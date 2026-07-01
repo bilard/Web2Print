@@ -264,3 +264,9 @@ main { flex: 1; }
   .menu-toggle { display: inline-flex; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } .feat-ico [class*="m-"], .feat-banner [class*="s-"] { animation: none !important; } }
+
+/* Sélecteur de langue (topbar) */
+.langsel { display: inline-flex; gap: 1px; align-items: center; padding: 2px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); }
+.langsel a { font: 600 11px/1 ui-monospace, SFMono-Regular, monospace; letter-spacing: .03em; color: var(--text-dim); text-decoration: none; padding: 4px 7px; border-radius: 999px; }
+.langsel a:hover { color: var(--text); text-decoration: none; }
+.langsel a[aria-current="page"] { color: var(--text); background: var(--accent-soft); }

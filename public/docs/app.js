@@ -1,5 +1,12 @@
 // IBS-Studio · Documentation technique — rendu data-driven, navigation, recherche.
-import { CATEGORIES, MODULES } from './content.js'
+// Contenu chargé depuis le dossier de la PAGE (/docs/ ou /docs/{lang}/) → multilingue.
+// Les pages traduites exposent en plus `STRINGS` (map FR→langue) pour traduire les
+// libellés codés en dur ici (captions, UI). Le FR n'a pas `STRINGS` → repli identité.
+const { CATEGORIES, MODULES, STRINGS = {} } = await import(new URL('./content.js', document.baseURI).href)
+/** Traduit une chaîne FR de ce fichier via la map de la page (identité si absente). */
+const T = (s) => STRINGS[s] ?? s
+/** Résout un média partagé (/docs/media/…) relativement à app.js, pas à la page. */
+const MEDIA = (s) => new URL(s, import.meta.url).href
 
 const $ = (s, r = document) => r.querySelector(s)
 const $$ = (s, r = document) => [...r.querySelectorAll(s)]
@@ -134,16 +141,19 @@ function motifFor(title) {
 }
 // Repli par catégorie : garantit qu'AUCUNE carte ne reste sans vignette animée.
 // Pioché dans l'ordre, en évitant les motifs déjà posés dans le module (variété).
+// Keyé par ID de catégorie (constant, langue-agnostique) — pas par label traduit.
 const CATEGORY_FALLBACK = {
-  'Démarrage': ['cursor', 'search', 'layers', 'grid', 'steps', 'bell'],
-  'Édition': ['layers', 'vector', 'image', 'video', 'export', 'grid'],
-  'Import': ['import', 'layers', 'doc', 'vector', 'transform', 'grid'],
-  'Données': ['grid', 'tree', 'image', 'search', 'erd', 'clock', 'diff'],
-  'Export': ['export', 'doc', 'slides', 'image', 'clock', 'grid'],
-  'Automatisation': ['flow', 'clock', 'telegram', 'export', 'ai', 'grid'],
-  'Assistant IA': ['ai', 'chat', 'search', 'clock', 'image'],
-  'Administration': ['shield', 'key', 'grid', 'search', 'clock', 'steps'],
+  'demarrage': ['cursor', 'search', 'layers', 'grid', 'steps', 'bell'],
+  'edition': ['layers', 'vector', 'image', 'video', 'export', 'grid'],
+  'import': ['import', 'layers', 'doc', 'vector', 'transform', 'grid'],
+  'donnees': ['grid', 'tree', 'image', 'search', 'erd', 'clock', 'diff'],
+  'export': ['export', 'doc', 'slides', 'image', 'clock', 'grid'],
+  'automatisation': ['flow', 'clock', 'telegram', 'export', 'ai', 'grid'],
+  'assistant-ia': ['ai', 'chat', 'search', 'clock', 'image'],
+  'administration': ['shield', 'key', 'grid', 'search', 'clock', 'steps'],
 }
+// Label de catégorie (langue courante) → id, pour retrouver le pool ci-dessus.
+const CAT_ID_BY_LABEL = new Map(CATEGORIES.map((c) => [c.label, c.id]))
 const DEFAULT_POOL = ['grid', 'ai', 'export', 'search', 'layers', 'image', 'clock', 'tree']
 // Bandeaux RENDUS via HyperFrames (MP4) — animations pro contextuelles par sujet,
 // DISTINCTES (zéro répétition). Priment sur les scènes SVG synthétiques.
@@ -173,10 +183,10 @@ function keysHTML(keys) { return `<span class="kbd-keys">${(keys || []).map((k) 
 function moduleHTML(m) {
   const demos = DEMOS[m.id] || []
   const demoHTML = demos
-    .map((d) => `<figure class="mod-demo"><video src="${d.src}" autoplay loop muted playsinline preload="metadata"></video><figcaption>${d.caption}</figcaption></figure>`)
+    .map((d) => `<figure class="mod-demo"><video src="${MEDIA(d.src)}" autoplay loop muted playsinline preload="metadata"></video><figcaption>${T(d.caption)}</figcaption></figure>`)
     .join('')
   const used = new Set()
-  const pool = CATEGORY_FALLBACK[m.cat] || DEFAULT_POOL
+  const pool = CATEGORY_FALLBACK[CAT_ID_BY_LABEL.get(m.cat)] || DEFAULT_POOL
   let bannerUsed = false // 1 grand bandeau MAX par module ; le reste = petits pictos
   const forced = MODULE_BANNER[m.id] // bandeau imposé (titres en prose qui ne matchent rien)
   const feats = (m.features || []).map((f, i) => {
@@ -193,23 +203,23 @@ function moduleHTML(m) {
     used.add(key)
     const vid = banner && RICH_VIDEO[key]
     const ico = vid
-      ? `<span class="feat-banner vid"><video src="${vid}" autoplay loop muted playsinline preload="metadata"></video></span>`
+      ? `<span class="feat-banner vid"><video src="${MEDIA(vid)}" autoplay loop muted playsinline preload="metadata"></video></span>`
       : banner && RICH[key]
       ? `<span class="feat-banner">${RICH[key]}</span>`
       : `<span class="feat-ico">${MOTIFS[key] || MOTIFS.grid}</span>`
     return `<div class="feat-item${vid || (banner && RICH[key]) ? ' rich' : ''}">${ico}<div class="feat-body"><dt>${f.title}</dt><dd>${f.desc}</dd></div></div>`
   }).join('')
-  const featHTML = feats ? `<div class="mod-sub">Fonctions</div><dl class="feat-list">${feats}</dl>` : ''
+  const featHTML = feats ? `<div class="mod-sub">${T('Fonctions')}</div><dl class="feat-list">${feats}</dl>` : ''
   const sc = (m.shortcuts || [])
   const scHTML = sc.length
-    ? `<div class="mod-sub">Raccourcis clavier</div><table class="kbd-table"><tbody>${sc.map((s) => `<tr><td>${keysHTML(s.keys)}</td><td>${s.label}</td></tr>`).join('')}</tbody></table>`
+    ? `<div class="mod-sub">${T('Raccourcis clavier')}</div><table class="kbd-table"><tbody>${sc.map((s) => `<tr><td>${keysHTML(s.keys)}</td><td>${s.label}</td></tr>`).join('')}</tbody></table>`
     : ''
   return `<section class="module" id="m-${m.id}">
     <div class="mod-head">
       <span class="mod-ico" aria-hidden="true">${m.icon || '✦'}</span>
       <h2>${m.title}</h2>
       <span class="mod-cat">${m.cat}</span>
-      <a class="mod-anchor" href="#m-${m.id}" aria-label="Lien vers ${m.title}">#</a>
+      <a class="mod-anchor" href="#m-${m.id}" aria-label="${T('Lien vers')} ${m.title}">#</a>
     </div>
     <p class="mod-intro">${m.intro}</p>
     ${demoHTML}${featHTML}${scHTML}
@@ -281,7 +291,7 @@ function runSearch(q) {
   const res = nq ? SEARCH_INDEX.filter((r) => r.hay.includes(nq)).slice(0, 24)
                  : MODULES.map((m) => ({ id: m.id, icon: m.icon, title: m.title, sub: m.cat }))
   searchSel = 0
-  if (!res.length) { list.innerHTML = `<li class="search-empty">Aucun résultat pour « ${q} »</li>`; return }
+  if (!res.length) { list.innerHTML = `<li class="search-empty">${T('Aucun résultat pour')} « ${q} »</li>`; return }
   list.innerHTML = res.map((r, i) => `<li data-id="${r.id}" class="${i === 0 ? 'active' : ''}"><span class="sr-ico">${r.icon}</span><span>${r.title}</span><span class="sr-sub">${r.sub}</span></li>`).join('')
   $$('#searchResults li').forEach((li) => li.addEventListener('click', () => { if (li.dataset.id) choose(li.dataset.id) }))
 }

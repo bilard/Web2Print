@@ -1316,7 +1316,7 @@ export const MODULES = [
     "cat": "Données",
     "icon": "✦",
     "anim": "default",
-    "title": "Promo Retail",
+    "title": "Création studio",
     "intro": "Créez et gérez vos promotions retail : visuels, offres et déclinaisons multi-format.",
     "features": [],
     "shortcuts": []

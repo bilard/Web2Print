@@ -1,0 +1,2435 @@
+// ⚠️ AUTO-GÉNÉRÉ par scripts/docs-i18n/build.mjs — NE PAS éditer.
+export const CATEGORIES = [
+  {
+    "id": "demarrage",
+    "label": "Getting started",
+    "icon": "🚀",
+    "desc": "Sign-in, onboarding, navigation and what's new: everything to get you going."
+  },
+  {
+    "id": "edition",
+    "label": "Editing",
+    "icon": "✏️",
+    "desc": "The Canva-style editor: canvas, tools, layers, print and animations."
+  },
+  {
+    "id": "import",
+    "label": "Import",
+    "icon": "📥",
+    "desc": "Start from an existing file: IDML, EasyCatalog, PPTX, Excel, image, SVG, PDF."
+  },
+  {
+    "id": "donnees",
+    "label": "Data",
+    "icon": "🗂️",
+    "desc": "The data core: PIM, media (DAM), taxonomies, scraping and price monitoring."
+  },
+  {
+    "id": "export",
+    "label": "Export",
+    "icon": "📤",
+    "desc": "Output your designs: print PDF, IDML, PPTX, SVG, PNG, web and social pack."
+  },
+  {
+    "id": "automatisation",
+    "label": "Automation",
+    "icon": "⚡",
+    "desc": "Visual workflows and Telegram control: chain modules together effortlessly."
+  },
+  {
+    "id": "assistant-ia",
+    "label": "AI Assistant",
+    "icon": "🤖",
+    "desc": "A conversational assistant to query, write and generate."
+  },
+  {
+    "id": "administration",
+    "label": "Administration",
+    "icon": "🛡️",
+    "desc": "Accounts, roles, permissions and workspace settings."
+  }
+]
+
+export const MODULES = [
+  {
+    "id": "getting-started",
+    "cat": "Getting started",
+    "icon": "🚀",
+    "anim": "pipeline",
+    "title": "Getting started",
+    "intro": "Sign-in, dashboard and creating your first project.",
+    "features": [
+      {
+        "title": "Dashboard sections",
+        "desc": "Each sidebar entry is a shortcut to a major area of the app. Clicking a link below highlights the item on screen (opening the dashboard first if needed)."
+      },
+      {
+        "title": "Create a blank project",
+        "desc": "Opens the \"New document\" panel and lets you pick a format (A4, A3, screen/social sizes, or custom dimensions)."
+      },
+      {
+        "title": "Find an existing project",
+        "desc": "The Library lists all your projects: • Open: single-click the card. Duplicate / delete: buttons on the card (or right-click). • Thumbnails or List: two buttons at the top right switch the view."
+      }
+    ],
+    "shortcuts": [
+      {
+        "keys": [
+          "⌘",
+          "S"
+        ],
+        "label": "Save the project"
+      },
+      {
+        "keys": [
+          "⌘",
+          "Z"
+        ],
+        "label": "Undo the last action"
+      },
+      {
+        "keys": [
+          "⌘",
+          "Y"
+        ],
+        "label": "Redo"
+      },
+      {
+        "keys": [
+          "⇧",
+          "?"
+        ],
+        "label": "Open / close the manual"
+      }
+    ]
+  },
+  {
+    "id": "nouveautes",
+    "cat": "Getting started",
+    "icon": "✨",
+    "anim": "spark",
+    "title": "What's new",
+    "intro": "What's just landed in the app — June 2026.",
+    "features": [
+      {
+        "title": "Navigation & comfort",
+        "desc": "• Command palette ⌘K / Ctrl+K: recent projects, modules, quick actions — from any page. • Notification centre (🔔 bottom left): history of workflow runs and exports, unread badge."
+      },
+      {
+        "title": "Editor",
+        "desc": "• Floating context bar below the selection (duplicate, layering, group, lock, delete) + real-time badge during manipulations (X/Y, W×H, angle)."
+      },
+      {
+        "title": "Promo re-skin (editor × PIM × AI)",
+        "desc": "• \"PIM products (re-skin)\" source in the Data panel: each product becomes a row — moving between products re-skins the design instantly."
+      },
+      {
+        "title": "PIM & data",
+        "desc": "• Completeness dot on each row (missing fields on hover) + average in the status bar. • Gallery view: products as cards (image, title, price, completeness). Details: PIM section."
+      },
+      {
+        "title": "Workflows & automation",
+        "desc": "• One-click template gallery (Scrape → PIM, monitoring, web search…). • \"Telegram approval\" node: the run pauses until you click ✅/❌. • \"Price watch\" node: alerts only when a price moves (works via server cron)."
+      },
+      {
+        "title": "Price monitoring & price comparison",
+        "desc": "• New Price monitoring module: dashboard of competitor prices (per-product gaps, positioning, alerts), fed by a workflow's \"Price monitoring\" node."
+      },
+      {
+        "title": "Telegram without a browser (server responder)",
+        "desc": "• The bot replies with the app closed: questions with automatic web search (cited sources), /flow generated and run server-side, /run of a saved workflow."
+      },
+      {
+        "title": "DAM, Telegram & export",
+        "desc": "• Automatic AI tagging of saved images + natural-language filter in \"My images\". • Daily Telegram digest (opt-in, 08:00): summary of the last 24 h."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "onboarding",
+    "cat": "Getting started",
+    "icon": "🧰",
+    "anim": "checklist",
+    "title": "Setup assistant",
+    "intro": "Set up your workspace step by step: AI keys, models, connectors and guided tour.",
+    "features": [
+      {
+        "title": "1 · Welcome",
+        "desc": "Overview of the upcoming steps (AI keys, models & cascade, connectors, guided tour). Nothing to enter."
+      },
+      {
+        "title": "2 · AI keys — required",
+        "desc": "Enter at least one API key among Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi or OpenRouter, then test it. Until a valid key is entered, the Next button stays disabled (\"Enter at least one LLM key\")."
+      },
+      {
+        "title": "3 · Models & cascade",
+        "desc": "Choose each provider's model and the order of the reasoning cascade (the first to respond wins, the others act as fallback)."
+      },
+      {
+        "title": "4 · Connectors — optional",
+        "desc": "Connect Google Drive, Bright Data (scraping) and Telegram if you need them. This step can be skipped and completed later in Settings → Connectors."
+      },
+      {
+        "title": "5 · Done",
+        "desc": "A summary of your profile, then the choice to launch the dashboard's guided tour or finish straight away."
+      },
+      {
+        "title": "Resume setup later",
+        "desc": "The assistant stays available at any time, via two entry points: • \"Setup assistant\" banner at the top of Settings — subtitle \"Resume the guided setup (keys, models, connectors)\"."
+      },
+      {
+        "title": "\"Update all LLMs\" button",
+        "desc": "Available in the assistant and in the AI tab of Settings, it selects each provider's latest flagship model (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter)."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "navigation",
+    "cat": "Getting started",
+    "icon": "🧭",
+    "anim": "taxonomy",
+    "title": "Navigation & guided tours",
+    "intro": "Move between modules from anywhere, and (re)launch the guided tours.",
+    "features": [
+      {
+        "title": "Module menu (☰)",
+        "desc": "A floating ☰ button at the bottom left opens a drawer listing every module: New document, Import, Library, DAM, PIM, Taxonomies, Scraping templates, Scraping Hub, Workflows, Price monitoring, Telegram, Animation, AI Chat and U…"
+      },
+      {
+        "title": "Command palette (⌘K)",
+        "desc": "⌘K (Mac) or Ctrl+K (PC) opens the command palette from any page: type a few letters to open one of your recent projects, jump to a module (\"pim\", \"workflows\", \"library\"…) or trigger a quick action…"
+      },
+      {
+        "title": "Notifications (🔔)",
+        "desc": "The bell at the bottom left (above the ☰ menu) keeps the history of important events: workflow run completions, successful or failed exports."
+      },
+      {
+        "title": "Guided tours (🧭)",
+        "desc": "A 🧭 \"Guided tour\" button at the bottom right (to the left of the help button) launches an interactive tour of the current screen: • Dashboard: walks through each workspace one by one."
+      },
+      {
+        "title": "This manual adapts to your role",
+        "desc": "The help's table of contents and search only show sections for the modules you have access to (the owner sees everything)."
+      }
+    ],
+    "shortcuts": [
+      {
+        "keys": [
+          "⌘",
+          "K"
+        ],
+        "label": "Open the command palette"
+      },
+      {
+        "keys": [
+          "⇧",
+          "?"
+        ],
+        "label": "Open / close the manual"
+      }
+    ]
+  },
+  {
+    "id": "editor",
+    "cat": "Editing",
+    "icon": "✏️",
+    "anim": "editor",
+    "title": "The editor",
+    "intro": "Canvas, tools, layers and saving the project.",
+    "features": [
+      {
+        "title": "Command palette (⌘K)",
+        "desc": "⌘K (or Ctrl+K) opens the command palette — available everywhere in the app, including the editor."
+      },
+      {
+        "title": "Text case (without rewriting)",
+        "desc": "The Transform section of a text's properties applies a case to the rendering without touching the typed content: uppercase, lowercase or Title Case (first letter of each word)."
+      },
+      {
+        "title": "Page thumbnails",
+        "desc": "On a multi-page document, the bottom bar shows a row of thumbnails (one per page, with its number)."
+      },
+      {
+        "title": "Organise the right-hand panels",
+        "desc": "The right-hand column is modular: the Properties panel stays pinned at the top, and every other panel (Layers, Images, Palette, Assets, Page, Print, Data, 3D Animation, Versions) collapses/expands with a click on its header."
+      },
+      {
+        "title": "Images",
+        "desc": "Insert images without leaving the editor: Gallery, Upload, AI (generation from a prompt, 5 ratios, image-to-image if an object is selected), Stock, My images, Favourites, Collections, Recent tabs — the same sources as the DAM."
+      },
+      {
+        "title": "Assets",
+        "desc": "The project's images and fonts (tabs with counters). Drag an image onto the canvas, or use imported fonts (IDML) in your text."
+      },
+      {
+        "title": "Page",
+        "desc": "Page format: presets (A4/A3/A5, Full HD, 4K, 16:9, Instagram post & story, Facebook cover) or custom dimensions in mm. Page background: solid colour, gradient or image (upload or drag-and-drop)."
+      },
+      {
+        "title": "Print",
+        "desc": "All the prepress: DPI, bleed, crop marks (length 2–10 mm, offset 0–3 mm, weight, colour), registration marks, safe zone (margin, configurable dashes) and the Preflight section…"
+      },
+      {
+        "title": "3D Animation",
+        "desc": "Apply 3D animations to an object (3D flip, emboss, particles…) via presets, with play/stop and video recording (MP4/WebM export) of the animated render."
+      },
+      {
+        "title": "Palette · Data · Versions",
+        "desc": "Detailed in their dedicated sections below (brand kit & object styles, PIM re-skin / mail merge, snapshots)."
+      }
+    ],
+    "shortcuts": [
+      {
+        "keys": [
+          "V"
+        ],
+        "label": "Selection tool"
+      },
+      {
+        "keys": [
+          "T"
+        ],
+        "label": "Text tool"
+      },
+      {
+        "keys": [
+          "R"
+        ],
+        "label": "Rectangle tool"
+      },
+      {
+        "keys": [
+          "E"
+        ],
+        "label": "Ellipse tool"
+      },
+      {
+        "keys": [
+          "L"
+        ],
+        "label": "Line tool"
+      },
+      {
+        "keys": [
+          "I"
+        ],
+        "label": "Image / DAM tool"
+      },
+      {
+        "keys": [
+          "Espace",
+          "⇧ Glisser"
+        ],
+        "label": "Pan the canvas"
+      },
+      {
+        "keys": [
+          "⌘",
+          "S"
+        ],
+        "label": "Save (manual commit)"
+      },
+      {
+        "keys": [
+          "⌘",
+          "Z"
+        ],
+        "label": "Undo"
+      },
+      {
+        "keys": [
+          "⌘",
+          "Y"
+        ],
+        "label": "Redo"
+      },
+      {
+        "keys": [
+          "⌘",
+          "A"
+        ],
+        "label": "Select all"
+      },
+      {
+        "keys": [
+          "⌘",
+          "D"
+        ],
+        "label": "Duplicate the selection"
+      },
+      {
+        "keys": [
+          "⌘",
+          "G"
+        ],
+        "label": "Group"
+      },
+      {
+        "keys": [
+          "⌘",
+          "⇧",
+          "G"
+        ],
+        "label": "Ungroup"
+      },
+      {
+        "keys": [
+          "⌘",
+          "]"
+        ],
+        "label": "Bring forward"
+      },
+      {
+        "keys": [
+          "⌘",
+          "["
+        ],
+        "label": "Send backward"
+      },
+      {
+        "keys": [
+          "⌘",
+          "⇧",
+          "]"
+        ],
+        "label": "Bring to front"
+      },
+      {
+        "keys": [
+          "⌘",
+          "⇧",
+          "["
+        ],
+        "label": "Send to back"
+      },
+      {
+        "keys": [
+          "←↑→↓"
+        ],
+        "label": "Move by 1 px (⇧: 10 px)"
+      },
+      {
+        "keys": [
+          "Suppr"
+        ],
+        "label": "Delete the selection"
+      },
+      {
+        "keys": [
+          "Échap"
+        ],
+        "label": "Deselect"
+      }
+    ]
+  },
+  {
+    "id": "conditional-rules",
+    "cat": "Editing",
+    "icon": "🔀",
+    "anim": "editor",
+    "title": "Conditional rules",
+    "intro": "Show, hide or transform a design element based on the current row's data — EasyCatalog style (\"New action\"), but directly in the editor. Ideal for mail merge: a \"PROMO\" banner that appears only on discounted products, a price turning red below a stock threshold, an enlarged icon for new items…",
+    "features": [
+      {
+        "title": "Open the panel",
+        "desc": "1. Select an object on the canvas. 2. In the right-hand column, open the Properties panel, then expand the Conditional rules section (branch icon). A counter shows the number of active rules on the object. 3."
+      },
+      {
+        "title": "Composing a rule: IF field → operator → value → THEN action",
+        "desc": "Each rule reads left to right: • Field: the data column being tested (e.g. promo, stock, Prixnormal). • Operator: the condition to check (see below)."
+      },
+      {
+        "title": "The operators (3 families)",
+        "desc": "Text (comparison ignoring case and leading/trailing spaces): • Contains / Does not contain • Is / Is not (exact string match) • Starts with / Ends with • Does not start with / Does not end with Presence (no…"
+      },
+      {
+        "title": "The actions (7)",
+        "desc": "• Hide: the object isn't rendered (neither on screen nor on export). • Show: forces display. • Bring forward / Send back: reorders the object in the stack (z-order)."
+      },
+      {
+        "title": "Preview and multiple rules",
+        "desc": "When a source is connected, the effect plays live on the current row: add or edit a rule and the canvas updates immediately."
+      },
+      {
+        "title": "How is this different from a standard {{field}} binding?",
+        "desc": "A {{field}} binding (or \"Link to a field\") replaces an element's content with the column's value (text, image)."
+      },
+      {
+        "title": "My warning \"the colour is also wired\"?",
+        "desc": "If a property is driven both by a data binding (e.g. colour wired to a column) and by a rule that changes it (Change colour / Change opacity), the two can conflict."
+      },
+      {
+        "title": "The fields don't appear in the selector",
+        "desc": "Connect a data source (Excel, Google Sheets, PIM…) from the Mail merge panel. Without any source — never connected — there are no columns to test."
+      },
+      {
+        "title": "The preview doesn't move when I add a rule",
+        "desc": "The live preview requires a connected source (Mail merge panel). While disconnected, the rule is still saved on the object, but its effect will only be visible at mail merge / batch export time."
+      },
+      {
+        "title": "EasyCatalog ↔ Conditional rules",
+        "desc": "The panel mirrors the logic of EasyCatalog's conditional actions (Contains, Is, Equals, Hide…)."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "hyperframes",
+    "cat": "Editing",
+    "icon": "🎬",
+    "anim": "reveal",
+    "title": "Animation",
+    "intro": "Generate standalone HTML animations (video) from a brief or a canvas design.",
+    "features": [
+      {
+        "title": "From a brief (multi-scene video)",
+        "desc": "Describe your subject, and optionally the audience, goal, tone, brand and a caption."
+      },
+      {
+        "title": "From a canvas design (design-reveal)",
+        "desc": "From the editor, the current project's SVG is captured and the AI animates it (reveals, pacing, easing) following a style instruction. Ideal for turning a print design into an animated teaser."
+      },
+      {
+        "title": "Reference files",
+        "desc": "Drag in images, PDFs or SVGs to enrich the brief: the AI reads them (text + visual) and uses them as context."
+      },
+      {
+        "title": "Format and duration",
+        "desc": "• Ratio: Auto, portrait (9:16), square (1:1), landscape (16:9) or custom dimensions (width × height, 240 to 4096 px, ratio shown live)."
+      },
+      {
+        "title": "Enrich and finalise",
+        "desc": "• Enrich with AI images: the AI generates one image per scene (shown in the background, Ken Burns effect). • Live preview: the player runs the composition with the applied style (pacing, intensity, easing, palette)."
+      },
+      {
+        "title": "The ZIP is a standalone, playable animation",
+        "desc": "The index.html is self-contained (CSS, JS, data and auto-play all inline): double-click it and it opens even over file://, with no server."
+      },
+      {
+        "title": "Manage your animations in the DAM",
+        "desc": "In the DAM's HTML animations tab, each card shows the ratio, size and date: • Open plays the animation in a new tab (the ZIP is extracted on the fly, the index.html is served as-is)."
+      },
+      {
+        "title": "Prompt library",
+        "desc": "Each generation remembers its brief: you can replay it, load it to tweak it, rename it or delete it — to produce variants without retyping everything."
+      },
+      {
+        "title": "See also",
+        "desc": "Generation relies on the AI models configured in Settings → AI. Scene visuals use the image generation engine (AI Image), the same one as in the DAM and AI Chat."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-idml",
+    "cat": "Import",
+    "icon": "📐",
+    "anim": "import",
+    "title": "IDML import",
+    "intro": "Bring in an InDesign layout and turn it into an IBS-Studio template.",
+    "features": [
+      {
+        "title": "How to export an IDML from InDesign",
+        "desc": "1. Open your document in InDesign CC or later 2. File → Export… 3. Choose the InDesign Markup (IDML) format 4. Save. The IDML file is in fact a ZIP containing XML + resources (fonts, images)."
+      },
+      {
+        "title": "Import the \"package\", not just the .idml",
+        "desc": "The import expects an InDesign package (File → Package…), not a standalone .idml: • an .idml file and a reference .pdf are required — without the PDF, the import stops with \"Missing components\" • the fonts in the Docume… folder"
+      },
+      {
+        "title": "Import into IBS-Studio",
+        "desc": "1. Dashboard → Import 2. Select the .idml 3. Wait: the parser extracts shapes, text, images, fonts, shadows and transparency — all the document's pages (each spread becomes an IBS-Studio page) 4."
+      },
+      {
+        "title": "Breakdown into editable layers",
+        "desc": "Nothing is flattened into an image: each object becomes an editable layer again in the editor."
+      },
+      {
+        "title": "CMYK colours converted faithfully",
+        "desc": "CMYK swatches are brought back to RGB for the screen. When InDesign has already stored the colour's sRGB value (from its own ICC conversion), it is used as-is."
+      },
+      {
+        "title": "What's preserved vs approximated on export",
+        "desc": "The IDML export isn't a regeneration: it re-patches the original IDML ZIP. Your changes to text, image, background colour, position and size are re-injected; everything else in the document (styles, layers, untouched settings) is pre…"
+      },
+      {
+        "title": "Known limitations",
+        "desc": "• Custom fonts: if not installed on the machine → Arial fallback. For perfect fidelity, load your fonts into public/fonts/ • Gradients: not imported — gradient objects come back as a solid colour (recreate them in the editor if need…"
+      },
+      {
+        "title": "InDesign ↔ IBS-Studio round-trip",
+        "desc": "The classic cycle: 1. Designer creates the layout in InDesign 2. Exports an IDML 3. Printer imports into IBS-Studio, adds placeholders, connects the data merge 4. Batch IDML export (one per product) or direct PDF 5."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "easycatalog",
+    "cat": "Import",
+    "icon": "🔗",
+    "anim": "import",
+    "title": "EasyCatalog (InDesign)",
+    "intro": "Round-trip with the EasyCatalog plug-in: import a template, merge its fields, then re-export a natively recognised IDML.",
+    "features": [
+      {
+        "title": "Under the hood: how the fields survive the IDML",
+        "desc": "EasyCatalog doesn't store its fields as text: it places invisible markers on the InDesign markup that IBS-Studio can read back."
+      },
+      {
+        "title": "1. Import an EasyCatalog template",
+        "desc": "1. From InDesign (with your EasyCatalog document open): File → Export… → InDesign Markup (IDML) 2. In IBS-Studio: Dashboard → Import → select the .idml 3. The template opens in the editor."
+      },
+      {
+        "title": "2. Connect your data and merge",
+        "desc": "In the editor, Mail merge panel: connect a source (Excel, Google Sheets, PIM…). IBS-Studio replaces the {{fields}} with the current row's values, and loads the images into the linked frames."
+      },
+      {
+        "title": "3. Export a data source FOR EasyCatalog",
+        "desc": "From the Data area, EasyCatalog button: generates a zip ready to connect as a flat-file data source in EasyCatalog."
+      },
+      {
+        "title": "4. Re-export an IDML (full round-trip)",
+        "desc": "From the editor, Export → IDML (multi-page): IBS-Studio produces an IDML that keeps the EasyCatalog markers and resolves values per row."
+      },
+      {
+        "title": "The fields aren't recognised on import?",
+        "desc": "Check that the IDML really comes from an EasyCatalog-driven document (fields are inserted via the EasyCatalog panel, recognisable by their green brackets). Hand-typed text is not a field."
+      },
+      {
+        "title": "What data to put in image columns?",
+        "desc": "An image URL (e.g. a Firebase/DAM link) loads directly. A plain filename is resolved via your storage if the file exists there. The image binding connects itself automatically to the imported EasyCatalog frame."
+      },
+      {
+        "title": "How is the key field chosen on export?",
+        "desc": "IBS-Studio uses your primary column as the EasyCatalog key if all its values are unique and non-empty. Otherwise, it synthesises an eckey (row1, row2, …) to guarantee reliable re-synchronisation."
+      },
+      {
+        "title": "Known limitations",
+        "desc": "• Fields in qualified form (full data source reference, $ID/2/$ID/3 markers) aren't yet converted to placeholders and remain as text; only the simple $ID/4/$ID/5 form is recognised."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "indesign-xml",
+    "cat": "Import",
+    "icon": "✦",
+    "anim": "default",
+    "title": "InDesign XML tags (auto-connect)",
+    "intro": "Tag an InDesign document with native XML tags named like your columns: when the IDML is imported, IBS-Studio turns them into {{…}} fields automatically connected to your database — a free alternative to EasyCatalog.",
+    "features": [
+      {
+        "title": "1. Tag the document in InDesign",
+        "desc": "1. Open the tags panel: Window → Utilities → Tags. 2. Create one tag per field, with the exact name of your column (e.g. LibelleArticle, Prixnormal, Marques). 3."
+      },
+      {
+        "title": "2. (Optional) The IBS-Studio plug-in: tag while connected to your database",
+        "desc": "To tag while connected live to your database, IBS-Studio provides an InDesign plug-in (UXP)."
+      },
+      {
+        "title": "3. Export the IDML",
+        "desc": "In InDesign: File → Export… → InDesign Markup (IDML). The XML tags are kept in the file."
+      },
+      {
+        "title": "4. Import into IBS-Studio → auto-connected fields",
+        "desc": "Dashboard → Import → select the .idml. On opening: • each text tag becomes an editable {{name}} placeholder; • each image tag becomes a linked image frame."
+      },
+      {
+        "title": "Native XML tag or EasyCatalog: which to choose?",
+        "desc": "Both lead to the same result (connected {{…}} fields). EasyCatalog is the way to go if your print workflow already uses it (re-sync on the InDesign side)."
+      },
+      {
+        "title": "Why don't I see the brackets on a block?",
+        "desc": "The brackets [ ] only appear on tagged text. If you applied the tag to the frame (rectangle) instead of the text, you get a coloured frame in the Structure but no brackets — and the value won't be replaced."
+      },
+      {
+        "title": "Must the names match the columns exactly?",
+        "desc": "The tag name must match the name of your database column. Case, accents and spaces/underscores are tolerated when matching (e.g. Prix normal ↔ Prixnormal column)."
+      },
+      {
+        "title": "The plug-in won't load / the token doesn't work",
+        "desc": "The plug-in is distributed in developer mode (UXP): it's loaded manually each session via the UXP Developer Tool."
+      },
+      {
+        "title": "Show / hide an element based on the data?",
+        "desc": "Once your database is connected, you can make an element react to each row's value (hide a \"PROMO\" banner when not on offer, turn a price red below a stock threshold, enlarge a \"new\" icon…)."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-pptx",
+    "cat": "Import",
+    "icon": "📊",
+    "anim": "import",
+    "title": "Import PPTX",
+    "intro": "Import a .pptx to reuse it as a template or starting point.",
+    "features": [
+      {
+        "title": "Import a PPTX",
+        "desc": "1. Dashboard → Import 2. Select the .pptx 3. The parser extracts text, images and shapes — including the theme (theme colours are resolved) and fill transparencies 4."
+      },
+      {
+        "title": "Typical use case",
+        "desc": "Dynamic sales presentation: your sales team starts from a PPTX template. You import it once, map the placeholders to your product database, and each rep generates their personalised version (client logo, negotiated price, references…"
+      },
+      {
+        "title": "Limitations",
+        "desc": "• Multi-slide: only slide 1 is read — the rest are ignored • PowerPoint animations: not supported (IBS-Studio exports print/static) • SmartArt: ignored on import (not converted into shapes) • Round-trip PPTX → Fabric → P…"
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-excel",
+    "cat": "Import",
+    "icon": "🧮",
+    "anim": "pim",
+    "title": "Import Excel",
+    "intro": "Populate the PIM from an Excel, CSV/TSV or Google Sheets file.",
+    "features": [
+      {
+        "title": "Supported formats",
+        "desc": "The import automatically detects column types: text, number, boolean, date, formula (stored then evaluated at merge time) and dictionary (a column with repeating values → choice list)."
+      },
+      {
+        "title": "Import a file",
+        "desc": "1. Open PIM from the menu. 2. Click Import a file (or Create empty to start from a blank database). 3. Select your file. 4. Check the detected columns. 5. Confirm → the database is created and synced to Firebase."
+      },
+      {
+        "title": "What next?",
+        "desc": "Once the database is imported, everything happens in the PIM: enrich the product sheets with AI, manage the structured fields (specifications, variants, documents, images) and export in batch. See the PIM section."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-image",
+    "cat": "Import",
+    "icon": "🌄",
+    "anim": "import",
+    "title": "Import an image",
+    "intro": "Place an image (PNG, JPG, WebP, GIF, SVG) onto the canvas of a new project.",
+    "features": [],
+    "shortcuts": []
+  },
+  {
+    "id": "import-svg",
+    "cat": "Import",
+    "icon": "✒️",
+    "anim": "img2svg",
+    "title": "Import SVG",
+    "intro": "Load an .svg as editable vector layers.",
+    "features": [
+      {
+        "title": "When to use it",
+        "desc": "• A vector logo to edit or recolour. • An already-vectorised visual (Illustrator/Figma export) to place into a layout."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-image-to-svg",
+    "cat": "Import",
+    "icon": "🪄",
+    "anim": "img2svg",
+    "title": "Image → editable SVG",
+    "intro": "Make a raster image editable: locked background + text broken out by AI.",
+    "features": [
+      {
+        "title": "How it works",
+        "desc": "1. The image is locked as the background (visual fidelity preserved). The source layer becomes unselectable: clicks pass through to the text placed on top. 2."
+      },
+      {
+        "title": "What becomes editable",
+        "desc": "The breakdown isn't limited to plain text: it reconstructs the formatting of each block."
+      },
+      {
+        "title": "Google Vision key required",
+        "desc": "Text detection calls the Google Cloud Vision API: you need to enter your key once in Settings → Connectors (Google Vision field), synced afterwards via your account."
+      },
+      {
+        "title": "Smart filters",
+        "desc": "To keep only editorial content and avoid noise, several filters apply automatically."
+      },
+      {
+        "title": "When to use it & limitations",
+        "desc": "Use it when you have a finished raster visual (poster, flyer, retail ad) without the source file and want to rewrite the text or adapt it without redoing everything."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-pdf-to-svg",
+    "cat": "Import",
+    "icon": "📄",
+    "anim": "img2svg",
+    "title": "PDF → editable SVG",
+    "intro": "Start from a PDF: page 1 rasterised as the background + editable text.",
+    "features": [
+      {
+        "title": "How it works",
+        "desc": "1. If the PDF has a usable native text layer, vector conversion is tried first: the text comes in exact (no OCR). 2."
+      },
+      {
+        "title": "Native text vs OCR — three levels",
+        "desc": "The import follows a cascade: it always keeps the most faithful level available. 1. Vector conversion (MuPDF) — tried first."
+      },
+      {
+        "title": "What becomes editable (vector conversion)",
+        "desc": "When the PDF goes through vector conversion, the import doesn't just separate text and background — it reconstructs objects that are truly editable: • Grouped text blocks: a composite price (\"22 DT ,99\"), a bubble (\"30% off…"
+      },
+      {
+        "title": "Faithful fonts (embedded + Google Fonts fallback)",
+        "desc": "So the rendering doesn't fall back to a default font: • Fonts embedded in the PDF (TrueType subsets) are extracted and loaded under their real family (\"WRZTFA+ArialNarrow-Bold\" → Arial Narrow, bold)."
+      },
+      {
+        "title": "Merge fields {{…}} preserved",
+        "desc": "If the original PDF already contains merge fields {{…}} (mail merge), the import recognises them and attaches their layout frame: block width + alignment detected from the actual geometry (shared right edges → right-align…"
+      },
+      {
+        "title": "Limitations & when to use it",
+        "desc": "• Page 1 only: the following pages are ignored. For a faithful multi-page import, use InDesign Import (IDML) instead. • Ideal for starting from an existing PDF (proof, old document) when the InDesign source file is no longer available."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "dam",
+    "cat": "Data",
+    "icon": "🖼️",
+    "anim": "dam",
+    "title": "DAM",
+    "intro": "Image bank, AI generation, editing, variants and organising your visuals.",
+    "features": [
+      {
+        "title": "The tabs",
+        "desc": "Click a tab to open it directly in the DAM."
+      },
+      {
+        "title": "Image bank",
+        "desc": "Search across Pexels & Unsplash (millions of royalty-free photos) with source / orientation / colour filters."
+      },
+      {
+        "title": "My images",
+        "desc": "Your saved images — from the bank or produced by AI generation."
+      },
+      {
+        "title": "Favourites",
+        "desc": "The images you've marked with a ♥ for quick access."
+      },
+      {
+        "title": "Collections",
+        "desc": "Organising folders that you create and fill yourself."
+      },
+      {
+        "title": "Recent",
+        "desc": "The latest additions, sorted by date."
+      },
+      {
+        "title": "Projects",
+        "desc": "The current project's images and fonts, ready to drag onto the canvas."
+      },
+      {
+        "title": "Image creation",
+        "desc": "AI image generation (Gemini / AI Image) — see the detailed parameters below."
+      },
+      {
+        "title": "HTML animations",
+        "desc": "Your video compositions (HyperFrames)."
+      },
+      {
+        "title": "Google Drive",
+        "desc": "Access to your Google Drive files once your account is connected."
+      },
+      {
+        "title": "Search for images",
+        "desc": "• By text: search bar with autocomplete and a history of recent searches. • By image (reverse search): camera button → pick a local image → the DAM finds similar visuals in the bank."
+      },
+      {
+        "title": "Create an image with AI",
+        "desc": "Image creation tab — AI Image engine (Gemini 3.1 image, text → image). Expand each parameter:"
+      },
+      {
+        "title": "Prompt (+ Improve / With questions)",
+        "desc": "Describe the image to generate. You can paste an image into the field: it joins the reference files."
+      },
+      {
+        "title": "Reference files",
+        "desc": "\"Add files\" button (or paste an image). Any format: images, logos, PDF, SVG (rasterised to PNG, capped at 2048 px)."
+      },
+      {
+        "title": "Output format",
+        "desc": "• Images & text (default): image + text — the model may add a brief comment. • Images only."
+      },
+      {
+        "title": "Temperature (0 → 2, default 1.0)",
+        "desc": "Slider, steps of 0.1. Adjusts creativity: • 0 — Precise: deterministic, faithful to the prompt/references. • 2 — Creative: more freedom and variation. Reproducing a reference → lower towards 0; exploring → raise towards 2."
+      },
+      {
+        "title": "Ratio (aspect)",
+        "desc": "Auto · 1:1 · 16:9 · 9:16 · 4:3 · 3:4. • Auto (default): the model chooses the framing suited to the prompt/references (no constraint sent). • The others enforce the ratio: 1:1 square (social), 16:9 / 4:3 landscape, 9:16 / 3:4 portrait."
+      },
+      {
+        "title": "Resolution (1K / 2K / 4K)",
+        "desc": "1K (default) · 2K · 4K. The visual's resolution. ⚠️ 2K and 4K are 2 to 3× slower — save them for the final render, stay in 1K to iterate."
+      },
+      {
+        "title": "Number of images (1 / 2 / 4)",
+        "desc": "1 (default) · 2 · 4. Generates N variations of the same prompt in parallel — to compare several options at once."
+      },
+      {
+        "title": "Generate & actions on the results",
+        "desc": "\"Generate\" button. For each image: • Download — PNG locally. • Save — to \"My images\" (original prompt, improved prompt and Q&A kept in the metadata). • Insert into the editor — places the image into the open project."
+      },
+      {
+        "title": "View & edit an image",
+        "desc": "A click opens the viewer (lightbox). Non-destructive editing tools:"
+      },
+      {
+        "title": "Zoom · Rotate · Mirror",
+        "desc": "Zoom in/out + fit, 90° rotation, horizontal and vertical mirror."
+      },
+      {
+        "title": "Crop",
+        "desc": "Interactive 8-handle mask, rule-of-thirds grid, ratio constraints (free, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3)."
+      },
+      {
+        "title": "Colour",
+        "desc": "Brightness, Contrast, Saturation, Hue sliders (rendered via CSS filter, non-destructive)."
+      },
+      {
+        "title": "Export",
+        "desc": "PNG / JPEG / WebP formats, with quality (JPEG/WebP) and scale (% of native resolution) settings."
+      },
+      {
+        "title": "Reset",
+        "desc": "Cancels all edits and returns to the original image."
+      },
+      {
+        "title": "Info panel & photo credit",
+        "desc": "To the right of the viewer, the Info tab sums up the visual's technical details: dimensions (px), resolution (megapixels) and ratio, file size, orientation, dominant colour (swatch + hex code) and sRGB space, plus the tags."
+      },
+      {
+        "title": "Prompts tab (AI images)",
+        "desc": "When an image was generated by AI, a Prompts tab is added in the viewer. It shows the original prompt (your raw text), the improved prompt actually sent to AI Image, and the Q&A details from the \"With questions\" mode."
+      },
+      {
+        "title": "Variants",
+        "desc": "Save an edit (crop + colour + mirror + rotation) as a named variant of an image, without touching the original: • Save variant → give it a name."
+      },
+      {
+        "title": "AI analysis of an image",
+        "desc": "In the viewer, AI analysis tab → \"Analyse with AI\" button. The AI returns: subject, description, identified brands, detected text (OCR), mood / style / composition / lighting, objects, search tags and colour palette.…"
+      },
+      {
+        "title": "Automatic tagging & search by tags",
+        "desc": "Every image saved in My images (AI generation, Chat images) is tagged automatically in the background: tags, dominant colour and subject are added a few seconds after saving."
+      },
+      {
+        "title": "Organise",
+        "desc": "• Favourites (♥): quick access. • Collections: create folders, add/remove images, thumbnail or list view."
+      },
+      {
+        "title": "Use an image in the editor",
+        "desc": "• Click: inserts the image at the centre of the canvas (auto-scaled). • Drag-and-drop: from the grid onto the canvas (equivalent to inserting)."
+      },
+      {
+        "title": "External sources",
+        "desc": "• Pexels & Unsplash: built-in bank (search + filters). • Google Drive: connect your account (Google Drive tab) to pull from your files."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "pim",
+    "cat": "Data",
+    "icon": "📦",
+    "anim": "pim",
+    "title": "PIM",
+    "intro": "Manage your product databases: sheets, AI enrichment, structured fields and export.",
+    "features": [
+      {
+        "title": "Databases",
+        "desc": "You can manage several databases at once. Three ways to create one: • Import a file — from Excel or CSV/TSV (see Import Excel). • Scrape the web — start from product URLs and let the AI fill in the sheets."
+      },
+      {
+        "title": "Enrich a sheet with AI",
+        "desc": "Click a row → AI-enriched panel on the right. AUTO mode (purple): if the row has a title, brand or reference, a web search (Jina) + LLM finds the URL and extracts the information (primary model: Gemini, fallback: Claude)."
+      },
+      {
+        "title": "Structured fields",
+        "desc": "Beyond plain text, a sheet stores rich fields, all usable in the data merge: • Excel formulas: evaluated on the fly. • Specifications: [{ group, name, value }] (dimensions, materials…)."
+      },
+      {
+        "title": "Calculated fields (formula columns)",
+        "desc": "A column can be a formula rather than a typed value — just like in Excel. You write an expression referencing other columns, and the value recalculates on the fly when the data changes."
+      },
+      {
+        "title": "Edit the table like a spreadsheet",
+        "desc": "The product table can be edited directly, without leaving the page: • Edit a cell: one click selects, a second click (or Enter) switches to editing; Enter confirms, Esc cancels."
+      },
+      {
+        "title": "Column types (Airtable style)",
+        "desc": "The header \"+\" button opens a field-type picker, grouped by category (Text, Number, Choice, Date, Link, Other) with search."
+      },
+      {
+        "title": "Column statistics",
+        "desc": "Below a numeric column's header, Min / Average / Max badges sum up the visible values. Clicking Min sorts ascending, Max descending — a glance is enough to spot outlier prices or empty fields."
+      },
+      {
+        "title": "Freshness per field",
+        "desc": "Each enriched value carries the date of its last change (updatedAt at field level)."
+      },
+      {
+        "title": "Multiple sources in one database",
+        "desc": "The left-hand side column lists a database's sources (each import / scrape / manual entry = one source). Click a source to show/hide its products in the table; tick several to merge them on screen."
+      },
+      {
+        "title": "A sheet's image gallery",
+        "desc": "In the sheet panel, images are reordered by drag-and-drop (the first serves as the main visual) and deleted individually."
+      },
+      {
+        "title": "Classify & export",
+        "desc": "• Link a database to a taxonomy to browse the catalogue by category. • Once the sheets are ready, the data merge generates one document per product from a template (PDF, PNG…)."
+      },
+      {
+        "title": "Gallery view",
+        "desc": "The table / gallery toggle (top right of the table) shows products as cards: image (automatically detected image column), title, price or brand, and completeness dot. Clicking a card opens the sheet."
+      },
+      {
+        "title": "Sheet completeness",
+        "desc": "Each table row carries a completeness dot: green (≥ 90% of columns filled), amber (≥ 60%) or red. Hover it to see the missing fields."
+      },
+      {
+        "title": "See also",
+        "desc": "Batch export (data merge) is detailed in the Multi-format export section. Re-skinning a visual with PIM products is described in The editor section."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "taxonomies",
+    "cat": "Data",
+    "icon": "🌳",
+    "anim": "taxonomy",
+    "title": "Taxonomies",
+    "intro": "Classify products and projects in a navigable hierarchy.",
+    "features": [
+      {
+        "title": "Create a taxonomy",
+        "desc": "1. Go to Taxonomies from the menu 2. Click New taxonomy 3. Give it a name (e.g. Product categories) 4. Add levels: click a node to create a child, drag to reorder 5."
+      },
+      {
+        "title": "Smart navigation",
+        "desc": "As soon as a source database is active, the left-hand browser auto-expands the matching branch and highlights every ancestor of the selected node up to the root. Deselecting collapses the branch again."
+      },
+      {
+        "title": "Assign products to a category",
+        "desc": "In the PIM, each product (row) is attached to a taxonomy node. Two ways: • Manual — select a row → click \"Unclassified — click to classify\" above the panel → choose the target node."
+      },
+      {
+        "title": "Edit the tree (nodes)",
+        "desc": "Hover a row in the tree to reveal its actions: • + — adds a child node under the hovered node • ✏ (pencil) — renames the node in place • 🔗 (chain) — links projects to the node (shown on leaf nodes only) •…"
+      },
+      {
+        "title": "Search for a node in the tree",
+        "desc": "A \"Search for a node…\" bar filters the tree from 2 characters. Each result shows its label + its full path (breadcrumb)."
+      },
+      {
+        "title": "Product counters per node",
+        "desc": "Each node shows how many products are attached to it, at two levels: • the direct count (products placed exactly on this node); • the cumulative count, which aggregates the node and all its descendants — so a parent node totals everything…"
+      },
+      {
+        "title": "Classify products in batch (AI)",
+        "desc": "Instead of filing rows one by one, you can run a batch AI classification: the assistant reads the content of each row in the active sheet and suggests the most likely node in the target taxonomy."
+      },
+      {
+        "title": "Import a taxonomy from a file",
+        "desc": "Rather than typing the tree by hand, import an existing nomenclature in .md / .txt (indentation = hierarchy), .csv or .xlsx format."
+      },
+      {
+        "title": "Build a taxonomy from PIM columns",
+        "desc": "If your sheet already has categorisation columns (e.g. Family, Sub-family, Type), assign each one a level (1, 2, 3…)."
+      },
+      {
+        "title": "Multiple taxonomies & overall management",
+        "desc": "You can maintain several taxonomies at once (e.g. one per analysis axis) and switch between them from the list."
+      },
+      {
+        "title": "Link projects (designs) to a node",
+        "desc": "Beyond products, a leaf node can reference projects (editor designs)."
+      },
+      {
+        "title": "Auto-build from scraping",
+        "desc": "When you scrape a site with a breadcrumb, IBS-Studio can auto-build a taxonomy from the category paths it encounters. Handy for starting a PIM that mirrors a supplier's site."
+      },
+      {
+        "title": "Briefs tab",
+        "desc": "The Taxonomies page also hosts the Briefs tab: describe a need in natural language, the AI asks questions, assembles a basket of products from the catalogue and structures a deck. Details in the Briefs & AI generation section."
+      },
+      {
+        "title": "Use cases",
+        "desc": "• Multi-brand catalogue: main taxonomy by product type (Tools / Garden / Appliances) • Multilingual: one taxonomy per language, or a single taxonomy with multilingual labels on the nodes • Reporting: f…"
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "briefs",
+    "cat": "Data",
+    "icon": "📝",
+    "anim": "chat",
+    "title": "Briefs & AI generation",
+    "intro": "Describe what you want in plain language, and the AI produces the content.",
+    "features": [
+      {
+        "title": "AI models used",
+        "desc": "By default, IBS-Studio relies on: • Claude Opus (Anthropic) — dynamic questions, basket composition and deck structure • Gemini (Google) — image prompts, catalogue keywords, image generation (Claude as fallback) • Enrichm…"
+      },
+      {
+        "title": "Where to use briefs?",
+        "desc": "In Taxonomies: the Briefs tab on the Taxonomies page is the dedicated panel — describe your need, the AI asks dynamic questions, assembles a basket of products from the catalogue and structures a deck (with image prompts)."
+      },
+      {
+        "title": "The brief assistant in 5 steps",
+        "desc": "In Taxonomies, opening a brief launches a guided assistant that turns a client need into a deliverable sales proposal: 1."
+      },
+      {
+        "title": "How the AI assembles the basket",
+        "desc": "On first reaching the Basket step, generation starts automatically (empty basket + no prior log)."
+      },
+      {
+        "title": "Edit and export the basket",
+        "desc": "The generated basket stays fully editable, row by row: quantities, adding/removing products, and above all an applied price that can override the original catalogue price (both are kept)."
+      },
+      {
+        "title": "Deck and PPTX export",
+        "desc": "The AI sketches a deck made of typed slides: cover, context, product grid (2×2 / 3×2 / 1×3 layout), product focus, budget (total + breakdown) and call to action."
+      },
+      {
+        "title": "Image generation",
+        "desc": "The DAM includes image generation via Gemini (the image model known as \"AI Image\"). You describe an image in any language and the AI produces a visual usable directly in your templates."
+      },
+      {
+        "title": "Brief limitations",
+        "desc": "• The AI can hallucinate references or specifications. Always check the result before publishing, especially figures and standards. • Briefs are stateless: no conversational memory."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "scraping",
+    "cat": "Data",
+    "icon": "🕸️",
+    "anim": "scrape",
+    "title": "Product scraping",
+    "intro": "Pull product sheets from the web — with no manual entry.",
+    "features": [
+      {
+        "title": "Which mode to use?",
+        "desc": "For a supplier you'll scrape more than twice, create a template. It's the best route: zero AI hallucination, zero tokens used, reusable across hundreds of URLs."
+      },
+      {
+        "title": "Create a scraping template",
+        "desc": "1. Open the Scraping templates page from the side menu 2. Click New → enter a name (e.g. Nicoll), the domain (nicoll.fr) and a URL pattern (. to match everything) 3."
+      },
+      {
+        "title": "Search tab: \"find me this, there\"",
+        "desc": "No URL to hand? Describe what you're looking for and where in natural language — \"Honda mowers at LeroyMerlin and Castorama\"."
+      },
+      {
+        "title": "Several sites/URLs at once (List · File · Google Sheet)",
+        "desc": "The Crawl and Map + Extract tabs aren't limited to a single URL. The source selector offers 4 modes: • 1 URL: the simple case. • List: paste several root URLs, one per line."
+      },
+      {
+        "title": "Refine a Crawl: limit, include/exclude (regex)",
+        "desc": "Before extracting the links, you can frame the discovery: • Page limit (1 to 500, default 30) — per root URL in multi mode. • Include (regex): keep only paths that match, e.g. /produits/.."
+      },
+      {
+        "title": "Track the cost and stop a run",
+        "desc": "• Cost chip (top of the modal): it adds up live the last run and the session total, broken down by source — LLM, Jina, Firecrawl, Bright Data."
+      },
+      {
+        "title": "What exactly does \"Full product\" retrieve?",
+        "desc": "All tabs (Scrape / Crawl / Map+Extract / Search) end with the same PIM engine (enrichProductCore), for a consistent result whichever path you take: • Specs in KEY/VALUE format (structured technical characteristics)."
+      },
+      {
+        "title": "Scrape from the database (Map + Extract)",
+        "desc": "When you don't have a template yet, or to explore a new site: 1. PIM → open a database (or create it empty) 2. Scrape the web button → Map + Extract tab 3. Paste a category URL → Map the site → list of internal links 4."
+      },
+      {
+        "title": "Limitations to know about",
+        "desc": "• Hostile e-commerce sites (Mr-Bricolage, Darty, Boulanger…): DataDome/Akamai may block."
+      },
+      {
+        "title": "Pro tip: URL-only enrichment",
+        "desc": "You can import an Excel with only a URL column (no title/brand/ref). The pipeline detects the URL column, finds the template by domain, and launches TEMPLATE enrichment in one click."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "scraping-templates",
+    "cat": "Data",
+    "icon": "🧩",
+    "anim": "scrape",
+    "title": "Scraping templates",
+    "intro": "Create and maintain per-supplier extraction templates: CSS selectors, prompts and tests.",
+    "features": [
+      {
+        "title": "The template editor",
+        "desc": "• New creates a template: name, domain (nicoll.fr), URL pattern (. to match everything)."
+      },
+      {
+        "title": "Three levels of AI prompts",
+        "desc": "Alongside the selectors, three optional prompts guide LLM post-processing: • Global prompt (of the template): reformatting instructions for all products in this template — e.g."
+      },
+      {
+        "title": "Five types of selector",
+        "desc": "Beyond classic CSS, each field accepts several strategies tried in order — the first non-empty value is kept, which makes the template robust when the supplier changes its CSS: • CSS: standard selector, reads the text…"
+      },
+      {
+        "title": "Transformations & KEY/VALUE specs",
+        "desc": "• Per-field transformations: trim, normalize-whitespace, uppercase/lowercase, parse-number, parse-price (isolates the number from a price), absolutize-url (relative path → absolute URL, applied automatically when capturing a src/href), decode-h…"
+      },
+      {
+        "title": "Pre-actions & capture via Chrome extension",
+        "desc": "• Pre-actions (Advanced tab): before capturing the DOM, you can chain click (expand an accordion/tab), scroll, wait, waitForSelector and acceptCookies (auto-detection of the banner) — essential for sheets whose specs are h…"
+      },
+      {
+        "title": "Field order & brand aliases (supplier level)",
+        "desc": "• Field order: reordering fields by drag-and-drop sets their display order in enrichment — shared across all templates of the same domain."
+      },
+      {
+        "title": "Usage statistics",
+        "desc": "Each template tracks its number of applications and successes — a template whose success rate drops signals a site that has changed structure (selectors to re-point)."
+      },
+      {
+        "title": "See also",
+        "desc": "The per-supplier overview (templates grouped by domain) is in the Scraping Hub. The general scraping guide (which mode to choose, Map + Extract, anti-bot limits) is in the Product scraping section."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "scraping-hub",
+    "cat": "Data",
+    "icon": "🛰️",
+    "anim": "scrape",
+    "title": "Scraping Hub",
+    "intro": "The scraping control centre: team rules, per-supplier view and extraction debugging.",
+    "features": [
+      {
+        "title": "Rules",
+        "desc": "The team's editorial rules (markdown): naming conventions, price formats, description language… Stored in Firestore and shared across the whole team, they serve as a common reference for enrichments."
+      },
+      {
+        "title": "Suppliers & Templates",
+        "desc": "An overview of all templates grouped by supplier domain: expand a supplier to see its templates and their status, and open the template editor directly with one click."
+      },
+      {
+        "title": "Jina/LLM debug",
+        "desc": "The log of the latest scraping requests (30 max, refreshed every 2 s): for each call, the content returned by Jina and the LLM's response."
+      },
+      {
+        "title": "Rules: markdown editor with live preview",
+        "desc": "The Rules tab is a side-by-side editor: you write markdown on the left, the rendering shows live on the right (headings, lists, GFM tables)."
+      },
+      {
+        "title": "Suppliers: per-domain prompt, fields and success rate",
+        "desc": "Under each supplier domain, you find the supplier prompt if one exists (blue box, \"supplier prompt set\" badge): these site-specific instructions apply to all its templates."
+      },
+      {
+        "title": "Debug: a log LOCAL to this browser",
+        "desc": "The debug log is stored locally on this machine (localStorage), not in Firestore: so it isn't shared with the team and reflects only your own recent enrichments."
+      },
+      {
+        "title": "See also",
+        "desc": "Templates are created in Scraping templates; the general guide (Scrape, Map + Extract, Crawl, anti-bot limits) is in Product scraping."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "price-watch",
+    "cat": "Data",
+    "icon": "💰",
+    "anim": "pricewatch",
+    "title": "Price monitoring",
+    "intro": "Track your competitors' prices: dashboard of gaps, positioning and alerts.",
+    "features": [
+      {
+        "title": "How it's set up",
+        "desc": "It all starts from a workflow containing the \"Price monitoring\" node: 1. An input product sheet (your catalogue: SKU/EAN, Name, Brand, and your price). 2. The competitor sites to monitor (one domain per line, e.g. amazon.fr). 3."
+      },
+      {
+        "title": "How each product is found at a competitor",
+        "desc": "You only provide a competitor's domain — not the URL of each page. For each product, the node runs a web search confined to that domain (site:domain): first by SKU (or EAN if none), then by Brand + Name."
+      },
+      {
+        "title": "Automatic matching vs \"to confirm\"",
+        "desc": "Before reading a price, the node checks that the page describes your product exactly. If the EAN read on the page matches the product's, the match is authoritative (100% confidence, with no AI model call)."
+      },
+      {
+        "title": "Validate the matches (Confirm / Reject)",
+        "desc": "The dashboard is read-only for prices, but offers one action: a \"To confirm\" queue lists uncertain matches (with the confidence % and a link to the page)."
+      },
+      {
+        "title": "Fields to scrape per site",
+        "desc": "In \"Competitor sites\", each row accepts a list of fields after a vertical bar: amazon.fr | price, availability. With no fields specified, only the price (price) is read."
+      },
+      {
+        "title": "Spot a bad match",
+        "desc": "In the comparison, hover a price: a \"Read: …\" tooltip shows the name and EAN actually read on the competitor's page."
+      },
+      {
+        "title": "Tracking identifier",
+        "desc": "The node's \"Tracking identifier\" field remembers, between runs, the pinned competitor URLs and the price history (last 30 readings per product × site pair)."
+      },
+      {
+        "title": "Positioning & variation alerts",
+        "desc": "Two families of alerts: positioning (comparing your price — the \"My price\" column — to competitors') and variation (a competitor price has changed since the last run, beyond the configured % threshold)."
+      },
+      {
+        "title": "Compare prices across sites",
+        "desc": "For a one-off price A | price B | gap comparison across several retailers (without alerts), use the \"Products from a list page\" + \"Compare prices\" nodes in a workflow instead."
+      },
+      {
+        "title": "Receive the alerts",
+        "desc": "Wire the node's changes port to \"Send via Telegram\" (\"1 message per row\") to be notified on every price move — including when the workflow runs via server cron, with the browser closed."
+      },
+      {
+        "title": "See also",
+        "desc": "The details of the nodes (\"Price monitoring\", \"Price watch\", \"Compare prices\") and of server cron scheduling are in the Workflows section; sending alerts is covered by Telegram."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "retail-promo",
+    "cat": "Data",
+    "icon": "✦",
+    "anim": "default",
+    "title": "Studio creation",
+    "intro": "Create and manage your retail promotions: visuals, offers and multi-format adaptations.",
+    "features": [],
+    "shortcuts": []
+  },
+  {
+    "id": "export",
+    "cat": "Export",
+    "icon": "📤",
+    "anim": "export",
+    "title": "Multi-format export",
+    "intro": "Output a print PDF, an IDML, a PPTX, an SVG, a PNG, an HTML web folder or a social media pack — single or in batch.",
+    "features": [
+      {
+        "title": "Available formats",
+        "desc": "All exports are faithful to the layout currently in the editor. The active data merge affects the content but not the format."
+      },
+      {
+        "title": "PDF export with print options",
+        "desc": "1. First set the bleed and the marks in the editor's Print panel (that's the source of truth — the export dialog has no bleed field) 2. Export button → choose PDF 3."
+      },
+      {
+        "title": "Batch export (multiple files)",
+        "desc": "When the data merge is active, the export generates one variant per database row: 1. Open the Data Merge panel → check the placeholder ↔ column mapping 2."
+      },
+      {
+        "title": "IDML export (back to InDesign)",
+        "desc": "When you want your designer to finish by hand in InDesign: 1. Set up your layout + data merge in IBS-Studio 2. IDML export → IBS-Studio rebuilds a standard IDML file with the values already merged."
+      },
+      {
+        "title": "Adapted pages vs Social pack — what's the difference?",
+        "desc": "Both start from the same four ratios (square post 1080×1080, story/reel 1080×1920, landscape 1920×1080, banner 1500×500), but produce different things: \"Adapted pages\" sends the AI a preview of the page plus the list of its…"
+      },
+      {
+        "title": "What each file really contains",
+        "desc": "• PDF: a high-resolution image of the canvas (×2 render, maximum quality) plus an invisible selectable/searchable text layer placed over each text block. So the PDF stays visually \"flat\" but the text is copyable."
+      },
+      {
+        "title": "SVG: Illustrator / Figma compatibility",
+        "desc": "The SVG export doesn't just use Fabric's raw toSVG(), it rewrites it for demanding vector editors: • images (DAM, Unsplash, linked IDML) are converted to data: URLs for the export — Illustrator no longer tries to resolv…"
+      },
+      {
+        "title": "Best practices",
+        "desc": "• Always run a test export on 1 row before launching a batch of 200 — you'll catch font or missing-image issues faster • Check the fonts: if an Arial fallback was applied, your printer will notice."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "workflow",
+    "cat": "Automation",
+    "icon": "⚡",
+    "anim": "workflow",
+    "title": "Workflows",
+    "intro": "Chain the app's functions into visual pipelines — Zapier / Make style.",
+    "features": [
+      {
+        "title": "Two ways to build",
+        "desc": "• Manual: drag the nodes from the palette (on the left), connect them, configure each one (right-hand panel), then Run."
+      },
+      {
+        "title": "Node catalogue",
+        "desc": "Expand a category to see its nodes."
+      },
+      {
+        "title": "Import (sources)",
+        "desc": ""
+      },
+      {
+        "title": "Enrichment",
+        "desc": ""
+      },
+      {
+        "title": "Transformation",
+        "desc": ""
+      },
+      {
+        "title": "Save",
+        "desc": ""
+      },
+      {
+        "title": "Export",
+        "desc": ""
+      },
+      {
+        "title": "Logic",
+        "desc": ""
+      },
+      {
+        "title": "Communication & control",
+        "desc": ""
+      },
+      {
+        "title": "Unified \"Web Scraping\" node",
+        "desc": "A single Web Scraping node covers every way of bringing data back from the web, via a Mode selector: • Scrape — one or more URLs → product fields (Jina + AI). • List — category pages → list of products."
+      },
+      {
+        "title": "\"Chart\" node",
+        "desc": "The \"Chart\" node turns a table into a chart image (PNG, via chart.js). Choose the type — Bar, Line, Area, Pie, Doughnut — the X-axis column, the value column(s) and an optional aggregation."
+      },
+      {
+        "title": "\"Result\" screen",
+        "desc": "The \"Result\" button in the editor header opens a dedicated page (/workflows/:id/result) that visualises the last run in the most relevant form: Dashboard, Table, Chart, Gallery (images), Document or Data (JSO…"
+      },
+      {
+        "title": "My templates (custom templates)",
+        "desc": "Beyond the ready-made gallery, you can save your own setup: the \"Template\" button in the editor saves the current graph as a reusable template (create or update)."
+      },
+      {
+        "title": "Stop a server run (STOP)",
+        "desc": "A workflow launched by the cron or a webhook runs without a browser. The Cron status panel then shows a red STOP button: it sets an abort flag that the server executor polls continuously, and the run stops within a few se…"
+      },
+      {
+        "title": "Pipeline examples",
+        "desc": "• Monitoring: Web search → Excel export → Send via Gmail. • Sourced answer: Web question (AI) → Send via Telegram. • Product sheets: Scrape URL → Enrichment → Save PIM → PPTX export."
+      },
+      {
+        "title": "Control from Telegram",
+        "desc": "Workflows can also be triggered remotely: /flow <request> generates and runs a workflow, /run <name> replays a saved workflow — and the resulting file comes back on Telegram."
+      },
+      {
+        "title": "Ready-made templates",
+        "desc": "The Workflows page offers a \"Start from a template\" gallery: Scrape a site → PIM, Daily monitoring → Telegram (cron), Scrape → approval ✅ → PIM, Web search → Excel."
+      },
+      {
+        "title": "Human approval (Telegram)",
+        "desc": "The \"Telegram approval\" node pauses the run and sends the question on Telegram with ✅ Approve / ❌ Reject buttons."
+      },
+      {
+        "title": "Price watch",
+        "desc": "The \"Price watch\" node remembers the previous run's prices (by tracking identifier) and only emits the changes port if a price has moved beyond the threshold — the emitted rows carry ancienprix, nouveauprix and variationpct, ready for a mess…"
+      },
+      {
+        "title": "Schedule (server cron)",
+        "desc": "The \"Cron\" node runs the workflow server-side, browser closed: cadence by minute, hour, day, week or month, precise HH:MM time, targeted weekday or \"Every day\" — Europe/Paris timezone, minimum granularity 1 minute."
+      },
+      {
+        "title": "Incoming webhook (external trigger)",
+        "desc": "The Webhook button in the editor header generates a secret URL to trigger this workflow from outside (Zapier, Make, an ERP, a plain curl): execution runs server-side (same nodes as the cron) and appears in the histor…"
+      },
+      {
+        "title": "Debug step by step",
+        "desc": "The \"Step\" button (next to Run) runs the workflow node by node: the run pauses before each step — the amber \"Step: <node>\" button in the header runs the next one."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "telegram",
+    "cat": "Automation",
+    "icon": "✈️",
+    "anim": "telegram",
+    "title": "Telegram",
+    "intro": "Control IBS-Studio from Telegram: AI chat with web access, generating and running workflows.",
+    "features": [
+      {
+        "title": "Getting started",
+        "desc": "1. Settings → Connectors: paste the bot token (obtained via BotFather) and your chat ID. 2. Open the Telegram tab in the side menu: that's what runs the \"worker\" that processes messages. 3."
+      },
+      {
+        "title": "(free text) — AI Chat with web access",
+        "desc": "The bot replies via the LLM. If the requested information is recent (score, news, price) or you paste a URL, it searches the web and reads the pages before answering. The reply cites its sources and the model used."
+      },
+      {
+        "title": "/flow <request> — Generate + run a workflow",
+        "desc": "Generates a workflow by AI from your request, runs it, and sends you the resulting file. E.g.: /flow scrape https://exemple.com/categorie and export an Excel."
+      },
+      {
+        "title": "/run <name> [text] — Run a saved workflow",
+        "desc": "Runs an already-saved workflow (by its name); any text serves as input. /run alone lists the available workflows."
+      },
+      {
+        "title": "/clear — Empty the inbox",
+        "desc": "Empties the inbox — on the app side AND the Telegram side (messages under 48 h old). Aliases: /purge, /vider."
+      },
+      {
+        "title": "/start — (ignored)",
+        "desc": "A Telegram service command — ignored, it doesn't clutter the inbox."
+      },
+      {
+        "title": "Good to know",
+        "desc": "• Two-way conversation: incoming AND outgoing messages are logged in the Telegram tab. • Files: a workflow that produces an export (Excel, PDF, PPTX…) returns the file as an attachment; otherwise a summary."
+      },
+      {
+        "title": "Replies without a browser (server responder)",
+        "desc": "No need to keep the app open: a server responder handles your messages as soon as they arrive — • Questions: immediate LLM answer, with automatic web search (Jina) when the question requires it (price, news, URL content) — sour…"
+      },
+      {
+        "title": "Human approval in a workflow",
+        "desc": "The \"Telegram approval\" node (Communication category in the workflow editor) pauses the run and asks a human for validation, directly in the messaging app: • The bot sends your question with two inline buttons ✅ Approv…"
+      },
+      {
+        "title": "Security: secret + allowlist",
+        "desc": "The incoming webhook only accepts a message if two conditions are met: • The secret token sent by Telegram matches the webhookSecret stored on the server (any request without the correct X-Telegram-Bot-Api-Secret-Token header is r…"
+      },
+      {
+        "title": "Why there's never a double reply",
+        "desc": "When a message arrives, the server responder attempts a transactional claim: it moves the record from pending to processing (and assigns itself workerId: 'server') in a single transaction."
+      },
+      {
+        "title": "Daily digest",
+        "desc": "In Settings → Connectors → Telegram, enable the daily digest: every morning at 08:00 (Paris time), the bot sends a summary of the last 24 h — successful/failed workflows (with names) and messages awaiting processing."
+      },
+      {
+        "title": "See also",
+        "desc": "/flow and /run rely on the Workflows module: AI generation and execution are the same as in the workflow editor."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "chat",
+    "cat": "AI Assistant",
+    "icon": "💬",
+    "anim": "chat",
+    "title": "AI Chat",
+    "intro": "A built-in conversational assistant: questions, writing, code, image generation.",
+    "features": [
+      {
+        "title": "Multi-turn conversation",
+        "desc": "The chat keeps the conversation thread during the session (the last 30 messages are sent to the model — beyond that, the start of the thread drops out of context)."
+      },
+      {
+        "title": "Attachments",
+        "desc": "Attach images (PNG, JPEG, WebP, GIF) to have them analysed — analysis is possible with multimodal models (Claude, Gemini, OpenAI); other providers ignore images."
+      },
+      {
+        "title": "Image generation",
+        "desc": "Choose the Image category: the input field switches to generation mode (AI Image engine). Attach reference images to edit them. Below each generated image: Download or Save to the DAM (it joins \"My images\")."
+      },
+      {
+        "title": "Voice input",
+        "desc": "Dictate your request to the mic: your speech is transcribed to text in the input field."
+      },
+      {
+        "title": "Prompt library",
+        "desc": "Categories (Write, Learn, Code, Everyday life, Ideas, Image, My prompts) offer ready-made prompts."
+      },
+      {
+        "title": "Reuse and duplicate a prompt",
+        "desc": "The ⋯ menu on each prompt lets you rename / edit it, duplicate it (creates a \"title (copy)\" to adapt) or delete it. Each use is counted: the most-used prompts and favourites are highlighted."
+      },
+      {
+        "title": "Model choice",
+        "desc": "The Chat uses a model cascade: if the primary model fails, the next one takes over automatically."
+      },
+      {
+        "title": "Switch model on the fly",
+        "desc": "The model badge, next to the send button, is clickable: it expands the list of all models in the cascade (grouped by provider, with their indicative input / output pricing)."
+      },
+      {
+        "title": "Not to be confused",
+        "desc": "• The AI Chat is conversational: it doesn't access the web and doesn't act on the app (it doesn't create projects, doesn't scrape, doesn't launch workflows)."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "access",
+    "cat": "Administration",
+    "icon": "🛡️",
+    "anim": "access",
+    "title": "Users & roles",
+    "intro": "Approve accounts, assign roles and fine-tune permissions. Owner only.",
+    "features": [
+      {
+        "title": "Onboarding a new user",
+        "desc": "1. The person signs in via Google: their account is first \"pending\" (no access). 2. In the Users tab, you assign them a role. 3. Next time they open the app, it only shows the modules allowed by their role."
+      },
+      {
+        "title": "Assign a role",
+        "desc": "Choose each user's role from a dropdown. The role defines the base set of their permissions."
+      },
+      {
+        "title": "Granular overrides",
+        "desc": "Beyond the role, you can grant or remove individual permissions for a specific user (e.g. open export for them without changing their role). Resetting the overrides clears these adjustments."
+      },
+      {
+        "title": "Block / reactivate",
+        "desc": "Blocking fully suspends an account without deleting it: no access at all, even with a role. Reactivating restores its rights."
+      },
+      {
+        "title": "\"Roles\" tab",
+        "desc": "Create and edit the team's roles via a per-module permission matrix. Three views: Cards (by module), Tree (hierarchy) and Mind map (graph)."
+      },
+      {
+        "title": "Roles are entirely custom",
+        "desc": "No role ships by default: you create the roles your team needs yourself (a name + a selection of permissions), and rename and delete them freely."
+      },
+      {
+        "title": "Modules covered by permissions",
+        "desc": "Library, Import (by format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, AI Chat, Telegram and Settings — each with its actions (create, edit, delete, export, run…)."
+      },
+      {
+        "title": "Security rules",
+        "desc": "• Effective permissions = role + granted permissions − removed permissions. • The owner has full, non-editable access."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "audit-log",
+    "cat": "Administration",
+    "icon": "✦",
+    "anim": "default",
+    "title": "Audit log & My activity",
+    "intro": "Who did what, when. Each user finds their own actions in \"My activity\"; the administrator sees everything in the \"Log\", filterable and with the before/after of each change.",
+    "features": [
+      {
+        "title": "The filters: WHO / WHAT / WHEN",
+        "desc": "• Type: the module involved (Access, Data, Export, Workflows, AI, Settings…). • What: the precise action (the list narrows to the chosen type). • Who (admin Log only): the user. • When: a date range (From / to)."
+      },
+      {
+        "title": "What is logged",
+        "desc": "• Access / roles: sign-in, role assignment/removal, block/unblock, permission granted/revoked, role modified, user deletion."
+      },
+      {
+        "title": "Clear your history",
+        "desc": "In My activity, the \"Clear history\" button (with confirmation) deletes your own entries. Each user can only erase their own; the administrator can delete everything."
+      },
+      {
+        "title": "I can't see the before/after on old rows",
+        "desc": "The detail (before → after, or the size) only appears on actions later than when the feature was added. Entries are immutable: they aren't filled in retroactively."
+      },
+      {
+        "title": "Why two \"DataSet saved\" in a row?",
+        "desc": "Each database save creates an entry. If the size (rows/columns) hasn't changed, the row shows only the size; if you added/removed rows, it shows the before → after."
+      },
+      {
+        "title": "Who can see the full Log?",
+        "desc": "Only the administrator (or the owner) sees the Log of all users, with the Who filter. A standard user only sees their own actions, in Settings → My activity."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "settings",
+    "cat": "Administration",
+    "icon": "⚙️",
+    "anim": "settings",
+    "title": "Settings",
+    "intro": "API keys and AI models, connectors (Drive, Telegram, scraping), cookies, usage statistics.",
+    "features": [
+      {
+        "title": "Profile tab — identity and appearance",
+        "desc": "• Your profile (name, Google account email). • The Appearance section switches the theme: Light, Dark (default) or System. The choice is stored on your account and follows you from one machine to another. The theme can also be switched from the ⌘K palette."
+      },
+      {
+        "title": "AI tab — keys and models",
+        "desc": "• Enter each provider's API key (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter) and test them with one click. • Choose each provider's model."
+      },
+      {
+        "title": "AI budgets and server proxy",
+        "desc": "LLM calls go through a server proxy: the request leaves without your API key, the server adds the key (read from your profile) and applies your monthly budget."
+      },
+      {
+        "title": "Telegram",
+        "desc": "Paste the bot token (via BotFather) and your chat ID to control the app from Telegram. This is where the Telegram module's bot draws its configuration."
+      },
+      {
+        "title": "Google Drive",
+        "desc": "Connect your Google Drive (OAuth) so workflows and the save-dam node deposit files there."
+      },
+      {
+        "title": "Google — server access (Drive + Gmail)",
+        "desc": "Authorise once (\"Connect\" button) the server to act on your behalf when the app is closed: scheduled workflows (cron), the webhook and /flow on Telegram can then create Google Sheets in your Drive and send Gmails."
+      },
+      {
+        "title": "Scraping (Bright Data, Jina, Firecrawl, Remove.bg)",
+        "desc": "Tokens for the scraping and image-processing services. Bright Data offers the Web Unlocker and, as an escalation, the Scraping Browser (tier 2) for the most protected sites."
+      },
+      {
+        "title": "Cookies tab",
+        "desc": "Manage session cookies to scrape B2B sites behind a login. Paste the cookies copied from your browser; they're injected into scraping requests. Their validity is time-limited (re-paste them regularly)."
+      },
+      {
+        "title": "Data tab — Firestore schema (owner only)",
+        "desc": "An entity-relationship diagram (ERD) of the database: each Firestore collection is a table showing all its fields, its PK/FK keys and its relationships (with cardinalities)."
+      },
+      {
+        "title": "Statistics & Firebase tabs",
+        "desc": "• Statistics: number of projects, exports this month, Firestore storage (progress bar), estimated AI cost in EUR per provider with the input/output tokens used, and the tracking of Bright Data requests (scraping quota)."
+      },
+      {
+        "title": "Who sees what",
+        "desc": "The Firebase tab is owner only. The Connectors and Cookies tabs depend on the permissions granted in Users & roles. Profile, AI and Statistics stay accessible to everyone."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "explorer",
+    "cat": "Data",
+    "icon": "🗺️",
+    "anim": "taxonomy",
+    "title": "Data explorer",
+    "intro": "Firestore mapping: relational schema (ERD) of collections, keys and cardinalities, and live inspection of records. Owner only.",
+    "features": [
+      {
+        "title": "The problem",
+        "desc": "A growing database becomes opaque: you no longer know which collections exist, how they relate, or what they actually contain — without opening the Firebase console."
+      },
+      {
+        "title": "Data model (ERD)",
+        "desc": "Each collection is a table with its fields, its primary key (PK) and its foreign keys (FK); business relationships are drawn with their cardinality (1:1, 1:N)."
+      },
+      {
+        "title": "Live data",
+        "desc": "A double-click on a table opens the real content of the collection, updated in real time (onSnapshot). For Excel databases, a selector lists each database and shows only its useful columns."
+      },
+      {
+        "title": "Persisted layout",
+        "desc": "Move the tables by dragging: their position is saved on your profile (Firestore) and restored next time. Compose the map that matches your reading of the data."
+      },
+      {
+        "title": "Extend the schema (collections / relations)",
+        "desc": "The diagram is built from TABLES and RELATIONS in features/data-graph/firestoreSchema.ts. Adding a collection or a link = completing these two lists; the rendering and cardinalities follow automatically."
+      },
+      {
+        "title": "Why owner only",
+        "desc": "The explorer exposes the structure and raw data of the entire workspace (all accounts combined). The Data tab in Settings — like Firebase — is therefore owner only."
+      }
+    ],
+    "shortcuts": []
+  }
+]
+
+export const STRINGS = {
+  "Démarrage": "Getting started",
+  "Connexion, prise en main, navigation et nouveautés : tout pour bien démarrer.": "Sign-in, onboarding, navigation and what's new: everything to get you going.",
+  "Édition": "Editing",
+  "L'éditeur type Canva : canvas, outils, calques, impression et animations.": "The Canva-style editor: canvas, tools, layers, print and animations.",
+  "Import": "Import",
+  "Repartez d'un fichier existant : IDML, EasyCatalog, PPTX, Excel, image, SVG, PDF.": "Start from an existing file: IDML, EasyCatalog, PPTX, Excel, image, SVG, PDF.",
+  "Données": "Data",
+  "Le cœur data : PIM, médias (DAM), taxonomies, scraping et veille tarifaire.": "The data core: PIM, media (DAM), taxonomies, scraping and price monitoring.",
+  "Export": "Export",
+  "Sortez vos créations : PDF print, IDML, PPTX, SVG, PNG, web et pack social.": "Output your designs: print PDF, IDML, PPTX, SVG, PNG, web and social pack.",
+  "Automatisation": "Automation",
+  "Workflows visuels et pilotage Telegram : enchaînez les modules sans effort.": "Visual workflows and Telegram control: chain modules together effortlessly.",
+  "Assistant IA": "AI Assistant",
+  "Un assistant conversationnel pour interroger, rédiger et générer.": "A conversational assistant to query, write and generate.",
+  "Administration": "Administration",
+  "Comptes, rôles, permissions et réglages de l'espace de travail.": "Accounts, roles, permissions and workspace settings.",
+  "Prise en main": "Getting started",
+  "Connexion, tableau de bord et création du premier projet.": "Sign-in, dashboard and creating your first project.",
+  "Sections du dashboard": "Dashboard sections",
+  "Chaque entrée de la barre latérale est un raccourci vers une grande zone de l'app. Cliquer un lien ci-dessous met l'élément en évidence sur l'écran (ouvre d'abord le tableau de bord si nécessaire).": "Each sidebar entry is a shortcut to a major area of the app. Clicking a link below highlights the item on screen (opening the dashboard first if needed).",
+  "Créer un projet vierge": "Create a blank project",
+  "Ouvre le panneau « Nouveau document » et choisis un format (A4, A3, formats écran/réseaux sociaux, ou dimensions personnalisées).": "Opens the \"New document\" panel and lets you pick a format (A4, A3, screen/social sizes, or custom dimensions).",
+  "Retrouver un projet existant": "Find an existing project",
+  "La Bibliothèque liste tous tes projets : • Ouvrir : clic simple sur la carte. Dupliquer / supprimer : boutons de la carte (ou clic droit). • Vignettes ou Liste : deux boutons en haut à droite basculent l'affichage.": "The Library lists all your projects: • Open: single-click the card. Duplicate / delete: buttons on the card (or right-click). • Thumbnails or List: two buttons at the top right switch the view.",
+  "Sauvegarder le projet": "Save the project",
+  "Annuler la dernière action": "Undo the last action",
+  "Rétablir": "Redo",
+  "Ouvrir / fermer le manuel": "Open / close the manual",
+  "Nouveautés": "What's new",
+  "Ce qui vient d'arriver dans l'application — juin 2026.": "What's just landed in the app — June 2026.",
+  "Navigation & confort": "Navigation & comfort",
+  "• Palette de commandes ⌘K / Ctrl+K : projets récents, modules, actions rapides — depuis n'importe quelle page. • Centre de notifications (🔔 en bas à gauche) : historique des runs de workflows et des exports, badge de non-lus.": "• Command palette ⌘K / Ctrl+K: recent projects, modules, quick actions — from any page. • Notification centre (🔔 bottom left): history of workflow runs and exports, unread badge.",
+  "Éditeur": "Editor",
+  "• Barre contextuelle flottante sous la sélection (dupliquer, plans, grouper, verrouiller, supprimer) + badge temps réel pendant les manipulations (X/Y, L×H, angle).": "• Floating context bar below the selection (duplicate, layering, group, lock, delete) + real-time badge during manipulations (X/Y, W×H, angle).",
+  "Re-skin de promo (éditeur × PIM × IA)": "Promo re-skin (editor × PIM × AI)",
+  "• Source « Produits PIM (re-skin) » dans le panneau Données : chaque produit devient une ligne — naviguer entre les produits re-skinne le visuel instantanément.": "• \"PIM products (re-skin)\" source in the Data panel: each product becomes a row — moving between products re-skins the design instantly.",
+  "PIM & données": "PIM & data",
+  "• Pastille de complétude sur chaque ligne (champs manquants au survol) + moyenne en barre d'état. • Vue galerie : produits en cartes (visuel, titre, prix, complétude). Détails : section PIM.": "• Completeness dot on each row (missing fields on hover) + average in the status bar. • Gallery view: products as cards (image, title, price, completeness). Details: PIM section.",
+  "Workflows & automatisation": "Workflows & automation",
+  "• Galerie de modèles 1-clic (Scraper → PIM, veille, recherche web…). • Node « Approbation Telegram » : le run se met en pause jusqu'au clic ✅/❌. • Node « Veille prix » : alerte seulement quand un prix bouge (fonctionne en cron serveur).": "• One-click template gallery (Scrape → PIM, monitoring, web search…). • \"Telegram approval\" node: the run pauses until you click ✅/❌. • \"Price watch\" node: alerts only when a price moves (works via server cron).",
+  "Veille tarifaire & comparaison de prix": "Price monitoring & price comparison",
+  "• Nouveau module Veille tarifaire : tableau de bord des prix concurrents (écarts par produit, positionnement, alertes), alimenté par le node « Veille tarifaire » d'un workflow.": "• New Price monitoring module: dashboard of competitor prices (per-product gaps, positioning, alerts), fed by a workflow's \"Price monitoring\" node.",
+  "Telegram sans navigateur (répondeur serveur)": "Telegram without a browser (server responder)",
+  "• Le bot répond app fermée : questions avec recherche web automatique (sources citées), /flow généré et exécuté côté serveur, /run d'un workflow sauvegardé.": "• The bot replies with the app closed: questions with automatic web search (cited sources), /flow generated and run server-side, /run of a saved workflow.",
+  "DAM, Telegram & export": "DAM, Telegram & export",
+  "• Tagging IA automatique des images sauvegardées + filtre en langage naturel dans « Mes images ». • Digest Telegram quotidien (opt-in, 08:00) : résumé des dernières 24 h.": "• Automatic AI tagging of saved images + natural-language filter in \"My images\". • Daily Telegram digest (opt-in, 08:00): summary of the last 24 h.",
+  "Assistant de configuration": "Setup assistant",
+  "Mettre en place son espace pas à pas : clés IA, modèles, connecteurs et visite guidée.": "Set up your workspace step by step: AI keys, models, connectors and guided tour.",
+  "1 · Bienvenue": "1 · Welcome",
+  "Présentation des étapes à venir (clés IA, modèles & cascade, connecteurs, visite guidée). Rien à saisir.": "Overview of the upcoming steps (AI keys, models & cascade, connectors, guided tour). Nothing to enter.",
+  "2 · Clés IA — obligatoire": "2 · AI keys — required",
+  "Renseigne au moins une clé API parmi Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi ou OpenRouter, puis teste-la. Tant qu'aucune clé valide n'est saisie, le bouton Suivant reste désactivé (« Renseignez au moins une clé LLM »).": "Enter at least one API key among Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi or OpenRouter, then test it. Until a valid key is entered, the Next button stays disabled (\"Enter at least one LLM key\").",
+  "3 · Modèles & cascade": "3 · Models & cascade",
+  "Choisis le modèle de chaque fournisseur et l'ordre de la cascade de raisonnement (le premier qui répond gagne, les suivants servent de secours).": "Choose each provider's model and the order of the reasoning cascade (the first to respond wins, the others act as fallback).",
+  "4 · Connecteurs — optionnel": "4 · Connectors — optional",
+  "Branche Google Drive, Bright Data (scraping) et Telegram si tu en as besoin. Cette étape peut être passée et complétée plus tard dans Réglages → Connecteurs.": "Connect Google Drive, Bright Data (scraping) and Telegram if you need them. This step can be skipped and completed later in Settings → Connectors.",
+  "5 · Terminé": "5 · Done",
+  "Récapitulatif de ton profil, puis le choix de lancer la visite guidée du tableau de bord ou de terminer directement.": "A summary of your profile, then the choice to launch the dashboard's guided tour or finish straight away.",
+  "Reprendre la configuration plus tard": "Resume setup later",
+  "L'assistant reste accessible à tout moment, par deux entrées : • Bandeau « Assistant de configuration » en haut des Réglages — sous-titre « Reprendre la mise en place guidée (clés, modèles, connecteurs) ».": "The assistant stays available at any time, via two entry points: • \"Setup assistant\" banner at the top of Settings — subtitle \"Resume the guided setup (keys, models, connectors)\".",
+  "Bouton « Mettre à jour tous les LLM »": "\"Update all LLMs\" button",
+  "Présent dans l'assistant et dans l'onglet IA des Réglages, il sélectionne le dernier modèle phare de chaque fournisseur (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter).": "Available in the assistant and in the AI tab of Settings, it selects each provider's latest flagship model (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter).",
+  "Navigation & visites guidées": "Navigation & guided tours",
+  "Passer d'un module à l'autre depuis n'importe où, et (re)lancer les visites guidées.": "Move between modules from anywhere, and (re)launch the guided tours.",
+  "Menu des modules (☰)": "Module menu (☰)",
+  "Un bouton ☰ flottant en bas à gauche ouvre un tiroir listant tous les modules : Nouveau document, Importer, Bibliothèque, DAM, PIM, Taxonomies, Templates scraping, Scraping Hub, Workflows, Veille tarifaire, Telegram, Animation, Chat IA et U…": "A floating ☰ button at the bottom left opens a drawer listing every module: New document, Import, Library, DAM, PIM, Taxonomies, Scraping templates, Scraping Hub, Workflows, Price monitoring, Telegram, Animation, AI Chat and U…",
+  "Palette de commandes (⌘K)": "Command palette (⌘K)",
+  "⌘K (Mac) ou Ctrl+K (PC) ouvre la palette de commandes depuis n'importe quelle page : tape quelques lettres pour ouvrir un de tes projets récents, sauter vers un module (« pim », « workflows », « bibliothèque »…) ou lancer une action rapide…": "⌘K (Mac) or Ctrl+K (PC) opens the command palette from any page: type a few letters to open one of your recent projects, jump to a module (\"pim\", \"workflows\", \"library\"…) or trigger a quick action…",
+  "Notifications (🔔)": "Notifications (🔔)",
+  "La cloche en bas à gauche (au-dessus du menu ☰) garde l'historique des évènements importants : fins de runs de workflow, exports réussis ou échoués.": "The bell at the bottom left (above the ☰ menu) keeps the history of important events: workflow run completions, successful or failed exports.",
+  "Visites guidées (🧭)": "Guided tours (🧭)",
+  "Un bouton 🧭 « Visite guidée » en bas à droite (à gauche du bouton d'aide) lance une visite interactive de l'écran courant : • Tableau de bord : parcourt chaque espace de travail un par un.": "A 🧭 \"Guided tour\" button at the bottom right (to the left of the help button) launches an interactive tour of the current screen: • Dashboard: walks through each workspace one by one.",
+  "Ce manuel s'adapte à ton rôle": "This manual adapts to your role",
+  "Le sommaire et la recherche de l'aide ne montrent que les sections des modules auxquels tu as accès (le propriétaire voit tout).": "The help's table of contents and search only show sections for the modules you have access to (the owner sees everything).",
+  "Ouvrir la palette de commandes": "Open the command palette",
+  "L'éditeur": "The editor",
+  "Canvas, outils, calques et sauvegarde du projet.": "Canvas, tools, layers and saving the project.",
+  "⌘K (ou Ctrl+K) ouvre la palette de commandes — disponible partout dans l'application, y compris l'éditeur.": "⌘K (or Ctrl+K) opens the command palette — available everywhere in the app, including the editor.",
+  "Casse du texte (sans réécrire)": "Text case (without rewriting)",
+  "La section Transformation des propriétés d'un texte applique une casse au rendu sans toucher au contenu saisi : majuscules, minuscules ou Capitales (première lettre de chaque mot).": "The Transform section of a text's properties applies a case to the rendering without touching the typed content: uppercase, lowercase or Title Case (first letter of each word).",
+  "Vignettes des pages": "Page thumbnails",
+  "Sur un document à plusieurs pages, la barre inférieure affiche une rangée de vignettes (une par page, avec son numéro).": "On a multi-page document, the bottom bar shows a row of thumbnails (one per page, with its number).",
+  "Organiser les panneaux de droite": "Organise the right-hand panels",
+  "La colonne de droite est modulaire : le panneau Propriétés reste épinglé en haut, et chaque autre panneau (Calques, Images, Palette, Assets, Page, Impression, Données, Animation 3D, Versions) se replie/déplie d'un clic sur son en-tête.": "The right-hand column is modular: the Properties panel stays pinned at the top, and every other panel (Layers, Images, Palette, Assets, Page, Print, Data, 3D Animation, Versions) collapses/expands with a click on its header.",
+  "Images": "Images",
+  "Insertion d'images sans quitter l'éditeur : onglets Galerie, Upload, IA (génération depuis un prompt, 5 ratios, image-to-image si un objet est sélectionné), Stock, Mes images, Favoris, Collections, Récents — les mêmes sources que le DAM.": "Insert images without leaving the editor: Gallery, Upload, AI (generation from a prompt, 5 ratios, image-to-image if an object is selected), Stock, My images, Favourites, Collections, Recent tabs — the same sources as the DAM.",
+  "Assets": "Assets",
+  "Les images et polices du projet (onglets avec compteurs). Glisse une image sur le canvas, ou utilise les polices importées (IDML) dans tes textes.": "The project's images and fonts (tabs with counters). Drag an image onto the canvas, or use imported fonts (IDML) in your text.",
+  "Page": "Page",
+  "Format de page : presets (A4/A3/A5, Full HD, 4K, 16:9, post & story Instagram, couverture Facebook) ou dimensions personnalisées en mm. Fond de page : couleur unie, dégradé ou image (upload ou glisser-déposer).": "Page format: presets (A4/A3/A5, Full HD, 4K, 16:9, Instagram post & story, Facebook cover) or custom dimensions in mm. Page background: solid colour, gradient or image (upload or drag-and-drop).",
+  "Impression": "Print",
+  "Tout le pré-presse : DPI, fond perdu (bleed), traits de coupe (longueur 2–10 mm, décalage 0–3 mm, épaisseur, couleur), hirondelles de repérage (registration marks), zone de sécurité (marge, pointillés paramétrables) et la section Preflight…": "All the prepress: DPI, bleed, crop marks (length 2–10 mm, offset 0–3 mm, weight, colour), registration marks, safe zone (margin, configurable dashes) and the Preflight section…",
+  "Animation 3D": "3D Animation",
+  "Applique des animations 3D à un objet (flip 3D, relief, particules…) via des presets, avec lecture/arrêt et enregistrement vidéo (export MP4/WebM) du rendu animé.": "Apply 3D animations to an object (3D flip, emboss, particles…) via presets, with play/stop and video recording (MP4/WebM export) of the animated render.",
+  "Palette · Données · Versions": "Palette · Data · Versions",
+  "Détaillés dans leurs sections dédiées plus bas (kit de marque & styles d'objets, re-skin PIM / publipostage, snapshots).": "Detailed in their dedicated sections below (brand kit & object styles, PIM re-skin / mail merge, snapshots).",
+  "Outil Sélection": "Selection tool",
+  "Outil Texte": "Text tool",
+  "Outil Rectangle": "Rectangle tool",
+  "Outil Ellipse": "Ellipse tool",
+  "Outil Ligne": "Line tool",
+  "Outil Image / DAM": "Image / DAM tool",
+  "Pan du canvas": "Pan the canvas",
+  "Sauvegarder (commit manuel)": "Save (manual commit)",
+  "Annuler": "Undo",
+  "Tout sélectionner": "Select all",
+  "Dupliquer la sélection": "Duplicate the selection",
+  "Grouper": "Group",
+  "Dégrouper": "Ungroup",
+  "Avancer d'un plan": "Bring forward",
+  "Reculer d'un plan": "Send backward",
+  "Premier plan": "Bring to front",
+  "Arrière-plan": "Send to back",
+  "Déplacer de 1 px (⇧ : 10 px)": "Move by 1 px (⇧: 10 px)",
+  "Supprimer la sélection": "Delete the selection",
+  "Désélectionner": "Deselect",
+  "Règles conditionnelles": "Conditional rules",
+  "Afficher, masquer ou transformer un élément du design selon la donnée de la ligne courante — façon EasyCatalog (« Nouvelle action »), mais directement dans l'éditeur. Idéal en publipostage : un bandeau « PROMO » qui n'apparaît que sur les produits en promotion, un prix qui passe en rouge sous un seuil de stock, un picto agrandi pour les nouveautés…": "Show, hide or transform a design element based on the current row's data — EasyCatalog style (\"New action\"), but directly in the editor. Ideal for mail merge: a \"PROMO\" banner that appears only on discounted products, a price turning red below a stock threshold, an enlarged icon for new items…",
+  "Ouvrir le panneau": "Open the panel",
+  "1. Sélectionne un objet sur le canvas. 2. Dans la colonne de droite, ouvre le panneau Propriétés, puis déplie la section Règles conditionnelles (icône branche). Un compteur indique le nombre de règles actives sur l'objet. 3.": "1. Select an object on the canvas. 2. In the right-hand column, open the Properties panel, then expand the Conditional rules section (branch icon). A counter shows the number of active rules on the object. 3.",
+  "Composer une règle : SI champ → opérateur → valeur → ALORS action": "Composing a rule: IF field → operator → value → THEN action",
+  "Chaque règle se lit de gauche à droite : • Champ : la colonne de données testée (ex. promo, stock, Prixnormal). • Opérateur : la condition à vérifier (voir ci-dessous).": "Each rule reads left to right: • Field: the data column being tested (e.g. promo, stock, Prixnormal). • Operator: the condition to check (see below).",
+  "Les opérateurs (3 familles)": "The operators (3 families)",
+  "Texte (comparaison insensible à la casse et aux espaces de début/fin) : • Contient / Ne contient pas • Est / N'est pas (égalité exacte de chaîne) • Commence par / Termine par • Ne commence pas avec / Ne se termine pas avec Présence (pas de…": "Text (comparison ignoring case and leading/trailing spaces): • Contains / Does not contain • Is / Is not (exact string match) • Starts with / Ends with • Does not start with / Does not end with Presence (no…",
+  "Les actions (7)": "The actions (7)",
+  "• Cacher : l'objet n'est pas rendu (ni à l'écran, ni à l'export). • Montrer : force l'affichage. • Mettre en avant / Mettre à l'arrière : réordonne l'objet dans la pile (z-order).": "• Hide: the object isn't rendered (neither on screen nor on export). • Show: forces display. • Bring forward / Send back: reorders the object in the stack (z-order).",
+  "Aperçu et plusieurs règles": "Preview and multiple rules",
+  "Quand une source est connectée, l'effet se rejoue en direct sur la ligne courante : ajoute ou modifie une règle et le canvas se met à jour aussitôt.": "When a source is connected, the effect plays live on the current row: add or edit a rule and the canvas updates immediately.",
+  "Quelle différence avec une liaison {{champ}} classique ?": "How is this different from a standard {{field}} binding?",
+  "Une liaison {{champ}} (ou « Lier à un champ ») remplace le contenu d'un élément par la valeur de la colonne (texte, image).": "A {{field}} binding (or \"Link to a field\") replaces an element's content with the column's value (text, image).",
+  "Mon avertissement « la couleur est aussi câblée » ?": "My warning \"the colour is also wired\"?",
+  "Si une propriété est à la fois pilotée par une liaison de données (ex. couleur câblée sur une colonne) et par une règle qui la modifie (Changer la couleur / Changer l'opacité), les deux peuvent se contredire.": "If a property is driven both by a data binding (e.g. colour wired to a column) and by a rule that changes it (Change colour / Change opacity), the two can conflict.",
+  "Les champs n'apparaissent pas dans le sélecteur": "The fields don't appear in the selector",
+  "Connecte une source de données (Excel, Google Sheets, PIM…) depuis le panneau Publipostage. Sans aucune source — jamais branchée — il n'y a pas de colonnes à tester.": "Connect a data source (Excel, Google Sheets, PIM…) from the Mail merge panel. Without any source — never connected — there are no columns to test.",
+  "L'aperçu ne bouge pas quand j'ajoute une règle": "The preview doesn't move when I add a rule",
+  "L'aperçu live nécessite une source connectée (panneau Publipostage). Hors connexion, la règle est bien enregistrée sur l'objet, mais son effet ne sera visible qu'au moment du publipostage / de l'export par lot.": "The live preview requires a connected source (Mail merge panel). While disconnected, the rule is still saved on the object, but its effect will only be visible at mail merge / batch export time.",
+  "EasyCatalog ↔ Règles conditionnelles": "EasyCatalog ↔ Conditional rules",
+  "Le panneau reprend la logique des actions conditionnelles d'EasyCatalog (Contient, Est, Est égal à, Cacher…).": "The panel mirrors the logic of EasyCatalog's conditional actions (Contains, Is, Equals, Hide…).",
+  "Animation": "Animation",
+  "Générer des animations HTML autonomes (vidéo) à partir d'un brief ou d'un design du canvas.": "Generate standalone HTML animations (video) from a brief or a canvas design.",
+  "À partir d'un brief (vidéo multi-scènes)": "From a brief (multi-scene video)",
+  "Décris ton sujet, et optionnellement l'audience, l'objectif, le ton, la marque et un caption.": "Describe your subject, and optionally the audience, goal, tone, brand and a caption.",
+  "À partir d'un design du canvas (design-reveal)": "From a canvas design (design-reveal)",
+  "Depuis l'éditeur, on capture le SVG du projet courant et l'IA l'anime (apparitions, rythme, easing) selon une consigne de style. Idéal pour transformer une création print en teaser animé.": "From the editor, the current project's SVG is captured and the AI animates it (reveals, pacing, easing) following a style instruction. Ideal for turning a print design into an animated teaser.",
+  "Fichiers de référence": "Reference files",
+  "Glisse des images, PDF ou SVG pour enrichir le brief : l'IA les lit (texte + visuel) et s'en sert comme contexte.": "Drag in images, PDFs or SVGs to enrich the brief: the AI reads them (text + visual) and uses them as context.",
+  "Format et durée": "Format and duration",
+  "• Ratio : Auto, portrait (9:16), carré (1:1), paysage (16:9) ou dimensions personnalisées (largeur × hauteur, 240 à 4096 px, ratio affiché en direct).": "• Ratio: Auto, portrait (9:16), square (1:1), landscape (16:9) or custom dimensions (width × height, 240 to 4096 px, ratio shown live).",
+  "Enrichir et finaliser": "Enrich and finalise",
+  "• Enrichir avec des images IA : l'IA génère un visuel par scène (affiché en fond, effet Ken Burns). • Aperçu live : le lecteur joue la composition avec le style appliqué (rythme, intensité, easing, palette).": "• Enrich with AI images: the AI generates one image per scene (shown in the background, Ken Burns effect). • Live preview: the player runs the composition with the applied style (pacing, intensity, easing, palette).",
+  "Le ZIP est une animation autonome et jouable": "The ZIP is a standalone, playable animation",
+  "Le index.html est self-contained (CSS, JS, données et auto-play tout inline) : double-clique-le, il s'ouvre même en file://, sans serveur.": "The index.html is self-contained (CSS, JS, data and auto-play all inline): double-click it and it opens even over file://, with no server.",
+  "Gérer ses animations dans le DAM": "Manage your animations in the DAM",
+  "Dans l'onglet Animations HTML du DAM, chaque carte affiche le ratio, le poids et la date : • Ouvrir joue l'animation dans un nouvel onglet (le ZIP est extrait à la volée, l'index.html est servi tel quel).": "In the DAM's HTML animations tab, each card shows the ratio, size and date: • Open plays the animation in a new tab (the ZIP is extracted on the fly, the index.html is served as-is).",
+  "Bibliothèque de prompts": "Prompt library",
+  "Chaque génération mémorise son brief : tu peux le rejouer, le charger pour l'ajuster, le renommer ou le supprimer — pour produire des variantes sans tout ressaisir.": "Each generation remembers its brief: you can replay it, load it to tweak it, rename it or delete it — to produce variants without retyping everything.",
+  "Voir aussi": "See also",
+  "La génération s'appuie sur les modèles IA configurés dans les Paramètres → IA. Les visuels de scène utilisent le moteur de génération d'image (Image IA), le même que dans le DAM et le Chat IA.": "Generation relies on the AI models configured in Settings → AI. Scene visuals use the image generation engine (AI Image), the same one as in the DAM and AI Chat.",
+  "Import IDML": "IDML import",
+  "Récupérer une maquette InDesign et la transformer en template IBS-Studio.": "Bring in an InDesign layout and turn it into an IBS-Studio template.",
+  "Comment exporter un IDML depuis InDesign": "How to export an IDML from InDesign",
+  "1. Ouvre ton document dans InDesign CC ou plus récent 2. Fichier → Exporter… 3. Choisis le format InDesign Markup (IDML) 4. Enregistre Le fichier IDML est en réalité un ZIP contenant XML + ressources (fonts, images).": "1. Open your document in InDesign CC or later 2. File → Export… 3. Choose the InDesign Markup (IDML) format 4. Save. The IDML file is in fact a ZIP containing XML + resources (fonts, images).",
+  "Importe le « package », pas seulement le .idml": "Import the \"package\", not just the .idml",
+  "L'import attend un assemblage InDesign (Fichier → Empaqueter…), pas un .idml isolé : • un fichier .idml et un .pdf de référence sont obligatoires — sans le PDF, l'import s'arrête avec « Composants manquants » • les polices du dossier Docume…": "The import expects an InDesign package (File → Package…), not a standalone .idml: • an .idml file and a reference .pdf are required — without the PDF, the import stops with \"Missing components\" • the fonts in the Docume… folder",
+  "Importer dans IBS-Studio": "Import into IBS-Studio",
+  "1. Tableau de bord → Importer 2. Sélectionne le .idml 3. Patiente : le parser extrait formes, textes, images, fonts, ombres et transparence — toutes les pages du document (chaque planche devient une page IBS-Studio) 4.": "1. Dashboard → Import 2. Select the .idml 3. Wait: the parser extracts shapes, text, images, fonts, shadows and transparency — all the document's pages (each spread becomes an IBS-Studio page) 4.",
+  "Décomposition en calques éditables": "Breakdown into editable layers",
+  "Rien n'est aplati en image : chaque objet redevient un calque manipulable dans l'éditeur.": "Nothing is flattened into an image: each object becomes an editable layer again in the editor.",
+  "Couleurs CMJN converties fidèlement": "CMYK colours converted faithfully",
+  "Les nuances CMJN sont ramenées en RVB pour l'écran. Quand InDesign a déjà stocké la valeur sRGB de la couleur (issue de sa propre conversion ICC), elle est utilisée telle quelle.": "CMYK swatches are brought back to RGB for the screen. When InDesign has already stored the colour's sRGB value (from its own ICC conversion), it is used as-is.",
+  "Ce qui est préservé vs approximé à l'export": "What's preserved vs approximated on export",
+  "L'export IDML n'est pas une régénération : il repatche le ZIP IDML d'origine. Sont réinjectées tes modifications de texte, image, couleur de fond, position et taille ; tout le reste du document (styles, calques, réglages non touchés) est co…": "The IDML export isn't a regeneration: it re-patches the original IDML ZIP. Your changes to text, image, background colour, position and size are re-injected; everything else in the document (styles, layers, untouched settings) is pre…",
+  "Limites connues": "Known limitations",
+  "• Fonts custom : si non installées sur la machine → fallback Arial. Pour une fidélité parfaite, charge tes fonts dans public/fonts/ • Dégradés : non importés — les objets dégradés reviennent en couleur unie (à recréer dans l'éditeur si beso…": "• Custom fonts: if not installed on the machine → Arial fallback. For perfect fidelity, load your fonts into public/fonts/ • Gradients: not imported — gradient objects come back as a solid colour (recreate them in the editor if need…",
+  "Aller-retour InDesign ↔ IBS-Studio": "InDesign ↔ IBS-Studio round-trip",
+  "Le cycle classique : 1. Graphiste crée la maquette dans InDesign 2. Exporte un IDML 3. Imprimeur importe dans IBS-Studio, ajoute placeholders, branche le data-merge 4. Batch export IDML (un par produit) ou PDF direct 5.": "The classic cycle: 1. Designer creates the layout in InDesign 2. Exports an IDML 3. Printer imports into IBS-Studio, adds placeholders, connects the data merge 4. Batch IDML export (one per product) or direct PDF 5.",
+  "EasyCatalog (InDesign)": "EasyCatalog (InDesign)",
+  "Aller-retour avec le plug-in EasyCatalog : importer un gabarit, fusionner ses champs, puis réexporter un IDML reconnu nativement.": "Round-trip with the EasyCatalog plug-in: import a template, merge its fields, then re-export a natively recognised IDML.",
+  "Sous le capot : comment les champs survivent à l'IDML": "Under the hood: how the fields survive the IDML",
+  "EasyCatalog ne stocke pas ses champs sous forme de texte : il pose des marqueurs invisibles sur le balisage InDesign que IBS-Studio sait relire.": "EasyCatalog doesn't store its fields as text: it places invisible markers on the InDesign markup that IBS-Studio can read back.",
+  "1. Importer un gabarit EasyCatalog": "1. Import an EasyCatalog template",
+  "1. Depuis InDesign (avec ton document EasyCatalog ouvert) : Fichier → Exporter… → InDesign Markup (IDML) 2. Dans IBS-Studio : Tableau de bord → Importer → sélectionne le .idml 3. Le gabarit s'ouvre dans l'éditeur.": "1. From InDesign (with your EasyCatalog document open): File → Export… → InDesign Markup (IDML) 2. In IBS-Studio: Dashboard → Import → select the .idml 3. The template opens in the editor.",
+  "2. Brancher tes données et fusionner": "2. Connect your data and merge",
+  "Dans l'éditeur, panneau Publipostage : connecte une source (Excel, Google Sheets, PIM…). IBS-Studio remplace les {{champs}} par les valeurs de la ligne courante, et charge les images dans les cadres liés.": "In the editor, Mail merge panel: connect a source (Excel, Google Sheets, PIM…). IBS-Studio replaces the {{fields}} with the current row's values, and loads the images into the linked frames.",
+  "3. Exporter une source de données POUR EasyCatalog": "3. Export a data source FOR EasyCatalog",
+  "Depuis l'espace Données, bouton EasyCatalog : génère un zip prêt à brancher comme flat-file data source dans EasyCatalog.": "From the Data area, EasyCatalog button: generates a zip ready to connect as a flat-file data source in EasyCatalog.",
+  "4. Réexporter un IDML (aller-retour complet)": "4. Re-export an IDML (full round-trip)",
+  "Depuis l'éditeur, Exporter → IDML (multi-pages) : IBS-Studio produit un IDML qui conserve les marqueurs EasyCatalog et résout les valeurs par ligne.": "From the editor, Export → IDML (multi-page): IBS-Studio produces an IDML that keeps the EasyCatalog markers and resolves values per row.",
+  "Les champs ne sont pas reconnus à l'import ?": "The fields aren't recognised on import?",
+  "Vérifie que l'IDML provient bien d'un document piloté par EasyCatalog (les champs y sont insérés via le panneau EasyCatalog, repérables aux crochets verts). Un texte tapé à la main n'est pas un champ.": "Check that the IDML really comes from an EasyCatalog-driven document (fields are inserted via the EasyCatalog panel, recognisable by their green brackets). Hand-typed text is not a field.",
+  "Quelles données mettre dans les colonnes image ?": "What data to put in image columns?",
+  "Une URL d'image (ex. lien Firebase/DAM) se charge directement. Un simple nom de fichier est résolu via ton stockage si le fichier y existe. Le binding image se branche tout seul sur le cadre EasyCatalog importé.": "An image URL (e.g. a Firebase/DAM link) loads directly. A plain filename is resolved via your storage if the file exists there. The image binding connects itself automatically to the imported EasyCatalog frame.",
+  "Comment le champ-clé est-il choisi à l'export ?": "How is the key field chosen on export?",
+  "IBS-Studio prend ta colonne primaire comme clé EasyCatalog si toutes ses valeurs sont uniques et non vides. Sinon, il synthétise une clé eckey (row1, row2, …) pour garantir une re-synchronisation fiable.": "IBS-Studio uses your primary column as the EasyCatalog key if all its values are unique and non-empty. Otherwise, it synthesises an eckey (row1, row2, …) to guarantee reliable re-synchronisation.",
+  "• Les champs sous forme qualifiée (référence data source complète, marqueurs $ID/2/$ID/3) ne sont pas encore convertis en placeholders et restent en texte ; seule la forme simple $ID/4/$ID/5 est reconnue.": "• Fields in qualified form (full data source reference, $ID/2/$ID/3 markers) aren't yet converted to placeholders and remain as text; only the simple $ID/4/$ID/5 form is recognised.",
+  "Balises XML InDesign (connexion auto)": "InDesign XML tags (auto-connect)",
+  "Baliser un document InDesign avec des balises XML natives nommées comme tes colonnes : à l'import de l'IDML, IBS-Studio les transforme en champs {{…}} automatiquement connectés à ta base — une alternative gratuite à EasyCatalog.": "Tag an InDesign document with native XML tags named like your columns: when the IDML is imported, IBS-Studio turns them into {{…}} fields automatically connected to your database — a free alternative to EasyCatalog.",
+  "1. Baliser le document dans InDesign": "1. Tag the document in InDesign",
+  "1. Ouvre le panneau des balises : Fenêtre → Utilitaires → Balises (Window → Utilities → Tags). 2. Crée une balise par champ, avec le nom exact de ta colonne (ex. LibelleArticle, Prixnormal, Marques). 3.": "1. Open the tags panel: Window → Utilities → Tags. 2. Create one tag per field, with the exact name of your column (e.g. LibelleArticle, Prixnormal, Marques). 3.",
+  "2. (Option) Le plug-in IBS-Studio : baliser connecté à ta base": "2. (Optional) The IBS-Studio plug-in: tag while connected to your database",
+  "Pour baliser en étant connecté à ta base en direct, IBS-Studio fournit un plug-in InDesign (UXP).": "To tag while connected live to your database, IBS-Studio provides an InDesign plug-in (UXP).",
+  "3. Exporter l'IDML": "3. Export the IDML",
+  "Dans InDesign : Fichier → Exporter… → InDesign Markup (IDML). Les balises XML sont conservées dans le fichier.": "In InDesign: File → Export… → InDesign Markup (IDML). The XML tags are kept in the file.",
+  "4. Importer dans IBS-Studio → champs auto-connectés": "4. Import into IBS-Studio → auto-connected fields",
+  "Tableau de bord → Importer → sélectionne le .idml. À l'ouverture : • chaque balise texte devient un placeholder {{nom}} éditable ; • chaque balise image devient un cadre image lié.": "Dashboard → Import → select the .idml. On opening: • each text tag becomes an editable {{name}} placeholder; • each image tag becomes a linked image frame.",
+  "Balise XML native ou EasyCatalog : laquelle choisir ?": "Native XML tag or EasyCatalog: which to choose?",
+  "Les deux aboutissent au même résultat (champs {{…}} connectés). EasyCatalog s'impose si ton flux print l'utilise déjà (re-synchro côté InDesign).": "Both lead to the same result (connected {{…}} fields). EasyCatalog is the way to go if your print workflow already uses it (re-sync on the InDesign side).",
+  "Pourquoi je ne vois pas les crochets sur un bloc ?": "Why don't I see the brackets on a block?",
+  "Les crochets [ ] n'apparaissent que sur du texte balisé. Si tu as appliqué la balise au cadre (rectangle) au lieu du texte, tu obtiens un cadre coloré dans la Structure mais pas de crochets — et la valeur ne sera pas remplacée.": "The brackets [ ] only appear on tagged text. If you applied the tag to the frame (rectangle) instead of the text, you get a coloured frame in the Structure but no brackets — and the value won't be replaced.",
+  "Les noms doivent-ils correspondre exactement aux colonnes ?": "Must the names match the columns exactly?",
+  "Le nom de la balise doit correspondre au nom de la colonne de ta base. La casse, les accents et les espaces/underscores sont tolérés à la correspondance (ex. Prix normal ↔ colonne Prixnormal).": "The tag name must match the name of your database column. Case, accents and spaces/underscores are tolerated when matching (e.g. Prix normal ↔ Prixnormal column).",
+  "Le plug-in ne se charge pas / le token ne marche pas": "The plug-in won't load / the token doesn't work",
+  "Le plug-in est distribué en mode développeur (UXP) : il se charge manuellement à chaque session via l'UXP Developer Tool.": "The plug-in is distributed in developer mode (UXP): it's loaded manually each session via the UXP Developer Tool.",
+  "Afficher / masquer un élément selon la donnée ?": "Show / hide an element based on the data?",
+  "Une fois ta base branchée, tu peux faire réagir un élément à la valeur de chaque ligne (masquer un bandeau « PROMO » hors promotion, passer un prix en rouge sous un seuil de stock, agrandir un picto « nouveauté »…).": "Once your database is connected, you can make an element react to each row's value (hide a \"PROMO\" banner when not on offer, turn a price red below a stock threshold, enlarge a \"new\" icon…).",
+  "Importer PPTX": "Import PPTX",
+  "Importer un .pptx pour le réutiliser comme template ou point de départ.": "Import a .pptx to reuse it as a template or starting point.",
+  "Importer un PPTX": "Import a PPTX",
+  "1. Tableau de bord → Importer 2. Sélectionne le .pptx 3. Le parser extrait textes, images et formes — y compris le thème (les couleurs de thème sont résolues) et les transparences de remplissage 4.": "1. Dashboard → Import 2. Select the .pptx 3. The parser extracts text, images and shapes — including the theme (theme colours are resolved) and fill transparencies 4.",
+  "Cas d'usage type": "Typical use case",
+  "Présentation commerciale dynamique : ton équipe vente part d'un PPTX modèle. Tu l'importes une fois, tu mappes les placeholders sur ta BDD produits, et chaque commercial génère sa version personnalisée (logo client, prix négocié, références…": "Dynamic sales presentation: your sales team starts from a PPTX template. You import it once, map the placeholders to your product database, and each rep generates their personalised version (client logo, negotiated price, references…",
+  "Limites": "Limitations",
+  "• Multi-slides : seule la slide 1 est lue — les suivantes sont ignorées • Animations PowerPoint : non supportées (IBS-Studio exporte du print/statique) • SmartArt : ignorés à l'import (non convertis en formes) • Round-trip PPTX → Fabric → P…": "• Multi-slide: only slide 1 is read — the rest are ignored • PowerPoint animations: not supported (IBS-Studio exports print/static) • SmartArt: ignored on import (not converted into shapes) • Round-trip PPTX → Fabric → P…",
+  "Importer Excel": "Import Excel",
+  "Alimenter le PIM depuis un fichier Excel, CSV/TSV ou Google Sheets.": "Populate the PIM from an Excel, CSV/TSV or Google Sheets file.",
+  "Formats supportés": "Supported formats",
+  "L'import détecte automatiquement les types de colonnes : texte, nombre, booléen, date, formule (stockée puis évaluée au moment de la fusion) et dictionnaire (colonne à valeurs répétitives → liste de choix).": "The import automatically detects column types: text, number, boolean, date, formula (stored then evaluated at merge time) and dictionary (a column with repeating values → choice list).",
+  "Importer un fichier": "Import a file",
+  "1. Ouvre PIM depuis le menu. 2. Clique Importer un fichier (ou Créer vide pour partir d'une base vierge). 3. Sélectionne ton fichier. 4. Vérifie les colonnes détectées. 5. Valide → la base est créée et synchronisée sur Firebase.": "1. Open PIM from the menu. 2. Click Import a file (or Create empty to start from a blank database). 3. Select your file. 4. Check the detected columns. 5. Confirm → the database is created and synced to Firebase.",
+  "Et ensuite ?": "What next?",
+  "Une fois la base importée, tout se passe dans le PIM : enrichir les fiches par IA, gérer les champs structurés (spécifications, variants, documents, images) et exporter en série. Voir la section PIM.": "Once the database is imported, everything happens in the PIM: enrich the product sheets with AI, manage the structured fields (specifications, variants, documents, images) and export in batch. See the PIM section.",
+  "Importer une image": "Import an image",
+  "Placer une image (PNG, JPG, WebP, GIF, SVG) sur le canvas d'un nouveau projet.": "Place an image (PNG, JPG, WebP, GIF, SVG) onto the canvas of a new project.",
+  "Importer SVG": "Import SVG",
+  "Charger un .svg comme calques vectoriels éditables.": "Load an .svg as editable vector layers.",
+  "Quand l'utiliser": "When to use it",
+  "• Un logo vectoriel à retoucher ou recolorer. • Un visuel déjà vectorisé (export Illustrator/Figma) à intégrer dans une maquette.": "• A vector logo to edit or recolour. • An already-vectorised visual (Illustrator/Figma export) to place into a layout.",
+  "Image → SVG éditable": "Image → editable SVG",
+  "Rendre une image raster éditable : fond verrouillé + textes décomposés par IA.": "Make a raster image editable: locked background + text broken out by AI.",
+  "Comment ça marche": "How it works",
+  "1. L'image est verrouillée en fond (fidélité visuelle préservée). Le calque source devient non sélectionnable : les clics passent aux textes posés par-dessus. 2.": "1. The image is locked as the background (visual fidelity preserved). The source layer becomes unselectable: clicks pass through to the text placed on top. 2.",
+  "Ce qui devient éditable": "What becomes editable",
+  "La décomposition ne se limite pas à du texte brut : elle reconstruit la mise en forme de chaque bloc.": "The breakdown isn't limited to plain text: it reconstructs the formatting of each block.",
+  "Clé Google Vision requise": "Google Vision key required",
+  "La détection des textes appelle l'API Google Cloud Vision : il faut renseigner ta clé une seule fois dans Paramètres → Connecteurs (champ Google Vision), synchronisée ensuite via ton compte.": "Text detection calls the Google Cloud Vision API: you need to enter your key once in Settings → Connectors (Google Vision field), synced afterwards via your account.",
+  "Filtres intelligents": "Smart filters",
+  "Pour ne garder que le contenu éditorial et éviter le bruit, plusieurs filtres s'appliquent automatiquement.": "To keep only editorial content and avoid noise, several filters apply automatically.",
+  "Quand l'utiliser & limites": "When to use it & limitations",
+  "À utiliser quand tu as un visuel raster fini (affiche, flyer, publicité retail) sans le fichier source et que tu veux réécrire les textes ou décliner sans tout refaire.": "Use it when you have a finished raster visual (poster, flyer, retail ad) without the source file and want to rewrite the text or adapt it without redoing everything.",
+  "PDF → SVG éditable": "PDF → editable SVG",
+  "Repartir d'un PDF : page 1 rasterisée en fond + textes éditables.": "Start from a PDF: page 1 rasterised as the background + editable text.",
+  "1. Si le PDF contient un calque texte natif exploitable, la conversion vectorielle est tentée d'abord : les textes arrivent exacts (pas d'OCR). 2.": "1. If the PDF has a usable native text layer, vector conversion is tried first: the text comes in exact (no OCR). 2.",
+  "Texte natif vs OCR — trois niveaux": "Native text vs OCR — three levels",
+  "L'import suit une cascade : il garde toujours le niveau le plus fidèle disponible. 1. Conversion vectorielle (MuPDF) — tentée d'abord.": "The import follows a cascade: it always keeps the most faithful level available. 1. Vector conversion (MuPDF) — tried first.",
+  "Ce qui devient éditable (conversion vectorielle)": "What becomes editable (vector conversion)",
+  "Quand le PDF passe par la conversion vectorielle, l'import ne se contente pas de séparer texte et fond — il reconstruit des objets vraiment manipulables : • Blocs de texte regroupés : un prix composé (« 22 DT ,99 »), une bulle (« 30 % d'éco…": "When the PDF goes through vector conversion, the import doesn't just separate text and background — it reconstructs objects that are truly editable: • Grouped text blocks: a composite price (\"22 DT ,99\"), a bubble (\"30% off…",
+  "Polices fidèles (embarquées + repli Google Fonts)": "Faithful fonts (embedded + Google Fonts fallback)",
+  "Pour que le rendu ne retombe pas sur une police par défaut : • Les polices embarquées dans le PDF (sous-ensembles TrueType) sont extraites et chargées sous leur vraie famille (« WRZTFA+ArialNarrow-Bold » → Arial Narrow, gras).": "So the rendering doesn't fall back to a default font: • Fonts embedded in the PDF (TrueType subsets) are extracted and loaded under their real family (\"WRZTFA+ArialNarrow-Bold\" → Arial Narrow, bold).",
+  "Champs de fusion {{…}} préservés": "Merge fields {{…}} preserved",
+  "Si le PDF d'origine contient déjà des champs de fusion {{…}} (publipostage), l'import les reconnaît et leur attache leur cadre de composition : largeur du bloc + alignement détecté sur la géométrie réelle (bords droits communs → aligné à dr…": "If the original PDF already contains merge fields {{…}} (mail merge), the import recognises them and attaches their layout frame: block width + alignment detected from the actual geometry (shared right edges → right-align…",
+  "Limites & quand l'utiliser": "Limitations & when to use it",
+  "• Page 1 uniquement : les pages suivantes sont ignorées. Pour un multi-pages fidèle, préférez Import InDesign (IDML). • Idéal pour repartir d'un PDF existant (BAT, ancien document) quand le fichier source InDesign n'est plus disponible.": "• Page 1 only: the following pages are ignored. For a faithful multi-page import, use InDesign Import (IDML) instead. • Ideal for starting from an existing PDF (proof, old document) when the InDesign source file is no longer available.",
+  "DAM": "DAM",
+  "Banque d'images, génération IA, édition, variantes et organisation des visuels.": "Image bank, AI generation, editing, variants and organising your visuals.",
+  "Les onglets": "The tabs",
+  "Clique un onglet pour l'ouvrir directement dans le DAM.": "Click a tab to open it directly in the DAM.",
+  "Banque d'images": "Image bank",
+  "Recherche dans Pexels & Unsplash (millions de photos libres de droits) avec filtres source / orientation / couleur.": "Search across Pexels & Unsplash (millions of royalty-free photos) with source / orientation / colour filters.",
+  "Mes images": "My images",
+  "Tes images sauvegardées — depuis la banque ou issues de la génération IA.": "Your saved images — from the bank or produced by AI generation.",
+  "Favoris": "Favourites",
+  "Les images que tu as marquées d'un ♥ pour un accès rapide.": "The images you've marked with a ♥ for quick access.",
+  "Collections": "Collections",
+  "Des dossiers d'organisation que tu crées et remplis toi-même.": "Organising folders that you create and fill yourself.",
+  "Récents": "Recent",
+  "Les derniers ajouts, triés par date.": "The latest additions, sorted by date.",
+  "Projets": "Projects",
+  "Les images et les polices du projet courant, prêtes à glisser sur le canvas.": "The current project's images and fonts, ready to drag onto the canvas.",
+  "Création d'image": "Image creation",
+  "Génération d'images par IA (Gemini / Image IA) — voir le détail des paramètres plus bas.": "AI image generation (Gemini / AI Image) — see the detailed parameters below.",
+  "Animations HTML": "HTML animations",
+  "Tes compositions vidéo (HyperFrames).": "Your video compositions (HyperFrames).",
+  "Google Drive": "Google Drive",
+  "Accès à tes fichiers Google Drive une fois ton compte connecté.": "Access to your Google Drive files once your account is connected.",
+  "Rechercher des images": "Search for images",
+  "• Par texte : barre de recherche avec autocomplétion et historique des recherches récentes. • Par image (recherche inversée) : bouton caméra → choisis une image locale → le DAM trouve des visuels similaires dans la banque.": "• By text: search bar with autocomplete and a history of recent searches. • By image (reverse search): camera button → pick a local image → the DAM finds similar visuals in the bank.",
+  "Créer une image par IA": "Create an image with AI",
+  "Onglet Création d'image — moteur Image IA (Gemini 3.1 image, texte → image). Déplie chaque paramètre :": "Image creation tab — AI Image engine (Gemini 3.1 image, text → image). Expand each parameter:",
+  "Prompt (+ Améliorer / Avec questions)": "Prompt (+ Improve / With questions)",
+  "Décris l'image à générer. Tu peux coller une image dans le champ : elle rejoint les fichiers de référence.": "Describe the image to generate. You can paste an image into the field: it joins the reference files.",
+  "Bouton « Ajouter des fichiers » (ou colle une image). Tous formats : images, logos, PDF, SVG (rastérisé en PNG, plafonné à 2048 px).": "\"Add files\" button (or paste an image). Any format: images, logos, PDF, SVG (rasterised to PNG, capped at 2048 px).",
+  "Format de sortie": "Output format",
+  "• Images & texte (défaut) : image + texte — le modèle peut commenter brièvement. • Images seul.": "• Images & text (default): image + text — the model may add a brief comment. • Images only.",
+  "Température (0 → 2, défaut 1,0)": "Temperature (0 → 2, default 1.0)",
+  "Curseur, pas de 0,1. Règle la créativité : • 0 — Précis : déterministe, fidèle au prompt/références. • 2 — Créatif : plus de liberté et de variation. Reproduire une référence → baisse vers 0 ; explorer → monte vers 2.": "Slider, steps of 0.1. Adjusts creativity: • 0 — Precise: deterministic, faithful to the prompt/references. • 2 — Creative: more freedom and variation. Reproducing a reference → lower towards 0; exploring → raise towards 2.",
+  "Ratio (format)": "Ratio (aspect)",
+  "Auto · 1:1 · 16:9 · 9:16 · 4:3 · 3:4. • Auto (défaut) : le modèle choisit le cadrage adapté au prompt/références (aucune contrainte envoyée). • Les autres imposent le rapport : 1:1 carré (réseaux), 16:9 / 4:3 paysage, 9:16 / 3:4 portrait.": "Auto · 1:1 · 16:9 · 9:16 · 4:3 · 3:4. • Auto (default): the model chooses the framing suited to the prompt/references (no constraint sent). • The others enforce the ratio: 1:1 square (social), 16:9 / 4:3 landscape, 9:16 / 3:4 portrait.",
+  "Résolution (1K / 2K / 4K)": "Resolution (1K / 2K / 4K)",
+  "1K (défaut) · 2K · 4K. Définition du visuel. ⚠️ 2K et 4K sont 2 à 3× plus lents — réserve-les au rendu final, reste en 1K pour itérer.": "1K (default) · 2K · 4K. The visual's resolution. ⚠️ 2K and 4K are 2 to 3× slower — save them for the final render, stay in 1K to iterate.",
+  "Nombre d'images (1 / 2 / 4)": "Number of images (1 / 2 / 4)",
+  "1 (défaut) · 2 · 4. Génère N variations en parallèle du même prompt — pour comparer plusieurs propositions d'un coup.": "1 (default) · 2 · 4. Generates N variations of the same prompt in parallel — to compare several options at once.",
+  "Générer & actions sur les résultats": "Generate & actions on the results",
+  "Bouton « Générer ». Pour chaque image : • Télécharger — PNG en local. • Sauvegarder — vers « Mes images » (prompt d'origine, prompt amélioré et Q/R conservés en métadonnées). • Insérer dans l'éditeur — place l'image dans le projet ouvert.": "\"Generate\" button. For each image: • Download — PNG locally. • Save — to \"My images\" (original prompt, improved prompt and Q&A kept in the metadata). • Insert into the editor — places the image into the open project.",
+  "Visualiser & éditer une image": "View & edit an image",
+  "Un clic ouvre la visionneuse (lightbox). Outils d'édition non destructive :": "A click opens the viewer (lightbox). Non-destructive editing tools:",
+  "Zoom · Rotation · Miroir": "Zoom · Rotate · Mirror",
+  "Zoom avant/arrière + ajustement, Rotation par 90°, Miroir horizontal et vertical.": "Zoom in/out + fit, 90° rotation, horizontal and vertical mirror.",
+  "Recadrage (crop)": "Crop",
+  "Masque interactif à 8 poignées, grille des tiers, contraintes de ratio (libre, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3).": "Interactive 8-handle mask, rule-of-thirds grid, ratio constraints (free, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3).",
+  "Colorimétrie": "Colour",
+  "Sliders Luminosité, Contraste, Saturation, Teinte (rendu via filtre CSS, non destructif).": "Brightness, Contrast, Saturation, Hue sliders (rendered via CSS filter, non-destructive).",
+  "Formats PNG / JPEG / WebP, avec réglage de qualité (JPEG/WebP) et d'échelle (% de la résolution native).": "PNG / JPEG / WebP formats, with quality (JPEG/WebP) and scale (% of native resolution) settings.",
+  "Réinitialiser": "Reset",
+  "Annule toutes les retouches et revient à l'image d'origine.": "Cancels all edits and returns to the original image.",
+  "Panneau d'informations & crédit photo": "Info panel & photo credit",
+  "À droite de la visionneuse, l'onglet Infos récapitule la fiche technique du visuel : dimensions (px), résolution (mégapixels) et ratio, poids du fichier, orientation, couleur dominante (pastille + code hex) et espace sRGB, plus les tags.": "To the right of the viewer, the Info tab sums up the visual's technical details: dimensions (px), resolution (megapixels) and ratio, file size, orientation, dominant colour (swatch + hex code) and sRGB space, plus the tags.",
+  "Onglet Prompts (images IA)": "Prompts tab (AI images)",
+  "Quand une image a été générée par IA, un onglet Prompts s'ajoute dans la visionneuse. Il restitue le prompt d'origine (ton texte brut), le prompt amélioré réellement envoyé à Image IA, et les précisions Q&R du mode « Avec questions ».": "When an image was generated by AI, a Prompts tab is added in the viewer. It shows the original prompt (your raw text), the improved prompt actually sent to AI Image, and the Q&A details from the \"With questions\" mode.",
+  "Variantes": "Variants",
+  "Sauvegarde une retouche (crop + colorimétrie + miroir + rotation) comme variante nommée d'une image, sans toucher l'originale : • Enregistrer variante → donne-lui un nom.": "Save an edit (crop + colour + mirror + rotation) as a named variant of an image, without touching the original: • Save variant → give it a name.",
+  "Analyse IA d'une image": "AI analysis of an image",
+  "Dans la visionneuse, onglet Analyse IA → bouton « Analyser avec IA ». L'IA renvoie : sujet, description, marques identifiées, texte détecté (OCR), ambiance / style / composition / éclairage, objets, tags de recherche et palette de couleurs.…": "In the viewer, AI analysis tab → \"Analyse with AI\" button. The AI returns: subject, description, identified brands, detected text (OCR), mood / style / composition / lighting, objects, search tags and colour palette.…",
+  "Tagging automatique & recherche par tags": "Automatic tagging & search by tags",
+  "Chaque image sauvegardée dans Mes images (génération IA, images du Chat) est taguée automatiquement en arrière-plan : tags, couleur dominante et sujet sont posés sur la fiche quelques secondes après la sauvegarde.": "Every image saved in My images (AI generation, Chat images) is tagged automatically in the background: tags, dominant colour and subject are added a few seconds after saving.",
+  "Organiser": "Organise",
+  "• Favoris (♥) : accès rapide. • Collections : crée des dossiers, ajoute/retire des images, vue vignettes ou liste.": "• Favourites (♥): quick access. • Collections: create folders, add/remove images, thumbnail or list view.",
+  "Utiliser une image dans l'éditeur": "Use an image in the editor",
+  "• Clic : insère l'image au centre du canvas (mise à l'échelle automatique). • Glisser-déposer : depuis la grille vers le canvas (équivaut à l'insertion).": "• Click: inserts the image at the centre of the canvas (auto-scaled). • Drag-and-drop: from the grid onto the canvas (equivalent to inserting).",
+  "Sources externes": "External sources",
+  "• Pexels & Unsplash : banque intégrée (recherche + filtres). • Google Drive : connecte ton compte (onglet Google Drive) pour piocher dans tes fichiers.": "• Pexels & Unsplash: built-in bank (search + filters). • Google Drive: connect your account (Google Drive tab) to pull from your files.",
+  "PIM": "PIM",
+  "Gérer tes bases de données produits : fiches, enrichissement IA, champs structurés et export.": "Manage your product databases: sheets, AI enrichment, structured fields and export.",
+  "Bases de données": "Databases",
+  "Tu peux gérer plusieurs bases en parallèle. Trois façons d'en créer une : • Importer un fichier — depuis Excel ou CSV/TSV (voir Importer Excel). • Scraper le web — partir d'URLs produits et laisser l'IA remplir les fiches.": "You can manage several databases at once. Three ways to create one: • Import a file — from Excel or CSV/TSV (see Import Excel). • Scrape the web — start from product URLs and let the AI fill in the sheets.",
+  "Enrichir une fiche par IA": "Enrich a sheet with AI",
+  "Clique sur une ligne → panneau Enrichi par IA à droite. Mode AUTO (violet) : si la ligne a un title, brand ou reference, une recherche web (Jina) + LLM trouve l'URL et extrait les infos (modèle principal : Gemini, secours : Claude).": "Click a row → AI-enriched panel on the right. AUTO mode (purple): if the row has a title, brand or reference, a web search (Jina) + LLM finds the URL and extracts the information (primary model: Gemini, fallback: Claude).",
+  "Champs structurés": "Structured fields",
+  "Au-delà du texte simple, une fiche stocke des champs riches, tous exploitables dans le data-merge : • Formules Excel : évaluées à la volée. • Spécifications : [{ group, name, value }] (dimensions, matériaux…).": "Beyond plain text, a sheet stores rich fields, all usable in the data merge: • Excel formulas: evaluated on the fly. • Specifications: [{ group, name, value }] (dimensions, materials…).",
+  "Champs calculés (colonnes formules)": "Calculated fields (formula columns)",
+  "Une colonne peut être une formule plutôt qu'une valeur saisie — comme dans Excel. Tu écris une expression qui référence d'autres colonnes, et la valeur se recalcule à la volée quand les données changent.": "A column can be a formula rather than a typed value — just like in Excel. You write an expression referencing other columns, and the value recalculates on the fly when the data changes.",
+  "Éditer la table comme un tableur": "Edit the table like a spreadsheet",
+  "La table produits se manipule directement, sans quitter la page : • Éditer une cellule : un clic sélectionne, un second clic (ou Entrée) passe en édition ; Entrée valide, Échap annule.": "The product table can be edited directly, without leaving the page: • Edit a cell: one click selects, a second click (or Enter) switches to editing; Enter confirms, Esc cancels.",
+  "Types de colonnes (façon Airtable)": "Column types (Airtable style)",
+  "Le bouton « + » d'en-tête ouvre un sélecteur de type de champ, regroupés par catégorie (Texte, Nombre, Choix, Date, Lien, Autre) avec recherche.": "The header \"+\" button opens a field-type picker, grouped by category (Text, Number, Choice, Date, Link, Other) with search.",
+  "Statistiques de colonne": "Column statistics",
+  "Sous l'en-tête d'une colonne numérique, des badges Min / Moyenne / Max résument les valeurs visibles. Cliquer Min trie en croissant, Max en décroissant — un coup d'œil suffit pour repérer prix aberrants ou champs vides.": "Below a numeric column's header, Min / Average / Max badges sum up the visible values. Clicking Min sorts ascending, Max descending — a glance is enough to spot outlier prices or empty fields.",
+  "Fraîcheur par champ": "Freshness per field",
+  "Chaque valeur enrichie porte la date de son dernier changement (updatedAt au niveau du champ).": "Each enriched value carries the date of its last change (updatedAt at field level).",
+  "Plusieurs sources dans une base": "Multiple sources in one database",
+  "La colonne latérale gauche liste les sources d'une base (chaque import / scrape / saisie manuelle = une source). Clique une source pour afficher/masquer ses produits dans la table ; coche-en plusieurs pour les fusionner à l'écran.": "The left-hand side column lists a database's sources (each import / scrape / manual entry = one source). Click a source to show/hide its products in the table; tick several to merge them on screen.",
+  "Galerie d'images d'une fiche": "A sheet's image gallery",
+  "Dans le panneau de fiche, les images se réorganisent par glisser-déposer (la première sert de visuel principal) et se suppriment à l'unité.": "In the sheet panel, images are reordered by drag-and-drop (the first serves as the main visual) and deleted individually.",
+  "Classer & exporter": "Classify & export",
+  "• Relie une base à une taxonomie pour naviguer le catalogue par catégories. • Une fois les fiches prêtes, le data-merge génère un document par produit à partir d'un template (PDF, PNG…).": "• Link a database to a taxonomy to browse the catalogue by category. • Once the sheets are ready, the data merge generates one document per product from a template (PDF, PNG…).",
+  "Vue galerie": "Gallery view",
+  "Le basculeur tableau / galerie (en haut à droite de la table) affiche les produits en cartes : visuel (colonne image détectée automatiquement), titre, prix ou marque, et pastille de complétude. Cliquer une carte ouvre la fiche.": "The table / gallery toggle (top right of the table) shows products as cards: image (automatically detected image column), title, price or brand, and completeness dot. Clicking a card opens the sheet.",
+  "Complétude des fiches": "Sheet completeness",
+  "Chaque ligne de la table porte une pastille de complétude : verte (≥ 90 % des colonnes remplies), ambre (≥ 60 %) ou rouge. Survole-la pour voir les champs manquants.": "Each table row carries a completeness dot: green (≥ 90% of columns filled), amber (≥ 60%) or red. Hover it to see the missing fields.",
+  "L'export en série (data-merge) est détaillé dans la section Export multi-format. Le re-skin d'un visuel par les produits PIM est décrit dans la section L'éditeur.": "Batch export (data merge) is detailed in the Multi-format export section. Re-skinning a visual with PIM products is described in The editor section.",
+  "Taxonomies": "Taxonomies",
+  "Classifier produits et projets dans une hiérarchie navigable.": "Classify products and projects in a navigable hierarchy.",
+  "Créer une taxonomie": "Create a taxonomy",
+  "1. Va dans Taxonomies depuis le menu 2. Clique Nouvelle taxonomie 3. Donne-lui un nom (ex: Catégories produits) 4. Ajoute des niveaux : clique sur un nœud pour créer un enfant, glisse pour réorganiser 5.": "1. Go to Taxonomies from the menu 2. Click New taxonomy 3. Give it a name (e.g. Product categories) 4. Add levels: click a node to create a child, drag to reorder 5.",
+  "Navigation intelligente": "Smart navigation",
+  "Dès qu'une BDD source est active, le navigateur de gauche auto-déplie la branche correspondante et colorise tous les ancêtres du nœud sélectionné jusqu'à la racine. Désélectionner referme la branche.": "As soon as a source database is active, the left-hand browser auto-expands the matching branch and highlights every ancestor of the selected node up to the root. Deselecting collapses the branch again.",
+  "Associer des produits à une catégorie": "Assign products to a category",
+  "Dans le PIM, chaque produit (ligne) est rattaché à un nœud de la taxonomie. Deux voies : • Manuel — sélectionne une ligne → clique « Non classé — cliquer pour classer » au-dessus du panneau → choisis le nœud cible.": "In the PIM, each product (row) is attached to a taxonomy node. Two ways: • Manual — select a row → click \"Unclassified — click to classify\" above the panel → choose the target node.",
+  "Éditer l'arbre (nœuds)": "Edit the tree (nodes)",
+  "Survole une ligne de l'arbre pour faire apparaître ses actions : • + — ajoute un nœud enfant sous le nœud survolé • ✏ (crayon) — renomme le nœud sur place • 🔗 (chaîne) — lie des projets au nœud (visible sur les nœuds feuilles uniquement) •…": "Hover a row in the tree to reveal its actions: • + — adds a child node under the hovered node • ✏ (pencil) — renames the node in place • 🔗 (chain) — links projects to the node (shown on leaf nodes only) •…",
+  "Rechercher un nœud dans l'arbre": "Search for a node in the tree",
+  "Une barre « Rechercher un nœud… » filtre l'arbre dès 2 caractères. Chaque résultat affiche son libellé + son chemin complet (fil d'Ariane).": "A \"Search for a node…\" bar filters the tree from 2 characters. Each result shows its label + its full path (breadcrumb).",
+  "Compteurs de produits par nœud": "Product counters per node",
+  "Chaque nœud affiche combien de produits y sont rattachés, sur deux niveaux : • le compte direct (produits posés exactement sur ce nœud) ; • le compte cumulé, qui agrège le nœud et tous ses descendants — un nœud parent totalise donc tout ce…": "Each node shows how many products are attached to it, at two levels: • the direct count (products placed exactly on this node); • the cumulative count, which aggregates the node and all its descendants — so a parent node totals everything…",
+  "Classer les produits en lot (IA)": "Classify products in batch (AI)",
+  "Au lieu de ranger les lignes une par une, tu peux lancer une classification IA en lot : l'assistant lit le contenu de chaque ligne de la feuille active et propose le nœud le plus probable de la taxonomie cible.": "Instead of filing rows one by one, you can run a batch AI classification: the assistant reads the content of each row in the active sheet and suggests the most likely node in the target taxonomy.",
+  "Importer une taxonomie depuis un fichier": "Import a taxonomy from a file",
+  "Plutôt que de saisir l'arbre à la main, importe une nomenclature existante au format .md / .txt (indentation = hiérarchie), .csv ou .xlsx.": "Rather than typing the tree by hand, import an existing nomenclature in .md / .txt (indentation = hierarchy), .csv or .xlsx format.",
+  "Construire une taxonomie depuis les colonnes du PIM": "Build a taxonomy from PIM columns",
+  "Si ta feuille contient déjà des colonnes de catégorisation (ex. Famille, Sous-famille, Type), affecte à chacune un niveau (1, 2, 3…).": "If your sheet already has categorisation columns (e.g. Family, Sub-family, Type), assign each one a level (1, 2, 3…).",
+  "Plusieurs taxonomies & gestion globale": "Multiple taxonomies & overall management",
+  "Tu peux maintenir plusieurs taxonomies en parallèle (ex. une par axe d'analyse) et basculer de l'une à l'autre depuis la liste.": "You can maintain several taxonomies at once (e.g. one per analysis axis) and switch between them from the list.",
+  "Lier des projets (designs) à un nœud": "Link projects (designs) to a node",
+  "Au-delà des produits, un nœud feuille peut référencer des projets (designs de l'éditeur).": "Beyond products, a leaf node can reference projects (editor designs).",
+  "Auto-construction depuis le scraping": "Auto-build from scraping",
+  "Quand tu scrapes un site avec un breadcrumb (fil d'Ariane), IBS-Studio peut auto-construire une taxonomie à partir des chemins de catégorie rencontrés. Utile pour démarrer un PIM en miroir d'un site fournisseur.": "When you scrape a site with a breadcrumb, IBS-Studio can auto-build a taxonomy from the category paths it encounters. Handy for starting a PIM that mirrors a supplier's site.",
+  "Onglet Briefs": "Briefs tab",
+  "La page Taxonomies héberge aussi l'onglet Briefs : décris un besoin en langage naturel, l'IA pose des questions, compose un panier de produits du catalogue et structure un deck. Détail dans la section Briefs & génération IA.": "The Taxonomies page also hosts the Briefs tab: describe a need in natural language, the AI asks questions, assembles a basket of products from the catalogue and structures a deck. Details in the Briefs & AI generation section.",
+  "Cas d'usage": "Use cases",
+  "• Catalogue multi-marques : taxonomie principale par typologie produit (Outillage / Jardin / Électroménager) • Multi-langues : une taxonomie par langue, ou bien une taxonomie unique avec des labels multilingues sur les nœuds • Reporting : f…": "• Multi-brand catalogue: main taxonomy by product type (Tools / Garden / Appliances) • Multilingual: one taxonomy per language, or a single taxonomy with multilingual labels on the nodes • Reporting: f…",
+  "Briefs & génération IA": "Briefs & AI generation",
+  "Décrire en français ce qu'on veut, l'IA produit le contenu.": "Describe what you want in plain language, and the AI produces the content.",
+  "Modèles IA utilisés": "AI models used",
+  "IBS-Studio s'appuie par défaut sur : • Claude Opus (Anthropic) — questions dynamiques, composition du panier et structure du deck • Gemini (Google) — prompts d'images, mots-clés catalogue, génération d'images (Claude en secours) • Enrichiss…": "By default, IBS-Studio relies on: • Claude Opus (Anthropic) — dynamic questions, basket composition and deck structure • Gemini (Google) — image prompts, catalogue keywords, image generation (Claude as fallback) • Enrichm…",
+  "Où utiliser les briefs ?": "Where to use briefs?",
+  "Dans les Taxonomies : l'onglet Briefs de la page Taxonomies est le panneau dédié — décris ton besoin, l'IA pose des questions dynamiques, compose un panier de produits depuis le catalogue et structure un deck (avec prompts d'images).": "In Taxonomies: the Briefs tab on the Taxonomies page is the dedicated panel — describe your need, the AI asks dynamic questions, assembles a basket of products from the catalogue and structures a deck (with image prompts).",
+  "L'assistant brief en 5 étapes": "The brief assistant in 5 steps",
+  "Dans les Taxonomies, ouvrir un brief lance un assistant guidé qui transforme un besoin client en proposition commerciale livrable : 1.": "In Taxonomies, opening a brief launches a guided assistant that turns a client need into a deliverable sales proposal: 1.",
+  "Comment l'IA compose le panier": "How the AI assembles the basket",
+  "À la première arrivée sur l'étape Panier, la génération démarre automatiquement (panier vide + aucun journal antérieur).": "On first reaching the Basket step, generation starts automatically (empty basket + no prior log).",
+  "Éditer et exporter le panier": "Edit and export the basket",
+  "Le panier généré reste entièrement modifiable, ligne par ligne : quantités, ajout/retrait de produits, et surtout un prix appliqué qui peut surcharger le prix catalogue d'origine (les deux sont conservés).": "The generated basket stays fully editable, row by row: quantities, adding/removing products, and above all an applied price that can override the original catalogue price (both are kept).",
+  "Deck et export PPTX": "Deck and PPTX export",
+  "L'IA esquisse un deck composé de slides typées : couverture, contexte, grille de produits (layout 2×2 / 3×2 / 1×3), focus produit, budget (total + détail) et appel à l'action.": "The AI sketches a deck made of typed slides: cover, context, product grid (2×2 / 3×2 / 1×3 layout), product focus, budget (total + breakdown) and call to action.",
+  "Génération d'images": "Image generation",
+  "Le DAM intègre la génération d'images via Gemini (modèle image dit « Image IA »). Tu décris une image en français ou en anglais, l'IA produit un visuel utilisable directement dans tes templates.": "The DAM includes image generation via Gemini (the image model known as \"AI Image\"). You describe an image in any language and the AI produces a visual usable directly in your templates.",
+  "Limites des briefs": "Brief limitations",
+  "• L'IA peut halluciner des références ou caractéristiques. Toujours vérifier le résultat avant publication, surtout sur les chiffres et les normes. • Les briefs sont stateless : aucune mémoire conversationnelle.": "• The AI can hallucinate references or specifications. Always check the result before publishing, especially figures and standards. • Briefs are stateless: no conversational memory.",
+  "Scraping produits": "Product scraping",
+  "Récupérer des fiches produits depuis le web — sans saisie manuelle.": "Pull product sheets from the web — with no manual entry.",
+  "Quel mode utiliser ?": "Which mode to use?",
+  "Pour un fournisseur que tu vas scraper plus de 2 fois, crée un template. C'est la voie royale : 0 hallucination IA, 0 token consommé, réutilisable sur des centaines d'URLs.": "For a supplier you'll scrape more than twice, create a template. It's the best route: zero AI hallucination, zero tokens used, reusable across hundreds of URLs.",
+  "Créer un template de scraping": "Create a scraping template",
+  "1. Ouvre la page Templates scraping depuis le menu latéral 2. Clique Nouveau → entre un nom (ex: Nicoll), le domaine (nicoll.fr) et un pattern d'URL (. pour tout matcher) 3.": "1. Open the Scraping templates page from the side menu 2. Click New → enter a name (e.g. Nicoll), the domain (nicoll.fr) and a URL pattern (. to match everything) 3.",
+  "Onglet Recherche : « trouve-moi ça, là »": "Search tab: \"find me this, there\"",
+  "Pas d'URL sous la main ? Décris ce que tu cherches et où en langage naturel — « tondeuses Honda chez LeroyMerlin et Castorama ».": "No URL to hand? Describe what you're looking for and where in natural language — \"Honda mowers at LeroyMerlin and Castorama\".",
+  "Plusieurs sites/URLs d'un coup (Liste · Fichier · Google Sheet)": "Several sites/URLs at once (List · File · Google Sheet)",
+  "Les onglets Crawl et Map + Extract ne se limitent pas à une seule URL. Le sélecteur de source propose 4 modes : • 1 URL : le cas simple. • Liste : colle plusieurs URLs racines, une par ligne.": "The Crawl and Map + Extract tabs aren't limited to a single URL. The source selector offers 4 modes: • 1 URL: the simple case. • List: paste several root URLs, one per line.",
+  "Affiner un Crawl : limite, inclure/exclure (regex)": "Refine a Crawl: limit, include/exclude (regex)",
+  "Avant d'extraire les liens, tu peux cadrer la découverte : • Limite de pages (1 à 500, défaut 30) — par URL racine en mode multi. • Inclure (regex) : ne garder que les chemins qui matchent, ex. /produits/..": "Before extracting the links, you can frame the discovery: • Page limit (1 to 500, default 30) — per root URL in multi mode. • Include (regex): keep only paths that match, e.g. /produits/..",
+  "Suivre le coût et arrêter un run": "Track the cost and stop a run",
+  "• Chip de coût (en haut du modal) : il additionne en direct le dernier traitement et le cumul de la session, ventilé par source — LLM, Jina, Firecrawl, Bright Data.": "• Cost chip (top of the modal): it adds up live the last run and the session total, broken down by source — LLM, Jina, Firecrawl, Bright Data.",
+  "Que récupère « Produit complet » exactement ?": "What exactly does \"Full product\" retrieve?",
+  "Tous les onglets (Scrape / Crawl / Map+Extract / Recherche) finissent par le même moteur PIM (enrichProductCore), pour un résultat homogène quel que soit le chemin : • Specs au format KEY/VALUE (caractéristiques techniques structurées).": "All tabs (Scrape / Crawl / Map+Extract / Search) end with the same PIM engine (enrichProductCore), for a consistent result whichever path you take: • Specs in KEY/VALUE format (structured technical characteristics).",
+  "Scraper depuis la BDD (Map + Extract)": "Scrape from the database (Map + Extract)",
+  "Quand tu n'as pas encore de template, ou pour explorer un nouveau site : 1. PIM → ouvre une BDD (ou crée-la vide) 2. Bouton Scraper le web → onglet Map + Extract 3. Colle une URL catégorie → Mapper le site → liste des liens internes 4.": "When you don't have a template yet, or to explore a new site: 1. PIM → open a database (or create it empty) 2. Scrape the web button → Map + Extract tab 3. Paste a category URL → Map the site → list of internal links 4.",
+  "Limites à connaître": "Limitations to know about",
+  "• Sites e-commerce hostiles (Mr-Bricolage, Darty, Boulanger…) : DataDome/Akamai peut bloquer.": "• Hostile e-commerce sites (Mr-Bricolage, Darty, Boulanger…): DataDome/Akamai may block.",
+  "Tip pro : URL-only enrichissement": "Pro tip: URL-only enrichment",
+  "Tu peux importer un Excel avec uniquement une colonne URL (sans titre/marque/réf). Le pipeline détecte la colonne URL, retrouve le template par domaine, et lance l'enrichissement TEMPLATE en un clic.": "You can import an Excel with only a URL column (no title/brand/ref). The pipeline detects the URL column, finds the template by domain, and launches TEMPLATE enrichment in one click.",
+  "Templates scraping": "Scraping templates",
+  "Créer et maintenir les templates d'extraction par fournisseur : sélecteurs CSS, prompts et tests.": "Create and maintain per-supplier extraction templates: CSS selectors, prompts and tests.",
+  "L'éditeur de template": "The template editor",
+  "• Nouveau crée un template : nom, domaine (nicoll.fr), pattern d'URL (. pour tout matcher).": "• New creates a template: name, domain (nicoll.fr), URL pattern (. to match everything).",
+  "Trois niveaux de prompts IA": "Three levels of AI prompts",
+  "En complément des sélecteurs, trois prompts optionnels guident le post-traitement LLM : • Prompt global (du template) : instructions de reformatage pour tous les produits de ce template — ex.": "Alongside the selectors, three optional prompts guide LLM post-processing: • Global prompt (of the template): reformatting instructions for all products in this template — e.g.",
+  "Cinq types de sélecteurs": "Five types of selector",
+  "Au-delà du CSS classique, chaque champ accepte plusieurs stratégies testées dans l'ordre — on garde la première valeur non vide, ce qui rend le template robuste quand le fournisseur change son CSS : • CSS : sélecteur standard, lit le texte…": "Beyond classic CSS, each field accepts several strategies tried in order — the first non-empty value is kept, which makes the template robust when the supplier changes its CSS: • CSS: standard selector, reads the text…",
+  "Transformations & specs KEY/VALUE": "Transformations & KEY/VALUE specs",
+  "• Transformations par champ : trim, normalize-whitespace, uppercase/lowercase, parse-number, parse-price (isole le nombre d'un prix), absolutize-url (chemin relatif → URL absolue, posé automatiquement quand on capture un src/href), decode-h…": "• Per-field transformations: trim, normalize-whitespace, uppercase/lowercase, parse-number, parse-price (isolates the number from a price), absolutize-url (relative path → absolute URL, applied automatically when capturing a src/href), decode-h…",
+  "Pré-actions & capture via extension Chrome": "Pre-actions & capture via Chrome extension",
+  "• Pré-actions (onglet Avancé) : avant la capture du DOM, on peut enchaîner click (déplier un accordéon/onglet), scroll, wait, waitForSelector et acceptCookies (auto-détection du bandeau) — indispensable pour les fiches dont les specs sont d…": "• Pre-actions (Advanced tab): before capturing the DOM, you can chain click (expand an accordion/tab), scroll, wait, waitForSelector and acceptCookies (auto-detection of the banner) — essential for sheets whose specs are h…",
+  "Ordre des champs & alias de marque (niveau fournisseur)": "Field order & brand aliases (supplier level)",
+  "• Ordre des champs : réorganiser les champs par glisser-déposer fixe leur ordre d'affichage dans l'enrichissement — partagé entre tous les templates du même domaine.": "• Field order: reordering fields by drag-and-drop sets their display order in enrichment — shared across all templates of the same domain.",
+  "Statistiques d'usage": "Usage statistics",
+  "Chaque template trace son nombre d'applications et de succès — un template au taux de succès en chute signale un site qui a changé de structure (sélecteurs à re-pointer).": "Each template tracks its number of applications and successes — a template whose success rate drops signals a site that has changed structure (selectors to re-point).",
+  "La vue d'ensemble par fournisseur (templates groupés par domaine) est dans le Scraping Hub. Le mode d'emploi général du scraping (quel mode choisir, Map + Extract, limites anti-bot) est dans la section Scraping produits.": "The per-supplier overview (templates grouped by domain) is in the Scraping Hub. The general scraping guide (which mode to choose, Map + Extract, anti-bot limits) is in the Product scraping section.",
+  "Scraping Hub": "Scraping Hub",
+  "Le centre de contrôle du scraping : règles d'équipe, vue par fournisseur et debug des extractions.": "The scraping control centre: team rules, per-supplier view and extraction debugging.",
+  "Règles": "Rules",
+  "Les règles rédactionnelles de l'équipe (markdown) : conventions de nommage, formats de prix, langue des descriptions… Stockées dans Firestore et partagées par toute l'équipe, elles servent de référence commune aux enrichissements.": "The team's editorial rules (markdown): naming conventions, price formats, description language… Stored in Firestore and shared across the whole team, they serve as a common reference for enrichments.",
+  "Fournisseurs & Templates": "Suppliers & Templates",
+  "Vue d'ensemble de tous les templates groupés par domaine fournisseur : déplie un fournisseur pour voir ses templates et leur état, et ouvre directement l'éditeur de template d'un clic.": "An overview of all templates grouped by supplier domain: expand a supplier to see its templates and their status, and open the template editor directly with one click.",
+  "Debug Jina/LLM": "Jina/LLM debug",
+  "Le journal des dernières requêtes de scraping (30 max, rafraîchi toutes les 2 s) : pour chaque appel, le contenu renvoyé par Jina et la réponse du LLM.": "The log of the latest scraping requests (30 max, refreshed every 2 s): for each call, the content returned by Jina and the LLM's response.",
+  "Règles : éditeur markdown avec aperçu live": "Rules: markdown editor with live preview",
+  "L'onglet Règles est un éditeur côte à côte : tu écris du markdown à gauche, le rendu s'affiche en direct à droite (titres, listes, tableaux GFM).": "The Rules tab is a side-by-side editor: you write markdown on the left, the rendering shows live on the right (headings, lists, GFM tables).",
+  "Fournisseurs : prompt par domaine, champs et taux de réussite": "Suppliers: per-domain prompt, fields and success rate",
+  "Sous chaque domaine fournisseur, tu retrouves le prompt fournisseur s'il en existe un (encadré bleu, badge « prompt fournisseur défini ») : ces consignes propres au site s'appliquent à tous ses templates.": "Under each supplier domain, you find the supplier prompt if one exists (blue box, \"supplier prompt set\" badge): these site-specific instructions apply to all its templates.",
+  "Debug : un journal LOCAL à ce navigateur": "Debug: a log LOCAL to this browser",
+  "Le journal de debug est stocké en local sur ce poste (localStorage), pas dans Firestore : il n'est donc pas partagé avec l'équipe et ne reflète que tes propres enrichissements récents.": "The debug log is stored locally on this machine (localStorage), not in Firestore: so it isn't shared with the team and reflects only your own recent enrichments.",
+  "La création des templates se fait dans Templates scraping ; le mode d'emploi général (Scrape, Map + Extract, Crawl, limites anti-bot) est dans Scraping produits.": "Templates are created in Scraping templates; the general guide (Scrape, Map + Extract, Crawl, anti-bot limits) is in Product scraping.",
+  "Veille tarifaire": "Price monitoring",
+  "Suis les prix de tes concurrents : tableau de bord des écarts, positionnement et alertes.": "Track your competitors' prices: dashboard of gaps, positioning and alerts.",
+  "Comment ça se met en place": "How it's set up",
+  "Tout part d'un workflow contenant le node « Veille tarifaire » : 1. Une feuille de produits en entrée (ton catalogue : SKU/EAN, Nom, Marque, et ton prix). 2. Les sites concurrents à surveiller (un domaine par ligne, ex : amazon.fr). 3.": "It all starts from a workflow containing the \"Price monitoring\" node: 1. An input product sheet (your catalogue: SKU/EAN, Name, Brand, and your price). 2. The competitor sites to monitor (one domain per line, e.g. amazon.fr). 3.",
+  "Comment chaque produit est retrouvé chez un concurrent": "How each product is found at a competitor",
+  "Tu ne fournis que le domaine d'un concurrent — pas l'URL de chaque fiche. Pour chaque produit, le node lance une recherche web cantonnée à ce domaine (site:domaine) : d'abord par SKU (ou EAN à défaut), puis par Marque + Nom.": "You only provide a competitor's domain — not the URL of each page. For each product, the node runs a web search confined to that domain (site:domain): first by SKU (or EAN if none), then by Brand + Name.",
+  "Appariement automatique vs « à confirmer »": "Automatic matching vs \"to confirm\"",
+  "Avant de relever un prix, le node vérifie que la page décrit exactement ton produit. Si l'EAN relevé sur la page est identique à celui du produit, l'appariement est autoritaire (confiance 100 %, sans appel au modèle IA).": "Before reading a price, the node checks that the page describes your product exactly. If the EAN read on the page matches the product's, the match is authoritative (100% confidence, with no AI model call).",
+  "Valider les correspondances (Confirmer / Rejeter)": "Validate the matches (Confirm / Reject)",
+  "Le tableau de bord est en lecture seule pour les prix, mais propose une action : une file « À confirmer » liste les appariements incertains (avec le % de confiance et un lien vers la page).": "The dashboard is read-only for prices, but offers one action: a \"To confirm\" queue lists uncertain matches (with the confidence % and a link to the page).",
+  "Champs à scraper par site": "Fields to scrape per site",
+  "Dans « Sites concurrents », chaque ligne accepte une liste de champs après une barre verticale : amazon.fr | price, availability. Sans champs précisés, seul le prix (price) est relevé.": "In \"Competitor sites\", each row accepts a list of fields after a vertical bar: amazon.fr | price, availability. With no fields specified, only the price (price) is read.",
+  "Repérer un mauvais appariement": "Spot a bad match",
+  "Dans le comparatif, survole un prix : une infobulle « Relevé : … » affiche le nom et l'EAN réellement lus sur la page concurrente.": "In the comparison, hover a price: a \"Read: …\" tooltip shows the name and EAN actually read on the competitor's page.",
+  "Identifiant du suivi": "Tracking identifier",
+  "Le champ « Identifiant du suivi » du node mémorise, entre deux runs, les URLs concurrentes épinglées et l'historique des prix (30 derniers relevés par couple produit × site).": "The node's \"Tracking identifier\" field remembers, between runs, the pinned competitor URLs and the price history (last 30 readings per product × site pair).",
+  "Alertes positionnement & variation": "Positioning & variation alerts",
+  "Deux familles d'alertes : le positionnement (comparaison de ton prix — colonne « Mon prix » — à celui des concurrents) et la variation (un prix concurrent a changé depuis le dernier run, au-delà du seuil % configuré).": "Two families of alerts: positioning (comparing your price — the \"My price\" column — to competitors') and variation (a competitor price has changed since the last run, beyond the configured % threshold).",
+  "Comparer des prix entre sites": "Compare prices across sites",
+  "Pour un comparatif ponctuel prix A | prix B | écart entre plusieurs enseignes (sans alertes), utilise plutôt les nodes « Produits d'une page liste » + « Comparer les prix » dans un workflow.": "For a one-off price A | price B | gap comparison across several retailers (without alerts), use the \"Products from a list page\" + \"Compare prices\" nodes in a workflow instead.",
+  "Recevoir les alertes": "Receive the alerts",
+  "Branche le port changes du node sur « Envoyer via Telegram » (« 1 message par ligne ») pour être prévenu à chaque mouvement de prix — y compris quand le workflow tourne en cron serveur, navigateur fermé.": "Wire the node's changes port to \"Send via Telegram\" (\"1 message per row\") to be notified on every price move — including when the workflow runs via server cron, with the browser closed.",
+  "Le détail des nodes (« Veille tarifaire », « Veille prix », « Comparer les prix ») et de la planification cron serveur est dans la section Workflows ; l'envoi d'alertes est couvert par Telegram.": "The details of the nodes (\"Price monitoring\", \"Price watch\", \"Compare prices\") and of server cron scheduling are in the Workflows section; sending alerts is covered by Telegram.",
+  "Création studio": "Studio creation",
+  "Créez et gérez vos promotions retail : visuels, offres et déclinaisons multi-format.": "Create and manage your retail promotions: visuals, offers and multi-format adaptations.",
+  "Export multi-format": "Multi-format export",
+  "Sortir un PDF imprimeur, un IDML, un PPTX, un SVG, un PNG, un dossier web HTML ou un pack réseaux sociaux — unitaire ou en série.": "Output a print PDF, an IDML, a PPTX, an SVG, a PNG, an HTML web folder or a social media pack — single or in batch.",
+  "Formats disponibles": "Available formats",
+  "Tous les exports sont fidèles à la maquette en cours dans l'éditeur. Le data-merge actif influence le contenu mais pas le format.": "All exports are faithful to the layout currently in the editor. The active data merge affects the content but not the format.",
+  "Export PDF avec options imprimeur": "PDF export with print options",
+  "1. Règle d'abord le fond perdu et les repères dans le panneau Impression de l'éditeur (c'est lui qui fait foi — la modale d'export n'a pas de champ bleed) 2. Bouton Exporter → choisis PDF 3.": "1. First set the bleed and the marks in the editor's Print panel (that's the source of truth — the export dialog has no bleed field) 2. Export button → choose PDF 3.",
+  "Export batch (plusieurs fichiers)": "Batch export (multiple files)",
+  "Quand le data-merge est actif, l'export génère une variante par ligne de la BDD : 1. Ouvre le panneau Data Merge → vérifie le mapping placeholders ↔ colonnes 2.": "When the data merge is active, the export generates one variant per database row: 1. Open the Data Merge panel → check the placeholder ↔ column mapping 2.",
+  "Export IDML (retour InDesign)": "IDML export (back to InDesign)",
+  "Quand tu veux que ta graphiste finisse à la main dans InDesign : 1. Configure ta maquette + data-merge dans IBS-Studio 2. Export IDML → IBS-Studio reconstruit un fichier IDML standard avec les valeurs déjà mergées.": "When you want your designer to finish by hand in InDesign: 1. Set up your layout + data merge in IBS-Studio 2. IDML export → IBS-Studio rebuilds a standard IDML file with the values already merged.",
+  "Pages déclinées vs Pack social — quelle différence ?": "Adapted pages vs Social pack — what's the difference?",
+  "Les deux partent des mêmes quatre ratios (post carré 1080×1080, story/reel 1080×1920, paysage 1920×1080, bannière 1500×500), mais ne produisent pas la même chose : « Pages déclinées » envoie à l'IA un aperçu de la page plus la liste de ses…": "Both start from the same four ratios (square post 1080×1080, story/reel 1080×1920, landscape 1920×1080, banner 1500×500), but produce different things: \"Adapted pages\" sends the AI a preview of the page plus the list of its…",
+  "Ce que contient vraiment chaque fichier": "What each file really contains",
+  "• PDF : une image haute résolution du canvas (rendu ×2, qualité maximale) plus une couche de texte invisible sélectionnable/cherchable posée sur chaque bloc de texte. Le PDF reste donc « plat » visuellement mais le texte est copiable.": "• PDF: a high-resolution image of the canvas (×2 render, maximum quality) plus an invisible selectable/searchable text layer placed over each text block. So the PDF stays visually \"flat\" but the text is copyable.",
+  "SVG : compatibilité Illustrator / Figma": "SVG: Illustrator / Figma compatibility",
+  "L'export SVG ne se contente pas du toSVG() brut de Fabric, il le réécrit pour les éditeurs vectoriels exigeants : • les images (DAM, Unsplash, IDML lié) sont converties en data: URL le temps de l'export — Illustrator n'essaie plus de résoud…": "The SVG export doesn't just use Fabric's raw toSVG(), it rewrites it for demanding vector editors: • images (DAM, Unsplash, linked IDML) are converted to data: URLs for the export — Illustrator no longer tries to resolv…",
+  "Bonnes pratiques": "Best practices",
+  "• Toujours faire un export test sur 1 ligne avant de lancer un batch de 200 — tu détectes les problèmes de fonts ou d'images manquantes plus vite • Vérifier les fonts : si un fallback Arial s'est appliqué, ton imprimeur le verra.": "• Always run a test export on 1 row before launching a batch of 200 — you'll catch font or missing-image issues faster • Check the fonts: if an Arial fallback was applied, your printer will notice.",
+  "Workflows": "Workflows",
+  "Enchaîner les fonctions de l'app en pipelines visuels — façon Zapier / Make.": "Chain the app's functions into visual pipelines — Zapier / Make style.",
+  "Deux façons de construire": "Two ways to build",
+  "• Manuel : glisse les nodes depuis la palette (à gauche), relie-les, configure chacun (panneau de droite), puis Run.": "• Manual: drag the nodes from the palette (on the left), connect them, configure each one (right-hand panel), then Run.",
+  "Catalogue des nodes": "Node catalogue",
+  "Déplie une catégorie pour voir ses nodes.": "Expand a category to see its nodes.",
+  "Import (sources)": "Import (sources)",
+  "Enrichissement": "Enrichment",
+  "Transformation": "Transformation",
+  "Sauvegarde": "Save",
+  "Logique": "Logic",
+  "Communication & contrôle": "Communication & control",
+  "Node « Web Scraping » unifié": "Unified \"Web Scraping\" node",
+  "Un seul node Web Scraping couvre toutes les façons de ramener des données du web, via un sélecteur de Mode : • Scrape — une ou plusieurs URLs → champs produit (Jina + IA). • Liste — pages catégorie → liste de produits.": "A single Web Scraping node covers every way of bringing data back from the web, via a Mode selector: • Scrape — one or more URLs → product fields (Jina + AI). • List — category pages → list of products.",
+  "Node « Graphique »": "\"Chart\" node",
+  "Le node « Graphique » transforme un tableau en image de graphe (PNG, via chart.js). Choisis le type — Barres, Lignes, Aire, Camembert, Anneau — la colonne d'axe X, la ou les colonnes de valeurs et une agrégation facultative.": "The \"Chart\" node turns a table into a chart image (PNG, via chart.js). Choose the type — Bar, Line, Area, Pie, Doughnut — the X-axis column, the value column(s) and an optional aggregation.",
+  "Écran « Résultat »": "\"Result\" screen",
+  "Le bouton « Résultat » dans l'en-tête de l'éditeur ouvre une page dédiée (/workflows/:id/result) qui visualise le dernier run sous la forme la plus pertinente : Tableau de bord, Tableau, Graphique, Galerie (images), Document ou Données (JSO…": "The \"Result\" button in the editor header opens a dedicated page (/workflows/:id/result) that visualises the last run in the most relevant form: Dashboard, Table, Chart, Gallery (images), Document or Data (JSO…",
+  "Mes modèles (modèles personnalisés)": "My templates (custom templates)",
+  "Au-delà de la galerie prête à l'emploi, tu peux enregistrer ton propre montage : le bouton « Modèle » dans l'éditeur sauvegarde le graphe courant comme modèle réutilisable (création ou mise à jour).": "Beyond the ready-made gallery, you can save your own setup: the \"Template\" button in the editor saves the current graph as a reusable template (create or update).",
+  "Arrêter un run serveur (STOP)": "Stop a server run (STOP)",
+  "Un workflow lancé par le cron ou un webhook tourne sans navigateur. Le panneau d'état du Cron affiche alors un bouton rouge STOP : il pose un drapeau d'abandon que l'exécuteur serveur interroge en continu et le run s'arrête sous quelques se…": "A workflow launched by the cron or a webhook runs without a browser. The Cron status panel then shows a red STOP button: it sets an abort flag that the server executor polls continuously, and the run stops within a few se…",
+  "Exemples de pipelines": "Pipeline examples",
+  "• Veille : Recherche web → Export Excel → Envoyer via Gmail. • Réponse sourcée : Question web (IA) → Envoyer via Telegram. • Fiches produit : Scrape URL → Enrichissement → Save PIM → Export PPTX.": "• Monitoring: Web search → Excel export → Send via Gmail. • Sourced answer: Web question (AI) → Send via Telegram. • Product sheets: Scrape URL → Enrichment → Save PIM → PPTX export.",
+  "Piloter depuis Telegram": "Control from Telegram",
+  "Les workflows se déclenchent aussi à distance : /flow <demande> génère et exécute un workflow, /run <nom> rejoue un workflow sauvegardé — et le fichier produit revient sur Telegram.": "Workflows can also be triggered remotely: /flow <request> generates and runs a workflow, /run <name> replays a saved workflow — and the resulting file comes back on Telegram.",
+  "Modèles prêts à l'emploi": "Ready-made templates",
+  "La page Workflows propose une galerie « Démarrer depuis un modèle » : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel.": "The Workflows page offers a \"Start from a template\" gallery: Scrape a site → PIM, Daily monitoring → Telegram (cron), Scrape → approval ✅ → PIM, Web search → Excel.",
+  "Approbation humaine (Telegram)": "Human approval (Telegram)",
+  "Le node « Approbation Telegram » met le run en pause et envoie la question sur Telegram avec des boutons ✅ Approuver / ❌ Refuser.": "The \"Telegram approval\" node pauses the run and sends the question on Telegram with ✅ Approve / ❌ Reject buttons.",
+  "Veille prix": "Price watch",
+  "Le node « Veille prix » mémorise les prix du run précédent (par identifiant de suivi) et n'émet le port changes que si un prix a varié au-delà du seuil — les lignes émises portent ancienprix, nouveauprix et variationpct, prêtes pour un mess…": "The \"Price watch\" node remembers the previous run's prices (by tracking identifier) and only emits the changes port if a price has moved beyond the threshold — the emitted rows carry ancienprix, nouveauprix and variationpct, ready for a mess…",
+  "Planifier (cron serveur)": "Schedule (server cron)",
+  "Le node « Cron » exécute le workflow côté serveur, navigateur fermé : cadence à la minute, heure, jour, semaine ou mois, heure précise HH:MM, jour de semaine ciblé ou « Tous les jours » — fuseau Europe/Paris, granularité minimale 1 minute.": "The \"Cron\" node runs the workflow server-side, browser closed: cadence by minute, hour, day, week or month, precise HH:MM time, targeted weekday or \"Every day\" — Europe/Paris timezone, minimum granularity 1 minute.",
+  "Webhook entrant (déclenchement externe)": "Incoming webhook (external trigger)",
+  "Le bouton Webhook dans l'en-tête de l'éditeur génère une URL secrète pour déclencher ce workflow depuis l'extérieur (Zapier, Make, un ERP, un simple curl) : L'exécution se fait côté serveur (mêmes nodes que le cron) et apparaît dans l'histo…": "The Webhook button in the editor header generates a secret URL to trigger this workflow from outside (Zapier, Make, an ERP, a plain curl): execution runs server-side (same nodes as the cron) and appears in the histor…",
+  "Débugger pas à pas": "Debug step by step",
+  "Le bouton « Pas à pas » (à côté de Run) exécute le workflow node par node : le run se met en pause avant chaque étape — le bouton ambre « Étape : <node> » dans l'en-tête exécute la suivante.": "The \"Step\" button (next to Run) runs the workflow node by node: the run pauses before each step — the amber \"Step: <node>\" button in the header runs the next one.",
+  "Telegram": "Telegram",
+  "Piloter IBS-Studio depuis Telegram : chat IA avec accès web, génération et exécution de workflows.": "Control IBS-Studio from Telegram: AI chat with web access, generating and running workflows.",
+  "Mise en route": "Getting started",
+  "1. Paramètres → Connecteurs : colle le bot token (obtenu via BotFather) et ton chat ID. 2. Ouvre l'onglet Telegram dans le menu latéral : c'est lui qui fait tourner le « worker » qui traite les messages. 3.": "1. Settings → Connectors: paste the bot token (obtained via BotFather) and your chat ID. 2. Open the Telegram tab in the side menu: that's what runs the \"worker\" that processes messages. 3.",
+  "(texte libre) — Chat IA avec accès web": "(free text) — AI Chat with web access",
+  "Le bot répond via le LLM. Si l'info demandée est récente (score, actu, prix) ou si tu colles une URL, il cherche sur le web et lit les pages avant de répondre. La réponse cite ses sources et le modèle utilisé.": "The bot replies via the LLM. If the requested information is recent (score, news, price) or you paste a URL, it searches the web and reads the pages before answering. The reply cites its sources and the model used.",
+  "/flow <demande> — Générer + exécuter un workflow": "/flow <request> — Generate + run a workflow",
+  "Génère un workflow par IA depuis ta demande, l'exécute, et te renvoie le fichier produit. Ex : /flow scrape https://exemple.com/categorie et exporte un Excel.": "Generates a workflow by AI from your request, runs it, and sends you the resulting file. E.g.: /flow scrape https://exemple.com/categorie and export an Excel.",
+  "/run <nom> [texte] — Exécuter un workflow sauvegardé": "/run <name> [text] — Run a saved workflow",
+  "Exécute un workflow déjà sauvegardé (par son nom) ; le texte éventuel sert d'entrée. /run seul liste les workflows disponibles.": "Runs an already-saved workflow (by its name); any text serves as input. /run alone lists the available workflows.",
+  "/clear — Vider la boîte": "/clear — Empty the inbox",
+  "Vide la boîte de réception — côté app ET côté Telegram (messages de moins de 48 h). Alias : /purge, /vider.": "Empties the inbox — on the app side AND the Telegram side (messages under 48 h old). Aliases: /purge, /vider.",
+  "/start — (ignorée)": "/start — (ignored)",
+  "Commande de service Telegram — ignorée, elle n'encombre pas la boîte.": "A Telegram service command — ignored, it doesn't clutter the inbox.",
+  "Bon à savoir": "Good to know",
+  "• Conversation bidirectionnelle : messages entrants ET sortants sont journalisés dans l'onglet Telegram. • Fichiers : un workflow qui produit un export (Excel, PDF, PPTX…) renvoie le fichier en pièce jointe ; sinon un résumé.": "• Two-way conversation: incoming AND outgoing messages are logged in the Telegram tab. • Files: a workflow that produces an export (Excel, PDF, PPTX…) returns the file as an attachment; otherwise a summary.",
+  "Réponses sans navigateur (répondeur serveur)": "Replies without a browser (server responder)",
+  "Plus besoin d'avoir l'app ouverte : un répondeur serveur traite vos messages dès leur arrivée — • Questions : réponse LLM immédiate, avec recherche web automatique (Jina) quand la question l'exige (prix, actualité, contenu d'une URL) — sour…": "No need to keep the app open: a server responder handles your messages as soon as they arrive — • Questions: immediate LLM answer, with automatic web search (Jina) when the question requires it (price, news, URL content) — sour…",
+  "Approbation humaine dans un workflow": "Human approval in a workflow",
+  "Le node « Approbation Telegram » (catégorie Communication dans l'éditeur de workflow) met le run en pause et demande une validation à un humain, directement dans la messagerie : • Le bot envoie ta question avec deux boutons inline ✅ Approuv…": "The \"Telegram approval\" node (Communication category in the workflow editor) pauses the run and asks a human for validation, directly in the messaging app: • The bot sends your question with two inline buttons ✅ Approv…",
+  "Sécurité : secret + allowlist": "Security: secret + allowlist",
+  "Le webhook entrant n'accepte un message que si deux conditions sont réunies : • Le secret token envoyé par Telegram correspond au webhookSecret enregistré côté serveur (toute requête sans le bon en-tête X-Telegram-Bot-Api-Secret-Token est r…": "The incoming webhook only accepts a message if two conditions are met: • The secret token sent by Telegram matches the webhookSecret stored on the server (any request without the correct X-Telegram-Bot-Api-Secret-Token header is r…",
+  "Pourquoi jamais de double réponse": "Why there's never a double reply",
+  "À l'arrivée d'un message, le répondeur serveur tente un claim transactionnel : il fait passer la fiche de pending à processing (et s'attribue workerId: 'server') en une seule transaction.": "When a message arrives, the server responder attempts a transactional claim: it moves the record from pending to processing (and assigns itself workerId: 'server') in a single transaction.",
+  "Digest quotidien": "Daily digest",
+  "Dans Réglages → Connecteurs → Telegram, activez le digest quotidien : chaque matin à 08:00 (heure de Paris), le bot envoie un résumé des dernières 24 h — workflows réussis/en échec (avec les noms) et messages en attente de traitement.": "In Settings → Connectors → Telegram, enable the daily digest: every morning at 08:00 (Paris time), the bot sends a summary of the last 24 h — successful/failed workflows (with names) and messages awaiting processing.",
+  "/flow et /run s'appuient sur le module Workflows : la génération par IA et l'exécution sont les mêmes que dans l'éditeur de workflow.": "/flow and /run rely on the Workflows module: AI generation and execution are the same as in the workflow editor.",
+  "Chat IA": "AI Chat",
+  "Un assistant conversationnel intégré : questions, rédaction, code, génération d'images.": "A built-in conversational assistant: questions, writing, code, image generation.",
+  "Conversation multitour": "Multi-turn conversation",
+  "Le chat garde le fil de la conversation pendant la session (les 30 derniers messages sont transmis au modèle — au-delà, le début du fil sort du contexte).": "The chat keeps the conversation thread during the session (the last 30 messages are sent to the model — beyond that, the start of the thread drops out of context).",
+  "Pièces jointes": "Attachments",
+  "Joins des images (PNG, JPEG, WebP, GIF) pour les faire analyser — analyse possible avec les modèles multimodaux (Claude, Gemini, OpenAI) ; les autres fournisseurs ignorent les images.": "Attach images (PNG, JPEG, WebP, GIF) to have them analysed — analysis is possible with multimodal models (Claude, Gemini, OpenAI); other providers ignore images.",
+  "Choisis la catégorie Image : le champ de saisie passe en mode génération (moteur Image IA). Joins des images de référence pour les éditer. Sous chaque image générée : Télécharger ou Sauvegarder dans le DAM (elle rejoint « Mes images »).": "Choose the Image category: the input field switches to generation mode (AI Image engine). Attach reference images to edit them. Below each generated image: Download or Save to the DAM (it joins \"My images\").",
+  "Saisie vocale": "Voice input",
+  "Dicte ta demande au micro : la parole est transcrite en texte dans la zone de saisie.": "Dictate your request to the mic: your speech is transcribed to text in the input field.",
+  "Des catégories (Écrire, Apprendre, Code, Vie quotidienne, Idées, Image, Mes prompts) proposent des prompts prêts à l'emploi.": "Categories (Write, Learn, Code, Everyday life, Ideas, Image, My prompts) offer ready-made prompts.",
+  "Réutiliser et dupliquer un prompt": "Reuse and duplicate a prompt",
+  "Le menu ⋯ de chaque prompt permet de le renommer / éditer, le dupliquer (crée une copie « titre (copie) » à adapter) ou le supprimer. Chaque usage est comptabilisé : les prompts les plus sollicités et les favoris sont mis en avant.": "The ⋯ menu on each prompt lets you rename / edit it, duplicate it (creates a \"title (copy)\" to adapt) or delete it. Each use is counted: the most-used prompts and favourites are highlighted.",
+  "Choix du modèle": "Model choice",
+  "Le Chat utilise une cascade de modèles : si le modèle principal échoue, le suivant prend le relais automatiquement.": "The Chat uses a model cascade: if the primary model fails, the next one takes over automatically.",
+  "Changer de modèle à la volée": "Switch model on the fly",
+  "Le badge du modèle, à côté du bouton d'envoi, est cliquable : il déplie la liste de tous les modèles de la cascade (regroupés par fournisseur, avec leur tarif indicatif entrée / sortie).": "The model badge, next to the send button, is clickable: it expands the list of all models in the cascade (grouped by provider, with their indicative input / output pricing).",
+  "À ne pas confondre": "Not to be confused",
+  "• Le Chat IA est conversationnel : il n'accède pas au web et n'agit pas sur l'app (il ne crée pas de projets, ne scrape pas, ne lance pas de workflows).": "• The AI Chat is conversational: it doesn't access the web and doesn't act on the app (it doesn't create projects, doesn't scrape, doesn't launch workflows).",
+  "Utilisateurs & rôles": "Users & roles",
+  "Approuver les comptes, attribuer des rôles et régler finement les permissions. Réservé au propriétaire.": "Approve accounts, assign roles and fine-tune permissions. Owner only.",
+  "Onboarding d'un nouvel utilisateur": "Onboarding a new user",
+  "1. La personne se connecte via Google : son compte est d'abord « en attente » (aucun accès). 2. Dans l'onglet Utilisateurs, tu lui attribues un rôle. 3. À sa prochaine ouverture, l'app n'affiche que les modules autorisés par son rôle.": "1. The person signs in via Google: their account is first \"pending\" (no access). 2. In the Users tab, you assign them a role. 3. Next time they open the app, it only shows the modules allowed by their role.",
+  "Attribuer un rôle": "Assign a role",
+  "Choisis le rôle de chaque utilisateur dans une liste déroulante. Le rôle définit l'ensemble de base de ses permissions.": "Choose each user's role from a dropdown. The role defines the base set of their permissions.",
+  "Surcharges granulaires": "Granular overrides",
+  "Au-delà du rôle, tu peux accorder ou retirer des permissions individuelles à un utilisateur précis (ex. lui ouvrir l'export sans changer son rôle). Réinitialiser les surcharges efface ces ajustements.": "Beyond the role, you can grant or remove individual permissions for a specific user (e.g. open export for them without changing their role). Resetting the overrides clears these adjustments.",
+  "Bloquer / réactiver": "Block / reactivate",
+  "Bloquer suspend totalement un compte sans le supprimer : plus aucun accès, même avec un rôle. Réactiver lui rend ses droits.": "Blocking fully suspends an account without deleting it: no access at all, even with a role. Reactivating restores its rights.",
+  "Onglet « Rôles »": "\"Roles\" tab",
+  "Crée et édite les rôles de l'équipe via une matrice de permissions par module. Trois vues : Cartes (par module), Arbre (hiérarchie) et Carte mentale (graphe).": "Create and edit the team's roles via a per-module permission matrix. Three views: Cards (by module), Tree (hierarchy) and Mind map (graph).",
+  "Les rôles sont entièrement personnalisés": "Roles are entirely custom",
+  "Aucun rôle n'est livré par défaut : tu crées toi-même les rôles dont l'équipe a besoin (un nom + une sélection de permissions), tu les renommes et les supprimes librement.": "No role ships by default: you create the roles your team needs yourself (a name + a selection of permissions), and rename and delete them freely.",
+  "Modules couverts par les permissions": "Modules covered by permissions",
+  "Bibliothèque, Import (par format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, Chat IA, Telegram et Paramètres — chacun avec ses actions (créer, éditer, supprimer, exporter, exécuter…).": "Library, Import (by format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, AI Chat, Telegram and Settings — each with its actions (create, edit, delete, export, run…).",
+  "Règles de sécurité": "Security rules",
+  "• Les permissions effectives = rôle + permissions accordées − permissions retirées. • Le propriétaire a un accès total non modifiable.": "• Effective permissions = role + granted permissions − removed permissions. • The owner has full, non-editable access.",
+  "Journal d'audit & Mon activité": "Audit log & My activity",
+  "Qui a fait quoi, quand. Chaque utilisateur retrouve ses propres actions dans « Mon activité » ; l'administrateur voit tout dans le « Journal », filtrable et avec l'avant/après de chaque changement.": "Who did what, when. Each user finds their own actions in \"My activity\"; the administrator sees everything in the \"Log\", filterable and with the before/after of each change.",
+  "Les filtres : QUI / QUOI / QUAND": "The filters: WHO / WHAT / WHEN",
+  "• Type : le module concerné (Accès, Données, Export, Workflows, IA, Réglages…). • Quoi : l'action précise (la liste se restreint au type choisi). • Qui (Journal admin uniquement) : l'utilisateur. • Quand : une plage de dates (Du / au).": "• Type: the module involved (Access, Data, Export, Workflows, AI, Settings…). • What: the precise action (the list narrows to the chosen type). • Who (admin Log only): the user. • When: a date range (From / to).",
+  "Ce qui est journalisé": "What is logged",
+  "• Accès / rôles : connexion, attribution/retrait de rôle, blocage/déblocage, permission accordée/révoquée, rôle modifié, suppression d'utilisateur.": "• Access / roles: sign-in, role assignment/removal, block/unblock, permission granted/revoked, role modified, user deletion.",
+  "Vider son historique": "Clear your history",
+  "Dans Mon activité, le bouton « Vider l'historique » (avec confirmation) supprime tes propres entrées. Chaque utilisateur ne peut effacer que les siennes ; l'administrateur peut tout supprimer.": "In My activity, the \"Clear history\" button (with confirmation) deletes your own entries. Each user can only erase their own; the administrator can delete everything.",
+  "Je ne vois pas l'avant/après sur d'anciennes lignes": "I can't see the before/after on old rows",
+  "Le détail (avant → après, ou la taille) n'apparaît que sur les actions postérieures à l'ajout de la fonctionnalité. Les entrées sont immuables : elles ne se complètent pas rétroactivement.": "The detail (before → after, or the size) only appears on actions later than when the feature was added. Entries are immutable: they aren't filled in retroactively.",
+  "Pourquoi deux « DataSet enregistré » de suite ?": "Why two \"DataSet saved\" in a row?",
+  "Chaque sauvegarde de base crée une entrée. Si la taille (lignes/colonnes) n'a pas changé, la ligne montre seulement la taille ; si tu as ajouté/supprimé des lignes, elle montre l'avant → après.": "Each database save creates an entry. If the size (rows/columns) hasn't changed, the row shows only the size; if you added/removed rows, it shows the before → after.",
+  "Qui peut voir le Journal complet ?": "Who can see the full Log?",
+  "Seul l'administrateur (ou le propriétaire) voit le Journal de tous les utilisateurs, avec le filtre Qui. Un utilisateur standard ne voit que ses actions, dans Réglages → Mon activité.": "Only the administrator (or the owner) sees the Log of all users, with the Who filter. A standard user only sees their own actions, in Settings → My activity.",
+  "Paramètres": "Settings",
+  "Clés API et modèles IA, connecteurs (Drive, Telegram, scraping), cookies, statistiques d'usage.": "API keys and AI models, connectors (Drive, Telegram, scraping), cookies, usage statistics.",
+  "Onglet Profil — identité et apparence": "Profile tab — identity and appearance",
+  "• Ton profil (nom, e-mail du compte Google). • La section Apparence bascule le thème : Clair, Sombre (défaut) ou Système. Le choix est mémorisé sur ton compte et te suit d'un poste à l'autre. Le thème se bascule aussi depuis la palette ⌘K.": "• Your profile (name, Google account email). • The Appearance section switches the theme: Light, Dark (default) or System. The choice is stored on your account and follows you from one machine to another. The theme can also be switched from the ⌘K palette.",
+  "Onglet IA — clés et modèles": "AI tab — keys and models",
+  "• Renseigne les clés API de chaque fournisseur (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter) et teste-les d'un clic. • Choisis le modèle de chaque fournisseur.": "• Enter each provider's API key (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter) and test them with one click. • Choose each provider's model.",
+  "Budgets IA et proxy serveur": "AI budgets and server proxy",
+  "Les appels LLM passent par un proxy serveur : la requête part sans ta clé API, le serveur ajoute la clé (lue sur ton profil) et applique ton budget mensuel.": "LLM calls go through a server proxy: the request leaves without your API key, the server adds the key (read from your profile) and applies your monthly budget.",
+  "Colle le bot token (via BotFather) et ton chat ID pour piloter l'app depuis Telegram. C'est ici que le bot du module Telegram puise sa configuration.": "Paste the bot token (via BotFather) and your chat ID to control the app from Telegram. This is where the Telegram module's bot draws its configuration.",
+  "Connecte ton Google Drive (OAuth) pour que les workflows et le node save-dam y déposent des fichiers.": "Connect your Google Drive (OAuth) so workflows and the save-dam node deposit files there.",
+  "Google — accès serveur (Drive + Gmail)": "Google — server access (Drive + Gmail)",
+  "Autorise une seule fois (bouton « Connecter ») le serveur à agir pour toi quand l'app est fermée : les workflows planifiés (cron), le webhook et /flow sur Telegram peuvent alors créer des Google Sheets dans ton Drive et envoyer des Gmail.": "Authorise once (\"Connect\" button) the server to act on your behalf when the app is closed: scheduled workflows (cron), the webhook and /flow on Telegram can then create Google Sheets in your Drive and send Gmails.",
+  "Scraping (Bright Data, Jina, Firecrawl, Remove.bg)": "Scraping (Bright Data, Jina, Firecrawl, Remove.bg)",
+  "Tokens des services de scraping et de traitement d'image. Bright Data propose le Web Unlocker et, en escalade, le Scraping Browser (tier 2) pour les sites les plus protégés.": "Tokens for the scraping and image-processing services. Bright Data offers the Web Unlocker and, as an escalation, the Scraping Browser (tier 2) for the most protected sites.",
+  "Onglet Cookies": "Cookies tab",
+  "Gère les cookies de session pour scraper des sites B2B derrière login. Colle les cookies copiés depuis ton navigateur ; ils sont injectés dans les requêtes de scraping. Leur validité est limitée dans le temps (à re-coller régulièrement).": "Manage session cookies to scrape B2B sites behind a login. Paste the cookies copied from your browser; they're injected into scraping requests. Their validity is time-limited (re-paste them regularly).",
+  "Onglet Données — schéma Firestore (réservé au propriétaire)": "Data tab — Firestore schema (owner only)",
+  "Un diagramme entité-relation (ERD) de la base : chaque collection Firestore est une table affichant tous ses champs, ses clés PK/FK et ses relations (avec cardinalités).": "An entity-relationship diagram (ERD) of the database: each Firestore collection is a table showing all its fields, its PK/FK keys and its relationships (with cardinalities).",
+  "Onglets Statistiques & Firebase": "Statistics & Firebase tabs",
+  "• Statistiques : nombre de projets, exports du mois, stockage Firestore (barre de progression), coût IA estimé en EUR par fournisseur avec les tokens entrants/sortants consommés, et le suivi des requêtes Bright Data (quota scraping).": "• Statistics: number of projects, exports this month, Firestore storage (progress bar), estimated AI cost in EUR per provider with the input/output tokens used, and the tracking of Bright Data requests (scraping quota).",
+  "Qui voit quoi": "Who sees what",
+  "L'onglet Firebase est réservé au propriétaire. Les onglets Connecteurs et Cookies dépendent des permissions accordées dans Utilisateurs & rôles. Profil, IA et Statistiques restent accessibles à tous.": "The Firebase tab is owner only. The Connectors and Cookies tabs depend on the permissions granted in Users & roles. Profile, AI and Statistics stay accessible to everyone.",
+  "Explorateur de données": "Data explorer",
+  "Cartographie Firestore : schéma relationnel (ERD) des collections, clés et cardinalités, et inspection des enregistrements en direct. Réservé au propriétaire.": "Firestore mapping: relational schema (ERD) of collections, keys and cardinalities, and live inspection of records. Owner only.",
+  "Le problème": "The problem",
+  "Une base qui grandit devient opaque : on ne sait plus quelles collections existent, comment elles se relient, ni ce qu'elles contiennent réellement — sans ouvrir la console Firebase.": "A growing database becomes opaque: you no longer know which collections exist, how they relate, or what they actually contain — without opening the Firebase console.",
+  "Modèle de données (ERD)": "Data model (ERD)",
+  "Chaque collection est une table avec ses champs, sa clé primaire (PK) et ses clés étrangères (FK) ; les relations métier sont tracées avec leur cardinalité (1:1, 1:N).": "Each collection is a table with its fields, its primary key (PK) and its foreign keys (FK); business relationships are drawn with their cardinality (1:1, 1:N).",
+  "Données live": "Live data",
+  "Un double-clic sur une table ouvre le contenu réel de la collection, mis à jour en temps réel (onSnapshot). Pour les bases Excel, un sélecteur liste chaque base et n'affiche que ses colonnes utiles.": "A double-click on a table opens the real content of the collection, updated in real time (onSnapshot). For Excel databases, a selector lists each database and shows only its useful columns.",
+  "Disposition persistée": "Persisted layout",
+  "Déplacez les tables par glisser : leur position est enregistrée sur votre profil (Firestore) et restaurée à la prochaine ouverture. Composez la cartographie qui correspond à votre lecture de la donnée.": "Move the tables by dragging: their position is saved on your profile (Firestore) and restored next time. Compose the map that matches your reading of the data.",
+  "Étendre le schéma (collections / relations)": "Extend the schema (collections / relations)",
+  "Le diagramme se construit à partir de TABLES et RELATIONS dans features/data-graph/firestoreSchema.ts. Ajouter une collection ou un lien = compléter ces deux listes ; le rendu et les cardinalités suivent automatiquement.": "The diagram is built from TABLES and RELATIONS in features/data-graph/firestoreSchema.ts. Adding a collection or a link = completing these two lists; the rendering and cardinalities follow automatically.",
+  "Pourquoi propriétaire uniquement": "Why owner only",
+  "L'explorateur expose la structure et les données brutes de tout l'espace de travail (tous comptes confondus). L'onglet Données des Paramètres — comme Firebase — est donc réservé au propriétaire.": "The explorer exposes the structure and raw data of the entire workspace (all accounts combined). The Data tab in Settings — like Firebase — is therefore owner only.",
+  "Une URL produit → lecture de la page, extraction des champs vers le PIM et des images vers le DAM.": "A product URL → reading the page, extracting the fields into the PIM and the images into the DAM.",
+  "Édition réelle d'une affiche — modification du prix puis de la couleur du badge ; calques et paramètres d'impression à droite.": "Real editing of a poster — changing the price then the badge colour; layers and print settings on the right.",
+  "Lier un projet à une base de données (publipostage) : les champs {{ nom }} {{ prix }} {{ image }} sont alimentés par chaque ligne → génération en série.": "Link a project to a database (mail merge): the {{ nom }} {{ prix }} {{ image }} fields are fed by each row → batch generation.",
+  "Une base produits avec colonne calculée (Prix TTC = formule Excel), plusieurs bases et champs structurés.": "A product database with a calculated column (Price incl. VAT = Excel formula), several databases and structured fields.",
+  "Un graphe de nodes (Scraper → Enrichir → Composer → Exporter → Telegram) exécuté de bout en bout.": "A node graph (Scrape → Enrich → Compose → Export → Telegram) run end to end.",
+  "Une source → N canaux : Impression (PDF/X), Réseaux sociaux, PowerPoint, Web et Vidéo, chacun généré.": "One source → N channels: Print (PDF/X), Social media, PowerPoint, Web and Video, each generated.",
+  "Piloter l'app depuis Telegram : « /flow … » génère et exécute un workflow, le fichier produit est renvoyé.": "Control the app from Telegram: \"/flow …\" generates and runs a workflow, the resulting file is sent back.",
+  "Import d'une maquette InDesign (IDML) décomposée en calques éditables.": "Import of an InDesign layout (IDML) broken down into editable layers.",
+  "Assistant conversationnel avec cascade multi-modèles (le suivant prend le relais si le principal échoue).": "Conversational assistant with a multi-model cascade (the next one takes over if the primary fails).",
+  "Arborescence de catalogue (catégories, compteurs) ; un produit scrappé est rangé automatiquement dans la bonne branche.": "Catalogue tree (categories, counters); a scraped product is automatically filed into the right branch.",
+  "Clés LLM par fournisseur (connexion testée), cascade de modèles et budget mensuel.": "Per-provider LLM keys (connection tested), model cascade and monthly budget.",
+  "Studio d'animation IA : format, durée, brief → génération de la vidéo ; bibliothèque de prompts rejouables.": "AI animation studio: format, duration, brief → video generation; library of replayable prompts.",
+  "Banque de médias : recherche (texte/tag/couleur), grille de visuels, génération d'images par IA (badges « IA »).": "Media bank: search (text/tag/colour), grid of visuals, AI image generation (\"AI\" badges).",
+  "Utilisateurs & rôles : attribution d'un rôle, surcharges de permissions par module.": "Users & roles: role assignment, per-module permission overrides.",
+  "Création d'un template : on pointe un élément de la page → sélecteur CSS généré → assignation à un champ.": "Creating a template: point at a page element → CSS selector generated → assign to a field.",
+  "Une image raster : le fond reste fidèle au pixel, l'IA (Google Vision) détecte les textes et les recrée en calques éditables par-dessus.": "A raster image: the background stays pixel-faithful, the AI (Google Vision) detects the text and recreates it as editable layers on top.",
+  "Le centre de contrôle : règles rédactionnelles de l'équipe, templates groupés par fournisseur, et journal de debug Jina/LLM en direct.": "The control centre: the team's editorial rules, templates grouped by supplier, and a live Jina/LLM debug log.",
+  "Veille concurrentielle : tableau des écarts (mon prix vs concurrents), positionnement par produit et alerte Telegram envoyée.": "Competitive monitoring: table of gaps (my price vs competitors), per-product positioning and Telegram alert sent.",
+  "Tableau de bord : la barre latérale des modules, puis le panneau « Nouveau document » dont la grille de formats (A4, A3, Story, Post…) se peuple et A4 se sélectionne.": "Dashboard: the module sidebar, then the \"New document\" panel whose format grid (A4, A3, Story, Post…) fills in and A4 gets selected.",
+  "Le tableau des nouveautés de juin 2026 : palette ⌘K, notifications, re-skin promo PIM×IA, veille tarifaire, approbation et serveur Telegram, tagging IA du DAM.": "The June 2026 what's-new board: ⌘K palette, notifications, PIM×AI promo re-skin, price monitoring, Telegram approval and server, DAM AI tagging.",
+  "Assistant en 5 étapes : stepper (Bienvenue → Clés IA → Modèles → Connecteurs → Terminé), test d'une clé LLM (✓ connecté) qui active le bouton Suivant.": "5-step assistant: stepper (Welcome → AI keys → Models → Connectors → Done), testing an LLM key (✓ connected) that enables the Next button.",
+  "La palette de commandes ⌘K : depuis n'importe quelle page, taper quelques lettres pour ouvrir un projet récent, sauter vers un module ou lancer une action.": "The ⌘K command palette: from any page, type a few letters to open a recent project, jump to a module or trigger an action.",
+  "Aller-retour InDesign : les champs EasyCatalog (crochets verts) d'un gabarit IDML sont résolus depuis le PIM par publipostage, puis réexportés en IDML avec leurs marqueurs conservés.": "InDesign round-trip: an IDML template's EasyCatalog fields (green brackets) are resolved from the PIM by mail merge, then re-exported to IDML with their markers preserved.",
+  "Une slide PowerPoint (titre, puces, image, forme, couleurs de thème) décomposée en calques Fabric éditables ; seule la slide 1 est lue.": "A PowerPoint slide (title, bullets, image, shape, theme colours) broken down into editable Fabric layers; only slide 1 is read.",
+  "Un classeur Excel importé : les types de colonnes (texte, nombre, formule, dictionnaire, date) sont détectés automatiquement et la base PIM se construit, synchronisée sur Firebase.": "An imported Excel workbook: column types (text, number, formula, dictionary, date) are detected automatically and the PIM database is built, synced to Firebase.",
+  "Déposer une image (PNG, JPG, WebP, GIF, SVG) sur le canvas d'un nouveau projet : la vignette glisse au centre de la page et devient un objet sélectionnable.": "Drop an image (PNG, JPG, WebP, GIF, SVG) onto the canvas of a new project: the thumbnail slides to the centre of the page and becomes a selectable object.",
+  "Un logo SVG se charge en calques vectoriels (cercle, polygone, trait, texte) ; chaque forme reste éditable — une est recolorée d'indigo à teal directement.": "An SVG logo loads as vector layers (circle, polygon, line, text); each shape stays editable — one is recoloured from indigo to teal directly.",
+  "Un PDF avec calque texte natif : la page 1 reste en fond fidèle, les textes sont extraits exacts (sans OCR) et deviennent des calques éditables.": "A PDF with a native text layer: page 1 stays as a faithful background, the text is extracted exactly (no OCR) and becomes editable layers.",
+  "Décris un besoin en français : l'IA pose des questions, compose un panier de produits depuis le catalogue et esquisse un deck (Claude Opus + Gemini).": "Describe a need in plain language: the AI asks questions, assembles a basket of products from the catalogue and sketches a deck (Claude Opus + Gemini).",
+  "Documentation · IBS-Studio": "Documentation · IBS-Studio",
+  "Rechercher un module ou une fonction…": "Search for a module or a function…",
+  "Rechercher (Ctrl+K)": "Search (Ctrl+K)",
+  "Fonctions": "Features",
+  "Raccourcis clavier": "Keyboard shortcuts",
+  "Lien vers": "Link to",
+  "Aucun résultat pour": "No results for"
+}

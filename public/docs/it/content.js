@@ -1,0 +1,2435 @@
+// ⚠️ AUTO-GÉNÉRÉ par scripts/docs-i18n/build.mjs — NE PAS éditer.
+export const CATEGORIES = [
+  {
+    "id": "demarrage",
+    "label": "Per iniziare",
+    "icon": "🚀",
+    "desc": "Accesso, primi passi, navigazione e novità: tutto per iniziare bene."
+  },
+  {
+    "id": "edition",
+    "label": "Modifica",
+    "icon": "✏️",
+    "desc": "L'editor in stile Canva: canvas, strumenti, livelli, stampa e animazioni."
+  },
+  {
+    "id": "import",
+    "label": "Importazione",
+    "icon": "📥",
+    "desc": "Riparti da un file esistente: IDML, EasyCatalog, PPTX, Excel, immagine, SVG, PDF."
+  },
+  {
+    "id": "donnees",
+    "label": "Dati",
+    "icon": "🗂️",
+    "desc": "Il cuore dei dati: PIM, media (DAM), tassonomie, scraping e monitoraggio prezzi."
+  },
+  {
+    "id": "export",
+    "label": "Esportazione",
+    "icon": "📤",
+    "desc": "Esporta le tue creazioni: PDF per la stampa, IDML, PPTX, SVG, PNG, web e pacchetto social."
+  },
+  {
+    "id": "automatisation",
+    "label": "Automazione",
+    "icon": "⚡",
+    "desc": "Workflow visivi e controllo tramite Telegram: concatena i moduli senza sforzo."
+  },
+  {
+    "id": "assistant-ia",
+    "label": "Assistente IA",
+    "icon": "🤖",
+    "desc": "Un assistente conversazionale per interrogare, redigere e generare."
+  },
+  {
+    "id": "administration",
+    "label": "Amministrazione",
+    "icon": "🛡️",
+    "desc": "Account, ruoli, permessi e impostazioni dello spazio di lavoro."
+  }
+]
+
+export const MODULES = [
+  {
+    "id": "getting-started",
+    "cat": "Per iniziare",
+    "icon": "🚀",
+    "anim": "pipeline",
+    "title": "Primi passi",
+    "intro": "Accesso, dashboard e creazione del primo progetto.",
+    "features": [
+      {
+        "title": "Sezioni della dashboard",
+        "desc": "Ogni voce della barra laterale è una scorciatoia verso un'area importante dell'app. Cliccando un link qui sotto l'elemento viene evidenziato sullo schermo (se necessario apre prima la dashboard)."
+      },
+      {
+        "title": "Creare un progetto vuoto",
+        "desc": "Apre il pannello «Nuovo documento» e permette di scegliere un formato (A4, A3, formati schermo/social, o dimensioni personalizzate)."
+      },
+      {
+        "title": "Ritrovare un progetto esistente",
+        "desc": "La Libreria elenca tutti i tuoi progetti: • Aprire: clic singolo sulla scheda. Duplicare / eliminare: pulsanti della scheda (o clic destro). • Miniature o Elenco: due pulsanti in alto a destra commutano la visualizzazione."
+      }
+    ],
+    "shortcuts": [
+      {
+        "keys": [
+          "⌘",
+          "S"
+        ],
+        "label": "Salvare il progetto"
+      },
+      {
+        "keys": [
+          "⌘",
+          "Z"
+        ],
+        "label": "Annullare l'ultima azione"
+      },
+      {
+        "keys": [
+          "⌘",
+          "Y"
+        ],
+        "label": "Ripristina"
+      },
+      {
+        "keys": [
+          "⇧",
+          "?"
+        ],
+        "label": "Aprire / chiudere il manuale"
+      }
+    ]
+  },
+  {
+    "id": "nouveautes",
+    "cat": "Per iniziare",
+    "icon": "✨",
+    "anim": "spark",
+    "title": "Novità",
+    "intro": "Le ultime novità dell'applicazione — giugno 2026.",
+    "features": [
+      {
+        "title": "Navigazione e comfort",
+        "desc": "• Palette dei comandi ⌘K / Ctrl+K: progetti recenti, moduli, azioni rapide — da qualsiasi pagina. • Centro notifiche (🔔 in basso a sinistra): cronologia delle esecuzioni dei workflow e delle esportazioni, badge dei non letti."
+      },
+      {
+        "title": "Editor",
+        "desc": "• Barra contestuale fluttuante sotto la selezione (duplica, ordina i piani, raggruppa, blocca, elimina) + badge in tempo reale durante le manipolazioni (X/Y, L×A, angolo)."
+      },
+      {
+        "title": "Re-skin di promo (editor × PIM × IA)",
+        "desc": "• Sorgente «Prodotti PIM (re-skin)» nel pannello Dati: ogni prodotto diventa una riga — navigare tra i prodotti applica il re-skin al visual istantaneamente."
+      },
+      {
+        "title": "PIM e dati",
+        "desc": "• Pastiglia di completezza su ogni riga (campi mancanti al passaggio del mouse) + media nella barra di stato. • Vista galleria: prodotti in schede (visual, titolo, prezzo, completezza). Dettagli: sezione PIM."
+      },
+      {
+        "title": "Workflow e automazione",
+        "desc": "• Galleria di modelli con 1 clic (Scraper → PIM, monitoraggio, ricerca web…). • Node «Approvazione Telegram»: l'esecuzione si mette in pausa fino al clic ✅/❌. • Node «Sorveglianza prezzi»: avvisa solo quando un prezzo cambia (funziona in cron sul server)."
+      },
+      {
+        "title": "Monitoraggio prezzi e confronto prezzi",
+        "desc": "• Nuovo modulo Monitoraggio prezzi: dashboard dei prezzi della concorrenza (scarti per prodotto, posizionamento, avvisi), alimentato dal node «Monitoraggio prezzi» di un workflow."
+      },
+      {
+        "title": "Telegram senza browser (risponditore sul server)",
+        "desc": "• Il bot risponde ad app chiusa: domande con ricerca web automatica (fonti citate), /flow generato ed eseguito sul server, /run di un workflow salvato."
+      },
+      {
+        "title": "DAM, Telegram ed esportazione",
+        "desc": "• Tagging IA automatico delle immagini salvate + filtro in linguaggio naturale in «Le mie immagini». • Digest Telegram giornaliero (opt-in, 08:00): riepilogo delle ultime 24 h."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "onboarding",
+    "cat": "Per iniziare",
+    "icon": "🧰",
+    "anim": "checklist",
+    "title": "Assistente di configurazione",
+    "intro": "Configura il tuo spazio passo dopo passo: chiavi IA, modelli, connettori e tour guidato.",
+    "features": [
+      {
+        "title": "1 · Benvenuto",
+        "desc": "Presentazione delle fasi successive (chiavi IA, modelli e cascata, connettori, tour guidato). Nulla da inserire."
+      },
+      {
+        "title": "2 · Chiavi IA — obbligatorio",
+        "desc": "Inserisci almeno una chiave API tra Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi o OpenRouter, poi testala. Finché non viene inserita una chiave valida, il pulsante Avanti resta disattivato («Inserisci almeno una chiave LLM»)."
+      },
+      {
+        "title": "3 · Modelli e cascata",
+        "desc": "Scegli il modello di ogni fornitore e l'ordine della cascata di ragionamento (il primo che risponde vince, i successivi fungono da riserva)."
+      },
+      {
+        "title": "4 · Connettori — facoltativo",
+        "desc": "Collega Google Drive, Bright Data (scraping) e Telegram se ti servono. Questa fase può essere saltata e completata più tardi in Impostazioni → Connettori."
+      },
+      {
+        "title": "5 · Completato",
+        "desc": "Riepilogo del tuo profilo, poi la scelta di avviare il tour guidato della dashboard o di terminare direttamente."
+      },
+      {
+        "title": "Riprendere la configurazione più tardi",
+        "desc": "L'assistente resta accessibile in qualsiasi momento, tramite due accessi: • Banner «Assistente di configurazione» in cima alle Impostazioni — sottotitolo «Riprendi la configurazione guidata (chiavi, modelli, connettori)»."
+      },
+      {
+        "title": "Pulsante «Aggiorna tutti gli LLM»",
+        "desc": "Presente nell'assistente e nella scheda IA delle Impostazioni, seleziona l'ultimo modello di punta di ogni fornitore (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter)."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "navigation",
+    "cat": "Per iniziare",
+    "icon": "🧭",
+    "anim": "taxonomy",
+    "title": "Navigazione e tour guidati",
+    "intro": "Passare da un modulo all'altro da qualsiasi punto e (ri)avviare i tour guidati.",
+    "features": [
+      {
+        "title": "Menu dei moduli (☰)",
+        "desc": "Un pulsante ☰ fluttuante in basso a sinistra apre un pannello che elenca tutti i moduli: Nuovo documento, Importare, Libreria, DAM, PIM, Tassonomie, Template scraping, Scraping Hub, Workflow, Monitoraggio prezzi, Telegram, Animazione, Chat IA e U…"
+      },
+      {
+        "title": "Palette dei comandi (⌘K)",
+        "desc": "⌘K (Mac) o Ctrl+K (PC) apre la palette dei comandi da qualsiasi pagina: digita alcune lettere per aprire uno dei tuoi progetti recenti, saltare a un modulo («pim», «workflow», «libreria»…) o avviare un'azione rapida…"
+      },
+      {
+        "title": "Notifiche (🔔)",
+        "desc": "La campanella in basso a sinistra (sopra il menu ☰) conserva la cronologia degli eventi importanti: fine delle esecuzioni dei workflow, esportazioni riuscite o fallite."
+      },
+      {
+        "title": "Tour guidati (🧭)",
+        "desc": "Un pulsante 🧭 «Tour guidato» in basso a destra (a sinistra del pulsante di aiuto) avvia un tour interattivo della schermata corrente: • Dashboard: percorre ogni spazio di lavoro uno per uno."
+      },
+      {
+        "title": "Questo manuale si adatta al tuo ruolo",
+        "desc": "L'indice e la ricerca della guida mostrano solo le sezioni dei moduli a cui hai accesso (il proprietario vede tutto)."
+      }
+    ],
+    "shortcuts": [
+      {
+        "keys": [
+          "⌘",
+          "K"
+        ],
+        "label": "Aprire la palette dei comandi"
+      },
+      {
+        "keys": [
+          "⇧",
+          "?"
+        ],
+        "label": "Aprire / chiudere il manuale"
+      }
+    ]
+  },
+  {
+    "id": "editor",
+    "cat": "Modifica",
+    "icon": "✏️",
+    "anim": "editor",
+    "title": "L'editor",
+    "intro": "Canvas, strumenti, livelli e salvataggio del progetto.",
+    "features": [
+      {
+        "title": "Palette dei comandi (⌘K)",
+        "desc": "⌘K (o Ctrl+K) apre la palette dei comandi — disponibile ovunque nell'applicazione, compreso l'editor."
+      },
+      {
+        "title": "Maiuscole/minuscole del testo (senza riscrivere)",
+        "desc": "La sezione Trasformazione delle proprietà di un testo applica un formato maiuscole/minuscole al rendering senza toccare il contenuto inserito: maiuscole, minuscole o Iniziali maiuscole (prima lettera di ogni parola)."
+      },
+      {
+        "title": "Miniature delle pagine",
+        "desc": "In un documento con più pagine, la barra inferiore mostra una fila di miniature (una per pagina, con il suo numero)."
+      },
+      {
+        "title": "Organizzare i pannelli di destra",
+        "desc": "La colonna di destra è modulare: il pannello Proprietà resta fissato in alto, e ogni altro pannello (Livelli, Immagini, Palette, Assets, Pagina, Stampa, Dati, Animazione 3D, Versioni) si richiude/espande con un clic sulla sua intestazione."
+      },
+      {
+        "title": "Immagini",
+        "desc": "Inserimento di immagini senza uscire dall'editor: schede Galleria, Upload, IA (generazione da un prompt, 5 rapporti, image-to-image se un oggetto è selezionato), Stock, Le mie immagini, Preferiti, Collezioni, Recenti — le stesse sorgenti del DAM."
+      },
+      {
+        "title": "Assets",
+        "desc": "Le immagini e i font del progetto (schede con contatori). Trascina un'immagine sul canvas, oppure usa i font importati (IDML) nei tuoi testi."
+      },
+      {
+        "title": "Pagina",
+        "desc": "Formato pagina: preset (A4/A3/A5, Full HD, 4K, 16:9, post e story Instagram, copertina Facebook) o dimensioni personalizzate in mm. Sfondo pagina: colore pieno, sfumatura o immagine (upload o trascinamento)."
+      },
+      {
+        "title": "Stampa",
+        "desc": "Tutto il prestampa: DPI, abbondanza (bleed), segni di taglio (lunghezza 2–10 mm, scostamento 0–3 mm, spessore, colore), crocini di registro (registration marks), zona di sicurezza (margine, tratteggio configurabile) e la sezione Preflight…"
+      },
+      {
+        "title": "Animazione 3D",
+        "desc": "Applica animazioni 3D a un oggetto (flip 3D, rilievo, particelle…) tramite preset, con riproduzione/arresto e registrazione video (esportazione MP4/WebM) del rendering animato."
+      },
+      {
+        "title": "Palette · Dati · Versioni",
+        "desc": "Dettagliati nelle rispettive sezioni dedicate più in basso (kit di marca e stili di oggetti, re-skin PIM / stampa unione, snapshot)."
+      }
+    ],
+    "shortcuts": [
+      {
+        "keys": [
+          "V"
+        ],
+        "label": "Strumento Selezione"
+      },
+      {
+        "keys": [
+          "T"
+        ],
+        "label": "Strumento Testo"
+      },
+      {
+        "keys": [
+          "R"
+        ],
+        "label": "Strumento Rettangolo"
+      },
+      {
+        "keys": [
+          "E"
+        ],
+        "label": "Strumento Ellisse"
+      },
+      {
+        "keys": [
+          "L"
+        ],
+        "label": "Strumento Linea"
+      },
+      {
+        "keys": [
+          "I"
+        ],
+        "label": "Strumento Immagine / DAM"
+      },
+      {
+        "keys": [
+          "Espace",
+          "⇧ Glisser"
+        ],
+        "label": "Pan del canvas"
+      },
+      {
+        "keys": [
+          "⌘",
+          "S"
+        ],
+        "label": "Salvare (commit manuale)"
+      },
+      {
+        "keys": [
+          "⌘",
+          "Z"
+        ],
+        "label": "Annullare"
+      },
+      {
+        "keys": [
+          "⌘",
+          "Y"
+        ],
+        "label": "Ripristina"
+      },
+      {
+        "keys": [
+          "⌘",
+          "A"
+        ],
+        "label": "Seleziona tutto"
+      },
+      {
+        "keys": [
+          "⌘",
+          "D"
+        ],
+        "label": "Duplicare la selezione"
+      },
+      {
+        "keys": [
+          "⌘",
+          "G"
+        ],
+        "label": "Raggruppare"
+      },
+      {
+        "keys": [
+          "⌘",
+          "⇧",
+          "G"
+        ],
+        "label": "Separare"
+      },
+      {
+        "keys": [
+          "⌘",
+          "]"
+        ],
+        "label": "Porta avanti di un livello"
+      },
+      {
+        "keys": [
+          "⌘",
+          "["
+        ],
+        "label": "Porta indietro di un livello"
+      },
+      {
+        "keys": [
+          "⌘",
+          "⇧",
+          "]"
+        ],
+        "label": "Primo piano"
+      },
+      {
+        "keys": [
+          "⌘",
+          "⇧",
+          "["
+        ],
+        "label": "Sfondo"
+      },
+      {
+        "keys": [
+          "←↑→↓"
+        ],
+        "label": "Spostare di 1 px (⇧: 10 px)"
+      },
+      {
+        "keys": [
+          "Suppr"
+        ],
+        "label": "Eliminare la selezione"
+      },
+      {
+        "keys": [
+          "Échap"
+        ],
+        "label": "Deselezionare"
+      }
+    ]
+  },
+  {
+    "id": "conditional-rules",
+    "cat": "Modifica",
+    "icon": "🔀",
+    "anim": "editor",
+    "title": "Regole condizionali",
+    "intro": "Mostrare, nascondere o trasformare un elemento del design in base al dato della riga corrente — in stile EasyCatalog («Nuova azione»), ma direttamente nell'editor. Ideale nella stampa unione: un banner «PROMO» che compare solo sui prodotti in promozione, un prezzo che diventa rosso sotto una soglia di stock, un'icona ingrandita per le novità…",
+    "features": [
+      {
+        "title": "Aprire il pannello",
+        "desc": "1. Seleziona un oggetto sul canvas. 2. Nella colonna di destra, apri il pannello Proprietà, poi espandi la sezione Regole condizionali (icona ramo). Un contatore indica il numero di regole attive sull'oggetto. 3."
+      },
+      {
+        "title": "Comporre una regola: SE campo → operatore → valore → ALLORA azione",
+        "desc": "Ogni regola si legge da sinistra a destra: • Campo: la colonna di dati testata (es. promo, stock, Prixnormal). • Operatore: la condizione da verificare (vedi sotto)."
+      },
+      {
+        "title": "Gli operatori (3 famiglie)",
+        "desc": "Testo (confronto senza distinzione tra maiuscole/minuscole e spazi iniziali/finali): • Contiene / Non contiene • È / Non è (uguaglianza esatta di stringa) • Inizia con / Finisce con • Non inizia con / Non finisce con Presenza (nessun…"
+      },
+      {
+        "title": "Le azioni (7)",
+        "desc": "• Nascondere: l'oggetto non viene renderizzato (né a schermo, né in esportazione). • Mostrare: forza la visualizzazione. • Porta avanti / Porta indietro: riordina l'oggetto nella pila (z-order)."
+      },
+      {
+        "title": "Anteprima e più regole",
+        "desc": "Quando una sorgente è collegata, l'effetto viene rieseguito in tempo reale sulla riga corrente: aggiungi o modifica una regola e il canvas si aggiorna immediatamente."
+      },
+      {
+        "title": "Che differenza c'è con un collegamento {{champ}} classico?",
+        "desc": "Un collegamento {{champ}} (o «Collega a un campo») sostituisce il contenuto di un elemento con il valore della colonna (testo, immagine)."
+      },
+      {
+        "title": "Il mio avviso «anche il colore è collegato»?",
+        "desc": "Se una proprietà è al contempo controllata da un collegamento dati (es. colore collegato a una colonna) e da una regola che la modifica (Cambiare il colore / Cambiare l'opacità), le due possono contraddirsi."
+      },
+      {
+        "title": "I campi non compaiono nel selettore",
+        "desc": "Collega una sorgente di dati (Excel, Google Sheets, PIM…) dal pannello Stampa unione. Senza alcuna sorgente — mai collegata — non ci sono colonne da testare."
+      },
+      {
+        "title": "L'anteprima non cambia quando aggiungo una regola",
+        "desc": "L'anteprima live richiede una sorgente collegata (pannello Stampa unione). Senza connessione, la regola viene comunque salvata sull'oggetto, ma il suo effetto sarà visibile solo al momento della stampa unione / dell'esportazione in lotto."
+      },
+      {
+        "title": "EasyCatalog ↔ Regole condizionali",
+        "desc": "Il pannello riprende la logica delle azioni condizionali di EasyCatalog (Contiene, È, È uguale a, Nascondere…)."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "hyperframes",
+    "cat": "Modifica",
+    "icon": "🎬",
+    "anim": "reveal",
+    "title": "Animazione",
+    "intro": "Generare animazioni HTML autonome (video) a partire da un brief o da un design del canvas.",
+    "features": [
+      {
+        "title": "A partire da un brief (video multi-scena)",
+        "desc": "Descrivi il tuo soggetto e, facoltativamente, il pubblico, l'obiettivo, il tono, la marca e una caption."
+      },
+      {
+        "title": "A partire da un design del canvas (design-reveal)",
+        "desc": "Dall'editor, si cattura l'SVG del progetto corrente e l'IA lo anima (comparse, ritmo, easing) secondo un'indicazione di stile. Ideale per trasformare una creazione per la stampa in un teaser animato."
+      },
+      {
+        "title": "File di riferimento",
+        "desc": "Trascina immagini, PDF o SVG per arricchire il brief: l'IA li legge (testo + visual) e li usa come contesto."
+      },
+      {
+        "title": "Formato e durata",
+        "desc": "• Rapporto: Auto, verticale (9:16), quadrato (1:1), orizzontale (16:9) o dimensioni personalizzate (larghezza × altezza, da 240 a 4096 px, rapporto mostrato in tempo reale)."
+      },
+      {
+        "title": "Arricchire e finalizzare",
+        "desc": "• Arricchire con immagini IA: l'IA genera un visual per scena (mostrato come sfondo, effetto Ken Burns). • Anteprima live: il player riproduce la composizione con lo stile applicato (ritmo, intensità, easing, palette)."
+      },
+      {
+        "title": "Lo ZIP è un'animazione autonoma e riproducibile",
+        "desc": "Il file index.html è self-contained (CSS, JS, dati e auto-play tutto inline): fai doppio clic, si apre anche in file://, senza server."
+      },
+      {
+        "title": "Gestire le proprie animazioni nel DAM",
+        "desc": "Nella scheda Animazioni HTML del DAM, ogni scheda mostra il rapporto, il peso e la data: • Aprire riproduce l'animazione in una nuova scheda (lo ZIP viene estratto al volo, index.html viene servito così com'è)."
+      },
+      {
+        "title": "Libreria di prompt",
+        "desc": "Ogni generazione memorizza il suo brief: puoi rieseguirlo, caricarlo per modificarlo, rinominarlo o eliminarlo — per produrre varianti senza reinserire tutto."
+      },
+      {
+        "title": "Vedi anche",
+        "desc": "La generazione si basa sui modelli IA configurati in Impostazioni → IA. I visual delle scene utilizzano il motore di generazione immagini (Image IA), lo stesso del DAM e della Chat IA."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-idml",
+    "cat": "Importazione",
+    "icon": "📐",
+    "anim": "import",
+    "title": "Importazione IDML",
+    "intro": "Recuperare un impaginato InDesign e trasformarlo in un template IBS-Studio.",
+    "features": [
+      {
+        "title": "Come esportare un IDML da InDesign",
+        "desc": "1. Apri il tuo documento in InDesign CC o più recente 2. File → Esporta… 3. Scegli il formato InDesign Markup (IDML) 4. Salva Il file IDML è in realtà uno ZIP che contiene XML + risorse (font, immagini)."
+      },
+      {
+        "title": "Importa il «package», non solo il file .idml",
+        "desc": "L'importazione richiede un pacchetto InDesign (File → Crea pacchetto…), non un .idml isolato: • un file .idml e un .pdf di riferimento sono obbligatori — senza il PDF, l'importazione si interrompe con «Componenti mancanti» • i font della cartella Docume…"
+      },
+      {
+        "title": "Importare in IBS-Studio",
+        "desc": "1. Dashboard → Importare 2. Seleziona il .idml 3. Attendi: il parser estrae forme, testi, immagini, font, ombre e trasparenza — tutte le pagine del documento (ogni tavola diventa una pagina IBS-Studio) 4."
+      },
+      {
+        "title": "Scomposizione in livelli modificabili",
+        "desc": "Nulla viene appiattito in immagine: ogni oggetto ridiventa un livello manipolabile nell'editor."
+      },
+      {
+        "title": "Colori CMYK convertiti fedelmente",
+        "desc": "Le tinte CMYK vengono riportate in RGB per lo schermo. Quando InDesign ha già memorizzato il valore sRGB del colore (derivato dalla propria conversione ICC), viene utilizzato così com'è."
+      },
+      {
+        "title": "Cosa viene preservato e cosa approssimato in esportazione",
+        "desc": "L'esportazione IDML non è una rigenerazione: applica una patch allo ZIP IDML originale. Vengono reiniettate le tue modifiche di testo, immagine, colore di sfondo, posizione e dimensione; tutto il resto del documento (stili, livelli, impostazioni non toccate) viene co…"
+      },
+      {
+        "title": "Limiti noti",
+        "desc": "• Font personalizzati: se non installati sulla macchina → fallback Arial. Per una fedeltà perfetta, carica i tuoi font in public/fonts/ • Sfumature: non importate — gli oggetti con sfumatura tornano a un colore pieno (da ricreare nell'editor se neces…"
+      },
+      {
+        "title": "Andata e ritorno InDesign ↔ IBS-Studio",
+        "desc": "Il ciclo classico: 1. Il grafico crea l'impaginato in InDesign 2. Esporta un IDML 3. Lo stampatore importa in IBS-Studio, aggiunge i placeholder, collega il data-merge 4. Esportazione batch IDML (uno per prodotto) o PDF diretto 5."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "easycatalog",
+    "cat": "Importazione",
+    "icon": "🔗",
+    "anim": "import",
+    "title": "EasyCatalog (InDesign)",
+    "intro": "Andata e ritorno con il plug-in EasyCatalog: importare un modello, unire i suoi campi, poi riesportare un IDML riconosciuto nativamente.",
+    "features": [
+      {
+        "title": "Sotto il cofano: come i campi sopravvivono all'IDML",
+        "desc": "EasyCatalog non memorizza i suoi campi sotto forma di testo: pone marcatori invisibili sul markup InDesign che IBS-Studio è in grado di rileggere."
+      },
+      {
+        "title": "1. Importare un modello EasyCatalog",
+        "desc": "1. Da InDesign (con il tuo documento EasyCatalog aperto): File → Esporta… → InDesign Markup (IDML) 2. In IBS-Studio: Dashboard → Importare → seleziona il .idml 3. Il modello si apre nell'editor."
+      },
+      {
+        "title": "2. Collegare i tuoi dati e unire",
+        "desc": "Nell'editor, pannello Stampa unione: collega una sorgente (Excel, Google Sheets, PIM…). IBS-Studio sostituisce i {{champs}} con i valori della riga corrente e carica le immagini nei riquadri collegati."
+      },
+      {
+        "title": "3. Esportare una sorgente di dati PER EasyCatalog",
+        "desc": "Dallo spazio Dati, pulsante EasyCatalog: genera uno zip pronto da collegare come flat-file data source in EasyCatalog."
+      },
+      {
+        "title": "4. Riesportare un IDML (andata e ritorno completa)",
+        "desc": "Dall'editor, Esporta → IDML (multipagina): IBS-Studio produce un IDML che conserva i marcatori EasyCatalog e risolve i valori per ogni riga."
+      },
+      {
+        "title": "I campi non vengono riconosciuti in importazione?",
+        "desc": "Verifica che l'IDML provenga effettivamente da un documento gestito da EasyCatalog (i campi vi sono inseriti tramite il pannello EasyCatalog, riconoscibili dalle parentesi quadre verdi). Un testo digitato a mano non è un campo."
+      },
+      {
+        "title": "Quali dati inserire nelle colonne immagine?",
+        "desc": "Un URL di immagine (es. link Firebase/DAM) si carica direttamente. Un semplice nome di file viene risolto tramite il tuo storage se il file esiste. Il binding immagine si collega da solo al riquadro EasyCatalog importato."
+      },
+      {
+        "title": "Come viene scelto il campo chiave in esportazione?",
+        "desc": "IBS-Studio usa la tua colonna primaria come chiave EasyCatalog se tutti i suoi valori sono univoci e non vuoti. Altrimenti, sintetizza una chiave eckey (row1, row2, …) per garantire una risincronizzazione affidabile."
+      },
+      {
+        "title": "Limiti noti",
+        "desc": "• I campi in forma qualificata (riferimento data source completo, marcatori $ID/2/$ID/3) non vengono ancora convertiti in placeholder e restano come testo; solo la forma semplice $ID/4/$ID/5 viene riconosciuta."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "indesign-xml",
+    "cat": "Importazione",
+    "icon": "✦",
+    "anim": "default",
+    "title": "Tag XML InDesign (connessione automatica)",
+    "intro": "Contrassegnare un documento InDesign con tag XML nativi denominati come le tue colonne: all'importazione dell'IDML, IBS-Studio li trasforma in campi {{…}} collegati automaticamente alla tua base — un'alternativa gratuita a EasyCatalog.",
+    "features": [
+      {
+        "title": "1. Contrassegnare il documento in InDesign",
+        "desc": "1. Apri il pannello dei tag: Finestra → Utilità → Tag (Window → Utilities → Tags). 2. Crea un tag per ogni campo, con il nome esatto della tua colonna (es. LibelleArticle, Prixnormal, Marques). 3."
+      },
+      {
+        "title": "2. (Opzione) Il plug-in IBS-Studio: contrassegnare collegati alla tua base",
+        "desc": "Per contrassegnare restando collegato alla tua base in tempo reale, IBS-Studio fornisce un plug-in InDesign (UXP)."
+      },
+      {
+        "title": "3. Esportare l'IDML",
+        "desc": "In InDesign: File → Esporta… → InDesign Markup (IDML). I tag XML vengono conservati nel file."
+      },
+      {
+        "title": "4. Importare in IBS-Studio → campi collegati automaticamente",
+        "desc": "Dashboard → Importare → seleziona il .idml. All'apertura: • ogni tag di testo diventa un placeholder {{nom}} modificabile; • ogni tag immagine diventa un riquadro immagine collegato."
+      },
+      {
+        "title": "Tag XML nativo o EasyCatalog: quale scegliere?",
+        "desc": "Entrambi portano allo stesso risultato (campi {{…}} collegati). EasyCatalog è preferibile se il tuo flusso di stampa lo usa già (risincronizzazione lato InDesign)."
+      },
+      {
+        "title": "Perché non vedo le parentesi quadre su un blocco?",
+        "desc": "Le parentesi quadre [ ] compaiono solo sul testo contrassegnato. Se hai applicato il tag al riquadro (rettangolo) invece che al testo, ottieni un riquadro colorato nella Struttura ma nessuna parentesi — e il valore non verrà sostituito."
+      },
+      {
+        "title": "I nomi devono corrispondere esattamente alle colonne?",
+        "desc": "Il nome del tag deve corrispondere al nome della colonna della tua base. Maiuscole/minuscole, accenti e spazi/underscore sono tollerati nella corrispondenza (es. Prix normal ↔ colonna Prixnormal)."
+      },
+      {
+        "title": "Il plug-in non si carica / il token non funziona",
+        "desc": "Il plug-in è distribuito in modalità sviluppatore (UXP): si carica manualmente a ogni sessione tramite l'UXP Developer Tool."
+      },
+      {
+        "title": "Mostrare / nascondere un elemento in base al dato?",
+        "desc": "Una volta collegata la tua base, puoi far reagire un elemento al valore di ogni riga (nascondere un banner «PROMO» fuori promozione, portare un prezzo in rosso sotto una soglia di stock, ingrandire un'icona «novità»…)."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-pptx",
+    "cat": "Importazione",
+    "icon": "📊",
+    "anim": "import",
+    "title": "Importare PPTX",
+    "intro": "Importare un .pptx per riutilizzarlo come template o punto di partenza.",
+    "features": [
+      {
+        "title": "Importare un PPTX",
+        "desc": "1. Dashboard → Importare 2. Seleziona il .pptx 3. Il parser estrae testi, immagini e forme — compreso il tema (i colori del tema vengono risolti) e le trasparenze di riempimento 4."
+      },
+      {
+        "title": "Caso d'uso tipico",
+        "desc": "Presentazione commerciale dinamica: il tuo team vendite parte da un PPTX modello. Lo importi una volta, mappi i placeholder sul tuo database prodotti, e ogni commerciale genera la propria versione personalizzata (logo cliente, prezzo negoziato, riferimenti…"
+      },
+      {
+        "title": "Limiti",
+        "desc": "• Multi-slide: viene letta solo la slide 1 — le successive sono ignorate • Animazioni PowerPoint: non supportate (IBS-Studio esporta per la stampa/statico) • SmartArt: ignorati in importazione (non convertiti in forme) • Round-trip PPTX → Fabric → P…"
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-excel",
+    "cat": "Importazione",
+    "icon": "🧮",
+    "anim": "pim",
+    "title": "Importare Excel",
+    "intro": "Alimentare il PIM da un file Excel, CSV/TSV o Google Sheets.",
+    "features": [
+      {
+        "title": "Formati supportati",
+        "desc": "L'importazione rileva automaticamente i tipi di colonna: testo, numero, booleano, data, formula (memorizzata e poi valutata al momento dell'unione) e dizionario (colonna con valori ripetitivi → elenco di scelte)."
+      },
+      {
+        "title": "Importare un file",
+        "desc": "1. Apri il PIM dal menu. 2. Clicca Importare un file (o Creare vuoto per partire da una base vuota). 3. Seleziona il tuo file. 4. Verifica le colonne rilevate. 5. Conferma → la base viene creata e sincronizzata su Firebase."
+      },
+      {
+        "title": "E poi?",
+        "desc": "Una volta importata la base, tutto avviene nel PIM: arricchire le schede tramite IA, gestire i campi strutturati (specifiche, varianti, documenti, immagini) ed esportare in serie. Vedi la sezione PIM."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-image",
+    "cat": "Importazione",
+    "icon": "🌄",
+    "anim": "import",
+    "title": "Importare un'immagine",
+    "intro": "Inserire un'immagine (PNG, JPG, WebP, GIF, SVG) sul canvas di un nuovo progetto.",
+    "features": [],
+    "shortcuts": []
+  },
+  {
+    "id": "import-svg",
+    "cat": "Importazione",
+    "icon": "✒️",
+    "anim": "img2svg",
+    "title": "Importare SVG",
+    "intro": "Caricare un .svg come livelli vettoriali modificabili.",
+    "features": [
+      {
+        "title": "Quando usarlo",
+        "desc": "• Un logo vettoriale da ritoccare o ricolorare. • Un visual già vettorializzato (esportazione Illustrator/Figma) da integrare in un impaginato."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-image-to-svg",
+    "cat": "Importazione",
+    "icon": "🪄",
+    "anim": "img2svg",
+    "title": "Immagine → SVG modificabile",
+    "intro": "Rendere modificabile un'immagine raster: sfondo bloccato + testi scomposti dall'IA.",
+    "features": [
+      {
+        "title": "Come funziona",
+        "desc": "1. L'immagine viene bloccata come sfondo (fedeltà visiva preservata). Il livello sorgente diventa non selezionabile: i clic passano ai testi posti sopra. 2."
+      },
+      {
+        "title": "Ciò che diventa modificabile",
+        "desc": "La scomposizione non si limita al testo grezzo: ricostruisce la formattazione di ogni blocco."
+      },
+      {
+        "title": "Chiave Google Vision richiesta",
+        "desc": "Il rilevamento dei testi chiama l'API Google Cloud Vision: devi inserire la tua chiave una sola volta in Impostazioni → Connettori (campo Google Vision), poi sincronizzata tramite il tuo account."
+      },
+      {
+        "title": "Filtri intelligenti",
+        "desc": "Per conservare solo il contenuto editoriale ed evitare il rumore, si applicano automaticamente diversi filtri."
+      },
+      {
+        "title": "Quando usarlo e limiti",
+        "desc": "Da usare quando hai un visual raster finito (manifesto, volantino, pubblicità retail) senza il file sorgente e vuoi riscrivere i testi o declinare senza rifare tutto."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "import-pdf-to-svg",
+    "cat": "Importazione",
+    "icon": "📄",
+    "anim": "img2svg",
+    "title": "PDF → SVG modificabile",
+    "intro": "Ripartire da un PDF: pagina 1 rasterizzata come sfondo + testi modificabili.",
+    "features": [
+      {
+        "title": "Come funziona",
+        "desc": "1. Se il PDF contiene un livello di testo nativo utilizzabile, viene tentata prima la conversione vettoriale: i testi arrivano esatti (nessun OCR). 2."
+      },
+      {
+        "title": "Testo nativo vs OCR — tre livelli",
+        "desc": "L'importazione segue una cascata: mantiene sempre il livello più fedele disponibile. 1. Conversione vettoriale (MuPDF) — tentata per prima."
+      },
+      {
+        "title": "Ciò che diventa modificabile (conversione vettoriale)",
+        "desc": "Quando il PDF passa per la conversione vettoriale, l'importazione non si limita a separare testo e sfondo — ricostruisce oggetti realmente manipolabili: • Blocchi di testo raggruppati: un prezzo composto («22 DT ,99»), un fumetto («30 % di risp…"
+      },
+      {
+        "title": "Font fedeli (incorporati + ripiego Google Fonts)",
+        "desc": "Affinché il rendering non ricada su un font predefinito: • I font incorporati nel PDF (sottoinsiemi TrueType) vengono estratti e caricati con la loro vera famiglia («WRZTFA+ArialNarrow-Bold» → Arial Narrow, grassetto)."
+      },
+      {
+        "title": "Campi di unione {{…}} preservati",
+        "desc": "Se il PDF originale contiene già campi di unione {{…}} (stampa unione), l'importazione li riconosce e associa loro il riquadro di composizione: larghezza del blocco + allineamento rilevato dalla geometria reale (bordi destri comuni → allineato a des…"
+      },
+      {
+        "title": "Limiti e quando usarlo",
+        "desc": "• Solo pagina 1: le pagine successive sono ignorate. Per un multipagina fedele, preferisci l'Importazione InDesign (IDML). • Ideale per ripartire da un PDF esistente (bozza, vecchio documento) quando il file sorgente InDesign non è più disponibile."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "dam",
+    "cat": "Dati",
+    "icon": "🖼️",
+    "anim": "dam",
+    "title": "DAM",
+    "intro": "Banca immagini, generazione IA, modifica, varianti e organizzazione dei visual.",
+    "features": [
+      {
+        "title": "Le schede",
+        "desc": "Clicca una scheda per aprirla direttamente nel DAM."
+      },
+      {
+        "title": "Banca immagini",
+        "desc": "Ricerca in Pexels e Unsplash (milioni di foto royalty-free) con filtri sorgente / orientamento / colore."
+      },
+      {
+        "title": "Le mie immagini",
+        "desc": "Le tue immagini salvate — dalla banca o generate dall'IA."
+      },
+      {
+        "title": "Preferiti",
+        "desc": "Le immagini che hai contrassegnato con un ♥ per un accesso rapido."
+      },
+      {
+        "title": "Collezioni",
+        "desc": "Cartelle di organizzazione che crei e riempi tu stesso."
+      },
+      {
+        "title": "Recenti",
+        "desc": "Le ultime aggiunte, ordinate per data."
+      },
+      {
+        "title": "Progetti",
+        "desc": "Le immagini e i font del progetto corrente, pronte da trascinare sul canvas."
+      },
+      {
+        "title": "Creazione immagine",
+        "desc": "Generazione di immagini tramite IA (Gemini / Image IA) — vedi il dettaglio dei parametri più in basso."
+      },
+      {
+        "title": "Animazioni HTML",
+        "desc": "Le tue composizioni video (HyperFrames)."
+      },
+      {
+        "title": "Google Drive",
+        "desc": "Accesso ai tuoi file Google Drive una volta collegato il tuo account."
+      },
+      {
+        "title": "Cercare immagini",
+        "desc": "• Per testo: barra di ricerca con completamento automatico e cronologia delle ricerche recenti. • Per immagine (ricerca inversa): pulsante fotocamera → scegli un'immagine locale → il DAM trova visual simili nella banca."
+      },
+      {
+        "title": "Creare un'immagine tramite IA",
+        "desc": "Scheda Creazione immagine — motore Image IA (Gemini 3.1 image, testo → immagine). Espandi ogni parametro:"
+      },
+      {
+        "title": "Prompt (+ Migliorare / Con domande)",
+        "desc": "Descrivi l'immagine da generare. Puoi incollare un'immagine nel campo: viene aggiunta ai file di riferimento."
+      },
+      {
+        "title": "File di riferimento",
+        "desc": "Pulsante «Aggiungi file» (o incolla un'immagine). Tutti i formati: immagini, loghi, PDF, SVG (rasterizzato in PNG, limitato a 2048 px)."
+      },
+      {
+        "title": "Formato di uscita",
+        "desc": "• Immagini e testo (predefinito): immagine + testo — il modello può commentare brevemente. • Solo immagini."
+      },
+      {
+        "title": "Temperatura (0 → 2, predefinito 1,0)",
+        "desc": "Cursore, passo di 0,1. Regola la creatività: • 0 — Preciso: deterministico, fedele al prompt/riferimenti. • 2 — Creativo: più libertà e variazione. Riprodurre un riferimento → abbassa verso 0; esplorare → alza verso 2."
+      },
+      {
+        "title": "Rapporto (formato)",
+        "desc": "Auto · 1:1 · 16:9 · 9:16 · 4:3 · 3:4. • Auto (predefinito): il modello sceglie l'inquadratura adatta al prompt/riferimenti (nessun vincolo inviato). • Gli altri impongono il rapporto: 1:1 quadrato (social), 16:9 / 4:3 orizzontale, 9:16 / 3:4 verticale."
+      },
+      {
+        "title": "Risoluzione (1K / 2K / 4K)",
+        "desc": "1K (predefinito) · 2K · 4K. Definizione del visual. ⚠️ 2K e 4K sono 2-3× più lenti — riservali al rendering finale, resta in 1K per iterare."
+      },
+      {
+        "title": "Numero di immagini (1 / 2 / 4)",
+        "desc": "1 (predefinito) · 2 · 4. Genera N variazioni in parallelo dello stesso prompt — per confrontare più proposte in una volta."
+      },
+      {
+        "title": "Generare e azioni sui risultati",
+        "desc": "Pulsante «Genera». Per ogni immagine: • Scaricare — PNG in locale. • Salvare — in «Le mie immagini» (prompt originale, prompt migliorato e D/R conservati nei metadati). • Inserire nell'editor — inserisce l'immagine nel progetto aperto."
+      },
+      {
+        "title": "Visualizzare e modificare un'immagine",
+        "desc": "Un clic apre il visualizzatore (lightbox). Strumenti di modifica non distruttiva:"
+      },
+      {
+        "title": "Zoom · Rotazione · Specchio",
+        "desc": "Zoom avanti/indietro + adattamento, Rotazione di 90°, Specchio orizzontale e verticale."
+      },
+      {
+        "title": "Ritaglio (crop)",
+        "desc": "Maschera interattiva con 8 maniglie, griglia dei terzi, vincoli di rapporto (libero, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3)."
+      },
+      {
+        "title": "Colorimetria",
+        "desc": "Cursori Luminosità, Contrasto, Saturazione, Tonalità (reso tramite filtro CSS, non distruttivo)."
+      },
+      {
+        "title": "Esportazione",
+        "desc": "Formati PNG / JPEG / WebP, con regolazione della qualità (JPEG/WebP) e della scala (% della risoluzione nativa)."
+      },
+      {
+        "title": "Reimpostare",
+        "desc": "Annulla tutte le modifiche e torna all'immagine originale."
+      },
+      {
+        "title": "Pannello informazioni e credito foto",
+        "desc": "A destra del visualizzatore, la scheda Info riepiloga la scheda tecnica del visual: dimensioni (px), risoluzione (megapixel) e rapporto, peso del file, orientamento, colore dominante (pastiglia + codice hex) e spazio sRGB, oltre ai tag."
+      },
+      {
+        "title": "Scheda Prompt (immagini IA)",
+        "desc": "Quando un'immagine è stata generata tramite IA, una scheda Prompt si aggiunge nel visualizzatore. Restituisce il prompt originale (il tuo testo grezzo), il prompt migliorato effettivamente inviato a Image IA, e le precisazioni D&R della modalità «Con domande»."
+      },
+      {
+        "title": "Varianti",
+        "desc": "Salva una modifica (crop + colorimetria + specchio + rotazione) come variante denominata di un'immagine, senza toccare l'originale: • Salvare variante → assegnale un nome."
+      },
+      {
+        "title": "Analisi IA di un'immagine",
+        "desc": "Nel visualizzatore, scheda Analisi IA → pulsante «Analizza con IA». L'IA restituisce: soggetto, descrizione, marche identificate, testo rilevato (OCR), atmosfera / stile / composizione / illuminazione, oggetti, tag di ricerca e palette di colori.…"
+      },
+      {
+        "title": "Tagging automatico e ricerca per tag",
+        "desc": "Ogni immagine salvata in Le mie immagini (generazione IA, immagini della Chat) viene taggata automaticamente in background: tag, colore dominante e soggetto vengono aggiunti alla scheda pochi secondi dopo il salvataggio."
+      },
+      {
+        "title": "Organizzare",
+        "desc": "• Preferiti (♥): accesso rapido. • Collezioni: crea cartelle, aggiungi/rimuovi immagini, vista miniature o elenco."
+      },
+      {
+        "title": "Usare un'immagine nell'editor",
+        "desc": "• Clic: inserisce l'immagine al centro del canvas (ridimensionamento automatico). • Trascinamento: dalla griglia al canvas (equivale all'inserimento)."
+      },
+      {
+        "title": "Sorgenti esterne",
+        "desc": "• Pexels e Unsplash: banca integrata (ricerca + filtri). • Google Drive: collega il tuo account (scheda Google Drive) per attingere ai tuoi file."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "pim",
+    "cat": "Dati",
+    "icon": "📦",
+    "anim": "pim",
+    "title": "PIM",
+    "intro": "Gestire i tuoi database prodotti: schede, arricchimento IA, campi strutturati ed esportazione.",
+    "features": [
+      {
+        "title": "Database",
+        "desc": "Puoi gestire più basi in parallelo. Tre modi per crearne una: • Importare un file — da Excel o CSV/TSV (vedi Importare Excel). • Scraping del web — partire da URL prodotto e lasciare che l'IA compili le schede."
+      },
+      {
+        "title": "Arricchire una scheda tramite IA",
+        "desc": "Clicca su una riga → pannello Arricchito da IA a destra. Modalità AUTO (viola): se la riga ha un title, brand o reference, una ricerca web (Jina) + LLM trova l'URL ed estrae le informazioni (modello principale: Gemini, riserva: Claude)."
+      },
+      {
+        "title": "Campi strutturati",
+        "desc": "Oltre al testo semplice, una scheda memorizza campi ricchi, tutti utilizzabili nel data-merge: • Formule Excel: valutate al volo. • Specifiche: [{ group, name, value }] (dimensioni, materiali…)."
+      },
+      {
+        "title": "Campi calcolati (colonne formula)",
+        "desc": "Una colonna può essere una formula anziché un valore inserito — come in Excel. Scrivi un'espressione che fa riferimento ad altre colonne, e il valore si ricalcola al volo quando i dati cambiano."
+      },
+      {
+        "title": "Modificare la tabella come un foglio di calcolo",
+        "desc": "La tabella prodotti si manipola direttamente, senza uscire dalla pagina: • Modificare una cella: un clic seleziona, un secondo clic (o Invio) passa alla modifica; Invio conferma, Esc annulla."
+      },
+      {
+        "title": "Tipi di colonna (in stile Airtable)",
+        "desc": "Il pulsante «+» dell'intestazione apre un selettore del tipo di campo, raggruppati per categoria (Testo, Numero, Scelta, Data, Link, Altro) con ricerca."
+      },
+      {
+        "title": "Statistiche di colonna",
+        "desc": "Sotto l'intestazione di una colonna numerica, badge Min / Media / Max riepilogano i valori visibili. Cliccando Min ordina in modo crescente, Max in modo decrescente — un colpo d'occhio basta per individuare prezzi anomali o campi vuoti."
+      },
+      {
+        "title": "Freschezza per campo",
+        "desc": "Ogni valore arricchito riporta la data della sua ultima modifica (updatedAt a livello del campo)."
+      },
+      {
+        "title": "Più sorgenti in una base",
+        "desc": "La colonna laterale sinistra elenca le sorgenti di una base (ogni importazione / scrape / inserimento manuale = una sorgente). Clicca una sorgente per mostrare/nascondere i suoi prodotti nella tabella; selezionane più di una per unirle a schermo."
+      },
+      {
+        "title": "Galleria immagini di una scheda",
+        "desc": "Nel pannello della scheda, le immagini si riorganizzano tramite trascinamento (la prima funge da visual principale) e si eliminano una a una."
+      },
+      {
+        "title": "Classificare ed esportare",
+        "desc": "• Collega una base a una tassonomia per navigare il catalogo per categorie. • Una volta pronte le schede, il data-merge genera un documento per prodotto a partire da un template (PDF, PNG…)."
+      },
+      {
+        "title": "Vista galleria",
+        "desc": "Il commutatore tabella / galleria (in alto a destra della tabella) mostra i prodotti in schede: visual (colonna immagine rilevata automaticamente), titolo, prezzo o marca, e pastiglia di completezza. Cliccando una scheda si apre la scheda prodotto."
+      },
+      {
+        "title": "Completezza delle schede",
+        "desc": "Ogni riga della tabella riporta una pastiglia di completezza: verde (≥ 90 % delle colonne compilate), ambra (≥ 60 %) o rossa. Passaci sopra il mouse per vedere i campi mancanti."
+      },
+      {
+        "title": "Vedi anche",
+        "desc": "L'esportazione in serie (data-merge) è dettagliata nella sezione Esportazione multiformato. Il re-skin di un visual tramite i prodotti PIM è descritto nella sezione L'editor."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "taxonomies",
+    "cat": "Dati",
+    "icon": "🌳",
+    "anim": "taxonomy",
+    "title": "Tassonomie",
+    "intro": "Classificare prodotti e progetti in una gerarchia navigabile.",
+    "features": [
+      {
+        "title": "Creare una tassonomia",
+        "desc": "1. Vai in Tassonomie dal menu 2. Clicca Nuova tassonomia 3. Assegnale un nome (es: Categorie prodotti) 4. Aggiungi livelli: clicca su un nodo per creare un figlio, trascina per riorganizzare 5."
+      },
+      {
+        "title": "Navigazione intelligente",
+        "desc": "Non appena un database sorgente è attivo, il navigatore di sinistra espande automaticamente il ramo corrispondente e colora tutti gli antenati del nodo selezionato fino alla radice. Deselezionando si richiude il ramo."
+      },
+      {
+        "title": "Associare prodotti a una categoria",
+        "desc": "Nel PIM, ogni prodotto (riga) è collegato a un nodo della tassonomia. Due modi: • Manuale — seleziona una riga → clicca «Non classificato — clicca per classificare» sopra il pannello → scegli il nodo di destinazione."
+      },
+      {
+        "title": "Modificare l'albero (nodi)",
+        "desc": "Passa il mouse su una riga dell'albero per far comparire le sue azioni: • + — aggiunge un nodo figlio sotto il nodo evidenziato • ✏ (matita) — rinomina il nodo sul posto • 🔗 (catena) — collega progetti al nodo (visibile solo sui nodi foglia) •…"
+      },
+      {
+        "title": "Cercare un nodo nell'albero",
+        "desc": "Una barra «Cerca un nodo…» filtra l'albero a partire da 2 caratteri. Ogni risultato mostra la sua etichetta + il suo percorso completo (breadcrumb)."
+      },
+      {
+        "title": "Contatori di prodotti per nodo",
+        "desc": "Ogni nodo mostra quanti prodotti vi sono collegati, su due livelli: • il conteggio diretto (prodotti posti esattamente su questo nodo); • il conteggio cumulativo, che aggrega il nodo e tutti i suoi discendenti — un nodo padre totalizza quindi tutto ciò…"
+      },
+      {
+        "title": "Classificare i prodotti in lotto (IA)",
+        "desc": "Invece di sistemare le righe una a una, puoi avviare una classificazione IA in lotto: l'assistente legge il contenuto di ogni riga del foglio attivo e propone il nodo più probabile della tassonomia di destinazione."
+      },
+      {
+        "title": "Importare una tassonomia da un file",
+        "desc": "Anziché inserire l'albero a mano, importa una nomenclatura esistente in formato .md / .txt (indentazione = gerarchia), .csv o .xlsx."
+      },
+      {
+        "title": "Costruire una tassonomia dalle colonne del PIM",
+        "desc": "Se il tuo foglio contiene già colonne di categorizzazione (es. Famiglia, Sottofamiglia, Tipo), assegna a ciascuna un livello (1, 2, 3…)."
+      },
+      {
+        "title": "Più tassonomie e gestione globale",
+        "desc": "Puoi mantenere più tassonomie in parallelo (es. una per asse di analisi) e passare dall'una all'altra dall'elenco."
+      },
+      {
+        "title": "Collegare progetti (design) a un nodo",
+        "desc": "Oltre ai prodotti, un nodo foglia può fare riferimento a progetti (design dell'editor)."
+      },
+      {
+        "title": "Costruzione automatica dallo scraping",
+        "desc": "Quando fai scraping di un sito con un breadcrumb (percorso di navigazione), IBS-Studio può costruire automaticamente una tassonomia a partire dai percorsi di categoria incontrati. Utile per avviare un PIM che rispecchia un sito fornitore."
+      },
+      {
+        "title": "Scheda Brief",
+        "desc": "La pagina Tassonomie ospita anche la scheda Brief: descrivi un'esigenza in linguaggio naturale, l'IA pone domande, compone un carrello di prodotti dal catalogo e struttura un deck. Dettagli nella sezione Brief e generazione IA."
+      },
+      {
+        "title": "Caso d'uso",
+        "desc": "• Catalogo multimarca: tassonomia principale per tipologia di prodotto (Utensili / Giardino / Elettrodomestici) • Multilingua: una tassonomia per lingua, oppure una tassonomia unica con etichette multilingue sui nodi • Reporting: f…"
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "briefs",
+    "cat": "Dati",
+    "icon": "📝",
+    "anim": "chat",
+    "title": "Brief e generazione IA",
+    "intro": "Descrivere in italiano ciò che si desidera, l'IA produce il contenuto.",
+    "features": [
+      {
+        "title": "Modelli IA utilizzati",
+        "desc": "IBS-Studio si basa per impostazione predefinita su: • Claude Opus (Anthropic) — domande dinamiche, composizione del carrello e struttura del deck • Gemini (Google) — prompt di immagini, parole chiave del catalogo, generazione di immagini (Claude come riserva) • Arricchim…"
+      },
+      {
+        "title": "Dove usare i brief?",
+        "desc": "Nelle Tassonomie: la scheda Brief della pagina Tassonomie è il pannello dedicato — descrivi la tua esigenza, l'IA pone domande dinamiche, compone un carrello di prodotti dal catalogo e struttura un deck (con prompt di immagini)."
+      },
+      {
+        "title": "L'assistente brief in 5 fasi",
+        "desc": "Nelle Tassonomie, aprire un brief avvia un assistente guidato che trasforma un'esigenza del cliente in una proposta commerciale consegnabile: 1."
+      },
+      {
+        "title": "Come l'IA compone il carrello",
+        "desc": "Al primo accesso alla fase Carrello, la generazione parte automaticamente (carrello vuoto + nessun registro precedente)."
+      },
+      {
+        "title": "Modificare ed esportare il carrello",
+        "desc": "Il carrello generato resta completamente modificabile, riga per riga: quantità, aggiunta/rimozione di prodotti, e soprattutto un prezzo applicato che può sovrascrivere il prezzo di catalogo originale (entrambi vengono conservati)."
+      },
+      {
+        "title": "Deck ed esportazione PPTX",
+        "desc": "L'IA abbozza un deck composto da slide tipizzate: copertina, contesto, griglia di prodotti (layout 2×2 / 3×2 / 1×3), focus prodotto, budget (totale + dettaglio) e call to action."
+      },
+      {
+        "title": "Generazione di immagini",
+        "desc": "Il DAM integra la generazione di immagini tramite Gemini (modello immagine chiamato «Image IA»). Descrivi un'immagine in italiano o in inglese, l'IA produce un visual utilizzabile direttamente nei tuoi template."
+      },
+      {
+        "title": "Limiti dei brief",
+        "desc": "• L'IA può allucinare riferimenti o caratteristiche. Verifica sempre il risultato prima della pubblicazione, soprattutto su cifre e norme. • I brief sono stateless: nessuna memoria conversazionale."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "scraping",
+    "cat": "Dati",
+    "icon": "🕸️",
+    "anim": "scrape",
+    "title": "Scraping prodotti",
+    "intro": "Recuperare schede prodotto dal web — senza inserimento manuale.",
+    "features": [
+      {
+        "title": "Quale modalità usare?",
+        "desc": "Per un fornitore che scraperai più di 2 volte, crea un template. È la via migliore: 0 allucinazioni IA, 0 token consumati, riutilizzabile su centinaia di URL."
+      },
+      {
+        "title": "Creare un template di scraping",
+        "desc": "1. Apri la pagina Template scraping dal menu laterale 2. Clicca Nuovo → inserisci un nome (es: Nicoll), il dominio (nicoll.fr) e un pattern di URL (. per corrispondere a tutto) 3."
+      },
+      {
+        "title": "Scheda Ricerca: «trovami questo, lì»",
+        "desc": "Nessun URL a portata di mano? Descrivi cosa cerchi e dove in linguaggio naturale — «tosaerba Honda da LeroyMerlin e Castorama»."
+      },
+      {
+        "title": "Più siti/URL in una volta (Elenco · File · Google Sheet)",
+        "desc": "Le schede Crawl e Map + Extract non si limitano a un solo URL. Il selettore di sorgente propone 4 modalità: • 1 URL: il caso semplice. • Elenco: incolla più URL radice, uno per riga."
+      },
+      {
+        "title": "Affinare un Crawl: limite, includi/escludi (regex)",
+        "desc": "Prima di estrarre i link, puoi delimitare la scoperta: • Limite di pagine (da 1 a 500, predefinito 30) — per URL radice in modalità multi. • Includi (regex): conservare solo i percorsi che corrispondono, es. /produits/.."
+      },
+      {
+        "title": "Monitorare il costo e arrestare un'esecuzione",
+        "desc": "• Chip del costo (in alto nella finestra modale): somma in tempo reale l'ultima elaborazione e il totale della sessione, suddiviso per sorgente — LLM, Jina, Firecrawl, Bright Data."
+      },
+      {
+        "title": "Cosa recupera esattamente «Prodotto completo»?",
+        "desc": "Tutte le schede (Scrape / Crawl / Map+Extract / Ricerca) terminano con lo stesso motore PIM (enrichProductCore), per un risultato omogeneo qualunque sia il percorso: • Specifiche in formato KEY/VALUE (caratteristiche tecniche strutturate)."
+      },
+      {
+        "title": "Scraping dal database (Map + Extract)",
+        "desc": "Quando non hai ancora un template, o per esplorare un nuovo sito: 1. PIM → apri un database (o crealo vuoto) 2. Pulsante Scraping del web → scheda Map + Extract 3. Incolla un URL di categoria → Mappare il sito → elenco dei link interni 4."
+      },
+      {
+        "title": "Limiti da conoscere",
+        "desc": "• Siti e-commerce ostili (Mr-Bricolage, Darty, Boulanger…): DataDome/Akamai può bloccare."
+      },
+      {
+        "title": "Suggerimento pro: arricchimento solo URL",
+        "desc": "Puoi importare un Excel con la sola colonna URL (senza titolo/marca/rif). La pipeline rileva la colonna URL, ritrova il template per dominio, e avvia l'arricchimento TEMPLATE con un clic."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "scraping-templates",
+    "cat": "Dati",
+    "icon": "🧩",
+    "anim": "scrape",
+    "title": "Template scraping",
+    "intro": "Creare e mantenere i template di estrazione per fornitore: selettori CSS, prompt e test.",
+    "features": [
+      {
+        "title": "L'editor di template",
+        "desc": "• Nuovo crea un template: nome, dominio (nicoll.fr), pattern di URL (. per corrispondere a tutto)."
+      },
+      {
+        "title": "Tre livelli di prompt IA",
+        "desc": "A complemento dei selettori, tre prompt facoltativi guidano la post-elaborazione LLM: • Prompt globale (del template): istruzioni di riformattazione per tutti i prodotti di questo template — es."
+      },
+      {
+        "title": "Cinque tipi di selettori",
+        "desc": "Oltre al CSS classico, ogni campo accetta più strategie testate in ordine — si mantiene il primo valore non vuoto, il che rende il template robusto quando il fornitore cambia il suo CSS: • CSS: selettore standard, legge il testo…"
+      },
+      {
+        "title": "Trasformazioni e specifiche KEY/VALUE",
+        "desc": "• Trasformazioni per campo: trim, normalize-whitespace, uppercase/lowercase, parse-number, parse-price (isola il numero da un prezzo), absolutize-url (percorso relativo → URL assoluto, applicato automaticamente quando si cattura un src/href), decode-h…"
+      },
+      {
+        "title": "Pre-azioni e cattura tramite estensione Chrome",
+        "desc": "• Pre-azioni (scheda Avanzate): prima della cattura del DOM, si possono concatenare click (espandere un accordion/scheda), scroll, wait, waitForSelector e acceptCookies (rilevamento automatico del banner) — indispensabile per le schede le cui specifiche sono d…"
+      },
+      {
+        "title": "Ordine dei campi e alias di marca (livello fornitore)",
+        "desc": "• Ordine dei campi: riorganizzare i campi tramite trascinamento fissa il loro ordine di visualizzazione nell'arricchimento — condiviso tra tutti i template dello stesso dominio."
+      },
+      {
+        "title": "Statistiche d'uso",
+        "desc": "Ogni template traccia il suo numero di applicazioni e di successi — un template con un tasso di successo in calo segnala un sito che ha cambiato struttura (selettori da riassegnare)."
+      },
+      {
+        "title": "Vedi anche",
+        "desc": "La panoramica per fornitore (template raggruppati per dominio) è nello Scraping Hub. Le istruzioni generali dello scraping (quale modalità scegliere, Map + Extract, limiti anti-bot) sono nella sezione Scraping prodotti."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "scraping-hub",
+    "cat": "Dati",
+    "icon": "🛰️",
+    "anim": "scrape",
+    "title": "Scraping Hub",
+    "intro": "Il centro di controllo dello scraping: regole del team, vista per fornitore e debug delle estrazioni.",
+    "features": [
+      {
+        "title": "Regole",
+        "desc": "Le regole redazionali del team (markdown): convenzioni di denominazione, formati di prezzo, lingua delle descrizioni… Memorizzate in Firestore e condivise da tutto il team, fungono da riferimento comune per gli arricchimenti."
+      },
+      {
+        "title": "Fornitori e Template",
+        "desc": "Panoramica di tutti i template raggruppati per dominio fornitore: espandi un fornitore per vedere i suoi template e il loro stato, e apri direttamente l'editor di template con un clic."
+      },
+      {
+        "title": "Debug Jina/LLM",
+        "desc": "Il registro delle ultime richieste di scraping (max 30, aggiornato ogni 2 s): per ogni chiamata, il contenuto restituito da Jina e la risposta dell'LLM."
+      },
+      {
+        "title": "Regole: editor markdown con anteprima live",
+        "desc": "La scheda Regole è un editor affiancato: scrivi markdown a sinistra, il rendering appare in tempo reale a destra (titoli, elenchi, tabelle GFM)."
+      },
+      {
+        "title": "Fornitori: prompt per dominio, campi e tasso di successo",
+        "desc": "Sotto ogni dominio fornitore, ritrovi il prompt fornitore se ne esiste uno (riquadro blu, badge «prompt fornitore definito»): queste istruzioni specifiche del sito si applicano a tutti i suoi template."
+      },
+      {
+        "title": "Debug: un registro LOCALE a questo browser",
+        "desc": "Il registro di debug è memorizzato in locale su questa postazione (localStorage), non in Firestore: non è quindi condiviso con il team e riflette solo i tuoi arricchimenti recenti."
+      },
+      {
+        "title": "Vedi anche",
+        "desc": "La creazione dei template avviene in Template scraping; le istruzioni generali (Scrape, Map + Extract, Crawl, limiti anti-bot) sono in Scraping prodotti."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "price-watch",
+    "cat": "Dati",
+    "icon": "💰",
+    "anim": "pricewatch",
+    "title": "Monitoraggio prezzi",
+    "intro": "Segui i prezzi dei tuoi concorrenti: dashboard degli scarti, posizionamento e avvisi.",
+    "features": [
+      {
+        "title": "Come si configura",
+        "desc": "Tutto parte da un workflow contenente il node «Monitoraggio prezzi»: 1. Un foglio di prodotti in ingresso (il tuo catalogo: SKU/EAN, Nome, Marca, e il tuo prezzo). 2. I siti concorrenti da monitorare (un dominio per riga, es: amazon.fr). 3."
+      },
+      {
+        "title": "Come ogni prodotto viene ritrovato presso un concorrente",
+        "desc": "Fornisci solo il dominio di un concorrente — non l'URL di ogni scheda. Per ogni prodotto, il node avvia una ricerca web limitata a quel dominio (site:dominio): prima per SKU (o EAN in mancanza), poi per Marca + Nome."
+      },
+      {
+        "title": "Abbinamento automatico vs «da confermare»",
+        "desc": "Prima di rilevare un prezzo, il node verifica che la pagina descriva esattamente il tuo prodotto. Se l'EAN rilevato sulla pagina è identico a quello del prodotto, l'abbinamento è autorevole (affidabilità 100 %, senza chiamata al modello IA)."
+      },
+      {
+        "title": "Convalidare le corrispondenze (Confermare / Rifiutare)",
+        "desc": "La dashboard è in sola lettura per i prezzi, ma propone un'azione: una coda «Da confermare» elenca gli abbinamenti incerti (con la % di affidabilità e un link alla pagina)."
+      },
+      {
+        "title": "Campi da scrapare per sito",
+        "desc": "In «Siti concorrenti», ogni riga accetta un elenco di campi dopo una barra verticale: amazon.fr | price, availability. Senza campi specificati, viene rilevato solo il prezzo (price)."
+      },
+      {
+        "title": "Individuare un abbinamento errato",
+        "desc": "Nel confronto, passa il mouse su un prezzo: un tooltip «Rilevato: …» mostra il nome e l'EAN realmente letti sulla pagina della concorrenza."
+      },
+      {
+        "title": "Identificativo del monitoraggio",
+        "desc": "Il campo «Identificativo del monitoraggio» del node memorizza, tra due esecuzioni, gli URL della concorrenza fissati e la cronologia dei prezzi (ultimi 30 rilevamenti per coppia prodotto × sito)."
+      },
+      {
+        "title": "Avvisi di posizionamento e variazione",
+        "desc": "Due famiglie di avvisi: il posizionamento (confronto del tuo prezzo — colonna «Il mio prezzo» — con quello dei concorrenti) e la variazione (un prezzo della concorrenza è cambiato dall'ultima esecuzione, oltre la soglia % configurata)."
+      },
+      {
+        "title": "Confrontare i prezzi tra siti",
+        "desc": "Per un confronto occasionale prezzo A | prezzo B | scarto tra più insegne (senza avvisi), usa piuttosto i node «Prodotti di una pagina elenco» + «Confrontare i prezzi» in un workflow."
+      },
+      {
+        "title": "Ricevere gli avvisi",
+        "desc": "Collega la porta changes del node a «Inviare tramite Telegram» («1 messaggio per riga») per essere avvisato a ogni movimento di prezzo — anche quando il workflow gira in cron sul server, browser chiuso."
+      },
+      {
+        "title": "Vedi anche",
+        "desc": "Il dettaglio dei node («Monitoraggio prezzi», «Sorveglianza prezzi», «Confrontare i prezzi») e della pianificazione cron sul server è nella sezione Workflow; l'invio di avvisi è trattato in Telegram."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "retail-promo",
+    "cat": "Dati",
+    "icon": "✦",
+    "anim": "default",
+    "title": "Creazione studio",
+    "intro": "Crea e gestisci le tue promozioni retail: visual, offerte e declinazioni multiformato.",
+    "features": [],
+    "shortcuts": []
+  },
+  {
+    "id": "export",
+    "cat": "Esportazione",
+    "icon": "📤",
+    "anim": "export",
+    "title": "Esportazione multiformato",
+    "intro": "Esportare un PDF per la stampa, un IDML, un PPTX, un SVG, un PNG, una cartella web HTML o un pacchetto social — singolo o in serie.",
+    "features": [
+      {
+        "title": "Formati disponibili",
+        "desc": "Tutte le esportazioni sono fedeli all'impaginato in corso nell'editor. Il data-merge attivo influenza il contenuto ma non il formato."
+      },
+      {
+        "title": "Esportazione PDF con opzioni di stampa",
+        "desc": "1. Imposta prima l'abbondanza e i segni nel pannello Stampa dell'editor (è quello che fa fede — la finestra modale di esportazione non ha un campo bleed) 2. Pulsante Esporta → scegli PDF 3."
+      },
+      {
+        "title": "Esportazione batch (più file)",
+        "desc": "Quando il data-merge è attivo, l'esportazione genera una variante per ogni riga del database: 1. Apri il pannello Data Merge → verifica il mapping placeholder ↔ colonne 2."
+      },
+      {
+        "title": "Esportazione IDML (ritorno a InDesign)",
+        "desc": "Quando vuoi che la tua grafica rifinisca a mano in InDesign: 1. Configura il tuo impaginato + data-merge in IBS-Studio 2. Esportazione IDML → IBS-Studio ricostruisce un file IDML standard con i valori già uniti."
+      },
+      {
+        "title": "Pagine declinate vs Pacchetto social — quale differenza?",
+        "desc": "Entrambi partono dagli stessi quattro rapporti (post quadrato 1080×1080, story/reel 1080×1920, orizzontale 1920×1080, banner 1500×500), ma non producono la stessa cosa: «Pagine declinate» invia all'IA un'anteprima della pagina più l'elenco dei suoi…"
+      },
+      {
+        "title": "Cosa contiene davvero ogni file",
+        "desc": "• PDF: un'immagine ad alta risoluzione del canvas (rendering ×2, qualità massima) più uno strato di testo invisibile selezionabile/ricercabile posto su ogni blocco di testo. Il PDF resta quindi «piatto» visivamente ma il testo è copiabile."
+      },
+      {
+        "title": "SVG: compatibilità Illustrator / Figma",
+        "desc": "L'esportazione SVG non si limita al toSVG() grezzo di Fabric, lo riscrive per gli editor vettoriali esigenti: • le immagini (DAM, Unsplash, IDML collegato) vengono convertite in data: URL durante l'esportazione — Illustrator non prova più a risolv…"
+      },
+      {
+        "title": "Buone pratiche",
+        "desc": "• Fai sempre un'esportazione di prova su 1 riga prima di avviare un batch di 200 — individui più velocemente i problemi di font o di immagini mancanti • Verifica i font: se è stato applicato un fallback Arial, il tuo stampatore lo noterà."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "workflow",
+    "cat": "Automazione",
+    "icon": "⚡",
+    "anim": "workflow",
+    "title": "Workflow",
+    "intro": "Concatenare le funzioni dell'app in pipeline visive — in stile Zapier / Make.",
+    "features": [
+      {
+        "title": "Due modi per costruire",
+        "desc": "• Manuale: trascina i node dalla palette (a sinistra), collegali, configura ciascuno (pannello di destra), poi Run."
+      },
+      {
+        "title": "Catalogo dei node",
+        "desc": "Espandi una categoria per vedere i suoi node."
+      },
+      {
+        "title": "Importazione (sorgenti)",
+        "desc": ""
+      },
+      {
+        "title": "Arricchimento",
+        "desc": ""
+      },
+      {
+        "title": "Trasformazione",
+        "desc": ""
+      },
+      {
+        "title": "Salvataggio",
+        "desc": ""
+      },
+      {
+        "title": "Esportazione",
+        "desc": ""
+      },
+      {
+        "title": "Logica",
+        "desc": ""
+      },
+      {
+        "title": "Comunicazione e controllo",
+        "desc": ""
+      },
+      {
+        "title": "Node «Web Scraping» unificato",
+        "desc": "Un solo node Web Scraping copre tutti i modi di riportare dati dal web, tramite un selettore di Modalità: • Scrape — uno o più URL → campi prodotto (Jina + IA). • Elenco — pagine di categoria → elenco di prodotti."
+      },
+      {
+        "title": "Node «Grafico»",
+        "desc": "Il node «Grafico» trasforma una tabella in un'immagine di grafico (PNG, tramite chart.js). Scegli il tipo — Barre, Linee, Area, Torta, Ciambella — la colonna dell'asse X, la o le colonne dei valori e un'aggregazione facoltativa."
+      },
+      {
+        "title": "Schermata «Risultato»",
+        "desc": "Il pulsante «Risultato» nell'intestazione dell'editor apre una pagina dedicata (/workflows/:id/result) che visualizza l'ultima esecuzione nella forma più pertinente: Dashboard, Tabella, Grafico, Galleria (immagini), Documento o Dati (JSO…"
+      },
+      {
+        "title": "I miei modelli (modelli personalizzati)",
+        "desc": "Oltre alla galleria pronta all'uso, puoi salvare il tuo montaggio: il pulsante «Modello» nell'editor salva il grafo corrente come modello riutilizzabile (creazione o aggiornamento)."
+      },
+      {
+        "title": "Arrestare un'esecuzione sul server (STOP)",
+        "desc": "Un workflow avviato dal cron o da un webhook gira senza browser. Il pannello di stato del Cron mostra allora un pulsante rosso STOP: pone un flag di interruzione che l'esecutore sul server interroga continuamente e l'esecuzione si arresta in pochi se…"
+      },
+      {
+        "title": "Esempi di pipeline",
+        "desc": "• Monitoraggio: Ricerca web → Esportazione Excel → Inviare tramite Gmail. • Risposta con fonti: Domanda web (IA) → Inviare tramite Telegram. • Schede prodotto: Scrape URL → Arricchimento → Save PIM → Esportazione PPTX."
+      },
+      {
+        "title": "Pilotare da Telegram",
+        "desc": "I workflow si attivano anche da remoto: /flow <richiesta> genera ed esegue un workflow, /run <nome> riesegue un workflow salvato — e il file prodotto torna su Telegram."
+      },
+      {
+        "title": "Modelli pronti all'uso",
+        "desc": "La pagina Workflow propone una galleria «Iniziare da un modello»: Scraping di un sito → PIM, Monitoraggio quotidiano → Telegram (cron), Scrape → approvazione ✅ → PIM, Ricerca web → Excel."
+      },
+      {
+        "title": "Approvazione umana (Telegram)",
+        "desc": "Il node «Approvazione Telegram» mette in pausa l'esecuzione e invia la domanda su Telegram con pulsanti ✅ Approva / ❌ Rifiuta."
+      },
+      {
+        "title": "Sorveglianza prezzi",
+        "desc": "Il node «Sorveglianza prezzi» memorizza i prezzi dell'esecuzione precedente (per identificativo di monitoraggio) ed emette la porta changes solo se un prezzo è variato oltre la soglia — le righe emesse riportano ancienprix, nouveauprix e variationpct, pronte per un mess…"
+      },
+      {
+        "title": "Pianificare (cron sul server)",
+        "desc": "Il node «Cron» esegue il workflow sul server, browser chiuso: cadenza al minuto, ora, giorno, settimana o mese, ora precisa HH:MM, giorno della settimana specifico o «Tutti i giorni» — fuso Europe/Paris, granularità minima 1 minuto."
+      },
+      {
+        "title": "Webhook in entrata (attivazione esterna)",
+        "desc": "Il pulsante Webhook nell'intestazione dell'editor genera un URL segreto per attivare questo workflow dall'esterno (Zapier, Make, un ERP, un semplice curl): L'esecuzione avviene sul server (stessi node del cron) e compare nella cronolo…"
+      },
+      {
+        "title": "Debug passo dopo passo",
+        "desc": "Il pulsante «Passo dopo passo» (accanto a Run) esegue il workflow node per node: l'esecuzione si mette in pausa prima di ogni fase — il pulsante ambra «Fase: <node>» nell'intestazione esegue la successiva."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "telegram",
+    "cat": "Automazione",
+    "icon": "✈️",
+    "anim": "telegram",
+    "title": "Telegram",
+    "intro": "Pilotare IBS-Studio da Telegram: chat IA con accesso web, generazione ed esecuzione di workflow.",
+    "features": [
+      {
+        "title": "Avvio",
+        "desc": "1. Impostazioni → Connettori: incolla il bot token (ottenuto tramite BotFather) e il tuo chat ID. 2. Apri la scheda Telegram nel menu laterale: è lei che fa girare il «worker» che elabora i messaggi. 3."
+      },
+      {
+        "title": "(testo libero) — Chat IA con accesso web",
+        "desc": "Il bot risponde tramite l'LLM. Se l'informazione richiesta è recente (risultato, notizia, prezzo) o se incolli un URL, cerca sul web e legge le pagine prima di rispondere. La risposta cita le sue fonti e il modello utilizzato."
+      },
+      {
+        "title": "/flow <richiesta> — Generare + eseguire un workflow",
+        "desc": "Genera un workflow tramite IA dalla tua richiesta, lo esegue e ti restituisce il file prodotto. Es: /flow scrape https://exemple.com/categorie ed esporta un Excel."
+      },
+      {
+        "title": "/run <nome> [testo] — Eseguire un workflow salvato",
+        "desc": "Esegue un workflow già salvato (tramite il suo nome); l'eventuale testo funge da input. /run da solo elenca i workflow disponibili."
+      },
+      {
+        "title": "/clear — Svuotare la casella",
+        "desc": "Svuota la casella di posta in arrivo — lato app E lato Telegram (messaggi di meno di 48 h). Alias: /purge, /vider."
+      },
+      {
+        "title": "/start — (ignorato)",
+        "desc": "Comando di servizio Telegram — ignorato, non ingombra la casella."
+      },
+      {
+        "title": "Buono a sapersi",
+        "desc": "• Conversazione bidirezionale: i messaggi in entrata E in uscita vengono registrati nella scheda Telegram. • File: un workflow che produce un'esportazione (Excel, PDF, PPTX…) restituisce il file come allegato; altrimenti un riepilogo."
+      },
+      {
+        "title": "Risposte senza browser (risponditore sul server)",
+        "desc": "Non serve più avere l'app aperta: un risponditore sul server elabora i vostri messaggi non appena arrivano — • Domande: risposta LLM immediata, con ricerca web automatica (Jina) quando la domanda lo richiede (prezzo, attualità, contenuto di un URL) — font…"
+      },
+      {
+        "title": "Approvazione umana in un workflow",
+        "desc": "Il node «Approvazione Telegram» (categoria Comunicazione nell'editor di workflow) mette in pausa l'esecuzione e chiede una convalida a un umano, direttamente nella messaggistica: • Il bot invia la tua domanda con due pulsanti inline ✅ Approv…"
+      },
+      {
+        "title": "Sicurezza: secret + allowlist",
+        "desc": "Il webhook in entrata accetta un messaggio solo se sono soddisfatte due condizioni: • Il secret token inviato da Telegram corrisponde al webhookSecret registrato sul server (qualsiasi richiesta senza il corretto header X-Telegram-Bot-Api-Secret-Token viene r…"
+      },
+      {
+        "title": "Perché mai una doppia risposta",
+        "desc": "All'arrivo di un messaggio, il risponditore sul server tenta un claim transazionale: fa passare la scheda da pending a processing (e si attribuisce workerId: 'server') in un'unica transazione."
+      },
+      {
+        "title": "Digest giornaliero",
+        "desc": "In Impostazioni → Connettori → Telegram, attiva il digest giornaliero: ogni mattina alle 08:00 (ora di Parigi), il bot invia un riepilogo delle ultime 24 h — workflow riusciti/falliti (con i nomi) e messaggi in attesa di elaborazione."
+      },
+      {
+        "title": "Vedi anche",
+        "desc": "/flow e /run si basano sul modulo Workflow: la generazione tramite IA e l'esecuzione sono le stesse dell'editor di workflow."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "chat",
+    "cat": "Assistente IA",
+    "icon": "💬",
+    "anim": "chat",
+    "title": "Chat IA",
+    "intro": "Un assistente conversazionale integrato: domande, redazione, codice, generazione di immagini.",
+    "features": [
+      {
+        "title": "Conversazione multi-turno",
+        "desc": "La chat mantiene il filo della conversazione durante la sessione (gli ultimi 30 messaggi vengono trasmessi al modello — oltre, l'inizio del filo esce dal contesto)."
+      },
+      {
+        "title": "Allegati",
+        "desc": "Allega immagini (PNG, JPEG, WebP, GIF) per farle analizzare — analisi possibile con i modelli multimodali (Claude, Gemini, OpenAI); gli altri fornitori ignorano le immagini."
+      },
+      {
+        "title": "Generazione di immagini",
+        "desc": "Scegli la categoria Immagine: il campo di inserimento passa in modalità generazione (motore Image IA). Allega immagini di riferimento per modificarle. Sotto ogni immagine generata: Scaricare o Salvare nel DAM (viene aggiunta a «Le mie immagini»)."
+      },
+      {
+        "title": "Inserimento vocale",
+        "desc": "Detta la tua richiesta al microfono: il parlato viene trascritto in testo nell'area di inserimento."
+      },
+      {
+        "title": "Libreria di prompt",
+        "desc": "Alcune categorie (Scrivere, Imparare, Codice, Vita quotidiana, Idee, Immagine, I miei prompt) propongono prompt pronti all'uso."
+      },
+      {
+        "title": "Riutilizzare e duplicare un prompt",
+        "desc": "Il menu ⋯ di ogni prompt permette di rinominarlo / modificarlo, duplicarlo (crea una copia «titolo (copia)» da adattare) o eliminarlo. Ogni utilizzo viene conteggiato: i prompt più richiesti e i preferiti vengono messi in evidenza."
+      },
+      {
+        "title": "Scelta del modello",
+        "desc": "La Chat utilizza una cascata di modelli: se il modello principale fallisce, il successivo subentra automaticamente."
+      },
+      {
+        "title": "Cambiare modello al volo",
+        "desc": "Il badge del modello, accanto al pulsante di invio, è cliccabile: espande l'elenco di tutti i modelli della cascata (raggruppati per fornitore, con la loro tariffa indicativa input / output)."
+      },
+      {
+        "title": "Da non confondere",
+        "desc": "• La Chat IA è conversazionale: non accede al web e non agisce sull'app (non crea progetti, non fa scraping, non avvia workflow)."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "access",
+    "cat": "Amministrazione",
+    "icon": "🛡️",
+    "anim": "access",
+    "title": "Utenti e ruoli",
+    "intro": "Approvare gli account, assegnare ruoli e regolare in modo preciso i permessi. Riservato al proprietario.",
+    "features": [
+      {
+        "title": "Onboarding di un nuovo utente",
+        "desc": "1. La persona accede tramite Google: il suo account è inizialmente «in attesa» (nessun accesso). 2. Nella scheda Utenti, gli assegni un ruolo. 3. Al suo prossimo accesso, l'app mostra solo i moduli autorizzati dal suo ruolo."
+      },
+      {
+        "title": "Assegnare un ruolo",
+        "desc": "Scegli il ruolo di ogni utente da un elenco a discesa. Il ruolo definisce l'insieme di base dei suoi permessi."
+      },
+      {
+        "title": "Override granulari",
+        "desc": "Oltre al ruolo, puoi concedere o revocare permessi individuali a un utente specifico (es. aprirgli l'esportazione senza cambiare il suo ruolo). Reimpostare gli override cancella questi aggiustamenti."
+      },
+      {
+        "title": "Bloccare / riattivare",
+        "desc": "Bloccare sospende totalmente un account senza eliminarlo: nessun accesso, nemmeno con un ruolo. Riattivare gli restituisce i suoi diritti."
+      },
+      {
+        "title": "Scheda «Ruoli»",
+        "desc": "Crea e modifica i ruoli del team tramite una matrice di permessi per modulo. Tre viste: Schede (per modulo), Albero (gerarchia) e Mappa mentale (grafo)."
+      },
+      {
+        "title": "I ruoli sono completamente personalizzati",
+        "desc": "Nessun ruolo è fornito per impostazione predefinita: crei tu stesso i ruoli di cui il team ha bisogno (un nome + una selezione di permessi), li rinomini e li elimini liberamente."
+      },
+      {
+        "title": "Moduli coperti dai permessi",
+        "desc": "Libreria, Importazione (per formato), DAM, PIM, Tassonomie, Scraping (template e hub), Workflow, Animazione, Chat IA, Telegram e Impostazioni — ciascuno con le sue azioni (creare, modificare, eliminare, esportare, eseguire…)."
+      },
+      {
+        "title": "Regole di sicurezza",
+        "desc": "• I permessi effettivi = ruolo + permessi concessi − permessi revocati. • Il proprietario ha un accesso totale non modificabile."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "audit-log",
+    "cat": "Amministrazione",
+    "icon": "✦",
+    "anim": "default",
+    "title": "Registro di audit e La mia attività",
+    "intro": "Chi ha fatto cosa, quando. Ogni utente ritrova le proprie azioni in «La mia attività»; l'amministratore vede tutto nel «Registro», filtrabile e con il prima/dopo di ogni modifica.",
+    "features": [
+      {
+        "title": "I filtri: CHI / COSA / QUANDO",
+        "desc": "• Tipo: il modulo interessato (Accesso, Dati, Esportazione, Workflow, IA, Impostazioni…). • Cosa: l'azione precisa (l'elenco si restringe al tipo scelto). • Chi (solo Registro admin): l'utente. • Quando: un intervallo di date (Dal / al)."
+      },
+      {
+        "title": "Ciò che viene registrato",
+        "desc": "• Accesso / ruoli: accesso, assegnazione/revoca di ruolo, blocco/sblocco, permesso concesso/revocato, ruolo modificato, eliminazione di utente."
+      },
+      {
+        "title": "Svuotare la propria cronologia",
+        "desc": "In La mia attività, il pulsante «Svuota la cronologia» (con conferma) elimina le tue voci. Ogni utente può cancellare solo le proprie; l'amministratore può eliminare tutto."
+      },
+      {
+        "title": "Non vedo il prima/dopo su righe più vecchie",
+        "desc": "Il dettaglio (prima → dopo, o la dimensione) compare solo sulle azioni successive all'aggiunta della funzionalità. Le voci sono immutabili: non si completano retroattivamente."
+      },
+      {
+        "title": "Perché due «DataSet salvato» di seguito?",
+        "desc": "Ogni salvataggio della base crea una voce. Se la dimensione (righe/colonne) non è cambiata, la riga mostra solo la dimensione; se hai aggiunto/eliminato righe, mostra il prima → dopo."
+      },
+      {
+        "title": "Chi può vedere il Registro completo?",
+        "desc": "Solo l'amministratore (o il proprietario) vede il Registro di tutti gli utenti, con il filtro Chi. Un utente standard vede solo le sue azioni, in Impostazioni → La mia attività."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "settings",
+    "cat": "Amministrazione",
+    "icon": "⚙️",
+    "anim": "settings",
+    "title": "Impostazioni",
+    "intro": "Chiavi API e modelli IA, connettori (Drive, Telegram, scraping), cookie, statistiche d'uso.",
+    "features": [
+      {
+        "title": "Scheda Profilo — identità e aspetto",
+        "desc": "• Il tuo profilo (nome, e-mail dell'account Google). • La sezione Aspetto commuta il tema: Chiaro, Scuro (predefinito) o Sistema. La scelta viene memorizzata sul tuo account e ti segue da una postazione all'altra. Il tema si commuta anche dalla palette ⌘K."
+      },
+      {
+        "title": "Scheda IA — chiavi e modelli",
+        "desc": "• Inserisci le chiavi API di ogni fornitore (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter) e testale con un clic. • Scegli il modello di ogni fornitore."
+      },
+      {
+        "title": "Budget IA e proxy sul server",
+        "desc": "Le chiamate LLM passano per un proxy sul server: la richiesta parte senza la tua chiave API, il server aggiunge la chiave (letta dal tuo profilo) e applica il tuo budget mensile."
+      },
+      {
+        "title": "Telegram",
+        "desc": "Incolla il bot token (tramite BotFather) e il tuo chat ID per pilotare l'app da Telegram. È qui che il bot del modulo Telegram attinge la sua configurazione."
+      },
+      {
+        "title": "Google Drive",
+        "desc": "Collega il tuo Google Drive (OAuth) affinché i workflow e il node save-dam vi depositino file."
+      },
+      {
+        "title": "Google — accesso server (Drive + Gmail)",
+        "desc": "Autorizza una sola volta (pulsante «Connetti») il server ad agire per te quando l'app è chiusa: i workflow pianificati (cron), il webhook e /flow su Telegram possono allora creare Google Sheets nel tuo Drive e inviare Gmail."
+      },
+      {
+        "title": "Scraping (Bright Data, Jina, Firecrawl, Remove.bg)",
+        "desc": "Token dei servizi di scraping e di elaborazione immagini. Bright Data offre il Web Unlocker e, in escalation, lo Scraping Browser (tier 2) per i siti più protetti."
+      },
+      {
+        "title": "Scheda Cookie",
+        "desc": "Gestisci i cookie di sessione per fare scraping di siti B2B dietro login. Incolla i cookie copiati dal tuo browser; vengono iniettati nelle richieste di scraping. La loro validità è limitata nel tempo (da reincollare regolarmente)."
+      },
+      {
+        "title": "Scheda Dati — schema Firestore (riservato al proprietario)",
+        "desc": "Un diagramma entità-relazione (ERD) della base: ogni collezione Firestore è una tabella che mostra tutti i suoi campi, le sue chiavi PK/FK e le sue relazioni (con cardinalità)."
+      },
+      {
+        "title": "Schede Statistiche e Firebase",
+        "desc": "• Statistiche: numero di progetti, esportazioni del mese, spazio di archiviazione Firestore (barra di avanzamento), costo IA stimato in EUR per fornitore con i token in entrata/uscita consumati, e il monitoraggio delle richieste Bright Data (quota scraping)."
+      },
+      {
+        "title": "Chi vede cosa",
+        "desc": "La scheda Firebase è riservata al proprietario. Le schede Connettori e Cookie dipendono dai permessi concessi in Utenti e ruoli. Profilo, IA e Statistiche restano accessibili a tutti."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "explorer",
+    "cat": "Dati",
+    "icon": "🗺️",
+    "anim": "taxonomy",
+    "title": "Esploratore di dati",
+    "intro": "Mappatura Firestore: schema relazionale (ERD) delle collezioni, chiavi e cardinalità, e ispezione dei record in tempo reale. Riservato al proprietario.",
+    "features": [
+      {
+        "title": "Il problema",
+        "desc": "Una base che cresce diventa opaca: non si sa più quali collezioni esistono, come si collegano, né cosa contengono realmente — senza aprire la console Firebase."
+      },
+      {
+        "title": "Modello di dati (ERD)",
+        "desc": "Ogni collezione è una tabella con i suoi campi, la sua chiave primaria (PK) e le sue chiavi esterne (FK); le relazioni di business sono tracciate con la loro cardinalità (1:1, 1:N)."
+      },
+      {
+        "title": "Dati live",
+        "desc": "Un doppio clic su una tabella apre il contenuto reale della collezione, aggiornato in tempo reale (onSnapshot). Per le basi Excel, un selettore elenca ogni base e mostra solo le sue colonne utili."
+      },
+      {
+        "title": "Disposizione persistente",
+        "desc": "Sposta le tabelle trascinandole: la loro posizione viene salvata sul tuo profilo (Firestore) e ripristinata alla prossima apertura. Componi la mappatura che corrisponde alla tua lettura del dato."
+      },
+      {
+        "title": "Estendere lo schema (collezioni / relazioni)",
+        "desc": "Il diagramma si costruisce a partire da TABLES e RELATIONS in features/data-graph/firestoreSchema.ts. Aggiungere una collezione o un collegamento = completare queste due liste; il rendering e le cardinalità seguono automaticamente."
+      },
+      {
+        "title": "Perché solo il proprietario",
+        "desc": "L'esploratore espone la struttura e i dati grezzi dell'intero spazio di lavoro (tutti gli account insieme). La scheda Dati delle Impostazioni — come Firebase — è quindi riservata al proprietario."
+      }
+    ],
+    "shortcuts": []
+  }
+]
+
+export const STRINGS = {
+  "Démarrage": "Per iniziare",
+  "Connexion, prise en main, navigation et nouveautés : tout pour bien démarrer.": "Accesso, primi passi, navigazione e novità: tutto per iniziare bene.",
+  "Édition": "Modifica",
+  "L'éditeur type Canva : canvas, outils, calques, impression et animations.": "L'editor in stile Canva: canvas, strumenti, livelli, stampa e animazioni.",
+  "Import": "Importazione",
+  "Repartez d'un fichier existant : IDML, EasyCatalog, PPTX, Excel, image, SVG, PDF.": "Riparti da un file esistente: IDML, EasyCatalog, PPTX, Excel, immagine, SVG, PDF.",
+  "Données": "Dati",
+  "Le cœur data : PIM, médias (DAM), taxonomies, scraping et veille tarifaire.": "Il cuore dei dati: PIM, media (DAM), tassonomie, scraping e monitoraggio prezzi.",
+  "Export": "Esportazione",
+  "Sortez vos créations : PDF print, IDML, PPTX, SVG, PNG, web et pack social.": "Esporta le tue creazioni: PDF per la stampa, IDML, PPTX, SVG, PNG, web e pacchetto social.",
+  "Automatisation": "Automazione",
+  "Workflows visuels et pilotage Telegram : enchaînez les modules sans effort.": "Workflow visivi e controllo tramite Telegram: concatena i moduli senza sforzo.",
+  "Assistant IA": "Assistente IA",
+  "Un assistant conversationnel pour interroger, rédiger et générer.": "Un assistente conversazionale per interrogare, redigere e generare.",
+  "Administration": "Amministrazione",
+  "Comptes, rôles, permissions et réglages de l'espace de travail.": "Account, ruoli, permessi e impostazioni dello spazio di lavoro.",
+  "Prise en main": "Primi passi",
+  "Connexion, tableau de bord et création du premier projet.": "Accesso, dashboard e creazione del primo progetto.",
+  "Sections du dashboard": "Sezioni della dashboard",
+  "Chaque entrée de la barre latérale est un raccourci vers une grande zone de l'app. Cliquer un lien ci-dessous met l'élément en évidence sur l'écran (ouvre d'abord le tableau de bord si nécessaire).": "Ogni voce della barra laterale è una scorciatoia verso un'area importante dell'app. Cliccando un link qui sotto l'elemento viene evidenziato sullo schermo (se necessario apre prima la dashboard).",
+  "Créer un projet vierge": "Creare un progetto vuoto",
+  "Ouvre le panneau « Nouveau document » et choisis un format (A4, A3, formats écran/réseaux sociaux, ou dimensions personnalisées).": "Apre il pannello «Nuovo documento» e permette di scegliere un formato (A4, A3, formati schermo/social, o dimensioni personalizzate).",
+  "Retrouver un projet existant": "Ritrovare un progetto esistente",
+  "La Bibliothèque liste tous tes projets : • Ouvrir : clic simple sur la carte. Dupliquer / supprimer : boutons de la carte (ou clic droit). • Vignettes ou Liste : deux boutons en haut à droite basculent l'affichage.": "La Libreria elenca tutti i tuoi progetti: • Aprire: clic singolo sulla scheda. Duplicare / eliminare: pulsanti della scheda (o clic destro). • Miniature o Elenco: due pulsanti in alto a destra commutano la visualizzazione.",
+  "Sauvegarder le projet": "Salvare il progetto",
+  "Annuler la dernière action": "Annullare l'ultima azione",
+  "Rétablir": "Ripristina",
+  "Ouvrir / fermer le manuel": "Aprire / chiudere il manuale",
+  "Nouveautés": "Novità",
+  "Ce qui vient d'arriver dans l'application — juin 2026.": "Le ultime novità dell'applicazione — giugno 2026.",
+  "Navigation & confort": "Navigazione e comfort",
+  "• Palette de commandes ⌘K / Ctrl+K : projets récents, modules, actions rapides — depuis n'importe quelle page. • Centre de notifications (🔔 en bas à gauche) : historique des runs de workflows et des exports, badge de non-lus.": "• Palette dei comandi ⌘K / Ctrl+K: progetti recenti, moduli, azioni rapide — da qualsiasi pagina. • Centro notifiche (🔔 in basso a sinistra): cronologia delle esecuzioni dei workflow e delle esportazioni, badge dei non letti.",
+  "Éditeur": "Editor",
+  "• Barre contextuelle flottante sous la sélection (dupliquer, plans, grouper, verrouiller, supprimer) + badge temps réel pendant les manipulations (X/Y, L×H, angle).": "• Barra contestuale fluttuante sotto la selezione (duplica, ordina i piani, raggruppa, blocca, elimina) + badge in tempo reale durante le manipolazioni (X/Y, L×A, angolo).",
+  "Re-skin de promo (éditeur × PIM × IA)": "Re-skin di promo (editor × PIM × IA)",
+  "• Source « Produits PIM (re-skin) » dans le panneau Données : chaque produit devient une ligne — naviguer entre les produits re-skinne le visuel instantanément.": "• Sorgente «Prodotti PIM (re-skin)» nel pannello Dati: ogni prodotto diventa una riga — navigare tra i prodotti applica il re-skin al visual istantaneamente.",
+  "PIM & données": "PIM e dati",
+  "• Pastille de complétude sur chaque ligne (champs manquants au survol) + moyenne en barre d'état. • Vue galerie : produits en cartes (visuel, titre, prix, complétude). Détails : section PIM.": "• Pastiglia di completezza su ogni riga (campi mancanti al passaggio del mouse) + media nella barra di stato. • Vista galleria: prodotti in schede (visual, titolo, prezzo, completezza). Dettagli: sezione PIM.",
+  "Workflows & automatisation": "Workflow e automazione",
+  "• Galerie de modèles 1-clic (Scraper → PIM, veille, recherche web…). • Node « Approbation Telegram » : le run se met en pause jusqu'au clic ✅/❌. • Node « Veille prix » : alerte seulement quand un prix bouge (fonctionne en cron serveur).": "• Galleria di modelli con 1 clic (Scraper → PIM, monitoraggio, ricerca web…). • Node «Approvazione Telegram»: l'esecuzione si mette in pausa fino al clic ✅/❌. • Node «Sorveglianza prezzi»: avvisa solo quando un prezzo cambia (funziona in cron sul server).",
+  "Veille tarifaire & comparaison de prix": "Monitoraggio prezzi e confronto prezzi",
+  "• Nouveau module Veille tarifaire : tableau de bord des prix concurrents (écarts par produit, positionnement, alertes), alimenté par le node « Veille tarifaire » d'un workflow.": "• Nuovo modulo Monitoraggio prezzi: dashboard dei prezzi della concorrenza (scarti per prodotto, posizionamento, avvisi), alimentato dal node «Monitoraggio prezzi» di un workflow.",
+  "Telegram sans navigateur (répondeur serveur)": "Telegram senza browser (risponditore sul server)",
+  "• Le bot répond app fermée : questions avec recherche web automatique (sources citées), /flow généré et exécuté côté serveur, /run d'un workflow sauvegardé.": "• Il bot risponde ad app chiusa: domande con ricerca web automatica (fonti citate), /flow generato ed eseguito sul server, /run di un workflow salvato.",
+  "DAM, Telegram & export": "DAM, Telegram ed esportazione",
+  "• Tagging IA automatique des images sauvegardées + filtre en langage naturel dans « Mes images ». • Digest Telegram quotidien (opt-in, 08:00) : résumé des dernières 24 h.": "• Tagging IA automatico delle immagini salvate + filtro in linguaggio naturale in «Le mie immagini». • Digest Telegram giornaliero (opt-in, 08:00): riepilogo delle ultime 24 h.",
+  "Assistant de configuration": "Assistente di configurazione",
+  "Mettre en place son espace pas à pas : clés IA, modèles, connecteurs et visite guidée.": "Configura il tuo spazio passo dopo passo: chiavi IA, modelli, connettori e tour guidato.",
+  "1 · Bienvenue": "1 · Benvenuto",
+  "Présentation des étapes à venir (clés IA, modèles & cascade, connecteurs, visite guidée). Rien à saisir.": "Presentazione delle fasi successive (chiavi IA, modelli e cascata, connettori, tour guidato). Nulla da inserire.",
+  "2 · Clés IA — obligatoire": "2 · Chiavi IA — obbligatorio",
+  "Renseigne au moins une clé API parmi Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi ou OpenRouter, puis teste-la. Tant qu'aucune clé valide n'est saisie, le bouton Suivant reste désactivé (« Renseignez au moins une clé LLM »).": "Inserisci almeno una chiave API tra Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi o OpenRouter, poi testala. Finché non viene inserita una chiave valida, il pulsante Avanti resta disattivato («Inserisci almeno una chiave LLM»).",
+  "3 · Modèles & cascade": "3 · Modelli e cascata",
+  "Choisis le modèle de chaque fournisseur et l'ordre de la cascade de raisonnement (le premier qui répond gagne, les suivants servent de secours).": "Scegli il modello di ogni fornitore e l'ordine della cascata di ragionamento (il primo che risponde vince, i successivi fungono da riserva).",
+  "4 · Connecteurs — optionnel": "4 · Connettori — facoltativo",
+  "Branche Google Drive, Bright Data (scraping) et Telegram si tu en as besoin. Cette étape peut être passée et complétée plus tard dans Réglages → Connecteurs.": "Collega Google Drive, Bright Data (scraping) e Telegram se ti servono. Questa fase può essere saltata e completata più tardi in Impostazioni → Connettori.",
+  "5 · Terminé": "5 · Completato",
+  "Récapitulatif de ton profil, puis le choix de lancer la visite guidée du tableau de bord ou de terminer directement.": "Riepilogo del tuo profilo, poi la scelta di avviare il tour guidato della dashboard o di terminare direttamente.",
+  "Reprendre la configuration plus tard": "Riprendere la configurazione più tardi",
+  "L'assistant reste accessible à tout moment, par deux entrées : • Bandeau « Assistant de configuration » en haut des Réglages — sous-titre « Reprendre la mise en place guidée (clés, modèles, connecteurs) ».": "L'assistente resta accessibile in qualsiasi momento, tramite due accessi: • Banner «Assistente di configurazione» in cima alle Impostazioni — sottotitolo «Riprendi la configurazione guidata (chiavi, modelli, connettori)».",
+  "Bouton « Mettre à jour tous les LLM »": "Pulsante «Aggiorna tutti gli LLM»",
+  "Présent dans l'assistant et dans l'onglet IA des Réglages, il sélectionne le dernier modèle phare de chaque fournisseur (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter).": "Presente nell'assistente e nella scheda IA delle Impostazioni, seleziona l'ultimo modello di punta di ogni fornitore (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter).",
+  "Navigation & visites guidées": "Navigazione e tour guidati",
+  "Passer d'un module à l'autre depuis n'importe où, et (re)lancer les visites guidées.": "Passare da un modulo all'altro da qualsiasi punto e (ri)avviare i tour guidati.",
+  "Menu des modules (☰)": "Menu dei moduli (☰)",
+  "Un bouton ☰ flottant en bas à gauche ouvre un tiroir listant tous les modules : Nouveau document, Importer, Bibliothèque, DAM, PIM, Taxonomies, Templates scraping, Scraping Hub, Workflows, Veille tarifaire, Telegram, Animation, Chat IA et U…": "Un pulsante ☰ fluttuante in basso a sinistra apre un pannello che elenca tutti i moduli: Nuovo documento, Importare, Libreria, DAM, PIM, Tassonomie, Template scraping, Scraping Hub, Workflow, Monitoraggio prezzi, Telegram, Animazione, Chat IA e U…",
+  "Palette de commandes (⌘K)": "Palette dei comandi (⌘K)",
+  "⌘K (Mac) ou Ctrl+K (PC) ouvre la palette de commandes depuis n'importe quelle page : tape quelques lettres pour ouvrir un de tes projets récents, sauter vers un module (« pim », « workflows », « bibliothèque »…) ou lancer une action rapide…": "⌘K (Mac) o Ctrl+K (PC) apre la palette dei comandi da qualsiasi pagina: digita alcune lettere per aprire uno dei tuoi progetti recenti, saltare a un modulo («pim», «workflow», «libreria»…) o avviare un'azione rapida…",
+  "Notifications (🔔)": "Notifiche (🔔)",
+  "La cloche en bas à gauche (au-dessus du menu ☰) garde l'historique des évènements importants : fins de runs de workflow, exports réussis ou échoués.": "La campanella in basso a sinistra (sopra il menu ☰) conserva la cronologia degli eventi importanti: fine delle esecuzioni dei workflow, esportazioni riuscite o fallite.",
+  "Visites guidées (🧭)": "Tour guidati (🧭)",
+  "Un bouton 🧭 « Visite guidée » en bas à droite (à gauche du bouton d'aide) lance une visite interactive de l'écran courant : • Tableau de bord : parcourt chaque espace de travail un par un.": "Un pulsante 🧭 «Tour guidato» in basso a destra (a sinistra del pulsante di aiuto) avvia un tour interattivo della schermata corrente: • Dashboard: percorre ogni spazio di lavoro uno per uno.",
+  "Ce manuel s'adapte à ton rôle": "Questo manuale si adatta al tuo ruolo",
+  "Le sommaire et la recherche de l'aide ne montrent que les sections des modules auxquels tu as accès (le propriétaire voit tout).": "L'indice e la ricerca della guida mostrano solo le sezioni dei moduli a cui hai accesso (il proprietario vede tutto).",
+  "Ouvrir la palette de commandes": "Aprire la palette dei comandi",
+  "L'éditeur": "L'editor",
+  "Canvas, outils, calques et sauvegarde du projet.": "Canvas, strumenti, livelli e salvataggio del progetto.",
+  "⌘K (ou Ctrl+K) ouvre la palette de commandes — disponible partout dans l'application, y compris l'éditeur.": "⌘K (o Ctrl+K) apre la palette dei comandi — disponibile ovunque nell'applicazione, compreso l'editor.",
+  "Casse du texte (sans réécrire)": "Maiuscole/minuscole del testo (senza riscrivere)",
+  "La section Transformation des propriétés d'un texte applique une casse au rendu sans toucher au contenu saisi : majuscules, minuscules ou Capitales (première lettre de chaque mot).": "La sezione Trasformazione delle proprietà di un testo applica un formato maiuscole/minuscole al rendering senza toccare il contenuto inserito: maiuscole, minuscole o Iniziali maiuscole (prima lettera di ogni parola).",
+  "Vignettes des pages": "Miniature delle pagine",
+  "Sur un document à plusieurs pages, la barre inférieure affiche une rangée de vignettes (une par page, avec son numéro).": "In un documento con più pagine, la barra inferiore mostra una fila di miniature (una per pagina, con il suo numero).",
+  "Organiser les panneaux de droite": "Organizzare i pannelli di destra",
+  "La colonne de droite est modulaire : le panneau Propriétés reste épinglé en haut, et chaque autre panneau (Calques, Images, Palette, Assets, Page, Impression, Données, Animation 3D, Versions) se replie/déplie d'un clic sur son en-tête.": "La colonna di destra è modulare: il pannello Proprietà resta fissato in alto, e ogni altro pannello (Livelli, Immagini, Palette, Assets, Pagina, Stampa, Dati, Animazione 3D, Versioni) si richiude/espande con un clic sulla sua intestazione.",
+  "Images": "Immagini",
+  "Insertion d'images sans quitter l'éditeur : onglets Galerie, Upload, IA (génération depuis un prompt, 5 ratios, image-to-image si un objet est sélectionné), Stock, Mes images, Favoris, Collections, Récents — les mêmes sources que le DAM.": "Inserimento di immagini senza uscire dall'editor: schede Galleria, Upload, IA (generazione da un prompt, 5 rapporti, image-to-image se un oggetto è selezionato), Stock, Le mie immagini, Preferiti, Collezioni, Recenti — le stesse sorgenti del DAM.",
+  "Assets": "Assets",
+  "Les images et polices du projet (onglets avec compteurs). Glisse une image sur le canvas, ou utilise les polices importées (IDML) dans tes textes.": "Le immagini e i font del progetto (schede con contatori). Trascina un'immagine sul canvas, oppure usa i font importati (IDML) nei tuoi testi.",
+  "Page": "Pagina",
+  "Format de page : presets (A4/A3/A5, Full HD, 4K, 16:9, post & story Instagram, couverture Facebook) ou dimensions personnalisées en mm. Fond de page : couleur unie, dégradé ou image (upload ou glisser-déposer).": "Formato pagina: preset (A4/A3/A5, Full HD, 4K, 16:9, post e story Instagram, copertina Facebook) o dimensioni personalizzate in mm. Sfondo pagina: colore pieno, sfumatura o immagine (upload o trascinamento).",
+  "Impression": "Stampa",
+  "Tout le pré-presse : DPI, fond perdu (bleed), traits de coupe (longueur 2–10 mm, décalage 0–3 mm, épaisseur, couleur), hirondelles de repérage (registration marks), zone de sécurité (marge, pointillés paramétrables) et la section Preflight…": "Tutto il prestampa: DPI, abbondanza (bleed), segni di taglio (lunghezza 2–10 mm, scostamento 0–3 mm, spessore, colore), crocini di registro (registration marks), zona di sicurezza (margine, tratteggio configurabile) e la sezione Preflight…",
+  "Animation 3D": "Animazione 3D",
+  "Applique des animations 3D à un objet (flip 3D, relief, particules…) via des presets, avec lecture/arrêt et enregistrement vidéo (export MP4/WebM) du rendu animé.": "Applica animazioni 3D a un oggetto (flip 3D, rilievo, particelle…) tramite preset, con riproduzione/arresto e registrazione video (esportazione MP4/WebM) del rendering animato.",
+  "Palette · Données · Versions": "Palette · Dati · Versioni",
+  "Détaillés dans leurs sections dédiées plus bas (kit de marque & styles d'objets, re-skin PIM / publipostage, snapshots).": "Dettagliati nelle rispettive sezioni dedicate più in basso (kit di marca e stili di oggetti, re-skin PIM / stampa unione, snapshot).",
+  "Outil Sélection": "Strumento Selezione",
+  "Outil Texte": "Strumento Testo",
+  "Outil Rectangle": "Strumento Rettangolo",
+  "Outil Ellipse": "Strumento Ellisse",
+  "Outil Ligne": "Strumento Linea",
+  "Outil Image / DAM": "Strumento Immagine / DAM",
+  "Pan du canvas": "Pan del canvas",
+  "Sauvegarder (commit manuel)": "Salvare (commit manuale)",
+  "Annuler": "Annullare",
+  "Tout sélectionner": "Seleziona tutto",
+  "Dupliquer la sélection": "Duplicare la selezione",
+  "Grouper": "Raggruppare",
+  "Dégrouper": "Separare",
+  "Avancer d'un plan": "Porta avanti di un livello",
+  "Reculer d'un plan": "Porta indietro di un livello",
+  "Premier plan": "Primo piano",
+  "Arrière-plan": "Sfondo",
+  "Déplacer de 1 px (⇧ : 10 px)": "Spostare di 1 px (⇧: 10 px)",
+  "Supprimer la sélection": "Eliminare la selezione",
+  "Désélectionner": "Deselezionare",
+  "Règles conditionnelles": "Regole condizionali",
+  "Afficher, masquer ou transformer un élément du design selon la donnée de la ligne courante — façon EasyCatalog (« Nouvelle action »), mais directement dans l'éditeur. Idéal en publipostage : un bandeau « PROMO » qui n'apparaît que sur les produits en promotion, un prix qui passe en rouge sous un seuil de stock, un picto agrandi pour les nouveautés…": "Mostrare, nascondere o trasformare un elemento del design in base al dato della riga corrente — in stile EasyCatalog («Nuova azione»), ma direttamente nell'editor. Ideale nella stampa unione: un banner «PROMO» che compare solo sui prodotti in promozione, un prezzo che diventa rosso sotto una soglia di stock, un'icona ingrandita per le novità…",
+  "Ouvrir le panneau": "Aprire il pannello",
+  "1. Sélectionne un objet sur le canvas. 2. Dans la colonne de droite, ouvre le panneau Propriétés, puis déplie la section Règles conditionnelles (icône branche). Un compteur indique le nombre de règles actives sur l'objet. 3.": "1. Seleziona un oggetto sul canvas. 2. Nella colonna di destra, apri il pannello Proprietà, poi espandi la sezione Regole condizionali (icona ramo). Un contatore indica il numero di regole attive sull'oggetto. 3.",
+  "Composer une règle : SI champ → opérateur → valeur → ALORS action": "Comporre una regola: SE campo → operatore → valore → ALLORA azione",
+  "Chaque règle se lit de gauche à droite : • Champ : la colonne de données testée (ex. promo, stock, Prixnormal). • Opérateur : la condition à vérifier (voir ci-dessous).": "Ogni regola si legge da sinistra a destra: • Campo: la colonna di dati testata (es. promo, stock, Prixnormal). • Operatore: la condizione da verificare (vedi sotto).",
+  "Les opérateurs (3 familles)": "Gli operatori (3 famiglie)",
+  "Texte (comparaison insensible à la casse et aux espaces de début/fin) : • Contient / Ne contient pas • Est / N'est pas (égalité exacte de chaîne) • Commence par / Termine par • Ne commence pas avec / Ne se termine pas avec Présence (pas de…": "Testo (confronto senza distinzione tra maiuscole/minuscole e spazi iniziali/finali): • Contiene / Non contiene • È / Non è (uguaglianza esatta di stringa) • Inizia con / Finisce con • Non inizia con / Non finisce con Presenza (nessun…",
+  "Les actions (7)": "Le azioni (7)",
+  "• Cacher : l'objet n'est pas rendu (ni à l'écran, ni à l'export). • Montrer : force l'affichage. • Mettre en avant / Mettre à l'arrière : réordonne l'objet dans la pile (z-order).": "• Nascondere: l'oggetto non viene renderizzato (né a schermo, né in esportazione). • Mostrare: forza la visualizzazione. • Porta avanti / Porta indietro: riordina l'oggetto nella pila (z-order).",
+  "Aperçu et plusieurs règles": "Anteprima e più regole",
+  "Quand une source est connectée, l'effet se rejoue en direct sur la ligne courante : ajoute ou modifie une règle et le canvas se met à jour aussitôt.": "Quando una sorgente è collegata, l'effetto viene rieseguito in tempo reale sulla riga corrente: aggiungi o modifica una regola e il canvas si aggiorna immediatamente.",
+  "Quelle différence avec une liaison {{champ}} classique ?": "Che differenza c'è con un collegamento {{champ}} classico?",
+  "Une liaison {{champ}} (ou « Lier à un champ ») remplace le contenu d'un élément par la valeur de la colonne (texte, image).": "Un collegamento {{champ}} (o «Collega a un campo») sostituisce il contenuto di un elemento con il valore della colonna (testo, immagine).",
+  "Mon avertissement « la couleur est aussi câblée » ?": "Il mio avviso «anche il colore è collegato»?",
+  "Si une propriété est à la fois pilotée par une liaison de données (ex. couleur câblée sur une colonne) et par une règle qui la modifie (Changer la couleur / Changer l'opacité), les deux peuvent se contredire.": "Se una proprietà è al contempo controllata da un collegamento dati (es. colore collegato a una colonna) e da una regola che la modifica (Cambiare il colore / Cambiare l'opacità), le due possono contraddirsi.",
+  "Les champs n'apparaissent pas dans le sélecteur": "I campi non compaiono nel selettore",
+  "Connecte une source de données (Excel, Google Sheets, PIM…) depuis le panneau Publipostage. Sans aucune source — jamais branchée — il n'y a pas de colonnes à tester.": "Collega una sorgente di dati (Excel, Google Sheets, PIM…) dal pannello Stampa unione. Senza alcuna sorgente — mai collegata — non ci sono colonne da testare.",
+  "L'aperçu ne bouge pas quand j'ajoute une règle": "L'anteprima non cambia quando aggiungo una regola",
+  "L'aperçu live nécessite une source connectée (panneau Publipostage). Hors connexion, la règle est bien enregistrée sur l'objet, mais son effet ne sera visible qu'au moment du publipostage / de l'export par lot.": "L'anteprima live richiede una sorgente collegata (pannello Stampa unione). Senza connessione, la regola viene comunque salvata sull'oggetto, ma il suo effetto sarà visibile solo al momento della stampa unione / dell'esportazione in lotto.",
+  "EasyCatalog ↔ Règles conditionnelles": "EasyCatalog ↔ Regole condizionali",
+  "Le panneau reprend la logique des actions conditionnelles d'EasyCatalog (Contient, Est, Est égal à, Cacher…).": "Il pannello riprende la logica delle azioni condizionali di EasyCatalog (Contiene, È, È uguale a, Nascondere…).",
+  "Animation": "Animazione",
+  "Générer des animations HTML autonomes (vidéo) à partir d'un brief ou d'un design du canvas.": "Generare animazioni HTML autonome (video) a partire da un brief o da un design del canvas.",
+  "À partir d'un brief (vidéo multi-scènes)": "A partire da un brief (video multi-scena)",
+  "Décris ton sujet, et optionnellement l'audience, l'objectif, le ton, la marque et un caption.": "Descrivi il tuo soggetto e, facoltativamente, il pubblico, l'obiettivo, il tono, la marca e una caption.",
+  "À partir d'un design du canvas (design-reveal)": "A partire da un design del canvas (design-reveal)",
+  "Depuis l'éditeur, on capture le SVG du projet courant et l'IA l'anime (apparitions, rythme, easing) selon une consigne de style. Idéal pour transformer une création print en teaser animé.": "Dall'editor, si cattura l'SVG del progetto corrente e l'IA lo anima (comparse, ritmo, easing) secondo un'indicazione di stile. Ideale per trasformare una creazione per la stampa in un teaser animato.",
+  "Fichiers de référence": "File di riferimento",
+  "Glisse des images, PDF ou SVG pour enrichir le brief : l'IA les lit (texte + visuel) et s'en sert comme contexte.": "Trascina immagini, PDF o SVG per arricchire il brief: l'IA li legge (testo + visual) e li usa come contesto.",
+  "Format et durée": "Formato e durata",
+  "• Ratio : Auto, portrait (9:16), carré (1:1), paysage (16:9) ou dimensions personnalisées (largeur × hauteur, 240 à 4096 px, ratio affiché en direct).": "• Rapporto: Auto, verticale (9:16), quadrato (1:1), orizzontale (16:9) o dimensioni personalizzate (larghezza × altezza, da 240 a 4096 px, rapporto mostrato in tempo reale).",
+  "Enrichir et finaliser": "Arricchire e finalizzare",
+  "• Enrichir avec des images IA : l'IA génère un visuel par scène (affiché en fond, effet Ken Burns). • Aperçu live : le lecteur joue la composition avec le style appliqué (rythme, intensité, easing, palette).": "• Arricchire con immagini IA: l'IA genera un visual per scena (mostrato come sfondo, effetto Ken Burns). • Anteprima live: il player riproduce la composizione con lo stile applicato (ritmo, intensità, easing, palette).",
+  "Le ZIP est une animation autonome et jouable": "Lo ZIP è un'animazione autonoma e riproducibile",
+  "Le index.html est self-contained (CSS, JS, données et auto-play tout inline) : double-clique-le, il s'ouvre même en file://, sans serveur.": "Il file index.html è self-contained (CSS, JS, dati e auto-play tutto inline): fai doppio clic, si apre anche in file://, senza server.",
+  "Gérer ses animations dans le DAM": "Gestire le proprie animazioni nel DAM",
+  "Dans l'onglet Animations HTML du DAM, chaque carte affiche le ratio, le poids et la date : • Ouvrir joue l'animation dans un nouvel onglet (le ZIP est extrait à la volée, l'index.html est servi tel quel).": "Nella scheda Animazioni HTML del DAM, ogni scheda mostra il rapporto, il peso e la data: • Aprire riproduce l'animazione in una nuova scheda (lo ZIP viene estratto al volo, index.html viene servito così com'è).",
+  "Bibliothèque de prompts": "Libreria di prompt",
+  "Chaque génération mémorise son brief : tu peux le rejouer, le charger pour l'ajuster, le renommer ou le supprimer — pour produire des variantes sans tout ressaisir.": "Ogni generazione memorizza il suo brief: puoi rieseguirlo, caricarlo per modificarlo, rinominarlo o eliminarlo — per produrre varianti senza reinserire tutto.",
+  "Voir aussi": "Vedi anche",
+  "La génération s'appuie sur les modèles IA configurés dans les Paramètres → IA. Les visuels de scène utilisent le moteur de génération d'image (Image IA), le même que dans le DAM et le Chat IA.": "La generazione si basa sui modelli IA configurati in Impostazioni → IA. I visual delle scene utilizzano il motore di generazione immagini (Image IA), lo stesso del DAM e della Chat IA.",
+  "Import IDML": "Importazione IDML",
+  "Récupérer une maquette InDesign et la transformer en template IBS-Studio.": "Recuperare un impaginato InDesign e trasformarlo in un template IBS-Studio.",
+  "Comment exporter un IDML depuis InDesign": "Come esportare un IDML da InDesign",
+  "1. Ouvre ton document dans InDesign CC ou plus récent 2. Fichier → Exporter… 3. Choisis le format InDesign Markup (IDML) 4. Enregistre Le fichier IDML est en réalité un ZIP contenant XML + ressources (fonts, images).": "1. Apri il tuo documento in InDesign CC o più recente 2. File → Esporta… 3. Scegli il formato InDesign Markup (IDML) 4. Salva Il file IDML è in realtà uno ZIP che contiene XML + risorse (font, immagini).",
+  "Importe le « package », pas seulement le .idml": "Importa il «package», non solo il file .idml",
+  "L'import attend un assemblage InDesign (Fichier → Empaqueter…), pas un .idml isolé : • un fichier .idml et un .pdf de référence sont obligatoires — sans le PDF, l'import s'arrête avec « Composants manquants » • les polices du dossier Docume…": "L'importazione richiede un pacchetto InDesign (File → Crea pacchetto…), non un .idml isolato: • un file .idml e un .pdf di riferimento sono obbligatori — senza il PDF, l'importazione si interrompe con «Componenti mancanti» • i font della cartella Docume…",
+  "Importer dans IBS-Studio": "Importare in IBS-Studio",
+  "1. Tableau de bord → Importer 2. Sélectionne le .idml 3. Patiente : le parser extrait formes, textes, images, fonts, ombres et transparence — toutes les pages du document (chaque planche devient une page IBS-Studio) 4.": "1. Dashboard → Importare 2. Seleziona il .idml 3. Attendi: il parser estrae forme, testi, immagini, font, ombre e trasparenza — tutte le pagine del documento (ogni tavola diventa una pagina IBS-Studio) 4.",
+  "Décomposition en calques éditables": "Scomposizione in livelli modificabili",
+  "Rien n'est aplati en image : chaque objet redevient un calque manipulable dans l'éditeur.": "Nulla viene appiattito in immagine: ogni oggetto ridiventa un livello manipolabile nell'editor.",
+  "Couleurs CMJN converties fidèlement": "Colori CMYK convertiti fedelmente",
+  "Les nuances CMJN sont ramenées en RVB pour l'écran. Quand InDesign a déjà stocké la valeur sRGB de la couleur (issue de sa propre conversion ICC), elle est utilisée telle quelle.": "Le tinte CMYK vengono riportate in RGB per lo schermo. Quando InDesign ha già memorizzato il valore sRGB del colore (derivato dalla propria conversione ICC), viene utilizzato così com'è.",
+  "Ce qui est préservé vs approximé à l'export": "Cosa viene preservato e cosa approssimato in esportazione",
+  "L'export IDML n'est pas une régénération : il repatche le ZIP IDML d'origine. Sont réinjectées tes modifications de texte, image, couleur de fond, position et taille ; tout le reste du document (styles, calques, réglages non touchés) est co…": "L'esportazione IDML non è una rigenerazione: applica una patch allo ZIP IDML originale. Vengono reiniettate le tue modifiche di testo, immagine, colore di sfondo, posizione e dimensione; tutto il resto del documento (stili, livelli, impostazioni non toccate) viene co…",
+  "Limites connues": "Limiti noti",
+  "• Fonts custom : si non installées sur la machine → fallback Arial. Pour une fidélité parfaite, charge tes fonts dans public/fonts/ • Dégradés : non importés — les objets dégradés reviennent en couleur unie (à recréer dans l'éditeur si beso…": "• Font personalizzati: se non installati sulla macchina → fallback Arial. Per una fedeltà perfetta, carica i tuoi font in public/fonts/ • Sfumature: non importate — gli oggetti con sfumatura tornano a un colore pieno (da ricreare nell'editor se neces…",
+  "Aller-retour InDesign ↔ IBS-Studio": "Andata e ritorno InDesign ↔ IBS-Studio",
+  "Le cycle classique : 1. Graphiste crée la maquette dans InDesign 2. Exporte un IDML 3. Imprimeur importe dans IBS-Studio, ajoute placeholders, branche le data-merge 4. Batch export IDML (un par produit) ou PDF direct 5.": "Il ciclo classico: 1. Il grafico crea l'impaginato in InDesign 2. Esporta un IDML 3. Lo stampatore importa in IBS-Studio, aggiunge i placeholder, collega il data-merge 4. Esportazione batch IDML (uno per prodotto) o PDF diretto 5.",
+  "EasyCatalog (InDesign)": "EasyCatalog (InDesign)",
+  "Aller-retour avec le plug-in EasyCatalog : importer un gabarit, fusionner ses champs, puis réexporter un IDML reconnu nativement.": "Andata e ritorno con il plug-in EasyCatalog: importare un modello, unire i suoi campi, poi riesportare un IDML riconosciuto nativamente.",
+  "Sous le capot : comment les champs survivent à l'IDML": "Sotto il cofano: come i campi sopravvivono all'IDML",
+  "EasyCatalog ne stocke pas ses champs sous forme de texte : il pose des marqueurs invisibles sur le balisage InDesign que IBS-Studio sait relire.": "EasyCatalog non memorizza i suoi campi sotto forma di testo: pone marcatori invisibili sul markup InDesign che IBS-Studio è in grado di rileggere.",
+  "1. Importer un gabarit EasyCatalog": "1. Importare un modello EasyCatalog",
+  "1. Depuis InDesign (avec ton document EasyCatalog ouvert) : Fichier → Exporter… → InDesign Markup (IDML) 2. Dans IBS-Studio : Tableau de bord → Importer → sélectionne le .idml 3. Le gabarit s'ouvre dans l'éditeur.": "1. Da InDesign (con il tuo documento EasyCatalog aperto): File → Esporta… → InDesign Markup (IDML) 2. In IBS-Studio: Dashboard → Importare → seleziona il .idml 3. Il modello si apre nell'editor.",
+  "2. Brancher tes données et fusionner": "2. Collegare i tuoi dati e unire",
+  "Dans l'éditeur, panneau Publipostage : connecte une source (Excel, Google Sheets, PIM…). IBS-Studio remplace les {{champs}} par les valeurs de la ligne courante, et charge les images dans les cadres liés.": "Nell'editor, pannello Stampa unione: collega una sorgente (Excel, Google Sheets, PIM…). IBS-Studio sostituisce i {{champs}} con i valori della riga corrente e carica le immagini nei riquadri collegati.",
+  "3. Exporter une source de données POUR EasyCatalog": "3. Esportare una sorgente di dati PER EasyCatalog",
+  "Depuis l'espace Données, bouton EasyCatalog : génère un zip prêt à brancher comme flat-file data source dans EasyCatalog.": "Dallo spazio Dati, pulsante EasyCatalog: genera uno zip pronto da collegare come flat-file data source in EasyCatalog.",
+  "4. Réexporter un IDML (aller-retour complet)": "4. Riesportare un IDML (andata e ritorno completa)",
+  "Depuis l'éditeur, Exporter → IDML (multi-pages) : IBS-Studio produit un IDML qui conserve les marqueurs EasyCatalog et résout les valeurs par ligne.": "Dall'editor, Esporta → IDML (multipagina): IBS-Studio produce un IDML che conserva i marcatori EasyCatalog e risolve i valori per ogni riga.",
+  "Les champs ne sont pas reconnus à l'import ?": "I campi non vengono riconosciuti in importazione?",
+  "Vérifie que l'IDML provient bien d'un document piloté par EasyCatalog (les champs y sont insérés via le panneau EasyCatalog, repérables aux crochets verts). Un texte tapé à la main n'est pas un champ.": "Verifica che l'IDML provenga effettivamente da un documento gestito da EasyCatalog (i campi vi sono inseriti tramite il pannello EasyCatalog, riconoscibili dalle parentesi quadre verdi). Un testo digitato a mano non è un campo.",
+  "Quelles données mettre dans les colonnes image ?": "Quali dati inserire nelle colonne immagine?",
+  "Une URL d'image (ex. lien Firebase/DAM) se charge directement. Un simple nom de fichier est résolu via ton stockage si le fichier y existe. Le binding image se branche tout seul sur le cadre EasyCatalog importé.": "Un URL di immagine (es. link Firebase/DAM) si carica direttamente. Un semplice nome di file viene risolto tramite il tuo storage se il file esiste. Il binding immagine si collega da solo al riquadro EasyCatalog importato.",
+  "Comment le champ-clé est-il choisi à l'export ?": "Come viene scelto il campo chiave in esportazione?",
+  "IBS-Studio prend ta colonne primaire comme clé EasyCatalog si toutes ses valeurs sont uniques et non vides. Sinon, il synthétise une clé eckey (row1, row2, …) pour garantir une re-synchronisation fiable.": "IBS-Studio usa la tua colonna primaria come chiave EasyCatalog se tutti i suoi valori sono univoci e non vuoti. Altrimenti, sintetizza una chiave eckey (row1, row2, …) per garantire una risincronizzazione affidabile.",
+  "• Les champs sous forme qualifiée (référence data source complète, marqueurs $ID/2/$ID/3) ne sont pas encore convertis en placeholders et restent en texte ; seule la forme simple $ID/4/$ID/5 est reconnue.": "• I campi in forma qualificata (riferimento data source completo, marcatori $ID/2/$ID/3) non vengono ancora convertiti in placeholder e restano come testo; solo la forma semplice $ID/4/$ID/5 viene riconosciuta.",
+  "Balises XML InDesign (connexion auto)": "Tag XML InDesign (connessione automatica)",
+  "Baliser un document InDesign avec des balises XML natives nommées comme tes colonnes : à l'import de l'IDML, IBS-Studio les transforme en champs {{…}} automatiquement connectés à ta base — une alternative gratuite à EasyCatalog.": "Contrassegnare un documento InDesign con tag XML nativi denominati come le tue colonne: all'importazione dell'IDML, IBS-Studio li trasforma in campi {{…}} collegati automaticamente alla tua base — un'alternativa gratuita a EasyCatalog.",
+  "1. Baliser le document dans InDesign": "1. Contrassegnare il documento in InDesign",
+  "1. Ouvre le panneau des balises : Fenêtre → Utilitaires → Balises (Window → Utilities → Tags). 2. Crée une balise par champ, avec le nom exact de ta colonne (ex. LibelleArticle, Prixnormal, Marques). 3.": "1. Apri il pannello dei tag: Finestra → Utilità → Tag (Window → Utilities → Tags). 2. Crea un tag per ogni campo, con il nome esatto della tua colonna (es. LibelleArticle, Prixnormal, Marques). 3.",
+  "2. (Option) Le plug-in IBS-Studio : baliser connecté à ta base": "2. (Opzione) Il plug-in IBS-Studio: contrassegnare collegati alla tua base",
+  "Pour baliser en étant connecté à ta base en direct, IBS-Studio fournit un plug-in InDesign (UXP).": "Per contrassegnare restando collegato alla tua base in tempo reale, IBS-Studio fornisce un plug-in InDesign (UXP).",
+  "3. Exporter l'IDML": "3. Esportare l'IDML",
+  "Dans InDesign : Fichier → Exporter… → InDesign Markup (IDML). Les balises XML sont conservées dans le fichier.": "In InDesign: File → Esporta… → InDesign Markup (IDML). I tag XML vengono conservati nel file.",
+  "4. Importer dans IBS-Studio → champs auto-connectés": "4. Importare in IBS-Studio → campi collegati automaticamente",
+  "Tableau de bord → Importer → sélectionne le .idml. À l'ouverture : • chaque balise texte devient un placeholder {{nom}} éditable ; • chaque balise image devient un cadre image lié.": "Dashboard → Importare → seleziona il .idml. All'apertura: • ogni tag di testo diventa un placeholder {{nom}} modificabile; • ogni tag immagine diventa un riquadro immagine collegato.",
+  "Balise XML native ou EasyCatalog : laquelle choisir ?": "Tag XML nativo o EasyCatalog: quale scegliere?",
+  "Les deux aboutissent au même résultat (champs {{…}} connectés). EasyCatalog s'impose si ton flux print l'utilise déjà (re-synchro côté InDesign).": "Entrambi portano allo stesso risultato (campi {{…}} collegati). EasyCatalog è preferibile se il tuo flusso di stampa lo usa già (risincronizzazione lato InDesign).",
+  "Pourquoi je ne vois pas les crochets sur un bloc ?": "Perché non vedo le parentesi quadre su un blocco?",
+  "Les crochets [ ] n'apparaissent que sur du texte balisé. Si tu as appliqué la balise au cadre (rectangle) au lieu du texte, tu obtiens un cadre coloré dans la Structure mais pas de crochets — et la valeur ne sera pas remplacée.": "Le parentesi quadre [ ] compaiono solo sul testo contrassegnato. Se hai applicato il tag al riquadro (rettangolo) invece che al testo, ottieni un riquadro colorato nella Struttura ma nessuna parentesi — e il valore non verrà sostituito.",
+  "Les noms doivent-ils correspondre exactement aux colonnes ?": "I nomi devono corrispondere esattamente alle colonne?",
+  "Le nom de la balise doit correspondre au nom de la colonne de ta base. La casse, les accents et les espaces/underscores sont tolérés à la correspondance (ex. Prix normal ↔ colonne Prixnormal).": "Il nome del tag deve corrispondere al nome della colonna della tua base. Maiuscole/minuscole, accenti e spazi/underscore sono tollerati nella corrispondenza (es. Prix normal ↔ colonna Prixnormal).",
+  "Le plug-in ne se charge pas / le token ne marche pas": "Il plug-in non si carica / il token non funziona",
+  "Le plug-in est distribué en mode développeur (UXP) : il se charge manuellement à chaque session via l'UXP Developer Tool.": "Il plug-in è distribuito in modalità sviluppatore (UXP): si carica manualmente a ogni sessione tramite l'UXP Developer Tool.",
+  "Afficher / masquer un élément selon la donnée ?": "Mostrare / nascondere un elemento in base al dato?",
+  "Une fois ta base branchée, tu peux faire réagir un élément à la valeur de chaque ligne (masquer un bandeau « PROMO » hors promotion, passer un prix en rouge sous un seuil de stock, agrandir un picto « nouveauté »…).": "Una volta collegata la tua base, puoi far reagire un elemento al valore di ogni riga (nascondere un banner «PROMO» fuori promozione, portare un prezzo in rosso sotto una soglia di stock, ingrandire un'icona «novità»…).",
+  "Importer PPTX": "Importare PPTX",
+  "Importer un .pptx pour le réutiliser comme template ou point de départ.": "Importare un .pptx per riutilizzarlo come template o punto di partenza.",
+  "Importer un PPTX": "Importare un PPTX",
+  "1. Tableau de bord → Importer 2. Sélectionne le .pptx 3. Le parser extrait textes, images et formes — y compris le thème (les couleurs de thème sont résolues) et les transparences de remplissage 4.": "1. Dashboard → Importare 2. Seleziona il .pptx 3. Il parser estrae testi, immagini e forme — compreso il tema (i colori del tema vengono risolti) e le trasparenze di riempimento 4.",
+  "Cas d'usage type": "Caso d'uso tipico",
+  "Présentation commerciale dynamique : ton équipe vente part d'un PPTX modèle. Tu l'importes une fois, tu mappes les placeholders sur ta BDD produits, et chaque commercial génère sa version personnalisée (logo client, prix négocié, références…": "Presentazione commerciale dinamica: il tuo team vendite parte da un PPTX modello. Lo importi una volta, mappi i placeholder sul tuo database prodotti, e ogni commerciale genera la propria versione personalizzata (logo cliente, prezzo negoziato, riferimenti…",
+  "Limites": "Limiti",
+  "• Multi-slides : seule la slide 1 est lue — les suivantes sont ignorées • Animations PowerPoint : non supportées (IBS-Studio exporte du print/statique) • SmartArt : ignorés à l'import (non convertis en formes) • Round-trip PPTX → Fabric → P…": "• Multi-slide: viene letta solo la slide 1 — le successive sono ignorate • Animazioni PowerPoint: non supportate (IBS-Studio esporta per la stampa/statico) • SmartArt: ignorati in importazione (non convertiti in forme) • Round-trip PPTX → Fabric → P…",
+  "Importer Excel": "Importare Excel",
+  "Alimenter le PIM depuis un fichier Excel, CSV/TSV ou Google Sheets.": "Alimentare il PIM da un file Excel, CSV/TSV o Google Sheets.",
+  "Formats supportés": "Formati supportati",
+  "L'import détecte automatiquement les types de colonnes : texte, nombre, booléen, date, formule (stockée puis évaluée au moment de la fusion) et dictionnaire (colonne à valeurs répétitives → liste de choix).": "L'importazione rileva automaticamente i tipi di colonna: testo, numero, booleano, data, formula (memorizzata e poi valutata al momento dell'unione) e dizionario (colonna con valori ripetitivi → elenco di scelte).",
+  "Importer un fichier": "Importare un file",
+  "1. Ouvre PIM depuis le menu. 2. Clique Importer un fichier (ou Créer vide pour partir d'une base vierge). 3. Sélectionne ton fichier. 4. Vérifie les colonnes détectées. 5. Valide → la base est créée et synchronisée sur Firebase.": "1. Apri il PIM dal menu. 2. Clicca Importare un file (o Creare vuoto per partire da una base vuota). 3. Seleziona il tuo file. 4. Verifica le colonne rilevate. 5. Conferma → la base viene creata e sincronizzata su Firebase.",
+  "Et ensuite ?": "E poi?",
+  "Une fois la base importée, tout se passe dans le PIM : enrichir les fiches par IA, gérer les champs structurés (spécifications, variants, documents, images) et exporter en série. Voir la section PIM.": "Una volta importata la base, tutto avviene nel PIM: arricchire le schede tramite IA, gestire i campi strutturati (specifiche, varianti, documenti, immagini) ed esportare in serie. Vedi la sezione PIM.",
+  "Importer une image": "Importare un'immagine",
+  "Placer une image (PNG, JPG, WebP, GIF, SVG) sur le canvas d'un nouveau projet.": "Inserire un'immagine (PNG, JPG, WebP, GIF, SVG) sul canvas di un nuovo progetto.",
+  "Importer SVG": "Importare SVG",
+  "Charger un .svg comme calques vectoriels éditables.": "Caricare un .svg come livelli vettoriali modificabili.",
+  "Quand l'utiliser": "Quando usarlo",
+  "• Un logo vectoriel à retoucher ou recolorer. • Un visuel déjà vectorisé (export Illustrator/Figma) à intégrer dans une maquette.": "• Un logo vettoriale da ritoccare o ricolorare. • Un visual già vettorializzato (esportazione Illustrator/Figma) da integrare in un impaginato.",
+  "Image → SVG éditable": "Immagine → SVG modificabile",
+  "Rendre une image raster éditable : fond verrouillé + textes décomposés par IA.": "Rendere modificabile un'immagine raster: sfondo bloccato + testi scomposti dall'IA.",
+  "Comment ça marche": "Come funziona",
+  "1. L'image est verrouillée en fond (fidélité visuelle préservée). Le calque source devient non sélectionnable : les clics passent aux textes posés par-dessus. 2.": "1. L'immagine viene bloccata come sfondo (fedeltà visiva preservata). Il livello sorgente diventa non selezionabile: i clic passano ai testi posti sopra. 2.",
+  "Ce qui devient éditable": "Ciò che diventa modificabile",
+  "La décomposition ne se limite pas à du texte brut : elle reconstruit la mise en forme de chaque bloc.": "La scomposizione non si limita al testo grezzo: ricostruisce la formattazione di ogni blocco.",
+  "Clé Google Vision requise": "Chiave Google Vision richiesta",
+  "La détection des textes appelle l'API Google Cloud Vision : il faut renseigner ta clé une seule fois dans Paramètres → Connecteurs (champ Google Vision), synchronisée ensuite via ton compte.": "Il rilevamento dei testi chiama l'API Google Cloud Vision: devi inserire la tua chiave una sola volta in Impostazioni → Connettori (campo Google Vision), poi sincronizzata tramite il tuo account.",
+  "Filtres intelligents": "Filtri intelligenti",
+  "Pour ne garder que le contenu éditorial et éviter le bruit, plusieurs filtres s'appliquent automatiquement.": "Per conservare solo il contenuto editoriale ed evitare il rumore, si applicano automaticamente diversi filtri.",
+  "Quand l'utiliser & limites": "Quando usarlo e limiti",
+  "À utiliser quand tu as un visuel raster fini (affiche, flyer, publicité retail) sans le fichier source et que tu veux réécrire les textes ou décliner sans tout refaire.": "Da usare quando hai un visual raster finito (manifesto, volantino, pubblicità retail) senza il file sorgente e vuoi riscrivere i testi o declinare senza rifare tutto.",
+  "PDF → SVG éditable": "PDF → SVG modificabile",
+  "Repartir d'un PDF : page 1 rasterisée en fond + textes éditables.": "Ripartire da un PDF: pagina 1 rasterizzata come sfondo + testi modificabili.",
+  "1. Si le PDF contient un calque texte natif exploitable, la conversion vectorielle est tentée d'abord : les textes arrivent exacts (pas d'OCR). 2.": "1. Se il PDF contiene un livello di testo nativo utilizzabile, viene tentata prima la conversione vettoriale: i testi arrivano esatti (nessun OCR). 2.",
+  "Texte natif vs OCR — trois niveaux": "Testo nativo vs OCR — tre livelli",
+  "L'import suit une cascade : il garde toujours le niveau le plus fidèle disponible. 1. Conversion vectorielle (MuPDF) — tentée d'abord.": "L'importazione segue una cascata: mantiene sempre il livello più fedele disponibile. 1. Conversione vettoriale (MuPDF) — tentata per prima.",
+  "Ce qui devient éditable (conversion vectorielle)": "Ciò che diventa modificabile (conversione vettoriale)",
+  "Quand le PDF passe par la conversion vectorielle, l'import ne se contente pas de séparer texte et fond — il reconstruit des objets vraiment manipulables : • Blocs de texte regroupés : un prix composé (« 22 DT ,99 »), une bulle (« 30 % d'éco…": "Quando il PDF passa per la conversione vettoriale, l'importazione non si limita a separare testo e sfondo — ricostruisce oggetti realmente manipolabili: • Blocchi di testo raggruppati: un prezzo composto («22 DT ,99»), un fumetto («30 % di risp…",
+  "Polices fidèles (embarquées + repli Google Fonts)": "Font fedeli (incorporati + ripiego Google Fonts)",
+  "Pour que le rendu ne retombe pas sur une police par défaut : • Les polices embarquées dans le PDF (sous-ensembles TrueType) sont extraites et chargées sous leur vraie famille (« WRZTFA+ArialNarrow-Bold » → Arial Narrow, gras).": "Affinché il rendering non ricada su un font predefinito: • I font incorporati nel PDF (sottoinsiemi TrueType) vengono estratti e caricati con la loro vera famiglia («WRZTFA+ArialNarrow-Bold» → Arial Narrow, grassetto).",
+  "Champs de fusion {{…}} préservés": "Campi di unione {{…}} preservati",
+  "Si le PDF d'origine contient déjà des champs de fusion {{…}} (publipostage), l'import les reconnaît et leur attache leur cadre de composition : largeur du bloc + alignement détecté sur la géométrie réelle (bords droits communs → aligné à dr…": "Se il PDF originale contiene già campi di unione {{…}} (stampa unione), l'importazione li riconosce e associa loro il riquadro di composizione: larghezza del blocco + allineamento rilevato dalla geometria reale (bordi destri comuni → allineato a des…",
+  "Limites & quand l'utiliser": "Limiti e quando usarlo",
+  "• Page 1 uniquement : les pages suivantes sont ignorées. Pour un multi-pages fidèle, préférez Import InDesign (IDML). • Idéal pour repartir d'un PDF existant (BAT, ancien document) quand le fichier source InDesign n'est plus disponible.": "• Solo pagina 1: le pagine successive sono ignorate. Per un multipagina fedele, preferisci l'Importazione InDesign (IDML). • Ideale per ripartire da un PDF esistente (bozza, vecchio documento) quando il file sorgente InDesign non è più disponibile.",
+  "DAM": "DAM",
+  "Banque d'images, génération IA, édition, variantes et organisation des visuels.": "Banca immagini, generazione IA, modifica, varianti e organizzazione dei visual.",
+  "Les onglets": "Le schede",
+  "Clique un onglet pour l'ouvrir directement dans le DAM.": "Clicca una scheda per aprirla direttamente nel DAM.",
+  "Banque d'images": "Banca immagini",
+  "Recherche dans Pexels & Unsplash (millions de photos libres de droits) avec filtres source / orientation / couleur.": "Ricerca in Pexels e Unsplash (milioni di foto royalty-free) con filtri sorgente / orientamento / colore.",
+  "Mes images": "Le mie immagini",
+  "Tes images sauvegardées — depuis la banque ou issues de la génération IA.": "Le tue immagini salvate — dalla banca o generate dall'IA.",
+  "Favoris": "Preferiti",
+  "Les images que tu as marquées d'un ♥ pour un accès rapide.": "Le immagini che hai contrassegnato con un ♥ per un accesso rapido.",
+  "Collections": "Collezioni",
+  "Des dossiers d'organisation que tu crées et remplis toi-même.": "Cartelle di organizzazione che crei e riempi tu stesso.",
+  "Récents": "Recenti",
+  "Les derniers ajouts, triés par date.": "Le ultime aggiunte, ordinate per data.",
+  "Projets": "Progetti",
+  "Les images et les polices du projet courant, prêtes à glisser sur le canvas.": "Le immagini e i font del progetto corrente, pronte da trascinare sul canvas.",
+  "Création d'image": "Creazione immagine",
+  "Génération d'images par IA (Gemini / Image IA) — voir le détail des paramètres plus bas.": "Generazione di immagini tramite IA (Gemini / Image IA) — vedi il dettaglio dei parametri più in basso.",
+  "Animations HTML": "Animazioni HTML",
+  "Tes compositions vidéo (HyperFrames).": "Le tue composizioni video (HyperFrames).",
+  "Google Drive": "Google Drive",
+  "Accès à tes fichiers Google Drive une fois ton compte connecté.": "Accesso ai tuoi file Google Drive una volta collegato il tuo account.",
+  "Rechercher des images": "Cercare immagini",
+  "• Par texte : barre de recherche avec autocomplétion et historique des recherches récentes. • Par image (recherche inversée) : bouton caméra → choisis une image locale → le DAM trouve des visuels similaires dans la banque.": "• Per testo: barra di ricerca con completamento automatico e cronologia delle ricerche recenti. • Per immagine (ricerca inversa): pulsante fotocamera → scegli un'immagine locale → il DAM trova visual simili nella banca.",
+  "Créer une image par IA": "Creare un'immagine tramite IA",
+  "Onglet Création d'image — moteur Image IA (Gemini 3.1 image, texte → image). Déplie chaque paramètre :": "Scheda Creazione immagine — motore Image IA (Gemini 3.1 image, testo → immagine). Espandi ogni parametro:",
+  "Prompt (+ Améliorer / Avec questions)": "Prompt (+ Migliorare / Con domande)",
+  "Décris l'image à générer. Tu peux coller une image dans le champ : elle rejoint les fichiers de référence.": "Descrivi l'immagine da generare. Puoi incollare un'immagine nel campo: viene aggiunta ai file di riferimento.",
+  "Bouton « Ajouter des fichiers » (ou colle une image). Tous formats : images, logos, PDF, SVG (rastérisé en PNG, plafonné à 2048 px).": "Pulsante «Aggiungi file» (o incolla un'immagine). Tutti i formati: immagini, loghi, PDF, SVG (rasterizzato in PNG, limitato a 2048 px).",
+  "Format de sortie": "Formato di uscita",
+  "• Images & texte (défaut) : image + texte — le modèle peut commenter brièvement. • Images seul.": "• Immagini e testo (predefinito): immagine + testo — il modello può commentare brevemente. • Solo immagini.",
+  "Température (0 → 2, défaut 1,0)": "Temperatura (0 → 2, predefinito 1,0)",
+  "Curseur, pas de 0,1. Règle la créativité : • 0 — Précis : déterministe, fidèle au prompt/références. • 2 — Créatif : plus de liberté et de variation. Reproduire une référence → baisse vers 0 ; explorer → monte vers 2.": "Cursore, passo di 0,1. Regola la creatività: • 0 — Preciso: deterministico, fedele al prompt/riferimenti. • 2 — Creativo: più libertà e variazione. Riprodurre un riferimento → abbassa verso 0; esplorare → alza verso 2.",
+  "Ratio (format)": "Rapporto (formato)",
+  "Auto · 1:1 · 16:9 · 9:16 · 4:3 · 3:4. • Auto (défaut) : le modèle choisit le cadrage adapté au prompt/références (aucune contrainte envoyée). • Les autres imposent le rapport : 1:1 carré (réseaux), 16:9 / 4:3 paysage, 9:16 / 3:4 portrait.": "Auto · 1:1 · 16:9 · 9:16 · 4:3 · 3:4. • Auto (predefinito): il modello sceglie l'inquadratura adatta al prompt/riferimenti (nessun vincolo inviato). • Gli altri impongono il rapporto: 1:1 quadrato (social), 16:9 / 4:3 orizzontale, 9:16 / 3:4 verticale.",
+  "Résolution (1K / 2K / 4K)": "Risoluzione (1K / 2K / 4K)",
+  "1K (défaut) · 2K · 4K. Définition du visuel. ⚠️ 2K et 4K sont 2 à 3× plus lents — réserve-les au rendu final, reste en 1K pour itérer.": "1K (predefinito) · 2K · 4K. Definizione del visual. ⚠️ 2K e 4K sono 2-3× più lenti — riservali al rendering finale, resta in 1K per iterare.",
+  "Nombre d'images (1 / 2 / 4)": "Numero di immagini (1 / 2 / 4)",
+  "1 (défaut) · 2 · 4. Génère N variations en parallèle du même prompt — pour comparer plusieurs propositions d'un coup.": "1 (predefinito) · 2 · 4. Genera N variazioni in parallelo dello stesso prompt — per confrontare più proposte in una volta.",
+  "Générer & actions sur les résultats": "Generare e azioni sui risultati",
+  "Bouton « Générer ». Pour chaque image : • Télécharger — PNG en local. • Sauvegarder — vers « Mes images » (prompt d'origine, prompt amélioré et Q/R conservés en métadonnées). • Insérer dans l'éditeur — place l'image dans le projet ouvert.": "Pulsante «Genera». Per ogni immagine: • Scaricare — PNG in locale. • Salvare — in «Le mie immagini» (prompt originale, prompt migliorato e D/R conservati nei metadati). • Inserire nell'editor — inserisce l'immagine nel progetto aperto.",
+  "Visualiser & éditer une image": "Visualizzare e modificare un'immagine",
+  "Un clic ouvre la visionneuse (lightbox). Outils d'édition non destructive :": "Un clic apre il visualizzatore (lightbox). Strumenti di modifica non distruttiva:",
+  "Zoom · Rotation · Miroir": "Zoom · Rotazione · Specchio",
+  "Zoom avant/arrière + ajustement, Rotation par 90°, Miroir horizontal et vertical.": "Zoom avanti/indietro + adattamento, Rotazione di 90°, Specchio orizzontale e verticale.",
+  "Recadrage (crop)": "Ritaglio (crop)",
+  "Masque interactif à 8 poignées, grille des tiers, contraintes de ratio (libre, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3).": "Maschera interattiva con 8 maniglie, griglia dei terzi, vincoli di rapporto (libero, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3).",
+  "Colorimétrie": "Colorimetria",
+  "Sliders Luminosité, Contraste, Saturation, Teinte (rendu via filtre CSS, non destructif).": "Cursori Luminosità, Contrasto, Saturazione, Tonalità (reso tramite filtro CSS, non distruttivo).",
+  "Formats PNG / JPEG / WebP, avec réglage de qualité (JPEG/WebP) et d'échelle (% de la résolution native).": "Formati PNG / JPEG / WebP, con regolazione della qualità (JPEG/WebP) e della scala (% della risoluzione nativa).",
+  "Réinitialiser": "Reimpostare",
+  "Annule toutes les retouches et revient à l'image d'origine.": "Annulla tutte le modifiche e torna all'immagine originale.",
+  "Panneau d'informations & crédit photo": "Pannello informazioni e credito foto",
+  "À droite de la visionneuse, l'onglet Infos récapitule la fiche technique du visuel : dimensions (px), résolution (mégapixels) et ratio, poids du fichier, orientation, couleur dominante (pastille + code hex) et espace sRGB, plus les tags.": "A destra del visualizzatore, la scheda Info riepiloga la scheda tecnica del visual: dimensioni (px), risoluzione (megapixel) e rapporto, peso del file, orientamento, colore dominante (pastiglia + codice hex) e spazio sRGB, oltre ai tag.",
+  "Onglet Prompts (images IA)": "Scheda Prompt (immagini IA)",
+  "Quand une image a été générée par IA, un onglet Prompts s'ajoute dans la visionneuse. Il restitue le prompt d'origine (ton texte brut), le prompt amélioré réellement envoyé à Image IA, et les précisions Q&R du mode « Avec questions ».": "Quando un'immagine è stata generata tramite IA, una scheda Prompt si aggiunge nel visualizzatore. Restituisce il prompt originale (il tuo testo grezzo), il prompt migliorato effettivamente inviato a Image IA, e le precisazioni D&R della modalità «Con domande».",
+  "Variantes": "Varianti",
+  "Sauvegarde une retouche (crop + colorimétrie + miroir + rotation) comme variante nommée d'une image, sans toucher l'originale : • Enregistrer variante → donne-lui un nom.": "Salva una modifica (crop + colorimetria + specchio + rotazione) come variante denominata di un'immagine, senza toccare l'originale: • Salvare variante → assegnale un nome.",
+  "Analyse IA d'une image": "Analisi IA di un'immagine",
+  "Dans la visionneuse, onglet Analyse IA → bouton « Analyser avec IA ». L'IA renvoie : sujet, description, marques identifiées, texte détecté (OCR), ambiance / style / composition / éclairage, objets, tags de recherche et palette de couleurs.…": "Nel visualizzatore, scheda Analisi IA → pulsante «Analizza con IA». L'IA restituisce: soggetto, descrizione, marche identificate, testo rilevato (OCR), atmosfera / stile / composizione / illuminazione, oggetti, tag di ricerca e palette di colori.…",
+  "Tagging automatique & recherche par tags": "Tagging automatico e ricerca per tag",
+  "Chaque image sauvegardée dans Mes images (génération IA, images du Chat) est taguée automatiquement en arrière-plan : tags, couleur dominante et sujet sont posés sur la fiche quelques secondes après la sauvegarde.": "Ogni immagine salvata in Le mie immagini (generazione IA, immagini della Chat) viene taggata automaticamente in background: tag, colore dominante e soggetto vengono aggiunti alla scheda pochi secondi dopo il salvataggio.",
+  "Organiser": "Organizzare",
+  "• Favoris (♥) : accès rapide. • Collections : crée des dossiers, ajoute/retire des images, vue vignettes ou liste.": "• Preferiti (♥): accesso rapido. • Collezioni: crea cartelle, aggiungi/rimuovi immagini, vista miniature o elenco.",
+  "Utiliser une image dans l'éditeur": "Usare un'immagine nell'editor",
+  "• Clic : insère l'image au centre du canvas (mise à l'échelle automatique). • Glisser-déposer : depuis la grille vers le canvas (équivaut à l'insertion).": "• Clic: inserisce l'immagine al centro del canvas (ridimensionamento automatico). • Trascinamento: dalla griglia al canvas (equivale all'inserimento).",
+  "Sources externes": "Sorgenti esterne",
+  "• Pexels & Unsplash : banque intégrée (recherche + filtres). • Google Drive : connecte ton compte (onglet Google Drive) pour piocher dans tes fichiers.": "• Pexels e Unsplash: banca integrata (ricerca + filtri). • Google Drive: collega il tuo account (scheda Google Drive) per attingere ai tuoi file.",
+  "PIM": "PIM",
+  "Gérer tes bases de données produits : fiches, enrichissement IA, champs structurés et export.": "Gestire i tuoi database prodotti: schede, arricchimento IA, campi strutturati ed esportazione.",
+  "Bases de données": "Database",
+  "Tu peux gérer plusieurs bases en parallèle. Trois façons d'en créer une : • Importer un fichier — depuis Excel ou CSV/TSV (voir Importer Excel). • Scraper le web — partir d'URLs produits et laisser l'IA remplir les fiches.": "Puoi gestire più basi in parallelo. Tre modi per crearne una: • Importare un file — da Excel o CSV/TSV (vedi Importare Excel). • Scraping del web — partire da URL prodotto e lasciare che l'IA compili le schede.",
+  "Enrichir une fiche par IA": "Arricchire una scheda tramite IA",
+  "Clique sur une ligne → panneau Enrichi par IA à droite. Mode AUTO (violet) : si la ligne a un title, brand ou reference, une recherche web (Jina) + LLM trouve l'URL et extrait les infos (modèle principal : Gemini, secours : Claude).": "Clicca su una riga → pannello Arricchito da IA a destra. Modalità AUTO (viola): se la riga ha un title, brand o reference, una ricerca web (Jina) + LLM trova l'URL ed estrae le informazioni (modello principale: Gemini, riserva: Claude).",
+  "Champs structurés": "Campi strutturati",
+  "Au-delà du texte simple, une fiche stocke des champs riches, tous exploitables dans le data-merge : • Formules Excel : évaluées à la volée. • Spécifications : [{ group, name, value }] (dimensions, matériaux…).": "Oltre al testo semplice, una scheda memorizza campi ricchi, tutti utilizzabili nel data-merge: • Formule Excel: valutate al volo. • Specifiche: [{ group, name, value }] (dimensioni, materiali…).",
+  "Champs calculés (colonnes formules)": "Campi calcolati (colonne formula)",
+  "Une colonne peut être une formule plutôt qu'une valeur saisie — comme dans Excel. Tu écris une expression qui référence d'autres colonnes, et la valeur se recalcule à la volée quand les données changent.": "Una colonna può essere una formula anziché un valore inserito — come in Excel. Scrivi un'espressione che fa riferimento ad altre colonne, e il valore si ricalcola al volo quando i dati cambiano.",
+  "Éditer la table comme un tableur": "Modificare la tabella come un foglio di calcolo",
+  "La table produits se manipule directement, sans quitter la page : • Éditer une cellule : un clic sélectionne, un second clic (ou Entrée) passe en édition ; Entrée valide, Échap annule.": "La tabella prodotti si manipola direttamente, senza uscire dalla pagina: • Modificare una cella: un clic seleziona, un secondo clic (o Invio) passa alla modifica; Invio conferma, Esc annulla.",
+  "Types de colonnes (façon Airtable)": "Tipi di colonna (in stile Airtable)",
+  "Le bouton « + » d'en-tête ouvre un sélecteur de type de champ, regroupés par catégorie (Texte, Nombre, Choix, Date, Lien, Autre) avec recherche.": "Il pulsante «+» dell'intestazione apre un selettore del tipo di campo, raggruppati per categoria (Testo, Numero, Scelta, Data, Link, Altro) con ricerca.",
+  "Statistiques de colonne": "Statistiche di colonna",
+  "Sous l'en-tête d'une colonne numérique, des badges Min / Moyenne / Max résument les valeurs visibles. Cliquer Min trie en croissant, Max en décroissant — un coup d'œil suffit pour repérer prix aberrants ou champs vides.": "Sotto l'intestazione di una colonna numerica, badge Min / Media / Max riepilogano i valori visibili. Cliccando Min ordina in modo crescente, Max in modo decrescente — un colpo d'occhio basta per individuare prezzi anomali o campi vuoti.",
+  "Fraîcheur par champ": "Freschezza per campo",
+  "Chaque valeur enrichie porte la date de son dernier changement (updatedAt au niveau du champ).": "Ogni valore arricchito riporta la data della sua ultima modifica (updatedAt a livello del campo).",
+  "Plusieurs sources dans une base": "Più sorgenti in una base",
+  "La colonne latérale gauche liste les sources d'une base (chaque import / scrape / saisie manuelle = une source). Clique une source pour afficher/masquer ses produits dans la table ; coche-en plusieurs pour les fusionner à l'écran.": "La colonna laterale sinistra elenca le sorgenti di una base (ogni importazione / scrape / inserimento manuale = una sorgente). Clicca una sorgente per mostrare/nascondere i suoi prodotti nella tabella; selezionane più di una per unirle a schermo.",
+  "Galerie d'images d'une fiche": "Galleria immagini di una scheda",
+  "Dans le panneau de fiche, les images se réorganisent par glisser-déposer (la première sert de visuel principal) et se suppriment à l'unité.": "Nel pannello della scheda, le immagini si riorganizzano tramite trascinamento (la prima funge da visual principale) e si eliminano una a una.",
+  "Classer & exporter": "Classificare ed esportare",
+  "• Relie une base à une taxonomie pour naviguer le catalogue par catégories. • Une fois les fiches prêtes, le data-merge génère un document par produit à partir d'un template (PDF, PNG…).": "• Collega una base a una tassonomia per navigare il catalogo per categorie. • Una volta pronte le schede, il data-merge genera un documento per prodotto a partire da un template (PDF, PNG…).",
+  "Vue galerie": "Vista galleria",
+  "Le basculeur tableau / galerie (en haut à droite de la table) affiche les produits en cartes : visuel (colonne image détectée automatiquement), titre, prix ou marque, et pastille de complétude. Cliquer une carte ouvre la fiche.": "Il commutatore tabella / galleria (in alto a destra della tabella) mostra i prodotti in schede: visual (colonna immagine rilevata automaticamente), titolo, prezzo o marca, e pastiglia di completezza. Cliccando una scheda si apre la scheda prodotto.",
+  "Complétude des fiches": "Completezza delle schede",
+  "Chaque ligne de la table porte une pastille de complétude : verte (≥ 90 % des colonnes remplies), ambre (≥ 60 %) ou rouge. Survole-la pour voir les champs manquants.": "Ogni riga della tabella riporta una pastiglia di completezza: verde (≥ 90 % delle colonne compilate), ambra (≥ 60 %) o rossa. Passaci sopra il mouse per vedere i campi mancanti.",
+  "L'export en série (data-merge) est détaillé dans la section Export multi-format. Le re-skin d'un visuel par les produits PIM est décrit dans la section L'éditeur.": "L'esportazione in serie (data-merge) è dettagliata nella sezione Esportazione multiformato. Il re-skin di un visual tramite i prodotti PIM è descritto nella sezione L'editor.",
+  "Taxonomies": "Tassonomie",
+  "Classifier produits et projets dans une hiérarchie navigable.": "Classificare prodotti e progetti in una gerarchia navigabile.",
+  "Créer une taxonomie": "Creare una tassonomia",
+  "1. Va dans Taxonomies depuis le menu 2. Clique Nouvelle taxonomie 3. Donne-lui un nom (ex: Catégories produits) 4. Ajoute des niveaux : clique sur un nœud pour créer un enfant, glisse pour réorganiser 5.": "1. Vai in Tassonomie dal menu 2. Clicca Nuova tassonomia 3. Assegnale un nome (es: Categorie prodotti) 4. Aggiungi livelli: clicca su un nodo per creare un figlio, trascina per riorganizzare 5.",
+  "Navigation intelligente": "Navigazione intelligente",
+  "Dès qu'une BDD source est active, le navigateur de gauche auto-déplie la branche correspondante et colorise tous les ancêtres du nœud sélectionné jusqu'à la racine. Désélectionner referme la branche.": "Non appena un database sorgente è attivo, il navigatore di sinistra espande automaticamente il ramo corrispondente e colora tutti gli antenati del nodo selezionato fino alla radice. Deselezionando si richiude il ramo.",
+  "Associer des produits à une catégorie": "Associare prodotti a una categoria",
+  "Dans le PIM, chaque produit (ligne) est rattaché à un nœud de la taxonomie. Deux voies : • Manuel — sélectionne une ligne → clique « Non classé — cliquer pour classer » au-dessus du panneau → choisis le nœud cible.": "Nel PIM, ogni prodotto (riga) è collegato a un nodo della tassonomia. Due modi: • Manuale — seleziona una riga → clicca «Non classificato — clicca per classificare» sopra il pannello → scegli il nodo di destinazione.",
+  "Éditer l'arbre (nœuds)": "Modificare l'albero (nodi)",
+  "Survole une ligne de l'arbre pour faire apparaître ses actions : • + — ajoute un nœud enfant sous le nœud survolé • ✏ (crayon) — renomme le nœud sur place • 🔗 (chaîne) — lie des projets au nœud (visible sur les nœuds feuilles uniquement) •…": "Passa il mouse su una riga dell'albero per far comparire le sue azioni: • + — aggiunge un nodo figlio sotto il nodo evidenziato • ✏ (matita) — rinomina il nodo sul posto • 🔗 (catena) — collega progetti al nodo (visibile solo sui nodi foglia) •…",
+  "Rechercher un nœud dans l'arbre": "Cercare un nodo nell'albero",
+  "Une barre « Rechercher un nœud… » filtre l'arbre dès 2 caractères. Chaque résultat affiche son libellé + son chemin complet (fil d'Ariane).": "Una barra «Cerca un nodo…» filtra l'albero a partire da 2 caratteri. Ogni risultato mostra la sua etichetta + il suo percorso completo (breadcrumb).",
+  "Compteurs de produits par nœud": "Contatori di prodotti per nodo",
+  "Chaque nœud affiche combien de produits y sont rattachés, sur deux niveaux : • le compte direct (produits posés exactement sur ce nœud) ; • le compte cumulé, qui agrège le nœud et tous ses descendants — un nœud parent totalise donc tout ce…": "Ogni nodo mostra quanti prodotti vi sono collegati, su due livelli: • il conteggio diretto (prodotti posti esattamente su questo nodo); • il conteggio cumulativo, che aggrega il nodo e tutti i suoi discendenti — un nodo padre totalizza quindi tutto ciò…",
+  "Classer les produits en lot (IA)": "Classificare i prodotti in lotto (IA)",
+  "Au lieu de ranger les lignes une par une, tu peux lancer une classification IA en lot : l'assistant lit le contenu de chaque ligne de la feuille active et propose le nœud le plus probable de la taxonomie cible.": "Invece di sistemare le righe una a una, puoi avviare una classificazione IA in lotto: l'assistente legge il contenuto di ogni riga del foglio attivo e propone il nodo più probabile della tassonomia di destinazione.",
+  "Importer une taxonomie depuis un fichier": "Importare una tassonomia da un file",
+  "Plutôt que de saisir l'arbre à la main, importe une nomenclature existante au format .md / .txt (indentation = hiérarchie), .csv ou .xlsx.": "Anziché inserire l'albero a mano, importa una nomenclatura esistente in formato .md / .txt (indentazione = gerarchia), .csv o .xlsx.",
+  "Construire une taxonomie depuis les colonnes du PIM": "Costruire una tassonomia dalle colonne del PIM",
+  "Si ta feuille contient déjà des colonnes de catégorisation (ex. Famille, Sous-famille, Type), affecte à chacune un niveau (1, 2, 3…).": "Se il tuo foglio contiene già colonne di categorizzazione (es. Famiglia, Sottofamiglia, Tipo), assegna a ciascuna un livello (1, 2, 3…).",
+  "Plusieurs taxonomies & gestion globale": "Più tassonomie e gestione globale",
+  "Tu peux maintenir plusieurs taxonomies en parallèle (ex. une par axe d'analyse) et basculer de l'une à l'autre depuis la liste.": "Puoi mantenere più tassonomie in parallelo (es. una per asse di analisi) e passare dall'una all'altra dall'elenco.",
+  "Lier des projets (designs) à un nœud": "Collegare progetti (design) a un nodo",
+  "Au-delà des produits, un nœud feuille peut référencer des projets (designs de l'éditeur).": "Oltre ai prodotti, un nodo foglia può fare riferimento a progetti (design dell'editor).",
+  "Auto-construction depuis le scraping": "Costruzione automatica dallo scraping",
+  "Quand tu scrapes un site avec un breadcrumb (fil d'Ariane), IBS-Studio peut auto-construire une taxonomie à partir des chemins de catégorie rencontrés. Utile pour démarrer un PIM en miroir d'un site fournisseur.": "Quando fai scraping di un sito con un breadcrumb (percorso di navigazione), IBS-Studio può costruire automaticamente una tassonomia a partire dai percorsi di categoria incontrati. Utile per avviare un PIM che rispecchia un sito fornitore.",
+  "Onglet Briefs": "Scheda Brief",
+  "La page Taxonomies héberge aussi l'onglet Briefs : décris un besoin en langage naturel, l'IA pose des questions, compose un panier de produits du catalogue et structure un deck. Détail dans la section Briefs & génération IA.": "La pagina Tassonomie ospita anche la scheda Brief: descrivi un'esigenza in linguaggio naturale, l'IA pone domande, compone un carrello di prodotti dal catalogo e struttura un deck. Dettagli nella sezione Brief e generazione IA.",
+  "Cas d'usage": "Caso d'uso",
+  "• Catalogue multi-marques : taxonomie principale par typologie produit (Outillage / Jardin / Électroménager) • Multi-langues : une taxonomie par langue, ou bien une taxonomie unique avec des labels multilingues sur les nœuds • Reporting : f…": "• Catalogo multimarca: tassonomia principale per tipologia di prodotto (Utensili / Giardino / Elettrodomestici) • Multilingua: una tassonomia per lingua, oppure una tassonomia unica con etichette multilingue sui nodi • Reporting: f…",
+  "Briefs & génération IA": "Brief e generazione IA",
+  "Décrire en français ce qu'on veut, l'IA produit le contenu.": "Descrivere in italiano ciò che si desidera, l'IA produce il contenuto.",
+  "Modèles IA utilisés": "Modelli IA utilizzati",
+  "IBS-Studio s'appuie par défaut sur : • Claude Opus (Anthropic) — questions dynamiques, composition du panier et structure du deck • Gemini (Google) — prompts d'images, mots-clés catalogue, génération d'images (Claude en secours) • Enrichiss…": "IBS-Studio si basa per impostazione predefinita su: • Claude Opus (Anthropic) — domande dinamiche, composizione del carrello e struttura del deck • Gemini (Google) — prompt di immagini, parole chiave del catalogo, generazione di immagini (Claude come riserva) • Arricchim…",
+  "Où utiliser les briefs ?": "Dove usare i brief?",
+  "Dans les Taxonomies : l'onglet Briefs de la page Taxonomies est le panneau dédié — décris ton besoin, l'IA pose des questions dynamiques, compose un panier de produits depuis le catalogue et structure un deck (avec prompts d'images).": "Nelle Tassonomie: la scheda Brief della pagina Tassonomie è il pannello dedicato — descrivi la tua esigenza, l'IA pone domande dinamiche, compone un carrello di prodotti dal catalogo e struttura un deck (con prompt di immagini).",
+  "L'assistant brief en 5 étapes": "L'assistente brief in 5 fasi",
+  "Dans les Taxonomies, ouvrir un brief lance un assistant guidé qui transforme un besoin client en proposition commerciale livrable : 1.": "Nelle Tassonomie, aprire un brief avvia un assistente guidato che trasforma un'esigenza del cliente in una proposta commerciale consegnabile: 1.",
+  "Comment l'IA compose le panier": "Come l'IA compone il carrello",
+  "À la première arrivée sur l'étape Panier, la génération démarre automatiquement (panier vide + aucun journal antérieur).": "Al primo accesso alla fase Carrello, la generazione parte automaticamente (carrello vuoto + nessun registro precedente).",
+  "Éditer et exporter le panier": "Modificare ed esportare il carrello",
+  "Le panier généré reste entièrement modifiable, ligne par ligne : quantités, ajout/retrait de produits, et surtout un prix appliqué qui peut surcharger le prix catalogue d'origine (les deux sont conservés).": "Il carrello generato resta completamente modificabile, riga per riga: quantità, aggiunta/rimozione di prodotti, e soprattutto un prezzo applicato che può sovrascrivere il prezzo di catalogo originale (entrambi vengono conservati).",
+  "Deck et export PPTX": "Deck ed esportazione PPTX",
+  "L'IA esquisse un deck composé de slides typées : couverture, contexte, grille de produits (layout 2×2 / 3×2 / 1×3), focus produit, budget (total + détail) et appel à l'action.": "L'IA abbozza un deck composto da slide tipizzate: copertina, contesto, griglia di prodotti (layout 2×2 / 3×2 / 1×3), focus prodotto, budget (totale + dettaglio) e call to action.",
+  "Génération d'images": "Generazione di immagini",
+  "Le DAM intègre la génération d'images via Gemini (modèle image dit « Image IA »). Tu décris une image en français ou en anglais, l'IA produit un visuel utilisable directement dans tes templates.": "Il DAM integra la generazione di immagini tramite Gemini (modello immagine chiamato «Image IA»). Descrivi un'immagine in italiano o in inglese, l'IA produce un visual utilizzabile direttamente nei tuoi template.",
+  "Limites des briefs": "Limiti dei brief",
+  "• L'IA peut halluciner des références ou caractéristiques. Toujours vérifier le résultat avant publication, surtout sur les chiffres et les normes. • Les briefs sont stateless : aucune mémoire conversationnelle.": "• L'IA può allucinare riferimenti o caratteristiche. Verifica sempre il risultato prima della pubblicazione, soprattutto su cifre e norme. • I brief sono stateless: nessuna memoria conversazionale.",
+  "Scraping produits": "Scraping prodotti",
+  "Récupérer des fiches produits depuis le web — sans saisie manuelle.": "Recuperare schede prodotto dal web — senza inserimento manuale.",
+  "Quel mode utiliser ?": "Quale modalità usare?",
+  "Pour un fournisseur que tu vas scraper plus de 2 fois, crée un template. C'est la voie royale : 0 hallucination IA, 0 token consommé, réutilisable sur des centaines d'URLs.": "Per un fornitore che scraperai più di 2 volte, crea un template. È la via migliore: 0 allucinazioni IA, 0 token consumati, riutilizzabile su centinaia di URL.",
+  "Créer un template de scraping": "Creare un template di scraping",
+  "1. Ouvre la page Templates scraping depuis le menu latéral 2. Clique Nouveau → entre un nom (ex: Nicoll), le domaine (nicoll.fr) et un pattern d'URL (. pour tout matcher) 3.": "1. Apri la pagina Template scraping dal menu laterale 2. Clicca Nuovo → inserisci un nome (es: Nicoll), il dominio (nicoll.fr) e un pattern di URL (. per corrispondere a tutto) 3.",
+  "Onglet Recherche : « trouve-moi ça, là »": "Scheda Ricerca: «trovami questo, lì»",
+  "Pas d'URL sous la main ? Décris ce que tu cherches et où en langage naturel — « tondeuses Honda chez LeroyMerlin et Castorama ».": "Nessun URL a portata di mano? Descrivi cosa cerchi e dove in linguaggio naturale — «tosaerba Honda da LeroyMerlin e Castorama».",
+  "Plusieurs sites/URLs d'un coup (Liste · Fichier · Google Sheet)": "Più siti/URL in una volta (Elenco · File · Google Sheet)",
+  "Les onglets Crawl et Map + Extract ne se limitent pas à une seule URL. Le sélecteur de source propose 4 modes : • 1 URL : le cas simple. • Liste : colle plusieurs URLs racines, une par ligne.": "Le schede Crawl e Map + Extract non si limitano a un solo URL. Il selettore di sorgente propone 4 modalità: • 1 URL: il caso semplice. • Elenco: incolla più URL radice, uno per riga.",
+  "Affiner un Crawl : limite, inclure/exclure (regex)": "Affinare un Crawl: limite, includi/escludi (regex)",
+  "Avant d'extraire les liens, tu peux cadrer la découverte : • Limite de pages (1 à 500, défaut 30) — par URL racine en mode multi. • Inclure (regex) : ne garder que les chemins qui matchent, ex. /produits/..": "Prima di estrarre i link, puoi delimitare la scoperta: • Limite di pagine (da 1 a 500, predefinito 30) — per URL radice in modalità multi. • Includi (regex): conservare solo i percorsi che corrispondono, es. /produits/..",
+  "Suivre le coût et arrêter un run": "Monitorare il costo e arrestare un'esecuzione",
+  "• Chip de coût (en haut du modal) : il additionne en direct le dernier traitement et le cumul de la session, ventilé par source — LLM, Jina, Firecrawl, Bright Data.": "• Chip del costo (in alto nella finestra modale): somma in tempo reale l'ultima elaborazione e il totale della sessione, suddiviso per sorgente — LLM, Jina, Firecrawl, Bright Data.",
+  "Que récupère « Produit complet » exactement ?": "Cosa recupera esattamente «Prodotto completo»?",
+  "Tous les onglets (Scrape / Crawl / Map+Extract / Recherche) finissent par le même moteur PIM (enrichProductCore), pour un résultat homogène quel que soit le chemin : • Specs au format KEY/VALUE (caractéristiques techniques structurées).": "Tutte le schede (Scrape / Crawl / Map+Extract / Ricerca) terminano con lo stesso motore PIM (enrichProductCore), per un risultato omogeneo qualunque sia il percorso: • Specifiche in formato KEY/VALUE (caratteristiche tecniche strutturate).",
+  "Scraper depuis la BDD (Map + Extract)": "Scraping dal database (Map + Extract)",
+  "Quand tu n'as pas encore de template, ou pour explorer un nouveau site : 1. PIM → ouvre une BDD (ou crée-la vide) 2. Bouton Scraper le web → onglet Map + Extract 3. Colle une URL catégorie → Mapper le site → liste des liens internes 4.": "Quando non hai ancora un template, o per esplorare un nuovo sito: 1. PIM → apri un database (o crealo vuoto) 2. Pulsante Scraping del web → scheda Map + Extract 3. Incolla un URL di categoria → Mappare il sito → elenco dei link interni 4.",
+  "Limites à connaître": "Limiti da conoscere",
+  "• Sites e-commerce hostiles (Mr-Bricolage, Darty, Boulanger…) : DataDome/Akamai peut bloquer.": "• Siti e-commerce ostili (Mr-Bricolage, Darty, Boulanger…): DataDome/Akamai può bloccare.",
+  "Tip pro : URL-only enrichissement": "Suggerimento pro: arricchimento solo URL",
+  "Tu peux importer un Excel avec uniquement une colonne URL (sans titre/marque/réf). Le pipeline détecte la colonne URL, retrouve le template par domaine, et lance l'enrichissement TEMPLATE en un clic.": "Puoi importare un Excel con la sola colonna URL (senza titolo/marca/rif). La pipeline rileva la colonna URL, ritrova il template per dominio, e avvia l'arricchimento TEMPLATE con un clic.",
+  "Templates scraping": "Template scraping",
+  "Créer et maintenir les templates d'extraction par fournisseur : sélecteurs CSS, prompts et tests.": "Creare e mantenere i template di estrazione per fornitore: selettori CSS, prompt e test.",
+  "L'éditeur de template": "L'editor di template",
+  "• Nouveau crée un template : nom, domaine (nicoll.fr), pattern d'URL (. pour tout matcher).": "• Nuovo crea un template: nome, dominio (nicoll.fr), pattern di URL (. per corrispondere a tutto).",
+  "Trois niveaux de prompts IA": "Tre livelli di prompt IA",
+  "En complément des sélecteurs, trois prompts optionnels guident le post-traitement LLM : • Prompt global (du template) : instructions de reformatage pour tous les produits de ce template — ex.": "A complemento dei selettori, tre prompt facoltativi guidano la post-elaborazione LLM: • Prompt globale (del template): istruzioni di riformattazione per tutti i prodotti di questo template — es.",
+  "Cinq types de sélecteurs": "Cinque tipi di selettori",
+  "Au-delà du CSS classique, chaque champ accepte plusieurs stratégies testées dans l'ordre — on garde la première valeur non vide, ce qui rend le template robuste quand le fournisseur change son CSS : • CSS : sélecteur standard, lit le texte…": "Oltre al CSS classico, ogni campo accetta più strategie testate in ordine — si mantiene il primo valore non vuoto, il che rende il template robusto quando il fornitore cambia il suo CSS: • CSS: selettore standard, legge il testo…",
+  "Transformations & specs KEY/VALUE": "Trasformazioni e specifiche KEY/VALUE",
+  "• Transformations par champ : trim, normalize-whitespace, uppercase/lowercase, parse-number, parse-price (isole le nombre d'un prix), absolutize-url (chemin relatif → URL absolue, posé automatiquement quand on capture un src/href), decode-h…": "• Trasformazioni per campo: trim, normalize-whitespace, uppercase/lowercase, parse-number, parse-price (isola il numero da un prezzo), absolutize-url (percorso relativo → URL assoluto, applicato automaticamente quando si cattura un src/href), decode-h…",
+  "Pré-actions & capture via extension Chrome": "Pre-azioni e cattura tramite estensione Chrome",
+  "• Pré-actions (onglet Avancé) : avant la capture du DOM, on peut enchaîner click (déplier un accordéon/onglet), scroll, wait, waitForSelector et acceptCookies (auto-détection du bandeau) — indispensable pour les fiches dont les specs sont d…": "• Pre-azioni (scheda Avanzate): prima della cattura del DOM, si possono concatenare click (espandere un accordion/scheda), scroll, wait, waitForSelector e acceptCookies (rilevamento automatico del banner) — indispensabile per le schede le cui specifiche sono d…",
+  "Ordre des champs & alias de marque (niveau fournisseur)": "Ordine dei campi e alias di marca (livello fornitore)",
+  "• Ordre des champs : réorganiser les champs par glisser-déposer fixe leur ordre d'affichage dans l'enrichissement — partagé entre tous les templates du même domaine.": "• Ordine dei campi: riorganizzare i campi tramite trascinamento fissa il loro ordine di visualizzazione nell'arricchimento — condiviso tra tutti i template dello stesso dominio.",
+  "Statistiques d'usage": "Statistiche d'uso",
+  "Chaque template trace son nombre d'applications et de succès — un template au taux de succès en chute signale un site qui a changé de structure (sélecteurs à re-pointer).": "Ogni template traccia il suo numero di applicazioni e di successi — un template con un tasso di successo in calo segnala un sito che ha cambiato struttura (selettori da riassegnare).",
+  "La vue d'ensemble par fournisseur (templates groupés par domaine) est dans le Scraping Hub. Le mode d'emploi général du scraping (quel mode choisir, Map + Extract, limites anti-bot) est dans la section Scraping produits.": "La panoramica per fornitore (template raggruppati per dominio) è nello Scraping Hub. Le istruzioni generali dello scraping (quale modalità scegliere, Map + Extract, limiti anti-bot) sono nella sezione Scraping prodotti.",
+  "Scraping Hub": "Scraping Hub",
+  "Le centre de contrôle du scraping : règles d'équipe, vue par fournisseur et debug des extractions.": "Il centro di controllo dello scraping: regole del team, vista per fornitore e debug delle estrazioni.",
+  "Règles": "Regole",
+  "Les règles rédactionnelles de l'équipe (markdown) : conventions de nommage, formats de prix, langue des descriptions… Stockées dans Firestore et partagées par toute l'équipe, elles servent de référence commune aux enrichissements.": "Le regole redazionali del team (markdown): convenzioni di denominazione, formati di prezzo, lingua delle descrizioni… Memorizzate in Firestore e condivise da tutto il team, fungono da riferimento comune per gli arricchimenti.",
+  "Fournisseurs & Templates": "Fornitori e Template",
+  "Vue d'ensemble de tous les templates groupés par domaine fournisseur : déplie un fournisseur pour voir ses templates et leur état, et ouvre directement l'éditeur de template d'un clic.": "Panoramica di tutti i template raggruppati per dominio fornitore: espandi un fornitore per vedere i suoi template e il loro stato, e apri direttamente l'editor di template con un clic.",
+  "Debug Jina/LLM": "Debug Jina/LLM",
+  "Le journal des dernières requêtes de scraping (30 max, rafraîchi toutes les 2 s) : pour chaque appel, le contenu renvoyé par Jina et la réponse du LLM.": "Il registro delle ultime richieste di scraping (max 30, aggiornato ogni 2 s): per ogni chiamata, il contenuto restituito da Jina e la risposta dell'LLM.",
+  "Règles : éditeur markdown avec aperçu live": "Regole: editor markdown con anteprima live",
+  "L'onglet Règles est un éditeur côte à côte : tu écris du markdown à gauche, le rendu s'affiche en direct à droite (titres, listes, tableaux GFM).": "La scheda Regole è un editor affiancato: scrivi markdown a sinistra, il rendering appare in tempo reale a destra (titoli, elenchi, tabelle GFM).",
+  "Fournisseurs : prompt par domaine, champs et taux de réussite": "Fornitori: prompt per dominio, campi e tasso di successo",
+  "Sous chaque domaine fournisseur, tu retrouves le prompt fournisseur s'il en existe un (encadré bleu, badge « prompt fournisseur défini ») : ces consignes propres au site s'appliquent à tous ses templates.": "Sotto ogni dominio fornitore, ritrovi il prompt fornitore se ne esiste uno (riquadro blu, badge «prompt fornitore definito»): queste istruzioni specifiche del sito si applicano a tutti i suoi template.",
+  "Debug : un journal LOCAL à ce navigateur": "Debug: un registro LOCALE a questo browser",
+  "Le journal de debug est stocké en local sur ce poste (localStorage), pas dans Firestore : il n'est donc pas partagé avec l'équipe et ne reflète que tes propres enrichissements récents.": "Il registro di debug è memorizzato in locale su questa postazione (localStorage), non in Firestore: non è quindi condiviso con il team e riflette solo i tuoi arricchimenti recenti.",
+  "La création des templates se fait dans Templates scraping ; le mode d'emploi général (Scrape, Map + Extract, Crawl, limites anti-bot) est dans Scraping produits.": "La creazione dei template avviene in Template scraping; le istruzioni generali (Scrape, Map + Extract, Crawl, limiti anti-bot) sono in Scraping prodotti.",
+  "Veille tarifaire": "Monitoraggio prezzi",
+  "Suis les prix de tes concurrents : tableau de bord des écarts, positionnement et alertes.": "Segui i prezzi dei tuoi concorrenti: dashboard degli scarti, posizionamento e avvisi.",
+  "Comment ça se met en place": "Come si configura",
+  "Tout part d'un workflow contenant le node « Veille tarifaire » : 1. Une feuille de produits en entrée (ton catalogue : SKU/EAN, Nom, Marque, et ton prix). 2. Les sites concurrents à surveiller (un domaine par ligne, ex : amazon.fr). 3.": "Tutto parte da un workflow contenente il node «Monitoraggio prezzi»: 1. Un foglio di prodotti in ingresso (il tuo catalogo: SKU/EAN, Nome, Marca, e il tuo prezzo). 2. I siti concorrenti da monitorare (un dominio per riga, es: amazon.fr). 3.",
+  "Comment chaque produit est retrouvé chez un concurrent": "Come ogni prodotto viene ritrovato presso un concorrente",
+  "Tu ne fournis que le domaine d'un concurrent — pas l'URL de chaque fiche. Pour chaque produit, le node lance une recherche web cantonnée à ce domaine (site:domaine) : d'abord par SKU (ou EAN à défaut), puis par Marque + Nom.": "Fornisci solo il dominio di un concorrente — non l'URL di ogni scheda. Per ogni prodotto, il node avvia una ricerca web limitata a quel dominio (site:dominio): prima per SKU (o EAN in mancanza), poi per Marca + Nome.",
+  "Appariement automatique vs « à confirmer »": "Abbinamento automatico vs «da confermare»",
+  "Avant de relever un prix, le node vérifie que la page décrit exactement ton produit. Si l'EAN relevé sur la page est identique à celui du produit, l'appariement est autoritaire (confiance 100 %, sans appel au modèle IA).": "Prima di rilevare un prezzo, il node verifica che la pagina descriva esattamente il tuo prodotto. Se l'EAN rilevato sulla pagina è identico a quello del prodotto, l'abbinamento è autorevole (affidabilità 100 %, senza chiamata al modello IA).",
+  "Valider les correspondances (Confirmer / Rejeter)": "Convalidare le corrispondenze (Confermare / Rifiutare)",
+  "Le tableau de bord est en lecture seule pour les prix, mais propose une action : une file « À confirmer » liste les appariements incertains (avec le % de confiance et un lien vers la page).": "La dashboard è in sola lettura per i prezzi, ma propone un'azione: una coda «Da confermare» elenca gli abbinamenti incerti (con la % di affidabilità e un link alla pagina).",
+  "Champs à scraper par site": "Campi da scrapare per sito",
+  "Dans « Sites concurrents », chaque ligne accepte une liste de champs après une barre verticale : amazon.fr | price, availability. Sans champs précisés, seul le prix (price) est relevé.": "In «Siti concorrenti», ogni riga accetta un elenco di campi dopo una barra verticale: amazon.fr | price, availability. Senza campi specificati, viene rilevato solo il prezzo (price).",
+  "Repérer un mauvais appariement": "Individuare un abbinamento errato",
+  "Dans le comparatif, survole un prix : une infobulle « Relevé : … » affiche le nom et l'EAN réellement lus sur la page concurrente.": "Nel confronto, passa il mouse su un prezzo: un tooltip «Rilevato: …» mostra il nome e l'EAN realmente letti sulla pagina della concorrenza.",
+  "Identifiant du suivi": "Identificativo del monitoraggio",
+  "Le champ « Identifiant du suivi » du node mémorise, entre deux runs, les URLs concurrentes épinglées et l'historique des prix (30 derniers relevés par couple produit × site).": "Il campo «Identificativo del monitoraggio» del node memorizza, tra due esecuzioni, gli URL della concorrenza fissati e la cronologia dei prezzi (ultimi 30 rilevamenti per coppia prodotto × sito).",
+  "Alertes positionnement & variation": "Avvisi di posizionamento e variazione",
+  "Deux familles d'alertes : le positionnement (comparaison de ton prix — colonne « Mon prix » — à celui des concurrents) et la variation (un prix concurrent a changé depuis le dernier run, au-delà du seuil % configuré).": "Due famiglie di avvisi: il posizionamento (confronto del tuo prezzo — colonna «Il mio prezzo» — con quello dei concorrenti) e la variazione (un prezzo della concorrenza è cambiato dall'ultima esecuzione, oltre la soglia % configurata).",
+  "Comparer des prix entre sites": "Confrontare i prezzi tra siti",
+  "Pour un comparatif ponctuel prix A | prix B | écart entre plusieurs enseignes (sans alertes), utilise plutôt les nodes « Produits d'une page liste » + « Comparer les prix » dans un workflow.": "Per un confronto occasionale prezzo A | prezzo B | scarto tra più insegne (senza avvisi), usa piuttosto i node «Prodotti di una pagina elenco» + «Confrontare i prezzi» in un workflow.",
+  "Recevoir les alertes": "Ricevere gli avvisi",
+  "Branche le port changes du node sur « Envoyer via Telegram » (« 1 message par ligne ») pour être prévenu à chaque mouvement de prix — y compris quand le workflow tourne en cron serveur, navigateur fermé.": "Collega la porta changes del node a «Inviare tramite Telegram» («1 messaggio per riga») per essere avvisato a ogni movimento di prezzo — anche quando il workflow gira in cron sul server, browser chiuso.",
+  "Le détail des nodes (« Veille tarifaire », « Veille prix », « Comparer les prix ») et de la planification cron serveur est dans la section Workflows ; l'envoi d'alertes est couvert par Telegram.": "Il dettaglio dei node («Monitoraggio prezzi», «Sorveglianza prezzi», «Confrontare i prezzi») e della pianificazione cron sul server è nella sezione Workflow; l'invio di avvisi è trattato in Telegram.",
+  "Création studio": "Creazione studio",
+  "Créez et gérez vos promotions retail : visuels, offres et déclinaisons multi-format.": "Crea e gestisci le tue promozioni retail: visual, offerte e declinazioni multiformato.",
+  "Export multi-format": "Esportazione multiformato",
+  "Sortir un PDF imprimeur, un IDML, un PPTX, un SVG, un PNG, un dossier web HTML ou un pack réseaux sociaux — unitaire ou en série.": "Esportare un PDF per la stampa, un IDML, un PPTX, un SVG, un PNG, una cartella web HTML o un pacchetto social — singolo o in serie.",
+  "Formats disponibles": "Formati disponibili",
+  "Tous les exports sont fidèles à la maquette en cours dans l'éditeur. Le data-merge actif influence le contenu mais pas le format.": "Tutte le esportazioni sono fedeli all'impaginato in corso nell'editor. Il data-merge attivo influenza il contenuto ma non il formato.",
+  "Export PDF avec options imprimeur": "Esportazione PDF con opzioni di stampa",
+  "1. Règle d'abord le fond perdu et les repères dans le panneau Impression de l'éditeur (c'est lui qui fait foi — la modale d'export n'a pas de champ bleed) 2. Bouton Exporter → choisis PDF 3.": "1. Imposta prima l'abbondanza e i segni nel pannello Stampa dell'editor (è quello che fa fede — la finestra modale di esportazione non ha un campo bleed) 2. Pulsante Esporta → scegli PDF 3.",
+  "Export batch (plusieurs fichiers)": "Esportazione batch (più file)",
+  "Quand le data-merge est actif, l'export génère une variante par ligne de la BDD : 1. Ouvre le panneau Data Merge → vérifie le mapping placeholders ↔ colonnes 2.": "Quando il data-merge è attivo, l'esportazione genera una variante per ogni riga del database: 1. Apri il pannello Data Merge → verifica il mapping placeholder ↔ colonne 2.",
+  "Export IDML (retour InDesign)": "Esportazione IDML (ritorno a InDesign)",
+  "Quand tu veux que ta graphiste finisse à la main dans InDesign : 1. Configure ta maquette + data-merge dans IBS-Studio 2. Export IDML → IBS-Studio reconstruit un fichier IDML standard avec les valeurs déjà mergées.": "Quando vuoi che la tua grafica rifinisca a mano in InDesign: 1. Configura il tuo impaginato + data-merge in IBS-Studio 2. Esportazione IDML → IBS-Studio ricostruisce un file IDML standard con i valori già uniti.",
+  "Pages déclinées vs Pack social — quelle différence ?": "Pagine declinate vs Pacchetto social — quale differenza?",
+  "Les deux partent des mêmes quatre ratios (post carré 1080×1080, story/reel 1080×1920, paysage 1920×1080, bannière 1500×500), mais ne produisent pas la même chose : « Pages déclinées » envoie à l'IA un aperçu de la page plus la liste de ses…": "Entrambi partono dagli stessi quattro rapporti (post quadrato 1080×1080, story/reel 1080×1920, orizzontale 1920×1080, banner 1500×500), ma non producono la stessa cosa: «Pagine declinate» invia all'IA un'anteprima della pagina più l'elenco dei suoi…",
+  "Ce que contient vraiment chaque fichier": "Cosa contiene davvero ogni file",
+  "• PDF : une image haute résolution du canvas (rendu ×2, qualité maximale) plus une couche de texte invisible sélectionnable/cherchable posée sur chaque bloc de texte. Le PDF reste donc « plat » visuellement mais le texte est copiable.": "• PDF: un'immagine ad alta risoluzione del canvas (rendering ×2, qualità massima) più uno strato di testo invisibile selezionabile/ricercabile posto su ogni blocco di testo. Il PDF resta quindi «piatto» visivamente ma il testo è copiabile.",
+  "SVG : compatibilité Illustrator / Figma": "SVG: compatibilità Illustrator / Figma",
+  "L'export SVG ne se contente pas du toSVG() brut de Fabric, il le réécrit pour les éditeurs vectoriels exigeants : • les images (DAM, Unsplash, IDML lié) sont converties en data: URL le temps de l'export — Illustrator n'essaie plus de résoud…": "L'esportazione SVG non si limita al toSVG() grezzo di Fabric, lo riscrive per gli editor vettoriali esigenti: • le immagini (DAM, Unsplash, IDML collegato) vengono convertite in data: URL durante l'esportazione — Illustrator non prova più a risolv…",
+  "Bonnes pratiques": "Buone pratiche",
+  "• Toujours faire un export test sur 1 ligne avant de lancer un batch de 200 — tu détectes les problèmes de fonts ou d'images manquantes plus vite • Vérifier les fonts : si un fallback Arial s'est appliqué, ton imprimeur le verra.": "• Fai sempre un'esportazione di prova su 1 riga prima di avviare un batch di 200 — individui più velocemente i problemi di font o di immagini mancanti • Verifica i font: se è stato applicato un fallback Arial, il tuo stampatore lo noterà.",
+  "Workflows": "Workflow",
+  "Enchaîner les fonctions de l'app en pipelines visuels — façon Zapier / Make.": "Concatenare le funzioni dell'app in pipeline visive — in stile Zapier / Make.",
+  "Deux façons de construire": "Due modi per costruire",
+  "• Manuel : glisse les nodes depuis la palette (à gauche), relie-les, configure chacun (panneau de droite), puis Run.": "• Manuale: trascina i node dalla palette (a sinistra), collegali, configura ciascuno (pannello di destra), poi Run.",
+  "Catalogue des nodes": "Catalogo dei node",
+  "Déplie une catégorie pour voir ses nodes.": "Espandi una categoria per vedere i suoi node.",
+  "Import (sources)": "Importazione (sorgenti)",
+  "Enrichissement": "Arricchimento",
+  "Transformation": "Trasformazione",
+  "Sauvegarde": "Salvataggio",
+  "Logique": "Logica",
+  "Communication & contrôle": "Comunicazione e controllo",
+  "Node « Web Scraping » unifié": "Node «Web Scraping» unificato",
+  "Un seul node Web Scraping couvre toutes les façons de ramener des données du web, via un sélecteur de Mode : • Scrape — une ou plusieurs URLs → champs produit (Jina + IA). • Liste — pages catégorie → liste de produits.": "Un solo node Web Scraping copre tutti i modi di riportare dati dal web, tramite un selettore di Modalità: • Scrape — uno o più URL → campi prodotto (Jina + IA). • Elenco — pagine di categoria → elenco di prodotti.",
+  "Node « Graphique »": "Node «Grafico»",
+  "Le node « Graphique » transforme un tableau en image de graphe (PNG, via chart.js). Choisis le type — Barres, Lignes, Aire, Camembert, Anneau — la colonne d'axe X, la ou les colonnes de valeurs et une agrégation facultative.": "Il node «Grafico» trasforma una tabella in un'immagine di grafico (PNG, tramite chart.js). Scegli il tipo — Barre, Linee, Area, Torta, Ciambella — la colonna dell'asse X, la o le colonne dei valori e un'aggregazione facoltativa.",
+  "Écran « Résultat »": "Schermata «Risultato»",
+  "Le bouton « Résultat » dans l'en-tête de l'éditeur ouvre une page dédiée (/workflows/:id/result) qui visualise le dernier run sous la forme la plus pertinente : Tableau de bord, Tableau, Graphique, Galerie (images), Document ou Données (JSO…": "Il pulsante «Risultato» nell'intestazione dell'editor apre una pagina dedicata (/workflows/:id/result) che visualizza l'ultima esecuzione nella forma più pertinente: Dashboard, Tabella, Grafico, Galleria (immagini), Documento o Dati (JSO…",
+  "Mes modèles (modèles personnalisés)": "I miei modelli (modelli personalizzati)",
+  "Au-delà de la galerie prête à l'emploi, tu peux enregistrer ton propre montage : le bouton « Modèle » dans l'éditeur sauvegarde le graphe courant comme modèle réutilisable (création ou mise à jour).": "Oltre alla galleria pronta all'uso, puoi salvare il tuo montaggio: il pulsante «Modello» nell'editor salva il grafo corrente come modello riutilizzabile (creazione o aggiornamento).",
+  "Arrêter un run serveur (STOP)": "Arrestare un'esecuzione sul server (STOP)",
+  "Un workflow lancé par le cron ou un webhook tourne sans navigateur. Le panneau d'état du Cron affiche alors un bouton rouge STOP : il pose un drapeau d'abandon que l'exécuteur serveur interroge en continu et le run s'arrête sous quelques se…": "Un workflow avviato dal cron o da un webhook gira senza browser. Il pannello di stato del Cron mostra allora un pulsante rosso STOP: pone un flag di interruzione che l'esecutore sul server interroga continuamente e l'esecuzione si arresta in pochi se…",
+  "Exemples de pipelines": "Esempi di pipeline",
+  "• Veille : Recherche web → Export Excel → Envoyer via Gmail. • Réponse sourcée : Question web (IA) → Envoyer via Telegram. • Fiches produit : Scrape URL → Enrichissement → Save PIM → Export PPTX.": "• Monitoraggio: Ricerca web → Esportazione Excel → Inviare tramite Gmail. • Risposta con fonti: Domanda web (IA) → Inviare tramite Telegram. • Schede prodotto: Scrape URL → Arricchimento → Save PIM → Esportazione PPTX.",
+  "Piloter depuis Telegram": "Pilotare da Telegram",
+  "Les workflows se déclenchent aussi à distance : /flow <demande> génère et exécute un workflow, /run <nom> rejoue un workflow sauvegardé — et le fichier produit revient sur Telegram.": "I workflow si attivano anche da remoto: /flow <richiesta> genera ed esegue un workflow, /run <nome> riesegue un workflow salvato — e il file prodotto torna su Telegram.",
+  "Modèles prêts à l'emploi": "Modelli pronti all'uso",
+  "La page Workflows propose une galerie « Démarrer depuis un modèle » : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel.": "La pagina Workflow propone una galleria «Iniziare da un modello»: Scraping di un sito → PIM, Monitoraggio quotidiano → Telegram (cron), Scrape → approvazione ✅ → PIM, Ricerca web → Excel.",
+  "Approbation humaine (Telegram)": "Approvazione umana (Telegram)",
+  "Le node « Approbation Telegram » met le run en pause et envoie la question sur Telegram avec des boutons ✅ Approuver / ❌ Refuser.": "Il node «Approvazione Telegram» mette in pausa l'esecuzione e invia la domanda su Telegram con pulsanti ✅ Approva / ❌ Rifiuta.",
+  "Veille prix": "Sorveglianza prezzi",
+  "Le node « Veille prix » mémorise les prix du run précédent (par identifiant de suivi) et n'émet le port changes que si un prix a varié au-delà du seuil — les lignes émises portent ancienprix, nouveauprix et variationpct, prêtes pour un mess…": "Il node «Sorveglianza prezzi» memorizza i prezzi dell'esecuzione precedente (per identificativo di monitoraggio) ed emette la porta changes solo se un prezzo è variato oltre la soglia — le righe emesse riportano ancienprix, nouveauprix e variationpct, pronte per un mess…",
+  "Planifier (cron serveur)": "Pianificare (cron sul server)",
+  "Le node « Cron » exécute le workflow côté serveur, navigateur fermé : cadence à la minute, heure, jour, semaine ou mois, heure précise HH:MM, jour de semaine ciblé ou « Tous les jours » — fuseau Europe/Paris, granularité minimale 1 minute.": "Il node «Cron» esegue il workflow sul server, browser chiuso: cadenza al minuto, ora, giorno, settimana o mese, ora precisa HH:MM, giorno della settimana specifico o «Tutti i giorni» — fuso Europe/Paris, granularità minima 1 minuto.",
+  "Webhook entrant (déclenchement externe)": "Webhook in entrata (attivazione esterna)",
+  "Le bouton Webhook dans l'en-tête de l'éditeur génère une URL secrète pour déclencher ce workflow depuis l'extérieur (Zapier, Make, un ERP, un simple curl) : L'exécution se fait côté serveur (mêmes nodes que le cron) et apparaît dans l'histo…": "Il pulsante Webhook nell'intestazione dell'editor genera un URL segreto per attivare questo workflow dall'esterno (Zapier, Make, un ERP, un semplice curl): L'esecuzione avviene sul server (stessi node del cron) e compare nella cronolo…",
+  "Débugger pas à pas": "Debug passo dopo passo",
+  "Le bouton « Pas à pas » (à côté de Run) exécute le workflow node par node : le run se met en pause avant chaque étape — le bouton ambre « Étape : <node> » dans l'en-tête exécute la suivante.": "Il pulsante «Passo dopo passo» (accanto a Run) esegue il workflow node per node: l'esecuzione si mette in pausa prima di ogni fase — il pulsante ambra «Fase: <node>» nell'intestazione esegue la successiva.",
+  "Telegram": "Telegram",
+  "Piloter IBS-Studio depuis Telegram : chat IA avec accès web, génération et exécution de workflows.": "Pilotare IBS-Studio da Telegram: chat IA con accesso web, generazione ed esecuzione di workflow.",
+  "Mise en route": "Avvio",
+  "1. Paramètres → Connecteurs : colle le bot token (obtenu via BotFather) et ton chat ID. 2. Ouvre l'onglet Telegram dans le menu latéral : c'est lui qui fait tourner le « worker » qui traite les messages. 3.": "1. Impostazioni → Connettori: incolla il bot token (ottenuto tramite BotFather) e il tuo chat ID. 2. Apri la scheda Telegram nel menu laterale: è lei che fa girare il «worker» che elabora i messaggi. 3.",
+  "(texte libre) — Chat IA avec accès web": "(testo libero) — Chat IA con accesso web",
+  "Le bot répond via le LLM. Si l'info demandée est récente (score, actu, prix) ou si tu colles une URL, il cherche sur le web et lit les pages avant de répondre. La réponse cite ses sources et le modèle utilisé.": "Il bot risponde tramite l'LLM. Se l'informazione richiesta è recente (risultato, notizia, prezzo) o se incolli un URL, cerca sul web e legge le pagine prima di rispondere. La risposta cita le sue fonti e il modello utilizzato.",
+  "/flow <demande> — Générer + exécuter un workflow": "/flow <richiesta> — Generare + eseguire un workflow",
+  "Génère un workflow par IA depuis ta demande, l'exécute, et te renvoie le fichier produit. Ex : /flow scrape https://exemple.com/categorie et exporte un Excel.": "Genera un workflow tramite IA dalla tua richiesta, lo esegue e ti restituisce il file prodotto. Es: /flow scrape https://exemple.com/categorie ed esporta un Excel.",
+  "/run <nom> [texte] — Exécuter un workflow sauvegardé": "/run <nome> [testo] — Eseguire un workflow salvato",
+  "Exécute un workflow déjà sauvegardé (par son nom) ; le texte éventuel sert d'entrée. /run seul liste les workflows disponibles.": "Esegue un workflow già salvato (tramite il suo nome); l'eventuale testo funge da input. /run da solo elenca i workflow disponibili.",
+  "/clear — Vider la boîte": "/clear — Svuotare la casella",
+  "Vide la boîte de réception — côté app ET côté Telegram (messages de moins de 48 h). Alias : /purge, /vider.": "Svuota la casella di posta in arrivo — lato app E lato Telegram (messaggi di meno di 48 h). Alias: /purge, /vider.",
+  "/start — (ignorée)": "/start — (ignorato)",
+  "Commande de service Telegram — ignorée, elle n'encombre pas la boîte.": "Comando di servizio Telegram — ignorato, non ingombra la casella.",
+  "Bon à savoir": "Buono a sapersi",
+  "• Conversation bidirectionnelle : messages entrants ET sortants sont journalisés dans l'onglet Telegram. • Fichiers : un workflow qui produit un export (Excel, PDF, PPTX…) renvoie le fichier en pièce jointe ; sinon un résumé.": "• Conversazione bidirezionale: i messaggi in entrata E in uscita vengono registrati nella scheda Telegram. • File: un workflow che produce un'esportazione (Excel, PDF, PPTX…) restituisce il file come allegato; altrimenti un riepilogo.",
+  "Réponses sans navigateur (répondeur serveur)": "Risposte senza browser (risponditore sul server)",
+  "Plus besoin d'avoir l'app ouverte : un répondeur serveur traite vos messages dès leur arrivée — • Questions : réponse LLM immédiate, avec recherche web automatique (Jina) quand la question l'exige (prix, actualité, contenu d'une URL) — sour…": "Non serve più avere l'app aperta: un risponditore sul server elabora i vostri messaggi non appena arrivano — • Domande: risposta LLM immediata, con ricerca web automatica (Jina) quando la domanda lo richiede (prezzo, attualità, contenuto di un URL) — font…",
+  "Approbation humaine dans un workflow": "Approvazione umana in un workflow",
+  "Le node « Approbation Telegram » (catégorie Communication dans l'éditeur de workflow) met le run en pause et demande une validation à un humain, directement dans la messagerie : • Le bot envoie ta question avec deux boutons inline ✅ Approuv…": "Il node «Approvazione Telegram» (categoria Comunicazione nell'editor di workflow) mette in pausa l'esecuzione e chiede una convalida a un umano, direttamente nella messaggistica: • Il bot invia la tua domanda con due pulsanti inline ✅ Approv…",
+  "Sécurité : secret + allowlist": "Sicurezza: secret + allowlist",
+  "Le webhook entrant n'accepte un message que si deux conditions sont réunies : • Le secret token envoyé par Telegram correspond au webhookSecret enregistré côté serveur (toute requête sans le bon en-tête X-Telegram-Bot-Api-Secret-Token est r…": "Il webhook in entrata accetta un messaggio solo se sono soddisfatte due condizioni: • Il secret token inviato da Telegram corrisponde al webhookSecret registrato sul server (qualsiasi richiesta senza il corretto header X-Telegram-Bot-Api-Secret-Token viene r…",
+  "Pourquoi jamais de double réponse": "Perché mai una doppia risposta",
+  "À l'arrivée d'un message, le répondeur serveur tente un claim transactionnel : il fait passer la fiche de pending à processing (et s'attribue workerId: 'server') en une seule transaction.": "All'arrivo di un messaggio, il risponditore sul server tenta un claim transazionale: fa passare la scheda da pending a processing (e si attribuisce workerId: 'server') in un'unica transazione.",
+  "Digest quotidien": "Digest giornaliero",
+  "Dans Réglages → Connecteurs → Telegram, activez le digest quotidien : chaque matin à 08:00 (heure de Paris), le bot envoie un résumé des dernières 24 h — workflows réussis/en échec (avec les noms) et messages en attente de traitement.": "In Impostazioni → Connettori → Telegram, attiva il digest giornaliero: ogni mattina alle 08:00 (ora di Parigi), il bot invia un riepilogo delle ultime 24 h — workflow riusciti/falliti (con i nomi) e messaggi in attesa di elaborazione.",
+  "/flow et /run s'appuient sur le module Workflows : la génération par IA et l'exécution sont les mêmes que dans l'éditeur de workflow.": "/flow e /run si basano sul modulo Workflow: la generazione tramite IA e l'esecuzione sono le stesse dell'editor di workflow.",
+  "Chat IA": "Chat IA",
+  "Un assistant conversationnel intégré : questions, rédaction, code, génération d'images.": "Un assistente conversazionale integrato: domande, redazione, codice, generazione di immagini.",
+  "Conversation multitour": "Conversazione multi-turno",
+  "Le chat garde le fil de la conversation pendant la session (les 30 derniers messages sont transmis au modèle — au-delà, le début du fil sort du contexte).": "La chat mantiene il filo della conversazione durante la sessione (gli ultimi 30 messaggi vengono trasmessi al modello — oltre, l'inizio del filo esce dal contesto).",
+  "Pièces jointes": "Allegati",
+  "Joins des images (PNG, JPEG, WebP, GIF) pour les faire analyser — analyse possible avec les modèles multimodaux (Claude, Gemini, OpenAI) ; les autres fournisseurs ignorent les images.": "Allega immagini (PNG, JPEG, WebP, GIF) per farle analizzare — analisi possibile con i modelli multimodali (Claude, Gemini, OpenAI); gli altri fornitori ignorano le immagini.",
+  "Choisis la catégorie Image : le champ de saisie passe en mode génération (moteur Image IA). Joins des images de référence pour les éditer. Sous chaque image générée : Télécharger ou Sauvegarder dans le DAM (elle rejoint « Mes images »).": "Scegli la categoria Immagine: il campo di inserimento passa in modalità generazione (motore Image IA). Allega immagini di riferimento per modificarle. Sotto ogni immagine generata: Scaricare o Salvare nel DAM (viene aggiunta a «Le mie immagini»).",
+  "Saisie vocale": "Inserimento vocale",
+  "Dicte ta demande au micro : la parole est transcrite en texte dans la zone de saisie.": "Detta la tua richiesta al microfono: il parlato viene trascritto in testo nell'area di inserimento.",
+  "Des catégories (Écrire, Apprendre, Code, Vie quotidienne, Idées, Image, Mes prompts) proposent des prompts prêts à l'emploi.": "Alcune categorie (Scrivere, Imparare, Codice, Vita quotidiana, Idee, Immagine, I miei prompt) propongono prompt pronti all'uso.",
+  "Réutiliser et dupliquer un prompt": "Riutilizzare e duplicare un prompt",
+  "Le menu ⋯ de chaque prompt permet de le renommer / éditer, le dupliquer (crée une copie « titre (copie) » à adapter) ou le supprimer. Chaque usage est comptabilisé : les prompts les plus sollicités et les favoris sont mis en avant.": "Il menu ⋯ di ogni prompt permette di rinominarlo / modificarlo, duplicarlo (crea una copia «titolo (copia)» da adattare) o eliminarlo. Ogni utilizzo viene conteggiato: i prompt più richiesti e i preferiti vengono messi in evidenza.",
+  "Choix du modèle": "Scelta del modello",
+  "Le Chat utilise une cascade de modèles : si le modèle principal échoue, le suivant prend le relais automatiquement.": "La Chat utilizza una cascata di modelli: se il modello principale fallisce, il successivo subentra automaticamente.",
+  "Changer de modèle à la volée": "Cambiare modello al volo",
+  "Le badge du modèle, à côté du bouton d'envoi, est cliquable : il déplie la liste de tous les modèles de la cascade (regroupés par fournisseur, avec leur tarif indicatif entrée / sortie).": "Il badge del modello, accanto al pulsante di invio, è cliccabile: espande l'elenco di tutti i modelli della cascata (raggruppati per fornitore, con la loro tariffa indicativa input / output).",
+  "À ne pas confondre": "Da non confondere",
+  "• Le Chat IA est conversationnel : il n'accède pas au web et n'agit pas sur l'app (il ne crée pas de projets, ne scrape pas, ne lance pas de workflows).": "• La Chat IA è conversazionale: non accede al web e non agisce sull'app (non crea progetti, non fa scraping, non avvia workflow).",
+  "Utilisateurs & rôles": "Utenti e ruoli",
+  "Approuver les comptes, attribuer des rôles et régler finement les permissions. Réservé au propriétaire.": "Approvare gli account, assegnare ruoli e regolare in modo preciso i permessi. Riservato al proprietario.",
+  "Onboarding d'un nouvel utilisateur": "Onboarding di un nuovo utente",
+  "1. La personne se connecte via Google : son compte est d'abord « en attente » (aucun accès). 2. Dans l'onglet Utilisateurs, tu lui attribues un rôle. 3. À sa prochaine ouverture, l'app n'affiche que les modules autorisés par son rôle.": "1. La persona accede tramite Google: il suo account è inizialmente «in attesa» (nessun accesso). 2. Nella scheda Utenti, gli assegni un ruolo. 3. Al suo prossimo accesso, l'app mostra solo i moduli autorizzati dal suo ruolo.",
+  "Attribuer un rôle": "Assegnare un ruolo",
+  "Choisis le rôle de chaque utilisateur dans une liste déroulante. Le rôle définit l'ensemble de base de ses permissions.": "Scegli il ruolo di ogni utente da un elenco a discesa. Il ruolo definisce l'insieme di base dei suoi permessi.",
+  "Surcharges granulaires": "Override granulari",
+  "Au-delà du rôle, tu peux accorder ou retirer des permissions individuelles à un utilisateur précis (ex. lui ouvrir l'export sans changer son rôle). Réinitialiser les surcharges efface ces ajustements.": "Oltre al ruolo, puoi concedere o revocare permessi individuali a un utente specifico (es. aprirgli l'esportazione senza cambiare il suo ruolo). Reimpostare gli override cancella questi aggiustamenti.",
+  "Bloquer / réactiver": "Bloccare / riattivare",
+  "Bloquer suspend totalement un compte sans le supprimer : plus aucun accès, même avec un rôle. Réactiver lui rend ses droits.": "Bloccare sospende totalmente un account senza eliminarlo: nessun accesso, nemmeno con un ruolo. Riattivare gli restituisce i suoi diritti.",
+  "Onglet « Rôles »": "Scheda «Ruoli»",
+  "Crée et édite les rôles de l'équipe via une matrice de permissions par module. Trois vues : Cartes (par module), Arbre (hiérarchie) et Carte mentale (graphe).": "Crea e modifica i ruoli del team tramite una matrice di permessi per modulo. Tre viste: Schede (per modulo), Albero (gerarchia) e Mappa mentale (grafo).",
+  "Les rôles sont entièrement personnalisés": "I ruoli sono completamente personalizzati",
+  "Aucun rôle n'est livré par défaut : tu crées toi-même les rôles dont l'équipe a besoin (un nom + une sélection de permissions), tu les renommes et les supprimes librement.": "Nessun ruolo è fornito per impostazione predefinita: crei tu stesso i ruoli di cui il team ha bisogno (un nome + una selezione di permessi), li rinomini e li elimini liberamente.",
+  "Modules couverts par les permissions": "Moduli coperti dai permessi",
+  "Bibliothèque, Import (par format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, Chat IA, Telegram et Paramètres — chacun avec ses actions (créer, éditer, supprimer, exporter, exécuter…).": "Libreria, Importazione (per formato), DAM, PIM, Tassonomie, Scraping (template e hub), Workflow, Animazione, Chat IA, Telegram e Impostazioni — ciascuno con le sue azioni (creare, modificare, eliminare, esportare, eseguire…).",
+  "Règles de sécurité": "Regole di sicurezza",
+  "• Les permissions effectives = rôle + permissions accordées − permissions retirées. • Le propriétaire a un accès total non modifiable.": "• I permessi effettivi = ruolo + permessi concessi − permessi revocati. • Il proprietario ha un accesso totale non modificabile.",
+  "Journal d'audit & Mon activité": "Registro di audit e La mia attività",
+  "Qui a fait quoi, quand. Chaque utilisateur retrouve ses propres actions dans « Mon activité » ; l'administrateur voit tout dans le « Journal », filtrable et avec l'avant/après de chaque changement.": "Chi ha fatto cosa, quando. Ogni utente ritrova le proprie azioni in «La mia attività»; l'amministratore vede tutto nel «Registro», filtrabile e con il prima/dopo di ogni modifica.",
+  "Les filtres : QUI / QUOI / QUAND": "I filtri: CHI / COSA / QUANDO",
+  "• Type : le module concerné (Accès, Données, Export, Workflows, IA, Réglages…). • Quoi : l'action précise (la liste se restreint au type choisi). • Qui (Journal admin uniquement) : l'utilisateur. • Quand : une plage de dates (Du / au).": "• Tipo: il modulo interessato (Accesso, Dati, Esportazione, Workflow, IA, Impostazioni…). • Cosa: l'azione precisa (l'elenco si restringe al tipo scelto). • Chi (solo Registro admin): l'utente. • Quando: un intervallo di date (Dal / al).",
+  "Ce qui est journalisé": "Ciò che viene registrato",
+  "• Accès / rôles : connexion, attribution/retrait de rôle, blocage/déblocage, permission accordée/révoquée, rôle modifié, suppression d'utilisateur.": "• Accesso / ruoli: accesso, assegnazione/revoca di ruolo, blocco/sblocco, permesso concesso/revocato, ruolo modificato, eliminazione di utente.",
+  "Vider son historique": "Svuotare la propria cronologia",
+  "Dans Mon activité, le bouton « Vider l'historique » (avec confirmation) supprime tes propres entrées. Chaque utilisateur ne peut effacer que les siennes ; l'administrateur peut tout supprimer.": "In La mia attività, il pulsante «Svuota la cronologia» (con conferma) elimina le tue voci. Ogni utente può cancellare solo le proprie; l'amministratore può eliminare tutto.",
+  "Je ne vois pas l'avant/après sur d'anciennes lignes": "Non vedo il prima/dopo su righe più vecchie",
+  "Le détail (avant → après, ou la taille) n'apparaît que sur les actions postérieures à l'ajout de la fonctionnalité. Les entrées sont immuables : elles ne se complètent pas rétroactivement.": "Il dettaglio (prima → dopo, o la dimensione) compare solo sulle azioni successive all'aggiunta della funzionalità. Le voci sono immutabili: non si completano retroattivamente.",
+  "Pourquoi deux « DataSet enregistré » de suite ?": "Perché due «DataSet salvato» di seguito?",
+  "Chaque sauvegarde de base crée une entrée. Si la taille (lignes/colonnes) n'a pas changé, la ligne montre seulement la taille ; si tu as ajouté/supprimé des lignes, elle montre l'avant → après.": "Ogni salvataggio della base crea una voce. Se la dimensione (righe/colonne) non è cambiata, la riga mostra solo la dimensione; se hai aggiunto/eliminato righe, mostra il prima → dopo.",
+  "Qui peut voir le Journal complet ?": "Chi può vedere il Registro completo?",
+  "Seul l'administrateur (ou le propriétaire) voit le Journal de tous les utilisateurs, avec le filtre Qui. Un utilisateur standard ne voit que ses actions, dans Réglages → Mon activité.": "Solo l'amministratore (o il proprietario) vede il Registro di tutti gli utenti, con il filtro Chi. Un utente standard vede solo le sue azioni, in Impostazioni → La mia attività.",
+  "Paramètres": "Impostazioni",
+  "Clés API et modèles IA, connecteurs (Drive, Telegram, scraping), cookies, statistiques d'usage.": "Chiavi API e modelli IA, connettori (Drive, Telegram, scraping), cookie, statistiche d'uso.",
+  "Onglet Profil — identité et apparence": "Scheda Profilo — identità e aspetto",
+  "• Ton profil (nom, e-mail du compte Google). • La section Apparence bascule le thème : Clair, Sombre (défaut) ou Système. Le choix est mémorisé sur ton compte et te suit d'un poste à l'autre. Le thème se bascule aussi depuis la palette ⌘K.": "• Il tuo profilo (nome, e-mail dell'account Google). • La sezione Aspetto commuta il tema: Chiaro, Scuro (predefinito) o Sistema. La scelta viene memorizzata sul tuo account e ti segue da una postazione all'altra. Il tema si commuta anche dalla palette ⌘K.",
+  "Onglet IA — clés et modèles": "Scheda IA — chiavi e modelli",
+  "• Renseigne les clés API de chaque fournisseur (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter) et teste-les d'un clic. • Choisis le modèle de chaque fournisseur.": "• Inserisci le chiavi API di ogni fornitore (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter) e testale con un clic. • Scegli il modello di ogni fornitore.",
+  "Budgets IA et proxy serveur": "Budget IA e proxy sul server",
+  "Les appels LLM passent par un proxy serveur : la requête part sans ta clé API, le serveur ajoute la clé (lue sur ton profil) et applique ton budget mensuel.": "Le chiamate LLM passano per un proxy sul server: la richiesta parte senza la tua chiave API, il server aggiunge la chiave (letta dal tuo profilo) e applica il tuo budget mensile.",
+  "Colle le bot token (via BotFather) et ton chat ID pour piloter l'app depuis Telegram. C'est ici que le bot du module Telegram puise sa configuration.": "Incolla il bot token (tramite BotFather) e il tuo chat ID per pilotare l'app da Telegram. È qui che il bot del modulo Telegram attinge la sua configurazione.",
+  "Connecte ton Google Drive (OAuth) pour que les workflows et le node save-dam y déposent des fichiers.": "Collega il tuo Google Drive (OAuth) affinché i workflow e il node save-dam vi depositino file.",
+  "Google — accès serveur (Drive + Gmail)": "Google — accesso server (Drive + Gmail)",
+  "Autorise une seule fois (bouton « Connecter ») le serveur à agir pour toi quand l'app est fermée : les workflows planifiés (cron), le webhook et /flow sur Telegram peuvent alors créer des Google Sheets dans ton Drive et envoyer des Gmail.": "Autorizza una sola volta (pulsante «Connetti») il server ad agire per te quando l'app è chiusa: i workflow pianificati (cron), il webhook e /flow su Telegram possono allora creare Google Sheets nel tuo Drive e inviare Gmail.",
+  "Scraping (Bright Data, Jina, Firecrawl, Remove.bg)": "Scraping (Bright Data, Jina, Firecrawl, Remove.bg)",
+  "Tokens des services de scraping et de traitement d'image. Bright Data propose le Web Unlocker et, en escalade, le Scraping Browser (tier 2) pour les sites les plus protégés.": "Token dei servizi di scraping e di elaborazione immagini. Bright Data offre il Web Unlocker e, in escalation, lo Scraping Browser (tier 2) per i siti più protetti.",
+  "Onglet Cookies": "Scheda Cookie",
+  "Gère les cookies de session pour scraper des sites B2B derrière login. Colle les cookies copiés depuis ton navigateur ; ils sont injectés dans les requêtes de scraping. Leur validité est limitée dans le temps (à re-coller régulièrement).": "Gestisci i cookie di sessione per fare scraping di siti B2B dietro login. Incolla i cookie copiati dal tuo browser; vengono iniettati nelle richieste di scraping. La loro validità è limitata nel tempo (da reincollare regolarmente).",
+  "Onglet Données — schéma Firestore (réservé au propriétaire)": "Scheda Dati — schema Firestore (riservato al proprietario)",
+  "Un diagramme entité-relation (ERD) de la base : chaque collection Firestore est une table affichant tous ses champs, ses clés PK/FK et ses relations (avec cardinalités).": "Un diagramma entità-relazione (ERD) della base: ogni collezione Firestore è una tabella che mostra tutti i suoi campi, le sue chiavi PK/FK e le sue relazioni (con cardinalità).",
+  "Onglets Statistiques & Firebase": "Schede Statistiche e Firebase",
+  "• Statistiques : nombre de projets, exports du mois, stockage Firestore (barre de progression), coût IA estimé en EUR par fournisseur avec les tokens entrants/sortants consommés, et le suivi des requêtes Bright Data (quota scraping).": "• Statistiche: numero di progetti, esportazioni del mese, spazio di archiviazione Firestore (barra di avanzamento), costo IA stimato in EUR per fornitore con i token in entrata/uscita consumati, e il monitoraggio delle richieste Bright Data (quota scraping).",
+  "Qui voit quoi": "Chi vede cosa",
+  "L'onglet Firebase est réservé au propriétaire. Les onglets Connecteurs et Cookies dépendent des permissions accordées dans Utilisateurs & rôles. Profil, IA et Statistiques restent accessibles à tous.": "La scheda Firebase è riservata al proprietario. Le schede Connettori e Cookie dipendono dai permessi concessi in Utenti e ruoli. Profilo, IA e Statistiche restano accessibili a tutti.",
+  "Explorateur de données": "Esploratore di dati",
+  "Cartographie Firestore : schéma relationnel (ERD) des collections, clés et cardinalités, et inspection des enregistrements en direct. Réservé au propriétaire.": "Mappatura Firestore: schema relazionale (ERD) delle collezioni, chiavi e cardinalità, e ispezione dei record in tempo reale. Riservato al proprietario.",
+  "Le problème": "Il problema",
+  "Une base qui grandit devient opaque : on ne sait plus quelles collections existent, comment elles se relient, ni ce qu'elles contiennent réellement — sans ouvrir la console Firebase.": "Una base che cresce diventa opaca: non si sa più quali collezioni esistono, come si collegano, né cosa contengono realmente — senza aprire la console Firebase.",
+  "Modèle de données (ERD)": "Modello di dati (ERD)",
+  "Chaque collection est une table avec ses champs, sa clé primaire (PK) et ses clés étrangères (FK) ; les relations métier sont tracées avec leur cardinalité (1:1, 1:N).": "Ogni collezione è una tabella con i suoi campi, la sua chiave primaria (PK) e le sue chiavi esterne (FK); le relazioni di business sono tracciate con la loro cardinalità (1:1, 1:N).",
+  "Données live": "Dati live",
+  "Un double-clic sur une table ouvre le contenu réel de la collection, mis à jour en temps réel (onSnapshot). Pour les bases Excel, un sélecteur liste chaque base et n'affiche que ses colonnes utiles.": "Un doppio clic su una tabella apre il contenuto reale della collezione, aggiornato in tempo reale (onSnapshot). Per le basi Excel, un selettore elenca ogni base e mostra solo le sue colonne utili.",
+  "Disposition persistée": "Disposizione persistente",
+  "Déplacez les tables par glisser : leur position est enregistrée sur votre profil (Firestore) et restaurée à la prochaine ouverture. Composez la cartographie qui correspond à votre lecture de la donnée.": "Sposta le tabelle trascinandole: la loro posizione viene salvata sul tuo profilo (Firestore) e ripristinata alla prossima apertura. Componi la mappatura che corrisponde alla tua lettura del dato.",
+  "Étendre le schéma (collections / relations)": "Estendere lo schema (collezioni / relazioni)",
+  "Le diagramme se construit à partir de TABLES et RELATIONS dans features/data-graph/firestoreSchema.ts. Ajouter une collection ou un lien = compléter ces deux listes ; le rendu et les cardinalités suivent automatiquement.": "Il diagramma si costruisce a partire da TABLES e RELATIONS in features/data-graph/firestoreSchema.ts. Aggiungere una collezione o un collegamento = completare queste due liste; il rendering e le cardinalità seguono automaticamente.",
+  "Pourquoi propriétaire uniquement": "Perché solo il proprietario",
+  "L'explorateur expose la structure et les données brutes de tout l'espace de travail (tous comptes confondus). L'onglet Données des Paramètres — comme Firebase — est donc réservé au propriétaire.": "L'esploratore espone la struttura e i dati grezzi dell'intero spazio di lavoro (tutti gli account insieme). La scheda Dati delle Impostazioni — come Firebase — è quindi riservata al proprietario.",
+  "Une URL produit → lecture de la page, extraction des champs vers le PIM et des images vers le DAM.": "Un URL prodotto → lettura della pagina, estrazione dei campi verso il PIM e delle immagini verso il DAM.",
+  "Édition réelle d'une affiche — modification du prix puis de la couleur du badge ; calques et paramètres d'impression à droite.": "Modifica reale di un manifesto — modifica del prezzo poi del colore del badge; livelli e parametri di stampa a destra.",
+  "Lier un projet à une base de données (publipostage) : les champs {{ nom }} {{ prix }} {{ image }} sont alimentés par chaque ligne → génération en série.": "Collegare un progetto a un database (stampa unione): i campi {{ nom }} {{ prix }} {{ image }} vengono alimentati da ogni riga → generazione in serie.",
+  "Une base produits avec colonne calculée (Prix TTC = formule Excel), plusieurs bases et champs structurés.": "Una base prodotti con colonna calcolata (Prezzo IVA inclusa = formula Excel), più basi e campi strutturati.",
+  "Un graphe de nodes (Scraper → Enrichir → Composer → Exporter → Telegram) exécuté de bout en bout.": "Un grafo di node (Scraper → Arricchire → Comporre → Esportare → Telegram) eseguito da capo a fondo.",
+  "Une source → N canaux : Impression (PDF/X), Réseaux sociaux, PowerPoint, Web et Vidéo, chacun généré.": "Una sorgente → N canali: Stampa (PDF/X), Social, PowerPoint, Web e Video, ciascuno generato.",
+  "Piloter l'app depuis Telegram : « /flow … » génère et exécute un workflow, le fichier produit est renvoyé.": "Pilotare l'app da Telegram: «/flow …» genera ed esegue un workflow, il file prodotto viene restituito.",
+  "Import d'une maquette InDesign (IDML) décomposée en calques éditables.": "Importazione di un impaginato InDesign (IDML) scomposto in livelli modificabili.",
+  "Assistant conversationnel avec cascade multi-modèles (le suivant prend le relais si le principal échoue).": "Assistente conversazionale con cascata multi-modello (il successivo subentra se il principale fallisce).",
+  "Arborescence de catalogue (catégories, compteurs) ; un produit scrappé est rangé automatiquement dans la bonne branche.": "Struttura ad albero del catalogo (categorie, contatori); un prodotto scrapato viene sistemato automaticamente nel ramo giusto.",
+  "Clés LLM par fournisseur (connexion testée), cascade de modèles et budget mensuel.": "Chiavi LLM per fornitore (connessione testata), cascata di modelli e budget mensile.",
+  "Studio d'animation IA : format, durée, brief → génération de la vidéo ; bibliothèque de prompts rejouables.": "Studio di animazione IA: formato, durata, brief → generazione del video; libreria di prompt rieseguibili.",
+  "Banque de médias : recherche (texte/tag/couleur), grille de visuels, génération d'images par IA (badges « IA »).": "Banca media: ricerca (testo/tag/colore), griglia di visual, generazione di immagini tramite IA (badge «IA»).",
+  "Utilisateurs & rôles : attribution d'un rôle, surcharges de permissions par module.": "Utenti e ruoli: assegnazione di un ruolo, override di permessi per modulo.",
+  "Création d'un template : on pointe un élément de la page → sélecteur CSS généré → assignation à un champ.": "Creazione di un template: si indica un elemento della pagina → selettore CSS generato → assegnazione a un campo.",
+  "Une image raster : le fond reste fidèle au pixel, l'IA (Google Vision) détecte les textes et les recrée en calques éditables par-dessus.": "Un'immagine raster: lo sfondo resta fedele al pixel, l'IA (Google Vision) rileva i testi e li ricrea in livelli modificabili sopra.",
+  "Le centre de contrôle : règles rédactionnelles de l'équipe, templates groupés par fournisseur, et journal de debug Jina/LLM en direct.": "Il centro di controllo: regole redazionali del team, template raggruppati per fornitore, e registro di debug Jina/LLM in tempo reale.",
+  "Veille concurrentielle : tableau des écarts (mon prix vs concurrents), positionnement par produit et alerte Telegram envoyée.": "Monitoraggio della concorrenza: tabella degli scarti (il mio prezzo vs concorrenti), posizionamento per prodotto e avviso Telegram inviato.",
+  "Tableau de bord : la barre latérale des modules, puis le panneau « Nouveau document » dont la grille de formats (A4, A3, Story, Post…) se peuple et A4 se sélectionne.": "Dashboard: la barra laterale dei moduli, poi il pannello «Nuovo documento» la cui griglia di formati (A4, A3, Story, Post…) si popola e A4 viene selezionato.",
+  "Le tableau des nouveautés de juin 2026 : palette ⌘K, notifications, re-skin promo PIM×IA, veille tarifaire, approbation et serveur Telegram, tagging IA du DAM.": "La tabella delle novità di giugno 2026: palette ⌘K, notifiche, re-skin promo PIM×IA, monitoraggio prezzi, approvazione e server Telegram, tagging IA del DAM.",
+  "Assistant en 5 étapes : stepper (Bienvenue → Clés IA → Modèles → Connecteurs → Terminé), test d'une clé LLM (✓ connecté) qui active le bouton Suivant.": "Assistente in 5 fasi: stepper (Benvenuto → Chiavi IA → Modelli → Connettori → Completato), test di una chiave LLM (✓ connesso) che attiva il pulsante Avanti.",
+  "La palette de commandes ⌘K : depuis n'importe quelle page, taper quelques lettres pour ouvrir un projet récent, sauter vers un module ou lancer une action.": "La palette dei comandi ⌘K: da qualsiasi pagina, digitare alcune lettere per aprire un progetto recente, saltare a un modulo o avviare un'azione.",
+  "Aller-retour InDesign : les champs EasyCatalog (crochets verts) d'un gabarit IDML sont résolus depuis le PIM par publipostage, puis réexportés en IDML avec leurs marqueurs conservés.": "Andata e ritorno InDesign: i campi EasyCatalog (parentesi quadre verdi) di un modello IDML vengono risolti dal PIM tramite stampa unione, poi riesportati in IDML con i loro marcatori conservati.",
+  "Une slide PowerPoint (titre, puces, image, forme, couleurs de thème) décomposée en calques Fabric éditables ; seule la slide 1 est lue.": "Una slide PowerPoint (titolo, punti elenco, immagine, forma, colori del tema) scomposta in livelli Fabric modificabili; viene letta solo la slide 1.",
+  "Un classeur Excel importé : les types de colonnes (texte, nombre, formule, dictionnaire, date) sont détectés automatiquement et la base PIM se construit, synchronisée sur Firebase.": "Una cartella di lavoro Excel importata: i tipi di colonna (testo, numero, formula, dizionario, data) vengono rilevati automaticamente e la base PIM si costruisce, sincronizzata su Firebase.",
+  "Déposer une image (PNG, JPG, WebP, GIF, SVG) sur le canvas d'un nouveau projet : la vignette glisse au centre de la page et devient un objet sélectionnable.": "Rilasciare un'immagine (PNG, JPG, WebP, GIF, SVG) sul canvas di un nuovo progetto: la miniatura scivola al centro della pagina e diventa un oggetto selezionabile.",
+  "Un logo SVG se charge en calques vectoriels (cercle, polygone, trait, texte) ; chaque forme reste éditable — une est recolorée d'indigo à teal directement.": "Un logo SVG si carica in livelli vettoriali (cerchio, poligono, tratto, testo); ogni forma resta modificabile — una viene ricolorata da indaco a teal direttamente.",
+  "Un PDF avec calque texte natif : la page 1 reste en fond fidèle, les textes sont extraits exacts (sans OCR) et deviennent des calques éditables.": "Un PDF con livello di testo nativo: la pagina 1 resta come sfondo fedele, i testi vengono estratti esatti (senza OCR) e diventano livelli modificabili.",
+  "Décris un besoin en français : l'IA pose des questions, compose un panier de produits depuis le catalogue et esquisse un deck (Claude Opus + Gemini).": "Descrivi un'esigenza in italiano: l'IA pone domande, compone un carrello di prodotti dal catalogo e abbozza un deck (Claude Opus + Gemini).",
+  "Documentation · IBS-Studio": "Documentazione · IBS-Studio",
+  "Rechercher un module ou une fonction…": "Cercare un modulo o una funzione…",
+  "Rechercher (Ctrl+K)": "Cercare (Ctrl+K)",
+  "Fonctions": "Funzioni",
+  "Raccourcis clavier": "Scorciatoie da tastiera",
+  "Lien vers": "Link a",
+  "Aucun résultat pour": "Nessun risultato per"
+}
