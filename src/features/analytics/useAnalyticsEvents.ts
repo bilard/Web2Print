@@ -21,19 +21,24 @@ function mapDoc(d: DocumentData): AnalyticsEvent {
   }
 }
 
-export function useAnalyticsEvents(fromMs: number, toMs: number, enabled: boolean) {
+/**
+ * Events de la période `[fromMs, toMs]`. Passer `toMs = null` = borne haute OUVERTE
+ * (jusqu'à maintenant) : indispensable pour la période courante, sinon les visites
+ * postérieures au montage (nouveaux pays, etc.) seraient exclues. Rafraîchi en continu
+ * (polling 60 s + au refocus) pour rester à jour.
+ */
+export function useAnalyticsEvents(fromMs: number, toMs: number | null, enabled: boolean) {
   return useQuery({
     queryKey: ['analyticsEvents', fromMs, toMs],
     enabled,
     staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<AnalyticsEvent[]> => {
+      const clauses = [where('ts', '>=', Timestamp.fromMillis(fromMs))]
+      if (toMs !== null) clauses.push(where('ts', '<=', Timestamp.fromMillis(toMs)))
       const snap = await getDocs(
-        query(
-          collection(db, 'analyticsEvents'),
-          where('ts', '>=', Timestamp.fromMillis(fromMs)),
-          where('ts', '<=', Timestamp.fromMillis(toMs)),
-          orderBy('ts', 'asc'),
-        ),
+        query(collection(db, 'analyticsEvents'), ...clauses, orderBy('ts', 'asc')),
       )
       return snap.docs.map((s) => mapDoc(s.data()))
     },

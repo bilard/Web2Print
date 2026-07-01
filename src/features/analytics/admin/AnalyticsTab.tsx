@@ -39,7 +39,8 @@ export function AnalyticsTab() {
       onError: (e) => toast.error(`Échec : ${e instanceof Error ? e.message : 'erreur inconnue'}`),
     })
   }
-  const cur = useAnalyticsEvents(fromMs, toMs, true)
+  // Période courante : borne haute ouverte (jusqu'à maintenant) pour inclure les visites en direct.
+  const cur = useAnalyticsEvents(fromMs, null, true)
   const prev = useAnalyticsEvents(prevFromMs, prevToMs, true)
   const allEvents = cur.data ?? []
   const events = useMemo(() => filterEvents(allEvents, filter), [allEvents, filter])
