@@ -117,7 +117,7 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'section:comparison', label: 'Comparatif',  intent: 'price-watch:section:comparison' },
     ],
   },
-  { id: 'retail-promo', icon: Tag, label: 'Promo Retail', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300',
+  { id: 'retail-promo', icon: Tag, label: 'Création studio', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300',
     children: [
       { id: 'action:new',  label: 'Créer une promo', intent: 'retail-promo:action:new' },
       { id: 'action:list', label: 'Mes promos',       intent: 'retail-promo:action:list' },
