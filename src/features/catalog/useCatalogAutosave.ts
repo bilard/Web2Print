@@ -26,7 +26,16 @@ export function useCatalogAutosave(): { saving: boolean } {
         finally { setSaving(false) }
       }, 2000)
     })
-    return () => { unsub(); if (timer.current) clearTimeout(timer.current) }
+    return () => {
+      unsub()
+      if (timer.current) {
+        clearTimeout(timer.current)
+        // Une modif en attente de débounce ne doit pas être perdue à l'unmount
+        // (changement d'étape/navigation) : flush immédiat, fire-and-forget.
+        const s = useCatalogStore.getState()
+        if (s.catalogId) void saveCatalog(s.toDoc()).catch((e) => console.error('[catalog autosave] flush échoué', e))
+      }
+    }
   }, [])
   return { saving }
 }
