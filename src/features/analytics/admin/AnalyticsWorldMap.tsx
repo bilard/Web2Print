@@ -22,6 +22,12 @@ interface Dot {
 const px = (lon: number): number => ((lon + 180) / 360) * world.width
 const py = (lat: number): number => ((90 - lat) / 180) * world.height
 
+// Graticule discret (méridiens/parallèles tous les 30°), borné au cadre visible.
+const GRATICULE = [
+  ...[-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150].map((lon) => `M${px(lon)},${BOUNDS.y}V${BOUNDS.y + BOUNDS.h}`),
+  ...[-30, 0, 30, 60].map((lat) => `M0,${py(lat)}H${world.width}`),
+].join('')
+
 const BTN = 'p-1 rounded bg-surface-2 border border-white/10 text-white/60 hover:text-white transition-colors'
 
 /** Carte du monde des connexions : un point par ville (aire ∝ connexions), zoom + lien liste→carte. */
@@ -72,7 +78,9 @@ export function AnalyticsWorldMap({ events }: { events: AnalyticsEvent[] }) {
           aria-label="Carte du monde des connexions par ville"
           {...pointerHandlers}
         >
-          <path d={world.path} className="fill-white/10" />
+          <path d={GRATICULE} fill="none" className="stroke-white/[0.05]" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+          {/* Le contour du land trace côtes ET frontières (arêtes partagées 2× = un peu plus marquées). */}
+          <path d={world.land} className="fill-white/10 stroke-white/20" strokeWidth={0.75} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           {dots.map((d) => (
             // Taille à l'écran constante quel que soit le zoom (rayons divisés par l'échelle).
             <g key={d.label}>

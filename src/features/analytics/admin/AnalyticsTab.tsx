@@ -1,5 +1,5 @@
 // src/features/analytics/admin/AnalyticsTab.tsx
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { Download, Trash2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -15,7 +15,11 @@ import { AnalyticsKpiCards } from './AnalyticsKpiCards'
 import { AnalyticsTimeChart } from './AnalyticsTimeChart'
 import { AnalyticsTopLists } from './AnalyticsTopLists'
 import { AnalyticsRecent } from './AnalyticsRecent'
-import { AnalyticsWorldMap } from './AnalyticsWorldMap'
+
+// Chargée à part : le fond de carte (Natural Earth 50m, ~500 Ko) ne doit pas peser sur le bundle principal.
+const AnalyticsWorldMap = lazy(() =>
+  import('./AnalyticsWorldMap').then((m) => ({ default: m.AnalyticsWorldMap })),
+)
 import { AnalyticsUsers } from './AnalyticsUsers'
 import { AnalyticsFilters } from './AnalyticsFilters'
 
@@ -123,7 +127,9 @@ export function AnalyticsTab() {
               {/* Journal détaillé : qui a vu quelle page et quand (élément principal). */}
               <AnalyticsRecent events={events} />
               {/* Carte du monde des connexions, par ville. */}
-              <AnalyticsWorldMap events={events} />
+              <Suspense fallback={<div className="bg-surface rounded-lg h-48 animate-pulse" />}>
+                <AnalyticsWorldMap events={events} />
+              </Suspense>
               {/* Synthèses : 1 panneau par colonne, réparties sur toute la largeur. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
                 <AnalyticsTopLists events={events} />
