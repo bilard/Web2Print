@@ -729,7 +729,6 @@
   .imp-src .imp-meta{display:block;padding:7px 9px 10px}
   .imp-src .imp-tt{display:block;font-size:20px;font-weight:800;color:#3730a3;line-height:1;letter-spacing:.01em}
   .imp-src .imp-st{display:block;font-style:normal;font-size:11px;color:#64748b;margin-top:3px;line-height:1.2}
-  .imp-src .imp-price{display:inline-block;text-decoration:none;background:#facc15;color:#dc2626;font-weight:800;font-size:14px;padding:2px 8px;border-radius:6px;margin-top:6px}
   .imp-src .imp-ref{display:block;font-style:normal;font-family:var(--mono);font-size:9px;color:#94a3b8;margin-top:5px;letter-spacing:.04em}
   .imp-src .imp-doctag{position:absolute;top:7px;right:7px;font-family:var(--mono);font-size:10px;font-weight:700;color:#fff;background:rgba(15,23,42,.72);border-radius:6px;padding:3px 7px;z-index:2}
   .imp-src .imp-shot{outline:1.5px dashed rgba(99,102,241,.55);outline-offset:-4px}
@@ -966,7 +965,6 @@
   .shead{margin-bottom:54px;max-width:60ch}
   .shead .idx{font-family:var(--mono);font-size:12px;letter-spacing:.18em}
   .shead h2{font-family:var(--display);font-weight:700;font-size:clamp(30px,4.6vw,62px);letter-spacing:-.025em;line-height:1.0;text-transform:uppercase;margin:14px 0 14px}
-  .shead .lead{color:var(--muted);font-size:17px;max-width:54ch}
 
   .tags{display:flex;flex-wrap:wrap;gap:11px}
   .tag{padding:11px 18px;border:1px solid var(--line);border-radius:100px;font-size:14px;color:var(--muted);background:var(--bg2);transition:all .2s}
@@ -1305,11 +1303,9 @@
   #explorer .scene-visual.is-in .erd-t1{animation-delay:.12s}
   #explorer .scene-visual.is-in .erd-t2{animation-delay:.3s}
   #explorer .scene-visual.is-in .erd-t3{animation-delay:.46s}
-  #explorer .scene-visual.is-in .erd-t4{animation-delay:.62s}
   #explorer .scene-visual.is-in .erd-payload{animation:erdPop .55s cubic-bezier(.2,.9,.3,1.3) forwards .22s,erdSel 6.5s ease-in-out infinite;outline:1.5px solid transparent;outline-offset:2px}
   #explorer .scene-visual.is-in .erd-links .lk{animation:erdDraw 1.1s ease forwards}
   #explorer .scene-visual.is-in .lk1{animation-delay:.75s}
-  #explorer .scene-visual.is-in .lk2{animation-delay:1s}
   #explorer .scene-visual.is-in .lk-active{stroke:var(--cyan);animation:erdDraw 1.1s ease forwards .55s}
   #explorer .scene-visual.is-in .erd-links .lk-flow{stroke:var(--cyan);stroke-width:1.6;stroke-dasharray:2 8;animation:erdAppear .3s ease forwards 1.7s,erdFlow 1s linear infinite 1.7s}
   #explorer .scene-visual.is-in .erd-card{animation:fadeup .4s ease forwards}
@@ -3512,7 +3508,7 @@ window.loopInView = function(el, opt){
   });
   var headGroups=[].slice.call(document.querySelectorAll('.shead')).map(function(s){
     return { root:s, parts:layers(s,[
-      ['.mono',-0.090],['h2',-0.090],['.lead',-0.055]
+      ['.mono',-0.090],['h2',-0.090]
     ]) };
   });
   var ctaGroups=[].slice.call(document.querySelectorAll('.cta')).map(function(c){
