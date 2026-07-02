@@ -10,7 +10,8 @@ export interface CityCoords {
 
 /** `0` = ville introuvable (négatif mis en cache pour ne pas re-géocoder en boucle). */
 type CacheEntry = CityCoords | 0
-const CACHE_KEY = 'w2p:cityCoords:v1'
+// v2 : le match par pays est devenu strict (plus de repli 1er résultat), purge des entrées mal placées.
+const CACHE_KEY = 'w2p:cityCoords:v2'
 
 const keyOf = (c: Pick<CityCount, 'city' | 'country'>): string => `${c.city}|${c.country ?? ''}`
 
@@ -39,7 +40,9 @@ async function geocode(city: string, country: string | null): Promise<CacheEntry
     results?: { latitude: number; longitude: number; country_code?: string }[]
   }
   const results = data.results ?? []
-  const hit = (country ? results.find((r) => r.country_code === country) : undefined) ?? results[0]
+  // Pays connu ⇒ match strict : mieux vaut aucun point qu'un point dans le mauvais pays
+  // (ex. DB-IP renvoie « Balikesir, US » → sans garde, le point atterrissait en Turquie).
+  const hit = country ? results.find((r) => r.country_code === country) : results[0]
   return hit ? { lat: hit.latitude, lon: hit.longitude } : 0
 }
 
