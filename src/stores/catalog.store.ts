@@ -63,18 +63,27 @@ const defaultState = {
 }
 
 // sessionStorage tolérant au quota : un gros catalogue ne doit jamais casser l'édition.
+// En cas d'échec (quota dépassé), on purge la clé plutôt que de laisser un snapshot
+// PARTIEL/périmé survivre : au reboot, l'absence de session force un rechargement
+// propre depuis Firestore (cf. CatalogBuilderPage) au lieu de rejouer un état bâtard.
 const safeSessionStorage = {
   getItem: (k: string) => sessionStorage.getItem(k),
-  setItem: (k: string, v: string) => { try { sessionStorage.setItem(k, v) } catch { /* quota : on continue sans persistance */ } },
+  setItem: (k: string, v: string) => {
+    try { sessionStorage.setItem(k, v) }
+    catch { try { sessionStorage.removeItem(k) } catch { /* rien de plus à faire */ } }
+  },
   removeItem: (k: string) => sessionStorage.removeItem(k),
 }
 
 export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   ...defaultState,
   hydrate: (doc, id) => set({
-    catalogId: id, name: doc.name, sourceRef: doc.sourceRef, selectedRowIds: doc.selectedRowIds,
+    catalogId: id, name: doc.name, step: 'source', sourceRef: doc.sourceRef, selectedRowIds: doc.selectedRowIds,
     levelKeys: doc.levelKeys, treeEdits: doc.treeEdits, prompt: doc.prompt, plan: doc.plan,
     fieldMap: doc.fieldMap, format: doc.format, coverImageUrl: doc.coverImageUrl, backCoverImageUrl: doc.backCoverImageUrl,
+    // Purge la session précédente (autre catalogue) : rawRows/rawColumns sont
+    // rechargés depuis sourceRef par CatalogBuilderPage (garde rawRows.length===0).
+    rawRows: [], rawColumns: [],
   }),
   toDoc: () => {
     const s = get()
