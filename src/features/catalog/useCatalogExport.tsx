@@ -9,7 +9,7 @@ import { flushSync } from 'react-dom'
 import { toast } from 'sonner'
 import type { CatalogPageDescriptor } from './catalogTypes'
 import { CatalogPageView } from './components/pages/CatalogPageView'
-import type { CatalogRenderCtx } from './components/pages/catalogCss'
+import { ensureCatalogFonts, type CatalogRenderCtx } from './components/pages/catalogCss'
 import { drawCropMarks } from './cropMarks'
 
 export interface CatalogExportOptions { mode: 'screen' | 'print'; dpi: 150 | 300; bleedMm: number; fileName: string }
@@ -40,6 +40,7 @@ export function useCatalogExport() {
   const [progress, setProgress] = useState(0)
 
   const exportPdf = async (pages: CatalogPageDescriptor[], ctx: CatalogRenderCtx, opts: CatalogExportOptions) => {
+    ensureCatalogFonts() // charge la feuille de style Google Fonts même sans passage par l'Aperçu
     setExporting(true)
     setProgress(0)
     const host = document.createElement('div')
