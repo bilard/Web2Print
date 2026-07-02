@@ -18,8 +18,8 @@ export interface Dot {
 export const BOUNDS: MapBox = { x: 0, y: 12, w: world.width, h: 314 }
 
 /** Projection équirectangulaire — même transformée que le fond généré (cf. worldPath.json). */
-export const px = (lon: number): number => ((lon + 180) / 360) * world.width
-export const py = (lat: number): number => ((90 - lat) / 180) * world.height
+const px = (lon: number): number => ((lon + 180) / 360) * world.width
+const py = (lat: number): number => ((90 - lat) / 180) * world.height
 
 // Graticule discret (méridiens/parallèles tous les 30°), borné au cadre visible.
 export const GRATICULE = [

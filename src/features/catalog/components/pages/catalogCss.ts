@@ -7,7 +7,7 @@ import type { PromoFieldKey } from '@/features/retail-promo/promoTypes'
 import { FONTS_HREF } from '@/features/retail-promo/RetailPromoCard'
 import type { CatalogFormat, CatalogPlan, CatalogTheme } from '../../catalogTypes'
 
-export const PX_PER_MM = 96 / 25.4
+const PX_PER_MM = 96 / 25.4
 
 export function pagePx(format: CatalogFormat): { w: number; h: number } {
   return { w: Math.round(format.widthMm * PX_PER_MM), h: Math.round(format.heightMm * PX_PER_MM) }
