@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react'
 import { FONT_OPTIONS } from '@/features/retail-promo/RetailPromoCard'
 import type { CatalogPlan, CatalogTheme } from '../../catalogTypes'
 import { useCoverImage } from '../../useCoverImage'
+import { TemplatesBar } from './TemplatesBar'
 
 interface PlanStylePanelProps {
   plan: CatalogPlan
@@ -34,6 +35,8 @@ export function PlanStylePanel({ plan, setPlan, coverImageUrl, backCoverImageUrl
 
   return (
     <div className="space-y-5">
+      <TemplatesBar plan={plan} setPlan={setPlan} fieldClass={fieldClass} />
+
       <section className="space-y-2">
         <h3 className="text-sm font-semibold text-white">Thème graphique</h3>
         <div className="flex flex-wrap gap-3">
