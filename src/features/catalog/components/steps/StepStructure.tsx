@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree } from '../../catalogTree'
-import { CATALOG_FORMAT_PRESETS, type CatalogFormat, type LevelKeys } from '../../catalogTypes'
+import { CATALOG_FORMAT_PRESETS, type LevelKeys } from '../../catalogTypes'
 import { StructureTreeNode } from './StructureTreeNode'
 
 const LEVEL_FIELDS: { key: keyof LevelKeys; label: string }[] = [
@@ -27,6 +27,25 @@ function clampMm(v: number): number {
 const selectClass = 'w-full px-3 py-1.5 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600'
 const inputClass = 'w-24 px-3 py-1.5 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600'
 
+function MmInput({ value, onChange, onBlur, onKeyDown }: {
+  value: string
+  onChange: (v: string) => void
+  onBlur: () => void
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
+}) {
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
+      className={inputClass}
+    />
+  )
+}
+
 export function StepStructure() {
   const rawColumns = useCatalogStore((s) => s.rawColumns)
   const rawRows = useCatalogStore((s) => s.rawRows)
@@ -38,6 +57,8 @@ export function StepStructure() {
   const setFormat = useCatalogStore((s) => s.setFormat)
   const setStep = useCatalogStore((s) => s.setStep)
   const [customMode, setCustomMode] = useState(false)
+  const [draftW, setDraftW] = useState(String(format.widthMm))
+  const [draftH, setDraftH] = useState(String(format.heightMm))
 
   const selectedRows = useMemo(() => {
     const ids = new Set(selectedRowIds)
@@ -65,11 +86,34 @@ export function StepStructure() {
   const handleFormatSelect = (value: string) => {
     if (value === CUSTOM_ID) { setCustomMode(true); return }
     const preset = CATALOG_FORMAT_PRESETS.find((p) => p.id === value)
-    if (preset) { setCustomMode(false); setFormat(preset.format) }
+    if (preset) {
+      setCustomMode(false)
+      setFormat(preset.format)
+      setDraftW(String(preset.format.widthMm))
+      setDraftH(String(preset.format.heightMm))
+    }
   }
 
-  const updateCustomDim = (dim: keyof CatalogFormat, raw: string) => {
-    setFormat({ ...format, [dim]: clampMm(Number(raw)) })
+  const handleDimBlur = (dim: 'widthMm' | 'heightMm', draft: string) => {
+    const n = Number(draft)
+    if (Number.isNaN(n) || draft.trim() === '') {
+      // Vide ou invalide → retomber sur la valeur courante
+      if (dim === 'widthMm') setDraftW(String(format.widthMm))
+      else setDraftH(String(format.heightMm))
+    } else {
+      // Nombre valide → clamper et appliquer
+      const clamped = clampMm(n)
+      setFormat({ ...format, [dim]: clamped })
+      if (dim === 'widthMm') setDraftW(String(clamped))
+      else setDraftH(String(clamped))
+    }
+  }
+
+  const handleDimKeyDown = (dim: 'widthMm' | 'heightMm', draft: string, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur()
+      handleDimBlur(dim, draft)
+    }
   }
 
   const rootIds = tree.map((n) => n.id)
@@ -100,11 +144,19 @@ export function StepStructure() {
           </select>
           {showCustom && (
             <div className="flex items-center gap-2">
-              <input type="number" min={MIN_MM} max={MAX_MM} value={format.widthMm}
-                onChange={(e) => updateCustomDim('widthMm', e.target.value)} className={inputClass} />
+              <MmInput
+                value={draftW}
+                onChange={setDraftW}
+                onBlur={() => handleDimBlur('widthMm', draftW)}
+                onKeyDown={(e) => handleDimKeyDown('widthMm', draftW, e)}
+              />
               <span className="text-xs text-muted-foreground">mm ×</span>
-              <input type="number" min={MIN_MM} max={MAX_MM} value={format.heightMm}
-                onChange={(e) => updateCustomDim('heightMm', e.target.value)} className={inputClass} />
+              <MmInput
+                value={draftH}
+                onChange={setDraftH}
+                onBlur={() => handleDimBlur('heightMm', draftH)}
+                onKeyDown={(e) => handleDimKeyDown('heightMm', draftH, e)}
+              />
               <span className="text-xs text-muted-foreground">mm</span>
             </div>
           )}
