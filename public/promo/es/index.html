@@ -112,7 +112,7 @@
   @media(min-width:1700px){
     :root{--maxw:min(94vw,2200px)}
     .wrap{padding:0 56px}
-    .scene{gap:clamp(64px,6vw,140px)}
+    .scene{gap:clamp(64px,5vw,110px)}
     h1.hero-title{font-size:clamp(92px,4.8vw,116px)}
     .hero-sub{font-size:clamp(20px,1vw,24px)}
     .scene-text h2{font-size:clamp(60px,3.4vw,78px)}
@@ -963,8 +963,8 @@
   .aic-chips span{font-size:11px;padding:8px 15px;border:1px solid var(--line2);border-radius:100px;color:var(--ink)}
 
   /* SCÈNES (la chaîne) */
-  .chain{padding:40px 0 20px}
-  .scene{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:70px 0;position:relative}
+  .chain{padding:20px 0 10px}
+  .scene{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:clamp(28px,2.4vw,44px) 0;position:relative}
   .scene:nth-child(even) .scene-text{order:2}
   @media(max-width:900px){.scene{grid-template-columns:1fr;gap:32px}.scene:nth-child(even) .scene-text{order:0}}
   .scene-num{display:inline-block;font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.2em;margin-bottom:10px;position:relative;z-index:3}
@@ -976,8 +976,8 @@
   .scene-list li::before{content:"→";color:var(--cyan);flex-shrink:0;font-weight:700}
   .scene-visual{position:relative}
 
-  section.block{padding:96px 0;position:relative}
-  .shead{margin-bottom:54px;max-width:60ch}
+  section.block{padding:60px 0;position:relative}
+  .shead{margin-bottom:38px;max-width:60ch}
   .shead .idx{font-family:var(--mono);font-size:12px;letter-spacing:.18em}
   .shead h2{font-family:var(--display);font-weight:700;font-size:clamp(30px,4.6vw,62px);letter-spacing:-.025em;line-height:1.0;text-transform:uppercase;margin:14px 0 14px}
 
