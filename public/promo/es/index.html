@@ -1138,9 +1138,11 @@
   @keyframes portPulse{0%,100%{opacity:.7}50%{opacity:1}}
   @keyframes nodeRun{0%,100%{border-color:var(--line2);box-shadow:0 14px 30px -18px #000,0 0 0 1px rgba(255,255,255,.02),0 0 22px -15px var(--accent)}44%,56%{border-color:var(--accent);box-shadow:0 14px 30px -18px #000,0 0 0 1px var(--accent),0 0 26px -6px var(--accent);transform:translate(-50%,-50%) scale(1.05)}}
 
-  /* 13 Telegram — messages qui arrivent + fichier */
-  #telegram .scene-visual.is-in .tlg-msg,#telegram .scene-visual.is-in .tlg-file{animation:cycleRise 5.2s ease-in-out infinite}
-  #telegram .scene-visual.is-in .tlg-msg.tlg-bot{animation-delay:.6s}#telegram .scene-visual.is-in .tlg-file{animation-delay:1.2s}
+  /* 13 Telegram — la conversation se joue message par message (question → réponse → fichier), puis recommence */
+  #telegram .scene-visual.is-in .tlg-body>*{animation:cycleRise 8.4s ease-in-out infinite}
+  #telegram .scene-visual.is-in .tlg-body>*:nth-child(2){animation-delay:.5s}#telegram .scene-visual.is-in .tlg-body>*:nth-child(3){animation-delay:1s}#telegram .scene-visual.is-in .tlg-body>*:nth-child(4){animation-delay:1.5s}#telegram .scene-visual.is-in .tlg-body>*:nth-child(5){animation-delay:2s}#telegram .scene-visual.is-in .tlg-body>*:nth-child(6){animation-delay:2.5s}#telegram .scene-visual.is-in .tlg-body>*:nth-child(7){animation-delay:3s}#telegram .scene-visual.is-in .tlg-body>*:nth-child(8){animation-delay:3.5s}
+  #telegram .scene-visual.is-in .tlg-bar .send{animation:btnPulse 2.4s ease-in-out infinite}
+  #telegram .scene-visual.is-in .tlg-bar .ph{animation:anmBlink 1.6s ease-in-out infinite}
 
   /* 14 Animation — cartes de la bibliothèque qui apparaissent */
   /* Le résultat « joue » : chaque élément est animé en continu (rythme énergique) */
@@ -1225,6 +1227,85 @@
   #settings .scene-visual.is-in .set-stat{animation:statBreathe 4s ease-in-out infinite}
   #settings .scene-visual.is-in .set-stat:nth-child(2){animation-delay:.5s}#settings .scene-visual.is-in .set-stat:nth-child(3){animation-delay:1s}#settings .scene-visual.is-in .set-stat:nth-child(4){animation-delay:1.5s}
   @keyframes statBreathe{0%,100%{border-color:var(--line)}50%{border-color:rgba(124,108,255,.32)}}
+
+  /* ====== V2 — POLISH GLOBAL : chaque module prend vie (texte + écran) ====== */
+  /* Puces des scènes : cascade à l'arrivée du texte */
+  html.js .scene-list li{opacity:0}
+  html.js .scene-text.is-in .scene-list li{animation:fadeup .55s cubic-bezier(.2,.7,.2,1) forwards}
+  html.js .scene-text.is-in .scene-list li:nth-child(1){animation-delay:.45s}html.js .scene-text.is-in .scene-list li:nth-child(2){animation-delay:.62s}html.js .scene-text.is-in .scene-list li:nth-child(3){animation-delay:.79s}html.js .scene-text.is-in .scene-list li:nth-child(4){animation-delay:.96s}html.js .scene-text.is-in .scene-list li:nth-child(5){animation-delay:1.13s}
+  /* L'écran se pose (léger settle) puis son halo respire */
+  html.js .scene .scene-visual.is-in .screen{animation:screenSettle .9s cubic-bezier(.2,.8,.25,1) both}
+  @keyframes screenSettle{from{transform:scale(.965) translateY(10px)}to{transform:none}}
+  .scene .scene-visual.is-in .screen .glow{animation:glowBreathe 5.6s ease-in-out infinite}
+  @keyframes glowBreathe{0%,100%{opacity:.7}50%{opacity:1}}
+
+  /* V2 · 01 Nouveau doc — les formats surgissent, la vignette scintille */
+  html.js #nouveau .nd-fmt{opacity:0}
+  #nouveau .scene-visual.is-in .nd-fmt{animation:pop .5s cubic-bezier(.2,.9,.3,1.4) forwards}
+  #nouveau .scene-visual.is-in .nd-fmt:nth-child(2){animation-delay:.15s}#nouveau .scene-visual.is-in .nd-fmt:nth-child(3){animation-delay:.3s}#nouveau .scene-visual.is-in .nd-fmt:nth-child(4){animation-delay:.45s}
+  #nouveau .scene-visual.is-in .nd-fmt.on{animation:pop .5s cubic-bezier(.2,.9,.3,1.4) forwards,breathe 2.6s ease-in-out infinite .8s}
+  #nouveau .nd-fmt .pv{position:relative;overflow:hidden}
+  #nouveau .scene-visual.is-in .nd-fmt .pv::after{content:"";position:absolute;inset:0;transform:translateX(-130%);background:linear-gradient(100deg,transparent 32%,rgba(255,255,255,.08) 50%,transparent 68%);animation:pvShine 4.2s ease-in-out infinite}
+  #nouveau .scene-visual.is-in .nd-fmt:nth-child(2) .pv::after{animation-delay:.35s}#nouveau .scene-visual.is-in .nd-fmt:nth-child(3) .pv::after{animation-delay:.7s}#nouveau .scene-visual.is-in .nd-fmt:nth-child(4) .pv::after{animation-delay:1.05s}
+  @keyframes pvShine{0%{transform:translateX(-130%)}55%,100%{transform:translateX(130%)}}
+
+  /* V2 · 05 DAM — sources en cascade + recherche qui pulse */
+  html.js #dam .dam-tags span{opacity:0}
+  #dam .scene-visual.is-in .dam-tags span{animation:fadeup .45s ease forwards}
+  #dam .scene-visual.is-in .dam-tags span:nth-child(1){animation-delay:.5s}#dam .scene-visual.is-in .dam-tags span:nth-child(2){animation-delay:.65s}#dam .scene-visual.is-in .dam-tags span:nth-child(3){animation-delay:.8s}#dam .scene-visual.is-in .dam-tags span:nth-child(4){animation-delay:.95s}#dam .scene-visual.is-in .dam-tags span:nth-child(5){animation-delay:1.1s}
+  #dam .scene-visual.is-in .dam-search{animation:gopulse 2.8s ease-in-out infinite 1.2s}
+
+  /* V2 · 07 PIM — les formules se rejouent, les cellules ƒx recalculent, la fraîcheur clignote */
+  #pim .scene-visual.is-in .pim-frow{animation:cycleSlide 5.6s ease-in-out infinite}
+  #pim .scene-visual.is-in .pim-frow:nth-child(3){animation-delay:.35s}#pim .scene-visual.is-in .pim-frow:nth-child(4){animation-delay:.7s}#pim .scene-visual.is-in .pim-frow:nth-child(5){animation-delay:1.05s}
+  #pim .scene-visual.is-in .pim-funcs span{animation:cyclePop 5.6s ease-in-out infinite}
+  #pim .scene-visual.is-in .pim-funcs span:nth-child(2){animation-delay:.14s}#pim .scene-visual.is-in .pim-funcs span:nth-child(3){animation-delay:.28s}#pim .scene-visual.is-in .pim-funcs span:nth-child(4){animation-delay:.42s}#pim .scene-visual.is-in .pim-funcs span:nth-child(5){animation-delay:.56s}#pim .scene-visual.is-in .pim-funcs span:nth-child(6){animation-delay:.7s}#pim .scene-visual.is-in .pim-funcs span:nth-child(7){animation-delay:.84s}#pim .scene-visual.is-in .pim-funcs span:nth-child(8){animation-delay:.98s}#pim .scene-visual.is-in .pim-funcs span:nth-child(9){animation-delay:1.12s}
+  #pim .scene-visual.is-in .pim-tr:not(.th) .num.calc{animation:calcFlash 4s ease-in-out infinite}
+  #pim .scene-visual.is-in .pim-tr:nth-of-type(3) .num.calc{animation-delay:.4s}#pim .scene-visual.is-in .pim-tr:nth-of-type(4) .num.calc{animation-delay:.8s}#pim .scene-visual.is-in .pim-tr:nth-of-type(5) .num.calc{animation-delay:1.2s}#pim .scene-visual.is-in .pim-tr:nth-of-type(6) .num.calc{animation-delay:1.6s}#pim .scene-visual.is-in .pim-tr:nth-of-type(7) .num.calc{animation-delay:2s}
+  @keyframes calcFlash{0%,38%,62%,100%{text-shadow:none}50%{color:#c7c4ff;text-shadow:0 0 10px rgba(124,108,255,.85)}}
+  #pim .scene-visual.is-in .pim-fr{animation:okBlink 2.8s ease-in-out infinite}
+  #pim .scene-visual.is-in .pim-tr:nth-of-type(4) .pim-fr{animation-delay:.5s}#pim .scene-visual.is-in .pim-tr:nth-of-type(5) .pim-fr{animation-delay:1s}#pim .scene-visual.is-in .pim-tr:nth-of-type(6) .pim-fr{animation-delay:1.5s}#pim .scene-visual.is-in .pim-tr:nth-of-type(7) .pim-fr{animation-delay:2s}
+  #pim .scene-visual.is-in .pim-tab.on{animation:breathe 3s ease-in-out infinite .6s}
+
+  /* V2 · 11 Veille — les indicateurs claquent à l'arrivée */
+  html.js #veille .vt-kpi{opacity:0}
+  #veille .scene-visual.is-in .vt-kpi{animation:pop .5s cubic-bezier(.2,.9,.3,1.4) forwards}
+  #veille .scene-visual.is-in .vt-kpi:nth-child(2){animation-delay:.12s}#veille .scene-visual.is-in .vt-kpi:nth-child(3){animation-delay:.24s}#veille .scene-visual.is-in .vt-kpi:nth-child(4){animation-delay:.36s}#veille .scene-visual.is-in .vt-kpi:nth-child(5){animation-delay:.48s}#veille .scene-visual.is-in .vt-kpi:nth-child(6){animation-delay:.6s}
+
+  /* V2 · 13 Telegram — commandes latérales en cascade, /flow reste allumée */
+  html.js #telegram .tlg-cmd{opacity:0}
+  #telegram .scene-visual.is-in .tlg-cmd{animation:fadeup .5s ease forwards}
+  #telegram .scene-visual.is-in .tlg-cmd:nth-child(3){animation-delay:.2s}#telegram .scene-visual.is-in .tlg-cmd:nth-child(4){animation-delay:.4s}#telegram .scene-visual.is-in .tlg-cmd:nth-child(5){animation-delay:.6s}#telegram .scene-visual.is-in .tlg-cmd:nth-child(6){animation-delay:.8s}#telegram .scene-visual.is-in .tlg-cmd:nth-child(7){animation-delay:1s}#telegram .scene-visual.is-in .tlg-cmd:nth-child(8){animation-delay:1.2s}
+  #telegram .scene-visual.is-in .tlg-cmd.on{animation:fadeup .5s ease forwards,rowflash 3.2s ease-in-out infinite 1.6s}
+
+  /* V2 · 15 Chat — les modèles du classement cascadent à l'ouverture du menu, les chips flottent */
+  #chat .aic-drop .aic-opt{opacity:0;transform:translateX(-10px);transition:opacity .4s ease,transform .4s cubic-bezier(.2,.8,.3,1)}
+  #chat .aic-drop.open .aic-opt{opacity:1;transform:none}
+  #chat .aic-drop.open .aic-opt:nth-child(3){transition-delay:.05s}#chat .aic-drop.open .aic-opt:nth-child(4){transition-delay:.1s}#chat .aic-drop.open .aic-opt:nth-child(5){transition-delay:.15s}#chat .aic-drop.open .aic-opt:nth-child(6){transition-delay:.2s}#chat .aic-drop.open .aic-opt:nth-child(7){transition-delay:.25s}#chat .aic-drop.open .aic-opt:nth-child(8){transition-delay:.3s}#chat .aic-drop.open .aic-opt:nth-child(9){transition-delay:.35s}#chat .aic-drop.open .aic-opt:nth-child(10){transition-delay:.4s}#chat .aic-drop.open .aic-opt:nth-child(11){transition-delay:.45s}
+  html.js #chat .aic-chips span{opacity:0}
+  #chat .scene-visual.is-in .aic-chips span{animation:pop .45s cubic-bezier(.2,.9,.3,1.4) forwards,floaty 3.6s ease-in-out infinite 1.4s}
+  #chat .scene-visual.is-in .aic-chips span:nth-child(2){animation-delay:.12s,1.6s}#chat .scene-visual.is-in .aic-chips span:nth-child(3){animation-delay:.24s,1.8s}#chat .scene-visual.is-in .aic-chips span:nth-child(4){animation-delay:.36s,2s}#chat .scene-visual.is-in .aic-chips span:nth-child(5){animation-delay:.48s,2.2s}
+
+  /* V2 · 18 Export — les réglages print se cochent en cascade */
+  html.js #export .pub-pre{opacity:0}
+  #export .scene-visual.is-in .pub-pre{animation:fadeup .45s ease forwards}
+  #export .scene-visual.is-in .pub-pre:nth-child(3){animation-delay:.18s}#export .scene-visual.is-in .pub-pre:nth-child(4){animation-delay:.36s}#export .scene-visual.is-in .pub-pre:nth-child(5){animation-delay:.54s}#export .scene-visual.is-in .pub-pre:nth-child(6){animation-delay:.72s}
+
+  /* V2 · 19 Rôles — l'équipe apparaît ligne à ligne, les statuts vivent */
+  html.js #roles .usr-row{opacity:0}
+  #roles .scene-visual.is-in .usr-row{animation:fadeup .5s ease forwards}
+  #roles .scene-visual.is-in .usr-row:nth-child(2){animation-delay:.15s}#roles .scene-visual.is-in .usr-row:nth-child(3){animation-delay:.3s}#roles .scene-visual.is-in .usr-row:nth-child(4){animation-delay:.45s}#roles .scene-visual.is-in .usr-row:nth-child(5){animation-delay:.6s}
+  #roles .scene-visual.is-in .usr-row.sel{animation:fadeup .5s ease forwards .15s,rowflash 3.4s ease-in-out infinite 1.4s}
+  #roles .scene-visual.is-in .usr-stat.pend{animation:okBlink 2.2s ease-in-out infinite 1s}
+  #roles .scene-visual.is-in .usr-perm.off{animation:permShake 5.4s ease-in-out infinite 2s}
+  @keyframes permShake{0%,86%,100%{transform:none}89%{transform:translateX(-2px)}93%{transform:translateX(2px)}97%{transform:none}}
+
+  /* V2 — respect de prefers-reduced-motion */
+  @media(prefers-reduced-motion:reduce){
+    html.js .scene-list li,html.js #nouveau .nd-fmt,html.js #dam .dam-tags span,html.js #veille .vt-kpi,html.js #telegram .tlg-cmd,html.js #chat .aic-chips span,html.js #export .pub-pre,html.js #roles .usr-row{opacity:1;animation:none}
+    html.js .scene .scene-visual.is-in .screen,.scene .scene-visual.is-in .screen .glow,#nouveau .scene-visual.is-in .nd-fmt .pv::after,#dam .scene-visual.is-in .dam-search,#pim .scene-visual.is-in .pim-frow,#pim .scene-visual.is-in .pim-funcs span,#pim .scene-visual.is-in .pim-tr:not(.th) .num.calc,#pim .scene-visual.is-in .pim-fr,#pim .scene-visual.is-in .pim-tab.on,#telegram .scene-visual.is-in .tlg-bar .send,#telegram .scene-visual.is-in .tlg-bar .ph,#chat .scene-visual.is-in .aic-chips span,#roles .scene-visual.is-in .usr-stat.pend,#roles .scene-visual.is-in .usr-perm.off{animation:none}
+    #chat .aic-drop .aic-opt{opacity:1;transform:none;transition:none}
+  }
 
   /* ====== CURSEUR DE DÉMO : un curseur réalise le geste clé, avec onde de « tap » ====== */
   .dcur{position:absolute;width:22px;height:22px;z-index:9;pointer-events:none;opacity:0;left:var(--x0,80%);top:var(--y0,88%);transform:translate(-2px,-1px)}
