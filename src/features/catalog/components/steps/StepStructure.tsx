@@ -8,6 +8,7 @@ import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree } from '../../catalogTree'
 import { CATALOG_FORMAT_PRESETS, type LevelKeys } from '../../catalogTypes'
 import { StructureTreeNode } from './StructureTreeNode'
+import { MmInput } from './MmInput'
 
 const LEVEL_FIELDS: { key: keyof LevelKeys; label: string }[] = [
   { key: 'univers', label: 'Univers' },
@@ -16,35 +17,8 @@ const LEVEL_FIELDS: { key: keyof LevelKeys; label: string }[] = [
 ]
 
 const CUSTOM_ID = 'custom'
-const MIN_MM = 50
-const MAX_MM = 2000
-
-function clampMm(v: number): number {
-  if (Number.isNaN(v)) return MIN_MM
-  return Math.min(MAX_MM, Math.max(MIN_MM, Math.round(v)))
-}
 
 const selectClass = 'w-full px-3 py-1.5 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600'
-const inputClass = 'w-24 px-3 py-1.5 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600'
-
-function MmInput({ value, onChange, onBlur, onKeyDown }: {
-  value: string
-  onChange: (v: string) => void
-  onBlur: () => void
-  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
-}) {
-  return (
-    <input
-      type="text"
-      inputMode="numeric"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onBlur={onBlur}
-      onKeyDown={onKeyDown}
-      className={inputClass}
-    />
-  )
-}
 
 export function StepStructure() {
   const rawColumns = useCatalogStore((s) => s.rawColumns)
@@ -57,8 +31,6 @@ export function StepStructure() {
   const setFormat = useCatalogStore((s) => s.setFormat)
   const setStep = useCatalogStore((s) => s.setStep)
   const [customMode, setCustomMode] = useState(false)
-  const [draftW, setDraftW] = useState(String(format.widthMm))
-  const [draftH, setDraftH] = useState(String(format.heightMm))
 
   const selectedRows = useMemo(() => {
     const ids = new Set(selectedRowIds)
@@ -89,30 +61,6 @@ export function StepStructure() {
     if (preset) {
       setCustomMode(false)
       setFormat(preset.format)
-      setDraftW(String(preset.format.widthMm))
-      setDraftH(String(preset.format.heightMm))
-    }
-  }
-
-  const handleDimBlur = (dim: 'widthMm' | 'heightMm', draft: string) => {
-    const n = Number(draft)
-    if (Number.isNaN(n) || draft.trim() === '') {
-      // Vide ou invalide → retomber sur la valeur courante
-      if (dim === 'widthMm') setDraftW(String(format.widthMm))
-      else setDraftH(String(format.heightMm))
-    } else {
-      // Nombre valide → clamper et appliquer
-      const clamped = clampMm(n)
-      setFormat({ ...format, [dim]: clamped })
-      if (dim === 'widthMm') setDraftW(String(clamped))
-      else setDraftH(String(clamped))
-    }
-  }
-
-  const handleDimKeyDown = (dim: 'widthMm' | 'heightMm', draft: string, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur()
-      handleDimBlur(dim, draft)
     }
   }
 
@@ -145,17 +93,13 @@ export function StepStructure() {
           {showCustom && (
             <div className="flex items-center gap-2">
               <MmInput
-                value={draftW}
-                onChange={setDraftW}
-                onBlur={() => handleDimBlur('widthMm', draftW)}
-                onKeyDown={(e) => handleDimKeyDown('widthMm', draftW, e)}
+                value={format.widthMm}
+                onValueChange={(v) => setFormat({ ...format, widthMm: v })}
               />
               <span className="text-xs text-muted-foreground">mm ×</span>
               <MmInput
-                value={draftH}
-                onChange={setDraftH}
-                onBlur={() => handleDimBlur('heightMm', draftH)}
-                onKeyDown={(e) => handleDimKeyDown('heightMm', draftH, e)}
+                value={format.heightMm}
+                onValueChange={(v) => setFormat({ ...format, heightMm: v })}
               />
               <span className="text-xs text-muted-foreground">mm</span>
             </div>
