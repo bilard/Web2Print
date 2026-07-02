@@ -65,6 +65,7 @@ type LLMTask =
   | 'web.searchPlan'
   | 'data.columnCompletion'
   | 'design.promoPlan'
+  | 'catalog.plan'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -145,6 +146,11 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // Génération de plan de composition retail (Visuels Promo) : placement sémantique de blocs
   // en pourcentages → gemini-3.1-pro-preview (responseSchema fiable sur v1beta) ; Claude fallback.
   'design.promoPlan': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
+  // Plan de catalogue multi-page (thème + grilles + couvertures) : raisonnement structuré
+  // créatif → claude primary (prend son défaut) ; fallback gemini ÉPINGLÉ 3.1-pro-preview
+  // (modelForProvider n'applique l'override qu'au provider du préfixe correspondant —
+  // même pattern que 'data.columnCompletion' ; JAMAIS gemini-3.5-flash pour du JSON).
+  'catalog.plan': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -176,6 +182,8 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'data.columnCompletion':  0.4,
   // Génération de plan promo : composition créative (placements en %) → légèrement créatif.
   'design.promoPlan':       0.3,
+  // Plan de catalogue : composition créative (thème, densités) mais bornée par le schéma.
+  'catalog.plan': 0.5,
 }
 
 interface GenerateJsonOptions<T> {
