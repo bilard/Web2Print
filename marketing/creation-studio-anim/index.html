@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Création studio — animation promo</title>
+<style>
+  @font-face {
+    font-family: "Jura";
+    src: url("fonts/jura-latin.woff2") format("woff2");
+    font-weight: 300 700;
+    font-style: normal;
+  }
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface-2: #232323;
+    --line: rgba(255, 255, 255, 0.09);
+    --txt: #f4f3f0;
+    --dim: rgba(244, 243, 240, 0.55);
+    --indigo: #6366f1;
+    --card-navy: #111827;
+    --card-red: #ef4444;
+    --card-paper: #f7f2ec;
+  }
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  [data-composition-id="root"] {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+    font-family: "Jura", system-ui, sans-serif;
+    color: var(--txt);
+  }
+  .stage { position: absolute; inset: 0; }
+
+  /* ---- fond du canvas : grille pointillée + halo indigo ---- */
+  .grid-dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.10) 1.5px, transparent 1.5px);
+    background-size: 44px 44px;
+    opacity: 0.5;
+  }
+  .glow {
+    position: absolute; width: 1100px; height: 1100px; left: 250px; top: -60px;
+    background: radial-gradient(circle, rgba(99,102,241,0.22), transparent 62%);
+    pointer-events: none;
+  }
+
+  /* ---- barre d'outils ---- */
+  .toolbar {
+    position: absolute; top: 0; left: 0; right: 0; height: 68px;
+    display: flex; align-items: center; gap: 22px; padding: 0 34px; box-sizing: border-box;
+    background: var(--surface); border-bottom: 2px solid var(--line);
+  }
+  .tb-dot { width: 13px; height: 13px; border-radius: 50%; }
+  .tb-title { font-size: 21px; font-weight: 700; letter-spacing: 0.02em; }
+  .tb-title b { color: var(--indigo); }
+  .tb-sep { width: 2px; height: 26px; background: var(--line); }
+  .tb-file { font-size: 17px; color: var(--dim); }
+  .tb-count {
+    margin-left: auto; font-family: "JetBrains Mono", monospace; font-size: 16px; color: var(--dim);
+  }
+  .tb-save {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--indigo); color: #fff; border-radius: 10px;
+    padding: 12px 22px; font-size: 17px; font-weight: 700; letter-spacing: 0.02em;
+  }
+
+  /* ---- rangée mise en page ---- */
+  .layouts {
+    position: absolute; top: 84px; left: 400px; right: 400px; height: 46px;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .layouts .lbl { font-size: 15px; letter-spacing: 0.14em; color: var(--dim); margin-right: 8px; }
+  .chip {
+    padding: 9px 18px; border-radius: 999px; font-size: 16px; font-weight: 600;
+    background: var(--surface-2); color: var(--dim); border: 2px solid var(--line);
+  }
+  .chip.on { background: var(--indigo); color: #fff; border-color: var(--indigo); }
+
+  /* ---- panneau calques ---- */
+  .panel {
+    position: absolute; top: 152px; bottom: 40px; width: 280px; box-sizing: border-box;
+    background: var(--surface); border: 2px solid var(--line); border-radius: 14px;
+    padding: 22px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .panel.left { left: 34px; }
+  .panel.right { right: 34px; width: 300px; }
+  .p-title { font-size: 15px; font-weight: 700; letter-spacing: 0.16em; color: var(--dim); margin-bottom: 6px; }
+  .layer {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface-2); border-radius: 9px; padding: 11px 14px;
+    font-size: 16px; font-weight: 600;
+  }
+  .layer .ic {
+    width: 24px; height: 24px; border-radius: 6px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff; background: var(--indigo);
+  }
+  .layer .ic.img { background: #10b981; }
+  .layer .ic.price { background: var(--card-red); }
+  .layer em { margin-left: auto; font-style: normal; font-size: 13px; color: var(--dim); }
+
+  /* ---- panneau propriétés ---- */
+  .prop-group { display: flex; flex-direction: column; gap: 9px; }
+  .prop-lbl { font-size: 13px; letter-spacing: 0.13em; color: var(--dim); }
+  .swatch-row {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface-2); border-radius: 9px; padding: 10px 14px;
+  }
+  .swatch { width: 26px; height: 26px; border-radius: 7px; border: 2px solid rgba(255,255,255,0.25); }
+  .swatch-row code { font-family: "JetBrains Mono", monospace; font-size: 15px; color: var(--txt); }
+  .font-pick {
+    background: var(--surface-2); border-radius: 9px; padding: 11px 14px;
+    font-family: "Montserrat", sans-serif; font-size: 16px; font-weight: 700;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .font-pick span { color: var(--dim); font-size: 13px; font-family: "Jura", sans-serif; }
+  .prop-note { font-size: 14px; line-height: 1.55; color: var(--dim); }
+
+  /* ---- la carte promo (style prospectus retail lumineux) ---- */
+  .card-wrap {
+    position: absolute; top: 152px; bottom: 40px; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card {
+    width: 430px; height: 780px; border-radius: 6px; overflow: hidden;
+    display: flex; flex-direction: column;
+    background: var(--card-paper);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55), 0 0 0 2px rgba(255,255,255,0.07);
+  }
+  .c-head {
+    background: var(--card-navy); color: #fff; padding: 26px 28px 22px;
+    transform-origin: left center;
+  }
+  .c-chip {
+    display: inline-block; background: var(--card-red); color: #fff;
+    font-family: "Montserrat", sans-serif; font-size: 14px; font-weight: 800;
+    letter-spacing: 0.14em; padding: 7px 14px; border-radius: 3px;
+  }
+  .c-title {
+    font-family: "Montserrat", sans-serif; font-size: 38px; font-weight: 900;
+    line-height: 1.08; margin: 14px 0 8px; letter-spacing: -0.01em;
+  }
+  .c-brand {
+    font-family: "Montserrat", sans-serif; font-size: 17px; font-weight: 700;
+    letter-spacing: 0.22em; color: rgba(255,255,255,0.8);
+  }
+  .c-desc { font-family: "Montserrat", sans-serif; font-size: 15px; font-weight: 500; margin-top: 10px; color: rgba(255,255,255,0.9); }
+  .c-photo { position: relative; flex: 1; overflow: hidden; background: var(--card-paper); }
+  .c-photo .ph-in { position: absolute; inset: 0; }
+  .c-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .badge {
+    position: absolute; top: 20px; right: 20px; width: 128px; height: 128px; border-radius: 50%;
+    background: var(--card-red); color: #fff; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 10px 26px rgba(239,68,68,0.45);
+  }
+  .badge b { font-family: "Montserrat", sans-serif; font-size: 40px; font-weight: 900; line-height: 1; }
+  .badge span { font-family: "Montserrat", sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; margin-top: 4px; }
+  .c-price { background: var(--card-red); color: #fff; padding: 20px 28px 22px; overflow: hidden; }
+  .c-price .pr-in { display: flex; flex-direction: column; }
+  .pr-lbl { font-family: "Montserrat", sans-serif; font-size: 14px; font-weight: 800; letter-spacing: 0.2em; }
+  .pr-row { display: flex; align-items: baseline; gap: 18px; margin-top: 4px; }
+  .pr-old {
+    position: relative; font-family: "Montserrat", sans-serif; font-size: 20px; font-weight: 600;
+    color: rgba(255,255,255,0.85); font-variant-numeric: tabular-nums;
+  }
+  .pr-old i {
+    position: absolute; left: -4px; right: -4px; top: 52%; height: 3px;
+    background: #fff; transform-origin: left center; font-style: normal;
+  }
+  .pr-new {
+    font-family: "Montserrat", sans-serif; font-size: 50px; font-weight: 900; line-height: 1;
+    margin-left: auto; font-variant-numeric: tabular-nums; letter-spacing: -0.03em;
+  }
+  .pr-ref { font-family: "Montserrat", sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.75); }
+  .c-foot {
+    background: var(--card-navy); color: rgba(255,255,255,0.7);
+    font-family: "Montserrat", sans-serif; font-size: 12px; font-weight: 500;
+    text-align: center; padding: 10px;
+  }
+
+  /* ---- toast ---- */
+  .toast {
+    position: absolute; right: 40px; top: 86px; z-index: 5;
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface-2); border: 2px solid rgba(99,102,241,0.55); border-radius: 12px;
+    padding: 16px 22px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  }
+  .toast .ok {
+    width: 30px; height: 30px; border-radius: 50%; background: #10b981; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 900;
+  }
+  .toast b { font-size: 17px; }
+  .toast small { display: block; font-size: 15px; color: var(--dim); margin-top: 2px; }
+  .toast .n { color: var(--indigo); font-weight: 700; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div data-composition-id="root" data-start="0" data-duration="12" data-width="1600" data-height="1000">
+  <div class="stage">
+    <div class="grid-dots"></div>
+    <div class="glow" id="glow"></div>
+
+    <div class="toolbar" id="toolbar">
+      <span class="tb-dot" style="background:#ff5f57"></span>
+      <span class="tb-dot" style="background:#febc2e"></span>
+      <span class="tb-dot" style="background:#28c840"></span>
+      <span class="tb-sep"></span>
+      <span class="tb-title"><b>Création studio</b> — Créer une promo</span>
+      <span class="tb-sep"></span>
+      <span class="tb-file">Catalogue_Maison_2026</span>
+      <span class="tb-count">174 produits</span>
+      <span class="tb-save" id="save-btn">Enregistrer la fiche</span>
+    </div>
+
+    <div class="layouts" id="layouts">
+      <span class="lbl">MISE EN PAGE</span>
+      <span class="chip on">Classique</span>
+      <span class="chip">Photo plein cadre</span>
+      <span class="chip">Prix dominant</span>
+      <span class="chip">Minimal</span>
+    </div>
+
+    <div class="panel left" id="panel-layers">
+      <div class="p-title">CALQUES</div>
+      <div class="layer l-row"><span class="ic">Aa</span>Catégorie<em>texte</em></div>
+      <div class="layer l-row"><span class="ic">Aa</span>Nom du produit<em>texte</em></div>
+      <div class="layer l-row"><span class="ic">Aa</span>Marque<em>texte</em></div>
+      <div class="layer l-row"><span class="ic img">▣</span>Cadre photo<em>image</em></div>
+      <div class="layer l-row"><span class="ic price">%</span>Badge remise<em>badge</em></div>
+      <div class="layer l-row"><span class="ic price">€</span>Bandeau prix<em>prix</em></div>
+      <div class="layer l-row"><span class="ic">Aa</span>Pied de page<em>texte</em></div>
+    </div>
+
+    <div class="panel right" id="panel-props">
+      <div class="p-title">PROPRIÉTÉS</div>
+      <div class="prop-group">
+        <span class="prop-lbl">ACCENT (BADGE / PRIX)</span>
+        <div class="swatch-row"><span class="swatch" style="background:#ef4444"></span><code>#EF4444</code></div>
+      </div>
+      <div class="prop-group">
+        <span class="prop-lbl">FOND EN-TÊTE / PIED</span>
+        <div class="swatch-row"><span class="swatch" style="background:#111827"></span><code>#111827</code></div>
+      </div>
+      <div class="prop-group">
+        <span class="prop-lbl">POLICE TITRES</span>
+        <div class="font-pick">Montserrat<span>▾</span></div>
+      </div>
+      <div class="prop-note">Un habillage, tout le catalogue : chaque ligne du PIM devient une fiche prête à imprimer.</div>
+    </div>
+
+    <div class="card-wrap">
+      <div class="card" id="card">
+        <div class="c-head" id="c-head">
+          <span class="c-chip" id="c-chip">MOBILIER &amp; DÉCO</span>
+          <div class="c-title" id="c-title">Fauteuil ROSSA&nbsp;210</div>
+          <div class="c-brand" id="c-brand">MAISON NORDIK</div>
+          <div class="c-desc" id="c-desc">Velours terracotta · Pieds hêtre massif · Garantie 2 ans</div>
+        </div>
+        <div class="c-photo">
+          <div class="ph-in" id="ph-in"><img id="ph-img" src="chair.jpg" alt="" /></div>
+          <div class="badge" id="badge"><div id="badge-in" style="display:flex;flex-direction:column;align-items:center"><b>−24%</b><span>DE REMISE</span></div></div>
+        </div>
+        <div class="c-price" id="c-price" data-layout-allow-overflow>
+          <div class="pr-in" id="pr-in">
+            <span class="pr-lbl">PRIX PROMO</span>
+            <div class="pr-row">
+              <span class="pr-old">329,90&nbsp;€<i id="pr-strike"></i></span>
+              <span class="pr-new" id="pr-new">0,00&nbsp;€</span>
+            </div>
+            <span class="pr-ref">Réf. 210 — MAISON NORDIK</span>
+          </div>
+        </div>
+        <div class="c-foot" id="c-foot">Dans la limite des stocks disponibles</div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast">
+      <span class="ok">✓</span>
+      <div><b>Fiche enregistrée</b><small>appliquée à <span class="n" id="toast-n">0</span> produits du catalogue</small></div>
+    </div>
+  </div>
+
+  <style>
+    /* états initiaux gérés par fromTo (immediateRender) — rien à cacher ici */
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    /* ---------- build : le chrome de l'app entre ---------- */
+    tl.fromTo("#toolbar", { y: -70, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "expo.out" }, 0.15);
+    tl.fromTo("#panel-layers", { x: -60, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 0.3);
+    tl.fromTo("#panel-props", { x: 60, opacity: 0 }, { x: 0, opacity: 1, duration: 0.65, ease: "power2.out" }, 0.4);
+    tl.fromTo("#layouts", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "sine.out" }, 0.55);
+    tl.fromTo("#glow", { opacity: 0 }, { opacity: 1, duration: 1.2, ease: "sine.out" }, 0.2);
+
+    /* ---------- build : la fiche promo se compose ---------- */
+    tl.fromTo("#card", { scale: 0.94, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.55, ease: "sine.out" }, 0.9);
+    tl.fromTo("#c-head", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "expo.out" }, 1.25);
+    tl.fromTo("#c-chip", { x: -34, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "back.out(1.6)" }, 1.6);
+    tl.fromTo("#c-title", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 1.85);
+    tl.fromTo("#c-brand", { letterSpacing: "0.6em", opacity: 0 }, { letterSpacing: "0.22em", opacity: 1, duration: 0.7, ease: "power2.out" }, 2.1);
+    tl.fromTo("#c-desc", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "sine.out" }, 2.35);
+
+    /* calques : les rangées cochent au fil de la composition */
+    tl.fromTo(".l-row", { x: -26, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "power2.out", stagger: 0.09 }, 1.3);
+
+    /* photo : pop du cadre + Ken Burns sur l'image enfant (jamais 2 transforms sur le même élément) */
+    tl.fromTo("#ph-in", { scale: 0.72, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.4)" }, 2.75);
+    tl.fromTo("#ph-img", { scale: 1 }, { scale: 1.07, duration: 8.2, ease: "none" }, 2.75);
+
+    /* badge remise : pop élastique */
+    tl.fromTo("#badge", { scale: 0, rotation: -32, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 0.65, ease: "back.out(2.2)" }, 3.6);
+
+    /* bandeau prix : slide + prix barré + compteur */
+    tl.fromTo("#pr-in", { yPercent: 110 }, { yPercent: 0, duration: 0.6, ease: "expo.out" }, 4.3);
+    tl.fromTo("#c-foot", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "sine.out" }, 4.5);
+    tl.fromTo("#pr-strike", { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "power4.out" }, 4.95);
+    const price = { v: 0 };
+    tl.to(price, {
+      v: 249.9, duration: 1.0, ease: "power1.out",
+      onUpdate: () => {
+        document.getElementById("pr-new").innerHTML = price.v.toFixed(2).replace(".", ",") + "&nbsp;€";
+      },
+    }, 4.6);
+
+    /* ---------- resolve : enregistrement + application au catalogue ---------- */
+    tl.fromTo("#save-btn", { scale: 1 }, { scale: 0.92, duration: 0.12, ease: "power2.in", yoyo: true, repeat: 1 }, 6.3);
+    tl.fromTo("#toast", { y: -36, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "back.out(1.5)" }, 6.7);
+    const applied = { n: 0 };
+    tl.to(applied, {
+      n: 174, duration: 1.2, ease: "power2.out",
+      onUpdate: () => {
+        document.getElementById("toast-n").textContent = String(Math.round(applied.n));
+      },
+    }, 6.95);
+    tl.to("#toast", { y: -20, opacity: 0, duration: 0.35, ease: "power2.in" }, 9.8);
+    tl.set("#toast", { visibility: "hidden" }, 10.15);
+
+    /* ---------- breathe : la fiche respire ---------- */
+    tl.to("#badge-in", { scale: 1.07, duration: 0.8, ease: "sine.inOut", yoyo: true, repeat: 3 }, 7.6);
+    tl.to("#glow", { x: 90, y: 40, duration: 7, ease: "sine.inOut" }, 4.0);
+
+    /* ---------- fin : fondu pour une boucle propre ---------- */
+    tl.to(".stage", { opacity: 0, duration: 0.55, ease: "sine.inOut" }, 11.4);
+
+    window.__timelines["root"] = tl;
+  </script>
+</div>
+</body>
+</html>
