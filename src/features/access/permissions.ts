@@ -56,6 +56,8 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: 'priceWatch.view', module: 'Veille tarifaire', label: 'Voir la veille tarifaire' },
   { key: 'retailPromo.view', module: 'Création studio', label: 'Voir le module Création studio' },
   { key: 'retailPromo.edit', module: 'Création studio', label: 'Créer/éditer dans Création studio' },
+  { key: 'catalog.view', module: 'Catalogue studio', label: 'Voir le module Catalogue studio' },
+  { key: 'catalog.edit', module: 'Catalogue studio', label: 'Créer/éditer des catalogues' },
   { key: 'hyperframes.view', module: 'Animation', label: 'Voir le module Animation' },
   { key: 'chat.view', module: 'Chat IA', label: 'Voir le Chat IA' },
   { key: 'telegram.view', module: 'Telegram', label: 'Voir Telegram' },

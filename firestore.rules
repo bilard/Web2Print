@@ -209,6 +209,16 @@ service cloud.firestore {
       allow write:  if hasPermission('retailPromo.edit') && request.auth.uid == uid;
     }
 
+    // Catalogues multi-pages (module Catalogue studio).
+    match /users/{uid}/catalogs/{catalogId} {
+      allow read:   if isAuthenticated() && request.auth.uid == uid;
+      allow write:  if hasPermission('catalog.edit') && request.auth.uid == uid;
+    }
+    match /users/{uid}/catalogTemplates/{templateId} {
+      allow read:   if isAuthenticated() && request.auth.uid == uid;
+      allow write:  if hasPermission('catalog.edit') && request.auth.uid == uid;
+    }
+
     // Fiches promo enregistrées (méta + lignes payload), module Promo Retail.
     match /users/{uid}/promos/{promoId} {
       allow read:   if isAuthenticated() && request.auth.uid == uid;
