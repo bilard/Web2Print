@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey } from './promoTypes'
 import type { ConditionalRule } from '@/features/merge/conditionalRules'
@@ -47,7 +48,14 @@ const defaultState = {
   textOverride: {} as Record<number, Partial<Record<PromoColorKey, string>>>,
 }
 
-export const useRetailPromoStore = create<RetailPromoState>((set) => ({
+// sessionStorage tolérant au quota : un catalogue trop gros ne doit jamais casser l'édition.
+const safeSessionStorage = {
+  getItem: (k: string) => sessionStorage.getItem(k),
+  setItem: (k: string, v: string) => { try { sessionStorage.setItem(k, v) } catch { /* quota dépassé : on continue sans persistance */ } },
+  removeItem: (k: string) => sessionStorage.removeItem(k),
+}
+
+export const useRetailPromoStore = create<RetailPromoState>()(persist((set) => ({
   ...defaultState,
   setStep: (step) => set({ step }),
   setSource: (sourceRef, rawColumns, rawRows) => set({ sourceRef, rawColumns, rawRows }),
@@ -79,4 +87,15 @@ export const useRetailPromoStore = create<RetailPromoState>((set) => ({
     config: { ...s.config, rules: { ...s.config.rules, [id]: rules } },
   })),
   reset: () => set(defaultState),
+}), {
+  // La session de travail survit au rechargement de l'onglet (⌘R après deploy,
+  // refresh accidentel) — sinon le wizard repart de zéro et donne l'impression
+  // que la fiche n'a pas été sauvegardée. sessionStorage : propre à l'onglet.
+  name: 'retail-promo-session',
+  storage: createJSONStorage(() => safeSessionStorage),
+  partialize: (s) => ({
+    step: s.step, rawColumns: s.rawColumns, rawRows: s.rawRows, fieldMap: s.fieldMap,
+    sourceRef: s.sourceRef, config: s.config, currentIndex: s.currentIndex,
+    imgOverride: s.imgOverride, textOverride: s.textOverride,
+  }),
 }))
