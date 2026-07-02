@@ -14,7 +14,9 @@ export function ProductGridPage({ ctx, grid, slots }: Props) {
       {slots.map((slot) => {
         const row = ctx.rowsById.get(slot.rowId)
         if (!row) return <div key={slot.rowId} className="cat-cell" />
-        return <ProductCell key={slot.rowId} fields={extractPromoFields(row, ctx.columns, ctx.fieldMap)} featured={slot.featured} />
+        // Kicker = sous-famille (dernier niveau du path, hors univers seul).
+        const kicker = slot.path.length > 1 ? slot.path[slot.path.length - 1] : undefined
+        return <ProductCell key={slot.rowId} fields={extractPromoFields(row, ctx.columns, ctx.fieldMap)} featured={slot.featured} kicker={kicker} />
       })}
     </div>
   )

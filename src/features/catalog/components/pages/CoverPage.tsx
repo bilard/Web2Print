@@ -11,6 +11,7 @@ export function CoverPage({ ctx, variant }: Props) {
   if (variant === 'back') {
     return (
       <div className="cat-back" style={style}>
+        <div className="cat-back-rule" />
         <div className="cat-back-title">{plan.backCover.title}</div>
         {plan.backCover.text && <div className="cat-back-text">{plan.backCover.text}</div>}
       </div>
@@ -18,9 +19,12 @@ export function CoverPage({ ctx, variant }: Props) {
   }
   return (
     <div className="cat-cover" style={style}>
-      {plan.cover.baseline && <div className="cat-cover-band">{plan.cover.baseline}</div>}
-      <h1 className="cat-cover-title">{plan.cover.title}</h1>
-      {plan.cover.subtitle && <div className="cat-cover-sub">{plan.cover.subtitle}</div>}
+      <div className="cat-cover-panel" style={img ? undefined : { background: 'none' }}>
+        {plan.cover.baseline && <div className="cat-cover-band">{plan.cover.baseline}</div>}
+        <h1 className="cat-cover-title">{plan.cover.title}</h1>
+        {plan.cover.subtitle && <div className="cat-cover-sub">{plan.cover.subtitle}</div>}
+        <div className="cat-cover-rule" />
+      </div>
     </div>
   )
 }

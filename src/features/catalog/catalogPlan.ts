@@ -45,7 +45,7 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
     },
     sections: {
       type: 'array',
-      description: 'densité de grille par nœud (nodeId EXACT de la liste fournie) : peu de produits ou produits premium → 1-2/page ; gamme large → 6-8/page',
+      description: "densité de grille : seul productsPerPage des nœuds de NIVEAU 1 (univers) compte — le flux est continu, les sous-familles s'enchaînent sans page à moitié vide. Choisis dense : 4/page standard, 6-8/page pour les grandes gammes ; 1-2/page UNIQUEMENT pour un univers premium très court. featuredIds se règle sur n'importe quel nœud.",
       items: {
         type: 'object',
         properties: {
@@ -169,7 +169,7 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
       `Nom du catalogue : « ${ctx.catalogName} ».\n` +
       `Structure (nodeId entre crochets — à réutiliser tel quel) :\n${treeDesc}\n\n` +
       `Produis un plan complet : thème (couleurs hex cohérentes avec la demande, polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')}), ` +
-      `une section par nodeId avec la densité adaptée (productsPerPage parmi ${CATALOG_GRIDS.join('/')}), 0-2 produits vedette par section ` +
+      `une section par nodeId — la densité (productsPerPage parmi ${CATALOG_GRIDS.join('/')}) ne compte que sur les nœuds de NIVEAU 1 (flux continu : les produits des sous-familles remplissent les pages sans vide) : choisis DENSE (4 à 8/page), jamais 1-2 sauf univers premium très court. 0-2 produits vedette par section ` +
       `choisis parmi les exemples (renvoie l'id AVANT le tiret), textes de couverture et 4e de couverture en FRANÇAIS, ` +
       `et un imagePrompt de couverture en anglais (photo réaliste, sans texte).\n\nDemande : ${brief}`,
     schema: PlanSchema,

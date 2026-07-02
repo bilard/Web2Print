@@ -54,7 +54,12 @@ export interface CatalogPlan {
 }
 
 export interface TocEntry { nodeId: string; label: string; level: 1 | 2 | 3; pageNumber: number }
-export interface ProductSlot { rowId: string; featured: boolean }
+export interface ProductSlot {
+  rowId: string
+  featured: boolean
+  /** Chemin taxonomique du produit (univers › famille › sous-famille) — affiché en kicker sur la fiche. */
+  path: string[]
+}
 
 export type CatalogPageDescriptor =
   | { kind: 'cover'; pageNumber: number }

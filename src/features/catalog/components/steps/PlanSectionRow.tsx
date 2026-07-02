@@ -1,6 +1,7 @@
 // src/features/catalog/components/steps/PlanSectionRow.tsx
-// Une ligne de section du plan : libellé + compteur produits, densité de grille,
-// et jusqu'à 3 vedettes cliquables (pleine page) parmi les premiers produits du nœud.
+// Une ligne de section du plan : libellé + compteur produits, densité de grille
+// (UNIVERS seulement — le flux continu applique la grille de l'univers à tout
+// son contenu), et jusqu'à 3 vedettes cliquables (pleine page) par nœud.
 import { CATALOG_GRIDS, type CatalogGrid, type CatalogSectionPlan, type CatalogTreeNode } from '../../catalogTypes'
 
 interface PlanSectionRowProps {
@@ -20,10 +21,12 @@ export function PlanSectionRow({ node, section, sampleFields, onGrid, onToggleFe
         <div className="text-xs text-muted-foreground">{node.productIds.length} produit{node.productIds.length > 1 ? 's' : ''}</div>
       </div>
 
-      <select value={section.productsPerPage} onChange={(e) => onGrid(Number(e.target.value) as CatalogGrid)}
-        className="w-24 px-2 py-1.5 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600 shrink-0">
-        {CATALOG_GRIDS.map((g) => <option key={g} value={g}>{g}/page</option>)}
-      </select>
+      {node.level === 1 && (
+        <select value={section.productsPerPage} onChange={(e) => onGrid(Number(e.target.value) as CatalogGrid)}
+          className="w-24 px-2 py-1.5 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600 shrink-0">
+          {CATALOG_GRIDS.map((g) => <option key={g} value={g}>{g}/page</option>)}
+        </select>
+      )}
 
       <div className="flex items-center gap-1.5 shrink-0">
         {sampleFields.map((f) => {
