@@ -642,6 +642,11 @@
   .anm-rv .rnew{font-weight:800;font-size:22px;color:#0b0b12;background:linear-gradient(135deg,#fde047,#facc15);padding:3px 11px;border-radius:8px;box-shadow:0 0 18px -3px rgba(250,204,21,.8)}
   .anm-rv .rnew small{font-size:11px;vertical-align:super;margin-left:1px}
   .anm-rv .rpromo{position:absolute;top:13px;left:13px;font-weight:800;font-size:20px;color:#fff;background:linear-gradient(135deg,#e879f9,#a855f7);padding:6px 14px;border-radius:10px;box-shadow:0 0 22px -2px rgba(232,121,249,.9);transform:rotate(-5deg)}
+  /* Claim « OFFRE FLASH » : remplit le tiers gauche du résultat (style signage néon) */
+  .anm-rv .rflash{position:absolute;left:15px;top:18%;z-index:1;text-transform:uppercase;line-height:1;pointer-events:none;transform:skewX(-3deg)}
+  .anm-rv .rflash i{font-style:normal;font-weight:800;font-size:26px;letter-spacing:.08em;color:transparent;-webkit-text-stroke:1.3px rgba(232,121,249,.95);text-shadow:0 0 22px rgba(232,121,249,.5)}
+  .anm-rv .rflash b{margin-left:7px;font-weight:900;font-size:26px;letter-spacing:.05em;background:linear-gradient(100deg,#fde047,#fb923c 55%,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px rgba(250,204,21,.55))}
+  .anm-rv .rflash em{display:block;width:max-content;margin-top:8px;font-style:normal;font-family:var(--mono);font-size:8px;letter-spacing:.13em;color:#e9d5ff;background:rgba(168,85,247,.22);border:1px solid rgba(232,121,249,.4);border-radius:100px;padding:4px 9px}
   .anm-rv .rgen{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:10px;color:#f5d0fe;background:rgba(168,85,247,.25);border:1px solid rgba(232,121,249,.5);border-radius:20px;padding:4px 11px}
   .anm-rv .rtitle{font-weight:800;font-size:21px;letter-spacing:.04em;color:#67e8f9;text-shadow:0 0 14px rgba(34,211,238,.9);line-height:1.1}
   .anm-rv .rtitle small{display:block;font-size:10px;font-weight:600;color:#f5d0fe;letter-spacing:.05em;text-shadow:0 0 10px rgba(232,121,249,.8);margin-top:3px}
@@ -1158,6 +1163,8 @@
   #animation .scene-visual.is-in .anm-rv .rpictos span:nth-child(2){animation-delay:.15s}
   #animation .scene-visual.is-in .anm-rv .rpictos span:nth-child(3){animation-delay:.3s}
   #animation .scene-visual.is-in .anm-rv .rold{animation:anmOld 5s ease-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rflash{animation:anmFlash 5s cubic-bezier(.2,.9,.3,1.4) infinite}
+  @keyframes anmFlash{0%,10%{opacity:0;transform:skewX(-8deg) translateX(-46px)}17%{opacity:1;transform:skewX(-3deg) translateX(4px)}21%{transform:skewX(-3deg)}48%{transform:skewX(-3deg) scale(1.05)}60%{transform:skewX(-3deg) scale(1)}78%{transform:skewX(-3deg) scale(1.05)}94%{opacity:1;transform:skewX(-3deg) scale(1)}100%{opacity:0;transform:skewX(-3deg) scale(.95)}}
   #animation .scene-visual.is-in .anm-rv .rnew{animation:anmPrice 5s cubic-bezier(.2,.9,.3,1.4) infinite}
   #animation .scene-visual.is-in .anm-rv .pp{animation:anmBlink 1s steps(1) infinite}
   @keyframes anmplay{0%{width:3%}100%{width:100%}}
@@ -2762,7 +2769,7 @@
                 <svg class="drill vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg>
                 <span class="rsparks"><i></i><i></i><i></i><i></i><i></i></span>
                 <span class="rshine"></span>
-                <span class="rpromo">−30 %</span>
+                <span class="rpromo">−30 %</span><span class="rflash" aria-hidden="true"><i>Flash</i><b>sale</b><em>This week only</em></span>
                 <span class="rgen">✦ generated · 16:9 · 10 s</span>
                 <div class="rinfo">
                   <span class="rtitle">18V DRILL<small>Brushless · 2 batteries · 13 mm chuck</small></span>
