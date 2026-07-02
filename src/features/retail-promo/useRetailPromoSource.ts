@@ -1,10 +1,7 @@
 import { useState, useCallback } from 'react'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import { loadPimMergeData, makePimSourceRef } from '@/features/merge/pimSource'
-import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
-import type { ExcelSheet } from '@/features/excel/types'
+import { loadExcelMergeData, makeExcelSourceRef } from '@/features/merge/excelSource'
 
 interface SourceResult {
   sourceRef: DataSourceRef
@@ -40,26 +37,8 @@ export function useRetailPromoSource() {
     setLoading(true)
     setError(null)
     try {
-      const metaSnap = await getDoc(doc(db, 'excel_data', excelDocId))
-      if (!metaSnap.exists()) throw new Error('Dataset introuvable')
-      const meta = metaSnap.data()
-      let sheets: ExcelSheet[]
-      if (typeof meta.sheets === 'string') {
-        sheets = JSON.parse(meta.sheets) as ExcelSheet[]
-      } else {
-        const payloadSnap = await getDoc(doc(db, 'excel_data_payload', excelDocId))
-        if (!payloadSnap.exists()) throw new Error('Dataset vide ou corrompu')
-        sheets = JSON.parse((payloadSnap.data() as { json: string }).json) as ExcelSheet[]
-      }
-      const sheet = sheets[sheetIndex] ?? sheets[0]
-      const columns: MergeColumn[] = sheet.columns.map((c) => ({
-        key: c.key,
-        label: c.label,
-        fieldType: c.fieldType,
-        aliases: ENRICHMENT_ALIASES[c.key],
-      }))
-      const rows: MergeRow[] = sheet.rows.map((r) => ({ ...r }))
-      const sourceRef: DataSourceRef = { excelDocId, sheetIndex, fileName }
+      const { columns, rows } = await loadExcelMergeData(excelDocId, sheetIndex)
+      const sourceRef = makeExcelSourceRef(excelDocId, sheetIndex, fileName)
       return { sourceRef, columns, rows }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)

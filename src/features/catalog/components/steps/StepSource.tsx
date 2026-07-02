@@ -1,12 +1,14 @@
 // src/features/catalog/components/steps/StepSource.tsx
-// Étape 1 du wizard « Catalogue studio » : connecter un projet PIM comme source,
-// puis choisir les produits à inclure dans le catalogue.
+// Étape 1 du wizard « Catalogue studio » : connecter un projet PIM ou un dataset
+// Excel legacy comme source, puis choisir les produits à inclure dans le catalogue.
 import { useMemo, useState } from 'react'
-import { Loader2, Package, Search, ArrowRight } from 'lucide-react'
+import { Search, ArrowRight } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import type { MergeRow } from '@/stores/merge.store'
 import { getRowValue } from '@/features/merge/mergeEngine'
+import type { SavedDataset } from '@/features/merge/excelSource'
 import { useCatalogSource } from '../../useCatalogSource'
+import { SourceGroupList } from './SourceGroupList'
 
 const MAX_VISIBLE_ROWS = 200
 
@@ -22,7 +24,7 @@ function ProductRow({ name, checked, onToggle }: ProductRowProps) {
 }
 
 export function StepSource() {
-  const { projects, loadingProjects, connecting, connect } = useCatalogSource()
+  const { projects, datasets, loadingProjects, connecting, connect, connectExcelDataset } = useCatalogSource()
   const rawColumns = useCatalogStore((s) => s.rawColumns)
   const rawRows = useCatalogStore((s) => s.rawRows)
   const selectedRowIds = useCatalogStore((s) => s.selectedRowIds)
@@ -30,7 +32,7 @@ export function StepSource() {
   const setSelectedRowIds = useCatalogStore((s) => s.setSelectedRowIds)
   const setStep = useCatalogStore((s) => s.setStep)
   const [search, setSearch] = useState('')
-  const [pendingProjectId, setPendingProjectId] = useState<string | null>(null)
+  const [pendingId, setPendingId] = useState<string | null>(null)
 
   const nameOf = (row: MergeRow) => {
     const v = fieldMap.name ? getRowValue(row, fieldMap.name, rawColumns) : undefined
@@ -59,34 +61,38 @@ export function StepSource() {
     const filteredIds = new Set(filtered.map((r) => r._id))
     setSelectedRowIds(selectedRowIds.filter((id) => !filteredIds.has(id)))
   }
-  const handleConnect = async (projectId: string, projectName: string) => {
-    setPendingProjectId(projectId)
+  const handleConnectPim = async (projectId: string, projectName: string) => {
+    setPendingId(projectId)
     await connect(projectId, projectName)
-    setPendingProjectId(null)
+    setPendingId(null)
+  }
+  const handleConnectExcel = async (ds: SavedDataset) => {
+    setPendingId(ds.docId)
+    await connectExcelDataset(ds)
+    setPendingId(null)
   }
 
   return (
     <div className="h-full flex">
-      <div className="w-80 shrink-0 border-r border-border bg-surface overflow-y-auto p-4 space-y-2">
-        <h2 className="text-sm font-semibold text-white mb-2">Projets PIM</h2>
-        {loadingProjects ? (
-          <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-indigo-400 animate-spin" /></div>
-        ) : projects.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4">Aucun projet PIM disponible. Créez-en un dans le module PIM.</p>
-        ) : (
-          projects.map((p) => (
-            <button key={p.id} disabled={connecting} onClick={() => void handleConnect(p.id, p.name)}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-surface-2 hover:bg-indigo-600/20 disabled:opacity-50 text-left transition-colors">
-              {connecting && pendingProjectId === p.id
-                ? <Loader2 className="w-4 h-4 text-indigo-400 animate-spin shrink-0" />
-                : <Package className="w-4 h-4 text-indigo-400 shrink-0" />}
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-white truncate">{p.name}</div>
-                {p.path.length > 0 && <div className="text-xs text-muted-foreground truncate">{p.path.join(' / ')}</div>}
-              </div>
-            </button>
-          ))
-        )}
+      <div className="w-80 shrink-0 border-r border-border bg-surface overflow-y-auto p-4 space-y-6">
+        <SourceGroupList
+          title="Projets PIM"
+          items={projects.map((p) => ({ id: p.id, label: p.name, sublabel: p.path.join(' / ') || undefined }))}
+          emptyText="Aucun projet PIM disponible. Créez-en un dans le module PIM."
+          loading={loadingProjects}
+          connecting={connecting}
+          pendingId={pendingId}
+          onSelect={(id) => { const p = projects.find((x) => x.id === id); if (p) void handleConnectPim(p.id, p.name) }}
+        />
+        <SourceGroupList
+          title="Datasets Excel"
+          items={datasets.map((d) => ({ id: d.docId, label: d.fileName, sublabel: `${d.totalRows} lignes` }))}
+          emptyText="Aucun dataset Excel importé."
+          loading={loadingProjects}
+          connecting={connecting}
+          pendingId={pendingId}
+          onSelect={(id) => { const d = datasets.find((x) => x.docId === id); if (d) void handleConnectExcel(d) }}
+        />
       </div>
 
       {rawRows.length > 0 ? (
@@ -120,7 +126,7 @@ export function StepSource() {
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-          Connectez un projet PIM pour charger ses produits.
+          Connectez un projet PIM ou un dataset Excel pour charger ses produits.
         </div>
       )}
     </div>

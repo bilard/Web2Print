@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { loadCatalog } from '@/features/catalog/catalogsApi'
 import { isPimSource, loadPimMergeData, pimProjectIdFromSource } from '@/features/merge/pimSource'
+import { loadExcelMergeData } from '@/features/merge/excelSource'
 import { useCatalogAutosave } from '@/features/catalog/useCatalogAutosave'
 import { CatalogStepsNav } from '@/features/catalog/components/CatalogStepsNav'
 
@@ -38,12 +39,16 @@ export default function CatalogBuilderPage() {
         s.hydrate(doc, id)
       }
       const st = useCatalogStore.getState()
-      if (st.sourceRef && st.rawRows.length === 0 && isPimSource(st.sourceRef)) {
+      if (st.sourceRef && st.rawRows.length === 0) {
         try {
-          const { columns, rows } = await loadPimMergeData(pimProjectIdFromSource(st.sourceRef))
+          const { columns, rows } = isPimSource(st.sourceRef)
+            ? await loadPimMergeData(pimProjectIdFromSource(st.sourceRef))
+            : await loadExcelMergeData(st.sourceRef.excelDocId, st.sourceRef.sheetIndex)
           if (cancelled) return
+          // Ne PAS retoucher selectedRowIds/fieldMap/levelKeys : déjà restaurés par
+          // hydrate() depuis le catalogue enregistré (contrairement au 1er connect).
           st.setSource(st.sourceRef, columns, rows)
-        } catch (e) { toast.error(`Source PIM indisponible : ${String((e as Error).message)}`) }
+        } catch (e) { toast.error(`Source indisponible : ${String((e as Error).message)}`) }
       }
       if (cancelled) return
       setReady(true)

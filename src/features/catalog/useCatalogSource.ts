@@ -1,38 +1,64 @@
 // src/features/catalog/useCatalogSource.ts
-// Connexion de la source PIM : charge lignes+colonnes, auto-mappe champs fiche
-// et niveaux taxonomiques, sélectionne tout par défaut.
+// Connexion de la source (projet PIM ou dataset Excel legacy) : charge lignes+colonnes,
+// auto-mappe champs fiche et niveaux taxonomiques, sélectionne tout par défaut.
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { auth } from '@/lib/firebase/config'
 import { listPimProjects, loadPimMergeData, makePimSourceRef, type PimProjectSummary } from '@/features/merge/pimSource'
+import { listExcelDatasets, loadExcelMergeData, makeExcelSourceRef, type SavedDataset } from '@/features/merge/excelSource'
 import { defaultPromoFieldMap } from '@/features/retail-promo/promoMapping'
+import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import { guessLevelKeys } from './catalogTree'
 import { useCatalogStore } from '@/stores/catalog.store'
 
+/** Post-connect commun : source + sélection totale + auto-mapping + toast. */
+function applyConnectedSource(sourceRef: DataSourceRef, columns: MergeColumn[], rows: MergeRow[]) {
+  const s = useCatalogStore.getState()
+  s.setSource(sourceRef, columns, rows)
+  s.setSelectedRowIds(rows.map((r) => r._id))
+  s.setFieldMap(defaultPromoFieldMap(columns))
+  s.setLevelKeys(guessLevelKeys(columns))
+  toast.success(`${rows.length} produits chargés`)
+}
+
 export function useCatalogSource() {
   const [projects, setProjects] = useState<PimProjectSummary[]>([])
+  const [datasets, setDatasets] = useState<SavedDataset[]>([])
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [connecting, setConnecting] = useState(false)
 
   useEffect(() => {
     const uid = auth.currentUser?.uid
     if (!uid) { setLoadingProjects(false); return }
-    listPimProjects(uid).then(setProjects).catch((e) => toast.error(String(e?.message ?? e))).finally(() => setLoadingProjects(false))
+    // allSettled : une panne isolée sur les datasets Excel (ou l'inverse) ne doit
+    // pas vider la liste des projets PIM qui, elle, a réussi.
+    Promise.allSettled([listPimProjects(uid), listExcelDatasets(uid)])
+      .then(([proj, ds]) => {
+        if (proj.status === 'fulfilled') setProjects(proj.value)
+        else toast.error(String(proj.reason?.message ?? proj.reason))
+        if (ds.status === 'fulfilled') setDatasets(ds.value)
+        else toast.error(String(ds.reason?.message ?? ds.reason))
+      })
+      .finally(() => setLoadingProjects(false))
   }, [])
 
   const connect = async (projectId: string, projectName: string) => {
     setConnecting(true)
     try {
       const { columns, rows } = await loadPimMergeData(projectId)
-      const s = useCatalogStore.getState()
-      s.setSource(makePimSourceRef(projectId, projectName), columns, rows)
-      s.setSelectedRowIds(rows.map((r) => r._id))
-      s.setFieldMap(defaultPromoFieldMap(columns))
-      s.setLevelKeys(guessLevelKeys(columns))
-      toast.success(`${rows.length} produits chargés`)
+      applyConnectedSource(makePimSourceRef(projectId, projectName), columns, rows)
     } catch (e) { toast.error(String((e as Error).message)) }
     finally { setConnecting(false) }
   }
 
-  return { projects, loadingProjects, connecting, connect }
+  const connectExcelDataset = async (ds: SavedDataset) => {
+    setConnecting(true)
+    try {
+      const { columns, rows } = await loadExcelMergeData(ds.docId, 0)
+      applyConnectedSource(makeExcelSourceRef(ds.docId, 0, ds.fileName), columns, rows)
+    } catch (e) { toast.error(String((e as Error).message)) }
+    finally { setConnecting(false) }
+  }
+
+  return { projects, datasets, loadingProjects, connecting, connect, connectExcelDataset }
 }
