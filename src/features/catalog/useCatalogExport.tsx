@@ -14,6 +14,10 @@ import { drawCropMarks } from './cropMarks'
 
 export interface CatalogExportOptions { mode: 'screen' | 'print'; dpi: 150 | 300; bleedMm: number; fileName: string }
 
+/** Hex strict `#rrggbb` : repli '#ffffff' si le thème contient une valeur non-hex (ex. 'white'). */
+const HEX_RE = /^#[0-9a-f]{6}$/i
+function safeHex(hex: string): string { return HEX_RE.test(hex) ? hex : '#ffffff' }
+
 const ASSET_WAIT_TIMEOUT_MS = 15_000
 
 async function waitAssets(host: HTMLElement): Promise<void> {
@@ -51,12 +55,17 @@ export function useCatalogExport() {
       const pdf = new jsPDF({ orientation: w + 2 * b >= h + 2 * b ? 'landscape' : 'portrait', unit: 'mm', format: [w + 2 * b, h + 2 * b] })
       for (let i = 0; i < pages.length; i++) {
         if (i > 0) pdf.addPage([w + 2 * b, h + 2 * b], w + 2 * b >= h + 2 * b ? 'landscape' : 'portrait')
-        if (b > 0) { pdf.setFillColor(ctx.plan.theme.pageBg); pdf.rect(0, 0, w + 2 * b, h + 2 * b, 'F') }
+        if (b > 0) {
+          // Un hex de thème invalide (ex. IA/import ayant glissé 'white') ne doit
+          // jamais faire planter tout l'export : repli '#ffffff' + garde try/catch.
+          try { pdf.setFillColor(safeHex(ctx.plan.theme.pageBg)); pdf.rect(0, 0, w + 2 * b, h + 2 * b, 'F') }
+          catch { try { pdf.setFillColor('#ffffff'); pdf.rect(0, 0, w + 2 * b, h + 2 * b, 'F') } catch { /* fond non dessiné, export non bloqué */ } }
+        }
         try {
           flushSync(() => root.render(<CatalogPageView page={pages[i]} ctx={ctx} />))
           await waitAssets(host)
           const el = host.firstElementChild as HTMLElement
-          const canvas = await html2canvas(el, { scale, useCORS: true, logging: false, backgroundColor: ctx.plan.theme.pageBg })
+          const canvas = await html2canvas(el, { scale, useCORS: true, logging: false, backgroundColor: safeHex(ctx.plan.theme.pageBg) })
           pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', b, b, w, h)
         } catch (e) {
           failed.push(pages[i].pageNumber)

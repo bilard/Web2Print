@@ -76,6 +76,27 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
 
 const DEFAULT_GRID: CatalogGrid = 4
 
+/** Thème neutre de repli — aussi source des fallbacks hex de `sanitizeTheme`. */
+const DEFAULT_THEME = {
+  accent: '#6366f1', pageBg: '#ffffff', ink: '#111827',
+  headerBg: '#111827', headerInk: '#ffffff', fontHeading: 'Archivo', fontBody: 'Inter',
+} as const
+
+const HEX_RE = /^#[0-9a-f]{6}$/i
+
+/** Valide chaque couleur du thème IA (hex strict `#rrggbb`) ; invalide → repli thème par défaut. */
+function sanitizeTheme(theme: RawCatalogPlan['theme']): RawCatalogPlan['theme'] {
+  const hex = (v: string, fallback: string) => (HEX_RE.test(v) ? v : fallback)
+  return {
+    ...theme,
+    accent: hex(theme.accent, DEFAULT_THEME.accent),
+    pageBg: hex(theme.pageBg, DEFAULT_THEME.pageBg),
+    ink: hex(theme.ink, DEFAULT_THEME.ink),
+    headerBg: hex(theme.headerBg, DEFAULT_THEME.headerBg),
+    headerInk: hex(theme.headerInk, DEFAULT_THEME.headerInk),
+  }
+}
+
 function clampGrid(n: number): CatalogGrid {
   let best: CatalogGrid = DEFAULT_GRID
   let diff = Infinity
@@ -93,10 +114,7 @@ function nodesWithProducts(tree: CatalogTreeNode[]): CatalogTreeNode[] {
 /** Plan neutre déterministe : repli si l'IA échoue, base avant première génération. */
 export function defaultCatalogPlan(tree: CatalogTreeNode[], catalogName: string): CatalogPlan {
   return {
-    theme: {
-      accent: '#6366f1', pageBg: '#ffffff', ink: '#111827',
-      headerBg: '#111827', headerInk: '#ffffff', fontHeading: 'Archivo', fontBody: 'Inter',
-    },
+    theme: { ...DEFAULT_THEME },
     sections: nodesWithProducts(tree).map((n) => ({ nodeId: n.id, productsPerPage: DEFAULT_GRID, featuredIds: [] })),
     cover: { title: catalogName || 'Catalogue', subtitle: '', baseline: '', imagePrompt: '' },
     backCover: { title: catalogName || 'Catalogue', text: '' },
@@ -120,7 +138,7 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
     if (!covered.has(n.id)) sections.push({ nodeId: n.id, productsPerPage: DEFAULT_GRID, featuredIds: [] })
   }
   return {
-    theme: raw.theme,
+    theme: sanitizeTheme(raw.theme),
     sections,
     cover: { title: raw.cover.title || catalogName, subtitle: raw.cover.subtitle ?? '', baseline: raw.cover.baseline ?? '', imagePrompt: raw.cover.imagePrompt },
     backCover: raw.backCover,

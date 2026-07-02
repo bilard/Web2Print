@@ -45,4 +45,10 @@ describe('sanitizeCatalogPlan', () => {
     expect(plan.cover.subtitle).toBe('')
     expect(plan.cover.baseline).toBe('')
   })
+  it('remplace une couleur de thème non-hex par la valeur par défaut (ex. pageBg: "white")', () => {
+    const plan = sanitizeCatalogPlan({ ...raw, theme: { ...raw.theme, pageBg: 'white' } }, tree, 'X')
+    expect(plan.theme.pageBg).toBe('#ffffff')
+    // Les couleurs hex valides restent inchangées.
+    expect(plan.theme.accent).toBe('#e11d48')
+  })
 })
