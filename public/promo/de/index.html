@@ -107,6 +107,20 @@
 
   .wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 40px}
   @media(max-width:720px){.wrap{padding:0 20px}}
+  /* Grands écrans : le contenu occupe la largeur de la page */
+  @media(min-width:1700px){
+    :root{--maxw:min(94vw,2200px)}
+    .wrap{padding:0 56px}
+    .scene{gap:clamp(64px,6vw,140px)}
+    h1.hero-title{font-size:clamp(92px,4.8vw,116px)}
+    .hero-sub{font-size:clamp(20px,1vw,24px)}
+    .scene-text h2{font-size:clamp(60px,3.4vw,78px)}
+    .scene-text p{font-size:19px;max-width:52ch}
+    .scene-list li{font-size:16.5px}
+    .shead{max-width:70ch}
+    .shead h2{font-size:clamp(62px,3.4vw,80px)}
+    .cta p{font-size:20px;max-width:56ch}
+  }
   a{color:inherit;text-decoration:none}
   .mono{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
   .grad-text{background:var(--grad);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 7s linear infinite}
