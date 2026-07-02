@@ -39,7 +39,7 @@ export function RetailPromoPage() {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Indicateur d'étapes */}
-      <div className="flex items-center gap-0 px-6 pt-6 pb-4 border-b border-white/5">
+      <div className="flex items-center gap-0 px-6 pt-3 pb-3 border-b border-white/5">
         {STEPS.map((s, i) => (
           <div key={s} className="flex items-center gap-0">
             <div className="flex items-center gap-2">
@@ -64,7 +64,7 @@ export function RetailPromoPage() {
       </div>
 
       {/* Contenu de l'étape courante */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="flex-1 overflow-y-auto px-6 py-4">
         {step === 'source' && <StepSource />}
         {step === 'mapping' && <StepMapping />}
         {step === 'template' && <StepRender />}

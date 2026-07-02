@@ -82,7 +82,7 @@ export function PromoTemplateEditor() {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-surface px-4 py-3">
+    <div className="flex flex-col gap-3 px-4 py-3">
       {/* Prompt IA */}
       <div className="flex items-center gap-2">
         <input

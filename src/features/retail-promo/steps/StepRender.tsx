@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import JSZip from 'jszip'
 import { httpsCallable } from 'firebase/functions'
-import { Download, Package, ChevronLeft, ChevronRight, Loader2, FileCode, Save } from 'lucide-react'
+import { Download, Package, ChevronLeft, ChevronRight, ChevronDown, Loader2, FileCode, Save, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { functions } from '@/lib/firebase/config'
 import { getRowValue } from '@/features/merge/mergeEngine'
@@ -213,29 +213,35 @@ export function StepRender() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Aperçu & export</h2>
-        <button onClick={() => setStep('mapping')} className="text-sm text-white/50 hover:text-white">← Mappage</button>
-      </div>
-
-      {/* Panneau d'édition du template (IA / champs / modèles) */}
-      <PromoTemplateEditor />
-
-      {/* Enregistrer la fiche (réutilisable depuis « Mes promos ») */}
-      <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-surface px-4 py-2.5">
-        <span className="text-xs font-semibold uppercase tracking-wide text-white/40">Fiche</span>
+    <div className="flex flex-col gap-3">
+      {/* Titre + enregistrement de la fiche sur une seule ligne */}
+      <div className="flex items-center gap-2">
+        <h2 className="shrink-0 text-lg font-semibold text-white">Aperçu & export</h2>
+        <span className="mx-1 h-5 w-px shrink-0 bg-white/10" />
         <input value={ficheName} onChange={(e) => setFicheName(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void saveFiche() }}
           placeholder={`Nom de la fiche… (déf. ${cards[safe]?.name?.slice(0, 24) || 'produit'})`}
-          className="w-64 rounded-lg border border-white/10 bg-well px-2.5 py-1.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#6366f1]" />
+          className="w-56 rounded-lg border border-white/10 bg-well px-2.5 py-1.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#6366f1]" />
         <button onClick={() => void saveFiche()} disabled={savingFiche}
-          className="flex items-center gap-2 rounded-lg bg-[#6366f1] px-3 py-1.5 text-sm font-medium text-[#fff] hover:bg-[#5457e5] disabled:opacity-40">
+          className="flex shrink-0 items-center gap-2 rounded-lg bg-[#6366f1] px-3 py-1.5 text-sm font-medium text-[#fff] hover:bg-[#5457e5] disabled:opacity-40">
           {savingFiche ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer la fiche
         </button>
         {sourceRef?.fileName && <span className="truncate text-xs text-white/40" title={sourceRef.fileName}>📄 {sourceRef.fileName}</span>}
-        <span className="ml-auto shrink-0 text-xs text-white/30">{cards.length} produit{cards.length > 1 ? 's' : ''}</span>
+        <span className="shrink-0 text-xs text-white/30">{cards.length} produit{cards.length > 1 ? 's' : ''}</span>
+        <button onClick={() => setStep('mapping')} className="ml-auto shrink-0 text-sm text-white/50 hover:text-white">← Mappage</button>
       </div>
+
+      {/* Gabarit, IA & modèles — replié par défaut pour laisser la place à la carte */}
+      <details className="group rounded-xl border border-white/10 bg-surface">
+        <summary className="flex cursor-pointer select-none items-center gap-2 px-4 py-2 text-sm text-white/70 hover:text-white [&::-webkit-details-marker]:hidden">
+          <Sparkles className="h-4 w-4 text-[#6366f1]" /> Gabarit, IA & modèles
+          <span className="text-xs text-white/30">— style, mise en page, champs affichés</span>
+          <ChevronDown className="ml-auto h-4 w-4 transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="border-t border-white/5">
+          <PromoTemplateEditor />
+        </div>
+      </details>
 
       {/* Calques + Images (gauche) · Aperçu (centre) · Propriétés (droite) */}
       <div className="flex items-start gap-4">
@@ -255,7 +261,7 @@ export function StepRender() {
               <button onClick={() => setConfig({ offsets: {} })} className="text-[#6366f1] hover:underline">Réinitialiser les positions</button>
             )}
           </div>
-          <div className="flex justify-center bg-well rounded-xl p-4 overflow-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+          <div className="flex justify-center bg-well rounded-xl p-3 overflow-auto" style={{ maxHeight: 'calc(100vh - 150px)' }}>
             <div style={{ transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top center', height: 842 * PREVIEW_SCALE, width: 595 * PREVIEW_SCALE }}>
               <RetailPromoCard ref={previewRef} data={currentData} config={config} editable effects={effects}
                 selectedKey={capturing ? null : selectedKey} onSelect={setSelectedKey} capturing={capturing}
