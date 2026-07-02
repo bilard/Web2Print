@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree, flattenTree } from '../../catalogTree'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
+import type { CatalogSectionPlan } from '../../catalogTypes'
 import { extractPromoFields } from '@/features/retail-promo/promoMapping'
 import { PlanSectionRow } from './PlanSectionRow'
 import { PlanStylePanel } from './PlanStylePanel'
@@ -41,7 +42,6 @@ export function StepPrompt() {
     [selectedRows, rawColumns, levelKeys, treeEdits],
   )
   const flatNodes = useMemo(() => flattenTree(tree), [tree])
-  const nodeById = useMemo(() => new Map(flatNodes.map((n) => [n.id, n])), [flatNodes])
 
   const generate = async () => {
     setBusy(true)
@@ -86,18 +86,21 @@ export function StepPrompt() {
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-white">Sections</h3>
                 <div className="border border-border rounded-md bg-surface">
-                  {plan.sections.map((section) => {
-                    const node = nodeById.get(section.nodeId)
-                    if (!node) return null
+                  {/* Itère sur l'arbre COURANT (pas plan.sections) : un nœud ajouté après
+                      la génération du plan (retouche de l'étape Structure) doit rester
+                      configurable — repli section par défaut si absente du plan. */}
+                  {flatNodes.filter((node) => node.productIds.length > 0).map((node) => {
+                    const section: CatalogSectionPlan = plan.sections.find((s) => s.nodeId === node.id)
+                      ?? { nodeId: node.id, productsPerPage: 4, featuredIds: [] }
                     const sampleFields = node.productIds.slice(0, 3).map((id) => {
                       const row = rowsById.get(id)
                       const f = row ? extractPromoFields(row, rawColumns, fieldMap) : null
                       return { id, name: f?.name ?? id }
                     })
                     return (
-                      <PlanSectionRow key={section.nodeId} node={node} section={section} sampleFields={sampleFields}
-                        onGrid={(g) => setSectionGrid(section.nodeId, g)}
-                        onToggleFeatured={(rowId) => toggleFeatured(section.nodeId, rowId)} />
+                      <PlanSectionRow key={node.id} node={node} section={section} sampleFields={sampleFields}
+                        onGrid={(g) => setSectionGrid(node.id, g)}
+                        onToggleFeatured={(rowId) => toggleFeatured(node.id, rowId)} />
                     )
                   })}
                 </div>

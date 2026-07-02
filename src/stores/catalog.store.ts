@@ -62,6 +62,16 @@ const defaultState = {
   backCoverImageUrl: null as string | null,
 }
 
+/**
+ * Assure qu'une section existe pour `nodeId` (append par défaut grille 4/aucune
+ * vedette si absente) — évite qu'un nœud apparu APRÈS la génération du plan
+ * (arbre retouché en étape Structure) reste inconfigurable dans StepPrompt.
+ */
+function upsertSection(sections: CatalogPlan['sections'], nodeId: string): CatalogPlan['sections'] {
+  if (sections.some((x) => x.nodeId === nodeId)) return sections
+  return [...sections, { nodeId, productsPerPage: 4, featuredIds: [] }]
+}
+
 // sessionStorage tolérant au quota : un gros catalogue ne doit jamais casser l'édition.
 // En cas d'échec (quota dépassé), on purge la clé plutôt que de laisser un snapshot
 // PARTIEL/périmé survivre : au reboot, l'absence de session force un rechargement
@@ -101,14 +111,18 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   setTreeEdits: (patch) => set((s) => ({ treeEdits: { ...s.treeEdits, ...patch } })),
   setPrompt: (prompt) => set({ prompt }),
   setPlan: (plan) => set({ plan }),
-  setSectionGrid: (nodeId, grid) => set((s) => s.plan ? ({
-    plan: { ...s.plan, sections: s.plan.sections.map((x) => x.nodeId === nodeId ? { ...x, productsPerPage: grid } : x) },
-  }) : {}),
-  toggleFeatured: (nodeId, rowId) => set((s) => s.plan ? ({
-    plan: { ...s.plan, sections: s.plan.sections.map((x) => x.nodeId === nodeId
+  setSectionGrid: (nodeId, grid) => set((s) => {
+    if (!s.plan) return {}
+    const sections = upsertSection(s.plan.sections, nodeId).map((x) => x.nodeId === nodeId ? { ...x, productsPerPage: grid } : x)
+    return { plan: { ...s.plan, sections } }
+  }),
+  toggleFeatured: (nodeId, rowId) => set((s) => {
+    if (!s.plan) return {}
+    const sections = upsertSection(s.plan.sections, nodeId).map((x) => x.nodeId === nodeId
       ? { ...x, featuredIds: x.featuredIds.includes(rowId) ? x.featuredIds.filter((i) => i !== rowId) : [...x.featuredIds, rowId] }
-      : x) },
-  }) : {}),
+      : x)
+    return { plan: { ...s.plan, sections } }
+  }),
   setFieldMap: (fieldMap) => set({ fieldMap }),
   setFormat: (format) => set({ format }),
   setCoverImageUrl: (coverImageUrl) => set({ coverImageUrl }),
