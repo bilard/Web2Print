@@ -34,7 +34,10 @@ async function resolveCatalogImage(url: string): Promise<string | undefined> {
     }
     imgCache.set(url, resolved)
     return resolved
-  } catch {
+  } catch (e) {
+    // Échec loggé (une fois par URL grâce au cache) : un placeholder silencieux
+    // rendrait le diagnostic impossible en production.
+    console.warn('[catalog] résolution image échouée :', url, e)
     imgCache.set(url, null)
     return undefined
   }
