@@ -26,9 +26,14 @@ export default function CatalogBuilderPage() {
 
   useEffect(() => {
     if (!id) return
+
+    // Garde d'annulation pour éviter les races au changement d'id ou en StrictMode
+    let cancelled = false
+
     const boot = async () => {
       if (s.catalogId !== id) {
         const doc = await loadCatalog(id)
+        if (cancelled) return
         if (!doc) { toast.error('Catalogue introuvable'); navigate('/dashboard'); return }
         s.hydrate(doc, id)
       }
@@ -36,12 +41,16 @@ export default function CatalogBuilderPage() {
       if (st.sourceRef && st.rawRows.length === 0 && isPimSource(st.sourceRef)) {
         try {
           const { columns, rows } = await loadPimMergeData(pimProjectIdFromSource(st.sourceRef))
+          if (cancelled) return
           st.setSource(st.sourceRef, columns, rows)
         } catch (e) { toast.error(`Source PIM indisponible : ${String((e as Error).message)}`) }
       }
+      if (cancelled) return
       setReady(true)
     }
     void boot()
+
+    return () => { cancelled = true }
   }, [id])
 
   if (!ready) return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Chargement du catalogue…</div>
