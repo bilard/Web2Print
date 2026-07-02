@@ -2,14 +2,19 @@
 // Fiche produit d'une cellule de grille. `featured` = pleine page (typo agrandie via .cat-featured).
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import { formatPrice } from './catalogCss'
+import { useResolvedImage } from '../../useResolvedImage'
 
 interface Props { fields: PromoFields; featured: boolean }
 
 export function ProductCell({ fields: f, featured }: Props) {
+  // Résolution Drive/CORS → blob:/data: (voir useResolvedImage). `data-resolving` est
+  // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
+  // avant capture html2canvas (l'<img> n'existe pas tant que src n'est pas prêt).
+  const { src, resolving } = useResolvedImage(f.image)
   return (
     <div className={`cat-cell${featured ? ' cat-featured' : ''}`}>
-      <div className="cat-cell-img">
-        {f.image ? <img src={f.image} alt="" crossOrigin="anonymous" /> : <span className="cat-cell-img-ph">Sans visuel</span>}
+      <div className="cat-cell-img" data-resolving={resolving ? 'true' : undefined}>
+        {src ? <img src={src} alt="" /> : <span className="cat-cell-img-ph">Sans visuel</span>}
       </div>
       <div className="cat-cell-body">
         {f.brand && <span className="cat-cell-brand">{f.brand}</span>}

@@ -14,8 +14,18 @@ import { drawCropMarks } from './cropMarks'
 
 export interface CatalogExportOptions { mode: 'screen' | 'print'; dpi: 150 | 300; bleedMm: number; fileName: string }
 
+const ASSET_WAIT_TIMEOUT_MS = 15_000
+
 async function waitAssets(host: HTMLElement): Promise<void> {
   await document.fonts.ready
+  // 1) Attend la résolution async des images produits (Drive/CORS → blob:/data:) :
+  //    tant que data-resolving="true" est présent, l'<img> correspondant n'existe
+  //    pas encore dans le DOM (voir ProductCell/useResolvedImage). Borné à 15 s.
+  const start = Date.now()
+  while (host.querySelector('[data-resolving="true"]') && Date.now() - start < ASSET_WAIT_TIMEOUT_MS) {
+    await new Promise((res) => setTimeout(res, 100))
+  }
+  // 2) Attend le chargement effectif des <img> désormais présents.
   await Promise.all(Array.from(host.querySelectorAll('img')).map((img) =>
     img.complete ? Promise.resolve() : new Promise<void>((res) => { img.onload = () => res(); img.onerror = () => res() }),
   ))
