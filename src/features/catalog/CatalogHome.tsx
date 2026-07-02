@@ -26,7 +26,7 @@ export function CatalogHome() {
       reset()
       hydrate(doc, id)
       navigate(`/catalog/${id}`)
-    } catch (e) { toast.error(`Création impossible : ${String((e as any)?.message ?? e)}`) }
+    } catch (e) { toast.error(`Création impossible : ${e instanceof Error ? e.message : String(e)}`) }
   }
 
   const remove = async (id: string) => {
@@ -34,7 +34,7 @@ export function CatalogHome() {
       await deleteCatalog(id)
       setItems((xs) => xs.filter((x) => x.id !== id))
       toast.success('Catalogue supprimé')
-    } catch (e) { toast.error(`Suppression impossible : ${String((e as any)?.message ?? e)}`) }
+    } catch (e) { toast.error(`Suppression impossible : ${e instanceof Error ? e.message : String(e)}`) }
   }
 
   return (
