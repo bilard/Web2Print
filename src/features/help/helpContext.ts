@@ -27,6 +27,7 @@ const CONTEXT_TO_ARTICLE: Record<HelpContext, string> = {
   access: 'access',
   'price-watch': 'price-watch',
   'retail-promo': 'retail-promo',
+  catalog: 'getting-started',
   editor: 'editor',
 }
 

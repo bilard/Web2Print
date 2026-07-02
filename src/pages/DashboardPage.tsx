@@ -46,6 +46,7 @@ const HyperframesPage = lazy(() => import('@/features/video/HyperframesPage').th
 const TelegramInboxView = lazy(() => import('@/features/telegram/TelegramInboxView').then((m) => ({ default: m.TelegramInboxView })))
 const PriceWatchPanel = lazy(() => import('@/features/priceWatch/PriceWatchPanel').then((m) => ({ default: m.PriceWatchPanel })))
 const RetailPromoPage = lazy(() => import('@/features/retail-promo/RetailPromoPage').then((m) => ({ default: m.RetailPromoPage })))
+const CatalogHome = lazy(() => import('@/features/catalog/CatalogHome').then((m) => ({ default: m.CatalogHome })))
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
@@ -762,6 +763,16 @@ export default function DashboardPage() {
             </div>
           }>
             <RetailPromoPage />
+          </Suspense>
+        </div>
+      ) : activeSection === 'catalog' && canSee('catalog') ? (
+        <div data-tour="section-catalog" className="flex-1 overflow-auto">
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
+              <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+            </div>
+          }>
+            <CatalogHome />
           </Suspense>
         </div>
       ) : (

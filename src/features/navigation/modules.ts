@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag } from 'lucide-react'
+import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, BookText, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { useAccessStore } from '@/stores/access.store'
 
@@ -18,7 +18,7 @@ import { useAccessStore } from '@/stores/access.store'
 export type Section =
   | 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings'
   | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
-  | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'retail-promo'
+  | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'retail-promo' | 'catalog'
 
 export interface ModuleChild {
   /** Suffixe d'action, ex. 'tab:favorites'. */
@@ -123,6 +123,12 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'action:list', label: 'Mes promos',       intent: 'retail-promo:action:list' },
     ],
   },
+  { id: 'catalog', icon: BookText, label: 'Catalogue studio', accent: 'text-cyan-400', activeBg: 'bg-cyan-500/[0.1]', activeText: 'text-cyan-300',
+    children: [
+      { id: 'action:new',  label: 'Nouveau catalogue', intent: 'catalog:action:new' },
+      { id: 'action:list', label: 'Mes catalogues',    intent: 'catalog:action:list' },
+    ],
+  },
   { id: 'telegram', icon: Send, label: 'Telegram', accent: 'text-blue-400', activeBg: 'bg-blue-500/[0.1]', activeText: 'text-blue-300',
     children: [
       { id: 'action:new', label: 'Nouveau message', intent: 'telegram:action:new' },
@@ -167,6 +173,7 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
   workflows: 'workflows.view',
   'price-watch': 'priceWatch.view',
   'retail-promo': 'retailPromo.view',
+  catalog: 'catalog.view',
   hyperframes: 'hyperframes.view',
   chat: 'chat.view',
   telegram: 'telegram.view',
