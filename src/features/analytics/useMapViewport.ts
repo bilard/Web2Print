@@ -80,6 +80,18 @@ export function useMapViewport(bounds: MapBox) {
     setCenter({ cx: x, cy: y })
   }, [])
 
+  /** Cadre la vue sur une boîte englobante (clic sur un pays : toutes ses villes visibles). */
+  const fitTo = useCallback((box: MapBox) => {
+    const PAD = 1.6
+    const next = clamp(
+      Math.min(bounds.w / Math.max(box.w * PAD, 1), bounds.h / Math.max(box.h * PAD, 1)),
+      MIN_SCALE,
+      FOCUS_SCALE,
+    )
+    setScale(next)
+    setCenter({ cx: box.x + box.w / 2, cy: box.y + box.h / 2 })
+  }, [bounds.w, bounds.h])
+
   const pointerHandlers = {
     onPointerDown: (e: PointerEvent<SVGSVGElement>) => {
       e.currentTarget.setPointerCapture(e.pointerId)
@@ -108,6 +120,7 @@ export function useMapViewport(bounds: MapBox) {
     zoomOut: () => zoomAt({ x: vb.x + vb.w / 2, y: vb.y + vb.h / 2 }, 1 / 1.6),
     reset,
     focus,
+    fitTo,
     pointerHandlers,
   }
 }

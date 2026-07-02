@@ -33,6 +33,8 @@ const PERIODS: { key: PeriodKey; label: string }[] = [
 export function AnalyticsTab() {
   const { period, setPeriod, fromMs, toMs, prevFromMs, prevToMs } = usePeriod('30d')
   const [filter, setFilter] = useState<EventFilter>(NO_FILTER)
+  // Pays sélectionné dans la carte « Pays » → mis en évidence sur la carte du monde.
+  const [country, setCountry] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const clear = useClearAnalytics()
   const handleClear = () => {
@@ -128,11 +130,11 @@ export function AnalyticsTab() {
               <AnalyticsRecent events={events} />
               {/* Carte du monde des connexions, par ville. */}
               <Suspense fallback={<div className="bg-surface rounded-lg h-48 animate-pulse" />}>
-                <AnalyticsWorldMap events={events} />
+                <AnalyticsWorldMap events={events} selectedCountry={country} onSelectCountry={setCountry} />
               </Suspense>
               {/* Synthèses : 1 panneau par colonne, réparties sur toute la largeur. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
-                <AnalyticsTopLists events={events} />
+                <AnalyticsTopLists events={events} selectedCountry={country} onSelectCountry={setCountry} />
                 <AnalyticsUsers events={events} />
               </div>
               {/* Attribution requise par la licence CC BY 4.0 de la base de géolocalisation. */}
