@@ -10,8 +10,9 @@ export interface CityCoords {
 
 /** `0` = ville introuvable (négatif mis en cache pour ne pas re-géocoder en boucle). */
 type CacheEntry = CityCoords | 0
-// v2 : le match par pays est devenu strict (plus de repli 1er résultat), purge des entrées mal placées.
-const CACHE_KEY = 'w2p:cityCoords:v2'
+// v3 : quartier entre parenthèses strippé avant géocodage (« San Jose (West San Jose) » ne
+// matchait jamais) ; v2 : match par pays strict. Bump = purge des négatifs devenus résolubles.
+const CACHE_KEY = 'w2p:cityCoords:v3'
 
 const keyOf = (c: Pick<CityCount, 'city' | 'country'>): string => `${c.city}|${c.country ?? ''}`
 
@@ -33,7 +34,9 @@ function writeCache(cache: Record<string, CacheEntry>): void {
 
 /** Géocode une ville via Open-Meteo (gratuit, CORS, sans clé). Erreur réseau ⇒ throw (retry React Query). */
 async function geocode(city: string, country: string | null): Promise<CacheEntry> {
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=5&language=en&format=json`
+  // DB-IP suffixe parfois le quartier : « San Jose (West San Jose) » — Open-Meteo ne connaît que la ville.
+  const name = city.replace(/\s*\(.+\)\s*$/, '')
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=5&language=en&format=json`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Géocodage « ${city} » : HTTP ${res.status}`)
   const data = (await res.json()) as {
@@ -51,9 +54,9 @@ async function geocode(city: string, country: string | null): Promise<CacheEntry
  * (DB-IP), on résout donc en lat/lon côté client avec un cache localStorage partagé
  * entre sessions. Renvoie une Map `« ville|pays » → coordonnées` (villes résolues seulement).
  */
-export function useCityCoords(cities: CityCount[]): Map<string, CityCoords> {
+export function useCityCoords(cities: CityCount[]): { coords: Map<string, CityCoords>; pending: boolean } {
   const keys = cities.map(keyOf).sort().join(';')
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['cityCoords', keys],
     enabled: cities.length > 0,
     staleTime: Infinity,
@@ -68,9 +71,10 @@ export function useCityCoords(cities: CityCount[]): Map<string, CityCoords> {
       return cache
     },
   })
-  return useMemo(() => {
+  const coords = useMemo(() => {
     const map = new Map<string, CityCoords>()
     for (const [k, v] of Object.entries(data ?? {})) if (v !== 0) map.set(k, v)
     return map
   }, [data])
+  return { coords, pending: isLoading }
 }

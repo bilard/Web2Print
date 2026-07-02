@@ -33,7 +33,7 @@ const BTN = 'p-1 rounded bg-surface-2 border border-white/10 text-white/60 hover
 /** Carte du monde des connexions : un point par ville (aire ∝ connexions), zoom + lien liste→carte. */
 export function AnalyticsWorldMap({ events }: { events: AnalyticsEvent[] }) {
   const cities = useMemo(() => cityCounts(events), [events])
-  const coords = useCityCoords(cities)
+  const { coords, pending } = useCityCoords(cities)
   const [hover, setHover] = useState<Dot | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const { svgRef, vb, scale, zoomed, zoomIn, zoomOut, reset, focus, pointerHandlers } = useMapViewport(BOUNDS)
@@ -134,7 +134,9 @@ export function AnalyticsWorldMap({ events }: { events: AnalyticsEvent[] }) {
       )}
       {dots.length === 0 && (
         <div className="text-white/35 text-xs">
-          {cities.length === 0 ? 'Aucune connexion localisée sur cette période.' : 'Localisation des villes en cours…'}
+          {cities.length > 0 && pending
+            ? 'Localisation des villes en cours…'
+            : 'Aucune connexion localisée sur cette période.'}
         </div>
       )}
     </div>
