@@ -1144,39 +1144,42 @@
   #telegram .scene-visual.is-in .tlg-bar .send{animation:btnPulse 2.4s ease-in-out infinite}
   #telegram .scene-visual.is-in .tlg-bar .ph{animation:anmBlink 1.6s ease-in-out infinite}
 
-  /* 14 Animation — cartes de la bibliothèque qui apparaissent */
-  /* Le résultat « joue » : chaque élément est animé en continu (rythme énergique) */
+  /* 14 Animation — le RÉSULTAT joue comme une vraie vidéo : chaque boucle de 5 s = une lecture complète,
+     synchronisée avec la barre de progression (le produit entre en scène, le titre slide, les pictos
+     claquent un à un, le prix se tamponne, fondu de fin → replay) */
   #animation .scene-visual.is-in .anm-rv .rbar i{animation:anmplay 5s linear infinite}
   #animation .scene-visual.is-in .anm-rv .ngrid{animation:anmGrid 1.6s linear infinite}
-  #animation .scene-visual.is-in .anm-rv .rstage{animation:anmStage 2.4s ease-in-out infinite}
-  #animation .scene-visual.is-in .anm-rv .drill{animation:anmDrill 2.4s ease-in-out infinite}
-  #animation .scene-visual.is-in .anm-rv .rpromo{animation:anmPromo 1.7s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rstage{animation:anmStage 5s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .drill{animation:anmDrill 5s cubic-bezier(.2,.8,.25,1) infinite}
+  #animation .scene-visual.is-in .anm-rv .rpromo{animation:anmPromo 5s cubic-bezier(.2,.9,.3,1.4) infinite}
   #animation .scene-visual.is-in .anm-rv .rgen{animation:anmGen 3s ease-in-out infinite}
-  #animation .scene-visual.is-in .anm-rv .rtitle{animation:neonpulse 2.2s ease-in-out infinite}
-  #animation .scene-visual.is-in .anm-rv .rpictos span{animation:anmBob 1.5s ease-in-out infinite}
-  #animation .scene-visual.is-in .anm-rv .rpictos span:nth-child(2){animation-delay:.18s}
-  #animation .scene-visual.is-in .anm-rv .rpictos span:nth-child(3){animation-delay:.36s}
-  #animation .scene-visual.is-in .anm-rv .rnew{animation:anmPrice 1.4s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rtitle{animation:anmTitle 5s cubic-bezier(.2,.8,.25,1) infinite}
+  #animation .scene-visual.is-in .anm-rv .rdesc{animation:anmDescIn 5s ease-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rpictos span{animation:anmPicto 5s cubic-bezier(.2,.9,.3,1.5) infinite}
+  #animation .scene-visual.is-in .anm-rv .rpictos span:nth-child(2){animation-delay:.15s}
+  #animation .scene-visual.is-in .anm-rv .rpictos span:nth-child(3){animation-delay:.3s}
+  #animation .scene-visual.is-in .anm-rv .rold{animation:anmOld 5s ease-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rnew{animation:anmPrice 5s cubic-bezier(.2,.9,.3,1.4) infinite}
   #animation .scene-visual.is-in .anm-rv .pp{animation:anmBlink 1s steps(1) infinite}
   @keyframes anmplay{0%{width:3%}100%{width:100%}}
   @keyframes anmGrid{to{background-position:0 -26px}}
-  @keyframes anmStage{0%,100%{transform:translateY(-50%) scale(1);opacity:.85}50%{transform:translateY(-50%) scale(1.08);opacity:1}}
-  @keyframes anmDrill{0%{transform:translateY(-50%) rotate(-4deg) scale(1)}50%{transform:translateY(-54%) rotate(4deg) scale(1.07)}100%{transform:translateY(-50%) rotate(-4deg) scale(1)}}
-  @keyframes anmPromo{0%,100%{transform:rotate(-5deg) scale(1)}50%{transform:rotate(-5deg) scale(1.1)}}
+  @keyframes anmStage{0%{transform:translateY(-50%) scale(.8);opacity:0}10%{transform:translateY(-50%) scale(1.05);opacity:1}40%{transform:translateY(-50%) scale(.98);opacity:.9}70%{transform:translateY(-50%) scale(1.08);opacity:1}94%{opacity:1}100%{transform:translateY(-50%) scale(1);opacity:0}}
+  @keyframes anmDrill{0%{transform:translateY(-50%) translateX(90px) rotate(10deg) scale(.8);opacity:0}9%{transform:translateY(-50%) translateX(-6px) rotate(-6deg) scale(1.02);opacity:1}14%{transform:translateY(-50%) translateX(0) rotate(-4deg) scale(1)}42%{transform:translateY(-56%) translateX(-10px) rotate(4deg) scale(1.1)}68%{transform:translateY(-49%) translateX(6px) rotate(-2deg) scale(1.04)}88%{transform:translateY(-52%) translateX(-3px) rotate(2deg) scale(1.07)}94%{opacity:1}100%{transform:translateY(-50%) translateX(0) rotate(-4deg) scale(1.02);opacity:0}}
+  @keyframes anmPromo{0%,4%{opacity:0;transform:rotate(18deg) scale(0)}10%{opacity:1;transform:rotate(-9deg) scale(1.25)}14%{transform:rotate(-5deg) scale(1)}34%{transform:rotate(-4deg) scale(1.14)}42%{transform:rotate(-5deg) scale(1)}62%{transform:rotate(-6deg) scale(1.12)}70%{transform:rotate(-5deg) scale(1)}94%{opacity:1;transform:rotate(-5deg) scale(1)}100%{opacity:0;transform:rotate(-5deg) scale(.9)}}
   @keyframes anmGen{0%,100%{opacity:.75}50%{opacity:1;box-shadow:0 0 14px -2px rgba(232,121,249,.7)}}
-  @keyframes neonpulse{0%,100%{text-shadow:0 0 12px rgba(34,211,238,.9)}50%{text-shadow:0 0 22px rgba(34,211,238,1),0 0 34px rgba(232,121,249,.7)}}
-  @keyframes anmBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-  @keyframes anmPrice{0%,100%{transform:scale(1);box-shadow:0 0 18px -3px rgba(250,204,21,.8)}50%{transform:scale(1.09);box-shadow:0 0 26px -2px rgba(250,204,21,1)}}
+  @keyframes anmTitle{0%,4%{opacity:0;transform:translateX(-52px) skewX(-10deg)}11%{opacity:1;transform:translateX(5px) skewX(3deg)}15%{transform:none;text-shadow:0 0 24px rgba(34,211,238,1),0 0 38px rgba(232,121,249,.8)}45%{text-shadow:0 0 12px rgba(34,211,238,.9)}72%{text-shadow:0 0 22px rgba(34,211,238,1),0 0 34px rgba(232,121,249,.7)}94%{opacity:1;transform:none;text-shadow:0 0 12px rgba(34,211,238,.9)}100%{opacity:0;transform:translateX(-14px)}}
+  @keyframes anmDescIn{0%,12%{opacity:0;transform:translateY(14px)}22%{opacity:1;transform:none}94%{opacity:1}100%{opacity:0}}
+  @keyframes anmPicto{0%,18%{opacity:0;transform:translateY(16px) scale(.5)}26%{opacity:1;transform:translateY(-4px) scale(1.15)}31%{transform:none}52%{transform:translateY(-4px)}64%{transform:none}80%{transform:translateY(-3px)}94%{opacity:1;transform:none}100%{opacity:0;transform:translateY(6px)}}
+  @keyframes anmOld{0%,24%{opacity:0;transform:translateX(-12px)}32%{opacity:1;transform:none}44%{opacity:.55}94%{opacity:.55}100%{opacity:0}}
+  @keyframes anmPrice{0%,30%{opacity:0;transform:scale(2.4) rotate(7deg);box-shadow:none}37%{opacity:1;transform:scale(.92) rotate(-3deg);box-shadow:0 0 30px 0 rgba(250,204,21,.9)}41%{transform:scale(1.08) rotate(1deg)}45%{transform:scale(1) rotate(0);box-shadow:0 0 18px -3px rgba(250,204,21,.8)}62%{transform:scale(1.09);box-shadow:0 0 26px -2px rgba(250,204,21,1)}72%{transform:scale(1)}86%{transform:scale(1.09);box-shadow:0 0 26px -2px rgba(250,204,21,1)}94%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.9)}}
   @keyframes anmBlink{0%,100%{opacity:1}50%{opacity:.4}}
-  #animation .scene-visual.is-in .anm-rv .rshine{animation:anmShine 3.8s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rshine{animation:anmShine 5s ease-in-out infinite}
   #animation .scene-visual.is-in .anm-rv .rsparks i{animation:anmSpark 2.2s ease-in-out infinite}
   #animation .scene-visual.is-in .anm-rv .rsparks i:nth-child(2){animation-delay:.5s}#animation .scene-visual.is-in .anm-rv .rsparks i:nth-child(3){animation-delay:.9s}#animation .scene-visual.is-in .anm-rv .rsparks i:nth-child(4){animation-delay:1.3s}#animation .scene-visual.is-in .anm-rv .rsparks i:nth-child(5){animation-delay:1.7s}
   #animation .scene-visual.is-in .anm-rv .rpromo::after{animation:anmSpin 6s linear infinite}
-  #animation .scene-visual.is-in .anm-rv .rdesc{animation:anmDesc 5.4s ease-in-out infinite}
-  @keyframes anmShine{0%{transform:translateX(-120%)}48%,100%{transform:translateX(120%)}}
-  @keyframes anmSpark{0%,100%{opacity:0;transform:scale(.4)}45%{opacity:1;transform:scale(1.25)}}
+  @keyframes anmShine{0%,40%{transform:translateX(-120%)}70%,100%{transform:translateX(120%)}}
+  @keyframes anmSpark{0%,100%{opacity:0;transform:translateY(8px) scale(.4)}45%{opacity:1;transform:translateY(-12px) scale(1.35)}}
   @keyframes anmSpin{to{transform:rotate(360deg)}}
-  @keyframes anmDesc{0%,100%{opacity:.72}50%{opacity:1}}
   #animation .scene-visual.is-in .anm-card{animation:cycleRise 4.6s ease-in-out infinite}
   #animation .scene-visual.is-in .anm-card:nth-child(3){animation-delay:.3s}#animation .scene-visual.is-in .anm-card:nth-child(4){animation-delay:.6s}
   #animation .scene-visual.is-in .anm-chip.on{animation:breathe 2.6s ease-in-out infinite}
