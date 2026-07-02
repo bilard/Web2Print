@@ -23,7 +23,7 @@ export function AnalyticsWorldMap({ events, selectedCountry = null, onSelectCoun
   const { coords, pending } = useCityCoords(cities)
   const [hover, setHover] = useState<Dot | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
-  const { svgRef, vb, scale, zoomed, zoomIn, zoomOut, reset, focus, fitTo, pointerHandlers } = useMapViewport(BOUNDS)
+  const { svgRef, vb, scale, zoomed, zoomIn, zoomOut, reset, focus, fitTo, didPan, pointerHandlers } = useMapViewport(BOUNDS)
   const dots = useMemo(() => buildDots(cities, coords), [cities, coords])
 
   // Clic pays (liste « Pays ») → cadrage sur ses villes + défilement de la carte en vue.
@@ -64,6 +64,12 @@ export function AnalyticsWorldMap({ events, selectedCountry = null, onSelectCoun
           className={`w-full touch-none ${zoomed ? 'cursor-grab active:cursor-grabbing' : ''}`}
           role="img"
           aria-label="Carte du monde des connexions par ville"
+          onClick={() => {
+            // Clic sur le fond (pas un pan, pas un point) → tout désélectionner.
+            if (didPan()) return
+            setSelected(null)
+            onSelectCountry?.(null)
+          }}
           {...pointerHandlers}
         >
           <path d={GRATICULE} fill="none" className="stroke-white/[0.05]" strokeWidth={1} vectorEffect="non-scaling-stroke" />
@@ -85,6 +91,11 @@ export function AnalyticsWorldMap({ events, selectedCountry = null, onSelectCoun
                 cx={d.x} cy={d.y} r={(d.r + 6) / scale} fill="transparent"
                 onMouseEnter={() => setHover(d)}
                 onMouseLeave={() => setHover(null)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onSelectCountry?.(null)
+                  setSelected(d.label)
+                }}
               />
             </g>
           ))}

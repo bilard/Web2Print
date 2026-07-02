@@ -25,6 +25,8 @@ export function useMapViewport(bounds: MapBox) {
   const [scale, setScale] = useState(1)
   const [center, setCenter] = useState({ cx: bounds.x + bounds.w / 2, cy: bounds.y + bounds.h / 2 })
   const drag = useRef<{ px: number; py: number; moved: boolean } | null>(null)
+  // Vrai si le dernier geste pointeur était un pan : le clic qui suit ne doit pas désélectionner.
+  const lastMoved = useRef(false)
 
   const w = bounds.w / scale
   const h = bounds.h / scale
@@ -106,6 +108,7 @@ export function useMapViewport(bounds: MapBox) {
       setCenter((c) => ({ cx: c.cx - dx, cy: c.cy - dy }))
     },
     onPointerUp: () => {
+      lastMoved.current = drag.current?.moved ?? false
       drag.current = null
     },
     onDoubleClick: (e: MouseEvent<SVGSVGElement>) => zoomAt(toSvg(e.clientX, e.clientY), 2),
@@ -121,6 +124,8 @@ export function useMapViewport(bounds: MapBox) {
     reset,
     focus,
     fitTo,
+    /** Vrai si le dernier geste était un glisser (le clic qui le clôt n'est pas un vrai clic). */
+    didPan: () => lastMoved.current,
     pointerHandlers,
   }
 }
