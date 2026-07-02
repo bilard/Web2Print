@@ -23,7 +23,7 @@ export function useCatalogAutosave(): { saving: boolean } {
         setSaving(true)
         try { await saveCatalog(useCatalogStore.getState().toDoc()) }
         catch (e) { toast.error(`Sauvegarde échouée : ${String((e as Error).message)}`) }
-        finally { setSaving(false) }
+        finally { setSaving(false); timer.current = null }
       }, 2000)
     })
     return () => {
