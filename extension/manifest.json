@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "IBS-Studio Capture",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Capture d'éléments pour le Scraping Hub de IBS-Studio",
   "background": {
     "service_worker": "background.js",
@@ -23,7 +23,8 @@
       "http://localhost:5173/*",
       "http://localhost:4173/*",
       "https://web2print-6fe5a.web.app/*",
-      "https://web2print-6fe5a.firebaseapp.com/*"
+      "https://web2print-6fe5a.firebaseapp.com/*",
+      "https://ibs-studio.com/*"
     ]
   }
 }

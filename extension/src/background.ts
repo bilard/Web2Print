@@ -29,6 +29,7 @@ const ALLOWED_ORIGINS = new Set([
   'http://localhost:4173',
   'https://web2print-6fe5a.web.app',
   'https://web2print-6fe5a.firebaseapp.com',
+  'https://ibs-studio.com',
 ])
 
 function isTrustedSender(sender: chrome.runtime.MessageSender): boolean {
