@@ -139,6 +139,26 @@ export function topBy(
     .slice(0, limit)
 }
 
+/** Connexions groupées par ville, triées par volume décroissant. */
+export interface CityCount {
+  city: string
+  country: string | null
+  count: number
+}
+
+/** Agrège les events par ville (ceux sans ville sont ignorés). */
+export function cityCounts(events: AnalyticsEvent[]): CityCount[] {
+  const counts = new Map<string, CityCount>()
+  for (const e of events) {
+    if (!e.city) continue
+    const key = `${e.city}|${e.country ?? ''}`
+    const cur = counts.get(key)
+    if (cur) cur.count += 1
+    else counts.set(key, { city: e.city, country: e.country, count: 1 })
+  }
+  return [...counts.values()].sort((a, b) => b.count - a.count)
+}
+
 const DAY = 86_400_000
 const dayKey = (ms: number): string => new Date(ms).toISOString().slice(0, 10)
 

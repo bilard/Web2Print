@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeKpis, topBy, timeSeries, deltaPct, recentEvents, topSources, sourceCategory, topSourceCategories, type AnalyticsEvent } from './metrics'
+import { computeKpis, topBy, timeSeries, deltaPct, recentEvents, topSources, sourceCategory, topSourceCategories, cityCounts, type AnalyticsEvent } from './metrics'
 
 const ev = (o: Partial<AnalyticsEvent>): AnalyticsEvent => ({
   ts: 0, path: '/promo', area: 'promo', ref: null, src: null,
@@ -67,6 +67,25 @@ describe('recentEvents', () => {
   it('trie décroissant par ts et applique la limite', () => {
     const out = recentEvents([ev({ ts: 1 }), ev({ ts: 3 }), ev({ ts: 2 })], 2)
     expect(out.map((e) => e.ts)).toEqual([3, 2])
+  })
+})
+
+describe('cityCounts', () => {
+  it('agrège par ville+pays, trie décroissant et ignore les events sans ville', () => {
+    const out = cityCounts([
+      ev({ city: 'Borgerhout', country: 'BE' }),
+      ev({ city: 'Borgerhout', country: 'BE' }),
+      ev({ city: 'Paris', country: 'FR' }),
+      ev({ city: null }),
+    ])
+    expect(out).toEqual([
+      { city: 'Borgerhout', country: 'BE', count: 2 },
+      { city: 'Paris', country: 'FR', count: 1 },
+    ])
+  })
+  it('distingue deux villes homonymes de pays différents', () => {
+    const out = cityCounts([ev({ city: 'Paris', country: 'FR' }), ev({ city: 'Paris', country: 'US' })])
+    expect(out).toHaveLength(2)
   })
 })
 

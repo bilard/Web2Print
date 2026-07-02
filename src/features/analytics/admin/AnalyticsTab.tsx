@@ -15,6 +15,7 @@ import { AnalyticsKpiCards } from './AnalyticsKpiCards'
 import { AnalyticsTimeChart } from './AnalyticsTimeChart'
 import { AnalyticsTopLists } from './AnalyticsTopLists'
 import { AnalyticsRecent } from './AnalyticsRecent'
+import { AnalyticsWorldMap } from './AnalyticsWorldMap'
 import { AnalyticsUsers } from './AnalyticsUsers'
 import { AnalyticsFilters } from './AnalyticsFilters'
 
@@ -121,6 +122,8 @@ export function AnalyticsTab() {
               <AnalyticsTimeChart series={series} />
               {/* Journal détaillé : qui a vu quelle page et quand (élément principal). */}
               <AnalyticsRecent events={events} />
+              {/* Carte du monde des connexions, par ville. */}
+              <AnalyticsWorldMap events={events} />
               {/* Synthèses : 1 panneau par colonne, réparties sur toute la largeur. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
                 <AnalyticsTopLists events={events} />

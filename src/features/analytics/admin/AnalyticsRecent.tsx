@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { AnalyticsEvent } from '../metrics'
-import { recentEvents, pageLabel, isInternalActivity } from '../metrics'
+import { recentEvents, pageLabel } from '../metrics'
 import { useUsersMap } from '../useUsersMap'
 
 const PAGE_SIZE = 15
@@ -42,11 +42,9 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
   const [page, setPage] = useState(0)
   const set = (k: keyof Filters, v: string) => { setF((p) => ({ ...p, [k]: v })); setPage(0) }
 
-  // Tri par récence, hors navigation interne (tableau de bord / workflows / accueil).
-  const sorted = useMemo(
-    () => recentEvents(events, events.length).filter((e) => !isInternalActivity(e.path)),
-    [events],
-  )
+  // Tri par récence sur le MÊME jeu d'événements que les cartes de synthèse (Pays, etc.) :
+  // la navigation interne n'est plus exclue, les filtres de colonnes suffisent à l'écarter.
+  const sorted = useMemo(() => recentEvents(events, events.length), [events])
 
   // Options des colonnes filtrables (Utilisateur, Page, Appareil, Pays, Jour).
   const opts = useMemo(() => {
