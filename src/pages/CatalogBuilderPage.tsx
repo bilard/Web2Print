@@ -51,6 +51,8 @@ export default function CatalogBuilderPage() {
         } catch (e) { toast.error(`Source indisponible : ${String((e as Error).message)}`) }
       }
       if (cancelled) return
+      // Sans lignes rechargées, seule l'étape Source a du sens (source supprimée, hors ligne…).
+      if (useCatalogStore.getState().rawRows.length === 0) useCatalogStore.getState().setStep('source')
       setReady(true)
     }
     void boot()
