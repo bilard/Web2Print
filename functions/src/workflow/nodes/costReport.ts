@@ -40,6 +40,9 @@ const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'gemini-3.1-flash-image-preview', label: 'Gemini 3.1 Flash Image (NB2)',    pricing: { input: 0.30,  output: 30 } },
   ],
   openai: [
+    { id: 'gpt-5.6-sol',   label: 'GPT-5.6 Sol',   pricing: { input: 5,    output: 30 } },
+    { id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra', pricing: { input: 2.50, output: 15 } },
+    { id: 'gpt-5.6-luna',  label: 'GPT-5.6 Luna',  pricing: { input: 1,    output: 6 } },
     { id: 'gpt-5.5-pro', label: 'GPT-5.5 Pro', pricing: { input: 30,   output: 180 } },
     { id: 'gpt-5.5',     label: 'GPT-5.5',     pricing: { input: 5,    output: 30 } },
     { id: 'gpt-5.4',     label: 'GPT-5.4',     pricing: { input: 2.50, output: 15 } },
