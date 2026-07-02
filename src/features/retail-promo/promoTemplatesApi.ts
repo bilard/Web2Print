@@ -1,6 +1,7 @@
 import { collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
 import type { PromoTemplateConfig } from './RetailPromoCard'
+import { stripUndefined } from './stripUndefined'
 
 export interface UserPromoTemplate {
   id: string
@@ -27,7 +28,9 @@ export async function savePromoTemplate(name: string, config: PromoTemplateConfi
   if (!uid) throw new Error('Non connecté')
   const existing = (await listPromoTemplates()).find((t) => t.name === name)
   const ref = existing ? doc(db, 'users', uid, 'promoTemplates', existing.id) : doc(colPath(uid))
-  await setDoc(ref, { name, config, createdAt: serverTimestamp() })
+  // stripUndefined : un style remis par défaut (fontFamily/fontWeight undefined)
+  // ferait rejeter tout le setDoc par Firestore → modèle jamais enregistré.
+  await setDoc(ref, { ...stripUndefined({ name, config }), createdAt: serverTimestamp() })
 }
 
 export async function deletePromoTemplate(id: string): Promise<void> {

@@ -1,5 +1,6 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
+import { stripUndefined } from './stripUndefined'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey } from './promoTypes'
 import type { PromoTemplateConfig, PromoColorKey } from './RetailPromoCard'
@@ -46,10 +47,15 @@ export async function savePromo(input: SavePromoInput, existingId?: string): Pro
   if (payloadJson.length > MAX_PAYLOAD) throw new Error('Catalogue trop volumineux pour être sauvegardé (> 900 Ko)')
 
   const ref = existingId ? doc(metaCol(uid), existingId) : doc(metaCol(uid))
+  // stripUndefined : Firestore rejette tout le doc si fieldMap/config contient un undefined
+  // (champ « (non mappé) », style remis par défaut) → fiche jamais enregistrée.
   await setDoc(ref, {
-    name: input.name, sourceRef: input.sourceRef, fieldMap: input.fieldMap,
-    config: input.config, rowCount: input.rows.length,
-    ...(input.thumbnail ? { thumbnail: input.thumbnail } : null), updatedAt: serverTimestamp(),
+    ...stripUndefined({
+      name: input.name, sourceRef: input.sourceRef, fieldMap: input.fieldMap,
+      config: input.config, rowCount: input.rows.length,
+      ...(input.thumbnail ? { thumbnail: input.thumbnail } : null),
+    }),
+    updatedAt: serverTimestamp(),
   })
   await setDoc(payloadDoc(uid, ref.id), { payload: payloadJson, updatedAt: serverTimestamp() })
   return ref.id
