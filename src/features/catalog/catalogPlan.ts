@@ -137,6 +137,19 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
   for (const n of valid) {
     if (!covered.has(n.id)) sections.push({ nodeId: n.id, productsPerPage: DEFAULT_GRID, featuredIds: [] })
   }
+  // Cap global : max 2 vedettes PAR UNIVERS (une vedette = une pleine page ;
+  // sans cap, 2 × N sections gonflent le catalogue de pleines pages).
+  const sectionByNode = new Map(sections.map((s) => [s.nodeId, s]))
+  for (const univers of tree) {
+    let budget = 2
+    for (const n of flattenTree([univers])) {
+      const s = sectionByNode.get(n.id)
+      if (!s || s.featuredIds.length === 0) continue
+      const kept = s.featuredIds.slice(0, Math.max(0, budget))
+      budget -= kept.length
+      s.featuredIds = kept
+    }
+  }
   return {
     theme: sanitizeTheme(raw.theme),
     sections,

@@ -40,6 +40,23 @@ describe('sanitizeCatalogPlan', () => {
     const plan = sanitizeCatalogPlan({ ...raw, sections: [] }, tree, 'X')
     expect(plan.sections).toEqual([{ nodeId: 'a', productsPerPage: 4, featuredIds: [] }])
   })
+  it('plafonne les vedettes à 2 par univers (une vedette = une pleine page)', () => {
+    const bigTree = [node('u', 'U', 1, ['a', 'b'], [
+      node('u/f1', 'F1', 2, ['c', 'd']),
+      node('u/f2', 'F2', 2, ['e', 'f']),
+    ])]
+    const plan = sanitizeCatalogPlan({
+      ...raw,
+      sections: [
+        { nodeId: 'u', productsPerPage: 4, featuredIds: ['a', 'b'] },
+        { nodeId: 'u/f1', productsPerPage: 4, featuredIds: ['c', 'd'] },
+        { nodeId: 'u/f2', productsPerPage: 4, featuredIds: ['e'] },
+      ],
+    }, bigTree, 'X')
+    const featured = plan.sections.flatMap((s) => s.featuredIds)
+    expect(featured).toEqual(['a', 'b']) // budget 2 consommé par l'univers, le reste purgé
+  })
+
   it('complète les champs texte optionnels manquants', () => {
     const plan = sanitizeCatalogPlan(raw, tree, 'X')
     expect(plan.cover.subtitle).toBe('')
