@@ -648,6 +648,11 @@
   .anm-rv .rflash i{font-style:normal;font-weight:800;font-size:26px;letter-spacing:.08em;color:transparent;-webkit-text-stroke:1.3px rgba(232,121,249,.95);text-shadow:0 0 22px rgba(232,121,249,.5)}
   .anm-rv .rflash b{margin-left:7px;font-weight:900;font-size:26px;letter-spacing:.05em;background:linear-gradient(100deg,#fde047,#fb923c 55%,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px rgba(250,204,21,.55))}
   .anm-rv .rflash em{display:block;width:max-content;margin-top:8px;font-style:normal;font-family:var(--mono);font-size:8px;letter-spacing:.13em;color:#e9d5ff;background:rgba(168,85,247,.22);border:1px solid rgba(232,121,249,.4);border-radius:100px;padding:4px 9px}
+  /* Caractéristiques produit : remplissent le vide au-dessus du titre sur les grands écrans */
+  .anm-rv .rfeats{display:none;flex-direction:column;gap:6px;margin-bottom:11px}
+  @media(min-width:2050px){.anm-rv .rfeats{display:flex}}
+  .anm-rv .rfeats i{font-style:normal;display:flex;align-items:center;gap:7px;width:max-content;font-size:11px;font-weight:600;color:#f5f3ff;background:rgba(99,102,241,.16);border:1px solid rgba(129,140,248,.38);border-radius:7px;padding:5px 10px}
+  .anm-rv .rfeats i::before{content:"✓";color:#67e8f9;font-weight:800;text-shadow:0 0 8px rgba(34,211,238,.9)}
   .anm-rv .rgen{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:10px;color:#f5d0fe;background:rgba(168,85,247,.25);border:1px solid rgba(232,121,249,.5);border-radius:20px;padding:4px 11px}
   .anm-rv .rtitle{font-weight:800;font-size:21px;letter-spacing:.04em;color:#67e8f9;text-shadow:0 0 14px rgba(34,211,238,.9);line-height:1.1}
   .anm-rv .rtitle small{display:block;font-size:10px;font-weight:600;color:#f5d0fe;letter-spacing:.05em;text-shadow:0 0 10px rgba(232,121,249,.8);margin-top:3px}
@@ -1165,6 +1170,9 @@
   #animation .scene-visual.is-in .anm-rv .rpictos span:nth-child(3){animation-delay:.3s}
   #animation .scene-visual.is-in .anm-rv .rold{animation:anmOld 5s ease-out infinite}
   #animation .scene-visual.is-in .anm-rv .rflash{animation:anmFlash 5s cubic-bezier(.2,.9,.3,1.4) infinite}
+  #animation .scene-visual.is-in .anm-rv .rfeats i{animation:anmFeat 5s ease-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rfeats i:nth-child(2){animation-delay:.16s}#animation .scene-visual.is-in .anm-rv .rfeats i:nth-child(3){animation-delay:.32s}
+  @keyframes anmFeat{0%,20%{opacity:0;transform:translateX(-18px)}28%{opacity:1;transform:none}94%{opacity:1}100%{opacity:0}}
   @keyframes anmFlash{0%,10%{opacity:0;transform:skewX(-8deg) translateX(-46px)}17%{opacity:1;transform:skewX(-3deg) translateX(4px)}21%{transform:skewX(-3deg)}48%{transform:skewX(-3deg) scale(1.05)}60%{transform:skewX(-3deg) scale(1)}78%{transform:skewX(-3deg) scale(1.05)}94%{opacity:1;transform:skewX(-3deg) scale(1)}100%{opacity:0;transform:skewX(-3deg) scale(.95)}}
   #animation .scene-visual.is-in .anm-rv .rnew{animation:anmPrice 5s cubic-bezier(.2,.9,.3,1.4) infinite}
   #animation .scene-visual.is-in .anm-rv .pp{animation:anmBlink 1s steps(1) infinite}
@@ -2772,7 +2780,7 @@
                 <span class="rpromo">−30 %</span><span class="rflash" aria-hidden="true"><i>Oferta</i><b>flash</b><em>Solo esta semana</em></span>
                 <span class="rgen">✦ generado · 16:9 · 10 s</span>
                 <div class="rinfo">
-                  <span class="rtitle">TALADRO 18V<small>Brushless · 2 baterías · mandril 13 mm</small></span>
+                  <span class="rfeats" aria-hidden="true"><i>Motor brushless de 60 Nm</i><i>2 baterías XR 2,0 Ah · carga 45 min</i><i>Portabrocas automático 13 mm · LED</i></span><span class="rtitle">TALADRO 18V<small>Brushless · 2 baterías · mandril 13 mm</small></span>
                   <span class="rdesc">La inalámbrica de nueva generación: motor <b>brushless</b> 60 Nm, 2 baterías XR 2 Ah y mandril 13 mm autoapriete. Ligera, indestructible, <b>garantía 3 años</b> — la aliada de potencia de todas sus obras.</span>
                   <span class="rpictos"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4"/></svg>2×2 Ah</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>60 Nm</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>3 años</span></span>
                   <span class="rprice"><span class="rold">31,10 €</span><span class="rnew">24<small>€90</small></span></span>
