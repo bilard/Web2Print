@@ -89,15 +89,16 @@ export const CATALOG_CSS = `
 .cat-cell-promo { flex:none; background:var(--cat-accent); color:#fff; font-family:var(--cat-font-h); font-weight:800;
   font-size:11px; letter-spacing:.14em; text-transform:uppercase; text-align:center; padding:6px 10px; }
 .cat-has-promo .cat-cell-kicker { top:26px; }
-.cat-cell-body { flex:none; padding:10px 12px 12px; display:flex; flex-direction:column; gap:2px; }
+.cat-cell-body { flex:none; padding:8px 12px 10px; display:flex; flex-direction:column; gap:2px; }
 .cat-cell-brand { font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--cat-accent); font-weight:800; }
 .cat-cell-name { font-family:var(--cat-font-h); font-weight:700; font-size:15px; line-height:1.2; text-transform:uppercase;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .cat-cell-desc { font-size:11px; opacity:.7; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.cat-cell-refcode { font-size:9px; opacity:.55; letter-spacing:.08em; text-transform:uppercase; margin-top:2px; }
-.cat-cell-row { display:flex; align-items:flex-end; justify-content:flex-end; margin-top:6px; gap:8px; }
+.cat-cell-refcode { font-size:9px; opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
+.cat-cell-row { display:flex; align-items:flex-end; justify-content:space-between; margin-top:6px; gap:10px; }
+.cat-cell-meta { display:flex; flex-direction:column; gap:3px; min-width:0; padding-bottom:2px; }
 .cat-cell-pricebox { text-align:right; }
-.cat-cell-unit { display:block; font-size:9px; opacity:.6; letter-spacing:.08em; text-transform:uppercase; margin-top:4px; }
+.cat-cell-unit { display:block; font-size:9px; opacity:.6; letter-spacing:.08em; text-transform:uppercase; }
 /* Étiquette prix : bloc barré (bandeau sombre) solidaire du badge prix accent */
 .cat-cell-tag { display:inline-flex; flex-direction:column; align-items:flex-end; transform:rotate(-2deg); }
 .cat-cell-was { display:inline-block; background:var(--cat-head-bg); color:var(--cat-head-ink); font-size:10px;

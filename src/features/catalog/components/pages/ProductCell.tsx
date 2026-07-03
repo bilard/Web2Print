@@ -51,14 +51,17 @@ export function ProductCell({ fields: f, featured, kicker, size, wide, style }: 
         {f.brand && <span className="cat-cell-brand">{f.brand}</span>}
         <span className="cat-cell-name">{f.name || 'Produit'}</span>
         {f.description && <span className="cat-cell-desc">{f.description}</span>}
-        {f.ref && <span className="cat-cell-refcode">Réf. {f.ref}</span>}
+        {/* Rangée du bas : réf/unité à GAUCHE du prix (comble l'espace vide). */}
         <div className="cat-cell-row">
+          <span className="cat-cell-meta">
+            {f.ref && <span className="cat-cell-refcode">Réf. {f.ref}</span>}
+            {f.unit && <span className="cat-cell-unit">Unité : {f.unit}</span>}
+          </span>
           <span className="cat-cell-pricebox">
             <span className="cat-cell-tag">
               {hasWas && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}
               <span className="cat-cell-price">{formatPrice(f.newPrice)}</span>
             </span>
-            {f.unit && <span className="cat-cell-unit">Unité : {f.unit}</span>}
           </span>
         </div>
       </div>
