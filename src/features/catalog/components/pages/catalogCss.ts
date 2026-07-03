@@ -70,8 +70,9 @@ export const CATALOG_CSS = `
 .cat-cell { position:relative; display:flex; flex-direction:column; min-height:0; background:#fff;
   border:1px solid rgba(17,24,39,.10); border-bottom:3px solid var(--cat-accent); border-radius:6px; overflow:hidden; }
 .cat-cell-img { position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
-  background:linear-gradient(180deg,#fafbfc 0%,#eef1f4 100%); padding:10px; }
-.cat-cell-img img { max-width:100%; max-height:100%; object-fit:contain; }
+  background:linear-gradient(180deg,#fafbfc 0%,#eef1f4 100%); padding:12px; }
+/* L'image REMPLIT sa zone (upscale contain) : plus de petit visuel perdu dans le blanc */
+.cat-cell-img img { width:100%; height:100%; object-fit:contain; }
 /* Sticker rond de remise (écart barré/vente) — en haut à droite du bloc image */
 .cat-price-sticker { position:absolute; top:8px; right:8px; width:46px; height:46px; border-radius:999px;
   background:var(--cat-accent); color:#fff; display:flex; align-items:center; justify-content:center;
@@ -118,6 +119,17 @@ export const CATALOG_CSS = `
 .cat-xl .cat-cell-refcode, .cat-xl .cat-cell-unit { font-size:11px; }
 .cat-xl .cat-cell-was { font-size:14px; padding:4px 12px 3px; }
 .cat-xl .cat-price-sticker { width:68px; height:68px; font-size:19px; }
+
+/* Carte LARGE (2 col × 1 ligne) : image à gauche, contenu à droite — zéro vide */
+.cat-wide { display:grid; grid-template-columns:40% 1fr; grid-template-rows:auto minmax(0,1fr); }
+.cat-wide .cat-cell-promo { grid-row:1; grid-column:1 / -1; }
+.cat-wide .cat-cell-img { grid-row:2; grid-column:1; height:100%; }
+.cat-wide .cat-cell-body { grid-row:2; grid-column:2; min-width:0; display:flex; flex-direction:column; justify-content:center; padding:12px 18px; gap:3px; }
+.cat-wide .cat-cell-row { margin-top:12px; }
+.cat-wide .cat-cell-name { font-size:19px; }
+.cat-wide .cat-cell-desc { -webkit-line-clamp:3; font-size:11px; }
+.cat-wide .cat-cell-price { font-size:24px; padding:8px 13px 7px; }
+.cat-wide .cat-cell-was { font-size:12px; }
 
 /* Vedette : mise en avant AU SEIN de la page — cadre accent + ruban en coin */
 .cat-featured { border:2px solid var(--cat-accent); border-bottom:6px solid var(--cat-accent);

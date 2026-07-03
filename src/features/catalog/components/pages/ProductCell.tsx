@@ -18,11 +18,13 @@ interface Props {
   /** Sous-famille du produit — pastille kicker en haut de fiche (flux continu). */
   kicker?: string
   size: CellSize
+  /** Carte LARGE (2 colonnes × 1 ligne) → layout horizontal image gauche / contenu droite. */
+  wide?: boolean
   /** Placement CSS grid (gridColumn/gridRow) calculé par le moteur. */
   style?: React.CSSProperties
 }
 
-export function ProductCell({ fields: f, featured, kicker, size, style }: Props) {
+export function ProductCell({ fields: f, featured, kicker, size, wide, style }: Props) {
   // Résolution Drive/CORS → blob:/data: (voir useResolvedImage). `data-resolving` est
   // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
   // avant capture html2canvas (l'<img> n'existe pas tant que src n'est pas prêt).
@@ -35,7 +37,7 @@ export function ProductCell({ fields: f, featured, kicker, size, style }: Props)
   const label = formatPromoLabel(f.promoLabel)
   const promo = label && label !== sticker ? label : null
   return (
-    <div className={`cat-cell cat-${size}${featured ? ' cat-featured' : ''}${promo ? ' cat-has-promo' : ''}`} style={style}>
+    <div className={`cat-cell cat-${size}${wide ? ' cat-wide' : ''}${featured ? ' cat-featured' : ''}${promo ? ' cat-has-promo' : ''}`} style={style}>
       {promo && <span className="cat-cell-promo">{promo}</span>}
       <div className="cat-cell-img" data-resolving={resolving ? 'true' : undefined}>
         {src ? <img src={src} alt="" /> : <span className="cat-cell-img-ph">Sans visuel</span>}

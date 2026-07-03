@@ -24,7 +24,8 @@ export function ProductGridPage({ ctx, grid, slots }: Props) {
         const kicker = slot.path.length > 1 ? slot.path[slot.path.length - 1] : undefined
         return (
           <ProductCell key={slot.rowId} fields={extractPromoFields(row, ctx.columns, ctx.fieldMap)}
-            featured={slot.featured} kicker={kicker} size={slotSize(slot, grid)} style={style} />
+            featured={slot.featured} kicker={kicker} size={slotSize(slot, grid)}
+            wide={slot.colSpan >= 2 && slot.rowSpan === 1} style={style} />
         )
       })}
     </div>
