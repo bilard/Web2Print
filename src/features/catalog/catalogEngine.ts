@@ -8,9 +8,10 @@
 // la page (1 vedette MAX par page, span plafonné pour ne JAMAIS couvrir la page
 // entière tant qu'il reste du flux), fiche chère = carte élargie (paliers
 // médiane/P80 par univers si sizeByPrice, même plafond), repli 1×1 quand le span
-// ne rentre plus → aucune case vide sauf sur la toute dernière page de l'univers.
-// Densité 'random' : grille tirée page à page via PRNG seedé par l'id d'univers
-// (rendu stable entre aperçu et export).
+// ne rentre plus, puis passe d'ÉTIREMENT sur la dernière page (les cartes
+// absorbent les cases restantes) → JAMAIS de case vide. Densité 'random' :
+// grille tirée page à page via PRNG seedé par l'id d'univers (rendu stable
+// entre aperçu et export).
 import type { CatalogGrid, CatalogPageDescriptor, CatalogSectionPlan, CatalogTreeNode, OpenerFamily, ProductSlot, TocEntry } from './catalogTypes'
 import { GRID_DIMS } from './catalogTypes'
 import { flattenTree, subtreeProductCount } from './catalogTree'
@@ -102,6 +103,46 @@ function shrinkCandidates(w: number, h: number): [number, number][] {
   if (w > 1) out.push([1, h])
   if (w > 1 || h > 1) out.push([1, 1])
   return out
+}
+
+/**
+ * Étire les cartes déjà placées pour absorber les cases restées libres (dernière
+ * page d'un univers) : extension vers le bas de la carte au-dessus, sinon vers la
+ * droite de la carte à gauche, multi-passes jusqu'à stabilité → JAMAIS de vide.
+ */
+function stretchToFill(occ: boolean[][], slots: ProductSlot[], C: number, R: number): void {
+  const at = (r: number, c: number): ProductSlot | undefined =>
+    slots.find((s) => r >= s.row - 1 && r < s.row - 1 + s.rowSpan && c >= s.col - 1 && c < s.col - 1 + s.colSpan)
+  let progress = true
+  while (progress) {
+    progress = false
+    for (let r = 0; r < R; r++) {
+      for (let c = 0; c < C; c++) {
+        if (occ[r][c]) continue
+        const above = r > 0 ? at(r - 1, c) : undefined
+        if (above) {
+          const cols = Array.from({ length: above.colSpan }, (_, i) => above.col - 1 + i)
+          const rowBelow = above.row - 1 + above.rowSpan
+          if (rowBelow < R && cols.every((cc) => !occ[rowBelow][cc])) {
+            cols.forEach((cc) => { occ[rowBelow][cc] = true })
+            above.rowSpan++
+            progress = true
+            continue
+          }
+        }
+        const left = c > 0 ? at(r, c - 1) : undefined
+        if (left) {
+          const leftRows = Array.from({ length: left.rowSpan }, (_, i) => left.row - 1 + i)
+          const colRight = left.col - 1 + left.colSpan
+          if (colRight < C && leftRows.every((rr) => !occ[rr][colRight])) {
+            leftRows.forEach((rr) => { occ[rr][colRight] = true })
+            left.colSpan++
+            progress = true
+          }
+        }
+      }
+    }
+  }
 }
 
 export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
@@ -202,6 +243,8 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
         featuredQueue.shift()
       }
       if (slots.length === 0) break // garde théorique (grille 1×1 minimum → jamais atteint)
+      // Cases restées libres (fin d'univers) : étirer les cartes → zéro vide.
+      stretchToFill(occ, slots, C, R)
       const breadcrumb = slots[0].path.slice(0, 2) // univers › famille du 1er slot
       pages.push({ kind: 'products', pageNumber, nodeId: univers.id, breadcrumb, grid, slots })
     }

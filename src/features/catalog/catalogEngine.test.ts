@@ -130,6 +130,24 @@ describe('paginateCatalog (flux continu par univers)', () => {
     expect(grids[0].slots.every((s) => s.colSpan === 1 && s.rowSpan === 1)).toBe(true)
   })
 
+  it('JAMAIS de case vide : la dernière page est étirée (cartes agrandies) pour couvrir toute la grille', () => {
+    // 4 produits sur grille 6 (2×3) : la rangée du bas est absorbée par les 2 cartes au-dessus.
+    const tree = [node('a', 'A', 1, ids(4))]
+    const pages = paginateCatalog({ tree, sections: [sec('a', 6)] })
+    const grids = pages.filter((p) => p.kind === 'products')
+    expect(grids).toHaveLength(1)
+    expect(grids[0].slots.map((s) => `${s.rowId}:${s.colSpan}x${s.rowSpan}`)).toEqual(['p1:1x1', 'p2:1x1', 'p3:1x2', 'p4:1x2'])
+    // Invariant : chaque page produits couvre 100 % de sa grille (aucun trou).
+    for (const g of [
+      ...grids,
+      ...paginateCatalog({ tree: [node('b', 'B', 1, ids(7))], sections: [sec('b', 8, ['p2'])] }).filter((p) => p.kind === 'products'),
+      ...paginateCatalog({ tree: [node('c', 'C', 1, ids(11))], sections: [{ ...sec('c', 4), randomDensity: true }] }).filter((p) => p.kind === 'products'),
+    ]) {
+      const [cols, rows] = { 1: [1, 1], 2: [1, 2], 3: [1, 3], 4: [2, 2], 6: [2, 3], 8: [2, 4] }[g.grid]!
+      expect(g.slots.reduce((acc, s) => acc + s.colSpan * s.rowSpan, 0)).toBe(cols * rows)
+    }
+  })
+
   it('densité aléatoire : déterministe (même entrée → mêmes pages), grilles dans le pool', () => {
     const tree = [node('a', 'A', 1, ids(30))]
     const sections = [{ ...sec('a', 4), randomDensity: true }]
