@@ -28,6 +28,29 @@ describe('defaultPromoFieldMap', () => {
     expect(m.newPrice).toBe('prix')
     expect(m.ean).toBe('ean')
   })
+
+  it('paire retail « Prix_barré » + « Prix_normal » : normal = prix de VENTE, barré = prix barré', () => {
+    const m = defaultPromoFieldMap([
+      { key: 'pb', label: 'Prix_barré', fieldType: 'currency' },
+      { key: 'pn', label: 'Prix_normal', fieldType: 'currency' },
+    ])
+    expect(m.oldPrice).toBe('pb')
+    expect(m.newPrice).toBe('pn')
+  })
+
+  it('garde anti-collision : une seule colonne prix → newPrice mappé, oldPrice abandonné', () => {
+    const m = defaultPromoFieldMap([{ key: 'pb', label: 'Prix barré', fieldType: 'currency' }])
+    expect(m.newPrice).toBe('pb') // repli partiel « prix »
+    expect(m.oldPrice).toBeUndefined() // jamais la même colonne que newPrice
+  })
+
+  it('cartouche promo : la colonne TEXTE (Mechanic) prime sur la colonne ratio (Promotion)', () => {
+    const m = defaultPromoFieldMap([
+      { key: 'promo', label: 'Promotion', fieldType: 'number' },
+      { key: 'mech', label: 'Mechanic', fieldType: 'text' },
+    ])
+    expect(m.promoLabel).toBe('mech')
+  })
 })
 
 describe('extractPromoFields', () => {

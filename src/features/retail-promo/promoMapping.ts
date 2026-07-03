@@ -11,12 +11,15 @@ const GUESS: Partial<Record<PromoFieldKey, string[]>> = {
   ref: ['référence', 'reference', 'ref', 'sku', 'code article', 'code_article', 'code produit', 'code_produit', 'n° article', 'numéro article', 'item code', 'ai_distributor_ref'],
   ean: ['ean', 'gencod', 'code-barres', 'barcode', 'ai_ean'],
   oldPrice: ['prix_barré', 'prix_barre', 'prix barré', 'prix barre', 'prix_normal', 'prix normal', 'ancien prix', 'prix public', 'prix conseillé', 'prix conseille', 'prix de référence', 'prix catalogue', 'pvc', 'msrp', 'original', 'old price'],
-  newPrice: ['prix_promo', 'prix promo', 'prix_net', 'prix_ttc', 'prix', 'tarif', 'price', 'pricing', 'ai_pricing'],
+  newPrice: ['prix_promo', 'prix promo', 'prix_net', 'prix_ttc', 'prix de vente', 'prix vente', 'prix_normal', 'prix normal', 'prix', 'tarif', 'price', 'pricing', 'ai_pricing'],
   unit: ['unité de vente', 'unite de vente', 'unité', 'unite', 'unit', 'conditionnement', 'colisage', 'vendu par', 'uv'],
   description: ['description', 'desc', 'descriptif', 'détail', 'detail', 'caractéristiques'],
   category: ['famille', 'univers', 'sous-famille', 'sous famille', 'catégorie', 'categorie', 'category', 'rayon'],
   unitPrice: ['unit_price', 'prix unitaire', 'prix au litre', 'prix/kg', 'prix au kg'],
-  promoLabel: ['promotion', 'mechanic', 'mécanique', 'mecanique', 'offre', 'promo', 'texte promotionnel', 'texte promo', 'accroche', 'badge', 'top affaire', 'bon plan'],
+  // Colonnes TEXTE (« Prix choc », « Top affaire ») d'abord : quand un dataset a
+  // à la fois Mechanic (accroche) et Promotion (ratio %), le cartouche doit
+  // porter l'accroche — la remise chiffrée reste calculable par les prix.
+  promoLabel: ['mechanic', 'mécanique', 'mecanique', 'texte promotionnel', 'texte promo', 'accroche', 'top affaire', 'bon plan', 'promotion', 'offre', 'promo', 'badge'],
   validFrom: ['du', 'date début', 'valid from', 'valid_from'],
   validTo: ['au', 'date fin', "jusqu'au", 'valid until', 'valid_to'],
   mentions: ['mentions', 'mention légale', 'legal'],
@@ -45,6 +48,10 @@ export function defaultPromoFieldMap(columns: MergeColumn[]): Partial<Record<Pro
     const key = matchColumn(columns, needles)
     if (key) map[field] = key
   }
+  // Garde : prix barré et prix de vente ne doivent JAMAIS pointer la même colonne
+  // (repli partiel « prix » possible) — sinon prix affiché = prix barré et la
+  // remise ne s'affiche jamais. On sacrifie le barré, le prix de vente prime.
+  if (map.oldPrice && map.oldPrice === map.newPrice) delete map.oldPrice
   return map
 }
 
