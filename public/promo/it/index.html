@@ -700,13 +700,13 @@
   .aic-opt .sc{margin-left:auto;font-family:var(--mono);font-size:10.5px;font-weight:700;color:#c7c4ff;flex:0 0 auto}
   .aic-opt.on{box-shadow:inset 0 0 0 1px rgba(124,108,255,.45)}
   /* 13 Utilisateurs & rôles — console RBAC */
-  .usr-body{display:flex;flex-direction:column;gap:11px}
+  .usr-body{display:flex;flex-direction:column;gap:13px}
   .usr-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
   .usr-hl{font-family:var(--mono);font-size:9px;letter-spacing:.07em;color:var(--faint);text-transform:uppercase}
-  .usr-leg{display:flex;align-items:center;gap:4px;font-size:8.5px;color:var(--muted);flex-wrap:wrap}
-  .usr-leg i{width:7px;height:7px;border-radius:50%;display:inline-block;margin-left:7px}.usr-leg i:first-child{margin-left:0}
+  .usr-leg{display:flex;align-items:center;gap:6px;font-size:9.5px;color:var(--muted);flex-wrap:wrap}
+  .usr-leg i{width:7px;height:7px;border-radius:50%;display:inline-block;margin-left:13px}.usr-leg i:first-child{margin-left:0}
   .rol-own{background:#fbbf24}.rol-edit{background:#818cf8}.rol-read{background:#c4b5fd}.rol-pend{background:#94a3b8}.rol-block{background:#f87171}
-  .usr-list{display:flex;flex-direction:column;gap:7px}
+  .usr-list{display:flex;flex-direction:column;gap:9px}
   .usr-row{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:8px 13px;transition:border-color .25s,box-shadow .25s}
   .usr-row.sel{border-color:rgba(124,108,255,.5);box-shadow:inset 2px 0 0 var(--indigo),0 0 20px -9px var(--indigo)}
   .usr-row.blocked{opacity:.62}
@@ -721,7 +721,7 @@
   .usr-stat::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 7px currentColor}
   .usr-stat.ok{color:#6ee7b7}.usr-stat.pend{color:#fcd34d}.usr-stat.block{color:#fca5a5}
   .usr-role{font-size:10.5px;border:1px solid var(--line2);border-radius:8px;padding:5px 10px;color:var(--muted);flex:0 0 auto;white-space:nowrap}
-  .usr-permhd{font-size:11px;color:var(--muted);margin:5px 0 0;display:flex;align-items:center;gap:7px;flex-wrap:wrap}.usr-permhd b{color:var(--ink);font-weight:700}.usr-permhd .sub{color:var(--faint);font-size:9.5px;font-family:var(--mono)}
+  .usr-permhd{font-size:11px;color:var(--muted);margin:9px 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.usr-permhd b{color:var(--ink);font-weight:700}.usr-permhd .sub{color:var(--faint);font-size:9.5px;font-family:var(--mono)}
   .usr-cats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
   .usr-cat{border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:8px 11px;display:flex;align-items:center;gap:9px;font-size:11px;font-weight:600}
   .usr-cat .ci{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;flex:0 0 auto}.usr-cat .ci svg{width:13px;height:13px}
@@ -974,7 +974,7 @@
 
   /* SCÈNES (la chaîne) */
   .chain{padding:20px 0 10px}
-  .scene{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:clamp(28px,2.4vw,44px) 0;position:relative}
+  .scene{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:clamp(52px,4vw,80px) 0;position:relative}
   .scene:nth-child(even) .scene-text{order:2}
   @media(max-width:900px){.scene{grid-template-columns:1fr;gap:32px}.scene:nth-child(even) .scene-text{order:0}}
   .scene-num{display:inline-block;font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.2em;margin-bottom:10px;position:relative;z-index:3}
@@ -2936,9 +2936,6 @@
               <div class="usr-cat"><span class="ci" style="background:rgba(52,211,153,.13);color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>PIM<span class="cc">0/7</span></div>
               <div class="usr-cat"><span class="ci" style="background:rgba(45,212,191,.13);color:#2dd4bf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v5h8v-1"/></svg></span>TAXO<span class="cc">0/3</span></div>
               <div class="usr-cat"><span class="ci" style="background:rgba(34,211,238,.13);color:#22d3ee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/></svg></span>SCRAPING<span class="cc">0/4</span></div>
-              <div class="usr-cat"><span class="ci" style="background:rgba(99,102,241,.13);color:#6366f1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>WORKFLOWS<span class="cc">0/5</span></div>
-              <div class="usr-cat"><span class="ci" style="background:rgba(96,165,250,.13);color:#60a5fa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span>TELEGRAM<span class="cc">0/1</span></div>
-              <div class="usr-cat"><span class="ci" style="background:rgba(232,121,249,.13);color:#e879f9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M9 4v14"/></svg></span>ANIMAZIONE<span class="cc">0/1</span></div>
             </div>
             <div class="usr-perms"><span class="pl">Override</span><span class="usr-perm on">+ Vedere il DAM</span><span class="usr-perm on">+ Scaricare un visual</span><span class="usr-perm off">− Eliminare un visual</span><span class="usr-perm">Caricare</span><span class="usr-perm">Raccolte</span></div>
           </div>
@@ -3703,7 +3700,7 @@ window.loopInView = function(el, opt){
         g.style.opacity=(0.16*clamp(1-Math.abs(d)*1.1,0,1)).toFixed(3);
       });
       /* COUCHES DE SCÈNE : maquette nettement plus rapide (profondeur franche) */
-      visuals.forEach(function(v){ if(!near(v))return; v.style.translate='0 '+(dist(v)*vh*-0.14).toFixed(1)+'px'; });
+      visuals.forEach(function(v){ if(!near(v))return; var t=dist(v)*vh*-0.14; if(t>36)t=36; if(t<-36)t=-36; v.style.translate='0 '+t.toFixed(1)+'px'; });
       /* COUCHES DE TEXTE : sous-éléments à vitesses décalées (parallaxe interne) */
       function driftGroup(g){ if(!near(g.root))return; var d=dist(g.root);
         for(var i=0;i<g.parts.length;i++){ g.parts[i][0].style.translate='0 '+(d*vh*g.parts[i][1]).toFixed(1)+'px'; }
