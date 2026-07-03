@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Catalogue studio — animation promo</title>
+<style>
+  @font-face {
+    font-family: "Jura";
+    src: url("fonts/jura-latin.woff2") format("woff2");
+    font-weight: 300 700;
+    font-style: normal;
+  }
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface-2: #232323;
+    --line: rgba(255, 255, 255, 0.09);
+    --txt: #f4f3f0;
+    --dim: rgba(244, 243, 240, 0.55);
+    --indigo: #6366f1;
+    --cyan: #22d3ee;
+    --page-paper: #faf8f4;
+    --page-ink: #1c1917;
+    --page-navy: #111827;
+    --page-red: #ef4444;
+    --page-line: #e7e2d8;
+  }
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  [data-composition-id="root"] {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+    font-family: "Jura", system-ui, sans-serif;
+    color: var(--txt);
+  }
+  .stage { position: absolute; inset: 0; }
+
+  /* ---- fond : grille pointillée + halo indigo ---- */
+  .grid-dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.10) 1.5px, transparent 1.5px);
+    background-size: 44px 44px;
+    opacity: 0.5;
+  }
+  .glow {
+    position: absolute; width: 1100px; height: 1100px; left: 250px; top: -60px;
+    background: radial-gradient(circle, rgba(99,102,241,0.22), transparent 62%);
+    pointer-events: none;
+  }
+
+  /* ---- barre d'outils ---- */
+  .toolbar {
+    position: absolute; top: 0; left: 0; right: 0; height: 68px; z-index: 6;
+    display: flex; align-items: center; gap: 22px; padding: 0 34px; box-sizing: border-box;
+    background: var(--surface); border-bottom: 2px solid var(--line);
+  }
+  .tb-dot { width: 13px; height: 13px; border-radius: 50%; }
+  .tb-title { font-size: 21px; font-weight: 700; letter-spacing: 0.02em; }
+  .tb-title b { color: var(--indigo); }
+  .tb-sep { width: 2px; height: 26px; background: var(--line); }
+  .tb-file { font-size: 17px; color: var(--dim); }
+  .tb-count { margin-left: auto; font-family: "JetBrains Mono", monospace; font-size: 16px; color: var(--dim); }
+  .tb-export {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--indigo); color: #fff; border-radius: 10px;
+    padding: 12px 22px; font-size: 17px; font-weight: 700; letter-spacing: 0.02em;
+  }
+
+  /* ---- fil d'étapes du wizard ---- */
+  .steps {
+    position: absolute; top: 84px; left: 360px; right: 400px; height: 46px; z-index: 2;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .step {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 18px; border-radius: 999px; font-size: 16px; font-weight: 600;
+    background: var(--surface-2); color: var(--dim); border: 2px solid var(--line);
+  }
+  .step .ok { color: #10b981; font-weight: 800; }
+  .step.on { background: var(--indigo); color: #fff; border-color: var(--indigo); }
+  .step-arrow { color: var(--dim); font-size: 15px; }
+
+  /* ---- panneau structure (arbre) ---- */
+  .panel {
+    position: absolute; top: 152px; bottom: 40px; width: 288px; box-sizing: border-box; z-index: 2;
+    background: var(--surface); border: 2px solid var(--line); border-radius: 14px;
+    padding: 22px; display: flex; flex-direction: column; gap: 11px;
+  }
+  .panel.left { left: 34px; }
+  .panel.right { right: 34px; width: 312px; }
+  .p-title { font-size: 15px; font-weight: 700; letter-spacing: 0.16em; color: var(--dim); margin-bottom: 4px; }
+  .tree-row {
+    display: flex; align-items: center; gap: 11px;
+    background: var(--surface-2); border-radius: 9px; padding: 10px 13px;
+    font-size: 16px; font-weight: 600;
+  }
+  .tree-row.lvl2 { margin-left: 22px; font-size: 15px; font-weight: 500; padding: 8px 13px; }
+  .tree-row .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--indigo); flex: none; }
+  .tree-row.lvl2 .dot { background: var(--cyan); width: 8px; height: 8px; }
+  .tree-row .n {
+    margin-left: auto; font-family: "JetBrains Mono", monospace; font-size: 13px;
+    background: rgba(99,102,241,0.18); color: #b9bbf9; border-radius: 999px; padding: 3px 9px;
+  }
+  .tree-row.lvl2 .n { background: rgba(34,211,238,0.14); color: #9adfee; }
+  .tree-note { font-size: 14px; line-height: 1.55; color: var(--dim); margin-top: auto; }
+
+  /* ---- panneau prompt + plan IA ---- */
+  .prompt-box {
+    background: var(--surface-2); border: 2px solid rgba(99,102,241,0.45); border-radius: 11px;
+    padding: 14px 16px; font-size: 16px; line-height: 1.5; min-height: 96px; box-sizing: border-box;
+  }
+  .prompt-box .caret {
+    display: inline-block; width: 2px; height: 18px; background: var(--indigo);
+    vertical-align: -3px; margin-left: 2px;
+  }
+  .gen-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--indigo); color: #fff; border-radius: 10px;
+    padding: 13px 0; font-size: 17px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .plan-lbl { font-size: 13px; letter-spacing: 0.13em; color: var(--dim); margin-top: 6px; }
+  .plan-chip {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface-2); border-radius: 9px; padding: 10px 13px;
+    font-size: 15px; font-weight: 600;
+  }
+  .plan-chip .ic {
+    width: 24px; height: 24px; border-radius: 6px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff; background: var(--indigo);
+  }
+  .plan-chip .ic.red { background: var(--page-red); }
+  .plan-chip .ic.green { background: #10b981; }
+  .plan-chip .ic.cyan { background: #0891b2; }
+  .plan-chip em { margin-left: auto; font-style: normal; font-size: 13px; color: var(--dim); }
+
+  /* ---- la page du catalogue ---- */
+  .page-wrap {
+    position: absolute; top: 152px; bottom: 40px; left: 360px; right: 400px; z-index: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .page-frame { position: relative; width: 552px; height: 780px; }
+  .page {
+    position: absolute; inset: 0; border-radius: 6px; overflow: hidden;
+    display: flex; flex-direction: column;
+    background: var(--page-paper); color: var(--page-ink);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55), 0 0 0 2px rgba(255,255,255,0.07);
+    font-family: "Montserrat", sans-serif;
+  }
+  .pg-head {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--page-navy); color: #fff; padding: 14px 22px;
+    transform-origin: left center;
+  }
+  .pg-crumb { font-size: 16px; font-weight: 800; letter-spacing: 0.16em; }
+  .pg-crumb i { font-style: normal; color: rgba(255,255,255,0.55); font-weight: 600; }
+  .pg-folio {
+    width: 34px; height: 34px; border-radius: 50%; background: var(--page-red); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums;
+  }
+  .pg-grid {
+    flex: 1; display: grid; gap: 10px; padding: 12px; box-sizing: border-box;
+    grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+  }
+  .cell {
+    position: relative; background: #fff; border: 1px solid var(--page-line); border-radius: 5px;
+    display: flex; flex-direction: column; overflow: hidden; padding: 9px; box-sizing: border-box;
+  }
+  .cl-imgw { position: relative; flex: 1; overflow: hidden; border-radius: 4px; }
+  .cl-imgw img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cl-name { font-size: 14px; font-weight: 800; line-height: 1.15; margin-top: 8px; letter-spacing: -0.01em; }
+  .cl-sub { font-size: 10.5px; font-weight: 600; color: #78716c; margin-top: 3px; }
+  .cl-pricerow { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 7px; }
+  .cl-old { position: relative; font-size: 12px; font-weight: 700; color: #57534e; font-variant-numeric: tabular-nums; }
+  .cl-old i { position: absolute; left: -3px; right: -3px; top: 50%; height: 2px; background: var(--page-red); transform-origin: left center; }
+  .cl-price {
+    background: var(--page-red); color: #fff; border-radius: 3px;
+    font-size: 16px; font-weight: 900; padding: 4px 9px; transform: rotate(-2deg);
+    font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+    box-shadow: 0 4px 12px rgba(239,68,68,0.35);
+  }
+
+  /* vedette 2×2 */
+  .cell.vedette {
+    grid-column: 1 / span 2; grid-row: 1 / span 2;
+    border: 2px solid var(--page-red); padding: 12px;
+  }
+  .vd-ruban {
+    position: absolute; top: 16px; left: -34px; z-index: 3; transform: rotate(-45deg);
+    background: var(--page-red); color: #fff; font-size: 11px; font-weight: 800;
+    letter-spacing: 0.14em; padding: 5px 40px;
+  }
+  .vd-sticker {
+    position: absolute; top: 12px; right: 12px; z-index: 3;
+    width: 74px; height: 74px; border-radius: 50%;
+    background: var(--page-red); color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px rgba(239,68,68,0.45);
+  }
+  .vd-sticker b { font-size: 24px; font-weight: 900; line-height: 1; }
+  .vd-sticker span { font-size: 8px; font-weight: 800; letter-spacing: 0.1em; margin-top: 2px; }
+  .cell.vedette .cl-name { font-size: 24px; margin-top: 10px; }
+  .cell.vedette .cl-sub { font-size: 13px; margin-top: 4px; }
+  .cell.vedette .cl-old { font-size: 16px; }
+  .cell.vedette .cl-price { font-size: 27px; padding: 6px 14px; }
+
+  .pg-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--page-navy); color: rgba(255,255,255,0.7);
+    font-size: 10.5px; font-weight: 600; padding: 8px 22px; letter-spacing: 0.08em;
+  }
+
+  /* page 2 : densité aléatoire (2×2) */
+  .page.p2 .pg-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+  .page.p2 .cell { padding: 12px; }
+  .page.p2 .cl-name { font-size: 19px; }
+  .page.p2 .cl-sub { font-size: 12px; }
+  .page.p2 .cl-price { font-size: 21px; padding: 5px 11px; }
+  .page.p2 .cl-old { font-size: 14px; }
+
+  /* ---- toast export ---- */
+  .toast {
+    position: absolute; right: 40px; top: 86px; z-index: 7;
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface-2); border: 2px solid rgba(99,102,241,0.55); border-radius: 12px;
+    padding: 16px 22px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  }
+  .toast .ok {
+    width: 30px; height: 30px; border-radius: 50%; background: #10b981; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 900;
+  }
+  .toast b { font-size: 17px; }
+  .toast small { display: block; font-size: 15px; color: var(--dim); margin-top: 2px; }
+  .toast .n { color: var(--indigo); font-weight: 700; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div data-composition-id="root" data-start="0" data-duration="13" data-width="1600" data-height="1000">
+  <div class="stage">
+    <div class="grid-dots"></div>
+    <div class="glow" id="glow"></div>
+
+    <div class="toolbar" id="toolbar">
+      <span class="tb-dot" style="background:#ff5f57"></span>
+      <span class="tb-dot" style="background:#febc2e"></span>
+      <span class="tb-dot" style="background:#28c840"></span>
+      <span class="tb-sep"></span>
+      <span class="tb-title"><b>Catalogue studio</b> — Nouveau catalogue</span>
+      <span class="tb-sep"></span>
+      <span class="tb-file">Catalogue_GSB_2026</span>
+      <span class="tb-count">174 produits</span>
+      <span class="tb-export" id="export-btn">Exporter le PDF</span>
+    </div>
+
+    <div class="steps" id="steps">
+      <span class="step"><span class="ok">✓</span>Source</span>
+      <span class="step-arrow">→</span>
+      <span class="step"><span class="ok">✓</span>Structure</span>
+      <span class="step-arrow">→</span>
+      <span class="step on">Prompt</span>
+      <span class="step-arrow">→</span>
+      <span class="step">Aperçu</span>
+    </div>
+
+    <div class="panel left" id="panel-tree">
+      <div class="p-title">STRUCTURE · UNIVERS</div>
+      <div class="tree-row t-row"><span class="dot"></span>Outillage<span class="n">84</span></div>
+      <div class="tree-row lvl2 t-row"><span class="dot"></span>Électroportatif<span class="n">32</span></div>
+      <div class="tree-row lvl2 t-row"><span class="dot"></span>Mesure &amp; traçage<span class="n">18</span></div>
+      <div class="tree-row t-row"><span class="dot"></span>Jardin<span class="n">46</span></div>
+      <div class="tree-row lvl2 t-row"><span class="dot"></span>Arrosage<span class="n">21</span></div>
+      <div class="tree-row t-row"><span class="dot"></span>Maison &amp; déco<span class="n">44</span></div>
+      <div class="tree-note">L'arbre Univers → Famille est déduit de votre PIM — renommez, fusionnez, réordonnez.</div>
+    </div>
+
+    <div class="panel right" id="panel-plan">
+      <div class="p-title">PROMPT DU CATALOGUE</div>
+      <div class="prompt-box"><span id="prompt-txt"></span><span class="caret" id="caret"></span></div>
+      <div class="gen-btn" id="gen-btn">✦ Générer le plan (IA)</div>
+      <span class="plan-lbl">PLAN GÉNÉRÉ</span>
+      <div class="plan-chip pl-chip"><span class="ic red">Aa</span>Thème « Rouge atelier »<em>couleurs</em></div>
+      <div class="plan-chip pl-chip"><span class="ic">★</span>Vedettes selon le prix<em>2×2</em></div>
+      <div class="plan-chip pl-chip"><span class="ic cyan">▦</span>Densité aléatoire<em>2–8/page</em></div>
+      <div class="plan-chip pl-chip"><span class="ic green">◫</span>Couverture générée (IA)<em>image</em></div>
+    </div>
+
+    <div class="page-wrap" data-layout-allow-overflow data-layout-allow-overlap data-layout-allow-occlusion>
+      <div class="page-frame" id="page-frame">
+        <div class="page" id="page1" data-layout-allow-occlusion data-layout-allow-overlap>
+          <div class="pg-head" id="pg1-head">
+            <span class="pg-crumb">OUTILLAGE <i>›</i> TOP AFFAIRES</span>
+            <span class="pg-folio" id="pg1-folio">12</span>
+          </div>
+          <div class="pg-grid">
+            <div class="cell vedette cellin" id="cell-vd" data-layout-allow-overflow>
+              <span class="vd-ruban" id="vd-ruban" data-layout-allow-occlusion data-layout-allow-overlap>★ VEDETTE</span>
+              <span class="vd-sticker" id="vd-sticker" data-layout-allow-occlusion data-layout-allow-overlap><b>−28%</b><span>DE REMISE</span></span>
+              <div class="cl-imgw"><img id="vd-img" src="drill.jpg" alt="" /></div>
+              <div class="cl-name">Perceuse-visseuse PRO&nbsp;18V</div>
+              <div class="cl-sub">Réf. 4892 · Unité : coffret · Mandrin 13&nbsp;mm</div>
+              <div class="cl-pricerow"><span class="cl-old">179,90&nbsp;€<i class="strike"></i></span><span class="cl-price pr-pop" id="vd-price">129,90&nbsp;€</span></div>
+            </div>
+            <div class="cell cellin"><div class="cl-imgw"><img src="lamp.jpg" alt="" /></div><div class="cl-name">Lampe OSLO</div><div class="cl-sub">Réf. 4471 · pièce</div><div class="cl-pricerow"><span class="cl-old">39,90&nbsp;€<i class="strike"></i></span><span class="cl-price pr-pop">29,90&nbsp;€</span></div></div>
+            <div class="cell cellin"><div class="cl-imgw"><img src="watch.jpg" alt="" /></div><div class="cl-name">Montre chantier</div><div class="cl-sub">Réf. 5120 · pièce</div><div class="cl-pricerow"><span class="cl-old">89,00&nbsp;€<i class="strike"></i></span><span class="cl-price pr-pop">64,90&nbsp;€</span></div></div>
+            <div class="cell cellin"><div class="cl-imgw"><img src="bottle.jpg" alt="" /></div><div class="cl-name">Brume d'ambiance</div><div class="cl-sub">Réf. 3308 · pièce</div><div class="cl-pricerow"><span class="cl-old">24,90&nbsp;€<i class="strike"></i></span><span class="cl-price pr-pop">17,90&nbsp;€</span></div></div>
+            <div class="cell cellin"><div class="cl-imgw"><img src="cam.jpg" alt="" /></div><div class="cl-name">Caméra inspection</div><div class="cl-sub">Réf. 6015 · kit</div><div class="cl-pricerow"><span class="cl-old">149,00&nbsp;€<i class="strike"></i></span><span class="cl-price pr-pop">99,00&nbsp;€</span></div></div>
+            <div class="cell cellin"><div class="cl-imgw"><img src="shoe.jpg" alt="" /></div><div class="cl-name">Chaussures sécu S3</div><div class="cl-sub">Réf. 7742 · paire</div><div class="cl-pricerow"><span class="cl-old">79,90&nbsp;€<i class="strike"></i></span><span class="cl-price pr-pop">54,90&nbsp;€</span></div></div>
+          </div>
+          <div class="pg-foot"><span>CATALOGUE PRINTEMPS 2026</span><span>PRIX EN € TTC · DANS LA LIMITE DES STOCKS</span></div>
+        </div>
+
+        <div class="page p2" id="page2" data-layout-allow-overflow>
+          <div class="pg-head">
+            <span class="pg-crumb">MAISON &amp; DÉCO <i>›</i> SÉLECTION</span>
+            <span class="pg-folio">27</span>
+          </div>
+          <div class="pg-grid">
+            <div class="cell"><div class="cl-imgw"><img src="plant.jpg" alt="" /></div><div class="cl-name">Kit goutte-à-goutte</div><div class="cl-sub">Réf. 8104 · Unité : kit 25&nbsp;m</div><div class="cl-pricerow"><span class="cl-old">59,90&nbsp;€<i></i></span><span class="cl-price">44,90&nbsp;€</span></div></div>
+            <div class="cell"><div class="cl-imgw"><img src="chair.jpg" alt="" /></div><div class="cl-name">Fauteuil ROSSA&nbsp;210</div><div class="cl-sub">Réf. 210 · Unité : pièce</div><div class="cl-pricerow"><span class="cl-old">329,90&nbsp;€<i></i></span><span class="cl-price">249,90&nbsp;€</span></div></div>
+            <div class="cell"><div class="cl-imgw"><img src="bottle.jpg" alt="" /></div><div class="cl-name">Eau de parfum 50&nbsp;ml</div><div class="cl-sub">Réf. 8230 · Unité : pièce</div><div class="cl-pricerow"><span class="cl-old">34,90&nbsp;€<i></i></span><span class="cl-price">24,90&nbsp;€</span></div></div>
+            <div class="cell"><div class="cl-imgw"><img src="lamp.jpg" alt="" /></div><div class="cl-name">Borne solaire ×4</div><div class="cl-sub">Réf. 8377 · Unité : lot</div><div class="cl-pricerow"><span class="cl-old">49,90&nbsp;€<i></i></span><span class="cl-price">34,90&nbsp;€</span></div></div>
+          </div>
+          <div class="pg-foot"><span>CATALOGUE PRINTEMPS 2026</span><span>DENSITÉ ALÉATOIRE · 4 / PAGE</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast">
+      <span class="ok">✓</span>
+      <div><b>PDF exporté — prêt à imprimer</b><small><span class="n" id="toast-n">0</span> pages · fond perdu + traits de coupe · 300 DPI</small></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    /* ---------- build : le chrome du builder entre ---------- */
+    tl.fromTo("#toolbar", { y: -70, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "expo.out" }, 0.15);
+    tl.fromTo("#panel-tree", { x: -60, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 0.3);
+    tl.fromTo("#panel-plan", { x: 60, opacity: 0 }, { x: 0, opacity: 1, duration: 0.65, ease: "power2.out" }, 0.42);
+    tl.fromTo("#steps", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "sine.out" }, 0.55);
+    tl.fromTo("#glow", { opacity: 0 }, { opacity: 1, duration: 1.2, ease: "sine.out" }, 0.2);
+
+    /* l'arbre se déplie */
+    tl.fromTo(".t-row", { x: -26, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "power2.out", stagger: 0.08 }, 0.75);
+
+    /* ---------- prompt : frappe + génération du plan ---------- */
+    const promptFull = "Thème atelier, vedettes selon le prix, densité aléatoire";
+    const typing = { n: 0 };
+    tl.to(typing, {
+      n: promptFull.length, duration: 1.5, ease: "none",
+      onUpdate: () => {
+        document.getElementById("prompt-txt").textContent = promptFull.slice(0, Math.round(typing.n));
+      },
+    }, 1.35);
+    tl.fromTo("#caret", { opacity: 1 }, { opacity: 0, duration: 0.4, ease: "steps(1)", yoyo: true, repeat: 7 }, 1.35);
+    tl.set("#caret", { opacity: 0 }, 4.6);
+
+    tl.fromTo("#gen-btn", { scale: 1 }, { scale: 0.92, duration: 0.12, ease: "power2.in", yoyo: true, repeat: 1 }, 3.05);
+    tl.fromTo(".pl-chip", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "back.out(1.6)", stagger: 0.11 }, 3.35);
+
+    /* ---------- la page se compose (packing first-fit) ---------- */
+    tl.fromTo("#page-frame", { scale: 0.94, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.55, ease: "sine.out" }, 3.7);
+    tl.fromTo("#pg1-head", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "expo.out" }, 4.05);
+    tl.fromTo("#pg1-folio", { scale: 0, rotation: -90 }, { scale: 1, rotation: 0, duration: 0.5, ease: "back.out(2)" }, 4.45);
+
+    /* vedette 2×2 d'abord, puis le flux comble les cases */
+    tl.fromTo("#cell-vd", { scale: 0.7, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.4)" }, 4.5);
+    tl.fromTo("#vd-img", { scale: 1 }, { scale: 1.08, duration: 7.6, ease: "none" }, 4.5);
+    tl.fromTo("#vd-ruban", { xPercent: -130 }, { xPercent: 0, duration: 0.5, ease: "power4.out" }, 4.95);
+    tl.fromTo(".cell.cellin:not(.vedette)", { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.42, ease: "power3.out", stagger: 0.09 }, 4.95);
+
+    /* prix : badges inclinés + barrés + sticker remise */
+    tl.fromTo(".pr-pop", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(2.4)", stagger: 0.07 }, 5.65);
+    tl.fromTo(".strike", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power4.out", stagger: 0.06 }, 6.0);
+    tl.fromTo("#vd-sticker", { scale: 0, rotation: -32, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 0.65, ease: "back.out(2.2)" }, 6.15);
+
+    /* ---------- densité aléatoire : la page suivante glisse ---------- */
+    tl.fromTo("#page2", { xPercent: 118, opacity: 0, rotation: 2 }, { xPercent: 0, opacity: 1, rotation: 0, duration: 0.75, ease: "expo.out" }, 8.0);
+
+    /* ---------- resolve : export PDF ---------- */
+    tl.fromTo("#export-btn", { scale: 1 }, { scale: 0.92, duration: 0.12, ease: "power2.in", yoyo: true, repeat: 1 }, 9.1);
+    tl.fromTo("#toast", { y: -36, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "back.out(1.5)" }, 9.5);
+    const pages = { n: 0 };
+    tl.to(pages, {
+      n: 68, duration: 1.2, ease: "power2.out",
+      onUpdate: () => {
+        document.getElementById("toast-n").textContent = String(Math.round(pages.n));
+      },
+    }, 9.75);
+    tl.to("#toast", { y: -20, opacity: 0, duration: 0.35, ease: "power2.in" }, 11.9);
+    tl.set("#toast", { visibility: "hidden" }, 12.25);
+
+    /* ---------- breathe ---------- */
+    tl.to("#vd-sticker", { scale: 1.07, duration: 0.8, ease: "sine.inOut", yoyo: true, repeat: 3 }, 7.2);
+    tl.to("#glow", { x: 90, y: 40, duration: 7, ease: "sine.inOut" }, 4.0);
+
+    /* ---------- fin : fondu pour une boucle propre ---------- */
+    tl.to(".stage", { opacity: 0, duration: 0.55, ease: "sine.inOut" }, 12.4);
+
+    window.__timelines["root"] = tl;
+  </script>
+</div>
+</body>
+</html>
