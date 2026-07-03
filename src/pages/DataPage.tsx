@@ -23,6 +23,9 @@ import { useExcelStore } from '@/stores/excel.store'
 import { useDamMigration } from '@/features/dam/useDamMigration'
 import { LinkDriveImagesModal } from '@/features/dam/LinkDriveImagesModal'
 import { usePimStore } from '@/stores/pim.store'
+import { SourceSyncModal } from '@/features/pim/SourceSyncModal'
+import { useSourceSyncPrompt } from '@/features/pim/useSourceSyncPrompt'
+import type { SourceIdent } from '@/features/pim/linkedPublications'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 const ExcelImportModal = lazy(() =>
@@ -69,6 +72,14 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const canCreate = useCan('pim.create')
   const canImport = useCan('pim.import')
   const canScrape = useCan('pim.scrape')
+
+  // PIM = source unique de vérité : après une rafale d'éditions, popup listant
+  // les publications reliées (catalogues auto-synchro, fiches promo à rafraîchir).
+  const sourceIdent = useMemo<SourceIdent | null>(
+    () => (currentDocId ? { kind: 'excel', docId: currentDocId } : null),
+    [currentDocId],
+  )
+  const { open: syncPromptOpen, close: closeSyncPrompt } = useSourceSyncPrompt(sourceIdent)
 
   const [rightTab, setRightTab] = useState<RightTab>('fields')
   const [showRight, setShowRight] = useState(true)
@@ -407,6 +418,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     <div className={`${embedded ? 'h-full' : 'h-screen'} bg-background text-white flex flex-col overflow-hidden`}>
       {/* Portal for sidebar toolbar */}
       {portalTarget && createPortal(sidebarToolbar, portalTarget)}
+
+      {/* Popup publications reliées (PIM source unique de vérité) */}
+      {sourceIdent && <SourceSyncModal ident={sourceIdent} open={syncPromptOpen} onClose={closeSyncPrompt} />}
 
       {/* Header */}
       <header className="h-11 bg-well border-b border-white/[0.06] flex items-center px-3 gap-2 shrink-0">
@@ -896,6 +910,14 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
   const canCreate = useCan('pim.create')
   const canImport = useCan('pim.import')
   const canScrape = useCan('pim.scrape')
+
+  // PIM = source unique de vérité : après une rafale d'éditions, popup listant
+  // les publications reliées (catalogues auto-synchro, fiches promo à rafraîchir).
+  const sourceIdent = useMemo<SourceIdent | null>(
+    () => (currentDocId ? { kind: 'excel', docId: currentDocId } : null),
+    [currentDocId],
+  )
+  const { open: syncPromptOpen, close: closeSyncPrompt } = useSourceSyncPrompt(sourceIdent)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [openAddMenu, setOpenAddMenu] = useState<string | null>(null)
   const [renamingDocId, setRenamingDocId] = useState<string | null>(null)

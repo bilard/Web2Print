@@ -6,8 +6,9 @@ import { auth, db } from '@/lib/firebase/config'
 import { stripUndefined } from '@/features/retail-promo/stripUndefined'
 import { EMPTY_TREE_EDITS } from './catalogTree'
 import { CATALOG_FORMAT_PRESETS, type CatalogDoc } from './catalogTypes'
+import type { DataSourceRef } from '@/stores/merge.store'
 
-export interface CatalogSummary { id: string; name: string; updatedAt: Date | null }
+export interface CatalogSummary { id: string; name: string; updatedAt: Date | null; sourceRef: DataSourceRef | null }
 
 const colPath = (uid: string) => collection(db, 'users', uid, 'catalogs')
 
@@ -24,7 +25,7 @@ export async function listCatalogs(): Promise<CatalogSummary[]> {
   if (!uid) return []
   const snap = await getDocs(colPath(uid))
   return snap.docs
-    .map((d) => ({ id: d.id, name: String(d.data().name ?? d.id), updatedAt: d.data().updatedAt?.toDate?.() ?? null }))
+    .map((d) => ({ id: d.id, name: String(d.data().name ?? d.id), updatedAt: d.data().updatedAt?.toDate?.() ?? null, sourceRef: (d.data().sourceRef ?? null) as DataSourceRef | null }))
     .sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0))
 }
 

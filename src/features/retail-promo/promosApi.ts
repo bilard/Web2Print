@@ -89,6 +89,23 @@ export async function loadPromoPayload(id: string): Promise<PromoPayload | null>
   try { return JSON.parse(String(snap.data().payload)) as PromoPayload } catch { return null }
 }
 
+/**
+ * Rafraîchit l'INSTANTANÉ de données d'une fiche depuis la source (PIM source
+ * unique de vérité) : colonnes/lignes remplacées, personnalisations conservées
+ * (⚠ imgOverride/textOverride sont indexés par POSITION de ligne).
+ */
+export async function refreshPromoData(id: string, columns: MergeColumn[], rows: MergeRow[]): Promise<void> {
+  const uid = auth.currentUser?.uid
+  if (!uid) throw new Error('Non connecté')
+  const existing = await loadPromoPayload(id)
+  if (!existing) throw new Error('Fiche introuvable')
+  const payload: PromoPayload = { columns, rows, imgOverride: existing.imgOverride, textOverride: existing.textOverride }
+  const payloadJson = JSON.stringify(payload)
+  if (payloadJson.length > MAX_PAYLOAD) throw new Error('Données trop volumineuses (> 900 Ko)')
+  await setDoc(payloadDoc(uid, id), { payload: payloadJson, updatedAt: serverTimestamp() })
+  await setDoc(doc(metaCol(uid), id), { rowCount: rows.length, updatedAt: serverTimestamp() }, { merge: true })
+}
+
 /** Supprime une fiche (méta + payload). */
 export async function deletePromo(id: string): Promise<void> {
   const uid = auth.currentUser?.uid
