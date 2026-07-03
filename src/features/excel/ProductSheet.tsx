@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import {
-  ChevronLeft, ChevronRight, Copy, Check, ExternalLink,
+  ChevronLeft, ChevronRight, Copy, Check, ExternalLink, Eraser, Loader2,
   Tag, Barcode, FileText, Play, Link2, Download, Zap, Database, Layers, Globe,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { useExcelStore } from '@/stores/excel.store'
 import { recordAudit } from '@/lib/auditLog'
@@ -19,6 +20,7 @@ import type { ExcelColumn, CellValue, FieldTypeId } from './types'
 import { DamImage } from '@/features/dam/DamImage'
 import { useResolvedImageSrc } from '@/features/dam/useResolvedImageSrc'
 import { isDriveImageRef } from '@/features/dam/driveAssets'
+import { detourImageRef } from '@/features/imaging/detourImage'
 import { EnrichmentPanel } from './ai-enrichment/EnrichmentPanel'
 import { ScrapedFieldsTab } from './ai-enrichment/ScrapedFieldsTab'
 import { useEnrichmentStore } from './ai-enrichment/enrichmentStore'
@@ -165,6 +167,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const { sheets, activeSheetIndex, updateCell } = useExcelStore()
   const sheet = sheets[activeSheetIndex]
   const [activeImg, setActiveImg] = useState(0)
+  const [detourBusy, setDetourBusy] = useState(false)
   const [tab, setTab] = useState<Tab>('general')
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
@@ -312,6 +315,30 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   // Résout l'image active si c'est une référence DAM (Drive) → blob affichable.
   const mainImageSrc = useResolvedImageSrc(uniqueImages[activeImg] ?? '')
 
+  // Détoure l'image AFFICHÉE et réécrit la cellule qui la porte : le segment est
+  // remplacé par « détourée | originale » (repli naturel si le PNG Drive est supprimé).
+  const detourActive = async () => {
+    const ref = uniqueImages[activeImg]
+    if (!ref || detourBusy) return
+    const col = imageCols.find(c => parseImageList(getValue(c)).includes(ref))
+    if (!col) {
+      toast.error('Image issue du scraping — enregistrez d’abord les images dans la fiche avant de détourer')
+      return
+    }
+    setDetourBusy(true)
+    try {
+      const link = await detourImageRef(ref, title || 'produit')
+      const segs = String(getValue(col) ?? '').split(/[\n|]/).map(s => s.trim()).filter(Boolean)
+      const next = segs.map(s => (s === ref ? `${link} | ${s}` : s)).join(' | ')
+      updateCell(activeSheetIndex, rowId, col.key, next)
+      toast.success('Image détourée (PNG ajouté au DAM « Détourés »)')
+    } catch (err) {
+      toast.error(`Détourage : ${String((err as Error).message)}`)
+    } finally {
+      setDetourBusy(false)
+    }
+  }
+
   const contentCols = visibleCols.filter(c =>
     c.key !== primaryCol?.key &&
     (levels[c.key] ?? 0) === 0 &&
@@ -404,6 +431,12 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
             <img src={mainImageSrc} alt={title}
               className="max-h-full max-w-full object-contain"
               onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            <button onClick={() => void detourActive()} disabled={detourBusy}
+              className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-black/50 text-[#fff]/70 hover:text-[#fff] hover:bg-black/70 text-[10px] font-medium transition-colors disabled:opacity-60"
+              title="Détourer l'image affichée (fond supprimé → PNG dans le DAM « Détourés »)">
+              {detourBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eraser className="w-3.5 h-3.5" />}
+              {detourBusy ? 'Détourage…' : 'Détourer'}
+            </button>
             {activeImg > 0 && (
               <button onClick={() => setActiveImg(i => i - 1)}
                 className="absolute left-2 p-1 rounded-full bg-black/50 text-[#fff]/60 hover:text-[#fff] hover:bg-black/70 transition-colors">
