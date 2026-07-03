@@ -2,7 +2,7 @@
 // Modal : importer N images d'un dossier local vers un dossier Google Drive choisi.
 import { useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { FolderUp, Folder, Loader2, Images, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { FolderUp, Folder, Loader2, Images, CheckCircle2, AlertTriangle, Eraser } from 'lucide-react'
 import { toast } from 'sonner'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { GDrivePickerModal } from '@/features/gdrive/GDrivePickerModal'
@@ -17,6 +17,7 @@ interface Props {
 
 export function ImportFolderToDriveModal({ open, onClose }: Props) {
   const [files, setFiles] = useState<File[]>([])
+  const [removeBg, setRemoveBg] = useState(false)
   const [dest, setDest] = useState<{ id: string; name: string } | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [running, setRunning] = useState(false)
@@ -41,7 +42,7 @@ export function ImportFolderToDriveModal({ open, onClose }: Props) {
     if (!files.length || !dest) return
     setRunning(true); setResult(null)
     try {
-      const res = await uploadFolder(files, dest.id)
+      const res = await uploadFolder(files, dest.id, { removeBg })
       setResult(res)
       if (res.failed === 0) toast.success(`${res.ok} image(s) importée(s) dans « ${dest.name} »`)
       else toast.warning(`${res.ok} importée(s), ${res.failed} échec(s) — voir le détail`)
@@ -134,6 +135,14 @@ export function ImportFolderToDriveModal({ open, onClose }: Props) {
               <p className="text-[11px] text-white/40">{dest ? 'Cliquer pour changer' : 'Parcourez votre Google Drive'}</p>
             </div>
           </button>
+
+          {/* Option détourage : chaque image passe par le moteur (rembg/Remove.bg) → PNG alpha */}
+          <label className="flex items-center gap-2.5 px-1 text-sm text-white/70 cursor-pointer select-none">
+            <input type="checkbox" checked={removeBg} onChange={(e) => setRemoveBg(e.target.checked)}
+              disabled={running} className="accent-indigo-600 w-4 h-4" />
+            <Eraser className="w-4 h-4 text-indigo-300 shrink-0" />
+            <span>Détourer les images à l'import <span className="text-white/35">(fond supprimé → PNG)</span></span>
+          </label>
 
           {/* Progression */}
           {running && progress && (

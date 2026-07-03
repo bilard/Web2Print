@@ -17,6 +17,7 @@ import { useIsOwner } from '@/features/auth/useAuth'
 import { useUsageStats } from '@/features/stats/useUsageStats'
 import { API_KEYS } from '@/lib/apiKeys'
 import { isRemoveBgApiEnabled, setRemoveBgApiEnabled } from '@/features/imaging/removeBackground'
+import { UserFontsPanel } from '@/features/fonts/UserFontsPanel'
 import { GDriveConnectorRow } from '@/features/gdrive/GDriveConnectorRow'
 import { ResumeSetupButton } from '@/features/onboarding/ResumeSetupButton'
 import { ApiKeyRow } from './ApiKeyRow'
@@ -450,6 +451,11 @@ function ConnectorsTab() {
       <ApiKeyRow id="scrapfly" label="ScrapFly" description="Réservée — pas de CORS browser-side, en attente d'une Cloud Function proxy" logo={<ScrapflyLogo />} placeholder="scp-live-..." />
       <HiggsfieldConnectorRow />
       <GDriveConnectorRow />
+
+      {/* ── Mes polices (globales : catalogue, promo…) ── */}
+      <div className="bg-white/[0.03] rounded-xl p-3">
+        <UserFontsPanel />
+      </div>
 
       {/* ── Google accès serveur (OAuth offline : Drive + Gmail pour cron/webhook/Telegram) ── */}
       <div className="bg-white/[0.03] rounded-xl p-3">

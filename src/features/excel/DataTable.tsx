@@ -20,6 +20,7 @@ import { rowCompleteness, completenessTone } from './completeness'
 import { cellFreshness } from './fieldFreshness'
 import { GalleryView } from './GalleryView'
 import { DamImage } from '@/features/dam/DamImage'
+import { DetourImageButton } from '@/features/imaging/DetourImageButton'
 import { DamPickButton } from '@/features/dam/DamPickButton'
 import { isDriveImageRef } from '@/features/dam/driveAssets'
 import { trashProductDamAssets } from '@/features/dam/damCleanup'
@@ -1067,6 +1068,13 @@ function DataRow({
                 {(col.fieldType === 'image' || col.fieldType === 'url') && (
                   <DamPickButton
                     onPick={(link) => updateCell(activeSheetIndex, row._id, col.key, link)}
+                  />
+                )}
+                {(col.fieldType === 'image' || isImageValue(value, col)) && !!value && (
+                  <DetourImageButton
+                    value={String(value)}
+                    baseName={String(row[sheet.columns.find((c) => c.isPrimary)?.key ?? ''] ?? 'image')}
+                    onDone={(v) => updateCell(activeSheetIndex, row._id, col.key, v)}
                   />
                 )}
                 {freshDot}

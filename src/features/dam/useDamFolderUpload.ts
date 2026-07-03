@@ -11,6 +11,7 @@ import { useState, useCallback, useRef } from 'react'
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { httpsCallable } from 'firebase/functions'
 import { auth, storage, functions } from '@/lib/firebase/config'
+import { removeBackground } from '@/features/imaging/removeBackground'
 
 const damUpload = httpsCallable<
   { url: string; fileName: string; folderId: string },
@@ -46,7 +47,7 @@ export function useDamFolderUpload() {
   const cancel = useCallback(() => { abortRef.current = true }, [])
 
   const uploadFolder = useCallback(
-    async (files: File[], folderId: string): Promise<FolderUploadResult> => {
+    async (files: File[], folderId: string, opts?: { removeBg?: boolean }): Promise<FolderUploadResult> => {
       const uid = auth.currentUser?.uid
       if (!uid) throw new Error('Connexion requise.')
 
@@ -61,15 +62,31 @@ export function useDamFolderUpload() {
       const runOne = async (file: File) => {
         if (abortRef.current) return
         setProgress((p) => (p ? { ...p, current: file.name } : p))
-        const ext = (file.name.match(IMAGE_RE)?.[1] ?? (file.type.split('/')[1] || 'jpg')).toLowerCase()
+        // Détourage optionnel AVANT upload : le fichier devient un PNG alpha.
+        // Un échec de détourage n'empêche pas l'import (image d'origine conservée).
+        let payload: { blob: Blob; name: string; type: string } = { blob: file, name: file.name, type: file.type }
+        if (opts?.removeBg) {
+          const objUrl = URL.createObjectURL(file)
+          try {
+            const { url } = await removeBackground(objUrl)
+            const png = await (await fetch(url)).blob()
+            URL.revokeObjectURL(url)
+            payload = { blob: png, name: `${file.name.replace(/\.[^.]+$/, '')}.png`, type: 'image/png' }
+          } catch (err) {
+            console.warn('[import DAM] détourage échoué, image d’origine conservée :', file.name, err)
+          } finally {
+            URL.revokeObjectURL(objUrl)
+          }
+        }
+        const ext = (payload.name.match(IMAGE_RE)?.[1] ?? (payload.type.split('/')[1] || 'jpg')).toLowerCase()
         const tempPath = `users/${uid}/dam-temp/${crypto.randomUUID()}.${ext}`
         const tempRef = storageRef(storage, tempPath)
         try {
-          await uploadBytes(tempRef, file, { contentType: file.type || `image/${ext}` })
+          await uploadBytes(tempRef, payload.blob, { contentType: payload.type || `image/${ext}` })
           const url = await getDownloadURL(tempRef)
-          const { webViewLink } = (await damUpload({ url, fileName: file.name, folderId })).data
+          const { webViewLink } = (await damUpload({ url, fileName: payload.name, folderId })).data
           result.ok++
-          result.links.push({ fileName: file.name, webViewLink })
+          result.links.push({ fileName: payload.name, webViewLink })
         } catch (err) {
           result.failed++
           result.errors.push({ fileName: file.name, message: err instanceof Error ? err.message : String(err) })
