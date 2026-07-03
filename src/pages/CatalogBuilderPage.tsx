@@ -9,6 +9,7 @@ import { useCatalogStore } from '@/stores/catalog.store'
 import { loadCatalog } from '@/features/catalog/catalogsApi'
 import { isPimSource, loadPimMergeData, pimProjectIdFromSource } from '@/features/merge/pimSource'
 import { loadExcelMergeData } from '@/features/merge/excelSource'
+import { defaultPromoFieldMap } from '@/features/retail-promo/promoMapping'
 import { useCatalogAutosave } from '@/features/catalog/useCatalogAutosave'
 import { CatalogStepsNav } from '@/features/catalog/components/CatalogStepsNav'
 
@@ -51,6 +52,16 @@ export default function CatalogBuilderPage() {
         } catch (e) { toast.error(`Source indisponible : ${String((e as Error).message)}`) }
       }
       if (cancelled) return
+      // Le fieldMap persisté date du devinage de l'époque : les aliases
+      // s'enrichissent au fil des versions (prix barré/PVC, code article,
+      // unité de vente…) → compléter les champs MANQUANTS avec le devinage
+      // actuel, sans jamais écraser un mapping existant. Hors de la branche
+      // de rechargement : s'applique aussi quand la session a gardé les lignes.
+      const cur = useCatalogStore.getState()
+      if (cur.rawColumns.length > 0) {
+        const merged = { ...defaultPromoFieldMap(cur.rawColumns), ...cur.fieldMap }
+        if (Object.keys(merged).length !== Object.keys(cur.fieldMap).length) cur.setFieldMap(merged)
+      }
       // Sans lignes rechargées, seule l'étape Source a du sens (source supprimée, hors ligne…).
       if (useCatalogStore.getState().rawRows.length === 0) useCatalogStore.getState().setStep('source')
       setReady(true)
