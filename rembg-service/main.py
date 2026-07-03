@@ -26,8 +26,9 @@ CORS_HEADERS = {
 }
 
 
-@app.get("/healthz")
-def healthz():
+# NB : « /healthz » est INTERCEPTÉ par le frontend Google (404) — ne pas l'utiliser.
+@app.get("/health")
+def health():
     return jsonify({"ok": True, "model": MODEL})
 
 

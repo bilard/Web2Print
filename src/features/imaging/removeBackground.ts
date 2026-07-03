@@ -8,8 +8,8 @@ import { auth, functions } from '@/lib/firebase/config'
 import { getApiKey } from '@/lib/apiKeys'
 import { recordRemoveBgUsage } from '@/features/stats/removeBgUsageTracking'
 
-/** Service rembg (projet web2print-render, comme hf-render). */
-const REMBG_URL = 'https://rembg-742448912014.europe-west1.run.app'
+/** Service rembg (projet web2print-render, comme hf-render) — URL canonique Cloud Run. */
+const REMBG_URL = 'https://rembg-tggty5kqja-ew.a.run.app'
 
 const DISABLE_FLAG = 'designstudio_removebg_api_disabled'
 
