@@ -17,6 +17,7 @@ export function useCatalogAutosave(): { saving: boolean } {
         || s.levelKeys !== prev.levelKeys || s.treeEdits !== prev.treeEdits || s.prompt !== prev.prompt
         || s.plan !== prev.plan || s.fieldMap !== prev.fieldMap || s.format !== prev.format
         || s.coverImageUrl !== prev.coverImageUrl || s.backCoverImageUrl !== prev.backCoverImageUrl
+        || s.pageOrder !== prev.pageOrder
       if (!changed) return
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(async () => {

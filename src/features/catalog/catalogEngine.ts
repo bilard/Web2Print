@@ -207,6 +207,7 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       const [C, R] = GRID_DIMS[grid]
       const occ: boolean[][] = Array.from({ length: R }, () => Array<boolean>(C).fill(false))
       const slots: ProductSlot[] = []
+      const pageNodeIds = new Set<string>()
       const pageNumber = pages.length + 1
       const place = (item: FlowItem, w: number, h: number): boolean => {
         let placed: { r: number; c: number; w: number; h: number } | null = null
@@ -217,6 +218,7 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
         if (!placed) return false
         for (let dr = 0; dr < placed.h; dr++) for (let dc = 0; dc < placed.w; dc++) occ[placed.r + dr][placed.c + dc] = true
         register(item.chain, pageNumber)
+        for (const id of item.chain) pageNodeIds.add(id)
         slots.push({
           rowId: item.rowId, featured: item.featured, path: item.path,
           col: placed.c + 1, row: placed.r + 1, colSpan: placed.w, rowSpan: placed.h,
@@ -246,7 +248,7 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       // Cases restées libres (fin d'univers) : étirer les cartes → zéro vide.
       stretchToFill(occ, slots, C, R)
       const breadcrumb = slots[0].path.slice(0, 2) // univers › famille du 1er slot
-      pages.push({ kind: 'products', pageNumber, nodeId: univers.id, breadcrumb, grid, slots })
+      pages.push({ kind: 'products', pageNumber, nodeId: univers.id, breadcrumb, grid, slots, nodeIds: [...pageNodeIds] })
     }
   })
   pages.push({ kind: 'back-cover', pageNumber: pages.length + 1 })

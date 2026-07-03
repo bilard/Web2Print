@@ -17,6 +17,7 @@ import { CatalogStepsNav } from '@/features/catalog/components/CatalogStepsNav'
 const StepSource = lazy(() => import('@/features/catalog/components/steps/StepSource').then((m) => ({ default: m.StepSource })))
 const StepStructure = lazy(() => import('@/features/catalog/components/steps/StepStructure').then((m) => ({ default: m.StepStructure })))
 const StepPrompt = lazy(() => import('@/features/catalog/components/steps/StepPrompt').then((m) => ({ default: m.StepPrompt })))
+const StepFlatplan = lazy(() => import('@/features/catalog/components/steps/StepFlatplan').then((m) => ({ default: m.StepFlatplan })))
 const StepPreview = lazy(() => import('@/features/catalog/components/steps/StepPreview').then((m) => ({ default: m.StepPreview })))
 const StepExport = lazy(() => import('@/features/catalog/components/steps/StepExport').then((m) => ({ default: m.StepExport })))
 
@@ -92,6 +93,7 @@ export default function CatalogBuilderPage() {
           {s.step === 'source' && <StepSource />}
           {s.step === 'structure' && <StepStructure />}
           {s.step === 'prompt' && <StepPrompt />}
+          {s.step === 'flatplan' && <StepFlatplan />}
           {s.step === 'preview' && <StepPreview />}
           {s.step === 'export' && <StepExport />}
         </Suspense>

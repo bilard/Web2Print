@@ -150,7 +150,9 @@ export type CatalogPageDescriptor =
   | { kind: 'cover'; pageNumber: number }
   | { kind: 'toc'; pageNumber: number; entries: TocEntry[] }
   | { kind: 'opener'; pageNumber: number; nodeId: string; label: string; index: number; productCount: number; families: OpenerFamily[]; highlights: string[] }
-  | { kind: 'products'; pageNumber: number; nodeId: string; breadcrumb: string[]; grid: CatalogGrid; slots: ProductSlot[] }
+  | { kind: 'products'; pageNumber: number; nodeId: string; breadcrumb: string[]; grid: CatalogGrid; slots: ProductSlot[];
+      /** Ids des nœuds taxonomiques représentés sur la page (chaînes univers→sous-famille) — navigation/stats du chemin de fer. */
+      nodeIds?: string[] }
   | { kind: 'back-cover'; pageNumber: number }
 
 /** Colonnes mappées sur les 3 niveaux taxonomiques. */
@@ -180,4 +182,6 @@ export interface CatalogDoc {
   format: CatalogFormat
   coverImageUrl: string | null
   backCoverImageUrl: string | null
+  /** Ordre manuel des pages (clés stables du chemin de fer, cf. catalogFlatplan). Vide = ordre du moteur. */
+  pageOrder: string[]
 }

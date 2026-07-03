@@ -5,8 +5,9 @@ const STEPS: { id: CatalogStep; label: string }[] = [
   { id: 'source', label: '1 · Source' },
   { id: 'structure', label: '2 · Structure' },
   { id: 'prompt', label: '3 · Prompt & style' },
-  { id: 'preview', label: '4 · Aperçu' },
-  { id: 'export', label: '5 · Export' },
+  { id: 'flatplan', label: '4 · Chemin de fer' },
+  { id: 'preview', label: '5 · Aperçu' },
+  { id: 'export', label: '6 · Export' },
 ]
 
 interface Props { step: CatalogStep; onStep: (s: CatalogStep) => void; canLeave: boolean }

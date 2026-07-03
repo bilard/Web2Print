@@ -6,7 +6,7 @@ import type { CatalogDensity, CatalogDoc, CatalogFormat, CatalogPlan, LevelKeys,
 import { CATALOG_FORMAT_PRESETS } from '@/features/catalog/catalogTypes'
 import { EMPTY_TREE_EDITS } from '@/features/catalog/catalogTree'
 
-export type CatalogStep = 'source' | 'structure' | 'prompt' | 'preview' | 'export'
+export type CatalogStep = 'source' | 'structure' | 'prompt' | 'flatplan' | 'preview' | 'export'
 
 interface CatalogState {
   catalogId: string | null
@@ -24,6 +24,10 @@ interface CatalogState {
   format: CatalogFormat
   coverImageUrl: string | null
   backCoverImageUrl: string | null
+  /** Ordre manuel des pages du chemin de fer (clés stables, vide = ordre moteur). */
+  pageOrder: string[]
+  /** Index de page à ouvrir en arrivant sur l'étape Aperçu (transient, non persisté). */
+  previewIndex: number | null
 
   hydrate: (doc: CatalogDoc, id: string) => void
   toDoc: () => CatalogDoc
@@ -43,6 +47,8 @@ interface CatalogState {
   setFormat: (format: CatalogFormat) => void
   setCoverImageUrl: (url: string | null) => void
   setBackCoverImageUrl: (url: string | null) => void
+  setPageOrder: (order: string[]) => void
+  setPreviewIndex: (index: number | null) => void
   reset: () => void
 }
 
@@ -62,6 +68,8 @@ const defaultState = {
   format: CATALOG_FORMAT_PRESETS[0].format,
   coverImageUrl: null as string | null,
   backCoverImageUrl: null as string | null,
+  pageOrder: [] as string[],
+  previewIndex: null as number | null,
 }
 
 /**
@@ -93,6 +101,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     catalogId: id, name: doc.name, step: 'source', sourceRef: doc.sourceRef, selectedRowIds: doc.selectedRowIds,
     levelKeys: doc.levelKeys, treeEdits: doc.treeEdits, prompt: doc.prompt, plan: doc.plan,
     fieldMap: doc.fieldMap, format: doc.format, coverImageUrl: doc.coverImageUrl, backCoverImageUrl: doc.backCoverImageUrl,
+    pageOrder: doc.pageOrder, previewIndex: null,
     // Purge la session précédente (autre catalogue) : rawRows/rawColumns sont
     // rechargés depuis sourceRef par CatalogBuilderPage (garde rawRows.length===0).
     rawRows: [], rawColumns: [],
@@ -103,6 +112,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
       id: s.catalogId ?? '', name: s.name, sourceRef: s.sourceRef, selectedRowIds: s.selectedRowIds,
       levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
       fieldMap: s.fieldMap, format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
+      pageOrder: s.pageOrder,
     }
   },
   setStep: (step) => set({ step }),
@@ -138,6 +148,8 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   setFormat: (format) => set({ format }),
   setCoverImageUrl: (coverImageUrl) => set({ coverImageUrl }),
   setBackCoverImageUrl: (backCoverImageUrl) => set({ backCoverImageUrl }),
+  setPageOrder: (pageOrder) => set({ pageOrder }),
+  setPreviewIndex: (previewIndex) => set({ previewIndex }),
   reset: () => set(defaultState),
 }), {
   name: 'catalog-builder-session',
@@ -147,5 +159,6 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     rawColumns: s.rawColumns, rawRows: s.rawRows, selectedRowIds: s.selectedRowIds,
     levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
     fieldMap: s.fieldMap, format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
+    pageOrder: s.pageOrder,
   }),
 }))

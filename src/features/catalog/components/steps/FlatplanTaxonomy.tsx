@@ -1,0 +1,82 @@
+// src/features/catalog/components/steps/FlatplanTaxonomy.tsx
+// Rail gauche du chemin de fer : la taxonomie (univers › famille › sous-famille)
+// avec les stats de chaque nœud (produits, pages, plage p. X–Y). Cliquer un nœud
+// surligne ses pages dans la nappe et y fait défiler la vue.
+import { ChevronDown, ChevronRight } from 'lucide-react'
+import { useState } from 'react'
+import type { CatalogTreeNode } from '../../catalogTypes'
+import { subtreeProductCount } from '../../catalogTree'
+import type { NodePageRange } from '../../catalogFlatplan'
+import { LEVEL_STYLES } from './levelStyles'
+
+interface Props {
+  tree: CatalogTreeNode[]
+  ranges: Map<string, NodePageRange>
+  colors: Map<string, string>
+  selectedNode: string | null
+  onSelect: (nodeId: string | null) => void
+}
+
+function RangeChip({ range }: { range: NodePageRange | undefined }) {
+  if (!range) return null
+  return (
+    <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
+      {range.first === range.last ? `p. ${range.first}` : `p. ${range.first}–${range.last}`}
+    </span>
+  )
+}
+
+function NodeRow({ node, ranges, colors, selectedNode, onSelect }: Props & { node: CatalogTreeNode }) {
+  const [collapsed, setCollapsed] = useState(false)
+  const count = subtreeProductCount(node)
+  if (count === 0) return null
+  const style = LEVEL_STYLES[node.level]
+  const range = ranges.get(node.id)
+  const active = selectedNode === node.id
+  const children = node.children.filter((c) => subtreeProductCount(c) > 0)
+  return (
+    <div>
+      <div className={`flex items-center gap-1 rounded-md ${active ? 'bg-indigo-600/20 ring-1 ring-indigo-500' : style.row}`}>
+        {node.level === 1 && children.length > 0 ? (
+          <button onClick={() => setCollapsed((v) => !v)} className="p-0.5 shrink-0 text-muted-foreground hover:text-white" title={collapsed ? 'Déplier' : 'Replier'}>
+            {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        ) : <span className="w-4 shrink-0" />}
+        <button onClick={() => onSelect(active ? null : node.id)}
+          className="flex-1 min-w-0 flex items-center gap-1.5 text-left px-1 py-1.5 rounded-md hover:bg-surface-2"
+          title={`${count} produit${count > 1 ? 's' : ''}${range ? ` · ${range.pageCount} page${range.pageCount > 1 ? 's' : ''}` : ''}`}>
+          {node.level === 1
+            ? <span className="w-2 h-2 rounded-full shrink-0" style={{ background: colors.get(node.id) ?? '#64748b' }} />
+            : <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />}
+          <span className={`truncate ${style.text}`}>{node.label}</span>
+          <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums ${style.badge}`}>{count}</span>
+          <span className="flex-1" />
+          <RangeChip range={range} />
+        </button>
+      </div>
+      {!collapsed && children.length > 0 && (
+        <div className="ml-4 border-l border-border pl-1.5 mt-0.5 space-y-0.5">
+          {children.map((c) => (
+            <NodeRow key={c.id} node={c} tree={[]} ranges={ranges} colors={colors} selectedNode={selectedNode} onSelect={onSelect} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function FlatplanTaxonomy({ tree, ranges, colors, selectedNode, onSelect }: Props) {
+  const universes = tree.filter((n) => subtreeProductCount(n) > 0)
+  return (
+    <div className="p-2 space-y-1">
+      <button onClick={() => onSelect(null)}
+        className={`w-full text-left px-2 py-1.5 rounded-md text-xs ${selectedNode === null ? 'bg-indigo-600 text-[#fff] font-medium' : 'text-muted-foreground hover:bg-surface-2 hover:text-white'}`}>
+        Tout le catalogue
+      </button>
+      {universes.map((u) => (
+        <NodeRow key={u.id} node={u} tree={tree} ranges={ranges} colors={colors} selectedNode={selectedNode} onSelect={onSelect} />
+      ))}
+      {universes.length === 0 && <p className="px-2 py-4 text-xs text-muted-foreground">Aucun univers — vérifiez la structure.</p>}
+    </div>
+  )
+}

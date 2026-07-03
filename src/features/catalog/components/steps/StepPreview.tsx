@@ -13,8 +13,15 @@ import { PreviewPageTree } from './PreviewPageTree'
 
 export function StepPreview() {
   const setStep = useCatalogStore((s) => s.setStep)
+  const previewIndex = useCatalogStore((s) => s.previewIndex)
+  const setPreviewIndex = useCatalogStore((s) => s.setPreviewIndex)
   const { pages, ctx } = useCatalogPages()
   const [index, setIndex] = useState(0)
+
+  // Arrivée depuis le chemin de fer : ouvrir directement la page demandée (one-shot).
+  useEffect(() => {
+    if (previewIndex !== null) { setIndex(previewIndex); setPreviewIndex(null) }
+  }, [previewIndex, setPreviewIndex])
   const containerRef = useRef<HTMLDivElement>(null)
   const [avail, setAvail] = useState({ w: 0, h: 0 })
   // Zoom (trackpad/Ctrl+molette, ancré sous le curseur) + pan à la barre d'espace.
