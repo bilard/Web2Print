@@ -8,6 +8,12 @@ import type { PromoFieldKey } from '@/features/retail-promo/promoTypes'
 export const CATALOG_GRIDS = [1, 2, 3, 4, 6, 8] as const
 export type CatalogGrid = (typeof CATALOG_GRIDS)[number]
 
+/** Densité choisie dans l'UI : une grille fixe ou 'random' (variée page à page, déterministe). */
+export type CatalogDensity = CatalogGrid | 'random'
+
+/** [colonnes, lignes] de chaque densité — partagé moteur (packing) + rendu (CSS grid). */
+export const GRID_DIMS: Record<CatalogGrid, [number, number]> = { 1: [1, 1], 2: [1, 2], 3: [1, 3], 4: [2, 2], 6: [2, 3], 8: [2, 4] }
+
 export interface CatalogFormat { widthMm: number; heightMm: number }
 
 export const CATALOG_FORMAT_PRESETS: { id: string; label: string; format: CatalogFormat }[] = [
@@ -31,7 +37,9 @@ export interface CatalogTreeNode {
 export interface CatalogSectionPlan {
   nodeId: string
   productsPerPage: CatalogGrid
-  /** Produits vedette : une pleine page chacun. */
+  /** Densité variée page à page (PRNG déterministe seedé par univers) — prime sur productsPerPage. */
+  randomDensity?: boolean
+  /** Produits vedette : grande carte 2×2 mise en avant AU SEIN de la page (design dédié). */
   featuredIds: string[]
 }
 
@@ -47,6 +55,8 @@ export interface CatalogTheme {
 
 export interface CatalogPlan {
   theme: CatalogTheme
+  /** Taille des fiches proportionnelle au prix (paliers médiane/P80 par univers). Absent = actif. */
+  sizeByPrice?: boolean
   sections: CatalogSectionPlan[]
   cover: { title: string; subtitle: string; baseline: string; imagePrompt: string }
   backCover: { title: string; text: string }
@@ -59,12 +69,20 @@ export interface ProductSlot {
   featured: boolean
   /** Chemin taxonomique du produit (univers › famille › sous-famille) — affiché en kicker sur la fiche. */
   path: string[]
+  /** Placement CSS grid (1-based) calculé par le packing du moteur. */
+  col: number
+  row: number
+  colSpan: number
+  rowSpan: number
 }
+
+/** Famille affichée sur la page d'ouverture d'univers (avec ses sous-familles). */
+export interface OpenerFamily { label: string; count: number; subs: string[] }
 
 export type CatalogPageDescriptor =
   | { kind: 'cover'; pageNumber: number }
   | { kind: 'toc'; pageNumber: number; entries: TocEntry[] }
-  | { kind: 'opener'; pageNumber: number; nodeId: string; label: string }
+  | { kind: 'opener'; pageNumber: number; nodeId: string; label: string; index: number; productCount: number; families: OpenerFamily[] }
   | { kind: 'products'; pageNumber: number; nodeId: string; breadcrumb: string[]; grid: CatalogGrid; slots: ProductSlot[] }
   | { kind: 'back-cover'; pageNumber: number }
 

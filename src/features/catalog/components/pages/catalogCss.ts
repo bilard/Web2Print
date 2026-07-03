@@ -87,11 +87,26 @@ export const CATALOG_CSS = `
 .cat-cell-was { display:block; font-size:11px; text-decoration:line-through; opacity:.5; }
 .cat-cell-price { display:inline-block; background:var(--cat-accent); color:#fff; font-family:var(--cat-font-h);
   font-weight:800; font-size:18px; line-height:1; padding:6px 10px 5px; border-radius:4px; transform:rotate(-2deg); }
-.cat-featured .cat-cell-name { font-size:30px; -webkit-line-clamp:3; }
-.cat-featured .cat-cell-desc { font-size:14px; -webkit-line-clamp:5; }
-.cat-featured .cat-cell-price { font-size:42px; padding:12px 20px 10px; }
-.cat-featured .cat-cell-kicker { font-size:12px; padding:8px 16px; }
-.cat-featured .cat-cell-brand { font-size:14px; }
+
+/* Tailles graduées (span issu du packing : prix élevé/vedette = carte plus grande) */
+.cat-lg .cat-cell-name { font-size:17px; }
+.cat-lg .cat-cell-desc { font-size:11px; -webkit-line-clamp:3; }
+.cat-lg .cat-cell-price { font-size:22px; }
+.cat-xl .cat-cell-name { font-size:26px; -webkit-line-clamp:3; }
+.cat-xl .cat-cell-desc { font-size:13px; -webkit-line-clamp:5; }
+.cat-xl .cat-cell-price { font-size:34px; padding:10px 16px 9px; }
+.cat-xl .cat-cell-kicker { font-size:11px; padding:6px 13px; }
+.cat-xl .cat-cell-brand { font-size:12px; }
+.cat-xl .cat-cell-body { padding:14px 18px 16px; gap:4px; }
+
+/* Vedette : mise en avant AU SEIN de la page — cadre accent + ruban en coin */
+.cat-featured { border:2px solid var(--cat-accent); border-bottom:6px solid var(--cat-accent);
+  box-shadow:0 6px 20px rgba(0,0,0,.12); }
+.cat-featured .cat-cell-name { color:var(--cat-accent); }
+.cat-cell-vedette { position:absolute; top:16px; right:-34px; transform:rotate(45deg); z-index:1;
+  background:var(--cat-accent); color:#fff; font-family:var(--cat-font-h); font-weight:800; font-size:10px;
+  letter-spacing:.16em; text-transform:uppercase; padding:5px 42px; }
+.cat-xl .cat-cell-vedette { top:22px; right:-30px; font-size:12px; }
 
 /* ── Couverture ─────────────────────────────────────────────────────── */
 .cat-cover { flex:1; display:flex; flex-direction:column; justify-content:flex-end; padding:0;
@@ -117,17 +132,30 @@ export const CATALOG_CSS = `
 .cat-toc-dots { flex:1; border-bottom:1px dotted rgba(0,0,0,.35); }
 .cat-toc-num { font-family:var(--cat-font-h); font-weight:800; color:var(--cat-accent); }
 
-/* ── Ouverture d'univers ────────────────────────────────────────────── */
-.cat-opener { flex:1; display:flex; flex-direction:column; justify-content:center; padding:48px;
+/* ── Ouverture d'univers : affiche éditoriale (numéro géant + familles) ── */
+.cat-opener { flex:1; display:flex; flex-direction:column; padding:52px 48px 44px;
   background:var(--cat-head-bg); color:var(--cat-head-ink); position:relative; overflow:hidden; }
 .cat-opener-stripe { position:absolute; top:-15%; right:-22%; width:55%; height:130%;
   background:var(--cat-accent); opacity:.92; transform:rotate(12deg); }
 .cat-opener-stripe2 { position:absolute; top:-15%; right:-30%; width:14%; height:130%;
   background:var(--cat-head-ink); opacity:.16; transform:rotate(12deg); }
+.cat-opener-num { position:absolute; top:6px; right:30px; font-family:var(--cat-font-h); font-weight:900;
+  font-size:170px; line-height:1; color:#fff; opacity:.28; letter-spacing:-.04em; }
 .cat-opener-kicker { position:relative; font-family:var(--cat-font-h); font-size:14px; letter-spacing:.28em; text-transform:uppercase; font-weight:800; opacity:.8; }
 .cat-opener-title { position:relative; font-family:var(--cat-font-h); font-weight:900; font-size:58px; line-height:1.02;
-  text-transform:uppercase; margin-top:16px; max-width:70%; }
-.cat-opener-rule { position:relative; width:110px; height:7px; background:var(--cat-accent); margin-top:28px; }
+  text-transform:uppercase; margin-top:16px; max-width:72%; }
+.cat-opener-count { position:relative; margin-top:14px; font-family:var(--cat-font-h); font-weight:800; font-size:12px;
+  letter-spacing:.2em; text-transform:uppercase; }
+.cat-opener-count b { background:var(--cat-accent); color:#fff; padding:3px 10px; border-radius:3px; margin-right:8px; }
+.cat-opener-rule { position:relative; width:110px; height:7px; background:var(--cat-accent); margin-top:24px; }
+.cat-opener-fams { position:relative; margin-top:38px; display:grid; grid-template-columns:1fr 1fr; gap:22px 30px; align-content:start; }
+.cat-opener-fam { border-top:3px solid var(--cat-accent); padding-top:10px; }
+.cat-opener-fam-name { display:flex; align-items:baseline; gap:10px; font-family:var(--cat-font-h); font-weight:800;
+  font-size:17px; text-transform:uppercase; line-height:1.15; }
+.cat-opener-fam-idx { color:var(--cat-accent); font-size:13px; letter-spacing:.06em; }
+.cat-opener-fam-count { font-size:9px; opacity:.6; letter-spacing:.14em; text-transform:uppercase; margin-top:3px; }
+.cat-opener-subs { margin-top:9px; display:flex; flex-wrap:wrap; gap:6px; }
+.cat-opener-sub { font-size:10px; padding:3px 10px; border:1px solid; opacity:.8; border-radius:999px; letter-spacing:.03em; }
 
 /* ── 4e de couverture ───────────────────────────────────────────────── */
 .cat-back { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:48px; text-align:center; }

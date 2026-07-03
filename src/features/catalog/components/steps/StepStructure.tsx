@@ -67,7 +67,7 @@ export function StepStructure() {
   const rootIds = tree.map((n) => n.id)
 
   return (
-    <div className="h-full overflow-y-auto p-6 space-y-6 max-w-3xl mx-auto">
+    <div className="h-full overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto">
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-white">Mapping des niveaux</h2>
         <div className="grid grid-cols-3 gap-3">

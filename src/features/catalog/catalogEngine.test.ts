@@ -44,22 +44,80 @@ describe('paginateCatalog (flux continu par univers)', () => {
     expect(grids[0].breadcrumb).toEqual(['Outillage', 'Perceuses']) // univers › famille du 1er slot
   })
 
-  it('vedette = pleine page (grille 1), regroupée en tête d’univers, retirée du flux', () => {
+  it('vedette = grande carte 2×2 en tête d’univers, retirée du flux', () => {
     const tree = [node('a', 'A', 1, ids(5))]
     const pages = paginateCatalog({ tree, sections: [sec('a', 4, ['p3'])] })
     const grids = pages.filter((p) => p.kind === 'products')
-    expect(grids[0].grid).toBe(1)
-    expect(grids[0].slots).toEqual([{ rowId: 'p3', featured: true, path: ['A'] }])
+    expect(grids[0].grid).toBe(4) // la densité de l'univers reste celle de la page
+    expect(grids[0].slots).toEqual([{ rowId: 'p3', featured: true, path: ['A'], col: 1, row: 1, colSpan: 2, rowSpan: 2 }])
     expect(grids[1].slots.map((s) => s.rowId)).toEqual(['p1', 'p2', 'p4', 'p5'])
   })
 
-  it('vedette d’une sous-famille : path complet, page émise avant le flux de l’univers', () => {
+  it('vedette PARTAGE la page avec d’autres produits quand la grille le permet (6/page)', () => {
+    const tree = [node('a', 'A', 1, ids(5))]
+    const pages = paginateCatalog({ tree, sections: [sec('a', 6, ['p1'])] })
+    const grids = pages.filter((p) => p.kind === 'products')
+    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p1', 'p2', 'p3']) // 2×2 + 2 fiches 1×1 = grille 2×3 pleine
+    expect(grids[0].slots[0]).toMatchObject({ featured: true, colSpan: 2, rowSpan: 2 })
+    expect(grids[0].slots.slice(1).every((s) => s.colSpan === 1 && s.rowSpan === 1 && s.row === 3)).toBe(true)
+    expect(grids[1].slots.map((s) => s.rowId)).toEqual(['p4', 'p5'])
+  })
+
+  it('vedette d’une sous-famille : path complet, placée en tête du flux de l’univers', () => {
     const tree = [node('a', 'A', 1, ids(2), [node('a/b', 'B', 2, ids(2, 'x'))])]
     const pages = paginateCatalog({ tree, sections: [sec('a', 4), sec('a/b', 4, ['x2'])] })
     const grids = pages.filter((p) => p.kind === 'products')
-    expect(grids[0].grid).toBe(1)
-    expect(grids[0].slots[0]).toEqual({ rowId: 'x2', featured: true, path: ['A', 'B'] })
+    expect(grids[0].slots[0]).toMatchObject({ rowId: 'x2', featured: true, path: ['A', 'B'], colSpan: 2, rowSpan: 2 })
     expect(grids[1].slots.map((s) => s.rowId)).toEqual(['p1', 'p2', 'x1'])
+  })
+
+  it('sizeByPrice : prix > P80 → carte 2×2, prix > médiane → carte élargie 2×1', () => {
+    const tree = [node('a', 'A', 1, ids(4))]
+    const prices = new Map<string, number | null>([['p1', 10], ['p2', 10], ['p3', 50], ['p4', 100]])
+    const pages = paginateCatalog({ tree, sections: [sec('a', 8)], sizeByPrice: true, prices })
+    const grids = pages.filter((p) => p.kind === 'products')
+    expect(grids).toHaveLength(1) // 1+1+2+4 = 8 unités = une grille 2×4 pleine
+    const byId = new Map(grids[0].slots.map((s) => [s.rowId, s]))
+    expect(byId.get('p1')).toMatchObject({ colSpan: 1, rowSpan: 1 })
+    expect(byId.get('p3')).toMatchObject({ colSpan: 2, rowSpan: 1 }) // > médiane
+    expect(byId.get('p4')).toMatchObject({ colSpan: 2, rowSpan: 2 }) // > P80
+  })
+
+  it('sizeByPrice : span dégradé (jamais de débordement), prix identiques → aucune carte agrandie', () => {
+    const tree = [node('a', 'A', 1, ids(4))]
+    const same = new Map<string, number | null>(ids(4).map((id) => [id, 25]))
+    const pages = paginateCatalog({ tree, sections: [sec('a', 4)], sizeByPrice: true, prices: same })
+    const grids = pages.filter((p) => p.kind === 'products')
+    expect(grids).toHaveLength(1)
+    expect(grids[0].slots.every((s) => s.colSpan === 1 && s.rowSpan === 1)).toBe(true)
+  })
+
+  it('densité aléatoire : déterministe (même entrée → mêmes pages), grilles dans le pool', () => {
+    const tree = [node('a', 'A', 1, ids(30))]
+    const sections = [{ ...sec('a', 4), randomDensity: true }]
+    const run1 = paginateCatalog({ tree, sections })
+    const run2 = paginateCatalog({ tree, sections })
+    expect(run1).toEqual(run2)
+    const grids = run1.filter((p) => p.kind === 'products')
+    expect(grids.length).toBeGreaterThan(1)
+    expect(new Set(grids.map((g) => g.grid)).size).toBeGreaterThan(1) // densité réellement variée
+    expect(grids.flatMap((g) => g.slots).map((s) => s.rowId)).toEqual(ids(30)) // aucun produit perdu
+  })
+
+  it('ouverture d’univers : index, compteur et familles (avec sous-familles non vides)', () => {
+    const tree = [
+      node('a', 'A', 1, ids(1)),
+      node('b', 'B', 1, [], [
+        node('b/c', 'C', 2, ids(2, 'c'), [node('b/c/d', 'D', 3, ids(1, 'd')), node('b/c/e', 'E', 3)]),
+      ]),
+    ]
+    const pages = paginateCatalog({ tree, sections: [] })
+    const openers = pages.filter((p) => p.kind === 'opener')
+    expect(openers[0]).toMatchObject({ label: 'A', index: 1, productCount: 1, families: [] })
+    expect(openers[1]).toMatchObject({
+      label: 'B', index: 2, productCount: 3,
+      families: [{ label: 'C', count: 3, subs: ['D'] }], // E est vide → absente
+    })
   })
 
   it('univers vide (aucun produit dans le sous-arbre) → ni ouverture ni entrée sommaire', () => {

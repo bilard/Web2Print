@@ -27,7 +27,7 @@ export function StepPrompt() {
   const backCoverImageUrl = useCatalogStore((s) => s.backCoverImageUrl)
   const setPrompt = useCatalogStore((s) => s.setPrompt)
   const setPlan = useCatalogStore((s) => s.setPlan)
-  const setSectionGrid = useCatalogStore((s) => s.setSectionGrid)
+  const setSectionDensity = useCatalogStore((s) => s.setSectionDensity)
   const toggleFeatured = useCatalogStore((s) => s.toggleFeatured)
   const setStep = useCatalogStore((s) => s.setStep)
   const [busy, setBusy] = useState(false)
@@ -66,7 +66,7 @@ export function StepPrompt() {
 
   return (
     <div className="h-full overflow-y-auto p-6">
-      <div className="grid grid-cols-2 gap-6 max-w-5xl mx-auto">
+      <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 max-w-7xl mx-auto">
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-white">Prompt global</h2>
           <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={6}
@@ -84,22 +84,30 @@ export function StepPrompt() {
             <>
               <PlanStylePanel plan={plan} setPlan={setPlan} coverImageUrl={coverImageUrl} backCoverImageUrl={backCoverImageUrl} />
               <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-white">Sections</h3>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-white">Sections</h3>
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                    <input type="checkbox" checked={plan.sizeByPrice ?? true}
+                      onChange={(e) => setPlan({ ...plan, sizeByPrice: e.target.checked })}
+                      className="accent-indigo-600" />
+                    Taille des fiches selon le prix
+                  </label>
+                </div>
                 <div className="border border-border rounded-md bg-surface">
                   {/* Itère sur l'arbre COURANT (pas plan.sections) : un nœud ajouté après
                       la génération du plan (retouche de l'étape Structure) doit rester
                       configurable — repli section par défaut si absente du plan. */}
                   {flatNodes.filter((node) => node.productIds.length > 0).map((node) => {
                     const section: CatalogSectionPlan = plan.sections.find((s) => s.nodeId === node.id)
-                      ?? { nodeId: node.id, productsPerPage: 4, featuredIds: [] }
-                    const sampleFields = node.productIds.slice(0, 3).map((id) => {
+                      ?? { nodeId: node.id, productsPerPage: 4, randomDensity: false, featuredIds: [] }
+                    const products = node.productIds.map((id) => {
                       const row = rowsById.get(id)
                       const f = row ? extractPromoFields(row, rawColumns, fieldMap) : null
                       return { id, name: f?.name ?? id }
                     })
                     return (
-                      <PlanSectionRow key={node.id} node={node} section={section} sampleFields={sampleFields}
-                        onGrid={(g) => setSectionGrid(node.id, g)}
+                      <PlanSectionRow key={node.id} node={node} section={section} products={products}
+                        onDensity={(d) => setSectionDensity(node.id, d)}
                         onToggleFeatured={(rowId) => toggleFeatured(node.id, rowId)} />
                     )
                   })}
@@ -112,7 +120,7 @@ export function StepPrompt() {
         </section>
       </div>
 
-      <div className="flex justify-end max-w-5xl mx-auto pt-6">
+      <div className="flex justify-end max-w-7xl mx-auto pt-6">
         <button onClick={() => setStep('preview')} disabled={!plan}
           className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-[#fff] text-sm font-medium">
           Continuer → Aperçu <ArrowRight className="w-4 h-4" />

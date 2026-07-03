@@ -10,7 +10,8 @@ describe('defaultCatalogPlan', () => {
     const tree = [node('a', 'A', 1, ['p1'], [node('a/b', 'B', 2, ['p2'])]), node('c', 'C', 1)]
     const plan = defaultCatalogPlan(tree, 'Mon catalogue')
     expect(plan.sections.map((s) => s.nodeId)).toEqual(['a', 'a/b'])
-    expect(plan.sections.every((s) => s.productsPerPage === 4 && s.featuredIds.length === 0)).toBe(true)
+    expect(plan.sections.every((s) => s.productsPerPage === 4 && s.featuredIds.length === 0 && s.randomDensity === false)).toBe(true)
+    expect(plan.sizeByPrice).toBe(true)
     expect(plan.cover.title).toBe('Mon catalogue')
     expect(plan.cover.imagePrompt).toBe('')
     expect(plan.theme.accent).toBe('#6366f1')
@@ -38,9 +39,9 @@ describe('sanitizeCatalogPlan', () => {
   })
   it('complète les sections manquantes avec la grille par défaut', () => {
     const plan = sanitizeCatalogPlan({ ...raw, sections: [] }, tree, 'X')
-    expect(plan.sections).toEqual([{ nodeId: 'a', productsPerPage: 4, featuredIds: [] }])
+    expect(plan.sections).toEqual([{ nodeId: 'a', productsPerPage: 4, randomDensity: false, featuredIds: [] }])
   })
-  it('plafonne les vedettes à 2 par univers (une vedette = une pleine page)', () => {
+  it('plafonne les vedettes à 2 par univers (une vedette = une grande carte 2×2)', () => {
     const bigTree = [node('u', 'U', 1, ['a', 'b'], [
       node('u/f1', 'F1', 2, ['c', 'd']),
       node('u/f2', 'F2', 2, ['e', 'f']),

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey } from '@/features/retail-promo/promoTypes'
-import type { CatalogDoc, CatalogFormat, CatalogGrid, CatalogPlan, LevelKeys, TreeEdits } from '@/features/catalog/catalogTypes'
+import type { CatalogDensity, CatalogDoc, CatalogFormat, CatalogPlan, LevelKeys, TreeEdits } from '@/features/catalog/catalogTypes'
 import { CATALOG_FORMAT_PRESETS } from '@/features/catalog/catalogTypes'
 import { EMPTY_TREE_EDITS } from '@/features/catalog/catalogTree'
 
@@ -35,7 +35,7 @@ interface CatalogState {
   setTreeEdits: (patch: Partial<TreeEdits>) => void
   setPrompt: (prompt: string) => void
   setPlan: (plan: CatalogPlan | null) => void
-  setSectionGrid: (nodeId: string, grid: CatalogGrid) => void
+  setSectionDensity: (nodeId: string, density: CatalogDensity) => void
   toggleFeatured: (nodeId: string, rowId: string) => void
   setFieldMap: (map: Partial<Record<PromoFieldKey, string>>) => void
   setFormat: (format: CatalogFormat) => void
@@ -69,7 +69,7 @@ const defaultState = {
  */
 function upsertSection(sections: CatalogPlan['sections'], nodeId: string): CatalogPlan['sections'] {
   if (sections.some((x) => x.nodeId === nodeId)) return sections
-  return [...sections, { nodeId, productsPerPage: 4, featuredIds: [] }]
+  return [...sections, { nodeId, productsPerPage: 4, randomDensity: false, featuredIds: [] }]
 }
 
 // sessionStorage tolérant au quota : un gros catalogue ne doit jamais casser l'édition.
@@ -111,9 +111,11 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   setTreeEdits: (patch) => set((s) => ({ treeEdits: { ...s.treeEdits, ...patch } })),
   setPrompt: (prompt) => set({ prompt }),
   setPlan: (plan) => set({ plan }),
-  setSectionGrid: (nodeId, grid) => set((s) => {
+  setSectionDensity: (nodeId, density) => set((s) => {
     if (!s.plan) return {}
-    const sections = upsertSection(s.plan.sections, nodeId).map((x) => x.nodeId === nodeId ? { ...x, productsPerPage: grid } : x)
+    const sections = upsertSection(s.plan.sections, nodeId).map((x) => x.nodeId === nodeId
+      ? (density === 'random' ? { ...x, randomDensity: true } : { ...x, productsPerPage: density, randomDensity: false })
+      : x)
     return { plan: { ...s.plan, sections } }
   }),
   toggleFeatured: (nodeId, rowId) => set((s) => {

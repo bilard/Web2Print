@@ -21,7 +21,10 @@ export function CatalogPageView({ page, ctx }: Props) {
       {page.kind === 'cover' && <CoverPage ctx={ctx} variant="cover" />}
       {page.kind === 'back-cover' && <CoverPage ctx={ctx} variant="back" />}
       {page.kind === 'toc' && <TocPage ctx={ctx} entries={page.entries} first={page.pageNumber === 2} />}
-      {page.kind === 'opener' && <OpenerPage label={page.label} catalogName={ctx.catalogName} />}
+      {page.kind === 'opener' && (
+        <OpenerPage label={page.label} catalogName={ctx.catalogName}
+          index={page.index} productCount={page.productCount} families={page.families} />
+      )}
       {page.kind === 'products' && <ProductGridPage ctx={ctx} grid={page.grid} slots={page.slots} />}
       {chrome && <CatalogFooter pageNumber={page.pageNumber} totalPages={ctx.totalPages} catalogName={ctx.catalogName} />}
     </div>

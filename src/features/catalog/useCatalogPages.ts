@@ -2,6 +2,7 @@
 // Source unique de la pagination : Aperçu ET Export consomment le même résultat.
 import { useMemo } from 'react'
 import { useCatalogStore } from '@/stores/catalog.store'
+import { extractPromoFields } from '@/features/retail-promo/promoMapping'
 import { buildCatalogTree } from './catalogTree'
 import { paginateCatalog } from './catalogEngine'
 import { defaultCatalogPlan } from './catalogPlan'
@@ -16,7 +17,13 @@ export function useCatalogPages(): { pages: CatalogPageDescriptor[]; ctx: Catalo
     const rows = s.rawRows.filter((r) => selected.has(r._id))
     const tree = buildCatalogTree(rows, s.rawColumns, s.levelKeys, s.treeEdits)
     const plan = s.plan ?? defaultCatalogPlan(tree, s.name)
-    const pages = paginateCatalog({ tree, sections: plan.sections })
+    // Prix de vente par ligne → sizing des fiches (plan.sizeByPrice, actif par défaut).
+    const prices = new Map<string, number | null>()
+    for (const r of rows) {
+      const f = extractPromoFields(r, s.rawColumns, s.fieldMap)
+      prices.set(r._id, f.newPrice ?? f.oldPrice)
+    }
+    const pages = paginateCatalog({ tree, sections: plan.sections, sizeByPrice: plan.sizeByPrice ?? true, prices })
     const ctx: CatalogRenderCtx = {
       plan, format: s.format, rowsById: new Map(rows.map((r) => [r._id, r])), columns: s.rawColumns,
       fieldMap: s.fieldMap, catalogName: s.name, totalPages: pages.length,

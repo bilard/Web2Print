@@ -51,7 +51,7 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
         properties: {
           nodeId: { type: 'string' },
           productsPerPage: { type: 'number', enum: [...CATALOG_GRIDS] },
-          featuredIds: { type: 'array', items: { type: 'string' }, description: 'ids produits vedette (pleine page), choisis parmi les exemples fournis, 0-2 par section' },
+          featuredIds: { type: 'array', items: { type: 'string' }, description: 'ids produits vedette (grande carte 2×2 mise en avant AU SEIN de la page), choisis parmi les exemples fournis, 0-2 par section' },
         },
         required: ['nodeId', 'productsPerPage'],
       },
@@ -115,7 +115,8 @@ function nodesWithProducts(tree: CatalogTreeNode[]): CatalogTreeNode[] {
 export function defaultCatalogPlan(tree: CatalogTreeNode[], catalogName: string): CatalogPlan {
   return {
     theme: { ...DEFAULT_THEME },
-    sections: nodesWithProducts(tree).map((n) => ({ nodeId: n.id, productsPerPage: DEFAULT_GRID, featuredIds: [] })),
+    sizeByPrice: true,
+    sections: nodesWithProducts(tree).map((n) => ({ nodeId: n.id, productsPerPage: DEFAULT_GRID, randomDensity: false, featuredIds: [] })),
     cover: { title: catalogName || 'Catalogue', subtitle: '', baseline: '', imagePrompt: '' },
     backCover: { title: catalogName || 'Catalogue', text: '' },
     tocTitle: 'Sommaire',
@@ -131,14 +132,15 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
     .map((s) => ({
       nodeId: s.nodeId,
       productsPerPage: clampGrid(s.productsPerPage),
+      randomDensity: false,
       featuredIds: (s.featuredIds ?? []).filter((id) => productsByNode.get(s.nodeId)!.has(id)),
     }))
   const covered = new Set(sections.map((s) => s.nodeId))
   for (const n of valid) {
-    if (!covered.has(n.id)) sections.push({ nodeId: n.id, productsPerPage: DEFAULT_GRID, featuredIds: [] })
+    if (!covered.has(n.id)) sections.push({ nodeId: n.id, productsPerPage: DEFAULT_GRID, randomDensity: false, featuredIds: [] })
   }
-  // Cap global : max 2 vedettes PAR UNIVERS (une vedette = une pleine page ;
-  // sans cap, 2 × N sections gonflent le catalogue de pleines pages).
+  // Cap global : max 2 vedettes PAR UNIVERS (une vedette = une grande carte 2×2 ;
+  // sans cap, 2 × N sections saturent les pages de grandes cartes).
   const sectionByNode = new Map(sections.map((s) => [s.nodeId, s]))
   for (const univers of tree) {
     let budget = 2
@@ -152,6 +154,7 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
   }
   return {
     theme: sanitizeTheme(raw.theme),
+    sizeByPrice: true,
     sections,
     cover: { title: raw.cover.title || catalogName, subtitle: raw.cover.subtitle ?? '', baseline: raw.cover.baseline ?? '', imagePrompt: raw.cover.imagePrompt },
     backCover: raw.backCover,
