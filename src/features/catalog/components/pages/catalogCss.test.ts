@@ -36,13 +36,15 @@ describe('cardStyleVars', () => {
     expect(v['--cat-promo-bg']).toBe('linear-gradient(90deg, #111111, #222222)')
   })
 
-  it('polices par champ (nom, marque, unité) et échelles (réf, cartouche)', () => {
-    const v = vars({ nameFont: 'Jura', brandFont: 'Oswald', unitFont: 'Inter', refScale: 1.2, promoScale: 0.8 })
+  it('polices par champ (nom, marque, unité, sticker) et échelles (réf, cartouche, sticker)', () => {
+    const v = vars({ nameFont: 'Jura', brandFont: 'Oswald', unitFont: 'Inter', stickerFont: 'Archivo', refScale: 1.2, promoScale: 0.8, stickerScale: 1.3 })
     expect(v['--cat-font-name']).toBe("'Jura', sans-serif")
     expect(v['--cat-font-brand']).toBe("'Oswald', sans-serif")
     expect(v['--cat-font-unit']).toBe("'Inter', sans-serif")
+    expect(v['--cat-font-sticker']).toBe("'Archivo', sans-serif")
     expect(v['--cat-s-ref']).toBe('1.2')
     expect(v['--cat-s-promo']).toBe('0.8')
+    expect(v['--cat-s-sticker']).toBe('1.3')
   })
 
   it("taille de l'image : largeur de colonne et marge du visuel", () => {

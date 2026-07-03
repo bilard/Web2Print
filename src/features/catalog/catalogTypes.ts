@@ -67,6 +67,8 @@ export interface CatalogCardStyle {
   refScale: number
   unitScale: number
   promoScale: number
+  /** Échelle du sticker de remise (pastille ET texte). */
+  stickerScale: number
   /** Polices par champ ('' = hérite du thème : titres pour nom/prix/cartouche, texte sinon). */
   nameFont: string
   descFont: string
@@ -75,6 +77,7 @@ export interface CatalogCardStyle {
   refFont: string
   unitFont: string
   promoFont: string
+  stickerFont: string
   /** Couleurs des objets ('' = hérite du thème). */
   promoBg: string
   stickerBg: string
@@ -106,8 +109,8 @@ export interface CatalogCardStyle {
 }
 
 export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
-  nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1,
-  nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '',
+  nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1, stickerScale: 1,
+  nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '', stickerFont: '',
   promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '',
   promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '',
   gradientAngle: 135,

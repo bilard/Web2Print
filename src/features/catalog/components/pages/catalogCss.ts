@@ -64,6 +64,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-s-ref': s.refScale !== 1 ? String(s.refScale) : undefined,
     '--cat-s-unit': s.unitScale !== 1 ? String(s.unitScale) : undefined,
     '--cat-s-promo': s.promoScale !== 1 ? String(s.promoScale) : undefined,
+    '--cat-s-sticker': s.stickerScale !== 1 ? String(s.stickerScale) : undefined,
     '--cat-font-name': font(s.nameFont),
     '--cat-font-desc': font(s.descFont),
     '--cat-font-price': font(s.priceFont),
@@ -71,6 +72,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-font-ref': font(s.refFont),
     '--cat-font-unit': font(s.unitFont),
     '--cat-font-promo': font(s.promoFont),
+    '--cat-font-sticker': font(s.stickerFont),
     '--cat-promo-bg': bg(s.promoBg, s.promoBg2, theme.accent),
     '--cat-sticker-bg': bg(s.stickerBg, s.stickerBg2, theme.accent),
     '--cat-price-bg': bg(s.priceBg, s.priceBg2, theme.accent),
@@ -118,9 +120,9 @@ export const CATALOG_CSS = `
 .cat-cell-img-in { position:absolute; top:var(--cat-img-pad,12px); left:var(--cat-img-pad,12px); right:var(--cat-img-pad,12px); bottom:var(--cat-img-pad,12px); }
 .cat-cell-img-in img { width:100%; height:100%; object-fit:contain; }
 /* Sticker rond de remise (écart barré/vente) — en haut à droite du bloc image */
-.cat-price-sticker { position:absolute; top:8px; right:8px; width:46px; height:46px; border-radius:999px;
+.cat-price-sticker { position:absolute; top:8px; right:8px; width:calc(46px * var(--cat-s-sticker,1)); height:calc(46px * var(--cat-s-sticker,1)); border-radius:999px;
   background:var(--cat-sticker-bg,var(--cat-accent)); color:#fff; display:flex; align-items:center; justify-content:center;
-  font-family:var(--cat-font-h); font-weight:800; font-size:13px; transform:rotate(8deg);
+  font-family:var(--cat-font-sticker,var(--cat-font-h)); font-weight:800; font-size:calc(13px * var(--cat-s-sticker,1)); transform:rotate(8deg);
   box-shadow:0 3px 10px rgba(0,0,0,.18); }
 .cat-featured .cat-price-sticker { top:54px; }
 .cat-cell-img-ph { font-size:11px; color:#94a3b8; }
@@ -166,7 +168,7 @@ export const CATALOG_CSS = `
 .cat-xl .cat-cell-refcode { font-size:calc(11px * var(--cat-s-ref,1)); }
 .cat-xl .cat-cell-unit { font-size:calc(11px * var(--cat-s-unit,1)); }
 .cat-xl .cat-cell-was { font-size:calc(14px * var(--cat-s-price,1)); padding:4px 12px 3px; }
-.cat-xl .cat-price-sticker { width:68px; height:68px; font-size:19px; }
+.cat-xl .cat-price-sticker { width:calc(68px * var(--cat-s-sticker,1)); height:calc(68px * var(--cat-s-sticker,1)); font-size:calc(19px * var(--cat-s-sticker,1)); }
 
 /* Layout HORIZONTAL (image gauche pleine hauteur / contenu droite) : cartes
    larges (2×1) et cartes standard des grilles denses 6-8/page — zéro vide */
@@ -186,7 +188,7 @@ export const CATALOG_CSS = `
 .cat-hz.cat-lg .cat-cell-price { font-size:calc(28px * var(--cat-s-price,1)); padding:9px 15px 8px; }
 .cat-hz.cat-lg .cat-cell-was { font-size:calc(13px * var(--cat-s-price,1)); }
 /* Cartes compactes horizontales : sticker réduit, en bas de l'image (le kicker occupe le haut) */
-.cat-hz.cat-md .cat-price-sticker { width:34px; height:34px; font-size:10px; top:auto; bottom:6px; right:6px; }
+.cat-hz.cat-md .cat-price-sticker { width:calc(34px * var(--cat-s-sticker,1)); height:calc(34px * var(--cat-s-sticker,1)); font-size:calc(10px * var(--cat-s-sticker,1)); top:auto; bottom:6px; right:6px; }
 .cat-hz.cat-md .cat-cell-img-in { top:var(--cat-img-pad,8px); left:var(--cat-img-pad,8px); right:var(--cat-img-pad,8px); bottom:var(--cat-img-pad,8px); }
 
 /* Vedette : mise en avant AU SEIN de la page — cadre accent + ruban en coin */

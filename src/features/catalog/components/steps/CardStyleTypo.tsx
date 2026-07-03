@@ -10,8 +10,8 @@ interface CardStyleTypoProps {
   patch: (p: Partial<CatalogCardStyle>) => void
 }
 
-type ScaleKey = 'nameScale' | 'descScale' | 'priceScale' | 'brandScale' | 'refScale' | 'unitScale' | 'promoScale'
-type FontKey = 'nameFont' | 'descFont' | 'priceFont' | 'brandFont' | 'refFont' | 'unitFont' | 'promoFont'
+type ScaleKey = 'nameScale' | 'descScale' | 'priceScale' | 'brandScale' | 'refScale' | 'unitScale' | 'promoScale' | 'stickerScale'
+type FontKey = 'nameFont' | 'descFont' | 'priceFont' | 'brandFont' | 'refFont' | 'unitFont' | 'promoFont' | 'stickerFont'
 
 const FIELDS: { scale: ScaleKey; font: FontKey; label: string }[] = [
   { scale: 'nameScale', font: 'nameFont', label: 'Nom' },
@@ -21,6 +21,7 @@ const FIELDS: { scale: ScaleKey; font: FontKey; label: string }[] = [
   { scale: 'refScale', font: 'refFont', label: 'Référence' },
   { scale: 'unitScale', font: 'unitFont', label: 'Unité' },
   { scale: 'promoScale', font: 'promoFont', label: 'Cartouche promo' },
+  { scale: 'stickerScale', font: 'stickerFont', label: 'Sticker remise' },
 ]
 
 export function CardStyleTypo({ style, patch }: CardStyleTypoProps) {
