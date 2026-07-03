@@ -15,7 +15,7 @@ export function CatalogPageView({ page, ctx }: Props) {
   const { w, h } = pagePx(ctx.format)
   const chrome = page.kind === 'products' || page.kind === 'toc' || page.kind === 'opener'
   return (
-    <div className="cat-page" style={{ width: w, height: h, ...themeVars(ctx.plan.theme), ...cardStyleVars(ctx.plan.cardStyle) }}>
+    <div className="cat-page" style={{ width: w, height: h, ...themeVars(ctx.plan.theme), ...cardStyleVars(ctx.plan.cardStyle, ctx.plan.theme) }}>
       <style>{CATALOG_CSS}</style>
       {page.kind === 'products' && <CatalogHeader breadcrumb={page.breadcrumb} />}
       {page.kind === 'cover' && <CoverPage ctx={ctx} variant="cover" />}

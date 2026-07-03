@@ -25,7 +25,7 @@ export function CardStylePreview({ theme, cardStyle, fields }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   return (
     <div className="cat-page rounded-md overflow-hidden shrink-0 border border-border"
-      style={{ width: 290, ...themeVars(theme), ...cardStyleVars(cardStyle) }}>
+      style={{ width: 290, ...themeVars(theme), ...cardStyleVars(cardStyle, theme) }}>
       <style>{CATALOG_CSS}</style>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12, background: 'var(--cat-bg)' }}>
         <div style={{ height: 250, display: 'grid' }}>

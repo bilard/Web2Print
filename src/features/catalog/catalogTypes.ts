@@ -63,6 +63,18 @@ export interface CatalogCardStyle {
   nameScale: number
   descScale: number
   priceScale: number
+  brandScale: number
+  refScale: number
+  unitScale: number
+  promoScale: number
+  /** Polices par champ ('' = hérite du thème : titres pour nom/prix/cartouche, texte sinon). */
+  nameFont: string
+  descFont: string
+  priceFont: string
+  brandFont: string
+  refFont: string
+  unitFont: string
+  promoFont: string
   /** Couleurs des objets ('' = hérite du thème). */
   promoBg: string
   stickerBg: string
@@ -70,8 +82,20 @@ export interface CatalogCardStyle {
   wasBg: string
   kickerBg: string
   nameColor: string
+  /** Fins de dégradé ('' = couleur unie) — combinées à la couleur de base de l'objet. */
+  promoBg2: string
+  stickerBg2: string
+  priceBg2: string
+  wasBg2: string
+  kickerBg2: string
+  /** Angle commun des dégradés (deg). */
+  gradientAngle: number
   /** Rayon des cartes (px). */
   radius: number
+  /** Largeur de la colonne image des cartes horizontales (%). */
+  imageShare: number
+  /** Marge interne du visuel dans son cadre (px) — petite marge = image plus grande. */
+  imagePad: number
   /** Visibilité des éléments. */
   showDesc: boolean
   showRef: boolean
@@ -82,9 +106,12 @@ export interface CatalogCardStyle {
 }
 
 export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
-  nameScale: 1, descScale: 1, priceScale: 1,
+  nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1,
+  nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '',
   promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '',
-  radius: 6,
+  promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '',
+  gradientAngle: 135,
+  radius: 6, imageShare: 40, imagePad: 12,
   showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true,
 }
 
