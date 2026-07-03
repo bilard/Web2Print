@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
-import { isDriveImageRef, extractDriveFileId, resolveDriveImageUrl } from '@/features/dam/driveAssets'
+import { imageChainCandidates, isDriveImageRef, extractDriveFileId, resolveDriveImageUrl } from '@/features/dam/driveAssets'
 
 const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(functions, 'imageProxy')
 // Cache module : une URL résolue une seule fois (data-URI/blob, ou null si échec).
@@ -17,7 +17,16 @@ function isReady(url: string): boolean {
   return url.startsWith('data:') || url.startsWith('blob:')
 }
 
-async function resolveCatalogImage(url: string): Promise<string | undefined> {
+/** Essaie chaque candidat de la chaîne jusqu'au premier qui se résout (repli). */
+async function resolveCatalogImage(value: string): Promise<string | undefined> {
+  for (const candidate of imageChainCandidates(value)) {
+    const resolved = await resolveOne(candidate)
+    if (resolved) return resolved
+  }
+  return undefined
+}
+
+async function resolveOne(url: string): Promise<string | undefined> {
   if (isReady(url)) return url
   if (imgCache.has(url)) return imgCache.get(url) ?? undefined
   try {
@@ -52,13 +61,15 @@ export interface ResolvedImage {
 
 /** Résout une cellule image (Drive/CORS) en URL affichable, avec cache module. */
 export function useResolvedImage(url: string | undefined | null): ResolvedImage {
-  const initialReady = !!url && isReady(url)
+  const first = url ? imageChainCandidates(url)[0] : undefined
+  const initialReady = !!first && isReady(first)
   const [src, setSrc] = useState<string | undefined>(initialReady ? (url as string) : undefined)
   const [resolving, setResolving] = useState(!!url && !initialReady)
 
   useEffect(() => {
     if (!url) { setSrc(undefined); setResolving(false); return }
-    if (isReady(url)) { setSrc(url); setResolving(false); return }
+    const head = imageChainCandidates(url)[0]
+    if (head && isReady(head)) { setSrc(head); setResolving(false); return }
     let cancelled = false
     setResolving(true)
     setSrc(undefined)

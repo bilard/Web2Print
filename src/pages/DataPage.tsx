@@ -910,14 +910,6 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
   const canCreate = useCan('pim.create')
   const canImport = useCan('pim.import')
   const canScrape = useCan('pim.scrape')
-
-  // PIM = source unique de vérité : après une rafale d'éditions, popup listant
-  // les publications reliées (catalogues auto-synchro, fiches promo à rafraîchir).
-  const sourceIdent = useMemo<SourceIdent | null>(
-    () => (currentDocId ? { kind: 'excel', docId: currentDocId } : null),
-    [currentDocId],
-  )
-  const { open: syncPromptOpen, close: closeSyncPrompt } = useSourceSyncPrompt(sourceIdent)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [openAddMenu, setOpenAddMenu] = useState<string | null>(null)
   const [renamingDocId, setRenamingDocId] = useState<string | null>(null)

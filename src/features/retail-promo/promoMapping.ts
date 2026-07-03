@@ -105,8 +105,10 @@ export function extractPromoFields(
   columns: MergeColumn[],
   fieldMap: Partial<Record<PromoFieldKey, string>>,
 ): PromoFields {
+  // Chaîne d'images complète (« détourée | originale », multi-images scrapées) :
+  // les résolveurs essaient chaque candidat dans l'ordre (repli si fichier supprimé).
   const imagesRaw = str(row, columns, fieldMap.image)
-  const image = imagesRaw ? (imagesRaw.split('|')[0]?.trim() || null) : null
+  const image = imagesRaw.trim() || null
   const oldPrice = num(row, columns, fieldMap.oldPrice)
   const newPrice = num(row, columns, fieldMap.newPrice)
   const lotQty = num(row, columns, fieldMap.lotQty)

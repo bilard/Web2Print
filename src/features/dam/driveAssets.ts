@@ -33,6 +33,16 @@ export function driveWebViewLink(fileId: string): string {
 }
 
 /** Vrai si la valeur de cellule pointe vers un asset Google Drive (≠ URL CDN brute). */
+/**
+ * Candidats d'une valeur image « en chaîne » : `détourée | originale` (ou
+ * multi-images scrapées séparées par | / retour-ligne). Ordre = priorité ;
+ * les résolveurs essaient chaque candidat jusqu'au premier qui répond —
+ * supprimer un fichier du Drive fait donc RETOMBER sur l'image suivante.
+ */
+export function imageChainCandidates(value: string): string[] {
+  return value.split(/[\n|]/).map((s) => s.trim()).filter(Boolean)
+}
+
 export function isDriveImageRef(value: string): boolean {
   return /(?:drive|docs)\.google\.com/.test(value) && extractDriveFileId(value) !== null
 }

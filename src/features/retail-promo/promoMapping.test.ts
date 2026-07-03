@@ -54,11 +54,11 @@ describe('defaultPromoFieldMap', () => {
 })
 
 describe('extractPromoFields', () => {
-  it('extrait + calcule la remise, prend la 1re image', () => {
+  it('extrait + calcule la remise, conserve la CHAÎNE d’images (repli à la résolution)', () => {
     const row: MergeRow = { _id: '1', ai_name: 'Perceuse', ai_images: 'http://a/1.jpg | http://a/2.jpg', prix_barre: '100 €', prix: '75 €', ean: '123' }
     const f = extractPromoFields(row, cols, defaultPromoFieldMap(cols))
     expect(f.name).toBe('Perceuse')
-    expect(f.image).toBe('http://a/1.jpg')
+    expect(f.image).toBe('http://a/1.jpg | http://a/2.jpg')
     expect(f.oldPrice).toBe(100)
     expect(f.newPrice).toBe(75)
     expect(f.remisePct).toBe(25)

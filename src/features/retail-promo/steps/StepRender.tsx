@@ -9,7 +9,7 @@ import { loadExcelMergeData } from '@/features/merge/excelSource'
 import { toast } from 'sonner'
 import { functions } from '@/lib/firebase/config'
 import { getRowValue } from '@/features/merge/mergeEngine'
-import { isDriveImageRef, extractDriveFileId, resolveDriveImageUrl } from '@/features/dam/driveAssets'
+import { imageChainCandidates, isDriveImageRef, extractDriveFileId, resolveDriveImageUrl } from '@/features/dam/driveAssets'
 import { useRetailPromoStore } from '../retailPromo.store'
 import { extractPromoFields } from '../promoMapping'
 import { toCardData } from '../promoCardData'
@@ -37,8 +37,17 @@ const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: st
 // Cache module : une URL résolue une seule fois (data-URI ou null si échec).
 const imgCache = new Map<string, string | null>()
 
-async function resolveImg(url?: string): Promise<string | undefined> {
-  if (!url) return undefined
+/** Essaie chaque candidat de la chaîne (« détourée | originale ») — repli naturel. */
+async function resolveImg(value?: string): Promise<string | undefined> {
+  if (!value) return undefined
+  for (const candidate of imageChainCandidates(value)) {
+    const resolved = await resolveOneImg(candidate)
+    if (resolved) return resolved
+  }
+  return undefined
+}
+
+async function resolveOneImg(url: string): Promise<string | undefined> {
   if (url.startsWith('data:') || url.startsWith('blob:')) return url
   if (imgCache.has(url)) return imgCache.get(url) ?? undefined
   try {
@@ -126,7 +135,10 @@ export function StepRender() {
   useEffect(() => {
     let cancelled = false
     setResolvedImg(undefined)
-    void resolveImg(srcRef).then((u) => { if (!cancelled) setResolvedImg(u) })
+    void resolveImg(srcRef)
+      // Override (ex. fichier Drive supprimé) irrésoluble → image d'origine du produit.
+      .then((u) => u ?? (imgOverride[safe] ? resolveImg(cards[safe]?.imageUrl) : undefined))
+      .then((u) => { if (!cancelled) setResolvedImg(u) })
     return () => { cancelled = true }
   }, [safe, srcRef])
 
