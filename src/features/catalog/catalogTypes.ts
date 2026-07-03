@@ -53,8 +53,45 @@ export interface CatalogTheme {
   fontBody: string
 }
 
+/**
+ * Style COSMÉTIQUE des fiches : réglages bornés appliqués en variables CSS
+ * par-dessus le template fluide (qui reste intouchable — packing, variantes
+ * et export ne peuvent pas être cassés). '' = couleur héritée du thème.
+ */
+export interface CatalogCardStyle {
+  /** Facteurs d'échelle typographique (1 = défaut), appliqués à toutes les variantes. */
+  nameScale: number
+  descScale: number
+  priceScale: number
+  /** Couleurs des objets ('' = hérite du thème). */
+  promoBg: string
+  stickerBg: string
+  priceBg: string
+  wasBg: string
+  kickerBg: string
+  nameColor: string
+  /** Rayon des cartes (px). */
+  radius: number
+  /** Visibilité des éléments. */
+  showDesc: boolean
+  showRef: boolean
+  showUnit: boolean
+  showSticker: boolean
+  showKicker: boolean
+  showPromo: boolean
+}
+
+export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
+  nameScale: 1, descScale: 1, priceScale: 1,
+  promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '',
+  radius: 6,
+  showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true,
+}
+
 export interface CatalogPlan {
   theme: CatalogTheme
+  /** Style cosmétique des fiches (couleurs/tailles/visibilité). Absent = défauts. */
+  cardStyle?: CatalogCardStyle
   /** Taille des fiches proportionnelle au prix (paliers médiane/P80 par univers). Absent = actif. */
   sizeByPrice?: boolean
   sections: CatalogSectionPlan[]

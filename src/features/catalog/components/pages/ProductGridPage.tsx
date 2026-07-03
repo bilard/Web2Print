@@ -28,7 +28,7 @@ export function ProductGridPage({ ctx, grid, slots }: Props) {
         return (
           <ProductCell key={slot.rowId} fields={extractPromoFields(row, ctx.columns, ctx.fieldMap)}
             featured={slot.featured} kicker={kicker} size={slotSize(slot, grid)}
-            horizontal={horizontal} style={style} />
+            horizontal={horizontal} cardStyle={ctx.plan.cardStyle} style={style} />
         )
       })}
     </div>

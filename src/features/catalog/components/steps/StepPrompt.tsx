@@ -10,6 +10,7 @@ import { buildCatalogTree, flattenTree } from '../../catalogTree'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
 import { extractPromoFields } from '@/features/retail-promo/promoMapping'
 import { PlanStylePanel } from './PlanStylePanel'
+import { CardStyleCard } from './CardStyleCard'
 import { SectionsCard } from './SectionsCard'
 
 export function StepPrompt() {
@@ -39,6 +40,11 @@ export function StepPrompt() {
     [selectedRows, rawColumns, levelKeys, treeEdits],
   )
   const flatNodes = useMemo(() => flattenTree(tree), [tree])
+  // Fiche exemple pour l'aperçu live du style (1er produit sélectionné).
+  const sampleFields = useMemo(
+    () => (selectedRows.length > 0 ? extractPromoFields(selectedRows[0], rawColumns, fieldMap) : null),
+    [selectedRows, rawColumns, fieldMap],
+  )
 
   const generate = async () => {
     setBusy(true)
@@ -94,6 +100,7 @@ export function StepPrompt() {
         {plan ? (
           <>
             <PlanStylePanel plan={plan} setPlan={setPlan} coverImageUrl={coverImageUrl} backCoverImageUrl={backCoverImageUrl} />
+            <CardStyleCard plan={plan} setPlan={setPlan} sampleFields={sampleFields} />
             <SectionsCard plan={plan} flatNodes={flatNodes} rowsById={rowsById} columns={rawColumns} fieldMap={fieldMap} />
           </>
         ) : (

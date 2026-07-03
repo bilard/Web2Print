@@ -39,12 +39,17 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
     setSelectedId(id)
     const t = templates.find((tpl) => tpl.id === id)
     if (!t) return
-    setPlan({ ...plan, theme: t.theme, sections: plan.sections.map((s) => ({ ...s, productsPerPage: t.defaultGrid })) })
+    setPlan({
+      ...plan, theme: t.theme,
+      // Modèles antérieurs sans cardStyle : on conserve le style courant.
+      ...(t.cardStyle ? { cardStyle: t.cardStyle } : {}),
+      sections: plan.sections.map((s) => ({ ...s, productsPerPage: t.defaultGrid })),
+    })
   }
 
   const handleSave = () => {
     if (!newName.trim()) return
-    saveCatalogTemplate(newName.trim(), plan.theme, majorityGrid(plan))
+    saveCatalogTemplate(newName.trim(), plan.theme, majorityGrid(plan), plan.cardStyle)
       .then(() => { toast.success('Modèle enregistré'); setNewName(''); reload() })
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Échec de l\'enregistrement'))
   }

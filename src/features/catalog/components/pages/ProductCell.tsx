@@ -7,6 +7,7 @@
 import type React from 'react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import { formatPromoLabel } from '@/features/retail-promo/promoMapping'
+import type { CatalogCardStyle } from '../../catalogTypes'
 import { formatPrice } from './catalogCss'
 import { useResolvedImage } from '../../useResolvedImage'
 
@@ -20,21 +21,24 @@ interface Props {
   size: CellSize
   /** Layout horizontal (image gauche / contenu droite) : cartes larges et grilles denses. */
   horizontal?: boolean
+  /** Style cosmétique (visibilité des éléments) — les couleurs/tailles passent par les variables CSS. */
+  cardStyle?: CatalogCardStyle
   /** Placement CSS grid (gridColumn/gridRow) calculé par le moteur. */
   style?: React.CSSProperties
 }
 
-export function ProductCell({ fields: f, featured, kicker, size, horizontal, style }: Props) {
+export function ProductCell({ fields: f, featured, kicker, size, horizontal, cardStyle, style }: Props) {
   // Résolution Drive/CORS → blob:/data: (voir useResolvedImage). `data-resolving` est
   // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
   // avant capture html2canvas (l'<img> n'existe pas tant que src n'est pas prêt).
   const { src, resolving } = useResolvedImage(f.image)
   const hasWas = f.oldPrice != null && f.newPrice != null && f.oldPrice > f.newPrice
+  const show = (key: 'showDesc' | 'showRef' | 'showUnit' | 'showSticker' | 'showKicker' | 'showPromo') => cardStyle?.[key] ?? true
   // Sticker rond = écart entre les 2 prix (remise calculée), en haut à droite de l'image.
-  const sticker = hasWas && f.remisePct != null && f.remisePct > 0 ? `-${f.remisePct}%` : null
+  const sticker = show('showSticker') && hasWas && f.remisePct != null && f.remisePct > 0 ? `-${f.remisePct}%` : null
   // Cartouche = TEXTE promo (« Top affaire », « Prix choc »…) uniquement — le
   // pourcentage vit dans le sticker ; on masque le cartouche s'il ferait doublon.
-  const label = formatPromoLabel(f.promoLabel)
+  const label = show('showPromo') ? formatPromoLabel(f.promoLabel) : undefined
   const promo = label && label !== sticker ? label : null
   return (
     <div className={`cat-cell cat-${size}${horizontal ? ' cat-hz' : ''}${featured ? ' cat-featured' : ''}${promo ? ' cat-has-promo' : ''}`} style={style}>
@@ -45,17 +49,17 @@ export function ProductCell({ fields: f, featured, kicker, size, horizontal, sty
         {src ? <div className="cat-cell-img-in"><img src={src} alt="" /></div> : <span className="cat-cell-img-ph">Sans visuel</span>}
         {sticker && <span className="cat-price-sticker">{sticker}</span>}
       </div>
-      {kicker && <span className="cat-cell-kicker">{kicker}</span>}
+      {kicker && show('showKicker') && <span className="cat-cell-kicker">{kicker}</span>}
       {featured && <span className="cat-cell-vedette">★ Vedette</span>}
       <div className="cat-cell-body">
         {f.brand && <span className="cat-cell-brand">{f.brand}</span>}
         <span className="cat-cell-name">{f.name || 'Produit'}</span>
-        {f.description && <span className="cat-cell-desc">{f.description}</span>}
+        {f.description && show('showDesc') && <span className="cat-cell-desc">{f.description}</span>}
         {/* Rangée du bas : réf/unité à GAUCHE du prix (comble l'espace vide). */}
         <div className="cat-cell-row">
           <span className="cat-cell-meta">
-            {f.ref && <span className="cat-cell-refcode">Réf. {f.ref}</span>}
-            {f.unit && <span className="cat-cell-unit">Unité : {f.unit}</span>}
+            {f.ref && show('showRef') && <span className="cat-cell-refcode">Réf. {f.ref}</span>}
+            {f.unit && show('showUnit') && <span className="cat-cell-unit">Unité : {f.unit}</span>}
           </span>
           <span className="cat-cell-pricebox">
             <span className="cat-cell-tag">

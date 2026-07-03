@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { CatalogPageDescriptor } from '../../catalogTypes'
-import { CATALOG_CSS, ensureCatalogFonts, pagePx, themeVars, type CatalogRenderCtx } from './catalogCss'
+import { CATALOG_CSS, cardStyleVars, ensureCatalogFonts, pagePx, themeVars, type CatalogRenderCtx } from './catalogCss'
 import { CatalogHeader } from './CatalogHeader'
 import { CatalogFooter } from './CatalogFooter'
 import { CoverPage } from './CoverPage'
@@ -15,7 +15,7 @@ export function CatalogPageView({ page, ctx }: Props) {
   const { w, h } = pagePx(ctx.format)
   const chrome = page.kind === 'products' || page.kind === 'toc' || page.kind === 'opener'
   return (
-    <div className="cat-page" style={{ width: w, height: h, ...themeVars(ctx.plan.theme) }}>
+    <div className="cat-page" style={{ width: w, height: h, ...themeVars(ctx.plan.theme), ...cardStyleVars(ctx.plan.cardStyle) }}>
       <style>{CATALOG_CSS}</style>
       {page.kind === 'products' && <CatalogHeader breadcrumb={page.breadcrumb} />}
       {page.kind === 'cover' && <CoverPage ctx={ctx} variant="cover" />}
