@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ImagePlus, Upload, Image as StockIcon, Eraser, Loader2, Search } from 'lucide-react'
+import { ImagePlus, Upload, Image as StockIcon, Eraser, Loader2, Search, DatabaseZap } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRemoveBg } from '@/features/nanobana/useRemoveBg'
 import { useDamStore } from '@/stores/dam.store'
@@ -10,6 +10,10 @@ interface Props {
   currentImage?: string
   /** Remplace l'image de la carte courante (data-URL / blob / URL stock). */
   onReplace: (url: string) => void
+  /** Vrai quand un override existe ET que la fiche est reliée à une vraie source. */
+  canApplyToSource?: boolean
+  /** Propage l'image de la fiche vers la CELLULE de la source (tous les canaux). */
+  onApplyToSource?: () => void
 }
 
 const blobToDataUrl = (b: Blob): Promise<string> =>
@@ -20,7 +24,7 @@ const toDataUrl = async (url: string): Promise<string> =>
   url.startsWith('data:') ? url : blobToDataUrl(await (await fetch(url)).blob())
 
 /** Panneau Images : aperçu produit, remplacement (upload / banque stock) et suppression du fond. */
-export function PromoImagePanel({ currentImage, onReplace }: Props) {
+export function PromoImagePanel({ currentImage, onReplace, canApplyToSource, onApplyToSource }: Props) {
   const [tab, setTab] = useState<'gallery' | 'upload' | 'stock'>('gallery')
   const fileRef = useRef<HTMLInputElement>(null)
   const { removeBg, loading: rbLoading, error: rbError } = useRemoveBg()
@@ -69,6 +73,13 @@ export function PromoImagePanel({ currentImage, onReplace }: Props) {
               {rbLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eraser className="h-4 w-4" />} Supprimer le fond
             </button>
             {rbError && <p className="text-[11px] leading-snug text-red-400">{rbError === 'Insufficient credits' ? 'Crédits Remove.bg épuisés (0 crédit). Rechargez votre compte Remove.bg.' : rbError}</p>}
+            {canApplyToSource && onApplyToSource && (
+              <button onClick={onApplyToSource}
+                className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-300 hover:bg-emerald-500/20"
+                title="Remplace l'image dans la cellule de la source : Catalogue studio et tous les canaux la verront">
+                <DatabaseZap className="h-4 w-4" /> Appliquer à la source
+              </button>
+            )}
           </>
         )}
 

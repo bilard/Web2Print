@@ -2,7 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import JSZip from 'jszip'
 import { httpsCallable } from 'firebase/functions'
-import { Download, Package, ChevronLeft, ChevronRight, ChevronDown, Loader2, FileCode, Save, Sparkles } from 'lucide-react'
+import { Download, Package, ChevronLeft, ChevronRight, ChevronDown, Loader2, FileCode, Save, Sparkles, RefreshCw } from 'lucide-react'
+import { updateSourceCell } from '@/features/merge/updateSourceCell'
+import { isPimSource, loadPimMergeData, pimProjectIdFromSource } from '@/features/merge/pimSource'
+import { loadExcelMergeData } from '@/features/merge/excelSource'
 import { toast } from 'sonner'
 import { functions } from '@/lib/firebase/config'
 import { getRowValue } from '@/features/merge/mergeEngine'
@@ -75,7 +78,7 @@ async function captureThumb(node: HTMLDivElement): Promise<string | undefined> {
 }
 
 export function StepRender() {
-  const { rawColumns, rawRows, fieldMap, config, sourceRef, currentIndex, setCurrentIndex, imgOverride, setImgOverrideAt, textOverride, setTextOverrideAt, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
+  const { rawColumns, rawRows, fieldMap, config, sourceRef, setSource, currentIndex, setCurrentIndex, imgOverride, setImgOverrideAt, textOverride, setTextOverrideAt, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
   const euroSep = { now: config.styles?.priceNow?.euroSep, was: config.styles?.priceWas?.euroSep }
   const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap), euroSep))
 
@@ -95,6 +98,27 @@ export function StepRender() {
   }
 
   const safe = cards.length ? Math.min(index, cards.length - 1) : 0
+  const hasRealSource = !!sourceRef && !sourceRef.excelDocId?.startsWith('saved_')
+
+  /** Propage l'image de la fiche (override DAM) vers la CELLULE de la source → tous les canaux. */
+  const applyImageToSource = async () => {
+    const ref = imgOverride[safe]
+    const imgCol = fieldMap.image
+    const row = rawRows[safe]
+    if (!ref || !imgCol || !row || !sourceRef) return
+    await updateSourceCell(sourceRef, row._id, imgCol, ref)
+    // Reflète immédiatement dans la copie locale (et l'instantané de la fiche).
+    setSource(sourceRef, rawColumns, rawRows.map((r, i) => (i === safe ? { ...r, [imgCol]: ref } : r)))
+  }
+
+  /** Recharge textes/prix/images depuis la source partagée (PIM ou dataset). */
+  const refreshFromSource = async () => {
+    if (!sourceRef || !hasRealSource) return
+    const { columns, rows } = isPimSource(sourceRef)
+      ? await loadPimMergeData(pimProjectIdFromSource(sourceRef))
+      : await loadExcelMergeData(sourceRef.excelDocId, sourceRef.sheetIndex)
+    setSource(sourceRef, columns, rows)
+  }
 
   // Résout l'image affichée (override DAM/Drive prioritaire, sinon image du dataset)
   // → data-URI/blob capturable par html2canvas.
@@ -227,6 +251,13 @@ export function StepRender() {
           {savingFiche ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer la fiche
         </button>
         {sourceRef?.fileName && <span className="truncate text-xs text-white/40" title={sourceRef.fileName}>📄 {sourceRef.fileName}</span>}
+        {hasRealSource && (
+          <button
+            onClick={() => toast.promise(refreshFromSource(), { loading: 'Actualisation depuis la source…', success: 'Contenus actualisés (textes, prix, images)', error: (e) => (e instanceof Error ? e.message : 'Échec de l\'actualisation') })}
+            className="shrink-0 p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10" title="Actualiser depuis la source (textes, prix, images)">
+            <RefreshCw className="h-4 w-4" />
+          </button>
+        )}
         <span className="shrink-0 text-xs text-white/30">{cards.length} produit{cards.length > 1 ? 's' : ''}</span>
         <button onClick={() => setStep('mapping')} className="ml-auto shrink-0 text-sm text-white/50 hover:text-white">← Mappage</button>
       </div>
@@ -251,7 +282,9 @@ export function StepRender() {
             // Upload vers le DAM (Drive) → on ne stocke qu'une réf légère dans la fiche.
             const p = uploadPromoImageToDam(url, cards[safe]?.name || 'image').then((ref) => setImgOverrideAt(safe, ref))
             toast.promise(p, { loading: 'Enregistrement de l\'image dans le DAM…', success: 'Image enregistrée (DAM)', error: (e) => (e instanceof Error ? e.message : 'Échec upload DAM') })
-          }} />
+          }}
+            canApplyToSource={hasRealSource && !!imgOverride[safe] && !!fieldMap.image}
+            onApplyToSource={() => toast.promise(applyImageToSource(), { loading: 'Écriture dans la source…', success: 'Image propagée à la source (tous les canaux)', error: (e) => (e instanceof Error ? e.message : 'Échec de l\'écriture') })} />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
