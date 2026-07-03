@@ -20,6 +20,18 @@ export type Section =
   | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
   | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'retail-promo' | 'catalog'
 
+export type ModuleGroupId = 'create' | 'product-data' | 'web' | 'publish' | 'automation' | 'admin'
+
+/** Thèmes du menu, dans l'ordre d'affichage (sidebar + drawer). */
+export const MODULE_GROUPS: { id: ModuleGroupId; label: string }[] = [
+  { id: 'create',       label: 'Création' },
+  { id: 'product-data', label: 'Données produits' },
+  { id: 'web',          label: 'Web & veille' },
+  { id: 'publish',      label: 'Publication' },
+  { id: 'automation',   label: 'Automatisation & IA' },
+  { id: 'admin',        label: 'Administration' },
+]
+
 export interface ModuleChild {
   /** Suffixe d'action, ex. 'tab:favorites'. */
   id: string
@@ -34,6 +46,7 @@ export interface ModuleChild {
 
 export interface ModuleItem {
   id: Section
+  group: ModuleGroupId
   icon: React.ComponentType<{ className?: string }>
   label: string
   accent: string
@@ -43,8 +56,9 @@ export interface ModuleItem {
 }
 
 export const MODULE_ITEMS: ModuleItem[] = [
-  { id: 'blank',  icon: FilePlus,       label: 'Nouveau document', accent: 'text-violet-400',  activeBg: 'bg-violet-500/[0.1]',  activeText: 'text-violet-300' },
-  { id: 'import', icon: Upload,         label: 'Importer',         accent: 'text-amber-400',   activeBg: 'bg-amber-500/[0.1]',   activeText: 'text-amber-300',
+  // ── Création ──
+  { id: 'blank',  group: 'create', icon: FilePlus,       label: 'Nouveau document', accent: 'text-violet-400',  activeBg: 'bg-violet-500/[0.1]',  activeText: 'text-violet-300' },
+  { id: 'import', group: 'create', icon: Upload,         label: 'Importer',         accent: 'text-amber-400',   activeBg: 'bg-amber-500/[0.1]',   activeText: 'text-amber-300',
     children: [
       // Ouvre l'assistant d'import PIM (animation de conversion des formules Excel).
       { id: 'action:excel',       label: 'Importer un Excel', intent: 'import:action:excel',    permission: 'import.excel' },
@@ -56,13 +70,14 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'format:pdf-to-svg',  label: 'PDF → SVG',    intent: 'import:format:pdf-to-svg',  permission: 'import.pdfToSvg' },
     ],
   },
-  { id: 'library',icon: Library,        label: 'Bibliothèque',     accent: 'text-sky-400',     activeBg: 'bg-sky-500/[0.1]',     activeText: 'text-sky-300',
+  { id: 'library', group: 'create', icon: Library,        label: 'Bibliothèque',     accent: 'text-sky-400',     activeBg: 'bg-sky-500/[0.1]',     activeText: 'text-sky-300',
     children: [
       { id: 'view:grid', label: 'Vue vignettes', intent: 'library:view:grid' },
       { id: 'view:list', label: 'Vue liste',     intent: 'library:view:list' },
     ],
   },
-  { id: 'images', icon: ImageIcon,      label: 'DAM',              accent: 'text-pink-400',    activeBg: 'bg-pink-500/[0.1]',    activeText: 'text-pink-300',
+  // ── Données produits ──
+  { id: 'images', group: 'product-data', icon: ImageIcon,      label: 'DAM',              accent: 'text-pink-400',    activeBg: 'bg-pink-500/[0.1]',    activeText: 'text-pink-300',
     children: [
       { id: 'tab:stock',       label: 'Banque d\'images',   intent: 'images:tab:stock' },
       { id: 'tab:my-images',   label: 'Mes images',         intent: 'images:tab:my-images' },
@@ -75,7 +90,7 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'tab:gdrive',      label: 'Google Drive',       intent: 'images:tab:gdrive',    permission: 'dam.gdrive' },
     ],
   },
-  { id: 'data',   icon: FileSpreadsheet,label: 'PIM',              accent: 'text-emerald-400', activeBg: 'bg-emerald-500/[0.1]', activeText: 'text-emerald-300',
+  { id: 'data',   group: 'product-data', icon: FileSpreadsheet,label: 'PIM',              accent: 'text-emerald-400', activeBg: 'bg-emerald-500/[0.1]', activeText: 'text-emerald-300',
     children: [
       { id: 'action:import',       label: 'Importer un fichier', intent: 'data:action:import' },
       { id: 'action:scrape',       label: 'Scraper le web',      intent: 'data:action:scrape' },
@@ -85,62 +100,60 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'action:export-ec',    label: 'Export EasyCatalog',  intent: 'data:action:export-ec' },
     ],
   },
-  { id: 'taxonomies', icon: FolderTree, label: 'Taxonomies',       accent: 'text-teal-400',    activeBg: 'bg-teal-500/[0.1]',    activeText: 'text-teal-300',
+  { id: 'taxonomies', group: 'product-data', icon: FolderTree, label: 'Taxonomies',       accent: 'text-teal-400',    activeBg: 'bg-teal-500/[0.1]',    activeText: 'text-teal-300',
     children: [
       { id: 'tab:tree',       label: 'Arbre',                intent: 'taxonomies:tab:tree' },
       { id: 'tab:briefs',     label: 'Briefs',               intent: 'taxonomies:tab:briefs' },
       { id: 'action:import',  label: 'Importer une taxonomie', intent: 'taxonomies:action:import' },
     ],
   },
-  { id: 'scraping-templates', icon: Database, label: 'Templates scraping', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300',
+  // ── Web & veille ──
+  { id: 'scraping-templates', group: 'web', icon: Database, label: 'Templates scraping', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300',
     children: [
       { id: 'action:new', label: 'Nouveau template', intent: 'scraping-templates:action:new' },
     ],
   },
-  { id: 'scraping-hub', icon: BookOpen, label: 'Scraping Hub', accent: 'text-sky-400', activeBg: 'bg-sky-500/[0.1]', activeText: 'text-sky-300',
+  { id: 'scraping-hub', group: 'web', icon: BookOpen, label: 'Scraping Hub', accent: 'text-sky-400', activeBg: 'bg-sky-500/[0.1]', activeText: 'text-sky-300',
     children: [
       { id: 'tab:rules',   label: 'Règles',                  intent: 'scraping-hub:tab:rules' },
       { id: 'tab:vendors', label: 'Fournisseurs & Templates', intent: 'scraping-hub:tab:vendors' },
       { id: 'tab:debug',   label: 'Debug Jina/LLM',          intent: 'scraping-hub:tab:debug' },
     ],
   },
-  { id: 'workflows', icon: Workflow, label: 'Workflows', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300',
+  { id: 'price-watch', group: 'web', icon: TrendingUpDown, label: 'Veille tarifaire', accent: 'text-orange-400', activeBg: 'bg-orange-500/[0.1]', activeText: 'text-orange-300',
+    children: [
+      { id: 'section:pending',    label: 'À confirmer', intent: 'price-watch:section:pending' },
+      { id: 'section:comparison', label: 'Comparatif',  intent: 'price-watch:section:comparison' },
+    ],
+  },
+  // ── Publication ──
+  { id: 'retail-promo', group: 'publish', icon: Tag, label: 'Création studio', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300',
+    children: [
+      { id: 'action:new',  label: 'Créer une promo', intent: 'retail-promo:action:new' },
+      { id: 'action:list', label: 'Mes promos',       intent: 'retail-promo:action:list' },
+    ],
+  },
+  { id: 'catalog', group: 'publish', icon: BookText, label: 'Catalogue studio', accent: 'text-cyan-400', activeBg: 'bg-cyan-500/[0.1]', activeText: 'text-cyan-300',
+    children: [
+      { id: 'action:new',  label: 'Nouveau catalogue', intent: 'catalog:action:new' },
+      { id: 'action:list', label: 'Mes catalogues',    intent: 'catalog:action:list' },
+    ],
+  },
+  { id: 'hyperframes', group: 'publish', icon: Film, label: 'Animation', accent: 'text-fuchsia-400', activeBg: 'bg-fuchsia-500/[0.1]', activeText: 'text-fuchsia-300',
+    children: [
+      { id: 'action:generate', label: 'Générer une animation', intent: 'hyperframes:action:generate' },
+      { id: 'action:list',     label: 'Mes animations',        intent: 'hyperframes:action:list' },
+    ],
+  },
+  // ── Automatisation & IA ──
+  { id: 'workflows', group: 'automation', icon: Workflow, label: 'Workflows', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300',
     children: [
       { id: 'action:new',               label: 'Nouveau workflow',   intent: 'workflows:action:new' },
       { id: 'action:my-templates',      label: 'Mes modèles',        intent: 'workflows:action:my-templates' },
       { id: 'action:builtin-templates', label: 'Modèles intégrés',   intent: 'workflows:action:builtin-templates' },
     ],
   },
-  { id: 'price-watch', icon: TrendingUpDown, label: 'Veille tarifaire', accent: 'text-orange-400', activeBg: 'bg-orange-500/[0.1]', activeText: 'text-orange-300',
-    children: [
-      { id: 'section:pending',    label: 'À confirmer', intent: 'price-watch:section:pending' },
-      { id: 'section:comparison', label: 'Comparatif',  intent: 'price-watch:section:comparison' },
-    ],
-  },
-  { id: 'retail-promo', icon: Tag, label: 'Création studio', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300',
-    children: [
-      { id: 'action:new',  label: 'Créer une promo', intent: 'retail-promo:action:new' },
-      { id: 'action:list', label: 'Mes promos',       intent: 'retail-promo:action:list' },
-    ],
-  },
-  { id: 'catalog', icon: BookText, label: 'Catalogue studio', accent: 'text-cyan-400', activeBg: 'bg-cyan-500/[0.1]', activeText: 'text-cyan-300',
-    children: [
-      { id: 'action:new',  label: 'Nouveau catalogue', intent: 'catalog:action:new' },
-      { id: 'action:list', label: 'Mes catalogues',    intent: 'catalog:action:list' },
-    ],
-  },
-  { id: 'telegram', icon: Send, label: 'Telegram', accent: 'text-blue-400', activeBg: 'bg-blue-500/[0.1]', activeText: 'text-blue-300',
-    children: [
-      { id: 'action:new', label: 'Nouveau message', intent: 'telegram:action:new' },
-    ],
-  },
-  { id: 'hyperframes', icon: Film, label: 'Animation', accent: 'text-fuchsia-400', activeBg: 'bg-fuchsia-500/[0.1]', activeText: 'text-fuchsia-300',
-    children: [
-      { id: 'action:generate', label: 'Générer une animation', intent: 'hyperframes:action:generate' },
-      { id: 'action:list',     label: 'Mes animations',        intent: 'hyperframes:action:list' },
-    ],
-  },
-  { id: 'chat', icon: MessageSquare, label: 'Chat IA', accent: 'text-violet-400', activeBg: 'bg-violet-500/[0.1]', activeText: 'text-violet-300',
+  { id: 'chat', group: 'automation', icon: MessageSquare, label: 'Chat IA', accent: 'text-violet-400', activeBg: 'bg-violet-500/[0.1]', activeText: 'text-violet-300',
     children: [
       { id: 'action:new',       label: 'Nouvelle conversation', intent: 'chat:action:new' },
       { id: 'category:writing', label: 'Écrire',                intent: 'chat:category:writing' },
@@ -151,7 +164,13 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'category:image',   label: 'Image',                 intent: 'chat:category:image' },
     ],
   },
-  { id: 'access', icon: ShieldCheck, label: 'Utilisateurs & rôles', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300',
+  { id: 'telegram', group: 'automation', icon: Send, label: 'Telegram', accent: 'text-blue-400', activeBg: 'bg-blue-500/[0.1]', activeText: 'text-blue-300',
+    children: [
+      { id: 'action:new', label: 'Nouveau message', intent: 'telegram:action:new' },
+    ],
+  },
+  // ── Administration ──
+  { id: 'access', group: 'admin', icon: ShieldCheck, label: 'Utilisateurs & rôles', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300',
     children: [
       { id: 'tab:users', label: 'Utilisateurs', intent: 'access:tab:users' },
       { id: 'tab:roles', label: 'Rôles',        intent: 'access:tab:roles' },
@@ -184,6 +203,13 @@ function canSeeModule(id: Section, isAdmin: boolean, permissions: Set<string>): 
   if (id === 'access') return isAdmin
   const perm = SECTION_PERMISSION[id]
   return isAdmin || !perm || permissions.has(perm)
+}
+
+/** Regroupe une liste (déjà filtrée) de modules par thème, dans l'ordre de MODULE_GROUPS. */
+export function groupModules(modules: ModuleItem[]): { group: (typeof MODULE_GROUPS)[number]; items: ModuleItem[] }[] {
+  return MODULE_GROUPS
+    .map((group) => ({ group, items: modules.filter((m) => m.group === group.id) }))
+    .filter((g) => g.items.length > 0)
 }
 
 /** Modules visibles pour l'utilisateur courant (mêmes droits que la sidebar du Dashboard). */

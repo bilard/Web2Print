@@ -31,7 +31,7 @@ import { useHelpStore } from '@/features/help/help.store'
 import { useAccessStore } from '@/stores/access.store'
 import { TourLauncher } from '@/features/tour/TourLauncher'
 import { registerTourSectionNavigator } from '@/features/tour/tour.store'
-import { MODULE_ITEMS as menuItems, SECTION_PERMISSION, type Section } from '@/features/navigation/modules'
+import { MODULE_ITEMS as menuItems, SECTION_PERMISSION, groupModules, type Section } from '@/features/navigation/modules'
 import { ModuleTree } from '@/features/navigation/ModuleTree'
 import { useModuleIntentStore } from '@/stores/moduleIntent.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
@@ -380,31 +380,35 @@ export default function DashboardPage() {
               })}
             />
           ) : (
-            visibleMenuItems.map(({ id, icon: Icon, label, accent, activeBg, activeText }) => {
-              const isActive = activeSection === id
-              return (
-                <button
-                  id={`menu-${id}`}
-                  data-help-id={`dashboard.sidebar.${id}`}
-                  ref={id === 'blank' ? newProjectHighlight.ref : undefined}
-                  key={id}
-                  role="menuitem"
-                  tabIndex={isActive ? 0 : -1}
-                  aria-current={isActive ? 'page' : undefined}
-                  aria-label={label}
-                  title={label}
-                  onClick={() => setActiveSection(id)}
-                  onKeyDown={(e) => handleKeyDown(e, id)}
-                  className={`w-full flex items-center justify-center px-0 py-[7px] rounded-md text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-2 ${
-                    isActive
-                      ? `${activeBg} ${activeText} font-medium`
-                      : 'text-white/45 hover:text-white/70 hover:bg-white/[0.04]'
-                  } ${id === 'blank' ? newProjectHighlight.className : ''}`}
-                >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? accent : 'opacity-50'}`} aria-hidden="true" />
-                </button>
-              )
-            })
+            groupModules(visibleMenuItems).map(({ group, items }, gi) => (
+              <div key={group.id} className={gi > 0 ? 'mt-1 pt-1 border-t border-white/[0.06]' : ''}>
+                {items.map(({ id, icon: Icon, label, accent, activeBg, activeText }) => {
+                  const isActive = activeSection === id
+                  return (
+                    <button
+                      id={`menu-${id}`}
+                      data-help-id={`dashboard.sidebar.${id}`}
+                      ref={id === 'blank' ? newProjectHighlight.ref : undefined}
+                      key={id}
+                      role="menuitem"
+                      tabIndex={isActive ? 0 : -1}
+                      aria-current={isActive ? 'page' : undefined}
+                      aria-label={label}
+                      title={label}
+                      onClick={() => setActiveSection(id)}
+                      onKeyDown={(e) => handleKeyDown(e, id)}
+                      className={`w-full flex items-center justify-center px-0 py-[7px] rounded-md text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-2 ${
+                        isActive
+                          ? `${activeBg} ${activeText} font-medium`
+                          : 'text-white/45 hover:text-white/70 hover:bg-white/[0.04]'
+                      } ${id === 'blank' ? newProjectHighlight.className : ''}`}
+                    >
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? accent : 'opacity-50'}`} aria-hidden="true" />
+                    </button>
+                  )
+                })}
+              </div>
+            ))
           )}
         </nav>
 
