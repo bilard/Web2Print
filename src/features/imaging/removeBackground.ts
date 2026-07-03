@@ -45,7 +45,8 @@ async function removeViaRembg(imageUrl: string): Promise<string> {
   const user = auth.currentUser
   if (!user) throw new Error('Non connecté')
   const [token, blob] = await Promise.all([user.getIdToken(), imageBlob(imageUrl)])
-  const res = await fetch(`${REMBG_URL}/remove`, {
+  // matting=1 : contours doux + ombres au sol préservées au mieux (repli serveur).
+  const res = await fetch(`${REMBG_URL}/remove?matting=1`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': blob.type || 'application/octet-stream' },
     body: blob,
@@ -55,6 +56,49 @@ async function removeViaRembg(imageUrl: string): Promise<string> {
     throw new Error(err.error ?? `Détourage rembg : erreur ${res.status}`)
   }
   return URL.createObjectURL(await res.blob())
+}
+
+/**
+ * Recadre un PNG détouré à la bounding box de son alpha (+ marge 2,5 %) : le
+ * cadre colle au sujet. Seuil bas (alpha > 8) pour NE PAS rogner les ombres au
+ * sol semi-transparentes. Sans pixel opaque (ou déjà plein cadre) → inchangé.
+ */
+async function trimToSubject(blobUrl: string): Promise<string> {
+  try {
+    const bmp = await createImageBitmap(await (await fetch(blobUrl)).blob())
+    const c = document.createElement('canvas')
+    c.width = bmp.width; c.height = bmp.height
+    const g = c.getContext('2d')
+    if (!g) return blobUrl
+    g.drawImage(bmp, 0, 0)
+    const { data } = g.getImageData(0, 0, c.width, c.height)
+    let minX = c.width, minY = c.height, maxX = -1, maxY = -1
+    for (let y = 0; y < c.height; y++) {
+      for (let x = 0; x < c.width; x++) {
+        if (data[(y * c.width + x) * 4 + 3] > 8) {
+          if (x < minX) minX = x
+          if (x > maxX) maxX = x
+          if (y < minY) minY = y
+          if (y > maxY) maxY = y
+        }
+      }
+    }
+    if (maxX < 0) return blobUrl // aucune matière
+    const pad = Math.round(Math.max(maxX - minX, maxY - minY) * 0.025)
+    const x0 = Math.max(0, minX - pad), y0 = Math.max(0, minY - pad)
+    const x1 = Math.min(c.width - 1, maxX + pad), y1 = Math.min(c.height - 1, maxY + pad)
+    const w = x1 - x0 + 1, h = y1 - y0 + 1
+    if (w >= c.width && h >= c.height) return blobUrl // déjà plein cadre
+    const out = document.createElement('canvas')
+    out.width = w; out.height = h
+    out.getContext('2d')!.drawImage(c, x0, y0, w, h, 0, 0, w, h)
+    const trimmed = await new Promise<Blob | null>((r) => out.toBlob(r, 'image/png'))
+    if (!trimmed) return blobUrl
+    URL.revokeObjectURL(blobUrl)
+    return URL.createObjectURL(trimmed)
+  } catch {
+    return blobUrl // le recadrage ne doit jamais faire échouer le détourage
+  }
 }
 
 async function removeViaRemoveBgApi(imageUrl: string, apiKey: string): Promise<string> {
@@ -84,17 +128,18 @@ export interface RemoveBackgroundResult {
 }
 
 /**
- * Détoure une image (URL data:/blob:/https) → PNG alpha. Remove.bg si activé
- * avec clé, sinon rembg ; échec Remove.bg (crédits épuisés…) → repli rembg.
+ * Détoure une image (URL data:/blob:/https) → PNG alpha RECADRÉ au sujet
+ * (bounding box + marge, ombres préservées). Remove.bg si activé avec clé,
+ * sinon rembg ; échec Remove.bg (crédits épuisés…) → repli rembg.
  */
 export async function removeBackground(imageUrl: string): Promise<RemoveBackgroundResult> {
   const apiKey = getApiKey('removebg')
   if (apiKey && isRemoveBgApiEnabled()) {
     try {
-      return { url: await removeViaRemoveBgApi(imageUrl, apiKey), provider: 'removebg' }
+      return { url: await trimToSubject(await removeViaRemoveBgApi(imageUrl, apiKey)), provider: 'removebg' }
     } catch (e) {
       console.warn('[détourage] Remove.bg indisponible, repli rembg :', e)
     }
   }
-  return { url: await removeViaRembg(imageUrl), provider: 'rembg' }
+  return { url: await trimToSubject(await removeViaRembg(imageUrl)), provider: 'rembg' }
 }

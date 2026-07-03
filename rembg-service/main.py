@@ -53,10 +53,25 @@ def remove_background():
     if len(data) > MAX_BYTES:
         return jsonify({"error": "image_too_large", "maxBytes": MAX_BYTES}), 413, CORS_HEADERS
 
+    # ?matting=1 : alpha matting (contours doux, préserve au mieux les ombres au
+    # sol semi-transparentes). Plus lent ; repli automatique sur le masque net.
+    kwargs = {}
+    if request.args.get("matting") == "1":
+        kwargs = dict(
+            alpha_matting=True,
+            alpha_matting_foreground_threshold=240,
+            alpha_matting_background_threshold=15,
+            alpha_matting_erode_size=10,
+        )
     try:
-        out = remove(data, session=SESSION)
-    except Exception as err:
-        return jsonify({"error": "rembg_failed", "detail": str(err)}), 422, CORS_HEADERS
+        out = remove(data, session=SESSION, **kwargs)
+    except Exception:
+        if not kwargs:
+            return jsonify({"error": "rembg_failed"}), 422, CORS_HEADERS
+        try:
+            out = remove(data, session=SESSION)  # repli sans matting
+        except Exception as err:
+            return jsonify({"error": "rembg_failed", "detail": str(err)}), 422, CORS_HEADERS
     return Response(out, mimetype="image/png", headers=CORS_HEADERS)
 
 
