@@ -1,63 +1,25 @@
+// Hook de détourage (boutons « Supprimer le fond » promo/galerie…) — délègue au
+// moteur partagé features/imaging/removeBackground : rembg (gratuit, Cloud Run)
+// par défaut, Remove.bg si clé configurée et non désactivée dans les Réglages.
 import { useCallback, useState } from 'react'
-import { getApiKey } from '@/lib/apiKeys'
-import { recordRemoveBgUsage } from '@/features/stats/removeBgUsageTracking'
+import { removeBackground } from '@/features/imaging/removeBackground'
 
 export function useRemoveBg() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   /**
-   * Supprime le fond d'une image via l'API Remove.bg.
-   * @param imageUrl URL de l'image source (doit être accessible publiquement ou en base64 data URL)
-   * @returns URL blob de l'image sans fond, ou null en cas d'erreur
+   * Supprime le fond d'une image (URL data:/blob:/https).
+   * @returns URL blob du PNG détouré, ou null en cas d'erreur.
    */
   const removeBg = useCallback(async (imageUrl: string): Promise<string | null> => {
-    const apiKey = getApiKey('removebg')
-    if (!apiKey) {
-      setError('Clé API Remove.bg non configurée (Paramètres > Connecteurs)')
-      return null
-    }
-
     setLoading(true)
     setError(null)
-
     try {
-      const formData = new FormData()
-
-      if (imageUrl.startsWith('data:')) {
-        // Base64 data URL → convertir en File
-        const res = await fetch(imageUrl)
-        const blob = await res.blob()
-        formData.append('image_file', blob, 'image.png')
-      } else {
-        formData.append('image_url', imageUrl)
-      }
-
-      formData.append('size', 'auto')
-
-      const response = await fetch('https://api.remove.bg/v1.0/removebg', {
-        method: 'POST',
-        headers: { 'X-Api-Key': apiKey },
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}))
-        const msg = (errData as any)?.errors?.[0]?.title ?? `Erreur ${response.status}`
-        setError(msg)
-        return null
-      }
-
-      // Enregistre la consommation (panneau « Consommation IA & Scraping — live »).
-      // L'API renvoie le débit réel dans `X-Credits-Charged` (1 en pleine résolution,
-      // ~0.25 en preview) ; repli sur 1 crédit si l'en-tête est absent.
-      const creditsCharged = Number(response.headers.get('X-Credits-Charged'))
-      void recordRemoveBgUsage(Number.isFinite(creditsCharged) && creditsCharged > 0 ? creditsCharged : 1)
-
-      const blob = await response.blob()
-      return URL.createObjectURL(blob)
-    } catch {
-      setError('Erreur réseau lors de la suppression du fond')
+      const { url } = await removeBackground(imageUrl)
+      return url
+    } catch (e) {
+      setError(String((e as Error).message))
       return null
     } finally {
       setLoading(false)

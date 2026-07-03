@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useIsOwner } from '@/features/auth/useAuth'
 import { useUsageStats } from '@/features/stats/useUsageStats'
 import { API_KEYS } from '@/lib/apiKeys'
+import { isRemoveBgApiEnabled, setRemoveBgApiEnabled } from '@/features/imaging/removeBackground'
 import { GDriveConnectorRow } from '@/features/gdrive/GDriveConnectorRow'
 import { ResumeSetupButton } from '@/features/onboarding/ResumeSetupButton'
 import { ApiKeyRow } from './ApiKeyRow'
@@ -411,11 +412,38 @@ function SiteCookiesSection() {
   )
 }
 
+/**
+ * Interrupteur du moteur de détourage : rembg (inclus, illimité) est TOUJOURS
+ * disponible ; Remove.bg (payant à l'image) ne sert que si activé ici ET clé
+ * présente — état dans features/imaging/removeBackground.
+ */
+function RemoveBgEngineToggle() {
+  const [enabled, setEnabled] = useState(isRemoveBgApiEnabled())
+  const toggle = (v: boolean) => { setRemoveBgApiEnabled(v); setEnabled(v) }
+  return (
+    <div className="bg-white/[0.03] rounded-xl px-3 py-2.5 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-xs text-white/70">Utiliser l'API Remove.bg (payante) quand la clé est présente</p>
+        <p className="text-[10px] text-white/30">
+          {enabled
+            ? 'Actif — repli automatique sur le détourage inclus (rembg) en cas d\'échec ou de crédits épuisés'
+            : 'Désactivé — tout le détourage passe par le moteur inclus (rembg, gratuit et illimité)'}
+        </p>
+      </div>
+      <button type="button" onClick={() => toggle(!enabled)} title={enabled ? 'Désactiver Remove.bg' : 'Activer Remove.bg'}
+        className={`shrink-0 w-9 h-5 rounded-full transition-colors relative ${enabled ? 'bg-indigo-600' : 'bg-white/10'}`}>
+        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${enabled ? 'left-[18px]' : 'left-0.5'}`} />
+      </button>
+    </div>
+  )
+}
+
 function ConnectorsTab() {
   return (
     <div className="flex flex-col gap-2">
       <ApiKeyRow id="google_vision" label="Google Cloud Vision" description="OCR pour Image/PDF → SVG éditable (décomposition des textes)" logo={<GoogleVisionLogo />} placeholder="AIza..." />
       <ApiKeyRow id="removebg" label="Remove.bg" description="Suppression de fond d'images" logo={<RemoveBgLogo />} />
+      <RemoveBgEngineToggle />
       <ApiKeyRow id="jina" label="Jina AI" description="Scraping et recherche web" logo={<JinaLogo />} placeholder="jina_..." />
       <ApiKeyRow id="firecrawl" label="Firecrawl" description="Scraping anti-bot fallback (Akamai, Cloudflare)" logo={<FirecrawlLogo />} placeholder="fc-..." />
       <BrightDataConnectorRow />

@@ -1,0 +1,63 @@
+# Service de détourage automatique (rembg / isnet-general-use) — Cloud Run.
+# Auth : jeton Firebase ID (projet web2print-6fe5a) en Bearer, vérifié via les
+# certificats publics Google (aucune clé de service requise pour la vérification).
+# Entrée : POST /remove avec le binaire de l'image ; sortie : PNG avec alpha.
+import os
+
+import firebase_admin
+from firebase_admin import auth as fb_auth
+from flask import Flask, Response, jsonify, request
+from rembg import new_session, remove
+
+PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "web2print-6fe5a")
+MODEL = os.environ.get("REMBG_MODEL", "isnet-general-use")
+MAX_BYTES = 15 * 1024 * 1024
+
+firebase_admin.initialize_app(options={"projectId": PROJECT_ID})
+SESSION = new_session(MODEL)  # chargé au boot (modèle pré-téléchargé dans l'image)
+
+app = Flask(__name__)
+
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+    "Access-Control-Max-Age": "3600",
+}
+
+
+@app.get("/healthz")
+def healthz():
+    return jsonify({"ok": True, "model": MODEL})
+
+
+@app.route("/remove", methods=["OPTIONS"])
+def remove_preflight():
+    return Response(status=204, headers=CORS_HEADERS)
+
+
+@app.post("/remove")
+def remove_background():
+    authz = request.headers.get("Authorization", "")
+    if not authz.startswith("Bearer "):
+        return jsonify({"error": "missing_bearer_token"}), 401, CORS_HEADERS
+    try:
+        fb_auth.verify_id_token(authz[7:])
+    except Exception as err:  # jeton invalide/expiré
+        return jsonify({"error": "invalid_token", "detail": str(err)}), 401, CORS_HEADERS
+
+    data = request.get_data()
+    if not data:
+        return jsonify({"error": "empty_body"}), 400, CORS_HEADERS
+    if len(data) > MAX_BYTES:
+        return jsonify({"error": "image_too_large", "maxBytes": MAX_BYTES}), 413, CORS_HEADERS
+
+    try:
+        out = remove(data, session=SESSION)
+    except Exception as err:
+        return jsonify({"error": "rembg_failed", "detail": str(err)}), 422, CORS_HEADERS
+    return Response(out, mimetype="image/png", headers=CORS_HEADERS)
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))
