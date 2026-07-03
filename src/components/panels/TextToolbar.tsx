@@ -3,7 +3,7 @@ import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJusti
 import { useEditorStore } from '@/stores/editor.store'
 import { useTextEditor, getCurrentTextStyle, getActivePtScale } from '@/features/editor/useTextEditor'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
-import { AVAILABLE_FONTS, getAllFonts } from '@/features/assets/useFonts'
+import { EditorFontOptions } from '@/features/fonts/EditorFontOptions'
 import type { TextStyle } from '@/features/editor/useTextEditor'
 import type { Canvas } from 'fabric'
 import { flattenStoreObjects } from '@/features/editor/deepObjects'
@@ -106,20 +106,7 @@ export function TextToolbar() {
         className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-indigo-500 w-36 cursor-pointer"
         style={{ fontFamily: style.fontFamily }}
       >
-        {(() => {
-          const allFonts = getAllFonts()
-          const docFonts = allFonts.filter(f => !AVAILABLE_FONTS.some(af => af.family === f.family))
-          return <>
-            {docFonts.length > 0 && (
-              <optgroup label="Fonts du document">
-                {docFonts.map(f => <option key={f.family} value={f.family} style={{ fontFamily: f.family }}>{f.label}</option>)}
-              </optgroup>
-            )}
-            <optgroup label="Google Fonts">
-              {AVAILABLE_FONTS.map(f => <option key={f.family} value={f.family} style={{ fontFamily: f.family }}>{f.label}</option>)}
-            </optgroup>
-          </>
-        })()}
+        <EditorFontOptions />
       </select>
 
       <div className="w-px h-5 bg-white/10 mx-1" />

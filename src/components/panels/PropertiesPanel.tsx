@@ -11,7 +11,9 @@ import {
 import { Shadow } from 'fabric'
 import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore } from '@/stores/editor.store'
-import { AVAILABLE_FONTS, getAllFonts, getDynamicFontVariants } from '@/features/assets/useFonts'
+import { getDynamicFontVariants } from '@/features/assets/useFonts'
+import { EditorFontOptions } from '@/features/fonts/EditorFontOptions'
+import { UserFontsPanel } from '@/features/fonts/UserFontsPanel'
 import { useTextEditor, getCurrentTextStyle } from '@/features/editor/useTextEditor'
 import { useObjectOperations } from '@/features/editor/useObjectOperations'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
@@ -769,22 +771,12 @@ export function PropertiesPanel() {
                     <select value={obj.fontFamily ?? 'Inter'} onChange={(e) => applyStyle({ fontFamily: e.target.value })}
                       className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                       style={{ fontFamily: obj.fontFamily ?? 'Inter' }}>
-                      {(() => {
-                        const allFonts = getAllFonts()
-                        const docFonts = allFonts.filter(f => !AVAILABLE_FONTS.some(af => af.family === f.family))
-                        return <>
-                          {docFonts.length > 0 && (
-                            <optgroup label="Fonts du document">
-                              {docFonts.map(f => <option key={f.family} value={f.family} style={{ fontFamily: f.family }}>{f.label}</option>)}
-                            </optgroup>
-                          )}
-                          <optgroup label="Google Fonts">
-                            {AVAILABLE_FONTS.map(f => <option key={f.family} value={f.family} style={{ fontFamily: f.family }}>{f.label}</option>)}
-                          </optgroup>
-                        </>
-                      })()}
+                      <EditorFontOptions />
                     </select>
                   </div>
+
+                  {/* Mes polices : upload .woff2/.ttf + ajout par URL Google Fonts */}
+                  <UserFontsPanel />
 
                   <Row>
                     <NumInput label="Taille" value={obj.fontSize ?? 24} onChange={(v) => applyStyle({ fontSize: v })} unit="pt" />
