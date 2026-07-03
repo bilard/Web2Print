@@ -102,9 +102,9 @@ export const CATALOG_CSS = `
 /* Étiquette prix : bloc barré (bandeau sombre) solidaire du badge prix accent */
 .cat-cell-tag { display:inline-flex; flex-direction:column; align-items:flex-end; transform:rotate(-2deg); }
 .cat-cell-was { display:inline-block; background:var(--cat-head-bg); color:var(--cat-head-ink); font-size:10px;
-  font-weight:700; text-decoration:line-through; padding:3px 9px 2px; border-radius:4px 4px 0 0; }
+  font-weight:700; text-decoration:line-through; padding:3px 9px 2px; border-radius:4px 4px 0 0; white-space:nowrap; }
 .cat-cell-price { display:inline-block; background:var(--cat-accent); color:#fff; font-family:var(--cat-font-h);
-  font-weight:800; font-size:18px; line-height:1; padding:6px 10px 5px; border-radius:4px; }
+  font-weight:800; font-size:18px; line-height:1; padding:6px 10px 5px; border-radius:4px; white-space:nowrap; }
 .cat-cell-was + .cat-cell-price { border-radius:4px 0 4px 4px; }
 
 /* Tailles graduées (span issu du packing : prix élevé/vedette = carte plus grande) */
@@ -123,18 +123,25 @@ export const CATALOG_CSS = `
 .cat-xl .cat-cell-was { font-size:14px; padding:4px 12px 3px; }
 .cat-xl .cat-price-sticker { width:68px; height:68px; font-size:19px; }
 
-/* Carte LARGE (2 col × 1 ligne) : image à gauche, contenu à droite — zéro vide */
-.cat-wide { display:grid; grid-template-columns:40% 1fr; grid-template-rows:auto minmax(0,1fr); }
-.cat-wide .cat-cell-promo { grid-row:1; grid-column:1 / -1; }
-.cat-wide .cat-cell-img { grid-row:2; grid-column:1; height:100%; }
-.cat-wide .cat-cell-body { grid-row:2; grid-column:2; min-width:0; display:flex; flex-direction:column; justify-content:center; padding:12px 18px; gap:3px; }
-.cat-wide .cat-cell-row { margin-top:14px; }
-.cat-wide .cat-cell-name { font-size:22px; -webkit-line-clamp:3; }
-.cat-wide .cat-cell-desc { -webkit-line-clamp:4; font-size:12px; }
-.cat-wide .cat-cell-brand { font-size:12px; }
-.cat-wide .cat-cell-refcode, .cat-wide .cat-cell-unit { font-size:10px; }
-.cat-wide .cat-cell-price { font-size:28px; padding:9px 15px 8px; }
-.cat-wide .cat-cell-was { font-size:13px; }
+/* Layout HORIZONTAL (image gauche pleine hauteur / contenu droite) : cartes
+   larges (2×1) et cartes standard des grilles denses 6-8/page — zéro vide */
+.cat-hz { display:grid; grid-template-columns:40% 1fr; grid-template-rows:auto minmax(0,1fr); }
+.cat-hz .cat-cell-promo { grid-row:1; grid-column:1 / -1; }
+.cat-hz .cat-cell-img { grid-row:2; grid-column:1; height:100%; }
+.cat-hz .cat-cell-body { grid-row:2; grid-column:2; min-width:0; display:flex; flex-direction:column; justify-content:center; padding:10px 14px; gap:3px; }
+.cat-hz .cat-cell-row { margin-top:10px; }
+/* Typo boost réservé aux VRAIES cartes larges (2 colonnes) */
+.cat-hz.cat-lg .cat-cell-body { padding:12px 18px; }
+.cat-hz.cat-lg .cat-cell-row { margin-top:14px; }
+.cat-hz.cat-lg .cat-cell-name { font-size:22px; -webkit-line-clamp:3; }
+.cat-hz.cat-lg .cat-cell-desc { -webkit-line-clamp:4; font-size:12px; }
+.cat-hz.cat-lg .cat-cell-brand { font-size:12px; }
+.cat-hz.cat-lg .cat-cell-refcode, .cat-hz.cat-lg .cat-cell-unit { font-size:10px; }
+.cat-hz.cat-lg .cat-cell-price { font-size:28px; padding:9px 15px 8px; }
+.cat-hz.cat-lg .cat-cell-was { font-size:13px; }
+/* Cartes compactes horizontales : sticker réduit, en bas de l'image (le kicker occupe le haut) */
+.cat-hz.cat-md .cat-price-sticker { width:34px; height:34px; font-size:10px; top:auto; bottom:6px; right:6px; }
+.cat-hz.cat-md .cat-cell-img-in { top:8px; left:8px; right:8px; bottom:8px; }
 
 /* Vedette : mise en avant AU SEIN de la page — cadre accent + ruban en coin */
 .cat-featured { border:2px solid var(--cat-accent); border-bottom:6px solid var(--cat-accent);
