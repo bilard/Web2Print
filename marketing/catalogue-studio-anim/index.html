@@ -134,12 +134,86 @@
   .plan-chip .ic.cyan { background: #0891b2; }
   .plan-chip em { margin-left: auto; font-style: normal; font-size: 13px; color: var(--dim); }
 
-  /* ---- la page du catalogue ---- */
+  /* ---- zone centrale ---- */
   .page-wrap {
     position: absolute; top: 152px; bottom: 40px; left: 360px; right: 400px; z-index: 1;
     display: flex; align-items: center; justify-content: center;
   }
-  .page-frame { position: relative; width: 552px; height: 780px; }
+
+  /* ---- carte source (table PIM) ---- */
+  .datacard {
+    position: absolute; left: calc(50% - 330px); top: 128px; width: 660px; z-index: 2;
+    background: var(--surface); border: 2px solid var(--line); border-radius: 14px;
+    padding: 22px 24px; box-sizing: border-box;
+  }
+  .dc-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .dc-title { font-size: 16px; font-weight: 700; letter-spacing: 0.14em; color: var(--dim); }
+  .dc-badge {
+    margin-left: auto; font-family: "JetBrains Mono", monospace; font-size: 14px;
+    background: rgba(99,102,241,0.18); color: #b9bbf9; border-radius: 999px; padding: 5px 12px;
+  }
+  .dc-cols {
+    display: grid; grid-template-columns: 40px 92px 1fr 110px; gap: 12px; align-items: center;
+    font-size: 12px; letter-spacing: 0.13em; color: var(--dim); padding: 0 10px 9px;
+    border-bottom: 2px solid var(--line);
+  }
+  .dc-row {
+    display: grid; grid-template-columns: 40px 92px 1fr 110px; gap: 12px; align-items: center;
+    background: var(--surface-2); border-radius: 9px; padding: 8px 10px; margin-top: 8px;
+    font-size: 15px; font-weight: 600;
+  }
+  .dc-row img { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; display: block; }
+  .dc-row code { font-family: "JetBrains Mono", monospace; font-size: 13px; color: #b9bbf9; }
+  .dc-row .pr { font-family: "JetBrains Mono", monospace; font-size: 14px; color: var(--txt); text-align: right; }
+
+  /* ---- chemin de fer (flat plan) ---- */
+  .flatplan {
+    position: absolute; left: calc(50% - 370px); top: 108px; width: 740px; z-index: 2;
+    background: var(--surface); border: 2px solid var(--line); border-radius: 14px;
+    padding: 20px 24px 18px; box-sizing: border-box;
+  }
+  .fp-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .fp-title { font-size: 16px; font-weight: 700; letter-spacing: 0.14em; color: var(--dim); }
+  .fp-badge {
+    margin-left: auto; font-family: "JetBrains Mono", monospace; font-size: 14px;
+    background: rgba(99,102,241,0.18); color: #b9bbf9; border-radius: 999px; padding: 5px 12px;
+  }
+  .fp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 12px; }
+  .fp-spread { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .fp-pages { display: flex; gap: 3px; }
+  .fp-page { position: relative; width: 70px; height: 99px; background: var(--page-paper); border-radius: 2px; overflow: hidden; }
+  .fp-page::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 9px; background: var(--page-navy); }
+  .fp-page::after { content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 5px; background: var(--page-navy); }
+  .fp-page .b {
+    position: absolute; left: 5px; right: 5px; top: 13px; bottom: 9px;
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 3px;
+  }
+  .fp-page .b i { position: relative; background: #eceadf; border: 1px solid var(--page-line); border-radius: 2px; }
+  .fp-page .b i::after {
+    content: ""; position: absolute; right: 2px; bottom: 2px; width: 13px; height: 6px;
+    background: var(--page-red); border-radius: 1px;
+  }
+  .fp-page.g6 .b { grid-template-rows: 1fr 1fr 1fr; }
+  .fp-page.vd .b { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  .fp-page.vd .b i { border: 2px solid var(--page-red); }
+  .fp-page.op .b { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr 1fr; }
+  .fp-page.op .b i::after { display: none; }
+  .fp-page.op .b i:first-child { background: var(--page-navy); grid-row: 1 / span 2; }
+  .fp-page.cov { background: radial-gradient(circle at 30% 20%, #34389b, #191c4f 75%); }
+  .fp-page.cov::before, .fp-page.cov::after { display: none; }
+  .fp-page.cov .cv { position: absolute; left: 8px; right: 8px; }
+  .fp-page.cov .cv.a { top: 16px; height: 7px; background: #fff; opacity: 0.92; border-radius: 1px; }
+  .fp-page.cov .cv.b2 { top: 27px; height: 7px; width: 60%; background: #fff; opacity: 0.6; border-radius: 1px; }
+  .fp-page.cov .cv.c { bottom: 12px; height: 12px; background: var(--page-red); border-radius: 2px; }
+  .fp-folio { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--dim); }
+  .fp-ring {
+    position: absolute; left: -8px; right: -8px; top: -8px; bottom: 14px;
+    border: 3px solid var(--indigo); border-radius: 9px;
+    box-shadow: 0 0 26px rgba(99,102,241,0.5);
+  }
+
+  /* ---- la page du catalogue ---- */
+  .page-frame { position: relative; width: 552px; height: 780px; z-index: 3; }
   .page {
     position: absolute; inset: 0; border-radius: 6px; overflow: hidden;
     display: flex; flex-direction: column;
@@ -219,6 +293,48 @@
   .page.p2 .cl-price { font-size: 21px; padding: 5px 11px; }
   .page.p2 .cl-old { font-size: 14px; }
 
+  /* ---- dézoom final : nappe de pages ---- */
+  .mini {
+    position: absolute; width: 152px; height: 214px; z-index: 1;
+    background: var(--page-paper); border-radius: 4px; overflow: hidden;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .mini::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 20px; background: var(--page-navy); }
+  .mini::after { content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 11px; background: var(--page-navy); }
+  .mini .sk {
+    position: absolute; left: 9px; right: 9px; top: 28px; bottom: 19px;
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 6px;
+  }
+  .mini .sk i { position: relative; background: #eceadf; border: 1px solid var(--page-line); border-radius: 3px; }
+  .mini .sk i::after {
+    content: ""; position: absolute; right: 4px; bottom: 4px; width: 26px; height: 11px;
+    background: var(--page-red); border-radius: 2px; transform: rotate(-3deg);
+  }
+  .mini .sk.sk4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .mini .sk.skv i:first-child { grid-column: 1 / span 2; grid-row: 1 / span 2; border: 2px solid var(--page-red); }
+  .mini.cover { background: radial-gradient(circle at 30% 20%, #34389b, #191c4f 75%); }
+  .mini.cover::before, .mini.cover::after { display: none; }
+  .mini.cover .cv { position: absolute; left: 14px; right: 14px; }
+  .mini.cover .cv.a { top: 26px; height: 13px; background: #fff; opacity: 0.92; border-radius: 2px; }
+  .mini.cover .cv.b { top: 46px; height: 13px; width: 70%; background: #fff; opacity: 0.6; border-radius: 2px; }
+  .mini.cover .cv.c { bottom: 20px; height: 22px; background: var(--page-red); border-radius: 3px; }
+  .m1 { left: 26px; top: 62px; }
+  .m2 { left: 20px; top: 306px; }
+  .m3 { left: 28px; top: 548px; }
+  .m4 { right: 32px; top: 62px; }
+  .m5 { right: 24px; top: 306px; }
+  .m6 { right: 30px; top: 548px; }
+
+  .count-chip {
+    position: absolute; bottom: 6px; left: 0; right: 0; z-index: 4;
+    width: max-content; margin: 0 auto;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface-2); border: 2px solid rgba(99,102,241,0.55); border-radius: 999px;
+    padding: 10px 20px; font-size: 16px; font-weight: 700;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+  }
+  .count-chip b { color: var(--indigo); font-family: "JetBrains Mono", monospace; font-size: 18px; font-variant-numeric: tabular-nums; }
+
   /* ---- toast export ---- */
   .toast {
     position: absolute; right: 40px; top: 86px; z-index: 7;
@@ -236,7 +352,7 @@
 </style>
 </head>
 <body>
-<div data-composition-id="root" data-start="0" data-duration="13" data-width="1600" data-height="1000">
+<div data-composition-id="root" data-start="0" data-duration="19" data-width="1600" data-height="1000">
   <div class="stage">
     <div class="grid-dots"></div>
     <div class="glow" id="glow"></div>
@@ -286,6 +402,47 @@
     </div>
 
     <div class="page-wrap" data-layout-allow-overflow data-layout-allow-overlap data-layout-allow-occlusion>
+
+      <div class="datacard" id="datacard">
+        <div class="dc-head"><span class="dc-title">SOURCE · PIM</span><span class="dc-badge">174 lignes</span></div>
+        <div class="dc-cols"><span></span><span>RÉF</span><span>PRODUIT</span><span style="text-align:right">PRIX</span></div>
+        <div class="dc-row d-row"><img src="drill.jpg" alt=""/><code>4892</code><span>Perceuse-visseuse PRO 18V</span><span class="pr">129,90 €</span></div>
+        <div class="dc-row d-row"><img src="lamp.jpg" alt=""/><code>4471</code><span>Lampe OSLO</span><span class="pr">29,90 €</span></div>
+        <div class="dc-row d-row"><img src="watch.jpg" alt=""/><code>5120</code><span>Montre chantier</span><span class="pr">64,90 €</span></div>
+        <div class="dc-row d-row"><img src="cam.jpg" alt=""/><code>6015</code><span>Caméra inspection</span><span class="pr">99,00 €</span></div>
+        <div class="dc-row d-row"><img src="shoe.jpg" alt=""/><code>7742</code><span>Chaussures sécu S3</span><span class="pr">54,90 €</span></div>
+        <div class="dc-row d-row"><img src="chair.jpg" alt=""/><code>0210</code><span>Fauteuil ROSSA 210</span><span class="pr">249,90 €</span></div>
+        <div class="dc-row d-row"><img src="plant.jpg" alt=""/><code>8104</code><span>Kit goutte-à-goutte</span><span class="pr">44,90 €</span></div>
+        <div class="dc-row d-row"><img src="bottle.jpg" alt=""/><code>3308</code><span>Brume d'ambiance</span><span class="pr">17,90 €</span></div>
+      </div>
+
+      <div class="flatplan" id="flatplan">
+        <div class="fp-head"><span class="fp-title">CHEMIN DE FER · APERÇU</span><span class="fp-badge">68 pages</span></div>
+        <div class="fp-grid">
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page cov"><span class="cv a"></span><span class="cv b2"></span><span class="cv c"></span></span></span><span class="fp-folio">couverture</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page op"><span class="b"><i></i><i></i></span></span><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">2–3</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page g6"><span class="b"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">4–5</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span><span class="fp-page vd"><span class="b"><i></i></span></span></span><span class="fp-folio">6–7</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page g6"><span class="b"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><span class="fp-page g6"><span class="b"><i></i><i></i><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">8–9</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">10–11</span></div>
+          <div class="fp-spread fp-in" id="fp-sel"><span class="fp-ring" id="fp-ring"></span><span class="fp-pages"><span class="fp-page vd"><span class="b"><i></i></span></span><span class="fp-page g6"><span class="b"><i></i><i></i><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">12–13</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span><span class="fp-page g6"><span class="b"><i></i><i></i><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">14–15</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page op"><span class="b"><i></i><i></i></span></span><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">16–17</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page g6"><span class="b"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">18–19</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span><span class="fp-page vd"><span class="b"><i></i></span></span></span><span class="fp-folio">20–21</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page g6"><span class="b"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">… 68</span></div>
+        </div>
+      </div>
+
+      <div class="mini m1 mini-l"><div class="sk"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="mini m2 mini-l"><div class="sk skv"><i></i><i></i><i></i></div></div>
+      <div class="mini m3 mini-l"><div class="sk sk4"><i></i><i></i><i></i><i></i></div></div>
+      <div class="mini m4 mini-r"><div class="sk sk4"><i></i><i></i><i></i><i></i></div></div>
+      <div class="mini m5 mini-r"><div class="sk"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="mini m6 mini-r cover"><span class="cv a"></span><span class="cv b"></span><span class="cv c"></span></div>
+
+      <div class="count-chip" id="count-chip"><b id="count-n">0</b>pages maquettées · sommaire exact</div>
+
       <div class="page-frame" id="page-frame">
         <div class="page" id="page1" data-layout-allow-occlusion data-layout-allow-overlap>
           <div class="pg-head" id="pg1-head">
@@ -328,7 +485,7 @@
 
     <div class="toast" id="toast">
       <span class="ok">✓</span>
-      <div><b>PDF exporté — prêt à imprimer</b><small><span class="n" id="toast-n">0</span> pages · fond perdu + traits de coupe · 300 DPI</small></div>
+      <div><b>PDF exporté — prêt à imprimer</b><small><span class="n">68</span> pages · fond perdu + traits de coupe · 300 DPI</small></div>
     </div>
   </div>
 
@@ -347,6 +504,10 @@
     /* l'arbre se déplie */
     tl.fromTo(".t-row", { x: -26, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "power2.out", stagger: 0.08 }, 0.75);
 
+    /* ---------- source : la table du PIM remplit le centre ---------- */
+    tl.fromTo("#datacard", { y: 34, opacity: 0, scale: 0.97 }, { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: "power3.out" }, 0.8);
+    tl.fromTo(".d-row", { x: -28, opacity: 0 }, { x: 0, opacity: 1, duration: 0.38, ease: "power2.out", stagger: 0.09 }, 1.1);
+
     /* ---------- prompt : frappe + génération du plan ---------- */
     const promptFull = "Thème atelier, vedettes selon le prix, densité aléatoire";
     const typing = { n: 0 };
@@ -355,51 +516,71 @@
       onUpdate: () => {
         document.getElementById("prompt-txt").textContent = promptFull.slice(0, Math.round(typing.n));
       },
-    }, 1.35);
-    tl.fromTo("#caret", { opacity: 1 }, { opacity: 0, duration: 0.4, ease: "steps(1)", yoyo: true, repeat: 7 }, 1.35);
-    tl.set("#caret", { opacity: 0 }, 4.6);
+    }, 1.55);
+    tl.fromTo("#caret", { opacity: 1 }, { opacity: 0, duration: 0.4, ease: "steps(1)", yoyo: true, repeat: 7 }, 1.55);
+    tl.set("#caret", { opacity: 0 }, 4.8);
 
-    tl.fromTo("#gen-btn", { scale: 1 }, { scale: 0.92, duration: 0.12, ease: "power2.in", yoyo: true, repeat: 1 }, 3.05);
-    tl.fromTo(".pl-chip", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "back.out(1.6)", stagger: 0.11 }, 3.35);
+    tl.fromTo("#gen-btn", { scale: 1 }, { scale: 0.92, duration: 0.12, ease: "power2.in", yoyo: true, repeat: 1 }, 3.25);
+    tl.fromTo(".pl-chip", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "back.out(1.6)", stagger: 0.11 }, 3.55);
+
+    /* la table s'efface : place au chemin de fer */
+    tl.to("#datacard", { scale: 0.95, opacity: 0, duration: 0.45, ease: "power2.in" }, 3.9);
+    tl.set("#datacard", { visibility: "hidden" }, 4.4);
+
+    /* ---------- chemin de fer : le plan devient des doubles pages ---------- */
+    tl.fromTo("#flatplan", { y: 30, opacity: 0, scale: 0.97 }, { y: 0, opacity: 1, scale: 1, duration: 0.55, ease: "power3.out" }, 4.35);
+    tl.fromTo(".fp-in", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.7)", stagger: 0.07 }, 4.6);
+    /* la double 12–13 se sélectionne */
+    tl.fromTo("#fp-ring", { scale: 1.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(2)" }, 6.15);
+    tl.to("#fp-sel", { scale: 1.08, duration: 0.35, ease: "sine.inOut", yoyo: true, repeat: 1 }, 6.25);
+    /* zoom dans la double page sélectionnée */
+    tl.to("#flatplan", { scale: 1.7, opacity: 0, duration: 0.6, ease: "power2.in", transformOrigin: "62% 58%" }, 7.05);
+    tl.set("#flatplan", { visibility: "hidden" }, 7.7);
 
     /* ---------- la page se compose (packing first-fit) ---------- */
-    tl.fromTo("#page-frame", { scale: 0.94, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.55, ease: "sine.out" }, 3.7);
-    tl.fromTo("#pg1-head", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "expo.out" }, 4.05);
-    tl.fromTo("#pg1-folio", { scale: 0, rotation: -90 }, { scale: 1, rotation: 0, duration: 0.5, ease: "back.out(2)" }, 4.45);
+    tl.fromTo("#page-frame", { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "power3.out" }, 7.5);
+    tl.fromTo("#pg1-head", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "expo.out" }, 7.95);
+    tl.fromTo("#pg1-folio", { scale: 0, rotation: -90 }, { scale: 1, rotation: 0, duration: 0.5, ease: "back.out(2)" }, 8.35);
 
     /* vedette 2×2 d'abord, puis le flux comble les cases */
-    tl.fromTo("#cell-vd", { scale: 0.7, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.4)" }, 4.5);
-    tl.fromTo("#vd-img", { scale: 1 }, { scale: 1.08, duration: 7.6, ease: "none" }, 4.5);
-    tl.fromTo("#vd-ruban", { xPercent: -130 }, { xPercent: 0, duration: 0.5, ease: "power4.out" }, 4.95);
-    tl.fromTo(".cell.cellin:not(.vedette)", { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.42, ease: "power3.out", stagger: 0.09 }, 4.95);
+    tl.fromTo("#cell-vd", { scale: 0.7, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.4)" }, 8.4);
+    tl.fromTo("#vd-img", { scale: 1 }, { scale: 1.09, duration: 10.0, ease: "none" }, 8.4);
+    tl.fromTo("#vd-ruban", { xPercent: -130 }, { xPercent: 0, duration: 0.5, ease: "power4.out" }, 8.85);
+    tl.fromTo(".cell.cellin:not(.vedette)", { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.42, ease: "power3.out", stagger: 0.09 }, 8.85);
 
     /* prix : badges inclinés + barrés + sticker remise */
-    tl.fromTo(".pr-pop", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(2.4)", stagger: 0.07 }, 5.65);
-    tl.fromTo(".strike", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power4.out", stagger: 0.06 }, 6.0);
-    tl.fromTo("#vd-sticker", { scale: 0, rotation: -32, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 0.65, ease: "back.out(2.2)" }, 6.15);
+    tl.fromTo(".pr-pop", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(2.4)", stagger: 0.07 }, 9.55);
+    tl.fromTo(".strike", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power4.out", stagger: 0.06 }, 9.9);
+    tl.fromTo("#vd-sticker", { scale: 0, rotation: -32, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 0.65, ease: "back.out(2.2)" }, 10.05);
 
     /* ---------- densité aléatoire : la page suivante glisse ---------- */
-    tl.fromTo("#page2", { xPercent: 118, opacity: 0, rotation: 2 }, { xPercent: 0, opacity: 1, rotation: 0, duration: 0.75, ease: "expo.out" }, 8.0);
+    tl.fromTo("#page2", { xPercent: 118, opacity: 0, rotation: 2 }, { xPercent: 0, opacity: 1, rotation: 0, duration: 0.75, ease: "expo.out" }, 11.55);
 
-    /* ---------- resolve : export PDF ---------- */
-    tl.fromTo("#export-btn", { scale: 1 }, { scale: 0.92, duration: 0.12, ease: "power2.in", yoyo: true, repeat: 1 }, 9.1);
-    tl.fromTo("#toast", { y: -36, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "back.out(1.5)" }, 9.5);
+    /* ---------- dézoom : tout le catalogue se déploie ---------- */
+    tl.to("#page-frame", { scale: 0.56, duration: 0.85, ease: "power3.inOut" }, 12.9);
+    tl.fromTo(".mini-l", { x: -70, opacity: 0, rotation: -7 }, { x: 0, opacity: 1, rotation: -2.5, duration: 0.55, ease: "back.out(1.5)", stagger: 0.12 }, 13.25);
+    tl.fromTo(".mini-r", { x: 70, opacity: 0, rotation: 7 }, { x: 0, opacity: 1, rotation: 2.5, duration: 0.55, ease: "back.out(1.5)", stagger: 0.12 }, 13.4);
+    tl.fromTo("#count-chip", { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 13.7);
     const pages = { n: 0 };
     tl.to(pages, {
-      n: 68, duration: 1.2, ease: "power2.out",
+      n: 68, duration: 1.3, ease: "power2.out",
       onUpdate: () => {
-        document.getElementById("toast-n").textContent = String(Math.round(pages.n));
+        document.getElementById("count-n").textContent = String(Math.round(pages.n));
       },
-    }, 9.75);
-    tl.to("#toast", { y: -20, opacity: 0, duration: 0.35, ease: "power2.in" }, 11.9);
-    tl.set("#toast", { visibility: "hidden" }, 12.25);
+    }, 13.9);
+
+    /* ---------- resolve : export PDF ---------- */
+    tl.fromTo("#export-btn", { scale: 1 }, { scale: 0.92, duration: 0.12, ease: "power2.in", yoyo: true, repeat: 1 }, 15.3);
+    tl.fromTo("#toast", { y: -36, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "back.out(1.5)" }, 15.7);
+    tl.to("#toast", { y: -20, opacity: 0, duration: 0.35, ease: "power2.in" }, 17.9);
+    tl.set("#toast", { visibility: "hidden" }, 18.25);
 
     /* ---------- breathe ---------- */
-    tl.to("#vd-sticker", { scale: 1.07, duration: 0.8, ease: "sine.inOut", yoyo: true, repeat: 3 }, 7.2);
-    tl.to("#glow", { x: 90, y: 40, duration: 7, ease: "sine.inOut" }, 4.0);
+    tl.to("#vd-sticker", { scale: 1.07, duration: 0.8, ease: "sine.inOut", yoyo: true, repeat: 3 }, 11.0);
+    tl.to("#glow", { x: 90, y: 40, duration: 11, ease: "sine.inOut" }, 4.5);
 
     /* ---------- fin : fondu pour une boucle propre ---------- */
-    tl.to(".stage", { opacity: 0, duration: 0.55, ease: "sine.inOut" }, 12.4);
+    tl.to(".stage", { opacity: 0, duration: 0.55, ease: "sine.inOut" }, 18.4);
 
     window.__timelines["root"] = tl;
   </script>
