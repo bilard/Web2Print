@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ArrowRight, ChevronLeft, ChevronRight, Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { useCatalogPages } from '../../useCatalogPages'
+import { usePreviewZoomPan } from '../../usePreviewZoomPan'
 import { CatalogPageView } from '../pages/CatalogPageView'
 import { pagePx } from '../pages/catalogCss'
 import { PreviewPageTree } from './PreviewPageTree'
@@ -14,10 +15,10 @@ export function StepPreview() {
   const setStep = useCatalogStore((s) => s.setStep)
   const { pages, ctx } = useCatalogPages()
   const [index, setIndex] = useState(0)
-  // null = « Ajuster » (la page tient dans la fenêtre) ; sinon facteur absolu.
-  const [zoom, setZoom] = useState<number | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [avail, setAvail] = useState({ w: 0, h: 0 })
+  // Zoom (trackpad/Ctrl+molette, ancré sous le curseur) + pan à la barre d'espace.
+  const { zoom, setZoom, kRef, panHandlers, cursorClass } = usePreviewZoomPan(containerRef, pages.length > 0 && !!ctx)
 
   const clampedIndex = pages.length === 0 ? 0 : Math.min(index, pages.length - 1)
 
@@ -55,6 +56,7 @@ export function StepPreview() {
   const fitK = avail.w > 0 && avail.h > 0 ? Math.min((avail.w - 24) / w, (avail.h - 24) / h, 1) : 1
   const k = zoom ?? fitK
   const zoomBy = (f: number) => setZoom(Math.min(4, Math.max(0.1, k * f)))
+  kRef.current = k
 
   return (
     <div className="h-full flex">
@@ -93,7 +95,7 @@ export function StepPreview() {
             Continuer → Export <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-        <div ref={containerRef} className="flex-1 min-h-0 overflow-auto flex bg-well">
+        <div ref={containerRef} {...panHandlers} className={`flex-1 min-h-0 overflow-auto flex bg-well ${cursorClass}`}>
           {/* m-auto : centré tant que la page tient, scrollable une fois zoomée */}
           <div className="m-auto p-3 w-fit">
             <div style={{ width: w * k, height: h * k, overflow: 'hidden' }}>
