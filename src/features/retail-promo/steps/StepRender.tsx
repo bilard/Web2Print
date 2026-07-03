@@ -306,9 +306,10 @@ export function StepRender() {
               <button onClick={() => setConfig({ offsets: {} })} className="text-[#6366f1] hover:underline">Réinitialiser les positions</button>
             )}
           </div>
-          {/* Clic hors de la carte (les éléments stoppent la propagation) → désélection */}
+          {/* Pointerdown sur le FOND (cible exacte, pas les éléments ni leurs poignées :
+              un `click` post-drag se synthétise sur l'ancêtre commun et casserait le resize) → désélection */}
           <div className="flex justify-center bg-well rounded-xl p-3 overflow-auto" style={{ maxHeight: 'calc(100vh - 150px)' }}
-            onClick={() => setSelectedKey(null)}>
+            onPointerDown={(e) => { if (e.target === e.currentTarget) setSelectedKey(null) }}>
             <div style={{ transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top center', height: 842 * PREVIEW_SCALE, width: 595 * PREVIEW_SCALE }}>
               <RetailPromoCard ref={previewRef} data={currentData} config={config} editable effects={effects}
                 selectedKey={capturing ? null : selectedKey} onSelect={setSelectedKey} capturing={capturing}
