@@ -40,7 +40,9 @@ export function ProductCell({ fields: f, featured, kicker, size, wide, style }: 
     <div className={`cat-cell cat-${size}${wide ? ' cat-wide' : ''}${featured ? ' cat-featured' : ''}${promo ? ' cat-has-promo' : ''}`} style={style}>
       {promo && <span className="cat-cell-promo">{promo}</span>}
       <div className="cat-cell-img" data-resolving={resolving ? 'true' : undefined}>
-        {src ? <img src={src} alt="" /> : <span className="cat-cell-img-ph">Sans visuel</span>}
+        {/* Cadre ABSOLU : donne une boîte définie à l'image (les % dans du flex
+            imbriqué sont mal résolus par html2canvas à l'export PDF). */}
+        {src ? <div className="cat-cell-img-in"><img src={src} alt="" /></div> : <span className="cat-cell-img-ph">Sans visuel</span>}
         {sticker && <span className="cat-price-sticker">{sticker}</span>}
       </div>
       {kicker && <span className="cat-cell-kicker">{kicker}</span>}
