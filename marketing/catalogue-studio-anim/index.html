@@ -142,7 +142,7 @@
 
   /* ---- carte source (table PIM) ---- */
   .datacard {
-    position: absolute; left: calc(50% - 330px); top: 128px; width: 660px; z-index: 2;
+    position: absolute; left: calc(50% - 330px); top: 150px; width: 660px; z-index: 2;
     background: var(--surface); border: 2px solid var(--line); border-radius: 14px;
     padding: 22px 24px; box-sizing: border-box;
   }
@@ -168,7 +168,7 @@
 
   /* ---- chemin de fer (flat plan) ---- */
   .flatplan {
-    position: absolute; left: calc(50% - 370px); top: 108px; width: 740px; z-index: 2;
+    position: absolute; left: calc(50% - 370px); top: 130px; width: 740px; z-index: 2;
     background: var(--surface); border: 2px solid var(--line); border-radius: 14px;
     padding: 20px 24px 18px; box-sizing: border-box;
   }
@@ -213,7 +213,7 @@
   }
 
   /* ---- la page du catalogue ---- */
-  .page-frame { position: relative; width: 552px; height: 780px; z-index: 3; }
+  .page-frame { position: relative; width: 620px; height: 876px; z-index: 3; }
   .page {
     position: absolute; inset: 0; border-radius: 6px; overflow: hidden;
     display: flex; flex-direction: column;
@@ -226,7 +226,7 @@
     background: var(--page-navy); color: #fff; padding: 14px 22px;
     transform-origin: left center;
   }
-  .pg-crumb { font-size: 16px; font-weight: 800; letter-spacing: 0.16em; }
+  .pg-crumb { font-size: 17px; font-weight: 800; letter-spacing: 0.16em; }
   .pg-crumb i { font-style: normal; color: rgba(255,255,255,0.55); font-weight: 600; }
   .pg-folio {
     width: 34px; height: 34px; border-radius: 50%; background: var(--page-red); color: #fff;
@@ -243,14 +243,14 @@
   }
   .cl-imgw { position: relative; flex: 1; overflow: hidden; border-radius: 4px; }
   .cl-imgw img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-  .cl-name { font-size: 14px; font-weight: 800; line-height: 1.15; margin-top: 8px; letter-spacing: -0.01em; }
-  .cl-sub { font-size: 10.5px; font-weight: 600; color: #78716c; margin-top: 3px; }
+  .cl-name { font-size: 15px; font-weight: 800; line-height: 1.15; margin-top: 8px; letter-spacing: -0.01em; }
+  .cl-sub { font-size: 11.5px; font-weight: 600; color: #78716c; margin-top: 3px; }
   .cl-pricerow { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 7px; }
   .cl-old { position: relative; font-size: 12px; font-weight: 700; color: #57534e; font-variant-numeric: tabular-nums; }
   .cl-old i { position: absolute; left: -3px; right: -3px; top: 50%; height: 2px; background: var(--page-red); transform-origin: left center; }
   .cl-price {
     background: var(--page-red); color: #fff; border-radius: 3px;
-    font-size: 16px; font-weight: 900; padding: 4px 9px; transform: rotate(-2deg);
+    font-size: 17.5px; font-weight: 900; padding: 4px 9px; transform: rotate(-2deg);
     font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
     box-shadow: 0 4px 12px rgba(239,68,68,0.35);
   }
@@ -267,17 +267,17 @@
   }
   .vd-sticker {
     position: absolute; top: 12px; right: 12px; z-index: 3;
-    width: 74px; height: 74px; border-radius: 50%;
+    width: 82px; height: 82px; border-radius: 50%;
     background: var(--page-red); color: #fff;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     box-shadow: 0 8px 20px rgba(239,68,68,0.45);
   }
-  .vd-sticker b { font-size: 24px; font-weight: 900; line-height: 1; }
+  .vd-sticker b { font-size: 27px; font-weight: 900; line-height: 1; }
   .vd-sticker span { font-size: 8px; font-weight: 800; letter-spacing: 0.1em; margin-top: 2px; }
-  .cell.vedette .cl-name { font-size: 24px; margin-top: 10px; }
+  .cell.vedette .cl-name { font-size: 26px; margin-top: 10px; }
   .cell.vedette .cl-sub { font-size: 13px; margin-top: 4px; }
   .cell.vedette .cl-old { font-size: 16px; }
-  .cell.vedette .cl-price { font-size: 27px; padding: 6px 14px; }
+  .cell.vedette .cl-price { font-size: 29px; padding: 6px 14px; }
 
   .pg-foot {
     display: flex; align-items: center; justify-content: space-between;
@@ -318,15 +318,15 @@
   .mini.cover .cv.a { top: 26px; height: 13px; background: #fff; opacity: 0.92; border-radius: 2px; }
   .mini.cover .cv.b { top: 46px; height: 13px; width: 70%; background: #fff; opacity: 0.6; border-radius: 2px; }
   .mini.cover .cv.c { bottom: 20px; height: 22px; background: var(--page-red); border-radius: 3px; }
-  .m1 { left: 26px; top: 62px; }
-  .m2 { left: 20px; top: 306px; }
-  .m3 { left: 28px; top: 548px; }
-  .m4 { right: 32px; top: 62px; }
-  .m5 { right: 24px; top: 306px; }
-  .m6 { right: 30px; top: 548px; }
+  .m1 { left: 26px; top: 84px; }
+  .m2 { left: 20px; top: 398px; }
+  .m3 { left: 28px; top: 712px; }
+  .m4 { right: 32px; top: 84px; }
+  .m5 { right: 24px; top: 398px; }
+  .m6 { right: 30px; top: 712px; }
 
   .count-chip {
-    position: absolute; bottom: 6px; left: 0; right: 0; z-index: 4;
+    position: absolute; bottom: 18px; left: 0; right: 0; z-index: 4;
     width: max-content; margin: 0 auto;
     display: flex; align-items: center; gap: 10px;
     background: var(--surface-2); border: 2px solid rgba(99,102,241,0.55); border-radius: 999px;
@@ -352,7 +352,7 @@
 </style>
 </head>
 <body>
-<div data-composition-id="root" data-start="0" data-duration="19" data-width="1600" data-height="1000">
+<div data-composition-id="root" data-start="0" data-duration="19" data-width="1600" data-height="1200">
   <div class="stage">
     <div class="grid-dots"></div>
     <div class="glow" id="glow"></div>
@@ -414,6 +414,8 @@
         <div class="dc-row d-row"><img src="chair.jpg" alt=""/><code>0210</code><span>Fauteuil ROSSA 210</span><span class="pr">249,90 €</span></div>
         <div class="dc-row d-row"><img src="plant.jpg" alt=""/><code>8104</code><span>Kit goutte-à-goutte</span><span class="pr">44,90 €</span></div>
         <div class="dc-row d-row"><img src="bottle.jpg" alt=""/><code>3308</code><span>Brume d'ambiance</span><span class="pr">17,90 €</span></div>
+        <div class="dc-row d-row"><img src="lamp.jpg" alt=""/><code>8377</code><span>Borne solaire ×4</span><span class="pr">34,90 €</span></div>
+        <div class="dc-row d-row"><img src="plant.jpg" alt=""/><code>8230</code><span>Pulvérisateur 5 L</span><span class="pr">24,90 €</span></div>
       </div>
 
       <div class="flatplan" id="flatplan">
@@ -430,6 +432,9 @@
           <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page op"><span class="b"><i></i><i></i></span></span><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">16–17</span></div>
           <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page g6"><span class="b"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">18–19</span></div>
           <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span><span class="fp-page vd"><span class="b"><i></i></span></span></span><span class="fp-folio">20–21</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span><span class="fp-page g6"><span class="b"><i></i><i></i><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">22–23</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page op"><span class="b"><i></i><i></i></span></span><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">24–25</span></div>
+          <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page g6"><span class="b"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><span class="fp-page vd"><span class="b"><i></i></span></span></span><span class="fp-folio">26–27</span></div>
           <div class="fp-spread fp-in"><span class="fp-pages"><span class="fp-page g6"><span class="b"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><span class="fp-page"><span class="b"><i></i><i></i><i></i><i></i></span></span></span><span class="fp-folio">… 68</span></div>
         </div>
       </div>
