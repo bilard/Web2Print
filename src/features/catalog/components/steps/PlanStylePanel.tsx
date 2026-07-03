@@ -3,8 +3,7 @@
 // couverture — génération des visuels via Nano Banana (useCoverImage).
 import { useState, type ReactNode } from 'react'
 import { Loader2, Palette, Image as ImageIcon, BookMarked, type LucideIcon } from 'lucide-react'
-import { FONT_OPTIONS } from '@/features/retail-promo/RetailPromoCard'
-import { useUserFonts } from '@/features/fonts/useUserFonts'
+import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import { UserFontsPanel } from '@/features/fonts/UserFontsPanel'
 import type { CatalogPlan, CatalogTheme } from '../../catalogTypes'
 import { useCoverImage } from '../../useCoverImage'
@@ -40,7 +39,6 @@ function Card({ title, icon: Icon, children }: { title: string; icon: LucideIcon
 
 export function PlanStylePanel({ plan, setPlan, coverImageUrl, backCoverImageUrl }: PlanStylePanelProps) {
   const { generating, generateCover } = useCoverImage()
-  const { fonts: userFonts } = useUserFonts()
   const [backPrompt, setBackPrompt] = useState('')
   const theme = plan.theme
   const setThemeColor = (key: (typeof THEME_COLORS)[number]['key'], value: string) => setPlan({ ...plan, theme: { ...theme, [key]: value } })
@@ -61,16 +59,12 @@ export function PlanStylePanel({ plan, setPlan, coverImageUrl, backCoverImageUrl
         </div>
         <div className="grid grid-cols-2 gap-3">
           {(['fontHeading', 'fontBody'] as const).map((key) => (
-            <select key={key} value={theme[key]} onChange={(e) => setFont(key, e.target.value)} className={fieldClass}>
-              {userFonts.length > 0 && (
-                <optgroup label="Mes polices">
-                  {userFonts.map((f) => <option key={f.id} value={f.family}>{f.family}</option>)}
-                </optgroup>
-              )}
-              <optgroup label="Google Fonts">
-                {FONT_OPTIONS.map((f) => <option key={f} value={f}>{f} ({key === 'fontHeading' ? 'titres' : 'texte'})</option>)}
-              </optgroup>
-            </select>
+            <label key={key} className="flex flex-col gap-1 text-xs text-muted-foreground">
+              {key === 'fontHeading' ? 'Titres' : 'Texte'}
+              <select value={theme[key]} onChange={(e) => setFont(key, e.target.value)} className={fieldClass}>
+                <FontSelectOptions />
+              </select>
+            </label>
           ))}
         </div>
         <div className="border-t border-border pt-3">

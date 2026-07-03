@@ -3,7 +3,8 @@ import { ColorPicker } from '@/components/shared/ColorPicker'
 import { useRetailPromoStore } from './retailPromo.store'
 import { Section, NumField, SegButtons, inputCls } from './promoPanelUi'
 import { PromoConditionalSection } from './PromoConditionalSection'
-import { FONT_OPTIONS, type PromoColorKey, type ElementStyle } from './RetailPromoCard'
+import type { PromoColorKey, ElementStyle } from './RetailPromoCard'
+import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import type { PromoFieldKey } from './promoTypes'
 
 type Align = NonNullable<ElementStyle['textAlign']>
@@ -41,7 +42,7 @@ export function PromoTextOptions({ id }: { id: PromoColorKey }) {
           <label className="col-span-2 flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40">Famille
             <select value={st.fontFamily ?? ''} onChange={(e) => set({ fontFamily: e.target.value || undefined })} className={inputCls}>
               <option value="">Hériter</option>
-              {FONT_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
+              <FontSelectOptions />
             </select>
           </label>
           <NumField label="Taille" unit="px" value={st.fontSize} min={6} max={400} onChange={(v) => set({ fontSize: v })} />

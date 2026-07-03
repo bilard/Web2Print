@@ -5,7 +5,9 @@ import { useRetailPromoStore } from './retailPromo.store'
 import { Section, inputCls } from './promoPanelUi'
 import { PromoShapeOptions } from './PromoShapeOptions'
 import { PromoTextOptions } from './PromoTextOptions'
-import { FONT_OPTIONS, STYLE_KEYS, type PromoColorKey } from './RetailPromoCard'
+import { STYLE_KEYS, type PromoColorKey } from './RetailPromoCard'
+import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
+import { UserFontsPanel } from '@/features/fonts/UserFontsPanel'
 
 const KEY_LABELS: Record<string, string> = {
   category: 'Catégorie', name: 'Nom', brand: 'Marque', description: 'Description',
@@ -35,11 +37,12 @@ export function PromoPropertiesPanel() {
               <ColorPicker label="Accent (badge / prix)" value={config.accent} onChange={(accent) => setConfig({ accent })} />
               <ColorPicker label="Fond en-tête / pied" value={config.headerBg} onChange={(headerBg) => setConfig({ headerBg })} />
               <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40">Police titres
-                <select value={config.fontHeading} onChange={(e) => setConfig({ fontHeading: e.target.value })} className={inputCls}>{FONT_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}</select>
+                <select value={config.fontHeading} onChange={(e) => setConfig({ fontHeading: e.target.value })} className={inputCls}><FontSelectOptions /></select>
               </label>
               <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40">Police prix
-                <select value={config.fontPrice} onChange={(e) => setConfig({ fontPrice: e.target.value })} className={inputCls}>{FONT_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}</select>
+                <select value={config.fontPrice} onChange={(e) => setConfig({ fontPrice: e.target.value })} className={inputCls}><FontSelectOptions /></select>
               </label>
+              <UserFontsPanel />
             </div>
           </Section>
         </div>

@@ -2,8 +2,7 @@
 // Sous-panneau « typo » du style de fiches : échelle ET police pour CHAQUE champ
 // texte mappé (nom, description, prix, marque, référence, unité, cartouche promo).
 // « Police du thème » = hérite des polices du plan (titres ou texte selon le champ).
-import { FONT_OPTIONS } from '@/features/retail-promo/RetailPromoCard'
-import { useUserFonts } from '@/features/fonts/useUserFonts'
+import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import type { CatalogCardStyle } from '../../catalogTypes'
 
 interface CardStyleTypoProps {
@@ -26,7 +25,6 @@ const FIELDS: { scale: ScaleKey; font: FontKey; label: string }[] = [
 ]
 
 export function CardStyleTypo({ style, patch }: CardStyleTypoProps) {
-  const { fonts: userFonts } = useUserFonts()
   return (
     <div>
       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Texte : taille & police par champ</div>
@@ -42,14 +40,7 @@ export function CardStyleTypo({ style, patch }: CardStyleTypoProps) {
             <select value={style[font]} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
               className="w-full px-2 py-1 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600">
               <option value="">Police du thème</option>
-              {userFonts.length > 0 && (
-                <optgroup label="Mes polices">
-                  {userFonts.map((f) => <option key={f.id} value={f.family}>{f.family}</option>)}
-                </optgroup>
-              )}
-              <optgroup label="Google Fonts">
-                {FONT_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
-              </optgroup>
+              <FontSelectOptions />
             </select>
           </div>
         ))}

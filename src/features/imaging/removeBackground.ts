@@ -41,12 +41,8 @@ async function imageBlob(imageUrl: string): Promise<Blob> {
   }
 }
 
-async function removeViaRembg(imageUrl: string): Promise<string> {
-  const user = auth.currentUser
-  if (!user) throw new Error('Non connecté')
-  const [token, blob] = await Promise.all([user.getIdToken(), imageBlob(imageUrl)])
-  // matting=1 : contours doux + ombres au sol préservées au mieux (repli serveur).
-  const res = await fetch(`${REMBG_URL}/remove?matting=1`, {
+async function postRembg(blob: Blob, token: string, matting: boolean): Promise<string> {
+  const res = await fetch(`${REMBG_URL}/remove${matting ? '?matting=1' : ''}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': blob.type || 'application/octet-stream' },
     body: blob,
@@ -56,6 +52,20 @@ async function removeViaRembg(imageUrl: string): Promise<string> {
     throw new Error(err.error ?? `Détourage rembg : erreur ${res.status}`)
   }
   return URL.createObjectURL(await res.blob())
+}
+
+async function removeViaRembg(imageUrl: string): Promise<string> {
+  const user = auth.currentUser
+  if (!user) throw new Error('Non connecté')
+  const [token, blob] = await Promise.all([user.getIdToken(), imageBlob(imageUrl)])
+  // matting=1 : contours doux + ombres au sol préservées au mieux. Si le serveur
+  // n'y arrive pas (timeout matting → connexion coupée), on retente en masque net.
+  try {
+    return await postRembg(blob, token, true)
+  } catch (e) {
+    console.warn('[détourage] matting indisponible, nouvel essai en masque net :', e)
+    return await postRembg(blob, token, false)
+  }
 }
 
 /**
