@@ -7,6 +7,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { flattenTree } from '../../catalogTree'
 import type { CatalogTreeNode } from '../../catalogTypes'
+import { LEVEL_STYLES } from './levelStyles'
 
 interface StructureTreeNodeProps {
   node: CatalogTreeNode
@@ -52,10 +53,11 @@ export function StructureTreeNode({ node, siblingIds, index, parentId, depth }: 
   }
 
   const productCount = countProducts(node)
+  const st = LEVEL_STYLES[node.level]
 
   return (
-    <div>
-      <div className="flex items-center gap-2 py-1 group" style={{ paddingLeft: depth * 20 }}>
+    <div className={node.level === 1 ? 'mt-2 first:mt-0' : ''}>
+      <div className={`flex items-center gap-2 py-1.5 px-2 group rounded-md ${st.row}`} style={{ marginLeft: depth * 24 }}>
         <div className="flex flex-col shrink-0">
           <button onClick={() => move(-1)} disabled={index === 0} title="Monter"
             className="h-4 flex items-center justify-center text-muted-foreground hover:text-white disabled:opacity-20 disabled:cursor-not-allowed">
@@ -66,6 +68,7 @@ export function StructureTreeNode({ node, siblingIds, index, parentId, depth }: 
             <ChevronDown className="w-3.5 h-3.5" />
           </button>
         </div>
+        <span className={`w-2 h-2 rounded-full shrink-0 ${st.dot}`} />
 
         {editing ? (
           <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)}
@@ -77,12 +80,14 @@ export function StructureTreeNode({ node, siblingIds, index, parentId, depth }: 
             className="flex-1 min-w-0 px-2 py-1 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600" />
         ) : (
           <span onDoubleClick={() => { setDraft(node.label); setEditing(true) }}
-            className="flex-1 min-w-0 truncate text-sm text-white cursor-text" title="Double-cliquer pour renommer">
+            className={`flex-1 min-w-0 truncate cursor-text ${st.text}`} title="Double-cliquer pour renommer">
             {node.label}
           </span>
         )}
 
-        <span className="shrink-0 text-xs text-muted-foreground">{productCount} produit{productCount > 1 ? 's' : ''}</span>
+        <span className={`shrink-0 px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums ${st.badge}`}>
+          {productCount} produit{productCount > 1 ? 's' : ''}
+        </span>
       </div>
 
       {node.children.length > 0 && (

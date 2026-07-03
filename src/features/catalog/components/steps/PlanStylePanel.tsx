@@ -1,7 +1,8 @@
 // src/features/catalog/components/steps/PlanStylePanel.tsx
-// Thème graphique + textes de couverture/4e + génération des visuels (Nano Banana).
-import { useState } from 'react'
-import { Loader2 } from 'lucide-react'
+// Grille de cartes du plan : Thème graphique (+ modèles), Couverture, 4e de
+// couverture — génération des visuels via Nano Banana (useCoverImage).
+import { useState, type ReactNode } from 'react'
+import { Loader2, Palette, Image as ImageIcon, BookMarked, type LucideIcon } from 'lucide-react'
 import { FONT_OPTIONS } from '@/features/retail-promo/RetailPromoCard'
 import type { CatalogPlan, CatalogTheme } from '../../catalogTypes'
 import { useCoverImage } from '../../useCoverImage'
@@ -24,6 +25,17 @@ const THEME_COLORS: { key: keyof Pick<CatalogTheme, 'accent' | 'pageBg' | 'ink' 
 
 const fieldClass = 'w-full px-3 py-1.5 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600'
 
+function Card({ title, icon: Icon, children }: { title: string; icon: LucideIcon; children: ReactNode }) {
+  return (
+    <section className="rounded-lg border border-border bg-surface p-4 space-y-3 min-w-0">
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
+        <Icon className="w-4 h-4 text-indigo-400" /> {title}
+      </h3>
+      {children}
+    </section>
+  )
+}
+
 export function PlanStylePanel({ plan, setPlan, coverImageUrl, backCoverImageUrl }: PlanStylePanelProps) {
   const { generating, generateCover } = useCoverImage()
   const [backPrompt, setBackPrompt] = useState('')
@@ -34,11 +46,8 @@ export function PlanStylePanel({ plan, setPlan, coverImageUrl, backCoverImageUrl
   const setBackCover = (patch: Partial<CatalogPlan['backCover']>) => setPlan({ ...plan, backCover: { ...plan.backCover, ...patch } })
 
   return (
-    <div className="space-y-5">
-      <TemplatesBar plan={plan} setPlan={setPlan} fieldClass={fieldClass} />
-
-      <section className="space-y-2">
-        <h3 className="text-sm font-semibold text-white">Thème graphique</h3>
+    <div className="grid gap-5 lg:grid-cols-3 items-start">
+      <Card title="Thème graphique" icon={Palette}>
         <div className="flex flex-wrap gap-3">
           {THEME_COLORS.map(({ key, label }) => (
             <label key={key} className="flex flex-col items-center gap-1 text-xs text-muted-foreground">
@@ -55,10 +64,12 @@ export function PlanStylePanel({ plan, setPlan, coverImageUrl, backCoverImageUrl
             {FONT_OPTIONS.map((f) => <option key={f} value={f}>{f} (texte)</option>)}
           </select>
         </div>
-      </section>
+        <div className="border-t border-border pt-3">
+          <TemplatesBar plan={plan} setPlan={setPlan} fieldClass={fieldClass} />
+        </div>
+      </Card>
 
-      <section className="space-y-2">
-        <h3 className="text-sm font-semibold text-white">Couverture</h3>
+      <Card title="Couverture" icon={ImageIcon}>
         <input value={plan.cover.title} onChange={(e) => setCover({ title: e.target.value })} placeholder="Titre" className={fieldClass} />
         <input value={plan.cover.subtitle} onChange={(e) => setCover({ subtitle: e.target.value })} placeholder="Sous-titre" className={fieldClass} />
         <input value={plan.cover.baseline} onChange={(e) => setCover({ baseline: e.target.value })} placeholder="Bandeau (baseline)" className={fieldClass} />
@@ -71,10 +82,9 @@ export function PlanStylePanel({ plan, setPlan, coverImageUrl, backCoverImageUrl
           </button>
           {coverImageUrl && <img src={coverImageUrl} alt="Couverture" className="w-14 h-14 object-cover rounded-md border border-border" />}
         </div>
-      </section>
+      </Card>
 
-      <section className="space-y-2">
-        <h3 className="text-sm font-semibold text-white">4e de couverture</h3>
+      <Card title="4e de couverture" icon={BookMarked}>
         <input value={plan.backCover.title} onChange={(e) => setBackCover({ title: e.target.value })} placeholder="Titre" className={fieldClass} />
         <textarea value={plan.backCover.text} onChange={(e) => setBackCover({ text: e.target.value })} rows={3}
           placeholder="Texte (contact, mentions…)" className={`${fieldClass} resize-none`} />
@@ -87,7 +97,7 @@ export function PlanStylePanel({ plan, setPlan, coverImageUrl, backCoverImageUrl
           </button>
           {backCoverImageUrl && <img src={backCoverImageUrl} alt="4e de couverture" className="w-14 h-14 object-cover rounded-md border border-border" />}
         </div>
-      </section>
+      </Card>
     </div>
   )
 }

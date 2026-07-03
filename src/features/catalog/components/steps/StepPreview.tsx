@@ -1,24 +1,14 @@
 // src/features/catalog/components/steps/StepPreview.tsx
 // Étape 4 du wizard « Catalogue studio » : aperçu page à page de la pagination live.
-// Une seule page montée à la fois (perf sur 100+ pages) ; rail de vignettes LÉGÈRES
-// (libellé seul, pas de CatalogPageView par vignette).
+// Une seule page montée à la fois (perf sur 100+ pages) ; rail en ARBRE structuré
+// par univers (PreviewPageTree), léger — pas de CatalogPageView par vignette.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { useCatalogPages } from '../../useCatalogPages'
 import { CatalogPageView } from '../pages/CatalogPageView'
 import { pagePx } from '../pages/catalogCss'
-import type { CatalogPageDescriptor } from '../../catalogTypes'
-
-function pageLabel(p: CatalogPageDescriptor): string {
-  switch (p.kind) {
-    case 'cover': return 'Couverture'
-    case 'toc': return 'Sommaire'
-    case 'opener': return `Ouverture ${p.label}`
-    case 'products': return `Produits ${p.breadcrumb[p.breadcrumb.length - 1] ?? ''}`
-    case 'back-cover': return '4e de couverture'
-  }
-}
+import { PreviewPageTree } from './PreviewPageTree'
 
 export function StepPreview() {
   const setStep = useCatalogStore((s) => s.setStep)
@@ -64,16 +54,8 @@ export function StepPreview() {
 
   return (
     <div className="h-full flex">
-      <aside className="w-56 shrink-0 border-r border-border bg-surface overflow-y-auto p-2 space-y-1">
-        {pages.map((p, i) => (
-          <button
-            key={i}
-            onClick={() => setIndex(i)}
-            className={`w-full text-left px-3 py-1.5 rounded-md text-xs truncate ${i === clampedIndex ? 'bg-indigo-600 text-[#fff]' : 'text-muted-foreground hover:bg-surface-2 hover:text-white'}`}
-          >
-            {p.pageNumber} · {pageLabel(p)}
-          </button>
-        ))}
+      <aside className="w-64 shrink-0 border-r border-border bg-surface overflow-y-auto">
+        <PreviewPageTree pages={pages} current={clampedIndex} onSelect={setIndex} />
       </aside>
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="flex items-center justify-between px-4 py-2 border-b border-border shrink-0">
