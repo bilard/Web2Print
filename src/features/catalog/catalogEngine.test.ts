@@ -63,11 +63,22 @@ describe('paginateCatalog (flux continu par univers)', () => {
     expect(grids[1].slots.map((s) => s.rowId)).toEqual(['p2', 'p5', 'p6'])
   })
 
-  it('vedette restante SANS flux à mixer → pleine page', () => {
+  it('ULTIME vedette restante sans plus rien à mixer → pleine page', () => {
     const tree = [node('a', 'A', 1, ['p1'])]
     const pages = paginateCatalog({ tree, sections: [sec('a', 4, ['p1'])] })
     const grids = pages.filter((p) => p.kind === 'products')
     expect(grids[0].slots).toEqual([{ rowId: 'p1', featured: true, path: ['A'], col: 1, row: 1, colSpan: 2, rowSpan: 2 }])
+  })
+
+  it('vedettes restantes APRÈS épuisement du flux : regroupées sur une même page, jamais une seule par page', () => {
+    // 6 produits dont 3 vedettes, grille 8 (2×4) : page 1 = v1 (2×2) + les 3 du flux
+    // + v2 (2×1, flux épuisé en cours de page) ; page 2 = v3 seule → pleine page.
+    const tree = [node('a', 'A', 1, ids(6))]
+    const pages = paginateCatalog({ tree, sections: [sec('a', 8, ['p1', 'p2', 'p3'])] })
+    const grids = pages.filter((p) => p.kind === 'products')
+    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p1', 'p4', 'p5', 'p6', 'p2'])
+    expect(grids[0].slots.filter((s) => s.featured).map((s) => s.rowId)).toEqual(['p1', 'p2'])
+    expect(grids[1].slots).toEqual([{ rowId: 'p3', featured: true, path: ['A'], col: 1, row: 1, colSpan: 2, rowSpan: 4 }])
   })
 
   it('vedette PARTAGE la page avec d’autres produits quand la grille le permet (6/page)', () => {

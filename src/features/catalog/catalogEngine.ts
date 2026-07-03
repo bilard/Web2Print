@@ -183,8 +183,9 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
         return true
       }
       if (featuredQueue.length > 0) {
-        // Plus de flux à mixer → la vedette restante occupe sa page entière.
-        const [w, h] = flowQueue.length > 0 ? bigSpan(C, R) : [C, R]
+        // Pleine page UNIQUEMENT pour l'ultime vedette sans plus rien à mixer ;
+        // sinon grande carte plafonnée (le flux ou les autres vedettes complètent).
+        const [w, h] = flowQueue.length === 0 && featuredQueue.length === 1 ? [C, R] : bigSpan(C, R)
         if (place(featuredQueue[0], w, h)) featuredQueue.shift()
       }
       while (flowQueue.length > 0) {
@@ -192,6 +193,13 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
         const [w, h] = wantedSpan(item, prices.get(item.rowId) ?? null, th, C, R)
         if (!place(item, w, h)) break // page pleine
         flowQueue.shift()
+      }
+      // Flux épuisé mais des vedettes restent : elles se PARTAGENT la page
+      // (jamais une vedette seule sur sa page tant qu'il en reste plusieurs).
+      while (flowQueue.length === 0 && featuredQueue.length > 0) {
+        const [w, h] = bigSpan(C, R)
+        if (!place(featuredQueue[0], w, h)) break // page pleine → suite page suivante
+        featuredQueue.shift()
       }
       if (slots.length === 0) break // garde théorique (grille 1×1 minimum → jamais atteint)
       const breadcrumb = slots[0].path.slice(0, 2) // univers › famille du 1er slot
