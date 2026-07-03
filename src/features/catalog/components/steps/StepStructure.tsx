@@ -10,6 +10,7 @@ import { CATALOG_FORMAT_PRESETS, type LevelKeys } from '../../catalogTypes'
 import { StructureTreeNode } from './StructureTreeNode'
 import { MmInput } from './MmInput'
 import { LEVEL_STYLES } from './levelStyles'
+import { StepActionsPortal } from './StepActionsPortal'
 
 const LEVEL_FIELDS: { key: keyof LevelKeys; label: string }[] = [
   { key: 'univers', label: 'Univers' },
@@ -69,6 +70,12 @@ export function StepStructure() {
 
   return (
     <div className="h-full overflow-y-auto p-6">
+      <StepActionsPortal>
+        <button onClick={() => setStep('prompt')}
+          className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-[#fff] text-sm font-medium">
+          Continuer → Prompt & style <ArrowRight className="w-4 h-4" />
+        </button>
+      </StepActionsPortal>
       <div className="max-w-6xl mx-auto space-y-5">
         <div className="grid gap-5 lg:grid-cols-[3fr_2fr] items-start">
           <section className="rounded-lg border border-border bg-surface p-4 space-y-3">
@@ -135,12 +142,6 @@ export function StepStructure() {
           </div>
         </section>
 
-        <div className="flex justify-end pt-1">
-          <button onClick={() => setStep('prompt')}
-            className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 text-[#fff] text-sm font-medium">
-            Continuer → Prompt & style <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
       </div>
     </div>
   )

@@ -11,9 +11,12 @@ const STEPS: { id: CatalogStep; label: string }[] = [
 
 interface Props { step: CatalogStep; onStep: (s: CatalogStep) => void; canLeave: boolean }
 
+/** Id du slot d'actions d'étape (rempli par les étapes via StepActionsPortal). */
+export const STEP_ACTIONS_SLOT_ID = 'catalog-step-actions'
+
 export function CatalogStepsNav({ step, onStep, canLeave }: Props) {
   return (
-    <nav className="flex gap-1 px-6 py-2 border-b border-border bg-surface">
+    <nav className="flex items-center gap-1 px-6 py-2 border-b border-border bg-surface">
       {/* « Source » reste toujours accessible : sans données rechargées, c'est la seule issue. */}
       {STEPS.map((s) => (
         <button key={s.id} onClick={() => (canLeave || s.id === 'source') && onStep(s.id)} disabled={!canLeave && s.id !== step && s.id !== 'source'}
@@ -21,6 +24,8 @@ export function CatalogStepsNav({ step, onStep, canLeave }: Props) {
           {s.label}
         </button>
       ))}
+      {/* Actions de l'étape active (Générer, Continuer…) — TOUJOURS visibles. */}
+      <div id={STEP_ACTIONS_SLOT_ID} className="ml-auto flex items-center gap-2" />
     </nav>
   )
 }

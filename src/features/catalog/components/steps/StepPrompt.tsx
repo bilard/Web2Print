@@ -12,6 +12,7 @@ import { extractPromoFields } from '@/features/retail-promo/promoMapping'
 import { PlanStylePanel } from './PlanStylePanel'
 import { CardStyleCard } from './CardStyleCard'
 import { SectionsCard } from './SectionsCard'
+import { StepActionsPortal } from './StepActionsPortal'
 
 export function StepPrompt() {
   const name = useCatalogStore((s) => s.name)
@@ -70,23 +71,22 @@ export function StepPrompt() {
   return (
     <div className="h-full overflow-y-auto p-6">
       <div className="max-w-7xl mx-auto space-y-5">
-        {/* Prompt + bouton de génération EN HAUT de page */}
+        {/* Actions dans le HEADER des étapes : toujours visibles, même page scrollée */}
+        <StepActionsPortal>
+          <button onClick={() => void generate()} disabled={busy}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[#fff] text-sm font-medium">
+            {busy && <Loader2 className="w-4 h-4 animate-spin" />} Générer le plan (IA)
+          </button>
+          <button onClick={() => setStep('preview')} disabled={!plan}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-md border border-indigo-500 text-indigo-300 hover:bg-indigo-600 hover:text-[#fff] disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium">
+            Continuer → Aperçu <ArrowRight className="w-4 h-4" />
+          </button>
+        </StepActionsPortal>
+
         <section className="rounded-lg border border-border bg-surface p-4 space-y-3">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
-              <Sparkles className="w-4 h-4 text-indigo-400" /> Prompt global
-            </h2>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={() => void generate()} disabled={busy}
-                className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[#fff] text-sm font-medium">
-                {busy && <Loader2 className="w-4 h-4 animate-spin" />} Générer le plan (IA)
-              </button>
-              <button onClick={() => setStep('preview')} disabled={!plan}
-                className="flex items-center gap-2 px-4 py-2 rounded-md border border-indigo-500 text-indigo-300 hover:bg-indigo-600 hover:text-[#fff] disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium">
-                Continuer → Aperçu <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+            <Sparkles className="w-4 h-4 text-indigo-400" /> Prompt global
+          </h2>
           <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3}
             placeholder="Décrivez le catalogue voulu : univers, ton, couleurs, densité des pages…"
             className="w-full px-3 py-2 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600 resize-none" />

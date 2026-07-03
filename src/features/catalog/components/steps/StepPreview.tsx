@@ -3,7 +3,7 @@
 // Une seule page montée à la fois (perf sur 100+ pages) ; rail en ARBRE structuré
 // par univers (PreviewPageTree), léger — pas de CatalogPageView par vignette.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { useCatalogPages } from '../../useCatalogPages'
 import { CatalogPageView } from '../pages/CatalogPageView'
@@ -14,6 +14,8 @@ export function StepPreview() {
   const setStep = useCatalogStore((s) => s.setStep)
   const { pages, ctx } = useCatalogPages()
   const [index, setIndex] = useState(0)
+  // null = « Ajuster » (la page tient dans la fenêtre) ; sinon facteur absolu.
+  const [zoom, setZoom] = useState<number | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [avail, setAvail] = useState({ w: 0, h: 0 })
 
@@ -50,7 +52,9 @@ export function StepPreview() {
 
   const currentPage = pages[clampedIndex]
   const { w, h } = pagePx(ctx.format)
-  const k = avail.w > 0 && avail.h > 0 ? Math.min(avail.w / w, avail.h / h, 1) : 1
+  const fitK = avail.w > 0 && avail.h > 0 ? Math.min((avail.w - 24) / w, (avail.h - 24) / h, 1) : 1
+  const k = zoom ?? fitK
+  const zoomBy = (f: number) => setZoom(Math.min(4, Math.max(0.1, k * f)))
 
   return (
     <div className="h-full flex">
@@ -69,16 +73,33 @@ export function StepPreview() {
               className="p-1.5 rounded-md hover:bg-surface-2 disabled:opacity-40 disabled:hover:bg-transparent" title="Page suivante">
               <ChevronRight className="w-4 h-4" />
             </button>
+            {/* Zoom */}
+            <div className="flex items-center gap-1 ml-3 pl-3 border-l border-border">
+              <button onClick={() => zoomBy(1 / 1.25)} className="p-1.5 rounded-md hover:bg-surface-2" title="Dézoomer">
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <span className="text-xs text-muted-foreground tabular-nums w-10 text-center">{Math.round(k * 100)}%</span>
+              <button onClick={() => zoomBy(1.25)} className="p-1.5 rounded-md hover:bg-surface-2" title="Zoomer">
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              <button onClick={() => setZoom(null)} disabled={zoom === null}
+                className="p-1.5 rounded-md hover:bg-surface-2 disabled:opacity-40 disabled:hover:bg-transparent" title="Ajuster à la fenêtre">
+                <Maximize2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <button onClick={() => setStep('export')}
             className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 text-[#fff] text-sm font-medium">
             Continuer → Export <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-        <div ref={containerRef} className="flex-1 min-h-0 overflow-hidden flex items-center justify-center bg-well">
-          <div style={{ width: w * k, height: h * k, overflow: 'hidden' }}>
-            <div style={{ width: w, height: h, transform: `scale(${k})`, transformOrigin: 'top left' }}>
-              <CatalogPageView page={currentPage} ctx={ctx} />
+        <div ref={containerRef} className="flex-1 min-h-0 overflow-auto flex bg-well">
+          {/* m-auto : centré tant que la page tient, scrollable une fois zoomée */}
+          <div className="m-auto p-3 w-fit">
+            <div style={{ width: w * k, height: h * k, overflow: 'hidden' }}>
+              <div style={{ width: w, height: h, transform: `scale(${k})`, transformOrigin: 'top left' }}>
+                <CatalogPageView page={currentPage} ctx={ctx} />
+              </div>
             </div>
           </div>
         </div>
