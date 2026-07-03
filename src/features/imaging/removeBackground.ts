@@ -58,14 +58,10 @@ async function removeViaRembg(imageUrl: string): Promise<string> {
   const user = auth.currentUser
   if (!user) throw new Error('Non connecté')
   const [token, blob] = await Promise.all([user.getIdToken(), imageBlob(imageUrl)])
-  // matting=1 : contours doux + ombres au sol préservées au mieux. Si le serveur
-  // n'y arrive pas (timeout matting → connexion coupée), on retente en masque net.
-  try {
-    return await postRembg(blob, token, true)
-  } catch (e) {
-    console.warn('[détourage] matting indisponible, nouvel essai en masque net :', e)
-    return await postRembg(blob, token, false)
-  }
+  // Masque net (rapide, 2-4 s) : l'alpha matting reste disponible côté serveur
+  // (?matting=1) mais coûte 30 s+ par image et ne préserve presque jamais les
+  // ombres au sol (vérifié) — pas activé par défaut.
+  return postRembg(blob, token, false)
 }
 
 /**
