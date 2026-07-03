@@ -10,6 +10,7 @@ import { loadCatalog } from '@/features/catalog/catalogsApi'
 import { isPimSource, loadPimMergeData, pimProjectIdFromSource } from '@/features/merge/pimSource'
 import { loadExcelMergeData } from '@/features/merge/excelSource'
 import { defaultPromoFieldMap } from '@/features/retail-promo/promoMapping'
+import { ensureUserFontsLoaded } from '@/features/fonts/useUserFonts'
 import { useCatalogAutosave } from '@/features/catalog/useCatalogAutosave'
 import { CatalogStepsNav } from '@/features/catalog/components/CatalogStepsNav'
 
@@ -33,6 +34,9 @@ export default function CatalogBuilderPage() {
     let cancelled = false
 
     const boot = async () => {
+      // Polices perso injectées dès le boot : l'export doit les avoir même
+      // sans passage par l'étape Prompt & style (fire-and-forget).
+      void ensureUserFontsLoaded()
       if (s.catalogId !== id) {
         const doc = await loadCatalog(id)
         if (cancelled) return

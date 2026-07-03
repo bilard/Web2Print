@@ -219,6 +219,12 @@ service cloud.firestore {
       allow write:  if hasPermission('catalog.edit') && request.auth.uid == uid;
     }
 
+    // Polices utilisateur (« Mes polices ») — méta des fichiers uploadés dans
+    // Storage users/{uid}/fonts/ ; privées à chaque user (cf. features/fonts).
+    match /users/{uid}/userFonts/{fontId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
     // Fiches promo enregistrées (méta + lignes payload), module Promo Retail.
     match /users/{uid}/promos/{promoId} {
       allow read:   if isAuthenticated() && request.auth.uid == uid;

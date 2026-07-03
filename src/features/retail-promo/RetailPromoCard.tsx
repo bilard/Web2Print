@@ -120,7 +120,10 @@ const DECO_BLOCKS: PromoBlockId[] = ['header', 'image', 'badge', 'price']
 const EDITABLE_TEXT: PromoColorKey[] = ['category', 'name', 'brand', 'description', 'priceLabel', 'footer']
 const SELECTABLE: PromoBlockId[] = [...(STYLE_KEYS as PromoBlockId[]), ...DECO_BLOCKS]
 
-export const FONT_OPTIONS = ['Montserrat', 'Oswald', 'Poppins', 'Archivo', 'Bebas Neue', 'Anton', 'Playfair Display', 'Inter'] as const
+export const FONT_OPTIONS = [
+  'Montserrat', 'Oswald', 'Poppins', 'Archivo', 'Bebas Neue', 'Anton', 'Playfair Display', 'Inter',
+  'Roboto', 'Lato', 'Raleway', 'Nunito', 'Rubik', 'Work Sans', 'Barlow Condensed', 'Jura',
+] as const
 
 export const DEFAULT_PROMO_CONFIG: PromoTemplateConfig = {
   layout: 'classique',
@@ -144,7 +147,8 @@ export const DEFAULT_PROMO_CONFIG: PromoTemplateConfig = {
 }
 
 export const FONTS_HREF =
-  'https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Oswald:wght@500;600;700&family=Poppins:wght@500;600;700;800&family=Archivo:wght@600;700;800;900&family=Bebas+Neue&family=Anton&family=Playfair+Display:wght@600;700;800;900&family=Inter:wght@500;600;700&display=swap'
+  'https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Oswald:wght@500;600;700&family=Poppins:wght@500;600;700;800&family=Archivo:wght@600;700;800;900&family=Bebas+Neue&family=Anton&family=Playfair+Display:wght@600;700;800;900&family=Inter:wght@500;600;700' +
+  '&family=Roboto:wght@500;700;900&family=Lato:wght@700;900&family=Raleway:wght@600;700;800&family=Nunito:wght@600;700;800&family=Rubik:wght@600;700;800&family=Work+Sans:wght@600;700;800&family=Barlow+Condensed:wght@600;700&family=Jura:wght@600;700&display=swap'
 
 /** Charge une fois toutes les polices proposées (nécessaire pour html2canvas). */
 function ensurePromoFonts(): void {
