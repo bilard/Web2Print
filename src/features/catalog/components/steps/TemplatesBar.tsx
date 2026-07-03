@@ -75,7 +75,13 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
         </button>
       </div>
       <div className="flex items-center gap-2">
-        <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nom du modèle" className={fieldClass} />
+        {/* Autocomplétion sur les noms existants : l'enregistrement est un upsert
+            par nom — retrouver un modèle à mettre à jour sans le retaper. */}
+        <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nom du modèle"
+          list="catalog-template-names" className={fieldClass} />
+        <datalist id="catalog-template-names">
+          {templates.map((t) => <option key={t.id} value={t.name} />)}
+        </datalist>
         <button type="button" onClick={handleSave} disabled={!newName.trim()}
           className="shrink-0 px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[#fff] text-xs font-medium">
           Enregistrer comme modèle
