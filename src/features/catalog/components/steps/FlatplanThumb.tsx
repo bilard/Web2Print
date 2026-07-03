@@ -58,7 +58,9 @@ function ThumbBody({ page, ctx, color, width }: Omit<Props, 'dimmed' | 'onOpen'>
   const [C, R] = GRID_DIMS[page.grid]
   return (
     <div className="w-full h-full flex flex-col" style={{ background: theme.pageBg }}>
-      <div className="shrink-0 flex items-center overflow-hidden" style={{ background: color, height: Math.max(6, width * 0.07), paddingInline: pad }}>
+      {/* Taxonomie au bord extérieur, comme sur la vraie page (verso = gauche, recto = droite). */}
+      <div className={`shrink-0 flex items-center overflow-hidden ${page.pageNumber % 2 === 1 ? 'justify-end' : ''}`}
+        style={{ background: color, height: Math.max(6, width * 0.07), paddingInline: pad }}>
         <span className="text-[#fff] font-semibold truncate" style={{ fontSize: Math.max(5, width * 0.05) }}>{page.breadcrumb.join(' › ')}</span>
       </div>
       <div className="flex-1 grid min-h-0" style={{ gridTemplateColumns: `repeat(${C}, 1fr)`, gridTemplateRows: `repeat(${R}, 1fr)`, gap: 2, padding: pad }}>

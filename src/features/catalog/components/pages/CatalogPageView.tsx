@@ -17,7 +17,7 @@ export function CatalogPageView({ page, ctx }: Props) {
   return (
     <div className="cat-page" style={{ width: w, height: h, ...themeVars(ctx.plan.theme), ...cardStyleVars(ctx.plan.cardStyle, ctx.plan.theme) }}>
       <style>{CATALOG_CSS}</style>
-      {page.kind === 'products' && <CatalogHeader breadcrumb={page.breadcrumb} />}
+      {page.kind === 'products' && <CatalogHeader breadcrumb={page.breadcrumb} pageNumber={page.pageNumber} />}
       {page.kind === 'cover' && <CoverPage ctx={ctx} variant="cover" />}
       {page.kind === 'back-cover' && <CoverPage ctx={ctx} variant="back" />}
       {page.kind === 'toc' && <TocPage ctx={ctx} entries={page.entries} first={page.pageNumber === 2} />}

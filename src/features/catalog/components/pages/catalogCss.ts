@@ -98,12 +98,14 @@ export const CATALOG_CSS = `
 /* ── Header : bandeau plein + liseré accent ─────────────────────────── */
 .cat-head { flex:none; background:var(--cat-head-bg,#111827); color:var(--cat-head-ink,#fff);
   padding:16px 32px 14px; display:flex; align-items:baseline; gap:12px; border-bottom:4px solid var(--cat-accent); }
+.cat-head--recto { justify-content:flex-end; } /* page impaire (recto) : taxonomie au bord droit */
 .cat-head-univers { font-family:var(--cat-font-h); font-weight:800; font-size:20px; text-transform:uppercase; letter-spacing:.1em; }
 .cat-head-crumb { font-size:12px; opacity:.85; text-transform:uppercase; letter-spacing:.06em; }
 .cat-head-sep { opacity:.5; }
 
 /* ── Footer : folio en pastille accent ──────────────────────────────── */
 .cat-foot { flex:none; margin-top:auto; padding:0 32px 14px; display:flex; align-items:center; justify-content:space-between; font-size:10px; }
+.cat-foot--verso { flex-direction:row-reverse; } /* page paire (verso) : folio au bord gauche */
 .cat-foot-name { text-transform:uppercase; letter-spacing:.14em; opacity:.55; font-weight:600; }
 .cat-foot-folio { background:var(--cat-accent); color:#fff; font-family:var(--cat-font-h); font-weight:800;
   font-size:12px; padding:5px 12px; border-radius:3px; }
