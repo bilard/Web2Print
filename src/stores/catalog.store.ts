@@ -36,6 +36,8 @@ interface CatalogState {
   setPrompt: (prompt: string) => void
   setPlan: (plan: CatalogPlan | null) => void
   setSectionDensity: (nodeId: string, density: CatalogDensity) => void
+  /** Densité par défaut : applique la valeur à TOUTES les sections d'un coup. */
+  setAllSectionsDensity: (density: CatalogDensity) => void
   toggleFeatured: (nodeId: string, rowId: string) => void
   setFieldMap: (map: Partial<Record<PromoFieldKey, string>>) => void
   setFormat: (format: CatalogFormat) => void
@@ -116,6 +118,13 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     const sections = upsertSection(s.plan.sections, nodeId).map((x) => x.nodeId === nodeId
       ? (density === 'random' ? { ...x, randomDensity: true } : { ...x, productsPerPage: density, randomDensity: false })
       : x)
+    return { plan: { ...s.plan, sections } }
+  }),
+  setAllSectionsDensity: (density) => set((s) => {
+    if (!s.plan) return {}
+    const sections = s.plan.sections.map((x) => density === 'random'
+      ? { ...x, randomDensity: true }
+      : { ...x, productsPerPage: density, randomDensity: false })
     return { plan: { ...s.plan, sections } }
   }),
   toggleFeatured: (nodeId, rowId) => set((s) => {

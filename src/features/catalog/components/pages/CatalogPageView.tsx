@@ -23,7 +23,7 @@ export function CatalogPageView({ page, ctx }: Props) {
       {page.kind === 'toc' && <TocPage ctx={ctx} entries={page.entries} first={page.pageNumber === 2} />}
       {page.kind === 'opener' && (
         <OpenerPage label={page.label} catalogName={ctx.catalogName}
-          index={page.index} productCount={page.productCount} families={page.families} />
+          index={page.index} productCount={page.productCount} families={page.families} highlights={page.highlights} />
       )}
       {page.kind === 'products' && <ProductGridPage ctx={ctx} grid={page.grid} slots={page.slots} />}
       {chrome && <CatalogFooter pageNumber={page.pageNumber} totalPages={ctx.totalPages} catalogName={ctx.catalogName} />}

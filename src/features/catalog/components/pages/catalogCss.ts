@@ -132,30 +132,41 @@ export const CATALOG_CSS = `
 .cat-toc-dots { flex:1; border-bottom:1px dotted rgba(0,0,0,.35); }
 .cat-toc-num { font-family:var(--cat-font-h); font-weight:800; color:var(--cat-accent); }
 
-/* ── Ouverture d'univers : affiche éditoriale (numéro géant + familles) ── */
-.cat-opener { flex:1; display:flex; flex-direction:column; padding:52px 48px 44px;
+/* ── Ouverture d'univers : affiche chapitre (numéro XXL + panneau contenu) ── */
+.cat-opener { flex:1; display:flex; flex-direction:column; padding:48px 48px 44px;
   background:var(--cat-head-bg); color:var(--cat-head-ink); position:relative; overflow:hidden; }
-.cat-opener-stripe { position:absolute; top:-15%; right:-22%; width:55%; height:130%;
+.cat-opener-stripe { position:absolute; top:-15%; right:-26%; width:46%; height:130%;
   background:var(--cat-accent); opacity:.92; transform:rotate(12deg); }
-.cat-opener-stripe2 { position:absolute; top:-15%; right:-30%; width:14%; height:130%;
+.cat-opener-stripe2 { position:absolute; top:-15%; right:-32%; width:12%; height:130%;
   background:var(--cat-head-ink); opacity:.16; transform:rotate(12deg); }
-.cat-opener-num { position:absolute; top:6px; right:30px; font-family:var(--cat-font-h); font-weight:900;
-  font-size:170px; line-height:1; color:#fff; opacity:.28; letter-spacing:-.04em; }
-.cat-opener-kicker { position:relative; font-family:var(--cat-font-h); font-size:14px; letter-spacing:.28em; text-transform:uppercase; font-weight:800; opacity:.8; }
-.cat-opener-title { position:relative; font-family:var(--cat-font-h); font-weight:900; font-size:58px; line-height:1.02;
-  text-transform:uppercase; margin-top:16px; max-width:72%; }
-.cat-opener-count { position:relative; margin-top:14px; font-family:var(--cat-font-h); font-weight:800; font-size:12px;
+.cat-opener-num { position:absolute; top:-42px; right:18px; font-family:var(--cat-font-h); font-weight:900;
+  font-size:300px; line-height:1; color:currentColor; opacity:.22; letter-spacing:-.05em; }
+.cat-opener-chip { position:relative; align-self:flex-start; background:var(--cat-accent); color:#fff;
+  font-family:var(--cat-font-h); font-weight:800; font-size:13px; letter-spacing:.24em; text-transform:uppercase;
+  padding:8px 18px; border-radius:3px; transform:rotate(-2deg); }
+.cat-opener-kicker { position:relative; margin-top:26px; font-family:var(--cat-font-h); font-size:14px; letter-spacing:.28em; text-transform:uppercase; font-weight:800; opacity:.75; }
+.cat-opener-title { position:relative; font-family:var(--cat-font-h); font-weight:900; font-size:74px; line-height:.98;
+  text-transform:uppercase; margin-top:14px; max-width:82%; }
+.cat-opener-count { position:relative; margin-top:20px; font-family:var(--cat-font-h); font-weight:800; font-size:14px;
   letter-spacing:.2em; text-transform:uppercase; }
-.cat-opener-count b { background:var(--cat-accent); color:#fff; padding:3px 10px; border-radius:3px; margin-right:8px; }
-.cat-opener-rule { position:relative; width:110px; height:7px; background:var(--cat-accent); margin-top:24px; }
-.cat-opener-fams { position:relative; margin-top:38px; display:grid; grid-template-columns:1fr 1fr; gap:22px 30px; align-content:start; }
-.cat-opener-fam { border-top:3px solid var(--cat-accent); padding-top:10px; }
+.cat-opener-count b { background:var(--cat-accent); color:#fff; padding:4px 12px; border-radius:3px; margin-right:10px; }
+/* Panneau contenu ancré en bas : fond de page (contraste fort) + barre accent */
+.cat-opener-panel { position:relative; margin-top:auto; background:var(--cat-bg); color:var(--cat-ink);
+  border-radius:12px; border-top:10px solid var(--cat-accent); padding:30px 36px 34px;
+  box-shadow:0 14px 40px rgba(0,0,0,.28); }
+.cat-opener-panel-title { font-family:var(--cat-font-h); font-weight:800; font-size:13px; letter-spacing:.22em;
+  text-transform:uppercase; opacity:.55; margin-bottom:22px; }
+.cat-opener-fams { display:grid; grid-template-columns:1fr 1fr; gap:24px 32px; align-content:start; }
+.cat-opener-fam { border-top:3px solid var(--cat-accent); padding-top:12px; }
 .cat-opener-fam-name { display:flex; align-items:baseline; gap:10px; font-family:var(--cat-font-h); font-weight:800;
-  font-size:17px; text-transform:uppercase; line-height:1.15; }
-.cat-opener-fam-idx { color:var(--cat-accent); font-size:13px; letter-spacing:.06em; }
-.cat-opener-fam-count { font-size:9px; opacity:.6; letter-spacing:.14em; text-transform:uppercase; margin-top:3px; }
-.cat-opener-subs { margin-top:9px; display:flex; flex-wrap:wrap; gap:6px; }
-.cat-opener-sub { font-size:10px; padding:3px 10px; border:1px solid; opacity:.8; border-radius:999px; letter-spacing:.03em; }
+  font-size:19px; text-transform:uppercase; line-height:1.15; }
+.cat-opener-fam-idx { color:var(--cat-accent); font-size:15px; letter-spacing:.06em; }
+.cat-opener-fam-count { font-size:11px; opacity:.6; letter-spacing:.14em; text-transform:uppercase; margin-top:4px; }
+.cat-opener-subs { margin-top:10px; display:flex; flex-wrap:wrap; gap:7px; }
+.cat-opener-sub { font-size:12px; padding:4px 12px; border:1px solid; opacity:.75; border-radius:999px; letter-spacing:.03em; }
+.cat-opener-hls { display:flex; flex-wrap:wrap; gap:10px; }
+.cat-opener-hl { font-size:14px; font-weight:600; padding:8px 16px; border-radius:999px;
+  border:1.5px solid var(--cat-accent); }
 
 /* ── 4e de couverture ───────────────────────────────────────────────── */
 .cat-back { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:48px; text-align:center; }

@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
 import { FONT_OPTIONS } from '@/features/retail-promo/RetailPromoCard'
 import { CATALOG_GRIDS, type CatalogGrid, type CatalogPlan, type CatalogTreeNode } from './catalogTypes'
-import { flattenTree } from './catalogTree'
+import { flattenTree, subtreeProductCount } from './catalogTree'
 
 const ThemeSchema = z.object({
   accent: z.string(), pageBg: z.string(), ink: z.string(),
@@ -107,8 +107,13 @@ function clampGrid(n: number): CatalogGrid {
   return best
 }
 
+/**
+ * Nœuds méritant une section : leur SOUS-ARBRE contient des produits. Un univers
+ * dont les produits sont tous dans les sous-familles doit avoir sa section (c'est
+ * elle qui porte la densité de grille du flux continu).
+ */
 function nodesWithProducts(tree: CatalogTreeNode[]): CatalogTreeNode[] {
-  return flattenTree(tree).filter((n) => n.productIds.length > 0)
+  return flattenTree(tree).filter((n) => subtreeProductCount(n) > 0)
 }
 
 /** Plan neutre déterministe : repli si l'IA échoue, base avant première génération. */

@@ -82,7 +82,7 @@ export interface OpenerFamily { label: string; count: number; subs: string[] }
 export type CatalogPageDescriptor =
   | { kind: 'cover'; pageNumber: number }
   | { kind: 'toc'; pageNumber: number; entries: TocEntry[] }
-  | { kind: 'opener'; pageNumber: number; nodeId: string; label: string; index: number; productCount: number; families: OpenerFamily[] }
+  | { kind: 'opener'; pageNumber: number; nodeId: string; label: string; index: number; productCount: number; families: OpenerFamily[]; highlights: string[] }
   | { kind: 'products'; pageNumber: number; nodeId: string; breadcrumb: string[]; grid: CatalogGrid; slots: ProductSlot[] }
   | { kind: 'back-cover'; pageNumber: number }
 

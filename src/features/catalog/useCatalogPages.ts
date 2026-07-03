@@ -17,13 +17,21 @@ export function useCatalogPages(): { pages: CatalogPageDescriptor[]; ctx: Catalo
     const rows = s.rawRows.filter((r) => selected.has(r._id))
     const tree = buildCatalogTree(rows, s.rawColumns, s.levelKeys, s.treeEdits)
     const plan = s.plan ?? defaultCatalogPlan(tree, s.name)
-    // Prix de vente par ligne → sizing des fiches (plan.sizeByPrice, actif par défaut).
+    // Prix de vente par ligne → sizing des fiches (plan.sizeByPrice, actif par défaut) ;
+    // noms → « highlights » des affiches d'univers sans familles.
     const prices = new Map<string, number | null>()
+    const names = new Map<string, string>()
     for (const r of rows) {
       const f = extractPromoFields(r, s.rawColumns, s.fieldMap)
       prices.set(r._id, f.newPrice ?? f.oldPrice)
+      names.set(r._id, f.name)
     }
-    const pages = paginateCatalog({ tree, sections: plan.sections, sizeByPrice: plan.sizeByPrice ?? true, prices })
+    const sizeByPrice = plan.sizeByPrice ?? true
+    if (sizeByPrice && [...prices.values()].filter((p) => p != null).length < 3) {
+      // Diagnostic : sizing demandé mais quasi aucun prix mappé → aucune carte ne grossira.
+      console.warn('[catalog] sizeByPrice actif mais < 3 prix détectés (fieldMap.newPrice/oldPrice non mappés ?)')
+    }
+    const pages = paginateCatalog({ tree, sections: plan.sections, sizeByPrice, prices, names })
     const ctx: CatalogRenderCtx = {
       plan, format: s.format, rowsById: new Map(rows.map((r) => [r._id, r])), columns: s.rawColumns,
       fieldMap: s.fieldMap, catalogName: s.name, totalPages: pages.length,

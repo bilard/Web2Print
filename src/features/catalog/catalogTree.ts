@@ -92,6 +92,11 @@ function applyOrder(siblings: CatalogTreeNode[], parentId: string, edits: TreeEd
   for (const n of siblings) applyOrder(n.children, n.id, edits)
 }
 
+/** Nombre de produits du nœud ET de ses descendants (un univers peut n'avoir aucun produit direct). */
+export function subtreeProductCount(n: CatalogTreeNode): number {
+  return n.productIds.length + n.children.reduce((acc, c) => acc + subtreeProductCount(c), 0)
+}
+
 /** Parcours en profondeur (préfixe). Utilisé par le moteur de pagination et le plan IA. */
 export function flattenTree(tree: CatalogTreeNode[]): CatalogTreeNode[] {
   const out: CatalogTreeNode[] = []

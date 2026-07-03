@@ -4,14 +4,16 @@
 //
 // Flux CONTINU par univers : les produits de toutes les familles/sous-familles
 // s'enchaînent sans rupture de page. Chaque page est une grille C×R remplie par
-// PACKING first-fit avec spans : vedette = grande carte 2×2 AU SEIN de la page,
-// fiche chère = carte élargie (paliers médiane/P80 par univers si sizeByPrice),
-// repli 1×1 quand le span ne rentre plus → aucune case vide sauf sur la toute
-// dernière page de l'univers. Densité 'random' : grille tirée page à page via
-// PRNG seedé par l'id d'univers (rendu stable entre aperçu et export).
+// PACKING first-fit avec spans : vedette = grande carte mise en avant AU SEIN de
+// la page (1 vedette MAX par page, span plafonné pour ne JAMAIS couvrir la page
+// entière tant qu'il reste du flux), fiche chère = carte élargie (paliers
+// médiane/P80 par univers si sizeByPrice, même plafond), repli 1×1 quand le span
+// ne rentre plus → aucune case vide sauf sur la toute dernière page de l'univers.
+// Densité 'random' : grille tirée page à page via PRNG seedé par l'id d'univers
+// (rendu stable entre aperçu et export).
 import type { CatalogGrid, CatalogPageDescriptor, CatalogSectionPlan, CatalogTreeNode, OpenerFamily, ProductSlot, TocEntry } from './catalogTypes'
 import { GRID_DIMS } from './catalogTypes'
-import { flattenTree } from './catalogTree'
+import { flattenTree, subtreeProductCount } from './catalogTree'
 
 export const TOC_ENTRIES_PER_PAGE = 24
 export const DEFAULT_GRID: CatalogGrid = 4
@@ -25,10 +27,8 @@ export interface PaginateInput {
   sizeByPrice?: boolean
   /** rowId → prix de vente (newPrice ?? oldPrice) — nécessaire au sizing par prix. */
   prices?: Map<string, number | null>
-}
-
-function subtreeProductCount(n: CatalogTreeNode): number {
-  return n.productIds.length + n.children.reduce((acc, c) => acc + subtreeProductCount(c), 0)
+  /** rowId → nom produit — alimente les « highlights » de l'affiche d'un univers sans familles. */
+  names?: Map<string, string>
 }
 
 interface FlowItem {
@@ -62,11 +62,22 @@ function priceThresholds(values: number[]): { p50: number; p80: number } | null 
   return { p50: v[Math.floor(0.5 * (v.length - 1))], p80: v[Math.floor(0.8 * (v.length - 1))] }
 }
 
+/**
+ * Grande carte (vedette ou prix > P80) plafonnée : jamais la page ENTIÈRE —
+ * il doit rester au moins une case pour d'autres produits (grille 1/page exceptée).
+ */
+function bigSpan(C: number, R: number): [number, number] {
+  let w = Math.min(2, C)
+  let h = Math.min(2, R)
+  while (w * h >= C * R && (h > 1 || w > 1)) { if (h > 1) h--; else w-- }
+  return [w, h]
+}
+
 /** Span voulu d'un item sur une grille C×R (sera dégradé au packing s'il ne rentre plus). */
 function wantedSpan(item: FlowItem, price: number | null, th: { p50: number; p80: number } | null, C: number, R: number): [number, number] {
-  if (item.featured) return [Math.min(2, C), Math.min(2, R)]
+  if (item.featured) return bigSpan(C, R)
   if (th && price != null) {
-    if (price > th.p80) return [Math.min(2, C), Math.min(2, R)]
+    if (price > th.p80) return bigSpan(C, R)
     if (price > th.p50) return C >= 2 ? [2, 1] : [1, Math.min(2, R)]
   }
   return [1, 1]
@@ -110,27 +121,19 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
   }
 
   kept.forEach((univers, universIndex) => {
-    const families: OpenerFamily[] = univers.children
-      .filter((c) => subtreeProductCount(c) > 0)
-      .map((c) => ({ label: c.label, count: subtreeProductCount(c), subs: c.children.filter((s) => subtreeProductCount(s) > 0).map((s) => s.label) }))
-    pages.push({
-      kind: 'opener', pageNumber: pages.length + 1, nodeId: univers.id, label: univers.label,
-      index: universIndex + 1, productCount: subtreeProductCount(univers), families,
-    })
-    nodePage.set(univers.id, pages.length)
     const section = byNode.get(univers.id)
     const fixedGrid = section?.productsPerPage ?? DEFAULT_GRID
     const rng = mulberry32(hashSeed(univers.id))
 
-    // Collecte DFS : vedettes en tête (grande carte sur la 1re page), puis flux continu.
-    const featuredItems: FlowItem[] = []
-    const flowItems: FlowItem[] = []
+    // Collecte DFS : vedettes distribuées 1 par page, flux continu pour le reste.
+    const featuredQueue: FlowItem[] = []
+    const flowQueue: FlowItem[] = []
     const collect = (node: CatalogTreeNode, path: string[], chain: string[]) => {
       const featured = new Set(byNode.get(node.id)?.featuredIds ?? [])
       for (const rowId of node.productIds) {
         const item: FlowItem = { rowId, featured: featured.has(rowId), path, chain }
-        if (item.featured) featuredItems.push(item)
-        else flowItems.push(item)
+        if (item.featured) featuredQueue.push(item)
+        else flowQueue.push(item)
       }
       for (const child of node.children) {
         if (subtreeProductCount(child) === 0) continue
@@ -138,36 +141,57 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       }
     }
     collect(univers, [univers.label], [univers.id])
-    const queue = [...featuredItems, ...flowItems]
+
+    const families: OpenerFamily[] = univers.children
+      .filter((c) => subtreeProductCount(c) > 0)
+      .map((c) => ({ label: c.label, count: subtreeProductCount(c), subs: c.children.filter((s) => subtreeProductCount(s) > 0).map((s) => s.label) }))
+    // Univers sans familles : l'affiche montre un extrait de la gamme (noms produits).
+    const highlights = families.length > 0 ? [] : [...featuredQueue, ...flowQueue]
+      .map((i) => input.names?.get(i.rowId) ?? '').filter(Boolean).slice(0, 8)
+    pages.push({
+      kind: 'opener', pageNumber: pages.length + 1, nodeId: univers.id, label: univers.label,
+      index: universIndex + 1, productCount: subtreeProductCount(univers), families, highlights,
+    })
+    nodePage.set(univers.id, pages.length)
 
     const th = sizeByPrice
-      ? priceThresholds(queue.map((i) => prices.get(i.rowId)).filter((p): p is number => p != null))
+      ? priceThresholds([...featuredQueue, ...flowQueue].map((i) => prices.get(i.rowId)).filter((p): p is number => p != null))
       : null
 
-    // Packing page à page : first-fit avec dégradation de span → zéro case vide
-    // tant qu'il reste des produits (le repli 1×1 rentre toujours).
-    while (queue.length > 0) {
+    // Packing page à page : 1 vedette MAX par page (grande carte jamais pleine
+    // page tant qu'il reste du flux), puis first-fit avec dégradation de span →
+    // zéro case vide tant qu'il reste des produits (le repli 1×1 rentre toujours).
+    while (featuredQueue.length > 0 || flowQueue.length > 0) {
       const grid = section?.randomDensity ? RANDOM_GRID_POOL[Math.floor(rng() * RANDOM_GRID_POOL.length)] : fixedGrid
       const [C, R] = GRID_DIMS[grid]
       const occ: boolean[][] = Array.from({ length: R }, () => Array<boolean>(C).fill(false))
       const slots: ProductSlot[] = []
       const pageNumber = pages.length + 1
-      while (queue.length > 0) {
-        const item = queue[0]
-        const [w, h] = wantedSpan(item, prices.get(item.rowId) ?? null, th, C, R)
+      const place = (item: FlowItem, w: number, h: number): boolean => {
         let placed: { r: number; c: number; w: number; h: number } | null = null
         for (const [cw, ch] of shrinkCandidates(w, h)) {
           const pos = findFit(occ, cw, ch)
           if (pos) { placed = { ...pos, w: cw, h: ch }; break }
         }
-        if (!placed) break // page pleine
+        if (!placed) return false
         for (let dr = 0; dr < placed.h; dr++) for (let dc = 0; dc < placed.w; dc++) occ[placed.r + dr][placed.c + dc] = true
-        queue.shift()
         register(item.chain, pageNumber)
         slots.push({
           rowId: item.rowId, featured: item.featured, path: item.path,
           col: placed.c + 1, row: placed.r + 1, colSpan: placed.w, rowSpan: placed.h,
         })
+        return true
+      }
+      if (featuredQueue.length > 0) {
+        // Plus de flux à mixer → la vedette restante occupe sa page entière.
+        const [w, h] = flowQueue.length > 0 ? bigSpan(C, R) : [C, R]
+        if (place(featuredQueue[0], w, h)) featuredQueue.shift()
+      }
+      while (flowQueue.length > 0) {
+        const item = flowQueue[0]
+        const [w, h] = wantedSpan(item, prices.get(item.rowId) ?? null, th, C, R)
+        if (!place(item, w, h)) break // page pleine
+        flowQueue.shift()
       }
       if (slots.length === 0) break // garde théorique (grille 1×1 minimum → jamais atteint)
       const breadcrumb = slots[0].path.slice(0, 2) // univers › famille du 1er slot

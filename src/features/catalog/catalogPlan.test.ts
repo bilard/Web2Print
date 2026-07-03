@@ -17,6 +17,16 @@ describe('defaultCatalogPlan', () => {
     expect(plan.theme.accent).toBe('#6366f1')
     expect(plan.tocTitle).toBe('Sommaire')
   })
+
+  it("un univers SANS produit direct (tout en sous-familles) reçoit quand même sa section — c'est elle qui porte la densité", () => {
+    const tree = [node('u', 'U', 1, [], [node('u/f', 'F', 2, ['p1'])])]
+    expect(defaultCatalogPlan(tree, 'X').sections.map((s) => s.nodeId)).toEqual(['u', 'u/f'])
+    const sanitized = sanitizeCatalogPlan({
+      theme: { accent: '#e11d48', pageBg: '#ffffff', ink: '#111111', headerBg: '#0f172a', headerInk: '#ffffff', fontHeading: 'Archivo', fontBody: 'Inter' },
+      sections: [], cover: { title: 'T', imagePrompt: 'x' }, backCover: { title: 'T', text: '' }, tocTitle: 'S',
+    }, tree, 'X')
+    expect(sanitized.sections.map((s) => s.nodeId)).toEqual(['u', 'u/f'])
+  })
 })
 
 describe('sanitizeCatalogPlan', () => {
