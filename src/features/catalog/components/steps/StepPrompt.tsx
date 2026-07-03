@@ -70,10 +70,16 @@ export function StepPrompt() {
             <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
               <Sparkles className="w-4 h-4 text-indigo-400" /> Prompt global
             </h2>
-            <button onClick={() => void generate()} disabled={busy}
-              className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[#fff] text-sm font-medium">
-              {busy && <Loader2 className="w-4 h-4 animate-spin" />} Générer le plan (IA)
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button onClick={() => void generate()} disabled={busy}
+                className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[#fff] text-sm font-medium">
+                {busy && <Loader2 className="w-4 h-4 animate-spin" />} Générer le plan (IA)
+              </button>
+              <button onClick={() => setStep('preview')} disabled={!plan}
+                className="flex items-center gap-2 px-4 py-2 rounded-md border border-indigo-500 text-indigo-300 hover:bg-indigo-600 hover:text-[#fff] disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium">
+                Continuer → Aperçu <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3}
             placeholder="Décrivez le catalogue voulu : univers, ton, couleurs, densité des pages…"
@@ -93,13 +99,6 @@ export function StepPrompt() {
         ) : (
           <p className="text-sm text-muted-foreground">Générez un plan pour éditer le thème, les couvertures et les sections.</p>
         )}
-
-        <div className="flex justify-end pt-1">
-          <button onClick={() => setStep('preview')} disabled={!plan}
-            className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-[#fff] text-sm font-medium">
-            Continuer → Aperçu <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
       </div>
     </div>
   )
