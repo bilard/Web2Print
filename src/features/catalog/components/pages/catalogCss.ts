@@ -76,14 +76,19 @@ export const CATALOG_CSS = `
 .cat-cell-kicker { position:absolute; top:0; left:0; background:var(--cat-head-bg); color:var(--cat-head-ink);
   font-family:var(--cat-font-h); font-weight:700; font-size:9px; letter-spacing:.12em; text-transform:uppercase;
   padding:4px 10px; border-radius:0 0 6px 0; }
+/* Cartouche promo (« Top affaire », « -30% »…) : bandeau accent AU-DESSUS de l'image */
+.cat-cell-promo { flex:none; background:var(--cat-accent); color:#fff; font-family:var(--cat-font-h); font-weight:800;
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase; text-align:center; padding:6px 10px; }
+.cat-has-promo .cat-cell-kicker { top:26px; }
 .cat-cell-body { flex:none; padding:10px 12px 12px; display:flex; flex-direction:column; gap:2px; }
 .cat-cell-brand { font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--cat-accent); font-weight:800; }
 .cat-cell-name { font-family:var(--cat-font-h); font-weight:700; font-size:14px; line-height:1.2; text-transform:uppercase;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .cat-cell-desc { font-size:10px; opacity:.7; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.cat-cell-row { display:flex; align-items:flex-end; justify-content:space-between; margin-top:6px; gap:8px; }
-.cat-cell-ref { font-size:8px; opacity:.5; letter-spacing:.04em; }
+.cat-cell-refcode { font-size:9px; opacity:.55; letter-spacing:.08em; text-transform:uppercase; margin-top:2px; }
+.cat-cell-row { display:flex; align-items:flex-end; justify-content:flex-end; margin-top:6px; gap:8px; }
 .cat-cell-pricebox { text-align:right; }
+.cat-cell-unit { display:block; font-size:9px; opacity:.6; letter-spacing:.08em; text-transform:uppercase; margin-top:4px; }
 .cat-cell-was { display:block; font-size:11px; text-decoration:line-through; opacity:.5; }
 .cat-cell-price { display:inline-block; background:var(--cat-accent); color:#fff; font-family:var(--cat-font-h);
   font-weight:800; font-size:18px; line-height:1; padding:6px 10px 5px; border-radius:4px; transform:rotate(-2deg); }
@@ -98,6 +103,9 @@ export const CATALOG_CSS = `
 .cat-xl .cat-cell-kicker { font-size:11px; padding:6px 13px; }
 .cat-xl .cat-cell-brand { font-size:12px; }
 .cat-xl .cat-cell-body { padding:14px 18px 16px; gap:4px; }
+.cat-xl .cat-cell-promo { font-size:14px; padding:8px 12px; }
+.cat-xl.cat-has-promo .cat-cell-kicker { top:33px; }
+.cat-xl .cat-cell-refcode, .cat-xl .cat-cell-unit { font-size:11px; }
 
 /* Vedette : mise en avant AU SEIN de la page — cadre accent + ruban en coin */
 .cat-featured { border:2px solid var(--cat-accent); border-bottom:6px solid var(--cat-accent);
