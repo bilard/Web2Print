@@ -69,9 +69,15 @@ export const CATALOG_CSS = `
 .cat-grid { flex:1; display:grid; gap:14px; padding:20px 32px 16px; min-height:0; }
 .cat-cell { position:relative; display:flex; flex-direction:column; min-height:0; background:#fff;
   border:1px solid rgba(17,24,39,.10); border-bottom:3px solid var(--cat-accent); border-radius:6px; overflow:hidden; }
-.cat-cell-img { flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
+.cat-cell-img { position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
   background:linear-gradient(180deg,#fafbfc 0%,#eef1f4 100%); padding:10px; }
 .cat-cell-img img { max-width:100%; max-height:100%; object-fit:contain; }
+/* Sticker rond de remise (écart barré/vente) — en haut à droite du bloc image */
+.cat-price-sticker { position:absolute; top:8px; right:8px; width:46px; height:46px; border-radius:999px;
+  background:var(--cat-accent); color:#fff; display:flex; align-items:center; justify-content:center;
+  font-family:var(--cat-font-h); font-weight:800; font-size:13px; transform:rotate(8deg);
+  box-shadow:0 3px 10px rgba(0,0,0,.18); }
+.cat-featured .cat-price-sticker { top:54px; }
 .cat-cell-img-ph { font-size:11px; color:#94a3b8; }
 .cat-cell-kicker { position:absolute; top:0; left:0; background:var(--cat-head-bg); color:var(--cat-head-ink);
   font-family:var(--cat-font-h); font-weight:700; font-size:9px; letter-spacing:.12em; text-transform:uppercase;
@@ -89,9 +95,13 @@ export const CATALOG_CSS = `
 .cat-cell-row { display:flex; align-items:flex-end; justify-content:flex-end; margin-top:6px; gap:8px; }
 .cat-cell-pricebox { text-align:right; }
 .cat-cell-unit { display:block; font-size:9px; opacity:.6; letter-spacing:.08em; text-transform:uppercase; margin-top:4px; }
-.cat-cell-was { display:block; font-size:11px; text-decoration:line-through; opacity:.5; }
+/* Étiquette prix : bloc barré (bandeau sombre) solidaire du badge prix accent */
+.cat-cell-tag { display:inline-flex; flex-direction:column; align-items:flex-end; transform:rotate(-2deg); }
+.cat-cell-was { display:inline-block; background:var(--cat-head-bg); color:var(--cat-head-ink); font-size:10px;
+  font-weight:700; text-decoration:line-through; padding:3px 9px 2px; border-radius:4px 4px 0 0; }
 .cat-cell-price { display:inline-block; background:var(--cat-accent); color:#fff; font-family:var(--cat-font-h);
-  font-weight:800; font-size:18px; line-height:1; padding:6px 10px 5px; border-radius:4px; transform:rotate(-2deg); }
+  font-weight:800; font-size:18px; line-height:1; padding:6px 10px 5px; border-radius:4px; }
+.cat-cell-was + .cat-cell-price { border-radius:4px 0 4px 4px; }
 
 /* Tailles graduées (span issu du packing : prix élevé/vedette = carte plus grande) */
 .cat-lg .cat-cell-name { font-size:17px; }
@@ -106,6 +116,8 @@ export const CATALOG_CSS = `
 .cat-xl .cat-cell-promo { font-size:14px; padding:8px 12px; }
 .cat-xl.cat-has-promo .cat-cell-kicker { top:33px; }
 .cat-xl .cat-cell-refcode, .cat-xl .cat-cell-unit { font-size:11px; }
+.cat-xl .cat-cell-was { font-size:14px; padding:4px 12px 3px; }
+.cat-xl .cat-price-sticker { width:68px; height:68px; font-size:19px; }
 
 /* Vedette : mise en avant AU SEIN de la page — cadre accent + ruban en coin */
 .cat-featured { border:2px solid var(--cat-accent); border-bottom:6px solid var(--cat-accent);

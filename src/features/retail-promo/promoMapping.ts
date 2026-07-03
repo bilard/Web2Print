@@ -67,7 +67,7 @@ function num(row: MergeRow, columns: MergeColumn[], key?: string): number | null
 }
 
 /** Formate la mécanique promo affichée : ratio 0.28 → « -28% », 28 → « -28% », sinon texte brut. */
-function fmtPromoLabel(raw: string): string | undefined {
+export function formatPromoLabel(raw: string): string | undefined {
   const t = raw.trim()
   if (!t) return undefined
   const n = Number(t.replace(',', '.'))
@@ -84,7 +84,7 @@ function fmtPromoLabel(raw: string): string | undefined {
  * partagée par l'aperçu (toCardData) ET les règles conditionnelles.
  */
 export function computeRemiseLabel(f: PromoFields): string | undefined {
-  return fmtPromoLabel(f.promoLabel) || (f.remisePct != null ? `-${f.remisePct}%` : undefined)
+  return formatPromoLabel(f.promoLabel) || (f.remisePct != null ? `-${f.remisePct}%` : undefined)
 }
 
 /**
