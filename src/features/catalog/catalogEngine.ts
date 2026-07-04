@@ -118,12 +118,23 @@ function reassignByPrice(slots: ProductSlot[], prices: Map<string, number | null
   const movable = slots.filter((s) => !s.featured)
   if (movable.length < 2) return
   const area = (s: ProductSlot) => s.colSpan * s.rowSpan
-  const byArea = [...movable].sort((a, b) => area(b) - area(a))
-  if (area(byArea[0]) === area(byArea[byArea.length - 1])) return // aucune hiérarchie de taille
-  const payloads = [...movable]
-    .sort((a, b) => (prices.get(b.rowId) ?? -1) - (prices.get(a.rowId) ?? -1))
-    .map((s) => ({ rowId: s.rowId, path: s.path }))
-  byArea.forEach((slot, i) => { slot.rowId = payloads[i].rowId; slot.path = payloads[i].path })
+  // ÉCHANGES MINIMAUX : seule chaque grande carte troque son contenu avec le
+  // produit le plus cher restant — l'ordre du flux (produits GROUPÉS par
+  // sous-famille) est préservé sur toutes les autres fiches.
+  const bigs = movable.filter((s) => area(s) > 1).sort((a, b) => area(b) - area(a))
+  const assigned = new Set<ProductSlot>()
+  for (const big of bigs) {
+    let best: ProductSlot | null = null
+    for (const s of movable) {
+      if (assigned.has(s)) continue
+      if (!best || (prices.get(s.rowId) ?? -1) > (prices.get(best.rowId) ?? -1)) best = s
+    }
+    assigned.add(big)
+    if (!best || best === big) continue
+    const tmp = { rowId: big.rowId, path: big.path }
+    big.rowId = best.rowId; big.path = best.path
+    best.rowId = tmp.rowId; best.path = tmp.path
+  }
 }
 
 /**
