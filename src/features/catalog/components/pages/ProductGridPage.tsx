@@ -1,6 +1,7 @@
+import type { CSSProperties } from 'react'
 import { extractPromoFields } from '@/features/retail-promo/promoMapping'
 import { GRID_DIMS, type CatalogGrid, type ProductSlot } from '../../catalogTypes'
-import type { CatalogRenderCtx } from './catalogCss'
+import { pagePx, type CatalogRenderCtx } from './catalogCss'
 import { ProductCell, type CellSize } from './ProductCell'
 
 function slotSize(slot: ProductSlot, grid: CatalogGrid): CellSize {
@@ -10,12 +11,32 @@ function slotSize(slot: ProductSlot, grid: CatalogGrid): CellSize {
   return 'md'
 }
 
+/**
+ * Facteur d'échelle TYPO de la page (--cat-fit) : la typo de base est calibrée
+ * pour une cellule de grille 6 A4 portrait — les grilles plus aérées (4/2/1,
+ * paysage…) produisent des cellules bien plus grandes où les textes en px fixes
+ * laissent trop de vide. Échelle = racine du rapport d'AIRES, bornée.
+ */
+function typoFit(ctx: CatalogRenderCtx, grid: CatalogGrid): number {
+  const { w, h } = pagePx(ctx.format)
+  const [C, R] = GRID_DIMS[grid]
+  // Marges verticales : header ~64 + footer ~40 + padding grille 36 ; gaps 14.
+  const cellW = (w - 64 - 14 * (C - 1)) / C
+  const cellH = (h - 140 - 14 * (R - 1)) / R
+  const REF_AREA = 358 * 318 // cellule de référence (A4 portrait, grille 6)
+  return Math.min(1.45, Math.max(0.85, Math.sqrt((cellW * cellH) / REF_AREA)))
+}
+
 interface Props { ctx: CatalogRenderCtx; grid: CatalogGrid; slots: ProductSlot[] }
 
 export function ProductGridPage({ ctx, grid, slots }: Props) {
   const [cols, rows] = GRID_DIMS[grid]
+  const fit = typoFit(ctx, grid)
   return (
-    <div className="cat-grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, gridTemplateRows: `repeat(${rows}, 1fr)` }}>
+    <div className="cat-grid" style={{
+      gridTemplateColumns: `repeat(${cols}, 1fr)`, gridTemplateRows: `repeat(${rows}, 1fr)`,
+      ...(fit !== 1 ? ({ '--cat-fit': String(Math.round(fit * 100) / 100) } as CSSProperties) : {}),
+    }}>
       {slots.map((slot) => {
         const style = { gridColumn: `${slot.col} / span ${slot.colSpan}`, gridRow: `${slot.row} / span ${slot.rowSpan}` }
         const row = ctx.rowsById.get(slot.rowId)
