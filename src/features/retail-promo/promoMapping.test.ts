@@ -97,3 +97,24 @@ describe('displayedRemisePct (colonne synthétique « Remise (%) »)', () => {
     expect(displayedRemisePct(F({}))).toBeNull()
   })
 })
+
+test('extractPromoFields peuple extra depuis customFields (vides omises)', () => {
+  const columns: MergeColumn[] = [
+    { key: 'c_norm', label: 'Normes' } as MergeColumn,
+    { key: 'c_colis', label: 'Colis' } as MergeColumn,
+    { key: 'c_vide', label: 'SEO' } as MergeColumn,
+  ]
+  const row: MergeRow = { _id: 'r1', c_norm: 'EN 388', c_colis: '6', c_vide: '' } as unknown as MergeRow
+  const f = extractPromoFields(row, columns, {}, [
+    { id: 'normes', label: 'Normes', column: 'c_norm' },
+    { id: 'colis', label: 'Colis', column: 'c_colis' },
+    { id: 'seo', label: 'SEO', column: 'c_vide' },
+  ])
+  expect(f.extra).toEqual({ normes: 'EN 388', colis: '6' })
+})
+
+test('extractPromoFields sans customFields → extra vide (rétro-compat)', () => {
+  const columns: MergeColumn[] = [{ key: 'c', label: 'Nom' } as MergeColumn]
+  const row: MergeRow = { _id: 'r1', c: 'X' } as unknown as MergeRow
+  expect(extractPromoFields(row, columns, { name: 'c' }).extra).toEqual({})
+})

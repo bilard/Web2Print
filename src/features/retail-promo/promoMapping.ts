@@ -1,6 +1,6 @@
 import { getRowValue } from '@/features/merge/mergeEngine'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
-import type { PromoFields, PromoFieldKey } from './promoTypes'
+import type { PromoFields, PromoFieldKey, CustomFieldMap } from './promoTypes'
 import { parsePrice, computeMechanism } from './priceParse'
 
 /** Indices de devinage : libellés/aliases (en minuscules) qui pointent vers chaque champ promo. */
@@ -104,6 +104,7 @@ export function extractPromoFields(
   row: MergeRow,
   columns: MergeColumn[],
   fieldMap: Partial<Record<PromoFieldKey, string>>,
+  customFields: CustomFieldMap = [],
 ): PromoFields {
   // Chaîne d'images complète (« détourée | originale », multi-images scrapées) :
   // les résolveurs essaient chaque candidat dans l'ordre (repli si fichier supprimé).
@@ -115,6 +116,11 @@ export function extractPromoFields(
   const lotOffert = num(row, columns, fieldMap.lotOffert)
   const lotPrice = num(row, columns, fieldMap.lotPrice)
   const { mechanism, remisePct, remiseMontant } = computeMechanism({ oldPrice, newPrice, lotQty, lotOffert, lotPrice })
+  const extra: Record<string, string> = {}
+  for (const cf of customFields) {
+    const v = str(row, columns, cf.column).trim()
+    if (v) extra[cf.id] = v
+  }
   return {
     name: str(row, columns, fieldMap.name),
     image,
@@ -135,5 +141,6 @@ export function extractPromoFields(
     mentions: str(row, columns, fieldMap.mentions),
     enseigne: str(row, columns, fieldMap.enseigne),
     badges: [],
+    extra,
   }
 }
