@@ -11,6 +11,7 @@ import { StructureTreeNode } from './StructureTreeNode'
 import { MmInput } from './MmInput'
 import { LEVEL_STYLES } from './levelStyles'
 import { StepActionsPortal } from './StepActionsPortal'
+import { StepFieldMapping } from './StepFieldMapping'
 
 const LEVEL_FIELDS: { key: keyof LevelKeys; label: string }[] = [
   { key: 'univers', label: 'Univers' },
@@ -108,21 +109,17 @@ export function StepStructure() {
               </select>
               {showCustom && (
                 <div className="flex items-center gap-2">
-                  <MmInput
-                    value={format.widthMm}
-                    onValueChange={(v) => setFormat({ ...format, widthMm: v })}
-                  />
+                  <MmInput value={format.widthMm} onValueChange={(v) => setFormat({ ...format, widthMm: v })} />
                   <span className="text-xs text-muted-foreground">mm ×</span>
-                  <MmInput
-                    value={format.heightMm}
-                    onValueChange={(v) => setFormat({ ...format, heightMm: v })}
-                  />
+                  <MmInput value={format.heightMm} onValueChange={(v) => setFormat({ ...format, heightMm: v })} />
                   <span className="text-xs text-muted-foreground">mm</span>
                 </div>
               )}
             </div>
           </section>
         </div>
+
+        <StepFieldMapping />
 
         <section className="rounded-lg border border-border bg-surface p-4 space-y-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -141,7 +138,6 @@ export function StepStructure() {
             )}
           </div>
         </section>
-
       </div>
     </div>
   )
