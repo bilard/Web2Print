@@ -12,7 +12,7 @@ import { FormulaEditor } from './FormulaEditor'
 import { cellValue } from './cellValue'
 import { getTaxoColumns } from './taxonomyBuilder'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
-import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/features/taxonomy/productTaxonomy'
+import { hasTaxoNav, buildTaxoNavPredicate, commonFilterDepth } from './taxoNavSelection'
 import type { ExcelColumn, ExcelRow, CellValue, FieldTypeId } from './types'
 import { useCan } from '@/features/access/useAccess'
 import { useThemeStore } from '@/stores/theme.store'
@@ -74,7 +74,7 @@ export function DataTable() {
    *  Le schéma de colonnes vient toujours de la sheet active : les rows
    *  venues d'une autre source affichent simplement `null` pour les colonnes
    *  manquantes. */
-  const hasNavFilter = Object.keys(taxonomyNavFilter).length > 0
+  const hasNavFilter = hasTaxoNav(taxonomyNavFilter)
   const baseRows = (() => {
     if (sheets.length <= 1) return sheet?.rows ?? []
     if (selectedSourceIds.length === 0) {
@@ -185,20 +185,11 @@ export function DataTable() {
 
   // Filter rows by taxonomy navigation + search.
   // Sources et taxonomie agissent en INTERSECTION : on ne montre que les rows
-  // qui matchent à la fois le scope source (cf. baseRows) ET le filtre taxo.
-  const navFilterEntries = Object.entries(taxonomyNavFilter)
+  // qui matchent à la fois le scope source (cf. baseRows) ET le filtre taxo
+  // (multi-sélection : union des chemins cochés, cf. taxoNavSelection).
   let filteredRows = baseRows
-  if (navFilterEntries.length > 0) {
-    const colEntries = navFilterEntries.filter(([k]) => k !== GLOBAL_TAXO_FILTER_KEY)
-    const globalFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
-    const globalPredicate = globalFilter
-      ? buildGlobalTaxoFilterPredicate(globalFilter, taxonomies)
-      : null
-    filteredRows = filteredRows.filter((row) => {
-      if (!colEntries.every(([colKey, value]) => String(row[colKey]) === value)) return false
-      if (globalPredicate && !globalPredicate(row)) return false
-      return true
-    })
+  if (hasNavFilter) {
+    filteredRows = filteredRows.filter(buildTaxoNavPredicate(taxonomyNavFilter, taxonomies))
   }
   if (searchQuery) {
     filteredRows = filteredRows.filter((row) =>
@@ -297,16 +288,10 @@ export function DataTable() {
   const groupedData = useMemo((): (RowGroup | ExcelRow)[] => {
     if (taxoCols.length === 0) return sortedRows
 
-    // Find the first taxo level index that is NOT filtered
-    const filterKeys = new Set(Object.keys(taxonomyNavFilter))
-    let startIdx = 0
-    for (let i = 0; i < taxoCols.length; i++) {
-      if (filterKeys.has(taxoCols[i].col.key)) {
-        startIdx = i + 1
-      } else {
-        break
-      }
-    }
+    // Sauter les niveaux de tête où TOUS les chemins sélectionnés portent la
+    // même valeur (leurs bandeaux seraient identiques pour toutes les lignes).
+    // Multi-sélection divergente (ex. Élec + Plomberie) → on regroupe dès le niveau 1.
+    const startIdx = commonFilterDepth(taxonomyNavFilter, taxoCols.map((tc) => tc.col.key))
 
     // If all levels are filtered, show flat rows
     if (startIdx >= taxoCols.length) return sortedRows

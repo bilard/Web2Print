@@ -50,7 +50,7 @@ const ColumnImageGenModal = lazy(() =>
 )
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useRenameTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
-import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/features/taxonomy/productTaxonomy'
+import { hasTaxoNav, buildTaxoNavPredicate } from '@/features/excel/taxoNavSelection'
 import { useCan } from '@/features/access/useAccess'
 import { EasyCatalogExportModal } from '@/features/easycatalog/EasyCatalogExportModal'
 import { OptionHelp } from '@/components/shared/OptionHelp'
@@ -154,7 +154,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   // - Multi-source sans sélection : vide (sauf filtre taxo actif → toutes).
   const filteredRowIds = useMemo(() => {
     if (!sheet) return []
-    const hasNavFilter = Object.keys(taxonomyNavFilter).length > 0
+    const hasNavFilter = hasTaxoNav(taxonomyNavFilter)
     let baseRows: typeof sheet.rows
     if (sheets.length <= 1) {
       baseRows = sheet.rows
@@ -166,18 +166,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         .flatMap((s) => s.rows)
     }
     let rows = baseRows
-    const navEntries = Object.entries(taxonomyNavFilter)
-    if (navEntries.length > 0) {
-      const colEntries = navEntries.filter(([k]) => k !== GLOBAL_TAXO_FILTER_KEY)
-      const globalFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
-      const globalPredicate = globalFilter
-        ? buildGlobalTaxoFilterPredicate(globalFilter, taxonomies)
-        : null
-      rows = rows.filter((r) => {
-        if (!colEntries.every(([k, v]) => String(r[k]) === v)) return false
-        if (globalPredicate && !globalPredicate(r)) return false
-        return true
-      })
+    if (hasNavFilter) {
+      rows = rows.filter(buildTaxoNavPredicate(taxonomyNavFilter, taxonomies))
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase()

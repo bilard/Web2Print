@@ -10,9 +10,12 @@ import {
   GLOBAL_TAXO_FILTER_KEY,
   encodeGlobalTaxoFilter,
   decodeGlobalTaxoFilter,
-  buildGlobalTaxoFilterPredicate,
   getProductTaxonomyLink,
 } from '@/features/taxonomy/productTaxonomy'
+import {
+  EMPTY_TAXO_NAV, hasTaxoNav, isSamePath, isPathPrefix, togglePath, toggleGlobalNode,
+  buildTaxoNavPredicate, type TaxoNavPath,
+} from './taxoNavSelection'
 import { findPath } from '@/features/taxonomy/taxonomyUtils'
 import type { Taxonomy, TaxonomyNode } from '@/features/taxonomy/types'
 import { getTaxoColumns, getLevelColor } from './taxonomyBuilder'
@@ -81,7 +84,6 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
 
       const { col, level, color } = taxoCols[levelIdx]
       const colKey = col.key
-      const selectedValue = taxonomyNavFilter[colKey] ?? null
 
       const uniqueValues = [...new Set(
         parentRows
@@ -92,9 +94,12 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
 
       return uniqueValues.map((val) => {
         const matchingRows = parentRows.filter((r) => String(r[colKey]) === val)
-        const isSelected = selectedValue === val
-        const isExpanded = isSelected
         const path: NodePath[] = [...parentPath, { colKey, value: val, level }]
+        // Multi-sélection : sélectionné = un chemin coché identique ; déplié =
+        // sélectionné OU ancêtre d'un chemin coché (pour révéler la sélection profonde).
+        const pathRec: TaxoNavPath = Object.fromEntries(path.map((p) => [p.colKey, p.value]))
+        const isSelected = taxonomyNavFilter.paths.some((p) => isSamePath(p, pathRec))
+        const isExpanded = isSelected || taxonomyNavFilter.paths.some((p) => isPathPrefix(pathRec, p))
 
         return {
           value: val,
@@ -128,27 +133,14 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
     toast.success(`Produit classé sous ${pathLabel}`)
   }, [sheet, activeSheetIndex, updateCell, taxoCols])
 
-  const handleSelect = useCallback((colKey: string, value: string, level: number) => {
-    const newFilter = { ...taxonomyNavFilter }
+  // Multi-sélection : clic = toggle du chemin (cumul entre branches ; un chemin
+  // plus profond remplace son ancêtre coché et inversement — cf. togglePath).
+  const handleSelect = useCallback((node: TreeNode) => {
+    const pathRec: TaxoNavPath = Object.fromEntries(node.path.map((p) => [p.colKey, p.value]))
+    setTaxonomyNavFilter(togglePath(taxonomyNavFilter, pathRec))
+  }, [taxonomyNavFilter, setTaxonomyNavFilter])
 
-    if (newFilter[colKey] === value) {
-      // Deselect: remove this level and all below
-      delete newFilter[colKey]
-      for (const tc of taxoCols) {
-        if (tc.level > level) delete newFilter[tc.col.key]
-      }
-    } else {
-      newFilter[colKey] = value
-      // Clear levels below when changing selection
-      for (const tc of taxoCols) {
-        if (tc.level > level) delete newFilter[tc.col.key]
-      }
-    }
-
-    setTaxonomyNavFilter(newFilter)
-  }, [taxonomyNavFilter, taxoCols, setTaxonomyNavFilter])
-
-  const handleClearAll = () => setTaxonomyNavFilter({})
+  const handleClearAll = () => setTaxonomyNavFilter(EMPTY_TAXO_NAV)
 
   // ── Section taxonomie globale ──────────────────────────────────────────────
   // Scope = TOUTES les rows de la BDD (mono ou multi-source). On veut que la
@@ -193,21 +185,21 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
     return out
   }, [selectedRows])
 
-  const globalFilterDecoded = useMemo(() => {
-    const v = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
-    return v ? decodeGlobalTaxoFilter(v) : null
+  /** Nœuds globaux sélectionnés, décodés — Map taxonomyId → Set<nodeId>. */
+  const globalSelectedByTaxo = useMemo(() => {
+    const out = new Map<string, Set<string>>()
+    for (const encoded of taxonomyNavFilter.globalNodes) {
+      const decoded = decodeGlobalTaxoFilter(encoded)
+      if (!decoded) continue
+      let s = out.get(decoded.taxonomyId)
+      if (!s) { s = new Set(); out.set(decoded.taxonomyId, s) }
+      s.add(decoded.nodeId)
+    }
+    return out
   }, [taxonomyNavFilter])
 
   const handleSelectGlobalNode = useCallback((taxonomyId: string, nodeId: string) => {
-    const newFilter = { ...taxonomyNavFilter }
-    const currentVal = newFilter[GLOBAL_TAXO_FILTER_KEY]
-    const targetVal = encodeGlobalTaxoFilter(taxonomyId, nodeId)
-    if (currentVal === targetVal) {
-      delete newFilter[GLOBAL_TAXO_FILTER_KEY]
-    } else {
-      newFilter[GLOBAL_TAXO_FILTER_KEY] = targetVal
-    }
-    setTaxonomyNavFilter(newFilter)
+    setTaxonomyNavFilter(toggleGlobalNode(taxonomyNavFilter, encodeGlobalTaxoFilter(taxonomyId, nodeId)))
   }, [taxonomyNavFilter, setTaxonomyNavFilter])
 
   const handleDropOnGlobalNode = useCallback((rowId: string, taxonomyId: string, nodeId: string, label: string) => {
@@ -217,25 +209,15 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
     toast.success(`Produit classé sous « ${label} »`)
   }, [sheet, activeSheetIndex, updateCell])
 
-  const hasFilters = Object.keys(taxonomyNavFilter).length > 0
+  const hasFilters = hasTaxoNav(taxonomyNavFilter)
 
   // Count total filtered rows. Quand le filtre globalTaxo est actif, on
   // élargit le scope à toutes les sheets (cohérent avec DataPage).
   const filteredCount = useMemo(() => {
     if (!sheet) return 0
-    const globalFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
-    const baseRows = globalFilter ? allRowsInBdd : sheet.rows
+    const baseRows = taxonomyNavFilter.globalNodes.length > 0 ? allRowsInBdd : sheet.rows
     if (!hasFilters) return baseRows.length
-    const globalPredicate = globalFilter
-      ? buildGlobalTaxoFilterPredicate(globalFilter, taxonomies)
-      : null
-    let rows = baseRows
-    for (const [colKey, value] of Object.entries(taxonomyNavFilter)) {
-      if (colKey === GLOBAL_TAXO_FILTER_KEY) continue
-      rows = rows.filter((r) => String(r[colKey]) === value)
-    }
-    if (globalPredicate) rows = rows.filter(globalPredicate)
-    return rows.length
+    return baseRows.filter(buildTaxoNavPredicate(taxonomyNavFilter, taxonomies)).length
   }, [sheet, allRowsInBdd, taxonomyNavFilter, hasFilters, taxonomies])
 
   const noColumnTree = !sheet || taxoCols.length === 0
@@ -282,42 +264,48 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
         </div>
       </div>
 
-      {/* Breadcrumb */}
+      {/* Pastilles des sélections (multi) — clic = retirer le filtre */}
       {hasFilters && (
         <div className="px-3 py-2 border-b border-white/[0.06] flex items-center gap-1 flex-wrap">
-          {taxoCols.map(({ col, color }) => {
-            const selected = taxonomyNavFilter[col.key]
-            if (!selected) return null
+          {taxonomyNavFilter.paths.map((path) => {
+            const orderedValues = taxoCols
+              .filter(({ col }) => path[col.key] !== undefined)
+              .map(({ col }) => path[col.key])
+            const color = getLevelColor(orderedValues.length)
+            const key = orderedValues.join('›')
             return (
-              <span key={col.key} className="flex items-center gap-1">
-                <span
-                  className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: `${color}20`, color }}
-                >
-                  {selected}
-                </span>
-                <ChevronRight className="w-2.5 h-2.5 text-white/20" />
-              </span>
+              <button
+                key={key}
+                onClick={() => setTaxonomyNavFilter(togglePath(taxonomyNavFilter, path))}
+                title="Retirer ce filtre"
+                className="text-[10px] font-medium px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                style={{ backgroundColor: `${color}20`, color }}
+              >
+                {orderedValues.join(' › ')}
+                <X className="w-2.5 h-2.5" />
+              </button>
             )
           })}
-          {globalFilterDecoded && (() => {
-            const tax = taxonomies?.find((t) => t.id === globalFilterDecoded.taxonomyId)
-            const node = tax?.nodes[globalFilterDecoded.nodeId]
-            if (!tax || !node) return null
+          {taxonomyNavFilter.globalNodes.map((encoded) => {
+            const decoded = decodeGlobalTaxoFilter(encoded)
+            const tax = decoded ? taxonomies?.find((t) => t.id === decoded.taxonomyId) : undefined
+            const node = decoded ? tax?.nodes[decoded.nodeId] : undefined
+            if (!node) return null
             const color = getLevelColor(node.level + 1)
             return (
-              <span className="flex items-center gap-1">
-                <span
-                  className="text-[10px] font-medium px-1.5 py-0.5 rounded-full inline-flex items-center gap-1"
-                  style={{ backgroundColor: `${color}20`, color }}
-                >
-                  <Layers className="w-2.5 h-2.5" />
-                  {node.label}
-                </span>
-                <ChevronRight className="w-2.5 h-2.5 text-white/20" />
-              </span>
+              <button
+                key={encoded}
+                onClick={() => setTaxonomyNavFilter(toggleGlobalNode(taxonomyNavFilter, encoded))}
+                title="Retirer ce filtre"
+                className="text-[10px] font-medium px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                style={{ backgroundColor: `${color}20`, color }}
+              >
+                <Layers className="w-2.5 h-2.5" />
+                {node.label}
+                <X className="w-2.5 h-2.5" />
+              </button>
             )
-          })()}
+          })}
           <span className="text-[10px] text-white/30 flex items-center gap-1">
             <Package className="w-2.5 h-2.5" />
             {filteredCount}
@@ -357,9 +345,7 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
                 key={taxonomy.id}
                 taxonomy={taxonomy}
                 leafCounts={leafCounts}
-                selectedNodeId={
-                  globalFilterDecoded?.taxonomyId === taxonomy.id ? globalFilterDecoded.nodeId : null
-                }
+                selectedNodeIds={globalSelectedByTaxo.get(taxonomy.id)}
                 autoExpandNodeIds={autoExpandByTaxoId.get(taxonomy.id)}
                 onSelect={(nodeId) => handleSelectGlobalNode(taxonomy.id, nodeId)}
                 onDropRow={(rowId, nodeId, label) => handleDropOnGlobalNode(rowId, taxonomy.id, nodeId, label)}
@@ -381,7 +367,7 @@ function nodeKey(node: TreeNode): string {
 
 interface TreeLevelProps {
   nodes: TreeNode[]
-  onSelect: (colKey: string, value: string, level: number) => void
+  onSelect: (node: TreeNode) => void
   dropTargetKey: string | null
   setDropTargetKey: (k: string | null) => void
   onDropRow: (rowId: string, node: TreeNode) => void
@@ -399,7 +385,7 @@ function TreeLevel({ nodes, onSelect, dropTargetKey, setDropTargetKey, onDropRow
         return (
         <div key={node.value}>
           <button
-            onClick={() => onSelect(node.colKey, node.value, node.level)}
+            onClick={() => onSelect(node)}
             onDragOver={(e) => {
               if (!e.dataTransfer.types.includes('application/x-product-row')) return
               e.preventDefault()
@@ -431,9 +417,9 @@ function TreeLevel({ nodes, onSelect, dropTargetKey, setDropTargetKey, onDropRow
               ...(isDropTarget ? { backgroundColor: `${node.color}20`, boxShadow: `inset 0 0 0 2px ${node.color}` } : {}),
             }}
           >
-            {/* Expand/collapse indicator */}
+            {/* Expand/collapse indicator (déplié = sélectionné OU ancêtre d'une sélection) */}
             <span className="w-3.5 shrink-0 flex items-center justify-center">
-              {node.isSelected ? (
+              {node.isExpanded ? (
                 <ChevronDown className="w-3 h-3" style={{ color: node.color }} />
               ) : (
                 <ChevronRight className="w-3 h-3 text-white/15 group-hover:text-white/30" />
@@ -454,7 +440,7 @@ function TreeLevel({ nodes, onSelect, dropTargetKey, setDropTargetKey, onDropRow
               }`}
               style={{
                 fontSize: node.level === 1 ? '13px' : node.level === 2 ? '12px' : '11px',
-                color: node.isSelected ? node.color : node.level === 1 ? 'rgb(var(--base) / 0.7)' : 'rgb(var(--base) / 0.5)',
+                color: node.isSelected || node.isExpanded ? node.color : node.level === 1 ? 'rgb(var(--base) / 0.7)' : 'rgb(var(--base) / 0.5)',
               }}
             >
               {node.value}
@@ -493,7 +479,8 @@ interface GlobalTaxoSubtreeProps {
   taxonomy: Taxonomy
   /** nodeId direct → nb de produits liés (sans descendance) */
   leafCounts: Map<string, number>
-  selectedNodeId: string | null
+  /** Nœuds sélectionnés dans CETTE taxonomie (multi-sélection). */
+  selectedNodeIds?: Set<string>
   /** nodeIds dont le chemin doit être auto-expand (rows de la sheet active
    *  liées à cette taxo) — ouvre la nav vers les classifications du source. */
   autoExpandNodeIds?: Set<string>
@@ -512,7 +499,7 @@ interface GlobalTaxoTreeNode {
 }
 
 function GlobalTaxoSubtree({
-  taxonomy, leafCounts, selectedNodeId, autoExpandNodeIds, onSelect, onDropRow, dropTargetKey, setDropTargetKey,
+  taxonomy, leafCounts, selectedNodeIds, autoExpandNodeIds, onSelect, onDropRow, dropTargetKey, setDropTargetKey,
 }: GlobalTaxoSubtreeProps) {
   // Calcule les counts cumulatifs (un nœud agrège lui-même + descendants directement liés)
   // et restreint l'arbre aux nœuds qui ont au moins 1 produit (ou sont sur un chemin
@@ -541,11 +528,11 @@ function GlobalTaxoSubtree({
     }
     for (const id of keepIds) computeCumul(id)
 
-    // 3) Auto-expand : chemin du nœud sélectionné + chemins des nœuds liés
-    //    aux rows de la sheet active (auto-révèle la classification du source).
+    // 3) Auto-expand : chemins des nœuds sélectionnés (multi) + chemins des nœuds
+    //    liés aux rows de la sheet active (auto-révèle la classification du source).
     const expandedIds = new Set<string>()
-    if (selectedNodeId) {
-      for (const id of findPath(allNodes, selectedNodeId)) expandedIds.add(id)
+    for (const nodeId of selectedNodeIds ?? []) {
+      for (const id of findPath(allNodes, nodeId)) expandedIds.add(id)
     }
     if (autoExpandNodeIds) {
       for (const nodeId of autoExpandNodeIds) {
@@ -561,14 +548,14 @@ function GlobalTaxoSubtree({
         .map((node) => ({
           node,
           count: cumulCounts.get(node.id) ?? 0,
-          isSelected: selectedNodeId === node.id,
+          isSelected: selectedNodeIds?.has(node.id) ?? false,
           isExpanded: expandedIds.has(node.id),
           children: expandedIds.has(node.id) ? buildBranch(node.id) : [],
         }))
     }
 
     return buildBranch(null)
-  }, [taxonomy, leafCounts, selectedNodeId, autoExpandNodeIds])
+  }, [taxonomy, leafCounts, selectedNodeIds, autoExpandNodeIds])
 
   if (tree.length === 0) return null
 

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { ExcelSheet, ExcelColumn, ExcelRow, TaxonomyCategory, TaxonomyTag, TaxonomyLevelMap, FieldTypeId } from '@/features/excel/types'
+import { EMPTY_TAXO_NAV, type TaxoNavSelection } from '@/features/excel/taxoNavSelection'
 
 interface ExcelState {
   sheets: ExcelSheet[]
@@ -17,8 +18,8 @@ interface ExcelState {
   currentPath: string[]
   /** Active taxonomy filter: { colKey, value } to filter rows by taxonomy value */
   taxonomyFilter: { colKey: string; value: string } | null
-  /** Multi-level taxonomy navigation filter: map of colKey → selected value */
-  taxonomyNavFilter: Record<string, string>
+  /** Sélection multi-nœuds du navigateur de taxonomie (chemins en union). */
+  taxonomyNavFilter: TaxoNavSelection
   /** Row ID for the product sheet panel */
   sheetRowId: string | null
   /** Whether to group rows by taxonomy levels in the table */
@@ -31,7 +32,7 @@ interface ExcelState {
   setDetecting: (v: boolean) => void
   setSearchQuery: (q: string) => void
   setTaxonomyFilter: (filter: { colKey: string; value: string } | null) => void
-  setTaxonomyNavFilter: (filter: Record<string, string>) => void
+  setTaxonomyNavFilter: (filter: TaxoNavSelection) => void
   setSheetRowId: (id: string | null) => void
   setCurrentFileName: (name: string | null) => void
   setCurrentDocId: (id: string | null) => void
@@ -96,7 +97,7 @@ export const useExcelStore = create<ExcelState>((set) => ({
   currentDocId: null,
   currentPath: [],
   taxonomyFilter: null,
-  taxonomyNavFilter: {},
+  taxonomyNavFilter: EMPTY_TAXO_NAV,
   sheetRowId: null,
   groupByTaxonomy: true,
 
