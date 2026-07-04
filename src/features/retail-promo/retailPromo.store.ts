@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
-import type { PromoFieldKey } from './promoTypes'
+import type { PromoFieldKey, CustomFieldMap } from './promoTypes'
 import type { ConditionalRule } from '@/features/merge/conditionalRules'
 import { DEFAULT_PROMO_CONFIG, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId, type ElementStyle, type BlockFill, type ShapeStyle } from './RetailPromoCard'
 
@@ -10,6 +10,7 @@ interface RetailPromoState {
   rawColumns: MergeColumn[]
   rawRows: MergeRow[]
   fieldMap: Partial<Record<PromoFieldKey, string>>
+  customFields: CustomFieldMap
   sourceRef: DataSourceRef | null
   config: PromoTemplateConfig
   selectedKey: PromoBlockId | null
@@ -20,6 +21,7 @@ interface RetailPromoState {
   setStep: (step: RetailPromoState['step']) => void
   setSource: (ref: DataSourceRef, columns: MergeColumn[], rows: MergeRow[]) => void
   setFieldMap: (map: Partial<Record<PromoFieldKey, string>>) => void
+  setCustomFields: (map: CustomFieldMap) => void
   setConfig: (patch: Partial<PromoTemplateConfig>) => void
   setSelectedKey: (key: PromoBlockId | null) => void
   setCurrentIndex: (i: number) => void
@@ -40,6 +42,7 @@ const defaultState = {
   rawColumns: [] as MergeColumn[],
   rawRows: [] as MergeRow[],
   fieldMap: {} as Partial<Record<PromoFieldKey, string>>,
+  customFields: [] as CustomFieldMap,
   sourceRef: null,
   config: DEFAULT_PROMO_CONFIG,
   selectedKey: null as PromoBlockId | null,
@@ -60,6 +63,7 @@ export const useRetailPromoStore = create<RetailPromoState>()(persist((set) => (
   setStep: (step) => set({ step }),
   setSource: (sourceRef, rawColumns, rawRows) => set({ sourceRef, rawColumns, rawRows }),
   setFieldMap: (fieldMap) => set({ fieldMap }),
+  setCustomFields: (customFields) => set({ customFields }),
   setConfig: (patch) => set((s) => ({ config: { ...s.config, ...patch } })),
   setSelectedKey: (selectedKey) => set({ selectedKey }),
   setCurrentIndex: (currentIndex) => set({ currentIndex }),
@@ -95,6 +99,7 @@ export const useRetailPromoStore = create<RetailPromoState>()(persist((set) => (
   storage: createJSONStorage(() => safeSessionStorage),
   partialize: (s) => ({
     step: s.step, rawColumns: s.rawColumns, rawRows: s.rawRows, fieldMap: s.fieldMap,
+    customFields: s.customFields,
     sourceRef: s.sourceRef, config: s.config, currentIndex: s.currentIndex,
     imgOverride: s.imgOverride, textOverride: s.textOverride,
   }),
