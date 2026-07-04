@@ -25,14 +25,15 @@ export function CardStylePreview({ theme, cardStyle, fields }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   return (
     <div className="cat-page rounded-md overflow-hidden shrink-0 border border-border"
-      style={{ width: 290, ...themeVars(theme), ...cardStyleVars(cardStyle, theme) }}>
+      style={{ width: 330, ...themeVars(theme), ...cardStyleVars(cardStyle, theme) }}>
       <style>{CATALOG_CSS}</style>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12, background: 'var(--cat-bg)' }}>
         {/* Variante VEDETTE : les réglages du ruban/cadre se voient en live. */}
-        <div style={{ height: 250, display: 'grid' }}>
+        <div style={{ height: 360, display: 'grid' }}>
           <ProductCell fields={f} featured kicker="Sous-famille" size="md" cardStyle={cardStyle} />
         </div>
-        <div style={{ height: 118, display: 'grid' }}>
+        {/* Variante horizontale (grilles denses) : assez haute pour ne pas couper prix/réf. */}
+        <div style={{ height: 190, display: 'grid' }}>
           <ProductCell fields={f} featured={false} kicker="Sous-famille" size="md" horizontal cardStyle={cardStyle} />
         </div>
       </div>
