@@ -47,6 +47,17 @@ describe('cardStyleVars', () => {
     expect(v['--cat-s-sticker']).toBe('1.3')
   })
 
+  it('vedette : échelle, police, couleur/dégradé du ruban, cadre UNI (border-color sans dégradé)', () => {
+    const v = vars({ vedetteScale: 1.3, vedetteFont: 'Jura', vedetteBg: '#111111', vedetteBg2: '#222222' })
+    expect(v['--cat-s-vedette']).toBe('1.3')
+    expect(v['--cat-font-vedette']).toBe("'Jura', sans-serif")
+    expect(v['--cat-vedette-bg']).toBe('linear-gradient(135deg, #111111, #222222)')
+    expect(v['--cat-vedette-ink']).toBe('#111111')
+    // Défauts : rien n'est émis (ruban/cadre retombent sur l'accent du thème).
+    expect(vars({})['--cat-vedette-bg']).toBeUndefined()
+    expect(vars({})['--cat-vedette-ink']).toBeUndefined()
+  })
+
   it("taille de l'image : largeur de colonne et marge du visuel", () => {
     const v = vars({ imageShare: 50, imagePad: 4 })
     expect(v['--cat-img-share']).toBe('50%')

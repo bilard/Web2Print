@@ -67,6 +67,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-s-unit': s.unitScale !== 1 ? String(s.unitScale) : undefined,
     '--cat-s-promo': s.promoScale !== 1 ? String(s.promoScale) : undefined,
     '--cat-s-sticker': s.stickerScale !== 1 ? String(s.stickerScale) : undefined,
+    '--cat-s-vedette': s.vedetteScale !== 1 ? String(s.vedetteScale) : undefined,
     '--cat-font-name': font(s.nameFont),
     '--cat-font-desc': font(s.descFont),
     '--cat-font-price': font(s.priceFont),
@@ -75,11 +76,15 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-font-unit': font(s.unitFont),
     '--cat-font-promo': font(s.promoFont),
     '--cat-font-sticker': font(s.stickerFont),
+    '--cat-font-vedette': font(s.vedetteFont),
     '--cat-promo-bg': bg(s.promoBg, s.promoBg2, theme.accent),
     '--cat-sticker-bg': bg(s.stickerBg, s.stickerBg2, theme.accent),
     '--cat-price-bg': bg(s.priceBg, s.priceBg2, theme.accent),
     '--cat-was-bg': bg(s.wasBg, s.wasBg2, theme.headerBg),
     '--cat-kicker-bg': bg(s.kickerBg, s.kickerBg2, theme.headerBg),
+    '--cat-vedette-bg': bg(s.vedetteBg, s.vedetteBg2, theme.accent),
+    // Cadre + nom de la fiche vedette : couleur UNIE (border-color n'accepte pas de dégradé).
+    '--cat-vedette-ink': s.vedetteBg || undefined,
     '--cat-name-ink': s.nameColor || undefined,
     '--cat-cell-radius': s.radius !== 6 ? `${s.radius}px` : undefined,
     '--cat-img-share': s.imageShare !== 40 ? `${s.imageShare}%` : undefined,
@@ -213,14 +218,16 @@ export const CATALOG_CSS = `
 .cat-hz.cat-md .cat-price-sticker { width:calc(34px * var(--cat-s-sticker,1)); height:calc(34px * var(--cat-s-sticker,1)); font-size:calc(10px * var(--cat-s-sticker,1)); top:auto; bottom:6px; right:6px; }
 .cat-hz.cat-md .cat-cell-img-in { top:var(--cat-img-pad,8px); left:var(--cat-img-pad,8px); right:var(--cat-img-pad,8px); bottom:var(--cat-img-pad,8px); }
 
-/* Vedette : mise en avant AU SEIN de la page — cadre accent + ruban en coin */
-.cat-featured { border:2px solid var(--cat-accent); border-bottom:6px solid var(--cat-accent);
+/* Vedette : mise en avant AU SEIN de la page — cadre accent + ruban en coin.
+   Personnalisable (Style des fiches) : couleur/dégradé, taille, police, texte. */
+.cat-featured { border:2px solid var(--cat-vedette-ink,var(--cat-accent)); border-bottom:6px solid var(--cat-vedette-ink,var(--cat-accent));
   box-shadow:0 6px 20px rgba(0,0,0,.12); }
-.cat-featured .cat-cell-name { color:var(--cat-accent); }
+.cat-featured .cat-cell-name { color:var(--cat-vedette-ink,var(--cat-accent)); }
 .cat-cell-vedette { position:absolute; top:16px; right:-34px; transform:rotate(45deg); z-index:1;
-  background:var(--cat-accent); color:#fff; font-family:var(--cat-font-h); font-weight:800; font-size:10px;
-  letter-spacing:.16em; text-transform:uppercase; padding:5px 42px; }
-.cat-xl .cat-cell-vedette { top:22px; right:-30px; font-size:12px; }
+  background:var(--cat-vedette-bg,var(--cat-accent)); color:#fff; font-family:var(--cat-font-vedette,var(--cat-font-h)); font-weight:800;
+  font-size:calc(10px * var(--cat-s-vedette,1)); letter-spacing:.16em; text-transform:uppercase;
+  padding:calc(5px * var(--cat-s-vedette,1)) 42px; }
+.cat-xl .cat-cell-vedette { top:22px; right:-30px; font-size:calc(12px * var(--cat-s-vedette,1)); }
 
 /* ── Couverture ─────────────────────────────────────────────────────── */
 .cat-cover { flex:1; display:flex; flex-direction:column; justify-content:flex-end; padding:0;

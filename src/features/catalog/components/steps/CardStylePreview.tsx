@@ -28,8 +28,9 @@ export function CardStylePreview({ theme, cardStyle, fields }: Props) {
       style={{ width: 290, ...themeVars(theme), ...cardStyleVars(cardStyle, theme) }}>
       <style>{CATALOG_CSS}</style>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12, background: 'var(--cat-bg)' }}>
+        {/* Variante VEDETTE : les réglages du ruban/cadre se voient en live. */}
         <div style={{ height: 250, display: 'grid' }}>
-          <ProductCell fields={f} featured={false} kicker="Sous-famille" size="md" cardStyle={cardStyle} />
+          <ProductCell fields={f} featured kicker="Sous-famille" size="md" cardStyle={cardStyle} />
         </div>
         <div style={{ height: 118, display: 'grid' }}>
           <ProductCell fields={f} featured={false} kicker="Sous-famille" size="md" horizontal cardStyle={cardStyle} />

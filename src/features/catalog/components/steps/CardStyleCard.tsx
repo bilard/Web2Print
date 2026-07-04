@@ -16,13 +16,14 @@ interface CardStyleCardProps {
   sampleFields?: PromoFields | null
 }
 
-const VISIBILITY: { key: keyof Pick<CatalogCardStyle, 'showPromo' | 'showSticker' | 'showKicker' | 'showDesc' | 'showRef' | 'showUnit'>; label: string }[] = [
+const VISIBILITY: { key: keyof Pick<CatalogCardStyle, 'showPromo' | 'showSticker' | 'showKicker' | 'showDesc' | 'showRef' | 'showUnit' | 'showVedette'>; label: string }[] = [
   { key: 'showPromo', label: 'Cartouche promo' },
   { key: 'showSticker', label: 'Sticker remise' },
   { key: 'showKicker', label: 'Sous-famille' },
   { key: 'showDesc', label: 'Description' },
   { key: 'showRef', label: 'Référence' },
   { key: 'showUnit', label: 'Unité' },
+  { key: 'showVedette', label: 'Ruban vedette' },
 ]
 
 export function CardStyleCard({ plan, setPlan, sampleFields }: CardStyleCardProps) {
@@ -49,7 +50,7 @@ export function CardStyleCard({ plan, setPlan, sampleFields }: CardStyleCardProp
           <CardStyleColors style={style} theme={plan.theme} patch={patch} />
           <div>
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Éléments affichés</div>
-            <div className="flex flex-wrap gap-x-4 gap-y-2">
+            <div className="flex flex-wrap gap-x-4 gap-y-2 items-center">
               {VISIBILITY.map(({ key, label }) => (
                 <label key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
                   <input type="checkbox" checked={style[key]} onChange={(e) => patch({ [key]: e.target.checked } as Partial<CatalogCardStyle>)}
@@ -57,6 +58,11 @@ export function CardStyleCard({ plan, setPlan, sampleFields }: CardStyleCardProp
                   {label}
                 </label>
               ))}
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                Texte du ruban
+                <input value={style.vedetteLabel} onChange={(e) => patch({ vedetteLabel: e.target.value })} placeholder="Vedette"
+                  className="w-28 px-2 py-1 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600" />
+              </label>
             </div>
           </div>
         </div>

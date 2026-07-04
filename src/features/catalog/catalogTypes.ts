@@ -71,6 +71,8 @@ export interface CatalogCardStyle {
   promoScale: number
   /** Échelle du sticker de remise (pastille ET texte). */
   stickerScale: number
+  /** Échelle du ruban « Vedette » (texte + hauteur). */
+  vedetteScale: number
   /** Polices par champ ('' = hérite du thème : titres pour nom/prix/cartouche, texte sinon). */
   nameFont: string
   descFont: string
@@ -80,6 +82,7 @@ export interface CatalogCardStyle {
   unitFont: string
   promoFont: string
   stickerFont: string
+  vedetteFont: string
   /** Couleurs des objets ('' = hérite du thème). */
   promoBg: string
   stickerBg: string
@@ -87,12 +90,17 @@ export interface CatalogCardStyle {
   wasBg: string
   kickerBg: string
   nameColor: string
+  /** Couleur de la vedette (ruban + cadre + nom de la fiche vedette). */
+  vedetteBg: string
   /** Fins de dégradé ('' = couleur unie) — combinées à la couleur de base de l'objet. */
   promoBg2: string
   stickerBg2: string
   priceBg2: string
   wasBg2: string
   kickerBg2: string
+  vedetteBg2: string
+  /** Texte du ruban vedette. */
+  vedetteLabel: string
   /** Angle commun des dégradés (deg). */
   gradientAngle: number
   /** Rayon des cartes (px). */
@@ -108,16 +116,18 @@ export interface CatalogCardStyle {
   showSticker: boolean
   showKicker: boolean
   showPromo: boolean
+  showVedette: boolean
 }
 
 export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
-  nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1, stickerScale: 1,
-  nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '', stickerFont: '',
-  promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '',
-  promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '',
+  nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1, stickerScale: 1, vedetteScale: 1,
+  nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '', stickerFont: '', vedetteFont: '',
+  promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '', vedetteBg: '',
+  promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '', vedetteBg2: '',
+  vedetteLabel: 'Vedette',
   gradientAngle: 135,
   radius: 6, imageShare: 40, imagePad: 12,
-  showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true,
+  showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true, showVedette: true,
 }
 
 /**
