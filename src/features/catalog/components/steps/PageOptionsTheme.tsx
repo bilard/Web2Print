@@ -35,7 +35,7 @@ export function PageOptionsTheme({ plan, setPlan, chapterColor }: Props) {
       <OptSection title="Thème graphique — couleurs">
         <div className="flex flex-wrap gap-2">
           {THEME_COLORS.map(({ key, label }) => (
-            <label key={key} className="flex flex-col items-center gap-1 text-[10px] text-muted-foreground">
+            <label key={key} className="flex flex-col items-center gap-1 text-[10px] text-white/40">
               {label}
               {key === 'headerBg' && style.chapterColors && chapterColor ? (
                 /* Couleurs par chapitre actives : la pastille montre la couleur du CHAPITRE affiché. */
@@ -55,7 +55,7 @@ export function PageOptionsTheme({ plan, setPlan, chapterColor }: Props) {
       <OptSection title="Polices">
         <div className="grid grid-cols-2 gap-2">
           {(['fontHeading', 'fontBody'] as const).map((key) => (
-            <label key={key} className="flex flex-col gap-1 text-xs text-muted-foreground">
+            <label key={key} className="flex flex-col gap-1 text-xs text-white/40">
               {key === 'fontHeading' ? 'Titres' : 'Texte'}
               <select value={theme[key]} onChange={(e) => setFont(key, e.target.value)} className={optFieldClass}>
                 <FontSelectOptions />
