@@ -92,6 +92,8 @@ export interface CatalogCardStyle {
   nameColor: string
   /** Couleur de la vedette (ruban + cadre + nom de la fiche vedette). */
   vedetteBg: string
+  /** Couleur du BADGE PRIX des fiches vedette ('' = couleur prix standard). */
+  vedettePriceBg: string
   /** Fins de dégradé ('' = couleur unie) — combinées à la couleur de base de l'objet. */
   promoBg2: string
   stickerBg2: string
@@ -99,6 +101,7 @@ export interface CatalogCardStyle {
   wasBg2: string
   kickerBg2: string
   vedetteBg2: string
+  vedettePriceBg2: string
   /** Texte du ruban vedette. */
   vedetteLabel: string
   /** Angle commun des dégradés (deg). */
@@ -122,8 +125,8 @@ export interface CatalogCardStyle {
 export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1, stickerScale: 1, vedetteScale: 1,
   nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '', stickerFont: '', vedetteFont: '',
-  promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '', vedetteBg: '',
-  promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '', vedetteBg2: '',
+  promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '', vedetteBg: '', vedettePriceBg: '',
+  promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '', vedetteBg2: '', vedettePriceBg2: '',
   vedetteLabel: 'Vedette',
   gradientAngle: 135,
   radius: 6, imageShare: 40, imagePad: 12,

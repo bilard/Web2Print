@@ -56,7 +56,10 @@ export function StepPrompt() {
           return `${id} — ${f?.name ?? id}`
         })
       }
-      setPlan(await generateCatalogPlan(prompt, { catalogName: name, tree, sampleNames }))
+      // `plan` courant transmis : régénérer PRÉSERVE les réglages manuels (style
+      // des fiches, fonds de page, couleurs de chapitres) — l'IA n'écrase que ce
+      // qu'elle renvoie explicitement.
+      setPlan(await generateCatalogPlan(prompt, { catalogName: name, tree, sampleNames }, plan))
       toast.success('Plan généré — ajustez-le librement ci-dessous')
     } catch (e) {
       setPlan(defaultCatalogPlan(tree, name))

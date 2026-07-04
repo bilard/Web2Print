@@ -4,7 +4,7 @@
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
 import { FONT_OPTIONS } from '@/features/retail-promo/RetailPromoCard'
-import { CATALOG_GRIDS, type CatalogGrid, type CatalogPlan, type CatalogTreeNode } from './catalogTypes'
+import { CATALOG_GRIDS, DEFAULT_CARD_STYLE, type CatalogCardStyle, type CatalogGrid, type CatalogPlan, type CatalogSectionPlan, type CatalogTreeNode } from './catalogTypes'
 import { flattenTree, subtreeProductCount } from './catalogTree'
 
 const ThemeSchema = z.object({
@@ -17,12 +17,20 @@ const SectionSchema = z.object({
   productsPerPage: z.number(),
   featuredIds: z.array(z.string()).optional(),
 })
+/** Couleurs des OBJETS des fiches pilotables par le prompt (sous-ensemble sûr de CatalogCardStyle). */
+const CardStyleAISchema = z.object({
+  promoBg: z.string().optional(), stickerBg: z.string().optional(), priceBg: z.string().optional(),
+  wasBg: z.string().optional(), kickerBg: z.string().optional(), nameColor: z.string().optional(),
+  vedetteBg: z.string().optional(), vedettePriceBg: z.string().optional(), vedetteLabel: z.string().optional(),
+}).optional()
+
 const PlanSchema = z.object({
   theme: ThemeSchema,
   sections: z.array(SectionSchema),
   cover: z.object({ title: z.string(), subtitle: z.string().optional(), baseline: z.string().optional(), imagePrompt: z.string() }),
   backCover: z.object({ title: z.string(), text: z.string() }),
   tocTitle: z.string(),
+  cardStyle: CardStyleAISchema,
 })
 export type RawCatalogPlan = z.infer<typeof PlanSchema>
 
@@ -70,6 +78,21 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
       required: ['title', 'text'],
     },
     tocTitle: { type: 'string' },
+    cardStyle: {
+      type: 'object',
+      description: "OPTIONNEL — style des fiches produit : ne renvoyer QUE si la demande porte explicitement dessus (couleurs d'objets, vedettes…). Hex #rrggbb.",
+      properties: {
+        promoBg: { type: 'string', description: 'hex cartouche promo' },
+        stickerBg: { type: 'string', description: 'hex sticker de remise' },
+        priceBg: { type: 'string', description: 'hex badge prix (toutes fiches)' },
+        wasBg: { type: 'string', description: 'hex bloc prix barré' },
+        kickerBg: { type: 'string', description: 'hex pastille sous-famille' },
+        nameColor: { type: 'string', description: 'hex du nom produit' },
+        vedetteBg: { type: 'string', description: 'hex ruban + cadre des fiches VEDETTE' },
+        vedettePriceBg: { type: 'string', description: 'hex badge prix des fiches VEDETTE uniquement' },
+        vedetteLabel: { type: 'string', description: 'texte du ruban vedette (ex. « Coup de cœur »)' },
+      },
+    },
   },
   required: ['theme', 'sections', 'cover', 'backCover', 'tocTitle'],
 }
@@ -128,11 +151,29 @@ export function defaultCatalogPlan(tree: CatalogTreeNode[], catalogName: string)
   }
 }
 
-/** Valide le plan IA contre l'arbre réel : grilles clampées, ids inconnus filtrés, sections manquantes complétées. */
-export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[], catalogName: string): CatalogPlan {
+/** Couleurs IA validées (hex strict) + texte du ruban borné — ignore tout le reste. */
+function sanitizeAICardStyle(raw: RawCatalogPlan['cardStyle']): Partial<CatalogCardStyle> {
+  if (!raw) return {}
+  const out: Partial<CatalogCardStyle> = {}
+  const HEX_KEYS = ['promoBg', 'stickerBg', 'priceBg', 'wasBg', 'kickerBg', 'nameColor', 'vedetteBg', 'vedettePriceBg'] as const
+  for (const k of HEX_KEYS) {
+    const v = raw[k]
+    if (v && HEX_RE.test(v)) out[k] = v
+  }
+  if (raw.vedetteLabel?.trim()) out.vedetteLabel = raw.vedetteLabel.trim().slice(0, 24)
+  return out
+}
+
+/**
+ * Valide le plan IA contre l'arbre réel : grilles clampées, ids inconnus filtrés,
+ * sections manquantes complétées. `current` = plan AVANT régénération : les
+ * réglages manuels (style des fiches, fonds de page, couleurs de chapitres,
+ * modèle appliqué) sont PRÉSERVÉS — l'IA ne remplace que ce qu'elle renvoie.
+ */
+export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[], catalogName: string, current?: CatalogPlan | null): CatalogPlan {
   const valid = nodesWithProducts(tree)
   const productsByNode = new Map(valid.map((n) => [n.id, new Set(n.productIds)]))
-  const sections = raw.sections
+  const sections: CatalogSectionPlan[] = raw.sections
     .filter((s) => productsByNode.has(s.nodeId))
     .map((s) => ({
       nodeId: s.nodeId,
@@ -157,13 +198,27 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
       s.featuredIds = kept
     }
   }
+  // Couleurs de chapitre choisies manuellement : recopiées sur les sections régénérées.
+  if (current) {
+    const prevColor = new Map(current.sections.filter((s) => s.color).map((s) => [s.nodeId, s.color as string]))
+    for (const s of sections) {
+      const color = prevColor.get(s.nodeId)
+      if (color) s.color = color
+    }
+  }
+  const aiCardStyle = sanitizeAICardStyle(raw.cardStyle)
+  const hasCardStyle = current?.cardStyle || Object.keys(aiCardStyle).length > 0
   return {
     theme: sanitizeTheme(raw.theme),
-    sizeByPrice: true,
+    sizeByPrice: current?.sizeByPrice ?? true,
     sections,
     cover: { title: raw.cover.title || catalogName, subtitle: raw.cover.subtitle ?? '', baseline: raw.cover.baseline ?? '', imagePrompt: raw.cover.imagePrompt },
     backCover: raw.backCover,
     tocTitle: raw.tocTitle || 'Sommaire',
+    // Réglages manuels préservés ; les couleurs demandées au prompt s'appliquent par-dessus.
+    ...(hasCardStyle ? { cardStyle: { ...DEFAULT_CARD_STYLE, ...current?.cardStyle, ...aiCardStyle } } : {}),
+    ...(current?.pageStyle ? { pageStyle: current.pageStyle } : {}),
+    ...(current?.appliedTemplate ? { appliedTemplate: current.appliedTemplate } : {}),
   }
 }
 
@@ -175,7 +230,7 @@ export interface CatalogPlanContext {
 }
 
 /** Appelle l'IA (cascade + retry Zod gérés par llmRouter). L'appelant gère le repli defaultCatalogPlan. */
-export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext): Promise<CatalogPlan> {
+export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext, current?: CatalogPlan | null): Promise<CatalogPlan> {
   const treeDesc = flattenTree(ctx.tree)
     .map((n) => {
       const samples = ctx.sampleNames[n.id]?.length ? ` — ex. ${ctx.sampleNames[n.id].join(' ; ')}` : ''
@@ -192,9 +247,10 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
       `Produis un plan complet : thème (couleurs hex cohérentes avec la demande, polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')}), ` +
       `une section par nodeId — la densité (productsPerPage parmi ${CATALOG_GRIDS.join('/')}) ne compte que sur les nœuds de NIVEAU 1 (flux continu : les produits des sous-familles remplissent les pages sans vide) : choisis DENSE (4 à 8/page), jamais 1-2 sauf univers premium très court. 0-2 produits vedette par section ` +
       `choisis parmi les exemples (renvoie l'id AVANT le tiret), textes de couverture et 4e de couverture en FRANÇAIS, ` +
-      `et un imagePrompt de couverture en anglais (photo réaliste, sans texte).\n\nDemande : ${brief}`,
+      `et un imagePrompt de couverture en anglais (photo réaliste, sans texte). ` +
+      `Si la demande porte sur le STYLE DES FICHES (couleur du prix, du cartouche, des vedettes, texte du ruban…), renvoie aussi cardStyle avec UNIQUEMENT les clés concernées.\n\nDemande : ${brief}`,
     schema: PlanSchema,
     schemaForLLM: SCHEMA_FOR_LLM,
   })
-  return sanitizeCatalogPlan(raw, ctx.tree, ctx.catalogName)
+  return sanitizeCatalogPlan(raw, ctx.tree, ctx.catalogName, current)
 }

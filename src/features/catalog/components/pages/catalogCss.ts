@@ -85,6 +85,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-vedette-bg': bg(s.vedetteBg, s.vedetteBg2, theme.accent),
     // Cadre + nom de la fiche vedette : couleur UNIE (border-color n'accepte pas de dégradé).
     '--cat-vedette-ink': s.vedetteBg || undefined,
+    '--cat-vedette-price-bg': bg(s.vedettePriceBg, s.vedettePriceBg2, theme.accent),
     '--cat-name-ink': s.nameColor || undefined,
     '--cat-cell-radius': s.radius !== 6 ? `${s.radius}px` : undefined,
     '--cat-img-share': s.imageShare !== 40 ? `${s.imageShare}%` : undefined,
@@ -223,6 +224,7 @@ export const CATALOG_CSS = `
 .cat-featured { border:2px solid var(--cat-vedette-ink,var(--cat-accent)); border-bottom:6px solid var(--cat-vedette-ink,var(--cat-accent));
   box-shadow:0 6px 20px rgba(0,0,0,.12); }
 .cat-featured .cat-cell-name { color:var(--cat-vedette-ink,var(--cat-accent)); }
+.cat-featured .cat-cell-price { background:var(--cat-vedette-price-bg,var(--cat-price-bg,var(--cat-accent))); }
 .cat-cell-vedette { position:absolute; top:16px; right:-34px; transform:rotate(45deg); z-index:1;
   background:var(--cat-vedette-bg,var(--cat-accent)); color:#fff; font-family:var(--cat-font-vedette,var(--cat-font-h)); font-weight:800;
   font-size:calc(10px * var(--cat-s-vedette,1)); letter-spacing:.16em; text-transform:uppercase;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { CatalogTreeNode } from './catalogTypes'
+import { DEFAULT_CARD_STYLE, DEFAULT_PAGE_STYLE, type CatalogTreeNode } from './catalogTypes'
 import { defaultCatalogPlan, sanitizeCatalogPlan } from './catalogPlan'
 
 const node = (id: string, label: string, level: 1 | 2 | 3, productIds: string[] = [], children: CatalogTreeNode[] = []): CatalogTreeNode =>
@@ -78,5 +78,39 @@ describe('sanitizeCatalogPlan', () => {
     expect(plan.theme.pageBg).toBe('#ffffff')
     // Les couleurs hex valides restent inchangées.
     expect(plan.theme.accent).toBe('#e11d48')
+  })
+
+  it('RÉGÉNÉRATION : préserve les réglages manuels du plan courant (cardStyle, pageStyle, couleurs de chapitre, modèle appliqué)', () => {
+    const current = {
+      ...defaultCatalogPlan(tree, 'X'),
+      cardStyle: { ...DEFAULT_CARD_STYLE, priceBg: '#00ff00', vedetteLabel: 'Top' },
+      pageStyle: { ...DEFAULT_PAGE_STYLE, chapterColors: true },
+      appliedTemplate: 'Standard',
+      sizeByPrice: false,
+    }
+    current.sections[0].color = '#123456'
+    const plan = sanitizeCatalogPlan(raw, tree, 'X', current)
+    expect(plan.cardStyle?.priceBg).toBe('#00ff00')
+    expect(plan.cardStyle?.vedetteLabel).toBe('Top')
+    expect(plan.pageStyle?.chapterColors).toBe(true)
+    expect(plan.appliedTemplate).toBe('Standard')
+    expect(plan.sizeByPrice).toBe(false)
+    expect(plan.sections.find((s) => s.nodeId === 'a')?.color).toBe('#123456')
+  })
+
+  it('cardStyle IA : hex valides appliqués PAR-DESSUS le style courant, valeurs invalides ignorées, label borné', () => {
+    const current = { ...defaultCatalogPlan(tree, 'X'), cardStyle: { ...DEFAULT_CARD_STYLE, promoBg: '#111111' } }
+    const plan = sanitizeCatalogPlan({
+      ...raw,
+      cardStyle: { vedettePriceBg: '#ffd700', priceBg: 'jaune', vedetteLabel: '  Coup de cœur  ' },
+    }, tree, 'X', current)
+    expect(plan.cardStyle?.vedettePriceBg).toBe('#ffd700') // « met en jaune les prix des Vedettes »
+    expect(plan.cardStyle?.priceBg).toBe('') // 'jaune' n'est pas un hex → ignoré (défaut conservé)
+    expect(plan.cardStyle?.promoBg).toBe('#111111') // réglage manuel préservé
+    expect(plan.cardStyle?.vedetteLabel).toBe('Coup de cœur')
+  })
+
+  it("sans plan courant ni cardStyle IA, le plan reste SANS cardStyle (pas d'objet fantôme)", () => {
+    expect(sanitizeCatalogPlan(raw, tree, 'X').cardStyle).toBeUndefined()
   })
 })
