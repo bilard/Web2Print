@@ -44,9 +44,9 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
     <aside className="w-80 shrink-0 border-l border-border bg-surface overflow-y-auto">
       <div className="p-3 space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-white">Fond de page <span className="text-xs font-normal text-muted-foreground">— {KIND_TITLES[page.kind]}</span></h3>
+          <h3 className="text-sm font-semibold text-white">Fond de page <span className="text-xs font-normal text-white/40">— {KIND_TITLES[page.kind]}</span></h3>
           <button type="button" onClick={() => setPlan({ ...plan, pageStyle: { ...DEFAULT_PAGE_STYLE } })}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-white hover:bg-surface-2" title="Revenir aux éléments par défaut">
+            className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-well" title="Revenir aux éléments par défaut">
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -94,7 +94,7 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
             — permet de styler en live et de récupérer le modèle dans un autre catalogue. */}
         <PageOptionsTheme plan={plan} setPlan={setPlan} chapterColor={chapterColor} />
 
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
+        <p className="text-[11px] text-white/40 leading-relaxed">
           Réglages appliqués à toutes les pages du même type — la mise en page fluide et l'export restent préservés.
         </p>
       </div>

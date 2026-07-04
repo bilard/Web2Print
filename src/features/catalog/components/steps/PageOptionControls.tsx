@@ -2,21 +2,19 @@
 // Contrôles partagés du panneau « Fond de page » (aperçu) : section, toggle,
 // slider et champ texte — mêmes idiomes que le reste de l'app (options à droite).
 import type { ReactNode } from 'react'
+import { PropertySection } from '@/components/shared/panel'
 
-export const optFieldClass = 'w-full px-2.5 py-1.5 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600'
+export const optFieldClass = 'w-full px-2.5 py-1.5 rounded-md bg-well text-xs text-white outline-none border border-white/10 focus:border-[#6366f1]'
 
+/** Alias repliable du kit partagé — même signature `{ title, children }`, tous les
+ * appelants (PageOptionsPanel/Cover/Theme) deviennent repliables sans changer. */
 export function OptSection({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="space-y-2 border-b border-border pb-3 last:border-b-0">
-      <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{title}</h4>
-      {children}
-    </section>
-  )
+  return <PropertySection title={title}>{children}</PropertySection>
 }
 
 export function OptToggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+    <label className="flex items-center gap-2 text-xs text-white/40 cursor-pointer select-none">
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="accent-indigo-600" />
       {label}
     </label>
@@ -27,7 +25,7 @@ interface SliderProps { label: string; value: number; min: number; max: number; 
 
 export function OptSlider({ label, value, min, max, step, unit, onChange }: SliderProps) {
   return (
-    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+    <label className="flex flex-col gap-1 text-xs text-white/40">
       <span className="flex items-center justify-between">
         {label}
         <span className="tabular-nums text-white">{unit ? `${value}${unit}` : `${Math.round(value * 100)}%`}</span>
