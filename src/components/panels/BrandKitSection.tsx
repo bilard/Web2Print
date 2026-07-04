@@ -1,7 +1,7 @@
 import { X, ArrowDownToLine, ArrowUpFromLine, Loader2 } from 'lucide-react'
 import { useBrandKit } from '@/features/brandkit/useBrandKit'
 import { usePaletteStore } from '@/stores/palette.store'
-import { OptionHelp } from '@/components/shared/OptionHelp'
+import { PropertySection } from '@/components/shared/panel'
 import { toast } from 'sonner'
 
 interface BrandKitSectionProps {
@@ -37,12 +37,11 @@ export function BrandKitSection({ onProjectPaletteChange }: BrandKitSectionProps
   }
 
   return (
-    <section data-tour="opt-palette-brandkit">
-      <h4 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider mb-2">
-        Kit de marque (global)
-        <OptionHelp text="Couleurs de marque partagées entre TOUS vos projets (synchronisées avec votre compte). Importez-les dans la palette du projet en un clic, ou capturez la palette courante dans le kit." />
-      </h4>
-
+    <PropertySection
+      title="Kit de marque (global)"
+      tourId="palette-brandkit"
+      help="Couleurs de marque partagées entre TOUS vos projets (synchronisées avec votre compte). Importez-les dans la palette du projet en un clic, ou capturez la palette courante dans le kit."
+    >
       {colors === null ? (
         <div className="flex justify-center py-2">
           <Loader2 className="w-4 h-4 text-white/20 animate-spin" />
@@ -88,6 +87,6 @@ export function BrandKitSection({ onProjectPaletteChange }: BrandKitSectionProps
           <ArrowUpFromLine className="w-3 h-3" /> Depuis le projet
         </button>
       </div>
-    </section>
+    </PropertySection>
   )
 }

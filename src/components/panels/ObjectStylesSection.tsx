@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { useObjectStyles, captureStyle, applyStyle } from '@/features/brandkit/useObjectStyles'
 import { globalFabricCanvas, globalSnapshot } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
-import { OptionHelp } from '@/components/shared/OptionHelp'
+import { PropertySection } from '@/components/shared/panel'
 
 /**
  * Styles d'objets réutilisables (panneau Palette) : capture du style de la
@@ -44,12 +44,11 @@ export function ObjectStylesSection() {
   }
 
   return (
-    <section data-tour="opt-palette-styles">
-      <h4 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider mb-2">
-        Styles d'objets (global)
-        <OptionHelp text="Capturez le style d'un objet (couleurs, contour, opacité, typo) et ré-appliquez-le en un clic sur n'importe quelle sélection, dans tous vos projets." />
-      </h4>
-
+    <PropertySection
+      title="Styles d'objets (global)"
+      tourId="palette-styles"
+      help="Capturez le style d'un objet (couleurs, contour, opacité, typo) et ré-appliquez-le en un clic sur n'importe quelle sélection, dans tous vos projets."
+    >
       {styles !== null && styles.length === 0 && (
         <p className="text-[10px] text-white/20 italic py-1">Aucun style — capturez-en un depuis la sélection.</p>
       )}
@@ -107,6 +106,6 @@ export function ObjectStylesSection() {
           </button>
         )}
       </div>
-    </section>
+    </PropertySection>
   )
 }

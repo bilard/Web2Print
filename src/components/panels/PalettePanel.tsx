@@ -4,7 +4,7 @@ import { usePaletteStore, savePaletteToFirestore } from '@/stores/palette.store'
 import type { PaletteColor, PaletteGradient } from '@/stores/palette.store'
 import type { GradientConfig } from '@/stores/editor.store'
 import { gradientToCss } from '@/components/shared/GradientPicker'
-import { OptionHelp } from '@/components/shared/OptionHelp'
+import { PropertySection } from '@/components/shared/panel'
 import { BrandKitSection } from './BrandKitSection'
 import { ObjectStylesSection } from './ObjectStylesSection'
 
@@ -202,11 +202,11 @@ export function PalettePanel() {
       <ObjectStylesSection />
 
       {/* Couleurs du projet */}
-      <section data-tour="opt-palette-colors">
-        <h4 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider mb-2">
-          Couleurs du projet
-          <OptionHelp text="Vos couleurs de marque enregistrées, réutilisables en un clic sur les objets. Ajoutez-en via le champ ci-dessous ; elles sont sauvegardées avec le projet." />
-        </h4>
+      <PropertySection
+        title="Couleurs du projet"
+        tourId="palette-colors"
+        help="Vos couleurs de marque enregistrées, réutilisables en un clic sur les objets. Ajoutez-en via le champ ci-dessous ; elles sont sauvegardées avec le projet."
+      >
         <div className="flex flex-col gap-1">
           {colors.length === 0 && (
             <p className="text-[10px] text-white/20 italic py-2">Aucune couleur enregistrée</p>
@@ -218,14 +218,14 @@ export function PalettePanel() {
         <div className="mt-2">
           <AddColorForm onAdd={(color, name) => { addColor(color, name); savePaletteToFirestore() }} />
         </div>
-      </section>
+      </PropertySection>
 
       {/* Dégradés du projet */}
-      <section data-tour="opt-palette-gradients">
-        <h4 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider mb-2">
-          Dégradés du projet
-          <OptionHelp text="Vos dégradés enregistrés (linéaires/radiaux), applicables aux objets et aux fonds. Créez-en de nouveaux via le bouton ci-dessous." />
-        </h4>
+      <PropertySection
+        title="Dégradés du projet"
+        tourId="palette-gradients"
+        help="Vos dégradés enregistrés (linéaires/radiaux), applicables aux objets et aux fonds. Créez-en de nouveaux via le bouton ci-dessous."
+      >
         <div className="flex flex-col gap-1">
           {gradients.length === 0 && (
             <p className="text-[10px] text-white/20 italic py-2">Aucun dégradé enregistré</p>
@@ -237,7 +237,7 @@ export function PalettePanel() {
         <div className="mt-2">
           <AddGradientForm onAdd={(gradient, name) => { addGradient(gradient, name); savePaletteToFirestore() }} />
         </div>
-      </section>
+      </PropertySection>
 
       {/* Info */}
       <p className="text-[9px] text-white/15 leading-relaxed">
