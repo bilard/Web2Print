@@ -60,10 +60,10 @@ export function CardStyleColors({ style, theme, patch }: CardStyleColorsProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {COLORS.map((def) => <ColorObjectField key={def.key} def={def} style={style} patch={patch} />)}
       </div>
-      <div className="grid grid-cols-2 gap-4 max-w-md">
+      <div className="grid grid-cols-1 gap-3">
         {hasGradient && (
           <SliderField label="Angle du dégradé" value={style.gradientAngle} onChange={(v) => patch({ gradientAngle: v })}
             min={0} max={360} step={15} unit="°" />

@@ -10,7 +10,9 @@ import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree, flattenTree } from '../../catalogTree'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
 import { extractPromoFields } from '@/features/retail-promo/promoMapping'
+import { DEFAULT_CARD_STYLE } from '../../catalogTypes'
 import { CardStyleCard } from './CardStyleCard'
+import { CardStylePreview } from './CardStylePreview'
 import { SectionsCard } from './SectionsCard'
 import { StepActionsPortal } from './StepActionsPortal'
 
@@ -69,44 +71,57 @@ export function StepPrompt() {
     }
   }
 
+  const cardStyle = useMemo(() => ({ ...DEFAULT_CARD_STYLE, ...plan?.cardStyle }), [plan])
+
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <div className="max-w-7xl mx-auto space-y-5">
-        {/* Actions dans le HEADER des étapes : toujours visibles, même page scrollée */}
-        <StepActionsPortal>
-          <button onClick={() => void generate()} disabled={busy}
-            className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[#fff] text-sm font-medium">
-            {busy && <Loader2 className="w-4 h-4 animate-spin" />} Générer le plan (IA)
-          </button>
-          <button onClick={() => setStep('preview')} disabled={!plan}
-            className="flex items-center gap-2 px-4 py-1.5 rounded-md border border-indigo-500 text-indigo-300 hover:bg-indigo-600 hover:text-[#fff] disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium">
-            Continuer → Aperçu <ArrowRight className="w-4 h-4" />
-          </button>
-        </StepActionsPortal>
+    <div className="h-full flex min-h-0">
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-4xl mx-auto space-y-5">
+          {/* Actions dans le HEADER des étapes : toujours visibles, même page scrollée */}
+          <StepActionsPortal>
+            <button onClick={() => void generate()} disabled={busy}
+              className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[#fff] text-sm font-medium">
+              {busy && <Loader2 className="w-4 h-4 animate-spin" />} Générer le plan (IA)
+            </button>
+            <button onClick={() => setStep('preview')} disabled={!plan}
+              className="flex items-center gap-2 px-4 py-1.5 rounded-md border border-indigo-500 text-indigo-300 hover:bg-indigo-600 hover:text-[#fff] disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium">
+              Continuer → Aperçu <ArrowRight className="w-4 h-4" />
+            </button>
+          </StepActionsPortal>
 
-        <section className="rounded-lg border border-border bg-surface p-4 space-y-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
-            <Sparkles className="w-4 h-4 text-indigo-400" /> Prompt global
-          </h2>
-          <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3}
-            placeholder="Décrivez le catalogue voulu : univers, ton, couleurs, densité des pages…"
-            className="w-full px-3 py-2 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600 resize-none" />
-          {!plan && (
-            <p className="text-xs text-muted-foreground">
-              Sans IA, un plan par défaut (grille homogène, thème neutre) reste disponible dès le premier clic.
-            </p>
+          <section className="rounded-lg border border-border bg-surface p-4 space-y-3">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+              <Sparkles className="w-4 h-4 text-indigo-400" /> Prompt global
+            </h2>
+            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3}
+              placeholder="Décrivez le catalogue voulu : univers, ton, couleurs, densité des pages…"
+              className="w-full px-3 py-2 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600 resize-none" />
+            {!plan && (
+              <p className="text-xs text-muted-foreground">
+                Sans IA, un plan par défaut (grille homogène, thème neutre) reste disponible dès le premier clic.
+              </p>
+            )}
+          </section>
+
+          {plan ? (
+            <>
+              <div className="flex justify-center">
+                <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields}
+                  editable onLayoutChange={(id, box) => setPlan({ ...plan, cardStyle: { ...cardStyle, layout: { ...cardStyle.layout, [id]: box } } })} />
+              </div>
+              <SectionsCard plan={plan} flatNodes={flatNodes} rowsById={rowsById} columns={rawColumns} fieldMap={fieldMap} />
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">Générez un plan pour éditer le style des fiches et les sections — thème et couvertures s'éditent dans l'Aperçu (panneau « Fond de page »).</p>
           )}
-        </section>
-
-        {plan ? (
-          <>
-            <CardStyleCard plan={plan} setPlan={setPlan} sampleFields={sampleFields} />
-            <SectionsCard plan={plan} flatNodes={flatNodes} rowsById={rowsById} columns={rawColumns} fieldMap={fieldMap} />
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">Générez un plan pour éditer le style des fiches et les sections — thème et couvertures s'éditent dans l'Aperçu (panneau « Fond de page »).</p>
-        )}
+        </div>
       </div>
+
+      {plan && (
+        <aside className="w-80 shrink-0 border-l border-border bg-surface overflow-y-auto">
+          <CardStyleCard plan={plan} setPlan={setPlan} />
+        </aside>
+      )}
     </div>
   )
 }

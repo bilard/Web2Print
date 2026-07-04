@@ -30,7 +30,7 @@ const FIELDS: { scale: ScaleKey; font: FontKey; label: string }[] = [
 
 export function CardStyleTypo({ style, patch }: CardStyleTypoProps) {
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-3">
+    <div className="grid grid-cols-1 gap-y-3">
       {FIELDS.map(({ scale, font, label }) => (
         <div key={scale} className="space-y-1">
           <SliderField label={label} value={style[scale]} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
