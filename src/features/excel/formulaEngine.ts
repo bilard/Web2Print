@@ -87,6 +87,34 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
     },
   },
   {
+    name: 'REMISE',
+    description: 'Pourcentage de remise entre un prix barré et un prix vendu (ratio 0–1 — choisir Type résultat « Pourcentage » pour afficher 17%)',
+    syntax: 'REMISE(prix_barré, prix)',
+    examples: [
+      { formula: 'REMISE([Prix barré (€)], [Prix (€)])', result: '0.17 → 17% en type Pourcentage' },
+      { formula: 'REMISE(29.90, 24.90)', result: '0.167' },
+    ],
+    category: 'math',
+    evaluate: (barre: any, prix: any) => {
+      const b = toNum(barre)
+      return b === 0 ? '#ERREUR: prix barré nul' : (b - toNum(prix)) / b
+    },
+  },
+  {
+    name: 'VARIATION',
+    description: 'Variation relative entre deux valeurs : (nouvelle − ancienne) / ancienne (ratio — choisir Type résultat « Pourcentage »)',
+    syntax: 'VARIATION(ancienne, nouvelle)',
+    examples: [
+      { formula: 'VARIATION([Prix 2026], [Prix 2027])', result: 'Hausse/baisse en ratio (0.05 = +5%)' },
+      { formula: 'VARIATION(100, 120)', result: '0.2' },
+    ],
+    category: 'math',
+    evaluate: (ancien: any, nouveau: any) => {
+      const a = toNum(ancien)
+      return a === 0 ? '#ERREUR: valeur de départ nulle' : (toNum(nouveau) - a) / a
+    },
+  },
+  {
     name: 'REMPLACE',
     description: 'Remplace une portion de texte par un autre',
     syntax: 'REMPLACE(texte, ancien, nouveau)',
@@ -249,20 +277,15 @@ function isExpressionFormula(formula: string): boolean {
   // Strip [field] references and quoted strings
   let stripped = formula.replace(/\[([^\]]+)\]/g, '')
   stripped = stripped.replace(/"([^"\\]|\\.)*"/g, '')
-  // What remains should only be: operators, numbers, function names, parens, commas, whitespace
-  // If there are other characters, it's a template
-  stripped = stripped.trim()
-  if (!stripped) return true
-  // Allow: operators, digits, dots, parens, commas, whitespace, and known function names
-  // Check each non-whitespace segment
-  const segments = stripped.split(/\s+/).filter(Boolean)
-  return segments.every((seg) => {
-    if (/^[+\-*\/(),><=!]+$/.test(seg)) return true
-    if (/^\d+\.?\d*$/.test(seg)) return true
-    if (FUNC_MAP.has(seg.toUpperCase())) return true
-    if (['true', 'false'].includes(seg.toLowerCase())) return true
-    return false
-  })
+  // Retirer les noms de fonctions connus et les booléens : le reste d'une
+  // expression pure ne contient que opérateurs, nombres, parenthèses, virgules.
+  // (L'ancien découpage par espaces ne reconnaissait pas `NOM(arg,` → TOUTE
+  // formule à fonction retombait en mode template et affichait son texte brut.)
+  for (const name of FUNC_MAP.keys()) {
+    stripped = stripped.replace(new RegExp(`\\b${name}\\b`, 'gi'), '')
+  }
+  stripped = stripped.replace(/\btrue\b|\bfalse\b/gi, '')
+  return /^[\s+\-*/(),.><=!\d]*$/.test(stripped)
 }
 
 /** Resolve a template formula: concatenate literal text + field values */
