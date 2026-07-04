@@ -515,8 +515,9 @@ export function DataTable() {
     const range = max - min
     if (range === 0) return null
 
-    // Position 0→1 relative au range
-    const ratio = (numVal - min) / range
+    // Position 0→1 relative au range — CLAMPÉE : des stats périmées (min/max calculés
+    // avant une édition massive) donnaient un ratio >> 1 → alpha > 1 → fond opaque illisible.
+    const ratio = Math.min(1, Math.max(0, (numVal - min) / range))
 
     // 3 zones égales basées sur le tiers inférieur / moyen / supérieur
     if (ratio <= 0.33) {

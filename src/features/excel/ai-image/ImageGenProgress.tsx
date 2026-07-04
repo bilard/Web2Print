@@ -1,5 +1,6 @@
 // src/features/excel/ai-image/ImageGenProgress.tsx
-// Aperçu du test (1 image) + compteurs de progression de la génération de visuels.
+// Aperçu du test (1 image), compteurs de progression et journal du traitement.
+import { useEffect, useRef } from 'react'
 import type { ImageGenItem } from './useColumnImageGen'
 
 export function ImageGenTestPreview({ src }: { src: string }) {
@@ -15,20 +16,34 @@ export function ImageGenTestPreview({ src }: { src: string }) {
 
 export function ImageGenCounters({ items }: { items: ImageGenItem[] }) {
   const count = (s: ImageGenItem['status']) => items.filter((i) => i.status === s).length
-  const failed = items.filter((i) => i.status === 'failed')
+  const aborted = count('aborted')
   return (
-    <div className="space-y-1">
-      <div className="flex gap-3 text-[12px]">
-        <span className="text-emerald-400">{count('done')} générés</span>
-        <span className="text-white/50">{count('skipped')} ignorés</span>
-        <span className="text-red-400">{count('failed')} échecs</span>
-        <span className="text-amber-400">{count('aborted')} interrompus</span>
-      </div>
-      {failed.length > 0 && (
-        <div className="text-[11px] text-red-400/80 max-h-16 overflow-y-auto">
-          {failed[0].error}
+    <div className="flex gap-3 text-[12px]">
+      <span className="text-emerald-400">{count('done')} générés</span>
+      <span className="text-white/50">{count('skipped')} ignorés</span>
+      <span className="text-red-400">{count('failed')} échecs</span>
+      <span className="text-sky-400">{count('pending')} en cours</span>
+      {aborted > 0 && <span className="text-amber-400">{aborted} interrompus</span>}
+    </div>
+  )
+}
+
+/** Journal du traitement (auto-scroll vers la dernière ligne). */
+export function ImageGenLog({ lines }: { lines: string[] }) {
+  const endRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { endRef.current?.scrollIntoView({ block: 'nearest' }) }, [lines.length])
+  if (lines.length === 0) return null
+  return (
+    <div className="border border-white/10 rounded bg-well max-h-36 overflow-y-auto p-2 space-y-0.5 text-[11px] font-mono">
+      {lines.map((l, i) => (
+        <div
+          key={i}
+          className={l.startsWith('✗') ? 'text-red-400/90' : l.startsWith('✓') ? 'text-emerald-400/80' : 'text-white/50'}
+        >
+          {l}
         </div>
-      )}
+      ))}
+      <div ref={endRef} />
     </div>
   )
 }

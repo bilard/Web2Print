@@ -7,7 +7,7 @@ import { ImagePlus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { useColumnImageGen, type ImageGenEngine } from './useColumnImageGen'
-import { ImageGenTestPreview, ImageGenCounters } from './ImageGenProgress'
+import { ImageGenTestPreview, ImageGenCounters, ImageGenLog } from './ImageGenProgress'
 import type { ExcelRow } from '@/features/excel/types'
 
 interface Props { open: boolean; onClose: () => void; visibleRowIds: string[] }
@@ -16,7 +16,7 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
   const sheets = useExcelStore((s) => s.sheets)
   const activeSheetIndex = useExcelStore((s) => s.activeSheetIndex)
   const sheet = sheets[activeSheetIndex]
-  const { items, running, runTest, runAll, abort, ensureTargetColumn } = useColumnImageGen()
+  const { items, log, running, runTest, runAll, abort, ensureTargetColumn } = useColumnImageGen()
 
   const imageCols = useMemo(() => (sheet?.columns ?? []).filter((c) => c.fieldType === 'image'), [sheet])
   const [engine, setEngine] = useState<ImageGenEngine>('nano')
@@ -116,6 +116,7 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
 
           {testSrc && <ImageGenTestPreview src={testSrc} />}
           {items.length > 0 && <ImageGenCounters items={items} />}
+          <ImageGenLog lines={log} />
         </div>
 
         <div className="flex items-center justify-between px-4 py-3 border-t border-white/10">

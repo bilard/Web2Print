@@ -17,7 +17,8 @@ export type ImageGenEngine = 'nano' | 'higgsfield'
 
 export interface ImageGenItem {
   rowId: string
-  status: ImageGenStatus
+  /** 'pending' = pas encore traité (file d'attente / génération en cours). */
+  status: ImageGenStatus | 'pending'
   value?: string
   error?: string
 }
@@ -59,10 +60,23 @@ function fileNameFor(row: ExcelRow, columns: ExcelColumn[], ext: string): string
   return `${base}_${row._id.slice(0, 6)}.${ext}`
 }
 
+/** Libellé lisible d'une ligne pour le journal (colonne primaire ou 1re colonne). */
+function rowLabel(row: ExcelRow | undefined, columns: ExcelColumn[]): string {
+  if (!row) return '?'
+  const nameCol = columns.find((c) => c.isPrimary) ?? columns[0]
+  const v = String(row[nameCol?.key ?? ''] ?? '').trim()
+  const label = v || row._id.slice(0, 8)
+  return label.length > 48 ? `${label.slice(0, 48)}…` : label
+}
+
+const ENGINE_LABEL: Record<ImageGenEngine, string> = { nano: 'Nano Banana', higgsfield: 'Higgsfield' }
+
 export function useColumnImageGen() {
   const [items, setItems] = useState<ImageGenItem[]>([])
+  const [log, setLog] = useState<string[]>([])
   const [running, setRunning] = useState(false)
   const abortRef = useRef({ current: false })
+  const pushLog = useCallback((line: string) => { setLog((prev) => [...prev, line]) }, [])
 
   /** Test sur 1 ligne : génère SANS uploader ni écrire ; renvoie la source affichable. */
   const runTest = useCallback(async (input: Omit<RunInput, 'subFolder'>): Promise<string> => {
@@ -87,30 +101,47 @@ export function useColumnImageGen() {
     const rowById = new Map(input.rows.map((r) => [r._id, r]))
     const { activeSheetIndex, updateCell } = useExcelStore.getState()
     const jobs = buildImageJobs(input.rows, input.prompt, input.columns, input.targetColKey)
-    setItems(jobs.map((j) => ({ rowId: j.rowId, status: 'aborted' as ImageGenStatus })))
+    setItems(jobs.map((j) => ({ rowId: j.rowId, status: 'pending' as const })))
+    setLog([`Démarrage — moteur ${ENGINE_LABEL[input.engine]}, dossier DAM « ${input.subFolder} »`])
+    const label = (rowId: string) => rowLabel(rowById.get(rowId), input.columns)
     try {
       await runImageGenQueue(jobs, {
         abortRef: abortRef.current,
         concurrency: input.engine === 'higgsfield' ? 1 : 2,
         generateAndStore: async (job: ImageGenJob) => {
-          const { src, ext } = await generateOne(input.engine, job.prompt)
+          pushLog(`⏳ ${label(job.rowId)} — génération ${ENGINE_LABEL[input.engine]}…`)
+          let src: string, ext: string
+          try {
+            ({ src, ext } = await generateOne(input.engine, job.prompt))
+          } catch (e) {
+            throw new Error(`génération (${ENGINE_LABEL[input.engine]}) : ${e instanceof Error ? e.message : 'erreur inconnue'}`, { cause: e })
+          }
           const row = rowById.get(job.rowId)
           const fileName = row ? fileNameFor(row, input.columns, ext) : `image_${job.rowId.slice(0, 6)}.${ext}`
-          return src.startsWith('http')
-            ? uploadUrlToDam(src, fileName, input.subFolder)
-            : uploadImageToDam(src, fileName, input.subFolder)
+          try {
+            return src.startsWith('http')
+              ? await uploadUrlToDam(src, fileName, input.subFolder)
+              : await uploadImageToDam(src, fileName, input.subFolder)
+          } catch (e) {
+            throw new Error(`upload DAM Drive (${fileName}) : ${e instanceof Error ? e.message : 'erreur inconnue'}`, { cause: e })
+          }
         },
         onItem: (rowId, status, value, error) => {
           setItems((prev) => prev.map((it) => (it.rowId === rowId ? { rowId, status, value, error } : it)))
           if (status === 'done' && value !== undefined) {
+            pushLog(`✓ ${label(rowId)} — visuel enregistré dans le DAM`)
             updateCell(activeSheetIndex, rowId, input.targetColKey, value)
+          } else if (status === 'failed') {
+            pushLog(`✗ ${label(rowId)} — ${error ?? 'échec'}`)
           }
         },
       }, { onlyEmpty: input.onlyEmpty })
+      const st = abortRef.current.current ? 'Arrêté par l\'utilisateur.' : 'Terminé.'
+      pushLog(st)
     } finally {
       setRunning(false)
     }
-  }, [])
+  }, [pushLog])
 
   /** Crée la colonne image cible si demandé ; retourne sa clé. */
   const ensureTargetColumn = useCallback((opts: { mode: 'new' | 'existing'; label: string; existingKey?: string }): string => {
@@ -125,5 +156,5 @@ export function useColumnImageGen() {
 
   const abort = useCallback(() => { abortRef.current.current = true }, [])
 
-  return { items, running, runTest, runAll, abort, ensureTargetColumn }
+  return { items, log, running, runTest, runAll, abort, ensureTargetColumn }
 }
