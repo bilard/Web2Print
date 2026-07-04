@@ -41,7 +41,7 @@ const Icon = ({ k }: { k: IconKind }) =>
  *  montre la valeur réelle du produit affiché (même source que l'aperçu) pour
  *  distinguer d'un coup d'œil deux blocs de même type. */
 export function PromoLayersPanel() {
-  const { config, selectedKey, setSelectedKey, setHidden, rawRows, rawColumns, fieldMap, currentIndex, textOverride } = useRetailPromoStore()
+  const { config, selectedKey, setSelectedKey, setHidden, rawRows, rawColumns, fieldMap, currentIndex, textOverride, customFields } = useRetailPromoStore()
   const [q, setQ] = useState('')
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(GROUP_IDS)) // groupes repliés par défaut
 
@@ -49,7 +49,11 @@ export function PromoLayersPanel() {
   const safe = rawRows.length ? Math.min(currentIndex, rawRows.length - 1) : 0
   const row = rawRows[safe]
   const card: RetailCardData | null = row
-    ? toCardData(extractPromoFields(row, rawColumns, fieldMap), { now: config.styles?.priceNow?.euroSep, was: config.styles?.priceWas?.euroSep })
+    ? toCardData(
+        extractPromoFields(row, rawColumns, fieldMap, customFields),
+        { now: config.styles?.priceNow?.euroSep, was: config.styles?.priceWas?.euroSep },
+        customFields,
+      )
     : null
   const tov = textOverride[safe] ?? {}
 
@@ -59,7 +63,7 @@ export function PromoLayersPanel() {
     switch (id) {
       case 'category': return tov.category ?? card.category ?? ''
       case 'name': return tov.name ?? card.name ?? ''
-      case 'brand': return tov.brand ?? [card.brand, card.ref].filter(Boolean).join(' · ')
+      case 'brand': return tov.brand ?? [card.brand, card.ref, card.ean].filter(Boolean).join(' · ')
       case 'description': return tov.description ?? card.description ?? ''
       case 'priceLabel': return tov.priceLabel ?? 'Prix promo'
       case 'priceWas': return card.priceWas ?? ''
@@ -67,6 +71,7 @@ export function PromoLayersPanel() {
       case 'unitPrice': return card.unitPrice ?? ''
       case 'footer': return tov.footer ?? card.validite ?? ''
       case 'badge': return card.remiseLabel ?? ''
+      case 'details': return card.details.join(' · ')
       case 'image': {
         const u = card.imageUrl
         if (!u) return ''

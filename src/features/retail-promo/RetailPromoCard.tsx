@@ -208,6 +208,7 @@ export const PROMO_CSS = `
 .rp-card[data-layout="photo-cover"] .rp-price { position:absolute; bottom:0; left:0; right:0; z-index:2; }
 .rp-card[data-layout="photo-cover"] .rp-badge { z-index:3; }
 .rp-card[data-layout="photo-cover"] .rp-foot { display:none; }
+.rp-card[data-layout="photo-cover"] .rp-details { display:none; }
 
 /* ── Variante « prix-fort » : grand bloc prix dominant en bas ── */
 .rp-card[data-layout="prix-fort"] .rp-head { padding:22px 40px 16px; gap:4px; }
