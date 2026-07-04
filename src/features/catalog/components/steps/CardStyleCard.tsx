@@ -64,11 +64,20 @@ export function CardStyleCard({ plan, setPlan, sampleFields }: CardStyleCardProp
                 <input value={style.vedetteLabel} onChange={(e) => patch({ vedetteLabel: e.target.value })} placeholder="Vedette"
                   className="w-28 px-2 py-1 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600" />
               </label>
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                <input type="checkbox" checked={style.freeLayout} onChange={(e) => patch({ freeLayout: e.target.checked })} className="accent-indigo-600" />
+                Disposition libre (glisser les objets)
+              </label>
+              {style.freeLayout && (
+                <button type="button" onClick={() => patch({ layout: {} })}
+                  className="text-xs text-muted-foreground hover:text-white underline">Réinitialiser les positions</button>
+              )}
             </div>
           </div>
         </div>
 
-        <CardStylePreview theme={plan.theme} cardStyle={style} fields={sampleFields} />
+        <CardStylePreview theme={plan.theme} cardStyle={style} fields={sampleFields}
+          editable onLayoutChange={(id, box) => patch({ layout: { ...style.layout, [id]: box } })} />
       </div>
     </section>
   )

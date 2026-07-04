@@ -1,10 +1,12 @@
 // src/features/catalog/components/steps/CardStylePreview.tsx
 // Aperçu LIVE du template de fiche (variantes verticale + horizontale) avec le
 // thème et le style cosmétique courants — même moteur de rendu que les pages.
+import { useRef } from 'react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
-import type { CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
+import type { CardBox, CardObjectId, CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
 import { CATALOG_CSS, cardStyleVars, themeVars } from '../pages/catalogCss'
 import { ProductCell } from '../pages/ProductCell'
+import { CardLayoutOverlay } from './CardLayoutOverlay'
 
 const SAMPLE_FIELDS: PromoFields = {
   name: 'Table de jardin ALTO 792', image: null, brand: 'Jardipro', ref: '246674928', ean: '',
@@ -19,18 +21,25 @@ interface Props {
   cardStyle: CatalogCardStyle
   /** Fiche exemple (1er produit sélectionné) — repli sur une fiche factice. */
   fields?: PromoFields | null
+  /** Monte l'overlay de drag/resize (disposition libre) quand vrai. */
+  editable?: boolean
+  onLayoutChange?: (id: CardObjectId, box: CardBox) => void
 }
 
-export function CardStylePreview({ theme, cardStyle, fields }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, editable, onLayoutChange }: Props) {
   const f = fields ?? SAMPLE_FIELDS
+  const cardRef = useRef<HTMLDivElement | null>(null)
   return (
-    <div className="cat-page rounded-md overflow-hidden shrink-0 border border-border"
+    <div className="cat-page rounded-md overflow-hidden shrink-0 border border-border relative"
       style={{ width: 330, ...themeVars(theme), ...cardStyleVars(cardStyle, theme) }}>
       <style>{CATALOG_CSS}</style>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12, background: 'var(--cat-bg)' }}>
-        {/* Variante VEDETTE : les réglages du ruban/cadre se voient en live. */}
-        <div style={{ height: 360, display: 'grid' }}>
+        {/* Variante VEDETTE : les réglages du ruban/cadre se voient en live ; support de l'overlay de disposition libre. */}
+        <div ref={cardRef} style={{ height: 360, display: 'grid', position: 'relative' }}>
           <ProductCell fields={f} featured kicker="Sous-famille" size="md" cardStyle={cardStyle} />
+          {editable && cardStyle.freeLayout && onLayoutChange && (
+            <CardLayoutOverlay cardRef={cardRef} style={cardStyle} onChange={onLayoutChange} />
+          )}
         </div>
         {/* Variante horizontale (grilles denses) : assez haute pour ne pas couper prix/réf. */}
         <div style={{ height: 190, display: 'grid' }}>
