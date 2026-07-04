@@ -4,7 +4,7 @@
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
 import { FONT_OPTIONS } from '@/features/retail-promo/RetailPromoCard'
-import { CATALOG_GRIDS, DEFAULT_CARD_STYLE, type CatalogCardStyle, type CatalogGrid, type CatalogPlan, type CatalogSectionPlan, type CatalogTreeNode } from './catalogTypes'
+import { CARD_OBJECT_IDS, CATALOG_GRIDS, DEFAULT_CARD_STYLE, type CardBox, type CardObjectId, type CatalogCardStyle, type CatalogGrid, type CatalogPlan, type CatalogSectionPlan, type CatalogTreeNode } from './catalogTypes'
 import { flattenTree, subtreeProductCount } from './catalogTree'
 
 const ThemeSchema = z.object({
@@ -169,6 +169,24 @@ function sanitizeAICardStyle(raw: RawCatalogPlan['cardStyle']): Partial<CatalogC
     if (v && HEX_RE.test(v)) out[k] = v
   }
   if (raw.vedetteLabel?.trim()) out.vedetteLabel = raw.vedetteLabel.trim().slice(0, 24)
+  const rawLayout = (raw as { freeLayout?: unknown; layout?: unknown })
+  if (typeof rawLayout.freeLayout === 'boolean') out.freeLayout = rawLayout.freeLayout
+  if (rawLayout.layout && typeof rawLayout.layout === 'object') {
+    const num = (v: unknown, lo: number, hi: number): number | undefined =>
+      typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : undefined
+    const layout: Partial<Record<CardObjectId, CardBox>> = {}
+    for (const id of CARD_OBJECT_IDS) {
+      const b = (rawLayout.layout as Record<string, { x?: unknown; y?: unknown; w?: unknown; h?: unknown }>)[id]
+      if (!b) continue
+      const x = num(b.x, 0, 100), y = num(b.y, 0, 100)
+      if (x == null || y == null) continue
+      const box: CardBox = { x, y }
+      const w = num(b.w, 4, 100); if (w != null) box.w = w
+      const h = num(b.h, 4, 100); if (h != null) box.h = h
+      layout[id] = box
+    }
+    if (Object.keys(layout).length) out.layout = layout
+  }
   return out
 }
 

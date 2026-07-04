@@ -136,4 +136,12 @@ describe('sanitizeCatalogPlan', () => {
     expect(plan.theme.accent).toBe('#6366f1')
     expect(plan.cover.title).toBe('X')
   })
+
+  it('freeLayout + layout bornés (0–100, ids connus)', () => {
+    const uTree = [node('u', 'U', 1, ['r1'])]
+    const plan = sanitizeCatalogPlan({ cardStyle: { freeLayout: true, layout: { name: { x: 10, y: 20, w: 150 }, bogus: { x: 1, y: 1 } } } } as never, uTree, 'C')
+    expect(plan.cardStyle?.freeLayout).toBe(true)
+    expect(plan.cardStyle?.layout?.name).toEqual({ x: 10, y: 20, w: 100 }) // w clampé
+    expect((plan.cardStyle?.layout as Record<string, unknown>)?.bogus).toBeUndefined() // id inconnu ignoré
+  })
 })
