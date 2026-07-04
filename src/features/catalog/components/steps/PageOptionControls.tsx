@@ -2,7 +2,7 @@
 // Contrôles partagés du panneau « Fond de page » (aperçu) : section, toggle,
 // slider et champ texte — mêmes idiomes que le reste de l'app (options à droite).
 import type { ReactNode } from 'react'
-import { PropertySection } from '@/components/shared/panel'
+import { PropertySection, SliderField } from '@/components/shared/panel'
 
 export const optFieldClass = 'w-full px-2.5 py-1.5 rounded-md bg-well text-xs text-white outline-none border border-white/10 focus:border-[#6366f1]'
 
@@ -23,15 +23,11 @@ export function OptToggle({ label, checked, onChange }: { label: string; checked
 
 interface SliderProps { label: string; value: number; min: number; max: number; step: number; unit?: string; onChange: (v: number) => void }
 
+/** Mince wrapper de `SliderField` du kit — même signature qu'avant, tous les appelants
+ * (PageOptionsPanel/Cover/Theme) restent inchangés. Sans `unit` explicite, l'ancien
+ * widget affichait un ratio en `%` (ex. 1.2 → « 120% ») : ces sliders (0.7..1.5) sont
+ * en réalité des échelles, donc `×` (même convention que CardStyleTypo) en est le
+ * rendu le plus proche compatible avec le formatage du kit (ex. « 1.2× »). */
 export function OptSlider({ label, value, min, max, step, unit, onChange }: SliderProps) {
-  return (
-    <label className="flex flex-col gap-1 text-xs text-white/40">
-      <span className="flex items-center justify-between">
-        {label}
-        <span className="tabular-nums text-white">{unit ? `${value}${unit}` : `${Math.round(value * 100)}%`}</span>
-      </span>
-      <input type="range" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-indigo-500" />
-    </label>
-  )
+  return <SliderField label={label} value={value} min={min} max={max} step={step} unit={unit ?? '×'} onChange={onChange} />
 }
