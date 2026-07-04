@@ -3,20 +3,23 @@
 // Une seule page montée à la fois (perf sur 100+ pages) ; rail en ARBRE structuré
 // par univers (PreviewPageTree), léger — pas de CatalogPageView par vignette.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ArrowRight, ChevronLeft, ChevronRight, Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Maximize2, SlidersHorizontal, ZoomIn, ZoomOut } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { useCatalogPages } from '../../useCatalogPages'
 import { usePreviewZoomPan } from '../../usePreviewZoomPan'
 import { CatalogPageView } from '../pages/CatalogPageView'
 import { pagePx } from '../pages/catalogCss'
 import { PreviewPageTree } from './PreviewPageTree'
+import { PageOptionsPanel } from './PageOptionsPanel'
 
 export function StepPreview() {
   const setStep = useCatalogStore((s) => s.setStep)
+  const setPlan = useCatalogStore((s) => s.setPlan)
   const previewIndex = useCatalogStore((s) => s.previewIndex)
   const setPreviewIndex = useCatalogStore((s) => s.setPreviewIndex)
   const { pages, ctx } = useCatalogPages()
   const [index, setIndex] = useState(0)
+  const [showOptions, setShowOptions] = useState(true)
 
   // Arrivée depuis le chemin de fer : ouvrir directement la page demandée (one-shot).
   useEffect(() => {
@@ -96,6 +99,12 @@ export function StepPreview() {
                 <Maximize2 className="w-4 h-4" />
               </button>
             </div>
+            {/* Options du fond de page (panneau droit contextuel) */}
+            <button onClick={() => setShowOptions((v) => !v)}
+              className={`flex items-center gap-1.5 ml-3 pl-3 border-l border-border px-2.5 py-1.5 rounded-md text-xs ${showOptions ? 'text-indigo-300 bg-indigo-600/15' : 'text-muted-foreground hover:bg-surface-2 hover:text-white'}`}
+              title="Afficher/masquer les options du fond de page">
+              <SlidersHorizontal className="w-3.5 h-3.5" /> Fond de page
+            </button>
           </div>
           <button onClick={() => setStep('export')}
             className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 text-[#fff] text-sm font-medium">
@@ -113,6 +122,11 @@ export function StepPreview() {
           </div>
         </div>
       </div>
+      {/* Options à droite (pattern app) : édition du fond de la page AFFICHÉE, mise à jour live */}
+      {showOptions && (
+        <PageOptionsPanel page={currentPage} plan={ctx.plan} setPlan={setPlan}
+          coverImageUrl={ctx.coverImageUrl} backCoverImageUrl={ctx.backCoverImageUrl} />
+      )}
     </div>
   )
 }

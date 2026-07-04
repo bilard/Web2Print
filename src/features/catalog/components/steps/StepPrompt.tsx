@@ -10,7 +10,6 @@ import { buildCatalogTree, flattenTree } from '../../catalogTree'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
 import { extractPromoFields } from '@/features/retail-promo/promoMapping'
 import { PlanStylePanel } from './PlanStylePanel'
-import { PageStyleCard } from './PageStyleCard'
 import { CardStyleCard } from './CardStyleCard'
 import { SectionsCard } from './SectionsCard'
 import { StepActionsPortal } from './StepActionsPortal'
@@ -101,7 +100,6 @@ export function StepPrompt() {
         {plan ? (
           <>
             <PlanStylePanel plan={plan} setPlan={setPlan} coverImageUrl={coverImageUrl} backCoverImageUrl={backCoverImageUrl} />
-            <PageStyleCard plan={plan} setPlan={setPlan} />
             <CardStyleCard plan={plan} setPlan={setPlan} sampleFields={sampleFields} />
             <SectionsCard plan={plan} flatNodes={flatNodes} rowsById={rowsById} columns={rawColumns} fieldMap={fieldMap} />
           </>
