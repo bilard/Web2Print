@@ -94,6 +94,10 @@ export interface CatalogCardStyle {
   vedetteBg: string
   /** Couleur du BADGE PRIX des fiches vedette ('' = couleur prix standard). */
   vedettePriceBg: string
+  /** Couleur du TEXTE des badges prix ('' = blanc). */
+  priceInk: string
+  /** Couleur du TEXTE du prix des fiches vedette ('' = texte prix standard). */
+  vedettePriceInk: string
   /** Fins de dégradé ('' = couleur unie) — combinées à la couleur de base de l'objet. */
   promoBg2: string
   stickerBg2: string
@@ -125,7 +129,7 @@ export interface CatalogCardStyle {
 export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1, stickerScale: 1, vedetteScale: 1,
   nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '', stickerFont: '', vedetteFont: '',
-  promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '', vedetteBg: '', vedettePriceBg: '',
+  promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '', vedetteBg: '', vedettePriceBg: '', priceInk: '', vedettePriceInk: '',
   promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '', vedetteBg2: '', vedettePriceBg2: '',
   vedetteLabel: 'Vedette',
   gradientAngle: 135,

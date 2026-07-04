@@ -10,7 +10,7 @@ interface CardStyleColorsProps {
   patch: (p: Partial<CatalogCardStyle>) => void
 }
 
-type ColorKey = 'promoBg' | 'stickerBg' | 'priceBg' | 'wasBg' | 'kickerBg' | 'nameColor' | 'vedetteBg' | 'vedettePriceBg'
+type ColorKey = 'promoBg' | 'stickerBg' | 'priceBg' | 'wasBg' | 'kickerBg' | 'nameColor' | 'vedetteBg' | 'vedettePriceBg' | 'priceInk' | 'vedettePriceInk'
 type GradKey = 'promoBg2' | 'stickerBg2' | 'priceBg2' | 'wasBg2' | 'kickerBg2' | 'vedetteBg2' | 'vedettePriceBg2'
 
 export function CardStyleColors({ style, theme, patch }: CardStyleColorsProps) {
@@ -22,6 +22,8 @@ export function CardStyleColors({ style, theme, patch }: CardStyleColorsProps) {
     { key: 'kickerBg', grad: 'kickerBg2', label: 'Sous-famille', fallback: theme.headerBg },
     { key: 'vedetteBg', grad: 'vedetteBg2', label: 'Vedette', fallback: theme.accent },
     { key: 'vedettePriceBg', grad: 'vedettePriceBg2', label: 'Prix vedette', fallback: theme.accent },
+    { key: 'priceInk', label: 'Texte prix', fallback: '#ffffff' },
+    { key: 'vedettePriceInk', label: 'Txt prix vedette', fallback: '#ffffff' },
     { key: 'nameColor', label: 'Nom', fallback: theme.ink },
   ]
   const hasGradient = COLORS.some(({ grad }) => grad && style[grad])

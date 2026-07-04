@@ -21,15 +21,19 @@ const SectionSchema = z.object({
 const CardStyleAISchema = z.object({
   promoBg: z.string().optional(), stickerBg: z.string().optional(), priceBg: z.string().optional(),
   wasBg: z.string().optional(), kickerBg: z.string().optional(), nameColor: z.string().optional(),
-  vedetteBg: z.string().optional(), vedettePriceBg: z.string().optional(), vedetteLabel: z.string().optional(),
+  vedetteBg: z.string().optional(), vedettePriceBg: z.string().optional(),
+  priceInk: z.string().optional(), vedettePriceInk: z.string().optional(),
+  vedetteLabel: z.string().optional(),
 }).optional()
 
+// TOUT est optionnel : en MODIFICATION (un plan existe), l'IA ne renvoie que
+// les clés que la demande impose de changer — le reste est conservé tel quel.
 const PlanSchema = z.object({
-  theme: ThemeSchema,
-  sections: z.array(SectionSchema),
-  cover: z.object({ title: z.string(), subtitle: z.string().optional(), baseline: z.string().optional(), imagePrompt: z.string() }),
-  backCover: z.object({ title: z.string(), text: z.string() }),
-  tocTitle: z.string(),
+  theme: ThemeSchema.optional(),
+  sections: z.array(SectionSchema).optional(),
+  cover: z.object({ title: z.string(), subtitle: z.string().optional(), baseline: z.string().optional(), imagePrompt: z.string() }).optional(),
+  backCover: z.object({ title: z.string(), text: z.string() }).optional(),
+  tocTitle: z.string().optional(),
   cardStyle: CardStyleAISchema,
 })
 export type RawCatalogPlan = z.infer<typeof PlanSchema>
@@ -90,11 +94,13 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
         nameColor: { type: 'string', description: 'hex du nom produit' },
         vedetteBg: { type: 'string', description: 'hex ruban + cadre des fiches VEDETTE' },
         vedettePriceBg: { type: 'string', description: 'hex badge prix des fiches VEDETTE uniquement' },
+        priceInk: { type: 'string', description: 'hex TEXTE des badges prix (toutes fiches)' },
+        vedettePriceInk: { type: 'string', description: 'hex TEXTE du prix des fiches VEDETTE uniquement' },
         vedetteLabel: { type: 'string', description: 'texte du ruban vedette (ex. « Coup de cœur »)' },
       },
     },
   },
-  required: ['theme', 'sections', 'cover', 'backCover', 'tocTitle'],
+  required: [],
 }
 
 const DEFAULT_GRID: CatalogGrid = 4
@@ -107,8 +113,10 @@ const DEFAULT_THEME = {
 
 const HEX_RE = /^#[0-9a-f]{6}$/i
 
+type RawTheme = NonNullable<RawCatalogPlan['theme']>
+
 /** Valide chaque couleur du thème IA (hex strict `#rrggbb`) ; invalide → repli thème par défaut. */
-function sanitizeTheme(theme: RawCatalogPlan['theme']): RawCatalogPlan['theme'] {
+function sanitizeTheme(theme: RawTheme): RawTheme {
   const hex = (v: string, fallback: string) => (HEX_RE.test(v) ? v : fallback)
   return {
     ...theme,
@@ -155,7 +163,7 @@ export function defaultCatalogPlan(tree: CatalogTreeNode[], catalogName: string)
 function sanitizeAICardStyle(raw: RawCatalogPlan['cardStyle']): Partial<CatalogCardStyle> {
   if (!raw) return {}
   const out: Partial<CatalogCardStyle> = {}
-  const HEX_KEYS = ['promoBg', 'stickerBg', 'priceBg', 'wasBg', 'kickerBg', 'nameColor', 'vedetteBg', 'vedettePriceBg'] as const
+  const HEX_KEYS = ['promoBg', 'stickerBg', 'priceBg', 'wasBg', 'kickerBg', 'nameColor', 'vedetteBg', 'vedettePriceBg', 'priceInk', 'vedettePriceInk'] as const
   for (const k of HEX_KEYS) {
     const v = raw[k]
     if (v && HEX_RE.test(v)) out[k] = v
@@ -173,14 +181,18 @@ function sanitizeAICardStyle(raw: RawCatalogPlan['cardStyle']): Partial<CatalogC
 export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[], catalogName: string, current?: CatalogPlan | null): CatalogPlan {
   const valid = nodesWithProducts(tree)
   const productsByNode = new Map(valid.map((n) => [n.id, new Set(n.productIds)]))
+  // sections ABSENTES de la réponse IA (modification ciblée) → celles du plan
+  // courant, intactes (densité aléatoire, vedettes, couleurs de chapitre).
   const sections: CatalogSectionPlan[] = raw.sections
-    .filter((s) => productsByNode.has(s.nodeId))
-    .map((s) => ({
-      nodeId: s.nodeId,
-      productsPerPage: clampGrid(s.productsPerPage),
-      randomDensity: false,
-      featuredIds: (s.featuredIds ?? []).filter((id) => productsByNode.get(s.nodeId)!.has(id)),
-    }))
+    ? raw.sections
+      .filter((s) => productsByNode.has(s.nodeId))
+      .map((s) => ({
+        nodeId: s.nodeId,
+        productsPerPage: clampGrid(s.productsPerPage),
+        randomDensity: false,
+        featuredIds: (s.featuredIds ?? []).filter((id) => productsByNode.get(s.nodeId)!.has(id)),
+      }))
+    : (current?.sections ?? []).filter((s) => productsByNode.has(s.nodeId)).map((s) => ({ ...s }))
   const covered = new Set(sections.map((s) => s.nodeId))
   for (const n of valid) {
     if (!covered.has(n.id)) sections.push({ nodeId: n.id, productsPerPage: DEFAULT_GRID, randomDensity: false, featuredIds: [] })
@@ -209,12 +221,15 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
   const aiCardStyle = sanitizeAICardStyle(raw.cardStyle)
   const hasCardStyle = current?.cardStyle || Object.keys(aiCardStyle).length > 0
   return {
-    theme: sanitizeTheme(raw.theme),
+    // Clés omises par l'IA (modification ciblée) : on conserve le plan courant.
+    theme: raw.theme ? sanitizeTheme(raw.theme) : { ...(current?.theme ?? DEFAULT_THEME) },
     sizeByPrice: current?.sizeByPrice ?? true,
     sections,
-    cover: { title: raw.cover.title || catalogName, subtitle: raw.cover.subtitle ?? '', baseline: raw.cover.baseline ?? '', imagePrompt: raw.cover.imagePrompt },
-    backCover: raw.backCover,
-    tocTitle: raw.tocTitle || 'Sommaire',
+    cover: raw.cover
+      ? { title: raw.cover.title || catalogName, subtitle: raw.cover.subtitle ?? '', baseline: raw.cover.baseline ?? '', imagePrompt: raw.cover.imagePrompt }
+      : (current?.cover ?? { title: catalogName || 'Catalogue', subtitle: '', baseline: '', imagePrompt: '' }),
+    backCover: raw.backCover ?? current?.backCover ?? { title: catalogName || 'Catalogue', text: '' },
+    tocTitle: raw.tocTitle || current?.tocTitle || 'Sommaire',
     // Réglages manuels préservés ; les couleurs demandées au prompt s'appliquent par-dessus.
     ...(hasCardStyle ? { cardStyle: { ...DEFAULT_CARD_STYLE, ...current?.cardStyle, ...aiCardStyle } } : {}),
     ...(current?.pageStyle ? { pageStyle: current.pageStyle } : {}),
@@ -237,18 +252,27 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
       return `${'  '.repeat(n.level - 1)}- [${n.id}] ${n.label} (${n.productIds.length} produits)${samples}`
     })
     .join('\n')
+  // CRÉATION (pas de plan) : plan complet. MODIFICATION (un plan existe) :
+  // l'IA ne renvoie QUE les clés que la demande impose — tout omis = conservé.
+  const consigne = current
+    ? `Un plan EXISTE DÉJÀ : ta réponse est une MODIFICATION CIBLÉE. Renvoie UNIQUEMENT les clés que la demande impose de changer ` +
+      `(ex. demande sur la couleur des prix/vedettes → cardStyle SEUL ; demande sur l'ambiance/les couleurs générales → theme). ` +
+      `OMETS complètement theme, sections, cover, backCover, tocTitle et cardStyle s'ils ne sont pas concernés — ils seront conservés tels quels. ` +
+      `Rappels : theme = polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')} ; sections = densité parmi ${CATALOG_GRIDS.join('/')} sur les nœuds de NIVEAU 1, vedettes = ids AVANT le tiret des exemples ; ` +
+      `cardStyle = uniquement les clés concernées (hex #rrggbb).`
+    : `Produis un plan complet : thème (couleurs hex cohérentes avec la demande, polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')}), ` +
+      `une section par nodeId — la densité (productsPerPage parmi ${CATALOG_GRIDS.join('/')}) ne compte que sur les nœuds de NIVEAU 1 (flux continu : les produits des sous-familles remplissent les pages sans vide) : choisis DENSE (4 à 8/page), jamais 1-2 sauf univers premium très court. 0-2 produits vedette par section ` +
+      `choisis parmi les exemples (renvoie l'id AVANT le tiret), textes de couverture et 4e de couverture en FRANÇAIS, ` +
+      `et un imagePrompt de couverture en anglais (photo réaliste, sans texte). ` +
+      `Si la demande porte sur le STYLE DES FICHES (couleur du prix, du cartouche, des vedettes, texte du ruban…), renvoie aussi cardStyle avec UNIQUEMENT les clés concernées.`
   const raw = await generateJson<RawCatalogPlan>({
     task: 'catalog.plan',
-    version: 'catalog.plan.v1',
+    version: 'catalog.plan.v2',
     prompt:
       `Tu conçois l'identité graphique d'un CATALOGUE PRODUIT professionnel multi-page (style prospectus/catalogue retail, lumineux, lisible — jamais sombre/cinématique).\n` +
       `Nom du catalogue : « ${ctx.catalogName} ».\n` +
       `Structure (nodeId entre crochets — à réutiliser tel quel) :\n${treeDesc}\n\n` +
-      `Produis un plan complet : thème (couleurs hex cohérentes avec la demande, polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')}), ` +
-      `une section par nodeId — la densité (productsPerPage parmi ${CATALOG_GRIDS.join('/')}) ne compte que sur les nœuds de NIVEAU 1 (flux continu : les produits des sous-familles remplissent les pages sans vide) : choisis DENSE (4 à 8/page), jamais 1-2 sauf univers premium très court. 0-2 produits vedette par section ` +
-      `choisis parmi les exemples (renvoie l'id AVANT le tiret), textes de couverture et 4e de couverture en FRANÇAIS, ` +
-      `et un imagePrompt de couverture en anglais (photo réaliste, sans texte). ` +
-      `Si la demande porte sur le STYLE DES FICHES (couleur du prix, du cartouche, des vedettes, texte du ruban…), renvoie aussi cardStyle avec UNIQUEMENT les clés concernées.\n\nDemande : ${brief}`,
+      `${consigne}\n\nDemande : ${brief}`,
     schema: PlanSchema,
     schemaForLLM: SCHEMA_FOR_LLM,
   })

@@ -74,7 +74,7 @@ describe('sanitizeCatalogPlan', () => {
     expect(plan.cover.baseline).toBe('')
   })
   it('remplace une couleur de thème non-hex par la valeur par défaut (ex. pageBg: "white")', () => {
-    const plan = sanitizeCatalogPlan({ ...raw, theme: { ...raw.theme, pageBg: 'white' } }, tree, 'X')
+    const plan = sanitizeCatalogPlan({ ...raw, theme: { ...raw.theme!, pageBg: 'white' } }, tree, 'X')
     expect(plan.theme.pageBg).toBe('#ffffff')
     // Les couleurs hex valides restent inchangées.
     expect(plan.theme.accent).toBe('#e11d48')
@@ -112,5 +112,28 @@ describe('sanitizeCatalogPlan', () => {
 
   it("sans plan courant ni cardStyle IA, le plan reste SANS cardStyle (pas d'objet fantôme)", () => {
     expect(sanitizeCatalogPlan(raw, tree, 'X').cardStyle).toBeUndefined()
+  })
+
+  it('MODIFICATION CIBLÉE : réponse IA réduite à cardStyle → thème, sections, couvertures et sommaire du plan courant CONSERVÉS', () => {
+    const current = {
+      ...defaultCatalogPlan(tree, 'X'),
+      theme: { ...defaultCatalogPlan(tree, 'X').theme, accent: '#e97817' },
+      cover: { title: 'Mon titre', subtitle: 'Sub', baseline: 'Base', imagePrompt: 'pic' },
+      tocTitle: 'Mon sommaire',
+    }
+    current.sections[0].productsPerPage = 6
+    current.sections[0].featuredIds = ['p1']
+    const plan = sanitizeCatalogPlan({ cardStyle: { vedettePriceInk: '#ffd700' } }, tree, 'X', current)
+    expect(plan.theme.accent).toBe('#e97817') // thème INTACT (pas de jaune partout)
+    expect(plan.cover.title).toBe('Mon titre')
+    expect(plan.tocTitle).toBe('Mon sommaire')
+    expect(plan.sections.find((s) => s.nodeId === 'a')).toMatchObject({ productsPerPage: 6, featuredIds: ['p1'] })
+    expect(plan.cardStyle?.vedettePriceInk).toBe('#ffd700') // « met en jaune les TEXTES des prix des Vedettes »
+  })
+
+  it('création SANS thème renvoyé par l\'IA → repli thème par défaut (jamais de plan invalide)', () => {
+    const plan = sanitizeCatalogPlan({ sections: raw.sections }, tree, 'X')
+    expect(plan.theme.accent).toBe('#6366f1')
+    expect(plan.cover.title).toBe('X')
   })
 })

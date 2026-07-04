@@ -86,6 +86,8 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     // Cadre + nom de la fiche vedette : couleur UNIE (border-color n'accepte pas de dégradé).
     '--cat-vedette-ink': s.vedetteBg || undefined,
     '--cat-vedette-price-bg': bg(s.vedettePriceBg, s.vedettePriceBg2, theme.accent),
+    '--cat-price-ink': s.priceInk || undefined,
+    '--cat-vedette-price-ink': s.vedettePriceInk || undefined,
     '--cat-name-ink': s.nameColor || undefined,
     '--cat-cell-radius': s.radius !== 6 ? `${s.radius}px` : undefined,
     '--cat-img-share': s.imageShare !== 40 ? `${s.imageShare}%` : undefined,
@@ -177,7 +179,7 @@ export const CATALOG_CSS = `
 .cat-cell-tag { display:inline-flex; flex-direction:column; align-items:flex-end; transform:rotate(-2deg); }
 .cat-cell-was { display:inline-block; background:var(--cat-was-bg,var(--cat-head-bg)); color:var(--cat-head-ink); font-size:calc(10px * var(--cat-s-price,1));
   font-family:var(--cat-font-price,var(--cat-font-b)); font-weight:700; text-decoration:line-through; padding:3px 9px 2px; border-radius:4px 4px 0 0; white-space:nowrap; }
-.cat-cell-price { display:inline-block; background:var(--cat-price-bg,var(--cat-accent)); color:#fff; font-family:var(--cat-font-price,var(--cat-font-h));
+.cat-cell-price { display:inline-block; background:var(--cat-price-bg,var(--cat-accent)); color:var(--cat-price-ink,#fff); font-family:var(--cat-font-price,var(--cat-font-h));
   font-weight:800; font-size:calc(18px * var(--cat-s-price,1)); line-height:1; padding:6px 10px 5px; border-radius:4px; white-space:nowrap; }
 .cat-cell-was + .cat-cell-price { border-radius:4px 0 4px 4px; }
 
@@ -224,7 +226,8 @@ export const CATALOG_CSS = `
 .cat-featured { border:2px solid var(--cat-vedette-ink,var(--cat-accent)); border-bottom:6px solid var(--cat-vedette-ink,var(--cat-accent));
   box-shadow:0 6px 20px rgba(0,0,0,.12); }
 .cat-featured .cat-cell-name { color:var(--cat-vedette-ink,var(--cat-accent)); }
-.cat-featured .cat-cell-price { background:var(--cat-vedette-price-bg,var(--cat-price-bg,var(--cat-accent))); }
+.cat-featured .cat-cell-price { background:var(--cat-vedette-price-bg,var(--cat-price-bg,var(--cat-accent)));
+  color:var(--cat-vedette-price-ink,var(--cat-price-ink,#fff)); }
 .cat-cell-vedette { position:absolute; top:16px; right:-34px; transform:rotate(45deg); z-index:1;
   background:var(--cat-vedette-bg,var(--cat-accent)); color:#fff; font-family:var(--cat-font-vedette,var(--cat-font-h)); font-weight:800;
   font-size:calc(10px * var(--cat-s-vedette,1)); letter-spacing:.16em; text-transform:uppercase;
