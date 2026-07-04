@@ -156,6 +156,16 @@ export const CATALOG_CSS = `
 .cat-cell { position:relative; display:flex; flex-direction:column; min-height:0; background:#fff;
   border:1px solid rgba(17,24,39,.10); border-bottom:3px solid var(--cat-accent);
   border-radius:var(--cat-cell-radius,6px); overflow:hidden; }
+/* ── Disposition LIBRE : objets positionnés en % (le concepteur les place) ── */
+.cat-free { position:relative; overflow:hidden; }
+.cat-free .cat-obj { position:absolute; }
+/* Neutralise le positionnement intrinsèque des objets qui étaient absolus dans le flux */
+.cat-free .cat-cell-promo, .cat-free .cat-cell-kicker, .cat-free .cat-price-sticker, .cat-free .cat-cell-vedette {
+  position:static; top:auto; left:auto; right:auto; bottom:auto; display:inline-flex; }
+.cat-free .cat-cell-img-in { position:static; top:auto; left:auto; right:auto; bottom:auto; width:100%; height:100%; }
+.cat-free .cat-obj[data-object-id="image"] { background:linear-gradient(180deg,#fafbfc 0%,#eef1f4 100%); }
+.cat-free .cat-cell-body { display:contents; }
+
 .cat-cell-img { position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
   background:linear-gradient(180deg,#fafbfc 0%,#eef1f4 100%); padding:12px; }
 /* L'image REMPLIT sa zone (upscale contain) via un cadre absolu — boîte définie,

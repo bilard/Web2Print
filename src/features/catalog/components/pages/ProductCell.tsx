@@ -7,8 +7,9 @@
 import type React from 'react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import { formatPromoLabel } from '@/features/retail-promo/promoMapping'
-import type { CatalogCardStyle } from '../../catalogTypes'
+import type { CardObjectId, CatalogCardStyle } from '../../catalogTypes'
 import { formatPrice } from './catalogCss'
+import { freeLayoutBox } from './freeLayout'
 import { useResolvedImage } from '../../useResolvedImage'
 
 export type CellSize = 'md' | 'lg' | 'xl'
@@ -42,6 +43,33 @@ export function ProductCell({ fields: f, featured, kicker, size, details, horizo
   // pourcentage vit dans le sticker ; on masque le cartouche s'il ferait doublon.
   const label = show('showPromo') ? formatPromoLabel(f.promoLabel) : undefined
   const promo = label && label !== sticker ? label : null
+  if (cardStyle?.freeLayout) {
+    const obj = (id: CardObjectId, node: React.ReactNode) => {
+      const b = freeLayoutBox(id, cardStyle)
+      return (
+        <div className="cat-obj" data-object-id={id}
+          style={{ left: `${b.x}%`, top: `${b.y}%`, ...(b.w != null ? { width: `${b.w}%` } : {}), ...(b.h != null ? { height: `${b.h}%` } : {}) }}>
+          {node}
+        </div>
+      )
+    }
+    return (
+      <div className={`cat-cell cat-free cat-${size}${featured ? ' cat-featured' : ''}`} style={style}>
+        {promo && obj('promo', <span className="cat-cell-promo">{promo}</span>)}
+        {obj('image', <div className="cat-cell-img-in" data-resolving={resolving ? 'true' : undefined}>{src ? <img src={src} alt="" /> : <span className="cat-cell-img-ph">Sans visuel</span>}</div>)}
+        {sticker && obj('sticker', <span className="cat-price-sticker">{sticker}</span>)}
+        {kicker && show('showKicker') && obj('kicker', <span className="cat-cell-kicker">{kicker}</span>)}
+        {featured && show('showVedette') && obj('vedette', <span className="cat-cell-vedette">★ {cardStyle?.vedetteLabel || 'Vedette'}</span>)}
+        {f.brand && obj('brand', <span className="cat-cell-brand">{f.brand}</span>)}
+        {obj('name', <span className="cat-cell-name">{f.name || 'Produit'}</span>)}
+        {f.description && show('showDesc') && obj('description', <span className="cat-cell-desc">{f.description}</span>)}
+        {f.ref && show('showRef') && obj('ref', <span className="cat-cell-refcode">Réf. {f.ref}</span>)}
+        {f.unit && show('showUnit') && obj('unit', <span className="cat-cell-unit">Unité : {f.unit}</span>)}
+        {obj('price', <span className="cat-cell-pricebox"><span className="cat-cell-tag">{hasWas && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}<span className="cat-cell-price">{formatPrice(f.newPrice)}</span></span></span>)}
+        {details && details.length > 0 && show('showDetails') && obj('details', <div className="cat-cell-details">{details.map((d, i) => <span key={i}>{d}</span>)}</div>)}
+      </div>
+    )
+  }
   return (
     <div className={`cat-cell cat-${size}${horizontal ? ' cat-hz' : ''}${featured ? ' cat-featured' : ''}${promo ? ' cat-has-promo' : ''}`} style={style}>
       {promo && <span className="cat-cell-promo">{promo}</span>}
