@@ -10,7 +10,7 @@ const fmtDate = (ms: number) => new Date(ms).toLocaleDateString('fr-FR', { day: 
 
 /** Écran « Mes promos » : fiches enregistrées, ouverture et suppression. */
 export function PromoSavedList({ onOpened, onNew }: Props) {
-  const { setSource, setFieldMap, setConfig, setStep, setImgOverride, setTextOverride, setCurrentIndex } = useRetailPromoStore()
+  const { setSource, setFieldMap, setConfig, setStep, setImgOverride, setTextOverride, setCurrentIndex, setCustomFields } = useRetailPromoStore()
   const [promos, setPromos] = useState<SavedPromoMeta[] | null>(null)
   const [opening, setOpening] = useState<string | null>(null)
 
@@ -23,6 +23,7 @@ export function PromoSavedList({ onOpened, onNew }: Props) {
       if (!payload) throw new Error('Données de la fiche introuvables')
       setConfig(p.config)
       setFieldMap(p.fieldMap)
+      setCustomFields(p.customFields ?? [])
       setSource(p.sourceRef ?? { excelDocId: `saved_${p.id}`, sheetIndex: 0, fileName: p.name }, payload.columns, payload.rows)
       setImgOverride(payload.imgOverride ?? {})
       setTextOverride(payload.textOverride ?? {})

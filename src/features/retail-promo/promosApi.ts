@@ -2,7 +2,7 @@ import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } 
 import { auth, db } from '@/lib/firebase/config'
 import { stripUndefined } from './stripUndefined'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
-import type { PromoFieldKey } from './promoTypes'
+import type { PromoFieldKey, CustomFieldMap } from './promoTypes'
 import type { PromoTemplateConfig, PromoColorKey } from './RetailPromoCard'
 
 /** Fiche promo enregistrée (métadonnées + habillage ; les lignes vivent dans un doc payload séparé). */
@@ -11,6 +11,7 @@ export interface SavedPromoMeta {
   name: string
   sourceRef: DataSourceRef | null
   fieldMap: Partial<Record<PromoFieldKey, string>>
+  customFields: CustomFieldMap
   config: PromoTemplateConfig
   rowCount: number
   updatedAt: number
@@ -26,6 +27,7 @@ export interface SavePromoInput {
   name: string
   sourceRef: DataSourceRef | null
   fieldMap: Partial<Record<PromoFieldKey, string>>
+  customFields: CustomFieldMap
   config: PromoTemplateConfig
   columns: MergeColumn[]
   rows: MergeRow[]
@@ -51,7 +53,7 @@ export async function savePromo(input: SavePromoInput, existingId?: string): Pro
   // (champ « (non mappé) », style remis par défaut) → fiche jamais enregistrée.
   await setDoc(ref, {
     ...stripUndefined({
-      name: input.name, sourceRef: input.sourceRef, fieldMap: input.fieldMap,
+      name: input.name, sourceRef: input.sourceRef, fieldMap: input.fieldMap, customFields: input.customFields,
       config: input.config, rowCount: input.rows.length,
       ...(input.thumbnail ? { thumbnail: input.thumbnail } : null),
     }),
@@ -71,7 +73,9 @@ export async function listPromos(): Promise<SavedPromoMeta[]> {
       const v = d.data()
       return {
         id: d.id, name: String(v.name ?? d.id), sourceRef: (v.sourceRef ?? null) as DataSourceRef | null,
-        fieldMap: (v.fieldMap ?? {}) as SavedPromoMeta['fieldMap'], config: v.config as PromoTemplateConfig,
+        fieldMap: (v.fieldMap ?? {}) as SavedPromoMeta['fieldMap'],
+        customFields: (v.customFields ?? []) as CustomFieldMap,
+        config: v.config as PromoTemplateConfig,
         rowCount: Number(v.rowCount ?? 0), updatedAt: Number(v.updatedAt?.seconds ?? 0) * 1000,
         thumbnail: v.thumbnail as string | undefined,
       }

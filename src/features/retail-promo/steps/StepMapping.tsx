@@ -1,5 +1,6 @@
 import { useRetailPromoStore } from '../retailPromo.store'
 import type { PromoFieldKey } from '../promoTypes'
+import { CustomFieldsEditor } from '../components/CustomFieldsEditor'
 
 const FIELD_LABELS: Array<{ key: PromoFieldKey; label: string }> = [
   { key: 'name', label: 'Nom produit' },
@@ -21,7 +22,7 @@ const FIELD_LABELS: Array<{ key: PromoFieldKey; label: string }> = [
 ]
 
 export function StepMapping() {
-  const { rawColumns, fieldMap, setFieldMap, setStep } = useRetailPromoStore()
+  const { rawColumns, fieldMap, setFieldMap, setStep, customFields, setCustomFields } = useRetailPromoStore()
 
   const handleChange = (promoKey: PromoFieldKey, colKey: string) => {
     setFieldMap({ ...fieldMap, [promoKey]: colKey || undefined } as typeof fieldMap)
@@ -51,6 +52,11 @@ export function StepMapping() {
             </select>
           </div>
         ))}
+      </div>
+
+      <div>
+        <div className="text-xs font-semibold text-white/70 uppercase tracking-wide mb-2">Champs supplémentaires</div>
+        <CustomFieldsEditor customFields={customFields} columns={rawColumns} onChange={setCustomFields} />
       </div>
 
       {rawColumns.length === 0 && (

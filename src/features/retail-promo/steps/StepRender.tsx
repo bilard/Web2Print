@@ -87,9 +87,9 @@ async function captureThumb(node: HTMLDivElement): Promise<string | undefined> {
 }
 
 export function StepRender() {
-  const { rawColumns, rawRows, fieldMap, config, sourceRef, setSource, currentIndex, setCurrentIndex, imgOverride, setImgOverrideAt, textOverride, setTextOverrideAt, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
+  const { rawColumns, rawRows, fieldMap, customFields, config, sourceRef, setSource, currentIndex, setCurrentIndex, imgOverride, setImgOverrideAt, textOverride, setTextOverrideAt, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
   const euroSep = { now: config.styles?.priceNow?.euroSep, was: config.styles?.priceWas?.euroSep }
-  const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap), euroSep))
+  const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap, customFields), euroSep, customFields))
 
   const index = currentIndex, setIndex = setCurrentIndex
   const [busy, setBusy] = useState<'one' | 'all' | 'html' | null>(null)
@@ -186,7 +186,7 @@ export function StepRender() {
       }
       // Upsert par nom : réenregistrer une fiche du même nom l'écrase (pas de doublon).
       const existing = (await listPromos()).find((p) => p.name === name)
-      await savePromo({ name, sourceRef, fieldMap, config, columns: rawColumns, rows: rawRows, imgOverride, textOverride, thumbnail }, existing?.id)
+      await savePromo({ name, sourceRef, fieldMap, customFields, config, columns: rawColumns, rows: rawRows, imgOverride, textOverride, thumbnail }, existing?.id)
       setFicheName(name)
       toast.success(existing ? `Fiche « ${name} » mise à jour` : `Fiche « ${name} » enregistrée`)
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec de l\'enregistrement') } finally { setSavingFiche(false) }
