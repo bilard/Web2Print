@@ -123,7 +123,7 @@ export const STYLE_KEYS: PromoColorKey[] = [
 /** Blocs déco sélectionnables (fond uni/dégradé + resize par échelle). */
 const DECO_BLOCKS: PromoBlockId[] = ['header', 'image', 'badge', 'price', 'details']
 /** Textes éditables inline (double-clic dans la carte). */
-const EDITABLE_TEXT: PromoColorKey[] = ['category', 'name', 'brand', 'description', 'priceLabel', 'footer']
+const EDITABLE_TEXT: PromoColorKey[] = ['category', 'name', 'brand', 'description', 'priceLabel']
 const SELECTABLE: PromoBlockId[] = [...(STYLE_KEYS as PromoBlockId[]), ...DECO_BLOCKS]
 
 export const FONT_OPTIONS = [

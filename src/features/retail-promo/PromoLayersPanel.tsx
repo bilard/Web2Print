@@ -69,7 +69,7 @@ export function PromoLayersPanel() {
       case 'priceWas': return card.priceWas ?? ''
       case 'priceNow': return card.priceNow ?? ''
       case 'unitPrice': return card.unitPrice ?? ''
-      case 'footer': return tov.footer ?? card.validite ?? ''
+      case 'footer': return [card.enseigne, card.validite, card.mentions].filter(Boolean).join(' — ')
       case 'badge': return card.remiseLabel ?? ''
       case 'details': return card.details.join(' · ')
       case 'image': {
