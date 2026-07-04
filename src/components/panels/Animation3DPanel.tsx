@@ -6,6 +6,7 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { startObjectAnimation } from '@/features/animation3d/useAnimation3D'
 import { OptionHelp } from '@/components/shared/OptionHelp'
 import { useCanvasRecorder } from '@/features/animation3d/useCanvasRecorder'
+import { SliderField } from '@/components/shared/panel'
 import type { Animation3DConfig, Animation3DPreset } from '@/features/animation3d/types'
 import { PRESETS, DEFAULT_ANIMATION_CONFIG } from '@/features/animation3d/types'
 
@@ -273,28 +274,28 @@ export function Animation3DPanel() {
             <OptionHelp text="Donne du volume au texte/objet : profondeur d'extrusion, biseau des arêtes et rotation sur les axes X/Y. Rotation auto pour une animation continue." />
           </div>
 
-          <Slider
+          <SliderField
             label="Profondeur"
             value={reliefConfig.depth}
             min={5} max={120} step={1}
             unit="px"
             onChange={(depth) => updateReliefConfig({ depth })}
           />
-          <Slider
+          <SliderField
             label="Biseau"
             value={reliefConfig.bevel}
             min={0} max={20} step={0.5}
             unit="px"
             onChange={(bevel) => updateReliefConfig({ bevel })}
           />
-          <Slider
+          <SliderField
             label="Rotation X"
             value={reliefConfig.rotX}
             min={-45} max={45} step={1}
             unit="°"
             onChange={(rotX) => updateReliefConfig({ rotX })}
           />
-          <Slider
+          <SliderField
             label="Rotation Y"
             value={reliefConfig.rotY}
             min={-90} max={90} step={1}
@@ -321,7 +322,7 @@ export function Animation3DPanel() {
             {/* Directional light */}
             <div className="space-y-2 rounded bg-white/5 p-2">
               <div className="text-[10px] uppercase tracking-wider text-white/50">Lumière directionnelle</div>
-              <Slider
+              <SliderField
                 label="Intensité"
                 value={reliefConfig.lighting.directionalIntensity}
                 min={0} max={3} step={0.05}
@@ -333,19 +334,19 @@ export function Animation3DPanel() {
                 value={reliefConfig.lighting.directionalColor}
                 onChange={(directionalColor) => updateReliefLighting({ directionalColor })}
               />
-              <Slider
+              <SliderField
                 label="Position X"
                 value={reliefConfig.lighting.dirPosX}
                 min={-5} max={5} step={0.1}
                 onChange={(dirPosX) => updateReliefLighting({ dirPosX })}
               />
-              <Slider
+              <SliderField
                 label="Position Y"
                 value={reliefConfig.lighting.dirPosY}
                 min={-5} max={5} step={0.1}
                 onChange={(dirPosY) => updateReliefLighting({ dirPosY })}
               />
-              <Slider
+              <SliderField
                 label="Position Z"
                 value={reliefConfig.lighting.dirPosZ}
                 min={1} max={10} step={0.1}
@@ -356,7 +357,7 @@ export function Animation3DPanel() {
             {/* Ambient light */}
             <div className="space-y-2 rounded bg-white/5 p-2">
               <div className="text-[10px] uppercase tracking-wider text-white/50">Lumière ambiante</div>
-              <Slider
+              <SliderField
                 label="Intensité"
                 value={reliefConfig.lighting.ambientIntensity}
                 min={0} max={2} step={0.05}
@@ -459,37 +460,6 @@ export function Animation3DPanel() {
             : 'Particules rendues en overlay Three.js au-dessus du canvas. Cliquez Lancer pour démarrer.'}
         </div>
       )}
-    </div>
-  )
-}
-
-interface SliderProps {
-  label: string
-  value: number
-  min: number
-  max: number
-  step: number
-  unit?: string
-  onChange: (v: number) => void
-}
-
-function Slider({ label, value, min, max, step, unit, onChange }: SliderProps) {
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-[10.5px] text-white/60">
-        <span>{label}</span>
-        <span className="tabular-nums text-white/80">
-          {Number.isInteger(step) ? value.toFixed(0) : value.toFixed(2)}
-          {unit ?? ''}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={min} max={max} step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-indigo-500"
-      />
     </div>
   )
 }
