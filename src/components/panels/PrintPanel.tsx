@@ -8,6 +8,7 @@ import { db } from '@/lib/firebase/config'
 import { usePrintPresets, type PrintPresetParams } from '@/features/print/usePrintPresets'
 import { applyPrintDefaults } from '@/features/print/printDefaults'
 import { OptionHelp } from '@/components/shared/OptionHelp'
+import { PropertySection } from '@/components/shared/panel'
 import { PreflightSection } from './PreflightSection'
 
 /**
@@ -131,11 +132,11 @@ export function PrintPanel() {
   return (
     <div className="p-3 flex flex-col gap-4">
       {/* ── Famille de paramètres (presets réutilisables entre projets) ── */}
-      <section data-tour="opt-print-presets" className="flex flex-col gap-1.5">
-        <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
-          Famille de paramètres
-          <OptionHelp text="Enregistrez vos réglages d'impression comme preset réutilisable d'un projet à l'autre. Les icônes à droite : créer, mettre à jour, supprimer une famille." />
-        </label>
+      <PropertySection
+        title="Famille de paramètres"
+        tourId="print-presets"
+        help="Enregistrez vos réglages d'impression comme preset réutilisable d'un projet à l'autre. Les icônes à droite : créer, mettre à jour, supprimer une famille."
+      >
         <div className="flex gap-1">
           <select
             value={selectedPresetId}
@@ -172,7 +173,7 @@ export function PrintPanel() {
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
-      </section>
+      </PropertySection>
 
       {/* ── Actions ── */}
       <div className="flex gap-2">
@@ -196,11 +197,11 @@ export function PrintPanel() {
       </div>
 
       {/* ── Résolution ── */}
-      <section data-tour="opt-print-dpi" className="flex flex-col gap-1">
-        <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
-          Résolution (DPI)
-          <OptionHelp text="Densité de l'export en points par pouce. 300 DPI = standard offset/impression. 72 DPI = web. Plus le DPI est élevé, plus le fichier est lourd et net." />
-        </label>
+      <PropertySection
+        title="Résolution (DPI)"
+        tourId="print-dpi"
+        help="Densité de l'export en points par pouce. 300 DPI = standard offset/impression. 72 DPI = web. Plus le DPI est élevé, plus le fichier est lourd et net."
+      >
         <select
           value={dpi}
           onChange={(e) => setDpi(Number(e.target.value))}
@@ -211,17 +212,15 @@ export function PrintPanel() {
           <option value={300}>300 DPI — offset (recommandé)</option>
           <option value={600}>600 DPI — très haute définition</option>
         </select>
-      </section>
+      </PropertySection>
 
       {/* ── Fond perdu ── */}
-      <section data-tour="opt-print-bleed" className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
-            Fond perdu (bleed)
-            <OptionHelp text="Marge de débord autour de la page, imprimée puis rognée. Évite les liserés blancs si la coupe est légèrement décalée. 3 mm = standard offset, 5 mm = numérique." />
-          </label>
-          <span className="text-[11px] text-white/80 font-mono tabular-nums">{bleedMm} mm</span>
-        </div>
+      <PropertySection
+        title="Fond perdu (bleed)"
+        tourId="print-bleed"
+        help="Marge de débord autour de la page, imprimée puis rognée. Évite les liserés blancs si la coupe est légèrement décalée. 3 mm = standard offset, 5 mm = numérique."
+        badge={<span className="text-[11px] text-white/80 font-mono tabular-nums">{bleedMm} mm</span>}
+      >
         <input
           type="range"
           min={0}
@@ -237,15 +236,14 @@ export function PrintPanel() {
           <span>5 num.</span>
           <span>10</span>
         </div>
-      </section>
+      </PropertySection>
 
       {/* ═══ REPÈRES D'IMPRESSION ═══ */}
-      <section data-tour="opt-print-marks" className="flex flex-col gap-3 pt-3 border-t border-white/5">
-        <h3 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
-          Repères d'impression
-          <OptionHelp text="Marques ajoutées hors page pour guider l'imprimeur : traits de coupe (où rogner), repères de fond perdu, et hirondelles (calage des couleurs)." />
-        </h3>
-
+      <PropertySection
+        title="Repères d'impression"
+        tourId="print-marks"
+        help="Marques ajoutées hors page pour guider l'imprimeur : traits de coupe (où rogner), repères de fond perdu, et hirondelles (calage des couleurs)."
+      >
         {/* Traits de coupe */}
         <MarkGroup
           icon={<Scissors className="w-3 h-3" />}
@@ -321,15 +319,14 @@ export function PrintPanel() {
           />
           <ColorControl label="Couleur" value={regColor} onChange={setRegColor} />
         </MarkGroup>
-      </section>
+      </PropertySection>
 
       {/* ═══ ZONE DE SÉCURITÉ ═══ */}
-      <section data-tour="opt-print-safe" className="flex flex-col gap-3 pt-3 border-t border-white/5">
-        <h3 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
-          Zone de sécurité
-          <OptionHelp text="Marge intérieure de sécurité : gardez-y le texte et les éléments importants pour qu'ils ne soient pas coupés au rognage." />
-        </h3>
-
+      <PropertySection
+        title="Zone de sécurité"
+        tourId="print-safe"
+        help="Marge intérieure de sécurité : gardez-y le texte et les éléments importants pour qu'ils ne soient pas coupés au rognage."
+      >
         <MarkGroup
           icon={<Shield className="w-3 h-3" />}
           label="Afficher la zone de sécurité"
@@ -362,7 +359,7 @@ export function PrintPanel() {
           />
           <ColorControl label="Couleur" value={safeColor} onChange={setSafeColor} />
         </MarkGroup>
-      </section>
+      </PropertySection>
 
       {/* Contrôle pré-impression (résolution images, hors page, textes) */}
       <PreflightSection />

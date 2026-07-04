@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { ShieldCheck, AlertTriangle, OctagonAlert, CheckCircle2 } from 'lucide-react'
+import { AlertTriangle, OctagonAlert, CheckCircle2 } from 'lucide-react'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { collectPreflightInfo, runPreflight, type PreflightIssue } from '@/features/editor/preflight'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
-import { OptionHelp } from '@/components/shared/OptionHelp'
+import { PropertySection } from '@/components/shared/panel'
 
 /**
  * Section « Preflight » du panneau Impression : analyse le canvas (résolution
@@ -43,21 +43,18 @@ export function PreflightSection() {
   const warnings = issues?.filter((i) => i.severity === 'warning') ?? []
 
   return (
-    <section className="flex flex-col gap-2 pt-3 border-t border-white/5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs text-white/80">
-          <ShieldCheck className="w-3.5 h-3.5 text-white/50" />
-          <span>Preflight</span>
-          <OptionHelp text="Contrôle pré-impression : images sous 150/225 DPI effectifs, objets hors page (au-delà du fond perdu), textes < 5 pt ou à moins de 3 mm du bord de coupe." />
-        </div>
+    <PropertySection
+      title="Preflight"
+      help="Contrôle pré-impression : images sous 150/225 DPI effectifs, objets hors page (au-delà du fond perdu), textes < 5 pt ou à moins de 3 mm du bord de coupe."
+      badge={
         <button
           onClick={analyze}
           className="px-2.5 py-1 rounded-md bg-white/[0.06] hover:bg-white/[0.1] text-[11px] text-white/70 transition-colors"
         >
           Analyser
         </button>
-      </div>
-
+      }
+    >
       {issues !== null && issues.length === 0 && (
         <div className="flex items-center gap-1.5 text-[11px] text-emerald-300/80 px-1">
           <CheckCircle2 className="w-3.5 h-3.5" />
@@ -90,6 +87,6 @@ export function PreflightSection() {
           ))}
         </div>
       )}
-    </section>
+    </PropertySection>
   )
 }
