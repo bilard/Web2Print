@@ -23,12 +23,12 @@
 
 - **`promoTypes.ts`**
   - `PromoFields` reçoit `extra?: Record<string, string>` (id de champ libre → valeur lue dans la ligne).
-  - Nouveau type exporté `CustomField = { id: string; label: string; column: string }` et `CustomFieldMap = CustomField[]`. `id` = slug stable généré à la création (pas d'index positionnel).
+  - Nouveau type exporté `CustomField = { id: string; label: string; column: string }` et `CustomFieldMap = CustomField[]`. `id` = slug stable généré à la création (pas d'index positionnel). `label` = **identifiant côté éditeur uniquement** (aide à repérer la colonne), **non rendu** sur la fiche.
 - **`promoMapping.ts`**
   - `extractPromoFields(row, columns, fieldMap, customFields?: CustomFieldMap)` — nouveau 4e paramètre **optionnel** (rétro-compatible). Peuple `f.extra[cf.id] = str(cf.column)` pour chaque champ libre dont la colonne est renseignée et la valeur non vide.
   - `defaultPromoFieldMap` inchangé (devinage des slots fixes uniquement).
 - **`promoCardData.ts`**
-  - `toCardData(f)` passe désormais `extra` → `details: { label, value }[]` (l'ordre suit `customFields` ; le label vient de `CustomField.label`, pas de `f.extra`). ⚠ `toCardData` reçoit `f: PromoFields` seul → pour connaître les **labels**, `RetailPromoCard` doit recevoir `customFields` séparément OU `toCardData` prend un 2e param `customFields`. **Choix** : `toCardData(f, customFields?)` construit `details` en joignant `customFields` (label) et `f.extra` (valeur).
+  - `toCardData(f, customFields?)` passe `extra` → `details: string[]` (**valeurs seules, sans label** ; l'ordre suit `customFields`, valeurs vides omises). Le param `customFields` sert uniquement à l'**ordre** ; le `label` de `CustomField` n'est **pas** rendu (identifiant d'éditeur uniquement).
   - Ajoute au `RetailCardData` : `unit`, `mentions`, `enseigne`, `ean` (fix désync) + `details`.
 
 ### Volet Catalogue studio — `src/features/catalog/`
@@ -46,7 +46,7 @@
   - Section **« Champs supplémentaires »** (add/nommer/choisir colonne/supprimer) → `customFields`.
   - Réutilise le composant partagé `CustomFieldsEditor` (voir ci-dessous).
 - **Rendu** (`components/pages/ProductCell.tsx`, `catalogCss.ts`)
-  - Nouvelle zone `.cat-cell-details` (liste `label : valeur`) sous la description, alimentée par `extractPromoFields(..., customFields).extra` joint à `customFields` pour les labels.
+  - Nouvelle zone `.cat-cell-details` (liste de **valeurs seules**, une par ligne) sous la description, alimentée par `extractPromoFields(..., customFields).extra` dans l'ordre de `customFields`.
   - `CatalogCardStyle` reçoit un toggle `showDetails` (Éléments affichés) + une échelle `detailsScale` (Style des fiches → typo par champ) → var CSS `--cat-s-details`. Font-size en `calc(Npx * var(--cat-s-details) * ${F})` (règle `${F}` obligatoire, cf. typoFit).
   - `ProductGridPage.tsx` passe `customFields` (depuis le plan/store) à `extractPromoFields`.
 
@@ -58,7 +58,7 @@
   - Nouvelle section **« Champs supplémentaires »** = `CustomFieldsEditor`.
 - **Rendu** (`RetailPromoCard.tsx`, `promoCardData.ts`)
   - **Un seul** nouvel id `details` ajouté à l'union `PromoBlockId` (bloc groupé). Il participe automatiquement aux `Record<PromoBlockId, …>` existants (offsets/scales/styles/blockFills/shapes/hidden/rules) → stylable/déplaçable **en tant que bloc entier**, sans refonte.
-  - Rendu `.rp-details` = liste `label : valeur` depuis `data.details`.
+  - Rendu `.rp-details` = liste de **valeurs seules** (une par ligne) depuis `data.details: string[]`.
   - Fix désync : afficher `unit` (près du prix), `mentions` (pied), `enseigne`, `ean` selon leur emplacement naturel. Ajout des ids de bloc/couleur correspondants **uniquement** si l'on veut les styler séparément — sinon rattachés au pied/prix existants (à trancher en impl, défaut : rattachés, zéro nouvel id hormis `details`).
 
 ### Composant partagé — `CustomFieldsEditor`
@@ -83,7 +83,7 @@ source (colonnes)
 ## Tests (moteurs purs, Vitest)
 
 - `promoMapping.test.ts` : `extractPromoFields` peuple `extra` depuis `customFields` (colonne présente → valeur ; colonne absente/vide → clé omise) ; signature à 3 params reste identique (rétro-compat).
-- `promoCardData.test.ts` (nouveau ou étendu) : `toCardData(f, customFields)` produit `details` ordonné + labels ; expose `unit/mentions/enseigne/ean`.
+- `promoCardData.test.ts` (nouveau ou étendu) : `toCardData(f, customFields)` produit `details` (valeurs seules) dans l'ordre de `customFields`, vides omises ; expose `unit/mentions/enseigne/ean`.
 - `catalog.store.test.ts` : `setFieldMapOverride(key, col)` puis recompute → `fieldMap` = merge ; `setFieldMapOverride(key, null)` revient au devinage ; overrides survivent à un re-boot simulé (le devinage ne les écrase pas).
 - Non-régression : tests existants catalog/retail-promo restent verts.
 
