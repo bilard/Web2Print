@@ -24,6 +24,8 @@ export interface CatalogRenderCtx {
   totalPages: number
   coverImageUrl: string | null
   backCoverImageUrl: string | null
+  /** univers → couleur cyclique (palette du chemin de fer) — utilisé si pageStyle.chapterColors. */
+  universeColors?: Map<string, string>
 }
 
 /** Charge une fois les polices Google (nécessaire aussi pour html2canvas). */

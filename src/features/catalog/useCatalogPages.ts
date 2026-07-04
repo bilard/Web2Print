@@ -5,7 +5,7 @@ import { useCatalogStore } from '@/stores/catalog.store'
 import { extractPromoFields } from '@/features/retail-promo/promoMapping'
 import { buildCatalogTree } from './catalogTree'
 import { paginateCatalog } from './catalogEngine'
-import { applyPageOrder } from './catalogFlatplan'
+import { applyPageOrder, universeColors } from './catalogFlatplan'
 import { defaultCatalogPlan } from './catalogPlan'
 import type { CatalogPageDescriptor, CatalogTreeNode } from './catalogTypes'
 import type { CatalogRenderCtx } from './components/pages/catalogCss'
@@ -51,6 +51,7 @@ export function useCatalogPages(): CatalogPagesResult {
       plan, format: s.format, rowsById: new Map(rows.map((r) => [r._id, r])), columns: s.rawColumns,
       fieldMap: s.fieldMap, catalogName: s.name, totalPages: pages.length,
       coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
+      universeColors: universeColors(pages),
     }
     return { pages, ctx, keys, tree }
   }, [s.rawRows, s.rawColumns, s.selectedRowIds, s.levelKeys, s.treeEdits, s.plan, s.format, s.fieldMap, s.name, s.coverImageUrl, s.backCoverImageUrl, s.pageOrder])

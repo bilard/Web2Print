@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type CSSProperties } from 'react'
 import type { CatalogPageDescriptor } from '../../catalogTypes'
 import { CATALOG_CSS, cardStyleVars, ensureCatalogFonts, mergedPageStyle, pagePx, pageStyleVars, themeVars, type CatalogRenderCtx } from './catalogCss'
 import { CatalogHeader } from './CatalogHeader'
@@ -15,8 +15,16 @@ export function CatalogPageView({ page, ctx }: Props) {
   const { w, h } = pagePx(ctx.format)
   const ps = mergedPageStyle(ctx.plan.pageStyle)
   const chrome = page.kind === 'products' || page.kind === 'toc' || page.kind === 'opener'
+  // « Couleurs par chapitre » : bandeau + affiche d'ouverture prennent la couleur
+  // de l'univers (même palette que le chemin de fer) au lieu du bandeau du thème.
+  const chapterColor = ps.chapterColors && (page.kind === 'products' || page.kind === 'opener')
+    ? ctx.universeColors?.get(page.nodeId)
+    : undefined
   return (
-    <div className="cat-page" style={{ width: w, height: h, ...themeVars(ctx.plan.theme), ...cardStyleVars(ctx.plan.cardStyle, ctx.plan.theme), ...pageStyleVars(ctx.plan.pageStyle) }}>
+    <div className="cat-page" style={{
+      width: w, height: h, ...themeVars(ctx.plan.theme), ...cardStyleVars(ctx.plan.cardStyle, ctx.plan.theme), ...pageStyleVars(ctx.plan.pageStyle),
+      ...(chapterColor ? ({ '--cat-head-bg': chapterColor, '--cat-head-ink': '#fff' } as CSSProperties) : {}),
+    }}>
       <style>{CATALOG_CSS}</style>
       {page.kind === 'products' && ps.showHeader && <CatalogHeader breadcrumb={page.breadcrumb} pageNumber={page.pageNumber} />}
       {page.kind === 'cover' && <CoverPage ctx={ctx} variant="cover" />}

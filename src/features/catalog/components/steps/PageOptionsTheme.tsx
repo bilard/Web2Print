@@ -5,8 +5,9 @@
 import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import { UserFontsPanel } from '@/features/fonts/UserFontsPanel'
 import type { CatalogPlan, CatalogTheme } from '../../catalogTypes'
+import { mergedPageStyle } from '../pages/catalogCss'
 import { TemplatesBar } from './TemplatesBar'
-import { OptSection, optFieldClass } from './PageOptionControls'
+import { OptSection, OptToggle, optFieldClass } from './PageOptionControls'
 
 interface Props {
   plan: CatalogPlan
@@ -23,6 +24,7 @@ const THEME_COLORS: { key: keyof Pick<CatalogTheme, 'accent' | 'pageBg' | 'ink' 
 
 export function PageOptionsTheme({ plan, setPlan }: Props) {
   const theme = plan.theme
+  const style = mergedPageStyle(plan.pageStyle)
   const setColor = (key: (typeof THEME_COLORS)[number]['key'], value: string) => setPlan({ ...plan, theme: { ...theme, [key]: value } })
   const setFont = (key: 'fontHeading' | 'fontBody', value: string) => setPlan({ ...plan, theme: { ...theme, [key]: value } })
 
@@ -38,6 +40,9 @@ export function PageOptionsTheme({ plan, setPlan }: Props) {
             </label>
           ))}
         </div>
+        {/* Le bandeau du thème s'efface quand les couleurs par chapitre sont actives. */}
+        <OptToggle label="Couleurs par chapitre (bandeau & ouvertures)" checked={style.chapterColors}
+          onChange={(v) => setPlan({ ...plan, pageStyle: { ...style, chapterColors: v } })} />
       </OptSection>
       <OptSection title="Polices">
         <div className="grid grid-cols-2 gap-2">

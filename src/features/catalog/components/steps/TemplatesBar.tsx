@@ -6,6 +6,10 @@ import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { listCatalogTemplates, saveCatalogTemplate, deleteCatalogTemplate, type CatalogTemplate } from '../../catalogTemplatesApi'
 import type { CatalogGrid, CatalogPlan } from '../../catalogTypes'
+import { mergedPageStyle } from '../pages/catalogCss'
+
+/** Entrée fixe de la liste : active les couleurs PAR CHAPITRE (palette du chemin de fer). */
+const CHAPTER_DEFAULT_ID = '__chapter-colors__'
 
 interface TemplatesBarProps {
   plan: CatalogPlan
@@ -36,6 +40,13 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
   useEffect(() => { reload() }, [])
 
   const applyTemplate = (id: string) => {
+    if (id === CHAPTER_DEFAULT_ID) {
+      // Pas un modèle enregistré : applique la couleur de chaque chapitre au
+      // bandeau et aux ouvertures (comme le chemin de fer), puis rend la main.
+      setSelectedId('')
+      setPlan({ ...plan, pageStyle: { ...mergedPageStyle(plan.pageStyle), chapterColors: true } })
+      return
+    }
     setSelectedId(id)
     const t = templates.find((tpl) => tpl.id === id)
     if (!t) return
@@ -67,6 +78,7 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
       <div className="flex items-center gap-2">
         <select value={selectedId} onChange={(e) => applyTemplate(e.target.value)} aria-label="Mes modèles" className={fieldClass}>
           <option value="">Appliquer un modèle…</option>
+          <option value={CHAPTER_DEFAULT_ID}>Défaut — couleurs par chapitre</option>
           {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
         <button type="button" onClick={handleDelete} disabled={!selectedId}

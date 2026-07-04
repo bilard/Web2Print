@@ -127,6 +127,8 @@ export interface CatalogPageStyle {
   /** Bandeau taxonomie des pages produits. */
   showHeader: boolean
   headerScale: number
+  /** Couleurs PAR CHAPITRE : bandeau + affiche d'ouverture prennent la couleur de l'univers (palette du chemin de fer) au lieu du bandeau du thème. */
+  chapterColors: boolean
   /** Pied de page (folio + nom du catalogue). */
   showFooter: boolean
   showFooterName: boolean
@@ -150,7 +152,7 @@ export interface CatalogPageStyle {
 }
 
 export const DEFAULT_PAGE_STYLE: CatalogPageStyle = {
-  showHeader: true, headerScale: 1,
+  showHeader: true, headerScale: 1, chapterColors: false,
   showFooter: true, showFooterName: true, folioScale: 1,
   showOpenerNum: true, showOpenerChip: true, showOpenerCount: true, showOpenerPanel: true, openerTitleScale: 1,
   coverTitleScale: 1, showCoverBaseline: true, showCoverSubtitle: true, showCoverRule: true, coverOverlay: 55,
