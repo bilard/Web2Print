@@ -30,11 +30,19 @@ export function SelectField<T extends string>({ label, value, options, onChange 
   )
 }
 
-/** Curseur 0-100 % (valeur stockée 0..1). */
-export function SliderField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+/**
+ * Curseur. Défaut = pourcentage 0..1 affiché ×100 % (rétro-compatible).
+ * `min/max/step/unit` permettent des bornes libres (mm, px, °, ×, s…) pour les
+ * panneaux qui ont des sliders non-% (Print, Animation3D, DataMerge).
+ */
+export function SliderField({ label, value, onChange, min = 0, max = 1, step = 0.01, unit = '%' }: {
+  label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; unit?: string
+}) {
+  const isPct = unit === '%' && max <= 1
+  const shown = isPct ? `${Math.round(value * 100)} %` : `${Math.round(value * 100) / 100}${unit}`
   return (
-    <label className={labelCls}>{label} ({Math.round(value * 100)} %)
-      <input type="range" min={0} max={1} step={0.01} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[#6366f1]" />
+    <label className={labelCls}>{label} ({shown})
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[#6366f1]" />
     </label>
   )
 }
