@@ -1,6 +1,7 @@
 // src/features/catalog/components/steps/StepPrompt.tsx
 // Étape 3 du wizard « Catalogue studio » : carte prompt (génération EN HAUT),
-// puis cartes Thème/Couverture/4e (PlanStylePanel) et carte Sections.
+// puis cartes Style des fiches et Sections. Thème, couvertures et fonds de
+// page s'éditent dans l'Aperçu (panneau « Fond de page », PageOptionsPanel).
 // L'IA ne bloque jamais : échec → repli sur defaultCatalogPlan + toast explicite.
 import { useMemo, useState } from 'react'
 import { Loader2, ArrowRight, Sparkles } from 'lucide-react'
@@ -9,7 +10,6 @@ import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree, flattenTree } from '../../catalogTree'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
 import { extractPromoFields } from '@/features/retail-promo/promoMapping'
-import { PlanStylePanel } from './PlanStylePanel'
 import { CardStyleCard } from './CardStyleCard'
 import { SectionsCard } from './SectionsCard'
 import { StepActionsPortal } from './StepActionsPortal'
@@ -24,8 +24,6 @@ export function StepPrompt() {
   const levelKeys = useCatalogStore((s) => s.levelKeys)
   const treeEdits = useCatalogStore((s) => s.treeEdits)
   const fieldMap = useCatalogStore((s) => s.fieldMap)
-  const coverImageUrl = useCatalogStore((s) => s.coverImageUrl)
-  const backCoverImageUrl = useCatalogStore((s) => s.backCoverImageUrl)
   const setPrompt = useCatalogStore((s) => s.setPrompt)
   const setPlan = useCatalogStore((s) => s.setPlan)
   const setStep = useCatalogStore((s) => s.setStep)
@@ -99,12 +97,11 @@ export function StepPrompt() {
 
         {plan ? (
           <>
-            <PlanStylePanel plan={plan} setPlan={setPlan} coverImageUrl={coverImageUrl} backCoverImageUrl={backCoverImageUrl} />
             <CardStyleCard plan={plan} setPlan={setPlan} sampleFields={sampleFields} />
             <SectionsCard plan={plan} flatNodes={flatNodes} rowsById={rowsById} columns={rawColumns} fieldMap={fieldMap} />
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">Générez un plan pour éditer le thème, les couvertures et les sections.</p>
+          <p className="text-sm text-muted-foreground">Générez un plan pour éditer le style des fiches et les sections — thème et couvertures s'éditent dans l'Aperçu (panneau « Fond de page »).</p>
         )}
       </div>
     </div>
