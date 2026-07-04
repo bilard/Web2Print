@@ -5,6 +5,7 @@
 // page. Aperçu live à droite (vrai moteur de rendu, données du 1er produit).
 import { Brush, RotateCcw } from 'lucide-react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
+import { PropertySection } from '@/components/shared/panel'
 import { DEFAULT_CARD_STYLE, type CatalogCardStyle, type CatalogPlan } from '../../catalogTypes'
 import { CardStylePreview } from './CardStylePreview'
 import { CardStyleTypo } from './CardStyleTypo'
@@ -36,44 +37,64 @@ export function CardStyleCard({ plan, setPlan, sampleFields }: CardStyleCardProp
       <div className="flex items-center justify-between gap-3">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
           <Brush className="w-4 h-4 text-indigo-400" /> Style des fiches
-          <span className="text-xs font-normal text-muted-foreground">— cosmétique seulement, la mise en page fluide est préservée</span>
+          <span className="text-xs font-normal text-white/40">— cosmétique seulement, la mise en page fluide est préservée</span>
         </h3>
         <button type="button" onClick={() => setPlan({ ...plan, cardStyle: { ...DEFAULT_CARD_STYLE } })}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-muted-foreground hover:text-white hover:bg-surface-2"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-white/40 hover:text-white hover:bg-well"
           title="Revenir au style par défaut">
           <RotateCcw className="w-3.5 h-3.5" /> Réinitialiser
         </button>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] items-start">
-        <div className="space-y-4 min-w-0">
-          <CardStyleTypo style={style} patch={patch} />
-          <CardStyleColors style={style} theme={plan.theme} patch={patch} />
-          <div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Éléments affichés</div>
+        <div className="min-w-0">
+          <PropertySection title="Texte : taille & police" help="Un réglage par champ texte (nom, prix, description...).">
+            <CardStyleTypo style={style} patch={patch} />
+          </PropertySection>
+
+          <PropertySection title="Couleurs des objets" help="2e case = dégradé (✕ pour revenir à l'uni).">
+            <CardStyleColors style={style} theme={plan.theme} patch={patch} />
+          </PropertySection>
+
+          <PropertySection title="Image">
+            <div className="grid grid-cols-2 gap-4">
+              <label className="text-xs text-white/40 space-y-1">
+                <span className="flex justify-between">Largeur (cartes horizontales)<b className="text-white tabular-nums">{style.imageShare}%</b></span>
+                <input type="range" min={25} max={55} step={1} value={style.imageShare}
+                  onChange={(e) => patch({ imageShare: Number(e.target.value) })} className="w-full accent-indigo-600" />
+              </label>
+              <label className="text-xs text-white/40 space-y-1">
+                <span className="flex justify-between">Marge du visuel<b className="text-white tabular-nums">{style.imagePad}px</b></span>
+                <input type="range" min={0} max={30} step={1} value={style.imagePad}
+                  onChange={(e) => patch({ imagePad: Number(e.target.value) })} className="w-full accent-indigo-600" />
+              </label>
+            </div>
+          </PropertySection>
+
+          <PropertySection title="Éléments affichés">
             <div className="flex flex-wrap gap-x-4 gap-y-2 items-center">
               {VISIBILITY.map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                <label key={key} className="flex items-center gap-1.5 text-xs text-white/40 cursor-pointer select-none">
                   <input type="checkbox" checked={style[key]} onChange={(e) => patch({ [key]: e.target.checked } as Partial<CatalogCardStyle>)}
                     className="accent-indigo-600" />
                   {label}
                 </label>
               ))}
-              <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <label className="flex items-center gap-1.5 text-xs text-white/40">
                 Texte du ruban
                 <input value={style.vedetteLabel} onChange={(e) => patch({ vedetteLabel: e.target.value })} placeholder="Vedette"
-                  className="w-28 px-2 py-1 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600" />
+                  className="w-28 px-2 py-1 rounded-md bg-well text-xs text-white outline-none border border-white/10 focus:border-[#6366f1]" />
               </label>
-              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+              <label className="flex items-center gap-1.5 text-xs text-white/40 cursor-pointer select-none">
                 <input type="checkbox" checked={style.freeLayout} onChange={(e) => patch({ freeLayout: e.target.checked })} className="accent-indigo-600" />
                 Disposition libre (glisser les objets)
               </label>
               {style.freeLayout && (
                 <button type="button" onClick={() => patch({ layout: {} })}
-                  className="text-xs text-muted-foreground hover:text-white underline">Réinitialiser les positions</button>
+                  className="text-xs text-white/40 hover:text-white underline">Réinitialiser les positions</button>
               )}
             </div>
-          </div>
+          </PropertySection>
         </div>
 
         <CardStylePreview theme={plan.theme} cardStyle={style} fields={sampleFields}

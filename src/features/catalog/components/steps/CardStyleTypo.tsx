@@ -28,25 +28,22 @@ const FIELDS: { scale: ScaleKey; font: FontKey; label: string }[] = [
 
 export function CardStyleTypo({ style, patch }: CardStyleTypoProps) {
   return (
-    <div>
-      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Texte : taille & police par champ</div>
-      <div className="grid grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-3">
-        {FIELDS.map(({ scale, font, label }) => (
-          <div key={scale} className="space-y-1">
-            <label className="block text-xs text-muted-foreground space-y-1">
-              <span className="flex justify-between">{label}<b className="text-white tabular-nums">×{style[scale].toFixed(2)}</b></span>
-              <input type="range" min={0.7} max={1.5} step={0.05} value={style[scale]}
-                onChange={(e) => patch({ [scale]: Number(e.target.value) } as Partial<CatalogCardStyle>)}
-                className="w-full accent-indigo-600" />
-            </label>
-            <select value={style[font]} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
-              className="w-full px-2 py-1 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600">
-              <option value="">Police du thème</option>
-              <FontSelectOptions />
-            </select>
-          </div>
-        ))}
-      </div>
+    <div className="grid grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-3">
+      {FIELDS.map(({ scale, font, label }) => (
+        <div key={scale} className="space-y-1">
+          <label className="block text-xs text-white/40 space-y-1">
+            <span className="flex justify-between">{label}<b className="text-white tabular-nums">×{style[scale].toFixed(2)}</b></span>
+            <input type="range" min={0.7} max={1.5} step={0.05} value={style[scale]}
+              onChange={(e) => patch({ [scale]: Number(e.target.value) } as Partial<CatalogCardStyle>)}
+              className="w-full accent-indigo-600" />
+          </label>
+          <select value={style[font]} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
+            className="w-full px-2 py-1 rounded-md bg-well text-xs text-white outline-none border border-white/10 focus:border-[#6366f1]">
+            <option value="">Police du thème</option>
+            <FontSelectOptions />
+          </select>
+        </div>
+      ))}
     </div>
   )
 }
