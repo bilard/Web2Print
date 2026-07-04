@@ -118,10 +118,51 @@ export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true,
 }
 
+/**
+ * Style des ÉLÉMENTS DE PAGE (bandeau taxonomie, pied de page, ouvertures,
+ * couverture, 4e) : mêmes principes que CatalogCardStyle — réglages bornés
+ * appliqués en variables CSS + visibilité, le gabarit reste intouchable.
+ */
+export interface CatalogPageStyle {
+  /** Bandeau taxonomie des pages produits. */
+  showHeader: boolean
+  headerScale: number
+  /** Pied de page (folio + nom du catalogue). */
+  showFooter: boolean
+  showFooterName: boolean
+  folioScale: number
+  /** Affiche d'ouverture d'univers. */
+  showOpenerNum: boolean
+  showOpenerChip: boolean
+  showOpenerCount: boolean
+  showOpenerPanel: boolean
+  openerTitleScale: number
+  /** Couverture. */
+  coverTitleScale: number
+  showCoverBaseline: boolean
+  showCoverSubtitle: boolean
+  showCoverRule: boolean
+  /** Assombrissement du visuel de couverture/4e (0–80 %). */
+  coverOverlay: number
+  /** 4e de couverture. */
+  backScale: number
+  showBackRule: boolean
+}
+
+export const DEFAULT_PAGE_STYLE: CatalogPageStyle = {
+  showHeader: true, headerScale: 1,
+  showFooter: true, showFooterName: true, folioScale: 1,
+  showOpenerNum: true, showOpenerChip: true, showOpenerCount: true, showOpenerPanel: true, openerTitleScale: 1,
+  coverTitleScale: 1, showCoverBaseline: true, showCoverSubtitle: true, showCoverRule: true, coverOverlay: 55,
+  backScale: 1, showBackRule: true,
+}
+
 export interface CatalogPlan {
   theme: CatalogTheme
   /** Style cosmétique des fiches (couleurs/tailles/visibilité). Absent = défauts. */
   cardStyle?: CatalogCardStyle
+  /** Style des éléments de page (bandeau/pied/ouvertures/couvertures). Absent = défauts. */
+  pageStyle?: CatalogPageStyle
   /** Taille des fiches proportionnelle au prix (paliers médiane/P80 par univers). Absent = actif. */
   sizeByPrice?: boolean
   sections: CatalogSectionPlan[]

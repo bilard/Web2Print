@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
-import { DEFAULT_CARD_STYLE } from '../../catalogTypes'
-import { cardStyleVars } from './catalogCss'
+import type { CatalogCardStyle, CatalogPageStyle, CatalogTheme } from '../../catalogTypes'
+import { DEFAULT_CARD_STYLE, DEFAULT_PAGE_STYLE } from '../../catalogTypes'
+import { cardStyleVars, mergedPageStyle, pageStyleVars } from './catalogCss'
 
 const THEME: CatalogTheme = {
   accent: '#e97817', pageBg: '#ffffff', ink: '#111827',
@@ -51,5 +51,37 @@ describe('cardStyleVars', () => {
     const v = vars({ imageShare: 50, imagePad: 4 })
     expect(v['--cat-img-share']).toBe('50%')
     expect(v['--cat-img-pad']).toBe('4px')
+  })
+})
+
+describe('pageStyleVars / mergedPageStyle', () => {
+  it('style absent → aucun override, fusion = défauts complets', () => {
+    expect(pageStyleVars(undefined)).toEqual({})
+    expect(mergedPageStyle(undefined)).toEqual(DEFAULT_PAGE_STYLE)
+  })
+
+  it("style par défaut → n'émet rien", () => {
+    const v = pageStyleVars({ ...DEFAULT_PAGE_STYLE }) as Record<string, string | undefined>
+    expect(Object.values(v).every((x) => x === undefined)).toBe(true)
+  })
+
+  it('style PARTIEL (ancien document/modèle) → fusion sans trous', () => {
+    const partial = { showHeader: false, coverTitleScale: 1.2 } as CatalogPageStyle
+    const m = mergedPageStyle(partial)
+    expect(m.showHeader).toBe(false)
+    expect(m.coverTitleScale).toBe(1.2)
+    expect(m.showFooter).toBe(true)
+    expect(m.coverOverlay).toBe(DEFAULT_PAGE_STYLE.coverOverlay)
+    const v = pageStyleVars(partial) as Record<string, string | undefined>
+    expect(v['--cat-p-cover']).toBe('1.2')
+    expect(v['--cat-p-head']).toBeUndefined()
+  })
+
+  it('chaque échelle émet sa variable dédiée', () => {
+    const v = pageStyleVars({ ...DEFAULT_PAGE_STYLE, headerScale: 0.8, folioScale: 1.3, openerTitleScale: 1.1, backScale: 0.9 }) as Record<string, string | undefined>
+    expect(v['--cat-p-head']).toBe('0.8')
+    expect(v['--cat-p-folio']).toBe('1.3')
+    expect(v['--cat-p-opener']).toBe('1.1')
+    expect(v['--cat-p-back']).toBe('0.9')
   })
 })

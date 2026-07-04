@@ -5,7 +5,7 @@ import type React from 'react'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey } from '@/features/retail-promo/promoTypes'
 import { FONTS_HREF } from '@/features/retail-promo/RetailPromoCard'
-import { DEFAULT_CARD_STYLE, type CatalogCardStyle, type CatalogFormat, type CatalogPlan, type CatalogTheme } from '../../catalogTypes'
+import { DEFAULT_CARD_STYLE, DEFAULT_PAGE_STYLE, type CatalogCardStyle, type CatalogFormat, type CatalogPageStyle, type CatalogPlan, type CatalogTheme } from '../../catalogTypes'
 
 const PX_PER_MM = 96 / 25.4
 
@@ -85,6 +85,24 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
   } as React.CSSProperties
 }
 
+/** Style de page persisté (possiblement PARTIEL) fusionné avec les défauts. */
+export function mergedPageStyle(style: CatalogPageStyle | undefined): CatalogPageStyle {
+  return { ...DEFAULT_PAGE_STYLE, ...style }
+}
+
+/** Variables CSS du style des éléments de page — seuls les écarts au défaut sont émis. */
+export function pageStyleVars(style: CatalogPageStyle | undefined): React.CSSProperties {
+  if (!style) return {}
+  const s = mergedPageStyle(style)
+  return {
+    '--cat-p-head': s.headerScale !== 1 ? String(s.headerScale) : undefined,
+    '--cat-p-folio': s.folioScale !== 1 ? String(s.folioScale) : undefined,
+    '--cat-p-opener': s.openerTitleScale !== 1 ? String(s.openerTitleScale) : undefined,
+    '--cat-p-cover': s.coverTitleScale !== 1 ? String(s.coverTitleScale) : undefined,
+    '--cat-p-back': s.backScale !== 1 ? String(s.backScale) : undefined,
+  } as React.CSSProperties
+}
+
 export function formatPrice(n: number | null): string {
   if (n == null) return ''
   return `${n.toFixed(2).replace('.', ',')} €`
@@ -99,8 +117,8 @@ export const CATALOG_CSS = `
 .cat-head { flex:none; background:var(--cat-head-bg,#111827); color:var(--cat-head-ink,#fff);
   padding:16px 32px 14px; display:flex; align-items:baseline; gap:12px; border-bottom:4px solid var(--cat-accent); }
 .cat-head--recto { justify-content:flex-end; } /* page impaire (recto) : taxonomie au bord droit */
-.cat-head-univers { font-family:var(--cat-font-h); font-weight:800; font-size:20px; text-transform:uppercase; letter-spacing:.1em; }
-.cat-head-crumb { font-size:12px; opacity:.85; text-transform:uppercase; letter-spacing:.06em; }
+.cat-head-univers { font-family:var(--cat-font-h); font-weight:800; font-size:calc(20px * var(--cat-p-head,1)); text-transform:uppercase; letter-spacing:.1em; }
+.cat-head-crumb { font-size:calc(12px * var(--cat-p-head,1)); opacity:.85; text-transform:uppercase; letter-spacing:.06em; }
 .cat-head-sep { opacity:.5; }
 
 /* ── Footer : folio en pastille accent ──────────────────────────────── */
@@ -108,7 +126,7 @@ export const CATALOG_CSS = `
 .cat-foot--verso { flex-direction:row-reverse; } /* page paire (verso) : folio au bord gauche */
 .cat-foot-name { text-transform:uppercase; letter-spacing:.14em; opacity:.55; font-weight:600; }
 .cat-foot-folio { background:var(--cat-accent); color:#fff; font-family:var(--cat-font-h); font-weight:800;
-  font-size:12px; padding:5px 12px; border-radius:3px; }
+  font-size:calc(12px * var(--cat-p-folio,1)); padding:5px 12px; border-radius:3px; }
 
 /* ── Grille produits : cartes pleines, séparées par filets ──────────── */
 .cat-grid { flex:1; display:grid; gap:14px; padding:20px 32px 16px; min-height:0; }
@@ -207,9 +225,9 @@ export const CATALOG_CSS = `
   background-size:cover; background-position:center; position:relative; }
 .cat-cover-panel { padding:40px 48px 48px; background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.28) 22%,rgba(0,0,0,.45) 100%); }
 .cat-cover-band { align-self:flex-start; display:inline-block; background:var(--cat-accent); color:#fff; padding:10px 22px;
-  border-radius:4px; font-family:var(--cat-font-h); font-weight:800; letter-spacing:.16em; text-transform:uppercase; font-size:13px; margin-bottom:20px; transform:rotate(-2deg); }
-.cat-cover-title { font-family:var(--cat-font-h); font-weight:900; font-size:64px; line-height:1; text-transform:uppercase; }
-.cat-cover-sub { font-family:var(--cat-font-h); font-size:24px; font-weight:700; margin-top:14px; opacity:.95; text-transform:uppercase; letter-spacing:.04em; }
+  border-radius:4px; font-family:var(--cat-font-h); font-weight:800; letter-spacing:.16em; text-transform:uppercase; font-size:calc(13px * var(--cat-p-cover,1)); margin-bottom:20px; transform:rotate(-2deg); }
+.cat-cover-title { font-family:var(--cat-font-h); font-weight:900; font-size:calc(64px * var(--cat-p-cover,1)); line-height:1; text-transform:uppercase; }
+.cat-cover-sub { font-family:var(--cat-font-h); font-size:calc(24px * var(--cat-p-cover,1)); font-weight:700; margin-top:14px; opacity:.95; text-transform:uppercase; letter-spacing:.04em; }
 .cat-cover-rule { width:120px; height:6px; background:var(--cat-accent); margin-top:24px; }
 
 /* ── Sommaire ───────────────────────────────────────────────────────── */
@@ -234,12 +252,12 @@ export const CATALOG_CSS = `
 .cat-opener-stripe2 { position:absolute; top:-15%; right:-32%; width:12%; height:130%;
   background:var(--cat-head-ink); opacity:.16; transform:rotate(12deg); }
 .cat-opener-num { position:absolute; top:-42px; right:18px; font-family:var(--cat-font-h); font-weight:900;
-  font-size:300px; line-height:1; color:currentColor; opacity:.22; letter-spacing:-.05em; }
+  font-size:calc(300px * var(--cat-p-opener,1)); line-height:1; color:currentColor; opacity:.22; letter-spacing:-.05em; }
 .cat-opener-chip { position:relative; align-self:flex-start; background:var(--cat-accent); color:#fff;
   font-family:var(--cat-font-h); font-weight:800; font-size:13px; letter-spacing:.24em; text-transform:uppercase;
   padding:8px 18px; border-radius:3px; transform:rotate(-2deg); }
 .cat-opener-kicker { position:relative; margin-top:26px; font-family:var(--cat-font-h); font-size:14px; letter-spacing:.28em; text-transform:uppercase; font-weight:800; opacity:.75; }
-.cat-opener-title { position:relative; font-family:var(--cat-font-h); font-weight:900; font-size:74px; line-height:.98;
+.cat-opener-title { position:relative; font-family:var(--cat-font-h); font-weight:900; font-size:calc(74px * var(--cat-p-opener,1)); line-height:.98;
   text-transform:uppercase; margin-top:14px; max-width:82%; }
 .cat-opener-count { position:relative; margin-top:20px; font-family:var(--cat-font-h); font-weight:800; font-size:14px;
   letter-spacing:.2em; text-transform:uppercase; }
@@ -265,6 +283,6 @@ export const CATALOG_CSS = `
 /* ── 4e de couverture ───────────────────────────────────────────────── */
 .cat-back { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:48px; text-align:center; }
 .cat-back-rule { width:90px; height:6px; background:var(--cat-accent); }
-.cat-back-title { font-family:var(--cat-font-h); font-weight:900; font-size:32px; text-transform:uppercase; }
-.cat-back-text { font-size:13px; opacity:.85; white-space:pre-wrap; max-width:70%; line-height:1.6; }
+.cat-back-title { font-family:var(--cat-font-h); font-weight:900; font-size:calc(32px * var(--cat-p-back,1)); text-transform:uppercase; }
+.cat-back-text { font-size:calc(13px * var(--cat-p-back,1)); opacity:.85; white-space:pre-wrap; max-width:70%; line-height:1.6; }
 `

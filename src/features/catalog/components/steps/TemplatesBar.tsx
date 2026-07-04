@@ -41,15 +41,16 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
     if (!t) return
     setPlan({
       ...plan, theme: t.theme,
-      // Modèles antérieurs sans cardStyle : on conserve le style courant.
+      // Modèles antérieurs sans cardStyle/pageStyle : on conserve le style courant.
       ...(t.cardStyle ? { cardStyle: t.cardStyle } : {}),
+      ...(t.pageStyle ? { pageStyle: t.pageStyle } : {}),
       sections: plan.sections.map((s) => ({ ...s, productsPerPage: t.defaultGrid })),
     })
   }
 
   const handleSave = () => {
     if (!newName.trim()) return
-    saveCatalogTemplate(newName.trim(), plan.theme, majorityGrid(plan), plan.cardStyle)
+    saveCatalogTemplate(newName.trim(), plan.theme, majorityGrid(plan), plan.cardStyle, plan.pageStyle)
       .then(() => { toast.success('Modèle enregistré'); setNewName(''); reload() })
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Échec de l\'enregistrement'))
   }
