@@ -20,7 +20,15 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
 
   const imageCols = useMemo(() => (sheet?.columns ?? []).filter((c) => c.fieldType === 'image'), [sheet])
   const [engine, setEngine] = useState<ImageGenEngine>('nano')
-  const [prompt, setPrompt] = useState('Photo packshot professionnelle du produit sur fond blanc, éclairage studio, style catalogue e-commerce : ')
+  // Prompt par défaut : références adaptées aux labels réels des colonnes
+  // (nom = colonne primaire ou nom/désignation ; description si présente).
+  const [prompt, setPrompt] = useState(() => {
+    const cols = sheet?.columns ?? []
+    const nameCol = cols.find((c) => c.isPrimary) ?? cols.find((c) => /nom|d[ée]signation|libell[ée]|name|titre/i.test(c.label))
+    const descCol = cols.find((c) => /desc/i.test(c.label))
+    const refs = `[${nameCol?.label ?? 'Nom'}]${descCol ? ` [${descCol.label}]` : ''}`
+    return `Photo packshot professionnelle du produit sur fond blanc, éclairage studio, avec une ombre légère en perspective, style catalogue e-commerce : ${refs}\nNe pas mettre de texte du champ : nom ou de la description dans l'image, je veux le produit seul`
+  })
   const [destKey, setDestKey] = useState<string>(imageCols[0]?.key ?? '__new__')
   const [onlyEmpty, setOnlyEmpty] = useState(true)
   const [scopeAll, setScopeAll] = useState(true)
@@ -77,7 +85,7 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
           <div>
             <label className="block mb-1 text-white/60">Consigne (référencez vos colonnes avec [Nom])</label>
             <textarea
-              value={prompt} onChange={(e) => { setPrompt(e.target.value); setTestSrc(null) }} rows={3}
+              value={prompt} onChange={(e) => { setPrompt(e.target.value); setTestSrc(null) }} rows={4}
               className="w-full bg-well border border-white/10 rounded p-2 text-white/90"
             />
             <div className="mt-1 flex flex-wrap gap-1">

@@ -13,6 +13,7 @@ import { cellValue } from './cellValue'
 import { getTaxoColumns } from './taxonomyBuilder'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { hasTaxoNav, buildTaxoNavPredicate, commonFilterDepth } from './taxoNavSelection'
+import { parseCellNumber as getNumericValue } from './numberParse'
 import type { ExcelColumn, ExcelRow, CellValue, FieldTypeId } from './types'
 import { useCan } from '@/features/access/useAccess'
 import { useThemeStore } from '@/stores/theme.store'
@@ -876,15 +877,6 @@ function measureTextWidth(text: string, font: string): number {
   return ctx.measureText(text).width
 }
 
-function getNumericValue(value: CellValue): number | null {
-  if (typeof value === 'number') return value
-  if (typeof value === 'string') {
-    const cleaned = value.replace(/[€$%\s]/g, '').replace(/\./g, '').replace(',', '.')
-    const num = parseFloat(cleaned)
-    if (!isNaN(num)) return num
-  }
-  return null
-}
 
 interface RowGroup {
   key: string
