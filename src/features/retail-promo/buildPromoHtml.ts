@@ -88,22 +88,23 @@ export function buildPromoHtml(
     <div class="rp-head" style="color:${hText};${bgCss(config, 'header')}${boxCss(config, 'header')}${efCss(effects, 'header')}">
       ${config.showCategory ? `<span class="rp-kicker" style="${elementCss(config, 'category') || `color:${catText}`};${boxCss(config, 'category')}${efCss(effects, 'category')}">${esc(data.category || 'Offre spéciale')}</span>` : ''}
       <div class="rp-name"${subAttr(config, 'name', effects)}>${esc(data.name || 'Produit')}</div>
-      ${(data.brand || data.ref) ? `<div class="rp-brand"${subAttr(config, 'brand', effects)}>${esc([data.brand, data.ref].filter(Boolean).join(' · '))}</div>` : ''}
+      ${(data.brand || data.ref || data.ean) ? `<div class="rp-brand"${subAttr(config, 'brand', effects)}>${esc([data.brand, data.ref, data.ean].filter(Boolean).join(' · '))}</div>` : ''}
       ${config.showDescription && data.description ? `<div class="rp-desc"${subAttr(config, 'description', effects)}>${esc(data.description)}</div>` : ''}
     </div>
     <div class="rp-product" style="${bgCss(config, 'image')}${efCss(effects, 'image')}">
       ${img}
       ${badge}
     </div>
+    ${!config.hidden?.details && data.details.length > 0 ? `<div class="rp-details" style="${bgCss(config, 'details')}${boxCss(config, 'details')}${efCss(effects, 'details')}">${data.details.map((d) => `<div class="rp-detail">${esc(d)}</div>`).join('')}</div>` : ''}
     <div class="rp-price" style="color:${priceText};${bgCss(config, 'price')}${boxCss(config, 'price')}${efCss(effects, 'price')}">
       <div class="rp-left">
         <span class="rp-plabel"${subAttr(config, 'priceLabel', effects)}>${esc(data.priceLabel || 'Prix promo')}</span>
         ${data.priceWas ? `<span class="rp-was"${subAttr(config, 'priceWas', effects)}>${esc(data.priceWas)}</span>` : ''}
         ${config.showUnitPrice && data.unitPrice ? `<span class="rp-unit"${subAttr(config, 'unitPrice', effects)}>${esc(data.unitPrice)}</span>` : ''}
       </div>
-      <div class="rp-now" style="font-size:${priceFontSize}px;${elementCss(config, 'priceNow')};${boxCss(config, 'priceNow')};${efCss(effects, 'priceNow')}">${esc(amount)}${cur ? `<span class="rp-cur">${esc(cur)}</span>` : ''}</div>
+      <div class="rp-now" style="font-size:${priceFontSize}px;${elementCss(config, 'priceNow')};${boxCss(config, 'priceNow')};${efCss(effects, 'priceNow')}">${esc(amount)}${cur ? `<span class="rp-cur">${esc(cur)}</span>` : ''}${data.unit ? `<span class="rp-cur">${esc(data.unit)}</span>` : ''}</div>
     </div>
-    ${config.showFooter ? `<div class="rp-foot" style="${elementCss(config, 'footer')};${boxCss(config, 'footer')};${efCss(effects, 'footer')}">${esc(data.validite || '')}</div>` : ''}
+    ${config.showFooter ? `<div class="rp-foot" style="${elementCss(config, 'footer')};${boxCss(config, 'footer')};${efCss(effects, 'footer')}">${esc([data.enseigne, data.validite, data.mentions].filter(Boolean).join(' — '))}</div>` : ''}
   </div>
 </body>
 </html>`
