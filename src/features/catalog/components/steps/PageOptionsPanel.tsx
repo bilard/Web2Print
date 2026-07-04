@@ -18,6 +18,8 @@ interface Props {
   setPlan: (plan: CatalogPlan) => void
   coverImageUrl: string | null
   backCoverImageUrl: string | null
+  /** Couleur du chapitre de la page affichée (couleurs par chapitre actives). */
+  chapterColor?: string
 }
 
 const KIND_TITLES: Record<CatalogPageDescriptor['kind'], string> = {
@@ -34,7 +36,7 @@ function FooterOptions({ style, patch }: { style: CatalogPageStyle; patch: (p: P
   )
 }
 
-export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCoverImageUrl }: Props) {
+export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCoverImageUrl, chapterColor }: Props) {
   const style = mergedPageStyle(plan.pageStyle)
   const patch = (p: Partial<CatalogPageStyle>) => setPlan({ ...plan, pageStyle: { ...style, ...p } })
 
@@ -90,7 +92,7 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
 
         {/* Thème (couleurs/polices) + Modèles : globaux, visibles sur TOUTES les pages
             — permet de styler en live et de récupérer le modèle dans un autre catalogue. */}
-        <PageOptionsTheme plan={plan} setPlan={setPlan} />
+        <PageOptionsTheme plan={plan} setPlan={setPlan} chapterColor={chapterColor} />
 
         <p className="text-[11px] text-muted-foreground leading-relaxed">
           Réglages appliqués à toutes les pages du même type — la mise en page fluide et l'export restent préservés.

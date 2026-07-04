@@ -12,6 +12,8 @@ import { OptSection, OptToggle, optFieldClass } from './PageOptionControls'
 interface Props {
   plan: CatalogPlan
   setPlan: (plan: CatalogPlan) => void
+  /** Couleur du chapitre de la page AFFICHÉE (si couleurs par chapitre actives) — remplace la pastille Bandeau. */
+  chapterColor?: string
 }
 
 const THEME_COLORS: { key: keyof Pick<CatalogTheme, 'accent' | 'pageBg' | 'ink' | 'headerBg' | 'headerInk'>; label: string }[] = [
@@ -22,7 +24,7 @@ const THEME_COLORS: { key: keyof Pick<CatalogTheme, 'accent' | 'pageBg' | 'ink' 
   { key: 'headerInk', label: 'Txt bandeau' },
 ]
 
-export function PageOptionsTheme({ plan, setPlan }: Props) {
+export function PageOptionsTheme({ plan, setPlan, chapterColor }: Props) {
   const theme = plan.theme
   const style = mergedPageStyle(plan.pageStyle)
   const setColor = (key: (typeof THEME_COLORS)[number]['key'], value: string) => setPlan({ ...plan, theme: { ...theme, [key]: value } })
@@ -35,8 +37,14 @@ export function PageOptionsTheme({ plan, setPlan }: Props) {
           {THEME_COLORS.map(({ key, label }) => (
             <label key={key} className="flex flex-col items-center gap-1 text-[10px] text-muted-foreground">
               {label}
-              <input type="color" value={theme[key]} onChange={(e) => setColor(key, e.target.value)}
-                className="w-9 h-7 rounded-md bg-surface-2 cursor-pointer" />
+              {key === 'headerBg' && style.chapterColors && chapterColor ? (
+                /* Couleurs par chapitre actives : la pastille montre la couleur du CHAPITRE affiché. */
+                <span title="Couleur du chapitre affiché (couleurs par chapitre actives)"
+                  className="w-9 h-7 rounded-md ring-1 ring-border inline-block" style={{ background: chapterColor }} />
+              ) : (
+                <input type="color" value={theme[key]} onChange={(e) => setColor(key, e.target.value)}
+                  className="w-9 h-7 rounded-md bg-surface-2 cursor-pointer" />
+              )}
             </label>
           ))}
         </div>

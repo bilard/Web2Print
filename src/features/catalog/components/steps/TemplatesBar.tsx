@@ -30,7 +30,6 @@ function majorityGrid(plan: CatalogPlan): CatalogGrid {
 
 export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
   const [templates, setTemplates] = useState<CatalogTemplate[]>([])
-  const [selectedId, setSelectedId] = useState('')
   const [newName, setNewName] = useState('')
 
   const reload = () => {
@@ -39,19 +38,24 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
 
   useEffect(() => { reload() }, [])
 
+  // Le modèle appliqué reste AFFICHÉ (persisté dans plan.appliedTemplate, par nom
+  // — survit au changement de page/étape). Sans modèle, l'entrée « Défaut »
+  // reflète l'état couleurs-par-chapitre.
+  const selectedValue = plan.appliedTemplate
+    ? (templates.find((t) => t.name === plan.appliedTemplate)?.id ?? '')
+    : mergedPageStyle(plan.pageStyle).chapterColors ? CHAPTER_DEFAULT_ID : ''
+
   const applyTemplate = (id: string) => {
     if (id === CHAPTER_DEFAULT_ID) {
       // Pas un modèle enregistré : applique la couleur de chaque chapitre au
-      // bandeau et aux ouvertures (comme le chemin de fer), puis rend la main.
-      setSelectedId('')
-      setPlan({ ...plan, pageStyle: { ...mergedPageStyle(plan.pageStyle), chapterColors: true } })
+      // bandeau et aux ouvertures (comme le chemin de fer).
+      setPlan({ ...plan, appliedTemplate: '', pageStyle: { ...mergedPageStyle(plan.pageStyle), chapterColors: true } })
       return
     }
-    setSelectedId(id)
     const t = templates.find((tpl) => tpl.id === id)
     if (!t) return
     setPlan({
-      ...plan, theme: t.theme,
+      ...plan, theme: t.theme, appliedTemplate: t.name,
       // Modèles antérieurs sans cardStyle/pageStyle : on conserve le style courant.
       ...(t.cardStyle ? { cardStyle: t.cardStyle } : {}),
       ...(t.pageStyle ? { pageStyle: t.pageStyle } : {}),
@@ -62,26 +66,31 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
   const handleSave = () => {
     if (!newName.trim()) return
     saveCatalogTemplate(newName.trim(), plan.theme, majorityGrid(plan), plan.cardStyle, plan.pageStyle)
-      .then(() => { toast.success('Modèle enregistré'); setNewName(''); reload() })
+      .then(() => {
+        toast.success('Modèle enregistré')
+        setPlan({ ...plan, appliedTemplate: newName.trim() })
+        setNewName('')
+        reload()
+      })
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Échec de l\'enregistrement'))
   }
 
   const handleDelete = () => {
-    if (!selectedId) return
-    deleteCatalogTemplate(selectedId)
-      .then(() => { toast.success('Modèle supprimé'); setSelectedId(''); reload() })
+    if (!selectedValue || selectedValue === CHAPTER_DEFAULT_ID) return
+    deleteCatalogTemplate(selectedValue)
+      .then(() => { toast.success('Modèle supprimé'); setPlan({ ...plan, appliedTemplate: '' }); reload() })
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Échec de la suppression'))
   }
 
   return (
     <section className="space-y-2">
       <div className="flex items-center gap-2">
-        <select value={selectedId} onChange={(e) => applyTemplate(e.target.value)} aria-label="Mes modèles" className={fieldClass}>
+        <select value={selectedValue} onChange={(e) => applyTemplate(e.target.value)} aria-label="Mes modèles" className={fieldClass}>
           <option value="">Appliquer un modèle…</option>
           <option value={CHAPTER_DEFAULT_ID}>Défaut — couleurs par chapitre</option>
           {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-        <button type="button" onClick={handleDelete} disabled={!selectedId}
+        <button type="button" onClick={handleDelete} disabled={!selectedValue || selectedValue === CHAPTER_DEFAULT_ID}
           className="p-2 rounded-md text-muted-foreground hover:text-red-400 disabled:opacity-40" title="Supprimer le modèle">
           <Trash2 className="w-4 h-4" />
         </button>

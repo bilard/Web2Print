@@ -165,6 +165,8 @@ export interface CatalogPlan {
   cardStyle?: CatalogCardStyle
   /** Style des éléments de page (bandeau/pied/ouvertures/couvertures). Absent = défauts. */
   pageStyle?: CatalogPageStyle
+  /** Nom du dernier modèle appliqué ('' = aucun) — réaffiché dans le sélecteur de modèles. */
+  appliedTemplate?: string
   /** Taille des fiches proportionnelle au prix (paliers médiane/P80 par univers). Absent = actif. */
   sizeByPrice?: boolean
   sections: CatalogSectionPlan[]
