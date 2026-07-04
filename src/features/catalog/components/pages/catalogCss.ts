@@ -3,7 +3,7 @@
 // 1 mm = 96/25.4 px CSS → une page A4 portrait fait 794×1123 px.
 import type React from 'react'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
-import type { PromoFieldKey } from '@/features/retail-promo/promoTypes'
+import type { PromoFieldKey, CustomFieldMap } from '@/features/retail-promo/promoTypes'
 import { FONTS_HREF } from '@/features/retail-promo/RetailPromoCard'
 import { DEFAULT_CARD_STYLE, DEFAULT_PAGE_STYLE, type CatalogCardStyle, type CatalogFormat, type CatalogPageStyle, type CatalogPlan, type CatalogTheme } from '../../catalogTypes'
 
@@ -20,6 +20,7 @@ export interface CatalogRenderCtx {
   rowsById: Map<string, MergeRow>
   columns: MergeColumn[]
   fieldMap: Partial<Record<PromoFieldKey, string>>
+  customFields: CustomFieldMap
   catalogName: string
   totalPages: number
   coverImageUrl: string | null
@@ -68,6 +69,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-s-promo': s.promoScale !== 1 ? String(s.promoScale) : undefined,
     '--cat-s-sticker': s.stickerScale !== 1 ? String(s.stickerScale) : undefined,
     '--cat-s-vedette': s.vedetteScale !== 1 ? String(s.vedetteScale) : undefined,
+    '--cat-s-details': s.detailsScale !== 1 ? String(s.detailsScale) : undefined,
     '--cat-font-name': font(s.nameFont),
     '--cat-font-desc': font(s.descFont),
     '--cat-font-price': font(s.priceFont),
@@ -77,6 +79,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-font-promo': font(s.promoFont),
     '--cat-font-sticker': font(s.stickerFont),
     '--cat-font-vedette': font(s.vedetteFont),
+    '--cat-font-details': font(s.detailsFont),
     '--cat-promo-bg': bg(s.promoBg, s.promoBg2, theme.accent),
     '--cat-sticker-bg': bg(s.stickerBg, s.stickerBg2, theme.accent),
     '--cat-price-bg': bg(s.priceBg, s.priceBg2, theme.accent),
@@ -180,6 +183,10 @@ export const CATALOG_CSS = `
   text-transform:uppercase; color:var(--cat-name-ink,inherit);
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .cat-cell-desc { font-family:var(--cat-font-desc,var(--cat-font-b)); font-size:calc(11px * var(--cat-s-desc,1) * ${F}); opacity:.7; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.cat-cell-details { display:flex; flex-direction:column; gap:1px; margin-top:4px;
+  font-family:var(--cat-font-details,var(--cat-font-b)); font-size:calc(9px * var(--cat-s-details,1) * ${F});
+  opacity:.6; line-height:1.3; }
+.cat-cell-details span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cat-cell-refcode { font-size:calc(9px * var(--cat-s-ref,1) * ${F}); font-family:var(--cat-font-ref,var(--cat-font-b)); opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
 .cat-cell-row { display:flex; align-items:flex-end; justify-content:space-between; margin-top:6px; gap:10px; }
 .cat-cell-meta { display:flex; flex-direction:column; gap:3px; min-width:0; padding-bottom:2px; }

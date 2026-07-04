@@ -16,7 +16,7 @@ interface CardStyleCardProps {
   sampleFields?: PromoFields | null
 }
 
-const VISIBILITY: { key: keyof Pick<CatalogCardStyle, 'showPromo' | 'showSticker' | 'showKicker' | 'showDesc' | 'showRef' | 'showUnit' | 'showVedette'>; label: string }[] = [
+const VISIBILITY: { key: keyof Pick<CatalogCardStyle, 'showPromo' | 'showSticker' | 'showKicker' | 'showDesc' | 'showRef' | 'showUnit' | 'showVedette' | 'showDetails'>; label: string }[] = [
   { key: 'showPromo', label: 'Cartouche promo' },
   { key: 'showSticker', label: 'Sticker remise' },
   { key: 'showKicker', label: 'Sous-famille' },
@@ -24,6 +24,7 @@ const VISIBILITY: { key: keyof Pick<CatalogCardStyle, 'showPromo' | 'showSticker
   { key: 'showRef', label: 'Référence' },
   { key: 'showUnit', label: 'Unité' },
   { key: 'showVedette', label: 'Ruban vedette' },
+  { key: 'showDetails', label: 'Détails' },
 ]
 
 export function CardStyleCard({ plan, setPlan, sampleFields }: CardStyleCardProps) {

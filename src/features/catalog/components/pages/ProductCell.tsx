@@ -19,6 +19,8 @@ interface Props {
   /** Sous-famille du produit — pastille kicker en haut de fiche (flux continu). */
   kicker?: string
   size: CellSize
+  /** Champs libres (valeurs seules, sans label) — zone « Détails » sous la description. */
+  details?: string[]
   /** Layout horizontal (image gauche / contenu droite) : cartes larges et grilles denses. */
   horizontal?: boolean
   /** Style cosmétique (visibilité des éléments) — les couleurs/tailles passent par les variables CSS. */
@@ -27,13 +29,13 @@ interface Props {
   style?: React.CSSProperties
 }
 
-export function ProductCell({ fields: f, featured, kicker, size, horizontal, cardStyle, style }: Props) {
+export function ProductCell({ fields: f, featured, kicker, size, details, horizontal, cardStyle, style }: Props) {
   // Résolution Drive/CORS → blob:/data: (voir useResolvedImage). `data-resolving` est
   // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
   // avant capture html2canvas (l'<img> n'existe pas tant que src n'est pas prêt).
   const { src, resolving } = useResolvedImage(f.image)
   const hasWas = f.oldPrice != null && f.newPrice != null && f.oldPrice > f.newPrice
-  const show = (key: 'showDesc' | 'showRef' | 'showUnit' | 'showSticker' | 'showKicker' | 'showPromo' | 'showVedette') => cardStyle?.[key] ?? true
+  const show = (key: 'showDesc' | 'showRef' | 'showUnit' | 'showSticker' | 'showKicker' | 'showPromo' | 'showVedette' | 'showDetails') => cardStyle?.[key] ?? true
   // Sticker rond = écart entre les 2 prix (remise calculée), en haut à droite de l'image.
   const sticker = show('showSticker') && hasWas && f.remisePct != null && f.remisePct > 0 ? `-${f.remisePct}%` : null
   // Cartouche = TEXTE promo (« Top affaire », « Prix choc »…) uniquement — le
@@ -55,6 +57,9 @@ export function ProductCell({ fields: f, featured, kicker, size, horizontal, car
         {f.brand && <span className="cat-cell-brand">{f.brand}</span>}
         <span className="cat-cell-name">{f.name || 'Produit'}</span>
         {f.description && show('showDesc') && <span className="cat-cell-desc">{f.description}</span>}
+        {details && details.length > 0 && show('showDetails') && (
+          <div className="cat-cell-details">{details.map((d, i) => <span key={i}>{d}</span>)}</div>
+        )}
         {/* Rangée du bas : réf/unité à GAUCHE du prix (comble l'espace vide). */}
         <div className="cat-cell-row">
           <span className="cat-cell-meta">

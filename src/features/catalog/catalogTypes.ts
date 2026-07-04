@@ -73,6 +73,8 @@ export interface CatalogCardStyle {
   stickerScale: number
   /** Échelle du ruban « Vedette » (texte + hauteur). */
   vedetteScale: number
+  /** Échelle de la zone « Détails » (champs libres, valeurs seules). */
+  detailsScale: number
   /** Polices par champ ('' = hérite du thème : titres pour nom/prix/cartouche, texte sinon). */
   nameFont: string
   descFont: string
@@ -83,6 +85,8 @@ export interface CatalogCardStyle {
   promoFont: string
   stickerFont: string
   vedetteFont: string
+  /** Police de la zone « Détails » ('' = hérite du thème : texte). */
+  detailsFont: string
   /** Couleurs des objets ('' = hérite du thème). */
   promoBg: string
   stickerBg: string
@@ -124,17 +128,19 @@ export interface CatalogCardStyle {
   showKicker: boolean
   showPromo: boolean
   showVedette: boolean
+  /** Affichage de la zone « Détails » (champs libres, valeurs seules). */
+  showDetails: boolean
 }
 
 export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
-  nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1, stickerScale: 1, vedetteScale: 1,
-  nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '', stickerFont: '', vedetteFont: '',
+  nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1, stickerScale: 1, vedetteScale: 1, detailsScale: 1,
+  nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '', stickerFont: '', vedetteFont: '', detailsFont: '',
   promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '', vedetteBg: '', vedettePriceBg: '', priceInk: '', vedettePriceInk: '',
   promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '', vedetteBg2: '', vedettePriceBg2: '',
   vedetteLabel: 'Vedette',
   gradientAngle: 135,
   radius: 6, imageShare: 40, imagePad: 12,
-  showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true, showVedette: true,
+  showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true, showVedette: true, showDetails: true,
 }
 
 /**
