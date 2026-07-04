@@ -64,7 +64,6 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
 
   return (
     <section className="space-y-2">
-      <h3 className="text-sm font-semibold text-white">Modèles</h3>
       <div className="flex items-center gap-2">
         <select value={selectedId} onChange={(e) => applyTemplate(e.target.value)} aria-label="Mes modèles" className={fieldClass}>
           <option value="">Appliquer un modèle…</option>

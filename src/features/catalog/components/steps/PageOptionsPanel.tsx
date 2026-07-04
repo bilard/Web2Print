@@ -10,6 +10,7 @@ import { DEFAULT_PAGE_STYLE } from '../../catalogTypes'
 import { mergedPageStyle } from '../pages/catalogCss'
 import { OptSection, OptSlider, OptToggle, optFieldClass } from './PageOptionControls'
 import { PageOptionsCover } from './PageOptionsCover'
+import { PageOptionsTheme } from './PageOptionsTheme'
 
 interface Props {
   page: CatalogPageDescriptor
@@ -86,6 +87,10 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
             <FooterOptions style={style} patch={patch} />
           </>
         )}
+
+        {/* Thème (couleurs/polices) + Modèles : globaux, visibles sur TOUTES les pages
+            — permet de styler en live et de récupérer le modèle dans un autre catalogue. */}
+        <PageOptionsTheme plan={plan} setPlan={setPlan} />
 
         <p className="text-[11px] text-muted-foreground leading-relaxed">
           Réglages appliqués à toutes les pages du même type — la mise en page fluide et l'export restent préservés.

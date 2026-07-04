@@ -1,13 +1,11 @@
 // src/features/catalog/components/steps/PlanStylePanel.tsx
-// Grille de cartes du plan : Thème graphique (+ modèles), Couverture, 4e de
-// couverture — génération des visuels via Nano Banana (useCoverImage).
+// Grille de cartes du plan : Couverture et 4e de couverture — génération des
+// visuels via Nano Banana (useCoverImage). Le thème (couleurs/polices) et les
+// Modèles vivent dans le panneau « Fond de page » de l'Aperçu (PageOptionsTheme).
 import { useState, type ReactNode } from 'react'
-import { Loader2, Palette, Image as ImageIcon, BookMarked, type LucideIcon } from 'lucide-react'
-import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
-import { UserFontsPanel } from '@/features/fonts/UserFontsPanel'
-import type { CatalogPlan, CatalogTheme } from '../../catalogTypes'
+import { Loader2, Image as ImageIcon, BookMarked, type LucideIcon } from 'lucide-react'
+import type { CatalogPlan } from '../../catalogTypes'
 import { useCoverImage } from '../../useCoverImage'
-import { TemplatesBar } from './TemplatesBar'
 
 interface PlanStylePanelProps {
   plan: CatalogPlan
@@ -15,14 +13,6 @@ interface PlanStylePanelProps {
   coverImageUrl: string | null
   backCoverImageUrl: string | null
 }
-
-const THEME_COLORS: { key: keyof Pick<CatalogTheme, 'accent' | 'pageBg' | 'ink' | 'headerBg' | 'headerInk'>; label: string }[] = [
-  { key: 'accent', label: 'Accent' },
-  { key: 'pageBg', label: 'Fond' },
-  { key: 'ink', label: 'Texte' },
-  { key: 'headerBg', label: 'Bandeau' },
-  { key: 'headerInk', label: 'Texte bandeau' },
-]
 
 const fieldClass = 'w-full px-3 py-1.5 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600'
 
@@ -40,41 +30,11 @@ function Card({ title, icon: Icon, children }: { title: string; icon: LucideIcon
 export function PlanStylePanel({ plan, setPlan, coverImageUrl, backCoverImageUrl }: PlanStylePanelProps) {
   const { generating, generateCover } = useCoverImage()
   const [backPrompt, setBackPrompt] = useState('')
-  const theme = plan.theme
-  const setThemeColor = (key: (typeof THEME_COLORS)[number]['key'], value: string) => setPlan({ ...plan, theme: { ...theme, [key]: value } })
-  const setFont = (key: 'fontHeading' | 'fontBody', value: string) => setPlan({ ...plan, theme: { ...theme, [key]: value } })
   const setCover = (patch: Partial<CatalogPlan['cover']>) => setPlan({ ...plan, cover: { ...plan.cover, ...patch } })
   const setBackCover = (patch: Partial<CatalogPlan['backCover']>) => setPlan({ ...plan, backCover: { ...plan.backCover, ...patch } })
 
   return (
-    <div className="grid gap-5 lg:grid-cols-3 items-start">
-      <Card title="Thème graphique" icon={Palette}>
-        <div className="flex flex-wrap gap-3">
-          {THEME_COLORS.map(({ key, label }) => (
-            <label key={key} className="flex flex-col items-center gap-1 text-xs text-muted-foreground">
-              {label}
-              <input type="color" value={theme[key]} onChange={(e) => setThemeColor(key, e.target.value)} className="w-10 h-8 rounded-md bg-surface-2 cursor-pointer" />
-            </label>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {(['fontHeading', 'fontBody'] as const).map((key) => (
-            <label key={key} className="flex flex-col gap-1 text-xs text-muted-foreground">
-              {key === 'fontHeading' ? 'Titres' : 'Texte'}
-              <select value={theme[key]} onChange={(e) => setFont(key, e.target.value)} className={fieldClass}>
-                <FontSelectOptions />
-              </select>
-            </label>
-          ))}
-        </div>
-        <div className="border-t border-border pt-3">
-          <UserFontsPanel />
-        </div>
-        <div className="border-t border-border pt-3">
-          <TemplatesBar plan={plan} setPlan={setPlan} fieldClass={fieldClass} />
-        </div>
-      </Card>
-
+    <div className="grid gap-5 lg:grid-cols-2 items-start">
       <Card title="Couverture" icon={ImageIcon}>
         <input value={plan.cover.title} onChange={(e) => setCover({ title: e.target.value })} placeholder="Titre" className={fieldClass} />
         <input value={plan.cover.subtitle} onChange={(e) => setCover({ subtitle: e.target.value })} placeholder="Sous-titre" className={fieldClass} />
