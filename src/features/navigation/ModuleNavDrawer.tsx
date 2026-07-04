@@ -1,11 +1,21 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Menu } from 'lucide-react'
+import { Menu, Settings, LogOut } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
+import { ThemeToggle } from '@/components/shared/ThemeToggle'
 import { useAccessLoading, useIsPending, useIsBlocked } from '@/features/access/useAccess'
+import { useAuthStore } from '@/stores/auth.store'
+import { useSignOut } from '@/features/auth/useAuth'
+import { useUIStore } from '@/stores/ui.store'
 import { useVisibleModules } from './modules'
 import { ResumeSetupButton } from '@/features/onboarding/ResumeSetupButton'
 import { ModuleTree } from './ModuleTree'
+
+// Réglages : sheet mutualisée avec l'éditeur, montée ici pour les routes autonomes
+// (où l'éditeur — qui la monte déjà — est absent). Se gate elle-même sur settingsOpen.
+const SettingsSheet = lazy(() =>
+  import('@/components/shared/SettingsSheet').then((m) => ({ default: m.SettingsSheet })),
+)
 
 /**
  * Menu de navigation global des modules, sous forme de drawer.
@@ -26,6 +36,14 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
   const location = useLocation()
   const [open, setOpen] = useState(false)
   const modules = useVisibleModules()
+  const user = useAuthStore((s) => s.user)
+  const setSettingsOpen = useUIStore((s) => s.setSettingsOpen)
+  const signOut = useSignOut()
+  const handleSignOut = async () => {
+    setOpen(false)
+    await signOut()
+    navigate('/login', { replace: true })
+  }
 
   // Gating identique à DashboardPage : pas de menu pour un compte en attente,
   // bloqué, ou pendant l'hydratation des droits.
@@ -100,9 +118,40 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
                 <ResumeSetupButton variant="item" />
               </div>
             </div>
+
+            {/* Pied : profil + thème + réglages + déconnexion (accès depuis tout module). */}
+            <div className="flex items-center gap-2 px-3 py-2.5 border-t border-white/[0.06]">
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt={user.displayName ?? ''} className="w-7 h-7 rounded-full ring-1 ring-white/[0.08] flex-shrink-0" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+                  <span className="text-[11px] font-medium text-white/40">{user?.displayName?.charAt(0) ?? '?'}</span>
+                </div>
+              )}
+              <p className="flex-1 min-w-0 text-[12px] text-white/50 truncate">{user?.displayName ?? user?.email ?? ''}</p>
+              <ThemeToggle />
+              <button
+                onClick={() => { setOpen(false); setSettingsOpen(true) }}
+                title="Paramètres"
+                aria-label="Paramètres"
+                className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <Settings className="w-4 h-4" aria-hidden="true" />
+              </button>
+              <button
+                onClick={handleSignOut}
+                title="Se déconnecter"
+                aria-label="Se déconnecter"
+                className="p-1.5 rounded-md text-white/40 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+              >
+                <LogOut className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
           </nav>
         </>
       )}
+      {/* Routes autonomes : l'éditeur monte déjà sa propre sheet (variant inline). */}
+      {!isInline && <Suspense fallback={null}><SettingsSheet /></Suspense>}
     </>
   )
 }
