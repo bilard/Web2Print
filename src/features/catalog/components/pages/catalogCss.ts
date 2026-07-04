@@ -143,6 +143,13 @@ export const CATALOG_CSS = `
 
 /* ── Grille produits : cartes pleines, séparées par filets ──────────── */
 .cat-grid { flex:1; display:grid; gap:14px; padding:20px 32px 16px; min-height:0; }
+/* Bandeau de SECTION (sous-famille) : casse la page au début de chaque groupe */
+.cat-group-band { display:flex; align-items:center; gap:10px;
+  background:var(--cat-kicker-bg,var(--cat-head-bg)); color:var(--cat-head-ink);
+  font-family:var(--cat-font-h); font-weight:800; font-size:calc(11px * ${F});
+  letter-spacing:.16em; text-transform:uppercase;
+  padding:calc(5px * ${F}) 14px; border-radius:4px; }
+.cat-group-band::after { content:''; flex:1; height:2px; background:var(--cat-accent); opacity:.6; border-radius:1px; }
 .cat-cell { position:relative; display:flex; flex-direction:column; min-height:0; background:#fff;
   border:1px solid rgba(17,24,39,.10); border-bottom:3px solid var(--cat-accent);
   border-radius:var(--cat-cell-radius,6px); overflow:hidden; }

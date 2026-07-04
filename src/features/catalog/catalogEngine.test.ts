@@ -30,7 +30,7 @@ describe('paginateCatalog (flux continu par univers)', () => {
     expect(pages.filter((p) => p.kind === 'products')).toHaveLength(2) // 4 produits / grille 2
   })
 
-  it('flux continu SANS vide : les sous-familles s’enchaînent sur la même page, chaque slot porte son path', () => {
+  it('SECTIONS : chaque sous-famille démarre sa RANGÉE (bandeau groupRows), la rangée entamée est comblée en largeur', () => {
     const tree = [node('a', 'Outillage', 1, [], [
       node('a/b', 'Perceuses', 2, ids(1, 'x')),
       node('a/c', 'Scies', 2, ids(1, 'y')),
@@ -38,10 +38,34 @@ describe('paginateCatalog (flux continu par univers)', () => {
     ])]
     const pages = paginateCatalog({ tree, sections: [sec('a', 4)] })
     const grids = pages.filter((p) => p.kind === 'products')
-    expect(grids).toHaveLength(1) // 3 produits sur UNE page de 4 — pas une page par sous-famille
-    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['x1', 'y1', 'z1'])
-    expect(grids[0].slots.map((s) => s.path[s.path.length - 1])).toEqual(['Perceuses', 'Scies', 'Marteaux'])
+    // Grille 4 = 2 rangées : Perceuses r1, Scies r2, Marteaux → page suivante.
+    expect(grids).toHaveLength(2)
+    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['x1', 'y1'])
+    // Fin de rangée comblée : chaque fiche s'élargit sur sa rangée (2 colonnes).
+    expect(grids[0].slots.every((s) => s.colSpan === 2 && s.rowSpan === 1)).toBe(true)
+    expect(grids[0].groupRows).toEqual([{ row: 1, label: 'Perceuses' }, { row: 2, label: 'Scies' }])
+    expect(grids[1].slots.map((s) => s.rowId)).toEqual(['z1'])
+    expect(grids[1].groupRows).toEqual([{ row: 1, label: 'Marteaux' }])
     expect(grids[0].breadcrumb).toEqual(['Outillage', 'Perceuses']) // univers › famille du 1er slot
+  })
+
+  it('SECTIONS : plusieurs produits par sous-famille remplissent leurs rangées, un seul bandeau par groupe et par page', () => {
+    const tree = [node('a', 'Outillage', 1, [], [
+      node('a/b', 'Perceuses', 2, ids(4, 'x')),
+      node('a/c', 'Scies', 2, ids(2, 'y')),
+    ])]
+    const pages = paginateCatalog({ tree, sections: [sec('a', 6)] })
+    const grids = pages.filter((p) => p.kind === 'products')
+    expect(grids).toHaveLength(1) // 4 + 2 = 6 = grille 2×3 pleine, sections alignées sur les rangées
+    expect(grids[0].groupRows).toEqual([{ row: 1, label: 'Perceuses' }, { row: 3, label: 'Scies' }])
+    // Invariant zéro vide conservé.
+    expect(grids[0].slots.reduce((sum, s) => sum + s.colSpan * s.rowSpan, 0)).toBe(6)
+  })
+
+  it("SECTIONS : un univers SANS sous-familles n'émet aucun bandeau (groupRows absent)", () => {
+    const pages = paginateCatalog({ tree: [node('a', 'A', 1, ids(4))], sections: [sec('a', 4)] })
+    const grids = pages.filter((p) => p.kind === 'products')
+    expect(grids[0].groupRows).toBeUndefined()
   })
 
   it('vedette JAMAIS pleine page tant qu’il reste du flux : grande carte 2×1 sur grille 4, entourée de produits', () => {

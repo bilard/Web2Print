@@ -123,10 +123,12 @@ function reassignByPrice(slots: ProductSlot[], prices: Map<string, number | null
   // sous-famille) est préservé sur toutes les autres fiches.
   const bigs = movable.filter((s) => area(s) > 1).sort((a, b) => area(b) - area(a))
   const assigned = new Set<ProductSlot>()
+  // Échanges INTRA-GROUPE seulement : un produit ne doit pas changer de section.
+  const groupOf = (s: ProductSlot) => (s.path.length > 1 ? s.path[s.path.length - 1] : null)
   for (const big of bigs) {
     let best: ProductSlot | null = null
     for (const s of movable) {
-      if (assigned.has(s)) continue
+      if (assigned.has(s) || groupOf(s) !== groupOf(big)) continue
       if (!best || (prices.get(s.rowId) ?? -1) > (prices.get(best.rowId) ?? -1)) best = s
     }
     assigned.add(big)
@@ -139,8 +141,10 @@ function reassignByPrice(slots: ProductSlot[], prices: Map<string, number | null
 
 /**
  * Étire les cartes déjà placées pour absorber les cases restées libres (dernière
- * page d'un univers) : extension vers le bas de la carte au-dessus, sinon vers la
- * droite de la carte à gauche, multi-passes jusqu'à stabilité → JAMAIS de vide.
+ * page d'un univers) : extension vers la DROITE de la carte à gauche en priorité
+ * (reste dans la même rangée → ne traverse jamais un bandeau de sous-famille),
+ * sinon vers le bas de la carte au-dessus (rangées vides de fin de page).
+ * Multi-passes jusqu'à stabilité → JAMAIS de vide.
  */
 function stretchToFill(occ: boolean[][], slots: ProductSlot[], C: number, R: number): void {
   const at = (r: number, c: number): ProductSlot | undefined =>
@@ -151,17 +155,6 @@ function stretchToFill(occ: boolean[][], slots: ProductSlot[], C: number, R: num
     for (let r = 0; r < R; r++) {
       for (let c = 0; c < C; c++) {
         if (occ[r][c]) continue
-        const above = r > 0 ? at(r - 1, c) : undefined
-        if (above) {
-          const cols = Array.from({ length: above.colSpan }, (_, i) => above.col - 1 + i)
-          const rowBelow = above.row - 1 + above.rowSpan
-          if (rowBelow < R && cols.every((cc) => !occ[rowBelow][cc])) {
-            cols.forEach((cc) => { occ[rowBelow][cc] = true })
-            above.rowSpan++
-            progress = true
-            continue
-          }
-        }
         const left = c > 0 ? at(r, c - 1) : undefined
         if (left) {
           const leftRows = Array.from({ length: left.rowSpan }, (_, i) => left.row - 1 + i)
@@ -169,6 +162,17 @@ function stretchToFill(occ: boolean[][], slots: ProductSlot[], C: number, R: num
           if (colRight < C && leftRows.every((rr) => !occ[rr][colRight])) {
             leftRows.forEach((rr) => { occ[rr][colRight] = true })
             left.colSpan++
+            progress = true
+            continue
+          }
+        }
+        const above = r > 0 ? at(r - 1, c) : undefined
+        if (above) {
+          const cols = Array.from({ length: above.colSpan }, (_, i) => above.col - 1 + i)
+          const rowBelow = above.row - 1 + above.rowSpan
+          if (rowBelow < R && cols.every((cc) => !occ[rowBelow][cc])) {
+            cols.forEach((cc) => { occ[rowBelow][cc] = true })
+            above.rowSpan++
             progress = true
           }
         }
@@ -231,6 +235,10 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       ? priceThresholds([...featuredQueue, ...flowQueue].map((i) => prices.get(i.rowId)).filter((p): p is number => p != null))
       : null
 
+    // Sous-famille = SECTION : chaque groupe démarre sur sa propre rangée,
+    // marquée d'un bandeau (groupRows). Conservé entre les pages de l'univers.
+    let currentGroup: string | null = null
+
     // Packing page à page : 1 vedette MAX par page (grande carte jamais pleine
     // page tant qu'il reste du flux), puis first-fit avec dégradation de span →
     // zéro case vide tant qu'il reste des produits (le repli 1×1 rentre toujours).
@@ -241,6 +249,18 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       const slots: ProductSlot[] = []
       const pageNodeIds = new Set<string>()
       const pageNumber = pages.length + 1
+      const groupRows: { row: number; label: string }[] = []
+      const pageGroupLabels = new Set<string>()
+      const holes: { r: number; c: number }[] = []
+      // Ferme la rangée entamée quand la sous-famille change : ses cases libres
+      // sont rendues au groupe précédent (comblées par extension horizontale).
+      const closeRow = () => {
+        for (let r = R - 1; r >= 0; r--) {
+          if (!occ[r].some(Boolean)) continue
+          for (let c = 0; c < C; c++) if (!occ[r][c]) { occ[r][c] = true; holes.push({ r, c }) }
+          break
+        }
+      }
       const place = (item: FlowItem, w: number, h: number): boolean => {
         let placed: { r: number; c: number; w: number; h: number } | null = null
         for (const [cw, ch] of shrinkCandidates(w, h)) {
@@ -268,11 +288,21 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       let priceUpgradesLeft = 1
       while (flowQueue.length > 0) {
         const item = flowQueue[0]
+        const label = item.path.length > 1 ? item.path[item.path.length - 1] : null
+        if (label !== currentGroup) {
+          closeRow() // le groupe suivant démarre sur une NOUVELLE rangée
+          currentGroup = label
+        }
         let [w, h] = wantedSpan(item, prices.get(item.rowId) ?? null, th, C, R)
         const isPriceUpgrade = !item.featured && w * h > 1
         if (isPriceUpgrade && priceUpgradesLeft <= 0) { w = 1; h = 1 }
         if (!place(item, w, h)) break // page pleine
         if (isPriceUpgrade && priceUpgradesLeft > 0) priceUpgradesLeft--
+        // Bandeau de section : première fiche du groupe SUR CETTE PAGE.
+        if (label && !pageGroupLabels.has(label)) {
+          pageGroupLabels.add(label)
+          groupRows.push({ row: slots[slots.length - 1].row, label })
+        }
         flowQueue.shift()
       }
       // Flux épuisé mais des vedettes restent : elles se PARTAGENT la page
@@ -283,13 +313,22 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
         featuredQueue.shift()
       }
       if (slots.length === 0) break // garde théorique (grille 1×1 minimum → jamais atteint)
+      // Fins de rangée fermées par un changement de sous-famille : la carte de
+      // gauche s'élargit (jamais d'extension VERTICALE à travers un bandeau).
+      for (const { r, c } of holes) {
+        const left = slots.find((s) => r >= s.row - 1 && r < s.row - 1 + s.rowSpan && c - 1 >= s.col - 1 && c - 1 < s.col - 1 + s.colSpan)
+        if (left) left.colSpan++
+      }
       // Cases restées libres (fin d'univers) : étirer les cartes → zéro vide.
       stretchToFill(occ, slots, C, R)
       // Après étirement (les aires sont définitives) : le prix le plus haut
       // occupe la plus grande carte de la page.
       if (sizeByPrice) reassignByPrice(slots, prices)
       const breadcrumb = slots[0].path.slice(0, 2) // univers › famille du 1er slot
-      pages.push({ kind: 'products', pageNumber, nodeId: univers.id, breadcrumb, grid, slots, nodeIds: [...pageNodeIds] })
+      pages.push({
+        kind: 'products', pageNumber, nodeId: univers.id, breadcrumb, grid, slots, nodeIds: [...pageNodeIds],
+        ...(groupRows.length > 0 ? { groupRows } : {}),
+      })
     }
   })
   pages.push({ kind: 'back-cover', pageNumber: pages.length + 1 })

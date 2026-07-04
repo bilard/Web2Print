@@ -216,7 +216,9 @@ export type CatalogPageDescriptor =
   | { kind: 'opener'; pageNumber: number; nodeId: string; label: string; index: number; productCount: number; families: OpenerFamily[]; highlights: string[] }
   | { kind: 'products'; pageNumber: number; nodeId: string; breadcrumb: string[]; grid: CatalogGrid; slots: ProductSlot[];
       /** Ids des nœuds taxonomiques représentés sur la page (chaînes univers→sous-famille) — navigation/stats du chemin de fer. */
-      nodeIds?: string[] }
+      nodeIds?: string[];
+      /** Bandeaux de SECTION : rangée (1-based) où démarre chaque sous-famille de la page. */
+      groupRows?: { row: number; label: string }[] }
   | { kind: 'back-cover'; pageNumber: number }
 
 /** Colonnes mappées sur les 3 niveaux taxonomiques. */

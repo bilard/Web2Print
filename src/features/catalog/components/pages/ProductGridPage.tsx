@@ -27,46 +27,52 @@ function typoFit(ctx: CatalogRenderCtx, grid: CatalogGrid): number {
   return Math.min(1.45, Math.max(0.85, Math.sqrt((cellW * cellH) / REF_AREA)))
 }
 
-interface Props { ctx: CatalogRenderCtx; grid: CatalogGrid; slots: ProductSlot[] }
-
-/**
- * Kickers à afficher : la pastille sous-famille n'apparaît qu'au CHANGEMENT de
- * sous-famille dans l'ordre de LECTURE (ligne puis colonne) — la répéter sur
- * chaque fiche d'un même groupe perturbe la lecture.
- */
-function kickerFirsts(slots: ProductSlot[]): Set<string> {
-  const reading = [...slots].sort((a, b) => a.row - b.row || a.col - b.col)
-  const firsts = new Set<string>()
-  let prev: string | undefined
-  for (const s of reading) {
-    const k = s.path.length > 1 ? s.path[s.path.length - 1] : undefined
-    if (k && k !== prev) firsts.add(s.rowId)
-    prev = k
-  }
-  return firsts
+interface Props {
+  ctx: CatalogRenderCtx
+  grid: CatalogGrid
+  slots: ProductSlot[]
+  /** Bandeaux de SECTION (sous-familles) : rangée moteur (1-based) → label. */
+  groupRows?: { row: number; label: string }[]
 }
 
-export function ProductGridPage({ ctx, grid, slots }: Props) {
+export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
   const [cols, rows] = GRID_DIMS[grid]
   const fit = typoFit(ctx, grid)
-  const withKicker = kickerFirsts(slots)
+  // Bandeaux de section (masquables via « Sous-famille » des éléments affichés).
+  const bands = (ctx.plan.cardStyle?.showKicker ?? true) ? (groupRows ?? []) : []
+  const bandAt = new Map(bands.map((b) => [b.row, b.label]))
+  // Grille CSS : une piste `auto` (bandeau) est insérée AVANT chaque rangée qui
+  // démarre une sous-famille ; les rangées produits se partagent le reste (1fr).
+  const template: string[] = []
+  const cssRowOf: number[] = [] // rangée moteur (1-based) → piste CSS (1-based)
+  const bandCssRow = new Map<number, number>()
+  for (let r = 1; r <= rows; r++) {
+    if (bandAt.has(r)) { template.push('auto'); bandCssRow.set(r, template.length) }
+    template.push('minmax(0, 1fr)')
+    cssRowOf[r] = template.length
+  }
   return (
     <div className="cat-grid" style={{
-      gridTemplateColumns: `repeat(${cols}, 1fr)`, gridTemplateRows: `repeat(${rows}, 1fr)`,
+      gridTemplateColumns: `repeat(${cols}, 1fr)`, gridTemplateRows: template.join(' '),
       ...(fit !== 1 ? ({ '--cat-fit': String(Math.round(fit * 100) / 100) } as CSSProperties) : {}),
     }}>
+      {bands.map((b) => (
+        <div key={`band-${b.row}`} className="cat-group-band" style={{ gridColumn: '1 / -1', gridRow: bandCssRow.get(b.row) }}>
+          {b.label}
+        </div>
+      ))}
       {slots.map((slot) => {
-        const style = { gridColumn: `${slot.col} / span ${slot.colSpan}`, gridRow: `${slot.row} / span ${slot.rowSpan}` }
+        // Les spans ne traversent jamais un bandeau (le moteur ferme les rangées
+        // au changement de groupe) → `span N` reste sûr en pistes CSS.
+        const style = { gridColumn: `${slot.col} / span ${slot.colSpan}`, gridRow: `${cssRowOf[slot.row]} / span ${slot.rowSpan}` }
         const row = ctx.rowsById.get(slot.rowId)
         if (!row) return <div key={slot.rowId} className="cat-cell" style={style} />
-        // Kicker = sous-famille (dernier niveau du path), au changement de groupe seulement.
-        const kicker = withKicker.has(slot.rowId) ? slot.path[slot.path.length - 1] : undefined
         // Layout horizontal (image gauche / contenu droite) : cartes larges (2×1)
         // ET cartes standard des grilles denses (6-8/page, trop courtes pour empiler).
         const horizontal = slot.rowSpan === 1 && (slot.colSpan >= 2 || grid >= 6)
         return (
           <ProductCell key={slot.rowId} fields={extractPromoFields(row, ctx.columns, ctx.fieldMap)}
-            featured={slot.featured} kicker={kicker} size={slotSize(slot, grid)}
+            featured={slot.featured} size={slotSize(slot, grid)}
             horizontal={horizontal} cardStyle={ctx.plan.cardStyle} style={style} />
         )
       })}
