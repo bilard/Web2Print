@@ -6,7 +6,7 @@ import { GradientPicker } from '@/components/shared/GradientPicker'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { ensurePageBgRect } from '@/features/editor/useCanvas'
 import { canvasPxToMm, mmToCanvasPx } from '@/features/print/dimensions'
-import { OptionHelp } from '@/components/shared/OptionHelp'
+import { PropertySection } from '@/components/shared/panel'
 
 // Le canvas Fabric stocke des points (1 px canvas = 1 pt = 1/72 inch).
 // Les formats print sont exprimés en pt pour rester cohérents avec l'import
@@ -124,11 +124,11 @@ export function PagePanel() {
   return (
     <div className="p-3 flex flex-col gap-4">
       {/* ── Dimensions ── */}
-      <section data-tour="opt-page-dims" className="flex flex-col gap-2">
-        <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
-          Dimensions
-          <OptionHelp text="Taille de la page en millimètres. Saisissez largeur/hauteur, ou choisissez un format prédéfini ci-dessous (A4, Instagram…). Modifiable à tout moment." />
-        </label>
+      <PropertySection
+        title="Dimensions"
+        tourId="page-dims"
+        help="Taille de la page en millimètres. Saisissez largeur/hauteur, ou choisissez un format prédéfini ci-dessous (A4, Instagram…). Modifiable à tout moment."
+      >
         <div className="flex items-center gap-2">
           <div className="flex-1 flex flex-col gap-1">
             <span className="text-[10px] text-white/30">Largeur</span>
@@ -172,15 +172,14 @@ export function PagePanel() {
             )
           })}
         </div>
-      </section>
+      </PropertySection>
 
       {/* ── Arrière-plan ── */}
-      <section data-tour="opt-page-bg" className="flex flex-col gap-2 pt-3 border-t border-white/5">
-        <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
-          Arrière-plan
-          <OptionHelp text="Fond de la page : couleur unie, dégradé, ou image. L'image de fond est verrouillée derrière les objets ; le dégradé est paramétrable (angle, étapes)." />
-        </label>
-
+      <PropertySection
+        title="Arrière-plan"
+        tourId="page-bg"
+        help="Fond de la page : couleur unie, dégradé, ou image. L'image de fond est verrouillée derrière les objets ; le dégradé est paramétrable (angle, étapes)."
+      >
         <div className="flex gap-1">
           {([
             { value: 'solid' as const, label: 'Uni' },
@@ -231,7 +230,7 @@ export function PagePanel() {
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
           </div>
         )}
-      </section>
+      </PropertySection>
 
       <div className="text-[10px] text-white/20 text-center pt-2 border-t border-white/5">
         {roundMm(canvasPxToMm(canvasWidth))} x {roundMm(canvasPxToMm(canvasHeight))} mm &mdash; {Math.round(canvasWidth)} x {Math.round(canvasHeight)} pt
