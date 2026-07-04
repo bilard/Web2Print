@@ -25,6 +25,16 @@ export interface PromoFields {
   mentions: string
   enseigne: string
   badges: string[]
+  /** Champs libres mappés par l'utilisateur (id de champ → valeur lue dans la ligne). */
+  extra?: Record<string, string>
 }
 
 export type PromoFieldKey = keyof PromoFields
+
+/** Un champ libre : colonne source arbitraire nommée par l'utilisateur. `label` = repère d'éditeur, NON rendu sur la fiche. */
+export interface CustomField {
+  id: string
+  label: string
+  column: string
+}
+export type CustomFieldMap = CustomField[]
