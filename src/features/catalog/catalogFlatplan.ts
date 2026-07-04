@@ -4,7 +4,7 @@
 // le sommaire et la 4e restent verrouillés à leur place ; seules les pages
 // d'ouverture et de produits se réordonnent. Après réordonnancement, les numéros
 // de page ET les entrées du sommaire sont recalculés (sinon export faux).
-import type { CatalogPageDescriptor } from './catalogTypes'
+import type { CatalogPageDescriptor, CatalogSectionPlan } from './catalogTypes'
 
 /** Genres de pages verrouillés (non triables) dans le chemin de fer. */
 const LOCKED_KINDS = new Set(['cover', 'toc', 'back-cover'])
@@ -135,13 +135,22 @@ export function nodePageRanges(pages: CatalogPageDescriptor[]): Map<string, Node
 /** Couleurs cycliques des univers (repère visuel du chemin de fer, indépendantes du thème). */
 const UNIVERSE_PALETTE = ['#6366f1', '#06b6d4', '#f59e0b', '#ec4899', '#22c55e', '#a855f7', '#ef4444', '#14b8a6']
 
-/** univers → couleur (ordre d'apparition des affiches, cyclique). */
-export function universeColors(pages: CatalogPageDescriptor[]): Map<string, string> {
+/** Couleur par défaut du i-ème chapitre (palette cyclique). */
+export function defaultUniverseColor(index: number): string {
+  return UNIVERSE_PALETTE[index % UNIVERSE_PALETTE.length]
+}
+
+/**
+ * univers → couleur : override choisi par l'utilisateur (section.color du
+ * chapitre) sinon palette cyclique par ordre d'apparition.
+ */
+export function universeColors(pages: CatalogPageDescriptor[], sections?: CatalogSectionPlan[]): Map<string, string> {
+  const custom = new Map((sections ?? []).filter((s) => s.color).map((s) => [s.nodeId, s.color as string]))
   const out = new Map<string, string>()
   for (const p of pages) {
     if (p.kind !== 'opener' && p.kind !== 'products') continue
     // nodeId des pages produits = univers (le moteur pagine par univers).
-    if (!out.has(p.nodeId)) out.set(p.nodeId, UNIVERSE_PALETTE[out.size % UNIVERSE_PALETTE.length])
+    if (!out.has(p.nodeId)) out.set(p.nodeId, custom.get(p.nodeId) ?? defaultUniverseColor(out.size))
   }
   return out
 }

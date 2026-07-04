@@ -41,6 +41,8 @@ export interface CatalogSectionPlan {
   randomDensity?: boolean
   /** Produits vedette : grande carte 2×2 mise en avant AU SEIN de la page (design dédié). */
   featuredIds: string[]
+  /** Couleur du CHAPITRE (section d'un univers) — '' = palette cyclique par défaut. */
+  color?: string
 }
 
 export interface CatalogTheme {

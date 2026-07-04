@@ -6,7 +6,7 @@ import { useMemo, useRef, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { useCatalogPages } from '../../useCatalogPages'
-import { flatplanStats, nodePageRanges, universeColors } from '../../catalogFlatplan'
+import { flatplanStats, nodePageRanges } from '../../catalogFlatplan'
 import { StepActionsPortal } from './StepActionsPortal'
 import { FlatplanStatsBar } from './FlatplanStatsBar'
 import { FlatplanTaxonomy } from './FlatplanTaxonomy'
@@ -27,7 +27,8 @@ export function StepFlatplan() {
 
   const stats = useMemo(() => flatplanStats(pages), [pages])
   const ranges = useMemo(() => nodePageRanges(pages), [pages])
-  const colors = useMemo(() => universeColors(pages), [pages])
+  // Source unique des couleurs de chapitre (overrides utilisateur inclus) : le ctx.
+  const colors = ctx?.universeColors ?? new Map<string, string>()
 
   if (pages.length === 0 || !ctx) {
     return <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Aucune page — vérifiez la sélection et la structure.</div>

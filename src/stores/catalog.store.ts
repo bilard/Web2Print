@@ -48,6 +48,8 @@ interface CatalogState {
    */
   setAllSectionsDensity: (density: CatalogDensity, nodeIds: string[]) => void
   toggleFeatured: (nodeId: string, rowId: string) => void
+  /** Couleur du chapitre (univers) — '' = palette cyclique par défaut. */
+  setSectionColor: (nodeId: string, color: string) => void
   setFieldMap: (map: Partial<Record<PromoFieldKey, string>>) => void
   setFormat: (format: CatalogFormat) => void
   setCoverImageUrl: (url: string | null) => void
@@ -149,6 +151,11 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     const sections = upsertSection(s.plan.sections, nodeId).map((x) => x.nodeId === nodeId
       ? { ...x, featuredIds: x.featuredIds.includes(rowId) ? x.featuredIds.filter((i) => i !== rowId) : [...x.featuredIds, rowId] }
       : x)
+    return { plan: { ...s.plan, sections } }
+  }),
+  setSectionColor: (nodeId, color) => set((s) => {
+    if (!s.plan) return {}
+    const sections = upsertSection(s.plan.sections, nodeId).map((x) => x.nodeId === nodeId ? { ...x, color } : x)
     return { plan: { ...s.plan, sections } }
   }),
   setFieldMap: (fieldMap) => set({ fieldMap }),

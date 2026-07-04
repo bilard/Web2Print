@@ -113,6 +113,14 @@ describe('stats & navigation', () => {
     expect(colors.get('a')).not.toBe(colors.get('b'))
   })
 
+  it('universeColors : la couleur CHOISIE du chapitre (section.color) prime sur la palette', () => {
+    const sections = [{ nodeId: 'a', productsPerPage: 4 as const, featuredIds: [], color: '#123456' }]
+    const colors = universeColors(samplePages(), sections)
+    expect(colors.get('a')).toBe('#123456')
+    // L'univers suivant garde SA couleur cyclique (l'index d'apparition ne bouge pas).
+    expect(colors.get('b')).toBe(universeColors(samplePages()).get('b'))
+  })
+
   it('flatplanStats sur page produits synthétique avec vedette', () => {
     const slot = (rowId: string, featured = false): ProductSlot => ({ rowId, featured, path: ['U'], col: 1, row: 1, colSpan: 1, rowSpan: 1 })
     const pages: CatalogPageDescriptor[] = [

@@ -8,6 +8,7 @@ import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey } from '@/features/retail-promo/promoTypes'
 import { CATALOG_GRIDS, type CatalogGrid, type CatalogPlan, type CatalogSectionPlan, type CatalogTreeNode } from '../../catalogTypes'
 import { subtreeProductCount } from '../../catalogTree'
+import { defaultUniverseColor } from '../../catalogFlatplan'
 import { PlanSectionRow } from './PlanSectionRow'
 
 interface SectionsCardProps {
@@ -23,6 +24,16 @@ export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap }: S
   const setSectionDensity = useCatalogStore((s) => s.setSectionDensity)
   const setAllSectionsDensity = useCatalogStore((s) => s.setAllSectionsDensity)
   const toggleFeatured = useCatalogStore((s) => s.toggleFeatured)
+  const setSectionColor = useCatalogStore((s) => s.setSectionColor)
+
+  // Couleur effective de chaque CHAPITRE : override utilisateur ?? palette cyclique
+  // (même résolution que le chemin de fer et le rendu des pages).
+  const chapterColorOf = new Map<string, string>()
+  flatNodes.filter((n) => n.level === 1 && subtreeProductCount(n) > 0).forEach((n, i) => {
+    const custom = plan.sections.find((x) => x.nodeId === n.id)?.color
+    chapterColorOf.set(n.id, custom || defaultUniverseColor(i))
+  })
+  const chapterOf = (node: CatalogTreeNode): string => chapterColorOf.get(node.id.split('/')[0]) ?? defaultUniverseColor(0)
 
   // Valeur du sélecteur « défaut » : la densité commune des univers, sinon « mixte ».
   const densities = flatNodes.filter((n) => n.level === 1).map((n) => {
@@ -74,8 +85,10 @@ export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap }: S
           })
           return (
             <PlanSectionRow key={node.id} node={node} section={section} products={products}
+              chapterColor={chapterOf(node)}
               onDensity={(d) => setSectionDensity(node.id, d)}
-              onToggleFeatured={(rowId) => toggleFeatured(node.id, rowId)} />
+              onToggleFeatured={(rowId) => toggleFeatured(node.id, rowId)}
+              onColor={node.level === 1 ? (c) => setSectionColor(node.id, c) : undefined} />
           )
         })}
       </div>

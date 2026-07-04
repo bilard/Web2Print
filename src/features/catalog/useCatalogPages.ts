@@ -51,7 +51,7 @@ export function useCatalogPages(): CatalogPagesResult {
       plan, format: s.format, rowsById: new Map(rows.map((r) => [r._id, r])), columns: s.rawColumns,
       fieldMap: s.fieldMap, catalogName: s.name, totalPages: pages.length,
       coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
-      universeColors: universeColors(pages),
+      universeColors: universeColors(pages, plan.sections),
     }
     return { pages, ctx, keys, tree }
   }, [s.rawRows, s.rawColumns, s.selectedRowIds, s.levelKeys, s.treeEdits, s.plan, s.format, s.fieldMap, s.name, s.coverImageUrl, s.backCoverImageUrl, s.pageOrder])
