@@ -4,9 +4,21 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { getApps, initializeApp } from 'firebase-admin/app'
 import { buildEventDoc } from './derive'
 import { clientIpFromHeaders, lookupGeo } from './geoip'
+import { getOwnerUid } from '../email/ownerMailer'
 
 if (!getApps().length) initializeApp()
 const db = getFirestore()
+
+// Uid du propriétaire mis en cache : ses visites (il teste l'app en continu) ne
+// doivent JAMAIS polluer les stats. Résolu une fois (requête `users`), puis mémoïsé
+// tant qu'il n'est pas trouvé (retry), pour ne pas peser sur cet endpoint à haute
+// fréquence.
+let ownerUidCache: string | null = null
+async function resolveOwnerUid(): Promise<string | null> {
+  if (ownerUidCache) return ownerUidCache
+  try { ownerUidCache = (await getOwnerUid()) || null } catch { ownerUidCache = null }
+  return ownerUidCache
+}
 
 export const collectAnalytics = onRequest(
   // 512 Mo : la base DB-IP (~124 Mo) est tenue en mémoire par instance (cf. geoip.ts).
@@ -46,6 +58,17 @@ export const collectAnalytics = onRequest(
     // les pages publiques / anciens beacons → `add()` classique.
     const rawEid = (req.body as { eid?: unknown } | null | undefined)?.eid
     const eid = typeof rawEid === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(rawEid) ? rawEid : null
+    // Propriétaire : on ne logue rien. Le beacon re-tague la page d'entrée (déjà
+    // écrite en anonyme sous le même `eid` avant la résolution de l'auth) avec son
+    // uid → on supprime alors ce doc pour ne laisser aucune trace de ses tests.
+    const ownerUid = await resolveOwnerUid()
+    if (ownerUid && (doc as { uid?: string | null }).uid === ownerUid) {
+      if (eid) {
+        try { await db.collection('analyticsEvents').doc(eid).delete() } catch { /* best-effort */ }
+      }
+      res.status(204).end()
+      return
+    }
     try {
       if (eid) {
         await db.collection('analyticsEvents').doc(eid).set({ ...doc, ts: FieldValue.serverTimestamp() }, { merge: true })

@@ -1,6 +1,6 @@
 // src/features/analytics/admin/AnalyticsTab.tsx
 import { lazy, Suspense, useMemo, useState } from 'react'
-import { Download, Trash2, Loader2 } from 'lucide-react'
+import { Download, Trash2, Loader2, UserX } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -10,7 +10,7 @@ import { useAnalyticsEvents } from '../useAnalyticsEvents'
 import { usePeriod, type PeriodKey } from '../usePeriod'
 import { computeKpis, timeSeries, filterEvents, NO_FILTER, type EventFilter } from '../metrics'
 import { downloadEventsCsv } from '../exportCsv'
-import { useClearAnalytics } from '../useClearAnalytics'
+import { useClearAnalytics, usePurgeMyAnalytics } from '../useClearAnalytics'
 import { AnalyticsKpiCards } from './AnalyticsKpiCards'
 import { AnalyticsTimeChart } from './AnalyticsTimeChart'
 import { AnalyticsTopLists } from './AnalyticsTopLists'
@@ -36,12 +36,23 @@ export function AnalyticsTab() {
   // Pays sélectionné dans la carte « Pays » → mis en évidence sur la carte du monde.
   const [country, setCountry] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
+  const [confirmPurge, setConfirmPurge] = useState(false)
   const clear = useClearAnalytics()
+  const purgeMine = usePurgeMyAnalytics()
   const handleClear = () => {
     clear.mutate(undefined, {
       onSuccess: (deleted) => {
         setConfirmClear(false)
         toast.success(`Historique vidé — ${deleted.toLocaleString('fr-FR')} consultation(s) supprimée(s).`)
+      },
+      onError: (e) => toast.error(`Échec : ${e instanceof Error ? e.message : 'erreur inconnue'}`),
+    })
+  }
+  const handlePurgeMine = () => {
+    purgeMine.mutate(undefined, {
+      onSuccess: (deleted) => {
+        setConfirmPurge(false)
+        toast.success(`Vos visites supprimées — ${deleted.toLocaleString('fr-FR')} consultation(s).`)
       },
       onError: (e) => toast.error(`Échec : ${e instanceof Error ? e.message : 'erreur inconnue'}`),
     })
@@ -79,6 +90,13 @@ export function AnalyticsTab() {
             <Download className="w-4 h-4" /> CSV
           </button>
           <button
+            onClick={() => setConfirmPurge(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-white/70 hover:text-white bg-surface-2"
+            title="Supprimer mes propres visites (tests) — elles faussent les stats"
+          >
+            <UserX className="w-4 h-4" /> Purger mes visites
+          </button>
+          <button
             onClick={() => setConfirmClear(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-red-400/80 hover:text-red-300 bg-surface-2 hover:bg-red-500/10"
             title="Vider tout l'historique de consultation"
@@ -105,6 +123,28 @@ export function AnalyticsTab() {
               className="bg-red-600 hover:bg-red-700 text-[#fff]"
             >
               {clear.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Suppression…</> : 'Vider définitivement'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmPurge} onOpenChange={(o) => !purgeMine.isPending && setConfirmPurge(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Purger vos propres visites ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Supprime <strong>uniquement vos consultations</strong> (vous, propriétaire) — vos tests
+              qui faussent les statistiques. Le trafic des autres visiteurs n'est pas touché. Action irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={purgeMine.isPending}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handlePurgeMine() }}
+              disabled={purgeMine.isPending}
+              className="bg-red-600 hover:bg-red-700 text-[#fff]"
+            >
+              {purgeMine.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Suppression…</> : 'Purger mes visites'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
