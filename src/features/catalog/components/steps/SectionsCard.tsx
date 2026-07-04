@@ -41,7 +41,10 @@ export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap }: S
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             Produits/page (défaut)
             <select value={globalDensity}
-              onChange={(e) => e.target.value && setAllSectionsDensity(e.target.value === 'random' ? 'random' : Number(e.target.value) as CatalogGrid)}
+              onChange={(e) => e.target.value && setAllSectionsDensity(
+                e.target.value === 'random' ? 'random' : Number(e.target.value) as CatalogGrid,
+                flatNodes.filter((n) => subtreeProductCount(n) > 0).map((n) => n.id),
+              )}
               className="w-24 px-2 py-1.5 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600">
               <option value="" disabled>mixte</option>
               {CATALOG_GRIDS.map((g) => <option key={g} value={g}>{g}/page</option>)}

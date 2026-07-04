@@ -40,8 +40,13 @@ interface CatalogState {
   setPrompt: (prompt: string) => void
   setPlan: (plan: CatalogPlan | null) => void
   setSectionDensity: (nodeId: string, density: CatalogDensity) => void
-  /** Densité par défaut : applique la valeur à TOUTES les sections d'un coup. */
-  setAllSectionsDensity: (density: CatalogDensity) => void
+  /**
+   * Densité par défaut : applique la valeur à TOUTES les sections d'un coup.
+   * `nodeIds` = nœuds de l'arbre COURANT : une section est créée pour chacun
+   * s'il n'en a pas (un plan partiel laisserait sinon des univers à la grille 4
+   * implicite → le sélecteur resterait « mixte » et semblerait inopérant).
+   */
+  setAllSectionsDensity: (density: CatalogDensity, nodeIds: string[]) => void
   toggleFeatured: (nodeId: string, rowId: string) => void
   setFieldMap: (map: Partial<Record<PromoFieldKey, string>>) => void
   setFormat: (format: CatalogFormat) => void
@@ -130,9 +135,11 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
       : x)
     return { plan: { ...s.plan, sections } }
   }),
-  setAllSectionsDensity: (density) => set((s) => {
+  setAllSectionsDensity: (density, nodeIds) => set((s) => {
     if (!s.plan) return {}
-    const sections = s.plan.sections.map((x) => density === 'random'
+    let sections = s.plan.sections
+    for (const id of nodeIds) sections = upsertSection(sections, id)
+    sections = sections.map((x) => density === 'random'
       ? { ...x, randomDensity: true }
       : { ...x, productsPerPage: density, randomDensity: false })
     return { plan: { ...s.plan, sections } }
