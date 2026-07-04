@@ -17,6 +17,12 @@ export interface RetailCardData {
   remiseLabel?: string
   validite?: string
   imageUrl?: string
+  ean?: string
+  unit?: string
+  mentions?: string
+  enseigne?: string
+  /** Champs libres, valeurs seules (sans label), ordre = customFields. */
+  details: string[]
 }
 
 export type PromoColorKey =

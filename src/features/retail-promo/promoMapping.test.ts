@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, test, expect } from 'vitest'
 import { defaultPromoFieldMap, extractPromoFields, computeRemiseLabel, displayedRemisePct } from './promoMapping'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFields } from './promoTypes'
