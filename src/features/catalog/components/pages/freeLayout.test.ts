@@ -12,5 +12,13 @@ test('freeLayoutBox : repli quand aucun override', () => {
 
 test('freeLayoutBox : override fusionné sur le repli', () => {
   const style = { ...DEFAULT_CARD_STYLE, layout: { name: { x: 10, y: 20 } } }
-  expect(freeLayoutBox('name', style)).toEqual({ x: 10, y: 20, w: 88 })
+  expect(freeLayoutBox('name', style)).toEqual({ x: 10, y: 20, w: 90 })
+})
+
+test('FREE_DEFAULT_LAYOUT : empilement vertical croissant (pas de chevauchement grossier)', () => {
+  const { promo, image, name, price, details } = FREE_DEFAULT_LAYOUT
+  expect(promo.y).toBeLessThan(image.y)
+  expect(image.y).toBeLessThan(name.y)
+  expect(name.y).toBeLessThan(price.y)
+  expect(price.y).toBeLessThan(details.y)
 })
