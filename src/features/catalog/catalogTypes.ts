@@ -55,6 +55,17 @@ export interface CatalogTheme {
   fontBody: string
 }
 
+/** Objets de la fiche déplaçables/redimensionnables en mode « disposition libre ». */
+export type CardObjectId =
+  | 'promo' | 'image' | 'sticker' | 'kicker' | 'vedette'
+  | 'brand' | 'name' | 'description' | 'ref' | 'unit' | 'price' | 'details'
+export const CARD_OBJECT_IDS: CardObjectId[] = [
+  'promo', 'image', 'sticker', 'kicker', 'vedette',
+  'brand', 'name', 'description', 'ref', 'unit', 'price', 'details',
+]
+/** Boîte d'un objet en % de la carte (x/y = coin haut-gauche ; w/h optionnels). */
+export interface CardBox { x: number; y: number; w?: number; h?: number }
+
 /**
  * Style COSMÉTIQUE des fiches : réglages bornés appliqués en variables CSS
  * par-dessus le template fluide (qui reste intouchable — packing, variantes
@@ -130,6 +141,10 @@ export interface CatalogCardStyle {
   showVedette: boolean
   /** Affichage de la zone « Détails » (champs libres, valeurs seules). */
   showDetails: boolean
+  /** Disposition LIBRE (drag & drop) : objets positionnés en % au lieu du flux. */
+  freeLayout: boolean
+  /** Boîtes en % par objet (mode libre uniquement) ; absent = position de repli. */
+  layout: Partial<Record<CardObjectId, CardBox>>
 }
 
 export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
@@ -141,6 +156,7 @@ export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   gradientAngle: 135,
   radius: 6, imageShare: 40, imagePad: 12,
   showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true, showVedette: true, showDetails: true,
+  freeLayout: false, layout: {},
 }
 
 /**
