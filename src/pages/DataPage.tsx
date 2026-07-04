@@ -8,7 +8,7 @@ import {
   MoreVertical, ExternalLink,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight, GripVertical,
-  Wand2, FolderUp, Link2,
+  Wand2, FolderUp, Link2, ImagePlus,
 } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -44,6 +44,9 @@ const ScrapingModal = lazy(() =>
 )
 const ColumnCompletionModal = lazy(() =>
   import('@/features/excel/ai-completion/ColumnCompletionModal').then((m) => ({ default: m.ColumnCompletionModal })),
+)
+const ColumnImageGenModal = lazy(() =>
+  import('@/features/excel/ai-image/ColumnImageGenModal').then((m) => ({ default: m.ColumnImageGenModal })),
 )
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useRenameTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
@@ -94,6 +97,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [linkImagesOpen, setLinkImagesOpen] = useState(false)
   const [scrapingOpen, setScrapingOpen] = useState(false)
   const [aiCompletionOpen, setAiCompletionOpen] = useState(false)
+  const [aiImageGenOpen, setAiImageGenOpen] = useState(false)
 
   useModuleIntent('data', (action) => {
     switch (action) {
@@ -656,6 +660,17 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               IA complétion
             </button>
             )}
+            {canScrape && (
+            <button
+              onClick={() => setAiImageGenOpen(true)}
+              disabled={!hasSelectedDb}
+              className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
+              title={hasSelectedDb ? 'Générer les visuels produits par IA (Nano Banana / Higgsfield) → DAM Drive' : 'Sélectionnez une base de données'}
+            >
+              <ImagePlus className="w-4 h-4" />
+              Visuels (IA)
+            </button>
+            )}
             {canCreate && (
             <button
               onClick={createEmpty}
@@ -804,6 +819,14 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           <ColumnCompletionModal
             open={aiCompletionOpen}
             onClose={() => setAiCompletionOpen(false)}
+            visibleRowIds={filteredRowIds}
+          />
+        )}
+
+        {aiImageGenOpen && (
+          <ColumnImageGenModal
+            open={aiImageGenOpen}
+            onClose={() => setAiImageGenOpen(false)}
             visibleRowIds={filteredRowIds}
           />
         )}

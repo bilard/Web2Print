@@ -25,6 +25,19 @@ async function ensureFolder(subFolder: string): Promise<string> {
 export const damSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'image'
 
 /**
+ * Uploade une image déjà accessible en http(s) (ex. URL CDN Higgsfield) vers le
+ * sous-dossier DAM : `damUpload` la re-télécharge côté serveur (magic bytes, 20 Mo max)
+ * — pas de pont Storage-temp ni de fetch client (CORS). Renvoie le webViewLink Drive.
+ */
+export async function uploadUrlToDam(url: string, fileName: string, subFolder: string): Promise<string> {
+  const uid = auth.currentUser?.uid
+  if (!uid) throw new Error('Connexion requise.')
+  const folderId = await ensureFolder(subFolder)
+  const { webViewLink } = (await damUpload({ url, fileName, folderId })).data
+  return webViewLink
+}
+
+/**
  * Uploade une image (data:/blob:/http) vers le sous-dossier DAM donné et renvoie
  * son webViewLink Drive (reconnu par isDriveImageRef → résoluble à l'affichage).
  */
