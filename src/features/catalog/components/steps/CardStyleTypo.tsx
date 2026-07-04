@@ -54,7 +54,7 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
       {FIELDS.map(({ scale, font, label }) => (
         <div key={scale} className={`space-y-1 ${scale === activeScale ? 'ring-2 ring-indigo-500 rounded-md' : ''}`}>
           <SliderField label={label} value={style[scale]} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
-            min={0.7} max={1.5} step={0.05} unit="×" inputRef={(el) => { inputRefs.current[scale] = el }} />
+            min={0.7} max={10} step={0.05} unit="×" inputRef={(el) => { inputRefs.current[scale] = el }} />
           <select value={style[font]} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
             className={inputCls}>
             <option value="">Police du thème</option>

@@ -77,7 +77,7 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
     const move = (ev: PointerEvent) => {
       // Tirer vers l'extérieur (dans le sens de la poignée) agrandit ; horizontal prioritaire.
       const grow = dx !== 0 ? (ev.clientX - sx) * dx : (ev.clientY - sy) * dy
-      const sc = clamp(Math.round(((startW + grow) / baseW) * 100) / 100, 0.2, 5)
+      const sc = clamp(Math.round(((startW + grow) / baseW) * 100) / 100, 0.2, 10)
       onChange(sel, { ...b, sc })
     }
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); setTick((t) => t + 1) }
