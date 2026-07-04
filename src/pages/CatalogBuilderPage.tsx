@@ -57,15 +57,13 @@ export default function CatalogBuilderPage() {
         } catch (e) { toast.error(`Source indisponible : ${String((e as Error).message)}`) }
       }
       if (cancelled) return
-      // Le fieldMap persisté date du devinage de l'époque, or le devinage
-      // s'améliore au fil des versions (aliases, garde anti-collision
-      // barré/vente…). Le wizard catalogue n'a AUCUNE UI de mapping : le
-      // devinage est la seule source → on re-dérive entièrement à chaque boot
-      // (auto-réparateur, y compris quand la session a gardé les lignes).
+      // Le devinage s'améliore au fil des versions ; on RE-DÉRIVE, mais les
+      // choix MANUELS (fieldMapOverrides) l'emportent et survivent → un mapping
+      // corrigé par l'utilisateur n'est jamais écrasé.
       const cur = useCatalogStore.getState()
       if (cur.rawColumns.length > 0) {
-        const guessed = defaultPromoFieldMap(cur.rawColumns)
-        if (JSON.stringify(guessed) !== JSON.stringify(cur.fieldMap)) cur.setFieldMap(guessed)
+        const eff = { ...defaultPromoFieldMap(cur.rawColumns), ...cur.fieldMapOverrides }
+        if (JSON.stringify(eff) !== JSON.stringify(cur.fieldMap)) cur.setFieldMap(eff)
       }
       // Sans lignes rechargées, seule l'étape Source a du sens (source supprimée, hors ligne…).
       if (useCatalogStore.getState().rawRows.length === 0) useCatalogStore.getState().setStep('source')

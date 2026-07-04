@@ -17,6 +17,8 @@ function applyConnectedSource(sourceRef: DataSourceRef, columns: MergeColumn[], 
   s.setSource(sourceRef, columns, rows)
   s.setSelectedRowIds(rows.map((r) => r._id))
   s.setFieldMap(defaultPromoFieldMap(columns))
+  useCatalogStore.setState({ fieldMapOverrides: {} })
+  s.setCustomFields([])
   s.setLevelKeys(guessLevelKeys(columns))
   toast.success(`${rows.length} produits chargés`)
 }

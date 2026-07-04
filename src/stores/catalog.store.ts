@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
-import type { PromoFieldKey } from '@/features/retail-promo/promoTypes'
+import type { PromoFieldKey, CustomFieldMap } from '@/features/retail-promo/promoTypes'
+import { defaultPromoFieldMap } from '@/features/retail-promo/promoMapping'
 import type { CatalogDensity, CatalogDoc, CatalogFormat, CatalogPlan, LevelKeys, TreeEdits } from '@/features/catalog/catalogTypes'
 import { CATALOG_FORMAT_PRESETS } from '@/features/catalog/catalogTypes'
 import { EMPTY_TREE_EDITS } from '@/features/catalog/catalogTree'
@@ -21,6 +22,8 @@ interface CatalogState {
   prompt: string
   plan: CatalogPlan | null
   fieldMap: Partial<Record<PromoFieldKey, string>>
+  fieldMapOverrides: Partial<Record<PromoFieldKey, string>>
+  customFields: CustomFieldMap
   format: CatalogFormat
   coverImageUrl: string | null
   backCoverImageUrl: string | null
@@ -51,6 +54,8 @@ interface CatalogState {
   /** Couleur du chapitre (univers) — '' = palette cyclique par défaut. */
   setSectionColor: (nodeId: string, color: string) => void
   setFieldMap: (map: Partial<Record<PromoFieldKey, string>>) => void
+  setFieldMapOverride: (key: PromoFieldKey, column: string | null) => void
+  setCustomFields: (map: CustomFieldMap) => void
   setFormat: (format: CatalogFormat) => void
   setCoverImageUrl: (url: string | null) => void
   setBackCoverImageUrl: (url: string | null) => void
@@ -72,6 +77,8 @@ const defaultState = {
   prompt: '',
   plan: null as CatalogPlan | null,
   fieldMap: {} as Partial<Record<PromoFieldKey, string>>,
+  fieldMapOverrides: {} as Partial<Record<PromoFieldKey, string>>,
+  customFields: [] as CustomFieldMap,
   format: CATALOG_FORMAT_PRESETS[0].format,
   coverImageUrl: null as string | null,
   backCoverImageUrl: null as string | null,
@@ -107,7 +114,8 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   hydrate: (doc, id) => set({
     catalogId: id, name: doc.name, step: 'source', sourceRef: doc.sourceRef, selectedRowIds: doc.selectedRowIds,
     levelKeys: doc.levelKeys, treeEdits: doc.treeEdits, prompt: doc.prompt, plan: doc.plan,
-    fieldMap: doc.fieldMap, format: doc.format, coverImageUrl: doc.coverImageUrl, backCoverImageUrl: doc.backCoverImageUrl,
+    fieldMap: doc.fieldMap, fieldMapOverrides: doc.fieldMapOverrides, customFields: doc.customFields,
+    format: doc.format, coverImageUrl: doc.coverImageUrl, backCoverImageUrl: doc.backCoverImageUrl,
     pageOrder: doc.pageOrder, previewIndex: null,
     // Purge la session précédente (autre catalogue) : rawRows/rawColumns sont
     // rechargés depuis sourceRef par CatalogBuilderPage (garde rawRows.length===0).
@@ -118,7 +126,8 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     return {
       id: s.catalogId ?? '', name: s.name, sourceRef: s.sourceRef, selectedRowIds: s.selectedRowIds,
       levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
-      fieldMap: s.fieldMap, format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
+      fieldMap: s.fieldMap, fieldMapOverrides: s.fieldMapOverrides, customFields: s.customFields,
+      format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
       pageOrder: s.pageOrder,
     }
   },
@@ -159,6 +168,14 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     return { plan: { ...s.plan, sections } }
   }),
   setFieldMap: (fieldMap) => set({ fieldMap }),
+  setFieldMapOverride: (key, column) => set((s) => {
+    const fieldMapOverrides = { ...s.fieldMapOverrides }
+    if (column) fieldMapOverrides[key] = column
+    else delete fieldMapOverrides[key]
+    const fieldMap = { ...defaultPromoFieldMap(s.rawColumns), ...fieldMapOverrides }
+    return { fieldMapOverrides, fieldMap }
+  }),
+  setCustomFields: (customFields) => set({ customFields }),
   setFormat: (format) => set({ format }),
   setCoverImageUrl: (coverImageUrl) => set({ coverImageUrl }),
   setBackCoverImageUrl: (backCoverImageUrl) => set({ backCoverImageUrl }),
@@ -172,7 +189,8 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     catalogId: s.catalogId, name: s.name, step: s.step, sourceRef: s.sourceRef,
     rawColumns: s.rawColumns, rawRows: s.rawRows, selectedRowIds: s.selectedRowIds,
     levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
-    fieldMap: s.fieldMap, format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
+    fieldMap: s.fieldMap, fieldMapOverrides: s.fieldMapOverrides, customFields: s.customFields,
+    format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
     pageOrder: s.pageOrder,
   }),
 }))

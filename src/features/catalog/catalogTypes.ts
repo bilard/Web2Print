@@ -2,7 +2,7 @@
 // Types du module Catalogue studio. Le moteur (catalogTree/catalogEngine) est pur :
 // il ne dépend que de ces types + MergeRow/MergeColumn.
 import type { DataSourceRef } from '@/stores/merge.store'
-import type { PromoFieldKey } from '@/features/retail-promo/promoTypes'
+import type { PromoFieldKey, CustomFieldMap } from '@/features/retail-promo/promoTypes'
 
 /** Densités de grille autorisées (produits par page). */
 export const CATALOG_GRIDS = [1, 2, 3, 4, 6, 8] as const
@@ -245,6 +245,10 @@ export interface CatalogDoc {
   prompt: string
   plan: CatalogPlan | null
   fieldMap: Partial<Record<PromoFieldKey, string>>
+  /** Choix MANUELS de correspondance (survivent au re-devinage). */
+  fieldMapOverrides: Partial<Record<PromoFieldKey, string>>
+  /** Champs libres affichés en zone « détails » de la fiche. */
+  customFields: CustomFieldMap
   format: CatalogFormat
   coverImageUrl: string | null
   backCoverImageUrl: string | null
