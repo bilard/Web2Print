@@ -2,7 +2,9 @@
 // Sous-panneau « typo » du style de fiches : échelle ET police pour CHAQUE champ
 // texte mappé (nom, description, prix, marque, référence, unité, cartouche promo).
 // « Police du thème » = hérite des polices du plan (titres ou texte selon le champ).
+// Widgets du kit : SliderField (échelle) + <select> stylé inputCls (police).
 import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
+import { SliderField, inputCls } from '@/components/shared/panel'
 import type { CatalogCardStyle } from '../../catalogTypes'
 
 interface CardStyleTypoProps {
@@ -31,14 +33,10 @@ export function CardStyleTypo({ style, patch }: CardStyleTypoProps) {
     <div className="grid grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-3">
       {FIELDS.map(({ scale, font, label }) => (
         <div key={scale} className="space-y-1">
-          <label className="block text-xs text-white/40 space-y-1">
-            <span className="flex justify-between">{label}<b className="text-white tabular-nums">×{style[scale].toFixed(2)}</b></span>
-            <input type="range" min={0.7} max={1.5} step={0.05} value={style[scale]}
-              onChange={(e) => patch({ [scale]: Number(e.target.value) } as Partial<CatalogCardStyle>)}
-              className="w-full accent-indigo-600" />
-          </label>
+          <SliderField label={label} value={style[scale]} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
+            min={0.7} max={1.5} step={0.05} unit="×" />
           <select value={style[font]} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
-            className="w-full px-2 py-1 rounded-md bg-well text-xs text-white outline-none border border-white/10 focus:border-[#6366f1]">
+            className={inputCls}>
             <option value="">Police du thème</option>
             <FontSelectOptions />
           </select>

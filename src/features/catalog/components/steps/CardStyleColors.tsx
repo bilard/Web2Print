@@ -1,6 +1,9 @@
 // src/features/catalog/components/steps/CardStyleColors.tsx
 // Sous-panneau « couleurs » du style de fiches : couleur (et fin de DÉGRADÉ
 // optionnelle, ✕ = retour à l'uni) par objet, angle commun, arrondi.
+// Widgets du kit : ColorField (base) + ColorPicker (fin de dégradé) + SliderField.
+import { ColorPicker } from '@/components/shared/ColorPicker'
+import { ColorField, SliderField } from '@/components/shared/panel'
 import type { CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
 
 interface CardStyleColorsProps {
@@ -12,8 +15,36 @@ interface CardStyleColorsProps {
 type ColorKey = 'promoBg' | 'stickerBg' | 'priceBg' | 'wasBg' | 'kickerBg' | 'nameColor' | 'vedetteBg' | 'vedettePriceBg' | 'priceInk' | 'vedettePriceInk'
 type GradKey = 'promoBg2' | 'stickerBg2' | 'priceBg2' | 'wasBg2' | 'kickerBg2' | 'vedetteBg2' | 'vedettePriceBg2'
 
+interface ColorDef { key: ColorKey; grad?: GradKey; label: string; fallback: string }
+
+/** Une ligne : couleur de base (ColorField) + éventuel contrôle de dégradé (fin + ✕ / bouton d'ajout). */
+function ColorObjectField({ def, style, patch }: { def: ColorDef; style: CatalogCardStyle; patch: CardStyleColorsProps['patch'] }) {
+  const { key, grad, label, fallback } = def
+  const base = style[key]
+  const gradValue = grad ? style[grad] : ''
+
+  return (
+    <div className="flex flex-wrap items-end gap-2 rounded-md border border-white/5 p-2">
+      <ColorField label={label} value={base} inherit={fallback} onChange={(v) => patch({ [key]: v } as Partial<CatalogCardStyle>)} />
+      {grad && (
+        gradValue ? (
+          <div className="flex items-end gap-1">
+            <ColorPicker label="Fin de dégradé" value={gradValue} onChange={(v) => patch({ [grad]: v } as Partial<CatalogCardStyle>)} />
+            <button type="button" onClick={() => patch({ [grad]: '' } as Partial<CatalogCardStyle>)}
+              className="text-white/40 hover:text-white leading-none pb-1.5" title="Couleur unie">✕</button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => patch({ [grad]: base || fallback } as Partial<CatalogCardStyle>)}
+            className="px-2 py-1.5 rounded-md text-xs text-white/40 hover:text-white border border-dashed border-white/10 hover:border-white/20"
+            title="Ajouter un dégradé">+ dégradé</button>
+        )
+      )}
+    </div>
+  )
+}
+
 export function CardStyleColors({ style, theme, patch }: CardStyleColorsProps) {
-  const COLORS: { key: ColorKey; grad?: GradKey; label: string; fallback: string }[] = [
+  const COLORS: ColorDef[] = [
     { key: 'promoBg', grad: 'promoBg2', label: 'Cartouche', fallback: theme.accent },
     { key: 'stickerBg', grad: 'stickerBg2', label: 'Sticker', fallback: theme.accent },
     { key: 'priceBg', grad: 'priceBg2', label: 'Prix', fallback: theme.accent },
@@ -28,44 +59,18 @@ export function CardStyleColors({ style, theme, patch }: CardStyleColorsProps) {
   const hasGradient = COLORS.some(({ grad }) => grad && style[grad])
 
   return (
-    <div className="flex flex-wrap gap-3 items-start">
-      {COLORS.map(({ key, grad, label, fallback }) => (
-        <div key={key} className="flex flex-col items-center gap-1 text-xs text-white/40">
-          {label}
-          <input type="color" value={style[key] || fallback}
-            onChange={(e) => patch({ [key]: e.target.value } as Partial<CatalogCardStyle>)}
-            className="w-10 h-8 rounded-md bg-well cursor-pointer" />
-          {grad && (
-            <span className="flex items-center gap-0.5">
-              <input type="color" value={style[grad] || style[key] || fallback} title="Fin de dégradé"
-                onChange={(e) => patch({ [grad]: e.target.value } as Partial<CatalogCardStyle>)}
-                className={`w-7 h-5 rounded bg-well cursor-pointer ${style[grad] ? '' : 'opacity-40'}`} />
-              {style[grad] && (
-                <button type="button" onClick={() => patch({ [grad]: '' } as Partial<CatalogCardStyle>)}
-                  className="text-white/40 hover:text-white leading-none" title="Couleur unie">✕</button>
-              )}
-            </span>
-          )}
-        </div>
-      ))}
-      {hasGradient && (
-        <label className="flex flex-col items-center gap-1 text-xs text-white/40">
-          Angle
-          <span className="flex items-center gap-2">
-            <input type="range" min={0} max={360} step={15} value={style.gradientAngle}
-              onChange={(e) => patch({ gradientAngle: Number(e.target.value) })} className="w-20 accent-indigo-600" />
-            <b className="text-white tabular-nums">{style.gradientAngle}°</b>
-          </span>
-        </label>
-      )}
-      <label className="flex flex-col items-center gap-1 text-xs text-white/40">
-        Arrondi
-        <span className="flex items-center gap-2">
-          <input type="range" min={0} max={16} step={1} value={style.radius}
-            onChange={(e) => patch({ radius: Number(e.target.value) })} className="w-20 accent-indigo-600" />
-          <b className="text-white tabular-nums">{style.radius}px</b>
-        </span>
-      </label>
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+        {COLORS.map((def) => <ColorObjectField key={def.key} def={def} style={style} patch={patch} />)}
+      </div>
+      <div className="grid grid-cols-2 gap-4 max-w-md">
+        {hasGradient && (
+          <SliderField label="Angle du dégradé" value={style.gradientAngle} onChange={(v) => patch({ gradientAngle: v })}
+            min={0} max={360} step={15} unit="°" />
+        )}
+        <SliderField label="Arrondi" value={style.radius} onChange={(v) => patch({ radius: v })}
+          min={0} max={16} step={1} unit="px" />
+      </div>
     </div>
   )
 }
