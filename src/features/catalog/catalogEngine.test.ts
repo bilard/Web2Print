@@ -109,16 +109,27 @@ describe('paginateCatalog (flux continu par univers)', () => {
     expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p1', 'p2', 'p3'])
   })
 
-  it('sizeByPrice : prix > P80 → carte 2×2, prix > médiane → carte élargie 2×1', () => {
+  it('sizeByPrice : prix > médiane → carte élargie (jamais 2×2 par prix, réservé vedettes) ; le plus cher finit le plus grand via étirement', () => {
     const tree = [node('a', 'A', 1, ids(4))]
     const prices = new Map<string, number | null>([['p1', 10], ['p2', 10], ['p3', 50], ['p4', 100]])
     const pages = paginateCatalog({ tree, sections: [sec('a', 8)], sizeByPrice: true, prices })
     const grids = pages.filter((p) => p.kind === 'products')
-    expect(grids).toHaveLength(1) // 1+1+2+4 = 8 unités = une grille 2×4 pleine
+    expect(grids).toHaveLength(1)
     const byId = new Map(grids[0].slots.map((s) => [s.rowId, s]))
     expect(byId.get('p1')).toMatchObject({ colSpan: 1, rowSpan: 1 })
-    expect(byId.get('p3')).toMatchObject({ colSpan: 2, rowSpan: 1 }) // > médiane
-    expect(byId.get('p4')).toMatchObject({ colSpan: 2, rowSpan: 2 }) // > P80
+    expect(byId.get('p3')).toMatchObject({ colSpan: 2, rowSpan: 1 }) // > médiane (budget de la page)
+    expect(byId.get('p4')).toMatchObject({ colSpan: 2, rowSpan: 2 }) // le plus cher absorbe le vide de fin de page
+  })
+
+  it('DENSITÉ RESPECTÉE : univers cher (moitié > médiane) sur grille 6 → 1 agrandissement prix max par page, ≥5 fiches par page pleine', () => {
+    const tree = [node('a', 'A', 1, ids(12))]
+    const prices = new Map<string, number | null>(ids(12).map((id, i) => [id, (i + 1) * 10]))
+    const pages = paginateCatalog({ tree, sections: [sec('a', 6)], sizeByPrice: true, prices })
+    const grids = pages.filter((p) => p.kind === 'products')
+    for (const g of grids.slice(0, -1)) { // pages pleines (hors dernière)
+      expect(g.slots.length).toBeGreaterThanOrEqual(5) // « 6/page » ne retombe plus à 2-4 fiches
+      expect(g.slots.filter((s) => s.colSpan * s.rowSpan > 1).length).toBeLessThanOrEqual(1)
+    }
   })
 
   it('sizeByPrice : span dégradé (jamais de débordement), prix identiques → aucune carte agrandie', () => {

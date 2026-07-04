@@ -74,13 +74,15 @@ function bigSpan(C: number, R: number): [number, number] {
   return [w, h]
 }
 
-/** Span voulu d'un item sur une grille C×R (sera dégradé au packing s'il ne rentre plus). */
+/**
+ * Span voulu d'un item sur une grille C×R (sera dégradé au packing s'il ne
+ * rentre plus). Agrandissement PRIX = carte élargie seulement (jamais 2×2,
+ * réservé aux vedettes) : la densité choisie par l'utilisateur reste reine —
+ * l'appelant borne en plus à UN agrandissement prix par page.
+ */
 function wantedSpan(item: FlowItem, price: number | null, th: { p50: number; p80: number } | null, C: number, R: number): [number, number] {
   if (item.featured) return bigSpan(C, R)
-  if (th && price != null) {
-    if (price > th.p80) return bigSpan(C, R)
-    if (price > th.p50) return C >= 2 ? [2, 1] : [1, Math.min(2, R)]
-  }
+  if (th && price != null && price > th.p50) return C >= 2 ? [2, 1] : [1, Math.min(2, R)]
   return [1, 1]
 }
 
@@ -250,10 +252,16 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
         const [w, h] = flowQueue.length === 0 && featuredQueue.length === 1 ? [C, R] : bigSpan(C, R)
         if (place(featuredQueue[0], w, h)) featuredQueue.shift()
       }
+      // Budget : UN agrandissement prix par page — sinon un univers cher (50 %
+      // des produits > médiane) transforme « 6/page » en pages de 2-4 fiches.
+      let priceUpgradesLeft = 1
       while (flowQueue.length > 0) {
         const item = flowQueue[0]
-        const [w, h] = wantedSpan(item, prices.get(item.rowId) ?? null, th, C, R)
+        let [w, h] = wantedSpan(item, prices.get(item.rowId) ?? null, th, C, R)
+        const isPriceUpgrade = !item.featured && w * h > 1
+        if (isPriceUpgrade && priceUpgradesLeft <= 0) { w = 1; h = 1 }
         if (!place(item, w, h)) break // page pleine
+        if (isPriceUpgrade && priceUpgradesLeft > 0) priceUpgradesLeft--
         flowQueue.shift()
       }
       // Flux épuisé mais des vedettes restent : elles se PARTAGENT la page
