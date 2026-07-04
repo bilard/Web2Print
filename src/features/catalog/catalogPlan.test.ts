@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 import { DEFAULT_CARD_STYLE, DEFAULT_PAGE_STYLE, type CatalogTreeNode } from './catalogTypes'
-import { defaultCatalogPlan, sanitizeCatalogPlan } from './catalogPlan'
+import { defaultCatalogPlan, PlanSchema, sanitizeCatalogPlan } from './catalogPlan'
 
 const node = (id: string, label: string, level: 1 | 2 | 3, productIds: string[] = [], children: CatalogTreeNode[] = []): CatalogTreeNode =>
   ({ id, label, level, children, productIds })
@@ -143,5 +143,11 @@ describe('sanitizeCatalogPlan', () => {
     expect(plan.cardStyle?.freeLayout).toBe(true)
     expect(plan.cardStyle?.layout?.name).toEqual({ x: 10, y: 20, w: 100 }) // w clampé
     expect((plan.cardStyle?.layout as Record<string, unknown>)?.bogus).toBeUndefined() // id inconnu ignoré
+  })
+
+  test('PlanSchema conserve freeLayout + layout (non strippés par zod)', () => {
+    const parsed = PlanSchema.parse({ cardStyle: { freeLayout: true, layout: { name: { x: 10, y: 20, w: 50 } } } })
+    expect(parsed.cardStyle?.freeLayout).toBe(true)
+    expect(parsed.cardStyle?.layout?.name).toEqual({ x: 10, y: 20, w: 50 })
   })
 })
