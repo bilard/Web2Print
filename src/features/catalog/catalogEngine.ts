@@ -106,6 +106,25 @@ function shrinkCandidates(w: number, h: number): [number, number][] {
 }
 
 /**
+ * Réaffecte les produits d'une page aux emplacements par PRIX décroissant :
+ * la plus grande carte reçoit le prix le plus haut. Le packing attribue les
+ * spans dans l'ordre du flux — un produit moyen (> médiane) peut consommer
+ * l'emplacement large avant qu'un produit PLUS cher n'arrive (dégradé 1×1).
+ * On échange donc les contenus (géométrie intacte, vedettes exclues).
+ */
+function reassignByPrice(slots: ProductSlot[], prices: Map<string, number | null>): void {
+  const movable = slots.filter((s) => !s.featured)
+  if (movable.length < 2) return
+  const area = (s: ProductSlot) => s.colSpan * s.rowSpan
+  const byArea = [...movable].sort((a, b) => area(b) - area(a))
+  if (area(byArea[0]) === area(byArea[byArea.length - 1])) return // aucune hiérarchie de taille
+  const payloads = [...movable]
+    .sort((a, b) => (prices.get(b.rowId) ?? -1) - (prices.get(a.rowId) ?? -1))
+    .map((s) => ({ rowId: s.rowId, path: s.path }))
+  byArea.forEach((slot, i) => { slot.rowId = payloads[i].rowId; slot.path = payloads[i].path })
+}
+
+/**
  * Étire les cartes déjà placées pour absorber les cases restées libres (dernière
  * page d'un univers) : extension vers le bas de la carte au-dessus, sinon vers la
  * droite de la carte à gauche, multi-passes jusqu'à stabilité → JAMAIS de vide.
@@ -247,6 +266,9 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       if (slots.length === 0) break // garde théorique (grille 1×1 minimum → jamais atteint)
       // Cases restées libres (fin d'univers) : étirer les cartes → zéro vide.
       stretchToFill(occ, slots, C, R)
+      // Après étirement (les aires sont définitives) : le prix le plus haut
+      // occupe la plus grande carte de la page.
+      if (sizeByPrice) reassignByPrice(slots, prices)
       const breadcrumb = slots[0].path.slice(0, 2) // univers › famille du 1er slot
       pages.push({ kind: 'products', pageNumber, nodeId: univers.id, breadcrumb, grid, slots, nodeIds: [...pageNodeIds] })
     }

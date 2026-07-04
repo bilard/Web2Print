@@ -130,6 +130,30 @@ describe('paginateCatalog (flux continu par univers)', () => {
     expect(grids[0].slots.every((s) => s.colSpan === 1 && s.rowSpan === 1)).toBe(true)
   })
 
+  it('sizeByPrice : le prix le PLUS HAUT occupe la plus grande carte, même s\'il arrive après dans le flux', () => {
+    // Bug vu en prod : p2 (421, > médiane) arrivait avant p3 (535, plus cher),
+    // consommait l'emplacement 2×1 et p3 était dégradé en 1×1.
+    const tree = [node('a', 'A', 1, ['p1', 'p2', 'p3', 'p4'])]
+    const prices = new Map<string, number | null>([['p1', 100], ['p2', 421], ['p3', 535], ['p4', 90]])
+    const pages = paginateCatalog({ tree, sections: [sec('a', 4)], sizeByPrice: true, prices })
+    const grids = pages.filter((p) => p.kind === 'products')
+    const first = new Map(grids[0].slots.map((s) => [s.rowId, s.colSpan * s.rowSpan]))
+    expect(first.get('p3')).toBe(2) // 535 → carte élargie
+    expect(first.get('p2')).toBe(1) // 421 → 1×1 (l'emplacement large revient au plus cher)
+  })
+
+  it('sizeByPrice : une carte ÉTIRÉE (comblement de fin de page) revient aussi au prix le plus haut', () => {
+    // 3 produits sur grille 4, prix ≤ médiane partout : la case libre est absorbée
+    // par étirement — la grande carte doit finir chez le plus cher (p1).
+    const tree = [node('a', 'A', 1, ['p1', 'p2', 'p3'])]
+    const prices = new Map<string, number | null>([['p1', 300], ['p2', 100], ['p3', 200]])
+    const pages = paginateCatalog({ tree, sections: [sec('a', 4)], sizeByPrice: true, prices })
+    const grids = pages.filter((p) => p.kind === 'products')
+    const areas = grids[0].slots.map((s) => ({ id: s.rowId, area: s.colSpan * s.rowSpan }))
+    const biggest = areas.reduce((a, b) => (b.area > a.area ? b : a))
+    expect(biggest.id).toBe('p1')
+  })
+
   it('JAMAIS de case vide : la dernière page est étirée (cartes agrandies) pour couvrir toute la grille', () => {
     // 4 produits sur grille 6 (2×3) : la rangée du bas est absorbée par les 2 cartes au-dessus.
     const tree = [node('a', 'A', 1, ids(4))]
