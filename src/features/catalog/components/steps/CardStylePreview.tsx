@@ -30,19 +30,19 @@ export function CardStylePreview({ theme, cardStyle, fields, editable, onLayoutC
   const f = fields ?? SAMPLE_FIELDS
   const cardRef = useRef<HTMLDivElement | null>(null)
   return (
-    <div className="cat-page rounded-md overflow-hidden shrink-0 border border-border relative"
-      style={{ width: 330, ...themeVars(theme), ...cardStyleVars(cardStyle, theme) }}>
+    <div className="cat-page rounded-lg overflow-hidden shrink-0 border border-border relative shadow-2xl w-full max-w-[560px]"
+      style={{ ...themeVars(theme), ...cardStyleVars(cardStyle, theme) }}>
       <style>{CATALOG_CSS}</style>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12, background: 'var(--cat-bg)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 16, background: 'var(--cat-bg)' }}>
         {/* Variante VEDETTE : les réglages du ruban/cadre se voient en live ; support de l'overlay de disposition libre. */}
-        <div ref={cardRef} style={{ height: 360, display: 'grid', position: 'relative' }}>
+        <div ref={cardRef} style={{ height: 560, display: 'grid', position: 'relative' }}>
           <ProductCell fields={f} featured kicker="Sous-famille" size="md" cardStyle={cardStyle} />
           {editable && cardStyle.freeLayout && onLayoutChange && (
             <CardLayoutOverlay cardRef={cardRef} style={cardStyle} onChange={onLayoutChange} />
           )}
         </div>
         {/* Variante horizontale (grilles denses) : assez haute pour ne pas couper prix/réf. */}
-        <div style={{ height: 190, display: 'grid' }}>
+        <div style={{ height: 300, display: 'grid' }}>
           <ProductCell fields={f} featured={false} kicker="Sous-famille" size="md" horizontal cardStyle={cardStyle} />
         </div>
       </div>
