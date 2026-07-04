@@ -27,6 +27,7 @@ const TREE: LayerNode[] = [
     { id: 'priceNow', label: 'Prix promo', isText: true, icon: 'text' },
   ] },
   { id: 'footer', label: 'Pied de page', isText: true, icon: 'text' },
+  { id: 'details', label: 'Détails (champs libres)', isText: false, icon: 'block' },
 ]
 
 const flatten = (nodes: LayerNode[]): LayerNode[] => nodes.flatMap((n) => [n, ...(n.children ? flatten(n.children) : [])])

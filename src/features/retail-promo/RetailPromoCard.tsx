@@ -30,7 +30,7 @@ export type PromoColorKey =
   | 'priceLabel' | 'priceWas' | 'unitPrice' | 'priceNow' | 'footer'
 
 export type PromoBlockId =
-  | 'header' | 'image' | 'badge' | 'price' | 'footer'
+  | 'header' | 'image' | 'badge' | 'price' | 'footer' | 'details'
   | 'category' | 'name' | 'brand' | 'description'
   | 'priceLabel' | 'priceWas' | 'unitPrice' | 'priceNow'
 
@@ -121,7 +121,7 @@ export const STYLE_KEYS: PromoColorKey[] = [
   'priceLabel', 'priceWas', 'unitPrice', 'priceNow', 'footer',
 ]
 /** Blocs déco sélectionnables (fond uni/dégradé + resize par échelle). */
-const DECO_BLOCKS: PromoBlockId[] = ['header', 'image', 'badge', 'price']
+const DECO_BLOCKS: PromoBlockId[] = ['header', 'image', 'badge', 'price', 'details']
 /** Textes éditables inline (double-clic dans la carte). */
 const EDITABLE_TEXT: PromoColorKey[] = ['category', 'name', 'brand', 'description', 'priceLabel', 'footer']
 const SELECTABLE: PromoBlockId[] = [...(STYLE_KEYS as PromoBlockId[]), ...DECO_BLOCKS]
@@ -177,6 +177,9 @@ export const PROMO_CSS = `
 .rp-brand { color:#9ca3af; font-weight:600; font-size:17px; }
 .rp-desc { color:#cbd5e1; font-weight:500; font-size:15px; line-height:1.3; margin-top:4px;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.rp-details { background:#f8fafc; color:#334155; padding:12px 40px; display:flex; flex-direction:column; gap:3px;
+  font-size:14px; line-height:1.3; border-top:1px solid #e2e8f0; }
+.rp-detail { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rp-unit { font-weight:600; font-size:15px; opacity:.85; margin-top:2px; }
 .rp-product { position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:36px;
   background:radial-gradient(120% 90% at 50% 30%, #f1f5f9 0%, #ffffff 70%); }
@@ -465,8 +468,8 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
         <div ref={setEl('header')} className="rp-head" style={blk('header', { color: hText, ...bg('header') })} {...drag('header')}>
           {config.showCategory && <span ref={setEl('category')} className="rp-kicker" style={blk('category', { color: catText, ...es('category') })} {...drag('category')} {...editProps('category')}>{data.category || 'Offre spéciale'}</span>}
           <div ref={setEl('name')} className="rp-name" style={blk('name', es('name'))} {...drag('name')} {...editProps('name')}>{data.name || 'Produit'}</div>
-          {(data.brand || data.ref) && (
-            <div ref={setEl('brand')} className="rp-brand" style={blk('brand', es('brand'))} {...drag('brand')} {...editProps('brand')}>{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
+          {(data.brand || data.ref || data.ean) && (
+            <div ref={setEl('brand')} className="rp-brand" style={blk('brand', es('brand'))} {...drag('brand')} {...editProps('brand')}>{[data.brand, data.ref, data.ean].filter(Boolean).join(' · ')}</div>
           )}
           {config.showDescription && data.description && <div ref={setEl('description')} className="rp-desc" style={blk('description', es('description'))} {...drag('description')} {...editProps('description')}>{data.description}</div>}
         </div>
@@ -481,6 +484,11 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
             </div>
           )}
         </div>
+        {!config.hidden?.details && data.details.length > 0 && (
+          <div ref={setEl('details')} className="rp-details" style={blk('details', bg('details'))} {...drag('details')}>
+            {data.details.map((d, i) => <div key={i} className="rp-detail">{d}</div>)}
+          </div>
+        )}
         <div ref={setEl('price')} className="rp-price" style={blk('price', { color: priceText, ...bg('price') })} {...drag('price')}>
           <div className="rp-left">
             <span ref={setEl('priceLabel')} className="rp-plabel" style={blk('priceLabel', es('priceLabel'))} {...drag('priceLabel')} {...editProps('priceLabel')}>{data.priceLabel || 'Prix promo'}</span>
@@ -488,10 +496,10 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
             {config.showUnitPrice && data.unitPrice && <span ref={setEl('unitPrice')} className="rp-unit" style={blk('unitPrice', es('unitPrice'))} {...drag('unitPrice')}>{data.unitPrice}</span>}
           </div>
           <div ref={setEl('priceNow')} className="rp-now" style={blk('priceNow', { fontSize: priceFontSize, ...es('priceNow') })} {...drag('priceNow')}>
-            {amount}{cur && <span className="rp-cur">{cur}</span>}
+            {amount}{cur && <span className="rp-cur">{cur}</span>}{data.unit && <span className="rp-cur">{data.unit}</span>}
           </div>
         </div>
-        {config.showFooter && <div ref={setEl('footer')} className="rp-foot" style={blk('footer', es('footer'))} {...drag('footer')} {...editProps('footer')}>{data.validite || ''}</div>}
+        {config.showFooter && <div ref={setEl('footer')} className="rp-foot" style={blk('footer', es('footer'))} {...drag('footer')} {...editProps('footer')}>{[data.enseigne, data.validite, data.mentions].filter(Boolean).join(' — ')}</div>}
         {editable && !capturing && selectedKey && !editingKey && (
           <PromoSelectionOverlay
             cardRef={cardElRef}
