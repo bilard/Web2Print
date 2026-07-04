@@ -1,6 +1,6 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, type ComponentProps } from 'react'
 import {
-  ChevronRight, X, AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  X, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   ChevronsUp, ArrowUp, ArrowDown, ChevronsDown, FlipHorizontal, FlipVertical,
   AlignStartVertical, AlignCenterHorizontal, AlignEndHorizontal,
   AlignStartHorizontal, AlignCenterVertical, AlignEndVertical,
@@ -20,8 +20,8 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { applyImageFill as applyImageFillUtil } from '@/features/editor/applyImageFill'
 import { ColorPicker } from '@/components/shared/ColorPicker'
-import { OptionHelp } from '@/components/shared/OptionHelp'
 import { GradientPicker, gradientToFabric, DEFAULT_GRADIENT } from '@/components/shared/GradientPicker'
+import { PropertySection } from '@/components/shared/panel'
 import type { Canvas } from 'fabric'
 import type { GradientConfig, CanvasObjectProps } from '@/stores/editor.store'
 import { useNanoBanaStore } from '@/stores/nanobana.store'
@@ -238,21 +238,10 @@ function Toggle({ active, onClick, children, title }: { active: boolean; onClick
   )
 }
 
-function Section({ title, children, defaultOpen = false, help, tourId }: { title: string; children: React.ReactNode; defaultOpen?: boolean; help?: string; tourId?: string }) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <section className="flex flex-col gap-2.5" data-tour={tourId ? `opt-${tourId}` : undefined}>
-      <div className="flex items-center gap-1">
-        <button onClick={() => setOpen(!open)}
-          className="flex items-center gap-1.5 text-[10px] font-semibold text-white/40 uppercase tracking-wider hover:text-white/60 transition-colors">
-          <ChevronRight className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`} />
-          {title}
-        </button>
-        {help && <OptionHelp text={help} />}
-      </div>
-      {open && children}
-    </section>
-  )
+// Accordéon mutualisé (kit shared/panel) ; l'Éditeur garde ses sections REPLIÉES par
+// défaut (defaultOpen=false) — un appelant peut toujours surcharger.
+function Section(props: ComponentProps<typeof PropertySection>) {
+  return <PropertySection defaultOpen={false} {...props} />
 }
 
 function SelectInput({ label, value, onChange, options }: {
