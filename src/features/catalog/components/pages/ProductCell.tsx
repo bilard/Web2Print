@@ -46,9 +46,11 @@ export function ProductCell({ fields: f, featured, kicker, size, details, horizo
   if (cardStyle?.freeLayout) {
     const obj = (id: CardObjectId, node: React.ReactNode) => {
       const b = freeLayoutBox(id, cardStyle)
+      const scaled = b.sc != null && b.sc !== 1
       return (
         <div className="cat-obj" data-object-id={id}
-          style={{ left: `${b.x}%`, top: `${b.y}%`, ...(b.w != null ? { width: `${b.w}%` } : {}), ...(b.h != null ? { height: `${b.h}%` } : {}) }}>
+          style={{ left: `${b.x}%`, top: `${b.y}%`, ...(b.w != null ? { width: `${b.w}%` } : {}), ...(b.h != null ? { height: `${b.h}%` } : {}),
+            ...(scaled ? { transform: `scale(${b.sc})`, transformOrigin: 'top left' } : {}) }}>
           {node}
         </div>
       )

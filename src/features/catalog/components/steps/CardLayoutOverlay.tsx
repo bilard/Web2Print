@@ -60,23 +60,25 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
   }
 
+  // Resize = mise à l'échelle UNIFORME de l'objet (transform:scale). Fonctionne pour
+  // TOUS les types (texte, badge, ruban, image) — pas seulement l'image : redimensionner
+  // la boîte ne suffisait pas car les objets inline ne la remplissent pas.
   const resize = (e: ReactPointerEvent, hnd: Handle) => {
     e.preventDefault(); e.stopPropagation()
     if (!sel) return
-    const rect = rects[sel]; if (!rect) return
+    const el = cardRef.current?.querySelector<HTMLElement>(`[data-object-id="${sel}"]`)
+    if (!el) return
     const b = freeLayoutBox(sel, style)
-    const startW = b.w ?? rect.width, startH = b.h ?? rect.height
-    const { w, h } = cardPx()
+    const startSc = b.sc ?? 1
+    const startW = el.getBoundingClientRect().width || 1  // largeur rendue (déjà à l'échelle startSc)
+    const baseW = startW / startSc                        // largeur naturelle (échelle 1)
     const dx = dirX(hnd), dy = dirY(hnd)
     const sx = e.clientX, sy = e.clientY
     const move = (ev: PointerEvent) => {
-      const ddx = ((ev.clientX - sx) / w) * 100, ddy = ((ev.clientY - sy) / h) * 100
-      const next: CardBox = { ...b }
-      if (dx > 0) next.w = clamp(r1(startW + ddx), 4, 100)
-      else if (dx < 0) { next.w = clamp(r1(startW - ddx), 4, 100); next.x = clamp(r1(b.x + ddx), 0, 100) }
-      if (dy > 0) next.h = clamp(r1(startH + ddy), 4, 100)
-      else if (dy < 0) { next.h = clamp(r1(startH - ddy), 4, 100); next.y = clamp(r1(b.y + ddy), 0, 100) }
-      onChange(sel, next)
+      // Tirer vers l'extérieur (dans le sens de la poignée) agrandit ; horizontal prioritaire.
+      const grow = dx !== 0 ? (ev.clientX - sx) * dx : (ev.clientY - sy) * dy
+      const sc = clamp(Math.round(((startW + grow) / baseW) * 100) / 100, 0.2, 5)
+      onChange(sel, { ...b, sc })
     }
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); setTick((t) => t + 1) }
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)

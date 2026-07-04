@@ -63,8 +63,9 @@ export const CARD_OBJECT_IDS: CardObjectId[] = [
   'promo', 'image', 'sticker', 'kicker', 'vedette',
   'brand', 'name', 'description', 'ref', 'unit', 'price', 'details',
 ]
-/** Boîte d'un objet en % de la carte (x/y = coin haut-gauche ; w/h optionnels). */
-export interface CardBox { x: number; y: number; w?: number; h?: number }
+/** Boîte d'un objet en % de la carte (x/y = coin haut-gauche ; w/h optionnels ;
+ * `sc` = mise à l'échelle uniforme de l'objet, 1 = taille naturelle). */
+export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number }
 
 /**
  * Style COSMÉTIQUE des fiches : réglages bornés appliqués en variables CSS
