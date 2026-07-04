@@ -2,7 +2,7 @@ import { ChevronsUp, ArrowUp, ArrowDown, ChevronsDown } from 'lucide-react'
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import { GradientPicker, DEFAULT_GRADIENT } from '@/components/shared/GradientPicker'
 import { useRetailPromoStore } from './retailPromo.store'
-import { Section, NumField, SelectField, SliderField, SegButtons } from './promoPanelUi'
+import { PropertySection as Section, NumField, SelectField, SliderField, SegButtons } from '@/components/shared/panel'
 import { PromoConditionalSection } from './PromoConditionalSection'
 import { STYLE_KEYS, type PromoBlockId, type PromoColorKey, type BlockFill } from './RetailPromoCard'
 

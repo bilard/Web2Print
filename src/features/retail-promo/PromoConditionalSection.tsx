@@ -1,7 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import { useRetailPromoStore } from './retailPromo.store'
-import { Section, inputCls } from './promoPanelUi'
+import { PropertySection as Section, inputCls } from '@/components/shared/panel'
 import {
   OPERATOR_LABELS, ACTION_LABELS, VALUELESS_OPERATORS, actionWithDefaults,
   DEFAULT_RULE_OPACITY, DEFAULT_RULE_SCALE,
