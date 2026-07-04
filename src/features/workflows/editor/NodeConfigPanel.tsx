@@ -48,9 +48,9 @@ function ConnectionsPanel({ node, wf, onRemoveEdge }: ConnectionsPanelProps) {
 
   if (incoming.length === 0 && outgoing.length === 0) {
     return (
-      <div className="pt-3 mt-3 border-t border-neutral-800">
-        <h4 className="text-xs uppercase text-neutral-500 font-semibold mb-2">Connexions</h4>
-        <p className="text-[11px] text-neutral-600 italic">
+      <div className="pt-3 mt-3 border-t border-white/10">
+        <h4 className="text-xs uppercase text-white/40 font-semibold mb-2">Connexions</h4>
+        <p className="text-[11px] text-white/30 italic">
           Aucune connexion. Tire un câble depuis un port d'un autre node.
         </p>
       </div>
@@ -73,24 +73,24 @@ function ConnectionsPanel({ node, wf, onRemoveEdge }: ConnectionsPanelProps) {
     return (
       <div
         key={e.id}
-        className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-well border border-neutral-800 hover:border-neutral-700 transition-colors"
+        className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-well border border-white/10 hover:border-white/20 transition-colors"
       >
-        <Icon className="w-3 h-3 text-neutral-500 shrink-0" />
+        <Icon className="w-3 h-3 text-white/40 shrink-0" />
         <div className="flex-1 min-w-0 text-[11px] leading-tight">
           <div className="text-white truncate" title={otherLabel}>
             {otherLabel}
           </div>
-          <div className="text-neutral-500 font-mono text-[10px] truncate">
+          <div className="text-white/40 font-mono text-[10px] truncate">
             {dir === 'in' ? (
               <>
                 <span className="text-emerald-400/80">{otherPort}</span>
-                <span className="text-neutral-600 mx-1">→</span>
+                <span className="text-white/30 mx-1">→</span>
                 <span className="text-cyan-400/80">{localPort}</span>
               </>
             ) : (
               <>
                 <span className="text-cyan-400/80">{localPort}</span>
-                <span className="text-neutral-600 mx-1">→</span>
+                <span className="text-white/30 mx-1">→</span>
                 <span className="text-emerald-400/80">{otherPort}</span>
               </>
             )}
@@ -99,7 +99,7 @@ function ConnectionsPanel({ node, wf, onRemoveEdge }: ConnectionsPanelProps) {
         <button
           type="button"
           onClick={() => onRemoveEdge(e.id)}
-          className="shrink-0 p-1 rounded text-neutral-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="shrink-0 p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
           title="Supprimer la connexion"
           aria-label="Supprimer la connexion"
         >
@@ -110,11 +110,11 @@ function ConnectionsPanel({ node, wf, onRemoveEdge }: ConnectionsPanelProps) {
   }
 
   return (
-    <div className="pt-3 mt-3 border-t border-neutral-800 space-y-3">
-      <h4 className="text-xs uppercase text-neutral-500 font-semibold">Connexions</h4>
+    <div className="pt-3 mt-3 border-t border-white/10 space-y-3">
+      <h4 className="text-xs uppercase text-white/40 font-semibold">Connexions</h4>
       {incoming.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-[10px] uppercase text-neutral-600 tracking-wider">
+          <p className="text-[10px] uppercase text-white/30 tracking-wider">
             Entrantes ({incoming.length})
           </p>
           <div className="space-y-1">{incoming.map((e) => renderEdge(e, 'in'))}</div>
@@ -122,7 +122,7 @@ function ConnectionsPanel({ node, wf, onRemoveEdge }: ConnectionsPanelProps) {
       )}
       {outgoing.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-[10px] uppercase text-neutral-600 tracking-wider">
+          <p className="text-[10px] uppercase text-white/30 tracking-wider">
             Sortantes ({outgoing.length})
           </p>
           <div className="space-y-1">{outgoing.map((e) => renderEdge(e, 'out'))}</div>
@@ -161,16 +161,16 @@ function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
 
       {/* Source */}
       <div className="space-y-1.5">
-        <p className="text-[10px] uppercase text-neutral-600 tracking-wider">Source</p>
-        <div className="px-2 py-2 rounded-md bg-well border border-neutral-800">
+        <p className="text-[10px] uppercase text-white/30 tracking-wider">Source</p>
+        <div className="px-2 py-2 rounded-md bg-well border border-white/10">
           <div className="text-[12px] text-white truncate" title={sourceLabel}>
             {sourceLabel}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5 text-[10px] font-mono">
             <span className="text-emerald-400/80">{edge.sourceHandle}</span>
             {sourcePortType && (
-              <span className="text-neutral-600">
-                : <span className="text-neutral-500">{sourcePortType}</span>
+              <span className="text-white/30">
+                : <span className="text-white/40">{sourcePortType}</span>
               </span>
             )}
           </div>
@@ -179,21 +179,21 @@ function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
 
       {/* Flèche descendante visuelle */}
       <div className="flex justify-center">
-        <ArrowRight className="w-4 h-4 text-neutral-600 rotate-90" />
+        <ArrowRight className="w-4 h-4 text-white/30 rotate-90" />
       </div>
 
       {/* Target */}
       <div className="space-y-1.5">
-        <p className="text-[10px] uppercase text-neutral-600 tracking-wider">Cible</p>
-        <div className="px-2 py-2 rounded-md bg-well border border-neutral-800">
+        <p className="text-[10px] uppercase text-white/30 tracking-wider">Cible</p>
+        <div className="px-2 py-2 rounded-md bg-well border border-white/10">
           <div className="text-[12px] text-white truncate" title={targetLabel}>
             {targetLabel}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5 text-[10px] font-mono">
             <span className="text-cyan-400/80">{edge.targetHandle}</span>
             {targetPortType && (
-              <span className="text-neutral-600">
-                : <span className="text-neutral-500">{targetPortType}</span>
+              <span className="text-white/30">
+                : <span className="text-white/40">{targetPortType}</span>
               </span>
             )}
           </div>
@@ -221,11 +221,11 @@ function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
 }
 
 const RUN_STATUS_META: Record<NodeStatus, { label: string; color: string; dot: string }> = {
-  pending: { label: 'En attente', color: 'text-neutral-400', dot: 'bg-neutral-500' },
+  pending: { label: 'En attente', color: 'text-white/60', dot: 'bg-neutral-500' },
   running: { label: 'En cours…', color: 'text-indigo-300', dot: 'bg-indigo-400' },
   success: { label: 'Terminé', color: 'text-emerald-300', dot: 'bg-emerald-400' },
   error: { label: 'Erreur', color: 'text-red-300', dot: 'bg-red-400' },
-  skipped: { label: 'Ignoré', color: 'text-neutral-400', dot: 'bg-neutral-600' },
+  skipped: { label: 'Ignoré', color: 'text-white/60', dot: 'bg-neutral-600' },
 }
 
 /**
@@ -248,7 +248,7 @@ function NodeLogsTab({ nodeId }: { nodeId: string }) {
         <span className={`w-2 h-2 rounded-full ${meta.dot} ${status === 'running' ? 'animate-pulse' : ''}`} />
         <span className={`text-xs font-medium ${meta.color}`}>{meta.label}</span>
         {typeof state?.durationMs === 'number' && (
-          <span className="text-[10px] text-neutral-500 tabular-nums">
+          <span className="text-[10px] text-white/40 tabular-nums">
             {(state.durationMs / 1000).toFixed(1)}s
           </span>
         )}
@@ -275,21 +275,21 @@ function NodeLogsTab({ nodeId }: { nodeId: string }) {
 
       {/* Journal complet (tous niveaux) — occupe toute la hauteur restante */}
       {logs.length > 0 ? (
-        <div className="space-y-1 flex-1 min-h-0 overflow-auto rounded-md bg-well border border-neutral-800 p-2">
+        <div className="space-y-1 flex-1 min-h-0 overflow-auto rounded-md bg-well border border-white/10 p-2">
           {logs.map((l, i) => (
             <div
               key={i}
               className={`text-[10px] font-mono leading-snug break-words flex gap-1.5 ${
-                l.level === 'error' ? 'text-red-300' : l.level === 'warn' ? 'text-amber-300' : 'text-neutral-400'
+                l.level === 'error' ? 'text-red-300' : l.level === 'warn' ? 'text-amber-300' : 'text-white/60'
               }`}
             >
-              <span className="text-neutral-600 shrink-0">{new Date(l.ts).toLocaleTimeString()}</span>
+              <span className="text-white/30 shrink-0">{new Date(l.ts).toLocaleTimeString()}</span>
               <span>{l.msg}</span>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-[11px] text-neutral-600 italic">
+        <p className="text-[11px] text-white/30 italic">
           {status === 'pending'
             ? 'Aucun traitement pour l’instant. Lancez le node (▶ au survol de la carte) pour suivre les logs ici.'
             : 'Aucun log.'}
@@ -363,8 +363,8 @@ export function NodeConfigPanel() {
   const showEdge = !node && !!selectedEdge
 
   return (
-    <aside data-tour="wf-inspector" className="w-72 border-l border-neutral-800 bg-surface-2 flex flex-col overflow-hidden p-4 h-full">
-      <h3 className="text-xs uppercase text-neutral-500 font-semibold mb-3 shrink-0">
+    <aside data-tour="wf-inspector" className="w-72 border-l border-white/10 bg-surface-2 flex flex-col overflow-hidden p-4 h-full">
+      <h3 className="text-xs uppercase text-white/40 font-semibold mb-3 shrink-0">
         {showEdge ? 'Connexion' : 'Configuration'}
       </h3>
       {showEdge && wf && selectedEdge ? (
@@ -374,7 +374,7 @@ export function NodeConfigPanel() {
           onRemove={() => removeEdge(selectedEdge.id)}
         />
       ) : !node || !spec ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-white/40">
           Sélectionnez un node ou une connexion pour voir ses détails.
         </p>
       ) : (
@@ -382,14 +382,14 @@ export function NodeConfigPanel() {
           <div className="text-sm font-medium text-white shrink-0">{spec.label}</div>
 
           {/* Onglets Config / Logs */}
-          <div className="flex items-center gap-1 border-b border-neutral-800 shrink-0">
+          <div className="flex items-center gap-1 border-b border-white/10 shrink-0">
             <button
               type="button"
               onClick={() => setTab('config')}
               className={`px-2.5 py-1.5 text-xs font-medium -mb-px border-b-2 transition-colors ${
                 tab === 'config'
                   ? 'border-indigo-400 text-white'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-300'
+                  : 'border-transparent text-white/40 hover:text-white/80'
               }`}
             >
               Config
@@ -400,7 +400,7 @@ export function NodeConfigPanel() {
               className={`px-2.5 py-1.5 text-xs font-medium -mb-px border-b-2 transition-colors flex items-center gap-1.5 ${
                 tab === 'logs'
                   ? 'border-indigo-400 text-white'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-300'
+                  : 'border-transparent text-white/40 hover:text-white/80'
               }`}
             >
               Logs
@@ -425,7 +425,7 @@ export function NodeConfigPanel() {
               ) : (
                 spec.configSchema.map((f) => (
                   <label key={f.name} className="block">
-                    <span className="text-xs text-neutral-400 mb-1 block">{f.label}</span>
+                    <span className="text-xs text-white/60 mb-1 block">{f.label}</span>
                     <ConfigFieldRenderer
                       field={f}
                       value={(node.config as Record<string, unknown>)[f.name]}
@@ -436,7 +436,7 @@ export function NodeConfigPanel() {
                         })
                       }
                     />
-                    {f.help ? <span className="text-[11px] text-neutral-600 mt-1 block">{f.help}</span> : null}
+                    {f.help ? <span className="text-[11px] text-white/30 mt-1 block">{f.help}</span> : null}
                   </label>
                 ))
               )}
