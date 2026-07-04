@@ -84,7 +84,7 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
     tocTitle: { type: 'string' },
     cardStyle: {
       type: 'object',
-      description: "OPTIONNEL — style des fiches produit : ne renvoyer QUE si la demande porte explicitement dessus (couleurs d'objets, vedettes…). Hex #rrggbb.",
+      description: "OPTIONNEL — style des fiches produit (hex #rrggbb). En CRÉATION : renvoie une palette VARIÉE coordonnée au thème (jamais monochrome). En MODIFICATION : uniquement les clés que la demande impose.",
       properties: {
         promoBg: { type: 'string', description: 'hex cartouche promo' },
         stickerBg: { type: 'string', description: 'hex sticker de remise' },
@@ -252,6 +252,11 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
       return `${'  '.repeat(n.level - 1)}- [${n.id}] ${n.label} (${n.productIds.length} produits)${samples}`
     })
     .join('\n')
+  // Anti-MONOCHROME : sans cette règle, l'IA recopie l'accent sur tous les
+  // objets des fiches (cartouche = sticker = prix = vedette) → pages ternes.
+  const antiMono =
+    `RÈGLE COULEURS : palette RICHE et coordonnée, JAMAIS monochrome — l'accent ne doit pas être recopié à l'identique sur tous les objets. ` +
+    `Quand tu renvoies cardStyle, utilise AU MOINS 3 teintes distinctes : cartouche promo, sticker remise, badge prix et vedette dans des couleurs DIFFÉRENTES mais harmonieuses (complémentaires/contrastées) ; prix barré et pastille sous-famille plus sombres/neutres ; texte des prix lisible sur son fond.`
   // CRÉATION (pas de plan) : plan complet. MODIFICATION (un plan existe) :
   // l'IA ne renvoie QUE les clés que la demande impose — tout omis = conservé.
   const consigne = current
@@ -259,15 +264,15 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
       `(ex. demande sur la couleur des prix/vedettes → cardStyle SEUL ; demande sur l'ambiance/les couleurs générales → theme). ` +
       `OMETS complètement theme, sections, cover, backCover, tocTitle et cardStyle s'ils ne sont pas concernés — ils seront conservés tels quels. ` +
       `Rappels : theme = polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')} ; sections = densité parmi ${CATALOG_GRIDS.join('/')} sur les nœuds de NIVEAU 1, vedettes = ids AVANT le tiret des exemples ; ` +
-      `cardStyle = uniquement les clés concernées (hex #rrggbb).`
+      `cardStyle = uniquement les clés concernées (hex #rrggbb). Si tu changes des couleurs : ${antiMono}`
     : `Produis un plan complet : thème (couleurs hex cohérentes avec la demande, polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')}), ` +
       `une section par nodeId — la densité (productsPerPage parmi ${CATALOG_GRIDS.join('/')}) ne compte que sur les nœuds de NIVEAU 1 (flux continu : les produits des sous-familles remplissent les pages sans vide) : choisis DENSE (4 à 8/page), jamais 1-2 sauf univers premium très court. 0-2 produits vedette par section ` +
       `choisis parmi les exemples (renvoie l'id AVANT le tiret), textes de couverture et 4e de couverture en FRANÇAIS, ` +
       `et un imagePrompt de couverture en anglais (photo réaliste, sans texte). ` +
-      `Si la demande porte sur le STYLE DES FICHES (couleur du prix, du cartouche, des vedettes, texte du ruban…), renvoie aussi cardStyle avec UNIQUEMENT les clés concernées.`
+      `Renvoie AUSSI cardStyle avec des couleurs d'objets VARIÉES coordonnées au thème. ${antiMono}`
   const raw = await generateJson<RawCatalogPlan>({
     task: 'catalog.plan',
-    version: 'catalog.plan.v2',
+    version: 'catalog.plan.v3',
     prompt:
       `Tu conçois l'identité graphique d'un CATALOGUE PRODUIT professionnel multi-page (style prospectus/catalogue retail, lumineux, lisible — jamais sombre/cinématique).\n` +
       `Nom du catalogue : « ${ctx.catalogName} ».\n` +
