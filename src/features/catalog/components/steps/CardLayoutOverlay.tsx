@@ -19,9 +19,11 @@ interface Props {
   cardRef: RefObject<HTMLDivElement | null>
   style: CatalogCardStyle
   onChange: (id: CardObjectId, box: CardBox) => void
+  /** Notifie l'objet sélectionné (clic/drag) — pour mettre en évidence le curseur correspondant côté panneau. */
+  onSelect?: (id: CardObjectId | null) => void
 }
 
-export function CardLayoutOverlay({ cardRef, style, onChange }: Props) {
+export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props) {
   const [sel, setSel] = useState<CardObjectId | null>(null)
   const [tick, setTick] = useState(0) // incrémenté après drag/resize → force le recalcul des rects (dépendance du useMemo ci-dessous)
   useLayoutEffect(() => { setTick((t) => t + 1) }, [style])
@@ -47,7 +49,7 @@ export function CardLayoutOverlay({ cardRef, style, onChange }: Props) {
   const cardPx = () => { const c = cardRef.current?.getBoundingClientRect(); return { w: c?.width || 1, h: c?.height || 1 } }
 
   const startDrag = (e: ReactPointerEvent, id: CardObjectId) => {
-    e.preventDefault(); e.stopPropagation(); setSel(id)
+    e.preventDefault(); e.stopPropagation(); setSel(id); onSelect?.(id)
     const b = freeLayoutBox(id, style)
     const { w, h } = cardPx()
     const sx = e.clientX, sy = e.clientY

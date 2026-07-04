@@ -24,9 +24,11 @@ interface Props {
   /** Monte l'overlay de drag/resize (disposition libre) quand vrai. */
   editable?: boolean
   onLayoutChange?: (id: CardObjectId, box: CardBox) => void
+  /** Objet sélectionné dans l'overlay (disposition libre) — remonté au parent pour le panneau de style. */
+  onSelect?: (id: CardObjectId | null) => void
 }
 
-export function CardStylePreview({ theme, cardStyle, fields, editable, onLayoutChange }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, editable, onLayoutChange, onSelect }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   const cardRef = useRef<HTMLDivElement | null>(null)
   return (
@@ -38,7 +40,7 @@ export function CardStylePreview({ theme, cardStyle, fields, editable, onLayoutC
         <div ref={cardRef} style={{ height: 560, display: 'grid', position: 'relative' }}>
           <ProductCell fields={f} featured kicker="Sous-famille" size="md" cardStyle={cardStyle} />
           {editable && cardStyle.freeLayout && onLayoutChange && (
-            <CardLayoutOverlay cardRef={cardRef} style={cardStyle} onChange={onLayoutChange} />
+            <CardLayoutOverlay cardRef={cardRef} style={cardStyle} onChange={onLayoutChange} onSelect={onSelect} />
           )}
         </div>
         {/* Variante horizontale (grilles denses) : assez haute pour ne pas couper prix/réf. */}

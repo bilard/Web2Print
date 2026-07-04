@@ -10,7 +10,7 @@ import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree, flattenTree } from '../../catalogTree'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
 import { extractPromoFields } from '@/features/retail-promo/promoMapping'
-import { DEFAULT_CARD_STYLE } from '../../catalogTypes'
+import { DEFAULT_CARD_STYLE, type CardObjectId } from '../../catalogTypes'
 import { CardStyleCard } from './CardStyleCard'
 import { CardStylePreview } from './CardStylePreview'
 import { SectionsCard } from './SectionsCard'
@@ -30,6 +30,8 @@ export function StepPrompt() {
   const setPlan = useCatalogStore((s) => s.setPlan)
   const setStep = useCatalogStore((s) => s.setStep)
   const [busy, setBusy] = useState(false)
+  // Objet sélectionné dans l'overlay de disposition libre → met en évidence + focus le curseur correspondant.
+  const [selectedObject, setSelectedObject] = useState<CardObjectId | null>(null)
 
   const rowsById = useMemo(() => new Map(rawRows.map((r) => [r._id, r])), [rawRows])
   const selectedRows = useMemo(() => {
@@ -116,7 +118,8 @@ export function StepPrompt() {
             <div className="lg:sticky lg:top-0 w-full lg:w-[560px]">
               <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Aperçu de la fiche</div>
               <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields}
-                editable onLayoutChange={(id, box) => setPlan({ ...plan, cardStyle: { ...cardStyle, layout: { ...cardStyle.layout, [id]: box } } })} />
+                editable onLayoutChange={(id, box) => setPlan({ ...plan, cardStyle: { ...cardStyle, layout: { ...cardStyle.layout, [id]: box } } })}
+                onSelect={setSelectedObject} />
             </div>
           )}
         </div>
@@ -124,7 +127,7 @@ export function StepPrompt() {
 
       {plan && (
         <aside className="w-80 shrink-0 border-l border-border bg-surface overflow-y-auto">
-          <CardStyleCard plan={plan} setPlan={setPlan} />
+          <CardStyleCard plan={plan} setPlan={setPlan} selectedObject={selectedObject} />
         </aside>
       )}
     </div>

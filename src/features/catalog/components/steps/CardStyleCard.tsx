@@ -6,13 +6,15 @@
 // rendu au centre par StepPrompt (CardStylePreview), pas ici.
 import { Brush, RotateCcw } from 'lucide-react'
 import { PropertySection } from '@/components/shared/panel'
-import { DEFAULT_CARD_STYLE, type CatalogCardStyle, type CatalogPlan } from '../../catalogTypes'
+import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle, type CatalogPlan } from '../../catalogTypes'
 import { CardStyleTypo } from './CardStyleTypo'
 import { CardStyleColors } from './CardStyleColors'
 
 interface CardStyleCardProps {
   plan: CatalogPlan
   setPlan: (plan: CatalogPlan) => void
+  /** Objet sélectionné dans l'aperçu (disposition libre) — surligne + focus le curseur typo correspondant. */
+  selectedObject?: CardObjectId | null
 }
 
 const VISIBILITY: { key: keyof Pick<CatalogCardStyle, 'showPromo' | 'showSticker' | 'showKicker' | 'showDesc' | 'showRef' | 'showUnit' | 'showVedette' | 'showDetails'>; label: string }[] = [
@@ -26,7 +28,7 @@ const VISIBILITY: { key: keyof Pick<CatalogCardStyle, 'showPromo' | 'showSticker
   { key: 'showDetails', label: 'Détails' },
 ]
 
-export function CardStyleCard({ plan, setPlan }: CardStyleCardProps) {
+export function CardStyleCard({ plan, setPlan, selectedObject }: CardStyleCardProps) {
   const style: CatalogCardStyle = { ...DEFAULT_CARD_STYLE, ...plan.cardStyle }
   const patch = (p: Partial<CatalogCardStyle>) => setPlan({ ...plan, cardStyle: { ...style, ...p } })
 
@@ -47,7 +49,7 @@ export function CardStyleCard({ plan, setPlan }: CardStyleCardProps) {
       </p>
 
       <PropertySection title="Texte : taille & police" help="Un réglage par champ texte (nom, prix, description...).">
-        <CardStyleTypo style={style} patch={patch} />
+        <CardStyleTypo style={style} patch={patch} selected={selectedObject} />
       </PropertySection>
 
       <PropertySection title="Couleurs des objets" help="2e case = dégradé (✕ pour revenir à l'uni).">

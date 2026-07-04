@@ -3,13 +3,16 @@
 // texte mappé (nom, description, prix, marque, référence, unité, cartouche promo).
 // « Police du thème » = hérite des polices du plan (titres ou texte selon le champ).
 // Widgets du kit : SliderField (échelle) + <select> stylé inputCls (police).
+import { useEffect, useRef } from 'react'
 import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import { SliderField, inputCls } from '@/components/shared/panel'
-import type { CatalogCardStyle } from '../../catalogTypes'
+import type { CardObjectId, CatalogCardStyle } from '../../catalogTypes'
 
 interface CardStyleTypoProps {
   style: CatalogCardStyle
   patch: (p: Partial<CatalogCardStyle>) => void
+  /** Objet sélectionné dans l'aperçu (disposition libre) — surligne + focus la ligne correspondante. */
+  selected?: CardObjectId | null
 }
 
 type ScaleKey = 'nameScale' | 'descScale' | 'priceScale' | 'brandScale' | 'refScale' | 'unitScale' | 'promoScale' | 'stickerScale' | 'vedetteScale' | 'detailsScale'
@@ -28,13 +31,30 @@ const FIELDS: { scale: ScaleKey; font: FontKey; label: string }[] = [
   { scale: 'detailsScale', font: 'detailsFont', label: 'Détails' },
 ]
 
-export function CardStyleTypo({ style, patch }: CardStyleTypoProps) {
+/** Objet de l'overlay « disposition libre » → champ d'échelle correspondant (image/kicker n'ont pas de curseur typo). */
+const OBJ_TO_SCALE: Partial<Record<CardObjectId, ScaleKey>> = {
+  name: 'nameScale', description: 'descScale', price: 'priceScale', brand: 'brandScale',
+  ref: 'refScale', unit: 'unitScale', promo: 'promoScale', sticker: 'stickerScale',
+  vedette: 'vedetteScale', details: 'detailsScale',
+}
+
+export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
+  const inputRefs = useRef<Partial<Record<ScaleKey, HTMLInputElement | null>>>({})
+  const activeScale = selected != null ? OBJ_TO_SCALE[selected] : undefined
+
+  useEffect(() => {
+    if (!activeScale) return
+    const el = inputRefs.current[activeScale]
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    el?.focus()
+  }, [selected])
+
   return (
     <div className="grid grid-cols-1 gap-y-3">
       {FIELDS.map(({ scale, font, label }) => (
-        <div key={scale} className="space-y-1">
+        <div key={scale} className={`space-y-1 ${scale === activeScale ? 'ring-2 ring-indigo-500 rounded-md' : ''}`}>
           <SliderField label={label} value={style[scale]} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
-            min={0.7} max={1.5} step={0.05} unit="×" />
+            min={0.7} max={1.5} step={0.05} unit="×" inputRef={(el) => { inputRefs.current[scale] = el }} />
           <select value={style[font]} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
             className={inputCls}>
             <option value="">Police du thème</option>

@@ -1,6 +1,6 @@
 // Champs typés promus de src/features/retail-promo/promoPanelUi.tsx — repris VERBATIM
 // (aucun changement de logique), pour être partagés par tous les panneaux de propriétés.
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 
 export const inputCls = 'w-full rounded border border-white/10 bg-well px-2 py-1 text-sm text-white outline-none focus:border-[#6366f1] placeholder:text-white/25 [&>option]:bg-neutral-900'
 const labelCls = 'flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40'
@@ -35,14 +35,16 @@ export function SelectField<T extends string>({ label, value, options, onChange 
  * `min/max/step/unit` permettent des bornes libres (mm, px, °, ×, s…) pour les
  * panneaux qui ont des sliders non-% (Print, Animation3D, DataMerge).
  */
-export function SliderField({ label, value, onChange, min = 0, max = 1, step = 0.01, unit = '%' }: {
+export function SliderField({ label, value, onChange, min = 0, max = 1, step = 0.01, unit = '%', inputRef }: {
   label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; unit?: string
+  /** Réf optionnelle sur l'`<input type="range">` (ex. scroll/focus programmatique). */
+  inputRef?: Ref<HTMLInputElement>
 }) {
   const isPct = unit === '%' && max <= 1
   const shown = isPct ? `${Math.round(value * 100)} %` : `${Math.round(value * 100) / 100}${unit}`
   return (
     <label className={labelCls}>{label} ({shown})
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[#6366f1]" />
+      <input ref={inputRef} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[#6366f1]" />
     </label>
   )
 }
