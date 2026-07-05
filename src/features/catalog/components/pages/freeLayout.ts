@@ -18,13 +18,13 @@ export const FREE_DEFAULT_LAYOUT: Record<CardObjectId, CardBox> = {
   brand: { x: 5, y: 48, w: 90 },
   name: { x: 5, y: 52, w: 92 },
   description: { x: 5, y: 58, w: 92 },
-  // Bas de carte en DEUX COLONNES : détails SANS hauteur imposée (textes entiers,
-  // jamais coupés) à GAUCHE, réf/unité dessous · prix À DROITE (y74 pour qu'un
-  // badge prix agrandi ×2 — barré + prix empilés — ne soit PAS coupé en bas).
-  details: { x: 5, y: 68, w: 48 },
-  ref: { x: 5, y: 88, w: 45 },
-  unit: { x: 5, y: 92, w: 45 },
-  price: { x: 56, y: 74, w: 40 },
+  // Design COMPLET calqué sur l'auto : détails pleine largeur (aimantés sous la
+  // description), réf en bas à gauche avec l'unité SOUDÉE à sa droite (liaison),
+  // prix ANCRÉ bas-droite (mise en page liquide) → identique sur toutes les cartes.
+  details: { x: 5, y: 68, w: 92 },
+  ref: { x: 5, y: 90, w: 45 },
+  unit: { x: 5, y: 94, link: 'ref' },
+  price: { x: 2, y: 2, w: 40, ax: 'r', ay: 'b' },
 }
 
 /** Boîte effective d'un objet : override utilisateur (layout) fusionné sur le repli. */

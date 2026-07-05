@@ -135,12 +135,15 @@ test('applyMagneticFlow : bloc LIÉ soudé à droite de sa cible (aligné en hau
   expect(parseFloat(unit.style.top)).toBeCloseTo(86, 0)
 })
 
-test('FREE_DEFAULT_LAYOUT : calqué sur l\'auto (image haut, textes empilés, rangée basse)', () => {
-  const { promo, image, name, description, details, ref, price } = FREE_DEFAULT_LAYOUT
+test('FREE_DEFAULT_LAYOUT : design complet calqué sur l\'auto (bandeau, pile de textes, liaisons, prix ancré)', () => {
+  const { promo, image, name, description, details, ref, unit, price } = FREE_DEFAULT_LAYOUT
+  expect(promo).toMatchObject({ x: 0, y: 0, w: 100 }) // cartouche = bandeau pleine largeur
   expect(promo.y).toBeLessThan(image.y)
   expect(image.y).toBeLessThan(name.y)
   expect(name.y).toBeLessThan(description.y)
   expect(description.y).toBeLessThan(details.y)
   expect(details.y).toBeLessThan(ref.y) // détails au-dessus de la rangée basse
-  expect(price.y).toBeGreaterThan(details.y) // prix en bas de carte
+  expect(unit.link).toBe('ref')         // unité SOUDÉE à la réf
+  expect(price.ax).toBe('r')            // prix ancré bas-droite (liquide)
+  expect(price.ay).toBe('b')
 })
