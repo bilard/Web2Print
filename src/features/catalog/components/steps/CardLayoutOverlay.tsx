@@ -54,6 +54,21 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
     // Mode liaison actif : ce clic désigne la CIBLE (soudure à sa droite), pas une sélection.
     if (linking && sel && id !== sel) {
       e.preventDefault(); e.stopPropagation()
+      // Si la cible (ou sa chaîne) est déjà liée au bloc sélectionné, lier =
+      // INVERSER la liaison : on coupe le lien qui reboucle (jamais de cycle,
+      // sinon chaque bloc se soude à l'autre et les positions divergent).
+      const seen = new Set<CardObjectId>()
+      let cur: CardObjectId | undefined = id
+      while (cur && !seen.has(cur)) {
+        seen.add(cur)
+        const b2 = freeLayoutBox(cur, style)
+        if (b2.link === sel) {
+          const r = rectOf(cur)
+          onChange(cur, { ...b2, link: undefined, lx: undefined, ly: undefined, ...(r ? { x: r1(r.left), y: r1(r.top) } : {}) })
+          break
+        }
+        cur = b2.link
+      }
       onChange(sel, { ...freeLayoutBox(sel, style), link: id, lx: 0, ly: 0, ax: 'l', ay: 't' })
       setLinking(false)
       return

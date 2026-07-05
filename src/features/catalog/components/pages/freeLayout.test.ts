@@ -135,6 +135,36 @@ test('applyMagneticFlow : bloc LIÉ soudé à droite de sa cible (aligné en hau
   expect(parseFloat(unit.style.top)).toBeCloseTo(86, 0)
 })
 
+test('applyMagneticFlow : liaison CIRCULAIRE (réf↔unité) — le premier lien gagne, l\'autre est ignoré (pas de divergence)', () => {
+  const card = document.createElement('div')
+  Object.defineProperty(card, 'clientHeight', { value: 1000 })
+  Object.defineProperty(card, 'clientWidth', { value: 1000 })
+  const mk = (id: string, h: number, extra?: { left?: number; width?: number; top?: number }) => {
+    const el = document.createElement('div')
+    el.className = 'cat-obj'
+    el.setAttribute('data-object-id', id)
+    Object.defineProperty(el, 'offsetHeight', { value: h })
+    Object.defineProperty(el, 'offsetWidth', { value: extra?.width ?? 400 })
+    Object.defineProperty(el, 'offsetLeft', { value: extra?.left ?? 0 })
+    Object.defineProperty(el, 'offsetTop', { value: extra?.top ?? 0 })
+    card.appendChild(el)
+    return el
+  }
+  const ref = mk('ref', 20)
+  const unit = mk('unit', 20, { left: 50, width: 200, top: 880 })
+  // Cycle stocké : réf liée à l'unité ET unité liée à la réf (état corrompu).
+  const style = {
+    ...DEFAULT_CARD_STYLE, freeLayout: true,
+    layout: { ref: { x: 5, y: 90, link: 'unit' as const }, unit: { x: 5, y: 94, link: 'ref' as const } },
+  }
+  applyMagneticFlow(card, style) // ne doit ni boucler ni diverger
+  // réf (premier lien dans CARD_OBJECT_IDS) soudée à droite de l'unité…
+  expect(parseFloat(ref.style.left)).toBeCloseTo(25.6, 1) // (50+200+6)/1000
+  expect(parseFloat(ref.style.top)).toBeCloseTo(88, 0)
+  // …et le lien retour de l'unité est IGNORÉ : elle reste dans la chaîne verticale.
+  expect(unit.style.left).toBe('')
+})
+
 test('FREE_DEFAULT_LAYOUT : design complet calqué sur l\'auto (bandeau, pile de textes, liaisons, prix ancré)', () => {
   const { promo, image, name, description, details, ref, unit, price } = FREE_DEFAULT_LAYOUT
   expect(promo).toMatchObject({ x: 0, y: 0, w: 100 }) // cartouche = bandeau pleine largeur

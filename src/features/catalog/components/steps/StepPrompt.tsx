@@ -12,7 +12,7 @@ import { representativeGrid } from '../../catalogEngine'
 import { cellDims, cellFit } from '../pages/catalogCss'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
 import { extractPromoFields, buildDetailLines } from '@/features/retail-promo/promoMapping'
-import { DEFAULT_CARD_STYLE, type CardObjectId } from '../../catalogTypes'
+import { DEFAULT_CARD_STYLE, type CardBox, type CardObjectId } from '../../catalogTypes'
 import { CardStyleCard } from './CardStyleCard'
 import { CardStylePreview } from './CardStylePreview'
 import { SectionsCard } from './SectionsCard'
@@ -87,6 +87,15 @@ export function StepPrompt() {
   }
 
   const cardStyle = useMemo(() => ({ ...DEFAULT_CARD_STYLE, ...plan?.cardStyle }), [plan])
+  // Patch de disposition depuis l'overlay : lit l'état FRAIS du store — un même
+  // geste peut émettre DEUX patchs successifs (ex. inversion de liaison) et une
+  // closure sur `plan` écraserait le premier.
+  const patchLayout = (id: CardObjectId, box: CardBox) => {
+    const s = useCatalogStore.getState()
+    if (!s.plan) return
+    const cs = { ...DEFAULT_CARD_STYLE, ...s.plan.cardStyle }
+    s.setPlan({ ...s.plan, cardStyle: { ...cs, layout: { ...cs.layout, [id]: box } } })
+  }
   // L'aperçu prend TOUJOURS la taille + le fit réels de la cellule imprimée
   // (réplique exacte de la fiche du catalogue, en auto comme en libre — un seul
   // affichage réaliste). `horizontal` reflète le rendu des grilles denses en auto.
@@ -154,7 +163,7 @@ export function StepPrompt() {
               </div>
               <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={cell}
                 horizontal={previewGrid >= 6} featuredVariant={previewFeatured} selected={selectedObject}
-                editable onLayoutChange={(id, box) => setPlan({ ...plan, cardStyle: { ...cardStyle, layout: { ...cardStyle.layout, [id]: box } } })}
+                editable onLayoutChange={patchLayout}
                 onSelect={setSelectedObject} />
             </div>
           )}

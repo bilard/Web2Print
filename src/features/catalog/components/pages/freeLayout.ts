@@ -58,15 +58,28 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
   const cardH = card.clientHeight
   const cardW = card.clientWidth
   if (!cardH || !cardW) return
+  // Liens VALIDES (garde-fou anti-CYCLE) : un lien dont la chaîne de cibles
+  // reboucle sur lui-même (ex. réf↔unité liées l'une à l'autre) est IGNORÉ —
+  // sinon chaque bloc se soude à droite de l'autre et les positions divergent à
+  // chaque rendu. Le premier lien déclaré (ordre CARD_OBJECT_IDS) gagne.
+  const validLink = new Map<CardObjectId, CardObjectId>()
+  for (const id of CARD_OBJECT_IDS) {
+    const t = freeLayoutBox(id, style).link
+    if (!t || t === id) continue
+    let cur: CardObjectId | undefined = t
+    while (cur && cur !== id) cur = validLink.get(cur)
+    if (cur !== id) validLink.set(id, t)
+  }
   const items = FLOW_CHAIN
     .map((id) => {
       const el = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
-      return el ? { el, box: freeLayoutBox(id, style) } : null
+      return el ? { id, el, box: freeLayoutBox(id, style) } : null
     })
-    .filter((x): x is { el: HTMLElement; box: CardBox } => x != null)
+    .filter((x): x is { id: CardObjectId; el: HTMLElement; box: CardBox } => x != null)
     // Un bloc ANCRÉ au bas/centre (mise en page liquide) ou LIÉ à un autre bloc
-    // sort de la chaîne : il est positionné par son bord / sa cible.
-    .filter((x) => (x.box.ay ?? 't') === 't' && !x.box.link)
+    // sort de la chaîne : il est positionné par son bord / sa cible. Un lien
+    // annulé (cycle) rend le bloc à la chaîne verticale.
+    .filter((x) => (x.box.ay ?? 't') === 't' && !validLink.has(x.id))
     .sort((a, b) => a.box.y - b.box.y)
   for (const it of items) it.el.style.top = `${it.box.y}%` // repart du configuré (mesures stables)
   const placed: { x1: number; x2: number; bottom: number }[] = []
@@ -91,12 +104,19 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
   // ── LIAISONS entre blocs (après la passe verticale : les cibles sont posées) :
   // un bloc lié est SOUDÉ à droite de sa cible, aligné sur son haut — il la suit
   // dans tous ses déplacements et sa volumétrie (ex. unité collée à la réf).
-  for (const id of CARD_OBJECT_IDS) {
+  // Récursif CIBLE D'ABORD : dans une chaîne A→B→C, C est posé avant B avant A
+  // (sans cycle possible : validLink est acyclique par construction).
+  const welded = new Set<CardObjectId>()
+  const weld = (id: CardObjectId): void => {
+    if (welded.has(id)) return
+    welded.add(id)
+    const link = validLink.get(id)
+    if (!link) return
+    weld(link)
     const box = freeLayoutBox(id, style)
-    if (!box.link) continue
     const el = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
-    const target = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${box.link}"]`)
-    if (!el || !target) continue
+    const target = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${link}"]`)
+    if (!el || !target) return
     // Soudure au bout du CONTENU de la cible (le texte RENDU), pas de sa boîte —
     // la boîte (w %) est souvent bien plus large que le texte, surtout sur les
     // cartes larges → le bloc lié serait soudé « dans le vide ». Mesure par Range
@@ -118,6 +138,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     el.style.left = `${Math.round((((target.offsetLeft + targetW + MAGNET_GAP) / cardW) * 100 + (box.lx ?? 0)) * 10) / 10}%`
     el.style.top = `${Math.round(((target.offsetTop / cardH) * 100 + (box.ly ?? 0)) * 10) / 10}%`
   }
+  for (const id of validLink.keys()) weld(id)
 }
 
 /** Position VISUELLE (%) d'un objet dans la carte d'aperçu (.cat-style-card-host) —

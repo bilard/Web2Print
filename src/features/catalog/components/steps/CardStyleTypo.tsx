@@ -61,10 +61,27 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
   // cible et la suit partout. Éditable ici pour VOIR tous les liens d'un coup.
   const setLink = (obj: CardObjectId, target: string) => {
     const base = freeLayoutBox(obj, style)
-    const box = target
-      ? { ...base, link: target as CardObjectId, lx: 0, ly: 0 } // soudure fraîche
-      : { ...base, link: undefined, lx: undefined, ly: undefined, ...(visualPos(obj) ?? {}) } // délié SANS saut
-    patch({ layout: { ...style.layout, [obj]: box } })
+    const layout = { ...style.layout }
+    if (target) {
+      // Si la cible (ou sa chaîne) est déjà liée à ce bloc, lier = INVERSER la
+      // liaison : on coupe le lien qui reboucle (un cycle rendrait les positions
+      // instables — chaque bloc se souderait à droite de l'autre).
+      const seen = new Set<CardObjectId>()
+      let cur: CardObjectId | undefined = target as CardObjectId
+      while (cur && !seen.has(cur)) {
+        seen.add(cur)
+        const b = freeLayoutBox(cur, style)
+        if (b.link === obj) {
+          layout[cur] = { ...b, link: undefined, lx: undefined, ly: undefined, ...(visualPos(cur) ?? {}) }
+          break
+        }
+        cur = b.link
+      }
+      layout[obj] = { ...base, link: target as CardObjectId, lx: 0, ly: 0 } // soudure fraîche
+    } else {
+      layout[obj] = { ...base, link: undefined, lx: undefined, ly: undefined, ...(visualPos(obj) ?? {}) } // délié SANS saut
+    }
+    patch({ layout })
   }
 
   // ── Visualisation des liaisons : une COULEUR par groupe (cible + suiveurs
