@@ -17,11 +17,11 @@ export const FREE_DEFAULT_LAYOUT: Record<CardObjectId, CardBox> = {
   sticker: { x: 70, y: 24 },
   brand: { x: 5, y: 48, w: 90 },
   name: { x: 5, y: 52, w: 92 },
-  description: { x: 5, y: 59, w: 92 },
-  // Bas de carte en DEUX COLONNES : détails hauts (≈6 lignes → TVA/Avantages/
-  // Entretien visibles) puis réf/unité À GAUCHE · prix À DROITE (y74 pour qu'un
+  description: { x: 5, y: 58, w: 92 },
+  // Bas de carte en DEUX COLONNES : détails SANS hauteur imposée (textes entiers,
+  // jamais coupés) à GAUCHE, réf/unité dessous · prix À DROITE (y74 pour qu'un
   // badge prix agrandi ×2 — barré + prix empilés — ne soit PAS coupé en bas).
-  details: { x: 5, y: 64, w: 48, h: 22 },
+  details: { x: 5, y: 68, w: 48 },
   ref: { x: 5, y: 88, w: 45 },
   unit: { x: 5, y: 92, w: 45 },
   price: { x: 56, y: 74, w: 40 },
@@ -55,8 +55,8 @@ const r1 = (v: number) => Math.round(v * 10) / 10
  * carte. Sert à AMORCER la disposition libre : au moment où l'on coche « libre »
  * (la carte est encore rendue en auto), on fige ces positions dans `layout` →
  * la carte reste IDENTIQUE au rendu auto, puis l'utilisateur déplace les blocs.
- * `h` n'est capturée que pour l'image et les détails (bornées) ; les textes
- * gardent leur hauteur naturelle.
+ * `h` n'est capturée que pour l'image (boîte remplie) ; textes ET détails gardent
+ * leur hauteur naturelle — en libre, les textes ne sont jamais coupés.
  */
 export function measureAutoLayout(card: HTMLElement): Partial<Record<CardObjectId, CardBox>> {
   const cr = card.getBoundingClientRect()
@@ -72,7 +72,7 @@ export function measureAutoLayout(card: HTMLElement): Partial<Record<CardObjectI
       y: r1(((er.top - cr.top) / cr.height) * 100),
       w: r1((er.width / cr.width) * 100),
     }
-    if (id === 'image' || id === 'details') box.h = r1((er.height / cr.height) * 100)
+    if (id === 'image') box.h = r1((er.height / cr.height) * 100)
     out[id] = box
   }
   return out

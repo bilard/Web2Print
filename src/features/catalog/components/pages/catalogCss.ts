@@ -228,11 +228,13 @@ export const CATALOG_CSS = `
    et hauteur bornée (remplit son .cat-obj à hauteur définie) → se coupe proprement,
    jamais de débordement hors carte. */
 .cat-free .cat-obj[data-object-id="details"] { overflow:hidden; }
-/* En disposition libre, la HAUTEUR DE LA BOÎTE (placée par l'utilisateur) fait loi :
-   on neutralise le clamp des cartes md (max-height 5em / 2 lignes par champ) pour
-   que TVA/Avantages/Entretien s'affichent tant que la boîte a la place. */
+/* En disposition libre, les TEXTES NE SONT JAMAIS COUPÉS : aucun clamp (description
+   et champs détails en hauteur naturelle) — c'est le placement des boîtes qui
+   organise la place, et l'utilisateur peut les déplacer/agrandir. Une hauteur
+   posée explicitement (poignées) reste respectée via l'overflow du .cat-obj. */
 .cat-free .cat-cell-details { background:rgba(127,127,127,.08); border-radius:4px; padding:4px 6px; margin-top:0; height:100%; max-height:none; overflow:hidden; }
-.cat-free .cat-cell-details span { -webkit-line-clamp:4; }
+.cat-free .cat-cell-details span { -webkit-line-clamp:unset; display:block; overflow:visible; }
+.cat-free .cat-cell-desc { -webkit-line-clamp:unset; display:block; overflow:visible; }
 .cat-cell-refcode { font-size:calc(9px * var(--cat-s-ref,1) * ${F}); font-family:var(--cat-font-ref,var(--cat-font-b)); opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
 .cat-cell-row { display:flex; align-items:flex-end; justify-content:space-between; margin-top:6px; gap:10px; }
 .cat-cell-meta { display:flex; flex-direction:column; gap:3px; min-width:0; padding-bottom:2px; }
