@@ -9,6 +9,7 @@ import { PropertySection } from '@/components/shared/panel'
 import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle, type CatalogPlan } from '../../catalogTypes'
 import { CardStyleTypo } from './CardStyleTypo'
 import { CardStyleColors } from './CardStyleColors'
+import { CardDesignGallery } from './CardDesignGallery'
 import { CardLayoutGallery } from './CardLayoutGallery'
 import { CardStyleShapes } from './CardStyleShapes'
 
@@ -67,9 +68,13 @@ export function CardStyleCard({ plan, setPlan, selectedObject, wide }: CardStyle
           className="text-[11px] text-indigo-300 hover:text-white underline text-left">Réinitialiser les positions</button>
       </div>
 
-      <PropertySection title="Mises en page" help="Des structures de fiche complètement différentes (croquis : variante verticale · pleine largeur). Appliquer remplace la disposition — couleurs, typo et formes sont conservées. « Enregistrer » sauve la fiche COMPLÈTE comme modèle réutilisable.">
-        <CardLayoutGallery style={style} patch={patch}
-          applyFull={(cs) => setPlan({ ...plan, cardStyle: { ...DEFAULT_CARD_STYLE, ...cs } })} />
+      <PropertySection title="Designs de fiche" help="Des identités visuelles TOTALEMENT différentes : polices, couleurs, formes, fond ET structure. Appliquer remplace tout le style de la fiche. « Enregistrer » sauve la fiche actuelle comme modèle réutilisable.">
+        <CardDesignGallery style={style}
+          applyFull={(cs) => setPlan({ ...plan, cardStyle: cs })} />
+      </PropertySection>
+
+      <PropertySection title="Mises en page" defaultOpen={false} help="Structure SEULE (croquis : verticale · pleine largeur) — couleurs, typo et formes conservées.">
+        <CardLayoutGallery patch={patch} />
       </PropertySection>
 
       <PropertySection title="Forme des badges" help="Presets de forme PAR OBJET : le prix et le sticker ont chacun leurs formes + leur inclinaison.">

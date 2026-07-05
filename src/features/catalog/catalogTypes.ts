@@ -120,6 +120,8 @@ export interface CatalogCardStyle {
   detailsFont: string
   /** Police de la pastille « Sous-famille » ('' = hérite du thème : titres). */
   kickerFont: string
+  /** Fond de la fiche ('' = blanc) — levier fort des designs (crème, gris perle…). */
+  cellBg: string
   /** FORME du badge prix : étiquette inclinée (défaut), coins arrondis, pastille pilule ou carré net. */
   priceShape: PriceShape
   /** Inclinaison (°) du badge prix (étiquette légèrement penchée par défaut). */
@@ -188,7 +190,7 @@ export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '', vedetteBg2: '', vedettePriceBg2: '',
   vedetteLabel: 'Vedette',
   gradientAngle: 135,
-  priceShape: 'tag', priceRotate: -2, stickerShape: 'round', stickerRotate: 8,
+  cellBg: '', priceShape: 'tag', priceRotate: -2, stickerShape: 'round', stickerRotate: 8,
   radius: 6, imageShare: 40, imagePad: 12,
   showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true, showVedette: true, showDetails: true,
   magnetFlow: true, layout: {}, layoutWide: {},
