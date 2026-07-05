@@ -56,10 +56,11 @@ export function ProductCell({ fields: f, featured, kicker, size, details, horizo
     const obj = (id: CardObjectId, node: ReactNode) => {
       const b = freeLayoutBox(id, cardStyle)
       const scaled = b.sc != null && b.sc !== 1
-      // Blocs TEXTE (chaîne de flux) : hauteur toujours NATURELLE — une hauteur
-      // figée en % ne s'adapte pas à la volumétrie (cartes larges = moins de
-      // lignes → gros vides) et contredit « textes jamais coupés ».
-      const fixedH = b.h != null && !FLOW_CHAIN.includes(id)
+      // Hauteur figée UNIQUEMENT pour l'image (elle REMPLIT sa boîte). Tous les
+      // autres blocs ont un contenu intrinsèque (textes, badges prix/sticker…) :
+      // une hauteur figée en % ne s'adapte ni à la volumétrie ni à la taille des
+      // cartes → contenu rogné (ex. bas du badge prix coupé).
+      const fixedH = b.h != null && id === 'image'
       // ANCRAGE LIQUIDE (ax/ay) : collé au bord droit/bas ou centré — stable sur
       // toutes les tailles de carte (mise en page liquide façon InDesign).
       // Un bloc LIÉ (link) est positionné par sa cible (applyMagneticFlow) →
