@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree, flattenTree } from '../../catalogTree'
 import { representativeGrid } from '../../catalogEngine'
-import { cellDims } from '../pages/catalogCss'
+import { cellDims, cellFit } from '../pages/catalogCss'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
 import { extractPromoFields, buildDetailLines } from '@/features/retail-promo/promoMapping'
 import { DEFAULT_CARD_STYLE, type CardObjectId } from '../../catalogTypes'
@@ -83,10 +83,12 @@ export function StepPrompt() {
   }
 
   const cardStyle = useMemo(() => ({ ...DEFAULT_CARD_STYLE, ...plan?.cardStyle }), [plan])
-  // Disposition libre : l'aperçu prend l'ASPECT réel de la cellule imprimée
-  // (mêmes proportions carte éditée ↔ fiche du catalogue → placement fidèle).
-  const cellAspect = useMemo(
-    () => (plan && cardStyle.freeLayout ? (() => { const { w, h } = cellDims(format, representativeGrid(plan.sections)); return w / h })() : undefined),
+  // Disposition libre : l'aperçu prend la TAILLE + le FIT réels de la cellule
+  // imprimée (carte éditée = réplique exacte de la fiche du catalogue → fidèle).
+  const cell = useMemo(
+    () => (plan && cardStyle.freeLayout
+      ? (() => { const grid = representativeGrid(plan.sections); const { w, h } = cellDims(format, grid); return { w, h, fit: cellFit(format, grid) } })()
+      : undefined),
     [plan, cardStyle.freeLayout, format],
   )
 
@@ -132,7 +134,7 @@ export function StepPrompt() {
           {plan && (
             <div className="lg:sticky lg:top-0 w-full lg:w-[560px]">
               <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Aperçu de la fiche</div>
-              <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} aspect={cellAspect}
+              <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={cell}
                 editable onLayoutChange={(id, box) => setPlan({ ...plan, cardStyle: { ...cardStyle, layout: { ...cardStyle.layout, [id]: box } } })}
                 onSelect={setSelectedObject} />
             </div>

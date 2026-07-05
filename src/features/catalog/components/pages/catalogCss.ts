@@ -25,6 +25,16 @@ export function cellDims(format: CatalogFormat, grid: CatalogGrid): { w: number;
   return { w: (w - 64 - 14 * (C - 1)) / C, h: (h - 140 - 14 * (R - 1)) / R }
 }
 
+/**
+ * Facteur d'échelle typo (`--cat-fit`) d'une cellule : racine du rapport d'aires
+ * vs la cellule de référence (A4 portrait grille 6), borné. SOURCE UNIQUE utilisée
+ * par le rendu des pages ET l'aperçu de fiche → badges/texte au même ratio.
+ */
+export function cellFit(format: CatalogFormat, grid: CatalogGrid): number {
+  const { w, h } = cellDims(format, grid)
+  return Math.min(1.45, Math.max(0.85, Math.sqrt((w * h) / (358 * 318))))
+}
+
 /** Contexte de rendu passé à toutes les pages (une seule prop drill, pas de store dans le rendu). */
 export interface CatalogRenderCtx {
   plan: CatalogPlan

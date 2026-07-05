@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { extractPromoFields, buildDetailLines } from '@/features/retail-promo/promoMapping'
 import { GRID_DIMS, type CatalogGrid, type ProductSlot } from '../../catalogTypes'
-import { pagePx, type CatalogRenderCtx } from './catalogCss'
+import { cellFit, type CatalogRenderCtx } from './catalogCss'
 import { ProductCell, type CellSize } from './ProductCell'
 
 function slotSize(slot: ProductSlot, grid: CatalogGrid, free: boolean): CellSize {
@@ -19,16 +19,10 @@ function slotSize(slot: ProductSlot, grid: CatalogGrid, free: boolean): CellSize
  * laissent trop de vide. Échelle = racine du rapport d'AIRES, bornée.
  */
 function typoFit(ctx: CatalogRenderCtx, grid: CatalogGrid): number {
-  // Disposition libre : fit=1 (comme l'aperçu) → mêmes tailles de badges/texte,
-  // sinon les fiches du catalogue grossissent et les positions % débordent.
-  if (ctx.plan.cardStyle?.freeLayout) return 1
-  const { w, h } = pagePx(ctx.format)
-  const [C, R] = GRID_DIMS[grid]
-  // Marges verticales : header ~64 + footer ~40 + padding grille 36 ; gaps 14.
-  const cellW = (w - 64 - 14 * (C - 1)) / C
-  const cellH = (h - 140 - 14 * (R - 1)) / R
-  const REF_AREA = 358 * 318 // cellule de référence (A4 portrait, grille 6)
-  return Math.min(1.45, Math.max(0.85, Math.sqrt((cellW * cellH) / REF_AREA)))
+  // `--cat-fit` = échelle de la cellule (source unique cellFit). En disposition
+  // libre, l'aperçu utilise EXACTEMENT le même fit + la même taille de cellule →
+  // badges/texte au même ratio, plus de débordement.
+  return cellFit(ctx.format, grid)
 }
 
 interface Props {
