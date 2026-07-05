@@ -67,10 +67,17 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
     // la liaison est CONSERVÉE (il continue de suivre sa cible).
     if (b.link) {
       const lx0 = b.lx ?? 0, ly0 = b.ly ?? 0
+      let last = { lx: lx0, ly: ly0 }
       const moveLinked = (ev: PointerEvent) => {
-        onChange(id, { ...b, lx: r1(lx0 + ((ev.clientX - sx) / w) * 100), ly: r1(ly0 + ((ev.clientY - sy) / h) * 100) })
+        last = { lx: r1(lx0 + ((ev.clientX - sx) / w) * 100), ly: r1(ly0 + ((ev.clientY - sy) / h) * 100) }
+        onChange(id, { ...b, ...last })
       }
-      const upLinked = () => { window.removeEventListener('pointermove', moveLinked); window.removeEventListener('pointerup', upLinked); setTick((t) => t + 1) }
+      const upLinked = () => {
+        window.removeEventListener('pointermove', moveLinked); window.removeEventListener('pointerup', upLinked)
+        // SNAP : lâché près du point de soudure → recollé NET (contrainte ferme).
+        if (Math.abs(last.lx) < 2.5 && Math.abs(last.ly) < 2.5 && (last.lx !== 0 || last.ly !== 0)) onChange(id, { ...b, lx: 0, ly: 0 })
+        setTick((t) => t + 1)
+      }
       window.addEventListener('pointermove', moveLinked); window.addEventListener('pointerup', upLinked)
       return
     }
@@ -164,6 +171,19 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
               color: freeLayoutBox(sel, style).link ? '#fff' : '#6366f1' }}>
             🔗 {freeLayoutBox(sel, style).link ? 'Lié ✕' : linking ? 'Cliquez la cible…' : 'Lier à…'}
           </button>
+          {/* Bloc lié mais DÉCALÉ du point de soudure : recoller net (contrainte ferme). */}
+          {(() => {
+            const b = freeLayoutBox(sel, style)
+            return b.link && ((b.lx ?? 0) !== 0 || (b.ly ?? 0) !== 0) ? (
+              <button type="button" onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }}
+                onClick={() => onChange(sel, { ...b, lx: 0, ly: 0 })}
+                title="Recoller au point de soudure (annule le décalage du glisser)"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999,
+                  fontSize: 10, fontWeight: 700, cursor: 'pointer', border: '1px solid #6366f1', background: '#fff', color: '#6366f1' }}>
+                ⟲ Recoller
+              </button>
+            ) : null
+          })()}
         </div>
       )}
       {sel && selRect && HANDLES.map((hnd) => {
