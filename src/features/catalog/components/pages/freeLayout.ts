@@ -82,7 +82,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
   // textes glissent SOUS le prix et se superposent. Ici ils se coupent proprement
   // AU-DESSUS (maxHeight + overflow). Seuls les obstacles situés EN DESSOUS du
   // bloc courant plafonnent (le kicker en haut ne coupe pas la pile de textes).
-  const obstacles: { x1: number; x2: number; top: number }[] = []
+  const obstacles: { x1: number; x2: number; top: number; bottom: number }[] = []
   for (const id of CARD_OBJECT_IDS) {
     if (id === 'image' || id === 'promo' || FLOW_CHAIN.includes(id)) continue
     const b = freeLayoutBox(id, style)
@@ -102,7 +102,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     const top = ay === 'b' ? cardH - (b.y / 100) * cardH - h
       : ay === 'c' ? cardH / 2 - h / 2
       : Math.min((b.y / 100) * cardH, cardH - h)
-    obstacles.push({ x1: x2 - wPct, x2, top })
+    obstacles.push({ x1: x2 - wPct, x2, top, bottom: top + h })
   }
   const ceilingFor = (x1: number, x2: number, top: number): number => {
     let c = cardH
@@ -163,11 +163,16 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
         if (x1 < jx2 && jx1 < x2) reserve += items[j].el.offsetHeight + MAGNET_GAP
       }
       let ceil = ceilingFor(x1, x2, top)
-      if (top + hEff + reserve > ceil) {
-        const blockers = obstacles.filter((o) => o.top > top && o.top < cardH && x1 < o.x2 && o.x1 < x2)
-        const leftmost = Math.min(...blockers.map((o) => o.x1))
+      // Un obstacle bloque dès que sa plage VERTICALE intersecte le pavé prospectif
+      // (pas seulement s'il commence dessous) : sur une carte vedette, le badge prix
+      // démarre AU-DESSUS du haut des détails — sans ce test, aucun plafond ne
+      // s'appliquait et le texte passait sous le prix.
+      const vertBlockers = obstacles.filter((o) =>
+        x1 < o.x2 && o.x1 < x2 && o.bottom > top && o.top < top + hEff + reserve)
+      if (top + hEff + reserve > ceil || vertBlockers.length > 0) {
+        const leftmost = Math.min(...vertBlockers.map((o) => o.x1))
         const newW = Math.round((leftmost - 1.5 - x1) * 10) / 10
-        if (blockers.length > 0 && newW >= (x2 - x1) * 0.45) {
+        if (vertBlockers.length > 0 && newW >= (x2 - x1) * 0.45) {
           it.el.style.width = `${newW}%`
           x2 = x1 + newW
           hEff = it.el.offsetHeight // reflow synchrone : le texte vient de se réécouler
