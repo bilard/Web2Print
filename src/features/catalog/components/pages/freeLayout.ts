@@ -157,12 +157,19 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     let hEff = it.el.offsetHeight
     if (CLIP_CHAIN.has(it.id)) {
       let reserve = 0
-      for (let j = i + 1; j < items.length; j++) {
-        if (CLIP_CHAIN.has(items[j].id) || !isMagnetized(items[j].box, style)) continue
-        const [jx1, jx2] = spanOf(items[j])
-        if (x1 < jx2 && jx1 < x2) reserve += items[j].el.offsetHeight + MAGNET_GAP
-      }
       let ceil = ceilingFor(x1, x2, top)
+      for (let j = i + 1; j < items.length; j++) {
+        const jt = items[j]
+        const [jx1, jx2] = spanOf(jt)
+        if (!(x1 < jx2 && jx1 < x2)) continue
+        if (!isMagnetized(jt.box, style)) {
+          // Bloc DÉTACHÉ (m:false) : posé à y fixe, il ne bougera pas → il devient
+          // un PLAFOND pour le pavé (sinon réf/unité détachées finissent dessous).
+          ceil = Math.min(ceil, (jt.box.y / 100) * cardH - MAGNET_GAP)
+        } else if (!CLIP_CHAIN.has(jt.id)) {
+          reserve += jt.el.offsetHeight + MAGNET_GAP
+        }
+      }
       // Un obstacle bloque dès que sa plage VERTICALE intersecte le pavé prospectif
       // (pas seulement s'il commence dessous) : sur une carte vedette, le badge prix
       // démarre AU-DESSUS du haut des détails — sans ce test, aucun plafond ne
