@@ -211,8 +211,10 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
     if (bb) {
       h = bb.bottom - bb.top
       // Anticipe le clamp final : une bbox qui déborde du bas sera REMONTÉE (bloc
-      // désancré trop bas, ou badge ancré bas dont la ROTATION dépasse le bord).
-      const over = ay !== 'c' ? Math.max(0, bb.bottom - cardH) : 0
+      // désancré trop bas, ou badge ancré bas dont la ROTATION dépasse le bord —
+      // pour l'ancré bas, la bbox entière respecte la marge configurée y %).
+      const target = ay === 'b' ? cardH - (b.y / 100) * cardH : cardH
+      const over = ay !== 'c' ? Math.max(0, bb.bottom - target) : 0
       top = bb.top - over
       x1 = (bb.left / cardW) * 100
       x2 = (bb.right / cardW) * 100
@@ -421,18 +423,26 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
       // Ancré BAS : la boîte ne déborde pas par construction… sauf bloc TOURNÉ,
       // dont la bbox dépasse géométriquement sous la boîte (rotation autour du
       // centre) → le badge se faisait couper par le bord. On REMONTE l'ancrage
-      // de l'excès mesuré. Reset d'abord (idempotent), puis mesure rendue.
+      // pour que la bbox ENTIÈRE respecte la marge configurée (y %).
+      // Reset d'abord (idempotent), puis mesure rendue.
       el.style.bottom = `${b.y}%`
       const bb = renderedBox(el)
-      const over = bb ? bb.bottom - cardH : 0
+      const over = bb ? bb.bottom - (cardH - (b.y / 100) * cardH) : 0
       if (over > 0.5) el.style.bottom = `${Math.round((((b.y / 100) * cardH + over) / cardH) * 1000) / 10}%`
       continue
     }
     if (ay !== 't') continue // centré : ne déborde pas du bas par construction
-    const h = el.offsetHeight * (b.sc ?? 1)
-    const topPx = linked ? el.offsetTop : (b.y / 100) * cardH
-    if (topPx + h > cardH) el.style.top = `${Math.round((Math.max(0, cardH - h) / cardH) * 1000) / 10}%`
-    else if (!linked) el.style.top = `${b.y}%` // reset idempotent d'un clamp précédent
+    // Position CONFIGURÉE d'abord (mesure stable), puis bbox rendue : un bloc
+    // TOURNÉ désancré (prix draggé) déborde de sa boîte — offsetHeight seul le
+    // laissait se faire couper en bas sur les cartes plus courtes que l'aperçu.
+    if (!linked) el.style.top = `${b.y}%` // reset idempotent d'un clamp précédent
+    const bb = renderedBox(el)
+    const boxTop = linked ? el.offsetTop : (b.y / 100) * cardH
+    const h = bb ? bb.bottom - bb.top : el.offsetHeight * (b.sc ?? 1)
+    const delta = bb ? bb.top - boxTop : 0 // débord de rotation AU-DESSUS de la boîte (≤ 0)
+    if (boxTop + delta + h > cardH) {
+      el.style.top = `${Math.round((Math.max(0, cardH - h - delta) / cardH) * 1000) / 10}%`
+    }
     // CLAMP HORIZONTAL : un bloc posé/désancré/lié dont le bord droit déborde la
     // carte est ramené à gauche (rien ne se coupe jamais au bord droit — ex. prix
     // désancré posé en % sur une carte plus étroite que l'aperçu).

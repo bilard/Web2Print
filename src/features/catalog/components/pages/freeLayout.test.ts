@@ -144,8 +144,28 @@ test('applyMagneticFlow : un badge ancré BAS dont la rotation déborde du bord 
   price.getBoundingClientRect = () => ({ left: 550, top: 890, right: 1000, bottom: 1030, width: 450, height: 140, x: 550, y: 890, toJSON: () => ({}) })
   card.appendChild(price)
   applyMagneticFlow(card, { ...DEFAULT_CARD_STYLE, layout: {} })
-  // Remonté de l'excès : bottom passe de 2 % à (20 + 30)/1000 = 5 %.
-  expect(price.style.bottom).toBe('5%')
+  // Remonté pour que la bbox ENTIÈRE respecte la marge configurée (2 %) :
+  // excès = 1030 − (1000 − 20) = 50 → bottom = (20 + 50)/1000 = 7 %.
+  expect(price.style.bottom).toBe('7%')
+})
+
+test('applyMagneticFlow : un badge DÉSANCRÉ (drag) et tourné est aussi remonté par sa bbox — plus jamais coupé en bas', () => {
+  const card = document.createElement('div')
+  Object.defineProperty(card, 'clientHeight', { value: 1000 })
+  Object.defineProperty(card, 'clientWidth', { value: 1000 })
+  card.getBoundingClientRect = () => ({ left: 0, top: 0, right: 1000, bottom: 1000, width: 1000, height: 1000, x: 0, y: 0, toJSON: () => ({}) })
+  const price = document.createElement('div')
+  price.className = 'cat-obj'
+  price.setAttribute('data-object-id', 'price')
+  Object.defineProperty(price, 'offsetHeight', { value: 80 })
+  Object.defineProperty(price, 'offsetWidth', { value: 400 })
+  // Boîte posée à y78 (780-860 : rentre) mais bbox TOURNÉE 760→1030 : déborde de 30.
+  price.getBoundingClientRect = () => ({ left: 550, top: 760, right: 1000, bottom: 1030, width: 450, height: 270, x: 550, y: 760, toJSON: () => ({}) })
+  card.appendChild(price)
+  const style = { ...DEFAULT_CARD_STYLE, layout: { price: { x: 55, y: 78, w: 40, ax: 'l' as const, ay: 't' as const } } }
+  applyMagneticFlow(card, style)
+  // top visé : bbox bottom = cardH → (1000 − 270 − (760 − 780))/1000 = 75 %.
+  expect(price.style.top).toBe('75%')
 })
 
 test('applyMagneticFlow : un prix DÉSANCRÉ (drag) reste un PLAFOND — les textes se coupent au-dessus, pas dessous', () => {
