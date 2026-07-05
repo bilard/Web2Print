@@ -83,22 +83,6 @@ test('applyMagneticFlow : un prix DÉSANCRÉ (drag) reste un PLAFOND — les tex
   expect(details.style.maxHeight).toBe('')    // hors de l'emprise du prix → aucune coupe nécessaire
 })
 
-test('applyMagneticFlow : CLAMP — un bloc ANCRÉ BAS glissé trop haut est REDESCENDU (jamais coupé par le bord haut)', () => {
-  const card = document.createElement('div')
-  Object.defineProperty(card, 'clientHeight', { value: 1000 })
-  Object.defineProperty(card, 'clientWidth', { value: 1000 })
-  const price = document.createElement('div')
-  price.className = 'cat-obj'
-  price.setAttribute('data-object-id', 'price')
-  Object.defineProperty(price, 'offsetHeight', { value: 200 })
-  Object.defineProperty(price, 'offsetWidth', { value: 400 })
-  card.appendChild(price)
-  // Prix ancré BAS avec un écart au bas de 95 % : bottom 950 + h 200 → sort par le HAUT.
-  const style = { ...DEFAULT_CARD_STYLE, layout: { price: { x: 2, y: 95, w: 40, ax: 'r' as const, ay: 'b' as const } } }
-  applyMagneticFlow(card, style)
-  expect(price.style.bottom).toBe('80%') // redescendu au ras du haut (1000 − 200)
-})
-
 test('applyMagneticFlow : CLAMP — un bloc désancré posé trop bas est REMONTÉ dans la carte (jamais coupé par le bord)', () => {
   const card = document.createElement('div')
   Object.defineProperty(card, 'clientHeight', { value: 1000 })

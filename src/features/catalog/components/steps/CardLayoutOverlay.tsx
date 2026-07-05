@@ -111,15 +111,11 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
     const by = ay0 === 'b'
       ? (r0 ? r1(100 - r0.top - r0.height) : b.y)
       : (b.ay ?? 't') !== 't' && r0 ? r1(r0.top) : b.y
-    // Bornes du glisser : un bloc ancré droite/bas garde son bloc ENTIER dans la
-    // carte (un écart au bord trop grand le ferait sortir par le côté opposé).
-    const maxX = ax0 === 'r' && r0 ? Math.max(0, r1(100 - r0.width)) : 100
-    const maxY = ay0 === 'b' && r0 ? Math.max(0, r1(100 - r0.height)) : 100
     const move = (ev: PointerEvent) => {
       const ddx = ((ev.clientX - sx) / w) * 100, ddy = ((ev.clientY - sy) / h) * 100
       onChange(id, { ...b, ax: ax0, ay: ay0,
-        x: clamp(r1(ax0 === 'r' ? bx - ddx : bx + ddx), 0, maxX),
-        y: clamp(r1(ay0 === 'b' ? by - ddy : by + ddy), 0, maxY) })
+        x: clamp(r1(ax0 === 'r' ? bx - ddx : bx + ddx), 0, 100),
+        y: clamp(r1(ay0 === 'b' ? by - ddy : by + ddy), 0, 100) })
     }
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); setTick((t) => t + 1) }
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
