@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { extractPromoFields } from '@/features/retail-promo/promoMapping'
+import { extractPromoFields, buildDetailLines } from '@/features/retail-promo/promoMapping'
 import { GRID_DIMS, type CatalogGrid, type ProductSlot } from '../../catalogTypes'
 import { pagePx, type CatalogRenderCtx } from './catalogCss'
 import { ProductCell, type CellSize } from './ProductCell'
@@ -71,16 +71,7 @@ export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
         // ET cartes standard des grilles denses (6-8/page, trop courtes pour empiler).
         const horizontal = slot.rowSpan === 1 && (slot.colSpan >= 2 || grid >= 6)
         const fields = extractPromoFields(row, ctx.columns, ctx.fieldMap, ctx.customFields)
-        // « Étiquette : valeur » — l'étiquette = nom du champ (label saisi, sinon nom de
-        // la colonne source), pour que des valeurs comme « 20 » aient un sens.
-        const details = [...new Set(ctx.customFields
-          .map((cf) => {
-            const v = fields.extra?.[cf.id]
-            if (!v || !v.trim()) return null
-            const lab = (cf.label || cf.column || '').trim()
-            return lab ? `${lab} : ${v.trim()}` : v.trim()
-          })
-          .filter((v): v is string => !!v))]  // dedup : un champ libre en double ne s'affiche qu'une fois
+        const details = buildDetailLines(ctx.customFields, fields)
         return (
           <ProductCell key={slot.rowId} fields={fields}
             featured={slot.featured} size={slotSize(slot, grid)} details={details}

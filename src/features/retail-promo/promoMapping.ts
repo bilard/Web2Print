@@ -144,3 +144,20 @@ export function extractPromoFields(
     extra,
   }
 }
+
+/**
+ * Lignes « Étiquette : valeur » des champs libres pour la zone « Détails » d'une
+ * fiche (étiquette = label saisi, sinon nom de colonne — pour que « 20 » ait un
+ * sens ; dédupliquées). Source UNIQUE partagée par le rendu des pages ET l'aperçu
+ * du style, sinon l'aperçu et le catalogue divergent.
+ */
+export function buildDetailLines(customFields: CustomFieldMap, fields: PromoFields): string[] {
+  return [...new Set(customFields
+    .map((cf) => {
+      const v = fields.extra?.[cf.id]
+      if (!v || !v.trim()) return null
+      const lab = (cf.label || cf.column || '').trim()
+      return lab ? `${lab} : ${v.trim()}` : v.trim()
+    })
+    .filter((v): v is string => !!v))]
+}

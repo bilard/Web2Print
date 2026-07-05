@@ -16,11 +16,17 @@ const SAMPLE_FIELDS: PromoFields = {
   lotQty: null, lotOffert: null, lotPrice: null, validFrom: null, validTo: null, mentions: '', enseigne: '', badges: [],
 }
 
+// Détails d'exemple : l'aperçu montre TOUJOURS la zone « Détails » (repli si aucun
+// champ libre défini), pour qu'on puisse la voir/la positionner en disposition libre.
+const SAMPLE_DETAILS = ['Avantages : Léger · Pliable · Résistant UV', 'Garantie : 2 ans', 'Matière : Aluminium']
+
 interface Props {
   theme: CatalogTheme
   cardStyle: CatalogCardStyle
   /** Fiche exemple (1er produit sélectionné) — repli sur une fiche factice. */
   fields?: PromoFields | null
+  /** Lignes du bloc « Détails » (champs libres) — pour que l'aperçu montre la même zone que le catalogue. */
+  details?: string[]
   /** Monte l'overlay de drag/resize (disposition libre) quand vrai. */
   editable?: boolean
   onLayoutChange?: (id: CardObjectId, box: CardBox) => void
@@ -28,8 +34,9 @@ interface Props {
   onSelect?: (id: CardObjectId | null) => void
 }
 
-export function CardStylePreview({ theme, cardStyle, fields, editable, onLayoutChange, onSelect }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, details, editable, onLayoutChange, onSelect }: Props) {
   const f = fields ?? SAMPLE_FIELDS
+  const d = details && details.length ? details : SAMPLE_DETAILS
   const cardRef = useRef<HTMLDivElement | null>(null)
   return (
     <div className="cat-page rounded-lg overflow-hidden shrink-0 border border-border relative shadow-2xl w-full max-w-[560px]"
@@ -38,14 +45,14 @@ export function CardStylePreview({ theme, cardStyle, fields, editable, onLayoutC
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 16, background: 'var(--cat-bg)' }}>
         {/* Variante VEDETTE : les réglages du ruban/cadre se voient en live ; support de l'overlay de disposition libre. */}
         <div ref={cardRef} className="cat-style-card-host" style={{ height: 560, display: 'grid', position: 'relative' }}>
-          <ProductCell fields={f} featured kicker="Sous-famille" size="md" cardStyle={cardStyle} />
+          <ProductCell fields={f} featured kicker="Sous-famille" size="md" details={d} cardStyle={cardStyle} />
           {editable && cardStyle.freeLayout && onLayoutChange && (
             <CardLayoutOverlay cardRef={cardRef} style={cardStyle} onChange={onLayoutChange} onSelect={onSelect} />
           )}
         </div>
         {/* Variante horizontale (grilles denses) : assez haute pour ne pas couper prix/réf. */}
         <div style={{ height: 300, display: 'grid' }}>
-          <ProductCell fields={f} featured={false} kicker="Sous-famille" size="md" horizontal cardStyle={cardStyle} />
+          <ProductCell fields={f} featured={false} kicker="Sous-famille" size="md" horizontal details={d} cardStyle={cardStyle} />
         </div>
       </div>
     </div>

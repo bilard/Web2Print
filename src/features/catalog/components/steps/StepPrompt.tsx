@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree, flattenTree } from '../../catalogTree'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
-import { extractPromoFields } from '@/features/retail-promo/promoMapping'
+import { extractPromoFields, buildDetailLines } from '@/features/retail-promo/promoMapping'
 import { DEFAULT_CARD_STYLE, type CardObjectId } from '../../catalogTypes'
 import { CardStyleCard } from './CardStyleCard'
 import { CardStylePreview } from './CardStylePreview'
@@ -26,6 +26,7 @@ export function StepPrompt() {
   const levelKeys = useCatalogStore((s) => s.levelKeys)
   const treeEdits = useCatalogStore((s) => s.treeEdits)
   const fieldMap = useCatalogStore((s) => s.fieldMap)
+  const customFields = useCatalogStore((s) => s.customFields)
   const setPrompt = useCatalogStore((s) => s.setPrompt)
   const setPlan = useCatalogStore((s) => s.setPlan)
   const setStep = useCatalogStore((s) => s.setStep)
@@ -43,10 +44,15 @@ export function StepPrompt() {
     [selectedRows, rawColumns, levelKeys, treeEdits],
   )
   const flatNodes = useMemo(() => flattenTree(tree), [tree])
-  // Fiche exemple pour l'aperçu live du style (1er produit sélectionné).
+  // Fiche exemple pour l'aperçu live du style (1er produit sélectionné) — AVEC les
+  // champs libres pour que l'aperçu montre la même zone « Détails » que le catalogue.
   const sampleFields = useMemo(
-    () => (selectedRows.length > 0 ? extractPromoFields(selectedRows[0], rawColumns, fieldMap) : null),
-    [selectedRows, rawColumns, fieldMap],
+    () => (selectedRows.length > 0 ? extractPromoFields(selectedRows[0], rawColumns, fieldMap, customFields) : null),
+    [selectedRows, rawColumns, fieldMap, customFields],
+  )
+  const sampleDetails = useMemo(
+    () => (sampleFields ? buildDetailLines(customFields, sampleFields) : []),
+    [customFields, sampleFields],
   )
 
   const generate = async () => {
@@ -117,7 +123,7 @@ export function StepPrompt() {
           {plan && (
             <div className="lg:sticky lg:top-0 w-full lg:w-[560px]">
               <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Aperçu de la fiche</div>
-              <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields}
+              <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails}
                 editable onLayoutChange={(id, box) => setPlan({ ...plan, cardStyle: { ...cardStyle, layout: { ...cardStyle.layout, [id]: box } } })}
                 onSelect={setSelectedObject} />
             </div>
