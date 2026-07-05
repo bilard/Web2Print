@@ -37,7 +37,7 @@ export function CardStylePreview({ theme, cardStyle, fields, editable, onLayoutC
       <style>{CATALOG_CSS}</style>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 16, background: 'var(--cat-bg)' }}>
         {/* Variante VEDETTE : les réglages du ruban/cadre se voient en live ; support de l'overlay de disposition libre. */}
-        <div ref={cardRef} style={{ height: 560, display: 'grid', position: 'relative' }}>
+        <div ref={cardRef} className="cat-style-card-host" style={{ height: 560, display: 'grid', position: 'relative' }}>
           <ProductCell fields={f} featured kicker="Sous-famille" size="md" cardStyle={cardStyle} />
           {editable && cardStyle.freeLayout && onLayoutChange && (
             <CardLayoutOverlay cardRef={cardRef} style={cardStyle} onChange={onLayoutChange} onSelect={onSelect} />
