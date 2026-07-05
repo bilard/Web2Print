@@ -333,19 +333,26 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     if (items.some((it) => it.id === id)) continue // chaîne : déjà bornée (plafonds)
     const b = freeLayoutBox(id, style)
     const linked = validLink.has(id)
-    const ay = linked ? 't' : (b.ay ?? 't')
-    if (ay !== 't') continue // ancré bas/centre : ne déborde pas du bas par construction
     const el = objOf(id)
     if (!el) continue
-    const h = el.offsetHeight * (b.sc ?? 1)
-    const topPx = linked ? el.offsetTop : (b.y / 100) * cardH
-    if (topPx + h > cardH) el.style.top = `${Math.round((Math.max(0, cardH - h) / cardH) * 1000) / 10}%`
-    else if (!linked) el.style.top = `${b.y}%` // reset idempotent d'un clamp précédent
+    const sc = b.sc ?? 1
+    const h = el.offsetHeight * sc
+    const ay = linked ? 't' : (b.ay ?? 't')
+    if (ay === 'b') {
+      // Ancré BAS : ne déborde jamais par le bas — mais un écart au bas (y) trop
+      // grand (bloc glissé vers le haut) le fait sortir par le HAUT : redescendu.
+      const maxY = Math.max(0, ((cardH - h) / cardH) * 100)
+      el.style.bottom = `${Math.round(Math.min(b.y, maxY) * 10) / 10}%`
+    } else if (ay === 't') {
+      const topPx = linked ? el.offsetTop : (b.y / 100) * cardH
+      if (topPx + h > cardH) el.style.top = `${Math.round((Math.max(0, cardH - h) / cardH) * 1000) / 10}%`
+      else if (!linked) el.style.top = `${b.y}%` // reset idempotent d'un clamp précédent
+    }
     // CLAMP HORIZONTAL : un bloc posé/désancré/lié dont le bord droit déborde la
     // carte est ramené à gauche (rien ne se coupe jamais au bord droit — ex. prix
     // désancré posé en % sur une carte plus étroite que l'aperçu). scrollWidth =
     // largeur du CONTENU réel (un badge prix agrandi déborde de sa boîte).
-    const wEff = Math.max(el.offsetWidth, el.scrollWidth) * (b.sc ?? 1)
+    const wEff = Math.max(el.offsetWidth, el.scrollWidth) * sc
     if ((linked || (b.ax ?? 'l') === 'l') && el.offsetLeft + wEff > cardW) {
       el.style.left = `${Math.round((Math.max(0, cardW - wEff) / cardW) * 1000) / 10}%`
     }
