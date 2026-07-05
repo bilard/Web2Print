@@ -73,14 +73,14 @@ export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
         const fields = extractPromoFields(row, ctx.columns, ctx.fieldMap, ctx.customFields)
         // « Étiquette : valeur » — l'étiquette = nom du champ (label saisi, sinon nom de
         // la colonne source), pour que des valeurs comme « 20 » aient un sens.
-        const details = ctx.customFields
+        const details = [...new Set(ctx.customFields
           .map((cf) => {
             const v = fields.extra?.[cf.id]
             if (!v || !v.trim()) return null
             const lab = (cf.label || cf.column || '').trim()
             return lab ? `${lab} : ${v.trim()}` : v.trim()
           })
-          .filter((v): v is string => !!v)
+          .filter((v): v is string => !!v))]  // dedup : un champ libre en double ne s'affiche qu'une fois
         return (
           <ProductCell key={slot.rowId} fields={fields}
             featured={slot.featured} size={slotSize(slot, grid)} details={details}
