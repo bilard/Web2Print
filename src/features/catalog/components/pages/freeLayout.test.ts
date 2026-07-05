@@ -29,20 +29,21 @@ test('applyMagneticFlow : un bloc volumineux POUSSE vers le bas ceux qui le chev
     card.appendChild(el)
     return el
   }
-  // description (y58, w92) très volumineuse : 250px — mais le prix ANCRÉ BAS est
-  // un PLAFOND (top 900, plafond 894) et réf+détails réservent leur place :
-  // l'excédent de la description se COUPE (maxHeight), rien ne se superpose.
+  // description (y58, w92) très volumineuse : 250px → pousse les détails à 836.
+  // Le prix ANCRÉ BAS est un PLAFOND (top 900, plafond 894) : la description
+  // (clippable, réserve réf 26) tient (288 dispo) ; les DÉTAILS se coupent à
+  // 32px (894 − 836 − 26) ; la réf (mono-ligne, jamais coupée) garde sa ligne.
   const desc = mk('description', 250)
-  const details = mk('details', 60) // collé sous la description coupée
+  const details = mk('details', 60)
   const ref = mk('ref', 20)         // hors de l'emprise du prix ([5,50] vs [58,98])
   const price = mk('price', 80)     // ancré bas-droite : obstacle, pas aimanté
   const style = { ...DEFAULT_CARD_STYLE, layout: {} }
   applyMagneticFlow(card, style)
   expect(parseFloat(desc.style.top)).toBeCloseTo(58, 0)
-  expect(desc.style.maxHeight).toBe('222px')                 // 894 − 580 − (60+6) − (20+6)
-  expect(parseFloat(details.style.top)).toBeCloseTo(80.8, 0) // 580+222+6 = 808px
-  expect(details.style.maxHeight).toBe('')                   // sa réserve l'a préservé entier
-  expect(parseFloat(ref.style.top)).toBeCloseTo(87.4, 0)     // 808+60+6 = 874px
+  expect(desc.style.maxHeight).toBe('')                      // 250 < 288 : intacte
+  expect(parseFloat(details.style.top)).toBeCloseTo(83.6, 0) // 580+250+6 = 836px
+  expect(details.style.maxHeight).toBe('32px')               // coupés au plafond − réserve réf
+  expect(parseFloat(ref.style.top)).toBeCloseTo(87.4, 0)     // 836+32+6 = 874px (au-dessus du prix)
   expect(price.style.top).toBe('') // le prix (ancré bas) n'est pas déplacé
 })
 

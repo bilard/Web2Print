@@ -45,6 +45,9 @@ export const FLOW_CHAIN: CardObjectId[] = ['brand', 'name', 'description', 'deta
 /** Écart (px) entre deux blocs aimantés (collés à cette distance). */
 const MAGNET_GAP = 6
 
+/** Blocs « pavés » CLIPPABLES quand la place manque — jamais les mono-lignes. */
+const CLIP_CHAIN: Set<CardObjectId> = new Set(['description', 'details'])
+
 /**
  * Applique l'aimantation sur une carte RENDUE (aperçu, pages du catalogue et
  * export partagent ce même calcul → résultat identique partout). Réinitialise
@@ -141,21 +144,25 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     }
     const top = snap ?? (it.box.y / 100) * cardH
     it.el.style.top = `${Math.round((top / cardH) * 1000) / 10}%`
-    // RÉSERVE : place des blocs aimantés SUIVANTS de la chaîne qui le chevauchent
-    // (réf/unité gardent leur ligne même quand les détails sont volumineux), puis
-    // PLAFOND (obstacles/bas de carte) : l'excédent se coupe, ne se superpose pas.
+    // Quand la place manque (carte plus courte que l'aperçu), SEULS les pavés
+    // CLIPPABLES (description, détails) se coupent — jamais les mono-lignes
+    // (marque, nom, réf) qui doivent rester lisibles. Le pavé garde une RÉSERVE
+    // pour les blocs NON clippables aimantés qui le suivent (réf garde sa ligne),
+    // puis se coupe au PLAFOND (obstacles / bas de carte).
     let hEff = it.el.offsetHeight
-    let reserve = 0
-    for (let j = i + 1; j < items.length; j++) {
-      if (!isMagnetized(items[j].box, style)) continue
-      const [jx1, jx2] = spanOf(items[j])
-      if (x1 < jx2 && jx1 < x2) reserve += items[j].el.offsetHeight + MAGNET_GAP
-    }
-    const maxH = ceilingFor(x1, x2, top) - top - reserve
-    if (hEff > maxH) {
-      hEff = Math.max(0, Math.floor(maxH))
-      it.el.style.maxHeight = `${hEff}px`
-      it.el.style.overflow = 'hidden'
+    if (CLIP_CHAIN.has(it.id)) {
+      let reserve = 0
+      for (let j = i + 1; j < items.length; j++) {
+        if (CLIP_CHAIN.has(items[j].id) || !isMagnetized(items[j].box, style)) continue
+        const [jx1, jx2] = spanOf(items[j])
+        if (x1 < jx2 && jx1 < x2) reserve += items[j].el.offsetHeight + MAGNET_GAP
+      }
+      const maxH = ceilingFor(x1, x2, top) - top - reserve
+      if (hEff > maxH) {
+        hEff = Math.max(0, Math.floor(maxH))
+        it.el.style.maxHeight = `${hEff}px`
+        it.el.style.overflow = 'hidden'
+      }
     }
     placed.push({ x1, x2, bottom: top + hEff })
   }
