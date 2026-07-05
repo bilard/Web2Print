@@ -24,7 +24,11 @@ export function useCatalogPages(): CatalogPagesResult {
   return useMemo(() => {
     if (s.rawRows.length === 0) return { pages: [], ctx: null, keys: [], tree: [] }
     const selected = new Set(s.selectedRowIds)
-    const rows = s.rawRows.filter((r) => selected.has(r._id))
+    // Corrections « publication » (édition double-clic) appliquées PAR-DESSUS la
+    // source : le rendu, l'export et l'arbre voient les valeurs corrigées.
+    const rows = s.rawRows
+      .filter((r) => selected.has(r._id))
+      .map((r) => (s.rowOverrides[r._id] ? { ...r, ...s.rowOverrides[r._id] } : r))
     const tree = buildCatalogTree(rows, s.rawColumns, s.levelKeys, s.treeEdits)
     const plan = s.plan ?? defaultCatalogPlan(tree, s.name)
     // Prix de vente par ligne → sizing des fiches (plan.sizeByPrice, actif par défaut) ;
@@ -56,5 +60,5 @@ export function useCatalogPages(): CatalogPagesResult {
       universeColors: universeColors(pages, plan.sections),
     }
     return { pages, ctx, keys, tree }
-  }, [s.rawRows, s.rawColumns, s.selectedRowIds, s.levelKeys, s.treeEdits, s.plan, s.format, s.fieldMap, s.customFields, s.name, s.coverImageUrl, s.backCoverImageUrl, s.pageOrder])
+  }, [s.rawRows, s.rawColumns, s.selectedRowIds, s.levelKeys, s.treeEdits, s.plan, s.format, s.fieldMap, s.customFields, s.name, s.coverImageUrl, s.backCoverImageUrl, s.pageOrder, s.rowOverrides])
 }

@@ -64,10 +64,12 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
         const b2 = freeLayoutBox(cur, style)
         if (b2.link === sel) {
           const r = rectOf(cur)
-          onChange(cur, { ...b2, link: undefined, lx: undefined, ly: undefined, ...(r ? { x: r1(r.left), y: r1(r.top) } : {}) })
+          // link:null (pas undefined) : la clé doit SURVIVRE à stripUndefined pour
+          // masquer un lien par défaut (unité→réf) au rechargement.
+          onChange(cur, { ...b2, link: null, lx: 0, ly: 0, ...(r ? { x: r1(r.left), y: r1(r.top) } : {}) })
           break
         }
-        cur = b2.link
+        cur = b2.link ?? undefined
       }
       onChange(sel, { ...freeLayoutBox(sel, style), link: id, lx: 0, ly: 0, ax: 'l', ay: 't' })
       setLinking(false)
@@ -183,9 +185,10 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
             onClick={() => {
               const b = freeLayoutBox(sel, style)
               if (b.link) {
-                // Délier SANS faire sauter le bloc : sa position visuelle devient sa position posée.
+                // Délier SANS faire sauter le bloc : sa position visuelle devient sa
+                // position posée. link:null (persistant) masque le lien par défaut.
                 const r = rectOf(sel)
-                onChange(sel, { ...b, link: undefined, lx: undefined, ly: undefined, ...(r ? { x: r1(r.left), y: r1(r.top) } : {}) })
+                onChange(sel, { ...b, link: null, lx: 0, ly: 0, ...(r ? { x: r1(r.left), y: r1(r.top) } : {}) })
               } else setLinking((v) => !v)
             }}
             title={freeLayoutBox(sel, style).link

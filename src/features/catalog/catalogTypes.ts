@@ -72,9 +72,12 @@ export const CARD_OBJECT_IDS: CardObjectId[] = [
  *  l'objet reste collé à son bord sur TOUTES les tailles de carte. */
 /** `link` = LIAISON entre blocs : collé à DROITE du bloc cible (aligné en haut),
  *  il le suit dans tous ses déplacements (ex. unité soudée à la réf).
+ *  ⚠ « Délié » se stocke `link: null`, JAMAIS undefined : stripUndefined retire la
+ *  clé à la sauvegarde Firestore et le lien PAR DÉFAUT (unité→réf) reviendrait au
+ *  rechargement — c'était la source des cycles réf↔unité fantômes.
  *  `lx`/`ly` = décalage (%) par rapport au point de soudure — le glisser d'un bloc
  *  lié ajuste ce décalage SANS rompre la liaison. */
-export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b'; link?: CardObjectId; lx?: number; ly?: number }
+export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b'; link?: CardObjectId | null; lx?: number; ly?: number }
 
 /**
  * Style COSMÉTIQUE des fiches : réglages bornés appliqués en variables CSS
@@ -286,4 +289,7 @@ export interface CatalogDoc {
   backCoverImageUrl: string | null
   /** Ordre manuel des pages (clés stables du chemin de fer, cf. catalogFlatplan). Vide = ordre du moteur. */
   pageOrder: string[]
+  /** Corrections produit propres à CE catalogue (édition double-clic, sauvegarde
+   *  « publication ») : rowId → { colonne → valeur }. Absent sur les anciens docs. */
+  rowOverrides?: Record<string, Record<string, string>>
 }

@@ -1,7 +1,19 @@
 // @vitest-environment jsdom
 import { test, expect } from 'vitest'
 import { CARD_OBJECT_IDS, DEFAULT_CARD_STYLE } from '../../catalogTypes'
-import { applyMagneticFlow, freeLayoutBox, FREE_DEFAULT_LAYOUT } from './freeLayout'
+import { applyMagneticFlow, freeLayoutBox, normalizeCardLinks, FREE_DEFAULT_LAYOUT } from './freeLayout'
+
+test('normalizeCardLinks : un override ref→unit + le lien PAR DÉFAUT unit→ref = cycle → le lien retour est posé à null (persistant)', () => {
+  // Défauts : unit.link='ref'. Override : ref.link='unit' → cycle effectif.
+  const style = { ...DEFAULT_CARD_STYLE, layout: { ref: { x: 5, y: 90, link: 'unit' as const } } }
+  const norm = normalizeCardLinks(style)
+  expect(norm).not.toBe(style)
+  expect(freeLayoutBox('ref', norm).link).toBe('unit')  // premier lien déclaré (ordre CARD_OBJECT_IDS) : gagne
+  expect(freeLayoutBox('unit', norm).link).toBeNull()   // lien retour ANNULÉ — null survit à stripUndefined
+  // Idempotent : un style déjà propre est retourné TEL QUEL (pas de re-render inutile).
+  expect(normalizeCardLinks(norm)).toBe(norm)
+  expect(normalizeCardLinks(DEFAULT_CARD_STYLE)).toBe(DEFAULT_CARD_STYLE)
+})
 
 test('FREE_DEFAULT_LAYOUT couvre tous les objets', () => {
   for (const id of CARD_OBJECT_IDS) expect(FREE_DEFAULT_LAYOUT[id]).toBeDefined()
@@ -30,9 +42,10 @@ test('applyMagneticFlow : un bloc volumineux POUSSE vers le bas ceux qui le chev
     return el
   }
   // description (y58, w92) très volumineuse : 250px → pousse les détails à 836.
-  // Le prix ANCRÉ BAS est un PLAFOND (top 900, plafond 894) : la description
-  // (clippable, réserve réf 26) tient (288 dispo) ; les DÉTAILS se coupent à
-  // 32px (894 − 836 − 26) ; la réf (mono-ligne, jamais coupée) garde sa ligne.
+  // Le prix ANCRÉ BAS ([58,98], top 900) est un PLAFOND : la description tient
+  // (288 dispo avec la réserve réf) ; les DÉTAILS dépasseraient → ils sont
+  // RÉTRÉCIS à gauche du prix (le texte se réécoule, aucune coupe) ; la réf
+  // (mono-ligne, jamais coupée) garde sa ligne.
   const desc = mk('description', 250)
   const details = mk('details', 60)
   const ref = mk('ref', 20)         // hors de l'emprise du prix ([5,50] vs [58,98])
@@ -42,8 +55,9 @@ test('applyMagneticFlow : un bloc volumineux POUSSE vers le bas ceux qui le chev
   expect(parseFloat(desc.style.top)).toBeCloseTo(58, 0)
   expect(desc.style.maxHeight).toBe('')                      // 250 < 288 : intacte
   expect(parseFloat(details.style.top)).toBeCloseTo(83.6, 0) // 580+250+6 = 836px
-  expect(details.style.maxHeight).toBe('32px')               // coupés au plafond − réserve réf
-  expect(parseFloat(ref.style.top)).toBeCloseTo(87.4, 0)     // 836+32+6 = 874px (au-dessus du prix)
+  expect(details.style.width).toBe('51.5%')                  // rétrécis à gauche du prix (58−1,5−5)
+  expect(details.style.maxHeight).toBe('')                   // hors de l'emprise → plus de coupe
+  expect(parseFloat(ref.style.top)).toBeCloseTo(90.2, 0)     // 836+60+6 = 902px
   expect(price.style.top).toBe('') // le prix (ancré bas) n'est pas déplacé
 })
 
@@ -61,11 +75,12 @@ test('applyMagneticFlow : un prix DÉSANCRÉ (drag) reste un PLAFOND — les tex
     return el
   }
   const details = mk('details', 300) // y68 (680), volumineux : descendrait à 980
-  mk('price', 150)                   // désancré à y75 (750) → plafond 744
+  mk('price', 150)                   // désancré à y75 (750), boîte [55,95] → plafond 744
   const style = { ...DEFAULT_CARD_STYLE, layout: { price: { x: 55, y: 75, w: 40, ax: 'l' as const, ay: 't' as const } } }
   applyMagneticFlow(card, style)
   expect(parseFloat(details.style.top)).toBeCloseTo(68, 0)
-  expect(details.style.maxHeight).toBe('64px') // 744 − 680 : coupé AU-DESSUS du prix
+  expect(details.style.width).toBe('48.5%')   // RÉTRÉCIS à gauche du prix (55−1,5−5) : le texte se réécoule
+  expect(details.style.maxHeight).toBe('')    // hors de l'emprise du prix → aucune coupe nécessaire
 })
 
 test('applyMagneticFlow : CLAMP — un bloc désancré posé trop bas est REMONTÉ dans la carte (jamais coupé par le bord)', () => {

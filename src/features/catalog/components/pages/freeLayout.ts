@@ -124,13 +124,15 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     it.el.style.top = `${it.box.y}%` // repart du configuré (mesures stables)
     it.el.style.maxHeight = ''
     it.el.style.overflow = ''
+    it.el.style.width = it.box.w != null ? `${it.box.w}%` : '' // annule un rétrécissement précédent
   }
   const spanOf = (it: { el: HTMLElement; box: CardBox }): [number, number] =>
     [it.box.x, it.box.x + (it.box.w ?? (it.el.offsetWidth / cardW) * 100)]
   const placed: { x1: number; x2: number; bottom: number }[] = []
   for (let i = 0; i < items.length; i++) {
     const it = items[i]
-    const [x1, x2] = spanOf(it)
+    const [x1] = spanOf(it)
+    let [, x2] = spanOf(it)
     // COLLÉ (aimant dans les deux sens) au bloc du dessus qui le chevauche
     // horizontalement : contenu court = l'enfant REMONTE (pas de trou), contenu
     // long = l'enfant est POUSSÉ (pas de superposition). Réglage PAR BLOC :
@@ -145,10 +147,13 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     const top = snap ?? (it.box.y / 100) * cardH
     it.el.style.top = `${Math.round((top / cardH) * 1000) / 10}%`
     // Quand la place manque (carte plus courte que l'aperçu), SEULS les pavés
-    // CLIPPABLES (description, détails) se coupent — jamais les mono-lignes
-    // (marque, nom, réf) qui doivent rester lisibles. Le pavé garde une RÉSERVE
-    // pour les blocs NON clippables aimantés qui le suivent (réf garde sa ligne),
-    // puis se coupe au PLAFOND (obstacles / bas de carte).
+    // CLIPPABLES (description, détails) s'adaptent — jamais les mono-lignes
+    // (marque, nom, réf) qui doivent rester lisibles. Adaptation en 2 temps :
+    // 1) RÉTRÉCIR : si l'obstacle (prix) ne barre que la droite du pavé, la boîte
+    //    se réduit à sa gauche et le texte se RÉÉCOULE (pas de coupe, pas de vide) ;
+    // 2) COUPER À LA LIGNE : sinon maxHeight arrondi à la ligne entière (jamais de
+    //    demi-ligne « masquée par un bloc blanc »), avec RÉSERVE pour que les
+    //    mono-lignes aimantées suivantes (réf) gardent leur place dans la carte.
     let hEff = it.el.offsetHeight
     if (CLIP_CHAIN.has(it.id)) {
       let reserve = 0
@@ -157,9 +162,31 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
         const [jx1, jx2] = spanOf(items[j])
         if (x1 < jx2 && jx1 < x2) reserve += items[j].el.offsetHeight + MAGNET_GAP
       }
-      const maxH = ceilingFor(x1, x2, top) - top - reserve
+      let ceil = ceilingFor(x1, x2, top)
+      if (top + hEff + reserve > ceil) {
+        const blockers = obstacles.filter((o) => o.top > top && o.top < cardH && x1 < o.x2 && o.x1 < x2)
+        const leftmost = Math.min(...blockers.map((o) => o.x1))
+        const newW = Math.round((leftmost - 1.5 - x1) * 10) / 10
+        if (blockers.length > 0 && newW >= (x2 - x1) * 0.45) {
+          it.el.style.width = `${newW}%`
+          x2 = x1 + newW
+          hEff = it.el.offsetHeight // reflow synchrone : le texte vient de se réécouler
+          ceil = ceilingFor(x1, x2, top)
+        }
+      }
+      const maxH = ceil - top - reserve
       if (hEff > maxH) {
         hEff = Math.max(0, Math.floor(maxH))
+        const inner = it.el.firstElementChild
+        if (inner instanceof HTMLElement) {
+          const cs = getComputedStyle(inner)
+          const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.35
+          const padV = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0)
+          if (Number.isFinite(lh) && lh > 0) {
+            const lines = Math.floor((hEff - padV) / lh)
+            hEff = lines >= 1 ? Math.round(lines * lh + padV) : 0
+          }
+        }
         it.el.style.maxHeight = `${hEff}px`
         it.el.style.overflow = 'hidden'
       }
@@ -222,6 +249,30 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     if (topPx + h > cardH) el.style.top = `${Math.round((Math.max(0, cardH - h) / cardH) * 1000) / 10}%`
     else if (!linked) el.style.top = `${b.y}%` // reset idempotent d'un clamp précédent
   }
+}
+
+/**
+ * Purge les CYCLES de liaison au niveau de la DONNÉE (défauts fusionnés compris —
+ * un override `ref→unit` forme un cycle avec le lien PAR DÉFAUT `unit→ref`) : le
+ * premier lien déclaré (ordre CARD_OBJECT_IDS) gagne, le lien retour est posé à
+ * `null` (persistant après stripUndefined). Appelée à CHAQUE setPlan (store) —
+ * l'UI et le moteur ne voient jamais d'état incohérent.
+ */
+export function normalizeCardLinks(style: CatalogCardStyle): CatalogCardStyle {
+  const valid = new Map<CardObjectId, CardObjectId>()
+  const losers: CardObjectId[] = []
+  for (const id of CARD_OBJECT_IDS) {
+    const t = freeLayoutBox(id, style).link
+    if (!t || t === id) continue
+    let cur: CardObjectId | null | undefined = t
+    while (cur && cur !== id) cur = valid.get(cur)
+    if (cur === id) losers.push(id)
+    else valid.set(id, t)
+  }
+  if (losers.length === 0) return style
+  const layout = { ...style.layout }
+  for (const id of losers) layout[id] = { ...freeLayoutBox(id, style), link: null, lx: 0, ly: 0 }
+  return { ...style, layout }
 }
 
 /** Position VISUELLE (%) d'un objet dans la carte d'aperçu (.cat-style-card-host) —

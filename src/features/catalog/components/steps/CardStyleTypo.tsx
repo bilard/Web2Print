@@ -67,19 +67,20 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
       // liaison : on coupe le lien qui reboucle (un cycle rendrait les positions
       // instables — chaque bloc se souderait à droite de l'autre).
       const seen = new Set<CardObjectId>()
-      let cur: CardObjectId | undefined = target as CardObjectId
+      let cur: CardObjectId | null | undefined = target as CardObjectId
       while (cur && !seen.has(cur)) {
         seen.add(cur)
         const b = freeLayoutBox(cur, style)
         if (b.link === obj) {
-          layout[cur] = { ...b, link: undefined, lx: undefined, ly: undefined, ...(visualPos(cur) ?? {}) }
+          // link:null (persistant après stripUndefined) : masque un lien PAR DÉFAUT.
+          layout[cur] = { ...b, link: null, lx: 0, ly: 0, ...(visualPos(cur) ?? {}) }
           break
         }
         cur = b.link
       }
       layout[obj] = { ...base, link: target as CardObjectId, lx: 0, ly: 0 } // soudure fraîche
     } else {
-      layout[obj] = { ...base, link: undefined, lx: undefined, ly: undefined, ...(visualPos(obj) ?? {}) } // délié SANS saut
+      layout[obj] = { ...base, link: null, lx: 0, ly: 0, ...(visualPos(obj) ?? {}) } // délié SANS saut
     }
     patch({ layout })
   }

@@ -68,7 +68,8 @@ export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
           return (
             <div key={slot.rowId} style={{ ...style, position: 'relative' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: `calc(100%/${s})`, height: `calc(100%/${s})`, transform: `scale(${s})`, transformOrigin: 'top left', display: 'grid' }}>
-                <ProductCell fields={fields} featured={slot.featured} details={details} cardStyle={ctx.plan.cardStyle} />
+                <ProductCell fields={fields} featured={slot.featured} details={details} cardStyle={ctx.plan.cardStyle}
+                  onEdit={ctx.onEditRow ? () => ctx.onEditRow?.(slot.rowId) : undefined} />
               </div>
             </div>
           )
@@ -76,7 +77,8 @@ export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
         return (
           <ProductCell key={slot.rowId} fields={fields}
             featured={slot.featured} details={details}
-            cardStyle={ctx.plan.cardStyle} style={style} />
+            cardStyle={ctx.plan.cardStyle} style={style}
+            onEdit={ctx.onEditRow ? () => ctx.onEditRow?.(slot.rowId) : undefined} />
         )
       })}
     </div>

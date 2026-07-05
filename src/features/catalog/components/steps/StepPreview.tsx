@@ -11,6 +11,7 @@ import { CatalogPageView } from '../pages/CatalogPageView'
 import { pagePx } from '../pages/catalogCss'
 import { PreviewPageTree } from './PreviewPageTree'
 import { PageOptionsPanel } from './PageOptionsPanel'
+import { ProductEditPanel } from './ProductEditPanel'
 
 export function StepPreview() {
   const setStep = useCatalogStore((s) => s.setStep)
@@ -20,6 +21,8 @@ export function StepPreview() {
   const { pages, ctx } = useCatalogPages()
   const [index, setIndex] = useState(0)
   const [showOptions, setShowOptions] = useState(true)
+  // Double-clic sur une fiche → édition de la data produit (publication ou master).
+  const [editRowId, setEditRowId] = useState<string | null>(null)
 
   // Arrivée depuis le chemin de fer : ouvrir directement la page demandée (one-shot).
   useEffect(() => {
@@ -116,12 +119,13 @@ export function StepPreview() {
           <div className="m-auto p-3 w-fit">
             <div style={{ width: w * k, height: h * k, overflow: 'hidden' }}>
               <div style={{ width: w, height: h, transform: `scale(${k})`, transformOrigin: 'top left' }}>
-                <CatalogPageView page={currentPage} ctx={ctx} />
+                <CatalogPageView page={currentPage} ctx={{ ...ctx, onEditRow: setEditRowId }} />
               </div>
             </div>
           </div>
         </div>
       </div>
+      {editRowId && <ProductEditPanel rowId={editRowId} onClose={() => setEditRowId(null)} />}
       {/* Options à droite (pattern app) : édition du fond de la page AFFICHÉE, mise à jour live */}
       {showOptions && (
         <PageOptionsPanel page={currentPage} plan={ctx.plan} setPlan={setPlan}

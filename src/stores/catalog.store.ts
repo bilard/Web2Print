@@ -4,8 +4,23 @@ import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey, CustomFieldMap } from '@/features/retail-promo/promoTypes'
 import { defaultPromoFieldMap } from '@/features/retail-promo/promoMapping'
 import type { CatalogDensity, CatalogDoc, CatalogFormat, CatalogPlan, LevelKeys, TreeEdits } from '@/features/catalog/catalogTypes'
-import { CATALOG_FORMAT_PRESETS } from '@/features/catalog/catalogTypes'
+import { CATALOG_FORMAT_PRESETS, DEFAULT_CARD_STYLE } from '@/features/catalog/catalogTypes'
+import { normalizeCardLinks } from '@/features/catalog/components/pages/freeLayout'
 import { EMPTY_TREE_EDITS } from '@/features/catalog/catalogTree'
+
+/** Corrections d'une ligne produit propres à CE catalogue (publication) :
+ *  rowId → { colonne → valeur }. Appliquées par-dessus la source au rendu. */
+type CatalogRowOverrides = Record<string, Record<string, string>>
+
+/** Garde-fou systémique : tout plan écrit dans le store passe par la purge des
+ *  cycles de liaison (un override ref→unit + le lien PAR DÉFAUT unit→ref rendait
+ *  les positions instables et l'UI incohérente). */
+function withNormalizedLinks(plan: CatalogPlan | null): CatalogPlan | null {
+  if (!plan?.cardStyle) return plan
+  const cs = { ...DEFAULT_CARD_STYLE, ...plan.cardStyle }
+  const norm = normalizeCardLinks(cs)
+  return norm === cs ? plan : { ...plan, cardStyle: { ...plan.cardStyle, layout: norm.layout } }
+}
 
 export type CatalogStep = 'source' | 'structure' | 'prompt' | 'flatplan' | 'preview' | 'export'
 
@@ -29,6 +44,8 @@ interface CatalogState {
   backCoverImageUrl: string | null
   /** Ordre manuel des pages du chemin de fer (clés stables, vide = ordre moteur). */
   pageOrder: string[]
+  /** Corrections produit propres à CE catalogue (sauvegarde « publication »). */
+  rowOverrides: CatalogRowOverrides
   /** Index de page à ouvrir en arrivant sur l'étape Aperçu (transient, non persisté). */
   previewIndex: number | null
 
@@ -61,6 +78,11 @@ interface CatalogState {
   setBackCoverImageUrl: (url: string | null) => void
   setPageOrder: (order: string[]) => void
   setPreviewIndex: (index: number | null) => void
+  /** Pose/retire les corrections publication d'une ligne ('' ou null = champ rendu à la source). */
+  setRowOverride: (rowId: string, patch: Record<string, string | null>) => void
+  clearRowOverride: (rowId: string) => void
+  /** Répercute une sauvegarde MASTER dans les lignes chargées (sans re-fetch). */
+  applyMasterPatch: (rowId: string, patch: Record<string, string>) => void
   reset: () => void
 }
 
@@ -83,6 +105,7 @@ const defaultState = {
   coverImageUrl: null as string | null,
   backCoverImageUrl: null as string | null,
   pageOrder: [] as string[],
+  rowOverrides: {} as CatalogRowOverrides,
   previewIndex: null as number | null,
 }
 
@@ -116,7 +139,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     levelKeys: doc.levelKeys, treeEdits: doc.treeEdits, prompt: doc.prompt, plan: doc.plan,
     fieldMap: doc.fieldMap, fieldMapOverrides: doc.fieldMapOverrides, customFields: doc.customFields,
     format: doc.format, coverImageUrl: doc.coverImageUrl, backCoverImageUrl: doc.backCoverImageUrl,
-    pageOrder: doc.pageOrder, previewIndex: null,
+    pageOrder: doc.pageOrder, rowOverrides: doc.rowOverrides ?? {}, previewIndex: null,
     // Purge la session précédente (autre catalogue) : rawRows/rawColumns sont
     // rechargés depuis sourceRef par CatalogBuilderPage (garde rawRows.length===0).
     rawRows: [], rawColumns: [],
@@ -128,7 +151,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
       levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
       fieldMap: s.fieldMap, fieldMapOverrides: s.fieldMapOverrides, customFields: s.customFields,
       format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
-      pageOrder: s.pageOrder,
+      pageOrder: s.pageOrder, rowOverrides: s.rowOverrides,
     }
   },
   setStep: (step) => set({ step }),
@@ -138,7 +161,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   setLevelKeys: (levelKeys) => set({ levelKeys }),
   setTreeEdits: (patch) => set((s) => ({ treeEdits: { ...s.treeEdits, ...patch } })),
   setPrompt: (prompt) => set({ prompt }),
-  setPlan: (plan) => set({ plan }),
+  setPlan: (plan) => set({ plan: withNormalizedLinks(plan) }),
   setSectionDensity: (nodeId, density) => set((s) => {
     if (!s.plan) return {}
     const sections = upsertSection(s.plan.sections, nodeId).map((x) => x.nodeId === nodeId
@@ -181,6 +204,25 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   setBackCoverImageUrl: (backCoverImageUrl) => set({ backCoverImageUrl }),
   setPageOrder: (pageOrder) => set({ pageOrder }),
   setPreviewIndex: (previewIndex) => set({ previewIndex }),
+  setRowOverride: (rowId, patch) => set((s) => {
+    const cur = { ...(s.rowOverrides[rowId] ?? {}) }
+    for (const [k, v] of Object.entries(patch)) {
+      if (v == null || v === '') delete cur[k]
+      else cur[k] = v
+    }
+    const rowOverrides = { ...s.rowOverrides }
+    if (Object.keys(cur).length) rowOverrides[rowId] = cur
+    else delete rowOverrides[rowId]
+    return { rowOverrides }
+  }),
+  clearRowOverride: (rowId) => set((s) => {
+    const rowOverrides = { ...s.rowOverrides }
+    delete rowOverrides[rowId]
+    return { rowOverrides }
+  }),
+  applyMasterPatch: (rowId, patch) => set((s) => ({
+    rawRows: s.rawRows.map((r) => (r._id === rowId ? { ...r, ...patch } : r)),
+  })),
   reset: () => set(defaultState),
 }), {
   name: 'catalog-builder-session',
@@ -191,6 +233,6 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
     fieldMap: s.fieldMap, fieldMapOverrides: s.fieldMapOverrides, customFields: s.customFields,
     format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
-    pageOrder: s.pageOrder,
+    pageOrder: s.pageOrder, rowOverrides: s.rowOverrides,
   }),
 }))

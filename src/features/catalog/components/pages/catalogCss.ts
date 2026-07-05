@@ -49,6 +49,8 @@ export interface CatalogRenderCtx {
   backCoverImageUrl: string | null
   /** univers → couleur cyclique (palette du chemin de fer) — utilisé si pageStyle.chapterColors. */
   universeColors?: Map<string, string>
+  /** Double-clic sur une fiche produit → édition de la data (Aperçu seulement ; absent à l'export). */
+  onEditRow?: (rowId: string) => void
 }
 
 /** Charge une fois les polices Google (nécessaire aussi pour html2canvas). */

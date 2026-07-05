@@ -23,6 +23,7 @@ export function StepPrompt() {
   const prompt = useCatalogStore((s) => s.prompt)
   const plan = useCatalogStore((s) => s.plan)
   const rawRows = useCatalogStore((s) => s.rawRows)
+  const rowOverrides = useCatalogStore((s) => s.rowOverrides)
   const rawColumns = useCatalogStore((s) => s.rawColumns)
   const selectedRowIds = useCatalogStore((s) => s.selectedRowIds)
   const levelKeys = useCatalogStore((s) => s.levelKeys)
@@ -40,7 +41,11 @@ export function StepPrompt() {
   const [previewRowId, setPreviewRowId] = useState<string | null>(null)
   const [previewFeatured, setPreviewFeatured] = useState(false)
 
-  const rowsById = useMemo(() => new Map(rawRows.map((r) => [r._id, r])), [rawRows])
+  // Corrections « publication » appliquées aussi à l'aperçu de fiche (cohérence avec les pages).
+  const rowsById = useMemo(
+    () => new Map(rawRows.map((r) => [r._id, rowOverrides[r._id] ? { ...r, ...rowOverrides[r._id] } : r])),
+    [rawRows, rowOverrides],
+  )
   const selectedRows = useMemo(() => {
     const ids = new Set(selectedRowIds)
     return rawRows.filter((r) => ids.has(r._id))

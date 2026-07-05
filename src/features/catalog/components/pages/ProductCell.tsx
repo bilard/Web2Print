@@ -25,9 +25,11 @@ interface Props {
   cardStyle?: CatalogCardStyle
   /** Placement CSS grid (gridColumn/gridRow) calculé par le moteur. */
   style?: CSSProperties
+  /** Double-clic sur la fiche → édition de la data produit (Aperçu du catalogue). */
+  onEdit?: () => void
 }
 
-export function ProductCell({ fields: f, featured, kicker, details, cardStyle, style }: Props) {
+export function ProductCell({ fields: f, featured, kicker, details, cardStyle, style, onEdit }: Props) {
   // Résolution Drive/CORS → blob:/data: (voir useResolvedImage). `data-resolving` est
   // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
   // avant capture html2canvas (l'<img> n'existe pas tant que src n'est pas prêt).
@@ -91,7 +93,9 @@ export function ProductCell({ fields: f, featured, kicker, details, cardStyle, s
     )
   }
   return (
-    <div ref={freeRef} className={`cat-cell cat-free cat-md${featured ? ' cat-featured' : ''}`} style={style}>
+    <div ref={freeRef} className={`cat-cell cat-free cat-md${featured ? ' cat-featured' : ''}`} style={style}
+      onDoubleClick={onEdit ? (e) => { e.stopPropagation(); onEdit() } : undefined}
+      title={onEdit ? 'Double-clic : modifier les données du produit' : undefined}>
       {promo && obj('promo', <span className="cat-cell-promo">{promo}</span>)}
       {obj('image', <div className="cat-cell-img-in" data-resolving={resolving ? 'true' : undefined}>{src ? <img src={src} alt="" /> : <span className="cat-cell-img-ph">Sans visuel</span>}</div>)}
       {sticker && obj('sticker', <span className="cat-price-sticker">{sticker}</span>)}
