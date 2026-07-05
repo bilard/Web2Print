@@ -49,6 +49,31 @@ const MAGNET_GAP = 6
 const CLIP_CHAIN: Set<CardObjectId> = new Set(['description', 'details'])
 
 /**
+ * Coupe un pavé à `maxH`, ARRONDI à la ligne entière (jamais de demi-ligne).
+ * La hauteur de ligne = le plus PETIT enfant mono-ligne du contenu (fiable même
+ * en line-height 'normal'), repli sur line-height/fontSize calculés.
+ * Retourne la hauteur effective posée.
+ */
+function clipToLines(el: HTMLElement, maxH: number): number {
+  let hEff = Math.max(0, Math.floor(maxH))
+  const inner = el.firstElementChild
+  if (inner instanceof HTMLElement) {
+    const cs = getComputedStyle(inner)
+    const padV = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0)
+    const kids = [...inner.children].filter((k): k is HTMLElement => k instanceof HTMLElement)
+    const oneLine = kids.length ? Math.min(...kids.map((k) => k.offsetHeight || Infinity)) : NaN
+    const lh = Number.isFinite(oneLine) && oneLine > 0 ? oneLine : parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.35
+    if (Number.isFinite(lh) && lh > 0) {
+      const lines = Math.floor((hEff - padV) / lh)
+      hEff = lines >= 1 ? Math.round(lines * lh + padV) : 0
+    }
+  }
+  el.style.maxHeight = `${hEff}px`
+  el.style.overflow = 'hidden'
+  return hEff
+}
+
+/**
  * Applique l'aimantation sur une carte RENDUE (aperçu, pages du catalogue et
  * export partagent ce même calcul → résultat identique partout). Réinitialise
  * d'abord les `top` configurés (idempotent), puis cascade les poussées.
@@ -187,21 +212,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
         }
       }
       const maxH = ceil - top - reserve
-      if (hEff > maxH) {
-        hEff = Math.max(0, Math.floor(maxH))
-        const inner = it.el.firstElementChild
-        if (inner instanceof HTMLElement) {
-          const cs = getComputedStyle(inner)
-          const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.35
-          const padV = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0)
-          if (Number.isFinite(lh) && lh > 0) {
-            const lines = Math.floor((hEff - padV) / lh)
-            hEff = lines >= 1 ? Math.round(lines * lh + padV) : 0
-          }
-        }
-        it.el.style.maxHeight = `${hEff}px`
-        it.el.style.overflow = 'hidden'
-      }
+      if (hEff > maxH) hEff = clipToLines(it.el, maxH)
     }
     placed.push({ x1, x2, bottom: top + hEff })
   }
@@ -243,6 +254,29 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     el.style.top = `${Math.round(((target.offsetTop / cardH) * 100 + (box.ly ?? 0)) * 10) / 10}%`
   }
   for (const id of validLink.keys()) weld(id)
+  // ── SECONDE PASSE pavés vs blocs LIÉS : un bloc lié n'est posé qu'APRÈS la
+  // soudure, et son décalage lx/ly peut l'amener n'importe où (ex. unité liée à
+  // la réf mais glissée à l'autre bout de la carte) — il resserre alors les
+  // pavés qu'il recouvre (le pavé ne bouge pas, seule sa hauteur se coupe).
+  for (const it of items) {
+    if (!CLIP_CHAIN.has(it.id)) continue
+    const top = it.el.offsetTop
+    const curH = it.el.offsetHeight
+    const x1 = (it.el.offsetLeft / cardW) * 100
+    const x2 = x1 + (it.el.offsetWidth / cardW) * 100
+    let ceil = Infinity
+    for (const id of validLink.keys()) {
+      const el = objOf(id)
+      if (!el) continue
+      const lx1 = (el.offsetLeft / cardW) * 100
+      const lx2 = lx1 + (el.offsetWidth / cardW) * 100
+      if (!(x1 < lx2 && lx1 < x2)) continue
+      if (el.offsetTop + el.offsetHeight > top && el.offsetTop < top + curH) {
+        ceil = Math.min(ceil, el.offsetTop - MAGNET_GAP)
+      }
+    }
+    if (ceil < top + curH) clipToLines(it.el, ceil - top)
+  }
   // ── CLAMP : rien ne sort JAMAIS du bas de la carte. Un bloc désancré par le
   // drag (ex. prix posé en % sur la carte d'aperçu, plus haute que les cellules
   // réelles), un bloc lié entraîné par sa cible ou un badge trop bas est REMONTÉ
