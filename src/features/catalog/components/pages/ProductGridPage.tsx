@@ -71,14 +71,16 @@ export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
         const horizontal = !free && slot.rowSpan === 1 && (slot.colSpan >= 2 || grid >= 6)
         const fields = extractPromoFields(row, ctx.columns, ctx.fieldMap, ctx.customFields)
         const details = buildDetailLines(ctx.customFields, fields)
-        // Disposition libre : une carte 2×2 (vedette ou mise en avant prix) est la
-        // fiche de base MAGNIFIÉE ×2 (transform scale) — la mise en page libre est
-        // strictement préservée, aucun débordement (taille en % du slot, la marge
-        // résiduelle ≈ la gouttière interne absorbée par l'agrandissement).
-        if (free && slot.colSpan >= 2 && slot.rowSpan >= 2) {
+        // Disposition libre : une GRANDE carte (vedette ou mise en avant prix) est
+        // la fiche de base MAGNIFIÉE (transform scale) — mise en page strictement
+        // préservée, zéro débordement par construction (wrapper = 100%/s, scale s).
+        // 2×2 → ×2 ; carte élargie [2,1] (grilles où le 2×2 serait pleine page,
+        // ex. grille 4) → ×1,35, le maximum tenant dans une rangée.
+        if (free && slot.colSpan * slot.rowSpan > 1) {
+          const s = slot.colSpan >= 2 && slot.rowSpan >= 2 ? 2 : 1.35
           return (
             <div key={slot.rowId} style={{ ...style, position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, width: 'calc(50% - 7px)', height: 'calc(50% - 7px)', transform: 'scale(2)', transformOrigin: 'top left', display: 'grid' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: `calc(100%/${s})`, height: `calc(100%/${s})`, transform: `scale(${s})`, transformOrigin: 'top left', display: 'grid' }}>
                 <ProductCell fields={fields} featured={slot.featured} size="md" details={details} cardStyle={ctx.plan.cardStyle} />
               </div>
             </div>
