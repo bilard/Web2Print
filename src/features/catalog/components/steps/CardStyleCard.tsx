@@ -48,6 +48,23 @@ export function CardStyleCard({ plan, setPlan, selectedObject }: CardStyleCardPr
         Cosmétique seulement, la mise en page fluide est préservée.
       </p>
 
+      {/* Mode de mise en page — en TÊTE car c'est un choix structurant (auto vs placement manuel). */}
+      <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-2.5 space-y-1.5">
+        <label className="flex items-center gap-2 text-xs font-medium text-white cursor-pointer select-none">
+          <input type="checkbox" checked={style.freeLayout} onChange={(e) => patch({ freeLayout: e.target.checked })} className="accent-indigo-600" />
+          Disposition libre (glisser les objets)
+        </label>
+        <p className="text-[10px] text-white/40 leading-snug">
+          {style.freeLayout
+            ? 'Vous placez chaque objet à la main (positions fixes) — surveillez les chevauchements sur les cartes courtes des grilles denses.'
+            : 'Mise en page automatique (recommandée) : chaque carte s\'adapte à sa taille et à son contenu, sans chevauchement ni débordement.'}
+        </p>
+        {style.freeLayout && (
+          <button type="button" onClick={() => patch({ layout: {} })}
+            className="text-[11px] text-indigo-300 hover:text-white underline text-left">Réinitialiser les positions</button>
+        )}
+      </div>
+
       <PropertySection title="Texte : taille & police" help="Un réglage par champ texte (nom, prix, description...).">
         <CardStyleTypo style={style} patch={patch} selected={selectedObject} />
       </PropertySection>
@@ -83,14 +100,6 @@ export function CardStyleCard({ plan, setPlan, selectedObject }: CardStyleCardPr
             <input value={style.vedetteLabel} onChange={(e) => patch({ vedetteLabel: e.target.value })} placeholder="Vedette"
               className="w-28 px-2 py-1 rounded-md bg-well text-xs text-white outline-none border border-white/10 focus:border-[#6366f1]" />
           </label>
-          <label className="flex items-center gap-1.5 text-xs text-white/40 cursor-pointer select-none">
-            <input type="checkbox" checked={style.freeLayout} onChange={(e) => patch({ freeLayout: e.target.checked })} className="accent-indigo-600" />
-            Disposition libre (glisser les objets)
-          </label>
-          {style.freeLayout && (
-            <button type="button" onClick={() => patch({ layout: {} })}
-              className="text-xs text-white/40 hover:text-white underline text-left">Réinitialiser les positions</button>
-          )}
         </div>
       </PropertySection>
     </div>
