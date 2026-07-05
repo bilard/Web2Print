@@ -3,7 +3,7 @@
 // texte mappé (nom, description, prix, marque, référence, unité, cartouche promo).
 // « Police du thème » = hérite des polices du plan (titres ou texte selon le champ).
 // Widgets du kit : SliderField (échelle) + <select> stylé inputCls (police).
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import { SliderField, inputCls } from '@/components/shared/panel'
 import { CARD_OBJECT_IDS, type CardObjectId, type CatalogCardStyle } from '../../catalogTypes'
@@ -67,35 +67,86 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
     patch({ layout: { ...style.layout, [obj]: box } })
   }
 
+  // ── Visualisation des liaisons : une COULEUR par groupe (cible + suiveurs
+  // teintés pareil) et des connecteurs FLÉCHÉS façon UML dans la marge gauche.
+  const LINK_COLORS = ['#6366f1', '#06b6d4', '#f59e0b', '#ec4899', '#22c55e', '#eab308']
+  const links = style.freeLayout
+    ? FIELDS.map((f) => ({ from: f.obj, to: freeLayoutBox(f.obj, style).link })).filter((l): l is { from: CardObjectId; to: CardObjectId } => !!l.to)
+    : []
+  const groupColor = new Map<CardObjectId, string>()
+  for (const l of links) if (!groupColor.has(l.to)) groupColor.set(l.to, LINK_COLORS[groupColor.size % LINK_COLORS.length])
+  const rowColor = (obj: CardObjectId): string | undefined =>
+    groupColor.get(obj) ?? groupColor.get(links.find((l) => l.from === obj)?.to as CardObjectId)
+
+  const wrapRef = useRef<HTMLDivElement | null>(null)
+  const rowRefs = useRef<Partial<Record<CardObjectId, HTMLDivElement | null>>>({})
+  const [arrows, setArrows] = useState<{ d: string; head: string; color: string }[]>([])
+  const linksKey = links.map((l) => `${l.from}>${l.to}`).join(',')
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current
+    if (!wrap || links.length === 0) { setArrows((a) => (a.length ? [] : a)); return }
+    const wt = wrap.getBoundingClientRect().top
+    const next = links.flatMap((l) => {
+      const a = rowRefs.current[l.from], b = rowRefs.current[l.to]
+      if (!a || !b) return []
+      const y1 = a.getBoundingClientRect().top - wt + 14 // départ : le suiveur
+      const y2 = b.getBoundingClientRect().top - wt + 14 // arrivée : la CIBLE (pointe de flèche)
+      return [{
+        d: `M 14 ${y1} C 2 ${y1}, 2 ${y2}, 12 ${y2}`,
+        head: `M 13 ${y2} L 6 ${y2 - 3.5} L 6 ${y2 + 3.5} Z`,
+        color: groupColor.get(l.to)!,
+      }]
+    })
+    setArrows((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
+  }, [linksKey, style])
+
   return (
-    <div className="grid grid-cols-1 gap-y-3">
-      {FIELDS.map(({ scale, font, label, obj }) => {
-        const link = style.freeLayout ? freeLayoutBox(obj, style).link : undefined
-        return (
-          <div key={scale} className={`space-y-1 ${scale === activeScale ? 'ring-2 ring-indigo-500 rounded-md' : ''}`}>
-            <SliderField label={label} value={style[scale]} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
-              min={0.7} max={10} step={0.05} unit="×" inputRef={(el) => { inputRefs.current[scale] = el }} />
-            <select value={style[font]} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
-              className={inputCls}>
-              <option value="">Police du thème</option>
-              <FontSelectOptions />
-            </select>
-            {style.freeLayout && (
-              <label className={`flex items-center gap-1.5 text-[10px] ${link ? 'text-indigo-300' : 'text-white/30'}`}
-                title="Liaison : ce bloc est soudé à DROITE du bloc choisi et le suit partout">
-                🔗
-                <select value={link ?? ''} onChange={(e) => setLink(obj, e.target.value)}
-                  className={`${inputCls} !py-0.5 !text-[10px]`}>
-                  <option value="">Non lié</option>
-                  {CARD_OBJECT_IDS.filter((t) => t !== obj).map((t) => (
-                    <option key={t} value={t}>Lié à : {OBJ_LABEL[t]}</option>
-                  ))}
-                </select>
-              </label>
-            )}
-          </div>
-        )
-      })}
+    <div ref={wrapRef} className="relative pl-4">
+      {/* Connecteurs de liaison (suiveur → cible), façon diagramme UML. */}
+      {arrows.length > 0 && (
+        <svg className="absolute left-0 top-0 h-full w-4 pointer-events-none overflow-visible">
+          {arrows.map((a, i) => (
+            <g key={i}>
+              <path d={a.d} fill="none" stroke={a.color} strokeWidth={1.5} />
+              <path d={a.head} fill={a.color} />
+            </g>
+          ))}
+        </svg>
+      )}
+      <div className="grid grid-cols-1 gap-y-3">
+        {FIELDS.map(({ scale, font, label, obj }) => {
+          const link = style.freeLayout ? freeLayoutBox(obj, style).link : undefined
+          const color = style.freeLayout ? rowColor(obj) : undefined
+          return (
+            <div key={scale} ref={(el) => { rowRefs.current[obj] = el }}
+              className={`space-y-1 ${scale === activeScale ? 'ring-2 ring-indigo-500 rounded-md' : ''}`}
+              style={color ? { boxShadow: `inset 3px 0 0 ${color}`, borderRadius: 6, paddingLeft: 6 } : undefined}>
+              <SliderField label={label} value={style[scale]} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
+                min={0.7} max={10} step={0.05} unit="×" inputRef={(el) => { inputRefs.current[scale] = el }} />
+              <select value={style[font]} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
+                className={inputCls}>
+                <option value="">Police du thème</option>
+                <FontSelectOptions />
+              </select>
+              {style.freeLayout && (
+                <label className="flex items-center gap-1.5 text-[10px]"
+                  style={{ color: link && color ? color : 'rgba(255,255,255,.3)' }}
+                  title="Liaison : ce bloc est soudé à DROITE du bloc choisi et le suit partout">
+                  🔗
+                  <select value={link ?? ''} onChange={(e) => setLink(obj, e.target.value)}
+                    className={`${inputCls} !py-0.5 !text-[10px]`}
+                    style={link && color ? { color, borderColor: color } : undefined}>
+                    <option value="">Non lié</option>
+                    {CARD_OBJECT_IDS.filter((t) => t !== obj).map((t) => (
+                      <option key={t} value={t}>Lié à : {OBJ_LABEL[t]}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
