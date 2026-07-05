@@ -13,15 +13,17 @@ export const FREE_DEFAULT_LAYOUT: Record<CardObjectId, CardBox> = {
   promo: { x: 0, y: 0, w: 100 },
   vedette: { x: 62, y: 3 },
   kicker: { x: 0, y: 2 },
-  image: { x: 2, y: 4, w: 96, h: 57 },
-  sticker: { x: 72, y: 30 },
-  brand: { x: 5, y: 63, w: 90 },
-  name: { x: 5, y: 67, w: 92 },
-  description: { x: 5, y: 74, w: 92 },
-  details: { x: 5, y: 81, w: 92, h: 8 },
-  ref: { x: 5, y: 90, w: 45 },
-  unit: { x: 5, y: 94, w: 45 },
-  price: { x: 60, y: 85, w: 36 },
+  image: { x: 2, y: 4, w: 96, h: 42 },
+  sticker: { x: 70, y: 24 },
+  brand: { x: 5, y: 48, w: 90 },
+  name: { x: 5, y: 52, w: 92 },
+  description: { x: 5, y: 59, w: 92 },
+  details: { x: 5, y: 66, w: 92, h: 12 },
+  // Rangée basse : réf/unité empilées À GAUCHE · prix À DROITE (remonté à y80 pour
+  // laisser la place à un badge prix agrandi ×2 sans être coupé en bas de carte).
+  ref: { x: 5, y: 88, w: 45 },
+  unit: { x: 5, y: 92, w: 45 },
+  price: { x: 56, y: 80, w: 40 },
 }
 
 /** Boîte effective d'un objet : override utilisateur (layout) fusionné sur le repli. */
