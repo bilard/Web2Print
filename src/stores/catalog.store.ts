@@ -136,7 +136,9 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   ...defaultState,
   hydrate: (doc, id) => set({
     catalogId: id, name: doc.name, step: 'source', sourceRef: doc.sourceRef, selectedRowIds: doc.selectedRowIds,
-    levelKeys: doc.levelKeys, treeEdits: doc.treeEdits, prompt: doc.prompt, plan: doc.plan,
+    // Les docs EXISTANTS passent aussi par la purge des cycles de liaison
+    // (un cycle persisté avant le garde-fou survivrait sinon à chaque session).
+    levelKeys: doc.levelKeys, treeEdits: doc.treeEdits, prompt: doc.prompt, plan: withNormalizedLinks(doc.plan),
     fieldMap: doc.fieldMap, fieldMapOverrides: doc.fieldMapOverrides, customFields: doc.customFields,
     format: doc.format, coverImageUrl: doc.coverImageUrl, backCoverImageUrl: doc.backCoverImageUrl,
     pageOrder: doc.pageOrder, rowOverrides: doc.rowOverrides ?? {}, previewIndex: null,

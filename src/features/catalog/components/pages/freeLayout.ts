@@ -182,19 +182,27 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     let hEff = it.el.offsetHeight
     if (CLIP_CHAIN.has(it.id)) {
       let reserve = 0
-      let ceil = ceilingFor(x1, x2, top)
       for (let j = i + 1; j < items.length; j++) {
         const jt = items[j]
+        if (CLIP_CHAIN.has(jt.id) || !isMagnetized(jt.box, style)) continue
         const [jx1, jx2] = spanOf(jt)
-        if (!(x1 < jx2 && jx1 < x2)) continue
-        if (!isMagnetized(jt.box, style)) {
-          // Bloc DÉTACHÉ (m:false) : posé à y fixe, il ne bougera pas → il devient
-          // un PLAFOND pour le pavé (sinon réf/unité détachées finissent dessous).
-          ceil = Math.min(ceil, (jt.box.y / 100) * cardH - MAGNET_GAP)
-        } else if (!CLIP_CHAIN.has(jt.id)) {
-          reserve += jt.el.offsetHeight + MAGNET_GAP
-        }
+        if (x1 < jx2 && jx1 < x2) reserve += jt.el.offsetHeight + MAGNET_GAP
       }
+      // Plafond COMPLET pour une emprise donnée : obstacles hors chaîne + blocs de
+      // chaîne DÉTACHÉS (m:false, posés à y fixe) qui suivent. Recalculé avec la
+      // MÊME fonction après rétrécissement — un recalcul « obstacles seulement »
+      // écraserait le plafond des détachés (réf/unité repasseraient dessous).
+      const ceilFor = (xx1: number, xx2: number): number => {
+        let c = ceilingFor(xx1, xx2, top)
+        for (let j = i + 1; j < items.length; j++) {
+          const jt = items[j]
+          if (isMagnetized(jt.box, style)) continue
+          const [jx1, jx2] = spanOf(jt)
+          if (xx1 < jx2 && jx1 < xx2) c = Math.min(c, (jt.box.y / 100) * cardH - MAGNET_GAP)
+        }
+        return c
+      }
+      let ceil = ceilFor(x1, x2)
       // Un obstacle bloque dès que sa plage VERTICALE intersecte le pavé prospectif
       // (pas seulement s'il commence dessous) : sur une carte vedette, le badge prix
       // démarre AU-DESSUS du haut des détails — sans ce test, aucun plafond ne
@@ -208,7 +216,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
           it.el.style.width = `${newW}%`
           x2 = x1 + newW
           hEff = it.el.offsetHeight // reflow synchrone : le texte vient de se réécouler
-          ceil = ceilingFor(x1, x2, top)
+          ceil = ceilFor(x1, x2)
         }
       }
       const maxH = ceil - top - reserve
