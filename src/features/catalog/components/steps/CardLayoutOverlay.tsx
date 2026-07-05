@@ -18,12 +18,15 @@ interface Rect { left: number; top: number; width: number; height: number }
 interface Props {
   cardRef: RefObject<HTMLDivElement | null>
   style: CatalogCardStyle
+  /** Carte LARGE (repli 2 colonnes FREE_WIDE_LAYOUT) — même base que le rendu de la carte. */
+  wide?: boolean
   onChange: (id: CardObjectId, box: CardBox) => void
   /** Notifie l'objet sélectionné (clic/drag) — pour mettre en évidence le curseur correspondant côté panneau. */
   onSelect?: (id: CardObjectId | null) => void
 }
 
-export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props) {
+export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSelect }: Props) {
+  const boxOf = (id: CardObjectId) => freeLayoutBox(id, style, wide)
   const [sel, setSel] = useState<CardObjectId | null>(null)
   // Mode LIAISON : le prochain clic sur un autre bloc le désigne comme CIBLE du bloc sélectionné.
   const [linking, setLinking] = useState(false)
@@ -61,7 +64,7 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
       let cur: CardObjectId | undefined = id
       while (cur && !seen.has(cur)) {
         seen.add(cur)
-        const b2 = freeLayoutBox(cur, style)
+        const b2 = boxOf(cur)
         if (b2.link === sel) {
           const r = rectOf(cur)
           // link:null (pas undefined) : la clé doit SURVIVRE à stripUndefined pour
@@ -71,13 +74,13 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
         }
         cur = b2.link ?? undefined
       }
-      onChange(sel, { ...freeLayoutBox(sel, style), link: id, lx: 0, ly: 0, ax: 'l', ay: 't' })
+      onChange(sel, { ...boxOf(sel), link: id, lx: 0, ly: 0, ax: 'l', ay: 't' })
       setLinking(false)
       return
     }
     setLinking(false)
     e.preventDefault(); e.stopPropagation(); setSel(id); onSelect?.(id)
-    const b = freeLayoutBox(id, style)
+    const b = boxOf(id)
     const { w, h } = cardPx()
     const sx = e.clientX, sy = e.clientY
     // Bloc LIÉ : le glisser ajuste son DÉCALAGE par rapport au point de soudure —
@@ -120,7 +123,7 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
     if (!sel) return
     const el = cardRef.current?.querySelector<HTMLElement>(`[data-object-id="${sel}"]`)
     if (!el) return
-    const b = freeLayoutBox(sel, style)
+    const b = boxOf(sel)
     const { w: cardW, h: cardH } = cardPx()
     const er = el.getBoundingClientRect()
     const startW = b.w ?? r1((er.width / cardW) * 100)   // largeur de départ (%)
@@ -144,10 +147,10 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
 
   const selRect = sel ? rects[sel] : null
   // Aimantation PAR BLOC : bouton 🧲 sur le bloc texte sélectionné (chaîne de flux).
-  const selMagnet = sel && FLOW_CHAIN.includes(sel) ? isMagnetized(freeLayoutBox(sel, style), style) : null
+  const selMagnet = sel && FLOW_CHAIN.includes(sel) ? isMagnetized(boxOf(sel), style) : null
   const toggleMagnet = () => {
     if (!sel) return
-    const b = freeLayoutBox(sel, style)
+    const b = boxOf(sel)
     onChange(sel, { ...b, m: !isMagnetized(b, style) })
   }
   return (
@@ -174,7 +177,7 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
           {/* LIAISON entre blocs : soude ce bloc à DROITE d'un autre (il le suit partout). */}
           <button type="button" onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }}
             onClick={() => {
-              const b = freeLayoutBox(sel, style)
+              const b = boxOf(sel)
               if (b.link) {
                 // Délier SANS faire sauter le bloc : sa position visuelle devient sa
                 // position posée. link:null (persistant) masque le lien par défaut.
@@ -182,18 +185,18 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
                 onChange(sel, { ...b, link: null, lx: 0, ly: 0, ...(r ? { x: r1(r.left), y: r1(r.top) } : {}) })
               } else setLinking((v) => !v)
             }}
-            title={freeLayoutBox(sel, style).link
+            title={boxOf(sel).link
               ? 'Lié : soudé à droite de sa cible, la suit partout (cliquer pour délier)'
               : linking ? 'Cliquez maintenant le bloc CIBLE dans l\'aperçu' : 'Lier ce bloc à un autre (soudé à sa droite)'}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999,
               fontSize: 10, fontWeight: 700, cursor: 'pointer', border: '1px solid #6366f1',
-              background: freeLayoutBox(sel, style).link ? '#6366f1' : linking ? '#eef2ff' : '#fff',
-              color: freeLayoutBox(sel, style).link ? '#fff' : '#6366f1' }}>
-            🔗 {freeLayoutBox(sel, style).link ? 'Lié ✕' : linking ? 'Cliquez la cible…' : 'Lier à…'}
+              background: boxOf(sel).link ? '#6366f1' : linking ? '#eef2ff' : '#fff',
+              color: boxOf(sel).link ? '#fff' : '#6366f1' }}>
+            🔗 {boxOf(sel).link ? 'Lié ✕' : linking ? 'Cliquez la cible…' : 'Lier à…'}
           </button>
           {/* Bloc lié mais DÉCALÉ du point de soudure : recoller net (contrainte ferme). */}
           {(() => {
-            const b = freeLayoutBox(sel, style)
+            const b = boxOf(sel)
             return b.link && ((b.lx ?? 0) !== 0 || (b.ly ?? 0) !== 0) ? (
               <button type="button" onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }}
                 onClick={() => onChange(sel, { ...b, lx: 0, ly: 0 })}

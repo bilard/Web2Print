@@ -7,7 +7,7 @@ import { AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHo
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import type { CardBox, CardObjectId, CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
 import { CATALOG_CSS, cardStyleVars, themeVars } from '../pages/catalogCss'
-import { freeLayoutBox } from '../pages/freeLayout'
+import { freeLayoutBox, isWideCard } from '../pages/freeLayout'
 import { ProductCell } from '../pages/ProductCell'
 import { CardLayoutOverlay } from './CardLayoutOverlay'
 
@@ -45,16 +45,18 @@ interface Props {
 
 /** Palette d'ANCRAGE LIQUIDE (façon InDesign) : colle le bloc sélectionné au bord
  *  choisi de la fiche — l'ancrage tient sur toutes les tailles de carte. */
-function AnchorPalette({ selected, style, onLayoutChange }: {
+function AnchorPalette({ selected, style, wide, onLayoutChange }: {
   selected: CardObjectId | null | undefined
   style: CatalogCardStyle
+  /** La carte d'aperçu est LARGE (repli 2 colonnes) — même base que le rendu. */
+  wide: boolean
   onLayoutChange: (id: CardObjectId, box: CardBox) => void
 }) {
   const apply = (patch: (b: CardBox) => CardBox) => {
     if (!selected) return
-    onLayoutChange(selected, patch(freeLayoutBox(selected, style)))
+    onLayoutChange(selected, patch(freeLayoutBox(selected, style, wide)))
   }
-  const box = selected ? freeLayoutBox(selected, style) : null
+  const box = selected ? freeLayoutBox(selected, style, wide) : null
   const BTNS: { icon: typeof AlignStartVertical; title: string; active: boolean; go: () => void }[] = [
     { icon: AlignStartVertical, title: 'Aimanter au bord GAUCHE', active: (box?.ax ?? 'l') === 'l', go: () => apply((b) => ({ ...b, ax: 'l', x: 2 })) },
     { icon: AlignCenterVertical, title: 'Centrer horizontalement', active: box?.ax === 'c', go: () => apply((b) => ({ ...b, ax: 'c', x: 50 })) },
@@ -81,8 +83,11 @@ export function CardStylePreview({ theme, cardStyle, fields, details, cell, feat
   const f = fields ?? SAMPLE_FIELDS
   const d = details && details.length ? details : SAMPLE_DETAILS
   const cardRef = useRef<HTMLDivElement | null>(null)
+  // La cellule d'aperçu a la forme de la cellule IMPRIMÉE → même bascule 2 colonnes
+  // que le rendu des pages (l'édition reste WYSIWYG sur les catalogues larges).
+  const wide = isWideCard(cell.w, cell.h)
   const overlay = editable && onLayoutChange
-    ? <CardLayoutOverlay cardRef={cardRef} style={cardStyle} onChange={onLayoutChange} onSelect={onSelect} />
+    ? <CardLayoutOverlay cardRef={cardRef} style={cardStyle} wide={wide} onChange={onLayoutChange} onSelect={onSelect} />
     : null
   const K = Math.max(1, Math.round((480 / cell.w) * 100) / 100)
   const pageStyle = { ...themeVars(theme), ...cardStyleVars(cardStyle, theme), ['--cat-fit']: String(Math.round(cell.fit * 100) / 100), width: cell.w * K + 32, background: 'var(--cat-bg)' } as CSSProperties
@@ -90,7 +95,7 @@ export function CardStylePreview({ theme, cardStyle, fields, details, cell, feat
     <div className="flex items-start gap-2">
       {/* Palette d'ancrage liquide (menu de gauche) — agit sur le bloc sélectionné. */}
       {editable && onLayoutChange && (
-        <AnchorPalette selected={selected} style={cardStyle} onLayoutChange={onLayoutChange} />
+        <AnchorPalette selected={selected} style={cardStyle} wide={wide} onLayoutChange={onLayoutChange} />
       )}
       <div className="cat-page rounded-lg overflow-hidden shrink-0 border border-border relative shadow-2xl" style={pageStyle}>
         <style>{CATALOG_CSS}</style>
@@ -98,7 +103,7 @@ export function CardStylePreview({ theme, cardStyle, fields, details, cell, feat
           {/* Conteneur qui réserve la place ZOOMÉE ; la carte interne est à la taille cellule exacte puis scale(K). */}
           <div style={{ width: cell.w * K, height: cell.h * K, position: 'relative' }}>
             <div ref={cardRef} className="cat-style-card-host" style={{ width: cell.w, height: cell.h, transform: `scale(${K})`, transformOrigin: 'top left', display: 'grid', position: 'relative' }}>
-              <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" details={d} cardStyle={cardStyle} />
+              <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" details={d} cardStyle={cardStyle} wide={wide} />
             </div>
             {/* Overlay HORS de la carte scalée : ses positions sont en % (invariantes au
                 zoom) mais ses pastilles/poignées sont en px — dedans, elles seraient ×K. */}

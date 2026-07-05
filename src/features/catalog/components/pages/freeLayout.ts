@@ -28,9 +28,41 @@ export const FREE_DEFAULT_LAYOUT: Record<CardObjectId, CardBox> = {
   price: { x: 2, y: 2, w: 40, ax: 'r', ay: 'b' },
 }
 
-/** Boîte effective d'un objet : override utilisateur (layout) fusionné sur le repli. */
-export function freeLayoutBox(id: CardObjectId, style: CatalogCardStyle): CardBox {
-  return { ...FREE_DEFAULT_LAYOUT[id], ...(style.layout?.[id] ?? {}) }
+/**
+ * Repli des cartes LARGES (pleine largeur : grilles 1 colonne, cartes élargies,
+ * grilles denses paysage) — la surface se divise en 2 COLONNES : image à gauche
+ * pleine hauteur, TOUS les textes en colonne droite. Les contraintes d'ancrage
+ * restent identiques au design vertical (prix ancré bas-droite, unité soudée à
+ * la réf) : le moteur d'aimantation continue de plafonner les pavés au-dessus
+ * du prix — jamais de texte sous le badge.
+ */
+export const FREE_WIDE_LAYOUT: Record<CardObjectId, CardBox> = {
+  promo: { x: 0, y: 0, w: 100 },
+  vedette: { x: 62, y: 3 },
+  kicker: { x: 0, y: 2 },
+  image: { x: 2, y: 8, w: 34, h: 88 },
+  sticker: { x: 28, y: 12 },
+  brand: { x: 40, y: 10, w: 56 },
+  name: { x: 40, y: 16, w: 58 },
+  description: { x: 40, y: 26, w: 58 },
+  details: { x: 40, y: 46, w: 58 },
+  ref: { x: 40, y: 88, w: 30 },
+  unit: { x: 40, y: 92, link: 'ref' },
+  price: { x: 2, y: 2, w: 40, ax: 'r', ay: 'b' },
+}
+
+/** Seuil de bascule vers le design 2 colonnes : carte au moins 1,3× plus large que haute. */
+export const WIDE_RATIO = 1.3
+
+/** Une carte de ces dimensions est-elle LARGE (design 2 colonnes) ? */
+export function isWideCard(w: number, h: number): boolean {
+  return h > 0 && w / h >= WIDE_RATIO
+}
+
+/** Boîte effective d'un objet : override utilisateur (layout) fusionné sur le repli
+ *  (vertical, ou 2 colonnes pour les cartes larges — les overrides priment toujours). */
+export function freeLayoutBox(id: CardObjectId, style: CatalogCardStyle, wide = false): CardBox {
+  return { ...(wide ? FREE_WIDE_LAYOUT : FREE_DEFAULT_LAYOUT)[id], ...(style.layout?.[id] ?? {}) }
 }
 
 /**
@@ -93,10 +125,11 @@ export function isMagnetized(box: CardBox, style: CatalogCardStyle): boolean {
   return box.m ?? (style.magnetFlow ?? true)
 }
 
-export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): void {
+export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wide = false): void {
   const cardH = card.clientHeight
   const cardW = card.clientWidth
   if (!cardH || !cardW) return
+  const boxOf = (id: CardObjectId) => freeLayoutBox(id, style, wide)
   const objOf = (id: CardObjectId) => card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
   // Liens VALIDES (garde-fou anti-CYCLE) : un lien dont la chaîne de cibles
   // reboucle sur lui-même (ex. réf↔unité liées l'une à l'autre) est IGNORÉ —
@@ -104,7 +137,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
   // chaque rendu. Le premier lien déclaré (ordre CARD_OBJECT_IDS) gagne.
   const validLink = new Map<CardObjectId, CardObjectId>()
   for (const id of CARD_OBJECT_IDS) {
-    const t = freeLayoutBox(id, style).link
+    const t = boxOf(id).link
     if (!t || t === id) continue
     let cur: CardObjectId | undefined = t
     while (cur && cur !== id) cur = validLink.get(cur)
@@ -120,7 +153,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
   const obstacles: { x1: number; x2: number; top: number; bottom: number }[] = []
   for (const id of CARD_OBJECT_IDS) {
     if (id === 'image' || id === 'promo' || FLOW_CHAIN.includes(id)) continue
-    const b = freeLayoutBox(id, style)
+    const b = boxOf(id)
     if (validLink.has(id)) continue
     const el = objOf(id)
     if (!el) continue
@@ -147,7 +180,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
   const items = FLOW_CHAIN
     .map((id) => {
       const el = objOf(id)
-      return el ? { id, el, box: freeLayoutBox(id, style) } : null
+      return el ? { id, el, box: boxOf(id) } : null
     })
     .filter((x): x is { id: CardObjectId; el: HTMLElement; box: CardBox } => x != null)
     // Un bloc ANCRÉ au bas/centre (mise en page liquide) ou LIÉ à un autre bloc
@@ -275,7 +308,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     const link = validLink.get(id)
     if (!link) return
     weld(link)
-    const box = freeLayoutBox(id, style)
+    const box = boxOf(id)
     const el = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
     const target = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${link}"]`)
     if (!el || !target) return
@@ -331,7 +364,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
   for (const id of CARD_OBJECT_IDS) {
     if (id === 'image' || id === 'promo') continue
     if (items.some((it) => it.id === id)) continue // chaîne : déjà bornée (plafonds)
-    const b = freeLayoutBox(id, style)
+    const b = boxOf(id)
     const linked = validLink.has(id)
     const ay = linked ? 't' : (b.ay ?? 't')
     if (ay !== 't') continue // ancré bas/centre : ne déborde pas du bas par construction

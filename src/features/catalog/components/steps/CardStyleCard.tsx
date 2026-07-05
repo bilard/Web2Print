@@ -15,6 +15,8 @@ interface CardStyleCardProps {
   setPlan: (plan: CatalogPlan) => void
   /** Objet sélectionné dans l'aperçu (disposition libre) — surligne + focus le curseur typo correspondant. */
   selectedObject?: CardObjectId | null
+  /** Carte d'aperçu LARGE (repli 2 colonnes) — propagé au panneau typo (liaisons). */
+  wide?: boolean
 }
 
 const VISIBILITY: { key: keyof Pick<CatalogCardStyle, 'showPromo' | 'showSticker' | 'showKicker' | 'showDesc' | 'showRef' | 'showUnit' | 'showVedette' | 'showDetails'>; label: string }[] = [
@@ -28,7 +30,7 @@ const VISIBILITY: { key: keyof Pick<CatalogCardStyle, 'showPromo' | 'showSticker
   { key: 'showDetails', label: 'Détails' },
 ]
 
-export function CardStyleCard({ plan, setPlan, selectedObject }: CardStyleCardProps) {
+export function CardStyleCard({ plan, setPlan, selectedObject, wide }: CardStyleCardProps) {
   const style: CatalogCardStyle = { ...DEFAULT_CARD_STYLE, ...plan.cardStyle }
   const patch = (p: Partial<CatalogCardStyle>) => setPlan({ ...plan, cardStyle: { ...style, ...p } })
 
@@ -64,7 +66,7 @@ export function CardStyleCard({ plan, setPlan, selectedObject }: CardStyleCardPr
       </div>
 
       <PropertySection title="Texte : taille & police" help="Un réglage par champ texte (nom, prix, description...).">
-        <CardStyleTypo style={style} patch={patch} selected={selectedObject} />
+        <CardStyleTypo style={style} patch={patch} selected={selectedObject} wide={wide} />
       </PropertySection>
 
       <PropertySection title="Couleurs des objets" help="2e case = dégradé (✕ pour revenir à l'uni).">

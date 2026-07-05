@@ -10,6 +10,7 @@ import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree, flattenTree } from '../../catalogTree'
 import { representativeGrid } from '../../catalogEngine'
 import { cellDims, cellFit } from '../pages/catalogCss'
+import { isWideCard } from '../pages/freeLayout'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
 import { extractPromoFields, buildDetailLines } from '@/features/retail-promo/promoMapping'
 import { DEFAULT_CARD_STYLE, type CardBox, type CardObjectId } from '../../catalogTypes'
@@ -176,7 +177,7 @@ export function StepPrompt() {
 
       {plan && (
         <aside className="w-80 shrink-0 border-l border-border bg-surface overflow-y-auto">
-          <CardStyleCard plan={plan} setPlan={setPlan} selectedObject={selectedObject} />
+          <CardStyleCard plan={plan} setPlan={setPlan} selectedObject={selectedObject} wide={isWideCard(cell.w, cell.h)} />
         </aside>
       )}
     </div>

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { test, expect } from 'vitest'
 import { CARD_OBJECT_IDS, DEFAULT_CARD_STYLE } from '../../catalogTypes'
-import { applyMagneticFlow, freeLayoutBox, normalizeCardLinks, FREE_DEFAULT_LAYOUT } from './freeLayout'
+import { applyMagneticFlow, freeLayoutBox, isWideCard, normalizeCardLinks, FREE_DEFAULT_LAYOUT, FREE_WIDE_LAYOUT } from './freeLayout'
 
 test('normalizeCardLinks : un override ref→unit + le lien PAR DÉFAUT unit→ref = cycle → le lien retour est posé à null (persistant)', () => {
   // Défauts : unit.link='ref'. Override : ref.link='unit' → cycle effectif.
@@ -26,6 +26,35 @@ test('freeLayoutBox : repli quand aucun override', () => {
 test('freeLayoutBox : override fusionné sur le repli', () => {
   const style = { ...DEFAULT_CARD_STYLE, layout: { name: { x: 10, y: 20 } } }
   expect(freeLayoutBox('name', style)).toEqual({ x: 10, y: 20, w: 92 })
+})
+
+test('FREE_WIDE_LAYOUT (cartes pleine largeur) : 2 colonnes — image à gauche, textes à droite, ancrages préservés', () => {
+  for (const id of CARD_OBJECT_IDS) expect(FREE_WIDE_LAYOUT[id]).toBeDefined()
+  // Colonne 1 : l'image occupe la gauche pleine hauteur ; colonne 2 : TOUS les textes.
+  const img = FREE_WIDE_LAYOUT.image
+  expect(img.x + (img.w ?? 0)).toBeLessThanOrEqual(40)
+  for (const id of ['brand', 'name', 'description', 'details', 'ref', 'unit'] as const) {
+    expect(FREE_WIDE_LAYOUT[id].x).toBeGreaterThanOrEqual(img.x + (img.w ?? 0))
+  }
+  // Contraintes d'ancrage IDENTIQUES au design vertical : prix ancré bas-droite,
+  // unité soudée à la réf, cartouche promo en bandeau pleine largeur.
+  expect(FREE_WIDE_LAYOUT.price).toEqual(FREE_DEFAULT_LAYOUT.price)
+  expect(FREE_WIDE_LAYOUT.unit.link).toBe('ref')
+  expect(FREE_WIDE_LAYOUT.promo).toEqual(FREE_DEFAULT_LAYOUT.promo)
+})
+
+test('freeLayoutBox wide : repli 2 colonnes, overrides utilisateur PRIORITAIRES', () => {
+  expect(freeLayoutBox('image', DEFAULT_CARD_STYLE, true)).toEqual(FREE_WIDE_LAYOUT.image)
+  const style = { ...DEFAULT_CARD_STYLE, layout: { name: { x: 10, y: 20 } } }
+  expect(freeLayoutBox('name', style, true)).toEqual({ x: 10, y: 20, w: FREE_WIDE_LAYOUT.name.w })
+})
+
+test('isWideCard : bascule au ratio 1,3 (grilles 1 colonne & paysage larges ; verticales inchangées)', () => {
+  expect(isWideCard(730, 484)).toBe(true)   // grille 2 (A4 portrait) : pleine largeur
+  expect(isWideCard(730, 318)).toBe(true)   // grille 3
+  expect(isWideCard(358, 484)).toBe(false)  // grille 4 : cellule portrait
+  expect(isWideCard(358, 318)).toBe(false)  // grille 6 : quasi carrée
+  expect(isWideCard(100, 0)).toBe(false)    // garde-fou division par zéro
 })
 
 test('applyMagneticFlow : un bloc volumineux POUSSE vers le bas ceux qui le chevauchent (jamais de superposition)', () => {

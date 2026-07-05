@@ -14,6 +14,8 @@ interface CardStyleTypoProps {
   patch: (p: Partial<CatalogCardStyle>) => void
   /** Objet sélectionné dans l'aperçu (disposition libre) — surligne + focus la ligne correspondante. */
   selected?: CardObjectId | null
+  /** Carte d'aperçu LARGE (repli 2 colonnes) — les boîtes stockées partent de la même base. */
+  wide?: boolean
 }
 
 type ScaleKey = 'nameScale' | 'descScale' | 'priceScale' | 'brandScale' | 'refScale' | 'unitScale' | 'promoScale' | 'stickerScale' | 'vedetteScale' | 'detailsScale'
@@ -46,7 +48,8 @@ const OBJ_TO_SCALE: Partial<Record<CardObjectId, ScaleKey>> = {
   vedette: 'vedetteScale', details: 'detailsScale',
 }
 
-export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
+export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyleTypoProps) {
+  const boxOf = (id: CardObjectId) => freeLayoutBox(id, style, wide)
   const inputRefs = useRef<Partial<Record<ScaleKey, HTMLInputElement | null>>>({})
   const activeScale = selected != null ? OBJ_TO_SCALE[selected] : undefined
 
@@ -60,7 +63,7 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
   // Liaison entre blocs (disposition libre) : le bloc est SOUDÉ à droite de sa
   // cible et la suit partout. Éditable ici pour VOIR tous les liens d'un coup.
   const setLink = (obj: CardObjectId, target: string) => {
-    const base = freeLayoutBox(obj, style)
+    const base = boxOf(obj)
     const layout = { ...style.layout }
     if (target) {
       // Si la cible (ou sa chaîne) est déjà liée à ce bloc, lier = INVERSER la
@@ -70,7 +73,7 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
       let cur: CardObjectId | null | undefined = target as CardObjectId
       while (cur && !seen.has(cur)) {
         seen.add(cur)
-        const b = freeLayoutBox(cur, style)
+        const b = boxOf(cur)
         if (b.link === obj) {
           // link:null (persistant après stripUndefined) : masque un lien PAR DÉFAUT.
           layout[cur] = { ...b, link: null, lx: 0, ly: 0, ...(visualPos(cur) ?? {}) }
@@ -89,7 +92,7 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
   // teintés pareil) et des connecteurs FLÉCHÉS façon UML dans la marge gauche.
   const LINK_COLORS = ['#6366f1', '#06b6d4', '#f59e0b', '#ec4899', '#22c55e', '#eab308']
   const links = FIELDS
-    .map((f) => ({ from: f.obj, to: freeLayoutBox(f.obj, style).link }))
+    .map((f) => ({ from: f.obj, to: boxOf(f.obj).link }))
     .filter((l): l is { from: CardObjectId; to: CardObjectId } => !!l.to)
   const groupColor = new Map<CardObjectId, string>()
   for (const l of links) if (!groupColor.has(l.to)) groupColor.set(l.to, LINK_COLORS[groupColor.size % LINK_COLORS.length])
@@ -135,7 +138,7 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
       )}
       <div className="grid grid-cols-1 gap-y-3">
         {FIELDS.map(({ scale, font, label, obj }) => {
-          const link = freeLayoutBox(obj, style).link
+          const link = boxOf(obj).link
           const color = rowColor(obj)
           return (
             <div key={scale} ref={(el) => { rowRefs.current[obj] = el }}

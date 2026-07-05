@@ -25,11 +25,15 @@ interface Props {
   cardStyle?: CatalogCardStyle
   /** Placement CSS grid (gridColumn/gridRow) calculé par le moteur. */
   style?: CSSProperties
+  /** Carte LARGE (pleine largeur, ratio ≥ 1,3) : repli 2 colonnes — image à
+   *  gauche, textes en colonne droite (FREE_WIDE_LAYOUT). Calculé par le parent
+   *  depuis la forme RÉELLE de la cellule (déterministe, fiable à l'export). */
+  wide?: boolean
   /** Double-clic sur la fiche → édition de la data produit (Aperçu du catalogue). */
   onEdit?: () => void
 }
 
-export function ProductCell({ fields: f, featured, kicker, details, cardStyle, style, onEdit }: Props) {
+export function ProductCell({ fields: f, featured, kicker, details, cardStyle, style, wide = false, onEdit }: Props) {
   // Résolution Drive/CORS → blob:/data: (voir useResolvedImage). `data-resolving` est
   // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
   // avant capture html2canvas (l'<img> n'existe pas tant que src n'est pas prêt).
@@ -44,7 +48,7 @@ export function ProductCell({ fields: f, featured, kicker, details, cardStyle, s
     // les blocs détachés y sont remis à leur position configurée (idempotent).
     const card = freeRef.current
     if (!card) return
-    const run = () => applyMagneticFlow(card, cs)
+    const run = () => applyMagneticFlow(card, cs, wide)
     run()
     // Les mesures bougent APRÈS ce rendu : polices chargées (métriques des
     // fallbacks ≠ police finale) et redimensionnements — re-dérouler le moteur,
@@ -64,7 +68,7 @@ export function ProductCell({ fields: f, featured, kicker, details, cardStyle, s
   const label = show('showPromo') ? formatPromoLabel(f.promoLabel) : undefined
   const promo = label && label !== sticker ? label : null
   const obj = (id: CardObjectId, node: ReactNode) => {
-    const b = freeLayoutBox(id, cs)
+    const b = freeLayoutBox(id, cs, wide)
     const scaled = b.sc != null && b.sc !== 1
     // Hauteur figée UNIQUEMENT pour l'image (elle REMPLIT sa boîte). Tous les
     // autres blocs ont un contenu intrinsèque (textes, badges prix/sticker…) :

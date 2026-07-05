@@ -1,7 +1,8 @@
 import type { CSSProperties } from 'react'
 import { extractPromoFields, buildDetailLines } from '@/features/retail-promo/promoMapping'
 import { GRID_DIMS, type CatalogGrid, type ProductSlot } from '../../catalogTypes'
-import { cellFit, type CatalogRenderCtx } from './catalogCss'
+import { cellDims, cellFit, type CatalogRenderCtx } from './catalogCss'
+import { isWideCard } from './freeLayout'
 import { ProductCell } from './ProductCell'
 
 /**
@@ -26,6 +27,13 @@ interface Props {
 export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
   const [cols, rows] = GRID_DIMS[grid]
   const fit = typoFit(ctx, grid)
+  // Forme RÉELLE de chaque carte (span × cellule + gaps) → les cartes LARGES
+  // (pleine largeur des grilles 1 colonne, cartes élargies, grilles paysage)
+  // basculent sur le design 2 colonnes (image gauche / textes droite). Le ratio
+  // est invariant à la magnification (wrapper 100%/s puis scale s).
+  const { w: cw, h: ch } = cellDims(ctx.format, grid)
+  const wideOf = (colSpan: number, rowSpan: number) =>
+    isWideCard(cw * colSpan + 14 * (colSpan - 1), ch * rowSpan + 14 * (rowSpan - 1))
   // Bandeaux de section (masquables via « Sous-famille » des éléments affichés).
   const bands = (ctx.plan.cardStyle?.showKicker ?? true) ? (groupRows ?? []) : []
   const bandAt = new Map(bands.map((b) => [b.row, b.label]))
@@ -69,6 +77,7 @@ export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
             <div key={slot.rowId} style={{ ...style, position: 'relative' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: `calc(100%/${s})`, height: `calc(100%/${s})`, transform: `scale(${s})`, transformOrigin: 'top left', display: 'grid' }}>
                 <ProductCell fields={fields} featured={slot.featured} details={details} cardStyle={ctx.plan.cardStyle}
+                  wide={wideOf(slot.colSpan, slot.rowSpan)}
                   onEdit={ctx.onEditRow ? () => ctx.onEditRow?.(slot.rowId) : undefined} />
               </div>
             </div>
@@ -78,6 +87,7 @@ export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
           <ProductCell key={slot.rowId} fields={fields}
             featured={slot.featured} details={details}
             cardStyle={ctx.plan.cardStyle} style={style}
+            wide={wideOf(slot.colSpan, slot.rowSpan)}
             onEdit={ctx.onEditRow ? () => ctx.onEditRow?.(slot.rowId) : undefined} />
         )
       })}
