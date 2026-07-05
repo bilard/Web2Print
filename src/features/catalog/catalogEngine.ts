@@ -30,6 +30,29 @@ export interface PaginateInput {
   prices?: Map<string, number | null>
   /** rowId → nom produit — alimente les « highlights » de l'affiche d'un univers sans familles. */
   names?: Map<string, string>
+  /**
+   * Mode UNIFORME (disposition libre) : toutes les fiches identiques (1×1, une
+   * seule grille `uniformGrid`, ni vedette 2×2 ni sizeByPrice ni étirement) → une
+   * position en % placée dans l'aperçu se retrouve À L'IDENTIQUE sur chaque fiche
+   * du catalogue. Compromis : plus de grandes vedettes ni de densité variable, et
+   * quelques cases vides possibles en fin de sous-famille.
+   */
+  uniform?: boolean
+  uniformGrid?: CatalogGrid
+}
+
+/** Grille représentative des sections (densité fixe la plus fréquente) — pour le
+ *  mode uniforme et l'aspect de l'aperçu. Repli DEFAULT_GRID si mixte/vide. */
+export function representativeGrid(sections: CatalogSectionPlan[]): CatalogGrid {
+  const counts = new Map<CatalogGrid, number>()
+  for (const s of sections) {
+    if (s.randomDensity) continue
+    const g = s.productsPerPage as CatalogGrid
+    counts.set(g, (counts.get(g) ?? 0) + 1)
+  }
+  let best: CatalogGrid = DEFAULT_GRID, bestN = 0
+  for (const [g, n] of counts) if (n > bestN) { best = g; bestN = n }
+  return best
 }
 
 interface FlowItem {
@@ -184,7 +207,8 @@ function stretchToFill(occ: boolean[][], slots: ProductSlot[], C: number, R: num
 export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
   const byNode = new Map(input.sections.map((s) => [s.nodeId, s]))
   const prices = input.prices ?? new Map<string, number | null>()
-  const sizeByPrice = input.sizeByPrice ?? prices.size > 0
+  const uniform = input.uniform ?? false
+  const sizeByPrice = uniform ? false : (input.sizeByPrice ?? prices.size > 0)
   const kept = input.tree.filter((u) => subtreeProductCount(u) > 0)
   const tocNodes = flattenTree(kept).filter((n) => subtreeProductCount(n) > 0)
   const tocPageCount = Math.max(1, Math.ceil(tocNodes.length / TOC_ENTRIES_PER_PAGE))
@@ -199,7 +223,8 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
 
   kept.forEach((univers, universIndex) => {
     const section = byNode.get(univers.id)
-    const fixedGrid = section?.productsPerPage ?? DEFAULT_GRID
+    // Mode uniforme : UNE seule grille pour tout le catalogue (fiches identiques).
+    const fixedGrid = uniform ? (input.uniformGrid ?? DEFAULT_GRID) : (section?.productsPerPage ?? DEFAULT_GRID)
     const rng = mulberry32(hashSeed(univers.id))
 
     // Collecte DFS : vedettes distribuées 1 par page, flux continu pour le reste.
@@ -243,7 +268,7 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
     // page tant qu'il reste du flux), puis first-fit avec dégradation de span →
     // zéro case vide tant qu'il reste des produits (le repli 1×1 rentre toujours).
     while (featuredQueue.length > 0 || flowQueue.length > 0) {
-      const grid = section?.randomDensity ? RANDOM_GRID_POOL[Math.floor(rng() * RANDOM_GRID_POOL.length)] : fixedGrid
+      const grid = (!uniform && section?.randomDensity) ? RANDOM_GRID_POOL[Math.floor(rng() * RANDOM_GRID_POOL.length)] : fixedGrid
       const [C, R] = GRID_DIMS[grid]
       const occ: boolean[][] = Array.from({ length: R }, () => Array<boolean>(C).fill(false))
       const slots: ProductSlot[] = []
@@ -280,7 +305,7 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       if (featuredQueue.length > 0) {
         // Pleine page UNIQUEMENT pour l'ultime vedette sans plus rien à mixer ;
         // sinon grande carte plafonnée (le flux ou les autres vedettes complètent).
-        const [w, h] = flowQueue.length === 0 && featuredQueue.length === 1 ? [C, R] : bigSpan(C, R)
+        const [w, h] = uniform ? [1, 1] : (flowQueue.length === 0 && featuredQueue.length === 1 ? [C, R] : bigSpan(C, R))
         if (place(featuredQueue[0], w, h)) featuredQueue.shift()
       }
       // Budget : UN agrandissement prix par page — sinon un univers cher (50 %
@@ -293,7 +318,7 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
           closeRow() // le groupe suivant démarre sur une NOUVELLE rangée
           currentGroup = label
         }
-        let [w, h] = wantedSpan(item, prices.get(item.rowId) ?? null, th, C, R)
+        let [w, h] = uniform ? [1, 1] : wantedSpan(item, prices.get(item.rowId) ?? null, th, C, R)
         const isPriceUpgrade = !item.featured && w * h > 1
         if (isPriceUpgrade && priceUpgradesLeft <= 0) { w = 1; h = 1 }
         if (!place(item, w, h)) break // page pleine
@@ -308,19 +333,22 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       // Flux épuisé mais des vedettes restent : elles se PARTAGENT la page
       // (jamais une vedette seule sur sa page tant qu'il en reste plusieurs).
       while (flowQueue.length === 0 && featuredQueue.length > 0) {
-        const [w, h] = bigSpan(C, R)
+        const [w, h] = uniform ? [1, 1] : bigSpan(C, R)
         if (!place(featuredQueue[0], w, h)) break // page pleine → suite page suivante
         featuredQueue.shift()
       }
       if (slots.length === 0) break // garde théorique (grille 1×1 minimum → jamais atteint)
       // Fins de rangée fermées par un changement de sous-famille : la carte de
       // gauche s'élargit (jamais d'extension VERTICALE à travers un bandeau).
-      for (const { r, c } of holes) {
-        const left = slots.find((s) => r >= s.row - 1 && r < s.row - 1 + s.rowSpan && c - 1 >= s.col - 1 && c - 1 < s.col - 1 + s.colSpan)
-        if (left) left.colSpan++
+      // En mode uniforme on laisse les cases vides (fiches strictement 1×1).
+      if (!uniform) {
+        for (const { r, c } of holes) {
+          const left = slots.find((s) => r >= s.row - 1 && r < s.row - 1 + s.rowSpan && c - 1 >= s.col - 1 && c - 1 < s.col - 1 + s.colSpan)
+          if (left) left.colSpan++
+        }
+        // Cases restées libres (fin d'univers) : étirer les cartes → zéro vide.
+        stretchToFill(occ, slots, C, R)
       }
-      // Cases restées libres (fin d'univers) : étirer les cartes → zéro vide.
-      stretchToFill(occ, slots, C, R)
       // Après étirement (les aires sont définitives) : le prix le plus haut
       // occupe la plus grande carte de la page.
       if (sizeByPrice) reassignByPrice(slots, prices)

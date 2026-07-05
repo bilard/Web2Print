@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { extractPromoFields } from '@/features/retail-promo/promoMapping'
 import { buildCatalogTree } from './catalogTree'
-import { paginateCatalog } from './catalogEngine'
+import { paginateCatalog, representativeGrid } from './catalogEngine'
 import { applyPageOrder, universeColors } from './catalogFlatplan'
 import { defaultCatalogPlan } from './catalogPlan'
 import type { CatalogPageDescriptor, CatalogTreeNode } from './catalogTypes'
@@ -43,8 +43,11 @@ export function useCatalogPages(): CatalogPagesResult {
     }
     // Ordre manuel du chemin de fer appliqué APRÈS la pagination (renumérote
     // et recale le sommaire) — aperçu et export voient le même ordre.
+    // Disposition libre → mode UNIFORME : toutes les fiches identiques (1×1, une
+    // seule grille) pour que les positions placées dans l'aperçu soient fidèles.
+    const uniform = plan.cardStyle?.freeLayout ?? false
     const { pages, keys } = applyPageOrder(
-      paginateCatalog({ tree, sections: plan.sections, sizeByPrice, prices, names }),
+      paginateCatalog({ tree, sections: plan.sections, sizeByPrice, prices, names, uniform, uniformGrid: representativeGrid(plan.sections) }),
       s.pageOrder,
     )
     const ctx: CatalogRenderCtx = {

@@ -4,7 +4,8 @@ import { GRID_DIMS, type CatalogGrid, type ProductSlot } from '../../catalogType
 import { pagePx, type CatalogRenderCtx } from './catalogCss'
 import { ProductCell, type CellSize } from './ProductCell'
 
-function slotSize(slot: ProductSlot, grid: CatalogGrid): CellSize {
+function slotSize(slot: ProductSlot, grid: CatalogGrid, free: boolean): CellSize {
+  if (free) return 'md' // disposition libre : toutes les fiches identiques (= aperçu)
   if (grid === 1) return 'xl' // pleine page
   if (slot.colSpan >= 2 && slot.rowSpan >= 2) return 'xl'
   if (slot.colSpan >= 2 || slot.rowSpan >= 2) return 'lg'
@@ -18,6 +19,9 @@ function slotSize(slot: ProductSlot, grid: CatalogGrid): CellSize {
  * laissent trop de vide. Échelle = racine du rapport d'AIRES, bornée.
  */
 function typoFit(ctx: CatalogRenderCtx, grid: CatalogGrid): number {
+  // Disposition libre : fit=1 (comme l'aperçu) → mêmes tailles de badges/texte,
+  // sinon les fiches du catalogue grossissent et les positions % débordent.
+  if (ctx.plan.cardStyle?.freeLayout) return 1
   const { w, h } = pagePx(ctx.format)
   const [C, R] = GRID_DIMS[grid]
   // Marges verticales : header ~64 + footer ~40 + padding grille 36 ; gaps 14.
@@ -38,6 +42,7 @@ interface Props {
 export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
   const [cols, rows] = GRID_DIMS[grid]
   const fit = typoFit(ctx, grid)
+  const free = ctx.plan.cardStyle?.freeLayout ?? false
   // Bandeaux de section (masquables via « Sous-famille » des éléments affichés).
   const bands = (ctx.plan.cardStyle?.showKicker ?? true) ? (groupRows ?? []) : []
   const bandAt = new Map(bands.map((b) => [b.row, b.label]))
@@ -69,12 +74,12 @@ export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
         if (!row) return <div key={slot.rowId} className="cat-cell" style={style} />
         // Layout horizontal (image gauche / contenu droite) : cartes larges (2×1)
         // ET cartes standard des grilles denses (6-8/page, trop courtes pour empiler).
-        const horizontal = slot.rowSpan === 1 && (slot.colSpan >= 2 || grid >= 6)
+        const horizontal = !free && slot.rowSpan === 1 && (slot.colSpan >= 2 || grid >= 6)
         const fields = extractPromoFields(row, ctx.columns, ctx.fieldMap, ctx.customFields)
         const details = buildDetailLines(ctx.customFields, fields)
         return (
           <ProductCell key={slot.rowId} fields={fields}
-            featured={slot.featured} size={slotSize(slot, grid)} details={details}
+            featured={slot.featured} size={slotSize(slot, grid, free)} details={details}
             horizontal={horizontal} cardStyle={ctx.plan.cardStyle} style={style} />
         )
       })}

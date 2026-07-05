@@ -5,12 +5,24 @@ import type React from 'react'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey, CustomFieldMap } from '@/features/retail-promo/promoTypes'
 import { FONTS_HREF } from '@/features/retail-promo/RetailPromoCard'
-import { DEFAULT_CARD_STYLE, DEFAULT_PAGE_STYLE, type CatalogCardStyle, type CatalogFormat, type CatalogPageStyle, type CatalogPlan, type CatalogTheme } from '../../catalogTypes'
+import { DEFAULT_CARD_STYLE, DEFAULT_PAGE_STYLE, GRID_DIMS, type CatalogCardStyle, type CatalogFormat, type CatalogGrid, type CatalogPageStyle, type CatalogPlan, type CatalogTheme } from '../../catalogTypes'
 
 const PX_PER_MM = 96 / 25.4
 
 export function pagePx(format: CatalogFormat): { w: number; h: number } {
   return { w: Math.round(format.widthMm * PX_PER_MM), h: Math.round(format.heightMm * PX_PER_MM) }
+}
+
+/**
+ * Dimensions (px) d'une cellule de grille (mêmes marges que le rendu : header ~64,
+ * footer ~40, padding grille 36, gaps 14). Source UNIQUE pour l'échelle typo
+ * (`typoFit`) ET l'aspect de l'aperçu de fiche en disposition libre (pour que la
+ * carte éditée ait la MÊME forme que la cellule imprimée → placement fidèle).
+ */
+export function cellDims(format: CatalogFormat, grid: CatalogGrid): { w: number; h: number } {
+  const { w, h } = pagePx(format)
+  const [C, R] = GRID_DIMS[grid]
+  return { w: (w - 64 - 14 * (C - 1)) / C, h: (h - 140 - 14 * (R - 1)) / R }
 }
 
 /** Contexte de rendu passé à toutes les pages (une seule prop drill, pas de store dans le rendu). */

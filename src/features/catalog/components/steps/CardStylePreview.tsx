@@ -27,6 +27,8 @@ interface Props {
   fields?: PromoFields | null
   /** Lignes du bloc « Détails » (champs libres) — pour que l'aperçu montre la même zone que le catalogue. */
   details?: string[]
+  /** Aspect (largeur/hauteur) de la cellule imprimée — la carte éditée l'adopte pour un placement fidèle (disposition libre). */
+  aspect?: number
   /** Monte l'overlay de drag/resize (disposition libre) quand vrai. */
   editable?: boolean
   onLayoutChange?: (id: CardObjectId, box: CardBox) => void
@@ -34,9 +36,12 @@ interface Props {
   onSelect?: (id: CardObjectId | null) => void
 }
 
-export function CardStylePreview({ theme, cardStyle, fields, details, editable, onLayoutChange, onSelect }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, details, aspect, editable, onLayoutChange, onSelect }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   const d = details && details.length ? details : SAMPLE_DETAILS
+  // Aspect réel de la cellule imprimée (disposition libre) → la carte a la MÊME
+  // forme que le catalogue. Sinon hauteur fixe (aperçu cosmétique classique).
+  const cardSize = aspect ? { aspectRatio: String(aspect) } : { height: 560 }
   const cardRef = useRef<HTMLDivElement | null>(null)
   return (
     <div className="cat-page rounded-lg overflow-hidden shrink-0 border border-border relative shadow-2xl w-full max-w-[560px]"
@@ -44,7 +49,7 @@ export function CardStylePreview({ theme, cardStyle, fields, details, editable, 
       <style>{CATALOG_CSS}</style>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 16, background: 'var(--cat-bg)' }}>
         {/* Variante VEDETTE : les réglages du ruban/cadre se voient en live ; support de l'overlay de disposition libre. */}
-        <div ref={cardRef} className="cat-style-card-host" style={{ height: 560, display: 'grid', position: 'relative' }}>
+        <div ref={cardRef} className="cat-style-card-host" style={{ ...cardSize, display: 'grid', position: 'relative' }}>
           <ProductCell fields={f} featured kicker="Sous-famille" size="md" details={d} cardStyle={cardStyle} />
           {editable && cardStyle.freeLayout && onLayoutChange && (
             <CardLayoutOverlay cardRef={cardRef} style={cardStyle} onChange={onLayoutChange} onSelect={onSelect} />

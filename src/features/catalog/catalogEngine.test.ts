@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CatalogSectionPlan, CatalogTreeNode } from './catalogTypes'
-import { DEFAULT_GRID, TOC_ENTRIES_PER_PAGE, paginateCatalog } from './catalogEngine'
+import { DEFAULT_GRID, TOC_ENTRIES_PER_PAGE, paginateCatalog, representativeGrid } from './catalogEngine'
 
 const node = (id: string, label: string, level: 1 | 2 | 3, productIds: string[] = [], children: CatalogTreeNode[] = []): CatalogTreeNode =>
   ({ id, label, level, children, productIds })
@@ -17,6 +17,22 @@ describe('paginateCatalog (flux continu par univers)', () => {
     const grids = pages.filter((p) => p.kind === 'products')
     expect(grids[0].slots).toHaveLength(4)
     expect(grids[1].slots).toHaveLength(1)
+  })
+
+  it('mode UNIFORME (disposition libre) : toutes les fiches 1×1, grille unique, malgré vedette + sizeByPrice', () => {
+    const tree = [node('a', 'A', 1, ids(8))]
+    const prices = new Map(ids(8).map((id, i) => [id, i === 0 ? 999 : 10])) // p1 très cher (sinon 2×2)
+    const pages = paginateCatalog({ tree, sections: [sec('a', 6, ['p2'])], prices, sizeByPrice: true, uniform: true, uniformGrid: 6 })
+    const grids = pages.filter((p) => p.kind === 'products')
+    for (const g of grids) for (const s of g.slots) {
+      expect(s.colSpan).toBe(1)
+      expect(s.rowSpan).toBe(1)
+    }
+  })
+
+  it('representativeGrid : densité fixe la plus fréquente (repli DEFAULT_GRID)', () => {
+    expect(representativeGrid([sec('a', 6), sec('b', 6), sec('c', 4)])).toBe(6)
+    expect(representativeGrid([])).toBe(DEFAULT_GRID)
   })
 
   it('grille par défaut = 4 si aucune section ne matche', () => {
