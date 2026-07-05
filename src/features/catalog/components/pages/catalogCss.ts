@@ -235,6 +235,10 @@ export const CATALOG_CSS = `
 .cat-free .cat-cell-details { background:rgba(127,127,127,.08); border-radius:4px; padding:4px 6px; margin-top:0; height:100%; max-height:none; overflow:hidden; }
 .cat-free .cat-cell-details span { -webkit-line-clamp:unset; display:block; overflow:visible; }
 .cat-free .cat-cell-desc { -webkit-line-clamp:unset; display:block; overflow:visible; }
+/* Textes INLINE (réf, marque, prix) passés en block : un span inline s'aligne sur
+   la LIGNE DE BASE de la police héritée (plus grande) → il descend dans sa boîte
+   et casse l'alignement des liaisons/soudures. En block, le texte colle au haut. */
+.cat-free .cat-cell-refcode, .cat-free .cat-cell-brand, .cat-free .cat-cell-pricebox { display:block; }
 .cat-cell-refcode { font-size:calc(9px * var(--cat-s-ref,1) * ${F}); font-family:var(--cat-font-ref,var(--cat-font-b)); opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
 .cat-cell-row { display:flex; align-items:flex-end; justify-content:space-between; margin-top:6px; gap:10px; }
 .cat-cell-meta { display:flex; flex-direction:column; gap:3px; min-width:0; padding-bottom:2px; }
