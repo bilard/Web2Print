@@ -70,7 +70,7 @@ export function CardStyleCard({ plan, setPlan, selectedObject, wide }: CardStyle
       </PropertySection>
 
       <PropertySection title="Couleurs des objets" help="2e case = dégradé (✕ pour revenir à l'uni).">
-        <CardStyleColors style={style} theme={plan.theme} patch={patch} />
+        <CardStyleColors style={style} theme={plan.theme} patch={patch} selected={selectedObject} />
       </PropertySection>
 
       <PropertySection title="Image">

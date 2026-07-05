@@ -56,9 +56,10 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
 
   useEffect(() => {
     if (!activeScale) return
-    const el = inputRefs.current[activeScale]
-    el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    el?.focus()
+    // preventScroll : le SCROLL du panneau appartient aux cases COULEUR du bloc
+    // sélectionné (CardStyleColors) — la ligne typo garde son anneau + le focus
+    // clavier, sans tirer le panneau dans l'autre sens.
+    inputRefs.current[activeScale]?.focus({ preventScroll: true })
   }, [selected])
 
   // Liaison entre blocs (disposition libre) : le bloc est SOUDÉ à droite de sa

@@ -2,14 +2,19 @@
 // Sous-panneau « couleurs » du style de fiches, COMPACT : grille 2 colonnes,
 // un item = étiquette + pastille couleur ; dégradé = lien « ◐ » discret sur
 // l'étiquette (fin de dégradé + ✕ = retour à l'uni). Angle commun, arrondi.
+// Sélectionner un bloc dans l'aperçu SURLIGNE ses cases (fond + textes) et
+// scrolle dessus.
+import { useEffect, useRef } from 'react'
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import { SliderField } from '@/components/shared/panel'
-import type { CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
+import type { CardObjectId, CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
 
 interface CardStyleColorsProps {
   style: CatalogCardStyle
   theme: CatalogTheme
   patch: (p: Partial<CatalogCardStyle>) => void
+  /** Objet sélectionné dans l'aperçu (disposition libre) — surligne + scrolle ses cases. */
+  selected?: CardObjectId | null
 }
 
 type ColorKey = 'promoBg' | 'stickerBg' | 'priceBg' | 'wasBg' | 'kickerBg' | 'nameColor' | 'vedetteBg' | 'vedettePriceBg' | 'priceInk' | 'vedettePriceInk'
@@ -18,14 +23,28 @@ type GradKey = 'promoBg2' | 'stickerBg2' | 'priceBg2' | 'wasBg2' | 'kickerBg2' |
 
 interface ColorDef { key: ColorKey; grad?: GradKey; label: string; fallback: string }
 
+/** Cases couleur de chaque objet de la fiche (fond + texte) — pour le surlignage à la sélection. */
+const OBJ_COLOR_KEYS: Partial<Record<CardObjectId, ColorKey[]>> = {
+  promo: ['promoBg', 'promoInk'],
+  sticker: ['stickerBg', 'stickerInk'],
+  kicker: ['kickerBg', 'kickerInk'],
+  price: ['priceBg', 'wasBg', 'priceInk', 'wasInk'],
+  vedette: ['vedetteBg', 'vedettePriceBg', 'vedetteTxtInk', 'vedettePriceInk'],
+  name: ['nameColor'], brand: ['brandColor'], description: ['descColor'],
+  ref: ['refColor'], unit: ['unitColor'], details: ['detailsColor', 'detailsBg'],
+}
+
 /** Cellule compacte : étiquette (+ ◐ dégradé) puis pastille ; 2e pastille si dégradé actif. */
-function ColorObjectField({ def, style, patch }: { def: ColorDef; style: CatalogCardStyle; patch: CardStyleColorsProps['patch'] }) {
+function ColorObjectField({ def, style, patch, highlighted, innerRef }: {
+  def: ColorDef; style: CatalogCardStyle; patch: CardStyleColorsProps['patch']
+  highlighted?: boolean; innerRef?: (el: HTMLDivElement | null) => void
+}) {
   const { key, grad, label, fallback } = def
   const base = style[key]
   const gradValue = grad ? style[grad] : ''
 
   return (
-    <div className="min-w-0 space-y-0.5">
+    <div ref={innerRef} className={`min-w-0 space-y-0.5 ${highlighted ? 'ring-2 ring-indigo-500 rounded-md p-1 -m-1' : ''}`}>
       <div className="flex items-center justify-between gap-1">
         <span className="text-[10px] text-white/30 uppercase tracking-wider truncate" title={label}>{label}</span>
         {grad && !gradValue && (
@@ -47,7 +66,13 @@ function ColorObjectField({ def, style, patch }: { def: ColorDef; style: Catalog
   )
 }
 
-export function CardStyleColors({ style, theme, patch }: CardStyleColorsProps) {
+export function CardStyleColors({ style, theme, patch, selected }: CardStyleColorsProps) {
+  const active = new Set<ColorKey>(selected ? (OBJ_COLOR_KEYS[selected] ?? []) : [])
+  const fieldRefs = useRef<Partial<Record<ColorKey, HTMLDivElement | null>>>({})
+  useEffect(() => {
+    const first = selected ? OBJ_COLOR_KEYS[selected]?.[0] : undefined
+    if (first) fieldRefs.current[first]?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [selected])
   const COLORS: ColorDef[] = [
     { key: 'promoBg', grad: 'promoBg2', label: 'Cartouche', fallback: theme.accent },
     { key: 'stickerBg', grad: 'stickerBg2', label: 'Sticker', fallback: theme.accent },
@@ -78,7 +103,10 @@ export function CardStyleColors({ style, theme, patch }: CardStyleColorsProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-x-2 gap-y-2">
-        {COLORS.map((def) => <ColorObjectField key={def.key} def={def} style={style} patch={patch} />)}
+        {COLORS.map((def) => (
+          <ColorObjectField key={def.key} def={def} style={style} patch={patch}
+            highlighted={active.has(def.key)} innerRef={(el) => { fieldRefs.current[def.key] = el }} />
+        ))}
       </div>
       <div className="grid grid-cols-1 gap-3">
         {hasGradient && (
