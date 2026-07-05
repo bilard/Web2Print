@@ -97,11 +97,19 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     const el = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
     const target = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${box.link}"]`)
     if (!el || !target) continue
-    // Soudure au bout du CONTENU de la cible (le texte), pas de sa boîte — la
-    // boîte (w %) est souvent bien plus large que le texte, surtout sur les
-    // cartes larges → le bloc lié serait soudé « dans le vide ».
-    const inner = target.firstElementChild as HTMLElement | null
-    const targetW = inner?.offsetWidth || target.offsetWidth
+    // Soudure au bout du CONTENU de la cible (le texte RENDU), pas de sa boîte —
+    // la boîte (w %) est souvent bien plus large que le texte, surtout sur les
+    // cartes larges → le bloc lié serait soudé « dans le vide ». Mesure par Range
+    // (fiable même quand le texte est display:block, où offsetWidth = la boîte).
+    let targetW = target.offsetWidth
+    const inner = target.firstElementChild
+    if (inner) {
+      const rg = document.createRange()
+      rg.selectNodeContents(inner)
+      const w = rg.getBoundingClientRect().width
+      if (w > 0) targetW = w
+      else if ((inner as HTMLElement).offsetWidth) targetW = (inner as HTMLElement).offsetWidth
+    }
     // lx/ly = décalage ajusté par l'utilisateur (glisser SANS rompre la liaison).
     el.style.left = `${Math.round((((target.offsetLeft + targetW + MAGNET_GAP) / cardW) * 100 + (box.lx ?? 0)) * 10) / 10}%`
     el.style.top = `${Math.round(((target.offsetTop / cardH) * 100 + (box.ly ?? 0)) * 10) / 10}%`
