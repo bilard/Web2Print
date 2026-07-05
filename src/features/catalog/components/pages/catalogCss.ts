@@ -118,6 +118,11 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-price-ink': s.priceInk || undefined,
     '--cat-vedette-price-ink': s.vedettePriceInk || undefined,
     '--cat-name-ink': s.nameColor || undefined,
+    // Formes des badges (presets graphiques) : rayon + inclinaison en variables.
+    '--cat-price-radius': s.priceShape !== 'tag' ? ({ rounded: '10px', pill: '999px', square: '0px' } as const)[s.priceShape] : undefined,
+    '--cat-price-rot': s.priceRotate !== -2 ? `${s.priceRotate}deg` : undefined,
+    '--cat-sticker-radius': s.stickerShape !== 'round' ? (s.stickerShape === 'square' ? '4px' : '14px') : undefined,
+    '--cat-sticker-rot': s.stickerRotate !== 8 ? `${s.stickerRotate}deg` : undefined,
     '--cat-cell-radius': s.radius !== 6 ? `${s.radius}px` : undefined,
     '--cat-img-share': s.imageShare !== 40 ? `${s.imageShare}%` : undefined,
     '--cat-img-pad': s.imagePad !== 12 ? `${s.imagePad}px` : undefined,
@@ -202,9 +207,9 @@ export const CATALOG_CSS = `
 .cat-cell-img-in { position:absolute; top:var(--cat-img-pad,12px); left:var(--cat-img-pad,12px); right:var(--cat-img-pad,12px); bottom:var(--cat-img-pad,12px); }
 .cat-cell-img-in img { width:100%; height:100%; object-fit:contain; }
 /* Sticker rond de remise (écart barré/vente) — en haut à droite du bloc image */
-.cat-price-sticker { position:absolute; top:8px; right:8px; width:calc(46px * var(--cat-s-sticker,1) * ${F}); height:calc(46px * var(--cat-s-sticker,1) * ${F}); border-radius:999px;
+.cat-price-sticker { position:absolute; top:8px; right:8px; width:calc(46px * var(--cat-s-sticker,1) * ${F}); height:calc(46px * var(--cat-s-sticker,1) * ${F}); border-radius:var(--cat-sticker-radius,999px);
   background:var(--cat-sticker-bg,var(--cat-accent)); color:#fff; display:flex; align-items:center; justify-content:center;
-  font-family:var(--cat-font-sticker,var(--cat-font-h)); font-weight:800; font-size:calc(13px * var(--cat-s-sticker,1) * ${F}); transform:rotate(8deg);
+  font-family:var(--cat-font-sticker,var(--cat-font-h)); font-weight:800; font-size:calc(13px * var(--cat-s-sticker,1) * ${F}); transform:rotate(var(--cat-sticker-rot,8deg));
   box-shadow:0 3px 10px rgba(0,0,0,.18); }
 .cat-featured .cat-price-sticker { top:54px; }
 .cat-cell-img-ph { font-size:11px; color:#94a3b8; }
@@ -252,12 +257,13 @@ export const CATALOG_CSS = `
 .cat-cell-pricebox { text-align:right; }
 .cat-cell-unit { display:block; font-size:calc(9px * var(--cat-s-unit,1) * ${F}); font-family:var(--cat-font-unit,var(--cat-font-b)); opacity:.6; letter-spacing:.08em; text-transform:uppercase; }
 /* Étiquette prix : bloc barré (bandeau sombre) solidaire du badge prix accent */
-.cat-cell-tag { display:inline-flex; flex-direction:column; align-items:flex-end; transform:rotate(-2deg); }
+.cat-cell-tag { display:inline-flex; flex-direction:column; align-items:flex-end; transform:rotate(var(--cat-price-rot,-2deg)); }
 .cat-cell-was { display:inline-block; background:var(--cat-was-bg,var(--cat-head-bg)); color:var(--cat-head-ink); font-size:calc(10px * var(--cat-s-price,1) * ${F});
-  font-family:var(--cat-font-price,var(--cat-font-b)); font-weight:700; text-decoration:line-through; padding:3px 9px 2px; border-radius:4px 4px 0 0; white-space:nowrap; }
+  font-family:var(--cat-font-price,var(--cat-font-b)); font-weight:700; text-decoration:line-through; padding:3px 9px 2px; border-radius:var(--cat-price-radius,4px) var(--cat-price-radius,4px) 0 0; white-space:nowrap; }
 .cat-cell-price { display:inline-block; background:var(--cat-price-bg,var(--cat-accent)); color:var(--cat-price-ink,#fff); font-family:var(--cat-font-price,var(--cat-font-h));
-  font-weight:800; font-size:calc(18px * var(--cat-s-price,1) * ${F}); line-height:1; padding:6px 10px 5px; border-radius:4px; white-space:nowrap; }
-.cat-cell-was + .cat-cell-price { border-radius:4px 0 4px 4px; }
+  font-weight:800; font-size:calc(18px * var(--cat-s-price,1) * ${F}); line-height:1; padding:6px 10px 5px; border-radius:var(--cat-price-radius,4px); white-space:nowrap; }
+/* Étiquette combinée barré+prix : coins soudés par défaut ; une FORME choisie (var posée) = rayon uniforme. */
+.cat-cell-was + .cat-cell-price { border-radius:var(--cat-price-radius,4px 0 4px 4px); }
 
 /* Tailles graduées (span issu du packing : prix élevé/vedette = carte plus grande) */
 .cat-lg .cat-cell-name { font-size:calc(17px * var(--cat-s-name,1) * ${F}); }

@@ -9,6 +9,8 @@ import { PropertySection } from '@/components/shared/panel'
 import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle, type CatalogPlan } from '../../catalogTypes'
 import { CardStyleTypo } from './CardStyleTypo'
 import { CardStyleColors } from './CardStyleColors'
+import { CardStylePresets } from './CardStylePresets'
+import { CardStyleShapes } from './CardStyleShapes'
 
 interface CardStyleCardProps {
   plan: CatalogPlan
@@ -64,6 +66,15 @@ export function CardStyleCard({ plan, setPlan, selectedObject, wide }: CardStyle
         <button type="button" onClick={() => patch({ layout: {}, layoutWide: {} })}
           className="text-[11px] text-indigo-300 hover:text-white underline text-left">Réinitialiser les positions</button>
       </div>
+
+      <PropertySection title="Styles prédéfinis" help="Prédéfinis = formes des badges seulement (vos couleurs/dispositions sont gardées). « Enregistrer » sauve le style COMPLET actuel comme preset réutilisable.">
+        <CardStylePresets style={style} patch={patch}
+          applyFull={(cs) => setPlan({ ...plan, cardStyle: { ...DEFAULT_CARD_STYLE, ...cs } })} />
+      </PropertySection>
+
+      <PropertySection title="Forme des badges" help="Forme du container + inclinaison du prix et du sticker de remise.">
+        <CardStyleShapes style={style} patch={patch} />
+      </PropertySection>
 
       <PropertySection title="Texte : taille & police" help="Un réglage par champ texte (nom, prix, description...).">
         <CardStyleTypo style={style} patch={patch} selected={selectedObject} wide={wide} />

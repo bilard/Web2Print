@@ -54,7 +54,7 @@ export const FREE_WIDE_LAYOUT: Record<CardObjectId, CardBox> = {
 }
 
 /** Seuil de bascule vers le design 2 colonnes : carte au moins 1,3× plus large que haute. */
-export const WIDE_RATIO = 1.3
+const WIDE_RATIO = 1.3
 
 /** Une carte de ces dimensions est-elle LARGE (design 2 colonnes) ? */
 export function isWideCard(w: number, h: number): boolean {
