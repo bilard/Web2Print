@@ -98,10 +98,10 @@ test('applyMagneticFlow : pas de poussée sans recouvrement horizontal (colonnes
     card.appendChild(el)
     return el
   }
-  const details = mk('details', 300) // colonne GAUCHE x5 w48 → descend loin
+  const details = mk('details', 300) // posé en colonne GAUCHE (x5 w48) → descend loin
   const ref = mk('ref', 20)
   // réf déplacée en colonne DROITE (x60) : aucun recouvrement avec détails (x5–53)
-  const style = { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: { ref: { x: 60, y: 88, w: 35 } } }
+  const style = { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: { details: { x: 5, y: 68, w: 48 }, ref: { x: 60, y: 88, w: 35 } } }
   applyMagneticFlow(card, style)
   expect(parseFloat(details.style.top)).toBeCloseTo(68, 0)
   expect(parseFloat(ref.style.top)).toBeCloseTo(88, 0) // reste à SA position

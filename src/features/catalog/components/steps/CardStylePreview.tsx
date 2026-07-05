@@ -103,8 +103,10 @@ export function CardStylePreview({ theme, cardStyle, fields, details, cell, hori
             <div ref={cardRef} className="cat-style-card-host" style={{ width: cell.w, height: cell.h, transform: `scale(${K})`, transformOrigin: 'top left', display: 'grid', position: 'relative' }}>
               <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" size="md" details={d}
                 horizontal={!free && horizontal} cardStyle={cardStyle} />
-              {overlay}
             </div>
+            {/* Overlay HORS de la carte scalée : ses positions sont en % (invariantes au
+                zoom) mais ses pastilles/poignées sont en px — dedans, elles seraient ×K. */}
+            {overlay}
           </div>
         </div>
       </div>
