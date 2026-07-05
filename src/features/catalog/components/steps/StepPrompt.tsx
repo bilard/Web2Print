@@ -176,11 +176,11 @@ export function StepPrompt() {
                   {/* Disposition éditée : chaque variante a SES positions (layout / layoutWide). */}
                   <div className="flex rounded-md overflow-hidden border border-border text-[11px]"
                     title="Chaque disposition s'affine séparément : verticale (cartes standard) · pleine largeur (2 colonnes)">
-                    <button type="button" onClick={() => setPreviewVariant('vertical')}
+                    <button type="button" onClick={() => { setPreviewVariant('vertical'); setSelectedObject(null) }}
                       className={`px-2.5 py-1 ${!previewWide ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
                       Verticale
                     </button>
-                    <button type="button" onClick={() => setPreviewVariant('wide')}
+                    <button type="button" onClick={() => { setPreviewVariant('wide'); setSelectedObject(null) }}
                       className={`px-2.5 py-1 ${previewWide ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
                       Pleine largeur
                     </button>

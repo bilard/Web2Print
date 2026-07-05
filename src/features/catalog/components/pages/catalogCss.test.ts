@@ -19,6 +19,18 @@ describe('cardStyleVars', () => {
     expect(Object.values(vars({})).every((v) => v === undefined)).toBe(true)
   })
 
+  it('couleurs de TEXTE par objet : la couleur choisie annule aussi l\'atténuation (opacity)', () => {
+    const v = vars({ promoInk: '#111111', descColor: '#0000ff', detailsBg: '#fff7e0' })
+    expect(v['--cat-promo-ink']).toBe('#111111')
+    expect(v['--cat-desc-ink']).toBe('#0000ff')
+    expect(v['--cat-desc-op']).toBe('1')
+    expect(v['--cat-details-bg']).toBe('#fff7e0')
+    const d = vars({})
+    expect(d['--cat-desc-ink']).toBeUndefined()
+    expect(d['--cat-desc-op']).toBeUndefined()
+    expect(d['--cat-promo-ink']).toBeUndefined()
+  })
+
   it('style PARTIEL (ancien document/modèle) → fusion avec les défauts, pas de valeurs « undefinedpx »', () => {
     const v = cardStyleVars({ promoBg: '#ff0000' } as CatalogCardStyle, THEME) as Record<string, string | undefined>
     expect(v['--cat-promo-bg']).toBe('#ff0000')

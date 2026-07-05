@@ -77,7 +77,8 @@ export const CARD_OBJECT_IDS: CardObjectId[] = [
  *  rechargement — c'était la source des cycles réf↔unité fantômes.
  *  `lx`/`ly` = décalage (%) par rapport au point de soudure — le glisser d'un bloc
  *  lié ajuste ce décalage SANS rompre la liaison. */
-export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b'; link?: CardObjectId | null; lx?: number; ly?: number }
+/** `r` = ROTATION du bloc (°) — appliquée au conteneur (contenu compris), par variante. */
+export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; r?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b'; link?: CardObjectId | null; lx?: number; ly?: number }
 
 /**
  * Style COSMÉTIQUE des fiches : réglages bornés appliqués en variables CSS
@@ -122,6 +123,20 @@ export interface CatalogCardStyle {
   wasBg: string
   kickerBg: string
   nameColor: string
+  /** Couleurs des TEXTES des badges ('' = blanc / encre du thème selon l'objet). */
+  promoInk: string
+  stickerInk: string
+  kickerInk: string
+  wasInk: string
+  vedetteTxtInk: string
+  /** Couleurs des textes de contenu ('' = hérite : accent pour la marque, encre sinon). */
+  brandColor: string
+  descColor: string
+  refColor: string
+  unitColor: string
+  detailsColor: string
+  /** Fond de la zone « Détails » ('' = gris translucide par défaut). */
+  detailsBg: string
   /** Couleur de la vedette (ruban + cadre + nom de la fiche vedette). */
   vedetteBg: string
   /** Couleur du BADGE PRIX des fiches vedette ('' = couleur prix standard). */
@@ -172,6 +187,7 @@ export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1, stickerScale: 1, vedetteScale: 1, detailsScale: 1, kickerScale: 1,
   nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '', stickerFont: '', vedetteFont: '', detailsFont: '', kickerFont: '',
   promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '', vedetteBg: '', vedettePriceBg: '', priceInk: '', vedettePriceInk: '',
+  promoInk: '', stickerInk: '', kickerInk: '', wasInk: '', vedetteTxtInk: '', brandColor: '', descColor: '', refColor: '', unitColor: '', detailsColor: '', detailsBg: '',
   promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '', vedetteBg2: '', vedettePriceBg2: '',
   vedetteLabel: 'Vedette',
   gradientAngle: 135,

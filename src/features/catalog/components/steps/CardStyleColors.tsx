@@ -13,6 +13,7 @@ interface CardStyleColorsProps {
 }
 
 type ColorKey = 'promoBg' | 'stickerBg' | 'priceBg' | 'wasBg' | 'kickerBg' | 'nameColor' | 'vedetteBg' | 'vedettePriceBg' | 'priceInk' | 'vedettePriceInk'
+  | 'promoInk' | 'stickerInk' | 'kickerInk' | 'wasInk' | 'vedetteTxtInk' | 'brandColor' | 'descColor' | 'refColor' | 'unitColor' | 'detailsColor' | 'detailsBg'
 type GradKey = 'promoBg2' | 'stickerBg2' | 'priceBg2' | 'wasBg2' | 'kickerBg2' | 'vedetteBg2' | 'vedettePriceBg2'
 
 interface ColorDef { key: ColorKey; grad?: GradKey; label: string; fallback: string }
@@ -57,7 +58,20 @@ export function CardStyleColors({ style, theme, patch }: CardStyleColorsProps) {
     { key: 'vedettePriceBg', grad: 'vedettePriceBg2', label: 'Prix vedette', fallback: theme.accent },
     { key: 'priceInk', label: 'Texte prix', fallback: '#ffffff' },
     { key: 'vedettePriceInk', label: 'Txt prix vedette', fallback: '#ffffff' },
+    // Textes des badges (fond ↑ · texte ↓).
+    { key: 'promoInk', label: 'Texte cartouche', fallback: '#ffffff' },
+    { key: 'stickerInk', label: 'Texte sticker', fallback: '#ffffff' },
+    { key: 'kickerInk', label: 'Txt sous-famille', fallback: theme.headerInk },
+    { key: 'wasInk', label: 'Txt prix barré', fallback: theme.headerInk },
+    { key: 'vedetteTxtInk', label: 'Texte ruban', fallback: '#ffffff' },
+    // Textes de contenu.
     { key: 'nameColor', label: 'Nom', fallback: theme.ink },
+    { key: 'brandColor', label: 'Marque', fallback: theme.accent },
+    { key: 'descColor', label: 'Description', fallback: theme.ink },
+    { key: 'refColor', label: 'Référence', fallback: theme.ink },
+    { key: 'unitColor', label: 'Unité', fallback: theme.ink },
+    { key: 'detailsColor', label: 'Détails (texte)', fallback: theme.ink },
+    { key: 'detailsBg', label: 'Détails (fond)', fallback: '#efefef' },
   ]
   const hasGradient = COLORS.some(({ grad }) => grad && style[grad])
 

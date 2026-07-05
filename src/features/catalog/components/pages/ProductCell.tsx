@@ -86,12 +86,15 @@ export function ProductCell({ fields: f, featured, kicker, details, cardStyle, s
     if (ax === 'c') tf.push('translateX(-50%)')
     if (ay === 'c') tf.push('translateY(-50%)')
     if (scaled) tf.push(`scale(${b.sc})`)
+    // ROTATION du bloc (contenu compris) : autour du CENTRE (naturel à l'œil) —
+    // sauf bloc mis à l'échelle, dont l'origine doit rester le coin (existant).
+    if (b.r) tf.push(`rotate(${b.r}deg)`)
     return (
       <div className="cat-obj" data-object-id={id}
         style={{ ...posH, ...posV, ...(b.w != null ? { width: `${b.w}%` } : {}), ...(fixedH ? { height: `${b.h}%`, overflow: 'hidden' } : {}),
           // Contenu aligné sur le bord d'ancrage (le badge prix colle à droite, pas au bord gauche de sa boîte).
           ...(ax !== 'l' ? { display: 'flex', justifyContent: ax === 'r' ? 'flex-end' : 'center' } : {}),
-          ...(tf.length ? { transform: tf.join(' '), transformOrigin: 'top left' } : {}) }}>
+          ...(tf.length ? { transform: tf.join(' '), transformOrigin: scaled ? 'top left' : b.r ? 'center' : 'top left' } : {}) }}>
         {node}
       </div>
     )

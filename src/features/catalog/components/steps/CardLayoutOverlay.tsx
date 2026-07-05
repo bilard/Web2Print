@@ -32,6 +32,9 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
   const [linking, setLinking] = useState(false)
   const [tick, setTick] = useState(0) // incrémenté après drag/resize → force le recalcul des rects (dépendance du useMemo ci-dessous)
   useLayoutEffect(() => { setTick((t) => t + 1) }, [style])
+  // Changement de VUE (verticale ↔ pleine largeur) : tout se replace → on
+  // DÉSÉLECTIONNE (sinon le cadre/poignées restent figés sur l'ancienne position).
+  useLayoutEffect(() => { setSel(null); setLinking(false); onSelect?.(null) }, [wide]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rectOf = (id: CardObjectId): Rect | null => {
     const card = cardRef.current
@@ -163,8 +166,20 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
             style={{ position: 'absolute', left: `${r.left}%`, top: `${r.top}%`, width: `${r.width}%`, height: `${r.height}%`, cursor: 'move', outline: sel === id ? '2px solid #6366f1' : '1px dashed rgba(99,102,241,.4)' }} />
         )
       })}
-      {sel && selRect && selMagnet != null && (
+      {sel && selRect && (
         <div style={{ position: 'absolute', left: `${selRect.left}%`, top: `calc(${selRect.top}% - 24px)`, zIndex: 22, display: 'inline-flex', gap: 4 }}>
+          {/* ROTATION du bloc (contenu compris) — pour TOUS les blocs, par variante. */}
+          <label onPointerDown={(e) => e.stopPropagation()}
+            title="Rotation du bloc (°) — tourne le bloc et son contenu"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 6px', borderRadius: 999,
+              fontSize: 10, fontWeight: 700, border: '1px solid #6366f1', background: '#fff', color: '#6366f1' }}>
+            ↻
+            <input type="number" min={-180} max={180} step={1} value={boxOf(sel).r ?? 0}
+              onChange={(e) => onChange(sel, { ...boxOf(sel), r: Math.max(-180, Math.min(180, Number(e.target.value) || 0)) })}
+              style={{ width: 34, border: 'none', outline: 'none', background: 'transparent', color: '#6366f1', fontSize: 10, fontWeight: 700 }} />
+            °
+          </label>
+          {selMagnet != null && (<>
           <button type="button" onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }} onClick={toggleMagnet}
             title={selMagnet
               ? 'Aimanté : collé au bloc texte du dessus selon son contenu (cliquer pour détacher)'
@@ -194,6 +209,7 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
               color: boxOf(sel).link ? '#fff' : '#6366f1' }}>
             🔗 {boxOf(sel).link ? 'Lié ✕' : linking ? 'Cliquez la cible…' : 'Lier à…'}
           </button>
+          </>)}
           {/* Bloc lié mais DÉCALÉ du point de soudure : recoller net (contrainte ferme). */}
           {(() => {
             const b = boxOf(sel)

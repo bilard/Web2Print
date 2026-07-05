@@ -118,6 +118,24 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-price-ink': s.priceInk || undefined,
     '--cat-vedette-price-ink': s.vedettePriceInk || undefined,
     '--cat-name-ink': s.nameColor || undefined,
+    // Textes des badges ('' = blanc / encre d'en-tête selon l'objet).
+    '--cat-promo-ink': s.promoInk || undefined,
+    '--cat-sticker-ink': s.stickerInk || undefined,
+    '--cat-kicker-ink': s.kickerInk || undefined,
+    '--cat-was-ink': s.wasInk || undefined,
+    '--cat-vedette-txt': s.vedetteTxtInk || undefined,
+    // Textes de contenu : la couleur choisie ANNULE aussi l'atténuation par
+    // défaut (opacity), sinon elle serait rendue délavée.
+    '--cat-brand-ink': s.brandColor || undefined,
+    '--cat-desc-ink': s.descColor || undefined,
+    '--cat-desc-op': s.descColor ? '1' : undefined,
+    '--cat-ref-ink': s.refColor || undefined,
+    '--cat-ref-op': s.refColor ? '1' : undefined,
+    '--cat-unit-ink': s.unitColor || undefined,
+    '--cat-unit-op': s.unitColor ? '1' : undefined,
+    '--cat-details-ink': s.detailsColor || undefined,
+    '--cat-details-op': s.detailsColor ? '1' : undefined,
+    '--cat-details-bg': s.detailsBg || undefined,
     '--cat-cell-radius': s.radius !== 6 ? `${s.radius}px` : undefined,
     '--cat-img-share': s.imageShare !== 40 ? `${s.imageShare}%` : undefined,
     '--cat-img-pad': s.imagePad !== 12 ? `${s.imagePad}px` : undefined,
@@ -174,7 +192,7 @@ export const CATALOG_CSS = `
 .cat-grid { flex:1; display:grid; gap:14px; padding:20px 32px 16px; min-height:0; }
 /* Bandeau de SECTION (sous-famille) : casse la page au début de chaque groupe */
 .cat-group-band { display:flex; align-items:center; gap:10px;
-  background:var(--cat-kicker-bg,var(--cat-head-bg)); color:var(--cat-head-ink);
+  background:var(--cat-kicker-bg,var(--cat-head-bg)); color:var(--cat-kicker-ink,var(--cat-head-ink));
   font-family:var(--cat-font-h); font-weight:800; font-size:calc(11px * ${F});
   letter-spacing:.16em; text-transform:uppercase;
   padding:calc(5px * ${F}) 14px; border-radius:4px; }
@@ -203,29 +221,29 @@ export const CATALOG_CSS = `
 .cat-cell-img-in img { width:100%; height:100%; object-fit:contain; }
 /* Sticker rond de remise (écart barré/vente) — en haut à droite du bloc image */
 .cat-price-sticker { position:absolute; top:8px; right:8px; width:calc(46px * var(--cat-s-sticker,1) * ${F}); height:calc(46px * var(--cat-s-sticker,1) * ${F}); border-radius:999px;
-  background:var(--cat-sticker-bg,var(--cat-accent)); color:#fff; display:flex; align-items:center; justify-content:center;
+  background:var(--cat-sticker-bg,var(--cat-accent)); color:var(--cat-sticker-ink,#fff); display:flex; align-items:center; justify-content:center;
   font-family:var(--cat-font-sticker,var(--cat-font-h)); font-weight:800; font-size:calc(13px * var(--cat-s-sticker,1) * ${F}); transform:rotate(8deg);
   box-shadow:0 3px 10px rgba(0,0,0,.18); }
 .cat-featured .cat-price-sticker { top:54px; }
 .cat-cell-img-ph { font-size:11px; color:#94a3b8; }
-.cat-cell-kicker { position:absolute; top:0; left:0; background:var(--cat-kicker-bg,var(--cat-head-bg)); color:var(--cat-head-ink);
+.cat-cell-kicker { position:absolute; top:0; left:0; background:var(--cat-kicker-bg,var(--cat-head-bg)); color:var(--cat-kicker-ink,var(--cat-head-ink));
   font-family:var(--cat-font-kicker,var(--cat-font-h)); font-weight:700; font-size:calc(9px * var(--cat-s-kicker,1) * ${F}); letter-spacing:.12em; text-transform:uppercase;
   padding:calc(4px * var(--cat-s-kicker,1)) calc(10px * var(--cat-s-kicker,1)); border-radius:0 0 6px 0; }
 /* Cartouche promo (« Top affaire », « -30% »…) : bandeau accent AU-DESSUS de l'image */
-.cat-cell-promo { flex:none; background:var(--cat-promo-bg,var(--cat-accent)); color:#fff; font-family:var(--cat-font-promo,var(--cat-font-h)); font-weight:800;
+.cat-cell-promo { flex:none; background:var(--cat-promo-bg,var(--cat-accent)); color:var(--cat-promo-ink,#fff); font-family:var(--cat-font-promo,var(--cat-font-h)); font-weight:800;
   font-size:calc(11px * var(--cat-s-promo,1) * ${F}); letter-spacing:.14em; text-transform:uppercase; text-align:center; padding:6px 10px; }
 .cat-has-promo .cat-cell-kicker { top:26px; }
 .cat-cell-body { flex:none; padding:8px 12px 10px; display:flex; flex-direction:column; gap:2px; }
 .cat-cell-brand { font-size:calc(10px * var(--cat-s-brand,1) * ${F}); font-family:var(--cat-font-brand,var(--cat-font-b));
-  text-transform:uppercase; letter-spacing:.12em; color:var(--cat-accent); font-weight:800; }
+  text-transform:uppercase; letter-spacing:.12em; color:var(--cat-brand-ink,var(--cat-accent)); font-weight:800; }
 .cat-cell-name { font-family:var(--cat-font-name,var(--cat-font-h)); font-weight:700; font-size:calc(15px * var(--cat-s-name,1) * ${F}); line-height:1.2;
   text-transform:uppercase; color:var(--cat-name-ink,inherit);
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.cat-cell-desc { font-family:var(--cat-font-desc,var(--cat-font-b)); font-size:calc(11px * var(--cat-s-desc,1) * ${F}); opacity:.7; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.cat-cell-desc { font-family:var(--cat-font-desc,var(--cat-font-b)); font-size:calc(11px * var(--cat-s-desc,1) * ${F}); color:var(--cat-desc-ink,inherit); opacity:var(--cat-desc-op,.7); line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .cat-cell-details { display:flex; flex-direction:column; gap:1px; margin-top:4px;
-  background:rgba(127,127,127,.06); border-radius:4px; padding:3px 7px;
+  background:var(--cat-details-bg,rgba(127,127,127,.06)); border-radius:4px; padding:3px 7px;
   font-family:var(--cat-font-details,var(--cat-font-b)); font-size:calc(9px * var(--cat-s-details,1) * ${F});
-  opacity:.75; line-height:1.3; }
+  color:var(--cat-details-ink,inherit); opacity:var(--cat-details-op,.75); line-height:1.3; }
 .cat-cell-details span { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 /* Cartes compactes (md, grilles denses) : bloc détails à HAUTEUR BORNÉE → coupe
    nette (ellipsis), jamais de débordement, réf/prix toujours visibles en bas. */
@@ -239,21 +257,21 @@ export const CATALOG_CSS = `
    et champs détails en hauteur naturelle) — c'est le placement des boîtes qui
    organise la place, et l'utilisateur peut les déplacer/agrandir. Une hauteur
    posée explicitement (poignées) reste respectée via l'overflow du .cat-obj. */
-.cat-free .cat-cell-details { background:rgba(127,127,127,.08); border-radius:4px; padding:4px 6px; margin-top:0; height:100%; max-height:none; overflow:hidden; }
+.cat-free .cat-cell-details { background:var(--cat-details-bg,rgba(127,127,127,.08)); border-radius:4px; padding:4px 6px; margin-top:0; height:100%; max-height:none; overflow:hidden; }
 .cat-free .cat-cell-details span { -webkit-line-clamp:unset; display:block; overflow:visible; }
 .cat-free .cat-cell-desc { -webkit-line-clamp:unset; display:block; overflow:visible; }
 /* Textes INLINE (réf, marque, prix) passés en block : un span inline s'aligne sur
    la LIGNE DE BASE de la police héritée (plus grande) → il descend dans sa boîte
    et casse l'alignement des liaisons/soudures. En block, le texte colle au haut. */
 .cat-free .cat-cell-refcode, .cat-free .cat-cell-brand, .cat-free .cat-cell-pricebox { display:block; }
-.cat-cell-refcode { font-size:calc(9px * var(--cat-s-ref,1) * ${F}); font-family:var(--cat-font-ref,var(--cat-font-b)); opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
+.cat-cell-refcode { font-size:calc(9px * var(--cat-s-ref,1) * ${F}); font-family:var(--cat-font-ref,var(--cat-font-b)); color:var(--cat-ref-ink,inherit); opacity:var(--cat-ref-op,.55); letter-spacing:.08em; text-transform:uppercase; }
 .cat-cell-row { display:flex; align-items:flex-end; justify-content:space-between; margin-top:6px; gap:10px; }
 .cat-cell-meta { display:flex; flex-direction:column; gap:3px; min-width:0; padding-bottom:2px; }
 .cat-cell-pricebox { text-align:right; }
-.cat-cell-unit { display:block; font-size:calc(9px * var(--cat-s-unit,1) * ${F}); font-family:var(--cat-font-unit,var(--cat-font-b)); opacity:.6; letter-spacing:.08em; text-transform:uppercase; }
+.cat-cell-unit { display:block; font-size:calc(9px * var(--cat-s-unit,1) * ${F}); font-family:var(--cat-font-unit,var(--cat-font-b)); color:var(--cat-unit-ink,inherit); opacity:var(--cat-unit-op,.6); letter-spacing:.08em; text-transform:uppercase; }
 /* Étiquette prix : bloc barré (bandeau sombre) solidaire du badge prix accent */
 .cat-cell-tag { display:inline-flex; flex-direction:column; align-items:flex-end; transform:rotate(-2deg); }
-.cat-cell-was { display:inline-block; background:var(--cat-was-bg,var(--cat-head-bg)); color:var(--cat-head-ink); font-size:calc(10px * var(--cat-s-price,1) * ${F});
+.cat-cell-was { display:inline-block; background:var(--cat-was-bg,var(--cat-head-bg)); color:var(--cat-was-ink,var(--cat-head-ink)); font-size:calc(10px * var(--cat-s-price,1) * ${F});
   font-family:var(--cat-font-price,var(--cat-font-b)); font-weight:700; text-decoration:line-through; padding:3px 9px 2px; border-radius:4px 4px 0 0; white-space:nowrap; }
 .cat-cell-price { display:inline-block; background:var(--cat-price-bg,var(--cat-accent)); color:var(--cat-price-ink,#fff); font-family:var(--cat-font-price,var(--cat-font-h));
   font-weight:800; font-size:calc(18px * var(--cat-s-price,1) * ${F}); line-height:1; padding:6px 10px 5px; border-radius:4px; white-space:nowrap; }
@@ -305,7 +323,7 @@ export const CATALOG_CSS = `
 .cat-featured .cat-cell-price { background:var(--cat-vedette-price-bg,var(--cat-price-bg,var(--cat-accent)));
   color:var(--cat-vedette-price-ink,var(--cat-price-ink,#fff)); }
 .cat-cell-vedette { position:absolute; top:16px; right:-34px; transform:rotate(45deg); z-index:1;
-  background:var(--cat-vedette-bg,var(--cat-accent)); color:#fff; font-family:var(--cat-font-vedette,var(--cat-font-h)); font-weight:800;
+  background:var(--cat-vedette-bg,var(--cat-accent)); color:var(--cat-vedette-txt,#fff); font-family:var(--cat-font-vedette,var(--cat-font-h)); font-weight:800;
   font-size:calc(10px * var(--cat-s-vedette,1) * ${F}); letter-spacing:.16em; text-transform:uppercase;
   padding:calc(5px * var(--cat-s-vedette,1) * ${F}) 42px; }
 .cat-xl .cat-cell-vedette { top:22px; right:-30px; font-size:calc(12px * var(--cat-s-vedette,1) * ${F}); }
