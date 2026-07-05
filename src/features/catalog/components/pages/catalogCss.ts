@@ -196,7 +196,7 @@ export const CATALOG_CSS = `
 .cat-cell-details { display:flex; flex-direction:column; gap:1px; margin-top:4px;
   font-family:var(--cat-font-details,var(--cat-font-b)); font-size:calc(9px * var(--cat-s-details,1) * ${F});
   opacity:.6; line-height:1.3; }
-.cat-cell-details span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cat-cell-details span { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .cat-cell-refcode { font-size:calc(9px * var(--cat-s-ref,1) * ${F}); font-family:var(--cat-font-ref,var(--cat-font-b)); opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
 .cat-cell-row { display:flex; align-items:flex-end; justify-content:space-between; margin-top:6px; gap:10px; }
 .cat-cell-meta { display:flex; flex-direction:column; gap:3px; min-width:0; padding-bottom:2px; }
