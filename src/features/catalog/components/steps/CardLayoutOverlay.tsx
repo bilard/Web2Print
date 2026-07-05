@@ -25,6 +25,8 @@ interface Props {
 
 export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props) {
   const [sel, setSel] = useState<CardObjectId | null>(null)
+  // Mode LIAISON : le prochain clic sur un autre bloc le désigne comme CIBLE du bloc sélectionné.
+  const [linking, setLinking] = useState(false)
   const [tick, setTick] = useState(0) // incrémenté après drag/resize → force le recalcul des rects (dépendance du useMemo ci-dessous)
   useLayoutEffect(() => { setTick((t) => t + 1) }, [style])
 
@@ -49,6 +51,14 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
   const cardPx = () => { const c = cardRef.current?.getBoundingClientRect(); return { w: c?.width || 1, h: c?.height || 1 } }
 
   const startDrag = (e: ReactPointerEvent, id: CardObjectId) => {
+    // Mode liaison actif : ce clic désigne la CIBLE (soudure à sa droite), pas une sélection.
+    if (linking && sel && id !== sel) {
+      e.preventDefault(); e.stopPropagation()
+      onChange(sel, { ...freeLayoutBox(sel, style), link: id, ax: 'l', ay: 't' })
+      setLinking(false)
+      return
+    }
+    setLinking(false)
     e.preventDefault(); e.stopPropagation(); setSel(id); onSelect?.(id)
     const b = freeLayoutBox(id, style)
     const { w, h } = cardPx()
@@ -59,7 +69,8 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
     const by = (b.ay ?? 't') !== 't' && r0 ? r1(r0.top) : b.y
     const sx = e.clientX, sy = e.clientY
     const move = (ev: PointerEvent) => {
-      onChange(id, { ...b, ax: 'l', ay: 't', x: clamp(r1(bx + ((ev.clientX - sx) / w) * 100), 0, 100), y: clamp(r1(by + ((ev.clientY - sy) / h) * 100), 0, 100) })
+      // Glisser rompt liaison et ancrages : placement manuel gauche/haut.
+      onChange(id, { ...b, ax: 'l', ay: 't', link: undefined, x: clamp(r1(bx + ((ev.clientX - sx) / w) * 100), 0, 100), y: clamp(r1(by + ((ev.clientY - sy) / h) * 100), 0, 100) })
     }
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); setTick((t) => t + 1) }
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
@@ -114,16 +125,33 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
         )
       })}
       {sel && selRect && selMagnet != null && (
-        <button type="button" onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }} onClick={toggleMagnet}
-          title={selMagnet
-            ? 'Aimanté : collé au bloc texte du dessus selon son contenu (cliquer pour détacher)'
-            : 'Libre : reste exactement où vous le posez (cliquer pour aimanter)'}
-          style={{ position: 'absolute', left: `${selRect.left}%`, top: `calc(${selRect.top}% - 24px)`, zIndex: 22,
-            display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999,
-            fontSize: 10, fontWeight: 700, cursor: 'pointer', border: '1px solid #6366f1',
-            background: selMagnet ? '#6366f1' : '#fff', color: selMagnet ? '#fff' : '#6366f1' }}>
-          🧲 {selMagnet ? 'Aimanté' : 'Libre'}
-        </button>
+        <div style={{ position: 'absolute', left: `${selRect.left}%`, top: `calc(${selRect.top}% - 24px)`, zIndex: 22, display: 'inline-flex', gap: 4 }}>
+          <button type="button" onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }} onClick={toggleMagnet}
+            title={selMagnet
+              ? 'Aimanté : collé au bloc texte du dessus selon son contenu (cliquer pour détacher)'
+              : 'Libre : reste exactement où vous le posez (cliquer pour aimanter)'}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999,
+              fontSize: 10, fontWeight: 700, cursor: 'pointer', border: '1px solid #6366f1',
+              background: selMagnet ? '#6366f1' : '#fff', color: selMagnet ? '#fff' : '#6366f1' }}>
+            🧲 {selMagnet ? 'Aimanté' : 'Libre'}
+          </button>
+          {/* LIAISON entre blocs : soude ce bloc à DROITE d'un autre (il le suit partout). */}
+          <button type="button" onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }}
+            onClick={() => {
+              const b = freeLayoutBox(sel, style)
+              if (b.link) onChange(sel, { ...b, link: undefined })
+              else setLinking((v) => !v)
+            }}
+            title={freeLayoutBox(sel, style).link
+              ? 'Lié : soudé à droite de sa cible, la suit partout (cliquer pour délier)'
+              : linking ? 'Cliquez maintenant le bloc CIBLE dans l\'aperçu' : 'Lier ce bloc à un autre (soudé à sa droite)'}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999,
+              fontSize: 10, fontWeight: 700, cursor: 'pointer', border: '1px solid #6366f1',
+              background: freeLayoutBox(sel, style).link ? '#6366f1' : linking ? '#eef2ff' : '#fff',
+              color: freeLayoutBox(sel, style).link ? '#fff' : '#6366f1' }}>
+            🔗 {freeLayoutBox(sel, style).link ? 'Lié ✕' : linking ? 'Cliquez la cible…' : 'Lier à…'}
+          </button>
+        </div>
       )}
       {sel && selRect && HANDLES.map((hnd) => {
         const cx = selRect.left + (dirX(hnd) < 0 ? 0 : dirX(hnd) > 0 ? selRect.width : selRect.width / 2)

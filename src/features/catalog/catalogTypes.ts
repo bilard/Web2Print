@@ -70,7 +70,9 @@ export const CARD_OBJECT_IDS: CardObjectId[] = [
  *  `ax`/`ay` = ANCRAGE LIQUIDE aux bords de la fiche (façon InDesign) : 'r' = x
  *  devient l'écart au bord DROIT, 'b' = y l'écart au bord BAS, 'c' = centré —
  *  l'objet reste collé à son bord sur TOUTES les tailles de carte. */
-export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b' }
+/** `link` = LIAISON entre blocs : collé à DROITE du bloc cible (aligné en haut),
+ *  il le suit dans tous ses déplacements (ex. unité soudée à la réf). */
+export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b'; link?: CardObjectId }
 
 /**
  * Style COSMÉTIQUE des fiches : réglages bornés appliqués en variables CSS

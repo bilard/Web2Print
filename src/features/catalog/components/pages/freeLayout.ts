@@ -64,9 +64,9 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
       return el ? { el, box: freeLayoutBox(id, style) } : null
     })
     .filter((x): x is { el: HTMLElement; box: CardBox } => x != null)
-    // Un bloc ANCRÉ au bas/centre (mise en page liquide) sort de la chaîne : il
-    // est positionné par son bord, pas par le flux.
-    .filter((x) => (x.box.ay ?? 't') === 't')
+    // Un bloc ANCRÉ au bas/centre (mise en page liquide) ou LIÉ à un autre bloc
+    // sort de la chaîne : il est positionné par son bord / sa cible.
+    .filter((x) => (x.box.ay ?? 't') === 't' && !x.box.link)
     .sort((a, b) => a.box.y - b.box.y)
   for (const it of items) it.el.style.top = `${it.box.y}%` // repart du configuré (mesures stables)
   const placed: { x1: number; x2: number; bottom: number }[] = []
@@ -87,6 +87,18 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     const top = snap ?? (it.box.y / 100) * cardH
     it.el.style.top = `${Math.round((top / cardH) * 1000) / 10}%`
     placed.push({ x1, x2, bottom: top + it.el.offsetHeight })
+  }
+  // ── LIAISONS entre blocs (après la passe verticale : les cibles sont posées) :
+  // un bloc lié est SOUDÉ à droite de sa cible, aligné sur son haut — il la suit
+  // dans tous ses déplacements et sa volumétrie (ex. unité collée à la réf).
+  for (const id of CARD_OBJECT_IDS) {
+    const box = freeLayoutBox(id, style)
+    if (!box.link) continue
+    const el = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
+    const target = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${box.link}"]`)
+    if (!el || !target) continue
+    el.style.left = `${Math.round(((target.offsetLeft + target.offsetWidth + MAGNET_GAP) / cardW) * 1000) / 10}%`
+    el.style.top = `${Math.round((target.offsetTop / cardH) * 1000) / 10}%`
   }
 }
 

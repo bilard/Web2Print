@@ -107,6 +107,29 @@ test('applyMagneticFlow : pas de poussée sans recouvrement horizontal (colonnes
   expect(parseFloat(ref.style.top)).toBeCloseTo(88, 0) // reste à SA position
 })
 
+test('applyMagneticFlow : bloc LIÉ soudé à droite de sa cible (aligné en haut), hors chaîne verticale', () => {
+  const card = document.createElement('div')
+  Object.defineProperty(card, 'clientHeight', { value: 1000 })
+  Object.defineProperty(card, 'clientWidth', { value: 1000 })
+  const mk = (id: string, h: number, extra?: { left?: number; width?: number; top?: number }) => {
+    const el = document.createElement('div')
+    el.className = 'cat-obj'
+    el.setAttribute('data-object-id', id)
+    Object.defineProperty(el, 'offsetHeight', { value: h })
+    Object.defineProperty(el, 'offsetWidth', { value: extra?.width ?? 400 })
+    Object.defineProperty(el, 'offsetLeft', { value: extra?.left ?? 0 })
+    Object.defineProperty(el, 'offsetTop', { value: extra?.top ?? 0 })
+    card.appendChild(el)
+    return el
+  }
+  mk('ref', 20, { left: 50, width: 200, top: 880 })
+  const unit = mk('unit', 20)
+  const style = { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: { unit: { x: 5, y: 92, link: 'ref' as const } } }
+  applyMagneticFlow(card, style)
+  expect(parseFloat(unit.style.left)).toBeCloseTo(25.6, 1) // (50+200+6)/1000
+  expect(parseFloat(unit.style.top)).toBeCloseTo(88, 0)    // aligné sur le haut de la réf
+})
+
 test('FREE_DEFAULT_LAYOUT : calqué sur l\'auto (image haut, textes empilés, rangée basse)', () => {
   const { promo, image, name, description, details, ref, price } = FREE_DEFAULT_LAYOUT
   expect(promo.y).toBeLessThan(image.y)

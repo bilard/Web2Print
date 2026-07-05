@@ -62,7 +62,9 @@ export function ProductCell({ fields: f, featured, kicker, size, details, horizo
       const fixedH = b.h != null && !FLOW_CHAIN.includes(id)
       // ANCRAGE LIQUIDE (ax/ay) : collé au bord droit/bas ou centré — stable sur
       // toutes les tailles de carte (mise en page liquide façon InDesign).
-      const ax = b.ax ?? 'l', ay = b.ay ?? 't'
+      // Un bloc LIÉ (link) est positionné par sa cible (applyMagneticFlow) →
+      // rendu de base gauche/haut, sans ancre ni centrage.
+      const ax = b.link ? 'l' : (b.ax ?? 'l'), ay = b.link ? 't' : (b.ay ?? 't')
       const posH: CSSProperties = ax === 'r' ? { right: `${b.x}%` } : { left: ax === 'c' ? '50%' : `${b.x}%` }
       const posV: CSSProperties = ay === 'b' ? { bottom: `${b.y}%` } : { top: ay === 'c' ? '50%' : `${b.y}%` }
       const tf: string[] = []
