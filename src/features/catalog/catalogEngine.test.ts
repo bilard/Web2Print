@@ -19,28 +19,19 @@ describe('paginateCatalog (flux continu par univers)', () => {
     expect(grids[1].slots).toHaveLength(1)
   })
 
-  it('mode UNIFORME (disposition libre) : toutes les fiches 1×1, grille unique, malgré vedette + sizeByPrice', () => {
-    const tree = [node('a', 'A', 1, ids(8))]
-    const prices = new Map(ids(8).map((id, i) => [id, i === 0 ? 999 : 10])) // p1 très cher (sinon 2×2)
-    const pages = paginateCatalog({ tree, sections: [sec('a', 6, ['p2'])], prices, sizeByPrice: true, uniform: true, uniformGrid: 6 })
-    const grids = pages.filter((p) => p.kind === 'products')
-    for (const g of grids) for (const s of g.slots) {
-      expect(s.colSpan).toBe(1)
-      expect(s.rowSpan).toBe(1)
-    }
+  it('mode UNIFORME (disposition libre) : UNE grille pour tout le catalogue, densités/aléatoire ignorés', () => {
+    const tree = [node('a', 'A', 1, ids(8)), node('b', 'B', 1, ids(8))]
+    const sections = [sec('a', 2), { ...sec('b', 8), randomDensity: true }]
+    const pages = paginateCatalog({ tree, sections, uniform: true, uniformGrid: 4 })
+    for (const p of pages) if (p.kind === 'products') expect(p.grid).toBe(4)
   })
 
-  it('mode UNIFORME : flux CONTINU (pas de bandeau ni rupture par sous-famille → zéro vide interne)', () => {
-    const tree = [node('a', 'A', 1, [], [
-      node('a/b', 'B', 2, ids(1, 'x')),
-      node('a/c', 'C', 2, ids(1, 'y')),
-      node('a/d', 'D', 2, ids(1, 'z')),
-    ])]
-    const pages = paginateCatalog({ tree, sections: [sec('a', 4)], uniform: true, uniformGrid: 4 })
-    const grids = pages.filter((p) => p.kind === 'products')
-    expect(grids).toHaveLength(1) // 3 fiches collées sur UNE page (pas 3 rangées)
-    expect(grids[0].slots).toHaveLength(3)
-    expect(grids[0].groupRows ?? []).toHaveLength(0) // aucun bandeau en uniforme
+  it('mode UNIFORME : vedettes, taille ∝ prix et étirement fonctionnent comme en auto', () => {
+    const tree = [node('a', 'A', 1, ids(8))]
+    const prices = new Map(ids(8).map((id, i) => [id, i === 0 ? 999 : 10]))
+    const pages = paginateCatalog({ tree, sections: [sec('a', 6, ['p2'])], prices, sizeByPrice: true, uniform: true, uniformGrid: 6 })
+    const slots = pages.filter((p) => p.kind === 'products').flatMap((p) => p.slots)
+    expect(slots.some((s) => s.colSpan * s.rowSpan > 1)).toBe(true) // hiérarchie de tailles conservée
   })
 
   it('representativeGrid : densité fixe la plus fréquente (repli DEFAULT_GRID)', () => {

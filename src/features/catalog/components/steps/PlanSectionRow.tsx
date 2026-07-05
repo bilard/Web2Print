@@ -22,9 +22,13 @@ interface PlanSectionRowProps {
   onToggleFeatured: (rowId: string) => void
   /** Ligne d'univers seulement : changer la couleur du chapitre. */
   onColor?: (color: string) => void
+  /** Produit actuellement affiché dans l'aperçu de la fiche. */
+  previewId?: string | null
+  /** 👁 sur la puce : afficher CE produit dans l'aperçu (test du rendu réel). */
+  onPreview?: (rowId: string) => void
 }
 
-export function PlanSectionRow({ node, section, products, chapterColor, onDensity, onToggleFeatured, onColor }: PlanSectionRowProps) {
+export function PlanSectionRow({ node, section, products, chapterColor, onDensity, onToggleFeatured, onColor, previewId, onPreview }: PlanSectionRowProps) {
   const densityValue = section.randomDensity ? RANDOM_ID : String(section.productsPerPage)
   const st = LEVEL_STYLES[node.level]
   const count = subtreeProductCount(node)
@@ -61,14 +65,24 @@ export function PlanSectionRow({ node, section, products, chapterColor, onDensit
         <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pl-5">
           {products.map((f) => {
             const active = section.featuredIds.includes(f.id)
+            const previewed = previewId === f.id
             return (
-              <button key={f.id} type="button" onClick={() => onToggleFeatured(f.id)} title={f.name}
-                className={`px-2 py-1 rounded-md text-xs truncate max-w-[160px] ${
-                  active ? 'text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'
-                }`}
+              <span key={f.id}
+                className={`inline-flex items-center rounded-md text-xs overflow-hidden ${
+                  active ? 'text-[#fff]' : 'bg-surface-2 text-muted-foreground'
+                } ${previewed ? 'ring-2 ring-indigo-500' : ''}`}
                 style={active ? { background: chapterColor } : undefined}>
-                {active && '★ '}{f.name}
-              </button>
+                <button type="button" onClick={() => onToggleFeatured(f.id)} title={`${f.name} — cliquer : vedette on/off`}
+                  className="px-2 py-1 truncate max-w-[140px] hover:text-white">
+                  {active && '★ '}{f.name}
+                </button>
+                {onPreview && (
+                  <button type="button" onClick={() => onPreview(f.id)} title="Afficher ce produit dans l'aperçu de la fiche"
+                    className={`px-1.5 py-1 border-l ${active ? 'border-[#ffffff33]' : 'border-border'} hover:text-white ${previewed ? 'text-indigo-400' : ''}`}>
+                    👁
+                  </button>
+                )}
+              </span>
             )
           })}
         </div>

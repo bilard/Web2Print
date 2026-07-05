@@ -31,6 +31,8 @@ interface Props {
   details?: string[]
   /** Cellule imprimée (px + facteur --cat-fit) — la carte éditée l'adopte À L'IDENTIQUE (disposition libre). */
   cell?: { w: number; h: number; fit: number }
+  /** Variante affichée en mode cellule : vedette (ruban + cadre) ou standard. */
+  featuredVariant?: boolean
   /** Monte l'overlay de drag/resize (disposition libre) quand vrai. */
   editable?: boolean
   onLayoutChange?: (id: CardObjectId, box: CardBox) => void
@@ -38,7 +40,7 @@ interface Props {
   onSelect?: (id: CardObjectId | null) => void
 }
 
-export function CardStylePreview({ theme, cardStyle, fields, details, cell, editable, onLayoutChange, onSelect }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, details, cell, featuredVariant = true, editable, onLayoutChange, onSelect }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   const d = details && details.length ? details : SAMPLE_DETAILS
   const cardRef = useRef<HTMLDivElement | null>(null)
@@ -58,7 +60,7 @@ export function CardStylePreview({ theme, cardStyle, fields, details, cell, edit
           {/* Conteneur qui réserve la place ZOOMÉE ; la carte interne est à la taille cellule exacte puis scale(K). */}
           <div style={{ width: cell.w * K, height: cell.h * K, position: 'relative' }}>
             <div ref={cardRef} className="cat-style-card-host" style={{ width: cell.w, height: cell.h, transform: `scale(${K})`, transformOrigin: 'top left', display: 'grid', position: 'relative' }}>
-              <ProductCell fields={f} featured kicker="Sous-famille" size="md" details={d} cardStyle={cardStyle} />
+              <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" size="md" details={d} cardStyle={cardStyle} />
               {overlay}
             </div>
           </div>

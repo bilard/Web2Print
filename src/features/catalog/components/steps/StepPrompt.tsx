@@ -36,6 +36,9 @@ export function StepPrompt() {
   const [busy, setBusy] = useState(false)
   // Objet sélectionné dans l'overlay de disposition libre → met en évidence + focus le curseur correspondant.
   const [selectedObject, setSelectedObject] = useState<CardObjectId | null>(null)
+  // Produit affiché dans l'aperçu (👁 sur les puces de la carte Sections) + variante.
+  const [previewRowId, setPreviewRowId] = useState<string | null>(null)
+  const [previewFeatured, setPreviewFeatured] = useState(false)
 
   const rowsById = useMemo(() => new Map(rawRows.map((r) => [r._id, r])), [rawRows])
   const selectedRows = useMemo(() => {
@@ -47,12 +50,13 @@ export function StepPrompt() {
     [selectedRows, rawColumns, levelKeys, treeEdits],
   )
   const flatNodes = useMemo(() => flattenTree(tree), [tree])
-  // Fiche exemple pour l'aperçu live du style (1er produit sélectionné) — AVEC les
-  // champs libres pour que l'aperçu montre la même zone « Détails » que le catalogue.
-  const sampleFields = useMemo(
-    () => (selectedRows.length > 0 ? extractPromoFields(selectedRows[0], rawColumns, fieldMap, customFields) : null),
-    [selectedRows, rawColumns, fieldMap, customFields],
-  )
+  // Fiche exemple pour l'aperçu live du style : produit choisi via 👁 (carte
+  // Sections), sinon 1er produit sélectionné — AVEC les champs libres pour que
+  // l'aperçu montre la même zone « Détails » que le catalogue.
+  const sampleFields = useMemo(() => {
+    const row = (previewRowId ? rowsById.get(previewRowId) : null) ?? selectedRows[0] ?? null
+    return row ? extractPromoFields(row, rawColumns, fieldMap, customFields) : null
+  }, [previewRowId, rowsById, selectedRows, rawColumns, fieldMap, customFields])
   const sampleDetails = useMemo(
     () => (sampleFields ? buildDetailLines(customFields, sampleFields) : []),
     [customFields, sampleFields],
@@ -124,7 +128,8 @@ export function StepPrompt() {
               )}
             </section>
             {plan ? (
-              <SectionsCard plan={plan} flatNodes={flatNodes} rowsById={rowsById} columns={rawColumns} fieldMap={fieldMap} />
+              <SectionsCard plan={plan} flatNodes={flatNodes} rowsById={rowsById} columns={rawColumns} fieldMap={fieldMap}
+                previewId={previewRowId} onPreview={setPreviewRowId} />
             ) : (
               <p className="text-sm text-muted-foreground">Générez un plan pour éditer le style des fiches et les sections — thème et couvertures s'éditent dans l'Aperçu (panneau « Fond de page »).</p>
             )}
@@ -133,8 +138,22 @@ export function StepPrompt() {
           {/* Colonne droite du centre : APERÇU grand (le résultat), collé en haut */}
           {plan && (
             <div className="lg:sticky lg:top-0 w-full lg:w-[560px]">
-              <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Aperçu de la fiche</div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Aperçu de la fiche</span>
+                {/* Variante éditée : les positions sont COMMUNES, seuls ruban/cadre vedette diffèrent. */}
+                <div className="flex rounded-md overflow-hidden border border-border text-[11px]">
+                  <button type="button" onClick={() => setPreviewFeatured(false)}
+                    className={`px-2.5 py-1 ${!previewFeatured ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
+                    Standard
+                  </button>
+                  <button type="button" onClick={() => setPreviewFeatured(true)}
+                    className={`px-2.5 py-1 ${previewFeatured ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
+                    ★ Vedette
+                  </button>
+                </div>
+              </div>
               <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={cell}
+                featuredVariant={previewFeatured}
                 editable onLayoutChange={(id, box) => setPlan({ ...plan, cardStyle: { ...cardStyle, layout: { ...cardStyle.layout, [id]: box } } })}
                 onSelect={setSelectedObject} />
             </div>

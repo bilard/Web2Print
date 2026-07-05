@@ -17,9 +17,12 @@ interface SectionsCardProps {
   rowsById: Map<string, MergeRow>
   columns: MergeColumn[]
   fieldMap: Partial<Record<PromoFieldKey, string>>
+  /** Produit affiché dans l'aperçu de la fiche (👁 sur les puces). */
+  previewId?: string | null
+  onPreview?: (rowId: string) => void
 }
 
-export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap }: SectionsCardProps) {
+export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap, previewId, onPreview }: SectionsCardProps) {
   const setPlan = useCatalogStore((s) => s.setPlan)
   const setSectionDensity = useCatalogStore((s) => s.setSectionDensity)
   const setAllSectionsDensity = useCatalogStore((s) => s.setAllSectionsDensity)
@@ -88,7 +91,8 @@ export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap }: S
               chapterColor={chapterOf(node)}
               onDensity={(d) => setSectionDensity(node.id, d)}
               onToggleFeatured={(rowId) => toggleFeatured(node.id, rowId)}
-              onColor={node.level === 1 ? (c) => setSectionColor(node.id, c) : undefined} />
+              onColor={node.level === 1 ? (c) => setSectionColor(node.id, c) : undefined}
+              previewId={previewId} onPreview={onPreview} />
           )
         })}
       </div>
