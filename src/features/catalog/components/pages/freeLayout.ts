@@ -343,9 +343,11 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     else if (!linked) el.style.top = `${b.y}%` // reset idempotent d'un clamp précédent
     // CLAMP HORIZONTAL : un bloc posé/désancré/lié dont le bord droit déborde la
     // carte est ramené à gauche (rien ne se coupe jamais au bord droit — ex. prix
-    // désancré posé en % sur une carte plus étroite que l'aperçu).
-    if ((linked || (b.ax ?? 'l') === 'l') && el.offsetLeft + el.offsetWidth * (b.sc ?? 1) > cardW) {
-      el.style.left = `${Math.round((Math.max(0, cardW - el.offsetWidth * (b.sc ?? 1)) / cardW) * 1000) / 10}%`
+    // désancré posé en % sur une carte plus étroite que l'aperçu). scrollWidth =
+    // largeur du CONTENU réel (un badge prix agrandi déborde de sa boîte).
+    const wEff = Math.max(el.offsetWidth, el.scrollWidth) * (b.sc ?? 1)
+    if ((linked || (b.ax ?? 'l') === 'l') && el.offsetLeft + wEff > cardW) {
+      el.style.left = `${Math.round((Math.max(0, cardW - wEff) / cardW) * 1000) / 10}%`
     }
   }
 }

@@ -244,6 +244,10 @@ export const CATALOG_CSS = `
    la LIGNE DE BASE de la police héritée (plus grande) → il descend dans sa boîte
    et casse l'alignement des liaisons/soudures. En block, le texte colle au haut. */
 .cat-free .cat-cell-refcode, .cat-free .cat-cell-brand, .cat-free .cat-cell-pricebox { display:block; }
+/* Badge prix PLUS LARGE que sa boîte (échelle prix élevée) : ne JAMAIS le comprimer
+   ni le laisser déborder à droite (coupé par l'overflow de la fiche) — flex-shrink:0
+   dans la boîte ancrée droite/centrée (flex) = il s'étend vers la GAUCHE. */
+.cat-free .cat-obj[data-object-id="price"] > .cat-cell-pricebox { flex-shrink:0; }
 .cat-cell-refcode { font-size:calc(9px * var(--cat-s-ref,1) * ${F}); font-family:var(--cat-font-ref,var(--cat-font-b)); opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
 .cat-cell-row { display:flex; align-items:flex-end; justify-content:space-between; margin-top:6px; gap:10px; }
 .cat-cell-meta { display:flex; flex-direction:column; gap:3px; min-width:0; padding-bottom:2px; }
