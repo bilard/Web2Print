@@ -60,25 +60,31 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
   }
 
-  // Resize = mise à l'échelle UNIFORME de l'objet (transform:scale). Fonctionne pour
-  // TOUS les types (texte, badge, ruban, image) — pas seulement l'image : redimensionner
-  // la boîte ne suffisait pas car les objets inline ne la remplissent pas.
+  // Resize = LARGEUR + HAUTEUR indépendantes (en % de la carte). Poignées E/O →
+  // largeur, N/S → hauteur, coins → les deux. Les poignées O/N déplacent aussi
+  // l'origine (x/y) pour que l'arête OPPOSÉE reste fixe (comportement attendu).
   const resize = (e: ReactPointerEvent, hnd: Handle) => {
     e.preventDefault(); e.stopPropagation()
     if (!sel) return
     const el = cardRef.current?.querySelector<HTMLElement>(`[data-object-id="${sel}"]`)
     if (!el) return
     const b = freeLayoutBox(sel, style)
-    const startSc = b.sc ?? 1
-    const startW = el.getBoundingClientRect().width || 1  // largeur rendue (déjà à l'échelle startSc)
-    const baseW = startW / startSc                        // largeur naturelle (échelle 1)
+    const { w: cardW, h: cardH } = cardPx()
+    const er = el.getBoundingClientRect()
+    const startW = b.w ?? r1((er.width / cardW) * 100)   // largeur de départ (%)
+    const startH = b.h ?? r1((er.height / cardH) * 100)  // hauteur de départ (%)
     const dx = dirX(hnd), dy = dirY(hnd)
     const sx = e.clientX, sy = e.clientY
     const move = (ev: PointerEvent) => {
-      // Tirer vers l'extérieur (dans le sens de la poignée) agrandit ; horizontal prioritaire.
-      const grow = dx !== 0 ? (ev.clientX - sx) * dx : (ev.clientY - sy) * dy
-      const sc = clamp(Math.round(((startW + grow) / baseW) * 100) / 100, 0.2, 10)
-      onChange(sel, { ...b, sc })
+      const ddx = ((ev.clientX - sx) / cardW) * 100
+      const ddy = ((ev.clientY - sy) / cardH) * 100
+      const next: CardBox = { ...b }
+      delete next.sc  // on passe au modèle largeur/hauteur : plus d'échelle uniforme
+      if (dx > 0) next.w = clamp(r1(startW + ddx), 4, 100)
+      else if (dx < 0) { next.w = clamp(r1(startW - ddx), 4, 100); next.x = clamp(r1(b.x + (startW - next.w)), 0, 100) }
+      if (dy > 0) next.h = clamp(r1(startH + ddy), 2, 100)
+      else if (dy < 0) { next.h = clamp(r1(startH - ddy), 2, 100); next.y = clamp(r1(b.y + (startH - next.h)), 0, 100) }
+      onChange(sel, next)
     }
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); setTick((t) => t + 1) }
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)

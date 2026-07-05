@@ -49,7 +49,7 @@ export function ProductCell({ fields: f, featured, kicker, size, details, horizo
       const scaled = b.sc != null && b.sc !== 1
       return (
         <div className="cat-obj" data-object-id={id}
-          style={{ left: `${b.x}%`, top: `${b.y}%`, ...(b.w != null ? { width: `${b.w}%` } : {}), ...(b.h != null ? { height: `${b.h}%` } : {}),
+          style={{ left: `${b.x}%`, top: `${b.y}%`, ...(b.w != null ? { width: `${b.w}%` } : {}), ...(b.h != null ? { height: `${b.h}%`, overflow: 'hidden' } : {}),
             ...(scaled ? { transform: `scale(${b.sc})`, transformOrigin: 'top left' } : {}) }}>
           {node}
         </div>
