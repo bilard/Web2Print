@@ -4,12 +4,12 @@
 // le design vedette (cadre accent + ruban) par-dessus la taille. Conventions
 // retail : cartouche promo au-dessus de l'image, réf. sous la description,
 // unité de vente sous le prix (cf. skill retail-card-conventions).
-import type React from 'react'
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import { formatPromoLabel } from '@/features/retail-promo/promoMapping'
 import type { CardObjectId, CatalogCardStyle } from '../../catalogTypes'
 import { formatPrice } from './catalogCss'
-import { freeLayoutBox } from './freeLayout'
+import { applyMagneticFlow, freeLayoutBox } from './freeLayout'
 import { useResolvedImage } from '../../useResolvedImage'
 
 export type CellSize = 'md' | 'lg' | 'xl'
@@ -27,7 +27,7 @@ interface Props {
   /** Style cosmétique (visibilité des éléments) — les couleurs/tailles passent par les variables CSS. */
   cardStyle?: CatalogCardStyle
   /** Placement CSS grid (gridColumn/gridRow) calculé par le moteur. */
-  style?: React.CSSProperties
+  style?: CSSProperties
 }
 
 export function ProductCell({ fields: f, featured, kicker, size, details, horizontal, cardStyle, style }: Props) {
@@ -35,6 +35,13 @@ export function ProductCell({ fields: f, featured, kicker, size, details, horizo
   // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
   // avant capture html2canvas (l'<img> n'existe pas tant que src n'est pas prêt).
   const { src, resolving } = useResolvedImage(f.image)
+  // Flux vertical AIMANTÉ (disposition libre) : après chaque rendu, les blocs texte
+  // qui se chevauchent sont poussés vers le bas selon la hauteur réelle de leur
+  // contenu — jamais de superposition (même calcul aperçu/catalogue/export).
+  const freeRef = useRef<HTMLDivElement | null>(null)
+  useLayoutEffect(() => {
+    if (cardStyle?.freeLayout && freeRef.current) applyMagneticFlow(freeRef.current, cardStyle)
+  })
   const hasWas = f.oldPrice != null && f.newPrice != null && f.oldPrice > f.newPrice
   const show = (key: 'showDesc' | 'showRef' | 'showUnit' | 'showSticker' | 'showKicker' | 'showPromo' | 'showVedette' | 'showDetails') => cardStyle?.[key] ?? true
   // Sticker rond = écart entre les 2 prix (remise calculée), en haut à droite de l'image.
@@ -44,7 +51,7 @@ export function ProductCell({ fields: f, featured, kicker, size, details, horizo
   const label = show('showPromo') ? formatPromoLabel(f.promoLabel) : undefined
   const promo = label && label !== sticker ? label : null
   if (cardStyle?.freeLayout) {
-    const obj = (id: CardObjectId, node: React.ReactNode) => {
+    const obj = (id: CardObjectId, node: ReactNode) => {
       const b = freeLayoutBox(id, cardStyle)
       const scaled = b.sc != null && b.sc !== 1
       return (
@@ -56,7 +63,7 @@ export function ProductCell({ fields: f, featured, kicker, size, details, horizo
       )
     }
     return (
-      <div className={`cat-cell cat-free cat-${size}${featured ? ' cat-featured' : ''}`} style={style}>
+      <div ref={freeRef} className={`cat-cell cat-free cat-${size}${featured ? ' cat-featured' : ''}`} style={style}>
         {promo && obj('promo', <span className="cat-cell-promo">{promo}</span>)}
         {obj('image', <div className="cat-cell-img-in" data-resolving={resolving ? 'true' : undefined}>{src ? <img src={src} alt="" /> : <span className="cat-cell-img-ph">Sans visuel</span>}</div>)}
         {sticker && obj('sticker', <span className="cat-price-sticker">{sticker}</span>)}

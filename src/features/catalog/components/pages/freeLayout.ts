@@ -32,6 +32,48 @@ export function freeLayoutBox(id: CardObjectId, style: CatalogCardStyle): CardBo
   return { ...FREE_DEFAULT_LAYOUT[id], ...(style.layout?.[id] ?? {}) }
 }
 
+/**
+ * Chaîne de FLUX VERTICAL AIMANTÉ : ces objets texte ne se superposent JAMAIS.
+ * Triés par leur y configuré (parent au-dessus > enfant en dessous), chaque bloc
+ * POUSSE vers le bas ceux qui le chevauchent, selon la hauteur RÉELLE de son
+ * contenu (volumétrie). Deux blocs sans recouvrement horizontal (ex. détails à
+ * gauche · prix à droite) restent indépendants. L'image/badges ne poussent pas.
+ */
+const FLOW_CHAIN: CardObjectId[] = ['brand', 'name', 'description', 'details', 'ref', 'unit']
+
+/** Écart minimal (px) entre deux blocs aimantés. */
+const MAGNET_GAP = 3
+
+/**
+ * Applique l'aimantation sur une carte RENDUE (aperçu, pages du catalogue et
+ * export partagent ce même calcul → résultat identique partout). Réinitialise
+ * d'abord les `top` configurés (idempotent), puis cascade les poussées.
+ */
+export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): void {
+  const cardH = card.clientHeight
+  const cardW = card.clientWidth
+  if (!cardH || !cardW) return
+  const items = FLOW_CHAIN
+    .map((id) => {
+      const el = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
+      return el ? { el, box: freeLayoutBox(id, style) } : null
+    })
+    .filter((x): x is { el: HTMLElement; box: CardBox } => x != null)
+    .sort((a, b) => a.box.y - b.box.y)
+  for (const it of items) it.el.style.top = `${it.box.y}%` // repart du configuré (mesures stables)
+  const placed: { x1: number; x2: number; bottom: number }[] = []
+  for (const it of items) {
+    const x1 = it.box.x
+    const x2 = it.box.x + (it.box.w ?? (it.el.offsetWidth / cardW) * 100)
+    let top = (it.box.y / 100) * cardH
+    for (const p of placed) {
+      if (x1 < p.x2 && p.x1 < x2) top = Math.max(top, p.bottom + MAGNET_GAP) // chevauchement horizontal → poussé sous le parent
+    }
+    it.el.style.top = `${Math.round((top / cardH) * 1000) / 10}%`
+    placed.push({ x1, x2, bottom: top + it.el.offsetHeight })
+  }
+}
+
 /** Sélecteur du rendu AUTO (flux) de chaque objet — pour capturer sa position. */
 const AUTO_SELECTORS: Record<CardObjectId, string> = {
   promo: '.cat-cell-promo',
