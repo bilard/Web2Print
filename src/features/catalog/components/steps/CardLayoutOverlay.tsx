@@ -98,24 +98,15 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
       window.addEventListener('pointermove', moveLinked); window.addEventListener('pointerup', upLinked)
       return
     }
-    // Glisser CONSERVE l'ancrage droite/bas (mise en page liquide) : on ajuste la
-    // distance au bord ancré — un prix ancré bas-droite RESTE collé bas-droite sur
-    // toutes les tailles de carte (les cellules du catalogue n'ont pas le ratio de
-    // l'aperçu). Seul le centrage repasse en gauche/haut (position visible).
+    // Glisser un bloc ANCRÉ (droite/bas/centre) le repasse en placement classique
+    // gauche/haut, en partant de sa position VISIBLE (rect DOM) — prévisible, et
+    // jamais de position « écart au bord » impossible (bloc sorti par le haut).
+    // Pour ré-ancrer : palette d'ancrage (rail gauche de l'aperçu).
     const r0 = rectOf(id)
-    const ax0 = b.ax === 'r' ? 'r' : 'l'
-    const ay0 = b.ay === 'b' ? 'b' : 't'
-    const bx = ax0 === 'r'
-      ? (r0 ? r1(100 - r0.left - r0.width) : b.x)
-      : (b.ax ?? 'l') !== 'l' && r0 ? r1(r0.left) : b.x
-    const by = ay0 === 'b'
-      ? (r0 ? r1(100 - r0.top - r0.height) : b.y)
-      : (b.ay ?? 't') !== 't' && r0 ? r1(r0.top) : b.y
+    const bx = (b.ax ?? 'l') !== 'l' && r0 ? r1(r0.left) : b.x
+    const by = (b.ay ?? 't') !== 't' && r0 ? r1(r0.top) : b.y
     const move = (ev: PointerEvent) => {
-      const ddx = ((ev.clientX - sx) / w) * 100, ddy = ((ev.clientY - sy) / h) * 100
-      onChange(id, { ...b, ax: ax0, ay: ay0,
-        x: clamp(r1(ax0 === 'r' ? bx - ddx : bx + ddx), 0, 100),
-        y: clamp(r1(ay0 === 'b' ? by - ddy : by + ddy), 0, 100) })
+      onChange(id, { ...b, ax: 'l', ay: 't', x: clamp(r1(bx + ((ev.clientX - sx) / w) * 100), 0, 100), y: clamp(r1(by + ((ev.clientY - sy) / h) * 100), 0, 100) })
     }
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); setTick((t) => t + 1) }
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
