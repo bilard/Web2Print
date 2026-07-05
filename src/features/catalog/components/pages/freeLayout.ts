@@ -168,6 +168,15 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
       for (const p of placed) {
         if (x1 < p.x2 && p.x1 < x2) snap = Math.max(snap ?? -Infinity, p.bottom + MAGNET_GAP)
       }
+    } else {
+      // POUSSÉE DOUCE d'un bloc DÉTACHÉ (m:false) : il ne REMONTE jamais (position
+      // choisie par l'utilisateur), mais GLISSE vers le bas si le contenu du dessus
+      // le recouvre — jamais au-delà du bord (les pavés sont bornés en conséquence).
+      let push = -Infinity
+      for (const p of placed) {
+        if (x1 < p.x2 && p.x1 < x2) push = Math.max(push, p.bottom + MAGNET_GAP)
+      }
+      if (push > (it.box.y / 100) * cardH) snap = Math.min(push, cardH - it.el.offsetHeight)
     }
     const top = snap ?? (it.box.y / 100) * cardH
     it.el.style.top = `${Math.round((top / cardH) * 1000) / 10}%`
@@ -189,16 +198,17 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
         if (x1 < jx2 && jx1 < x2) reserve += jt.el.offsetHeight + MAGNET_GAP
       }
       // Plafond COMPLET pour une emprise donnée : obstacles hors chaîne + blocs de
-      // chaîne DÉTACHÉS (m:false, posés à y fixe) qui suivent. Recalculé avec la
-      // MÊME fonction après rétrécissement — un recalcul « obstacles seulement »
-      // écraserait le plafond des détachés (réf/unité repasseraient dessous).
+      // chaîne DÉTACHÉS (m:false) qui suivent — bornés à leur position la plus
+      // BASSE possible (poussée douce : ils glissent au ras du bord si besoin,
+      // le pavé récupère leur espace). Recalculé avec la MÊME fonction après
+      // rétrécissement — un recalcul « obstacles seulement » écraserait tout.
       const ceilFor = (xx1: number, xx2: number): number => {
         let c = ceilingFor(xx1, xx2, top)
         for (let j = i + 1; j < items.length; j++) {
           const jt = items[j]
           if (isMagnetized(jt.box, style)) continue
           const [jx1, jx2] = spanOf(jt)
-          if (xx1 < jx2 && jx1 < xx2) c = Math.min(c, (jt.box.y / 100) * cardH - MAGNET_GAP)
+          if (xx1 < jx2 && jx1 < xx2) c = Math.min(c, cardH - jt.el.offsetHeight - MAGNET_GAP)
         }
         return c
       }

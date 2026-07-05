@@ -61,10 +61,10 @@ export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
         // MAGNIFIÉE (transform scale) — mise en page strictement préservée, zéro
         // débordement par construction (wrapper = 100%/s, scale s). 2×2 → ×2 ;
         // carte élargie [2,1] (grilles où le 2×2 serait pleine page, ex. grille 4)
-        // → ×1,5 : le contenu se compresse verticalement (l'aimant évite tout
-        // chevauchement, le prix reste ancré en bas).
+        // → ×1,3 : compromis dominance/contenu — à ×1,5 la carte perdait ~40 px de
+        // hauteur layout et les pavés (avantages/TVA/entretien) se faisaient couper.
         if (slot.colSpan * slot.rowSpan > 1) {
-          const s = slot.colSpan >= 2 && slot.rowSpan >= 2 ? 2 : 1.5
+          const s = slot.colSpan >= 2 && slot.rowSpan >= 2 ? 2 : 1.3
           return (
             <div key={slot.rowId} style={{ ...style, position: 'relative' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: `calc(100%/${s})`, height: `calc(100%/${s})`, transform: `scale(${s})`, transformOrigin: 'top left', display: 'grid' }}>

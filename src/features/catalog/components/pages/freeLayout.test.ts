@@ -142,6 +142,28 @@ test('applyMagneticFlow : aimant PAR BLOC — un bloc détaché (m:false) reste 
   expect(parseFloat(ref.style.top)).toBeCloseTo(86.6, 0)     // 800+60+6 = 866px
 })
 
+test('applyMagneticFlow : POUSSÉE DOUCE — un bloc détaché recouvert glisse vers le bas (jamais hors carte), le pavé garde sa place', () => {
+  const card = document.createElement('div')
+  Object.defineProperty(card, 'clientHeight', { value: 1000 })
+  Object.defineProperty(card, 'clientWidth', { value: 1000 })
+  const mk = (id: string, h: number) => {
+    const el = document.createElement('div')
+    el.className = 'cat-obj'
+    el.setAttribute('data-object-id', id)
+    Object.defineProperty(el, 'offsetHeight', { value: h })
+    Object.defineProperty(el, 'offsetWidth', { value: 400 })
+    card.appendChild(el)
+    return el
+  }
+  const desc = mk('description', 300) // y58 (580) volumineuse → bas 880
+  const ref = mk('ref', 20)           // DÉTACHÉ à y66 (660) : recouvert → glisse à 886
+  const style = { ...DEFAULT_CARD_STYLE, layout: { ref: { x: 5, y: 66, w: 45, m: false } } }
+  applyMagneticFlow(card, style)
+  expect(parseFloat(desc.style.top)).toBeCloseTo(58, 0)
+  expect(desc.style.maxHeight).toBe('')                  // plafond = position la plus basse de la réf (974)
+  expect(parseFloat(ref.style.top)).toBeCloseTo(88.6, 0) // 880+6 : poussé, pas superposé, dans la carte
+})
+
 test('applyMagneticFlow : pas de poussée sans recouvrement horizontal (colonnes indépendantes)', () => {
   const card = document.createElement('div')
   Object.defineProperty(card, 'clientHeight', { value: 1000 })
