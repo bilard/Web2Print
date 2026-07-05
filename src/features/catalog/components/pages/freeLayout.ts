@@ -64,6 +64,9 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
       return el ? { el, box: freeLayoutBox(id, style) } : null
     })
     .filter((x): x is { el: HTMLElement; box: CardBox } => x != null)
+    // Un bloc ANCRÉ au bas/centre (mise en page liquide) sort de la chaîne : il
+    // est positionné par son bord, pas par le flux.
+    .filter((x) => (x.box.ay ?? 't') === 't')
     .sort((a, b) => a.box.y - b.box.y)
   for (const it of items) it.el.style.top = `${it.box.y}%` // repart du configuré (mesures stables)
   const placed: { x1: number; x2: number; bottom: number }[] = []

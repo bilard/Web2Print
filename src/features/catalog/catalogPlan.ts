@@ -189,6 +189,8 @@ function sanitizeAICardStyle(raw: RawCatalogPlan['cardStyle']): Partial<CatalogC
       const h = num(b.h, 4, 100); if (h != null) box.h = h
       const sc = num((b as { sc?: unknown }).sc, 0.2, 10); if (sc != null) box.sc = sc
       const m = (b as { m?: unknown }).m; if (typeof m === 'boolean') box.m = m
+      const ax = (b as { ax?: unknown }).ax; if (ax === 'l' || ax === 'c' || ax === 'r') box.ax = ax
+      const ay = (b as { ay?: unknown }).ay; if (ay === 't' || ay === 'c' || ay === 'b') box.ay = ay
       layout[id] = box
     }
     if (Object.keys(layout).length) out.layout = layout

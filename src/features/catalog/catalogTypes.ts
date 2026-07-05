@@ -66,8 +66,11 @@ export const CARD_OBJECT_IDS: CardObjectId[] = [
 /** Boîte d'un objet en % de la carte (x/y = coin haut-gauche ; w/h optionnels ;
  * `sc` = mise à l'échelle uniforme de l'objet, 1 = taille naturelle). */
 /** Boîte d'un objet en disposition libre (%). `m` = aimanté PAR BLOC (collé au bloc
- *  texte du dessus selon la volumétrie) ; absent = suit le défaut `magnetFlow`. */
-export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; m?: boolean }
+ *  texte du dessus selon la volumétrie) ; absent = suit le défaut `magnetFlow`.
+ *  `ax`/`ay` = ANCRAGE LIQUIDE aux bords de la fiche (façon InDesign) : 'r' = x
+ *  devient l'écart au bord DROIT, 'b' = y l'écart au bord BAS, 'c' = centré —
+ *  l'objet reste collé à son bord sur TOUTES les tailles de carte. */
+export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b' }
 
 /**
  * Style COSMÉTIQUE des fiches : réglages bornés appliqués en variables CSS

@@ -153,7 +153,7 @@ export function StepPrompt() {
                 </div>
               </div>
               <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={cell}
-                featuredVariant={previewFeatured}
+                featuredVariant={previewFeatured} selected={selectedObject}
                 editable onLayoutChange={(id, box) => setPlan({ ...plan, cardStyle: { ...cardStyle, layout: { ...cardStyle.layout, [id]: box } } })}
                 onSelect={setSelectedObject} />
             </div>

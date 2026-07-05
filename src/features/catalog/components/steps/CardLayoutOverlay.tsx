@@ -52,9 +52,14 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
     e.preventDefault(); e.stopPropagation(); setSel(id); onSelect?.(id)
     const b = freeLayoutBox(id, style)
     const { w, h } = cardPx()
+    // Glisser un bloc ANCRÉ (droite/bas/centre) le repasse en placement classique
+    // gauche/haut, en partant de sa position VISIBLE (rect DOM) — prévisible.
+    const r0 = rectOf(id)
+    const bx = (b.ax ?? 'l') !== 'l' && r0 ? r1(r0.left) : b.x
+    const by = (b.ay ?? 't') !== 't' && r0 ? r1(r0.top) : b.y
     const sx = e.clientX, sy = e.clientY
     const move = (ev: PointerEvent) => {
-      onChange(id, { ...b, x: clamp(r1(b.x + ((ev.clientX - sx) / w) * 100), 0, 100), y: clamp(r1(b.y + ((ev.clientY - sy) / h) * 100), 0, 100) })
+      onChange(id, { ...b, ax: 'l', ay: 't', x: clamp(r1(bx + ((ev.clientX - sx) / w) * 100), 0, 100), y: clamp(r1(by + ((ev.clientY - sy) / h) * 100), 0, 100) })
     }
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); setTick((t) => t + 1) }
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)

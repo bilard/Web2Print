@@ -60,10 +60,21 @@ export function ProductCell({ fields: f, featured, kicker, size, details, horizo
       // figée en % ne s'adapte pas à la volumétrie (cartes larges = moins de
       // lignes → gros vides) et contredit « textes jamais coupés ».
       const fixedH = b.h != null && !FLOW_CHAIN.includes(id)
+      // ANCRAGE LIQUIDE (ax/ay) : collé au bord droit/bas ou centré — stable sur
+      // toutes les tailles de carte (mise en page liquide façon InDesign).
+      const ax = b.ax ?? 'l', ay = b.ay ?? 't'
+      const posH: CSSProperties = ax === 'r' ? { right: `${b.x}%` } : { left: ax === 'c' ? '50%' : `${b.x}%` }
+      const posV: CSSProperties = ay === 'b' ? { bottom: `${b.y}%` } : { top: ay === 'c' ? '50%' : `${b.y}%` }
+      const tf: string[] = []
+      if (ax === 'c') tf.push('translateX(-50%)')
+      if (ay === 'c') tf.push('translateY(-50%)')
+      if (scaled) tf.push(`scale(${b.sc})`)
       return (
         <div className="cat-obj" data-object-id={id}
-          style={{ left: `${b.x}%`, top: `${b.y}%`, ...(b.w != null ? { width: `${b.w}%` } : {}), ...(fixedH ? { height: `${b.h}%`, overflow: 'hidden' } : {}),
-            ...(scaled ? { transform: `scale(${b.sc})`, transformOrigin: 'top left' } : {}) }}>
+          style={{ ...posH, ...posV, ...(b.w != null ? { width: `${b.w}%` } : {}), ...(fixedH ? { height: `${b.h}%`, overflow: 'hidden' } : {}),
+            // Contenu aligné sur le bord d'ancrage (le badge prix colle à droite, pas au bord gauche de sa boîte).
+            ...(ax !== 'l' ? { display: 'flex', justifyContent: ax === 'r' ? 'flex-end' : 'center' } : {}),
+            ...(tf.length ? { transform: tf.join(' '), transformOrigin: 'top left' } : {}) }}>
           {node}
         </div>
       )
