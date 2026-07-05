@@ -196,7 +196,9 @@ export const CATALOG_CSS = `
 .cat-cell-details { display:flex; flex-direction:column; gap:1px; margin-top:4px;
   font-family:var(--cat-font-details,var(--cat-font-b)); font-size:calc(9px * var(--cat-s-details,1) * ${F});
   opacity:.6; line-height:1.3; }
-.cat-cell-details span { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.cat-cell-details span { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+/* Habillage du bloc détails en disposition libre : petit fond neutre = bloc net, lisible. */
+.cat-free .cat-cell-details { background:rgba(127,127,127,.08); border-radius:4px; padding:4px 6px; margin-top:0; }
 .cat-cell-refcode { font-size:calc(9px * var(--cat-s-ref,1) * ${F}); font-family:var(--cat-font-ref,var(--cat-font-b)); opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
 .cat-cell-row { display:flex; align-items:flex-end; justify-content:space-between; margin-top:6px; gap:10px; }
 .cat-cell-meta { display:flex; flex-direction:column; gap:3px; min-width:0; padding-bottom:2px; }

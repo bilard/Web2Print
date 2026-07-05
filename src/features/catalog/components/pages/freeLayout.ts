@@ -16,11 +16,13 @@ export const FREE_DEFAULT_LAYOUT: Record<CardObjectId, CardBox> = {
   sticker: { x: 82, y: 36 },
   brand: { x: 5, y: 45, w: 60 },
   name: { x: 5, y: 49, w: 90 },
-  description: { x: 5, y: 57, w: 90 },
-  ref: { x: 5, y: 70, w: 48 },
-  unit: { x: 5, y: 76, w: 48 },
-  price: { x: 55, y: 67, w: 42 },
-  details: { x: 5, y: 88, w: 90 },
+  description: { x: 5, y: 56, w: 90 },
+  // Bas de carte = DEUX COLONNES qui ne se chevauchent JAMAIS :
+  // colonne GAUCHE (réf, unité, détails) x5→55 · colonne DROITE (prix) x56→96.
+  ref: { x: 5, y: 68, w: 50 },
+  unit: { x: 5, y: 73, w: 50 },
+  details: { x: 5, y: 79, w: 50 },
+  price: { x: 56, y: 67, w: 40 },
 }
 
 /** Boîte effective d'un objet : override utilisateur (layout) fusionné sur le repli. */
