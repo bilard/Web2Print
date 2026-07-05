@@ -130,6 +130,24 @@ test('applyMagneticFlow : un prix TOURNÉ plafonne par sa bbox RENDUE (rotation 
   expect(details.style.maxHeight).toBe('')
 })
 
+test('applyMagneticFlow : un badge ancré BAS dont la rotation déborde du bord est REMONTÉ (jamais coupé)', () => {
+  const card = document.createElement('div')
+  Object.defineProperty(card, 'clientHeight', { value: 1000 })
+  Object.defineProperty(card, 'clientWidth', { value: 1000 })
+  card.getBoundingClientRect = () => ({ left: 0, top: 0, right: 1000, bottom: 1000, width: 1000, height: 1000, x: 0, y: 0, toJSON: () => ({}) })
+  const price = document.createElement('div')
+  price.className = 'cat-obj'
+  price.setAttribute('data-object-id', 'price')
+  Object.defineProperty(price, 'offsetHeight', { value: 80 })
+  Object.defineProperty(price, 'offsetWidth', { value: 400 })
+  // Boîte ancrée bas (y2 → 900-980) mais bbox TOURNÉE : déborde à 1030 (+30 sous le bord).
+  price.getBoundingClientRect = () => ({ left: 550, top: 890, right: 1000, bottom: 1030, width: 450, height: 140, x: 550, y: 890, toJSON: () => ({}) })
+  card.appendChild(price)
+  applyMagneticFlow(card, { ...DEFAULT_CARD_STYLE, layout: {} })
+  // Remonté de l'excès : bottom passe de 2 % à (20 + 30)/1000 = 5 %.
+  expect(price.style.bottom).toBe('5%')
+})
+
 test('applyMagneticFlow : un prix DÉSANCRÉ (drag) reste un PLAFOND — les textes se coupent au-dessus, pas dessous', () => {
   const card = document.createElement('div')
   Object.defineProperty(card, 'clientHeight', { value: 1000 })

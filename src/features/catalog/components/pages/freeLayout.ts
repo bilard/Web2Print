@@ -161,6 +161,29 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
   // convertir les bbox écran en unités de mise en page.
   const cardRect = card.getBoundingClientRect()
   const dispScale = cardW ? cardRect.width / cardW : 0
+  /** Bbox RENDUE d'un bloc (px de mise en page, relative à la carte) : intègre
+   *  TOUTES les transforms (rotation posée, inclinaison décorative, échelle) —
+   *  la bbox écran couvre l'élément et ses ancêtres, pas ses enfants → union
+   *  avec les enfants directs du contenu (l'étiquette prix inclinée vit DANS le
+   *  contenu). null quand la mesure est indisponible (jsdom des tests). */
+  const renderedBox = (el: HTMLElement): { left: number; top: number; right: number; bottom: number } | null => {
+    if (!(dispScale > 0)) return null
+    const inner = el.firstElementChild as HTMLElement | null
+    const src = inner && inner.offsetWidth ? inner : el
+    const r0 = src.getBoundingClientRect()
+    const bb = { left: r0.left, top: r0.top, right: r0.right, bottom: r0.bottom }
+    for (const child of Array.from(src.children)) {
+      const cr = child.getBoundingClientRect()
+      if (cr.bottom - cr.top <= 0) continue
+      bb.left = Math.min(bb.left, cr.left); bb.top = Math.min(bb.top, cr.top)
+      bb.right = Math.max(bb.right, cr.right); bb.bottom = Math.max(bb.bottom, cr.bottom)
+    }
+    if (bb.bottom - bb.top <= 0) return null
+    return {
+      left: (bb.left - cardRect.left) / dispScale, top: (bb.top - cardRect.top) / dispScale,
+      right: (bb.right - cardRect.left) / dispScale, bottom: (bb.bottom - cardRect.top) / dispScale,
+    }
+  }
   for (const id of CARD_OBJECT_IDS) {
     if (id === 'image' || id === 'promo' || FLOW_CHAIN.includes(id)) continue
     const b = boxOf(id)
@@ -183,27 +206,16 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
     let x1 = x2 - wPct
     // Un bloc TOURNÉ (rotation posée + inclinaison décorative du badge) occupe la
     // bbox de sa rotation — offsetWidth/offsetHeight l'ignorent (le badge mordait
-    // les pavés). La bbox ÉCRAN intègre les transforms de l'élément et de ses
-    // ANCÊTRES, pas de ses enfants : union avec les enfants directs (l'étiquette
-    // prix inclinée vit DANS le contenu). Repli sur le calcul ci-dessus quand la
-    // mesure est indisponible (jsdom des tests).
-    const src = inner && inner.offsetWidth ? inner : el
-    const r0 = src.getBoundingClientRect()
-    const bb = { left: r0.left, top: r0.top, right: r0.right, bottom: r0.bottom }
-    for (const child of Array.from(src.children)) {
-      const cr = child.getBoundingClientRect()
-      if (cr.bottom - cr.top <= 0) continue
-      bb.left = Math.min(bb.left, cr.left); bb.top = Math.min(bb.top, cr.top)
-      bb.right = Math.max(bb.right, cr.right); bb.bottom = Math.max(bb.bottom, cr.bottom)
-    }
-    if (bb.bottom - bb.top > 0 && dispScale > 0) {
-      const yTop = (bb.top - cardRect.top) / dispScale
-      h = (bb.bottom - bb.top) / dispScale
-      // Même anticipation de clamp : la bbox qui déborde du bas sera remontée.
-      const over = ay === 't' ? Math.max(0, yTop + h - cardH) : 0
-      top = yTop - over
-      x1 = ((bb.left - cardRect.left) / dispScale / cardW) * 100
-      x2 = ((bb.right - cardRect.left) / dispScale / cardW) * 100
+    // les pavés). Bbox rendue si mesurable, repli sur le calcul ci-dessus sinon.
+    const bb = renderedBox(el)
+    if (bb) {
+      h = bb.bottom - bb.top
+      // Anticipe le clamp final : une bbox qui déborde du bas sera REMONTÉE (bloc
+      // désancré trop bas, ou badge ancré bas dont la ROTATION dépasse le bord).
+      const over = ay !== 'c' ? Math.max(0, bb.bottom - cardH) : 0
+      top = bb.top - over
+      x1 = (bb.left / cardW) * 100
+      x2 = (bb.right / cardW) * 100
       wPct = x2 - x1
     }
     obstacles.push({ x1, x2, top, bottom: top + h })
@@ -403,9 +415,20 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
     const b = boxOf(id)
     const linked = validLink.has(id)
     const ay = linked ? 't' : (b.ay ?? 't')
-    if (ay !== 't') continue // ancré bas/centre : ne déborde pas du bas par construction
     const el = objOf(id)
     if (!el) continue
+    if (ay === 'b') {
+      // Ancré BAS : la boîte ne déborde pas par construction… sauf bloc TOURNÉ,
+      // dont la bbox dépasse géométriquement sous la boîte (rotation autour du
+      // centre) → le badge se faisait couper par le bord. On REMONTE l'ancrage
+      // de l'excès mesuré. Reset d'abord (idempotent), puis mesure rendue.
+      el.style.bottom = `${b.y}%`
+      const bb = renderedBox(el)
+      const over = bb ? bb.bottom - cardH : 0
+      if (over > 0.5) el.style.bottom = `${Math.round((((b.y / 100) * cardH + over) / cardH) * 1000) / 10}%`
+      continue
+    }
+    if (ay !== 't') continue // centré : ne déborde pas du bas par construction
     const h = el.offsetHeight * (b.sc ?? 1)
     const topPx = linked ? el.offsetTop : (b.y / 100) * cardH
     if (topPx + h > cardH) el.style.top = `${Math.round((Math.max(0, cardH - h) / cardH) * 1000) / 10}%`
