@@ -13,7 +13,8 @@ import { CARD_OBJECT_IDS } from '../../catalogTypes'
 export const FREE_DEFAULT_LAYOUT: Record<CardObjectId, CardBox> = {
   promo: { x: 0, y: 0, w: 100 },
   vedette: { x: 62, y: 3 },
-  kicker: { x: 0, y: 2 },
+  // SOUS le bandeau promo (~6 % de haut) — à y:2 la pastille le chevauchait.
+  kicker: { x: 0, y: 8 },
   image: { x: 2, y: 4, w: 96, h: 42 },
   sticker: { x: 70, y: 24 },
   brand: { x: 5, y: 48, w: 90 },
@@ -39,7 +40,8 @@ export const FREE_DEFAULT_LAYOUT: Record<CardObjectId, CardBox> = {
 export const FREE_WIDE_LAYOUT: Record<CardObjectId, CardBox> = {
   promo: { x: 0, y: 0, w: 100 },
   vedette: { x: 62, y: 3 },
-  kicker: { x: 0, y: 2 },
+  // SOUS le bandeau promo (cartes larges = moins hautes → bandeau ~8-9 %).
+  kicker: { x: 0, y: 10 },
   image: { x: 2, y: 8, w: 34, h: 88 },
   sticker: { x: 28, y: 12 },
   brand: { x: 40, y: 10, w: 56 },

@@ -18,8 +18,8 @@ interface CardStyleTypoProps {
   wide?: boolean
 }
 
-type ScaleKey = 'nameScale' | 'descScale' | 'priceScale' | 'brandScale' | 'refScale' | 'unitScale' | 'promoScale' | 'stickerScale' | 'vedetteScale' | 'detailsScale'
-type FontKey = 'nameFont' | 'descFont' | 'priceFont' | 'brandFont' | 'refFont' | 'unitFont' | 'promoFont' | 'stickerFont' | 'vedetteFont' | 'detailsFont'
+type ScaleKey = 'nameScale' | 'descScale' | 'priceScale' | 'brandScale' | 'refScale' | 'unitScale' | 'promoScale' | 'stickerScale' | 'vedetteScale' | 'detailsScale' | 'kickerScale'
+type FontKey = 'nameFont' | 'descFont' | 'priceFont' | 'brandFont' | 'refFont' | 'unitFont' | 'promoFont' | 'stickerFont' | 'vedetteFont' | 'detailsFont' | 'kickerFont'
 
 const FIELDS: { scale: ScaleKey; font: FontKey; label: string; obj: CardObjectId }[] = [
   { scale: 'nameScale', font: 'nameFont', label: 'Nom', obj: 'name' },
@@ -32,6 +32,7 @@ const FIELDS: { scale: ScaleKey; font: FontKey; label: string; obj: CardObjectId
   { scale: 'stickerScale', font: 'stickerFont', label: 'Sticker remise', obj: 'sticker' },
   { scale: 'vedetteScale', font: 'vedetteFont', label: 'Ruban vedette', obj: 'vedette' },
   { scale: 'detailsScale', font: 'detailsFont', label: 'Détails', obj: 'details' },
+  { scale: 'kickerScale', font: 'kickerFont', label: 'Sous-famille', obj: 'kicker' },
 ]
 
 /** Nom d'affichage de chaque bloc (options du sélecteur de liaison). */
@@ -41,11 +42,11 @@ const OBJ_LABEL: Record<CardObjectId, string> = {
   ref: 'Référence', unit: 'Unité', details: 'Détails', price: 'Prix',
 }
 
-/** Objet de l'overlay « disposition libre » → champ d'échelle correspondant (image/kicker n'ont pas de curseur typo). */
+/** Objet de l'overlay « disposition libre » → champ d'échelle correspondant (seule l'image n'a pas de curseur typo). */
 const OBJ_TO_SCALE: Partial<Record<CardObjectId, ScaleKey>> = {
   name: 'nameScale', description: 'descScale', price: 'priceScale', brand: 'brandScale',
   ref: 'refScale', unit: 'unitScale', promo: 'promoScale', sticker: 'stickerScale',
-  vedette: 'vedetteScale', details: 'detailsScale',
+  vedette: 'vedetteScale', details: 'detailsScale', kicker: 'kickerScale',
 }
 
 export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyleTypoProps) {

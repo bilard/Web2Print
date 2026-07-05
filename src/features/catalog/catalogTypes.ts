@@ -99,6 +99,8 @@ export interface CatalogCardStyle {
   vedetteScale: number
   /** Échelle de la zone « Détails » (champs libres, valeurs seules). */
   detailsScale: number
+  /** Échelle de la pastille « Sous-famille » (kicker, pastille ET texte). */
+  kickerScale: number
   /** Polices par champ ('' = hérite du thème : titres pour nom/prix/cartouche, texte sinon). */
   nameFont: string
   descFont: string
@@ -111,6 +113,8 @@ export interface CatalogCardStyle {
   vedetteFont: string
   /** Police de la zone « Détails » ('' = hérite du thème : texte). */
   detailsFont: string
+  /** Police de la pastille « Sous-famille » ('' = hérite du thème : titres). */
+  kickerFont: string
   /** Couleurs des objets ('' = hérite du thème). */
   promoBg: string
   stickerBg: string
@@ -165,8 +169,8 @@ export interface CatalogCardStyle {
 }
 
 export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
-  nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1, stickerScale: 1, vedetteScale: 1, detailsScale: 1,
-  nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '', stickerFont: '', vedetteFont: '', detailsFont: '',
+  nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1, promoScale: 1, stickerScale: 1, vedetteScale: 1, detailsScale: 1, kickerScale: 1,
+  nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '', stickerFont: '', vedetteFont: '', detailsFont: '', kickerFont: '',
   promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '', vedetteBg: '', vedettePriceBg: '', priceInk: '', vedettePriceInk: '',
   promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '', vedetteBg2: '', vedettePriceBg2: '',
   vedetteLabel: 'Vedette',

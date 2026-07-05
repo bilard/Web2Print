@@ -94,6 +94,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-s-sticker': s.stickerScale !== 1 ? String(s.stickerScale) : undefined,
     '--cat-s-vedette': s.vedetteScale !== 1 ? String(s.vedetteScale) : undefined,
     '--cat-s-details': s.detailsScale !== 1 ? String(s.detailsScale) : undefined,
+    '--cat-s-kicker': s.kickerScale !== 1 ? String(s.kickerScale) : undefined,
     '--cat-font-name': font(s.nameFont),
     '--cat-font-desc': font(s.descFont),
     '--cat-font-price': font(s.priceFont),
@@ -104,6 +105,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-font-sticker': font(s.stickerFont),
     '--cat-font-vedette': font(s.vedetteFont),
     '--cat-font-details': font(s.detailsFont),
+    '--cat-font-kicker': font(s.kickerFont),
     '--cat-promo-bg': bg(s.promoBg, s.promoBg2, theme.accent),
     '--cat-sticker-bg': bg(s.stickerBg, s.stickerBg2, theme.accent),
     '--cat-price-bg': bg(s.priceBg, s.priceBg2, theme.accent),
@@ -207,8 +209,8 @@ export const CATALOG_CSS = `
 .cat-featured .cat-price-sticker { top:54px; }
 .cat-cell-img-ph { font-size:11px; color:#94a3b8; }
 .cat-cell-kicker { position:absolute; top:0; left:0; background:var(--cat-kicker-bg,var(--cat-head-bg)); color:var(--cat-head-ink);
-  font-family:var(--cat-font-h); font-weight:700; font-size:calc(9px * ${F}); letter-spacing:.12em; text-transform:uppercase;
-  padding:4px 10px; border-radius:0 0 6px 0; }
+  font-family:var(--cat-font-kicker,var(--cat-font-h)); font-weight:700; font-size:calc(9px * var(--cat-s-kicker,1) * ${F}); letter-spacing:.12em; text-transform:uppercase;
+  padding:calc(4px * var(--cat-s-kicker,1)) calc(10px * var(--cat-s-kicker,1)); border-radius:0 0 6px 0; }
 /* Cartouche promo (« Top affaire », « -30% »…) : bandeau accent AU-DESSUS de l'image */
 .cat-cell-promo { flex:none; background:var(--cat-promo-bg,var(--cat-accent)); color:#fff; font-family:var(--cat-font-promo,var(--cat-font-h)); font-weight:800;
   font-size:calc(11px * var(--cat-s-promo,1) * ${F}); letter-spacing:.14em; text-transform:uppercase; text-align:center; padding:6px 10px; }
@@ -264,7 +266,7 @@ export const CATALOG_CSS = `
 .cat-xl .cat-cell-name { font-size:calc(26px * var(--cat-s-name,1) * ${F}); -webkit-line-clamp:3; }
 .cat-xl .cat-cell-desc { font-size:calc(13px * var(--cat-s-desc,1) * ${F}); -webkit-line-clamp:5; }
 .cat-xl .cat-cell-price { font-size:calc(34px * var(--cat-s-price,1) * ${F}); padding:10px 16px 9px; }
-.cat-xl .cat-cell-kicker { font-size:calc(11px * ${F}); padding:6px 13px; }
+.cat-xl .cat-cell-kicker { font-size:calc(11px * var(--cat-s-kicker,1) * ${F}); padding:calc(6px * var(--cat-s-kicker,1)) calc(13px * var(--cat-s-kicker,1)); }
 .cat-xl .cat-cell-brand { font-size:calc(12px * var(--cat-s-brand,1) * ${F}); }
 .cat-xl .cat-cell-body { padding:14px 18px 16px; gap:4px; }
 .cat-xl .cat-cell-promo { font-size:calc(14px * var(--cat-s-promo,1) * ${F}); padding:8px 12px; }
