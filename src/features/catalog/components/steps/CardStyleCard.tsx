@@ -9,7 +9,7 @@ import { PropertySection } from '@/components/shared/panel'
 import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle, type CatalogPlan } from '../../catalogTypes'
 import { CardStyleTypo } from './CardStyleTypo'
 import { CardStyleColors } from './CardStyleColors'
-import { CardStylePresets } from './CardStylePresets'
+import { CardLayoutGallery } from './CardLayoutGallery'
 import { CardStyleShapes } from './CardStyleShapes'
 
 interface CardStyleCardProps {
@@ -67,13 +67,13 @@ export function CardStyleCard({ plan, setPlan, selectedObject, wide }: CardStyle
           className="text-[11px] text-indigo-300 hover:text-white underline text-left">Réinitialiser les positions</button>
       </div>
 
-      <PropertySection title="Styles prédéfinis" help="Prédéfinis = formes des badges seulement (vos couleurs/dispositions sont gardées). « Enregistrer » sauve le style COMPLET actuel comme preset réutilisable.">
-        <CardStylePresets style={style} patch={patch}
+      <PropertySection title="Mises en page" help="Des structures de fiche complètement différentes (croquis : variante verticale · pleine largeur). Appliquer remplace la disposition — couleurs, typo et formes sont conservées. « Enregistrer » sauve la fiche COMPLÈTE comme modèle réutilisable.">
+        <CardLayoutGallery style={style} patch={patch}
           applyFull={(cs) => setPlan({ ...plan, cardStyle: { ...DEFAULT_CARD_STYLE, ...cs } })} />
       </PropertySection>
 
-      <PropertySection title="Forme des badges" help="Forme du container + inclinaison du prix et du sticker de remise.">
-        <CardStyleShapes style={style} patch={patch} />
+      <PropertySection title="Forme des badges" help="Presets de forme PAR OBJET : le prix et le sticker ont chacun leurs formes + leur inclinaison.">
+        <CardStyleShapes style={style} patch={patch} selected={selectedObject} />
       </PropertySection>
 
       <PropertySection title="Texte : taille & police" help="Un réglage par champ texte (nom, prix, description...).">
