@@ -194,9 +194,14 @@ export const CATALOG_CSS = `
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .cat-cell-desc { font-family:var(--cat-font-desc,var(--cat-font-b)); font-size:calc(11px * var(--cat-s-desc,1) * ${F}); opacity:.7; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .cat-cell-details { display:flex; flex-direction:column; gap:1px; margin-top:4px;
+  background:rgba(127,127,127,.06); border-radius:4px; padding:3px 7px;
   font-family:var(--cat-font-details,var(--cat-font-b)); font-size:calc(9px * var(--cat-s-details,1) * ${F});
-  opacity:.6; line-height:1.3; }
+  opacity:.75; line-height:1.3; }
 .cat-cell-details span { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+/* Cartes compactes (md, grilles denses) : bloc détails à HAUTEUR BORNÉE → coupe
+   nette (ellipsis), jamais de débordement, réf/prix toujours visibles en bas. */
+.cat-md .cat-cell-details { max-height:5em; overflow:hidden; }
+.cat-md .cat-cell-details span { -webkit-line-clamp:2; }
 /* Habillage du bloc détails en disposition libre : fond neutre = bloc net, lisible,
    et hauteur bornée (remplit son .cat-obj à hauteur définie) → se coupe proprement,
    jamais de débordement hors carte. */
