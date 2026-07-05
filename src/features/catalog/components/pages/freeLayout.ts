@@ -39,7 +39,7 @@ export function freeLayoutBox(id: CardObjectId, style: CatalogCardStyle): CardBo
  * contenu (volumétrie). Deux blocs sans recouvrement horizontal (ex. détails à
  * gauche · prix à droite) restent indépendants. L'image/badges ne poussent pas.
  */
-const FLOW_CHAIN: CardObjectId[] = ['brand', 'name', 'description', 'details', 'ref', 'unit']
+export const FLOW_CHAIN: CardObjectId[] = ['brand', 'name', 'description', 'details', 'ref', 'unit']
 
 /** Écart (px) entre deux blocs aimantés (collés à cette distance). */
 const MAGNET_GAP = 6
@@ -49,13 +49,9 @@ const MAGNET_GAP = 6
  * export partagent ce même calcul → résultat identique partout). Réinitialise
  * d'abord les `top` configurés (idempotent), puis cascade les poussées.
  */
-/** Aimantation désactivée : rend aux blocs de la chaîne leur position CONFIGURÉE
- *  (annule les `top` posés par une aimantation précédente — placement 100 % manuel). */
-export function resetMagneticFlow(card: HTMLElement, style: CatalogCardStyle): void {
-  for (const id of FLOW_CHAIN) {
-    const el = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
-    if (el) el.style.top = `${freeLayoutBox(id, style).y}%`
-  }
+/** Un bloc est-il aimanté ? Réglage PAR BLOC (`box.m`), sinon défaut global. */
+export function isMagnetized(box: CardBox, style: CatalogCardStyle): boolean {
+  return box.m ?? (style.magnetFlow ?? true)
 }
 
 export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): void {
@@ -76,11 +72,14 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     const x2 = it.box.x + (it.box.w ?? (it.el.offsetWidth / cardW) * 100)
     // COLLÉ (aimant dans les deux sens) au bloc du dessus qui le chevauche
     // horizontalement : contenu court = l'enfant REMONTE (pas de trou), contenu
-    // long = l'enfant est POUSSÉ (pas de superposition). Sans parent (colonne
-    // indépendante ou 1er bloc) : position configurée.
+    // long = l'enfant est POUSSÉ (pas de superposition). Réglage PAR BLOC :
+    // un bloc détaché (m=false) reste EXACTEMENT à sa position configurée —
+    // mais sert toujours de parent aux blocs aimantés qui le suivent.
     let snap: number | null = null
-    for (const p of placed) {
-      if (x1 < p.x2 && p.x1 < x2) snap = Math.max(snap ?? -Infinity, p.bottom + MAGNET_GAP)
+    if (isMagnetized(it.box, style)) {
+      for (const p of placed) {
+        if (x1 < p.x2 && p.x1 < x2) snap = Math.max(snap ?? -Infinity, p.bottom + MAGNET_GAP)
+      }
     }
     const top = snap ?? (it.box.y / 100) * cardH
     it.el.style.top = `${Math.round((top / cardH) * 1000) / 10}%`

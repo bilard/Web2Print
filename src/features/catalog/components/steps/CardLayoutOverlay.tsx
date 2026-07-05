@@ -4,7 +4,7 @@
 import { useLayoutEffect, useMemo, useState, type RefObject, type PointerEvent as ReactPointerEvent } from 'react'
 import type { CardBox, CardObjectId, CatalogCardStyle } from '../../catalogTypes'
 import { CARD_OBJECT_IDS } from '../../catalogTypes'
-import { freeLayoutBox } from '../pages/freeLayout'
+import { FLOW_CHAIN, freeLayoutBox, isMagnetized } from '../pages/freeLayout'
 
 type Handle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
@@ -91,6 +91,13 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
   }
 
   const selRect = sel ? rects[sel] : null
+  // Aimantation PAR BLOC : bouton 🧲 sur le bloc texte sélectionné (chaîne de flux).
+  const selMagnet = sel && FLOW_CHAIN.includes(sel) ? isMagnetized(freeLayoutBox(sel, style), style) : null
+  const toggleMagnet = () => {
+    if (!sel) return
+    const b = freeLayoutBox(sel, style)
+    onChange(sel, { ...b, m: !isMagnetized(b, style) })
+  }
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 20 }}>
       {CARD_OBJECT_IDS.map((id) => {
@@ -101,6 +108,18 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
             style={{ position: 'absolute', left: `${r.left}%`, top: `${r.top}%`, width: `${r.width}%`, height: `${r.height}%`, cursor: 'move', outline: sel === id ? '2px solid #6366f1' : '1px dashed rgba(99,102,241,.4)' }} />
         )
       })}
+      {sel && selRect && selMagnet != null && (
+        <button type="button" onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }} onClick={toggleMagnet}
+          title={selMagnet
+            ? 'Aimanté : collé au bloc texte du dessus selon son contenu (cliquer pour détacher)'
+            : 'Libre : reste exactement où vous le posez (cliquer pour aimanter)'}
+          style={{ position: 'absolute', left: `${selRect.left}%`, top: `calc(${selRect.top}% - 24px)`, zIndex: 22,
+            display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999,
+            fontSize: 10, fontWeight: 700, cursor: 'pointer', border: '1px solid #6366f1',
+            background: selMagnet ? '#6366f1' : '#fff', color: selMagnet ? '#fff' : '#6366f1' }}>
+          🧲 {selMagnet ? 'Aimanté' : 'Libre'}
+        </button>
+      )}
       {sel && selRect && HANDLES.map((hnd) => {
         const cx = selRect.left + (dirX(hnd) < 0 ? 0 : dirX(hnd) > 0 ? selRect.width : selRect.width / 2)
         const cy = selRect.top + (dirY(hnd) < 0 ? 0 : dirY(hnd) > 0 ? selRect.height : selRect.height / 2)

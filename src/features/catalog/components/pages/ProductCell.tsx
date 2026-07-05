@@ -9,7 +9,7 @@ import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import { formatPromoLabel } from '@/features/retail-promo/promoMapping'
 import type { CardObjectId, CatalogCardStyle } from '../../catalogTypes'
 import { formatPrice } from './catalogCss'
-import { applyMagneticFlow, freeLayoutBox, resetMagneticFlow } from './freeLayout'
+import { applyMagneticFlow, freeLayoutBox } from './freeLayout'
 import { useResolvedImage } from '../../useResolvedImage'
 
 export type CellSize = 'md' | 'lg' | 'xl'
@@ -40,10 +40,9 @@ export function ProductCell({ fields: f, featured, kicker, size, details, horizo
   // contenu — jamais de superposition (même calcul aperçu/catalogue/export).
   const freeRef = useRef<HTMLDivElement | null>(null)
   useLayoutEffect(() => {
-    if (!cardStyle?.freeLayout || !freeRef.current) return
-    // magnetFlow décoché = placement 100 % manuel (reset des top aimantés).
-    if (cardStyle.magnetFlow ?? true) applyMagneticFlow(freeRef.current, cardStyle)
-    else resetMagneticFlow(freeRef.current, cardStyle)
+    // Aimantation PAR BLOC (box.m ?? défaut magnetFlow) — gérée dans le moteur ;
+    // les blocs détachés y sont remis à leur position configurée (idempotent).
+    if (cardStyle?.freeLayout && freeRef.current) applyMagneticFlow(freeRef.current, cardStyle)
   })
   const hasWas = f.oldPrice != null && f.newPrice != null && f.oldPrice > f.newPrice
   const show = (key: 'showDesc' | 'showRef' | 'showUnit' | 'showSticker' | 'showKicker' | 'showPromo' | 'showVedette' | 'showDetails') => cardStyle?.[key] ?? true

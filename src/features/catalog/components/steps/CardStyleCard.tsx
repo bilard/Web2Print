@@ -76,12 +76,12 @@ export function CardStyleCard({ plan, setPlan, selectedObject }: CardStyleCardPr
           <>
             <label className="flex items-center gap-2 text-[11px] text-white/70 cursor-pointer select-none">
               <input type="checkbox" checked={style.magnetFlow ?? true} onChange={(e) => patch({ magnetFlow: e.target.checked })} className="accent-indigo-600" />
-              Aimanter les blocs texte (anti-superposition)
+              Aimanter les blocs texte (défaut)
             </label>
             <p className="text-[10px] text-white/40 leading-snug">
-              {style.magnetFlow ?? true
-                ? 'Les blocs texte se collent/poussent selon leur contenu — jamais de trou ni de chevauchement.'
-                : 'Placement 100 % manuel : chaque bloc reste exactement où vous le posez (superpositions possibles).'}
+              Réglable BLOC PAR BLOC : sélectionnez un bloc texte dans l'aperçu puis
+              cliquez sur sa pastille 🧲 (Aimanté = collé au bloc du dessus selon son
+              contenu · Libre = reste exactement où vous le posez).
             </p>
             <button type="button" onClick={() => patch({ layout: {} })}
               className="text-[11px] text-indigo-300 hover:text-white underline text-left">Réinitialiser les positions</button>

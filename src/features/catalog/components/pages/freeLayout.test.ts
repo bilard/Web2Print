@@ -62,6 +62,29 @@ test('applyMagneticFlow : contenu COURT → l\'enfant REMONTE se coller (pas de 
   expect(parseFloat(details.style.top)).toBeCloseTo(61.6, 0) // 580+30+6 = 616px < 680 configuré
 })
 
+test('applyMagneticFlow : aimant PAR BLOC — un bloc détaché (m:false) reste à sa position mais sert de parent', () => {
+  const card = document.createElement('div')
+  Object.defineProperty(card, 'clientHeight', { value: 1000 })
+  Object.defineProperty(card, 'clientWidth', { value: 1000 })
+  const mk = (id: string, h: number) => {
+    const el = document.createElement('div')
+    el.className = 'cat-obj'
+    el.setAttribute('data-object-id', id)
+    Object.defineProperty(el, 'offsetHeight', { value: h })
+    Object.defineProperty(el, 'offsetWidth', { value: 400 })
+    card.appendChild(el)
+    return el
+  }
+  const desc = mk('description', 30)  // courte (580→610)
+  const details = mk('details', 60)   // DÉTACHÉ, posé à y80 → ne remonte PAS
+  const ref = mk('ref', 20)           // aimanté → collé SOUS le bloc détaché (800+60+6)
+  const style = { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: { details: { x: 5, y: 80, w: 48, m: false } } }
+  applyMagneticFlow(card, style)
+  expect(parseFloat(desc.style.top)).toBeCloseTo(58, 0)
+  expect(parseFloat(details.style.top)).toBeCloseTo(80, 0)   // reste où il est posé
+  expect(parseFloat(ref.style.top)).toBeCloseTo(86.6, 0)     // 800+60+6 = 866px
+})
+
 test('applyMagneticFlow : pas de poussée sans recouvrement horizontal (colonnes indépendantes)', () => {
   const card = document.createElement('div')
   Object.defineProperty(card, 'clientHeight', { value: 1000 })
