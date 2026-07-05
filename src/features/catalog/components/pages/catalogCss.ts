@@ -234,7 +234,7 @@ export const CATALOG_CSS = `
 /* Sticker rond de remise (écart barré/vente) — en haut à droite du bloc image */
 .cat-price-sticker { position:absolute; top:8px; right:8px; width:calc(46px * var(--cat-s-sticker,1) * ${F}); height:calc(46px * var(--cat-s-sticker,1) * ${F}); border-radius:999px;
   background:var(--cat-sticker-bg,var(--cat-accent)); color:var(--cat-sticker-ink,#fff); display:flex; align-items:center; justify-content:center;
-  font-family:var(--cat-font-sticker,var(--cat-font-h)); font-weight:800; font-size:calc(13px * var(--cat-s-sticker,1) * ${F}); transform:rotate(8deg);
+  font-family:var(--cat-font-sticker,var(--cat-font-h)); font-weight:800; font-size:calc(13px * var(--cat-s-sticker,1) * ${F});
   box-shadow:0 3px 10px rgba(0,0,0,.18); }
 .cat-featured .cat-price-sticker { top:54px; }
 .cat-cell-img-ph { font-size:11px; color:#94a3b8; }
@@ -282,7 +282,10 @@ export const CATALOG_CSS = `
 .cat-cell-pricebox { text-align:right; }
 .cat-cell-unit { display:block; font-size:calc(9px * var(--cat-s-unit,1) * ${F}); font-family:var(--cat-font-unit,var(--cat-font-b)); color:var(--cat-unit-ink,inherit); opacity:var(--cat-unit-op,.6); letter-spacing:.08em; text-transform:uppercase; }
 /* Étiquette prix : bloc barré (bandeau sombre) solidaire du badge prix accent */
-.cat-cell-tag { display:inline-flex; flex-direction:column; align-items:flex-end; transform:rotate(-2deg); }
+/* Inclinaisons décoratives (étiquette prix, sticker) : PLUS RIEN en dur ici —
+   portées par la rotation PAR BLOC (r du layout, défauts −2°/+8°) pour que le
+   réglage « Rotation » affiche la réalité (0° = parfaitement droit). */
+.cat-cell-tag { display:inline-flex; flex-direction:column; align-items:flex-end; }
 .cat-cell-was { display:inline-block; background:var(--cat-was-bg,var(--cat-head-bg)); color:var(--cat-was-ink,var(--cat-head-ink)); font-size:calc(10px * var(--cat-s-price,1) * ${F});
   font-family:var(--cat-font-price,var(--cat-font-b)); font-weight:700; text-decoration:line-through; padding:3px 9px 2px; border-radius:4px 4px 0 0; white-space:nowrap; }
 .cat-cell-price { display:inline-block; background:var(--cat-price-bg,var(--cat-accent)); color:var(--cat-price-ink,#fff); font-family:var(--cat-font-price,var(--cat-font-h));

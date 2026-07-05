@@ -16,7 +16,9 @@ export const FREE_DEFAULT_LAYOUT: Record<CardObjectId, CardBox> = {
   // SOUS le bandeau promo (~6 % de haut) — à y:2 la pastille le chevauchait.
   kicker: { x: 0, y: 8 },
   image: { x: 2, y: 4, w: 96, h: 42 },
-  sticker: { x: 70, y: 24 },
+  // Inclinaisons décoratives par DÉFAUT (r) — plus rien en dur dans le CSS :
+  // le réglage « Rotation » du bloc affiche la réalité (0° = droit).
+  sticker: { x: 70, y: 24, r: 8 },
   brand: { x: 5, y: 48, w: 90 },
   name: { x: 5, y: 52, w: 92 },
   description: { x: 5, y: 58, w: 92 },
@@ -26,7 +28,7 @@ export const FREE_DEFAULT_LAYOUT: Record<CardObjectId, CardBox> = {
   details: { x: 5, y: 68, w: 92 },
   ref: { x: 5, y: 90, w: 45 },
   unit: { x: 5, y: 94, link: 'ref' },
-  price: { x: 2, y: 2, w: 40, ax: 'r', ay: 'b' },
+  price: { x: 2, y: 2, w: 40, ax: 'r', ay: 'b', r: -2 },
 }
 
 /**
@@ -43,14 +45,14 @@ export const FREE_WIDE_LAYOUT: Record<CardObjectId, CardBox> = {
   // SOUS le bandeau promo (cartes larges = moins hautes → bandeau ~8-9 %).
   kicker: { x: 0, y: 10 },
   image: { x: 2, y: 8, w: 34, h: 88 },
-  sticker: { x: 28, y: 12 },
+  sticker: { x: 28, y: 12, r: 8 },
   brand: { x: 40, y: 10, w: 56 },
   name: { x: 40, y: 16, w: 58 },
   description: { x: 40, y: 26, w: 58 },
   details: { x: 40, y: 46, w: 58 },
   ref: { x: 40, y: 88, w: 30 },
   unit: { x: 40, y: 92, link: 'ref' },
-  price: { x: 2, y: 2, w: 40, ax: 'r', ay: 'b' },
+  price: { x: 2, y: 2, w: 40, ax: 'r', ay: 'b', r: -2 },
 }
 
 /** Seuil de bascule vers le design 2 colonnes : carte au moins 1,3× plus large que haute. */
