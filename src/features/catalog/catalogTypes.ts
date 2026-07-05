@@ -79,11 +79,6 @@ export const CARD_OBJECT_IDS: CardObjectId[] = [
  *  lié ajuste ce décalage SANS rompre la liaison. */
 export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b'; link?: CardObjectId | null; lx?: number; ly?: number }
 
-/** Forme du badge prix ('tag' = étiquette classique aux coins 4px). */
-export type PriceShape = 'tag' | 'rounded' | 'pill' | 'square'
-/** Forme du sticker de remise. */
-export type StickerShape = 'round' | 'rounded' | 'square'
-
 /**
  * Style COSMÉTIQUE des fiches : réglages bornés appliqués en variables CSS
  * par-dessus le template fluide (qui reste intouchable — packing, variantes
@@ -120,16 +115,6 @@ export interface CatalogCardStyle {
   detailsFont: string
   /** Police de la pastille « Sous-famille » ('' = hérite du thème : titres). */
   kickerFont: string
-  /** Fond de la fiche ('' = blanc) — levier fort des designs (crème, gris perle…). */
-  cellBg: string
-  /** FORME du badge prix : étiquette inclinée (défaut), coins arrondis, pastille pilule ou carré net. */
-  priceShape: PriceShape
-  /** Inclinaison (°) du badge prix (étiquette légèrement penchée par défaut). */
-  priceRotate: number
-  /** FORME du sticker de remise : rond (défaut), carré arrondi ou carré net. */
-  stickerShape: StickerShape
-  /** Inclinaison (°) du sticker de remise. */
-  stickerRotate: number
   /** Couleurs des objets ('' = hérite du thème). */
   promoBg: string
   stickerBg: string
@@ -190,7 +175,6 @@ export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '', vedetteBg2: '', vedettePriceBg2: '',
   vedetteLabel: 'Vedette',
   gradientAngle: 135,
-  cellBg: '', priceShape: 'tag', priceRotate: -2, stickerShape: 'round', stickerRotate: 8,
   radius: 6, imageShare: 40, imagePad: 12,
   showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true, showVedette: true, showDetails: true,
   magnetFlow: true, layout: {}, layoutWide: {},

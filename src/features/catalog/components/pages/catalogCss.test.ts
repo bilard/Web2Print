@@ -19,19 +19,6 @@ describe('cardStyleVars', () => {
     expect(Object.values(vars({})).every((v) => v === undefined)).toBe(true)
   })
 
-  it('formes des badges (presets graphiques) : rayon + inclinaison — rien émis aux défauts', () => {
-    const v = vars({ priceShape: 'pill', priceRotate: 0, stickerShape: 'square', stickerRotate: 0 })
-    expect(v['--cat-price-radius']).toBe('999px')
-    expect(v['--cat-price-rot']).toBe('0deg')
-    expect(v['--cat-sticker-radius']).toBe('4px')
-    expect(v['--cat-sticker-rot']).toBe('0deg')
-    const d = vars({})
-    expect(d['--cat-price-radius']).toBeUndefined()
-    expect(d['--cat-price-rot']).toBeUndefined()
-    expect(d['--cat-sticker-radius']).toBeUndefined()
-    expect(d['--cat-sticker-rot']).toBeUndefined()
-  })
-
   it('style PARTIEL (ancien document/modèle) → fusion avec les défauts, pas de valeurs « undefinedpx »', () => {
     const v = cardStyleVars({ promoBg: '#ff0000' } as CatalogCardStyle, THEME) as Record<string, string | undefined>
     expect(v['--cat-promo-bg']).toBe('#ff0000')
