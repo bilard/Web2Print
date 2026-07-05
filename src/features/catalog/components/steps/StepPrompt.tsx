@@ -8,7 +8,7 @@ import { Loader2, ArrowRight, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree, flattenTree } from '../../catalogTree'
-import { representativeGrid } from '../../catalogEngine'
+import { DEFAULT_GRID, representativeGrid } from '../../catalogEngine'
 import { cellDims, cellFit } from '../pages/catalogCss'
 import { isWideCard } from '../pages/freeLayout'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
@@ -100,7 +100,10 @@ export function StepPrompt() {
     const s = useCatalogStore.getState()
     if (!s.plan) return
     const cs = { ...DEFAULT_CARD_STYLE, ...s.plan.cardStyle }
-    s.setPlan({ ...s.plan, cardStyle: { ...cs, layout: { ...cs.layout, [id]: box } } })
+    // Chaque variante a son propre jeu de positions : le patch va dans celui
+    // de la variante AFFICHÉE (verticale → layout · pleine largeur → layoutWide).
+    const key = previewWide ? 'layoutWide' : 'layout'
+    s.setPlan({ ...s.plan, cardStyle: { ...cs, [key]: { ...(cs[key] ?? {}), [id]: box } } })
   }
   // L'aperçu prend TOUJOURS la taille + le fit réels de la cellule imprimée
   // (réplique exacte de la fiche du catalogue — un seul affichage réaliste).
@@ -109,6 +112,21 @@ export function StepPrompt() {
     const { w, h } = cellDims(format, previewGrid)
     return { w, h, fit: cellFit(format, previewGrid) }
   }, [format, previewGrid])
+  // Variante ÉDITÉE dans l'aperçu : verticale ou pleine largeur (2 colonnes) —
+  // les deux dispositions coexistent dans un catalogue (cartes élargies, grilles
+  // mixtes) et s'affinent chacune sur SA forme. Défaut : la forme dominante.
+  const [previewVariant, setPreviewVariant] = useState<'auto' | 'vertical' | 'wide'>('auto')
+  const baseIsWide = isWideCard(cell.w, cell.h)
+  const previewWide = previewVariant === 'auto' ? baseIsWide : previewVariant === 'wide'
+  // Forme de la carte d'aperçu : la cellule réelle si elle correspond à la
+  // variante éditée, sinon une cellule CANONIQUE de l'autre famille
+  // (grille 2 = pleine largeur · grille 4 = verticale).
+  const previewCell = useMemo(() => {
+    if (previewWide === baseIsWide) return cell
+    const g = previewWide ? 2 : DEFAULT_GRID
+    const { w, h } = cellDims(format, g)
+    return { w, h, fit: cellFit(format, g) }
+  }, [cell, previewWide, baseIsWide, format])
 
   return (
     <div className="h-full flex min-h-0">
@@ -152,22 +170,36 @@ export function StepPrompt() {
           {/* Colonne droite du centre : APERÇU grand (le résultat), collé en haut */}
           {plan && (
             <div className="lg:sticky lg:top-0 w-full lg:w-[560px]">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between gap-2 mb-2">
                 <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Aperçu de la fiche</span>
-                {/* Variante éditée : les positions sont COMMUNES, seuls ruban/cadre vedette diffèrent. */}
-                <div className="flex rounded-md overflow-hidden border border-border text-[11px]">
-                  <button type="button" onClick={() => setPreviewFeatured(false)}
-                    className={`px-2.5 py-1 ${!previewFeatured ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
-                    Standard
-                  </button>
-                  <button type="button" onClick={() => setPreviewFeatured(true)}
-                    className={`px-2.5 py-1 ${previewFeatured ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
-                    ★ Vedette
-                  </button>
+                <div className="flex items-center gap-2">
+                  {/* Disposition éditée : chaque variante a SES positions (layout / layoutWide). */}
+                  <div className="flex rounded-md overflow-hidden border border-border text-[11px]"
+                    title="Chaque disposition s'affine séparément : verticale (cartes standard) · pleine largeur (2 colonnes)">
+                    <button type="button" onClick={() => setPreviewVariant('vertical')}
+                      className={`px-2.5 py-1 ${!previewWide ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
+                      Verticale
+                    </button>
+                    <button type="button" onClick={() => setPreviewVariant('wide')}
+                      className={`px-2.5 py-1 ${previewWide ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
+                      Pleine largeur
+                    </button>
+                  </div>
+                  {/* Variante vedette : les positions sont COMMUNES, seuls ruban/cadre diffèrent. */}
+                  <div className="flex rounded-md overflow-hidden border border-border text-[11px]">
+                    <button type="button" onClick={() => setPreviewFeatured(false)}
+                      className={`px-2.5 py-1 ${!previewFeatured ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
+                      Standard
+                    </button>
+                    <button type="button" onClick={() => setPreviewFeatured(true)}
+                      className={`px-2.5 py-1 ${previewFeatured ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
+                      ★ Vedette
+                    </button>
+                  </div>
                 </div>
               </div>
-              <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={cell}
-                featuredVariant={previewFeatured} selected={selectedObject}
+              <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={previewCell}
+                wide={previewWide} featuredVariant={previewFeatured} selected={selectedObject}
                 editable onLayoutChange={patchLayout}
                 onSelect={setSelectedObject} />
             </div>
@@ -177,7 +209,7 @@ export function StepPrompt() {
 
       {plan && (
         <aside className="w-80 shrink-0 border-l border-border bg-surface overflow-y-auto">
-          <CardStyleCard plan={plan} setPlan={setPlan} selectedObject={selectedObject} wide={isWideCard(cell.w, cell.h)} />
+          <CardStyleCard plan={plan} setPlan={setPlan} selectedObject={selectedObject} wide={previewWide} />
         </aside>
       )}
     </div>

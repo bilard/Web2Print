@@ -64,7 +64,9 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
   // cible et la suit partout. Éditable ici pour VOIR tous les liens d'un coup.
   const setLink = (obj: CardObjectId, target: string) => {
     const base = boxOf(obj)
-    const layout = { ...style.layout }
+    // Écrit dans le jeu d'overrides de la variante ÉDITÉE (verticale / pleine largeur).
+    const layoutKey = wide ? ('layoutWide' as const) : ('layout' as const)
+    const layout = { ...(style[layoutKey] ?? {}) }
     if (target) {
       // Si la cible (ou sa chaîne) est déjà liée à ce bloc, lier = INVERSER la
       // liaison : on coupe le lien qui reboucle (un cycle rendrait les positions
@@ -85,7 +87,7 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
     } else {
       layout[obj] = { ...base, link: null, lx: 0, ly: 0, ...(visualPos(obj) ?? {}) } // délié SANS saut
     }
-    patch({ layout })
+    patch({ [layoutKey]: layout } as Partial<CatalogCardStyle>)
   }
 
   // ── Visualisation des liaisons : une COULEUR par groupe (cible + suiveurs

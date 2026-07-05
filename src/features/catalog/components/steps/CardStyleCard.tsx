@@ -61,7 +61,7 @@ export function CardStyleCard({ plan, setPlan, selectedObject, wide }: CardStyle
           cliquez sur sa pastille 🧲 (Aimanté = collé au bloc du dessus selon son
           contenu · Libre = reste exactement où vous le posez).
         </p>
-        <button type="button" onClick={() => patch({ layout: {} })}
+        <button type="button" onClick={() => patch({ layout: {}, layoutWide: {} })}
           className="text-[11px] text-indigo-300 hover:text-white underline text-left">Réinitialiser les positions</button>
       </div>
 

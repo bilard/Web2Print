@@ -43,10 +43,24 @@ test('FREE_WIDE_LAYOUT (cartes pleine largeur) : 2 colonnes — image à gauche,
   expect(FREE_WIDE_LAYOUT.promo).toEqual(FREE_DEFAULT_LAYOUT.promo)
 })
 
-test('freeLayoutBox wide : repli 2 colonnes, overrides utilisateur PRIORITAIRES', () => {
+test('freeLayoutBox wide : repli 2 colonnes + overrides INDÉPENDANTS par variante', () => {
   expect(freeLayoutBox('image', DEFAULT_CARD_STYLE, true)).toEqual(FREE_WIDE_LAYOUT.image)
-  const style = { ...DEFAULT_CARD_STYLE, layout: { name: { x: 10, y: 20 } } }
-  expect(freeLayoutBox('name', style, true)).toEqual({ x: 10, y: 20, w: FREE_WIDE_LAYOUT.name.w })
+  // Un drag fait sur la carte VERTICALE (layout) ne déforme JAMAIS la carte
+  // large — c'était le bug : l'image héritait de sa boîte pleine largeur.
+  const style = { ...DEFAULT_CARD_STYLE, layout: { image: { x: 2, y: 4, w: 96, h: 42 } }, layoutWide: { name: { x: 45, y: 18 } } }
+  expect(freeLayoutBox('image', style, true)).toEqual(FREE_WIDE_LAYOUT.image)
+  expect(freeLayoutBox('name', style, true)).toEqual({ x: 45, y: 18, w: FREE_WIDE_LAYOUT.name.w })
+  // Et réciproquement : layoutWide n'affecte pas la carte verticale.
+  expect(freeLayoutBox('name', style, false)).toEqual(FREE_DEFAULT_LAYOUT.name)
+})
+
+test('normalizeCardLinks : purge un cycle dans layoutWide sans toucher layout', () => {
+  const style = { ...DEFAULT_CARD_STYLE, layoutWide: { ref: { x: 40, y: 88, link: 'unit' as const } } }
+  const norm = normalizeCardLinks(style)
+  expect(freeLayoutBox('ref', norm, true).link).toBe('unit')
+  expect(freeLayoutBox('unit', norm, true).link).toBeNull()
+  expect(freeLayoutBox('unit', norm, false).link).toBe('ref') // variante verticale intacte
+  expect(norm.layout).toEqual({})
 })
 
 test('isWideCard : bascule au ratio 1,3 (grilles 1 colonne & paysage larges ; verticales inchangées)', () => {

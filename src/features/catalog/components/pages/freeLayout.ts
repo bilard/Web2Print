@@ -59,10 +59,14 @@ export function isWideCard(w: number, h: number): boolean {
   return h > 0 && w / h >= WIDE_RATIO
 }
 
-/** Boîte effective d'un objet : override utilisateur (layout) fusionné sur le repli
- *  (vertical, ou 2 colonnes pour les cartes larges — les overrides priment toujours). */
+/** Boîte effective d'un objet : override utilisateur fusionné sur le repli de SA
+ *  variante. Chaque variante a son PROPRE jeu d'overrides (`layout` vertical ·
+ *  `layoutWide` 2 colonnes) : un drag fait sur la carte verticale ne déforme
+ *  jamais la carte pleine largeur, et réciproquement. */
 export function freeLayoutBox(id: CardObjectId, style: CatalogCardStyle, wide = false): CardBox {
-  return { ...(wide ? FREE_WIDE_LAYOUT : FREE_DEFAULT_LAYOUT)[id], ...(style.layout?.[id] ?? {}) }
+  return wide
+    ? { ...FREE_WIDE_LAYOUT[id], ...(style.layoutWide?.[id] ?? {}) }
+    : { ...FREE_DEFAULT_LAYOUT[id], ...(style.layout?.[id] ?? {}) }
 }
 
 /**
@@ -391,20 +395,25 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
  * l'UI et le moteur ne voient jamais d'état incohérent.
  */
 export function normalizeCardLinks(style: CatalogCardStyle): CatalogCardStyle {
-  const valid = new Map<CardObjectId, CardObjectId>()
-  const losers: CardObjectId[] = []
-  for (const id of CARD_OBJECT_IDS) {
-    const t = freeLayoutBox(id, style).link
-    if (!t || t === id) continue
-    let cur: CardObjectId | null | undefined = t
-    while (cur && cur !== id) cur = valid.get(cur)
-    if (cur === id) losers.push(id)
-    else valid.set(id, t)
+  let out = style
+  // Chaque variante a son propre jeu d'overrides → purge INDÉPENDANTE.
+  for (const wide of [false, true]) {
+    const valid = new Map<CardObjectId, CardObjectId>()
+    const losers: CardObjectId[] = []
+    for (const id of CARD_OBJECT_IDS) {
+      const t = freeLayoutBox(id, out, wide).link
+      if (!t || t === id) continue
+      let cur: CardObjectId | null | undefined = t
+      while (cur && cur !== id) cur = valid.get(cur)
+      if (cur === id) losers.push(id)
+      else valid.set(id, t)
+    }
+    if (losers.length === 0) continue
+    const layout = { ...(wide ? out.layoutWide : out.layout) }
+    for (const id of losers) layout[id] = { ...freeLayoutBox(id, out, wide), link: null, lx: 0, ly: 0 }
+    out = wide ? { ...out, layoutWide: layout } : { ...out, layout }
   }
-  if (losers.length === 0) return style
-  const layout = { ...style.layout }
-  for (const id of losers) layout[id] = { ...freeLayoutBox(id, style), link: null, lx: 0, ly: 0 }
-  return { ...style, layout }
+  return out
 }
 
 /** Position VISUELLE (%) d'un objet dans la carte d'aperçu (.cat-style-card-host) —

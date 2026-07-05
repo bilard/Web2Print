@@ -158,6 +158,10 @@ export interface CatalogCardStyle {
   magnetFlow: boolean
   /** Boîtes en % par objet (disposition libre — LE mode de rendu) ; absent = position de repli. */
   layout: Partial<Record<CardObjectId, CardBox>>
+  /** Boîtes de la variante LARGE (fiches pleine largeur, repli 2 colonnes) —
+   *  INDÉPENDANTES de `layout` : un drag fait sur la carte verticale ne déforme
+   *  jamais la carte large, et réciproquement. Optionnel (styles persistés anciens). */
+  layoutWide?: Partial<Record<CardObjectId, CardBox>>
 }
 
 export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
@@ -169,7 +173,7 @@ export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   gradientAngle: 135,
   radius: 6, imageShare: 40, imagePad: 12,
   showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true, showVedette: true, showDetails: true,
-  magnetFlow: true, layout: {},
+  magnetFlow: true, layout: {}, layoutWide: {},
 }
 
 /**

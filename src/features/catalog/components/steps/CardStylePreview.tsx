@@ -32,6 +32,9 @@ interface Props {
   details?: string[]
   /** Cellule imprimée (px + facteur --cat-fit) — la carte de l'aperçu EST cette cellule. */
   cell: { w: number; h: number; fit: number }
+  /** Disposition éditée : pleine largeur (repli 2 colonnes + layoutWide) ou verticale.
+   *  Absent = déduit de la forme de la cellule (même bascule que le rendu des pages). */
+  wide?: boolean
   /** Variante affichée : vedette (ruban + cadre) ou standard. */
   featuredVariant?: boolean
   /** Monte l'overlay de drag/resize (disposition libre) quand vrai. */
@@ -79,13 +82,13 @@ function AnchorPalette({ selected, style, wide, onLayoutChange }: {
   )
 }
 
-export function CardStylePreview({ theme, cardStyle, fields, details, cell, featuredVariant = true, editable, onLayoutChange, onSelect, selected }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, details, cell, wide: wideProp, featuredVariant = true, editable, onLayoutChange, onSelect, selected }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   const d = details && details.length ? details : SAMPLE_DETAILS
   const cardRef = useRef<HTMLDivElement | null>(null)
   // La cellule d'aperçu a la forme de la cellule IMPRIMÉE → même bascule 2 colonnes
   // que le rendu des pages (l'édition reste WYSIWYG sur les catalogues larges).
-  const wide = isWideCard(cell.w, cell.h)
+  const wide = wideProp ?? isWideCard(cell.w, cell.h)
   const overlay = editable && onLayoutChange
     ? <CardLayoutOverlay cardRef={cardRef} style={cardStyle} wide={wide} onChange={onLayoutChange} onSelect={onSelect} />
     : null
