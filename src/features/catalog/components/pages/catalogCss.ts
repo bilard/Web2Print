@@ -184,6 +184,9 @@ export const CATALOG_CSS = `
 /* Neutralise le positionnement intrinsèque des objets qui étaient absolus dans le flux */
 .cat-free .cat-cell-promo, .cat-free .cat-cell-kicker, .cat-free .cat-price-sticker, .cat-free .cat-cell-vedette {
   position:static; top:auto; left:auto; right:auto; bottom:auto; display:inline-flex; }
+/* La cartouche promo reste un BANDEAU (remplit sa boîte, pleine largeur par
+   défaut) — inline-flex la réduisait à la largeur du texte, design ≠ auto. */
+.cat-free .cat-cell-promo { display:block; width:100%; }
 .cat-free .cat-cell-img-in { position:static; top:auto; left:auto; right:auto; bottom:auto; width:100%; height:100%; }
 .cat-free .cat-obj[data-object-id="image"] { background:linear-gradient(180deg,#fafbfc 0%,#eef1f4 100%); }
 .cat-free .cat-cell-body { display:contents; }
