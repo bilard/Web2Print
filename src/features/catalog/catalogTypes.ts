@@ -151,11 +151,9 @@ export interface CatalogCardStyle {
   showVedette: boolean
   /** Affichage de la zone « Détails » (champs libres, valeurs seules). */
   showDetails: boolean
-  /** Disposition LIBRE (drag & drop) : objets positionnés en % au lieu du flux. */
-  freeLayout: boolean
-  /** Flux AIMANTÉ (mode libre) : les blocs texte se collent/poussent selon leur volumétrie — jamais de superposition ni de trou. Décoché = placement 100 % manuel. */
+  /** Flux AIMANTÉ : les blocs texte se collent/poussent selon leur volumétrie — jamais de superposition ni de trou. Décoché = placement 100 % manuel. */
   magnetFlow: boolean
-  /** Boîtes en % par objet (mode libre uniquement) ; absent = position de repli. */
+  /** Boîtes en % par objet (disposition libre — LE mode de rendu) ; absent = position de repli. */
   layout: Partial<Record<CardObjectId, CardBox>>
 }
 
@@ -168,7 +166,7 @@ export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   gradientAngle: 135,
   radius: 6, imageShare: 40, imagePad: 12,
   showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true, showVedette: true, showDetails: true,
-  freeLayout: false, magnetFlow: true, layout: {},
+  magnetFlow: true, layout: {},
 }
 
 /**

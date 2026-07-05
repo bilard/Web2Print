@@ -97,8 +97,7 @@ export function StepPrompt() {
     s.setPlan({ ...s.plan, cardStyle: { ...cs, layout: { ...cs.layout, [id]: box } } })
   }
   // L'aperçu prend TOUJOURS la taille + le fit réels de la cellule imprimée
-  // (réplique exacte de la fiche du catalogue, en auto comme en libre — un seul
-  // affichage réaliste). `horizontal` reflète le rendu des grilles denses en auto.
+  // (réplique exacte de la fiche du catalogue — un seul affichage réaliste).
   const previewGrid = useMemo(() => (plan ? representativeGrid(plan.sections) : 4), [plan])
   const cell = useMemo(() => {
     const { w, h } = cellDims(format, previewGrid)
@@ -162,7 +161,7 @@ export function StepPrompt() {
                 </div>
               </div>
               <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={cell}
-                horizontal={previewGrid >= 6} featuredVariant={previewFeatured} selected={selectedObject}
+                featuredVariant={previewFeatured} selected={selectedObject}
                 editable onLayoutChange={patchLayout}
                 onSelect={setSelectedObject} />
             </div>

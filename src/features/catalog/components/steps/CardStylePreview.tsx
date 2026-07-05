@@ -1,7 +1,7 @@
 // src/features/catalog/components/steps/CardStylePreview.tsx
 // Aperçu de la fiche : UNE SEULE réplique RÉALISTE de la cellule imprimée (mêmes
-// px + même --cat-fit, zoomée pour l'édition) — identique en auto et en
-// disposition libre ; le mode libre ajoute seulement l'overlay d'édition.
+// px + même --cat-fit, zoomée pour l'édition) + overlay de disposition libre
+// (drag/resize, aimant, liaisons) et palette d'ancrage liquide.
 import { useRef, type CSSProperties } from 'react'
 import { AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal } from 'lucide-react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
@@ -32,8 +32,6 @@ interface Props {
   details?: string[]
   /** Cellule imprimée (px + facteur --cat-fit) — la carte de l'aperçu EST cette cellule. */
   cell: { w: number; h: number; fit: number }
-  /** Layout horizontal (grilles denses en mode auto) — reflète le rendu réel du catalogue. */
-  horizontal?: boolean
   /** Variante affichée : vedette (ruban + cadre) ou standard. */
   featuredVariant?: boolean
   /** Monte l'overlay de drag/resize (disposition libre) quand vrai. */
@@ -79,12 +77,11 @@ function AnchorPalette({ selected, style, onLayoutChange }: {
   )
 }
 
-export function CardStylePreview({ theme, cardStyle, fields, details, cell, horizontal, featuredVariant = true, editable, onLayoutChange, onSelect, selected }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, details, cell, featuredVariant = true, editable, onLayoutChange, onSelect, selected }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   const d = details && details.length ? details : SAMPLE_DETAILS
   const cardRef = useRef<HTMLDivElement | null>(null)
-  const free = cardStyle.freeLayout
-  const overlay = editable && free && onLayoutChange
+  const overlay = editable && onLayoutChange
     ? <CardLayoutOverlay cardRef={cardRef} style={cardStyle} onChange={onLayoutChange} onSelect={onSelect} />
     : null
   const K = Math.max(1, Math.round((480 / cell.w) * 100) / 100)
@@ -92,7 +89,7 @@ export function CardStylePreview({ theme, cardStyle, fields, details, cell, hori
   return (
     <div className="flex items-start gap-2">
       {/* Palette d'ancrage liquide (menu de gauche) — agit sur le bloc sélectionné. */}
-      {editable && free && onLayoutChange && (
+      {editable && onLayoutChange && (
         <AnchorPalette selected={selected} style={cardStyle} onLayoutChange={onLayoutChange} />
       )}
       <div className="cat-page rounded-lg overflow-hidden shrink-0 border border-border relative shadow-2xl" style={pageStyle}>
@@ -101,8 +98,7 @@ export function CardStylePreview({ theme, cardStyle, fields, details, cell, hori
           {/* Conteneur qui réserve la place ZOOMÉE ; la carte interne est à la taille cellule exacte puis scale(K). */}
           <div style={{ width: cell.w * K, height: cell.h * K, position: 'relative' }}>
             <div ref={cardRef} className="cat-style-card-host" style={{ width: cell.w, height: cell.h, transform: `scale(${K})`, transformOrigin: 'top left', display: 'grid', position: 'relative' }}>
-              <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" size="md" details={d}
-                horizontal={!free && horizontal} cardStyle={cardStyle} />
+              <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" details={d} cardStyle={cardStyle} />
             </div>
             {/* Overlay HORS de la carte scalée : ses positions sont en % (invariantes au
                 zoom) mais ses pastilles/poignées sont en px — dedans, elles seraient ×K. */}

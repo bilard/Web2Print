@@ -87,9 +87,9 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
   // ── Visualisation des liaisons : une COULEUR par groupe (cible + suiveurs
   // teintés pareil) et des connecteurs FLÉCHÉS façon UML dans la marge gauche.
   const LINK_COLORS = ['#6366f1', '#06b6d4', '#f59e0b', '#ec4899', '#22c55e', '#eab308']
-  const links = style.freeLayout
-    ? FIELDS.map((f) => ({ from: f.obj, to: freeLayoutBox(f.obj, style).link })).filter((l): l is { from: CardObjectId; to: CardObjectId } => !!l.to)
-    : []
+  const links = FIELDS
+    .map((f) => ({ from: f.obj, to: freeLayoutBox(f.obj, style).link }))
+    .filter((l): l is { from: CardObjectId; to: CardObjectId } => !!l.to)
   const groupColor = new Map<CardObjectId, string>()
   for (const l of links) if (!groupColor.has(l.to)) groupColor.set(l.to, LINK_COLORS[groupColor.size % LINK_COLORS.length])
   const rowColor = (obj: CardObjectId): string | undefined =>
@@ -134,8 +134,8 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
       )}
       <div className="grid grid-cols-1 gap-y-3">
         {FIELDS.map(({ scale, font, label, obj }) => {
-          const link = style.freeLayout ? freeLayoutBox(obj, style).link : undefined
-          const color = style.freeLayout ? rowColor(obj) : undefined
+          const link = freeLayoutBox(obj, style).link
+          const color = rowColor(obj)
           return (
             <div key={scale} ref={(el) => { rowRefs.current[obj] = el }}
               className={`space-y-1 ${scale === activeScale ? 'ring-2 ring-indigo-500 rounded-md' : ''}`}
@@ -147,21 +147,19 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
                 <option value="">Police du thème</option>
                 <FontSelectOptions />
               </select>
-              {style.freeLayout && (
-                <label className="flex items-center gap-1.5 text-[10px]"
-                  style={{ color: link && color ? color : 'rgba(255,255,255,.3)' }}
-                  title="Liaison : ce bloc est soudé à DROITE du bloc choisi et le suit partout">
-                  🔗
-                  <select value={link ?? ''} onChange={(e) => setLink(obj, e.target.value)}
-                    className={`${inputCls} !py-0.5 !text-[10px]`}
-                    style={link && color ? { color, borderColor: color } : undefined}>
-                    <option value="">Non lié</option>
-                    {CARD_OBJECT_IDS.filter((t) => t !== obj).map((t) => (
-                      <option key={t} value={t}>Lié à : {OBJ_LABEL[t]}</option>
-                    ))}
-                  </select>
-                </label>
-              )}
+              <label className="flex items-center gap-1.5 text-[10px]"
+                style={{ color: link && color ? color : 'rgba(255,255,255,.3)' }}
+                title="Liaison : ce bloc est soudé à DROITE du bloc choisi et le suit partout">
+                🔗
+                <select value={link ?? ''} onChange={(e) => setLink(obj, e.target.value)}
+                  className={`${inputCls} !py-0.5 !text-[10px]`}
+                  style={link && color ? { color, borderColor: color } : undefined}>
+                  <option value="">Non lié</option>
+                  {CARD_OBJECT_IDS.filter((t) => t !== obj).map((t) => (
+                    <option key={t} value={t}>Lié à : {OBJ_LABEL[t]}</option>
+                  ))}
+                </select>
+              </label>
             </div>
           )
         })}

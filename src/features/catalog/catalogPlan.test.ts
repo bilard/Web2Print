@@ -137,17 +137,15 @@ describe('sanitizeCatalogPlan', () => {
     expect(plan.cover.title).toBe('X')
   })
 
-  it('freeLayout + layout bornés (0–100, ids connus)', () => {
+  it('layout borné (0–100, ids connus)', () => {
     const uTree = [node('u', 'U', 1, ['r1'])]
-    const plan = sanitizeCatalogPlan({ cardStyle: { freeLayout: true, layout: { name: { x: 10, y: 20, w: 150 }, bogus: { x: 1, y: 1 } } } } as never, uTree, 'C')
-    expect(plan.cardStyle?.freeLayout).toBe(true)
+    const plan = sanitizeCatalogPlan({ cardStyle: { layout: { name: { x: 10, y: 20, w: 150 }, bogus: { x: 1, y: 1 } } } } as never, uTree, 'C')
     expect(plan.cardStyle?.layout?.name).toEqual({ x: 10, y: 20, w: 100 }) // w clampé
     expect((plan.cardStyle?.layout as Record<string, unknown>)?.bogus).toBeUndefined() // id inconnu ignoré
   })
 
-  test('PlanSchema conserve freeLayout + layout (non strippés par zod)', () => {
-    const parsed = PlanSchema.parse({ cardStyle: { freeLayout: true, layout: { name: { x: 10, y: 20, w: 50 } } } })
-    expect(parsed.cardStyle?.freeLayout).toBe(true)
+  test('PlanSchema conserve layout (non strippé par zod)', () => {
+    const parsed = PlanSchema.parse({ cardStyle: { layout: { name: { x: 10, y: 20, w: 50 } } } })
     expect(parsed.cardStyle?.layout?.name).toEqual({ x: 10, y: 20, w: 50 })
   })
 })

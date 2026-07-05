@@ -24,7 +24,6 @@ const CardStyleAISchema = z.object({
   vedetteBg: z.string().optional(), vedettePriceBg: z.string().optional(),
   priceInk: z.string().optional(), vedettePriceInk: z.string().optional(),
   vedetteLabel: z.string().optional(),
-  freeLayout: z.boolean().optional(),
   layout: z.record(z.string(), z.object({ x: z.number(), y: z.number(), w: z.number().optional(), h: z.number().optional() })).optional(),
 }).optional()
 
@@ -99,7 +98,6 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
         priceInk: { type: 'string', description: 'hex TEXTE des badges prix (toutes fiches)' },
         vedettePriceInk: { type: 'string', description: 'hex TEXTE du prix des fiches VEDETTE uniquement' },
         vedetteLabel: { type: 'string', description: 'texte du ruban vedette (ex. « Coup de cœur »)' },
-        freeLayout: { type: 'boolean', description: 'true = disposition LIBRE des objets de la fiche (positions en % via layout) au lieu du flux automatique — ne renvoyer que si la demande porte sur le placement/la disposition' },
         layout: { type: 'object', description: 'OPTIONNEL — position/taille en % (0-100) par objet ; ne renvoyer QUE si la demande porte sur le placement. Objets: promo, image, sticker, kicker, vedette, brand, name, description, ref, unit, price, details. Chaque valeur = { x, y, w?, h? } en %', additionalProperties: { type: 'object', properties: { x: { type: 'number' }, y: { type: 'number' }, w: { type: 'number' }, h: { type: 'number' } } } },
       },
     },
@@ -173,8 +171,7 @@ function sanitizeAICardStyle(raw: RawCatalogPlan['cardStyle']): Partial<CatalogC
     if (v && HEX_RE.test(v)) out[k] = v
   }
   if (raw.vedetteLabel?.trim()) out.vedetteLabel = raw.vedetteLabel.trim().slice(0, 24)
-  const rawLayout = (raw as { freeLayout?: unknown; layout?: unknown })
-  if (typeof rawLayout.freeLayout === 'boolean') out.freeLayout = rawLayout.freeLayout
+  const rawLayout = (raw as { layout?: unknown })
   if (rawLayout.layout && typeof rawLayout.layout === 'object') {
     const num = (v: unknown, lo: number, hi: number): number | undefined =>
       typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : undefined

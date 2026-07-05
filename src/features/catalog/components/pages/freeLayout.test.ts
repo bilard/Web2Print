@@ -34,7 +34,7 @@ test('applyMagneticFlow : un bloc volumineux POUSSE vers le bas ceux qui le chev
   const details = mk('details', 60) // y68 configuré (680) < 586+250 → poussé, COLLÉ à 836
   const ref = mk('ref', 20)         // collé sous détails : 836+60+6 = 902
   const price = mk('price', 80)     // PAS dans la chaîne : intouché
-  const style = { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: {} }
+  const style = { ...DEFAULT_CARD_STYLE, layout: {} }
   applyMagneticFlow(card, style)
   expect(parseFloat(desc.style.top)).toBeCloseTo(58, 0)
   expect(parseFloat(details.style.top)).toBeCloseTo(83.6, 0) // 580+250+6 = 836px
@@ -57,7 +57,7 @@ test('applyMagneticFlow : contenu COURT → l\'enfant REMONTE se coller (pas de 
   }
   const desc = mk('description', 30) // y58, courte : 580→610
   const details = mk('details', 60)  // y68 configuré (680) → REMONTÉ collé à 616
-  applyMagneticFlow(card, { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: {} })
+  applyMagneticFlow(card, { ...DEFAULT_CARD_STYLE, layout: {} })
   expect(parseFloat(desc.style.top)).toBeCloseTo(58, 0)
   expect(parseFloat(details.style.top)).toBeCloseTo(61.6, 0) // 580+30+6 = 616px < 680 configuré
 })
@@ -78,7 +78,7 @@ test('applyMagneticFlow : aimant PAR BLOC — un bloc détaché (m:false) reste 
   const desc = mk('description', 30)  // courte (580→610)
   const details = mk('details', 60)   // DÉTACHÉ, posé à y80 → ne remonte PAS
   const ref = mk('ref', 20)           // aimanté → collé SOUS le bloc détaché (800+60+6)
-  const style = { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: { details: { x: 5, y: 80, w: 48, m: false } } }
+  const style = { ...DEFAULT_CARD_STYLE, layout: { details: { x: 5, y: 80, w: 48, m: false } } }
   applyMagneticFlow(card, style)
   expect(parseFloat(desc.style.top)).toBeCloseTo(58, 0)
   expect(parseFloat(details.style.top)).toBeCloseTo(80, 0)   // reste où il est posé
@@ -101,7 +101,7 @@ test('applyMagneticFlow : pas de poussée sans recouvrement horizontal (colonnes
   const details = mk('details', 300) // posé en colonne GAUCHE (x5 w48) → descend loin
   const ref = mk('ref', 20)
   // réf déplacée en colonne DROITE (x60) : aucun recouvrement avec détails (x5–53)
-  const style = { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: { details: { x: 5, y: 68, w: 48 }, ref: { x: 60, y: 88, w: 35 } } }
+  const style = { ...DEFAULT_CARD_STYLE, layout: { details: { x: 5, y: 68, w: 48 }, ref: { x: 60, y: 88, w: 35 } } }
   applyMagneticFlow(card, style)
   expect(parseFloat(details.style.top)).toBeCloseTo(68, 0)
   expect(parseFloat(ref.style.top)).toBeCloseTo(88, 0) // reste à SA position
@@ -124,12 +124,12 @@ test('applyMagneticFlow : bloc LIÉ soudé à droite de sa cible (aligné en hau
   }
   mk('ref', 20, { left: 50, width: 200, top: 880 })
   const unit = mk('unit', 20)
-  const style = { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: { unit: { x: 5, y: 92, link: 'ref' as const } } }
+  const style = { ...DEFAULT_CARD_STYLE, layout: { unit: { x: 5, y: 92, link: 'ref' as const } } }
   applyMagneticFlow(card, style)
   expect(parseFloat(unit.style.left)).toBeCloseTo(25.6, 1) // (50+200+6)/1000
   expect(parseFloat(unit.style.top)).toBeCloseTo(88, 0)    // aligné sur le haut de la réf
   // Décalage lx/ly (glisser SANS rompre la liaison) : ajouté au point de soudure.
-  const style2 = { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: { unit: { x: 5, y: 92, link: 'ref' as const, lx: 4, ly: -2 } } }
+  const style2 = { ...DEFAULT_CARD_STYLE, layout: { unit: { x: 5, y: 92, link: 'ref' as const, lx: 4, ly: -2 } } }
   applyMagneticFlow(card, style2)
   expect(parseFloat(unit.style.left)).toBeCloseTo(29.6, 1)
   expect(parseFloat(unit.style.top)).toBeCloseTo(86, 0)
@@ -154,7 +154,7 @@ test('applyMagneticFlow : liaison CIRCULAIRE (réf↔unité) — le premier lien
   const unit = mk('unit', 20, { left: 50, width: 200, top: 880 })
   // Cycle stocké : réf liée à l'unité ET unité liée à la réf (état corrompu).
   const style = {
-    ...DEFAULT_CARD_STYLE, freeLayout: true,
+    ...DEFAULT_CARD_STYLE,
     layout: { ref: { x: 5, y: 90, link: 'unit' as const }, unit: { x: 5, y: 94, link: 'ref' as const } },
   }
   applyMagneticFlow(card, style) // ne doit ni boucler ni diverger

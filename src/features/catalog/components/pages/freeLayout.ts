@@ -1,13 +1,14 @@
 // src/features/catalog/components/pages/freeLayout.ts
-// Repli + fusion de la disposition libre (mode `cardStyle.freeLayout`).
+// Repli + fusion + moteur (aimant/liaisons) de la disposition libre — LE mode de
+// rendu des fiches produit.
 import type { CardBox, CardObjectId, CatalogCardStyle } from '../../catalogTypes'
 import { CARD_OBJECT_IDS } from '../../catalogTypes'
 
 /**
- * Positions de repli (%) — CALQUÉES sur le rendu AUTO d'une carte verticale
- * (image en haut, textes empilés, réf/unité en bas à gauche · prix en bas à
- * droite). Sert de point de départ si la capture du rendu auto échoue (ou après
- * « Réinitialiser les positions ») : cocher « libre » ressemble alors à l'auto.
+ * Positions de repli (%) — le design COMPLET d'une carte verticale (image en
+ * haut, textes empilés, réf/unité soudées en bas à gauche · prix ancré en bas à
+ * droite). C'est la fiche par défaut, et le point de retour de
+ * « Réinitialiser les positions ».
  */
 export const FREE_DEFAULT_LAYOUT: Record<CardObjectId, CardBox> = {
   promo: { x: 0, y: 0, w: 100 },
@@ -151,50 +152,4 @@ export function visualPos(id: CardObjectId): { x: number; y: number } | null {
     x: Math.round((el.offsetLeft / card.clientWidth) * 1000) / 10,
     y: Math.round((el.offsetTop / card.clientHeight) * 1000) / 10,
   }
-}
-
-/** Sélecteur du rendu AUTO (flux) de chaque objet — pour capturer sa position. */
-const AUTO_SELECTORS: Record<CardObjectId, string> = {
-  promo: '.cat-cell-promo',
-  vedette: '.cat-cell-vedette',
-  kicker: '.cat-cell-kicker',
-  image: '.cat-cell-img',
-  sticker: '.cat-price-sticker',
-  brand: '.cat-cell-brand',
-  name: '.cat-cell-name',
-  description: '.cat-cell-desc',
-  details: '.cat-cell-details',
-  ref: '.cat-cell-refcode',
-  unit: '.cat-cell-unit',
-  price: '.cat-cell-pricebox',
-}
-
-const r1 = (v: number) => Math.round(v * 10) / 10
-
-/**
- * Capture la position (en % de la carte) de chaque objet du rendu AUTO d'une
- * carte. Sert à AMORCER la disposition libre : au moment où l'on coche « libre »
- * (la carte est encore rendue en auto), on fige ces positions dans `layout` →
- * la carte reste IDENTIQUE au rendu auto, puis l'utilisateur déplace les blocs.
- * `h` n'est capturée que pour l'image (boîte remplie) ; textes ET détails gardent
- * leur hauteur naturelle — en libre, les textes ne sont jamais coupés.
- */
-export function measureAutoLayout(card: HTMLElement): Partial<Record<CardObjectId, CardBox>> {
-  const cr = card.getBoundingClientRect()
-  if (!cr.width || !cr.height) return {}
-  const out: Partial<Record<CardObjectId, CardBox>> = {}
-  for (const id of CARD_OBJECT_IDS) {
-    const el = card.querySelector<HTMLElement>(AUTO_SELECTORS[id])
-    if (!el) continue
-    const er = el.getBoundingClientRect()
-    if (!er.width || !er.height) continue
-    const box: CardBox = {
-      x: r1(((er.left - cr.left) / cr.width) * 100),
-      y: r1(((er.top - cr.top) / cr.height) * 100),
-      w: r1((er.width / cr.width) * 100),
-    }
-    if (id === 'image') box.h = r1((er.height / cr.height) * 100)
-    out[id] = box
-  }
-  return out
 }

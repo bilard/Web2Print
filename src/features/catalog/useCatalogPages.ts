@@ -43,11 +43,10 @@ export function useCatalogPages(): CatalogPagesResult {
     }
     // Ordre manuel du chemin de fer appliqué APRÈS la pagination (renumérote
     // et recale le sommaire) — aperçu et export voient le même ordre.
-    // Disposition libre → mode UNIFORME : toutes les fiches identiques (1×1, une
-    // seule grille) pour que les positions placées dans l'aperçu soient fidèles.
-    const uniform = plan.cardStyle?.freeLayout ?? false
+    // Mode UNIFORME (toujours) : une seule grille pour tout le catalogue → les
+    // positions placées dans l'aperçu (disposition libre) sont fidèles au pixel.
     const { pages, keys } = applyPageOrder(
-      paginateCatalog({ tree, sections: plan.sections, sizeByPrice, prices, names, uniform, uniformGrid: representativeGrid(plan.sections) }),
+      paginateCatalog({ tree, sections: plan.sections, sizeByPrice, prices, names, uniform: true, uniformGrid: representativeGrid(plan.sections) }),
       s.pageOrder,
     )
     const ctx: CatalogRenderCtx = {
