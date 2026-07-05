@@ -58,14 +58,14 @@ describe('paginateCatalog (flux continu par univers)', () => {
     ])]
     const pages = paginateCatalog({ tree, sections: [sec('a', 4)] })
     const grids = pages.filter((p) => p.kind === 'products')
-    // Grille 4 = 2 rangées : Perceuses r1, Scies r2, Marteaux → page suivante.
-    expect(grids).toHaveLength(2)
-    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['x1', 'y1'])
+    // « 4/page » = 4 PRODUITS : les 3 sous-familles (1 rangée chacune) tiennent
+    // sur la page — la grille gagne une rangée (2 nominales → 3 réelles).
+    expect(grids).toHaveLength(1)
+    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['x1', 'y1', 'z1'])
     // Fin de rangée comblée : chaque fiche s'élargit sur sa rangée (2 colonnes).
     expect(grids[0].slots.every((s) => s.colSpan === 2 && s.rowSpan === 1)).toBe(true)
-    expect(grids[0].groupRows).toEqual([{ row: 1, label: 'Perceuses' }, { row: 2, label: 'Scies' }])
-    expect(grids[1].slots.map((s) => s.rowId)).toEqual(['z1'])
-    expect(grids[1].groupRows).toEqual([{ row: 1, label: 'Marteaux' }])
+    expect(grids[0].groupRows).toEqual([{ row: 1, label: 'Perceuses' }, { row: 2, label: 'Scies' }, { row: 3, label: 'Marteaux' }])
+    expect(grids[0].rows).toBe(3) // rangées RÉELLES émises quand ≠ nominal
     expect(grids[0].breadcrumb).toEqual(['Outillage', 'Perceuses']) // univers › famille du 1er slot
   })
 
@@ -93,18 +93,23 @@ describe('paginateCatalog (flux continu par univers)', () => {
     const pages = paginateCatalog({ tree, sections: [sec('a', 4, ['p3'])] })
     const grids = pages.filter((p) => p.kind === 'products')
     expect(grids[0].grid).toBe(4)
-    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p3', 'p1', 'p2']) // vedette + 2 produits sur la MÊME page
+    // « 4/page » = 4 PRODUITS malgré la grande carte : rangée supplémentaire.
+    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p3', 'p1', 'p2', 'p4'])
     expect(grids[0].slots[0]).toMatchObject({ featured: true, col: 1, row: 1, colSpan: 2, rowSpan: 1 })
-    expect(grids[1].slots.map((s) => s.rowId)).toEqual(['p4', 'p5'])
+    expect(grids[0].rows).toBe(3)
+    expect(grids[1].slots.map((s) => s.rowId)).toEqual(['p5'])
   })
 
-  it('1 vedette MAX par page : deux vedettes réparties sur deux pages', () => {
+  it('« 6/page » avec 2 vedettes : les 6 produits tiennent sur UNE page (2e vedette ajoutée après épuisement du flux)', () => {
     const tree = [node('a', 'A', 1, ids(6))]
     const pages = paginateCatalog({ tree, sections: [sec('a', 6, ['p1', 'p2'])] })
     const grids = pages.filter((p) => p.kind === 'products')
-    expect(grids.map((g) => g.slots.filter((s) => s.featured).length)).toEqual([1, 1])
-    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p1', 'p3', 'p4'])
-    expect(grids[1].slots.map((s) => s.rowId)).toEqual(['p2', 'p5', 'p6'])
+    expect(grids).toHaveLength(1)
+    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p1', 'p3', 'p4', 'p5', 'p6', 'p2'])
+    expect(grids[0].slots.filter((s) => s.featured).map((s) => s.rowId)).toEqual(['p1', 'p2'])
+    // Les 2 vedettes gardent leur taille 2×2 — la grille passe de 3 à 6 rangées.
+    expect(grids[0].slots.filter((s) => s.featured).every((s) => s.colSpan === 2 && s.rowSpan === 2)).toBe(true)
+    expect(grids[0].rows).toBe(6)
   })
 
   it('ULTIME vedette restante sans plus rien à mixer → pleine page', () => {
@@ -120,28 +125,34 @@ describe('paginateCatalog (flux continu par univers)', () => {
     const tree = [node('a', 'A', 1, ids(6))]
     const pages = paginateCatalog({ tree, sections: [sec('a', 8, ['p1', 'p2', 'p3'])] })
     const grids = pages.filter((p) => p.kind === 'products')
-    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p1', 'p4', 'p5', 'p6', 'p2'])
-    expect(grids[0].slots.filter((s) => s.featured).map((s) => s.rowId)).toEqual(['p1', 'p2'])
-    expect(grids[1].slots).toEqual([{ rowId: 'p3', featured: true, path: ['A'], col: 1, row: 1, colSpan: 2, rowSpan: 4 }])
+    // « 8/page » : les 6 produits (3 vedettes 2×2 + 3 flux) tiennent sur UNE page.
+    expect(grids).toHaveLength(1)
+    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p1', 'p4', 'p5', 'p6', 'p2', 'p3'])
+    expect(grids[0].slots.filter((s) => s.featured).every((s) => s.colSpan === 2 && s.rowSpan === 2)).toBe(true)
+    // Zéro vide : la somme des aires couvre la grille réelle.
+    const rows = grids[0].rows ?? 4
+    expect(grids[0].slots.reduce((sum, s) => sum + s.colSpan * s.rowSpan, 0)).toBe(2 * rows)
   })
 
   it('vedette PARTAGE la page avec d’autres produits quand la grille le permet (6/page)', () => {
     const tree = [node('a', 'A', 1, ids(5))]
     const pages = paginateCatalog({ tree, sections: [sec('a', 6, ['p1'])] })
     const grids = pages.filter((p) => p.kind === 'products')
-    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p1', 'p2', 'p3']) // 2×2 + 2 fiches 1×1 = grille 2×3 pleine
+    // Vedette 2×2 + les 4 autres produits : une rangée s'ajoute (3 → 4).
+    expect(grids).toHaveLength(1)
+    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p1', 'p2', 'p3', 'p4', 'p5'])
     expect(grids[0].slots[0]).toMatchObject({ featured: true, colSpan: 2, rowSpan: 2 })
-    expect(grids[0].slots.slice(1).every((s) => s.colSpan === 1 && s.rowSpan === 1 && s.row === 3)).toBe(true)
-    expect(grids[1].slots.map((s) => s.rowId)).toEqual(['p4', 'p5'])
+    expect(grids[0].slots.slice(1).every((s) => s.colSpan === 1 && s.rowSpan === 1)).toBe(true)
+    expect(grids[0].rows).toBe(4)
   })
 
   it('vedette d’une sous-famille : path complet, mixée en tête de la 1re page de l’univers', () => {
     const tree = [node('a', 'A', 1, ids(2), [node('a/b', 'B', 2, ids(2, 'x'))])]
     const pages = paginateCatalog({ tree, sections: [sec('a', 4), sec('a/b', 4, ['x2'])] })
     const grids = pages.filter((p) => p.kind === 'products')
+    expect(grids).toHaveLength(1) // « 4/page » = les 4 produits, rangée ajoutée pour x1
     expect(grids[0].slots[0]).toMatchObject({ rowId: 'x2', featured: true, path: ['A', 'B'], colSpan: 2, rowSpan: 1 })
-    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['x2', 'p1', 'p2'])
-    expect(grids[1].slots.map((s) => s.rowId)).toEqual(['x1'])
+    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['x2', 'p1', 'p2', 'x1'])
   })
 
   it('sizeByPrice : la carte > P80 est plafonnée (jamais pleine page) sur grille 4', () => {
@@ -149,8 +160,10 @@ describe('paginateCatalog (flux continu par univers)', () => {
     const prices = new Map<string, number | null>([['p1', 100], ['p2', 10], ['p3', 10], ['p4', 10]])
     const pages = paginateCatalog({ tree, sections: [sec('a', 4)], sizeByPrice: true, prices })
     const grids = pages.filter((p) => p.kind === 'products')
-    expect(grids[0].slots[0]).toMatchObject({ rowId: 'p1', colSpan: 2, rowSpan: 1 }) // 2×2 plafonné → 2×1
-    expect(grids[0].slots.map((s) => s.rowId)).toEqual(['p1', 'p2', 'p3'])
+    expect(grids).toHaveLength(1) // « 4/page » = les 4 produits malgré la carte élargie
+    const byId = new Map(grids[0].slots.map((s) => [s.rowId, s]))
+    expect(byId.get('p1')).toMatchObject({ colSpan: 2, rowSpan: 1 }) // 2×2 plafonné → 2×1, prix le plus haut
+    expect(grids[0].slots).toHaveLength(4)
   })
 
   it('sizeByPrice : prix > médiane → carte élargie (jamais 2×2 par prix, réservé vedettes) ; le plus cher finit le plus grand via étirement', () => {
@@ -193,8 +206,12 @@ describe('paginateCatalog (flux continu par univers)', () => {
     const pages = paginateCatalog({ tree, sections: [sec('a', 4)], sizeByPrice: true, prices })
     const grids = pages.filter((p) => p.kind === 'products')
     const first = new Map(grids[0].slots.map((s) => [s.rowId, s.colSpan * s.rowSpan]))
-    expect(first.get('p3')).toBe(2) // 535 → carte élargie
-    expect(first.get('p2')).toBe(1) // 421 → 1×1 (l'emplacement large revient au plus cher)
+    expect(first.get('p3')).toBe(2) // 535 → la plus grande carte
+    // « 4/page » loge p4 sur une rangée ajoutée (comblée en largeur) : la page a
+    // DEUX grandes cartes — les 2 prix les plus hauts (535, 421) les occupent.
+    expect(first.get('p2')).toBe(2)
+    expect(first.get('p1')).toBe(1)
+    expect(first.get('p4')).toBe(1)
   })
 
   it('sizeByPrice : une carte ÉTIRÉE (comblement de fin de page) revient aussi au prix le plus haut', () => {
@@ -222,8 +239,8 @@ describe('paginateCatalog (flux continu par univers)', () => {
       ...paginateCatalog({ tree: [node('b', 'B', 1, ids(7))], sections: [sec('b', 8, ['p2'])] }).filter((p) => p.kind === 'products'),
       ...paginateCatalog({ tree: [node('c', 'C', 1, ids(11))], sections: [{ ...sec('c', 4), randomDensity: true }] }).filter((p) => p.kind === 'products'),
     ]) {
-      const [cols, rows] = { 1: [1, 1], 2: [1, 2], 3: [1, 3], 4: [2, 2], 6: [2, 3], 8: [2, 4] }[g.grid]!
-      expect(g.slots.reduce((acc, s) => acc + s.colSpan * s.rowSpan, 0)).toBe(cols * rows)
+      const [cols, nominalRows] = { 1: [1, 1], 2: [1, 2], 3: [1, 3], 4: [2, 2], 6: [2, 3], 8: [2, 4] }[g.grid]!
+      expect(g.slots.reduce((acc, s) => acc + s.colSpan * s.rowSpan, 0)).toBe(cols * (g.rows ?? nominalRows))
     }
   })
 

@@ -270,6 +270,13 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
     while (featuredQueue.length > 0 || flowQueue.length > 0) {
       const grid = (!uniform && section?.randomDensity) ? RANDOM_GRID_POOL[Math.floor(rng() * RANDOM_GRID_POOL.length)] : fixedGrid
       const [C, R] = GRID_DIMS[grid]
+      // « N/page » = N PRODUITS sur la page (pas N cases) : quand une grande
+      // carte (vedette 2×2, agrandissement prix) consomme des cases, la grille
+      // gagne des RANGÉES supplémentaires au lieu de repousser des produits —
+      // les règles de tailles (vedette double, upgrade, bandeaux) sont intactes,
+      // les cellules de la page sont juste moins hautes. Borné (garde-fou).
+      const target = grid as number
+      const maxRows = R * 3
       const occ: boolean[][] = Array.from({ length: R }, () => Array<boolean>(C).fill(false))
       const slots: ProductSlot[] = []
       const pageNodeIds = new Set<string>()
@@ -280,7 +287,7 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       // Ferme la rangée entamée quand la sous-famille change : ses cases libres
       // sont rendues au groupe précédent (comblées par extension horizontale).
       const closeRow = () => {
-        for (let r = R - 1; r >= 0; r--) {
+        for (let r = occ.length - 1; r >= 0; r--) {
           if (!occ[r].some(Boolean)) continue
           for (let c = 0; c < C; c++) if (!occ[r][c]) { occ[r][c] = true; holes.push({ r, c }) }
           break
@@ -289,7 +296,14 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       const place = (item: FlowItem, w: number, h: number): boolean => {
         let placed: { r: number; c: number; w: number; h: number } | null = null
         for (const [cw, ch] of shrinkCandidates(w, h)) {
-          const pos = findFit(occ, cw, ch)
+          // GRANDIR avant de dégrader : des rangées s'ajoutent pour loger le span
+          // VOULU (la vedette reste 2×2) — la dégradation n'est qu'un dernier
+          // recours si le plafond de rangées est atteint.
+          let pos = findFit(occ, cw, ch)
+          while (!pos && occ.length < maxRows) {
+            occ.push(Array<boolean>(C).fill(false))
+            pos = findFit(occ, cw, ch)
+          }
           if (pos) { placed = { ...pos, w: cw, h: ch }; break }
         }
         if (!placed) return false
@@ -311,7 +325,7 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       // Budget : UN agrandissement prix par page — sinon un univers cher (50 %
       // des produits > médiane) transforme « 6/page » en pages de 2-4 fiches.
       let priceUpgradesLeft = 1
-      while (flowQueue.length > 0) {
+      while (flowQueue.length > 0 && slots.length < target) {
         const item = flowQueue[0]
         const label = item.path.length > 1 ? item.path[item.path.length - 1] : null
         if (label !== currentGroup) {
@@ -337,9 +351,9 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       }
       // Flux épuisé mais des vedettes restent : elles se PARTAGENT la page
       // (jamais une vedette seule sur sa page tant qu'il en reste plusieurs).
-      while (flowQueue.length === 0 && featuredQueue.length > 0) {
+      while (flowQueue.length === 0 && featuredQueue.length > 0 && slots.length < target) {
         const [w, h] = bigSpan(C, R)
-        if (!place(featuredQueue[0], w, h)) break // page pleine → suite page suivante
+        if (!place(featuredQueue[0], w, h)) break // plafond de rangées → suite page suivante
         featuredQueue.shift()
       }
       if (slots.length === 0) break // garde théorique (grille 1×1 minimum → jamais atteint)
@@ -349,14 +363,18 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
         const left = slots.find((s) => r >= s.row - 1 && r < s.row - 1 + s.rowSpan && c - 1 >= s.col - 1 && c - 1 < s.col - 1 + s.colSpan)
         if (left) left.colSpan++
       }
+      // Rangées ajoutées mais restées vides (dégradation tardive) : retaillées —
+      // jamais en dessous du nominal (une fin d'univers garde sa grille pleine).
+      while (occ.length > R && !occ[occ.length - 1].some(Boolean)) occ.pop()
       // Cases restées libres (fin d'univers) : étirer les cartes → zéro vide.
-      stretchToFill(occ, slots, C, R)
+      stretchToFill(occ, slots, C, occ.length)
       // Après étirement (les aires sont définitives) : le prix le plus haut
       // occupe la plus grande carte de la page.
       if (sizeByPrice) reassignByPrice(slots, prices)
       const breadcrumb = slots[0].path.slice(0, 2) // univers › famille du 1er slot
       pages.push({
         kind: 'products', pageNumber, nodeId: univers.id, breadcrumb, grid, slots, nodeIds: [...pageNodeIds],
+        ...(occ.length !== R ? { rows: occ.length } : {}),
         ...(groupRows.length > 0 ? { groupRows } : {}),
       })
     }

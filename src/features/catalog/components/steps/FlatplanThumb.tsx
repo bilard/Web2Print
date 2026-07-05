@@ -55,7 +55,8 @@ function ThumbBody({ page, ctx, color, width }: Omit<Props, 'dimmed' | 'onOpen'>
       </div>
     )
   }
-  const [C, R] = GRID_DIMS[page.grid]
+  const [C, nominalR] = GRID_DIMS[page.grid]
+  const R = page.rows ?? nominalR // pages étirées (« N produits/page » + grandes cartes)
   return (
     <div className="w-full h-full flex flex-col" style={{ background: theme.pageBg }}>
       {/* Taxonomie au bord extérieur, comme sur la vraie page (verso = gauche, recto = droite). */}

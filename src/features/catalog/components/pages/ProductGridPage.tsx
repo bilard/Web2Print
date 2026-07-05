@@ -1,37 +1,32 @@
 import type { CSSProperties } from 'react'
 import { extractPromoFields, buildDetailLines } from '@/features/retail-promo/promoMapping'
 import { GRID_DIMS, type CatalogGrid, type ProductSlot } from '../../catalogTypes'
-import { cellDims, cellFit, type CatalogRenderCtx } from './catalogCss'
+import { cellDimsFor, cellFitFor, type CatalogRenderCtx } from './catalogCss'
 import { isWideCard } from './freeLayout'
 import { ProductCell } from './ProductCell'
-
-/**
- * Facteur d'échelle TYPO de la page (--cat-fit) : la typo de base est calibrée
- * pour une cellule de grille 6 A4 portrait — les grilles plus aérées (4/2/1,
- * paysage…) produisent des cellules bien plus grandes où les textes en px fixes
- * laissent trop de vide. Échelle = source unique cellFit : l'aperçu utilise
- * EXACTEMENT le même fit + la même taille de cellule → fidélité au pixel.
- */
-function typoFit(ctx: CatalogRenderCtx, grid: CatalogGrid): number {
-  return cellFit(ctx.format, grid)
-}
 
 interface Props {
   ctx: CatalogRenderCtx
   grid: CatalogGrid
+  /** Rangées RÉELLES de la page (« N produits/page » + grandes cartes) — absent = nominal. */
+  rows?: number
   slots: ProductSlot[]
   /** Bandeaux de SECTION (sous-familles) : rangée moteur (1-based) → label. */
   groupRows?: { row: number; label: string }[]
 }
 
-export function ProductGridPage({ ctx, grid, slots, groupRows }: Props) {
-  const [cols, rows] = GRID_DIMS[grid]
-  const fit = typoFit(ctx, grid)
+export function ProductGridPage({ ctx, grid, rows: rowsProp, slots, groupRows }: Props) {
+  const [cols, nominalRows] = GRID_DIMS[grid]
+  const rows = rowsProp ?? nominalRows
+  // Facteur d'échelle TYPO de la page (--cat-fit), calibré cellule grille 6 A4
+  // portrait — calculé sur les rangées RÉELLES : une page étirée (vedette 2×2 +
+  // N produits) a des cellules moins hautes → typo réduite en proportion.
+  const fit = cellFitFor(ctx.format, cols, rows)
   // Forme RÉELLE de chaque carte (span × cellule + gaps) → les cartes LARGES
-  // (pleine largeur des grilles 1 colonne, cartes élargies, grilles paysage)
-  // basculent sur le design 2 colonnes (image gauche / textes droite). Le ratio
-  // est invariant à la magnification (wrapper 100%/s puis scale s).
-  const { w: cw, h: ch } = cellDims(ctx.format, grid)
+  // (pleine largeur des grilles 1 colonne, cartes élargies, grilles paysage,
+  // cellules écrasées des pages étirées) basculent sur le design 2 colonnes
+  // (image gauche / textes droite). Ratio invariant à la magnification.
+  const { w: cw, h: ch } = cellDimsFor(ctx.format, cols, rows)
   const wideOf = (colSpan: number, rowSpan: number) =>
     isWideCard(cw * colSpan + 14 * (colSpan - 1), ch * rowSpan + 14 * (rowSpan - 1))
   // Bandeaux de section (masquables via « Sous-famille » des éléments affichés).

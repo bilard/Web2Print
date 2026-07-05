@@ -274,6 +274,10 @@ export type CatalogPageDescriptor =
   | { kind: 'toc'; pageNumber: number; entries: TocEntry[] }
   | { kind: 'opener'; pageNumber: number; nodeId: string; label: string; index: number; productCount: number; families: OpenerFamily[]; highlights: string[] }
   | { kind: 'products'; pageNumber: number; nodeId: string; breadcrumb: string[]; grid: CatalogGrid; slots: ProductSlot[];
+      /** Rangées RÉELLES de la page quand elles diffèrent du nominal GRID_DIMS —
+       *  la grille s'étire pour honorer « N produits/page » malgré les grandes
+       *  cartes (vedette 2×2, agrandissement prix). Absent = nominal. */
+      rows?: number;
       /** Ids des nœuds taxonomiques représentés sur la page (chaînes univers→sous-famille) — navigation/stats du chemin de fer. */
       nodeIds?: string[];
       /** Bandeaux de SECTION : rangée (1-based) où démarre chaque sous-famille de la page. */

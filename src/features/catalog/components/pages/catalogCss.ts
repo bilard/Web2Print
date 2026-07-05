@@ -20,9 +20,15 @@ export function pagePx(format: CatalogFormat): { w: number; h: number } {
  * carte éditée ait la MÊME forme que la cellule imprimée → placement fidèle).
  */
 export function cellDims(format: CatalogFormat, grid: CatalogGrid): { w: number; h: number } {
-  const { w, h } = pagePx(format)
   const [C, R] = GRID_DIMS[grid]
-  return { w: (w - 64 - 14 * (C - 1)) / C, h: (h - 140 - 14 * (R - 1)) / R }
+  return cellDimsFor(format, C, R)
+}
+
+/** Variante colonnes × rangées EXPLICITES — pages étirées (« N produits/page »
+ *  avec grandes cartes : rangées réelles > nominal). */
+export function cellDimsFor(format: CatalogFormat, cols: number, rows: number): { w: number; h: number } {
+  const { w, h } = pagePx(format)
+  return { w: (w - 64 - 14 * (cols - 1)) / cols, h: (h - 140 - 14 * (rows - 1)) / rows }
 }
 
 /**
@@ -31,7 +37,13 @@ export function cellDims(format: CatalogFormat, grid: CatalogGrid): { w: number;
  * par le rendu des pages ET l'aperçu de fiche → badges/texte au même ratio.
  */
 export function cellFit(format: CatalogFormat, grid: CatalogGrid): number {
-  const { w, h } = cellDims(format, grid)
+  const [C, R] = GRID_DIMS[grid]
+  return cellFitFor(format, C, R)
+}
+
+/** Variante colonnes × rangées EXPLICITES (pages étirées). */
+export function cellFitFor(format: CatalogFormat, cols: number, rows: number): number {
+  const { w, h } = cellDimsFor(format, cols, rows)
   return Math.min(1.45, Math.max(0.85, Math.sqrt((w * h) / (358 * 318))))
 }
 

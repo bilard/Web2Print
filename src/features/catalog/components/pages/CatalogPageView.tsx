@@ -34,7 +34,7 @@ export function CatalogPageView({ page, ctx }: Props) {
         <OpenerPage label={page.label} catalogName={ctx.catalogName} pageStyle={ps}
           index={page.index} productCount={page.productCount} families={page.families} highlights={page.highlights} />
       )}
-      {page.kind === 'products' && <ProductGridPage ctx={ctx} grid={page.grid} slots={page.slots} groupRows={page.groupRows} />}
+      {page.kind === 'products' && <ProductGridPage ctx={ctx} grid={page.grid} rows={page.rows} slots={page.slots} groupRows={page.groupRows} />}
       {chrome && ps.showFooter && (
         <CatalogFooter pageNumber={page.pageNumber} totalPages={ctx.totalPages} catalogName={ctx.catalogName} showName={ps.showFooterName} />
       )}
