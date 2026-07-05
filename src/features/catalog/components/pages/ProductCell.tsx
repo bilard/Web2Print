@@ -40,7 +40,18 @@ export function ProductCell({ fields: f, featured, kicker, details, cardStyle, s
   useLayoutEffect(() => {
     // Aimantation PAR BLOC (box.m ?? défaut magnetFlow) — gérée dans le moteur ;
     // les blocs détachés y sont remis à leur position configurée (idempotent).
-    if (freeRef.current) applyMagneticFlow(freeRef.current, cs)
+    const card = freeRef.current
+    if (!card) return
+    const run = () => applyMagneticFlow(card, cs)
+    run()
+    // Les mesures bougent APRÈS ce rendu : polices chargées (métriques des
+    // fallbacks ≠ police finale) et redimensionnements — re-dérouler le moteur,
+    // sinon les positions restent calées sur des hauteurs périmées (superpositions).
+    document.fonts?.ready.then(run).catch(() => undefined)
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(run)
+    ro.observe(card)
+    return () => ro.disconnect()
   })
   const hasWas = f.oldPrice != null && f.newPrice != null && f.oldPrice > f.newPrice
   const show = (key: 'showDesc' | 'showRef' | 'showUnit' | 'showSticker' | 'showKicker' | 'showPromo' | 'showVedette' | 'showDetails') => cardStyle?.[key] ?? true

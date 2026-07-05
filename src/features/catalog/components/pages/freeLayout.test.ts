@@ -29,17 +29,58 @@ test('applyMagneticFlow : un bloc volumineux POUSSE vers le bas ceux qui le chev
     card.appendChild(el)
     return el
   }
-  // description (y58, w92) très volumineuse : 250px → descend jusqu'à 830px.
+  // description (y58, w92) très volumineuse : 250px — mais le prix ANCRÉ BAS est
+  // un PLAFOND (top 900, plafond 894) et réf+détails réservent leur place :
+  // l'excédent de la description se COUPE (maxHeight), rien ne se superpose.
   const desc = mk('description', 250)
-  const details = mk('details', 60) // y68 configuré (680) < 586+250 → poussé, COLLÉ à 836
-  const ref = mk('ref', 20)         // collé sous détails : 836+60+6 = 902
-  const price = mk('price', 80)     // PAS dans la chaîne : intouché
+  const details = mk('details', 60) // collé sous la description coupée
+  const ref = mk('ref', 20)         // hors de l'emprise du prix ([5,50] vs [58,98])
+  const price = mk('price', 80)     // ancré bas-droite : obstacle, pas aimanté
   const style = { ...DEFAULT_CARD_STYLE, layout: {} }
   applyMagneticFlow(card, style)
   expect(parseFloat(desc.style.top)).toBeCloseTo(58, 0)
-  expect(parseFloat(details.style.top)).toBeCloseTo(83.6, 0) // 580+250+6 = 836px
-  expect(parseFloat(ref.style.top)).toBeCloseTo(90.2, 0)     // 836+60+6 = 902px
-  expect(price.style.top).toBe('') // le prix (colonne droite) n'est pas aimanté
+  expect(desc.style.maxHeight).toBe('222px')                 // 894 − 580 − (60+6) − (20+6)
+  expect(parseFloat(details.style.top)).toBeCloseTo(80.8, 0) // 580+222+6 = 808px
+  expect(details.style.maxHeight).toBe('')                   // sa réserve l'a préservé entier
+  expect(parseFloat(ref.style.top)).toBeCloseTo(87.4, 0)     // 808+60+6 = 874px
+  expect(price.style.top).toBe('') // le prix (ancré bas) n'est pas déplacé
+})
+
+test('applyMagneticFlow : un prix DÉSANCRÉ (drag) reste un PLAFOND — les textes se coupent au-dessus, pas dessous', () => {
+  const card = document.createElement('div')
+  Object.defineProperty(card, 'clientHeight', { value: 1000 })
+  Object.defineProperty(card, 'clientWidth', { value: 1000 })
+  const mk = (id: string, h: number) => {
+    const el = document.createElement('div')
+    el.className = 'cat-obj'
+    el.setAttribute('data-object-id', id)
+    Object.defineProperty(el, 'offsetHeight', { value: h })
+    Object.defineProperty(el, 'offsetWidth', { value: 400 })
+    card.appendChild(el)
+    return el
+  }
+  const details = mk('details', 300) // y68 (680), volumineux : descendrait à 980
+  mk('price', 150)                   // désancré à y75 (750) → plafond 744
+  const style = { ...DEFAULT_CARD_STYLE, layout: { price: { x: 55, y: 75, w: 40, ax: 'l' as const, ay: 't' as const } } }
+  applyMagneticFlow(card, style)
+  expect(parseFloat(details.style.top)).toBeCloseTo(68, 0)
+  expect(details.style.maxHeight).toBe('64px') // 744 − 680 : coupé AU-DESSUS du prix
+})
+
+test('applyMagneticFlow : CLAMP — un bloc désancré posé trop bas est REMONTÉ dans la carte (jamais coupé par le bord)', () => {
+  const card = document.createElement('div')
+  Object.defineProperty(card, 'clientHeight', { value: 1000 })
+  Object.defineProperty(card, 'clientWidth', { value: 1000 })
+  const price = document.createElement('div')
+  price.className = 'cat-obj'
+  price.setAttribute('data-object-id', 'price')
+  Object.defineProperty(price, 'offsetHeight', { value: 200 })
+  Object.defineProperty(price, 'offsetWidth', { value: 400 })
+  card.appendChild(price)
+  // Prix DÉSANCRÉ par un drag dans l'aperçu (ay:'t', y:90) : 900+200 > 1000.
+  const style = { ...DEFAULT_CARD_STYLE, layout: { price: { x: 55, y: 90, w: 40, ax: 'l' as const, ay: 't' as const } } }
+  applyMagneticFlow(card, style)
+  expect(price.style.top).toBe('80%') // remonté au ras du bas (1000 − 200)
 })
 
 test('applyMagneticFlow : contenu COURT → l\'enfant REMONTE se coller (pas de trou)', () => {

@@ -59,6 +59,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
   const cardH = card.clientHeight
   const cardW = card.clientWidth
   if (!cardH || !cardW) return
+  const objOf = (id: CardObjectId) => card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
   // Liens VALIDES (garde-fou anti-CYCLE) : un lien dont la chaîne de cibles
   // reboucle sur lui-même (ex. réf↔unité liées l'une à l'autre) est IGNORÉ —
   // sinon chaque bloc se soude à droite de l'autre et les positions divergent à
@@ -71,9 +72,43 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     while (cur && cur !== id) cur = validLink.get(cur)
     if (cur !== id) validLink.set(id, t)
   }
+  // ── OBSTACLES : les blocs HORS CHAÎNE (prix ancré bas par défaut — mais aussi
+  // un prix DÉSANCRÉ par un drag, badges…) sont des PLAFONDS pour la chaîne de
+  // flux. Les cartes du catalogue n'ont pas le ratio de la carte d'aperçu
+  // (grilles larges/courtes, typo --cat-fit plus grosse) : sans plafond, les
+  // textes glissent SOUS le prix et se superposent. Ici ils se coupent proprement
+  // AU-DESSUS (maxHeight + overflow). Seuls les obstacles situés EN DESSOUS du
+  // bloc courant plafonnent (le kicker en haut ne coupe pas la pile de textes).
+  const obstacles: { x1: number; x2: number; top: number }[] = []
+  for (const id of CARD_OBJECT_IDS) {
+    if (id === 'image' || id === 'promo' || FLOW_CHAIN.includes(id)) continue
+    const b = freeLayoutBox(id, style)
+    if (validLink.has(id)) continue
+    const el = objOf(id)
+    if (!el) continue
+    const sc = b.sc ?? 1
+    const h = el.offsetHeight * sc
+    // Largeur du CONTENU (badge rendu), pas de la boîte (souvent bien plus large,
+    // ex. prix w:40 aligné à droite) — sinon le plafond coupe des colonnes entières.
+    const inner = el.firstElementChild as HTMLElement | null
+    const wPct = (((inner?.offsetWidth || el.offsetWidth) * sc) / cardW) * 100
+    const ax = b.ax ?? 'l'
+    const x2 = ax === 'r' ? 100 - b.x : ax === 'c' ? 50 + wPct / 2 : b.x + wPct
+    const ay = b.ay ?? 't'
+    // Anticipe le CLAMP final : un bloc désancré posé trop bas sera remonté au ras.
+    const top = ay === 'b' ? cardH - (b.y / 100) * cardH - h
+      : ay === 'c' ? cardH / 2 - h / 2
+      : Math.min((b.y / 100) * cardH, cardH - h)
+    obstacles.push({ x1: x2 - wPct, x2, top })
+  }
+  const ceilingFor = (x1: number, x2: number, top: number): number => {
+    let c = cardH
+    for (const o of obstacles) if (o.top > top && x1 < o.x2 && o.x1 < x2) c = Math.min(c, o.top - MAGNET_GAP)
+    return c
+  }
   const items = FLOW_CHAIN
     .map((id) => {
-      const el = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
+      const el = objOf(id)
       return el ? { id, el, box: freeLayoutBox(id, style) } : null
     })
     .filter((x): x is { id: CardObjectId; el: HTMLElement; box: CardBox } => x != null)
@@ -82,11 +117,17 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     // annulé (cycle) rend le bloc à la chaîne verticale.
     .filter((x) => (x.box.ay ?? 't') === 't' && !validLink.has(x.id))
     .sort((a, b) => a.box.y - b.box.y)
-  for (const it of items) it.el.style.top = `${it.box.y}%` // repart du configuré (mesures stables)
-  const placed: { x1: number; x2: number; bottom: number }[] = []
   for (const it of items) {
-    const x1 = it.box.x
-    const x2 = it.box.x + (it.box.w ?? (it.el.offsetWidth / cardW) * 100)
+    it.el.style.top = `${it.box.y}%` // repart du configuré (mesures stables)
+    it.el.style.maxHeight = ''
+    it.el.style.overflow = ''
+  }
+  const spanOf = (it: { el: HTMLElement; box: CardBox }): [number, number] =>
+    [it.box.x, it.box.x + (it.box.w ?? (it.el.offsetWidth / cardW) * 100)]
+  const placed: { x1: number; x2: number; bottom: number }[] = []
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i]
+    const [x1, x2] = spanOf(it)
     // COLLÉ (aimant dans les deux sens) au bloc du dessus qui le chevauche
     // horizontalement : contenu court = l'enfant REMONTE (pas de trou), contenu
     // long = l'enfant est POUSSÉ (pas de superposition). Réglage PAR BLOC :
@@ -100,7 +141,23 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     }
     const top = snap ?? (it.box.y / 100) * cardH
     it.el.style.top = `${Math.round((top / cardH) * 1000) / 10}%`
-    placed.push({ x1, x2, bottom: top + it.el.offsetHeight })
+    // RÉSERVE : place des blocs aimantés SUIVANTS de la chaîne qui le chevauchent
+    // (réf/unité gardent leur ligne même quand les détails sont volumineux), puis
+    // PLAFOND (obstacles/bas de carte) : l'excédent se coupe, ne se superpose pas.
+    let hEff = it.el.offsetHeight
+    let reserve = 0
+    for (let j = i + 1; j < items.length; j++) {
+      if (!isMagnetized(items[j].box, style)) continue
+      const [jx1, jx2] = spanOf(items[j])
+      if (x1 < jx2 && jx1 < x2) reserve += items[j].el.offsetHeight + MAGNET_GAP
+    }
+    const maxH = ceilingFor(x1, x2, top) - top - reserve
+    if (hEff > maxH) {
+      hEff = Math.max(0, Math.floor(maxH))
+      it.el.style.maxHeight = `${hEff}px`
+      it.el.style.overflow = 'hidden'
+    }
+    placed.push({ x1, x2, bottom: top + hEff })
   }
   // ── LIAISONS entre blocs (après la passe verticale : les cibles sont posées) :
   // un bloc lié est SOUDÉ à droite de sa cible, aligné sur son haut — il la suit
@@ -140,6 +197,24 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     el.style.top = `${Math.round(((target.offsetTop / cardH) * 100 + (box.ly ?? 0)) * 10) / 10}%`
   }
   for (const id of validLink.keys()) weld(id)
+  // ── CLAMP : rien ne sort JAMAIS du bas de la carte. Un bloc désancré par le
+  // drag (ex. prix posé en % sur la carte d'aperçu, plus haute que les cellules
+  // réelles), un bloc lié entraîné par sa cible ou un badge trop bas est REMONTÉ
+  // au ras du bord au lieu d'être coupé par l'overflow de la fiche.
+  for (const id of CARD_OBJECT_IDS) {
+    if (id === 'image' || id === 'promo') continue
+    if (items.some((it) => it.id === id)) continue // chaîne : déjà bornée (plafonds)
+    const b = freeLayoutBox(id, style)
+    const linked = validLink.has(id)
+    const ay = linked ? 't' : (b.ay ?? 't')
+    if (ay !== 't') continue // ancré bas/centre : ne déborde pas du bas par construction
+    const el = objOf(id)
+    if (!el) continue
+    const h = el.offsetHeight * (b.sc ?? 1)
+    const topPx = linked ? el.offsetTop : (b.y / 100) * cardH
+    if (topPx + h > cardH) el.style.top = `${Math.round((Math.max(0, cardH - h) / cardH) * 1000) / 10}%`
+    else if (!linked) el.style.top = `${b.y}%` // reset idempotent d'un clamp précédent
+  }
 }
 
 /** Position VISUELLE (%) d'un objet dans la carte d'aperçu (.cat-style-card-host) —
