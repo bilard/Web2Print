@@ -91,8 +91,10 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
       if (!a || !b) return []
       const y1 = a.getBoundingClientRect().top - wt + 14 // départ : le suiveur
       const y2 = b.getBoundingClientRect().top - wt + 14 // arrivée : la CIBLE (pointe de flèche)
+      // Connecteur ORTHOGONAL (angles droits, façon UML) : sortie à gauche,
+      // segment vertical, entrée horizontale dans la cible.
       return [{
-        d: `M 14 ${y1} C 2 ${y1}, 2 ${y2}, 12 ${y2}`,
+        d: `M 14 ${y1} L 4 ${y1} L 4 ${y2} L 7 ${y2}`,
         head: `M 13 ${y2} L 6 ${y2 - 3.5} L 6 ${y2 + 3.5} Z`,
         color: groupColor.get(l.to)!,
       }]
