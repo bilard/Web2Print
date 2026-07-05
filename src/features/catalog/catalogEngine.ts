@@ -319,6 +319,11 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
           currentGroup = label
         }
         let [w, h] = wantedSpan(item, prices.get(item.rowId) ?? null, th, C, R)
+        // Mode UNIFORME (disposition libre) : la mise en avant prix = carte 2×2
+        // (même aspect que la cellule) → la fiche est MAGNIFIÉE ×2 au rendu, la
+        // mise en page libre reste identique. Une carte élargie [2,1] n'aurait
+        // aucun effet visuel (typo constante).
+        if (uniform && !item.featured && w * h > 1) [w, h] = bigSpan(C, R)
         const isPriceUpgrade = !item.featured && w * h > 1
         if (isPriceUpgrade && priceUpgradesLeft <= 0) { w = 1; h = 1 }
         if (!place(item, w, h)) break // page pleine
