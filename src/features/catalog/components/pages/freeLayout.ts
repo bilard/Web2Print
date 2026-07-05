@@ -104,9 +104,13 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     let targetW = target.offsetWidth
     const inner = target.firstElementChild
     if (inner) {
+      // ⚠ Range mesure à l'ÉCRAN (affecté par le zoom/scale de l'aperçu) alors que
+      // offsetLeft/clientWidth sont en unités de MISE EN PAGE : diviser par le
+      // facteur d'échelle réel de l'élément, sinon la soudure dérive avec le zoom.
+      const scale = target.offsetWidth ? target.getBoundingClientRect().width / target.offsetWidth : 0
       const rg = document.createRange()
       rg.selectNodeContents(inner)
-      const w = rg.getBoundingClientRect().width
+      const w = scale > 0 ? rg.getBoundingClientRect().width / scale : 0
       if (w > 0) targetW = w
       else if ((inner as HTMLElement).offsetWidth) targetW = (inner as HTMLElement).offsetWidth
     }
