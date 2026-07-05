@@ -30,6 +30,19 @@ describe('paginateCatalog (flux continu par univers)', () => {
     }
   })
 
+  it('mode UNIFORME : flux CONTINU (pas de bandeau ni rupture par sous-famille → zéro vide interne)', () => {
+    const tree = [node('a', 'A', 1, [], [
+      node('a/b', 'B', 2, ids(1, 'x')),
+      node('a/c', 'C', 2, ids(1, 'y')),
+      node('a/d', 'D', 2, ids(1, 'z')),
+    ])]
+    const pages = paginateCatalog({ tree, sections: [sec('a', 4)], uniform: true, uniformGrid: 4 })
+    const grids = pages.filter((p) => p.kind === 'products')
+    expect(grids).toHaveLength(1) // 3 fiches collées sur UNE page (pas 3 rangées)
+    expect(grids[0].slots).toHaveLength(3)
+    expect(grids[0].groupRows ?? []).toHaveLength(0) // aucun bandeau en uniforme
+  })
+
   it('representativeGrid : densité fixe la plus fréquente (repli DEFAULT_GRID)', () => {
     expect(representativeGrid([sec('a', 6), sec('b', 6), sec('c', 4)])).toBe(6)
     expect(representativeGrid([])).toBe(DEFAULT_GRID)

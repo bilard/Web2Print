@@ -315,7 +315,9 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
         const item = flowQueue[0]
         const label = item.path.length > 1 ? item.path[item.path.length - 1] : null
         if (label !== currentGroup) {
-          closeRow() // le groupe suivant démarre sur une NOUVELLE rangée
+          // Bandeau de sous-famille = nouvelle rangée. En mode UNIFORME (disposition
+          // libre), on NE ferme PAS la rangée → flux continu, zéro case vide.
+          if (!uniform) closeRow()
           currentGroup = label
         }
         let [w, h] = uniform ? [1, 1] : wantedSpan(item, prices.get(item.rowId) ?? null, th, C, R)
@@ -323,8 +325,9 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
         if (isPriceUpgrade && priceUpgradesLeft <= 0) { w = 1; h = 1 }
         if (!place(item, w, h)) break // page pleine
         if (isPriceUpgrade && priceUpgradesLeft > 0) priceUpgradesLeft--
-        // Bandeau de section : première fiche du groupe SUR CETTE PAGE.
-        if (label && !pageGroupLabels.has(label)) {
+        // Bandeau de section : première fiche du groupe SUR CETTE PAGE (pas de
+        // bandeau en mode uniforme = flux continu sans rupture de rangée).
+        if (!uniform && label && !pageGroupLabels.has(label)) {
           pageGroupLabels.add(label)
           groupRows.push({ row: slots[slots.length - 1].row, label })
         }
