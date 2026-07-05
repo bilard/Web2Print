@@ -49,24 +49,34 @@ const MAGNET_GAP = 6
 const CLIP_CHAIN: Set<CardObjectId> = new Set(['description', 'details'])
 
 /**
- * Coupe un pavé à `maxH`, ARRONDI à la ligne entière (jamais de demi-ligne).
- * La hauteur de ligne = le plus PETIT enfant mono-ligne du contenu (fiable même
- * en line-height 'normal'), repli sur line-height/fontSize calculés.
- * Retourne la hauteur effective posée.
+ * Coupe un pavé à `maxH`, PILE sous une ligne rendue (jamais de demi-ligne).
+ * Frontières mesurées par Range (un rect par ligne RÉELLE) — les heuristiques
+ * line-height échouent (gaps entre items, arrondis sub-pixel → la coupe tombait
+ * au milieu de la ligne TVA). ⚠ Range mesure à l'ÉCRAN : diviser par l'échelle
+ * réelle (cartes magnifiées/zoomées). Retourne la hauteur effective posée.
  */
 function clipToLines(el: HTMLElement, maxH: number): number {
   let hEff = Math.max(0, Math.floor(maxH))
   const inner = el.firstElementChild
   if (inner instanceof HTMLElement) {
-    const cs = getComputedStyle(inner)
-    const padV = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0)
-    const kids = [...inner.children].filter((k): k is HTMLElement => k instanceof HTMLElement)
-    const oneLine = kids.length ? Math.min(...kids.map((k) => k.offsetHeight || Infinity)) : NaN
-    const lh = Number.isFinite(oneLine) && oneLine > 0 ? oneLine : parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.35
-    if (Number.isFinite(lh) && lh > 0) {
-      const lines = Math.floor((hEff - padV) / lh)
-      hEff = lines >= 1 ? Math.round(lines * lh + padV) : 0
-    }
+    try {
+      const padB = parseFloat(getComputedStyle(inner).paddingBottom) || 0
+      const rg = document.createRange()
+      rg.selectNodeContents(inner)
+      const ref = el.getBoundingClientRect()
+      const scale = el.offsetWidth ? ref.width / el.offsetWidth : 0
+      if (scale > 0) {
+        const rects = [...rg.getClientRects()].filter((r) => r.height >= 3)
+        if (rects.length) {
+          let best = 0
+          for (const r of rects) {
+            const bottom = (r.bottom - ref.top) / scale
+            if (bottom + padB <= maxH) best = Math.max(best, bottom)
+          }
+          hEff = best > 0 ? Math.round(best + padB) : 0
+        }
+      }
+    } catch { /* environnement sans Range.getClientRects (tests) : coupe brute */ }
   }
   el.style.maxHeight = `${hEff}px`
   el.style.overflow = 'hidden'
@@ -150,6 +160,8 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     it.el.style.maxHeight = ''
     it.el.style.overflow = ''
     it.el.style.width = it.box.w != null ? `${it.box.w}%` : '' // annule un rétrécissement précédent
+    const inner = it.el.firstElementChild
+    if (inner instanceof HTMLElement) inner.style.fontSize = '' // annule une condensation précédente
   }
   const spanOf = (it: { el: HTMLElement; box: CardBox }): [number, number] =>
     [it.box.x, it.box.x + (it.box.w ?? (it.el.offsetWidth / cardW) * 100)]
@@ -230,7 +242,24 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
         }
       }
       const maxH = ceil - top - reserve
-      if (hEff > maxH) hEff = clipToLines(it.el, maxH)
+      if (hEff > maxH) {
+        // CONDENSER d'abord la typo du pavé (paliers jusqu'à −25 %) : le texte est
+        // moins haut ET wrappe moins — le contenu complet retrouve souvent sa place.
+        // La COUPE à la ligne n'intervient qu'en dernier recours.
+        const inner = it.el.firstElementChild
+        if (inner instanceof HTMLElement) {
+          const fs0 = parseFloat(getComputedStyle(inner).fontSize)
+          if (Number.isFinite(fs0) && fs0 > 0) {
+            for (const k of [0.92, 0.85, 0.78, 0.75]) {
+              inner.style.fontSize = `${Math.round(fs0 * k * 10) / 10}px`
+              if (it.el.offsetHeight <= maxH) break
+            }
+            if (it.el.offsetHeight > maxH && it.el.offsetHeight === hEff) inner.style.fontSize = '' // sans effet (tests) : ne pas laisser traîner
+          }
+        }
+        hEff = it.el.offsetHeight
+        if (hEff > maxH) hEff = clipToLines(it.el, maxH)
+      }
     }
     placed.push({ x1, x2, bottom: top + hEff })
   }
@@ -312,6 +341,12 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     const topPx = linked ? el.offsetTop : (b.y / 100) * cardH
     if (topPx + h > cardH) el.style.top = `${Math.round((Math.max(0, cardH - h) / cardH) * 1000) / 10}%`
     else if (!linked) el.style.top = `${b.y}%` // reset idempotent d'un clamp précédent
+    // CLAMP HORIZONTAL : un bloc posé/désancré/lié dont le bord droit déborde la
+    // carte est ramené à gauche (rien ne se coupe jamais au bord droit — ex. prix
+    // désancré posé en % sur une carte plus étroite que l'aperçu).
+    if ((linked || (b.ax ?? 'l') === 'l') && el.offsetLeft + el.offsetWidth * (b.sc ?? 1) > cardW) {
+      el.style.left = `${Math.round((Math.max(0, cardW - el.offsetWidth * (b.sc ?? 1)) / cardW) * 1000) / 10}%`
+    }
   }
 }
 
