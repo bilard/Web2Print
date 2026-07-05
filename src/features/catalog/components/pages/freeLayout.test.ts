@@ -31,15 +31,35 @@ test('applyMagneticFlow : un bloc volumineux POUSSE vers le bas ceux qui le chev
   }
   // description (y58, w92) très volumineuse : 250px → descend jusqu'à 830px.
   const desc = mk('description', 250)
-  const details = mk('details', 60) // y68 configuré (680) < 833 → poussé à 833
-  const ref = mk('ref', 20)         // y88 configuré (880) < 833+60+3=896 → poussé
+  const details = mk('details', 60) // y68 configuré (680) < 586+250 → poussé, COLLÉ à 836
+  const ref = mk('ref', 20)         // collé sous détails : 836+60+6 = 902
   const price = mk('price', 80)     // PAS dans la chaîne : intouché
   const style = { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: {} }
   applyMagneticFlow(card, style)
   expect(parseFloat(desc.style.top)).toBeCloseTo(58, 0)
-  expect(parseFloat(details.style.top)).toBeCloseTo(83.3, 0) // 580+250+3 = 833px
-  expect(parseFloat(ref.style.top)).toBeCloseTo(89.6, 0)     // 833+60+3 = 896px
+  expect(parseFloat(details.style.top)).toBeCloseTo(83.6, 0) // 580+250+6 = 836px
+  expect(parseFloat(ref.style.top)).toBeCloseTo(90.2, 0)     // 836+60+6 = 902px
   expect(price.style.top).toBe('') // le prix (colonne droite) n'est pas aimanté
+})
+
+test('applyMagneticFlow : contenu COURT → l\'enfant REMONTE se coller (pas de trou)', () => {
+  const card = document.createElement('div')
+  Object.defineProperty(card, 'clientHeight', { value: 1000 })
+  Object.defineProperty(card, 'clientWidth', { value: 1000 })
+  const mk = (id: string, h: number) => {
+    const el = document.createElement('div')
+    el.className = 'cat-obj'
+    el.setAttribute('data-object-id', id)
+    Object.defineProperty(el, 'offsetHeight', { value: h })
+    Object.defineProperty(el, 'offsetWidth', { value: 400 })
+    card.appendChild(el)
+    return el
+  }
+  const desc = mk('description', 30) // y58, courte : 580→610
+  const details = mk('details', 60)  // y68 configuré (680) → REMONTÉ collé à 616
+  applyMagneticFlow(card, { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: {} })
+  expect(parseFloat(desc.style.top)).toBeCloseTo(58, 0)
+  expect(parseFloat(details.style.top)).toBeCloseTo(61.6, 0) // 580+30+6 = 616px < 680 configuré
 })
 
 test('applyMagneticFlow : pas de poussée sans recouvrement horizontal (colonnes indépendantes)', () => {

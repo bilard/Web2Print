@@ -41,8 +41,8 @@ export function freeLayoutBox(id: CardObjectId, style: CatalogCardStyle): CardBo
  */
 const FLOW_CHAIN: CardObjectId[] = ['brand', 'name', 'description', 'details', 'ref', 'unit']
 
-/** Écart minimal (px) entre deux blocs aimantés. */
-const MAGNET_GAP = 3
+/** Écart (px) entre deux blocs aimantés (collés à cette distance). */
+const MAGNET_GAP = 6
 
 /**
  * Applique l'aimantation sur une carte RENDUE (aperçu, pages du catalogue et
@@ -65,10 +65,15 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
   for (const it of items) {
     const x1 = it.box.x
     const x2 = it.box.x + (it.box.w ?? (it.el.offsetWidth / cardW) * 100)
-    let top = (it.box.y / 100) * cardH
+    // COLLÉ (aimant dans les deux sens) au bloc du dessus qui le chevauche
+    // horizontalement : contenu court = l'enfant REMONTE (pas de trou), contenu
+    // long = l'enfant est POUSSÉ (pas de superposition). Sans parent (colonne
+    // indépendante ou 1er bloc) : position configurée.
+    let snap: number | null = null
     for (const p of placed) {
-      if (x1 < p.x2 && p.x1 < x2) top = Math.max(top, p.bottom + MAGNET_GAP) // chevauchement horizontal → poussé sous le parent
+      if (x1 < p.x2 && p.x1 < x2) snap = Math.max(snap ?? -Infinity, p.bottom + MAGNET_GAP)
     }
+    const top = snap ?? (it.box.y / 100) * cardH
     it.el.style.top = `${Math.round((top / cardH) * 1000) / 10}%`
     placed.push({ x1, x2, bottom: top + it.el.offsetHeight })
   }
