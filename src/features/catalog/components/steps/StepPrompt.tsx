@@ -87,14 +87,14 @@ export function StepPrompt() {
   }
 
   const cardStyle = useMemo(() => ({ ...DEFAULT_CARD_STYLE, ...plan?.cardStyle }), [plan])
-  // Disposition libre : l'aperçu prend la TAILLE + le FIT réels de la cellule
-  // imprimée (carte éditée = réplique exacte de la fiche du catalogue → fidèle).
-  const cell = useMemo(
-    () => (plan && cardStyle.freeLayout
-      ? (() => { const grid = representativeGrid(plan.sections); const { w, h } = cellDims(format, grid); return { w, h, fit: cellFit(format, grid) } })()
-      : undefined),
-    [plan, cardStyle.freeLayout, format],
-  )
+  // L'aperçu prend TOUJOURS la taille + le fit réels de la cellule imprimée
+  // (réplique exacte de la fiche du catalogue, en auto comme en libre — un seul
+  // affichage réaliste). `horizontal` reflète le rendu des grilles denses en auto.
+  const previewGrid = useMemo(() => (plan ? representativeGrid(plan.sections) : 4), [plan])
+  const cell = useMemo(() => {
+    const { w, h } = cellDims(format, previewGrid)
+    return { w, h, fit: cellFit(format, previewGrid) }
+  }, [format, previewGrid])
 
   return (
     <div className="h-full flex min-h-0">
@@ -153,7 +153,7 @@ export function StepPrompt() {
                 </div>
               </div>
               <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={cell}
-                featuredVariant={previewFeatured} selected={selectedObject}
+                horizontal={previewGrid >= 6} featuredVariant={previewFeatured} selected={selectedObject}
                 editable onLayoutChange={(id, box) => setPlan({ ...plan, cardStyle: { ...cardStyle, layout: { ...cardStyle.layout, [id]: box } } })}
                 onSelect={setSelectedObject} />
             </div>

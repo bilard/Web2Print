@@ -1,8 +1,7 @@
 // src/features/catalog/components/steps/CardStylePreview.tsx
-// Aperçu LIVE du template de fiche avec le thème et le style cosmétique courants
-// — même moteur de rendu que les pages. En DISPOSITION LIBRE, la carte est rendue
-// à la taille EXACTE de la cellule imprimée (mêmes px + même --cat-fit) puis zoomée
-// visuellement → ce qu'on place = ce qui s'imprime.
+// Aperçu de la fiche : UNE SEULE réplique RÉALISTE de la cellule imprimée (mêmes
+// px + même --cat-fit, zoomée pour l'édition) — identique en auto et en
+// disposition libre ; le mode libre ajoute seulement l'overlay d'édition.
 import { useRef, type CSSProperties } from 'react'
 import { AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal } from 'lucide-react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
@@ -31,9 +30,11 @@ interface Props {
   fields?: PromoFields | null
   /** Lignes du bloc « Détails » (champs libres) — pour que l'aperçu montre la même zone que le catalogue. */
   details?: string[]
-  /** Cellule imprimée (px + facteur --cat-fit) — la carte éditée l'adopte À L'IDENTIQUE (disposition libre). */
-  cell?: { w: number; h: number; fit: number }
-  /** Variante affichée en mode cellule : vedette (ruban + cadre) ou standard. */
+  /** Cellule imprimée (px + facteur --cat-fit) — la carte de l'aperçu EST cette cellule. */
+  cell: { w: number; h: number; fit: number }
+  /** Layout horizontal (grilles denses en mode auto) — reflète le rendu réel du catalogue. */
+  horizontal?: boolean
+  /** Variante affichée : vedette (ruban + cadre) ou standard. */
   featuredVariant?: boolean
   /** Monte l'overlay de drag/resize (disposition libre) quand vrai. */
   editable?: boolean
@@ -78,53 +79,33 @@ function AnchorPalette({ selected, style, onLayoutChange }: {
   )
 }
 
-export function CardStylePreview({ theme, cardStyle, fields, details, cell, featuredVariant = true, editable, onLayoutChange, onSelect, selected }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, details, cell, horizontal, featuredVariant = true, editable, onLayoutChange, onSelect, selected }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   const d = details && details.length ? details : SAMPLE_DETAILS
   const cardRef = useRef<HTMLDivElement | null>(null)
-  const overlay = editable && cardStyle.freeLayout && onLayoutChange
+  const free = cardStyle.freeLayout
+  const overlay = editable && free && onLayoutChange
     ? <CardLayoutOverlay cardRef={cardRef} style={cardStyle} onChange={onLayoutChange} onSelect={onSelect} />
     : null
-
-  // ── Disposition libre : réplique EXACTE de la cellule imprimée (mêmes px, même
-  // --cat-fit → badges/texte au même ratio, zéro débordement), zoomée pour l'édition.
-  if (cell) {
-    const K = Math.max(1, Math.round((480 / cell.w) * 100) / 100)
-    const pageStyle = { ...themeVars(theme), ...cardStyleVars(cardStyle, theme), ['--cat-fit']: String(Math.round(cell.fit * 100) / 100), width: cell.w * K + 32, background: 'var(--cat-bg)' } as CSSProperties
-    return (
-      <div className="flex items-start gap-2">
-        {/* Palette d'ancrage liquide (menu de gauche) — agit sur le bloc sélectionné. */}
-        {editable && onLayoutChange && (
-          <AnchorPalette selected={selected} style={cardStyle} onLayoutChange={onLayoutChange} />
-        )}
-        <div className="cat-page rounded-lg overflow-hidden shrink-0 border border-border relative shadow-2xl" style={pageStyle}>
-          <style>{CATALOG_CSS}</style>
-          <div style={{ padding: 16 }}>
-            {/* Conteneur qui réserve la place ZOOMÉE ; la carte interne est à la taille cellule exacte puis scale(K). */}
-            <div style={{ width: cell.w * K, height: cell.h * K, position: 'relative' }}>
-              <div ref={cardRef} className="cat-style-card-host" style={{ width: cell.w, height: cell.h, transform: `scale(${K})`, transformOrigin: 'top left', display: 'grid', position: 'relative' }}>
-                <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" size="md" details={d} cardStyle={cardStyle} />
-                {overlay}
-              </div>
+  const K = Math.max(1, Math.round((480 / cell.w) * 100) / 100)
+  const pageStyle = { ...themeVars(theme), ...cardStyleVars(cardStyle, theme), ['--cat-fit']: String(Math.round(cell.fit * 100) / 100), width: cell.w * K + 32, background: 'var(--cat-bg)' } as CSSProperties
+  return (
+    <div className="flex items-start gap-2">
+      {/* Palette d'ancrage liquide (menu de gauche) — agit sur le bloc sélectionné. */}
+      {editable && free && onLayoutChange && (
+        <AnchorPalette selected={selected} style={cardStyle} onLayoutChange={onLayoutChange} />
+      )}
+      <div className="cat-page rounded-lg overflow-hidden shrink-0 border border-border relative shadow-2xl" style={pageStyle}>
+        <style>{CATALOG_CSS}</style>
+        <div style={{ padding: 16 }}>
+          {/* Conteneur qui réserve la place ZOOMÉE ; la carte interne est à la taille cellule exacte puis scale(K). */}
+          <div style={{ width: cell.w * K, height: cell.h * K, position: 'relative' }}>
+            <div ref={cardRef} className="cat-style-card-host" style={{ width: cell.w, height: cell.h, transform: `scale(${K})`, transformOrigin: 'top left', display: 'grid', position: 'relative' }}>
+              <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" size="md" details={d}
+                horizontal={!free && horizontal} cardStyle={cardStyle} />
+              {overlay}
             </div>
           </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Mode cosmétique (auto) : deux variantes illustratives, hauteur fixe.
-  return (
-    <div className="cat-page rounded-lg overflow-hidden shrink-0 border border-border relative shadow-2xl w-full max-w-[560px]"
-      style={{ ...themeVars(theme), ...cardStyleVars(cardStyle, theme) }}>
-      <style>{CATALOG_CSS}</style>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 16, background: 'var(--cat-bg)' }}>
-        <div ref={cardRef} className="cat-style-card-host" style={{ height: 560, display: 'grid', position: 'relative' }}>
-          <ProductCell fields={f} featured kicker="Sous-famille" size="md" details={d} cardStyle={cardStyle} />
-          {overlay}
-        </div>
-        <div style={{ height: 300, display: 'grid' }}>
-          <ProductCell fields={f} featured={false} kicker="Sous-famille" size="md" horizontal details={d} cardStyle={cardStyle} />
         </div>
       </div>
     </div>
