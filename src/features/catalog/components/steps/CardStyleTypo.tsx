@@ -3,7 +3,7 @@
 // texte mappé (nom, description, prix, marque, référence, unité, cartouche promo).
 // « Police du thème » = hérite des polices du plan (titres ou texte selon le champ).
 // Widgets du kit : SliderField (échelle) + <select> stylé inputCls (police).
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import { SliderField, inputCls } from '@/components/shared/panel'
 import { CARD_OBJECT_IDS, type CardObjectId, type CatalogCardStyle } from '../../catalogTypes'
@@ -18,10 +18,10 @@ interface CardStyleTypoProps {
   wide?: boolean
 }
 
-type ScaleKey = 'nameScale' | 'descScale' | 'priceScale' | 'brandScale' | 'refScale' | 'unitScale' | 'promoScale' | 'stickerScale' | 'vedetteScale' | 'detailsScale' | 'kickerScale'
-type FontKey = 'nameFont' | 'descFont' | 'priceFont' | 'brandFont' | 'refFont' | 'unitFont' | 'promoFont' | 'stickerFont' | 'vedetteFont' | 'detailsFont' | 'kickerFont'
+export type ScaleKey = 'nameScale' | 'descScale' | 'priceScale' | 'brandScale' | 'refScale' | 'unitScale' | 'promoScale' | 'stickerScale' | 'vedetteScale' | 'detailsScale' | 'kickerScale'
+export type FontKey = 'nameFont' | 'descFont' | 'priceFont' | 'brandFont' | 'refFont' | 'unitFont' | 'promoFont' | 'stickerFont' | 'vedetteFont' | 'detailsFont' | 'kickerFont'
 
-const FIELDS: { scale: ScaleKey; font: FontKey; label: string; obj: CardObjectId }[] = [
+export const CARD_TYPO_FIELDS: { scale: ScaleKey; font: FontKey; label: string; obj: CardObjectId }[] = [
   { scale: 'nameScale', font: 'nameFont', label: 'Nom', obj: 'name' },
   { scale: 'descScale', font: 'descFont', label: 'Description', obj: 'description' },
   { scale: 'priceScale', font: 'priceFont', label: 'Prix', obj: 'price' },
@@ -36,10 +36,42 @@ const FIELDS: { scale: ScaleKey; font: FontKey; label: string; obj: CardObjectId
 ]
 
 /** Nom d'affichage de chaque bloc (options du sélecteur de liaison). */
-const OBJ_LABEL: Record<CardObjectId, string> = {
+export const OBJ_LABEL: Record<CardObjectId, string> = {
   promo: 'Cartouche promo', vedette: 'Ruban vedette', kicker: 'Sous-famille', image: 'Image',
   sticker: 'Sticker remise', brand: 'Marque', name: 'Nom', description: 'Description',
   ref: 'Référence', unit: 'Unité', details: 'Détails', price: 'Prix',
+}
+
+/**
+ * Patch de LIAISON entre blocs (disposition libre) : le bloc est SOUDÉ à droite
+ * de sa cible et la suit partout. Écrit dans le jeu d'overrides de la variante
+ * ÉDITÉE (layout / layoutWide). Si la cible (ou sa chaîne) est déjà liée à ce
+ * bloc, lier = INVERSER : le lien qui reboucle est coupé (un cycle rendrait les
+ * positions instables). '' = délier SANS saut (position visuelle figée).
+ * Partagé entre la liste typo et le panneau « Bloc sélectionné ».
+ */
+export function objectLinkPatch(style: CatalogCardStyle, wide: boolean, obj: CardObjectId, target: string): Partial<CatalogCardStyle> {
+  const boxOf = (id: CardObjectId) => freeLayoutBox(id, style, wide)
+  const layoutKey = wide ? ('layoutWide' as const) : ('layout' as const)
+  const layout = { ...(style[layoutKey] ?? {}) }
+  if (target) {
+    const seen = new Set<CardObjectId>()
+    let cur: CardObjectId | null | undefined = target as CardObjectId
+    while (cur && !seen.has(cur)) {
+      seen.add(cur)
+      const b = boxOf(cur)
+      if (b.link === obj) {
+        // link:null (persistant après stripUndefined) : masque un lien PAR DÉFAUT.
+        layout[cur] = { ...b, link: null, lx: 0, ly: 0, ...(visualPos(cur) ?? {}) }
+        break
+      }
+      cur = b.link
+    }
+    layout[obj] = { ...boxOf(obj), link: target as CardObjectId, lx: 0, ly: 0 } // soudure fraîche
+  } else {
+    layout[obj] = { ...boxOf(obj), link: null, lx: 0, ly: 0, ...(visualPos(obj) ?? {}) } // délié SANS saut
+  }
+  return { [layoutKey]: layout }
 }
 
 /** Objet de l'overlay « disposition libre » → champ d'échelle correspondant (seule l'image n'a pas de curseur typo). */
@@ -51,51 +83,16 @@ const OBJ_TO_SCALE: Partial<Record<CardObjectId, ScaleKey>> = {
 
 export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyleTypoProps) {
   const boxOf = (id: CardObjectId) => freeLayoutBox(id, style, wide)
-  const inputRefs = useRef<Partial<Record<ScaleKey, HTMLInputElement | null>>>({})
+  // Anneau passif sur la ligne du bloc sélectionné — le scroll ET le focus
+  // appartiennent au panneau « Bloc sélectionné » qui regroupe ces réglages.
   const activeScale = selected != null ? OBJ_TO_SCALE[selected] : undefined
 
-  useEffect(() => {
-    if (!activeScale) return
-    // preventScroll : le SCROLL du panneau appartient aux cases COULEUR du bloc
-    // sélectionné (CardStyleColors) — la ligne typo garde son anneau + le focus
-    // clavier, sans tirer le panneau dans l'autre sens.
-    inputRefs.current[activeScale]?.focus({ preventScroll: true })
-  }, [selected])
-
-  // Liaison entre blocs (disposition libre) : le bloc est SOUDÉ à droite de sa
-  // cible et la suit partout. Éditable ici pour VOIR tous les liens d'un coup.
-  const setLink = (obj: CardObjectId, target: string) => {
-    const base = boxOf(obj)
-    // Écrit dans le jeu d'overrides de la variante ÉDITÉE (verticale / pleine largeur).
-    const layoutKey = wide ? ('layoutWide' as const) : ('layout' as const)
-    const layout = { ...(style[layoutKey] ?? {}) }
-    if (target) {
-      // Si la cible (ou sa chaîne) est déjà liée à ce bloc, lier = INVERSER la
-      // liaison : on coupe le lien qui reboucle (un cycle rendrait les positions
-      // instables — chaque bloc se souderait à droite de l'autre).
-      const seen = new Set<CardObjectId>()
-      let cur: CardObjectId | null | undefined = target as CardObjectId
-      while (cur && !seen.has(cur)) {
-        seen.add(cur)
-        const b = boxOf(cur)
-        if (b.link === obj) {
-          // link:null (persistant après stripUndefined) : masque un lien PAR DÉFAUT.
-          layout[cur] = { ...b, link: null, lx: 0, ly: 0, ...(visualPos(cur) ?? {}) }
-          break
-        }
-        cur = b.link
-      }
-      layout[obj] = { ...base, link: target as CardObjectId, lx: 0, ly: 0 } // soudure fraîche
-    } else {
-      layout[obj] = { ...base, link: null, lx: 0, ly: 0, ...(visualPos(obj) ?? {}) } // délié SANS saut
-    }
-    patch({ [layoutKey]: layout } as Partial<CatalogCardStyle>)
-  }
+  const setLink = (obj: CardObjectId, target: string) => patch(objectLinkPatch(style, wide, obj, target))
 
   // ── Visualisation des liaisons : une COULEUR par groupe (cible + suiveurs
   // teintés pareil) et des connecteurs FLÉCHÉS façon UML dans la marge gauche.
   const LINK_COLORS = ['#6366f1', '#06b6d4', '#f59e0b', '#ec4899', '#22c55e', '#eab308']
-  const links = FIELDS
+  const links = CARD_TYPO_FIELDS
     .map((f) => ({ from: f.obj, to: boxOf(f.obj).link }))
     .filter((l): l is { from: CardObjectId; to: CardObjectId } => !!l.to)
   const groupColor = new Map<CardObjectId, string>()
@@ -141,7 +138,7 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
         </svg>
       )}
       <div className="grid grid-cols-1 gap-y-3">
-        {FIELDS.map(({ scale, font, label, obj }) => {
+        {CARD_TYPO_FIELDS.map(({ scale, font, label, obj }) => {
           const link = boxOf(obj).link
           const color = rowColor(obj)
           return (
@@ -149,7 +146,7 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
               className={`space-y-1 ${scale === activeScale ? 'ring-2 ring-indigo-500 rounded-md' : ''}`}
               style={color ? { boxShadow: `inset 3px 0 0 ${color}`, borderRadius: 6, paddingLeft: 6 } : undefined}>
               <SliderField label={label} value={style[scale]} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
-                min={0.7} max={10} step={0.05} unit="×" inputRef={(el) => { inputRefs.current[scale] = el }} />
+                min={0.7} max={10} step={0.05} unit="×" />
               <select value={style[font]} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
                 className={inputCls}>
                 <option value="">Police du thème</option>

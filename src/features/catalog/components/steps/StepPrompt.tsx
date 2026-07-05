@@ -209,7 +209,8 @@ export function StepPrompt() {
 
       {plan && (
         <aside className="w-80 shrink-0 border-l border-border bg-surface overflow-y-auto">
-          <CardStyleCard plan={plan} setPlan={setPlan} selectedObject={selectedObject} wide={previewWide} />
+          <CardStyleCard plan={plan} setPlan={setPlan} selectedObject={selectedObject}
+            onClearSelection={() => setSelectedObject(null)} wide={previewWide} />
         </aside>
       )}
     </div>

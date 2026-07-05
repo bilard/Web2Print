@@ -4,17 +4,21 @@
 // taille de l'image, visibilité) appliqués par variables CSS par-dessus le
 // template fluide — impossible de casser la mise en page. L'aperçu live est
 // rendu au centre par StepPrompt (CardStylePreview), pas ici.
-import { Brush, RotateCcw } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { Brush, RotateCcw, X } from 'lucide-react'
 import { PropertySection } from '@/components/shared/panel'
 import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle, type CatalogPlan } from '../../catalogTypes'
-import { CardStyleTypo } from './CardStyleTypo'
+import { CardObjectSettings } from './CardObjectSettings'
+import { CardStyleTypo, OBJ_LABEL } from './CardStyleTypo'
 import { CardStyleColors } from './CardStyleColors'
 
 interface CardStyleCardProps {
   plan: CatalogPlan
   setPlan: (plan: CatalogPlan) => void
-  /** Objet sélectionné dans l'aperçu (disposition libre) — surligne + focus le curseur typo correspondant. */
+  /** Objet sélectionné dans l'aperçu (disposition libre) — ses réglages sont REGROUPÉS en tête de panneau. */
   selectedObject?: CardObjectId | null
+  /** Désélectionne l'objet (✕ du panneau « Bloc sélectionné »). */
+  onClearSelection?: () => void
   /** Carte d'aperçu LARGE (repli 2 colonnes) — propagé au panneau typo (liaisons). */
   wide?: boolean
 }
@@ -30,9 +34,14 @@ const VISIBILITY: { key: keyof Pick<CatalogCardStyle, 'showPromo' | 'showSticker
   { key: 'showDetails', label: 'Détails' },
 ]
 
-export function CardStyleCard({ plan, setPlan, selectedObject, wide }: CardStyleCardProps) {
+export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection, wide }: CardStyleCardProps) {
   const style: CatalogCardStyle = { ...DEFAULT_CARD_STYLE, ...plan.cardStyle }
   const patch = (p: Partial<CatalogCardStyle>) => setPlan({ ...plan, cardStyle: { ...style, ...p } })
+  // Sélection d'un bloc → le panneau regroupé apparaît EN TÊTE : on y scrolle.
+  const selRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (selectedObject) selRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }, [selectedObject])
 
   return (
     <div className="p-3 space-y-3">
@@ -64,6 +73,25 @@ export function CardStyleCard({ plan, setPlan, selectedObject, wide }: CardStyle
         <button type="button" onClick={() => patch({ layout: {}, layoutWide: {} })}
           className="text-[11px] text-indigo-300 hover:text-white underline text-left">Réinitialiser les positions</button>
       </div>
+
+      {/* BLOC SÉLECTIONNÉ : tous ses réglages regroupés (taille, police, rotation,
+          couleurs, liaison, visibilité) — les listes complètes restent dessous. */}
+      {selectedObject && (
+        <div ref={selRef} className="rounded-lg border border-indigo-500 bg-indigo-500/10 p-2.5 space-y-2 scroll-mt-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-semibold text-indigo-300 uppercase tracking-wider">
+              Bloc sélectionné : {OBJ_LABEL[selectedObject]}
+            </span>
+            {onClearSelection && (
+              <button type="button" onClick={onClearSelection} title="Désélectionner"
+                className="p-1 rounded-md text-white/40 hover:text-white hover:bg-well">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <CardObjectSettings obj={selectedObject} style={style} theme={plan.theme} patch={patch} wide={wide ?? false} />
+        </div>
+      )}
 
       <PropertySection title="Texte : taille & police" help="Un réglage par champ texte (nom, prix, description...).">
         <CardStyleTypo style={style} patch={patch} selected={selectedObject} wide={wide} />

@@ -2,9 +2,7 @@
 // Sous-panneau « couleurs » du style de fiches, COMPACT : grille 2 colonnes,
 // un item = étiquette + pastille couleur ; dégradé = lien « ◐ » discret sur
 // l'étiquette (fin de dégradé + ✕ = retour à l'uni). Angle commun, arrondi.
-// Sélectionner un bloc dans l'aperçu SURLIGNE ses cases (fond + textes) et
-// scrolle dessus.
-import { useEffect, useRef } from 'react'
+// Sélectionner un bloc dans l'aperçu SURLIGNE ses cases (fond + textes).
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import { SliderField } from '@/components/shared/panel'
 import type { CardObjectId, CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
@@ -17,14 +15,14 @@ interface CardStyleColorsProps {
   selected?: CardObjectId | null
 }
 
-type ColorKey = 'promoBg' | 'stickerBg' | 'priceBg' | 'wasBg' | 'kickerBg' | 'nameColor' | 'vedetteBg' | 'vedettePriceBg' | 'priceInk' | 'vedettePriceInk'
+export type ColorKey = 'promoBg' | 'stickerBg' | 'priceBg' | 'wasBg' | 'kickerBg' | 'nameColor' | 'vedetteBg' | 'vedettePriceBg' | 'priceInk' | 'vedettePriceInk'
   | 'promoInk' | 'stickerInk' | 'kickerInk' | 'wasInk' | 'vedetteTxtInk' | 'brandColor' | 'descColor' | 'refColor' | 'unitColor' | 'detailsColor' | 'detailsBg'
 type GradKey = 'promoBg2' | 'stickerBg2' | 'priceBg2' | 'wasBg2' | 'kickerBg2' | 'vedetteBg2' | 'vedettePriceBg2'
 
-interface ColorDef { key: ColorKey; grad?: GradKey; label: string; fallback: string }
+export interface ColorDef { key: ColorKey; grad?: GradKey; label: string; fallback: string }
 
-/** Cases couleur de chaque objet de la fiche (fond + texte) — pour le surlignage à la sélection. */
-const OBJ_COLOR_KEYS: Partial<Record<CardObjectId, ColorKey[]>> = {
+/** Cases couleur de chaque objet de la fiche (fond + texte) — pour le panneau « Bloc sélectionné ». */
+export const OBJ_COLOR_KEYS: Partial<Record<CardObjectId, ColorKey[]>> = {
   promo: ['promoBg', 'promoInk'],
   sticker: ['stickerBg', 'stickerInk'],
   kicker: ['kickerBg', 'kickerInk'],
@@ -35,7 +33,7 @@ const OBJ_COLOR_KEYS: Partial<Record<CardObjectId, ColorKey[]>> = {
 }
 
 /** Cellule compacte : étiquette (+ ◐ dégradé) puis pastille ; 2e pastille si dégradé actif. */
-function ColorObjectField({ def, style, patch, highlighted, innerRef }: {
+export function ColorObjectField({ def, style, patch, highlighted, innerRef }: {
   def: ColorDef; style: CatalogCardStyle; patch: CardStyleColorsProps['patch']
   highlighted?: boolean; innerRef?: (el: HTMLDivElement | null) => void
 }) {
@@ -66,14 +64,10 @@ function ColorObjectField({ def, style, patch, highlighted, innerRef }: {
   )
 }
 
-export function CardStyleColors({ style, theme, patch, selected }: CardStyleColorsProps) {
-  const active = new Set<ColorKey>(selected ? (OBJ_COLOR_KEYS[selected] ?? []) : [])
-  const fieldRefs = useRef<Partial<Record<ColorKey, HTMLDivElement | null>>>({})
-  useEffect(() => {
-    const first = selected ? OBJ_COLOR_KEYS[selected]?.[0] : undefined
-    if (first) fieldRefs.current[first]?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-  }, [selected])
-  const COLORS: ColorDef[] = [
+/** Définitions des cases couleur (repli = couleur héritée du thème) — source
+ *  unique de la grille complète ET du panneau « Bloc sélectionné ». */
+export function colorDefs(theme: CatalogTheme): ColorDef[] {
+  return [
     { key: 'promoBg', grad: 'promoBg2', label: 'Cartouche', fallback: theme.accent },
     { key: 'stickerBg', grad: 'stickerBg2', label: 'Sticker', fallback: theme.accent },
     { key: 'priceBg', grad: 'priceBg2', label: 'Prix', fallback: theme.accent },
@@ -98,14 +92,20 @@ export function CardStyleColors({ style, theme, patch, selected }: CardStyleColo
     { key: 'detailsColor', label: 'Détails (texte)', fallback: theme.ink },
     { key: 'detailsBg', label: 'Détails (fond)', fallback: '#efefef' },
   ]
+}
+
+export function CardStyleColors({ style, theme, patch, selected }: CardStyleColorsProps) {
+  // Surlignage passif : les cases du bloc sélectionné (le scroll appartient au
+  // panneau « Bloc sélectionné » en tête, qui regroupe déjà ces réglages).
+  const active = new Set<ColorKey>(selected ? (OBJ_COLOR_KEYS[selected] ?? []) : [])
+  const COLORS = colorDefs(theme)
   const hasGradient = COLORS.some(({ grad }) => grad && style[grad])
 
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-x-2 gap-y-2">
         {COLORS.map((def) => (
-          <ColorObjectField key={def.key} def={def} style={style} patch={patch}
-            highlighted={active.has(def.key)} innerRef={(el) => { fieldRefs.current[def.key] = el }} />
+          <ColorObjectField key={def.key} def={def} style={style} patch={patch} highlighted={active.has(def.key)} />
         ))}
       </div>
       <div className="grid grid-cols-1 gap-3">
