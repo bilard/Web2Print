@@ -9,7 +9,7 @@ import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import { formatPromoLabel } from '@/features/retail-promo/promoMapping'
 import type { CardObjectId, CatalogCardStyle } from '../../catalogTypes'
 import { formatPrice } from './catalogCss'
-import { applyMagneticFlow, freeLayoutBox } from './freeLayout'
+import { applyMagneticFlow, FLOW_CHAIN, freeLayoutBox } from './freeLayout'
 import { useResolvedImage } from '../../useResolvedImage'
 
 export type CellSize = 'md' | 'lg' | 'xl'
@@ -56,9 +56,13 @@ export function ProductCell({ fields: f, featured, kicker, size, details, horizo
     const obj = (id: CardObjectId, node: ReactNode) => {
       const b = freeLayoutBox(id, cardStyle)
       const scaled = b.sc != null && b.sc !== 1
+      // Blocs TEXTE (chaîne de flux) : hauteur toujours NATURELLE — une hauteur
+      // figée en % ne s'adapte pas à la volumétrie (cartes larges = moins de
+      // lignes → gros vides) et contredit « textes jamais coupés ».
+      const fixedH = b.h != null && !FLOW_CHAIN.includes(id)
       return (
         <div className="cat-obj" data-object-id={id}
-          style={{ left: `${b.x}%`, top: `${b.y}%`, ...(b.w != null ? { width: `${b.w}%` } : {}), ...(b.h != null ? { height: `${b.h}%`, overflow: 'hidden' } : {}),
+          style={{ left: `${b.x}%`, top: `${b.y}%`, ...(b.w != null ? { width: `${b.w}%` } : {}), ...(fixedH ? { height: `${b.h}%`, overflow: 'hidden' } : {}),
             ...(scaled ? { transform: `scale(${b.sc})`, transformOrigin: 'top left' } : {}) }}>
           {node}
         </div>

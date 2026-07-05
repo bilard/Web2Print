@@ -1,9 +1,9 @@
 // src/features/catalog/components/steps/CardStyleColors.tsx
-// Sous-panneau « couleurs » du style de fiches : couleur (et fin de DÉGRADÉ
-// optionnelle, ✕ = retour à l'uni) par objet, angle commun, arrondi.
-// Widgets du kit : ColorField (base) + ColorPicker (fin de dégradé) + SliderField.
+// Sous-panneau « couleurs » du style de fiches, COMPACT : grille 2 colonnes,
+// un item = étiquette + pastille couleur ; dégradé = lien « ◐ » discret sur
+// l'étiquette (fin de dégradé + ✕ = retour à l'uni). Angle commun, arrondi.
 import { ColorPicker } from '@/components/shared/ColorPicker'
-import { ColorField, SliderField } from '@/components/shared/panel'
+import { SliderField } from '@/components/shared/panel'
 import type { CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
 
 interface CardStyleColorsProps {
@@ -17,27 +17,30 @@ type GradKey = 'promoBg2' | 'stickerBg2' | 'priceBg2' | 'wasBg2' | 'kickerBg2' |
 
 interface ColorDef { key: ColorKey; grad?: GradKey; label: string; fallback: string }
 
-/** Une ligne : couleur de base (ColorField) + éventuel contrôle de dégradé (fin + ✕ / bouton d'ajout). */
+/** Cellule compacte : étiquette (+ ◐ dégradé) puis pastille ; 2e pastille si dégradé actif. */
 function ColorObjectField({ def, style, patch }: { def: ColorDef; style: CatalogCardStyle; patch: CardStyleColorsProps['patch'] }) {
   const { key, grad, label, fallback } = def
   const base = style[key]
   const gradValue = grad ? style[grad] : ''
 
   return (
-    <div className="flex flex-wrap items-end gap-2 rounded-md border border-white/5 p-2">
-      <ColorField label={label} value={base} inherit={fallback} onChange={(v) => patch({ [key]: v } as Partial<CatalogCardStyle>)} />
-      {grad && (
-        gradValue ? (
-          <div className="flex items-end gap-1">
-            <ColorPicker label="Fin de dégradé" value={gradValue} onChange={(v) => patch({ [grad]: v } as Partial<CatalogCardStyle>)} />
-            <button type="button" onClick={() => patch({ [grad]: '' } as Partial<CatalogCardStyle>)}
-              className="text-white/40 hover:text-white leading-none pb-1.5" title="Couleur unie">✕</button>
-          </div>
-        ) : (
+    <div className="min-w-0 space-y-0.5">
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-[10px] text-white/30 uppercase tracking-wider truncate" title={label}>{label}</span>
+        {grad && !gradValue && (
           <button type="button" onClick={() => patch({ [grad]: base || fallback } as Partial<CatalogCardStyle>)}
-            className="px-2 py-1.5 rounded-md text-xs text-white/40 hover:text-white border border-dashed border-white/10 hover:border-white/20"
-            title="Ajouter un dégradé">+ dégradé</button>
-        )
+            className="text-[10px] text-white/25 hover:text-white leading-none shrink-0" title="Ajouter un dégradé">◐+</button>
+        )}
+      </div>
+      <ColorPicker value={base || fallback} onChange={(v) => patch({ [key]: v } as Partial<CatalogCardStyle>)} />
+      {grad && gradValue && (
+        <div className="flex items-center gap-1">
+          <div className="flex-1 min-w-0">
+            <ColorPicker value={gradValue} onChange={(v) => patch({ [grad]: v } as Partial<CatalogCardStyle>)} />
+          </div>
+          <button type="button" onClick={() => patch({ [grad]: '' } as Partial<CatalogCardStyle>)}
+            className="text-white/40 hover:text-white leading-none shrink-0" title="Couleur unie">✕</button>
+        </div>
       )}
     </div>
   )
@@ -60,7 +63,7 @@ export function CardStyleColors({ style, theme, patch }: CardStyleColorsProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-1 gap-2">
+      <div className="grid grid-cols-2 gap-x-2 gap-y-2">
         {COLORS.map((def) => <ColorObjectField key={def.key} def={def} style={style} patch={patch} />)}
       </div>
       <div className="grid grid-cols-1 gap-3">
