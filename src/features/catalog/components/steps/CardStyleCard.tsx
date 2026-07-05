@@ -73,8 +73,19 @@ export function CardStyleCard({ plan, setPlan, selectedObject }: CardStyleCardPr
             : 'Mise en page automatique (recommandée) : chaque carte s\'adapte à sa taille et à son contenu, sans chevauchement ni débordement.'}
         </p>
         {style.freeLayout && (
-          <button type="button" onClick={() => patch({ layout: {} })}
-            className="text-[11px] text-indigo-300 hover:text-white underline text-left">Réinitialiser les positions</button>
+          <>
+            <label className="flex items-center gap-2 text-[11px] text-white/70 cursor-pointer select-none">
+              <input type="checkbox" checked={style.magnetFlow ?? true} onChange={(e) => patch({ magnetFlow: e.target.checked })} className="accent-indigo-600" />
+              Aimanter les blocs texte (anti-superposition)
+            </label>
+            <p className="text-[10px] text-white/40 leading-snug">
+              {style.magnetFlow ?? true
+                ? 'Les blocs texte se collent/poussent selon leur contenu — jamais de trou ni de chevauchement.'
+                : 'Placement 100 % manuel : chaque bloc reste exactement où vous le posez (superpositions possibles).'}
+            </p>
+            <button type="button" onClick={() => patch({ layout: {} })}
+              className="text-[11px] text-indigo-300 hover:text-white underline text-left">Réinitialiser les positions</button>
+          </>
         )}
       </div>
 

@@ -49,6 +49,15 @@ const MAGNET_GAP = 6
  * export partagent ce même calcul → résultat identique partout). Réinitialise
  * d'abord les `top` configurés (idempotent), puis cascade les poussées.
  */
+/** Aimantation désactivée : rend aux blocs de la chaîne leur position CONFIGURÉE
+ *  (annule les `top` posés par une aimantation précédente — placement 100 % manuel). */
+export function resetMagneticFlow(card: HTMLElement, style: CatalogCardStyle): void {
+  for (const id of FLOW_CHAIN) {
+    const el = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
+    if (el) el.style.top = `${freeLayoutBox(id, style).y}%`
+  }
+}
+
 export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): void {
   const cardH = card.clientHeight
   const cardW = card.clientWidth
