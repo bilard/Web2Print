@@ -97,8 +97,21 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle): v
     const el = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
     const target = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${box.link}"]`)
     if (!el || !target) continue
-    el.style.left = `${Math.round(((target.offsetLeft + target.offsetWidth + MAGNET_GAP) / cardW) * 1000) / 10}%`
-    el.style.top = `${Math.round((target.offsetTop / cardH) * 1000) / 10}%`
+    // lx/ly = décalage ajusté par l'utilisateur (glisser SANS rompre la liaison).
+    el.style.left = `${Math.round((((target.offsetLeft + target.offsetWidth + MAGNET_GAP) / cardW) * 100 + (box.lx ?? 0)) * 10) / 10}%`
+    el.style.top = `${Math.round(((target.offsetTop / cardH) * 100 + (box.ly ?? 0)) * 10) / 10}%`
+  }
+}
+
+/** Position VISUELLE (%) d'un objet dans la carte d'aperçu (.cat-style-card-host) —
+ *  pour délier sans faire sauter le bloc (on fige sa position affichée). */
+export function visualPos(id: CardObjectId): { x: number; y: number } | null {
+  const card = document.querySelector<HTMLElement>('.cat-style-card-host')
+  const el = card?.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
+  if (!card || !el || !card.clientWidth || !card.clientHeight) return null
+  return {
+    x: Math.round((el.offsetLeft / card.clientWidth) * 1000) / 10,
+    y: Math.round((el.offsetTop / card.clientHeight) * 1000) / 10,
   }
 }
 

@@ -54,7 +54,7 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
     // Mode liaison actif : ce clic désigne la CIBLE (soudure à sa droite), pas une sélection.
     if (linking && sel && id !== sel) {
       e.preventDefault(); e.stopPropagation()
-      onChange(sel, { ...freeLayoutBox(sel, style), link: id, ax: 'l', ay: 't' })
+      onChange(sel, { ...freeLayoutBox(sel, style), link: id, lx: 0, ly: 0, ax: 'l', ay: 't' })
       setLinking(false)
       return
     }
@@ -62,15 +62,25 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
     e.preventDefault(); e.stopPropagation(); setSel(id); onSelect?.(id)
     const b = freeLayoutBox(id, style)
     const { w, h } = cardPx()
+    const sx = e.clientX, sy = e.clientY
+    // Bloc LIÉ : le glisser ajuste son DÉCALAGE par rapport au point de soudure —
+    // la liaison est CONSERVÉE (il continue de suivre sa cible).
+    if (b.link) {
+      const lx0 = b.lx ?? 0, ly0 = b.ly ?? 0
+      const moveLinked = (ev: PointerEvent) => {
+        onChange(id, { ...b, lx: r1(lx0 + ((ev.clientX - sx) / w) * 100), ly: r1(ly0 + ((ev.clientY - sy) / h) * 100) })
+      }
+      const upLinked = () => { window.removeEventListener('pointermove', moveLinked); window.removeEventListener('pointerup', upLinked); setTick((t) => t + 1) }
+      window.addEventListener('pointermove', moveLinked); window.addEventListener('pointerup', upLinked)
+      return
+    }
     // Glisser un bloc ANCRÉ (droite/bas/centre) le repasse en placement classique
     // gauche/haut, en partant de sa position VISIBLE (rect DOM) — prévisible.
     const r0 = rectOf(id)
     const bx = (b.ax ?? 'l') !== 'l' && r0 ? r1(r0.left) : b.x
     const by = (b.ay ?? 't') !== 't' && r0 ? r1(r0.top) : b.y
-    const sx = e.clientX, sy = e.clientY
     const move = (ev: PointerEvent) => {
-      // Glisser rompt liaison et ancrages : placement manuel gauche/haut.
-      onChange(id, { ...b, ax: 'l', ay: 't', link: undefined, x: clamp(r1(bx + ((ev.clientX - sx) / w) * 100), 0, 100), y: clamp(r1(by + ((ev.clientY - sy) / h) * 100), 0, 100) })
+      onChange(id, { ...b, ax: 'l', ay: 't', x: clamp(r1(bx + ((ev.clientX - sx) / w) * 100), 0, 100), y: clamp(r1(by + ((ev.clientY - sy) / h) * 100), 0, 100) })
     }
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); setTick((t) => t + 1) }
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
@@ -139,8 +149,11 @@ export function CardLayoutOverlay({ cardRef, style, onChange, onSelect }: Props)
           <button type="button" onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }}
             onClick={() => {
               const b = freeLayoutBox(sel, style)
-              if (b.link) onChange(sel, { ...b, link: undefined })
-              else setLinking((v) => !v)
+              if (b.link) {
+                // Délier SANS faire sauter le bloc : sa position visuelle devient sa position posée.
+                const r = rectOf(sel)
+                onChange(sel, { ...b, link: undefined, lx: undefined, ly: undefined, ...(r ? { x: r1(r.left), y: r1(r.top) } : {}) })
+              } else setLinking((v) => !v)
             }}
             title={freeLayoutBox(sel, style).link
               ? 'Lié : soudé à droite de sa cible, la suit partout (cliquer pour délier)'

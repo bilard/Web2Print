@@ -71,8 +71,10 @@ export const CARD_OBJECT_IDS: CardObjectId[] = [
  *  devient l'écart au bord DROIT, 'b' = y l'écart au bord BAS, 'c' = centré —
  *  l'objet reste collé à son bord sur TOUTES les tailles de carte. */
 /** `link` = LIAISON entre blocs : collé à DROITE du bloc cible (aligné en haut),
- *  il le suit dans tous ses déplacements (ex. unité soudée à la réf). */
-export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b'; link?: CardObjectId }
+ *  il le suit dans tous ses déplacements (ex. unité soudée à la réf).
+ *  `lx`/`ly` = décalage (%) par rapport au point de soudure — le glisser d'un bloc
+ *  lié ajuste ce décalage SANS rompre la liaison. */
+export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b'; link?: CardObjectId; lx?: number; ly?: number }
 
 /**
  * Style COSMÉTIQUE des fiches : réglages bornés appliqués en variables CSS

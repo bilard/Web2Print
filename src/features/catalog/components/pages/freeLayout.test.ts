@@ -128,6 +128,11 @@ test('applyMagneticFlow : bloc LIÉ soudé à droite de sa cible (aligné en hau
   applyMagneticFlow(card, style)
   expect(parseFloat(unit.style.left)).toBeCloseTo(25.6, 1) // (50+200+6)/1000
   expect(parseFloat(unit.style.top)).toBeCloseTo(88, 0)    // aligné sur le haut de la réf
+  // Décalage lx/ly (glisser SANS rompre la liaison) : ajouté au point de soudure.
+  const style2 = { ...DEFAULT_CARD_STYLE, freeLayout: true, layout: { unit: { x: 5, y: 92, link: 'ref' as const, lx: 4, ly: -2 } } }
+  applyMagneticFlow(card, style2)
+  expect(parseFloat(unit.style.left)).toBeCloseTo(29.6, 1)
+  expect(parseFloat(unit.style.top)).toBeCloseTo(86, 0)
 })
 
 test('FREE_DEFAULT_LAYOUT : calqué sur l\'auto (image haut, textes empilés, rangée basse)', () => {

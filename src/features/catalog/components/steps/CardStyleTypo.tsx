@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'react'
 import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import { SliderField, inputCls } from '@/components/shared/panel'
 import { CARD_OBJECT_IDS, type CardObjectId, type CatalogCardStyle } from '../../catalogTypes'
-import { freeLayoutBox } from '../pages/freeLayout'
+import { freeLayoutBox, visualPos } from '../pages/freeLayout'
 
 interface CardStyleTypoProps {
   style: CatalogCardStyle
@@ -60,7 +60,10 @@ export function CardStyleTypo({ style, patch, selected }: CardStyleTypoProps) {
   // Liaison entre blocs (disposition libre) : le bloc est SOUDÉ à droite de sa
   // cible et la suit partout. Éditable ici pour VOIR tous les liens d'un coup.
   const setLink = (obj: CardObjectId, target: string) => {
-    const box = { ...freeLayoutBox(obj, style), link: (target || undefined) as CardObjectId | undefined }
+    const base = freeLayoutBox(obj, style)
+    const box = target
+      ? { ...base, link: target as CardObjectId, lx: 0, ly: 0 } // soudure fraîche
+      : { ...base, link: undefined, lx: undefined, ly: undefined, ...(visualPos(obj) ?? {}) } // délié SANS saut
     patch({ layout: { ...style.layout, [obj]: box } })
   }
 
