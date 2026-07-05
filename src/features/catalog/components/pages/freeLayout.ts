@@ -157,6 +157,10 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
   // AU-DESSUS (maxHeight + overflow). Seuls les obstacles situés EN DESSOUS du
   // bloc courant plafonnent (le kicker en haut ne coupe pas la pile de textes).
   const obstacles: { x1: number; x2: number; top: number; bottom: number }[] = []
+  // Échelle d'AFFICHAGE de la carte (aperçu zoomé, cartes magnifiées) — pour
+  // convertir les bbox écran en unités de mise en page.
+  const cardRect = card.getBoundingClientRect()
+  const dispScale = cardW ? cardRect.width / cardW : 0
   for (const id of CARD_OBJECT_IDS) {
     if (id === 'image' || id === 'promo' || FLOW_CHAIN.includes(id)) continue
     const b = boxOf(id)
@@ -164,19 +168,45 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
     const el = objOf(id)
     if (!el) continue
     const sc = b.sc ?? 1
-    const h = el.offsetHeight * sc
+    let h = el.offsetHeight * sc
     // Largeur du CONTENU (badge rendu), pas de la boîte (souvent bien plus large,
     // ex. prix w:40 aligné à droite) — sinon le plafond coupe des colonnes entières.
     const inner = el.firstElementChild as HTMLElement | null
-    const wPct = (((inner?.offsetWidth || el.offsetWidth) * sc) / cardW) * 100
+    let wPct = (((inner?.offsetWidth || el.offsetWidth) * sc) / cardW) * 100
     const ax = b.ax ?? 'l'
-    const x2 = ax === 'r' ? 100 - b.x : ax === 'c' ? 50 + wPct / 2 : b.x + wPct
+    let x2 = ax === 'r' ? 100 - b.x : ax === 'c' ? 50 + wPct / 2 : b.x + wPct
     const ay = b.ay ?? 't'
     // Anticipe le CLAMP final : un bloc désancré posé trop bas sera remonté au ras.
-    const top = ay === 'b' ? cardH - (b.y / 100) * cardH - h
+    let top = ay === 'b' ? cardH - (b.y / 100) * cardH - h
       : ay === 'c' ? cardH / 2 - h / 2
       : Math.min((b.y / 100) * cardH, cardH - h)
-    obstacles.push({ x1: x2 - wPct, x2, top, bottom: top + h })
+    let x1 = x2 - wPct
+    // Un bloc TOURNÉ (rotation posée + inclinaison décorative du badge) occupe la
+    // bbox de sa rotation — offsetWidth/offsetHeight l'ignorent (le badge mordait
+    // les pavés). La bbox ÉCRAN intègre les transforms de l'élément et de ses
+    // ANCÊTRES, pas de ses enfants : union avec les enfants directs (l'étiquette
+    // prix inclinée vit DANS le contenu). Repli sur le calcul ci-dessus quand la
+    // mesure est indisponible (jsdom des tests).
+    const src = inner && inner.offsetWidth ? inner : el
+    const r0 = src.getBoundingClientRect()
+    const bb = { left: r0.left, top: r0.top, right: r0.right, bottom: r0.bottom }
+    for (const child of Array.from(src.children)) {
+      const cr = child.getBoundingClientRect()
+      if (cr.bottom - cr.top <= 0) continue
+      bb.left = Math.min(bb.left, cr.left); bb.top = Math.min(bb.top, cr.top)
+      bb.right = Math.max(bb.right, cr.right); bb.bottom = Math.max(bb.bottom, cr.bottom)
+    }
+    if (bb.bottom - bb.top > 0 && dispScale > 0) {
+      const yTop = (bb.top - cardRect.top) / dispScale
+      h = (bb.bottom - bb.top) / dispScale
+      // Même anticipation de clamp : la bbox qui déborde du bas sera remontée.
+      const over = ay === 't' ? Math.max(0, yTop + h - cardH) : 0
+      top = yTop - over
+      x1 = ((bb.left - cardRect.left) / dispScale / cardW) * 100
+      x2 = ((bb.right - cardRect.left) / dispScale / cardW) * 100
+      wPct = x2 - x1
+    }
+    obstacles.push({ x1, x2, top, bottom: top + h })
   }
   const ceilingFor = (x1: number, x2: number, top: number): number => {
     let c = cardH
