@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { Database, FileOutput, Loader2, RotateCcw, X } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { saveRowToMaster } from '../../masterWrite'
+import { isImageValue, ProductImageField } from './ProductImageField'
 
 interface Props {
   rowId: string
@@ -100,6 +101,8 @@ export function ProductEditPanel({ rowId, onClose }: Props) {
                   {overridden && <span className="px-1.5 rounded bg-amber-500/15 text-amber-400 text-[9px] uppercase tracking-wide">publication</span>}
                   {formula && <span className="px-1.5 rounded bg-surface-2 text-muted-foreground text-[9px] uppercase tracking-wide">formule</span>}
                 </span>
+                {/* Champ IMAGE : vignette résolue (DAM/Drive → blob) + lien vers l'asset, URL éditable dessous. */}
+                {isImageValue(c.key, c.label, draft[c.key] ?? '') && <ProductImageField url={draft[c.key]} />}
                 {long ? (
                   <textarea value={draft[c.key] ?? ''} rows={3} disabled={formula}
                     onChange={(e) => setDraft((d) => ({ ...d, [c.key]: e.target.value }))}
