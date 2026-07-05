@@ -26,7 +26,11 @@ function RangeChip({ range }: { range: NodePageRange | undefined }) {
   )
 }
 
-function NodeRow({ node, ranges, colors, selectedNode, onSelect }: Props & { node: CatalogTreeNode }) {
+/** Alphas hex du fond de ligne par niveau — MÊME dégressivité que la carte
+ *  Sections (PlanSectionRow) : cohérence des interfaces du module. */
+const ROW_ALPHA: Record<1 | 2 | 3, string> = { 1: '2E', 2: '1A', 3: '0D' }
+
+function NodeRow({ node, ranges, colors, selectedNode, onSelect, chapterColor }: Props & { node: CatalogTreeNode; chapterColor: string }) {
   const [collapsed, setCollapsed] = useState(false)
   const count = subtreeProductCount(node)
   if (count === 0) return null
@@ -36,7 +40,8 @@ function NodeRow({ node, ranges, colors, selectedNode, onSelect }: Props & { nod
   const children = node.children.filter((c) => subtreeProductCount(c) > 0)
   return (
     <div>
-      <div className={`flex items-center gap-1 rounded-md ${active ? 'bg-indigo-600/20 ring-1 ring-indigo-500' : style.row}`}>
+      <div className={`flex items-center gap-1 rounded-md ${active ? 'ring-1 ring-indigo-500' : ''}`}
+        style={{ background: active ? undefined : `${chapterColor}${ROW_ALPHA[node.level]}` }}>
         {node.level === 1 && children.length > 0 ? (
           <button onClick={() => setCollapsed((v) => !v)} className="p-0.5 shrink-0 text-muted-foreground hover:text-white" title={collapsed ? 'Déplier' : 'Replier'}>
             {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -45,11 +50,9 @@ function NodeRow({ node, ranges, colors, selectedNode, onSelect }: Props & { nod
         <button onClick={() => onSelect(active ? null : node.id)}
           className="flex-1 min-w-0 flex items-center gap-1.5 text-left px-1 py-1.5 rounded-md hover:bg-surface-2"
           title={`${count} produit${count > 1 ? 's' : ''}${range ? ` · ${range.pageCount} page${range.pageCount > 1 ? 's' : ''}` : ''}`}>
-          {node.level === 1
-            ? <span className="w-2 h-2 rounded-full shrink-0" style={{ background: colors.get(node.id) ?? '#64748b' }} />
-            : <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />}
-          <span className={`truncate ${style.text}`}>{node.label}</span>
-          <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums ${style.badge}`}>{count}</span>
+          <span className={`rounded-full shrink-0 ${node.level === 1 ? 'w-2 h-2' : 'w-1.5 h-1.5'}`} style={{ background: chapterColor }} />
+          <span className={`truncate ${style.text}`} style={{ color: chapterColor }}>{node.label}</span>
+          <span className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums text-[#fff]" style={{ background: chapterColor }}>{count}</span>
           <span className="flex-1" />
           <RangeChip range={range} />
         </button>
@@ -57,7 +60,7 @@ function NodeRow({ node, ranges, colors, selectedNode, onSelect }: Props & { nod
       {!collapsed && children.length > 0 && (
         <div className="ml-4 border-l border-border pl-1.5 mt-0.5 space-y-0.5">
           {children.map((c) => (
-            <NodeRow key={c.id} node={c} tree={[]} ranges={ranges} colors={colors} selectedNode={selectedNode} onSelect={onSelect} />
+            <NodeRow key={c.id} node={c} tree={[]} ranges={ranges} colors={colors} selectedNode={selectedNode} onSelect={onSelect} chapterColor={chapterColor} />
           ))}
         </div>
       )}
@@ -74,7 +77,8 @@ export function FlatplanTaxonomy({ tree, ranges, colors, selectedNode, onSelect 
         Tout le catalogue
       </button>
       {universes.map((u) => (
-        <NodeRow key={u.id} node={u} tree={tree} ranges={ranges} colors={colors} selectedNode={selectedNode} onSelect={onSelect} />
+        <NodeRow key={u.id} node={u} tree={tree} ranges={ranges} colors={colors} selectedNode={selectedNode} onSelect={onSelect}
+          chapterColor={colors.get(u.id) ?? '#64748b'} />
       ))}
       {universes.length === 0 && <p className="px-2 py-4 text-xs text-muted-foreground">Aucun univers — vérifiez la structure.</p>}
     </div>
