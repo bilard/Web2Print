@@ -274,7 +274,9 @@ export interface CatalogPageStyle {
 }
 
 export const DEFAULT_PAGE_STYLE: CatalogPageStyle = {
-  showHeader: true, headerScale: 1, chapterColors: false,
+  // Couleurs par CHAPITRE sur les bandeaux de taxonomie & ouvertures : ACTIF par
+  // défaut (l'identité de chapitre structure le catalogue) — désactivable par toggle.
+  showHeader: true, headerScale: 1, chapterColors: true,
   showFooter: true, showFooterName: true, folioScale: 1,
   showOpenerNum: true, showOpenerChip: true, showOpenerCount: true, showOpenerPanel: true, openerTitleScale: 1,
   coverTitleScale: 1, showCoverBaseline: true, showCoverSubtitle: true, showCoverRule: true, coverOverlay: 55,
