@@ -2,7 +2,7 @@
 // Aperçu de la fiche : UNE SEULE réplique RÉALISTE de la cellule imprimée (mêmes
 // px + même --cat-fit, zoomée pour l'édition) + overlay de disposition libre
 // (drag/resize, aimant, liaisons) et palette d'ancrage liquide.
-import { useRef, type CSSProperties } from 'react'
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal } from 'lucide-react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import type { CardBox, CardObjectId, CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
@@ -92,10 +92,26 @@ export function CardStylePreview({ theme, cardStyle, fields, details, cell, wide
   const overlay = editable && onLayoutChange
     ? <CardLayoutOverlay cardRef={cardRef} style={cardStyle} wide={wide} onChange={onLayoutChange} onSelect={onSelect} />
     : null
-  const K = Math.max(1, Math.round((480 / cell.w) * 100) / 100)
+  // Zoom AUTO-MESURÉ : la carte occupe la largeur DISPONIBLE de sa colonne
+  // (écran optimisé), bornée par la hauteur du viewport (la fiche verticale
+  // doit rester visible en entier) — plancher 480 px (lisibilité historique).
+  const wrapRef = useRef<HTMLDivElement | null>(null)
+  const [availW, setAvailW] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    const el = wrapRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setAvailW(el.clientWidth))
+    ro.observe(el)
+    setAvailW(el.clientWidth)
+    return () => ro.disconnect()
+  }, [])
+  const paletteW = editable && onLayoutChange ? 40 : 0 // palette d'ancrage + gap
+  const targetW = availW != null ? Math.max(480, availW - paletteW - 32) : 480
+  const maxH = typeof window !== 'undefined' ? Math.max(480, window.innerHeight - 140) : Infinity
+  const K = Math.max(1, Math.round(Math.min(targetW / cell.w, maxH / cell.h) * 100) / 100)
   const pageStyle = { ...themeVars(theme), ...cardStyleVars(cardStyle, theme), ['--cat-fit']: String(Math.round(cell.fit * 100) / 100), width: cell.w * K + 32, background: 'var(--cat-bg)' } as CSSProperties
   return (
-    <div className="flex items-start gap-2">
+    <div ref={wrapRef} className="flex items-start gap-2 w-full min-w-0">
       {/* Palette d'ancrage liquide (menu de gauche) — agit sur le bloc sélectionné. */}
       {editable && onLayoutChange && (
         <AnchorPalette selected={selected} style={cardStyle} wide={wide} onLayoutChange={onLayoutChange} />

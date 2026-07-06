@@ -153,9 +153,9 @@ export function StepPrompt() {
           </button>
         </StepActionsPortal>
 
-        {/* Colonne gauche BORNÉE (600 px) : l'arbre des sections est compact
-            (liste réf+nom, accordéon) — inutile de l'étirer, l'aperçu respire. */}
-        <div className="mx-auto max-w-[1400px] grid gap-6 lg:grid-cols-[minmax(0,600px)_auto] lg:justify-center items-start">
+        {/* Colonne gauche BORNÉE (600 px, arbre compact) ; l'APERÇU prend TOUTE
+            la largeur restante — son zoom s'auto-mesure sur la place disponible. */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,600px)_minmax(0,1fr)] items-start">
           {/* Colonne gauche : prompt + sections */}
           <div className="space-y-5 min-w-0">
             <section className="rounded-lg border border-border bg-surface p-4 space-y-3">
@@ -181,7 +181,7 @@ export function StepPrompt() {
 
           {/* Colonne droite du centre : APERÇU grand (le résultat), collé en haut */}
           {plan && (
-            <div className="lg:sticky lg:top-0 w-full lg:w-[560px]">
+            <div className="lg:sticky lg:top-0 w-full min-w-0">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Aperçu de la fiche</span>
                 <div className="flex items-center gap-2">
