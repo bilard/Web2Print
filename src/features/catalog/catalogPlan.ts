@@ -299,6 +299,13 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
   if (contrast(theme.ink, effCardBg) < 0.35) {
     if (lumOf(theme.pageBg) < 0.4) { aiCardStyle.cardBg = theme.pageBg; effCardBg = theme.pageBg }
     else if (lumOf(effCardBg) > 0.6) theme.ink = DEFAULT_THEME.ink
+    else {
+      // Fiches SOMBRES demandées mais encre SOMBRE aussi (page claire) : on
+      // annule le fond sombre — fiches blanches + encre sombre, toujours lisible.
+      aiCardStyle.cardBg = ''
+      effCardBg = '#ffffff'
+      if (contrast(theme.ink, effCardBg) < 0.35) theme.ink = DEFAULT_THEME.ink
+    }
   }
   // Seuils calibrés : blanc-sur-blanc ≈ 0,02 · gris clair sur blanc ≈ 0,13 (rejetés) ;
   // or sur orange ≈ 0,23 = contraste de TEINTE légitime (accepté pour les badges).
@@ -375,7 +382,7 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
           (ctx.charte.colors.length ? `- Palette imposée : ${ctx.charte.colors.join(', ')} (répartis-la : accent, bandeaux, badges — reste DANS ces teintes ou leurs nuances proches).\n` : '') +
           (ctx.charte.fonts.length ? `- Typographies de la marque : ${ctx.charte.fonts.join(', ')} (choisis les polices du thème PARMI ${FONT_OPTIONS.join(', ')} en te rapprochant LE PLUS de ces familles).\n` : '') +
           (ctx.charte.notes ? `- Consignes créa (graphique & structure) : ${ctx.charte.notes}\n` : '') +
-          `- STRUCTURE : si les consignes décrivent une composition (couverture éditoriale, fiches en LISTE 1 colonne, densité), APPLIQUE-les : cover.layout ('panel' maquette éditoriale, 'poster' visuel plein cadre), productsPerPage 2-3 = LISTE pleine largeur, 4-8 = grille.\n` +
+          `- STRUCTURE : si les consignes décrivent une composition (couverture éditoriale, fiches en LISTE 1 colonne, densité), APPLIQUE-les : cover.layout ('panel' maquette éditoriale, 'poster' visuel plein cadre), productsPerPage 2-3 = LISTE pleine largeur, 4-8 = grille. Si un ARCHÉTYPE COUVERTURE est imposé, renvoie OBLIGATOIREMENT l'objet cover complet (title, imagePrompt, layout).\n` +
           `- COMPOSITION DES FICHES : reproduis la maquette AVEC les leviers : cardStyle.cardBg (fond des FICHES — jaune/sombre si le modèle le veut), theme.pageBg (fond de PAGE, noir si le modèle est dark), kickerBg (pastille type chip), cardStyle.shape (coins/chips/prix/sticker/image/ombre — la STRUCTURE graphique) et cardStyle.layout (positions % des blocs) pour rapprocher la maquette du modèle — ose des placements différents du gabarit par défaut.\n` + '\n'
         : '') +
       `${consigne}\n\nDemande : ${brief}`,
