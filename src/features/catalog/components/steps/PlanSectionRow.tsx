@@ -2,7 +2,8 @@
 // Une ligne de section du plan : hiérarchie visuelle par niveau, teintée par la
 // COULEUR DU CHAPITRE (sélecteur sur la ligne d'univers — texte + fond dégressifs
 // sur chaque niveau), densité de grille (UNIVERS seulement — flux continu ;
-// « Aléatoire » = densité variée page à page), et TOUS les produits du nœud
+// « Aléatoire » = densité variée page à page), et TOUS les produits du nœud en
+// LISTE compacte (réf + nom tronqué, petit texte — jamais la description),
 // cliquables pour marquer ou retirer une vedette.
 import { CATALOG_GRIDS, type CatalogDensity, type CatalogSectionPlan, type CatalogTreeNode } from '../../catalogTypes'
 import { subtreeProductCount } from '../../catalogTree'
@@ -15,7 +16,7 @@ const ROW_ALPHA: Record<1 | 2 | 3, string> = { 1: '2E', 2: '1A', 3: '0D' }
 interface PlanSectionRowProps {
   node: CatalogTreeNode
   section: CatalogSectionPlan
-  products: { id: string; name: string }[]
+  products: { id: string; name: string; ref: string }[]
   /** Couleur effective du chapitre parent (override utilisateur ?? palette). */
   chapterColor: string
   onDensity: (density: CatalogDensity) => void
@@ -62,27 +63,27 @@ export function PlanSectionRow({ node, section, products, chapterColor, onDensit
       </div>
 
       {products.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pl-5">
+        <div className="flex flex-col max-h-28 overflow-y-auto pl-5">
           {products.map((f) => {
             const active = section.featuredIds.includes(f.id)
             const previewed = previewId === f.id
             return (
-              <span key={f.id}
-                className={`inline-flex items-center rounded-md text-xs overflow-hidden ${
-                  active ? 'text-[#fff]' : 'bg-surface-2 text-muted-foreground'
-                } ${previewed ? 'ring-2 ring-indigo-500' : ''}`}
+              <div key={f.id}
+                className={`flex items-center rounded ${active ? 'text-[#fff]' : 'text-muted-foreground hover:bg-well'} ${previewed ? 'ring-1 ring-indigo-500' : ''}`}
                 style={active ? { background: chapterColor } : undefined}>
                 <button type="button" onClick={() => onToggleFeatured(f.id)} title={`${f.name} — cliquer : vedette on/off`}
-                  className="px-2 py-1 truncate max-w-[140px] hover:text-white">
-                  {active && '★ '}{f.name}
+                  className="flex-1 min-w-0 flex items-center gap-1.5 px-1.5 py-0.5 text-left hover:text-white">
+                  {active && <span className="shrink-0">★</span>}
+                  {f.ref && <span className="shrink-0 text-[10px] tabular-nums opacity-70">{f.ref}</span>}
+                  <span className="truncate text-[11px]">{f.name}</span>
                 </button>
                 {onPreview && (
                   <button type="button" onClick={() => onPreview(f.id)} title="Afficher ce produit dans l'aperçu de la fiche"
-                    className={`px-1.5 py-1 border-l ${active ? 'border-[#ffffff33]' : 'border-border'} hover:text-white ${previewed ? 'text-indigo-400' : ''}`}>
+                    className={`shrink-0 px-1.5 text-xs hover:text-white ${previewed ? 'text-indigo-400' : ''}`}>
                     👁
                   </button>
                 )}
-              </span>
+              </div>
             )
           })}
         </div>

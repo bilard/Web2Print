@@ -150,9 +150,11 @@ export function extractPromoFields(
  * fiche (étiquette = label saisi, sinon nom de colonne — pour que « 20 » ait un
  * sens ; dédupliquées). Source UNIQUE partagée par le rendu des pages ET l'aperçu
  * du style, sinon l'aperçu et le catalogue divergent.
+ * `hidden` = ids de champs masqués individuellement (« Éléments affichés »).
  */
-export function buildDetailLines(customFields: CustomFieldMap, fields: PromoFields): string[] {
+export function buildDetailLines(customFields: CustomFieldMap, fields: PromoFields, hidden?: string[]): string[] {
   return [...new Set(customFields
+    .filter((cf) => !hidden?.includes(cf.id))
     .map((cf) => {
       const v = fields.extra?.[cf.id]
       if (!v || !v.trim()) return null

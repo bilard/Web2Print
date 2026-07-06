@@ -173,6 +173,14 @@ export interface CatalogCardStyle {
   showVedette: boolean
   /** Affichage de la zone « Détails » (champs libres, valeurs seules). */
   showDetails: boolean
+  showImage: boolean
+  showBrand: boolean
+  showName: boolean
+  showPrice: boolean
+  /** Affichage du prix BARRÉ dans le badge prix (le prix de vente reste). */
+  showWas: boolean
+  /** Ids des champs libres MASQUÉS dans la zone « Détails » (ex. TVA) — optionnel (styles persistés anciens). */
+  hiddenDetails?: string[]
   /** Flux AIMANTÉ : les blocs texte se collent/poussent selon leur volumétrie — jamais de superposition ni de trou. Décoché = placement 100 % manuel. */
   magnetFlow: boolean
   /** Boîtes en % par objet (disposition libre — LE mode de rendu) ; absent = position de repli. */
@@ -193,6 +201,7 @@ export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   gradientAngle: 135,
   radius: 6, imageShare: 40, imagePad: 12,
   showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true, showVedette: true, showDetails: true,
+  showImage: true, showBrand: true, showName: true, showPrice: true, showWas: true, hiddenDetails: [],
   magnetFlow: true, layout: {}, layoutWide: {},
 }
 

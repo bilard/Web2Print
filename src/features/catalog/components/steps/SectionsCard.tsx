@@ -84,7 +84,7 @@ export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap, pre
           const products = node.productIds.map((id) => {
             const row = rowsById.get(id)
             const f = row ? extractPromoFields(row, columns, fieldMap) : null
-            return { id, name: f?.name ?? id }
+            return { id, name: f?.name ?? id, ref: f?.ref ?? '' }
           })
           return (
             <PlanSectionRow key={node.id} node={node} section={section} products={products}

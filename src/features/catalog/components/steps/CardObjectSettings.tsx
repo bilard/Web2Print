@@ -19,10 +19,11 @@ interface Props {
   wide: boolean
 }
 
-/** Case à cocher de visibilité de l'objet (absent = objet toujours affiché). */
+/** Case à cocher de visibilité de l'objet. */
 const OBJ_SHOW: Partial<Record<CardObjectId, keyof CatalogCardStyle>> = {
   promo: 'showPromo', sticker: 'showSticker', kicker: 'showKicker', description: 'showDesc',
   ref: 'showRef', unit: 'showUnit', vedette: 'showVedette', details: 'showDetails',
+  image: 'showImage', brand: 'showBrand', name: 'showName', price: 'showPrice',
 }
 
 export function CardObjectSettings({ obj, style, theme, patch, wide }: Props) {

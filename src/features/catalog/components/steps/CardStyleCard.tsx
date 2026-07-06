@@ -11,6 +11,7 @@ import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle, type Cata
 import { CardObjectSettings } from './CardObjectSettings'
 import { CardStyleTypo, OBJ_LABEL } from './CardStyleTypo'
 import { CardStyleColors } from './CardStyleColors'
+import { CardStyleVisibility } from './CardStyleVisibility'
 
 interface CardStyleCardProps {
   plan: CatalogPlan
@@ -22,17 +23,6 @@ interface CardStyleCardProps {
   /** Carte d'aperçu LARGE (repli 2 colonnes) — propagé au panneau typo (liaisons). */
   wide?: boolean
 }
-
-const VISIBILITY: { key: keyof Pick<CatalogCardStyle, 'showPromo' | 'showSticker' | 'showKicker' | 'showDesc' | 'showRef' | 'showUnit' | 'showVedette' | 'showDetails'>; label: string }[] = [
-  { key: 'showPromo', label: 'Cartouche promo' },
-  { key: 'showSticker', label: 'Sticker remise' },
-  { key: 'showKicker', label: 'Sous-famille' },
-  { key: 'showDesc', label: 'Description' },
-  { key: 'showRef', label: 'Référence' },
-  { key: 'showUnit', label: 'Unité' },
-  { key: 'showVedette', label: 'Ruban vedette' },
-  { key: 'showDetails', label: 'Détails' },
-]
 
 export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection, wide }: CardStyleCardProps) {
   const style: CatalogCardStyle = { ...DEFAULT_CARD_STYLE, ...plan.cardStyle }
@@ -114,21 +104,8 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
         </label>
       </PropertySection>
 
-      <PropertySection title="Éléments affichés">
-        <div className="flex flex-col gap-2">
-          {VISIBILITY.map(({ key, label }) => (
-            <label key={key} className="flex items-center gap-1.5 text-xs text-white/40 cursor-pointer select-none">
-              <input type="checkbox" checked={style[key]} onChange={(e) => patch({ [key]: e.target.checked } as Partial<CatalogCardStyle>)}
-                className="accent-indigo-600" />
-              {label}
-            </label>
-          ))}
-          <label className="flex items-center gap-1.5 text-xs text-white/40">
-            Texte du ruban
-            <input value={style.vedetteLabel} onChange={(e) => patch({ vedetteLabel: e.target.value })} placeholder="Vedette"
-              className="w-28 px-2 py-1 rounded-md bg-well text-xs text-white outline-none border border-white/10 focus:border-[#6366f1]" />
-          </label>
-        </div>
+      <PropertySection title="Éléments affichés" help="Champs libres (TVA, entretien...) masquables un par un sous « Détails ».">
+        <CardStyleVisibility style={style} patch={patch} />
       </PropertySection>
     </div>
   )

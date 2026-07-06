@@ -60,7 +60,7 @@ export function ProductCell({ fields: f, featured, kicker, details, cardStyle, s
     return () => ro.disconnect()
   })
   const hasWas = f.oldPrice != null && f.newPrice != null && f.oldPrice > f.newPrice
-  const show = (key: 'showDesc' | 'showRef' | 'showUnit' | 'showSticker' | 'showKicker' | 'showPromo' | 'showVedette' | 'showDetails') => cardStyle?.[key] ?? true
+  const show = (key: 'showDesc' | 'showRef' | 'showUnit' | 'showSticker' | 'showKicker' | 'showPromo' | 'showVedette' | 'showDetails' | 'showImage' | 'showBrand' | 'showName' | 'showPrice' | 'showWas') => cardStyle?.[key] ?? true
   // Sticker rond = écart entre les 2 prix (remise calculée), en haut à droite de l'image.
   const sticker = show('showSticker') && hasWas && f.remisePct != null && f.remisePct > 0 ? `-${f.remisePct}%` : null
   // Cartouche = TEXTE promo (« Top affaire », « Prix choc »…) uniquement — le
@@ -104,16 +104,16 @@ export function ProductCell({ fields: f, featured, kicker, details, cardStyle, s
       onDoubleClick={onEdit ? (e) => { e.stopPropagation(); onEdit() } : undefined}
       title={onEdit ? 'Double-clic : modifier les données du produit' : undefined}>
       {promo && obj('promo', <span className="cat-cell-promo">{promo}</span>)}
-      {obj('image', <div className="cat-cell-img-in" data-resolving={resolving ? 'true' : undefined}>{src ? <img src={src} alt="" /> : <span className="cat-cell-img-ph">Sans visuel</span>}</div>)}
+      {show('showImage') && obj('image', <div className="cat-cell-img-in" data-resolving={resolving ? 'true' : undefined}>{src ? <img src={src} alt="" /> : <span className="cat-cell-img-ph">Sans visuel</span>}</div>)}
       {sticker && obj('sticker', <span className="cat-price-sticker">{sticker}</span>)}
       {kicker && show('showKicker') && obj('kicker', <span className="cat-cell-kicker">{kicker}</span>)}
       {featured && show('showVedette') && obj('vedette', <span className="cat-cell-vedette">★ {cardStyle?.vedetteLabel || 'Vedette'}</span>)}
-      {f.brand && obj('brand', <span className="cat-cell-brand">{f.brand}</span>)}
-      {obj('name', <span className="cat-cell-name">{f.name || 'Produit'}</span>)}
+      {f.brand && show('showBrand') && obj('brand', <span className="cat-cell-brand">{f.brand}</span>)}
+      {show('showName') && obj('name', <span className="cat-cell-name">{f.name || 'Produit'}</span>)}
       {f.description && show('showDesc') && obj('description', <span className="cat-cell-desc">{f.description}</span>)}
       {f.ref && show('showRef') && obj('ref', <span className="cat-cell-refcode">Réf. {f.ref}</span>)}
       {f.unit && show('showUnit') && obj('unit', <span className="cat-cell-unit">Unité : {f.unit}</span>)}
-      {obj('price', <span className="cat-cell-pricebox"><span className="cat-cell-tag">{hasWas && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}<span className="cat-cell-price">{formatPrice(f.newPrice)}</span></span></span>)}
+      {show('showPrice') && obj('price', <span className="cat-cell-pricebox"><span className="cat-cell-tag">{hasWas && show('showWas') && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}<span className="cat-cell-price">{formatPrice(f.newPrice)}</span></span></span>)}
       {details && details.length > 0 && show('showDetails') && obj('details', <div className="cat-cell-details">{details.map((d, i) => <span key={i}>{d}</span>)}</div>)}
     </div>
   )
