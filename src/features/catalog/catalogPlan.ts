@@ -310,6 +310,17 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
   // Seuils calibrés : blanc-sur-blanc ≈ 0,02 · gris clair sur blanc ≈ 0,13 (rejetés) ;
   // or sur orange ≈ 0,23 = contraste de TEINTE légitime (accepté pour les badges).
   if (aiCardStyle.nameColor && contrast(aiCardStyle.nameColor, effCardBg) < 0.22) delete aiCardStyle.nameColor
+  // Marque et textes de contenu : mêmes règles que le nom (jaune-sur-jaune interdit).
+  for (const k of ['brandColor', 'descColor', 'refColor', 'unitColor', 'detailsColor'] as const) {
+    const v = (aiCardStyle as Partial<CatalogCardStyle>)[k] ?? current?.cardStyle?.[k]
+    if (v && contrast(v, effCardBg) < 0.22) (aiCardStyle as Partial<CatalogCardStyle>)[k] = ''
+  }
+  // Sticker : encre vs fond du sticker (noir-sur-noir interdit).
+  {
+    const bg = aiCardStyle.stickerBg || current?.cardStyle?.stickerBg || theme.accent
+    const ink = (aiCardStyle as Partial<CatalogCardStyle>).stickerInk ?? current?.cardStyle?.stickerInk ?? '#ffffff'
+    if (contrast(ink || '#ffffff', bg) < 0.18) (aiCardStyle as Partial<CatalogCardStyle>).stickerInk = hexLum ? (hexLum(bg) > 0.5 ? '#111111' : '#ffffff') : '#ffffff'
+  }
   for (const [ink, bgKey, fallbackBg] of [['priceInk', 'priceBg', theme.accent], ['vedettePriceInk', 'vedettePriceBg', theme.accent]] as const) {
     const bg = aiCardStyle[bgKey] || current?.cardStyle?.[bgKey] || fallbackBg
     if (aiCardStyle[ink] && contrast(aiCardStyle[ink]!, bg) < 0.18) delete aiCardStyle[ink]
