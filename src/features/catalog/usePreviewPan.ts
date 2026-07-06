@@ -1,18 +1,16 @@
 // src/features/catalog/usePreviewPan.ts
 // PAN à la barre d'ESPACE (outil main façon Adobe/Figma) sur l'aperçu de fiche :
 // espace MAINTENU → un voile capte le pointeur (le drag des blocs est suspendu),
-// glisser déplace le conteneur zoomé (scrollLeft) ET la zone défilante verticale
-// la plus proche (scrollTop). Espace relâché → retour à l'édition.
+// glisser déplace le conteneur de l'aperçu (scrollLeft + scrollTop) — et LUI
+// SEUL : jamais la page de l'étape ni la colonne de gauche.
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 
 interface PanTargets {
-  /** Conteneur à défilement HORIZONTAL (wrapper overflow-auto de l'aperçu zoomé). */
+  /** Conteneur défilant de l'aperçu zoomé (overflow-auto, les DEUX axes). */
   hRef: React.RefObject<HTMLElement | null>
-  /** Point de départ pour trouver l'ancêtre à défilement VERTICAL. */
-  areaRef: React.RefObject<HTMLElement | null>
 }
 
-export function usePreviewPan({ hRef, areaRef }: PanTargets) {
+export function usePreviewPan({ hRef }: PanTargets) {
   const [panning, setPanning] = useState(false)
   useEffect(() => {
     const isEditable = (t: EventTarget | null) => {
@@ -30,19 +28,17 @@ export function usePreviewPan({ hRef, areaRef }: PanTargets) {
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up) }
   }, [])
 
-  const drag = useRef<{ x: number; y: number; sx: number; sy: number; h: HTMLElement | null; v: HTMLElement | null } | null>(null)
+  const drag = useRef<{ x: number; y: number; sx: number; sy: number; h: HTMLElement | null } | null>(null)
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    // Ancêtre défilant vertical (la colonne est sticky dans la zone scrollable de l'étape).
-    let v = areaRef.current?.parentElement ?? null
-    while (v && v.scrollHeight <= v.clientHeight + 1) v = v.parentElement
-    drag.current = { x: e.clientX, y: e.clientY, sx: hRef.current?.scrollLeft ?? 0, sy: v?.scrollTop ?? 0, h: hRef.current, v }
+    const h = hRef.current
+    drag.current = { x: e.clientX, y: e.clientY, sx: h?.scrollLeft ?? 0, sy: h?.scrollTop ?? 0, h }
     e.currentTarget.setPointerCapture(e.pointerId)
   }
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const s = drag.current
-    if (!s) return
-    if (s.h) s.h.scrollLeft = s.sx - (e.clientX - s.x)
-    if (s.v) s.v.scrollTop = s.sy - (e.clientY - s.y)
+    if (!s?.h) return
+    s.h.scrollLeft = s.sx - (e.clientX - s.x)
+    s.h.scrollTop = s.sy - (e.clientY - s.y)
   }
   const end = () => { drag.current = null }
   return { panning, overlayProps: { onPointerDown, onPointerMove, onPointerUp: end, onPointerCancel: end } }

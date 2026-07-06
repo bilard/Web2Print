@@ -145,9 +145,10 @@ export function StepPrompt() {
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
   }, [plan != null])
-  // PAN à la barre d'espace (outil main) : voile de capture au-dessus de l'aperçu.
+  // PAN à la barre d'espace (outil main) : voile de capture au-dessus de l'aperçu —
+  // ne déplace QUE le conteneur de l'aperçu (jamais la colonne de gauche).
   const scrollBoxRef = useRef<HTMLDivElement | null>(null)
-  const { panning, overlayProps } = usePreviewPan({ hRef: scrollBoxRef, areaRef: zoomAreaRef })
+  const { panning, overlayProps } = usePreviewPan({ hRef: scrollBoxRef })
   const baseIsWide = isWideCard(cell.w, cell.h)
   const previewWide = previewVariant === 'auto' ? baseIsWide : previewVariant === 'wide'
   // Forme de la carte d'aperçu : la cellule réelle si elle correspond à la
@@ -243,8 +244,9 @@ export function StepPrompt() {
                   </div>
                 </div>
               </div>
-              {/* Zoom > 100 % : la carte déborde de la colonne → défilement horizontal local. */}
-              <div ref={scrollBoxRef} className="overflow-auto pb-2">
+              {/* Zoom > 100 % : la carte déborde → défilement LOCAL des deux axes
+                  (hauteur bornée au viewport) — le pan reste confiné à l'aperçu. */}
+              <div ref={scrollBoxRef} className="overflow-auto pb-2 max-h-[calc(100vh-150px)]">
                 <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={previewCell}
                   wide={previewWide} featuredVariant={previewFeatured} selected={selectedObject}
                   editable onLayoutChange={patchLayout}
