@@ -16,18 +16,30 @@ const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: st
 
 const IMG_EXT_RE = /\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i
 
-/** Visuel principal d'une page : og:image / twitter:image / 1re grande <img>. */
+/** Visuel principal d'une page : og:image / twitter:image / 1re grande <img>.
+ *  Escalade JINA READER (moteur navigateur) quand la page est derrière un
+ *  challenge Cloudflare/DataDome — cas Dribbble/Behance (fetch serveur = 202). */
 async function resolveMainImageUrl(url: string): Promise<string> {
   if (IMG_EXT_RE.test(url)) return url
-  const { fetchSourceHtml } = await import('@/features/scraping-templates/fetchSourceHtml')
-  const html = await fetchSourceHtml(url, 20_000)
-  if (!html) throw new Error('page inaccessible')
-  const doc = new DOMParser().parseFromString(html, 'text/html')
-  const meta = doc.querySelector('meta[property="og:image"], meta[property="og:image:url"], meta[name="twitter:image"]')?.getAttribute('content')
-  if (meta) return new URL(meta, url).href
-  const img = [...doc.querySelectorAll('img[src]')].map((i) => i.getAttribute('src')!)
-    .find((s) => IMG_EXT_RE.test(s) && !/logo|icon|avatar|sprite/i.test(s))
-  if (img) return new URL(img, url).href
+  try {
+    const { fetchSourceHtml } = await import('@/features/scraping-templates/fetchSourceHtml')
+    const html = await fetchSourceHtml(url, 20_000)
+    if (html) {
+      const doc = new DOMParser().parseFromString(html, 'text/html')
+      const meta = doc.querySelector('meta[property="og:image"], meta[property="og:image:url"], meta[name="twitter:image"]')?.getAttribute('content')
+      if (meta) return new URL(meta, url).href
+      const img = [...doc.querySelectorAll('img[src]')].map((i) => i.getAttribute('src')!)
+        .find((s) => IMG_EXT_RE.test(s) && !/logo|icon|avatar|sprite/i.test(s))
+      if (img) return new URL(img, url).href
+    }
+  } catch { /* CF indisponible/challenge → escalade Jina */ }
+  const { jinaRead } = await import('@/features/scraping/useJina')
+  const data = await jinaRead(url, { timeout: 30_000 })
+  const candidates = Object.values(data.images ?? {})
+  const good = candidates.find((u) => /^https?:/.test(u) && !/avatar|icon|logo|sprite|emoji|badge/i.test(u))
+  if (good) return good
+  const md = data.content?.match(/!\[[^\]]*\]\((https?:[^)\s]+)\)/)
+  if (md) return md[1]
   throw new Error('aucun visuel principal détecté sur la page')
 }
 
