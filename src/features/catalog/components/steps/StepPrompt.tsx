@@ -3,7 +3,7 @@
 // puis cartes Style des fiches et Sections. Thème, couvertures et fonds de
 // page s'éditent dans l'Aperçu (panneau « Fond de page », PageOptionsPanel).
 // L'IA ne bloque jamais : échec → repli sur defaultCatalogPlan + toast explicite.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Loader2, ArrowRight, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
@@ -41,6 +41,16 @@ export function StepPrompt() {
   // Produit affiché dans l'aperçu (👁 sur les puces de la carte Sections) + variante.
   const [previewRowId, setPreviewRowId] = useState<string | null>(null)
   const [previewFeatured, setPreviewFeatured] = useState(false)
+  // L'aperçu suit le STATUT du produit choisi : sélectionner une vedette (ou
+  // étoiler le produit affiché) bascule sur le template Vedette — le toggle
+  // manuel Standard/Vedette reste utilisable après coup.
+  const previewedIsFeatured = useMemo(
+    () => previewRowId != null && (plan?.sections.some((s) => s.featuredIds.includes(previewRowId)) ?? false),
+    [plan, previewRowId],
+  )
+  useEffect(() => {
+    if (previewRowId) setPreviewFeatured(previewedIsFeatured)
+  }, [previewedIsFeatured, previewRowId])
 
   // Corrections « publication » appliquées aussi à l'aperçu de fiche (cohérence avec les pages).
   const rowsById = useMemo(
