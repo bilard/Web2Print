@@ -4,7 +4,11 @@
 // sur chaque niveau), densité de grille (UNIVERS seulement — flux continu ;
 // « Aléatoire » = densité variée page à page), et TOUS les produits du nœud en
 // LISTE compacte (réf + nom tronqué, petit texte — jamais la description),
-// cliquables pour marquer ou retirer une vedette.
+// PLIABLE en accordéon (chevron + clic sur l'intitulé), cliquables pour marquer
+// ou retirer une vedette. Une vedette ★ ou le produit prévisualisé gardent la
+// liste dépliée par défaut (repères visibles).
+import { useState } from 'react'
+import { ChevronRight } from 'lucide-react'
 import { CATALOG_GRIDS, type CatalogDensity, type CatalogSectionPlan, type CatalogTreeNode } from '../../catalogTypes'
 import { subtreeProductCount } from '../../catalogTree'
 import { LEVEL_STYLES } from './levelStyles'
@@ -33,12 +37,24 @@ export function PlanSectionRow({ node, section, products, chapterColor, onDensit
   const densityValue = section.randomDensity ? RANDOM_ID : String(section.productsPerPage)
   const st = LEVEL_STYLES[node.level]
   const count = subtreeProductCount(node)
+  // Accordéon : replié par défaut (gain de place), sauf section avec vedette ★
+  // ou produit prévisualisé (état INITIAL seulement — le pli reste manuel ensuite).
+  const [open, setOpen] = useState(() =>
+    section.featuredIds.length > 0 || (previewId != null && products.some((p) => p.id === previewId)))
+  const foldable = products.length > 0
   return (
     <div className="px-3 py-2 border-b border-border last:border-b-0 space-y-2"
       style={{ paddingLeft: (node.level - 1) * 24 + 12, background: `${chapterColor}${ROW_ALPHA[node.level]}` }}>
       <div className="flex items-center gap-3">
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: chapterColor }} />
-        <div className="flex-1 min-w-0 flex items-baseline gap-2">
+        {foldable ? (
+          <ChevronRight className={`w-3.5 h-3.5 -mx-0.5 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
+            style={{ color: chapterColor }} />
+        ) : (
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: chapterColor }} />
+        )}
+        <div className={`flex-1 min-w-0 flex items-baseline gap-2 ${foldable ? 'cursor-pointer select-none' : ''}`}
+          onClick={foldable ? () => setOpen((o) => !o) : undefined}
+          title={foldable ? (open ? 'Replier la liste des produits' : 'Déplier la liste des produits') : undefined}>
           <span className={`truncate ${st.text}`} style={{ color: chapterColor }}>{node.label}</span>
           <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold tabular-nums text-[#fff]"
             style={{ background: chapterColor }}>
@@ -62,7 +78,7 @@ export function PlanSectionRow({ node, section, products, chapterColor, onDensit
         )}
       </div>
 
-      {products.length > 0 && (
+      {foldable && open && (
         <div className="flex flex-col max-h-28 overflow-y-auto pl-5">
           {products.map((f) => {
             const active = section.featuredIds.includes(f.id)
