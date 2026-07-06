@@ -1,6 +1,9 @@
 // src/features/catalog/components/steps/SectionsCard.tsx
 // Carte « Sections » de l'étape Prompt : densité par défaut (toutes sections),
 // toggle taille ∝ prix, puis une ligne par nœud de l'arbre (PlanSectionRow).
+// ACCORDÉON à tous les niveaux : replier un nœud masque ses sous-lignes et sa
+// liste de produits — tout replié par défaut, sauf la chaîne des vedettes ★.
+import { useState } from 'react'
 import { LayoutGrid } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { extractPromoFields } from '@/features/retail-promo/promoMapping'
@@ -24,6 +27,31 @@ interface SectionsCardProps {
 
 export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap, previewId, onPreview }: SectionsCardProps) {
   const setPlan = useCatalogStore((s) => s.setPlan)
+  // Nœuds DÉPLIÉS (ids hiérarchiques « univers/famille/sous-famille ») : tout
+  // replié par défaut, sauf la chaîne des sections à vedette ★ ou du produit
+  // prévisualisé (état INITIAL seulement — le pli reste ensuite manuel).
+  const [openIds, setOpenIds] = useState<Set<string>>(() => {
+    const open = new Set<string>()
+    const anchored = new Set(plan.sections.filter((s) => s.featuredIds.length > 0).map((s) => s.nodeId))
+    for (const n of flatNodes) {
+      if (!anchored.has(n.id) && !(previewId != null && n.productIds.includes(previewId))) continue
+      const parts = n.id.split('/')
+      for (let i = 1; i <= parts.length; i++) open.add(parts.slice(0, i).join('/'))
+    }
+    return open
+  })
+  const toggleOpen = (id: string) => setOpenIds((prev) => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    return next
+  })
+  // Une ligne n'est visible que si TOUS ses ancêtres sont dépliés.
+  const isVisible = (id: string) => {
+    const parts = id.split('/')
+    for (let i = 1; i < parts.length; i++) if (!openIds.has(parts.slice(0, i).join('/'))) return false
+    return true
+  }
   const setSectionDensity = useCatalogStore((s) => s.setSectionDensity)
   const setAllSectionsDensity = useCatalogStore((s) => s.setAllSectionsDensity)
   const toggleFeatured = useCatalogStore((s) => s.toggleFeatured)
@@ -78,23 +106,29 @@ export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap, pre
             génération du plan doit rester configurable — repli section par défaut.
             Filtre sur le SOUS-ARBRE : un univers sans produit direct garde sa ligne
             (c'est elle qui porte le sélecteur de densité). */}
-        {flatNodes.filter((node) => subtreeProductCount(node) > 0).map((node) => {
-          const section: CatalogSectionPlan = plan.sections.find((s) => s.nodeId === node.id)
-            ?? { nodeId: node.id, productsPerPage: 4, randomDensity: false, featuredIds: [] }
-          const products = node.productIds.map((id) => {
-            const row = rowsById.get(id)
-            const f = row ? extractPromoFields(row, columns, fieldMap) : null
-            return { id, name: f?.name ?? id, ref: f?.ref ?? '' }
+        {(() => {
+          const nodes = flatNodes.filter((node) => subtreeProductCount(node) > 0)
+          const hasChildrenOf = (id: string) => nodes.some((n) => n.id.startsWith(`${id}/`))
+          return nodes.filter((node) => isVisible(node.id)).map((node) => {
+            const section: CatalogSectionPlan = plan.sections.find((s) => s.nodeId === node.id)
+              ?? { nodeId: node.id, productsPerPage: 4, randomDensity: false, featuredIds: [] }
+            const products = node.productIds.map((id) => {
+              const row = rowsById.get(id)
+              const f = row ? extractPromoFields(row, columns, fieldMap) : null
+              return { id, name: f?.name ?? id, ref: f?.ref ?? '' }
+            })
+            return (
+              <PlanSectionRow key={node.id} node={node} section={section} products={products}
+                chapterColor={chapterOf(node)}
+                onDensity={(d) => setSectionDensity(node.id, d)}
+                onToggleFeatured={(rowId) => toggleFeatured(node.id, rowId)}
+                onColor={node.level === 1 ? (c) => setSectionColor(node.id, c) : undefined}
+                previewId={previewId} onPreview={onPreview}
+                open={openIds.has(node.id)} onToggle={() => toggleOpen(node.id)}
+                hasChildren={hasChildrenOf(node.id)} />
+            )
           })
-          return (
-            <PlanSectionRow key={node.id} node={node} section={section} products={products}
-              chapterColor={chapterOf(node)}
-              onDensity={(d) => setSectionDensity(node.id, d)}
-              onToggleFeatured={(rowId) => toggleFeatured(node.id, rowId)}
-              onColor={node.level === 1 ? (c) => setSectionColor(node.id, c) : undefined}
-              previewId={previewId} onPreview={onPreview} />
-          )
-        })}
+        })()}
       </div>
     </section>
   )
