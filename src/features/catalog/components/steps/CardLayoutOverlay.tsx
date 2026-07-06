@@ -24,13 +24,19 @@ interface Props {
   onChange: (id: CardObjectId, box: CardBox) => void
   /** Notifie l'objet sélectionné (clic/drag) — pour mettre en évidence le curseur correspondant côté panneau. */
   onSelect?: (id: CardObjectId | null) => void
+  /** Sélection contrôlée par le parent : passer null DÉSÉLECTIONNE (clic hors aperçu, ✕ du panneau). */
+  selected?: CardObjectId | null
 }
 
-export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSelect }: Props) {
+export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSelect, selected }: Props) {
   const boxOf = (id: CardObjectId) => freeLayoutBox(id, style, wide)
   const [sel, setSel] = useState<CardObjectId | null>(null)
   // Mode LIAISON : le prochain clic sur un autre bloc le désigne comme CIBLE du bloc sélectionné.
   const [linking, setLinking] = useState(false)
+  // Désélection PILOTÉE par le parent (clic hors aperçu, ✕ du panneau).
+  useLayoutEffect(() => {
+    if (selected === null) { setSel(null); setLinking(false) }
+  }, [selected])
   const [tick, setTick] = useState(0) // incrémenté après drag/resize → force le recalcul des rects (dépendance du useMemo ci-dessous)
   useLayoutEffect(() => { setTick((t) => t + 1) }, [style])
   // Changement de VUE (verticale ↔ pleine largeur) : tout se replace → on
@@ -149,14 +155,18 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
   }
 
-  // RELATIONS entre blocs : chaque liaison est dessinée enfant ● ─→ parent
-  // (flèche vers la CIBLE suivie) — on voit qui est le parent de qui.
+  // RELATIONS entre blocs — LISIBLES : pas de fil qui traverse la fiche, mais
+  // des ÉTIQUETTES appariées par COULEUR (une couleur par parent) : l'enfant
+  // porte « → suit X », le parent porte « Parent ».
   const links = CARD_OBJECT_IDS.flatMap((id) => {
     const b = boxOf(id)
     const from = rects[id]
     const to = b.link ? rects[b.link] : null
     return b.link && from && to ? [{ id, target: b.link, from, to }] : []
   })
+  const LINK_COLORS = ['#6366f1', '#06b6d4', '#f59e0b', '#ec4899', '#22c55e']
+  const parentColor = new Map<CardObjectId, string>()
+  for (const l of links) if (!parentColor.has(l.target)) parentColor.set(l.target, LINK_COLORS[parentColor.size % LINK_COLORS.length])
 
   const selRect = sel ? rects[sel] : null
   // Aimantation PAR BLOC : bouton 🧲 sur le bloc texte sélectionné (chaîne de flux).
@@ -168,35 +178,38 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
   }
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 20 }}>
-      {/* Fils de LIAISON enfant ● ─→ parent (flèche sur la cible suivie). */}
-      {links.length > 0 && (
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 21, overflow: 'visible' }}>
-          <defs>
-            <marker id="cat-link-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-              <path d="M0,0 L7,3.5 L0,7 Z" fill="#6366f1" />
-            </marker>
-          </defs>
-          {links.map(({ id, from, to }) => {
-            const x1 = from.left, y1 = from.top + from.height / 2
-            const x2 = to.left + to.width, y2 = to.top + to.height / 2
-            return (
-              <g key={id}>
-                <line x1={`${x1}%`} y1={`${y1}%`} x2={`${x2}%`} y2={`${y2}%`}
-                  stroke="#6366f1" strokeWidth={1.5} strokeDasharray="4 3" markerEnd="url(#cat-link-arrow)" />
-                <circle cx={`${x1}%`} cy={`${y1}%`} r={3} fill="#fff" stroke="#6366f1" strokeWidth={1.5} />
-              </g>
-            )
-          })}
-        </svg>
-      )}
+      {/* ÉTIQUETTES de relation appariées par couleur (aucun trait sur la fiche) :
+          « → suit X » sur l'enfant · « Parent » sur la cible, même teinte. */}
+      {links.map(({ id, target, from }) => (
+        <span key={`lnk-${id}`} style={{ position: 'absolute', left: `${from.left}%`, top: `${from.top}%`,
+          transform: 'translateY(-55%)', zIndex: 23, pointerEvents: 'none', whiteSpace: 'nowrap',
+          padding: '1px 7px', borderRadius: 999, fontSize: 9, fontWeight: 800, letterSpacing: .2,
+          background: parentColor.get(target), color: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.35)' }}>
+          → suit {OBJ_LABEL[target]}
+        </span>
+      ))}
+      {[...parentColor.entries()].map(([pid, color]) => {
+        const r = rects[pid]
+        return r ? (
+          <span key={`par-${pid}`} style={{ position: 'absolute', left: `${r.left + r.width}%`, top: `${r.top}%`,
+            transform: 'translate(-100%, -55%)', zIndex: 23, pointerEvents: 'none', whiteSpace: 'nowrap',
+            padding: '1px 7px', borderRadius: 999, fontSize: 9, fontWeight: 800, letterSpacing: .2,
+            background: color, color: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.35)' }}>
+            ◉ Parent · {OBJ_LABEL[pid]}
+          </span>
+        ) : null
+      })}
       {CARD_OBJECT_IDS.map((id) => {
         const r = rects[id]
         if (!r) return null
         const link = boxOf(id).link
+        // Bloc d'une relation (enfant OU parent) : contour teinté de SA couleur.
+        const relColor = link ? parentColor.get(link) : parentColor.get(id)
         return (
           <div key={id} onPointerDown={(e) => startDrag(e, id)}
             title={link ? `${OBJ_LABEL[id]} — lié à « ${OBJ_LABEL[link]} » (parent)` : OBJ_LABEL[id]}
-            style={{ position: 'absolute', left: `${r.left}%`, top: `${r.top}%`, width: `${r.width}%`, height: `${r.height}%`, cursor: 'move', outline: sel === id ? '2px solid #6366f1' : '1px dashed rgba(99,102,241,.4)' }} />
+            style={{ position: 'absolute', left: `${r.left}%`, top: `${r.top}%`, width: `${r.width}%`, height: `${r.height}%`, cursor: 'move',
+              outline: sel === id ? '2px solid #6366f1' : relColor ? `2px dashed ${relColor}` : '1px dashed rgba(99,102,241,.4)' }} />
         )
       })}
       {sel && selRect && (
