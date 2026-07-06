@@ -313,6 +313,17 @@ export interface TreeEdits {
 }
 
 /** Document Firestore users/{uid}/catalogs/{id}. Les lignes ne sont PAS persistées (rechargées via sourceRef). */
+/** Charte graphique EXTRAITE des éléments joints (PDF/logo/visuels) — données
+ *  seules, jamais de binaire (Firestore ≤ 1 MiB/doc). Alimente le thème ET le
+ *  prompt du plan IA (moteur créatif). */
+export interface CatalogCharte {
+  files: string[]
+  colors: string[]
+  fonts: string[]
+  /** Consignes libres de pilotage créa (graphique + structure). */
+  notes: string
+}
+
 export interface CatalogDoc {
   id: string
   name: string
@@ -335,4 +346,6 @@ export interface CatalogDoc {
   /** Corrections produit propres à CE catalogue (édition double-clic, sauvegarde
    *  « publication ») : rowId → { colonne → valeur }. Absent sur les anciens docs. */
   rowOverrides?: Record<string, Record<string, string>>
+  /** Charte extraite des éléments joints — absent sur les anciens docs. */
+  charte?: CatalogCharte | null
 }

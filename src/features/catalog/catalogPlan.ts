@@ -4,7 +4,7 @@
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
 import { FONT_OPTIONS } from '@/features/retail-promo/RetailPromoCard'
-import { CARD_OBJECT_IDS, CATALOG_GRIDS, DEFAULT_CARD_STYLE, type CardBox, type CardObjectId, type CatalogCardStyle, type CatalogGrid, type CatalogPlan, type CatalogSectionPlan, type CatalogTreeNode } from './catalogTypes'
+import { CARD_OBJECT_IDS, CATALOG_GRIDS, DEFAULT_CARD_STYLE, type CardBox, type CardObjectId, type CatalogCardStyle, type CatalogGrid, type CatalogCharte, type CatalogPlan, type CatalogSectionPlan, type CatalogTreeNode } from './catalogTypes'
 import { flattenTree, subtreeProductCount } from './catalogTree'
 
 const ThemeSchema = z.object({
@@ -270,6 +270,8 @@ export interface CatalogPlanContext {
   tree: CatalogTreeNode[]
   /** nodeId → jusqu'à 3 « id — nom produit » (pour le choix des vedettes). */
   sampleNames: Record<string, string[]>
+  /** Charte extraite des éléments joints (palette/typos/consignes) — PRIME sur le brief pour le graphique. */
+  charte?: CatalogCharte | null
 }
 
 /** Appelle l'IA (cascade + retry Zod gérés par llmRouter). L'appelant gère le repli defaultCatalogPlan. */
@@ -305,6 +307,14 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
       `Tu conçois l'identité graphique d'un CATALOGUE PRODUIT professionnel multi-page (style prospectus/catalogue retail, lumineux, lisible — jamais sombre/cinématique).\n` +
       `Nom du catalogue : « ${ctx.catalogName} ».\n` +
       `Structure (nodeId entre crochets — à réutiliser tel quel) :\n${treeDesc}\n\n` +
+      // CHARTE (moteur créatif) : extraite des éléments JOINTS par l'utilisateur —
+      // elle PRIME sur les goûts du modèle pour les couleurs/typos du thème.
+      (ctx.charte && (ctx.charte.colors.length || ctx.charte.fonts.length || ctx.charte.notes)
+        ? `CHARTE GRAPHIQUE DE LA MARQUE (extraite des éléments joints — À RESPECTER en PRIORITÉ pour theme et cardStyle) :\n` +
+          (ctx.charte.colors.length ? `- Palette imposée : ${ctx.charte.colors.join(', ')} (répartis-la : accent, bandeaux, badges — reste DANS ces teintes ou leurs nuances proches).\n` : '') +
+          (ctx.charte.fonts.length ? `- Typographies de la marque : ${ctx.charte.fonts.join(', ')} (choisis les polices du thème PARMI ${FONT_OPTIONS.join(', ')} en te rapprochant LE PLUS de ces familles).\n` : '') +
+          (ctx.charte.notes ? `- Consignes créa (graphique & structure) : ${ctx.charte.notes}\n` : '') + '\n'
+        : '') +
       `${consigne}\n\nDemande : ${brief}`,
     schema: PlanSchema,
     schemaForLLM: SCHEMA_FOR_LLM,

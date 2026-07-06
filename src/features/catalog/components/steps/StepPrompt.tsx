@@ -17,6 +17,7 @@ import { DEFAULT_CARD_STYLE, type CardBox, type CardObjectId } from '../../catal
 import { CardStyleCard } from './CardStyleCard'
 import { CardStylePreview } from './CardStylePreview'
 import { PreviewTextToolbar } from './PreviewTextToolbar'
+import { CharteCard } from './CharteCard'
 import { usePreviewPan } from '../../usePreviewPan'
 import { SectionsCard } from './SectionsCard'
 import { StepActionsPortal } from './StepActionsPortal'
@@ -25,6 +26,7 @@ export function StepPrompt() {
   const name = useCatalogStore((s) => s.name)
   const prompt = useCatalogStore((s) => s.prompt)
   const plan = useCatalogStore((s) => s.plan)
+  const charte = useCatalogStore((s) => s.charte)
   const rawRows = useCatalogStore((s) => s.rawRows)
   const rowOverrides = useCatalogStore((s) => s.rowOverrides)
   const rawColumns = useCatalogStore((s) => s.rawColumns)
@@ -94,7 +96,7 @@ export function StepPrompt() {
       // `plan` courant transmis : régénérer PRÉSERVE les réglages manuels (style
       // des fiches, fonds de page, couleurs de chapitres) — l'IA n'écrase que ce
       // qu'elle renvoie explicitement.
-      setPlan(await generateCatalogPlan(prompt, { catalogName: name, tree, sampleNames }, plan))
+      setPlan(await generateCatalogPlan(prompt, { catalogName: name, tree, sampleNames, charte }, plan))
       toast.success('Plan généré — ajustez-le librement ci-dessous')
     } catch (e) {
       setPlan(defaultCatalogPlan(tree, name))
@@ -194,6 +196,9 @@ export function StepPrompt() {
                 </p>
               )}
             </section>
+            {/* Moteur créatif : éléments joints (charte PDF, logo, visuels) → palette
+                + typos extraites, consignes libres — le tout pilote le plan IA. */}
+            <CharteCard />
             {plan ? (
               <SectionsCard plan={plan} flatNodes={flatNodes} rowsById={rowsById} columns={rawColumns} fieldMap={fieldMap}
                 previewId={previewRowId} onPreview={setPreviewRowId} />

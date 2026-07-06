@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey, CustomFieldMap } from '@/features/retail-promo/promoTypes'
 import { defaultPromoFieldMap } from '@/features/retail-promo/promoMapping'
-import type { CatalogDensity, CatalogDoc, CatalogFormat, CatalogPlan, LevelKeys, TreeEdits } from '@/features/catalog/catalogTypes'
+import type { CatalogCharte, CatalogDensity, CatalogDoc, CatalogFormat, CatalogPlan, LevelKeys, TreeEdits } from '@/features/catalog/catalogTypes'
 import { CATALOG_FORMAT_PRESETS, DEFAULT_CARD_STYLE } from '@/features/catalog/catalogTypes'
 import { normalizeCardLinks } from '@/features/catalog/components/pages/freeLayout'
 import { EMPTY_TREE_EDITS } from '@/features/catalog/catalogTree'
@@ -36,6 +36,8 @@ interface CatalogState {
   treeEdits: TreeEdits
   prompt: string
   plan: CatalogPlan | null
+  /** Charte extraite des éléments joints (palette/typos/consignes) — moteur créatif. */
+  charte: CatalogCharte | null
   fieldMap: Partial<Record<PromoFieldKey, string>>
   fieldMapOverrides: Partial<Record<PromoFieldKey, string>>
   customFields: CustomFieldMap
@@ -59,6 +61,7 @@ interface CatalogState {
   setTreeEdits: (patch: Partial<TreeEdits>) => void
   setPrompt: (prompt: string) => void
   setPlan: (plan: CatalogPlan | null) => void
+  setCharte: (charte: CatalogCharte | null) => void
   setSectionDensity: (nodeId: string, density: CatalogDensity) => void
   /**
    * Densité par défaut : applique la valeur à TOUTES les sections d'un coup.
@@ -98,6 +101,7 @@ const defaultState = {
   treeEdits: EMPTY_TREE_EDITS,
   prompt: '',
   plan: null as CatalogPlan | null,
+  charte: null as CatalogCharte | null,
   fieldMap: {} as Partial<Record<PromoFieldKey, string>>,
   fieldMapOverrides: {} as Partial<Record<PromoFieldKey, string>>,
   customFields: [] as CustomFieldMap,
@@ -138,7 +142,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     catalogId: id, name: doc.name, step: 'source', sourceRef: doc.sourceRef, selectedRowIds: doc.selectedRowIds,
     // Les docs EXISTANTS passent aussi par la purge des cycles de liaison
     // (un cycle persisté avant le garde-fou survivrait sinon à chaque session).
-    levelKeys: doc.levelKeys, treeEdits: doc.treeEdits, prompt: doc.prompt, plan: withNormalizedLinks(doc.plan),
+    levelKeys: doc.levelKeys, treeEdits: doc.treeEdits, prompt: doc.prompt, plan: withNormalizedLinks(doc.plan), charte: doc.charte ?? null,
     fieldMap: doc.fieldMap, fieldMapOverrides: doc.fieldMapOverrides, customFields: doc.customFields,
     format: doc.format, coverImageUrl: doc.coverImageUrl, backCoverImageUrl: doc.backCoverImageUrl,
     pageOrder: doc.pageOrder, rowOverrides: doc.rowOverrides ?? {}, previewIndex: null,
@@ -153,7 +157,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
       levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
       fieldMap: s.fieldMap, fieldMapOverrides: s.fieldMapOverrides, customFields: s.customFields,
       format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
-      pageOrder: s.pageOrder, rowOverrides: s.rowOverrides,
+      pageOrder: s.pageOrder, rowOverrides: s.rowOverrides, charte: s.charte,
     }
   },
   setStep: (step) => set({ step }),
@@ -164,6 +168,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   setTreeEdits: (patch) => set((s) => ({ treeEdits: { ...s.treeEdits, ...patch } })),
   setPrompt: (prompt) => set({ prompt }),
   setPlan: (plan) => set({ plan: withNormalizedLinks(plan) }),
+  setCharte: (charte) => set({ charte }),
   setSectionDensity: (nodeId, density) => set((s) => {
     if (!s.plan) return {}
     const sections = upsertSection(s.plan.sections, nodeId).map((x) => x.nodeId === nodeId
@@ -235,6 +240,6 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
     fieldMap: s.fieldMap, fieldMapOverrides: s.fieldMapOverrides, customFields: s.customFields,
     format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
-    pageOrder: s.pageOrder, rowOverrides: s.rowOverrides,
+    pageOrder: s.pageOrder, rowOverrides: s.rowOverrides, charte: s.charte,
   }),
 }))
