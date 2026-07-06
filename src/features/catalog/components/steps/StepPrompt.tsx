@@ -3,7 +3,7 @@
 // puis cartes Style des fiches et Sections. Thème, couvertures et fonds de
 // page s'éditent dans l'Aperçu (panneau « Fond de page », PageOptionsPanel).
 // L'IA ne bloque jamais : échec → repli sur defaultCatalogPlan + toast explicite.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2, ArrowRight, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
@@ -16,6 +16,7 @@ import { extractPromoFields, buildDetailLines } from '@/features/retail-promo/pr
 import { DEFAULT_CARD_STYLE, type CardBox, type CardObjectId } from '../../catalogTypes'
 import { CardStyleCard } from './CardStyleCard'
 import { CardStylePreview } from './CardStylePreview'
+import { PreviewTextToolbar } from './PreviewTextToolbar'
 import { SectionsCard } from './SectionsCard'
 import { StepActionsPortal } from './StepActionsPortal'
 
@@ -128,6 +129,21 @@ export function StepPrompt() {
   const [previewVariant, setPreviewVariant] = useState<'auto' | 'vertical' | 'wide'>('auto')
   // Zoom UTILISATEUR de l'aperçu (%) — 100 = ajusté à la colonne ; clic sur le % = reset.
   const [previewZoom, setPreviewZoom] = useState(100)
+  // ⌘/Ctrl + molette OU pincement trackpad (wheel avec ctrlKey) = zoom fluide.
+  // Listener NATIF passive:false — React attache wheel en passif, preventDefault
+  // y serait ignoré et la page défilerait en même temps.
+  const zoomAreaRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const el = zoomAreaRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      setPreviewZoom((z) => Math.min(200, Math.max(50, Math.round(z * Math.exp(-e.deltaY / 300)))))
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [plan != null])
   const baseIsWide = isWideCard(cell.w, cell.h)
   const previewWide = previewVariant === 'auto' ? baseIsWide : previewVariant === 'wide'
   // Forme de la carte d'aperçu : la cellule réelle si elle correspond à la
@@ -183,12 +199,15 @@ export function StepPrompt() {
 
           {/* Colonne droite du centre : APERÇU grand (le résultat), collé en haut */}
           {plan && (
-            <div className="lg:sticky lg:top-0 w-full min-w-0">
+            <div ref={zoomAreaRef} className="lg:sticky lg:top-0 w-full min-w-0">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Aperçu de la fiche</span>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {/* Gestion de PARAGRAPHE du bloc sélectionné (gras/italique/souligné + alignement). */}
+                  <PreviewTextToolbar obj={selectedObject} style={cardStyle}
+                    patch={(p) => setPlan({ ...plan, cardStyle: { ...cardStyle, ...p } })} />
                   {/* Zoom de l'aperçu : relatif à l'ajustement auto — clic sur le % = 100. */}
-                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground" title="Zoom de l'aperçu (100 % = ajusté à la colonne)">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground" title="Zoom de l'aperçu (100 % = ajusté à la colonne · ⌘/Ctrl + molette ou pincement trackpad)">
                     <span aria-hidden>🔍</span>
                     <input type="range" min={50} max={200} step={5} value={previewZoom}
                       onChange={(e) => setPreviewZoom(Number(e.target.value))} className="w-24 accent-indigo-600" />

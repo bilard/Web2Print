@@ -80,6 +80,10 @@ export const CARD_OBJECT_IDS: CardObjectId[] = [
 /** `r` = ROTATION du bloc (°) — appliquée au conteneur (contenu compris), par variante. */
 export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; r?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b'; link?: CardObjectId | null; lx?: number; ly?: number }
 
+/** Style de PARAGRAPHE d'un bloc (barre du header de l'aperçu) : gras/italique/
+ *  souligné FORCÉS (absent = défaut du template) + alignement du texte. */
+export interface CardTextStyle { align?: 'l' | 'c' | 'r' | 'j'; bold?: boolean; italic?: boolean; underline?: boolean }
+
 /**
  * Style COSMÉTIQUE des fiches : réglages bornés appliqués en variables CSS
  * par-dessus le template fluide (qui reste intouchable — packing, variantes
@@ -181,6 +185,8 @@ export interface CatalogCardStyle {
   showWas: boolean
   /** Ids des champs libres MASQUÉS dans la zone « Détails » (ex. TVA) — optionnel (styles persistés anciens). */
   hiddenDetails?: string[]
+  /** Paragraphe PAR BLOC (gras/italique/souligné/alignement) — optionnel (styles persistés anciens). */
+  textStyle?: Partial<Record<CardObjectId, CardTextStyle>>
   /** Flux AIMANTÉ : les blocs texte se collent/poussent selon leur volumétrie — jamais de superposition ni de trou. Décoché = placement 100 % manuel. */
   magnetFlow: boolean
   /** Boîtes en % par objet (disposition libre — LE mode de rendu) ; absent = position de repli. */
@@ -201,7 +207,7 @@ export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   gradientAngle: 135,
   radius: 6, imageShare: 40, imagePad: 12,
   showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true, showVedette: true, showDetails: true,
-  showImage: true, showBrand: true, showName: true, showPrice: true, showWas: true, hiddenDetails: [],
+  showImage: true, showBrand: true, showName: true, showPrice: true, showWas: true, hiddenDetails: [], textStyle: {},
   magnetFlow: true, layout: {}, layoutWide: {},
 }
 

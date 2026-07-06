@@ -224,6 +224,17 @@ export const CATALOG_CSS = `
 .cat-free .cat-cell-img-in { position:static; top:auto; left:auto; right:auto; bottom:auto; width:100%; height:100%; }
 .cat-free .cat-obj[data-object-id="image"] { background:linear-gradient(180deg,#fafbfc 0%,#eef1f4 100%); }
 .cat-free .cat-cell-body { display:contents; }
+/* Paragraphe PAR BLOC (barre du header de l'aperçu) — data-attrs posés par
+   ProductCell : alignement (le contenu devient bloc pour que text-align porte)
+   + gras/italique/souligné FORCÉS par-dessus les défauts du template. */
+.cat-free .cat-obj[data-ta] > * { display:block; width:100%; }
+.cat-free .cat-obj[data-ta="l"] { text-align:left; }
+.cat-free .cat-obj[data-ta="c"] { text-align:center; }
+.cat-free .cat-obj[data-ta="r"] { text-align:right; }
+.cat-free .cat-obj[data-ta="j"] { text-align:justify; }
+.cat-free .cat-obj[data-b], .cat-free .cat-obj[data-b] * { font-weight:700 !important; }
+.cat-free .cat-obj[data-i], .cat-free .cat-obj[data-i] * { font-style:italic !important; }
+.cat-free .cat-obj[data-u] > * { text-decoration:underline; }
 
 .cat-cell-img { position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
   background:linear-gradient(180deg,#fafbfc 0%,#eef1f4 100%); padding:12px; }

@@ -89,8 +89,12 @@ export function ProductCell({ fields: f, featured, kicker, details, cardStyle, s
     // ROTATION du bloc (contenu compris) : autour du CENTRE (naturel à l'œil) —
     // sauf bloc mis à l'échelle, dont l'origine doit rester le coin (existant).
     if (b.r) tf.push(`rotate(${b.r}deg)`)
+    // Paragraphe PAR BLOC (barre du header de l'aperçu) : data-attrs lus par le
+    // CSS partagé — même rendu aperçu / pages / export.
+    const ts = cs.textStyle?.[id]
     return (
       <div className="cat-obj" data-object-id={id}
+        data-ta={ts?.align} data-b={ts?.bold ? '' : undefined} data-i={ts?.italic ? '' : undefined} data-u={ts?.underline ? '' : undefined}
         style={{ ...posH, ...posV, ...(b.w != null ? { width: `${b.w}%` } : {}), ...(fixedH ? { height: `${b.h}%`, overflow: 'hidden' } : {}),
           // Contenu aligné sur le bord d'ancrage (le badge prix colle à droite, pas au bord gauche de sa boîte).
           ...(ax !== 'l' ? { display: 'flex', justifyContent: ax === 'r' ? 'flex-end' : 'center' } : {}),
