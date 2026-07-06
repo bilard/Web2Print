@@ -108,12 +108,22 @@ function clipToLines(el: HTMLElement, maxH: number): number {
       if (scale > 0) {
         const rects = [...rg.getClientRects()].filter((r) => r.height >= 3)
         if (rects.length) {
+          // Garde la DERNIÈRE ligne dont le TEXTE tient (le padding bas peut être
+          // rogné : exiger bottom+padB coûtait une ligne entière quand ça se
+          // jouait à quelques px), puis PLAFONNE au haut de la ligne suivante —
+          // sans quoi le padding restitué laissait dépasser une DEMI-ligne
+          // (« TVA (%… » coupée en deux sur les petites cartes).
           let best = 0
           for (const r of rects) {
             const bottom = (r.bottom - ref.top) / scale
-            if (bottom + padB <= maxH) best = Math.max(best, bottom)
+            if (bottom <= maxH) best = Math.max(best, bottom)
           }
-          hEff = best > 0 ? Math.round(best + padB) : 0
+          let next = Infinity
+          for (const r of rects) {
+            const top = (r.top - ref.top) / scale
+            if (top >= best - 0.5) next = Math.min(next, top)
+          }
+          hEff = best > 0 ? Math.max(0, Math.floor(Math.min(best + padB, next))) : 0
         }
       }
     } catch { /* environnement sans Range.getClientRects (tests) : coupe brute */ }
@@ -330,12 +340,17 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
       if (hEff > maxH) {
         // CONDENSER d'abord la typo du pavé (paliers jusqu'à −25 %) : le texte est
         // moins haut ET wrappe moins — le contenu complet retrouve souvent sa place.
-        // La COUPE à la ligne n'intervient qu'en dernier recours.
+        // La COUPE à la ligne n'intervient qu'en dernier recours. Le pavé DÉTAILS
+        // porte des DONNÉES (TVA, entretien…) : il descend plus bas (−45 %) plutôt
+        // que de PERDRE des lignes — la description (prose) garde le palier −25 %.
+        const ladder = it.id === 'details'
+          ? [0.92, 0.85, 0.78, 0.75, 0.7, 0.65, 0.6, 0.55]
+          : [0.92, 0.85, 0.78, 0.75]
         const inner = it.el.firstElementChild
         if (inner instanceof HTMLElement) {
           const fs0 = parseFloat(getComputedStyle(inner).fontSize)
           if (Number.isFinite(fs0) && fs0 > 0) {
-            for (const k of [0.92, 0.85, 0.78, 0.75]) {
+            for (const k of ladder) {
               inner.style.fontSize = `${Math.round(fs0 * k * 10) / 10}px`
               if (it.el.offsetHeight <= maxH) break
             }

@@ -171,6 +171,22 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
   const selRect = sel ? rects[sel] : null
   // Aimantation PAR BLOC : bouton 🧲 sur le bloc texte sélectionné (chaîne de flux).
   const selMagnet = sel && FLOW_CHAIN.includes(sel) ? isMagnetized(boxOf(sel), style) : null
+  // PARENT D'AIMANT du bloc sélectionné : le bloc de flux directement AU-DESSUS
+  // (chevauchement horizontal, bord bas le plus proche) — révélé à la sélection
+  // pour qu'on voie qui colle sous qui, même sans liaison explicite.
+  const magnetParent = (() => {
+    if (!sel || !selRect || !selMagnet) return null
+    let best: { id: CardObjectId; bottom: number } | null = null
+    for (const id of FLOW_CHAIN) {
+      if (id === sel) continue
+      const r = rects[id]
+      if (!r) continue
+      const bottom = r.top + r.height
+      const overlapH = r.left < selRect.left + selRect.width && selRect.left < r.left + r.width
+      if (overlapH && bottom <= selRect.top + 1 && (!best || bottom > best.bottom)) best = { id, bottom }
+    }
+    return best?.id ?? null
+  })()
   const toggleMagnet = () => {
     if (!sel) return
     const b = boxOf(sel)
@@ -188,6 +204,15 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
           → suit {OBJ_LABEL[target]}
         </span>
       ))}
+      {/* Parent d'AIMANT du bloc sélectionné : étiquette sur le bloc du dessus. */}
+      {magnetParent && rects[magnetParent] && (
+        <span style={{ position: 'absolute', left: `${rects[magnetParent]!.left}%`, top: `${rects[magnetParent]!.top}%`,
+          transform: 'translateY(-55%)', zIndex: 23, pointerEvents: 'none', whiteSpace: 'nowrap',
+          padding: '1px 7px', borderRadius: 999, fontSize: 9, fontWeight: 800, letterSpacing: .2,
+          background: '#6366f1', color: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.35)' }}>
+          🧲 Aimanté sous · {OBJ_LABEL[magnetParent]}
+        </span>
+      )}
       {[...parentColor.entries()].map(([pid, color]) => {
         const r = rects[pid]
         return r ? (
@@ -209,7 +234,9 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
           <div key={id} onPointerDown={(e) => startDrag(e, id)}
             title={link ? `${OBJ_LABEL[id]} — lié à « ${OBJ_LABEL[link]} » (parent)` : OBJ_LABEL[id]}
             style={{ position: 'absolute', left: `${r.left}%`, top: `${r.top}%`, width: `${r.width}%`, height: `${r.height}%`, cursor: 'move',
-              outline: sel === id ? '2px solid #6366f1' : relColor ? `2px dashed ${relColor}` : '1px dashed rgba(99,102,241,.4)' }} />
+              outline: sel === id ? '2px solid #6366f1'
+                : id === magnetParent ? '2px solid rgba(99,102,241,.75)'
+                : relColor ? `2px dashed ${relColor}` : '1px dashed rgba(99,102,241,.4)' }} />
         )
       })}
       {sel && selRect && (
