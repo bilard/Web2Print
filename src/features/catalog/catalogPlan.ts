@@ -314,6 +314,12 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
     const bg = aiCardStyle[bgKey] || current?.cardStyle?.[bgKey] || fallbackBg
     if (aiCardStyle[ink] && contrast(aiCardStyle[ink]!, bg) < 0.18) delete aiCardStyle[ink]
   }
+  // Badges à fond CLAIR sans encre définie : leur texte par défaut est BLANC
+  // (invisible) → encre sombre posée automatiquement.
+  for (const [bgKey, inkKey] of [['stickerBg', 'stickerInk'], ['promoBg', 'promoInk'], ['priceBg', 'priceInk'], ['wasBg', 'wasInk'], ['kickerBg', 'kickerInk'], ['vedettePriceBg', 'vedettePriceInk']] as const) {
+    const bg = aiCardStyle[bgKey] || current?.cardStyle?.[bgKey]
+    if (bg && lumOf(bg) > 0.72 && !aiCardStyle[inkKey] && !current?.cardStyle?.[inkKey]) aiCardStyle[inkKey] = '#111111'
+  }
   const hasCardStyle = current?.cardStyle || Object.keys(aiCardStyle).length > 0
   return {
     // Clés omises par l'IA (modification ciblée) : on conserve le plan courant.
