@@ -134,6 +134,37 @@ function clipToLines(el: HTMLElement, maxH: number): number {
 }
 
 /**
+ * Quand la place manque : CONDENSER d'abord la typo du pavé (le texte est moins
+ * haut ET wrappe moins — le contenu complet retrouve souvent sa place), COUPER à
+ * la ligne en DERNIER recours. Le pavé DÉTAILS porte des DONNÉES (TVA,
+ * entretien…) : il descend plus bas (−45 %) plutôt que de PERDRE des lignes —
+ * la description (prose) garde le palier −25 %. Partagé par la passe verticale
+ * ET la seconde passe (pavés vs blocs liés) — cette dernière coupait DIRECT sans
+ * condenser : c'était la « TVA » disparue des petites cartes.
+ * `fs0` de référence mémorisé sur l'élément (dataset) : les passes successives
+ * repartent de la taille NON condensée, jamais d'une condensation précédente.
+ */
+function shrinkThenClip(el: HTMLElement, id: CardObjectId, maxH: number, hBefore: number): number {
+  const ladder = id === 'details'
+    ? [0.92, 0.85, 0.78, 0.75, 0.7, 0.65, 0.6, 0.55]
+    : [0.92, 0.85, 0.78, 0.75]
+  const inner = el.firstElementChild
+  if (inner instanceof HTMLElement) {
+    if (!inner.style.fontSize) inner.dataset.fs0 = String(parseFloat(getComputedStyle(inner).fontSize))
+    const fs0 = parseFloat(inner.dataset.fs0 ?? '') || parseFloat(getComputedStyle(inner).fontSize)
+    if (Number.isFinite(fs0) && fs0 > 0) {
+      for (const k of ladder) {
+        inner.style.fontSize = `${Math.round(fs0 * k * 10) / 10}px`
+        if (el.offsetHeight <= maxH) break
+      }
+      if (el.offsetHeight > maxH && el.offsetHeight === hBefore) inner.style.fontSize = '' // sans effet (tests) : ne pas laisser traîner
+    }
+  }
+  const h = el.offsetHeight
+  return h > maxH ? clipToLines(el, maxH) : h
+}
+
+/**
  * Applique l'aimantation sur une carte RENDUE (aperçu, pages du catalogue et
  * export partagent ce même calcul → résultat identique partout). Réinitialise
  * d'abord les `top` configurés (idempotent), puis cascade les poussées.
@@ -337,29 +368,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
         }
       }
       const maxH = ceil - top - reserve
-      if (hEff > maxH) {
-        // CONDENSER d'abord la typo du pavé (paliers jusqu'à −25 %) : le texte est
-        // moins haut ET wrappe moins — le contenu complet retrouve souvent sa place.
-        // La COUPE à la ligne n'intervient qu'en dernier recours. Le pavé DÉTAILS
-        // porte des DONNÉES (TVA, entretien…) : il descend plus bas (−45 %) plutôt
-        // que de PERDRE des lignes — la description (prose) garde le palier −25 %.
-        const ladder = it.id === 'details'
-          ? [0.92, 0.85, 0.78, 0.75, 0.7, 0.65, 0.6, 0.55]
-          : [0.92, 0.85, 0.78, 0.75]
-        const inner = it.el.firstElementChild
-        if (inner instanceof HTMLElement) {
-          const fs0 = parseFloat(getComputedStyle(inner).fontSize)
-          if (Number.isFinite(fs0) && fs0 > 0) {
-            for (const k of ladder) {
-              inner.style.fontSize = `${Math.round(fs0 * k * 10) / 10}px`
-              if (it.el.offsetHeight <= maxH) break
-            }
-            if (it.el.offsetHeight > maxH && it.el.offsetHeight === hEff) inner.style.fontSize = '' // sans effet (tests) : ne pas laisser traîner
-          }
-        }
-        hEff = it.el.offsetHeight
-        if (hEff > maxH) hEff = clipToLines(it.el, maxH)
-      }
+      if (hEff > maxH) hEff = shrinkThenClip(it.el, it.id, maxH, hEff)
     }
     placed.push({ x1, x2, bottom: top + hEff })
   }
@@ -422,7 +431,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
         ceil = Math.min(ceil, el.offsetTop - MAGNET_GAP)
       }
     }
-    if (ceil < top + curH) clipToLines(it.el, ceil - top)
+    if (ceil < top + curH) shrinkThenClip(it.el, it.id, ceil - top, curH)
   }
   // ── CLAMP : rien ne sort JAMAIS du bas de la carte. Un bloc désancré par le
   // drag (ex. prix posé en % sur la carte d'aperçu, plus haute que les cellules
