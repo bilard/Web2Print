@@ -44,6 +44,8 @@ interface Props {
   onSelect?: (id: CardObjectId | null) => void
   /** Objet sélectionné (contrôlé par le parent) — active la palette d'ancrage liquide. */
   selected?: CardObjectId | null
+  /** Zoom UTILISATEUR relatif à l'ajustement auto (1 = remplit la colonne). */
+  zoom?: number
 }
 
 /** Palette d'ANCRAGE LIQUIDE (façon InDesign) : colle le bloc sélectionné au bord
@@ -82,7 +84,7 @@ function AnchorPalette({ selected, style, wide, onLayoutChange }: {
   )
 }
 
-export function CardStylePreview({ theme, cardStyle, fields, details, cell, wide: wideProp, featuredVariant = true, editable, onLayoutChange, onSelect, selected }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, details, cell, wide: wideProp, featuredVariant = true, editable, onLayoutChange, onSelect, selected, zoom = 1 }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   const d = details && details.length ? details : SAMPLE_DETAILS
   const cardRef = useRef<HTMLDivElement | null>(null)
@@ -108,7 +110,9 @@ export function CardStylePreview({ theme, cardStyle, fields, details, cell, wide
   const paletteW = editable && onLayoutChange ? 40 : 0 // palette d'ancrage + gap
   const targetW = availW != null ? Math.max(480, availW - paletteW - 32) : 480
   const maxH = typeof window !== 'undefined' ? Math.max(480, window.innerHeight - 140) : Infinity
-  const K = Math.max(1, Math.round(Math.min(targetW / cell.w, maxH / cell.h) * 100) / 100)
+  // Zoom final = ajustement auto × zoom UTILISATEUR (curseur) — plancher 0,5.
+  const fitK = Math.max(1, Math.min(targetW / cell.w, maxH / cell.h))
+  const K = Math.max(0.5, Math.round(fitK * zoom * 100) / 100)
   const pageStyle = { ...themeVars(theme), ...cardStyleVars(cardStyle, theme), ['--cat-fit']: String(Math.round(cell.fit * 100) / 100), width: cell.w * K + 32, background: 'var(--cat-bg)' } as CSSProperties
   return (
     <div ref={wrapRef} className="flex items-start gap-2 w-full min-w-0">

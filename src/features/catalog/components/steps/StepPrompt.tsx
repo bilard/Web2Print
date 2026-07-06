@@ -126,6 +126,8 @@ export function StepPrompt() {
   // les deux dispositions coexistent dans un catalogue (cartes élargies, grilles
   // mixtes) et s'affinent chacune sur SA forme. Défaut : la forme dominante.
   const [previewVariant, setPreviewVariant] = useState<'auto' | 'vertical' | 'wide'>('auto')
+  // Zoom UTILISATEUR de l'aperçu (%) — 100 = ajusté à la colonne ; clic sur le % = reset.
+  const [previewZoom, setPreviewZoom] = useState(100)
   const baseIsWide = isWideCard(cell.w, cell.h)
   const previewWide = previewVariant === 'auto' ? baseIsWide : previewVariant === 'wide'
   // Forme de la carte d'aperçu : la cellule réelle si elle correspond à la
@@ -184,7 +186,15 @@ export function StepPrompt() {
             <div className="lg:sticky lg:top-0 w-full min-w-0">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Aperçu de la fiche</span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {/* Zoom de l'aperçu : relatif à l'ajustement auto — clic sur le % = 100. */}
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground" title="Zoom de l'aperçu (100 % = ajusté à la colonne)">
+                    <span aria-hidden>🔍</span>
+                    <input type="range" min={50} max={200} step={5} value={previewZoom}
+                      onChange={(e) => setPreviewZoom(Number(e.target.value))} className="w-24 accent-indigo-600" />
+                    <button type="button" onClick={() => setPreviewZoom(100)} title="Revenir à 100 %"
+                      className="w-10 text-right tabular-nums hover:text-white">{previewZoom}%</button>
+                  </div>
                   {/* Disposition éditée : chaque variante a SES positions (layout / layoutWide). */}
                   <div className="flex rounded-md overflow-hidden border border-border text-[11px]"
                     title="Chaque disposition s'affine séparément : verticale (cartes standard) · pleine largeur (2 colonnes)">
@@ -210,10 +220,13 @@ export function StepPrompt() {
                   </div>
                 </div>
               </div>
-              <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={previewCell}
-                wide={previewWide} featuredVariant={previewFeatured} selected={selectedObject}
-                editable onLayoutChange={patchLayout}
-                onSelect={setSelectedObject} />
+              {/* Zoom > 100 % : la carte déborde de la colonne → défilement horizontal local. */}
+              <div className={previewZoom > 100 ? 'overflow-x-auto pb-2' : undefined}>
+                <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={previewCell}
+                  wide={previewWide} featuredVariant={previewFeatured} selected={selectedObject}
+                  editable onLayoutChange={patchLayout}
+                  onSelect={setSelectedObject} zoom={previewZoom / 100} />
+              </div>
             </div>
           )}
         </div>
