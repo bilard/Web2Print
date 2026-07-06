@@ -49,6 +49,8 @@ const AnalysisSchema = z.object({
   coverArchetype: z.enum(['classic', 'panel', 'poster']).optional(),
   productLayout: z.enum(['liste', 'grille']).optional(),
   productsPerPage: z.number().optional(),
+  pageBg: z.string().optional(),
+  cardBg: z.string().optional(),
   cardShape: z.object({
     corner: z.enum(['square', 'rounded', 'bevel']).optional(),
     chip: z.enum(['notch', 'band', 'underline', 'plain']).optional(),
@@ -77,6 +79,8 @@ const ANALYSIS_SCHEMA_FOR_LLM: Record<string, unknown> = {
     },
     productLayout: { type: 'string', enum: ['liste', 'grille'], description: "Fiches produit : 'liste' = 1 colonne pleine largeur (image à gauche, textes à droite) · 'grille' = cartes en colonnes" },
     productsPerPage: { type: 'number', description: 'densité produits/page suggérée par le visuel (2-8)' },
+    pageBg: { type: 'string', description: 'hex du FOND DE PAGE (derrière les cartes) — ex. noir profond si le visuel est dark' },
+    cardBg: { type: 'string', description: 'hex du FOND DES CARTES produit — ex. jaune si les cartes sont jaunes sur page noire' },
     cardShape: { type: 'object', description: 'STRUCTURE graphique des cartes produit du visuel', properties: {
       corner: { type: 'string', enum: ['square', 'rounded', 'bevel'], description: 'coins des cartes (bevel = coin coupé en biseau)' },
       chip: { type: 'string', enum: ['notch', 'band', 'underline', 'plain'], description: 'forme des étiquettes/titres (notch = chip à encoche)' },
@@ -86,7 +90,7 @@ const ANALYSIS_SCHEMA_FOR_LLM: Record<string, unknown> = {
       shadow: { type: 'boolean', description: 'les cartes ont une ombre portée' },
     } },
   },
-  required: ['palette', 'designBrief', 'coverArchetype', 'productLayout', 'productsPerPage'],
+  required: ['palette', 'designBrief', 'coverArchetype', 'productLayout', 'productsPerPage', 'pageBg', 'cardBg'],
 }
 
 const HEX_RE = /^#[0-9a-f]{6}$/i
@@ -130,6 +134,8 @@ export async function analyzeInspirationUrl(rawUrl: string, base: CatalogCharte)
     analysis.productLayout ? `FICHES : ${analysis.productLayout === 'liste' ? 'LISTE pleine largeur (1 colonne, image à gauche)' : 'grille'}` : '',
     analysis.productsPerPage ? `DENSITÉ : ${Math.round(analysis.productsPerPage)} produits/page` : '',
     analysis.cardShape ? `FORMES (cardStyle.shape À RECOPIER TEL QUEL) : ${JSON.stringify(analysis.cardShape)}` : '',
+    analysis.pageBg && HEX_RE.test(analysis.pageBg) ? `FOND DE PAGE (theme.pageBg À RECOPIER) : ${analysis.pageBg}` : '',
+    analysis.cardBg && HEX_RE.test(analysis.cardBg) ? `FOND DES FICHES (cardStyle.cardBg À RECOPIER) : ${analysis.cardBg}` : '',
   ].filter(Boolean).join(' · ')
   const brief = `INSPIRATION (${url}) — reproduire ce design : ${structure ? `${structure}. ` : ''}${analysis.designBrief}`
   const notes = base.notes ? `${base.notes}\n\n${brief}` : brief
