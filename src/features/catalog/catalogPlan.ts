@@ -348,6 +348,31 @@ export interface CatalogPlanContext {
 }
 
 /** Appelle l'IA (cascade + retry Zod gérés par llmRouter). L'appelant gère le repli defaultCatalogPlan. */
+/** Luminance perceptuelle d'un hex #rrggbb (0 = noir, 1 = blanc). */
+function hexLum(hex: string): number {
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16)
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255
+}
+
+/**
+ * Directives HEX de la charte (« FOND DE PAGE … : #hex » / « FOND DES FICHES … : #hex »,
+ * écrites par l'analyse d'inspiration ou l'utilisateur) : appliquées EN DUR après la
+ * génération — le LLM recopiait parfois le mauvais hex (fiches noires au lieu de jaunes).
+ * La DERNIÈRE directive gagne (les analyses successives s'accumulent dans les notes).
+ */
+function applyCharteBackgrounds(plan: CatalogPlan, notes: string): CatalogPlan {
+  const last = (re: RegExp) => [...notes.matchAll(re)].pop()?.[1]?.toLowerCase()
+  const pageBg = last(/FOND DE PAGE[^:#]*:\s*(#[0-9a-f]{6})/gi)
+  const cardBg = last(/FOND DES FICHES[^:#]*:\s*(#[0-9a-f]{6})/gi)
+  if (!pageBg && !cardBg) return plan
+  const theme = { ...plan.theme, ...(pageBg ? { pageBg } : {}) }
+  const cardStyle = cardBg ? { ...DEFAULT_CARD_STYLE, ...plan.cardStyle, cardBg } : plan.cardStyle
+  // Lisibilité garantie après forçage : encre contrastée avec le fond des fiches.
+  const effCardBg = cardStyle?.cardBg || '#ffffff'
+  if (Math.abs(hexLum(theme.ink) - hexLum(effCardBg)) < 0.35) theme.ink = hexLum(effCardBg) > 0.5 ? '#111111' : '#ffffff'
+  return { ...plan, theme, ...(cardStyle ? { cardStyle } : {}) }
+}
+
 export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext, current?: CatalogPlan | null): Promise<CatalogPlan> {
   const treeDesc = flattenTree(ctx.tree)
     .map((n) => {
@@ -395,5 +420,5 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
     schema: PlanSchema,
     schemaForLLM: SCHEMA_FOR_LLM,
   })
-  return sanitizeCatalogPlan(raw, ctx.tree, ctx.catalogName, current)
+  return applyCharteBackgrounds(sanitizeCatalogPlan(raw, ctx.tree, ctx.catalogName, current), ctx.charte?.notes ?? '')
 }
