@@ -240,8 +240,8 @@ export const CATALOG_CSS = `
 .cat-cell[data-sh-chip="plain"] .cat-cell-kicker { background:none; color:var(--cat-ink); padding-left:0; }
 /* Prix NU (texte bold sans badge, façon maquettes minimalistes) */
 .cat-cell[data-sh-price="bare"] .cat-cell-tag { background:none !important; box-shadow:none; transform:none; padding:0; }
-.cat-cell[data-sh-price="bare"] .cat-cell-price { color:var(--cat-price-bg,var(--cat-ink)); text-shadow:none; }
-.cat-cell[data-sh-price="bare"] .cat-cell-was { background:none !important; color:var(--cat-was-bg,var(--cat-ink)); opacity:.55; padding:0; transform:none; }
+.cat-cell[data-sh-price="bare"] .cat-cell-price { color:var(--cat-price-ink,var(--cat-ink)); text-shadow:none; }
+.cat-cell[data-sh-price="bare"] .cat-cell-was { background:none !important; color:var(--cat-ink); opacity:.5; padding:0; transform:none; }
 /* Prix PASTILLE arrondie */
 .cat-cell[data-sh-price="pill"] .cat-cell-tag { border-radius:999px; transform:none; padding-left:18px; padding-right:18px; }
 /* Sticker rectangle / étoile (rond = défaut) */
