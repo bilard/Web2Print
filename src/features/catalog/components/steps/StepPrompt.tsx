@@ -17,6 +17,7 @@ import { DEFAULT_CARD_STYLE, type CardBox, type CardObjectId } from '../../catal
 import { CardStyleCard } from './CardStyleCard'
 import { CardStylePreview } from './CardStylePreview'
 import { PreviewTextToolbar } from './PreviewTextToolbar'
+import { usePreviewPan } from '../../usePreviewPan'
 import { SectionsCard } from './SectionsCard'
 import { StepActionsPortal } from './StepActionsPortal'
 
@@ -144,6 +145,9 @@ export function StepPrompt() {
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
   }, [plan != null])
+  // PAN à la barre d'espace (outil main) : voile de capture au-dessus de l'aperçu.
+  const scrollBoxRef = useRef<HTMLDivElement | null>(null)
+  const { panning, overlayProps } = usePreviewPan({ hRef: scrollBoxRef, areaRef: zoomAreaRef })
   const baseIsWide = isWideCard(cell.w, cell.h)
   const previewWide = previewVariant === 'auto' ? baseIsWide : previewVariant === 'wide'
   // Forme de la carte d'aperçu : la cellule réelle si elle correspond à la
@@ -199,7 +203,7 @@ export function StepPrompt() {
 
           {/* Colonne droite du centre : APERÇU grand (le résultat), collé en haut */}
           {plan && (
-            <div ref={zoomAreaRef} className="lg:sticky lg:top-0 w-full min-w-0">
+            <div ref={zoomAreaRef} className="relative lg:sticky lg:top-0 w-full min-w-0">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Aperçu de la fiche</span>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -240,12 +244,17 @@ export function StepPrompt() {
                 </div>
               </div>
               {/* Zoom > 100 % : la carte déborde de la colonne → défilement horizontal local. */}
-              <div className={previewZoom > 100 ? 'overflow-x-auto pb-2' : undefined}>
+              <div ref={scrollBoxRef} className="overflow-auto pb-2">
                 <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={previewCell}
                   wide={previewWide} featuredVariant={previewFeatured} selected={selectedObject}
                   editable onLayoutChange={patchLayout}
                   onSelect={setSelectedObject} zoom={previewZoom / 100} />
               </div>
+              {/* Voile PAN (espace maintenu) : capte le pointeur au-dessus de l'aperçu —
+                  le drag des blocs est suspendu le temps du déplacement. */}
+              {panning && (
+                <div {...overlayProps} className="absolute inset-0 z-40 cursor-grab active:cursor-grabbing" />
+              )}
             </div>
           )}
         </div>
