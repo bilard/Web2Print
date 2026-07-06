@@ -202,9 +202,16 @@ export function StepPrompt() {
             )}
           </div>
 
-          {/* Colonne droite du centre : APERÇU grand (le résultat), collé en haut */}
+          {/* Colonne droite du centre : APERÇU grand (le résultat), collé en haut.
+              Clic sur le FOND (hors bloc et hors contrôles) → désélection du bloc
+              actif — les blocs/outils de l'overlay stopPropagation, et on ignore
+              tout clic sur un contrôle (palette d'ancrage, barres du header, zoom). */}
           {plan && (
-            <div ref={zoomAreaRef} className="relative lg:sticky lg:top-0 w-full min-w-0">
+            <div ref={zoomAreaRef} className="relative lg:sticky lg:top-0 w-full min-w-0"
+              onPointerDown={(e) => {
+                if ((e.target as HTMLElement).closest('button, input, select, label, [data-object-id]')) return
+                setSelectedObject(null)
+              }}>
               <div className="flex items-center justify-between gap-2 mb-2">
                 <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Aperçu de la fiche</span>
                 <div className="flex items-center gap-2 flex-wrap justify-end">

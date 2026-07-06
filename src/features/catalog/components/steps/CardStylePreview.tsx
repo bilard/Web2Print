@@ -92,7 +92,7 @@ export function CardStylePreview({ theme, cardStyle, fields, details, cell, wide
   // que le rendu des pages (l'édition reste WYSIWYG sur les catalogues larges).
   const wide = wideProp ?? isWideCard(cell.w, cell.h)
   const overlay = editable && onLayoutChange
-    ? <CardLayoutOverlay cardRef={cardRef} style={cardStyle} wide={wide} onChange={onLayoutChange} onSelect={onSelect} />
+    ? <CardLayoutOverlay cardRef={cardRef} style={cardStyle} wide={wide} onChange={onLayoutChange} onSelect={onSelect} selected={selected} />
     : null
   // Zoom AUTO-MESURÉ : la carte occupe la largeur DISPONIBLE de sa colonne
   // (écran optimisé), bornée par la hauteur du viewport (la fiche verticale
