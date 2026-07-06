@@ -398,7 +398,7 @@ export const CATALOG_CSS = `
    sombre + pastille baseline verticale + grand panneau accent chevauchant la
    photo + bandeau infos bas — composition façon maquettes print. ── */
 .cat-coverp { flex:1; position:relative; overflow:hidden; }
-.cat-coverp-spine { position:absolute; left:0; top:0; bottom:0; width:13%; background:var(--cat-header-bg);
+.cat-coverp-spine { position:absolute; left:0; top:0; bottom:0; width:13%; background:var(--cat-head-bg);
   display:flex; justify-content:center; padding-top:6%; }
 .cat-coverp-chip { writing-mode:vertical-rl; transform:rotate(180deg); background:var(--cat-accent); color:var(--cat-ink);
   font-family:var(--cat-font-h); font-weight:800; font-size:20px; letter-spacing:.12em; text-transform:uppercase;
@@ -410,7 +410,7 @@ export const CATALOG_CSS = `
 .cat-coverp-foot { position:absolute; left:0; right:0; bottom:0; height:14%; background:var(--cat-bg); color:var(--cat-ink);
   display:flex; align-items:center; justify-content:space-between; padding:0 6% 0 17%; }
 .cat-coverp-foot-info { font-family:var(--cat-font-h); font-weight:700; font-size:16px; letter-spacing:.06em; text-transform:uppercase; opacity:.8; }
-.cat-coverp-foot-chip { background:var(--cat-header-bg); color:var(--cat-header-ink); font-family:var(--cat-font-h);
+.cat-coverp-foot-chip { background:var(--cat-head-bg); color:var(--cat-head-ink); font-family:var(--cat-font-h);
   font-weight:700; font-size:15px; padding:10px 26px; letter-spacing:.08em; }
 /* ── Couverture ARCHÉTYPE « poster » : titre géant centré sur la photo. ── */
 .cat-coverz { justify-content:center; }
