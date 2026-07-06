@@ -87,6 +87,26 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
   // appartiennent au panneau « Bloc sélectionné » qui regroupe ces réglages.
   const activeScale = selected != null ? OBJ_TO_SCALE[selected] : undefined
 
+  // Les champs suivent la HIÉRARCHIE VISUELLE de la fiche : tri par position
+  // (haut → bas puis gauche → droite), ancres liquides converties (bord bas =
+  // 100 − y) ; un bloc LIÉ se range juste APRÈS son parent. L'ordre du panneau
+  // se met à jour en direct quand on déplace les blocs.
+  const posOf = (id: CardObjectId, depth = 0): { y: number; x: number } => {
+    const b = boxOf(id)
+    if (b.link && depth < CARD_OBJECT_IDS.length) {
+      const p = posOf(b.link, depth + 1)
+      return { y: p.y + 0.01, x: p.x + 1 }
+    }
+    return {
+      y: (b.ay ?? 't') === 'b' ? 100 - b.y : b.ay === 'c' ? 50 : b.y,
+      x: (b.ax ?? 'l') === 'r' ? 100 - b.x : b.ax === 'c' ? 50 : b.x,
+    }
+  }
+  const orderedFields = [...CARD_TYPO_FIELDS].sort((a, b) => {
+    const pa = posOf(a.obj), pb = posOf(b.obj)
+    return pa.y - pb.y || pa.x - pb.x
+  })
+
   const setLink = (obj: CardObjectId, target: string) => patch(objectLinkPatch(style, wide, obj, target))
 
   // ── Visualisation des liaisons : une COULEUR par groupe (cible + suiveurs
@@ -138,7 +158,7 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
         </svg>
       )}
       <div className="grid grid-cols-1 gap-y-3">
-        {CARD_TYPO_FIELDS.map(({ scale, font, label, obj }) => {
+        {orderedFields.map(({ scale, font, label, obj }) => {
           const link = boxOf(obj).link
           const color = rowColor(obj)
           return (
