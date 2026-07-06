@@ -148,6 +148,8 @@ export interface CatalogCardStyle {
   detailsColor: string
   /** Fond de la zone « Détails » ('' = gris translucide par défaut). */
   detailsBg: string
+  /** FOND des fiches ('' = blanc) — un design d'inspiration SOMBRE le noircit. */
+  cardBg: string
   /** Couleur de la vedette (ruban + cadre + nom de la fiche vedette). */
   vedetteBg: string
   /** Couleur du BADGE PRIX des fiches vedette ('' = couleur prix standard). */
@@ -209,7 +211,7 @@ export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   nameFont: '', descFont: '', priceFont: '', brandFont: '', refFont: '', unitFont: '', promoFont: '', stickerFont: '', vedetteFont: '', detailsFont: '', kickerFont: '',
   promoBg: '', stickerBg: '', priceBg: '', wasBg: '', kickerBg: '', nameColor: '', vedetteBg: '', vedettePriceBg: '', priceInk: '', vedettePriceInk: '',
   promoInk: '', stickerInk: '', kickerInk: '', wasInk: '', vedetteTxtInk: '', brandColor: '', descColor: '', refColor: '', unitColor: '', detailsColor: '', detailsBg: '',
-  promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '', vedetteBg2: '', vedettePriceBg2: '',
+  promoBg2: '', stickerBg2: '', priceBg2: '', wasBg2: '', kickerBg2: '', vedetteBg2: '', vedettePriceBg2: '', cardBg: '',
   vedetteLabel: 'Vedette',
   gradientAngle: 135,
   radius: 6, imageShare: 40, imagePad: 12,

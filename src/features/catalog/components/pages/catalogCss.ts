@@ -127,6 +127,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     // Cadre + nom de la fiche vedette : couleur UNIE (border-color n'accepte pas de dégradé).
     '--cat-vedette-ink': s.vedetteBg || undefined,
     '--cat-vedette-price-bg': bg(s.vedettePriceBg, s.vedettePriceBg2, theme.accent),
+    '--cat-card-bg': s.cardBg || undefined,
     '--cat-price-ink': s.priceInk || undefined,
     '--cat-vedette-price-ink': s.vedettePriceInk || undefined,
     '--cat-name-ink': s.nameColor || undefined,
@@ -209,7 +210,7 @@ export const CATALOG_CSS = `
   letter-spacing:.16em; text-transform:uppercase;
   padding:calc(5px * ${F}) 14px; border-radius:4px; }
 .cat-group-band::after { content:''; flex:1; height:2px; background:var(--cat-accent); opacity:.6; border-radius:1px; }
-.cat-cell { position:relative; display:flex; flex-direction:column; min-height:0; background:#fff;
+.cat-cell { position:relative; display:flex; flex-direction:column; min-height:0; background:var(--cat-card-bg,#fff);
   border:1px solid rgba(17,24,39,.10); border-bottom:3px solid var(--cat-accent);
   border-radius:var(--cat-cell-radius,6px); overflow:hidden; }
 /* ── Disposition LIBRE : objets positionnés en % (le concepteur les place) ── */

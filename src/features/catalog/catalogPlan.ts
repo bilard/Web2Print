@@ -19,6 +19,7 @@ const SectionSchema = z.object({
 })
 /** Couleurs des OBJETS des fiches pilotables par le prompt (sous-ensemble sûr de CatalogCardStyle). */
 const CardStyleAISchema = z.object({
+  cardBg: z.string().optional(),
   promoBg: z.string().optional(), stickerBg: z.string().optional(), priceBg: z.string().optional(),
   wasBg: z.string().optional(), kickerBg: z.string().optional(), nameColor: z.string().optional(),
   vedetteBg: z.string().optional(), vedettePriceBg: z.string().optional(),
@@ -88,6 +89,7 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
       type: 'object',
       description: "OPTIONNEL — style des fiches produit (hex #rrggbb). En CRÉATION : renvoie une palette VARIÉE coordonnée au thème (jamais monochrome). En MODIFICATION : uniquement les clés que la demande impose.",
       properties: {
+        cardBg: { type: 'string', description: "hex du FOND des fiches produit — INDISPENSABLE pour un design SOMBRE (fond quasi-noir + textes clairs) ; omettre pour des fiches blanches" },
         promoBg: { type: 'string', description: 'hex cartouche promo' },
         stickerBg: { type: 'string', description: 'hex sticker de remise' },
         priceBg: { type: 'string', description: 'hex badge prix (toutes fiches)' },
@@ -166,7 +168,7 @@ export function defaultCatalogPlan(tree: CatalogTreeNode[], catalogName: string)
 function sanitizeAICardStyle(raw: RawCatalogPlan['cardStyle']): Partial<CatalogCardStyle> {
   if (!raw) return {}
   const out: Partial<CatalogCardStyle> = {}
-  const HEX_KEYS = ['promoBg', 'stickerBg', 'priceBg', 'wasBg', 'kickerBg', 'nameColor', 'vedetteBg', 'vedettePriceBg', 'priceInk', 'vedettePriceInk'] as const
+  const HEX_KEYS = ['cardBg', 'promoBg', 'stickerBg', 'priceBg', 'wasBg', 'kickerBg', 'nameColor', 'vedetteBg', 'vedettePriceBg', 'priceInk', 'vedettePriceInk'] as const
   for (const k of HEX_KEYS) {
     const v = raw[k]
     if (v && HEX_RE.test(v)) out[k] = v
@@ -248,10 +250,34 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
     }
   }
   const aiCardStyle = sanitizeAICardStyle(raw.cardStyle)
+  const theme = raw.theme ? sanitizeTheme(raw.theme) : { ...(current?.theme ?? DEFAULT_THEME) }
+  // ── GARDE-FOUS DE CONTRASTE (déterministes) : une inspiration SOMBRE faisait
+  // renvoyer des textes clairs sur nos fiches blanches → nom/description
+  // INVISIBLES. Règles : 1) encre illisible sur le fond EFFECTIF des fiches →
+  // les fiches adoptent le fond sombre du thème (design dark cohérent), sinon
+  // l'encre retombe au défaut ; 2) toute couleur de texte trop proche de son
+  // fond est REJETÉE (héritage du template, toujours lisible).
+  const lumOf = (hex: string): number => {
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16)
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  }
+  const contrast = (a: string, b: string) => Math.abs(lumOf(a) - lumOf(b))
+  let effCardBg = aiCardStyle.cardBg || current?.cardStyle?.cardBg || '#ffffff'
+  if (contrast(theme.ink, effCardBg) < 0.35) {
+    if (lumOf(theme.pageBg) < 0.4) { aiCardStyle.cardBg = theme.pageBg; effCardBg = theme.pageBg }
+    else if (lumOf(effCardBg) > 0.6) theme.ink = DEFAULT_THEME.ink
+  }
+  // Seuils calibrés : blanc-sur-blanc ≈ 0,02 · gris clair sur blanc ≈ 0,13 (rejetés) ;
+  // or sur orange ≈ 0,23 = contraste de TEINTE légitime (accepté pour les badges).
+  if (aiCardStyle.nameColor && contrast(aiCardStyle.nameColor, effCardBg) < 0.22) delete aiCardStyle.nameColor
+  for (const [ink, bgKey, fallbackBg] of [['priceInk', 'priceBg', theme.accent], ['vedettePriceInk', 'vedettePriceBg', theme.accent]] as const) {
+    const bg = aiCardStyle[bgKey] || current?.cardStyle?.[bgKey] || fallbackBg
+    if (aiCardStyle[ink] && contrast(aiCardStyle[ink]!, bg) < 0.18) delete aiCardStyle[ink]
+  }
   const hasCardStyle = current?.cardStyle || Object.keys(aiCardStyle).length > 0
   return {
     // Clés omises par l'IA (modification ciblée) : on conserve le plan courant.
-    theme: raw.theme ? sanitizeTheme(raw.theme) : { ...(current?.theme ?? DEFAULT_THEME) },
+    theme,
     sizeByPrice: current?.sizeByPrice ?? true,
     sections,
     cover: raw.cover
@@ -287,7 +313,8 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
   // objets des fiches (cartouche = sticker = prix = vedette) → pages ternes.
   const antiMono =
     `RÈGLE COULEURS : palette RICHE et coordonnée, JAMAIS monochrome — l'accent ne doit pas être recopié à l'identique sur tous les objets. ` +
-    `Quand tu renvoies cardStyle, utilise AU MOINS 3 teintes distinctes : cartouche promo, sticker remise, badge prix et vedette dans des couleurs DIFFÉRENTES mais harmonieuses (complémentaires/contrastées) ; prix barré et pastille sous-famille plus sombres/neutres ; texte des prix lisible sur son fond.`
+    `Quand tu renvoies cardStyle, utilise AU MOINS 3 teintes distinctes : cartouche promo, sticker remise, badge prix et vedette dans des couleurs DIFFÉRENTES mais harmonieuses (complémentaires/contrastées) ; prix barré et pastille sous-famille plus sombres/neutres ; texte des prix lisible sur son fond. ` +
+    `COHÉRENCE SOMBRE : pour un design/inspiration SOMBRE, renvoie cardStyle.cardBg sombre assorti au pageBg et des textes clairs — ne mets JAMAIS un texte clair sans avoir posé le fond sombre correspondant.`
   // CRÉATION (pas de plan) : plan complet. MODIFICATION (un plan existe) :
   // l'IA ne renvoie QUE les clés que la demande impose — tout omis = conservé.
   const consigne = current
@@ -315,7 +342,8 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
           (ctx.charte.colors.length ? `- Palette imposée : ${ctx.charte.colors.join(', ')} (répartis-la : accent, bandeaux, badges — reste DANS ces teintes ou leurs nuances proches).\n` : '') +
           (ctx.charte.fonts.length ? `- Typographies de la marque : ${ctx.charte.fonts.join(', ')} (choisis les polices du thème PARMI ${FONT_OPTIONS.join(', ')} en te rapprochant LE PLUS de ces familles).\n` : '') +
           (ctx.charte.notes ? `- Consignes créa (graphique & structure) : ${ctx.charte.notes}\n` : '') +
-          `- STRUCTURE : si les consignes décrivent une composition (couverture éditoriale, fiches en LISTE 1 colonne, densité), APPLIQUE-les : cover.layout ('panel' pour une maquette éditoriale, 'poster' pour un visuel plein cadre), productsPerPage 2-3 pour des fiches en LISTE pleine largeur (1 colonne), 4-8 pour une grille.\n` + '\n'
+          `- STRUCTURE : si les consignes décrivent une composition (couverture éditoriale, fiches en LISTE 1 colonne, densité), APPLIQUE-les : cover.layout ('panel' maquette éditoriale, 'poster' visuel plein cadre), productsPerPage 2-3 = LISTE pleine largeur, 4-8 = grille.\n` +
+          `- COMPOSITION DES FICHES : reproduis la maquette AVEC les leviers : cardStyle.cardBg (fond des FICHES — jaune/sombre si le modèle le veut), theme.pageBg (fond de PAGE, noir si le modèle est dark), kickerBg (pastille type chip), et cardStyle.layout (positions/tailles en % des blocs image/name/price/description…) pour rapprocher la disposition de celle du modèle — ose des placements différents du gabarit par défaut.\n` + '\n'
         : '') +
       `${consigne}\n\nDemande : ${brief}`,
     schema: PlanSchema,

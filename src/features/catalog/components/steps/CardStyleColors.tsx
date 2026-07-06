@@ -16,7 +16,7 @@ interface CardStyleColorsProps {
 }
 
 export type ColorKey = 'promoBg' | 'stickerBg' | 'priceBg' | 'wasBg' | 'kickerBg' | 'nameColor' | 'vedetteBg' | 'vedettePriceBg' | 'priceInk' | 'vedettePriceInk'
-  | 'promoInk' | 'stickerInk' | 'kickerInk' | 'wasInk' | 'vedetteTxtInk' | 'brandColor' | 'descColor' | 'refColor' | 'unitColor' | 'detailsColor' | 'detailsBg'
+  | 'promoInk' | 'stickerInk' | 'kickerInk' | 'wasInk' | 'vedetteTxtInk' | 'brandColor' | 'descColor' | 'refColor' | 'unitColor' | 'detailsColor' | 'detailsBg' | 'cardBg'
 type GradKey = 'promoBg2' | 'stickerBg2' | 'priceBg2' | 'wasBg2' | 'kickerBg2' | 'vedetteBg2' | 'vedettePriceBg2'
 
 export interface ColorDef { key: ColorKey; grad?: GradKey; label: string; fallback: string }
@@ -72,6 +72,7 @@ export function colorDefs(theme: CatalogTheme): ColorDef[] {
     { key: 'stickerBg', grad: 'stickerBg2', label: 'Sticker', fallback: theme.accent },
     { key: 'priceBg', grad: 'priceBg2', label: 'Prix', fallback: theme.accent },
     { key: 'wasBg', grad: 'wasBg2', label: 'Prix barré', fallback: theme.headerBg },
+    { key: 'cardBg', label: 'Fond de fiche', fallback: '#ffffff' },
     { key: 'kickerBg', grad: 'kickerBg2', label: 'Sous-famille', fallback: theme.headerBg },
     { key: 'vedetteBg', grad: 'vedetteBg2', label: 'Vedette', fallback: theme.accent },
     { key: 'vedettePriceBg', grad: 'vedettePriceBg2', label: 'Prix vedette', fallback: theme.accent },
