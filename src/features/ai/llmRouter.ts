@@ -66,6 +66,7 @@ type LLMTask =
   | 'data.columnCompletion'
   | 'design.promoPlan'
   | 'catalog.plan'
+  | 'catalog.inspiration'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -151,6 +152,9 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // (modelForProvider n'applique l'override qu'au provider du préfixe correspondant —
   // même pattern que 'data.columnCompletion' ; JAMAIS gemini-3.5-flash pour du JSON).
   'catalog.plan': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
+  // Inspiration : Vision multimodale sur un visuel de référence (Dribbble, moodboard…)
+  // → palette + brief de mise en page. Gemini Pro Vision primary (comme imageDecompose).
+  'catalog.inspiration': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -184,6 +188,7 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'design.promoPlan':       0.3,
   // Plan de catalogue : composition créative (thème, densités) mais bornée par le schéma.
   'catalog.plan': 0.5,
+  'catalog.inspiration': 0.3,
 }
 
 interface GenerateJsonOptions<T> {

@@ -3,10 +3,11 @@
 // logo ou visuels de marque → palette + typos extraites AUTOMATIQUEMENT
 // (moteur créatif : la charte pilote le plan IA et peut s'appliquer au thème).
 import { useRef, useState } from 'react'
-import { Loader2, Palette, Paperclip, X } from 'lucide-react'
+import { Link2, Loader2, Palette, Paperclip, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { EMPTY_CHARTE, charteToThemePatch, extractCharteFromFile } from '../../charte/extractCharte'
+import { analyzeInspirationUrl } from '../../charte/inspiration'
 
 export function CharteCard() {
   const charte = useCatalogStore((s) => s.charte)
@@ -15,6 +16,24 @@ export function CharteCard() {
   const setPlan = useCatalogStore((s) => s.setPlan)
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  // Source d'INSPIRATION par URL (Dribbble, Behance, image directe…) : le visuel
+  // est analysé par la Vision LLM → palette + brief de design dans la charte.
+  const [inspUrl, setInspUrl] = useState('')
+  const [inspBusy, setInspBusy] = useState(false)
+  const analyzeInspiration = async () => {
+    if (!inspUrl.trim()) return
+    setInspBusy(true)
+    try {
+      const next = await analyzeInspirationUrl(inspUrl, charte ?? EMPTY_CHARTE)
+      setCharte(next)
+      setInspUrl('')
+      toast.success('Inspiration analysée — « Générer le plan (IA) » reproduira ce look')
+    } catch (e) {
+      toast.error(`Analyse impossible (${String((e as Error).message).slice(0, 90)})`)
+    } finally {
+      setInspBusy(false)
+    }
+  }
 
   const onFiles = async (files: FileList | null) => {
     if (!files?.length) return
@@ -67,6 +86,21 @@ export function CharteCard() {
         {charte?.files.map((f) => (
           <span key={f} className="px-2 py-0.5 rounded-full bg-well text-[10px] text-white/50 truncate max-w-[160px]">{f}</span>
         ))}
+      </div>
+      {/* Source d'inspiration : URL d'un design de référence à REPRODUIRE. */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 flex items-center gap-1.5 px-2.5 rounded-md bg-surface-2 border border-border focus-within:border-indigo-500">
+          <Link2 className="w-3.5 h-3.5 text-white/30 shrink-0" />
+          <input value={inspUrl} onChange={(e) => setInspUrl(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') void analyzeInspiration() }}
+            placeholder="Source d'inspiration (URL Dribbble, Behance, image…)"
+            className="w-full py-1.5 bg-transparent text-xs text-white outline-none placeholder:text-white/25" />
+        </div>
+        <button type="button" onClick={() => void analyzeInspiration()} disabled={inspBusy || !inspUrl.trim()}
+          title="Récupère le visuel de la page et fait analyser sa mise en page par la Vision IA"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-indigo-500 text-indigo-300 hover:bg-indigo-600 hover:text-[#fff] disabled:opacity-40">
+          {inspBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Analyser
+        </button>
       </div>
       {charte && charte.colors.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">

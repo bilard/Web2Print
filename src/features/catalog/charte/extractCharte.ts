@@ -13,7 +13,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
 export const EMPTY_CHARTE: CatalogCharte = { files: [], colors: [], fonts: [], notes: '' }
 
 /** Quantifie les pixels d'un canvas (4 bits/canal) → hex dominants dédupliqués. */
-function paletteFromCanvas(canvas: HTMLCanvasElement, max = 8): string[] {
+export function paletteFromCanvas(canvas: HTMLCanvasElement, max = 8): string[] {
   const ctx = canvas.getContext('2d')
   if (!ctx) return []
   const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height)
