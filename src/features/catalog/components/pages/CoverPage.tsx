@@ -21,6 +21,39 @@ export function CoverPage({ ctx, variant }: Props) {
       </div>
     )
   }
+  // ARCHÉTYPE « panel » (éditorial) : photo NON assombrie + bande latérale sombre
+  // (baseline verticale sur pastille accent) + grand panneau accent chevauchant
+  // + bandeau infos bas — composition du moteur créatif (inspiration).
+  if ((plan.cover.layout ?? 'classic') === 'panel') {
+    const photo = img ? { backgroundImage: `url(${img})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: plan.theme.headerBg }
+    return (
+      <div className="cat-coverp" style={photo}>
+        <div className="cat-coverp-spine">
+          {ps.showCoverBaseline && plan.cover.baseline && <div className="cat-coverp-chip">{plan.cover.baseline}</div>}
+        </div>
+        <div className="cat-coverp-panel">
+          <h1 className="cat-coverp-title">{plan.cover.title}</h1>
+          {ps.showCoverSubtitle && plan.cover.subtitle && <div className="cat-coverp-sub">{plan.cover.subtitle}</div>}
+        </div>
+        <div className="cat-coverp-foot">
+          <div className="cat-coverp-foot-info">{ctx.catalogName}</div>
+          <div className="cat-coverp-foot-chip">{new Date().getFullYear()}</div>
+        </div>
+      </div>
+    )
+  }
+  // ARCHÉTYPE « poster » : photo pleine page, titre GÉANT centré, minimal.
+  if (plan.cover.layout === 'poster') {
+    return (
+      <div className="cat-cover cat-coverz" style={style}>
+        <div className="cat-coverz-in">
+          {ps.showCoverBaseline && plan.cover.baseline && <div className="cat-cover-band">{plan.cover.baseline}</div>}
+          <h1 className="cat-coverz-title">{plan.cover.title}</h1>
+          {ps.showCoverSubtitle && plan.cover.subtitle && <div className="cat-cover-sub">{plan.cover.subtitle}</div>}
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="cat-cover" style={style}>
       <div className="cat-cover-panel" style={img ? undefined : { background: 'none' }}>

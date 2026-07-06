@@ -32,7 +32,7 @@ const CardStyleAISchema = z.object({
 export const PlanSchema = z.object({
   theme: ThemeSchema.optional(),
   sections: z.array(SectionSchema).optional(),
-  cover: z.object({ title: z.string(), subtitle: z.string().optional(), baseline: z.string().optional(), imagePrompt: z.string() }).optional(),
+  cover: z.object({ title: z.string(), subtitle: z.string().optional(), baseline: z.string().optional(), imagePrompt: z.string(), layout: z.enum(['classic', 'panel', 'poster']).optional() }).optional(),
   backCover: z.object({ title: z.string(), text: z.string() }).optional(),
   tocTitle: z.string().optional(),
   cardStyle: CardStyleAISchema,
@@ -74,6 +74,7 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
       properties: {
         title: { type: 'string' }, subtitle: { type: 'string' }, baseline: { type: 'string' },
         imagePrompt: { type: 'string', description: 'prompt EN ANGLAIS pour générer le visuel de couverture (photo réaliste, sans texte incrusté)' },
+        layout: { type: 'string', enum: ['classic', 'panel', 'poster'], description: "ARCHÉTYPE de composition : 'classic' = photo assombrie + textes bas-gauche · 'panel' = éditorial print (bande latérale sombre, grand panneau accent chevauchant la photo, bandeau infos bas) — choisis-le pour les inspirations maquettes/minimalistes · 'poster' = titre géant centré sur la photo" },
       },
       required: ['title', 'imagePrompt'],
     },
@@ -254,7 +255,7 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
     sizeByPrice: current?.sizeByPrice ?? true,
     sections,
     cover: raw.cover
-      ? { title: raw.cover.title || catalogName, subtitle: raw.cover.subtitle ?? '', baseline: raw.cover.baseline ?? '', imagePrompt: raw.cover.imagePrompt }
+      ? { title: raw.cover.title || catalogName, subtitle: raw.cover.subtitle ?? '', baseline: raw.cover.baseline ?? '', imagePrompt: raw.cover.imagePrompt, layout: raw.cover.layout ?? current?.cover.layout ?? 'classic' }
       : (current?.cover ?? { title: catalogName || 'Catalogue', subtitle: '', baseline: '', imagePrompt: '' }),
     backCover: raw.backCover ?? current?.backCover ?? { title: catalogName || 'Catalogue', text: '' },
     tocTitle: raw.tocTitle || current?.tocTitle || 'Sommaire',
@@ -313,7 +314,8 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
         ? `CHARTE GRAPHIQUE DE LA MARQUE (extraite des éléments joints — À RESPECTER en PRIORITÉ pour theme et cardStyle) :\n` +
           (ctx.charte.colors.length ? `- Palette imposée : ${ctx.charte.colors.join(', ')} (répartis-la : accent, bandeaux, badges — reste DANS ces teintes ou leurs nuances proches).\n` : '') +
           (ctx.charte.fonts.length ? `- Typographies de la marque : ${ctx.charte.fonts.join(', ')} (choisis les polices du thème PARMI ${FONT_OPTIONS.join(', ')} en te rapprochant LE PLUS de ces familles).\n` : '') +
-          (ctx.charte.notes ? `- Consignes créa (graphique & structure) : ${ctx.charte.notes}\n` : '') + '\n'
+          (ctx.charte.notes ? `- Consignes créa (graphique & structure) : ${ctx.charte.notes}\n` : '') +
+          `- STRUCTURE : si les consignes décrivent une composition (couverture éditoriale, fiches en LISTE 1 colonne, densité), APPLIQUE-les : cover.layout ('panel' pour une maquette éditoriale, 'poster' pour un visuel plein cadre), productsPerPage 2-3 pour des fiches en LISTE pleine largeur (1 colonne), 4-8 pour une grille.\n` + '\n'
         : '') +
       `${consigne}\n\nDemande : ${brief}`,
     schema: PlanSchema,

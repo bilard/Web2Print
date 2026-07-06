@@ -46,6 +46,9 @@ async function resolveMainImageUrl(url: string): Promise<string> {
 const AnalysisSchema = z.object({
   palette: z.array(z.string()).max(8),
   designBrief: z.string(),
+  coverArchetype: z.enum(['classic', 'panel', 'poster']).optional(),
+  productLayout: z.enum(['liste', 'grille']).optional(),
+  productsPerPage: z.number().optional(),
 })
 
 const ANALYSIS_SCHEMA_FOR_LLM: Record<string, unknown> = {
@@ -60,8 +63,14 @@ const ANALYSIS_SCHEMA_FOR_LLM: Record<string, unknown> = {
         "traitement des images produit (fonds, ombres, détourage), badges/prix/promotions (formes, angles, positions), " +
         "usage des couleurs (rôle de chaque teinte : fonds, accents, texte), ambiance générale et interdits (ce que ce style NE fait PAS).",
     },
+    coverArchetype: {
+      type: 'string', enum: ['classic', 'panel', 'poster'],
+      description: "Composition de COUVERTURE la plus proche du visuel : 'panel' = éditorial print (bande latérale, grand panneau de couleur chevauchant la photo, zone infos) · 'poster' = photo plein cadre + titre géant · 'classic' = photo assombrie + textes en bas",
+    },
+    productLayout: { type: 'string', enum: ['liste', 'grille'], description: "Fiches produit : 'liste' = 1 colonne pleine largeur (image à gauche, textes à droite) · 'grille' = cartes en colonnes" },
+    productsPerPage: { type: 'number', description: 'densité produits/page suggérée par le visuel (2-8)' },
   },
-  required: ['palette', 'designBrief'],
+  required: ['palette', 'designBrief', 'coverArchetype', 'productLayout', 'productsPerPage'],
 }
 
 const HEX_RE = /^#[0-9a-f]{6}$/i
@@ -98,7 +107,14 @@ export async function analyzeInspirationUrl(rawUrl: string, base: CatalogCharte)
   const visionColors = analysis.palette.map((c) => c.trim().toLowerCase()).filter((c) => HEX_RE.test(c))
   // Vision d'abord (couleurs de RÔLE), pixels ensuite (complément), dédup.
   const colors = [...new Set([...visionColors, ...pixelColors, ...base.colors])].slice(0, 10)
-  const brief = `INSPIRATION (${url}) — reproduire ce design : ${analysis.designBrief}`
+  // Directives STRUCTURELLES explicites — le plan IA les mappe sur cover.layout
+  // et productsPerPage (liste 1 colonne vs grille) : c'est ça, CRÉER la maquette.
+  const structure = [
+    analysis.coverArchetype ? `ARCHÉTYPE COUVERTURE : ${analysis.coverArchetype}` : '',
+    analysis.productLayout ? `FICHES : ${analysis.productLayout === 'liste' ? 'LISTE pleine largeur (1 colonne, image à gauche)' : 'grille'}` : '',
+    analysis.productsPerPage ? `DENSITÉ : ${Math.round(analysis.productsPerPage)} produits/page` : '',
+  ].filter(Boolean).join(' · ')
+  const brief = `INSPIRATION (${url}) — reproduire ce design : ${structure ? `${structure}. ` : ''}${analysis.designBrief}`
   const notes = base.notes ? `${base.notes}\n\n${brief}` : brief
   const label = `🔗 ${new URL(url).hostname}`
   return { ...base, files: [...base.files.filter((f) => f !== label), label].slice(-6), colors, fonts: base.fonts, notes }

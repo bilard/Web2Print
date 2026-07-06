@@ -14,6 +14,13 @@ export type CatalogDensity = CatalogGrid | 'random'
 /** [colonnes, lignes] de chaque densité — partagé moteur (packing) + rendu (CSS grid). */
 export const GRID_DIMS: Record<CatalogGrid, [number, number]> = { 1: [1, 1], 2: [1, 2], 3: [1, 3], 4: [2, 2], 6: [2, 3], 8: [2, 4] }
 
+/** ARCHÉTYPES de composition de couverture (le moteur créatif en choisit un) :
+ *  classic = photo pleine page assombrie + textes bas-gauche (historique) ·
+ *  panel = éditorial (bande latérale sombre + grand panneau accent chevauchant
+ *  la photo + bandeau infos bas, façon maquettes print/Dribbble) ·
+ *  poster = photo pleine page, titre GÉANT centré, minimal. */
+export type CatalogCoverLayout = 'classic' | 'panel' | 'poster'
+
 export interface CatalogFormat { widthMm: number; heightMm: number }
 
 export const CATALOG_FORMAT_PRESETS: { id: string; label: string; format: CatalogFormat }[] = [
@@ -263,7 +270,7 @@ export interface CatalogPlan {
   /** Taille des fiches proportionnelle au prix (paliers médiane/P80 par univers). Absent = actif. */
   sizeByPrice?: boolean
   sections: CatalogSectionPlan[]
-  cover: { title: string; subtitle: string; baseline: string; imagePrompt: string }
+  cover: { title: string; subtitle: string; baseline: string; imagePrompt: string; layout?: CatalogCoverLayout }
   backCover: { title: string; text: string }
   tocTitle: string
 }
