@@ -18,7 +18,17 @@ const SectionSchema = z.object({
   featuredIds: z.array(z.string()).optional(),
 })
 /** Couleurs des OBJETS des fiches pilotables par le prompt (sous-ensemble sûr de CatalogCardStyle). */
+const ShapeSchema = z.object({
+  corner: z.enum(['square', 'rounded', 'bevel']).optional(),
+  chip: z.enum(['notch', 'band', 'underline', 'plain']).optional(),
+  price: z.enum(['badge', 'bare', 'pill']).optional(),
+  sticker: z.enum(['round', 'rect', 'star']).optional(),
+  image: z.enum(['framed', 'overflow']).optional(),
+  shadow: z.boolean().optional(),
+}).optional()
+
 const CardStyleAISchema = z.object({
+  shape: ShapeSchema,
   cardBg: z.string().optional(),
   promoBg: z.string().optional(), stickerBg: z.string().optional(), priceBg: z.string().optional(),
   wasBg: z.string().optional(), kickerBg: z.string().optional(), nameColor: z.string().optional(),
@@ -90,6 +100,14 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
       description: "OPTIONNEL — style des fiches produit (hex #rrggbb). En CRÉATION : renvoie une palette VARIÉE coordonnée au thème (jamais monochrome). En MODIFICATION : uniquement les clés que la demande impose.",
       properties: {
         cardBg: { type: 'string', description: "hex du FOND des fiches produit — INDISPENSABLE pour un design SOMBRE (fond quasi-noir + textes clairs) ; omettre pour des fiches blanches" },
+        shape: { type: 'object', description: "GRAMMAIRE DE FORMES des fiches — reproduis la STRUCTURE graphique du modèle, pas seulement ses couleurs", properties: {
+          corner: { type: 'string', enum: ['square', 'rounded', 'bevel'], description: 'coins des fiches (bevel = coin bas-droit coupé, façon flyer)' },
+          chip: { type: 'string', enum: ['notch', 'band', 'underline', 'plain'], description: 'pastille sous-famille (notch = chip à encoche coupée)' },
+          price: { type: 'string', enum: ['badge', 'bare', 'pill'], description: 'bare = prix en TEXTE bold sans badge (minimaliste) · pill = pastille arrondie' },
+          sticker: { type: 'string', enum: ['round', 'rect', 'star'] },
+          image: { type: 'string', enum: ['framed', 'overflow'], description: 'overflow = produit détouré AMPLIFIÉ qui déborde avec ombre portée' },
+          shadow: { type: 'boolean', description: 'ombre portée des fiches' },
+        } },
         promoBg: { type: 'string', description: 'hex cartouche promo' },
         stickerBg: { type: 'string', description: 'hex sticker de remise' },
         priceBg: { type: 'string', description: 'hex badge prix (toutes fiches)' },
@@ -174,6 +192,21 @@ function sanitizeAICardStyle(raw: RawCatalogPlan['cardStyle']): Partial<CatalogC
     if (v && HEX_RE.test(v)) out[k] = v
   }
   if (raw.vedetteLabel?.trim()) out.vedetteLabel = raw.vedetteLabel.trim().slice(0, 24)
+  if (raw.shape && typeof raw.shape === 'object') {
+    const sh = raw.shape
+    const pick = <T extends string>(v: unknown, allowed: readonly T[]): T | undefined =>
+      typeof v === 'string' && (allowed as readonly string[]).includes(v) ? (v as T) : undefined
+    const shape = {
+      corner: pick(sh.corner, ['square', 'rounded', 'bevel'] as const),
+      chip: pick(sh.chip, ['notch', 'band', 'underline', 'plain'] as const),
+      price: pick(sh.price, ['badge', 'bare', 'pill'] as const),
+      sticker: pick(sh.sticker, ['round', 'rect', 'star'] as const),
+      image: pick(sh.image, ['framed', 'overflow'] as const),
+      ...(typeof sh.shadow === 'boolean' ? { shadow: sh.shadow } : {}),
+    }
+    const clean = Object.fromEntries(Object.entries(shape).filter(([, v]) => v !== undefined))
+    if (Object.keys(clean).length) out.shape = clean
+  }
   const rawLayout = (raw as { layout?: unknown })
   if (rawLayout.layout && typeof rawLayout.layout === 'object') {
     const num = (v: unknown, lo: number, hi: number): number | undefined =>
@@ -343,7 +376,7 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
           (ctx.charte.fonts.length ? `- Typographies de la marque : ${ctx.charte.fonts.join(', ')} (choisis les polices du thème PARMI ${FONT_OPTIONS.join(', ')} en te rapprochant LE PLUS de ces familles).\n` : '') +
           (ctx.charte.notes ? `- Consignes créa (graphique & structure) : ${ctx.charte.notes}\n` : '') +
           `- STRUCTURE : si les consignes décrivent une composition (couverture éditoriale, fiches en LISTE 1 colonne, densité), APPLIQUE-les : cover.layout ('panel' maquette éditoriale, 'poster' visuel plein cadre), productsPerPage 2-3 = LISTE pleine largeur, 4-8 = grille.\n` +
-          `- COMPOSITION DES FICHES : reproduis la maquette AVEC les leviers : cardStyle.cardBg (fond des FICHES — jaune/sombre si le modèle le veut), theme.pageBg (fond de PAGE, noir si le modèle est dark), kickerBg (pastille type chip), et cardStyle.layout (positions/tailles en % des blocs image/name/price/description…) pour rapprocher la disposition de celle du modèle — ose des placements différents du gabarit par défaut.\n` + '\n'
+          `- COMPOSITION DES FICHES : reproduis la maquette AVEC les leviers : cardStyle.cardBg (fond des FICHES — jaune/sombre si le modèle le veut), theme.pageBg (fond de PAGE, noir si le modèle est dark), kickerBg (pastille type chip), cardStyle.shape (coins/chips/prix/sticker/image/ombre — la STRUCTURE graphique) et cardStyle.layout (positions % des blocs) pour rapprocher la maquette du modèle — ose des placements différents du gabarit par défaut.\n` + '\n'
         : '') +
       `${consigne}\n\nDemande : ${brief}`,
     schema: PlanSchema,

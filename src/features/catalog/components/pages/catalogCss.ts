@@ -225,6 +225,36 @@ export const CATALOG_CSS = `
 .cat-free .cat-cell-img-in { position:static; top:auto; left:auto; right:auto; bottom:auto; width:100%; height:100%; }
 .cat-free .cat-obj[data-object-id="image"] { background:linear-gradient(180deg,#fafbfc 0%,#eef1f4 100%); }
 .cat-free .cat-cell-body { display:contents; }
+/* ── GRAMMAIRE DE FORMES (moteur créatif v2) : chaque descripteur CardShape a son
+   rendu CSS déterministe — data-attrs posés par ProductCell, identiques aperçu /
+   pages / export. ── */
+/* Coins des fiches */
+.cat-cell[data-sh-corner="rounded"] { border-radius:16px; }
+.cat-cell[data-sh-corner="bevel"] { border-radius:0; border-bottom:none;
+  clip-path:polygon(0 0, 100% 0, 100% calc(100% - 26px), calc(100% - 26px) 100%, 0 100%); }
+/* Chip sous-famille à ENCOCHE (coin bas-droit coupé, façon flyer promo) */
+.cat-cell[data-sh-chip="notch"] .cat-cell-kicker { border-radius:0;
+  clip-path:polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 13px) 100%, 0 100%); padding-right:18px; }
+.cat-cell[data-sh-chip="underline"] .cat-cell-kicker { background:none; color:var(--cat-ink);
+  border-radius:0; padding-left:0; box-shadow:inset 0 -3px 0 var(--cat-kicker-bg,var(--cat-accent)); }
+.cat-cell[data-sh-chip="plain"] .cat-cell-kicker { background:none; color:var(--cat-ink); padding-left:0; }
+/* Prix NU (texte bold sans badge, façon maquettes minimalistes) */
+.cat-cell[data-sh-price="bare"] .cat-cell-tag { background:none !important; box-shadow:none; transform:none; padding:0; }
+.cat-cell[data-sh-price="bare"] .cat-cell-price { color:var(--cat-price-bg,var(--cat-ink)); text-shadow:none; }
+.cat-cell[data-sh-price="bare"] .cat-cell-was { background:none !important; color:var(--cat-was-bg,var(--cat-ink)); opacity:.55; padding:0; transform:none; }
+/* Prix PASTILLE arrondie */
+.cat-cell[data-sh-price="pill"] .cat-cell-tag { border-radius:999px; transform:none; padding-left:18px; padding-right:18px; }
+/* Sticker rectangle / étoile (rond = défaut) */
+.cat-cell[data-sh-sticker="rect"] .cat-price-sticker { border-radius:10px; aspect-ratio:auto; padding:8px 14px; }
+.cat-cell[data-sh-sticker="star"] .cat-price-sticker { border-radius:0;
+  clip-path:polygon(50% 0%,61% 12%,76% 6%,79% 22%,95% 25%,88% 39%,100% 50%,88% 61%,95% 75%,79% 78%,76% 94%,61% 88%,50% 100%,39% 88%,24% 94%,21% 78%,5% 75%,12% 61%,0% 50%,12% 39%,5% 25%,21% 22%,24% 6%,39% 12%); }
+/* Image AMPLIFIÉE : déborde de sa boîte avec ombre portée (détouré mis en avant) */
+.cat-cell[data-sh-image="overflow"] .cat-cell-img-in { overflow:visible; }
+.cat-cell[data-sh-image="overflow"] .cat-cell-img-in img { transform:scale(1.16); filter:drop-shadow(0 10px 18px rgba(0,0,0,.28)); }
+.cat-cell[data-sh-image="overflow"] .cat-obj[data-object-id="image"] { overflow:visible !important; background:none; }
+/* Ombre portée des fiches */
+.cat-cell[data-sh-shadow] { box-shadow:0 10px 26px rgba(0,0,0,.22); }
+
 /* Paragraphe PAR BLOC (barre du header de l'aperçu) — data-attrs posés par
    ProductCell : alignement (le contenu devient bloc pour que text-align porte)
    + gras/italique/souligné FORCÉS par-dessus les défauts du template. */

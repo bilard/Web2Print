@@ -49,6 +49,14 @@ const AnalysisSchema = z.object({
   coverArchetype: z.enum(['classic', 'panel', 'poster']).optional(),
   productLayout: z.enum(['liste', 'grille']).optional(),
   productsPerPage: z.number().optional(),
+  cardShape: z.object({
+    corner: z.enum(['square', 'rounded', 'bevel']).optional(),
+    chip: z.enum(['notch', 'band', 'underline', 'plain']).optional(),
+    price: z.enum(['badge', 'bare', 'pill']).optional(),
+    sticker: z.enum(['round', 'rect', 'star']).optional(),
+    image: z.enum(['framed', 'overflow']).optional(),
+    shadow: z.boolean().optional(),
+  }).optional(),
 })
 
 const ANALYSIS_SCHEMA_FOR_LLM: Record<string, unknown> = {
@@ -69,6 +77,14 @@ const ANALYSIS_SCHEMA_FOR_LLM: Record<string, unknown> = {
     },
     productLayout: { type: 'string', enum: ['liste', 'grille'], description: "Fiches produit : 'liste' = 1 colonne pleine largeur (image à gauche, textes à droite) · 'grille' = cartes en colonnes" },
     productsPerPage: { type: 'number', description: 'densité produits/page suggérée par le visuel (2-8)' },
+    cardShape: { type: 'object', description: 'STRUCTURE graphique des cartes produit du visuel', properties: {
+      corner: { type: 'string', enum: ['square', 'rounded', 'bevel'], description: 'coins des cartes (bevel = coin coupé en biseau)' },
+      chip: { type: 'string', enum: ['notch', 'band', 'underline', 'plain'], description: 'forme des étiquettes/titres (notch = chip à encoche)' },
+      price: { type: 'string', enum: ['badge', 'bare', 'pill'], description: 'bare = prix en texte bold SANS badge' },
+      sticker: { type: 'string', enum: ['round', 'rect', 'star'], description: 'forme des pastilles de remise' },
+      image: { type: 'string', enum: ['framed', 'overflow'], description: 'overflow = produits détourés qui débordent des cartes' },
+      shadow: { type: 'boolean', description: 'les cartes ont une ombre portée' },
+    } },
   },
   required: ['palette', 'designBrief', 'coverArchetype', 'productLayout', 'productsPerPage'],
 }
@@ -96,7 +112,7 @@ export async function analyzeInspirationUrl(rawUrl: string, base: CatalogCharte)
 
   const analysis = await generateJson<z.infer<typeof AnalysisSchema>>({
     task: 'catalog.inspiration',
-    version: 'catalog.inspiration.v1',
+    version: 'catalog.inspiration.v2',
     prompt:
       `Tu es directeur artistique print/retail. Analyse ce visuel d'INSPIRATION (référence de design trouvée par l'utilisateur : ${url}) ` +
       `pour qu'un catalogue produit multi-page soit généré avec LE MÊME look, la même mise en page et la même ambiance.`,
@@ -113,6 +129,7 @@ export async function analyzeInspirationUrl(rawUrl: string, base: CatalogCharte)
     analysis.coverArchetype ? `ARCHÉTYPE COUVERTURE : ${analysis.coverArchetype}` : '',
     analysis.productLayout ? `FICHES : ${analysis.productLayout === 'liste' ? 'LISTE pleine largeur (1 colonne, image à gauche)' : 'grille'}` : '',
     analysis.productsPerPage ? `DENSITÉ : ${Math.round(analysis.productsPerPage)} produits/page` : '',
+    analysis.cardShape ? `FORMES (cardStyle.shape À RECOPIER TEL QUEL) : ${JSON.stringify(analysis.cardShape)}` : '',
   ].filter(Boolean).join(' · ')
   const brief = `INSPIRATION (${url}) — reproduire ce design : ${structure ? `${structure}. ` : ''}${analysis.designBrief}`
   const notes = base.notes ? `${base.notes}\n\n${brief}` : brief

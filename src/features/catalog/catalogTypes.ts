@@ -87,6 +87,24 @@ export const CARD_OBJECT_IDS: CardObjectId[] = [
 /** `r` = ROTATION du bloc (°) — appliquée au conteneur (contenu compris), par variante. */
 export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: number; r?: number; m?: boolean; ax?: 'l' | 'c' | 'r'; ay?: 't' | 'c' | 'b'; link?: CardObjectId | null; lx?: number; ly?: number }
 
+/** GRAMMAIRE DE FORMES des fiches (moteur créatif v2) : descripteurs remplis par
+ *  la Vision depuis la source d'inspiration, rendus par du CSS DÉTERMINISTE —
+ *  l'IA ne génère jamais de CSS libre. Absent = gabarit historique. */
+export interface CardShape {
+  /** Coins des fiches : droits / arrondis / BISEAU (coin bas-droit coupé, façon flyer). */
+  corner?: 'square' | 'rounded' | 'bevel'
+  /** Pastille sous-famille : chip à ENCOCHE (coin coupé), bandeau, souligné, aucune forme. */
+  chip?: 'notch' | 'band' | 'underline' | 'plain'
+  /** Prix : badge incliné (historique) / texte NU bold sans fond / pastille arrondie. */
+  price?: 'badge' | 'bare' | 'pill'
+  /** Sticker remise : rond / rectangle arrondi / étoile. */
+  sticker?: 'round' | 'rect' | 'star'
+  /** Image : cadrée / AMPLIFIÉE (déborde de sa boîte avec ombre portée). */
+  image?: 'framed' | 'overflow'
+  /** Ombre portée des fiches. */
+  shadow?: boolean
+}
+
 /** Style de PARAGRAPHE d'un bloc (barre du header de l'aperçu) : gras/italique/
  *  souligné FORCÉS (absent = défaut du template) + alignement du texte. */
 export interface CardTextStyle { align?: 'l' | 'c' | 'r' | 'j'; bold?: boolean; italic?: boolean; underline?: boolean }
@@ -196,6 +214,8 @@ export interface CatalogCardStyle {
   hiddenDetails?: string[]
   /** Paragraphe PAR BLOC (gras/italique/souligné/alignement) — optionnel (styles persistés anciens). */
   textStyle?: Partial<Record<CardObjectId, CardTextStyle>>
+  /** Grammaire de FORMES (moteur créatif) — optionnel (gabarit historique). */
+  shape?: CardShape
   /** Flux AIMANTÉ : les blocs texte se collent/poussent selon leur volumétrie — jamais de superposition ni de trou. Décoché = placement 100 % manuel. */
   magnetFlow: boolean
   /** Boîtes en % par objet (disposition libre — LE mode de rendu) ; absent = position de repli. */

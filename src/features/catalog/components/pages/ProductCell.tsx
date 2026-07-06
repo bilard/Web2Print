@@ -103,8 +103,12 @@ export function ProductCell({ fields: f, featured, kicker, details, cardStyle, s
       </div>
     )
   }
+  // GRAMMAIRE DE FORMES (moteur créatif) : data-attrs lus par le CSS partagé.
+  const sh = cs.shape ?? {}
   return (
     <div ref={freeRef} className={`cat-cell cat-free cat-md${featured ? ' cat-featured' : ''}`} style={style}
+      data-sh-corner={sh.corner} data-sh-chip={sh.chip} data-sh-price={sh.price}
+      data-sh-sticker={sh.sticker} data-sh-image={sh.image} data-sh-shadow={sh.shadow ? '' : undefined}
       onDoubleClick={onEdit ? (e) => { e.stopPropagation(); onEdit() } : undefined}
       title={onEdit ? 'Double-clic : modifier les données du produit' : undefined}>
       {promo && obj('promo', <span className="cat-cell-promo">{promo}</span>)}
