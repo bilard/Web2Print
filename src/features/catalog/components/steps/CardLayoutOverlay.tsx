@@ -5,6 +5,7 @@ import { useLayoutEffect, useMemo, useState, type RefObject, type PointerEvent a
 import type { CardBox, CardObjectId, CatalogCardStyle } from '../../catalogTypes'
 import { CARD_OBJECT_IDS } from '../../catalogTypes'
 import { FLOW_CHAIN, freeLayoutBox, isMagnetized } from '../pages/freeLayout'
+import { OBJ_LABEL } from './CardStyleTypo'
 
 type Handle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
@@ -148,6 +149,15 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
   }
 
+  // RELATIONS entre blocs : chaque liaison est dessinée enfant ● ─→ parent
+  // (flèche vers la CIBLE suivie) — on voit qui est le parent de qui.
+  const links = CARD_OBJECT_IDS.flatMap((id) => {
+    const b = boxOf(id)
+    const from = rects[id]
+    const to = b.link ? rects[b.link] : null
+    return b.link && from && to ? [{ id, target: b.link, from, to }] : []
+  })
+
   const selRect = sel ? rects[sel] : null
   // Aimantation PAR BLOC : bouton 🧲 sur le bloc texte sélectionné (chaîne de flux).
   const selMagnet = sel && FLOW_CHAIN.includes(sel) ? isMagnetized(boxOf(sel), style) : null
@@ -158,11 +168,34 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
   }
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 20 }}>
+      {/* Fils de LIAISON enfant ● ─→ parent (flèche sur la cible suivie). */}
+      {links.length > 0 && (
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 21, overflow: 'visible' }}>
+          <defs>
+            <marker id="cat-link-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <path d="M0,0 L7,3.5 L0,7 Z" fill="#6366f1" />
+            </marker>
+          </defs>
+          {links.map(({ id, from, to }) => {
+            const x1 = from.left, y1 = from.top + from.height / 2
+            const x2 = to.left + to.width, y2 = to.top + to.height / 2
+            return (
+              <g key={id}>
+                <line x1={`${x1}%`} y1={`${y1}%`} x2={`${x2}%`} y2={`${y2}%`}
+                  stroke="#6366f1" strokeWidth={1.5} strokeDasharray="4 3" markerEnd="url(#cat-link-arrow)" />
+                <circle cx={`${x1}%`} cy={`${y1}%`} r={3} fill="#fff" stroke="#6366f1" strokeWidth={1.5} />
+              </g>
+            )
+          })}
+        </svg>
+      )}
       {CARD_OBJECT_IDS.map((id) => {
         const r = rects[id]
         if (!r) return null
+        const link = boxOf(id).link
         return (
-          <div key={id} onPointerDown={(e) => startDrag(e, id)} title={id}
+          <div key={id} onPointerDown={(e) => startDrag(e, id)}
+            title={link ? `${OBJ_LABEL[id]} — lié à « ${OBJ_LABEL[link]} » (parent)` : OBJ_LABEL[id]}
             style={{ position: 'absolute', left: `${r.left}%`, top: `${r.top}%`, width: `${r.width}%`, height: `${r.height}%`, cursor: 'move', outline: sel === id ? '2px solid #6366f1' : '1px dashed rgba(99,102,241,.4)' }} />
         )
       })}
