@@ -18,7 +18,7 @@ const ICON = {
   'import-idml': '📐', easycatalog: '🔗', 'import-pptx': '📊', 'import-excel': '🧮',
   'import-image': '🌄', 'import-svg': '✒️', 'import-image-to-svg': '🪄', 'import-pdf-to-svg': '📄',
   dam: '🖼️', pim: '📦', taxonomies: '🌳', briefs: '📝',
-  scraping: '🕸️', 'scraping-templates': '🧩', 'scraping-hub': '🛰️', 'price-watch': '💰',
+  scraping: '🕸️', 'scraping-templates': '🧩', 'scraping-hub': '🛰️', 'price-watch': '💰', catalog: '📕',
   export: '📤', workflow: '⚡', telegram: '✈️', chat: '💬', access: '🛡️', settings: '⚙️',
   explorer: '🗺️',
 }

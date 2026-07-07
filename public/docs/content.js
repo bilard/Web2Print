@@ -1297,6 +1297,36 @@ export const MODULES = [
     "shortcuts": []
   },
   {
+    "id": "catalog",
+    "cat": "Données",
+    "icon": "📕",
+    "title": "Catalogue studio",
+    "intro": "Générez un catalogue produits complet — de la sélection PIM au PDF prêt à imprimer — via un assistant en 6 étapes piloté par IA.",
+    "features": [
+      {
+        "title": "Créer un catalogue",
+        "desc": "1. Ouvrez Catalogue studio depuis le menu latéral (groupe Publication). 2. Cliquez Nouveau catalogue (ou reprenez-en un dans Mes catalogues). 3. L'assistant en 6 étapes s'ouvre."
+      },
+      {
+        "title": "Les 6 étapes de l'assistant",
+        "desc": "1 · Source — Choisissez d'où viennent les produits : un projet PIM ou un dataset Excel importé. Chaque ligne devient un produit du catalogue. 2 · Structure — Organisez le catalogue en sections (rubriques, familles)."
+      },
+      {
+        "title": "Charte graphique & source d'inspiration",
+        "desc": "À l'étape Prompt & style, la carte Charte & éléments joints pilote le moteur créatif : • Éléments joints : ajoutez un logo, une charte PDF ou des visuels de référence."
+      },
+      {
+        "title": "Exporter",
+        "desc": "À l'étape Export, deux sorties : • PDF écran — léger, pour l'aperçu et le partage web. • PDF print pro — haute définition, prêt pour l'impression."
+      },
+      {
+        "title": "Bon à savoir",
+        "desc": "• La source est relue au chargement du catalogue : si le PIM évolue, rouvrez le catalogue pour repartir des données à jour. • Pour des fiches promo unitaires (affiches, étiquettes) plutôt qu'un catalogue complet, voyez Création studio."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
     "id": "export",
     "cat": "Export",
     "icon": "📤",

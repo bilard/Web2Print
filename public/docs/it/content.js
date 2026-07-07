@@ -1294,6 +1294,36 @@ export const MODULES = [
     "shortcuts": []
   },
   {
+    "id": "catalog",
+    "cat": "Dati",
+    "icon": "📕",
+    "title": "Catalogo studio",
+    "intro": "Genera un catalogo prodotti completo — dalla selezione PIM al PDF pronto per la stampa — tramite un assistente in 6 fasi guidato dall'IA.",
+    "features": [
+      {
+        "title": "Creare un catalogo",
+        "desc": "1. Apri Catalogo studio dal menu laterale (gruppo Pubblicazione). 2. Fai clic su Nuovo catalogo (o riprendine uno da I miei cataloghi). 3. Si apre l'assistente in 6 fasi."
+      },
+      {
+        "title": "Le 6 fasi dell'assistente",
+        "desc": "1 · Sorgente — Scegli da dove provengono i prodotti: un progetto PIM o un dataset Excel importato. Ogni riga diventa un prodotto del catalogo. 2 · Struttura — Organizza il catalogo in sezioni (rubriche, famiglie)."
+      },
+      {
+        "title": "Identità grafica e fonte d'ispirazione",
+        "desc": "Nella fase Prompt e stile, la scheda Identità grafica e allegati guida il motore creativo: • Allegati: aggiungi un logo, un PDF di linee guida o visual di riferimento."
+      },
+      {
+        "title": "Esportare",
+        "desc": "Nella fase Esporta, due uscite: • PDF schermo — leggero, per l'anteprima e la condivisione web. • PDF print pro — alta definizione, pronto per la stampa."
+      },
+      {
+        "title": "Buono a sapersi",
+        "desc": "• La sorgente viene riletta al caricamento del catalogo: se il PIM evolve, riapri il catalogo per ripartire da dati aggiornati. • Per schede promozionali singole (manifesti, etichette) anziché un catalogo completo, vedi Creazione studio."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
     "id": "export",
     "cat": "Esportazione",
     "icon": "📤",
@@ -2397,6 +2427,17 @@ export const STRINGS = {
   "Rechercher (Ctrl+K)": "Cercare (Ctrl+K)",
   "Fonctions": "Funzioni",
   "Raccourcis clavier": "Scorciatoie da tastiera",
+  "Catalogue studio": "Catalogo studio",
+  "Générez un catalogue produits complet — de la sélection PIM au PDF prêt à imprimer — via un assistant en 6 étapes piloté par IA.": "Genera un catalogo prodotti completo — dalla selezione PIM al PDF pronto per la stampa — tramite un assistente in 6 fasi guidato dall'IA.",
+  "Créer un catalogue": "Creare un catalogo",
+  "1. Ouvrez Catalogue studio depuis le menu latéral (groupe Publication). 2. Cliquez Nouveau catalogue (ou reprenez-en un dans Mes catalogues). 3. L'assistant en 6 étapes s'ouvre.": "1. Apri Catalogo studio dal menu laterale (gruppo Pubblicazione). 2. Fai clic su Nuovo catalogo (o riprendine uno da I miei cataloghi). 3. Si apre l'assistente in 6 fasi.",
+  "Les 6 étapes de l'assistant": "Le 6 fasi dell'assistente",
+  "1 · Source — Choisissez d'où viennent les produits : un projet PIM ou un dataset Excel importé. Chaque ligne devient un produit du catalogue. 2 · Structure — Organisez le catalogue en sections (rubriques, familles).": "1 · Sorgente — Scegli da dove provengono i prodotti: un progetto PIM o un dataset Excel importato. Ogni riga diventa un prodotto del catalogo. 2 · Struttura — Organizza il catalogo in sezioni (rubriche, famiglie).",
+  "Charte graphique & source d'inspiration": "Identità grafica e fonte d'ispirazione",
+  "À l'étape Prompt & style, la carte Charte & éléments joints pilote le moteur créatif : • Éléments joints : ajoutez un logo, une charte PDF ou des visuels de référence.": "Nella fase Prompt e stile, la scheda Identità grafica e allegati guida il motore creativo: • Allegati: aggiungi un logo, un PDF di linee guida o visual di riferimento.",
+  "Exporter": "Esportare",
+  "À l'étape Export, deux sorties : • PDF écran — léger, pour l'aperçu et le partage web. • PDF print pro — haute définition, prêt pour l'impression.": "Nella fase Esporta, due uscite: • PDF schermo — leggero, per l'anteprima e la condivisione web. • PDF print pro — alta definizione, pronto per la stampa.",
+  "• La source est relue au chargement du catalogue : si le PIM évolue, rouvrez le catalogue pour repartir des données à jour. • Pour des fiches promo unitaires (affiches, étiquettes) plutôt qu'un catalogue complet, voyez Création studio.": "• La sorgente viene riletta al caricamento del catalogo: se il PIM evolve, riapri il catalogo per ripartire da dati aggiornati. • Per schede promozionali singole (manifesti, etichette) anziché un catalogo completo, vedi Creazione studio.",
   "Lien vers": "Link a",
   "Aucun résultat pour": "Nessun risultato per"
 }

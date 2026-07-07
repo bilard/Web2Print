@@ -687,5 +687,16 @@
  "Rechercher un module ou une fonction…": "Search for a module or a function…",
  "Rechercher (Ctrl+K)": "Search (Ctrl+K)",
  "Fonctions": "Features",
- "Raccourcis clavier": "Keyboard shortcuts"
+ "Raccourcis clavier": "Keyboard shortcuts",
+ "Catalogue studio": "Studio catalog",
+ "Générez un catalogue produits complet — de la sélection PIM au PDF prêt à imprimer — via un assistant en 6 étapes piloté par IA.": "Generate a complete product catalog — from the PIM selection to a print-ready PDF — through an AI-driven 6-step wizard.",
+ "Créer un catalogue": "Create a catalog",
+ "1. Ouvrez Catalogue studio depuis le menu latéral (groupe Publication). 2. Cliquez Nouveau catalogue (ou reprenez-en un dans Mes catalogues). 3. L'assistant en 6 étapes s'ouvre.": "1. Open Studio catalog from the side menu (Publishing group). 2. Click New catalog (or resume one from My catalogs). 3. The 6-step wizard opens.",
+ "Les 6 étapes de l'assistant": "The wizard's 6 steps",
+ "1 · Source — Choisissez d'où viennent les produits : un projet PIM ou un dataset Excel importé. Chaque ligne devient un produit du catalogue. 2 · Structure — Organisez le catalogue en sections (rubriques, familles).": "1 · Source — Choose where the products come from: a PIM project or an imported Excel dataset. Each row becomes a catalog product. 2 · Structure — Organize the catalog into sections (headings, families).",
+ "Charte graphique & source d'inspiration": "Brand kit & inspiration source",
+ "À l'étape Prompt & style, la carte Charte & éléments joints pilote le moteur créatif : • Éléments joints : ajoutez un logo, une charte PDF ou des visuels de référence.": "In the Prompt & style step, the Brand kit & attachments card drives the creative engine: • Attachments: add a logo, a brand-guidelines PDF or reference visuals.",
+ "Exporter": "Export",
+ "À l'étape Export, deux sorties : • PDF écran — léger, pour l'aperçu et le partage web. • PDF print pro — haute définition, prêt pour l'impression.": "In the Export step, two outputs: • Screen PDF — lightweight, for preview and web sharing. • Pro print PDF — high resolution, ready for printing.",
+ "• La source est relue au chargement du catalogue : si le PIM évolue, rouvrez le catalogue pour repartir des données à jour. • Pour des fiches promo unitaires (affiches, étiquettes) plutôt qu'un catalogue complet, voyez Création studio.": "• The source is re-read when the catalog loads: if the PIM changes, reopen the catalog to start from up-to-date data. • For standalone promo sheets (posters, labels) rather than a full catalog, see Studio creation."
 }

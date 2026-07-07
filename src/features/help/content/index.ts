@@ -23,6 +23,7 @@ import { scrapingTemplatesSection } from './scraping-templates'
 import { scrapingHubSection } from './scraping-hub'
 import { priceWatchSection } from './price-watch'
 import { retailPromoSection } from './retail-promo'
+import { catalogSection } from './catalog'
 import { exportSection } from './export'
 import { telegramSection } from './telegram'
 import { workflowSection } from './workflow'
@@ -59,6 +60,7 @@ export const helpSections: HelpSection[] = [
   scrapingHubSection,
   priceWatchSection,
   retailPromoSection,
+  catalogSection,
   exportSection,
   workflowSection,
   telegramSection,

@@ -1294,6 +1294,36 @@ export const MODULES = [
     "shortcuts": []
   },
   {
+    "id": "catalog",
+    "cat": "Daten",
+    "icon": "📕",
+    "title": "Studio-Katalog",
+    "intro": "Erstellen Sie einen vollständigen Produktkatalog — von der PIM-Auswahl bis zum druckfertigen PDF — über einen KI-gesteuerten Assistenten in 6 Schritten.",
+    "features": [
+      {
+        "title": "Einen Katalog erstellen",
+        "desc": "1. Öffnen Sie Studio-Katalog über das Seitenmenü (Gruppe Veröffentlichung). 2. Klicken Sie auf Neuer Katalog (oder setzen Sie einen aus Meine Kataloge fort). 3. Der Assistent mit 6 Schritten öffnet sich."
+      },
+      {
+        "title": "Die 6 Schritte des Assistenten",
+        "desc": "1 · Quelle — Wählen Sie, woher die Produkte stammen: ein PIM-Projekt oder ein importiertes Excel-Dataset. Jede Zeile wird zu einem Katalogprodukt. 2 · Struktur — Gliedern Sie den Katalog in Abschnitte (Rubriken, Familien)."
+      },
+      {
+        "title": "Corporate Design & Inspirationsquelle",
+        "desc": "Im Schritt Prompt & Stil steuert die Karte Corporate Design & Anhänge die Kreativ-Engine: • Anhänge: Fügen Sie ein Logo, ein Styleguide-PDF oder Referenzbilder hinzu."
+      },
+      {
+        "title": "Exportieren",
+        "desc": "Im Schritt Export zwei Ausgaben: • Bildschirm-PDF — leicht, für Vorschau und Web-Freigabe. • Pro-Druck-PDF — hohe Auflösung, druckbereit."
+      },
+      {
+        "title": "Gut zu wissen",
+        "desc": "• Die Quelle wird beim Laden des Katalogs neu eingelesen: Wenn sich das PIM ändert, öffnen Sie den Katalog erneut, um von aktuellen Daten auszugehen. • Für einzelne Werbeblätter (Poster, Etiketten) statt eines vollständigen Katalogs siehe Studio-Erstellung."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
     "id": "export",
     "cat": "Export",
     "icon": "📤",
@@ -2397,6 +2427,17 @@ export const STRINGS = {
   "Rechercher (Ctrl+K)": "Suchen (Strg+K)",
   "Fonctions": "Funktionen",
   "Raccourcis clavier": "Tastenkürzel",
+  "Catalogue studio": "Studio-Katalog",
+  "Générez un catalogue produits complet — de la sélection PIM au PDF prêt à imprimer — via un assistant en 6 étapes piloté par IA.": "Erstellen Sie einen vollständigen Produktkatalog — von der PIM-Auswahl bis zum druckfertigen PDF — über einen KI-gesteuerten Assistenten in 6 Schritten.",
+  "Créer un catalogue": "Einen Katalog erstellen",
+  "1. Ouvrez Catalogue studio depuis le menu latéral (groupe Publication). 2. Cliquez Nouveau catalogue (ou reprenez-en un dans Mes catalogues). 3. L'assistant en 6 étapes s'ouvre.": "1. Öffnen Sie Studio-Katalog über das Seitenmenü (Gruppe Veröffentlichung). 2. Klicken Sie auf Neuer Katalog (oder setzen Sie einen aus Meine Kataloge fort). 3. Der Assistent mit 6 Schritten öffnet sich.",
+  "Les 6 étapes de l'assistant": "Die 6 Schritte des Assistenten",
+  "1 · Source — Choisissez d'où viennent les produits : un projet PIM ou un dataset Excel importé. Chaque ligne devient un produit du catalogue. 2 · Structure — Organisez le catalogue en sections (rubriques, familles).": "1 · Quelle — Wählen Sie, woher die Produkte stammen: ein PIM-Projekt oder ein importiertes Excel-Dataset. Jede Zeile wird zu einem Katalogprodukt. 2 · Struktur — Gliedern Sie den Katalog in Abschnitte (Rubriken, Familien).",
+  "Charte graphique & source d'inspiration": "Corporate Design & Inspirationsquelle",
+  "À l'étape Prompt & style, la carte Charte & éléments joints pilote le moteur créatif : • Éléments joints : ajoutez un logo, une charte PDF ou des visuels de référence.": "Im Schritt Prompt & Stil steuert die Karte Corporate Design & Anhänge die Kreativ-Engine: • Anhänge: Fügen Sie ein Logo, ein Styleguide-PDF oder Referenzbilder hinzu.",
+  "Exporter": "Exportieren",
+  "À l'étape Export, deux sorties : • PDF écran — léger, pour l'aperçu et le partage web. • PDF print pro — haute définition, prêt pour l'impression.": "Im Schritt Export zwei Ausgaben: • Bildschirm-PDF — leicht, für Vorschau und Web-Freigabe. • Pro-Druck-PDF — hohe Auflösung, druckbereit.",
+  "• La source est relue au chargement du catalogue : si le PIM évolue, rouvrez le catalogue pour repartir des données à jour. • Pour des fiches promo unitaires (affiches, étiquettes) plutôt qu'un catalogue complet, voyez Création studio.": "• Die Quelle wird beim Laden des Katalogs neu eingelesen: Wenn sich das PIM ändert, öffnen Sie den Katalog erneut, um von aktuellen Daten auszugehen. • Für einzelne Werbeblätter (Poster, Etiketten) statt eines vollständigen Katalogs siehe Studio-Erstellung.",
   "Lien vers": "Link zu",
   "Aucun résultat pour": "Keine Ergebnisse für"
 }

@@ -687,5 +687,16 @@
  "Rechercher un module ou une fonction…": "Buscar un módulo o una función…",
  "Rechercher (Ctrl+K)": "Buscar (Ctrl+K)",
  "Fonctions": "Funciones",
- "Raccourcis clavier": "Atajos de teclado"
+ "Raccourcis clavier": "Atajos de teclado",
+ "Catalogue studio": "Catálogo studio",
+ "Générez un catalogue produits complet — de la sélection PIM au PDF prêt à imprimer — via un assistant en 6 étapes piloté par IA.": "Genera un catálogo de productos completo — desde la selección PIM hasta el PDF listo para imprimir — mediante un asistente de 6 pasos impulsado por IA.",
+ "Créer un catalogue": "Crear un catálogo",
+ "1. Ouvrez Catalogue studio depuis le menu latéral (groupe Publication). 2. Cliquez Nouveau catalogue (ou reprenez-en un dans Mes catalogues). 3. L'assistant en 6 étapes s'ouvre.": "1. Abre Catálogo studio desde el menú lateral (grupo Publicación). 2. Haz clic en Nuevo catálogo (o retoma uno en Mis catálogos). 3. Se abre el asistente de 6 pasos.",
+ "Les 6 étapes de l'assistant": "Los 6 pasos del asistente",
+ "1 · Source — Choisissez d'où viennent les produits : un projet PIM ou un dataset Excel importé. Chaque ligne devient un produit du catalogue. 2 · Structure — Organisez le catalogue en sections (rubriques, familles).": "1 · Fuente — Elige de dónde vienen los productos: un proyecto PIM o un dataset Excel importado. Cada fila se convierte en un producto del catálogo. 2 · Estructura — Organiza el catálogo en secciones (rúbricas, familias).",
+ "Charte graphique & source d'inspiration": "Carta gráfica y fuente de inspiración",
+ "À l'étape Prompt & style, la carte Charte & éléments joints pilote le moteur créatif : • Éléments joints : ajoutez un logo, une charte PDF ou des visuels de référence.": "En el paso Prompt y estilo, la tarjeta Carta gráfica y elementos adjuntos impulsa el motor creativo: • Elementos adjuntos: añade un logo, una carta gráfica en PDF o visuales de referencia.",
+ "Exporter": "Exportar",
+ "À l'étape Export, deux sorties : • PDF écran — léger, pour l'aperçu et le partage web. • PDF print pro — haute définition, prêt pour l'impression.": "En el paso Exportar, dos salidas: • PDF pantalla — ligero, para la vista previa y el uso compartido web. • PDF print pro — alta definición, listo para imprimir.",
+ "• La source est relue au chargement du catalogue : si le PIM évolue, rouvrez le catalogue pour repartir des données à jour. • Pour des fiches promo unitaires (affiches, étiquettes) plutôt qu'un catalogue complet, voyez Création studio.": "• La fuente se vuelve a leer al cargar el catálogo: si el PIM evoluciona, vuelve a abrir el catálogo para partir de datos actualizados. • Para fichas promocionales sueltas (carteles, etiquetas) en lugar de un catálogo completo, consulta Creación studio."
 }
