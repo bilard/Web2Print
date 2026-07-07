@@ -8,9 +8,11 @@ import { clientIpFromHeaders, lookupGeo } from './geoip'
 if (!getApps().length) initializeApp()
 const db = getFirestore()
 
-// Comptes de Francis (owner + compte pimalion) : ses visites (il teste l'app en
-// continu) ne doivent JAMAIS polluer les stats (décision re-confirmée 2026-07-07).
-const EXCLUDED_EMAILS = ['ibs.studio@gmail.com', 'f.bilard@pimalion.com']
+// Compte OWNER uniquement : ses visites (il teste l'app en continu) ne doivent
+// JAMAIS polluer les stats (décision re-confirmée 2026-07-07). ⚠ Ne PAS y ajouter
+// f.bilard@pimalion.com : c'est son compte de test « utilisateur normal », il doit
+// apparaître dans le journal (retiré le 2026-07-07 après l'avoir exclu à tort).
+const EXCLUDED_EMAILS = ['ibs.studio@gmail.com']
 
 // Uids exclus mis en cache par instance : résolus une fois (requête `users`), puis
 // mémoïsés tant qu'introuvables (retry), pour ne pas peser sur cet endpoint à haute
