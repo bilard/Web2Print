@@ -1,16 +1,22 @@
 // functions/src/analytics/notifySession.ts
-// Notification Telegram best-effort au propriétaire à CHAQUE nouvelle session
-// visiteur (premier hit d'un `sid`). Déclenché depuis collectAnalytics après
-// l'écriture de l'event, et UNIQUEMENT pour les visiteurs non exclus (le
-// propriétaire ne se notifie donc jamais lui-même).
+// Notifications Telegram best-effort au propriétaire, façon LOG LIVE. Déclenché
+// depuis collectAnalytics après l'écriture de l'event, et UNIQUEMENT pour les
+// visiteurs non exclus (le propriétaire ne se notifie donc jamais lui-même).
 //
-// Anti-doublon multi-instances : on tente `create()` sur analyticsSessions/{sid} ;
-// il n'aboutit qu'une seule fois par session (rejet ALREADY_EXISTS sinon), ce qui
-// est atomique et sûr même avec maxInstances > 1. On ne notifie que sur ce succès.
+// Deux régimes selon que le visiteur est identifié :
+//  • Utilisateur CONNECTÉ (uid effectif présent) → flux d'activité : une notif à
+//    CHAQUE page/section visitée (anti-doublon PAR ÉVÉNEMENT via `eid`), pour un
+//    suivi live indépendant de ce qui est supprimé côté Telegram.
+//  • Visiteur ANONYME → un seul ping d'arrivée par session (`sid`), pour signaler
+//    le trafic public sans le noyer sous chaque page vue.
+//
+// Anti-doublon multi-instances : `create()` sur analyticsNotifyGuards/{clé} —
+// atomique (rejet ALREADY_EXISTS), sûr même avec maxInstances > 1. Clé = `e:<eid>`
+// (activité connectée, granularité event) ou `s:<sid>` (arrivée anonyme, session).
 //
 // Destinataire : users/{ownerUid}.telegram (botToken + chatId), la même config que
 // le digest quotidien. Coupe-circuit : telegram.sessionAlerts === false désactive
-// les notifications sans redéploiement.
+// tout sans redéploiement.
 import type { Firestore } from 'firebase-admin/firestore'
 import { FieldValue } from 'firebase-admin/firestore'
 import { getAuth } from 'firebase-admin/auth'
@@ -29,17 +35,6 @@ interface SessionEventDoc {
   city: string | null
 }
 
-export interface SessionNotifyInput {
-  name: string | null
-  area: string
-  path: string
-  device: string | null
-  browser: string | null
-  os: string | null
-  country: string | null
-  city: string | null
-}
-
 /** Drapeau emoji à partir d'un code pays ISO-3166 alpha-2 (`''` sinon). */
 function flagEmoji(cc: string | null): string {
   if (!cc || !/^[A-Za-z]{2}$/.test(cc)) return ''
@@ -48,19 +43,36 @@ function flagEmoji(cc: string | null): string {
   return String.fromCodePoint(base + up.charCodeAt(0) - 65, base + up.charCodeAt(1) - 65)
 }
 
-/** Pur : compose le message Telegram d'une nouvelle session. */
-export function buildSessionText(i: SessionNotifyInput): string {
-  const who = i.name ? ` — ${i.name}` : ' — Visiteur anonyme'
-  const lines = [`🔵 Nouvelle visite${who}`]
-
+/** Pur : message d'ARRIVÉE d'un visiteur anonyme (un par session). */
+export function buildSessionText(i: {
+  area: string
+  path: string
+  device: string | null
+  browser: string | null
+  os: string | null
+  country: string | null
+  city: string | null
+}): string {
+  const lines = ['🔵 Nouvelle visite — Visiteur anonyme']
   const place = [i.city, i.country].filter(Boolean).join(', ')
   if (place) lines.push(`📍 ${flagEmoji(i.country)} ${place}`.trim())
-
   lines.push(`📄 ${i.area} · ${i.path}`)
-
   const tech = [i.device, i.browser, i.os].filter(Boolean).join(' · ')
   if (tech) lines.push(`💻 ${tech}`)
+  return lines.join('\n')
+}
 
+/** Pur : ligne de LOG LIVE d'un utilisateur connecté (une par page/section). */
+export function buildActivityText(i: {
+  name: string
+  area: string
+  path: string
+  country: string | null
+  city: string | null
+}): string {
+  const lines = [`🟢 ${i.name}`, `📄 ${i.area} · ${i.path}`]
+  const place = [i.city, i.country].filter(Boolean).join(', ')
+  if (place) lines.push(`📍 ${flagEmoji(i.country)} ${place}`.trim())
   return lines.join('\n')
 }
 
@@ -91,9 +103,8 @@ async function readOwnerTelegram(db: Firestore): Promise<{ botToken: string; cha
   return null
 }
 
-/** Résout un nom lisible pour un visiteur connecté (`null` si anonyme/inconnu). */
-async function resolveName(uid: string | null): Promise<string | null> {
-  if (!uid) return null
+/** Résout un nom lisible pour un visiteur connecté (`null` si inconnu). */
+async function resolveName(uid: string): Promise<string | null> {
   try {
     const rec = await getAuth().getUser(uid)
     return rec.displayName || rec.email || null
@@ -103,38 +114,60 @@ async function resolveName(uid: string | null): Promise<string | null> {
 }
 
 /**
- * Notifie le propriétaire par Telegram si `doc` inaugure une nouvelle session.
- * Entièrement best-effort : ne lève jamais (les erreurs sont avalées) afin de ne
- * jamais bloquer la réponse au beacon.
+ * Garde atomique : `true` si cette clé n'avait jamais été notifiée (donc on notifie),
+ * `false` sinon (doublon ou erreur d'écriture — on s'abstient).
+ */
+async function claimGuard(db: Firestore, key: string, meta: Record<string, unknown>): Promise<boolean> {
+  try {
+    await db.collection('analyticsNotifyGuards').doc(key).create({
+      firstSeen: FieldValue.serverTimestamp(),
+      ...meta,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Notifie le propriétaire par Telegram selon le régime du visiteur (cf. en-tête).
+ * Entièrement best-effort : ne lève jamais afin de ne jamais bloquer la réponse au
+ * beacon. `effectiveUid` = uid pour NOMMER le visiteur (doc.uid ?? luid) — `luid`
+ * est présent dès le 1er hit d'un utilisateur connu ; servi au seul affichage,
+ * JAMAIS persisté.
  */
 export async function maybeNotifyNewSession(
   db: Firestore,
   doc: SessionEventDoc,
-  // uid effectif pour NOMMER le visiteur (doc.uid ?? luid) : `luid` est présent dès
-  // le premier hit d'un utilisateur connu, là où `doc.uid` n'est backfillé qu'après.
-  // Servi au seul affichage du nom — JAMAIS persisté dans analyticsSessions.
   effectiveUid: string | null,
+  eid: string | null,
 ): Promise<void> {
-  const sid = doc.sid
-  if (!sid) return
   try {
-    // Garde atomique : n'aboutit qu'au premier hit de cette session.
-    await db.collection('analyticsSessions').doc(sid).create({
-      firstSeen: FieldValue.serverTimestamp(),
-      vid: doc.vid,
-      country: doc.country,
-      city: doc.city,
-    })
-  } catch {
-    // ALREADY_EXISTS (session déjà vue) ou erreur d'écriture → on ne notifie pas.
-    return
-  }
-  try {
+    if (effectiveUid) {
+      // Utilisateur connecté → log live : une ligne par événement.
+      // Anti-doublon par event ; sans `eid` (rare) on laisse passer.
+      const key = eid ? `e:${eid}` : null
+      if (key && !(await claimGuard(db, key, { uid: effectiveUid, path: doc.path }))) return
+      const recipient = await readOwnerTelegram(db)
+      if (!recipient) return
+      const name = (await resolveName(effectiveUid)) ?? 'Utilisateur connecté'
+      const text = buildActivityText({
+        name,
+        area: doc.area,
+        path: doc.path,
+        country: doc.country,
+        city: doc.city,
+      })
+      await sendTelegram(recipient.botToken, recipient.chatId, text)
+      return
+    }
+
+    // Visiteur anonyme → un seul ping d'arrivée par session.
+    if (!doc.sid) return
+    if (!(await claimGuard(db, `s:${doc.sid}`, { vid: doc.vid, country: doc.country, city: doc.city }))) return
     const recipient = await readOwnerTelegram(db)
     if (!recipient) return
-    const name = await resolveName(effectiveUid)
     const text = buildSessionText({
-      name,
       area: doc.area,
       path: doc.path,
       device: doc.device,
@@ -145,6 +178,6 @@ export async function maybeNotifyNewSession(
     })
     await sendTelegram(recipient.botToken, recipient.chatId, text)
   } catch (err) {
-    console.error('maybeNotifyNewSession: envoi Telegram échoué', err)
+    console.error('maybeNotifyNewSession: notification Telegram échouée', err)
   }
 }

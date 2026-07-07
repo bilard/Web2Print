@@ -92,9 +92,9 @@ export const collectAnalytics = onRequest(
     } catch {
       // best-effort : on n'expose jamais d'erreur au visiteur
     }
-    // Notification Telegram au propriétaire à chaque nouvelle session visiteur.
-    // Best-effort et interne (jamais ne lève) : ne bloque pas la réponse au beacon.
-    await maybeNotifyNewSession(db, doc, uid)
+    // Notifications Telegram au propriétaire (log live des connectés + arrivée des
+    // anonymes). Best-effort et interne (jamais ne lève) : ne bloque pas le beacon.
+    await maybeNotifyNewSession(db, doc, uid, eid)
     res.status(204).end()
   },
 )
