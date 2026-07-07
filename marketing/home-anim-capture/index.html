@@ -35,6 +35,9 @@ h1{font-size:27px;font-weight:750;letter-spacing:-.02em;margin:0 0 6px;}
 .copy.done{color:var(--good);border-color:var(--good);}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 footer{margin-top:44px;color:var(--faint);font-size:12.5px;font-family:var(--mono);text-align:center;}
+.docmenu{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.docbtn{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:12.5px;color:var(--text);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:6px 12px;text-decoration:none;transition:border-color .15s,color .15s;}
+.docbtn:hover{border-color:var(--accent);color:var(--accent-soft);}
 @media(prefers-reduced-motion:reduce){.card{transition:none;}.card:hover{transform:none;}}
 </style>
 <div class="wrap">
@@ -42,7 +45,11 @@ footer{margin-top:44px;color:var(--faint);font-size:12.5px;font-family:var(--mon
   <p class="sub"><b>16</b> fichiers <code style="font-family:var(--mono)">.mp4</code> · 1920/HD · ~6,5 s chacun · rendus par seek déterministe (zéro saccade).</p>
   <div class="note">
     Toutes les vidéos sont dans <code>marketing/home-anim-capture/out/</code>. Ouvre le dossier :
-    <code>open /Applications/_IA/Claude_workspace/Web2Print/marketing/home-anim-capture/out/</code> · le bouton « Copier » met le chemin complet du fichier dans le presse-papier.
+    <code>open /Applications/_IA/Claude_workspace/Web2Print/marketing/home-anim-capture/out/</code> · le bouton « Copier » met le chemin complet du fichier dans le presse-papier. <b>Cliquez sur une vignette pour lire sa vidéo.</b>
+    <div class="docmenu">
+      <a class="docbtn" href="file:///Applications/_IA/Claude_workspace/Web2Print/marketing/home-anim-capture/index.html">🎬 Galerie des animations</a>
+      <a class="docbtn" href="out/">📂 Dossier des vidéos</a>
+    </div>
   </div>
   <div class="grid">
 <article class="card">
