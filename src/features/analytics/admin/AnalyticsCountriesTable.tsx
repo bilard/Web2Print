@@ -1,5 +1,5 @@
 // src/features/analytics/admin/AnalyticsCountriesTable.tsx
-import { countryCityStats, type AnalyticsEvent } from '../metrics'
+import { countryCityStats, countryName, type AnalyticsEvent } from '../metrics'
 
 const TH = 'font-medium text-left py-1.5 px-2 border-b border-white/10'
 const TD = 'py-1.5 px-2 border-b border-white/5'
@@ -50,8 +50,11 @@ export function AnalyticsCountriesTable({ events, selected, onSelect }: Props) {
                   className={`transition-colors ${click ? 'cursor-pointer hover:bg-white/[0.04]' : ''} ${active ? 'bg-indigo-500/15' : ''}`}
                 >
                   <td className={TD}>
-                    <span className="inline-block bg-indigo-500/20 text-indigo-200 rounded px-1.5 py-0.5 text-[10px] font-medium tracking-wide">
-                      {r.country ?? '—'}
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block bg-indigo-500/20 text-indigo-200 rounded px-1.5 py-0.5 text-[10px] font-medium tracking-wide">
+                        {r.country ?? '—'}
+                      </span>
+                      <span className="text-white/80">{countryName(r.country) ?? '—'}</span>
                     </span>
                   </td>
                   <td className={`${TD} text-white/80 truncate max-w-[140px]`}>{r.city ?? '—'}</td>

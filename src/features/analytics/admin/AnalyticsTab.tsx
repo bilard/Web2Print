@@ -28,10 +28,12 @@ const PERIODS: { key: PeriodKey; label: string }[] = [
   { key: '30d', label: '30 j' },
   { key: '90d', label: '90 j' },
   { key: '12m', label: '12 mois' },
+  { key: 'custom', label: 'Perso' },
 ]
 
 export function AnalyticsTab() {
-  const { period, setPeriod, fromMs, toMs, prevFromMs, prevToMs } = usePeriod('30d')
+  const { period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo, fromMs, toMs, prevFromMs, prevToMs, isLive } = usePeriod('30d')
+  const today = new Date().toISOString().slice(0, 10)
   const [filter, setFilter] = useState<EventFilter>(NO_FILTER)
   // Pays sélectionné dans la carte « Pays » → mis en évidence sur la carte du monde.
   const [country, setCountry] = useState<string | null>(null)
@@ -57,8 +59,9 @@ export function AnalyticsTab() {
       onError: (e) => toast.error(`Échec : ${e instanceof Error ? e.message : 'erreur inconnue'}`),
     })
   }
-  // Période courante : borne haute ouverte (jusqu'à maintenant) pour inclure les visites en direct.
-  const cur = useAnalyticsEvents(fromMs, null, true)
+  // Preset : borne haute ouverte (jusqu'à maintenant) pour inclure le direct.
+  // Plage perso : borne haute fixée à la date de fin choisie.
+  const cur = useAnalyticsEvents(fromMs, isLive ? null : toMs, true)
   const prev = useAnalyticsEvents(prevFromMs, prevToMs, true)
   const allEvents = cur.data ?? []
   const events = useMemo(() => filterEvents(allEvents, filter), [allEvents, filter])
@@ -68,19 +71,31 @@ export function AnalyticsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-1">
-          {PERIODS.map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setPeriod(p.key)}
-              className={`px-3 py-1.5 rounded text-sm ${
-                period === p.key ? 'bg-white/[0.08] text-white' : 'text-white/45 hover:text-white/70'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex gap-1">
+            {PERIODS.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setPeriod(p.key)}
+                className={`px-3 py-1.5 rounded text-sm ${
+                  period === p.key ? 'bg-white/[0.08] text-white' : 'text-white/45 hover:text-white/70'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          {period === 'custom' && (
+            <div className="flex items-center gap-2 text-xs text-white/60">
+              <label className="flex items-center gap-1.5">Du
+                <input type="date" value={customFrom} max={customTo || today} onChange={(e) => setCustomFrom(e.target.value)} className="bg-surface-2 border border-white/10 rounded px-2 py-1 text-white/80" />
+              </label>
+              <label className="flex items-center gap-1.5">Au
+                <input type="date" value={customTo} max={today} onChange={(e) => setCustomTo(e.target.value)} className="bg-surface-2 border border-white/10 rounded px-2 py-1 text-white/80" />
+              </label>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button

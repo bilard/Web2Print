@@ -1,8 +1,8 @@
 // src/features/analytics/admin/AnalyticsRecent.tsx
-import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Fragment, useMemo, useState } from 'react'
+import { ChevronLeft, ChevronRight, Users, List } from 'lucide-react'
 import type { AnalyticsEvent } from '../metrics'
-import { recentEvents, pageLabel } from '../metrics'
+import { recentEvents, pageLabel, countryName } from '../metrics'
 import { useUsersMap } from '../useUsersMap'
 
 const PAGE_SIZE = 15
@@ -13,40 +13,65 @@ type Filters = { user: string; page: string; device: string; country: string; da
 const NONE: Filters = { user: 'all', page: 'all', device: 'all', country: 'all', day: 'all' }
 
 const dayOf = (ts: number) => new Date(ts).toLocaleDateString('fr-FR')
-
-/** Détail de l'appareil : « OS · Navigateur » (ce qui est connu), pour la ligne secondaire. */
 const deviceDetail = (e: AnalyticsEvent): string => [e.os, e.browser].filter(Boolean).join(' · ')
-/** Lieu lisible : « Ville, PAYS » ou ce qui est connu (« — » si rien). */
-const placeOf = (e: AnalyticsEvent): string => [e.city, e.country].filter(Boolean).join(', ') || '—'
+/** Lieu lisible : « Ville, Pays » (nom en clair) ou ce qui est connu (« — » si rien). */
+const placeOf = (e: AnalyticsEvent): string => [e.city, countryName(e.country)].filter(Boolean).join(', ') || '—'
+const when = (ts: number) => new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+const relDay = (ts: number) => new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 
-/** Menu déroulant de filtre pour un en-tête de colonne. */
+const TH = 'font-medium text-left py-2 px-2 border-b border-white/10'
+const TD = 'py-1.5 px-2 border-b border-white/5'
+
 function ColFilter({ value, onChange, options, allLabel }: { value: string; onChange: (v: string) => void; options: Opt[]; allLabel: string }) {
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full max-w-[170px] bg-surface-2 text-white/70 rounded px-1.5 py-1 border border-white/10 text-[11px]"
-    >
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full max-w-[170px] bg-surface-2 text-white/70 rounded px-1.5 py-1 border border-white/10 text-[11px]">
       <option value="all">{allLabel}</option>
       {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   )
 }
 
-/** Journal de consultation : qui a vu quelle page et quand, avec un filtre par colonne. */
+interface Group { key: string; label: string; isNamed: boolean; events: AnalyticsEvent[]; lastTs: number }
+
+/** Regroupe les consultations par utilisateur (un bloc par uid nommé + « Anonyme »). */
+function groupByUser(events: AnalyticsEvent[], userName: (uid: string | null) => string): Group[] {
+  const map = new Map<string, AnalyticsEvent[]>()
+  for (const e of events) {
+    const key = e.uid ?? ANON
+    const arr = map.get(key)
+    if (arr) arr.push(e); else map.set(key, [e])
+  }
+  return [...map.entries()]
+    .map(([key, evs]): Group => ({ key, label: key === ANON ? 'Anonyme' : userName(key), isNamed: key !== ANON, events: evs, lastTs: evs[0]?.ts ?? 0 }))
+    .sort((a, b) => Number(b.isNamed) - Number(a.isNamed) || b.lastTs - a.lastTs)
+}
+
+function EventRow({ e, showUser, userName }: { e: AnalyticsEvent; showUser: boolean; userName: (uid: string | null) => string }) {
+  const detail = deviceDetail(e)
+  return (
+    <tr className="hover:bg-white/[0.03]">
+      <td className={`${TD} truncate max-w-[180px] ${e.uid ? 'text-white/80' : 'text-white/35 italic'}`} title={e.uid ?? 'Visiteur anonyme'}>{showUser ? userName(e.uid) : ''}</td>
+      <td className={`${TD} text-white/70 truncate max-w-[240px]`} title={e.path}>{pageLabel(e.path)}</td>
+      <td className={`${TD} text-white/55`} title={detail || undefined}>
+        <span>{DEVICE_FR[e.device] ?? e.device}</span>
+        {detail && <span className="block text-white/35 text-[10px] leading-tight">{detail}</span>}
+      </td>
+      <td className={`${TD} text-white/55`}>{placeOf(e)}</td>
+      <td className={`${TD} text-white/55 text-right whitespace-nowrap tabular-nums`}>{when(e.ts)}</td>
+    </tr>
+  )
+}
+
+/** Journal de consultation : qui a vu quelle page et quand — filtres par colonne + regroupement par utilisateur. */
 export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
   const usersMap = useUsersMap()
   const userName = (uid: string | null): string => (uid ? usersMap.get(uid) ?? uid : 'Anonyme')
-
   const [f, setF] = useState<Filters>(NONE)
   const [page, setPage] = useState(0)
+  const [grouped, setGrouped] = useState(true)
   const set = (k: keyof Filters, v: string) => { setF((p) => ({ ...p, [k]: v })); setPage(0) }
 
-  // Tri par récence sur le MÊME jeu d'événements que les cartes de synthèse (Pays, etc.) :
-  // la navigation interne n'est plus exclue, les filtres de colonnes suffisent à l'écarter.
   const sorted = useMemo(() => recentEvents(events, events.length), [events])
-
-  // Options des colonnes filtrables (Utilisateur, Page, Appareil, Pays, Jour).
   const opts = useMemo(() => {
     const users = new Map<string, true>(); const pages = new Set<string>(); const countries = new Set<string>(); const days = new Map<string, true>()
     let anon = false; let noCountry = false
@@ -54,16 +79,13 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
       if (e.uid) users.set(e.uid, true); else anon = true
       pages.add(pageLabel(e.path))
       if (e.country) countries.add(e.country); else noCountry = true
-      days.set(dayOf(e.ts), true) // sorted = récent→ancien ⇒ ordre déjà chronologique inversé
+      days.set(dayOf(e.ts), true)
     }
     return {
-      users: [
-        ...[...users.keys()].map((uid) => ({ value: uid, label: userName(uid) })).sort((a, b) => a.label.localeCompare(b.label)),
-        ...(anon ? [{ value: ANON, label: 'Anonyme' }] : []),
-      ],
+      users: [...[...users.keys()].map((uid) => ({ value: uid, label: userName(uid) })).sort((a, b) => a.label.localeCompare(b.label)), ...(anon ? [{ value: ANON, label: 'Anonyme' }] : [])],
       pages: [...pages].sort((a, b) => a.localeCompare(b)).map((p) => ({ value: p, label: p })),
       devices: [...new Set(sorted.map((e) => e.device))].map((d) => ({ value: d, label: DEVICE_FR[d] ?? d })),
-      countries: [...[...countries].sort().map((c) => ({ value: c, label: c })), ...(noCountry ? [{ value: '__none__', label: '—' }] : [])],
+      countries: [...[...countries].sort().map((c) => ({ value: c, label: countryName(c) ?? c })), ...(noCountry ? [{ value: '__none__', label: '—' }] : [])],
       days: [...days.keys()].map((d) => ({ value: d, label: d })),
     }
   }, [sorted, usersMap])
@@ -76,13 +98,10 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
     (f.day === 'all' || dayOf(e.ts) === f.day),
   ), [sorted, f])
 
+  const groups = useMemo(() => (grouped ? groupByUser(filtered, userName) : []), [grouped, filtered, usersMap])
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const current = Math.min(page, pageCount - 1)
   const slice = filtered.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE)
-
-  const when = (ts: number) => new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
-  const TH = 'font-medium text-left py-2 px-2 border-b border-white/10'
-  const TD = 'py-1.5 px-2 border-b border-white/5'
 
   return (
     <div className="bg-surface rounded-lg p-4">
@@ -91,24 +110,25 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
           Journal de consultation
           <span className="text-white/35 font-normal ml-2">qui · quand · quelle page — {filtered.length.toLocaleString('fr-FR')} consultations</span>
         </div>
-        {pageCount > 1 && (
-          <div className="flex items-center gap-1.5">
-            <button type="button" onClick={() => setPage(Math.max(0, current - 1))} disabled={current === 0} aria-label="Page précédente" className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-            <span className="text-white/40 text-xs tabular-nums">{current + 1} / {pageCount}</span>
-            <button type="button" onClick={() => setPage(Math.min(pageCount - 1, current + 1))} disabled={current >= pageCount - 1} aria-label="Page suivante" className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"><ChevronRight className="w-4 h-4" /></button>
-          </div>
-        )}
+        <div className="flex items-center gap-1.5">
+          <button type="button" onClick={() => setGrouped((v) => !v)} className="flex items-center gap-1.5 px-2 py-1 rounded text-xs text-white/60 hover:text-white bg-surface-2" title={grouped ? 'Afficher en liste chronologique' : 'Grouper par utilisateur'}>
+            {grouped ? <><List className="w-3.5 h-3.5" /> Liste</> : <><Users className="w-3.5 h-3.5" /> Grouper</>}
+          </button>
+          {!grouped && pageCount > 1 && (
+            <>
+              <button type="button" onClick={() => setPage(Math.max(0, current - 1))} disabled={current === 0} aria-label="Page précédente" className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+              <span className="text-white/40 text-xs tabular-nums">{current + 1} / {pageCount}</span>
+              <button type="button" onClick={() => setPage(Math.min(pageCount - 1, current + 1))} disabled={current >= pageCount - 1} aria-label="Page suivante" className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronRight className="w-4 h-4" /></button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="text-white/40">
-              <th className={TH}>Utilisateur</th>
-              <th className={TH}>Page</th>
-              <th className={TH}>Appareil</th>
-              <th className={TH}>Lieu</th>
-              <th className={`${TH} text-right whitespace-nowrap`}>Date &amp; heure</th>
+              <th className={TH}>Utilisateur</th><th className={TH}>Page</th><th className={TH}>Appareil</th><th className={TH}>Lieu</th><th className={`${TH} text-right whitespace-nowrap`}>Date &amp; heure</th>
             </tr>
             <tr>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.user} onChange={(v) => set('user', v)} options={opts.users} allLabel="Tous" /></th>
@@ -119,26 +139,22 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
             </tr>
           </thead>
           <tbody>
-            {slice.map((e, i) => {
-              const detail = deviceDetail(e)
-              return (
-                <tr key={`${e.vid}-${e.ts}-${i}`} className="hover:bg-white/[0.03]">
-                  <td className={`${TD} truncate max-w-[180px] ${e.uid ? 'text-white/80' : 'text-white/35 italic'}`} title={e.uid ?? 'Visiteur anonyme'}>{userName(e.uid)}</td>
-                  <td className={`${TD} text-white/70 truncate max-w-[240px]`} title={e.path}>{pageLabel(e.path)}</td>
-                  <td className={`${TD} text-white/55`} title={detail || undefined}>
-                    <span>{DEVICE_FR[e.device] ?? e.device}</span>
-                    {detail && <span className="block text-white/35 text-[10px] leading-tight">{detail}</span>}
-                  </td>
-                  <td className={`${TD} text-white/55`}>{placeOf(e)}</td>
-                  <td className={`${TD} text-white/55 text-right whitespace-nowrap tabular-nums`}>{when(e.ts)}</td>
-                </tr>
-              )
-            })}
+            {grouped
+              ? groups.map((g) => (
+                  <Fragment key={g.key}>
+                    <tr className="bg-white/[0.03]">
+                      <td colSpan={5} className="px-2 py-1.5 border-b border-white/10">
+                        <span className={g.isNamed ? 'text-white/85 font-medium' : 'text-white/45 italic'}>{g.label}</span>
+                        <span className="text-white/35 ml-2">{g.events.length} consultation{g.events.length > 1 ? 's' : ''} · dernière {relDay(g.lastTs)}</span>
+                      </td>
+                    </tr>
+                    {g.events.map((e, i) => <EventRow key={`${g.key}-${e.vid}-${e.ts}-${i}`} e={e} showUser={false} userName={userName} />)}
+                  </Fragment>
+                ))
+              : slice.map((e, i) => <EventRow key={`${e.vid}-${e.ts}-${i}`} e={e} showUser userName={userName} />)}
           </tbody>
         </table>
-        {filtered.length === 0 && (
-          <div className="text-white/30 text-xs py-3">Aucune consultation pour ces filtres.</div>
-        )}
+        {filtered.length === 0 && <div className="text-white/30 text-xs py-3">Aucune consultation pour ces filtres.</div>}
       </div>
     </div>
   )

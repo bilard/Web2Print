@@ -43,6 +43,25 @@ function eventSource(e: AnalyticsEvent): string | null {
   return e.src ?? e.ref
 }
 
+const regionNames = (() => {
+  try {
+    return new Intl.DisplayNames(['fr'], { type: 'region' })
+  } catch {
+    return null
+  }
+})()
+
+/** Nom de pays en clair (français) depuis un code ISO-3166 alpha-2 (« FR » → « France »). */
+export function countryName(iso: string | null): string | null {
+  if (!iso) return null
+  if (iso.length !== 2 || !/^[a-z]{2}$/i.test(iso)) return iso
+  try {
+    return regionNames?.of(iso.toUpperCase()) ?? iso
+  } catch {
+    return iso
+  }
+}
+
 /**
  * Règles de catégorisation d'une source (domaine référent ou `utm_source`) en canal
  * lisible. Testées sur la valeur en minuscules ; l'ordre compte (email d'abord, puis
