@@ -1,5 +1,4 @@
 import { timeSeries, type AnalyticsEvent } from './metrics'
-import type { PulsePeriod } from './useLivePulse'
 
 /** Emoji drapeau à partir d'un code pays ISO-3166 alpha-2 (ex. « FR » → 🇫🇷). */
 export function flagEmoji(iso: string | null): string {
@@ -7,6 +6,25 @@ export function flagEmoji(iso: string | null): string {
   const base = 0x1f1e6
   const cc = iso.toUpperCase()
   return String.fromCodePoint(base + (cc.charCodeAt(0) - 65), base + (cc.charCodeAt(1) - 65))
+}
+
+const regionNames = (() => {
+  try {
+    return new Intl.DisplayNames(['fr'], { type: 'region' })
+  } catch {
+    return null
+  }
+})()
+
+/** Nom de pays en clair (français) depuis un code ISO-3166 alpha-2 (« FR » → « France »). */
+export function countryName(iso: string | null): string | null {
+  if (!iso) return null
+  if (iso.length !== 2 || !/^[a-z]{2}$/i.test(iso)) return iso
+  try {
+    return regionNames?.of(iso.toUpperCase()) ?? iso
+  } catch {
+    return iso
+  }
 }
 
 /** Temps relatif court en français (« à l'instant », « il y a 4 min », « 14:32 », « hier »). */
@@ -51,9 +69,9 @@ export interface TrendPoint {
 
 const HOUR = 3_600_000
 
-/** Série pour la carte Tendance : horaire sur 24 h (24 points), sinon quotidienne. */
-export function pulseTrendSeries(events: AnalyticsEvent[], fromMs: number, toMs: number, period: PulsePeriod): TrendPoint[] {
-  if (period === '24h') {
+/** Série pour la carte Tendance : horaire (24 points) si `hourly`, sinon quotidienne. */
+export function pulseTrendSeries(events: AnalyticsEvent[], fromMs: number, toMs: number, hourly: boolean): TrendPoint[] {
+  if (hourly) {
     const start = toMs - 24 * HOUR
     const buckets = Array.from({ length: 24 }, () => ({ pv: 0, vids: new Set<string>() }))
     for (const e of events) {

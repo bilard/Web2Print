@@ -2,18 +2,17 @@ import { useMemo, useState, type PointerEvent } from 'react'
 import { PulseSparkline } from './PulseSparkline'
 import { pulseTrendSeries } from '@/features/analytics/pulseFormat'
 import type { AnalyticsEvent } from '@/features/analytics/metrics'
-import type { PulsePeriod } from '@/features/analytics/useLivePulse'
 
 interface PulseTrendProps {
   events: AnalyticsEvent[]
   fromMs: number
   toMs: number
-  period: PulsePeriod
+  hourly: boolean
 }
 
 /** Carte Tendance : aire des visiteurs sur la période, scrutable au doigt. */
-export function PulseTrend({ events, fromMs, toMs, period }: PulseTrendProps) {
-  const series = useMemo(() => pulseTrendSeries(events, fromMs, toMs, period), [events, fromMs, toMs, period])
+export function PulseTrend({ events, fromMs, toMs, hourly }: PulseTrendProps) {
+  const series = useMemo(() => pulseTrendSeries(events, fromMs, toMs, hourly), [events, fromMs, toMs, hourly])
   const visitors = series.map((p) => p.visitors)
   const total = visitors.reduce((a, b) => a + b, 0)
   const peak = Math.max(0, ...visitors)

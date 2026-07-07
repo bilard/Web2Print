@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Monitor, Smartphone, Tablet } from 'lucide-react'
 import { pageLabel, recentEvents, type AnalyticsEvent } from '@/features/analytics/metrics'
-import { flagEmoji, timeAgo } from '@/features/analytics/pulseFormat'
+import { countryName, flagEmoji, timeAgo } from '@/features/analytics/pulseFormat'
 import { useUsersMap } from '@/features/analytics/useUsersMap'
 
 const DEVICE_ICON = { mobile: Smartphone, tablet: Tablet, desktop: Monitor }
 
 function place(e: AnalyticsEvent): string {
-  const parts = [e.city, e.country].filter(Boolean)
+  const parts = [e.city, countryName(e.country)].filter(Boolean)
   return parts.length ? parts.join(' · ') : 'Origine inconnue'
 }
 

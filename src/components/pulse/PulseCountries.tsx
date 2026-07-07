@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { countryCityStats, type AnalyticsEvent } from '@/features/analytics/metrics'
-import { flagEmoji } from '@/features/analytics/pulseFormat'
+import { countryName, flagEmoji } from '@/features/analytics/pulseFormat'
 
 const COLLAPSED = 12
 const shortDate = (ts: number) =>
@@ -28,8 +28,13 @@ export function PulseCountries({ events }: { events: AnalyticsEvent[] }) {
               <li key={`${r.country}-${r.city}-${i}`} className="flex items-center gap-3 py-2.5">
                 <span className="text-[18px] leading-none" aria-hidden>{flagEmoji(r.country)}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-medium">{r.city ?? 'Ville inconnue'}</p>
-                  <div className="mt-1 h-1 overflow-hidden rounded-full" style={{ background: 'var(--pulse-surface-2)' }}>
+                  <p className="truncate text-[14px] font-medium">
+                    {r.city ?? 'Ville inconnue'}
+                    {countryName(r.country) && (
+                      <span className="font-normal" style={{ color: 'var(--pulse-text-3)' }}> · {countryName(r.country)}</span>
+                    )}
+                  </p>
+                  <div className="mt-1.5 h-1 overflow-hidden rounded-full" style={{ background: 'var(--pulse-surface-2)' }}>
                     <div className="h-full rounded-full" style={{ width: `${Math.max(4, (r.count / max) * 100)}%`, background: 'var(--pulse-accent)' }} />
                   </div>
                 </div>

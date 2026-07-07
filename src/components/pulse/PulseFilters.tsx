@@ -71,7 +71,7 @@ export function PulseFilters({ events, filter, onChange }: PulseFiltersProps) {
   const dirty = JSON.stringify(filter) !== JSON.stringify(NO_FILTER)
 
   return (
-    <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pulse-noscroll">
+    <div className="flex flex-wrap items-center gap-2">
       {dirty && (
         <button
           onClick={() => onChange(NO_FILTER)}

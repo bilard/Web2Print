@@ -7,8 +7,14 @@ const DAY = 86_400_000
 const LIVE_WINDOW = 5 * MIN
 const HERO_MINUTES = 60
 
-export type PulsePeriod = '24h' | '7d' | '30d' | '90d'
-const SPAN: Record<PulsePeriod, number> = { '24h': DAY, '7d': 7 * DAY, '30d': 30 * DAY, '90d': 90 * DAY }
+/** Presets rapides de période. `custom` (plage Du/Au) se sélectionne à part. */
+export const PULSE_PRESETS = [
+  { key: '24h', label: '24 h', spanMs: DAY },
+  { key: '7d', label: '7 j', spanMs: 7 * DAY },
+  { key: '30d', label: '30 j', spanMs: 30 * DAY },
+  { key: '90d', label: '90 j', spanMs: 90 * DAY },
+  { key: '12m', label: '12 mois', spanMs: 365 * DAY },
+] as const
 
 export interface KpiWithDelta extends Kpis {
   dVisitors: number | null
@@ -39,21 +45,34 @@ export interface LivePulse {
 }
 
 /**
- * Agrège les events analytics pour la vue mobile « Pulse ». La borne haute de la
- * période courante reste ouverte (`toMs = null`) pour capter les visites en direct ;
- * la période précédente sert au calcul des deltas. `anchor` n'est recalculé qu'au
- * changement de période ou au rafraîchissement manuel, pour garder la clé de requête
- * stable (le polling 60 s de `useAnalyticsEvents` fait le reste).
+ * Agrège les events analytics pour la vue mobile « Pulse ».
+ *
+ * Deux modes de période :
+ * - **Preset** (`spanMs` fourni, `customFromMs`/`customToMs` nuls) : fenêtre glissante
+ *   finissant maintenant ; borne haute OUVERTE (`toMs = null`) pour capter le direct.
+ * - **Plage perso** (`customFromMs`+`customToMs` fournis) : bornes fixes, borne haute fermée.
+ *
+ * La période précédente (même durée, décalée) sert aux deltas. Les bornes ne sont
+ * recalculées qu'au changement de période/filtre ou au rafraîchissement (clé de requête stable).
  */
-export function useLivePulse(period: PulsePeriod, filter: EventFilter): LivePulse {
+export function useLivePulse(
+  spanMs: number | null,
+  customFromMs: number | null,
+  customToMs: number | null,
+  filter: EventFilter,
+): LivePulse {
   const [nonce, setNonce] = useState(0)
-  const { fromMs, prevFromMs, prevToMs, anchorMs } = useMemo(() => {
+  const { fromMs, upperBound, prevFromMs, prevToMs, anchorMs } = useMemo(() => {
+    if (customFromMs != null && customToMs != null && customToMs > customFromMs) {
+      const span = customToMs - customFromMs
+      return { fromMs: customFromMs, upperBound: customToMs as number | null, prevFromMs: customFromMs - span, prevToMs: customFromMs, anchorMs: customToMs }
+    }
     const now = Date.now()
-    const span = SPAN[period]
-    return { fromMs: now - span, prevFromMs: now - 2 * span, prevToMs: now - span, anchorMs: now }
-  }, [period, nonce])
+    const span = spanMs ?? 30 * DAY
+    return { fromMs: now - span, upperBound: null as number | null, prevFromMs: now - 2 * span, prevToMs: now - span, anchorMs: now }
+  }, [spanMs, customFromMs, customToMs, nonce])
 
-  const cur = useAnalyticsEvents(fromMs, null, true)
+  const cur = useAnalyticsEvents(fromMs, upperBound, true)
   const prev = useAnalyticsEvents(prevFromMs, prevToMs, true)
 
   const allEvents = cur.data ?? []

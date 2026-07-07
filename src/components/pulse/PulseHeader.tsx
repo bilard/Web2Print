@@ -1,17 +1,9 @@
 import { RotateCw } from 'lucide-react'
-import { PulseSegmented } from './PulseSegmented'
-import type { PulsePeriod } from '@/features/analytics/useLivePulse'
-
-const PERIODS: readonly { value: PulsePeriod; label: string }[] = [
-  { value: '24h', label: '24 h' },
-  { value: '7d', label: '7 j' },
-  { value: '30d', label: '30 j' },
-  { value: '90d', label: '90 j' },
-]
+import { PulsePeriodControl, type PeriodValue } from './PulsePeriodControl'
 
 interface PulseHeaderProps {
-  period: PulsePeriod
-  onPeriod: (p: PulsePeriod) => void
+  period: PeriodValue
+  onPeriod: (v: PeriodValue) => void
   liveVisitors: number
   fetching: boolean
   onRefresh: () => void
@@ -54,7 +46,7 @@ export function PulseHeader({ period, onPeriod, liveVisitors, fetching, onRefres
         </div>
       </div>
       <div className="pb-3">
-        <PulseSegmented options={PERIODS} value={period} onChange={onPeriod} ariaLabel="Période" />
+        <PulsePeriodControl value={period} onChange={onPeriod} />
       </div>
       </div>
     </header>

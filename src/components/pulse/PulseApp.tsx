@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useLivePulse, type PulsePeriod } from '@/features/analytics/useLivePulse'
+import { useEffect, useMemo, useState } from 'react'
+import { PULSE_PRESETS, useLivePulse } from '@/features/analytics/useLivePulse'
 import { NO_FILTER, type EventFilter } from '@/features/analytics/metrics'
 import { PulseHeader } from './PulseHeader'
 import { PulseFilters } from './PulseFilters'
@@ -10,13 +10,27 @@ import { PulseLiveFeed } from './PulseLiveFeed'
 import { PulseTopLists } from './PulseTopLists'
 import { PulseCountries } from './PulseCountries'
 import { PulseInstallHint } from './PulseInstallHint'
+import type { PeriodValue } from './PulsePeriodControl'
 
 /** Coquille de la PWA « Pulse » : orchestre période, filtres, données live et sections. */
 export function PulseApp() {
-  const [period, setPeriod] = useState<PulsePeriod>('7d')
+  const [period, setPeriod] = useState<PeriodValue>({ key: '7d', from: '', to: '' })
   const [filter, setFilter] = useState<EventFilter>(NO_FILTER)
   const [scrolled, setScrolled] = useState(false)
-  const p = useLivePulse(period, filter)
+
+  // Presets → fenêtre glissante (spanMs) ; « Perso » → bornes fixes une fois Du+Au saisis.
+  const { spanMs, customFromMs, customToMs } = useMemo(() => {
+    if (period.key === 'custom' && period.from && period.to) {
+      const from = new Date(`${period.from}T00:00:00`).getTime()
+      const to = new Date(`${period.to}T23:59:59.999`).getTime()
+      return { spanMs: null, customFromMs: from, customToMs: to }
+    }
+    const preset = PULSE_PRESETS.find((p) => p.key === period.key)
+    return { spanMs: preset?.spanMs ?? PULSE_PRESETS[1].spanMs, customFromMs: null, customToMs: null }
+  }, [period])
+
+  const p = useLivePulse(spanMs, customFromMs, customToMs, filter)
+  const hourly = period.key === '24h'
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -54,7 +68,7 @@ export function PulseApp() {
             <PulseFilters events={p.allEvents} filter={filter} onChange={setFilter} />
             <PulseHero liveVisitors={p.liveVisitors} liveViews={p.liveViews} heroSeries={p.heroSeries} />
             <PulseKpiGrid kpis={p.kpis} />
-            <PulseTrend events={p.events} fromMs={p.fromMs} toMs={p.anchorMs} period={period} />
+            <PulseTrend events={p.events} fromMs={p.fromMs} toMs={p.anchorMs} hourly={hourly} />
             <PulseTopLists events={p.events} />
             <PulseCountries events={p.events} />
             <PulseLiveFeed events={p.events} />
