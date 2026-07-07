@@ -76,6 +76,23 @@
     timer = setTimeout(function () { doSend(r) }, 150) // petit anti-rebond pour les changements d'ancre rapides
   }
 
+  // Opt-out par navigateur, indépendant du login : ouvrir `/?nt=1` arme l'exclusion
+  // (persistée en localStorage w2p_optout, RÉ-ARMÉE à chaque ouverture du lien → résiste
+  // aux purges de stockage d'iOS/WebKit qui font sauter le w2p_luid) ; `/?nt=0` la lève.
+  // Opt-out actif = AUCUN beacon envoyé depuis ce navigateur (l'exclusion serveur par
+  // uid/luid ne couvre que les navigateurs déjà connectés à l'app, cf. collectAnalytics).
+  function optedOut() {
+    try {
+      var nt = new URLSearchParams(location.search).get('nt')
+      if (nt === '1') localStorage.setItem('w2p_optout', '1')
+      else if (nt === '0') localStorage.removeItem('w2p_optout')
+      return localStorage.getItem('w2p_optout') === '1'
+    } catch (e) { return false }
+  }
+  // Retour anticipé : __w2pIdentify/__w2pTrack restent undefined — leurs appelants
+  // (uidBridge.ts, track.ts) utilisent l'optional chaining, aucun risque d'erreur.
+  if (optedOut()) return
+
   // L'auth Firebase se résout APRÈS le chargement : le pont uid (uidBridge) appelle
   // ceci dès qu'il connaît l'utilisateur, pour ré-enregistrer la page courante avec l'uid.
   window.__w2pIdentify = function (uid) {
