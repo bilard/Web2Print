@@ -4,20 +4,27 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { getApps, initializeApp } from 'firebase-admin/app'
 import { buildEventDoc } from './derive'
 import { clientIpFromHeaders, lookupGeo } from './geoip'
-import { getOwnerUid } from '../email/ownerMailer'
 
 if (!getApps().length) initializeApp()
 const db = getFirestore()
 
-// Uid du propriétaire mis en cache : ses visites (il teste l'app en continu) ne
-// doivent JAMAIS polluer les stats (décision re-confirmée 2026-07-07). Résolu une
-// fois (requête `users`), puis mémoïsé tant qu'il n'est pas trouvé (retry), pour
-// ne pas peser sur cet endpoint à haute fréquence.
-let ownerUidCache: string | null = null
-async function resolveOwnerUid(): Promise<string | null> {
-  if (ownerUidCache) return ownerUidCache
-  try { ownerUidCache = (await getOwnerUid()) || null } catch { ownerUidCache = null }
-  return ownerUidCache
+// Comptes de Francis (owner + compte pimalion) : ses visites (il teste l'app en
+// continu) ne doivent JAMAIS polluer les stats (décision re-confirmée 2026-07-07).
+const EXCLUDED_EMAILS = ['ibs.studio@gmail.com', 'f.bilard@pimalion.com']
+
+// Uids exclus mis en cache par instance : résolus une fois (requête `users`), puis
+// mémoïsés tant qu'introuvables (retry), pour ne pas peser sur cet endpoint à haute
+// fréquence.
+let excludedUidsCache: Set<string> | null = null
+async function resolveExcludedUids(): Promise<Set<string>> {
+  if (excludedUidsCache && excludedUidsCache.size > 0) return excludedUidsCache
+  try {
+    const snap = await db.collection('users').where('email', 'in', EXCLUDED_EMAILS).get()
+    excludedUidsCache = new Set(snap.docs.map((d) => d.id))
+  } catch {
+    excludedUidsCache = new Set()
+  }
+  return excludedUidsCache
 }
 
 export const collectAnalytics = onRequest(
@@ -58,12 +65,12 @@ export const collectAnalytics = onRequest(
     // les pages publiques / anciens beacons → `add()` classique.
     const rawEid = (req.body as { eid?: unknown } | null | undefined)?.eid
     const eid = typeof rawEid === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(rawEid) ? rawEid : null
-    // Propriétaire : on ne logue rien. Le beacon re-tague la page d'entrée (déjà
+    // Comptes exclus : on ne logue rien. Le beacon re-tague la page d'entrée (déjà
     // écrite en anonyme sous le même `eid` avant la résolution de l'auth) avec son
     // uid → on supprime alors ce doc pour ne laisser aucune trace de ses tests.
     // (Le re-tag est immédiat côté beacon depuis f7966e81 — plus de résidus anonymes.)
-    const ownerUid = await resolveOwnerUid()
-    if (ownerUid && (doc as { uid?: string | null }).uid === ownerUid) {
+    const uid = (doc as { uid?: string | null }).uid
+    if (uid && (await resolveExcludedUids()).has(uid)) {
       if (eid) {
         try { await db.collection('analyticsEvents').doc(eid).delete() } catch { /* best-effort */ }
       }
