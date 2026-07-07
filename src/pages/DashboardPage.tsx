@@ -614,18 +614,19 @@ export default function DashboardPage() {
             onSelectNode={handleFilterSelect}
           />
           <main className="flex-1 p-8 overflow-auto" role="main" aria-label="Bibliothèque">
-            <div className="max-w-6xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-xl font-bold">
-                  Mes projets
-                  {filterNodeId && (
-                    <span className="text-sm font-normal text-white/40 ml-3">
-                      ({filteredProjects.length} résultat{filteredProjects.length !== 1 ? 's' : ''})
-                    </span>
-                  )}
-                </h1>
+            {/* Hors du conteneur centré : le toggle reste ancré au bord DROIT du module
+                quelle que soit la largeur d'écran (sinon il flotte au bord de la colonne 6xl). */}
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-xl font-bold">
+                Mes projets
+                {filterNodeId && (
+                  <span className="text-sm font-normal text-white/40 ml-3">
+                    ({filteredProjects.length} résultat{filteredProjects.length !== 1 ? 's' : ''})
+                  </span>
+                )}
+              </h1>
 
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                   {/* Toggle vue grille / liste */}
                   <div
                     className="flex items-center gap-0.5 bg-white/[0.04] border border-white/[0.08] rounded-lg p-0.5"
@@ -661,9 +662,10 @@ export default function DashboardPage() {
                       <span className="hidden sm:inline">Liste</span>
                     </button>
                   </div>
-                </div>
               </div>
+            </div>
 
+            <div className="max-w-6xl mx-auto">
               {/* Barre d'actions de sélection groupée — visible dès qu'un projet est coché */}
               {selectedIds.size > 0 && (
                 <div className="flex items-center justify-between gap-3 mb-4 bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2">
