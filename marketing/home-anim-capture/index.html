@@ -15,8 +15,13 @@ h1{font-size:27px;font-weight:750;letter-spacing:-.02em;margin:0 0 6px;}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s,transform .15s;}
 .card:hover{border-color:var(--accent);transform:translateY(-2px);}
-.thumb{aspect-ratio:1/1;background:#0a0a0d;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.thumb{aspect-ratio:1/1;background:#0a0a0d;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;}
 .thumb img{width:100%;height:100%;object-fit:contain;}
+.thumb video{width:100%;height:100%;object-fit:contain;display:block;background:#0a0a0d;}
+.thumb .play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:54px;height:54px;border-radius:50%;background:rgba(10,10,13,.5);border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;pointer-events:none;transition:opacity .2s;box-shadow:0 4px 16px rgba(0,0,0,.35);}
+.thumb .play::after{content:"";width:0;height:0;border-style:solid;border-width:10px 0 10px 16px;border-color:transparent transparent transparent #fff;margin-left:4px;}
+.thumb:hover .play{background:rgba(99,102,241,.72);border-color:rgba(255,255,255,.4);}
+.thumb.playing .play{opacity:0;}
 .meta{padding:14px 15px 15px;display:flex;flex-direction:column;gap:7px;}
 .meta h3{font-size:15.5px;font-weight:650;margin:0;letter-spacing:-.01em;}
 .desc{font-size:13px;color:var(--muted);margin:0;}
@@ -284,6 +289,32 @@ footer{margin-top:44px;color:var(--faint);font-size:12.5px;font-family:var(--mon
   <footer>Filmées depuis public/promo/index.html · pipeline marketing/home-anim-capture/</footer>
 </div>
 <script>
+// Lecture de la vidéo au clic sur la vignette
+document.querySelectorAll(".thumb").forEach(function(thumb){
+  var card=thumb.closest(".card");
+  var fn=card&&card.querySelector(".fn");
+  if(!fn)return;
+  var src="out/"+fn.textContent.trim();
+  var play=document.createElement("div");play.className="play";
+  thumb.appendChild(play);
+  var video=null;
+  thumb.addEventListener("click",function(e){
+    if(!video){
+      var img=thumb.querySelector("img");
+      video=document.createElement("video");
+      video.src=src;video.loop=true;video.muted=true;video.controls=true;
+      video.playsInline=true;video.setAttribute("preload","none");
+      if(img)img.style.display="none";
+      thumb.insertBefore(video,play);
+      video.addEventListener("play",function(){thumb.classList.add("playing");});
+      video.addEventListener("pause",function(){thumb.classList.remove("playing");});
+      video.play();
+      return;
+    }
+    if(e.target===video)return; // laisser les contrôles natifs gérer
+    if(video.paused)video.play();else video.pause();
+  });
+});
 document.querySelectorAll(".copy").forEach(function(b){
   b.addEventListener("click",function(){
     navigator.clipboard.writeText(b.getAttribute("data-p")).then(function(){
