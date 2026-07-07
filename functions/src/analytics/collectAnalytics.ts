@@ -4,15 +4,14 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { getApps, initializeApp } from 'firebase-admin/app'
 import { buildEventDoc } from './derive'
 import { clientIpFromHeaders, lookupGeo } from './geoip'
+import { OWNER_EMAILS } from './owner'
+import { maybeNotifyNewSession } from './notifySession'
 
 if (!getApps().length) initializeApp()
 const db = getFirestore()
 
-// Compte OWNER uniquement : ses visites (il teste l'app en continu) ne doivent
-// JAMAIS polluer les stats (décision re-confirmée 2026-07-07). ⚠ Ne PAS y ajouter
-// f.bilard@pimalion.com : c'est son compte de test « utilisateur normal », il doit
-// apparaître dans le journal (retiré le 2026-07-07 après l'avoir exclu à tort).
-const EXCLUDED_EMAILS = ['ibs.studio@gmail.com']
+// Compte OWNER exclu des stats (cf. owner.ts pour la liste et le raisonnement).
+const EXCLUDED_EMAILS = OWNER_EMAILS
 
 // Uids exclus mis en cache par instance : résolus une fois (requête `users`), puis
 // mémoïsés tant qu'introuvables (retry), pour ne pas peser sur cet endpoint à haute
@@ -93,6 +92,9 @@ export const collectAnalytics = onRequest(
     } catch {
       // best-effort : on n'expose jamais d'erreur au visiteur
     }
+    // Notification Telegram au propriétaire à chaque nouvelle session visiteur.
+    // Best-effort et interne (jamais ne lève) : ne bloque pas la réponse au beacon.
+    await maybeNotifyNewSession(db, doc, uid)
     res.status(204).end()
   },
 )
