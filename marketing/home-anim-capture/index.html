@@ -296,7 +296,12 @@ footer{margin-top:44px;color:var(--faint);font-size:12.5px;font-family:var(--mon
   <footer>Filmées depuis public/promo/index.html · pipeline marketing/home-anim-capture/</footer>
 </div>
 <script>
-// Lecture de la vidéo au clic sur la vignette
+// Lecture de la vidéo au clic sur la vignette — en plein écran
+function goFullscreen(v){
+  if(v.requestFullscreen){v.requestFullscreen().catch(function(){});}
+  else if(v.webkitRequestFullscreen){v.webkitRequestFullscreen();}
+  else if(v.webkitEnterFullscreen){v.webkitEnterFullscreen();} // iOS (video natif)
+}
 document.querySelectorAll(".thumb").forEach(function(thumb){
   var card=thumb.closest(".card");
   var fn=card&&card.querySelector(".fn");
@@ -316,10 +321,11 @@ document.querySelectorAll(".thumb").forEach(function(thumb){
       video.addEventListener("play",function(){thumb.classList.add("playing");});
       video.addEventListener("pause",function(){thumb.classList.remove("playing");});
       video.play();
+      goFullscreen(video);
       return;
     }
     if(e.target===video)return; // laisser les contrôles natifs gérer
-    if(video.paused)video.play();else video.pause();
+    if(video.paused){video.play();goFullscreen(video);}else video.pause();
   });
 });
 document.querySelectorAll(".copy").forEach(function(b){
