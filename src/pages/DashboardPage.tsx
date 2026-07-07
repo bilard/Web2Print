@@ -360,9 +360,11 @@ export default function DashboardPage() {
         </div>
 
         {/* Menu principal */}
+        {/* min-h-0 + overflow : l'arbre déplié scrolle DANS la sidebar au lieu de pousser
+            le bloc utilisateur (avatar/réglages/déconnexion) hors de l'écran. */}
         <nav
           data-tour="sidebar"
-          className={`${sidebarOpen ? 'px-2' : 'px-1.5'} pb-3 space-y-0.5`}
+          className={`${sidebarOpen ? 'px-2' : 'px-1.5'} pb-3 space-y-0.5 min-h-0 overflow-y-auto overscroll-contain`}
           aria-label="Navigation des modules"
         >
           {sidebarOpen ? (
