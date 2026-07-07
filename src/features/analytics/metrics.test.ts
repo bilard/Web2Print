@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeKpis, pageLabel, topBy, timeSeries, deltaPct, recentEvents, topSources, sourceCategory, topSourceCategories, cityCounts, type AnalyticsEvent } from './metrics'
+import { computeKpis, countryCityStats, pageLabel, topBy, timeSeries, deltaPct, recentEvents, topSources, sourceCategory, topSourceCategories, cityCounts, type AnalyticsEvent } from './metrics'
 
 const ev = (o: Partial<AnalyticsEvent>): AnalyticsEvent => ({
   ts: 0, path: '/promo', area: 'promo', ref: null, src: null,
@@ -163,5 +163,25 @@ describe('pageLabel', () => {
   it('déclinaisons de langue', () => {
     expect(pageLabel('/promo/en/')).toBe('Promo (EN)')
     expect(pageLabel('/docs/de/')).toBe('Documentation (DE)')
+  })
+})
+
+describe('countryCityStats', () => {
+  it('agrège par pays·ville avec dernière visite, tri décroissant', () => {
+    const rows = countryCityStats([
+      ev({ country: 'FR', city: 'Pleurtuit', ts: 1000 }),
+      ev({ country: 'FR', city: 'Pleurtuit', ts: 5000 }),
+      ev({ country: 'BE', city: 'Bruxelles', ts: 2000 }),
+    ], 8)
+    expect(rows[0]).toEqual({ country: 'FR', city: 'Pleurtuit', count: 2, lastTs: 5000 })
+    expect(rows[1]).toEqual({ country: 'BE', city: 'Bruxelles', count: 1, lastTs: 2000 })
+  })
+  it('ville nulle = ligne à part, limite respectée', () => {
+    const rows = countryCityStats([
+      ev({ country: 'US', city: null, ts: 1 }),
+      ev({ country: 'US', city: 'San Jose', ts: 2 }),
+      ev({ country: 'DE', city: null, ts: 3 }),
+    ], 2)
+    expect(rows).toHaveLength(2)
   })
 })

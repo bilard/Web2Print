@@ -178,6 +178,27 @@ export function timeSeries(
   return [...buckets.entries()].map(([day, b]) => ({ day, pageViews: b.pageViews, visitors: b.vids.size }))
 }
 
+export interface CountryCityRow {
+  country: string | null
+  city: string | null
+  count: number
+  /** Timestamp (ms) de la visite la plus récente pour ce couple pays·ville. */
+  lastTs: number
+}
+
+/** Agrégat Pays · Ville : nombre de visites et dernière visite, tri par visites décroissantes. */
+export function countryCityStats(events: AnalyticsEvent[], limit: number): CountryCityRow[] {
+  const map = new Map<string, CountryCityRow>()
+  for (const e of events) {
+    const key = (e.country ?? '') + '|' + (e.city ?? '')
+    const row = map.get(key) ?? { country: e.country, city: e.city, count: 0, lastTs: 0 }
+    row.count += 1
+    if (e.ts > row.lastTs) row.lastTs = e.ts
+    map.set(key, row)
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count).slice(0, limit)
+}
+
 export function deltaPct(current: number, previous: number): number | null {
   if (previous === 0) return null
   return Math.round(((current - previous) / previous) * 100)

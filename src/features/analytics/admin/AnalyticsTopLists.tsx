@@ -1,5 +1,6 @@
 // src/features/analytics/admin/AnalyticsTopLists.tsx
 import { topBy, topSourceCategories, pageLabel, type AnalyticsEvent } from '../metrics'
+import { AnalyticsCountriesTable } from './AnalyticsCountriesTable'
 
 interface Row {
   label: string
@@ -11,12 +12,9 @@ interface Row {
 interface ListProps {
   title: string
   rows: Row[]
-  /** Rend les lignes cliquables (toggle) — clic pays → carte du monde. */
-  onSelect?: (value: string | null) => void
-  selected?: string | null
 }
 
-function List({ title, rows, onSelect, selected }: ListProps) {
+function List({ title, rows }: ListProps) {
   const max = rows[0]?.count ?? 1
   return (
     <div className="bg-surface rounded-lg p-4">
@@ -25,31 +23,17 @@ function List({ title, rows, onSelect, selected }: ListProps) {
         {rows.length === 0 && <div className="text-white/35 text-xs">Aucune donnée</div>}
         {rows.map((r) => {
           const value = r.raw ?? r.label
-          const active = selected != null && selected === value
-          const inner = (
-            <>
+          return (
+            <div key={value} className="relative">
               <div
-                className={`absolute inset-0 rounded ${active ? 'bg-indigo-500/30' : 'bg-indigo-500/15'}`}
+                className="absolute inset-0 rounded bg-indigo-500/15"
                 style={{ width: `${(r.count / max) * 100}%` }}
               />
               <div className="relative flex justify-between text-xs px-2 py-1">
                 <span className="text-white/80 truncate" title={value}>{r.label}</span>
                 <span className="text-white/50">{r.count}</span>
               </div>
-            </>
-          )
-          return onSelect ? (
-            <button
-              key={value}
-              type="button"
-              onClick={() => onSelect(active ? null : value)}
-              title="Voir sur la carte"
-              className={`relative block w-full text-left rounded transition-colors hover:bg-white/5 ${active ? 'ring-1 ring-indigo-400/60' : ''}`}
-            >
-              {inner}
-            </button>
-          ) : (
-            <div key={value} className="relative">{inner}</div>
+            </div>
           )
         })}
       </div>
@@ -74,7 +58,7 @@ export function AnalyticsTopLists({ events, selectedCountry, onSelectCountry }: 
     <>
       <List title="Pages consultées" rows={pages} />
       <List title="Sources de trafic" rows={topSourceCategories(events, 8)} />
-      <List title="Pays" rows={topBy(events, 'country', 8)} onSelect={onSelectCountry} selected={selectedCountry} />
+      <AnalyticsCountriesTable events={events} onSelect={onSelectCountry} selected={selectedCountry} />
     </>
   )
 }
