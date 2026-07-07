@@ -3,7 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- PWA « Pulse » (suivi du trafic sur /pulse) : manifest + intégration iOS.
+         Sur les autres routes de l'app ces balises sont inertes. -->
+    <link rel="manifest" href="/pulse.webmanifest" />
+    <meta name="theme-color" content="#08080A" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Pulse" />
+    <link rel="apple-touch-icon" href="/pulse-icon-180.png" />
     <!-- Shell de l'app authentifiée (sert toutes les routes SPA via _app.html) :
          aucune valeur de référencement, on demande aux moteurs de ne pas l'indexer.
          Les pages publiques (promo racine, /digital/, /docs/) sont des fichiers

@@ -12,6 +12,7 @@ const WorkflowsPage = lazy(() => import('@/pages/WorkflowsPage'))
 const WorkflowEditorPage = lazy(() => import('@/pages/WorkflowEditorPage'))
 const WorkflowResultsPage = lazy(() => import('@/pages/WorkflowResultsPage'))
 const CatalogBuilderPage = lazy(() => import('@/pages/CatalogBuilderPage'))
+const PulsePage = lazy(() => import('@/pages/PulsePage'))
 
 function PageLoader() {
   return (
@@ -25,6 +26,16 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <Navigate to="/dashboard" replace />,
+  },
+  {
+    // PWA mobile de suivi du trafic. Hors ProtectedRoute : gating et FAB gérés
+    // par PulseGate pour une surface plein écran, sans chrome desktop.
+    path: '/pulse',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <PulsePage />
+      </Suspense>
+    ),
   },
   {
     path: '/login',

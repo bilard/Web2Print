@@ -118,6 +118,28 @@
             "value": "no-cache, must-revalidate"
           }
         ]
+      },
+      {
+        "source": "/pulse-sw.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/pulse.webmanifest",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, must-revalidate"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/manifest+json"
+          }
+        ]
       }
     ]
   },
