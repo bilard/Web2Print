@@ -62,6 +62,38 @@ function EventRow({ e, showUser, userName }: { e: AnalyticsEvent; showUser: bool
   )
 }
 
+const GROUP_PAGE = 8
+
+/** Bloc d'un utilisateur dans le journal groupé : en-tête + ses consultations paginées. */
+function GroupSection({ g, userName }: { g: Group; userName: (uid: string | null) => string }) {
+  const [gp, setGp] = useState(0)
+  const pages = Math.max(1, Math.ceil(g.events.length / GROUP_PAGE))
+  const cur = Math.min(gp, pages - 1)
+  const slice = g.events.slice(cur * GROUP_PAGE, cur * GROUP_PAGE + GROUP_PAGE)
+  return (
+    <Fragment>
+      <tr className="bg-white/[0.03]">
+        <td colSpan={5} className="px-2 py-1.5 border-b border-white/10">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <span className={g.isNamed ? 'text-white/85 font-medium' : 'text-white/45 italic'}>{g.label}</span>
+              <span className="text-white/35 ml-2">{g.events.length} consultation{g.events.length > 1 ? 's' : ''} · dernière {relDay(g.lastTs)}</span>
+            </div>
+            {pages > 1 && (
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={() => setGp(Math.max(0, cur - 1))} disabled={cur === 0} aria-label="Page précédente" className="p-0.5 rounded text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronLeft className="w-3.5 h-3.5" /></button>
+                <span className="text-white/40 text-[11px] tabular-nums">{cur + 1}/{pages}</span>
+                <button type="button" onClick={() => setGp(Math.min(pages - 1, cur + 1))} disabled={cur >= pages - 1} aria-label="Page suivante" className="p-0.5 rounded text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronRight className="w-3.5 h-3.5" /></button>
+              </div>
+            )}
+          </div>
+        </td>
+      </tr>
+      {slice.map((e, i) => <EventRow key={`${g.key}-${e.vid}-${e.ts}-${i}`} e={e} showUser={false} userName={userName} />)}
+    </Fragment>
+  )
+}
+
 /** Journal de consultation : qui a vu quelle page et quand — filtres par colonne + regroupement par utilisateur. */
 export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
   const usersMap = useUsersMap()
@@ -140,17 +172,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
           </thead>
           <tbody>
             {grouped
-              ? groups.map((g) => (
-                  <Fragment key={g.key}>
-                    <tr className="bg-white/[0.03]">
-                      <td colSpan={5} className="px-2 py-1.5 border-b border-white/10">
-                        <span className={g.isNamed ? 'text-white/85 font-medium' : 'text-white/45 italic'}>{g.label}</span>
-                        <span className="text-white/35 ml-2">{g.events.length} consultation{g.events.length > 1 ? 's' : ''} · dernière {relDay(g.lastTs)}</span>
-                      </td>
-                    </tr>
-                    {g.events.map((e, i) => <EventRow key={`${g.key}-${e.vid}-${e.ts}-${i}`} e={e} showUser={false} userName={userName} />)}
-                  </Fragment>
-                ))
+              ? groups.map((g) => <GroupSection key={g.key} g={g} userName={userName} />)
               : slice.map((e, i) => <EventRow key={`${e.vid}-${e.ts}-${i}`} e={e} showUser userName={userName} />)}
           </tbody>
         </table>
