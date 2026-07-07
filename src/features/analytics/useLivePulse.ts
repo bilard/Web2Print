@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useAnalyticsEvents } from './useAnalyticsEvents'
-import { computeKpis, deltaPct, type AnalyticsEvent, type Kpis } from './metrics'
+import { computeKpis, deltaPct, filterEvents, type AnalyticsEvent, type EventFilter, type Kpis } from './metrics'
 
 const MIN = 60_000
 const DAY = 86_400_000
@@ -20,7 +20,10 @@ export interface LivePulse {
   loading: boolean
   fetching: boolean
   error: boolean
+  /** Events de la période après application des filtres (base de toutes les vues). */
   events: AnalyticsEvent[]
+  /** Events de la période SANS filtre — pour peupler les options de filtre. */
+  allEvents: AnalyticsEvent[]
   kpis: KpiWithDelta
   /** Visiteurs uniques actifs sur les 5 dernières minutes. */
   liveVisitors: number
@@ -42,7 +45,7 @@ export interface LivePulse {
  * changement de période ou au rafraîchissement manuel, pour garder la clé de requête
  * stable (le polling 60 s de `useAnalyticsEvents` fait le reste).
  */
-export function useLivePulse(period: PulsePeriod): LivePulse {
+export function useLivePulse(period: PulsePeriod, filter: EventFilter): LivePulse {
   const [nonce, setNonce] = useState(0)
   const { fromMs, prevFromMs, prevToMs, anchorMs } = useMemo(() => {
     const now = Date.now()
@@ -53,17 +56,18 @@ export function useLivePulse(period: PulsePeriod): LivePulse {
   const cur = useAnalyticsEvents(fromMs, null, true)
   const prev = useAnalyticsEvents(prevFromMs, prevToMs, true)
 
-  const events = cur.data ?? []
+  const allEvents = cur.data ?? []
+  const events = useMemo(() => filterEvents(allEvents, filter), [allEvents, filter])
   const kpis = useMemo<KpiWithDelta>(() => {
     const k = computeKpis(events)
-    const p = computeKpis(prev.data ?? [])
+    const p = computeKpis(filterEvents(prev.data ?? [], filter))
     return {
       ...k,
       dVisitors: deltaPct(k.visitors, p.visitors),
       dPageViews: deltaPct(k.pageViews, p.pageViews),
       dSessions: deltaPct(k.sessions, p.sessions),
     }
-  }, [events, prev.data])
+  }, [events, prev.data, filter])
 
   const live = useMemo(() => {
     const cutoff = Date.now() - LIVE_WINDOW
@@ -94,6 +98,7 @@ export function useLivePulse(period: PulsePeriod): LivePulse {
     fetching: cur.isFetching || prev.isFetching,
     error: cur.isError,
     events,
+    allEvents,
     kpis,
     liveVisitors: live.liveVisitors,
     liveViews: live.liveViews,

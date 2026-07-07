@@ -7,8 +7,11 @@ import '@/components/pulse/pulse.css'
 export default function PulsePage() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
-    // Scope /pulse : le worker ne contrôle que cette PWA, jamais le reste du site.
-    void navigator.serviceWorker.register('/pulse-sw.js', { scope: '/pulse' }).catch(() => {})
+    // En dev, le SW (cache-first) interfère avec le HMR de Vite → on ne l'enregistre
+    // qu'en production. Scope /pulse : il ne contrôle que cette PWA, jamais le reste du site.
+    if (import.meta.env.PROD) {
+      void navigator.serviceWorker.register('/pulse-sw.js', { scope: '/pulse' }).catch(() => {})
+    }
   }, [])
 
   return (

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Monitor, Smartphone, Tablet } from 'lucide-react'
 import { pageLabel, recentEvents, type AnalyticsEvent } from '@/features/analytics/metrics'
 import { flagEmoji, timeAgo } from '@/features/analytics/pulseFormat'
@@ -31,26 +31,44 @@ function Row({ e, name, now }: { e: AnalyticsEvent; name?: string; now: number }
   )
 }
 
-/** Journal « qui se connecte » : dernières visites, lieu, appareil, utilisateur nommé. */
+const COLLAPSED = 24
+
+/** Journal « qui se connecte » : visites détaillées (lieu, appareil, utilisateur nommé). */
 export function PulseLiveFeed({ events }: { events: AnalyticsEvent[] }) {
   const users = useUsersMap()
   const now = Date.now()
-  const recent = useMemo(() => recentEvents(events, 24), [events])
+  const [expanded, setExpanded] = useState(false)
+  const all = useMemo(() => recentEvents(events, 500), [events])
+  const shown = expanded ? all : all.slice(0, COLLAPSED)
 
   return (
     <section>
-      <h2 className="mb-2 px-1 text-[15px] font-semibold">Activité récente</h2>
+      <div className="mb-2 flex items-baseline justify-between px-1">
+        <h2 className="text-[15px] font-semibold">Journal de consultation</h2>
+        <span className="text-[12px]" style={{ color: 'var(--pulse-text-3)' }}>{all.length} consultations</span>
+      </div>
       <div className="pulse-card px-4 py-1">
-        {recent.length === 0 ? (
+        {all.length === 0 ? (
           <p className="py-6 text-center text-[13px]" style={{ color: 'var(--pulse-text-3)' }}>
             Aucune visite sur cette période.
           </p>
         ) : (
-          <ul className="divide-y divide-[color:var(--pulse-hair)]">
-            {recent.map((e, i) => (
-              <Row key={`${e.vid}-${e.ts}-${i}`} e={e} name={e.uid ? users.get(e.uid) : undefined} now={now} />
-            ))}
-          </ul>
+          <>
+            <ul className="divide-y divide-[color:var(--pulse-hair)]">
+              {shown.map((e, i) => (
+                <Row key={`${e.vid}-${e.ts}-${i}`} e={e} name={e.uid ? users.get(e.uid) : undefined} now={now} />
+              ))}
+            </ul>
+            {all.length > COLLAPSED && (
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                className="pulse-tap w-full py-3 text-[13px] font-semibold"
+                style={{ color: 'var(--pulse-accent-2)' }}
+              >
+                {expanded ? 'Réduire' : `Afficher tout (${all.length})`}
+              </button>
+            )}
+          </>
         )}
       </div>
     </section>

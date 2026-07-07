@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react'
 import { useLivePulse, type PulsePeriod } from '@/features/analytics/useLivePulse'
+import { NO_FILTER, type EventFilter } from '@/features/analytics/metrics'
 import { PulseHeader } from './PulseHeader'
+import { PulseFilters } from './PulseFilters'
 import { PulseHero } from './PulseHero'
 import { PulseKpiGrid } from './PulseKpiGrid'
 import { PulseTrend } from './PulseTrend'
 import { PulseLiveFeed } from './PulseLiveFeed'
 import { PulseTopLists } from './PulseTopLists'
+import { PulseCountries } from './PulseCountries'
 import { PulseInstallHint } from './PulseInstallHint'
 
-/** Coquille de la PWA « Pulse » : orchestre période, données live et sections. */
+/** Coquille de la PWA « Pulse » : orchestre période, filtres, données live et sections. */
 export function PulseApp() {
   const [period, setPeriod] = useState<PulsePeriod>('7d')
+  const [filter, setFilter] = useState<EventFilter>(NO_FILTER)
   const [scrolled, setScrolled] = useState(false)
-  const p = useLivePulse(period)
+  const p = useLivePulse(period, filter)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -47,11 +51,13 @@ export function PulseApp() {
           <PulseSkeleton />
         ) : (
           <>
+            <PulseFilters events={p.allEvents} filter={filter} onChange={setFilter} />
             <PulseHero liveVisitors={p.liveVisitors} liveViews={p.liveViews} heroSeries={p.heroSeries} />
             <PulseKpiGrid kpis={p.kpis} />
             <PulseTrend events={p.events} fromMs={p.fromMs} toMs={p.anchorMs} period={period} />
-            <PulseLiveFeed events={p.events} />
             <PulseTopLists events={p.events} />
+            <PulseCountries events={p.events} />
+            <PulseLiveFeed events={p.events} />
             <PulseInstallHint />
             <p className="pb-2 text-center text-[11px]" style={{ color: 'var(--pulse-text-3)' }}>
               Sans cookie · sans donnée personnelle · vos propres visites sont exclues

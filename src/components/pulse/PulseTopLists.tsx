@@ -2,23 +2,12 @@ import { useMemo, useState } from 'react'
 import { PulseSegmented } from './PulseSegmented'
 import { PulseDeviceSplit } from './PulseDeviceSplit'
 import { pageLabel, topBy, topSourceCategories, type AnalyticsEvent } from '@/features/analytics/metrics'
-import { flagEmoji } from '@/features/analytics/pulseFormat'
 
-type Tab = 'pages' | 'sources' | 'countries'
+type Tab = 'pages' | 'sources'
 const TABS: readonly { value: Tab; label: string }[] = [
   { value: 'pages', label: 'Pages' },
   { value: 'sources', label: 'Sources' },
-  { value: 'countries', label: 'Pays' },
 ]
-
-const regionName = new Intl.DisplayNames(['fr'], { type: 'region' })
-function countryLabel(iso: string): string {
-  try {
-    return (iso.length === 2 && regionName.of(iso.toUpperCase())) || iso
-  } catch {
-    return iso
-  }
-}
 
 interface Row {
   label: string
@@ -52,8 +41,7 @@ export function PulseTopLists({ events }: { events: AnalyticsEvent[] }) {
   const [tab, setTab] = useState<Tab>('pages')
   const rows = useMemo<Row[]>(() => {
     if (tab === 'pages') return topBy(events, 'path', 6).map((r) => ({ label: pageLabel(r.label), count: r.count }))
-    if (tab === 'sources') return topSourceCategories(events, 6).map((r) => ({ label: r.label, count: r.count }))
-    return topBy(events, 'country', 6).map((r) => ({ label: countryLabel(r.label), count: r.count, prefix: flagEmoji(r.label) }))
+    return topSourceCategories(events, 6).map((r) => ({ label: r.label, count: r.count }))
   }, [events, tab])
   const max = rows.reduce((m, r) => Math.max(m, r.count), 0)
 
