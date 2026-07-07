@@ -66,6 +66,15 @@
         ]
       },
       {
+        "source": "/animations{/,/index.html}",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
         "source": "/@(dashboard|login|editor|onboarding|workflows|data|scraping-templates|taxonomies|catalog){,/**}",
         "headers": [
           {
