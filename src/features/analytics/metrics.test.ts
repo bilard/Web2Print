@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeKpis, topBy, timeSeries, deltaPct, recentEvents, topSources, sourceCategory, topSourceCategories, cityCounts, type AnalyticsEvent } from './metrics'
+import { computeKpis, pageLabel, topBy, timeSeries, deltaPct, recentEvents, topSources, sourceCategory, topSourceCategories, cityCounts, type AnalyticsEvent } from './metrics'
 
 const ev = (o: Partial<AnalyticsEvent>): AnalyticsEvent => ({
   ts: 0, path: '/promo', area: 'promo', ref: null, src: null,
@@ -126,5 +126,42 @@ describe('topSourceCategories', () => {
     expect(out).toContainEqual({ label: 'Google', count: 2 })
     expect(out).toContainEqual({ label: 'LinkedIn', count: 1 })
     expect(out).toContainEqual({ label: 'Direct', count: 1 })
+  })
+})
+
+describe('pageLabel', () => {
+  it('routes connues de la SPA', () => {
+    expect(pageLabel('/dashboard')).toBe('Tableau de bord')
+    expect(pageLabel('/data')).toBe('PIM')
+    expect(pageLabel('/login')).toBe('Connexion')
+  })
+  it('supprime les ids opaques (documents Firestore)', () => {
+    expect(pageLabel('/catalog/W39BHo8LRoQUgypyKOgB')).toBe('Catalogue studio')
+    expect(pageLabel('/workflows/nlWju2m6eM0dWtBvLADS/result')).toBe('Workflows · Résultat')
+  })
+  it('garde les slugs lisibles', () => {
+    expect(pageLabel('/editor/snipet_promo_converted')).toBe('Éditeur · Snipet Promo Converted')
+  })
+  it('modules du dashboard (pages virtuelles)', () => {
+    expect(pageLabel('/dashboard/images')).toBe('DAM')
+    expect(pageLabel('/dashboard/catalog')).toBe('Catalogue studio')
+    expect(pageLabel('/dashboard/access')).toBe('Utilisateurs & rôles')
+  })
+  it('ancres du site vitrine, identiques quel que soit le chemin', () => {
+    expect(pageLabel('/#modules')).toBe('Modules')
+    expect(pageLabel('/promo/#export')).toBe('Publier')
+    expect(pageLabel('/promo/index.html#studio')).toBe('Studio')
+  })
+  it('ancres inconnues préfixées par la page (doc)', () => {
+    expect(pageLabel('/docs/#m-getting-started')).toBe('Documentation · Getting Started')
+    expect(pageLabel('/docs/#m-settings')).toBe('Documentation · Settings')
+  })
+  it('#top et # vide = la page elle-même', () => {
+    expect(pageLabel('/#top')).toBe('Accueil')
+    expect(pageLabel('/docs/#top')).toBe('Documentation')
+  })
+  it('déclinaisons de langue', () => {
+    expect(pageLabel('/promo/en/')).toBe('Promo (EN)')
+    expect(pageLabel('/docs/de/')).toBe('Documentation (DE)')
   })
 })

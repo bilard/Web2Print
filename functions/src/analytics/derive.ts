@@ -1,7 +1,7 @@
 export type Area = 'promo' | 'docs' | 'app' | 'other'
 export type Device = 'mobile' | 'tablet' | 'desktop'
 
-const APP_PREFIXES = ['/dashboard', '/editor', '/data', '/taxonomies', '/scraping-templates', '/workflows', '/login', '/onboarding']
+const APP_PREFIXES = ['/dashboard', '/editor', '/data', '/taxonomies', '/scraping-templates', '/workflows', '/catalog', '/login', '/onboarding']
 const BOT_RE = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|pingdom|monitor/i
 
 export function deriveArea(path: string): Area {

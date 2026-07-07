@@ -195,6 +195,37 @@ const KNOWN_PAGES: Record<string, string> = {
   '/dashboard': 'Tableau de bord',
   '/login': 'Connexion',
   '/onboarding': 'Bienvenue',
+  '/data': 'PIM',
+  '/taxonomies': 'Taxonomies',
+  '/editor': 'Éditeur',
+  '/scraping-templates': 'Templates scraping',
+  '/workflows': 'Workflows',
+  '/catalog': 'Catalogue studio',
+}
+
+/**
+ * Modules du dashboard — pages « virtuelles » `/dashboard/<section>` émises par
+ * `trackSection` (les modules ne sont PAS des routes, cf. `navigation/modules.ts`).
+ * Miroir des labels de MODULE_ITEMS (non importé : ce module reste pur).
+ */
+const SECTION_LABELS: Record<string, string> = {
+  blank: 'Nouveau document',
+  import: 'Importer',
+  library: 'Bibliothèque',
+  images: 'DAM',
+  data: 'PIM',
+  taxonomies: 'Taxonomies',
+  'scraping-templates': 'Templates scraping',
+  'scraping-hub': 'Scraping Hub',
+  'price-watch': 'Veille tarifaire',
+  'retail-promo': 'Création studio',
+  catalog: 'Catalogue studio',
+  hyperframes: 'Animation',
+  workflows: 'Workflows',
+  chat: 'Chat IA',
+  telegram: 'Telegram',
+  access: 'Utilisateurs & rôles',
+  settings: 'Réglages',
 }
 
 /**
@@ -223,29 +254,55 @@ const KNOWN_ANCHORS: Record<string, string> = {
   roles: 'Gouverner',
   decouverte: 'Découverte',
   explorer: 'Explorer',
+  studio: 'Studio',
+  catalogue: 'Catalogue',
 }
 
 const pretty = (s: string): string =>
   s.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
+/** Traductions des segments techniques connus en fin de chemin. */
+const SEG_LABELS: Record<string, string> = { result: 'Résultat' }
+
+/** Déclinaisons de langue du site vitrine et de la doc (`/promo/en/…`, `/docs/de/…`). */
+const LANG_RE = /^(en|es|de|it)$/
+/** Segment opaque (id Firestore, jeton machine) : long, alphanumérique, avec chiffre. */
+const ID_RE = /^(?=.*\d)[A-Za-z0-9-]{15,}$/
+
 /** Transforme un chemin technique (`/promo/offre`, `/#modules`) en nom lisible. */
 export function pageLabel(path: string): string {
   if (!path) return 'Accueil'
-  // Ancre/section d'un site mono-page : `/#modules` → « Modules ».
+  // Ancre/section : `/#modules` → « Modules » ; sur une page interne inconnue,
+  // préfixer par la page (`/docs/#m-settings` → « Documentation · Settings »).
   const hashIdx = path.indexOf('#')
   if (hashIdx >= 0) {
+    const base = path.slice(0, hashIdx).replace(/\/index\.html$/, '/')
     const anchor = path.slice(hashIdx + 1)
-    if (!anchor) return 'Accueil'
-    return KNOWN_ANCHORS[anchor] ?? pretty(anchor)
+    // `#` vide ou `#top` = la page elle-même.
+    if (!anchor || anchor === 'top') return pageLabel(base || '/')
+    // Sections du site vitrine : identiques sur `/`, `/promo` et leurs langues.
+    const known = KNOWN_ANCHORS[anchor]
+    if (known) return known
+    const baseLabel = pageLabel(base || '/')
+    const anchorLabel = pretty(anchor.replace(/^m-/, '')) // ancres de la doc préfixées « m- »
+    return baseLabel === 'Accueil' ? anchorLabel : baseLabel + ' · ' + anchorLabel
   }
   if (path === '/') return 'Accueil'
   const clean = path.replace(/\/+$/, '')
   if (KNOWN_PAGES[clean]) return KNOWN_PAGES[clean]
   const segs = clean.split('/').filter(Boolean)
   if (segs.length === 0) return 'Accueil'
-  if (segs.length === 1) return pretty(segs[0])
-  const head = KNOWN_PAGES['/' + segs[0]] ?? pretty(segs[0])
-  return head + ' · ' + segs.slice(1).map(pretty).join(' · ')
+  // Modules du dashboard : pages virtuelles `/dashboard/<section>` (cf. trackSection).
+  if (segs[0] === 'dashboard' && segs.length === 2 && SECTION_LABELS[segs[1]]) return SECTION_LABELS[segs[1]]
+  let head = KNOWN_PAGES['/' + segs[0]] ?? pretty(segs[0])
+  let rest = segs.slice(1)
+  if (rest.length > 0 && LANG_RE.test(rest[0]) && (segs[0] === 'promo' || segs[0] === 'docs')) {
+    head += ' (' + rest[0].toUpperCase() + ')'
+    rest = rest.slice(1)
+  }
+  // Les ids opaques (documents Firestore) sont du bruit, pas un nom de page.
+  const tail = rest.filter((s) => !ID_RE.test(s)).map((s) => SEG_LABELS[s] ?? pretty(s))
+  return tail.length > 0 ? head + ' · ' + tail.join(' · ') : head
 }
 
 /**
@@ -259,6 +316,13 @@ const MODULE_GROUP: Record<string, string> = {
   'Décliner': 'Produire & diffuser', 'Publier': 'Produire & diffuser',
   'Automatiser': 'Automatiser & assister', 'Piloter': 'Automatiser & assister', 'Assister': 'Automatiser & assister',
   'Gouverner': 'Administrer', 'Paramétrer': 'Administrer', 'Explorer': 'Administrer',
+  // Modules de l'app (routes SPA + sections du dashboard) — mêmes familles que `navigation/modules.ts`.
+  'Nouveau document': 'Créer & éditer', 'Bibliothèque': 'Créer & éditer', 'Éditeur': 'Créer & éditer', 'Animation': 'Créer & éditer',
+  'PIM': 'Données & catalogue', 'Taxonomies': 'Données & catalogue', 'DAM': 'Données & catalogue',
+  'Templates scraping': 'Collecter le web', 'Scraping Hub': 'Collecter le web', 'Veille tarifaire': 'Collecter le web',
+  'Création studio': 'Produire & diffuser', 'Catalogue studio': 'Produire & diffuser',
+  'Workflows': 'Automatiser & assister', 'Chat IA': 'Automatiser & assister', 'Telegram': 'Automatiser & assister',
+  'Utilisateurs & rôles': 'Administrer', 'Réglages': 'Administrer',
 }
 
 /** Ordre d'affichage des groupes (+ « Autres » pour les pages hors modules). */

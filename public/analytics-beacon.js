@@ -40,9 +40,10 @@
   var lastEid = null // id du dernier event envoyé, réutilisé pour le re-tag uid (cf. doSend)
   var timer = null
   // reuse=true : ré-envoie l'event courant SOUS LE MÊME eid (re-tag uid), sans créer de doublon.
-  function doSend(reuse) {
+  // pathOverride : page « virtuelle » (module du dashboard sans changement d'URL).
+  function doSend(reuse, pathOverride) {
     try {
-      var p = currentPath()
+      var p = pathOverride || currentPath()
       if (!reuse && p === lastPath) return // dédoublonnage (scroll-spy qui rejoue la même ancre)
       // Re-tag (reuse) : on garde l'eid de l'event déjà envoyé → le serveur fusionne (merge).
       var eid = reuse && lastEid ? lastEid : rand()
@@ -73,8 +74,18 @@
   window.__w2pIdentify = function (uid) {
     window.__w2pAnalyticsUid = uid || null
     if (!uid) return
-    // Re-tag de la page courante avec l'uid SOUS LE MÊME eid : pas de 2e doc (pas de double comptage).
-    send(true)
+    // Re-tag IMMÉDIAT de la page courante avec l'uid SOUS LE MÊME eid : pas de 2e doc.
+    // Hors debounce partagé : un pushState/hashchange dans la même fenêtre de 150 ms
+    // annulerait le re-tag (le timer est commun) et la visite resterait « anonyme ».
+    doSend(true)
+  }
+
+  // Page « virtuelle » : les modules du dashboard ne changent pas l'URL (section en état
+  // local React). L'app appelle ceci avec un chemin synthétique (ex. '/dashboard/data').
+  window.__w2pTrack = function (path) {
+    if (typeof path !== 'string' || path.charAt(0) !== '/') return
+    if (timer) clearTimeout(timer)
+    doSend(false, path)
   }
 
   // Page vue initiale

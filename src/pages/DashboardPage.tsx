@@ -35,6 +35,7 @@ import { MODULE_ITEMS as menuItems, SECTION_PERMISSION, groupModules, type Secti
 import { ModuleTree } from '@/features/navigation/ModuleTree'
 import { useModuleIntentStore } from '@/stores/moduleIntent.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
+import { trackSection } from '@/features/analytics/track'
 
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
@@ -103,6 +104,11 @@ export default function DashboardPage() {
   useEffect(() => {
     setHelpContext(activeSection)
   }, [activeSection, setHelpContext])
+  // Analytics : les modules n'étant pas des routes, chaque section ouverte est
+  // enregistrée comme page virtuelle `/dashboard/<section>`.
+  useEffect(() => {
+    trackSection(activeSection)
+  }, [activeSection])
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true
     return window.localStorage.getItem('dashboard:sidebarOpen') !== 'false'
