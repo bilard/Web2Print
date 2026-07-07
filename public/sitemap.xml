@@ -1,34 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://ibs-studio.com/</loc>
-    <lastmod>2026-07-02</lastmod>
+    <lastmod>2026-07-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ibs-studio.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ibs-studio.com/promo/en/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ibs-studio.com/promo/es/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ibs-studio.com/promo/de/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://ibs-studio.com/promo/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ibs-studio.com/"/>
   </url>
   <url>
     <loc>https://ibs-studio.com/promo/en/</loc>
-    <lastmod>2026-07-02</lastmod>
+    <lastmod>2026-07-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ibs-studio.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ibs-studio.com/promo/en/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ibs-studio.com/promo/es/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ibs-studio.com/promo/de/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://ibs-studio.com/promo/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ibs-studio.com/"/>
   </url>
   <url>
     <loc>https://ibs-studio.com/promo/es/</loc>
-    <lastmod>2026-07-02</lastmod>
+    <lastmod>2026-07-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ibs-studio.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ibs-studio.com/promo/en/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ibs-studio.com/promo/es/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ibs-studio.com/promo/de/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://ibs-studio.com/promo/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ibs-studio.com/"/>
   </url>
   <url>
     <loc>https://ibs-studio.com/promo/de/</loc>
-    <lastmod>2026-07-02</lastmod>
+    <lastmod>2026-07-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ibs-studio.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ibs-studio.com/promo/en/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ibs-studio.com/promo/es/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ibs-studio.com/promo/de/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://ibs-studio.com/promo/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ibs-studio.com/"/>
   </url>
   <url>
     <loc>https://ibs-studio.com/promo/it/</loc>
-    <lastmod>2026-07-02</lastmod>
+    <lastmod>2026-07-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ibs-studio.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ibs-studio.com/promo/en/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ibs-studio.com/promo/es/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ibs-studio.com/promo/de/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://ibs-studio.com/promo/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ibs-studio.com/"/>
   </url>
   <url>
     <loc>https://ibs-studio.com/digital/</loc>
@@ -41,29 +72,59 @@
     <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ibs-studio.com/docs/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ibs-studio.com/docs/en/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ibs-studio.com/docs/es/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ibs-studio.com/docs/de/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://ibs-studio.com/docs/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ibs-studio.com/docs/"/>
   </url>
   <url>
     <loc>https://ibs-studio.com/docs/en/</loc>
     <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ibs-studio.com/docs/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ibs-studio.com/docs/en/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ibs-studio.com/docs/es/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ibs-studio.com/docs/de/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://ibs-studio.com/docs/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ibs-studio.com/docs/"/>
   </url>
   <url>
     <loc>https://ibs-studio.com/docs/es/</loc>
     <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ibs-studio.com/docs/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ibs-studio.com/docs/en/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ibs-studio.com/docs/es/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ibs-studio.com/docs/de/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://ibs-studio.com/docs/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ibs-studio.com/docs/"/>
   </url>
   <url>
     <loc>https://ibs-studio.com/docs/de/</loc>
     <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ibs-studio.com/docs/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ibs-studio.com/docs/en/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ibs-studio.com/docs/es/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ibs-studio.com/docs/de/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://ibs-studio.com/docs/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ibs-studio.com/docs/"/>
   </url>
   <url>
     <loc>https://ibs-studio.com/docs/it/</loc>
     <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ibs-studio.com/docs/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ibs-studio.com/docs/en/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ibs-studio.com/docs/es/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ibs-studio.com/docs/de/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://ibs-studio.com/docs/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ibs-studio.com/docs/"/>
   </url>
 </urlset>
