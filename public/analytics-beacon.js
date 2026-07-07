@@ -25,6 +25,12 @@
       return sid
     } catch (e) { return rand() }
   }
+  // Dernier uid connu sur ce navigateur (posé par __w2pIdentify dans l'app). Les pages
+  // publiques (landing, docs) n'ont PAS Firebase Auth : sans lui, les visites du
+  // propriétaire depuis `/` resteraient anonymes et échapperaient à l'exclusion serveur.
+  function lastUid() {
+    try { return localStorage.getItem('w2p_luid') } catch (e) { return null }
+  }
   function utmSource() {
     try {
       var p = new URLSearchParams(location.search).get('utm_source')
@@ -56,6 +62,7 @@
         sid: sessionId(),
         src: utmSource(),
         uid: window.__w2pAnalyticsUid || null,
+        luid: lastUid(), // servi UNIQUEMENT à l'exclusion serveur, jamais stocké
       })
       var blob = new Blob([payload], { type: 'application/json' })
       if (navigator.sendBeacon) navigator.sendBeacon(ENDPOINT, blob)
@@ -74,6 +81,8 @@
   window.__w2pIdentify = function (uid) {
     window.__w2pAnalyticsUid = uid || null
     if (!uid) return
+    // Mémorise l'uid pour les prochaines visites des pages publiques (cf. lastUid).
+    try { localStorage.setItem('w2p_luid', uid) } catch (e) { /* best-effort */ }
     // Re-tag IMMÉDIAT de la page courante avec l'uid SOUS LE MÊME eid : pas de 2e doc.
     // Hors debounce partagé : un pushState/hashchange dans la même fenêtre de 150 ms
     // annulerait le re-tag (le timer est commun) et la visite resterait « anonyme ».

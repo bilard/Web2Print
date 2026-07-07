@@ -69,7 +69,12 @@ export const collectAnalytics = onRequest(
     // écrite en anonyme sous le même `eid` avant la résolution de l'auth) avec son
     // uid → on supprime alors ce doc pour ne laisser aucune trace de ses tests.
     // (Le re-tag est immédiat côté beacon depuis f7966e81 — plus de résidus anonymes.)
-    const uid = (doc as { uid?: string | null }).uid
+    // `luid` = dernier uid connu du navigateur (localStorage, posé par l'app) : les
+    // pages publiques (landing `/`) n'ont pas d'auth — sans lui, les visites du
+    // propriétaire y resteraient anonymes. Servi à l'exclusion seulement, JAMAIS stocké.
+    const rawLuid = (req.body as { luid?: unknown } | null | undefined)?.luid
+    const luid = typeof rawLuid === 'string' && /^[A-Za-z0-9]{10,60}$/.test(rawLuid) ? rawLuid : null
+    const uid = (doc as { uid?: string | null }).uid ?? luid
     if (uid && (await resolveExcludedUids()).has(uid)) {
       if (eid) {
         try { await db.collection('analyticsEvents').doc(eid).delete() } catch { /* best-effort */ }
