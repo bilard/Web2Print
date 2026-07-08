@@ -23,6 +23,8 @@ const PUBLIC = '/Applications/_IA/Claude_workspace/Web2Print/public';
 const OUT = join(here, 'out');
 const FPS = 30;
 const SCALE = 2;              // deviceScaleFactor (netteté)
+const SLOW = 1.5;            // facteur de ralenti (1 = vitesse native) → « moins rapide »
+const XFADE = 0.45;         // durée du fondu de bouclage sans couture (s)
 const arg = (process.argv[2] || 'wfl').trim();
 
 const MIME = { '.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript',
@@ -47,8 +49,16 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 3400 }, deviceScaleFactor: SCALE });
 // bloque le bandeau cookies / consent (injecté par consent.js) pour qu'il ne pollue pas les captures
 await page.route('**/consent.js', (r) => r.abort());
+// ceinture + bretelles : marque le consentement « refusé » AVANT tout script → aucune bannière
+await page.addInitScript(() => { try { localStorage.setItem('cs_consent', 'denied'); } catch {} });
 await page.goto(`http://localhost:${port}/promo/index.html`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(500);
+// masque tout overlay en position:fixed (bandeau consent résiduel, barres de nav modnav/m-menu,
+// faisceau cineBeam) qui, superposé au cadre d'une fenêtre, polluerait la capture.
+await page.addStyleTag({ content: `
+  .modnav, .m-menu, .cineBeam, [role="dialog"] { display:none !important; }
+  *[style*="position:fixed"][style*="z-index:99999"] { display:none !important; }
+` });
 
 // index des blocs → data-cap-idx + slug
 const blocks = await page.evaluate(() => {
@@ -89,15 +99,36 @@ for (const { idx, slug } of targets) {
     return durs.length ? Math.min(10000, Math.round(Math.max(...durs))) : 6500;
   }, winSel);
 
+  // Fige les dimensions de la fenêtre à son MAX sur toute la période : certaines fenêtres
+  // reflowent (listes qui se remplissent…) → sans ça, les frames ont des tailles différentes
+  // et la séquence ffmpeg casse / l'image « saute ». On échantillonne, on prend le max, on fixe.
+  await page.evaluate(({ sel, period }) => {
+    const w = document.querySelector(sel);
+    let mw = 0, mh = 0, N = 20;
+    for (let i = 0; i <= N; i++) {
+      const t = (period / N) * i;
+      for (const a of w.getAnimations({ subtree: true })) { try { a.pause(); a.currentTime = t; } catch {} }
+      const r = w.getBoundingClientRect();
+      mw = Math.max(mw, r.width); mh = Math.max(mh, r.height);
+    }
+    w.style.width = Math.ceil(mw) + 'px';
+    w.style.height = Math.ceil(mh) + 'px';
+    w.style.boxSizing = 'border-box';
+    w.style.overflow = 'hidden';
+  }, { sel: winSel, period: periodMs });
+
   const box = await win.boundingBox();
-  const frames = Math.max(1, Math.round((periodMs / 1000) * FPS));
+  // durée de sortie = période animée × ralenti. Ré-échantillonnage fin : chaque frame de
+  // sortie échantillonne un état d'animation distinct (vrai ralenti, pas de doublons).
+  const outSec = (periodMs / 1000) * SLOW;
+  const frames = Math.max(1, Math.round(outSec * FPS));
   const framesDir = join(OUT, `.frames-${slug}`);
   await rm(framesDir, { recursive: true, force: true });
   await mkdir(framesDir, { recursive: true });
-  process.stdout.write(`\n${slug} : ${box.width|0}×${box.height|0}, ${(periodMs/1000).toFixed(1)}s, ${frames} frames `);
+  process.stdout.write(`\n${slug} : ${box.width|0}×${box.height|0}, ${outSec.toFixed(1)}s (×${SLOW}), ${frames} frames `);
 
   for (let f = 0; f < frames; f++) {
-    const t = (f / FPS) * 1000;
+    const t = (f / FPS) / SLOW * 1000; // temps d'animation ralenti
     await page.evaluate(({ sel, t }) => {
       const w = document.querySelector(sel);
       for (const a of w.getAnimations({ subtree: true })) { try { a.pause(); a.currentTime = t; } catch {} }
@@ -107,11 +138,28 @@ for (const { idx, slug } of targets) {
     if (f % 30 === 0) process.stdout.write('.');
   }
 
-  // frames → mp4 (dims forcées paires)
+  // frames → mp4. Boucle SANS COUTURE : les durées d'animation ne s'alignent pas sur la
+  // période (10-17 loops infinis de périodes distinctes), donc un rebouclage brut « saute ».
+  // On croise en fondu les XFADE dernières secondes avec les XFADE premières → boucle propre.
   const mp4 = join(OUT, `${slug}.mp4`);
-  await run('ffmpeg', ['-y', '-framerate', String(FPS), '-i', join(framesDir, 'f%04d.png'),
-    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18',
-    '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-movflags', '+faststart', mp4]);
+  const evenScale = 'scale=trunc(iw/2)*2:trunc(ih/2)*2';
+  const d = Math.min(XFADE, outSec / 3);
+  const ENC = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '16', '-preset', 'slow', '-movflags', '+faststart'];
+  if (frames >= 6 && d > 0.1) {
+    const fc = [
+      `[0:v]${evenScale},format=yuv420p,split=3[a][b][c]`,
+      `[a]trim=0:${d.toFixed(3)},setpts=PTS-STARTPTS[head]`,
+      `[b]trim=${(outSec - d).toFixed(3)}:${outSec.toFixed(3)},setpts=PTS-STARTPTS[tail]`,
+      `[tail][head]xfade=transition=fade:duration=${d.toFixed(3)}:offset=0[seam]`,
+      `[c]trim=${d.toFixed(3)}:${(outSec - d).toFixed(3)},setpts=PTS-STARTPTS[mid]`,
+      `[mid][seam]concat=n=2:v=1[out]`,
+    ].join(';');
+    await run('ffmpeg', ['-y', '-framerate', String(FPS), '-i', join(framesDir, 'f%04d.png'),
+      '-filter_complex', fc, '-map', '[out]', ...ENC, mp4]);
+  } else {
+    await run('ffmpeg', ['-y', '-framerate', String(FPS), '-i', join(framesDir, 'f%04d.png'),
+      '-vf', evenScale, ...ENC, mp4]);
+  }
   await rm(framesDir, { recursive: true, force: true });
   process.stdout.write(` ✓ ${mp4}`);
 }
