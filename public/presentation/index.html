@@ -182,6 +182,7 @@
 
 <script>
 const V = "https://ibs-studio.com/animations/out/";
+const VER = "20260708b"; // bump à chaque re-génération des vidéos → contourne le cache navigateur/CDN
 const PILLARS = [
   { id:"creer", n:"01", c:"var(--cyan)", title:"Créer & importer", accent:"Le point de départ",
     intro:"Ouvrez le bon plan de travail, ou repartez de vos fichiers existants — sans les recréer.",
@@ -232,7 +233,7 @@ function cardHTML(m, big){
     <div class="${big?'colv':''}">
       <div class="chrome"><div class="lights"><i></i><i></i><i></i></div>
         <div class="addr">ibs-studio.com<span class="path">/${m.s}</span></div></div>
-      <div class="media" data-src="${V}${m.s}.mp4">
+      <div class="media" data-src="${V}${m.s}.mp4?v=${VER}">
         <div class="shim"></div>
         <div class="zoom">⤢</div>
       </div>
