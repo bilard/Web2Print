@@ -4,10 +4,10 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>IBS-Studio — Présentation des modules</title>
-<meta name="description" content="La chaîne graphique tout-en-un : import fidèle, PIM/DAM, publipostage, IA créative et automatisation. 16 modules en démonstration animée." />
+<meta name="description" content="La chaîne graphique tout-en-un : import fidèle, PIM/DAM, publication multicanale, IA créative et automatisation. 19 modules en démonstration." />
 <link rel="canonical" href="https://ibs-studio.com/presentation/" />
 <meta property="og:title" content="IBS-Studio — Vos données produit, publiées sur tous vos canaux" />
-<meta property="og:description" content="16 modules en démonstration animée : import, PIM/DAM, publipostage, IA créative, automatisation." />
+<meta property="og:description" content="19 modules en démonstration : référentiel produit, publication multicanale, IA créative, automatisation." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://ibs-studio.com/presentation/" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -96,7 +96,7 @@
   .addr{flex:1;font-family:var(--mono);font-size:11.5px;color:var(--faint);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .addr .path{color:var(--muted)}
   .media{position:relative;background:#000;cursor:zoom-in;overflow:hidden}
-  .media video{display:block;width:100%;height:auto}
+  .media video,.media img{display:block;width:100%;height:auto}
   .media .shim{position:absolute;inset:0;background:linear-gradient(110deg,#0d0d14 30%,#15151f 50%,#0d0d14 70%);background-size:200% 100%;animation:shim 1.4s linear infinite}
   @keyframes shim{to{background-position:-200% 0}}
   .media .zoom{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:8px;background:rgba(6,6,9,.6);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;color:var(--ink);opacity:0;transition:.25s;backdrop-filter:blur(6px)}
@@ -132,7 +132,7 @@
   /* ── LIGHTBOX ── */
   .lb{position:fixed;inset:0;z-index:100;background:rgba(4,4,7,.9);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:4vh 4vw;opacity:0;transition:opacity .3s}
   .lb.on{display:flex;opacity:1}
-  .lb video{max-width:100%;max-height:92vh;border-radius:14px;border:1px solid var(--line2);box-shadow:0 40px 120px -30px #000}
+  .lb video,.lb img{max-width:100%;max-height:92vh;border-radius:14px;border:1px solid var(--line2);box-shadow:0 40px 120px -30px #000}
   .lb .x{position:absolute;top:22px;right:26px;width:44px;height:44px;border-radius:12px;border:1px solid var(--line2);background:rgba(255,255,255,.05);color:var(--ink);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .lb .x:hover{background:rgba(255,255,255,.12)}
 
@@ -148,9 +148,9 @@
   <header class="hero">
     <div class="brand"><span class="dot"></span><b>IBS-STUDIO</b><span>·</span><span>La chaîne graphique tout-en-un</span></div>
     <h1 class="title">Vos données produit.<br><span class="g">Publiées sur tous vos canaux.</span></h1>
-    <p class="lead">Centralisez votre <b>référentiel produit</b>, puis déclinez-le automatiquement sur <b>tous vos canaux</b> — catalogue, print, web, réseaux — sans ressaisie. Le tout accéléré par l'IA, dans <b>16 modules</b> intégrés. Chaque module ci-dessous est présenté <b>en démonstration animée</b>.</p>
+    <p class="lead">Centralisez votre <b>référentiel produit</b>, puis déclinez-le automatiquement sur <b>tous vos canaux</b> — catalogue, print, web, réseaux — sans ressaisie. Le tout accéléré par l'IA, dans <b>19 modules</b> intégrés. Chaque module ci-dessous est présenté <b>en démonstration</b>.</p>
     <div class="stats" id="stats">
-      <div class="stat"><div class="n" data-to="16">0</div><div class="l">modules intégrés</div></div>
+      <div class="stat"><div class="n" data-to="19">0</div><div class="l">modules intégrés</div></div>
       <div class="stat"><div class="n" data-suffix="+" data-to="4">0</div><div class="l">formats import / export</div></div>
       <div class="stat"><div class="n">∞</div><div class="l">variantes par gabarit</div></div>
       <div class="stat"><div class="n">IA</div><div class="l">image · vidéo · texte</div></div>
@@ -173,7 +173,7 @@
         <a class="btn pri" href="https://mail.google.com/mail/?view=cm&fs=1&to=ibs.studio@gmail.com&su=Demande%20de%20d%C3%A9mo%20IBS-Studio&body=Bonjour%2C%0A%0AJe%20souhaite%20une%20d%C3%A9monstration%20d%27IBS-Studio%20sur%20notre%20catalogue.%0A%0AMerci." target="_blank" rel="noopener">Demander une démo →</a>
         <a class="btn sec" href="https://ibs-studio.com/" target="_blank" rel="noopener">Découvrir l'application</a>
       </div>
-      <div class="foot">ibs-studio.com · 16 modules · une seule plateforme</div>
+      <div class="foot">ibs-studio.com · 19 modules · une seule plateforme</div>
     </div>
   </footer>
 </div>
@@ -192,11 +192,13 @@ const PILLARS = [
       {s:"txo", tag:"Taxonomies", h:"Un catalogue bien rangé", p:"Un classement partagé qui rend tout votre catalogue navigable."},
       {s:"erd", tag:"Données", h:"Vos données, cartographiées", p:"Une cartographie vivante : comprendre la structure et inspecter la donnée réelle au même endroit."},
     ]},
-  { id:"masse", n:"02", c:"var(--amber)", title:"Personnaliser en masse", accent:"La publication multicanale",
-    intro:"Un seul gabarit, des centaines de déclinaisons sur tous vos canaux — automatiquement, sans erreur.",
-    feature:true,
+  { id:"masse", n:"02", c:"var(--amber)", title:"Décliner & publier", accent:"La publication multicanale",
+    intro:"D'une seule source, produisez tout votre catalogue et diffusez-le sur chaque canal — sans ressaisie.",
     mods:[
-      {s:"db", tag:"Publipostage", h:"Une base, des centaines de variantes", p:"Des centaines de visuels personnalisés depuis un seul gabarit, sans erreur — et le même visuel décliné à tous les formats. C'est le cœur du réacteur : votre catalogue produit devient un flux de créations."},
+      {s:"db", tag:"Publipostage", h:"Une base, des centaines de variantes", p:"Des centaines de visuels personnalisés depuis un seul gabarit, sans erreur — et le même visuel décliné à tous les formats."},
+      {img:"m19", slug:"publier", tag:"Multicanal", h:"Une source, tous vos canaux", p:"Un même document exporté partout en une fois : PDF imprimeur (CMJN, fond perdu, FOGRA39), PNG, PPTX, SVG, page web, vidéo et réseaux sociaux."},
+      {img:"m15", slug:"catalogue", tag:"Catalogue studio", h:"Un catalogue entier, depuis un prompt", p:"Décrivez le catalogue voulu : la structure se déduit du PIM et le plan complet se génère par IA, prêt à exporter en PDF."},
+      {img:"m14", slug:"promo", tag:"Création studio", h:"Des promos à l'échelle du catalogue", p:"Un seul habillage et chaque ligne du PIM devient une fiche promo prête à imprimer, à votre charte."},
     ]},
   { id:"creer", n:"03", c:"var(--cyan)", title:"Créer & importer", accent:"Le studio",
     intro:"Ouvrez le bon plan de travail, ou repartez de vos fichiers existants — sans les recréer.",
@@ -229,14 +231,15 @@ const PILLARS = [
 
 const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
 function cardHTML(m, big){
+  const path = m.s || m.slug || m.img;
+  const media = m.img
+    ? `<div class="media" data-img="media/${m.img}.jpg?v=${VER}"><img src="media/${m.img}.jpg?v=${VER}" alt="${esc(m.h)}" loading="lazy"><div class="zoom">⤢</div></div>`
+    : `<div class="media" data-src="${V}${m.s}.mp4?v=${VER}"><div class="shim"></div><div class="zoom">⤢</div></div>`;
   return `<article class="card${big?' big':''}" style="--c:${m._c}">
     <div class="${big?'colv':''}">
       <div class="chrome"><div class="lights"><i></i><i></i><i></i></div>
-        <div class="addr">ibs-studio.com<span class="path">/${m.s}</span></div></div>
-      <div class="media" data-src="${V}${m.s}.mp4?v=${VER}">
-        <div class="shim"></div>
-        <div class="zoom">⤢</div>
-      </div>
+        <div class="addr">ibs-studio.com<span class="path">/${path}</span></div></div>
+      ${media}
     </div>
     <div class="body">
       <span class="tag">${esc(m.tag)}</span>
@@ -268,6 +271,7 @@ PILLARS.forEach(P=>{
 const lazyIO = new IntersectionObserver((es)=>{
   es.forEach(e=>{
     const box=e.target;
+    if(!box.dataset.src) return; // carte image statique → rien à charger
     if(e.isIntersecting){
       let v=box.querySelector('video');
       if(!v){
@@ -316,20 +320,25 @@ document.querySelectorAll('.stat .n[data-to]').forEach(el=>cIO.observe(el));
 
 /* lightbox */
 const lb=document.getElementById('lb');
+const lbClear=()=>lb.querySelectorAll('video,img').forEach(el=>el.remove());
 document.addEventListener('click',ev=>{
   const media=ev.target.closest('.media');
   if(media){
-    lb.querySelectorAll('video').forEach(v=>v.remove());
-    const v=document.createElement('video');
-    v.src=media.dataset.src;v.muted=true;v.loop=true;v.autoplay=true;v.controls=true;v.playsInline=true;
-    lb.appendChild(v);lb.classList.add('on');v.play().catch(()=>{});
+    lbClear();
+    if(media.dataset.img){
+      const im=document.createElement('img'); im.src=media.dataset.img;
+      lb.appendChild(im);
+    }else{
+      const v=document.createElement('video');
+      v.src=media.dataset.src;v.muted=true;v.loop=true;v.autoplay=true;v.controls=true;v.playsInline=true;
+      lb.appendChild(v);v.play().catch(()=>{});
+    }
+    lb.classList.add('on');
     return;
   }
-  if(ev.target===lb||ev.target.classList.contains('x')){
-    lb.classList.remove('on');lb.querySelectorAll('video').forEach(v=>v.remove());
-  }
+  if(ev.target===lb||ev.target.classList.contains('x')){ lb.classList.remove('on');lbClear(); }
 });
-addEventListener('keydown',e=>{if(e.key==='Escape'){lb.classList.remove('on');lb.querySelectorAll('video').forEach(v=>v.remove());}});
+addEventListener('keydown',e=>{if(e.key==='Escape'){lb.classList.remove('on');lbClear();}});
 </script>
 </body>
 </html>
