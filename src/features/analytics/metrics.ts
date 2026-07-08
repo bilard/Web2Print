@@ -218,6 +218,45 @@ export function countryCityStats(events: AnalyticsEvent[], limit: number): Count
   return [...map.values()].sort((a, b) => b.count - a.count).slice(0, limit)
 }
 
+export interface CountryGroup {
+  country: string | null
+  /** Total des visites du pays (toutes villes confondues). */
+  count: number
+  lastTs: number
+  /** Villes du pays, triées par visites décroissantes. */
+  cities: CountryCityRow[]
+}
+
+/**
+ * Villes regroupées par pays : pays triés par visites décroissantes, villes idem à l'intérieur.
+ * Passe unique sur les events → totaux pays exacts (pas de troncature de la longue traîne).
+ */
+export function countryGroupStats(events: AnalyticsEvent[]): CountryGroup[] {
+  const groups = new Map<string, CountryGroup>()
+  const cities = new Map<string, CountryCityRow>()
+  for (const e of events) {
+    const gKey = e.country ?? ''
+    const g = groups.get(gKey) ?? { country: e.country, count: 0, lastTs: 0, cities: [] }
+    g.count += 1
+    if (e.ts > g.lastTs) g.lastTs = e.ts
+
+    const cKey = gKey + '|' + (e.city ?? '')
+    const city = cities.get(cKey)
+    if (city) {
+      city.count += 1
+      if (e.ts > city.lastTs) city.lastTs = e.ts
+    } else {
+      const row: CountryCityRow = { country: e.country, city: e.city, count: 1, lastTs: e.ts }
+      cities.set(cKey, row)
+      g.cities.push(row)
+    }
+    groups.set(gKey, g)
+  }
+  const list = [...groups.values()]
+  for (const g of list) g.cities.sort((a, b) => b.count - a.count)
+  return list.sort((a, b) => b.count - a.count)
+}
+
 export function deltaPct(current: number, previous: number): number | null {
   if (previous === 0) return null
   return Math.round(((current - previous) / previous) * 100)
