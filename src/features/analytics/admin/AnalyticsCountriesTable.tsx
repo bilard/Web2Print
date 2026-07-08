@@ -1,5 +1,5 @@
 // src/features/analytics/admin/AnalyticsCountriesTable.tsx
-import { countryCityStats, countryName, type AnalyticsEvent } from '../metrics'
+import { countryGroupStats, countryName, type AnalyticsEvent } from '../metrics'
 
 const TH = 'font-medium text-left py-1.5 px-2 border-b border-white/10'
 const TD = 'py-1.5 px-2 border-b border-white/5'
@@ -16,17 +16,20 @@ interface Props {
   onSelect?: (country: string | null) => void
 }
 
-/** Carte « Pays » : tableau pays · ville · visites · dernière visite, lignes cliquables → carte. */
+/**
+ * Carte « Pays » : villes regroupées par pays (pays triés par visites décroissantes),
+ * en-tête pays cliquable → carte du monde, villes détaillées dessous.
+ */
 export function AnalyticsCountriesTable({ events, selected, onSelect }: Props) {
-  const rows = countryCityStats(events, 12)
-  const max = rows[0]?.count ?? 1
+  const groups = countryGroupStats(events)
+  const maxCountry = groups[0]?.count ?? 1
   return (
     <div className="bg-surface rounded-lg p-4">
       <div className="text-white/70 text-sm font-medium mb-3">
         Pays
-        <span className="text-white/35 font-normal ml-2">ville · visites · dernière visite</span>
+        <span className="text-white/35 font-normal ml-2">villes groupées · visites · dernière visite</span>
       </div>
-      {rows.length === 0 ? (
+      {groups.length === 0 ? (
         <div className="text-white/35 text-xs">Aucune donnée</div>
       ) : (
         <div className="overflow-x-auto">
@@ -39,27 +42,43 @@ export function AnalyticsCountriesTable({ events, selected, onSelect }: Props) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => {
-              const active = selected != null && selected === r.country
-              const click = onSelect && r.country ? () => onSelect(active ? null : r.country) : undefined
+            {groups.map((g) => {
+              const maxCity = g.cities[0]?.count ?? 1
+              const active = selected != null && selected === g.country
+              const click = onSelect && g.country ? () => onSelect(active ? null : g.country) : undefined
               return (
                 <tr
-                  key={`${r.country}-${r.city}`}
+                  key={`${g.country}`}
                   onClick={click}
                   onKeyDown={click ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); click() } } : undefined}
                   tabIndex={click ? 0 : undefined}
                   title={click ? 'Voir sur la carte' : undefined}
                   className={`transition-colors ${click ? 'cursor-pointer hover:bg-white/[0.04]' : ''} ${active ? 'bg-indigo-500/15' : ''}`}
                 >
-                  <td className={`${TD} text-white/80 whitespace-nowrap`} title={r.country ?? undefined}>{countryName(r.country) ?? '—'}</td>
-                  <td className={`${TD} text-white/60 truncate max-w-[100px]`}>{r.city ?? '—'}</td>
-                  <td className={`${TD} text-right`}>
-                    <span className="text-white/80 tabular-nums">{r.count}</span>
+                  {/* En-tête pays : nom en gras + total + barre relative aux autres pays */}
+                  <td className={`${TD} align-top text-white font-semibold whitespace-nowrap`} title={g.country ?? undefined}>
+                    {countryName(g.country) ?? '—'}
+                  </td>
+                  {/* Villes du pays, empilées, triées par visites décroissantes */}
+                  <td className={`${TD} text-white/60`}>
+                    <div className="space-y-1">
+                      {g.cities.map((c, j) => (
+                        <div key={`${c.city}-${j}`} className="flex items-center gap-2">
+                          <span className="truncate max-w-[100px]">{c.city ?? '—'}</span>
+                          <div className="h-0.5 flex-1 rounded bg-indigo-500/40" style={{ maxWidth: `${Math.max(8, (c.count / maxCity) * 60)}px` }} />
+                          <span className="text-white/45 tabular-nums shrink-0">{c.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                  {/* Total pays + barre + dernière visite */}
+                  <td className={`${TD} align-top text-right`}>
+                    <span className="text-white font-semibold tabular-nums">{g.count}</span>
                     <div
-                      className="mt-1 h-0.5 rounded bg-indigo-500/60 ml-auto"
-                      style={{ width: `${Math.max(4, (r.count / max) * 100)}%` }}
+                      className="mt-1 h-0.5 rounded bg-indigo-500/70 ml-auto"
+                      style={{ width: `${Math.max(4, (g.count / maxCountry) * 100)}%` }}
                     />
-                    <span className="block text-white/40 text-[10px] whitespace-nowrap tabular-nums mt-0.5">{when(r.lastTs)}</span>
+                    <span className="block text-white/40 text-[10px] whitespace-nowrap tabular-nums mt-0.5">{when(g.lastTs)}</span>
                   </td>
                 </tr>
               )

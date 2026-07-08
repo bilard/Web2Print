@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeKpis, countryCityStats, pageLabel, topBy, timeSeries, deltaPct, recentEvents, topSources, sourceCategory, topSourceCategories, cityCounts, type AnalyticsEvent } from './metrics'
+import { computeKpis, countryCityStats, countryGroupStats, pageLabel, topBy, timeSeries, deltaPct, recentEvents, topSources, sourceCategory, topSourceCategories, cityCounts, type AnalyticsEvent } from './metrics'
 
 const ev = (o: Partial<AnalyticsEvent>): AnalyticsEvent => ({
   ts: 0, path: '/promo', area: 'promo', ref: null, src: null,
@@ -183,5 +183,31 @@ describe('countryCityStats', () => {
       ev({ country: 'DE', city: null, ts: 3 }),
     ], 2)
     expect(rows).toHaveLength(2)
+  })
+})
+
+describe('countryGroupStats', () => {
+  it('regroupe les villes par pays, pays triés par visites décroissantes', () => {
+    const groups = countryGroupStats([
+      ev({ country: 'FR', city: 'Lille', ts: 10 }),
+      ev({ country: 'FR', city: 'Lille', ts: 40 }),
+      ev({ country: 'FR', city: 'Paris', ts: 20 }),
+      ev({ country: 'US', city: 'New York', ts: 30 }),
+    ])
+    expect(groups.map((g) => g.country)).toEqual(['FR', 'US'])
+    expect(groups[0]).toMatchObject({ country: 'FR', count: 3, lastTs: 40 })
+    // Villes triées par visites décroissantes à l'intérieur du pays
+    expect(groups[0].cities.map((c) => [c.city, c.count])).toEqual([['Lille', 2], ['Paris', 1]])
+    expect(groups[1]).toMatchObject({ country: 'US', count: 1 })
+  })
+
+  it('total pays exact même sur une longue traîne (pas de troncature)', () => {
+    const events = Array.from({ length: 50 }, (_, i) => ev({ country: 'US', city: `v${i}`, ts: i }))
+    events.push(ev({ country: 'FR', city: 'Lille', ts: 1000 }), ev({ country: 'FR', city: 'Lille', ts: 1001 }))
+    const groups = countryGroupStats(events)
+    // 50 villes US à 1 visite l'emportent sur les 2 visites FR
+    expect(groups[0].country).toBe('US')
+    expect(groups[0].count).toBe(50)
+    expect(groups[0].cities).toHaveLength(50)
   })
 })
