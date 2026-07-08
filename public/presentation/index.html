@@ -182,7 +182,7 @@
 
 <script>
 const V = "https://ibs-studio.com/animations/out/";
-const VER = "20260708c"; // bump à chaque re-génération des vidéos → contourne le cache navigateur/CDN
+const VER = "20260708d"; // bump à chaque re-génération des vidéos → contourne le cache navigateur/CDN
 const PILLARS = [
   { id:"referentiel", n:"01", c:"var(--green)", title:"Référentiel produit", accent:"La source de vérité",
     intro:"Vos produits, vos visuels et votre catalogue structurés au même endroit — la donnée qui alimente tous vos canaux.",
@@ -196,16 +196,16 @@ const PILLARS = [
     intro:"D'une seule source, produisez tout votre catalogue et diffusez-le sur chaque canal — sans ressaisie.",
     mods:[
       {s:"db", tag:"Publipostage", h:"Une base, des centaines de variantes", p:"Des centaines de visuels personnalisés depuis un seul gabarit, sans erreur — et le même visuel décliné à tous les formats."},
-      {img:"m19", slug:"publier", tag:"Multicanal", h:"Une source, tous vos canaux", p:"Un même document exporté partout en une fois : PDF imprimeur (CMJN, fond perdu, FOGRA39), PNG, PPTX, SVG, page web, vidéo et réseaux sociaux."},
-      {img:"m15", slug:"catalogue", tag:"Catalogue studio", h:"Un catalogue entier, depuis un prompt", p:"Décrivez le catalogue voulu : la structure se déduit du PIM et le plan complet se génère par IA, prêt à exporter en PDF."},
-      {img:"m14", slug:"promo", tag:"Création studio", h:"Des promos à l'échelle du catalogue", p:"Un seul habillage et chaque ligne du PIM devient une fiche promo prête à imprimer, à votre charte."},
+      {s:"publier", tag:"Multicanal", h:"Une source, tous vos canaux", p:"Un même document exporté partout en une fois : PDF imprimeur (CMJN, fond perdu, FOGRA39), PNG, PPTX, SVG, page web, vidéo et réseaux sociaux."},
+      {s:"catalogue", tag:"Catalogue studio", h:"Un catalogue entier, depuis un prompt", p:"Décrivez le catalogue voulu : la structure se déduit du PIM et le plan complet se génère par IA, prêt à exporter en PDF."},
+      {s:"promo", tag:"Création studio", h:"Des promos à l'échelle du catalogue", p:"Un seul habillage et chaque ligne du PIM devient une fiche promo prête à imprimer, à votre charte."},
     ]},
   { id:"creer", n:"03", c:"var(--cyan)", title:"Créer & importer", accent:"Le studio",
     intro:"Ouvrez le bon plan de travail, ou repartez de vos fichiers existants — sans les recréer.",
     mods:[
       {s:"imp", tag:"Import", h:"Vos fichiers, fidèles et éditables", p:"PDF, IDML, PPTX, SVG : vos documents redeviennent éditables bloc par bloc, sans avoir à les refaire."},
       {s:"nd",  tag:"Nouvelle toile", h:"Une toile, tous les formats", p:"Un plan de travail aux bonnes normes en quelques secondes — sans gabarit à chercher ni réglage manuel."},
-      {img:"m03", slug:"editeur", tag:"Éditeur", h:"Un éditeur visuel, complet et précis", p:"Calques, champs de publipostage, typographie et préparation print (repères, fond perdu, 300 DPI CMJN) — avec versions automatiques."},
+      {s:"editeur", tag:"Éditeur", h:"Un éditeur visuel, complet et précis", p:"Calques, champs de publipostage, typographie et préparation print (repères, fond perdu, 300 DPI CMJN) — avec versions automatiques."},
       {s:"lib", tag:"Projets", h:"Tous vos projets, au même endroit", p:"Une production rangée, accessible et réutilisable. Fini les fichiers perdus."},
     ]},
   { id:"ia", n:"04", c:"var(--violet)", title:"IA créative", accent:"Produire plus vite",
@@ -219,10 +219,10 @@ const PILLARS = [
     intro:"Alimentez vos données et enchaînez vos étapes de production — en no-code, même depuis votre poche.",
     mods:[
       {s:"tpl", tag:"Scraping", h:"Le scraping, sans écrire de code", p:"Une collecte fiable et répétable, sans coder un parseur par marque."},
-      {img:"m10", slug:"collecter", tag:"Enrichissement", h:"La donnée se collecte seule", p:"Une URL fournisseur → fiche PIM structurée + visuels DAM, taxonomie déduite et prix réels comparés, par Jina + IA."},
+      {s:"collecter", tag:"Enrichissement", h:"La donnée se collecte seule", p:"Une URL fournisseur → fiche PIM structurée + visuels DAM, taxonomie déduite et prix réels comparés, par Jina + IA."},
       {s:"wfl", tag:"Workflows", h:"Enchaînez tout, en no-code", p:"Vos chaînes de production tournent toutes seules, du brief au livrable."},
       {s:"tlg", tag:"Telegram", h:"Toute l'app, depuis un bot", p:"Vous pilotez votre chaîne graphique depuis votre poche, par simple message."},
-      {img:"m11", slug:"veille", tag:"Veille tarifaire", h:"Vos prix, face à la concurrence", p:"Un relevé quotidien automatique des concurrents : écart, position, alerte Telegram sur baisse — piloté par workflow planifié."},
+      {s:"veille", tag:"Veille tarifaire", h:"Vos prix, face à la concurrence", p:"Un relevé quotidien automatique des concurrents : écart, position, alerte Telegram sur baisse — piloté par workflow planifié."},
     ]},
   { id:"pilotage", n:"06", c:"var(--sky)", title:"Piloter & sécuriser", accent:"La maîtrise",
     intro:"Le bon accès pour chaque rôle, vos clés et vos modèles IA sous contrôle.",

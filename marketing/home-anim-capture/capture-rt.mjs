@@ -68,10 +68,27 @@ await page.evaluate(() => {
 });
 await page.waitForTimeout(500);
 
-const blocks = await page.evaluate(() => {
+// Modules SANS .mk-body (mockups en .scene-visual) → captés en mode « extra » par n° de section.
+const EXTRA = { editeur:'03', collecter:'10', veille:'11', promo:'14', catalogue:'15', publier:'19' };
+const blocks = await page.evaluate(({ mode, extra }) => {
   const clsOf = (el) => !el ? '' : String(el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className || '');
+  const res = [];
+  if (mode === 'extra') {
+    const vis = [...document.querySelectorAll('.scene-visual')];
+    let i = 1000;
+    for (const [slug, num] of Object.entries(extra)) {
+      const v = vis.find((v) => {
+        const scene = v.closest('.scene') || v.parentElement;
+        const nt = (scene?.querySelector('.scene-num')?.textContent || '').trim();
+        const m = nt.match(/^\s*(\d+)/);
+        return m && parseInt(m[1], 10) === parseInt(num, 10);
+      });
+      if (v) { v.setAttribute('data-cap-win', String(i)); res.push({ idx: i, slug }); i++; }
+    }
+    return res;
+  }
   const bodies = [...document.querySelectorAll('.mk-body')];
-  const seen = new Set(); const res = [];
+  const seen = new Set();
   bodies.forEach((b, i) => {
     let win = b.closest('.mk') || b.parentElement;
     if (seen.has(win)) return; seen.add(win);
@@ -79,10 +96,10 @@ const blocks = await page.evaluate(() => {
     res.push({ idx: i, slug: (clsOf(b).replace(/\s*mk-body\s*/, '').replace(/-body$|-layout$/, '').trim() || ('bloc'+i)) });
   });
   return res;
-});
+}, { mode: (arg === 'extra' || EXTRA[arg]) ? 'extra' : 'mk', extra: EXTRA });
 
 if (arg === 'list') { console.log(blocks.map(b => b.slug).join('\n')); await browser.close(); server.close(); process.exit(0); }
-const targets = arg === 'all' ? blocks : blocks.filter(b => b.slug === arg);
+const targets = (arg === 'all' || arg === 'extra') ? blocks : blocks.filter(b => b.slug === arg);
 if (!targets.length) { console.error('slug introuvable:', arg); await browser.close(); server.close(); process.exit(1); }
 
 const client = await page.context().newCDPSession(page);
