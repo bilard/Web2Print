@@ -69,7 +69,10 @@ await page.evaluate(() => {
 await page.waitForTimeout(500);
 
 // Modules SANS .mk-body (mockups en .scene-visual) → captés en mode « extra » par n° de section.
-const EXTRA = { editeur:'03', collecter:'10', veille:'11', promo:'14', catalogue:'15', publier:'19' };
+// Noms de sortie PAR SUJET (fichiers /animations/out/<sujet>.mp4).
+const EXTRA = { editeur:'03', enrichissement:'10', 'veille-tarifaire':'11', 'creation-studio':'14', 'catalogue-studio':'15', 'publication-multicanale':'19' };
+// Renommage sujet des blocs .mk-body (slug dérivé de la classe CSS → nom lisible).
+const RENAME = { imp:'import', nd:'nouvelle-toile', lib:'projets', pim:'fiches-produits', dam:'bibliotheque-media', txo:'taxonomies', erd:'cartographie-donnees', db:'publipostage', ig:'images-ia', anm:'videos-ia', aic:'assistant-ia', tpl:'scraping', wfl:'workflows', tlg:'telegram', usr:'roles-acces', set:'parametres' };
 const blocks = await page.evaluate(({ mode, extra }) => {
   const clsOf = (el) => !el ? '' : String(el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className || '');
   const res = [];
@@ -96,7 +99,8 @@ const blocks = await page.evaluate(({ mode, extra }) => {
     res.push({ idx: i, slug: (clsOf(b).replace(/\s*mk-body\s*/, '').replace(/-body$|-layout$/, '').trim() || ('bloc'+i)) });
   });
   return res;
-}, { mode: (arg === 'extra' || EXTRA[arg]) ? 'extra' : 'mk', extra: EXTRA });
+}, { mode: (arg === 'extra' || EXTRA[arg]) ? 'extra' : 'mk', extra: EXTRA })
+  .then((bs) => bs.map((b) => ({ ...b, slug: RENAME[b.slug] || b.slug }))); // slugs par sujet
 
 if (arg === 'list') { console.log(blocks.map(b => b.slug).join('\n')); await browser.close(); server.close(); process.exit(0); }
 const targets = (arg === 'all' || arg === 'extra') ? blocks : blocks.filter(b => b.slug === arg);
