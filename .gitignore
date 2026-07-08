@@ -63,3 +63,6 @@ playwright-report/
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+
+# vidéos d'animations (régénérables via marketing/home-anim-capture/capture-rt.mjs)
+public/animations/out/

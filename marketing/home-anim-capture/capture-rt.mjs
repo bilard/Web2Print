@@ -21,7 +21,7 @@ import http from 'node:http';
 const run = promisify(execFile);
 const here = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = '/Applications/_IA/Claude_workspace/Web2Print/public';
-const OUT = join(here, 'out');
+const OUT = join(here, '..', '..', 'public', 'animations', 'out'); // dossier unique servi (/animations/out/)
 const SCALE = 2;
 const FPS = 30;            // fps de sortie
 const XFADE = 0.4;         // crossfade de sécurité (s)
