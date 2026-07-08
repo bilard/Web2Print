@@ -2,6 +2,7 @@
 node_modules/
 
 # Build
+/site-web/
 dist/
 dist-ssr/
 web2print-dist.zip

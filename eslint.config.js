@@ -11,6 +11,7 @@ import globals from 'globals'
 export default tseslint.config(
   {
     ignores: [
+      'site-web/**',
       'dist/**',
       'build/**',
       'node_modules/**',

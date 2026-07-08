@@ -10,6 +10,7 @@ export default defineConfig({
     },
   },
   build: {
+    outDir: 'site-web', // dossier de sortie du build (ex-« dist »)
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {

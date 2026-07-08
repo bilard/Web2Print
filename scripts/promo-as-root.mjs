@@ -9,16 +9,16 @@
 import { copyFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-const dist = join(process.cwd(), 'dist')
+const dist = join(process.cwd(), 'site-web') // dossier de build (ex-« dist »)
 const appShell = join(dist, 'index.html')
 const appShellRenamed = join(dist, '_app.html')
 const promo = join(dist, 'promo', 'index.html')
 
 if (!existsSync(appShell) || !existsSync(promo)) {
-  console.error('[promo-as-root] dist/index.html ou dist/promo/index.html introuvable — build incomplet ?')
+  console.error('[promo-as-root] site-web/index.html ou site-web/promo/index.html introuvable — build incomplet ?')
   process.exit(1)
 }
 
 copyFileSync(appShell, appShellRenamed)       // shell app préservé pour le rewrite SPA
 copyFileSync(promo, appShell)                 // promo promue à la racine
-console.log('[promo-as-root] dist/index.html ← promo ; shell app → dist/_app.html')
+console.log('[promo-as-root] site-web/index.html ← promo ; shell app → site-web/_app.html')
