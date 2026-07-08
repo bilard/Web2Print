@@ -59,14 +59,15 @@ export function AnalyticsCountriesTable({ events, selected, onSelect }: Props) {
                   <td className={`${TD} align-top text-white font-semibold whitespace-nowrap`} title={g.country ?? undefined}>
                     {countryName(g.country) ?? '—'}
                   </td>
-                  {/* Villes du pays, empilées, triées par visites décroissantes */}
+                  {/* Villes du pays, empilées, triées par visites décroissantes.
+                      Grille 3 colonnes → noms, barres et compteurs alignés verticalement. */}
                   <td className={`${TD} text-white/60`}>
                     <div className="space-y-1">
                       {g.cities.map((c, j) => (
-                        <div key={`${c.city}-${j}`} className="flex items-center gap-2">
-                          <span className="truncate max-w-[100px]">{c.city ?? '—'}</span>
-                          <div className="h-0.5 flex-1 rounded bg-indigo-500/40" style={{ maxWidth: `${Math.max(8, (c.count / maxCity) * 60)}px` }} />
-                          <span className="text-white/45 tabular-nums shrink-0">{c.count}</span>
+                        <div key={`${c.city}-${j}`} className="grid grid-cols-[minmax(0,1fr)_48px_24px] items-center gap-2">
+                          <span className="truncate" title={c.city ?? undefined}>{c.city ?? '—'}</span>
+                          <div className="h-0.5 rounded bg-indigo-500/40" style={{ width: `${Math.max(8, (c.count / maxCity) * 100)}%` }} />
+                          <span className="text-white/45 tabular-nums text-right">{c.count}</span>
                         </div>
                       ))}
                     </div>
