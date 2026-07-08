@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IBS-Studio — Présentation des modules</title>
+<meta name="description" content="La chaîne graphique tout-en-un : import fidèle, PIM/DAM, publipostage, IA créative et automatisation. 16 modules en démonstration animée." />
+<link rel="canonical" href="https://ibs-studio.com/presentation/" />
+<meta property="og:title" content="IBS-Studio — Toute votre chaîne graphique, un seul studio" />
+<meta property="og:description" content="16 modules en démonstration animée : import, PIM/DAM, publipostage, IA créative, automatisation." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ibs-studio.com/presentation/" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Jura:wght@300..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#060609; --bg2:#0a0a10; --surface:#101019; --surface2:#16161f;
+    --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+    --ink:#f4f3f0; --muted:rgba(244,243,240,.60); --faint:rgba(244,243,240,.38);
+    --indigo:#6366f1; --indigo2:#818cf8; --violet:#a855f7; --cyan:#22d3ee;
+    --green:#34d399; --lime:#a3e635; --amber:#fbbf24; --pink:#f472b6; --sky:#38bdf8;
+    --grad:linear-gradient(108deg,#818cf8 0%,#a855f7 38%,#22d3ee 100%);
+    --display:"Jura",system-ui,sans-serif; --body:"Jura",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+    --maxw:1500px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.6;overflow-x:hidden;position:relative;-webkit-font-smoothing:antialiased}
+
+  /* ambient background mesh */
+  .mesh{position:fixed;inset:0;z-index:-2;overflow:hidden}
+  .mesh i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.35;animation:drift 26s ease-in-out infinite}
+  .mesh i:nth-child(1){width:46vw;height:46vw;left:-10vw;top:-8vw;background:#4f46e5;animation-delay:0s}
+  .mesh i:nth-child(2){width:40vw;height:40vw;right:-8vw;top:18vh;background:#a855f7;animation-delay:-8s}
+  .mesh i:nth-child(3){width:38vw;height:38vw;left:20vw;bottom:-12vw;background:#22d3ee;animation-delay:-15s;opacity:.22}
+  @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(4vw,-3vh) scale(1.08)}66%{transform:translate(-3vw,4vh) scale(.94)}}
+  body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:radial-gradient(120% 80% at 50% -10%,transparent 55%,rgba(6,6,9,.7) 100%);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.028'/%3E%3C/svg%3E")}
+
+  /* scroll progress */
+  .progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:50;background:var(--grad);box-shadow:0 0 12px rgba(129,140,248,.6)}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 clamp(18px,4vw,48px)}
+
+  /* ── HERO ── */
+  header.hero{min-height:92vh;display:flex;flex-direction:column;justify-content:center;padding:120px 0 64px;position:relative}
+  .brand{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);margin-bottom:30px}
+  .brand b{color:var(--ink);font-weight:700;letter-spacing:.22em}
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  h1.title{font-family:var(--display);font-weight:700;font-size:clamp(38px,7.2vw,104px);line-height:1.02;letter-spacing:-.02em}
+  h1.title .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{margin-top:26px;max-width:640px;font-size:clamp(16px,2vw,21px);color:var(--muted)}
+  .lead b{color:var(--ink);font-weight:600}
+  .stats{display:flex;flex-wrap:wrap;gap:14px;margin-top:44px}
+  .stat{border:1px solid var(--line);background:rgba(255,255,255,.02);border-radius:16px;padding:16px 22px;backdrop-filter:blur(8px)}
+  .stat .n{font-family:var(--display);font-weight:700;font-size:30px;line-height:1;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .l{font-size:12.5px;color:var(--muted);margin-top:6px;letter-spacing:.02em}
+  .scrollhint{margin-top:56px;display:flex;align-items:center;gap:10px;color:var(--faint);font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+  .scrollhint .arw{width:22px;height:22px;border-right:1.5px solid var(--faint);border-bottom:1.5px solid var(--faint);transform:rotate(45deg);animation:bob 1.8s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:rotate(45deg) translate(0,0)}50%{transform:rotate(45deg) translate(3px,3px)}}
+
+  /* ── STICKY NAV ── */
+  nav.pillnav{position:sticky;top:0;z-index:40;padding:12px 0;background:rgba(6,6,9,.72);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+  .pillnav .row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+  .pillnav .row::-webkit-scrollbar{display:none}
+  .pillnav a{flex:0 0 auto;font-size:13.5px;color:var(--muted);text-decoration:none;padding:8px 15px;border-radius:999px;border:1px solid transparent;white-space:nowrap;transition:.22s;display:flex;align-items:center;gap:8px}
+  .pillnav a .cdot{width:7px;height:7px;border-radius:50%;background:var(--c)}
+  .pillnav a:hover{color:var(--ink);background:rgba(255,255,255,.04)}
+  .pillnav a.active{color:var(--ink);border-color:var(--line2);background:rgba(255,255,255,.05)}
+
+  /* ── PILLAR ── */
+  section.pillar{padding:78px 0 20px;scroll-margin-top:70px}
+  .phead{display:flex;align-items:baseline;gap:18px;margin-bottom:34px;flex-wrap:wrap}
+  .pnum{font-family:var(--mono);font-size:14px;color:var(--c);letter-spacing:.1em;border:1px solid var(--c);border-radius:8px;padding:5px 9px;opacity:.9}
+  .ptitle{font-family:var(--display);font-weight:700;font-size:clamp(24px,3.4vw,40px);letter-spacing:-.01em}
+  .ptitle .a{color:var(--c)}
+  .pintro{flex-basis:100%;color:var(--muted);max-width:720px;font-size:16px;margin-top:-6px}
+
+  /* masonry grid */
+  .grid{columns:3;column-gap:22px}
+  @media(max-width:1080px){.grid{columns:2}}
+  @media(max-width:640px){.grid{columns:1}}
+  .grid.feature{columns:1}
+
+  /* ── CARD ── */
+  .card{break-inside:avoid;margin:0 0 22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,var(--surface),var(--bg2));overflow:hidden;position:relative;transition:transform .3s cubic-bezier(.2,.7,.2,1),border-color .3s,box-shadow .3s;opacity:0;transform:translateY(22px)}
+  .card.in{opacity:1;transform:none}
+  .card:hover{border-color:var(--c);box-shadow:0 18px 50px -20px rgba(0,0,0,.8),0 0 0 1px var(--c) inset;transform:translateY(-3px)}
+  .chrome{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+  .lights{display:flex;gap:6px}
+  .lights i{width:11px;height:11px;border-radius:50%}
+  .lights i:nth-child(1){background:#ff5f57}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+  .addr{flex:1;font-family:var(--mono);font-size:11.5px;color:var(--faint);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .addr .path{color:var(--muted)}
+  .media{position:relative;background:#000;cursor:zoom-in;overflow:hidden}
+  .media video{display:block;width:100%;height:auto}
+  .media .shim{position:absolute;inset:0;background:linear-gradient(110deg,#0d0d14 30%,#15151f 50%,#0d0d14 70%);background-size:200% 100%;animation:shim 1.4s linear infinite}
+  @keyframes shim{to{background-position:-200% 0}}
+  .media .zoom{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:8px;background:rgba(6,6,9,.6);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;color:var(--ink);opacity:0;transition:.25s;backdrop-filter:blur(6px)}
+  .media:hover .zoom{opacity:1}
+  .body{padding:18px 20px 22px}
+  .tag{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--c);border:1px solid var(--c);border-radius:999px;padding:4px 10px;opacity:.92}
+  .tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c)}
+  .card h3{font-family:var(--display);font-weight:700;font-size:19.5px;letter-spacing:-.01em;margin:13px 0 8px;line-height:1.22}
+  .card p{color:var(--muted);font-size:14.5px;line-height:1.58}
+
+  /* feature card = split */
+  .card.big{display:grid;grid-template-columns:1.15fr .85fr}
+  .card.big .colv{border-right:1px solid var(--line)}
+  .card.big .body{display:flex;flex-direction:column;justify-content:center;padding:clamp(22px,3vw,44px)}
+  .card.big h3{font-size:clamp(22px,2.6vw,32px);margin-top:16px}
+  .card.big p{font-size:16px;max-width:44ch}
+  @media(max-width:820px){.card.big{grid-template-columns:1fr}.card.big .colv{border-right:none;border-bottom:1px solid var(--line)}}
+
+  /* ── CTA ── */
+  footer{padding:100px 0 90px;text-align:center;position:relative}
+  .ctacard{border:1px solid var(--line2);border-radius:28px;padding:clamp(40px,6vw,76px) 24px;background:radial-gradient(120% 140% at 50% 0%,rgba(129,140,248,.16),transparent 60%),linear-gradient(180deg,var(--surface),var(--bg2));position:relative;overflow:hidden}
+  .ctacard h2{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.6vw,52px);letter-spacing:-.02em;line-height:1.05}
+  .ctacard h2 .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .ctacard p{color:var(--muted);max-width:520px;margin:20px auto 34px;font-size:17px}
+  .btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:16px;text-decoration:none;padding:15px 28px;border-radius:14px;transition:.25s}
+  .btn.pri{background:var(--grad);color:#0a0a10;box-shadow:0 10px 30px -8px rgba(129,140,248,.5)}
+  .btn.pri:hover{transform:translateY(-2px);box-shadow:0 16px 40px -8px rgba(129,140,248,.65)}
+  .btn.sec{border:1px solid var(--line2);color:var(--ink)}
+  .btn.sec:hover{background:rgba(255,255,255,.05);border-color:var(--ink)}
+  .foot{margin-top:56px;color:var(--faint);font-family:var(--mono);font-size:12px;letter-spacing:.1em}
+
+  /* ── LIGHTBOX ── */
+  .lb{position:fixed;inset:0;z-index:100;background:rgba(4,4,7,.9);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:4vh 4vw;opacity:0;transition:opacity .3s}
+  .lb.on{display:flex;opacity:1}
+  .lb video{max-width:100%;max-height:92vh;border-radius:14px;border:1px solid var(--line2);box-shadow:0 40px 120px -30px #000}
+  .lb .x{position:absolute;top:22px;right:26px;width:44px;height:44px;border-radius:12px;border:1px solid var(--line2);background:rgba(255,255,255,.05);color:var(--ink);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .lb .x:hover{background:rgba(255,255,255,.12)}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.card{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="mesh"><i></i><i></i><i></i></div>
+<div class="progress" id="prog"></div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="brand"><span class="dot"></span><b>IBS-STUDIO</b><span>·</span><span>La chaîne graphique tout-en-un</span></div>
+    <h1 class="title">Toute votre production graphique.<br><span class="g">Un seul studio.</span></h1>
+    <p class="lead">De l'import fidèle de vos fichiers au publipostage de centaines de variantes, du référentiel produit à l'IA créative : <b>16 modules</b> qui remplacent votre chaîne d'outils. Chaque module ci-dessous est présenté <b>en démonstration animée</b>.</p>
+    <div class="stats" id="stats">
+      <div class="stat"><div class="n" data-to="16">0</div><div class="l">modules intégrés</div></div>
+      <div class="stat"><div class="n" data-suffix="+" data-to="4">0</div><div class="l">formats import / export</div></div>
+      <div class="stat"><div class="n">∞</div><div class="l">variantes par gabarit</div></div>
+      <div class="stat"><div class="n">IA</div><div class="l">image · vidéo · texte</div></div>
+    </div>
+    <div class="scrollhint"><span>Faites défiler</span><span class="arw"></span></div>
+  </header>
+
+</div>
+
+<nav class="pillnav"><div class="wrap"><div class="row" id="nav"></div></div></nav>
+
+<main class="wrap" id="app"></main>
+
+<div class="wrap">
+  <footer>
+    <div class="ctacard">
+      <h2>Prêt à voir IBS-Studio<br><span class="g">sur vos produits ?</span></h2>
+      <p>Une démonstration personnalisée sur votre catalogue, vos formats et votre charte. En 30 minutes, du fichier au livrable.</p>
+      <div class="btns">
+        <a class="btn pri" href="mailto:ibs.studio@gmail.com?subject=D%C3%A9mo%20IBS-Studio">Demander une démo →</a>
+        <a class="btn sec" href="https://ibs-studio.com/" target="_blank" rel="noopener">Découvrir l'application</a>
+      </div>
+      <div class="foot">ibs-studio.com · 16 modules · une seule plateforme</div>
+    </div>
+  </footer>
+</div>
+
+<div class="lb" id="lb"><button class="x" aria-label="Fermer">✕</button></div>
+
+<script>
+const V = "https://ibs-studio.com/animations/out/";
+const PILLARS = [
+  { id:"creer", n:"01", c:"var(--cyan)", title:"Créer & importer", accent:"Le point de départ",
+    intro:"Ouvrez le bon plan de travail, ou repartez de vos fichiers existants — sans les recréer.",
+    mods:[
+      {s:"imp", tag:"Import", h:"Vos fichiers, fidèles et éditables", p:"PDF, IDML, PPTX, SVG : vos documents redeviennent éditables bloc par bloc, sans avoir à les refaire."},
+      {s:"nd",  tag:"Éditeur", h:"Une toile, tous les formats", p:"Un plan de travail aux bonnes normes en quelques secondes — sans gabarit à chercher ni réglage manuel."},
+      {s:"lib", tag:"Projets", h:"Tous vos projets, au même endroit", p:"Une production rangée, accessible et réutilisable. Fini les fichiers perdus."},
+    ]},
+  { id:"referentiel", n:"02", c:"var(--green)", title:"Référentiel produit", accent:"La source de vérité",
+    intro:"Vos produits, vos visuels et votre catalogue structurés au même endroit — prêts à être diffusés.",
+    mods:[
+      {s:"pim", tag:"PIM", h:"Vos fiches produits, structurées", p:"Un référentiel produit à jour, directement exploitable en publipostage."},
+      {s:"dam", tag:"DAM", h:"Une bibliothèque média centrale", p:"Une source unique de vérité pour vos visuels, partagée et toujours à jour."},
+      {s:"txo", tag:"Taxonomies", h:"Un catalogue bien rangé", p:"Un classement partagé qui rend tout votre catalogue navigable."},
+      {s:"erd", tag:"Données", h:"Vos données, cartographiées", p:"Une cartographie vivante : comprendre la structure et inspecter la donnée réelle au même endroit."},
+    ]},
+  { id:"masse", n:"03", c:"var(--amber)", title:"Personnaliser en masse", accent:"L'effet de levier",
+    intro:"Un seul gabarit, des centaines de déclinaisons — automatiquement, sans erreur.",
+    feature:true,
+    mods:[
+      {s:"db", tag:"Publipostage", h:"Une base, des centaines de variantes", p:"Des centaines de visuels personnalisés depuis un seul gabarit, sans erreur — et le même visuel décliné à tous les formats. C'est le cœur du réacteur : votre catalogue produit devient un flux de créations."},
+    ]},
+  { id:"ia", n:"04", c:"var(--violet)", title:"IA créative", accent:"Produire plus vite",
+    intro:"Générer des visuels, des vidéos et du texte directement dans l'app — sans studio ni logiciel tiers.",
+    mods:[
+      {s:"ig",  tag:"Image IA", h:"Des visuels produit, générés par IA", p:"Des visuels sur mesure en quelques secondes, sans shooting ni détourage."},
+      {s:"anm", tag:"Animation", h:"Des vidéos, depuis un prompt", p:"Des vidéos animées générées depuis vos contenus, sans After Effects."},
+      {s:"aic", tag:"Assistant IA", h:"Un assistant, tous les modèles", p:"Un copilote créatif intégré pour produire et itérer sans quitter l'app."},
+    ]},
+  { id:"auto", n:"05", c:"var(--pink)", title:"Collecter & automatiser", accent:"Le pilote automatique",
+    intro:"Alimentez vos données et enchaînez vos étapes de production — en no-code, même depuis votre poche.",
+    mods:[
+      {s:"tpl", tag:"Scraping", h:"Le scraping, sans écrire de code", p:"Une collecte fiable et répétable, sans coder un parseur par marque."},
+      {s:"wfl", tag:"Workflows", h:"Enchaînez tout, en no-code", p:"Vos chaînes de production tournent toutes seules, du brief au livrable."},
+      {s:"tlg", tag:"Telegram", h:"Toute l'app, depuis un bot", p:"Vous pilotez votre chaîne graphique depuis votre poche, par simple message."},
+    ]},
+  { id:"pilotage", n:"06", c:"var(--sky)", title:"Piloter & sécuriser", accent:"La maîtrise",
+    intro:"Le bon accès pour chaque rôle, vos clés et vos modèles IA sous contrôle.",
+    mods:[
+      {s:"usr", tag:"Rôles & accès", h:"Le bon accès, au bon rôle", p:"Chacun voit exactement ce qu'il doit voir. Vos données restent protégées."},
+      {s:"set", tag:"Paramètres", h:"Vos clés, vos modèles", p:"Une plateforme à votre main, maîtrisée et sous budget."},
+    ]},
+];
+
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+function cardHTML(m, big){
+  return `<article class="card${big?' big':''}" style="--c:${m._c}">
+    <div class="${big?'colv':''}">
+      <div class="chrome"><div class="lights"><i></i><i></i><i></i></div>
+        <div class="addr">ibs-studio.com<span class="path">/${m.s}</span></div></div>
+      <div class="media" data-src="${V}${m.s}.mp4">
+        <div class="shim"></div>
+        <div class="zoom">⤢</div>
+      </div>
+    </div>
+    <div class="body">
+      <span class="tag">${esc(m.tag)}</span>
+      <h3>${esc(m.h)}</h3>
+      <p>${esc(m.p)}</p>
+    </div>
+  </article>`;
+}
+
+const app = document.getElementById('app');
+const nav = document.getElementById('nav');
+PILLARS.forEach(P=>{
+  P.mods.forEach(m=>m._c=P.c);
+  const sec = document.createElement('section');
+  sec.className='pillar'; sec.id=P.id; sec.style.setProperty('--c',P.c);
+  sec.innerHTML = `<div class="phead">
+      <span class="pnum">${P.n}</span>
+      <h2 class="ptitle">${esc(P.title)} <span class="a">·</span> <span style="color:var(--muted);font-weight:400;font-size:.62em">${esc(P.accent)}</span></h2>
+      <p class="pintro">${esc(P.intro)}</p>
+    </div>
+    <div class="grid${P.feature?' feature':''}">${P.mods.map(m=>cardHTML(m,P.feature)).join('')}</div>`;
+  app.appendChild(sec);
+  const a=document.createElement('a'); a.href='#'+P.id; a.dataset.id=P.id;
+  a.innerHTML=`<span class="cdot" style="background:${P.c}"></span>${esc(P.title)}`;
+  nav.appendChild(a);
+});
+
+/* lazy autoplay: charge la vidéo + play quand visible, pause sinon */
+const lazyIO = new IntersectionObserver((es)=>{
+  es.forEach(e=>{
+    const box=e.target;
+    if(e.isIntersecting){
+      let v=box.querySelector('video');
+      if(!v){
+        v=document.createElement('video');
+        v.muted=true;v.loop=true;v.playsInline=true;v.setAttribute('playsinline','');
+        v.preload='auto';v.src=box.dataset.src;
+        v.addEventListener('loadeddata',()=>{const s=box.querySelector('.shim');if(s)s.remove();});
+        box.insertBefore(v,box.querySelector('.zoom'));
+      }
+      v.play().catch(()=>{});
+    }else{
+      const v=box.querySelector('video'); if(v)v.pause();
+    }
+  });
+},{rootMargin:'250px 0px',threshold:.01});
+document.querySelectorAll('.media').forEach(m=>lazyIO.observe(m));
+
+/* apparition cartes */
+const revIO=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');revIO.unobserve(e.target);}}),{threshold:.12});
+document.querySelectorAll('.card').forEach(c=>revIO.observe(c));
+
+/* scroll-spy nav */
+const links=[...nav.querySelectorAll('a')];
+const spy=new IntersectionObserver((es)=>{
+  es.forEach(e=>{if(e.isIntersecting){
+    links.forEach(l=>l.classList.toggle('active',l.dataset.id===e.target.id));
+  }});
+},{rootMargin:'-45% 0px -50% 0px'});
+document.querySelectorAll('.pillar').forEach(s=>spy.observe(s));
+
+/* barre de progression */
+const prog=document.getElementById('prog');
+addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';
+},{passive:true});
+
+/* compteurs hero */
+const cIO=new IntersectionObserver((es)=>es.forEach(e=>{
+  if(!e.isIntersecting)return; cIO.unobserve(e.target);
+  const el=e.target,to=+el.dataset.to,suf=el.dataset.suffix||'';let n=0;
+  const step=()=>{n+=Math.max(1,Math.ceil(to/24));if(n>=to)n=to;el.textContent=n+suf;if(n<to)requestAnimationFrame(step);};
+  step();
+}),{threshold:.6});
+document.querySelectorAll('.stat .n[data-to]').forEach(el=>cIO.observe(el));
+
+/* lightbox */
+const lb=document.getElementById('lb');
+document.addEventListener('click',ev=>{
+  const media=ev.target.closest('.media');
+  if(media){
+    lb.querySelectorAll('video').forEach(v=>v.remove());
+    const v=document.createElement('video');
+    v.src=media.dataset.src;v.muted=true;v.loop=true;v.autoplay=true;v.controls=true;v.playsInline=true;
+    lb.appendChild(v);lb.classList.add('on');v.play().catch(()=>{});
+    return;
+  }
+  if(ev.target===lb||ev.target.classList.contains('x')){
+    lb.classList.remove('on');lb.querySelectorAll('video').forEach(v=>v.remove());
+  }
+});
+addEventListener('keydown',e=>{if(e.key==='Escape'){lb.classList.remove('on');lb.querySelectorAll('video').forEach(v=>v.remove());}});
+</script>
+</body>
+</html>
