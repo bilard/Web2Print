@@ -1,7 +1,7 @@
 // Service worker de la PWA « Pulse » — scope /pulse uniquement.
 // Rôle : installabilité + coquille hors-ligne. N'intercepte JAMAIS les autres
 // routes du site (promo, dashboard…), qui gardent leur stratégie de cache Hosting.
-const CACHE = 'pulse-v1'
+const CACHE = 'pulse-v2'
 const SHELL = ['/pulse', '/pulse-icon-192.png', '/pulse.webmanifest']
 
 self.addEventListener('install', (event) => {
