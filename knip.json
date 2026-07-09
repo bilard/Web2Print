@@ -9,7 +9,8 @@
         "index.html",
         "tailwind.config.{js,cjs,ts}",
         "postcss.config.{js,cjs}",
-        "src/**/*.test.{ts,tsx}"
+        "src/**/*.test.{ts,tsx}",
+        "test/**/*.test.ts"
       ],
       "project": [
         "src/**/*.{ts,tsx}"
@@ -17,6 +18,9 @@
       "ignore": [
         "src/components/ui/**",
         "src/types/fabric.d.ts"
+      ],
+      "ignoreBinaries": [
+        "firebase"
       ]
     },
     "functions": {

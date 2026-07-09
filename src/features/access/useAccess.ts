@@ -95,8 +95,9 @@ export function useAccessLoading(): boolean {
   return useAccessStore((s) => s.loading)
 }
 
-/** Compte « démo » (quotas de données). L'owner n'est jamais démo. */
-export function useIsDemo(): boolean {
+/** Compte « démo » (quotas de données). L'owner n'est jamais démo. Interne : consommé
+ *  par useQuota (les composants passent par useQuota). */
+function useIsDemo(): boolean {
   return useAccessStore((s) => !s.isOwner && s.permissions.has(DEMO_PERMISSION))
 }
 

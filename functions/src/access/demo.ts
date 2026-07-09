@@ -4,9 +4,9 @@
 // DEMO_LIMITS) et de firestore.rules — tenir les 3 en phase.
 import type { Firestore } from 'firebase-admin/firestore'
 
-export const DEMO_PERMISSION = 'demo.view'
-export const DEMO_PIM_LIMIT = 50 // défaut si le rôle ne configure pas de limite
-export const DEMO_DAM_LIMIT = 20
+const DEMO_PERMISSION = 'demo.view'
+const DEMO_PIM_LIMIT = 50 // défaut si le rôle ne configure pas de limite
+const DEMO_DAM_LIMIT = 20
 const OWNER_EMAIL = 'ibs.studio@gmail.com'
 
 export interface DemoLimits { pimRows: number; damAssets: number }
