@@ -293,16 +293,28 @@ service cloud.firestore {
     // que les listings n'aient pas à charger le payload complet à chaque refresh.
     // Le `docId` est commun entre les deux collections.
 
+    // ⚠ Store Excel LEGACY, écrit AUSSI par /data (dual-store). Gaté par userId seul
+    // (pas de permission). Pour ne pas laisser une porte de côté au quota démo, on
+    // plafonne la TAILLE d'un dataset démo : méta à ≤ 50 lignes (= DEMO_LIMITS.pimRows),
+    // payload à ≤ 500k caractères. Le save = batch atomique (méta + payload) → refuser
+    // l'un refuse tout. Plafond PAR dataset (pas cumulé) : suffisant vu que l'import est
+    // déjà borné à 50 côté PIM et que les données sont isolées par userId.
     match /excel_data/{docId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid
+                    && (!isDemo() || request.resource.data.get('totalRows', 0) <= 50);
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid
+                    && (!isDemo() || request.resource.data.get('totalRows', 0) <= 50);
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
     match /excel_data_payload/{docId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid
+                    && (!isDemo() || request.resource.data.get('json', '').size() <= 500000);
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid
+                    && (!isDemo() || request.resource.data.get('json', '').size() <= 500000);
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
     // ── PIM Projects ─────────────────────────────────────────────────────────
