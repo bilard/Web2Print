@@ -6,7 +6,7 @@
 // conserve le shell de l'app sous _app.html (vers lequel pointe le rewrite SPA
 // dans firebase.json). Les assets de l'app sont en chemins absolus (/assets/…),
 // le shell fonctionne donc depuis n'importe quel nom de fichier.
-import { copyFileSync, existsSync } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const dist = join(process.cwd(), 'site-web') // dossier de build (ex-« dist »)
@@ -22,3 +22,17 @@ if (!existsSync(appShell) || !existsSync(promo)) {
 copyFileSync(appShell, appShellRenamed)       // shell app préservé pour le rewrite SPA
 copyFileSync(promo, appShell)                 // promo promue à la racine
 console.log('[promo-as-root] site-web/index.html ← promo ; shell app → site-web/_app.html')
+
+// Cache-buster du service worker « Pulse » : on tamponne la version du cache avec
+// l'horodatage du build. Le contenu de pulse-sw.js change donc à CHAQUE déploiement,
+// ce qui force iOS à réinstaller le SW → le handler `activate` purge les anciens
+// caches et la PWA installée récupère la dernière version au prochain lancement.
+const sw = join(dist, 'pulse-sw.js')
+if (existsSync(sw)) {
+  const stamp = `pulse-${Date.now().toString(36)}`
+  const patched = readFileSync(sw, 'utf8').replace(/const CACHE = '[^']*'/, `const CACHE = '${stamp}'`)
+  writeFileSync(sw, patched)
+  console.log(`[promo-as-root] pulse-sw.js ← CACHE = '${stamp}'`)
+} else {
+  console.warn('[promo-as-root] site-web/pulse-sw.js introuvable — cache-buster SW non appliqué.')
+}
