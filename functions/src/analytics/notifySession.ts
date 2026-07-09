@@ -130,6 +130,19 @@ async function claimGuard(db: Firestore, key: string, meta: Record<string, unkno
 }
 
 /**
+ * Libère une garde posée dont l'envoi a échoué, pour qu'un événement ultérieur de la
+ * même session/activité puisse REESSAYER (sinon la notif est perdue à jamais : la garde
+ * poser-avant-envoi bloquerait tout nouvel essai). Best-effort.
+ */
+async function releaseGuard(db: Firestore, key: string): Promise<void> {
+  try {
+    await db.collection('analyticsNotifyGuards').doc(key).delete()
+  } catch {
+    /* best-effort : au pire la garde subsiste et on ne renotifie pas — comportement d'avant */
+  }
+}
+
+/**
  * Notifie le propriétaire par Telegram selon le régime du visiteur (cf. en-tête).
  * Entièrement best-effort : ne lève jamais afin de ne jamais bloquer la réponse au
  * beacon. `effectiveUid` = uid pour NOMMER le visiteur (doc.uid ?? luid) — `luid`
@@ -148,35 +161,48 @@ export async function maybeNotifyNewSession(
       // Anti-doublon par event ; sans `eid` (rare) on laisse passer.
       const key = eid ? `e:${eid}` : null
       if (key && !(await claimGuard(db, key, { uid: effectiveUid, path: doc.path }))) return
-      const recipient = await readOwnerTelegram(db)
-      if (!recipient) return
-      const name = (await resolveName(effectiveUid)) ?? 'Utilisateur connecté'
-      const text = buildActivityText({
-        name,
-        area: doc.area,
-        path: doc.path,
-        country: doc.country,
-        city: doc.city,
-      })
-      await sendTelegram(recipient.botToken, recipient.chatId, text)
+      try {
+        const recipient = await readOwnerTelegram(db)
+        if (!recipient) return
+        const name = (await resolveName(effectiveUid)) ?? 'Utilisateur connecté'
+        const text = buildActivityText({
+          name,
+          area: doc.area,
+          path: doc.path,
+          country: doc.country,
+          city: doc.city,
+        })
+        await sendTelegram(recipient.botToken, recipient.chatId, text)
+      } catch (err) {
+        // Envoi raté → on libère la garde pour réessayer au prochain événement.
+        if (key) await releaseGuard(db, key)
+        throw err
+      }
       return
     }
 
     // Visiteur anonyme → un seul ping d'arrivée par session.
     if (!doc.sid) return
-    if (!(await claimGuard(db, `s:${doc.sid}`, { vid: doc.vid, country: doc.country, city: doc.city }))) return
-    const recipient = await readOwnerTelegram(db)
-    if (!recipient) return
-    const text = buildSessionText({
-      area: doc.area,
-      path: doc.path,
-      device: doc.device,
-      browser: doc.browser,
-      os: doc.os,
-      country: doc.country,
-      city: doc.city,
-    })
-    await sendTelegram(recipient.botToken, recipient.chatId, text)
+    const sessionKey = `s:${doc.sid}`
+    if (!(await claimGuard(db, sessionKey, { vid: doc.vid, country: doc.country, city: doc.city }))) return
+    try {
+      const recipient = await readOwnerTelegram(db)
+      if (!recipient) return
+      const text = buildSessionText({
+        area: doc.area,
+        path: doc.path,
+        device: doc.device,
+        browser: doc.browser,
+        os: doc.os,
+        country: doc.country,
+        city: doc.city,
+      })
+      await sendTelegram(recipient.botToken, recipient.chatId, text)
+    } catch (err) {
+      // Envoi raté → on libère la garde pour renotifier cette session plus tard.
+      await releaseGuard(db, sessionKey)
+      throw err
+    }
   } catch (err) {
     console.error('maybeNotifyNewSession: notification Telegram échouée', err)
   }
