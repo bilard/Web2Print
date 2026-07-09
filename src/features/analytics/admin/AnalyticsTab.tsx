@@ -32,7 +32,7 @@ const PERIODS: { key: PeriodKey; label: string }[] = [
 ]
 
 export function AnalyticsTab() {
-  const { period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo, fromMs, toMs, prevFromMs, prevToMs, isLive } = usePeriod('30d')
+  const { period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo, fromMs, toMs, prevFromMs, prevToMs, isLive } = usePeriod('90d')
   const today = new Date().toISOString().slice(0, 10)
   const [filter, setFilter] = useState<EventFilter>(NO_FILTER)
   // Pays sélectionné dans la carte « Pays » → mis en évidence sur la carte du monde.

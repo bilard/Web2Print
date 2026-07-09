@@ -14,7 +14,7 @@ import type { PeriodValue } from './PulsePeriodControl'
 
 /** Coquille de la PWA « Pulse » : orchestre période, filtres, données live et sections. */
 export function PulseApp() {
-  const [period, setPeriod] = useState<PeriodValue>({ key: '7d', from: '', to: '' })
+  const [period, setPeriod] = useState<PeriodValue>({ key: '90d', from: '', to: '' })
   const [filter, setFilter] = useState<EventFilter>(NO_FILTER)
   const [scrolled, setScrolled] = useState(false)
 
