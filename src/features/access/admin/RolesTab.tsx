@@ -111,11 +111,11 @@ export function RolesTab() {
             <button onClick={collapseAll} title="Tout replier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsDownUp className="w-3.5 h-3.5" /></button>
           </>)}
         </div>
-        </div>
-
+        {/* Quotas du compte démo : épinglés dans l'en-tête → visibles quel que soit le
+            défilement (la case « Compte démo » est le dernier module, tout en bas). */}
         {editing.permissions.has(DEMO_PERMISSION) && (
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 flex flex-col gap-2">
-            <p className="text-[11px] font-medium text-white/60">Quotas du compte démo</p>
+          <div className="rounded-xl border border-indigo-400/30 bg-indigo-500/[0.07] px-3 py-2.5 flex flex-col gap-2">
+            <p className="text-[11px] font-medium text-white/75">Quotas du compte démo</p>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               {([
                 { key: 'pimRows' as const, label: 'Lignes PIM' },
@@ -126,14 +126,15 @@ export function RolesTab() {
                   <input
                     type="number" min={0} value={editing.limits[key]}
                     onChange={(e) => setEditing({ ...editing, limits: { ...editing.limits, [key]: Math.max(0, Math.floor(Number(e.target.value) || 0)) } })}
-                    className="w-24 bg-white/[0.04] border border-white/10 rounded-md px-2 py-1 text-sm text-white tabular-nums"
+                    className="w-24 bg-well border border-white/15 rounded-md px-2 py-1 text-sm text-white tabular-nums"
                   />
                 </label>
               ))}
             </div>
-            <p className="text-[10px] text-white/30">Plafonds cumulés par compte, imposés côté serveur (PIM via Cloud Function, DAM via l'upload serveur). 0 = import bloqué.</p>
+            <p className="text-[10px] text-white/40">Plafonds cumulés par compte, imposés côté serveur. 0 = import bloqué.</p>
           </div>
         )}
+        </div>
 
         {viewMode === 'mindmap' ? (
           <Suspense fallback={<div className="h-[380px] rounded-xl border border-white/[0.06] bg-well flex items-center justify-center"><div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>}>
