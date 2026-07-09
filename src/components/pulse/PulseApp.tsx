@@ -50,7 +50,7 @@ export function PulseApp() {
         scrolled={scrolled}
       />
 
-      <main className="pulse-safe-x pulse-safe-bottom mx-auto flex max-w-lg flex-col gap-5 pt-3">
+      <main className="pulse-safe-x pulse-safe-bottom mx-auto flex max-w-lg flex-col gap-5 pt-3 lg:max-w-5xl">
         {p.error ? (
           <div className="pulse-card px-4 py-8 text-center">
             <p className="text-[15px] font-semibold">Données indisponibles</p>
@@ -68,10 +68,14 @@ export function PulseApp() {
             <PulseFilters events={p.allEvents} filter={filter} onChange={setFilter} />
             <PulseHero liveVisitors={p.liveVisitors} liveViews={p.liveViews} heroSeries={p.heroSeries} />
             <PulseKpiGrid kpis={p.kpis} />
-            <PulseTrend events={p.events} fromMs={p.fromMs} toMs={p.anchorMs} hourly={hourly} />
-            <PulseTopLists events={p.events} />
-            <PulseCountries events={p.events} />
-            <PulseLiveFeed events={p.events} />
+            {/* Grand écran : les sections analytiques se répartissent en 2 colonnes (masonry
+                CSS, hauteurs indépendantes) ; mobile : colonne unique espacée de 20 px. */}
+            <div className="space-y-5 lg:space-y-0 lg:columns-2 lg:gap-5 lg:[&>*]:mb-5 lg:[&>*]:break-inside-avoid">
+              <PulseTrend events={p.events} fromMs={p.fromMs} toMs={p.anchorMs} hourly={hourly} />
+              <PulseTopLists events={p.events} />
+              <PulseCountries events={p.events} />
+              <PulseLiveFeed events={p.events} />
+            </div>
             <PulseInstallHint />
             <p className="pb-2 text-center text-[11px]" style={{ color: 'var(--pulse-text-3)' }}>
               Sans cookie · sans donnée personnelle · vos propres visites sont exclues
