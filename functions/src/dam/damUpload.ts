@@ -9,11 +9,36 @@
 //
 // Usage : httpsCallable(functions,'damUpload')({ url, fileName, folderName })
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
+import { getApps, initializeApp } from 'firebase-admin/app'
+import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore'
 import { getGoogleAccessToken } from '../google/serverAuth'
 import { ensureDamTarget } from './driveFolders'
 
+if (!getApps().length) initializeApp()
+
 const FETCH_TIMEOUT_MS = 20_000
 const MAX_BYTES = 20 * 1024 * 1024 // 20 Mo : pas de base64 vers le client → on peut être large
+
+// ── Quota compte démo ──────────────────────────────────────────────────────
+// ⚠ Constantes dupliquées de src/features/access/permissions.ts (DEMO_PERMISSION /
+// DEMO_LIMITS.damAssets) et de firestore.rules — tenir les 3 en phase.
+const DEMO_PERMISSION = 'demo.view'
+const DAM_ASSET_LIMIT = 20
+const OWNER_EMAIL = 'ibs.studio@gmail.com'
+
+/** Le caller est-il un compte démo plafonné ? (owner/admin jamais limité). */
+async function isDemoLimited(db: Firestore, uid: string, email: string | null): Promise<boolean> {
+  if (email && email.toLowerCase() === OWNER_EMAIL) return false
+  const u = (await db.collection('users').doc(uid).get()).data() ?? {}
+  const grants: string[] = Array.isArray(u.accessGrants) ? u.accessGrants : []
+  const revokes: string[] = Array.isArray(u.accessRevokes) ? u.accessRevokes : []
+  if (revokes.includes(DEMO_PERMISSION)) return false
+  if (grants.includes(DEMO_PERMISSION)) return true
+  const roleId = typeof u.accessRoleId === 'string' ? u.accessRoleId : ''
+  if (!roleId) return false
+  const perms = (await db.collection('roles').doc(roleId).get()).data()?.permissions
+  return Array.isArray(perms) && perms.includes(DEMO_PERMISSION)
+}
 
 const BLOCKED_HOST_PATTERNS: RegExp[] = [
   /^localhost$/i, /^127\./, /^10\./, /^192\.168\./,
@@ -52,6 +77,19 @@ export const damUpload = onCall(
       { url?: string; fileName?: string; folderName?: string; subFolder?: string; folderId?: string }
     if (typeof url !== 'string' || url.length === 0) throw new HttpsError('invalid-argument', 'url manquant')
     const safe = assertSafeUrl(url)
+
+    // Quota compte démo : plafond serveur infalsifiable. On vérifie au départ, on
+    // incrémente `users/{uid}.usage.damAssets` à la RÉUSSITE (un échec ne consomme
+    // pas de quota). Sous concurrence, léger dépassement borné toléré pour une démo ;
+    // le client pré-tranche déjà à la limite restante.
+    const db = getFirestore()
+    const demoEmail = (request.auth.token.email as string | undefined) ?? null
+    const demo = await isDemoLimited(db, request.auth.uid, demoEmail)
+    const usageRef = db.collection('users').doc(request.auth.uid)
+    if (demo) {
+      const used = ((await usageRef.get()).data()?.usage?.damAssets as number | undefined) ?? 0
+      if (used >= DAM_ASSET_LIMIT) throw new HttpsError('resource-exhausted', `Limite démo atteinte : ${DAM_ASSET_LIMIT} assets DAM maximum.`)
+    }
 
     const token = await getGoogleAccessToken(request.auth.uid)
     // Dossier cible : pré-résolu (recommandé, évite la course entre uploads
@@ -102,6 +140,9 @@ export const damUpload = onCall(
     )
     const meta = (await up.json().catch(() => null)) as { id?: string; webViewLink?: string; error?: { message?: string } } | null
     if (!up.ok || !meta?.id) throw new HttpsError('internal', `Drive ${up.status} — ${meta?.error?.message ?? 'upload échoué'}`)
+
+    // Upload réussi → on décompte un asset du quota démo (best-effort).
+    if (demo) await usageRef.set({ usage: { damAssets: FieldValue.increment(1) } }, { merge: true }).catch(() => {})
 
     return { fileId: meta.id, webViewLink: meta.webViewLink ?? `https://drive.google.com/file/d/${meta.id}/view` }
   },

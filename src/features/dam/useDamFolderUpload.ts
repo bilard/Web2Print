@@ -8,10 +8,13 @@
 // re-télécharge et écrit dans Drive (avec sa validation magic-bytes). Le fichier
 // temporaire est supprimé après coup. Aucun redéploiement de functions requis.
 import { useState, useCallback, useRef } from 'react'
+import { toast } from 'sonner'
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { httpsCallable } from 'firebase/functions'
 import { auth, storage, functions } from '@/lib/firebase/config'
 import { removeBackground } from '@/features/imaging/removeBackground'
+import { useAccessStore } from '@/stores/access.store'
+import { DEMO_PERMISSION, DEMO_LIMITS } from '@/features/access/permissions'
 
 const damUpload = httpsCallable<
   { url: string; fileName: string; folderId: string },
@@ -55,10 +58,28 @@ export function useDamFolderUpload() {
       abortRef.current = false
 
       const result: FolderUploadResult = { ok: 0, failed: 0, links: [], errors: [] }
-      let done = 0
-      setProgress({ total: images.length, done: 0, ok: 0, failed: 0, current: null })
 
-      const queue = [...images]
+      // Quota compte démo : pré-tranche à la limite restante (le serveur `damUpload`
+      // reste le garde dur, mais on évite d'envoyer des uploads voués à l'échec).
+      const acc = useAccessStore.getState()
+      const isDemo = !acc.isOwner && acc.permissions.has(DEMO_PERMISSION)
+      let toUpload = images
+      if (isDemo) {
+        const remaining = Math.max(0, DEMO_LIMITS.damAssets - acc.usage.damAssets)
+        if (remaining <= 0) {
+          toast.error(`Limite démo atteinte : ${DEMO_LIMITS.damAssets} assets DAM maximum.`)
+          return result
+        }
+        if (images.length > remaining) {
+          toast.warning(`Limite démo : seuls ${remaining}/${images.length} fichiers importés (${DEMO_LIMITS.damAssets} assets max).`)
+          toUpload = images.slice(0, remaining)
+        }
+      }
+
+      let done = 0
+      setProgress({ total: toUpload.length, done: 0, ok: 0, failed: 0, current: null })
+
+      const queue = [...toUpload]
       const runOne = async (file: File) => {
         if (abortRef.current) return
         setProgress((p) => (p ? { ...p, current: file.name } : p))
@@ -87,6 +108,7 @@ export function useDamFolderUpload() {
           const { webViewLink } = (await damUpload({ url, fileName: payload.name, folderId })).data
           result.ok++
           result.links.push({ fileName: payload.name, webViewLink })
+          if (isDemo) useAccessStore.getState().bumpUsage({ damAssets: 1 }) // miroir du compteur serveur
         } catch (err) {
           result.failed++
           result.errors.push({ fileName: file.name, message: err instanceof Error ? err.message : String(err) })

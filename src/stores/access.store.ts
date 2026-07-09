@@ -1,5 +1,7 @@
 // src/stores/access.store.ts
 import { create } from 'zustand'
+import type { UsageCounters } from '@/features/access/permissions'
+import { emptyUsage } from '@/features/access/usage'
 
 interface AccessState {
   /** Permissions effectives du user courant. */
@@ -9,12 +11,17 @@ interface AccessState {
   isOwner: boolean
   /** Compte suspendu par un admin (aucun accès, même avec un rôle). */
   blocked: boolean
+  /** Compteurs d'usage cumulés (quotas démo). Miroir local de `users/{uid}.usage`,
+   *  hydraté au login et incrémenté optimistiquement à chaque import. */
+  usage: UsageCounters
   /** true tant que l'accès n'a pas été hydraté depuis Firestore. */
   loading: boolean
   /** Flag Firestore users/{uid}.onboardingComplete — lu en piggyback à l'hydratation de l'accès. */
   onboardingComplete: boolean
-  setAccess: (a: { permissions: Set<string>; roleId: string | null; isOwner: boolean; blocked: boolean; onboardingComplete: boolean }) => void
+  setAccess: (a: { permissions: Set<string>; roleId: string | null; isOwner: boolean; blocked: boolean; usage: UsageCounters; onboardingComplete: boolean }) => void
   setLoading: (loading: boolean) => void
+  /** Incrément optimiste des compteurs d'usage (après un import réussi). */
+  bumpUsage: (patch: Partial<UsageCounters>) => void
   /** Mise à jour locale après clic « Terminer » (évite la réouverture dans la session). */
   setOnboardingComplete: (v: boolean) => void
   reset: () => void
@@ -25,10 +32,15 @@ export const useAccessStore = create<AccessState>((set) => ({
   roleId: null,
   isOwner: false,
   blocked: false,
+  usage: emptyUsage(),
   loading: true,
   onboardingComplete: false,
   setAccess: (a) => set({ ...a, loading: false }),
   setLoading: (loading) => set({ loading }),
+  bumpUsage: (patch) => set((s) => ({ usage: {
+    pimRows: s.usage.pimRows + (patch.pimRows ?? 0),
+    damAssets: s.usage.damAssets + (patch.damAssets ?? 0),
+  } })),
   setOnboardingComplete: (v) => set({ onboardingComplete: v }),
-  reset: () => set({ permissions: new Set(), roleId: null, isOwner: false, blocked: false, loading: true, onboardingComplete: false }),
+  reset: () => set({ permissions: new Set(), roleId: null, isOwner: false, blocked: false, usage: emptyUsage(), loading: true, onboardingComplete: false }),
 }))

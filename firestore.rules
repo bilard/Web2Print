@@ -62,6 +62,27 @@ service cloud.firestore {
       return collab.data.role == 'editor';
     }
 
+    // ── Quotas comptes démo ───────────────────────────────────────────────────
+    // Un compte porteur de la permission-marqueur 'demo.view' (cf. permissions.ts)
+    // est plafonné en volume de données. ⚠ Limites (50/20) dupliquées côté client
+    // (DEMO_LIMITS) et dans functions/dam/damUpload.ts — tenir les 3 en phase.
+    function isDemo() {
+      return isAuthenticated() && !isAdmin() && hasPermission('demo.view');
+    }
+    function usageOf(field) {
+      return accessData().get('usage', {}).get(field, 0);
+    }
+    // Création autorisée tant que le compteur reste sous la limite (non-démo = illimité).
+    function withinQuota(field, limit) {
+      return !isDemo() || usageOf(field) < limit;
+    }
+    // Interdit au user de DÉCROÎTRE ses compteurs d'usage (anti-reset du quota).
+    function usageMonotonic() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['usage'])
+        || (request.resource.data.get('usage', {}).get('pimRows', 0) >= resource.data.get('usage', {}).get('pimRows', 0)
+         && request.resource.data.get('usage', {}).get('damAssets', 0) >= resource.data.get('usage', {}).get('damAssets', 0));
+    }
+
     // ── Users ─────────────────────────────────────────────────────────────────
 
     // ── Roles (RBAC) ──────────────────────────────────────────────────────────
@@ -80,9 +101,12 @@ service cloud.firestore {
       allow create: if isAdmin()
                     || (isAuthenticated() && request.auth.uid == uid
                         && !request.resource.data.keys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked']));
+      // Le user peut écrire son propre `usage` (compteurs de quota) mais jamais le
+      // DÉCROÎTRE (usageMonotonic) : seul l'admin peut réinitialiser un quota démo.
       allow update: if isAdmin()
                     || (isAuthenticated() && request.auth.uid == uid
-                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked']));
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked'])
+                        && usageMonotonic());
       // Suppression du profil : admin uniquement (écran « Utilisateurs & rôles »).
       allow delete: if isAdmin();
     }
@@ -304,7 +328,8 @@ service cloud.firestore {
         );
         // Écriture : il faut en plus une permission PIM mutante (edit couvre
         // l'édition manuelle, import/scrape écrivent aussi des produits).
-        allow write: if (hasPermission('pim.edit') || hasPermission('pim.import') || hasPermission('pim.scrape')) && (
+        // Édition/suppression de produits existants : pas de quota (ne fait pas croître le volume).
+        allow update, delete: if (hasPermission('pim.edit') || hasPermission('pim.import') || hasPermission('pim.scrape')) && (
           (exists(/databases/$(database)/documents/pim_projects/$(projectId)) &&
            get(/databases/$(database)/documents/pim_projects/$(projectId)).data.userId == request.auth.uid)
           ||
@@ -313,6 +338,16 @@ service cloud.firestore {
           // dans le même batch, donc fallback : autoriser tout user authentifié à créer/écrire
           // s'il n'y a pas encore de parent. Audit léger via la règle parent qui exigera
           // userId == auth.uid au moment du commit du batch.
+          !exists(/databases/$(database)/documents/pim_projects/$(projectId))
+        );
+        // Création d'un produit (ajout d'une ligne) : idem + quota démo. Backstop
+        // best-effort — les rules ne comptent pas la sous-collection, l'enforcement
+        // fin repose sur le compteur users/{uid}.usage.pimRows tenu par le client
+        // (données isolées par userId : au pire le prospect ne pollue que son bac).
+        allow create: if (hasPermission('pim.edit') || hasPermission('pim.import') || hasPermission('pim.scrape')) && withinQuota('pimRows', 50) && (
+          (exists(/databases/$(database)/documents/pim_projects/$(projectId)) &&
+           get(/databases/$(database)/documents/pim_projects/$(projectId)).data.userId == request.auth.uid)
+          ||
           !exists(/databases/$(database)/documents/pim_projects/$(projectId))
         );
       }
@@ -346,7 +381,9 @@ service cloud.firestore {
     // comptes actifs (pas aux pending/bloqués), écritures gatées par permission.
     match /dam_assets/{assetId} {
       allow read: if isActiveUser();
-      allow create: if hasPermission('dam.upload');
+      // Création plafonnée par le quota démo (compteur partagé users/{uid}.usage.damAssets,
+      // aussi alimenté par la CF damUpload pour les uploads Drive).
+      allow create: if hasPermission('dam.upload') && withinQuota('damAssets', 20);
       allow update: if hasPermission('dam.edit') && resource.data.addedBy == request.auth.uid;
       allow delete: if hasPermission('dam.delete') && resource.data.addedBy == request.auth.uid;
     }

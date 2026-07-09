@@ -13,6 +13,19 @@ export interface PermissionDef {
 /** Permission spéciale : accès total + gestion des rôles/utilisateurs. */
 export const ADMIN_PERMISSION = 'admin'
 
+/** Permission-marqueur d'un compte « démo » : plafonne les données importées. */
+export const DEMO_PERMISSION = 'demo.view'
+
+/** Compteurs d'usage cumulés par compte (champ `users/{uid}.usage`). */
+export interface UsageCounters {
+  pimRows: number
+  damAssets: number
+}
+
+/** Plafonds appliqués aux comptes démo. ⚠ Dupliqués dans `firestore.rules`
+ *  (`withinQuota`) et `functions/src/dam/damUpload.ts` — tenir les 3 en phase. */
+export const DEMO_LIMITS: UsageCounters = { pimRows: 50, damAssets: 20 }
+
 export const PERMISSIONS: PermissionDef[] = [
   { key: 'library.view', module: 'Bibliothèque', label: 'Voir la bibliothèque' },
   { key: 'library.create', module: 'Bibliothèque', label: 'Créer un document/projet' },
@@ -65,6 +78,10 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: 'settings.firebase.view', module: 'Paramètres', label: 'Voir l\'onglet Firebase' },
   { key: 'settings.connectors.edit', module: 'Paramètres', label: 'Éditer les connecteurs' },
   { key: 'settings.cookies.edit', module: 'Paramètres', label: 'Éditer les cookies' },
+  // Marqueur de compte « démo » : ne débloque rien mais IMPOSE les quotas DEMO_LIMITS
+  // (lignes PIM + assets DAM). Un rôle qui porte cette clé est plafonné, côté client
+  // ET serveur (firestore.rules + Cloud Function damUpload). L'owner n'est jamais limité.
+  { key: DEMO_PERMISSION, module: 'Démo', label: 'Compte démo — quotas (50 lignes PIM · 20 assets DAM)', description: 'Plafonne les données importées : à réserver aux comptes de démonstration/prospects.' },
 ]
 
 export const ALL_PERMISSION_KEYS: string[] = PERMISSIONS.map((p) => p.key)

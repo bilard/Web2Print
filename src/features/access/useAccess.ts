@@ -6,6 +6,8 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useAccessStore } from '@/stores/access.store'
 import { isOwnerEmail } from '@/features/auth/useAuth'
 import { computeEffectivePermissions } from './computePermissions'
+import { DEMO_PERMISSION, DEMO_LIMITS, type UsageCounters } from './permissions'
+import { readUsage, emptyUsage } from './usage'
 
 /** Hydrate les permissions effectives au login (lit users/{uid} + le doc rôle). */
 export function useAccessInit() {
@@ -47,12 +49,13 @@ export function useAccessInit() {
           roleId: resolvedRoleId,
           isOwner,
           blocked,
+          usage: readUsage(data.usage),
           onboardingComplete,
         })
       } catch (e) {
         if (cancelled) return
         console.warn('[useAccessInit] load failed:', e)
-        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, isOwner, blocked: false, onboardingComplete: false })
+        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, isOwner, blocked: false, usage: emptyUsage(), onboardingComplete: false })
       }
     })()
 
@@ -83,4 +86,40 @@ export function useIsAdmin(): boolean {
 /** true tant que l'accès n'est pas hydraté. */
 export function useAccessLoading(): boolean {
   return useAccessStore((s) => s.loading)
+}
+
+/** Compte « démo » (quotas de données). L'owner n'est jamais démo. */
+export function useIsDemo(): boolean {
+  return useAccessStore((s) => !s.isOwner && s.permissions.has(DEMO_PERMISSION))
+}
+
+interface QuotaField {
+  used: number
+  limit: number
+  remaining: number
+}
+export interface Quota {
+  isDemo: boolean
+  pimRows: QuotaField
+  damAssets: QuotaField
+  /** Peut-on encore ajouter `n` lignes PIM sans dépasser le quota ? */
+  canAddPim: (n: number) => boolean
+  /** Peut-on encore ajouter `n` assets DAM sans dépasser le quota ? */
+  canAddDam: (n: number) => boolean
+}
+
+/** Quotas + usage courant du compte (limites = ∞ hors démo). */
+export function useQuota(): Quota {
+  const isDemo = useIsDemo()
+  const usage: UsageCounters = useAccessStore((s) => s.usage)
+  const field = (used: number, limit: number): QuotaField => ({ used, limit, remaining: Math.max(0, limit - used) })
+  const pimLimit = isDemo ? DEMO_LIMITS.pimRows : Infinity
+  const damLimit = isDemo ? DEMO_LIMITS.damAssets : Infinity
+  return {
+    isDemo,
+    pimRows: field(usage.pimRows, pimLimit),
+    damAssets: field(usage.damAssets, damLimit),
+    canAddPim: (n) => !isDemo || usage.pimRows + n <= DEMO_LIMITS.pimRows,
+    canAddDam: (n) => !isDemo || usage.damAssets + n <= DEMO_LIMITS.damAssets,
+  }
 }
