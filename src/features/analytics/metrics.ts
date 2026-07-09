@@ -196,7 +196,7 @@ export function timeSeries(
   events: AnalyticsEvent[],
   fromMs: number,
   toMs: number,
-): { day: string; pageViews: number; visitors: number }[] {
+): { day: string; pageViews: number; visitors: number; connections: number }[] {
   const buckets = new Map<string, { pageViews: number; vids: Set<string> }>()
   for (let t = fromMs; t <= toMs; t += DAY) buckets.set(dayKey(t), { pageViews: 0, vids: new Set() })
   for (const e of events) {
@@ -205,7 +205,13 @@ export function timeSeries(
     b.pageViews++
     b.vids.add(e.vid)
   }
-  return [...buckets.entries()].map(([day, b]) => ({ day, pageViews: b.pageViews, visitors: b.vids.size }))
+  // `connections` = cumul des connexions (events) jour après jour : la courbe grimpe jusqu'au
+  // total de la période (sur l'historique complet, elle atteint le nombre total de connexions).
+  let running = 0
+  return [...buckets.entries()].map(([day, b]) => {
+    running += b.pageViews
+    return { day, pageViews: b.pageViews, visitors: b.vids.size, connections: running }
+  })
 }
 
 export interface CountryCityRow {

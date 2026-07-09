@@ -17,7 +17,7 @@ import { parseDayKey } from '../metrics'
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler)
 
 interface Props {
-  series: { day: string; pageViews: number; visitors: number }[]
+  series: { day: string; pageViews: number; visitors: number; connections: number }[]
 }
 
 const axisFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' })
@@ -32,6 +32,7 @@ export function AnalyticsTimeChart({ series }: Props) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.55)'
+  const total = series.length ? series[series.length - 1].connections : 0
   const data = {
     labels: series.map((p) => axisFmt.format(parseDayKey(p.day))),
     datasets: [
@@ -42,6 +43,7 @@ export function AnalyticsTimeChart({ series }: Props) {
         backgroundColor: '#6366f155',
         fill: true,
         tension: 0.3,
+        yAxisID: 'y',
       },
       {
         label: 'Visiteurs',
@@ -49,6 +51,17 @@ export function AnalyticsTimeChart({ series }: Props) {
         borderColor: '#22d3ee',
         backgroundColor: 'transparent',
         tension: 0.3,
+        yAxisID: 'y',
+      },
+      {
+        // Cumul des connexions (axe droit) : la courbe grimpe jusqu'au total de la période.
+        label: `Connexions (cumul · ${total})`,
+        data: series.map((p) => p.connections),
+        borderColor: '#f59e0b',
+        backgroundColor: 'transparent',
+        borderDash: [6, 4],
+        tension: 0.3,
+        yAxisID: 'y1',
       },
     ],
   }
@@ -67,6 +80,12 @@ export function AnalyticsTimeChart({ series }: Props) {
     scales: {
       x: { grid: { color: grid }, ticks: { color: tick } },
       y: { grid: { color: grid }, ticks: { color: tick }, beginAtZero: true },
+      y1: {
+        position: 'right' as const,
+        grid: { drawOnChartArea: false },
+        ticks: { color: '#f59e0b' },
+        beginAtZero: true,
+      },
     },
   }
   return (
