@@ -41,7 +41,7 @@ const nf = new Intl.NumberFormat('fr-FR')
 /** Grille 2×2 des indicateurs clés avec variation vs période précédente. */
 export function PulseKpiGrid({ kpis }: { kpis: KpiWithDelta }) {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 landscape:grid-cols-4">
       <Tile value={nf.format(kpis.visitors)} label="Visiteurs" pct={kpis.dVisitors} />
       <Tile value={nf.format(kpis.pageViews)} label="Pages vues" pct={kpis.dPageViews} />
       <Tile value={nf.format(kpis.sessions)} label="Sessions" pct={kpis.dSessions} />

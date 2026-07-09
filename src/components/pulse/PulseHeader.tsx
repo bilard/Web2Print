@@ -14,7 +14,7 @@ interface PulseHeaderProps {
 export function PulseHeader({ period, onPeriod, liveVisitors, fetching, onRefresh, scrolled }: PulseHeaderProps) {
   return (
     <header className="pulse-topbar pulse-safe-top pulse-safe-x sticky top-0 z-30" data-scrolled={scrolled}>
-      <div className="mx-auto w-full max-w-lg lg:max-w-5xl">
+      <div className="mx-auto w-full max-w-lg landscape:max-w-5xl">
       <div className="flex items-end justify-between pb-2">
         <div>
           <h1 className="pulse-rounded text-[30px] font-bold leading-none">Pulse</h1>
