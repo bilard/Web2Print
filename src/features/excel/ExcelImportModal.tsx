@@ -19,6 +19,7 @@ import { useUpsertProducts } from '@/features/pim/useProducts'
 import { useUpsertSource } from '@/features/pim/useSources'
 import { usePimStore } from '@/stores/pim.store'
 import { MatchPreviewModal } from '@/components/pim/MatchPreviewModal'
+import { useQuota } from '@/features/access/useAccess'
 import { toast } from 'sonner'
 
 interface Props {
@@ -40,6 +41,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
   const { detecting } = useExcelStore()
   const { createEmpty } = useExcelImport()
   const createTaxonomy = useCreateTaxonomy()
+  const quota = useQuota()
 
   // ── PIM branch ───────────────────────────────────────────────────────────
   const pimProjectId = usePimStore((s) => s.currentProjectId)
@@ -153,6 +155,16 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
 
       return { ...sheet, columns, taxonomy, taxonomyLevels: taxoLevels }
     })
+
+    // Quota démo (branche legacy excel_data) : un import DÉPASSANT le plafond serait
+    // rejeté par la rule `excel_data.totalRows <= demoLimit('pimRows')` → autosave en
+    // échec (CloudOff) + données perdues au reload. On refuse AVANT d'écrire le store.
+    // (Complète le bouton désactivé, qui ne couvre que le cas « déjà au plafond ».)
+    const importedRows = finalSheets.reduce((acc, s) => acc + s.rows.length, 0)
+    if (quota.isDemo && importedRows > quota.pimRows.limit) {
+      toast.error(`Limite démo : ${quota.pimRows.limit} lignes maximum par base (fichier : ${importedRows}).`)
+      return
+    }
 
     // ── PIM branch: route through matchRows when a PIM project is active ──
     if (pimProjectId && finalSheets[0]) {
