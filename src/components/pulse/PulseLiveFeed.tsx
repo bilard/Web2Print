@@ -58,27 +58,84 @@ function Row({ e, now }: { e: AnalyticsEvent; now: number }) {
   )
 }
 
-function GroupBlock({ g, now, expanded }: { g: Group; now: number; expanded: boolean }) {
-  const shown = expanded ? g.events : g.events.slice(0, PER_GROUP)
-  const rest = g.events.length - shown.length
+interface CountrySub { code: string; label: string; events: AnalyticsEvent[]; lastTs: number }
+
+/** Sous-groupe les événements par pays (pays triés par nombre de consultations). */
+function groupByCountry(events: AnalyticsEvent[]): CountrySub[] {
+  const map = new Map<string, AnalyticsEvent[]>()
+  for (const e of events) {
+    const code = e.country ?? '__none__'
+    const arr = map.get(code)
+    if (arr) arr.push(e); else map.set(code, [e])
+  }
+  return [...map.entries()]
+    .map(([code, evs]): CountrySub => ({ code, label: (code === '__none__' ? null : countryName(code)) ?? 'Origine inconnue', events: evs, lastTs: evs[0]?.ts ?? 0 }))
+    .sort((a, b) => b.events.length - a.events.length || b.lastTs - a.lastTs)
+}
+
+function GroupHeader({ g, now }: { g: Group; now: number }) {
   const initial = g.label.trim().charAt(0).toUpperCase() || '?'
   return (
+    <div className="flex items-center gap-2.5 pb-1 pt-1">
+      <span
+        className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-semibold"
+        style={{
+          background: g.isNamed ? 'var(--pulse-accent-soft)' : 'var(--pulse-surface-2)',
+          color: g.isNamed ? 'var(--pulse-accent-2)' : 'var(--pulse-text-3)',
+        }}
+      >
+        {g.isNamed ? initial : <Users size={13} />}
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{g.label}</span>
+      <span className="text-[11px] tabular-nums" style={{ color: 'var(--pulse-text-3)' }}>
+        {g.events.length} · {timeAgo(g.lastTs, now)}
+      </span>
+    </div>
+  )
+}
+
+/** Bloc « Visiteurs anonymes » : consultations sous-groupées par pays. */
+function AnonGroupBlock({ g, now, expanded }: { g: Group; now: number; expanded: boolean }) {
+  const byCountry = groupByCountry(g.events)
+  return (
     <div className="py-1.5">
-      <div className="flex items-center gap-2.5 pb-1 pt-1">
-        <span
-          className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-semibold"
-          style={{
-            background: g.isNamed ? 'var(--pulse-accent-soft)' : 'var(--pulse-surface-2)',
-            color: g.isNamed ? 'var(--pulse-accent-2)' : 'var(--pulse-text-3)',
-          }}
-        >
-          {g.isNamed ? initial : <Users size={13} />}
-        </span>
-        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{g.label}</span>
-        <span className="text-[11px] tabular-nums" style={{ color: 'var(--pulse-text-3)' }}>
-          {g.events.length} · {timeAgo(g.lastTs, now)}
-        </span>
+      <GroupHeader g={g} now={now} />
+      <div className="space-y-2 pl-[34px]">
+        {byCountry.map((c) => {
+          const shown = expanded ? c.events : c.events.slice(0, PER_GROUP)
+          const rest = c.events.length - shown.length
+          return (
+            <div key={c.code}>
+              <div className="flex items-baseline gap-2 pb-0.5">
+                <span className="text-[16px] leading-none" aria-hidden>{flagEmoji(c.code === '__none__' ? null : c.code)}</span>
+                <span className="min-w-0 flex-1 truncate text-[12px] font-semibold" style={{ color: 'var(--pulse-text-2)' }}>{c.label}</span>
+                <span className="text-[11px] tabular-nums" style={{ color: 'var(--pulse-text-3)' }}>{c.events.length}</span>
+              </div>
+              <ul className="divide-y divide-[color:var(--pulse-hair)] pl-[24px]">
+                {shown.map((e, i) => (
+                  <Row key={`${e.vid}-${e.ts}-${i}`} e={e} now={now} />
+                ))}
+              </ul>
+              {rest > 0 && (
+                <p className="py-1 pl-[24px] text-[12px]" style={{ color: 'var(--pulse-text-3)' }}>
+                  +{rest} autre{rest > 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
+          )
+        })}
       </div>
+    </div>
+  )
+}
+
+function GroupBlock({ g, now, expanded }: { g: Group; now: number; expanded: boolean }) {
+  if (!g.isNamed) return <AnonGroupBlock g={g} now={now} expanded={expanded} />
+  const shown = expanded ? g.events : g.events.slice(0, PER_GROUP)
+  const rest = g.events.length - shown.length
+  return (
+    <div className="py-1.5">
+      <GroupHeader g={g} now={now} />
       <ul className="divide-y divide-[color:var(--pulse-hair)] pl-[34px]">
         {shown.map((e, i) => (
           <Row key={`${e.vid}-${e.ts}-${i}`} e={e} now={now} />

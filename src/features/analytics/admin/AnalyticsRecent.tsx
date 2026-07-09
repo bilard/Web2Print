@@ -63,6 +63,64 @@ function EventRow({ e, showUser, userName }: { e: AnalyticsEvent; showUser: bool
 }
 
 const GROUP_PAGE = 8
+const ANON_COUNTRY_CAP = 6
+
+interface CountrySub { code: string; label: string; events: AnalyticsEvent[]; lastTs: number }
+
+/** Sous-groupe les événements par pays (pays triés par nombre de consultations). */
+function groupByCountry(events: AnalyticsEvent[]): CountrySub[] {
+  const map = new Map<string, AnalyticsEvent[]>()
+  for (const e of events) {
+    const code = e.country ?? '__none__'
+    const arr = map.get(code)
+    if (arr) arr.push(e); else map.set(code, [e])
+  }
+  return [...map.entries()]
+    .map(([code, evs]): CountrySub => ({ code, label: (code === '__none__' ? null : countryName(code)) ?? '—', events: evs, lastTs: evs[0]?.ts ?? 0 }))
+    .sort((a, b) => b.events.length - a.events.length || b.lastTs - a.lastTs)
+}
+
+/** Bloc « Anonyme » : consultations sous-groupées par pays (chaque pays repliable). */
+function AnonGroupSection({ g, userName }: { g: Group; userName: (uid: string | null) => string }) {
+  const [open, setOpen] = useState<Set<string>>(() => new Set())
+  const byCountry = useMemo(() => groupByCountry(g.events), [g.events])
+  const toggle = (code: string) => setOpen((s) => { const n = new Set(s); if (n.has(code)) n.delete(code); else n.add(code); return n })
+  return (
+    <Fragment>
+      <tr className="bg-white/[0.03]">
+        <td colSpan={5} className="px-2 py-1.5 border-b border-white/10">
+          <span className="text-white/45 italic">{g.label}</span>
+          <span className="text-white/35 ml-2">{g.events.length} consultation{g.events.length > 1 ? 's' : ''} · {byCountry.length} pays · dernière {relDay(g.lastTs)}</span>
+        </td>
+      </tr>
+      {byCountry.map((c) => {
+        const isOpen = open.has(c.code)
+        const slice = isOpen ? c.events : c.events.slice(0, ANON_COUNTRY_CAP)
+        const hasMore = c.events.length > ANON_COUNTRY_CAP
+        return (
+          <Fragment key={c.code}>
+            <tr className="bg-white/[0.015]">
+              <td colSpan={5} className="pl-6 pr-2 py-1 border-b border-white/5">
+                <span className="text-white/60 text-[11px] font-medium">{c.label}</span>
+                <span className="text-white/30 text-[11px] ml-2">{c.events.length} · dernière {relDay(c.lastTs)}</span>
+              </td>
+            </tr>
+            {slice.map((e, i) => <EventRow key={`${g.key}-${c.code}-${e.vid}-${e.ts}-${i}`} e={e} showUser={false} userName={userName} />)}
+            {hasMore && (
+              <tr>
+                <td colSpan={5} className="pl-6 pr-2 py-1 border-b border-white/5">
+                  <button type="button" onClick={() => toggle(c.code)} className="text-white/40 hover:text-white/70 text-[11px] transition-colors">
+                    {isOpen ? 'Réduire' : `+${c.events.length - ANON_COUNTRY_CAP} autre${c.events.length - ANON_COUNTRY_CAP > 1 ? 's' : ''} à ${c.label}`}
+                  </button>
+                </td>
+              </tr>
+            )}
+          </Fragment>
+        )
+      })}
+    </Fragment>
+  )
+}
 
 /** Bloc d'un utilisateur dans le journal groupé : en-tête + ses consultations paginées. */
 function GroupSection({ g, userName }: { g: Group; userName: (uid: string | null) => string }) {
@@ -172,7 +230,9 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
           </thead>
           <tbody>
             {grouped
-              ? groups.map((g) => <GroupSection key={g.key} g={g} userName={userName} />)
+              ? groups.map((g) => (g.isNamed
+                  ? <GroupSection key={g.key} g={g} userName={userName} />
+                  : <AnonGroupSection key={g.key} g={g} userName={userName} />))
               : slice.map((e, i) => <EventRow key={`${e.vid}-${e.ts}-${i}`} e={e} showUser userName={userName} />)}
           </tbody>
         </table>
