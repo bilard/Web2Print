@@ -60,6 +60,16 @@ export const collectAnalytics = onRequest(
       res.status(204).end()
       return
     }
+    // La PWA d'analytics « Pulse » (/pulse) est une console interne réservée au
+    // propriétaire : on ne journalise JAMAIS ses consultations (ni Analytics, ni
+    // Telegram). Sinon le propriétaire s'auto-notifie à chaque ouverture de son
+    // propre tableau de bord — et au démarrage à froid de la PWA, la 1re page vue
+    // part AVANT que Firebase restaure la session (donc « anonyme », échappant à
+    // l'exclusion par uid/luid). Ce filtre par chemin est indépendant de l'auth.
+    if (doc.path === '/pulse' || doc.path.startsWith('/pulse/')) {
+      res.status(204).end()
+      return
+    }
     // `eid` (id stable côté client) : le beacon ré-envoie l'event d'entrée sous le même
     // eid pour y backfiller l'uid une fois l'auth résolue. On écrit en `set(merge)` sur ce
     // doc → un seul document (sinon double comptage des pages d'entrée d'app). Absent sur
