@@ -2,7 +2,7 @@
 import { useEffect, useState, lazy, Suspense } from 'react'
 import { Plus, Trash2, Save, Lock, Check, Eye, LayoutGrid, ListTree, Network, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
-import { permissionsByModule, permissionParent, permissionChildren, permissionLabel } from '@/features/access/permissions'
+import { permissionsByModule, permissionParent, permissionChildren, permissionLabel, DEMO_PERMISSION, DEMO_LIMITS, type UsageCounters } from '@/features/access/permissions'
 import { listRoles, saveRole, deleteRole, type Role } from '@/features/access/rolesApi'
 import { recordAudit } from '@/lib/auditLog'
 import { moduleMeta, orderedModuleEntries } from '@/features/access/moduleMeta'
@@ -15,7 +15,7 @@ type ViewMode = 'cards' | 'tree' | 'mindmap'
 
 export function RolesTab() {
   const [roles, setRoles] = useState<Role[]>([])
-  const [editing, setEditing] = useState<{ id?: string; name: string; permissions: Set<string> } | null>(null)
+  const [editing, setEditing] = useState<{ id?: string; name: string; permissions: Set<string>; limits: UsageCounters } | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('mindmap')
   const [openSet, setOpenSet] = useState<Set<string>>(new Set())
   const byModule = permissionsByModule()
@@ -30,10 +30,10 @@ export function RolesTab() {
     for (const [module, defs] of entries) if (defs.some((d) => perms.has(d.key))) open.add(module)
     return open
   }
-  const startNew = () => { setEditing({ name: '', permissions: new Set() }); setOpenSet(new Set()) }
+  const startNew = () => { setEditing({ name: '', permissions: new Set(), limits: { ...DEMO_LIMITS } }); setOpenSet(new Set()) }
   const startEdit = (r: Role) => {
     const perms = new Set(r.permissions)
-    setEditing({ id: r.id, name: r.name, permissions: perms }); setOpenSet(defaultOpen(perms))
+    setEditing({ id: r.id, name: r.name, permissions: perms, limits: { ...DEMO_LIMITS, ...(r.limits ?? {}) } }); setOpenSet(defaultOpen(perms))
   }
   const toggleModule = (module: string) => setOpenSet((prev) => {
     const next = new Set(prev); next.has(module) ? next.delete(module) : next.add(module); return next
@@ -63,7 +63,7 @@ export function RolesTab() {
     const prev = roles.find((r) => r.id === editing.id)
     const beforeCount = prev?.permissions.length ?? 0
     const afterCount = [...editing.permissions].length
-    await saveRole({ id: editing.id, name: editing.name, permissions: [...editing.permissions] })
+    await saveRole({ id: editing.id, name: editing.name, permissions: [...editing.permissions], limits: editing.limits })
     const renamed = prev && prev.name !== editing.name ? { nom: `${prev.name} → ${editing.name}` } : {}
     recordAudit({ action: 'access.role.save', module: 'access', targetId: editing.id, targetLabel: editing.name, meta: { before: `${beforeCount} perms`, after: `${afterCount} perms`, ...renamed } })
     setEditing(null); refresh()
@@ -112,6 +112,28 @@ export function RolesTab() {
           </>)}
         </div>
         </div>
+
+        {editing.permissions.has(DEMO_PERMISSION) && (
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 flex flex-col gap-2">
+            <p className="text-[11px] font-medium text-white/60">Quotas du compte démo</p>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              {([
+                { key: 'pimRows' as const, label: 'Lignes PIM' },
+                { key: 'damAssets' as const, label: 'Assets DAM' },
+              ]).map(({ key, label }) => (
+                <label key={key} className="flex items-center gap-2 text-[12px] text-white/70">
+                  {label}
+                  <input
+                    type="number" min={0} value={editing.limits[key]}
+                    onChange={(e) => setEditing({ ...editing, limits: { ...editing.limits, [key]: Math.max(0, Math.floor(Number(e.target.value) || 0)) } })}
+                    className="w-24 bg-white/[0.04] border border-white/10 rounded-md px-2 py-1 text-sm text-white tabular-nums"
+                  />
+                </label>
+              ))}
+            </div>
+            <p className="text-[10px] text-white/30">Plafonds cumulés par compte, imposés côté serveur (PIM via Cloud Function, DAM via l'upload serveur). 0 = import bloqué.</p>
+          </div>
+        )}
 
         {viewMode === 'mindmap' ? (
           <Suspense fallback={<div className="h-[380px] rounded-xl border border-white/[0.06] bg-well flex items-center justify-center"><div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>}>

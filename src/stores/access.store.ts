@@ -1,6 +1,6 @@
 // src/stores/access.store.ts
 import { create } from 'zustand'
-import type { UsageCounters } from '@/features/access/permissions'
+import { DEMO_LIMITS, type UsageCounters } from '@/features/access/permissions'
 import { emptyUsage } from '@/features/access/usage'
 
 interface AccessState {
@@ -14,11 +14,13 @@ interface AccessState {
   /** Compteurs d'usage cumulés (quotas démo). Miroir local de `users/{uid}.usage`,
    *  hydraté au login et incrémenté optimistiquement à chaque import. */
   usage: UsageCounters
+  /** Plafonds du compte démo, issus du rôle (`roles/{id}.limits`, repli DEMO_LIMITS). */
+  limits: UsageCounters
   /** true tant que l'accès n'a pas été hydraté depuis Firestore. */
   loading: boolean
   /** Flag Firestore users/{uid}.onboardingComplete — lu en piggyback à l'hydratation de l'accès. */
   onboardingComplete: boolean
-  setAccess: (a: { permissions: Set<string>; roleId: string | null; isOwner: boolean; blocked: boolean; usage: UsageCounters; onboardingComplete: boolean }) => void
+  setAccess: (a: { permissions: Set<string>; roleId: string | null; isOwner: boolean; blocked: boolean; usage: UsageCounters; limits: UsageCounters; onboardingComplete: boolean }) => void
   setLoading: (loading: boolean) => void
   /** Incrément optimiste des compteurs d'usage (après un import réussi). */
   bumpUsage: (patch: Partial<UsageCounters>) => void
@@ -33,6 +35,7 @@ export const useAccessStore = create<AccessState>((set) => ({
   isOwner: false,
   blocked: false,
   usage: emptyUsage(),
+  limits: { ...DEMO_LIMITS },
   loading: true,
   onboardingComplete: false,
   setAccess: (a) => set({ ...a, loading: false }),
@@ -42,5 +45,5 @@ export const useAccessStore = create<AccessState>((set) => ({
     damAssets: s.usage.damAssets + (patch.damAssets ?? 0),
   } })),
   setOnboardingComplete: (v) => set({ onboardingComplete: v }),
-  reset: () => set({ permissions: new Set(), roleId: null, isOwner: false, blocked: false, usage: emptyUsage(), loading: true, onboardingComplete: false }),
+  reset: () => set({ permissions: new Set(), roleId: null, isOwner: false, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, loading: true, onboardingComplete: false }),
 }))

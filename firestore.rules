@@ -72,9 +72,15 @@ service cloud.firestore {
     function usageOf(field) {
       return accessData().get('usage', {}).get(field, 0);
     }
-    // Création autorisée tant que le compteur reste sous la limite (non-démo = illimité).
-    function withinQuota(field, limit) {
-      return !isDemo() || usageOf(field) < limit;
+    // Plafond configuré sur le rôle (roles/{id}.limits.<field>), repli sur `fallback`.
+    function demoLimit(field, fallback) {
+      return hasRoleAssigned()
+        ? get(/databases/$(database)/documents/roles/$(accessData().accessRoleId)).data.get('limits', {}).get(field, fallback)
+        : fallback;
+    }
+    // Création autorisée tant que le compteur reste sous la limite du rôle (non-démo = illimité).
+    function withinQuota(field, fallback) {
+      return !isDemo() || usageOf(field) < demoLimit(field, fallback);
     }
     // Interdit au user de DÉCROÎTRE ses compteurs d'usage (anti-reset du quota).
     function usageMonotonic() {
@@ -302,9 +308,9 @@ service cloud.firestore {
     match /excel_data/{docId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid
-                    && (!isDemo() || request.resource.data.get('totalRows', 0) <= 50);
+                    && (!isDemo() || request.resource.data.get('totalRows', 0) <= demoLimit('pimRows', 50));
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid
-                    && (!isDemo() || request.resource.data.get('totalRows', 0) <= 50);
+                    && (!isDemo() || request.resource.data.get('totalRows', 0) <= demoLimit('pimRows', 50));
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 

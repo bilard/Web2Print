@@ -31,6 +31,7 @@ export function useAccessInit() {
         // Compte suspendu par un admin → aucun accès (l'owner ne peut jamais être bloqué).
         const blocked = !isOwner && ((data.accessBlocked as boolean | undefined) ?? false)
         let rolePermissions: string[] | null = null
+        let limits: UsageCounters = { ...DEMO_LIMITS }
         // Rôle supprimé entre-temps → on le traite comme « pas de rôle » (pending) :
         // resolvedRoleId repasse à null pour que useIsPending() renvoie true.
         let resolvedRoleId: string | null = roleId
@@ -38,6 +39,11 @@ export function useAccessInit() {
           const roleSnap = await getDoc(doc(db, 'roles', roleId))
           if (roleSnap.exists()) {
             rolePermissions = (roleSnap.data()?.permissions as string[] | undefined) ?? []
+            const rl = roleSnap.data()?.limits as Partial<UsageCounters> | undefined
+            limits = {
+              pimRows: typeof rl?.pimRows === 'number' ? rl.pimRows : DEMO_LIMITS.pimRows,
+              damAssets: typeof rl?.damAssets === 'number' ? rl.damAssets : DEMO_LIMITS.damAssets,
+            }
           } else {
             resolvedRoleId = null
           }
@@ -50,12 +56,13 @@ export function useAccessInit() {
           isOwner,
           blocked,
           usage: readUsage(data.usage),
+          limits,
           onboardingComplete,
         })
       } catch (e) {
         if (cancelled) return
         console.warn('[useAccessInit] load failed:', e)
-        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, isOwner, blocked: false, usage: emptyUsage(), onboardingComplete: false })
+        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, isOwner, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, onboardingComplete: false })
       }
     })()
 
@@ -108,18 +115,17 @@ export interface Quota {
   canAddDam: (n: number) => boolean
 }
 
-/** Quotas + usage courant du compte (limites = ∞ hors démo). */
+/** Quotas + usage courant du compte (limites configurées par le rôle ; ∞ hors démo). */
 export function useQuota(): Quota {
   const isDemo = useIsDemo()
   const usage: UsageCounters = useAccessStore((s) => s.usage)
+  const limits: UsageCounters = useAccessStore((s) => s.limits)
   const field = (used: number, limit: number): QuotaField => ({ used, limit, remaining: Math.max(0, limit - used) })
-  const pimLimit = isDemo ? DEMO_LIMITS.pimRows : Infinity
-  const damLimit = isDemo ? DEMO_LIMITS.damAssets : Infinity
   return {
     isDemo,
-    pimRows: field(usage.pimRows, pimLimit),
-    damAssets: field(usage.damAssets, damLimit),
-    canAddPim: (n) => !isDemo || usage.pimRows + n <= DEMO_LIMITS.pimRows,
-    canAddDam: (n) => !isDemo || usage.damAssets + n <= DEMO_LIMITS.damAssets,
+    pimRows: field(usage.pimRows, isDemo ? limits.pimRows : Infinity),
+    damAssets: field(usage.damAssets, isDemo ? limits.damAssets : Infinity),
+    canAddPim: (n) => !isDemo || usage.pimRows + n <= limits.pimRows,
+    canAddDam: (n) => !isDemo || usage.damAssets + n <= limits.damAssets,
   }
 }

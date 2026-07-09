@@ -14,7 +14,7 @@ import { httpsCallable } from 'firebase/functions'
 import { auth, storage, functions } from '@/lib/firebase/config'
 import { removeBackground } from '@/features/imaging/removeBackground'
 import { useAccessStore } from '@/stores/access.store'
-import { DEMO_PERMISSION, DEMO_LIMITS } from '@/features/access/permissions'
+import { DEMO_PERMISSION } from '@/features/access/permissions'
 
 const damUpload = httpsCallable<
   { url: string; fileName: string; folderId: string },
@@ -65,13 +65,14 @@ export function useDamFolderUpload() {
       const isDemo = !acc.isOwner && acc.permissions.has(DEMO_PERMISSION)
       let toUpload = images
       if (isDemo) {
-        const remaining = Math.max(0, DEMO_LIMITS.damAssets - acc.usage.damAssets)
+        const limit = acc.limits.damAssets
+        const remaining = Math.max(0, limit - acc.usage.damAssets)
         if (remaining <= 0) {
-          toast.error(`Limite démo atteinte : ${DEMO_LIMITS.damAssets} assets DAM maximum.`)
+          toast.error(`Limite démo atteinte : ${limit} assets DAM maximum.`)
           return result
         }
         if (images.length > remaining) {
-          toast.warning(`Limite démo : seuls ${remaining}/${images.length} fichiers importés (${DEMO_LIMITS.damAssets} assets max).`)
+          toast.warning(`Limite démo : seuls ${remaining}/${images.length} fichiers importés (${limit} assets max).`)
           toUpload = images.slice(0, remaining)
         }
       }

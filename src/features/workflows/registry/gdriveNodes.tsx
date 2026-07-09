@@ -20,7 +20,7 @@ import { useGDriveStore } from '@/stores/gdrive.store'
 import { getServerGoogleToken } from '@/features/gdrive/serverGoogleToken'
 import { functions, auth } from '@/lib/firebase/config'
 import { useAccessStore } from '@/stores/access.store'
-import { DEMO_PERMISSION, DEMO_LIMITS } from '@/features/access/permissions'
+import { DEMO_PERMISSION } from '@/features/access/permissions'
 import { incrementUsage } from '@/features/access/usage'
 import {
   GoogleAuthMissingError,
@@ -917,9 +917,10 @@ const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { assets: Dam
     const acc = useAccessStore.getState()
     const isDemo = !acc.isOwner && acc.permissions.has(DEMO_PERMISSION)
     const demoUid = auth.currentUser?.uid ?? null
-    const maxUploads = isDemo ? Math.max(0, DEMO_LIMITS.damAssets - acc.usage.damAssets) : Infinity
+    const damLimit = acc.limits.damAssets
+    const maxUploads = isDemo ? Math.max(0, damLimit - acc.usage.damAssets) : Infinity
     if (isDemo && maxUploads <= 0) {
-      ctx.log('warn', `Limite démo atteinte (${DEMO_LIMITS.damAssets} assets DAM) — aucun upload.`)
+      ctx.log('warn', `Limite démo atteinte (${damLimit} assets DAM) — aucun upload.`)
       return { assets }
     }
 
@@ -941,7 +942,7 @@ const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { assets: Dam
       const asset = assets[i]
       // Quota démo atteint pour ce run → on laisse passer les assets restants sans uploader.
       if (isDemo && ok >= maxUploads) {
-        if (out.length === i) ctx.log('warn', `Limite démo (${DEMO_LIMITS.damAssets} assets DAM) — ${assets.length - i} asset(s) non uploadé(s).`)
+        if (out.length === i) ctx.log('warn', `Limite démo (${damLimit} assets DAM) — ${assets.length - i} asset(s) non uploadé(s).`)
         out.push(asset)
         continue
       }

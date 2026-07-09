@@ -7,7 +7,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { getApps, initializeApp } from 'firebase-admin/app'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
-import { isDemoLimited, DEMO_PIM_LIMIT } from '../access/demo'
+import { getDemoLimits } from '../access/demo'
 
 if (!getApps().length) initializeApp()
 
@@ -31,13 +31,13 @@ export const pimSaveProducts = onCall(
     if (projSnap.exists && projSnap.data()?.userId !== uid) throw new HttpsError('permission-denied', 'Projet non possédé')
 
     const email = (request.auth.token.email as string | undefined) ?? null
-    const demo = await isDemoLimited(db, uid, email)
+    const demo = await getDemoLimits(db, uid, email)
     const userRef = db.collection('users').doc(uid)
     if (demo) {
       const used = ((await userRef.get()).data()?.usage?.pimRows as number | undefined) ?? 0
-      if (used + products.length > DEMO_PIM_LIMIT) {
-        const left = Math.max(0, DEMO_PIM_LIMIT - used)
-        throw new HttpsError('resource-exhausted', `Limite démo : ${DEMO_PIM_LIMIT} lignes PIM maximum (${left} restante(s)).`)
+      if (used + products.length > demo.pimRows) {
+        const left = Math.max(0, demo.pimRows - used)
+        throw new HttpsError('resource-exhausted', `Limite démo : ${demo.pimRows} lignes PIM maximum (${left} restante(s)).`)
       }
     }
 

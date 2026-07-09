@@ -5,23 +5,32 @@
 import type { Firestore } from 'firebase-admin/firestore'
 
 export const DEMO_PERMISSION = 'demo.view'
-export const DEMO_PIM_LIMIT = 50
+export const DEMO_PIM_LIMIT = 50 // défaut si le rôle ne configure pas de limite
 export const DEMO_DAM_LIMIT = 20
 const OWNER_EMAIL = 'ibs.studio@gmail.com'
 
+export interface DemoLimits { pimRows: number; damAssets: number }
+
 /**
- * Le caller est-il un compte démo plafonné ? Réplique la logique des permissions
- * effectives (revokes > grants > rôle) côté serveur. L'owner/admin n'est jamais limité.
+ * Limites du compte démo du caller, ou `null` s'il n'est pas démo. Réplique la logique
+ * des permissions effectives (revokes > grants > rôle) côté serveur ; les plafonds
+ * proviennent de `roles/{id}.limits` (repli DEMO_PIM_LIMIT/DEMO_DAM_LIMIT). L'owner
+ * n'est jamais limité (null).
  */
-export async function isDemoLimited(db: Firestore, uid: string, email: string | null): Promise<boolean> {
-  if (email && email.toLowerCase() === OWNER_EMAIL) return false
+export async function getDemoLimits(db: Firestore, uid: string, email: string | null): Promise<DemoLimits | null> {
+  if (email && email.toLowerCase() === OWNER_EMAIL) return null
   const u = (await db.collection('users').doc(uid).get()).data() ?? {}
   const grants: string[] = Array.isArray(u.accessGrants) ? u.accessGrants : []
   const revokes: string[] = Array.isArray(u.accessRevokes) ? u.accessRevokes : []
-  if (revokes.includes(DEMO_PERMISSION)) return false
-  if (grants.includes(DEMO_PERMISSION)) return true
+  if (revokes.includes(DEMO_PERMISSION)) return null
   const roleId = typeof u.accessRoleId === 'string' ? u.accessRoleId : ''
-  if (!roleId) return false
-  const perms = (await db.collection('roles').doc(roleId).get()).data()?.permissions
-  return Array.isArray(perms) && perms.includes(DEMO_PERMISSION)
+  const role = roleId ? (await db.collection('roles').doc(roleId).get()).data() : null
+  const rolePerms: string[] = Array.isArray(role?.permissions) ? role!.permissions : []
+  const isDemo = grants.includes(DEMO_PERMISSION) || rolePerms.includes(DEMO_PERMISSION)
+  if (!isDemo) return null
+  const limits = (role?.limits ?? {}) as Partial<DemoLimits>
+  return {
+    pimRows: typeof limits.pimRows === 'number' ? limits.pimRows : DEMO_PIM_LIMIT,
+    damAssets: typeof limits.damAssets === 'number' ? limits.damAssets : DEMO_DAM_LIMIT,
+  }
 }

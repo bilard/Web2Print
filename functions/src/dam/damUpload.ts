@@ -13,7 +13,7 @@ import { getApps, initializeApp } from 'firebase-admin/app'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { getGoogleAccessToken } from '../google/serverAuth'
 import { ensureDamTarget } from './driveFolders'
-import { isDemoLimited, DEMO_DAM_LIMIT } from '../access/demo'
+import { getDemoLimits } from '../access/demo'
 
 if (!getApps().length) initializeApp()
 
@@ -64,11 +64,11 @@ export const damUpload = onCall(
     // le client pré-tranche déjà à la limite restante.
     const db = getFirestore()
     const demoEmail = (request.auth.token.email as string | undefined) ?? null
-    const demo = await isDemoLimited(db, request.auth.uid, demoEmail)
+    const demo = await getDemoLimits(db, request.auth.uid, demoEmail)
     const usageRef = db.collection('users').doc(request.auth.uid)
     if (demo) {
       const used = ((await usageRef.get()).data()?.usage?.damAssets as number | undefined) ?? 0
-      if (used >= DEMO_DAM_LIMIT) throw new HttpsError('resource-exhausted', `Limite démo atteinte : ${DEMO_DAM_LIMIT} assets DAM maximum.`)
+      if (used >= demo.damAssets) throw new HttpsError('resource-exhausted', `Limite démo atteinte : ${demo.damAssets} assets DAM maximum.`)
     }
 
     const token = await getGoogleAccessToken(request.auth.uid)

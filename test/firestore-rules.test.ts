@@ -85,6 +85,24 @@ describe('usage — monotonie (anti-reset)', () => {
   })
 })
 
+describe('quotas configurables (roles/{id}.limits)', () => {
+  it('honore une limite DAM personnalisée (damAssets: 2)', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore()
+      await setDoc(doc(db, 'roles', 'roleDemo'), { limits: { pimRows: 50, damAssets: 2 } }, { merge: true })
+      await setDoc(doc(db, 'users', DEMO_UID), { usage: { pimRows: 0, damAssets: 2 } }, { merge: true })
+    })
+    await assertFails(setDoc(doc(demoDb(), 'dam_assets', 'ax'), { addedBy: DEMO_UID, url: 'x' }))
+  })
+  it('honore une limite PIM personnalisée pour excel_data (pimRows: 10)', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'roles', 'roleDemo'), { limits: { pimRows: 10, damAssets: 20 } }, { merge: true })
+    })
+    await assertFails(setDoc(doc(demoDb(), 'excel_data', 'ec'), { userId: DEMO_UID, totalRows: 11 }))
+    await assertSucceeds(setDoc(doc(demoDb(), 'excel_data', 'ec2'), { userId: DEMO_UID, totalRows: 10 }))
+  })
+})
+
 describe('excel_data — plafond de taille démo', () => {
   it('REFUSE un dataset démo > 50 lignes', async () => {
     await assertFails(setDoc(doc(demoDb(), 'excel_data', 'e1'), { userId: DEMO_UID, totalRows: 51 }))
