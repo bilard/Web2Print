@@ -81,7 +81,7 @@ export const PERMISSIONS: PermissionDef[] = [
   // Marqueur de compte « démo » : ne débloque rien mais IMPOSE les quotas DEMO_LIMITS
   // (lignes PIM + assets DAM). Un rôle qui porte cette clé est plafonné, côté client
   // ET serveur (firestore.rules + Cloud Function damUpload). L'owner n'est jamais limité.
-  { key: DEMO_PERMISSION, module: 'Démo', label: 'Compte démo — quotas (50 lignes PIM · 20 assets DAM)', description: 'Plafonne les données importées : à réserver aux comptes de démonstration/prospects.' },
+  { key: DEMO_PERMISSION, module: 'Démo', label: 'Compte démo — quotas de données', description: 'Plafonne les données importées (limites éditables ci-dessus) : à réserver aux comptes de démonstration/prospects.' },
 ]
 
 export const ALL_PERMISSION_KEYS: string[] = PERMISSIONS.map((p) => p.key)
