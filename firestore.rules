@@ -340,11 +340,11 @@ service cloud.firestore {
           // userId == auth.uid au moment du commit du batch.
           !exists(/databases/$(database)/documents/pim_projects/$(projectId))
         );
-        // Création d'un produit (ajout d'une ligne) : idem + quota démo. Backstop
-        // best-effort — les rules ne comptent pas la sous-collection, l'enforcement
-        // fin repose sur le compteur users/{uid}.usage.pimRows tenu par le client
-        // (données isolées par userId : au pire le prospect ne pollue que son bac).
-        allow create: if (hasPermission('pim.edit') || hasPermission('pim.import') || hasPermission('pim.scrape')) && withinQuota('pimRows', 50) && (
+        // Création d'un produit (ajout d'une ligne) : permission + possession du parent,
+        // MAIS interdite en DIRECT aux comptes démo (!isDemo). Un démo ne peut ajouter des
+        // produits QUE via la Cloud Function pimSaveProducts (Admin SDK, hors rules), qui
+        // impose le quota users/{uid}.usage.pimRows → plafond serveur infalsifiable.
+        allow create: if (hasPermission('pim.edit') || hasPermission('pim.import') || hasPermission('pim.scrape')) && !isDemo() && (
           (exists(/databases/$(database)/documents/pim_projects/$(projectId)) &&
            get(/databases/$(database)/documents/pim_projects/$(projectId)).data.userId == request.auth.uid)
           ||

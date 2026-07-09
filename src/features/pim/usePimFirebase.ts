@@ -1,9 +1,15 @@
 import { doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
-import { db, auth } from '@/lib/firebase/config'
+import { httpsCallable } from 'firebase/functions'
+import { db, auth, functions } from '@/lib/firebase/config'
+import { useAccessStore } from '@/stores/access.store'
+import { DEMO_PERMISSION } from '@/features/access/permissions'
 import type { Product, Source } from './types'
 
 const COLLECTION = 'pim_projects'
 const PRODUCTS_SUB = 'products'
+
+/** Écriture serveur des produits (comptes démo) — quota infalsifiable, cf. CF pimSaveProducts. */
+const pimSaveProductsCF = httpsCallable<{ projectId: string; products: Product[] }, { count: number }>(functions, 'pimSaveProducts')
 
 function requireUser() {
   const u = auth.currentUser
@@ -28,9 +34,19 @@ function stripUndefined<T>(value: T): T {
   return value
 }
 
-/** Écrit un lot de products via writeBatch (max 500 par batch Firestore). */
+/** Écrit un lot de products via writeBatch (max 500 par batch Firestore).
+ *  Comptes démo : routé par la Cloud Function `pimSaveProducts` (quota serveur
+ *  infalsifiable — les rules refusent l'écriture directe des produits). Couvre
+ *  aussi bien l'import UI que le nœud workflow `save-pim` (tous deux passent ici). */
 export async function saveProducts(projectId: string, products: Product[]): Promise<void> {
   requireUser()
+  if (products.length === 0) return
+  const acc = useAccessStore.getState()
+  if (!acc.isOwner && acc.permissions.has(DEMO_PERMISSION)) {
+    // La sérialisation callable (JSON) retire déjà les `undefined` interdits par Firestore.
+    await pimSaveProductsCF({ projectId, products })
+    return
+  }
   const chunks: Product[][] = []
   for (let i = 0; i < products.length; i += 400) chunks.push(products.slice(i, i + 400))
   for (const chunk of chunks) {

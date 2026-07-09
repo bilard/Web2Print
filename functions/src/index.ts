@@ -22,6 +22,9 @@ export { imageProxy } from './imageProxy'
 // --- DAM : upload serveur d'une image vers Drive (centralisation, sans base64 client) ---
 export { damUpload } from './dam/damUpload'
 
+// --- PIM : écriture serveur des produits pour comptes démo (quota infalsifiable) ---
+export { pimSaveProducts } from './pim/pimSaveProducts'
+
 // --- DAM : corbeille Drive des assets d'un produit supprimé ---
 export { damDelete } from './dam/damDelete'
 

@@ -10,35 +10,15 @@
 // Usage : httpsCallable(functions,'damUpload')({ url, fileName, folderName })
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { getApps, initializeApp } from 'firebase-admin/app'
-import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore'
+import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { getGoogleAccessToken } from '../google/serverAuth'
 import { ensureDamTarget } from './driveFolders'
+import { isDemoLimited, DEMO_DAM_LIMIT } from '../access/demo'
 
 if (!getApps().length) initializeApp()
 
 const FETCH_TIMEOUT_MS = 20_000
 const MAX_BYTES = 20 * 1024 * 1024 // 20 Mo : pas de base64 vers le client → on peut être large
-
-// ── Quota compte démo ──────────────────────────────────────────────────────
-// ⚠ Constantes dupliquées de src/features/access/permissions.ts (DEMO_PERMISSION /
-// DEMO_LIMITS.damAssets) et de firestore.rules — tenir les 3 en phase.
-const DEMO_PERMISSION = 'demo.view'
-const DAM_ASSET_LIMIT = 20
-const OWNER_EMAIL = 'ibs.studio@gmail.com'
-
-/** Le caller est-il un compte démo plafonné ? (owner/admin jamais limité). */
-async function isDemoLimited(db: Firestore, uid: string, email: string | null): Promise<boolean> {
-  if (email && email.toLowerCase() === OWNER_EMAIL) return false
-  const u = (await db.collection('users').doc(uid).get()).data() ?? {}
-  const grants: string[] = Array.isArray(u.accessGrants) ? u.accessGrants : []
-  const revokes: string[] = Array.isArray(u.accessRevokes) ? u.accessRevokes : []
-  if (revokes.includes(DEMO_PERMISSION)) return false
-  if (grants.includes(DEMO_PERMISSION)) return true
-  const roleId = typeof u.accessRoleId === 'string' ? u.accessRoleId : ''
-  if (!roleId) return false
-  const perms = (await db.collection('roles').doc(roleId).get()).data()?.permissions
-  return Array.isArray(perms) && perms.includes(DEMO_PERMISSION)
-}
 
 const BLOCKED_HOST_PATTERNS: RegExp[] = [
   /^localhost$/i, /^127\./, /^10\./, /^192\.168\./,
@@ -88,7 +68,7 @@ export const damUpload = onCall(
     const usageRef = db.collection('users').doc(request.auth.uid)
     if (demo) {
       const used = ((await usageRef.get()).data()?.usage?.damAssets as number | undefined) ?? 0
-      if (used >= DAM_ASSET_LIMIT) throw new HttpsError('resource-exhausted', `Limite démo atteinte : ${DAM_ASSET_LIMIT} assets DAM maximum.`)
+      if (used >= DEMO_DAM_LIMIT) throw new HttpsError('resource-exhausted', `Limite démo atteinte : ${DEMO_DAM_LIMIT} assets DAM maximum.`)
     }
 
     const token = await getGoogleAccessToken(request.auth.uid)
