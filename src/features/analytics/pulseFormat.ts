@@ -48,6 +48,8 @@ export interface TrendPoint {
   label: string
   visitors: number
   pageViews: number
+  /** Cumul des connexions (events) jusqu'à ce point : monte jusqu'au total de la période. */
+  connections: number
 }
 
 const HOUR = 3_600_000
@@ -64,16 +66,17 @@ export function pulseTrendSeries(events: AnalyticsEvent[], fromMs: number, toMs:
       buckets[i].pv += 1
       buckets[i].vids.add(e.vid)
     }
-    return buckets.map((b, i) => ({
-      label: `${new Date(start + i * HOUR).getHours()}h`,
-      visitors: b.vids.size,
-      pageViews: b.pv,
-    }))
+    let run = 0
+    return buckets.map((b, i) => {
+      run += b.pv
+      return { label: `${new Date(start + i * HOUR).getHours()}h`, visitors: b.vids.size, pageViews: b.pv, connections: run }
+    })
   }
   return timeSeries(events, fromMs, toMs).map((d) => ({
     label: parseDayKey(d.day).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
     visitors: d.visitors,
     pageViews: d.pageViews,
+    connections: d.connections,
   }))
 }
 
