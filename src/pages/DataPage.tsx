@@ -51,7 +51,8 @@ const ColumnImageGenModal = lazy(() =>
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useRenameTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
 import { hasTaxoNav, buildTaxoNavPredicate } from '@/features/excel/taxoNavSelection'
-import { useCan } from '@/features/access/useAccess'
+import { useCan, useQuota } from '@/features/access/useAccess'
+import { DemoQuotaBanner } from '@/features/access/DemoQuotaBanner'
 import { EasyCatalogExportModal } from '@/features/easycatalog/EasyCatalogExportModal'
 import { OptionHelp } from '@/components/shared/OptionHelp'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
@@ -75,6 +76,19 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const canCreate = useCan('pim.create')
   const canImport = useCan('pim.import')
   const canScrape = useCan('pim.scrape')
+  const quota = useQuota()
+  // Quota démo plein → on bloque les actions qui AJOUTENT de la donnée (import/scrape = lignes
+  // PIM ; Visuels IA = assets DAM). L'IA complétion (remplit des cellules existantes) et
+  // « Créer vide » (0 ligne) ne consomment rien → jamais gatés.
+  //
+  // PIM : dans DataPage le compteur `usage.pimRows` est DORMANT (l'import/scrape écrivent
+  // `excel_data`, pas la CF pimSaveProducts). Le vrai plafond serveur est la rule
+  // `excel_data.totalRows <= demoLimit('pimRows')` PAR BASE. On aligne donc le garde-fou UI
+  // sur le nombre de lignes RÉEL de la base courante (auto-cicatrisant à la suppression :
+  // supprimer des lignes rebaisse le compte et réactive les boutons, sans compteur à gérer).
+  const pimRowsUsed = sheets.reduce((acc, s) => acc + s.rows.length, 0)
+  const pimReached = quota.isDemo && pimRowsUsed >= quota.pimRows.limit
+  const damQuotaFull = quota.isDemo && !quota.canAddDam(1)
 
   // PIM = source unique de vérité : après une rafale d'éditions, popup listant
   // les publications reliées (catalogues auto-synchro, fiches promo à rafraîchir).
@@ -617,10 +631,10 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             {canImport && (
             <button
               onClick={() => setImportModalOpen(true)}
-              disabled={!hasSelectedDb}
+              disabled={!hasSelectedDb || pimReached}
               data-tour="opt-pim-import"
               className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-white/5 disabled:hover:bg-white/5 disabled:text-white/25 disabled:cursor-not-allowed text-[#fff] text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
-              title={hasSelectedDb ? 'Importer un fichier' : 'Sélectionnez une base de données'}
+              title={pimReached ? 'Plafond démo atteint — supprimez des lignes pour importer à nouveau' : hasSelectedDb ? 'Importer un fichier' : 'Sélectionnez une base de données'}
             >
               <Upload className="w-4 h-4" />
               Importer un fichier
@@ -630,9 +644,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             {canScrape && (
             <button
               onClick={() => setScrapingOpen(true)}
-              disabled={!hasSelectedDb}
+              disabled={!hasSelectedDb || pimReached}
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
-              title={hasSelectedDb ? 'Scraper le web' : 'Sélectionnez une base de données'}
+              title={pimReached ? 'Plafond démo atteint — supprimez des lignes pour scraper à nouveau' : hasSelectedDb ? 'Scraper le web' : 'Sélectionnez une base de données'}
             >
               <Globe className="w-4 h-4" />
               Scraper le web
@@ -653,9 +667,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             {canScrape && (
             <button
               onClick={() => setAiImageGenOpen(true)}
-              disabled={!hasSelectedDb}
+              disabled={!hasSelectedDb || damQuotaFull}
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
-              title={hasSelectedDb ? 'Générer les visuels produits par IA (Nano Banana / Higgsfield) → DAM Drive' : 'Sélectionnez une base de données'}
+              title={damQuotaFull ? 'Plafond démo atteint — contactez-nous pour lever le plafond de visuels' : hasSelectedDb ? 'Générer les visuels produits par IA (Nano Banana / Higgsfield) → DAM Drive' : 'Sélectionnez une base de données'}
             >
               <ImagePlus className="w-4 h-4" />
               Visuels (IA)
@@ -674,6 +688,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             </button>
             )}
           </div>
+
+          {/* Alerte plafond démo (persistante tant que la limite PIM est pleine) */}
+          <DemoQuotaBanner reached={pimReached} limit={quota.pimRows.limit} field="pimRows" className="mx-4 mt-3" />
 
           {/* Breadcrumb PIM désactivé — pas pertinent pour le flux legacy */}
 

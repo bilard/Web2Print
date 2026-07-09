@@ -40,9 +40,11 @@ export const useAccessStore = create<AccessState>((set) => ({
   onboardingComplete: false,
   setAccess: (a) => set({ ...a, loading: false }),
   setLoading: (loading) => set({ loading }),
+  // Incrément optimiste du miroir local (compteur serveur = vérité). Borné à 0 par
+  // sûreté (le miroir ne descend jamais sous zéro).
   bumpUsage: (patch) => set((s) => ({ usage: {
-    pimRows: s.usage.pimRows + (patch.pimRows ?? 0),
-    damAssets: s.usage.damAssets + (patch.damAssets ?? 0),
+    pimRows: Math.max(0, s.usage.pimRows + (patch.pimRows ?? 0)),
+    damAssets: Math.max(0, s.usage.damAssets + (patch.damAssets ?? 0)),
   } })),
   setOnboardingComplete: (v) => set({ onboardingComplete: v }),
   reset: () => set({ permissions: new Set(), roleId: null, isOwner: false, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, loading: true, onboardingComplete: false }),

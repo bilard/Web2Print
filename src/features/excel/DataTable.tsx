@@ -15,7 +15,7 @@ import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { hasTaxoNav, buildTaxoNavPredicate, commonFilterDepth } from './taxoNavSelection'
 import { parseCellNumber as getNumericValue } from './numberParse'
 import type { ExcelColumn, ExcelRow, CellValue, FieldTypeId } from './types'
-import { useCan } from '@/features/access/useAccess'
+import { useCan, useQuota } from '@/features/access/useAccess'
 import { useThemeStore } from '@/stores/theme.store'
 import { rowCompleteness, completenessTone } from './completeness'
 import { cellFreshness } from './fieldFreshness'
@@ -451,7 +451,14 @@ export function DataTable() {
     setEditingCell(null)
   }
 
+  // Quota démo : ajouter une ligne au-delà du plafond ferait échouer l'autosave
+  // `excel_data` (rule `totalRows <= demoLimit('pimRows')`) → on bloque en amont.
+  // Plafond PAR base = somme des lignes de toutes les feuilles (cf. saveToFirebase).
+  const quota = useQuota()
+  const pimReached = quota.isDemo && sheets.reduce((acc, s) => acc + s.rows.length, 0) >= quota.pimRows.limit
+
   const handleAddRow = () => {
+    if (pimReached) return
     const newRow: Record<string, CellValue> = { _id: `row_${Date.now()}` }
     for (const col of sheet.columns) newRow[col.key] = null
     addRow(activeSheetIndex, newRow as any)
@@ -785,7 +792,9 @@ export function DataTable() {
       {dataViewMode === 'table' && (
       <button
         onClick={handleAddRow}
-        className="w-full flex items-center gap-2 px-4 py-2 text-xs text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors border-b border-white/5"
+        disabled={pimReached}
+        title={pimReached ? 'Plafond démo atteint — supprimez des lignes pour en ajouter' : undefined}
+        className="w-full flex items-center gap-2 px-4 py-2 text-xs text-white/30 hover:text-white/60 hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors border-b border-white/5"
       >
         <Plus className="w-3.5 h-3.5" />
         Ajouter une ligne

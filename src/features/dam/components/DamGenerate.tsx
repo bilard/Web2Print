@@ -6,6 +6,7 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db, storage } from '../../../lib/firebase/config'
 import { useAuthStore } from '../../../stores/auth.store'
+import { useQuota } from '../../access/useAccess'
 import { useEditorStore } from '../../../stores/editor.store'
 import { useProjectStore } from '../../../stores/project.store'
 import { useUIStore } from '../../../stores/ui.store'
@@ -181,6 +182,10 @@ export function DamGenerate() {
   const setPendingDamInsert = useProjectStore((s) => s.setPendingDamInsert)
   const setDamPickerOpen = useUIStore((s) => s.setDamPickerOpen)
   const navigate = useNavigate()
+  const quota = useQuota()
+  // Quota démo d'assets DAM plein → la génération finirait par une sauvegarde refusée
+  // (dam_assets gaté serveur). On bloque en amont avec un message clair.
+  const damQuotaFull = quota.isDemo && !quota.canAddDam(1)
 
   const handleAddRefs = useCallback(async (files: FileList | File[]) => {
     const arr = Array.from(files)
@@ -712,7 +717,8 @@ export function DamGenerate() {
         {/* Generate button */}
         <button
           onClick={handleGenerate}
-          disabled={!prompt.trim() || generating}
+          disabled={!prompt.trim() || generating || damQuotaFull}
+          title={damQuotaFull ? 'Plafond démo atteint — contactez-nous pour lever le plafond de visuels' : undefined}
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-500 text-[#fff] text-sm font-medium hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition mt-2"
         >
           {generating ? (

@@ -14,7 +14,12 @@ import { DamLightbox } from './DamLightbox'
 import { GDriveConnect } from '../../gdrive/GDriveConnect'
 import { GDrivePanel } from '../../gdrive/GDrivePanel'
 import { UserAnimationsList } from '../../video/UserAnimationsList'
-import { useCan } from '../../access/useAccess'
+import { useCan, useQuota } from '../../access/useAccess'
+import { DemoQuotaBanner } from '../../access/DemoQuotaBanner'
+
+// Onglets où le quota d'assets DAM possédés a du sens (on exclut « Stock » = banque
+// Adobe non possédée, et « videos » = animations HTML hors compteur images).
+const OWNED_ASSET_TABS = new Set(['my-images', 'favorites', 'collections', 'recent', 'projects', 'generate', 'gdrive'])
 
 const TAB_TITLES: Record<string, string> = {
   stock: 'Banque d\'images',
@@ -39,6 +44,9 @@ export function DamPage() {
   const canGenerate = useCan('dam.generate')
   const canAnimations = useCan('dam.animations')
   const canGdrive = useCan('dam.gdrive')
+  // DAM : le compteur `usage.damAssets` EST mû côté serveur (CF damUpload) → source fiable.
+  const quota = useQuota()
+  const damReached = quota.isDemo && quota.damAssets.remaining <= 0
 
   return (
     <div className="flex h-full bg-background overflow-hidden">
@@ -58,6 +66,10 @@ export function DamPage() {
               </span>
             )}
           </div>
+        )}
+
+        {OWNED_ASSET_TABS.has(activeTab) && (
+          <DemoQuotaBanner reached={damReached} limit={quota.damAssets.limit} field="damAssets" className="mx-6 mt-4" />
         )}
 
         {activeTab === 'stock' && <DamImageGrid />}
