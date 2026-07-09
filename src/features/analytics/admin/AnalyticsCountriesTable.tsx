@@ -14,17 +14,19 @@ interface Props {
   /** Pays sélectionné (toggle) — synchronisé avec la carte du monde. */
   selected?: string | null
   onSelect?: (country: string | null) => void
+  /** Classes de layout (ex. col-span) injectées par le conteneur parent. */
+  className?: string
 }
 
 /**
  * Carte « Pays » : villes regroupées par pays (pays triés par visites décroissantes),
  * en-tête pays cliquable → carte du monde, villes détaillées dessous.
  */
-export function AnalyticsCountriesTable({ events, selected, onSelect }: Props) {
+export function AnalyticsCountriesTable({ events, selected, onSelect, className }: Props) {
   const groups = countryGroupStats(events)
   const maxCountry = groups[0]?.count ?? 1
   return (
-    <div className="bg-surface rounded-lg p-4">
+    <div className={`bg-surface rounded-lg p-4${className ? ` ${className}` : ''}`}>
       <div className="text-white/70 text-sm font-medium mb-3">
         Pays
         <span className="text-white/35 font-normal ml-2">villes groupées · visites · dernière visite</span>

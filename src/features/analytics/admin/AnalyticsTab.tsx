@@ -187,8 +187,8 @@ export function AnalyticsTab() {
               <Suspense fallback={<div className="bg-surface rounded-lg h-48 animate-pulse" />}>
                 <AnalyticsWorldMap events={events} selectedCountry={country} onSelectCountry={setCountry} />
               </Suspense>
-              {/* Synthèses : 1 panneau par colonne, réparties sur toute la largeur. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
+              {/* Synthèses : grille sur 5 colonnes (xl) — le panneau « Pays » en occupe 2. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 items-start">
                 <AnalyticsTopLists events={events} selectedCountry={country} onSelectCountry={setCountry} />
                 <AnalyticsUsers events={events} />
               </div>

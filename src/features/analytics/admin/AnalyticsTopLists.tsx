@@ -58,7 +58,8 @@ export function AnalyticsTopLists({ events, selectedCountry, onSelectCountry }: 
     <>
       <List title="Pages consultées" rows={pages} />
       <List title="Sources de trafic" rows={topSourceCategories(events, 8)} />
-      <AnalyticsCountriesTable events={events} onSelect={onSelectCountry} selected={selectedCountry} />
+      {/* Panneau le plus dense (villes groupées) → 2 colonnes sur grand écran. */}
+      <AnalyticsCountriesTable events={events} onSelect={onSelectCountry} selected={selectedCountry} className="xl:col-span-2" />
     </>
   )
 }
