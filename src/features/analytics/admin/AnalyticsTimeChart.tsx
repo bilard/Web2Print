@@ -12,6 +12,7 @@ import {
   type TooltipItem,
 } from 'chart.js'
 import { useThemeStore } from '@/stores/theme.store'
+import { parseDayKey } from '../metrics'
 
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler)
 
@@ -26,18 +27,13 @@ const fullFmt = new Intl.DateTimeFormat('fr-FR', {
   month: 'long',
   year: 'numeric',
 })
-// Parse « YYYY-MM-DD » en date locale (évite le décalage d'un jour de new Date(str) en UTC).
-function toDate(day: string) {
-  const [y, m, d] = day.split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
 
 export function AnalyticsTimeChart({ series }: Props) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.55)'
   const data = {
-    labels: series.map((p) => axisFmt.format(toDate(p.day))),
+    labels: series.map((p) => axisFmt.format(parseDayKey(p.day))),
     datasets: [
       {
         label: 'Pages vues',
@@ -64,7 +60,7 @@ export function AnalyticsTimeChart({ series }: Props) {
       legend: { labels: { color: tick } },
       tooltip: {
         callbacks: {
-          title: (items: TooltipItem<'line'>[]) => fullFmt.format(toDate(series[items[0].dataIndex].day)),
+          title: (items: TooltipItem<'line'>[]) => fullFmt.format(parseDayKey(series[items[0].dataIndex].day)),
         },
       },
     },

@@ -33,7 +33,8 @@ const PERIODS: { key: PeriodKey; label: string }[] = [
 
 export function AnalyticsTab() {
   const { period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo, fromMs, toMs, prevFromMs, prevToMs, isLive } = usePeriod('90d')
-  const today = new Date().toISOString().slice(0, 10)
+  // Jour local « YYYY-MM-DD » (sv-SE ⇒ format ISO en heure locale, pas UTC) pour la borne max des sélecteurs.
+  const today = new Date().toLocaleDateString('sv-SE')
   const [filter, setFilter] = useState<EventFilter>(NO_FILTER)
   // Pays sélectionné dans la carte « Pays » → mis en évidence sur la carte du monde.
   const [country, setCountry] = useState<string | null>(null)

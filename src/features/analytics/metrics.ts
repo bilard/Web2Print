@@ -179,7 +179,18 @@ export function cityCounts(events: AnalyticsEvent[]): CityCount[] {
 }
 
 const DAY = 86_400_000
-const dayKey = (ms: number): string => new Date(ms).toISOString().slice(0, 10)
+const pad2 = (n: number): string => String(n).padStart(2, '0')
+// Jour LOCAL « YYYY-MM-DD » (et non UTC) : aligné sur l'affichage du journal (cf. AnalyticsRecent,
+// toLocaleString) pour qu'un événement compte le même jour dans le graphe et dans la liste.
+const dayKey = (ms: number): string => {
+  const d = new Date(ms)
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
+/** Parse un jour « YYYY-MM-DD » (produit par dayKey) en Date LOCALE, sans décalage UTC. */
+export const parseDayKey = (day: string): Date => {
+  const [y, m, d] = day.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
 
 export function timeSeries(
   events: AnalyticsEvent[],

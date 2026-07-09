@@ -1,4 +1,4 @@
-import { timeSeries, type AnalyticsEvent } from './metrics'
+import { timeSeries, parseDayKey, type AnalyticsEvent } from './metrics'
 
 export { countryName } from './metrics'
 
@@ -71,7 +71,7 @@ export function pulseTrendSeries(events: AnalyticsEvent[], fromMs: number, toMs:
     }))
   }
   return timeSeries(events, fromMs, toMs).map((d) => ({
-    label: new Date(d.day).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+    label: parseDayKey(d.day).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
     visitors: d.visitors,
     pageViews: d.pageViews,
   }))
