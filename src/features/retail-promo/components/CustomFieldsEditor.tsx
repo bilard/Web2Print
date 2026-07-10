@@ -23,6 +23,14 @@ function slugify(label: string, taken: Set<string>): string {
 export function CustomFieldsEditor({ customFields, columns, onChange }: Props) {
   const update = (idx: number, patch: Partial<CustomField>) =>
     onChange(customFields.map((cf, i) => (i === idx ? { ...cf, ...patch } : cf)))
+  // Choisir une colonne PRÉ-REMPLIT le nom (l'étiquette imprimée « Nom : valeur »)
+  // s'il est encore vide — l'utilisateur garde la main pour le personnaliser.
+  const pickColumn = (idx: number, key: string) => {
+    const label = customFields[idx].label.trim()
+      ? customFields[idx].label
+      : (columns.find((c) => c.key === key)?.label || key).trim()
+    update(idx, { column: key, label: key ? label : customFields[idx].label })
+  }
   const remove = (idx: number) => onChange(customFields.filter((_, i) => i !== idx))
   const add = () => {
     const taken = new Set(customFields.map((c) => c.id))
@@ -35,7 +43,7 @@ export function CustomFieldsEditor({ customFields, columns, onChange }: Props) {
         <div key={cf.id} className="flex items-center gap-2">
           <input value={cf.label} onChange={(e) => update(idx, { label: e.target.value })} placeholder="Nom du champ"
             className="w-32 px-2 py-1.5 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600" />
-          <select value={cf.column} onChange={(e) => update(idx, { column: e.target.value })}
+          <select value={cf.column} onChange={(e) => pickColumn(idx, e.target.value)}
             className="flex-1 px-2 py-1.5 rounded-md bg-well border border-white/10 text-white text-sm outline-none focus:border-[#6366f1] [&>option]:bg-neutral-900">
             <option value="">(choisir une colonne)</option>
             {columns.map((c) => <option key={c.key} value={c.key}>{c.label || c.key}</option>)}
