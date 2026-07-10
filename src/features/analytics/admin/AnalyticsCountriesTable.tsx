@@ -38,10 +38,10 @@ export function AnalyticsCountriesTable({ events, selected, onSelect, className 
       {groups.length === 0 ? (
         <div className="text-white/35 text-xs">Aucune donnée</div>
       ) : (
-        <div className="overflow-auto max-h-[70vh]">
+        <div className="overflow-x-auto">
         <table className="w-full text-xs border-collapse">
-          <thead className="sticky top-0 z-10 bg-surface">
-            <tr className="text-white/40 bg-surface">
+          <thead>
+            <tr className="text-white/40">
               <th className={TH}>Pays</th>
               <th className={TH}>Ville</th>
               <th className={`${TH} text-right`}>Visites</th>

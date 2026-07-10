@@ -70,8 +70,15 @@ export function AnalyticsTab() {
   const prevKpis = useMemo(() => computeKpis(filterEvents(prev.data ?? [], filter)), [prev.data, filter])
   const series = useMemo(() => timeSeries(events, fromMs, toMs), [events, fromMs, toMs])
 
+  const loading = cur.isLoading || prev.isLoading
+  const noData = !loading && allEvents.length === 0
+  const noFiltered = !loading && !noData && events.length === 0
+
   return (
     <div className="space-y-4">
+      {/* Bandeau de contrôle épinglé en haut de la zone défilante : période + filtres + KPI
+          restent visibles pendant qu'on fait défiler graphe, journal, carte… */}
+      <div className="sticky top-0 z-20 -mx-1 px-1 pt-0.5 pb-3 bg-background space-y-3 border-b border-white/[0.06]">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex gap-1">
@@ -121,6 +128,13 @@ export function AnalyticsTab() {
           </button>
         </div>
       </div>
+      {!loading && !noData && (
+        <AnalyticsFilters events={allEvents} filter={filter} onChange={setFilter} />
+      )}
+      {!loading && !noData && !noFiltered && (
+        <AnalyticsKpiCards cur={kpis} prev={prevKpis} />
+      )}
+      </div>
 
       <AlertDialog open={confirmClear} onOpenChange={(o) => !clear.isPending && setConfirmClear(o)}>
         <AlertDialogContent>
@@ -165,44 +179,38 @@ export function AnalyticsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      {cur.isLoading || prev.isLoading ? (
+      {loading ? (
         <div className="text-white/40 text-sm py-12 text-center">Chargement…</div>
-      ) : allEvents.length === 0 ? (
+      ) : noData ? (
         <div className="text-white/40 text-sm py-12 text-center">
           Aucune donnée de trafic sur cette période.
         </div>
+      ) : noFiltered ? (
+        <div className="text-white/40 text-sm py-12 text-center">
+          Aucune donnée pour ces filtres.
+        </div>
       ) : (
         <>
-          <AnalyticsFilters events={allEvents} filter={filter} onChange={setFilter} />
-          {events.length === 0 ? (
-            <div className="text-white/40 text-sm py-12 text-center">
-              Aucune donnée pour ces filtres.
-            </div>
-          ) : (
-            <>
-              <AnalyticsKpiCards cur={kpis} prev={prevKpis} />
-              <AnalyticsTimeChart series={series} />
-              {/* Journal détaillé : qui a vu quelle page et quand (élément principal). */}
-              <AnalyticsRecent events={events} />
-              {/* Carte du monde des connexions, par ville. */}
-              <Suspense fallback={<div className="bg-surface rounded-lg h-48 animate-pulse" />}>
-                <AnalyticsWorldMap events={events} selectedCountry={country} onSelectCountry={setCountry} />
-              </Suspense>
-              {/* Synthèses : grille sur 5 colonnes (xl) — le panneau « Pays » en occupe 2. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 items-start">
-                <AnalyticsTopLists events={events} selectedCountry={country} onSelectCountry={setCountry} />
-                <AnalyticsUsers events={events} />
-              </div>
-              {/* Attribution requise par la licence CC BY 4.0 de la base de géolocalisation. */}
-              <div className="text-white/25 text-[10px] pt-1">
-                Géolocalisation IP par{' '}
-                <a href="https://db-ip.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/40">
-                  DB-IP
-                </a>
-                {' '}(CC BY 4.0)
-              </div>
-            </>
-          )}
+          <AnalyticsTimeChart series={series} />
+          {/* Journal détaillé : qui a vu quelle page et quand (élément principal). */}
+          <AnalyticsRecent events={events} />
+          {/* Carte du monde des connexions, par ville. */}
+          <Suspense fallback={<div className="bg-surface rounded-lg h-48 animate-pulse" />}>
+            <AnalyticsWorldMap events={events} selectedCountry={country} onSelectCountry={setCountry} />
+          </Suspense>
+          {/* Synthèses : grille sur 5 colonnes (xl) — le panneau « Pays » en occupe 2. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 items-start">
+            <AnalyticsTopLists events={events} selectedCountry={country} onSelectCountry={setCountry} />
+            <AnalyticsUsers events={events} />
+          </div>
+          {/* Attribution requise par la licence CC BY 4.0 de la base de géolocalisation. */}
+          <div className="text-white/25 text-[10px] pt-1">
+            Géolocalisation IP par{' '}
+            <a href="https://db-ip.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/40">
+              DB-IP
+            </a>
+            {' '}(CC BY 4.0)
+          </div>
         </>
       )}
     </div>

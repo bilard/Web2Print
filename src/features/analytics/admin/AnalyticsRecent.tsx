@@ -220,13 +220,13 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
         </div>
       </div>
 
-      <div className="overflow-auto max-h-[70vh]">
+      <div className="overflow-x-auto">
         <table className="w-full text-xs border-collapse">
-          <thead className="sticky top-0 z-10 bg-surface">
-            <tr className="text-white/40 bg-surface">
+          <thead>
+            <tr className="text-white/40">
               <th className={TH}>Utilisateur</th><th className={TH}>Page</th><th className={TH}>Appareil</th><th className={TH}>Lieu</th><th className={`${TH} text-right whitespace-nowrap`}>Date &amp; heure</th>
             </tr>
-            <tr className="bg-surface">
+            <tr>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.user} onChange={(v) => set('user', v)} options={opts.users} allLabel="Tous" /></th>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.page} onChange={(v) => set('page', v)} options={opts.pages} allLabel="Toutes" /></th>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.device} onChange={(v) => set('device', v)} options={opts.devices} allLabel="Tous" /></th>
