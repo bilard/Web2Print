@@ -55,6 +55,56 @@ export function defaultPromoFieldMap(columns: MergeColumn[]): Partial<Record<Pro
   return map
 }
 
+/**
+ * Colonnes « détails produit » usuelles du retail, reconnues comme champs libres
+ * (zone « Détails » des fiches) — dans l'ordre d'affichage conventionnel.
+ * Même philosophie que GUESS : source unique, étendre ICI (cf. skill
+ * retail-card-conventions), jamais de dictionnaire local par module.
+ */
+const DETAIL_GUESS: string[][] = [
+  ['avantages', 'avantage', 'bénéfices', 'benefits', 'atouts', 'points forts'],
+  ['applications', 'application', 'usages', 'usage', 'utilisations', 'utilisation'],
+  ['installation', 'montage', 'pose'],
+  ['entretien', 'maintenance'],
+  ['garantie', 'warranty'],
+  ['matière', 'matiere', 'matériau', 'materiau', 'material'],
+  ['dimensions', 'dimension'],
+  ['poids', 'weight'],
+  ['composition'],
+  ['coloris', 'couleur', 'couleurs'],
+  ['normes', 'norme', 'certifications', 'certification'],
+  ['tva'],
+]
+
+/**
+ * Devine les champs libres depuis les colonnes non mappées : chaque colonne
+ * reconnue par DETAIL_GUESS devient une ligne « Étiquette : valeur » de la zone
+ * Détails. Pendant du devinage `defaultPromoFieldMap` — sans lui, seuls les
+ * champs ajoutés à la main s'affichaient et les colonnes riches (Avantages,
+ * Applications…) restaient invisibles sur les fiches.
+ */
+export function defaultCustomFields(
+  columns: MergeColumn[],
+  fieldMap: Partial<Record<PromoFieldKey, string>>,
+): CustomFieldMap {
+  const used = new Set(Object.values(fieldMap))
+  const takenIds = new Set<string>()
+  const out: CustomFieldMap = []
+  for (const needles of DETAIL_GUESS) {
+    const free = columns.filter((c) => !used.has(c.key) && !out.some((cf) => cf.column === c.key))
+    const key = matchColumn(free, needles)
+    if (!key) continue
+    const label = (columns.find((c) => c.key === key)?.label || key).trim()
+    const base = label.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'champ'
+    let id = base
+    for (let i = 2; takenIds.has(id); i++) id = `${base}-${i}`
+    takenIds.add(id)
+    out.push({ id, label, column: key })
+  }
+  return out
+}
+
 function str(row: MergeRow, columns: MergeColumn[], key?: string): string {
   if (!key) return ''
   const v = getRowValue(row, key, columns)
@@ -152,6 +202,19 @@ export function extractPromoFields(
  * du style, sinon l'aperçu et le catalogue divergent.
  * `hidden` = ids de champs masqués individuellement (« Éléments affichés »).
  */
+/**
+ * Une valeur LISTE À TIRETS/PUCES (« - A - B - C », sortie IA ou scraping) est
+ * illisible en ligne préfixée (« Avantages : - Double… ») : elle devient
+ * « A · B · C » — le format détails des fiches. Les tirets INTERNES des mots
+ * composés (Anti-corrosion) n'ont pas d'espaces autour et sont préservés.
+ */
+function normalizeDetailValue(v: string): string {
+  const t = v.trim()
+  if (!/^[-–—•*]\s/.test(t)) return t
+  return t.replace(/^[-–—•*]\s+/, '').split(/\s+[-–—•*]\s+/)
+    .map((s) => s.trim()).filter(Boolean).join(' · ')
+}
+
 export function buildDetailLines(customFields: CustomFieldMap, fields: PromoFields, hidden?: string[]): string[] {
   return [...new Set(customFields
     .filter((cf) => !hidden?.includes(cf.id))
@@ -159,7 +222,8 @@ export function buildDetailLines(customFields: CustomFieldMap, fields: PromoFiel
       const v = fields.extra?.[cf.id]
       if (!v || !v.trim()) return null
       const lab = (cf.label || cf.column || '').trim()
-      return lab ? `${lab} : ${v.trim()}` : v.trim()
+      const val = normalizeDetailValue(v)
+      return lab ? `${lab} : ${val}` : val
     })
     .filter((v): v is string => !!v))]
 }

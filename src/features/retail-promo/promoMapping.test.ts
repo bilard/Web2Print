@@ -1,5 +1,5 @@
 import { describe, it, test, expect } from 'vitest'
-import { defaultPromoFieldMap, extractPromoFields, computeRemiseLabel, displayedRemisePct } from './promoMapping'
+import { defaultPromoFieldMap, defaultCustomFields, buildDetailLines, extractPromoFields, computeRemiseLabel, displayedRemisePct } from './promoMapping'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFields } from './promoTypes'
 
@@ -95,6 +95,68 @@ describe('displayedRemisePct (colonne synthétique « Remise (%) »)', () => {
   it('null si le badge n’exprime pas un pourcentage', () => {
     expect(displayedRemisePct(F({ promoLabel: 'Lot 3+1' }))).toBeNull()
     expect(displayedRemisePct(F({}))).toBeNull()
+  })
+})
+
+describe('defaultCustomFields (devinage des champs libres « Détails »)', () => {
+  it('devine les colonnes détails usuelles du retail, dans l’ordre du dictionnaire', () => {
+    const columns: MergeColumn[] = [
+      { key: 'c_tva', label: 'TVA (%)', fieldType: 'number' },
+      { key: 'c_av', label: 'Avantages', fieldType: 'text' },
+      { key: 'c_app', label: 'Applications', fieldType: 'text' },
+      { key: 'c_inst', label: 'Installation', fieldType: 'text' },
+      { key: 'c_ent', label: 'Entretien', fieldType: 'text' },
+      { key: 'c_seo', label: 'SEO', fieldType: 'text' },
+    ]
+    const cfs = defaultCustomFields(columns, {})
+    expect(cfs.map((c) => c.column)).toEqual(['c_av', 'c_app', 'c_inst', 'c_ent', 'c_tva'])
+    expect(cfs.map((c) => c.label)).toEqual(['Avantages', 'Applications', 'Installation', 'Entretien', 'TVA (%)'])
+  })
+
+  it('exclut les colonnes déjà mappées sur un champ de fiche', () => {
+    const columns: MergeColumn[] = [
+      { key: 'c_av', label: 'Avantages', fieldType: 'text' },
+      { key: 'c_gar', label: 'Garantie', fieldType: 'text' },
+    ]
+    const cfs = defaultCustomFields(columns, { description: 'c_av' })
+    expect(cfs.map((c) => c.column)).toEqual(['c_gar'])
+  })
+
+  it('jamais deux champs sur la même colonne, ids uniques', () => {
+    const columns: MergeColumn[] = [
+      { key: 'c1', label: 'Matière', fieldType: 'text', aliases: ['material'] },
+    ]
+    const cfs = defaultCustomFields(columns, {})
+    expect(cfs).toHaveLength(1)
+    const ids = defaultCustomFields(
+      [{ key: 'a', label: 'Garantie', fieldType: 'text' }, { key: 'b', label: 'Garantie constructeur', fieldType: 'text' }], {})
+    expect(new Set(ids.map((c) => c.id)).size).toBe(ids.length)
+  })
+
+  it('aucune colonne reconnue → liste vide', () => {
+    expect(defaultCustomFields([{ key: 'x', label: 'SEO', fieldType: 'text' }], {})).toEqual([])
+  })
+})
+
+describe('buildDetailLines — normalisation des valeurs liste à tirets', () => {
+  const cfs = [{ id: 'av', label: 'Avantages', column: 'c_av' }]
+  const F = (v: string) => ({ extra: { av: v } }) as unknown as Parameters<typeof buildDetailLines>[1]
+
+  it('« - A - B - C » (export IA/scraping) → « A · B · C »', () => {
+    expect(buildDetailLines(cfs, F('- Double expansion - Charge 35kg - Anti-corrosion - 20 pièces + vis - Idéal usage courant')))
+      .toEqual(['Avantages : Double expansion · Charge 35kg · Anti-corrosion · 20 pièces + vis · Idéal usage courant'])
+  })
+
+  it('les tirets INTERNES des mots composés sont préservés (Anti-corrosion)', () => {
+    expect(buildDetailLines(cfs, F('- Anti-corrosion - Semi-rigide'))).toEqual(['Avantages : Anti-corrosion · Semi-rigide'])
+  })
+
+  it('liste à puces multi-lignes → même normalisation', () => {
+    expect(buildDetailLines(cfs, F('• Léger\n• Pliable'))).toEqual(['Avantages : Léger · Pliable'])
+  })
+
+  it('valeur sans tiret de tête inchangée', () => {
+    expect(buildDetailLines(cfs, F('Acier zingué'))).toEqual(['Avantages : Acier zingué'])
   })
 })
 

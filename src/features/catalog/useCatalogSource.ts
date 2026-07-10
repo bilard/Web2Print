@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { auth } from '@/lib/firebase/config'
 import { listPimProjects, loadPimMergeData, makePimSourceRef, type PimProjectSummary } from '@/features/merge/pimSource'
 import { listExcelDatasets, loadExcelMergeData, makeExcelSourceRef, type SavedDataset } from '@/features/merge/excelSource'
-import { defaultPromoFieldMap } from '@/features/retail-promo/promoMapping'
+import { defaultPromoFieldMap, defaultCustomFields } from '@/features/retail-promo/promoMapping'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import { guessLevelKeys } from './catalogTree'
 import { useCatalogStore } from '@/stores/catalog.store'
@@ -16,9 +16,10 @@ function applyConnectedSource(sourceRef: DataSourceRef, columns: MergeColumn[], 
   const s = useCatalogStore.getState()
   s.setSource(sourceRef, columns, rows)
   s.setSelectedRowIds(rows.map((r) => r._id))
-  s.setFieldMap(defaultPromoFieldMap(columns))
+  const fieldMap = defaultPromoFieldMap(columns)
+  s.setFieldMap(fieldMap)
   useCatalogStore.setState({ fieldMapOverrides: {} })
-  s.setCustomFields([])
+  s.setCustomFields(defaultCustomFields(columns, fieldMap))
   s.setLevelKeys(guessLevelKeys(columns))
   toast.success(`${rows.length} produits chargés`)
 }

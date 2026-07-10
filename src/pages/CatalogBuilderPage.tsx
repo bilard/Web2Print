@@ -9,7 +9,7 @@ import { useCatalogStore } from '@/stores/catalog.store'
 import { loadCatalog } from '@/features/catalog/catalogsApi'
 import { isPimSource, loadPimMergeData, pimProjectIdFromSource } from '@/features/merge/pimSource'
 import { loadExcelMergeData } from '@/features/merge/excelSource'
-import { defaultPromoFieldMap } from '@/features/retail-promo/promoMapping'
+import { defaultPromoFieldMap, defaultCustomFields } from '@/features/retail-promo/promoMapping'
 import { ensureUserFontsLoaded } from '@/features/fonts/useUserFonts'
 import { useCatalogAutosave } from '@/features/catalog/useCatalogAutosave'
 import { CatalogStepsNav } from '@/features/catalog/components/CatalogStepsNav'
@@ -64,6 +64,11 @@ export default function CatalogBuilderPage() {
       if (cur.rawColumns.length > 0) {
         const eff = { ...defaultPromoFieldMap(cur.rawColumns), ...cur.fieldMapOverrides }
         if (JSON.stringify(eff) !== JSON.stringify(cur.fieldMap)) cur.setFieldMap(eff)
+        // Champs libres jamais configurés (catalogues antérieurs au devinage) :
+        // deviner aussi les colonnes détails (Avantages, Applications…). Une liste
+        // NON vide est la config de l'utilisateur — jamais retouchée (pour masquer
+        // sans supprimer : « Éléments affichés », hiddenDetails).
+        if (cur.customFields.length === 0) cur.setCustomFields(defaultCustomFields(cur.rawColumns, eff))
       }
       // Sans lignes rechargées, seule l'étape Source a du sens (source supprimée, hors ligne…).
       if (useCatalogStore.getState().rawRows.length === 0) useCatalogStore.getState().setStep('source')
