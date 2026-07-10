@@ -44,7 +44,7 @@ function flagEmoji(cc: string | null): string {
 }
 
 /** Pur : message d'ARRIVÉE d'un visiteur anonyme (un par session). */
-export function buildSessionText(i: {
+function buildSessionText(i: {
   area: string
   path: string
   device: string | null
@@ -63,7 +63,7 @@ export function buildSessionText(i: {
 }
 
 /** Pur : ligne de LOG LIVE d'un utilisateur connecté (une par page/section). */
-export function buildActivityText(i: {
+function buildActivityText(i: {
   name: string
   area: string
   path: string

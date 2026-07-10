@@ -19,7 +19,7 @@ export const GRID_DIMS: Record<CatalogGrid, [number, number]> = { 1: [1, 1], 2: 
  *  panel = éditorial (bande latérale sombre + grand panneau accent chevauchant
  *  la photo + bandeau infos bas, façon maquettes print/Dribbble) ·
  *  poster = photo pleine page, titre GÉANT centré, minimal. */
-export type CatalogCoverLayout = 'classic' | 'panel' | 'poster'
+type CatalogCoverLayout = 'classic' | 'panel' | 'poster'
 
 export interface CatalogFormat { widthMm: number; heightMm: number }
 
@@ -90,7 +90,7 @@ export interface CardBox { x: number; y: number; w?: number; h?: number; sc?: nu
 /** GRAMMAIRE DE FORMES des fiches (moteur créatif v2) : descripteurs remplis par
  *  la Vision depuis la source d'inspiration, rendus par du CSS DÉTERMINISTE —
  *  l'IA ne génère jamais de CSS libre. Absent = gabarit historique. */
-export interface CardShape {
+interface CardShape {
   /** Coins des fiches : droits / arrondis / BISEAU (coin bas-droit coupé, façon flyer). */
   corner?: 'square' | 'rounded' | 'bevel'
   /** Pastille sous-famille : chip à ENCOCHE (coin coupé), bandeau, souligné, aucune forme. */
