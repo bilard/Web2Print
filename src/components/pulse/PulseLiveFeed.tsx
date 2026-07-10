@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Monitor, Smartphone, Tablet, Users } from 'lucide-react'
+import { ChevronDown, Monitor, Smartphone, Tablet, Users } from 'lucide-react'
 import { pageLabel, type AnalyticsEvent } from '@/features/analytics/metrics'
 import { countryName, flagEmoji, timeAgo } from '@/features/analytics/pulseFormat'
 import { useUsersMap } from '@/features/analytics/useUsersMap'
@@ -73,10 +73,10 @@ function groupByCountry(events: AnalyticsEvent[]): CountrySub[] {
     .sort((a, b) => b.events.length - a.events.length || b.lastTs - a.lastTs)
 }
 
-function GroupHeader({ g, now }: { g: Group; now: number }) {
+function GroupHeader({ g, now, collapsed, onToggle }: { g: Group; now: number; collapsed: boolean; onToggle: () => void }) {
   const initial = g.label.trim().charAt(0).toUpperCase() || '?'
   return (
-    <div className="flex items-center gap-2.5 pb-1 pt-1">
+    <button type="button" onClick={onToggle} className="pulse-tap flex w-full items-center gap-2.5 pb-1 pt-1 text-left">
       <span
         className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-semibold"
         style={{
@@ -90,16 +90,19 @@ function GroupHeader({ g, now }: { g: Group; now: number }) {
       <span className="text-[11px] tabular-nums" style={{ color: 'var(--pulse-text-3)' }}>
         {g.events.length} · {timeAgo(g.lastTs, now)}
       </span>
-    </div>
+      <ChevronDown size={15} className={`shrink-0 transition-transform ${collapsed ? '-rotate-90' : ''}`} style={{ color: 'var(--pulse-text-3)' }} />
+    </button>
   )
 }
 
 /** Bloc « Visiteurs anonymes » : consultations sous-groupées par pays. */
 function AnonGroupBlock({ g, now, expanded }: { g: Group; now: number; expanded: boolean }) {
+  const [collapsed, setCollapsed] = useState(false)
   const byCountry = groupByCountry(g.events)
   return (
     <div className="py-1.5">
-      <GroupHeader g={g} now={now} />
+      <GroupHeader g={g} now={now} collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+      {!collapsed && (
       <div className="space-y-2 pl-[34px]">
         {byCountry.map((c) => {
           const shown = expanded ? c.events : c.events.slice(0, PER_GROUP)
@@ -125,26 +128,32 @@ function AnonGroupBlock({ g, now, expanded }: { g: Group; now: number; expanded:
           )
         })}
       </div>
+      )}
     </div>
   )
 }
 
 function GroupBlock({ g, now, expanded }: { g: Group; now: number; expanded: boolean }) {
+  const [collapsed, setCollapsed] = useState(false)
   if (!g.isNamed) return <AnonGroupBlock g={g} now={now} expanded={expanded} />
   const shown = expanded ? g.events : g.events.slice(0, PER_GROUP)
   const rest = g.events.length - shown.length
   return (
     <div className="py-1.5">
-      <GroupHeader g={g} now={now} />
-      <ul className="divide-y divide-[color:var(--pulse-hair)] pl-[34px]">
-        {shown.map((e, i) => (
-          <Row key={`${e.vid}-${e.ts}-${i}`} e={e} now={now} />
-        ))}
-      </ul>
-      {rest > 0 && (
-        <p className="py-1.5 pl-[34px] text-[12px]" style={{ color: 'var(--pulse-text-3)' }}>
-          +{rest} autre{rest > 1 ? 's' : ''}
-        </p>
+      <GroupHeader g={g} now={now} collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+      {!collapsed && (
+        <>
+          <ul className="divide-y divide-[color:var(--pulse-hair)] pl-[34px]">
+            {shown.map((e, i) => (
+              <Row key={`${e.vid}-${e.ts}-${i}`} e={e} now={now} />
+            ))}
+          </ul>
+          {rest > 0 && (
+            <p className="py-1.5 pl-[34px] text-[12px]" style={{ color: 'var(--pulse-text-3)' }}>
+              +{rest} autre{rest > 1 ? 's' : ''}
+            </p>
+          )}
+        </>
       )}
     </div>
   )

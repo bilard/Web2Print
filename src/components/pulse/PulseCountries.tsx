@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { countryGroupStats, type AnalyticsEvent } from '@/features/analytics/metrics'
 import { countryName, flagEmoji } from '@/features/analytics/pulseFormat'
 
@@ -10,6 +11,8 @@ const shortDate = (ts: number) =>
 export function PulseCountries({ events }: { events: AnalyticsEvent[] }) {
   const groups = useMemo(() => countryGroupStats(events), [events])
   const [expanded, setExpanded] = useState(false)
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+  const toggle = (key: string) => setCollapsed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })
   const maxCountry = groups[0]?.count ?? 1
   const shown = expanded ? groups : groups.slice(0, COLLAPSED)
 
@@ -26,10 +29,12 @@ export function PulseCountries({ events }: { events: AnalyticsEvent[] }) {
           <ul className="divide-y divide-[color:var(--pulse-hair)]">
             {shown.map((g, i) => {
               const maxCity = g.cities[0]?.count ?? 1
+              const ckey = g.country ?? '__none__'
+              const isCollapsed = collapsed.has(ckey)
               return (
                 <li key={`${g.country}-${i}`} className="py-2.5">
-                  {/* En-tête pays : drapeau · nom · total · barre relative aux autres pays */}
-                  <div className="flex items-center gap-2.5">
+                  {/* En-tête pays cliquable : drapeau · nom · total · barre + chevron repli */}
+                  <button type="button" onClick={() => toggle(ckey)} className="pulse-tap flex w-full items-center gap-2.5 text-left">
                     <span className="text-[18px] leading-none" aria-hidden>{flagEmoji(g.country)}</span>
                     <span className="min-w-0 flex-1 truncate text-[14px] font-semibold" title={countryName(g.country) ?? undefined}>
                       {countryName(g.country) ?? '—'}
@@ -38,11 +43,13 @@ export function PulseCountries({ events }: { events: AnalyticsEvent[] }) {
                       <span className="pulse-tnum text-[14px] font-semibold">{g.count}</span>
                       <span className="text-[11px] tabular-nums" style={{ color: 'var(--pulse-text-3)' }}>{shortDate(g.lastTs)}</span>
                     </div>
-                  </div>
+                    <ChevronDown size={16} className={`shrink-0 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} style={{ color: 'var(--pulse-text-3)' }} />
+                  </button>
                   <div className="mt-1.5 h-1 overflow-hidden rounded-full" style={{ background: 'var(--pulse-surface-2)' }}>
                     <div className="h-full rounded-full" style={{ width: `${Math.max(4, (g.count / maxCountry) * 100)}%`, background: 'var(--pulse-accent)' }} />
                   </div>
                   {/* Villes du pays, indentées sous le drapeau */}
+                  {!isCollapsed && (
                   <ul className="mt-2 space-y-1.5 pl-[28px]">
                     {g.cities.map((c, j) => (
                       <li key={`${c.city}-${j}`} className="flex items-center gap-2.5">
@@ -59,6 +66,7 @@ export function PulseCountries({ events }: { events: AnalyticsEvent[] }) {
                       </li>
                     ))}
                   </ul>
+                  )}
                 </li>
               )
             })}

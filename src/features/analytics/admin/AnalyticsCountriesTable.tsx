@@ -1,4 +1,6 @@
 // src/features/analytics/admin/AnalyticsCountriesTable.tsx
+import { useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { countryGroupStats, countryName, type AnalyticsEvent } from '../metrics'
 
 const TH = 'font-medium text-left py-1.5 px-2 border-b border-white/10'
@@ -25,6 +27,8 @@ interface Props {
 export function AnalyticsCountriesTable({ events, selected, onSelect, className }: Props) {
   const groups = countryGroupStats(events)
   const maxCountry = groups[0]?.count ?? 1
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+  const toggle = (key: string) => setCollapsed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })
   return (
     <div className={`bg-surface rounded-lg p-4${className ? ` ${className}` : ''}`}>
       <div className="text-white/70 text-sm font-medium mb-3">
@@ -34,10 +38,10 @@ export function AnalyticsCountriesTable({ events, selected, onSelect, className 
       {groups.length === 0 ? (
         <div className="text-white/35 text-xs">Aucune donnée</div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[70vh]">
         <table className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="text-white/40">
+          <thead className="sticky top-0 z-10 bg-surface">
+            <tr className="text-white/40 bg-surface">
               <th className={TH}>Pays</th>
               <th className={TH}>Ville</th>
               <th className={`${TH} text-right`}>Visites</th>
@@ -48,6 +52,8 @@ export function AnalyticsCountriesTable({ events, selected, onSelect, className 
               const maxCity = g.cities[0]?.count ?? 1
               const active = selected != null && selected === g.country
               const click = onSelect && g.country ? () => onSelect(active ? null : g.country) : undefined
+              const ckey = g.country ?? '__none__'
+              const isCollapsed = collapsed.has(ckey)
               return (
                 <tr
                   key={`${g.country}`}
@@ -57,13 +63,26 @@ export function AnalyticsCountriesTable({ events, selected, onSelect, className 
                   title={click ? 'Voir sur la carte' : undefined}
                   className={`transition-colors ${click ? 'cursor-pointer hover:bg-white/[0.04]' : ''} ${active ? 'bg-indigo-500/15' : ''}`}
                 >
-                  {/* En-tête pays : nom en gras + total + barre relative aux autres pays */}
+                  {/* En-tête pays : chevron repli + nom en gras + total + barre relative aux autres pays */}
                   <td className={`${TD} align-top text-white font-semibold whitespace-nowrap`} title={g.country ?? undefined}>
-                    {countryName(g.country) ?? '—'}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggle(ckey) }}
+                        aria-label={isCollapsed ? 'Déplier les villes' : 'Replier les villes'}
+                        className="p-0.5 -ml-1 rounded text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                      >
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+                      </button>
+                      {countryName(g.country) ?? '—'}
+                    </div>
                   </td>
                   {/* Villes du pays, empilées, triées par visites décroissantes.
                       Grille 3 colonnes → noms, barres et compteurs alignés verticalement. */}
                   <td className={`${TD} text-white/60`}>
+                    {isCollapsed ? (
+                      <span className="text-white/35">{g.cities.length} ville{g.cities.length > 1 ? 's' : ''}</span>
+                    ) : (
                     <div className="space-y-1">
                       {g.cities.map((c, j) => (
                         <div key={`${c.city}-${j}`} className="grid grid-cols-[minmax(0,1fr)_48px_24px] items-center gap-2">
@@ -73,6 +92,7 @@ export function AnalyticsCountriesTable({ events, selected, onSelect, className 
                         </div>
                       ))}
                     </div>
+                    )}
                   </td>
                   {/* Total pays + barre + dernière visite */}
                   <td className={`${TD} align-top text-right`}>

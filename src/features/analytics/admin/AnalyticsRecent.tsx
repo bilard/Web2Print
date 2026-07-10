@@ -1,6 +1,6 @@
 // src/features/analytics/admin/AnalyticsRecent.tsx
 import { Fragment, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Users, List } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Users, List } from 'lucide-react'
 import type { AnalyticsEvent } from '../metrics'
 import { recentEvents, pageLabel, countryName } from '../metrics'
 import { useUsersMap } from '../useUsersMap'
@@ -83,17 +83,21 @@ function groupByCountry(events: AnalyticsEvent[]): CountrySub[] {
 /** Bloc « Anonyme » : consultations sous-groupées par pays (chaque pays repliable). */
 function AnonGroupSection({ g, userName }: { g: Group; userName: (uid: string | null) => string }) {
   const [open, setOpen] = useState<Set<string>>(() => new Set())
+  const [collapsed, setCollapsed] = useState(false)
   const byCountry = useMemo(() => groupByCountry(g.events), [g.events])
   const toggle = (code: string) => setOpen((s) => { const n = new Set(s); if (n.has(code)) n.delete(code); else n.add(code); return n })
   return (
     <Fragment>
-      <tr className="bg-white/[0.03]">
+      <tr className="bg-white/[0.03] cursor-pointer select-none hover:bg-white/[0.05]" onClick={() => setCollapsed((v) => !v)}>
         <td colSpan={5} className="px-2 py-1.5 border-b border-white/10">
-          <span className="text-white/45 italic">{g.label}</span>
-          <span className="text-white/35 ml-2">{g.events.length} consultation{g.events.length > 1 ? 's' : ''} · {byCountry.length} pays · dernière {relDay(g.lastTs)}</span>
+          <div className="flex items-center gap-1.5">
+            <ChevronDown className={`w-3.5 h-3.5 text-white/40 shrink-0 transition-transform ${collapsed ? '-rotate-90' : ''}`} />
+            <span className="text-white/45 italic">{g.label}</span>
+            <span className="text-white/35">{g.events.length} consultation{g.events.length > 1 ? 's' : ''} · {byCountry.length} pays · dernière {relDay(g.lastTs)}</span>
+          </div>
         </td>
       </tr>
-      {byCountry.map((c) => {
+      {!collapsed && byCountry.map((c) => {
         const isOpen = open.has(c.code)
         const slice = isOpen ? c.events : c.events.slice(0, ANON_COUNTRY_CAP)
         const hasMore = c.events.length > ANON_COUNTRY_CAP
@@ -125,20 +129,22 @@ function AnonGroupSection({ g, userName }: { g: Group; userName: (uid: string | 
 /** Bloc d'un utilisateur dans le journal groupé : en-tête + ses consultations paginées. */
 function GroupSection({ g, userName }: { g: Group; userName: (uid: string | null) => string }) {
   const [gp, setGp] = useState(0)
+  const [collapsed, setCollapsed] = useState(false)
   const pages = Math.max(1, Math.ceil(g.events.length / GROUP_PAGE))
   const cur = Math.min(gp, pages - 1)
   const slice = g.events.slice(cur * GROUP_PAGE, cur * GROUP_PAGE + GROUP_PAGE)
   return (
     <Fragment>
-      <tr className="bg-white/[0.03]">
+      <tr className="bg-white/[0.03] cursor-pointer select-none hover:bg-white/[0.05]" onClick={() => setCollapsed((v) => !v)}>
         <td colSpan={5} className="px-2 py-1.5 border-b border-white/10">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div>
+            <div className="flex items-center gap-1.5">
+              <ChevronDown className={`w-3.5 h-3.5 text-white/40 shrink-0 transition-transform ${collapsed ? '-rotate-90' : ''}`} />
               <span className={g.isNamed ? 'text-white/85 font-medium' : 'text-white/45 italic'}>{g.label}</span>
-              <span className="text-white/35 ml-2">{g.events.length} consultation{g.events.length > 1 ? 's' : ''} · dernière {relDay(g.lastTs)}</span>
+              <span className="text-white/35">{g.events.length} consultation{g.events.length > 1 ? 's' : ''} · dernière {relDay(g.lastTs)}</span>
             </div>
-            {pages > 1 && (
-              <div className="flex items-center gap-1">
+            {!collapsed && pages > 1 && (
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 <button type="button" onClick={() => setGp(Math.max(0, cur - 1))} disabled={cur === 0} aria-label="Page précédente" className="p-0.5 rounded text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronLeft className="w-3.5 h-3.5" /></button>
                 <span className="text-white/40 text-[11px] tabular-nums">{cur + 1}/{pages}</span>
                 <button type="button" onClick={() => setGp(Math.min(pages - 1, cur + 1))} disabled={cur >= pages - 1} aria-label="Page suivante" className="p-0.5 rounded text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronRight className="w-3.5 h-3.5" /></button>
@@ -147,7 +153,7 @@ function GroupSection({ g, userName }: { g: Group; userName: (uid: string | null
           </div>
         </td>
       </tr>
-      {slice.map((e, i) => <EventRow key={`${g.key}-${e.vid}-${e.ts}-${i}`} e={e} showUser={false} userName={userName} />)}
+      {!collapsed && slice.map((e, i) => <EventRow key={`${g.key}-${e.vid}-${e.ts}-${i}`} e={e} showUser={false} userName={userName} />)}
     </Fragment>
   )
 }
@@ -214,13 +220,13 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-auto max-h-[70vh]">
         <table className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="text-white/40">
+          <thead className="sticky top-0 z-10 bg-surface">
+            <tr className="text-white/40 bg-surface">
               <th className={TH}>Utilisateur</th><th className={TH}>Page</th><th className={TH}>Appareil</th><th className={TH}>Lieu</th><th className={`${TH} text-right whitespace-nowrap`}>Date &amp; heure</th>
             </tr>
-            <tr>
+            <tr className="bg-surface">
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.user} onChange={(v) => set('user', v)} options={opts.users} allLabel="Tous" /></th>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.page} onChange={(v) => set('page', v)} options={opts.pages} allLabel="Toutes" /></th>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.device} onChange={(v) => set('device', v)} options={opts.devices} allLabel="Tous" /></th>
