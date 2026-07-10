@@ -1,9 +1,9 @@
 // src/features/analytics/usePeriod.ts
 import { useMemo, useState } from 'react'
 
-export type PeriodKey = '7d' | '30d' | '90d' | '12m' | 'custom'
+export type PeriodKey = 'today' | '7d' | '30d' | '90d' | '12m' | 'custom'
 const DAY = 86_400_000
-const SPAN: Record<Exclude<PeriodKey, 'custom'>, number> = {
+const SPAN: Record<Exclude<PeriodKey, 'today' | 'custom'>, number> = {
   '7d': 7 * DAY,
   '30d': 30 * DAY,
   '90d': 90 * DAY,
@@ -11,7 +11,9 @@ const SPAN: Record<Exclude<PeriodKey, 'custom'>, number> = {
 }
 
 /**
- * Fenêtre temporelle du dashboard analytics. Deux modes :
+ * Fenêtre temporelle du dashboard analytics. Trois modes :
+ * - `today` : depuis minuit (heure locale) jusqu'à maintenant, `isLive` = true ;
+ *   la période de comparaison = hier sur la même tranche horaire écoulée ;
  * - preset (`7d`…`12m`) : fenêtre glissante finissant maintenant, `isLive` = true
  *   (borne haute ouverte pour capter le direct) ;
  * - `custom` : plage fixe `customFrom`/`customTo` (dates `YYYY-MM-DD`), `isLive` = false.
@@ -32,6 +34,14 @@ export function usePeriod(initial: PeriodKey = '30d') {
       }
     }
     const toMs = Date.now()
+    if (period === 'today') {
+      const midnight = new Date()
+      midnight.setHours(0, 0, 0, 0)
+      const fromMs = midnight.getTime()
+      // Comparaison équitable : hier sur la même tranche horaire déjà écoulée aujourd'hui.
+      const span = Math.max(toMs - fromMs, 1)
+      return { fromMs, toMs, prevFromMs: fromMs - span, prevToMs: fromMs, isLive: true }
+    }
     const span = SPAN[period === 'custom' ? '30d' : period]
     return { fromMs: toMs - span, toMs, prevFromMs: toMs - 2 * span, prevToMs: toMs - span, isLive: true }
   }, [period, customFrom, customTo])

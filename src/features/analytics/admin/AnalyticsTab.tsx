@@ -24,6 +24,7 @@ import { AnalyticsUsers } from './AnalyticsUsers'
 import { AnalyticsFilters } from './AnalyticsFilters'
 
 const PERIODS: { key: PeriodKey; label: string }[] = [
+  { key: 'today', label: "Aujourd'hui" },
   { key: '7d', label: '7 j' },
   { key: '30d', label: '30 j' },
   { key: '90d', label: '90 j' },
@@ -68,7 +69,9 @@ export function AnalyticsTab() {
   const events = useMemo(() => filterEvents(allEvents, filter), [allEvents, filter])
   const kpis = useMemo(() => computeKpis(events), [events])
   const prevKpis = useMemo(() => computeKpis(filterEvents(prev.data ?? [], filter)), [prev.data, filter])
-  const series = useMemo(() => timeSeries(events, fromMs, toMs), [events, fromMs, toMs])
+  // « Aujourd'hui » : courbe par heure (une seule journée ⇒ un point unique en granularité jour).
+  const hourly = period === 'today'
+  const series = useMemo(() => timeSeries(events, fromMs, toMs, hourly), [events, fromMs, toMs, hourly])
 
   const loading = cur.isLoading || prev.isLoading
   const noData = !loading && allEvents.length === 0

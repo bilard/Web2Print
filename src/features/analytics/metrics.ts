@@ -186,21 +186,27 @@ const dayKey = (ms: number): string => {
   const d = new Date(ms)
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 }
-/** Parse un jour « YYYY-MM-DD » (produit par dayKey) en Date LOCALE, sans décalage UTC. */
+// Heure LOCALE « YYYY-MM-DDTHH » — granularité fine pour les périodes infra-journalières.
+const hourKey = (ms: number): string => `${dayKey(ms)}T${pad2(new Date(ms).getHours())}`
+/** Parse une clé « YYYY-MM-DD » ou « YYYY-MM-DDTHH » (dayKey/hourKey) en Date LOCALE, sans décalage UTC. */
 export const parseDayKey = (day: string): Date => {
-  const [y, m, d] = day.split('-').map(Number)
-  return new Date(y, m - 1, d)
+  const [datePart, hourPart] = day.split('T')
+  const [y, m, d] = datePart.split('-').map(Number)
+  return new Date(y, m - 1, d, hourPart ? Number(hourPart) : 0)
 }
 
 export function timeSeries(
   events: AnalyticsEvent[],
   fromMs: number,
   toMs: number,
+  hourly = false,
 ): { day: string; pageViews: number; visitors: number; connections: number }[] {
+  const key = hourly ? hourKey : dayKey
+  const step = hourly ? 3_600_000 : DAY
   const buckets = new Map<string, { pageViews: number; vids: Set<string> }>()
-  for (let t = fromMs; t <= toMs; t += DAY) buckets.set(dayKey(t), { pageViews: 0, vids: new Set() })
+  for (let t = fromMs; t <= toMs; t += step) buckets.set(key(t), { pageViews: 0, vids: new Set() })
   for (const e of events) {
-    const b = buckets.get(dayKey(e.ts))
+    const b = buckets.get(key(e.ts))
     if (!b) continue
     b.pageViews++
     b.vids.add(e.vid)

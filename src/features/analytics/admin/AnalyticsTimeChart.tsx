@@ -21,6 +21,7 @@ interface Props {
 }
 
 const axisFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' })
+const hourFmt = new Intl.DateTimeFormat('fr-FR', { hour: 'numeric' })
 const fullFmt = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',
   day: 'numeric',
@@ -29,12 +30,14 @@ const fullFmt = new Intl.DateTimeFormat('fr-FR', {
 })
 
 export function AnalyticsTimeChart({ series }: Props) {
+  // Clés horaires « YYYY-MM-DDTHH » (période Aujourd'hui) : axe et tooltips en heures.
+  const hourly = series.length > 0 && series[0].day.includes('T')
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.55)'
   const total = series.length ? series[series.length - 1].connections : 0
   const data = {
-    labels: series.map((p) => axisFmt.format(parseDayKey(p.day))),
+    labels: series.map((p) => (hourly ? hourFmt : axisFmt).format(parseDayKey(p.day))),
     datasets: [
       {
         label: 'Pages vues',
@@ -73,7 +76,10 @@ export function AnalyticsTimeChart({ series }: Props) {
       legend: { labels: { color: tick } },
       tooltip: {
         callbacks: {
-          title: (items: TooltipItem<'line'>[]) => fullFmt.format(parseDayKey(series[items[0].dataIndex].day)),
+          title: (items: TooltipItem<'line'>[]) => {
+            const d = parseDayKey(series[items[0].dataIndex].day)
+            return hourly ? `${fullFmt.format(d)} · ${hourFmt.format(d)}` : fullFmt.format(d)
+          },
         },
       },
     },
