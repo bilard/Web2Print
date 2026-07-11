@@ -10,6 +10,7 @@ import {
 import { interpolate } from '../runtime/interpolate'
 import { extractRows } from '../runtime/executor'
 import { useTelegramStore } from '@/stores/telegram.store'
+import { useAccessStore } from '@/stores/access.store'
 import { addOutboxMessage } from '@/features/telegram/useTelegramInbox'
 
 // Limite Telegram pour une légende de document.
@@ -195,6 +196,14 @@ export const sendTelegramNode: NodeSpec<
   runtime: 'client',
   ConfigComponent: SendTelegramConfigUi,
   run: async (ctx, config, inputs) => {
+    // Droit « telegram.send » (Utilisateurs & rôles) : les envois AUTOMATISÉS
+    // du compte suivent le même droit que l'envoi manuel de la boîte Telegram.
+    // L'owner/admin n'est jamais restreint ; le jumeau serveur (cron) tourne
+    // sous le compte du propriétaire du workflow et n'est pas concerné.
+    const acc = useAccessStore.getState()
+    if (!acc.isOwner && !acc.permissions.has('telegram.send')) {
+      throw new Error('Envoi Telegram refusé : le droit « Envoyer des messages Telegram » n’est pas accordé à ce compte (Utilisateurs & rôles → module Telegram).')
+    }
     // Fallback sur la config Telegram globale (Settings) quand un champ du node est vide.
     const global = useTelegramStore.getState()
     const effToken = (c?: string) => (c?.trim() ? c.trim() : global.botToken.trim())

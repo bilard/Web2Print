@@ -15,6 +15,7 @@ import { sendTelegramMessage, sendTelegramDocument } from '@/lib/telegramApi'
 import { addOutboxMessage } from '@/features/telegram/useTelegramInbox'
 import { sendTelegramNode } from './telegramNodes'
 import { useTelegramStore } from '@/stores/telegram.store'
+import { useAccessStore } from '@/stores/access.store'
 import type { RunContextApi } from '../types'
 
 type Cfg = Parameters<typeof sendTelegramNode.run>[1]
@@ -41,6 +42,14 @@ describe('send-telegram node', () => {
     vi.clearAllMocks()
     // Config globale vide par défaut : le fallback ne doit pas masquer les guards des tests.
     useTelegramStore.setState({ botToken: '', chatId: '' })
+    // Droit d'envoi accordé par défaut (le node est gaté par « telegram.send »).
+    useAccessStore.setState({ permissions: new Set(['telegram.send']) })
+  })
+
+  it("refuse l'envoi sans le droit « telegram.send »", async () => {
+    useAccessStore.setState({ permissions: new Set(), isOwner: false })
+    await expect(sendTelegramNode.run(mkCtx(), baseConfig, {})).rejects.toThrow(/telegram\.send/)
+    expect(sendTelegramMessage).not.toHaveBeenCalled()
   })
 
   it('envoie un message texte unique', async () => {
