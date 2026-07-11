@@ -31,9 +31,12 @@ import type { CatalogCharte, CatalogDoc } from '@/features/catalog/catalogTypes'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import { buildDemoSheet, sheetToMerge, DEMO_TARGET_FIELDS, type DemoProduct } from './buildDemoSheet'
 import { buildDemoWorkflow } from './demoWorkflow'
+import { discoverCategories } from './discoverFromHome'
 
 const MAX_PRODUCTS = 12 // temps de démo raisonnable, sous le quota démo PIM (50)
 const MAX_DAM_UPLOADS = 18 // sous le quota démo DAM (20)
+const MAX_CATEGORY_TRIES = 8 // rayons explorés au plus lors de la descente depuis la home
+const PRODUCTS_PER_CATEGORY = 4 // échantillon par rayon → produits répartis sur la taxonomie
 
 const errMsg = (e: unknown): string => (e instanceof Error ? e.message : 'erreur inconnue')
 
@@ -176,16 +179,36 @@ export function useDemoExpress() {
       step('charte', { status: 'warning', detail: `charte par défaut (${errMsg(e)})` })
     }
 
-    // 2) Découverte des produits
+    // 2) Découverte des produits — URL DE BASE : si la page est un « hub »
+    // (accueil = menu sans cartes produit), descente automatique dans les
+    // rubriques du menu, quelques produits par rayon (taxonomie couverte).
     step('discover', { status: 'running' })
     let productPages: { url: string; title: string }[] = []
     try {
-      const { pages, source, error } = await discover(url, { limit: MAX_PRODUCTS })
-      productPages = pages
-      if (!pages.length) {
-        step('discover', { status: 'error', detail: error || 'aucune fiche produit détectée sur cette page' })
+      const first = await discover(url, { limit: MAX_PRODUCTS })
+      productPages = [...first.pages]
+      if (!productPages.length) {
+        step('discover', { status: 'running', detail: 'page d’accueil sans fiches — descente dans les rayons…' })
+        const categories = await discoverCategories(url)
+        let tries = 0
+        for (const cat of categories) {
+          if (aborted() || productPages.length >= MAX_PRODUCTS || tries >= MAX_CATEGORY_TRIES) break
+          tries++
+          step('discover', { status: 'running', detail: `rayon ${tries}/${Math.min(categories.length, MAX_CATEGORY_TRIES)} — ${new URL(cat).pathname}` })
+          const r = await discover(cat, { limit: PRODUCTS_PER_CATEGORY })
+          for (const p of r.pages) {
+            if (productPages.length >= MAX_PRODUCTS) break
+            if (!productPages.some((x) => x.url === p.url)) productPages.push(p)
+          }
+        }
+      }
+      if (!productPages.length) {
+        step('discover', {
+          status: 'error',
+          detail: first.error || 'aucune fiche produit trouvée (site probablement en rendu 100 % JavaScript)',
+        })
       } else {
-        step('discover', { status: 'done', detail: `${pages.length} produits (source : ${source})` })
+        step('discover', { status: 'done', detail: `${productPages.length} produits repérés sur le site` })
       }
     } catch (e) {
       step('discover', { status: 'error', detail: errMsg(e) })

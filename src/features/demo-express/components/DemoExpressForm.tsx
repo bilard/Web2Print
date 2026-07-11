@@ -35,19 +35,19 @@ export function DemoExpressForm({ onLaunch }: Props) {
       </div>
       <div>
         <label htmlFor="demo-url" className="block text-sm font-medium text-white/80 mb-1.5">
-          Page produits de son site
+          Site du prospect
         </label>
         <input
           id="demo-url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && launch()}
-          placeholder="https://www.site-du-prospect.fr/categorie/…"
+          placeholder="https://www.site-du-prospect.fr"
           className="w-full rounded-lg bg-well border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-indigo-500"
         />
         <p className="mt-1.5 text-xs text-white/40">
-          De préférence une page catégorie/rayon : la découverte y repère les fiches produit
-          (une douzaine max, pour une démo rapide).
+          L’adresse d’accueil suffit : la démo descend toute seule dans les rayons du site et
+          échantillonne une douzaine de produits répartis sur ses univers.
         </p>
       </div>
       <button
