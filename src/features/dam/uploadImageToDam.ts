@@ -26,15 +26,30 @@ export const damSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_'
 
 /**
  * Uploade une image déjà accessible en http(s) (ex. URL CDN Higgsfield) vers le
- * sous-dossier DAM : `damUpload` la re-télécharge côté serveur (magic bytes, 20 Mo max)
- * — pas de pont Storage-temp ni de fetch client (CORS). Renvoie le webViewLink Drive.
+ * sous-dossier DAM : `damUpload` la re-télécharge côté serveur (magic bytes, 20 Mo max).
+ * Repli : certains CDN (Akamai — media.castorama) bloquent les IP datacenter
+ * (« source répond 403 ») tout en servant CORS `*` — dans ce cas le NAVIGATEUR
+ * télécharge (IP résidentielle) et passe par le pont Storage-temp
+ * (`uploadImageToDam`). Renvoie le webViewLink Drive.
  */
 export async function uploadUrlToDam(url: string, fileName: string, subFolder: string): Promise<string> {
   const uid = auth.currentUser?.uid
   if (!uid) throw new Error('Connexion requise.')
   const folderId = await ensureFolder(subFolder)
-  const { webViewLink } = (await damUpload({ url, fileName, folderId })).data
-  return webViewLink
+  try {
+    const { webViewLink } = (await damUpload({ url, fileName, folderId })).data
+    return webViewLink
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    // Échecs systémiques (quota démo, Google non connecté) : le pont
+    // navigateur échouerait pareil — propager tel quel.
+    if (/resource-exhausted|google non connect/i.test(msg)) throw e
+    try {
+      return await uploadImageToDam(url, fileName, subFolder)
+    } catch {
+      throw e // cause d'origine (plus parlante que l'échec CORS du repli)
+    }
+  }
 }
 
 /**
