@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, BookText, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag } from 'lucide-react'
+import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, BookText, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag, Sparkles } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { useAccessStore } from '@/stores/access.store'
 
@@ -19,6 +19,7 @@ export type Section =
   | 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings'
   | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
   | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'retail-promo' | 'catalog'
+  | 'demo-express'
 
 export type ModuleGroupId = 'create' | 'product-data' | 'web' | 'publish' | 'automation' | 'admin'
 
@@ -74,6 +75,11 @@ export const MODULE_ITEMS: ModuleItem[] = [
     children: [
       { id: 'view:grid', label: 'Vue vignettes', intent: 'library:view:grid' },
       { id: 'view:list', label: 'Vue liste',     intent: 'library:view:list' },
+    ],
+  },
+  { id: 'demo-express', group: 'create', icon: Sparkles, label: 'Démo express', accent: 'text-lime-400', activeBg: 'bg-lime-500/[0.1]', activeText: 'text-lime-300',
+    children: [
+      { id: 'action:new', label: 'Nouvelle démo', intent: 'demo-express:action:new' },
     ],
   },
   // ── Données produits ──

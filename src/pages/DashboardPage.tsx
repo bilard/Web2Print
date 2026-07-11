@@ -48,6 +48,7 @@ const TelegramInboxView = lazy(() => import('@/features/telegram/TelegramInboxVi
 const PriceWatchPanel = lazy(() => import('@/features/priceWatch/PriceWatchPanel').then((m) => ({ default: m.PriceWatchPanel })))
 const RetailPromoPage = lazy(() => import('@/features/retail-promo/RetailPromoPage').then((m) => ({ default: m.RetailPromoPage })))
 const CatalogHome = lazy(() => import('@/features/catalog/CatalogHome').then((m) => ({ default: m.CatalogHome })))
+const DemoExpressPage = lazy(() => import('@/features/demo-express/DemoExpressPage').then((m) => ({ default: m.DemoExpressPage })))
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
@@ -787,6 +788,16 @@ export default function DashboardPage() {
             </div>
           }>
             <CatalogHome />
+          </Suspense>
+        </div>
+      ) : activeSection === 'demo-express' && canSee('demo-express') ? (
+        <div data-tour="section-demo-express" className="flex-1 overflow-hidden">
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
+              <Loader2 className="w-8 h-8 text-lime-500 animate-spin" />
+            </div>
+          }>
+            <DemoExpressPage />
           </Suspense>
         </div>
       ) : (

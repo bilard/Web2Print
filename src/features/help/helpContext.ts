@@ -28,6 +28,7 @@ const CONTEXT_TO_ARTICLE: Record<HelpContext, string> = {
   'price-watch': 'price-watch',
   'retail-promo': 'retail-promo',
   catalog: 'getting-started',
+  'demo-express': 'getting-started',
   editor: 'editor',
 }
 
