@@ -63,6 +63,9 @@ function TreeLeaf({
 }: {
   def: PermissionDef
   on: boolean
+  /** Parent `.view` non coché. N'EMPÊCHE PAS le clic : cocher cet enfant coche
+   *  aussi son parent en cascade (RolesTab.toggle) — le cadenas bloquant
+   *  forçait un détour par le parent sans aucune raison fonctionnelle. */
   locked: boolean
   accent: ModuleMeta
   onClick: () => void
@@ -70,21 +73,19 @@ function TreeLeaf({
 }) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   return (
-    <button disabled={locked} onClick={onClick}
-      title={locked ? `Nécessite : ${lockHint}` : def.key}
+    <button onClick={onClick}
+      title={locked ? `Active aussi : ${lockHint}` : def.key}
       className={`flex items-center gap-2 px-2 py-1 rounded-md text-[12px] text-left transition-colors ${
-        locked ? (isLight ? 'text-white/45 cursor-not-allowed' : 'text-white/20 cursor-not-allowed')
-          : on ? 'text-white/90 bg-white/[0.04] hover:bg-white/[0.06]'
-            : (isLight ? 'text-white/80 hover:bg-white/[0.05] hover:text-white/90' : 'text-white/55 hover:bg-white/[0.03] hover:text-white/80')
+        on ? 'text-white/90 bg-white/[0.04] hover:bg-white/[0.06]'
+          : (isLight ? 'text-white/80 hover:bg-white/[0.05] hover:text-white/90' : 'text-white/55 hover:bg-white/[0.03] hover:text-white/80')
       }`}>
       <span className={`w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 border ${
-        locked ? 'border-white/10'
-          : on ? accent.chipOn
-            : 'border-white/25'
+        on ? accent.chipOn : locked ? 'border-white/15' : 'border-white/25'
       }`}>
-        {locked ? <Lock className="w-2 h-2" /> : on ? <Check className="w-2.5 h-2.5" /> : null}
+        {on ? <Check className="w-2.5 h-2.5" /> : locked ? <Lock className="w-2 h-2 text-white/25" /> : null}
       </span>
       {def.label}
+      {locked && <span className="ml-auto text-[9px] text-white/25">+ {lockHint}</span>}
     </button>
   )
 }
