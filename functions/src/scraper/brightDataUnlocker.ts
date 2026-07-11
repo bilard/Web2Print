@@ -132,6 +132,16 @@ export async function callBrightData(
     }
 
     const html = await res.text()
+    // Compte suspendu / zone inactive : Bright Data répond 200 avec un corps
+    // VIDE (constaté 2026-07-11, même sur example.com). Sans cette garde, le
+    // vide passe pour un succès et le client escalade pour rien vers le
+    // Scraping Browser (qui répond alors 403 « Account is suspended »).
+    if (html.length === 0) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Bright Data a renvoyé une réponse vide — compte suspendu ou zone inactive (vérifier le dashboard Bright Data : solde/facturation).',
+      )
+    }
     return { html, status: res.status }
   } finally {
     clearTimeout(timer)

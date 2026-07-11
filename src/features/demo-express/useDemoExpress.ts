@@ -233,11 +233,18 @@ export function useDemoExpress() {
         }
       }
       if (!productPages.length) {
+        // Cause précise de l'échec Bright Data (compte suspendu, solde, token…)
+        // plutôt qu'un « vérifier le connecteur » générique.
+        const bdError = homeHtmlBd === null
+          ? (await import('@/features/scraping/core/brightDataFallback')).getLastBrightDataError()
+          : null
         step('discover', {
           status: 'error',
-          detail: homeHtmlBd === null
-            ? (first.error || 'site protégé anti-bot — vérifier le connecteur Bright Data (Scraping Hub)')
-            : 'site protégé anti-bot — aucune fiche extraite même via Bright Data',
+          detail: bdError
+            ? `site protégé anti-bot — Bright Data : ${bdError.message}`
+            : homeHtmlBd === null
+              ? (first.error || 'site protégé anti-bot — vérifier le connecteur Bright Data (Scraping Hub)')
+              : 'site protégé anti-bot — aucune fiche extraite même via Bright Data',
         })
       } else {
         step('discover', { status: 'done', detail: `${productPages.length} produits repérés sur le site` })
