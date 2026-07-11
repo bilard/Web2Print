@@ -31,12 +31,13 @@ import type { CatalogCharte, CatalogDoc } from '@/features/catalog/catalogTypes'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import { buildDemoSheet, sheetToMerge, DEMO_TARGET_FIELDS, type DemoProduct } from './buildDemoSheet'
 import { buildDemoWorkflow } from './demoWorkflow'
-import { discoverCategories } from './discoverFromHome'
+import { discoverCategories, categoriesFromHtml, productLinksFromListingHtml } from './discoverFromHome'
 
 const MAX_PRODUCTS = 12 // temps de démo raisonnable, sous le quota démo PIM (50)
 const MAX_DAM_UPLOADS = 18 // sous le quota démo DAM (20)
 const MAX_CATEGORY_TRIES = 8 // rayons explorés au plus lors de la descente depuis la home
 const PRODUCTS_PER_CATEGORY = 4 // échantillon par rayon → produits répartis sur la taxonomie
+const MAX_BD_CATEGORY_TRIES = 5 // rayons via Bright Data (payant) — borne de coût
 
 const errMsg = (e: unknown): string => (e instanceof Error ? e.message : 'erreur inconnue')
 
@@ -184,6 +185,13 @@ export function useDemoExpress() {
     // rubriques du menu, quelques produits par rayon (taxonomie couverte).
     step('discover', { status: 'running' })
     let productPages: { url: string; title: string }[] = []
+    let homeHtmlBd: string | null = null
+    const pushUnique = (pages: { url: string; title: string }[]) => {
+      for (const p of pages) {
+        if (productPages.length >= MAX_PRODUCTS) break
+        if (!productPages.some((x) => x.url === p.url)) productPages.push(p)
+      }
+    }
     try {
       const first = await discover(url, { limit: MAX_PRODUCTS })
       productPages = [...first.pages]
@@ -196,22 +204,60 @@ export function useDemoExpress() {
           tries++
           step('discover', { status: 'running', detail: `rayon ${tries}/${Math.min(categories.length, MAX_CATEGORY_TRIES)} — ${new URL(cat).pathname}` })
           const r = await discover(cat, { limit: PRODUCTS_PER_CATEGORY })
-          for (const p of r.pages) {
-            if (productPages.length >= MAX_PRODUCTS) break
-            if (!productPages.some((x) => x.url === p.url)) productPages.push(p)
+          pushUnique(r.pages)
+        }
+      }
+      // Étage anti-bot (cas DataDome/Akamai : CF et Jina ne voient qu'une
+      // coquille vide) → escalade Bright Data sur la home puis les rayons.
+      if (!productPages.length && !aborted()) {
+        step('discover', { status: 'running', detail: 'anti-bot détecté — escalade Bright Data…' })
+        const { brightDataScrapeHtml, markHostBlocked } =
+          await import('@/features/scraping/core/brightDataFallback')
+        // Les enrichissements suivants sauteront directement à Bright Data.
+        markHostBlocked(url)
+        homeHtmlBd = await brightDataScrapeHtml(url)
+        if (homeHtmlBd) {
+          // Produits en vitrine sur la home (JSON-LD/dataLayer seulement —
+          // les ancres à image d'une home sont des bannières, pas des fiches).
+          pushUnique(await productLinksFromListingHtml(homeHtmlBd, url, MAX_PRODUCTS, { anchorFallback: false }))
+          const cats = categoriesFromHtml(homeHtmlBd, url)
+          let tries = 0
+          for (const cat of cats) {
+            if (aborted() || productPages.length >= MAX_PRODUCTS || tries >= MAX_BD_CATEGORY_TRIES) break
+            tries++
+            step('discover', { status: 'running', detail: `Bright Data — rayon ${tries}/${Math.min(cats.length, MAX_BD_CATEGORY_TRIES)} — ${new URL(cat).pathname}` })
+            const catHtml = await brightDataScrapeHtml(cat)
+            if (!catHtml) continue
+            pushUnique(await productLinksFromListingHtml(catHtml, cat, PRODUCTS_PER_CATEGORY, { anchorFallback: true }))
           }
         }
       }
       if (!productPages.length) {
         step('discover', {
           status: 'error',
-          detail: first.error || 'aucune fiche produit trouvée (site probablement en rendu 100 % JavaScript)',
+          detail: homeHtmlBd === null
+            ? (first.error || 'site protégé anti-bot — vérifier le connecteur Bright Data (Scraping Hub)')
+            : 'site protégé anti-bot — aucune fiche extraite même via Bright Data',
         })
       } else {
         step('discover', { status: 'done', detail: `${productPages.length} produits repérés sur le site` })
       }
     } catch (e) {
       step('discover', { status: 'error', detail: errMsg(e) })
+    }
+
+    // Seconde chance charte : le HTML Bright Data de la home porte souvent
+    // l'og:image que l'analyse directe n'a pas pu voir (challenge anti-bot).
+    if (!charte.colors.length && homeHtmlBd) {
+      try {
+        const og = new DOMParser().parseFromString(homeHtmlBd, 'text/html')
+          .querySelector('meta[property="og:image"], meta[property="og:image:url"], meta[name="twitter:image"]')
+          ?.getAttribute('content')
+        if (og && /\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i.test(og)) {
+          charte = await analyzeInspirationUrl(new URL(og, url).href, EMPTY_CHARTE)
+          step('charte', { status: 'done', detail: `${charte.colors.length} couleurs (og:image via Bright Data)` })
+        }
+      } catch { /* la charte par défaut reste */ }
     }
     if (!productPages.length) {
       // Sans produits, rien à ensemencer — on marque le reste comme sauté.

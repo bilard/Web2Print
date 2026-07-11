@@ -24,26 +24,15 @@ const EXCLUDE_PATH_RE =
 
 const FILE_EXT_RE = /\.(pdf|jpe?g|png|webp|gif|svg|zip|xml|js|css)(\?|#|$)/i
 
-/**
- * Rubriques candidates du site (ordre du menu = ordre de la taxonomie).
- * navLinks (menu/footer) d'abord — c'est là que vit l'arborescence — puis le
- * reste des liens en complément.
- */
-export async function discoverCategories(baseUrl: string): Promise<string[]> {
-  const [cloud, jinaLinks] = await Promise.all([
-    extractBreadcrumbFn({ url: baseUrl }).then((r) => r.data).catch(() => ({}) as HomeLinks),
-    jinaRead(baseUrl, { listing: true })
-      .then((p) => Object.values(p.links ?? {}))
-      .catch(() => [] as string[]),
-  ])
+/** Filtre générique des liens candidats « rubrique catalogue » (même host,
+ *  profondeur ≤ 3, hors chemins institutionnels/fichiers), ordre préservé. */
+function filterCategoryCandidates(rawLinks: string[], baseUrl: string): string[] {
   const base = new URL(baseUrl)
   const baseHost = base.hostname.replace(/^www\./, '')
   const basePath = base.pathname.replace(/\/+$/, '')
-  // Menu (navLinks) d'abord — c'est l'arborescence — puis Jina, puis le reste.
-  const candidates = [...(cloud.navLinks ?? []), ...jinaLinks, ...(cloud.links ?? [])]
   const seen = new Set<string>()
   const out: string[] = []
-  for (const raw of candidates) {
+  for (const raw of rawLinks) {
     let u: URL
     try { u = new URL(raw, baseUrl) } catch { continue }
     if (u.hostname.replace(/^www\./, '') !== baseHost) continue
@@ -57,6 +46,80 @@ export async function discoverCategories(baseUrl: string): Promise<string[]> {
     if (seen.has(key)) continue
     seen.add(key)
     out.push(key)
+  }
+  return out
+}
+
+/**
+ * Rubriques candidates du site (ordre du menu = ordre de la taxonomie).
+ * navLinks (menu/footer) d'abord — c'est là que vit l'arborescence — puis le
+ * reste des liens en complément.
+ */
+export async function discoverCategories(baseUrl: string): Promise<string[]> {
+  const [cloud, jinaLinks] = await Promise.all([
+    extractBreadcrumbFn({ url: baseUrl }).then((r) => r.data).catch(() => ({}) as HomeLinks),
+    jinaRead(baseUrl, { listing: true })
+      .then((p) => Object.values(p.links ?? {}))
+      .catch(() => [] as string[]),
+  ])
+  return filterCategoryCandidates([...(cloud.navLinks ?? []), ...jinaLinks, ...(cloud.links ?? [])], baseUrl)
+}
+
+// ── Étage anti-bot (DataDome/Akamai) : le HTML vient de Bright Data ─────────
+
+export interface DiscoveredPage { url: string; title: string }
+
+/** Rubriques candidates depuis un HTML déjà récupéré (voie Bright Data) :
+ *  ancres du menu (nav/header) d'abord, puis le reste de la page. */
+export function categoriesFromHtml(html: string, baseUrl: string): string[] {
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  const hrefs = (sel: string) =>
+    [...doc.querySelectorAll<HTMLAnchorElement>(sel)].map((a) => a.getAttribute('href') ?? '').filter(Boolean)
+  return filterCategoryCandidates([...hrefs('nav a[href], header a[href]'), ...hrefs('a[href]')], baseUrl)
+}
+
+/**
+ * Fiches produit d'une page listing déjà récupérée (voie Bright Data) :
+ * JSON-LD ItemList → dataLayer GTM (parseurs du node list-products), puis
+ * repli déterministe « ancres porteuses d'image » (les cartes produit d'une
+ * grille contiennent le visuel). Le repli est coupé sur la home (bannières).
+ */
+export async function productLinksFromListingHtml(
+  html: string,
+  pageUrl: string,
+  limit: number,
+  opts: { anchorFallback: boolean },
+): Promise<DiscoveredPage[]> {
+  const { parseListingItemList, parseListingDataLayer, dedupListing } =
+    await import('@/features/workflows/registry/listProductsNode')
+  const structured = dedupListing([
+    ...parseListingItemList(html),
+    ...parseListingDataLayer(html, pageUrl),
+  ]).filter((p) => p.url)
+  if (structured.length) {
+    return structured.slice(0, limit).map((p) => ({ url: p.url, title: p.name || '' }))
+  }
+  if (!opts.anchorFallback) return []
+
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  const base = new URL(pageUrl)
+  const baseHost = base.hostname.replace(/^www\./, '')
+  const basePath = base.pathname.replace(/\/+$/, '')
+  const seen = new Set<string>()
+  const out: DiscoveredPage[] = []
+  for (const a of doc.querySelectorAll<HTMLAnchorElement>('a[href]')) {
+    if (!a.querySelector('img')) continue
+    let u: URL
+    try { u = new URL(a.getAttribute('href') ?? '', pageUrl) } catch { continue }
+    if (u.hostname.replace(/^www\./, '') !== baseHost) continue
+    const path = u.pathname.replace(/\/+$/, '')
+    if (!path || path === basePath) continue
+    if (EXCLUDE_PATH_RE.test(u.href) || FILE_EXT_RE.test(path)) continue
+    const key = `${u.origin}${path}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({ url: key, title: (a.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 120) })
+    if (out.length >= limit) break
   }
   return out
 }
