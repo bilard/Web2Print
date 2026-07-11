@@ -74,6 +74,7 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: 'hyperframes.view', module: 'Animation', label: 'Voir le module Animation' },
   { key: 'chat.view', module: 'Chat IA', label: 'Voir le Chat IA' },
   { key: 'telegram.view', module: 'Telegram', label: 'Voir Telegram' },
+  { key: 'telegram.send', module: 'Telegram', label: 'Envoyer des messages Telegram' },
   { key: 'settings.view', module: 'Paramètres', label: 'Ouvrir les Paramètres' },
   { key: 'settings.firebase.view', module: 'Paramètres', label: 'Voir l\'onglet Firebase' },
   { key: 'settings.connectors.edit', module: 'Paramètres', label: 'Éditer les connecteurs' },
