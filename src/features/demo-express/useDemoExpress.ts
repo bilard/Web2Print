@@ -54,9 +54,14 @@ function volumePlan(maxProducts: number) {
 
 const errMsg = (e: unknown): string => (e instanceof Error ? e.message : 'erreur inconnue')
 
-/** Upload DAM des images produit (1 par produit, plafonné) — mute `items`. */
-async function seedDam(items: DemoProduct[], company: string, aborted: () => boolean, maxUploads: number): Promise<number> {
+/** Upload DAM des images produit (1 par produit, plafonné) — mute `items`.
+ *  Renvoie aussi la PREMIÈRE cause d'échec : sans elle, un « aucun upload »
+ *  masquait la vraie raison (ex. Google non connecté pour l'accès serveur). */
+async function seedDam(
+  items: DemoProduct[], company: string, aborted: () => boolean, maxUploads: number,
+): Promise<{ uploaded: number; firstError: string | null }> {
   let uploaded = 0
+  let firstError: string | null = null
   for (const it of items) {
     if (aborted() || uploaded >= maxUploads) break
     const img = it.assets.find((a) => a.type === 'image')?.url
@@ -66,12 +71,15 @@ async function seedDam(items: DemoProduct[], company: string, aborted: () => boo
       it.damLink = await uploadUrlToDam(img, `${damSlug(name)}.jpg`, `Démo ${company}`)
       uploaded++
     } catch (e) {
-      // Quota démo DAM atteint (resource-exhausted) ou image irrécupérable :
-      // la cellule garde l'URL externe (DamImage l'affiche aussi), on continue.
-      if (errMsg(e).includes('resource-exhausted')) break
+      const msg = errMsg(e)
+      firstError ??= msg
+      // Quota démo DAM atteint OU Google non connecté : inutile d'insister,
+      // toutes les tentatives suivantes échoueraient pareil. Les cellules
+      // gardent l'URL externe (DamImage l'affiche aussi).
+      if (msg.includes('resource-exhausted') || /google non connect/i.test(msg)) break
     }
   }
-  return uploaded
+  return { uploaded, firstError }
 }
 
 /** Catalogue piloté par la charte : source liée, plan IA (repli déterministe), couverture IA. */
@@ -311,10 +319,10 @@ export function useDemoExpress() {
 
     // 4) Images → DAM Drive (1 par produit, quota démo respecté)
     step('dam', { status: 'running' })
-    const damCount = await seedDam(items, company, aborted, vol.damUploads)
+    const { uploaded: damCount, firstError: damError } = await seedDam(items, company, aborted, vol.damUploads)
     step('dam', damCount > 0
       ? { status: 'done', detail: `${damCount} image(s) dans le Drive DAM` }
-      : { status: 'warning', detail: 'aucun upload (les cellules gardent les URLs externes)' })
+      : { status: 'warning', detail: damError ?? 'aucune image exploitable (les cellules gardent les URLs externes)' })
 
     // 5) Feuille PIM — base Firestore DÉDIÉE (jamais d'écrasement de l'existant)
     step('sheet', { status: 'running' })
