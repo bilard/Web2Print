@@ -35,9 +35,12 @@ export const damSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_'
 export async function uploadUrlToDam(url: string, fileName: string, subFolder: string): Promise<string> {
   const uid = auth.currentUser?.uid
   if (!uid) throw new Error('Connexion requise.')
+  // Entités HTML résiduelles (URLs sorties de JSON-LD : `?a=1&amp;b=2`) —
+  // laissées telles quelles, le CDN reçoit un paramètre `amp;b` erroné.
+  const cleanUrl = url.replace(/&amp;/g, '&')
   const folderId = await ensureFolder(subFolder)
   try {
-    const { webViewLink } = (await damUpload({ url, fileName, folderId })).data
+    const { webViewLink } = (await damUpload({ url: cleanUrl, fileName, folderId })).data
     return webViewLink
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
@@ -45,9 +48,12 @@ export async function uploadUrlToDam(url: string, fileName: string, subFolder: s
     // navigateur échouerait pareil — propager tel quel.
     if (/resource-exhausted|google non connect/i.test(msg)) throw e
     try {
-      return await uploadImageToDam(url, fileName, subFolder)
-    } catch {
-      throw e // cause d'origine (plus parlante que l'échec CORS du repli)
+      return await uploadImageToDam(cleanUrl, fileName, subFolder)
+    } catch (e2) {
+      // Les DEUX voies ont échoué : message combiné, sinon impossible de
+      // savoir si le pont navigateur a seulement tourné.
+      const msg2 = e2 instanceof Error ? e2.message : String(e2)
+      throw new Error(`${msg} · pont navigateur : ${msg2}`)
     }
   }
 }
