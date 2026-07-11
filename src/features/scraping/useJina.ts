@@ -31,13 +31,19 @@ const extractBreadcrumbCloudFn = httpsCallable<
 
 const JINA_READER = 'https://r.jina.ai'
 
-const jinaHeaders = (extra: Record<string, string> = {}) => ({
-  Authorization: `Bearer ${getApiKey('jina')}`,
-  Accept: 'application/json',
-  'X-With-Links-Summary': 'true',
-  'X-With-Images-Summary': 'true',
-  ...extra,
-})
+const jinaHeaders = (extra: Record<string, string> = {}) => {
+  // Sans clé (compte sans clé perso ni VITE_JINA_API_KEY) : NE PAS envoyer
+  // `Authorization: Bearer ` vide — Jina répond 401 AuthenticationFailedError,
+  // alors que le tier anonyme (rate-limité) fonctionne sans header.
+  const key = getApiKey('jina').trim()
+  return {
+    ...(key ? { Authorization: `Bearer ${key}` } : {}),
+    Accept: 'application/json',
+    'X-With-Links-Summary': 'true',
+    'X-With-Images-Summary': 'true',
+    ...extra,
+  }
+}
 
 // ─── Brand → Official Site mapping ───────────────────────────────────────────
 
