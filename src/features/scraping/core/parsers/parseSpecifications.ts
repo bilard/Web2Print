@@ -354,7 +354,10 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
    *  Permet aux callers (Format 4 notamment) de NE PAS consommer la ligne
    *  suivante quand la pair est rejetée — évite les cascades de shift. */
   function add(rawName: string, rawValue: string, group?: string): boolean {
-    let n = rawName.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
+    // Marqueur de liste résiduel en tête de nom (`*   Surface intérieure`) :
+    // les bullets markdown `Nom : Valeur` capturés par Format 3 gardaient le
+    // marqueur dans le nom (constaté sur les fiches Castorama).
+    let n = rawName.trim().replace(/^[-*•·▪●◦▶]\s+/, '').replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
     let v = rawValue.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
     if (isInverted(n, v)) {
       [n, v] = [v, n]

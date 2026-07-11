@@ -437,3 +437,23 @@ Tension : 18 V
     expect(specs.find((s) => s.name === 'Fournisseur')).toBeUndefined()
   })
 })
+
+// Extrait RÉEL Castorama (2026-07-11) : bullets markdown `*   Nom : Valeur`
+// capturés par Format 3 — le marqueur de liste restait dans le nom
+// (« *   Surface intérieure »).
+describe('parseSpecsFromMarkdown — bullets markdown « Nom : Valeur » (Castorama)', () => {
+  it('nettoie le marqueur de liste en tête de nom', () => {
+    const md = `# Abri
+
+### Informations sur le produit
+
+*   Surface intérieure : 4,04 m²
+*   Garantie : 10 ans
+`
+    const specs = parseSpecsFromMarkdown(md)
+    const names = specs.map((s) => s.name)
+    expect(names).toContain('Surface intérieure')
+    expect(names).toContain('Garantie')
+    expect(names.every((n) => !n.startsWith('*'))).toBe(true)
+  })
+})

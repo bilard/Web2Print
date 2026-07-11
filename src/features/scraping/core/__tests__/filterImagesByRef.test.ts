@@ -60,7 +60,7 @@ describe('parseNamedDocLinks', () => {
     ])
   })
 
-  it('ignore les liens vides précédés d\'un heading ou d\'un autre lien', () => {
+  it('ignore les liens vides précédés d\'un heading ou d\'un autre lien, mais garde les liens titrés', () => {
     const md = `## Téléchargements
 
 [](https://x.fr/a.pdf)
@@ -69,6 +69,9 @@ describe('parseNamedDocLinks', () => {
 
 [](https://x.fr/c.pdf)
 `
-    expect(parseNamedDocLinks(md)).toEqual([])
+    // a.pdf / c.pdf : liens vides sans libellé orphelin plausible → ignorés.
+    // doc B : lien TITRÉ vers un document → document nommé à part entière
+    // (pass 2 ajoutée pour les notices Castorama sans extension .pdf).
+    expect(parseNamedDocLinks(md)).toEqual([{ name: 'doc B', url: 'https://x.fr/b.pdf' }])
   })
 })
