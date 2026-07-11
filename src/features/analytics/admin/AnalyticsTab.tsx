@@ -1,6 +1,6 @@
 // src/features/analytics/admin/AnalyticsTab.tsx
 import { lazy, Suspense, useMemo, useState } from 'react'
-import { Download, Trash2, Loader2, UserX } from 'lucide-react'
+import { Download, Trash2, Loader2, UserX, Bell, BellOff } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -11,6 +11,7 @@ import { usePeriod, type PeriodKey } from '../usePeriod'
 import { computeKpis, timeSeries, filterEvents, NO_FILTER, type EventFilter } from '../metrics'
 import { downloadEventsCsv } from '../exportCsv'
 import { useClearAnalytics, usePurgeMyAnalytics } from '../useClearAnalytics'
+import { useSessionAlerts } from '../useSessionAlerts'
 import { AnalyticsKpiCards } from './AnalyticsKpiCards'
 import { AnalyticsTimeChart } from './AnalyticsTimeChart'
 import { AnalyticsTopLists } from './AnalyticsTopLists'
@@ -42,6 +43,7 @@ export function AnalyticsTab() {
   const [confirmClear, setConfirmClear] = useState(false)
   const [confirmPurge, setConfirmPurge] = useState(false)
   const clear = useClearAnalytics()
+  const sessionAlerts = useSessionAlerts()
   const purgeMine = usePurgeMyAnalytics()
   const handleClear = () => {
     clear.mutate(undefined, {
@@ -109,6 +111,21 @@ export function AnalyticsTab() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={async () => {
+              const next = await sessionAlerts.toggle()
+              if (next === null) return
+              toast.success(next ? 'Alertes Telegram de visite activées' : 'Alertes Telegram de visite coupées')
+            }}
+            disabled={sessionAlerts.enabled === null}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-surface-2 transition-colors ${
+              sessionAlerts.enabled ? 'text-emerald-400 hover:text-emerald-300' : 'text-white/50 hover:text-white/80'
+            }`}
+            title="Log live sur Telegram : 🟢 une ligne par page d'un utilisateur connecté, 🔵 un ping par session anonyme (vos propres visites ne sont jamais notifiées)"
+          >
+            {sessionAlerts.enabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+            Alertes Telegram
+          </button>
           <button
             onClick={() => downloadEventsCsv(events, `analytics-${period}.csv`)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-white/70 hover:text-white bg-surface-2"
