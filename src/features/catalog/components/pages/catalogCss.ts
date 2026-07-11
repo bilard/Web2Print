@@ -312,7 +312,9 @@ export const CATALOG_CSS = `
    organise la place, et l'utilisateur peut les déplacer/agrandir. Une hauteur
    posée explicitement (poignées) reste respectée via l'overflow du .cat-obj. */
 .cat-free .cat-cell-details { background:var(--cat-details-bg,rgba(127,127,127,.08)); border-radius:4px; padding:4px 6px; margin-top:0; height:100%; max-height:none; overflow:hidden; }
-.cat-free .cat-cell-details span { -webkit-line-clamp:unset; display:block; overflow:visible; }
+/* pre-line : les valeurs multi-lignes (Avantages « • … » séparés par \n) se
+   rendent en LIGNES lisibles au lieu d'un pavé aux retours écrasés. */
+.cat-free .cat-cell-details span { -webkit-line-clamp:unset; display:block; overflow:visible; white-space:pre-line; }
 .cat-free .cat-cell-desc { -webkit-line-clamp:unset; display:block; overflow:visible; }
 /* Textes INLINE (réf, marque, prix) passés en block : un span inline s'aligne sur
    la LIGNE DE BASE de la police héritée (plus grande) → il descend dans sa boîte

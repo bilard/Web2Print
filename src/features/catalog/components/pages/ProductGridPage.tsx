@@ -68,9 +68,15 @@ export function ProductGridPage({ ctx, grid, rows: rowsProp, slots, groupRows }:
         // hauteur layout et les pavés (avantages/TVA/entretien) se faisaient couper.
         if (slot.colSpan * slot.rowSpan > 1) {
           const s = slot.colSpan >= 2 && slot.rowSpan >= 2 ? 2 : 1.3
+          // HIÉRARCHIE TYPO : la magnification ×s grossit AUSSI les textes ×s —
+          // un titre de vedette 2× celui des cartes voisines casse la hiérarchie
+          // de la page. On tempère la typo en √s via un override local de
+          // --cat-fit (texte effectif ×√s : dominant mais cohérent) ; l'image et
+          // la mise en page gardent la magnification pleine.
+          const textFit = Math.round((fit * Math.sqrt(s) / s) * 100) / 100
           return (
             <div key={slot.rowId} style={{ ...style, position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, width: `calc(100%/${s})`, height: `calc(100%/${s})`, transform: `scale(${s})`, transformOrigin: 'top left', display: 'grid' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: `calc(100%/${s})`, height: `calc(100%/${s})`, transform: `scale(${s})`, transformOrigin: 'top left', display: 'grid', ...( { '--cat-fit': String(textFit) } as CSSProperties) }}>
                 <ProductCell fields={fields} featured={slot.featured} details={details} cardStyle={ctx.plan.cardStyle}
                   wide={wideOf(slot.colSpan, slot.rowSpan)}
                   onEdit={ctx.onEditRow ? () => ctx.onEditRow?.(slot.rowId) : undefined} />

@@ -33,6 +33,16 @@ interface Props {
   onEdit?: () => void
 }
 
+/** Description ABRÉGÉE à la donnée (~420 chars, coupe au mot + « … » visible) :
+ *  les descriptions scrapées peuvent faire 10+ lignes et écraser la hiérarchie
+ *  de la fiche. Abréger le TEXTE (plutôt que clamper la boîte) reste fidèle au
+ *  contrat de la disposition libre — rien n'est jamais rogné invisiblement,
+ *  l'export rend exactement l'aperçu. */
+function abridge(text: string, max = 420): string {
+  if (text.length <= max) return text
+  return `${text.slice(0, max).replace(/\s+\S*$/, '')}…`
+}
+
 export function ProductCell({ fields: f, featured, kicker, details, cardStyle, style, wide = false, onEdit }: Props) {
   // Résolution Drive/CORS → blob:/data: (voir useResolvedImage). `data-resolving` est
   // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
@@ -118,7 +128,7 @@ export function ProductCell({ fields: f, featured, kicker, details, cardStyle, s
       {featured && show('showVedette') && obj('vedette', <span className="cat-cell-vedette">★ {cardStyle?.vedetteLabel || 'Vedette'}</span>)}
       {f.brand && show('showBrand') && obj('brand', <span className="cat-cell-brand">{f.brand}</span>)}
       {show('showName') && obj('name', <span className="cat-cell-name">{f.name || 'Produit'}</span>)}
-      {f.description && show('showDesc') && obj('description', <span className="cat-cell-desc">{f.description}</span>)}
+      {f.description && show('showDesc') && obj('description', <span className="cat-cell-desc">{abridge(f.description)}</span>)}
       {f.ref && show('showRef') && obj('ref', <span className="cat-cell-refcode">Réf. {f.ref}</span>)}
       {f.unit && show('showUnit') && obj('unit', <span className="cat-cell-unit">Unité : {f.unit}</span>)}
       {show('showPrice') && obj('price', <span className="cat-cell-pricebox"><span className="cat-cell-tag">{hasWas && show('showWas') && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}<span className="cat-cell-price">{formatPrice(f.newPrice)}</span></span></span>)}
