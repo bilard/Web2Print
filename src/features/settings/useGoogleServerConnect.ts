@@ -106,6 +106,17 @@ export function useGoogleServerConnect() {
           setClientId(id)
           setClientSecret(secret)
         } catch { /* lecture admin-only : ignorer */ }
+      } else {
+        // Non-admin : le Client ID (public — il figure dans l'URL de consentement)
+        // se lit dans config/googleOAuthPublic, écrit par l'admin à la sauvegarde.
+        // Sans ça, `connect()` bloquait tout compte non-admin sur « Renseigne
+        // d'abord le client OAuth » alors que la config app existe.
+        try {
+          const snap = await getDoc(doc(db, 'config', 'googleOAuthPublic'))
+          if (cancelled) return
+          id = (snap.data()?.clientId as string) ?? ''
+          setClientId(id)
+        } catch { /* doc absent : le bouton Connecter affichera l'avertissement */ }
       }
       refreshTokenRef.current = token
       if (cancelled) return
@@ -124,6 +135,9 @@ export function useGoogleServerConnect() {
       clientId: clientId.trim(),
       ...(clientSecret.trim() ? { clientSecret: clientSecret.trim() } : {}),
     }, { merge: true })
+    // Copie PUBLIQUE du seul Client ID : lisible par les non-admins (cf. rules)
+    // pour que leur bouton « Connecter » puisse construire l'URL de consentement.
+    await setDoc(doc(db, 'config', 'googleOAuthPublic'), { clientId: clientId.trim() }, { merge: true })
     toast.success('Client OAuth enregistré.')
     void test()
   }

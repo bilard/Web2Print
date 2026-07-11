@@ -526,6 +526,15 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Exception : le Client ID OAuth Google est PUBLIC par nature (il figure dans
+    // l'URL de consentement) — tout compte connecté doit pouvoir le lire pour
+    // lancer « Google — accès serveur » (le clientSecret, lui, reste dans
+    // config/googleOAuth, admin-only, lu côté serveur uniquement).
+    match /config/googleOAuthPublic {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
     // ── Plannings cron de workflow ────────────────────────────────────────────
     // Plannings cron de workflow (un doc par workflow). Le client lit/écrit les siens ;
     // le scanner serveur (admin) contourne ces règles.
