@@ -1,5 +1,5 @@
 // src/features/onboarding/OnboardingWizard.tsx
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { useAuthStore } from '@/stores/auth.store'
@@ -28,10 +28,15 @@ export function OnboardingWizard() {
   const onboardingComplete = useAccessStore((s) => s.onboardingComplete)
   const setOnboardingComplete = useAccessStore((s) => s.setOnboardingComplete)
   const uid = useAuthStore((s) => s.user?.uid)
+  // En état (pas calculé au rendu) : la saisie d'une clé dans KeysStep doit
+  // déverrouiller « Suivant » IMMÉDIATEMENT — l'événement apikeys:updated ne
+  // provoque aucun re-render sinon, et le bouton restait grisé malgré la clé.
+  const [keyReady, setKeyReady] = useState(hasAnyLlmKey())
 
   // Auto-ouverture : réévalue à l'hydratation des clés / changement d'accès.
   useEffect(() => {
     const evaluate = () => {
+      setKeyReady(hasAnyLlmKey())
       const dismissed = sessionStorage.getItem(ONBOARDING_DISMISS_KEY) === '1'
       if (shouldAutoOpenOnboarding({
         hydrated: areApiKeysHydrated(),
@@ -55,7 +60,6 @@ export function OnboardingWizard() {
   if (!open) return null
 
   const isLast = step === ONBOARDING_STEP_COUNT - 1
-  const keyReady = hasAnyLlmKey()
   // Étape 1 (Clés, index 1) bloque la progression tant qu'aucune clé n'existe.
   const nextDisabled = step === 1 && !keyReady
 
