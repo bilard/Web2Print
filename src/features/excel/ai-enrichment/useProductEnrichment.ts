@@ -717,6 +717,42 @@ function buildIdentity(args: {
 }
 
 /** Nettoie un EnrichedProduct en retirant les contenus parasites */
+/** Blocs sentinelles internes (images/téléchargements injectés dans le markdown
+ *  pour l'extraction déterministe) : à retirer de TOUT contenu envoyé au LLM —
+ *  sinon le modèle les recrache dans les specs/description (constaté Castorama :
+ *  spec « Caractéristiques » terminée par « JINA_EXTRACTED_IMAGES_START »). */
+function stripInternalSentinels(md: string): string {
+  return md
+    .replace(/JINA_EXTRACTED_(?:IMAGES|DOWNLOADS)_START[\s\S]*?(?:JINA_EXTRACTED_(?:IMAGES|DOWNLOADS)_END|$)/g, '')
+    .trim()
+}
+
+/** Nom de spec « fourre-tout » : le LLM a mis TOUTE la table dans une seule valeur. */
+const MEGA_SPEC_NAME_RE = /^(caract[eé]ristiques?|sp[eé]cifications?(\s+techniques?)?|d[eé]tails?(\s+du\s+produit)?|informations?(\s+sur\s+le\s+produit)?)$/i
+
+/**
+ * Re-découpe une méga-valeur « Clé: Valeur Clé: Valeur … » (LLM qui concatène
+ * la table de specs en une seule paire) en paires individuelles. Déterministe :
+ * les clés sont détectées par le motif « Mot(s) capitalisé(s) court(s) + ": " ».
+ * Renvoie [] si moins de 3 clés détectées (la valeur n'est pas une table).
+ */
+export function splitMegaSpecValue(value: string): Array<{ name: string; value: string }> {
+  const re = /(?:^|\s)([A-ZÀ-Ÿ][A-Za-zÀ-ÿ'’()%/°\d .-]{1,40}?):\s+/g
+  const keys: Array<{ name: string; start: number; valStart: number }> = []
+  let m: RegExpExecArray | null
+  while ((m = re.exec(value)) !== null) {
+    keys.push({ name: m[1].trim(), start: m.index, valStart: m.index + m[0].length })
+  }
+  if (keys.length < 3) return []
+  const out: Array<{ name: string; value: string }> = []
+  for (let i = 0; i < keys.length; i++) {
+    const raw = value.slice(keys[i].valStart, i + 1 < keys.length ? keys[i + 1].start : undefined)
+    const v = raw.replace(/©.*$/s, '').replace(/JINA_EXTRACTED_[\s\S]*$/, '').trim()
+    if (v && !/^©/.test(keys[i].name)) out.push({ name: keys[i].name, value: v })
+  }
+  return out
+}
+
 function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []): EnrichedProduct {
   // Description : vider si c'est du cookie/GDPR (court ou long) ou du nav/footer
   let description = enriched.description
@@ -777,9 +813,27 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
    *  "- [x]", "[x]", "* [ ]", "[]". Si le LLM avale quand-même une de ces
    *  paires, le `name` ressemble à un marqueur de checkbox sans contenu. */
   const CHECKBOX_MARKER_RE = /^\s*[-*•]?\s*\[[xX✓✔ ]?\]\s*$/
+  // Pré-passe : re-découper les méga-specs « Caractéristiques = toute la table
+  // inline » (sortie LLM dégradée) en paires individuelles — les paires issues
+  // du découpage repassent ensuite par TOUS les filtres ci-dessous.
+  const preSpecs: EnrichedProduct['specifications'] = []
+  for (const s of enriched.specifications) {
+    if (MEGA_SPEC_NAME_RE.test(s.name.trim())) {
+      const split = splitMegaSpecValue(s.value)
+      if (split.length >= 3) {
+        console.log('[sanitize] mega-spec «', s.name, '» re-découpée en', split.length, 'paires')
+        preSpecs.push(...split.map((p) => ({ ...p, group: s.group })))
+        continue
+      }
+    }
+    preSpecs.push(s)
+  }
+
   const keptSpecs: EnrichedProduct['specifications'] = []
   const rejectedSpecs: EnrichedProduct['specifications'] = []
-  for (const s of enriched.specifications) {
+  for (const s of preSpecs) {
+    // Sentinelles internes recrachées par le LLM : jamais une spec.
+    if (/JINA_EXTRACTED_/.test(s.name) || /JINA_EXTRACTED_/.test(s.value)) { rejectedSpecs.push(s); continue }
     if (isGarbageContent(s.name) || isGarbageContent(s.value)) { rejectedSpecs.push(s); continue }
     if (s.group && JUNK_GROUP_RE.test(s.group.trim())) { rejectedSpecs.push(s); continue }
     // Lignes d'en-tête de table parasites : "Valeur", "*Valeur*",
@@ -4434,7 +4488,7 @@ async function enrichProductCoreInner(
               // Nettoyer nav/cookies AVANT la coupe : sur les sites à méga-menu
               // (Makita & co) les 20k premiers chars sont du menu — le contenu
               // produit (specs, EAN, sous-titre) n'atteignait jamais le LLM.
-              const cleanedMd = sanitizeJinaMarkdown(markdownContent)
+              const cleanedMd = stripInternalSentinels(sanitizeJinaMarkdown(markdownContent))
               mfrDataSections.push(`## Contenu de la page produit (markdown rendu)\n${cleanedMd.slice(0, 20000)}`)
             }
 
@@ -4572,6 +4626,23 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         else {
         let directBuild: Partial<EnrichedProduct> | null = null
         const structuredEarly = (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured ?? null
+        // ── Passe HTML BRUT universelle (parité fabricant/retailer) ──────────
+        // Même arsenal que les sites fabricants — REDUX / JSON-LD maison /
+        // NEXT_DATA / tables DOM / PDFs / breadcrumb / pictos — pour TOUS les
+        // sites : la qualité de fiche ne dépend plus du type de site détecté.
+        // HTML via CF fetchPageHtml → repli Jina HTML (WAF filtrant par IP).
+        const emptyRawData: ManufacturerData = {
+          downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [], pictoUrls: [],
+        }
+        let rawData = emptyRawData
+        if (productUrl) {
+          log(`Extraction HTML brut (JSON-LD, tables DOM, PDFs)…`)
+          rawData = await scrapeManufacturerRawData(productUrl).catch(() => emptyRawData)
+        }
+        if (rawData.specs.length || rawData.downloads.length || rawData.images.length) {
+          log(`HTML brut : ${rawData.specs.length} specs, ${rawData.downloads.length} PDFs, ${rawData.images.length} images`)
+        }
+        const hasRawSpecs = rawData.specs.length >= 3
         // Donnée structurée riche = JSON-LD ou microdata avec assez d'infos pour
         // construire un produit utile sans LLM. Utile quand markdown est vide
         // (DataDome bloque Jina/Firecrawl markdown mais le HTML contient JSON-LD).
@@ -4582,7 +4653,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         ))
         const hasMarkdown = !!(markdownContent && markdownContent.length > 200)
 
-        if (hasMarkdown || hasRichStructured) {
+        if (hasMarkdown || hasRichStructured || hasRawSpecs) {
           const mdSpecs = hasMarkdown ? parseSpecsFromMarkdown(markdownContent!) : []
           const mdAdvantages = hasMarkdown ? parseAdvantagesFromMarkdown(markdownContent!) : []
           // Description : parser uniquement la section primaire pour éviter
@@ -4607,6 +4678,12 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               mdSpecs.unshift(...jsonLdSpecs)
             }
           }
+
+          // Specs du HTML brut (tables DOM / état embarqué) — additives, dédup par nom.
+          if (rawData.specs.length > 0) {
+            const namesSeen = new Set(mdSpecs.map(s => s.name.toLowerCase()))
+            mdSpecs.push(...rawData.specs.filter(sp => !namesSeen.has(sp.name.toLowerCase())))
+          }
           console.log('[enrichment] parseDescriptionFromMarkdown returned:', mdDescription.length, 'chars. First 200:', JSON.stringify(mdDescription.slice(0, 200)))
 
           if (!mdDescription || mdDescription.length < 30) {
@@ -4619,9 +4696,9 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
           console.log('[enrichment] direct build attempt:', { specs: mdSpecs.length, advantages: mdAdvantages.length, descLen: mdDescription.length, hasMarkdown, hasRichStructured })
 
-          // Seuil abaissé quand structured-data riche : 3 specs suffisent
-          // (vs 5 pour markdown-only) car la donnée est de meilleure qualité.
-          const minSpecs = hasRichStructured ? 3 : 5
+          // Seuil abaissé quand structured-data ou HTML brut riche : 3 specs
+          // suffisent (vs 5 pour markdown-only) car la donnée est de meilleure qualité.
+          const minSpecs = (hasRichStructured || hasRawSpecs) ? 3 : 5
           const hasEnoughData = mdSpecs.length >= minSpecs
             && (mdAdvantages.length >= 2 || mdDescription.length > 50)
           if (hasEnoughData) {
@@ -4679,7 +4756,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             // EXCLUSIF (ancien comportement) faisait perdre les vraies images
             // produit quand le JSON-LD n'a qu'une URL `og:image` répétée.
             const structuredImages = structured?.images ?? []
-            const sourceImages = [...structuredImages, ...directImages]
+            const sourceImages = [...structuredImages, ...directImages, ...rawData.images]
             // Dédup par `imageStem()` (retire UNIQUEMENT les extensions d'image,
             // ex: `21334841.4006825646498.25192.40242354.jpg` → garde tous les
             // points internes du filename). L'ancienne logique `split('.')[0]`
@@ -4708,6 +4785,13 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               : undefined
             const mdPricing = parsePricingFromMarkdown(mdSafe, jsonLdPricing)
 
+            // Documents du HTML brut (PDFs REDUX/DOM) — additifs, dédup par URL.
+            for (const d of rawData.downloads) {
+              if (!directDocsSeen.has(d.url)) {
+                directDocsSeen.add(d.url)
+                directDocuments.push(buildDocument(d.url, d.name))
+              }
+            }
             directBuild = {
               description: mdDescription,
               advantages: mdAdvantages,
@@ -4766,9 +4850,10 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
           enriched = {
             ...directIdentity,
-            // Markdown d'abord ; JSON-LD `description` en repli quand la page
+            breadcrumb: rawData.breadcrumb.length > 0 ? rawData.breadcrumb : undefined,
+            // Markdown d'abord ; JSON-LD puis HTML brut en repli quand la page
             // rendue n'a pas fourni de prose exploitable.
-            description: directBuild.description || directStructured?.description || '',
+            description: directBuild.description || directStructured?.description || rawData.description || '',
             advantages: directBuild.advantages ?? [],
             specifications: directSpecsAfterLift,
             variants: directBuild.variants ?? [],
@@ -4838,7 +4923,9 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
           const dataSections: string[] = []
           if (markdownContent) {
-            dataSections.push(`## Contenu de la page produit (markdown rendu)\n${markdownContent.slice(0, 20000)}`)
+            // sanitize + strip des sentinelles internes : le LLM ne doit JAMAIS
+            // voir JINA_EXTRACTED_* (il les recrache dans les specs) ni le nav/cookies.
+            dataSections.push(`## Contenu de la page produit (markdown rendu)\n${stripInternalSentinels(sanitizeJinaMarkdown(markdownContent)).slice(0, 20000)}`)
           }
 
           const finalMdScore = scoreMd(markdownContent)
@@ -4966,6 +5053,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           const mergedImages: string[] = Array.from(new Set([
             ...(mdImages.length > 0 ? [...mdImages, ...llmImages] : llmImages),
             ...llmSdImages,
+            ...rawData.images.filter((u) => /^https?:\/\//.test(u) && !isJunkImageUrl(u)),
           ]))
           console.log('[enrichment-images] PATH=B(LLM) mdImages=', mdImages.length, 'llmImages=', llmImages.length, 'sdImages=', llmSdImages.length, 'merged=', mergedImages.length, 'sample:', mergedImages.slice(0, 3))
 
@@ -4989,6 +5077,8 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           for (const d of llmDocs) pushDoc(d)
           for (const t of mdDocTitled) pushDoc(buildDocument(t.url, t.name))
           for (const u of mdDocUrls) pushDoc(buildDocument(u))
+          // Documents du HTML brut (PDFs REDUX/DOM) — parité avec la voie fabricant.
+          for (const d of rawData.downloads) pushDoc(buildDocument(d.url, d.name))
 
           const llmVariants: Array<{ reference: string; label: string; properties: Record<string, string> }> =
             Array.isArray(ai.variants) ? ai.variants.filter(
@@ -5002,9 +5092,19 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           // JSON-LD prioritaire puis lift depuis specs Rubix-style, fallback
           // sur le H1 markdown ou les inputs utilisateur.
           const llmStructured = (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured ?? null
+          // Specs du HTML brut (tables DOM / état embarqué) — additives, dédup
+          // par nom : parité avec la voie fabricant, le LLM ne gate jamais la
+          // complétude des specs scrapées déterministiquement.
+          const llmSpecsWithRaw = [...ai.specifications]
+          {
+            const namesSeen = new Set(llmSpecsWithRaw.map((s: { name: string }) => s.name.toLowerCase()))
+            for (const sp of rawData.specs) {
+              if (!namesSeen.has(sp.name.toLowerCase())) llmSpecsWithRaw.push(sp)
+            }
+          }
           const { identity: llmIdentity, specs: llmSpecsAfterLift } = buildIdentity({
             structured: llmStructured,
-            specs: ai.specifications,
+            specs: llmSpecsWithRaw,
             markdown: markdownContent,
             inputTitle: title,
             inputBrand: brand,
@@ -5013,6 +5113,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
           enriched = {
             ...llmIdentity,
+            breadcrumb: rawData.breadcrumb.length > 0 ? rawData.breadcrumb : undefined,
             description: ai.description,
             advantages: (ai.advantages as string[]).map(text => ({ text })),
             specifications: llmSpecsAfterLift,
