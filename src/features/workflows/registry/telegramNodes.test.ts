@@ -48,7 +48,7 @@ describe('send-telegram node', () => {
 
   it("refuse l'envoi sans le droit « telegram.send »", async () => {
     useAccessStore.setState({ permissions: new Set(), isOwner: false })
-    await expect(sendTelegramNode.run(mkCtx(), baseConfig, {})).rejects.toThrow(/telegram\.send/)
+    await expect(sendTelegramNode.run(mkCtx(), baseConfig, {})).rejects.toThrow(/Envoyer des messages Telegram/)
     expect(sendTelegramMessage).not.toHaveBeenCalled()
   })
 
