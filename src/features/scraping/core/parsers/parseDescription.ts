@@ -5,6 +5,14 @@ import { isGarbageContent } from './garbageFilter'
  *  B2B (RS Components, Conrad…). Ce ne sont pas de la prose descriptive. */
 const METADATA_LINE_RE = /^[^.]*?\b(code\s+commande|r[eé]f[eé]rence(\s+fabricant)?|num[eé]ro\s+(de\s+)?(?:s[eé]rie|article)|sku|ean|gtin|code[\s-]?barres?|marque)\s*[:=]/i
 
+/** Bruit de widgets e-commerce rendus en texte par Jina (note d'avis « 3.44
+ *  étoiles sur 5 sur 47 avis produits », bandeau prix/promo « Vous économisez »,
+ *  disponibilité magasin « renseignez votre code postal », images inline
+ *  « !Image 28: … »). C'est de la micro-UI, jamais de la prose descriptive —
+ *  mais ces lignes dépassent 40 chars et passaient le filtre prose (poison
+ *  constaté sur les fiches Castorama). Rejet par MOTIF de widget, jamais par site. */
+const WIDGET_NOISE_RE = /(\b[eé]toiles?\s+sur\s+5\b|\bavis\s+(produits?|clients?|v[eé]rifi[eé]s?)\b|\bvous\s+[eé]conomisez\b|\bprix\s+d[’']origine\b|\bajouter\s+au\s+panier\b|\bvendu\s+et\s+exp[eé]di[eé]\b|(?:renseignez|saisissez)\s+votre\s+code\s+postal|\bquantit[eé]\s+limit[eé]e\s+[aà]\s+\d|magasins?\s+participants?|!Image\s+\d+:|offre\s+valable\s+du)/i
+
 /**
  * Extrait la description structurée depuis un blob `NEXT_DATA_SPECS: {...}`
  * injecté par notre scrape POST sur les sites Next.js (RS Components, etc.).
@@ -203,6 +211,7 @@ export function parseDescriptionFromMarkdown(md: string): string {
     // prose (≥ 40 chars, pas de bullet, pas de garbage), occupe Phase 1, et
     // empêche Phase 3 (longest prose) de s'activer.
     && !METADATA_LINE_RE.test(s)
+    && !WIDGET_NOISE_RE.test(s)
 
   const clean = (s: string) => s.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim()
 

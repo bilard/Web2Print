@@ -4741,15 +4741,20 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             message: 'Construction directe depuis les données scrapées (sans IA)…',
           })
 
-          const mergedImages = Array.from(new Set(
-            (directBuild.images ?? []).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u)),
-          ))
-
           // Identité (name/brand/model/refs/EAN) — JSON-LD prioritaire, lift
           // depuis specs Rubix-style en fallback, H1 markdown pour name si
           // toujours rien. Les specs liftées sont retirées pour éviter la
           // duplication "Marque" dans ai_specifications + ai_brand.
           const directStructured = (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured ?? null
+
+          // Images : markdown/DOM + JSON-LD (schema.org `image`) en ADDITIF —
+          // sur les retailers dont seul le JSON-LD porte les visuels (Castorama),
+          // les ignorer laissait la fiche sans aucune image.
+          const directSdImages = (directStructured?.images ?? [])
+            .filter((u) => /^https?:\/\//.test(u) && !isJunkImageUrl(u))
+          const mergedImages = Array.from(new Set(
+            [...(directBuild.images ?? []), ...directSdImages].map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u)),
+          ))
           const { identity: directIdentity, specs: directSpecsAfterLift } = buildIdentity({
             structured: directStructured,
             specs: directBuild.specifications ?? [],
@@ -4761,7 +4766,9 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
           enriched = {
             ...directIdentity,
-            description: directBuild.description ?? '',
+            // Markdown d'abord ; JSON-LD `description` en repli quand la page
+            // rendue n'a pas fourni de prose exploitable.
+            description: directBuild.description || directStructured?.description || '',
             advantages: directBuild.advantages ?? [],
             specifications: directSpecsAfterLift,
             variants: directBuild.variants ?? [],
@@ -4952,10 +4959,15 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             ? (ai.images as unknown[]).filter((u): u is string => typeof u === 'string' && /^https?:\/\//.test(u))
               .filter((u) => !isJunkImageUrl(u))
             : []
-          const mergedImages: string[] = mdImages.length > 0
-            ? Array.from(new Set([...mdImages, ...llmImages]))
-            : llmImages
-          console.log('[enrichment-images] PATH=B(LLM) mdImages=', mdImages.length, 'llmImages=', llmImages.length, 'merged=', mergedImages.length, 'sample:', mergedImages.slice(0, 3))
+          // JSON-LD (schema.org `image`) en ADDITIF — même raison que PATH A :
+          // sur certains retailers seul le JSON-LD porte les visuels produit.
+          const llmSdImages = (((globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured)?.images ?? [])
+            .filter((u) => /^https?:\/\//.test(u) && !isJunkImageUrl(u))
+          const mergedImages: string[] = Array.from(new Set([
+            ...(mdImages.length > 0 ? [...mdImages, ...llmImages] : llmImages),
+            ...llmSdImages,
+          ]))
+          console.log('[enrichment-images] PATH=B(LLM) mdImages=', mdImages.length, 'llmImages=', llmImages.length, 'sdImages=', llmSdImages.length, 'merged=', mergedImages.length, 'sample:', mergedImages.slice(0, 3))
 
           // Documents : LLM + extraction directe du markdown (URLs .pdf simples + liens titrés)
           const mdDocUrls: string[] = markdownContent

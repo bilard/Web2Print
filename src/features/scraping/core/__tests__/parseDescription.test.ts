@@ -192,3 +192,41 @@ Cette tondeuse à gazon alimentée par batterie est conçue pour une tonte effic
     expect(desc).not.toContain('DLM432Z') // pas le titre H3, juste la prose
   })
 })
+
+// Extrait RÉEL d'une fiche Castorama rendue par Jina (2026-07-11) : les lignes
+// widgets (note d'avis, bandeau promo) dépassent 40 chars et empoisonnaient la
+// description (cas Démo express — abris de jardin).
+const SAMPLE_CASTORAMA = `# Abri de jardin OAKLAND 757 en résine - KETER - gris et noir - Surface hors tout 5,12 m²
+
+Vendu et expédié par Castorama
+
+Note avis produits: 3.44 étoiles sur 5 sur 47 avis produits
+
+(47)
+
+Prix d’origine 1 149,90€~~1 149,90€~~919,92€Vous économisez 229,98€
+
+*Soldes, offre valable du 24/06/2026 au 17/07/2026, dans la limite des stocks disponibles.
+
+!Image 28: Icone Wibilong Interroger les utilisateurs Quantité limitée à 660 pièces au 08/07/2026 pour l'ensemble des magasins participants.
+
+Pour connaître la disponibilité des produits renseignez votre code postal
+
+## Détails du produit
+
+### Informations sur le produit
+
+L’abri de jardin Okaland 757 très élégant, de la marque Keter, offre une surface de 5,12m². Très esthétique, sa structure résistante en polypropylène brossé présente un effet bois selon la technologie Duotech et est traitée anti UV.
+`
+
+describe('parseDescriptionFromMarkdown — bruit widgets e-commerce (Castorama)', () => {
+  it('rejette les lignes widgets (avis, promo, dispo magasin) et garde la vraie prose', () => {
+    const desc = parseDescriptionFromMarkdown(SAMPLE_CASTORAMA)
+    expect(desc).toContain('polypropylène brossé')
+    expect(desc).not.toContain('étoiles sur 5')
+    expect(desc).not.toContain('Vous économisez')
+    expect(desc).not.toContain('code postal')
+    expect(desc).not.toContain('Wibilong')
+    expect(desc).not.toContain('Ajouter au panier')
+  })
+})
