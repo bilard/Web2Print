@@ -16,6 +16,7 @@ import { AnalyticsKpiCards } from './AnalyticsKpiCards'
 import { AnalyticsTimeChart } from './AnalyticsTimeChart'
 import { AnalyticsTopLists } from './AnalyticsTopLists'
 import { AnalyticsRecent } from './AnalyticsRecent'
+import { AnalyticsLiveFeed } from './AnalyticsLiveFeed'
 
 // Chargée à part : le fond de carte (Natural Earth 50m, ~500 Ko) ne doit pas peser sur le bundle principal.
 const AnalyticsWorldMap = lazy(() =>
@@ -212,6 +213,8 @@ export function AnalyticsTab() {
       ) : (
         <>
           <AnalyticsTimeChart series={series} />
+          {/* Trafic en direct (onSnapshot) — le même flux que les alertes Telegram. */}
+          <AnalyticsLiveFeed />
           {/* Journal détaillé : qui a vu quelle page et quand (élément principal). */}
           <AnalyticsRecent events={events} />
           {/* Carte du monde des connexions, par ville. */}
