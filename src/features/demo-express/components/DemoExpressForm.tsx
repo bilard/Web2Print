@@ -1,22 +1,24 @@
 // src/features/demo-express/components/DemoExpressForm.tsx
-// Écran d'entrée du wizard : nom de la société + URL d'une page produits de son
-// site (page catégorie idéalement — la découverte y trouve les fiches).
+// Écran d'entrée du wizard : nom de la société + URL de base de son site +
+// volumétrie du scraping (nombre de produits échantillonnés sur ses univers).
 import { useState } from 'react'
 import { Rocket } from 'lucide-react'
+import { DEMO_VOLUMES } from '../useDemoExpress'
 
 interface Props {
-  onLaunch: (company: string, url: string) => void
+  onLaunch: (company: string, url: string, opts: { maxProducts: number }) => void
 }
 
 export function DemoExpressForm({ onLaunch }: Props) {
   const [company, setCompany] = useState('')
   const [url, setUrl] = useState('')
+  const [volume, setVolume] = useState<number>(12)
   const valid = company.trim().length > 1 && /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}/i.test(url.trim())
 
   const launch = () => {
     if (!valid) return
     const normalized = /^https?:\/\//i.test(url.trim()) ? url.trim() : `https://${url.trim()}`
-    onLaunch(company.trim(), normalized)
+    onLaunch(company.trim(), normalized, { maxProducts: volume })
   }
 
   return (
@@ -47,7 +49,30 @@ export function DemoExpressForm({ onLaunch }: Props) {
         />
         <p className="mt-1.5 text-xs text-white/40">
           L’adresse d’accueil suffit : la démo descend toute seule dans les rayons du site et
-          échantillonne une douzaine de produits répartis sur ses univers.
+          échantillonne les produits répartis sur ses univers.
+        </p>
+      </div>
+      <div>
+        <span className="block text-sm font-medium text-white/80 mb-1.5">Volumétrie du scraping</span>
+        <div className="flex items-center gap-2">
+          {DEMO_VOLUMES.map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setVolume(v)}
+              className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                volume === v
+                  ? 'bg-indigo-600 border-indigo-500 text-[#fff]'
+                  : 'bg-well border-white/10 text-white/60 hover:text-white hover:border-white/25'
+              }`}
+            >
+              {v} produits
+            </button>
+          ))}
+        </div>
+        <p className="mt-1.5 text-xs text-white/40">
+          Plus de produits = démo plus riche mais plus longue (~30 s à 1 min par fiche).
+          Sur un compte démo, les quotas s’appliquent (50 produits, 20 images DAM).
         </p>
       </div>
       <button

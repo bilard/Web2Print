@@ -33,19 +33,32 @@ import { buildDemoSheet, sheetToMerge, DEMO_TARGET_FIELDS, type DemoProduct } fr
 import { buildDemoWorkflow } from './demoWorkflow'
 import { discoverCategories, categoriesFromHtml, productLinksFromListingHtml } from './discoverFromHome'
 
-const MAX_PRODUCTS = 12 // temps de démo raisonnable, sous le quota démo PIM (50)
-const MAX_DAM_UPLOADS = 18 // sous le quota démo DAM (20)
-const MAX_CATEGORY_TRIES = 8 // rayons explorés au plus lors de la descente depuis la home
-const PRODUCTS_PER_CATEGORY = 4 // échantillon par rayon → produits répartis sur la taxonomie
+/** Volumétries proposées par le wizard (48 max : sous le quota démo PIM de 50). */
+export const DEMO_VOLUMES = [6, 12, 24, 48] as const
+const DEFAULT_MAX_PRODUCTS = 12 // temps de démo raisonnable
 const MAX_BD_CATEGORY_TRIES = 5 // rayons via Bright Data (payant) — borne de coût
+
+/** Plafonds dérivés de la volumétrie choisie. */
+function volumePlan(maxProducts: number) {
+  // Échantillon par rayon : produits répartis sur la taxonomie (2 à 8/rayon).
+  const perCategory = Math.min(8, Math.max(2, Math.round(maxProducts / 4)))
+  return {
+    maxProducts,
+    perCategory,
+    // Assez de rayons pour atteindre la cible, borné (temps de démo).
+    categoryTries: Math.min(16, Math.max(8, Math.ceil(maxProducts / perCategory) + 2)),
+    // 1 image/produit ; le quota démo DAM (20) est de toute façon appliqué serveur.
+    damUploads: maxProducts,
+  }
+}
 
 const errMsg = (e: unknown): string => (e instanceof Error ? e.message : 'erreur inconnue')
 
 /** Upload DAM des images produit (1 par produit, plafonné) — mute `items`. */
-async function seedDam(items: DemoProduct[], company: string, aborted: () => boolean): Promise<number> {
+async function seedDam(items: DemoProduct[], company: string, aborted: () => boolean, maxUploads: number): Promise<number> {
   let uploaded = 0
   for (const it of items) {
-    if (aborted() || uploaded >= MAX_DAM_UPLOADS) break
+    if (aborted() || uploaded >= maxUploads) break
     const img = it.assets.find((a) => a.type === 'image')?.url
     if (!img) continue
     try {
@@ -160,9 +173,10 @@ export function useDemoExpress() {
   const { discover } = useJina()
   const { saveToFirebase } = useExcelFirebase()
 
-  const run = useCallback(async (company: string, url: string) => {
+  const run = useCallback(async (company: string, url: string, opts?: { maxProducts?: number }) => {
     const uid = auth.currentUser?.uid
     if (!uid) { toast.error('Connexion requise'); return }
+    const vol = volumePlan(opts?.maxProducts ?? DEFAULT_MAX_PRODUCTS)
     const s = useDemoExpressStore.getState()
     s.begin(company, url)
     const step = (id: Parameters<typeof s.updateStep>[0], patch: Parameters<typeof s.updateStep>[1]) =>
@@ -188,22 +202,22 @@ export function useDemoExpress() {
     let homeHtmlBd: string | null = null
     const pushUnique = (pages: { url: string; title: string }[]) => {
       for (const p of pages) {
-        if (productPages.length >= MAX_PRODUCTS) break
+        if (productPages.length >= vol.maxProducts) break
         if (!productPages.some((x) => x.url === p.url)) productPages.push(p)
       }
     }
     try {
-      const first = await discover(url, { limit: MAX_PRODUCTS })
+      const first = await discover(url, { limit: vol.maxProducts })
       productPages = [...first.pages]
       if (!productPages.length) {
         step('discover', { status: 'running', detail: 'page d’accueil sans fiches — descente dans les rayons…' })
         const categories = await discoverCategories(url)
         let tries = 0
         for (const cat of categories) {
-          if (aborted() || productPages.length >= MAX_PRODUCTS || tries >= MAX_CATEGORY_TRIES) break
+          if (aborted() || productPages.length >= vol.maxProducts || tries >= vol.categoryTries) break
           tries++
-          step('discover', { status: 'running', detail: `rayon ${tries}/${Math.min(categories.length, MAX_CATEGORY_TRIES)} — ${new URL(cat).pathname}` })
-          const r = await discover(cat, { limit: PRODUCTS_PER_CATEGORY })
+          step('discover', { status: 'running', detail: `rayon ${tries}/${Math.min(categories.length, vol.categoryTries)} — ${new URL(cat).pathname}` })
+          const r = await discover(cat, { limit: vol.perCategory })
           pushUnique(r.pages)
         }
       }
@@ -219,16 +233,16 @@ export function useDemoExpress() {
         if (homeHtmlBd) {
           // Produits en vitrine sur la home (JSON-LD/dataLayer seulement —
           // les ancres à image d'une home sont des bannières, pas des fiches).
-          pushUnique(await productLinksFromListingHtml(homeHtmlBd, url, MAX_PRODUCTS, { anchorFallback: false }))
+          pushUnique(await productLinksFromListingHtml(homeHtmlBd, url, vol.maxProducts, { anchorFallback: false }))
           const cats = categoriesFromHtml(homeHtmlBd, url)
           let tries = 0
           for (const cat of cats) {
-            if (aborted() || productPages.length >= MAX_PRODUCTS || tries >= MAX_BD_CATEGORY_TRIES) break
+            if (aborted() || productPages.length >= vol.maxProducts || tries >= MAX_BD_CATEGORY_TRIES) break
             tries++
             step('discover', { status: 'running', detail: `Bright Data — rayon ${tries}/${Math.min(cats.length, MAX_BD_CATEGORY_TRIES)} — ${new URL(cat).pathname}` })
             const catHtml = await brightDataScrapeHtml(cat)
             if (!catHtml) continue
-            pushUnique(await productLinksFromListingHtml(catHtml, cat, PRODUCTS_PER_CATEGORY, { anchorFallback: true }))
+            pushUnique(await productLinksFromListingHtml(catHtml, cat, vol.perCategory, { anchorFallback: true }))
           }
         }
       }
@@ -297,7 +311,7 @@ export function useDemoExpress() {
 
     // 4) Images → DAM Drive (1 par produit, quota démo respecté)
     step('dam', { status: 'running' })
-    const damCount = await seedDam(items, company, aborted)
+    const damCount = await seedDam(items, company, aborted, vol.damUploads)
     step('dam', damCount > 0
       ? { status: 'done', detail: `${damCount} image(s) dans le Drive DAM` }
       : { status: 'warning', detail: 'aucun upload (les cellules gardent les URLs externes)' })
