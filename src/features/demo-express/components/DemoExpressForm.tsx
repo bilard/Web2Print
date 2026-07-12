@@ -6,19 +6,20 @@ import { Rocket } from 'lucide-react'
 import { DEMO_VOLUMES } from '../useDemoExpress'
 
 interface Props {
-  onLaunch: (company: string, url: string, opts: { maxProducts: number }) => void
+  onLaunch: (company: string, url: string, opts: { maxProducts: number; prompt?: string }) => void
 }
 
 export function DemoExpressForm({ onLaunch }: Props) {
   const [company, setCompany] = useState('')
   const [url, setUrl] = useState('')
   const [volume, setVolume] = useState<number>(12)
+  const [prompt, setPrompt] = useState('')
   const valid = company.trim().length > 1 && /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}/i.test(url.trim())
 
   const launch = () => {
     if (!valid) return
     const normalized = /^https?:\/\//i.test(url.trim()) ? url.trim() : `https://${url.trim()}`
-    onLaunch(company.trim(), normalized, { maxProducts: volume })
+    onLaunch(company.trim(), normalized, { maxProducts: volume, prompt: prompt.trim() || undefined })
   }
 
   return (
@@ -73,6 +74,23 @@ export function DemoExpressForm({ onLaunch }: Props) {
         <p className="mt-1.5 text-xs text-white/40">
           Plus de produits = démo plus riche mais plus longue (~30 s à 1 min par fiche).
           Sur un compte démo, les quotas s’appliquent (50 produits, 20 images DAM).
+        </p>
+      </div>
+      <div>
+        <label htmlFor="demo-prompt" className="block text-sm font-medium text-white/80 mb-1.5">
+          Consignes créatives <span className="text-white/40 font-normal">(optionnel)</span>
+        </label>
+        <textarea
+          id="demo-prompt"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          rows={3}
+          placeholder="Ex. catalogue premium épuré, fiches en liste pleine largeur, couverture ambiance jardin d'été, ton chaleureux…"
+          className="w-full rounded-lg bg-well border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-indigo-500 resize-y"
+        />
+        <p className="mt-1.5 text-xs text-white/40">
+          Pilote le plan créatif du catalogue (mise en page, densité, ambiance, couverture) —
+          la charte du site reste prioritaire pour les couleurs.
         </p>
       </div>
       <button

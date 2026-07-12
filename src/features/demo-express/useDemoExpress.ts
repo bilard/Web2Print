@@ -91,8 +91,10 @@ async function seedCatalog(input: {
   columns: MergeColumn[]
   rows: MergeRow[]
   onDetail: (d: string) => void
+  /** Consignes créatives saisies dans le wizard (optionnel). */
+  userPrompt?: string
 }): Promise<string> {
-  const { company, charte, docId, fileName, columns, rows, onDetail } = input
+  const { company, charte, docId, fileName, columns, rows, onDetail, userPrompt } = input
   const name = `Démo ${company}`
   const levelKeys = guessLevelKeys(columns)
   const tree = buildCatalogTree(rows, columns, levelKeys)
@@ -101,7 +103,14 @@ async function seedCatalog(input: {
   for (const n of flattenTree(tree)) {
     sampleNames[n.id] = n.productIds.slice(0, 3).map((id) => `${id} — ${nameOf.get(id) ?? ''}`)
   }
-  const brief = `Catalogue de démonstration pour ${company}, fidèle à la charte graphique de son site (palette et consignes jointes).`
+  // Consignes créatives du wizard EN TÊTE du brief (elles pilotent le plan IA :
+  // mise en page, densité, ambiance, couverture) ; la charte reste prioritaire
+  // pour les couleurs (injectée à part dans le contexte du plan). Le brief est
+  // aussi persisté dans CatalogDoc.prompt → itérable ensuite dans le builder.
+  const brief = [
+    userPrompt,
+    `Catalogue de démonstration pour ${company}, fidèle à la charte graphique de son site (palette et consignes jointes).`,
+  ].filter(Boolean).join(' — ')
 
   onDetail('plan IA en cours…')
   let plan
@@ -181,7 +190,7 @@ export function useDemoExpress() {
   const { discover } = useJina()
   const { saveToFirebase } = useExcelFirebase()
 
-  const run = useCallback(async (company: string, url: string, opts?: { maxProducts?: number }) => {
+  const run = useCallback(async (company: string, url: string, opts?: { maxProducts?: number; prompt?: string }) => {
     const uid = auth.currentUser?.uid
     if (!uid) { toast.error('Connexion requise'); return }
     const vol = volumePlan(opts?.maxProducts ?? DEFAULT_MAX_PRODUCTS)
@@ -356,6 +365,7 @@ export function useDemoExpress() {
     try {
       const catalogId = await seedCatalog({
         company, charte, docId, fileName, columns, rows,
+        userPrompt: opts?.prompt,
         onDetail: (d) => step('catalog', { status: 'running', detail: d }),
       })
       useDemoExpressStore.getState().setLinks({ catalogId })
