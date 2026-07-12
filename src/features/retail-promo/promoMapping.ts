@@ -231,8 +231,8 @@ export function extractPromoFields(
  * du style, sinon l'aperçu et le catalogue divergent.
  * `hidden` = ids de champs masqués individuellement (« Éléments affichés »).
  */
-/** Une fiche n'est pas une fiche technique : plafond PAR DÉFAUT des specs affichées (réglable par fiche via cardStyle.maxSpecLines). */
-export const MAX_SPEC_LINES = 6
+/** PAR DÉFAUT le catalogue est EXHAUSTIF (toutes puces, toutes specs) — les
+ *  limites cardStyle.maxBulletLines/maxSpecLines sont optionnelles (0 specs = masquées). */
 const SPEC_FIELD_RE = /sp[ée]c|caract[ée]ristiques techniques/i
 
 /** Ce champ libre est-il la colonne de spécifications techniques ? (UI du plafond). */
@@ -262,7 +262,8 @@ export function buildSpecTable(
   hidden?: string[],
   maxSpecLines?: number,
 ): SpecTable | null {
-  const max = Math.max(0, maxSpecLines ?? MAX_SPEC_LINES)
+  // Défaut = TOUT (catalogue exhaustif) ; une limite n'existe que si posée explicitement.
+  const max = Math.max(0, maxSpecLines ?? UNCAPPED)
   if (max === 0) return null
   for (const cf of customFields) {
     if (hidden?.includes(cf.id) || !isSpecsDetailField(cf)) continue
@@ -287,8 +288,6 @@ export function buildSpecTable(
   return null
 }
 
-/** Fiche promo ≠ argumentaire complet : plafond de puces par champ (réglable via cardStyle.maxBulletLines), longueur max d'une puce. */
-export const MAX_BULLET_ITEMS = 5
 const MAX_BULLET_CHARS = 160
 
 /** Abrège au mot (« … » visible) — même philosophie que la description des fiches. */
@@ -365,7 +364,8 @@ export function buildDetailLines(
       // Champ de spécifications éclatable : rendu à part en TABLEAU nom/valeur
       // (buildSpecTable) — jamais en lignes de texte.
       if (isSpecsDetailField(cf) && isSpecShaped(v)) return []
-      return bulletLines(lab, v, maxBulletItems ?? MAX_BULLET_ITEMS)
+      // Défaut = TOUTES les puces (catalogue exhaustif) ; limite optionnelle.
+      return bulletLines(lab, v, maxBulletItems ?? UNCAPPED)
     })
     .filter((v): v is string => !!v))]
 }

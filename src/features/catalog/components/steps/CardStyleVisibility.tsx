@@ -4,7 +4,7 @@
 // (TVA, entretien…) masquables UN PAR UN sous « Détails ».
 import { useMemo } from 'react'
 import { useCatalogStore } from '@/stores/catalog.store'
-import { MAX_SPEC_LINES, MAX_BULLET_ITEMS, UNCAPPED, isSpecsDetailField, extractPromoFields, countDetailData } from '@/features/retail-promo/promoMapping'
+import { UNCAPPED, isSpecsDetailField, extractPromoFields, countDetailData } from '@/features/retail-promo/promoMapping'
 import type { CatalogCardStyle } from '../../catalogTypes'
 
 type ShowKey = keyof Pick<CatalogCardStyle,
@@ -79,34 +79,35 @@ export function CardStyleVisibility({ style, patch }: Props) {
                 </label>
               ))}
               <label className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
-                Puces max (par champ)
-                <input type="number" min={1} max={UNCAPPED} value={style.maxBulletLines ?? MAX_BULLET_ITEMS}
-                  onChange={(e) => patch({ maxBulletLines: Math.max(1, Math.min(UNCAPPED, Number(e.target.value) || 1)) })}
-                  className="w-14 px-2 py-0.5 rounded-md bg-well text-[11px] text-white outline-none border border-white/10 focus:border-[#6366f1]" />
+                Puces max (vide = toutes)
+                <input type="number" min={1} max={UNCAPPED} placeholder="toutes"
+                  value={style.maxBulletLines != null && style.maxBulletLines < UNCAPPED ? style.maxBulletLines : ''}
+                  onChange={(e) => patch({ maxBulletLines: e.target.value === '' ? UNCAPPED : Math.max(1, Math.min(UNCAPPED, Number(e.target.value) || 1)) })}
+                  className="w-16 px-2 py-0.5 rounded-md bg-well text-[11px] text-white outline-none border border-white/10 focus:border-[#6366f1] placeholder:text-white/25" />
               </label>
               {hasSpecsField && (
                 <label className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
-                  Spécifications max
-                  <input type="number" min={0} max={UNCAPPED} value={style.maxSpecLines ?? MAX_SPEC_LINES}
-                    onChange={(e) => patch({ maxSpecLines: Math.max(0, Math.min(UNCAPPED, Number(e.target.value) || 0)) })}
-                    className="w-14 px-2 py-0.5 rounded-md bg-well text-[11px] text-white outline-none border border-white/10 focus:border-[#6366f1]" />
+                  Spécifications max (vide = toutes)
+                  <input type="number" min={0} max={UNCAPPED} placeholder="toutes"
+                    value={style.maxSpecLines != null && style.maxSpecLines < UNCAPPED ? style.maxSpecLines : ''}
+                    onChange={(e) => patch({ maxSpecLines: e.target.value === '' ? UNCAPPED : Math.max(0, Math.min(UNCAPPED, Number(e.target.value) || 0)) })}
+                    className="w-16 px-2 py-0.5 rounded-md bg-well text-[11px] text-white outline-none border border-white/10 focus:border-[#6366f1] placeholder:text-white/25" />
                 </label>
               )}
               {(() => {
-                const auto = (style.maxBulletLines ?? MAX_BULLET_ITEMS) >= autoCounts.bullets
-                  && (style.maxSpecLines ?? MAX_SPEC_LINES) >= autoCounts.specs
+                const exhaustive = (style.maxBulletLines ?? UNCAPPED) >= autoCounts.bullets
+                  && (style.maxSpecLines ?? UNCAPPED) >= autoCounts.specs
                 return (
                   <button type="button"
-                    onClick={() => patch(auto
-                      ? { maxBulletLines: MAX_BULLET_ITEMS, maxSpecLines: MAX_SPEC_LINES }
-                      : { maxBulletLines: autoCounts.bullets, maxSpecLines: autoCounts.specs })}
-                    title="Règle les plafonds sur les comptes RÉELS des produits sélectionnés (tout est affiché, sans abrégé) — re-cliquer = revenir aux plafonds par défaut"
+                    onClick={() => patch({ maxBulletLines: UNCAPPED, maxSpecLines: UNCAPPED })}
+                    disabled={exhaustive}
+                    title="Retire toute limite : catalogue EXHAUSTIF (toutes les puces et toutes les spécifications de la source, sans abrégé) — c'est le comportement par défaut"
                     className={`w-full px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${
-                      auto ? 'bg-indigo-600 border-indigo-500 text-[#fff]' : 'bg-well border-white/10 text-white/60 hover:text-white'
+                      exhaustive ? 'bg-indigo-600/60 border-indigo-500/50 text-[#fff] cursor-default' : 'bg-well border-white/10 text-white/60 hover:text-white'
                     }`}>
-                    {auto
-                      ? `✓ Auto — tout est affiché (${autoCounts.bullets} puces · ${autoCounts.specs} specs)`
-                      : `Auto — tout afficher (${autoCounts.bullets} puces · ${autoCounts.specs} specs)`}
+                    {exhaustive
+                      ? `✓ Exhaustif — toute la donnée source est affichée (${autoCounts.bullets} puces · ${autoCounts.specs} specs)`
+                      : `Tout afficher (${autoCounts.bullets} puces · ${autoCounts.specs} specs)`}
                   </button>
                 )
               })()}

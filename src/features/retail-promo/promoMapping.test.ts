@@ -198,11 +198,11 @@ describe('spécifications techniques sur les fiches (devinage + rendu plafonné)
     expect(cfs.some((cf) => cf.column === 'ai_specifications')).toBe(true)
   })
 
-  it('buildSpecTable éclate les specs aplaties en paires nom/valeur plafonnées à 6, groupe retiré', () => {
+  it('buildSpecTable éclate les specs aplaties en paires nom/valeur — TOUTES par défaut (exhaustif), groupe retiré', () => {
     const cfs = [{ id: 'specs', label: 'Spécifications', column: 'ai_specifications' }]
     const t = buildSpecTable(cfs, { extra: { specs: SPECS } } as unknown as Parameters<typeof buildSpecTable>[1])
     expect(t?.label).toBe('Spécifications')
-    expect(t?.rows).toHaveLength(6)
+    expect(t?.rows).toHaveLength(8)
     expect(t?.rows[0]).toEqual({ name: 'Type d\'article', value: 'Dispo' })
     expect(t?.rows[2]).toEqual({ name: 'Profondeur externe (cm)', value: '243cm' })
     expect(t?.rows.every((r) => !r.name.includes('['))).toBe(true)
@@ -272,15 +272,15 @@ describe('plafond des puces (champ verbeux ne doit pas évincer les specs)', () 
   const cfs = [{ id: 'av', label: 'Avantages', column: 'c_av' }]
   const F = (v: string) => ({ extra: { av: v } }) as unknown as Parameters<typeof buildDetailLines>[1]
 
-  it('max 5 puces par champ (défaut)', () => {
+  it('défaut EXHAUSTIF : toutes les puces affichées', () => {
     const lines = buildDetailLines(cfs, F('A\nB\nC\nD\nE\nF\nG\nH'))
-    expect(lines).toEqual(['Avantages :', '• A', '• B', '• C', '• D', '• E'])
+    expect(lines).toEqual(['Avantages :', '• A', '• B', '• C', '• D', '• E', '• F', '• G', '• H'])
   })
 
-  it('une puce trop longue est abrégée au mot (« … ») quand le plafond COUPE la liste', () => {
+  it('une puce trop longue est abrégée au mot (« … ») quand une LIMITE coupe la liste', () => {
     const long = `Le coffre est-il difficile à monter ? Non, le montage est simplifié grâce à une notice illustrée et des éléments pré-percés, rendant l'assemblage accessible à tous les bricoleurs.`
-    // 7 items > plafond (5) → liste coupée → les puces gardées restent abrégées.
-    const lines = buildDetailLines(cfs, F(`${long}\nB\nC\nD\nE\nF\nG`))
+    // 7 items > limite explicite (5) → liste coupée → les puces gardées restent abrégées.
+    const lines = buildDetailLines(cfs, F(`${long}\nB\nC\nD\nE\nF\nG`), undefined, 5)
     expect(lines[1]!.length).toBeLessThanOrEqual(2 + 161)
     expect(lines[1]!.endsWith('…')).toBe(true)
   })
@@ -332,9 +332,9 @@ describe('puces : plafond réglable + titres de sous-section écartés', () => {
       .toEqual(['Avantages :', '• Poignée latérale', '• Perforateur SDS-Max puissant', '• Moteur 1470 W'])
   })
 
-  it('défaut : 5 puces max', () => {
+  it('défaut : toutes les puces (exhaustif)', () => {
     const lines = buildDetailLines(cfs, F('A1\nB2\nC3\nD4\nE5\nF6\nG7'))
-    expect(lines).toHaveLength(6) // étiquette + 5
+    expect(lines).toHaveLength(8) // étiquette + 7
   })
 
   it('maxBulletItems=8 → 7 puces affichées', () => {
