@@ -53,23 +53,15 @@ export const damUpload = onCall(
   { region: 'europe-west1', memory: '512MiB', timeoutSeconds: 60, maxInstances: 10 },
   async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Authentification requise')
-    const { url, fileName, folderName, subFolder, folderId: preResolvedFolderId } = (request.data ?? {}) as
-      { url?: string; fileName?: string; folderName?: string; subFolder?: string; folderId?: string }
+    const { url, fileName, folderName, subFolder, folderId: preResolvedFolderId, reuseByName } = (request.data ?? {}) as
+      { url?: string; fileName?: string; folderName?: string; subFolder?: string; folderId?: string; reuseByName?: boolean }
     if (typeof url !== 'string' || url.length === 0) throw new HttpsError('invalid-argument', 'url manquant')
     const safe = assertSafeUrl(url)
 
-    // Quota compte démo : plafond serveur infalsifiable. On vérifie au départ, on
-    // incrémente `users/{uid}.usage.damAssets` à la RÉUSSITE (un échec ne consomme
-    // pas de quota). Sous concurrence, léger dépassement borné toléré pour une démo ;
-    // le client pré-tranche déjà à la limite restante.
     const db = getFirestore()
     const demoEmail = (request.auth.token.email as string | undefined) ?? null
     const demo = await getDemoLimits(db, request.auth.uid, demoEmail)
     const usageRef = db.collection('users').doc(request.auth.uid)
-    if (demo) {
-      const used = ((await usageRef.get()).data()?.usage?.damAssets as number | undefined) ?? 0
-      if (used >= demo.damAssets) throw new HttpsError('resource-exhausted', `Limite démo atteinte : ${demo.damAssets} assets DAM maximum.`)
-    }
 
     const token = await getGoogleAccessToken(request.auth.uid)
     // Dossier cible : pré-résolu (recommandé, évite la course entre uploads
@@ -78,6 +70,31 @@ export const damUpload = onCall(
       typeof preResolvedFolderId === 'string' && /^[\w-]{10,}$/.test(preResolvedFolderId)
         ? preResolvedFolderId
         : (await ensureDamTarget(token, folderName ?? 'Web2Print — Assets DAM', subFolder)).targetId
+
+    // Idempotence OPT-IN (re-runs de la Démo express…) : si un fichier du MÊME
+    // NOM existe déjà dans le dossier cible, on le RÉUTILISE — zéro re-upload,
+    // zéro quota consommé. Vérifié AVANT le plafond démo : réutiliser ne doit
+    // jamais échouer « limite atteinte ».
+    if (reuseByName === true && typeof fileName === 'string' && fileName) {
+      const existingName = fileName.replace(/[/\\:*?"<>|]/g, '_').slice(0, 80)
+      const q = new URLSearchParams({
+        q: `'${folderId}' in parents and trashed=false and name='${existingName.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`,
+        fields: 'files(id,webViewLink)', pageSize: '1', spaces: 'drive',
+      })
+      const found = await fetch(`https://www.googleapis.com/drive/v3/files?${q}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => (r.ok ? r.json() : null)).catch(() => null) as { files?: { id: string; webViewLink?: string }[] } | null
+      const hit = found?.files?.[0]
+      if (hit) return { fileId: hit.id, webViewLink: hit.webViewLink ?? `https://drive.google.com/file/d/${hit.id}/view`, reused: true }
+    }
+
+    // Quota compte démo : plafond serveur infalsifiable. On vérifie au départ, on
+    // incrémente `users/{uid}.usage.damAssets` à la RÉUSSITE (un échec ne consomme
+    // pas de quota). Sous concurrence, léger dépassement borné toléré pour une démo ;
+    // le client pré-tranche déjà à la limite restante.
+    if (demo) {
+      const used = ((await usageRef.get()).data()?.usage?.damAssets as number | undefined) ?? 0
+      if (used >= demo.damAssets) throw new HttpsError('resource-exhausted', `Limite démo atteinte : ${demo.damAssets} assets DAM maximum.`)
+    }
 
     // 1. Récupère l'image côté serveur.
     const ctrl = new AbortController()

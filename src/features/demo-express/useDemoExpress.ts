@@ -13,7 +13,7 @@ import { useJina } from '@/features/scraping/useJina'
 import { enrichRow } from '@/features/excel/ai-enrichment/enrichRow'
 import { analyzeInspirationUrl } from '@/features/catalog/charte/inspiration'
 import { EMPTY_CHARTE, charteToThemePatch } from '@/features/catalog/charte/extractCharte'
-import { uploadUrlToDam, damSlug } from '@/features/dam/uploadImageToDam'
+import { uploadUrlToDam, damSlug, isSystemicDamError } from '@/features/dam/uploadImageToDam'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { useExcelStore } from '@/stores/excel.store'
 import { makeExcelSourceRef } from '@/features/merge/excelSource'
@@ -70,15 +70,16 @@ async function seedDam(
     if (!img) continue
     try {
       const name = String(it.fields.name ?? 'produit')
-      it.damLink = await uploadUrlToDam(img, `${damSlug(name)}.jpg`, `Démo ${company}`)
+      // reuseByName : un re-run RÉUTILISE l'image « Démo {Société} » déjà dans le
+      // Drive (même nom) au lieu de re-consommer le quota démo (20 assets).
+      it.damLink = await uploadUrlToDam(img, `${damSlug(name)}.jpg`, `Démo ${company}`, { reuseByName: true })
       uploaded++
     } catch (e) {
-      const msg = errMsg(e)
-      firstError ??= msg
+      firstError ??= errMsg(e)
       // Quota démo DAM atteint OU Google non connecté : inutile d'insister,
       // toutes les tentatives suivantes échoueraient pareil. Les cellules
       // gardent l'URL externe (DamImage l'affiche aussi).
-      if (msg.includes('resource-exhausted') || /google non connect/i.test(msg)) break
+      if (isSystemicDamError(e)) break
     }
   }
   return { uploaded, firstError }
