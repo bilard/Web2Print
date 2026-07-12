@@ -58,8 +58,23 @@ function volumePlan(maxProducts: number) {
 const errMsg = (e: unknown): string => (e instanceof Error ? e.message : 'erreur inconnue')
 
 /** Journal live (panneau console de la page Démo express). */
-const logLine = (kind: 'ia' | 'connector' | 'error', text: string) => {
+const logLine = (kind: 'step' | 'ia' | 'connector' | 'error', text: string) => {
   useDemoExpressStore.getState().appendLog(kind, text)
+}
+
+/** Bilan d'une fiche enrichie pour le journal : ce qui a été RÉELLEMENT obtenu —
+ *  une fiche sans specs/réf se repère immédiatement, plus de diagnostic à l'aveugle. */
+function fieldsSummary(fields: Record<string, unknown>, assetCount: number): string {
+  const s = (k: string) => String(fields[k] ?? '').trim()
+  const specCount = s('specifications').split(/\n+/).filter((l) => l.includes(':')).length
+  const flags = [
+    `réf ${s('reference') || '—'}`,
+    `${specCount} spec(s)`,
+    `${assetCount} image(s)`,
+    s('price') ? `prix ${s('price')}` : null,
+    s('ean') ? `EAN ${s('ean')}` : null,
+  ].filter(Boolean).join(' · ')
+  return `✓ ${s('name') || 'Fiche'} — ${flags}`
 }
 
 // ── Trace des appels IA dans le journal (une ligne PAR REQUÊTE terminée :
@@ -357,7 +372,10 @@ export function useDemoExpress() {
       step('enrich', { status: 'running', detail: `${i + 1}/${productPages.length} — ${p.title}` })
       try {
         const { fields, assets } = await enrichRow({ url: p.url, targetFields: [...DEMO_TARGET_FIELDS] })
-        if (fields.name || fields.description || assets.length) items.push({ url: p.url, fields, assets })
+        if (fields.name || fields.description || assets.length) {
+          items.push({ url: p.url, fields, assets })
+          logLine('step', fieldsSummary(fields, assets.length))
+        }
       } catch (e) {
         // fiche irrécupérable : on passe à la suivante
         logLine('error', `Enrichissement — ${p.url} : ${errMsg(e)}`)
@@ -401,6 +419,7 @@ export function useDemoExpress() {
           if (isProductLike(fields)) {
             productLike.push({ url: p.url, fields, assets })
             recovered++
+            logLine('step', fieldsSummary(fields, assets.length))
           } else if (cand.depth < 2) {
             // Toujours pas un produit : c'est un sous-rayon (gamme) → un niveau de plus.
             editorialQueue.push({ url: p.url, depth: cand.depth + 1 })
