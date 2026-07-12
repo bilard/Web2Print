@@ -1028,7 +1028,7 @@ const enrichedProductJsonSchema = {
   properties: {
     description: {
       type: 'string',
-      description: 'Description marketing riche (2 à 4 phrases), en français, ton professionnel et engageant.',
+      description: 'Le paragraphe descriptif de la SOURCE recopié VERBATIM (mot pour mot) — ne rédige jamais ton propre texte, ne résume pas, ne reformule pas.',
     },
     advantages: {
       type: 'array',
@@ -4510,8 +4510,8 @@ ${mfrBuild.advantages.length > 0 ? `### Avantages scrapés (${mfrBuild.advantage
 ${mfrBuild.specifications.length > 0 ? `### Specs scrapées (${mfrBuild.specifications.length})\n${mfrBuild.specifications.map(s => `- ${s.group ? `[${s.group}] ` : ''}${s.name}: ${s.value}`).join('\n')}` : ''}
 
 ## CE QUE TU DOIS FAIRE
-1. Description : rédige une description professionnelle du produit en français (2-4 phrases), basée UNIQUEMENT sur le contenu de la page
-2. Avantages : REPRENDS les avantages scrapés ci-dessus + extrais ceux mentionnés dans le markdown
+1. Description : EXTRAIS verbatim le paragraphe descriptif principal de la page — copie EXACTE mot pour mot, NE RÉDIGE PAS, NE RÉSUME PAS, NE REFORMULE PAS
+2. Avantages : REPRENDS les avantages scrapés ci-dessus + extrais ceux du markdown, chaque puce recopiée EXACTEMENT telle qu'écrite (verbatim)
 3. Spécifications : Extrais UNIQUEMENT les specs visibles dans le markdown ci-dessus.
    Parcours TOUT le texte pour trouver les paires nom/valeur (tables, listes, texte libre).
    Organise-les en groupes selon les titres de section du markdown.
@@ -4971,8 +4971,8 @@ ${sourceContext}
 ${dataSections.join('\n\n')}
 
 ## CE QUE TU DOIS FAIRE
-1. Description : rédige une description professionnelle en français basée UNIQUEMENT sur le contenu de la page
-2. Avantages : extrais TOUS les points forts / avantages mentionnés dans le markdown
+1. Description : EXTRAIS verbatim le paragraphe descriptif principal de la page — copie EXACTE mot pour mot, NE RÉDIGE PAS, NE RÉSUME PAS, NE REFORMULE PAS
+2. Avantages : extrais TOUS les points forts / avantages du markdown, chaque puce recopiée EXACTEMENT telle qu'écrite (verbatim)
 3. Spécifications : Parcours TOUT le markdown pour trouver les paires nom/valeur.
    Organise-les en groupes selon les titres de section du texte.
    NE PAS compléter avec des specs non présentes dans le texte — UNIQUEMENT ce qui est écrit.
@@ -4994,8 +4994,8 @@ ${sourceContext}
 ${hasSomeData ? '\n' + dataSections.join('\n\n') : ''}
 
 ## CE QUE TU DOIS FAIRE
-1. Description : rédige une description marketing professionnelle du produit en français (2-4 phrases)
-2. Avantages : liste les principaux points forts / avantages du produit (5-10 bullet points)
+1. Description : le paragraphe descriptif de la SOURCE recopié verbatim (mot pour mot) — NE RÉDIGE PAS, NE RÉSUME PAS, NE REFORMULE PAS
+2. Avantages : les points forts / avantages tels qu'écrits par la source, chaque puce recopiée EXACTEMENT (verbatim)
 3. Spécifications : liste TOUTES les spécifications techniques connues, organisées en groupes (Informations, Poids, Puissance, Décibels, Vibrations, Dimensions, etc.)
    Inclus notamment : tension, couple, vitesse, capacité, poids, dimensions, niveau sonore, vibrations, etc.
 4. Variantes : si tu connais des déclinaisons (kits avec différentes batteries, etc.), liste-les
