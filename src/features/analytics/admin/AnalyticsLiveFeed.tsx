@@ -16,6 +16,7 @@ function flagEmoji(cc: string | null): string {
 }
 
 const timeFmt = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' })
+const dateFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' })
 
 export function AnalyticsLiveFeed() {
   const events = useLiveTraffic(30)
@@ -47,7 +48,9 @@ export function AnalyticsLiveFeed() {
                 <span className={`shrink-0 font-medium ${e.uid ? 'text-white/85' : 'text-white/55'}`}>{name}</span>
                 <span className="text-white/45 truncate">{e.area} · {e.path}</span>
                 {place && <span className="shrink-0 text-white/40">{flagEmoji(e.country)} {place}</span>}
-                <span className="ml-auto shrink-0 tabular-nums text-white/30">{timeFmt.format(new Date(e.ts))}</span>
+                <span className="ml-auto shrink-0 tabular-nums text-white/30">
+                  {dateFmt.format(new Date(e.ts))} · {timeFmt.format(new Date(e.ts))}
+                </span>
               </li>
             )
           })}
