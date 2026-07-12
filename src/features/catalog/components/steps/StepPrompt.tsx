@@ -12,7 +12,7 @@ import { DEFAULT_GRID, representativeGrid } from '../../catalogEngine'
 import { cellDims, cellFit } from '../pages/catalogCss'
 import { isWideCard } from '../pages/freeLayout'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
-import { extractPromoFields, buildDetailLines } from '@/features/retail-promo/promoMapping'
+import { extractPromoFields, buildDetailLines, buildSpecTable } from '@/features/retail-promo/promoMapping'
 import { DEFAULT_CARD_STYLE, type CardBox, type CardObjectId } from '../../catalogTypes'
 import { CardStyleCard } from './CardStyleCard'
 import { CardStylePreview } from './CardStylePreview'
@@ -78,7 +78,11 @@ export function StepPrompt() {
     return row ? extractPromoFields(row, rawColumns, fieldMap, customFields) : null
   }, [previewRowId, rowsById, selectedRows, rawColumns, fieldMap, customFields])
   const sampleDetails = useMemo(
-    () => (sampleFields ? buildDetailLines(customFields, sampleFields, plan?.cardStyle?.hiddenDetails, plan?.cardStyle?.maxSpecLines) : []),
+    () => (sampleFields ? buildDetailLines(customFields, sampleFields, plan?.cardStyle?.hiddenDetails) : []),
+    [customFields, sampleFields, plan?.cardStyle?.hiddenDetails],
+  )
+  const sampleSpecs = useMemo(
+    () => (sampleFields ? buildSpecTable(customFields, sampleFields, plan?.cardStyle?.hiddenDetails, plan?.cardStyle?.maxSpecLines) : null),
     [customFields, sampleFields, plan?.cardStyle?.hiddenDetails, plan?.cardStyle?.maxSpecLines],
   )
 
@@ -259,7 +263,7 @@ export function StepPrompt() {
               {/* Zoom > 100 % : la carte déborde → défilement LOCAL des deux axes
                   (hauteur bornée au viewport) — le pan reste confiné à l'aperçu. */}
               <div ref={scrollBoxRef} className="overflow-auto pb-2 max-h-[calc(100vh-150px)]">
-                <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} cell={previewCell}
+                <CardStylePreview theme={plan.theme} cardStyle={cardStyle} fields={sampleFields} details={sampleDetails} specs={sampleSpecs} cell={previewCell}
                   wide={previewWide} featuredVariant={previewFeatured} selected={selectedObject}
                   editable onLayoutChange={patchLayout}
                   onSelect={setSelectedObject} zoom={previewZoom / 100} />

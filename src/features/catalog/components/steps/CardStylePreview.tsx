@@ -5,6 +5,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal } from 'lucide-react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
+import type { SpecTable } from '@/features/retail-promo/promoMapping'
 import type { CardBox, CardObjectId, CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
 import { CATALOG_CSS, cardStyleVars, themeVars } from '../pages/catalogCss'
 import { freeLayoutBox, isWideCard } from '../pages/freeLayout'
@@ -30,6 +31,8 @@ interface Props {
   fields?: PromoFields | null
   /** Lignes du bloc « Détails » (champs libres) — pour que l'aperçu montre la même zone que le catalogue. */
   details?: string[]
+  /** Tableau des spécifications (paires nom/valeur plafonnées) — même rendu que le catalogue. */
+  specs?: SpecTable | null
   /** Cellule imprimée (px + facteur --cat-fit) — la carte de l'aperçu EST cette cellule. */
   cell: { w: number; h: number; fit: number }
   /** Disposition éditée : pleine largeur (repli 2 colonnes + layoutWide) ou verticale.
@@ -84,7 +87,7 @@ function AnchorPalette({ selected, style, wide, onLayoutChange }: {
   )
 }
 
-export function CardStylePreview({ theme, cardStyle, fields, details, cell, wide: wideProp, featuredVariant = true, editable, onLayoutChange, onSelect, selected, zoom = 1 }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, details, specs, cell, wide: wideProp, featuredVariant = true, editable, onLayoutChange, onSelect, selected, zoom = 1 }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   const d = details && details.length ? details : SAMPLE_DETAILS
   const cardRef = useRef<HTMLDivElement | null>(null)
@@ -126,7 +129,7 @@ export function CardStylePreview({ theme, cardStyle, fields, details, cell, wide
           {/* Conteneur qui réserve la place ZOOMÉE ; la carte interne est à la taille cellule exacte puis scale(K). */}
           <div style={{ width: cell.w * K, height: cell.h * K, position: 'relative' }}>
             <div ref={cardRef} className="cat-style-card-host" style={{ width: cell.w, height: cell.h, transform: `scale(${K})`, transformOrigin: 'top left', display: 'grid', position: 'relative' }}>
-              <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" details={d} cardStyle={cardStyle} wide={wide} />
+              <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" details={d} specs={specs} cardStyle={cardStyle} wide={wide} />
             </div>
             {/* Overlay HORS de la carte scalée : ses positions sont en % (invariantes au
                 zoom) mais ses pastilles/poignées sont en px — dedans, elles seraient ×K. */}

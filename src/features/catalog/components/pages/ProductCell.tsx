@@ -8,7 +8,7 @@
 // prix ancré bas-droite (cf. skill retail-card-conventions).
 import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
-import { formatPromoLabel } from '@/features/retail-promo/promoMapping'
+import { formatPromoLabel, type SpecTable } from '@/features/retail-promo/promoMapping'
 import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle } from '../../catalogTypes'
 import { formatPrice } from './catalogCss'
 import { applyMagneticFlow, freeLayoutBox } from './freeLayout'
@@ -21,6 +21,8 @@ interface Props {
   kicker?: string
   /** Champs libres (valeurs seules, sans label) — zone « Détails » sous la description. */
   details?: string[]
+  /** Spécifications techniques (paires nom/valeur plafonnées) — TABLEAU dans la zone « Détails ». */
+  specs?: SpecTable | null
   /** Style cosmétique (visibilité des éléments) — les couleurs/tailles passent par les variables CSS. */
   cardStyle?: CatalogCardStyle
   /** Placement CSS grid (gridColumn/gridRow) calculé par le moteur. */
@@ -43,7 +45,7 @@ function abridge(text: string, max = 420): string {
   return `${text.slice(0, max).replace(/\s+\S*$/, '')}…`
 }
 
-export function ProductCell({ fields: f, featured, kicker, details, cardStyle, style, wide = false, onEdit }: Props) {
+export function ProductCell({ fields: f, featured, kicker, details, specs, cardStyle, style, wide = false, onEdit }: Props) {
   // Résolution Drive/CORS → blob:/data: (voir useResolvedImage). `data-resolving` est
   // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
   // avant capture html2canvas (l'<img> n'existe pas tant que src n'est pas prêt).
@@ -132,7 +134,22 @@ export function ProductCell({ fields: f, featured, kicker, details, cardStyle, s
       {f.ref && show('showRef') && obj('ref', <span className="cat-cell-refcode">Réf. {f.ref}</span>)}
       {f.unit && show('showUnit') && obj('unit', <span className="cat-cell-unit">Unité : {f.unit}</span>)}
       {show('showPrice') && obj('price', <span className="cat-cell-pricebox"><span className="cat-cell-tag">{hasWas && show('showWas') && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}<span className="cat-cell-price">{formatPrice(f.newPrice)}</span></span></span>)}
-      {details && details.length > 0 && show('showDetails') && obj('details', <div className="cat-cell-details">{details.map((d, i) => <span key={i}>{d}</span>)}</div>)}
+      {((details && details.length > 0) || (specs && specs.rows.length > 0)) && show('showDetails') && obj('details',
+        <div className="cat-cell-details">
+          {details?.map((d, i) => <span key={i}>{d}</span>)}
+          {specs && specs.rows.length > 0 && (
+            <div className="cat-cell-specs-wrap">
+              <span className="cat-cell-specs-title">{specs.label}</span>
+              <table className="cat-cell-specs">
+                <tbody>
+                  {specs.rows.map((r, i) => (
+                    <tr key={i}><td>{r.name}</td><td>{r.value}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>)}
     </div>
   )
 }

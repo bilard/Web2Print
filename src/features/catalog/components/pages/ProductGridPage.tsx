@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { extractPromoFields, buildDetailLines } from '@/features/retail-promo/promoMapping'
+import { extractPromoFields, buildDetailLines, buildSpecTable } from '@/features/retail-promo/promoMapping'
 import { GRID_DIMS, type CatalogGrid, type ProductSlot } from '../../catalogTypes'
 import { cellDimsFor, cellFitFor, type CatalogRenderCtx } from './catalogCss'
 import { isWideCard } from './freeLayout'
@@ -59,7 +59,8 @@ export function ProductGridPage({ ctx, grid, rows: rowsProp, slots, groupRows }:
         const row = ctx.rowsById.get(slot.rowId)
         if (!row) return <div key={slot.rowId} className="cat-cell" style={style} />
         const fields = extractPromoFields(row, ctx.columns, ctx.fieldMap, ctx.customFields)
-        const details = buildDetailLines(ctx.customFields, fields, ctx.plan.cardStyle?.hiddenDetails, ctx.plan.cardStyle?.maxSpecLines)
+        const details = buildDetailLines(ctx.customFields, fields, ctx.plan.cardStyle?.hiddenDetails)
+        const specs = buildSpecTable(ctx.customFields, fields, ctx.plan.cardStyle?.hiddenDetails, ctx.plan.cardStyle?.maxSpecLines)
         // Une GRANDE carte (vedette ou mise en avant prix) est la fiche de base
         // MAGNIFIÉE (transform scale) — mise en page strictement préservée, zéro
         // débordement par construction (wrapper = 100%/s, scale s). 2×2 → ×2 ;
@@ -77,7 +78,7 @@ export function ProductGridPage({ ctx, grid, rows: rowsProp, slots, groupRows }:
           return (
             <div key={slot.rowId} style={{ ...style, position: 'relative' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: `calc(100%/${s})`, height: `calc(100%/${s})`, transform: `scale(${s})`, transformOrigin: 'top left', display: 'grid', ...( { '--cat-fit': String(textFit) } as CSSProperties) }}>
-                <ProductCell fields={fields} featured={slot.featured} details={details} cardStyle={ctx.plan.cardStyle}
+                <ProductCell fields={fields} featured={slot.featured} details={details} specs={specs} cardStyle={ctx.plan.cardStyle}
                   wide={wideOf(slot.colSpan, slot.rowSpan)}
                   onEdit={ctx.onEditRow ? () => ctx.onEditRow?.(slot.rowId) : undefined} />
               </div>
@@ -86,7 +87,7 @@ export function ProductGridPage({ ctx, grid, rows: rowsProp, slots, groupRows }:
         }
         return (
           <ProductCell key={slot.rowId} fields={fields}
-            featured={slot.featured} details={details}
+            featured={slot.featured} details={details} specs={specs}
             cardStyle={ctx.plan.cardStyle} style={style}
             wide={wideOf(slot.colSpan, slot.rowSpan)}
             onEdit={ctx.onEditRow ? () => ctx.onEditRow?.(slot.rowId) : undefined} />

@@ -1,5 +1,5 @@
 import { describe, it, test, expect } from 'vitest'
-import { defaultPromoFieldMap, defaultCustomFields, buildDetailLines, extractPromoFields, computeRemiseLabel, displayedRemisePct } from './promoMapping'
+import { defaultPromoFieldMap, defaultCustomFields, buildDetailLines, buildSpecTable, extractPromoFields, computeRemiseLabel, displayedRemisePct } from './promoMapping'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFields } from './promoTypes'
 
@@ -198,28 +198,42 @@ describe('spécifications techniques sur les fiches (devinage + rendu plafonné)
     expect(cfs.some((cf) => cf.column === 'ai_specifications')).toBe(true)
   })
 
-  it('buildDetailLines éclate les specs aplaties en « Nom : Valeur » plafonnées à 6, étiquette en tête, groupe retiré', () => {
+  it('buildSpecTable éclate les specs aplaties en paires nom/valeur plafonnées à 6, groupe retiré', () => {
     const cfs = [{ id: 'specs', label: 'Spécifications', column: 'ai_specifications' }]
-    const lines = buildDetailLines(cfs, { extra: { specs: SPECS } } as unknown as Parameters<typeof buildDetailLines>[1])
-    expect(lines).toHaveLength(7) // étiquette + 6 specs
-    expect(lines[0]).toBe('Spécifications :')
-    expect(lines[1]).toBe('Type d\'article : Dispo')
-    expect(lines[3]).toBe('Profondeur externe (cm) : 243cm')
-    expect(lines.every((l) => !l.includes('['))).toBe(true)
+    const t = buildSpecTable(cfs, { extra: { specs: SPECS } } as unknown as Parameters<typeof buildSpecTable>[1])
+    expect(t?.label).toBe('Spécifications')
+    expect(t?.rows).toHaveLength(6)
+    expect(t?.rows[0]).toEqual({ name: 'Type d\'article', value: 'Dispo' })
+    expect(t?.rows[2]).toEqual({ name: 'Profondeur externe (cm)', value: '243cm' })
+    expect(t?.rows.every((r) => !r.name.includes('['))).toBe(true)
   })
 
-  it('specs « une paire nom: valeur PAR LIGNE » (dataset démo express) → même éclatement', () => {
+  it('specs « une paire nom: valeur PAR LIGNE » (dataset démo express) → même tableau', () => {
     const cfs = [{ id: 'specs', label: 'Caractéristiques', column: 'specifications' }]
-    const lines = buildDetailLines(cfs, {
+    const t = buildSpecTable(cfs, {
       extra: { specs: 'Type d\'article: Dispo\nGamme: Milo\nMatière: Bois' },
-    } as unknown as Parameters<typeof buildDetailLines>[1])
-    expect(lines).toEqual(['Caractéristiques :', 'Type d\'article : Dispo', 'Gamme : Milo', 'Matière : Bois'])
+    } as unknown as Parameters<typeof buildSpecTable>[1])
+    expect(t).toEqual({ label: 'Caractéristiques', rows: [
+      { name: 'Type d\'article', value: 'Dispo' },
+      { name: 'Gamme', value: 'Milo' },
+      { name: 'Matière', value: 'Bois' },
+    ] })
   })
 
-  it('une valeur specs SANS format aplati reste une ligne « Étiquette : valeur » classique', () => {
+  it('buildDetailLines EXCLUT le champ specs éclatable (rendu en tableau, pas en lignes)', () => {
+    const cfs = [
+      { id: 'av', label: 'Avantages', column: 'c_av' },
+      { id: 'specs', label: 'Spécifications', column: 'ai_specifications' },
+    ]
+    const lines = buildDetailLines(cfs, { extra: { av: 'Acier zingué', specs: SPECS } } as unknown as Parameters<typeof buildDetailLines>[1])
+    expect(lines).toEqual(['Avantages : Acier zingué'])
+  })
+
+  it('une valeur specs SANS format éclatable reste une ligne « Étiquette : valeur » (et pas de tableau)', () => {
     const cfs = [{ id: 'specs', label: 'Spécifications', column: 'ai_specifications' }]
-    expect(buildDetailLines(cfs, { extra: { specs: 'Acier zingué' } } as unknown as Parameters<typeof buildDetailLines>[1]))
-      .toEqual(['Spécifications : Acier zingué'])
+    const F = { extra: { specs: 'Acier zingué' } } as unknown as Parameters<typeof buildDetailLines>[1]
+    expect(buildDetailLines(cfs, F)).toEqual(['Spécifications : Acier zingué'])
+    expect(buildSpecTable(cfs, F)).toBeNull()
   })
 
   it('extractPromoFields aplatit une cellule specs STRUCTURÉE (source PIM verbatim)', () => {
@@ -239,15 +253,17 @@ describe('spécifications techniques sur les fiches (devinage + rendu plafonné)
 describe('plafond de specs réglable (cardStyle.maxSpecLines)', () => {
   const cfs = [{ id: 'specs', label: 'Spécifications', column: 'ai_specifications' }]
   const SPECS = '[G]A: 1 | [G]B: 2 | [G]C: 3 | [G]D: 4'
-  const F = { extra: { specs: SPECS } } as unknown as Parameters<typeof buildDetailLines>[1]
+  const F = { extra: { specs: SPECS } } as unknown as Parameters<typeof buildSpecTable>[1]
 
-  it('maxSpecLines=2 → étiquette + 2 lignes', () => {
-    expect(buildDetailLines(cfs, F, undefined, 2)).toEqual(['Spécifications :', 'A : 1', 'B : 2'])
+  it('maxSpecLines=2 → 2 paires', () => {
+    expect(buildSpecTable(cfs, F, undefined, 2)?.rows).toEqual([
+      { name: 'A', value: '1' }, { name: 'B', value: '2' },
+    ])
   })
-  it('maxSpecLines=0 → aucune ligne de spec (étiquette comprise)', () => {
-    expect(buildDetailLines(cfs, F, undefined, 0)).toEqual([])
+  it('maxSpecLines=0 → pas de tableau', () => {
+    expect(buildSpecTable(cfs, F, undefined, 0)).toBeNull()
   })
-  it('absent → défaut MAX_SPEC_LINES (6) : étiquette + les 4 specs', () => {
-    expect(buildDetailLines(cfs, F)).toHaveLength(5)
+  it('absent → défaut MAX_SPEC_LINES (6) : les 4 paires', () => {
+    expect(buildSpecTable(cfs, F)?.rows).toHaveLength(4)
   })
 })

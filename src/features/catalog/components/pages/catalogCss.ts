@@ -299,6 +299,15 @@ export const CATALOG_CSS = `
   font-family:var(--cat-font-details,var(--cat-font-b)); font-size:calc(9px * var(--cat-s-details,1) * ${F});
   color:var(--cat-details-ink,inherit); opacity:var(--cat-details-op,.75); line-height:1.3; }
 .cat-cell-details span { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+/* Tableau des spécifications : paires nom/valeur zébrées, filets discrets —
+   couleurs héritées de la zone détails (thème par fiche respecté). */
+.cat-cell-specs-wrap { margin-top:2px; }
+.cat-cell-specs-title { font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-size:.95em; }
+.cat-cell-specs { width:100%; border-collapse:collapse; margin-top:2px; table-layout:fixed; }
+.cat-cell-specs td { padding:1px 5px; vertical-align:top; line-height:1.3; border-top:1px solid rgba(127,127,127,.22); word-break:break-word; }
+.cat-cell-specs tr:first-child td { border-top:none; }
+.cat-cell-specs tr:nth-child(even) td { background:rgba(127,127,127,.07); }
+.cat-cell-specs td:first-child { font-weight:600; width:48%; }
 /* Cartes compactes (md, grilles denses) : bloc détails à HAUTEUR BORNÉE → coupe
    nette (ellipsis), jamais de débordement, réf/prix toujours visibles en bas. */
 .cat-md .cat-cell-details { max-height:5em; overflow:hidden; }

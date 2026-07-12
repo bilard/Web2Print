@@ -238,21 +238,47 @@ export function isSpecsDetailField(cf: { label?: string; column?: string }): boo
   return SPEC_FIELD_RE.test(`${cf.label ?? ''} ${cf.column ?? ''}`)
 }
 
+/** Une valeur de specs est-elle ÉCLATABLE en paires nom/valeur ? (« a: x | b: y » ou une paire par ligne). */
+function isSpecShaped(v: string): boolean {
+  return v.includes(':') && /\s\|\s|\n/.test(v)
+}
+
+export interface SpecTable {
+  label: string
+  rows: { name: string; value: string }[]
+}
+
 /**
- * Specs aplaties (« [Groupe]Nom: Valeur | … » OU une paire « Nom: Valeur » par
- * ligne) → étiquette en tête puis lignes « Nom : Valeur », plafonnées.
+ * TABLEAU des spécifications techniques d'une fiche : paires nom/valeur du champ
+ * specs (formats « [Groupe]Nom: Valeur | … » et « une paire par ligne »),
+ * plafonnées (`maxSpecLines`, 0 = masqué). Rendu en <table> par la carte —
+ * null si aucun champ specs exploitable.
  */
-function specLines(label: string, v: string, max: number): string[] {
-  const lines = v.split(/\s\|\s|\n+/)
-    .map((s) => s.replace(/^\[[^\]]*\]\s*/, '').trim())
-    .filter(Boolean)
-    .slice(0, max)
-    .map((s) => {
-      const i = s.indexOf(':')
-      return i > 0 ? `${s.slice(0, i).trim()} : ${s.slice(i + 1).trim()}` : s
-    })
-  if (lines.length === 0) return []
-  return label ? [`${label} :`, ...lines] : lines
+export function buildSpecTable(
+  customFields: CustomFieldMap,
+  fields: PromoFields,
+  hidden?: string[],
+  maxSpecLines?: number,
+): SpecTable | null {
+  const max = Math.max(0, maxSpecLines ?? MAX_SPEC_LINES)
+  if (max === 0) return null
+  for (const cf of customFields) {
+    if (hidden?.includes(cf.id) || !isSpecsDetailField(cf)) continue
+    const v = fields.extra?.[cf.id]
+    if (!v || !isSpecShaped(v)) continue
+    const rows = v.split(/\s\|\s|\n+/)
+      .map((s) => s.replace(/^\[[^\]]*\]\s*/, '').trim())
+      .filter(Boolean)
+      .slice(0, max)
+      .map((s) => {
+        const i = s.indexOf(':')
+        return i > 0
+          ? { name: s.slice(0, i).trim(), value: s.slice(i + 1).trim() }
+          : { name: s, value: '' }
+      })
+    if (rows.length) return { label: (cf.label || cf.column || '').trim(), rows }
+  }
+  return null
 }
 
 /**
@@ -277,7 +303,6 @@ export function buildDetailLines(
   customFields: CustomFieldMap,
   fields: PromoFields,
   hidden?: string[],
-  maxSpecLines?: number,
 ): string[] {
   return [...new Set(customFields
     .filter((cf) => !hidden?.includes(cf.id))
@@ -285,11 +310,9 @@ export function buildDetailLines(
       const v = fields.extra?.[cf.id]
       if (!v || !v.trim()) return []
       const lab = (cf.label || cf.column || '').trim()
-      // Champ de spécifications (paires « nom: valeur » séparées par « | » ou par
-      // retours ligne) : une ligne par spec, plafonnées — pas un pavé mono-ligne.
-      if (SPEC_FIELD_RE.test(`${cf.label} ${cf.column}`) && v.includes(':') && /\s\|\s|\n/.test(v)) {
-        return specLines(lab, v, Math.max(0, maxSpecLines ?? MAX_SPEC_LINES))
-      }
+      // Champ de spécifications éclatable : rendu à part en TABLEAU nom/valeur
+      // (buildSpecTable) — jamais en lignes de texte.
+      if (isSpecsDetailField(cf) && isSpecShaped(v)) return []
       return bulletLines(lab, v)
     })
     .filter((v): v is string => !!v))]
