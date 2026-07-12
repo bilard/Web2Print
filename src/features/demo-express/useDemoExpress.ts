@@ -410,7 +410,19 @@ export function useDemoExpress() {
         }
       }
     }
-    if (productLike.length > 0) items.splice(0, items.length, ...productLike)
+    // Échec FRANC plutôt qu'un catalogue de pages parasites : sans la moindre
+    // fiche à identité produit (réf/EAN — ou prix + vraies specs), on n'ensemence
+    // RIEN (un catalogue « politique de confidentialité » est pire que vide).
+    if (productLike.length === 0) {
+      step('enrich', {
+        status: 'error',
+        detail: `${items.length} page(s) analysée(s), aucune fiche PRODUIT identifiable (réf/EAN) — essayez une URL de rayon ou de fiche produit`,
+      })
+      for (const id of ['dam', 'sheet', 'catalog', 'promo', 'workflow'] as const) step(id, { status: 'skipped' })
+      finish()
+      return
+    }
+    items.splice(0, items.length, ...productLike)
     step('enrich', {
       status: 'done',
       detail: `${items.length} fiche(s) produit${editorial > 0
