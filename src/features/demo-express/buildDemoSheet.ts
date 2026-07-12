@@ -12,7 +12,7 @@ import { isSaneSpecPair } from '@/features/scraping/core/parsers/parseSpecificat
 /** Champs demandés au moteur d'enrichissement (clés de mapProductToFields). */
 export const DEMO_TARGET_FIELDS = [
   'name', 'brand', 'reference', 'ean', 'price',
-  'description', 'advantages', 'specifications', 'breadcrumb',
+  'description', 'advantages', 'specifications', 'documents', 'breadcrumb',
 ]
 
 export interface DemoProduct {
@@ -85,6 +85,7 @@ export function buildDemoSheet(company: string, siteUrl: string, items: DemoProd
     col('description', 'Description', 'text_long', { width: 320 }),
     col('advantages', 'Avantages', 'text_long', { width: 280 }),
     col('specifications', 'Caractéristiques', 'text_long', { width: 320 }),
+    col('documents', 'Documents', 'url', { width: 220 }),
     col('url', 'URL source', 'url', { width: 220 }),
   ]
 
@@ -109,6 +110,7 @@ export function buildDemoSheet(company: string, siteUrl: string, items: DemoProd
       description: str(f.description) || null,
       advantages: str(f.advantages) || null,
       specifications: str(f.specifications) || null,
+      documents: str(f.documents) || null,
       url: it.url,
     }
   })

@@ -170,6 +170,10 @@ async function seedCatalog(input: {
   } catch {
     plan = defaultCatalogPlan(tree, name)
   }
+  // Le catalogue démo est un catalogue de DONNÉES exhaustives (défaut des fiches) :
+  // grandes cartes 2/page, sinon les puces + tableau de specs n'ont pas la place
+  // et le contenu se fait condenser/rogner (constaté Milwaukee).
+  plan = { ...plan, sections: plan.sections.map((sec) => ({ ...sec, productsPerPage: 2 as const, randomDensity: false })) }
 
   const fieldMap = defaultPromoFieldMap(columns)
   const doc: CatalogDoc = {

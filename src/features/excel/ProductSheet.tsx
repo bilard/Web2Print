@@ -73,9 +73,9 @@ const parseImageList = (v: CellValue): string[] => {
   return isImageUrl(v) ? [v] : []
 }
 
-// "Label: Val | Label: Val" → [{name,value}] or null
+// "Label: Val | Label: Val" OU une paire « Label: Val » PAR LIGNE → [{name,value}] ou null
 const parseSpecTable = (v: string): { name: string; value: string }[] | null => {
-  const parts = v.split(' | ').map(s => s.trim()).filter(Boolean)
+  const parts = v.split(/\s\|\s|\n+/).map(s => s.trim()).filter(Boolean)
   if (parts.length < 2) return null
   const parsed = parts.map(p => {
     const idx = p.indexOf(':')
@@ -820,10 +820,10 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
               const v = getValue(col)
               if (!v) return null
               const raw = String(v)
-              // May contain multiple URLs separated by " | "
+              // Plusieurs URLs séparées par « | » OU une par ligne.
               // For doc columns, keep only valid URLs; for generic URL values keep all non-empty
               const isDocColumn = isDocKey(col.key)
-              const links = raw.split(' | ').map(s => s.trim()).filter(s => isDocColumn ? isAnyUrl(s) : s.length > 0)
+              const links = raw.split(/\s\|\s|\n+/).map(s => s.trim()).filter(s => isDocColumn ? isAnyUrl(s) : s.length > 0)
               if (links.length === 0) return null
 
               return (
