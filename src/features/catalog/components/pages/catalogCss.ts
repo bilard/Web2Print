@@ -322,6 +322,12 @@ export const CATALOG_CSS = `
    passe à la ligne ; une valeur vraiment trop longue s'ellipse proprement. */
 .cat-spec-v { text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%; flex-shrink:0;
   font-weight:800; color:var(--cat-accent); opacity:1; }
+/* ⚠ Spécificité : en disposition libre, « .cat-free .cat-cell-details span » pose
+   pre-line sur TOUS les spans — la valeur de spec re-wrappait sur 6 lignes et
+   creusait des vides dans la grille. Le nowrap/ellipse doit regagner. */
+.cat-free .cat-cell-details .cat-spec-v { white-space:nowrap; display:inline-block; overflow:hidden; }
+.cat-free .cat-cell-details .cat-spec-n { display:inline-block; }
+.cat-free .cat-cell-details .cat-cell-specs-title { display:inline-block; }
 /* Cartes compactes (md, grilles denses) : bloc détails à HAUTEUR BORNÉE → coupe
    nette (ellipsis), jamais de débordement, réf/prix toujours visibles en bas. */
 .cat-md .cat-cell-details { max-height:5em; overflow:hidden; }

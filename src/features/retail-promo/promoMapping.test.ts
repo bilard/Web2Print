@@ -284,3 +284,14 @@ describe('plafond des puces (champ verbeux ne doit pas évincer les specs)', () 
     expect(lines[1]!.endsWith('…')).toBe(true)
   })
 })
+
+test('buildSpecTable écarte les paires PROSE (valeur > 60 c) — elles creusaient des vides en chips', () => {
+  const cfs = [{ id: 'specs', label: 'Caractéristiques', column: 'specifications' }]
+  const t = buildSpecTable(cfs, {
+    extra: { specs: 'Matière: Aluminium\nUsage: Idéal pour les usages quotidiens exigeants dans de nombreuses situations domestiques différentes. 3 positions, conversion facile sans outil.\nType d\'article: Diable' },
+  } as unknown as Parameters<typeof buildSpecTable>[1])
+  expect(t?.rows).toEqual([
+    { name: 'Matière', value: 'Aluminium' },
+    { name: 'Type d\'article', value: 'Diable' },
+  ])
+})

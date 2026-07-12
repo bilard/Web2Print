@@ -269,13 +269,17 @@ export function buildSpecTable(
     const rows = v.split(/\s\|\s|\n+/)
       .map((s) => s.replace(/^\[[^\]]*\]\s*/, '').trim())
       .filter(Boolean)
-      .slice(0, max)
       .map((s) => {
         const i = s.indexOf(':')
         return i > 0
           ? { name: s.slice(0, i).trim(), value: s.slice(i + 1).trim() }
           : { name: s, value: '' }
       })
+      // Une « valeur » de plusieurs dizaines de caractères est de la PROSE
+      // (« Usage : Idéal pour les usages quotidiens… »), pas une spec — en chip
+      // elle wrappe sur 6 lignes et creuse des VIDES dans toute la rangée.
+      .filter((r) => r.value.length <= 60)
+      .slice(0, max)
     if (rows.length) return { label: (cf.label || cf.column || '').trim(), rows }
   }
   return null
