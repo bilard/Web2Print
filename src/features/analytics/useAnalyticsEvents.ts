@@ -4,8 +4,9 @@ import { db } from '@/lib/firebase/config'
 import type { AnalyticsEvent } from './metrics'
 
 /** Mapping doc Firestore → AnalyticsEvent (partagé avec le flux live onSnapshot). */
-export function mapAnalyticsDoc(d: DocumentData): AnalyticsEvent {
+export function mapAnalyticsDoc(d: DocumentData, id?: string): AnalyticsEvent {
   return {
+    id,
     ts: (d.ts as Timestamp | undefined)?.toMillis() ?? 0,
     path: d.path ?? '/',
     area: d.area ?? 'other',
@@ -41,7 +42,7 @@ export function useAnalyticsEvents(fromMs: number, toMs: number | null, enabled:
       const snap = await getDocs(
         query(collection(db, 'analyticsEvents'), ...clauses, orderBy('ts', 'asc')),
       )
-      return snap.docs.map((s) => mapAnalyticsDoc(s.data()))
+      return snap.docs.map((s) => mapAnalyticsDoc(s.data(), s.id))
     },
   })
 }

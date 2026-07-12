@@ -2,6 +2,8 @@ type Area = 'promo' | 'docs' | 'app' | 'other'
 type Device = 'mobile' | 'tablet' | 'desktop'
 
 export interface AnalyticsEvent {
+  /** Id du document Firestore — requis pour « Supprimer le résultat » (absent des events synthétiques de test). */
+  id?: string
   ts: number
   path: string
   area: Area

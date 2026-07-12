@@ -15,7 +15,7 @@ export function useLiveTraffic(count = 30): AnalyticsEvent[] {
     const q = query(collection(db, 'analyticsEvents'), orderBy('ts', 'desc'), limit(count))
     return onSnapshot(
       q,
-      (snap) => setEvents(snap.docs.map((d) => mapAnalyticsDoc(d.data()))),
+      (snap) => setEvents(snap.docs.map((d) => mapAnalyticsDoc(d.data(), d.id))),
       () => setEvents([]),
     )
   }, [count])

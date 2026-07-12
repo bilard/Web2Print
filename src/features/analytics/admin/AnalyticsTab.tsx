@@ -1,17 +1,14 @@
 // src/features/analytics/admin/AnalyticsTab.tsx
 import { lazy, Suspense, useMemo, useState } from 'react'
-import { Download, Trash2, Loader2, UserX, Bell, BellOff } from 'lucide-react'
+import { Download, Trash2, UserX, Bell, BellOff, FilterX } from 'lucide-react'
 import { toast } from 'sonner'
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { useAnalyticsEvents } from '../useAnalyticsEvents'
 import { usePeriod, type PeriodKey } from '../usePeriod'
 import { computeKpis, timeSeries, filterEvents, NO_FILTER, type EventFilter } from '../metrics'
 import { downloadEventsCsv } from '../exportCsv'
-import { useClearAnalytics, usePurgeMyAnalytics } from '../useClearAnalytics'
+import { useClearAnalytics, usePurgeMyAnalytics, useDeleteFilteredAnalytics } from '../useClearAnalytics'
 import { useSessionAlerts } from '../useSessionAlerts'
+import { ConfirmDeleteDialog } from './ConfirmDeleteDialog'
 import { AnalyticsKpiCards } from './AnalyticsKpiCards'
 import { AnalyticsTimeChart } from './AnalyticsTimeChart'
 import { AnalyticsTopLists } from './AnalyticsTopLists'
@@ -43,9 +40,11 @@ export function AnalyticsTab() {
   const [country, setCountry] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const [confirmPurge, setConfirmPurge] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const clear = useClearAnalytics()
   const sessionAlerts = useSessionAlerts()
   const purgeMine = usePurgeMyAnalytics()
+  const deleteFiltered = useDeleteFilteredAnalytics()
   const handleClear = () => {
     clear.mutate(undefined, {
       onSuccess: (deleted) => {
@@ -70,6 +69,16 @@ export function AnalyticsTab() {
   const prev = useAnalyticsEvents(prevFromMs, prevToMs, true)
   const allEvents = cur.data ?? []
   const events = useMemo(() => filterEvents(allEvents, filter), [allEvents, filter])
+  const handleDeleteFiltered = () => {
+    const ids = events.map((e) => e.id).filter((id): id is string => !!id)
+    deleteFiltered.mutate(ids, {
+      onSuccess: (deleted) => {
+        setConfirmDelete(false)
+        toast.success(`Résultat supprimé — ${deleted.toLocaleString('fr-FR')} consultation(s).`)
+      },
+      onError: (e) => toast.error(`Échec : ${e instanceof Error ? e.message : 'erreur inconnue'}`),
+    })
+  }
   const kpis = useMemo(() => computeKpis(events), [events])
   const prevKpis = useMemo(() => computeKpis(filterEvents(prev.data ?? [], filter)), [prev.data, filter])
   // « Aujourd'hui » : courbe par heure (une seule journée ⇒ un point unique en granularité jour).
@@ -141,6 +150,14 @@ export function AnalyticsTab() {
             <UserX className="w-4 h-4" /> Purger mes visites
           </button>
           <button
+            onClick={() => setConfirmDelete(true)}
+            disabled={events.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-red-400/80 hover:text-red-300 bg-surface-2 hover:bg-red-500/10 disabled:opacity-40 disabled:pointer-events-none"
+            title="Supprimer définitivement les consultations correspondant aux filtres et à la période affichés"
+          >
+            <FilterX className="w-4 h-4" /> Supprimer le résultat
+          </button>
+          <button
             onClick={() => setConfirmClear(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-red-400/80 hover:text-red-300 bg-surface-2 hover:bg-red-500/10"
             title="Vider tout l'historique de consultation"
@@ -157,49 +174,45 @@ export function AnalyticsTab() {
       )}
       </div>
 
-      <AlertDialog open={confirmClear} onOpenChange={(o) => !clear.isPending && setConfirmClear(o)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Vider tout l'historique ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action supprime <strong>définitivement toutes les consultations</strong> enregistrées
-              (toutes périodes confondues), pas seulement celles affichées. Elle est irréversible.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={clear.isPending}>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); handleClear() }}
-              disabled={clear.isPending}
-              className="bg-red-600 hover:bg-red-700 text-[#fff]"
-            >
-              {clear.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Suppression…</> : 'Vider définitivement'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={confirmClear}
+        onOpenChange={setConfirmClear}
+        title="Vider tout l'historique ?"
+        description={<>
+          Cette action supprime <strong>définitivement toutes les consultations</strong> enregistrées
+          (toutes périodes confondues), pas seulement celles affichées. Elle est irréversible.
+        </>}
+        actionLabel="Vider définitivement"
+        pending={clear.isPending}
+        onConfirm={handleClear}
+      />
 
-      <AlertDialog open={confirmPurge} onOpenChange={(o) => !purgeMine.isPending && setConfirmPurge(o)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Purger vos propres visites ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Supprime <strong>uniquement vos consultations</strong> (vous, propriétaire) — vos tests
-              qui faussent les statistiques. Le trafic des autres visiteurs n'est pas touché. Action irréversible.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={purgeMine.isPending}>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); handlePurgeMine() }}
-              disabled={purgeMine.isPending}
-              className="bg-red-600 hover:bg-red-700 text-[#fff]"
-            >
-              {purgeMine.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Suppression…</> : 'Purger mes visites'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={confirmPurge}
+        onOpenChange={setConfirmPurge}
+        title="Purger vos propres visites ?"
+        description={<>
+          Supprime <strong>uniquement vos consultations</strong> (vous, propriétaire) — vos tests
+          qui faussent les statistiques. Le trafic des autres visiteurs n'est pas touché. Action irréversible.
+        </>}
+        actionLabel="Purger mes visites"
+        pending={purgeMine.isPending}
+        onConfirm={handlePurgeMine}
+      />
+
+      <ConfirmDeleteDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Supprimer le résultat filtré ?"
+        description={<>
+          Supprime <strong>définitivement les {events.length.toLocaleString('fr-FR')} consultation(s)</strong> correspondant
+          à la période et aux filtres affichés (zone, appareil, pays, page, source, utilisateur).
+          Le reste de l'historique n'est pas touché. Action irréversible.
+        </>}
+        actionLabel="Supprimer le résultat"
+        pending={deleteFiltered.isPending}
+        onConfirm={handleDeleteFiltered}
+      />
       {loading ? (
         <div className="text-white/40 text-sm py-12 text-center">Chargement…</div>
       ) : noData ? (
