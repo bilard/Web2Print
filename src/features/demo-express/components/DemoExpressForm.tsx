@@ -16,6 +16,9 @@ export function DemoExpressForm({ onLaunch }: Props) {
   // Volumétrie partagée avec le menu (« Scraper N produits » la prérègle).
   const volume = useDemoExpressStore((s) => s.formVolume)
   const setVolume = useDemoExpressStore((s) => s.setFormVolume)
+  // Brouillon de saisie : vider le champ pour retaper ne doit PAS être écrasé
+  // par la valeur clampée du store (Number('')=0 → resnappait à 12 à chaque frappe).
+  const [volumeDraft, setVolumeDraft] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('')
   const valid = company.trim().length > 1 && /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}/i.test(url.trim())
 
@@ -63,7 +66,7 @@ export function DemoExpressForm({ onLaunch }: Props) {
             <button
               key={v}
               type="button"
-              onClick={() => setVolume(v)}
+              onClick={() => { setVolume(v); setVolumeDraft(null) }}
               className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
                 volume === v
                   ? 'bg-indigo-600 border-indigo-500 text-[#fff]'
@@ -76,8 +79,14 @@ export function DemoExpressForm({ onLaunch }: Props) {
           <label className="flex items-center gap-1.5 text-sm text-white/60">
             ou exactement
             <input
-              type="number" min={1} max={48} value={volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
+              type="number" min={1} max={48}
+              value={volumeDraft ?? String(volume)}
+              onChange={(e) => {
+                setVolumeDraft(e.target.value)
+                const n = Number(e.target.value)
+                if (e.target.value !== '' && Number.isFinite(n) && n >= 1) setVolume(n)
+              }}
+              onBlur={() => setVolumeDraft(null)}
               className="w-16 rounded-lg bg-well border border-white/10 px-2 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500"
             />
           </label>
