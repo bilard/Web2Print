@@ -34,7 +34,7 @@ import type { CatalogCharte, CatalogDoc } from '@/features/catalog/catalogTypes'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import { buildDemoSheet, sheetToMerge, isProductLike, DEMO_TARGET_FIELDS, type DemoProduct } from './buildDemoSheet'
 import { buildDemoWorkflow } from './demoWorkflow'
-import { discoverCategories, categoriesFromHtml, productLinksFromListingHtml } from './discoverFromHome'
+import { discoverCategories, categoriesFromHtml, productLinksFromListingHtml, isObviousNonProductUrl } from './discoverFromHome'
 
 /** Volumétries proposées par le wizard (48 max : sous le quota démo PIM de 50). */
 export const DEMO_VOLUMES = [6, 12, 24, 48] as const
@@ -278,13 +278,19 @@ export function useDemoExpress() {
     const pushUnique = (pages: { url: string; title: string }[]) => {
       for (const p of pages) {
         if (productPages.length >= vol.maxProducts) break
+        // URL à l'évidence non-produit (cookies, actu, catalogues, concours…) :
+        // écartée AVANT l'enrichissement (~1 min économisée par page parasite).
+        if (isObviousNonProductUrl(p.url)) {
+          logLine('step', `URL non-produit écartée sans enrichissement : ${p.url}`)
+          continue
+        }
         if (!productPages.some((x) => x.url === p.url)) productPages.push(p)
       }
     }
     try {
       logLine('connector', `Jina — découverte des cartes produit sur ${url}`)
       const first = await discover(url, { limit: vol.maxProducts })
-      productPages = [...first.pages]
+      pushUnique(first.pages)
       if (!productPages.length) {
         step('discover', { status: 'running', detail: 'page d’accueil sans fiches — descente dans les rayons…' })
         const categories = await discoverCategories(url)
@@ -412,6 +418,7 @@ export function useDemoExpress() {
         if (aborted() || productLike.length >= vol.maxProducts) break
         if (seenUrls.has(p.url)) continue
         seenUrls.add(p.url)
+        if (isObviousNonProductUrl(p.url)) continue
         step('enrich', { status: 'running', detail: `descente — ${p.title}` })
         try {
           const { fields, assets } = await enrichRow({ url: p.url, targetFields: [...DEMO_TARGET_FIELDS] })

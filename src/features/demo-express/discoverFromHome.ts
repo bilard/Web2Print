@@ -69,6 +69,27 @@ export async function discoverCategories(baseUrl: string): Promise<string[]> {
 
 export interface DiscoveredPage { url: string; title: string }
 
+/**
+ * URL à l'ÉVIDENCE non-produit (pages légales, nav, actu, jeux concours,
+ * store locator…) : ne JAMAIS dépenser un enrichissement complet (~1 min)
+ * dessus — la découverte des cartes d'une SPA en remonte parfois.
+ * Signal par vocabulaire d'URL multi-langue, jamais par site.
+ */
+const NON_PRODUCT_PATH_RE = new RegExp(
+  '(^|[-_/])(politique|privacy|cookies?|confidentialite|mentions(-legales)?|legal|cg[uv]|conditions|contact|about|a-?propos|'
+  + 'news|actualites?|blog|presse?|press|catalogues|sitemap|recherche|search|login|signin|register|compte|account|'
+  + 'panier|cart|checkout|faq|support|sav|service-?client|garanties?|warranty|store-?locator|magasins?|distributeurs?|'
+  + 'revendeurs?|newsletter|evenements?|events?|jeu-?concours|concours|carrieres?|jobs?|recrutement)([-_/.]|$)',
+  'i',
+)
+export function isObviousNonProductUrl(url: string): boolean {
+  try {
+    return NON_PRODUCT_PATH_RE.test(new URL(url).pathname)
+  } catch {
+    return false
+  }
+}
+
 /** Rubriques candidates depuis un HTML déjà récupéré (voie Bright Data) :
  *  ancres du menu (nav/header) d'abord, puis le reste de la page. */
 export function categoriesFromHtml(html: string, baseUrl: string): string[] {
