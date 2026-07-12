@@ -59,9 +59,12 @@ function DemoLogConsole() {
   const logs = useDemoExpressStore((s) => s.logs)
   const [open, setOpen] = useState(true)
   const boxRef = useRef<HTMLDivElement | null>(null)
+  // « Collé au bas » façon terminal : l'auto-scroll ne s'applique que si on est
+  // déjà en bas — remonter lire l'historique n'est jamais interrompu.
+  const stickRef = useRef(true)
   useEffect(() => {
     const el = boxRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    if (el && stickRef.current) el.scrollTop = el.scrollHeight
   }, [logs.length, open])
   if (logs.length === 0) return null
   return (
@@ -73,7 +76,14 @@ function DemoLogConsole() {
         <span className="ml-auto">{open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}</span>
       </button>
       {open && (
-        <div ref={boxRef} className="max-h-[32vh] overflow-y-auto px-4 pb-3 font-mono text-[11px] leading-relaxed">
+        <div ref={boxRef}
+          onScroll={(e) => {
+            const el = e.currentTarget
+            stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60
+          }}
+          className="h-[32vh] overflow-y-scroll overscroll-contain px-4 pb-3 font-mono text-[11px] leading-relaxed
+            [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-white/[0.04]
+            [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/40">
           {logs.map((l, i) => (
             <div key={i} className="flex gap-2 items-baseline">
               <span className="shrink-0 text-white/25 tabular-nums">
