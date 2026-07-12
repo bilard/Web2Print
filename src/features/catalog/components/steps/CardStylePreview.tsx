@@ -129,7 +129,7 @@ export function CardStylePreview({ theme, cardStyle, fields, details, specs, cel
           {/* Conteneur qui réserve la place ZOOMÉE ; la carte interne est à la taille cellule exacte puis scale(K). */}
           <div style={{ width: cell.w * K, height: cell.h * K, position: 'relative' }}>
             <div ref={cardRef} className="cat-style-card-host" style={{ width: cell.w, height: cell.h, transform: `scale(${K})`, transformOrigin: 'top left', display: 'grid', position: 'relative' }}>
-              <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" details={d} specs={specs} cardStyle={cardStyle} wide={wide} />
+              <ProductCell fields={f} featured={featuredVariant} kicker="Sous-famille" details={d} specs={specs} cardStyle={cardStyle} wide={wide} previewRibbon />
             </div>
             {/* Overlay HORS de la carte scalée : ses positions sont en % (invariantes au
                 zoom) mais ses pastilles/poignées sont en px — dedans, elles seraient ×K. */}

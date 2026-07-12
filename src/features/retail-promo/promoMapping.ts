@@ -305,8 +305,12 @@ function abridgeItem(s: string): string {
  * Les tirets INTERNES des mots composés (Anti-corrosion) sont préservés.
  * Mono-sujet : ligne « Étiquette : valeur » classique.
  */
+/** Valeur de plafond signifiant « TOUT afficher » (bouton Auto) : plus de coupe ni d'abrégé. */
+export const UNCAPPED = 99
+
 function bulletLines(label: string, v: string, maxItems: number): string[] {
   const t = v.trim()
+  const full = maxItems >= UNCAPPED
   const items = (/^[-–—•*]\s/.test(t)
     ? t.replace(/^[-–—•*]\s+/, '').split(/\s+[-–—•*]\s+/)
     : t.split(/\n+/)
@@ -316,8 +320,9 @@ function bulletLines(label: string, v: string, maxItems: number): string[] {
     // Une « puce » qui finit par « : » est un TITRE de sous-section aspiré
     // (« Equipement standard : ») — elle consommait le quota pour rien.
     .filter((s) => !/:\s*$/.test(s))
-  if (items.length < 2) return [label ? `${label} : ${abridgeItem(items[0] ?? t)}` : abridgeItem(items[0] ?? t)]
-  return [...(label ? [`${label} :`] : []), ...items.slice(0, Math.max(1, maxItems)).map((s) => `• ${abridgeItem(s)}`)]
+  const shape = (s: string) => (full ? s : abridgeItem(s))
+  if (items.length < 2) return [label ? `${label} : ${shape(items[0] ?? t)}` : shape(items[0] ?? t)]
+  return [...(label ? [`${label} :`] : []), ...items.slice(0, Math.max(1, maxItems)).map((s) => `• ${shape(s)}`)]
 }
 
 export function buildDetailLines(

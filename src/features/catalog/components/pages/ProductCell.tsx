@@ -33,6 +33,9 @@ interface Props {
   wide?: boolean
   /** Double-clic sur la fiche → édition de la data produit (Aperçu du catalogue). */
   onEdit?: () => void
+  /** APERÇU DE STYLE uniquement : montre le ruban vedette même sur la variante
+   *  standard (pour le voir/le positionner) — les pages réelles restent featured-only. */
+  previewRibbon?: boolean
 }
 
 /** Description ABRÉGÉE à la donnée (~420 chars, coupe au mot + « … » visible) :
@@ -45,7 +48,7 @@ function abridge(text: string, max = 420): string {
   return `${text.slice(0, max).replace(/\s+\S*$/, '')}…`
 }
 
-export function ProductCell({ fields: f, featured, kicker, details, specs, cardStyle, style, wide = false, onEdit }: Props) {
+export function ProductCell({ fields: f, featured, kicker, details, specs, cardStyle, style, wide = false, onEdit, previewRibbon = false }: Props) {
   // Résolution Drive/CORS → blob:/data: (voir useResolvedImage). `data-resolving` est
   // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
   // avant capture html2canvas (l'<img> n'existe pas tant que src n'est pas prêt).
@@ -134,7 +137,7 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
       {show('showImage') && obj('image', <div className="cat-cell-img-in" data-resolving={resolving ? 'true' : undefined}>{src ? <img src={src} alt="" /> : <span className="cat-cell-img-ph">Sans visuel</span>}</div>)}
       {sticker && obj('sticker', <span className="cat-price-sticker">{sticker}</span>)}
       {kicker && show('showKicker') && obj('kicker', <span className="cat-cell-kicker">{kicker}</span>)}
-      {featured && show('showVedette') && obj('vedette', <span className="cat-cell-vedette">★ {cardStyle?.vedetteLabel || 'Vedette'}</span>)}
+      {(featured || previewRibbon) && show('showVedette') && obj('vedette', <span className="cat-cell-vedette">★ {cardStyle?.vedetteLabel || 'Vedette'}</span>)}
       {f.brand && show('showBrand') && obj('brand', <span className="cat-cell-brand">{f.brand}</span>)}
       {show('showName') && obj('name', <span className="cat-cell-name">{f.name || 'Produit'}</span>)}
       {f.description && show('showDesc') && obj('description', <span className="cat-cell-desc">{abridge(f.description)}</span>)}

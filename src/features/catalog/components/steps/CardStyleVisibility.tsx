@@ -3,7 +3,7 @@
 // la fiche (image, marque, nom, prix, prix barré compris) + les champs libres
 // (TVA, entretien…) masquables UN PAR UN sous « Détails ».
 import { useCatalogStore } from '@/stores/catalog.store'
-import { MAX_SPEC_LINES, MAX_BULLET_ITEMS, isSpecsDetailField } from '@/features/retail-promo/promoMapping'
+import { MAX_SPEC_LINES, MAX_BULLET_ITEMS, UNCAPPED, isSpecsDetailField } from '@/features/retail-promo/promoMapping'
 import type { CatalogCardStyle } from '../../catalogTypes'
 
 type ShowKey = keyof Pick<CatalogCardStyle,
@@ -61,15 +61,30 @@ export function CardStyleVisibility({ style, patch }: Props) {
               ))}
               <label className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
                 Puces max (par champ)
-                <input type="number" min={1} max={20} value={style.maxBulletLines ?? MAX_BULLET_ITEMS}
-                  onChange={(e) => patch({ maxBulletLines: Math.max(1, Math.min(20, Number(e.target.value) || 1)) })}
+                <input type="number" min={1} max={UNCAPPED} value={style.maxBulletLines ?? MAX_BULLET_ITEMS}
+                  onChange={(e) => patch({ maxBulletLines: Math.max(1, Math.min(UNCAPPED, Number(e.target.value) || 1)) })}
                   className="w-14 px-2 py-0.5 rounded-md bg-well text-[11px] text-white outline-none border border-white/10 focus:border-[#6366f1]" />
+                <button type="button"
+                  onClick={() => {
+                    const auto = (style.maxBulletLines ?? MAX_BULLET_ITEMS) >= UNCAPPED && (style.maxSpecLines ?? MAX_SPEC_LINES) >= UNCAPPED
+                    patch(auto
+                      ? { maxBulletLines: MAX_BULLET_ITEMS, maxSpecLines: MAX_SPEC_LINES }
+                      : { maxBulletLines: UNCAPPED, maxSpecLines: UNCAPPED })
+                  }}
+                  title="Tout afficher : plus aucun plafond ni abrégé sur les puces et les spécifications (re-cliquer = revenir aux plafonds par défaut)"
+                  className={`px-2 py-0.5 rounded-md text-[11px] border transition-colors ${
+                    (style.maxBulletLines ?? MAX_BULLET_ITEMS) >= UNCAPPED && (style.maxSpecLines ?? MAX_SPEC_LINES) >= UNCAPPED
+                      ? 'bg-indigo-600 border-indigo-500 text-[#fff]'
+                      : 'bg-well border-white/10 text-white/60 hover:text-white'
+                  }`}>
+                  Auto
+                </button>
               </label>
               {hasSpecsField && (
                 <label className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
                   Spécifications max
-                  <input type="number" min={0} max={30} value={style.maxSpecLines ?? MAX_SPEC_LINES}
-                    onChange={(e) => patch({ maxSpecLines: Math.max(0, Math.min(30, Number(e.target.value) || 0)) })}
+                  <input type="number" min={0} max={UNCAPPED} value={style.maxSpecLines ?? MAX_SPEC_LINES}
+                    onChange={(e) => patch({ maxSpecLines: Math.max(0, Math.min(UNCAPPED, Number(e.target.value) || 0)) })}
                     className="w-14 px-2 py-0.5 rounded-md bg-well text-[11px] text-white outline-none border border-white/10 focus:border-[#6366f1]" />
                 </label>
               )}

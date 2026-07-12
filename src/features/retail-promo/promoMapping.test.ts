@@ -335,3 +335,11 @@ describe('puces : plafond réglable + titres de sous-section écartés', () => {
     expect(lines).toHaveLength(8) // étiquette + 7
   })
 })
+
+test('mode Auto (UNCAPPED) : toutes les puces, sans abrégé', () => {
+  const cfs = [{ id: 'av', label: 'Avantages', column: 'c_av' }]
+  const long = 'Perforateur SDS-Max puissant délivrant onze joules d\'énergie d\'impact pour un rendement très élevé dans le béton armé, avec un moteur de mille quatre cent soixante-dix watts offrant une performance maximale et une durabilité optimisée'
+  const lines = buildDetailLines(cfs, { extra: { av: `${long}\nB\nC\nD\nE\nF\nG` } } as unknown as Parameters<typeof buildDetailLines>[1], undefined, 99)
+  expect(lines).toHaveLength(8) // étiquette + 7 puces, aucune coupe
+  expect(lines[1]).toBe(`• ${long}`) // pas d'abrégé « … »
+})
