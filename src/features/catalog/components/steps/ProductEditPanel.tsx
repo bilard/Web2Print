@@ -5,7 +5,7 @@
 // « Master » (écrit la source PIM/Excel : tous les canaux la verront).
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Database, FileOutput, Loader2, RotateCcw, X } from 'lucide-react'
+import { Database, FileOutput, Loader2, RotateCcw, Star, X } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { saveRowToMaster } from '../../masterWrite'
 import { isImageValue, ProductImageField } from './ProductImageField'
@@ -26,6 +26,26 @@ export function ProductEditPanel({ rowId, onClose }: Props) {
   const setRowOverride = useCatalogStore((s) => s.setRowOverride)
   const clearRowOverride = useCatalogStore((s) => s.clearRowOverride)
   const applyMasterPatch = useCatalogStore((s) => s.applyMasterPatch)
+  const plan = useCatalogStore((s) => s.plan)
+  const setPlan = useCatalogStore((s) => s.setPlan)
+  // Vedette = présence dans les featuredIds du plan (grande carte + ruban).
+  const isVedette = !!plan?.sections.some((sec) => sec.featuredIds?.includes(rowId))
+  const toggleVedette = () => {
+    if (!plan) return
+    // On ne connaît pas ici la section taxonomique du produit : l'id est posé
+    // sur TOUTES les sections — inerte hors de la sienne (le moteur ne teste
+    // featuredIds que contre les produits du nœud), nettoyé au prochain plan.
+    const sections = plan.sections.map((sec) => ({
+      ...sec,
+      featuredIds: isVedette
+        ? (sec.featuredIds ?? []).filter((id) => id !== rowId)
+        : [...new Set([...(sec.featuredIds ?? []), rowId])],
+    }))
+    setPlan({ ...plan, sections })
+    toast.success(isVedette
+      ? 'Ruban vedette retiré — enregistré dans la publication'
+      : 'Produit mis en VEDETTE (grande carte + ruban) — enregistré dans la publication')
+  }
   const row = useMemo(() => rawRows.find((r) => r._id === rowId), [rawRows, rowId])
   // Colonnes MAPPÉES sur la fiche d'abord (nom, marque, prix…), puis le reste.
   const columns = useMemo(() => {
@@ -84,6 +104,14 @@ export function ProductEditPanel({ rowId, onClose }: Props) {
           <button onClick={onClose} className="p-1.5 rounded-md hover:bg-surface-2 text-muted-foreground hover:text-white"><X className="w-4 h-4" /></button>
         </header>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {plan && (
+            <label className="flex items-center gap-2 px-3 py-2 rounded-md bg-surface-2 border border-white/[0.06] text-xs text-white/85 cursor-pointer select-none"
+              title="Grande carte 2×2 mise en avant avec le ruban vedette — réglage propre à CE catalogue (publication)">
+              <input type="checkbox" checked={isVedette} onChange={toggleVedette} className="accent-indigo-600" />
+              <Star className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+              Ruban vedette (mise en avant dans ce catalogue)
+            </label>
+          )}
           {overrides && Object.keys(overrides).length > 0 && (
             <button onClick={() => { clearRowOverride(rowId); onClose() }}
               className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md border border-amber-500/40 text-amber-400 hover:bg-amber-500/10 text-xs">
