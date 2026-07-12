@@ -6,6 +6,7 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { AiLiveIndicator } from '@/components/shared/AiLiveIndicator'
 import { TopProgressBar } from '@/components/shared/TopProgressBar'
 import { useThemeStore } from '@/stores/theme.store'
+import { useVersionCheck } from '@/features/app/useVersionCheck'
 import { router } from './router'
 
 const queryClient = new QueryClient({
@@ -24,6 +25,7 @@ function ThemedToaster() {
 }
 
 export default function App() {
+  useVersionCheck()
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>

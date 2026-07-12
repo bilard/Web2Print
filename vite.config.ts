@@ -1,9 +1,23 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
+// Stamp de build : injecté dans l'app (__BUILD_ID__) ET émis en /version.json.
+// L'app polle version.json et affiche « Nouvelle version disponible — Recharger »
+// dès qu'un déploiement plus récent est en ligne (SPA jamais rechargée sinon).
+const buildId = Date.now().toString(36)
+const emitVersion = (): Plugin => ({
+  name: 'emit-version-json',
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ buildId }) })
+  },
+})
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), emitVersion()],
+  define: {
+    __BUILD_ID__: JSON.stringify(buildId),
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
