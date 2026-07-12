@@ -311,7 +311,9 @@ export const CATALOG_CSS = `
 /* Zèbre par RANGÉE (2 paires par rangée) : rangées paires ombrées. */
 .cat-spec-pair:nth-child(4n+3), .cat-spec-pair:nth-child(4n+4) { background:rgba(127,127,127,.07); }
 .cat-spec-n { font-weight:600; word-break:break-word; }
-.cat-spec-v { text-align:right; word-break:break-word; }
+/* La VALEUR ne se coupe jamais au milieu d'un mot (« 243cm ») : c'est le nom qui
+   passe à la ligne ; une valeur vraiment trop longue s'ellipse proprement. */
+.cat-spec-v { text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%; flex-shrink:0; }
 /* Cartes compactes (md, grilles denses) : bloc détails à HAUTEUR BORNÉE → coupe
    nette (ellipsis), jamais de débordement, réf/prix toujours visibles en bas. */
 .cat-md .cat-cell-details { max-height:5em; overflow:hidden; }
