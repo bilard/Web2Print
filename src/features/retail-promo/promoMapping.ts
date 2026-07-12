@@ -308,10 +308,10 @@ function abridgeItem(s: string): string {
 /** Valeur de plafond signifiant « TOUT afficher » (bouton Auto) : plus de coupe ni d'abrégé. */
 export const UNCAPPED = 99
 
-function bulletLines(label: string, v: string, maxItems: number): string[] {
+/** Items de puces d'une valeur multi-sujets (titres de sous-section « … : » écartés). */
+function bulletItems(v: string): string[] {
   const t = v.trim()
-  const full = maxItems >= UNCAPPED
-  const items = (/^[-–—•*]\s/.test(t)
+  return (/^[-–—•*]\s/.test(t)
     ? t.replace(/^[-–—•*]\s+/, '').split(/\s+[-–—•*]\s+/)
     : t.split(/\n+/)
   ).flatMap((s) => s.split(/\n+/))
@@ -320,9 +320,34 @@ function bulletLines(label: string, v: string, maxItems: number): string[] {
     // Une « puce » qui finit par « : » est un TITRE de sous-section aspiré
     // (« Equipement standard : ») — elle consommait le quota pour rien.
     .filter((s) => !/:\s*$/.test(s))
+}
+
+function bulletLines(label: string, v: string, maxItems: number): string[] {
+  const items = bulletItems(v)
+  // Plafond qui COUVRE toute la liste (mode Auto/exact) = affichage intégral, sans abrégé.
+  const full = maxItems >= items.length
   const shape = (s: string) => (full ? s : abridgeItem(s))
-  if (items.length < 2) return [label ? `${label} : ${shape(items[0] ?? t)}` : shape(items[0] ?? t)]
+  if (items.length < 2) return [label ? `${label} : ${shape(items[0] ?? v.trim())}` : shape(items[0] ?? v.trim())]
   return [...(label ? [`${label} :`] : []), ...items.slice(0, Math.max(1, maxItems)).map((s) => `• ${shape(s)}`)]
+}
+
+/**
+ * Comptes RÉELS d'une fiche pour le bouton « Auto » : le plus grand nombre de
+ * puces d'un champ Détails, et le nombre de paires du tableau de specs.
+ */
+export function countDetailData(
+  customFields: CustomFieldMap,
+  fields: PromoFields,
+): { bullets: number; specs: number } {
+  let bullets = 0
+  for (const cf of customFields) {
+    const v = fields.extra?.[cf.id]
+    if (!v || !v.trim()) continue
+    if (isSpecsDetailField(cf) && isSpecShaped(v)) continue
+    bullets = Math.max(bullets, bulletItems(v).length)
+  }
+  const specs = buildSpecTable(customFields, fields, undefined, UNCAPPED)?.rows.length ?? 0
+  return { bullets, specs }
 }
 
 export function buildDetailLines(

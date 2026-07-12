@@ -2,8 +2,9 @@
 // Liste « Éléments affichés » du panneau Style des fiches : TOUS les objets de
 // la fiche (image, marque, nom, prix, prix barré compris) + les champs libres
 // (TVA, entretien…) masquables UN PAR UN sous « Détails ».
+import { useMemo } from 'react'
 import { useCatalogStore } from '@/stores/catalog.store'
-import { MAX_SPEC_LINES, MAX_BULLET_ITEMS, UNCAPPED, isSpecsDetailField } from '@/features/retail-promo/promoMapping'
+import { MAX_SPEC_LINES, MAX_BULLET_ITEMS, UNCAPPED, isSpecsDetailField, extractPromoFields, countDetailData } from '@/features/retail-promo/promoMapping'
 import type { CatalogCardStyle } from '../../catalogTypes'
 
 type ShowKey = keyof Pick<CatalogCardStyle,
@@ -36,8 +37,26 @@ export function CardStyleVisibility({ style, patch }: Props) {
   // Champs libres du catalogue (TVA, avantages…) : une case par champ, indentée
   // sous « Détails » — masquer un champ retire SA ligne de la zone, pas la zone.
   const customFields = useCatalogStore((s) => s.customFields)
+  const rawRows = useCatalogStore((s) => s.rawRows)
+  const rawColumns = useCatalogStore((s) => s.rawColumns)
+  const fieldMap = useCatalogStore((s) => s.fieldMap)
+  const selectedRowIds = useCatalogStore((s) => s.selectedRowIds)
   const hidden = style.hiddenDetails ?? []
   const hasSpecsField = customFields.some(isSpecsDetailField)
+  // Comptes RÉELS pour « Auto » : maximum de puces / de specs parmi les
+  // produits SÉLECTIONNÉS — les champs affichent alors le nombre exact.
+  const autoCounts = useMemo(() => {
+    const sel = new Set(selectedRowIds)
+    let bullets = 0
+    let specs = 0
+    for (const row of rawRows) {
+      if (sel.size > 0 && !sel.has(row._id)) continue
+      const c = countDetailData(customFields, extractPromoFields(row, rawColumns, fieldMap, customFields))
+      bullets = Math.max(bullets, c.bullets)
+      specs = Math.max(specs, c.specs)
+    }
+    return { bullets: Math.max(1, bullets), specs }
+  }, [rawRows, rawColumns, fieldMap, customFields, selectedRowIds])
   const toggleDetail = (id: string, visible: boolean) =>
     patch({ hiddenDetails: visible ? hidden.filter((h) => h !== id) : [...hidden, id] })
 
@@ -74,17 +93,20 @@ export function CardStyleVisibility({ style, patch }: Props) {
                 </label>
               )}
               {(() => {
-                const auto = (style.maxBulletLines ?? MAX_BULLET_ITEMS) >= UNCAPPED && (style.maxSpecLines ?? MAX_SPEC_LINES) >= UNCAPPED
+                const auto = (style.maxBulletLines ?? MAX_BULLET_ITEMS) >= autoCounts.bullets
+                  && (style.maxSpecLines ?? MAX_SPEC_LINES) >= autoCounts.specs
                 return (
                   <button type="button"
                     onClick={() => patch(auto
                       ? { maxBulletLines: MAX_BULLET_ITEMS, maxSpecLines: MAX_SPEC_LINES }
-                      : { maxBulletLines: UNCAPPED, maxSpecLines: UNCAPPED })}
-                    title="Tout afficher : plus aucun plafond ni abrégé sur les puces et les spécifications — re-cliquer = revenir aux plafonds par défaut"
+                      : { maxBulletLines: autoCounts.bullets, maxSpecLines: autoCounts.specs })}
+                    title="Règle les plafonds sur les comptes RÉELS des produits sélectionnés (tout est affiché, sans abrégé) — re-cliquer = revenir aux plafonds par défaut"
                     className={`w-full px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${
                       auto ? 'bg-indigo-600 border-indigo-500 text-[#fff]' : 'bg-well border-white/10 text-white/60 hover:text-white'
                     }`}>
-                    {auto ? '✓ Auto — tout est affiché' : 'Auto — afficher la totalité des données'}
+                    {auto
+                      ? `✓ Auto — tout est affiché (${autoCounts.bullets} puces · ${autoCounts.specs} specs)`
+                      : `Auto — tout afficher (${autoCounts.bullets} puces · ${autoCounts.specs} specs)`}
                   </button>
                 )
               })()}

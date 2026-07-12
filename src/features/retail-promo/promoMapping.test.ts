@@ -1,5 +1,5 @@
 import { describe, it, test, expect } from 'vitest'
-import { defaultPromoFieldMap, defaultCustomFields, buildDetailLines, buildSpecTable, extractPromoFields, computeRemiseLabel, displayedRemisePct } from './promoMapping'
+import { defaultPromoFieldMap, defaultCustomFields, buildDetailLines, buildSpecTable, countDetailData, extractPromoFields, computeRemiseLabel, displayedRemisePct } from './promoMapping'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFields } from './promoTypes'
 
@@ -277,11 +277,18 @@ describe('plafond des puces (champ verbeux ne doit pas évincer les specs)', () 
     expect(lines).toEqual(['Avantages :', '• A', '• B', '• C', '• D', '• E'])
   })
 
-  it('une puce trop longue est abrégée au mot (« … »)', () => {
+  it('une puce trop longue est abrégée au mot (« … ») quand le plafond COUPE la liste', () => {
     const long = `Le coffre est-il difficile à monter ? Non, le montage est simplifié grâce à une notice illustrée et des éléments pré-percés, rendant l'assemblage accessible à tous les bricoleurs.`
-    const lines = buildDetailLines(cfs, F(`${long}\nSecond point court.`))
+    // 7 items > plafond (5) → liste coupée → les puces gardées restent abrégées.
+    const lines = buildDetailLines(cfs, F(`${long}\nB\nC\nD\nE\nF\nG`))
     expect(lines[1]!.length).toBeLessThanOrEqual(2 + 161)
     expect(lines[1]!.endsWith('…')).toBe(true)
+  })
+
+  it('plafond qui COUVRE toute la liste → puces intégrales, sans abrégé', () => {
+    const long = `Le coffre est-il difficile à monter ? Non, le montage est simplifié grâce à une notice illustrée et des éléments pré-percés, rendant l'assemblage accessible à tous les bricoleurs.`
+    const lines = buildDetailLines(cfs, F(`${long}\nSecond point court.`))
+    expect(lines[1]).toBe(`• ${long}`)
   })
 })
 
@@ -342,4 +349,18 @@ test('mode Auto (UNCAPPED) : toutes les puces, sans abrégé', () => {
   const lines = buildDetailLines(cfs, { extra: { av: `${long}\nB\nC\nD\nE\nF\nG` } } as unknown as Parameters<typeof buildDetailLines>[1], undefined, 99)
   expect(lines).toHaveLength(8) // étiquette + 7 puces, aucune coupe
   expect(lines[1]).toBe(`• ${long}`) // pas d'abrégé « … »
+})
+
+test('countDetailData : comptes réels (puces max par champ, paires de specs)', () => {
+  const cfs = [
+    { id: 'av', label: 'Avantages', column: 'c_av' },
+    { id: 'specs', label: 'Caractéristiques', column: 'specifications' },
+  ]
+  const fields = {
+    extra: {
+      av: 'A\nB\nC\nEquipement standard :\nD',
+      specs: 'Tension: 18V\nPoids: 2kg\nCouple: 60Nm\nMandrin: 13mm',
+    },
+  } as unknown as Parameters<typeof countDetailData>[1]
+  expect(countDetailData(cfs, fields)).toEqual({ bullets: 4, specs: 4 })
 })
