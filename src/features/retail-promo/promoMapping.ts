@@ -64,6 +64,10 @@ export function defaultPromoFieldMap(columns: MergeColumn[]): Partial<Record<Pro
 const DETAIL_GUESS: string[][] = [
   ['avantages', 'avantage', 'bénéfices', 'benefits', 'atouts', 'points forts'],
   ['applications', 'application', 'usages', 'usage', 'utilisations', 'utilisation'],
+  // Spécifications techniques scrapées (ai_specifications, aplaties « [Groupe]Nom: Valeur | … ») —
+  // rendues en lignes « Nom : Valeur » plafonnées (cf. specLines). PAS de needle
+  // « caractéristiques » nu : il sert déjà d'alias de description.
+  ['spécifications', 'specifications', 'specs', 'spécifications techniques', 'caractéristiques techniques'],
   ['installation', 'montage', 'pose'],
   ['entretien', 'maintenance'],
   ['garantie', 'warranty'],
@@ -109,6 +113,29 @@ function str(row: MergeRow, columns: MergeColumn[], key?: string): string {
   if (!key) return ''
   const v = getRowValue(row, key, columns)
   return v == null ? '' : String(v)
+}
+
+/**
+ * Texte d'une cellule potentiellement STRUCTURÉE (source PIM verbatim) : les specs
+ * [{group, name, value}] sont aplaties au même format que l'enrichissement
+ * (« [Groupe]Nom: Valeur | … ») au lieu de sortir en « [object Object] ».
+ */
+function cellText(v: unknown): string {
+  if (v == null) return ''
+  if (Array.isArray(v)) {
+    return v
+      .map((it) => {
+        if (it && typeof it === 'object') {
+          const o = it as { group?: string; name?: string; value?: unknown }
+          if (o.name !== undefined) return `${o.group ? `[${o.group}]` : ''}${o.name}: ${o.value ?? ''}`
+          return JSON.stringify(it)
+        }
+        return String(it)
+      })
+      .filter(Boolean)
+      .join(' | ')
+  }
+  return String(v)
 }
 
 function num(row: MergeRow, columns: MergeColumn[], key?: string): number | null {
@@ -168,7 +195,7 @@ export function extractPromoFields(
   const { mechanism, remisePct, remiseMontant } = computeMechanism({ oldPrice, newPrice, lotQty, lotOffert, lotPrice })
   const extra: Record<string, string> = {}
   for (const cf of customFields) {
-    const v = str(row, columns, cf.column).trim()
+    const v = cellText(getRowValue(row, cf.column, columns)).trim()
     if (v) extra[cf.id] = v
   }
   return {
@@ -215,15 +242,36 @@ function normalizeDetailValue(v: string): string {
     .map((s) => s.trim()).filter(Boolean).join(' · ')
 }
 
+/** Une fiche n'est pas une fiche technique : on plafonne les specs affichées. */
+const MAX_SPEC_LINES = 6
+const SPEC_FIELD_RE = /sp[ée]c|caract[ée]ristiques techniques/i
+
+/** « [Groupe]Nom: Valeur | … » (specs aplaties) → lignes « Nom : Valeur », plafonnées. */
+function specLines(v: string): string[] {
+  return v.split(/\s\|\s/)
+    .map((s) => s.replace(/^\[[^\]]*\]\s*/, '').trim())
+    .filter(Boolean)
+    .slice(0, MAX_SPEC_LINES)
+    .map((s) => {
+      const i = s.indexOf(':')
+      return i > 0 ? `${s.slice(0, i).trim()} : ${s.slice(i + 1).trim()}` : s
+    })
+}
+
 export function buildDetailLines(customFields: CustomFieldMap, fields: PromoFields, hidden?: string[]): string[] {
   return [...new Set(customFields
     .filter((cf) => !hidden?.includes(cf.id))
-    .map((cf) => {
+    .flatMap((cf) => {
       const v = fields.extra?.[cf.id]
-      if (!v || !v.trim()) return null
+      if (!v || !v.trim()) return []
+      // Champ de spécifications au format aplati « a: x | b: y » : une ligne par
+      // spec (sans préfixe d'étiquette), plafonnées — pas un pavé mono-ligne.
+      if (SPEC_FIELD_RE.test(`${cf.label} ${cf.column}`) && v.includes(' | ') && v.includes(':')) {
+        return specLines(v)
+      }
       const lab = (cf.label || cf.column || '').trim()
       const val = normalizeDetailValue(v)
-      return lab ? `${lab} : ${val}` : val
+      return [lab ? `${lab} : ${val}` : val]
     })
     .filter((v): v is string => !!v))]
 }

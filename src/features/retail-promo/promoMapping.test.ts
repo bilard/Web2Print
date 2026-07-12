@@ -180,3 +180,44 @@ test('extractPromoFields sans customFields → extra vide (rétro-compat)', () =
   const row: MergeRow = { _id: 'r1', c: 'X' } as unknown as MergeRow
   expect(extractPromoFields(row, columns, { name: 'c' }).extra).toEqual({})
 })
+
+describe('spécifications techniques sur les fiches (devinage + rendu plafonné)', () => {
+  const SPECS = '[Général]Type d\'article: Dispo | [Général]Gamme: Milo | [Dimensions]Profondeur externe (cm): 243cm | [Dimensions]Largeur externe (cm): 243cm | [Dimensions]Hauteur (cm): 232cm | [Toit]Pente: 15.7° | [Toit]Couverture: feutre bitumeux | [Portes]Largeur: 1.2M'
+
+  it('defaultCustomFields devine la colonne specifications (alias ai_specifications)', () => {
+    const columns: MergeColumn[] = [
+      { key: 'ai_name', label: 'Nom', fieldType: 'text' },
+      { key: 'ai_specifications', label: 'Spécifications', fieldType: 'text', aliases: ['Spécifications', 'specs', 'Caractéristiques', 'specifications'] },
+    ]
+    const cfs = defaultCustomFields(columns, { name: 'ai_name' })
+    expect(cfs.some((cf) => cf.column === 'ai_specifications')).toBe(true)
+  })
+
+  it('buildDetailLines éclate les specs aplaties en lignes « Nom : Valeur » plafonnées à 6, groupe retiré', () => {
+    const cfs = [{ id: 'specs', label: 'Spécifications', column: 'ai_specifications' }]
+    const lines = buildDetailLines(cfs, { extra: { specs: SPECS } } as unknown as Parameters<typeof buildDetailLines>[1])
+    expect(lines).toHaveLength(6)
+    expect(lines[0]).toBe('Type d\'article : Dispo')
+    expect(lines[2]).toBe('Profondeur externe (cm) : 243cm')
+    expect(lines.every((l) => !l.includes('['))).toBe(true)
+  })
+
+  it('une valeur specs SANS format aplati reste une ligne « Étiquette : valeur » classique', () => {
+    const cfs = [{ id: 'specs', label: 'Spécifications', column: 'ai_specifications' }]
+    expect(buildDetailLines(cfs, { extra: { specs: 'Acier zingué' } } as unknown as Parameters<typeof buildDetailLines>[1]))
+      .toEqual(['Spécifications : Acier zingué'])
+  })
+
+  it('extractPromoFields aplatit une cellule specs STRUCTURÉE (source PIM verbatim)', () => {
+    const columns: MergeColumn[] = [{ key: 'ai_specifications', label: 'Spécifications' } as MergeColumn]
+    const row = {
+      _id: 'r1',
+      ai_specifications: [
+        { group: 'Général', name: 'Gamme', value: 'Milo' },
+        { group: 'Dimensions', name: 'Hauteur (cm)', value: '232cm' },
+      ],
+    } as unknown as MergeRow
+    const f = extractPromoFields(row, columns, {}, [{ id: 'specs', label: 'Spécifications', column: 'ai_specifications' }])
+    expect(f.extra?.specs).toBe('[Général]Gamme: Milo | [Dimensions]Hauteur (cm): 232cm')
+  })
+})
