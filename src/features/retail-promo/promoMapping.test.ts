@@ -267,3 +267,20 @@ describe('plafond de specs réglable (cardStyle.maxSpecLines)', () => {
     expect(buildSpecTable(cfs, F)?.rows).toHaveLength(4)
   })
 })
+
+describe('plafond des puces (champ verbeux ne doit pas évincer les specs)', () => {
+  const cfs = [{ id: 'av', label: 'Avantages', column: 'c_av' }]
+  const F = (v: string) => ({ extra: { av: v } }) as unknown as Parameters<typeof buildDetailLines>[1]
+
+  it('max 4 puces par champ', () => {
+    const lines = buildDetailLines(cfs, F('A\nB\nC\nD\nE\nF\nG\nH'))
+    expect(lines).toEqual(['Avantages :', '• A', '• B', '• C', '• D'])
+  })
+
+  it('une puce trop longue est abrégée au mot (« … »)', () => {
+    const long = `Le coffre est-il difficile à monter ? Non, le montage est simplifié grâce à une notice illustrée et des éléments pré-percés, rendant l'assemblage accessible à tous les bricoleurs.`
+    const lines = buildDetailLines(cfs, F(`${long}\nSecond point court.`))
+    expect(lines[1]!.length).toBeLessThanOrEqual(2 + 161)
+    expect(lines[1]!.endsWith('…')).toBe(true)
+  })
+})

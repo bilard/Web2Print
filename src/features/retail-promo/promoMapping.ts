@@ -281,9 +281,21 @@ export function buildSpecTable(
   return null
 }
 
+/** Fiche promo ≠ argumentaire complet : plafond de puces par champ, et longueur max d'une puce. */
+const MAX_BULLET_ITEMS = 4
+const MAX_BULLET_CHARS = 160
+
+/** Abrège au mot (« … » visible) — même philosophie que la description des fiches. */
+function abridgeItem(s: string): string {
+  if (s.length <= MAX_BULLET_CHARS) return s
+  return `${s.slice(0, MAX_BULLET_CHARS).replace(/\s+\S*$/, '')}…`
+}
+
 /**
  * Valeur MULTI-SUJETS (liste à tirets/puces « - A - B », ou une phrase par
- * ligne — sortie IA/scraping) → étiquette en tête puis une PUCE par sujet.
+ * ligne — sortie IA/scraping) → étiquette en tête puis une PUCE par sujet,
+ * PLAFONNÉES (4 puces, ~160 c chacune) : sans plafond, un champ verbeux (FAQ
+ * scrapée…) remplit la boîte Détails et fait rogner les specs en dessous.
  * Les tirets INTERNES des mots composés (Anti-corrosion) sont préservés.
  * Mono-sujet : ligne « Étiquette : valeur » classique.
  */
@@ -295,8 +307,8 @@ function bulletLines(label: string, v: string): string[] {
   ).flatMap((s) => s.split(/\n+/))
     .map((s) => s.trim().replace(/^[-–—•*]\s+/, ''))
     .filter(Boolean)
-  if (items.length < 2) return [label ? `${label} : ${items[0] ?? t}` : (items[0] ?? t)]
-  return [...(label ? [`${label} :`] : []), ...items.map((s) => `• ${s}`)]
+  if (items.length < 2) return [label ? `${label} : ${abridgeItem(items[0] ?? t)}` : abridgeItem(items[0] ?? t)]
+  return [...(label ? [`${label} :`] : []), ...items.slice(0, MAX_BULLET_ITEMS).map((s) => `• ${abridgeItem(s)}`)]
 }
 
 export function buildDetailLines(
