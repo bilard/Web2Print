@@ -22,6 +22,14 @@ export interface DemoStep {
   detail?: string
 }
 
+/** Ligne du journal live du pipeline (actions, appels IA, connecteurs). */
+export type DemoLogKind = 'step' | 'ia' | 'connector' | 'error'
+export interface DemoLogLine {
+  ts: number
+  kind: DemoLogKind
+  text: string
+}
+
 /** Identifiants des artefacts créés, pour le panneau « Découvrez vos données ». */
 export interface DemoResultLinks {
   sheetDocId?: string

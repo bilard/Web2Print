@@ -1,9 +1,10 @@
 // src/features/demo-express/components/DemoExpressProgress.tsx
 // Checklist live du pipeline : une ligne par étape (spinner/ok/avertissement/
-// erreur/sautée) + bouton d'arrêt pendant l'exécution.
-import { Loader2, Check, AlertTriangle, X, Minus, CircleDashed, Square } from 'lucide-react'
+// erreur/sautée) + journal console (actions, appels IA, connecteurs) + arrêt.
+import { useEffect, useRef } from 'react'
+import { Loader2, Check, AlertTriangle, X, Minus, CircleDashed, Square, Terminal } from 'lucide-react'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
-import type { DemoStepStatus } from '../types'
+import type { DemoLogKind, DemoStepStatus } from '../types'
 
 const STATUS_ICON: Record<DemoStepStatus, React.ReactNode> = {
   pending: <CircleDashed className="w-4 h-4 text-white/25" aria-hidden="true" />,
@@ -12,6 +13,42 @@ const STATUS_ICON: Record<DemoStepStatus, React.ReactNode> = {
   warning: <AlertTriangle className="w-4 h-4 text-amber-400" aria-hidden="true" />,
   error: <X className="w-4 h-4 text-rose-400" aria-hidden="true" />,
   skipped: <Minus className="w-4 h-4 text-white/25" aria-hidden="true" />,
+}
+
+const LOG_TAG: Record<DemoLogKind, { label: string; cls: string }> = {
+  step: { label: 'étape', cls: 'text-white/45' },
+  ia: { label: 'IA', cls: 'text-indigo-300' },
+  connector: { label: 'connecteur', cls: 'text-teal-300' },
+  error: { label: 'erreur', cls: 'text-rose-400' },
+}
+
+/** Console du run : chaque action horodatée (étapes, appels IA, connecteurs), défilement auto. */
+function DemoLogConsole() {
+  const logs = useDemoExpressStore((s) => s.logs)
+  const boxRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const el = boxRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [logs.length])
+  if (logs.length === 0) return null
+  return (
+    <div className="mt-5">
+      <div className="flex items-center gap-1.5 mb-1.5 text-[11px] text-white/40">
+        <Terminal className="w-3.5 h-3.5" aria-hidden="true" /> Journal ({logs.length})
+      </div>
+      <div ref={boxRef} className="rounded-lg bg-well border border-white/[0.06] max-h-56 overflow-y-auto px-3 py-2 font-mono text-[11px] leading-relaxed">
+        {logs.map((l, i) => (
+          <div key={i} className="flex gap-2 items-baseline">
+            <span className="shrink-0 text-white/25 tabular-nums">
+              {new Date(l.ts).toLocaleTimeString('fr-FR')}
+            </span>
+            <span className={`shrink-0 w-[74px] ${LOG_TAG[l.kind].cls}`}>{LOG_TAG[l.kind].label}</span>
+            <span className={l.kind === 'error' ? 'text-rose-300/90' : 'text-white/75'}>{l.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export function DemoExpressProgress() {
@@ -39,6 +76,7 @@ export function DemoExpressProgress() {
           </li>
         ))}
       </ol>
+      <DemoLogConsole />
       {phase === 'running' && (
         <button
           onClick={requestAbort}

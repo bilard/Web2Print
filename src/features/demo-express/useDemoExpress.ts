@@ -29,6 +29,7 @@ import { saveWorkflow, listWorkflows } from '@/features/workflows/persistence/wo
 import { listCatalogs } from '@/features/catalog/catalogsApi'
 import { listPromos } from '@/features/retail-promo/promosApi'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
+import { useAiActivityStore } from '@/stores/aiActivity.store'
 import type { CatalogCharte, CatalogDoc } from '@/features/catalog/catalogTypes'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import { buildDemoSheet, sheetToMerge, isProductLike, DEMO_TARGET_FIELDS, type DemoProduct } from './buildDemoSheet'
@@ -56,6 +57,35 @@ function volumePlan(maxProducts: number) {
 
 const errMsg = (e: unknown): string => (e instanceof Error ? e.message : 'erreur inconnue')
 
+/** Journal live (panneau console de la page Démo express). */
+const logLine = (kind: 'ia' | 'connector' | 'error', text: string) => {
+  useDemoExpressStore.getState().appendLog(kind, text)
+}
+
+// ── Trace des appels IA dans le journal (une ligne PAR REQUÊTE terminée :
+// provider/modèle, tâche, durée, coût) — abonnement UNIQUE au store aiActivity,
+// actif seulement pendant un run (phase 'running'), donc aucun bruit des autres
+// modules hors Démo express.
+let aiTapInstalled = false
+function installAiTap(): void {
+  if (aiTapInstalled) return
+  aiTapInstalled = true
+  let lastSeen = useAiActivityStore.getState().last
+  useAiActivityStore.subscribe((s) => {
+    const rec = s.last
+    if (!rec || rec === lastSeen) return
+    lastSeen = rec
+    if (useDemoExpressStore.getState().phase !== 'running') return
+    const dur = rec.endedAt ? `${Math.round((rec.endedAt - rec.startedAt) / 100) / 10}s` : ''
+    const cost = rec.costUsd ? ` · ${rec.costUsd.toFixed(3)} $` : ''
+    if (rec.status === 'error') {
+      logLine('error', `IA ${rec.provider} · ${rec.model} — ${rec.label} : ${rec.errorMessage ?? 'échec'}`)
+    } else {
+      logLine('ia', `IA ${rec.provider} · ${rec.model} — ${rec.label} (${dur}${cost})`)
+    }
+  })
+}
+
 /** Upload DAM des images produit (1 par produit, plafonné) — mute `items`.
  *  Renvoie aussi la PREMIÈRE cause d'échec : sans elle, un « aucun upload »
  *  masquait la vraie raison (ex. Google non connecté pour l'accès serveur). */
@@ -70,12 +100,15 @@ async function seedDam(
     if (!img) continue
     try {
       const name = String(it.fields.name ?? 'produit')
+      const fileName = `${damSlug(name)}.jpg`
       // reuseByName : un re-run RÉUTILISE l'image « Démo {Société} » déjà dans le
       // Drive (même nom) au lieu de re-consommer le quota démo (20 assets).
-      it.damLink = await uploadUrlToDam(img, `${damSlug(name)}.jpg`, `Démo ${company}`, { reuseByName: true })
+      it.damLink = await uploadUrlToDam(img, fileName, `Démo ${company}`, { reuseByName: true })
       uploaded++
+      logLine('connector', `Drive DAM — « ${fileName} » déposé (${uploaded}/${Math.min(items.length, maxUploads)})`)
     } catch (e) {
       firstError ??= errMsg(e)
+      logLine('error', `Drive DAM — ${errMsg(e)}`)
       // Quota démo DAM atteint OU Google non connecté : inutile d'insister,
       // toutes les tentatives suivantes échoueraient pareil. Les cellules
       // gardent l'URL externe (DamImage l'affiche aussi).
@@ -205,6 +238,7 @@ export function useDemoExpress() {
     const vol = volumePlan(opts?.maxProducts ?? DEFAULT_MAX_PRODUCTS)
     const s = useDemoExpressStore.getState()
     s.begin(company, url)
+    installAiTap()
     const step = (id: Parameters<typeof s.updateStep>[0], patch: Parameters<typeof s.updateStep>[1]) =>
       useDemoExpressStore.getState().updateStep(id, patch)
     const aborted = () => useDemoExpressStore.getState().abortRequested
@@ -233,6 +267,7 @@ export function useDemoExpress() {
       }
     }
     try {
+      logLine('connector', `Jina — découverte des cartes produit sur ${url}`)
       const first = await discover(url, { limit: vol.maxProducts })
       productPages = [...first.pages]
       if (!productPages.length) {
@@ -323,8 +358,9 @@ export function useDemoExpress() {
       try {
         const { fields, assets } = await enrichRow({ url: p.url, targetFields: [...DEMO_TARGET_FIELDS] })
         if (fields.name || fields.description || assets.length) items.push({ url: p.url, fields, assets })
-      } catch {
+      } catch (e) {
         // fiche irrécupérable : on passe à la suivante
+        logLine('error', `Enrichissement — ${p.url} : ${errMsg(e)}`)
       }
     }
     if (!items.length) {
