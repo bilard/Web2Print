@@ -20,15 +20,23 @@ describe('isProductLike — écarte les pages éditoriales de la découverte', (
     expect(isProductLike({ name: 'X', ean: '4058546325749' })).toBe(true)
   })
 
-  it('fiche avec prix seul → produit', () => {
-    expect(isProductLike({ name: 'X', price: 129.9 })).toBe(true)
+  it('prix SEUL ne suffit plus (un jeu concours affiche « 17 900 € ») → NON produit', () => {
+    expect(isProductLike({ name: 'X', price: 129.9 })).toBe(false)
   })
 
-  it('fiche sans commerce mais avec vraies specs (≥ 3 paires) → produit', () => {
+  it('prix + vraies specs (≥ 3 paires saines) → produit', () => {
     expect(isProductLike({
       name: 'X',
+      price: 129.9,
       specifications: 'Tension: 18V\nCapacité: 5Ah\nPoids: 2.1kg\nVitesse: 1800 tr/min',
     })).toBe(true)
+  })
+
+  it('specs seules SANS identité ni prix → NON produit (page formulaire métier)', () => {
+    expect(isProductLike({
+      name: 'X',
+      specifications: 'Charpenterie et Menuiserie: Construction et Génie Civil\nDémolition: Electricité\nMaintenance: Mécanique, CVC et plomberie',
+    })).toBe(false)
   })
 
   it('valeurs vides/null ne comptent pas comme signal', () => {
@@ -50,8 +58,9 @@ describe('isProductLike — le bandeau cookies ne fabrique plus de fausses specs
     })).toBe(false)
   })
 
-  it('vraies specs (≥ 3) non affectées par le filtre CMP', () => {
+  it('vraies specs (≥ 3) non affectées par le filtre CMP (avec prix)', () => {
     expect(isProductLike({
+      price: '129.90',
       specifications: 'Tension: 18V\nCapacité: 5Ah\nPoids: 2.1kg',
     })).toBe(true)
   })

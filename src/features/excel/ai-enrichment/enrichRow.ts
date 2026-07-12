@@ -10,7 +10,7 @@
 import { enrichProductCore } from './useProductEnrichment'
 import type { EnrichedProduct } from './types'
 import { isJunkImageUrl, classifyImage, getProductRefs } from './imageFilter'
-import { isCmpUiPair } from '@/features/scraping/core/parsers/garbageFilter'
+import { isSaneSpecPair } from '@/features/scraping/core/parsers/parseSpecifications'
 
 export interface EnrichRowInput {
   url: string
@@ -59,9 +59,11 @@ export function mapProductToFields(
     },
     images: () => (p.images?.length ? p.images.join('\n') : null),
     specifications: () => {
-      // Poison CMP/nav éliminé au flatten : sur une page non-produit, le LLM
-      // renvoie les boutons du bandeau cookies (OneTrust) comme « specs ».
-      const clean = (p.specifications ?? []).filter((s) => !isCmpUiPair(s.name, s.value))
+      // Batterie de sanité COMPLÈTE du parser appliquée aux specs LLM : sur une
+      // page non-produit (bandeau cookies OneTrust, jeu concours, formulaire
+      // métier), le LLM renvoie des pseudo-paires — prix/dates en nom, prose
+      // tronquée en valeur — qui ne doivent jamais devenir des « specs ».
+      const clean = (p.specifications ?? []).filter((s) => isSaneSpecPair(s.name.trim(), s.value.trim()))
       return clean.length ? clean.map((s) => `${s.name}: ${s.value}`).join('\n') : null
     },
     documents: () => (p.documents?.length ? p.documents.map((d) => d.url).join('\n') : null),

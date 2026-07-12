@@ -7,7 +7,7 @@ import type { ExcelSheet, ExcelColumn, ExcelRow, FieldTypeId, TaxonomyLevelMap }
 import { buildTaxonomyFromLevels } from '@/features/excel/taxonomyBuilder'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { EnrichRowAsset } from '@/features/excel/ai-enrichment/enrichRow'
-import { isCmpUiPair } from '@/features/scraping/core/parsers/garbageFilter'
+import { isSaneSpecPair } from '@/features/scraping/core/parsers/parseSpecifications'
 
 /** Champs demandés au moteur d'enrichissement (clés de mapProductToFields). */
 export const DEMO_TARGET_FIELDS = [
@@ -25,27 +25,27 @@ export interface DemoProduct {
 
 /**
  * Une page enrichie est-elle une FICHE PRODUIT — et pas une page ÉDITORIALE
- * (rubrique, story « Trade Essentials », landing métier) remontée par la
- * découverte quand les tuiles de la home ressemblent à des cartes produit ?
- * Signal GÉNÉRIQUE (jamais par-vendeur) : au moins une donnée de commerce
- * (référence, EAN, prix) OU un vrai tableau de specs (≥ 3 paires).
+ * (rubrique, jeu concours, politique de confidentialité, landing métier)
+ * remontée par la découverte ? Signal GÉNÉRIQUE (jamais par-vendeur), et
+ * STRICT : les pages parasites savent produire un « prix » (lot d'un jeu
+ * concours : 17 900 €) ou des pseudo-paires (formulaire métier) — seule une
+ * IDENTITÉ produit (référence ou EAN) suffit seule ; sinon il faut prix ET
+ * un vrai tableau de specs (≥ 3 paires passant la batterie de sanité).
  */
 export function isProductLike(fields: Record<string, unknown>): boolean {
   const has = (k: string) => {
     const v = fields[k]
     return v != null && String(v).trim() !== ''
   }
-  if (has('reference') || has('ean') || has('price')) return true
-  // Paires CMP/nav exclues du compte : le bandeau cookies d'une page rubrique
-  // fournissait ≥ 3 pseudo-specs et déjouait le filtre (Milwaukee /metiers/…).
+  if (has('reference') || has('ean')) return true
   const specPairs = String(fields.specifications ?? '')
     .split(/\n+|\s\|\s/)
     .map((s) => {
       const i = s.indexOf(':')
       return i > 0 ? ([s.slice(0, i).trim(), s.slice(i + 1).trim()] as const) : null
     })
-    .filter((p): p is readonly [string, string] => !!p && !isCmpUiPair(p[0], p[1])).length
-  return specPairs >= 3
+    .filter((p): p is readonly [string, string] => !!p && isSaneSpecPair(p[0], p[1])).length
+  return has('price') && specPairs >= 3
 }
 
 const col = (key: string, label: string, fieldType: FieldTypeId, opts: Partial<ExcelColumn> = {}): ExcelColumn => ({

@@ -269,6 +269,116 @@ export function extractSpecsFromHtml(html: string): string | null {
 }
 
 /** Parse les spécifications depuis du markdown (tables + paires inline + blobs caractéristiques). */
+const FINANCIAL_NAME_RE = /^(date|payment|paiement|prix|price|montant|amount|total|ech[eé]ance|mensualit[eé]|versement|livraison|delivery|shipping|frais|fee|cost|co[uû]t|quantit[eé]|qty|stock|disponibilit[eé]|panier|cart|ajouter|add to|acheter|buy)\b|incl\.\s*vat|excl\.\s*vat|ttc|hors\s*taxe|tva/i
+const FINANCIAL_VALUE_RE = /^\d{1,4}[,.]\d{2}\s*[€$£]|^[€$£]\s*\d|^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$|incl\.\s*vat|excl\.\s*vat|ttc\b|hors\s*taxe|tva\b/i
+/** UI de livraison/promo/checkout que les sites GSA mettent en cellule de
+ *  tableau (Jardiland, Leroy Merlin) et qu'on capture par erreur en spec. */
+const DELIVERY_UI_RE = /^(en\s+stock|stock\s+disponible|disponible|indisponible|livraison|gratuit\s+(à\s+partir|d[eè]s)|estim(ée|ation)(\s+\S+)*|exp[eé]di[eé]e?|d[eé]livr[eé]e?|retir[eé]\s+en|click\s+&\s+collect|\+\s*\d+\s+offres?|voir\s+l['']offre|voir\s+d[eé]tails?|comparer)$/i
+const JUNK_NAME_RE = /^(title|url|source|markdown|favicon|description|og:|meta |statuscode|viewport|http)/i
+const JUNK_VALUE_RE = /^https?:\/\/|\.pdf\b|\[.*\]\(http/i
+const LINK_BRACKETS_RE = /\[.*?\]\(.*?\)/
+const FILE_VALUE_RE = /^(pdf|doc|docx|xls|xlsx|zip|rar|dwg|dxf|bim|ifc|step|stp|iges)$/i
+const FILE_SIZE_RE = /^\d+([.,]\d+)?\s*(b|kb|mb|gb|tb|ko|mo|go|to|octets?|bytes?)\s*$/i
+/** Lignes d'en-tête de table dupliquées entre sections (cf. commentaire d'origine). */
+const PLACEHOLDER_HEADER_RE = /^[\s*_]*(valeur|value|caract[eé]ristique|description|sp[eé]cification|name|nom|d[eé]signation|propri[eé]t[eé]|attributs?|attributes?|fields?|champs?|key|cl[eé])[\s*_]*$/i
+/** Nom entièrement entre crochets `[...]` sans contenu informatif. */
+const BRACKETED_HEADER_RE = /^\s*\[[^[\]()]+\]\s*$/
+
+/**
+ * Batterie COMPLÈTE de sanité d'une paire nom/valeur de spec — extraite du
+ * parser markdown pour être partagée avec les specs renvoyées par le LLM
+ * (`mapProductToFields`) : une page parasite (jeu concours, formulaire métier,
+ * politique de confidentialité) produit des pseudo-paires qui passent un simple
+ * filtre CMP mais pas cette batterie (prix/dates en nom, prose composite,
+ * fragments de phrases, UI de livraison, notices PDF…).
+ */
+export function isSaneSpecPair(n: string, v: string): boolean {
+  if (!n || !v) return false
+  if (JUNK_NAME_RE.test(n)) return false
+  if (JUNK_VALUE_RE.test(v)) return false
+  if (FILE_VALUE_RE.test(v)) return false
+  if (FILE_SIZE_RE.test(n) || FILE_SIZE_RE.test(v)) return false
+  if (FINANCIAL_NAME_RE.test(n)) return false
+  if (FINANCIAL_VALUE_RE.test(v)) return false
+  // FINANCIAL_NAME_RE inclut "ajouter|panier|cart|acheter|buy" — appliquer aussi
+  // sur la VALEUR pour rejeter les bouts de table prix `Unité=Ajouter`.
+  if (FINANCIAL_NAME_RE.test(v)) return false
+  // Delivery / promo UI cells (Jardiland-style)
+  if (DELIVERY_UI_RE.test(n) || DELIVERY_UI_RE.test(v)) return false
+  // Nom = juste un symbole/séparateur (ex: "+", "-", "/", "?")
+  if (/^[+\-*/?!.,;:]$/.test(n)) return false
+  // Cookie banner buttons : "Tout accepter=Enregistrer", "Accepter tout=Refuser"
+  if (/^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save|continuer\s+sans\s+accepter)$/i.test(n)
+      || /^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save)$/i.test(v)) return false
+  // Prose bannière cookies/consentement passée entre les sections
+  if (/\b(consentement|cookies?|rgpd|gdpr)\b/i.test(n) || /derni[eè]re\s+mise\s+[aà]\s+jour/i.test(v)) return false
+  // UI CMP anglo (OneTrust : « Filter Button=ConsentLeg.Interest », « Confirm My
+  // Choices=Allow All ») + libellés dupliqués + CTA nav — prédicat partagé.
+  if (isCmpUiPair(n, v)) return false
+  // Toggles d'UI "Voir plus / View less" capturés comme paires
+  if (/^(plus|moins|more|less|voir\s+(plus|moins))$/i.test(n) || /\b(view|show)\s+(less|more)\b|\bvoir\s+(plus|moins)\b/i.test(v)) return false
+  if (/^[#]/.test(n)) return false
+  if (/^[.\-–—,;:!?]$/.test(v)) return false
+  if (n.length > 80 || v.length > 250) return false
+  if (/fiche\s*(de\s*donn[eé]es|technique|produit)/i.test(n)) return false
+  if (/www\.[a-z]/i.test(v) || /\.com\//.test(v)) return false
+  if (PLACEHOLDER_HEADER_RE.test(v) || PLACEHOLDER_HEADER_RE.test(n)) return false
+  if (BRACKETED_HEADER_RE.test(n)) return false
+  // Rejet : nom purement numérique (ex: "414,20") — c'est probablement un prix
+  // capturé par erreur dans une table 2-col. Les vrais codes de spec (EN60745,
+  // 2014/30/UE) contiennent des lettres et passent ce test.
+  if (/^\d[\d\s.,\-+/]*$/.test(n)) return false
+  // Rejet : value qui est uniquement une unité/suffixe monétaire (ex: "€ HT",
+  // "€ TTC", "/ unité", "/ pièce") — c'est le label d'une cellule prix mal
+  // capturée comme value. Les vraies valeurs avec unité ont au moins un digit.
+  if (/^[\s/]?[€$£%]\s*(?:HT|TTC|HTVA|TVA)?\s*$/i.test(v)) return false
+  if (/^\/\s*(?:unit[eé]|pi[eè]ce|kilo|kg|m|m²|m³)\s*$/i.test(v)) return false
+  // Rejet bullets "• Texte" en nom ou valeur (n'est PAS une spec, c'est
+  // une cellule de table qui a capturé un bullet de feature)
+  if (/^[•·]\s/.test(n) || /^[•·]\s/.test(v)) return false
+  // Rejet bullets markdown `- ` ou `* ` en valeur (ex: `Avantages produits=- Item`)
+  if (/^[-*]\s/.test(v)) return false
+  // Rejet noms qui sont des headings de section (capturés par erreur via Format 1)
+  const SECTION_HEADING_RE = /^(caract[eé]ristiques?|sp[eé]cifications?|d[eé]tails?|description|avantages?|points?\s+forts?|fiche|info\s|[eé]quipement|application)/i
+  if (SECTION_HEADING_RE.test(n) && n.length < 35) return false
+  // Anti-prose composite : nom > 5 mots ET valeur sans chiffre/unité
+  // = très probablement une phrase prose découpée par erreur
+  if (n.split(/\s+/).length > 5 && !/[:\d]|\b(mm|cm|kg|g|w|v|hz|ml|l|nm|rpm|db|°|%|bar|psi|mpa)\b/i.test(v)) return false
+
+  // ── Anti-PDF-manuel : prose extraite des notices/manuels d'instruction ──
+  // (blockquote, ruptures hyphenisées, multi-phrases, lexique sécurité, prose composite)
+  if (/^>\s/.test(n) || /^>\s/.test(v)) return false
+  if (n.includes('](') || v.includes('](')) return false
+  if (/^\/\/[a-z0-9]/i.test(v)) return false  // value qui démarre par "//www..." (URL coupée)
+  if (/\)\s*$/.test(v) && /\.[a-z]{2,5}\)?$/i.test(v)) return false  // fin d'URL coupée
+  if (/-\s*$/.test(n) || /-\s*$/.test(v)) return false // rupture de page PDF
+  if (/[.!?]\s+[A-Z]/.test(n) || /[.!?]\s+[A-Z]/.test(v)) return false // multi-phrases
+  if (/[a-z]{3,}\.$/.test(n) && /[a-z]{3,}\.$/.test(v)) return false // phrases déclaratives
+  const SAFETY_RE = /\b(NOTICE|WARNING|CAUTION|DANGER|IMPORTANT|never\s+use|must\s+(?:not|be)|do\s+not\s+(?:use|operate|disassemble|short)|tape\s+(?:or|off)|hold\s+the\s+tool|annex\s+[a-z]|instruction\s+manual|HINWEIS|WARNUNG|VORSICHT|ANMERKUNG|BEMERKUNG|NOTA|AVVERTIMENTO|ATTENZIONE|AVVISO|OPMERKING|WAARSCHUWING|KENNISGEVING|LET\s+OP|ADVERTENCIA|PRECAUCI[ÓO]N|OBSERVA[ÇC][ÃA]O|BEM[ÆE]RK|ADVARSEL|FORSIGTIG|BEM[ÆE]RKNING|ΠΑΡΑΤΗΡΗΣΗ|ΠΡΟΕΙΔΟΠΟΙΗΣΗ|ΠΡΟΣΟΧΗ|ΕΙΔΟΠΟΙΗΣΗ|UYARI|D[İI]KKAT|[ÖO]NEML[İI]\s+NOT)\b/i
+  if (SAFETY_RE.test(n) || SAFETY_RE.test(v)) return false
+  if (/[ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω]/.test(n) || /[ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω]/.test(v)) return false
+  // Prose anglaise composite : ≥5 mots ET ≥2 stopwords courants (exception :
+  // valeur avec signature unité claire — "Width of the cutting blade" → "300 mm").
+  const ENGLISH_STOPWORDS = /\b(the|of|in|to|for|with|when|while|under|on|off|by|that|which|this|these|those|will|may|can|could|would|should|has|have|is|are|was|were|been|be|all|any|each|both|either|neither|some|few|many|several|most)\b/gi
+  const looksLikeProse = (s: string): boolean => {
+    const words = s.split(/\s+/).length
+    if (words < 5) return false
+    const stops = (s.match(ENGLISH_STOPWORDS) ?? []).length
+    return stops >= 2
+  }
+  const hasUnitSignal = (s: string): boolean => {
+    if (s.length > 80) return false
+    if (!/\d/.test(s)) return false
+    if (/\b(mm|cm|m|kg|g|nm|rpm|tr\/min|v|ah|w|kw|hz|db|dba|°|%|bar|l\/min|psi|mpa|ion|litre|watt|volt|amp)\b/i.test(s)) return true
+    if (s.length < 30 && /^[\d.,\s\-x×/]+$/.test(s)) return true
+    return false
+  }
+  if ((looksLikeProse(n) || looksLikeProse(v)) && !hasUnitSignal(v)) return false
+
+  if (isGarbageContent(n) || isGarbageContent(v)) return false
+  return true
+}
+
 export function parseSpecsFromMarkdown(md: string): Specification[] {
   const specs: Specification[] = []
   const seen = new Set<string>()
@@ -279,12 +389,7 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
   // toujours rendue en premier.
   const seenNames = new Set<string>()
 
-  const FINANCIAL_NAME_RE = /^(date|payment|paiement|prix|price|montant|amount|total|ech[eé]ance|mensualit[eé]|versement|livraison|delivery|shipping|frais|fee|cost|co[uû]t|quantit[eé]|qty|stock|disponibilit[eé]|panier|cart|ajouter|add to|acheter|buy)\b|incl\.\s*vat|excl\.\s*vat|ttc|hors\s*taxe|tva/i
-  const FINANCIAL_VALUE_RE = /^\d{1,4}[,.]\d{2}\s*[€$£]|^[€$£]\s*\d|^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$|incl\.\s*vat|excl\.\s*vat|ttc\b|hors\s*taxe|tva\b/i
   const PRICE_GROUP_RE = /prix|price|tarif|co[uû]t|cost|tva|vat|ttc|ht\b|hors\s*taxe/i
-  /** UI de livraison/promo/checkout que les sites GSA mettent en cellule de
-   *  tableau (Jardiland, Leroy Merlin) et qu'on capture par erreur en spec. */
-  const DELIVERY_UI_RE = /^(en\s+stock|stock\s+disponible|disponible|indisponible|livraison|gratuit\s+(à\s+partir|d[eè]s)|estim(ée|ation)(\s+\S+)*|exp[eé]di[eé]e?|d[eé]livr[eé]e?|retir[eé]\s+en|click\s+&\s+collect|\+\s*\d+\s+offres?|voir\s+l['']offre|voir\s+d[eé]tails?|comparer)$/i
 
   // ── Parser rapide pour le format injecté par notre script Jina ──
   const jinaStart = md.indexOf('JINA_EXTRACTED_SPECS_START')
@@ -321,19 +426,6 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     }
   }
 
-  const JUNK_NAME_RE = /^(title|url|source|markdown|favicon|description|og:|meta |statuscode|viewport|http)/i
-  const JUNK_VALUE_RE = /^https?:\/\/|\.pdf\b|\[.*\]\(http/i
-  const LINK_BRACKETS_RE = /\[.*?\]\(.*?\)/
-  const FILE_VALUE_RE = /^(pdf|doc|docx|xls|xlsx|zip|rar|dwg|dxf|bim|ifc|step|stp|iges)$/i
-  const FILE_SIZE_RE = /^\d+([.,]\d+)?\s*(b|kb|mb|gb|tb|ko|mo|go|to|octets?|bytes?)\s*$/i
-  /** Lignes d'en-tête de table dupliquées entre sections : "Valeur",
-   *  "*Valeur*", "Caractéristique"… — souvent recopiées par le scraping
-   *  quand la même table d'en-tête est répétée pour chaque sous-section.
-   *  Inclut "attribut(s)" / "attribute(s)" — col header générique de Rubix & co. */
-  const PLACEHOLDER_HEADER_RE = /^[\s*_]*(valeur|value|caract[eé]ristique|description|sp[eé]cification|name|nom|d[eé]signation|propri[eé]t[eé]|attributs?|attributes?|fields?|champs?|key|cl[eé])[\s*_]*$/i
-  /** Nom entièrement entre crochets `[...]` sans contenu informatif. */
-  const BRACKETED_HEADER_RE = /^\s*\[[^[\]()]+\]\s*$/
-
   // Heuristique anti-inversion : sur certains sites B2B (Rubix, Würth) la table
   // de specs est rendue avec valeur À GAUCHE et label À DROITE. Le parser HTML
   // capture donc `name=value, value=name` (inversé). On détecte et on swap si :
@@ -368,105 +460,8 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     // Dedup par nom : garde la première occurrence pour les pages avec
     // comparaisons multi-modèles (RS Components etc.).
     if (seenNames.has(nameKey)) return false
-    if (JUNK_NAME_RE.test(n)) return false
-    if (JUNK_VALUE_RE.test(v)) return false
-    if (FILE_VALUE_RE.test(v)) return false
-    if (FILE_SIZE_RE.test(n) || FILE_SIZE_RE.test(v)) return false
-    if (FINANCIAL_NAME_RE.test(n)) return false
-    if (FINANCIAL_VALUE_RE.test(v)) return false
-    // FINANCIAL_NAME_RE inclut "ajouter|panier|cart|acheter|buy" — appliquer aussi
-    // sur la VALEUR pour rejeter les bouts de table prix `Unité=Ajouter`.
-    if (FINANCIAL_NAME_RE.test(v)) return false
-    // Delivery / promo UI cells (Jardiland-style)
-    if (DELIVERY_UI_RE.test(n) || DELIVERY_UI_RE.test(v)) return false
-    // Nom = juste un symbole/séparateur (ex: "+", "-", "/", "?")
-    if (/^[+\-*/?!.,;:]$/.test(n)) return false
-    // Cookie banner buttons : "Tout accepter=Enregistrer", "Accepter tout=Refuser"
-    if (/^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save|continuer\s+sans\s+accepter)$/i.test(n)
-        || /^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save)$/i.test(v)) return false
-    // Prose bannière cookies/consentement passée entre les sections
-    if (/\b(consentement|cookies?|rgpd|gdpr)\b/i.test(n) || /derni[eè]re\s+mise\s+[aà]\s+jour/i.test(v)) return false
-    // UI CMP anglo (OneTrust : « Filter Button=ConsentLeg.Interest », « Confirm My
-    // Choices=Allow All ») + libellés dupliqués + CTA nav — prédicat partagé.
-    if (isCmpUiPair(n, v)) return false
-    // Toggles d'UI "Voir plus / View less" capturés comme paires
-    if (/^(plus|moins|more|less|voir\s+(plus|moins))$/i.test(n) || /\b(view|show)\s+(less|more)\b|\bvoir\s+(plus|moins)\b/i.test(v)) return false
-    if (/^[#]/.test(n)) return false
-    if (/^[.\-–—,;:!?]$/.test(v)) return false
-    if (n.length > 80 || v.length > 250) return false
-    if (/fiche\s*(de\s*donn[eé]es|technique|produit)/i.test(n)) return false
-    if (/www\.[a-z]/i.test(v) || /\.com\//.test(v)) return false
-    if (PLACEHOLDER_HEADER_RE.test(v) || PLACEHOLDER_HEADER_RE.test(n)) return false
-    if (BRACKETED_HEADER_RE.test(n)) return false
-    // Rejet : nom purement numérique (ex: "414,20") — c'est probablement un prix
-    // capturé par erreur dans une table 2-col. Les vrais codes de spec (EN60745,
-    // 2014/30/UE) contiennent des lettres et passent ce test.
-    if (/^\d[\d\s.,\-+/]*$/.test(n)) return false
-    // Rejet : value qui est uniquement une unité/suffixe monétaire (ex: "€ HT",
-    // "€ TTC", "/ unité", "/ pièce") — c'est le label d'une cellule prix mal
-    // capturée comme value. Les vraies valeurs avec unité ont au moins un digit.
-    if (/^[\s/]?[€$£%]\s*(?:HT|TTC|HTVA|TVA)?\s*$/i.test(v)) return false
-    if (/^\/\s*(?:unit[eé]|pi[eè]ce|kilo|kg|m|m²|m³)\s*$/i.test(v)) return false
-    // Rejet bullets "• Texte" en nom ou valeur (n'est PAS une spec, c'est
-    // une cellule de table qui a capturé un bullet de feature)
-    if (/^[•·]\s/.test(n) || /^[•·]\s/.test(v)) return false
-    // Rejet bullets markdown `- ` ou `* ` en valeur (ex: `Avantages produits=- Item`)
-    if (/^[-*]\s/.test(v)) return false
-    // Rejet noms qui sont des headings de section (capturés par erreur via Format 1)
-    const SECTION_HEADING_RE = /^(caract[eé]ristiques?|sp[eé]cifications?|d[eé]tails?|description|avantages?|points?\s+forts?|fiche|info\s|[eé]quipement|application)/i
-    if (SECTION_HEADING_RE.test(n) && n.length < 35) return false
-    // Anti-prose composite : nom > 5 mots ET valeur sans chiffre/unité
-    // = très probablement une phrase prose découpée par erreur
-    if (n.split(/\s+/).length > 5 && !/[:\d]|\b(mm|cm|kg|g|w|v|hz|ml|l|nm|rpm|db|°|%|bar|psi|mpa)\b/i.test(v)) return false
-
-    // ── Anti-PDF-manuel : prose extraite des notices/manuels d'instruction ──
-    // Quand Jina scrape un PDF (ex: notice sécurité Makita), le texte est
-    // injecté brut dans le markdown et les heuristiques table le capturent.
-    // Signatures : blockquote `>`, ruptures de page hyphenisées, multi-phrases,
-    // lexique sécurité, prose anglaise/française composite.
-
-    // Préfixe blockquote markdown — typique des tables PDF mal extraites
-    if (/^>\s/.test(n) || /^>\s/.test(v)) return false
-    // Lien markdown splitté : `[Texte](https` côté name + `//www....)` côté value
-    // (artefact quand le `:` ou `|` d'un menu de navigation découpe l'URL).
-    // Détection : présence du début ou de la fin d'un `[...](...)` incomplet.
-    if (n.includes('](') || v.includes('](')) return false
-    if (/^\/\/[a-z0-9]/i.test(v)) return false  // value qui démarre par "//www..." (URL coupée)
-    if (/\)\s*$/.test(v) && /\.[a-z]{2,5}\)?$/i.test(v)) return false  // value qui finit par ".html)" — fin d'URL coupée
-    // Trait d'union de fin = rupture de page PDF ("actua-", "influ-")
-    if (/-\s*$/.test(n) || /-\s*$/.test(v)) return false
-    // Multi-phrases : point/!/? suivi d'un espace + capitale → prose narrative
-    if (/[.!?]\s+[A-Z]/.test(n) || /[.!?]\s+[A-Z]/.test(v)) return false
-    // Phrase complète : nom ET valeur se terminent par un point déclaratif
-    if (/[a-z]{3,}\.$/.test(n) && /[a-z]{3,}\.$/.test(v)) return false
-    // Lexique sécurité/avertissement multilingue — jamais dans les vraies specs.
-    // Couvre EN/FR/DE/IT/NL/ES/PT/DA/EL/TR (notices Makita-style multilingues).
-    const SAFETY_RE = /\b(NOTICE|WARNING|CAUTION|DANGER|IMPORTANT|never\s+use|must\s+(?:not|be)|do\s+not\s+(?:use|operate|disassemble|short)|tape\s+(?:or|off)|hold\s+the\s+tool|annex\s+[a-z]|instruction\s+manual|HINWEIS|WARNUNG|VORSICHT|ANMERKUNG|BEMERKUNG|NOTA|AVVERTIMENTO|ATTENZIONE|AVVISO|OPMERKING|WAARSCHUWING|KENNISGEVING|LET\s+OP|ADVERTENCIA|PRECAUCI[ÓO]N|OBSERVA[ÇC][ÃA]O|BEM[ÆE]RK|ADVARSEL|FORSIGTIG|BEM[ÆE]RKNING|ΠΑΡΑΤΗΡΗΣΗ|ΠΡΟΕΙΔΟΠΟΙΗΣΗ|ΠΡΟΣΟΧΗ|ΕΙΔΟΠΟΙΗΣΗ|UYARI|D[İI]KKAT|[ÖO]NEML[İI]\s+NOT)\b/i
-    if (SAFETY_RE.test(n) || SAFETY_RE.test(v)) return false
-    // Caractères grecs ou turcs spécifiques → quasi-certainement du PDF multilingue
-    if (/[ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω]/.test(n) || /[ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω]/.test(v)) return false
-    // Prose anglaise composite : ≥5 mots ET ≥2 stopwords courants
-    // Exception : si la valeur a une signature unité claire (digit + unité physique
-    // OU valeur courte purement numérique), on garde — couvre les vraies specs
-    // multi-mots type "Width of the cutting blade" → "300 mm".
-    const ENGLISH_STOPWORDS = /\b(the|of|in|to|for|with|when|while|under|on|off|by|that|which|this|these|those|will|may|can|could|would|should|has|have|is|are|was|were|been|be|all|any|each|both|either|neither|some|few|many|several|most)\b/gi
-    const looksLikeProse = (s: string): boolean => {
-      const words = s.split(/\s+/).length
-      if (words < 5) return false
-      const stops = (s.match(ENGLISH_STOPWORDS) ?? []).length
-      return stops >= 2
-    }
-    const hasUnitSignal = (s: string): boolean => {
-      if (s.length > 80) return false
-      if (!/\d/.test(s)) return false
-      if (/\b(mm|cm|m|kg|g|nm|rpm|tr\/min|v|ah|w|kw|hz|db|dba|°|%|bar|l\/min|psi|mpa|ion|litre|watt|volt|amp)\b/i.test(s)) return true
-      // Valeur courte purement numérique : "300", "0-1500", "300x500"
-      if (s.length < 30 && /^[\d.,\s\-x×/]+$/.test(s)) return true
-      return false
-    }
-    if ((looksLikeProse(n) || looksLikeProse(v)) && !hasUnitSignal(v)) return false
-
-    if (isGarbageContent(n) || isGarbageContent(v)) return false
+    // Batterie de sanité COMPLÈTE (module, partagée avec les specs LLM).
+    if (!isSaneSpecPair(n, v)) return false
     seen.add(key)
     seenNames.add(nameKey)
     specs.push({ name: n, value: v, group: group || undefined })
