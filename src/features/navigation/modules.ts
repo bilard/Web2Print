@@ -80,11 +80,6 @@ export const MODULE_ITEMS: ModuleItem[] = [
   { id: 'demo-express', group: 'create', icon: Sparkles, label: 'Démo express', accent: 'text-lime-400', activeBg: 'bg-lime-500/[0.1]', activeText: 'text-lime-300',
     children: [
       { id: 'action:new', label: 'Nouvelle démo', intent: 'demo-express:action:new' },
-      // Lancement rapide par volumétrie : préremplit le nombre de produits à scraper.
-      { id: 'action:new:6', label: 'Scraper 6 produits', intent: 'demo-express:action:new:6' },
-      { id: 'action:new:12', label: 'Scraper 12 produits', intent: 'demo-express:action:new:12' },
-      { id: 'action:new:24', label: 'Scraper 24 produits', intent: 'demo-express:action:new:24' },
-      { id: 'action:new:48', label: 'Scraper 48 produits', intent: 'demo-express:action:new:48' },
     ],
   },
   // ── Données produits ──
