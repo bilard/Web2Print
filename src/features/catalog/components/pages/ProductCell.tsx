@@ -123,6 +123,13 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
       data-sh-sticker={sh.sticker} data-sh-image={sh.image} data-sh-shadow={sh.shadow ? '' : undefined}
       onDoubleClick={onEdit ? (e) => { e.stopPropagation(); onEdit() } : undefined}
       title={onEdit ? 'Double-clic : modifier les données du produit' : undefined}>
+      {/* Lien de CONTRÔLE vers la fiche source (colonne url) : visible au survol
+          uniquement — invisible à l'export/impression (opacity 0 hors hover). */}
+      {f.url && (
+        <a className="cat-cell-srclink" href={f.url} target="_blank" rel="noopener noreferrer"
+          title={`Ouvrir la fiche source\n${f.url}`} onClick={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}>↗</a>
+      )}
       {promo && obj('promo', <span className="cat-cell-promo">{promo}</span>)}
       {show('showImage') && obj('image', <div className="cat-cell-img-in" data-resolving={resolving ? 'true' : undefined}>{src ? <img src={src} alt="" /> : <span className="cat-cell-img-ph">Sans visuel</span>}</div>)}
       {sticker && obj('sticker', <span className="cat-price-sticker">{sticker}</span>)}

@@ -295,3 +295,23 @@ test('buildSpecTable écarte les paires PROSE (valeur > 60 c) — elles creusaie
     { name: 'Type d\'article', value: 'Diable' },
   ])
 })
+
+describe('lien vers la fiche produit SOURCE (colonne url)', () => {
+  const columns: MergeColumn[] = [
+    { key: 'ai_name', label: 'Nom', fieldType: 'text' },
+    { key: 'url', label: 'URL source', fieldType: 'url' },
+  ] as MergeColumn[]
+
+  it('devine la colonne url et valide http(s)', () => {
+    const m = defaultPromoFieldMap(columns)
+    expect(m.url).toBe('url')
+    const f = extractPromoFields({ _id: '1', ai_name: 'X', url: 'https://site.fr/p/123' } as unknown as MergeRow, columns, m)
+    expect(f.url).toBe('https://site.fr/p/123')
+  })
+
+  it('valeur non-URL → pas de lien', () => {
+    const m = defaultPromoFieldMap(columns)
+    const f = extractPromoFields({ _id: '1', ai_name: 'X', url: 'voir site' } as unknown as MergeRow, columns, m)
+    expect(f.url).toBeUndefined()
+  })
+})

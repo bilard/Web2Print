@@ -24,6 +24,7 @@ const GUESS: Partial<Record<PromoFieldKey, string[]>> = {
   validTo: ['au', 'date fin', "jusqu'au", 'valid until', 'valid_to'],
   mentions: ['mentions', 'mention légale', 'legal'],
   enseigne: ['enseigne', 'magasin', 'store'],
+  url: ['url source', 'url produit', 'url', 'lien produit', 'lien', 'product url', 'link', 'page produit'],
 }
 
 function matchColumn(columns: MergeColumn[], needles: string[]): string | undefined {
@@ -218,6 +219,7 @@ export function extractPromoFields(
     mentions: str(row, columns, fieldMap.mentions),
     enseigne: str(row, columns, fieldMap.enseigne),
     badges: [],
+    url: /^https?:\/\//.test(str(row, columns, fieldMap.url).trim()) ? str(row, columns, fieldMap.url).trim() : undefined,
     extra,
   }
 }

@@ -25,6 +25,8 @@ export interface PromoFields {
   mentions: string
   enseigne: string
   badges: string[]
+  /** URL de la fiche produit SOURCE (colonne url/lien) — lien de contrôle à l'écran, jamais imprimé. */
+  url?: string
   /** Champs libres mappés par l'utilisateur (id de champ → valeur lue dans la ligne). */
   extra?: Record<string, string>
 }

@@ -96,12 +96,45 @@ export function themeVars(theme: CatalogTheme): React.CSSProperties {
  * dégradé transforme la couleur de l'objet en linear-gradient (le `theme`
  * fournit la couleur de base héritée).
  */
+/** Luminance relative WCAG d'un hex 6 — null si non calculable. */
+function relLum(hex: string): number | null {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex)
+  if (!m) return null
+  const [r, g, b] = [0, 2, 4]
+    .map((i) => parseInt(m[1].slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+/**
+ * GARDE DE LISIBILITÉ des textes de contenu : une couleur de charte trop pâle
+ * sur le fond de fiche (contraste < 2.5:1 — titre Milwaukee rose délavé sur
+ * blanc) est IGNORÉE → repli sur l'encre du thème. Couleur non-hex ou fond
+ * non-hex : comportement inchangé (garde-fou).
+ */
+function readableInk(color: string, cardBg: string): string | undefined {
+  if (!color) return undefined
+  const lc = relLum(color)
+  const lb = relLum(cardBg)
+  if (lc == null || lb == null) return color
+  const ratio = (Math.max(lc, lb) + 0.05) / (Math.min(lc, lb) + 0.05)
+  return ratio < 2.5 ? undefined : color
+}
+
 export function cardStyleVars(style: CatalogCardStyle | undefined, theme: CatalogTheme): React.CSSProperties {
   if (!style) return {}
   const s: CatalogCardStyle = { ...DEFAULT_CARD_STYLE, ...style }
   const bg = (c1: string, c2: string, inherited: string): string | undefined =>
     c2 ? `linear-gradient(${s.gradientAngle}deg, ${c1 || inherited}, ${c2})` : (c1 || undefined)
   const font = (f: string): string | undefined => (f ? `'${f}', sans-serif` : undefined)
+  // Fiches lumineuses : fond blanc par défaut (référence du contraste).
+  const cardBg = /^#[0-9a-f]{6}$/i.test(s.cardBg) ? s.cardBg : '#ffffff'
+  const nameInk = readableInk(s.nameColor, cardBg)
+  const brandInk = readableInk(s.brandColor, cardBg)
+  const descInk = readableInk(s.descColor, cardBg)
+  const refInk = readableInk(s.refColor, cardBg)
+  const unitInk = readableInk(s.unitColor, cardBg)
+  const detailsInk = readableInk(s.detailsColor, cardBg)
   return {
     '--cat-s-name': s.nameScale !== 1 ? String(s.nameScale) : undefined,
     '--cat-s-desc': s.descScale !== 1 ? String(s.descScale) : undefined,
@@ -137,7 +170,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-card-bg': s.cardBg || undefined,
     '--cat-price-ink': s.priceInk || undefined,
     '--cat-vedette-price-ink': s.vedettePriceInk || undefined,
-    '--cat-name-ink': s.nameColor || undefined,
+    '--cat-name-ink': nameInk,
     // Textes des badges ('' = blanc / encre d'en-tête selon l'objet).
     '--cat-promo-ink': s.promoInk || undefined,
     '--cat-sticker-ink': s.stickerInk || undefined,
@@ -146,15 +179,15 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-vedette-txt': s.vedetteTxtInk || undefined,
     // Textes de contenu : la couleur choisie ANNULE aussi l'atténuation par
     // défaut (opacity), sinon elle serait rendue délavée.
-    '--cat-brand-ink': s.brandColor || undefined,
-    '--cat-desc-ink': s.descColor || undefined,
-    '--cat-desc-op': s.descColor ? '1' : undefined,
-    '--cat-ref-ink': s.refColor || undefined,
-    '--cat-ref-op': s.refColor ? '1' : undefined,
-    '--cat-unit-ink': s.unitColor || undefined,
-    '--cat-unit-op': s.unitColor ? '1' : undefined,
-    '--cat-details-ink': s.detailsColor || undefined,
-    '--cat-details-op': s.detailsColor ? '1' : undefined,
+    '--cat-brand-ink': brandInk,
+    '--cat-desc-ink': descInk,
+    '--cat-desc-op': descInk ? '1' : undefined,
+    '--cat-ref-ink': refInk,
+    '--cat-ref-op': refInk ? '1' : undefined,
+    '--cat-unit-ink': unitInk,
+    '--cat-unit-op': unitInk ? '1' : undefined,
+    '--cat-details-ink': detailsInk,
+    '--cat-details-op': detailsInk ? '1' : undefined,
     '--cat-details-bg': s.detailsBg || undefined,
     '--cat-cell-radius': s.radius !== 6 ? `${s.radius}px` : undefined,
     '--cat-img-share': s.imageShare !== 40 ? `${s.imageShare}%` : undefined,
@@ -310,6 +343,13 @@ export const CATALOG_CSS = `
    titre en pastille accent, paires en CHIPS arrondies teintées accent avec liseré,
    valeur en couleur accent — 2 colonnes (gain de place vertical par fiche). */
 .cat-cell-specs-wrap { margin-top:0; }
+/* Lien de contrôle vers la fiche produit SOURCE : pastille en haut à droite,
+   visible AU SURVOL seulement → jamais capturée à l'export (opacity 0). */
+.cat-cell-srclink { position:absolute; top:4px; right:4px; z-index:6; width:20px; height:20px;
+  display:flex; align-items:center; justify-content:center; border-radius:999px;
+  background:var(--cat-accent); color:#fff; font-size:12px; font-weight:700; text-decoration:none;
+  opacity:0; transition:opacity .15s; }
+.cat-cell:hover .cat-cell-srclink { opacity:.92; }
 .cat-cell-specs-title { display:inline-block; background:var(--cat-promo-bg,var(--cat-accent)); color:var(--cat-promo-ink,#fff);
   font-family:var(--cat-font-h); font-weight:800; text-transform:uppercase; letter-spacing:.08em; font-size:.92em;
   padding:1px 9px; border-radius:999px; }
