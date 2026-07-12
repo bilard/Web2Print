@@ -306,7 +306,10 @@ service cloud.firestore {
     // l'un refuse tout. Plafond PAR dataset (pas cumulé) : suffisant vu que l'import est
     // déjà borné à 50 côté PIM et que les données sont isolées par userId.
     match /excel_data/{docId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // resource == null : un getDoc sur un dataset SUPPRIMÉ doit renvoyer
+      // « n'existe pas » (le client affiche « Dataset introuvable »), pas
+      // permission-denied (un catalogue peut garder un sourceRef pendouillant).
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid
                     && (!isDemo() || request.resource.data.get('totalRows', 0) <= demoLimit('pimRows', 50));
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid
@@ -315,7 +318,8 @@ service cloud.firestore {
     }
 
     match /excel_data_payload/{docId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // resource == null : idem excel_data (getDoc d'un payload supprimé).
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid
                     && (!isDemo() || request.resource.data.get('json', '').size() <= 500000);
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid
@@ -329,7 +333,8 @@ service cloud.firestore {
     // permissions du parent via lookup.
 
     match /pim_projects/{projectId} {
-      allow read:   if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // resource == null : getDoc d'un projet supprimé → « n'existe pas », pas permission-denied.
+      allow read:   if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
       allow create: if hasPermission('pim.create') && request.resource.data.userId == request.auth.uid;
       allow update: if hasPermission('pim.edit') && resource.data.userId == request.auth.uid;
       allow delete: if hasPermission('pim.delete') && resource.data.userId == request.auth.uid;
