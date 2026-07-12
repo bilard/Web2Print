@@ -145,3 +145,48 @@ describe('parseAdvantagesFromMarkdown — « Caractéristiques et avantages » (
     expect(advs.every((a) => a.group !== 'et avantages')).toBe(true)
   })
 })
+
+// Extrait RÉEL d'une fiche Jardiland (Jina navigateur, 2026-07-12) : points
+// forts en LIGNES PLATES sans puces + bloc d'avis client (« Steffan M. »,
+// « 5/5 5/5 », témoignage) + widget prix — l'avis devenait l'unique
+// « avantage » et les vrais points forts étaient perdus.
+const JARDILAND_MD = `# Abri de jardin bois 6,8m² Flodova
+
+## Points forts
+
+Robustesse exceptionnelle
+
+Toit avec évacuation d'eau
+
+Double porte vitrée
+
+Steffan M.
+
+5/5 5/5
+
+Parfait, montage simple. Toiture qui pourrait être amélioré avec un autre système (goudron actuellement). Les chaumières sont un peu légères.…
+
+944,10 €1 049,00 €- 10 %
+
+Quantité
+
+Livraison à domicile
+
+GRATUIT à partir du dimanche 26 juillet
+`
+
+describe('parseAdvantagesFromMarkdown — points forts en lignes plates + avis client (Jardiland)', () => {
+  it('capture les points forts courts sans puces', () => {
+    const texts = parseAdvantagesFromMarkdown(JARDILAND_MD).map((a) => a.text)
+    expect(texts).toContain('Robustesse exceptionnelle')
+    expect(texts).toContain("Toit avec évacuation d'eau")
+    expect(texts).toContain('Double porte vitrée')
+  })
+
+  it("exclut l'avis client et le bloc commerce post-prix", () => {
+    const all = parseAdvantagesFromMarkdown(JARDILAND_MD).map((a) => a.text).join(' | ')
+    expect(all).not.toContain('montage simple')
+    expect(all).not.toContain('GRATUIT')
+    expect(all).not.toContain('€')
+  })
+})

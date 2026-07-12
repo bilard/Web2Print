@@ -1,4 +1,4 @@
-import { isGarbageContent } from './garbageFilter'
+import { isGarbageContent, stripReviewBlocks } from './garbageFilter'
 
 export interface Advantage {
   text: string
@@ -35,7 +35,10 @@ export function mergeGroupsIntoAdvantages(
 }
 
 /** Extrait une liste d'avantages/points forts depuis du markdown. */
-export function parseAdvantagesFromMarkdown(md: string): Advantage[] {
+export function parseAdvantagesFromMarkdown(rawMd: string): Advantage[] {
+  // Témoignages clients (« 5/5 » + paragraphe) : passaient les filtres et
+  // devenaient des avantages (constat Jardiland) — neutralisés en amont.
+  const md = stripReviewBlocks(rawMd)
   const advantages: Array<{ text: string; group?: string }> = []
   const seenTexts = new Set<string>()
 
@@ -242,6 +245,17 @@ export function parseAdvantagesFromMarkdown(md: string): Advantage[] {
 
     if (!inFeatureZone) continue
 
+    // Widget PRIX (« 944,10 €1 049,00 €- 10 % ») : tout ce qui suit est du
+    // commerce (stock, livraison, paiement) — fin de la zone features. Sans
+    // ça, les lignes marchandes post-prix devenaient des « avantages ».
+    if (/\d+[.,]\d{2}\s*€/.test(trimmed)) {
+      flushPending()
+      inFeatureZone = false
+      currentGroup = undefined
+      currentBoldGroup = undefined
+      continue
+    }
+
     // Bullet bold `* **Titre**` → démarre un nouvel avantage hiérarchique.
     // Les paragraphes prose qui suivent seront ajoutés à son texte.
     const bulletBoldMatch = trimmed.match(/^[-*•·✓✔]\s+\*\*(.+?)\*\*\s*$/)
@@ -273,9 +287,13 @@ export function parseAdvantagesFromMarkdown(md: string): Advantage[] {
       continue
     }
 
-    // Paragraphes de prose dans la zone features (pas un heading, pas un tableau, pas un lien)
+    // Lignes de prose dans la zone features (pas un heading, pas un tableau,
+    // pas un lien). Seuil 15 : les points forts en LIGNES PLATES sans puces
+    // (« Robustesse exceptionnelle », « Double porte vitrée » — pattern
+    // Jardiland/Leroy Merlin) font souvent < 40 chars ; les gardes d'addBullet
+    // (commercial, garbage, paires specs) contiennent le bruit.
     if (
-      trimmed.length >= 40
+      trimmed.length >= 15
       && !trimmed.startsWith('|')
       && !trimmed.startsWith('#')
       && !trimmed.startsWith('![')
@@ -288,10 +306,10 @@ export function parseAdvantagesFromMarkdown(md: string): Advantage[] {
         .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
         .replace(/\\\\/g, '')
         .trim()
-      // Si un avantage hiérarchique est en cours → la prose est sa description.
-      // Sinon : paragraphe libre = avantage à part entière.
+      // Si un avantage hiérarchique est en cours → la prose LONGUE est sa
+      // description (les fragments courts n'y sont pas rattachés : bruit).
       if (pendingAdvantage) {
-        pendingAdvantage.text += '\n\n' + cleanedProse
+        if (cleanedProse.length >= 40) pendingAdvantage.text += '\n\n' + cleanedProse
       } else {
         addBullet(trimmed, currentBoldGroup ?? currentGroup)
       }

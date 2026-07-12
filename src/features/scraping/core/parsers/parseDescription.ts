@@ -1,4 +1,4 @@
-import { isGarbageContent } from './garbageFilter'
+import { isGarbageContent, stripReviewBlocks } from './garbageFilter'
 
 /** Lignes de métadonnées produit ("Code commande RS:…", "Référence fabricant:…",
  *  "SKU:", "EAN:", "Marque:") concaténées en haut de fiche par les revendeurs
@@ -181,7 +181,10 @@ function parseDescriptionAfterBoldHeading(md: string): string {
  *   3. Filtrer les bandeaux cookies (isGarbageContent)
  *   4. Couper avant la première section "Spécifications" / "Caractéristiques"
  */
-export function parseDescriptionFromMarkdown(md: string): string {
+export function parseDescriptionFromMarkdown(rawMd: string): string {
+  // Les témoignages clients (« 5/5 » + paragraphe) passent tous les filtres
+  // prose et devenaient LA description (constat Jardiland) — neutralisés en amont.
+  const md = stripReviewBlocks(rawMd)
   // Phase 0 : Next.js structured data — source de vérité quand disponible
   const nextDataDesc = parseDescriptionFromNextData(md)
   if (nextDataDesc && nextDataDesc.length >= 50) return nextDataDesc

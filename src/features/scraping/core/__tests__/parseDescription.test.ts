@@ -230,3 +230,21 @@ describe('parseDescriptionFromMarkdown — bruit widgets e-commerce (Castorama)'
     expect(desc).not.toContain('Ajouter au panier')
   })
 })
+
+describe('parseDescriptionFromMarkdown — bloc avis client (Jardiland)', () => {
+  it("le témoignage « 5/5 » ne devient pas la description", () => {
+    const md = `# Abri Flodova
+
+Steffan M.
+
+5/5 5/5
+
+Parfait, montage simple. Toiture qui pourrait être améliorée avec un autre système, les chaumières sont un peu légères sur ce produit.
+
+L'abri de jardin Flodova est conçu en sapin du Nord naturel, un matériau réputé pour sa robustesse et sa résistance aux conditions climatiques.
+`
+    const desc = parseDescriptionFromMarkdown(md)
+    expect(desc).toContain('sapin du Nord')
+    expect(desc).not.toContain('montage simple')
+  })
+})

@@ -15,3 +15,36 @@ export function isMainlyGarbage(text: string): boolean {
   // Si plus de 30% des lignes sont garbage → considérer comme parasite
   return garbageLines.length / lines.length > 0.3
 }
+
+/** Ligne de note d'avis client : « 5/5 », « 4,5/5 », « 5/5 5/5 »… seule sur sa ligne. */
+const RATING_LINE_RE = /^\s*(?:\d(?:[.,]\d)?\s*\/\s*5\s*)+$/
+
+/** Ligne de signature d'avis : « Steffan M. », « Marie-Claude D. » (prénom + initiale). */
+const REVIEWER_LINE_RE = /^[A-ZÀ-Ÿ][\p{L}’'-]+(?:\s+[A-ZÀ-Ÿ][\p{L}’'-]+)?\s+[A-ZÀ-Ÿ]\.?$/u
+
+/**
+ * Retire les BLOCS d'avis client d'un markdown : la ligne de note (« 5/5 »),
+ * la signature courte qui la précède (« Steffan M. ») et le paragraphe de
+ * témoignage qui la suit — poison récurrent des parsers (le témoignage passe
+ * tous les filtres prose et devient description ou avantage). Signal par
+ * STRUCTURE (marqueur de note), jamais par site ; un markdown sans note
+ * ressort strictement inchangé.
+ */
+export function stripReviewBlocks(md: string): string {
+  const lines = md.split('\n')
+  const drop = new Set<number>()
+  for (let i = 0; i < lines.length; i++) {
+    if (!RATING_LINE_RE.test(lines[i])) continue
+    drop.add(i)
+    // Signature au-dessus — uniquement si elle a la FORME d'un nom d'avis.
+    let j = i - 1
+    while (j >= 0 && !lines[j].trim()) j--
+    if (j >= 0 && REVIEWER_LINE_RE.test(lines[j].trim())) drop.add(j)
+    // Témoignage : le paragraphe qui suit la note (jusqu'à la ligne vide).
+    let k = i + 1
+    while (k < lines.length && !lines[k].trim()) k++
+    while (k < lines.length && lines[k].trim() && !/^#/.test(lines[k].trim())) { drop.add(k); k++ }
+  }
+  if (drop.size === 0) return md
+  return lines.filter((_, idx) => !drop.has(idx)).join('\n')
+}
