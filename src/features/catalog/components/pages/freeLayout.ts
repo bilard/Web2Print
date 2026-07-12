@@ -333,18 +333,19 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
     let hEff = it.el.offsetHeight
     if (CLIP_CHAIN.has(it.id)) {
       let reserve = 0
+      // Le TABLEAU DE SPECS qui suit (pavé de DONNÉES pleine largeur, sans
+      // échappatoire latérale) entre dans un PARTAGE PROPORTIONNEL : ni la
+      // prose ne peut l'étrangler (titre seul, zéro ligne), ni lui affamer la
+      // prose (réserve intégrale = description/avantages à zéro). Les autres
+      // pavés rognables gardent leur logique (rétrécissement latéral, coupe).
+      let followClipH = 0
       for (let j = i + 1; j < items.length; j++) {
         const jt = items[j]
         if (!isMagnetized(jt.box, style)) continue
         const [jx1, jx2] = spanOf(jt)
         if (!(x1 < jx2 && jx1 < x2)) continue
-        // Les mono-lignes (réf/unité) réservent leur hauteur — et depuis que le
-        // tableau de specs est un pavé À PART, lui aussi : sinon les puces
-        // d'avantages (exhaustives) s'étendaient jusqu'au bas et l'étranglaient
-        // à zéro (le titre CARACTÉRISTIQUES restait seul, sans lignes). La
-        // DONNÉE ne se fait plus voler sa place par la PROSE ; si le total ne
-        // tient pas, chaque pavé se condense puis se coupe sur SA hauteur.
-        reserve += jt.el.offsetHeight + MAGNET_GAP
+        if (jt.id === 'specs') followClipH += jt.el.offsetHeight + MAGNET_GAP
+        else if (!CLIP_CHAIN.has(jt.id)) reserve += jt.el.offsetHeight + MAGNET_GAP
       }
       // Plafond COMPLET pour une emprise donnée : obstacles hors chaîne + blocs de
       // chaîne DÉTACHÉS (m:false) qui suivent — bornés à leur position la plus
@@ -378,7 +379,13 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
           ceil = ceilFor(x1, x2)
         }
       }
-      const maxH = ceil - top - reserve
+      const avail = ceil - top - reserve
+      // Partage PROPORTIONNEL avec les pavés rognables suivants : si le total
+      // déborde, chacun se condense/coupe sur SA part (au prorata du contenu) —
+      // plancher 24 px pour qu'aucun ne disparaisse entièrement.
+      const maxH = followClipH > 0 && hEff + followClipH > avail
+        ? Math.max(24, Math.floor(avail * (hEff / (hEff + followClipH))))
+        : avail - followClipH
       if (hEff > maxH) hEff = shrinkThenClip(it.el, it.id, maxH, hEff)
     }
     placed.push({ x1, x2, bottom: top + hEff })
