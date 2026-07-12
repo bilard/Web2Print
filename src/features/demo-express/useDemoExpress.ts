@@ -31,7 +31,7 @@ import { listPromos } from '@/features/retail-promo/promosApi'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import type { CatalogCharte, CatalogDoc } from '@/features/catalog/catalogTypes'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
-import { buildDemoSheet, sheetToMerge, DEMO_TARGET_FIELDS, type DemoProduct } from './buildDemoSheet'
+import { buildDemoSheet, sheetToMerge, isProductLike, DEMO_TARGET_FIELDS, type DemoProduct } from './buildDemoSheet'
 import { buildDemoWorkflow } from './demoWorkflow'
 import { discoverCategories, categoriesFromHtml, productLinksFromListingHtml } from './discoverFromHome'
 
@@ -333,7 +333,16 @@ export function useDemoExpress() {
       finish()
       return
     }
-    step('enrich', { status: 'done', detail: `${items.length} fiches enrichies` })
+    // Pages ÉDITORIALES écartées (rubrique/landing prises pour des produits par la
+    // découverte : ni réf, ni EAN, ni prix, ni vraies specs) — garde-fou : un
+    // filtre ne VIDE jamais la liste (site fabricant atypique → on garde tout).
+    const productLike = items.filter((it) => isProductLike(it.fields))
+    const editorial = items.length - productLike.length
+    if (productLike.length > 0 && editorial > 0) items.splice(0, items.length, ...productLike)
+    step('enrich', {
+      status: 'done',
+      detail: `${items.length} fiches enrichies${productLike.length > 0 && editorial > 0 ? ` · ${editorial} page(s) éditoriale(s) écartée(s)` : ''}`,
+    })
 
     // 4) Images → DAM Drive (1 par produit, quota démo respecté)
     step('dam', { status: 'running' })

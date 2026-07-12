@@ -22,6 +22,25 @@ export interface DemoProduct {
   damLink?: string
 }
 
+/**
+ * Une page enrichie est-elle une FICHE PRODUIT — et pas une page ÉDITORIALE
+ * (rubrique, story « Trade Essentials », landing métier) remontée par la
+ * découverte quand les tuiles de la home ressemblent à des cartes produit ?
+ * Signal GÉNÉRIQUE (jamais par-vendeur) : au moins une donnée de commerce
+ * (référence, EAN, prix) OU un vrai tableau de specs (≥ 3 paires).
+ */
+export function isProductLike(fields: Record<string, unknown>): boolean {
+  const has = (k: string) => {
+    const v = fields[k]
+    return v != null && String(v).trim() !== ''
+  }
+  if (has('reference') || has('ean') || has('price')) return true
+  const specPairs = String(fields.specifications ?? '')
+    .split(/\n+|\s\|\s/)
+    .filter((s) => s.includes(':')).length
+  return specPairs >= 3
+}
+
 const col = (key: string, label: string, fieldType: FieldTypeId, opts: Partial<ExcelColumn> = {}): ExcelColumn => ({
   key, label, fieldType, detectedType: fieldType, isPrimary: false, width: 180, ...opts,
 })
