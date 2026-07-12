@@ -25,7 +25,9 @@ import { generateImageBase64 } from '@/features/nanobana/generateImageBase64'
 import { defaultPromoFieldMap, defaultCustomFields } from '@/features/retail-promo/promoMapping'
 import { savePromo } from '@/features/retail-promo/promosApi'
 import { DEFAULT_PROMO_CONFIG, type PromoTemplateConfig } from '@/features/retail-promo/RetailPromoCard'
-import { saveWorkflow } from '@/features/workflows/persistence/workflowsApi'
+import { saveWorkflow, listWorkflows } from '@/features/workflows/persistence/workflowsApi'
+import { listCatalogs } from '@/features/catalog/catalogsApi'
+import { listPromos } from '@/features/retail-promo/promosApi'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import type { CatalogCharte, CatalogDoc } from '@/features/catalog/catalogTypes'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
@@ -132,6 +134,10 @@ async function seedCatalog(input: {
     customFields: defaultCustomFields(columns, fieldMap),
     charte,
   }
+  // Idempotent : un re-run REMPLACE le catalogue « Démo {Société} » existant
+  // (saveCatalog upserte par id) au lieu d'empiler des doublons.
+  const existingCatalog = (await listCatalogs().catch(() => [])).find((c) => c.name === name)
+  if (existingCatalog) doc.id = existingCatalog.id
   const catalogId = await saveCatalog(doc)
 
   // Couverture Nano Banana — facultative : le catalogue reste valable sans.
@@ -175,6 +181,8 @@ async function seedPromo(input: {
     headerBg: patch.headerBg ?? DEFAULT_PROMO_CONFIG.headerBg,
   }
   const fieldMap = defaultPromoFieldMap(columns)
+  // Idempotent : remplace la fiche promo « Démo {Société} » existante.
+  const existingPromo = (await listPromos().catch(() => [])).find((p) => p.name === `Démo ${company}`)
   return savePromo({
     name: `Démo ${company}`,
     sourceRef: makeExcelSourceRef(docId, 0, fileName),
@@ -183,12 +191,12 @@ async function seedPromo(input: {
     config,
     columns,
     rows,
-  })
+  }, existingPromo?.id)
 }
 
 export function useDemoExpress() {
   const { discover } = useJina()
-  const { saveToFirebase } = useExcelFirebase()
+  const { saveToFirebase, listSavedFiles } = useExcelFirebase()
 
   const run = useCallback(async (company: string, url: string, opts?: { maxProducts?: number; prompt?: string }) => {
     const uid = auth.currentUser?.uid
@@ -339,7 +347,9 @@ export function useDemoExpress() {
     const fileName = `Démo ${company}`
     let docId: string | null = null
     try {
-      docId = await saveToFirebase(fileName, [sheet], [], null)
+      // Idempotent : un re-run met à jour la base « Démo {Société} » existante.
+      const existingSheet = (await listSavedFiles().catch(() => [])).find((f) => f.fileName === fileName)
+      docId = await saveToFirebase(fileName, [sheet], [], existingSheet?.docId ?? null)
       if (!docId) throw new Error('sauvegarde refusée')
       const ex = useExcelStore.getState()
       if (ex.sheets.length === 0) {
@@ -388,6 +398,10 @@ export function useDemoExpress() {
     step('workflow', { status: 'running' })
     try {
       const wf = buildDemoWorkflow(company, items.map((it) => it.url), uid)
+      // Idempotent : remplace le workflow « Démo {Société} » existant (constaté :
+      // 8 doublons « Démo castorama » empilés par les re-runs).
+      const existingWf = (await listWorkflows(uid).catch(() => [])).find((w) => w.name === wf.name)
+      if (existingWf) wf.id = existingWf.id
       await saveWorkflow(uid, wf)
       useDemoExpressStore.getState().setLinks({ workflowId: wf.id })
       step('workflow', { status: 'done', detail: `« ${wf.name} » ajouté à ses workflows` })
@@ -396,7 +410,7 @@ export function useDemoExpress() {
     }
 
     finish()
-  }, [discover, saveToFirebase])
+  }, [discover, saveToFirebase, listSavedFiles])
 
   return { run }
 }
