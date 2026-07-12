@@ -26,6 +26,9 @@ export const FREE_DEFAULT_LAYOUT: Record<CardObjectId, CardBox> = {
   // description), réf en bas à gauche avec l'unité SOUDÉE à sa droite (liaison),
   // prix ANCRÉ bas-droite (mise en page liquide) → identique sur toutes les cartes.
   details: { x: 5, y: 68, w: 92 },
+  // Bloc À PART des détails : quand un obstacle (prix) ne rétrécit que les puces,
+  // le tableau de specs, posé APRÈS, garde TOUTE la largeur sous l'obstacle.
+  specs: { x: 5, y: 80, w: 92 },
   ref: { x: 5, y: 90, w: 45 },
   unit: { x: 5, y: 94, link: 'ref' },
   price: { x: 2, y: 2, w: 40, ax: 'r', ay: 'b', r: -2 },
@@ -50,6 +53,7 @@ export const FREE_WIDE_LAYOUT: Record<CardObjectId, CardBox> = {
   name: { x: 40, y: 16, w: 58 },
   description: { x: 40, y: 26, w: 58 },
   details: { x: 40, y: 46, w: 58 },
+  specs: { x: 40, y: 68, w: 58 },
   ref: { x: 40, y: 88, w: 30 },
   unit: { x: 40, y: 92, link: 'ref' },
   price: { x: 2, y: 2, w: 40, ax: 'r', ay: 'b', r: -2 },
@@ -80,13 +84,13 @@ export function freeLayoutBox(id: CardObjectId, style: CatalogCardStyle, wide = 
  * contenu (volumétrie). Deux blocs sans recouvrement horizontal (ex. détails à
  * gauche · prix à droite) restent indépendants. L'image/badges ne poussent pas.
  */
-export const FLOW_CHAIN: CardObjectId[] = ['brand', 'name', 'description', 'details', 'ref', 'unit']
+export const FLOW_CHAIN: CardObjectId[] = ['brand', 'name', 'description', 'details', 'specs', 'ref', 'unit']
 
 /** Écart (px) entre deux blocs aimantés (collés à cette distance). */
 const MAGNET_GAP = 6
 
 /** Blocs « pavés » CLIPPABLES quand la place manque — jamais les mono-lignes. */
-const CLIP_CHAIN: Set<CardObjectId> = new Set(['description', 'details'])
+const CLIP_CHAIN: Set<CardObjectId> = new Set(['description', 'details', 'specs'])
 
 /**
  * Coupe un pavé à `maxH`, PILE sous une ligne rendue (jamais de demi-ligne).
@@ -145,7 +149,7 @@ function clipToLines(el: HTMLElement, maxH: number): number {
  * repartent de la taille NON condensée, jamais d'une condensation précédente.
  */
 function shrinkThenClip(el: HTMLElement, id: CardObjectId, maxH: number, hBefore: number): number {
-  const ladder = id === 'details'
+  const ladder = id === 'details' || id === 'specs'
     ? [0.92, 0.85, 0.78, 0.75, 0.7, 0.65, 0.6, 0.55]
     : [0.92, 0.85, 0.78, 0.75]
   const inner = el.firstElementChild

@@ -134,22 +134,23 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
       {f.ref && show('showRef') && obj('ref', <span className="cat-cell-refcode">Réf. {f.ref}</span>)}
       {f.unit && show('showUnit') && obj('unit', <span className="cat-cell-unit">Unité : {f.unit}</span>)}
       {show('showPrice') && obj('price', <span className="cat-cell-pricebox"><span className="cat-cell-tag">{hasWas && show('showWas') && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}<span className="cat-cell-price">{formatPrice(f.newPrice)}</span></span></span>)}
-      {((details && details.length > 0) || (specs && specs.rows.length > 0)) && show('showDetails') && obj('details',
+      {details && details.length > 0 && show('showDetails') && obj('details',
         <div className="cat-cell-details">
-          {details?.map((d, i) => <span key={i}>{d}</span>)}
-          {specs && specs.rows.length > 0 && (
-            <div className="cat-cell-specs-wrap">
-              <span className="cat-cell-specs-title">{specs.label}</span>
-              <div className="cat-cell-specs">
-                {specs.rows.map((r, i) => (
-                  <div className="cat-spec-pair" key={i}>
-                    <span className="cat-spec-n">{r.name}</span>
-                    <span className="cat-spec-v">{r.value}</span>
-                  </div>
-                ))}
+          {details.map((d, i) => <span key={i}>{d}</span>)}
+        </div>)}
+      {/* Bloc À PART dans la chaîne de flux : si le prix ne rétrécit que les puces,
+          le tableau garde TOUTE la largeur en dessous (jamais de colonne vide). */}
+      {specs && specs.rows.length > 0 && show('showDetails') && obj('specs',
+        <div className="cat-cell-details cat-cell-specs-wrap">
+          <span className="cat-cell-specs-title">{specs.label}</span>
+          <div className="cat-cell-specs">
+            {specs.rows.map((r, i) => (
+              <div className="cat-spec-pair" key={i}>
+                <span className="cat-spec-n">{r.name}</span>
+                <span className="cat-spec-v">{r.value}</span>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>)}
     </div>
   )

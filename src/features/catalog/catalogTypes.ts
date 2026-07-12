@@ -65,10 +65,10 @@ export interface CatalogTheme {
 /** Objets de la fiche déplaçables/redimensionnables en mode « disposition libre ». */
 export type CardObjectId =
   | 'promo' | 'image' | 'sticker' | 'kicker' | 'vedette'
-  | 'brand' | 'name' | 'description' | 'ref' | 'unit' | 'price' | 'details'
+  | 'brand' | 'name' | 'description' | 'ref' | 'unit' | 'price' | 'details' | 'specs'
 export const CARD_OBJECT_IDS: CardObjectId[] = [
   'promo', 'image', 'sticker', 'kicker', 'vedette',
-  'brand', 'name', 'description', 'ref', 'unit', 'price', 'details',
+  'brand', 'name', 'description', 'ref', 'unit', 'price', 'details', 'specs',
 ]
 /** Boîte d'un objet en % de la carte (x/y = coin haut-gauche ; w/h optionnels ;
  * `sc` = mise à l'échelle uniforme de l'objet, 1 = taille naturelle). */

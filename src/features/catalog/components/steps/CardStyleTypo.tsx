@@ -39,7 +39,7 @@ export const CARD_TYPO_FIELDS: { scale: ScaleKey; font: FontKey; label: string; 
 export const OBJ_LABEL: Record<CardObjectId, string> = {
   promo: 'Cartouche promo', vedette: 'Ruban vedette', kicker: 'Sous-famille', image: 'Image',
   sticker: 'Sticker remise', brand: 'Marque', name: 'Nom', description: 'Description',
-  ref: 'Référence', unit: 'Unité', details: 'Détails', price: 'Prix',
+  ref: 'Référence', unit: 'Unité', details: 'Détails', specs: 'Caractéristiques', price: 'Prix',
 }
 
 /**

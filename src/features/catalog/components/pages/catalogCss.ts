@@ -309,7 +309,7 @@ export const CATALOG_CSS = `
 /* Spécifications VERSION PROMO (document de communication, pas fiche technique) :
    titre en pastille accent, paires en CHIPS arrondies teintées accent avec liseré,
    valeur en couleur accent — 2 colonnes (gain de place vertical par fiche). */
-.cat-cell-specs-wrap { margin-top:3px; }
+.cat-cell-specs-wrap { margin-top:0; }
 .cat-cell-specs-title { display:inline-block; background:var(--cat-promo-bg,var(--cat-accent)); color:var(--cat-promo-ink,#fff);
   font-family:var(--cat-font-h); font-weight:800; text-transform:uppercase; letter-spacing:.08em; font-size:.92em;
   padding:1px 9px; border-radius:999px; }
@@ -335,7 +335,7 @@ export const CATALOG_CSS = `
 /* Habillage du bloc détails en disposition libre : fond neutre = bloc net, lisible,
    et hauteur bornée (remplit son .cat-obj à hauteur définie) → se coupe proprement,
    jamais de débordement hors carte. */
-.cat-free .cat-obj[data-object-id="details"] { overflow:hidden; }
+.cat-free .cat-obj[data-object-id="details"], .cat-free .cat-obj[data-object-id="specs"] { overflow:hidden; }
 /* En disposition libre, les TEXTES NE SONT JAMAIS COUPÉS : aucun clamp (description
    et champs détails en hauteur naturelle) — c'est le placement des boîtes qui
    organise la place, et l'utilisateur peut les déplacer/agrandir. Une hauteur
