@@ -299,15 +299,19 @@ export const CATALOG_CSS = `
   font-family:var(--cat-font-details,var(--cat-font-b)); font-size:calc(9px * var(--cat-s-details,1) * ${F});
   color:var(--cat-details-ink,inherit); opacity:var(--cat-details-op,.75); line-height:1.3; }
 .cat-cell-details span { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-/* Tableau des spécifications : paires nom/valeur zébrées, filets discrets —
-   couleurs héritées de la zone détails (thème par fiche respecté). */
+/* Tableau des spécifications sur 2 COLONNES de paires nom/valeur (gain de place
+   vertical par fiche) : zèbre par rangée, filets discrets — couleurs héritées de
+   la zone détails (thème par fiche respecté). */
 .cat-cell-specs-wrap { margin-top:2px; }
 .cat-cell-specs-title { font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-size:.95em; }
-.cat-cell-specs { width:100%; border-collapse:collapse; margin-top:2px; table-layout:fixed; }
-.cat-cell-specs td { padding:1px 5px; vertical-align:top; line-height:1.3; border-top:1px solid rgba(127,127,127,.22); word-break:break-word; }
-.cat-cell-specs tr:first-child td { border-top:none; }
-.cat-cell-specs tr:nth-child(even) td { background:rgba(127,127,127,.07); }
-.cat-cell-specs td:first-child { font-weight:600; width:48%; }
+.cat-cell-specs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:8px; margin-top:2px; }
+.cat-spec-pair { display:flex; justify-content:space-between; align-items:baseline; gap:6px;
+  padding:1px 5px; line-height:1.3; border-top:1px solid rgba(127,127,127,.22); min-width:0; }
+.cat-spec-pair:nth-child(-n+2) { border-top:none; }
+/* Zèbre par RANGÉE (2 paires par rangée) : rangées paires ombrées. */
+.cat-spec-pair:nth-child(4n+3), .cat-spec-pair:nth-child(4n+4) { background:rgba(127,127,127,.07); }
+.cat-spec-n { font-weight:600; word-break:break-word; }
+.cat-spec-v { text-align:right; word-break:break-word; }
 /* Cartes compactes (md, grilles denses) : bloc détails à HAUTEUR BORNÉE → coupe
    nette (ellipsis), jamais de débordement, réf/prix toujours visibles en bas. */
 .cat-md .cat-cell-details { max-height:5em; overflow:hidden; }

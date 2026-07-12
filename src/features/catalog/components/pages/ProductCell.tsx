@@ -140,13 +140,14 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
           {specs && specs.rows.length > 0 && (
             <div className="cat-cell-specs-wrap">
               <span className="cat-cell-specs-title">{specs.label}</span>
-              <table className="cat-cell-specs">
-                <tbody>
-                  {specs.rows.map((r, i) => (
-                    <tr key={i}><td>{r.name}</td><td>{r.value}</td></tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="cat-cell-specs">
+                {specs.rows.map((r, i) => (
+                  <div className="cat-spec-pair" key={i}>
+                    <span className="cat-spec-n">{r.name}</span>
+                    <span className="cat-spec-v">{r.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>)}
