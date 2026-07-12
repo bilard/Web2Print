@@ -15,6 +15,31 @@ const STATUS_ICON: Record<DemoStepStatus, React.ReactNode> = {
   skipped: <Minus className="w-4 h-4 text-white/25" aria-hidden="true" />,
 }
 
+/** Détail d'étape COLORÉ : teinte selon l'état, compteur « 5/6 » en accent. */
+const DETAIL_CLS: Record<DemoStepStatus, string> = {
+  pending: 'text-white/35',
+  running: 'text-indigo-300/90',
+  done: 'text-emerald-300/80',
+  warning: 'text-amber-300/90',
+  error: 'text-rose-400/90',
+  skipped: 'text-white/35',
+}
+
+function StepDetail({ status, detail }: { status: DemoStepStatus; detail: string }) {
+  const m = /^(\d+\s*\/\s*\d+)(\s*—\s*)([\s\S]*)$/.exec(detail)
+  return (
+    <p className={`text-xs truncate ${DETAIL_CLS[status]}`}>
+      {m ? (
+        <>
+          <span className="font-bold text-indigo-400 tabular-nums">{m[1]}</span>
+          <span className="text-white/30">{m[2]}</span>
+          <span>{m[3]}</span>
+        </>
+      ) : detail}
+    </p>
+  )
+}
+
 const LOG_TAG: Record<DemoLogKind, { label: string; cls: string }> = {
   step: { label: 'étape', cls: 'text-white/45' },
   ia: { label: 'IA', cls: 'text-indigo-300' },
@@ -67,11 +92,7 @@ export function DemoExpressProgress() {
               <p className={`text-sm ${st.status === 'pending' || st.status === 'skipped' ? 'text-white/40' : 'text-white/90'}`}>
                 {st.label}
               </p>
-              {st.detail && (
-                <p className={`text-xs truncate ${st.status === 'error' ? 'text-rose-400/80' : 'text-white/40'}`}>
-                  {st.detail}
-                </p>
-              )}
+              {st.detail && <StepDetail status={st.status} detail={st.detail} />}
             </div>
           </li>
         ))}
