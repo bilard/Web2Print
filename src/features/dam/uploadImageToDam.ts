@@ -53,7 +53,7 @@ export async function uploadUrlToDam(url: string, fileName: string, subFolder: s
       // Les DEUX voies ont échoué : message combiné, sinon impossible de
       // savoir si le pont navigateur a seulement tourné.
       const msg2 = e2 instanceof Error ? e2.message : String(e2)
-      throw new Error(`${msg} · pont navigateur : ${msg2}`, { cause: e })
+      throw new Error(`${msg} · pont navigateur : ${msg2}`, { cause: e2 })
     }
   }
 }
