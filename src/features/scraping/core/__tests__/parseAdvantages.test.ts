@@ -1,6 +1,6 @@
 // src/features/scraping/core/__tests__/parseAdvantages.test.ts
 import { describe, it, expect } from 'vitest'
-import { parseAdvantagesFromMarkdown, mergeGroupsIntoAdvantages } from '../parsers/parseAdvantages'
+import { parseAdvantagesFromMarkdown, parseAdvantagesFromHtml, mergeGroupsIntoAdvantages, mergeAdvantagesAdditive } from '../parsers/parseAdvantages'
 
 const MD_FLAT = `## Points forts
 
@@ -188,5 +188,70 @@ describe('parseAdvantagesFromMarkdown — points forts en lignes plates + avis c
     expect(all).not.toContain('montage simple')
     expect(all).not.toContain('GRATUIT')
     expect(all).not.toContain('€')
+  })
+})
+
+// Fixture RÉELLE (Milwaukee M18 ONEFHPX, HTML statique) : la section
+// « caractéristiques » est un <h2> minuscule + <ul> replié côté rendu
+// (« Voir plus ») — le HTML statique, lui, contient la liste COMPLÈTE.
+// Bug d'origine : la fiche ne gardait que les 6 puces visibles du rendu.
+const MILWAUKEE_HTML = `
+<html><head><script>window.__REDUX_STORE = {"features":["bruit de script à ignorer"],"readMoreText":"Voir plus"}</script>
+<style>.jKBbkw{color:#db011c;}</style></head><body>
+<nav><ul><li><a href="/systems/m18/">M18</a></li><li>Plaquiste</li></ul></nav>
+<section id="caractéristiques" data-navigation-title="caractéristiques">
+<h2 class="Typographystyles__H2-sc-fh0jc-1">caractéristiques</h2>
+<ul class="ProductFeaturesTextstyles__FeatureList-sc-fxqvf2-1">
+<li class="ProductFeaturesTextstyles__Feature-sc-fxqvf2-3">Perfo-burineur le plus puissant de sa cat&eacute;gorie avec une force de frappe de 5.0 J (EPTA) avec un niveau de vibration r&eacute;duit de 6.9 m/s&sup2;.</li>
+<li class="ProductFeaturesTextstyles__Feature-sc-fxqvf2-3">Jusqu'&agrave; 10 trous de &#8960;18 mm et de 100 mm de profondeur avec une charge de batterie <a href="/systems/m18/">M18&trade;</a> HIGH OUTPUT&trade; 5,5 Ah.</li>
+<li class="ProductFeaturesTextstyles__Feature-sc-fxqvf2-3">FIXTEC&trade; permet d&#8217;intervertir entre l&#8217;emmanchement SDS-PLUS et le mandrin auto-serrant 13mm</li>
+<li class="ProductFeaturesTextstyles__Feature-sc-fxqvf2-3">4 modes de fonctionnement : Per&ccedil;age, burinage, perfo-burinage et orientation du burin (variolock).</li>
+<li class="ProductFeaturesTextstyles__Feature-sc-fxqvf2-3">Compatible avec le syst&egrave;me d'aspiration M18 FPDDEXL</li>
+<li class="ProductFeaturesTextstyles__Feature-sc-fxqvf2-3">Syst&egrave;me de batterie r&eacute;trocompatible: fonctionne avec toutes les batteries MILWAUKEE&reg; M18&trade;</li>
+</ul></div></section>
+<section><h2>Spécifications</h2><table><tr><td>Capacité</td><td>32 mm</td></tr></table></section>
+<footer><ul><li>Mentions légales</li><li>Politique de confidentialité</li></ul></footer>
+</body></html>`
+
+describe('parseAdvantagesFromHtml — HTML statique (Milwaukee, liste repliée côté rendu)', () => {
+  it('capture la liste complète, y compris la queue masquée par « Voir plus »', () => {
+    const texts = parseAdvantagesFromHtml(MILWAUKEE_HTML).map((a) => a.text)
+    expect(texts.some((t) => t.startsWith('Perfo-burineur le plus puissant'))).toBe(true)
+    expect(texts).toContain("Compatible avec le système d'aspiration M18 FPDDEXL")
+    expect(texts.some((t) => t.startsWith('Système de batterie rétrocompatible'))).toBe(true)
+  })
+
+  it('décode les entités et aplatit les liens <a> en texte', () => {
+    const texts = parseAdvantagesFromHtml(MILWAUKEE_HTML).map((a) => a.text)
+    const batterie = texts.find((t) => t.includes('HIGH OUTPUT'))
+    expect(batterie).toContain('M18™ HIGH OUTPUT™ 5,5 Ah')
+    expect(batterie).not.toContain('&trade;')
+  })
+
+  it('ignore nav/footer/script/table (aucun bruit hors zone features)', () => {
+    const all = parseAdvantagesFromHtml(MILWAUKEE_HTML).map((a) => a.text).join(' | ')
+    expect(all).not.toContain('Mentions légales')
+    expect(all).not.toContain('bruit de script')
+    expect(all).not.toContain('32 mm')
+  })
+
+  it('garde-fou : HTML vide ou sans zone features → liste vide', () => {
+    expect(parseAdvantagesFromHtml('')).toEqual([])
+    expect(parseAdvantagesFromHtml('<html><body><ul><li>Un item hors de toute section avantages qui fait plus de quinze caractères</li></ul></body></html>')).toEqual([])
+  })
+})
+
+describe('mergeAdvantagesAdditive', () => {
+  const base = [{ text: 'Perfo-burineur le plus puissant de sa catégorie', group: 'caractéristiques' }]
+  it('ajoute les items nouveaux, jamais les doublons (normalisation accents/ponctuation)', () => {
+    const merged = mergeAdvantagesAdditive(base, [
+      { text: 'PERFO-BURINEUR le plus puissant de sa catégorie !' }, // doublon normalisé
+      { text: "Compatible avec le système d'aspiration M18 FPDDEXL" },
+    ])
+    expect(merged).toHaveLength(2)
+    expect(merged[0]).toBe(base[0]) // base intacte, ordre préservé
+  })
+  it('garde-fou : extra vide → base retournée telle quelle', () => {
+    expect(mergeAdvantagesAdditive(base, [])).toBe(base)
   })
 })

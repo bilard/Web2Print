@@ -34,6 +34,93 @@ export function mergeGroupsIntoAdvantages(
   return result
 }
 
+/** Fusion ADDITIVE d'avantages : garde `base` tel quel, ajoute les items de
+ *  `extra` non dupliqués (normalisation : minuscules, alphanumérique, 40 chars).
+ *  Contrat garde-fou : extra vide → base inchangée. */
+export function mergeAdvantagesAdditive(
+  base: Advantage[],
+  extra: Advantage[],
+): Advantage[] {
+  if (extra.length === 0) return base
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-zàâéèêëîïôùûüç0-9]/g, '').slice(0, 40)
+  const seen = new Set(base.map((a) => norm(a.text)))
+  const out = [...base]
+  for (const a of extra) {
+    const n = norm(a.text)
+    if (!n || seen.has(n)) continue
+    seen.add(n)
+    out.push(a)
+  }
+  return out
+}
+
+const NAMED_ENTITIES: Record<string, string> = {
+  nbsp: ' ', amp: '&', quot: '"', apos: '’', rsquo: '’', lsquo: '‘',
+  lt: '<', gt: '>', laquo: '«', raquo: '»', hellip: '…', ndash: '–', mdash: '—',
+  trade: '™', reg: '®', copy: '©', deg: '°', sup2: '²', sup3: '³', euro: '€',
+  agrave: 'à', acirc: 'â', eacute: 'é', egrave: 'è', ecirc: 'ê', euml: 'ë',
+  icirc: 'î', iuml: 'ï', ocirc: 'ô', ugrave: 'ù', ucirc: 'û', uuml: 'ü', ccedil: 'ç',
+  Agrave: 'À', Eacute: 'É', Egrave: 'È', Ccedil: 'Ç',
+}
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&([a-zA-Z]+[0-9]?);/g, (m, name: string) => NAMED_ENTITIES[name] ?? NAMED_ENTITIES[name.toLowerCase()] ?? m)
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+}
+
+function stripTags(s: string): string {
+  return decodeEntities(s.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim()
+}
+
+/** Convertit le HTML brut en pseudo-markdown minimal (headings → `## …`,
+ *  `<li>` → `*   …`) pour réutiliser TELLE QUELLE la batterie de gardes de
+ *  parseAdvantagesFromMarkdown (zones features, filtres commercial/garbage).
+ *  Les blocs sans avantages (script/style/table/select/nav/footer) sont retirés
+ *  en amont pour limiter le bruit. */
+function htmlToFeatureMarkdown(html: string): string {
+  const s = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<svg[\s\S]*?<\/svg>/gi, ' ')
+    .replace(/<table[\s\S]*?<\/table>/gi, ' ')
+    .replace(/<select[\s\S]*?<\/select>/gi, ' ')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+  const out: string[] = []
+  // Balayage séquentiel : seuls les headings et les <li> produisent des lignes —
+  // le reste du texte de la page est ignoré (la prose descriptive vit dans
+  // parseDescription, pas ici).
+  const TOKEN_RE = /<h([1-6])[^>]*>([\s\S]*?)<\/h\1>|<li[^>]*>([\s\S]*?)(?=<li[^>]*>|<\/li>|<\/[ou]l>)/gi
+  for (const m of s.matchAll(TOKEN_RE)) {
+    if (m[1]) {
+      const t = stripTags(m[2])
+      if (t) out.push(`\n${'#'.repeat(Number(m[1]))} ${t}\n`)
+    } else if (m[3] != null) {
+      const t = stripTags(m[3])
+      if (t) out.push(`*   ${t}`)
+    }
+  }
+  return out.join('\n')
+}
+
+/** Extrait les avantages depuis le HTML BRUT (source déterministe, comme
+ *  parseImagesFromHtml pour les images) : le HTML statique contient les listes
+ *  complètes même quand le rendu navigateur les replie (« Voir plus ») ou
+ *  qu'un vieux markdown de cache est resservi. Additif par contrat : l'appelant
+ *  FUSIONNE via mergeAdvantagesAdditive, ne remplace jamais. */
+export function parseAdvantagesFromHtml(html: string): Advantage[] {
+  if (!html || html.length < 200) return []
+  try {
+    return parseAdvantagesFromMarkdown(htmlToFeatureMarkdown(html))
+  } catch {
+    return []
+  }
+}
+
 /** Extrait une liste d'avantages/points forts depuis du markdown. */
 export function parseAdvantagesFromMarkdown(rawMd: string): Advantage[] {
   // Témoignages clients (« 5/5 » + paragraphe) : passaient les filtres et

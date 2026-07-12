@@ -16,7 +16,7 @@ import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal } from '@/feat
 import { filterImagesByProductRef } from '@/features/scraping/core/parsers/filterImagesByRef'
 import { parseNamedDocLinks } from '@/features/scraping/core/parsers/parseNamedDocLinks'
 import { parsePricingFromMarkdown } from '@/features/scraping/core/parsers/parsePricing'
-import { parseAdvantagesFromMarkdown } from '@/features/scraping/core/parsers/parseAdvantages'
+import { parseAdvantagesFromMarkdown, parseAdvantagesFromHtml, mergeAdvantagesAdditive } from '@/features/scraping/core/parsers/parseAdvantages'
 import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
 import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
@@ -1838,6 +1838,10 @@ interface ManufacturerData {
    *  badges Garantie, Brushless, labels énergie). Signal plus fiable que
    *  l'heuristique URL : pré-remplit `imageClassOverrides`. */
   pictoUrls: string[]
+  /** Avantages parsés depuis le HTML STATIQUE (listes complètes même quand le
+   *  rendu navigateur replie la section « Voir plus » ou qu'un markdown de
+   *  cache tronqué est resservi). Fusion ADDITIVE en aval, jamais remplaçante. */
+  advantages: Array<{ text: string; group?: string }>
 }
 
 
@@ -2443,7 +2447,7 @@ async function jinaScrapeMaufacturerPageFallback(pageUrl: string, _jinaKey: stri
  */
 async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerData> {
   console.log('[manufacturer] fetching raw HTML →', pageUrl)
-  const data: ManufacturerData = { downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [], pictoUrls: [] }
+  const data: ManufacturerData = { downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [], pictoUrls: [], advantages: [] }
 
   // Voie principale : Cloud Function `fetchPageHtml` (serveur, pas de CORS),
   // avec les proxies publics en filet — les proxies seuls sont morts depuis
@@ -2473,6 +2477,14 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
     }
   } catch (err) {
     console.warn('[manufacturer] breadcrumb extraction failed:', err)
+  }
+
+  // ── 0bis. Avantages depuis le HTML statique (déterministe, additif) ──
+  // Le HTML brut contient les listes COMPLÈTES même quand le rendu navigateur
+  // les replie (« Voir plus ») ou qu'un markdown de cache tronqué est resservi.
+  data.advantages = parseAdvantagesFromHtml(html)
+  if (data.advantages.length > 0) {
+    console.log('[manufacturer] ✓ advantages from HTML:', data.advantages.length)
   }
 
   // ── 1. Parse window.__REDUX_STORE (TTI Group / sites Relay) ──
@@ -2966,8 +2978,17 @@ function buildManufacturerProduct(
   }
   const specifications = [...specsMap.values()]
 
-  // Advantages : depuis le markdown uniquement (les bullet points)
-  const advantages = markdownContent ? parseAdvantagesFromMarkdown(markdownContent) : []
+  // Advantages : markdown (bullet points, avec groupes) + HTML statique en
+  // fusion ADDITIVE — le HTML récupère la queue des listes repliées que le
+  // rendu navigateur ou un cache tronqué a perdues.
+  let advantages = markdownContent ? parseAdvantagesFromMarkdown(markdownContent) : []
+  if (rawData.advantages.length > 0) {
+    const beforeCount = advantages.length
+    advantages = mergeAdvantagesAdditive(advantages, rawData.advantages)
+    if (advantages.length > beforeCount) {
+      console.log('[manufacturer-build] ✓ advantages completed from HTML:', beforeCount, '→', advantages.length)
+    }
+  }
   // + pictogrammes d'équipement (section "Symbols" des fiches fabricant)
   if (markdownContent) {
     const pictos = parsePictosFromMarkdown(markdownContent)
@@ -4632,7 +4653,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         // sites : la qualité de fiche ne dépend plus du type de site détecté.
         // HTML via CF fetchPageHtml → repli Jina HTML (WAF filtrant par IP).
         const emptyRawData: ManufacturerData = {
-          downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [], pictoUrls: [],
+          downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [], pictoUrls: [], advantages: [],
         }
         let rawData = emptyRawData
         if (productUrl) {
@@ -4655,7 +4676,12 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
         if (hasMarkdown || hasRichStructured || hasRawSpecs) {
           const mdSpecs = hasMarkdown ? parseSpecsFromMarkdown(markdownContent!) : []
-          const mdAdvantages = hasMarkdown ? parseAdvantagesFromMarkdown(markdownContent!) : []
+          // Avantages : markdown + HTML statique en fusion additive (parité
+          // fabricant/retailer — même complétion des listes repliées).
+          const mdAdvantages = mergeAdvantagesAdditive(
+            hasMarkdown ? parseAdvantagesFromMarkdown(markdownContent!) : [],
+            rawData.advantages,
+          )
           // Description : parser uniquement la section primaire pour éviter
           // que le texte UI des pages avis (/avis?productCode=...) contamine
           // la description produit.
