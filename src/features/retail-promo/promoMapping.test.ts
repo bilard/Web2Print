@@ -138,24 +138,29 @@ describe('defaultCustomFields (devinage des champs libres « Détails »)', () =
   })
 })
 
-describe('buildDetailLines — normalisation des valeurs liste à tirets', () => {
+describe('buildDetailLines — valeurs multi-sujets en PUCES (étiquette en tête)', () => {
   const cfs = [{ id: 'av', label: 'Avantages', column: 'c_av' }]
   const F = (v: string) => ({ extra: { av: v } }) as unknown as Parameters<typeof buildDetailLines>[1]
 
-  it('« - A - B - C » (export IA/scraping) → « A · B · C »', () => {
-    expect(buildDetailLines(cfs, F('- Double expansion - Charge 35kg - Anti-corrosion - 20 pièces + vis - Idéal usage courant')))
-      .toEqual(['Avantages : Double expansion · Charge 35kg · Anti-corrosion · 20 pièces + vis · Idéal usage courant'])
+  it('« - A - B - C » (export IA/scraping) → une puce par sujet', () => {
+    expect(buildDetailLines(cfs, F('- Double expansion - Charge 35kg - Anti-corrosion')))
+      .toEqual(['Avantages :', '• Double expansion', '• Charge 35kg', '• Anti-corrosion'])
   })
 
   it('les tirets INTERNES des mots composés sont préservés (Anti-corrosion)', () => {
-    expect(buildDetailLines(cfs, F('- Anti-corrosion - Semi-rigide'))).toEqual(['Avantages : Anti-corrosion · Semi-rigide'])
+    expect(buildDetailLines(cfs, F('- Anti-corrosion - Semi-rigide'))).toEqual(['Avantages :', '• Anti-corrosion', '• Semi-rigide'])
   })
 
-  it('liste à puces multi-lignes → même normalisation', () => {
-    expect(buildDetailLines(cfs, F('• Léger\n• Pliable'))).toEqual(['Avantages : Léger · Pliable'])
+  it('une phrase par ligne (sortie IA) → une puce par phrase', () => {
+    expect(buildDetailLines(cfs, F('En sapin blanc du Nord.\nToiture en plaques ESB.\nDouble porte verrouillable.')))
+      .toEqual(['Avantages :', '• En sapin blanc du Nord.', '• Toiture en plaques ESB.', '• Double porte verrouillable.'])
   })
 
-  it('valeur sans tiret de tête inchangée', () => {
+  it('liste à puces multi-lignes → puces propres (marqueurs d’origine retirés)', () => {
+    expect(buildDetailLines(cfs, F('• Léger\n• Pliable'))).toEqual(['Avantages :', '• Léger', '• Pliable'])
+  })
+
+  it('valeur mono-sujet → ligne « Étiquette : valeur » classique', () => {
     expect(buildDetailLines(cfs, F('Acier zingué'))).toEqual(['Avantages : Acier zingué'])
   })
 })
@@ -193,13 +198,22 @@ describe('spécifications techniques sur les fiches (devinage + rendu plafonné)
     expect(cfs.some((cf) => cf.column === 'ai_specifications')).toBe(true)
   })
 
-  it('buildDetailLines éclate les specs aplaties en lignes « Nom : Valeur » plafonnées à 6, groupe retiré', () => {
+  it('buildDetailLines éclate les specs aplaties en « Nom : Valeur » plafonnées à 6, étiquette en tête, groupe retiré', () => {
     const cfs = [{ id: 'specs', label: 'Spécifications', column: 'ai_specifications' }]
     const lines = buildDetailLines(cfs, { extra: { specs: SPECS } } as unknown as Parameters<typeof buildDetailLines>[1])
-    expect(lines).toHaveLength(6)
-    expect(lines[0]).toBe('Type d\'article : Dispo')
-    expect(lines[2]).toBe('Profondeur externe (cm) : 243cm')
+    expect(lines).toHaveLength(7) // étiquette + 6 specs
+    expect(lines[0]).toBe('Spécifications :')
+    expect(lines[1]).toBe('Type d\'article : Dispo')
+    expect(lines[3]).toBe('Profondeur externe (cm) : 243cm')
     expect(lines.every((l) => !l.includes('['))).toBe(true)
+  })
+
+  it('specs « une paire nom: valeur PAR LIGNE » (dataset démo express) → même éclatement', () => {
+    const cfs = [{ id: 'specs', label: 'Caractéristiques', column: 'specifications' }]
+    const lines = buildDetailLines(cfs, {
+      extra: { specs: 'Type d\'article: Dispo\nGamme: Milo\nMatière: Bois' },
+    } as unknown as Parameters<typeof buildDetailLines>[1])
+    expect(lines).toEqual(['Caractéristiques :', 'Type d\'article : Dispo', 'Gamme : Milo', 'Matière : Bois'])
   })
 
   it('une valeur specs SANS format aplati reste une ligne « Étiquette : valeur » classique', () => {
@@ -227,13 +241,13 @@ describe('plafond de specs réglable (cardStyle.maxSpecLines)', () => {
   const SPECS = '[G]A: 1 | [G]B: 2 | [G]C: 3 | [G]D: 4'
   const F = { extra: { specs: SPECS } } as unknown as Parameters<typeof buildDetailLines>[1]
 
-  it('maxSpecLines=2 → 2 lignes', () => {
-    expect(buildDetailLines(cfs, F, undefined, 2)).toEqual(['A : 1', 'B : 2'])
+  it('maxSpecLines=2 → étiquette + 2 lignes', () => {
+    expect(buildDetailLines(cfs, F, undefined, 2)).toEqual(['Spécifications :', 'A : 1', 'B : 2'])
   })
-  it('maxSpecLines=0 → aucune ligne de spec', () => {
+  it('maxSpecLines=0 → aucune ligne de spec (étiquette comprise)', () => {
     expect(buildDetailLines(cfs, F, undefined, 0)).toEqual([])
   })
-  it('absent → défaut MAX_SPEC_LINES (6)', () => {
-    expect(buildDetailLines(cfs, F)).toHaveLength(4)
+  it('absent → défaut MAX_SPEC_LINES (6) : étiquette + les 4 specs', () => {
+    expect(buildDetailLines(cfs, F)).toHaveLength(5)
   })
 })

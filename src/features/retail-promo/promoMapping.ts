@@ -229,19 +229,6 @@ export function extractPromoFields(
  * du style, sinon l'aperçu et le catalogue divergent.
  * `hidden` = ids de champs masqués individuellement (« Éléments affichés »).
  */
-/**
- * Une valeur LISTE À TIRETS/PUCES (« - A - B - C », sortie IA ou scraping) est
- * illisible en ligne préfixée (« Avantages : - Double… ») : elle devient
- * « A · B · C » — le format détails des fiches. Les tirets INTERNES des mots
- * composés (Anti-corrosion) n'ont pas d'espaces autour et sont préservés.
- */
-function normalizeDetailValue(v: string): string {
-  const t = v.trim()
-  if (!/^[-–—•*]\s/.test(t)) return t
-  return t.replace(/^[-–—•*]\s+/, '').split(/\s+[-–—•*]\s+/)
-    .map((s) => s.trim()).filter(Boolean).join(' · ')
-}
-
 /** Une fiche n'est pas une fiche technique : plafond PAR DÉFAUT des specs affichées (réglable par fiche via cardStyle.maxSpecLines). */
 export const MAX_SPEC_LINES = 6
 const SPEC_FIELD_RE = /sp[ée]c|caract[ée]ristiques techniques/i
@@ -251,9 +238,12 @@ export function isSpecsDetailField(cf: { label?: string; column?: string }): boo
   return SPEC_FIELD_RE.test(`${cf.label ?? ''} ${cf.column ?? ''}`)
 }
 
-/** « [Groupe]Nom: Valeur | … » (specs aplaties) → lignes « Nom : Valeur », plafonnées. */
-function specLines(v: string, max: number): string[] {
-  return v.split(/\s\|\s/)
+/**
+ * Specs aplaties (« [Groupe]Nom: Valeur | … » OU une paire « Nom: Valeur » par
+ * ligne) → étiquette en tête puis lignes « Nom : Valeur », plafonnées.
+ */
+function specLines(label: string, v: string, max: number): string[] {
+  const lines = v.split(/\s\|\s|\n+/)
     .map((s) => s.replace(/^\[[^\]]*\]\s*/, '').trim())
     .filter(Boolean)
     .slice(0, max)
@@ -261,6 +251,26 @@ function specLines(v: string, max: number): string[] {
       const i = s.indexOf(':')
       return i > 0 ? `${s.slice(0, i).trim()} : ${s.slice(i + 1).trim()}` : s
     })
+  if (lines.length === 0) return []
+  return label ? [`${label} :`, ...lines] : lines
+}
+
+/**
+ * Valeur MULTI-SUJETS (liste à tirets/puces « - A - B », ou une phrase par
+ * ligne — sortie IA/scraping) → étiquette en tête puis une PUCE par sujet.
+ * Les tirets INTERNES des mots composés (Anti-corrosion) sont préservés.
+ * Mono-sujet : ligne « Étiquette : valeur » classique.
+ */
+function bulletLines(label: string, v: string): string[] {
+  const t = v.trim()
+  const items = (/^[-–—•*]\s/.test(t)
+    ? t.replace(/^[-–—•*]\s+/, '').split(/\s+[-–—•*]\s+/)
+    : t.split(/\n+/)
+  ).flatMap((s) => s.split(/\n+/))
+    .map((s) => s.trim().replace(/^[-–—•*]\s+/, ''))
+    .filter(Boolean)
+  if (items.length < 2) return [label ? `${label} : ${items[0] ?? t}` : (items[0] ?? t)]
+  return [...(label ? [`${label} :`] : []), ...items.map((s) => `• ${s}`)]
 }
 
 export function buildDetailLines(
@@ -274,14 +284,13 @@ export function buildDetailLines(
     .flatMap((cf) => {
       const v = fields.extra?.[cf.id]
       if (!v || !v.trim()) return []
-      // Champ de spécifications au format aplati « a: x | b: y » : une ligne par
-      // spec (sans préfixe d'étiquette), plafonnées — pas un pavé mono-ligne.
-      if (SPEC_FIELD_RE.test(`${cf.label} ${cf.column}`) && v.includes(' | ') && v.includes(':')) {
-        return specLines(v, Math.max(0, maxSpecLines ?? MAX_SPEC_LINES))
-      }
       const lab = (cf.label || cf.column || '').trim()
-      const val = normalizeDetailValue(v)
-      return [lab ? `${lab} : ${val}` : val]
+      // Champ de spécifications (paires « nom: valeur » séparées par « | » ou par
+      // retours ligne) : une ligne par spec, plafonnées — pas un pavé mono-ligne.
+      if (SPEC_FIELD_RE.test(`${cf.label} ${cf.column}`) && v.includes(':') && /\s\|\s|\n/.test(v)) {
+        return specLines(lab, v, Math.max(0, maxSpecLines ?? MAX_SPEC_LINES))
+      }
+      return bulletLines(lab, v)
     })
     .filter((v): v is string => !!v))]
 }
