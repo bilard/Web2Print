@@ -15,8 +15,15 @@ export function DemoExpressPage() {
   const reset = useDemoExpressStore((s) => s.reset)
   const { run } = useDemoExpress()
 
+  const setFormVolume = useDemoExpressStore((s) => s.setFormVolume)
   useModuleIntent('demo-express', (action) => {
     if (action === 'action:new') reset()
+    // « Scraper N produits » (menu) : nouveau formulaire avec la volumétrie préremplie.
+    const m = /^action:new:(\d+)$/.exec(action)
+    if (m) {
+      reset()
+      setFormVolume(Number(m[1]))
+    }
   })
 
   return (

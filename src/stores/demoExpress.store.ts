@@ -27,6 +27,9 @@ interface DemoExpressState {
   phase: 'form' | 'running' | 'done'
   company: string
   url: string
+  /** Volumétrie présélectionnée du formulaire (menu « Scraper N produits »). */
+  formVolume: number
+  setFormVolume: (n: number) => void
   steps: DemoStep[]
   /** Journal live : actions du pipeline, appels IA, connecteurs (Jina, Drive…). */
   logs: DemoLogLine[]
@@ -48,6 +51,8 @@ export const useDemoExpressStore = create<DemoExpressState>((set) => ({
   phase: 'form',
   company: '',
   url: '',
+  formVolume: 12,
+  setFormVolume: (n) => set({ formVolume: Math.max(1, Math.min(48, Math.round(n) || 12)) }),
   steps: freshSteps(),
   logs: [],
   links: {},

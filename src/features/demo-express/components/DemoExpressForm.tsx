@@ -3,6 +3,7 @@
 // volumétrie du scraping (nombre de produits échantillonnés sur ses univers).
 import { useState } from 'react'
 import { Rocket } from 'lucide-react'
+import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import { DEMO_VOLUMES } from '../useDemoExpress'
 
 interface Props {
@@ -12,7 +13,9 @@ interface Props {
 export function DemoExpressForm({ onLaunch }: Props) {
   const [company, setCompany] = useState('')
   const [url, setUrl] = useState('')
-  const [volume, setVolume] = useState<number>(12)
+  // Volumétrie partagée avec le menu (« Scraper N produits » la prérègle).
+  const volume = useDemoExpressStore((s) => s.formVolume)
+  const setVolume = useDemoExpressStore((s) => s.setFormVolume)
   const [prompt, setPrompt] = useState('')
   const valid = company.trim().length > 1 && /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}/i.test(url.trim())
 
@@ -54,8 +57,8 @@ export function DemoExpressForm({ onLaunch }: Props) {
         </p>
       </div>
       <div>
-        <span className="block text-sm font-medium text-white/80 mb-1.5">Volumétrie du scraping</span>
-        <div className="flex items-center gap-2">
+        <span className="block text-sm font-medium text-white/80 mb-1.5">Nombre de produits à scraper</span>
+        <div className="flex items-center gap-2 flex-wrap">
           {DEMO_VOLUMES.map((v) => (
             <button
               key={v}
@@ -70,6 +73,14 @@ export function DemoExpressForm({ onLaunch }: Props) {
               {v} produits
             </button>
           ))}
+          <label className="flex items-center gap-1.5 text-sm text-white/60">
+            ou exactement
+            <input
+              type="number" min={1} max={48} value={volume}
+              onChange={(e) => setVolume(Number(e.target.value))}
+              className="w-16 rounded-lg bg-well border border-white/10 px-2 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+            />
+          </label>
         </div>
         <p className="mt-1.5 text-xs text-white/40">
           Plus de produits = démo plus riche mais plus longue (~30 s à 1 min par fiche).
