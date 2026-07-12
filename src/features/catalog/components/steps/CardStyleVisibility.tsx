@@ -97,18 +97,28 @@ export function CardStyleVisibility({ style, patch }: Props) {
               {(() => {
                 const exhaustive = (style.maxBulletLines ?? UNCAPPED) >= autoCounts.bullets
                   && (style.maxSpecLines ?? UNCAPPED) >= autoCounts.specs
+                const on = 'bg-indigo-600 border-indigo-500 text-[#fff]'
+                const off = 'bg-well border-white/10 text-white/60 hover:text-white'
                 return (
-                  <button type="button"
-                    onClick={() => patch({ maxBulletLines: UNCAPPED, maxSpecLines: UNCAPPED })}
-                    disabled={exhaustive}
-                    title="Retire toute limite : catalogue EXHAUSTIF (toutes les puces et toutes les spécifications de la source, sans abrégé) — c'est le comportement par défaut"
-                    className={`w-full px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${
-                      exhaustive ? 'bg-indigo-600/60 border-indigo-500/50 text-[#fff] cursor-default' : 'bg-well border-white/10 text-white/60 hover:text-white'
-                    }`}>
-                    {exhaustive
-                      ? `✓ Exhaustif — toute la donnée source est affichée (${autoCounts.bullets} puces · ${autoCounts.specs} specs)`
-                      : `Tout afficher (${autoCounts.bullets} puces · ${autoCounts.specs} specs)`}
-                  </button>
+                  <div className="space-y-1">
+                    <div className="flex gap-1.5">
+                      <button type="button"
+                        onClick={() => patch({ maxBulletLines: UNCAPPED, maxSpecLines: UNCAPPED })}
+                        title="Toute la donnée source : toutes les puces (sans abrégé) et toutes les spécifications"
+                        className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${exhaustive ? on : off}`}>
+                        {exhaustive ? '✓ Exhaustif' : 'Exhaustif'}
+                      </button>
+                      <button type="button"
+                        onClick={() => patch({ maxBulletLines: 5, maxSpecLines: 6 })}
+                        title="Version condensée : 5 puces et 6 spécifications par fiche — ajustez ensuite les quotas dans les champs ci-dessus"
+                        className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${!exhaustive ? on : off}`}>
+                        {!exhaustive ? '✓ Condensé' : 'Condensé'}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-white/35">
+                      Data source : {autoCounts.bullets} puce(s) · {autoCounts.specs} spec(s) max par fiche
+                    </p>
+                  </div>
                 )
               })()}
             </div>
