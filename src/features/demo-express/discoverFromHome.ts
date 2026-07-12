@@ -16,7 +16,7 @@ interface HomeLinks {
   cardLinks?: { url: string; title: string }[]
 }
 
-const extractBreadcrumbFn = httpsCallable<{ url: string }, HomeLinks>(functions, 'extractBreadcrumb')
+const extractBreadcrumbFn = httpsCallable<{ url: string }, HomeLinks>(functions, 'extractBreadcrumb', { timeout: 185_000 })
 
 /** Chemins qui ne mènent jamais au catalogue (institutionnel, compte, légal…). */
 const EXCLUDE_PATH_RE =

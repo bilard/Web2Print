@@ -71,7 +71,10 @@ async function getBrowser(): Promise<Browser> {
 export const extractBreadcrumb = onCall<ExtractBreadcrumbRequest, Promise<ExtractBreadcrumbResponse>>(
   {
     region: 'europe-west1',
-    timeoutSeconds: 60,
+    // 180 s : les PLP SPA lourdes (Milwaukee ~1,4 Mo + hydratation + scroll
+    // itératif) dépassaient les 60 s → deadline → la découverte retombait sur
+    // des étages faibles qui remontent des liens parasites (cookies, actu…).
+    timeoutSeconds: 180,
     memory: '1GiB',
     cors: true,
   },

@@ -291,6 +291,14 @@ export function useDemoExpress() {
       logLine('connector', `Jina — découverte des cartes produit sur ${url}`)
       const first = await discover(url, { limit: vol.maxProducts })
       pushUnique(first.pages)
+      // Le rendu des PLP SPA n'est pas déterministe (CMP, timeout CF) : un
+      // second essai DIRECT réussit souvent là où le premier n'a rien vu.
+      if (!productPages.length && !aborted()) {
+        step('discover', { status: 'running', detail: 'rendu instable — seconde tentative de découverte…' })
+        logLine('connector', `Jina/CF — 2e tentative de découverte sur ${url}`)
+        const second = await discover(url, { limit: vol.maxProducts }).catch(() => ({ pages: [] as { url: string; title: string }[] }))
+        pushUnique(second.pages)
+      }
       if (!productPages.length) {
         step('discover', { status: 'running', detail: 'page d’accueil sans fiches — descente dans les rayons…' })
         const categories = await discoverCategories(url)

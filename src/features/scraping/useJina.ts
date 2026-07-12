@@ -27,7 +27,7 @@ const extractBreadcrumbCloudFn = httpsCallable<
     /** Ancres « carte produit » (groupes répétés en zone contenu) — source prioritaire. */
     cardLinks?: { url: string; title: string }[]
   }
->(functions, 'extractBreadcrumb')
+>(functions, 'extractBreadcrumb', { timeout: 185_000 })
 
 const JINA_READER = 'https://r.jina.ai'
 
