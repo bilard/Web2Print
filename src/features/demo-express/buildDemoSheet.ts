@@ -96,7 +96,9 @@ export function buildDemoSheet(company: string, siteUrl: string, items: DemoProd
     return {
       _id: `demo_${i}_${Math.random().toString(36).slice(2, 8)}`,
       name: name || `Produit ${i + 1}`,
-      brand: str(f.brand) || null,
+      // Marque toujours renseignée : repli sur la société du prospect (« Milwaukee »)
+      // — les pages fabricant n'affichent pas leur propre marque en donnée.
+      brand: str(f.brand) || company,
       reference: str(f.reference) || null,
       ean: str(f.ean) || null,
       price: toPrice(f.price),

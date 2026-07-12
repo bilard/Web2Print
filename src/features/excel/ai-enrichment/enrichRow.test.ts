@@ -119,3 +119,45 @@ describe('isEmptyProduct (parité PIM ↔ workflow)', () => {
     expect(isEmptyProduct(p)).toBe(false)
   })
 })
+
+describe('homogénéité identité/description (sites fabricant à variantes)', () => {
+  const base = { images: [], advantages: [], specifications: [], documents: [], breadcrumb: [] }
+
+  it('nom = CODE et réf = PROSE → échange (Milwaukee M18 FHAC16-302X)', () => {
+    const f = mapProductToFields({
+      ...base,
+      name: 'M18 FHAC16-302X',
+      distributorRef: 'M18 FUEL™ Perforateur SDS+ 16 mm',
+    } as never, ['name', 'reference'])
+    expect(f.name).toBe('M18 FUEL™ Perforateur SDS+ 16 mm')
+    expect(f.reference).toBe('M18 FHAC16-302X')
+  })
+
+  it('nom descriptif normal → aucun échange', () => {
+    const f = mapProductToFields({
+      ...base,
+      name: 'Perceuse à percussion GSB 18V',
+      distributorRef: 'GSB18V-55',
+    } as never, ['name', 'reference'])
+    expect(f.name).toBe('Perceuse à percussion GSB 18V')
+    expect(f.reference).toBe('GSB18V-55')
+  })
+
+  it('CTA de carte collé au nom retiré (« …COMPACTEEn savoir plus »)', () => {
+    const f = mapProductToFields({
+      ...base,
+      name: 'M18™ BRUSHLESS PERCEUSE VISSEUSE COMPACTEEn savoir plus',
+    } as never, ['name'])
+    expect(f.name).toBe('M18™ BRUSHLESS PERCEUSE VISSEUSE COMPACTE')
+  })
+
+  it('description : artefacts markdown/javascript: assainis', () => {
+    const f = mapProductToFields({
+      ...base,
+      name: 'X',
+      description: "M18 FPD3 ![Image 68: Perceuse à percussion M18 FUEL™ (116) Perceuse](javascript:throw new Error('React has blocked a javascript: URL as a security precaution.'))",
+    } as never, ['description'])
+    expect(String(f.description)).not.toMatch(/javascript:|!\[|\]\(/)
+    expect(String(f.description)).toContain('M18 FPD3')
+  })
+})

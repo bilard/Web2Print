@@ -36,17 +36,48 @@ export interface EnrichRowResult {
   blockedByAntiBot: boolean
 }
 
+/** Texte « code produit » : court, MAJUSCULES/chiffres/tirets — jamais de la prose. */
+const CODE_LIKE_RE = /^[A-Z0-9][A-Z0-9 ()\-/.]{1,29}$/
+const isCodeLike = (s: string): boolean => CODE_LIKE_RE.test(s.trim()) && /\d/.test(s)
+/** Texte « nom descriptif » : ≥ 3 mots avec des minuscules/™ (prose produit). */
+const isProseLike = (s: string): boolean => s.trim().split(/\s+/).length >= 3 && /[a-zà-ÿ™]/.test(s)
+
+/** Nettoie un NOM : CTA de carte aspiré en fin (« …COMPACTEEn savoir plus »). */
+function cleanName(s: string): string {
+  return s.replace(/\s*(en savoir plus|voir le produit|voir plus|learn more|d[ée]couvrir)\s*$/i, '').replace(/\s{2,}/g, ' ').trim()
+}
+
+/** Nettoie une DESCRIPTION : artefacts markdown (`![Image 68: …](javascript:…)`,
+ *  liens → leur texte), jamais d'URL javascript: dans une donnée produit. */
+function cleanDescription(s: string): string {
+  return s
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)\]\(\s*javascript:[^)]*\)/gi, ' ')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
 /** Mappe un EnrichedProduct (sortie moteur PIM) vers les clés de champs du template du node. */
 export function mapProductToFields(
   p: EnrichedProduct,
   targetFields: string[],
 ): Record<string, unknown> {
+  // IDENTITÉ homogène : sur les sites fabricant à variantes (Milwaukee/TTI),
+  // le « nom » extrait est parfois le CODE (« M18 FHAC16-302X ») et la « réf »
+  // le nom descriptif (« M18 FUEL™ Perforateur SDS+ 16 mm ») — on ÉCHANGE
+  // quand la forme des deux textes le prouve (code vs prose).
+  let name = p.name ? cleanName(p.name) : null
+  let reference = p.distributorRef ?? p.manufacturerRef ?? p.model ?? null
+  if (name && reference && isCodeLike(name) && isProseLike(reference)) {
+    ;[name, reference] = [cleanName(reference), name]
+  }
   const getters: Record<string, () => string | null> = {
-    name: () => p.name ?? null,
-    title: () => p.name ?? null,
-    reference: () => p.distributorRef ?? p.manufacturerRef ?? p.model ?? null,
+    name: () => name,
+    title: () => name,
+    reference: () => reference,
     subtitle: () => p.model ?? null,
-    description: () => p.description || null,
+    description: () => (p.description ? cleanDescription(p.description) || null : null),
     breadcrumb: () => (p.breadcrumb?.length ? p.breadcrumb.join(' > ') : null),
     advantages: () => (p.advantages?.length ? p.advantages.map((a) => a.text).join('\n') : null),
     brand: () => p.brand ?? null,
