@@ -3,6 +3,7 @@
 // la fiche (image, marque, nom, prix, prix barré compris) + les champs libres
 // (TVA, entretien…) masquables UN PAR UN sous « Détails ».
 import { useMemo } from 'react'
+import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { UNCAPPED, isSpecsDetailField, extractPromoFields, countDetailData } from '@/features/retail-promo/promoMapping'
 import type { CatalogCardStyle } from '../../catalogTypes'
@@ -41,6 +42,13 @@ export function CardStyleVisibility({ style, patch }: Props) {
   const rawColumns = useCatalogStore((s) => s.rawColumns)
   const fieldMap = useCatalogStore((s) => s.fieldMap)
   const selectedRowIds = useCatalogStore((s) => s.selectedRowIds)
+  const plan = useCatalogStore((s) => s.plan)
+  const setPlan = useCatalogStore((s) => s.setPlan)
+  /** Couplage mode ↔ densité : l'exhaustif n'est visible qu'avec de GRANDES cartes. */
+  const setAllSectionsGrid = (grid: 2 | 4) => {
+    if (!plan) return
+    setPlan({ ...plan, sections: plan.sections.map((sec) => ({ ...sec, productsPerPage: grid, randomDensity: false })) })
+  }
   const hidden = style.hiddenDetails ?? []
   const hasSpecsField = customFields.some(isSpecsDetailField)
   // Comptes RÉELS pour « Auto » : maximum de puces / de specs parmi les
@@ -103,14 +111,26 @@ export function CardStyleVisibility({ style, patch }: Props) {
                   <div className="space-y-1">
                     <div className="flex gap-1.5">
                       <button type="button"
-                        onClick={() => patch({ maxBulletLines: UNCAPPED, maxSpecLines: UNCAPPED })}
-                        title="Toute la donnée source : toutes les puces (sans abrégé) et toutes les spécifications"
+                        onClick={() => {
+                          patch({ maxBulletLines: UNCAPPED, maxSpecLines: UNCAPPED })
+                          setAllSectionsGrid(2)
+                          toast.success('Mode EXHAUSTIF : toute la donnée source + grandes cartes (2 produits/page) sur toutes les sections', {
+                            description: 'Densité ajustable section par section dans le panneau Sections.',
+                          })
+                        }}
+                        title="Toute la donnée source (puces intégrales + toutes les specs) ET grandes cartes : toutes les sections passent en 2 produits/page"
                         className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${exhaustive ? on : off}`}>
                         {exhaustive ? '✓ Exhaustif' : 'Exhaustif'}
                       </button>
                       <button type="button"
-                        onClick={() => patch({ maxBulletLines: 5, maxSpecLines: 6 })}
-                        title="Version condensée : 5 puces et 6 spécifications par fiche — ajustez ensuite les quotas dans les champs ci-dessus"
+                        onClick={() => {
+                          patch({ maxBulletLines: 5, maxSpecLines: 6 })
+                          setAllSectionsGrid(4)
+                          toast.success('Mode CONDENSÉ : 5 puces · 6 specs + grille 4 produits/page', {
+                            description: 'Quotas ajustables dans les champs, densité dans le panneau Sections.',
+                          })
+                        }}
+                        title="Version condensée : 5 puces et 6 spécifications par fiche, grille 4 produits/page — ajustez ensuite les quotas dans les champs ci-dessus"
                         className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${!exhaustive ? on : off}`}>
                         {!exhaustive ? '✓ Condensé' : 'Condensé'}
                       </button>
