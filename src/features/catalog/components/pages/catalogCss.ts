@@ -73,10 +73,17 @@ export function ensureCatalogFonts(): void {
   document.head.appendChild(link)
 }
 
+/** Teinte PÂLE export-safe (hex 8 chiffres — html2canvas ne connaît pas color-mix) dérivée d'une couleur hex. */
+function paleTint(color: string, alphaHex: string): string {
+  return /^#[0-9a-f]{6}$/i.test(color) ? `${color}${alphaHex}` : 'rgba(127,127,127,.08)'
+}
+
 export function themeVars(theme: CatalogTheme): React.CSSProperties {
   return {
     '--cat-accent': theme.accent, '--cat-bg': theme.pageBg, '--cat-ink': theme.ink,
     '--cat-head-bg': theme.headerBg, '--cat-head-ink': theme.headerInk,
+    // Teinte pâle de l'accent — fonds « promo » légers (chips de specs…).
+    '--cat-accent-tint': paleTint(theme.accent, '14'),
     '--cat-font-h': `'${theme.fontHeading}', sans-serif`, '--cat-font-b': `'${theme.fontBody}', sans-serif`,
   } as React.CSSProperties
 }
@@ -299,21 +306,22 @@ export const CATALOG_CSS = `
   font-family:var(--cat-font-details,var(--cat-font-b)); font-size:calc(9px * var(--cat-s-details,1) * ${F});
   color:var(--cat-details-ink,inherit); opacity:var(--cat-details-op,.75); line-height:1.3; }
 .cat-cell-details span { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-/* Tableau des spécifications sur 2 COLONNES de paires nom/valeur (gain de place
-   vertical par fiche) : zèbre par rangée, filets discrets — couleurs héritées de
-   la zone détails (thème par fiche respecté). */
-.cat-cell-specs-wrap { margin-top:2px; }
-.cat-cell-specs-title { font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-size:.95em; }
-.cat-cell-specs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:8px; margin-top:2px; }
+/* Spécifications VERSION PROMO (document de communication, pas fiche technique) :
+   titre en pastille accent, paires en CHIPS arrondies teintées accent avec liseré,
+   valeur en couleur accent — 2 colonnes (gain de place vertical par fiche). */
+.cat-cell-specs-wrap { margin-top:3px; }
+.cat-cell-specs-title { display:inline-block; background:var(--cat-promo-bg,var(--cat-accent)); color:var(--cat-promo-ink,#fff);
+  font-family:var(--cat-font-h); font-weight:800; text-transform:uppercase; letter-spacing:.08em; font-size:.92em;
+  padding:1px 9px; border-radius:999px; }
+.cat-cell-specs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:3px 6px; margin-top:4px; }
 .cat-spec-pair { display:flex; justify-content:space-between; align-items:baseline; gap:6px;
-  padding:1px 5px; line-height:1.3; border-top:1px solid rgba(127,127,127,.22); min-width:0; }
-.cat-spec-pair:nth-child(-n+2) { border-top:none; }
-/* Zèbre par RANGÉE (2 paires par rangée) : rangées paires ombrées. */
-.cat-spec-pair:nth-child(4n+3), .cat-spec-pair:nth-child(4n+4) { background:rgba(127,127,127,.07); }
+  padding:2px 7px; line-height:1.3; min-width:0;
+  background:var(--cat-accent-tint,rgba(127,127,127,.08)); border-left:3px solid var(--cat-accent); border-radius:6px; }
 .cat-spec-n { font-weight:600; word-break:break-word; }
 /* La VALEUR ne se coupe jamais au milieu d'un mot (« 243cm ») : c'est le nom qui
    passe à la ligne ; une valeur vraiment trop longue s'ellipse proprement. */
-.cat-spec-v { text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%; flex-shrink:0; }
+.cat-spec-v { text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%; flex-shrink:0;
+  font-weight:800; color:var(--cat-accent); opacity:1; }
 /* Cartes compactes (md, grilles denses) : bloc détails à HAUTEUR BORNÉE → coupe
    nette (ellipsis), jamais de débordement, réf/prix toujours visibles en bas. */
 .cat-md .cat-cell-details { max-height:5em; overflow:hidden; }
