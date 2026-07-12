@@ -171,9 +171,10 @@ async function seedCatalog(input: {
     plan = defaultCatalogPlan(tree, name)
   }
   // Le catalogue démo est un catalogue de DONNÉES exhaustives (défaut des fiches) :
-  // grandes cartes 2/page, sinon les puces + tableau de specs n'ont pas la place
-  // et le contenu se fait condenser/rogner (constaté Milwaukee).
-  plan = { ...plan, sections: plan.sections.map((sec) => ({ ...sec, productsPerPage: 2 as const, randomDensity: false })) }
+  // fiche PLEINE PAGE (1/page) — seule surface qui garantit 100 % des avantages
+  // ET du tableau de specs sur les produits riches (Milwaukee : 11 puces + 24
+  // lignes ne tiennent pas ensemble en 2/page, le partage proportionnel coupe).
+  plan = { ...plan, sections: plan.sections.map((sec) => ({ ...sec, productsPerPage: 1 as const, randomDensity: false })) }
 
   const fieldMap = defaultPromoFieldMap(columns)
   const doc: CatalogDoc = {
