@@ -1,8 +1,8 @@
 // src/features/demo-express/components/DemoExpressProgress.tsx
 // Checklist live du pipeline : une ligne par étape (spinner/ok/avertissement/
 // erreur/sautée) + journal console (actions, appels IA, connecteurs) + arrêt.
-import { useEffect, useRef } from 'react'
-import { Loader2, Check, AlertTriangle, X, Minus, CircleDashed, Square, Terminal } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ChevronDown, ChevronUp, Loader2, Check, AlertTriangle, X, Minus, CircleDashed, Square, Terminal } from 'lucide-react'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import type { DemoLogKind, DemoStepStatus } from '../types'
 
@@ -40,38 +40,51 @@ function StepDetail({ status, detail }: { status: DemoStepStatus; detail: string
   )
 }
 
-const LOG_TAG: Record<DemoLogKind, { label: string; cls: string }> = {
-  step: { label: 'étape', cls: 'text-white/45' },
-  ia: { label: 'IA', cls: 'text-indigo-300' },
-  connector: { label: 'connecteur', cls: 'text-teal-300' },
-  error: { label: 'erreur', cls: 'text-rose-400' },
+const LOG_TAG: Record<DemoLogKind, { label: string; tag: string; text: string }> = {
+  step: { label: 'étape', tag: 'text-white/45', text: 'text-white/75' },
+  ia: { label: 'IA', tag: 'text-indigo-400', text: 'text-indigo-300' },
+  connector: { label: 'connecteur', tag: 'text-teal-400', text: 'text-teal-300' },
+  error: { label: 'erreur', tag: 'text-rose-400', text: 'text-rose-300' },
 }
 
-/** Console du run : chaque action horodatée (étapes, appels IA, connecteurs), défilement auto. */
+/** Couleur de la LIGNE entière : type + sémantique (✓ bilan = vert, compteur = accent). */
+function lineTextCls(kind: DemoLogKind, text: string): string {
+  if (kind === 'step' && text.includes('✓')) return 'text-emerald-300'
+  return LOG_TAG[kind].text
+}
+
+/** Console de logs FIXÉE EN BAS de l'écran (façon terminal/DevTools), repliable,
+ *  défilement auto vers la dernière ligne. */
 function DemoLogConsole() {
   const logs = useDemoExpressStore((s) => s.logs)
+  const [open, setOpen] = useState(true)
   const boxRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
     const el = boxRef.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [logs.length])
+  }, [logs.length, open])
   if (logs.length === 0) return null
   return (
-    <div className="mt-5">
-      <div className="flex items-center gap-1.5 mb-1.5 text-[11px] text-white/40">
-        <Terminal className="w-3.5 h-3.5" aria-hidden="true" /> Journal ({logs.length})
-      </div>
-      <div ref={boxRef} className="rounded-lg bg-well border border-white/[0.06] max-h-56 overflow-y-auto px-3 py-2 font-mono text-[11px] leading-relaxed">
-        {logs.map((l, i) => (
-          <div key={i} className="flex gap-2 items-baseline">
-            <span className="shrink-0 text-white/25 tabular-nums">
-              {new Date(l.ts).toLocaleTimeString('fr-FR')}
-            </span>
-            <span className={`shrink-0 w-[74px] ${LOG_TAG[l.kind].cls}`}>{LOG_TAG[l.kind].label}</span>
-            <span className={l.kind === 'error' ? 'text-rose-300/90' : 'text-white/75'}>{l.text}</span>
-          </div>
-        ))}
-      </div>
+    <div className="fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#0b0b0e]/95 backdrop-blur">
+      <button onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-2 px-4 py-1.5 text-[11px] text-white/50 hover:text-white/80">
+        <Terminal className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+        Journal ({logs.length})
+        <span className="ml-auto">{open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}</span>
+      </button>
+      {open && (
+        <div ref={boxRef} className="max-h-[32vh] overflow-y-auto px-4 pb-3 font-mono text-[11px] leading-relaxed">
+          {logs.map((l, i) => (
+            <div key={i} className="flex gap-2 items-baseline">
+              <span className="shrink-0 text-white/25 tabular-nums">
+                {new Date(l.ts).toLocaleTimeString('fr-FR')}
+              </span>
+              <span className={`shrink-0 w-[74px] ${LOG_TAG[l.kind].tag}`}>{LOG_TAG[l.kind].label}</span>
+              <span className={lineTextCls(l.kind, l.text)}>{l.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
