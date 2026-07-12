@@ -369,15 +369,53 @@ export function useDemoExpress() {
       finish()
       return
     }
-    // Pages ÉDITORIALES écartées (rubrique/landing prises pour des produits par la
-    // découverte : ni réf, ni EAN, ni prix, ni vraies specs) — garde-fou : un
-    // filtre ne VIDE jamais la liste (site fabricant atypique → on garde tout).
+    // Pages ÉDITORIALES : pas des produits (ni réf, ni EAN, ni prix, ni vraies
+    // specs) mais souvent des RAYONS déguisés (landing métier « Plaquiste ») —
+    // au lieu de les jeter, DESCENTE : on y re-découvre les cartes produit
+    // (2 niveaux max : métier → gamme → produit ; bornée en découvertes et par
+    // la volumétrie). Garde-fou : si rien de mieux, la liste initiale reste.
     const productLike = items.filter((it) => isProductLike(it.fields))
-    const editorial = items.length - productLike.length
-    if (productLike.length > 0 && editorial > 0) items.splice(0, items.length, ...productLike)
+    const editorialQueue = items
+      .filter((it) => !isProductLike(it.fields))
+      .map((it) => ({ url: it.url, depth: 1 }))
+    const editorial = editorialQueue.length
+    const seenUrls = new Set(items.map((it) => it.url))
+    let descents = 0
+    let recovered = 0
+    while (editorialQueue.length > 0 && productLike.length < vol.maxProducts && descents < 6 && !aborted()) {
+      const cand = editorialQueue.shift()
+      if (!cand) break
+      descents++
+      logLine('connector', `Jina — descente niveau ${cand.depth} : ${cand.url}`)
+      step('enrich', { status: 'running', detail: `page éditoriale → descente dans ${new URL(cand.url).pathname}` })
+      const sub = await discover(cand.url, { limit: vol.perCategory })
+        .catch(() => ({ pages: [] as { url: string; title: string }[] }))
+      for (const p of sub.pages) {
+        if (aborted() || productLike.length >= vol.maxProducts) break
+        if (seenUrls.has(p.url)) continue
+        seenUrls.add(p.url)
+        step('enrich', { status: 'running', detail: `descente — ${p.title}` })
+        try {
+          const { fields, assets } = await enrichRow({ url: p.url, targetFields: [...DEMO_TARGET_FIELDS] })
+          if (!(fields.name || fields.description || assets.length)) continue
+          if (isProductLike(fields)) {
+            productLike.push({ url: p.url, fields, assets })
+            recovered++
+          } else if (cand.depth < 2) {
+            // Toujours pas un produit : c'est un sous-rayon (gamme) → un niveau de plus.
+            editorialQueue.push({ url: p.url, depth: cand.depth + 1 })
+          }
+        } catch (e) {
+          logLine('error', `Enrichissement — ${p.url} : ${errMsg(e)}`)
+        }
+      }
+    }
+    if (productLike.length > 0) items.splice(0, items.length, ...productLike)
     step('enrich', {
       status: 'done',
-      detail: `${items.length} fiches enrichies${productLike.length > 0 && editorial > 0 ? ` · ${editorial} page(s) éditoriale(s) écartée(s)` : ''}`,
+      detail: `${items.length} fiche(s) produit${editorial > 0
+        ? ` · ${editorial} page(s) éditoriale(s)${recovered > 0 ? ` → ${recovered} produit(s) récupérés en descente` : ' écartée(s)'}`
+        : ''}`,
     })
 
     // 4) Images → DAM Drive (1 par produit, quota démo respecté)

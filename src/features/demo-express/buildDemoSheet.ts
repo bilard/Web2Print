@@ -7,6 +7,7 @@ import type { ExcelSheet, ExcelColumn, ExcelRow, FieldTypeId, TaxonomyLevelMap }
 import { buildTaxonomyFromLevels } from '@/features/excel/taxonomyBuilder'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { EnrichRowAsset } from '@/features/excel/ai-enrichment/enrichRow'
+import { isCmpUiPair } from '@/features/scraping/core/parsers/garbageFilter'
 
 /** Champs demandés au moteur d'enrichissement (clés de mapProductToFields). */
 export const DEMO_TARGET_FIELDS = [
@@ -35,9 +36,15 @@ export function isProductLike(fields: Record<string, unknown>): boolean {
     return v != null && String(v).trim() !== ''
   }
   if (has('reference') || has('ean') || has('price')) return true
+  // Paires CMP/nav exclues du compte : le bandeau cookies d'une page rubrique
+  // fournissait ≥ 3 pseudo-specs et déjouait le filtre (Milwaukee /metiers/…).
   const specPairs = String(fields.specifications ?? '')
     .split(/\n+|\s\|\s/)
-    .filter((s) => s.includes(':')).length
+    .map((s) => {
+      const i = s.indexOf(':')
+      return i > 0 ? ([s.slice(0, i).trim(), s.slice(i + 1).trim()] as const) : null
+    })
+    .filter((p): p is readonly [string, string] => !!p && !isCmpUiPair(p[0], p[1])).length
   return specPairs >= 3
 }
 

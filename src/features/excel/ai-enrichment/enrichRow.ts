@@ -10,6 +10,7 @@
 import { enrichProductCore } from './useProductEnrichment'
 import type { EnrichedProduct } from './types'
 import { isJunkImageUrl, classifyImage, getProductRefs } from './imageFilter'
+import { isCmpUiPair } from '@/features/scraping/core/parsers/garbageFilter'
 
 export interface EnrichRowInput {
   url: string
@@ -57,8 +58,12 @@ export function mapProductToFields(
       return null
     },
     images: () => (p.images?.length ? p.images.join('\n') : null),
-    specifications: () =>
-      p.specifications?.length ? p.specifications.map((s) => `${s.name}: ${s.value}`).join('\n') : null,
+    specifications: () => {
+      // Poison CMP/nav éliminé au flatten : sur une page non-produit, le LLM
+      // renvoie les boutons du bandeau cookies (OneTrust) comme « specs ».
+      const clean = (p.specifications ?? []).filter((s) => !isCmpUiPair(s.name, s.value))
+      return clean.length ? clean.map((s) => `${s.name}: ${s.value}`).join('\n') : null
+    },
     documents: () => (p.documents?.length ? p.documents.map((d) => d.url).join('\n') : null),
   }
   const out: Record<string, unknown> = {}

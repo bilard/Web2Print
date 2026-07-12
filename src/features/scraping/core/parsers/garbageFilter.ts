@@ -16,6 +16,24 @@ export function isMainlyGarbage(text: string): boolean {
   return garbageLines.length / lines.length > 0.3
 }
 
+/**
+ * Paire nom/valeur de SPEC issue de l'UI d'un bandeau cookies/CMP (OneTrust :
+ * « Filter Button = ConsentLeg.Interest », « Confirm My Choices = Allow All »,
+ * « checkbox labellabel »…) ou d'un CTA de navigation (« Voir toute la
+ * gamme ») — poison des fiches quand une page non-produit passe dans le
+ * moteur. Signal par VOCABULAIRE CMP/structure, jamais par site.
+ */
+const CMP_PAIR_RE = /\b(leg\.?\s?interest|allow all|confirm my choices|filter button|checkbox ?label|manage (my )?choices|do not sell|iab tcf|vendors? list)\b/i
+export function isCmpUiPair(name: string, value: string): boolean {
+  const n = name.trim()
+  const v = value.trim()
+  if (n && v && n.toLowerCase() === v.toLowerCase()) return true // libellé UI dupliqué de part et d'autre
+  if (CMP_PAIR_RE.test(n) || CMP_PAIR_RE.test(v)) return true
+  if (isGarbageContent(n) || isGarbageContent(v)) return true
+  if (/^voir (toute?s?|la|les|nos)\b/i.test(n)) return true // CTA de navigation pris pour un nom de spec
+  return false
+}
+
 /** Ligne de note d'avis client : « 5/5 », « 4,5/5 », « 5/5 5/5 »… seule sur sa ligne. */
 const RATING_LINE_RE = /^\s*(?:\d(?:[.,]\d)?\s*\/\s*5\s*)+$/
 

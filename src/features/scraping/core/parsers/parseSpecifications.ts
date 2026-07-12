@@ -5,7 +5,7 @@
 // l.2378, extractCharacteristicsBlobs l.2889, parseCharacteristicsBlob l.2903,
 // truncateBeforeNonProductSections l.2930).
 
-import { isGarbageContent } from './garbageFilter'
+import { isGarbageContent, isCmpUiPair } from './garbageFilter'
 
 export interface Specification {
   name: string
@@ -386,6 +386,9 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
         || /^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save)$/i.test(v)) return false
     // Prose bannière cookies/consentement passée entre les sections
     if (/\b(consentement|cookies?|rgpd|gdpr)\b/i.test(n) || /derni[eè]re\s+mise\s+[aà]\s+jour/i.test(v)) return false
+    // UI CMP anglo (OneTrust : « Filter Button=ConsentLeg.Interest », « Confirm My
+    // Choices=Allow All ») + libellés dupliqués + CTA nav — prédicat partagé.
+    if (isCmpUiPair(n, v)) return false
     // Toggles d'UI "Voir plus / View less" capturés comme paires
     if (/^(plus|moins|more|less|voir\s+(plus|moins))$/i.test(n) || /\b(view|show)\s+(less|more)\b|\bvoir\s+(plus|moins)\b/i.test(v)) return false
     if (/^[#]/.test(n)) return false

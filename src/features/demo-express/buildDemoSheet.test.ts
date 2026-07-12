@@ -35,3 +35,24 @@ describe('isProductLike — écarte les pages éditoriales de la découverte', (
     expect(isProductLike({ reference: '  ', ean: null, price: undefined, specifications: '' })).toBe(false)
   })
 })
+
+describe('isProductLike — le bandeau cookies ne fabrique plus de fausses specs', () => {
+  it('cas réel Milwaukee /metiers/plaquiste : 5 pseudo-specs CMP/nav → NON produit', () => {
+    expect(isProductLike({
+      name: 'Pourdesoutilsplusintelligents,plussûrsetplusefficaces',
+      specifications: [
+        'Plafonds: 2',
+        "Voir toute la gamme d'outils: Mesures et repères\\\\",
+        'Filter Button: ConsentLeg.Interest',
+        'checkbox labellabel: checkbox labellabel',
+        'Confirm My Choices: Allow All',
+      ].join('\n'),
+    })).toBe(false)
+  })
+
+  it('vraies specs (≥ 3) non affectées par le filtre CMP', () => {
+    expect(isProductLike({
+      specifications: 'Tension: 18V\nCapacité: 5Ah\nPoids: 2.1kg',
+    })).toBe(true)
+  })
+})
