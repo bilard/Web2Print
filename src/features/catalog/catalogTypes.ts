@@ -214,6 +214,8 @@ export interface CatalogCardStyle {
   hiddenDetails?: string[]
   /** Plafond de lignes de SPÉCIFICATIONS techniques affichées (0 = aucune) — optionnel (défaut : MAX_SPEC_LINES). */
   maxSpecLines?: number
+  /** Plafond de PUCES par champ Détails (avantages…) — optionnel (défaut : MAX_BULLET_ITEMS). */
+  maxBulletLines?: number
   /** Paragraphe PAR BLOC (gras/italique/souligné/alignement) — optionnel (styles persistés anciens). */
   textStyle?: Partial<Record<CardObjectId, CardTextStyle>>
   /** Grammaire de FORMES (moteur créatif) — optionnel (gabarit historique). */

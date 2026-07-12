@@ -272,9 +272,9 @@ describe('plafond des puces (champ verbeux ne doit pas évincer les specs)', () 
   const cfs = [{ id: 'av', label: 'Avantages', column: 'c_av' }]
   const F = (v: string) => ({ extra: { av: v } }) as unknown as Parameters<typeof buildDetailLines>[1]
 
-  it('max 4 puces par champ', () => {
+  it('max 5 puces par champ (défaut)', () => {
     const lines = buildDetailLines(cfs, F('A\nB\nC\nD\nE\nF\nG\nH'))
-    expect(lines).toEqual(['Avantages :', '• A', '• B', '• C', '• D'])
+    expect(lines).toEqual(['Avantages :', '• A', '• B', '• C', '• D', '• E'])
   })
 
   it('une puce trop longue est abrégée au mot (« … »)', () => {
@@ -313,5 +313,25 @@ describe('lien vers la fiche produit SOURCE (colonne url)', () => {
     const m = defaultPromoFieldMap(columns)
     const f = extractPromoFields({ _id: '1', ai_name: 'X', url: 'voir site' } as unknown as MergeRow, columns, m)
     expect(f.url).toBeUndefined()
+  })
+})
+
+describe('puces : plafond réglable + titres de sous-section écartés', () => {
+  const cfs = [{ id: 'av', label: 'Avantages', column: 'c_av' }]
+  const F = (v: string) => ({ extra: { av: v } }) as unknown as Parameters<typeof buildDetailLines>[1]
+
+  it('une « puce » finissant par « : » est un titre aspiré → écartée (Equipement standard :)', () => {
+    expect(buildDetailLines(cfs, F('Equipement standard :\nPoignée latérale\nPerforateur SDS-Max puissant\nMoteur 1470 W')))
+      .toEqual(['Avantages :', '• Poignée latérale', '• Perforateur SDS-Max puissant', '• Moteur 1470 W'])
+  })
+
+  it('défaut : 5 puces max', () => {
+    const lines = buildDetailLines(cfs, F('A1\nB2\nC3\nD4\nE5\nF6\nG7'))
+    expect(lines).toHaveLength(6) // étiquette + 5
+  })
+
+  it('maxBulletItems=8 → 7 puces affichées', () => {
+    const lines = buildDetailLines(cfs, F('A1\nB2\nC3\nD4\nE5\nF6\nG7'), undefined, 8)
+    expect(lines).toHaveLength(8) // étiquette + 7
   })
 })

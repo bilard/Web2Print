@@ -287,8 +287,8 @@ export function buildSpecTable(
   return null
 }
 
-/** Fiche promo ≠ argumentaire complet : plafond de puces par champ, et longueur max d'une puce. */
-const MAX_BULLET_ITEMS = 4
+/** Fiche promo ≠ argumentaire complet : plafond de puces par champ (réglable via cardStyle.maxBulletLines), longueur max d'une puce. */
+export const MAX_BULLET_ITEMS = 5
 const MAX_BULLET_CHARS = 160
 
 /** Abrège au mot (« … » visible) — même philosophie que la description des fiches. */
@@ -305,7 +305,7 @@ function abridgeItem(s: string): string {
  * Les tirets INTERNES des mots composés (Anti-corrosion) sont préservés.
  * Mono-sujet : ligne « Étiquette : valeur » classique.
  */
-function bulletLines(label: string, v: string): string[] {
+function bulletLines(label: string, v: string, maxItems: number): string[] {
   const t = v.trim()
   const items = (/^[-–—•*]\s/.test(t)
     ? t.replace(/^[-–—•*]\s+/, '').split(/\s+[-–—•*]\s+/)
@@ -313,14 +313,18 @@ function bulletLines(label: string, v: string): string[] {
   ).flatMap((s) => s.split(/\n+/))
     .map((s) => s.trim().replace(/^[-–—•*]\s+/, ''))
     .filter(Boolean)
+    // Une « puce » qui finit par « : » est un TITRE de sous-section aspiré
+    // (« Equipement standard : ») — elle consommait le quota pour rien.
+    .filter((s) => !/:\s*$/.test(s))
   if (items.length < 2) return [label ? `${label} : ${abridgeItem(items[0] ?? t)}` : abridgeItem(items[0] ?? t)]
-  return [...(label ? [`${label} :`] : []), ...items.slice(0, MAX_BULLET_ITEMS).map((s) => `• ${abridgeItem(s)}`)]
+  return [...(label ? [`${label} :`] : []), ...items.slice(0, Math.max(1, maxItems)).map((s) => `• ${abridgeItem(s)}`)]
 }
 
 export function buildDetailLines(
   customFields: CustomFieldMap,
   fields: PromoFields,
   hidden?: string[],
+  maxBulletItems?: number,
 ): string[] {
   return [...new Set(customFields
     .filter((cf) => !hidden?.includes(cf.id))
@@ -331,7 +335,7 @@ export function buildDetailLines(
       // Champ de spécifications éclatable : rendu à part en TABLEAU nom/valeur
       // (buildSpecTable) — jamais en lignes de texte.
       if (isSpecsDetailField(cf) && isSpecShaped(v)) return []
-      return bulletLines(lab, v)
+      return bulletLines(lab, v, maxBulletItems ?? MAX_BULLET_ITEMS)
     })
     .filter((v): v is string => !!v))]
 }
