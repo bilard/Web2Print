@@ -114,16 +114,27 @@ export async function analyzeInspirationUrl(rawUrl: string, base: CatalogCharte)
   canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height)
   const pixelColors = paletteFromCanvas(canvas)
 
-  const analysis = await generateJson<z.infer<typeof AnalysisSchema>>({
-    task: 'catalog.inspiration',
-    version: 'catalog.inspiration.v2',
-    prompt:
-      `Tu es directeur artistique print/retail. Analyse ce visuel d'INSPIRATION (référence de design trouvée par l'utilisateur : ${url}) ` +
-      `pour qu'un catalogue produit multi-page soit généré avec LE MÊME look, la même mise en page et la même ambiance.`,
-    schema: AnalysisSchema,
-    schemaForLLM: ANALYSIS_SCHEMA_FOR_LLM,
-    imageDataUris: [dataUri],
-  })
+  let analysis: z.infer<typeof AnalysisSchema>
+  try {
+    analysis = await generateJson<z.infer<typeof AnalysisSchema>>({
+      task: 'catalog.inspiration',
+      version: 'catalog.inspiration.v2',
+      prompt:
+        `Tu es directeur artistique print/retail. Analyse ce visuel d'INSPIRATION (référence de design trouvée par l'utilisateur : ${url}) ` +
+        `pour qu'un catalogue produit multi-page soit généré avec LE MÊME look, la même mise en page et la même ambiance.`,
+      schema: AnalysisSchema,
+      schemaForLLM: ANALYSIS_SCHEMA_FOR_LLM,
+      imageDataUris: [dataUri],
+    })
+  } catch (e) {
+    // Vision indisponible (quota LLM, clé absente…) : la palette PIXELS est
+    // déjà calculée — la charte repart avec les couleurs RÉELLES du visuel
+    // plutôt que de tout perdre. Le brief design manquera, pas la palette.
+    console.warn('[inspiration] Vision KO — charte pixels seule :', e instanceof Error ? e.message.slice(0, 120) : e)
+    const label = `🔗 ${new URL(url).hostname}`
+    const colors = [...new Set([...pixelColors, ...base.colors])].slice(0, 10)
+    return { ...base, files: [...base.files.filter((f) => f !== label), label].slice(-6), colors, fonts: base.fonts, notes: base.notes }
+  }
   const visionColors = analysis.palette.map((c) => c.trim().toLowerCase()).filter((c) => HEX_RE.test(c))
   // Vision d'abord (couleurs de RÔLE), pixels ensuite (complément), dédup.
   const colors = [...new Set([...visionColors, ...pixelColors, ...base.colors])].slice(0, 10)
