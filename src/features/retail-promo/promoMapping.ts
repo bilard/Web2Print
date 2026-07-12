@@ -242,23 +242,33 @@ function normalizeDetailValue(v: string): string {
     .map((s) => s.trim()).filter(Boolean).join(' · ')
 }
 
-/** Une fiche n'est pas une fiche technique : on plafonne les specs affichées. */
-const MAX_SPEC_LINES = 6
+/** Une fiche n'est pas une fiche technique : plafond PAR DÉFAUT des specs affichées (réglable par fiche via cardStyle.maxSpecLines). */
+export const MAX_SPEC_LINES = 6
 const SPEC_FIELD_RE = /sp[ée]c|caract[ée]ristiques techniques/i
 
+/** Ce champ libre est-il la colonne de spécifications techniques ? (UI du plafond). */
+export function isSpecsDetailField(cf: { label?: string; column?: string }): boolean {
+  return SPEC_FIELD_RE.test(`${cf.label ?? ''} ${cf.column ?? ''}`)
+}
+
 /** « [Groupe]Nom: Valeur | … » (specs aplaties) → lignes « Nom : Valeur », plafonnées. */
-function specLines(v: string): string[] {
+function specLines(v: string, max: number): string[] {
   return v.split(/\s\|\s/)
     .map((s) => s.replace(/^\[[^\]]*\]\s*/, '').trim())
     .filter(Boolean)
-    .slice(0, MAX_SPEC_LINES)
+    .slice(0, max)
     .map((s) => {
       const i = s.indexOf(':')
       return i > 0 ? `${s.slice(0, i).trim()} : ${s.slice(i + 1).trim()}` : s
     })
 }
 
-export function buildDetailLines(customFields: CustomFieldMap, fields: PromoFields, hidden?: string[]): string[] {
+export function buildDetailLines(
+  customFields: CustomFieldMap,
+  fields: PromoFields,
+  hidden?: string[],
+  maxSpecLines?: number,
+): string[] {
   return [...new Set(customFields
     .filter((cf) => !hidden?.includes(cf.id))
     .flatMap((cf) => {
@@ -267,7 +277,7 @@ export function buildDetailLines(customFields: CustomFieldMap, fields: PromoFiel
       // Champ de spécifications au format aplati « a: x | b: y » : une ligne par
       // spec (sans préfixe d'étiquette), plafonnées — pas un pavé mono-ligne.
       if (SPEC_FIELD_RE.test(`${cf.label} ${cf.column}`) && v.includes(' | ') && v.includes(':')) {
-        return specLines(v)
+        return specLines(v, Math.max(0, maxSpecLines ?? MAX_SPEC_LINES))
       }
       const lab = (cf.label || cf.column || '').trim()
       const val = normalizeDetailValue(v)

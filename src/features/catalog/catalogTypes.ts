@@ -212,6 +212,8 @@ export interface CatalogCardStyle {
   showWas: boolean
   /** Ids des champs libres MASQUÉS dans la zone « Détails » (ex. TVA) — optionnel (styles persistés anciens). */
   hiddenDetails?: string[]
+  /** Plafond de lignes de SPÉCIFICATIONS techniques affichées (0 = aucune) — optionnel (défaut : MAX_SPEC_LINES). */
+  maxSpecLines?: number
   /** Paragraphe PAR BLOC (gras/italique/souligné/alignement) — optionnel (styles persistés anciens). */
   textStyle?: Partial<Record<CardObjectId, CardTextStyle>>
   /** Grammaire de FORMES (moteur créatif) — optionnel (gabarit historique). */

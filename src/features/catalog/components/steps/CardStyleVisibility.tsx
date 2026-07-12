@@ -3,6 +3,7 @@
 // la fiche (image, marque, nom, prix, prix barré compris) + les champs libres
 // (TVA, entretien…) masquables UN PAR UN sous « Détails ».
 import { useCatalogStore } from '@/stores/catalog.store'
+import { MAX_SPEC_LINES, isSpecsDetailField } from '@/features/retail-promo/promoMapping'
 import type { CatalogCardStyle } from '../../catalogTypes'
 
 type ShowKey = keyof Pick<CatalogCardStyle,
@@ -36,6 +37,7 @@ export function CardStyleVisibility({ style, patch }: Props) {
   // sous « Détails » — masquer un champ retire SA ligne de la zone, pas la zone.
   const customFields = useCatalogStore((s) => s.customFields)
   const hidden = style.hiddenDetails ?? []
+  const hasSpecsField = customFields.some(isSpecsDetailField)
   const toggleDetail = (id: string, visible: boolean) =>
     patch({ hiddenDetails: visible ? hidden.filter((h) => h !== id) : [...hidden, id] })
 
@@ -57,6 +59,14 @@ export function CardStyleVisibility({ style, patch }: Props) {
                   {(cf.label || cf.column || 'Champ').trim()}
                 </label>
               ))}
+              {hasSpecsField && (
+                <label className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
+                  Spécifications max
+                  <input type="number" min={0} max={30} value={style.maxSpecLines ?? MAX_SPEC_LINES}
+                    onChange={(e) => patch({ maxSpecLines: Math.max(0, Math.min(30, Number(e.target.value) || 0)) })}
+                    className="w-14 px-2 py-0.5 rounded-md bg-well text-[11px] text-white outline-none border border-white/10 focus:border-[#6366f1]" />
+                </label>
+              )}
             </div>
           )}
         </div>

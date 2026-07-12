@@ -221,3 +221,19 @@ describe('spécifications techniques sur les fiches (devinage + rendu plafonné)
     expect(f.extra?.specs).toBe('[Général]Gamme: Milo | [Dimensions]Hauteur (cm): 232cm')
   })
 })
+
+describe('plafond de specs réglable (cardStyle.maxSpecLines)', () => {
+  const cfs = [{ id: 'specs', label: 'Spécifications', column: 'ai_specifications' }]
+  const SPECS = '[G]A: 1 | [G]B: 2 | [G]C: 3 | [G]D: 4'
+  const F = { extra: { specs: SPECS } } as unknown as Parameters<typeof buildDetailLines>[1]
+
+  it('maxSpecLines=2 → 2 lignes', () => {
+    expect(buildDetailLines(cfs, F, undefined, 2)).toEqual(['A : 1', 'B : 2'])
+  })
+  it('maxSpecLines=0 → aucune ligne de spec', () => {
+    expect(buildDetailLines(cfs, F, undefined, 0)).toEqual([])
+  })
+  it('absent → défaut MAX_SPEC_LINES (6)', () => {
+    expect(buildDetailLines(cfs, F)).toHaveLength(4)
+  })
+})

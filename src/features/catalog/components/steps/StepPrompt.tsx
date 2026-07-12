@@ -78,8 +78,8 @@ export function StepPrompt() {
     return row ? extractPromoFields(row, rawColumns, fieldMap, customFields) : null
   }, [previewRowId, rowsById, selectedRows, rawColumns, fieldMap, customFields])
   const sampleDetails = useMemo(
-    () => (sampleFields ? buildDetailLines(customFields, sampleFields, plan?.cardStyle?.hiddenDetails) : []),
-    [customFields, sampleFields, plan?.cardStyle?.hiddenDetails],
+    () => (sampleFields ? buildDetailLines(customFields, sampleFields, plan?.cardStyle?.hiddenDetails, plan?.cardStyle?.maxSpecLines) : []),
+    [customFields, sampleFields, plan?.cardStyle?.hiddenDetails, plan?.cardStyle?.maxSpecLines],
   )
 
   const generate = async () => {

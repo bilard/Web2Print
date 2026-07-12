@@ -59,7 +59,7 @@ export function ProductGridPage({ ctx, grid, rows: rowsProp, slots, groupRows }:
         const row = ctx.rowsById.get(slot.rowId)
         if (!row) return <div key={slot.rowId} className="cat-cell" style={style} />
         const fields = extractPromoFields(row, ctx.columns, ctx.fieldMap, ctx.customFields)
-        const details = buildDetailLines(ctx.customFields, fields, ctx.plan.cardStyle?.hiddenDetails)
+        const details = buildDetailLines(ctx.customFields, fields, ctx.plan.cardStyle?.hiddenDetails, ctx.plan.cardStyle?.maxSpecLines)
         // Une GRANDE carte (vedette ou mise en avant prix) est la fiche de base
         // MAGNIFIÉE (transform scale) — mise en page strictement préservée, zéro
         // débordement par construction (wrapper = 100%/s, scale s). 2×2 → ×2 ;
