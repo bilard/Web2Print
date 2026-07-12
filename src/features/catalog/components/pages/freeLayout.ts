@@ -335,9 +335,16 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
       let reserve = 0
       for (let j = i + 1; j < items.length; j++) {
         const jt = items[j]
-        if (CLIP_CHAIN.has(jt.id) || !isMagnetized(jt.box, style)) continue
+        if (!isMagnetized(jt.box, style)) continue
         const [jx1, jx2] = spanOf(jt)
-        if (x1 < jx2 && jx1 < x2) reserve += jt.el.offsetHeight + MAGNET_GAP
+        if (!(x1 < jx2 && jx1 < x2)) continue
+        // Les mono-lignes (réf/unité) réservent leur hauteur — et depuis que le
+        // tableau de specs est un pavé À PART, lui aussi : sinon les puces
+        // d'avantages (exhaustives) s'étendaient jusqu'au bas et l'étranglaient
+        // à zéro (le titre CARACTÉRISTIQUES restait seul, sans lignes). La
+        // DONNÉE ne se fait plus voler sa place par la PROSE ; si le total ne
+        // tient pas, chaque pavé se condense puis se coupe sur SA hauteur.
+        reserve += jt.el.offsetHeight + MAGNET_GAP
       }
       // Plafond COMPLET pour une emprise donnée : obstacles hors chaîne + blocs de
       // chaîne DÉTACHÉS (m:false) qui suivent — bornés à leur position la plus
