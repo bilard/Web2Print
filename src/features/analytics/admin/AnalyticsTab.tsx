@@ -1,12 +1,12 @@
 // src/features/analytics/admin/AnalyticsTab.tsx
 import { lazy, Suspense, useMemo, useState } from 'react'
-import { Download, Trash2, UserX, Bell, BellOff, FilterX } from 'lucide-react'
+import { Download, Trash2, Bell, BellOff, FilterX } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAnalyticsEvents } from '../useAnalyticsEvents'
 import { usePeriod, type PeriodKey } from '../usePeriod'
 import { computeKpis, timeSeries, filterEvents, NO_FILTER, type EventFilter } from '../metrics'
 import { downloadEventsCsv } from '../exportCsv'
-import { useClearAnalytics, usePurgeMyAnalytics, useDeleteFilteredAnalytics } from '../useClearAnalytics'
+import { useClearAnalytics, useDeleteFilteredAnalytics } from '../useClearAnalytics'
 import { useSessionAlerts } from '../useSessionAlerts'
 import { ConfirmDeleteDialog } from './ConfirmDeleteDialog'
 import { AnalyticsKpiCards } from './AnalyticsKpiCards'
@@ -39,26 +39,15 @@ export function AnalyticsTab() {
   // Pays sélectionné dans la carte « Pays » → mis en évidence sur la carte du monde.
   const [country, setCountry] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
-  const [confirmPurge, setConfirmPurge] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const clear = useClearAnalytics()
   const sessionAlerts = useSessionAlerts()
-  const purgeMine = usePurgeMyAnalytics()
   const deleteFiltered = useDeleteFilteredAnalytics()
   const handleClear = () => {
     clear.mutate(undefined, {
       onSuccess: (deleted) => {
         setConfirmClear(false)
         toast.success(`Historique vidé — ${deleted.toLocaleString('fr-FR')} consultation(s) supprimée(s).`)
-      },
-      onError: (e) => toast.error(`Échec : ${e instanceof Error ? e.message : 'erreur inconnue'}`),
-    })
-  }
-  const handlePurgeMine = () => {
-    purgeMine.mutate(undefined, {
-      onSuccess: (deleted) => {
-        setConfirmPurge(false)
-        toast.success(`Vos visites supprimées — ${deleted.toLocaleString('fr-FR')} consultation(s).`)
       },
       onError: (e) => toast.error(`Échec : ${e instanceof Error ? e.message : 'erreur inconnue'}`),
     })
@@ -143,13 +132,6 @@ export function AnalyticsTab() {
             <Download className="w-4 h-4" /> CSV
           </button>
           <button
-            onClick={() => setConfirmPurge(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-white/70 hover:text-white bg-surface-2"
-            title="Supprimer mes propres visites (tests) — elles faussent les stats"
-          >
-            <UserX className="w-4 h-4" /> Purger mes visites
-          </button>
-          <button
             onClick={() => setConfirmDelete(true)}
             disabled={events.length === 0}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-red-400/80 hover:text-red-300 bg-surface-2 hover:bg-red-500/10 disabled:opacity-40 disabled:pointer-events-none"
@@ -185,19 +167,6 @@ export function AnalyticsTab() {
         actionLabel="Vider définitivement"
         pending={clear.isPending}
         onConfirm={handleClear}
-      />
-
-      <ConfirmDeleteDialog
-        open={confirmPurge}
-        onOpenChange={setConfirmPurge}
-        title="Purger vos propres visites ?"
-        description={<>
-          Supprime <strong>uniquement vos consultations</strong> (vous, propriétaire) — vos tests
-          qui faussent les statistiques. Le trafic des autres visiteurs n'est pas touché. Action irréversible.
-        </>}
-        actionLabel="Purger mes visites"
-        pending={purgeMine.isPending}
-        onConfirm={handlePurgeMine}
       />
 
       <ConfirmDeleteDialog
