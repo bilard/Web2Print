@@ -356,7 +356,7 @@ export const CATALOG_CSS = `
 .cat-cell-specs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:3px 6px; margin-top:4px; }
 .cat-spec-pair { display:flex; justify-content:space-between; align-items:baseline; gap:6px;
   padding:2px 7px; line-height:1.3; min-width:0;
-  background:var(--cat-accent-tint,rgba(127,127,127,.08)); border-left:3px solid var(--cat-accent); border-radius:6px; }
+  background:var(--cat-accent-tint,rgba(127,127,127,.08)); border-radius:6px; }
 .cat-spec-n { font-weight:600; word-break:break-word; }
 /* La VALEUR ne se coupe jamais au milieu d'un mot (« 243cm ») : c'est le nom qui
    passe à la ligne ; une valeur vraiment trop longue s'ellipse proprement. */

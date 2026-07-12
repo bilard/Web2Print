@@ -21,7 +21,7 @@ export function DemoExpressPage() {
 
   return (
     <div className="h-full overflow-auto bg-background">
-      <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="max-w-6xl mx-auto px-6 py-10">
         <header className="mb-8">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-lime-500/[0.12] flex items-center justify-center">
