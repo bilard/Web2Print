@@ -18,8 +18,8 @@ interface CardStyleTypoProps {
   wide?: boolean
 }
 
-export type ScaleKey = 'nameScale' | 'descScale' | 'priceScale' | 'brandScale' | 'refScale' | 'unitScale' | 'promoScale' | 'stickerScale' | 'vedetteScale' | 'detailsScale' | 'kickerScale'
-export type FontKey = 'nameFont' | 'descFont' | 'priceFont' | 'brandFont' | 'refFont' | 'unitFont' | 'promoFont' | 'stickerFont' | 'vedetteFont' | 'detailsFont' | 'kickerFont'
+export type ScaleKey = 'nameScale' | 'descScale' | 'priceScale' | 'brandScale' | 'refScale' | 'unitScale' | 'promoScale' | 'stickerScale' | 'vedetteScale' | 'detailsScale' | 'kickerScale' | 'specsScale'
+export type FontKey = 'nameFont' | 'descFont' | 'priceFont' | 'brandFont' | 'refFont' | 'unitFont' | 'promoFont' | 'stickerFont' | 'vedetteFont' | 'detailsFont' | 'kickerFont' | 'specsFont'
 
 export const CARD_TYPO_FIELDS: { scale: ScaleKey; font: FontKey; label: string; obj: CardObjectId }[] = [
   { scale: 'nameScale', font: 'nameFont', label: 'Nom', obj: 'name' },
@@ -33,6 +33,7 @@ export const CARD_TYPO_FIELDS: { scale: ScaleKey; font: FontKey; label: string; 
   { scale: 'vedetteScale', font: 'vedetteFont', label: 'Ruban vedette', obj: 'vedette' },
   { scale: 'detailsScale', font: 'detailsFont', label: 'Détails', obj: 'details' },
   { scale: 'kickerScale', font: 'kickerFont', label: 'Sous-famille', obj: 'kicker' },
+  { scale: 'specsScale', font: 'specsFont', label: 'Caractéristiques', obj: 'specs' },
 ]
 
 /** Nom d'affichage de chaque bloc (options du sélecteur de liaison). */
@@ -165,9 +166,9 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
             <div key={scale} ref={(el) => { rowRefs.current[obj] = el }}
               className={`space-y-1 ${scale === activeScale ? 'ring-2 ring-indigo-500 rounded-md' : ''}`}
               style={color ? { boxShadow: `inset 3px 0 0 ${color}`, borderRadius: 6, paddingLeft: 6 } : undefined}>
-              <SliderField label={label} value={style[scale]} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
+              <SliderField label={label} value={style[scale] ?? 1} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
                 min={0.7} max={10} step={0.05} unit="×" />
-              <select value={style[font]} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
+              <select value={style[font] ?? ''} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
                 className={inputCls}>
                 <option value="">Police du thème</option>
                 <FontSelectOptions />

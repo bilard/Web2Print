@@ -147,6 +147,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-s-vedette': s.vedetteScale !== 1 ? String(s.vedetteScale) : undefined,
     '--cat-s-details': s.detailsScale !== 1 ? String(s.detailsScale) : undefined,
     '--cat-s-kicker': s.kickerScale !== 1 ? String(s.kickerScale) : undefined,
+    '--cat-s-specs': (s.specsScale ?? 1) !== 1 ? String(s.specsScale) : undefined,
     '--cat-font-name': font(s.nameFont),
     '--cat-font-desc': font(s.descFont),
     '--cat-font-price': font(s.priceFont),
@@ -158,6 +159,7 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-font-vedette': font(s.vedetteFont),
     '--cat-font-details': font(s.detailsFont),
     '--cat-font-kicker': font(s.kickerFont),
+    '--cat-font-specs': font(s.specsFont ?? ''),
     '--cat-promo-bg': bg(s.promoBg, s.promoBg2, theme.accent),
     '--cat-sticker-bg': bg(s.stickerBg, s.stickerBg2, theme.accent),
     '--cat-price-bg': bg(s.priceBg, s.priceBg2, theme.accent),
@@ -352,7 +354,9 @@ export const CATALOG_CSS = `
 /* Spécifications VERSION PROMO (document de communication, pas fiche technique) :
    titre en pastille accent, paires en CHIPS arrondies teintées accent avec liseré,
    valeur en couleur accent — 2 colonnes (gain de place vertical par fiche). */
-.cat-cell-specs-wrap { margin-top:0; }
+.cat-cell-specs-wrap { margin-top:0;
+  font-size:calc(9px * var(--cat-s-specs,var(--cat-s-details,1)) * ${F});
+  font-family:var(--cat-font-specs,var(--cat-font-details,var(--cat-font-b))); }
 /* Lien de contrôle vers la fiche produit SOURCE : pastille en haut à droite,
    visible AU SURVOL seulement → jamais capturée à l'export (opacity 0). */
 .cat-cell-srclink { position:absolute; top:4px; right:4px; z-index:6; width:20px; height:20px;
