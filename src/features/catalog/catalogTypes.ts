@@ -220,6 +220,9 @@ export interface CatalogCardStyle {
   bandRuleColor?: string
   /** Description répartie sur 2 colonnes (split équilibré aux retours à la ligne) — optionnel (défaut : 1). */
   descColumns?: 1 | 2
+  /** Taille de texte IDENTIQUE sur toutes les fiches : neutralise la hiérarchie typo
+   *  (magnification vedette/prix en √s) et le --cat-fit par page — optionnel (défaut : false). */
+  uniformTextScale?: boolean
   /** Ids des champs libres MASQUÉS dans la zone « Détails » (ex. TVA) — optionnel (styles persistés anciens). */
   hiddenDetails?: string[]
   /** Plafond de lignes de SPÉCIFICATIONS techniques affichées (0 = aucune) — optionnel (défaut : MAX_SPEC_LINES). */

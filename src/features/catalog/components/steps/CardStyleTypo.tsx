@@ -107,6 +107,18 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
     const pa = posOf(a.obj), pb = posOf(b.obj)
     return pa.y - pb.y || pa.x - pb.x
   })
+  // Groupes THÉMATIQUES : la liste plate de 12 blocs était illisible — chaque
+  // groupe garde en son sein l'ordre visuel de la fiche (posOf).
+  const TYPO_GROUPS: { title: string; objs: CardObjectId[] }[] = [
+    { title: 'Badges & rubans', objs: ['promo', 'sticker', 'vedette', 'kicker'] },
+    { title: 'Identité produit', objs: ['brand', 'name', 'ref', 'unit'] },
+    { title: 'Description & détails', objs: ['description', 'details', 'specs'] },
+    { title: 'Prix', objs: ['price'] },
+  ]
+  const groupedFields = TYPO_GROUPS.map((g) => ({
+    title: g.title,
+    fields: orderedFields.filter((f) => g.objs.includes(f.obj)),
+  })).filter((g) => g.fields.length > 0)
 
   const setLink = (obj: CardObjectId, target: string) => patch(objectLinkPatch(style, wide, obj, target))
 
@@ -159,7 +171,10 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
         </svg>
       )}
       <div className="grid grid-cols-1 gap-y-3">
-        {orderedFields.map(({ scale, font, label, obj }) => {
+        {groupedFields.map((group) => (
+        <div key={group.title} className="space-y-3">
+          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-widest border-b border-white/[0.06] pb-1">{group.title}</p>
+        {group.fields.map(({ scale, font, label, obj }) => {
           const link = boxOf(obj).link
           const color = rowColor(obj)
           return (
@@ -189,6 +204,8 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
             </div>
           )
         })}
+        </div>
+        ))}
       </div>
     </div>
   )

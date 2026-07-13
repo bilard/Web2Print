@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import { extractPromoFields, buildDetailLines, buildSpecTable } from '@/features/retail-promo/promoMapping'
 import { GRID_DIMS, type CatalogGrid, type ProductSlot } from '../../catalogTypes'
 import { cellDimsFor, cellFitFor, type CatalogRenderCtx } from './catalogCss'
+import { representativeGrid } from '../../catalogEngine'
 import { isWideCard } from './freeLayout'
 import { ProductCell } from './ProductCell'
 
@@ -21,7 +22,12 @@ export function ProductGridPage({ ctx, grid, rows: rowsProp, slots, groupRows }:
   // Facteur d'échelle TYPO de la page (--cat-fit), calibré cellule grille 6 A4
   // portrait — calculé sur les rangées RÉELLES : une page étirée (vedette 2×2 +
   // N produits) a des cellules moins hautes → typo réduite en proportion.
-  const fit = cellFitFor(ctx.format, cols, rows)
+  // « Taille de texte identique » : le fit est celui de la grille REPRÉSENTATIVE
+  // du catalogue (constant d'une page à l'autre), au lieu du fit par page.
+  const uniformText = ctx.plan.cardStyle?.uniformTextScale === true
+  const fit = uniformText
+    ? cellFitFor(ctx.format, ...GRID_DIMS[representativeGrid(ctx.plan.sections)])
+    : cellFitFor(ctx.format, cols, rows)
   // Forme RÉELLE de chaque carte (span × cellule + gaps) → les cartes LARGES
   // (pleine largeur des grilles 1 colonne, cartes élargies, grilles paysage,
   // cellules écrasées des pages étirées) basculent sur le design 2 colonnes
@@ -74,7 +80,9 @@ export function ProductGridPage({ ctx, grid, rows: rowsProp, slots, groupRows }:
           // de la page. On tempère la typo en √s via un override local de
           // --cat-fit (texte effectif ×√s : dominant mais cohérent) ; l'image et
           // la mise en page gardent la magnification pleine.
-          const textFit = Math.round((fit * Math.sqrt(s) / s) * 100) / 100
+          // Taille identique : le texte revient à la taille de base (fit/s compense
+          // exactement la magnification) — sinon hiérarchie tempérée en racine(s).
+          const textFit = Math.round((uniformText ? fit / s : fit * Math.sqrt(s) / s) * 100) / 100
           return (
             <div key={slot.rowId} style={{ ...style, position: 'relative' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: `calc(100%/${s})`, height: `calc(100%/${s})`, transform: `scale(${s})`, transformOrigin: 'top left', display: 'grid', ...( { '--cat-fit': String(textFit) } as CSSProperties) }}>

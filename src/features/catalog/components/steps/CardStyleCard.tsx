@@ -103,6 +103,12 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
       </PropertySection>
 
       <PropertySection title="Texte : taille & police" help="Un réglage par champ texte (nom, prix, description...).">
+        <label className="flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none"
+          title="Neutralise la hiérarchie automatique (fiches vedette / mise en avant prix magnifiées, ajustement par page) : tous les produits du catalogue partagent la même taille de texte">
+          <input type="checkbox" checked={style.uniformTextScale ?? false}
+            onChange={(e) => patch({ uniformTextScale: e.target.checked })} className="accent-indigo-600" />
+          Taille identique sur toutes les fiches
+        </label>
         <CardStyleTypo style={style} patch={patch} selected={selectedObject} wide={wide} />
       </PropertySection>
 
