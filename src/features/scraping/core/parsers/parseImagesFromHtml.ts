@@ -67,3 +67,41 @@ export function parseImagesFromHtml(html: string): string[] {
   for (const m of html.matchAll(LINK_RE)) add(m[1])
   return Array.from(out)
 }
+
+/**
+ * Galerie Adobe Scene7 / Dynamic Media (générique — convention `/is/image/`
+ * utilisée par des milliers de retailers) : les photos du carrousel sont des
+ * assets SANS extension (`?src=company/REF_A1`) jamais rendus en <img> statique,
+ * mais leurs NOMS figurent dans le HTML (config JS de la galerie). À partir du
+ * premier asset trouvé (og:image), on déduit le stem (REF) et on collecte tous
+ * les membres `REF_Xn` mentionnés dans la page. Garde-fou : aucune URL Scene7
+ * dans `images` → liste retournée STRICTEMENT inchangée.
+ */
+const SCENE7_RE = /^(https?:\/\/[^/]+\/is\/image\/([^/?&]+))(?:\?src=\2\/([A-Za-z0-9_-]+)|\/([A-Za-z0-9_-]+))/i
+
+export function expandSceneSevenGallery(html: string, images: string[]): string[] {
+  const seed = images.map((u) => SCENE7_RE.exec(u)).find((m) => m && (m[3] || m[4]))
+  if (!seed || !html) return images
+  const [, base, company] = seed
+  const asset = (seed[3] || seed[4])!
+  // Stem = asset sans son suffixe de vue (`767RV_P` → `767RV`) ; un asset sans
+  // suffixe est son propre stem.
+  const stem = asset.replace(/_[A-Za-z0-9]{1,4}$/, '')
+  if (stem.length < 4) return images
+  const esc = stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const members = new Set<string>([asset])
+  for (const m of html.matchAll(new RegExp(`\\b(${esc}_[A-Za-z0-9]{1,4})\\b`, 'g'))) members.add(m[1])
+  if (members.size <= 1) return images
+  const out = [...images]
+  const seen = new Set(images)
+  // Tri naturel : vue principale (P) d'abord, puis A1, A2… (ordre du carrousel).
+  const sorted = [...members].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+  for (const name of sorted) {
+    const url = `${base}?src=${company}/${name}&`
+    if (!seen.has(url) && !images.some((u) => u.includes(`/${name}`) || u.includes(`=${company}/${name}`))) {
+      out.push(url)
+      seen.add(url)
+    }
+  }
+  return out
+}

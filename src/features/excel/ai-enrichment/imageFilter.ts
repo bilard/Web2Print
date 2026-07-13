@@ -98,7 +98,7 @@ function isPictoOrLogo(url: string): boolean {
     if (/(?:^|[-_])(?:logo|favicon|sprite|icon|ico|picto|pictogram|badge|certif|cert|stamp|seal|award|emblem|flag|trust|medal|ribbon|monogram|warranty|garantie|guarantee|symbol|symbole|energy[-_]?label|label)s?\d*(?:[-_.]|$)/i.test(filename)) return true
     // Path segment dédié picto/logo (ex: /logos/, /icons/, /symbols/) —
     // tolère les préfixes/suffixes numériques des DAM (`305_logos`, `logos_2`).
-    if (segments.some((s) => /^(?:\d+[-_])?(logos?|icons?|icones?|pictos?|pictograms?|badges?|certificats?|certificates?|seals?|awards?|emblems?|trust|sprites?|symbols?|symboles?|standards?|labels?|energy[-_]?labels?|ratings?|warrant(?:y|ies)|garanties?|features?[-_]?icons?)(?:[-_]\d+)?$/i.test(s))) return true
+    if (segments.some((s) => /^(?:\d+[-_])?(logos?|[a-z]*icons?|icones?|pictos?|pictograms?|badges?|certificats?|certificates?|seals?|awards?|emblems?|trust|sprites?|symbols?|symboles?|standards?|labels?|energy[-_]?labels?|ratings?|warrant(?:y|ies)|garanties?|features?[-_]?icons?)(?:[-_]\d+)?$/i.test(s))) return true
     // Contrainte de taille dans l'URL : une image demandée ≤ 160 px est un
     // picto/logo, jamais une photo produit (Cloudinary `w_100`, query
     // `width=64`, suffixe `_80x80`).
@@ -120,9 +120,14 @@ function isPictoOrLogo(url: string): boolean {
  *  campagne marketing, mégamenu Drupal, asset global, réseau social, etc.). */
 export function isJunkImageUrl(url: string): boolean {
   try {
-    const path = new URL(url).pathname
+    const { pathname: path, hostname } = new URL(url)
     const filename = path.split('/').pop()?.toLowerCase() ?? ''
     const segments = path.split('/').filter(Boolean)
+    // Hosts de CMP / consentement / tracking : jamais des images produit.
+    if (/(?:^|\.)(?:trustarc|onetrust|cookiebot|cookielaw|consensu|quantcast|didomi|usercentrics)\./i.test(hostname)) return true
+    // Drapeaux « collés » sans séparateur (EUflag.png, UKflag.png) — le token
+    // \bflag\b ne les voyait pas ; « camouflage » ne matche pas (flag+ext exigé).
+    if (/(?:^|[^a-z])?[a-z]{0,3}flags?\.(?:png|svg|gif|jpe?g|webp|avif)$/i.test(filename) || /drapeaux?/i.test(filename)) return true
     // Extensions non-photo : SVG et ICO quasi toujours des pictos/icônes.
     if (/\.(svg|ico)(\?|$)/i.test(url)) return true
     // Noms de fichier de pictos/logos/ornements (start ou milieu de nom).
@@ -144,7 +149,7 @@ export function isJunkImageUrl(url: string): boolean {
     const styleMatch = path.match(/\/styles\/([^/]+)\//i)
     if (styleMatch && /(^|[-_])(doc|docs|document|documents|pdf|notice|fiche|datasheet|brochure|thumb|mini|icon|logo|picto|badge|flag|banner|bandeau|hero|slide|slider|slideshow|promo|promotion|news|blog|actualite|article|campagne|landing|hp|home|homepage|carousel[-_]?home|segment|secteur|domaine|metier|chantier|reference|projet|inspiration|temoignage|partenaire|brand|marque|lifestyle|tarif|catalogue|plaquette|affiche|encart|application|push[-_]?menu|menu[-_]?push)([-_]|$)/i.test(styleMatch[1])) return true
     // Path segment dédié aux documents/logos/icônes/banners/news/segments/megamenu
-    if (segments.some(s => /^(docs?|documents?|pdfs?|notices?|fiches?|brochures?|datasheets?|logos?|icons?|icones?|pictos?|badges?|banners?|bandeaux?|sliders?|slideshows?|heroes?|promos?|promotions?|news|blog|actualit[ée]s?|articles?|campagnes?|marketing|communication|segments?|secteurs?|domaines?|m[ée]tiers?|chantiers?|r[ée]f[ée]rences?|projets?|inspirations?|t[ée]moignages?|partenaires?|brands?|marques?|lifestyle|landing|home|homepage|hp|tarifs?|catalogues?|flyers?|affiches?|plaquettes?|encarts?|flags?|seals?|awards?|certificates?|ornements?|sprites?|assets[-_]?icons?|menu[-_]push|push[-_]menu|menu[-_]pushs?|pushs?[-_]menu)$/i.test(s))) return true
+    if (segments.some(s => /^(docs?|documents?|pdfs?|notices?|fiches?|brochures?|datasheets?|logos?|[a-z]*icons?|icones?|pictos?|badges?|banners?|bandeaux?|sliders?|slideshows?|heroes?|promos?|promotions?|news|blog|actualit[ée]s?|articles?|campagnes?|marketing|communication|segments?|secteurs?|domaines?|m[ée]tiers?|chantiers?|r[ée]f[ée]rences?|projets?|inspirations?|t[ée]moignages?|partenaires?|brands?|marques?|lifestyle|landing|home|homepage|hp|tarifs?|catalogues?|flyers?|affiches?|plaquettes?|encarts?|flags?|seals?|awards?|certificates?|ornements?|sprites?|assets[-_]?icons?|menu[-_]push|push[-_]menu|menu[-_]pushs?|pushs?[-_]menu)$/i.test(s))) return true
     // Drupal year-folder : /sites/.../files/[styles/<x>/public/]20XX/... = contenu promo/actu daté
     // (un produit légitime serait sous /products/ ou /produits/, pas dans un dossier d'année).
     if (/\/sites\/[^/]+\/files\/(?:styles\/[^/]+\/public\/)?(?:19|20)\d{2}\b/i.test(path) && !/\/produits?\//i.test(path)) return true

@@ -95,3 +95,31 @@ describe('isJunkImageUrl', () => {
     })
   })
 })
+
+// Fixture réelle screwfix.fr (2026-07-13) : drapeaux de sélecteur de langue
+// (EUflag.png — « flag » collé sans séparateur), icônes sociales dans un segment
+// composé (socialicons/fb.png) et pixels des CMP (trustarc) passaient le filtre
+// et devenaient les « images produit » de la fiche.
+describe('isJunkImageUrl — drapeaux collés / segments *icons / hosts consent (Screwfix)', () => {
+  const JUNK = [
+    'https://www.screwfix.fr/media/wysiwyg/EUflag.png',
+    'https://www.screwfix.fr/media/wysiwyg/UKflag.png',
+    'https://www.screwfix.fr/media/wysiwyg/IEflag.png',
+    'https://www.screwfix.fr/media/wysiwyg/images/socialicons/fb.png',
+    'https://www.screwfix.fr/media/wysiwyg/images/socialicons/ig.png',
+    'https://www.screwfix.fr/media/images/paymenticons/Visa_Logo.png',
+    'https://consent-pref.trustarc.com/images/trustarc-logo-small.png',
+  ]
+  it.each(JUNK)('junk : %s', (u) => {
+    expect(isJunkImageUrl(u)).toBe(true)
+  })
+  const GOOD = [
+    // Scene7 sans extension = photo produit légitime
+    'https://media.screwfix.fr/is/image/ae235?src=ae235/767RV_P&',
+    // « camouflage » contient « flag » mais n'est pas un drapeau
+    'https://x.fr/media/catalog/product/bache-camouflage.jpg',
+  ]
+  it.each(GOOD)('photo : %s', (u) => {
+    expect(isJunkImageUrl(u)).toBe(false)
+  })
+})

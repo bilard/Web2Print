@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseImagesFromHtml } from '../parsers/parseImagesFromHtml'
+import { parseImagesFromHtml, expandSceneSevenGallery } from '../parsers/parseImagesFromHtml'
 
 describe('parseImagesFromHtml', () => {
   // Fixture RÉELLE (Milwaukee M18 FPD3) : URLs avec entités `&amp;` + vignettes width=64&blur.
@@ -40,5 +40,27 @@ describe('parseImagesFromHtml', () => {
     expect(parseImagesFromHtml('')).toEqual([])
     const urls = parseImagesFromHtml(`<img src="data:image/png;base64,AAAA" /><img src="/local/x.jpg" />`)
     expect(urls).toEqual([])
+  })
+})
+
+// Fixture réelle screwfix.fr (2026-07-13) : galerie produit sur Adobe Scene7 /
+// Dynamic Media — URLs SANS extension (`/is/image/ae235?src=ae235/767RV_P&…`),
+// membres du carrousel (767RV_A1…A7) présents dans le HTML mais jamais rendus
+// en <img> statique. Convention Scene7 = générique (des milliers de retailers).
+describe('expandSceneSevenGallery', () => {
+  const HTML = `<meta property="og:image" content="https://media.screwfix.fr/is/image/ae235?src=ae235/767RV_P&amp;" />
+    <script>var assets = ["767RV_P","767RV_A1","767RV_A2","767RV_A3","767RV_A4","767RV_A5","767RV_A6","767RV_A7"];</script>`
+
+  it('déduit toute la galerie depuis le stem de l’asset og:image', () => {
+    const base = parseImagesFromHtml(HTML)
+    const all = expandSceneSevenGallery(HTML, base)
+    const names = all.filter((u) => u.includes('/is/image/')).map((u) => u.match(/767RV_[A-Z0-9]+/)?.[0])
+    expect(names).toContain('767RV_P')
+    for (let i = 1; i <= 7; i++) expect(names).toContain(`767RV_A${i}`)
+  })
+
+  it('garde-fou : sans URL Scene7, la liste ressort inchangée', () => {
+    const imgs = ['https://x.fr/media/catalog/product/p1.jpg']
+    expect(expandSceneSevenGallery('<html><body>rien</body></html>', imgs)).toEqual(imgs)
   })
 })

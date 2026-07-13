@@ -2523,9 +2523,13 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
   //     (&amp;) + dé-vignettage gérés dans le parser. isJunkImageUrl écarte les
   //     pictos/logos ; filterImagesByProductRef isolera la galerie en aval. ──
   try {
-    const { parseImagesFromHtml } = await import('@/features/scraping/core/parsers/parseImagesFromHtml')
+    const { parseImagesFromHtml, expandSceneSevenGallery } = await import('@/features/scraping/core/parsers/parseImagesFromHtml')
+    // Galerie Adobe Scene7/Dynamic Media : les vues du carrousel (REF_A1…An)
+    // sont des assets SANS extension jamais rendus en <img> — leurs noms sont
+    // dans le HTML, on reconstruit leurs URLs depuis l'asset og:image.
+    const parsed = expandSceneSevenGallery(html, parseImagesFromHtml(html))
     let added = 0
-    for (const img of parseImagesFromHtml(html)) {
+    for (const img of parsed) {
       if (!isJunkImageUrl(img) && !data.images.includes(img)) { data.images.push(img); added++ }
     }
     if (added > 0) console.log('[manufacturer] ✓ images from raw HTML:', added)
