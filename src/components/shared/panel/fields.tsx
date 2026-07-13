@@ -54,16 +54,25 @@ export function SliderField({ label, value, onChange, min = 0, max = 1, step = 0
     const v = isPct ? n / 100 : n
     onChange(Math.min(max, Math.max(min, v)))
   }
+  // Boutons − / + : un pas du slider par clic, aligné sur la grille du pas.
+  const nudge = (dir: 1 | -1) => {
+    const snapped = Math.round((value + dir * step) / step) * step
+    onChange(Math.min(max, Math.max(min, Math.round(snapped * 1000) / 1000)))
+    setDraft(null)
+  }
+  const nudgeCls = 'w-5 h-5 shrink-0 rounded border border-white/10 bg-well text-white/50 hover:text-white hover:bg-white/10 leading-none text-[13px] font-medium'
   return (
     <label className={labelCls}>
       <span className="flex items-center justify-between gap-2">
         <span className="truncate">{label}</span>
         <span className="flex items-center gap-1 shrink-0 normal-case tracking-normal">
+          <button type="button" onClick={() => nudge(-1)} title="Diminuer d'un pas" className={nudgeCls}>−</button>
           <input type="number" value={draft ?? String(numValue)}
             min={isPct ? Math.round(min * 100) : min} max={isPct ? Math.round(max * 100) : max} step={isPct ? 1 : step}
             onChange={(e) => { setDraft(e.target.value); commit(e.target.value) }}
             onBlur={() => setDraft(null)}
             className="w-14 rounded border border-white/10 bg-well px-1.5 py-0.5 text-[11px] text-white text-right tabular-nums outline-none focus:border-[#6366f1] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+          <button type="button" onClick={() => nudge(1)} title="Augmenter d'un pas" className={nudgeCls}>+</button>
           <span className="text-white/30">{unit}</span>
         </span>
       </span>
