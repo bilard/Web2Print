@@ -6,9 +6,10 @@ import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal } from 'lucide-react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import type { SpecTable } from '@/features/retail-promo/promoMapping'
-import type { CardBox, CardObjectId, CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
-import { CATALOG_CSS, cardStyleVars, themeVars } from '../pages/catalogCss'
+import type { CardBox, CardObjectId, CatalogCardStyle, CatalogPageStyle, CatalogTheme } from '../../catalogTypes'
+import { CATALOG_CSS, cardStyleVars, mergedPageStyle, pageStyleVars, themeVars } from '../pages/catalogCss'
 import { freeLayoutBox, isWideCard } from '../pages/freeLayout'
+import { CatalogHeader } from '../pages/CatalogHeader'
 import { ProductCell } from '../pages/ProductCell'
 import { CardLayoutOverlay } from './CardLayoutOverlay'
 
@@ -49,6 +50,9 @@ interface Props {
   selected?: CardObjectId | null
   /** Zoom UTILISATEUR relatif à l'ajustement auto (1 = remplit la colonne). */
   zoom?: number
+  /** Style des éléments de page — quand fourni, l'aperçu montre AUSSI le bandeau
+   *  taxonomie « Univers › Famille » au-dessus de la fiche (rendu réel). */
+  pageStyle?: CatalogPageStyle
 }
 
 /** Palette d'ANCRAGE LIQUIDE (façon InDesign) : colle le bloc sélectionné au bord
@@ -87,7 +91,7 @@ function AnchorPalette({ selected, style, wide, onLayoutChange }: {
   )
 }
 
-export function CardStylePreview({ theme, cardStyle, fields, details, specs, cell, wide: wideProp, featuredVariant = true, editable, onLayoutChange, onSelect, selected, zoom = 1 }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, details, specs, cell, wide: wideProp, featuredVariant = true, editable, onLayoutChange, onSelect, selected, zoom = 1, pageStyle: pageStyleProp }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   const d = details && details.length ? details : SAMPLE_DETAILS
   const cardRef = useRef<HTMLDivElement | null>(null)
@@ -116,7 +120,8 @@ export function CardStylePreview({ theme, cardStyle, fields, details, specs, cel
   // Zoom final = ajustement auto × zoom UTILISATEUR (curseur) — plancher 0,5.
   const fitK = Math.max(1, Math.min(targetW / cell.w, maxH / cell.h))
   const K = Math.max(0.5, Math.round(fitK * zoom * 100) / 100)
-  const pageStyle = { ...themeVars(theme), ...cardStyleVars(cardStyle, theme), ['--cat-fit']: String(Math.round(cell.fit * 100) / 100), width: cell.w * K + 32, background: 'var(--cat-bg)' } as CSSProperties
+  const pageStyle = { ...themeVars(theme), ...cardStyleVars(cardStyle, theme), ...pageStyleVars(pageStyleProp), ['--cat-fit']: String(Math.round(cell.fit * 100) / 100), width: cell.w * K + 32, background: 'var(--cat-bg)' } as CSSProperties
+  const showHeaderBand = pageStyleProp != null && mergedPageStyle(pageStyleProp).showHeader !== false
   return (
     <div ref={wrapRef} className="flex items-start gap-2 w-full min-w-0">
       {/* Palette d'ancrage liquide (menu de gauche) — agit sur le bloc sélectionné. */}
@@ -125,6 +130,13 @@ export function CardStylePreview({ theme, cardStyle, fields, details, specs, cel
       )}
       <div className="cat-page rounded-lg overflow-hidden shrink-0 border border-border relative shadow-2xl" style={pageStyle}>
         <style>{CATALOG_CSS}</style>
+        {/* Bandeau taxonomie ÉCHANTILLON (rendu réel CatalogHeader, tailles/couleurs/
+            polices live) — `zoom` plutôt que transform : la hauteur suit l'échelle. */}
+        {showHeaderBand && (
+          <div style={{ zoom: K, width: cell.w + 32 }}>
+            <CatalogHeader breadcrumb={['Univers', 'Famille']} pageNumber={2} />
+          </div>
+        )}
         <div style={{ padding: 16 }}>
           {/* Conteneur qui réserve la place ZOOMÉE ; la carte interne est à la taille cellule exacte puis scale(K). */}
           <div style={{ width: cell.w * K, height: cell.h * K, position: 'relative' }}>
