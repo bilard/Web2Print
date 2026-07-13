@@ -74,7 +74,10 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
 
         {page.kind === 'products' && (
           <>
-            <HeaderBandOptions style={style} patch={patch} theme={plan.theme} />
+            <HeaderBandOptions style={style} patch={patch} theme={plan.theme}
+              onHeaderBg={(v) => setPlan({ ...plan, theme: { ...plan.theme, headerBg: v } })}
+              sections={plan.sections}
+              onSectionColor={(nodeId, color) => setPlan({ ...plan, sections: plan.sections.map((s) => s.nodeId === nodeId ? { ...s, color } : s) })} />
             <FooterOptions style={style} patch={patch} />
           </>
         )}

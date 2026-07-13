@@ -5,18 +5,24 @@
 // pages du catalogue (Aperçu/export), pas dans l'aperçu de fiche seule.
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
-import type { CatalogPageStyle, CatalogTheme } from '../../catalogTypes'
+import type { CatalogPageStyle, CatalogSectionPlan, CatalogTheme } from '../../catalogTypes'
+import { defaultUniverseColor } from '../../catalogFlatplan'
 import { OptSection, OptSlider, OptToggle, optFieldClass } from './PageOptionControls'
 
 interface Props {
   style: CatalogPageStyle
   patch: (p: Partial<CatalogPageStyle>) => void
   theme: CatalogTheme
+  /** Écrit la couleur « Bandeau » du thème (régime uniforme) — pastille « Fond bandeau » du groupe. */
+  onHeaderBg?: (v: string) => void
+  /** Sections du plan (une par univers) — pastilles de FOND par chapitre quand le régime chapitre est actif. */
+  sections?: CatalogSectionPlan[]
+  onSectionColor?: (nodeId: string, color: string) => void
   /** Note contextuelle (ex. depuis Prompt & style : « visible dans l'Aperçu »). */
   hint?: string
 }
 
-export function HeaderBandOptions({ style, patch, theme, hint }: Props) {
+export function HeaderBandOptions({ style, patch, theme, onHeaderBg, sections, onSectionColor, hint }: Props) {
   return (
     <OptSection title="Bandeau taxonomie (Univers › Famille)">
       {hint && <p className="text-[10px] text-white/35 leading-snug">{hint}</p>}
@@ -46,7 +52,16 @@ export function HeaderBandOptions({ style, patch, theme, hint }: Props) {
           </label>
         ))}
       </div>
+      {/* TOUTES les couleurs du bandeau au même endroit : FOND (selon le régime —
+          thème uniforme OU une pastille par univers) + textes des deux niveaux. */}
       <div className="flex flex-wrap gap-2">
+        {!style.chapterColors && onHeaderBg && (
+          <ColorPicker label="Fond bandeau" value={theme.headerBg} onChange={onHeaderBg} />
+        )}
+        {style.chapterColors && onSectionColor && (sections ?? []).map((sec, i) => (
+          <ColorPicker key={sec.nodeId} label={`Fond univers ${i + 1}`} value={sec.color || defaultUniverseColor(i)}
+            onChange={(v) => onSectionColor(sec.nodeId, v)} />
+        ))}
         <ColorPicker label="Txt Univers" value={style.headUniversInk || theme.headerInk}
           onChange={(v) => patch({ headUniversInk: v })} />
         <ColorPicker label="Txt Famille" value={style.headCrumbInk || theme.headerInk}

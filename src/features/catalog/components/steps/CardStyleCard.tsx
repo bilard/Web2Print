@@ -128,6 +128,9 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
       </PropertySection>
 
       <HeaderBandOptions style={pageStyle} patch={patchPage} theme={plan.theme}
+        onHeaderBg={(v) => setPlan({ ...plan, theme: { ...plan.theme, headerBg: v } })}
+        sections={plan.sections}
+        onSectionColor={(nodeId, color) => setPlan({ ...plan, sections: plan.sections.map((s) => s.nodeId === nodeId ? { ...s, color } : s) })}
         hint="Bandeau des PAGES du catalogue (Univers › Famille) — le rendu se voit sur les pages produits (Aperçu/export), pas sur la fiche seule ci-contre." />
     </div>
   )
