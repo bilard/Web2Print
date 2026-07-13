@@ -79,7 +79,15 @@ export function mapProductToFields(
     subtitle: () => p.model ?? null,
     description: () => (p.description ? cleanDescription(p.description) || null : null),
     breadcrumb: () => (p.breadcrumb?.length ? p.breadcrumb.join(' > ') : null),
-    advantages: () => (p.advantages?.length ? p.advantages.map((a) => a.text).join('\n') : null),
+    advantages: () => {
+      if (!p.advantages?.length) return null
+      // Le NOM du produit recopié en puce n'est pas un avantage (H1 aspiré
+      // par le parser de features) — dédoublonné par normalisation.
+      const norm = (s: string) => s.toLowerCase().replace(/[^a-zà-ÿ0-9]+/g, ' ').trim()
+      const nameNorm = name ? norm(name) : ''
+      const clean = p.advantages.map((a) => a.text).filter((t) => !nameNorm || norm(t) !== nameNorm)
+      return clean.length ? clean.join('\n') : null
+    },
     brand: () => p.brand ?? null,
     ean: () => p.ean ?? null,
     price: () => {

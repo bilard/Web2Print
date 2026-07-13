@@ -143,8 +143,12 @@ export function parseAdvantagesFromMarkdown(rawMd: string): Advantage[] {
   // « Caractéristiques et avantages » (heading Kingfisher : Castorama, Brico
   // Dépôt) = section de bullets marketing → NE PAS sortir de la zone features.
   const exitKeywords = /(?:sp[eé]cification|caract[eé]ristiques?\b(?!\s+(?:du\s+produit|et\s+avantages?))|donn[eé]es\s*technique|descriptif\s*technique|t[eé]l[eé]chargement|downloads?|documents?|avis|reviews?|note\s+g[eé]n[eé]rale|description\s+sommaire|filtrer\s+les\s+avis|trier\s+les\s+avis|foire\s+aux\s+questions|faq|r[eé]f[eé]rences?|variantes?|accessoires?\s*associ|offres?\s+partenaires?|marketplace|vendeur\s+tiers?|paiement|s[eé]curis[eé]|satisfait\s+ou\s+rembours[eé]|livraison|prix|tarif|contact|mentions?\s*l[eé]gal|conditions?\s*g[eé]n[eé]ral|informations?\s*compl[eé]ment|[eé]quipement\s+et\s+application|domaine\s+d[‘'']application|cookies?|gdpr|consentement|param[eè]tres?\s+(?:de\s+)?confidentialit)/i
-  // Contenu commercial/politique à filtrer
-  const COMMERCIAL_RE = /achet[eé]|achat|retourn|rembours|livr[eé]|exp[eé]di|panier|commander|boutique|magasin|labellis[eé]|certifi[eé].*utilisateur|v[eé]rifi[eé].*identit|historique.*d.achat|provien.*d.utilisateur|contrefaçon|authenticit|service\s*client|cat[eé]gories?\s*d.?[eé]valuation|distinguons?\s*trois|noter\s*ce\s*produit|\bsoldes?\b|black\s*friday|s[eé]lection\s+de\s+produits|offre\s+valable/i
+  // Contenu commercial/politique à filtrer. Inclut l'UI compte client
+  // (« Suivi de la commande », « Commandez plus rapidement » — bloc
+  // « Avantages » du menu compte Magento) et le widget stock (« En rupture
+  // en ligne », « Restez informé(e) sur le stock », « Me tenir informé(e) »)
+  // qui deviennent sinon des « points forts » de la fiche.
+  const COMMERCIAL_RE = /achet[eé]|achat|retourn|rembours|livr[eé]|livraison|exp[eé]di|panier|command(?:er|ez)|suivi\s+de\s+(?:la\s+)?commande|boutique|magasin|labellis[eé]|certifi[eé].*utilisateur|v[eé]rifi[eé].*identit|historique.*d.achat|provien.*d.utilisateur|contrefaçon|authenticit|service\s*client|cat[eé]gories?\s*d.?[eé]valuation|distinguons?\s*trois|noter\s*ce\s*produit|\bsoldes?\b|black\s*friday|s[eé]lection\s+de\s+produits|offre\s+valable|cr[eé]er\s+un\s+compte|se\s+connecter|mon\s+compte|liste\s+d['’]envies|wishlist|en\s+rupture|rupture\s+de\s+stock|rest(?:ez|er)\s+inform[eé]|me\s+tenir\s+inform[eé]|v[eé]rifi(?:er|ez)\s+le\s+stock|alerte\s+(?:stock|dispo)|newsletter/i
 
   const extractGroupName = (raw: string): string | undefined => {
     const stripped = raw

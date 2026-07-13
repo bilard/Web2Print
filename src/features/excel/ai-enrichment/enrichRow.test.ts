@@ -161,3 +161,21 @@ describe('homogénéité identité/description (sites fabricant à variantes)', 
     expect(String(f.description)).toContain('M18 FPD3')
   })
 })
+
+// Démo express : le NOM du produit recopié tel quel dans les avantages
+// (« Ventilateur Sans Hélice Noir » en puce) dupliquait le titre de la fiche.
+describe('mapProductToFields — avantages ≠ titre du produit', () => {
+  it('retire l’avantage identique au nom (normalisé), garde les autres', () => {
+    const fields = mapProductToFields(
+      {
+        name: 'Ventilateur Sans Hélice Noir',
+        advantages: [
+          { text: 'Ventilateur Sans Hélice Noir' },
+          { text: 'Conception sans pales, sécurisée pour les enfants' },
+        ],
+      } as never,
+      ['advantages'],
+    )
+    expect(fields.advantages).toBe('Conception sans pales, sécurisée pour les enfants')
+  })
+})

@@ -255,3 +255,33 @@ describe('mergeAdvantagesAdditive', () => {
     expect(mergeAdvantagesAdditive(base, [])).toBe(base)
   })
 })
+
+// Fixture réelle trafic.com (Démo express, 2026-07-13) : le bloc « Avantages »
+// du menu COMPTE Magento (« Suivi de la commande », « Commandez plus
+// rapidement ») et le widget stock (« En rupture en ligne », « Restez
+// informé(e) sur le stock », « Me tenir informé(e) ») devenaient des
+// « Points forts » de la fiche. Signal par vocabulaire compte/stock, pas par site.
+describe('parseAdvantagesFromMarkdown — UI compte / stock (fixture Trafic)', () => {
+  const MD = `**Avantages :**
+
+*   Suivi de la commande
+*   Commandez plus rapidement
+
+## Points forts
+
+*   Flux d'air uniforme et silencieux pour un confort optimal
+*   Conception sans pales, sécurisée pour les enfants
+
+En rupture en ligne
+
+Restez informé(e) sur le stock
+
+Me tenir informé(e)
+`
+  it('tue l’UI compte/stock, garde les vrais points forts', () => {
+    const advs = parseAdvantagesFromMarkdown(MD).map((a) => a.text)
+    expect(advs).toContain('Flux d\'air uniforme et silencieux pour un confort optimal')
+    expect(advs).toContain('Conception sans pales, sécurisée pour les enfants')
+    expect(advs.join(' | ')).not.toMatch(/suivi de la commande|commandez plus rapidement|en rupture|restez informé|me tenir informé/i)
+  })
+})
