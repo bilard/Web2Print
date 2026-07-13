@@ -8,6 +8,7 @@ import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import type { SpecTable } from '@/features/retail-promo/promoMapping'
 import type { CardBox, CardObjectId, CatalogCardStyle, CatalogPageStyle, CatalogTheme } from '../../catalogTypes'
 import { CATALOG_CSS, cardStyleVars, mergedPageStyle, pageStyleVars, themeVars } from '../pages/catalogCss'
+import { defaultUniverseColor } from '../../catalogFlatplan'
 import { freeLayoutBox, isWideCard } from '../pages/freeLayout'
 import { CatalogHeader } from '../pages/CatalogHeader'
 import { ProductCell } from '../pages/ProductCell'
@@ -121,7 +122,14 @@ export function CardStylePreview({ theme, cardStyle, fields, details, specs, cel
   const fitK = Math.max(1, Math.min(targetW / cell.w, maxH / cell.h))
   const K = Math.max(0.5, Math.round(fitK * zoom * 100) / 100)
   const pageStyle = { ...themeVars(theme), ...cardStyleVars(cardStyle, theme), ...pageStyleVars(pageStyleProp), ['--cat-fit']: String(Math.round(cell.fit * 100) / 100), width: cell.w * K + 32, background: 'var(--cat-bg)' } as CSSProperties
-  const showHeaderBand = pageStyleProp != null && mergedPageStyle(pageStyleProp).showHeader !== false
+  const ps = pageStyleProp ? mergedPageStyle(pageStyleProp) : null
+  const showHeaderBand = ps != null && ps.showHeader !== false
+  // « Couleurs par chapitre » actif : les pages colorent le bandeau à la couleur
+  // de l'UNIVERS — l'échantillon montre celle du 1er univers (même palette),
+  // sinon il mentirait en affichant la couleur « Bandeau » du thème.
+  const sampleChapterVars = ps?.chapterColors
+    ? ({ '--cat-head-bg': defaultUniverseColor(0), '--cat-head-ink': '#fff' } as CSSProperties)
+    : ({} as CSSProperties)
   return (
     <div ref={wrapRef} className="flex items-start gap-2 w-full min-w-0">
       {/* Palette d'ancrage liquide (menu de gauche) — agit sur le bloc sélectionné. */}
@@ -133,7 +141,7 @@ export function CardStylePreview({ theme, cardStyle, fields, details, specs, cel
         {/* Bandeau taxonomie ÉCHANTILLON (rendu réel CatalogHeader, tailles/couleurs/
             polices live) — `zoom` plutôt que transform : la hauteur suit l'échelle. */}
         {showHeaderBand && (
-          <div style={{ zoom: K, width: cell.w + 32 }}>
+          <div style={{ zoom: K, width: cell.w + 32, ...sampleChapterVars }}>
             <CatalogHeader breadcrumb={['Univers', 'Famille']} pageNumber={2} />
           </div>
         )}

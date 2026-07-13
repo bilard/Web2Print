@@ -21,6 +21,15 @@ export function HeaderBandOptions({ style, patch, theme, hint }: Props) {
     <OptSection title="Bandeau taxonomie (Univers › Famille)">
       {hint && <p className="text-[10px] text-white/35 leading-snug">{hint}</p>}
       <OptToggle label="Afficher" checked={style.showHeader} onChange={(v) => patch({ showHeader: v })} />
+      {/* Le FOND du bandeau a DEUX régimes — la source de confusion classique :
+          par chapitre (couleur de l'univers) ou couleur « Bandeau » du thème. */}
+      <OptToggle label="Couleurs par chapitre (fond = couleur de l'univers)" checked={style.chapterColors}
+        onChange={(v) => patch({ chapterColors: v })} />
+      <p className="text-[10px] text-white/35 leading-snug">
+        {style.chapterColors
+          ? <>Fond du bandeau = couleur du <b>chapitre</b> (une par univers — pastille modifiable dans le panneau Sections / chemin de fer). La couleur « Bandeau » du thème est ignorée sur les pages produits.</>
+          : <>Fond du bandeau = couleur « Bandeau » du thème (section Couleurs du thème).</>}
+      </p>
       <OptSlider label="Taille" value={style.headerScale} min={0.7} max={1.5} step={0.05} onChange={(v) => patch({ headerScale: v })} />
       {/* Réglages FINS par niveau — échelles multiplicatives sur « Taille »
           (1× = suit), police et couleur du texte par niveau ('' = hérite). */}
