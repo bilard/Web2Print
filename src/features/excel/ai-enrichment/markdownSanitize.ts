@@ -192,9 +192,20 @@ export function sanitizeJinaMarkdown(raw: string): string {
   // 11. Catalogue / menu listings : ≥4 lignes de liens consécutifs.
   //     - Avec bullet : `* [Texte](url)` (catalogue B2B)
   //     - Sans bullet : `[Texte](url)` séparés par lignes vides (menu nav top/footer)
-  //     Dans les 2 cas, c'est de la navigation à virer avant parsing produit.
-  md = md.replace(/(?:^[*-]\s*\[[^\]]+\]\([^)]+\)\s*$\n?){4,}/gm, '')
+  //     - MÉGA-MENU IMBRIQUÉ (Magento/Kingfisher) : puces INDENTÉES (`    *   [x](url)`)
+  //       éventuellement séparées par des lignes vides — des milliers de lignes de
+  //       navigation sinon envoyées au LLM (et recopiées verbatim dans la fiche).
+  //     Dans tous les cas, c'est de la navigation à virer avant parsing produit.
+  md = md.replace(/(?:^[ \t]*[*-]\s*\[[^\]]+\]\([^)]+\)[ \t]*$\n(?:[ \t]*\n)*){4,}/gm, '')
   md = md.replace(/(?:^\[[^\]]+\]\(https?:\/\/[^)]+\)\s*$\n+){4,}/gm, '')
+  // 11b. Artefacts d'images de nav cassées sur plusieurs lignes
+  //      (`![Image 4: France\n\n(https://…/fr.svg)]Catégorie`) : retirer l'artefact
+  //      image, la ligne devient un label nu traité par les règles nav.
+  md = md.replace(/!\[Image \d+:[^\]\n]*\n+\([^)]+\)\]/g, '')
+  md = md.replace(/^\(https?:\/\/[^)]+\)\]/gm, '')
+  // 11c. Chrome de navigation (libellés nus du menu) et note iframes.
+  md = md.replace(/^[ \t]*(?:Fermer la navigation|Affichage navigation|Chercher un produit\s*|Annuler|Menu principal)\s*$/gim, '')
+  md = md.replace(/^.*ne prend pas en charge les iframes.*$/gim, '')
 
   // 12. Bullets vides résiduels
   md = md.replace(/^[*-]\s*$/gm, '')

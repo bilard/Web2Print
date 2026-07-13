@@ -643,3 +643,31 @@ describe('extractSpecsFromHtml — régions hors-produit exclues', () => {
     expect(md).toContain('Couple maxi')
   })
 })
+
+// Paires réelles screwfix.fr (2026-07-13) : les AVIS CLIENTS (titre + commentaire)
+// passaient en « specs » — « achat tondeuse a gazon == Délai très court trè bon
+// rapport qualité/prix », « Super == Très bonne tondeuse », « Tondeuse == Moteur
+// puissant !!! ». Signal par vocabulaire d'OPINION (jamais par site).
+describe('isSaneSpecPair — avis clients en paires (fixture Screwfix)', () => {
+  const JUNK: Array<[string, string]> = [
+    ['achat tondeuse a gazon', 'Délai très court trè bon rapport qualité/prix'],
+    ['Super', 'Très bonne tondeuse'],
+    ['Tondeuse', 'Moteur puissant !!!'],
+    ['Génial', 'Je recommande ce produit'],
+  ]
+  it.each(JUNK)('tue « %s == %s »', (n, v) => {
+    expect(isSaneSpecPair(n, v)).toBe(false)
+  })
+  // Les vraies specs de la MÊME fiche passent (y compris avec adjectifs).
+  const GOOD: Array<[string, string]> = [
+    ['Largeur de coupe', '53 cm'],
+    ['Cylindrée (cm³ / cc)', '224 cc'],
+    ['Huile moteur recommandée', 'Huile SAE 10W30 ou SAE 10W40 requise'],
+    ['Niveau de bruit (Db)', '84,1 dBA'],
+    ['Type de traction', 'Autotractée'],
+    ['Garantie du fabricant', 'Garantie fabricant de 10 ans (enregistrement requis)'],
+  ]
+  it.each(GOOD)('garde « %s == %s »', (n, v) => {
+    expect(isSaneSpecPair(n, v)).toBe(true)
+  })
+})

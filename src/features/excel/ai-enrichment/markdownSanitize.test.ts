@@ -485,3 +485,45 @@ Description complète du produit.`
     expect(out).toContain('Description complète du produit.')
   })
 })
+
+// Fixture réelle screwfix.fr (Magento/Kingfisher, 2026-07-13) : le MÉGA-MENU
+// (puces de liens IMBRIQUÉES/indentées, des centaines de lignes) survivait à la
+// règle 11 (ancrée en début de ligne) et partait au LLM qui le recopiait
+// verbatim dans la fiche.
+describe('sanitizeJinaMarkdown — méga-menu imbriqué + artefacts nav', () => {
+  it('supprime les puces de liens indentées consécutives (menu imbriqué)', () => {
+    const md = `# Produit
+
+*   [Outillage](https://x.fr/outillage)
+
+    *   [Voir tout](https://x.fr/outillage)
+    *   [Outillage électroportatif](https://x.fr/electro)
+
+        *   [Pack d'outils](https://x.fr/pack)
+        *   [Perceuse](https://x.fr/perceuse)
+
+La vraie description du produit reste intacte ici.`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).not.toContain('Outillage électroportatif')
+    expect(out).not.toContain('Perceuse](')
+    expect(out).toContain('La vraie description du produit reste intacte ici.')
+  })
+
+  it('retire les artefacts d’images de nav cassées et le chrome de navigation', () => {
+    const md = `![Image 4: France
+
+(https://x.fr/flags/fr.svg)]Outillage électroportatif
+
+Fermer la navigation
+
+Votre navigateur ne prend pas en charge les iframes. Visitez le portail.
+
+Description réelle du produit conservée.`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).not.toContain('![Image 4')
+    expect(out).not.toContain('fr.svg')
+    expect(out).not.toContain('Fermer la navigation')
+    expect(out).not.toContain('iframes')
+    expect(out).toContain('Description réelle du produit conservée.')
+  })
+})

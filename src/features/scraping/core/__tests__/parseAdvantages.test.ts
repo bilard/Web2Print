@@ -285,3 +285,40 @@ Me tenir informé(e)
     expect(advs.join(' | ')).not.toMatch(/suivi de la commande|commandez plus rapidement|en rupture|restez informé|me tenir informé/i)
   })
 })
+
+// Fixture réelle screwfix.fr (2026-07-13) : le bloc « Avantages : » du menu
+// COMPTE ouvre la zone features, puis les SENTINELLES internes
+// (JINA_EXTRACTED_*), une ligne document « 780##https://….pdf » et la liste de
+// navigation des catégories devenaient des puces d'avantages. Règles
+// génériques : sentinelle = borne machine (ferme la zone + jamais une puce),
+// ligne document rejetée, vocabulaire compte client rejeté.
+describe('parseAdvantagesFromMarkdown — sentinelles / nav / compte (fixture Screwfix)', () => {
+  const MD = `Avantages :
+
+*   Suivre l'historique des commandes
+
+JINA_EXTRACTED_IMAGES_START
+JINA_EXTRACTED_IMAGES_END
+JINA_EXTRACTED_DOWNLOADS_START
+780##Entreprise responsable,https://www.screwfix.fr/media/general/assets/pdf/Accessibility/Strat_gie_d_entreprise_responsable.pdf
+JINA_EXTRACTED_DOWNLOADS_END
+
+*   Outillage électroportatif
+*   Batterie et chargeur
+*   Scie électrique portative
+
+## Points forts
+
+*   Largeur de coupe XXL de 53 cm pour une tonte optimale
+*   Collecteur d'herbe robuste de 65 L avec indicateur de remplissage
+`
+  it('ne capture NI sentinelles, NI ligne document, NI menu compte/catégories', () => {
+    const advs = parseAdvantagesFromMarkdown(MD).map((a) => a.text)
+    expect(advs.join(' | ')).not.toMatch(/JINA_EXTRACTED|##|historique des commandes|Outillage électroportatif|Batterie et chargeur|Scie électrique/i)
+  })
+  it('garde les vrais points forts', () => {
+    const advs = parseAdvantagesFromMarkdown(MD).map((a) => a.text)
+    expect(advs).toContain('Largeur de coupe XXL de 53 cm pour une tonte optimale')
+    expect(advs).toContain("Collecteur d'herbe robuste de 65 L avec indicateur de remplissage")
+  })
+})

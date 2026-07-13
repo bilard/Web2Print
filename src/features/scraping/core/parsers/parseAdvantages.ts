@@ -148,7 +148,7 @@ export function parseAdvantagesFromMarkdown(rawMd: string): Advantage[] {
   // « Avantages » du menu compte Magento) et le widget stock (« En rupture
   // en ligne », « Restez informé(e) sur le stock », « Me tenir informé(e) »)
   // qui deviennent sinon des « points forts » de la fiche.
-  const COMMERCIAL_RE = /achet[eé]|achat|retourn|rembours|livr[eé]|livraison|exp[eé]di|panier|command(?:er|ez)|suivi\s+de\s+(?:la\s+)?commande|boutique|magasin|labellis[eé]|certifi[eé].*utilisateur|v[eé]rifi[eé].*identit|historique.*d.achat|provien.*d.utilisateur|contrefaçon|authenticit|service\s*client|cat[eé]gories?\s*d.?[eé]valuation|distinguons?\s*trois|noter\s*ce\s*produit|\bsoldes?\b|black\s*friday|s[eé]lection\s+de\s+produits|offre\s+valable|cr[eé]er\s+un\s+compte|se\s+connecter|mon\s+compte|liste\s+d['’]envies|wishlist|en\s+rupture|rupture\s+de\s+stock|rest(?:ez|er)\s+inform[eé]|me\s+tenir\s+inform[eé]|v[eé]rifi(?:er|ez)\s+le\s+stock|alerte\s+(?:stock|dispo)|newsletter/i
+  const COMMERCIAL_RE = /achet[eé]|achat|retourn|rembours|livr[eé]|livraison|exp[eé]di|panier|command(?:er|ez)|suivi\s+de\s+(?:la\s+)?commande|suiv(?:re|i)\s+l['’]historique|historique\s+des\s+commandes|boutique|magasin|labellis[eé]|certifi[eé].*utilisateur|v[eé]rifi[eé].*identit|historique.*d.achat|provien.*d.utilisateur|contrefaçon|authenticit|service\s*client|cat[eé]gories?\s*d.?[eé]valuation|distinguons?\s*trois|noter\s*ce\s*produit|\bsoldes?\b|black\s*friday|s[eé]lection\s+de\s+produits|offre\s+valable|cr[eé]er\s+un\s+compte|se\s+connecter|mon\s+compte|liste\s+d['’]envies|wishlist|en\s+rupture|rupture\s+de\s+stock|rest(?:ez|er)\s+inform[eé]|me\s+tenir\s+inform[eé]|v[eé]rifi(?:er|ez)\s+le\s+stock|alerte\s+(?:stock|dispo)|newsletter/i
 
   const extractGroupName = (raw: string): string | undefined => {
     const stripped = raw
@@ -178,6 +178,8 @@ export function parseAdvantagesFromMarkdown(rawMd: string): Advantage[] {
       .replace(/\\\\/g, '')
       .trim()
     if (clean.length < 15 || clean.startsWith('http') || /^\d+$/.test(clean) || seenTexts.has(clean)) return
+    // Ligne document injectée (« 780##Label,https://….pdf ») ou sentinelle résiduelle.
+    if (/##|JINA_EXTRACTED_|NEXT_DATA_SPECS/.test(clean)) return
     // Paires « Nom : Valeur » courtes = specs (capturées par le parser de specs
     // dans les sections mixtes type « Caractéristiques et avantages ») — les
     // garder ici dupliquerait chaque spec en avantage.
@@ -227,6 +229,18 @@ export function parseAdvantagesFromMarkdown(rawMd: string): Advantage[] {
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim()
     if (!trimmed) continue
+
+    // SENTINELLES internes (JINA_EXTRACTED_*, NEXT_DATA_SPECS…) : bornes de
+    // sections machine injectées dans le markdown — jamais des avantages, et la
+    // zone features en cours s'arrête là (ce qui suit est du contenu injecté
+    // puis de la navigation, pas la suite des points forts).
+    if (/JINA_EXTRACTED_|NEXT_DATA_SPECS/.test(trimmed)) {
+      flushPending()
+      inFeatureZone = false
+      currentGroup = undefined
+      currentBoldGroup = undefined
+      continue
+    }
 
     const headingMatch = trimmed.match(/^#{1,5}\s+(.+)$/)
     if (headingMatch) {

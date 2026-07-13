@@ -336,6 +336,10 @@ const FORM_CTA_VALUE_RE = /formulaire\s*:?\s*$|^via\s+ce\b/i
 const STORE_STOCK_UI_RE = /trouver\s+sur\s+(?:la\s+)?carte|veuillez\s+fournir\s+un\s+code\s+postal|autoriser\s+le\s+navigateur|produits\s+recommand[eé]s|me\s+tenir\s+inform[eé]|rest(?:ez|er)\s+inform[eé]|v[eé]rifier\s+le\s+stock|retrait\s+(?:\S+\s+){0,2}en\s+magasin|livraison\s+[àa]\s+domicile/i
 const SEARCH_UI_WORD_RE = /^(?:search|submit|close|submit\s+close|clear|rechercher|fermer|annuler|valider)$/i
 const STREET_NAME_START_RE = /^(?:rue|boulevard|avenue|chauss[eé]e|impasse|all[eé]e|quai)\b/i
+// Avis clients rendus en paires titre/commentaire (« Super == Très bonne
+// tondeuse », « Tondeuse == Moteur puissant !!! ») : vocabulaire d'OPINION —
+// exclamations répétées, jugements, recommandations — jamais des specs.
+const OPINION_PAIR_RE = /!{2,}|\brapport\s+qualit[eé][\s/–-]*prix|\btr[eè]s?\s+bon(?:ne)?s?\b|\bexcellents?\b|\bexcellentes?\b|\bparfaits?\b|\bg[eé]nial(?:e)?\b|\bje\s+(?:recommande|conseille)|\bsatisfaits?\b|\bd[eé]lai\s+tr[eè]s?\s+court|\bsuper\s+produit|\bconforme\s+[aà]\s+la\s+description/i
 
 /** Headings de sections hors-produit : footer, services magasin, légal/CGV.
  *  Le rendu « tout déplié » les fait entrer dans le markdown ; les lignes qui
@@ -356,6 +360,9 @@ export function isSaneSpecPair(n: string, v: string): boolean {
   // Footer / contact / commerce — jamais des specs produit
   if (FOOTER_UI_RE.test(n) || FOOTER_UI_RE.test(v)) return false
   if (STORE_STOCK_UI_RE.test(n) || STORE_STOCK_UI_RE.test(v)) return false
+  if (OPINION_PAIR_RE.test(n) || OPINION_PAIR_RE.test(v)) return false
+  // Titre d'avis nu (« Super », « Génial ») apparié à un commentaire.
+  if (/^(?:super|g[eé]nial|top|parfait|nickel|impeccable)\s*!*$/i.test(n)) return false
   if (SEARCH_UI_WORD_RE.test(n) || SEARCH_UI_WORD_RE.test(v)) return false
   // Adresse postale en NOM (« Boulevard du Roi Albert II 8 == 1000 Bruxelles ») —
   // le durcissement précédent ne la testait qu'en VALEUR.
