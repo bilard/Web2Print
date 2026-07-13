@@ -8,8 +8,10 @@ import { useEffect, useRef } from 'react'
 import { Brush, RotateCcw, X } from 'lucide-react'
 import { PropertySection } from '@/components/shared/panel'
 import { ColorPicker } from '@/components/shared/ColorPicker'
-import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle, type CatalogPlan } from '../../catalogTypes'
+import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle, type CatalogPageStyle, type CatalogPlan } from '../../catalogTypes'
+import { mergedPageStyle } from '../pages/catalogCss'
 import { THEME_COLORS } from './PageOptionsTheme'
+import { HeaderBandOptions } from './HeaderBandOptions'
 import { CardObjectSettings } from './CardObjectSettings'
 import { CardStyleTypo, OBJ_LABEL } from './CardStyleTypo'
 import { CardStyleColors } from './CardStyleColors'
@@ -29,6 +31,10 @@ interface CardStyleCardProps {
 export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection, wide }: CardStyleCardProps) {
   const style: CatalogCardStyle = { ...DEFAULT_CARD_STYLE, ...plan.cardStyle }
   const patch = (p: Partial<CatalogCardStyle>) => setPlan({ ...plan, cardStyle: { ...style, ...p } })
+  // Bandeau taxonomie (Univers › Famille) = élément de PAGE (pageStyle) — exposé
+  // ici aussi pour tout régler sans changer d'onglet.
+  const pageStyle = mergedPageStyle(plan.pageStyle)
+  const patchPage = (p: Partial<CatalogPageStyle>) => setPlan({ ...plan, pageStyle: { ...pageStyle, ...p } })
   // Sélection d'un bloc → le panneau regroupé apparaît EN TÊTE : on y scrolle.
   const selRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
@@ -120,6 +126,9 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
       <PropertySection title="Éléments affichés" help="Champs libres (TVA, entretien...) masquables un par un sous « Détails ».">
         <CardStyleVisibility style={style} patch={patch} />
       </PropertySection>
+
+      <HeaderBandOptions style={pageStyle} patch={patchPage} theme={plan.theme}
+        hint="Bandeau des PAGES du catalogue (Univers › Famille) — le rendu se voit sur les pages produits (Aperçu/export), pas sur la fiche seule ci-contre." />
     </div>
   )
 }

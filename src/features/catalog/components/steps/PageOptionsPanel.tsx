@@ -5,12 +5,11 @@
 // produits/sommaire (bandeau taxonomie, pied de page, titre du sommaire).
 // Réglages bornés du plan (pageStyle) : la mise en page fluide est préservée.
 import { RotateCcw } from 'lucide-react'
-import { ColorPicker } from '@/components/shared/ColorPicker'
-import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import type { CatalogPageDescriptor, CatalogPageStyle, CatalogPlan } from '../../catalogTypes'
 import { DEFAULT_PAGE_STYLE } from '../../catalogTypes'
 import { mergedPageStyle } from '../pages/catalogCss'
 import { OptSection, OptSlider, OptToggle, optFieldClass } from './PageOptionControls'
+import { HeaderBandOptions } from './HeaderBandOptions'
 import { PageOptionsCover } from './PageOptionsCover'
 import { PageOptionsTheme } from './PageOptionsTheme'
 
@@ -75,31 +74,7 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
 
         {page.kind === 'products' && (
           <>
-            <OptSection title="Bandeau taxonomie">
-              <OptToggle label="Afficher" checked={style.showHeader} onChange={(v) => patch({ showHeader: v })} />
-              <OptSlider label="Taille" value={style.headerScale} min={0.7} max={1.5} step={0.05} onChange={(v) => patch({ headerScale: v })} />
-              {/* Réglages FINS par niveau — échelles multiplicatives sur « Taille »
-                  (1× = suit), police et couleur du texte par niveau ('' = hérite). */}
-              <OptSlider label="Taille Univers" value={style.headUniversScale ?? 1} min={0.7} max={2} step={0.05} onChange={(v) => patch({ headUniversScale: v })} />
-              <OptSlider label="Taille Famille" value={style.headCrumbScale ?? 1} min={0.7} max={2} step={0.05} onChange={(v) => patch({ headCrumbScale: v })} />
-              <div className="grid grid-cols-2 gap-2">
-                {([['headUniversFont', 'Police Univers'], ['headCrumbFont', 'Police Famille']] as const).map(([key, label]) => (
-                  <label key={key} className="flex flex-col gap-1 text-[10px] uppercase tracking-wide text-white/40">
-                    {label}
-                    <select value={style[key] ?? ''} onChange={(e) => patch({ [key]: e.target.value } as Partial<CatalogPageStyle>)} className={optFieldClass}>
-                      <option value="">Police du thème</option>
-                      <FontSelectOptions />
-                    </select>
-                  </label>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <ColorPicker label="Txt Univers" value={style.headUniversInk || plan.theme.headerInk}
-                  onChange={(v) => patch({ headUniversInk: v })} />
-                <ColorPicker label="Txt Famille" value={style.headCrumbInk || plan.theme.headerInk}
-                  onChange={(v) => patch({ headCrumbInk: v })} />
-              </div>
-            </OptSection>
+            <HeaderBandOptions style={style} patch={patch} theme={plan.theme} />
             <FooterOptions style={style} patch={patch} />
           </>
         )}
