@@ -358,14 +358,15 @@ export const CATALOG_CSS = `
   padding:2px 7px; line-height:1.3; min-width:0;
   background:var(--cat-accent-tint,rgba(127,127,127,.08)); border-radius:6px; }
 .cat-spec-n { font-weight:600; word-break:break-word; }
-/* La VALEUR ne se coupe jamais au milieu d'un mot (« 243cm ») : c'est le nom qui
-   passe à la ligne ; une valeur vraiment trop longue s'ellipse proprement. */
-.cat-spec-v { text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%; flex-shrink:0;
+/* La VALEUR affiche TOUT le texte de la source (jamais d'ellipse « LED in… ») :
+   elle wrappe aux ESPACES uniquement — jamais au milieu d'un mot (« 243cm »
+   reste entier) ; une valeur multi-mots longue passe sur 2 lignes. */
+.cat-spec-v { text-align:right; white-space:normal; max-width:65%; flex-shrink:0;
   font-weight:800; color:var(--cat-accent); opacity:1; }
 /* ⚠ Spécificité : en disposition libre, « .cat-free .cat-cell-details span » pose
-   pre-line sur TOUS les spans — la valeur de spec re-wrappait sur 6 lignes et
-   creusait des vides dans la grille. Le nowrap/ellipse doit regagner. */
-.cat-free .cat-cell-details .cat-spec-v { white-space:nowrap; display:inline-block; overflow:hidden; }
+   pre-line sur TOUS les spans — white-space:normal doit regagner ici pour que la
+   valeur wrappe proprement (pas de faux retours à la ligne pre-line). */
+.cat-free .cat-cell-details .cat-spec-v { white-space:normal; display:inline-block; }
 .cat-free .cat-cell-details .cat-spec-n { display:inline-block; }
 .cat-free .cat-cell-details .cat-cell-specs-title { display:inline-block; }
 /* Cartes compactes (md, grilles denses) : bloc détails à HAUTEUR BORNÉE → coupe
