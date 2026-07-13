@@ -272,16 +272,20 @@ export const CATALOG_CSS = `
 .cat-cell[data-sh-corner="rounded"] { border-radius:16px; }
 .cat-cell[data-sh-corner="bevel"] { border-radius:0; border-bottom:none;
   clip-path:polygon(0 0, 100% 0, 100% calc(100% - 26px), calc(100% - 26px) 100%, 0 100%); }
+/* ⚠ PRIORITÉ COULEURS : les variantes « sans fond » (chip plain/underline,
+   prix bare) n'écrasent JAMAIS un choix explicite de l'utilisateur — les
+   variables --cat-*-bg/--cat-*-ink ne sont émises QUE quand une couleur est
+   fixée dans le panneau, elles gagnent donc sur le design de la forme. */
 /* Chip sous-famille à ENCOCHE (coin bas-droit coupé, façon flyer promo) */
 .cat-cell[data-sh-chip="notch"] .cat-cell-kicker { border-radius:0;
   clip-path:polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 13px) 100%, 0 100%); padding-right:18px; }
-.cat-cell[data-sh-chip="underline"] .cat-cell-kicker { background:none; color:var(--cat-ink);
+.cat-cell[data-sh-chip="underline"] .cat-cell-kicker { background:var(--cat-kicker-bg,none); color:var(--cat-kicker-ink,var(--cat-ink));
   border-radius:0; padding-left:0; box-shadow:inset 0 -3px 0 var(--cat-kicker-bg,var(--cat-accent)); }
-.cat-cell[data-sh-chip="plain"] .cat-cell-kicker { background:none; color:var(--cat-ink); padding-left:0; }
+.cat-cell[data-sh-chip="plain"] .cat-cell-kicker { background:var(--cat-kicker-bg,none); color:var(--cat-kicker-ink,var(--cat-ink)); padding-left:0; }
 /* Prix NU (texte bold sans badge, façon maquettes minimalistes) */
-.cat-cell[data-sh-price="bare"] .cat-cell-tag { background:none !important; box-shadow:none; transform:none; padding:0; }
+.cat-cell[data-sh-price="bare"] .cat-cell-tag { background:var(--cat-price-bg,none) !important; box-shadow:none; transform:none; padding:0; }
 .cat-cell[data-sh-price="bare"] .cat-cell-price { color:var(--cat-price-ink,var(--cat-ink)); text-shadow:none; }
-.cat-cell[data-sh-price="bare"] .cat-cell-was { background:none !important; color:var(--cat-ink); opacity:.5; padding:0; transform:none; }
+.cat-cell[data-sh-price="bare"] .cat-cell-was { background:var(--cat-was-bg,none) !important; color:var(--cat-was-ink,var(--cat-ink)); opacity:.5; padding:0; transform:none; }
 /* Prix PASTILLE arrondie */
 .cat-cell[data-sh-price="pill"] .cat-cell-tag { border-radius:999px; transform:none; padding-left:18px; padding-right:18px; }
 /* Sticker rectangle / étoile (rond = défaut) */
