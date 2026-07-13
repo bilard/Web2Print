@@ -64,3 +64,18 @@ describe('expandSceneSevenGallery', () => {
     expect(expandSceneSevenGallery('<html><body>rien</body></html>', imgs)).toEqual(imgs)
   })
 })
+
+// Galerie JSON Magento (mage/gallery) : chaque vue expose thumb/img/full —
+// `full` = pleine résolution ($prodImageLarge$), URLs parfois JSON-échappées.
+describe('parseImagesFromHtml — galerie JSON embarquée (Magento)', () => {
+  it('extrait les URLs « full » de la config de galerie', () => {
+    const html = `<script>var cfg = [{"thumb":"https://m.x.fr/is/image/a?src=a/REF_A1&$t$","img":"https://m.x.fr/is/image/a?src=a/REF_A1&$m$","full":"https://m.x.fr/is/image/a?src=a/REF_A1&$l$"},{"full":"https:\\/\\/m.x.fr\\/is\\/image\\/a?src=a\\/REF_A2&$l$"}];</script>`
+    const imgs = parseImagesFromHtml(html)
+    expect(imgs).toContain('https://m.x.fr/is/image/a?src=a/REF_A1&$l$')
+    expect(imgs).toContain('https://m.x.fr/is/image/a?src=a/REF_A2&$l$')
+  })
+  it('n’avale pas les URLs non-image (« full » pointant un .js)', () => {
+    const html = `<script>{"full":"https://m.x.fr/bundle.js"}</script>`
+    expect(parseImagesFromHtml(html)).toEqual([])
+  })
+})

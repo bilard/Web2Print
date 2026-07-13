@@ -65,6 +65,18 @@ export function parseImagesFromHtml(html: string): string[] {
   }
   for (const m of html.matchAll(OG_RE)) add(m[1])
   for (const m of html.matchAll(LINK_RE)) add(m[1])
+  // Galeries JSON embarquées (Magento mage/gallery & co) : chaque vue expose
+  // `"thumb"/"img"/"full"` — on prend `full` (pleine résolution), repli sur
+  // `img`/`large`/`zoom`. Gère les URLs JSON-échappées (https:\/\/…). Les
+  // non-images (.js/.css…) sont écartées ; le junk l'est en aval.
+  const jsonUrls = (key: string) =>
+    [...html.matchAll(new RegExp(`"${key}"\\s*:\\s*"(https?:(?:\\\\/|[^"\\\\])+)"`, 'gi'))]
+      .map((m) => m[1].replace(/\\\//g, '/'))
+  const fulls = jsonUrls('full')
+  const gallery = fulls.length > 0 ? fulls : [...jsonUrls('img'), ...jsonUrls('large'), ...jsonUrls('zoom')]
+  for (const u of gallery) {
+    if (!/\.(?:js|css|json|html?)(?:\?|$)/i.test(u)) add(u)
+  }
   return Array.from(out)
 }
 
