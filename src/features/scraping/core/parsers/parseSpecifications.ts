@@ -292,8 +292,33 @@ const BRACKETED_HEADER_RE = /^\s*\[[^[\]()]+\]\s*$/
  * filtre CMP mais pas cette batterie (prix/dates en nom, prose composite,
  * fragments de phrases, UI de livraison, notices PDF…).
  */
+// ── Pied de page / contact / commerce (fixture réelle Trafic, Magento+Amasty) ──
+// Le footer (store locator, newsletter, moyens de paiement, adresses, mentions
+// légales) traversait l'extraction LLM et le balayage DOM en paires « specs ».
+const FOOTER_UI_RE = /code\s+postal\s+ou\s+ville|rayon\s+de\s+recherche|nos\s+magasins|^[àa]\s+proximit[eé]$|trouv(?:er|ez)\s+un\s+magasin|store\s*locator|acc[eè]s\s+rapide|plan\s+du\s+site|suivez[- ]nous|r[eé]seaux\s+sociaux|service\s+client[eè]?l?e?\b/i
+const NEWSLETTER_RE = /inscrivez[- ]vous|abonnez[- ]vous|[ms]['’]abonner|newsletter|recevoir\s+nos\s+(?:infos|offres|actualit[eé]s?)/i
+const PAYMENT_METHODS_RE = /paiements?\s+par|\b(?:maestro|mastercard|bancontact|paypal)\b|\besp[eè]ces\b|carte\s+bancaire/i
+const CONTACT_NAME_RE = /^(?:t[eé]l[eé]?(?:phone)?\.?|fax|gsm|e-?mail|whatsapp|contact(?:ez-nous)?)$/i
+const PHONE_VALUE_RE = /^(?:t[eé]l|fax|gsm)\.?\s*:?\s*\+?[\d(][\d\s().\/-]{7,}$/i
+const STREET_ADDRESS_RE = /\b(?:rue|boulevard|avenue|chauss[eé]e|impasse|all[eé]e|quai)\b.*(?:n\s?°\s*\d|\b\d{4,5}\b)/i
+const POSTAL_CITY_NAME_RE = /^\d{4,5}\s+[A-ZÀ-Ý][a-zà-ÿ]/
+const LEGAL_ENTITY_RE = /\b(?:S\.A\.S?|S\.?[AP]\.?R\.?L|SPRL|GmbH|B\.V\.|Ltd|Inc)\b\.?\s*$|\b(?:FR|BE|LU)\s?\d{8,}\b|m[eé]diation|ombudsman/i
+const FORM_CTA_VALUE_RE = /formulaire\s*:?\s*$|^via\s+ce\b/i
+
 export function isSaneSpecPair(n: string, v: string): boolean {
   if (!n || !v) return false
+  // Footer / contact / commerce — jamais des specs produit
+  if (FOOTER_UI_RE.test(n) || FOOTER_UI_RE.test(v)) return false
+  if (NEWSLETTER_RE.test(n) || NEWSLETTER_RE.test(v)) return false
+  if (PAYMENT_METHODS_RE.test(n) || PAYMENT_METHODS_RE.test(v)) return false
+  if (CONTACT_NAME_RE.test(n)) return false
+  if (PHONE_VALUE_RE.test(v)) return false
+  if (STREET_ADDRESS_RE.test(v)) return false
+  if (POSTAL_CITY_NAME_RE.test(n)) return false
+  if (LEGAL_ENTITY_RE.test(n)) return false
+  if (FORM_CTA_VALUE_RE.test(v)) return false
+  // Nom = contact/adresse dont la valeur est un téléphone nu (« Fax == 02 808 71 29 »)
+  if (CONTACT_NAME_RE.test(n.replace(/\s*:\s*$/, '')) || (POSTAL_CITY_NAME_RE.test(n) && /^\+?[\d(][\d\s().\/-]{7,}$/.test(v))) return false
   if (JUNK_NAME_RE.test(n)) return false
   if (JUNK_VALUE_RE.test(v)) return false
   if (FILE_VALUE_RE.test(v)) return false

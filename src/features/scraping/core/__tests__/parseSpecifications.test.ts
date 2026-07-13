@@ -6,6 +6,7 @@ import {
   extractCharacteristicsBlobs,
   parseCharacteristicsBlob,
   truncateBeforeNonProductSections,
+  isSaneSpecPair,
 } from '../parsers/parseSpecifications'
 
 const MD_TABLE = `## Caractéristiques techniques
@@ -455,5 +456,44 @@ describe('parseSpecsFromMarkdown — bullets markdown « Nom : Valeur » (Castor
     expect(names).toContain('Surface intérieure')
     expect(names).toContain('Garantie')
     expect(names.every((n) => !n.startsWith('*'))).toBe(true)
+  })
+})
+
+// Paires RÉELLES issues d'une fiche Démo express sur trafic.com (Magento +
+// Amasty, 2026-07-13) : le footer (store locator, newsletter, moyens de
+// paiement, adresses, mentions légales) traversait l'extraction LLM et
+// atterrissait dans le tableau « Caractéristiques » de la fiche.
+describe('isSaneSpecPair — footer/contact/commerce (fixture Trafic)', () => {
+  const JUNK: Array<[string, string]> = [
+    ['Code postal ou ville', 'Rayon de recherche , km'],
+    ['France', 'paiements par Maestro, VISA, MASTERCARD et espèces.'],
+    ['Luxembourg', 'paiements par Maestro, VISA, MASTERCARD et espèces'],
+    ['Service de Médiation pour le Consommateur', 'Boulevard du Roi Albert II 8'],
+    ['Fax', '02 808 71 29'],
+    ['TRAFINTER (FR) FR08383139458', '(Rue Jean Jaures, n°225, 59243 Quarouble, France)'],
+    ['Inscrivez-vous pour recevoir nos infos', "M'abonner"],
+    ['Accès rapide', 'Trafic'],
+    ['a proximité', 'Nos magasins'],
+    ['6220 Heppignies', 'Via ce formulaire :'],
+    ['1000 Bruxelles', 'Tél. : 02 702 52 20'],
+    ['SOGESMA S.A.', 'Rue de Capilône, n°6'],
+  ]
+  it.each(JUNK)('tue « %s == %s »', (n, v) => {
+    expect(isSaneSpecPair(n, v)).toBe(false)
+  })
+
+  // Garde-fou : les vraies specs (dont celles de la même fiche) passent toujours.
+  const GOOD: Array<[string, string]> = [
+    ['Couleur', 'Noir'],
+    ['Alimentation', '5V / 1A via USB-C'],
+    ['Poids', '20.5 kg'],
+    ['Volume maximum', '3800'],
+    ['Matériau de la paroi', 'PVC'],
+    ['Vitesse à vide', '0 - 1 000 000 tr/min'],
+    ['Capacité de perçage béton', '32 mm'],
+    ['Norme', 'EN 60745'],
+  ]
+  it.each(GOOD)('garde « %s == %s »', (n, v) => {
+    expect(isSaneSpecPair(n, v)).toBe(true)
   })
 })
