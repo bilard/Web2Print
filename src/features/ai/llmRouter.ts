@@ -396,6 +396,17 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
           )
         }
       }
+      // Crédit FACTURATION épuisé (OpenAI « insufficient_quota », etc.) : ce
+      // n'est pas un rate-limit passager — chaque appel du batch re-paierait
+      // un 429 tant que le compte n'est pas rechargé. Pas de date de
+      // rétablissement dans l'erreur → cooldown 60 min, persisté comme Claude.
+      else if (/insufficient_quota|exceeded your current quota/i.test(errAsErr.message)) {
+        const until = Date.now() + 60 * 60 * 1000
+        setCooldown(provider, until)
+        console.warn(
+          `[llmRouter] ${provider} : crédit épuisé (insufficient_quota) — ignoré 60 min, la cascade passe au provider suivant.`,
+        )
+      }
       const nextProvider = cascade[i + 1]
       if (nextProvider) {
         console.warn(
