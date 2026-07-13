@@ -148,45 +148,18 @@ function clipToLines(el: HTMLElement, maxH: number): number {
  * `fs0` de référence mémorisé sur l'élément (dataset) : les passes successives
  * repartent de la taille NON condensée, jamais d'une condensation précédente.
  */
-/**
- * Harmonisation CATALOGUE (« Taille identique sur toutes les fiches ») : chaque
- * carte publie le facteur de condensation dont ELLE a besoin par objet
- * (specs/détails/description) ; toutes appliquent le MINIMUM global — la fiche
- * la plus chargée dicte la taille commune. Les entrées de cartes démontées sont
- * purgées à la lecture ; les cartes re-déroulent leur flux quand le minimum
- * BAISSE (via onSharedShrink), jamais en boucle (facteur propre inchangé).
- */
-const sharedShrink = {
-  need: new Map<CardObjectId, Map<HTMLElement, number>>(),
-  listeners: new Set<() => void>(),
-  min(id: CardObjectId): number {
-    const byCard = this.need.get(id)
-    if (!byCard) return 1
-    let m = 1
-    for (const [el, k] of byCard) {
-      if (!el.isConnected) { byCard.delete(el); continue }
-      if (k < m) m = k
-    }
-    return m
-  },
-  record(id: CardObjectId, card: HTMLElement, k: number): void {
-    let byCard = this.need.get(id)
-    if (!byCard) { byCard = new Map(); this.need.set(id, byCard) }
-    const before = this.min(id)
-    if (byCard.get(card) === k) return
-    byCard.set(card, k)
-    if (this.min(id) < before) queueMicrotask(() => this.listeners.forEach((l) => l()))
-  },
-}
-
-/** S'abonner aux baisses du minimum global de condensation (cartes en mode
- *  « taille identique » : re-dérouler le flux pour adopter la taille commune). */
-export function onSharedShrink(listener: () => void): () => void {
-  sharedShrink.listeners.add(listener)
-  return () => { sharedShrink.listeners.delete(listener) }
-}
-
-function shrinkThenClip(el: HTMLElement, id: CardObjectId, maxH: number, hBefore: number, shareCard?: HTMLElement): number {
+function shrinkThenClip(el: HTMLElement, id: CardObjectId, maxH: number, hBefore: number, uniform = false): number {
+  // « Taille identique sur toutes les fiches » : AUCUNE condensation automatique
+  // — la typo reste exactement celle des réglages (identique sur chaque fiche,
+  // chaque page) ; un pavé qui déborde est coupé à la ligne (visible, l'utilisateur
+  // ajuste le slider du bloc). L'Aperçu ne montant qu'une page à la fois, une
+  // harmonisation par mesure inter-fiches serait invisible/incohérente.
+  if (uniform) {
+    const innerU = el.firstElementChild
+    if (innerU instanceof HTMLElement && innerU.style.fontSize) innerU.style.fontSize = ''
+    const h = el.offsetHeight
+    return h > maxH ? clipToLines(el, maxH) : h
+  }
   const ladder = id === 'details' || id === 'specs'
     ? [0.92, 0.85, 0.78, 0.75, 0.7, 0.65, 0.6, 0.55]
     : [0.92, 0.85, 0.78, 0.75]
@@ -195,20 +168,11 @@ function shrinkThenClip(el: HTMLElement, id: CardObjectId, maxH: number, hBefore
     if (!inner.style.fontSize) inner.dataset.fs0 = String(parseFloat(getComputedStyle(inner).fontSize))
     const fs0 = parseFloat(inner.dataset.fs0 ?? '') || parseFloat(getComputedStyle(inner).fontSize)
     if (Number.isFinite(fs0) && fs0 > 0) {
-      let applied = 1
       for (const k of ladder) {
-        applied = k
         inner.style.fontSize = `${Math.round(fs0 * k * 10) / 10}px`
         if (el.offsetHeight <= maxH) break
       }
-      if (el.offsetHeight > maxH && el.offsetHeight === hBefore) { inner.style.fontSize = ''; applied = 1 } // sans effet (tests) : ne pas laisser traîner
-      // Taille identique : publier le besoin de CETTE carte, appliquer le
-      // minimum de TOUTES (jamais plus grand que son propre besoin).
-      if (shareCard) {
-        sharedShrink.record(id, shareCard, applied)
-        const gk = Math.min(applied, sharedShrink.min(id))
-        if (gk < applied) inner.style.fontSize = `${Math.round(fs0 * gk * 10) / 10}px`
-      }
+      if (el.offsetHeight > maxH && el.offsetHeight === hBefore) inner.style.fontSize = '' // sans effet (tests) : ne pas laisser traîner
     }
   }
   const h = el.offsetHeight
@@ -229,22 +193,12 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
   const cardH = card.clientHeight
   const cardW = card.clientWidth
   if (!cardH || !cardW) return
-  // « Taille identique » : AVANT le flux, chaque pavé adopte le minimum global
-  // déjà connu (les cartes peu chargées se condensent au niveau de la plus
-  // chargée) ; il publie son besoin réel via shrinkThenClip s'il déborde.
-  const uniformCard = style.uniformTextScale === true ? card : undefined
-  if (uniformCard) {
-    for (const [id, byCard] of sharedShrink.need) {
-      void byCard
-      const gk = sharedShrink.min(id)
-      const el = card.querySelector<HTMLElement>(`.cat-obj[data-object-id="${id}"]`)
-      const inner = el?.firstElementChild
-      if (!(inner instanceof HTMLElement)) continue
-      if (!inner.style.fontSize) inner.dataset.fs0 = String(parseFloat(getComputedStyle(inner).fontSize))
-      const fs0 = parseFloat(inner.dataset.fs0 ?? '')
-      if (!Number.isFinite(fs0) || fs0 <= 0) continue
-      inner.style.fontSize = gk < 1 ? `${Math.round(fs0 * gk * 10) / 10}px` : ''
-      if (gk < 1) sharedShrink.record(id, card, Math.min(sharedShrink.need.get(id)?.get(card) ?? 1, 1))
+  // « Taille identique » : les condensations résiduelles d'un rendu précédent
+  // sont effacées — la typo redevient exactement celle des réglages.
+  const uniform = style.uniformTextScale === true
+  if (uniform) {
+    for (const inner of card.querySelectorAll<HTMLElement>('.cat-obj > *')) {
+      if (inner.style.fontSize) inner.style.fontSize = ''
     }
   }
   const boxOf = (id: CardObjectId) => freeLayoutBox(id, style, wide)
@@ -451,7 +405,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
       const maxH = followClipH > 0 && hEff + followClipH > avail
         ? Math.max(24, Math.floor(avail * (hEff / (hEff + followClipH))))
         : avail - followClipH
-      if (hEff > maxH) hEff = shrinkThenClip(it.el, it.id, maxH, hEff, uniformCard)
+      if (hEff > maxH) hEff = shrinkThenClip(it.el, it.id, maxH, hEff, uniform)
     }
     placed.push({ x1, x2, bottom: top + hEff })
   }
@@ -514,7 +468,7 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
         ceil = Math.min(ceil, el.offsetTop - MAGNET_GAP)
       }
     }
-    if (ceil < top + curH) shrinkThenClip(it.el, it.id, ceil - top, curH, uniformCard)
+    if (ceil < top + curH) shrinkThenClip(it.el, it.id, ceil - top, curH, uniform)
   }
   // ── CLAMP : rien ne sort JAMAIS du bas de la carte. Un bloc désancré par le
   // drag (ex. prix posé en % sur la carte d'aperçu, plus haute que les cellules

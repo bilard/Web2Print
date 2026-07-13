@@ -11,7 +11,7 @@ import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import { formatPromoLabel, type SpecTable } from '@/features/retail-promo/promoMapping'
 import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle } from '../../catalogTypes'
 import { formatPrice } from './catalogCss'
-import { applyMagneticFlow, freeLayoutBox, onSharedShrink } from './freeLayout'
+import { applyMagneticFlow, freeLayoutBox } from './freeLayout'
 import { useResolvedImage } from '../../useResolvedImage'
 
 interface Props {
@@ -77,13 +77,10 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
     // fallbacks ≠ police finale) et redimensionnements — re-dérouler le moteur,
     // sinon les positions restent calées sur des hauteurs périmées (superpositions).
     document.fonts?.ready.then(run).catch(() => undefined)
-    // « Taille identique » : re-dérouler quand le minimum GLOBAL de condensation
-    // baisse (une autre fiche plus chargée vient d'imposer une taille commune).
-    const offShared = cs.uniformTextScale === true ? onSharedShrink(run) : undefined
-    if (typeof ResizeObserver === 'undefined') return offShared
+    if (typeof ResizeObserver === 'undefined') return
     const ro = new ResizeObserver(run)
     ro.observe(card)
-    return () => { ro.disconnect(); offShared?.() }
+    return () => ro.disconnect()
   })
   const hasWas = f.oldPrice != null && f.newPrice != null && f.oldPrice > f.newPrice
   const show = (key: 'showDesc' | 'showRef' | 'showUnit' | 'showSticker' | 'showKicker' | 'showPromo' | 'showVedette' | 'showDetails' | 'showImage' | 'showBrand' | 'showName' | 'showPrice' | 'showWas') => cardStyle?.[key] ?? true
