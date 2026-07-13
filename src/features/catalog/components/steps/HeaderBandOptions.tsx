@@ -66,11 +66,16 @@ export function HeaderBandOptions({ style, patch, theme, onHeaderBg, sections, o
         {!style.chapterColors && onHeaderBg && (
           <ColorPicker label="Fond bandeau" value={theme.headerBg} onChange={onHeaderBg} />
         )}
-        {style.chapterColors && onSectionColor && (sections ?? []).map((sec, i) => (
-          <ColorPicker key={sec.nodeId} label={`Fond ${universeLabelFromNodeId(sec.nodeId) ?? `univers ${i + 1}`}`}
-            value={sec.color || defaultUniverseColor(i)}
-            onChange={(v) => onSectionColor(sec.nodeId, v)} />
-        ))}
+        {/* Une pastille par UNIVERS uniquement (nodeId sans « / ») : plan.sections
+            contient TOUS les nœuds (familles/sous-familles incluses) mais seule la
+            couleur du nœud de niveau 1 pilote le bandeau (universeColors). */}
+        {style.chapterColors && onSectionColor && (sections ?? [])
+          .filter((sec) => !sec.nodeId.includes('/'))
+          .map((sec, i) => (
+            <ColorPicker key={sec.nodeId} label={`Fond ${universeLabelFromNodeId(sec.nodeId) ?? `univers ${i + 1}`}`}
+              value={sec.color || defaultUniverseColor(i)}
+              onChange={(v) => onSectionColor(sec.nodeId, v)} />
+          ))}
         <ColorPicker label="Txt Univers" value={style.headUniversInk || theme.headerInk}
           onChange={(v) => patch({ headUniversInk: v })} />
         <ColorPicker label="Txt Famille" value={style.headCrumbInk || theme.headerInk}
