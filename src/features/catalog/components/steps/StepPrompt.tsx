@@ -10,6 +10,7 @@ import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree, flattenTree } from '../../catalogTree'
 import { DEFAULT_GRID, representativeGrid } from '../../catalogEngine'
 import { cellDims, cellFit, mergedPageStyle } from '../pages/catalogCss'
+import { defaultUniverseColor } from '../../catalogFlatplan'
 import { isWideCard } from '../pages/freeLayout'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
 import { extractPromoFields, buildDetailLines, buildSpecTable } from '@/features/retail-promo/promoMapping'
@@ -263,7 +264,7 @@ export function StepPrompt() {
               {/* Zoom > 100 % : la carte déborde → défilement LOCAL des deux axes
                   (hauteur bornée au viewport) — le pan reste confiné à l'aperçu. */}
               <div ref={scrollBoxRef} className="overflow-auto pb-2 max-h-[calc(100vh-150px)]">
-                <CardStylePreview theme={plan.theme} cardStyle={cardStyle} pageStyle={mergedPageStyle(plan.pageStyle)} fields={sampleFields} details={sampleDetails} specs={sampleSpecs} cell={previewCell}
+                <CardStylePreview theme={plan.theme} cardStyle={cardStyle} pageStyle={mergedPageStyle(plan.pageStyle)} chapterColor={plan.sections[0]?.color || defaultUniverseColor(0)} fields={sampleFields} details={sampleDetails} specs={sampleSpecs} cell={previewCell}
                   wide={previewWide} featuredVariant={previewFeatured} selected={selectedObject}
                   editable onLayoutChange={patchLayout}
                   onSelect={setSelectedObject} zoom={previewZoom / 100} />

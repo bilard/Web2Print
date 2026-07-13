@@ -54,6 +54,9 @@ interface Props {
   /** Style des éléments de page — quand fourni, l'aperçu montre AUSSI le bandeau
    *  taxonomie « Univers › Famille » au-dessus de la fiche (rendu réel). */
   pageStyle?: CatalogPageStyle
+  /** Couleur EFFECTIVE du 1er chapitre (section.color ou palette) — l'échantillon
+   *  du bandeau doit montrer la vraie couleur, pas le défaut de la palette. */
+  chapterColor?: string
 }
 
 /** Palette d'ANCRAGE LIQUIDE (façon InDesign) : colle le bloc sélectionné au bord
@@ -92,7 +95,7 @@ function AnchorPalette({ selected, style, wide, onLayoutChange }: {
   )
 }
 
-export function CardStylePreview({ theme, cardStyle, fields, details, specs, cell, wide: wideProp, featuredVariant = true, editable, onLayoutChange, onSelect, selected, zoom = 1, pageStyle: pageStyleProp }: Props) {
+export function CardStylePreview({ theme, cardStyle, fields, details, specs, cell, wide: wideProp, featuredVariant = true, editable, onLayoutChange, onSelect, selected, zoom = 1, pageStyle: pageStyleProp, chapterColor }: Props) {
   const f = fields ?? SAMPLE_FIELDS
   const d = details && details.length ? details : SAMPLE_DETAILS
   const cardRef = useRef<HTMLDivElement | null>(null)
@@ -128,7 +131,7 @@ export function CardStylePreview({ theme, cardStyle, fields, details, specs, cel
   // de l'UNIVERS — l'échantillon montre celle du 1er univers (même palette),
   // sinon il mentirait en affichant la couleur « Bandeau » du thème.
   const sampleChapterVars = ps?.chapterColors
-    ? ({ '--cat-head-bg': defaultUniverseColor(0), '--cat-head-ink': '#fff' } as CSSProperties)
+    ? ({ '--cat-head-bg': chapterColor ?? defaultUniverseColor(0), '--cat-head-ink': '#fff' } as CSSProperties)
     : ({} as CSSProperties)
   return (
     <div ref={wrapRef} className="flex items-start gap-2 w-full min-w-0">
