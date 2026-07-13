@@ -175,6 +175,9 @@ export function cardStyleVars(style: CatalogCardStyle | undefined, theme: Catalo
     '--cat-promo-ink': s.promoInk || undefined,
     '--cat-sticker-ink': s.stickerInk || undefined,
     '--cat-kicker-ink': s.kickerInk || undefined,
+    // Filet du bandeau de section (couleur + visibilité).
+    '--cat-band-rule': s.bandRuleColor || undefined,
+    '--cat-band-rule-display': s.showBandRule === false ? 'none' : undefined,
     '--cat-was-ink': s.wasInk || undefined,
     '--cat-vedette-txt': s.vedetteTxtInk || undefined,
     // Textes de contenu : la couleur choisie ANNULE aussi l'atténuation par
@@ -246,10 +249,13 @@ export const CATALOG_CSS = `
 /* Bandeau de SECTION (sous-famille) : casse la page au début de chaque groupe */
 .cat-group-band { display:flex; align-items:center; gap:10px;
   background:var(--cat-kicker-bg,var(--cat-head-bg)); color:var(--cat-kicker-ink,var(--cat-head-ink));
-  font-family:var(--cat-font-h); font-weight:800; font-size:calc(11px * ${F});
+  font-family:var(--cat-font-kicker,var(--cat-font-h)); font-weight:800; font-size:calc(11px * var(--cat-s-kicker,1) * ${F});
   letter-spacing:.16em; text-transform:uppercase;
-  padding:calc(5px * ${F}) 14px; border-radius:4px; }
-.cat-group-band::after { content:''; flex:1; height:2px; background:var(--cat-accent); opacity:.6; border-radius:1px; }
+  padding:calc(5px * var(--cat-s-kicker,1) * ${F}) 14px; border-radius:4px; }
+/* Filet du bandeau : couleur pilotable (case « Filet section » du bloc
+   Sous-famille), masquable via « Éléments affichés ». */
+.cat-group-band::after { content:''; flex:1; height:2px; background:var(--cat-band-rule,var(--cat-accent));
+  opacity:.6; border-radius:1px; display:var(--cat-band-rule-display,block); }
 .cat-cell { position:relative; display:flex; flex-direction:column; min-height:0; background:var(--cat-card-bg,#fff);
   border:1px solid rgba(17,24,39,.10); border-bottom:3px solid var(--cat-accent);
   border-radius:var(--cat-cell-radius,6px); overflow:hidden; }

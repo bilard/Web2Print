@@ -15,7 +15,7 @@ interface CardStyleColorsProps {
   selected?: CardObjectId | null
 }
 
-export type ColorKey = 'promoBg' | 'stickerBg' | 'priceBg' | 'wasBg' | 'kickerBg' | 'nameColor' | 'vedetteBg' | 'vedettePriceBg' | 'priceInk' | 'vedettePriceInk'
+export type ColorKey = 'promoBg' | 'stickerBg' | 'priceBg' | 'wasBg' | 'kickerBg' | 'bandRuleColor' | 'nameColor' | 'vedetteBg' | 'vedettePriceBg' | 'priceInk' | 'vedettePriceInk'
   | 'promoInk' | 'stickerInk' | 'kickerInk' | 'wasInk' | 'vedetteTxtInk' | 'brandColor' | 'descColor' | 'refColor' | 'unitColor' | 'detailsColor' | 'detailsBg' | 'cardBg'
 type GradKey = 'promoBg2' | 'stickerBg2' | 'priceBg2' | 'wasBg2' | 'kickerBg2' | 'vedetteBg2' | 'vedettePriceBg2'
 
@@ -25,7 +25,7 @@ export interface ColorDef { key: ColorKey; grad?: GradKey; label: string; fallba
 export const OBJ_COLOR_KEYS: Partial<Record<CardObjectId, ColorKey[]>> = {
   promo: ['promoBg', 'promoInk'],
   sticker: ['stickerBg', 'stickerInk'],
-  kicker: ['kickerBg', 'kickerInk'],
+  kicker: ['kickerBg', 'kickerInk', 'bandRuleColor'],
   price: ['priceBg', 'wasBg', 'priceInk', 'wasInk'],
   vedette: ['vedetteBg', 'vedettePriceBg', 'vedetteTxtInk', 'vedettePriceInk'],
   name: ['nameColor'], brand: ['brandColor'], description: ['descColor'],
@@ -74,6 +74,7 @@ export function colorDefs(theme: CatalogTheme): ColorDef[] {
     { key: 'wasBg', grad: 'wasBg2', label: 'Prix barré', fallback: theme.headerBg },
     { key: 'cardBg', label: 'Fond de fiche', fallback: '#ffffff' },
     { key: 'kickerBg', grad: 'kickerBg2', label: 'Sous-famille', fallback: theme.headerBg },
+    { key: 'bandRuleColor', label: 'Filet section', fallback: theme.accent },
     { key: 'vedetteBg', grad: 'vedetteBg2', label: 'Vedette', fallback: theme.accent },
     { key: 'vedettePriceBg', grad: 'vedettePriceBg2', label: 'Prix vedette', fallback: theme.accent },
     { key: 'priceInk', label: 'Texte prix', fallback: '#ffffff' },

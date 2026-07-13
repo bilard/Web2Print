@@ -9,7 +9,7 @@ import { UNCAPPED, isSpecsDetailField, extractPromoFields, countDetailData } fro
 import type { CatalogCardStyle } from '../../catalogTypes'
 
 type ShowKey = keyof Pick<CatalogCardStyle,
-  'showPromo' | 'showImage' | 'showSticker' | 'showKicker' | 'showVedette' | 'showBrand' | 'showName'
+  'showPromo' | 'showImage' | 'showSticker' | 'showKicker' | 'showBandRule' | 'showVedette' | 'showBrand' | 'showName'
   | 'showDesc' | 'showRef' | 'showUnit' | 'showPrice' | 'showWas' | 'showDetails'>
 
 /** Ordre = ordre visuel de la fiche (conventions retail). */
@@ -18,6 +18,7 @@ const VISIBILITY: { key: ShowKey; label: string }[] = [
   { key: 'showImage', label: 'Image' },
   { key: 'showSticker', label: 'Sticker remise' },
   { key: 'showKicker', label: 'Sous-famille' },
+  { key: 'showBandRule', label: 'Filet du bandeau de section' },
   { key: 'showVedette', label: 'Ruban vedette' },
   { key: 'showBrand', label: 'Marque' },
   { key: 'showName', label: 'Nom' },
@@ -73,7 +74,8 @@ export function CardStyleVisibility({ style, patch }: Props) {
       {VISIBILITY.map(({ key, label }) => (
         <div key={key}>
           <label className="flex items-center gap-1.5 text-xs text-white/40 cursor-pointer select-none">
-            <input type="checkbox" checked={style[key]} onChange={(e) => patch({ [key]: e.target.checked } as Partial<CatalogCardStyle>)}
+            {/* !== false : les clés optionnelles (showBandRule) valent true sur les styles persistés anciens. */}
+            <input type="checkbox" checked={style[key] !== false} onChange={(e) => patch({ [key]: e.target.checked } as Partial<CatalogCardStyle>)}
               className="accent-indigo-600" />
             {label}
           </label>

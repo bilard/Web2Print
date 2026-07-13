@@ -210,6 +210,10 @@ export interface CatalogCardStyle {
   showPrice: boolean
   /** Affichage du prix BARRÉ dans le badge prix (le prix de vente reste). */
   showWas: boolean
+  /** Affichage du FILET du bandeau de section (trait après le titre de sous-famille) — optionnel (styles persistés anciens, défaut : true). */
+  showBandRule?: boolean
+  /** Couleur du filet du bandeau de section ('' = accent du thème) — optionnel (styles persistés anciens). */
+  bandRuleColor?: string
   /** Ids des champs libres MASQUÉS dans la zone « Détails » (ex. TVA) — optionnel (styles persistés anciens). */
   hiddenDetails?: string[]
   /** Plafond de lignes de SPÉCIFICATIONS techniques affichées (0 = aucune) — optionnel (défaut : MAX_SPEC_LINES). */
@@ -240,7 +244,7 @@ export const DEFAULT_CARD_STYLE: CatalogCardStyle = {
   gradientAngle: 135,
   radius: 6, imageShare: 40, imagePad: 12,
   showDesc: true, showRef: true, showUnit: true, showSticker: true, showKicker: true, showPromo: true, showVedette: true, showDetails: true,
-  showImage: true, showBrand: true, showName: true, showPrice: true, showWas: true, hiddenDetails: [], textStyle: {},
+  showImage: true, showBrand: true, showName: true, showPrice: true, showWas: true, showBandRule: true, bandRuleColor: '', hiddenDetails: [], textStyle: {},
   magnetFlow: true, layout: {}, layoutWide: {},
 }
 
