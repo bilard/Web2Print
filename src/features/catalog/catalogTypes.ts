@@ -214,6 +214,8 @@ export interface CatalogCardStyle {
   showBandRule?: boolean
   /** Couleur du filet du bandeau de section ('' = accent du thème) — optionnel (styles persistés anciens). */
   bandRuleColor?: string
+  /** Description répartie sur 2 colonnes (split équilibré aux retours à la ligne) — optionnel (défaut : 1). */
+  descColumns?: 1 | 2
   /** Ids des champs libres MASQUÉS dans la zone « Détails » (ex. TVA) — optionnel (styles persistés anciens). */
   hiddenDetails?: string[]
   /** Plafond de lignes de SPÉCIFICATIONS techniques affichées (0 = aucune) — optionnel (défaut : MAX_SPEC_LINES). */

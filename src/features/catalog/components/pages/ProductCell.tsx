@@ -38,6 +38,22 @@ interface Props {
   previewRibbon?: boolean
 }
 
+/** Coupe un texte en 2 moitiés ÉQUILIBRÉES (au retour à la ligne le plus proche
+ *  de la moitié, sinon à la phrase) — pour l'option « description sur 2 colonnes ». */
+function splitBalanced(text: string): [string, string] {
+  const units = text.includes('\n') ? text.split('\n') : text.split(/(?<=\.)\s+/)
+  if (units.length < 2) return [text, '']
+  const total = text.length
+  let acc = 0
+  let idx = units.length - 1
+  for (let i = 0; i < units.length - 1; i++) {
+    acc += units[i].length + 1
+    if (acc >= total / 2) { idx = i + 1; break }
+  }
+  const sep = text.includes('\n') ? '\n' : ' '
+  return [units.slice(0, idx).join(sep), units.slice(idx).join(sep)]
+}
+
 export function ProductCell({ fields: f, featured, kicker, details, specs, cardStyle, style, wide = false, onEdit, previewRibbon = false }: Props) {
   // Résolution Drive/CORS → blob:/data: (voir useResolvedImage). `data-resolving` est
   // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
@@ -131,8 +147,15 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
       {f.brand && show('showBrand') && obj('brand', <span className="cat-cell-brand">{f.brand}</span>)}
       {show('showName') && obj('name', <span className="cat-cell-name">{f.name || 'Produit'}</span>)}
       {/* Description INTÉGRALE de la source — jamais abrégée à la donnée : le flux
-          aimanté de la disposition libre absorbe la hauteur réelle du texte. */}
-      {f.description && show('showDesc') && obj('description', <span className="cat-cell-desc">{f.description}</span>)}
+          aimanté de la disposition libre absorbe la hauteur réelle du texte.
+          Option « 2 colonnes » : split équilibré aux retours à la ligne, rendu en
+          flex (pas de CSS columns — html2canvas ne les supporte pas à l'export). */}
+      {f.description && show('showDesc') && obj('description',
+        cardStyle?.descColumns === 2
+          ? (() => { const [a, b] = splitBalanced(f.description!); return (
+              <span className="cat-cell-desc cat-desc-cols"><span>{a}</span><span>{b}</span></span>
+            ) })()
+          : <span className="cat-cell-desc">{f.description}</span>)}
       {f.ref && show('showRef') && obj('ref', <span className="cat-cell-refcode">Réf. {f.ref}</span>)}
       {f.unit && show('showUnit') && obj('unit', <span className="cat-cell-unit">Unité : {f.unit}</span>)}
       {show('showPrice') && obj('price', <span className="cat-cell-pricebox"><span className="cat-cell-tag">{hasWas && show('showWas') && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}<span className="cat-cell-price">{formatPrice(f.newPrice)}</span></span></span>)}

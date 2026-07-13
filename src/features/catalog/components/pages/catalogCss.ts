@@ -396,6 +396,10 @@ export const CATALOG_CSS = `
    rendent en LIGNES lisibles au lieu d'un pavé aux retours écrasés. */
 .cat-free .cat-cell-details span { -webkit-line-clamp:unset; display:block; overflow:visible; white-space:pre-line; }
 .cat-free .cat-cell-desc { -webkit-line-clamp:unset; display:block; overflow:visible; }
+/* Description sur 2 COLONNES : deux moitiés équilibrées rendues en flex (pas de
+   CSS columns — html2canvas ne les supporte pas, l'export doit égaler l'aperçu). */
+.cat-free .cat-cell-desc.cat-desc-cols { display:flex; gap:16px; }
+.cat-desc-cols > span { flex:1 1 0; min-width:0; white-space:pre-line; }
 /* Textes INLINE (réf, marque, prix) passés en block : un span inline s'aligne sur
    la LIGNE DE BASE de la police héritée (plus grande) → il descend dans sa boîte
    et casse l'alignement des liaisons/soudures. En block, le texte colle au haut. */
