@@ -211,6 +211,12 @@ export function pageStyleVars(style: CatalogPageStyle | undefined): React.CSSPro
   const s = mergedPageStyle(style)
   return {
     '--cat-p-head': s.headerScale !== 1 ? String(s.headerScale) : undefined,
+    '--cat-p-head-univers': (s.headUniversScale ?? 1) !== 1 ? String(s.headUniversScale) : undefined,
+    '--cat-p-head-crumb': (s.headCrumbScale ?? 1) !== 1 ? String(s.headCrumbScale) : undefined,
+    '--cat-head-univers-font': s.headUniversFont ? `'${s.headUniversFont}', sans-serif` : undefined,
+    '--cat-head-crumb-font': s.headCrumbFont ? `'${s.headCrumbFont}', sans-serif` : undefined,
+    '--cat-head-univers-ink': s.headUniversInk || undefined,
+    '--cat-head-crumb-ink': s.headCrumbInk || undefined,
     '--cat-p-folio': s.folioScale !== 1 ? String(s.folioScale) : undefined,
     '--cat-p-opener': s.openerTitleScale !== 1 ? String(s.openerTitleScale) : undefined,
     '--cat-p-cover': s.coverTitleScale !== 1 ? String(s.coverTitleScale) : undefined,
@@ -235,8 +241,14 @@ export const CATALOG_CSS = `
 .cat-head { flex:none; background:var(--cat-head-bg,#111827); color:var(--cat-head-ink,#fff);
   padding:16px 32px 14px; display:flex; align-items:baseline; gap:12px; border-bottom:4px solid var(--cat-accent); }
 .cat-head--recto { justify-content:flex-end; } /* page impaire (recto) : taxonomie au bord droit */
-.cat-head-univers { font-family:var(--cat-font-h); font-weight:800; font-size:calc(20px * var(--cat-p-head,1)); text-transform:uppercase; letter-spacing:.1em; }
-.cat-head-crumb { font-size:calc(12px * var(--cat-p-head,1)); opacity:.85; text-transform:uppercase; letter-spacing:.06em; }
+/* Univers / Famille du bandeau : échelles MULTIPLICATIVES sur --cat-p-head
+   (continues autour de 1), police et couleur par niveau ('' = hérite). */
+.cat-head-univers { font-family:var(--cat-head-univers-font,var(--cat-font-h)); font-weight:800;
+  font-size:calc(20px * var(--cat-p-head,1) * var(--cat-p-head-univers,1));
+  text-transform:uppercase; letter-spacing:.1em; color:var(--cat-head-univers-ink,inherit); }
+.cat-head-crumb { font-family:var(--cat-head-crumb-font,inherit);
+  font-size:calc(12px * var(--cat-p-head,1) * var(--cat-p-head-crumb,1));
+  opacity:.85; text-transform:uppercase; letter-spacing:.06em; color:var(--cat-head-crumb-ink,inherit); }
 .cat-head-sep { opacity:.5; }
 
 /* ── Footer : folio en pastille accent ──────────────────────────────── */

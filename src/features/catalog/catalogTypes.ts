@@ -263,6 +263,14 @@ export interface CatalogPageStyle {
   /** Bandeau taxonomie des pages produits. */
   showHeader: boolean
   headerScale: number
+  /** Bandeau taxonomie — réglages fins par niveau (optionnels, styles persistés anciens) :
+   *  échelles MULTIPLICATIVES sur headerScale ; '' = hérite (police du thème / txt bandeau). */
+  headUniversScale?: number
+  headCrumbScale?: number
+  headUniversFont?: string
+  headCrumbFont?: string
+  headUniversInk?: string
+  headCrumbInk?: string
   /** Couleurs PAR CHAPITRE : bandeau + affiche d'ouverture prennent la couleur de l'univers (palette du chemin de fer) au lieu du bandeau du thème. */
   chapterColors: boolean
   /** Pied de page (folio + nom du catalogue). */
@@ -291,6 +299,7 @@ export const DEFAULT_PAGE_STYLE: CatalogPageStyle = {
   // Couleurs par CHAPITRE sur les bandeaux de taxonomie & ouvertures : ACTIF par
   // défaut (l'identité de chapitre structure le catalogue) — désactivable par toggle.
   showHeader: true, headerScale: 1, chapterColors: true,
+  headUniversScale: 1, headCrumbScale: 1, headUniversFont: '', headCrumbFont: '', headUniversInk: '', headCrumbInk: '',
   showFooter: true, showFooterName: true, folioScale: 1,
   showOpenerNum: true, showOpenerChip: true, showOpenerCount: true, showOpenerPanel: true, openerTitleScale: 1,
   coverTitleScale: 1, showCoverBaseline: true, showCoverSubtitle: true, showCoverRule: true, coverOverlay: 55,
