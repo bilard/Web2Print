@@ -22,6 +22,14 @@ interface Props {
   hint?: string
 }
 
+/** Nom lisible de l'univers depuis le nodeId de sa section (slug du label,
+ *  cf. buildCatalogTree : id = segments slugifiés joints par « / »). */
+function universeLabelFromNodeId(nodeId: string): string | null {
+  const slug = nodeId.split('/')[0] ?? ''
+  const human = slug.replace(/[-_]+/g, ' ').trim()
+  return human ? human.charAt(0).toUpperCase() + human.slice(1) : null
+}
+
 export function HeaderBandOptions({ style, patch, theme, onHeaderBg, sections, onSectionColor, hint }: Props) {
   return (
     <OptSection title="Bandeau taxonomie (Univers › Famille)">
@@ -59,7 +67,8 @@ export function HeaderBandOptions({ style, patch, theme, onHeaderBg, sections, o
           <ColorPicker label="Fond bandeau" value={theme.headerBg} onChange={onHeaderBg} />
         )}
         {style.chapterColors && onSectionColor && (sections ?? []).map((sec, i) => (
-          <ColorPicker key={sec.nodeId} label={`Fond univers ${i + 1}`} value={sec.color || defaultUniverseColor(i)}
+          <ColorPicker key={sec.nodeId} label={`Fond ${universeLabelFromNodeId(sec.nodeId) ?? `univers ${i + 1}`}`}
+            value={sec.color || defaultUniverseColor(i)}
             onChange={(v) => onSectionColor(sec.nodeId, v)} />
         ))}
         <ColorPicker label="Txt Univers" value={style.headUniversInk || theme.headerInk}
