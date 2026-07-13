@@ -7,7 +7,9 @@
 import { useEffect, useRef } from 'react'
 import { Brush, RotateCcw, X } from 'lucide-react'
 import { PropertySection } from '@/components/shared/panel'
+import { ColorPicker } from '@/components/shared/ColorPicker'
 import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle, type CatalogPlan } from '../../catalogTypes'
+import { THEME_COLORS } from './PageOptionsTheme'
 import { CardObjectSettings } from './CardObjectSettings'
 import { CardStyleTypo, OBJ_LABEL } from './CardStyleTypo'
 import { CardStyleColors } from './CardStyleColors'
@@ -82,6 +84,17 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
           <CardObjectSettings obj={selectedObject} style={style} theme={plan.theme} patch={patch} wide={wide ?? false} />
         </div>
       )}
+
+      {/* Couleurs GLOBALES du thème — mêmes pastilles que le panneau « Fond de
+          page » de l'Aperçu, éditables dès cette étape sans changer d'onglet. */}
+      <PropertySection title="Couleurs du thème" help="Globales (accent, fond, bandeau…) — synchronisées avec le panneau « Fond de page » de l'Aperçu.">
+        <div className="flex flex-wrap gap-2">
+          {THEME_COLORS.map(({ key, label }) => (
+            <ColorPicker key={key} value={plan.theme[key]} label={label}
+              onChange={(v) => setPlan({ ...plan, theme: { ...plan.theme, [key]: v } })} />
+          ))}
+        </div>
+      </PropertySection>
 
       <PropertySection title="Texte : taille & police" help="Un réglage par champ texte (nom, prix, description...).">
         <CardStyleTypo style={style} patch={patch} selected={selectedObject} wide={wide} />

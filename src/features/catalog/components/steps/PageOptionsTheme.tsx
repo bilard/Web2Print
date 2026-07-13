@@ -18,7 +18,8 @@ interface Props {
   chapterColor?: string
 }
 
-const THEME_COLORS: { key: keyof Pick<CatalogTheme, 'accent' | 'pageBg' | 'ink' | 'headerBg' | 'headerInk'>; label: string }[] = [
+/** Pastilles du thème global — partagées avec l'étape « Prompt & style » (CardStyleCard). */
+export const THEME_COLORS: { key: keyof Pick<CatalogTheme, 'accent' | 'pageBg' | 'ink' | 'headerBg' | 'headerInk'>; label: string }[] = [
   { key: 'accent', label: 'Accent' },
   { key: 'pageBg', label: 'Fond' },
   { key: 'ink', label: 'Texte' },
