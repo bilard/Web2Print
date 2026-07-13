@@ -51,7 +51,9 @@ function splitBalanced(text: string): [string, string] {
     if (acc >= total / 2) { idx = i + 1; break }
   }
   const sep = text.includes('\n') ? '\n' : ' '
-  return [units.slice(0, idx).join(sep), units.slice(idx).join(sep)]
+  // Trim des moitiés : la coupe tombe souvent sur une frontière de paragraphe
+  // (\n\n) → sans trim, la 2e colonne démarre sur une ligne VIDE (blanc en tête).
+  return [units.slice(0, idx).join(sep).trim(), units.slice(idx).join(sep).trim()]
 }
 
 export function ProductCell({ fields: f, featured, kicker, details, specs, cardStyle, style, wide = false, onEdit, previewRibbon = false }: Props) {
