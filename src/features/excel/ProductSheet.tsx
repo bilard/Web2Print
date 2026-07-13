@@ -656,7 +656,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
                   <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
                     {/subtitle|sous.?titre/i.test(col.key) ? 'Nom' : col.label}
                   </p>
-                  <p className="text-[13px] text-white/65 leading-relaxed">{String(v)}</p>
+                  <p className="text-[13px] text-white/65 leading-relaxed whitespace-pre-line">{String(v)}</p>
                 </div>
               )
             })}

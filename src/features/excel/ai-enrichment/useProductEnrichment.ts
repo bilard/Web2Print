@@ -1028,7 +1028,7 @@ const enrichedProductJsonSchema = {
   properties: {
     description: {
       type: 'string',
-      description: 'Le paragraphe descriptif de la SOURCE recopié VERBATIM (mot pour mot) — ne rédige jamais ton propre texte, ne résume pas, ne reformule pas.',
+      description: 'Le paragraphe descriptif de la SOURCE recopié VERBATIM (mot pour mot) — ne rédige jamais ton propre texte, ne résume pas, ne reformule pas. Conserve les retours à la ligne de la source (paragraphes, listes).',
     },
     advantages: {
       type: 'array',
@@ -4305,7 +4305,7 @@ ${mfrBuild.advantages.length > 0 ? `### Avantages scrapés (${mfrBuild.advantage
 ${mfrBuild.specifications.length > 0 ? `### Specs scrapées (${mfrBuild.specifications.length})\n${mfrBuild.specifications.map(s => `- ${s.group ? `[${s.group}] ` : ''}${s.name}: ${s.value}`).join('\n')}` : ''}
 
 ## CE QUE TU DOIS FAIRE
-1. Description : EXTRAIS verbatim le paragraphe descriptif principal de la page — copie EXACTE mot pour mot, NE RÉDIGE PAS, NE RÉSUME PAS, NE REFORMULE PAS
+1. Description : EXTRAIS verbatim le paragraphe descriptif principal de la page — copie EXACTE mot pour mot, structure préservée (retours à la ligne, listes), NE RÉDIGE PAS, NE RÉSUME PAS, NE REFORMULE PAS
 2. Avantages : REPRENDS les avantages scrapés ci-dessus + extrais ceux du markdown, chaque puce recopiée EXACTEMENT telle qu'écrite (verbatim)
 3. Spécifications : Extrais UNIQUEMENT les specs visibles dans le markdown ci-dessus.
    Parcours TOUT le texte pour trouver les paires nom/valeur (tables, listes, texte libre).
@@ -4771,7 +4771,7 @@ ${sourceContext}
 ${dataSections.join('\n\n')}
 
 ## CE QUE TU DOIS FAIRE
-1. Description : EXTRAIS verbatim le paragraphe descriptif principal de la page — copie EXACTE mot pour mot, NE RÉDIGE PAS, NE RÉSUME PAS, NE REFORMULE PAS
+1. Description : EXTRAIS verbatim le paragraphe descriptif principal de la page — copie EXACTE mot pour mot, structure préservée (retours à la ligne, listes), NE RÉDIGE PAS, NE RÉSUME PAS, NE REFORMULE PAS
 2. Avantages : extrais TOUS les points forts / avantages du markdown, chaque puce recopiée EXACTEMENT telle qu'écrite (verbatim)
 3. Spécifications : Parcours TOUT le markdown pour trouver les paires nom/valeur.
    Organise-les en groupes selon les titres de section du texte.

@@ -48,13 +48,18 @@ function cleanName(s: string): string {
 }
 
 /** Nettoie une DESCRIPTION : artefacts markdown (`![Image 68: …](javascript:…)`,
- *  liens → leur texte), jamais d'URL javascript: dans une donnée produit. */
+ *  liens → leur texte), jamais d'URL javascript: dans une donnée produit.
+ *  La STRUCTURE de la source est préservée : les retours à la ligne
+ *  (paragraphes, liste « Caractéristiques principales : » du JSON-LD en \n\t)
+ *  restent — seuls les espaces/tabs en excès sont compactés ligne par ligne. */
 function cleanDescription(s: string): string {
   return s
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]*)\]\(\s*javascript:[^)]*\)/gi, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/\s{2,}/g, ' ')
+    .replace(/[ \t]{2,}/g, ' ')
+    .split('\n').map((l) => l.trim()).join('\n')
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
 

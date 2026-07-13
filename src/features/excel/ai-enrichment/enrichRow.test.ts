@@ -179,3 +179,20 @@ describe('mapProductToFields — avantages ≠ titre du produit', () => {
     expect(fields.advantages).toBe('Conception sans pales, sécurisée pour les enfants')
   })
 })
+
+// « Garde la structure de la source » : la description JSON-LD de trafic.com
+// porte des \n\t (paragraphes + liste « Caractéristiques principales : ») que
+// cleanDescription écrasait en un seul bloc via replace(/\s{2,}/g, ' ').
+describe('mapProductToFields — description conserve la structure de la source', () => {
+  it('préserve les retours à la ligne (paragraphes + liste JSON-LD)', () => {
+    const fields = mapProductToFields(
+      {
+        description: 'Le ventilateur allie design moderne et silence.\n\nCaractéristiques principales :\n\n\n\tMarque : Lifetime Air\n\tCouleur : Noir\n',
+      } as never,
+      ['description'],
+    )
+    expect(fields.description).toBe(
+      'Le ventilateur allie design moderne et silence.\n\nCaractéristiques principales :\n\nMarque : Lifetime Air\nCouleur : Noir',
+    )
+  })
+})
