@@ -12,7 +12,7 @@ import { extractLongestProseParagraph } from './enrichmentSanitize'
 import { isJunkImageUrl } from './imageFilter'
 export { isJunkImageUrl }
 import { parseDescriptionFromMarkdown as parseDescriptionFromMarkdownExternal } from '@/features/scraping/core/parsers/parseDescription'
-import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal } from '@/features/scraping/core/parsers/parseSpecifications'
+import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal, extractSpecsFromHtml as extractSpecsFromHtmlExternal, isNonProductRegion } from '@/features/scraping/core/parsers/parseSpecifications'
 import { filterImagesByProductRef } from '@/features/scraping/core/parsers/filterImagesByRef'
 import { parseNamedDocLinks } from '@/features/scraping/core/parsers/parseNamedDocLinks'
 import { parsePricingFromMarkdown } from '@/features/scraping/core/parsers/parsePricing'
@@ -1536,255 +1536,10 @@ async function scrapeHtmlFallback(pageUrl: string): Promise<string | null> {
 
 /** Parse le HTML (via DOMParser) et extrait les specs en markdown */
 function extractSpecsFromHtml(html: string): string | null {
-  const doc = new DOMParser().parseFromString(html, 'text/html')
-  const mdParts: string[] = []
-
-  // ── 1. JSON-LD structured data (Product schema) ──
-  const jsonLdScripts = doc.querySelectorAll('script[type="application/ld+json"]')
-  for (const script of jsonLdScripts) {
-    try {
-      let data = JSON.parse(script.textContent ?? '')
-      // Gérer @graph (wrapper courant)
-      if (data['@graph']) data = data['@graph']
-      const items = Array.isArray(data) ? data : [data]
-      for (const item of items) {
-        const type = item['@type']
-        if (type !== 'Product' && !(Array.isArray(type) && type.includes('Product'))) continue
-        if (item.name) mdParts.push(`# ${item.name}`)
-        if (item.description) mdParts.push(`\n${item.description}`)
-        // additionalProperty = specs
-        if (Array.isArray(item.additionalProperty)) {
-          mdParts.push('\n## Spécifications (JSON-LD)')
-          for (const prop of item.additionalProperty) {
-            if (prop.name && prop.value != null) {
-              mdParts.push(`| ${prop.name} | ${prop.value}${prop.unitText ? ' ' + prop.unitText : ''} |`)
-            }
-          }
-        }
-        // weight, width, height, depth
-        for (const dim of ['weight', 'width', 'height', 'depth']) {
-          const val = item[dim]
-          if (val?.value != null) {
-            mdParts.push(`| ${dim} | ${val.value}${val.unitText ? ' ' + val.unitText : ''} |`)
-          }
-        }
-      }
-    } catch { /* JSON-LD invalide */ }
-  }
-
-  // ── 2. Extraire TOUT le contenu textuel structuré (accordéons inclus) ──
-  // Sur les SPA, le contenu est dans le DOM même si masqué par CSS.
-  // DOMParser ne filtre PAS par display:none — on récupère tout.
-  const processedEls = new Set<Element>()
-
-  const accordionSelectors = [
-    // Générique accordéon
-    '[data-accordion-content]', '[data-accordion-body]', '[data-collapse-content]',
-    '.accordion-content', '.accordion-body', '.accordion__body', '.accordion__content',
-    '.accordion-panel', '.accordion__panel',
-    '.collapse-content', '.collapsible-content', '.panel-collapse',
-    // Tabs
-    '.tab-content', '.tab-pane', '[role="tabpanel"]',
-    // Specs spécifiques
-    '.product-specs', '.product-specifications', '.specifications-table',
-    '.specs-content', '.spec-table', '.technical-data', '.technical-specs',
-    // Wildcard (attrape Milwaukee, Bosch, Makita, DeWalt, etc.)
-    '[class*="accordion"]', '[class*="Accordion"]',
-    '[class*="collapse"]', '[class*="Collapse"]',
-    '[class*="specification"]', '[class*="Specification"]',
-    '[class*="spec-"]', '[class*="Spec-"]',
-    '[class*="technical"]', '[class*="Technical"]',
-    '[class*="product-detail"]', '[class*="ProductDetail"]',
-    '[class*="feature"]', '[class*="Feature"]',
-  ]
-
-  /** Extraire les paires clé/valeur d'un élément DOM */
-  function extractKvFromElement(el: Element, heading?: string): void {
-    if (heading && heading.length < 80 && !isGarbageContent(heading)) {
-      mdParts.push(`\n## ${heading}`)
-    }
-
-    // Tables internes
-    const tables = el.querySelectorAll('table')
-    for (const table of tables) {
-      processedEls.add(table)
-      const rows = table.querySelectorAll('tr')
-      for (const row of rows) {
-        const cells = row.querySelectorAll('td, th')
-        if (cells.length >= 2) {
-          const n = cells[0].textContent?.trim()
-          const v = cells[1].textContent?.trim()
-          if (n && v && !/^[-:]+$/.test(n)) mdParts.push(`| ${n} | ${v} |`)
-        }
-      }
-    }
-
-    // dt/dd
-    const dts = el.querySelectorAll('dt')
-    const dds = el.querySelectorAll('dd')
-    if (dts.length > 0 && dds.length > 0) {
-      const count = Math.min(dts.length, dds.length)
-      for (let i = 0; i < count; i++) {
-        const n = dts[i].textContent?.trim()
-        const v = dds[i].textContent?.trim()
-        if (n && v) mdParts.push(`| ${n} | ${v} |`)
-      }
-    }
-
-    // li contenant des specs
-    const lis = el.querySelectorAll('li')
-    for (const li of lis) {
-      const text = li.textContent?.trim()
-      if (!text || text.length < 5 || text.length > 300 || isGarbageContent(text)) continue
-      // "Nom : Valeur" dans un <li>
-      const kv = text.match(/^([^:]{2,50})\s*:\s+(.{1,200})$/)
-      if (kv) {
-        mdParts.push(`| ${kv[1].trim()} | ${kv[2].trim()} |`)
-      } else {
-        // Chercher un <strong>/<b> suivi de texte
-        const strong = li.querySelector('strong, b, span[class*="label"], span[class*="name"]')
-        if (strong) {
-          const name = strong.textContent?.trim()
-          const rest = text.replace(name ?? '', '').replace(/^[\s:–—-]+/, '').trim()
-          if (name && rest && rest.length > 1) mdParts.push(`| ${name} | ${rest} |`)
-        }
-      }
-    }
-
-    // Si pas de table/dt/li, fallback texte brut
-    if (tables.length === 0 && dts.length === 0 && lis.length === 0) {
-      const text = el.textContent?.trim()
-      if (!text) return
-      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2 && l.length < 200)
-      for (const line of lines) {
-        if (isGarbageContent(line)) continue
-        const kv = line.match(/^([^:]{2,50})\s*:\s+(.{1,200})$/)
-          || line.match(/^(.{2,50})\t+(.{1,200})$/)
-        if (kv) mdParts.push(`| ${kv[1].trim()} | ${kv[2].trim()} |`)
-      }
-    }
-  }
-
-  for (const sel of accordionSelectors) {
-    try {
-      const els = doc.querySelectorAll(sel)
-      for (const el of els) {
-        if (processedEls.has(el)) continue
-        processedEls.add(el)
-        const text = el.textContent?.trim()
-        if (!text || text.length < 5 || isGarbageContent(text)) continue
-
-        // Trouver le heading de l'accordéon
-        const parentBtn = el.previousElementSibling
-        const heading = parentBtn?.textContent?.trim()
-          || el.closest('[data-accordion-item], [class*="accordion-item"], [class*="AccordionItem"]')
-              ?.querySelector('button, h2, h3, h4, [class*="title"], [class*="header"], [class*="trigger"]')
-              ?.textContent?.trim()
-
-        extractKvFromElement(el, heading)
-      }
-    } catch { /* sélecteur invalide */ }
-  }
-
-  // ── 3. Tables de specs orphelines (pas dans un accordéon) ──
-  const allTables = doc.querySelectorAll('table')
-  for (const table of allTables) {
-    if (processedEls.has(table)) continue
-    const tableText = table.textContent?.trim() ?? ''
-    if (tableText.length < 20 || tableText.length > 10000 || isGarbageContent(tableText)) continue
-
-    const rows = table.querySelectorAll('tr')
-    let specCount = 0
-    const tableLines: string[] = []
-    for (const row of rows) {
-      const cells = row.querySelectorAll('td, th')
-      if (cells.length === 2) {
-        const n = cells[0].textContent?.trim()
-        const v = cells[1].textContent?.trim()
-        if (n && v && n.length < 60 && v.length < 200 && !/^[-:]+$/.test(n)) {
-          tableLines.push(`| ${n} | ${v} |`)
-          if (/\d/.test(v) || /\b(mm|cm|kg|nm|rpm|v|ah|w|hz|db|°|%)\b/i.test(v)) specCount++
-        }
-      }
-    }
-    if (specCount >= 2 && tableLines.length >= 2) {
-      mdParts.push('\n## Spécifications (table)')
-      mdParts.push(...tableLines)
-    }
-  }
-
-  // ── 4. dl/dt/dd orphelines ──
-  const dlElements = doc.querySelectorAll('dl')
-  for (const dl of dlElements) {
-    if (processedEls.has(dl)) continue
-    const dts = dl.querySelectorAll('dt')
-    const dds = dl.querySelectorAll('dd')
-    if (dts.length >= 2) {
-      const count = Math.min(dts.length, dds.length)
-      let specCount = 0
-      const dlLines: string[] = []
-      for (let i = 0; i < count; i++) {
-        const n = dts[i].textContent?.trim()
-        const v = dds[i].textContent?.trim()
-        if (n && v) {
-          dlLines.push(`| ${n} | ${v} |`)
-          if (/\d/.test(v)) specCount++
-        }
-      }
-      if (specCount >= 2) {
-        mdParts.push('\n## Spécifications (définitions)')
-        mdParts.push(...dlLines)
-      }
-    }
-  }
-
-  // ── 5. Dernier recours : chercher les paires .label / .value dans le body ──
-  if (mdParts.filter(l => l.startsWith('|')).length < 3) {
-    const labelValueSelectors = [
-      // Makita / sites avec convention "techspecs--row-*"
-      { label: '[class*="techspecs--row-specification"], [class*="techspec-name"], [class*="techspec-label"]',
-        value: '[class*="techspecs--row-value"], [class*="techspec-value"], [class*="techspec-data"]' },
-      // Paires label+value communes sur les SPA fabricants
-      { label: '[class*="spec-label"], [class*="spec-name"], [class*="SpecLabel"], [class*="SpecName"]',
-        value: '[class*="spec-value"], [class*="spec-data"], [class*="SpecValue"], [class*="SpecData"]' },
-      { label: '[class*="attr-label"], [class*="attr-name"], [class*="AttrLabel"]',
-        value: '[class*="attr-value"], [class*="attr-data"], [class*="AttrValue"]' },
-      { label: '[class*="feature-label"], [class*="feature-name"]',
-        value: '[class*="feature-value"], [class*="feature-data"]' },
-      { label: '[class*="property-label"], [class*="property-name"]',
-        value: '[class*="property-value"], [class*="property-data"]' },
-    ]
-    for (const { label: lSel, value: vSel } of labelValueSelectors) {
-      try {
-        const labels = doc.querySelectorAll(lSel)
-        const values = doc.querySelectorAll(vSel)
-        if (labels.length >= 2 && labels.length === values.length) {
-          mdParts.push('\n## Spécifications (DOM)')
-          for (let i = 0; i < labels.length; i++) {
-            const n = labels[i].textContent?.trim()
-            // Si la valeur contient une icône check (<i class="fa fa-check">),
-            // c'est une spec booléenne "Oui" (Makita "Tension LXT", "BL Motor").
-            const valueEl = values[i]
-            const hasCheckIcon = !!valueEl.querySelector('i[class*="fa-check"], i[class*="check"], svg[class*="check"], [class*="checkmark"]')
-            const textValue = valueEl.textContent?.trim()
-            const v = textValue || (hasCheckIcon ? 'Oui' : '')
-            if (n && v) mdParts.push(`| ${n} | ${v} |`)
-          }
-          break
-        }
-      } catch { /* sélecteur invalide */ }
-    }
-  }
-
-  if (mdParts.length === 0) {
-    console.log('[html-fallback] no structured data found in HTML')
-    return null
-  }
-
-  const result = mdParts.join('\n').trim()
-  const specLines = result.split('\n').filter(l => l.startsWith('|')).length
-  console.log('[html-fallback] extracted', result.length, 'chars,', specLines, 'spec lines')
-  return result
+  // Délègue au parser canonique (features/scraping/core/parsers) — la copie
+  // historique locale avait dérivé et ne bénéficiait pas des exclusions de
+  // régions hors-produit (header/footer/nav/recherche/store locator).
+  return extractSpecsFromHtmlExternal(html)
 }
 
 
@@ -1872,6 +1627,16 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
   // car c'est la seule méthode capturée par Jina (appendChild + innerHTML ne marchent pas).
   const EXPAND_ACCORDIONS_SCRIPT = `
 (function() {
+  // ── Zones hors-produit : ne JAMAIS y cliquer ni les déplier ──
+  // Header/nav/footer, overlay de recherche, store locator, mini-panier,
+  // newsletter, cookies : les déplier fait entrer leurs textes dans le
+  // markdown (suggestions de recherche, CGV, adresses) qui deviennent de
+  // fausses specs en aval. Signal par STRUCTURE, jamais par site.
+  var NOISE_ZONES = 'header, footer, nav, aside, [role="search"], [role="navigation"], [role="banner"], [role="contentinfo"], [class*="footer" i], [id*="footer" i], [class*="search-" i], [class*="-search" i], [id*="search" i], [class*="locator" i], [class*="minicart" i], [class*="newsletter" i], [class*="cookie" i], [class*="consent" i]';
+  function inNoiseZone(el) {
+    try { return !!(el.closest && el.closest(NOISE_ZONES)); } catch(e) { return false; }
+  }
+
   // ── Ouvrir les accordéons classiques (universel, tout type de site) ──
   function expandAll() {
     var sels = [
@@ -1890,9 +1655,9 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
       'button[class*="more"]', 'a[class*="more"]'
     ];
     sels.forEach(function(sel) {
-      try { document.querySelectorAll(sel).forEach(function(el) { try { el.click(); } catch(e) {} }); } catch(e) {}
+      try { document.querySelectorAll(sel).forEach(function(el) { if (inNoiseZone(el)) return; try { el.click(); } catch(e) {} }); } catch(e) {}
     });
-    document.querySelectorAll('details:not([open])').forEach(function(d) { d.setAttribute('open', ''); });
+    document.querySelectorAll('details:not([open])').forEach(function(d) { if (inNoiseZone(d)) return; d.setAttribute('open', ''); });
     // Ouvrir tous les contenus cachés (accordéons, onglets, sections repliées)
     var hiddenSels = [
       '.collapse:not(.show)', '[class*="accordion-content"]', '[class*="accordion__content"]',
@@ -1907,6 +1672,7 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
     hiddenSels.forEach(function(sel) {
       try {
         document.querySelectorAll(sel).forEach(function(el) {
+          if (inNoiseZone(el)) return;
           el.style.display = 'block'; el.style.height = 'auto'; el.style.overflow = 'visible';
           el.style.maxHeight = 'none'; el.style.opacity = '1'; el.style.visibility = 'visible';
           el.classList.add('show', 'in', 'active'); el.classList.remove('collapsed', 'hidden', 'hide');
@@ -1930,6 +1696,7 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
     tabSels.forEach(function(sel) {
       try {
         document.querySelectorAll(sel).forEach(function(el) {
+          if (inNoiseZone(el)) return;
           if (allTabs.indexOf(el) === -1) allTabs.push(el);
         });
       } catch(e) {}
@@ -1946,6 +1713,7 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
         panelSels.forEach(function(sel) {
           try {
             document.querySelectorAll(sel).forEach(function(el) {
+              if (inNoiseZone(el)) return;
               el.style.display = 'block';
               el.style.visibility = 'visible';
               el.style.height = 'auto';
@@ -2797,9 +2565,12 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
   if (data.specs.length === 0 && html.length > 1000) {
     try {
       const doc = new DOMParser().parseFromString(html, 'text/html')
-      // Tables de specs
+      // Tables de specs — jamais dans les régions hors-produit (header/footer/
+      // nav/recherche/store locator) : sur une page rendue « tout dépliée »,
+      // le footer fournit des paires plausibles (adresses, moyens de paiement).
       const tables = doc.querySelectorAll('table')
       for (const table of tables) {
+        if (isNonProductRegion(table)) continue
         const rows = table.querySelectorAll('tr')
         for (const row of rows) {
           const cells = row.querySelectorAll('td, th')
@@ -2815,6 +2586,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
       // dt/dd pairs
       const dlElements = doc.querySelectorAll('dl')
       for (const dl of dlElements) {
+        if (isNonProductRegion(dl)) continue
         const dts = dl.querySelectorAll('dt')
         const dds = dl.querySelectorAll('dd')
         const count = Math.min(dts.length, dds.length)
@@ -2831,6 +2603,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
       const valueEls = doc.querySelectorAll('[class*="spec-value"], [class*="spec-data"], [class*="attr-value"], [class*="feature-value"]')
       if (labelEls.length >= 2 && labelEls.length === valueEls.length) {
         for (let di = 0; di < labelEls.length; di++) {
+          if (isNonProductRegion(labelEls[di])) continue
           const n = labelEls[di].textContent?.trim()
           const v = valueEls[di].textContent?.trim()
           if (n && v) data.specs.push({ name: n, value: v })
@@ -2845,6 +2618,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
       const seenRows = new Set<Element>()
       for (const row of techRows) {
         if (seenRows.has(row)) continue
+        if (isNonProductRegion(row)) continue
         seenRows.add(row)
         const label = row.querySelector('[class*="techspecs--row-specification"]:not([class*="info"]), [class*="techspec-name"], [class*="techspec-label"]')
         const value = row.querySelector('[class*="techspecs--row-value"], [class*="techspec-value"], [class*="techspec-data"]')

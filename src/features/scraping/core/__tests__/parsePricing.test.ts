@@ -323,3 +323,38 @@ Prix total : 497,04 € TTC
     expect(p?.ht).toBe(414.2)
   })
 })
+
+// Fixture réelle trafic.com : la page « tout dépliée » contient un montant
+// « 50,00 € HT » de bruit (franco de port / offre d'assurance) alors que le
+// produit vaut 19,99 € TTC. Un HT ≥ TTC est arithmétiquement impossible
+// (TVA ≥ 0) → le HT doit être rejeté.
+describe('parsePricingFromMarkdown — garde HT ≥ TTC (bruit de page)', () => {
+  it('rejette un HT capturé supérieur au TTC', () => {
+    const md = `# Ventilateur Sans Hélice Noir
+
+19,99 €
+
+Franco de port à partir de 50,00 € HT`
+    const p = parsePricingFromMarkdown(md, { ttc: 19.99 })
+    expect(p?.ttc).toBe(19.99)
+    expect(p?.ht).toBeUndefined()
+  })
+
+  it('garde-fou : un vrai couple HT/TTC reste intact', () => {
+    const md = `414,20 € HT
+
+497,04 € TTC`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ht).toBe(414.2)
+    expect(p?.ttc).toBe(497.04)
+  })
+
+  it('rejette un prix barré ≤ TTC (bruit)', () => {
+    const md = `Prix actuel : 19,99 €
+
+était 19,99 €`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ttc).toBe(19.99)
+    expect(p?.original).toBeUndefined()
+  })
+})

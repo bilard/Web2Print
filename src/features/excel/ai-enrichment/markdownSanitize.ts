@@ -121,6 +121,29 @@ export function sanitizeJinaMarkdown(raw: string): string {
   // Strip phrases types cookie banner (avec mots-clés discriminants).
   md = md.replace(/^.{0,40}(?:nous\s+(?:utilisons|stockons)\s+(?:des|les)\s+cookies|n[eé]cessitent?\s+votre\s+accord|limiter\s+certaines\s+fonctionnalit[eé]s?|finalit[eé]s?\s+de\s+(?:traitement|consentement)|d[eé]p[oô]t\s+de\s+cookies?|partenaires?\s+(?:peuvent|utilisent)\s+(?:des|ces)\s+cookies?).{0,200}$/gim, '')
 
+  // 1d. Sections légales / services magasin (CGV, code de conduite, médiation,
+  //     assurances, recherches populaires, store locator…) : le rendu « tout
+  //     déplié » (POST injectPageScript) les fait entrer dans le markdown, où
+  //     elles deviennent de fausses specs/description en aval. Même mécanique
+  //     itérative que les cookies : heading H1-H4 → suppression jusqu'au
+  //     prochain heading. Signal par vocabulaire de section, jamais par site.
+  const LEGAL_FOOTER_KW = 'code\\s+de\\s+conduite|traitement\\s+des\\s+plaintes|conditions\\s+g[eé]n[eé]rales|mentions\\s+l[eé]gales|m[eé]diation|droit\\s+de\\s+r[eé]tractation|propri[eé]t[eé]\\s+intellectuelle|assurances?\\b|recherches?\\s+populaires?|produits\\s+recommand[eé]s|nos\\s+magasins|trouver\\s+(?:un\\s+magasin|sur\\s+carte)|v[eé]rifier\\s+le\\s+stock|moyens?\\s+de\\s+paiement|plan\\s+du\\s+site|acc[eè]s\\s+rapide'
+  for (let pass = 0; pass < 10; pass++) {
+    const before = md
+    md = md.replace(
+      new RegExp(`(^|\\n)#{1,4}\\s+[^\\n]*?(?:${LEGAL_FOOTER_KW})[^\\n]*\\n[\\s\\S]*?(?=\\n#{1,4}\\s|\\n\\n---|$)`, 'gi'),
+      '$1',
+    )
+    if (md === before) break
+  }
+  // 1e. Clause CGV numérotée rendue en gras seul (« **14. Code de conduite et
+  //     traitement des plaintes** ») : suppression de la clause et de son corps
+  //     jusqu'au prochain heading markdown ou gras seul.
+  md = md.replace(
+    new RegExp(`(^|\\n)\\*\\*\\d{1,2}[.)][^\\n]*?(?:${LEGAL_FOOTER_KW})[^\\n]*\\*\\*[ \\t]*\\n[\\s\\S]*?(?=\\n#{1,4}\\s|\\n\\*\\*[^*\\n]+\\*\\*[ \\t]*\\n|$)`, 'gi'),
+    '$1',
+  )
+
   // 2. Filtres facettes / checkboxes UI : "- [x] Texte" sur une ligne entière
   md = md.replace(/^[-*•]?\s*\[[xX✓✔ ]?\]\s+.*$/gm, '')
 

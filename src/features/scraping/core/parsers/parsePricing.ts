@@ -360,6 +360,21 @@ export function parsePricingFromMarkdown(
     if (jsonLdPrice.ecoParticipation != null) result.ecoParticipation = jsonLdPrice.ecoParticipation
   }
 
+  // 4. Cohérence arithmétique. Un HT > TTC est impossible (TVA ≥ 0) : c'est un
+  //    montant de bruit capturé sur la page « tout dépliée » (franco de port
+  //    « dès 50 € HT », offre d'assurance, footer). Idem pour un prix barré
+  //    ≤ TTC. On rejette la valeur incohérente, jamais le prix principal.
+  //    (HT == TTC toléré : le fallback « prix EUR seul » recopie le montant HT
+  //    en TTC quand la page n'affiche qu'un prix HT.)
+  if (result.ht != null && result.ttc != null && result.ht > result.ttc) {
+    console.log('[parsePricing] HT', result.ht, '≥ TTC', result.ttc, '— HT rejeté (bruit de page)')
+    delete result.ht
+  }
+  if (result.original != null && result.ttc != null && result.original <= result.ttc) {
+    console.log('[parsePricing] prix barré', result.original, '≤ TTC', result.ttc, '— rejeté')
+    delete result.original
+  }
+
   // Diagnostic — visible dans la console DevTools, utile pour comprendre
   // pourquoi un prix manque sur un site spécifique.
   if (found) {

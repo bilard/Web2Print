@@ -497,3 +497,149 @@ describe('isSaneSpecPair — footer/contact/commerce (fixture Trafic)', () => {
     expect(isSaneSpecPair(n, v)).toBe(true)
   })
 })
+
+// Fixture RÉELLE trafic.com (Magento + Amasty, 2026-07-13) : le scrape POST
+// « tout déplié » (X-Engine: browser + injectPageScript) ouvre l'overlay de
+// recherche, le store locator et les accordéons footer/CGV. Le markdown qui en
+// sort contient des headings hors-produit (« ASSURANCES », « **14. Code de
+// conduite et traitement des plaintes** ») qui ouvraient le spec-mode
+// (isUpperCaseShort) et faisaient apparier les lignes suivantes (Format 4)
+// en fausses specs : « ventilateurs == climatiseurs », adresses de Bruxelles…
+describe('parseSpecsFromMarkdown — sections hors-produit (fixture Trafic « tout déplié »)', () => {
+  const MD = `# Ventilateur Sans Hélice Noir
+
+## Caractéristiques techniques
+
+| Puissance | 5 W |
+| Couleur | Noir |
+| Alimentation | 5V / 1A via USB-C |
+
+## ASSURANCES
+
+Search
+
+Submit Close
+
+ventilateurs
+
+climatiseurs
+
+piscines tubulaires
+
+ventilateur
+
+parasol
+
+spas gonflables
+
+jacuzzi
+
+parasols
+
+tables de jardin
+
+Produits recommandés
+
+Trouver sur carte
+
+Veuillez fournir un code postal ou autoriser le navigateur à partager votre position.
+
+**14. Code de conduite et traitement des plaintes**
+
+Boulevard du Roi Albert II 8
+
+1000 Bruxelles
+
+Rue de Capilône, n°6
+
+6220 Heppignies
+`
+
+  it('garde les vraies specs de la fiche', () => {
+    const specs = parseSpecsFromMarkdown(MD)
+    const names = specs.map((s) => s.name)
+    expect(names).toContain('Puissance')
+    expect(names).toContain('Couleur')
+    expect(names).toContain('Alimentation')
+  })
+
+  it('n’apparie RIEN sous un heading hors-produit (recherche, magasins, CGV)', () => {
+    const specs = parseSpecsFromMarkdown(MD)
+    const all = specs.map((s) => `${s.name}=${s.value}`).join(' | ')
+    expect(all).not.toMatch(/ventilateurs=|piscines tubulaires|Trouver sur carte|Submit|Boulevard du Roi Albert|Rue de Capilône|Bruxelles|Heppignies|Produits recommandés/i)
+  })
+
+  it('aucun groupe hors-produit ne subsiste (ASSURANCES, CGV numérotée)', () => {
+    const specs = parseSpecsFromMarkdown(MD)
+    const groups = new Set(specs.map((s) => s.group ?? ''))
+    expect([...groups].join(' ')).not.toMatch(/assurances|code de conduite/i)
+  })
+})
+
+// Paires réelles des captures utilisateur (fiche Trafic polluée) qui passaient
+// encore isSaneSpecPair après le durcissement footer du 2026-07-13.
+describe('isSaneSpecPair — overlay recherche / store locator / adresses en NOM', () => {
+  const JUNK: Array<[string, string]> = [
+    ['Search', 'Submit Close'],
+    ['Trouver sur carte', 'Veuillez fournir un code postal ou autoriser le navigateur à partager votre position.'],
+    ['tables de jardin', 'Produits recommandés'],
+    ['Boulevard du Roi Albert II 8', '1000 Bruxelles'],
+    ['Rue de Capilône, n°6', '6220 Heppignies'],
+    ['Retrait gratuit en magasin', 'Livraison à domicile (19.99€)'],
+    ['Restez informé(e) sur le stock', 'Me tenir informé(e)'],
+  ]
+  it.each(JUNK)('tue « %s == %s »', (n, v) => {
+    expect(isSaneSpecPair(n, v)).toBe(false)
+  })
+
+  // Les vraies specs — dont des cas proches des patterns tués — passent toujours.
+  const GOOD: Array<[string, string]> = [
+    ['Puissance', '5 W'],
+    ['Alimentation', '5V / 1A via USB-C'],
+    ['Éclairage', 'Lumière d’ambiance LED intégrée'],
+    ['Dimensions', '124 × 90 × 300 mm'],
+    ['Niveau sonore', '50 dB'],
+  ]
+  it.each(GOOD)('garde « %s == %s »', (n, v) => {
+    expect(isSaneSpecPair(n, v)).toBe(true)
+  })
+})
+
+// Le balayage DOM (accordéons larges [class*="accordion"], tables orphelines,
+// dl) ne doit JAMAIS lire dans les régions structurelles hors-produit :
+// header/nav/footer/overlay de recherche/store locator. Signal par STRUCTURE
+// (élément/role/token de classe), jamais par site.
+describe('extractSpecsFromHtml — régions hors-produit exclues', () => {
+  const HTML = `
+    <header><div class="accordion-content"><ul>
+      <li>ventilateurs : climatiseurs</li>
+    </ul></div></header>
+    <div id="search_autocomplete"><ul><li>piscines tubulaires : parasols</li></ul></div>
+    <main><div class="product-specs"><table>
+      <tr><td>Puissance</td><td>5 W</td></tr>
+      <tr><td>Couleur</td><td>Noir</td></tr>
+    </table></div></main>
+    <footer><div class="accordion-content">
+      <table>
+        <tr><td>Boulevard du Roi Albert II 8</td><td>1000 Bruxelles</td></tr>
+        <tr><td>Rue de Capilône, n°6</td><td>6220 Heppignies</td></tr>
+      </table>
+    </div></footer>`
+
+  it('garde les specs de la zone produit, ignore header/footer/recherche', () => {
+    const md = extractSpecsFromHtml(HTML)
+    expect(md).not.toBeNull()
+    expect(md).toContain('Puissance')
+    expect(md).toContain('Couleur')
+    expect(md).not.toContain('Bruxelles')
+    expect(md).not.toContain('Heppignies')
+    expect(md).not.toContain('climatiseurs')
+    expect(md).not.toContain('piscines tubulaires')
+  })
+
+  it('garde-fou : sans région bruitée, comportement inchangé', () => {
+    const md = extractSpecsFromHtml('<table><tr><th>Tension</th><td>18 V</td></tr><tr><th>Couple maxi</th><td>60 Nm</td></tr></table>')
+    expect(md).toContain('Tension')
+    expect(md).toContain('Couple maxi')
+  })
+})

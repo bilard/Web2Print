@@ -13,6 +13,25 @@ export interface Specification {
   group?: string
 }
 
+/** Régions structurelles hors-produit : le balayage large ([class*="accordion"],
+ *  tables orphelines, dl) ne doit jamais y lire — header/nav/footer, overlay de
+ *  recherche, store locator, mini-panier, newsletter, bannières cookies. Sur une
+ *  page rendue « tout dépliée », ces zones fournissent des paires plausibles
+ *  (suggestions de recherche, adresses des CGV). Signal par STRUCTURE (élément,
+ *  role, token de classe/id), jamais par site. */
+const NON_PRODUCT_REGION_SEL = [
+  'header', 'footer', 'nav', 'aside',
+  '[role="search"]', '[role="navigation"]', '[role="banner"]', '[role="contentinfo"]',
+  '[class*="footer" i]', '[id*="footer" i]',
+  '[class*="search-" i]', '[class*="-search" i]', '[id*="search" i]',
+  '[class*="locator" i]', '[class*="minicart" i]', '[class*="newsletter" i]',
+  '[class*="cookie" i]', '[class*="consent" i]',
+].join(', ')
+
+export function isNonProductRegion(el: Element): boolean {
+  try { return !!el.closest(NON_PRODUCT_REGION_SEL) } catch { return false }
+}
+
 /** Extrait du HTML les <table> de specs et les renvoie en markdown lisible. */
 export function extractSpecsFromHtml(html: string): string | null {
   const doc = new DOMParser().parseFromString(html, 'text/html')
@@ -132,6 +151,7 @@ export function extractSpecsFromHtml(html: string): string | null {
       const els = doc.querySelectorAll(sel)
       for (const el of els) {
         if (processedEls.has(el)) continue
+        if (isNonProductRegion(el)) continue
         processedEls.add(el)
         const text = el.textContent?.trim()
         if (!text || text.length < 5 || isGarbageContent(text)) continue
@@ -151,6 +171,7 @@ export function extractSpecsFromHtml(html: string): string | null {
   const allTables = doc.querySelectorAll('table')
   for (const table of allTables) {
     if (processedEls.has(table)) continue
+    if (isNonProductRegion(table)) continue
     const tableText = table.textContent?.trim() ?? ''
     if (tableText.length < 20 || tableText.length > 10000 || isGarbageContent(tableText)) continue
 
@@ -178,6 +199,7 @@ export function extractSpecsFromHtml(html: string): string | null {
   const dlElements = doc.querySelectorAll('dl')
   for (const dl of dlElements) {
     if (processedEls.has(dl)) continue
+    if (isNonProductRegion(dl)) continue
     const dts = dl.querySelectorAll('dt')
     const dds = dl.querySelectorAll('dd')
     if (dts.length >= 2) {
@@ -208,6 +230,7 @@ export function extractSpecsFromHtml(html: string): string | null {
     const seenRows = new Set<Element>()
     for (const row of techRows) {
       if (seenRows.has(row)) continue
+      if (isNonProductRegion(row)) continue
       seenRows.add(row)
       const label = row.querySelector('[class*="techspecs--row-specification"]:not([class*="info"]), [class*="techspec-name"], [class*="techspec-label"]')
       const value = row.querySelector('[class*="techspecs--row-value"], [class*="techspec-value"], [class*="techspec-data"]')
@@ -242,6 +265,7 @@ export function extractSpecsFromHtml(html: string): string | null {
         if (labels.length >= 2 && labels.length === values.length) {
           mdParts.push('\n## Spécifications (DOM)')
           for (let i = 0; i < labels.length; i++) {
+            if (isNonProductRegion(labels[i])) continue
             const n = labels[i].textContent?.trim()
             // Si la valeur contient une icône check (<i class="fa fa-check">),
             // c'est une spec booléenne "Oui" (ex: Makita "Tension LXT", "BL Motor").
@@ -304,11 +328,38 @@ const STREET_ADDRESS_RE = /\b(?:rue|boulevard|avenue|chauss[eé]e|impasse|all[e�
 const POSTAL_CITY_NAME_RE = /^\d{4,5}\s+[A-ZÀ-Ý][a-zà-ÿ]/
 const LEGAL_ENTITY_RE = /\b(?:S\.A\.S?|S\.?[AP]\.?R\.?L|SPRL|GmbH|B\.V\.|Ltd|Inc)\b\.?\s*$|\b(?:FR|BE|LU)\s?\d{8,}\b|m[eé]diation|ombudsman/i
 const FORM_CTA_VALUE_RE = /formulaire\s*:?\s*$|^via\s+ce\b/i
+// ── Overlay recherche / store locator / réassurance (rendu « tout déplié ») ──
+// Le scrape POST (X-Engine: browser + injectPageScript) déplie AUSSI l'overlay
+// de recherche, le store locator et les accordéons footer : leurs lignes courtes
+// consécutives deviennent des paires plausibles (« Trouver sur carte == Veuillez
+// fournir un code postal… », adresse postale en NOM). Vocabulaire d'UI, pas de site.
+const STORE_STOCK_UI_RE = /trouver\s+sur\s+(?:la\s+)?carte|veuillez\s+fournir\s+un\s+code\s+postal|autoriser\s+le\s+navigateur|produits\s+recommand[eé]s|me\s+tenir\s+inform[eé]|rest(?:ez|er)\s+inform[eé]|v[eé]rifier\s+le\s+stock|retrait\s+(?:\S+\s+){0,2}en\s+magasin|livraison\s+[àa]\s+domicile/i
+const SEARCH_UI_WORD_RE = /^(?:search|submit|close|submit\s+close|clear|rechercher|fermer|annuler|valider)$/i
+const STREET_NAME_START_RE = /^(?:rue|boulevard|avenue|chauss[eé]e|impasse|all[eé]e|quai)\b/i
+
+/** Headings de sections hors-produit : footer, services magasin, légal/CGV.
+ *  Le rendu « tout déplié » les fait entrer dans le markdown ; les lignes qui
+ *  suivent ne doivent JAMAIS être appariées en specs. */
+const NON_PRODUCT_HEADING_RE = /^(?:recherches?\s+populaires?|produits\s+recommand[eé]s|nos\s+magasins|trouver\s+(?:un\s+magasin|sur\s+(?:la\s+)?carte)|v[eé]rifier\s+le\s+stock(?:\s+du\s+magasin)?|rest(?:ez|er)\s+inform[eé].{0,25}|assurances?|nos\s+services|services?\s+clients?|aide\s+(?:et|&)\s+contact|moyens?\s+de\s+paiement|modes?\s+de\s+(?:paiement|livraison)|livraisons?\s+(?:et|&)\s+retours?|retrait\s+en\s+magasin|plan\s+du\s+site|acc[eè]s\s+rapide|suivez[- ]nous|mentions\s+l[eé]gales|informations?\s+l[eé]gales|conditions\s+g[eé]n[eé]rales(?:\s+de\s+(?:vente|location))?|cgv|code\s+de\s+conduite.*|traitement\s+des\s+plaintes|m[eé]diation.*|droit\s+de\s+r[eé]tractation|propri[eé]t[eé]\s+intellectuelle|protection\s+des\s+donn[eé]es|litiges?)$/i
+
+/** Heading hors-produit ? Accepte les trois formes (`## X`, `**X**`, texte nu)
+ *  et reconnaît les clauses CGV numérotées (« 14. Code de conduite… »). */
+function isNonProductHeading(raw: string): boolean {
+  const h = raw.replace(/^#{1,5}\s*/, '').replace(/[*_]/g, '').replace(/\s*:\s*$/, '').trim()
+  // Clause numérotée type CGV — un groupe de specs n'est jamais « 14. … »
+  if (/^\d{1,2}[.)]\s+\S/.test(h)) return true
+  return NON_PRODUCT_HEADING_RE.test(h)
+}
 
 export function isSaneSpecPair(n: string, v: string): boolean {
   if (!n || !v) return false
   // Footer / contact / commerce — jamais des specs produit
   if (FOOTER_UI_RE.test(n) || FOOTER_UI_RE.test(v)) return false
+  if (STORE_STOCK_UI_RE.test(n) || STORE_STOCK_UI_RE.test(v)) return false
+  if (SEARCH_UI_WORD_RE.test(n) || SEARCH_UI_WORD_RE.test(v)) return false
+  // Adresse postale en NOM (« Boulevard du Roi Albert II 8 == 1000 Bruxelles ») —
+  // le durcissement précédent ne la testait qu'en VALEUR.
+  if (STREET_NAME_START_RE.test(n) && (/\d/.test(n) || POSTAL_CITY_NAME_RE.test(v))) return false
   if (NEWSLETTER_RE.test(n) || NEWSLETTER_RE.test(v)) return false
   if (PAYMENT_METHODS_RE.test(n) || PAYMENT_METHODS_RE.test(v)) return false
   if (CONTACT_NAME_RE.test(n)) return false
@@ -540,6 +591,17 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     // `### Marketing`, `Finalité`, `Expiration`, `Fournisseur`) imitent des
     // groupes de specs → sortir du spec mode pour ne pas capturer ces faux KV.
     if (/^#{1,5}\s*(strictement\s+n[eé]cessaire|statistiques?|marketing|pr[eé]f[eé]rences?|non\s+class[eé]s?|cookies?\b.*|consentement|confidentialit[eé]|rgpd|gdpr|finalit[eé]s?)\s*:?\s*$/i.test(trimmed)) {
+      inSpecSection = false
+      currentGroup = ''
+      continue
+    }
+
+    // Sections hors-produit : footer / services magasin / légal-CGV. Leur heading
+    // (markdown `##`, gras seul `**14. Code de conduite…**`, MAJUSCULES court)
+    // FERME le spec-mode — sinon `isUpperCaseShort` l'ouvre (« ## ASSURANCES »)
+    // et le Format 4 apparie les lignes courtes suivantes (suggestions de
+    // recherche, store locator, adresses) en fausses specs.
+    if ((/^#{1,5}\s+\S/.test(trimmed) || /^\*\*[^*]+\*\*\s*$/.test(trimmed)) && isNonProductHeading(trimmed)) {
       inSpecSection = false
       currentGroup = ''
       continue

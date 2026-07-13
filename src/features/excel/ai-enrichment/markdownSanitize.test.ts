@@ -396,3 +396,92 @@ Vraie description.`
     expect(out).toContain('Vraie description.')
   })
 })
+
+// Fixture réelle trafic.com (2026-07-13) : le rendu « tout déplié » fait entrer
+// les CGV (sections numérotées « **14. Code de conduite et traitement des
+// plaintes** » avec adresses) et les blocs services magasin dans le markdown.
+// Ces sections ne sont JAMAIS de la donnée produit → coupées avant le LLM.
+describe('sanitizeJinaMarkdown — sections légales / services magasin', () => {
+  it('coupe une section légale en heading markdown', () => {
+    const md = `# Produit
+
+## Caractéristiques
+
+Puissance : 5 W
+
+## Conditions générales de vente
+
+Boulevard du Roi Albert II 8
+1000 Bruxelles
+
+## Description
+
+Un super ventilateur.`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).toContain('Puissance : 5 W')
+    expect(out).toContain('Un super ventilateur.')
+    expect(out).not.toContain('Bruxelles')
+  })
+
+  it('coupe une clause CGV numérotée en gras avec vocabulaire légal', () => {
+    const md = `# Produit
+
+Puissance : 5 W
+
+**14. Code de conduite et traitement des plaintes**
+
+Boulevard du Roi Albert II 8
+1000 Bruxelles
+Rue de Capilône, n°6
+6220 Heppignies
+
+## Description
+
+Un super ventilateur.`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).toContain('Puissance : 5 W')
+    expect(out).toContain('Un super ventilateur.')
+    expect(out).not.toContain('Code de conduite')
+    expect(out).not.toContain('Bruxelles')
+    expect(out).not.toContain('Heppignies')
+  })
+
+  it('coupe les blocs services magasin (assurances, produits recommandés)', () => {
+    const md = `# Produit
+
+Puissance : 5 W
+
+## Assurances
+
+Search
+Submit Close
+ventilateurs
+climatiseurs
+
+## Description
+
+Un super ventilateur.`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).toContain('Puissance : 5 W')
+    expect(out).toContain('Un super ventilateur.')
+    expect(out).not.toContain('Submit Close')
+    expect(out).not.toContain('climatiseurs')
+  })
+
+  it('garde-fou : un markdown produit sain ressort inchangé sur le fond', () => {
+    const md = `# Produit
+
+## Caractéristiques principales
+
+Marque : Lifetime Air
+Puissance : 5 W
+
+**Garantie : 2 ans**
+
+Description complète du produit.`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).toContain('Marque : Lifetime Air')
+    expect(out).toContain('Garantie : 2 ans')
+    expect(out).toContain('Description complète du produit.')
+  })
+})
