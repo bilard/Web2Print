@@ -129,9 +129,7 @@ export function StepPreview() {
       {/* Options à droite (pattern app) : édition du fond de la page AFFICHÉE, mise à jour live */}
       {showOptions && (
         <PageOptionsPanel page={currentPage} plan={ctx.plan} setPlan={setPlan}
-          coverImageUrl={ctx.coverImageUrl} backCoverImageUrl={ctx.backCoverImageUrl}
-          chapterColor={currentPage.kind === 'products' || currentPage.kind === 'opener'
-            ? ctx.universeColors?.get(currentPage.nodeId) : undefined} />
+          coverImageUrl={ctx.coverImageUrl} backCoverImageUrl={ctx.backCoverImageUrl} />
       )}
     </div>
   )

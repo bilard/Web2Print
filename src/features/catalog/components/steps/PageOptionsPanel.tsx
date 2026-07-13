@@ -19,8 +19,6 @@ interface Props {
   setPlan: (plan: CatalogPlan) => void
   coverImageUrl: string | null
   backCoverImageUrl: string | null
-  /** Couleur du chapitre de la page affichée (couleurs par chapitre actives). */
-  chapterColor?: string
 }
 
 const KIND_TITLES: Record<CatalogPageDescriptor['kind'], string> = {
@@ -37,7 +35,7 @@ function FooterOptions({ style, patch }: { style: CatalogPageStyle; patch: (p: P
   )
 }
 
-export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCoverImageUrl, chapterColor }: Props) {
+export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCoverImageUrl }: Props) {
   const style = mergedPageStyle(plan.pageStyle)
   const patch = (p: Partial<CatalogPageStyle>) => setPlan({ ...plan, pageStyle: { ...style, ...p } })
 
@@ -59,6 +57,10 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
 
         {page.kind === 'opener' && (
           <>
+            <HeaderBandOptions style={style} patch={patch} theme={plan.theme}
+              onHeaderBg={(v) => setPlan({ ...plan, theme: { ...plan.theme, headerBg: v } })}
+              sections={plan.sections}
+              onSectionColor={(nodeId, color) => setPlan({ ...plan, sections: plan.sections.map((s) => s.nodeId === nodeId ? { ...s, color } : s) })} />
             <OptSection title="Éléments de l'affiche">
               <OptToggle label="Numéro XXL" checked={style.showOpenerNum} onChange={(v) => patch({ showOpenerNum: v })} />
               <OptToggle label="Chip chapitre" checked={style.showOpenerChip} onChange={(v) => patch({ showOpenerChip: v })} />
@@ -93,7 +95,7 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
 
         {/* Thème (couleurs/polices) + Modèles : globaux, visibles sur TOUTES les pages
             — permet de styler en live et de récupérer le modèle dans un autre catalogue. */}
-        <PageOptionsTheme plan={plan} setPlan={setPlan} chapterColor={chapterColor} />
+        <PageOptionsTheme plan={plan} setPlan={setPlan} />
 
         <p className="text-[11px] text-white/40 leading-relaxed">
           Réglages appliqués à toutes les pages du même type — la mise en page fluide et l'export restent préservés.
