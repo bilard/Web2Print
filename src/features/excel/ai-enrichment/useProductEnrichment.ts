@@ -3151,8 +3151,16 @@ function parseCharacteristicsBlob(blob: string): Record<string, string> {
  *  extensions retirées (gère les doubles .jpg.webp de Drupal imagecache). */
 function imageStem(url: string): string {
   try {
-    const path = new URL(url).pathname.replace(/\/$/, '')
+    const u = new URL(url)
+    const path = u.pathname.replace(/\/$/, '')
     const last = path.split('/').pop() || ''
+    // CDN à ASSET EN QUERY (Adobe Scene7 `/is/image/co?src=co/REF_A1&…`) : le
+    // pathname est identique pour TOUTES les vues — sans l'asset de la query,
+    // la dédup collapsait la galerie entière en 1 image. On stemme sur l'asset.
+    if (!/\.[a-z0-9]{2,5}$/i.test(last)) {
+      const asset = u.searchParams.get('src') || u.searchParams.get('image') || u.searchParams.get('asset')
+      if (asset) return asset.toLowerCase()
+    }
     return last.replace(/\.(jpe?g|png|webp|avif|gif|svg)(\.(jpe?g|png|webp|avif|gif))?$/i, '').toLowerCase()
   } catch { return url }
 }
