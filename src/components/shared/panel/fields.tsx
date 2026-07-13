@@ -1,5 +1,6 @@
 // Champs typés promus de src/features/retail-promo/promoPanelUi.tsx — repris VERBATIM
 // (aucun changement de logique), pour être partagés par tous les panneaux de propriétés.
+import { useState } from 'react'
 import type { ReactNode, Ref } from 'react'
 
 export const inputCls = 'w-full rounded border border-white/10 bg-well px-2 py-1 text-sm text-white outline-none focus:border-[#6366f1] placeholder:text-white/25 [&>option]:bg-neutral-900'
@@ -41,9 +42,31 @@ export function SliderField({ label, value, onChange, min = 0, max = 1, step = 0
   inputRef?: Ref<HTMLInputElement>
 }) {
   const isPct = unit === '%' && max <= 1
-  const shown = isPct ? `${Math.round(value * 100)} %` : `${Math.round(value * 100) / 100}${unit}`
+  // Champ numérique jumeau du curseur : édite la valeur AFFICHÉE (en % pour les
+  // sliders 0..1). `draft` laisse taper librement (champ vide, « 1. ») — la
+  // valeur n'est committée que si elle parse, et le blur resynchronise.
+  const numValue = isPct ? Math.round(value * 100) : Math.round(value * 100) / 100
+  const [draft, setDraft] = useState<string | null>(null)
+  const commit = (raw: string) => {
+    if (raw.trim() === '') return
+    const n = Number(raw.replace(',', '.'))
+    if (!Number.isFinite(n)) return
+    const v = isPct ? n / 100 : n
+    onChange(Math.min(max, Math.max(min, v)))
+  }
   return (
-    <label className={labelCls}>{label} ({shown})
+    <label className={labelCls}>
+      <span className="flex items-center justify-between gap-2">
+        <span className="truncate">{label}</span>
+        <span className="flex items-center gap-1 shrink-0 normal-case tracking-normal">
+          <input type="number" value={draft ?? String(numValue)}
+            min={isPct ? Math.round(min * 100) : min} max={isPct ? Math.round(max * 100) : max} step={isPct ? 1 : step}
+            onChange={(e) => { setDraft(e.target.value); commit(e.target.value) }}
+            onBlur={() => setDraft(null)}
+            className="w-14 rounded border border-white/10 bg-well px-1.5 py-0.5 text-[11px] text-white text-right tabular-nums outline-none focus:border-[#6366f1] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+          <span className="text-white/30">{unit}</span>
+        </span>
+      </span>
       <input ref={inputRef} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[#6366f1]" />
     </label>
   )
