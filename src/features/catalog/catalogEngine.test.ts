@@ -310,3 +310,22 @@ describe('paginateCatalog (flux continu par univers)', () => {
     expect(pages.map((p) => p.kind)).toEqual(['cover', 'toc', 'back-cover'])
   })
 })
+
+// Bug réel (Démo express trafic.com, 2026-07-13) : les VEDETTES sont placées
+// par leur propre file (featuredQueue) qui ne poussait jamais groupRows — sur
+// un catalogue 1 fiche/page où la fiche est vedette, la page n'avait AUCUN
+// bandeau de sous-famille, quelle que soit la case « Sous-famille ».
+describe('paginateCatalog — bandeau de section sur les pages VEDETTE', () => {
+  it('une vedette seule sur sa page porte le bandeau de sa sous-famille', () => {
+    const tree = [node('a', 'Maison', 1, [], [
+      node('a/b', 'Ventilateurs et climatiseurs', 2, ids(2, 'v')),
+    ])]
+    // featuredIds se lisent sur le NODE porteur des produits (a/b), pas l'univers.
+    const pages = paginateCatalog({ tree, sections: [sec('a', 1), sec('a/b', 1, ['v1'])] })
+    const grids = pages.filter((p) => p.kind === 'products')
+    // Chaque page (vedette comprise) doit marquer sa sous-famille.
+    for (const g of grids) {
+      expect(g.groupRows?.map((r) => r.label)).toContain('Ventilateurs et climatiseurs')
+    }
+  })
+})

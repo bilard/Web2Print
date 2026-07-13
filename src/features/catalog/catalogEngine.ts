@@ -316,11 +316,24 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
         })
         return true
       }
+      // Bandeau de section : première fiche du groupe SUR CETTE PAGE — pour le
+      // flux ET les vedettes (leur file séparée ne marquait pas le groupe → une
+      // page vedette 1/page perdait son bandeau de sous-famille).
+      const markGroup = (item: FlowItem) => {
+        const label = item.path.length > 1 ? item.path[item.path.length - 1] : null
+        if (label && !pageGroupLabels.has(label)) {
+          pageGroupLabels.add(label)
+          groupRows.push({ row: slots[slots.length - 1].row, label })
+        }
+      }
       if (featuredQueue.length > 0) {
         // Pleine page UNIQUEMENT pour l'ultime vedette sans plus rien à mixer ;
         // sinon grande carte plafonnée (le flux ou les autres vedettes complètent).
         const [w, h] = flowQueue.length === 0 && featuredQueue.length === 1 ? [C, R] : bigSpan(C, R)
-        if (place(featuredQueue[0], w, h)) featuredQueue.shift()
+        if (place(featuredQueue[0], w, h)) {
+          markGroup(featuredQueue[0])
+          featuredQueue.shift()
+        }
       }
       // Budget : UN agrandissement prix par page — sinon un univers cher (50 %
       // des produits > médiane) transforme « 6/page » en pages de 2-4 fiches.
@@ -342,11 +355,7 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
         if (isPriceUpgrade && priceUpgradesLeft <= 0) { w = 1; h = 1 }
         if (!place(item, w, h)) break // page pleine
         if (isPriceUpgrade && priceUpgradesLeft > 0) priceUpgradesLeft--
-        // Bandeau de section : première fiche du groupe SUR CETTE PAGE.
-        if (label && !pageGroupLabels.has(label)) {
-          pageGroupLabels.add(label)
-          groupRows.push({ row: slots[slots.length - 1].row, label })
-        }
+        markGroup(item)
         flowQueue.shift()
       }
       // Flux épuisé mais des vedettes restent : elles se PARTAGENT la page
@@ -354,6 +363,7 @@ export function paginateCatalog(input: PaginateInput): CatalogPageDescriptor[] {
       while (flowQueue.length === 0 && featuredQueue.length > 0 && slots.length < target) {
         const [w, h] = bigSpan(C, R)
         if (!place(featuredQueue[0], w, h)) break // plafond de rangées → suite page suivante
+        markGroup(featuredQueue[0])
         featuredQueue.shift()
       }
       if (slots.length === 0) break // garde théorique (grille 1×1 minimum → jamais atteint)
