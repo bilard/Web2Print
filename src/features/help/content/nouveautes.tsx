@@ -1,4 +1,4 @@
-import { Workflow, FileSpreadsheet, Image as ImageIcon, Send, TrendingUpDown } from 'lucide-react'
+import { Workflow, FileSpreadsheet, Image as ImageIcon, Send, TrendingUpDown, Sparkles, BookText } from 'lucide-react'
 import type { HelpSection } from './types'
 
 /**
@@ -9,8 +9,57 @@ export const nouveautesSection: HelpSection = {
   id: 'nouveautes',
   title: 'Nouveautés',
   category: 'Démarrage',
-  intro: 'Ce qui vient d\'arriver dans l\'application — juin 2026.',
+  intro: 'Ce qui vient d\'arriver dans l\'application — juin et juillet 2026.',
   blocks: [
+    {
+      type: 'text',
+      md: `### Démo express (nouveau module)
+
+Un wizard qui **ensemence tout le studio depuis le site d'un prospect** : société + URL → découverte automatique des rayons, scraping des produits, projet PIM, images au DAM, catalogue démo, carte promo et workflow. Volumétrie réglable, **consignes créatives** pour piloter le plan du catalogue, **console journal en direct** (étapes, appels IA avec coût, bilan par fiche), re-runs idempotents.
+
+_Détails : section **Démo express**._`,
+    },
+    {
+      type: 'menu-link',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.demo-express' },
+      label: 'Ouvrir Démo express',
+      icon: Sparkles,
+    },
+    {
+      type: 'text',
+      md: `### Catalogue studio : fiches produit sur mesure
+
+- **Densité des fiches** : modes **Exhaustif** (toute la donnée source, 2 fiches/page) et **Condensé** (4 fiches/page), plafonds « Puces max » / « Spécifications max » réglables.
+- **Tableau « Caractéristiques »** : specs en paires nom/valeur sur 2 colonnes, bloc de disposition à part, taille et police dédiées.
+- **Bandeau taxonomie (Univers › Famille)** : taille, couleur et police par niveau, réglable depuis « Prompt & style ».
+- **« Taille identique sur toutes les fiches »**, **« Texte sur 2 colonnes »** pour la description, **couleurs du thème éditables**, **ruban vedette** par produit.
+
+_Détails : section **Catalogue studio**._`,
+    },
+    {
+      type: 'menu-link',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.catalog' },
+      label: 'Ouvrir Catalogue studio',
+      icon: BookText,
+    },
+    {
+      type: 'text',
+      md: `### Scraping : textes fidèles et galeries pleine résolution
+
+- **Extraction verbatim** : les textes de la fiche (description, points forts) sont **recopiés de la source**, jamais rédigés par l'IA — structure (paragraphes, listes) préservée.
+- **Galeries d'images en pleine résolution** (Adobe Scene7, galeries Magento embarquées), sans doublons ni logos/drapeaux parasites.
+- **Fiches sans pollution** : menus, avis clients, footer et pages éditoriales sont écartés.
+
+_Détails : section **Web Scraping**._`,
+    },
+    {
+      type: 'text',
+      md: `### Fréquentation & trafic (administration)
+
+Tableau de bord d'audience **maison** (aucun tiers) dans **Utilisateurs & rôles → Analytics** : visites par période (« Aujourd'hui », 90 j, dates libres), pays et villes, journal de consultation groupé par utilisateur, **« Trafic en direct »**, **alertes Telegram** de visite, et la **PWA mobile « Pulse »**.
+
+_Détails : section **Fréquentation & trafic**._`,
+    },
     {
       type: 'text',
       md: `### Navigation & confort

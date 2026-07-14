@@ -39,6 +39,7 @@ const HELP_SECTION_ACCESS: Record<string, string | string[]> = {
   settings: 'settings.view',
   // Administration
   access: ADMIN_PERMISSION,
+  analytics: ADMIN_PERMISSION,
   explorer: ADMIN_PERMISSION,
 }
 

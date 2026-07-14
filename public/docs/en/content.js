@@ -107,8 +107,24 @@ export const MODULES = [
     "cat": "Getting started",
     "icon": "✨",
     "title": "What's new",
-    "intro": "What's just landed in the app — June 2026.",
+    "intro": "What's just landed in the app — June and July 2026.",
     "features": [
+      {
+        "title": "Express demo (new module)",
+        "desc": "A wizard that seeds the entire studio from a prospect's website: company + URL → automatic department discovery, product scraping, PIM project, images in the DAM, demo catalog, promo card and workflow."
+      },
+      {
+        "title": "Studio catalog: custom product cards",
+        "desc": "• Card density: Exhaustive (all the source data, 2 cards/page) and Condensed (4 cards/page) modes, with adjustable \"Max bullets\" / \"Max specifications\" caps."
+      },
+      {
+        "title": "Scraping: faithful text and full-resolution galleries",
+        "desc": "• Verbatim extraction: the sheet's text (description, highlights) is copied from the source, never written by the AI — structure (paragraphs, lists) preserved."
+      },
+      {
+        "title": "Audience & traffic (administration)",
+        "desc": "A home-grown audience dashboard (no third party) in Users & roles → Analytics: visits by period (\"Today\", 90 d, free dates), countries and cities, browsing log grouped by user, \"Live traffic\", alerts…"
+      },
       {
         "title": "Navigation & comfort",
         "desc": "• Command palette ⌘K / Ctrl+K: recent projects, modules, quick actions — from any page. • Notification centre (🔔 bottom left): history of workflow runs and exports, unread badge."
@@ -993,6 +1009,64 @@ export const MODULES = [
     "shortcuts": []
   },
   {
+    "id": "demo-express",
+    "cat": "Data",
+    "icon": "🎯",
+    "title": "Express demo",
+    "intro": "Enter a prospect's company and website: the studio fills itself — products, images, catalog, promo and workflow in the prospect's colours.",
+    "features": [
+      {
+        "title": "Launch a demo step by step",
+        "desc": "1. Fill in the prospect's Company (e.g. Jardiland) and the prospect's Website: the home address is enough, the demo drills down into the site's departments on its own and samples products spread across its universes. 2."
+      },
+      {
+        "title": "Automatic department discovery (and anti-bot stage)",
+        "desc": "You provide the site's base URL, not a listing page. If the home page is a \"hub\" with no product cards, the demo automatically drills down into the menu's sections and picks a few products per department, to cover the prospect's…"
+      },
+      {
+        "title": "Sheet enrichment: the real PIM engine",
+        "desc": "Every product page spotted goes through the PIM's enrichment engine (the same one as the Scraping module): name, description, reference, specifications, price, EAN, images… Editorial pages (business landing pages, guides) aren't thrown away: the demo drills back…"
+      },
+      {
+        "title": "Creative guidelines: drive the catalog plan",
+        "desc": "The Creative guidelines field (optional) drives the creative plan of the AI-generated catalog: layout, density, mood, cover (e.g. \"clean premium catalog, full-width list cards, summer-garden-mood cover\")."
+      },
+      {
+        "title": "Live log: a console pinned to the bottom of the screen",
+        "desc": "During the run, a terminal-style Log is pinned to the bottom of the screen (collapsible in one click, visible scrollbar)."
+      },
+      {
+        "title": "\"Discover your data\": everything is connected",
+        "desc": "At the end of the run, one card per seeded module lets you open the result directly:"
+      },
+      {
+        "title": "PIM — product data",
+        "desc": "A dedicated \"Demo {Company}\" Firestore database with the enriched products and their taxonomy — your existing data is never overwritten. If the studio is blank (the demo account's nominal case), the database is loaded on screen."
+      },
+      {
+        "title": "DAM — images",
+        "desc": "One image per product dropped into Drive, in a \"Demo {Company}\" folder. If Drive isn't connected or the quota is reached, the cells keep the images' external URLs (which remain displayed)."
+      },
+      {
+        "title": "Studio catalog",
+        "desc": "A catalog linked to the PIM source, assembled with the site's brand kit (extracted palette), an AI plan driven by your creative guidelines and a generated cover."
+      },
+      {
+        "title": "Promo sheet",
+        "desc": "A data-driven promo card in the prospect's colours (accent and banner taken from the brand kit), over the complete product snapshot."
+      },
+      {
+        "title": "\"Demo {Company}\" workflow",
+        "desc": "A workflow ready to replay: Scrape URLs (up to 3 real product URLs from the site) → Excel export. Ideal for demonstrating the automation live."
+      },
+      {
+        "title": "Good to know",
+        "desc": "• A clean failure rather than a junk catalog: without a single sheet carrying a product identity (reference/EAN — or price + real specs), the demo seeds nothing and invites you to try a department or product page URL."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
     "id": "taxonomies",
     "cat": "Data",
     "icon": "🌳",
@@ -1134,6 +1208,26 @@ export const MODULES = [
       {
         "title": "What exactly does \"Full product\" retrieve?",
         "desc": "All tabs (Scrape / Crawl / Map+Extract / Search) end with the same PIM engine (enrichProductCore), for a consistent result whichever path you take: • Specs in KEY/VALUE format (structured technical characteristics)."
+      },
+      {
+        "title": "Text faithful to the source (verbatim)",
+        "desc": "The AI copies the page's text, it never writes it. The description and the benefits are extracted word for word from the source — no rephrasing, no summarising, no translating."
+      },
+      {
+        "title": "The same quality on manufacturers and retailers (raw-HTML pass)",
+        "desc": "On top of the AI extraction, a deterministic pass over the page's raw HTML completes the sheet — specifications, benefits, PDF documents — with the same quality on a manufacturer site (Milwaukee, Dyson…) as on a retailer (Castoram…"
+      },
+      {
+        "title": "Full-resolution image galleries",
+        "desc": "The image pass rebuilds the galleries that classic rendering doesn't see: • Adobe Scene7 / Dynamic Media (the /is/image/ convention used by thousands of retailers): from a single detected view, the app derives the base name of…"
+      },
+      {
+        "title": "Sheets free of navigation pollution",
+        "desc": "E-commerce interface noise no longer contaminates the sheets: • Nested mega menus, account menu, mini-cart: their entries no longer become false specifications."
+      },
+      {
+        "title": "More reliable discovery on large sites",
+        "desc": "On very heavy category pages (SPAs over 1 MB), product discovery is made more reliable: the server timeout is extended to 3 minutes (instead of 1), and a second direct attempt is played before falling back to the department-by-department…"
       },
       {
         "title": "Scrape from the database (Map + Extract)",
@@ -1287,7 +1381,7 @@ export const MODULES = [
   {
     "id": "retail-promo",
     "cat": "Data",
-    "icon": "✦",
+    "icon": "🏷️",
     "title": "Studio creation",
     "intro": "Create and manage your retail promotions: visuals, offers and multi-format adaptations.",
     "features": [],
@@ -1311,6 +1405,46 @@ export const MODULES = [
       {
         "title": "Brand kit & inspiration source",
         "desc": "In the Prompt & style step, the Brand kit & attachments card drives the creative engine: • Attachments: add a logo, a brand-guidelines PDF or reference visuals."
+      },
+      {
+        "title": "Card density: Exhaustive or Condensed",
+        "desc": "In the \"Card style\" panel (Prompt & style step), \"Displayed elements\" section, two buttons under \"Details\" drive in one click the amount of data AND the grid density: • \"Exhaustive\" — all the source data (full bullets…"
+      },
+      {
+        "title": "\"Specifications\" table and Description block",
+        "desc": "The technical specifications detected in the source are rendered as a table of name/value pairs over 2 columns: name in bold on the left, value in the accent colour on the right, each pair on a tinted background, title as a pill."
+      },
+      {
+        "title": "\"Same size on all cards\"",
+        "desc": "At the top of \"Text: size & font\", the \"Same size on all cards\" checkbox neutralises the automatic hierarchy (magnified featured cards, per-page size adjustment): every product in the catalog shares the same size…"
+      },
+      {
+        "title": "Taxonomy banner (Universe › Family)",
+        "desc": "The header banner of the product pages shows the current Universe and Family. Its settings section, \"Taxonomy banner (Universe › Family)\", is available both in the Preview's \"Page background\" panel and in \"Card sty…"
+      },
+      {
+        "title": "Banner background colour modes",
+        "desc": "The background has two explicit modes, driven by the \"Colours per chapter (background = universe colour)\" toggle: • On: background = the chapter's colour — one swatch per universe, named after the real universe in your taxonomy (e.g."
+      },
+      {
+        "title": "Size, font and colour PER LEVEL (Universe / Family)",
+        "desc": "Beyond the global \"Size\" slider, each level is adjusted separately: \"Universe size\" and \"Family size\" (multiplicative scales, 1× = follows the global size), \"Universe font\" / \"Family font\" (\"Theme font\" = inherit…"
+      },
+      {
+        "title": "Section banner rule",
+        "desc": "The rule under the banner is controlled as an object of its own: a \"Section banner rule\" checkbox in \"Displayed elements\" to show/hide it, and a \"Section rule\" swatch among the colours (default: the theme's accent colour)."
+      },
+      {
+        "title": "Theme colours right from \"Prompt & style\"",
+        "desc": "The \"Theme colours\" section of the \"Card style\" panel exposes the global colours (accent, background, banner…) — the same swatches as the Preview's \"Page background\" panel, kept in sync: no more need to go to the Preview step t…"
+      },
+      {
+        "title": "Featured ribbon",
+        "desc": "Put a product forward in one click: double-click its card in the Preview to open product editing, then enable \"Featured ribbon (highlighted in this catalog)\"."
+      },
+      {
+        "title": "Guessed fields & link to the source sheet",
+        "desc": "When the source is connected, the card fields (name, image, price, strikethrough price, brand, reference, unit, description) AND the free fields of the \"Details\" area (VAT, benefits, specifications…) are guessed automatically from the col…"
       },
       {
         "title": "Export",
@@ -1438,7 +1572,7 @@ export const MODULES = [
       },
       {
         "title": "Ready-made templates",
-        "desc": "The Workflows page offers a \"Start from a template\" gallery: Scrape a site → PIM, Daily monitoring → Telegram (cron), Scrape → approval ✅ → PIM, Web search → Excel."
+        "desc": "The Workflows page offers a \"Start from a template\" gallery: Scrape a site → PIM, Daily monitoring → Telegram (cron), Scrape → approval ✅ → PIM, Web search → Excel, Price monitoring (competitor matrix) — your products compared…"
       },
       {
         "title": "Human approval (Telegram)",
@@ -1599,6 +1733,10 @@ export const MODULES = [
         "desc": "Create and edit the team's roles via a per-module permission matrix. Three views: Cards (by module), Tree (hierarchy) and Mind map (graph)."
       },
       {
+        "title": "\"Log\" and \"Analytics\" tabs",
+        "desc": "Two observation tabs round out rights management: • Log — the history of who did what (details: Audit log & My activity section)."
+      },
+      {
         "title": "Roles are entirely custom",
         "desc": "No role ships by default: you create the roles your team needs yourself (a name + a selection of permissions), and rename and delete them freely."
       },
@@ -1616,7 +1754,7 @@ export const MODULES = [
   {
     "id": "audit-log",
     "cat": "Administration",
-    "icon": "✦",
+    "icon": "🧾",
     "title": "Audit log & My activity",
     "intro": "Who did what, when. Each user finds their own actions in \"My activity\"; the administrator sees everything in the \"Log\", filterable and with the before/after of each change.",
     "features": [
@@ -1643,6 +1781,60 @@ export const MODULES = [
       {
         "title": "Who can see the full Log?",
         "desc": "Only the administrator (or the owner) sees the Log of all users, with the Who filter. A standard user only sees their own actions, in Settings → My activity."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "analytics",
+    "cat": "Administration",
+    "icon": "📈",
+    "title": "Audience & traffic",
+    "intro": "A complete audience dashboard — visitors, page views, countries, detailed log and live traffic — measured by IBS-Studio itself: no data is sent to any third-party service.",
+    "features": [
+      {
+        "title": "Periods, filters and indicators — the pinned banner",
+        "desc": "At the top of the dashboard, a banner gathers the period, the filters and the key indicators. It stays pinned to the top as you scroll: you keep the context in sight while browsing the chart, the log or the map."
+      },
+      {
+        "title": "The traffic chart",
+        "desc": "The top curve plots activity over the period: • Page views (indigo fill) and Visitors (cyan), point by point."
+      },
+      {
+        "title": "The browsing log",
+        "desc": "The \"Browsing log\" panel answers the who · when · which page question, with the User · Page · Device · Location · Date & time columns (the device details the OS and browser; the location shows \"City, Country\" a…"
+      },
+      {
+        "title": "Countries, cities and world map",
+        "desc": "• The world map places the connections city by city. • The \"Countries\" panel lists cities grouped by country, countries sorted by descending visits, each with its total, a proportion bar, the date of the last visit and the city det…"
+      },
+      {
+        "title": "\"Live traffic\" and Telegram alerts",
+        "desc": "The \"Live traffic\" panel shows the real-time stream of visits, in the same format as Telegram: 🟢 one line per page view from a signed-in user (name resolved), 🔵 the arrival of an anonymous visitor — with the zone, the page, the flag a…"
+      },
+      {
+        "title": "CSV export, \"Delete result\" and \"Clear\"",
+        "desc": "• CSV: downloads the page views for the displayed period and filters, for analysis in a spreadsheet."
+      },
+      {
+        "title": "\"Pulse\" — the mobile PWA",
+        "desc": "Pulse is the mobile version of the dashboard, at /pulse: Google sign-in then an administrator role check, and you get the same data — indicators, trend, filters and periods, log grouped by user, countries…"
+      },
+      {
+        "title": "Why aren't my own visits counted?",
+        "desc": "The owner account is excluded from tracking server-side: its page views are neither recorded nor notified, including on public pages (the last account signed in on the browser is recognised even without being authenticated on the landing…"
+      },
+      {
+        "title": "What does the \"Zone\" filter distinguish?",
+        "desc": "Website = the public pages (home, promo landing, documentation); Application = app usage by signed-in users (each module opened in the dashboard counts as a page, even without a URL change)."
+      },
+      {
+        "title": "\"No traffic data for this period\"",
+        "desc": "The message appears when no page view exists in the chosen window: widen the period (90 d, 12 months) or check the \"From / To\" dates in Custom mode."
+      },
+      {
+        "title": "Good to know",
+        "desc": "• The dashboard is restricted to administrators and the owner (Analytics tab of the Users & roles module, and the Pulse PWA)."
       }
     ],
     "shortcuts": []
@@ -2438,6 +2630,95 @@ export const STRINGS = {
   "Exporter": "Export",
   "À l'étape Export, deux sorties : • PDF écran — léger, pour l'aperçu et le partage web. • PDF print pro — haute définition, prêt pour l'impression.": "In the Export step, two outputs: • Screen PDF — lightweight, for preview and web sharing. • Pro print PDF — high resolution, ready for printing.",
   "• La source est relue au chargement du catalogue : si le PIM évolue, rouvrez le catalogue pour repartir des données à jour. • Pour des fiches promo unitaires (affiches, étiquettes) plutôt qu'un catalogue complet, voyez Création studio.": "• The source is re-read when the catalog loads: if the PIM changes, reopen the catalog to start from up-to-date data. • For standalone promo sheets (posters, labels) rather than a full catalog, see Studio creation.",
+  "Ce qui vient d'arriver dans l'application — juin et juillet 2026.": "What's just landed in the app — June and July 2026.",
+  "Démo express (nouveau module)": "Express demo (new module)",
+  "Un wizard qui ensemence tout le studio depuis le site d'un prospect : société + URL → découverte automatique des rayons, scraping des produits, projet PIM, images au DAM, catalogue démo, carte promo et workflow.": "A wizard that seeds the entire studio from a prospect's website: company + URL → automatic department discovery, product scraping, PIM project, images in the DAM, demo catalog, promo card and workflow.",
+  "Catalogue studio : fiches produit sur mesure": "Studio catalog: custom product cards",
+  "• Densité des fiches : modes Exhaustif (toute la donnée source, 2 fiches/page) et Condensé (4 fiches/page), plafonds « Puces max » / « Spécifications max » réglables.": "• Card density: Exhaustive (all the source data, 2 cards/page) and Condensed (4 cards/page) modes, with adjustable \"Max bullets\" / \"Max specifications\" caps.",
+  "Scraping : textes fidèles et galeries pleine résolution": "Scraping: faithful text and full-resolution galleries",
+  "• Extraction verbatim : les textes de la fiche (description, points forts) sont recopiés de la source, jamais rédigés par l'IA — structure (paragraphes, listes) préservée.": "• Verbatim extraction: the sheet's text (description, highlights) is copied from the source, never written by the AI — structure (paragraphs, lists) preserved.",
+  "Fréquentation & trafic (administration)": "Audience & traffic (administration)",
+  "Tableau de bord d'audience maison (aucun tiers) dans Utilisateurs & rôles → Analytics : visites par période (« Aujourd'hui », 90 j, dates libres), pays et villes, journal de consultation groupé par utilisateur, « Trafic en direct », alertes…": "A home-grown audience dashboard (no third party) in Users & roles → Analytics: visits by period (\"Today\", 90 d, free dates), countries and cities, browsing log grouped by user, \"Live traffic\", alerts…",
+  "Démo express": "Express demo",
+  "Saisissez la société et le site d’un prospect : le studio se remplit tout seul — produits, images, catalogue, promo et workflow à ses couleurs.": "Enter a prospect's company and website: the studio fills itself — products, images, catalog, promo and workflow in the prospect's colours.",
+  "Lancer une démo pas à pas": "Launch a demo step by step",
+  "1. Renseignez la Société du prospect (ex. Jardiland) et le Site du prospect : l'adresse d'accueil suffit, la démo descend toute seule dans les rayons du site et échantillonne les produits répartis sur ses univers. 2.": "1. Fill in the prospect's Company (e.g. Jardiland) and the prospect's Website: the home address is enough, the demo drills down into the site's departments on its own and samples products spread across its universes. 2.",
+  "Découverte automatique des rayons (et étage anti-bot)": "Automatic department discovery (and anti-bot stage)",
+  "Vous donnez l'URL de base du site, pas une page de listing. Si l'accueil est un « hub » sans cartes produit, la démo descend automatiquement dans les rubriques du menu et prélève quelques produits par rayon, pour couvrir la taxonomie du pro…": "You provide the site's base URL, not a listing page. If the home page is a \"hub\" with no product cards, the demo automatically drills down into the menu's sections and picks a few products per department, to cover the prospect's…",
+  "Enrichissement des fiches : le vrai moteur PIM": "Sheet enrichment: the real PIM engine",
+  "Chaque page produit repérée passe dans le moteur d'enrichissement du PIM (le même que le module Scraping) : nom, description, référence, spécifications, prix, EAN, images… Les pages éditoriales (landing métier, guide) ne sont pas jetées : l…": "Every product page spotted goes through the PIM's enrichment engine (the same one as the Scraping module): name, description, reference, specifications, price, EAN, images… Editorial pages (business landing pages, guides) aren't thrown away: the demo drills back…",
+  "Consignes créatives : pilotez le plan du catalogue": "Creative guidelines: drive the catalog plan",
+  "Le champ Consignes créatives (optionnel) pilote le plan créatif du catalogue généré par l'IA : mise en page, densité, ambiance, couverture (ex. « catalogue premium épuré, fiches en liste pleine largeur, couverture ambiance jardin d'été »).": "The Creative guidelines field (optional) drives the creative plan of the AI-generated catalog: layout, density, mood, cover (e.g. \"clean premium catalog, full-width list cards, summer-garden-mood cover\").",
+  "Journal live : une console fixée en bas de l'écran": "Live log: a console pinned to the bottom of the screen",
+  "Pendant le run, un Journal façon terminal est fixé en bas de l'écran (repliable d'un clic, barre de défilement visible).": "During the run, a terminal-style Log is pinned to the bottom of the screen (collapsible in one click, visible scrollbar).",
+  "« Découvrez vos données » : tout est relié": "\"Discover your data\": everything is connected",
+  "À la fin du run, une carte par module ensemencé permet d'ouvrir directement le résultat :": "At the end of the run, one card per seeded module lets you open the result directly:",
+  "PIM — données produits": "PIM — product data",
+  "Une base Firestore dédiée « Démo {Société} » avec les produits enrichis et leur taxonomie — jamais d'écrasement de vos données existantes. Si le studio est vierge (cas nominal du compte démo), la base est chargée à l'écran.": "A dedicated \"Demo {Company}\" Firestore database with the enriched products and their taxonomy — your existing data is never overwritten. If the studio is blank (the demo account's nominal case), the database is loaded on screen.",
+  "DAM — images": "DAM — images",
+  "Une image par produit déposée dans le Drive, dossier « Démo {Société} ». Si le Drive n'est pas connecté ou le quota atteint, les cellules gardent les URLs externes des images (qui restent affichées).": "One image per product dropped into Drive, in a \"Demo {Company}\" folder. If Drive isn't connected or the quota is reached, the cells keep the images' external URLs (which remain displayed).",
+  "Un catalogue lié à la source PIM, monté avec la charte du site (palette extraite), un plan IA piloté par vos consignes créatives et une couverture générée.": "A catalog linked to the PIM source, assembled with the site's brand kit (extracted palette), an AI plan driven by your creative guidelines and a generated cover.",
+  "Fiche promo": "Promo sheet",
+  "Une carte promo data-driven aux couleurs du prospect (accent et bandeau issus de la charte), sur l'instantané complet des produits.": "A data-driven promo card in the prospect's colours (accent and banner taken from the brand kit), over the complete product snapshot.",
+  "Workflow « Démo {Société} »": "\"Demo {Company}\" workflow",
+  "Un workflow prêt à rejouer : Scraper des URLs (jusqu'à 3 vraies URLs produits du site) → Export Excel. Idéal pour montrer l'automatisation en live.": "A workflow ready to replay: Scrape URLs (up to 3 real product URLs from the site) → Excel export. Ideal for demonstrating the automation live.",
+  "• Échec franc plutôt que catalogue parasite : sans la moindre fiche à identité produit (référence/EAN — ou prix + vraies specs), la démo n'ensemence rien et vous invite à essayer une URL de rayon ou de fiche produit.": "• A clean failure rather than a junk catalog: without a single sheet carrying a product identity (reference/EAN — or price + real specs), the demo seeds nothing and invites you to try a department or product page URL.",
+  "Textes fidèles à la source (verbatim)": "Text faithful to the source (verbatim)",
+  "L'IA recopie les textes de la page, elle ne les rédige jamais. La description et les avantages sont extraits mot pour mot depuis la source — sans reformuler, sans résumer, sans traduire.": "The AI copies the page's text, it never writes it. The description and the benefits are extracted word for word from the source — no rephrasing, no summarising, no translating.",
+  "Même qualité sur fabricants et retailers (passe HTML brut)": "The same quality on manufacturers and retailers (raw-HTML pass)",
+  "En complément de l'extraction IA, une passe déterministe sur le HTML brut de la page complète la fiche — spécifications, avantages, documents PDF — avec la même qualité sur un site fabricant (Milwaukee, Dyson…) que sur un retailer (Castoram…": "On top of the AI extraction, a deterministic pass over the page's raw HTML completes the sheet — specifications, benefits, PDF documents — with the same quality on a manufacturer site (Milwaukee, Dyson…) as on a retailer (Castoram…",
+  "Galeries d'images en pleine résolution": "Full-resolution image galleries",
+  "La passe images reconstruit les galeries que le rendu classique ne voit pas : • Adobe Scene7 / Dynamic Media (convention /is/image/ utilisée par des milliers de retailers) : à partir d'une seule vue détectée, l'app déduit le nom de base de…": "The image pass rebuilds the galleries that classic rendering doesn't see: • Adobe Scene7 / Dynamic Media (the /is/image/ convention used by thousands of retailers): from a single detected view, the app derives the base name of…",
+  "Fiches sans pollution de navigation": "Sheets free of navigation pollution",
+  "Le bruit d'interface des sites e-commerce ne contamine plus les fiches : • Méga-menus imbriqués, menu compte, mini-panier : leurs entrées ne deviennent plus de fausses caractéristiques.": "E-commerce interface noise no longer contaminates the sheets: • Nested mega menus, account menu, mini-cart: their entries no longer become false specifications.",
+  "Découverte plus fiable sur les gros sites": "More reliable discovery on large sites",
+  "Sur les pages catégories très lourdes (SPA de plus d'1 Mo), la découverte de produits est fiabilisée : le délai serveur est étendu à 3 minutes (au lieu d'1), et une seconde tentative directe est jouée avant de basculer sur la descente par r…": "On very heavy category pages (SPAs over 1 MB), product discovery is made more reliable: the server timeout is extended to 3 minutes (instead of 1), and a second direct attempt is played before falling back to the department-by-department…",
+  "Densité des fiches : Exhaustif ou Condensé": "Card density: Exhaustive or Condensed",
+  "Dans le panneau « Style des fiches » (étape Prompt & style), section « Éléments affichés », deux boutons sous « Détails » pilotent d'un clic la quantité de données ET la densité de grille : • « Exhaustif » — toute la donnée source (puces in…": "In the \"Card style\" panel (Prompt & style step), \"Displayed elements\" section, two buttons under \"Details\" drive in one click the amount of data AND the grid density: • \"Exhaustive\" — all the source data (full bullets…",
+  "Tableau « Caractéristiques » et bloc Description": "\"Specifications\" table and Description block",
+  "Les spécifications techniques détectées dans la source sont rendues en tableau de paires nom/valeur sur 2 colonnes : nom en gras à gauche, valeur en couleur d'accent à droite, chaque paire sur un fond teinté, titre en pastille.": "The technical specifications detected in the source are rendered as a table of name/value pairs over 2 columns: name in bold on the left, value in the accent colour on the right, each pair on a tinted background, title as a pill.",
+  "« Taille identique sur toutes les fiches »": "\"Same size on all cards\"",
+  "En tête de « Texte : taille & police », la case « Taille identique sur toutes les fiches » neutralise la hiérarchie automatique (fiches vedette magnifiées, ajustement de taille par page) : tous les produits du catalogue partagent la même ta…": "At the top of \"Text: size & font\", the \"Same size on all cards\" checkbox neutralises the automatic hierarchy (magnified featured cards, per-page size adjustment): every product in the catalog shares the same size…",
+  "Bandeau taxonomie (Univers › Famille)": "Taxonomy banner (Universe › Family)",
+  "Le bandeau de tête des pages produits affiche l'Univers et la Famille courants. Sa section de réglages, « Bandeau taxonomie (Univers › Famille) », est disponible à la fois dans le panneau « Fond de page » de l'Aperçu et dans « Style des fic…": "The header banner of the product pages shows the current Universe and Family. Its settings section, \"Taxonomy banner (Universe › Family)\", is available both in the Preview's \"Page background\" panel and in \"Card sty…",
+  "Régime de couleur du fond du bandeau": "Banner background colour modes",
+  "Le fond a deux régimes explicites, pilotés par l'interrupteur « Couleurs par chapitre (fond = couleur de l'univers) » : • Activé : fond = couleur du chapitre — une pastille par univers, nommée d'après l'univers réel de votre taxonomie (ex.": "The background has two explicit modes, driven by the \"Colours per chapter (background = universe colour)\" toggle: • On: background = the chapter's colour — one swatch per universe, named after the real universe in your taxonomy (e.g.",
+  "Taille, police et couleur PAR NIVEAU (Univers / Famille)": "Size, font and colour PER LEVEL (Universe / Family)",
+  "Au-delà du curseur « Taille » global, chaque niveau se règle séparément : « Taille Univers » et « Taille Famille » (échelles multiplicatives, 1× = suit la taille globale), « Police Univers » / « Police Famille » (« Police du thème » = hérit…": "Beyond the global \"Size\" slider, each level is adjusted separately: \"Universe size\" and \"Family size\" (multiplicative scales, 1× = follows the global size), \"Universe font\" / \"Family font\" (\"Theme font\" = inherit…",
+  "Filet du bandeau de section": "Section banner rule",
+  "Le filet sous le bandeau se pilote comme un objet à part : case « Filet du bandeau de section » dans « Éléments affichés » pour l'afficher/masquer, et pastille « Filet section » dans les couleurs (par défaut : couleur d'accent du thème).": "The rule under the banner is controlled as an object of its own: a \"Section banner rule\" checkbox in \"Displayed elements\" to show/hide it, and a \"Section rule\" swatch among the colours (default: the theme's accent colour).",
+  "Couleurs du thème dès « Prompt & style »": "Theme colours right from \"Prompt & style\"",
+  "La section « Couleurs du thème » du panneau « Style des fiches » expose les couleurs globales (accent, fond, bandeau…) — les mêmes pastilles que le panneau « Fond de page » de l'Aperçu, synchronisées : plus besoin d'aller à l'étape Aperçu p…": "The \"Theme colours\" section of the \"Card style\" panel exposes the global colours (accent, background, banner…) — the same swatches as the Preview's \"Page background\" panel, kept in sync: no more need to go to the Preview step t…",
+  "Ruban vedette": "Featured ribbon",
+  "Mettez un produit en avant d'un clic : double-cliquez sa fiche dans l'Aperçu pour ouvrir l'édition du produit, puis activez « Ruban vedette (mise en avant dans ce catalogue) ».": "Put a product forward in one click: double-click its card in the Preview to open product editing, then enable \"Featured ribbon (highlighted in this catalog)\".",
+  "Champs devinés & lien vers la fiche source": "Guessed fields & link to the source sheet",
+  "À la connexion de la source, les champs de fiche (nom, image, prix, prix barré, marque, référence, unité, description) ET les champs libres de la zone « Détails » (TVA, avantages, spécifications…) sont devinés automatiquement depuis les col…": "When the source is connected, the card fields (name, image, price, strikethrough price, brand, reference, unit, description) AND the free fields of the \"Details\" area (VAT, benefits, specifications…) are guessed automatically from the col…",
+  "La page Workflows propose une galerie « Démarrer depuis un modèle » : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel, Veille tarifaire (matrice concurrents) — tes produits co…": "The Workflows page offers a \"Start from a template\" gallery: Scrape a site → PIM, Daily monitoring → Telegram (cron), Scrape → approval ✅ → PIM, Web search → Excel, Price monitoring (competitor matrix) — your products compared…",
+  "Onglets « Journal » et « Analytics »": "\"Log\" and \"Analytics\" tabs",
+  "Deux onglets d'observation complètent la gestion des droits : • Journal — l'historique de qui a fait quoi (détails : section Journal d'audit & Mon activité).": "Two observation tabs round out rights management: • Log — the history of who did what (details: Audit log & My activity section).",
+  "Fréquentation & trafic": "Audience & traffic",
+  "Un tableau de bord d'audience complet — visiteurs, pages vues, pays, journal détaillé et trafic en direct — mesuré par IBS-Studio lui-même : aucune donnée n'est envoyée à un service tiers.": "A complete audience dashboard — visitors, page views, countries, detailed log and live traffic — measured by IBS-Studio itself: no data is sent to any third-party service.",
+  "Périodes, filtres et indicateurs — le bandeau épinglé": "Periods, filters and indicators — the pinned banner",
+  "En haut du tableau de bord, un bandeau regroupe la période, les filtres et les indicateurs clés. Il reste épinglé en haut pendant le défilement : vous gardez le contexte sous les yeux en parcourant le graphe, le journal ou la carte.": "At the top of the dashboard, a banner gathers the period, the filters and the key indicators. It stays pinned to the top as you scroll: you keep the context in sight while browsing the chart, the log or the map.",
+  "Le graphe de trafic": "The traffic chart",
+  "La courbe du haut trace l'activité sur la période : • Pages vues (aplat indigo) et Visiteurs (cyan), point par point.": "The top curve plots activity over the period: • Page views (indigo fill) and Visitors (cyan), point by point.",
+  "Le journal de consultation": "The browsing log",
+  "Le panneau « Journal de consultation » répond à la question qui · quand · quelle page, avec les colonnes Utilisateur · Page · Appareil · Lieu · Date & heure (l'appareil précise le système et le navigateur ; le lieu affiche « Ville, Pays » e…": "The \"Browsing log\" panel answers the who · when · which page question, with the User · Page · Device · Location · Date & time columns (the device details the OS and browser; the location shows \"City, Country\" a…",
+  "Pays, villes et carte du monde": "Countries, cities and world map",
+  "• La carte du monde situe les connexions ville par ville. • Le panneau « Pays » liste les villes groupées par pays, pays triés par visites décroissantes, avec pour chacun le total, une barre de proportion, la date de dernière visite et le d…": "• The world map places the connections city by city. • The \"Countries\" panel lists cities grouped by country, countries sorted by descending visits, each with its total, a proportion bar, the date of the last visit and the city det…",
+  "« Trafic en direct » et alertes Telegram": "\"Live traffic\" and Telegram alerts",
+  "Le panneau « Trafic en direct » affiche le flux temps réel des visites, au même format que Telegram : 🟢 une ligne par page vue d'un utilisateur connecté (nom résolu), 🔵 l'arrivée d'un visiteur anonyme — avec la zone, la page, le drapeau e…": "The \"Live traffic\" panel shows the real-time stream of visits, in the same format as Telegram: 🟢 one line per page view from a signed-in user (name resolved), 🔵 the arrival of an anonymous visitor — with the zone, the page, the flag a…",
+  "Export CSV, « Supprimer le résultat » et « Vider »": "CSV export, \"Delete result\" and \"Clear\"",
+  "• CSV : télécharge les consultations de la période et des filtres affichés, pour analyse dans un tableur.": "• CSV: downloads the page views for the displayed period and filters, for analysis in a spreadsheet.",
+  "« Pulse » — la PWA mobile": "\"Pulse\" — the mobile PWA",
+  "Pulse est la version mobile du tableau de bord, à l'adresse /pulse : connexion Google puis contrôle du rôle administrateur, et vous retrouvez les mêmes données — indicateurs, tendance, filtres et périodes, journal groupé par utilisateur, pa…": "Pulse is the mobile version of the dashboard, at /pulse: Google sign-in then an administrator role check, and you get the same data — indicators, trend, filters and periods, log grouped by user, countries…",
+  "Pourquoi mes propres visites ne sont-elles pas comptées ?": "Why aren't my own visits counted?",
+  "Le compte propriétaire est exclu du tracking côté serveur : ses pages vues ne sont ni enregistrées ni notifiées, y compris sur les pages publiques (le dernier compte connecté sur le navigateur est reconnu même sans être authentifié sur la l…": "The owner account is excluded from tracking server-side: its page views are neither recorded nor notified, including on public pages (the last account signed in on the browser is recognised even without being authenticated on the landing…",
+  "Que distingue le filtre « Zone » ?": "What does the \"Zone\" filter distinguish?",
+  "Site web = les pages publiques (accueil, landing promo, documentation) ; Application = l'usage de l'app par les utilisateurs connectés (chaque module ouvert dans le dashboard compte comme une page, même sans changement d'URL).": "Website = the public pages (home, promo landing, documentation); Application = app usage by signed-in users (each module opened in the dashboard counts as a page, even without a URL change).",
+  "« Aucune donnée de trafic sur cette période »": "\"No traffic data for this period\"",
+  "Le message apparaît quand aucune consultation n'existe dans la fenêtre choisie : élargissez la période (90 j, 12 mois) ou vérifiez les dates « Du / Au » en mode Perso.": "The message appears when no page view exists in the chosen window: widen the period (90 d, 12 months) or check the \"From / To\" dates in Custom mode.",
+  "• Le tableau de bord est réservé aux administrateurs et au propriétaire (onglet Analytics du module Utilisateurs & rôles, et PWA Pulse).": "• The dashboard is restricted to administrators and the owner (Analytics tab of the Users & roles module, and the Pulse PWA).",
   "Lien vers": "Link to",
   "Aucun résultat pour": "No results for"
 }

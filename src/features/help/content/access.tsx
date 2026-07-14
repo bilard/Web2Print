@@ -58,6 +58,14 @@ Les permissions sont **hiérarchiques** : la visibilité d'un module (*« voir �
     },
     {
       type: 'text',
+      md: `### Onglets « Journal » et « Analytics »
+
+Deux onglets d'observation complètent la gestion des droits :
+- **Journal** — l'historique de qui a fait quoi (détails : section **Journal d'audit & Mon activité**).
+- **Analytics** — la fréquentation du site et de l'app : visites, pays, journal de consultation, trafic en direct (détails : section **Fréquentation & trafic**).`,
+    },
+    {
+      type: 'text',
       md: `### Les rôles sont entièrement personnalisés
 
 Aucun rôle n'est livré par défaut : tu **crées toi-même** les rôles dont l'équipe a besoin (un nom + une sélection de permissions), tu les **renommes** et les **supprimes** librement.
@@ -68,7 +76,9 @@ Aucun rôle n'est livré par défaut : tu **crées toi-même** les rôles dont l
       type: 'text',
       md: `### Modules couverts par les permissions
 
-Bibliothèque, Import (par format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, Chat IA, Telegram et Paramètres — chacun avec ses actions (créer, éditer, supprimer, exporter, exécuter…).`,
+Bibliothèque, Import (par format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, Chat IA, Telegram et Paramètres — chacun avec ses actions (créer, éditer, supprimer, exporter, exécuter…).
+
+Exemple de droit d'action fin : **« Envoyer des messages Telegram »** (\`telegram.send\`) gouverne l'envoi — sans lui, un utilisateur peut voir Telegram mais **ni envoyer un message, ni exécuter le node « Envoyer via Telegram »** d'un workflow.`,
     },
     {
       type: 'text',

@@ -18,6 +18,7 @@ import { importPdfToSvgSection } from './import-pdf-to-svg'
 import { pimSection } from './pim'
 import { taxonomiesSection } from './taxonomies'
 import { briefsSection } from './briefs'
+import { demoExpressSection } from './demo-express'
 import { scrapingSection } from './scraping'
 import { scrapingTemplatesSection } from './scraping-templates'
 import { scrapingHubSection } from './scraping-hub'
@@ -30,6 +31,7 @@ import { workflowSection } from './workflow'
 import { hyperframesSection } from './hyperframes'
 import { chatSection } from './chat'
 import { accessSection } from './access'
+import { analyticsSection } from './analytics'
 import { auditLogSection } from './audit-log'
 import { settingsSection } from './settings'
 import { explorerSection } from './explorer'
@@ -53,6 +55,7 @@ export const helpSections: HelpSection[] = [
   importPdfToSvgSection,
   damSection,
   pimSection,
+  demoExpressSection,
   taxonomiesSection,
   briefsSection,
   scrapingSection,
@@ -67,6 +70,7 @@ export const helpSections: HelpSection[] = [
   chatSection,
   accessSection,
   auditLogSection,
+  analyticsSection,
   settingsSection,
   explorerSection,
 ]

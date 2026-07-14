@@ -164,7 +164,7 @@ Les workflows se déclenchent aussi à distance : \`/flow <demande>\` génère e
       type: 'text',
       md: `### Modèles prêts à l'emploi
 
-La page Workflows propose une galerie **« Démarrer depuis un modèle »** : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel. Un clic crée le workflow complet — il ne reste qu'à coller tes URLs et choisir le projet cible.`,
+La page Workflows propose une galerie **« Démarrer depuis un modèle »** : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel, **Veille tarifaire (matrice concurrents)** — tes produits comparés chez plusieurs concurrents (appariement SKU/EAN puis nom), tableau de bord « Veille tarifaire » rempli et alerte Telegram seulement si un concurrent est moins cher ou a bougé. Un clic crée le workflow complet — il ne reste qu'à coller tes URLs et choisir le projet cible.`,
     },
     {
       type: 'text',

@@ -115,6 +115,58 @@ Si une page revient quasi vide, l'app conserve quand même le **résultat partie
     },
     {
       type: 'text',
+      md: `### Textes fidèles à la source (verbatim)
+
+L'IA **recopie** les textes de la page, elle ne les rédige jamais. La description et les avantages sont extraits **mot pour mot** depuis la source — sans reformuler, sans résumer, sans traduire. Vous obtenez le texte du fabricant ou du distributeur, pas une paraphrase générée.
+
+La description conserve aussi la **structure d'origine** : retours à la ligne entre paragraphes et listes à puces sont préservés tels qu'ils apparaissent sur la page. Le fil d'Ariane est lui aussi recopié verbatim, ce qui fiabilise la taxonomie.`,
+    },
+    {
+      type: 'text',
+      md: `### Même qualité sur fabricants et retailers (passe HTML brut)
+
+En complément de l'extraction IA, une **passe déterministe sur le HTML brut** de la page complète la fiche — spécifications, avantages, documents PDF — avec la même qualité sur un site fabricant (Milwaukee, Dyson…) que sur un retailer (Castorama, Jardiland, Screwfix…).
+
+Cette passe est **additive** : elle n'écrase rien, elle comble les manques. Elle lit directement le code source, donc elle récupère aussi ce que le rendu navigateur cache :
+
+- les **listes repliées derrière « Voir plus »** (avantages et specs complets, pas seulement les 3 premières lignes visibles) ;
+- les tableaux de caractéristiques présents dans la page mais masqués derrière des onglets ou accordéons.
+
+Zéro hallucination possible sur ces champs : ce sont des parsers déterministes, pas un LLM.`,
+    },
+    {
+      type: 'text',
+      md: `### Galeries d'images en pleine résolution
+
+La passe images reconstruit les galeries que le rendu classique ne voit pas :
+
+- **Adobe Scene7 / Dynamic Media** (convention \`/is/image/\` utilisée par des milliers de retailers) : à partir d'une seule vue détectée, l'app déduit le nom de base de l'asset et reconstruit **toutes les vues du carrousel** mentionnées dans la page — là où l'extraction classique ne voyait aucune photo.
+- **Galeries JSON embarquées** (Magento \`mage/gallery\` et similaires) : chaque vue expose une variante miniature/moyenne/pleine — l'app prend systématiquement la **pleine résolution**.
+- La **déduplication respecte les galeries** : les différentes vues d'un même produit (face, profil, détail…) ne sont plus fusionnées en une seule image.
+- Les **drapeaux, icônes de réseaux sociaux, logos de paiement et pixels de consentement** sont définitivement écartés des photos produit.`,
+    },
+    {
+      type: 'text',
+      md: `### Fiches sans pollution de navigation
+
+Le bruit d'interface des sites e-commerce ne contamine plus les fiches :
+
+- **Méga-menus imbriqués, menu compte, mini-panier** : leurs entrées ne deviennent plus de fausses caractéristiques.
+- **Footer complet** (store locator « Trouver un magasin », moyens de paiement, adresses, mentions légales, plan du site, newsletter) : exclu des specs.
+- **Avis clients** (notes « 4,5/5 », commentaires) : neutralisés, ils ne remontent ni en specs ni en description.
+- **Overlays de recherche, CGV, bannières cookies, sentinelles techniques internes** : filtrés.
+- Les **« Points forts »** ne reprennent plus l'UI du compte client, le widget de stock (« En rupture… ») ni le titre du produit — uniquement les vrais bénéfices rédigés par la source.
+
+Ces filtres sont validés sur des fixtures réelles (Screwfix, Castorama, Jardiland…) et fonctionnent sans aucun code spécifique par enseigne.`,
+    },
+    {
+      type: 'text',
+      md: `### Découverte plus fiable sur les gros sites
+
+Sur les pages catégories très lourdes (SPA de plus d'1 Mo), la découverte de produits est fiabilisée : le **délai serveur est étendu à 3 minutes** (au lieu d'1), et une **seconde tentative directe** est jouée avant de basculer sur la descente par rayons. Résultat : moins de découvertes qui retombent sur des liens parasites (cookies, actualités) faute de temps.`,
+    },
+    {
+      type: 'text',
       md: `### Scraper depuis la BDD (Map + Extract)
 
 Quand tu n'as pas encore de template, ou pour explorer un nouveau site :

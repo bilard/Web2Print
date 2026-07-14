@@ -20,7 +20,7 @@ const ICON = {
   dam: '🖼️', pim: '📦', taxonomies: '🌳', briefs: '📝',
   scraping: '🕸️', 'scraping-templates': '🧩', 'scraping-hub': '🛰️', 'price-watch': '💰', catalog: '📕',
   export: '📤', workflow: '⚡', telegram: '✈️', chat: '💬', access: '🛡️', settings: '⚙️',
-  explorer: '🗺️',
+  explorer: '🗺️', 'retail-promo': '🏷️', 'audit-log': '🧾', 'demo-express': '🎯', analytics: '📈',
 }
 // Métadonnées d'affichage des 8 catégories (ordre = ordre des sections).
 const CATEGORIES = [

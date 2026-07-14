@@ -110,8 +110,24 @@ export const MODULES = [
     "cat": "Démarrage",
     "icon": "✨",
     "title": "Nouveautés",
-    "intro": "Ce qui vient d'arriver dans l'application — juin 2026.",
+    "intro": "Ce qui vient d'arriver dans l'application — juin et juillet 2026.",
     "features": [
+      {
+        "title": "Démo express (nouveau module)",
+        "desc": "Un wizard qui ensemence tout le studio depuis le site d'un prospect : société + URL → découverte automatique des rayons, scraping des produits, projet PIM, images au DAM, catalogue démo, carte promo et workflow."
+      },
+      {
+        "title": "Catalogue studio : fiches produit sur mesure",
+        "desc": "• Densité des fiches : modes Exhaustif (toute la donnée source, 2 fiches/page) et Condensé (4 fiches/page), plafonds « Puces max » / « Spécifications max » réglables."
+      },
+      {
+        "title": "Scraping : textes fidèles et galeries pleine résolution",
+        "desc": "• Extraction verbatim : les textes de la fiche (description, points forts) sont recopiés de la source, jamais rédigés par l'IA — structure (paragraphes, listes) préservée."
+      },
+      {
+        "title": "Fréquentation & trafic (administration)",
+        "desc": "Tableau de bord d'audience maison (aucun tiers) dans Utilisateurs & rôles → Analytics : visites par période (« Aujourd'hui », 90 j, dates libres), pays et villes, journal de consultation groupé par utilisateur, « Trafic en direct », alertes…"
+      },
       {
         "title": "Navigation & confort",
         "desc": "• Palette de commandes ⌘K / Ctrl+K : projets récents, modules, actions rapides — depuis n'importe quelle page. • Centre de notifications (🔔 en bas à gauche) : historique des runs de workflows et des exports, badge de non-lus."
@@ -996,6 +1012,64 @@ export const MODULES = [
     "shortcuts": []
   },
   {
+    "id": "demo-express",
+    "cat": "Données",
+    "icon": "🎯",
+    "title": "Démo express",
+    "intro": "Saisissez la société et le site d’un prospect : le studio se remplit tout seul — produits, images, catalogue, promo et workflow à ses couleurs.",
+    "features": [
+      {
+        "title": "Lancer une démo pas à pas",
+        "desc": "1. Renseignez la Société du prospect (ex. Jardiland) et le Site du prospect : l'adresse d'accueil suffit, la démo descend toute seule dans les rayons du site et échantillonne les produits répartis sur ses univers. 2."
+      },
+      {
+        "title": "Découverte automatique des rayons (et étage anti-bot)",
+        "desc": "Vous donnez l'URL de base du site, pas une page de listing. Si l'accueil est un « hub » sans cartes produit, la démo descend automatiquement dans les rubriques du menu et prélève quelques produits par rayon, pour couvrir la taxonomie du pro…"
+      },
+      {
+        "title": "Enrichissement des fiches : le vrai moteur PIM",
+        "desc": "Chaque page produit repérée passe dans le moteur d'enrichissement du PIM (le même que le module Scraping) : nom, description, référence, spécifications, prix, EAN, images… Les pages éditoriales (landing métier, guide) ne sont pas jetées : l…"
+      },
+      {
+        "title": "Consignes créatives : pilotez le plan du catalogue",
+        "desc": "Le champ Consignes créatives (optionnel) pilote le plan créatif du catalogue généré par l'IA : mise en page, densité, ambiance, couverture (ex. « catalogue premium épuré, fiches en liste pleine largeur, couverture ambiance jardin d'été »)."
+      },
+      {
+        "title": "Journal live : une console fixée en bas de l'écran",
+        "desc": "Pendant le run, un Journal façon terminal est fixé en bas de l'écran (repliable d'un clic, barre de défilement visible)."
+      },
+      {
+        "title": "« Découvrez vos données » : tout est relié",
+        "desc": "À la fin du run, une carte par module ensemencé permet d'ouvrir directement le résultat :"
+      },
+      {
+        "title": "PIM — données produits",
+        "desc": "Une base Firestore dédiée « Démo {Société} » avec les produits enrichis et leur taxonomie — jamais d'écrasement de vos données existantes. Si le studio est vierge (cas nominal du compte démo), la base est chargée à l'écran."
+      },
+      {
+        "title": "DAM — images",
+        "desc": "Une image par produit déposée dans le Drive, dossier « Démo {Société} ». Si le Drive n'est pas connecté ou le quota atteint, les cellules gardent les URLs externes des images (qui restent affichées)."
+      },
+      {
+        "title": "Catalogue studio",
+        "desc": "Un catalogue lié à la source PIM, monté avec la charte du site (palette extraite), un plan IA piloté par vos consignes créatives et une couverture générée."
+      },
+      {
+        "title": "Fiche promo",
+        "desc": "Une carte promo data-driven aux couleurs du prospect (accent et bandeau issus de la charte), sur l'instantané complet des produits."
+      },
+      {
+        "title": "Workflow « Démo {Société} »",
+        "desc": "Un workflow prêt à rejouer : Scraper des URLs (jusqu'à 3 vraies URLs produits du site) → Export Excel. Idéal pour montrer l'automatisation en live."
+      },
+      {
+        "title": "Bon à savoir",
+        "desc": "• Échec franc plutôt que catalogue parasite : sans la moindre fiche à identité produit (référence/EAN — ou prix + vraies specs), la démo n'ensemence rien et vous invite à essayer une URL de rayon ou de fiche produit."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
     "id": "taxonomies",
     "cat": "Données",
     "icon": "🌳",
@@ -1137,6 +1211,26 @@ export const MODULES = [
       {
         "title": "Que récupère « Produit complet » exactement ?",
         "desc": "Tous les onglets (Scrape / Crawl / Map+Extract / Recherche) finissent par le même moteur PIM (enrichProductCore), pour un résultat homogène quel que soit le chemin : • Specs au format KEY/VALUE (caractéristiques techniques structurées)."
+      },
+      {
+        "title": "Textes fidèles à la source (verbatim)",
+        "desc": "L'IA recopie les textes de la page, elle ne les rédige jamais. La description et les avantages sont extraits mot pour mot depuis la source — sans reformuler, sans résumer, sans traduire."
+      },
+      {
+        "title": "Même qualité sur fabricants et retailers (passe HTML brut)",
+        "desc": "En complément de l'extraction IA, une passe déterministe sur le HTML brut de la page complète la fiche — spécifications, avantages, documents PDF — avec la même qualité sur un site fabricant (Milwaukee, Dyson…) que sur un retailer (Castoram…"
+      },
+      {
+        "title": "Galeries d'images en pleine résolution",
+        "desc": "La passe images reconstruit les galeries que le rendu classique ne voit pas : • Adobe Scene7 / Dynamic Media (convention /is/image/ utilisée par des milliers de retailers) : à partir d'une seule vue détectée, l'app déduit le nom de base de…"
+      },
+      {
+        "title": "Fiches sans pollution de navigation",
+        "desc": "Le bruit d'interface des sites e-commerce ne contamine plus les fiches : • Méga-menus imbriqués, menu compte, mini-panier : leurs entrées ne deviennent plus de fausses caractéristiques."
+      },
+      {
+        "title": "Découverte plus fiable sur les gros sites",
+        "desc": "Sur les pages catégories très lourdes (SPA de plus d'1 Mo), la découverte de produits est fiabilisée : le délai serveur est étendu à 3 minutes (au lieu d'1), et une seconde tentative directe est jouée avant de basculer sur la descente par r…"
       },
       {
         "title": "Scraper depuis la BDD (Map + Extract)",
@@ -1290,7 +1384,7 @@ export const MODULES = [
   {
     "id": "retail-promo",
     "cat": "Données",
-    "icon": "✦",
+    "icon": "🏷️",
     "title": "Création studio",
     "intro": "Créez et gérez vos promotions retail : visuels, offres et déclinaisons multi-format.",
     "features": [],
@@ -1314,6 +1408,46 @@ export const MODULES = [
       {
         "title": "Charte graphique & source d'inspiration",
         "desc": "À l'étape Prompt & style, la carte Charte & éléments joints pilote le moteur créatif : • Éléments joints : ajoutez un logo, une charte PDF ou des visuels de référence."
+      },
+      {
+        "title": "Densité des fiches : Exhaustif ou Condensé",
+        "desc": "Dans le panneau « Style des fiches » (étape Prompt & style), section « Éléments affichés », deux boutons sous « Détails » pilotent d'un clic la quantité de données ET la densité de grille : • « Exhaustif » — toute la donnée source (puces in…"
+      },
+      {
+        "title": "Tableau « Caractéristiques » et bloc Description",
+        "desc": "Les spécifications techniques détectées dans la source sont rendues en tableau de paires nom/valeur sur 2 colonnes : nom en gras à gauche, valeur en couleur d'accent à droite, chaque paire sur un fond teinté, titre en pastille."
+      },
+      {
+        "title": "« Taille identique sur toutes les fiches »",
+        "desc": "En tête de « Texte : taille & police », la case « Taille identique sur toutes les fiches » neutralise la hiérarchie automatique (fiches vedette magnifiées, ajustement de taille par page) : tous les produits du catalogue partagent la même ta…"
+      },
+      {
+        "title": "Bandeau taxonomie (Univers › Famille)",
+        "desc": "Le bandeau de tête des pages produits affiche l'Univers et la Famille courants. Sa section de réglages, « Bandeau taxonomie (Univers › Famille) », est disponible à la fois dans le panneau « Fond de page » de l'Aperçu et dans « Style des fic…"
+      },
+      {
+        "title": "Régime de couleur du fond du bandeau",
+        "desc": "Le fond a deux régimes explicites, pilotés par l'interrupteur « Couleurs par chapitre (fond = couleur de l'univers) » : • Activé : fond = couleur du chapitre — une pastille par univers, nommée d'après l'univers réel de votre taxonomie (ex."
+      },
+      {
+        "title": "Taille, police et couleur PAR NIVEAU (Univers / Famille)",
+        "desc": "Au-delà du curseur « Taille » global, chaque niveau se règle séparément : « Taille Univers » et « Taille Famille » (échelles multiplicatives, 1× = suit la taille globale), « Police Univers » / « Police Famille » (« Police du thème » = hérit…"
+      },
+      {
+        "title": "Filet du bandeau de section",
+        "desc": "Le filet sous le bandeau se pilote comme un objet à part : case « Filet du bandeau de section » dans « Éléments affichés » pour l'afficher/masquer, et pastille « Filet section » dans les couleurs (par défaut : couleur d'accent du thème)."
+      },
+      {
+        "title": "Couleurs du thème dès « Prompt & style »",
+        "desc": "La section « Couleurs du thème » du panneau « Style des fiches » expose les couleurs globales (accent, fond, bandeau…) — les mêmes pastilles que le panneau « Fond de page » de l'Aperçu, synchronisées : plus besoin d'aller à l'étape Aperçu p…"
+      },
+      {
+        "title": "Ruban vedette",
+        "desc": "Mettez un produit en avant d'un clic : double-cliquez sa fiche dans l'Aperçu pour ouvrir l'édition du produit, puis activez « Ruban vedette (mise en avant dans ce catalogue) »."
+      },
+      {
+        "title": "Champs devinés & lien vers la fiche source",
+        "desc": "À la connexion de la source, les champs de fiche (nom, image, prix, prix barré, marque, référence, unité, description) ET les champs libres de la zone « Détails » (TVA, avantages, spécifications…) sont devinés automatiquement depuis les col…"
       },
       {
         "title": "Exporter",
@@ -1441,7 +1575,7 @@ export const MODULES = [
       },
       {
         "title": "Modèles prêts à l'emploi",
-        "desc": "La page Workflows propose une galerie « Démarrer depuis un modèle » : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel."
+        "desc": "La page Workflows propose une galerie « Démarrer depuis un modèle » : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel, Veille tarifaire (matrice concurrents) — tes produits co…"
       },
       {
         "title": "Approbation humaine (Telegram)",
@@ -1602,6 +1736,10 @@ export const MODULES = [
         "desc": "Crée et édite les rôles de l'équipe via une matrice de permissions par module. Trois vues : Cartes (par module), Arbre (hiérarchie) et Carte mentale (graphe)."
       },
       {
+        "title": "Onglets « Journal » et « Analytics »",
+        "desc": "Deux onglets d'observation complètent la gestion des droits : • Journal — l'historique de qui a fait quoi (détails : section Journal d'audit & Mon activité)."
+      },
+      {
         "title": "Les rôles sont entièrement personnalisés",
         "desc": "Aucun rôle n'est livré par défaut : tu crées toi-même les rôles dont l'équipe a besoin (un nom + une sélection de permissions), tu les renommes et les supprimes librement."
       },
@@ -1619,7 +1757,7 @@ export const MODULES = [
   {
     "id": "audit-log",
     "cat": "Administration",
-    "icon": "✦",
+    "icon": "🧾",
     "title": "Journal d'audit & Mon activité",
     "intro": "Qui a fait quoi, quand. Chaque utilisateur retrouve ses propres actions dans « Mon activité » ; l'administrateur voit tout dans le « Journal », filtrable et avec l'avant/après de chaque changement.",
     "features": [
@@ -1646,6 +1784,60 @@ export const MODULES = [
       {
         "title": "Qui peut voir le Journal complet ?",
         "desc": "Seul l'administrateur (ou le propriétaire) voit le Journal de tous les utilisateurs, avec le filtre Qui. Un utilisateur standard ne voit que ses actions, dans Réglages → Mon activité."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "analytics",
+    "cat": "Administration",
+    "icon": "📈",
+    "title": "Fréquentation & trafic",
+    "intro": "Un tableau de bord d'audience complet — visiteurs, pages vues, pays, journal détaillé et trafic en direct — mesuré par IBS-Studio lui-même : aucune donnée n'est envoyée à un service tiers.",
+    "features": [
+      {
+        "title": "Périodes, filtres et indicateurs — le bandeau épinglé",
+        "desc": "En haut du tableau de bord, un bandeau regroupe la période, les filtres et les indicateurs clés. Il reste épinglé en haut pendant le défilement : vous gardez le contexte sous les yeux en parcourant le graphe, le journal ou la carte."
+      },
+      {
+        "title": "Le graphe de trafic",
+        "desc": "La courbe du haut trace l'activité sur la période : • Pages vues (aplat indigo) et Visiteurs (cyan), point par point."
+      },
+      {
+        "title": "Le journal de consultation",
+        "desc": "Le panneau « Journal de consultation » répond à la question qui · quand · quelle page, avec les colonnes Utilisateur · Page · Appareil · Lieu · Date & heure (l'appareil précise le système et le navigateur ; le lieu affiche « Ville, Pays » e…"
+      },
+      {
+        "title": "Pays, villes et carte du monde",
+        "desc": "• La carte du monde situe les connexions ville par ville. • Le panneau « Pays » liste les villes groupées par pays, pays triés par visites décroissantes, avec pour chacun le total, une barre de proportion, la date de dernière visite et le d…"
+      },
+      {
+        "title": "« Trafic en direct » et alertes Telegram",
+        "desc": "Le panneau « Trafic en direct » affiche le flux temps réel des visites, au même format que Telegram : 🟢 une ligne par page vue d'un utilisateur connecté (nom résolu), 🔵 l'arrivée d'un visiteur anonyme — avec la zone, la page, le drapeau e…"
+      },
+      {
+        "title": "Export CSV, « Supprimer le résultat » et « Vider »",
+        "desc": "• CSV : télécharge les consultations de la période et des filtres affichés, pour analyse dans un tableur."
+      },
+      {
+        "title": "« Pulse » — la PWA mobile",
+        "desc": "Pulse est la version mobile du tableau de bord, à l'adresse /pulse : connexion Google puis contrôle du rôle administrateur, et vous retrouvez les mêmes données — indicateurs, tendance, filtres et périodes, journal groupé par utilisateur, pa…"
+      },
+      {
+        "title": "Pourquoi mes propres visites ne sont-elles pas comptées ?",
+        "desc": "Le compte propriétaire est exclu du tracking côté serveur : ses pages vues ne sont ni enregistrées ni notifiées, y compris sur les pages publiques (le dernier compte connecté sur le navigateur est reconnu même sans être authentifié sur la l…"
+      },
+      {
+        "title": "Que distingue le filtre « Zone » ?",
+        "desc": "Site web = les pages publiques (accueil, landing promo, documentation) ; Application = l'usage de l'app par les utilisateurs connectés (chaque module ouvert dans le dashboard compte comme une page, même sans changement d'URL)."
+      },
+      {
+        "title": "« Aucune donnée de trafic sur cette période »",
+        "desc": "Le message apparaît quand aucune consultation n'existe dans la fenêtre choisie : élargissez la période (90 j, 12 mois) ou vérifiez les dates « Du / Au » en mode Perso."
+      },
+      {
+        "title": "Bon à savoir",
+        "desc": "• Le tableau de bord est réservé aux administrateurs et au propriétaire (onglet Analytics du module Utilisateurs & rôles, et PWA Pulse)."
       }
     ],
     "shortcuts": []

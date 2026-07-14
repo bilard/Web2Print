@@ -107,8 +107,24 @@ export const MODULES = [
     "cat": "Per iniziare",
     "icon": "✨",
     "title": "Novità",
-    "intro": "Le ultime novità dell'applicazione — giugno 2026.",
+    "intro": "Le ultime novità dell'applicazione — giugno e luglio 2026.",
     "features": [
+      {
+        "title": "Demo express (nuovo modulo)",
+        "desc": "Un wizard che semina l'intero studio dal sito di un prospect: società + URL → scoperta automatica dei reparti, scraping dei prodotti, progetto PIM, immagini nel DAM, catalogo demo, scheda promo e workflow."
+      },
+      {
+        "title": "Catalogo studio: schede prodotto su misura",
+        "desc": "• Densità delle schede: modalità Esaustivo (tutti i dati sorgente, 2 schede/pagina) e Condensato (4 schede/pagina), tetti «Punti elenco max» / «Specifiche max» regolabili."
+      },
+      {
+        "title": "Scraping: testi fedeli e gallerie a piena risoluzione",
+        "desc": "• Estrazione verbatim: i testi della scheda (descrizione, punti di forza) vengono ricopiati dalla sorgente, mai redatti dall'IA — struttura (paragrafi, elenchi) preservata."
+      },
+      {
+        "title": "Audience e traffico (amministrazione)",
+        "desc": "Dashboard di audience fatta in casa (nessun servizio di terzi) in Utenti e ruoli → Analytics: visite per periodo («Oggi», 90 gg, date libere), paesi e città, registro di consultazione raggruppato per utente, «Traffico in diretta», avvisi…"
+      },
       {
         "title": "Navigazione e comfort",
         "desc": "• Palette dei comandi ⌘K / Ctrl+K: progetti recenti, moduli, azioni rapide — da qualsiasi pagina. • Centro notifiche (🔔 in basso a sinistra): cronologia delle esecuzioni dei workflow e delle esportazioni, badge dei non letti."
@@ -993,6 +1009,64 @@ export const MODULES = [
     "shortcuts": []
   },
   {
+    "id": "demo-express",
+    "cat": "Dati",
+    "icon": "🎯",
+    "title": "Demo express",
+    "intro": "Inserisci la società e il sito di un prospect: lo studio si riempie da solo — prodotti, immagini, catalogo, promo e workflow con i suoi colori.",
+    "features": [
+      {
+        "title": "Avviare una demo passo dopo passo",
+        "desc": "1. Compila la Società del prospect (es. Jardiland) e il Sito del prospect: l'indirizzo della home basta, la demo scende da sola nei reparti del sito e campiona i prodotti distribuiti sui suoi universi. 2."
+      },
+      {
+        "title": "Scoperta automatica dei reparti (e stadio anti-bot)",
+        "desc": "Fornisci l'URL di base del sito, non una pagina di listing. Se la home è un «hub» senza schede prodotto, la demo scende automaticamente nelle rubriche del menu e preleva alcuni prodotti per reparto, per coprire la tassonomia del pro…"
+      },
+      {
+        "title": "Arricchimento delle schede: il vero motore PIM",
+        "desc": "Ogni pagina prodotto individuata passa nel motore di arricchimento del PIM (lo stesso del modulo Scraping): nome, descrizione, riferimento, specifiche, prezzo, EAN, immagini… Le pagine editoriali (landing di settore, guide) non vengono scartate: l…"
+      },
+      {
+        "title": "Indicazioni creative: guida il piano del catalogo",
+        "desc": "Il campo Indicazioni creative (facoltativo) guida il piano creativo del catalogo generato dall'IA: impaginazione, densità, atmosfera, copertina (es. «catalogo premium essenziale, schede in elenco a piena larghezza, copertina atmosfera giardino d'estate»)."
+      },
+      {
+        "title": "Registro live: una console fissata in fondo allo schermo",
+        "desc": "Durante l'esecuzione, un Registro in stile terminale resta fissato in fondo allo schermo (richiudibile con un clic, barra di scorrimento visibile)."
+      },
+      {
+        "title": "«Scopri i tuoi dati»: tutto è collegato",
+        "desc": "Alla fine dell'esecuzione, una scheda per ogni modulo seminato permette di aprire direttamente il risultato:"
+      },
+      {
+        "title": "PIM — dati prodotto",
+        "desc": "Una base Firestore dedicata «Démo {Société}» con i prodotti arricchiti e la loro tassonomia — mai una sovrascrittura dei tuoi dati esistenti. Se lo studio è vuoto (caso nominale dell'account demo), la base viene caricata a schermo."
+      },
+      {
+        "title": "DAM — immagini",
+        "desc": "Un'immagine per prodotto depositata nel Drive, cartella «Démo {Société}». Se il Drive non è connesso o la quota è raggiunta, le celle conservano gli URL esterni delle immagini (che restano visualizzate)."
+      },
+      {
+        "title": "Catalogo studio",
+        "desc": "Un catalogo collegato alla sorgente PIM, montato con l'identità grafica del sito (palette estratta), un piano IA guidato dalle tue indicazioni creative e una copertina generata."
+      },
+      {
+        "title": "Scheda promo",
+        "desc": "Una scheda promo data-driven con i colori del prospect (accento e banner derivati dall'identità grafica), sullo snapshot completo dei prodotti."
+      },
+      {
+        "title": "Workflow «Démo {Société}»",
+        "desc": "Un workflow pronto da rieseguire: Scraping di URL (fino a 3 veri URL prodotto del sito) → Esportazione Excel. Ideale per mostrare l'automazione dal vivo."
+      },
+      {
+        "title": "Buono a sapersi",
+        "desc": "• Fallimento esplicito piuttosto che un catalogo parassita: senza nemmeno una scheda con identità prodotto (riferimento/EAN — o prezzo + vere specifiche), la demo non semina nulla e ti invita a provare un URL di reparto o di scheda prodotto."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
     "id": "taxonomies",
     "cat": "Dati",
     "icon": "🌳",
@@ -1134,6 +1208,26 @@ export const MODULES = [
       {
         "title": "Cosa recupera esattamente «Prodotto completo»?",
         "desc": "Tutte le schede (Scrape / Crawl / Map+Extract / Ricerca) terminano con lo stesso motore PIM (enrichProductCore), per un risultato omogeneo qualunque sia il percorso: • Specifiche in formato KEY/VALUE (caratteristiche tecniche strutturate)."
+      },
+      {
+        "title": "Testi fedeli alla sorgente (verbatim)",
+        "desc": "L'IA ricopia i testi della pagina, non li redige mai. La descrizione e i vantaggi vengono estratti parola per parola dalla sorgente — senza riformulare, senza riassumere, senza tradurre."
+      },
+      {
+        "title": "Stessa qualità su produttori e retailer (passata HTML grezzo)",
+        "desc": "A complemento dell'estrazione IA, una passata deterministica sull'HTML grezzo della pagina completa la scheda — specifiche, vantaggi, documenti PDF — con la stessa qualità su un sito di produttore (Milwaukee, Dyson…) e su un retailer (Castoram…"
+      },
+      {
+        "title": "Gallerie di immagini a piena risoluzione",
+        "desc": "La passata immagini ricostruisce le gallerie che il rendering classico non vede: • Adobe Scene7 / Dynamic Media (convenzione /is/image/ usata da migliaia di retailer): a partire da una sola vista rilevata, l'app deduce il nome di base de…"
+      },
+      {
+        "title": "Schede senza inquinamento da navigazione",
+        "desc": "Il rumore d'interfaccia dei siti e-commerce non contamina più le schede: • Mega-menu annidati, menu account, mini-carrello: le loro voci non diventano più false caratteristiche."
+      },
+      {
+        "title": "Scoperta più affidabile sui grandi siti",
+        "desc": "Sulle pagine categoria molto pesanti (SPA di oltre 1 MB), la scoperta dei prodotti è resa più affidabile: il timeout server è esteso a 3 minuti (invece di 1), e un secondo tentativo diretto viene eseguito prima di passare alla discesa per r…"
       },
       {
         "title": "Scraping dal database (Map + Extract)",
@@ -1287,7 +1381,7 @@ export const MODULES = [
   {
     "id": "retail-promo",
     "cat": "Dati",
-    "icon": "✦",
+    "icon": "🏷️",
     "title": "Creazione studio",
     "intro": "Crea e gestisci le tue promozioni retail: visual, offerte e declinazioni multiformato.",
     "features": [],
@@ -1311,6 +1405,46 @@ export const MODULES = [
       {
         "title": "Identità grafica e fonte d'ispirazione",
         "desc": "Nella fase Prompt e stile, la scheda Identità grafica e allegati guida il motore creativo: • Allegati: aggiungi un logo, un PDF di linee guida o visual di riferimento."
+      },
+      {
+        "title": "Densità delle schede: Esaustivo o Condensato",
+        "desc": "Nel pannello «Stile delle schede» (fase Prompt e stile), sezione «Elementi visualizzati», due pulsanti sotto «Dettagli» controllano con un clic la quantità di dati E la densità della griglia: • «Esaustivo» — tutti i dati sorgente (punti elenco in…"
+      },
+      {
+        "title": "Tabella «Caratteristiche» e blocco Descrizione",
+        "desc": "Le specifiche tecniche rilevate nella sorgente vengono rese come tabella di coppie nome/valore su 2 colonne: nome in grassetto a sinistra, valore in colore d'accento a destra, ogni coppia su uno sfondo tinto, titolo in pastiglia."
+      },
+      {
+        "title": "«Dimensione identica su tutte le schede»",
+        "desc": "In cima a «Testo: dimensione e font», la casella «Dimensione identica su tutte le schede» neutralizza la gerarchia automatica (schede in evidenza ingrandite, adattamento della dimensione per pagina): tutti i prodotti del catalogo condividono la stessa di…"
+      },
+      {
+        "title": "Banner tassonomia (Universo › Famiglia)",
+        "desc": "Il banner di testa delle pagine prodotto mostra l'Universo e la Famiglia correnti. La sua sezione di impostazioni, «Banner tassonomia (Universo › Famiglia)», è disponibile sia nel pannello «Sfondo pagina» dell'Anteprima sia in «Stile delle sch…"
+      },
+      {
+        "title": "Regime di colore dello sfondo del banner",
+        "desc": "Lo sfondo ha due regimi espliciti, controllati dall'interruttore «Colori per capitolo (sfondo = colore dell'universo)»: • Attivato: sfondo = colore del capitolo — una pastiglia per universo, denominata secondo l'universo reale della tua tassonomia (es."
+      },
+      {
+        "title": "Dimensione, font e colore PER LIVELLO (Universo / Famiglia)",
+        "desc": "Oltre al cursore «Dimensione» globale, ogni livello si regola separatamente: «Dimensione Universo» e «Dimensione Famiglia» (scale moltiplicative, 1× = segue la dimensione globale), «Font Universo» / «Font Famiglia» («Font del tema» = eredit…"
+      },
+      {
+        "title": "Filetto del banner di sezione",
+        "desc": "Il filetto sotto il banner si controlla come un oggetto a sé: casella «Filetto del banner di sezione» in «Elementi visualizzati» per mostrarlo/nasconderlo, e pastiglia «Filetto sezione» nei colori (per impostazione predefinita: colore d'accento del tema)."
+      },
+      {
+        "title": "Colori del tema già da «Prompt e stile»",
+        "desc": "La sezione «Colori del tema» del pannello «Stile delle schede» espone i colori globali (accento, sfondo, banner…) — le stesse pastiglie del pannello «Sfondo pagina» dell'Anteprima, sincronizzate: non serve più andare alla fase Anteprima p…"
+      },
+      {
+        "title": "Nastro in evidenza",
+        "desc": "Metti in risalto un prodotto con un clic: fai doppio clic sulla sua scheda nell'Anteprima per aprire la modifica del prodotto, poi attiva «Nastro in evidenza (messa in risalto in questo catalogo)»."
+      },
+      {
+        "title": "Campi rilevati automaticamente e link alla scheda sorgente",
+        "desc": "Alla connessione della sorgente, i campi della scheda (nome, immagine, prezzo, prezzo barrato, marca, riferimento, unità, descrizione) E i campi liberi della zona «Dettagli» (IVA, vantaggi, specifiche…) vengono rilevati automaticamente dalle col…"
       },
       {
         "title": "Esportare",
@@ -1438,7 +1572,7 @@ export const MODULES = [
       },
       {
         "title": "Modelli pronti all'uso",
-        "desc": "La pagina Workflow propone una galleria «Iniziare da un modello»: Scraping di un sito → PIM, Monitoraggio quotidiano → Telegram (cron), Scrape → approvazione ✅ → PIM, Ricerca web → Excel."
+        "desc": "La pagina Workflow propone una galleria «Iniziare da un modello»: Scraping di un sito → PIM, Monitoraggio quotidiano → Telegram (cron), Scrape → approvazione ✅ → PIM, Ricerca web → Excel, Monitoraggio prezzi (matrice concorrenti) — i tuoi prodotti co…"
       },
       {
         "title": "Approvazione umana (Telegram)",
@@ -1599,6 +1733,10 @@ export const MODULES = [
         "desc": "Crea e modifica i ruoli del team tramite una matrice di permessi per modulo. Tre viste: Schede (per modulo), Albero (gerarchia) e Mappa mentale (grafo)."
       },
       {
+        "title": "Schede «Registro» e «Analytics»",
+        "desc": "Due schede di osservazione completano la gestione dei diritti: • Registro — la cronologia di chi ha fatto cosa (dettagli: sezione Registro di audit e La mia attività)."
+      },
+      {
         "title": "I ruoli sono completamente personalizzati",
         "desc": "Nessun ruolo è fornito per impostazione predefinita: crei tu stesso i ruoli di cui il team ha bisogno (un nome + una selezione di permessi), li rinomini e li elimini liberamente."
       },
@@ -1616,7 +1754,7 @@ export const MODULES = [
   {
     "id": "audit-log",
     "cat": "Amministrazione",
-    "icon": "✦",
+    "icon": "🧾",
     "title": "Registro di audit e La mia attività",
     "intro": "Chi ha fatto cosa, quando. Ogni utente ritrova le proprie azioni in «La mia attività»; l'amministratore vede tutto nel «Registro», filtrabile e con il prima/dopo di ogni modifica.",
     "features": [
@@ -1643,6 +1781,60 @@ export const MODULES = [
       {
         "title": "Chi può vedere il Registro completo?",
         "desc": "Solo l'amministratore (o il proprietario) vede il Registro di tutti gli utenti, con il filtro Chi. Un utente standard vede solo le sue azioni, in Impostazioni → La mia attività."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "analytics",
+    "cat": "Amministrazione",
+    "icon": "📈",
+    "title": "Audience e traffico",
+    "intro": "Una dashboard di audience completa — visitatori, pagine viste, paesi, registro dettagliato e traffico in diretta — misurata da IBS-Studio stesso: nessun dato viene inviato a un servizio di terzi.",
+    "features": [
+      {
+        "title": "Periodi, filtri e indicatori — il banner fissato",
+        "desc": "In cima alla dashboard, un banner raggruppa il periodo, i filtri e gli indicatori chiave. Resta fissato in alto durante lo scorrimento: mantieni il contesto sotto gli occhi mentre percorri il grafico, il registro o la mappa."
+      },
+      {
+        "title": "Il grafico del traffico",
+        "desc": "La curva in alto traccia l'attività sul periodo: • Pagine viste (area piena indaco) e Visitatori (ciano), punto per punto."
+      },
+      {
+        "title": "Il registro di consultazione",
+        "desc": "Il pannello «Registro di consultazione» risponde alla domanda chi · quando · quale pagina, con le colonne Utente · Pagina · Dispositivo · Luogo · Data e ora (il dispositivo precisa il sistema e il browser; il luogo mostra «Città, Paese» e…"
+      },
+      {
+        "title": "Paesi, città e mappa del mondo",
+        "desc": "• La mappa del mondo colloca le connessioni città per città. • Il pannello «Paesi» elenca le città raggruppate per paese, con i paesi ordinati per visite decrescenti e per ciascuno il totale, una barra di proporzione, la data dell'ultima visita e il d…"
+      },
+      {
+        "title": "«Traffico in diretta» e avvisi Telegram",
+        "desc": "Il pannello «Traffico in diretta» mostra il flusso in tempo reale delle visite, nello stesso formato di Telegram: 🟢 una riga per ogni pagina vista da un utente connesso (nome risolto), 🔵 l'arrivo di un visitatore anonimo — con la zona, la pagina, la bandiera e…"
+      },
+      {
+        "title": "Esportazione CSV, «Eliminare il risultato» e «Svuotare»",
+        "desc": "• CSV: scarica le consultazioni del periodo e dei filtri visualizzati, per l'analisi in un foglio di calcolo."
+      },
+      {
+        "title": "«Pulse» — la PWA mobile",
+        "desc": "Pulse è la versione mobile della dashboard, all'indirizzo /pulse: accesso Google poi verifica del ruolo di amministratore, e ritrovi gli stessi dati — indicatori, tendenza, filtri e periodi, registro raggruppato per utente, pa…"
+      },
+      {
+        "title": "Perché le mie visite non vengono contate?",
+        "desc": "L'account proprietario è escluso dal tracking lato server: le sue pagine viste non vengono né registrate né notificate, anche sulle pagine pubbliche (l'ultimo account connesso sul browser viene riconosciuto anche senza essere autenticato sulla l…"
+      },
+      {
+        "title": "Cosa distingue il filtro «Zona»?",
+        "desc": "Sito web = le pagine pubbliche (home, landing promo, documentazione); Applicazione = l'uso dell'app da parte degli utenti connessi (ogni modulo aperto nella dashboard conta come una pagina, anche senza cambio di URL)."
+      },
+      {
+        "title": "«Nessun dato di traffico su questo periodo»",
+        "desc": "Il messaggio compare quando nessuna consultazione esiste nella finestra scelta: allarga il periodo (90 gg, 12 mesi) o verifica le date «Dal / Al» in modalità Personalizzata."
+      },
+      {
+        "title": "Buono a sapersi",
+        "desc": "• La dashboard è riservata agli amministratori e al proprietario (scheda Analytics del modulo Utenti e ruoli, e PWA Pulse)."
       }
     ],
     "shortcuts": []
@@ -2438,6 +2630,95 @@ export const STRINGS = {
   "Exporter": "Esportare",
   "À l'étape Export, deux sorties : • PDF écran — léger, pour l'aperçu et le partage web. • PDF print pro — haute définition, prêt pour l'impression.": "Nella fase Esporta, due uscite: • PDF schermo — leggero, per l'anteprima e la condivisione web. • PDF print pro — alta definizione, pronto per la stampa.",
   "• La source est relue au chargement du catalogue : si le PIM évolue, rouvrez le catalogue pour repartir des données à jour. • Pour des fiches promo unitaires (affiches, étiquettes) plutôt qu'un catalogue complet, voyez Création studio.": "• La sorgente viene riletta al caricamento del catalogo: se il PIM evolve, riapri il catalogo per ripartire da dati aggiornati. • Per schede promozionali singole (manifesti, etichette) anziché un catalogo completo, vedi Creazione studio.",
+  "Ce qui vient d'arriver dans l'application — juin et juillet 2026.": "Le ultime novità dell'applicazione — giugno e luglio 2026.",
+  "Démo express (nouveau module)": "Demo express (nuovo modulo)",
+  "Un wizard qui ensemence tout le studio depuis le site d'un prospect : société + URL → découverte automatique des rayons, scraping des produits, projet PIM, images au DAM, catalogue démo, carte promo et workflow.": "Un wizard che semina l'intero studio dal sito di un prospect: società + URL → scoperta automatica dei reparti, scraping dei prodotti, progetto PIM, immagini nel DAM, catalogo demo, scheda promo e workflow.",
+  "Catalogue studio : fiches produit sur mesure": "Catalogo studio: schede prodotto su misura",
+  "• Densité des fiches : modes Exhaustif (toute la donnée source, 2 fiches/page) et Condensé (4 fiches/page), plafonds « Puces max » / « Spécifications max » réglables.": "• Densità delle schede: modalità Esaustivo (tutti i dati sorgente, 2 schede/pagina) e Condensato (4 schede/pagina), tetti «Punti elenco max» / «Specifiche max» regolabili.",
+  "Scraping : textes fidèles et galeries pleine résolution": "Scraping: testi fedeli e gallerie a piena risoluzione",
+  "• Extraction verbatim : les textes de la fiche (description, points forts) sont recopiés de la source, jamais rédigés par l'IA — structure (paragraphes, listes) préservée.": "• Estrazione verbatim: i testi della scheda (descrizione, punti di forza) vengono ricopiati dalla sorgente, mai redatti dall'IA — struttura (paragrafi, elenchi) preservata.",
+  "Fréquentation & trafic (administration)": "Audience e traffico (amministrazione)",
+  "Tableau de bord d'audience maison (aucun tiers) dans Utilisateurs & rôles → Analytics : visites par période (« Aujourd'hui », 90 j, dates libres), pays et villes, journal de consultation groupé par utilisateur, « Trafic en direct », alertes…": "Dashboard di audience fatta in casa (nessun servizio di terzi) in Utenti e ruoli → Analytics: visite per periodo («Oggi», 90 gg, date libere), paesi e città, registro di consultazione raggruppato per utente, «Traffico in diretta», avvisi…",
+  "Démo express": "Demo express",
+  "Saisissez la société et le site d’un prospect : le studio se remplit tout seul — produits, images, catalogue, promo et workflow à ses couleurs.": "Inserisci la società e il sito di un prospect: lo studio si riempie da solo — prodotti, immagini, catalogo, promo e workflow con i suoi colori.",
+  "Lancer une démo pas à pas": "Avviare una demo passo dopo passo",
+  "1. Renseignez la Société du prospect (ex. Jardiland) et le Site du prospect : l'adresse d'accueil suffit, la démo descend toute seule dans les rayons du site et échantillonne les produits répartis sur ses univers. 2.": "1. Compila la Società del prospect (es. Jardiland) e il Sito del prospect: l'indirizzo della home basta, la demo scende da sola nei reparti del sito e campiona i prodotti distribuiti sui suoi universi. 2.",
+  "Découverte automatique des rayons (et étage anti-bot)": "Scoperta automatica dei reparti (e stadio anti-bot)",
+  "Vous donnez l'URL de base du site, pas une page de listing. Si l'accueil est un « hub » sans cartes produit, la démo descend automatiquement dans les rubriques du menu et prélève quelques produits par rayon, pour couvrir la taxonomie du pro…": "Fornisci l'URL di base del sito, non una pagina di listing. Se la home è un «hub» senza schede prodotto, la demo scende automaticamente nelle rubriche del menu e preleva alcuni prodotti per reparto, per coprire la tassonomia del pro…",
+  "Enrichissement des fiches : le vrai moteur PIM": "Arricchimento delle schede: il vero motore PIM",
+  "Chaque page produit repérée passe dans le moteur d'enrichissement du PIM (le même que le module Scraping) : nom, description, référence, spécifications, prix, EAN, images… Les pages éditoriales (landing métier, guide) ne sont pas jetées : l…": "Ogni pagina prodotto individuata passa nel motore di arricchimento del PIM (lo stesso del modulo Scraping): nome, descrizione, riferimento, specifiche, prezzo, EAN, immagini… Le pagine editoriali (landing di settore, guide) non vengono scartate: l…",
+  "Consignes créatives : pilotez le plan du catalogue": "Indicazioni creative: guida il piano del catalogo",
+  "Le champ Consignes créatives (optionnel) pilote le plan créatif du catalogue généré par l'IA : mise en page, densité, ambiance, couverture (ex. « catalogue premium épuré, fiches en liste pleine largeur, couverture ambiance jardin d'été »).": "Il campo Indicazioni creative (facoltativo) guida il piano creativo del catalogo generato dall'IA: impaginazione, densità, atmosfera, copertina (es. «catalogo premium essenziale, schede in elenco a piena larghezza, copertina atmosfera giardino d'estate»).",
+  "Journal live : une console fixée en bas de l'écran": "Registro live: una console fissata in fondo allo schermo",
+  "Pendant le run, un Journal façon terminal est fixé en bas de l'écran (repliable d'un clic, barre de défilement visible).": "Durante l'esecuzione, un Registro in stile terminale resta fissato in fondo allo schermo (richiudibile con un clic, barra di scorrimento visibile).",
+  "« Découvrez vos données » : tout est relié": "«Scopri i tuoi dati»: tutto è collegato",
+  "À la fin du run, une carte par module ensemencé permet d'ouvrir directement le résultat :": "Alla fine dell'esecuzione, una scheda per ogni modulo seminato permette di aprire direttamente il risultato:",
+  "PIM — données produits": "PIM — dati prodotto",
+  "Une base Firestore dédiée « Démo {Société} » avec les produits enrichis et leur taxonomie — jamais d'écrasement de vos données existantes. Si le studio est vierge (cas nominal du compte démo), la base est chargée à l'écran.": "Una base Firestore dedicata «Démo {Société}» con i prodotti arricchiti e la loro tassonomia — mai una sovrascrittura dei tuoi dati esistenti. Se lo studio è vuoto (caso nominale dell'account demo), la base viene caricata a schermo.",
+  "DAM — images": "DAM — immagini",
+  "Une image par produit déposée dans le Drive, dossier « Démo {Société} ». Si le Drive n'est pas connecté ou le quota atteint, les cellules gardent les URLs externes des images (qui restent affichées).": "Un'immagine per prodotto depositata nel Drive, cartella «Démo {Société}». Se il Drive non è connesso o la quota è raggiunta, le celle conservano gli URL esterni delle immagini (che restano visualizzate).",
+  "Un catalogue lié à la source PIM, monté avec la charte du site (palette extraite), un plan IA piloté par vos consignes créatives et une couverture générée.": "Un catalogo collegato alla sorgente PIM, montato con l'identità grafica del sito (palette estratta), un piano IA guidato dalle tue indicazioni creative e una copertina generata.",
+  "Fiche promo": "Scheda promo",
+  "Une carte promo data-driven aux couleurs du prospect (accent et bandeau issus de la charte), sur l'instantané complet des produits.": "Una scheda promo data-driven con i colori del prospect (accento e banner derivati dall'identità grafica), sullo snapshot completo dei prodotti.",
+  "Workflow « Démo {Société} »": "Workflow «Démo {Société}»",
+  "Un workflow prêt à rejouer : Scraper des URLs (jusqu'à 3 vraies URLs produits du site) → Export Excel. Idéal pour montrer l'automatisation en live.": "Un workflow pronto da rieseguire: Scraping di URL (fino a 3 veri URL prodotto del sito) → Esportazione Excel. Ideale per mostrare l'automazione dal vivo.",
+  "• Échec franc plutôt que catalogue parasite : sans la moindre fiche à identité produit (référence/EAN — ou prix + vraies specs), la démo n'ensemence rien et vous invite à essayer une URL de rayon ou de fiche produit.": "• Fallimento esplicito piuttosto che un catalogo parassita: senza nemmeno una scheda con identità prodotto (riferimento/EAN — o prezzo + vere specifiche), la demo non semina nulla e ti invita a provare un URL di reparto o di scheda prodotto.",
+  "Textes fidèles à la source (verbatim)": "Testi fedeli alla sorgente (verbatim)",
+  "L'IA recopie les textes de la page, elle ne les rédige jamais. La description et les avantages sont extraits mot pour mot depuis la source — sans reformuler, sans résumer, sans traduire.": "L'IA ricopia i testi della pagina, non li redige mai. La descrizione e i vantaggi vengono estratti parola per parola dalla sorgente — senza riformulare, senza riassumere, senza tradurre.",
+  "Même qualité sur fabricants et retailers (passe HTML brut)": "Stessa qualità su produttori e retailer (passata HTML grezzo)",
+  "En complément de l'extraction IA, une passe déterministe sur le HTML brut de la page complète la fiche — spécifications, avantages, documents PDF — avec la même qualité sur un site fabricant (Milwaukee, Dyson…) que sur un retailer (Castoram…": "A complemento dell'estrazione IA, una passata deterministica sull'HTML grezzo della pagina completa la scheda — specifiche, vantaggi, documenti PDF — con la stessa qualità su un sito di produttore (Milwaukee, Dyson…) e su un retailer (Castoram…",
+  "Galeries d'images en pleine résolution": "Gallerie di immagini a piena risoluzione",
+  "La passe images reconstruit les galeries que le rendu classique ne voit pas : • Adobe Scene7 / Dynamic Media (convention /is/image/ utilisée par des milliers de retailers) : à partir d'une seule vue détectée, l'app déduit le nom de base de…": "La passata immagini ricostruisce le gallerie che il rendering classico non vede: • Adobe Scene7 / Dynamic Media (convenzione /is/image/ usata da migliaia di retailer): a partire da una sola vista rilevata, l'app deduce il nome di base de…",
+  "Fiches sans pollution de navigation": "Schede senza inquinamento da navigazione",
+  "Le bruit d'interface des sites e-commerce ne contamine plus les fiches : • Méga-menus imbriqués, menu compte, mini-panier : leurs entrées ne deviennent plus de fausses caractéristiques.": "Il rumore d'interfaccia dei siti e-commerce non contamina più le schede: • Mega-menu annidati, menu account, mini-carrello: le loro voci non diventano più false caratteristiche.",
+  "Découverte plus fiable sur les gros sites": "Scoperta più affidabile sui grandi siti",
+  "Sur les pages catégories très lourdes (SPA de plus d'1 Mo), la découverte de produits est fiabilisée : le délai serveur est étendu à 3 minutes (au lieu d'1), et une seconde tentative directe est jouée avant de basculer sur la descente par r…": "Sulle pagine categoria molto pesanti (SPA di oltre 1 MB), la scoperta dei prodotti è resa più affidabile: il timeout server è esteso a 3 minuti (invece di 1), e un secondo tentativo diretto viene eseguito prima di passare alla discesa per r…",
+  "Densité des fiches : Exhaustif ou Condensé": "Densità delle schede: Esaustivo o Condensato",
+  "Dans le panneau « Style des fiches » (étape Prompt & style), section « Éléments affichés », deux boutons sous « Détails » pilotent d'un clic la quantité de données ET la densité de grille : • « Exhaustif » — toute la donnée source (puces in…": "Nel pannello «Stile delle schede» (fase Prompt e stile), sezione «Elementi visualizzati», due pulsanti sotto «Dettagli» controllano con un clic la quantità di dati E la densità della griglia: • «Esaustivo» — tutti i dati sorgente (punti elenco in…",
+  "Tableau « Caractéristiques » et bloc Description": "Tabella «Caratteristiche» e blocco Descrizione",
+  "Les spécifications techniques détectées dans la source sont rendues en tableau de paires nom/valeur sur 2 colonnes : nom en gras à gauche, valeur en couleur d'accent à droite, chaque paire sur un fond teinté, titre en pastille.": "Le specifiche tecniche rilevate nella sorgente vengono rese come tabella di coppie nome/valore su 2 colonne: nome in grassetto a sinistra, valore in colore d'accento a destra, ogni coppia su uno sfondo tinto, titolo in pastiglia.",
+  "« Taille identique sur toutes les fiches »": "«Dimensione identica su tutte le schede»",
+  "En tête de « Texte : taille & police », la case « Taille identique sur toutes les fiches » neutralise la hiérarchie automatique (fiches vedette magnifiées, ajustement de taille par page) : tous les produits du catalogue partagent la même ta…": "In cima a «Testo: dimensione e font», la casella «Dimensione identica su tutte le schede» neutralizza la gerarchia automatica (schede in evidenza ingrandite, adattamento della dimensione per pagina): tutti i prodotti del catalogo condividono la stessa di…",
+  "Bandeau taxonomie (Univers › Famille)": "Banner tassonomia (Universo › Famiglia)",
+  "Le bandeau de tête des pages produits affiche l'Univers et la Famille courants. Sa section de réglages, « Bandeau taxonomie (Univers › Famille) », est disponible à la fois dans le panneau « Fond de page » de l'Aperçu et dans « Style des fic…": "Il banner di testa delle pagine prodotto mostra l'Universo e la Famiglia correnti. La sua sezione di impostazioni, «Banner tassonomia (Universo › Famiglia)», è disponibile sia nel pannello «Sfondo pagina» dell'Anteprima sia in «Stile delle sch…",
+  "Régime de couleur du fond du bandeau": "Regime di colore dello sfondo del banner",
+  "Le fond a deux régimes explicites, pilotés par l'interrupteur « Couleurs par chapitre (fond = couleur de l'univers) » : • Activé : fond = couleur du chapitre — une pastille par univers, nommée d'après l'univers réel de votre taxonomie (ex.": "Lo sfondo ha due regimi espliciti, controllati dall'interruttore «Colori per capitolo (sfondo = colore dell'universo)»: • Attivato: sfondo = colore del capitolo — una pastiglia per universo, denominata secondo l'universo reale della tua tassonomia (es.",
+  "Taille, police et couleur PAR NIVEAU (Univers / Famille)": "Dimensione, font e colore PER LIVELLO (Universo / Famiglia)",
+  "Au-delà du curseur « Taille » global, chaque niveau se règle séparément : « Taille Univers » et « Taille Famille » (échelles multiplicatives, 1× = suit la taille globale), « Police Univers » / « Police Famille » (« Police du thème » = hérit…": "Oltre al cursore «Dimensione» globale, ogni livello si regola separatamente: «Dimensione Universo» e «Dimensione Famiglia» (scale moltiplicative, 1× = segue la dimensione globale), «Font Universo» / «Font Famiglia» («Font del tema» = eredit…",
+  "Filet du bandeau de section": "Filetto del banner di sezione",
+  "Le filet sous le bandeau se pilote comme un objet à part : case « Filet du bandeau de section » dans « Éléments affichés » pour l'afficher/masquer, et pastille « Filet section » dans les couleurs (par défaut : couleur d'accent du thème).": "Il filetto sotto il banner si controlla come un oggetto a sé: casella «Filetto del banner di sezione» in «Elementi visualizzati» per mostrarlo/nasconderlo, e pastiglia «Filetto sezione» nei colori (per impostazione predefinita: colore d'accento del tema).",
+  "Couleurs du thème dès « Prompt & style »": "Colori del tema già da «Prompt e stile»",
+  "La section « Couleurs du thème » du panneau « Style des fiches » expose les couleurs globales (accent, fond, bandeau…) — les mêmes pastilles que le panneau « Fond de page » de l'Aperçu, synchronisées : plus besoin d'aller à l'étape Aperçu p…": "La sezione «Colori del tema» del pannello «Stile delle schede» espone i colori globali (accento, sfondo, banner…) — le stesse pastiglie del pannello «Sfondo pagina» dell'Anteprima, sincronizzate: non serve più andare alla fase Anteprima p…",
+  "Ruban vedette": "Nastro in evidenza",
+  "Mettez un produit en avant d'un clic : double-cliquez sa fiche dans l'Aperçu pour ouvrir l'édition du produit, puis activez « Ruban vedette (mise en avant dans ce catalogue) ».": "Metti in risalto un prodotto con un clic: fai doppio clic sulla sua scheda nell'Anteprima per aprire la modifica del prodotto, poi attiva «Nastro in evidenza (messa in risalto in questo catalogo)».",
+  "Champs devinés & lien vers la fiche source": "Campi rilevati automaticamente e link alla scheda sorgente",
+  "À la connexion de la source, les champs de fiche (nom, image, prix, prix barré, marque, référence, unité, description) ET les champs libres de la zone « Détails » (TVA, avantages, spécifications…) sont devinés automatiquement depuis les col…": "Alla connessione della sorgente, i campi della scheda (nome, immagine, prezzo, prezzo barrato, marca, riferimento, unità, descrizione) E i campi liberi della zona «Dettagli» (IVA, vantaggi, specifiche…) vengono rilevati automaticamente dalle col…",
+  "La page Workflows propose une galerie « Démarrer depuis un modèle » : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel, Veille tarifaire (matrice concurrents) — tes produits co…": "La pagina Workflow propone una galleria «Iniziare da un modello»: Scraping di un sito → PIM, Monitoraggio quotidiano → Telegram (cron), Scrape → approvazione ✅ → PIM, Ricerca web → Excel, Monitoraggio prezzi (matrice concorrenti) — i tuoi prodotti co…",
+  "Onglets « Journal » et « Analytics »": "Schede «Registro» e «Analytics»",
+  "Deux onglets d'observation complètent la gestion des droits : • Journal — l'historique de qui a fait quoi (détails : section Journal d'audit & Mon activité).": "Due schede di osservazione completano la gestione dei diritti: • Registro — la cronologia di chi ha fatto cosa (dettagli: sezione Registro di audit e La mia attività).",
+  "Fréquentation & trafic": "Audience e traffico",
+  "Un tableau de bord d'audience complet — visiteurs, pages vues, pays, journal détaillé et trafic en direct — mesuré par IBS-Studio lui-même : aucune donnée n'est envoyée à un service tiers.": "Una dashboard di audience completa — visitatori, pagine viste, paesi, registro dettagliato e traffico in diretta — misurata da IBS-Studio stesso: nessun dato viene inviato a un servizio di terzi.",
+  "Périodes, filtres et indicateurs — le bandeau épinglé": "Periodi, filtri e indicatori — il banner fissato",
+  "En haut du tableau de bord, un bandeau regroupe la période, les filtres et les indicateurs clés. Il reste épinglé en haut pendant le défilement : vous gardez le contexte sous les yeux en parcourant le graphe, le journal ou la carte.": "In cima alla dashboard, un banner raggruppa il periodo, i filtri e gli indicatori chiave. Resta fissato in alto durante lo scorrimento: mantieni il contesto sotto gli occhi mentre percorri il grafico, il registro o la mappa.",
+  "Le graphe de trafic": "Il grafico del traffico",
+  "La courbe du haut trace l'activité sur la période : • Pages vues (aplat indigo) et Visiteurs (cyan), point par point.": "La curva in alto traccia l'attività sul periodo: • Pagine viste (area piena indaco) e Visitatori (ciano), punto per punto.",
+  "Le journal de consultation": "Il registro di consultazione",
+  "Le panneau « Journal de consultation » répond à la question qui · quand · quelle page, avec les colonnes Utilisateur · Page · Appareil · Lieu · Date & heure (l'appareil précise le système et le navigateur ; le lieu affiche « Ville, Pays » e…": "Il pannello «Registro di consultazione» risponde alla domanda chi · quando · quale pagina, con le colonne Utente · Pagina · Dispositivo · Luogo · Data e ora (il dispositivo precisa il sistema e il browser; il luogo mostra «Città, Paese» e…",
+  "Pays, villes et carte du monde": "Paesi, città e mappa del mondo",
+  "• La carte du monde situe les connexions ville par ville. • Le panneau « Pays » liste les villes groupées par pays, pays triés par visites décroissantes, avec pour chacun le total, une barre de proportion, la date de dernière visite et le d…": "• La mappa del mondo colloca le connessioni città per città. • Il pannello «Paesi» elenca le città raggruppate per paese, con i paesi ordinati per visite decrescenti e per ciascuno il totale, una barra di proporzione, la data dell'ultima visita e il d…",
+  "« Trafic en direct » et alertes Telegram": "«Traffico in diretta» e avvisi Telegram",
+  "Le panneau « Trafic en direct » affiche le flux temps réel des visites, au même format que Telegram : 🟢 une ligne par page vue d'un utilisateur connecté (nom résolu), 🔵 l'arrivée d'un visiteur anonyme — avec la zone, la page, le drapeau e…": "Il pannello «Traffico in diretta» mostra il flusso in tempo reale delle visite, nello stesso formato di Telegram: 🟢 una riga per ogni pagina vista da un utente connesso (nome risolto), 🔵 l'arrivo di un visitatore anonimo — con la zona, la pagina, la bandiera e…",
+  "Export CSV, « Supprimer le résultat » et « Vider »": "Esportazione CSV, «Eliminare il risultato» e «Svuotare»",
+  "• CSV : télécharge les consultations de la période et des filtres affichés, pour analyse dans un tableur.": "• CSV: scarica le consultazioni del periodo e dei filtri visualizzati, per l'analisi in un foglio di calcolo.",
+  "« Pulse » — la PWA mobile": "«Pulse» — la PWA mobile",
+  "Pulse est la version mobile du tableau de bord, à l'adresse /pulse : connexion Google puis contrôle du rôle administrateur, et vous retrouvez les mêmes données — indicateurs, tendance, filtres et périodes, journal groupé par utilisateur, pa…": "Pulse è la versione mobile della dashboard, all'indirizzo /pulse: accesso Google poi verifica del ruolo di amministratore, e ritrovi gli stessi dati — indicatori, tendenza, filtri e periodi, registro raggruppato per utente, pa…",
+  "Pourquoi mes propres visites ne sont-elles pas comptées ?": "Perché le mie visite non vengono contate?",
+  "Le compte propriétaire est exclu du tracking côté serveur : ses pages vues ne sont ni enregistrées ni notifiées, y compris sur les pages publiques (le dernier compte connecté sur le navigateur est reconnu même sans être authentifié sur la l…": "L'account proprietario è escluso dal tracking lato server: le sue pagine viste non vengono né registrate né notificate, anche sulle pagine pubbliche (l'ultimo account connesso sul browser viene riconosciuto anche senza essere autenticato sulla l…",
+  "Que distingue le filtre « Zone » ?": "Cosa distingue il filtro «Zona»?",
+  "Site web = les pages publiques (accueil, landing promo, documentation) ; Application = l'usage de l'app par les utilisateurs connectés (chaque module ouvert dans le dashboard compte comme une page, même sans changement d'URL).": "Sito web = le pagine pubbliche (home, landing promo, documentazione); Applicazione = l'uso dell'app da parte degli utenti connessi (ogni modulo aperto nella dashboard conta come una pagina, anche senza cambio di URL).",
+  "« Aucune donnée de trafic sur cette période »": "«Nessun dato di traffico su questo periodo»",
+  "Le message apparaît quand aucune consultation n'existe dans la fenêtre choisie : élargissez la période (90 j, 12 mois) ou vérifiez les dates « Du / Au » en mode Perso.": "Il messaggio compare quando nessuna consultazione esiste nella finestra scelta: allarga il periodo (90 gg, 12 mesi) o verifica le date «Dal / Al» in modalità Personalizzata.",
+  "• Le tableau de bord est réservé aux administrateurs et au propriétaire (onglet Analytics du module Utilisateurs & rôles, et PWA Pulse).": "• La dashboard è riservata agli amministratori e al proprietario (scheda Analytics del modulo Utenti e ruoli, e PWA Pulse).",
   "Lien vers": "Link a",
   "Aucun résultat pour": "Nessun risultato per"
 }
