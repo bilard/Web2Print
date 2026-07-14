@@ -77,11 +77,6 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'view:list', label: 'Vue liste',     intent: 'library:view:list' },
     ],
   },
-  { id: 'demo-express', group: 'create', icon: Sparkles, label: 'Démo express', accent: 'text-lime-400', activeBg: 'bg-lime-500/[0.1]', activeText: 'text-lime-300',
-    children: [
-      { id: 'action:new', label: 'Nouvelle démo', intent: 'demo-express:action:new' },
-    ],
-  },
   // ── Données produits ──
   { id: 'images', group: 'product-data', icon: ImageIcon,      label: 'DAM',              accent: 'text-pink-400',    activeBg: 'bg-pink-500/[0.1]',    activeText: 'text-pink-300',
     children: [
@@ -133,6 +128,11 @@ export const MODULE_ITEMS: ModuleItem[] = [
     ],
   },
   // ── Publication ──
+  { id: 'demo-express', group: 'publish', icon: Sparkles, label: 'Démo express', accent: 'text-lime-400', activeBg: 'bg-lime-500/[0.1]', activeText: 'text-lime-300',
+    children: [
+      { id: 'action:new', label: 'Nouvelle démo', intent: 'demo-express:action:new' },
+    ],
+  },
   { id: 'retail-promo', group: 'publish', icon: Tag, label: 'Création studio', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300',
     children: [
       { id: 'action:new',  label: 'Créer une promo', intent: 'retail-promo:action:new' },

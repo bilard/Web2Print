@@ -84,25 +84,13 @@ export const dashboardTourSteps: TourStep[] = [
       align: 'center',
     },
   },
-  {
-    element: '[data-tour="section-demo-express"]',
-    prepare: openSection('demo-express'),
-    requireSelector: '[data-tour="section-demo-express"]',
-    popover: {
-      title: '4 · Démo express',
-      description:
-        'Une société + une URL → une démo complète, générée automatiquement : produits scrapés dans le PIM, images dans le DAM, catalogue, carte promo, animations HTML et workflow. Nombre de produits réglable, journal console en direct (étapes, appels IA, coûts).',
-      side: 'right',
-      align: 'center',
-    },
-  },
   // ── Données produits ──
   {
     element: '[data-tour="section-images"]',
     prepare: openSection('images'),
     requireSelector: '[data-tour="section-images"]',
     popover: {
-      title: '5 · DAM — médias',
+      title: '4 · DAM — médias',
       description: 'Votre bibliothèque d’images. Parcourons ses rubriques.',
       side: 'right',
       align: 'center',
@@ -122,7 +110,7 @@ export const dashboardTourSteps: TourStep[] = [
     prepare: openSection('data'),
     requireSelector: '[data-tour="section-data"]',
     popover: {
-      title: '6 · PIM — données produits',
+      title: '5 · PIM — données produits',
       description: 'Vos fiches produits en tableau. Voici les actions principales (sélectionnez d’abord une base à gauche).',
       side: 'right',
       align: 'center',
@@ -138,7 +126,7 @@ export const dashboardTourSteps: TourStep[] = [
     prepare: openSection('taxonomies'),
     requireSelector: '[data-tour="section-taxonomies"]',
     popover: {
-      title: '7 · Taxonomies',
+      title: '6 · Taxonomies',
       description:
         'Arborescence de classification (catégories, gammes…). Reliez-y vos projets pour les filtrer dans la Bibliothèque et structurer vos exports.',
       side: 'right',
@@ -151,7 +139,7 @@ export const dashboardTourSteps: TourStep[] = [
     prepare: openSection('scraping-templates'),
     requireSelector: '[data-tour="section-scraping-templates"]',
     popover: {
-      title: '8 · Templates scraping',
+      title: '7 · Templates scraping',
       description:
         'Définissez les règles d’extraction (sélecteurs, mapping des champs) réutilisées pour enrichir automatiquement vos données produits.',
       side: 'right',
@@ -163,7 +151,7 @@ export const dashboardTourSteps: TourStep[] = [
     prepare: openSection('scraping-hub'),
     requireSelector: '[data-tour="section-scraping-hub"]',
     popover: {
-      title: '9 · Scraping Hub',
+      title: '8 · Scraping Hub',
       description:
         'Lancez et suivez les extractions à grande échelle. Centralise les sources, les lots et les résultats du scraping.',
       side: 'right',
@@ -175,7 +163,7 @@ export const dashboardTourSteps: TourStep[] = [
     prepare: openSection('price-watch'),
     requireSelector: '[data-tour="section-price-watch"]',
     popover: {
-      title: '10 · Veille tarifaire',
+      title: '9 · Veille tarifaire',
       description:
         'Tableau de bord de vos suivis de prix concurrents : écarts par produit, positionnement et alertes Telegram. La collecte (produits en entrée, sites concurrents, champs) se configure dans un workflow, via le node « Veille tarifaire ».',
       side: 'right',
@@ -183,6 +171,18 @@ export const dashboardTourSteps: TourStep[] = [
     },
   },
   // ── Publication ──
+  {
+    element: '[data-tour="section-demo-express"]',
+    prepare: openSection('demo-express'),
+    requireSelector: '[data-tour="section-demo-express"]',
+    popover: {
+      title: '10 · Démo express',
+      description:
+        'Une société + une URL → une démo complète, générée automatiquement : produits scrapés dans le PIM, images dans le DAM, catalogue, carte promo, animations HTML et workflow. Nombre de produits réglable, journal console en direct (étapes, appels IA, coûts).',
+      side: 'right',
+      align: 'center',
+    },
+  },
   {
     element: '[data-tour="section-retail-promo"]',
     prepare: openSection('retail-promo'),
