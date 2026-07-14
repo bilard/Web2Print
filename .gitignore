@@ -52,8 +52,6 @@ PowerPoint/
 Taxonomies/
 .netlify/
 .playwright-mcp/
-.DS_Store
-dist/
 .claude/
 env.local
 .agents/

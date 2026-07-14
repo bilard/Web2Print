@@ -37,7 +37,7 @@ const slugs = await page.evaluate(() => {
   const bodies = [...document.querySelectorAll('.mk-body')];
   const seen = new Set(); const res = [];
   bodies.forEach((b, i) => {
-    let win = b.closest('.mk') || b.parentElement;
+    const win = b.closest('.mk') || b.parentElement;
     if (seen.has(win)) return; seen.add(win);
     b.setAttribute('data-cap-idx', String(i));
     res.push({ idx: i, slug: clsOf(b).replace(/\s*mk-body\s*/, '').trim() || ('bloc'+i) });

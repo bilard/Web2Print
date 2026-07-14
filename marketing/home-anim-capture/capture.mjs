@@ -10,7 +10,7 @@
  * Sortie : marketing/home-anim-capture/out/<slug>.mp4
  */
 import { chromium } from 'playwright';
-import { readFile, stat, mkdir, rm, writeFile } from 'node:fs/promises';
+import { readFile, stat, mkdir, rm } from 'node:fs/promises';
 import { join, extname, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
@@ -66,7 +66,7 @@ const blocks = await page.evaluate(() => {
   const bodies = [...document.querySelectorAll('.mk-body')];
   const seen = new Set(); const res = [];
   bodies.forEach((b, i) => {
-    let win = b.closest('.mk') || b.parentElement;
+    const win = b.closest('.mk') || b.parentElement;
     if (seen.has(win)) return; seen.add(win);
     b.setAttribute('data-cap-idx', String(i));
     win.setAttribute('data-cap-win', String(i));
@@ -104,7 +104,8 @@ for (const { idx, slug } of targets) {
   // et la séquence ffmpeg casse / l'image « saute ». On échantillonne, on prend le max, on fixe.
   await page.evaluate(({ sel, period }) => {
     const w = document.querySelector(sel);
-    let mw = 0, mh = 0, N = 20;
+    let mw = 0, mh = 0;
+    const N = 20;
     for (let i = 0; i <= N; i++) {
       const t = (period / N) * i;
       for (const a of w.getAnimations({ subtree: true })) { try { a.pause(); a.currentTime = t; } catch {} }

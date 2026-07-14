@@ -41,7 +41,7 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
   useLayoutEffect(() => { setTick((t) => t + 1) }, [style])
   // Changement de VUE (verticale ↔ pleine largeur) : tout se replace → on
   // DÉSÉLECTIONNE (sinon le cadre/poignées restent figés sur l'ancienne position).
-  useLayoutEffect(() => { setSel(null); setLinking(false); onSelect?.(null) }, [wide]) // eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => { setSel(null); setLinking(false); onSelect?.(null) }, [wide])
 
   const rectOf = (id: CardObjectId): Rect | null => {
     const card = cardRef.current

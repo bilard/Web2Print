@@ -93,7 +93,7 @@ const blocks = await page.evaluate(({ mode, extra }) => {
   const bodies = [...document.querySelectorAll('.mk-body')];
   const seen = new Set();
   bodies.forEach((b, i) => {
-    let win = b.closest('.mk') || b.parentElement;
+    const win = b.closest('.mk') || b.parentElement;
     if (seen.has(win)) return; seen.add(win);
     win.setAttribute('data-cap-win', String(i));
     res.push({ idx: i, slug: (clsOf(b).replace(/\s*mk-body\s*/, '').replace(/-body$|-layout$/, '').trim() || ('bloc'+i)) });

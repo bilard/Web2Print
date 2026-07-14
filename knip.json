@@ -16,8 +16,7 @@
         "src/**/*.{ts,tsx}"
       ],
       "ignore": [
-        "src/components/ui/**",
-        "src/types/fabric.d.ts"
+        "src/components/ui/**"
       ],
       "ignoreBinaries": [
         "firebase"

@@ -324,7 +324,7 @@ export function useDemoExpress() {
     // (accueil = menu sans cartes produit), descente automatique dans les
     // rubriques du menu, quelques produits par rayon (taxonomie couverte).
     step('discover', { status: 'running' })
-    let productPages: { url: string; title: string }[] = []
+    const productPages: { url: string; title: string }[] = []
     let homeHtmlBd: string | null = null
     const pushUnique = (pages: { url: string; title: string }[]) => {
       for (const p of pages) {
