@@ -10,8 +10,11 @@ import { maybeNotifyNewSession } from './notifySession'
 if (!getApps().length) initializeApp()
 const db = getFirestore()
 
-// Compte OWNER exclu des stats (cf. owner.ts pour la liste et le raisonnement).
-const EXCLUDED_EMAILS = OWNER_EMAILS
+// Comptes exclus des stats : OWNER + son second compte personnel (mêmes
+// machines lilloises, il teste l'app avec les deux). ⚠ Ne PAS y ajouter
+// f.bilard@pimalion.com : compte de test « utilisateur normal », il doit
+// rester visible dans le journal (décision 2026-07-07, cf. owner.ts).
+const EXCLUDED_EMAILS = [...OWNER_EMAILS, 'fbilard59@gmail.com']
 
 // Uids exclus mis en cache par instance : résolus une fois (requête `users`), puis
 // mémoïsés tant qu'introuvables (retry), pour ne pas peser sur cet endpoint à haute
