@@ -1,5 +1,23 @@
 import { describe, it, expect } from 'vitest'
-import { isProductLike } from './buildDemoSheet'
+import { isProductLike, buildDemoSheet, DEMO_TARGET_FIELDS } from './buildDemoSheet'
+
+describe('buildDemoSheet — structure alignée sur le scraping (Prix, Sous-titre…)', () => {
+  it('la feuille porte les colonnes subtitle et price, remplies depuis les champs enrichis', () => {
+    expect(DEMO_TARGET_FIELDS).toContain('subtitle')
+    expect(DEMO_TARGET_FIELDS).toContain('price')
+    const sheet = buildDemoSheet('Acme', 'https://acme.test', [{
+      url: 'https://acme.test/p1',
+      fields: { name: 'Perceuse P1', subtitle: '18 V Li-Ion - Produit seul', price: '129,90 €' },
+      assets: [],
+    }])
+    const keys = sheet.columns.map((c) => c.key)
+    expect(keys).toContain('subtitle')
+    expect(keys).toContain('price')
+    expect(sheet.columns.find((c) => c.key === 'subtitle')!.label).toBe('Sous-titre')
+    expect(sheet.rows[0].subtitle).toBe('18 V Li-Ion - Produit seul')
+    expect(sheet.rows[0].price).toBe(129.9)
+  })
+})
 
 describe('isProductLike — écarte les pages éditoriales de la découverte', () => {
   it('page rubrique (ni réf, ni EAN, ni prix, 2 pseudo-specs) → NON produit', () => {

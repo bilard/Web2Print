@@ -36,6 +36,18 @@ export function buildDemoWorkflow(company: string, productUrls: string[], uid: s
       config: { folderName: demoName },
     },
     {
+      // Couverture IA — même étape que la couverture Nano Banana du pipeline :
+      // l'image générée rejoint les photos produit dans le dossier DAM démo
+      // (fan-in : mergeInputValue concatène les deux tableaux d'assets).
+      id: 'n6', type: 'generate-image', position: { x: 80, y: 460 },
+      config: {
+        prompt:
+          `Couverture de catalogue produits pour ${company} : visuel professionnel et moderne ` +
+          `inspiré de l'univers de la marque, sans aucun texte ni logo.`,
+        count: 1, aspectRatio: '3:4',
+      },
+    },
+    {
       id: 'n5', type: 'send-gmail', position: { x: 840, y: 220 },
       config: {
         to: email,
@@ -52,14 +64,16 @@ export function buildDemoWorkflow(company: string, productUrls: string[], uid: s
     { id: 'e_n1_sheet_n3_sheet', source: 'n1', sourceHandle: 'sheet', target: 'n3', targetHandle: 'sheet' },
     { id: 'e_n1_assets_n4_assets', source: 'n1', sourceHandle: 'assets', target: 'n4', targetHandle: 'assets' },
     { id: 'e_n3_result_n5_gsheet', source: 'n3', sourceHandle: 'result', target: 'n5', targetHandle: 'gsheet' },
+    { id: 'e_n6_assets_n4_assets', source: 'n6', sourceHandle: 'assets', target: 'n4', targetHandle: 'assets' },
   ]
   const template: WorkflowTemplate = {
     id: 'demo-express',
     name: demoName,
     description:
-      `Généré par la Démo express : scrape ${urls.length} produit(s) du site de ${company}, ` +
-      `dépose les images dans le DAM Drive, exporte le résultat en Excel et Google Sheets ` +
-      `puis envoie le Sheet par Gmail. Le cron (désactivé) permet de planifier le tout côté serveur.`,
+      `Généré par la Démo express : scrape ${urls.length} produit(s) du site de ${company} ` +
+      `(structure complète : prix, sous-titre, specs…), génère une couverture IA, dépose images ` +
+      `et couverture dans le DAM Drive, exporte le résultat en Excel et Google Sheets puis envoie ` +
+      `le Sheet par Gmail. Le cron (désactivé) permet de planifier le tout côté serveur.`,
     emoji: '✨',
     nodes,
     edges,

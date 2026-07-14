@@ -5,9 +5,11 @@
 // scrape ne reste orpheline.
 import { describe, it, expect, beforeAll } from 'vitest'
 import { buildDemoWorkflow } from './demoWorkflow'
+import { DEMO_TARGET_FIELDS } from './buildDemoSheet'
 import { initWorkflowsRegistry } from '@/features/workflows/registry/builtin'
 import { nodeRegistry } from '@/features/workflows/registry'
 import { isCompatible } from '@/features/workflows/runtime/ports'
+import { FIELD_TEMPLATES } from '@/features/scraping/useJina'
 
 beforeAll(() => {
   initWorkflowsRegistry()
@@ -19,8 +21,30 @@ describe('buildDemoWorkflow', () => {
   it('contient toutes les cartes du pipeline démo', () => {
     const types = wf().nodes.map((n) => n.type).sort()
     expect(types).toEqual(
-      ['cron', 'export-excel', 'gsheets-export', 'save-dam', 'scrape-url', 'send-gmail'].sort(),
+      ['cron', 'export-excel', 'generate-image', 'gsheets-export', 'save-dam', 'scrape-url', 'send-gmail'].sort(),
     )
+  })
+
+  it('cohérence de structure : le template de scrape du workflow couvre les champs de la feuille démo', () => {
+    // Le workflow scrape en `product_full` : ses colonnes Excel/GSheet doivent
+    // porter la même structure que la feuille PIM démo (Prix, Sous-titre compris).
+    const scrapeKeys = FIELD_TEMPLATES.product_full.fields.map((f) => f.key)
+    for (const k of DEMO_TARGET_FIELDS) {
+      expect(scrapeKeys, `champ démo absent du template product_full : ${k}`).toContain(k)
+    }
+    expect(scrapeKeys).toContain('price')
+    expect(scrapeKeys).toContain('subtitle')
+  })
+
+  it('couverture IA : carte generate-image préremplie, câblée vers le DAM', () => {
+    const w = wf()
+    const gen = w.nodes.find((n) => n.type === 'generate-image')!
+    expect(gen).toBeDefined()
+    expect(String((gen.config as Record<string, unknown>).prompt)).toContain('Acme')
+    const dam = w.nodes.find((n) => n.type === 'save-dam')!
+    expect(
+      w.edges.some((e) => e.source === gen.id && e.sourceHandle === 'assets' && e.target === dam.id && e.targetHandle === 'assets'),
+    ).toBe(true)
   })
 
   it('nodes connus et edges valides (ports existants et compatibles)', () => {

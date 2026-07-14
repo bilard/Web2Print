@@ -11,7 +11,7 @@ import { isSaneSpecPair } from '@/features/scraping/core/parsers/parseSpecificat
 
 /** Champs demandés au moteur d'enrichissement (clés de mapProductToFields). */
 export const DEMO_TARGET_FIELDS = [
-  'name', 'brand', 'reference', 'ean', 'price',
+  'name', 'subtitle', 'brand', 'reference', 'ean', 'price',
   'description', 'advantages', 'specifications', 'documents', 'breadcrumb',
 ]
 
@@ -74,6 +74,7 @@ function breadcrumbLevels(breadcrumb: string, name: string): string[] {
 export function buildDemoSheet(company: string, siteUrl: string, items: DemoProduct[]): ExcelSheet {
   const columns: ExcelColumn[] = [
     col('name', 'Nom', 'text', { isPrimary: true, width: 240 }),
+    col('subtitle', 'Sous-titre', 'text', { width: 200 }),
     col('brand', 'Marque', 'text', { width: 130 }),
     col('reference', 'Référence', 'text', { width: 140 }),
     col('ean', 'EAN', 'text', { width: 140 }),
@@ -97,6 +98,7 @@ export function buildDemoSheet(company: string, siteUrl: string, items: DemoProd
     return {
       _id: `demo_${i}_${Math.random().toString(36).slice(2, 8)}`,
       name: name || `Produit ${i + 1}`,
+      subtitle: str(f.subtitle) || null,
       // Marque toujours renseignée : repli sur la société du prospect (« Milwaukee »)
       // — les pages fabricant n'affichent pas leur propre marque en donnée.
       brand: str(f.brand) || company,
