@@ -27,19 +27,10 @@ interface SectionsCardProps {
 
 export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap, previewId, onPreview }: SectionsCardProps) {
   const setPlan = useCatalogStore((s) => s.setPlan)
-  // Nœuds DÉPLIÉS (ids hiérarchiques « univers/famille/sous-famille ») : tout
-  // replié par défaut, sauf la chaîne des sections à vedette ★ ou du produit
-  // prévisualisé (état INITIAL seulement — le pli reste ensuite manuel).
-  const [openIds, setOpenIds] = useState<Set<string>>(() => {
-    const open = new Set<string>()
-    const anchored = new Set(plan.sections.filter((s) => s.featuredIds.length > 0).map((s) => s.nodeId))
-    for (const n of flatNodes) {
-      if (!anchored.has(n.id) && !(previewId != null && n.productIds.includes(previewId))) continue
-      const parts = n.id.split('/')
-      for (let i = 1; i <= parts.length; i++) open.add(parts.slice(0, i).join('/'))
-    }
-    return open
-  })
+  // Nœuds DÉPLIÉS (ids hiérarchiques « univers/famille/sous-famille ») : TOUT
+  // DÉPLIÉ par défaut (l'arbre complet et ses produits sont visibles d'emblée) —
+  // le pli reste ensuite manuel.
+  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set(flatNodes.map((n) => n.id)))
   const toggleOpen = (id: string) => setOpenIds((prev) => {
     const next = new Set(prev)
     if (next.has(id)) next.delete(id)
