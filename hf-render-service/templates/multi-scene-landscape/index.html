@@ -138,6 +138,17 @@
 
         const BG = (comp.palette && comp.palette.bg) || '#0a0a0a';
         const ACCENT = (comp.palette && comp.palette.accent) || '#ffffff';
+        // Texte lisible garanti : l'accent ne sert de couleur de texte que
+        // s'il est assez clair pour le fond sombre / la photo voilée ; sinon
+        // blanc — l'accent reste sur les décors (halo, blobs, mockup, barre,
+        // bandeau caption).
+        const TEXT = (function () {
+          const m = /^#?([a-f0-9]{6})$/i.exec(ACCENT);
+          if (!m) return '#ffffff';
+          const n = parseInt(m[1], 16);
+          const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+          return lum >= 0.55 ? ACCENT : '#ffffff';
+        })();
         const PACE_MULT = { slow: 1.2, normal: 1.0, fast: 0.8 }[comp.pace] ?? 1.0;
         const dur = (d) => d * PACE_MULT;
 
@@ -200,7 +211,7 @@
         function buildHook(scene, container) {
           addDecor(container, true);
           if (scene.imageUrl) addImageBg(container, scene.imageUrl);
-          container.style.color = ACCENT;
+          container.style.color = TEXT;
           if (scene.title) {
             const t = el('div', 'title');
             const words = String(scene.title).split(/\s+/).filter(Boolean);
@@ -219,7 +230,7 @@
           addDecor(container, false);
           addMockupBg(container, THEME);
           if (scene.imageUrl) addImageBg(container, scene.imageUrl);
-          container.style.color = ACCENT;
+          container.style.color = TEXT;
           if (scene.title) container.appendChild(el('div', 'title', scene.title));
           if (scene.sub) container.appendChild(el('div', 'sub', scene.sub));
           if (Array.isArray(scene.kpis) && scene.kpis.length) {
@@ -232,7 +243,7 @@
         function buildCta(scene, container) {
           addDecor(container, true);
           if (scene.imageUrl) addImageBg(container, scene.imageUrl);
-          container.style.color = ACCENT;
+          container.style.color = TEXT;
           if (scene.label) {
             const l = el('div', 'label');
             const words = String(scene.label).split(/\s+/).filter(Boolean);
