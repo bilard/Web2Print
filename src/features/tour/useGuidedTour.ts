@@ -40,11 +40,26 @@ export function useGuidedTour() {
     const steps = TOUR_STEPS[activeTour]
     let instance: Driver | null = null
 
+    // Garde anti-réentrance : un double-clic « Suivant » (ou des flèches
+    // clavier martelées) pendant une transition entremêle deux moveTo et
+    // laisse le popover caché définitivement (course d'animations driver.js).
+    let transitioning = false
+
+    const popoverVisible = () => {
+      const p = document.querySelector('.driver-popover')
+      return !!p && getComputedStyle(p).display !== 'none'
+    }
+
     const goTo = async (targetIndex: number) => {
-      if (!instance) return
-      const step = steps[targetIndex]
-      if (step) await prepareStep(step)
-      instance.moveTo(targetIndex)
+      if (!instance || transitioning) return
+      transitioning = true
+      try {
+        const step = steps[targetIndex]
+        if (step) await prepareStep(step)
+        instance.moveTo(targetIndex)
+      } finally {
+        transitioning = false
+      }
     }
 
     instance = driver({
@@ -61,11 +76,13 @@ export function useGuidedTour() {
       progressText: '{{current}} / {{total}}',
       steps,
       onNextClick: () => {
+        if (transitioning || !popoverVisible()) return
         const idx = instance?.getActiveIndex() ?? 0
         if (instance?.isLastStep()) instance.destroy()
         else void goTo(idx + 1)
       },
       onPrevClick: () => {
+        if (transitioning || !popoverVisible()) return
         const idx = instance?.getActiveIndex() ?? 0
         void goTo(idx - 1)
       },
