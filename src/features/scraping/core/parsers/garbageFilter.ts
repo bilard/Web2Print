@@ -2,9 +2,18 @@
  *  et les éléments d'UI de sections avis (filtres, tri, pagination Bazaarvoice). */
 const GARBAGE_RE = /\b(cookie[s ]?|gdpr|your privacy|recaptcha|captcha|consent manager|targeting cookies?|functional cookies?|performance cookies?|strictly necessary|strictement\s+n[eé]cessaire|necessary cookies?|checkbox.?label|onetrust|cookiebot|manage preferences|cookie settings|politique de confidentialit[eé]|param[eè]tres? des? cookies?|refuser les cookies?|accepter les cookies?|we use cookies|this site is exceeding|we and our partners store|non-sensitive information|personali[sz]ed ads|ad measurement|audience insights|legitimate interest|store and\/or access|advertising purposes?|consent purposes?|personalised content|accept all|reject all|aspsessionid[a-z]*|asp\.net|prestataire\s+de\s+traitement|dur[eé]e\s+de\s+conservation|finalit[eé]\s+du\s+traitement|statistique|analytique|pr[eé]f[eé]rences?|ciblage|publicit[eé]|marketing)\b|s[eé]lectionnez\s+une?\s+ligne\s+ci-dessous\s+pour\s+filtrer|filtrer\s+les\s+avis|trier\s+les\s+avis|afficher\s+plus\s+de\s+filtres|\d+\s+à\s+\d+\s+sur\s+\d+\s+avis|avis\s+r[eé]gionaux|r[eé]gional\s+avis|lire\s+tous\s+les\s+avis|voir\s+tous\s+les\s+avis/i
 
-/** Détecte si un texte est du contenu parasite (cookie banner, GDPR, reCAPTCHA) */
+/** Prose JURIDIQUE (CGV/garantie légale), UI compte/checkout (Magento),
+ *  newsletter et placeholders de template non résolus
+ *  (« country_language__other », « country_name_ ») — jamais du contenu
+ *  produit. Fixture réelle Trafic : l'onglet Garantie déplié devenait LA
+ *  description, l'UI de login polluait avantages/description. Signal par
+ *  vocabulaire/motif générique, jamais par site. */
+const LEGAL_ACCOUNT_RE = /d[eé]faut\s+de\s+conformit[eé]|lettre\s+recommand[eé]e|sous\s+peine\s+d|r[eé]serve\s+de\s+propri[eé]t[eé]|droit\s+de\s+r[eé]tractation|conditions\s+g[eé]n[eé]rales\s+de\s+(?:vente|location)|identifiant\s+unique\s+\(idu\)|cr[eé]ation\s+d.{0,3}un\s+compte|commander\s+en\s+(?:tant\s+que|utilisant)|mot\s+de\s+passe|inscrivez[- ]vous|d[eé]sinscri|newsletter|\b[a-z]+__[a-z]+\b|\b[a-z]+_[a-z]+_(?![a-z0-9])/i
+
+/** Détecte si un texte est du contenu parasite (cookie banner, GDPR, reCAPTCHA,
+ *  prose CGV, UI compte client, placeholder de template). */
 export function isGarbageContent(text: string): boolean {
-  return GARBAGE_RE.test(text)
+  return GARBAGE_RE.test(text) || LEGAL_ACCOUNT_RE.test(text)
 }
 
 /** Renvoie true si > 30 % des lignes non-vides du texte sont du garbage. */

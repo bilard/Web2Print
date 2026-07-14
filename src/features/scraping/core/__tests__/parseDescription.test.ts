@@ -248,3 +248,32 @@ L'abri de jardin Flodova est conçu en sapin du Nord naturel, un matériau répu
     expect(desc).not.toContain('montage simple')
   })
 })
+
+// Fixture réelle trafic.com (2026-07-14, fiche Farelek) : la fiche n'a qu'une
+// ligne de description ; le scrape browser déplie l'onglet GARANTIE (prose CGV
+// « défaut de conformité », « lettre recommandée ») qui devenait LA description
+// (plus long bloc de prose), et l'UI de login Magento (« La création d'un compte
+// possède de nombreux avantages : ») polluait la phase 1. Signal par vocabulaire
+// juridique/compte — jamais par site.
+describe('parseDescriptionFromMarkdown — prose CGV/garantie et UI compte exclues (fixture Trafic Farelek)', () => {
+  const MD = `# Farelek Télécommande Ventilateur De Plafond
+
+**Commander en tant que nouveau client**
+
+La création d’un compte possède de nombreux avantages :
+
+Adresse email 
+
+Détails
+
+FARELEK Télécommande Ventilateur de Plafond
+
+Garantie
+
+Le Vendeur offre une garantie de 24 mois contre tout défaut de conformité non apparent dont pourraient être affectés les produits vendus. Ce délai prend cours au moment de la délivrance du produit (date renseignée sur le bon de livraison et, à défaut, sur le ticket ou le bon d’achat) pour une utilisation exclusivement non professionnelle du produit par un consommateur (Client particulier). Toute réclamation pour défaut de conformité doit être adressée par e-mail, ou en lettre recommandée à SOGESMA S.A. dans les 2 mois calendrier suivant le jour où le consommateur a constaté le défaut ou devait pouvoir le constater, sous peine d’annulation de son droit à une telle réclamation.
+`
+  it('ni la garantie CGV ni le bloc compte ne deviennent la description', () => {
+    const desc = parseDescriptionFromMarkdown(MD)
+    expect(desc).not.toMatch(/défaut de conformité|lettre recommandée|garantie de 24 mois|création d’un compte/i)
+  })
+})

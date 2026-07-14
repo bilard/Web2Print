@@ -322,3 +322,80 @@ JINA_EXTRACTED_DOWNLOADS_END
     expect(advs).toContain("Collecteur d'herbe robuste de 65 L avec indicateur de remplissage")
   })
 })
+
+// Fixture réelle trafic.com (2026-07-14, fiche farelek-telecommande-ventilateur-de-pl,
+// Magento) : la ligne d'UI de login « La création d'un compte possède de nombreux
+// avantages : » OUVRAIT la zone features, et faute de heading H1/H2 pour la
+// refermer, TOUT le bas de page devenait des « avantages » (promesses enseigne,
+// table sérialisée, newsletter, TVA TRAFINTER, adresses, Mollie, bloc NL avec
+// placeholders de template non résolus). Signal par vocabulaire compte/checkout
+// et par motifs génériques (placeholder, n° TVA, table pipée) — jamais par site.
+describe('parseAdvantagesFromMarkdown — UI compte Magento + footer enseigne (fixture Trafic Farelek)', () => {
+  const MD = `# Farelek Télécommande Ventilateur De Plafond
+
+**Commander en tant que nouveau client**
+
+La création d’un compte possède de nombreux avantages :
+
+*   Voir le statut de la commande et de l’expédition
+*   Suivi de la commande
+*   Commandez plus rapidement
+
+**Commander en utilisant votre compte**
+
+Adresse email 
+
+Mot de passe 
+
+Farelek Télécommande Ventilateur De Plafond
+
+SKU 1084074
+
+FARELEK Télécommande Ventilateur de Plafond
+
+50 69
+
+Détails
+
+FARELEK Télécommande Ventilateur de Plafond
+
+Caractéristiques
+
+Plus d’information| Référence Trafic | 1084074 |
+| --- |
+
+Nos 4 promesses:
+
+*   Laissez-vous séduire
+*   par un choix impressionnant, des offres et des collections exclusives
+
+*   Faites confiance
+*   à une qualité testée et validée
+
+*   Profitez
+*   des meilleurs prix garantis du marché
+
+*   Vivez
+*   une expérience chaleureuse et agréable
+
+ Doe je liever je aankopen op onze country_language__other site? 
+
+Inscrivez-vous pour recevoir nos infos
+
+Vous pouvez vous désinscrire à tout moment en vous rendant sur votre compte. Voyez notre politique de respect de la vie privée pour plus d'informations.
+
+TRAFINTER (FR) FR08383139458
+
+(Rue Jean Jaures, n°225, 59243 Quarouble, France)
+
+Payez vite et en toute sécurité avec avec Mollie
+`
+  it("l'UI de login n'ouvre pas la zone features → aucun item du footer", () => {
+    const advs = parseAdvantagesFromMarkdown(MD).map((a) => a.text)
+    expect(advs.join(' | ')).not.toMatch(/Laissez-vous séduire|Faites confiance|prix garantis|expérience chaleureuse|Inscrivez-vous|désinscrire|TRAFINTER|Quarouble|Mollie|Doe je liever|country_|Plus d’information|Référence Trafic/i)
+  })
+  it('aucun heading de section nu ne devient un avantage', () => {
+    const advs = parseAdvantagesFromMarkdown(MD).map((a) => a.text)
+    expect(advs).not.toContain('Caractéristiques')
+  })
+})

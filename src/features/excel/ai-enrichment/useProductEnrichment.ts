@@ -17,6 +17,7 @@ import { filterImagesByProductRef } from '@/features/scraping/core/parsers/filte
 import { parseNamedDocLinks } from '@/features/scraping/core/parsers/parseNamedDocLinks'
 import { parsePricingFromMarkdown } from '@/features/scraping/core/parsers/parsePricing'
 import { parseAdvantagesFromMarkdown, parseAdvantagesFromHtml, mergeAdvantagesAdditive } from '@/features/scraping/core/parsers/parseAdvantages'
+import { parseIcecatGtin } from '@/features/scraping/core/parsers/parseIcecatGtin'
 import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
 import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
@@ -648,7 +649,10 @@ function buildIdentity(args: {
     model: structured?.sku?.trim() || lifted.model,
     distributorRef: lifted.distributorRef,
     manufacturerRef: structured?.mpn?.trim() || lifted.manufacturerRef,
-    ean: structured?.gtin?.trim() || lifted.ean,
+    // gtin JSON-LD VALIDÉ (8-14 chiffres) : nombre de sites y recopient leur
+    // sku interne (« gtin: 1084074 » à 7 chiffres, fixture Trafic) — un faux
+    // EAN écraserait celui lifté des specs (widget Icecat, tableau EAN…).
+    ean: (() => { const g = structured?.gtin?.trim(); return g && EAN_VALUE_RE.test(g) ? g : lifted.ean })(),
   }
 
   // Fallback name : H1 markdown puis input utilisateur
@@ -2253,6 +2257,16 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
   data.advantages = parseAdvantagesFromHtml(html)
   if (data.advantages.length > 0) {
     console.log('[manufacturer] ✓ advantages from HTML:', data.advantages.length)
+  }
+
+  // ── 0ter. EAN depuis le widget Icecat Live (plateforme standard) ──
+  // Poussé en paire spec « EAN » : liftIdentityFromSpecs la remonte en identité
+  // (et la retire des specs) — souvent le SEUL EAN fiable quand le JSON-LD
+  // recopie le sku interne (cf. parseIcecatGtin).
+  const icecatGtin = parseIcecatGtin(html)
+  if (icecatGtin) {
+    data.specs.push({ name: 'EAN', value: icecatGtin })
+    console.log('[manufacturer] ✓ EAN from Icecat widget:', icecatGtin)
   }
 
   // ── 1. Parse window.__REDUX_STORE (TTI Group / sites Relay) ──
