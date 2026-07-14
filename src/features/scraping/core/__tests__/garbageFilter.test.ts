@@ -50,3 +50,30 @@ describe('isMainlyGarbage', () => {
     expect(isMainlyGarbage('')).toBe(false)
   })
 })
+
+// Fixture réelle trafic.com (2026-07-14, PATH B LLM) : le bloc « Nos 4
+// promesses » (réassurance ENSEIGNE — parle du magasin, jamais du produit) et
+// le boilerplate de galerie Magento ressortaient en avantages/description via
+// la synthèse LLM. Vocabulaire de réassurance retail générique, jamais par site.
+describe('isGarbageContent — réassurance enseigne + galerie (fixture Trafic)', () => {
+  const JUNK = [
+    'Laissez-vous séduire par un choix impressionnant, des offres et des collections exclusives',
+    'Faites confiance à une qualité testée et validée',
+    'des meilleurs prix garantis du marché',
+    'une expérience chaleureuse et agréable',
+    'Nos 4 promesses:',
+    'Skip to the beginning of the images gallery',
+    'Skip to the end of the images gallery',
+  ]
+  it.each(JUNK)('tue « %s »', (t) => {
+    expect(isGarbageContent(t)).toBe(true)
+  })
+  const GOOD = [
+    'Ventilateur de plafond silencieux avec télécommande, idéal pour la chambre',
+    'La tour de ventilateur 3 vitesses blanche a 3 vitesses avec une puissance de 45W.',
+    'Garantie fabricant de 10 ans (enregistrement requis)',
+  ]
+  it.each(GOOD)('garde « %s »', (t) => {
+    expect(isGarbageContent(t)).toBe(false)
+  })
+})

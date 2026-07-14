@@ -10,10 +10,16 @@ const GARBAGE_RE = /\b(cookie[s ]?|gdpr|your privacy|recaptcha|captcha|consent m
  *  vocabulaire/motif générique, jamais par site. */
 const LEGAL_ACCOUNT_RE = /d[eé]faut\s+de\s+conformit[eé]|lettre\s+recommand[eé]e|sous\s+peine\s+d|r[eé]serve\s+de\s+propri[eé]t[eé]|droit\s+de\s+r[eé]tractation|conditions\s+g[eé]n[eé]rales\s+de\s+(?:vente|location)|identifiant\s+unique\s+\(idu\)|cr[eé]ation\s+d.{0,3}un\s+compte|commander\s+en\s+(?:tant\s+que|utilisant)|mot\s+de\s+passe|inscrivez[- ]vous|d[eé]sinscri|newsletter|\b[a-z]+__[a-z]+\b|\b[a-z]+_[a-z]+_(?![a-z0-9])/i
 
+/** Réassurance ENSEIGNE (« Nos 4 promesses », « Laissez-vous séduire »…) et
+ *  boilerplate de galerie Magento (« Skip to the beginning of the images
+ *  gallery ») : vocabulaire marketing du MAGASIN — jamais du produit. Fixture
+ *  réelle Trafic : la synthèse LLM les recrachait en avantages/description. */
+const STORE_REASSURANCE_RE = /laissez-vous\s+s[eé]duire|choix\s+impressionnant|collections\s+exclusives|meilleurs\s+prix\s+garantis|exp[eé]rience\s+chaleureuse|qualit[eé]\s+test[eé]e\s+et\s+valid[eé]e|nos\s+\d+\s+promesses|skip\s+to\s+the\s+(?:beginning|end)\s+of\s+the\s+images\s+gallery/i
+
 /** Détecte si un texte est du contenu parasite (cookie banner, GDPR, reCAPTCHA,
  *  prose CGV, UI compte client, placeholder de template). */
 export function isGarbageContent(text: string): boolean {
-  return GARBAGE_RE.test(text) || LEGAL_ACCOUNT_RE.test(text)
+  return GARBAGE_RE.test(text) || LEGAL_ACCOUNT_RE.test(text) || STORE_REASSURANCE_RE.test(text)
 }
 
 /** Renvoie true si > 30 % des lignes non-vides du texte sont du garbage. */

@@ -26,6 +26,17 @@ function extractTabId(el: Element): string | null {
   return null
 }
 
+
+/** Pages TRANSVERSES d'un site e-commerce (CGV, mentions légales, compte,
+ *  panier, contact, magasins…) : jamais des sous-pages PRODUIT — les fusionner
+ *  au bundle noie la fiche (fixture réelle Trafic : 28 Ko de CGV fusionnés, la
+ *  garantie légale devenait LA description). Segments EXACTS, jamais par site. */
+const NON_PRODUCT_SEGMENT_RE = /(?:^|\/)(?:conditions-?generales?(?:-de-vente)?|cgv|cgu|mentions-?legales?|legal(?:-notices?)?|privacy(?:-policy)?|politique-[a-z-]+|cookies?|contact(?:ez-nous|s)?|aide|help|faqs?|livraisons?|delivery|retours?|returns?|customer|account|mon-compte|login|connexion|panier|cart|checkout|wishlist|newsletter|magasins?|stores?|store-locator|a-propos|about(?:-us)?|qui-sommes-nous|recrutement|jobs?|carrieres?|sitemap|plan-du-site)(?:$|\/|\?)/i
+
+function isNonProductUrl(url: URL): boolean {
+  return NON_PRODUCT_SEGMENT_RE.test(url.pathname)
+}
+
 export interface RelatedUrls {
   tabs: string[]
   pdfs: string[]
@@ -80,6 +91,7 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
     }
 
     if (isInsideNav(a)) continue
+    if (isNonProductUrl(resolved)) continue
 
     const normalized = normalizeUrl(resolved.toString())
     if (!normalized || normalized === baseKey) continue

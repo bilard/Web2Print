@@ -203,3 +203,27 @@ describe('discoverRelatedUrls - ARIA tabs synthesis', () => {
     expect(tabs.length).toBeGreaterThan(0)
   })
 })
+
+// Fixture réelle trafic.com (2026-07-14, Magento) : le « préfixe partagé » des
+// sous-pages n'était que la LOCALE (/fr_FR/) → /fr_FR/conditions-generales
+// devenait une sous-page produit et ses 28 Ko de CGV étaient fusionnés au
+// bundle (la garantie devenait LA description). Blocklist de slugs transverses
+// e-commerce — jamais par site.
+describe('discoverRelatedUrls - pages transverses jamais en sous-pages (fixture Trafic)', () => {
+  const base = new URL('https://trafic.com/fr_FR/farelek-telecommande-ventilateur-de-pl')
+  const html = `
+<html><body>
+  <main>
+    <a href="/fr_FR/conditions-generales">Conditions générales</a>
+    <a href="/fr_FR/mentions-legales">Mentions légales</a>
+    <a href="/fr_FR/contact">Contact</a>
+    <a href="/fr_FR/customer/account/create/">Créer un compte</a>
+    <a href="/fr_FR/farelek-telecommande-ventilateur-de-pl-notice">Notice produit</a>
+  </main>
+</body></html>`
+  it('exclut CGV / mentions légales / contact / compte, garde la sous-page produit', () => {
+    const rel = discoverRelatedUrls(html, base)
+    expect(rel.subpages.join(' ')).not.toMatch(/conditions-generales|mentions-legales|contact|customer/)
+    expect(rel.subpages.join(' ')).toContain('farelek-telecommande-ventilateur-de-pl-notice')
+  })
+})

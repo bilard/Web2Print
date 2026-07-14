@@ -780,6 +780,11 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
         // Rejet : ligne contenant une URL + séparateur ou juste une URL
         if (/\s[|#]{1,2}\s*https?:\/\//.test(t)) return false
         if (/https?:\/\/\S+/.test(t)) return false
+        // Ligne-image markdown résiduelle (« !Farelek Télécommande… ») et
+        // boilerplate ligne à ligne (galerie, réassurance enseigne, CGV) :
+        // la synthèse LLM recopie parfois ces lignes autour du vrai paragraphe.
+        if (t.startsWith('!')) return false
+        if (isGarbageContent(t)) return false
         return true
       })
       .join('\n')
