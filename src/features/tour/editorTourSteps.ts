@@ -82,6 +82,16 @@ export const editorTourSteps: TourStep[] = [
     },
   },
   {
+    element: '[data-tour="video-ai"]',
+    popover: {
+      title: 'Vidéo IA',
+      description:
+        'Transformez la PAGE ENTIÈRE en vidéo animée : décrivez l’ambiance dans un brief, l’IA construit le plan de motion (elle rejoue aussi vos animations par-objet) et rend un MP4. Vos briefs s’enregistrent en modèles réutilisables. Pour animer un seul objet, utilisez plutôt le panneau « Animer l’objet ».',
+      side: 'bottom',
+      align: 'end',
+    },
+  },
+  {
     element: '[data-tour="toolbar"]',
     popover: {
       title: 'Barre d’outils',
@@ -327,7 +337,8 @@ export const editorTourSteps: TourStep[] = [
     requireSelector: '[data-tour="panel-data"]',
     popover: {
       title: 'Panneau Données (publipostage)',
-      description: 'Liez une source PIM/Excel et associez les champs aux éléments pour générer en masse une variante par ligne.',
+      description:
+        'Liez une source PIM/Excel et associez les champs aux éléments pour générer en masse une variante par ligne. Les blocs balisés d’un import IDML gardent leur connecteur : mappez chaque balise vers une colonne, et des badges sur le canvas montrent quels blocs sont reliés.',
       side: 'left',
       align: 'start',
     },
@@ -394,7 +405,8 @@ export const editorTourSteps: TourStep[] = [
     requireSelector: '[data-tour="panel-assets"]',
     popover: {
       title: 'Panneau Assets',
-      description: 'Polices et ressources disponibles pour la composition.',
+      description:
+        'Polices et ressources disponibles pour la composition — dont « Mes polices » : vos fichiers uploadés (ex. polices d’un projet InDesign) et des Google Fonts ajoutées par URL, proposés dans tous les sélecteurs de police.',
       side: 'left',
       align: 'start',
     },
@@ -404,8 +416,9 @@ export const editorTourSteps: TourStep[] = [
     prepare: prepareAnimPanel,
     requireSelector: '[data-tour="panel-animation3d"]',
     popover: {
-      title: 'Panneau Animation 3D',
-      description: 'Effets et transformations 3D (un objet est sélectionné pour la démo). Choisissez un preset puis réglez les paramètres.',
+      title: 'Panneau Animer l’objet',
+      description:
+        'Anime l’objet SÉLECTIONNÉ en direct : choisissez un preset d’effet 3D puis réglez les paramètres (un objet est sélectionné pour la démo). Pour une vidéo de toute la page, utilisez « Vidéo IA » dans la barre supérieure.',
       side: 'left',
       align: 'start',
     },

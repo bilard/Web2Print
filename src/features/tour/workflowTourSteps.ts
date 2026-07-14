@@ -50,7 +50,7 @@ export const workflowTourSteps: TourStep[] = [
     popover: {
       title: 'Étape 1 · Import',
       description:
-        'Le point de départ : d’où viennent les données (PIM, scraping web, fichier, base existante). Les étapes suivantes ne se déverrouillent qu’une fois un bloc d’import posé.',
+        'Le point de départ : d’où viennent les données (PIM, scraping web, fichier, base existante). Le bloc « Planification » déclenche le workflow à intervalle régulier, côté serveur — même app fermée. Les étapes suivantes ne se déverrouillent qu’une fois un bloc d’import posé.',
       side: 'right',
       align: 'start',
     },
@@ -62,6 +62,28 @@ export const workflowTourSteps: TourStep[] = [
       title: 'Étape · Transformation',
       description:
         'Remodelez les données : filtres, colonnes calculées, et le bloc « Graphique » qui produit un graphe (barres, lignes, camembert) inséré dans vos exports ou Google Sheets.',
+      side: 'right',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="wf-step-export"]',
+    requireSelector: '[data-tour="wf-step-export"]',
+    popover: {
+      title: 'Étape · Export',
+      description:
+        'Produisez le livrable : Excel, PPTX, Google Sheets… et les rapports HTML prêts à envoyer — « Rapport de coûts IA » (consommation par service) et « Fréquentation du site » (visites, pages vues).',
+      side: 'right',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="wf-step-communication"]',
+    requireSelector: '[data-tour="wf-step-communication"]',
+    popover: {
+      title: 'Étape · Communication',
+      description:
+        'Diffusez le résultat : email Gmail (les fichiers produits en amont partent automatiquement en pièces jointes), message Telegram, ou « Webhook / Make » qui POSTe les données vers Make, Zapier, n8n…',
       side: 'right',
       align: 'start',
     },
@@ -113,7 +135,7 @@ export const workflowTourSteps: TourStep[] = [
     popover: {
       title: 'Exécuter',
       description:
-        '« Run » lance le workflow de bout en bout. « Pas à pas » s’arrête avant chaque bloc pour inspecter ses sorties — idéal pour déboguer. Pendant l’exécution, un bouton « Stop » apparaît.',
+        '« Run » lance le workflow de bout en bout (les blocs indépendants tournent en parallèle). « Pas à pas » s’arrête avant chaque bloc pour inspecter ses sorties — idéal pour déboguer. Avec une planification active, un badge « Prochaine · … » propose aussi « Lancer (serveur) » : le run tourne dans le cloud, même app fermée.',
       side: 'bottom',
       align: 'end',
     },

@@ -149,6 +149,7 @@ export function EditorHeader() {
       )}
 
       <button
+        data-tour="video-ai"
         onClick={() => setModal('video')}
         title="Générer une vidéo IA de la PAGE ENTIÈRE (brief → animation). Pour animer un seul objet en direct, utilise le panneau « Animer l'objet »."
         className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
