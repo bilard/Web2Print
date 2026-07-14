@@ -57,6 +57,14 @@ export function CardObjectSettings({ obj, style, theme, patch, wide }: Props) {
       )}
       <SliderField label={`Rotation (${wide ? 'pleine largeur' : 'verticale'})`} value={box.r ?? 0}
         onChange={setRotation} min={-45} max={45} step={1} unit="°" />
+      {obj === 'details' && (
+        <label className="flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none"
+          title="Répartit les lignes de données en deux colonnes équilibrées — identique à l'export">
+          <input type="checkbox" checked={style.detailsColumns === 2}
+            onChange={(e) => patch({ detailsColumns: e.target.checked ? 2 : 1 })} className="accent-indigo-600" />
+          Texte sur 2 colonnes
+        </label>
+      )}
       {obj === 'description' && (
         <label className="flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none"
           title="Répartit le texte en deux moitiés équilibrées côte à côte — identique à l'export">

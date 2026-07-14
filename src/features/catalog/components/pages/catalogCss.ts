@@ -431,6 +431,9 @@ export const CATALOG_CSS = `
 /* Description sur 2 COLONNES : deux moitiés équilibrées rendues en flex (pas de
    CSS columns — html2canvas ne les supporte pas, l'export doit égaler l'aperçu). */
 .cat-free .cat-cell-desc.cat-desc-cols { display:flex; gap:16px; }
+/* Bloc « Détails » (data) sur 2 COLONNES : même principe (flex, export-safe). */
+.cat-cell-details.cat-details-cols { flex-direction:row; gap:12px; }
+.cat-details-cols > div { flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:1px; }
 .cat-desc-cols > span { flex:1 1 0; min-width:0; white-space:pre-line; }
 /* Textes INLINE (réf, marque, prix) passés en block : un span inline s'aligne sur
    la LIGNE DE BASE de la police héritée (plus grande) → il descend dans sa boîte

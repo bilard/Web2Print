@@ -220,6 +220,8 @@ export interface CatalogCardStyle {
   bandRuleColor?: string
   /** Description répartie sur 2 colonnes (split équilibré aux retours à la ligne) — optionnel (défaut : 1). */
   descColumns?: 1 | 2
+  /** Bloc « Détails » (champs libres/data) réparti sur 2 colonnes équilibrées — optionnel (défaut : 1). */
+  detailsColumns?: 1 | 2
   /** Taille de texte IDENTIQUE sur toutes les fiches : neutralise la hiérarchie typo
    *  (magnification vedette/prix en √s) et le --cat-fit par page — optionnel (défaut : false). */
   uniformTextScale?: boolean

@@ -162,9 +162,24 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
       {f.unit && show('showUnit') && obj('unit', <span className="cat-cell-unit">Unité : {f.unit}</span>)}
       {show('showPrice') && obj('price', <span className="cat-cell-pricebox"><span className="cat-cell-tag">{hasWas && show('showWas') && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}<span className="cat-cell-price">{formatPrice(f.newPrice)}</span></span></span>)}
       {details && details.length > 0 && show('showDetails') && obj('details',
-        <div className="cat-cell-details">
-          {details.map((d, i) => <span key={i}>{d}</span>)}
-        </div>)}
+        cardStyle?.detailsColumns === 2
+          ? (() => {
+              // Split ÉQUILIBRÉ à la LIGNE physique (les entrées multi-lignes \n
+              // se répartissent aussi) — flex, pas de CSS columns (html2canvas).
+              const lines = details.flatMap((d) => d.split('\n'))
+              const total = lines.reduce((n, l) => n + l.length + 1, 0)
+              let acc = 0, idx = lines.length
+              for (let i = 0; i < lines.length - 1; i++) { acc += lines[i].length + 1; if (acc >= total / 2) { idx = i + 1; break } }
+              return (
+                <div className="cat-cell-details cat-details-cols">
+                  <div>{lines.slice(0, idx).map((d, i) => <span key={i}>{d}</span>)}</div>
+                  <div>{lines.slice(idx).map((d, i) => <span key={i}>{d}</span>)}</div>
+                </div>
+              )
+            })()
+          : <div className="cat-cell-details">
+              {details.map((d, i) => <span key={i}>{d}</span>)}
+            </div>)}
       {/* Bloc À PART dans la chaîne de flux : si le prix ne rétrécit que les puces,
           le tableau garde TOUTE la largeur en dessous (jamais de colonne vide). */}
       {specs && specs.rows.length > 0 && show('showDetails') && obj('specs',
