@@ -7,7 +7,7 @@ import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import { DEMO_VOLUMES } from '../useDemoExpress'
 
 interface Props {
-  onLaunch: (company: string, url: string, opts: { maxProducts: number; prompt?: string }) => void
+  onLaunch: (company: string, url: string, opts: { maxProducts: number; prompt?: string; animations?: boolean }) => void
 }
 
 export function DemoExpressForm({ onLaunch }: Props) {
@@ -20,12 +20,13 @@ export function DemoExpressForm({ onLaunch }: Props) {
   // par la valeur clampée du store (Number('')=0 → resnappait à 12 à chaque frappe).
   const [volumeDraft, setVolumeDraft] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('')
+  const [animations, setAnimations] = useState(true)
   const valid = company.trim().length > 1 && /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}/i.test(url.trim())
 
   const launch = () => {
     if (!valid) return
     const normalized = /^https?:\/\//i.test(url.trim()) ? url.trim() : `https://${url.trim()}`
-    onLaunch(company.trim(), normalized, { maxProducts: volume, prompt: prompt.trim() || undefined })
+    onLaunch(company.trim(), normalized, { maxProducts: volume, prompt: prompt.trim() || undefined, animations })
   }
 
   return (
@@ -113,6 +114,21 @@ export function DemoExpressForm({ onLaunch }: Props) {
           la charte du site reste prioritaire pour les couleurs.
         </p>
       </div>
+      <label className="flex items-start gap-2.5 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={animations}
+          onChange={(e) => setAnimations(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-white/20 bg-well accent-indigo-600"
+        />
+        <span className="text-sm text-white/80">
+          Une animation HTML par produit
+          <span className="block text-xs text-white/40 font-normal mt-0.5">
+            Fiche animée (nom, prix, image, couleurs du site) sauvegardée dans le DAM, onglet
+            « Animations HTML » — sans appel IA, quelques secondes par produit.
+          </span>
+        </span>
+      </label>
       <button
         onClick={launch}
         disabled={!valid}
@@ -123,7 +139,8 @@ export function DemoExpressForm({ onLaunch }: Props) {
       </button>
       <p className="text-xs text-white/40">
         Le pipeline enchaîne : charte du site → découverte produits → enrichissement → images
-        DAM → feuille PIM → catalogue → fiche promo → workflow. Comptez quelques minutes.
+        DAM → feuille PIM → catalogue → fiche promo → animations HTML → workflow. Comptez
+        quelques minutes.
       </p>
     </div>
   )

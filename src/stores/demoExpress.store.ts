@@ -13,6 +13,7 @@ const STEP_LABELS: [DemoStepId, string][] = [
   ['sheet', 'Feuille PIM'],
   ['catalog', 'Catalogue studio'],
   ['promo', 'Fiche promo'],
+  ['anim', 'Animations HTML produits'],
   ['workflow', 'Workflow personnalisé'],
 ]
 

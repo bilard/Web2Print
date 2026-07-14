@@ -10,6 +10,7 @@ export type DemoStepId =
   | 'sheet'
   | 'catalog'
   | 'promo'
+  | 'anim'
   | 'workflow'
 
 export type DemoStepStatus = 'pending' | 'running' | 'done' | 'warning' | 'error' | 'skipped'
@@ -38,5 +39,6 @@ export interface DemoResultLinks {
   damCount?: number
   catalogId?: string
   promoId?: string
+  animCount?: number
   workflowId?: string
 }

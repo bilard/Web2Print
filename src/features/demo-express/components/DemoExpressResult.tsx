@@ -2,7 +2,7 @@
 // Panneau « Découvrez vos données » : une carte par module ensemencé, chaque
 // bouton deep-linke vers le module (section du Dashboard ou vraie route).
 import { useNavigate } from 'react-router-dom'
-import { FileSpreadsheet, Image as ImageIcon, BookText, Tag, Workflow, RotateCcw } from 'lucide-react'
+import { FileSpreadsheet, Image as ImageIcon, BookText, Tag, Clapperboard, Workflow, RotateCcw } from 'lucide-react'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import type { Section } from '@/features/navigation/modules'
 
@@ -48,6 +48,12 @@ export function DemoExpressResult() {
       title: 'Fiche promo',
       desc: 'Carte promo data-driven aux couleurs du prospect.',
       action: () => openSection('retail-promo', 'retail-promo:action:list'), enabled: !!links.promoId,
+    },
+    {
+      icon: Clapperboard, accent: 'text-violet-400',
+      title: 'Animations HTML',
+      desc: `${links.animCount ?? 0} fiche(s) produit animée(s) dans le DAM, prêtes à télécharger.`,
+      action: () => openSection('images', 'images:tab:videos'), enabled: (links.animCount ?? 0) > 0,
     },
     {
       icon: Workflow, accent: 'text-indigo-400',

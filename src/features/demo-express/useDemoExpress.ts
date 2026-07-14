@@ -34,6 +34,7 @@ import type { CatalogCharte, CatalogDoc } from '@/features/catalog/catalogTypes'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import { buildDemoSheet, sheetToMerge, isProductLike, DEMO_TARGET_FIELDS, type DemoProduct } from './buildDemoSheet'
 import { buildDemoWorkflow } from './demoWorkflow'
+import { seedAnimations } from './seedAnimations'
 import { discoverCategories, categoriesFromHtml, productLinksFromListingHtml, isObviousNonProductUrl } from './discoverFromHome'
 
 /** Volumétries proposées par le wizard (48 max : sous le quota démo PIM de 50). */
@@ -252,7 +253,7 @@ export function useDemoExpress() {
   const { discover } = useJina()
   const { saveToFirebase, listSavedFiles } = useExcelFirebase()
 
-  const run = useCallback(async (company: string, url: string, opts?: { maxProducts?: number; prompt?: string }) => {
+  const run = useCallback(async (company: string, url: string, opts?: { maxProducts?: number; prompt?: string; animations?: boolean }) => {
     const uid = auth.currentUser?.uid
     if (!uid) { toast.error('Connexion requise'); return }
     const vol = volumePlan(opts?.maxProducts ?? DEFAULT_MAX_PRODUCTS)
@@ -377,7 +378,7 @@ export function useDemoExpress() {
     }
     if (!productPages.length) {
       // Sans produits, rien à ensemencer — on marque le reste comme sauté.
-      for (const id of ['enrich', 'dam', 'sheet', 'catalog', 'promo', 'workflow'] as const) step(id, { status: 'skipped' })
+      for (const id of ['enrich', 'dam', 'sheet', 'catalog', 'promo', 'anim', 'workflow'] as const) step(id, { status: 'skipped' })
       finish()
       return
     }
@@ -402,7 +403,7 @@ export function useDemoExpress() {
     }
     if (!items.length) {
       step('enrich', { status: 'error', detail: 'aucune fiche exploitable (site anti-bot ?)' })
-      for (const id of ['dam', 'sheet', 'catalog', 'promo', 'workflow'] as const) step(id, { status: 'skipped' })
+      for (const id of ['dam', 'sheet', 'catalog', 'promo', 'anim', 'workflow'] as const) step(id, { status: 'skipped' })
       finish()
       return
     }
@@ -457,7 +458,7 @@ export function useDemoExpress() {
         status: 'error',
         detail: `${items.length} page(s) analysée(s), aucune fiche PRODUIT identifiable (réf/EAN) — essayez une URL de rayon ou de fiche produit`,
       })
-      for (const id of ['dam', 'sheet', 'catalog', 'promo', 'workflow'] as const) step(id, { status: 'skipped' })
+      for (const id of ['dam', 'sheet', 'catalog', 'promo', 'anim', 'workflow'] as const) step(id, { status: 'skipped' })
       finish()
       return
     }
@@ -498,7 +499,7 @@ export function useDemoExpress() {
       step('sheet', { status: 'done', detail: `${items.length} produits — « ${fileName} »` })
     } catch (e) {
       step('sheet', { status: 'error', detail: errMsg(e) })
-      for (const id of ['catalog', 'promo', 'workflow'] as const) step(id, { status: 'skipped' })
+      for (const id of ['catalog', 'promo', 'anim', 'workflow'] as const) step(id, { status: 'skipped' })
       finish()
       return
     }
@@ -529,7 +530,28 @@ export function useDemoExpress() {
       step('promo', { status: 'error', detail: errMsg(e) })
     }
 
-    // 8) Workflow « Démo {Société} »
+    // 8) Animations HTML par produit (optionnel) — compositions déterministes
+    // (aucun appel IA) compilées et sauvées dans le DAM par le module vidéo.
+    if (opts?.animations === false) {
+      step('anim', { status: 'skipped', detail: 'désactivées dans le formulaire' })
+    } else {
+      step('anim', { status: 'running' })
+      try {
+        const { created, firstError } = await seedAnimations({
+          items, company, siteUrl: url, charte, aborted,
+          onDetail: (d) => step('anim', { status: 'running', detail: d }),
+          log: logLine,
+        })
+        useDemoExpressStore.getState().setLinks({ animCount: created })
+        step('anim', created > 0
+          ? { status: 'done', detail: `${created} animation(s) HTML dans le DAM` }
+          : { status: 'warning', detail: firstError ?? 'aucune animation générée' })
+      } catch (e) {
+        step('anim', { status: 'error', detail: errMsg(e) })
+      }
+    }
+
+    // 9) Workflow « Démo {Société} »
     step('workflow', { status: 'running' })
     try {
       const wf = buildDemoWorkflow(company, items.map((it) => it.url), uid)
