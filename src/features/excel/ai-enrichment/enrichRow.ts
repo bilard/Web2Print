@@ -81,7 +81,9 @@ export function mapProductToFields(
     name: () => name,
     title: () => name,
     reference: () => reference,
-    subtitle: () => p.model ?? null,
+    // Parité PIM : le VRAI sous-titre extrait de la fiche (« 18 V Li-Ion - 5 Ah… »)
+    // prime sur le code modèle — la Démo express recevait le code à la place.
+    subtitle: () => p.subtitle ?? p.model ?? null,
     description: () => (p.description ? cleanDescription(p.description) || null : null),
     breadcrumb: () => (p.breadcrumb?.length ? p.breadcrumb.join(' > ') : null),
     advantages: () => {
@@ -108,7 +110,9 @@ export function mapProductToFields(
       // métier), le LLM renvoie des pseudo-paires — prix/dates en nom, prose
       // tronquée en valeur — qui ne doivent jamais devenir des « specs ».
       const clean = (p.specifications ?? []).filter((s) => isSaneSpecPair(s.name.trim(), s.value.trim()))
-      return clean.length ? clean.map((s) => `${s.name}: ${s.value}`).join('\n') : null
+      // Parité PIM : le GROUPE est préservé (« [Dimensions]Longueur: 12 cm ») —
+      // buildSpecTable et l'affichage catalogue savent le retirer/exploiter.
+      return clean.length ? clean.map((s) => `${s.group ? `[${s.group}]` : ''}${s.name}: ${s.value}`).join('\n') : null
     },
     documents: () => (p.documents?.length ? p.documents.map((d) => d.url).join('\n') : null),
   }

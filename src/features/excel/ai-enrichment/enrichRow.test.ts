@@ -49,6 +49,22 @@ describe('mapProductToFields', () => {
     expect(f.documents).toBe('https://x/notice.pdf')
   })
 
+  it('parité PIM : subtitle réel prioritaire sur le modèle, groupes de specs préservés', () => {
+    const p: EnrichedProduct = {
+      ...base,
+      name: 'DDA351RTJ',
+      model: 'DDA351RTJ',
+      subtitle: '18 V Li-Ion - 5 Ah - Ø 10 mm - Auto-serrant',
+      specifications: [
+        { name: 'Longueur', value: '12 cm', group: 'Dimensions' },
+        { name: 'Poids', value: '1,8 kg' },
+      ],
+    }
+    const f = mapProductToFields(p, ['subtitle', 'specifications'])
+    expect(f.subtitle).toBe('18 V Li-Ion - 5 Ah - Ø 10 mm - Auto-serrant')
+    expect(f.specifications).toBe('[Dimensions]Longueur: 12 cm\nPoids: 1,8 kg')
+  })
+
   it('champ inconnu → customFields, sinon null', () => {
     const p: EnrichedProduct = { ...base, name: 'X', customFields: { garantie: '3 ans' } }
     const f = mapProductToFields(p, ['garantie', 'inexistant'])
