@@ -352,20 +352,21 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
     let hEff = it.el.offsetHeight
     if (CLIP_CHAIN.has(it.id)) {
       let reserve = 0
-      // Le TABLEAU DE SPECS qui suit (pavé de DONNÉES pleine largeur, sans
-      // échappatoire latérale) entre dans un PARTAGE PROPORTIONNEL : ni la
-      // prose ne peut l'étrangler (titre seul, zéro ligne), ni lui affamer la
-      // prose (réserve intégrale = description/avantages à zéro). Les autres
-      // pavés rognables gardent leur logique (rétrécissement latéral, coupe).
+      // Les pavés de DONNÉES qui suivent réservent leur espace : le TABLEAU DE
+      // SPECS à hauteur PLEINE (données tabulaires, la fiche doit montrer TOUTE
+      // la data — un tableau à zéro ligne était le bug Démo express), les autres
+      // pavés rognables (détails) à leur PLANCHER (ils savent se rétrécir
+      // latéralement, mais leur gap+plancher ne doit pas affamer le tableau).
+      const FLOOR = 24
       let followClipH = 0
-      let followCount = 0
       for (let j = i + 1; j < items.length; j++) {
         const jt = items[j]
         if (!isMagnetized(jt.box, style)) continue
         const [jx1, jx2] = spanOf(jt)
         if (!(x1 < jx2 && jx1 < x2)) continue
-        if (jt.id === 'specs') { followClipH += jt.el.offsetHeight + MAGNET_GAP; followCount++ }
-        else if (!CLIP_CHAIN.has(jt.id)) reserve += jt.el.offsetHeight + MAGNET_GAP
+        if (jt.id === 'specs') followClipH += jt.el.offsetHeight + MAGNET_GAP
+        else if (CLIP_CHAIN.has(jt.id)) followClipH += Math.min(jt.el.offsetHeight, FLOOR) + MAGNET_GAP
+        else reserve += jt.el.offsetHeight + MAGNET_GAP
       }
       // Plafond COMPLET pour une emprise donnée : obstacles hors chaîne + blocs de
       // chaîne DÉTACHÉS (m:false) qui suivent — bornés à leur position la plus
@@ -401,15 +402,14 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
       }
       const avail = ceil - top - reserve
       // Partage avec les pavés rognables suivants quand le total déborde :
-      //  - la DESCRIPTION est prioritaire (« ne coupe jamais mes textes ») —
-      //    elle garde sa hauteur PLEINE tant que les suivants peuvent céder
-      //    jusqu'à leur plancher (24 px chacun) ; coupée en DERNIER recours ;
+      //  - la DESCRIPTION (prose, qui duplique souvent les specs du site) CÈDE
+      //    aux pavés de DONNÉES : elle est coupée à la ligne (plancher 24 px)
+      //    pour que le tableau des caractéristiques s'affiche EN ENTIER ;
       //  - les autres pavés se partagent au prorata du contenu (historique).
-      const FLOOR = 24
       let maxH: number
       if (followClipH > 0 && hEff + followClipH > avail) {
         maxH = it.id === 'description'
-          ? Math.max(FLOOR, avail - followCount * FLOOR)
+          ? Math.max(FLOOR, avail - followClipH)
           : Math.max(FLOOR, Math.floor(avail * (hEff / (hEff + followClipH))))
       } else {
         maxH = avail - followClipH

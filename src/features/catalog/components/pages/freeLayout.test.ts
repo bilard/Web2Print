@@ -104,6 +104,40 @@ test('applyMagneticFlow : un bloc volumineux POUSSE vers le bas ceux qui le chev
   expect(price.style.top).toBe('') // le prix (ancré bas) n'est pas déplacé
 })
 
+test('applyMagneticFlow : le TABLEAU DE SPECS garde sa hauteur PLEINE — la prose (description) cède, jamais zéro ligne (fiche Démo express)', () => {
+  const card = document.createElement('div')
+  Object.defineProperty(card, 'clientHeight', { value: 1000 })
+  Object.defineProperty(card, 'clientWidth', { value: 1000 })
+  const mk = (id: string, h: number) => {
+    const el = document.createElement('div')
+    el.className = 'cat-obj'
+    el.setAttribute('data-object-id', id)
+    Object.defineProperty(el, 'offsetHeight', { value: h })
+    Object.defineProperty(el, 'offsetWidth', { value: 400 })
+    card.appendChild(el)
+    return el
+  }
+  // Description INTÉGRALE volumineuse (prose, duplique souvent les specs) suivie
+  // des pavés de DONNÉES : détails (20), tableau specs (100), réf, prix ancré bas.
+  // Le prix ([58,98], top 900) déclenche le rétrécissement latéral des pavés
+  // (51,5 %), leur plafond remonte à 1000 → 394px dispo sous 580 (réserve réf).
+  const desc = mk('description', 400)
+  const details = mk('details', 20)
+  const specs = mk('specs', 100)
+  const ref = mk('ref', 20)
+  mk('price', 80)
+  applyMagneticFlow(card, { ...DEFAULT_CARD_STYLE, layout: {} })
+  // La PROSE cède : 394 − (specs 100+6) − (plancher détails min(20,24)+6) = 262.
+  expect(desc.style.maxHeight).toBe('262px')
+  // Les DONNÉES gardent leur hauteur PLEINE (aucune coupe) :
+  expect(details.style.maxHeight).toBe('')
+  expect(parseFloat(details.style.top)).toBeCloseTo(84.8, 0) // 580+262+6
+  expect(specs.style.maxHeight).toBe('')                     // tableau ENTIER — plus jamais 0px
+  expect(parseFloat(specs.style.top)).toBeCloseTo(87.4, 0)   // 848+20+6
+  // La pile complète tient dans la carte : réf collée sous le tableau.
+  expect(parseFloat(ref.style.top)).toBeCloseTo(98, 0)
+})
+
 test('applyMagneticFlow : un prix TOURNÉ plafonne par sa bbox RENDUE (rotation comprise), pas par offsetHeight', () => {
   const card = document.createElement('div')
   Object.defineProperty(card, 'clientHeight', { value: 1000 })
