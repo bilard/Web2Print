@@ -297,7 +297,7 @@ const FINANCIAL_NAME_RE = /^(date|payment|paiement|prix|price|montant|amount|tot
 const FINANCIAL_VALUE_RE = /^\d{1,4}[,.]\d{2}\s*[€$£]|^[€$£]\s*\d|^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$|incl\.\s*vat|excl\.\s*vat|ttc\b|hors\s*taxe|tva\b/i
 /** UI de livraison/promo/checkout que les sites GSA mettent en cellule de
  *  tableau (Jardiland, Leroy Merlin) et qu'on capture par erreur en spec. */
-const DELIVERY_UI_RE = /^(en\s+stock|stock\s+disponible|disponible|indisponible|livraison|gratuit\s+(à\s+partir|d[eè]s)|estim(ée|ation)(\s+\S+)*|exp[eé]di[eé]e?|d[eé]livr[eé]e?|retir[eé]\s+en|click\s+&\s+collect|\+\s*\d+\s+offres?|voir\s+l['']offre|voir\s+d[eé]tails?|comparer)$/i
+const DELIVERY_UI_RE = /^(en\s+stock|stock\s+disponible|disponible|indisponible|livraison|en\s+magasin|gratuit|gratuit\s+(à\s+partir|d[eè]s)|estim(ée|ation)(\s+\S+)*|exp[eé]di[eé]e?|d[eé]livr[eé]e?|retir[eé]\s+en|click\s+&\s+collect|\+\s*\d+\s+offres?|voir\s+l['']offre|voir\s+d[eé]tails?|comparer)$/i
 const JUNK_NAME_RE = /^(title|url|source|markdown|favicon|description|og:|meta |statuscode|viewport|http)/i
 const JUNK_VALUE_RE = /^https?:\/\/|\.pdf\b|\[.*\]\(http/i
 const LINK_BRACKETS_RE = /\[.*?\]\(.*?\)/
@@ -336,6 +336,12 @@ const FORM_CTA_VALUE_RE = /formulaire\s*:?\s*$|^via\s+ce\b/i
 const STORE_STOCK_UI_RE = /trouver\s+sur\s+(?:la\s+)?carte|veuillez\s+fournir\s+un\s+code\s+postal|autoriser\s+le\s+navigateur|produits\s+recommand[eé]s|me\s+tenir\s+inform[eé]|rest(?:ez|er)\s+inform[eé]|v[eé]rifier\s+le\s+stock|retrait\s+(?:\S+\s+){0,2}en\s+magasin|livraison\s+[àa]\s+domicile/i
 const SEARCH_UI_WORD_RE = /^(?:search|submit|close|submit\s+close|clear|rechercher|fermer|annuler|valider)$/i
 const STREET_NAME_START_RE = /^(?:rue|boulevard|avenue|chauss[eé]e|impasse|all[eé]e|quai)\b/i
+// ── Bloc commande / compte client (fixture réelle Trafic 221919) ── Le panneau
+// de checkout (« Commander en tant que nouveau client », « La création d'un
+// compte possède de nombreux avantages », champs login) traversait le balayage
+// en paires « specs ». Vocabulaire de COMPTE/CHECKOUT — locutions composées
+// uniquement : « Commande : Électronique » (vraie spec machine) reste sane.
+const ACCOUNT_CHECKOUT_RE = /commander\s+en\s+(?:tant\s+que|utilisant)|cr[eé]ation\s+d.{0,3}un\s+compte|(?:votre|mon)\s+compte\b|nouveau\s+client\b|se\s+connecter|s['’]identifier|adresse\s+e-?mail|mot\s+de\s+passe|create\s+an?\s+account|sign\s+(?:in|up)\b|log\s?in\b/i
 // Avis clients rendus en paires titre/commentaire (« Super == Très bonne
 // tondeuse », « Tondeuse == Moteur puissant !!! ») : vocabulaire d'OPINION —
 // exclamations répétées, jugements, recommandations — jamais des specs.
@@ -360,6 +366,7 @@ export function isSaneSpecPair(n: string, v: string): boolean {
   // Footer / contact / commerce — jamais des specs produit
   if (FOOTER_UI_RE.test(n) || FOOTER_UI_RE.test(v)) return false
   if (STORE_STOCK_UI_RE.test(n) || STORE_STOCK_UI_RE.test(v)) return false
+  if (ACCOUNT_CHECKOUT_RE.test(n) || ACCOUNT_CHECKOUT_RE.test(v)) return false
   if (OPINION_PAIR_RE.test(n) || OPINION_PAIR_RE.test(v)) return false
   // Titre d'avis nu (« Super », « Génial ») apparié à un commentaire.
   if (/^(?:super|g[eé]nial|top|parfait|nickel|impeccable)\s*!*$/i.test(n)) return false

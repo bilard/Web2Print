@@ -671,3 +671,33 @@ describe('isSaneSpecPair — avis clients en paires (fixture Screwfix)', () => {
     expect(isSaneSpecPair(n, v)).toBe(true)
   })
 })
+
+// Paires réelles trafic.com (2026-07-14, fiche 221919 via Démo express) : le bloc
+// COMMANDE/COMPTE CLIENT du checkout passait en « specs » — « Commander en tant
+// que nouveau client == La création d'un compte possède de nombreux avantages : »,
+// « gratuit == en magasin », « Commander en utilisant votre compte == Adresse
+// email ». Signal par vocabulaire de COMPTE/CHECKOUT (jamais par site).
+describe('isSaneSpecPair — bloc commande/compte client (fixture Trafic 221919)', () => {
+  const JUNK: Array<[string, string]> = [
+    ['Commander en tant que nouveau client', "La création d'un compte possède de nombreux avantages :"],
+    ['Commander en utilisant votre compte', 'Adresse email'],
+    ['gratuit', 'en magasin'],
+    ['Se connecter', 'Mot de passe'],
+    ['Create an account', 'Sign in'],
+  ]
+  it.each(JUNK)('tue « %s == %s »', (n, v) => {
+    expect(isSaneSpecPair(n, v)).toBe(false)
+  })
+  // Les vraies specs de la MÊME fiche passent.
+  const GOOD: Array<[string, string]> = [
+    ['Couleur', 'Noir'],
+    ['Puissance', '5 W'],
+    ['Alimentation', '5V / 1A via USB-C'],
+    ['Utilisation', 'Sans fil (rechargeable)'],
+    ['Référence Trafic', '221919'],
+    ['Commande', 'Électronique'],
+  ]
+  it.each(GOOD)('garde « %s == %s »', (n, v) => {
+    expect(isSaneSpecPair(n, v)).toBe(true)
+  })
+})
