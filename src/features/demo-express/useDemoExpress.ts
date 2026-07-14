@@ -19,7 +19,7 @@ import { useExcelStore } from '@/stores/excel.store'
 import { makeExcelSourceRef } from '@/features/merge/excelSource'
 import { newCatalogDoc, saveCatalog } from '@/features/catalog/catalogsApi'
 import { buildCatalogTree, flattenTree, guessLevelKeys } from '@/features/catalog/catalogTree'
-import { generateCatalogPlan, defaultCatalogPlan } from '@/features/catalog/catalogPlan'
+import { generateCatalogPlan, defaultCatalogPlan, hexLum } from '@/features/catalog/catalogPlan'
 import { pagePx } from '@/features/catalog/components/pages/catalogCss'
 import { generateImageBase64 } from '@/features/nanobana/generateImageBase64'
 import { defaultPromoFieldMap, defaultCustomFields } from '@/features/retail-promo/promoMapping'
@@ -176,9 +176,24 @@ async function seedCatalog(input: {
   // ET du tableau de specs sur les produits riches (Milwaukee : 11 puces + 24
   // lignes ne tiennent pas ensemble en 2/page, le partage proportionnel coupe).
   plan = { ...plan, sections: plan.sections.map((sec) => ({ ...sec, productsPerPage: 1 as const, randomDensity: false })) }
-  // Fiches pleine page (larges) : l'image occupe 30 % de la fiche, la DONNÉE 70 %
-  // (le repli 34 % laissait trop de place au visuel) — colonne texte décalée
-  // d'autant. Déterministe : gagne sur les placements éventuels du plan IA.
+  // FOND DE PAGE BLANC — TOUJOURS, pour la démo : l'analyse de charte du site
+  // écrit parfois « FOND DE PAGE : #0…» (site sombre) et ce canal explicite
+  // passe devant enforceLightPageBg → pages noires non voulues. Encre relisible.
+  plan = { ...plan, theme: { ...plan.theme, pageBg: '#ffffff', ...(hexLum(plan.theme.ink) > 0.65 ? { ink: '#111827' } : {}) } }
+  // Image = 30 % de la fiche, la DONNÉE 70 %. La fiche pleine page (portrait)
+  // est VERTICALE (image en haut) → patcher `layout` ; `layoutWide` couvre les
+  // formats paysage. Déterministe : gagne sur les placements du plan IA.
+  const demoLayout = {
+    image: { x: 2, y: 4, w: 96, h: 30 },
+    sticker: { x: 70, y: 20, r: 8 },
+    brand: { x: 5, y: 36, w: 90 },
+    name: { x: 5, y: 40, w: 92 },
+    description: { x: 5, y: 46, w: 92 },
+    details: { x: 5, y: 58, w: 92 },
+    specs: { x: 5, y: 72, w: 92 },
+    ref: { x: 5, y: 90, w: 45 },
+    unit: { x: 5, y: 94, link: 'ref' as const },
+  }
   const demoLayoutWide = {
     image: { x: 2, y: 8, w: 30, h: 88 },
     sticker: { x: 24, y: 12, r: 8 },
@@ -190,7 +205,9 @@ async function seedCatalog(input: {
     ref: { x: 36, y: 88, w: 30 },
     unit: { x: 36, y: 92, link: 'ref' as const },
   }
-  plan = { ...plan, cardStyle: { ...DEFAULT_CARD_STYLE, ...plan.cardStyle, layoutWide: { ...plan.cardStyle?.layoutWide, ...demoLayoutWide } } }
+  plan = { ...plan, cardStyle: { ...DEFAULT_CARD_STYLE, ...plan.cardStyle,
+    layout: { ...plan.cardStyle?.layout, ...demoLayout },
+    layoutWide: { ...plan.cardStyle?.layoutWide, ...demoLayoutWide } } }
 
   const fieldMap = defaultPromoFieldMap(columns)
   const doc: CatalogDoc = {
