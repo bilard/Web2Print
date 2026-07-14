@@ -75,10 +75,14 @@ export function StepPrompt() {
   // Fiche exemple pour l'aperçu live du style : produit choisi via 👁 (carte
   // Sections), sinon 1er produit sélectionné — AVEC les champs libres pour que
   // l'aperçu montre la même zone « Détails » que le catalogue.
-  const sampleFields = useMemo(() => {
-    const row = (previewRowId ? rowsById.get(previewRowId) : null) ?? selectedRows[0] ?? null
-    return row ? extractPromoFields(row, rawColumns, fieldMap, customFields) : null
-  }, [previewRowId, rowsById, selectedRows, rawColumns, fieldMap, customFields])
+  const sampleRow = useMemo(
+    () => (previewRowId ? rowsById.get(previewRowId) : null) ?? selectedRows[0] ?? null,
+    [previewRowId, rowsById, selectedRows],
+  )
+  const sampleFields = useMemo(
+    () => (sampleRow ? extractPromoFields(sampleRow, rawColumns, fieldMap, customFields) : null),
+    [sampleRow, rawColumns, fieldMap, customFields],
+  )
   const sampleDetails = useMemo(
     () => (sampleFields ? buildDetailLines(customFields, sampleFields, plan?.cardStyle?.hiddenDetails, plan?.cardStyle?.maxBulletLines) : []),
     [customFields, sampleFields, plan?.cardStyle?.hiddenDetails, plan?.cardStyle?.maxBulletLines],
@@ -116,14 +120,14 @@ export function StepPrompt() {
   // Patch de disposition depuis l'overlay : lit l'état FRAIS du store — un même
   // geste peut émettre DEUX patchs successifs (ex. inversion de liaison) et une
   // closure sur `plan` écraserait le premier.
-  const patchLayout = (id: CardObjectId, box: CardBox) => {
+  const patchLayout = (id: CardObjectId, box: CardBox, wideOverride?: boolean) => {
     const s = useCatalogStore.getState()
     if (!s.plan) return
     const cs = { ...DEFAULT_CARD_STYLE, ...s.plan.cardStyle }
     // Chaque variante a son propre jeu de positions : le patch va dans celui
     // de la variante AFFICHÉE (verticale → layout · pleine largeur → layoutWide) ;
-    // en simulation de page, c'est la forme de la cellule simulée qui décide.
-    const key = (simWide ?? previewWide) ? 'layoutWide' : 'layout'
+    // en simulation de page, la variante RÉELLE de la fiche éditée est passée.
+    const key = (wideOverride ?? simWide ?? previewWide) ? 'layoutWide' : 'layout'
     s.setPlan({ ...s.plan, cardStyle: { ...cs, [key]: { ...(cs[key] ?? {}), [id]: box } } })
   }
   // L'aperçu prend TOUJOURS la taille + le fit réels de la cellule imprimée
@@ -139,15 +143,11 @@ export function StepPrompt() {
   const [previewVariant, setPreviewVariant] = useState<'auto' | 'vertical' | 'wide'>('auto')
   // Simulation de PAGE : 0 = fiche seule (édition), sinon densité simulée (N/page).
   const [pageSim, setPageSim] = useState<0 | 1 | 2 | 3 | 4 | 6 | 8>(0)
-  // Variante des fiches SIMULÉES : le toggle Verticale/Pleine largeur PRIME
-  // (édition de la variante choisie dans le contexte page) ; « auto » = la forme
-  // de la cellule simulée. Les patchs de blocs écrivent dans ce jeu de positions.
-  const simWide = useMemo(() => {
-    if (!pageSim) return null
-    if (previewVariant !== 'auto') return previewVariant === 'wide'
-    const { w, h } = cellDims(format, pageSim)
-    return isWideCard(w, h)
-  }, [pageSim, previewVariant, format])
+  // Variante RÉELLE de la 1re fiche de la page simulée (mesurée par le rendu
+  // moteur) — les patchs et le panneau « Bloc sélectionné » écrivent dans SON
+  // jeu de positions ; le toggle Verticale/Pleine largeur ne vaut que hors sim.
+  const [simMeasuredWide, setSimMeasuredWide] = useState(false)
+  const simWide = pageSim ? simMeasuredWide : null
   // Zoom UTILISATEUR de l'aperçu (%) — 100 = ajusté à la colonne ; clic sur le % = reset.
   const [previewZoom, setPreviewZoom] = useState(100)
   // ⌘/Ctrl + molette OU pincement trackpad (wheel avec ctrlKey) = zoom fluide.
@@ -270,17 +270,19 @@ export function StepPrompt() {
                     {[1, 2, 3, 4, 6, 8].map((n) => <option key={n} value={n}>Page · {n}/page</option>)}
                   </select>
                   {/* Disposition éditée : chaque variante a SES positions (layout / layoutWide). */}
-                  <div className="flex rounded-md overflow-hidden border border-border text-[11px]"
-                    title="Chaque disposition s'affine séparément : verticale (cartes standard) · pleine largeur (2 colonnes)">
-                    <button type="button" onClick={() => { setPreviewVariant('vertical'); setSelectedObject(null) }}
-                      className={`px-2.5 py-1 ${!previewWide ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
-                      Verticale
-                    </button>
-                    <button type="button" onClick={() => { setPreviewVariant('wide'); setSelectedObject(null) }}
-                      className={`px-2.5 py-1 ${previewWide ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
-                      Pleine largeur
-                    </button>
-                  </div>
+                  {pageSim === 0 && (
+                    <div className="flex rounded-md overflow-hidden border border-border text-[11px]"
+                      title="Chaque disposition s'affine séparément : verticale (cartes standard) · pleine largeur (2 colonnes). En simulation de page, la variante est celle du rendu réel.">
+                      <button type="button" onClick={() => { setPreviewVariant('vertical'); setSelectedObject(null) }}
+                        className={`px-2.5 py-1 ${!previewWide ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
+                        Verticale
+                      </button>
+                      <button type="button" onClick={() => { setPreviewVariant('wide'); setSelectedObject(null) }}
+                        className={`px-2.5 py-1 ${previewWide ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
+                        Pleine largeur
+                      </button>
+                    </div>
+                  )}
                   {/* Variante vedette : les positions sont COMMUNES, seuls ruban/cadre diffèrent. */}
                   <div className="flex rounded-md overflow-hidden border border-border text-[11px]">
                     <button type="button" onClick={() => setPreviewFeatured(false)}
@@ -297,11 +299,13 @@ export function StepPrompt() {
               {/* Zoom > 100 % : la carte déborde → défilement LOCAL des deux axes
                   (hauteur bornée au viewport) — le pan reste confiné à l'aperçu. */}
               <div ref={scrollBoxRef} className="overflow-auto pb-2 max-h-[calc(100vh-150px)]">
-                {pageSim > 0 && sampleFields ? (
-                  <PageSimPreview theme={plan.theme} cardStyle={cardStyle} pageStyle={plan.pageStyle}
-                    format={format} grid={pageSim as Exclude<typeof pageSim, 0>} fields={sampleFields} details={sampleDetails} specs={sampleSpecs}
-                    zoom={previewZoom / 100} wide={simWide ?? undefined}
-                    onLayoutChange={patchLayout} onSelect={setSelectedObject} selected={selectedObject} />
+                {pageSim > 0 && sampleRow ? (
+                  <PageSimPreview plan={plan} cardStyle={cardStyle} format={format}
+                    columns={rawColumns} fieldMap={fieldMap} customFields={customFields}
+                    row={sampleRow} grid={pageSim as Exclude<typeof pageSim, 0>}
+                    zoom={previewZoom / 100}
+                    onLayoutChange={patchLayout} onSelect={setSelectedObject} selected={selectedObject}
+                    onMeasuredWide={setSimMeasuredWide} />
                 ) : (
                   <CardStylePreview theme={plan.theme} cardStyle={cardStyle} pageStyle={mergedPageStyle(plan.pageStyle)} chapterColor={plan.sections.find((sec) => !sec.nodeId.includes('/'))?.color || defaultUniverseColor(0)} fields={sampleFields} details={sampleDetails} specs={sampleSpecs} cell={previewCell}
                     wide={previewWide} featuredVariant={previewFeatured} selected={selectedObject}
