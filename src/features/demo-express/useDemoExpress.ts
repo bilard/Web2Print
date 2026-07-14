@@ -30,7 +30,7 @@ import { listCatalogs } from '@/features/catalog/catalogsApi'
 import { listPromos } from '@/features/retail-promo/promosApi'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import { useAiActivityStore } from '@/stores/aiActivity.store'
-import type { CatalogCharte, CatalogDoc } from '@/features/catalog/catalogTypes'
+import { DEFAULT_CARD_STYLE, type CatalogCharte, type CatalogDoc } from '@/features/catalog/catalogTypes'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import { buildDemoSheet, sheetToMerge, isProductLike, DEMO_TARGET_FIELDS, type DemoProduct } from './buildDemoSheet'
 import { buildDemoWorkflow } from './demoWorkflow'
@@ -176,6 +176,21 @@ async function seedCatalog(input: {
   // ET du tableau de specs sur les produits riches (Milwaukee : 11 puces + 24
   // lignes ne tiennent pas ensemble en 2/page, le partage proportionnel coupe).
   plan = { ...plan, sections: plan.sections.map((sec) => ({ ...sec, productsPerPage: 1 as const, randomDensity: false })) }
+  // Fiches pleine page (larges) : l'image occupe 30 % de la fiche, la DONNÉE 70 %
+  // (le repli 34 % laissait trop de place au visuel) — colonne texte décalée
+  // d'autant. Déterministe : gagne sur les placements éventuels du plan IA.
+  const demoLayoutWide = {
+    image: { x: 2, y: 8, w: 30, h: 88 },
+    sticker: { x: 24, y: 12, r: 8 },
+    brand: { x: 36, y: 10, w: 60 },
+    name: { x: 36, y: 16, w: 62 },
+    description: { x: 36, y: 26, w: 62 },
+    details: { x: 36, y: 46, w: 62 },
+    specs: { x: 36, y: 68, w: 62 },
+    ref: { x: 36, y: 88, w: 30 },
+    unit: { x: 36, y: 92, link: 'ref' as const },
+  }
+  plan = { ...plan, cardStyle: { ...DEFAULT_CARD_STYLE, ...plan.cardStyle, layoutWide: { ...plan.cardStyle?.layoutWide, ...demoLayoutWide } } }
 
   const fieldMap = defaultPromoFieldMap(columns)
   const doc: CatalogDoc = {

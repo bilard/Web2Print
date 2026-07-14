@@ -182,7 +182,7 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
               className={`space-y-1 ${scale === activeScale ? 'ring-2 ring-indigo-500 rounded-md' : ''}`}
               style={color ? { boxShadow: `inset 3px 0 0 ${color}`, borderRadius: 6, paddingLeft: 6 } : undefined}>
               <SliderField label={label} value={style[scale] ?? 1} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
-                min={0.7} max={10} step={0.05} unit="×" />
+                min={0.7} max={10} step={0.05} unit="×" center={1} />
               <select value={style[font] ?? ''} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
                 className={inputCls}>
                 <option value="">Police du thème</option>

@@ -36,8 +36,13 @@ export function SelectField<T extends string>({ label, value, options, onChange 
  * `min/max/step/unit` permettent des bornes libres (mm, px, °, ×, s…) pour les
  * panneaux qui ont des sliders non-% (Print, Animation3D, DataMerge).
  */
-export function SliderField({ label, value, onChange, min = 0, max = 1, step = 0.01, unit = '%', inputRef }: {
+export function SliderField({ label, value, onChange, min = 0, max = 1, step = 0.01, unit = '%', center, inputRef }: {
   label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; unit?: string
+  /** Échelle BILINÉAIRE : cette valeur tombe à MI-COURSE du curseur — moitié
+   *  gauche = [min..center], moitié droite = [center..max]. Pour les échelles
+   *  asymétriques (typo 0.7..10 : la valeur neutre 1 était à 3 % de la course,
+   *  descendre sous 1 était presque impossible). */
+  center?: number
   /** Réf optionnelle sur l'`<input type="range">` (ex. scroll/focus programmatique). */
   inputRef?: Ref<HTMLInputElement>
 }) {
@@ -69,7 +74,23 @@ export function SliderField({ label, value, onChange, min = 0, max = 1, step = 0
           <span className="text-white/30">{unit}</span>
         </span>
       </span>
-      <input ref={inputRef} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[#6366f1]" />
+      {center != null && center > min && center < max ? (
+        // Piste virtuelle 0..1000 : 500 = `center` — les deux moitiés de la course
+        // couvrent chacune leur intervalle, la valeur committée reste crantée au step.
+        <input ref={inputRef} type="range" min={0} max={1000} step={1}
+          value={Math.round(value <= center
+            ? ((Math.max(min, value) - min) / (center - min)) * 500
+            : 500 + ((Math.min(max, value) - center) / (max - center)) * 500)}
+          onChange={(e) => {
+            const t = Number(e.target.value)
+            const raw = t <= 500 ? min + (t / 500) * (center - min) : center + ((t - 500) / 500) * (max - center)
+            const decimals = (String(step).split('.')[1] ?? '').length
+            onChange(Number((Math.round(raw / step) * step).toFixed(decimals)))
+          }}
+          className="w-full accent-[#6366f1]" />
+      ) : (
+        <input ref={inputRef} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[#6366f1]" />
+      )}
     </label>
   )
 }
