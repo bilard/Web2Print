@@ -94,7 +94,6 @@ export function PageSimPreview({ plan, cardStyle, format, columns, fieldMap, cus
     const ro = new ResizeObserver(measure)
     ro.observe(w)
     return () => ro.disconnect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [K, grid, page])
   if (!page) return null
   return (
