@@ -44,11 +44,11 @@ export function HeaderBandOptions({ style, patch, theme, onHeaderBg, sections, o
           ? <>Fond du bandeau = couleur du <b>chapitre</b> (une par univers — pastille modifiable dans le panneau Sections / chemin de fer). La couleur « Bandeau » du thème est ignorée sur les pages produits.</>
           : <>Fond du bandeau = couleur « Bandeau » du thème (section Couleurs du thème).</>}
       </p>
-      <OptSlider label="Taille" value={style.headerScale} min={0.7} max={1.5} step={0.05} onChange={(v) => patch({ headerScale: v })} />
+      <OptSlider label="Taille" value={style.headerScale} min={0.2} max={1.5} step={0.05} onChange={(v) => patch({ headerScale: v })} />
       {/* Réglages FINS par niveau — échelles multiplicatives sur « Taille »
           (1× = suit), police et couleur du texte par niveau ('' = hérite). */}
-      <OptSlider label="Taille Univers" value={style.headUniversScale ?? 1} min={0.7} max={2} step={0.05} onChange={(v) => patch({ headUniversScale: v })} />
-      <OptSlider label="Taille Famille" value={style.headCrumbScale ?? 1} min={0.7} max={2} step={0.05} onChange={(v) => patch({ headCrumbScale: v })} />
+      <OptSlider label="Taille Univers" value={style.headUniversScale ?? 1} min={0.2} max={2} step={0.05} onChange={(v) => patch({ headUniversScale: v })} />
+      <OptSlider label="Taille Famille" value={style.headCrumbScale ?? 1} min={0.2} max={2} step={0.05} onChange={(v) => patch({ headCrumbScale: v })} />
       <div className="grid grid-cols-2 gap-2">
         {([['headUniversFont', 'Police Univers'], ['headCrumbFont', 'Police Famille']] as const).map(([key, label]) => (
           <label key={key} className="flex flex-col gap-1 text-[10px] uppercase tracking-wide text-white/40">

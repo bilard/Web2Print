@@ -54,8 +54,8 @@ export function PageOptionsCover({ variant, plan, setPlan, style, patchStyle, im
       </OptSection>
       <OptSection title="Tailles & visuel">
         {isCover
-          ? <OptSlider label="Titres" value={style.coverTitleScale} min={0.7} max={1.5} step={0.05} onChange={(v) => patchStyle({ coverTitleScale: v })} />
-          : <OptSlider label="Textes" value={style.backScale} min={0.7} max={1.5} step={0.05} onChange={(v) => patchStyle({ backScale: v })} />}
+          ? <OptSlider label="Titres" value={style.coverTitleScale} min={0.2} max={1.5} step={0.05} onChange={(v) => patchStyle({ coverTitleScale: v })} />
+          : <OptSlider label="Textes" value={style.backScale} min={0.2} max={1.5} step={0.05} onChange={(v) => patchStyle({ backScale: v })} />}
         <OptSlider label="Assombrissement visuel" value={style.coverOverlay} min={0} max={80} step={5} unit="%" onChange={(v) => patchStyle({ coverOverlay: v })} />
       </OptSection>
       <OptSection title="Visuel IA">

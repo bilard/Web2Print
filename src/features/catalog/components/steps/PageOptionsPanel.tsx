@@ -30,7 +30,7 @@ function FooterOptions({ style, patch }: { style: CatalogPageStyle; patch: (p: P
     <OptSection title="Pied de page">
       <OptToggle label="Afficher" checked={style.showFooter} onChange={(v) => patch({ showFooter: v })} />
       <OptToggle label="Nom du catalogue" checked={style.showFooterName} onChange={(v) => patch({ showFooterName: v })} />
-      <OptSlider label="Folio" value={style.folioScale} min={0.7} max={1.5} step={0.05} onChange={(v) => patch({ folioScale: v })} />
+      <OptSlider label="Folio" value={style.folioScale} min={0.2} max={1.5} step={0.05} onChange={(v) => patch({ folioScale: v })} />
     </OptSection>
   )
 }
@@ -68,7 +68,7 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
               <OptToggle label="Panneau familles" checked={style.showOpenerPanel} onChange={(v) => patch({ showOpenerPanel: v })} />
             </OptSection>
             <OptSection title="Tailles">
-              <OptSlider label="Titre & numéro" value={style.openerTitleScale} min={0.7} max={1.5} step={0.05} onChange={(v) => patch({ openerTitleScale: v })} />
+              <OptSlider label="Titre & numéro" value={style.openerTitleScale} min={0.2} max={1.5} step={0.05} onChange={(v) => patch({ openerTitleScale: v })} />
             </OptSection>
             <FooterOptions style={style} patch={patch} />
           </>

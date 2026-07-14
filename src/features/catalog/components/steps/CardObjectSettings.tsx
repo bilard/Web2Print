@@ -47,7 +47,7 @@ export function CardObjectSettings({ obj, style, theme, patch, wide }: Props) {
       {typo && (
         <>
           <SliderField label="Taille" value={style[typo.scale] ?? 1} onChange={(v) => patch({ [typo.scale]: v } as Partial<CatalogCardStyle>)}
-            min={0.7} max={10} step={0.05} unit="×" center={1} />
+            min={0.2} max={10} step={0.05} unit="×" center={1} />
           <select value={style[typo.font] ?? ''} onChange={(e) => patch({ [typo.font]: e.target.value } as Partial<CatalogCardStyle>)}
             className={inputCls}>
             <option value="">Police du thème</option>
