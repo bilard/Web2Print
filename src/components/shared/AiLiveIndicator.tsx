@@ -1,8 +1,17 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { Sparkles, Loader2, AlertTriangle, ChevronDown, Coins, RotateCcw } from 'lucide-react'
 import { useAiActivityStore, type AiActivityRecord } from '@/stores/aiActivity.store'
 import { getModel, type AiProvider } from '@/lib/aiModels'
 import { CloseButton } from '@/components/shared/CloseButton'
+import { router } from '@/app/router'
+
+/** Pathname réactif hors arbre du router (l'indicateur est monté à côté du RouterProvider). */
+function usePathname(): string {
+  return useSyncExternalStore(
+    (cb) => router.subscribe(cb),
+    () => router.state.location.pathname,
+  )
+}
 
 // Panneau complet (par LLM + connecteurs) chargé en lazy : monté seulement à l'ouverture.
 const LiveLlmUsagePanel = lazy(() =>
@@ -194,6 +203,12 @@ export function AiLiveIndicator() {
   const [expanded, setExpanded] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
   const [lastVisible, setLastVisible] = useState(false)
+  // Position par route : sous le header (top-14) par défaut — mais dans le
+  // Catalogue studio cette bande porte les actions d'étape (« Générer le plan »,
+  // « Continuer → Aperçu ») que le chip masquait → REMONTÉ dans le header de la
+  // page, dont le coin droit est libre (l'éditeur, lui, y a Exporter/avatar).
+  const pathname = usePathname()
+  const raised = pathname.startsWith('/catalog/')
 
   // Affiche `last` quelques secondes après la fin, puis masque.
   useEffect(() => {
@@ -227,7 +242,7 @@ export function AiLiveIndicator() {
   const extraCount = hasActive ? activeList.length - 1 : 0
 
   return (
-    <div className="fixed top-14 right-3 z-[60] pointer-events-none flex flex-col items-end">
+    <div className={`fixed ${raised ? 'top-2.5' : 'top-14'} right-3 z-[60] pointer-events-none flex flex-col items-end`}>
       <div className="flex flex-row items-center gap-1.5 pointer-events-auto justify-end flex-wrap">
         {primary && <ActivityRow record={primary} primary />}
         {extraCount > 0 && (
