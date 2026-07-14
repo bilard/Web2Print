@@ -554,7 +554,7 @@ export function useDemoExpress() {
     // 9) Workflow « Démo {Société} »
     step('workflow', { status: 'running' })
     try {
-      const wf = buildDemoWorkflow(company, items.map((it) => it.url), uid)
+      const wf = buildDemoWorkflow(company, items.map((it) => it.url), uid, auth.currentUser?.email ?? '')
       // Idempotent : remplace le workflow « Démo {Société} » existant (constaté :
       // 8 doublons « Démo castorama » empilés par les re-runs).
       const existingWf = (await listWorkflows(uid).catch(() => [])).find((w) => w.name === wf.name)

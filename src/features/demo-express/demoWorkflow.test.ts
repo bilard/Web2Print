@@ -1,0 +1,65 @@
+// src/features/demo-express/demoWorkflow.test.ts
+// Le workflow ensemencé par la Démo express doit refléter TOUT le pipeline
+// (pas seulement scrape → Excel) : chaque carte référence un node enregistré,
+// chaque edge relie des ports existants et compatibles, et aucune sortie du
+// scrape ne reste orpheline.
+import { describe, it, expect, beforeAll } from 'vitest'
+import { buildDemoWorkflow } from './demoWorkflow'
+import { initWorkflowsRegistry } from '@/features/workflows/registry/builtin'
+import { nodeRegistry } from '@/features/workflows/registry'
+import { isCompatible } from '@/features/workflows/runtime/ports'
+
+beforeAll(() => {
+  initWorkflowsRegistry()
+})
+
+const wf = () => buildDemoWorkflow('Acme', ['https://acme.test/p1', 'https://acme.test/p2'], 'uid-1', 'demo@acme.test')
+
+describe('buildDemoWorkflow', () => {
+  it('contient toutes les cartes du pipeline démo', () => {
+    const types = wf().nodes.map((n) => n.type).sort()
+    expect(types).toEqual(
+      ['cron', 'export-excel', 'gsheets-export', 'save-dam', 'scrape-url', 'send-gmail'].sort(),
+    )
+  })
+
+  it('nodes connus et edges valides (ports existants et compatibles)', () => {
+    const w = wf()
+    const byId = new Map(w.nodes.map((n) => [n.id, n]))
+    for (const n of w.nodes) {
+      expect(nodeRegistry.get(n.type), `type inconnu : ${n.type}`).toBeDefined()
+    }
+    for (const e of w.edges) {
+      const src = byId.get(e.source)
+      const tgt = byId.get(e.target)
+      expect(src, `source absente : ${e.source}`).toBeDefined()
+      expect(tgt, `cible absente : ${e.target}`).toBeDefined()
+      const out = nodeRegistry.get(src!.type)!.outputs.find((p) => p.name === e.sourceHandle)
+      const inp = nodeRegistry.get(tgt!.type)!.inputs.find((p) => p.name === e.targetHandle)
+      expect(out, `port sortant absent : ${src!.type}.${e.sourceHandle}`).toBeDefined()
+      expect(inp, `port entrant absent : ${tgt!.type}.${e.targetHandle}`).toBeDefined()
+      expect(
+        isCompatible(out!.type, inp!.type),
+        `ports incompatibles : ${src!.type}.${e.sourceHandle} → ${tgt!.type}.${e.targetHandle}`,
+      ).toBe(true)
+    }
+  })
+
+  it('aucune sortie du scrape orpheline : sheet ET assets sont câblés', () => {
+    const w = wf()
+    const scrape = w.nodes.find((n) => n.type === 'scrape-url')!
+    const handles = w.edges.filter((e) => e.source === scrape.id).map((e) => e.sourceHandle).sort()
+    expect(handles).toContain('sheet')
+    expect(handles).toContain('assets')
+  })
+
+  it('configs préremplies : URLs, dossier DAM, Sheet et destinataire Gmail « Démo Acme »', () => {
+    const w = wf()
+    const cfg = (type: string) => w.nodes.find((n) => n.type === type)!.config as Record<string, unknown>
+    expect(cfg('scrape-url').urls).toBe('https://acme.test/p1\nhttps://acme.test/p2')
+    expect(cfg('save-dam').folderName).toBe('Démo Acme')
+    expect(cfg('gsheets-export').name).toBe('Démo Acme')
+    expect(cfg('send-gmail').to).toBe('demo@acme.test')
+    expect(cfg('cron').enabled).toBe(false)
+  })
+})
