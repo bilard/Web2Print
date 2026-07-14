@@ -2,7 +2,7 @@
 // Carte « Charte & éléments joints » de l'étape Prompt : joignez PDF de charte,
 // logo ou visuels de marque → palette + typos extraites AUTOMATIQUEMENT
 // (moteur créatif : la charte pilote le plan IA et peut s'appliquer au thème).
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link2, Loader2, Palette, Paperclip, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
@@ -20,6 +20,32 @@ export function CharteCard() {
   // est analysé par la Vision LLM → palette + brief de design dans la charte.
   const [inspUrl, setInspUrl] = useState('')
   const [inspBusy, setInspBusy] = useState(false)
+  // SUJET de chaque couleur : quels objets du catalogue elle impacte — directives
+  // explicites des consignes (« FOND DE PAGE : #hex ») + répartition dérivée
+  // (charteToThemePatch : accent, fond, bandeau, encres), affiché sous la pastille.
+  const colorRoles = useMemo(() => {
+    const map = new Map<string, string[]>()
+    const add = (hex: string | undefined, label: string) => {
+      if (!hex) return
+      const k = hex.toLowerCase()
+      const arr = map.get(k) ?? []
+      if (!arr.includes(label)) arr.push(label)
+      map.set(k, arr)
+    }
+    const notes = charte?.notes ?? ''
+    const last = (re: RegExp) => [...notes.matchAll(re)].pop()?.[1]?.toLowerCase()
+    add(last(/FOND DE PAGE[^:#]*:\s*(#[0-9a-f]{6})/gi), 'Fond de page')
+    add(last(/FOND DES FICHES[^:#]*:\s*(#[0-9a-f]{6})/gi), 'Fond des fiches')
+    if (charte) {
+      const p = charteToThemePatch(charte)
+      add(p.accent, 'Accent')
+      add(p.pageBg, 'Fond de page')
+      add(p.headerBg, 'Bandeau')
+      add(p.ink, 'Texte')
+      add(p.headerInk, 'Texte bandeau')
+    }
+    return map
+  }, [charte])
   const analyzeInspiration = async () => {
     if (!inspUrl.trim()) return
     setInspBusy(true)
@@ -103,10 +129,21 @@ export function CharteCard() {
         </button>
       </div>
       {charte && charte.colors.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {charte.colors.map((c) => (
-            <span key={c} title={c} className="w-6 h-6 rounded-md border border-white/15 shrink-0" style={{ background: c }} />
-          ))}
+        <div className="flex items-start gap-2 flex-wrap">
+          {charte.colors.map((c) => {
+            const roles = colorRoles.get(c.toLowerCase())
+            return (
+              <span key={c} className="flex flex-col items-center gap-0.5 min-w-0">
+                <span title={`${c}${roles ? ' — ' + roles.join(' + ') : ''}`}
+                  className="w-6 h-6 rounded-md border border-white/15 shrink-0" style={{ background: c }} />
+                {roles && (
+                  <span className="text-[9px] leading-tight text-white/45 text-center max-w-[64px]">
+                    {roles.join(' · ')}
+                  </span>
+                )}
+              </span>
+            )
+          })}
           <button type="button" onClick={applyToTheme} disabled={!plan}
             title={plan ? 'Répartit la palette dans le thème (accent, bandeau, fond, encre)' : 'Générez d’abord un plan'}
             className="ml-1 px-2.5 py-1 rounded-md text-[11px] border border-indigo-500 text-indigo-300 hover:bg-indigo-600 hover:text-[#fff] disabled:opacity-40">
@@ -120,10 +157,12 @@ export function CharteCard() {
           <span className="text-white/35"> — chargez les fichiers via « Mes polices » (Aperçu → Fond de page) pour les utiliser telles quelles.</span>
         </p>
       )}
-      <textarea value={charte?.notes ?? ''} rows={2}
+      {/* Consignes AGRANDIES + scrollables (le brief d'inspiration est long) —
+          redimensionnable verticalement à la poignée. */}
+      <textarea value={charte?.notes ?? ''} rows={9}
         onChange={(e) => setCharte({ ...(charte ?? EMPTY_CHARTE), notes: e.target.value })}
         placeholder="Consignes créa (graphique & structure) : ton, interdits, hiérarchie des pages, densité…"
-        className="w-full px-3 py-2 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600 resize-none" />
+        className="w-full px-3 py-2 rounded-md bg-surface-2 text-xs leading-relaxed text-white outline-none focus:ring-1 focus:ring-indigo-600 resize-y overflow-y-auto min-h-[120px] max-h-[50vh]" />
     </section>
   )
 }
