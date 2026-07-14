@@ -645,6 +645,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             <button
               onClick={() => setScrapingOpen(true)}
               disabled={!hasSelectedDb || pimReached}
+              data-tour="opt-pim-scrape"
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
               title={pimReached ? 'Plafond démo atteint — supprimez des lignes pour scraper à nouveau' : hasSelectedDb ? 'Scraper le web' : 'Sélectionnez une base de données'}
             >
@@ -657,6 +658,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             <button
               onClick={() => setAiCompletionOpen(true)}
               disabled={!hasSelectedDb}
+              data-tour="opt-pim-ai-completion"
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
               title={hasSelectedDb ? 'Compléter une colonne par IA' : 'Sélectionnez une base de données'}
             >
@@ -668,6 +670,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             <button
               onClick={() => setAiImageGenOpen(true)}
               disabled={!hasSelectedDb || damQuotaFull}
+              data-tour="opt-pim-ai-visuals"
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
               title={damQuotaFull ? 'Plafond démo atteint — contactez-nous pour lever le plafond de visuels' : hasSelectedDb ? 'Générer les visuels produits par IA (Nano Banana / Higgsfield) → DAM Drive' : 'Sélectionnez une base de données'}
             >
@@ -679,6 +682,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             <button
               onClick={createEmpty}
               disabled={!hasSelectedDb}
+              data-tour="opt-pim-create"
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
               title={hasSelectedDb ? 'Créer un tableau vide' : 'Sélectionnez une base de données'}
             >

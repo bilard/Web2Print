@@ -17,6 +17,9 @@ const optStep = (section: string, anchor: string, title: string, description: st
  * Chaque étape ouvre sa section (`prepare`) puis attend son conteneur
  * (`requireSelector`) avant de surligner. Les sections masquées par
  * permission sont ignorées (bulle centrée — dégradation gracieuse).
+ * L'ordre suit les thèmes du menu (cf. MODULE_GROUPS dans modules.ts) :
+ * Création · Données produits · Web & veille · Publication ·
+ * Automatisation & IA · Administration.
  */
 export const dashboardTourSteps: TourStep[] = [
   {
@@ -31,11 +34,12 @@ export const dashboardTourSteps: TourStep[] = [
     popover: {
       title: 'Menu principal',
       description:
-        'Chaque entrée ouvre un grand espace de l’app. Le menu se replie en cliquant sur le logo. Nous allons les parcourir un par un.',
+        'Les modules sont organisés en arbre par thème : Création, Données produits, Web & veille, Publication, Automatisation & IA, Administration. Cliquez un module pour déplier ses raccourcis (onglets, actions) et y sauter directement. Le menu se replie en cliquant sur le logo.',
       side: 'right',
       align: 'center',
     },
   },
+  // ── Création ──
   {
     element: '[data-tour="section-blank"]',
     prepare: openSection('blank'),
@@ -63,11 +67,11 @@ export const dashboardTourSteps: TourStep[] = [
   },
   optStep('import', 'opt-import-idml', 'Import IDML', 'Projet Adobe InDesign (IDML + PDF + polices) : conserve la mise en page et le texte éditable.'),
   optStep('import', 'opt-import-pptx', 'Importer PPTX', 'Présentation PowerPoint : chaque diapositive devient une page éditable.'),
-  optStep('import', 'opt-import-image', 'Importer une image', 'Crée un projet à partir d’une image (PNG, JPG, SVG, WebP).'),
   optStep('import', 'opt-import-svg', 'Importer SVG', 'Vectoriel SVG : chaque forme/texte reste éditable.'),
-  optStep('import', 'opt-import-excel', 'Importer Excel', 'Tableau Excel/CSV dans le PIM : alimente le publipostage.'),
+  optStep('import', 'opt-import-excel', 'Importer Excel', 'Tableau Excel/CSV dans le PIM : alimente le publipostage. Les formules sont préservées.'),
   optStep('import', 'opt-import-image-to-svg', 'Image → SVG éditable', 'Image verrouillée en fond + textes détectés (Vision) éditables par-dessus.'),
   optStep('import', 'opt-import-pdf-to-svg', 'PDF → SVG éditable', 'Page 1 du PDF rasterisée en fond + textes éditables en surimpression.'),
+  optStep('import', 'opt-import-folder-to-drive', 'Dossier → Drive', 'Envoie un lot d’images d’un dossier local vers votre Google Drive (DAM), avec déduplication des doublons.'),
   {
     element: '[data-tour="section-library"]',
     prepare: openSection('library'),
@@ -81,11 +85,24 @@ export const dashboardTourSteps: TourStep[] = [
     },
   },
   {
+    element: '[data-tour="section-demo-express"]',
+    prepare: openSection('demo-express'),
+    requireSelector: '[data-tour="section-demo-express"]',
+    popover: {
+      title: '4 · Démo express',
+      description:
+        'Une société + une URL → une démo complète, générée automatiquement : produits scrapés dans le PIM, images dans le DAM, catalogue, carte promo, animations HTML et workflow. Nombre de produits réglable, journal console en direct (étapes, appels IA, coûts).',
+      side: 'right',
+      align: 'center',
+    },
+  },
+  // ── Données produits ──
+  {
     element: '[data-tour="section-images"]',
     prepare: openSection('images'),
     requireSelector: '[data-tour="section-images"]',
     popover: {
-      title: '4 · DAM — médias',
+      title: '5 · DAM — médias',
       description: 'Votre bibliothèque d’images. Parcourons ses rubriques.',
       side: 'right',
       align: 'center',
@@ -97,41 +114,44 @@ export const dashboardTourSteps: TourStep[] = [
   optStep('images', 'opt-dam-collections', 'Collections', 'Vos images regroupées par thème ou campagne.'),
   optStep('images', 'opt-dam-recent', 'Récents', 'Les dernières images utilisées ou ajoutées.'),
   optStep('images', 'opt-dam-projects', 'Projets', 'Les visuels rattachés à chaque projet.'),
-  optStep('images', 'opt-dam-generate', 'Création d’image', 'Génération d’images par IA (Image IA) depuis une description.'),
+  optStep('images', 'opt-dam-generate', 'Création d’image', 'Génération d’images par IA (Image IA) depuis une description. Détourage automatique du fond inclus.'),
   optStep('images', 'opt-dam-videos', 'Animations HTML', 'Vos animations / vidéos HTML (HyperFrames).'),
-  optStep('images', 'opt-dam-gdrive', 'Google Drive', 'Importez des fichiers depuis votre Drive connecté.'),
+  optStep('images', 'opt-dam-gdrive', 'Google Drive', 'Importez des fichiers depuis votre Drive connecté (dédup automatique des doublons).'),
   {
     element: '[data-tour="section-data"]',
     prepare: openSection('data'),
     requireSelector: '[data-tour="section-data"]',
     popover: {
-      title: '5 · PIM — données produits',
+      title: '6 · PIM — données produits',
       description: 'Vos fiches produits en tableau. Voici les actions principales (sélectionnez d’abord une base à gauche).',
       side: 'right',
       align: 'center',
     },
   },
   optStep('data', 'opt-pim-import', 'Importer un fichier', 'Charge un Excel/CSV dans la base : chaque ligne = une fiche produit.'),
-  optStep('data', 'opt-pim-scrape', 'Scraper le web', 'Enrichit les produits depuis des URL (specs, images, descriptions via Jina + IA).'),
+  optStep('data', 'opt-pim-scrape', 'Scraper le web', 'Enrichit les produits depuis des URL (specs, images, descriptions via Jina + IA). Les textes sont repris VERBATIM de la source.'),
+  optStep('data', 'opt-pim-ai-completion', 'IA complétion', 'Complète une colonne entière par IA, ligne par ligne (traduction, reformulation, données manquantes…).'),
+  optStep('data', 'opt-pim-ai-visuals', 'Visuels (IA)', 'Génère les visuels produits par IA (Nano Banana / Higgsfield) et les range dans le DAM Google Drive.'),
   optStep('data', 'opt-pim-create', 'Créer vide', 'Crée un tableau vierge pour saisir des produits ou définir vos colonnes.'),
   {
     element: '[data-tour="section-taxonomies"]',
     prepare: openSection('taxonomies'),
     requireSelector: '[data-tour="section-taxonomies"]',
     popover: {
-      title: '6 · Taxonomies',
+      title: '7 · Taxonomies',
       description:
         'Arborescence de classification (catégories, gammes…). Reliez-y vos projets pour les filtrer dans la Bibliothèque et structurer vos exports.',
       side: 'right',
       align: 'center',
     },
   },
+  // ── Web & veille ──
   {
     element: '[data-tour="section-scraping-templates"]',
     prepare: openSection('scraping-templates'),
     requireSelector: '[data-tour="section-scraping-templates"]',
     popover: {
-      title: '7 · Templates scraping',
+      title: '8 · Templates scraping',
       description:
         'Définissez les règles d’extraction (sélecteurs, mapping des champs) réutilisées pour enrichir automatiquement vos données produits.',
       side: 'right',
@@ -143,7 +163,7 @@ export const dashboardTourSteps: TourStep[] = [
     prepare: openSection('scraping-hub'),
     requireSelector: '[data-tour="section-scraping-hub"]',
     popover: {
-      title: '8 · Scraping Hub',
+      title: '9 · Scraping Hub',
       description:
         'Lancez et suivez les extractions à grande échelle. Centralise les sources, les lots et les résultats du scraping.',
       side: 'right',
@@ -151,38 +171,38 @@ export const dashboardTourSteps: TourStep[] = [
     },
   },
   {
-    element: '[data-tour="section-workflows"]',
-    prepare: openSection('workflows'),
-    requireSelector: '[data-tour="section-workflows"]',
-    popover: {
-      title: '9 · Workflows',
-      description: 'Automatisez l’enchaînement des modules, façon Zapier.',
-      side: 'right',
-      align: 'center',
-    },
-  },
-  optStep('workflows', 'opt-wf-title', 'À quoi ça sert', 'Enchaînez scraping → décomposition → export → Drive/Gmail/Telegram. Un workflow peut être généré par IA depuis un prompt, réutilisé via vos modèles enregistrés, et son dernier résultat se consulte sur un écran dédié (tableau, galerie, graphique).'),
-  optStep('workflows', 'opt-wf-new', 'Nouveau workflow', 'Crée un workflow vierge et ouvre l’éditeur de graphe (nodes + liens).'),
-  {
     element: '[data-tour="section-price-watch"]',
     prepare: openSection('price-watch'),
     requireSelector: '[data-tour="section-price-watch"]',
     popover: {
       title: '10 · Veille tarifaire',
       description:
-        'Tableau de bord de vos suivis de prix concurrents : écarts par produit, positionnement et alertes. La collecte (produits en entrée, sites concurrents, champs) se configure dans un workflow, via le node « Veille tarifaire ».',
+        'Tableau de bord de vos suivis de prix concurrents : écarts par produit, positionnement et alertes Telegram. La collecte (produits en entrée, sites concurrents, champs) se configure dans un workflow, via le node « Veille tarifaire ».',
+      side: 'right',
+      align: 'center',
+    },
+  },
+  // ── Publication ──
+  {
+    element: '[data-tour="section-retail-promo"]',
+    prepare: openSection('retail-promo'),
+    requireSelector: '[data-tour="section-retail-promo"]',
+    popover: {
+      title: '11 · Création studio',
+      description:
+        'Cartes promo retail pilotées par vos données : choisissez des produits du PIM, la carte (prix, prix barré, remise, code article) se remplit toute seule. Règles conditionnelles par calque, styles prospectus, export en un clic.',
       side: 'right',
       align: 'center',
     },
   },
   {
-    element: '[data-tour="section-telegram"]',
-    prepare: openSection('telegram'),
-    requireSelector: '[data-tour="section-telegram"]',
+    element: '[data-tour="section-catalog"]',
+    prepare: openSection('catalog'),
+    requireSelector: '[data-tour="section-catalog"]',
     popover: {
-      title: '11 · Telegram',
+      title: '12 · Catalogue studio',
       description:
-        'Pilotez l’app depuis un bot Telegram : envoyez une demande, un workflow est généré puis exécuté, et le fichier vous est renvoyé.',
+        'Composez un catalogue complet : chemin de fer en glisser-déposer, fiches générées depuis le PIM (modes Exhaustif/Condensé, ruban vedette, specs en tableau), style piloté par prompt ou par une URL d’inspiration, bandeau taxonomie Univers › Famille, export print.',
       side: 'right',
       align: 'center',
     },
@@ -192,19 +212,33 @@ export const dashboardTourSteps: TourStep[] = [
     prepare: openSection('hyperframes'),
     requireSelector: '[data-tour="section-hyperframes"]',
     popover: {
-      title: '12 · Animation',
+      title: '13 · Animation',
       description:
         'Créez des vidéos et animations (HyperFrames) : compositions animées, transitions, sous-titres synchronisés.',
       side: 'right',
       align: 'center',
     },
   },
+  // ── Automatisation & IA ──
+  {
+    element: '[data-tour="section-workflows"]',
+    prepare: openSection('workflows'),
+    requireSelector: '[data-tour="section-workflows"]',
+    popover: {
+      title: '14 · Workflows',
+      description: 'Automatisez l’enchaînement des modules, façon Zapier.',
+      side: 'right',
+      align: 'center',
+    },
+  },
+  optStep('workflows', 'opt-wf-title', 'À quoi ça sert', 'Enchaînez scraping → données → export → Drive/Gmail/Telegram/Webhook. Nodes récents : Graphique, Rapport de coûts IA, Fréquentation du site, Veille tarifaire. Un workflow peut être généré par IA depuis un prompt, planifié côté serveur (cron), et son résultat se consulte sur un écran dédié.'),
+  optStep('workflows', 'opt-wf-new', 'Nouveau workflow', 'Crée un workflow vierge et ouvre l’éditeur de graphe (nodes + liens). Des modèles intégrés et vos propres modèles sont aussi disponibles dans le menu.'),
   {
     element: '[data-tour="section-chat"]',
     prepare: openSection('chat'),
     requireSelector: '[data-tour="section-chat"]',
     popover: {
-      title: '13 · Chat IA',
+      title: '15 · Chat IA',
       description:
         'Un assistant conversationnel pour interroger vos données, générer du contenu et déclencher des actions dans l’app.',
       side: 'right',
@@ -212,13 +246,26 @@ export const dashboardTourSteps: TourStep[] = [
     },
   },
   {
+    element: '[data-tour="section-telegram"]',
+    prepare: openSection('telegram'),
+    requireSelector: '[data-tour="section-telegram"]',
+    popover: {
+      title: '16 · Telegram',
+      description:
+        'Pilotez l’app depuis un bot Telegram : envoyez une demande, un workflow est généré puis exécuté, et le fichier vous est renvoyé.',
+      side: 'right',
+      align: 'center',
+    },
+  },
+  // ── Administration ──
+  {
     element: '[data-tour="section-access"]',
     prepare: openSection('access'),
     requireSelector: '[data-tour="section-access"]',
     popover: {
-      title: '14 · Utilisateurs & rôles',
+      title: '17 · Utilisateurs & rôles',
       description:
-        'Administration des accès : approuvez les comptes en attente et attribuez des rôles/permissions par module (réservé aux administrateurs).',
+        'Administration des accès : approbation des comptes, rôles/permissions par module, Journal d’audit des actions, et onglet Analytics — fréquentation du site (visites, pages vues, trafic en direct, alertes Telegram). Réservé aux administrateurs.',
       side: 'right',
       align: 'center',
     },
@@ -230,7 +277,7 @@ export const dashboardTourSteps: TourStep[] = [
     popover: {
       title: 'Profil & paramètres',
       description:
-        'En bas de la barre : votre compte, l’icône ⚙️ ouvre les Réglages (clés IA, intégrations Drive/Telegram, modèles), et la déconnexion.',
+        'En bas de la barre : votre compte, l’icône ⚙️ ouvre les Réglages (clés IA, modèles et budgets, intégrations Drive/Telegram, schéma des données), et la déconnexion.',
       side: 'right',
       align: 'end',
     },
