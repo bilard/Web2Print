@@ -17,6 +17,7 @@ import { extractPromoFields, buildDetailLines, buildSpecTable } from '@/features
 import { DEFAULT_CARD_STYLE, type CardBox, type CardObjectId } from '../../catalogTypes'
 import { CardStyleCard } from './CardStyleCard'
 import { CardStylePreview } from './CardStylePreview'
+import { PageSimPreview } from './PageSimPreview'
 import { PreviewTextToolbar } from './PreviewTextToolbar'
 import { CharteCard } from './CharteCard'
 import { usePreviewPan } from '../../usePreviewPan'
@@ -135,6 +136,8 @@ export function StepPrompt() {
   // les deux dispositions coexistent dans un catalogue (cartes élargies, grilles
   // mixtes) et s'affinent chacune sur SA forme. Défaut : la forme dominante.
   const [previewVariant, setPreviewVariant] = useState<'auto' | 'vertical' | 'wide'>('auto')
+  // Simulation de PAGE : 0 = fiche seule (édition), sinon densité simulée (N/page).
+  const [pageSim, setPageSim] = useState<0 | 1 | 2 | 3 | 4 | 6 | 8>(0)
   // Zoom UTILISATEUR de l'aperçu (%) — 100 = ajusté à la colonne ; clic sur le % = reset.
   const [previewZoom, setPreviewZoom] = useState(100)
   // ⌘/Ctrl + molette OU pincement trackpad (wheel avec ctrlKey) = zoom fluide.
@@ -248,6 +251,14 @@ export function StepPrompt() {
                     <button type="button" onClick={() => setPreviewZoom(100)} title="Revenir à 100 %"
                       className="w-10 text-right tabular-nums hover:text-white">{previewZoom}%</button>
                   </div>
+                  {/* Simulation de PAGE : la page réelle avec N fiches échantillon —
+                      régler les tailles par bloc dans le vrai contexte d'impression. */}
+                  <select value={pageSim} onChange={(e) => setPageSim(Number(e.target.value) as typeof pageSim)}
+                    title="Affiche la page complète simulée avec N produits (tailles réelles d'impression)"
+                    className="rounded-md border border-border bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:text-white">
+                    <option value={0}>Fiche seule</option>
+                    {[1, 2, 3, 4, 6, 8].map((n) => <option key={n} value={n}>Page · {n}/page</option>)}
+                  </select>
                   {/* Disposition éditée : chaque variante a SES positions (layout / layoutWide). */}
                   <div className="flex rounded-md overflow-hidden border border-border text-[11px]"
                     title="Chaque disposition s'affine séparément : verticale (cartes standard) · pleine largeur (2 colonnes)">
@@ -276,10 +287,16 @@ export function StepPrompt() {
               {/* Zoom > 100 % : la carte déborde → défilement LOCAL des deux axes
                   (hauteur bornée au viewport) — le pan reste confiné à l'aperçu. */}
               <div ref={scrollBoxRef} className="overflow-auto pb-2 max-h-[calc(100vh-150px)]">
-                <CardStylePreview theme={plan.theme} cardStyle={cardStyle} pageStyle={mergedPageStyle(plan.pageStyle)} chapterColor={plan.sections.find((sec) => !sec.nodeId.includes('/'))?.color || defaultUniverseColor(0)} fields={sampleFields} details={sampleDetails} specs={sampleSpecs} cell={previewCell}
-                  wide={previewWide} featuredVariant={previewFeatured} selected={selectedObject}
-                  editable onLayoutChange={patchLayout}
-                  onSelect={setSelectedObject} zoom={previewZoom / 100} />
+                {pageSim > 0 && sampleFields ? (
+                  <PageSimPreview theme={plan.theme} cardStyle={cardStyle} pageStyle={plan.pageStyle}
+                    format={format} grid={pageSim as Exclude<typeof pageSim, 0>} fields={sampleFields} details={sampleDetails} specs={sampleSpecs}
+                    zoom={previewZoom / 100} />
+                ) : (
+                  <CardStylePreview theme={plan.theme} cardStyle={cardStyle} pageStyle={mergedPageStyle(plan.pageStyle)} chapterColor={plan.sections.find((sec) => !sec.nodeId.includes('/'))?.color || defaultUniverseColor(0)} fields={sampleFields} details={sampleDetails} specs={sampleSpecs} cell={previewCell}
+                    wide={previewWide} featuredVariant={previewFeatured} selected={selectedObject}
+                    editable onLayoutChange={patchLayout}
+                    onSelect={setSelectedObject} zoom={previewZoom / 100} />
+                )}
               </div>
               {/* Voile PAN (espace maintenu) : capte le pointeur au-dessus de l'aperçu —
                   le drag des blocs est suspendu le temps du déplacement. */}
