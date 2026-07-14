@@ -319,7 +319,7 @@ const BRACKETED_HEADER_RE = /^\s*\[[^[\]()]+\]\s*$/
 // ── Pied de page / contact / commerce (fixture réelle Trafic, Magento+Amasty) ──
 // Le footer (store locator, newsletter, moyens de paiement, adresses, mentions
 // légales) traversait l'extraction LLM et le balayage DOM en paires « specs ».
-const FOOTER_UI_RE = /code\s+postal\s+ou\s+ville|rayon\s+de\s+recherche|nos\s+magasins|^[àa]\s+proximit[eé]$|trouv(?:er|ez)\s+un\s+magasin|store\s*locator|acc[eè]s\s+rapide|plan\s+du\s+site|suivez[- ]nous|r[eé]seaux\s+sociaux|service\s+client[eè]?l?e?\b/i
+const FOOTER_UI_RE = /code\s+postal\s+ou\s+ville|rayon\s+de\s+recherche|nos\s+magasins|^[àa]\s+proximit[eé]$|trouv(?:er|ez)\s+un\s+magasin|store\s*locator|acc[eè]s\s+rapide|plan\s+du\s+site|suivez[- ]nous|r[eé]seaux\s+sociaux|service\s+client(?:s|[eè]le)?\b/i
 const NEWSLETTER_RE = /inscrivez[- ]vous|abonnez[- ]vous|[ms]['’]abonner|newsletter|recevoir\s+nos\s+(?:infos|offres|actualit[eé]s?)/i
 const PAYMENT_METHODS_RE = /paiements?\s+par|\b(?:maestro|mastercard|bancontact|paypal)\b|\besp[eè]ces\b|carte\s+bancaire/i
 const CONTACT_NAME_RE = /^(?:t[eé]l[eé]?(?:phone)?\.?|fax|gsm|e-?mail|whatsapp|contact(?:ez-nous)?)$/i
@@ -342,6 +342,10 @@ const STREET_NAME_START_RE = /^(?:rue|boulevard|avenue|chauss[eé]e|impasse|all[
 // en paires « specs ». Vocabulaire de COMPTE/CHECKOUT — locutions composées
 // uniquement : « Commande : Électronique » (vraie spec machine) reste sane.
 const ACCOUNT_CHECKOUT_RE = /commander\s+en\s+(?:tant\s+que|utilisant)|cr[eé]ation\s+d.{0,3}un\s+compte|(?:votre|mon)\s+compte\b|nouveau\s+client\b|se\s+connecter|s['’]identifier|adresse\s+e-?mail|mot\s+de\s+passe|create\s+an?\s+account|sign\s+(?:in|up)\b|log\s?in\b/i
+// Clause CGV NUMÉROTÉE en NOM de paire (« 9.1 Piles et accumulateurs == IDU… »,
+// « 18.2 Aire géographique == La vente en ligne… ») : une spec produit n'est
+// jamais nommée « N.N Titre » — c'est la numérotation des conditions de vente.
+const LEGAL_CLAUSE_NAME_RE = /^\d{1,2}\.\d{1,2}\.?\s+\S/
 // Avis clients rendus en paires titre/commentaire (« Super == Très bonne
 // tondeuse », « Tondeuse == Moteur puissant !!! ») : vocabulaire d'OPINION —
 // exclamations répétées, jugements, recommandations — jamais des specs.
@@ -367,6 +371,7 @@ export function isSaneSpecPair(n: string, v: string): boolean {
   if (FOOTER_UI_RE.test(n) || FOOTER_UI_RE.test(v)) return false
   if (STORE_STOCK_UI_RE.test(n) || STORE_STOCK_UI_RE.test(v)) return false
   if (ACCOUNT_CHECKOUT_RE.test(n) || ACCOUNT_CHECKOUT_RE.test(v)) return false
+  if (LEGAL_CLAUSE_NAME_RE.test(n)) return false
   if (OPINION_PAIR_RE.test(n) || OPINION_PAIR_RE.test(v)) return false
   // Titre d'avis nu (« Super », « Génial ») apparié à un commentaire.
   if (/^(?:super|g[eé]nial|top|parfait|nickel|impeccable)\s*!*$/i.test(n)) return false

@@ -684,6 +684,10 @@ describe('isSaneSpecPair — bloc commande/compte client (fixture Trafic 221919)
     ['gratuit', 'en magasin'],
     ['Se connecter', 'Mot de passe'],
     ['Create an account', 'Sign in'],
+    // Clauses CGV numérotées + footer (même fiche 221919) :
+    ['9.1 Piles et accumulateurs', 'Identifiant unique (IDU) pour la filière piles et accumulateurs COREPILE: FR001981_066STI'],
+    ['18.2 Aire géographique', 'La vente en ligne des produits et services présentés dans le site est réservée aux acheteurs qui résident en Belgique'],
+    ['Trafic', 'Service clients'],
   ]
   it.each(JUNK)('tue « %s == %s »', (n, v) => {
     expect(isSaneSpecPair(n, v)).toBe(false)
