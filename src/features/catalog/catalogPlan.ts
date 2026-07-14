@@ -384,6 +384,24 @@ function applyCharteBackgrounds(plan: CatalogPlan, notes: string): CatalogPlan {
   return { ...plan, theme, ...(cardStyle ? { cardStyle } : {}) }
 }
 
+/**
+ * FOND DE PAGE BLANC PAR DÉFAUT : un fond de page SOMBRE proposé spontanément
+ * par l'IA (charte de site sombre, goûts du modèle) est ramené au blanc —
+ * catalogue print lumineux. Seuls l'imposent : une directive « FOND DE PAGE :
+ * #hex » (analyse d'inspiration / consignes), une demande explicite de fond
+ * sombre dans le brief, ou un plan courant déjà sombre (réglage utilisateur —
+ * jamais écrasé). L'encre éclaircie pour l'ancien fond sombre redevient lisible.
+ */
+export function enforceLightPageBg(plan: CatalogPlan, opts: { notes: string; brief: string; current?: CatalogPlan | null }): CatalogPlan {
+  const asked = /FOND DE PAGE[^:#]*:\s*#[0-9a-f]{6}/i.test(opts.notes)
+    || /\b(fonds?|pages?|background)\b[^.\n]{0,40}\b(noire?s?|sombres?|dark|black)\b/i.test(opts.brief)
+  const wasDark = opts.current ? hexLum(opts.current.theme.pageBg) < 0.55 : false
+  if (asked || wasDark || hexLum(plan.theme.pageBg) >= 0.55) return plan
+  const theme = { ...plan.theme, pageBg: '#ffffff' }
+  if (hexLum(theme.ink) > 0.65) theme.ink = '#111827'
+  return { ...plan, theme }
+}
+
 export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext, current?: CatalogPlan | null): Promise<CatalogPlan> {
   const treeDesc = flattenTree(ctx.tree)
     .map((n) => {
@@ -431,5 +449,7 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
     schema: PlanSchema,
     schemaForLLM: SCHEMA_FOR_LLM,
   })
-  return applyCharteBackgrounds(sanitizeCatalogPlan(raw, ctx.tree, ctx.catalogName, current), ctx.charte?.notes ?? '')
+  const notes = ctx.charte?.notes ?? ''
+  const plan = enforceLightPageBg(sanitizeCatalogPlan(raw, ctx.tree, ctx.catalogName, current), { notes, brief, current })
+  return applyCharteBackgrounds(plan, notes)
 }

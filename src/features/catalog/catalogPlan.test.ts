@@ -1,6 +1,6 @@
 import { describe, expect, it, test } from 'vitest'
 import { DEFAULT_CARD_STYLE, DEFAULT_PAGE_STYLE, type CatalogTreeNode } from './catalogTypes'
-import { defaultCatalogPlan, PlanSchema, sanitizeCatalogPlan } from './catalogPlan'
+import { defaultCatalogPlan, enforceLightPageBg, PlanSchema, sanitizeCatalogPlan } from './catalogPlan'
 
 const node = (id: string, label: string, level: 1 | 2 | 3, productIds: string[] = [], children: CatalogTreeNode[] = []): CatalogTreeNode =>
   ({ id, label, level, children, productIds })
@@ -147,5 +147,40 @@ describe('sanitizeCatalogPlan', () => {
   test('PlanSchema conserve layout (non strippé par zod)', () => {
     const parsed = PlanSchema.parse({ cardStyle: { layout: { name: { x: 10, y: 20, w: 50 } } } })
     expect(parsed.cardStyle?.layout?.name).toEqual({ x: 10, y: 20, w: 50 })
+  })
+})
+
+describe('enforceLightPageBg — fond de page BLANC par défaut', () => {
+  const TREE: CatalogTreeNode[] = []
+  const darkPlan = () => {
+    const p = defaultCatalogPlan(TREE, 'Démo')
+    return { ...p, theme: { ...p.theme, pageBg: '#000000', ink: '#f5f5f5' } }
+  }
+
+  it('fond sombre spontané de l\'IA → ramené au blanc, encre relisible', () => {
+    const out = enforceLightPageBg(darkPlan(), { notes: '', brief: 'Catalogue fidèle à la charte du site' })
+    expect(out.theme.pageBg).toBe('#ffffff')
+    expect(out.theme.ink).toBe('#111827')
+  })
+
+  it('directive explicite « FOND DE PAGE : #hex » (inspiration/consignes) → sombre conservé', () => {
+    const out = enforceLightPageBg(darkPlan(), { notes: 'FOND DE PAGE (aplat) : #101014', brief: '' })
+    expect(out.theme.pageBg).toBe('#000000')
+  })
+
+  it('demande de fond sombre dans le brief → conservé', () => {
+    const out = enforceLightPageBg(darkPlan(), { notes: '', brief: 'Ambiance premium, fond de page noir' })
+    expect(out.theme.pageBg).toBe('#000000')
+  })
+
+  it('plan courant déjà sombre (réglage utilisateur) → jamais écrasé', () => {
+    const out = enforceLightPageBg(darkPlan(), { notes: '', brief: 'change la couleur des prix', current: darkPlan() })
+    expect(out.theme.pageBg).toBe('#000000')
+  })
+
+  it('fond clair → intouché (encre comprise)', () => {
+    const p = defaultCatalogPlan(TREE, 'Démo')
+    const out = enforceLightPageBg(p, { notes: '', brief: '' })
+    expect(out).toBe(p)
   })
 })
