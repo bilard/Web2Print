@@ -18,6 +18,7 @@ import { parseNamedDocLinks } from '@/features/scraping/core/parsers/parseNamedD
 import { parsePricingFromMarkdown } from '@/features/scraping/core/parsers/parsePricing'
 import { parseAdvantagesFromMarkdown, parseAdvantagesFromHtml, mergeAdvantagesAdditive } from '@/features/scraping/core/parsers/parseAdvantages'
 import { parseIcecatGtin } from '@/features/scraping/core/parsers/parseIcecatGtin'
+import { extractProductScope, productScopeText } from '@/features/scraping/core/parsers/productScope'
 import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
 import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
@@ -1597,6 +1598,10 @@ interface ManufacturerData {
   specs: Array<{ name: string; value: string; group?: string }>
   description: string
   breadcrumb: string[]
+  /** Texte de la ZONE PRODUIT du DOM (liste blanche `extractProductScope`) —
+   *  fourni en PRIORITÉ au LLM : le header/footer/login/CGV n'y existent pas
+   *  par construction. Absent quand le scope n'est pas identifiable. */
+  productScopeText?: string
   /** URLs d'images dont la PROVENANCE dit que ce sont des pictos/badges
    *  (ex: REDUX `standardsFeaturesIcons` chez TTI — Ryobi/Milwaukee/AEG :
    *  badges Garantie, Brushless, labels énergie). Signal plus fiable que
@@ -2256,10 +2261,18 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
     console.warn('[manufacturer] breadcrumb extraction failed:', err)
   }
 
-  // ── 0bis. Avantages depuis le HTML statique (déterministe, additif) ──
-  // Le HTML brut contient les listes COMPLÈTES même quand le rendu navigateur
-  // les replie (« Voir plus ») ou qu'un markdown de cache tronqué est resservi.
-  data.advantages = parseAdvantagesFromHtml(html)
+  // ── 0bis. ZONE PRODUIT (liste blanche) + avantages depuis le HTML statique ──
+  // Universalité par CONSTRUCTION : les avantages sont d'abord cherchés dans la
+  // zone produit scopée (header/footer/login/CGV hors-scope) ; repli page
+  // entière si le scope est introuvable ou n'en donne aucun (jamais moins
+  // qu'avant). Le texte du scope est aussi fourni au LLM (PATH B).
+  const scopeHtml = extractProductScope(html)
+  if (scopeHtml) {
+    data.productScopeText = productScopeText(scopeHtml)
+    console.log('[manufacturer] ✓ product scope:', scopeHtml.length, 'chars (page:', html.length, ')')
+  }
+  data.advantages = scopeHtml ? parseAdvantagesFromHtml(scopeHtml) : []
+  if (data.advantages.length === 0) data.advantages = parseAdvantagesFromHtml(html)
   if (data.advantages.length > 0) {
     console.log('[manufacturer] ✓ advantages from HTML:', data.advantages.length)
   }
@@ -4753,6 +4766,12 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             .join('\n')
 
           const dataSections: string[] = []
+          // ZONE PRODUIT (liste blanche DOM) en TÊTE : description et avantages
+          // doivent venir d'ICI — le markdown complet (dessous) sert aux specs,
+          // variantes et documents, mais son footer/login n'est jamais du produit.
+          if (rawData.productScopeText) {
+            dataSections.push(`## ZONE PRODUIT (extraite du DOM — description et avantages viennent EXCLUSIVEMENT d'ici)\n${rawData.productScopeText}`)
+          }
           if (markdownContent) {
             // sanitize + strip des sentinelles internes : le LLM ne doit JAMAIS
             // voir JINA_EXTRACTED_* (il les recrache dans les specs) ni le nav/cookies.
@@ -4785,6 +4804,7 @@ ${dataSections.join('\n\n')}
 7. Documents : reprends toutes les URLs de fichiers PDF (.pdf) trouvées dans les données.
 8. Si un champ n'existe pas dans les données → chaîne vide ou tableau vide. JAMAIS d'invention.
 9. FIDÉLITÉ chiffrée : aucune conversion d'unité, aucun arrondi.
+10. Si une section « ZONE PRODUIT » est présente : description et avantages viennent EXCLUSIVEMENT d'elle. Tout ce qui n'y figure pas (promesses de l'enseigne, newsletter, compte client, paiement, mentions légales) n'est JAMAIS un avantage ni une description.
 
 Réponds UNIQUEMENT via l'outil emit_response.`
             : needsKnowledgeBoost
@@ -4815,6 +4835,7 @@ ${dataSections.join('\n\n')}
 - FIDÉLITÉ : chaque valeur doit être recopiée EXACTEMENT depuis le markdown source
 - Si tu ne trouves PAS une spec dans le texte, ne l'ajoute PAS
 - Mieux vaut retourner moins de specs que d'en inventer
+- Si une section « ZONE PRODUIT » est présente : description et avantages viennent EXCLUSIVEMENT d'elle — le reste de la page (promesses enseigne, newsletter, compte, paiement, légal) n'est JAMAIS du contenu produit
 
 Réponds UNIQUEMENT via l'outil emit_response.`
             : `Tu es un expert produit. Le scraping de la page web n'a pas donné de contenu exploitable.
