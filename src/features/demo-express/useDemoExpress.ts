@@ -180,21 +180,30 @@ async function seedCatalog(input: {
   // écrit parfois « FOND DE PAGE : #0…» (site sombre) et ce canal explicite
   // passe devant enforceLightPageBg → pages noires non voulues. Encre relisible.
   plan = { ...plan, theme: { ...plan.theme, pageBg: '#ffffff', ...(hexLum(plan.theme.ink) > 0.65 ? { ink: '#111827' } : {}) } }
-  // Image = 30 % de la fiche, la DONNÉE 70 %. La fiche pleine page (portrait)
-  // est VERTICALE (image en haut) → patcher `layout` ; `layoutWide` couvre les
-  // formats paysage. Déterministe : gagne sur les placements du plan IA.
+  // MISE EN PAGE SOUS CONTRÔLE TOTAL : la démo impose la disposition COMPLÈTE
+  // de la fiche (les 13 blocs — le plan IA ne place plus rien) : image 30 % de
+  // la fiche / DONNÉE 70 %, tableau de caractéristiques TOUJOURS visible et
+  // exhaustif (hiddenDetails vidé, plafonds levés), tailles homogènes (échelles
+  // à 1 + « Taille identique »), prix ancré bas-droite.
   const demoLayout = {
+    promo: { x: 0, y: 0, w: 100 },
+    vedette: { x: 62, y: 3 },
+    kicker: { x: 0, y: 7 },
     image: { x: 2, y: 4, w: 96, h: 30 },
     sticker: { x: 70, y: 20, r: 8 },
     brand: { x: 5, y: 36, w: 90 },
     name: { x: 5, y: 40, w: 92 },
     description: { x: 5, y: 46, w: 92 },
     details: { x: 5, y: 58, w: 92 },
-    specs: { x: 5, y: 72, w: 92 },
-    ref: { x: 5, y: 90, w: 45 },
-    unit: { x: 5, y: 94, link: 'ref' as const },
+    specs: { x: 5, y: 70, w: 92 },
+    ref: { x: 5, y: 92, w: 45 },
+    unit: { x: 5, y: 95, link: 'ref' as const },
+    price: { x: 2, y: 2, w: 40, ax: 'r' as const, ay: 'b' as const, r: 0 },
   }
   const demoLayoutWide = {
+    promo: { x: 0, y: 0, w: 100 },
+    vedette: { x: 62, y: 3 },
+    kicker: { x: 0, y: 10 },
     image: { x: 2, y: 8, w: 30, h: 88 },
     sticker: { x: 24, y: 12, r: 8 },
     brand: { x: 36, y: 10, w: 60 },
@@ -204,10 +213,14 @@ async function seedCatalog(input: {
     specs: { x: 36, y: 68, w: 62 },
     ref: { x: 36, y: 88, w: 30 },
     unit: { x: 36, y: 92, link: 'ref' as const },
+    price: { x: 2, y: 2, w: 40, ax: 'r' as const, ay: 'b' as const, r: 0 },
   }
   plan = { ...plan, cardStyle: { ...DEFAULT_CARD_STYLE, ...plan.cardStyle,
-    layout: { ...plan.cardStyle?.layout, ...demoLayout },
-    layoutWide: { ...plan.cardStyle?.layoutWide, ...demoLayoutWide } } }
+    layout: demoLayout, layoutWide: demoLayoutWide,
+    hiddenDetails: [], maxSpecLines: undefined, maxBulletLines: undefined,
+    showDetails: true, uniformTextScale: true, textStyle: {},
+    nameScale: 1, descScale: 1, priceScale: 1, brandScale: 1, refScale: 1, unitScale: 1,
+    promoScale: 1, stickerScale: 1, vedetteScale: 1, detailsScale: 1, kickerScale: 1, specsScale: 1 } }
 
   const fieldMap = defaultPromoFieldMap(columns)
   const doc: CatalogDoc = {
