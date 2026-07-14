@@ -121,8 +121,9 @@ export function StepPrompt() {
     if (!s.plan) return
     const cs = { ...DEFAULT_CARD_STYLE, ...s.plan.cardStyle }
     // Chaque variante a son propre jeu de positions : le patch va dans celui
-    // de la variante AFFICHÉE (verticale → layout · pleine largeur → layoutWide).
-    const key = previewWide ? 'layoutWide' : 'layout'
+    // de la variante AFFICHÉE (verticale → layout · pleine largeur → layoutWide) ;
+    // en simulation de page, c'est la forme de la cellule simulée qui décide.
+    const key = (simWide ?? previewWide) ? 'layoutWide' : 'layout'
     s.setPlan({ ...s.plan, cardStyle: { ...cs, [key]: { ...(cs[key] ?? {}), [id]: box } } })
   }
   // L'aperçu prend TOUJOURS la taille + le fit réels de la cellule imprimée
@@ -138,6 +139,13 @@ export function StepPrompt() {
   const [previewVariant, setPreviewVariant] = useState<'auto' | 'vertical' | 'wide'>('auto')
   // Simulation de PAGE : 0 = fiche seule (édition), sinon densité simulée (N/page).
   const [pageSim, setPageSim] = useState<0 | 1 | 2 | 3 | 4 | 6 | 8>(0)
+  // Variante de la cellule SIMULÉE : les patchs de blocs écrivent dans SON jeu
+  // de positions (layout / layoutWide) — pas celui du toggle Verticale/Pleine largeur.
+  const simWide = useMemo(() => {
+    if (!pageSim) return null
+    const { w, h } = cellDims(format, pageSim)
+    return isWideCard(w, h)
+  }, [pageSim, format])
   // Zoom UTILISATEUR de l'aperçu (%) — 100 = ajusté à la colonne ; clic sur le % = reset.
   const [previewZoom, setPreviewZoom] = useState(100)
   // ⌘/Ctrl + molette OU pincement trackpad (wheel avec ctrlKey) = zoom fluide.
@@ -290,7 +298,8 @@ export function StepPrompt() {
                 {pageSim > 0 && sampleFields ? (
                   <PageSimPreview theme={plan.theme} cardStyle={cardStyle} pageStyle={plan.pageStyle}
                     format={format} grid={pageSim as Exclude<typeof pageSim, 0>} fields={sampleFields} details={sampleDetails} specs={sampleSpecs}
-                    zoom={previewZoom / 100} />
+                    zoom={previewZoom / 100}
+                    onLayoutChange={patchLayout} onSelect={setSelectedObject} selected={selectedObject} />
                 ) : (
                   <CardStylePreview theme={plan.theme} cardStyle={cardStyle} pageStyle={mergedPageStyle(plan.pageStyle)} chapterColor={plan.sections.find((sec) => !sec.nodeId.includes('/'))?.color || defaultUniverseColor(0)} fields={sampleFields} details={sampleDetails} specs={sampleSpecs} cell={previewCell}
                     wide={previewWide} featuredVariant={previewFeatured} selected={selectedObject}
@@ -311,7 +320,7 @@ export function StepPrompt() {
       {plan && (
         <aside className="w-80 shrink-0 border-l border-border bg-surface overflow-y-auto">
           <CardStyleCard plan={plan} setPlan={setPlan} selectedObject={selectedObject}
-            onClearSelection={() => setSelectedObject(null)} wide={previewWide} />
+            onClearSelection={() => setSelectedObject(null)} wide={simWide ?? previewWide} />
         </aside>
       )}
     </div>

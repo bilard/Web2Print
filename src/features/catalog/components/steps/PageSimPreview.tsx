@@ -6,11 +6,12 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import type { PromoFields } from '@/features/retail-promo/promoTypes'
 import type { SpecTable } from '@/features/retail-promo/promoMapping'
-import { GRID_DIMS, type CatalogCardStyle, type CatalogGrid, type CatalogFormat, type CatalogPageStyle, type CatalogTheme } from '../../catalogTypes'
+import { GRID_DIMS, type CardBox, type CardObjectId, type CatalogCardStyle, type CatalogGrid, type CatalogFormat, type CatalogPageStyle, type CatalogTheme } from '../../catalogTypes'
 import { CATALOG_CSS, cardStyleVars, cellDims, cellFit, mergedPageStyle, pagePx, pageStyleVars, themeVars } from '../pages/catalogCss'
 import { isWideCard } from '../pages/freeLayout'
 import { CatalogHeader } from '../pages/CatalogHeader'
 import { ProductCell } from '../pages/ProductCell'
+import { CardLayoutOverlay } from './CardLayoutOverlay'
 
 interface Props {
   theme: CatalogTheme
@@ -24,9 +25,13 @@ interface Props {
   specs?: SpecTable | null
   /** Zoom utilisateur relatif à l'ajustement auto (1 = remplit la colonne). */
   zoom?: number
+  /** Édition des blocs sur la 1re fiche de la page (drag/resize/sélection). */
+  onLayoutChange?: (id: CardObjectId, box: CardBox) => void
+  onSelect?: (id: CardObjectId | null) => void
+  selected?: CardObjectId | null
 }
 
-export function PageSimPreview({ theme, cardStyle, pageStyle, format, grid, fields, details, specs, zoom = 1 }: Props) {
+export function PageSimPreview({ theme, cardStyle, pageStyle, format, grid, fields, details, specs, zoom = 1, onLayoutChange, onSelect, selected }: Props) {
   const { w: pw, h: ph } = pagePx(format)
   const [cols, rows] = GRID_DIMS[grid]
   const cell = cellDims(format, grid)
@@ -44,10 +49,27 @@ export function PageSimPreview({ theme, cardStyle, pageStyle, format, grid, fiel
     return () => ro.disconnect()
   }, [])
   const K = Math.max(0.2, Math.round((availW != null ? Math.max(320, availW - 8) / pw : 0.6) * zoom * 100) / 100)
+  // Overlay d'édition sur la 1RE FICHE : ses poignées vivent HORS de la page
+  // scalée (px écran) — on mesure la position visuelle de la carte dans le wrap.
+  const hostRef = useRef<HTMLDivElement | null>(null)
+  const [overlayRect, setOverlayRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
+  useLayoutEffect(() => {
+    const w = wrapRef.current, h = hostRef.current
+    if (!w || !h || !onLayoutChange) return
+    const measure = () => {
+      const wr = w.getBoundingClientRect(), hr = h.getBoundingClientRect()
+      setOverlayRect({ left: hr.left - wr.left, top: hr.top - wr.top, width: hr.width, height: hr.height })
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(w); ro.observe(h)
+    return () => ro.disconnect()
+  }, [K, grid, onLayoutChange])
   const ps = mergedPageStyle(pageStyle)
   const vars = { ...themeVars(theme), ...cardStyleVars(cardStyle, theme), ...pageStyleVars(pageStyle) } as CSSProperties
   return (
-    <div ref={wrapRef} className="w-full min-w-0">
+    <div ref={wrapRef} className="w-full min-w-0 relative">
       <div style={{ width: pw * K, height: ph * K, position: 'relative', overflow: 'hidden' }} className="rounded-lg border border-border shadow-2xl">
         <div className="cat-page" style={{ ...vars, width: pw, height: ph, transform: `scale(${K})`, transformOrigin: 'top left' }}>
           <style>{CATALOG_CSS}</style>
@@ -57,7 +79,12 @@ export function PageSimPreview({ theme, cardStyle, pageStyle, format, grid, fiel
             gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
             ...(fit !== 1 ? ({ '--cat-fit': String(fit) } as CSSProperties) : {}),
           }}>
-            {Array.from({ length: grid as number }, (_, i) => (
+            {Array.from({ length: grid as number }, (_, i) => i === 0 && onLayoutChange ? (
+              <div key={0} ref={hostRef} style={{ display: 'grid', position: 'relative' }}>
+                <ProductCell fields={fields} featured={false} kicker="Sous-famille"
+                  details={details} specs={specs} cardStyle={cardStyle} wide={wide} />
+              </div>
+            ) : (
               <ProductCell key={i} fields={fields} featured={false} kicker="Sous-famille"
                 details={details} specs={specs} cardStyle={cardStyle} wide={wide} />
             ))}
@@ -70,6 +97,13 @@ export function PageSimPreview({ theme, cardStyle, pageStyle, format, grid, fiel
           )}
         </div>
       </div>
+      {/* Overlay HORS de la page scalée : positions % invariantes, poignées en px. */}
+      {onLayoutChange && overlayRect && (
+        <div style={{ position: 'absolute', ...overlayRect }}>
+          <CardLayoutOverlay cardRef={hostRef} style={cardStyle} wide={wide}
+            onChange={onLayoutChange} onSelect={onSelect} selected={selected} />
+        </div>
+      )}
     </div>
   )
 }
