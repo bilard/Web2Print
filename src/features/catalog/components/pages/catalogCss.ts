@@ -380,11 +380,10 @@ export const CATALOG_CSS = `
 /* Spécifications VERSION PROMO (document de communication, pas fiche technique) :
    titre en pastille accent, paires en CHIPS arrondies teintées accent avec liseré,
    valeur en couleur accent — 2 colonnes (gain de place vertical par fiche). */
-/* Échelle du tableau Caractéristiques : MULTIPLICATIVE par-dessus « Détails »
-   (1× = suit Détails exactement — pas de saut entre 0.95 et 1, le repli
-   « var absente » et le réglage « 1 » rendent le même résultat). */
+/* Échelle du tableau Caractéristiques : INDÉPENDANTE du bloc « Détails » —
+   chaque bloc gère SA taille (réduire les avantages ne rétrécit plus le tableau). */
 .cat-cell-specs-wrap { margin-top:0;
-  font-size:calc(9px * var(--cat-s-details,1) * var(--cat-s-specs,1) * ${F});
+  font-size:calc(9px * var(--cat-s-specs,1) * ${F});
   font-family:var(--cat-font-specs,var(--cat-font-details,var(--cat-font-b))); }
 /* Lien de contrôle vers la fiche produit SOURCE : pastille en haut à droite,
    visible AU SURVOL seulement → jamais capturée à l'export (opacity 0). */
