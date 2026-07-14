@@ -47,6 +47,20 @@ export function cellFitFor(format: CatalogFormat, cols: number, rows: number): n
   return Math.min(1.45, Math.max(0.85, Math.sqrt((w * h) / (358 * 318))))
 }
 
+/** Magnification des cartes ÉLARGIES (colSpan 2 non-2×2) — partagée pages/aperçu. */
+export const WIDE_MAGNIFY = 1.3
+
+/**
+ * Fit typo du CONTENU d'une carte magnifiée ×s (grande carte de ProductGridPage) :
+ * « Taille identique » → compensation exacte (fit/s, texte visuel = fit du
+ * catalogue) ; sinon tempérament √s (dominant mais cohérent avec la page).
+ * SOURCE UNIQUE pages ↔ aperçu de fiche : la variante « Pleine largeur » de
+ * Prompt & style doit montrer le MÊME texte visuel que la carte élargie réelle.
+ */
+export function magnifiedTextFit(fit: number, s: number, uniformText: boolean): number {
+  return Math.round((uniformText ? fit / s : fit * Math.sqrt(s) / s) * 100) / 100
+}
+
 /** Contexte de rendu passé à toutes les pages (une seule prop drill, pas de store dans le rendu). */
 export interface CatalogRenderCtx {
   plan: CatalogPlan

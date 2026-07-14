@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { extractPromoFields, buildDetailLines, buildSpecTable } from '@/features/retail-promo/promoMapping'
 import { GRID_DIMS, type CatalogGrid, type ProductSlot } from '../../catalogTypes'
-import { cellDimsFor, cellFitFor, type CatalogRenderCtx } from './catalogCss'
+import { cellDimsFor, cellFitFor, magnifiedTextFit, WIDE_MAGNIFY, type CatalogRenderCtx } from './catalogCss'
 import { representativeGrid } from '../../catalogEngine'
 import { isWideCard } from './freeLayout'
 import { ProductCell } from './ProductCell'
@@ -74,15 +74,13 @@ export function ProductGridPage({ ctx, grid, rows: rowsProp, slots, groupRows }:
         // → ×1,3 : compromis dominance/contenu — à ×1,5 la carte perdait ~40 px de
         // hauteur layout et les pavés (avantages/TVA/entretien) se faisaient couper.
         if (slot.colSpan * slot.rowSpan > 1) {
-          const s = slot.colSpan >= 2 && slot.rowSpan >= 2 ? 2 : 1.3
+          const s = slot.colSpan >= 2 && slot.rowSpan >= 2 ? 2 : WIDE_MAGNIFY
           // HIÉRARCHIE TYPO : la magnification ×s grossit AUSSI les textes ×s —
           // un titre de vedette 2× celui des cartes voisines casse la hiérarchie
-          // de la page. On tempère la typo en √s via un override local de
-          // --cat-fit (texte effectif ×√s : dominant mais cohérent) ; l'image et
-          // la mise en page gardent la magnification pleine.
-          // Taille identique : le texte revient à la taille de base (fit/s compense
-          // exactement la magnification) — sinon hiérarchie tempérée en racine(s).
-          const textFit = Math.round((uniformText ? fit / s : fit * Math.sqrt(s) / s) * 100) / 100
+          // de la page. On tempère la typo via magnifiedTextFit (source unique
+          // partagée avec l'aperçu de fiche) ; l'image et la mise en page gardent
+          // la magnification pleine.
+          const textFit = magnifiedTextFit(fit, s, uniformText)
           return (
             <div key={slot.rowId} style={{ ...style, position: 'relative' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: `calc(100%/${s})`, height: `calc(100%/${s})`, transform: `scale(${s})`, transformOrigin: 'top left', display: 'grid', ...( { '--cat-fit': String(textFit) } as CSSProperties) }}>

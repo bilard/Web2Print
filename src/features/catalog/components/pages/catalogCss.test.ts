@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CatalogCardStyle, CatalogPageStyle, CatalogTheme } from '../../catalogTypes'
 import { DEFAULT_CARD_STYLE, DEFAULT_PAGE_STYLE } from '../../catalogTypes'
-import { cardStyleVars, mergedPageStyle, pageStyleVars } from './catalogCss'
+import { cardStyleVars, cellFit, magnifiedTextFit, mergedPageStyle, pageStyleVars, WIDE_MAGNIFY } from './catalogCss'
 
 const THEME: CatalogTheme = {
   accent: '#e97817', pageBg: '#ffffff', ink: '#111827',
@@ -106,5 +106,31 @@ describe('pageStyleVars / mergedPageStyle', () => {
     expect(v['--cat-p-folio']).toBe('1.3')
     expect(v['--cat-p-opener']).toBe('1.1')
     expect(v['--cat-p-back']).toBe('0.9')
+  })
+})
+
+describe('magnifiedTextFit — parité typo aperçu de fiche ↔ pages du catalogue', () => {
+  const A4 = { widthMm: 210, heightMm: 297 } as Parameters<typeof cellFit>[0]
+
+  it('« Taille identique » : le texte VISUEL de la carte élargie ×1.3 = fit de base (compensation exacte)', () => {
+    const fit = cellFit(A4, 4) // grille représentative 4 (cellules verticales)
+    const textFit = magnifiedTextFit(fit, WIDE_MAGNIFY, true)
+    expect(textFit).toBeCloseTo(fit / WIDE_MAGNIFY, 2)
+    // Visuel après scale(1.3) : retombe sur le fit du catalogue (±arrondi 2 déc.)
+    expect(textFit * WIDE_MAGNIFY).toBeCloseTo(fit, 1)
+  })
+
+  it('mode adaptatif : tempérament √s (dominant mais cohérent avec la page)', () => {
+    const fit = cellFit(A4, 4)
+    const textFit = magnifiedTextFit(fit, WIDE_MAGNIFY, false)
+    expect(textFit).toBeCloseTo(fit * Math.sqrt(WIDE_MAGNIFY) / WIDE_MAGNIFY, 2)
+  })
+
+  it('la variante « Pleine largeur » de l\'aperçu ne reprend PLUS le fit de la grille 2 (1.45)', () => {
+    // Régression mesurée en prod : aperçu wide à 1.45 vs pages à 1.23 (+18 %).
+    const base = cellFit(A4, 4)
+    const previewVisual = Math.round(magnifiedTextFit(base, WIDE_MAGNIFY, true) * WIDE_MAGNIFY * 100) / 100
+    expect(previewVisual).toBeCloseTo(base, 1)
+    expect(previewVisual).toBeLessThan(cellFit(A4, 2))
   })
 })

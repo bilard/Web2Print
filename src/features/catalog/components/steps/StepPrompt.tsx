@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { buildCatalogTree, flattenTree } from '../../catalogTree'
 import { DEFAULT_GRID, representativeGrid } from '../../catalogEngine'
-import { cellDims, cellFit, mergedPageStyle } from '../pages/catalogCss'
+import { cellDims, cellFit, magnifiedTextFit, mergedPageStyle, WIDE_MAGNIFY } from '../pages/catalogCss'
 import { defaultUniverseColor } from '../../catalogFlatplan'
 import { isWideCard } from '../pages/freeLayout'
 import { generateCatalogPlan, defaultCatalogPlan } from '../../catalogPlan'
@@ -161,12 +161,24 @@ export function StepPrompt() {
   // Forme de la carte d'aperçu : la cellule réelle si elle correspond à la
   // variante éditée, sinon une cellule CANONIQUE de l'autre famille
   // (grille 2 = pleine largeur · grille 4 = verticale).
+  const uniformText = plan?.cardStyle?.uniformTextScale === true
   const previewCell = useMemo(() => {
     if (previewWide === baseIsWide) return cell
     const g = previewWide ? 2 : DEFAULT_GRID
     const { w, h } = cellDims(format, g)
-    return { w, h, fit: cellFit(format, g) }
-  }, [cell, previewWide, baseIsWide, format])
+    if (previewWide) {
+      // Carte LARGE d'un catalogue à cellules verticales = carte ÉLARGIE réelle
+      // (2 cellules + gap, magnifiée ×1.3) : même FORME que la cellule grille 2
+      // mais le TEXTE reste celui du catalogue — reprendre le fit de la grille 2
+      // (1.45) affichait un texte ~18 % plus grand que les pages (mesuré en prod).
+      // Fit visuel = textFit de la carte magnifiée × la magnification.
+      const fit = Math.round(magnifiedTextFit(cell.fit, WIDE_MAGNIFY, uniformText) * WIDE_MAGNIFY * 100) / 100
+      return { w, h, fit }
+    }
+    // Variante verticale forcée : « Taille identique » cale TOUT le catalogue sur
+    // le fit représentatif — l'aperçu doit suivre, sinon fit de la forme canonique.
+    return { w, h, fit: uniformText ? cell.fit : cellFit(format, g) }
+  }, [cell, previewWide, baseIsWide, format, uniformText])
 
   return (
     <div className="h-full flex min-h-0">
