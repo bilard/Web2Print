@@ -329,3 +329,20 @@ describe('paginateCatalog — bandeau de section sur les pages VEDETTE', () => {
     }
   })
 })
+
+describe('representativeGrid — la densité ne compte que sur les univers (niveau 1)', () => {
+  it('changer l\'univers à 1/page gagne même si ses sous-familles restent à 6', () => {
+    expect(representativeGrid([
+      { nodeId: 'maison', productsPerPage: 1, featuredIds: [] },
+      { nodeId: 'maison/chauffage', productsPerPage: 6, featuredIds: [] },
+      { nodeId: 'maison/chauffage/ventilateurs', productsPerPage: 6, featuredIds: [] },
+    ])).toBe(1)
+  })
+
+  it('repli : aucune section de niveau 1 → majorité toutes sections', () => {
+    expect(representativeGrid([
+      { nodeId: 'a/b', productsPerPage: 4, featuredIds: [] },
+      { nodeId: 'a/c', productsPerPage: 4, featuredIds: [] },
+    ])).toBe(4)
+  })
+})

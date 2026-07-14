@@ -44,9 +44,13 @@ export interface PaginateInput {
 /** Grille représentative des sections (densité fixe la plus fréquente) — pour le
  *  mode uniforme et l'aspect de l'aperçu. Repli DEFAULT_GRID si mixte/vide. */
 export function representativeGrid(sections: CatalogSectionPlan[]): CatalogGrid {
+  // Seuls les nœuds de NIVEAU 1 (univers, nodeId sans '/') portent la densité —
+  // compter les sous-sections figeait la grille : changer l'univers à 1/page
+  // « ne changeait rien » tant que ses sous-familles restaient majoritaires.
+  const top = sections.filter((s) => !s.randomDensity && !s.nodeId.includes('/'))
+  const pool = top.length ? top : sections.filter((s) => !s.randomDensity)
   const counts = new Map<CatalogGrid, number>()
-  for (const s of sections) {
-    if (s.randomDensity) continue
+  for (const s of pool) {
     const g = s.productsPerPage as CatalogGrid
     counts.set(g, (counts.get(g) ?? 0) + 1)
   }
