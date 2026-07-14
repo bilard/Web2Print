@@ -25,18 +25,20 @@ interface Props {
   specs?: SpecTable | null
   /** Zoom utilisateur relatif à l'ajustement auto (1 = remplit la colonne). */
   zoom?: number
+  /** Variante des fiches (toggle Verticale/Pleine largeur) — absent = forme de la cellule. */
+  wide?: boolean
   /** Édition des blocs sur la 1re fiche de la page (drag/resize/sélection). */
   onLayoutChange?: (id: CardObjectId, box: CardBox) => void
   onSelect?: (id: CardObjectId | null) => void
   selected?: CardObjectId | null
 }
 
-export function PageSimPreview({ theme, cardStyle, pageStyle, format, grid, fields, details, specs, zoom = 1, onLayoutChange, onSelect, selected }: Props) {
+export function PageSimPreview({ theme, cardStyle, pageStyle, format, grid, fields, details, specs, zoom = 1, wide: wideProp, onLayoutChange, onSelect, selected }: Props) {
   const { w: pw, h: ph } = pagePx(format)
   const [cols, rows] = GRID_DIMS[grid]
   const cell = cellDims(format, grid)
   const fit = Math.round(cellFit(format, grid) * 100) / 100
-  const wide = isWideCard(cell.w, cell.h)
+  const wide = wideProp ?? isWideCard(cell.w, cell.h)
   // Ajustement auto à la colonne (même pattern que CardStylePreview).
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const [availW, setAvailW] = useState<number | null>(null)

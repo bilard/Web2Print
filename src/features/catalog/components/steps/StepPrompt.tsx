@@ -139,13 +139,15 @@ export function StepPrompt() {
   const [previewVariant, setPreviewVariant] = useState<'auto' | 'vertical' | 'wide'>('auto')
   // Simulation de PAGE : 0 = fiche seule (édition), sinon densité simulée (N/page).
   const [pageSim, setPageSim] = useState<0 | 1 | 2 | 3 | 4 | 6 | 8>(0)
-  // Variante de la cellule SIMULÉE : les patchs de blocs écrivent dans SON jeu
-  // de positions (layout / layoutWide) — pas celui du toggle Verticale/Pleine largeur.
+  // Variante des fiches SIMULÉES : le toggle Verticale/Pleine largeur PRIME
+  // (édition de la variante choisie dans le contexte page) ; « auto » = la forme
+  // de la cellule simulée. Les patchs de blocs écrivent dans ce jeu de positions.
   const simWide = useMemo(() => {
     if (!pageSim) return null
+    if (previewVariant !== 'auto') return previewVariant === 'wide'
     const { w, h } = cellDims(format, pageSim)
     return isWideCard(w, h)
-  }, [pageSim, format])
+  }, [pageSim, previewVariant, format])
   // Zoom UTILISATEUR de l'aperçu (%) — 100 = ajusté à la colonne ; clic sur le % = reset.
   const [previewZoom, setPreviewZoom] = useState(100)
   // ⌘/Ctrl + molette OU pincement trackpad (wheel avec ctrlKey) = zoom fluide.
@@ -298,7 +300,7 @@ export function StepPrompt() {
                 {pageSim > 0 && sampleFields ? (
                   <PageSimPreview theme={plan.theme} cardStyle={cardStyle} pageStyle={plan.pageStyle}
                     format={format} grid={pageSim as Exclude<typeof pageSim, 0>} fields={sampleFields} details={sampleDetails} specs={sampleSpecs}
-                    zoom={previewZoom / 100}
+                    zoom={previewZoom / 100} wide={simWide ?? undefined}
                     onLayoutChange={patchLayout} onSelect={setSelectedObject} selected={selectedObject} />
                 ) : (
                   <CardStylePreview theme={plan.theme} cardStyle={cardStyle} pageStyle={mergedPageStyle(plan.pageStyle)} chapterColor={plan.sections.find((sec) => !sec.nodeId.includes('/'))?.color || defaultUniverseColor(0)} fields={sampleFields} details={sampleDetails} specs={sampleSpecs} cell={previewCell}
