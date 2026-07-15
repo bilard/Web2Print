@@ -398,11 +398,12 @@ export const CATALOG_CSS = `
   background:var(--cat-accent); color:#fff; font-size:12px; font-weight:700; text-decoration:none;
   opacity:0; transition:opacity .15s; }
 .cat-cell:hover .cat-cell-srclink { opacity:.92; }
-/* Centrage html2canvas-safe : line-height SERRÉ (glyphe remplit la line-box,
-   html2canvas top-aligne mais sans vide) + padding symétrique qui centre. */
-.cat-cell-specs-title { display:inline-block; background:var(--cat-promo-bg,var(--cat-accent)); color:var(--cat-promo-ink,#fff);
-  font-family:var(--cat-font-h); font-weight:800; text-transform:uppercase; letter-spacing:.08em; font-size:.92em; line-height:1.05;
-  padding:5px 10px 4px; border-radius:999px; }
+/* Centrage vertical html2canvas-safe (validé empiriquement) : inline-flex +
+   HAUTEUR EXPLICITE + align-items:center. Sans hauteur explicite html2canvas
+   top-aligne ; avec, il centre comme le navigateur, quelle que soit la police. */
+.cat-cell-specs-title { display:inline-flex; align-items:center; height:1.9em; line-height:1; background:var(--cat-promo-bg,var(--cat-accent)); color:var(--cat-promo-ink,#fff);
+  font-family:var(--cat-font-h); font-weight:800; text-transform:uppercase; letter-spacing:.08em; font-size:.92em;
+  padding:0 11px; border-radius:999px; }
 .cat-cell-specs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:3px 6px; margin-top:4px; }
 .cat-spec-pair { display:flex; justify-content:space-between; align-items:baseline; gap:6px;
   padding:2px 7px; line-height:1.3; min-width:0;
@@ -418,7 +419,7 @@ export const CATALOG_CSS = `
    valeur wrappe proprement (pas de faux retours à la ligne pre-line). */
 .cat-free .cat-cell-details .cat-spec-v { white-space:normal; display:inline-block; }
 .cat-free .cat-cell-details .cat-spec-n { display:inline-block; }
-.cat-free .cat-cell-details .cat-cell-specs-title { display:inline-block; }
+.cat-free .cat-cell-details .cat-cell-specs-title { display:inline-flex; }
 /* Cartes compactes (md, grilles denses) : bloc détails à HAUTEUR BORNÉE → coupe
    nette (ellipsis), jamais de débordement, réf/prix toujours visibles en bas. */
 .cat-md .cat-cell-details { max-height:5em; overflow:hidden; }
@@ -463,8 +464,8 @@ export const CATALOG_CSS = `
 .cat-cell-tag { display:inline-flex; flex-direction:column; align-items:flex-end; }
 .cat-cell-was { display:inline-block; background:var(--cat-was-bg,var(--cat-head-bg)); color:var(--cat-was-ink,var(--cat-head-ink)); font-size:calc(10px * var(--cat-s-price,1) * ${F});
   font-family:var(--cat-font-price,var(--cat-font-b)); font-weight:700; text-decoration:line-through; padding:3px 9px 2px; border-radius:4px 4px 0 0; white-space:nowrap; }
-.cat-cell-price { display:inline-block; background:var(--cat-price-bg,var(--cat-accent)); color:var(--cat-price-ink,#fff); font-family:var(--cat-font-price,var(--cat-font-h));
-  font-weight:800; font-size:calc(18px * var(--cat-s-price,1) * ${F}); line-height:1.15; padding:8px 12px; border-radius:4px; white-space:nowrap; }
+.cat-cell-price { display:inline-flex; align-items:center; justify-content:center; height:2.3em; line-height:1; background:var(--cat-price-bg,var(--cat-accent)); color:var(--cat-price-ink,#fff); font-family:var(--cat-font-price,var(--cat-font-h));
+  font-weight:800; font-size:calc(18px * var(--cat-s-price,1) * ${F}); padding:0 13px; border-radius:4px; white-space:nowrap; }
 .cat-cell-was + .cat-cell-price { border-radius:4px 0 4px 4px; }
 
 /* Tailles graduées (span issu du packing : prix élevé/vedette = carte plus grande) */
