@@ -40,6 +40,9 @@ import { discoverCategories, categoriesFromHtml, productLinksFromListingHtml, is
 /** Volumétries proposées par le wizard (48 max : sous le quota démo PIM de 50). */
 export const DEMO_VOLUMES = [6, 12, 24, 48] as const
 const DEFAULT_MAX_PRODUCTS = 12 // temps de démo raisonnable
+/** Accent BLEU imposé aux surfaces démo (catalogue + promo) — palette propre et
+ *  lisible, au lieu d'hériter des couleurs souvent garish de la charte du site. */
+const DEMO_ACCENT_BLUE = '#2563eb'
 const MAX_BD_CATEGORY_TRIES = 5 // rayons via Bright Data (payant) — borne de coût
 
 /** Plafonds dérivés de la volumétrie choisie. */
@@ -179,7 +182,10 @@ async function seedCatalog(input: {
   // FOND DE PAGE BLANC — TOUJOURS, pour la démo : l'analyse de charte du site
   // écrit parfois « FOND DE PAGE : #0…» (site sombre) et ce canal explicite
   // passe devant enforceLightPageBg → pages noires non voulues. Encre relisible.
-  plan = { ...plan, theme: { ...plan.theme, pageBg: '#ffffff', ...(hexLum(plan.theme.ink) > 0.65 ? { ink: '#111827' } : {}) } }
+  // Palette DÉMO : accent BLEU propre. La charte du site produit souvent des
+  // couleurs garish/illisibles (rouge accent + bandeau jaune) — pour la démo on
+  // impose un bleu lisible plutôt que d'hériter des couleurs du site.
+  plan = { ...plan, theme: { ...plan.theme, pageBg: '#ffffff', accent: DEMO_ACCENT_BLUE, ...(hexLum(plan.theme.ink) > 0.65 ? { ink: '#111827' } : {}) } }
   // MISE EN PAGE SOUS CONTRÔLE TOTAL : la démo impose la disposition COMPLÈTE
   // de la fiche (les 13 blocs — le plan IA ne place plus rien) : image 30 % de
   // la fiche / DONNÉE 70 %, tableau de caractéristiques TOUJOURS visible et
@@ -216,6 +222,10 @@ async function seedCatalog(input: {
     price: { x: 2, y: 2, w: 40, ax: 'r' as const, ay: 'b' as const, r: 0 },
   }
   plan = { ...plan, cardStyle: { ...DEFAULT_CARD_STYLE, ...plan.cardStyle,
+    // Neutralise les couleurs de charte (bandeaux jaunes, titres/valeurs rouges) —
+    // tout retombe sur l'accent BLEU + l'encre foncée : palette démo lisible.
+    promoBg: '', kickerBg: '', promoBg2: '', kickerBg2: '', nameColor: '',
+    priceBg: '', wasBg: '', stickerBg: '', vedetteBg: '', vedettePriceBg: '', brandColor: '', descColor: '',
     layout: demoLayout, layoutWide: demoLayoutWide,
     hiddenDetails: [], maxSpecLines: undefined, maxBulletLines: undefined,
     showDetails: true, uniformTextScale: true, textStyle: {},
@@ -277,7 +287,8 @@ async function seedPromo(input: {
   const patch = charteToThemePatch(charte)
   const config: PromoTemplateConfig = {
     ...DEFAULT_PROMO_CONFIG,
-    accent: patch.accent ?? DEFAULT_PROMO_CONFIG.accent,
+    // Démo : accent BLEU lisible (on n'hérite pas du rouge/jaune de la charte).
+    accent: DEMO_ACCENT_BLUE,
     headerBg: patch.headerBg ?? DEFAULT_PROMO_CONFIG.headerBg,
   }
   const fieldMap = defaultPromoFieldMap(columns)
