@@ -14,7 +14,7 @@ const LEGAL_ACCOUNT_RE = /d[eé]faut\s+de\s+conformit[eé]|lettre\s+recommand[e�
  *  boilerplate de galerie Magento (« Skip to the beginning of the images
  *  gallery ») : vocabulaire marketing du MAGASIN — jamais du produit. Fixture
  *  réelle Trafic : la synthèse LLM les recrachait en avantages/description. */
-const STORE_REASSURANCE_RE = /laissez-vous\s+s[eé]duire|choix\s+impressionnant|collections\s+exclusives|meilleurs\s+prix\s+garantis|exp[eé]rience\s+chaleureuse|qualit[eé]\s+test[eé]e\s+et\s+valid[eé]e|nos\s+\d+\s+promesses|skip\s+to\s+the\s+(?:beginning|end)\s+of\s+the\s+images\s+gallery/i
+const STORE_REASSURANCE_RE = /laissez-vous\s+s[eé]duire|choix\s+impressionnant|collections\s+exclusives|meilleurs\s+prix\s+garantis|exp[eé]rience\s+chaleureuse|qualit[eé]\s+test[eé]e\s+et\s+valid[eé]e|nos\s+\d+\s+promesses|skip\s+to\s+the\s+(?:beginning|end)\s+of\s+the\s+images\s+gallery|indice\s+de\s+r[eé]parabilit[eé]|cet\s+indice\s+permet|capacit[eé]\s+[àa]\s+r[eé]parer\s+un\s+produit|reprise\s+des\s+produits|paiement\s+100\s*%?\s*s[eé]curis|satisfait\s+ou\s+rembours|\d+x\s*,?\s*\d*x?\s*sans\s+frais|offres?\s+partenaires?/i
 
 /** PIED DE PAGE / mentions légales / newsletter / infos société (Trafic/Magento) :
  *  « M'abonner », « TVA / n° FR08383139458 / BE 0866517727 », raison sociale

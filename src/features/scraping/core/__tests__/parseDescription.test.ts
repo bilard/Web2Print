@@ -461,3 +461,23 @@ Livraison à domicile (19.99€)
     expect(rich).not.toMatch(/rupture en ligne|livr[eé] à domicile|livr[eé] en magasin|vérifier le stock|tenir informé|livraison à domicile/i)
   })
 })
+
+describe('parseDescriptionFromMarkdown — indice de réparabilité écarté (Jardiland/Ryobi)', () => {
+  it('ignore « Cet indice permet de mesurer… » et garde la vraie description', () => {
+    const md = `# Tondeuse RLM13E33S
+
+8,4/10
+
+Indice de réparabilité
+
+Cet indice permet de mesurer la capacité à réparer un produit
+
+## Description
+
+Optimisez la tonte de votre pelouse jusqu'à 300 m² avec la Tondeuse électrique RLM13E33S de Ryobi. Dotée d'un puissant moteur de 1300 W, elle assure une coupe précise de 33 cm de large.
+`
+    const desc = parseDescriptionFromMarkdown(md)
+    expect(desc).toContain('Optimisez la tonte de votre pelouse')
+    expect(desc).not.toMatch(/indice permet|capacité à réparer/i)
+  })
+})
