@@ -209,6 +209,8 @@ export function extractPromoFields(
     currency: 'EUR',
     unit: str(row, columns, fieldMap.unit),
     description: str(row, columns, fieldMap.description),
+    // Version formatée (gras) — colonne masquée ai_description_rich si présente.
+    descriptionRich: str(row, columns, 'ai_description_rich') || undefined,
     category: str(row, columns, fieldMap.category),
     unitPrice: str(row, columns, fieldMap.unitPrice),
     promoLabel: str(row, columns, fieldMap.promoLabel),

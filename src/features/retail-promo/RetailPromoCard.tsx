@@ -10,6 +10,7 @@ export interface RetailCardData {
   ref?: string
   category?: string
   description?: string
+  descriptionRich?: string
   priceNow: string
   priceWas?: string
   priceLabel?: string

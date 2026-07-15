@@ -13,6 +13,7 @@ import { DEFAULT_CARD_STYLE, type CardObjectId, type CatalogCardStyle } from '..
 import { formatPrice } from './catalogCss'
 import { applyMagneticFlow, freeLayoutBox } from './freeLayout'
 import { useResolvedImage } from '../../useResolvedImage'
+import { boldMarkdownToHtml } from '@/lib/richText'
 
 interface Props {
   fields: PromoFields
@@ -154,10 +155,13 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
           flex (pas de CSS columns — html2canvas ne les supporte pas à l'export). */}
       {f.description && show('showDesc') && obj('description',
         cardStyle?.descColumns === 2
-          ? (() => { const [a, b] = splitBalanced(f.description!); return (
-              <span className="cat-cell-desc cat-desc-cols"><span>{a}</span><span>{b}</span></span>
+          ? (() => { const [a, b] = splitBalanced(f.descriptionRich || f.description!); return (
+              <span className="cat-cell-desc cat-desc-cols">
+                <span dangerouslySetInnerHTML={{ __html: boldMarkdownToHtml(a) }} />
+                <span dangerouslySetInnerHTML={{ __html: boldMarkdownToHtml(b) }} />
+              </span>
             ) })()
-          : <span className="cat-cell-desc">{f.description}</span>)}
+          : <span className="cat-cell-desc" dangerouslySetInnerHTML={{ __html: boldMarkdownToHtml(f.descriptionRich || f.description) }} />)}
       {f.ref && show('showRef') && obj('ref', <span className="cat-cell-refcode">Réf. {f.ref}</span>)}
       {f.unit && show('showUnit') && obj('unit', <span className="cat-cell-unit">Unité : {f.unit}</span>)}
       {show('showPrice') && obj('price', <span className="cat-cell-pricebox"><span className="cat-cell-tag">{hasWas && show('showWas') && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}<span className="cat-cell-price">{formatPrice(f.newPrice)}</span></span></span>)}

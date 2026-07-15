@@ -25,6 +25,7 @@ export function toCardData(
     ref: f.ref || undefined,
     category: f.category || undefined,
     description: f.description || undefined,
+    descriptionRich: f.descriptionRich || undefined,
     priceNow: f.newPrice != null ? formatPrice(f.newPrice, f.currency, euroSep.now) : '—',
     priceWas: f.oldPrice != null ? formatPrice(f.oldPrice, f.currency, euroSep.was) : undefined,
     unitPrice: f.unitPrice || undefined,
