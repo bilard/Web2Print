@@ -173,13 +173,11 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
         const logKey = f.name || f.ref || ''
         if (logKey && !_descLogged.has(logKey)) {
           _descLogged.add(logKey)
-          console.log('[desc-debug] cell', logKey.slice(0, 28), {
-            descLen: (f.description ?? '').length,
-            richLen: (f.descriptionRich ?? '').length,
-            htmlLen: html.length,
-            usedRich,
-            richPrev: (f.descriptionRich ?? '').slice(0, 50),
-          })
+          console.log(
+            `[desc-debug] cell "${logKey.slice(0, 28)}" descLen=${(f.description ?? '').length}`
+            + ` richLen=${(f.descriptionRich ?? '').length} htmlLen=${html.length} usedRich=${usedRich}`
+            + ` richPrev=${JSON.stringify((f.descriptionRich ?? '').slice(0, 60))}`,
+          )
         }
         if (!html) return null
         if (cardStyle?.descColumns === 2) {
