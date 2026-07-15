@@ -57,6 +57,21 @@ function splitBalanced(text: string): [string, string] {
   return [units.slice(0, idx).join(sep).trim(), units.slice(idx).join(sep).trim()]
 }
 
+const _descLogged = new Set<string>()
+/** HTML de description ROBUSTE : le rich (colonne `text_rich`, sujet aux
+ *  round-trips Firestore / sérialisations) ne doit JAMAIS masquer un plain
+ *  valide s'il rend un HTML vide ou cassé (« [object Object] »). Repli
+ *  déterministe sur le plain — le catalogue est la SEULE surface qui rend le
+ *  rich, d'où l'asymétrie PIM (plain, OK) / catalogue (rich, masquait le plain). */
+function pickDescHtml(rich: string | undefined, plain: string | undefined): { html: string; usedRich: boolean } {
+  const richMd = (rich ?? '').trim()
+  const plainMd = (plain ?? '').trim()
+  const richHtml = richMd ? descriptionMarkdownToHtml(richMd) : ''
+  const richBroken = !richHtml.trim() || /\[object Object\]/.test(richHtml)
+  if (!richBroken) return { html: richHtml, usedRich: true }
+  return { html: plainMd ? descriptionMarkdownToHtml(plainMd) : '', usedRich: false }
+}
+
 export function ProductCell({ fields: f, featured, kicker, details, specs, cardStyle, style, wide = false, onEdit, previewRibbon = false }: Props) {
   // Résolution Drive/CORS → blob:/data: (voir useResolvedImage). `data-resolving` est
   // lu par useCatalogExport.waitAssets pour attendre la fin de la résolution async
@@ -153,15 +168,30 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
           aimanté de la disposition libre absorbe la hauteur réelle du texte.
           Option « 2 colonnes » : split équilibré aux retours à la ligne, rendu en
           flex (pas de CSS columns — html2canvas ne les supporte pas à l'export). */}
-      {f.description && show('showDesc') && obj('description',
-        cardStyle?.descColumns === 2
-          ? (() => { const [a, b] = splitBalanced(f.descriptionRich || f.description!); return (
-              <span className="cat-cell-desc cat-desc-cols">
-                <span dangerouslySetInnerHTML={{ __html: descriptionMarkdownToHtml(a) }} />
-                <span dangerouslySetInnerHTML={{ __html: descriptionMarkdownToHtml(b) }} />
-              </span>
-            ) })()
-          : <span className="cat-cell-desc" dangerouslySetInnerHTML={{ __html: descriptionMarkdownToHtml(f.descriptionRich || f.description) }} />)}
+      {show('showDesc') && (() => {
+        const { html, usedRich } = pickDescHtml(f.descriptionRich, f.description)
+        const logKey = f.name || f.ref || ''
+        if (logKey && !_descLogged.has(logKey)) {
+          _descLogged.add(logKey)
+          console.log('[desc-debug] cell', logKey.slice(0, 28), {
+            descLen: (f.description ?? '').length,
+            richLen: (f.descriptionRich ?? '').length,
+            htmlLen: html.length,
+            usedRich,
+            richPrev: (f.descriptionRich ?? '').slice(0, 50),
+          })
+        }
+        if (!html) return null
+        if (cardStyle?.descColumns === 2) {
+          const [a, b] = splitBalanced((usedRich ? f.descriptionRich : f.description) || '')
+          return obj('description',
+            <span className="cat-cell-desc cat-desc-cols">
+              <span dangerouslySetInnerHTML={{ __html: descriptionMarkdownToHtml(a) }} />
+              <span dangerouslySetInnerHTML={{ __html: descriptionMarkdownToHtml(b) }} />
+            </span>)
+        }
+        return obj('description', <span className="cat-cell-desc" dangerouslySetInnerHTML={{ __html: html }} />)
+      })()}
       {f.ref && show('showRef') && obj('ref', <span className="cat-cell-refcode">Réf. {f.ref}</span>)}
       {f.unit && show('showUnit') && obj('unit', <span className="cat-cell-unit">Unité : {f.unit}</span>)}
       {show('showPrice') && obj('price', <span className="cat-cell-pricebox"><span className="cat-cell-tag">{hasWas && show('showWas') && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}<span className="cat-cell-price">{formatPrice(f.newPrice)}</span></span></span>)}
