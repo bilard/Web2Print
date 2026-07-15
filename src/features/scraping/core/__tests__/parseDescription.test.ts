@@ -352,3 +352,39 @@ Grâce à sa conception **sans pales**, il diffuse un flux d'air uniforme tout e
     expect(parseRichDescriptionFromMarkdown('# Titre seul\n')).toBe('')
   })
 })
+
+describe('parseRichDescriptionFromMarkdown — bloc login/compte Magento exclu', () => {
+  const MD = `# Ventilateur sans hélice noir
+
+## Commander en tant que nouveau client
+
+- Voir le statut de la commande et de l'expédition
+- Suivi de la commande
+- Commandez plus rapidement
+
+## Commander en utilisant votre compte
+
+Adresse email
+
+Connexion
+
+SKU 1168214
+
+Rafraîchissez votre espace en toute discrétion avec ce ventilateur sans pales silencieux et design, utilisable sans fil.
+
+## Caractéristiques principales :
+
+- Couleur : Noir
+- Puissance : 5 W
+`
+  it('exclut l\'UI compte/commande, garde la vraie description + caractéristiques', () => {
+    const rich = parseRichDescriptionFromMarkdown(MD)
+    // Boilerplate login exclu
+    expect(rich).not.toMatch(/nouveau client|statut de la commande|suivi de la commande|utilisant votre compte|adresse email|^connexion/im)
+    expect(rich).not.toContain('Commandez plus rapidement')
+    // Vraie description + caractéristiques gardées
+    expect(rich).toContain('Rafraîchissez votre espace en toute discrétion')
+    expect(rich).toContain('## Caractéristiques principales :')
+    expect(rich).toContain('- Couleur : Noir')
+  })
+})
