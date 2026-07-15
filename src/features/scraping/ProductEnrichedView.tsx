@@ -64,7 +64,7 @@ export function ProductEnrichedView({ product }: Props) {
           <div
             className="text-[12.5px] text-white/75 leading-relaxed
               [&_strong]:font-semibold [&_strong]:text-white/90
-              [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:text-white/90 [&_h3]:mt-2 [&_h3]:mb-1
+              [&_h3]:text-[15px] [&_h3]:font-bold [&_h3]:text-white [&_h3]:mt-1 [&_h3]:mb-1.5 [&_h3]:leading-snug
               [&_h4]:font-semibold [&_h4]:text-white/85 [&_h4]:mt-2 [&_h4]:mb-1
               [&_h5]:font-semibold [&_h5]:text-white/85 [&_h5]:mt-1.5 [&_h6]:font-semibold [&_h6]:text-white/80
               [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ul]:space-y-0.5 [&_li]:marker:text-white/30"

@@ -375,7 +375,7 @@ export const CATALOG_CSS = `
 /* Description STRUCTURÉE de la source (titres/gras/listes préservés). */
 .cat-cell-desc strong { font-weight:700; }
 .cat-cell-desc h3, .cat-cell-desc h4, .cat-cell-desc h5, .cat-cell-desc h6 { font-family:var(--cat-font-h,var(--cat-font-b)); font-weight:800; margin:.5em 0 .18em; line-height:1.2; opacity:1; }
-.cat-cell-desc h3 { font-size:1.18em; } .cat-cell-desc h4 { font-size:1.06em; } .cat-cell-desc h5, .cat-cell-desc h6 { font-size:1em; }
+.cat-cell-desc h3 { font-size:1.32em; line-height:1.15; margin-top:.1em; } .cat-cell-desc h4 { font-size:1.06em; } .cat-cell-desc h5, .cat-cell-desc h6 { font-size:1em; }
 .cat-cell-desc p { margin:0 0 .42em; } .cat-cell-desc p:last-child { margin-bottom:0; }
 .cat-cell-desc ul { margin:.2em 0 .45em; padding-left:1.15em; list-style:disc; } .cat-cell-desc li { margin:.05em 0; }
 .cat-cell-details { display:flex; flex-direction:column; gap:1px; margin-top:4px;

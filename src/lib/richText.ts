@@ -97,17 +97,23 @@ export function boldMarkdownToHtml(s: string): string {
  *  aucune pollution possible (pas de footer/cookies/livraison). */
 export function structuredPlainToRichMarkdown(desc: string): string {
   const out: string[] = []
+  let firstBlock = true // le 1er bloc de prose = tagline/intro (rendu `<h2>` par la source) → titre
   for (const raw of (desc || '').split('\n')) {
     const t = raw.trim()
     if (!t) { if (out.length && out[out.length - 1] !== '') out.push(''); continue }
     // Item de liste : ligne indentée par tabulation OU déjà préfixée d'une puce.
     if (/^\t/.test(raw) || /^[•·▪●◦▶-]\s/.test(t)) {
       out.push(`- ${normalizeBoldMarkers(t.replace(/^[•·▪●◦▶-]\s*/, ''))}`)
+      firstBlock = false
       continue
     }
     // Sous-titre : ligne courte finissant par `:` (ex. « Caractéristiques principales : »).
-    if (t.length <= 70 && /:\s*$/.test(t)) { out.push(`## ${normalizeBoldMarkers(t)}`); continue }
+    if (t.length <= 70 && /:\s*$/.test(t)) { out.push(`## ${normalizeBoldMarkers(t)}`); firstBlock = false; continue }
+    // 1re phrase COURTE (tagline produit) → titre `#` (h2 de la source). Un long
+    // 1er paragraphe reste de la prose (ce n'est pas un titre).
+    if (firstBlock && t.length <= 170) { out.push(`# ${normalizeBoldMarkers(t)}`); firstBlock = false; continue }
     out.push(normalizeBoldMarkers(t))
+    firstBlock = false
   }
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trim()
 }

@@ -105,10 +105,15 @@ describe('structuredPlainToRichMarkdown — JSON-LD Product.description → stru
   it('paragraphes, sous-titre « : », liste tabulée → puces', () => {
     const jsonld = 'Le ventilateur allie design moderne, sécurité et performance silencieuse.\n\nGrâce à sa conception sans pales, il diffuse un flux d’air uniforme.\n\nCaractéristiques principales :\n\n\n\tMarque : Lifetime Air\n\tCouleur : Noir\n\tPuissance : 5 W'
     expect(structuredPlainToRichMarkdown(jsonld)).toBe(
-      'Le ventilateur allie design moderne, sécurité et performance silencieuse.\n\n' +
+      '# Le ventilateur allie design moderne, sécurité et performance silencieuse.\n\n' +
       'Grâce à sa conception sans pales, il diffuse un flux d’air uniforme.\n\n' +
       '## Caractéristiques principales :\n\n' +
       '- Marque : Lifetime Air\n- Couleur : Noir\n- Puissance : 5 W',
     )
+  })
+
+  it('un 1er paragraphe long reste de la prose (pas un titre)', () => {
+    const long = 'a'.repeat(200) + '.\n\nSuite.'
+    expect(structuredPlainToRichMarkdown(long).startsWith('# ')).toBe(false)
   })
 })
