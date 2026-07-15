@@ -79,6 +79,16 @@ export const API_KEYS: ApiKeyConfig[] = [
     },
   },
   {
+    id: 'glm',
+    label: 'GLM (Z.ai)',
+    envVar: 'VITE_GLM_API_KEY',
+    description: 'Clé Z.ai — GLM (endpoint OpenAI-compatible)',
+    links: {
+      manage: 'https://z.ai/manage-apikey/apikey-list',
+      billing: 'https://z.ai/manage-apikey/apikey-list',
+    },
+  },
+  {
     id: 'openrouter',
     label: 'OpenRouter',
     envVar: 'VITE_OPENROUTER_API_KEY',
@@ -352,6 +362,24 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
       // 404 sur /models = endpoint inexistant mais clé probablement valide
       if (res.status === 404) {
         return { status: 'ok', message: 'Clé acceptée (modèle fixe : kimi-for-coding)' }
+      }
+      return { status: 'error', message: `Erreur ${res.status}` }
+    }
+
+    if (id === 'glm') {
+      // GLM (Z.ai) — endpoint OpenAI-compatible. On liste les modèles pour valider
+      // la clé ; 404 = endpoint absent mais clé probablement valide (comme Kimi).
+      const res = await fetch('https://api.z.ai/api/paas/v4/models', {
+        headers: { Authorization: `Bearer ${key}` },
+      })
+      if (res.ok) {
+        return { status: 'ok', message: 'Connecté à GLM (Z.ai)' }
+      }
+      if (res.status === 401 || res.status === 403) {
+        return { status: 'error', message: 'Clé invalide ou non autorisée' }
+      }
+      if (res.status === 404) {
+        return { status: 'ok', message: 'Clé acceptée (endpoint /models indisponible)' }
       }
       return { status: 'error', message: `Erreur ${res.status}` }
     }

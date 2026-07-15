@@ -26,7 +26,7 @@ export const onboardingSection: HelpSection = {
         },
         {
           title: '2 · Clés IA — obligatoire',
-          md: 'Renseigne **au moins une clé API** parmi Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi ou OpenRouter, puis teste-la. Tant qu\'aucune clé valide n\'est saisie, le bouton **Suivant** reste désactivé (*« Renseignez au moins une clé LLM »*). C\'est la seule étape réellement bloquante.',
+          md: 'Renseigne **au moins une clé API** parmi Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi, GLM (Z.ai) ou OpenRouter, puis teste-la. Tant qu\'aucune clé valide n\'est saisie, le bouton **Suivant** reste désactivé (*« Renseignez au moins une clé LLM »*). C\'est la seule étape réellement bloquante.',
         },
         {
           title: '3 · Modèles & cascade',
@@ -63,7 +63,7 @@ Les deux rouvrent l'assistant à la première étape.`,
       type: 'text',
       md: `### Bouton « Mettre à jour tous les LLM »
 
-Présent dans l'assistant **et** dans l'onglet **IA** des Réglages, il sélectionne le **dernier modèle phare** de chaque fournisseur (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter). Pratique pour rester à jour sans choisir chaque modèle à la main après une évolution du catalogue.`,
+Présent dans l'assistant **et** dans l'onglet **IA** des Réglages, il sélectionne le **dernier modèle phare** de chaque fournisseur (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter). Pratique pour rester à jour sans choisir chaque modèle à la main après une évolution du catalogue.`,
     },
     {
       type: 'text',

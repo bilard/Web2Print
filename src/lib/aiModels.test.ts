@@ -3,7 +3,7 @@ import { AI_MODELS, getModel, getDefaultModel, type AiProvider } from './aiModel
 
 describe('aiModels catalog', () => {
   it('exports a default model for each provider', () => {
-    const providers: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'openrouter']
+    const providers: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'glm', 'openrouter']
     for (const p of providers) {
       const list = AI_MODELS[p]
       expect(list.length).toBeGreaterThan(0)
@@ -27,6 +27,7 @@ describe('aiModels catalog', () => {
     expect(getDefaultModel('deepseek').id).toBe('deepseek-chat')
     expect(getDefaultModel('qwen').id).toBe('qwen3.7-max')
     expect(getDefaultModel('kimi').id).toBe('kimi-k2.6')
+    expect(getDefaultModel('glm').id).toBe('glm-5.1')
     expect(getDefaultModel('openrouter').id).toBe('openrouter/auto')
   })
 

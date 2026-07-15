@@ -65,6 +65,16 @@ export const KimiLogo = () => (
   </svg>
 )
 
+export const GLMLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" aria-hidden="true">
+    <rect x="2" y="2" width="20" height="20" rx="5" fill="#3859FF" />
+    <path
+      fill="#FFFFFF"
+      d="M7 7.5h9l-6.4 6.4H15V16.5H7l6.4-6.4H7z"
+    />
+  </svg>
+)
+
 export const OpenRouterLogo = () => (
   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" aria-hidden="true">
     <circle cx="12" cy="12" r="10" fill="#6366f1" />

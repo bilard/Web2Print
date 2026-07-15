@@ -15,7 +15,7 @@ import type { BrightDataAccountStats } from '@/features/stats/useBrightDataAccou
 const USD_TO_EUR = 0.92
 const GEMINI_IMAGE_MODEL_ID = 'gemini-3.1-flash-image-preview'
 
-const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'openrouter']
+const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'glm', 'openrouter']
 
 const PROVIDER_META: Record<AiProvider, { label: string; dot: string; topup: string }> = {
   claude:     { label: 'Claude (Anthropic)', dot: '#fb923c', topup: 'https://console.anthropic.com/settings/billing' },
@@ -24,6 +24,7 @@ const PROVIDER_META: Record<AiProvider, { label: string; dot: string; topup: str
   deepseek:   { label: 'DeepSeek',           dot: '#818cf8', topup: 'https://platform.deepseek.com/top_up' },
   qwen:       { label: 'Qwen',               dot: '#a78bfa', topup: 'https://bailian.console.aliyun.com/' },
   kimi:       { label: 'Kimi',               dot: '#fbbf24', topup: 'https://platform.moonshot.cn/console/account' },
+  glm:        { label: 'GLM (Z.ai)',         dot: '#3859ff', topup: 'https://z.ai/manage-apikey/apikey-list' },
   openrouter: { label: 'OpenRouter',         dot: '#e879f9', topup: 'https://openrouter.ai/settings/credits' },
 }
 

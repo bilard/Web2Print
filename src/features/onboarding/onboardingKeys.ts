@@ -2,7 +2,7 @@ import { getApiKey } from '@/lib/apiKeys'
 
 /** Fournisseurs LLM proposés dans le wizard d'onboarding, dans l'ordre d'affichage.
  *  Les deux premiers (Gemini + Claude) sont les modèles par défaut de l'app. */
-export const LLM_KEY_IDS = ['gemini', 'anthropic', 'openrouter', 'openai', 'deepseek', 'qwen', 'kimi'] as const
+export const LLM_KEY_IDS = ['gemini', 'anthropic', 'openrouter', 'openai', 'deepseek', 'qwen', 'kimi', 'glm'] as const
 
 /** Clés mises en avant comme « recommandées » (modèles utilisés par défaut partout). */
 export const RECOMMENDED_KEY_IDS: ReadonlySet<string> = new Set(['gemini', 'anthropic'])

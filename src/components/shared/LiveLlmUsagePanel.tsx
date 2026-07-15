@@ -18,10 +18,11 @@ const PROVIDER_META: Record<AiProvider, { label: string; dot: string; topup: str
   deepseek:   { label: 'DeepSeek',           dot: 'bg-indigo-400',  topup: 'https://platform.deepseek.com/top_up' },
   qwen:       { label: 'Qwen',               dot: 'bg-violet-400',  topup: 'https://bailian.console.aliyun.com/?productCode=p_efm#/expense-center' },
   kimi:       { label: 'Kimi',               dot: 'bg-amber-400',   topup: 'https://platform.moonshot.cn/console/account' },
+  glm:        { label: 'GLM (Z.ai)',         dot: 'bg-blue-400',    topup: 'https://z.ai/manage-apikey/apikey-list' },
   openrouter: { label: 'OpenRouter',         dot: 'bg-fuchsia-400', topup: 'https://openrouter.ai/settings/credits' },
 }
 
-const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'openrouter']
+const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'glm', 'openrouter']
 
 /** Modèle image Gemini (Image IA). Affiché sur sa propre ligne sous le
  *  modèle texte Gemini sélectionné — il a son propre pricing ($30 / 1M output)

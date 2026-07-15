@@ -268,7 +268,7 @@ export function getProviderCascade(onWarning?: (msg: string) => void): LLMProvid
     if (p === 'gemini' || p === 'claude' || p === 'openai' || p === 'deepseek' || p === 'openrouter') {
       supported.push(p)
     } else {
-      // qwen, kimi, autres : non câblés dans callProvider
+      // qwen, kimi, glm, autres : non câblés dans callProvider
       ignored.push(p)
     }
   }

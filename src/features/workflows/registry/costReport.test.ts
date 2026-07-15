@@ -22,6 +22,7 @@ function mockStats(): AiCostStats {
       deepseek: leaf(1_140_000, 501_800, 0.8529) as AiCostStats['byProvider']['deepseek'],
       qwen: emptyP(),
       kimi: emptyP(),
+      glm: emptyP(),
       openrouter: emptyP(),
     } as AiCostStats['byProvider'],
   }
@@ -37,8 +38,8 @@ describe('buildCostRows', () => {
     expect(text.costUsd).toBeCloseTo(0.0626, 4)
     expect(image.isSubRow).toBe(true)
     expect(image.costUsd).toBeCloseTo(1.8881, 4)
-    // 7 providers, gemini compte double → 8 lignes
-    expect(rows).toHaveLength(8)
+    // 8 providers, gemini compte double → 9 lignes
+    expect(rows).toHaveLength(9)
   })
 
   it('reporte tokens/coût pour les providers simples', () => {

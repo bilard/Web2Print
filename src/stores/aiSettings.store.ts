@@ -41,6 +41,7 @@ export const initialSelected = (): Record<AiProvider, string> => ({
   deepseek: getDefaultModel('deepseek').id,
   qwen: getDefaultModel('qwen').id,
   kimi: getDefaultModel('kimi').id,
+  glm: getDefaultModel('glm').id,
   openrouter: getDefaultModel('openrouter').id,
 })
 
@@ -60,6 +61,7 @@ export const initialBudgets = (): Record<AiProvider, number | null> => ({
   deepseek: null,
   qwen: null,
   kimi: null,
+  glm: null,
   openrouter: null,
 })
 
@@ -67,7 +69,7 @@ export const useAiSettingsStore = create<AiSettingsState>()(
   persist(
     (set) => ({
       selectedModel: initialSelected(),
-      fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], openrouter: [] },
+      fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], glm: [], openrouter: [] },
       // Default cascade : Gemini (free tier) puis Claude Opus en fallback. Les
       // providers chinois sont disponibles mais non activés par défaut.
       reasoningCascade: ['gemini', 'claude'],
@@ -102,9 +104,9 @@ export const useAiSettingsStore = create<AiSettingsState>()(
       }),
       // Migration depuis l'ancien champ primaryReasoningProvider (single value)
       // vers reasoningCascade (array). Garde Claude en fallback automatique.
-      // v4 : complète les Records par-provider avec les clés manquantes (ex: openrouter
-      // ajouté ultérieurement) — sans ça, Object.entries() renvoie undefined sur la
-      // nouvelle clé et casse les composants qui appellent .toFixed() etc.
+      // v4/v5 : complète les Records par-provider avec les clés manquantes (ex: openrouter,
+      // puis glm ajoutés ultérieurement) — sans ça, Object.entries() renvoie undefined sur
+      // la nouvelle clé et casse les composants qui lisent selectedModel[provider] en direct.
       migrate: (persisted: unknown) => {
         if (!persisted || typeof persisted !== 'object') return persisted
         const obj = persisted as Record<string, unknown>
@@ -125,7 +127,7 @@ export const useAiSettingsStore = create<AiSettingsState>()(
         }
         return obj
       },
-      version: 4,
+      version: 5,
     },
   ),
 )

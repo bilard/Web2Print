@@ -43,6 +43,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   deepseek: 'DeepSeek',
   qwen: 'Qwen',
   kimi: 'Kimi',
+  glm: 'GLM',
   openrouter: 'OpenRouter',
 }
 

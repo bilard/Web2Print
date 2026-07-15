@@ -14,7 +14,7 @@ import { recordAudit } from '@/lib/auditLog'
 
 interface AiProviderCardProps {
   provider: AiProvider
-  apiKeyId: 'gemini' | 'anthropic' | 'openai' | 'deepseek' | 'qwen' | 'kimi' | 'openrouter'
+  apiKeyId: 'gemini' | 'anthropic' | 'openai' | 'deepseek' | 'qwen' | 'kimi' | 'glm' | 'openrouter'
   label: string
   description: string
   logo?: React.ReactNode
@@ -145,6 +145,17 @@ const PROVIDER_MODEL_ADAPTERS: Record<AiProvider, ProviderModelsAdapter> = {
         .filter((m) => /^kimi/i.test(m.id) || /^moonshot/i.test(m.id))
         .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } })),
     fallbackOnError: [{ id: 'kimi-for-coding', label: 'Kimi for Coding', pricing: { input: 0, output: 0 } }],
+  },
+  glm: {
+    // GLM (Z.ai) — endpoint OpenAI-compatible. On tente /models et on retombe sur le
+    // seed en cas de 404 / CORS (comme Kimi).
+    url: () => 'https://api.z.ai/api/paas/v4/models',
+    headers: bearer,
+    extract: (data) =>
+      pickArr<{ id: string }>(data, 'data')
+        .filter((m) => /glm/i.test(m.id))
+        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } })),
+    fallbackOnError: AI_MODELS.glm,
   },
 }
 

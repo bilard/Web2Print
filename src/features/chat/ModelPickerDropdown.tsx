@@ -11,6 +11,7 @@ const PROVIDER_LABEL: Record<AiProvider, string> = {
   deepseek: 'DeepSeek',
   qwen: 'Qwen',
   kimi: 'Kimi',
+  glm: 'GLM (Z.ai)',
   openrouter: 'OpenRouter',
 }
 

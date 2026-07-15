@@ -22,7 +22,7 @@ export const settingsSection: HelpSection = {
       type: 'text',
       md: `### Onglet IA — clés et modèles
 
-- Renseigne les **clés API** de chaque fournisseur (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter) et **teste-les** d'un clic.
+- Renseigne les **clés API** de chaque fournisseur (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter) et **teste-les** d'un clic.
 - Choisis le **modèle** de chaque fournisseur.
 - Définis la **cascade de raisonnement** : l'ordre dans lequel les fournisseurs sont essayés (le premier qui répond gagne, les suivants servent de secours).
 - Le bouton **« Mettre à jour tous les LLM »** réaligne toute la sélection sur les dernières versions du catalogue.

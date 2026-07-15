@@ -1,4 +1,4 @@
-export type AiProvider = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'qwen' | 'kimi' | 'openrouter'
+export type AiProvider = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'qwen' | 'kimi' | 'glm' | 'openrouter'
 
 export interface AiModelInfo {
   id: string
@@ -52,6 +52,12 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'kimi-k2.6',        label: 'Kimi K2.6',        pricing: { input: 0.75, output: 3.50 }, isDefault: true },
     { id: 'kimi-k2-thinking', label: 'Kimi K2 Thinking', pricing: { input: 0.60, output: 2.50 } },
     { id: 'kimi-for-coding',  label: 'Kimi for Coding',  pricing: { input: 0,    output: 0 } },
+  ],
+  // Z.ai — GLM (endpoint OpenAI-compatible). Pricing calqué sur le seed OpenRouter z-ai/*.
+  glm: [
+    { id: 'glm-5.1',       label: 'GLM 5.1',       pricing: { input: 1.05, output: 3.50 }, isDefault: true },
+    { id: 'glm-4.7',       label: 'GLM 4.7',       pricing: { input: 0.38, output: 1.74 } },
+    { id: 'glm-4.5-air',   label: 'GLM 4.5 Air',   pricing: { input: 0,    output: 0 } },
   ],
   // OpenRouter agrège ~370 modèles. Le seed ci-dessous est curé sur les flagships
   // actuels (mai 2026) regroupés par famille — l'utilisateur clique "Rafraîchir"

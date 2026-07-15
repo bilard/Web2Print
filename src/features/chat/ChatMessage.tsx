@@ -18,6 +18,7 @@ const PROVIDER_DISPLAY: Record<string, string> = {
   deepseek: 'DeepSeek',
   qwen: 'Qwen',
   kimi: 'Kimi',
+  glm: 'GLM (Z.ai)',
   openrouter: 'OpenRouter',
 }
 

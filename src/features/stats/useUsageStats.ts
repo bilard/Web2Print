@@ -52,7 +52,7 @@ export async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']>
   if (!snap.exists()) {
     return {
       total: 0,
-      byProvider: { claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider(), deepseek: emptyProvider(), qwen: emptyProvider(), kimi: emptyProvider(), openrouter: emptyProvider() },
+      byProvider: { claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider(), deepseek: emptyProvider(), qwen: emptyProvider(), kimi: emptyProvider(), glm: emptyProvider(), openrouter: emptyProvider() },
     }
   }
   const data = snap.data() as {
@@ -80,7 +80,7 @@ export async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']>
   }
   return {
     total: data.total?.costUsd ?? 0,
-    byProvider: { claude: merge('claude'), gemini: merge('gemini'), openai: merge('openai'), deepseek: merge('deepseek'), qwen: merge('qwen'), kimi: merge('kimi'), openrouter: merge('openrouter') },
+    byProvider: { claude: merge('claude'), gemini: merge('gemini'), openai: merge('openai'), deepseek: merge('deepseek'), qwen: merge('qwen'), kimi: merge('kimi'), glm: merge('glm'), openrouter: merge('openrouter') },
   }
 }
 
@@ -114,7 +114,7 @@ async function fetchStats(userId: string): Promise<UsageStats> {
       console.warn('[useUsageStats] fetchAiCost failed:', e)
       return {
         total: 0,
-        byProvider: { claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider(), deepseek: emptyProvider(), qwen: emptyProvider(), kimi: emptyProvider(), openrouter: emptyProvider() },
+        byProvider: { claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider(), deepseek: emptyProvider(), qwen: emptyProvider(), kimi: emptyProvider(), glm: emptyProvider(), openrouter: emptyProvider() },
       }
     })
   const safeBrightData = (): Promise<BrightDataUsage> =>

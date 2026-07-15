@@ -3,7 +3,7 @@ import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2,
 import { DataModelDiagram } from '@/features/data-graph/DataModelDiagram'
 import { MyActivityTab } from '@/features/access/MyActivityTab'
 import {
-  FirebaseLogo, GeminiLogo, ClaudeLogo, OpenAILogo, DeepSeekLogo, KimiLogo,
+  FirebaseLogo, GeminiLogo, ClaudeLogo, OpenAILogo, DeepSeekLogo, KimiLogo, GLMLogo,
   OpenRouterLogo, QwenLogo, JinaLogo, RemoveBgLogo, FirecrawlLogo, ScrapflyLogo, GoogleVisionLogo,
 } from '@/features/ai/providerLogos'
 import { HiggsfieldConnectorRow } from './HiggsfieldConnectorRow'
@@ -37,6 +37,7 @@ const PROVIDER_LABELS: Record<AiProvider, string> = {
   deepseek: 'DeepSeek',
   qwen: 'Qwen',
   kimi: 'Kimi',
+  glm: 'GLM',
   openrouter: 'OpenRouter',
 }
 
@@ -188,6 +189,14 @@ function AiTab() {
         description="Kimi Code — endpoint OpenAI-compatible (optionnel)"
         logo={<KimiLogo />}
         apiKeyUrl="https://www.kimi.com/code/console"
+      />
+      <AiProviderCard
+        provider="glm"
+        apiKeyId="glm"
+        label="GLM (Z.ai)"
+        description="GLM — endpoint OpenAI-compatible (optionnel)"
+        logo={<GLMLogo />}
+        apiKeyUrl="https://z.ai/manage-apikey/apikey-list"
       />
       <AiProviderCard
         provider="openrouter"

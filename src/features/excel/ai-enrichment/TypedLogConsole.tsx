@@ -74,7 +74,7 @@ function inferLogType(message: string): LogType {
     return 'scrape'
   }
   // 3. LLM : modèles / IA / tokens
-  if (/\b(?:gemini|claude|gpt|deepseek|qwen|kimi|llm|prompt|token[s]?|model[eè]?\s|opus|sonnet|haiku|nano[\s-]?banana|extraction\s+ia)/i.test(m)) {
+  if (/\b(?:gemini|claude|gpt|deepseek|qwen|kimi|glm|llm|prompt|token[s]?|model[eè]?\s|opus|sonnet|haiku|nano[\s-]?banana|extraction\s+ia)/i.test(m)) {
     return 'llm'
   }
   // 4. Parse : extraction structurée

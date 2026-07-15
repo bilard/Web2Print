@@ -19,7 +19,7 @@ export function useAiSettingsSync() {
     if (!uid) {
       useAiSettingsStore.setState({
         selectedModel: initialSelected(),
-        fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], openrouter: [] },
+        fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], glm: [], openrouter: [] },
         reasoningCascade: DEFAULT_REASONING_CASCADE,
         monthlyBudgetUsd: initialBudgets(),
         brightDataBudgetUsd: null,
@@ -32,7 +32,7 @@ export function useAiSettingsSync() {
     //  en mémoire lors d'un switch sans reload → ce reset garantit l'isolation par user.)
     useAiSettingsStore.setState({
       selectedModel: initialSelected(),
-      fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], openrouter: [] },
+      fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], glm: [], openrouter: [] },
       reasoningCascade: DEFAULT_REASONING_CASCADE,
       monthlyBudgetUsd: initialBudgets(),
       brightDataBudgetUsd: null,
@@ -73,6 +73,7 @@ export function useAiSettingsSync() {
               deepseek: ai.fetchedModels.deepseek ?? current.deepseek,
               qwen: ai.fetchedModels.qwen ?? current.qwen,
               kimi: ai.fetchedModels.kimi ?? current.kimi,
+              glm: ai.fetchedModels.glm ?? current.glm,
               openrouter: ai.fetchedModels.openrouter ?? current.openrouter,
             },
           })

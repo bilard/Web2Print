@@ -18,7 +18,7 @@ import { makeServerFile } from './serverFile'
 import { fetchBrightDataAccountStats } from '../../scraper/brightDataAccount'
 
 // ───────────────────────────── Catalogue modèles (copie de src/lib/aiModels.ts) ──
-type AiProvider = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'qwen' | 'kimi' | 'openrouter'
+type AiProvider = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'qwen' | 'kimi' | 'glm' | 'openrouter'
 interface AiModelInfo {
   id: string
   label: string
@@ -68,6 +68,11 @@ const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'kimi-k2-thinking', label: 'Kimi K2 Thinking', pricing: { input: 0.60, output: 2.50 } },
     { id: 'kimi-for-coding',  label: 'Kimi for Coding',  pricing: { input: 0,    output: 0 } },
   ],
+  glm: [
+    { id: 'glm-5.1',     label: 'GLM 5.1',     pricing: { input: 1.05, output: 3.50 }, isDefault: true },
+    { id: 'glm-4.7',     label: 'GLM 4.7',     pricing: { input: 0.38, output: 1.74 } },
+    { id: 'glm-4.5-air', label: 'GLM 4.5 Air', pricing: { input: 0,    output: 0 } },
+  ],
   openrouter: [
     { id: 'openrouter/auto', label: 'OpenRouter Auto (routing)', pricing: { input: 0, output: 0 }, isDefault: true },
   ],
@@ -85,7 +90,7 @@ function getSelectedModel(provider: AiProvider): string {
 const USD_TO_EUR = 0.92
 const GEMINI_IMAGE_MODEL_ID = 'gemini-3.1-flash-image-preview'
 
-const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'openrouter']
+const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'glm', 'openrouter']
 
 const PROVIDER_META: Record<AiProvider, { label: string; dot: string; topup: string }> = {
   claude:     { label: 'Claude (Anthropic)', dot: '#fb923c', topup: 'https://console.anthropic.com/settings/billing' },
@@ -94,6 +99,7 @@ const PROVIDER_META: Record<AiProvider, { label: string; dot: string; topup: str
   deepseek:   { label: 'DeepSeek',           dot: '#818cf8', topup: 'https://platform.deepseek.com/top_up' },
   qwen:       { label: 'Qwen',               dot: '#a78bfa', topup: 'https://bailian.console.aliyun.com/' },
   kimi:       { label: 'Kimi',               dot: '#fbbf24', topup: 'https://platform.moonshot.cn/console/account' },
+  glm:        { label: 'GLM (Z.ai)',         dot: '#3859ff', topup: 'https://z.ai/manage-apikey/apikey-list' },
   openrouter: { label: 'OpenRouter',         dot: '#e879f9', topup: 'https://openrouter.ai/settings/credits' },
 }
 
@@ -162,7 +168,7 @@ const emptyAiCost = (): AiCostStats => ({
   total: 0,
   byProvider: {
     claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider(),
-    deepseek: emptyProvider(), qwen: emptyProvider(), kimi: emptyProvider(), openrouter: emptyProvider(),
+    deepseek: emptyProvider(), qwen: emptyProvider(), kimi: emptyProvider(), glm: emptyProvider(), openrouter: emptyProvider(),
   },
 })
 
@@ -194,7 +200,7 @@ function parseAiCost(data: FirebaseFirestore.DocumentData | undefined): AiCostSt
     total: d.total?.costUsd ?? 0,
     byProvider: {
       claude: merge('claude'), gemini: merge('gemini'), openai: merge('openai'),
-      deepseek: merge('deepseek'), qwen: merge('qwen'), kimi: merge('kimi'), openrouter: merge('openrouter'),
+      deepseek: merge('deepseek'), qwen: merge('qwen'), kimi: merge('kimi'), glm: merge('glm'), openrouter: merge('openrouter'),
     },
   }
 }

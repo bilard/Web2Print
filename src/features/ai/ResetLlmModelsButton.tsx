@@ -15,7 +15,7 @@ export function ResetLlmModelsButton() {
         resetToLatest()
         toast.success('Tous les LLM mis à jour vers leur dernière version')
       }}
-      title="Sélectionne le dernier modèle phare de chaque provider (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter)"
+      title="Sélectionne le dernier modèle phare de chaque provider (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter)"
       className="flex items-center justify-center gap-1.5 text-xs font-medium text-violet-200 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 rounded-lg px-3 py-2 transition-colors"
     >
       <RefreshCw className="w-3.5 h-3.5" />
