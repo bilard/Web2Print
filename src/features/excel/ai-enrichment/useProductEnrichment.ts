@@ -401,22 +401,23 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
   const structuredDesc = (globalThis as unknown as { __lastStructured?: StructuredProductData | null })
     .__lastStructured?.description
   let descriptionRich: string | undefined
-  if (structuredDesc && structuredDesc.trim().length > 50 && !looksLikeBotChallenge(structuredDesc)) {
-    // Retire la liste de caractéristiques finale (redondante avec le tableau de
-    // specs) → la description garde l'intro + la prose.
+  // 1) JSON-LD prioritaire s'il est PRÉSENT ET PROPRE (pas un challenge, pas du
+  //    garbage type indice de réparabilité). Retire la liste de specs finale.
+  if (structuredDesc && structuredDesc.trim().length > 50
+      && !looksLikeBotChallenge(structuredDesc) && !isGarbageContent(structuredDesc)) {
     const proseOnly = stripTrailingSpecList(structuredDesc)
-    description = proseOnly.replace(/\t/g, '').replace(/\n{3,}/g, '\n\n').trim()
-    descriptionRich = structuredPlainToRichMarkdown(proseOnly)
-  } else {
-    // Pas de JSON-LD exploitable (ex. sites anti-bot type Jardiland) → on garantit
-    // que la description PLATE vient du parseur markdown robuste si elle est vide.
-    if ((!description || description.trim().length < 30) && markdownContent) {
-      const md = parseDescriptionFromMarkdown(markdownContent)
-      if (md && md.length >= 30) description = md
-    }
-    // Version markdown structurée (repli) — rendue par descriptionMarkdownToHtml.
-    descriptionRich = parseRichDescriptionFromMarkdown(markdownContent) || undefined
+    const clean = proseOnly.replace(/\t/g, '').replace(/\n{3,}/g, '\n\n').trim()
+    if (clean.length >= 30) { description = clean; descriptionRich = structuredPlainToRichMarkdown(proseOnly) }
   }
+  // 2) REPLI GARANTI (toujours, pas seulement quand le JSON-LD manque) : si la
+  //    description est encore vide/trop courte, la prendre dans le markdown robuste
+  //    — indispensable sur les sites anti-bot (Jardiland) où le JSON-LD n'arrive pas.
+  if ((!description || description.trim().length < 30) && markdownContent) {
+    const md = parseDescriptionFromMarkdown(markdownContent)
+    if (md && md.length >= 30) description = md
+  }
+  // 3) Version RICHE : dérivée du markdown si pas déjà obtenue du JSON-LD.
+  if (!descriptionRich) descriptionRich = parseRichDescriptionFromMarkdown(markdownContent) || undefined
 
   return { ...enriched, description, descriptionRich, advantages, specifications, variants, documents: cleanedDocuments, breadcrumb }
 }
