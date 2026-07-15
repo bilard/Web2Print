@@ -427,3 +427,37 @@ Rafraîchissez votre espace en toute discrétion avec ce ventilateur sans pales 
     expect(rich).not.toMatch(/M['’]abonner|TRAFINTER|SOGESMA|FR08383139458|Faites confiance|Plus d'information/i)
   })
 })
+
+describe('parseRichDescriptionFromMarkdown — UI livraison/stock écartée (Trafic)', () => {
+  const MD = `# Ventilateur sans hélice noir
+
+Rafraîchissez votre espace en toute discrétion avec ce ventilateur sans pales silencieux et design, utilisable sans fil et doté d'un éclairage d'ambiance.
+
+19 99
+
+En rupture en ligne
+
+Livré à domicile en 2 à 5 jours ouvrés
+
+Livré en magasin en 2 à 5 jours ouvrés
+
+Vérifier le stock du magasin
+
+Restez informé(e) sur le stock
+
+Me tenir informé(e)
+
+Livraison à domicile (19.99€)
+
+## Caractéristiques principales :
+
+- Couleur : Noir
+- Puissance : 5 W
+`
+  it('garde la vraie description, écarte livraison/stock/disponibilité', () => {
+    const rich = parseRichDescriptionFromMarkdown(MD)
+    expect(rich).toContain('Rafraîchissez votre espace en toute discrétion')
+    expect(rich).toContain('## Caractéristiques principales :')
+    expect(rich).not.toMatch(/rupture en ligne|livr[eé] à domicile|livr[eé] en magasin|vérifier le stock|tenir informé|livraison à domicile/i)
+  })
+})

@@ -24,10 +24,18 @@ const STORE_REASSURANCE_RE = /laissez-vous\s+s[eé]duire|choix\s+impressionnant|
  *  choisissait le footer comme description sur la démo. */
 const FOOTER_COMPANY_RE = /m['’]abonner|s['’]abonner|abonnez[- ]vous|\bTVA\b|num[eé]ro\s+de\s+tva|\b(?:FR|BE|LU|NL|DE|IT|ES|CH)\s?\d{9,12}\b|\bRCS\b|\bSIRE[NT]\b|\bS\.A\.(?:S\.?)?\b|\bSARL\b|\bSASU?\b|\bEURL\b|acc[eè]s\s+rapide|plus\s+d['’]informations?|faites\s+confiance|\b\d{4,5}\s+[A-ZÀ-Ÿ][a-zà-ÿ]{2,}[^\n]{0,40}\b(?:France|Belgique|Belgium|Luxembourg|Suisse|Nederland|Deutschland|España|Italia)\b/i
 
+/** UI LIVRAISON / STOCK / DISPONIBILITÉ (widgets e-commerce, GÉNÉRIQUE) :
+ *  « En rupture en ligne », « Livré à domicile en 2 à 5 jours ouvrés »,
+ *  « Vérifier le stock du magasin », « Me tenir informé(e) », « Retrait gratuit
+ *  en magasin », « Livraison à domicile (19.99€) ». Interleavé après la vraie
+ *  description sur les fiches retail (Trafic/Magento). Jamais de la description. */
+const DELIVERY_STOCK_RE = /en\s+rupture|rupture\s+en\s+ligne|\ben\s+stock\b|livr[eé]e?\s+(?:à\s+)?(?:domicile|en\s+magasin)|livraison\s+(?:à\s+domicile|en\s+magasin|gratuite?|standard|express|estim[eé]e)|v[eé]rifier\s+le\s+stock|stock\s+(?:du|en|au|magasin)|rest[eé]z\s+inform|me\s+tenir\s+inform|tenez[- ]moi\s+inform|inform[eé]\(e\)|retrait[^\n]{0,18}magasin|jours\s+ouvr[eé]s|click\s*(?:&|and|et)?\s*collect|disponibilit[eé]\b|ajouter\s+au\s+panier/i
+
 /** Détecte si un texte est du contenu parasite (cookie banner, GDPR, reCAPTCHA,
- *  prose CGV, UI compte client, footer société, placeholder de template). */
+ *  prose CGV, UI compte client, footer société, UI livraison/stock, placeholder). */
 export function isGarbageContent(text: string): boolean {
-  return GARBAGE_RE.test(text) || LEGAL_ACCOUNT_RE.test(text) || STORE_REASSURANCE_RE.test(text) || FOOTER_COMPANY_RE.test(text)
+  return GARBAGE_RE.test(text) || LEGAL_ACCOUNT_RE.test(text) || STORE_REASSURANCE_RE.test(text)
+    || FOOTER_COMPANY_RE.test(text) || DELIVERY_STOCK_RE.test(text)
 }
 
 /** Renvoie true si > 30 % des lignes non-vides du texte sont du garbage. */
