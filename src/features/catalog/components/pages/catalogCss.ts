@@ -368,14 +368,14 @@ export const CATALOG_CSS = `
 .cat-cell-body { flex:none; padding:8px 12px 10px; display:flex; flex-direction:column; gap:2px; }
 .cat-cell-brand { font-size:calc(10px * var(--cat-s-brand,1) * ${F}); font-family:var(--cat-font-brand,var(--cat-font-b));
   text-transform:uppercase; letter-spacing:.12em; color:var(--cat-brand-ink,var(--cat-accent)); font-weight:800; }
-.cat-cell-name { font-family:var(--cat-font-name,var(--cat-font-h)); font-weight:700; font-size:calc(15px * var(--cat-s-name,1) * ${F}); line-height:1.2;
+.cat-cell-name { font-family:var(--cat-font-name,var(--cat-font-h)); font-weight:700; font-size:calc(15px * var(--cat-s-name,1) * ${F}); line-height:1.32; padding-bottom:1px;
   text-transform:uppercase; color:var(--cat-name-ink,inherit);
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .cat-cell-desc { font-family:var(--cat-font-desc,var(--cat-font-b)); font-size:calc(11px * var(--cat-s-desc,1) * ${F}); color:var(--cat-desc-ink,inherit); opacity:var(--cat-desc-op,.7); line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:pre-line; }
 /* Description STRUCTURÉE de la source (titres/gras/listes préservés). */
 .cat-cell-desc strong { font-weight:700; }
-.cat-cell-desc h3, .cat-cell-desc h4, .cat-cell-desc h5, .cat-cell-desc h6 { font-family:var(--cat-font-h,var(--cat-font-b)); font-weight:800; margin:.5em 0 .18em; line-height:1.2; opacity:1; }
-.cat-cell-desc h3 { font-size:1.32em; line-height:1.15; margin-top:.1em; } .cat-cell-desc h4 { font-size:1.06em; } .cat-cell-desc h5, .cat-cell-desc h6 { font-size:1em; }
+.cat-cell-desc h3, .cat-cell-desc h4, .cat-cell-desc h5, .cat-cell-desc h6 { font-family:var(--cat-font-h,var(--cat-font-b)); font-weight:800; margin:.5em 0 .2em; line-height:1.3; padding-bottom:1px; opacity:1; }
+.cat-cell-desc h3 { font-size:1.32em; line-height:1.32; margin-top:.1em; } .cat-cell-desc h4 { font-size:1.06em; } .cat-cell-desc h5, .cat-cell-desc h6 { font-size:1em; }
 .cat-cell-desc p { margin:0 0 .42em; } .cat-cell-desc p:last-child { margin-bottom:0; }
 .cat-cell-desc ul { margin:.2em 0 .45em; padding-left:1.15em; list-style:disc; } .cat-cell-desc li { margin:.05em 0; }
 .cat-cell-details { display:flex; flex-direction:column; gap:1px; margin-top:4px;
@@ -399,8 +399,8 @@ export const CATALOG_CSS = `
   opacity:0; transition:opacity .15s; }
 .cat-cell:hover .cat-cell-srclink { opacity:.92; }
 .cat-cell-specs-title { display:inline-block; background:var(--cat-promo-bg,var(--cat-accent)); color:var(--cat-promo-ink,#fff);
-  font-family:var(--cat-font-h); font-weight:800; text-transform:uppercase; letter-spacing:.08em; font-size:.92em;
-  padding:1px 9px; border-radius:999px; }
+  font-family:var(--cat-font-h); font-weight:800; text-transform:uppercase; letter-spacing:.08em; font-size:.92em; line-height:1.35;
+  padding:2px 9px 3px; border-radius:999px; }
 .cat-cell-specs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:3px 6px; margin-top:4px; }
 .cat-spec-pair { display:flex; justify-content:space-between; align-items:baseline; gap:6px;
   padding:2px 7px; line-height:1.3; min-width:0;
@@ -458,7 +458,7 @@ export const CATALOG_CSS = `
 .cat-cell-was { display:inline-block; background:var(--cat-was-bg,var(--cat-head-bg)); color:var(--cat-was-ink,var(--cat-head-ink)); font-size:calc(10px * var(--cat-s-price,1) * ${F});
   font-family:var(--cat-font-price,var(--cat-font-b)); font-weight:700; text-decoration:line-through; padding:3px 9px 2px; border-radius:4px 4px 0 0; white-space:nowrap; }
 .cat-cell-price { display:inline-block; background:var(--cat-price-bg,var(--cat-accent)); color:var(--cat-price-ink,#fff); font-family:var(--cat-font-price,var(--cat-font-h));
-  font-weight:800; font-size:calc(18px * var(--cat-s-price,1) * ${F}); line-height:1; padding:6px 10px 5px; border-radius:4px; white-space:nowrap; }
+  font-weight:800; font-size:calc(18px * var(--cat-s-price,1) * ${F}); line-height:1.12; padding:6px 12px 7px; border-radius:4px; white-space:nowrap; }
 .cat-cell-was + .cat-cell-price { border-radius:4px 0 4px 4px; }
 
 /* Tailles graduées (span issu du packing : prix élevé/vedette = carte plus grande) */
