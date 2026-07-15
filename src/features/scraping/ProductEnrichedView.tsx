@@ -1,6 +1,7 @@
 import { Check, FileDown, Zap, ShieldAlert } from 'lucide-react'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { displayDocumentName } from '@/features/excel/ai-enrichment/documentUtils'
+import { boldMarkdownToHtml } from '@/lib/richText'
 
 interface Props {
   product: EnrichedProduct
@@ -58,7 +59,11 @@ export function ProductEnrichedView({ product }: Props) {
       {product.description && (
         <section className="px-4 py-3 rounded-lg border border-white/[0.06] bg-white/[0.02]">
           <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">Description</p>
-          <p className="text-[12.5px] text-white/75 leading-relaxed whitespace-pre-line">{product.description}</p>
+          {/* Gras de la source préservé (boldMarkdownToHtml échappe le texte, ne produit que <strong>). */}
+          <p
+            className="text-[12.5px] text-white/75 leading-relaxed whitespace-pre-line [&_strong]:font-semibold [&_strong]:text-white/90"
+            dangerouslySetInnerHTML={{ __html: boldMarkdownToHtml(product.description) }}
+          />
         </section>
       )}
 

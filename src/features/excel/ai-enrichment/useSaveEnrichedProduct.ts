@@ -7,6 +7,7 @@ import type { ExcelColumn, ExcelSheet, FieldTypeId } from '@/features/excel/type
 import type { EnrichedProduct } from './types'
 import { useEnrichmentStore } from './enrichmentStore'
 import { enrichmentKey } from './types'
+import { stripBoldMarkers, hasBoldMarkers } from '@/lib/richText'
 
 const FIRESTORE_COLLECTION = 'excel_data'
 const FIRESTORE_PAYLOAD_COLLECTION = 'excel_data_payload'
@@ -116,6 +117,11 @@ export const ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
   { key: 'ai_subtitle',         label: 'Sous-titre',         fieldType: 'text',      width: 240 },
   // ── Contenu enrichi ────────────────────────────────────────────────────────
   { key: 'ai_description',     label: 'Description',   fieldType: 'text_long', width: 320 },
+  // Version formatée (markdown `**gras**`) de la description — préserve la mise
+  // en forme de la source. Colonne `ai_*` HORS IDENTITY_AI_KEYS → masquée de la
+  // grille et du panneau, mais persistée : lue par les rendus qui savent afficher
+  // le gras (cartes retail/catalogue, fusion). Canonique `ai_description` = brut.
+  { key: 'ai_description_rich', label: 'Description (mise en forme)', fieldType: 'text_rich', width: 320 },
   { key: 'ai_breadcrumb',      label: 'Fil d\'Ariane',  fieldType: 'text_long', width: 260 },
   { key: 'ai_advantages',      label: 'Points forts',   fieldType: 'text_long', width: 280 },
   { key: 'ai_specifications',  label: 'Spécifications', fieldType: 'text_long', width: 320 },
@@ -174,7 +180,11 @@ export function serializeEnriched(
     ai_manufacturer_ref: data.manufacturerRef || null,
     ai_ean: data.ean || null,
     ai_subtitle: data.subtitle || null,
-    ai_description: data.description || null,
+    // Canonique : texte BRUT (gras retiré) — lu par tous les consommateurs
+    // existants sans risque de `**` littéral. La version formatée va dans
+    // ai_description_rich (colonne masquée).
+    ai_description: data.description ? stripBoldMarkers(data.description) : null,
+    ai_description_rich: data.description && hasBoldMarkers(data.description) ? data.description : null,
     ai_breadcrumb: (data.breadcrumb && data.breadcrumb.length > 0) ? data.breadcrumb.join(' › ') : null,
     ai_advantages: data.advantages.length > 0
       ? data.advantages.map(a => a.group ? `[${a.group}]${a.text}` : a.text).join(' | ')

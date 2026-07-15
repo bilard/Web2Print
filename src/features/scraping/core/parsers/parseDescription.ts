@@ -1,4 +1,5 @@
 import { isGarbageContent, stripReviewBlocks } from './garbageFilter'
+import { normalizeBoldMarkers, stripBoldMarkers, htmlBoldToMarkers } from '@/lib/richText'
 
 /** Lignes de métadonnées produit ("Code commande RS:…", "Référence fabricant:…",
  *  "SKU:", "EAN:", "Marque:") concaténées en haut de fiche par les revendeurs
@@ -71,6 +72,9 @@ function parseDescriptionFromNextData(md: string): string {
     const content = findContent(parsed)
     if (content && content.length > 0) {
       const stripHtml = (s: string) => s.replace(/<[^>]+>/g, '').trim()
+      // Variante pour les PARAGRAPHES : convertit <strong>/<b> → ** avant de
+      // retirer les autres balises → gras de la source préservé.
+      const stripHtmlRich = (s: string) => normalizeBoldMarkers(htmlBoldToMarkers(s).replace(/<[^>]+>/g, '')).trim()
       const paragraphs: string[] = []
       let seenFirstHeading = false
       for (const item of content) {
@@ -81,8 +85,8 @@ function parseDescriptionFromNextData(md: string): string {
           continue
         }
         if (item.type === 'Paragraph' && Array.isArray(item.value)) {
-          const text = stripHtml(item.value.join(' '))
-          if (text.length >= 30) paragraphs.push(text)
+          const text = stripHtmlRich(item.value.join(' '))
+          if (stripBoldMarkers(text).length >= 30) paragraphs.push(text)
         }
       }
       const joined = paragraphs.join('\n\n').trim()
@@ -94,7 +98,7 @@ function parseDescriptionFromNextData(md: string): string {
   // `"01Paragraph"..."type":"Paragraph"..."value":["TEXTE"]` est intact dans
   // les ~5 premiers Ko du blob. On extrait directement par regex sans parser
   // le JSON. Chercher `01Paragraph`, `02Paragraph`, etc. en ordre.
-  const stripHtml = (s: string) => s.replace(/<[^>]+>/g, '').replace(/\\"/g, '"').replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim()
+  const stripHtml = (s: string) => normalizeBoldMarkers(htmlBoldToMarkers(s).replace(/<[^>]+>/g, '').replace(/\\"/g, '"').replace(/\\n/g, ' ').replace(/\s+/g, ' ')).trim()
   const paragraphs: string[] = []
   // Regex : capture la VALEUR string d'un Paragraph numéroté `0X` (où le
   // numéro doit augmenter pour suivre l'ordre logique). On limite aux 4
@@ -163,8 +167,8 @@ function parseDescriptionAfterBoldHeading(md: string): string {
       if (/^\[/.test(p) || /^!\[/.test(p)) continue
       if (/^https?:\/\//.test(p)) continue
       if (isGarbageContent(p)) continue
-      // OK, c'est notre paragraphe descriptif
-      return p.replace(/\*\*/g, '').trim()
+      // OK, c'est notre paragraphe descriptif — gras de la source préservé.
+      return normalizeBoldMarkers(p).trim()
     }
   }
   return ''
@@ -216,7 +220,11 @@ export function parseDescriptionFromMarkdown(rawMd: string): string {
     && !METADATA_LINE_RE.test(s)
     && !WIDGET_NOISE_RE.test(s)
 
-  const clean = (s: string) => s.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim()
+  // cleanRich : PRÉSERVE le gras de la source (`**…**`, `<strong>`) — c'est la
+  // valeur qu'on émet. clean : version aplatie (sans `**`) utilisée UNIQUEMENT
+  // pour la détection de prose (longueur, regex métadonnées/bruit).
+  const cleanRich = (s: string) => normalizeBoldMarkers(s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')).trim()
+  const clean = (s: string) => stripBoldMarkers(cleanRich(s))
 
   // Sections qui contiennent typiquement de la description/prose
   // "Caractéristiques" seul = section de specs Dyson/e-commerce (nom + valeur sur 2 lignes).
@@ -235,7 +243,7 @@ export function parseDescriptionFromMarkdown(rawMd: string): string {
     if (/^#{2,}\s/.test(trimmed)) break
     if (!trimmed) continue
     const c = clean(trimmed)
-    if (isProseText(c)) phase1Parts.push(c)
+    if (isProseText(c)) phase1Parts.push(cleanRich(trimmed))
     if (phase1Parts.length >= 4) break
   }
 
@@ -300,8 +308,8 @@ export function parseDescriptionFromMarkdown(rawMd: string): string {
     const c = clean(trimmed)
     if (isProseText(c)) {
       const norm = c.toLowerCase().slice(0, 50)
-      if (!phase2Parts.some(p => p.toLowerCase().slice(0, 50) === norm)) {
-        phase2Parts.push(c)
+      if (!phase2Parts.some(p => stripBoldMarkers(p).toLowerCase().slice(0, 50) === norm)) {
+        phase2Parts.push(cleanRich(trimmed))
       }
     }
     if (phase2Parts.length >= 8) break
@@ -317,7 +325,7 @@ export function parseDescriptionFromMarkdown(rawMd: string): string {
       const trimmed = line.trim()
       const c = clean(trimmed)
       if (trimmed && isProseText(c) && c.length >= 50) {
-        currentBlock.push(c)
+        currentBlock.push(cleanRich(trimmed))
       } else {
         const blockLen = currentBlock.reduce((s, p) => s + p.length, 0)
         if (blockLen > bestLen) {

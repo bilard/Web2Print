@@ -277,3 +277,34 @@ Le Vendeur offre une garantie de 24 mois contre tout défaut de conformité non 
     expect(desc).not.toMatch(/défaut de conformité|lettre recommandée|garantie de 24 mois|création d’un compte/i)
   })
 })
+
+describe('parseDescriptionFromMarkdown — préservation du gras de la source', () => {
+  it('conserve le **gras** markdown dans le paragraphe descriptif', () => {
+    const md = `# Ventilateur sans hélice Lifetime Air
+
+**Le ventilateur de table sans hélice Lifetime Air** allie design moderne, sécurité
+et performance silencieuse. Grâce à sa conception **sans pales**, il diffuse un flux
+d'air uniforme tout en restant facile à nettoyer.
+`
+    const desc = parseDescriptionFromMarkdown(md)
+    expect(desc).toContain('**Le ventilateur de table sans hélice Lifetime Air**')
+    expect(desc).toContain('**sans pales**')
+  })
+
+  it('convertit <strong>/<b> de la source en marqueurs gras', () => {
+    const md = `# Perceuse XR
+
+Cette perceuse <strong>18 V</strong> offre un couple de <b>60 Nm</b> pour tous vos
+travaux de perçage et de vissage sur bois, métal et matériaux composites divers.
+`
+    const desc = parseDescriptionFromMarkdown(md)
+    expect(desc).toContain('**18 V**')
+    expect(desc).toContain('**60 Nm**')
+  })
+
+  it('texte sans gras : aucun marqueur ** ajouté', () => {
+    const desc = parseDescriptionFromMarkdown(SAMPLE_MD_1)
+    expect(desc).not.toContain('**')
+    expect(desc).toContain('Perceuse-visseuse compacte 18V')
+  })
+})
