@@ -201,11 +201,21 @@ function finalizeDescription(current: string, markdownContent: string | null): {
     const clean = proseOnly.replace(/\t/g, '').replace(/\n{3,}/g, '\n\n').trim()
     if (clean.length >= 30) { description = clean; descriptionRich = structuredPlainToRichMarkdown(proseOnly) }
   }
+  const beforeFallback = description.length
   if ((!description || description.length < 30) && markdownContent) {
     const md = parseDescriptionFromMarkdown(markdownContent)
     if (md && md.length >= 30) description = md
   }
   if (!descriptionRich) descriptionRich = parseRichDescriptionFromMarkdown(markdownContent || '') || undefined
+  console.log('[desc-debug] finalizeDescription:', {
+    structuredDescLen: structuredDesc?.length ?? 0,
+    currentLen: (current || '').length,
+    afterStructured: beforeFallback,
+    mdLen: markdownContent?.length ?? 0,
+    mdHasDesc: markdownContent ? parseDescriptionFromMarkdown(markdownContent).length : 0,
+    finalLen: description.length,
+    finalPreview: description.slice(0, 80),
+  })
   return { description, descriptionRich }
 }
 
@@ -4068,9 +4078,17 @@ async function enrichProductCoreInner(
           //    mais PAS la prose de description), alors que le GET simple Jina la
           //    contient. Si la description manque, on retente jinaScrapeMarkdown et on
           //    garde la version qui a la prose (les specs des deux se fusionnent en aval).
+          console.log('[desc-debug] après scrape principal:', {
+            mdLen: markdownContent?.length ?? 0,
+            deepHasDesc: parseDescriptionFromMarkdown(markdownContent || '').length,
+          })
           if (productUrl && parseDescriptionFromMarkdown(markdownContent || '').length < 30) {
             try {
               const simpleMd = await jinaScrapeMarkdown(productUrl)
+              console.log('[desc-debug] repli GET simple:', {
+                simpleMdLen: simpleMd?.length ?? 0,
+                simpleHasDesc: simpleMd ? parseDescriptionFromMarkdown(simpleMd).length : 0,
+              })
               if (simpleMd && parseDescriptionFromMarkdown(simpleMd).length >= 30) {
                 log('✓ Repli GET simple Jina — la description manquait au rendu deep')
                 console.log('[enrichment] deep render sans description → bascule sur jinaScrapeMarkdown (même URL)')
