@@ -95,6 +95,28 @@ export function boldMarkdownToHtml(s: string): string {
  *  caractéristiques indentée par tabulation, sous-titre finissant par `:`) en
  *  markdown STRUCTURÉ (titres `##`, puces `- `). Source fiable et déterministe :
  *  aucune pollution possible (pas de footer/cookies/livraison). */
+/** Retire la LISTE de caractéristiques finale d'une description structurée
+ *  (JSON-LD : « Caractéristiques principales : » + items indentés par tabulation)
+ *  — redondante avec le tableau de specs. Garde l'intro + la prose. Si pas de
+ *  liste détectée, renvoie la description inchangée. */
+export function stripTrailingSpecList(desc: string): string {
+  const lines = (desc || '').split('\n')
+  let listStart = -1
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\t/.test(lines[i]) || /^[•·▪●◦▶-]\s/.test(lines[i].trim())) { listStart = i; break }
+  }
+  if (listStart < 0) return desc // pas de liste → inchangé
+  let end = listStart
+  while (end > 0 && !lines[end - 1].trim()) end-- // sauter les lignes vides avant la liste
+  // Retirer la ligne d'en-tête « … : » qui introduit la liste.
+  if (end > 0) {
+    const prev = lines[end - 1].trim()
+    if (prev.length <= 70 && /:\s*$/.test(prev)) end--
+  }
+  const kept = lines.slice(0, end).join('\n').replace(/\n{3,}/g, '\n\n').trim()
+  return kept.length >= 20 ? kept : desc // garde-fou : ne pas tout vider
+}
+
 export function structuredPlainToRichMarkdown(desc: string): string {
   const out: string[] = []
   let firstBlock = true // le 1er bloc de prose = tagline/intro (rendu `<h2>` par la source) → titre

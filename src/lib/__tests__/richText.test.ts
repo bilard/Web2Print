@@ -9,6 +9,7 @@ import {
   descriptionMarkdownToHtml,
   flattenRichMarkdown,
   structuredPlainToRichMarkdown,
+  stripTrailingSpecList,
 } from '../richText'
 
 describe('richText — préservation du gras', () => {
@@ -115,5 +116,18 @@ describe('structuredPlainToRichMarkdown — JSON-LD Product.description → stru
   it('un 1er paragraphe long reste de la prose (pas un titre)', () => {
     const long = 'a'.repeat(200) + '.\n\nSuite.'
     expect(structuredPlainToRichMarkdown(long).startsWith('# ')).toBe(false)
+  })
+})
+
+describe('stripTrailingSpecList — retire la liste de caractéristiques finale', () => {
+  it('garde intro + prose, coupe « Caractéristiques principales : » + liste tabulée', () => {
+    const jsonld = 'Le ventilateur allie design moderne.\n\nGrâce à sa conception sans pales, il diffuse un flux d’air uniforme.\n\nCaractéristiques principales :\n\n\n\tMarque : Lifetime Air\n\tCouleur : Noir'
+    expect(stripTrailingSpecList(jsonld)).toBe(
+      'Le ventilateur allie design moderne.\n\nGrâce à sa conception sans pales, il diffuse un flux d’air uniforme.',
+    )
+  })
+  it('sans liste : inchangé', () => {
+    const s = 'Une description prose sans liste de caractéristiques du tout.'
+    expect(stripTrailingSpecList(s)).toBe(s)
   })
 })

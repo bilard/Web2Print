@@ -12,7 +12,7 @@ import { extractLongestProseParagraph } from './enrichmentSanitize'
 import { isJunkImageUrl } from './imageFilter'
 export { isJunkImageUrl }
 import { parseDescriptionFromMarkdown as parseDescriptionFromMarkdownExternal, parseRichDescriptionFromMarkdown } from '@/features/scraping/core/parsers/parseDescription'
-import { structuredPlainToRichMarkdown } from '@/lib/richText'
+import { structuredPlainToRichMarkdown, stripTrailingSpecList } from '@/lib/richText'
 import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal, extractSpecsFromHtml as extractSpecsFromHtmlExternal, isNonProductRegion } from '@/features/scraping/core/parsers/parseSpecifications'
 import { filterImagesByProductRef } from '@/features/scraping/core/parsers/filterImagesByRef'
 import { parseNamedDocLinks } from '@/features/scraping/core/parsers/parseNamedDocLinks'
@@ -402,8 +402,11 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
     .__lastStructured?.description
   let descriptionRich: string | undefined
   if (structuredDesc && structuredDesc.trim().length > 50 && !looksLikeBotChallenge(structuredDesc)) {
-    description = structuredDesc.replace(/\t/g, '').replace(/\n{3,}/g, '\n\n').trim()
-    descriptionRich = structuredPlainToRichMarkdown(structuredDesc)
+    // Retire la liste de caractéristiques finale (redondante avec le tableau de
+    // specs) → la description garde l'intro + la prose.
+    const proseOnly = stripTrailingSpecList(structuredDesc)
+    description = proseOnly.replace(/\t/g, '').replace(/\n{3,}/g, '\n\n').trim()
+    descriptionRich = structuredPlainToRichMarkdown(proseOnly)
   } else {
     // Version markdown structurée (repli) — rendue par descriptionMarkdownToHtml.
     descriptionRich = parseRichDescriptionFromMarkdown(markdownContent) || undefined
