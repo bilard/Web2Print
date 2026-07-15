@@ -20,7 +20,8 @@ export function DemoExpressForm({ onLaunch }: Props) {
   // par la valeur clampée du store (Number('')=0 → resnappait à 12 à chaque frappe).
   const [volumeDraft, setVolumeDraft] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('')
-  const [animations, setAnimations] = useState(true)
+  // Désactivé par défaut : l'utilisateur coche s'il veut une animation HTML par produit.
+  const [animations, setAnimations] = useState(false)
   const valid = company.trim().length > 1 && /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}/i.test(url.trim())
 
   const launch = () => {
