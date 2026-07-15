@@ -1,7 +1,7 @@
 import { Sparkles, ChevronUp, ChevronDown, X, ArrowUp } from 'lucide-react'
 import { useAiSettingsStore, getSelectedModel, type ReasoningProvider } from '@/stores/aiSettings.store'
 import type { AiProvider } from '@/lib/aiModels'
-import { GeminiLogo, ClaudeLogo, OpenAILogo, DeepSeekLogo, QwenLogo, OpenRouterLogo } from './providerLogos'
+import { GeminiLogo, ClaudeLogo, OpenAILogo, DeepSeekLogo, QwenLogo, GLMLogo, OpenRouterLogo } from './providerLogos'
 
 const CASCADE_PROVIDER_INFO: Record<ReasoningProvider, { label: string; sub: string; logo: React.ReactNode }> = {
   gemini:     { label: 'Gemini',      sub: 'free tier · économique',          logo: <GeminiLogo /> },
@@ -9,10 +9,11 @@ const CASCADE_PROVIDER_INFO: Record<ReasoningProvider, { label: string; sub: str
   openai:     { label: 'OpenAI',      sub: 'GPT · json_schema strict',        logo: <OpenAILogo /> },
   deepseek:   { label: 'DeepSeek',    sub: 'low cost · JSON natif',           logo: <DeepSeekLogo /> },
   qwen:       { label: 'Qwen',        sub: 'multilingue · alternatif',        logo: <QwenLogo /> },
+  glm:        { label: 'GLM (Z.ai)',  sub: 'GLM 5.2 · JSON · bon rapport',    logo: <GLMLogo /> },
   openrouter: { label: 'OpenRouter',  sub: 'agrégateur · routing multi-LLM',  logo: <OpenRouterLogo /> },
 }
 
-const ALL_REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'openai', 'deepseek', 'qwen', 'openrouter']
+const ALL_REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'openai', 'deepseek', 'qwen', 'glm', 'openrouter']
 
 export function AiCascadeEditor() {
   const cascade = useAiSettingsStore((s) => s.reasoningCascade)

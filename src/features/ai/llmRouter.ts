@@ -18,7 +18,7 @@ import { recordAiUsage, pushAiUsageListener } from '@/features/stats/aiUsageTrac
 import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
 import type { AiProvider } from '@/lib/aiModels'
 
-export type LLMProviderId = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'openrouter'
+export type LLMProviderId = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'glm' | 'openrouter'
 
 /**
  * Snapshot du payload réellement envoyé au provider LLM.
@@ -243,6 +243,7 @@ export function modelForProvider(provider: LLMProviderId, modelOverride?: string
       claude: /^claude-/i,
       gemini: /^gemini-/i,
       deepseek: /^deepseek-/i,
+      glm: /^glm-/i,
       openai: /^(gpt-|o\d|chatgpt)/i,
       // OpenRouter accepte des IDs préfixés par vendor (anthropic/, openai/, google/...).
       // On laisse passer tout override qui contient un slash — sinon defaultModel.
@@ -265,15 +266,15 @@ export function getProviderCascade(onWarning?: (msg: string) => void): LLMProvid
   const supported: LLMProviderId[] = []
   const ignored: string[] = []
   for (const p of cascade) {
-    if (p === 'gemini' || p === 'claude' || p === 'openai' || p === 'deepseek' || p === 'openrouter') {
+    if (p === 'gemini' || p === 'claude' || p === 'openai' || p === 'deepseek' || p === 'glm' || p === 'openrouter') {
       supported.push(p)
     } else {
-      // qwen, kimi, glm, autres : non câblés dans callProvider
+      // qwen, kimi, autres : non câblés dans callProvider
       ignored.push(p)
     }
   }
   if (ignored.length > 0 && onWarning) {
-    onWarning(`Providers ignorés (non implémentés) : ${ignored.join(', ')}. Active uniquement gemini, claude, openai, deepseek, openrouter dans ta cascade.`)
+    onWarning(`Providers ignorés (non implémentés) : ${ignored.join(', ')}. Active uniquement gemini, claude, openai, deepseek, glm, openrouter dans ta cascade.`)
   }
   return supported
 }
@@ -457,6 +458,9 @@ async function callProvider<T>(
   if (provider === 'deepseek') {
     return await callDeepSeek(opts, model)
   }
+  if (provider === 'glm') {
+    return await callGlm(opts, model)
+  }
   if (provider === 'openrouter') {
     return await callOpenRouter(opts, model)
   }
@@ -472,20 +476,30 @@ async function callProvider<T>(
 // génération, puis on valide via Zod en sortie.
 
 interface OpenAICompatibleConfig {
-  providerId: 'deepseek' | 'openrouter'
+  providerId: 'deepseek' | 'glm' | 'openrouter'
   apiKeyId: string
   endpoint: string
   displayName: string
   /** Headers en plus de `Authorization` (ex. `HTTP-Referer` / `X-Title` pour OpenRouter). */
   extraHeaders?: Record<string, string>
+  /** Court-circuite le proxy serveur (llmProxy ne connaît pas ce provider) et
+   *  appelle l'endpoint directement depuis le navigateur avec la clé locale. */
+  bypassProxy?: boolean
 }
 
-const OPENAI_COMPATIBLE_PROVIDERS: Record<'deepseek' | 'openrouter', OpenAICompatibleConfig> = {
+const OPENAI_COMPATIBLE_PROVIDERS: Record<'deepseek' | 'glm' | 'openrouter', OpenAICompatibleConfig> = {
   deepseek: {
     providerId: 'deepseek',
     apiKeyId: 'deepseek',
     endpoint: 'https://api.deepseek.com/v1/chat/completions',
     displayName: 'DeepSeek',
+  },
+  glm: {
+    providerId: 'glm',
+    apiKeyId: 'glm',
+    endpoint: 'https://api.z.ai/api/paas/v4/chat/completions',
+    displayName: 'GLM (Z.ai)',
+    bypassProxy: true,
   },
   openrouter: {
     providerId: 'openrouter',
@@ -554,12 +568,14 @@ async function callOpenAICompatible<T>(
     }
   }
 
-  const res = await llmFetchViaProxy(
-    config.providerId,
-    model,
-    requestBody as unknown as Record<string, unknown>,
-    directFetch,
-  )
+  const res = config.bypassProxy
+    ? await directFetch()
+    : await llmFetchViaProxy(
+        config.providerId as 'deepseek' | 'openrouter',
+        model,
+        requestBody as unknown as Record<string, unknown>,
+        directFetch,
+      )
 
   if (!res.ok) {
     const body = await res.text()
@@ -601,6 +617,9 @@ async function callOpenAICompatible<T>(
 
 const callDeepSeek = <T>(opts: GenerateJsonOptions<T>, model: string) =>
   callOpenAICompatible(OPENAI_COMPATIBLE_PROVIDERS.deepseek, opts, model)
+
+const callGlm = <T>(opts: GenerateJsonOptions<T>, model: string) =>
+  callOpenAICompatible(OPENAI_COMPATIBLE_PROVIDERS.glm, opts, model)
 
 const callOpenRouter = <T>(opts: GenerateJsonOptions<T>, model: string) =>
   callOpenAICompatible(OPENAI_COMPATIBLE_PROVIDERS.openrouter, opts, model)

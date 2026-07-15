@@ -5,9 +5,9 @@ import { AI_MODELS, getModel, getDefaultModel, type AiProvider, type AiModelInfo
 /** Providers supportés pour les tâches de raisonnement texte/JSON
  *  (extraction scraping, Art Director, amélioration de prompt). Tous les
  *  providers de cette liste sont câblés dans les fonctions concernées. */
-export type ReasoningProvider = 'gemini' | 'claude' | 'openai' | 'deepseek' | 'qwen' | 'openrouter'
+export type ReasoningProvider = 'gemini' | 'claude' | 'openai' | 'deepseek' | 'qwen' | 'glm' | 'openrouter'
 
-const REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'openai', 'deepseek', 'qwen', 'openrouter']
+const REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'openai', 'deepseek', 'qwen', 'glm', 'openrouter']
 
 /** Cascade par défaut : Gemini (free tier) puis Claude Opus en fallback. */
 export const DEFAULT_REASONING_CASCADE: ReasoningProvider[] = ['gemini', 'claude']
