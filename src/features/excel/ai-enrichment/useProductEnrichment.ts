@@ -4063,6 +4063,24 @@ async function enrichProductCoreInner(
             console.log('[enrichment] markdown preview (first 3000 chars):\n', markdownContent.slice(0, 3000))
           }
 
+          // ── Repli SUR LA MÊME URL : le rendu « deep » (navigateur, onglets) peut
+          //    renvoyer un état PARTIEL sur les SPA anti-bot (JSON-LD/specs logistiques
+          //    mais PAS la prose de description), alors que le GET simple Jina la
+          //    contient. Si la description manque, on retente jinaScrapeMarkdown et on
+          //    garde la version qui a la prose (les specs des deux se fusionnent en aval).
+          if (productUrl && parseDescriptionFromMarkdown(markdownContent || '').length < 30) {
+            try {
+              const simpleMd = await jinaScrapeMarkdown(productUrl)
+              if (simpleMd && parseDescriptionFromMarkdown(simpleMd).length >= 30) {
+                log('✓ Repli GET simple Jina — la description manquait au rendu deep')
+                console.log('[enrichment] deep render sans description → bascule sur jinaScrapeMarkdown (même URL)')
+                markdownContent = scoreMd(simpleMd) >= scoreMd(markdownContent)
+                  ? simpleMd
+                  : `${markdownContent ?? ''}\n\n${simpleMd}` // fusion si le deep avait d'autres specs
+              }
+            } catch { /* ignorer */ }
+          }
+
           // ── Fallback : si le markdown est trop court/pauvre, essayer des sources alternatives ──
           const primaryScore = scoreMd(markdownContent)
           console.log('[enrichment] primary markdown score:', primaryScore, '(', markdownContent?.length ?? 0, 'chars)')
