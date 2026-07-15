@@ -386,9 +386,38 @@ export function parseDescriptionFromMarkdown(rawMd: string): string {
  * (specs, téléchargements, FAQ, avis, CGV…). Lignes bruit/garbage/images/URLs
  * filtrées. Retourne '' si trop court → l'appelant retombe sur la version plate.
  */
+/** Clé de rapprochement : minuscule, sans gras/markdown, alphanum compacté. */
+function anchorKey(s: string): string {
+  return stripBoldMarkers(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
 export function parseRichDescriptionFromMarkdown(rawMd: string): string {
   const md = stripReviewBlocks(rawMd)
   const lines = md.split('\n')
+
+  // MOTEUR UNIQUE : on délègue la LOCALISATION de la région descriptive propre au
+  // parseur robuste du PIM (parseDescriptionFromMarkdown, filtres cookies/nav/
+  // login/garbage éprouvés). On ne fait ensuite que RÉ-APPLIQUER la structure
+  // (titres/gras/listes) à partir de son point d'ancrage → tout boilerplate en
+  // amont (bloc compte/connexion, breadcrumb, métadonnées) est écarté par
+  // construction, sans réimplémenter le filtrage.
+  // Index de la ligne du markdown qui démarre la vraie description (ancre du
+  // moteur PIM). -1 si le moteur ne renvoie pas de prose exploitable → repli sur
+  // le comportement H1 (avec les filtres compte/garbage) plus bas.
+  const flat = parseDescriptionFromMarkdown(md)
+  let anchorIdx = -1
+  if (stripBoldMarkers(flat).trim().length >= 40) {
+    const flatFirst = flat.split('\n').map((l) => l.trim()).find(Boolean) ?? ''
+    const anchor = anchorKey(flatFirst).slice(0, 34)
+    if (anchor.length >= 15) {
+      anchorIdx = lines.findIndex((l) => {
+        const k = anchorKey(l)
+        return k.length >= 15 && (k.includes(anchor) || anchor.includes(k.slice(0, 34)))
+      })
+    }
+  }
+
   // Sections qui terminent la description (on s'arrête AVANT).
   const stopSection = /sp[eé]cification|descriptif\s*technique|donn[eé]es?\s*technique|fiche\s*technique|t[eé]l[eé]chargement|downloads?|documents?|r[eé]f[eé]rences?|variantes?|accessoires?|avis|reviews?|galerie|vid[eé]os?|questions?|faq|contact|dimensions?\s*et|table\s*des?\s*mati[eè]res|garantie|conditions\s*g[eé]n[eé]rales|livraison|paiement/i
   const faqQuestion = /^(quelle?|comment|est[-\s]?(?:il|ce)|pourquoi|o[uù]\b|quand|combien|peut[-\s]on|faut[-\s]il|dois[-\s]je)/i
@@ -398,17 +427,37 @@ export function parseRichDescriptionFromMarkdown(rawMd: string): string {
   const accountUi = /commander en (?:tant que|utilisant)|nouveau client|utilisant votre compte|votre compte\b|adresse\s+e-?mail|se\s+connecter|^connexion\b|cr[eé]er\s+un\s+compte|mot\s+de\s+passe|^panier\b|checkout|suivi\s+de\s+(?:la\s+|votre\s+)?commande|statut\s+de\s+(?:la\s+|votre\s+)?commande|commandez\s+plus|s['’]identifier|identifiez-vous|^login\b|sign\s*in|my\s*account|se\s+souvenir\s+de\s+moi/i
   const unlink = (s: string) => s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
 
+  // Remonte l'ancre pour inclure un/des titre(s) d'intro directement au-dessus
+  // (ex. « ## Le ventilateur… » avant le paragraphe), tant que ce sont des titres
+  // NON login/garbage/specs. Un texte/métadonnée/login intercalé stoppe la remontée
+  // → le bloc compte (séparé par « SKU … », « Connexion »…) reste exclu.
+  let startIdx = anchorIdx
+  if (anchorIdx >= 0) {
+    for (let j = anchorIdx - 1; j >= 0; j--) {
+      const lt = lines[j].trim()
+      if (!lt) continue
+      const isHeading = /^#{2,6}\s+/.test(lt) || /^\*\*.+\*\*\s*$/.test(lt) || /^<(?:strong|b)>.+<\/(?:strong|b)>\s*:?\s*$/i.test(lt)
+      if (!isHeading) break
+      const htxt = stripBoldMarkers(htmlBoldToMarkers(lt.replace(/^#{2,6}\s+/, '')))
+      if (accountUi.test(htxt) || stopSection.test(htxt) || faqQuestion.test(htxt) || isGarbageContent(htxt)) break
+      startIdx = j
+    }
+  }
+
   const out: string[] = []
-  let started = false
+  // Démarrage : à l'ancre du moteur PIM si trouvée (skip login/nav en amont),
+  // sinon repli sur le 1er H1 (comportement historique).
+  let started = anchorIdx >= 0
   let chars = 0
   // true après un titre « compte/connexion » → ses puces (statut, suivi…) sont sautées.
   let inAccountBlock = false
   const pushBlank = () => { if (out.length && out[out.length - 1] !== '') out.push('') }
 
-  for (const raw of lines) {
+  for (let i = 0; i < lines.length; i++) {
     if (chars > 3000 || out.length > 80) break
-    const t = raw.trim()
-    if (/^#\s/.test(t)) { started = true; continue } // H1 = nom produit → début (exclu)
+    if (anchorIdx >= 0 && i < startIdx) continue // avant la région ancrée = boilerplate, ignoré
+    const t = lines[i].trim()
+    if (anchorIdx < 0 && /^#\s/.test(t)) { started = true; continue } // H1 = nom produit → début (exclu)
     if (!started) continue
     if (!t) { pushBlank(); continue }
 
