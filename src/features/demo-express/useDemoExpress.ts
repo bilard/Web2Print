@@ -30,7 +30,7 @@ import { listCatalogs } from '@/features/catalog/catalogsApi'
 import { listPromos } from '@/features/retail-promo/promosApi'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import { useAiActivityStore } from '@/stores/aiActivity.store'
-import { DEFAULT_CARD_STYLE, type CatalogCharte, type CatalogDoc } from '@/features/catalog/catalogTypes'
+import { DEFAULT_CARD_STYLE, type CatalogCharte, type CatalogDoc, type CatalogPlan } from '@/features/catalog/catalogTypes'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import { buildDemoSheet, sheetToMerge, isProductLike, DEMO_TARGET_FIELDS, type DemoProduct } from './buildDemoSheet'
 import { buildDemoWorkflow } from './demoWorkflow'
@@ -40,9 +40,20 @@ import { discoverCategories, categoriesFromHtml, productLinksFromListingHtml, is
 /** Volumétries proposées par le wizard (48 max : sous le quota démo PIM de 50). */
 export const DEMO_VOLUMES = [6, 12, 24, 48] as const
 const DEFAULT_MAX_PRODUCTS = 12 // temps de démo raisonnable
-/** Accent BLEU imposé aux surfaces démo (catalogue + promo) — palette propre et
- *  lisible, au lieu d'hériter des couleurs souvent garish de la charte du site. */
+/** Repli BLEU pour la démo quand une couleur de charte est trop claire/illisible. */
 const DEMO_ACCENT_BLUE = '#2563eb'
+/** Couleur trop claire pour porter du texte blanc (bandeau) ou pour servir de
+ *  texte sur fond blanc (contraste insuffisant) → à neutraliser/remplacer. Une
+ *  couleur de marque LISIBLE (rouge, bleu foncé…) passe et est CONSERVÉE. */
+const tooLightForContrast = (hex?: string): boolean =>
+  !!hex && /^#[0-9a-f]{6}$/i.test(hex) && hexLum(hex) > 0.6
+/** Champs couleur du style de fiche à neutraliser s'ils sont trop clairs (fonds
+ *  de bandeaux → repli sur l'accent ; couleurs de texte → repli sur l'encre). */
+const DEMO_CARD_COLOR_FIELDS = [
+  'promoBg', 'kickerBg', 'priceBg', 'wasBg', 'stickerBg', 'vedetteBg', 'vedettePriceBg',
+  'promoBg2', 'kickerBg2', 'priceBg2', 'wasBg2', 'stickerBg2', 'vedetteBg2', 'vedettePriceBg2',
+  'nameColor', 'brandColor', 'descColor',
+] as const
 const MAX_BD_CATEGORY_TRIES = 5 // rayons via Bright Data (payant) — borne de coût
 
 /** Plafonds dérivés de la volumétrie choisie. */
@@ -168,7 +179,7 @@ async function seedCatalog(input: {
   ].filter(Boolean).join(' — ')
 
   onDetail('plan IA en cours…')
-  let plan
+  let plan: CatalogPlan
   try {
     plan = await generateCatalogPlan(brief, { catalogName: name, tree, sampleNames, charte })
   } catch {
@@ -182,10 +193,11 @@ async function seedCatalog(input: {
   // FOND DE PAGE BLANC — TOUJOURS, pour la démo : l'analyse de charte du site
   // écrit parfois « FOND DE PAGE : #0…» (site sombre) et ce canal explicite
   // passe devant enforceLightPageBg → pages noires non voulues. Encre relisible.
-  // Palette DÉMO : accent BLEU propre. La charte du site produit souvent des
-  // couleurs garish/illisibles (rouge accent + bandeau jaune) — pour la démo on
-  // impose un bleu lisible plutôt que d'hériter des couleurs du site.
-  plan = { ...plan, theme: { ...plan.theme, pageBg: '#ffffff', accent: DEMO_ACCENT_BLUE, ...(hexLum(plan.theme.ink) > 0.65 ? { ink: '#111827' } : {}) } }
+  // Palette DÉMO : on GARDE l'accent de la charte s'il est lisible, on ne bascule
+  // en bleu que s'il est trop clair (accent jaune illisible sur fiches blanches).
+  plan = { ...plan, theme: { ...plan.theme, pageBg: '#ffffff',
+    ...(tooLightForContrast(plan.theme.accent) ? { accent: DEMO_ACCENT_BLUE } : {}),
+    ...(hexLum(plan.theme.ink) > 0.65 ? { ink: '#111827' } : {}) } }
   // MISE EN PAGE SOUS CONTRÔLE TOTAL : la démo impose la disposition COMPLÈTE
   // de la fiche (les 13 blocs — le plan IA ne place plus rien) : image 30 % de
   // la fiche / DONNÉE 70 %, tableau de caractéristiques TOUJOURS visible et
@@ -221,11 +233,15 @@ async function seedCatalog(input: {
     unit: { x: 36, y: 92, link: 'ref' as const },
     price: { x: 2, y: 2, w: 40, ax: 'r' as const, ay: 'b' as const, r: 0 },
   }
-  plan = { ...plan, cardStyle: { ...DEFAULT_CARD_STYLE, ...plan.cardStyle,
-    // Neutralise les couleurs de charte (bandeaux jaunes, titres/valeurs rouges) —
-    // tout retombe sur l'accent BLEU + l'encre foncée : palette démo lisible.
-    promoBg: '', kickerBg: '', promoBg2: '', kickerBg2: '', nameColor: '',
-    priceBg: '', wasBg: '', stickerBg: '', vedetteBg: '', vedettePriceBg: '', brandColor: '', descColor: '',
+  // Neutralise UNIQUEMENT les couleurs de fiche trop claires/illisibles (bandeau
+  // jaune, texte pâle) → repli sur l'accent + l'encre. Les couleurs de charte
+  // lisibles sont CONSERVÉES.
+  const demoColorGuard = Object.fromEntries(
+    DEMO_CARD_COLOR_FIELDS
+      .filter((f) => tooLightForContrast((plan.cardStyle as Record<string, string> | undefined)?.[f]))
+      .map((f) => [f, '']),
+  )
+  plan = { ...plan, cardStyle: { ...DEFAULT_CARD_STYLE, ...plan.cardStyle, ...demoColorGuard,
     layout: demoLayout, layoutWide: demoLayoutWide,
     hiddenDetails: [], maxSpecLines: undefined, maxBulletLines: undefined,
     showDetails: true, uniformTextScale: true, textStyle: {},
@@ -285,10 +301,11 @@ async function seedPromo(input: {
 }): Promise<string> {
   const { company, charte, docId, fileName, columns, rows } = input
   const patch = charteToThemePatch(charte)
+  // Accent charte conservé s'il est lisible ; bleu de repli seulement s'il est trop clair.
+  const promoAccent = patch.accent ?? DEFAULT_PROMO_CONFIG.accent
   const config: PromoTemplateConfig = {
     ...DEFAULT_PROMO_CONFIG,
-    // Démo : accent BLEU lisible (on n'hérite pas du rouge/jaune de la charte).
-    accent: DEMO_ACCENT_BLUE,
+    accent: tooLightForContrast(promoAccent) ? DEMO_ACCENT_BLUE : promoAccent,
     headerBg: patch.headerBg ?? DEFAULT_PROMO_CONFIG.headerBg,
   }
   const fieldMap = defaultPromoFieldMap(columns)
