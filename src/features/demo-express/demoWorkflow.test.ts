@@ -29,7 +29,12 @@ describe('buildDemoWorkflow', () => {
     // Le workflow scrape en `product_full` : ses colonnes Excel/GSheet doivent
     // porter la même structure que la feuille PIM démo (Prix, Sous-titre compris).
     const scrapeKeys = FIELD_TEMPLATES.product_full.fields.map((f) => f.key)
+    // `descriptionRich` est un champ DÉRIVÉ (calculé par enrichProductCore à partir
+    // du markdown, pas extrait par le LLM) — il n'a pas de champ dans le template
+    // de scrape LLM et est exclu de la vérification de couverture.
+    const DERIVED_FIELDS = new Set(['descriptionRich'])
     for (const k of DEMO_TARGET_FIELDS) {
+      if (DERIVED_FIELDS.has(k)) continue
       expect(scrapeKeys, `champ démo absent du template product_full : ${k}`).toContain(k)
     }
     expect(scrapeKeys).toContain('price')

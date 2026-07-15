@@ -12,7 +12,7 @@ import { isSaneSpecPair } from '@/features/scraping/core/parsers/parseSpecificat
 /** Champs demandés au moteur d'enrichissement (clés de mapProductToFields). */
 export const DEMO_TARGET_FIELDS = [
   'name', 'subtitle', 'brand', 'reference', 'ean', 'price',
-  'description', 'advantages', 'specifications', 'documents', 'breadcrumb',
+  'description', 'descriptionRich', 'advantages', 'specifications', 'documents', 'breadcrumb',
 ]
 
 export interface DemoProduct {
@@ -84,6 +84,9 @@ export function buildDemoSheet(company: string, siteUrl: string, items: DemoProd
     col('taxonomie_n2', 'Famille', 'text', { width: 150 }),
     col('taxonomie_n3', 'Sous-famille', 'text', { width: 150 }),
     col('description', 'Description', 'text_long', { width: 320 }),
+    // Version structurée (markdown : titres/gras/listes) — colonne `ai_*` masquée
+    // de la grille, lue par le rendu riche fiche/catalogue/promo (clé exacte).
+    col('ai_description_rich', 'Description (mise en forme)', 'text_rich', { width: 320 }),
     col('advantages', 'Avantages', 'text_long', { width: 280 }),
     col('specifications', 'Caractéristiques', 'text_long', { width: 320 }),
     col('documents', 'Documents', 'url', { width: 220 }),
@@ -110,6 +113,7 @@ export function buildDemoSheet(company: string, siteUrl: string, items: DemoProd
       taxonomie_n2: levels[1] ?? null,
       taxonomie_n3: levels[2] ?? null,
       description: str(f.description) || null,
+      ai_description_rich: str(f.descriptionRich) || null,
       advantages: str(f.advantages) || null,
       specifications: str(f.specifications) || null,
       documents: str(f.documents) || null,

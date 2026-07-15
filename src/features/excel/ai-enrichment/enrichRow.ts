@@ -85,6 +85,9 @@ export function mapProductToFields(
     // prime sur le code modèle — la Démo express recevait le code à la place.
     subtitle: () => p.subtitle ?? p.model ?? null,
     description: () => (p.description ? cleanDescription(p.description) || null : null),
+    // Version structurée (markdown : titres ##, gras **, listes -) recopiée telle
+    // quelle — NE PAS nettoyer (la structure doit survivre pour le rendu riche).
+    descriptionRich: () => p.descriptionRich ?? null,
     breadcrumb: () => (p.breadcrumb?.length ? p.breadcrumb.join(' > ') : null),
     advantages: () => {
       if (!p.advantages?.length) return null
