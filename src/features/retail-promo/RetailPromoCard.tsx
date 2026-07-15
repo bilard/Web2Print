@@ -248,11 +248,44 @@ export function splitPrice(priceNow: string): { amount: string; cur: string; fon
  * Précédence remplissage : styles.gradient/fill > colors[key] (legacy) > défaut hérité.
  * `capturing` aplatit le dégradé-texte en couleur unie (html2canvas ne sait pas clipper le texte).
  */
+/** Luminance relative WCAG d'un hex #rrggbb. */
+function relLum(hex: string): number {
+  const h = (hex || '').replace('#', '')
+  if (h.length < 6) return 1
+  const lin = [0, 2, 4].map((i) => {
+    const v = parseInt(h.slice(i, i + 2), 16) / 255
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+}
+/** Ratio de contraste WCAG entre deux couleurs. */
+function contrastRatio(a: string, b: string): number {
+  const la = relLum(a), lb = relLum(b)
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)
+}
+/** Fond effectif de l'en-tête selon le layout (le bandeau passe en blanc en « minimal »). */
+function effectiveHeaderBg(config: PromoTemplateConfig): string {
+  if (config.layout === 'minimal') return '#ffffff'
+  if (config.layout === 'photo-cover') return '#0b1020'
+  return config.headerBg || '#111827'
+}
+/** Textes de l'en-tête posés directement sur le fond du bandeau (garde-fou lisibilité). */
+const HEADER_TEXT_KEYS = new Set<PromoColorKey>(['name', 'brand', 'description'])
+/** Repli LISIBLE (bleu) quand une couleur de texte d'en-tête a un contraste trop
+ *  faible sur son fond — évite le titre jaune illisible sur bandeau blanc. Un
+ *  contraste correct est laissé intact. */
+function ensureReadable(color: string, bg: string): string {
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) return color
+  if (contrastRatio(color, bg) >= 3) return color
+  return relLum(bg) > 0.5 ? '#1d4ed8' : '#93c5fd' // bleu foncé sur clair, bleu clair sur sombre
+}
+
 function resolveElementStyle(
   config: PromoTemplateConfig,
   key: PromoColorKey,
   opts?: { capturing?: boolean },
 ): React.CSSProperties {
+  const guard = (c: string) => (HEADER_TEXT_KEYS.has(key) ? ensureReadable(c, effectiveHeaderBg(config)) : c)
   const st = config.styles?.[key]
   const css: React.CSSProperties = {}
   if (st?.fontFamily) css.fontFamily = `'${st.fontFamily}', sans-serif`
@@ -276,9 +309,9 @@ function resolveElementStyle(
       css.WebkitTextFillColor = 'transparent'
     }
   } else if (fillType === 'solid' && st?.fill) {
-    css.color = st.fill
+    css.color = guard(st.fill)
   } else if (config.colors[key]) {
-    css.color = config.colors[key]
+    css.color = guard(config.colors[key])
   }
   return css
 }
