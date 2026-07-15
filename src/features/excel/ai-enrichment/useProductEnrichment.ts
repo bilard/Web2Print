@@ -408,6 +408,12 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
     description = proseOnly.replace(/\t/g, '').replace(/\n{3,}/g, '\n\n').trim()
     descriptionRich = structuredPlainToRichMarkdown(proseOnly)
   } else {
+    // Pas de JSON-LD exploitable (ex. sites anti-bot type Jardiland) → on garantit
+    // que la description PLATE vient du parseur markdown robuste si elle est vide.
+    if ((!description || description.trim().length < 30) && markdownContent) {
+      const md = parseDescriptionFromMarkdown(markdownContent)
+      if (md && md.length >= 30) description = md
+    }
     // Version markdown structurée (repli) — rendue par descriptionMarkdownToHtml.
     descriptionRich = parseRichDescriptionFromMarkdown(markdownContent) || undefined
   }

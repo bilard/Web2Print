@@ -474,6 +474,28 @@ export function isSaneSpecPair(n: string, v: string): boolean {
   return true
 }
 
+/** Parse une spec « Nom Valeur » COLLÉE sur une seule ligne (tableau d'attributs
+ *  sans séparateur, rendu ainsi par Jina). Split GÉNÉRIQUE et déterministe par
+ *  signal de valeur en fin de ligne. Renvoie null si la ligne ressemble à un pur
+ *  LABEL (pas de valeur détectable) → laisse Format 4 l'apparier normalement. */
+function parseGluedSpec(line: string): { name: string; value: string } | null {
+  const t = line.trim()
+  if (t.length < 4 || t.length > 80) return null
+  // 1) « Nom (unité)valeur » — split au « ( » ; valeur = ce qui suit « (unité) ».
+  let m = t.match(/^(.{2,}?)\s*\(([^)]{1,6})\)\s*(.+)$/)
+  if (m && /[a-zà-ÿ]/i.test(m[1]) && /\d/.test(m[3])) return { name: m[1].trim(), value: m[3].trim() }
+  // 2) finit par « Oui » / « Non »
+  m = t.match(/^(.{2,}?)\s+(Oui|Non)$/i)
+  if (m) return { name: m[1].trim(), value: m[2] }
+  // 3) finit par un nombre (+ unité éventuelle)
+  m = t.match(/^(.{2,}?)\s+(\d[\d.,]*\s*(?:cm|mm|m²?|kg|g|l|w|kw|v|ah|min|°|%|ann[eé]es?|ans?|positions?|t\/min|rpm|litres?|watts?)?)$/i)
+  if (m && /[a-zà-ÿ]/i.test(m[1])) return { name: m[1].trim(), value: m[2].trim() }
+  // 4) finit par UN mot-valeur capitalisé précédé d'un mot minuscule
+  m = t.match(/^(.{2,}?[a-zà-ÿ])\s+([A-ZÀ-Ÿ][a-zà-ÿ]{2,})$/)
+  if (m) return { name: m[1].trim(), value: m[2].trim() }
+  return null
+}
+
 export function parseSpecsFromMarkdown(md: string): Specification[] {
   const specs: Specification[] = []
   const seen = new Set<string>()
@@ -722,6 +744,14 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
         && !trimmed.startsWith('!') && !/^[=:\-]+$/.test(trimmed)
         && !/^[•·▪●◦▶]/.test(trimmed)  // bullets typographiques → laisser Format 5 les traiter
         && !/:\s*$/.test(trimmed)) {   // prose intro finissant par `:` (ex: "conforme aux directives :")
+      // Format 7 (PRIORITAIRE sur Format 4) : spec complète « Nom Valeur » COLLÉE
+      // sur UNE ligne, sans séparateur (tableau d'attributs rendu ainsi par Jina :
+      // « Capacité … (l)40 L », « Type de propulsion Poussée », « Garantie
+      // constructeur 3 années », « Bac de ramassage Oui »). On la parse en spec
+      // UNIQUE au lieu de la laisser Format 4 l'apparier à tort avec la suivante.
+      const glued = parseGluedSpec(trimmed)
+      if (glued) { add(glued.name, glued.value, currentGroup); continue }
+
       let nextIdx = i + 1
       while (nextIdx < lines.length && nextIdx <= i + 3 && !lines[nextIdx].trim()) nextIdx++
       const nextLine = (lines[nextIdx] ?? '').trim()

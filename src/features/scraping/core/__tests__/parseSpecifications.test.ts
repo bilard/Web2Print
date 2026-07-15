@@ -705,3 +705,48 @@ describe('isSaneSpecPair — bloc commande/compte client (fixture Trafic 221919)
     expect(isSaneSpecPair(n, v)).toBe(true)
   })
 })
+
+describe('parseSpecsFromMarkdown — tableau d\'attributs COLLÉ (Format 7, Jardiland)', () => {
+  it('parse « Nom Valeur » collé en spec unique (pas de décalage 2-lignes)', () => {
+    const md = `# Tondeuse
+
+**Caractéristiques**
+
+Garantie constructeur 3 années
+
+Bac de ramassage Oui
+
+Capacité du bac de ramassage (l)40 L
+
+Largeur de coupe (cm)42 cm
+
+Puissance (W)1800 W
+
+Type de propulsion Poussée
+
+Type de tondeuse Électrique
+
+Guidon réglable en hauteur Non
+
+Hauteur de coupe max 80 cm
+
+Surface conseillée (m²)700 m²
+`
+    const specs = parseSpecsFromMarkdown(md)
+    const byName = Object.fromEntries(specs.map(s => [s.name, s.value]))
+    expect(byName['Garantie constructeur']).toBe('3 années')
+    expect(byName['Bac de ramassage']).toBe('Oui')
+    expect(byName['Capacité du bac de ramassage']).toBe('40 L')
+    expect(byName['Largeur de coupe']).toBe('42 cm')
+    expect(byName['Puissance']).toBe('1800 W')
+    expect(byName['Type de propulsion']).toBe('Poussée')
+    expect(byName['Guidon réglable en hauteur']).toBe('Non')
+    expect(byName['Hauteur de coupe max']).toBe('80 cm')
+    expect(byName['Surface conseillée']).toBe('700 m²')
+    // AUCUNE spec décalée (nom == une autre spec collée)
+    for (const s of specs) {
+      expect(s.name).not.toMatch(/\([^)]+\)\s*\d/) // pas de « (l)40 » dans le nom
+      expect(s.value).not.toMatch(/\([^)]+\)\s*\d/) // ni dans la valeur
+    }
+  })
+})
