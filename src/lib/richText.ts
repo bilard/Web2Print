@@ -90,6 +90,28 @@ export function boldMarkdownToHtml(s: string): string {
     .join('')
 }
 
+/** Convertit une description PLATE issue d'une source structurée (JSON-LD
+ *  `Product.description` : paragraphes séparés par des sauts de ligne, liste de
+ *  caractéristiques indentée par tabulation, sous-titre finissant par `:`) en
+ *  markdown STRUCTURÉ (titres `##`, puces `- `). Source fiable et déterministe :
+ *  aucune pollution possible (pas de footer/cookies/livraison). */
+export function structuredPlainToRichMarkdown(desc: string): string {
+  const out: string[] = []
+  for (const raw of (desc || '').split('\n')) {
+    const t = raw.trim()
+    if (!t) { if (out.length && out[out.length - 1] !== '') out.push(''); continue }
+    // Item de liste : ligne indentée par tabulation OU déjà préfixée d'une puce.
+    if (/^\t/.test(raw) || /^[•·▪●◦▶-]\s/.test(t)) {
+      out.push(`- ${normalizeBoldMarkers(t.replace(/^[•·▪●◦▶-]\s*/, ''))}`)
+      continue
+    }
+    // Sous-titre : ligne courte finissant par `:` (ex. « Caractéristiques principales : »).
+    if (t.length <= 70 && /:\s*$/.test(t)) { out.push(`## ${normalizeBoldMarkers(t)}`); continue }
+    out.push(normalizeBoldMarkers(t))
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+}
+
 /** Aplatit un markdown structuré en texte inline (retire les préfixes titre `#`
  *  et puce `- `, garde le gras `**` et le texte) — pour les surfaces compactes
  *  (carte promo clampée) qui ne veulent qu'un teaser en gras, pas la structure. */

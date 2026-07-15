@@ -8,6 +8,7 @@ import {
   boldMarkdownToHtml,
   descriptionMarkdownToHtml,
   flattenRichMarkdown,
+  structuredPlainToRichMarkdown,
 } from '../richText'
 
 describe('richText — préservation du gras', () => {
@@ -97,5 +98,17 @@ describe('flattenRichMarkdown — teaser inline gras conservé', () => {
   it('retire titres et puces, garde le gras', () => {
     const md = '## Titre\n\nUn texte **fort**.\n\n- Puce 1\n- Puce 2'
     expect(flattenRichMarkdown(md)).toBe('Titre Un texte **fort**. Puce 1 Puce 2')
+  })
+})
+
+describe('structuredPlainToRichMarkdown — JSON-LD Product.description → structuré', () => {
+  it('paragraphes, sous-titre « : », liste tabulée → puces', () => {
+    const jsonld = 'Le ventilateur allie design moderne, sécurité et performance silencieuse.\n\nGrâce à sa conception sans pales, il diffuse un flux d’air uniforme.\n\nCaractéristiques principales :\n\n\n\tMarque : Lifetime Air\n\tCouleur : Noir\n\tPuissance : 5 W'
+    expect(structuredPlainToRichMarkdown(jsonld)).toBe(
+      'Le ventilateur allie design moderne, sécurité et performance silencieuse.\n\n' +
+      'Grâce à sa conception sans pales, il diffuse un flux d’air uniforme.\n\n' +
+      '## Caractéristiques principales :\n\n' +
+      '- Marque : Lifetime Air\n- Couleur : Noir\n- Puissance : 5 W',
+    )
   })
 })

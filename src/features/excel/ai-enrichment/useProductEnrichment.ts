@@ -12,6 +12,7 @@ import { extractLongestProseParagraph } from './enrichmentSanitize'
 import { isJunkImageUrl } from './imageFilter'
 export { isJunkImageUrl }
 import { parseDescriptionFromMarkdown as parseDescriptionFromMarkdownExternal, parseRichDescriptionFromMarkdown } from '@/features/scraping/core/parsers/parseDescription'
+import { structuredPlainToRichMarkdown } from '@/lib/richText'
 import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal, extractSpecsFromHtml as extractSpecsFromHtmlExternal, isNonProductRegion } from '@/features/scraping/core/parsers/parseSpecifications'
 import { filterImagesByProductRef } from '@/features/scraping/core/parsers/filterImagesByRef'
 import { parseNamedDocLinks } from '@/features/scraping/core/parsers/parseNamedDocLinks'
@@ -391,10 +392,22 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
     if (mdBreadcrumb.length > 0) breadcrumb = mdBreadcrumb
   }
 
-  // ── 7. Description RICHE (structure de la source : titres/gras/listes) ──
-  // Version markdown structurée, parallèle à la description plate. Rendue par
-  // descriptionMarkdownToHtml (fiche/catalogue). Absente si pas de structure.
-  const descriptionRich = parseRichDescriptionFromMarkdown(markdownContent) || undefined
+  // ── 7. Description : source FIABLE (JSON-LD) prioritaire ──
+  // Le `Product.description` du JSON-LD est DÉTERMINISTE — même source que les
+  // specs (toujours justes) — contrairement au markdown rendu, instable sur les
+  // SPA Magento (selon l'état : vrai texte, mur cookies, erreur panier, footer).
+  // Quand il est présent et propre, il prime pour la version PLATE et la version
+  // RICHE (structure dérivée de sa mise en forme JSON-LD). Sinon, repli markdown.
+  const structuredDesc = (globalThis as unknown as { __lastStructured?: StructuredProductData | null })
+    .__lastStructured?.description
+  let descriptionRich: string | undefined
+  if (structuredDesc && structuredDesc.trim().length > 50 && !looksLikeBotChallenge(structuredDesc)) {
+    description = structuredDesc.replace(/\t/g, '').replace(/\n{3,}/g, '\n\n').trim()
+    descriptionRich = structuredPlainToRichMarkdown(structuredDesc)
+  } else {
+    // Version markdown structurée (repli) — rendue par descriptionMarkdownToHtml.
+    descriptionRich = parseRichDescriptionFromMarkdown(markdownContent) || undefined
+  }
 
   return { ...enriched, description, descriptionRich, advantages, specifications, variants, documents: cleanedDocuments, breadcrumb }
 }
