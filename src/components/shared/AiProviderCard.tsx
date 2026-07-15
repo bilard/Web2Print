@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Eye, EyeOff, RotateCcw, CheckCircle2, XCircle, Loader2, Wifi,
-  ChevronDown, RefreshCw, Info, ExternalLink, Search,
+  ChevronDown, RefreshCw, Info, ExternalLink, Search, ArrowUp,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -9,7 +9,7 @@ import {
   type ApiTestResult,
 } from '@/lib/apiKeys'
 import { AI_MODELS, type AiProvider, type AiModelInfo } from '@/lib/aiModels'
-import { useAiSettingsStore } from '@/stores/aiSettings.store'
+import { useAiSettingsStore, isReasoningProvider, type ReasoningProvider } from '@/stores/aiSettings.store'
 import { recordAudit } from '@/lib/auditLog'
 
 interface AiProviderCardProps {
@@ -193,6 +193,18 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
   const fetched = useAiSettingsStore((s) => s.fetchedModels[provider])
   const setSelectedModel = useAiSettingsStore((s) => s.setSelectedModel)
   const setFetchedModels = useAiSettingsStore((s) => s.setFetchedModels)
+
+  // ── Cascade de raisonnement : promotion « Remonter » depuis la carte
+  const cascade = useAiSettingsStore((s) => s.reasoningCascade)
+  const setCascade = useAiSettingsStore((s) => s.setReasoningCascade)
+  const cascadeEligible = isReasoningProvider(provider)
+  const cascadePos = cascadeEligible ? cascade.indexOf(provider as ReasoningProvider) + 1 : 0
+  const promoteToCascade = () => {
+    if (!cascadeEligible || cascadePos > 0) return
+    setCascade([...cascade, provider as ReasoningProvider])
+    recordAudit({ action: 'settings.ai.model', module: 'settings', targetLabel: label, meta: { cascadeAdded: provider } })
+    toast.success(`${label} ajouté à la cascade de raisonnement`)
+  }
   const models = useMemo(() => {
     const catalog = AI_MODELS[provider]
     const seen = new Set(catalog.map((m) => m.id))
@@ -310,6 +322,26 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          {cascadeEligible && (
+            cascadePos > 0 ? (
+              <span
+                title={`Position ${cascadePos} dans la cascade de raisonnement`}
+                className="flex items-center gap-1 text-[10px] font-medium text-violet-300/70 bg-violet-500/10 border border-violet-500/20 rounded-md px-2 py-1"
+              >
+                <CheckCircle2 className="w-3 h-3" />
+                Cascade {cascadePos}
+              </span>
+            ) : (
+              <button
+                onClick={(e) => { stop(e); promoteToCascade() }}
+                title="Remonter dans la cascade de raisonnement"
+                className="flex items-center gap-1 text-[10px] font-medium text-violet-300/80 hover:text-violet-200 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 rounded-md px-2 py-1 transition-colors"
+              >
+                <ArrowUp className="w-3 h-3" />
+                Remonter
+              </button>
+            )
+          )}
           <button onClick={(e) => { stop(e); handleTestKey() }} title="Tester la connexion" className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5">
             <Wifi className="w-3 h-3" />
           </button>

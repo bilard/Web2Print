@@ -89,8 +89,8 @@ export function AuditLogView({ entries, loading, showWho = false, onRefresh }: P
         )}
       </div>
 
-      {/* En-tête tableau */}
-      <div className="flex items-center gap-3 px-3 text-[10px] uppercase tracking-wide text-white/35">
+      {/* En-tête tableau — figé en haut au scroll des lignes */}
+      <div className="sticky top-0 z-10 bg-background flex items-center gap-3 px-3 py-2 text-[10px] uppercase tracking-wide text-white/35">
         <span className="w-28 shrink-0">Quand</span>
         {showWho && <span className="w-44 shrink-0">Qui</span>}
         <span className="w-40 shrink-0">Action</span>

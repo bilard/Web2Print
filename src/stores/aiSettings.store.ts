@@ -9,6 +9,12 @@ export type ReasoningProvider = 'gemini' | 'claude' | 'openai' | 'deepseek' | 'q
 
 const REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'openai', 'deepseek', 'qwen', 'glm', 'openrouter']
 
+/** Un AiProvider peut-il figurer dans la cascade de raisonnement texte/JSON ?
+ *  (kimi est un AiProvider mais n'est pas câblé comme ReasoningProvider.) */
+export function isReasoningProvider(p: string): p is ReasoningProvider {
+  return (REASONING_PROVIDERS as string[]).includes(p)
+}
+
 /** Cascade par défaut : Gemini (free tier) puis Claude Opus en fallback. */
 export const DEFAULT_REASONING_CASCADE: ReasoningProvider[] = ['gemini', 'claude']
 
