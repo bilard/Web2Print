@@ -1,5 +1,5 @@
 import type { RuleEffect } from '@/features/merge/conditionalRules'
-import { boldMarkdownToHtml } from '@/lib/richText'
+import { boldMarkdownToHtml, flattenRichMarkdown } from '@/lib/richText'
 import { PROMO_CSS, FONTS_HREF, splitPrice, idealText, layoutTune, elementCss, blockBgCss, blockBoxCssString, STYLE_KEYS, type RetailCardData, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId } from './RetailPromoCard'
 
 type Effects = Partial<Record<PromoBlockId, RuleEffect>>
@@ -90,7 +90,7 @@ export function buildPromoHtml(
       ${config.showCategory ? `<span class="rp-kicker" style="${elementCss(config, 'category') || `color:${catText}`};${boxCss(config, 'category')}${efCss(effects, 'category')}">${esc(data.category || 'Offre spéciale')}</span>` : ''}
       <div class="rp-name"${subAttr(config, 'name', effects)}>${esc(data.name || 'Produit')}</div>
       ${(data.brand || data.ref || data.ean) ? `<div class="rp-brand"${subAttr(config, 'brand', effects)}>${esc([data.brand, data.ref, data.ean].filter(Boolean).join(' · '))}</div>` : ''}
-      ${config.showDescription && (data.descriptionRich || data.description) ? `<div class="rp-desc"${subAttr(config, 'description', effects)}>${boldMarkdownToHtml(data.descriptionRich || data.description || '')}</div>` : ''}
+      ${config.showDescription && (data.descriptionRich || data.description) ? `<div class="rp-desc"${subAttr(config, 'description', effects)}>${boldMarkdownToHtml(flattenRichMarkdown(data.descriptionRich || data.description || ''))}</div>` : ''}
     </div>
     <div class="rp-product" style="${bgCss(config, 'image')}${efCss(effects, 'image')}">
       ${img}

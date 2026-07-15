@@ -89,3 +89,51 @@ export function boldMarkdownToHtml(s: string): string {
     .map((r) => (r.bold && r.text ? `<strong>${escapeHtml(r.text)}</strong>` : escapeHtml(r.text)))
     .join('')
 }
+
+/** Aplatit un markdown structuré en texte inline (retire les préfixes titre `#`
+ *  et puce `- `, garde le gras `**` et le texte) — pour les surfaces compactes
+ *  (carte promo clampée) qui ne veulent qu'un teaser en gras, pas la structure. */
+export function flattenRichMarkdown(md: string): string {
+  return normalizeBoldMarkers(md || '')
+    .split('\n')
+    .map((l) => l.trim().replace(/^#{1,6}\s+/, '').replace(/^[-*•·▪●◦▶]\s+/, ''))
+    .filter(Boolean)
+    .join(' ')
+}
+
+/**
+ * Rend un markdown de description STRUCTURÉ en HTML sûr, préservant les styles
+ * de la source : titres (`#`..`######` → `<h3>`..`<h6>` ; h1/h2 réservés à la
+ * page ne sont jamais produits), gras (`**` / `<strong>`), listes à puces
+ * (`- ` / `• ` → `<ul><li>`), paragraphes → `<p>`. Texte échappé ; seules ces
+ * balises structurelles sont produites (sûr pour innerHTML). Un texte PLAT (sans
+ * markdown) ressort en un `<p>` par bloc — inchangé sémantiquement.
+ */
+export function descriptionMarkdownToHtml(md: string): string {
+  const lines = normalizeBoldMarkers(md || '').split('\n')
+  const html: string[] = []
+  let list: string[] = []
+  const flushList = () => {
+    if (list.length) {
+      html.push(`<ul>${list.map((li) => `<li>${boldMarkdownToHtml(li)}</li>`).join('')}</ul>`)
+      list = []
+    }
+  }
+  for (const raw of lines) {
+    const t = raw.trim()
+    if (!t) { flushList(); continue }
+    const h = t.match(/^(#{1,6})\s+(.+?)\s*$/)
+    if (h) {
+      flushList()
+      const lvl = Math.min(6, h[1].length + 2) // # → h3, ## → h4, … (h1/h2 réservés)
+      html.push(`<h${lvl}>${boldMarkdownToHtml(h[2])}</h${lvl}>`)
+      continue
+    }
+    const b = t.match(/^[-*•·▪●◦▶]\s+(.+)$/)
+    if (b) { list.push(b[1]); continue }
+    flushList()
+    html.push(`<p>${boldMarkdownToHtml(t)}</p>`)
+  }
+  flushList()
+  return html.join('')
+}

@@ -81,8 +81,12 @@ export interface EnrichedProduct {
    *  (ex: "18 V Li-Ion - 5 Ah - Ø 10 mm - Auto-serrant" chez Makita).
    *  Extrait de la ligne courte qui suit le H1/la référence dans le markdown. */
   subtitle?: string
-  /** Description marketing reformulée par l'IA */
+  /** Description marketing reformulée par l'IA (texte plat, gras inline `**` conservé) */
   description: string
+  /** Description STRUCTURÉE de la source en markdown (titres `##`, gras `**`,
+   *  listes `- `) — préserve la mise en forme d'origine. Rendue via
+   *  `descriptionMarkdownToHtml`. Absente si la source n'a pas de structure. */
+  descriptionRich?: string
   /** Fil d'Ariane / catégorisation (ex: ["Outillage", "Perceuses", "Visseuses à chocs"]) */
   breadcrumb?: string[]
   /** Prix indicatif extrait — type ouvert car parfois string (ex: "À partir de 99€").

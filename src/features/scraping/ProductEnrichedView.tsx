@@ -1,7 +1,7 @@
 import { Check, FileDown, Zap, ShieldAlert } from 'lucide-react'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { displayDocumentName } from '@/features/excel/ai-enrichment/documentUtils'
-import { boldMarkdownToHtml } from '@/lib/richText'
+import { descriptionMarkdownToHtml } from '@/lib/richText'
 
 interface Props {
   product: EnrichedProduct
@@ -59,10 +59,16 @@ export function ProductEnrichedView({ product }: Props) {
       {product.description && (
         <section className="px-4 py-3 rounded-lg border border-white/[0.06] bg-white/[0.02]">
           <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">Description</p>
-          {/* Gras de la source préservé (boldMarkdownToHtml échappe le texte, ne produit que <strong>). */}
-          <p
-            className="text-[12.5px] text-white/75 leading-relaxed whitespace-pre-line [&_strong]:font-semibold [&_strong]:text-white/90"
-            dangerouslySetInnerHTML={{ __html: boldMarkdownToHtml(product.description) }}
+          {/* Structure de la source préservée (titres/gras/listes). descriptionMarkdownToHtml
+              échappe le texte et ne produit que des balises structurelles sûres. */}
+          <div
+            className="text-[12.5px] text-white/75 leading-relaxed
+              [&_strong]:font-semibold [&_strong]:text-white/90
+              [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:text-white/90 [&_h3]:mt-2 [&_h3]:mb-1
+              [&_h4]:font-semibold [&_h4]:text-white/85 [&_h4]:mt-2 [&_h4]:mb-1
+              [&_h5]:font-semibold [&_h5]:text-white/85 [&_h5]:mt-1.5 [&_h6]:font-semibold [&_h6]:text-white/80
+              [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ul]:space-y-0.5 [&_li]:marker:text-white/30"
+            dangerouslySetInnerHTML={{ __html: descriptionMarkdownToHtml(product.descriptionRich || product.description) }}
           />
         </section>
       )}

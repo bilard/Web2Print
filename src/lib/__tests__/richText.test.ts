@@ -6,6 +6,8 @@ import {
   normalizeBoldMarkers,
   parseBoldRuns,
   boldMarkdownToHtml,
+  descriptionMarkdownToHtml,
+  flattenRichMarkdown,
 } from '../richText'
 
 describe('richText — préservation du gras', () => {
@@ -58,5 +60,42 @@ describe('richText — préservation du gras', () => {
       { text: 'Poids : ', bold: false },
       { text: '18 kg', bold: true },
     ])
+  })
+})
+
+describe('descriptionMarkdownToHtml — structure préservée', () => {
+  it('titres, gras, listes, paragraphes', () => {
+    const md = [
+      '## Le ventilateur sans hélice',
+      '',
+      'Un flux d’air **uniforme** et silencieux.',
+      '',
+      '## Caractéristiques principales :',
+      '',
+      '- Marque : Lifetime Air',
+      '- Couleur : Noir',
+    ].join('\n')
+    expect(descriptionMarkdownToHtml(md)).toBe(
+      '<h4>Le ventilateur sans hélice</h4>' +
+      '<p>Un flux d’air <strong>uniforme</strong> et silencieux.</p>' +
+      '<h4>Caractéristiques principales :</h4>' +
+      '<ul><li>Marque : Lifetime Air</li><li>Couleur : Noir</li></ul>',
+    )
+  })
+
+  it('niveaux de titre : # → h3, ### → h5', () => {
+    expect(descriptionMarkdownToHtml('# Titre')).toBe('<h3>Titre</h3>')
+    expect(descriptionMarkdownToHtml('### Sous-titre')).toBe('<h5>Sous-titre</h5>')
+  })
+
+  it('texte plat : un <p> par bloc, HTML échappé', () => {
+    expect(descriptionMarkdownToHtml('Ligne A\n\nLigne B < C')).toBe('<p>Ligne A</p><p>Ligne B &lt; C</p>')
+  })
+})
+
+describe('flattenRichMarkdown — teaser inline gras conservé', () => {
+  it('retire titres et puces, garde le gras', () => {
+    const md = '## Titre\n\nUn texte **fort**.\n\n- Puce 1\n- Puce 2'
+    expect(flattenRichMarkdown(md)).toBe('Titre Un texte **fort**. Puce 1 Puce 2')
   })
 })

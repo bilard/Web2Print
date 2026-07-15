@@ -184,7 +184,9 @@ export function serializeEnriched(
     // existants sans risque de `**` littéral. La version formatée va dans
     // ai_description_rich (colonne masquée).
     ai_description: data.description ? stripBoldMarkers(data.description) : null,
-    ai_description_rich: data.description && hasBoldMarkers(data.description) ? data.description : null,
+    // Structuré (titres/gras/listes) si dispo, sinon repli sur le plat avec gras inline.
+    ai_description_rich: data.descriptionRich
+      || (data.description && hasBoldMarkers(data.description) ? data.description : null),
     ai_breadcrumb: (data.breadcrumb && data.breadcrumb.length > 0) ? data.breadcrumb.join(' › ') : null,
     ai_advantages: data.advantages.length > 0
       ? data.advantages.map(a => a.group ? `[${a.group}]${a.text}` : a.text).join(' | ')

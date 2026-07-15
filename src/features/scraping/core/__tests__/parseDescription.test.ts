@@ -308,3 +308,47 @@ travaux de perçage et de vissage sur bois, métal et matériaux composites dive
     expect(desc).toContain('Perceuse-visseuse compacte 18V')
   })
 })
+
+import { parseRichDescriptionFromMarkdown } from '../parsers/parseDescription'
+
+describe('parseRichDescriptionFromMarkdown — structure de la source préservée', () => {
+  const MD = `# Ventilateur sans hélice noir
+
+## Le ventilateur de table sans hélice Lifetime Air allie design moderne, sécurité et performance silencieuse.
+
+Grâce à sa conception **sans pales**, il diffuse un flux d'air uniforme tout en étant facile à nettoyer et adapté aux familles.
+
+**Caractéristiques principales :**
+
+- Marque : Lifetime Air
+- Couleur : Noir
+- Puissance : 5 W
+
+## Spécifications techniques
+
+| Tension | 5 V |
+`
+  it('préserve titres (##), sous-titre gras, puces et paragraphe ; coupe aux specs', () => {
+    const rich = parseRichDescriptionFromMarkdown(MD)
+    expect(rich).toContain('## Le ventilateur de table sans hélice Lifetime Air')
+    expect(rich).toContain('**sans pales**')
+    expect(rich).toContain('## Caractéristiques principales :')
+    expect(rich).toContain('- Marque : Lifetime Air')
+    expect(rich).toContain('- Couleur : Noir')
+    // Coupé avant les specs
+    expect(rich).not.toContain('Spécifications')
+    expect(rich).not.toContain('Tension')
+  })
+
+  it('convertit <strong> label en sous-titre', () => {
+    const rich = parseRichDescriptionFromMarkdown(
+      '# Produit\n\n<strong>Points forts :</strong>\n\n- Léger et compact pour un transport facile\n- Autonomie prolongée\n',
+    )
+    expect(rich).toContain('## Points forts :')
+    expect(rich).toContain('- Léger et compact pour un transport facile')
+  })
+
+  it('vide si pas de contenu exploitable', () => {
+    expect(parseRichDescriptionFromMarkdown('# Titre seul\n')).toBe('')
+  })
+})

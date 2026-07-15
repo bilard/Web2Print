@@ -23,11 +23,14 @@ export function deserializeEnrichedFromRow(
 ): DeserializedEnrichment | null {
   if (!row) return null
 
-  // Préfère la version formatée (gras markdown) si présente — la fiche réhydratée
-  // d'un produit sauvegardé conserve ainsi le gras de la source. Repli sur le brut.
-  const description =
-    (typeof row.ai_description_rich === 'string' && row.ai_description_rich) ||
-    (typeof row.ai_description === 'string' ? row.ai_description : '')
+  // `description` = texte brut (champ éditable). `descriptionRich` = version
+  // structurée (titres/gras/listes, markdown) rendue par descriptionMarkdownToHtml —
+  // la fiche réhydratée conserve ainsi la mise en forme de la source.
+  const description = typeof row.ai_description === 'string' ? row.ai_description : ''
+  const descriptionRich =
+    typeof row.ai_description_rich === 'string' && row.ai_description_rich
+      ? row.ai_description_rich
+      : undefined
   const breadcrumbRaw = typeof row.ai_breadcrumb === 'string' ? row.ai_breadcrumb : ''
   const advantagesRaw = typeof row.ai_advantages === 'string' ? row.ai_advantages : ''
   const specsRaw = typeof row.ai_specifications === 'string' ? row.ai_specifications : ''
@@ -177,5 +180,5 @@ export function deserializeEnrichedFromRow(
     llmModel,
   })
 
-  return { product, llmRequest }
+  return { product: { ...product, descriptionRich }, llmRequest }
 }

@@ -11,7 +11,7 @@ import { sanitizeJinaMarkdown, looksLikeBotChallenge } from './markdownSanitize'
 import { extractLongestProseParagraph } from './enrichmentSanitize'
 import { isJunkImageUrl } from './imageFilter'
 export { isJunkImageUrl }
-import { parseDescriptionFromMarkdown as parseDescriptionFromMarkdownExternal } from '@/features/scraping/core/parsers/parseDescription'
+import { parseDescriptionFromMarkdown as parseDescriptionFromMarkdownExternal, parseRichDescriptionFromMarkdown } from '@/features/scraping/core/parsers/parseDescription'
 import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal, extractSpecsFromHtml as extractSpecsFromHtmlExternal, isNonProductRegion } from '@/features/scraping/core/parsers/parseSpecifications'
 import { filterImagesByProductRef } from '@/features/scraping/core/parsers/filterImagesByRef'
 import { parseNamedDocLinks } from '@/features/scraping/core/parsers/parseNamedDocLinks'
@@ -391,7 +391,12 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
     if (mdBreadcrumb.length > 0) breadcrumb = mdBreadcrumb
   }
 
-  return { ...enriched, description, advantages, specifications, variants, documents: cleanedDocuments, breadcrumb }
+  // ── 7. Description RICHE (structure de la source : titres/gras/listes) ──
+  // Version markdown structurée, parallèle à la description plate. Rendue par
+  // descriptionMarkdownToHtml (fiche/catalogue). Absente si pas de structure.
+  const descriptionRich = parseRichDescriptionFromMarkdown(markdownContent) || undefined
+
+  return { ...enriched, description, descriptionRich, advantages, specifications, variants, documents: cleanedDocuments, breadcrumb }
 }
 
 /** Détecte si un texte est principalement du contenu cookie/GDPR (ratio de lignes garbage) */

@@ -375,3 +375,71 @@ export function parseDescriptionFromMarkdown(rawMd: string): string {
 
   return ''
 }
+
+/**
+ * Variante STRUCTURÉE de la description : au lieu d'aplatir en prose, préserve la
+ * mise en forme de la source — titres (`##`..`######`), lignes en gras/`<strong>`
+ * transformées en sous-titres, listes à puces, paragraphes. Le résultat est du
+ * markdown structuré (rendu ensuite par `descriptionMarkdownToHtml`).
+ *
+ * Région = du H1 (nom produit, exclu) jusqu'à la première section NON descriptive
+ * (specs, téléchargements, FAQ, avis, CGV…). Lignes bruit/garbage/images/URLs
+ * filtrées. Retourne '' si trop court → l'appelant retombe sur la version plate.
+ */
+export function parseRichDescriptionFromMarkdown(rawMd: string): string {
+  const md = stripReviewBlocks(rawMd)
+  const lines = md.split('\n')
+  // Sections qui terminent la description (on s'arrête AVANT).
+  const stopSection = /sp[eé]cification|descriptif\s*technique|donn[eé]es?\s*technique|fiche\s*technique|t[eé]l[eé]chargement|downloads?|documents?|r[eé]f[eé]rences?|variantes?|accessoires?|avis|reviews?|galerie|vid[eé]os?|questions?|faq|contact|dimensions?\s*et|table\s*des?\s*mati[eè]res|garantie|conditions\s*g[eé]n[eé]rales|livraison|paiement/i
+  const faqQuestion = /^(quelle?|comment|est[-\s]?(?:il|ce)|pourquoi|o[uù]\b|quand|combien|peut[-\s]on|faut[-\s]il|dois[-\s]je)/i
+  const unlink = (s: string) => s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+
+  const out: string[] = []
+  let started = false
+  let chars = 0
+  const pushBlank = () => { if (out.length && out[out.length - 1] !== '') out.push('') }
+
+  for (const raw of lines) {
+    if (chars > 3000 || out.length > 80) break
+    const t = raw.trim()
+    if (/^#\s/.test(t)) { started = true; continue } // H1 = nom produit → début (exclu)
+    if (!started) continue
+    if (!t) { pushBlank(); continue }
+
+    // Sous-titre markdown
+    const h = t.match(/^(#{2,6})\s+(.+?)\s*$/)
+    if (h) {
+      const txt = stripBoldMarkers(htmlBoldToMarkers(h[2]))
+      if (stopSection.test(txt) || faqQuestion.test(txt)) break
+      const line = `## ${normalizeBoldMarkers(unlink(h[2]))}`
+      out.push(line); chars += line.length; continue
+    }
+    // Ligne entièrement en gras = libellé/sous-titre (ex. **Caractéristiques principales :**)
+    const boldOnly = t.match(/^\*\*(.+?)\*\*\s*$/) || t.match(/^<(?:strong|b)>(.+?)<\/(?:strong|b)>\s*:?\s*$/i)
+    if (boldOnly) {
+      const txt = boldOnly[1].trim()
+      if (stopSection.test(txt) || faqQuestion.test(txt)) break
+      const line = `## ${stripBoldMarkers(txt)}`
+      out.push(line); chars += line.length; continue
+    }
+    // Puce
+    const bullet = t.match(/^[-*•·▪●◦▶]\s+(.+)$/)
+    if (bullet) {
+      const item = bullet[1].trim()
+      if (isGarbageContent(item) || /^https?:\/\//.test(item) || /^!\[/.test(item)) continue
+      if (/\s[|#]{1,2}\s*https?:\/\//.test(item)) continue
+      const line = `- ${normalizeBoldMarkers(unlink(item))}`
+      out.push(line); chars += line.length; continue
+    }
+    // Paragraphe de prose
+    if (isGarbageContent(t)) continue
+    if (/^!\[/.test(t) || /^\[.*\]\(.*\)$/.test(t) || /^https?:\/\//.test(t) || /^\|/.test(t)) continue
+    if (METADATA_LINE_RE.test(t) || WIDGET_NOISE_RE.test(t)) continue
+    if (/\s[|#]{1,2}\s*https?:\/\//.test(t) || /https?:\/\/\S+/.test(t)) continue
+    const line = normalizeBoldMarkers(unlink(t))
+    out.push(line); chars += line.length
+  }
+
+  const result = out.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+  return stripBoldMarkers(result).length >= 40 ? result : ''
+}

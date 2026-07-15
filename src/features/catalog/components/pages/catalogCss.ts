@@ -372,6 +372,12 @@ export const CATALOG_CSS = `
   text-transform:uppercase; color:var(--cat-name-ink,inherit);
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .cat-cell-desc { font-family:var(--cat-font-desc,var(--cat-font-b)); font-size:calc(11px * var(--cat-s-desc,1) * ${F}); color:var(--cat-desc-ink,inherit); opacity:var(--cat-desc-op,.7); line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:pre-line; }
+/* Description STRUCTURÉE de la source (titres/gras/listes préservés). */
+.cat-cell-desc strong { font-weight:700; }
+.cat-cell-desc h3, .cat-cell-desc h4, .cat-cell-desc h5, .cat-cell-desc h6 { font-family:var(--cat-font-h,var(--cat-font-b)); font-weight:800; margin:.5em 0 .18em; line-height:1.2; opacity:1; }
+.cat-cell-desc h3 { font-size:1.18em; } .cat-cell-desc h4 { font-size:1.06em; } .cat-cell-desc h5, .cat-cell-desc h6 { font-size:1em; }
+.cat-cell-desc p { margin:0 0 .42em; } .cat-cell-desc p:last-child { margin-bottom:0; }
+.cat-cell-desc ul { margin:.2em 0 .45em; padding-left:1.15em; list-style:disc; } .cat-cell-desc li { margin:.05em 0; }
 .cat-cell-details { display:flex; flex-direction:column; gap:1px; margin-top:4px;
   background:var(--cat-details-bg,rgba(127,127,127,.06)); border-radius:4px; padding:3px 7px;
   font-family:var(--cat-font-details,var(--cat-font-b)); font-size:calc(9px * var(--cat-s-details,1) * ${F});
