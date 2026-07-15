@@ -173,7 +173,7 @@ export const MODULES = [
       },
       {
         "title": "2 · Claves IA — obligatorio",
-        "desc": "Introduce al menos una clave API entre Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi u OpenRouter, y pruébala. Mientras no se introduzca ninguna clave válida, el botón Siguiente permanece desactivado («Introduce al menos una clave LLM»)."
+        "desc": "Renseigne au moins une clé API parmi Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi, GLM (Z.ai) ou OpenRouter, puis teste-la."
       },
       {
         "title": "3 · Modelos y cascada",
@@ -193,7 +193,7 @@ export const MODULES = [
       },
       {
         "title": "Botón «Actualizar todos los LLM»",
-        "desc": "Presente en el asistente y en la pestaña IA de los Ajustes, selecciona el último modelo estrella de cada proveedor (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter)."
+        "desc": "Présent dans l'assistant et dans l'onglet IA des Réglages, il sélectionne le dernier modèle phare de chaque fournisseur (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter)."
       }
     ],
     "shortcuts": []
@@ -1852,7 +1852,7 @@ export const MODULES = [
       },
       {
         "title": "Pestaña IA — claves y modelos",
-        "desc": "• Introduce las claves API de cada proveedor (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter) y pruébalas con un clic. • Elige el modelo de cada proveedor."
+        "desc": "• Renseigne les clés API de chaque fournisseur (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter) et teste-les d'un clic. • Choisis le modèle de chaque fournisseur."
       },
       {
         "title": "Presupuestos IA y proxy de servidor",

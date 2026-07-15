@@ -173,7 +173,7 @@ export const MODULES = [
       },
       {
         "title": "2 · KI-Schlüssel — erforderlich",
-        "desc": "Geben Sie mindestens einen API-Schlüssel unter Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi oder OpenRouter ein und testen Sie ihn. Solange kein gültiger Schlüssel eingegeben ist, bleibt die Schaltfläche Weiter deaktiviert („Geben Sie mindestens einen LLM-Schlüssel ein“)."
+        "desc": "Renseigne au moins une clé API parmi Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi, GLM (Z.ai) ou OpenRouter, puis teste-la."
       },
       {
         "title": "3 · Modelle & Kaskade",
@@ -193,7 +193,7 @@ export const MODULES = [
       },
       {
         "title": "Schaltfläche „Alle LLM aktualisieren“",
-        "desc": "Sie ist im Assistenten und im Tab KI der Einstellungen vorhanden und wählt das neueste Flaggschiff-Modell jedes Anbieters aus (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter)."
+        "desc": "Présent dans l'assistant et dans l'onglet IA des Réglages, il sélectionne le dernier modèle phare de chaque fournisseur (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter)."
       }
     ],
     "shortcuts": []
@@ -1852,7 +1852,7 @@ export const MODULES = [
       },
       {
         "title": "Tab KI — Schlüssel und Modelle",
-        "desc": "• Geben Sie die API-Schlüssel jedes Anbieters ein (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter) und testen Sie sie mit einem Klick. • Wählen Sie das Modell jedes Anbieters."
+        "desc": "• Renseigne les clés API de chaque fournisseur (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter) et teste-les d'un clic. • Choisis le modèle de chaque fournisseur."
       },
       {
         "title": "KI-Budgets und Server-Proxy",

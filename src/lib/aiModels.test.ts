@@ -27,7 +27,7 @@ describe('aiModels catalog', () => {
     expect(getDefaultModel('deepseek').id).toBe('deepseek-chat')
     expect(getDefaultModel('qwen').id).toBe('qwen3.7-max')
     expect(getDefaultModel('kimi').id).toBe('kimi-k2.6')
-    expect(getDefaultModel('glm').id).toBe('glm-5.1')
+    expect(getDefaultModel('glm').id).toBe('glm-5.2')
     expect(getDefaultModel('openrouter').id).toBe('openrouter/auto')
   })
 

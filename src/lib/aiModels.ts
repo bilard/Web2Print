@@ -55,7 +55,8 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
   ],
   // Z.ai — GLM (endpoint OpenAI-compatible). Pricing calqué sur le seed OpenRouter z-ai/*.
   glm: [
-    { id: 'glm-5.1',       label: 'GLM 5.1',       pricing: { input: 1.05, output: 3.50 }, isDefault: true },
+    { id: 'glm-5.2',       label: 'GLM 5.2',       pricing: { input: 1.10, output: 3.70 }, isDefault: true },
+    { id: 'glm-5.1',       label: 'GLM 5.1',       pricing: { input: 1.05, output: 3.50 } },
     { id: 'glm-4.7',       label: 'GLM 4.7',       pricing: { input: 0.38, output: 1.74 } },
     { id: 'glm-4.5-air',   label: 'GLM 4.5 Air',   pricing: { input: 0,    output: 0 } },
   ],
@@ -118,6 +119,7 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'mistralai/codestral-2508',                 label: 'Codestral 2508',                             pricing: { input: 0.30, output: 0.90 } },
 
     // Z.ai — GLM
+    { id: 'z-ai/glm-5.2',                             label: 'GLM 5.2',                                    pricing: { input: 1.10, output: 3.70 } },
     { id: 'z-ai/glm-5.1',                             label: 'GLM 5.1',                                    pricing: { input: 1.05, output: 3.50 } },
     { id: 'z-ai/glm-4.7',                             label: 'GLM 4.7',                                    pricing: { input: 0.38, output: 1.74 } },
     { id: 'z-ai/glm-4.5-air:free',                    label: 'GLM 4.5 Air (free)',                         pricing: { input: 0,    output: 0 } },
