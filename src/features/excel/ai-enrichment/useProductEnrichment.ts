@@ -4079,6 +4079,7 @@ async function enrichProductCoreInner(
           //    contient. Si la description manque, on retente jinaScrapeMarkdown et on
           //    garde la version qui a la prose (les specs des deux se fusionnent en aval).
           console.log('[desc-debug] après scrape principal:', {
+            url: productUrl,
             mdLen: markdownContent?.length ?? 0,
             deepHasDesc: parseDescriptionFromMarkdown(markdownContent || '').length,
           })
@@ -4086,6 +4087,7 @@ async function enrichProductCoreInner(
             try {
               const simpleMd = await jinaScrapeMarkdown(productUrl)
               console.log('[desc-debug] repli GET simple:', {
+                url: productUrl,
                 simpleMdLen: simpleMd?.length ?? 0,
                 simpleHasDesc: simpleMd ? parseDescriptionFromMarkdown(simpleMd).length : 0,
               })
