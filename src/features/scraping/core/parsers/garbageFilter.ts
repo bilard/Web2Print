@@ -16,10 +16,18 @@ const LEGAL_ACCOUNT_RE = /d[eé]faut\s+de\s+conformit[eé]|lettre\s+recommand[e�
  *  réelle Trafic : la synthèse LLM les recrachait en avantages/description. */
 const STORE_REASSURANCE_RE = /laissez-vous\s+s[eé]duire|choix\s+impressionnant|collections\s+exclusives|meilleurs\s+prix\s+garantis|exp[eé]rience\s+chaleureuse|qualit[eé]\s+test[eé]e\s+et\s+valid[eé]e|nos\s+\d+\s+promesses|skip\s+to\s+the\s+(?:beginning|end)\s+of\s+the\s+images\s+gallery/i
 
+/** PIED DE PAGE / mentions légales / newsletter / infos société (Trafic/Magento) :
+ *  « M'abonner », « TVA / n° FR08383139458 / BE 0866517727 », raison sociale
+ *  (S.A., SARL, SAS…), adresses postales, nav (« Accès rapide », « Plus
+ *  d'information »), réassurance (« Faites confiance »). GÉNÉRIQUE — signaux de
+ *  footer société, jamais de description produit. Sans lui, le parseur PIM
+ *  choisissait le footer comme description sur la démo. */
+const FOOTER_COMPANY_RE = /m['’]abonner|s['’]abonner|abonnez[- ]vous|\bTVA\b|num[eé]ro\s+de\s+tva|\b(?:FR|BE|LU|NL|DE|IT|ES|CH)\s?\d{9,12}\b|\bRCS\b|\bSIRE[NT]\b|\bS\.A\.(?:S\.?)?\b|\bSARL\b|\bSASU?\b|\bEURL\b|acc[eè]s\s+rapide|plus\s+d['’]informations?|faites\s+confiance|\b\d{4,5}\s+[A-ZÀ-Ÿ][a-zà-ÿ]{2,}[^\n]{0,40}\b(?:France|Belgique|Belgium|Luxembourg|Suisse|Nederland|Deutschland|España|Italia)\b/i
+
 /** Détecte si un texte est du contenu parasite (cookie banner, GDPR, reCAPTCHA,
- *  prose CGV, UI compte client, placeholder de template). */
+ *  prose CGV, UI compte client, footer société, placeholder de template). */
 export function isGarbageContent(text: string): boolean {
-  return GARBAGE_RE.test(text) || LEGAL_ACCOUNT_RE.test(text) || STORE_REASSURANCE_RE.test(text)
+  return GARBAGE_RE.test(text) || LEGAL_ACCOUNT_RE.test(text) || STORE_REASSURANCE_RE.test(text) || FOOTER_COMPANY_RE.test(text)
 }
 
 /** Renvoie true si > 30 % des lignes non-vides du texte sont du garbage. */

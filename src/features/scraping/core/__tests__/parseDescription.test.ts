@@ -395,3 +395,35 @@ Rafraîchissez votre espace en toute discrétion avec ce ventilateur sans pales 
     expect(rich).toContain('- Couleur : Noir')
   })
 })
+
+describe('parseRichDescriptionFromMarkdown — footer société/newsletter écarté (Trafic)', () => {
+  const MD = `# Ventilateur sans hélice noir
+
+Plus d'information| Référence Trafic | 1168214 |
+
+- Faites confiance
+- Profitez
+- Vivez
+
+M'abonner
+
+TRAFINTER (FR) FR08383139458
+
+(Rue Jean Jaures, n°225, 59243 Quarouble, France)
+
+SOGESMA S.A. BE 0866517727
+
+Rafraîchissez votre espace en toute discrétion avec ce ventilateur sans pales silencieux et design, utilisable sans fil et doté d'un éclairage d'ambiance.
+
+## Caractéristiques principales :
+
+- Couleur : Noir
+- Puissance : 5 W
+`
+  it('exclut footer/newsletter/mentions légales, garde la vraie description', () => {
+    const rich = parseRichDescriptionFromMarkdown(MD)
+    expect(rich).toContain('Rafraîchissez votre espace en toute discrétion')
+    expect(rich).toContain('## Caractéristiques principales :')
+    expect(rich).not.toMatch(/M['’]abonner|TRAFINTER|SOGESMA|FR08383139458|Faites confiance|Plus d'information/i)
+  })
+})
