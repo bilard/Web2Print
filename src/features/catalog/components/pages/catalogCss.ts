@@ -434,6 +434,10 @@ export const CATALOG_CSS = `
    rendent en LIGNES lisibles au lieu d'un pavé aux retours écrasés. */
 .cat-free .cat-cell-details span { -webkit-line-clamp:unset; display:block; overflow:visible; white-space:pre-line; }
 .cat-free .cat-cell-desc { -webkit-line-clamp:unset; display:block; overflow:visible; }
+/* Nom en disposition libre : sortir du -webkit-box (line-clamp) — html2canvas le
+   ROGNE (bas des glyphes de la police condensée coupé). En pleine page il y a la
+   place, on passe en block sans clamp ni overflow. */
+.cat-free .cat-cell-name { -webkit-line-clamp:unset; display:block; overflow:visible; }
 /* Description sur 2 COLONNES : deux moitiés équilibrées rendues en flex (pas de
    CSS columns — html2canvas ne les supporte pas, l'export doit égaler l'aperçu). */
 .cat-free .cat-cell-desc.cat-desc-cols { display:flex; gap:16px; }
@@ -458,7 +462,7 @@ export const CATALOG_CSS = `
 .cat-cell-was { display:inline-block; background:var(--cat-was-bg,var(--cat-head-bg)); color:var(--cat-was-ink,var(--cat-head-ink)); font-size:calc(10px * var(--cat-s-price,1) * ${F});
   font-family:var(--cat-font-price,var(--cat-font-b)); font-weight:700; text-decoration:line-through; padding:3px 9px 2px; border-radius:4px 4px 0 0; white-space:nowrap; }
 .cat-cell-price { display:inline-block; background:var(--cat-price-bg,var(--cat-accent)); color:var(--cat-price-ink,#fff); font-family:var(--cat-font-price,var(--cat-font-h));
-  font-weight:800; font-size:calc(18px * var(--cat-s-price,1) * ${F}); line-height:1.12; padding:6px 12px 7px; border-radius:4px; white-space:nowrap; }
+  font-weight:800; font-size:calc(18px * var(--cat-s-price,1) * ${F}); line-height:1.4; padding:5px 12px 6px; border-radius:4px; white-space:nowrap; }
 .cat-cell-was + .cat-cell-price { border-radius:4px 0 4px 4px; }
 
 /* Tailles graduées (span issu du packing : prix élevé/vedette = carte plus grande) */
