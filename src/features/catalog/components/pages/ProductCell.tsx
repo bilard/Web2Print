@@ -58,6 +58,7 @@ function splitBalanced(text: string): [string, string] {
 }
 
 const _descLogged = new Set<string>()
+const _descMeasured = new Set<string>()
 /** HTML de description ROBUSTE : le rich (colonne `text_rich`, sujet aux
  *  round-trips Firestore / sérialisations) ne doit JAMAIS masquer un plain
  *  valide s'il rend un HTML vide ou cassé (« [object Object] »). Repli
@@ -89,6 +90,22 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
     if (!card) return
     const run = () => applyMagneticFlow(card, cs, wide)
     run()
+    // DEBUG description invisible : mesure RÉELLE du bloc description après flux.
+    const dbgKey = f.name || f.ref || ''
+    if (dbgKey && !_descMeasured.has(dbgKey)) {
+      _descMeasured.add(dbgKey)
+      requestAnimationFrame(() => {
+        const el = card.querySelector<HTMLElement>('[data-object-id="description"] .cat-cell-desc')
+        const o = card.querySelector<HTMLElement>('[data-object-id="description"]')
+        if (!el || !o) { console.log(`[desc-debug] measure "${dbgKey.slice(0, 24)}" AUCUN bloc description dans le DOM`); return }
+        const r = el.getBoundingClientRect(), csx = getComputedStyle(el)
+        console.log(
+          `[desc-debug] measure "${dbgKey.slice(0, 24)}" descH=${Math.round(r.height)} descW=${Math.round(r.width)}`
+          + ` color=${csx.color} opacity=${csx.opacity} display=${csx.display}`
+          + ` objTop=${o.style.top} objMaxH=${o.style.maxHeight || '(none)'} txt=${JSON.stringify(el.textContent?.slice(0, 30) ?? '')}`,
+        )
+      })
+    }
     // Les mesures bougent APRÈS ce rendu : polices chargées (métriques des
     // fallbacks ≠ police finale) et redimensionnements — re-dérouler le moteur,
     // sinon les positions restent calées sur des hauteurs périmées (superpositions).
