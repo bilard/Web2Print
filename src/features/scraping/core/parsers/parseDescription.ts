@@ -444,21 +444,21 @@ export function parseRichDescriptionFromMarkdown(rawMd: string): string {
     }
   }
 
+  // PAS de repli glouton : si le moteur PIM n'a pas localisé la région propre,
+  // on renonce à la version structurée → le rendu retombe sur la description
+  // PLATE propre du PIM. `descriptionRich` n'est donc JAMAIS pire que le PIM
+  // (jamais de footer/newsletter/mentions légales ramassés à l'aveugle).
+  if (anchorIdx < 0) return ''
+
   const out: string[] = []
-  // Démarrage : à l'ancre du moteur PIM si trouvée (skip login/nav en amont),
-  // sinon repli sur le 1er H1 (comportement historique).
-  let started = anchorIdx >= 0
   let chars = 0
   // true après un titre « compte/connexion » → ses puces (statut, suivi…) sont sautées.
   let inAccountBlock = false
   const pushBlank = () => { if (out.length && out[out.length - 1] !== '') out.push('') }
 
-  for (let i = 0; i < lines.length; i++) {
+  for (let i = startIdx; i < lines.length; i++) {
     if (chars > 3000 || out.length > 80) break
-    if (anchorIdx >= 0 && i < startIdx) continue // avant la région ancrée = boilerplate, ignoré
     const t = lines[i].trim()
-    if (anchorIdx < 0 && /^#\s/.test(t)) { started = true; continue } // H1 = nom produit → début (exclu)
-    if (!started) continue
     if (!t) { pushBlank(); continue }
 
     // Sous-titre markdown

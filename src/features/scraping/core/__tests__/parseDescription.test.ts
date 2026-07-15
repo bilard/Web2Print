@@ -340,9 +340,9 @@ Grâce à sa conception **sans pales**, il diffuse un flux d'air uniforme tout e
     expect(rich).not.toContain('Tension')
   })
 
-  it('convertit <strong> label en sous-titre', () => {
+  it('convertit <strong> label en sous-titre (ancré sur la prose du moteur PIM)', () => {
     const rich = parseRichDescriptionFromMarkdown(
-      '# Produit\n\n<strong>Points forts :</strong>\n\n- Léger et compact pour un transport facile\n- Autonomie prolongée\n',
+      '# Produit\n\nCe produit compact et robuste est idéal pour un usage nomade au quotidien.\n\n<strong>Points forts :</strong>\n\n- Léger et compact pour un transport facile\n- Autonomie prolongée\n',
     )
     expect(rich).toContain('## Points forts :')
     expect(rich).toContain('- Léger et compact pour un transport facile')
@@ -350,6 +350,13 @@ Grâce à sa conception **sans pales**, il diffuse un flux d'air uniforme tout e
 
   it('vide si pas de contenu exploitable', () => {
     expect(parseRichDescriptionFromMarkdown('# Titre seul\n')).toBe('')
+  })
+
+  it('PAS de repli glouton : sans prose localisable par le moteur PIM → vide (le rendu retombe sur le plat)', () => {
+    // Uniquement un titre + puces, aucun paragraphe → le moteur PIM ne renvoie
+    // rien d'exploitable → on renonce à la version structurée (jamais de footer
+    // ramassé à l'aveugle).
+    expect(parseRichDescriptionFromMarkdown('# Produit\n\n**Points forts :**\n\n- Léger\n- Compact\n')).toBe('')
   })
 })
 
