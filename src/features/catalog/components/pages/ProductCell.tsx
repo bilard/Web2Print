@@ -57,8 +57,6 @@ function splitBalanced(text: string): [string, string] {
   return [units.slice(0, idx).join(sep).trim(), units.slice(idx).join(sep).trim()]
 }
 
-const _descLogged = new Set<string>()
-const _descMeasured = new Set<string>()
 /** HTML de description ROBUSTE : le rich (colonne `text_rich`, sujet aux
  *  round-trips Firestore / sérialisations) ne doit JAMAIS masquer un plain
  *  valide s'il rend un HTML vide ou cassé (« [object Object] »). Repli
@@ -90,22 +88,6 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
     if (!card) return
     const run = () => applyMagneticFlow(card, cs, wide)
     run()
-    // DEBUG description invisible : mesure RÉELLE du bloc description après flux.
-    const dbgKey = f.name || f.ref || ''
-    if (dbgKey && !_descMeasured.has(dbgKey)) {
-      _descMeasured.add(dbgKey)
-      requestAnimationFrame(() => {
-        const el = card.querySelector<HTMLElement>('[data-object-id="description"] .cat-cell-desc')
-        const o = card.querySelector<HTMLElement>('[data-object-id="description"]')
-        if (!el || !o) { console.log(`[desc-debug] measure "${dbgKey.slice(0, 24)}" AUCUN bloc description dans le DOM`); return }
-        const r = el.getBoundingClientRect(), csx = getComputedStyle(el)
-        console.log(
-          `[desc-debug] measure "${dbgKey.slice(0, 24)}" descH=${Math.round(r.height)} descW=${Math.round(r.width)}`
-          + ` color=${csx.color} opacity=${csx.opacity} display=${csx.display}`
-          + ` objTop=${o.style.top} objMaxH=${o.style.maxHeight || '(none)'} txt=${JSON.stringify(el.textContent?.slice(0, 30) ?? '')}`,
-        )
-      })
-    }
     // Les mesures bougent APRÈS ce rendu : polices chargées (métriques des
     // fallbacks ≠ police finale) et redimensionnements — re-dérouler le moteur,
     // sinon les positions restent calées sur des hauteurs périmées (superpositions).
@@ -187,15 +169,6 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
           flex (pas de CSS columns — html2canvas ne les supporte pas à l'export). */}
       {show('showDesc') && (() => {
         const { html, usedRich } = pickDescHtml(f.descriptionRich, f.description)
-        const logKey = f.name || f.ref || ''
-        if (logKey && !_descLogged.has(logKey)) {
-          _descLogged.add(logKey)
-          console.log(
-            `[desc-debug] cell "${logKey.slice(0, 28)}" descLen=${(f.description ?? '').length}`
-            + ` richLen=${(f.descriptionRich ?? '').length} htmlLen=${html.length} usedRich=${usedRich}`
-            + ` richPrev=${JSON.stringify((f.descriptionRich ?? '').slice(0, 60))}`,
-          )
-        }
         if (!html) return null
         if (cardStyle?.descColumns === 2) {
           const [a, b] = splitBalanced((usedRich ? f.descriptionRich : f.description) || '')

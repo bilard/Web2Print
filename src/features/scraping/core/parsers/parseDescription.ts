@@ -420,6 +420,14 @@ export function parseRichDescriptionFromMarkdown(rawMd: string): string {
 
   // Sections qui terminent la description (on s'arrête AVANT).
   const stopSection = /sp[eé]cification|descriptif\s*technique|donn[eé]es?\s*technique|fiche\s*technique|t[eé]l[eé]chargement|downloads?|documents?|r[eé]f[eé]rences?|variantes?|accessoires?|avis|reviews?|galerie|vid[eé]os?|questions?|faq|contact|dimensions?\s*et|table\s*des?\s*mati[eè]res|garantie|conditions\s*g[eé]n[eé]rales|livraison|paiement/i
+  // Titre d'une SECTION DE SPECS (tableau nom/valeur rendu séparément) : on s'arrête
+  // AVANT pour ne pas DUPLIQUER le tableau de caractéristiques dans la prose. Seul le
+  // titre NU (« Caractéristiques », « Caractéristiques techniques », « Fiche technique »)
+  // = specs ; « Caractéristiques PRINCIPALES / du produit / générales » = prose
+  // descriptive (conservée, non matchée). GÉNÉRIQUE, jamais par-vendeur.
+  const specTableHeading = /^(?:caract[eé]ristiques(?:\s+techniques)?|fiche\s+technique)\s*:?\s*$/i
+  // Expander UI e-commerce (« Voir plus », « Lire la suite »…) happé dans le markdown.
+  const uiExpander = /^(?:voir\s+(?:plus|moins|tout|toutes?|les?\b)|lire\s+(?:la\s+suite|plus|moins)|afficher\s+(?:plus|moins|tout)|(?:show|read)\s+(?:more|less))\b/i
   const faqQuestion = /^(quelle?|comment|est[-\s]?(?:il|ce)|pourquoi|o[uù]\b|quand|combien|peut[-\s]on|faut[-\s]il|dois[-\s]je)/i
   // UI compte / connexion / commande (boilerplate Magento & e-commerce, GÉNÉRIQUE) :
   // « Commander en tant que nouveau client », « Connexion », « Adresse e-mail »,
@@ -465,7 +473,7 @@ export function parseRichDescriptionFromMarkdown(rawMd: string): string {
     const h = t.match(/^(#{2,6})\s+(.+?)\s*$/)
     if (h) {
       const txt = stripBoldMarkers(htmlBoldToMarkers(h[2]))
-      if (stopSection.test(txt) || faqQuestion.test(txt)) break
+      if (stopSection.test(txt) || specTableHeading.test(txt) || faqQuestion.test(txt)) break
       if (accountUi.test(txt)) { inAccountBlock = true; continue } // saute le titre login + ses puces
       inAccountBlock = false
       const line = `## ${normalizeBoldMarkers(unlink(h[2]))}`
@@ -475,7 +483,7 @@ export function parseRichDescriptionFromMarkdown(rawMd: string): string {
     const boldOnly = t.match(/^\*\*(.+?)\*\*\s*$/) || t.match(/^<(?:strong|b)>(.+?)<\/(?:strong|b)>\s*:?\s*$/i)
     if (boldOnly) {
       const txt = boldOnly[1].trim()
-      if (stopSection.test(txt) || faqQuestion.test(txt)) break
+      if (stopSection.test(txt) || specTableHeading.test(txt) || faqQuestion.test(txt)) break
       if (accountUi.test(txt)) { inAccountBlock = true; continue }
       inAccountBlock = false
       const line = `## ${stripBoldMarkers(txt)}`
@@ -486,6 +494,7 @@ export function parseRichDescriptionFromMarkdown(rawMd: string): string {
     if (bullet) {
       const item = bullet[1].trim()
       if (inAccountBlock || accountUi.test(item)) continue // puces du bloc login
+      if (uiExpander.test(item)) continue
       if (isGarbageContent(item) || /^https?:\/\//.test(item) || /^!\[/.test(item)) continue
       if (/\s[|#]{1,2}\s*https?:\/\//.test(item)) continue
       const line = `- ${normalizeBoldMarkers(unlink(item))}`
@@ -494,6 +503,7 @@ export function parseRichDescriptionFromMarkdown(rawMd: string): string {
     // Paragraphe de prose
     inAccountBlock = false
     if (accountUi.test(t)) continue // « Adresse e-mail », « Connexion », etc.
+    if (uiExpander.test(t)) continue // « Voir plus », « Lire la suite »…
     if (isGarbageContent(t)) continue
     if (/^!\[/.test(t) || /^\[.*\]\(.*\)$/.test(t) || /^https?:\/\//.test(t) || /^\|/.test(t)) continue
     if (METADATA_LINE_RE.test(t) || WIDGET_NOISE_RE.test(t)) continue

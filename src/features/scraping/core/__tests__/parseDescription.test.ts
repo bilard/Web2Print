@@ -358,6 +358,29 @@ Grâce à sa conception **sans pales**, il diffuse un flux d'air uniforme tout e
     // ramassé à l'aveugle).
     expect(parseRichDescriptionFromMarkdown('# Produit\n\n**Points forts :**\n\n- Léger\n- Compact\n')).toBe('')
   })
+
+  it('coupe la section de specs NUE « Caractéristiques » (doublon du tableau) et saute « Voir plus » (Jardiland)', () => {
+    const MD = `# Tondeuse électrique RLM13E33S
+
+Optimisez la tonte de votre pelouse jusqu'à 300 m² avec la Tondeuse électrique RLM13E33S de Ryobi, dotée d'un puissant moteur de 1300 W assurant une coupe précise de 33 cm de large.
+
+Voir plus
+
+## Caractéristiques
+
+- Hauteur du produit : 38 cm
+- Largeur du produit : 68 cm
+- Poids du produit non packagé : 9 kg
+`
+    const rich = parseRichDescriptionFromMarkdown(MD)
+    expect(rich).toContain('Optimisez la tonte')
+    // La liste de specs (doublon du tableau) est coupée…
+    expect(rich).not.toContain('Caractéristiques')
+    expect(rich).not.toContain('Hauteur du produit')
+    expect(rich).not.toContain('68 cm')
+    // …et l'expander UI est écarté.
+    expect(rich).not.toContain('Voir plus')
+  })
 })
 
 describe('parseRichDescriptionFromMarkdown — bloc login/compte Magento exclu', () => {
