@@ -177,6 +177,38 @@ function parseBreadcrumbFromMarkdown(md: string): string[] {
  * Le markdown est la SOURCE DE VÉRITÉ pour les groupes, les items manquants et les variantes.
  * Le LLM retourne tout à plat — le markdown conserve la structure d'origine.
  */
+
+/**
+ * Finalise la DESCRIPTION (plate + riche) — logique UNIQUE partagée par TOUS les
+ * chemins de retour d'enrichProductCore (direct-build ET post-process markdown).
+ *   1. JSON-LD (`__lastStructured.description`) prioritaire s'il est propre.
+ *   2. Repli GARANTI sur le parseur markdown robuste si la description est vide.
+ *   3. `descriptionRich` dérivée du JSON-LD (structuré) ou du markdown.
+ * Sans ce partage, le direct-build (sites JSON-LD riches) court-circuitait la
+ * description → fiches sans description.
+ */
+function finalizeDescription(current: string, markdownContent: string | null): { description: string; descriptionRich: string | undefined } {
+  let description = (current || '').trim()
+  // Une description candidate garbage (indice, réassurance, footer…) est vidée
+  // pour déclencher le repli markdown robuste plus bas.
+  if (description && (isGarbageContent(description) || looksLikeBotChallenge(description))) description = ''
+  let descriptionRich: string | undefined
+  const structuredDesc = (globalThis as unknown as { __lastStructured?: StructuredProductData | null })
+    .__lastStructured?.description
+  if (structuredDesc && structuredDesc.trim().length > 50
+      && !looksLikeBotChallenge(structuredDesc) && !isGarbageContent(structuredDesc)) {
+    const proseOnly = stripTrailingSpecList(structuredDesc)
+    const clean = proseOnly.replace(/\t/g, '').replace(/\n{3,}/g, '\n\n').trim()
+    if (clean.length >= 30) { description = clean; descriptionRich = structuredPlainToRichMarkdown(proseOnly) }
+  }
+  if ((!description || description.length < 30) && markdownContent) {
+    const md = parseDescriptionFromMarkdown(markdownContent)
+    if (md && md.length >= 30) description = md
+  }
+  if (!descriptionRich) descriptionRich = parseRichDescriptionFromMarkdown(markdownContent || '') || undefined
+  return { description, descriptionRich }
+}
+
 function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: string | null): EnrichedProduct {
   if (!markdownContent || markdownContent.length < 100) {
     console.log('[post-process] no markdown content, skipping')
@@ -398,28 +430,9 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
   // SPA Magento (selon l'état : vrai texte, mur cookies, erreur panier, footer).
   // Quand il est présent et propre, il prime pour la version PLATE et la version
   // RICHE (structure dérivée de sa mise en forme JSON-LD). Sinon, repli markdown.
-  const structuredDesc = (globalThis as unknown as { __lastStructured?: StructuredProductData | null })
-    .__lastStructured?.description
-  let descriptionRich: string | undefined
-  // 1) JSON-LD prioritaire s'il est PRÉSENT ET PROPRE (pas un challenge, pas du
-  //    garbage type indice de réparabilité). Retire la liste de specs finale.
-  if (structuredDesc && structuredDesc.trim().length > 50
-      && !looksLikeBotChallenge(structuredDesc) && !isGarbageContent(structuredDesc)) {
-    const proseOnly = stripTrailingSpecList(structuredDesc)
-    const clean = proseOnly.replace(/\t/g, '').replace(/\n{3,}/g, '\n\n').trim()
-    if (clean.length >= 30) { description = clean; descriptionRich = structuredPlainToRichMarkdown(proseOnly) }
-  }
-  // 2) REPLI GARANTI (toujours, pas seulement quand le JSON-LD manque) : si la
-  //    description est encore vide/trop courte, la prendre dans le markdown robuste
-  //    — indispensable sur les sites anti-bot (Jardiland) où le JSON-LD n'arrive pas.
-  if ((!description || description.trim().length < 30) && markdownContent) {
-    const md = parseDescriptionFromMarkdown(markdownContent)
-    if (md && md.length >= 30) description = md
-  }
-  // 3) Version RICHE : dérivée du markdown si pas déjà obtenue du JSON-LD.
-  if (!descriptionRich) descriptionRich = parseRichDescriptionFromMarkdown(markdownContent) || undefined
+  const { description: finalDescription, descriptionRich } = finalizeDescription(description, markdownContent)
 
-  return { ...enriched, description, descriptionRich, advantages, specifications, variants, documents: cleanedDocuments, breadcrumb }
+  return { ...enriched, description: finalDescription, descriptionRich, advantages, specifications, variants, documents: cleanedDocuments, breadcrumb }
 }
 
 /** Détecte si un texte est principalement du contenu cookie/GDPR (ratio de lignes garbage) */
@@ -4720,12 +4733,18 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             inputReference: reference ?? sku,
           })
 
+          // Description : logique UNIQUE partagée (JSON-LD propre → repli markdown
+          // garanti → descriptionRich). Sans ça, ce chemin direct-build (sites
+          // JSON-LD riches type Jardiland) sortait sans description ni version riche.
+          const { description: directDesc, descriptionRich: directRich } = finalizeDescription(
+            directBuild.description || directStructured?.description || rawData.description || '',
+            markdownContent,
+          )
           enriched = {
             ...directIdentity,
             breadcrumb: rawData.breadcrumb.length > 0 ? rawData.breadcrumb : undefined,
-            // Markdown d'abord ; JSON-LD puis HTML brut en repli quand la page
-            // rendue n'a pas fourni de prose exploitable.
-            description: directBuild.description || directStructured?.description || rawData.description || '',
+            description: directDesc,
+            descriptionRich: directRich,
             advantages: directBuild.advantages ?? [],
             specifications: directSpecsAfterLift,
             variants: directBuild.variants ?? [],
