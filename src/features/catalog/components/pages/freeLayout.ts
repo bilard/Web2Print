@@ -127,7 +127,13 @@ function clipToLines(el: HTMLElement, maxH: number): number {
             const top = (r.top - ref.top) / scale
             if (top >= best - 0.5) next = Math.min(next, top)
           }
-          hEff = best > 0 ? Math.max(0, Math.floor(Math.min(best + padB, next))) : 0
+          // best>0 : coupe pile sous la dernière ligne qui tient. best==0 (maxH plus
+          // petit que la 1re ligne) : NE JAMAIS masquer tout le pavé → garder au moins
+          // la première ligne rendue (un bloc à max-height:0 = donnée invisible, cf.
+          // description écrasée par un tableau specs exhaustif en Démo express).
+          hEff = best > 0
+            ? Math.max(0, Math.floor(Math.min(best + padB, next)))
+            : Math.max(0, Math.ceil((rects[0].bottom - ref.top) / scale))
         }
       }
     } catch { /* environnement sans Range.getClientRects (tests) : coupe brute */ }
@@ -409,11 +415,22 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
       let maxH: number
       if (followClipH > 0 && hEff + followClipH > avail) {
         maxH = it.id === 'description'
-          ? Math.max(FLOOR, avail - followClipH)
+          // GRILLE DENSE (aperçu multi-fiches) : la description CÈDE aux specs (part
+          // résiduelle plancherée). PAGE PLEINE 1 produit (uniform = Démo/Print PRO) :
+          // part PROPORTIONNELLE au contenu — jamais réduite à un filet, sinon un
+          // tableau specs exhaustif l'écrasait à 0 (bloc invisible malgré donnée complète).
+          ? (uniform
+              ? Math.max(FLOOR, Math.floor(avail * (hEff / (hEff + followClipH))))
+              : Math.max(FLOOR, avail - followClipH))
           : Math.max(FLOOR, Math.floor(avail * (hEff / (hEff + followClipH))))
       } else {
-        maxH = avail - followClipH
+        // Plancher FLOOR même ici : un avail négatif (specs très hauts) donnait un
+        // maxH négatif → clipToLines(0) → pavé masqué. Jamais de bloc à hauteur nulle.
+        maxH = Math.max(FLOOR, avail - followClipH)
       }
+      // La DESCRIPTION est le contenu HÉROS d'une fiche pleine page : au moins la
+      // moitié de l'espace disponible (bornée à sa hauteur réelle) quand la place existe.
+      if (it.id === 'description' && uniform && avail > 0) maxH = Math.max(maxH, Math.min(hEff, Math.floor(avail * 0.5)))
       if (hEff > maxH) hEff = shrinkThenClip(it.el, it.id, maxH, hEff, uniform)
     }
     placed.push({ x1, x2, bottom: top + hEff })
