@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Loader2, Factory, Check, ExternalLink, AlertCircle, ShieldCheck } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
@@ -23,7 +23,18 @@ const CONF_META: Record<ManufacturerCandidate['confidence'], { label: string; cl
 export function ManufacturerVerifyPanel({ rowId, source, sourceLabel, onClose }: Props) {
   const { phase, candidates, comparisons, summary, mfrName, mfrUrl, error, saving, resolve, confirm } = useManufacturerVerify(rowId)
 
-  useEffect(() => { void resolve(source) }, [resolve, source])
+  // Résoudre les candidats UNE seule fois par fiche. `source` change d'identité à
+  // chaque render de ProductSheet (spread) et `save()` déclenche des re-renders du
+  // store : sans ce garde, l'effet se relancerait après confirmation et effacerait
+  // le verdict. On garde la 1re référence stable de `source` pour cette fiche.
+  const resolvedFor = useRef<string | null>(null)
+  const sourceRef = useRef(source)
+  useEffect(() => {
+    if (resolvedFor.current === rowId) return
+    resolvedFor.current = rowId
+    sourceRef.current = source
+    void resolve(sourceRef.current)
+  }, [rowId, resolve, source])
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
@@ -92,7 +103,7 @@ export function ManufacturerVerifyPanel({ rowId, source, sourceLabel, onClose }:
                         </a>
                       </div>
                     </div>
-                    <button onClick={() => void confirm(c, source)}
+                    <button onClick={() => void confirm(c, sourceRef.current)}
                       className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/90 hover:bg-indigo-500 text-[#fff] text-[12px] font-medium transition-colors">
                       <Check className="w-3.5 h-3.5" /> Confirmer
                     </button>
