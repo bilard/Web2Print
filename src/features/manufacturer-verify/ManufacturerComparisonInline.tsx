@@ -8,12 +8,11 @@ interface Props {
   onOpen: () => void
 }
 
-function Stat({ n, label, cls }: { n: number; label: string; cls: string }) {
+function Stat({ n, sym, cls, title }: { n: number; sym: string; cls: string; title: string }) {
   return (
-    <div className={`flex-1 rounded-lg border px-2 py-1.5 text-center ${cls}`}>
-      <div className="text-[15px] font-bold tabular-nums leading-none">{n}</div>
-      <div className="text-[9px] uppercase tracking-wide mt-0.5 opacity-80">{label}</div>
-    </div>
+    <span title={title} className={`flex-1 inline-flex items-center justify-center gap-1 rounded-lg border py-1.5 text-[13px] font-bold tabular-nums ${cls}`}>
+      <span className="text-[11px] opacity-80">{sym}</span>{n}
+    </span>
   )
 }
 
@@ -42,11 +41,11 @@ export function ManufacturerComparisonInline({ summary, mfrHost, eanMatch, onOpe
         </div>
       )}
 
-      {/* Compteurs */}
+      {/* Compteurs (compacts pour la colonne étroite) */}
       <div className="flex gap-1.5 mb-3">
-        <Stat n={summary.confirmed} label="Confirmés" cls="border-emerald-500/25 bg-emerald-500/10 text-emerald-300" />
-        <Stat n={summary.divergent} label="Divergents" cls="border-amber-500/25 bg-amber-500/10 text-amber-300" />
-        <Stat n={summary.completed} label="Complétés" cls="border-indigo-500/25 bg-indigo-500/10 text-indigo-300" />
+        <Stat n={summary.confirmed} sym="=" title="Confirmés (identiques)" cls="border-emerald-500/25 bg-emerald-500/10 text-emerald-300" />
+        <Stat n={summary.divergent} sym="≠" title="Divergents" cls="border-amber-500/25 bg-amber-500/10 text-amber-300" />
+        <Stat n={summary.completed} sym="+" title="Complétés par le fabricant" cls="border-indigo-500/25 bg-indigo-500/10 text-indigo-300" />
       </div>
 
       {/* CTA principal */}
