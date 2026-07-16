@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { Globe, Factory, Check, AlertTriangle, Plus, BadgeCheck, ShieldAlert } from 'lucide-react'
 import type { CompareStatus, FieldComparison, VerdictSummary } from './types'
 
@@ -103,6 +103,13 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
   // Filtre par statut via les tuiles (bascule). null = tout afficher.
   const [filter, setFilter] = useState<CompareStatus | null>(null)
   const toggle = (s: CompareStatus) => setFilter((f) => (f === s ? null : s))
+  // Hauteur réelle des compteurs épinglés → offset de l'entête de tableau sticky
+  // (évite qu'elle passe DERRIÈRE les compteurs). Mesuré, pas de valeur magique.
+  const countersRef = useRef<HTMLDivElement>(null)
+  const [countersH, setCountersH] = useState(96)
+  useLayoutEffect(() => {
+    if (countersRef.current) setCountersH(countersRef.current.offsetHeight)
+  }, [filter, content.length])
 
   return (
     <div className="flex flex-col gap-4 pt-5">
@@ -138,7 +145,7 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
       </div>
 
       {/* Compteurs — cliquables (filtre) et ÉPINGLÉS en haut au scroll (fond opaque) */}
-      <div className="sticky top-0 z-20 -mx-5 px-5 py-3 bg-background border-b border-white/[0.08] shadow-[0_6px_16px_-8px_rgba(0,0,0,0.6)] flex gap-2.5">
+      <div ref={countersRef} className="sticky top-0 z-20 -mx-5 px-5 py-3 bg-background border-b border-white/[0.08] shadow-[0_6px_16px_-8px_rgba(0,0,0,0.6)] flex gap-2.5">
         <Tile n={summary.confirmed} label="Confirmés" tone="text-emerald-400" icon={<Check className="w-3.5 h-3.5" />}
           active={filter === 'match'} onClick={() => toggle('match')} ring="border-emerald-500/50" />
         <Tile n={summary.completed} label="Complétés" tone="text-indigo-300" icon={<Plus className="w-3.5 h-3.5" />}
@@ -173,7 +180,7 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
 
       {/* Tableau comparatif groupé — entête de colonnes ÉPINGLÉE sous les compteurs */}
       <div className="rounded-xl border border-white/[0.06] overflow-visible">
-        <div className="sticky top-[86px] z-10 grid grid-cols-[1fr_1fr_1fr_auto] gap-2 px-4 py-2.5 bg-background border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/35">
+        <div style={{ top: countersH - 1 }} className="sticky z-10 grid grid-cols-[1fr_1fr_1fr_auto] gap-2 px-4 py-2.5 bg-background border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/35">
           <span>Champ</span><span>Source</span><span>Fabricant</span><span className="text-right">État</span>
         </div>
         {groups.map((g) => {
