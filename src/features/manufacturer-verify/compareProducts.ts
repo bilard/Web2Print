@@ -208,10 +208,11 @@ export function compareSourceVsManufacturer(
   const srcPrice = priceStr(source.pricing, 'ttc') ?? priceStr(source.pricing, 'ht')
   const mfrPrice = priceStr(mfr.pricing, 'ttc') ?? priceStr(mfr.pricing, 'ht')
   if (srcPrice || mfrPrice) {
+    // Comparaison honnête (RRP ≠ revendeur → souvent 'diff'), mais NON scoré
+    // en divergent (cf. summarize) : c'est informatif.
     out.push({
       key: 'price:main', label: 'Prix (fabricant = conseillé)', group: 'price',
-      sourceValue: srcPrice, mfrValue: mfrPrice,
-      status: mfrPrice ? (srcPrice ? 'match' : 'mfr-only') : 'source-only',
+      sourceValue: srcPrice, mfrValue: mfrPrice, status: statusFor(srcPrice, mfrPrice),
     })
   }
 
@@ -291,11 +292,13 @@ export function compareSourceVsManufacturer(
   return out
 }
 
-/** Compteurs pour la vue verdict. Prix + contenu = informatifs, NON scorés
- *  (le prix fabricant est un tarif conseillé, une différence n'est pas une erreur). */
+/** Compteurs pour la vue verdict. On ne score QUE les SPÉCIFICATIONS TECHNIQUES :
+ *  c'est là qu'est « la vérité des données ». Identité (Rubix a ses propres réf/nom),
+ *  prix (RRP ≠ revendeur) et contenu sont INFORMATIFS. La concordance produit est
+ *  portée par le badge EAN, pas par le compteur. */
 export function summarize(comparisons: FieldComparison[]): VerdictSummary {
   let confirmed = 0, completed = 0, divergent = 0
-  const scored = comparisons.filter((c) => c.group === 'identity' || c.group === 'spec')
+  const scored = comparisons.filter((c) => c.group === 'spec')
   for (const c of scored) {
     if (c.status === 'match') confirmed++
     else if (c.status === 'mfr-only') completed++

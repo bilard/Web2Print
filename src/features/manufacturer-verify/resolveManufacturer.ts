@@ -22,6 +22,8 @@ export interface ResolveInput {
   manufacturerRef?: string
   /** Nom produit — sert à extraire une référence si `manufacturerRef` manque. */
   name?: string
+  /** EAN/GTIN source — clé de correspondance la plus fiable (variante exacte). */
+  ean?: string
 }
 
 function hostOf(url: string): string | null {
@@ -137,8 +139,13 @@ export async function resolveManufacturerCandidates(input: ResolveInput): Promis
   const domain = official?.domain ?? ''
   const refAlnum = ref ? alnum(ref) : ''
 
-  // Requêtes : la plus ciblée (`réf site:domaine`) d'abord.
+  // Requêtes, de la plus fiable à la plus large. L'EAN cible la VARIANTE EXACTE
+  // (un kit « 2×2Ah » ≠ « solo » ont des EAN distincts) — indispensable pour
+  // industrialiser : sans lui on tombe sur une variante voisine du produit.
+  const ean = (input.ean ?? '').replace(/\D/g, '')
   const queries: string[] = []
+  if (ean.length >= 8 && domain) queries.push(`${ean} site:${domain}`)
+  if (ean.length >= 8) queries.push(`${ean} ${input.brand ?? ''}`.trim())
   if (ref && domain) queries.push(`${ref} site:${domain}`)
   if (ref && input.brand) queries.push(`${input.brand} ${ref}`)
   if (!ref && domain && input.name) queries.push(`${input.name} site:${domain}`)

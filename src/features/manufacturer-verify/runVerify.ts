@@ -65,6 +65,7 @@ export async function verifyRowAuto(source: EnrichedProduct): Promise<AutoVerify
     brand: source.brand,
     manufacturerRef: source.manufacturerRef,
     name: source.name,
+    ean: source.ean,
   })
   if (candidates.length === 0) return { status: 'skipped', reason: 'aucune page fabricant trouvée' }
 

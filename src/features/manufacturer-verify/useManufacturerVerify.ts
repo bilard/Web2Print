@@ -36,6 +36,7 @@ export function useManufacturerVerify(rowId: string) {
         brand: source.brand,
         manufacturerRef: source.manufacturerRef,
         name: source.name,
+        ean: source.ean,
       })
       if (found.length === 0) {
         setError("Aucune page fabricant n'a pu être identifiée pour ce produit (marque ou référence manquante).")
