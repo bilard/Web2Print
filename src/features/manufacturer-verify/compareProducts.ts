@@ -231,14 +231,15 @@ export function compareSourceVsManufacturer(
       status: mfrDesc ? (srcDesc ? 'match' : 'mfr-only') : 'source-only',
     })
   }
-  const srcAdv = source.advantages.length
-  const mfrAdv = mfr.advantages.length
-  if (srcAdv || mfrAdv) {
+  // Points forts : on porte le TEXTE réel des puces (séparées par « • ») pour
+  // pouvoir les AFFICHER, pas seulement les compter.
+  const srcAdvText = source.advantages.map((a) => a.text.trim()).filter(Boolean).join(' • ')
+  const mfrAdvText = mfr.advantages.map((a) => a.text.trim()).filter(Boolean).join(' • ')
+  if (srcAdvText || mfrAdvText) {
     out.push({
       key: 'content:advantages', label: 'Points forts', group: 'content',
-      sourceValue: srcAdv ? `${srcAdv} point${srcAdv > 1 ? 's' : ''}` : null,
-      mfrValue: mfrAdv ? `${mfrAdv} point${mfrAdv > 1 ? 's' : ''}` : null,
-      status: mfrAdv ? (srcAdv ? 'match' : 'mfr-only') : 'source-only',
+      sourceValue: srcAdvText || null, mfrValue: mfrAdvText || null,
+      status: mfrAdvText ? (srcAdvText ? 'match' : 'mfr-only') : 'source-only',
     })
   }
 

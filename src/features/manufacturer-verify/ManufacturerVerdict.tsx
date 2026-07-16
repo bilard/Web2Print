@@ -43,6 +43,35 @@ const GROUP_LABEL: Record<FieldComparison['group'], string> = {
   identity: 'Identité', price: 'Prix (indicatif)', spec: 'Spécifications techniques', content: 'Contenu marketing',
 }
 
+/** Un côté (source ou fabricant) d'un champ de contenu marketing : texte complet,
+ *  ou liste à puces pour les « Points forts ». */
+function ContentSide({ title, tone, value, field, highlight }: {
+  title: string; tone: string; value: string | null; field: string; highlight?: boolean
+}) {
+  const isBullets = field === 'content:advantages'
+  const bullets = isBullets && value ? value.split(' • ').map((s) => s.trim()).filter(Boolean) : []
+  return (
+    <div>
+      <div className={`text-[10px] font-semibold uppercase tracking-wider mb-1.5 ${tone}`}>{title}</div>
+      {!value ? (
+        <div className="text-[12px] text-white/25">—</div>
+      ) : isBullets ? (
+        <ul className="flex flex-col gap-1">
+          {bullets.map((b, i) => (
+            <li key={i} className={`text-[12px] leading-snug flex gap-1.5 ${highlight ? 'text-white/80' : 'text-white/55'}`}>
+              <span className="text-indigo-300/60 shrink-0">•</span><span>{b}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className={`text-[12px] leading-relaxed whitespace-pre-line max-h-48 overflow-y-auto pr-1 ${highlight ? 'text-white/80' : 'text-white/55'}`}>
+          {value}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Tile({ n, label, tone, icon }: { n: number; label: string; tone: string; icon: React.ReactNode }) {
   return (
     <div className="flex-1 rounded-xl border border-white/[0.06] bg-surface-2 px-4 py-3">
@@ -56,7 +85,11 @@ function Tile({ n, label, tone, icon }: { n: number; label: string; tone: string
 
 /** Vue verdict « la vérité est chez le fabricant » — comparaison Source ⇄ Fabricant. */
 export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, summary, comparisons, eanMatch }: Props) {
-  const groups: FieldComparison['group'][] = ['identity', 'price', 'spec', 'content']
+  // Le contenu marketing est rendu en BLOCS lisibles EN HAUT (texte complet),
+  // pas dans le tableau (où il serait tronqué). Le tableau ne garde que le
+  // comparable ligne à ligne.
+  const groups: FieldComparison['group'][] = ['identity', 'price', 'spec']
+  const content = comparisons.filter((c) => c.group === 'content')
 
   return (
     <div className="flex flex-col gap-4">
@@ -97,6 +130,24 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
         <Tile n={summary.completed} label="Complétés" tone="text-indigo-300" icon={<Plus className="w-3.5 h-3.5" />} />
         <Tile n={summary.divergent} label="Divergents" tone="text-amber-400" icon={<AlertTriangle className="w-3.5 h-3.5" />} />
       </div>
+
+      {/* CONTENU MARKETING — en haut, en blocs lisibles (texte complet côte à côte) */}
+      {content.length > 0 && (
+        <div className="rounded-xl border border-white/[0.06] overflow-hidden">
+          <div className="px-4 py-2 bg-well text-[10px] font-semibold uppercase tracking-wider text-white/45">
+            Contenu marketing
+          </div>
+          {content.map((c) => (
+            <div key={c.key} className="px-4 py-3 border-t border-white/[0.04]">
+              <div className="text-[11px] font-semibold text-white/55 mb-2">{c.label}</div>
+              <div className="grid grid-cols-2 gap-4">
+                <ContentSide title="Source (revendeur)" tone="text-white/40" value={c.sourceValue} field={c.key} />
+                <ContentSide title="Fabricant" tone="text-indigo-300/70" value={c.mfrValue} field={c.key} highlight />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Tableau comparatif groupé */}
       <div className="rounded-xl border border-white/[0.06] overflow-hidden">
