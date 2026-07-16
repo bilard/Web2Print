@@ -2864,13 +2864,20 @@ function buildManufacturerProduct(
   for (const s of rawSpecs) {
     specsMap.set(s.name.toLowerCase().trim(), s)
   }
-  for (const s of mdSpecs) {
-    const key = s.name.toLowerCase().trim()
-    if (!specsMap.has(key)) specsMap.set(key, s)
+  // Le markdown n'est fusionné QUE si le HTML structuré est pauvre. Quand le
+  // fabricant a livré une vraie table technique (≥ 6 specs via REDUX/JSON-LD/DOM),
+  // elle fait AUTORITÉ : le markdown Jina n'ajoute alors que du bruit (tableaux
+  // configurateur d'accessoires avec prix, adresse société, paires inversées) que
+  // la dédup par nom ne peut pas rattraper (noms différents). Signal par richesse
+  // de la source structurée, pas par site.
+  if (rawSpecs.length < 6) {
+    for (const s of mdSpecs) {
+      const key = s.name.toLowerCase().trim()
+      if (!specsMap.has(key)) specsMap.set(key, s)
+    }
   }
-  // Filtre de cohérence canonique : rejette le bruit que le parser markdown peut
-  // ramener (adresse fabricant « Max-Lang-Strasse … 70771 … », UI, paires nom/valeur
-  // inversées où le nom est une valeur numérique). Même sanity que le reste du pipeline.
+  // Filtre de cohérence canonique : rejette le bruit résiduel (UI, adresses,
+  // paires nom/valeur inversées). Même sanity que le reste du pipeline.
   const specifications = [...specsMap.values()].filter((s) => isSaneSpecPair(s.name, s.value))
 
   // Advantages : markdown (bullet points, avec groupes) + HTML statique en
