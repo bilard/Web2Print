@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Globe, Factory, Check, AlertTriangle, Plus, BadgeCheck, ShieldAlert } from 'lucide-react'
 import type { CompareStatus, FieldComparison, VerdictSummary } from './types'
 
@@ -72,14 +73,23 @@ function ContentSide({ title, tone, value, field, highlight }: {
   )
 }
 
-function Tile({ n, label, tone, icon }: { n: number; label: string; tone: string; icon: React.ReactNode }) {
+function Tile({ n, label, tone, icon, active, onClick, ring }: {
+  n: number; label: string; tone: string; icon: React.ReactNode
+  active: boolean; onClick: () => void; ring: string
+}) {
   return (
-    <div className="flex-1 rounded-xl border border-white/[0.06] bg-surface-2 px-4 py-3">
+    <button
+      onClick={onClick}
+      className={`flex-1 text-left rounded-xl border bg-surface-2 px-4 py-3 transition-colors ${
+        active ? `${ring} bg-white/[0.04]` : 'border-white/[0.06] hover:border-white/15'
+      }`}
+      title="Cliquer pour filtrer le tableau"
+    >
       <div className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider ${tone}`}>
         {icon}{label}
       </div>
       <div className="mt-1 text-2xl font-bold tabular-nums text-white">{n}</div>
-    </div>
+    </button>
   )
 }
 
@@ -90,6 +100,9 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
   // comparable ligne à ligne.
   const groups: FieldComparison['group'][] = ['identity', 'price', 'spec']
   const content = comparisons.filter((c) => c.group === 'content')
+  // Filtre par statut via les tuiles (bascule). null = tout afficher.
+  const [filter, setFilter] = useState<CompareStatus | null>(null)
+  const toggle = (s: CompareStatus) => setFilter((f) => (f === s ? null : s))
 
   return (
     <div className="flex flex-col gap-4">
@@ -124,15 +137,24 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
         </div>
       </div>
 
-      {/* Compteurs */}
-      <div className="flex gap-2.5">
-        <Tile n={summary.confirmed} label="Confirmés" tone="text-emerald-400" icon={<Check className="w-3.5 h-3.5" />} />
-        <Tile n={summary.completed} label="Complétés" tone="text-indigo-300" icon={<Plus className="w-3.5 h-3.5" />} />
-        <Tile n={summary.divergent} label="Divergents" tone="text-amber-400" icon={<AlertTriangle className="w-3.5 h-3.5" />} />
+      {/* Compteurs — cliquables (filtre) et ÉPINGLÉS en haut au scroll */}
+      <div className="sticky top-0 z-10 -mx-5 px-5 py-2 bg-background flex gap-2.5">
+        <Tile n={summary.confirmed} label="Confirmés" tone="text-emerald-400" icon={<Check className="w-3.5 h-3.5" />}
+          active={filter === 'match'} onClick={() => toggle('match')} ring="border-emerald-500/50" />
+        <Tile n={summary.completed} label="Complétés" tone="text-indigo-300" icon={<Plus className="w-3.5 h-3.5" />}
+          active={filter === 'mfr-only'} onClick={() => toggle('mfr-only')} ring="border-indigo-500/50" />
+        <Tile n={summary.divergent} label="Divergents" tone="text-amber-400" icon={<AlertTriangle className="w-3.5 h-3.5" />}
+          active={filter === 'diff'} onClick={() => toggle('diff')} ring="border-amber-500/50" />
       </div>
+      {filter && (
+        <button onClick={() => setFilter(null)} className="self-start -mt-2 text-[11px] text-indigo-300 hover:text-indigo-200">
+          ✕ Retirer le filtre — tout afficher
+        </button>
+      )}
 
-      {/* CONTENU MARKETING — en haut, en blocs lisibles (texte complet côte à côte) */}
-      {content.length > 0 && (
+      {/* CONTENU MARKETING — en haut, en blocs lisibles (texte complet côte à côte).
+          Masqué quand un filtre de statut est actif (le contenu n'est pas scoré). */}
+      {!filter && content.length > 0 && (
         <div className="rounded-xl border border-white/[0.06] overflow-hidden">
           <div className="px-4 py-2 bg-well text-[10px] font-semibold uppercase tracking-wider text-white/45">
             Contenu marketing
@@ -155,7 +177,7 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
           <span>Champ</span><span>Source</span><span>Fabricant</span><span className="text-right">État</span>
         </div>
         {groups.map((g) => {
-          const rows = comparisons.filter((c) => c.group === g)
+          const rows = comparisons.filter((c) => c.group === g && (!filter || c.status === filter))
           if (rows.length === 0) return null
           return (
             <div key={g}>
