@@ -33,7 +33,7 @@ export function ManufacturerVerdictModal({ onClose, ...verdict }: Props) {
           </div>
           <CloseButton onClick={onClose} size="sm" />
         </div>
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto px-5 pb-5">
           <ManufacturerVerdict {...verdict} />
         </div>
       </div>

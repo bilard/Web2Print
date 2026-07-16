@@ -105,7 +105,7 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
   const toggle = (s: CompareStatus) => setFilter((f) => (f === s ? null : s))
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pt-5">
       {/* Badge de certitude EAN/GTIN */}
       {eanMatch === true && (
         <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 px-3.5 py-2 text-[12px] text-emerald-300">
@@ -137,8 +137,8 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
         </div>
       </div>
 
-      {/* Compteurs — cliquables (filtre) et ÉPINGLÉS en haut au scroll */}
-      <div className="sticky top-0 z-10 -mx-5 px-5 py-2 bg-background flex gap-2.5">
+      {/* Compteurs — cliquables (filtre) et ÉPINGLÉS en haut au scroll (fond opaque) */}
+      <div className="sticky top-0 z-20 -mx-5 px-5 py-3 bg-background border-b border-white/[0.08] shadow-[0_6px_16px_-8px_rgba(0,0,0,0.6)] flex gap-2.5">
         <Tile n={summary.confirmed} label="Confirmés" tone="text-emerald-400" icon={<Check className="w-3.5 h-3.5" />}
           active={filter === 'match'} onClick={() => toggle('match')} ring="border-emerald-500/50" />
         <Tile n={summary.completed} label="Complétés" tone="text-indigo-300" icon={<Plus className="w-3.5 h-3.5" />}
@@ -171,9 +171,9 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
         </div>
       )}
 
-      {/* Tableau comparatif groupé */}
-      <div className="rounded-xl border border-white/[0.06] overflow-hidden">
-        <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 px-4 py-2 bg-well text-[10px] font-semibold uppercase tracking-wider text-white/35">
+      {/* Tableau comparatif groupé — entête de colonnes ÉPINGLÉE sous les compteurs */}
+      <div className="rounded-xl border border-white/[0.06] overflow-visible">
+        <div className="sticky top-[86px] z-10 grid grid-cols-[1fr_1fr_1fr_auto] gap-2 px-4 py-2.5 bg-background border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/35">
           <span>Champ</span><span>Source</span><span>Fabricant</span><span className="text-right">État</span>
         </div>
         {groups.map((g) => {
