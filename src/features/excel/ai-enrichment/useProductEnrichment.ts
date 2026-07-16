@@ -13,7 +13,7 @@ import { isJunkImageUrl } from './imageFilter'
 export { isJunkImageUrl }
 import { parseDescriptionFromMarkdown as parseDescriptionFromMarkdownExternal, parseRichDescriptionFromMarkdown } from '@/features/scraping/core/parsers/parseDescription'
 import { structuredPlainToRichMarkdown, stripTrailingSpecList } from '@/lib/richText'
-import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal, extractSpecsFromHtml as extractSpecsFromHtmlExternal, isNonProductRegion } from '@/features/scraping/core/parsers/parseSpecifications'
+import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal, extractSpecsFromHtml as extractSpecsFromHtmlExternal, isNonProductRegion, isSaneSpecPair } from '@/features/scraping/core/parsers/parseSpecifications'
 import { filterImagesByProductRef } from '@/features/scraping/core/parsers/filterImagesByRef'
 import { parseNamedDocLinks } from '@/features/scraping/core/parsers/parseNamedDocLinks'
 import { parsePricingFromMarkdown } from '@/features/scraping/core/parsers/parsePricing'
@@ -2868,7 +2868,10 @@ function buildManufacturerProduct(
     const key = s.name.toLowerCase().trim()
     if (!specsMap.has(key)) specsMap.set(key, s)
   }
-  const specifications = [...specsMap.values()]
+  // Filtre de cohérence canonique : rejette le bruit que le parser markdown peut
+  // ramener (adresse fabricant « Max-Lang-Strasse … 70771 … », UI, paires nom/valeur
+  // inversées où le nom est une valeur numérique). Même sanity que le reste du pipeline.
+  const specifications = [...specsMap.values()].filter((s) => isSaneSpecPair(s.name, s.value))
 
   // Advantages : markdown (bullet points, avec groupes) + HTML statique en
   // fusion ADDITIVE — le HTML récupère la queue des listes repliées que le
