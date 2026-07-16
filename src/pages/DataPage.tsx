@@ -8,7 +8,7 @@ import {
   MoreVertical, ExternalLink,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight, GripVertical,
-  Wand2, FolderUp, Link2, ImagePlus,
+  Wand2, FolderUp, Link2, ImagePlus, X,
 } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -927,6 +927,11 @@ function pathKey(path: string[]): string {
 }
 
 /** Saved files list panel */
+/** Minuscule + sans accents, pour une recherche de base tolérante. */
+const normDb = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+/** Set vide stable : force le dépliage de tous les dossiers pendant une recherche. */
+const NO_COLLAPSE = new Set<string>()
+
 function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRename, onMove, onImportAt, onScrapeAt, onCreateAt, onRefresh, onReorder }: {
   files: SavedFileEntry[]
   loading: boolean
@@ -951,8 +956,14 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
   const [movingDocId, setMovingDocId] = useState<string | null>(null)
   const [moveValue, setMoveValue] = useState('')
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+  const [query, setQuery] = useState('')
 
-  const tree = useMemo(() => buildDatabaseTree(files), [files])
+  const q = normDb(query.trim())
+  const filteredFiles = useMemo(
+    () => (q ? files.filter((f) => normDb(f.fileName).includes(q) || f.path.some((p) => normDb(p).includes(q))) : files),
+    [files, q],
+  )
+  const tree = useMemo(() => buildDatabaseTree(filteredFiles), [filteredFiles])
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -1067,6 +1078,27 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
         </button>
       </div>
 
+      {files.length > 0 && (
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Rechercher une base…"
+            className="w-full pl-8 pr-7 py-1.5 rounded-md bg-well border border-white/10 text-[12px] placeholder:text-white/30 focus:outline-none focus:border-indigo-500/40"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+              aria-label="Effacer la recherche"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
       {openMenu || openAddMenu ? (
         <div className="fixed inset-0 z-40" onClick={handleOverlayClick} />
       ) : null}
@@ -1077,12 +1109,14 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
         </div>
       ) : files.length === 0 ? (
         <p className="text-xs text-white/25 text-center py-4">Aucune base de données</p>
+      ) : filteredFiles.length === 0 ? (
+        <p className="text-xs text-white/25 text-center py-4">Aucun résultat pour « {query} »</p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <TreeLevel
             node={tree}
             depth={0}
-            collapsed={collapsed}
+            collapsed={q ? NO_COLLAPSE : collapsed}
             onToggleFolder={toggleFolder}
             currentDocId={currentDocId}
             openMenu={openMenu}
