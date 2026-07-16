@@ -197,8 +197,12 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
                 ) : null}
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <ContentSide title="Source (revendeur)" tone="text-white/40" value={c.sourceValue} field={c.key} highlight={c.adopted} />
-                <ContentSide title="Fabricant" tone="text-indigo-300/70" value={c.mfrValue} field={c.key} highlight />
+                {/* Source (master). Adoptée → montre le texte FABRICANT appliqué (teal). */}
+                <ContentSide
+                  title={c.adopted ? 'Source · fabricant appliqué' : 'Source (revendeur)'}
+                  tone={c.adopted ? 'text-teal-300/80' : 'text-white/40'}
+                  value={c.adopted ? c.mfrValue : c.sourceValue} field={c.key} highlight={c.adopted} />
+                <ContentSide title="Fabricant" tone="text-indigo-300/70" value={c.mfrValue} field={c.key} highlight={!c.adopted} />
               </div>
             </div>
           ))}
@@ -230,8 +234,19 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
                 return (
                   <div key={c.key} className={`grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center px-4 py-2 border-t border-white/[0.03] ${c.adopted ? 'bg-teal-500/[0.06]' : ''}`}>
                     <span className="text-[12px] text-white/60">{c.label}</span>
-                    <span className={`text-[12px] truncate ${c.adopted ? 'text-white/30 line-through' : 'text-white/45'}`} title={c.sourceValue ?? ''}>{c.sourceValue ?? '—'}</span>
-                    <span className={`text-[12px] truncate ${c.mfrValue ? (c.adopted ? 'text-teal-200 font-medium' : 'text-white/85 font-medium') : 'text-white/30'}`} title={c.mfrValue ?? ''}>
+                    {/* Colonne SOURCE (master). Adoptée → affiche la valeur FABRICANT appliquée
+                        (teal + point de provenance) ; l'ancienne source reste barrée en petit. */}
+                    {c.adopted ? (
+                      <span className="text-[12px] truncate flex items-baseline gap-1.5" title={c.mfrValue ?? ''}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-teal-400 shrink-0 self-center" />
+                        <span className="text-teal-200 font-medium truncate">{c.mfrValue ?? '—'}</span>
+                        {c.sourceValue && <span className="text-white/25 line-through text-[10px] truncate shrink-0">{c.sourceValue}</span>}
+                      </span>
+                    ) : (
+                      <span className="text-[12px] truncate text-white/45" title={c.sourceValue ?? ''}>{c.sourceValue ?? '—'}</span>
+                    )}
+                    {/* Colonne FABRICANT. Adoptée → estompée (elle est désormais dans la source). */}
+                    <span className={`text-[12px] truncate ${c.mfrValue ? (c.adopted ? 'text-white/35' : 'text-white/85 font-medium') : 'text-white/30'}`} title={c.mfrValue ?? ''}>
                       {c.mfrValue ?? '—'}
                     </span>
                     {/* ÉTAT / toggle d'adoption */}
