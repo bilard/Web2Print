@@ -8,7 +8,7 @@ import { scrapeManufacturerProduct } from '@/features/excel/ai-enrichment/usePro
 import { alignUnknownSpecs } from './alignSpecs'
 import { compareSourceVsManufacturer, summarize } from './compareProducts'
 import { resolveManufacturerCandidates } from './resolveManufacturer'
-import type { FieldComparison, LlmSpecPairs, ManufacturerCandidate, VerdictSummary } from './types'
+import type { FieldComparison, LlmSpecPairs, ManufacturerCandidate, VerdictSummary, VerifyLogFn } from './types'
 
 export interface VerifyResult {
   mfr: EnrichedProduct
@@ -37,22 +37,27 @@ function eanEquals(a: string | undefined, b: string | undefined): boolean {
 export async function verifyAgainstManufacturer(
   source: EnrichedProduct,
   candidate: ManufacturerCandidate,
-  onLog: (m: string) => void = () => {},
+  onLog: VerifyLogFn = () => {},
 ): Promise<VerifyResult> {
-  onLog(`Extraction de la page fabricant : ${hostOf(candidate.url)}`)
+  onLog(`Extraction de la page fabricant · ${hostOf(candidate.url)}`, 'scrape')
   const mfr = await scrapeManufacturerProduct(candidate.url)
   if (mfr.blockedByAntiBot) {
-    onLog('⚠ Page bloquée (SPA / anti-bot) — rien à comparer')
+    onLog('Page bloquée (SPA / anti-bot) — rien à comparer', 'warn')
     return { mfr, alignment: {}, comparisons: [], summary: { confirmed: 0, completed: 0, divergent: 0, total: 0 }, blocked: true, eanMatch: null }
   }
-  onLog(`${mfr.specifications.length} caractéristique(s) extraite(s)${mfr.ean ? ` · EAN ${mfr.ean}` : ''}`)
-  onLog('Alignement des libellés (dictionnaire + IA)…')
+  onLog(`${mfr.specifications.length} caractéristique(s) extraite(s)${mfr.ean ? ` · EAN ${mfr.ean}` : ''}`, 'metric')
+  onLog('Alignement des libellés (dictionnaire + IA)…', 'align')
   const alignment = await alignUnknownSpecs(source, mfr)
   const comparisons = compareSourceVsManufacturer(source, mfr, alignment)
   const summary = summarize(comparisons)
   const eanMatch = (source.ean && mfr.ean) ? eanEquals(source.ean, mfr.ean) : null
-  onLog(`Comparaison : ✓ ${summary.confirmed} confirmés · + ${summary.completed} complétés · ≠ ${summary.divergent} divergents`)
-  onLog(eanMatch === true ? 'EAN certifié — même produit' : eanMatch === false ? '⚠ EAN différents — variante possible' : 'EAN non vérifiable')
+  onLog(`✓ ${summary.confirmed} confirmés · + ${summary.completed} complétés · ≠ ${summary.divergent} divergents`, 'compare')
+  onLog(
+    eanMatch === true ? `EAN certifié — même produit (${mfr.ean})`
+      : eanMatch === false ? `EAN différents — variante possible (source ${source.ean} ≠ fabricant ${mfr.ean})`
+      : 'EAN non vérifiable — un côté sans code',
+    eanMatch === true ? 'ok' : eanMatch === false ? 'warn' : 'info',
+  )
   return { mfr, alignment, comparisons, summary, blocked: false, eanMatch }
 }
 

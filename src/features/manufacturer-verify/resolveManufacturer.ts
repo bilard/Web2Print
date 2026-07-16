@@ -11,7 +11,7 @@
 import { detectBrandFromUrl, detectBrandLabelFromUrl, BRAND_OFFICIAL_SITES, RESELLER_HOSTS } from '@/features/scraping/useJina'
 import { extractProductReference } from '@/features/scraping/core/manufacturerFallback'
 import { jinaSearch } from '@/features/excel/ai-enrichment/useProductEnrichment'
-import type { ManufacturerCandidate } from './types'
+import type { ManufacturerCandidate, VerifyLogFn } from './types'
 
 export interface ResolveInput {
   /** URL source (revendeur). */
@@ -132,24 +132,24 @@ async function resolveOfficialDomain(input: ResolveInput): Promise<{ domain: str
  */
 export async function resolveManufacturerCandidates(
   input: ResolveInput,
-  onLog: (m: string) => void = () => {},
+  onLog: VerifyLogFn = () => {},
 ): Promise<ManufacturerCandidate[]> {
-  onLog('Analyse de la fiche source…')
+  onLog('Analyse de la fiche source…', 'search')
   const official = await resolveOfficialDomain(input)
   const ref = (input.manufacturerRef ?? extractProductReference(input.name ?? '') ?? '').trim()
-  if (!official && !ref) { onLog('Ni marque ni référence exploitable — abandon'); return [] }
+  if (!official && !ref) { onLog('Ni marque ni référence exploitable — abandon', 'warn'); return [] }
 
   const label = official?.label ?? detectBrandLabelFromUrl(input.url) ?? (input.brand ?? 'Fabricant')
   const domain = official?.domain ?? ''
   const refAlnum = ref ? alnum(ref) : ''
-  onLog(official ? `Fabricant : ${label}${domain ? ' · ' + domain : ''}` : `Marque : ${label} (domaine non résolu)`)
-  if (ref) onLog(`Référence recherchée : ${ref}`)
+  onLog(official ? `Fabricant identifié · ${label}${domain ? ' · ' + domain : ''}` : `Marque : ${label} (domaine officiel non résolu)`, 'candidate')
+  if (ref) onLog(`Référence fabricant · ${ref}`, 'metric')
 
   // Requêtes, de la plus fiable à la plus large. L'EAN cible la VARIANTE EXACTE
   // (un kit « 2×2Ah » ≠ « solo » ont des EAN distincts) — indispensable pour
   // industrialiser : sans lui on tombe sur une variante voisine du produit.
   const ean = (input.ean ?? '').replace(/\D/g, '')
-  if (ean.length >= 8) onLog(`EAN cible : ${ean}`)
+  if (ean.length >= 8) onLog(`EAN cible · ${ean} (variante exacte)`, 'metric')
   const queries: string[] = []
   if (ean.length >= 8 && domain) queries.push(`${ean} site:${domain}`)
   if (ean.length >= 8) queries.push(`${ean} ${input.brand ?? ''}`.trim())
@@ -162,10 +162,10 @@ export async function resolveManufacturerCandidates(
   const candidates: ManufacturerCandidate[] = []
 
   for (const q of queries) {
-    onLog(`Recherche : « ${q} »`)
+    onLog(`Recherche « ${q} »`, 'search')
     let results
-    try { results = await jinaSearch(q, 8) } catch { onLog('  ↳ recherche indisponible'); continue }
-    onLog(`  ↳ ${results.length} résultat(s)`)
+    try { results = await jinaSearch(q, 8) } catch { onLog('recherche indisponible', 'warn', true); continue }
+    onLog(`${results.length} résultat(s)`, 'metric', true)
     for (const r of results) {
       const h = hostOf(r.url)
       if (!h) continue
@@ -226,6 +226,10 @@ export async function resolveManufacturerCandidates(
   const rank = { high: 0, medium: 1, low: 2 }
   pool.sort((a, b) => rank[a.confidence] - rank[b.confidence])
   const out = pool.slice(0, 5)
-  onLog(`${out.length} page(s) fabricant candidate(s)${out[0] ? ` — meilleure : ${out[0].confidence}` : ''}`)
+  const CONF_FR = { high: 'confiance élevée', medium: 'confiance moyenne', low: 'confiance faible' }
+  onLog(
+    `${out.length} page(s) candidate(s)${out[0] ? ` — meilleure : ${CONF_FR[out[0].confidence]}` : ''}`,
+    out[0]?.confidence === 'high' ? 'ok' : out.length ? 'candidate' : 'warn',
+  )
   return out
 }

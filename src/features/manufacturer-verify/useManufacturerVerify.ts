@@ -8,7 +8,7 @@ import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { resolveManufacturerCandidates } from './resolveManufacturer'
 import { verifyAgainstManufacturer } from './runVerify'
 import { useSaveManufacturerData } from './useSaveManufacturerData'
-import type { FieldComparison, ManufacturerCandidate, VerdictSummary } from './types'
+import type { FieldComparison, ManufacturerCandidate, VerdictSummary, VerifyLogEntry, VerifyLogKind } from './types'
 
 export type VerifyPhase = 'idle' | 'resolving' | 'candidates' | 'scraping' | 'done' | 'error'
 
@@ -21,10 +21,13 @@ export function useManufacturerVerify(rowId: string) {
   const [mfrUrl, setMfrUrl] = useState<string | null>(null)
   const [eanMatch, setEanMatch] = useState<boolean | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [logs, setLogs] = useState<string[]>([])
+  const [logs, setLogs] = useState<VerifyLogEntry[]>([])
   const { save, saving } = useSaveManufacturerData()
 
-  const pushLog = useCallback((m: string) => setLogs((l) => [...l, m]), [])
+  const pushLog = useCallback(
+    (text: string, kind: VerifyLogKind = 'info', sub = false) => setLogs((l) => [...l, { kind, text, sub }]),
+    [],
+  )
 
   const reset = useCallback(() => {
     setPhase('idle'); setCandidates([]); setComparisons([]); setSummary(null); setError(null); setMfrName(null); setMfrUrl(null); setEanMatch(null); setLogs([])
@@ -57,7 +60,7 @@ export function useManufacturerVerify(rowId: string) {
   /** Étape 2 : l'utilisateur confirme une page → scrape + compare + sauvegarde. */
   const confirm = useCallback(async (candidate: ManufacturerCandidate, source: EnrichedProduct) => {
     setPhase('scraping'); setError(null)
-    pushLog(`Page confirmée : ${candidate.title}`)
+    pushLog(`Page confirmée · ${candidate.title}`, 'candidate')
     try {
       const res = await verifyAgainstManufacturer(source, candidate, pushLog)
       if (res.blocked) {
@@ -70,9 +73,9 @@ export function useManufacturerVerify(rowId: string) {
       setMfrName(res.mfr.name ?? candidate.brand)
       setMfrUrl(candidate.url)
       setEanMatch(res.eanMatch)
-      pushLog('Enregistrement dans la fiche…')
+      pushLog('Enregistrement dans la fiche…', 'save')
       await save(rowId, res.mfr, { candidate, alignment: res.alignment })
-      pushLog('Terminé ✓')
+      pushLog('Terminé — comparaison prête', 'ok')
       setPhase('done')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur pendant le scraping fabricant.')
