@@ -1031,7 +1031,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         {/* Footer */}
         {(canImport || canImportEnriched || canImportBatch) && (
           <div className="px-5 py-3.5 border-t border-white/[0.06] shrink-0">
-            {canImportEnriched && (
+            {canImportEnriched && !pimProjectId && (
               <label className="flex items-center gap-2 mb-2.5 cursor-pointer select-none">
                 <input
                   type="checkbox"

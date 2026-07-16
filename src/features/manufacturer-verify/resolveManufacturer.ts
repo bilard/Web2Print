@@ -98,9 +98,13 @@ export async function resolveManufacturerCandidates(input: ResolveInput): Promis
 
       const urlAlnum = alnum(r.url)
       const titleAlnum = alnum(r.title ?? '')
+      // Une réf trop courte (< 5 car. alnum) sur-matche des URLs sans lien (« 18v »,
+      // codes 3-4 chiffres) → jamais « high » (sinon le lot fusionnerait en silence
+      // le mauvais produit, l'inverse du but « vérité fabricant »). Plafond « medium ».
+      const refStrong = refAlnum.length >= 5
       let confidence: ManufacturerCandidate['confidence'] = 'low'
-      if (refAlnum && urlAlnum.includes(refAlnum)) confidence = 'high'
-      else if (refAlnum && titleAlnum.includes(refAlnum)) confidence = 'medium'
+      if (refStrong && urlAlnum.includes(refAlnum)) confidence = 'high'
+      else if (refAlnum && (urlAlnum.includes(refAlnum) || titleAlnum.includes(refAlnum))) confidence = 'medium'
       else if (domain && h === domain) confidence = 'medium'
 
       candidates.push({
