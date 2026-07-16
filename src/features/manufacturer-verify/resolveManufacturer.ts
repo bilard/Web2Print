@@ -61,6 +61,18 @@ function toFrenchLocale(url: string): string | null {
 
 const alnum = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
 
+/** Retire query + fragment : une page produit fabricant n'a pas besoin de
+ *  paramètres (les `?bvstate=…` sont des deeplinks d'AVIS Bazaarvoice qui
+ *  atterrissent sur la section avis, pas la fiche). */
+function cleanCandidateUrl(url: string): string {
+  try { const u = new URL(url); u.search = ''; u.hash = ''; return u.toString() } catch { return url }
+}
+
+/** Vrai si l'URL est un deeplink d'avis / de tracking (à ne jamais mettre en tête). */
+function isReviewDeeplink(url: string): boolean {
+  return /[?&](bvstate|bvroute|bvsyndication|bvpage)=|\/reviews?(?:\/|$)|#reviews?\b/i.test(url)
+}
+
 /** Résout le domaine officiel + le label de marque. Généraliste hors whitelist. */
 async function resolveOfficialDomain(input: ResolveInput): Promise<{ domain: string; label: string } | null> {
   // 1. Marque détectée depuis l'URL revendeur (nom dans le path OU préfixe SKU).
@@ -124,10 +136,12 @@ export async function resolveManufacturerCandidates(input: ResolveInput): Promis
       // Ne garder que le domaine officiel quand on le connaît.
       if (domain && h !== domain && !h.endsWith('.' + domain)) continue
       if (!domain && RESELLER_HOSTS.test(h)) continue
-      if (seen.has(r.url)) continue
-      seen.add(r.url)
+      const review = isReviewDeeplink(r.url)
+      const cleanUrl = cleanCandidateUrl(r.url)
+      if (seen.has(cleanUrl)) continue
+      seen.add(cleanUrl)
 
-      const urlAlnum = alnum(r.url)
+      const urlAlnum = alnum(cleanUrl)
       const titleAlnum = alnum(r.title ?? '')
       // Une réf trop courte (< 5 car. alnum) sur-matche des URLs sans lien (« 18v »,
       // codes 3-4 chiffres) → jamais « high » (sinon le lot fusionnerait en silence
@@ -137,10 +151,13 @@ export async function resolveManufacturerCandidates(input: ResolveInput): Promis
       if (refStrong && urlAlnum.includes(refAlnum)) confidence = 'high'
       else if (refAlnum && (urlAlnum.includes(refAlnum) || titleAlnum.includes(refAlnum))) confidence = 'medium'
       else if (domain && h === domain) confidence = 'medium'
+      // Un deeplink d'avis n'est jamais une bonne fiche produit → tout en bas,
+      // jamais auto-fusionné en lot.
+      if (review) confidence = 'low'
 
       candidates.push({
-        url: r.url,
-        title: r.title ?? r.url,
+        url: cleanUrl,
+        title: r.title ?? cleanUrl,
         brand: label,
         domain: h,
         matchedRef: ref || null,

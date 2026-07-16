@@ -29,9 +29,9 @@ const SPEC_SYNONYMS: SpecSynonymEntry[] = [
   { canonicalKey: 'tension', label: 'Tension', aliases: ['tension', 'voltage', 'tension batterie', 'tension nominale', 'tension d alimentation', 'volt'] },
   { canonicalKey: 'capacite_batterie', label: 'Capacité batterie', aliases: ['capacite batterie', 'capacite de la batterie', 'capacite', 'ampere heure', 'capacite accu', 'battery capacity', 'ah'] },
   { canonicalKey: 'type_batterie', label: 'Type de batterie', aliases: ['type de batterie', 'type batterie', 'technologie batterie', 'battery type'] },
-  { canonicalKey: 'couple', label: 'Couple', aliases: ['couple', 'couple max', 'couple maxi', 'couple maximal', 'couple de serrage', 'torque', 'max torque'] },
-  { canonicalKey: 'couple_dur', label: 'Couple (vissage dur)', aliases: ['couple dur', 'couple vissage dur', 'couple max dur', 'hard torque'] },
-  { canonicalKey: 'couple_tendre', label: 'Couple (vissage tendre)', aliases: ['couple tendre', 'couple vissage tendre', 'soft torque'] },
+  // Un seul champ « Couple » (les variantes tendre/dur/maxi restent alignées
+  // ensemble : source et fabricant n'ont en général qu'une ligne Couple).
+  { canonicalKey: 'couple', label: 'Couple', aliases: ['couple', 'couple max', 'couple maxi', 'couple maximal', 'couple de serrage', 'couple tendre', 'couple dur', 'couple vissage tendre', 'couple vissage dur', 'torque', 'max torque', 'hard torque', 'soft torque'] },
   { canonicalKey: 'vitesse_rotation', label: 'Vitesse de rotation', aliases: ['vitesse de rotation', 'vitesse a vide', 'vitesse rotation', 'regime a vide', 'nombre de tours', 'no load speed', 'rpm', 'tr min'] },
   { canonicalKey: 'vitesse_rotation_2', label: 'Vitesse de rotation (2e)', aliases: ['vitesse de rotation 2e vitesse', '2e vitesse', 'vitesse 2'] },
   { canonicalKey: 'frequence_frappe', label: 'Fréquence de frappe', aliases: ['frequence de frappe', 'cadence de frappe', 'frequence de percussion', 'coups par minute', 'impact rate', 'bpm'] },
@@ -106,11 +106,16 @@ export function canonicalizeSpecName(name: string): string | null {
   if (!norm) return null
   const exact = ALIAS_INDEX.get(norm)
   if (exact) return exact
-  // Inclusion : alias contenu dans le libellé (ou l'inverse pour les libellés très courts).
+  // Rapprochement ancré au DÉBUT du libellé, pas au milieu : « couple (tendre/dur) »
+  // → couple, mais « présélections de couple » NE matche PAS couple (sinon on
+  // comparerait la mauvaise valeur). On accepte aussi l'inverse quand le libellé
+  // est plus court que l'alias (« puissance » ⊂ « puissance nominale absorbée »).
   let best: { key: string; len: number } | null = null
   for (const [alias, key] of ALIAS_INDEX) {
     if (alias.length < 4) continue
-    if (norm.includes(alias) || alias.includes(norm)) {
+    const startsWithAlias = norm === alias || norm.startsWith(alias + ' ')
+    const aliasStartsWithNorm = alias === norm || alias.startsWith(norm + ' ')
+    if (startsWithAlias || aliasStartsWithNorm) {
       if (!best || alias.length > best.len) best = { key, len: alias.length }
     }
   }

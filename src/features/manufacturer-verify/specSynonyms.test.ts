@@ -22,6 +22,15 @@ describe('canonicalizeSpecName', () => {
   it('retourne null pour un libellé inconnu', () => {
     expect(canonicalizeSpecName('Numéro de lot logistique')).toBeNull()
   })
+
+  it('ancre au début : « Couple (tendre/dur/maxi) » = couple, mais « Présélections de couple » ≠ couple', () => {
+    expect(canonicalizeSpecName('Couple (tendre/dur/maxi)')).toBe('couple')
+    expect(canonicalizeSpecName('Présélections de couple')).not.toBe('couple')
+  })
+
+  it('« Poids avec batterie » = poids', () => {
+    expect(canonicalizeSpecName('Poids avec batterie')).toBe('poids')
+  })
 })
 
 describe('normalizeValueForCompare', () => {

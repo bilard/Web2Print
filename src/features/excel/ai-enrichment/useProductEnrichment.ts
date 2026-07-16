@@ -2715,20 +2715,35 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
       // technique dans une grille <div class="…body-row"><div class="…body-cell">
       // <span>Nom</span></div><div class="…body-cell"><span>Valeur</span></div>
       // — invisible aux parsers <table>/<dl>/techspecs. Générique par convention
-      // de classe. Garde-fous : exactement une paire (nom, valeur) exploitable,
-      // libellés courts, hors zones non-produit (avis/footer via isNonProductRegion).
-      const divRows = doc.querySelectorAll('[class*="body-row"]')
+      // de classe. SCOPÉ à la section « caractéristiques techniques » : sans ce
+      // scope, d'autres grilles body-row (adresse fabricant, blocs marketing)
+      // entrent comme fausses specs. Signal par heading, pas par site.
+      const SPEC_SECTION_RE = /caract[eé]ristiques?\s*techniques?|donn[eé]es?\s*techniques?|fiche\s*technique|sp[eé]cifications?|technical\s*data|technische\s*daten|dati\s*tecnici|especificaciones|technische\s*gegevens/i
+      const specRoots: Element[] = []
+      for (const h of doc.querySelectorAll('h1, h2, h3, h4')) {
+        if (!SPEC_SECTION_RE.test(h.textContent || '')) continue
+        // Remonter jusqu'au conteneur qui englobe la table de la section.
+        let root: Element | null = h.parentElement
+        for (let i = 0; i < 4 && root; i++) {
+          if (root.querySelector('[class*="body-row"]')) break
+          root = root.parentElement
+        }
+        if (root && !specRoots.includes(root)) specRoots.push(root)
+      }
       let divCount = 0
-      for (const row of divRows) {
-        if (isNonProductRegion(row)) continue
-        const cells = row.querySelectorAll('[class*="body-cell"]')
-        if (cells.length < 2) continue
-        const n = (cells[0].textContent || '').replace(/\s+/g, ' ').trim()
-        const v = (cells[1].textContent || '').replace(/\s+/g, ' ').trim()
-        // Un libellé de spec est court ; une valeur reste bornée. Rejette les
-        // lignes de contenu long (paragraphes d'avis, descriptions) qui pourraient
-        // porter la même convention de classe sur d'autres sites.
-        if (n && v && n.length <= 80 && v.length <= 200 && n !== v) {
+      const seenDiv = new Set<string>()
+      for (const root of specRoots) {
+        for (const row of root.querySelectorAll('[class*="body-row"]')) {
+          if (isNonProductRegion(row)) continue
+          const cells = row.querySelectorAll('[class*="body-cell"]')
+          if (cells.length < 2) continue
+          const n = (cells[0].textContent || '').replace(/\s+/g, ' ').trim()
+          const v = (cells[1].textContent || '').replace(/\s+/g, ' ').trim()
+          // Libellé court, valeur bornée, nom ≠ valeur, non dupliqué.
+          if (!n || !v || n.length > 80 || v.length > 200 || n === v) continue
+          const key = n.toLowerCase()
+          if (seenDiv.has(key)) continue
+          seenDiv.add(key)
           data.specs.push({ name: n, value: v })
           divCount++
         }
