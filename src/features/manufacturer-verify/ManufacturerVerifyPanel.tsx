@@ -3,7 +3,7 @@ import { Loader2, Factory, Check, ExternalLink, AlertCircle, ShieldCheck } from 
 import { CloseButton } from '@/components/shared/CloseButton'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { useManufacturerVerify } from './useManufacturerVerify'
-import { ManufacturerVerdict } from './ManufacturerVerdict'
+import { VerdictDonePane } from './VerdictDonePane'
 import type { ManufacturerCandidate } from './types'
 
 interface Props {
@@ -114,14 +114,15 @@ export function ManufacturerVerifyPanel({ rowId, source, sourceLabel, onClose }:
           )}
 
           {phase === 'done' && summary && (
-            <ManufacturerVerdict
+            <VerdictDonePane
+              rowId={rowId}
               sourceUrl={source.sourceUrl}
               sourceLabel={sourceLabel}
               mfrUrl={mfrUrl}
               mfrLabel={mfrName ?? 'Fabricant'}
-              summary={summary}
-              comparisons={comparisons}
               eanMatch={eanMatch}
+              fallbackComparisons={comparisons}
+              fallbackSummary={summary}
             />
           )}
         </div>
