@@ -33,6 +33,16 @@ describe('normalizeSpecPairs', () => {
     expect(names).not.toContain('52,24 €')
   })
 
+  it('rejette le bruit anti-bot / formulaire / UUID (source polluée)', () => {
+    const out = normalizeSpecPairs([
+      { name: 'Poids', value: '0,95 kg' },
+      { name: 'Verify', value: 'No Internet access' },
+      { name: 'Please choose a subject', value: "I've tried several times but it won't submit" },
+      { name: 'ID', value: '29aae2cf-97c1-cb53-f592-b1776abc1234' },
+    ])
+    expect(out.map((s) => s.name)).toEqual(['Poids'])
+  })
+
   it('déduplique par nom normalisé (Poids ×2)', () => {
     const out = normalizeSpecPairs([
       { name: 'Poids', value: '0,95 kg' },

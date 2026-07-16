@@ -13,6 +13,7 @@
 import type { ExcelColumn, ExcelRow } from '@/features/excel/types'
 import type { EnrichedProduct, EnrichedSpec, EnrichedAdvantage, Pricing } from '@/features/excel/ai-enrichment/types'
 import { normalizeSpecPairs } from '@/features/scraping/core/parsers/normalizeSpecPairs'
+import { isSaneSpecPair } from '@/features/scraping/core/parsers/parseSpecifications'
 import { canonicalizeSpecName, canonicalLabel, normalizeSpecLabel, normalizeValueForCompare } from './specSynonyms'
 import type { FieldComparison, LlmSpecPairs, VerdictSummary } from './types'
 
@@ -73,8 +74,10 @@ export function sheetRowToEnrichedProduct(row: ExcelRow, columns: ExcelColumn[])
   const has = new Set(columns.map((c) => c.key))
   const specsRaw = has.has('ai_specifications') ? cell(row, 'ai_specifications') : null
   // Normaliseur universel : dédup (« Poids » ×2) + rejet des paires corrompues
-  // (nom en forme de valeur, UUID) que le scrape source peut charrier.
+  // (nom en forme de valeur, UUID, challenge anti-bot) + sanity canonique (UI,
+  // adresse, financier) — même nettoyage que côté fabricant.
   const specifications = normalizeSpecPairs(specsRaw ? parseSerializedSpecs(specsRaw) : [])
+    .filter((s) => isSaneSpecPair(s.name, s.value))
   const advRaw = has.has('ai_advantages') ? cell(row, 'ai_advantages') : null
   const pricingRaw = has.has('ai_pricing') ? cell(row, 'ai_pricing') : null
   const imagesRaw = has.has('ai_images') ? cell(row, 'ai_images') : null
@@ -114,6 +117,7 @@ function rowToManufacturerProduct(row: ExcelRow, columns: ExcelColumn[]): Enrich
   if (!has.has('ai_mfr_specifications') && !has.has('ai_mfr_name') && !has.has('ai_mfr_pricing')) return null
   const specsRaw = cell(row, 'ai_mfr_specifications')
   const specifications = normalizeSpecPairs(specsRaw ? parseSerializedSpecs(specsRaw) : [])
+    .filter((s) => isSaneSpecPair(s.name, s.value))
   const advRaw = cell(row, 'ai_mfr_advantages')
   const name = cell(row, 'ai_mfr_name')
   const pricingRaw = cell(row, 'ai_mfr_pricing')

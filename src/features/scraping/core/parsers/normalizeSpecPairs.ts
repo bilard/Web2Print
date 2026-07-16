@@ -28,6 +28,20 @@ export function looksLikeSpecValue(s: string): boolean {
   return hasUnit || !hasWord
 }
 
+/** UUID / identifiant technique nu (ex: « 29aae2cf-97c1-cb53-… ») en valeur. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-?/i
+
+/** Bruit anti-bot / erreur de connectivité / prompt de formulaire (challenge
+ *  DataDome, captcha, avis) — poison RÉCURRENT des scrapes, universel. */
+const BOT_FORM_RE = /\b(no\s+internet\s+access|access\s+denied|are\s+you\s+(?:a\s+)?(?:human|robot)|verify\s+you\s+are|captcha|please\s+(?:enable|verify|choose|select|complete|try)|choose\s+a\s+(?:subject|reason|topic)|i['’]?ve\s+tried|try\s+again\s+later|enable\s+javascript|checking\s+your\s+browser|acc[eè]s\s+refus[eé]|v[eé]rifi(?:cation|ez)\s+que\s+vous)/i
+
+/** Vrai si la paire est du bruit technique/anti-bot/formulaire (à rejeter). */
+function isNoisePair(name: string, value: string): boolean {
+  if (UUID_RE.test(value)) return true
+  if (BOT_FORM_RE.test(name) || BOT_FORM_RE.test(value)) return true
+  return false
+}
+
 export interface RawSpecPair { name: string; value: string; group?: string }
 
 /**
@@ -42,6 +56,7 @@ export function normalizeSpecPairs<T extends RawSpecPair>(specs: T[]): T[] {
     const value = (s.value ?? '').trim()
     if (!name || !value) continue
     if (looksLikeSpecValue(name)) continue
+    if (isNoisePair(name, value)) continue
     const key = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     if (seen.has(key)) continue
     seen.add(key)
