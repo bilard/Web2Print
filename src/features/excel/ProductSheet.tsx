@@ -189,10 +189,11 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   // Split resizable entre panneau source (gauche) et enrichissement IA (droite)
   const splitContainerRef = useRef<HTMLDivElement>(null)
   const [leftRatio, setLeftRatio] = useState<number>(() => {
-    if (typeof window === 'undefined') return 0.5
-    const stored = window.localStorage.getItem('productSheet.splitRatio')
+    // Défaut : source (gauche) à 20 % → fiche produit enrichie (droite) à 80 %.
+    if (typeof window === 'undefined') return 0.2
+    const stored = window.localStorage.getItem('productSheet.splitRatio.v2')
     const parsed = stored ? Number(stored) : NaN
-    return Number.isFinite(parsed) && parsed >= 0.2 && parsed <= 0.8 ? parsed : 0.5
+    return Number.isFinite(parsed) && parsed >= 0.2 && parsed <= 0.8 ? parsed : 0.2
   })
   const draggingRef = useRef(false)
 
@@ -217,7 +218,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
       try {
-        window.localStorage.setItem('productSheet.splitRatio', String(leftRatio))
+        window.localStorage.setItem('productSheet.splitRatio.v2', String(leftRatio))
       } catch { /* noop */ }
     }
     window.addEventListener('mousemove', onMove)

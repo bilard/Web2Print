@@ -651,7 +651,7 @@ export function EnrichmentPanel({ input }: Props) {
               <Sparkles className="w-3 h-3 text-indigo-300" />
             </div>
             <span className="text-[11px] font-semibold text-white/80 uppercase tracking-wider shrink-0">
-              Enrichi par IA
+              Scrapé par IA
             </span>
           </div>
           {isDone && (
@@ -1357,45 +1357,69 @@ function DoneState({
           const hasAnyPrice = p && (p.ttc != null || p.ht != null || p.original != null)
           const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: p?.currency || 'EUR', minimumFractionDigits: 2 }).format(n)
           if (!p || !hasAnyPrice) return null
+          // Prix « héros » = TTC (ce que paie le client), repli sur HT si TTC absent.
+          const heroPrice = p.ttc ?? p.ht
+          const heroLabel = p.ttc != null ? 'TTC' : 'HT'
+          // Garde-fou promo : le prix barré doit dépasser le plus bas des deux (cf. extraction promo B2B barré HT).
+          const isPromo = p.original != null && p.original > Math.min(p.ttc ?? Infinity, p.ht ?? Infinity)
+          const hasBadge = isPromo || !!(p.discount && (p.discount.amount != null || p.discount.percent != null))
           return (
             <div key="pricing" id={sectionAnchor('pricing')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
               <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">Prix</p>
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
-                {p.ttc != null && (
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-[10px] text-white/40 uppercase tracking-wider">TTC</span>
-                    <span className="text-[16px] font-semibold text-emerald-300">{fmt(p.ttc)}</span>
+              <div className={`rounded-xl border px-4 py-3 bg-gradient-to-br ${
+                isPromo
+                  ? 'border-rose-500/25 from-rose-500/[0.08] to-emerald-500/[0.03]'
+                  : 'border-emerald-500/20 from-emerald-500/[0.08] to-emerald-500/[0.02]'
+              }`}>
+                <div className="flex items-end justify-between gap-3">
+                  {/* Prix principal */}
+                  <div className="min-w-0">
+                    {isPromo && (
+                      <span className="block text-[12px] text-white/35 line-through leading-none mb-1">
+                        {fmt(p.original!)}
+                      </span>
+                    )}
+                    {heroPrice != null && (
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-[26px] font-bold text-emerald-300 leading-none tabular-nums">{fmt(heroPrice)}</span>
+                        <span className="text-[10px] font-semibold text-emerald-300/60 uppercase tracking-wider">{heroLabel}</span>
+                      </div>
+                    )}
+                    {(( p.ttc != null && p.ht != null) || p.unit) && (
+                      <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 text-[11px] text-white/45">
+                        {p.ttc != null && p.ht != null && (
+                          <span><span className="tabular-nums">{fmt(p.ht)}</span> <span className="text-white/30">HT</span></span>
+                        )}
+                        {p.unit && <span className="text-white/35">/ {p.unit}</span>}
+                      </div>
+                    )}
                   </div>
-                )}
-                {p.ht != null && (
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-[10px] text-white/40 uppercase tracking-wider">HT</span>
-                    <span className="text-[14px] text-white/70">{fmt(p.ht)}</span>
-                  </div>
-                )}
-                {p.unit && (
-                  <span className="text-[11px] text-white/40">/ {p.unit}</span>
-                )}
-                {p.original != null && p.original > Math.min(p.ttc ?? Infinity, p.ht ?? Infinity) && (
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-[10px] text-white/40 uppercase tracking-wider">Avant</span>
-                    <span className="text-[12px] text-white/40 line-through">{fmt(p.original)}</span>
-                  </div>
-                )}
-                {p.discount && (p.discount.amount != null || p.discount.percent != null) && (
-                  <div className="px-1.5 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[11px] font-medium">
-                    {p.discount.percent != null ? `-${p.discount.percent}%` : ''}
-                    {p.discount.amount != null && p.discount.percent != null ? ' · ' : ''}
-                    {p.discount.amount != null ? `-${fmt(p.discount.amount)}` : ''}
+                  {/* Cartouche promo */}
+                  {hasBadge && (
+                    <div className="shrink-0">
+                      {p.discount?.percent != null ? (
+                        <span className="inline-block px-2.5 py-1.5 rounded-lg bg-rose-500 text-[#fff] text-[16px] font-extrabold leading-none tabular-nums shadow-sm shadow-rose-500/30">
+                          −{p.discount.percent}%
+                        </span>
+                      ) : p.discount?.amount != null ? (
+                        <span className="inline-block px-2.5 py-1.5 rounded-lg bg-rose-500 text-[#fff] text-[13px] font-bold leading-none tabular-nums shadow-sm shadow-rose-500/30">
+                          −{fmt(p.discount.amount)}
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2 py-1 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-bold uppercase tracking-wider">
+                          Promo
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {(p.ecoParticipation != null || p.validUntil) && (
+                  <div className="mt-2.5 pt-2 border-t border-white/[0.07] flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-white/40">
+                    {p.ecoParticipation != null && <span>Éco-participation : {fmt(p.ecoParticipation)}</span>}
+                    {p.validUntil && <span>Valable jusqu'au {p.validUntil}</span>}
                   </div>
                 )}
               </div>
-              {(p.ecoParticipation != null || p.validUntil) && (
-                <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-white/40">
-                  {p.ecoParticipation != null && <span>Éco-participation : {fmt(p.ecoParticipation)}</span>}
-                  {p.validUntil && <span>Valable jusqu'au {p.validUntil}</span>}
-                </div>
-              )}
             </div>
           )
         }
