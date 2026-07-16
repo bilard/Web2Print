@@ -309,7 +309,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       if (!rootUrl) setCrawlPages([])
       return
     }
-    const SRC_LABEL: Record<string, string> = { cards: 'grille produit', content: 'liens hors navigation', cloud: 'escalade scroll (Puppeteer)', firecrawl: 'Firecrawl (proxy stealth, anti-bot)', jina: 'moteur Jina', none: 'aucune' }
+    const SRC_LABEL: Record<string, string> = { cards: 'grille produit', content: 'liens hors navigation', cloud: 'escalade scroll (Puppeteer)', firecrawl: 'cascade anti-bot (fetchPageHtml → Firecrawl → Bright Data)', jina: 'moteur Jina', none: 'aucune' }
     pushDiscoveryLog(`${pages.length} lien(s) découvert(s) · source : ${SRC_LABEL[source] ?? source}`)
     if (source === 'cards') {
       toast.success(`${pages.length} fiche(s) détectée(s) dans la grille produit (liens de navigation exclus).`)
@@ -318,8 +318,8 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     } else if (source === 'cloud') {
       toast.info(`${pages.length} produit(s) — l'escalade scroll a complété la grille lazy-load.`)
     } else if (source === 'firecrawl') {
-      pushDiscoveryLog('⚠ Liens BRUTS (Firecrawl anti-bot, non classifiés) — décoche les liens hors produit avant d\'enrichir, ou affine « Inclure (regex) ».')
-      toast.info(`${pages.length} lien(s) via Firecrawl (anti-bot contourné) — liens bruts, vérifie/filtre avant d'enrichir.`)
+      pushDiscoveryLog('⚠ Liens BRUTS (cascade anti-bot, non classifiés) — décoche les liens hors produit avant d\'enrichir, ou affine « Inclure (regex) » (ex. /p-).')
+      toast.info(`${pages.length} lien(s) via la cascade anti-bot — liens bruts, vérifie/filtre avant d'enrichir.`)
     }
 
     // Filtre par instruction (« ne garder que les perceuses Makita ») — AVANT

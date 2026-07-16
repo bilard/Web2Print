@@ -11,6 +11,8 @@ import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 import { sanitizeSchemaForGemini } from '@/features/briefs/ai/geminiClient'
 import { selectDiscoveryEntries } from './core/discoverLinks'
 import { firecrawlScrapeHtml } from './core/firecrawlFallback'
+import { brightDataScrapeHtml } from './core/brightDataFallback'
+import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
 import { recordScrapeUsage } from '@/features/stats/aiUsageTracking'
 
 /** Cloud Function Puppeteer : extrait le breadcrumb visible d'une page
@@ -1241,30 +1243,37 @@ export function useJina() {
       const nothingRendered = jinaEntries.length === 0 && cloudTotal === 0
 
       // Dernier recours ANTI-BOT : quand Jina ET l'escalade Puppeteer ne rendent
-      // rien (DataDome/captcha), on tente Firecrawl (proxy stealth résidentiel +
-      // waitFor → rend le JS et passe l'anti-bot). On extrait les ancres du HTML
-      // rendu et on les traite comme des liens BRUTS (l'utilisateur coche avant
-      // d'enrichir). Universel + fail-safe : pas de clé ou échec → comportement
-      // inchangé (0 lien).
+      // rien (DataDome/captcha, ex. Rubix), on rejoue la MÊME cascade HTML qui
+      // marche déjà pour les fiches produit — CF fetchPageHtml → Firecrawl (stealth
+      // résidentiel + JS) → Bright Data Web Unlocker — puis on extrait les ancres
+      // du HTML rendu (liens BRUTS : l'utilisateur coche avant d'enrichir). C'est
+      // ce qui manquait : le scrape produit passe, la découverte non, car elle
+      // n'appelait pas cette cascade. Universel + fail-safe (échec → 0 lien).
       if (nothingRendered) {
+        const extractAnchors = (html: string): [string, string][] => {
+          const out: [string, string][] = []
+          try {
+            const dom = new DOMParser().parseFromString(html, 'text/html')
+            dom.querySelectorAll('a[href]').forEach((a) => {
+              const href = a.getAttribute('href') ?? ''
+              const title = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
+              if (href) out.push([title, href])
+            })
+          } catch { /* DOMParser indisponible */ }
+          return out
+        }
         const fcKey = getApiKey('firecrawl').trim()
-        if (fcKey) {
-          const html = await firecrawlScrapeHtml(url, fcKey).catch(() => null)
-          if (html) {
-            const anchors: [string, string][] = []
-            try {
-              const dom = new DOMParser().parseFromString(html, 'text/html')
-              dom.querySelectorAll('a[href]').forEach((a) => {
-                const href = a.getAttribute('href') ?? ''
-                const title = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
-                if (href) anchors.push([title, href])
-              })
-            } catch { /* DOMParser indisponible */ }
-            const fcProducts = toProducts(anchors)
-            if (fcProducts.length > 0) {
-              return { pages: fcProducts, source: 'firecrawl' }
-            }
-          }
+        // Ordre = cascade produit. Une page de challenge fait ~1 ko → seuil de garde.
+        const htmlSources: Array<() => Promise<string | null>> = [
+          () => fetchSourceHtml(url, 25_000).catch(() => null),
+          ...(fcKey ? [() => firecrawlScrapeHtml(url, fcKey).catch(() => null)] : []),
+          () => brightDataScrapeHtml(url).catch(() => null),
+        ]
+        for (const fetchHtml of htmlSources) {
+          const html = await fetchHtml()
+          if (!html || html.length < 1500) continue
+          const prods = toProducts(extractAnchors(html))
+          if (prods.length > 0) return { pages: prods, source: 'firecrawl' }
         }
       }
       const tierHint = nothingRendered
