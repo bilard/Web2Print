@@ -1,5 +1,6 @@
 import type { EnrichedProduct, EnrichedSpec, EnrichedAdvantage } from './types'
 import { isJunkImageUrl } from './imageFilter'
+import { sanitizeSpecPair } from '@/features/scraping/core/parsers/normalizeSpecPairs'
 
 /**
  * Sanitization minimaliste appliquée à TOUTE EnrichedProduct au chargement
@@ -80,7 +81,9 @@ export function sanitizeEnrichedProduct(product: EnrichedProduct): EnrichedProdu
   let description = product.description ?? ''
   if (description && isNavLikeDescription(description)) description = ''
 
-  const specifications = (product.specifications ?? []).filter(s => !isJunkSpec(s))
+  // Nettoyage universel (crochet orphelin, libellé auto-répété dans la valeur)
+  // AVANT le filtre junk — même sanitizer que la comparaison → fiche homogène.
+  const specifications = (product.specifications ?? []).map(sanitizeSpecPair).filter(s => !isJunkSpec(s))
   const advantages = (product.advantages ?? []).map(cleanAdvantage)
 
   // Filtre les images junk au reload Firestore — couvre les données enregistrées

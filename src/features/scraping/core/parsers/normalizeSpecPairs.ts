@@ -44,14 +44,42 @@ function isNoisePair(name: string, value: string): boolean {
 
 export interface RawSpecPair { name: string; value: string; group?: string }
 
+/** Normalisation faible d'un libellé (NFD, minuscules, alphanumérique). */
+function normKey(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+/** Ponctuation orpheline EN TÊTE (crochets, puces, pipes, deux-points…). On
+ *  exclut volontairement `- < > ~ . /` qui portent du sens en valeur
+ *  (« -5°C », « <0,5 mm », « 1/2" »). */
+const LEADING_JUNK_RE = /^[\s\]\[)(}{»«·•*_|:;►▶▪–—]+/
+
 /**
- * Nettoie une liste de paires : rejette les paires corrompues (nom = valeur,
- * valeur vide) et déduplique par nom normalisé (NFD, minuscules).
+ * Nettoie UNE paire (nom, valeur) de façon universelle et idempotente :
+ *  - retire la ponctuation orpheline de tête (« ]Couple… » → « Couple… ») ;
+ *  - retire le libellé auto-répété dans la valeur (name=« Réglage du couple »,
+ *    value=« Réglage du couple: 21 positions » → « 21 positions »).
+ * Ne modifie jamais une paire déjà propre (renvoie l'objet d'origine).
+ */
+export function sanitizeSpecPair<T extends RawSpecPair>(spec: T): T {
+  const name = (spec.name ?? '').replace(LEADING_JUNK_RE, '').trim()
+  let value = (spec.value ?? '').replace(LEADING_JUNK_RE, '').trim()
+  const ci = value.indexOf(':')
+  const nk = normKey(name)
+  if (ci > 0 && nk && normKey(value.slice(0, ci)) === nk) value = value.slice(ci + 1).trim()
+  return name === spec.name && value === spec.value ? spec : { ...spec, name, value }
+}
+
+/**
+ * Nettoie une liste de paires : sanitize chaque paire (crochet/libellé auto-
+ * répété), rejette les paires corrompues (nom = valeur, valeur vide) et
+ * déduplique par nom normalisé (NFD, minuscules).
  */
 export function normalizeSpecPairs<T extends RawSpecPair>(specs: T[]): T[] {
   const out: T[] = []
   const seen = new Set<string>()
-  for (const s of specs) {
+  for (const raw of specs) {
+    const s = sanitizeSpecPair(raw)
     const name = (s.name ?? '').trim()
     const value = (s.value ?? '').trim()
     if (!name || !value) continue

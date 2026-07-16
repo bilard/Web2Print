@@ -229,7 +229,7 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
                 const meta = badgeFor(c)
                 // Toggle Source⇄Fabricant possible dès que le fabricant a une valeur
                 // et qu'il y a un choix (déjà adopté, présent seulement fabricant, ou divergent).
-                const canToggle = c.group === 'spec' && !!onToggleAdopt && !!c.mfrValue
+                const canToggle = c.group === 'spec' && !!onToggleAdopt && !!c.mfrValue && !c.dupCanon
                   && (c.adopted || c.status === 'mfr-only' || c.status === 'diff')
                 return (
                   <div key={c.key} className={`grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center px-4 py-2 border-t border-white/[0.03] ${c.adopted ? 'bg-teal-500/[0.06]' : ''}`}>

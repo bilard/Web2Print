@@ -164,7 +164,8 @@ export function normalizeValueForCompare(value: string): string {
   if (single) {
     const num = parseFloat(single[1].replace(/[<>~\u2248\s]/g, '').replace(',', '.'))
     const unitKey = single[2].trim().replace(/[./-]/g, ' ').replace(/\s+/g, ' ').trim()
-    const conv = UNIT_FACTORS[unitKey]
+    // Tolère l'unité avec/ sans séparateur interne : « N.m », « N m » ≡ « Nm ».
+    const conv = UNIT_FACTORS[unitKey] ?? UNIT_FACTORS[unitKey.replace(/\s+/g, '')]
     if (conv && Number.isFinite(num)) {
       const inBase = num * conv.factor
       return `${trimNumber(inBase)} ${conv.base}`

@@ -190,6 +190,22 @@ function priceStr(pricing: Pricing | undefined, field: 'ttc' | 'ht' | 'original'
   return typeof n === 'number' ? String(n) : null
 }
 
+/** Dédup une liste de specs par (clé canonique|libellé normalisé, valeur normalisée) :
+ *  collapse les doublons de FORMAT d'une même donnée (« 65 Nm » ≡ « 65 N.m »), sans
+ *  fusionner deux valeurs réellement distinctes d'un même canon (54/30 vs 65). */
+function dedupByCanonValue(specs: EnrichedSpec[]): EnrichedSpec[] {
+  const seen = new Set<string>()
+  const out: EnrichedSpec[] = []
+  for (const s of specs) {
+    const canon = canonicalizeSpecName(s.name) ?? normalizeSpecLabel(s.name)
+    const k = `${canon}=${normalizeValueForCompare(s.value)}`
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push(s)
+  }
+  return out
+}
+
 /**
  * Compare identité + prix + specs. `llmPairs` (optionnel) rapproche les specs
  * dont ni la source ni le fabricant n'ont de clé canonique connue
@@ -246,54 +262,68 @@ export function compareSourceVsManufacturer(
     })
   }
 
-  // 3. Specs — index fabricant par clé canonique et par libellé normalisé.
-  const mfrByCanon = new Map<string, EnrichedSpec>()
+  // 3. Specs. Dédup chaque côté par (clé canonique, valeur normalisée) : collapse
+  //    les doublons de format (« 65 Nm » ≡ « 65 N.m ») avant l'appariement.
+  const srcSpecs = dedupByCanonValue(source.specifications)
+  const mfrSpecs = dedupByCanonValue(mfr.specifications)
+
+  // Index fabricant : POOLS par canon (un canon peut porter plusieurs valeurs :
+  //    couple 54/30 ET 65 Nm) + repli par libellé normalisé.
+  const mfrByCanon = new Map<string, EnrichedSpec[]>()
   const mfrByNorm = new Map<string, EnrichedSpec>()
-  for (const s of mfr.specifications) {
+  for (const s of mfrSpecs) {
     const canon = canonicalizeSpecName(s.name)
-    if (canon && !mfrByCanon.has(canon)) mfrByCanon.set(canon, s)
+    if (canon) { const a = mfrByCanon.get(canon); if (a) a.push(s); else mfrByCanon.set(canon, [s]) }
     const norm = normalizeSpecLabel(s.name)
     if (norm && !mfrByNorm.has(norm)) mfrByNorm.set(norm, s)
   }
   const consumedMfr = new Set<EnrichedSpec>()
+  const usedKeys = new Set<string>()
+  const uniqueKey = (base: string): string => {
+    let k = base, i = 2
+    while (usedKeys.has(k)) k = `${base}~${i++}`
+    usedKeys.add(k)
+    return k
+  }
 
-  for (const src of source.specifications) {
+  for (const src of srcSpecs) {
     const canon = canonicalizeSpecName(src.name)
     const srcNorm = normalizeSpecLabel(src.name)
     let match: EnrichedSpec | undefined
-
     if (canon && mfrByCanon.has(canon)) {
-      match = mfrByCanon.get(canon)
+      // Appariement par VALEUR d'abord (65 Nm ↔ 65 Nm), sinon 1re dispo du pool.
+      const pool = mfrByCanon.get(canon)!.filter((m) => !consumedMfr.has(m))
+      match = pool.find((m) => normalizeValueForCompare(m.value) === normalizeValueForCompare(src.value)) ?? pool[0]
     } else if (llmPairs[srcNorm] && mfrByNorm.has(llmPairs[srcNorm])) {
-      match = mfrByNorm.get(llmPairs[srcNorm])
+      const m = mfrByNorm.get(llmPairs[srcNorm]); if (m && !consumedMfr.has(m)) match = m
     } else if (mfrByNorm.has(srcNorm)) {
-      match = mfrByNorm.get(srcNorm)
+      const m = mfrByNorm.get(srcNorm); if (m && !consumedMfr.has(m)) match = m
     }
     if (match) consumedMfr.add(match)
 
-    const label = canon ? canonicalLabel(canon) : src.name
+    // 1re spec d'un canon → libellé canonique + clé `spec:canon`. Les suivantes
+    //    gardent leur libellé BRUT (respect de la source), une clé unique, et sont
+    //    marquées dupCanon (non adoptables — l'adoption par canon serait ambiguë).
+    const canonTaken = !!canon && usedKeys.has(`spec:${canon}`)
+    const label = canon && !canonTaken ? canonicalLabel(canon) : src.name
     const mfrValue = match ? match.value : null
     out.push({
-      key: canon ? `spec:${canon}` : `spec:${srcNorm}`,
-      label,
-      group: 'spec',
-      sourceValue: src.value,
-      mfrValue,
-      status: statusFor(src.value, mfrValue),
+      key: uniqueKey(canon ? `spec:${canon}` : `spec:${srcNorm}`),
+      label, group: 'spec', sourceValue: src.value, mfrValue,
+      status: statusFor(src.value, mfrValue), ...(canonTaken ? { dupCanon: true } : {}),
     })
   }
 
   // 4. Specs présentes SEULEMENT chez le fabricant (la « vérité » complémentaire).
-  for (const s of mfr.specifications) {
+  for (const s of mfrSpecs) {
     if (consumedMfr.has(s)) continue
     const canon = canonicalizeSpecName(s.name)
+    const canonTaken = !!canon && usedKeys.has(`spec:${canon}`)
     out.push({
-      key: canon ? `spec:${canon}` : `spec:${normalizeSpecLabel(s.name)}`,
-      label: canon ? canonicalLabel(canon) : s.name,
-      group: 'spec',
-      sourceValue: null,
-      mfrValue: s.value,
-      status: 'mfr-only',
+      key: uniqueKey(canon ? `spec:${canon}` : `spec:${normalizeSpecLabel(s.name)}`),
+      label: canon && !canonTaken ? canonicalLabel(canon) : s.name,
+      group: 'spec', sourceValue: null, mfrValue: s.value, status: 'mfr-only',
+      ...(canonTaken ? { dupCanon: true } : {}),
     })
   }
 

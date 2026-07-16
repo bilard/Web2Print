@@ -1,5 +1,27 @@
 import { describe, it, expect } from 'vitest'
-import { looksLikeSpecValue, normalizeSpecPairs } from './normalizeSpecPairs'
+import { looksLikeSpecValue, normalizeSpecPairs, sanitizeSpecPair } from './normalizeSpecPairs'
+
+describe('sanitizeSpecPair (valeurs source réelles Rubix/Makita)', () => {
+  it('retire le crochet orphelin + le libellé auto-répété dans la valeur', () => {
+    // Cas réels capturés en prod (fiche Makita DDF484RTJ) :
+    expect(sanitizeSpecPair({ name: 'Couple max. fixation franc/élastique', value: ']Couple max. fixation franc/élastique: 54 / 30 Nm' }))
+      .toEqual({ name: 'Couple max. fixation franc/élastique', value: '54 / 30 Nm' })
+    expect(sanitizeSpecPair({ name: 'Réglage du couple', value: ']Réglage du couple: 21 positions' }))
+      .toEqual({ name: 'Réglage du couple', value: '21 positions' })
+  })
+
+  it('ne touche jamais une paire déjà propre', () => {
+    const clean = { name: 'Couple', value: '65 Nm' }
+    expect(sanitizeSpecPair(clean)).toBe(clean) // même référence
+    // Signes utiles préservés (pas de sur-strip) :
+    expect(sanitizeSpecPair({ name: 'Température', value: '-5°C' }).value).toBe('-5°C')
+    expect(sanitizeSpecPair({ name: 'Tolérance', value: '<0,5 mm' }).value).toBe('<0,5 mm')
+  })
+
+  it('ne retire le préfixe QUE si la tête == le nom (pas un « Type: » légitime)', () => {
+    expect(sanitizeSpecPair({ name: 'Mandrin', value: 'Type: auto-serrant' }).value).toBe('Type: auto-serrant')
+  })
+})
 
 describe('looksLikeSpecValue', () => {
   it('détecte les valeurs (nombre + unité, prix)', () => {

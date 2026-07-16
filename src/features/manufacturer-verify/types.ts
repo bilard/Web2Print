@@ -20,6 +20,10 @@ export interface FieldComparison {
   /** Vrai si la valeur fabricant a été ADOPTÉE dans le master de la source
    *  (provenance fabricant conservée en permanence). */
   adopted?: boolean
+  /** Vrai si cette ligne est une 2e occurrence d'une même clé canonique (ex:
+   *  plusieurs specs « Couple ») : gardée pour ne rien perdre, mais NON adoptable
+   *  (l'adoption par clé canonique serait ambiguë). */
+  dupCanon?: boolean
 }
 
 /** Paires de specs rapprochées par le LLM (clés = libellés normalisés). */

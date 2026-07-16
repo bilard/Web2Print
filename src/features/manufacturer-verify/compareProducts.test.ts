@@ -101,6 +101,35 @@ describe('compareSourceVsManufacturer', () => {
     expect(couple?.adopted).toBe(true)
   })
 
+  it('dédup + apparie les specs multi-valeurs d’un même canon (Couple ×3 → 2 lignes, clés uniques)', () => {
+    // Reproduit le cas réel Makita : 3 « Couple » source (dont un doublon de
+    // format 65 Nm / 65 N.m) et 2 « Couple » fabricant.
+    const source = baseProduct({
+      specifications: [
+        { name: 'Couple max. fixation franc/élastique', value: '54 / 30 Nm' },
+        { name: 'Couple', value: '65 Nm' },
+        { name: 'Couple de serrage', value: '65 N.m' }, // même valeur que 65 Nm, format ≠
+      ],
+    })
+    const mfr = baseProduct({
+      specifications: [
+        { name: 'Couple', value: '54 / 30 Nm' },
+        { name: 'Couple max', value: '65 Nm' },
+      ],
+    })
+    const comps = compareSourceVsManufacturer(source, mfr)
+    const couples = comps.filter((c) => c.group === 'spec' && c.key.startsWith('spec:couple'))
+    // 65 Nm ≡ 65 N.m collapsés → 2 lignes couple, pas 3+.
+    expect(couples).toHaveLength(2)
+    // Appariées par valeur → toutes match (54/30 ↔ 54/30, 65 ↔ 65).
+    expect(couples.every((c) => c.status === 'match')).toBe(true)
+    // Clés uniques (pas de collision React / adoption).
+    expect(new Set(couples.map((c) => c.key)).size).toBe(2)
+    // La 2e occurrence garde son libellé brut + est marquée non-adoptable.
+    expect(couples[0].dupCanon).toBeFalsy()
+    expect(couples[1].dupCanon).toBe(true)
+  })
+
   it('summarize compte confirmés/complétés/divergents', () => {
     const s = summarize([
       { key: 'a', label: 'a', group: 'spec', sourceValue: '1', mfrValue: '1', status: 'match' },
