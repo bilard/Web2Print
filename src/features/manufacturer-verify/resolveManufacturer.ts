@@ -28,6 +28,37 @@ function hostOf(url: string): string | null {
   try { return new URL(url).hostname.toLowerCase().replace(/^www\./, '') } catch { return null }
 }
 
+/** Vrai si l'URL cible la locale FR (chemin /fr/ ou /fr-fr/). */
+function isFrenchUrl(url: string): boolean {
+  try {
+    const p = new URL(url).pathname.toLowerCase()
+    return p.startsWith('/fr/') || p.startsWith('/fr-') || p === '/fr'
+  } catch { return false }
+}
+
+/**
+ * Réécrit une URL fabricant vers sa variante FR quand le chemin porte une locale
+ * (/de/de/…, /en/…, /it/it/…). Générique — segments de locale, JAMAIS par marque.
+ * Retourne null si aucune locale réécrivable (déjà FR ou pas de segment locale).
+ */
+function toFrenchLocale(url: string): string | null {
+  try {
+    const u = new URL(url)
+    const segs = u.pathname.split('/').filter(Boolean)
+    if (segs.length === 0) return null
+    const isLang = (s: string) => /^[a-z]{2}$/.test(s)
+    let changed = false
+    if (isLang(segs[0]) && segs[1] && isLang(segs[1])) {
+      if (segs[0] !== 'fr' || segs[1] !== 'fr') { segs[0] = 'fr'; segs[1] = 'fr'; changed = true }
+    } else if (isLang(segs[0])) {
+      if (segs[0] !== 'fr') { segs[0] = 'fr'; changed = true }
+    }
+    if (!changed) return null
+    u.pathname = '/' + segs.join('/')
+    return u.toString()
+  } catch { return null }
+}
+
 const alnum = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
 
 /** Résout le domaine officiel + le label de marque. Généraliste hors whitelist. */
@@ -120,7 +151,22 @@ export async function resolveManufacturerCandidates(input: ResolveInput): Promis
     if (candidates.some((c) => c.confidence === 'high') && candidates.length >= 3) break
   }
 
+  // Ajouter la variante FR de chaque candidat localisé (page fabricant traduite) :
+  // la démo est française, on veut comparer aux valeurs FR (et éviter le bruit
+  // d'avis en langue étrangère, non filtré par les parsers FR/EN).
+  const expanded: ManufacturerCandidate[] = []
+  const seenUrl = new Set<string>()
+  for (const c of candidates) {
+    const fr = toFrenchLocale(c.url)
+    if (fr && !seenUrl.has(fr)) { seenUrl.add(fr); expanded.push({ ...c, url: fr }) }
+    if (!seenUrl.has(c.url)) { seenUrl.add(c.url); expanded.push(c) }
+  }
+
   const rank = { high: 0, medium: 1, low: 2 }
-  candidates.sort((a, b) => rank[a.confidence] - rank[b.confidence])
-  return candidates.slice(0, 5)
+  // Tri : confiance d'abord, puis pages FR en tête (à confiance égale).
+  expanded.sort((a, b) =>
+    (rank[a.confidence] - rank[b.confidence])
+    || ((isFrenchUrl(b.url) ? 1 : 0) - (isFrenchUrl(a.url) ? 1 : 0)),
+  )
+  return expanded.slice(0, 5)
 }

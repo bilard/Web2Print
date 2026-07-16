@@ -2709,6 +2709,32 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
         }
       }
       if (techCount > 0) console.log('[manufacturer] ✓ specs from techspecs HTML rows:', techCount)
+
+      // ── Tables de specs en <div> (convention body-row / body-cell) ──
+      // Beaucoup de fabricants (Bosch Professional & co) rendent la fiche
+      // technique dans une grille <div class="…body-row"><div class="…body-cell">
+      // <span>Nom</span></div><div class="…body-cell"><span>Valeur</span></div>
+      // — invisible aux parsers <table>/<dl>/techspecs. Générique par convention
+      // de classe. Garde-fous : exactement une paire (nom, valeur) exploitable,
+      // libellés courts, hors zones non-produit (avis/footer via isNonProductRegion).
+      const divRows = doc.querySelectorAll('[class*="body-row"]')
+      let divCount = 0
+      for (const row of divRows) {
+        if (isNonProductRegion(row)) continue
+        const cells = row.querySelectorAll('[class*="body-cell"]')
+        if (cells.length < 2) continue
+        const n = (cells[0].textContent || '').replace(/\s+/g, ' ').trim()
+        const v = (cells[1].textContent || '').replace(/\s+/g, ' ').trim()
+        // Un libellé de spec est court ; une valeur reste bornée. Rejette les
+        // lignes de contenu long (paragraphes d'avis, descriptions) qui pourraient
+        // porter la même convention de classe sur d'autres sites.
+        if (n && v && n.length <= 80 && v.length <= 200 && n !== v) {
+          data.specs.push({ name: n, value: v })
+          divCount++
+        }
+      }
+      if (divCount > 0) console.log('[manufacturer] ✓ specs from <div> table rows:', divCount)
+
       if (data.specs.length > 0) console.log('[manufacturer] ✓ specs from HTML DOM:', data.specs.length)
     } catch (err) {
       console.warn('[manufacturer] HTML DOM spec extraction failed:', err)
