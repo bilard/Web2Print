@@ -3,14 +3,15 @@
  *
  * « La vérité est chez le fabricant » → l'utilisateur promeut une valeur
  * fabricant dans les données du produit. Gère 3 cibles :
- *  - spec technique (« + fabricant » ou « ≠ diffère ») → colonne `ai_specifications`
+ *  - spec technique (« + fabricant » ou « ≠ diffère ») → `ai_specifications`
  *    (append si absente, REMPLACE la valeur source si divergente),
  *  - description → `ai_description`,
  *  - points forts → `ai_advantages`.
  *
  * La provenance + la valeur SOURCE d'origine sont tracées dans `ai_mfr_adopted`
- * (JSON `{ [key]: { label, target, original } }`) → badge permanent + RESET fidèle
- * (restaure l'original). Append/retrait par segment, jamais d'écrasement global.
+ * (JSON `{ [key]: { label, target, original } }`) → badge permanent + RESET fidèle.
+ * Matching des specs par CLÉ CANONIQUE (robuste au nommage réel). Append/retrait
+ * par segment, jamais d'écrasement global.
  */
 
 import { useCallback, useState } from 'react'
@@ -19,6 +20,7 @@ import { auth } from '@/lib/firebase/config'
 import { useExcelStore } from '@/stores/excel.store'
 import type { ExcelColumn, FieldTypeId } from '@/features/excel/types'
 import { writeSheetsToFirestore } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
+import { canonicalizeSpecName, normalizeSpecLabel } from './specSynonyms'
 
 const ADOPTED_COL = 'ai_mfr_adopted'
 
@@ -27,9 +29,25 @@ const buildCol = (key: string, label: string, fieldType: FieldTypeId, width: num
 })
 
 const splitSegs = (raw: string): string[] => raw.split(' | ').map((s) => s.trim()).filter(Boolean)
+/** Nom d'un segment « [groupe]Nom: valeur » (groupe et valeur retirés). */
+const segName = (seg: string): string => seg.replace(/^\[[^\]]*\]/, '').split(':')[0].trim()
+const segCanon = (seg: string): string => { const n = segName(seg); return canonicalizeSpecName(n) ?? normalizeSpecLabel(n) }
+const segValue = (seg: string): string => { const i = seg.indexOf(':'); return i >= 0 ? seg.slice(i + 1).trim() : '' }
 
 interface AdoptRecord { label: string; target: string; original: string | null }
 type AdoptedMap = Record<string, AdoptRecord>
+
+/** Tolère le format JSON (nouveau) ET l'ancien « clé | clé » (rétro-compat). */
+function parseAdopted(raw: string): AdoptedMap {
+  if (!raw) return {}
+  try {
+    const j = JSON.parse(raw) as unknown
+    if (j && typeof j === 'object' && !Array.isArray(j)) return j as AdoptedMap
+  } catch { /* ancien format */ }
+  const map: AdoptedMap = {}
+  for (const k of splitSegs(raw)) map[k] = { label: '', target: 'ai_specifications', original: null }
+  return map
+}
 
 /** Item de comparaison à adopter/annuler. */
 export interface AdoptItem {
@@ -39,7 +57,6 @@ export interface AdoptItem {
   value: string
 }
 
-/** Colonne cible + valeur à écrire selon le type de champ. */
 function targetFor(item: AdoptItem): { col: string; write: string } | null {
   if (item.key === 'content:description') return { col: 'ai_description', write: item.value }
   if (item.key === 'content:advantages') return { col: 'ai_advantages', write: item.value.split(' • ').map((s) => s.trim()).filter(Boolean).join(' | ') }
@@ -68,25 +85,25 @@ export function useAdoptManufacturerSpec() {
       if (!keys.has(target.col)) addColumn(activeSheetIndex, buildCol(target.col, target.col, 'text_long', 320))
       if (!keys.has(ADOPTED_COL)) addColumn(activeSheetIndex, buildCol(ADOPTED_COL, 'Fabricant · Adoptées', 'text_long', 120))
 
-      let adoptedMap: AdoptedMap = {}
-      const adoptedRaw = typeof row[ADOPTED_COL] === 'string' ? (row[ADOPTED_COL] as string) : ''
-      if (adoptedRaw) { try { adoptedMap = JSON.parse(adoptedRaw) as AdoptedMap } catch { adoptedMap = {} } }
-
+      const adoptedMap = parseAdopted(typeof row[ADOPTED_COL] === 'string' ? (row[ADOPTED_COL] as string) : '')
       const curCell = typeof row[target.col] === 'string' ? (row[target.col] as string) : ''
 
       if (target.col === 'ai_specifications') {
-        // Spec = segment « label: valeur » dans la chaîne pipe-séparée.
+        // Matching par clé canonique — robuste au nom réel de la spec source.
+        const canon = item.key.replace(/^spec:/, '')
         const segs = splitSegs(curCell)
-        const idx = segs.findIndex((s) => s.toLowerCase().replace(/^\[[^\]]*\]/, '').startsWith(`${item.label.toLowerCase()}:`))
+        const idx = segs.findIndex((s) => segCanon(s) === canon)
         if (adopt) {
-          const original = idx >= 0 ? segs[idx].replace(/^\[[^\]]*\][^:]*:|^[^:]*:/, '').trim() : null
-          adoptedMap[item.key] = { label: item.label, target: target.col, original }
-          if (idx >= 0) segs[idx] = `${item.label}: ${target.write}`
-          else segs.push(`${item.label}: ${target.write}`)
+          const original = idx >= 0 ? segValue(segs[idx]) : null
+          const name = idx >= 0 ? segName(segs[idx]) : item.label
+          adoptedMap[item.key] = { label: name, target: target.col, original }
+          const newSeg = `${name}: ${target.write}`
+          if (idx >= 0) segs[idx] = newSeg
+          else segs.push(newSeg)
         } else {
           const rec = adoptedMap[item.key]
           if (idx >= 0) {
-            if (rec?.original != null) segs[idx] = `${item.label}: ${rec.original}`
+            if (rec?.original != null) segs[idx] = `${segName(segs[idx])}: ${rec.original}`
             else segs.splice(idx, 1)
           }
           delete adoptedMap[item.key]
@@ -127,8 +144,7 @@ export function useAdoptManufacturerSpec() {
   return { setAdopted, busy }
 }
 
-/** Clés adoptées lues depuis `ai_mfr_adopted` (JSON). */
+/** Clés adoptées lues depuis `ai_mfr_adopted` (JSON ou ancien format). */
 export function readAdoptedKeys(raw: string | null): Set<string> {
-  if (!raw) return new Set()
-  try { return new Set(Object.keys(JSON.parse(raw) as AdoptedMap)) } catch { return new Set() }
+  return new Set(Object.keys(parseAdopted(raw ?? '')))
 }
