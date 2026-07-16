@@ -177,7 +177,10 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
           <span>Champ</span><span>Source</span><span>Fabricant</span><span className="text-right">État</span>
         </div>
         {groups.map((g) => {
-          const rows = comparisons.filter((c) => c.group === g && (!filter || c.status === filter))
+          // Un filtre actif ne montre QUE les specs de ce statut (ce que comptent
+          // les tuiles) — l'identité/prix ne sont pas scorés.
+          const rows = comparisons.filter((c) =>
+            c.group === g && (!filter || (g === 'spec' && c.status === filter)))
           if (rows.length === 0) return null
           return (
             <div key={g}>
