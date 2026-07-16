@@ -10,6 +10,7 @@ import { functions } from '@/lib/firebase/config'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 import { sanitizeSchemaForGemini } from '@/features/briefs/ai/geminiClient'
 import { selectDiscoveryEntries } from './core/discoverLinks'
+import { firecrawlScrapeHtml } from './core/firecrawlFallback'
 import { recordScrapeUsage } from '@/features/stats/aiUsageTracking'
 
 /** Cloud Function Puppeteer : extrait le breadcrumb visible d'une page
@@ -1155,7 +1156,7 @@ export function useJina() {
   const discover = useCallback(async (
     url: string,
     opts: { includePaths?: string; excludePaths?: string; limit?: number } = {},
-  ): Promise<{ pages: CrawlPage[]; source: 'cards' | 'content' | 'jina' | 'cloud' | 'none'; error?: string }> => {
+  ): Promise<{ pages: CrawlPage[]; source: 'cards' | 'content' | 'jina' | 'cloud' | 'firecrawl' | 'none'; error?: string }> => {
     const safeRe = (s?: string): RegExp | null => {
       const t = (s ?? '').trim()
       if (!t) return null
@@ -1238,6 +1239,34 @@ export function useJina() {
       const cloudTotal = cloud.links.length + cloud.navLinks.length + cloud.cardLinks.length
       const counts = `Jina : ${jinaEntries.length} lien(s) · escalade Puppeteer : ${cloudTotal} lien(s)`
       const nothingRendered = jinaEntries.length === 0 && cloudTotal === 0
+
+      // Dernier recours ANTI-BOT : quand Jina ET l'escalade Puppeteer ne rendent
+      // rien (DataDome/captcha), on tente Firecrawl (proxy stealth résidentiel +
+      // waitFor → rend le JS et passe l'anti-bot). On extrait les ancres du HTML
+      // rendu et on les traite comme des liens BRUTS (l'utilisateur coche avant
+      // d'enrichir). Universel + fail-safe : pas de clé ou échec → comportement
+      // inchangé (0 lien).
+      if (nothingRendered) {
+        const fcKey = getApiKey('firecrawl').trim()
+        if (fcKey) {
+          const html = await firecrawlScrapeHtml(url, fcKey).catch(() => null)
+          if (html) {
+            const anchors: [string, string][] = []
+            try {
+              const dom = new DOMParser().parseFromString(html, 'text/html')
+              dom.querySelectorAll('a[href]').forEach((a) => {
+                const href = a.getAttribute('href') ?? ''
+                const title = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
+                if (href) anchors.push([title, href])
+              })
+            } catch { /* DOMParser indisponible */ }
+            const fcProducts = toProducts(anchors)
+            if (fcProducts.length > 0) {
+              return { pages: fcProducts, source: 'firecrawl' }
+            }
+          }
+        }
+      }
       const tierHint = nothingRendered
         ? 'Page NON CHARGÉE : ni le moteur navigateur Jina ni l\'escalade Puppeteer n\'ont récupéré de lien. '
           + 'La page est très probablement protégée par un anti-bot (captcha / DataDome) ou entièrement rendue en JS. '
