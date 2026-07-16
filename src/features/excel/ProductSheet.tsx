@@ -29,7 +29,8 @@ import type { EnrichedProduct } from './ai-enrichment/types'
 import { IDENTITY_AI_KEYS } from './ai-enrichment/useSaveEnrichedProduct'
 import { ManufacturerVerifyPanel } from '@/features/manufacturer-verify/ManufacturerVerifyPanel'
 import { ManufacturerComparisonInline } from '@/features/manufacturer-verify/ManufacturerComparisonInline'
-import { sheetRowToEnrichedProduct, buildRowComparison } from '@/features/manufacturer-verify/compareProducts'
+import { ManufacturerVerdictModal } from '@/features/manufacturer-verify/ManufacturerVerdictModal'
+import { sheetRowToEnrichedProduct, buildRowComparison, summarize } from '@/features/manufacturer-verify/compareProducts'
 
 const BREADCRUMB_SPLIT_RE = /\s*[›>/»·]\s*/
 
@@ -175,6 +176,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const [detourBusy, setDetourBusy] = useState(false)
   const [tab, setTab] = useState<Tab>('general')
   const [verifyOpen, setVerifyOpen] = useState(false)
+  const [verdictModalOpen, setVerdictModalOpen] = useState(false)
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [copiedField, setCopiedField] = useState<string | null>(null)
@@ -433,10 +435,17 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const canVerify = !!verifySource && !!(verifySource.sourceUrl || verifySource.brand || verifySource.name)
   // Comparaison persistée (recompute déterministe depuis ai_mfr_* + ai_mfr_alignment).
   const rowComparison = buildRowComparison(row, sheet.columns)
+  const rowSummary = rowComparison ? summarize(rowComparison) : null
+  const mfrSourceUrl = typeof row.ai_mfr_source === 'string' ? row.ai_mfr_source : null
   const mfrHost = (() => {
-    const s = typeof row.ai_mfr_source === 'string' ? row.ai_mfr_source : null
-    if (!s) return null
-    try { return new URL(s).hostname.replace(/^www\./, '') } catch { return null }
+    if (!mfrSourceUrl) return null
+    try { return new URL(mfrSourceUrl).hostname.replace(/^www\./, '') } catch { return null }
+  })()
+  const rowEanMatch = (() => {
+    const se = typeof row.ai_ean === 'string' ? row.ai_ean.replace(/\D/g, '').replace(/^0+/, '') : ''
+    const me = typeof row.ai_mfr_ean === 'string' ? row.ai_mfr_ean.replace(/\D/g, '').replace(/^0+/, '') : ''
+    if (se.length < 8 || me.length < 8) return null
+    return se === me
   })()
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -655,10 +664,16 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
         </span>
       </div>
 
-      {/* Comparaison Source ⇄ Fabricant (si la fiche a été vérifiée) */}
-      {rowComparison && rowComparison.length > 0 && (
-        <div className="shrink-0 max-h-[40%] overflow-y-auto bg-well/50">
-          <ManufacturerComparisonInline comparisons={rowComparison} mfrHost={mfrHost} />
+      {/* Comparaison Source ⇄ Fabricant (si la fiche a été vérifiée) — carte
+          compacte + bouton vers l'écran plein (la colonne est trop étroite). */}
+      {rowComparison && rowComparison.length > 0 && rowSummary && (
+        <div className="shrink-0 bg-well/50">
+          <ManufacturerComparisonInline
+            summary={rowSummary}
+            mfrHost={mfrHost}
+            eanMatch={rowEanMatch}
+            onOpen={() => setVerdictModalOpen(true)}
+          />
         </div>
       )}
 
@@ -1031,6 +1046,19 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
           source={verifySource}
           sourceLabel={title}
           onClose={() => setVerifyOpen(false)}
+        />
+      )}
+
+      {verdictModalOpen && rowComparison && rowSummary && (
+        <ManufacturerVerdictModal
+          sourceUrl={verifySource?.sourceUrl ?? enrichmentInput.knownUrl ?? null}
+          sourceLabel={title}
+          mfrUrl={mfrSourceUrl}
+          mfrLabel={typeof row.ai_mfr_name === 'string' ? row.ai_mfr_name : 'Fabricant'}
+          summary={rowSummary}
+          comparisons={rowComparison}
+          eanMatch={rowEanMatch}
+          onClose={() => setVerdictModalOpen(false)}
         />
       )}
     </div>

@@ -17,11 +17,26 @@ const hostOf = (url: string | null): string => {
   try { return new URL(url).hostname.replace(/^www\./, '') } catch { return url }
 }
 
-const STATUS_META: Record<CompareStatus, { label: string; cls: string }> = {
-  match:         { label: 'identique',  cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-  diff:          { label: 'diffère',    cls: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-  'mfr-only':    { label: 'fabricant',  cls: 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' },
-  'source-only': { label: 'source',     cls: 'text-white/40 bg-white/[0.04] border-white/10' },
+const STATUS_META: Record<CompareStatus, { sym: string; label: string; cls: string }> = {
+  match:         { sym: '=', label: 'identique',  cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  diff:          { sym: '≠', label: 'diffère',    cls: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+  'mfr-only':    { sym: '+', label: 'fabricant',  cls: 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' },
+  'source-only': { sym: '·', label: 'source',     cls: 'text-white/40 bg-white/[0.04] border-white/10' },
+}
+
+const NEUTRAL = 'text-white/45 bg-white/[0.04] border-white/10'
+
+/** Badge d'un champ : verdict =/≠ pour identité/specs ; NEUTRE (informatif) pour
+ *  prix et contenu — un prix RRP ≠ revendeur ou « 4 vs 1 points » n'est ni
+ *  « identique » ni une « erreur ». */
+function badgeFor(c: FieldComparison): { sym: string; label: string; cls: string } {
+  if (c.group === 'price') return { sym: '≈', label: 'indicatif', cls: NEUTRAL }
+  if (c.group === 'content') {
+    if (c.sourceValue && c.mfrValue) return { sym: '·', label: 'des deux', cls: NEUTRAL }
+    if (c.mfrValue) return { sym: '+', label: 'fabricant', cls: 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' }
+    return { sym: '·', label: 'source', cls: NEUTRAL }
+  }
+  return STATUS_META[c.status]
 }
 
 const GROUP_LABEL: Record<FieldComparison['group'], string> = {
@@ -97,7 +112,7 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
                 {GROUP_LABEL[g]}
               </div>
               {rows.map((c) => {
-                const meta = STATUS_META[c.status]
+                const meta = badgeFor(c)
                 return (
                   <div key={c.key} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center px-4 py-2 border-t border-white/[0.03]">
                     <span className="text-[12px] text-white/60">{c.label}</span>
@@ -106,7 +121,7 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
                       {c.mfrValue ?? '—'}
                     </span>
                     <span className={`justify-self-end text-[10px] font-semibold px-2 py-[2px] rounded-full border whitespace-nowrap ${meta.cls}`}>
-                      {c.status === 'match' ? '=' : c.status === 'diff' ? '≠' : c.status === 'mfr-only' ? '+' : '·'} {meta.label}
+                      {meta.sym} {meta.label}
                     </span>
                   </div>
                 )

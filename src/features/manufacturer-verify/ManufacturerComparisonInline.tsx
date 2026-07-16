@@ -1,54 +1,49 @@
-import { Factory } from 'lucide-react'
-import type { CompareStatus, FieldComparison } from './types'
+import { Factory, Maximize2, BadgeCheck, ShieldAlert } from 'lucide-react'
+import type { VerdictSummary } from './types'
 
 interface Props {
-  comparisons: FieldComparison[]
+  summary: VerdictSummary
   mfrHost: string | null
+  eanMatch: boolean | null
+  onOpen: () => void
 }
 
-const BADGE: Record<CompareStatus, { sym: string; cls: string; title: string }> = {
-  match:         { sym: '=', cls: 'text-emerald-400 bg-emerald-500/10', title: 'Identique au fabricant' },
-  diff:          { sym: '≠', cls: 'text-amber-400 bg-amber-500/10', title: 'Diffère du fabricant' },
-  'mfr-only':    { sym: '+', cls: 'text-indigo-300 bg-indigo-500/10', title: 'Présent seulement chez le fabricant' },
-  'source-only': { sym: '·', cls: 'text-white/40 bg-white/[0.04]', title: 'Présent seulement chez la source' },
-}
-
-/** Comparaison Source ⇄ Fabricant intégrée à la colonne « Source » de la fiche. */
-export function ManufacturerComparisonInline({ comparisons, mfrHost }: Props) {
-  if (comparisons.length === 0) return null
-  const confirmed = comparisons.filter((c) => c.status === 'match').length
-  const diff = comparisons.filter((c) => c.status === 'diff').length
-  const mfrOnly = comparisons.filter((c) => c.status === 'mfr-only').length
-
+/** Carte COMPACTE dans la colonne « Source » de la fiche : synthèse + bouton
+ *  vers l'écran plein. Pas de tableau ici (colonne trop étroite → illisible). */
+export function ManufacturerComparisonInline({ summary, mfrHost, eanMatch, onOpen }: Props) {
   return (
     <div className="px-4 py-3 border-b border-white/[0.06]">
       <div className="flex items-center gap-1.5 mb-2">
         <Factory className="w-3 h-3 text-indigo-300" />
         <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">Comparaison Fabricant</span>
       </div>
-      <div className="flex gap-1.5 mb-2 text-[10px]">
-        <span className="px-1.5 py-[1px] rounded bg-emerald-500/10 text-emerald-400">{confirmed} = </span>
-        <span className="px-1.5 py-[1px] rounded bg-amber-500/10 text-amber-400">{diff} ≠</span>
-        <span className="px-1.5 py-[1px] rounded bg-indigo-500/10 text-indigo-300">{mfrOnly} +</span>
-        {mfrHost && <span className="ml-auto text-white/30 truncate">{mfrHost}</span>}
+
+      {/* Certitude EAN */}
+      {eanMatch === true && (
+        <div className="flex items-center gap-1.5 mb-2 text-[10px] text-emerald-300">
+          <BadgeCheck className="w-3.5 h-3.5" /> Même produit certifié (EAN)
+        </div>
+      )}
+      {eanMatch === false && (
+        <div className="flex items-center gap-1.5 mb-2 text-[10px] text-rose-300">
+          <ShieldAlert className="w-3.5 h-3.5" /> EAN différents — variante ?
+        </div>
+      )}
+
+      {/* Compteurs (specs) */}
+      <div className="flex gap-1.5 mb-2.5 text-[10px]">
+        <span className="px-1.5 py-[2px] rounded bg-emerald-500/10 text-emerald-400">{summary.confirmed} confirmés</span>
+        <span className="px-1.5 py-[2px] rounded bg-amber-500/10 text-amber-400">{summary.divergent} divergents</span>
+        <span className="px-1.5 py-[2px] rounded bg-indigo-500/10 text-indigo-300">{summary.completed} +</span>
       </div>
-      <div className="flex flex-col gap-1">
-        {comparisons.map((c) => {
-          const b = BADGE[c.status]
-          return (
-            <div key={c.key} className="grid grid-cols-[1fr_auto] gap-x-2 items-start py-1 border-t border-white/[0.03]">
-              <span className="text-[11px] text-white/45">{c.label}</span>
-              <span className={`justify-self-end text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded ${b.cls}`} title={b.title}>{b.sym}</span>
-              <span className="text-[11px] text-white/35 truncate col-start-1" title={c.sourceValue ?? ''}>
-                <span className="text-white/25">S:</span> {c.sourceValue ?? '—'}
-              </span>
-              <span className={`text-[11px] truncate col-start-1 ${c.mfrValue ? 'text-white/70' : 'text-white/25'}`} title={c.mfrValue ?? ''}>
-                <span className="text-indigo-300/50">F:</span> {c.mfrValue ?? '—'}
-              </span>
-            </div>
-          )
-        })}
-      </div>
+
+      <button
+        onClick={onOpen}
+        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/12 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/25 text-[11px] font-medium transition-colors"
+      >
+        <Maximize2 className="w-3.5 h-3.5" /> Voir la comparaison complète
+      </button>
+      {mfrHost && <div className="mt-1.5 text-[10px] text-white/30 truncate text-center">{mfrHost}</div>}
     </div>
   )
 }
