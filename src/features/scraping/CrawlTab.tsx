@@ -21,7 +21,12 @@ interface Props {
 }
 
 export function CrawlTab({ url, loading, pages, onCrawl, onAbort, onEnrichMany, batchRunning, onUrlSuggestion }: Props) {
-  const [limit, setLimit] = useState(30)
+  // Champ « Limite » piloté par une CHAÎNE (édition libre : permet de vider, de
+  // taper plusieurs chiffres, sans les blocages du input number contrôlé par un
+  // nombre qui affichait « 01 » et refusait la saisie). `limit` = nombre dérivé,
+  // borné [1..500] — c'est lui qu'on passe à onCrawl.
+  const [limitStr, setLimitStr] = useState('30')
+  const limit = Math.min(500, Math.max(1, parseInt(limitStr, 10) || 1))
   const [includePaths, setIncludePaths] = useState('')
   const [excludePaths, setExcludePaths] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -80,8 +85,9 @@ export function CrawlTab({ url, loading, pages, onCrawl, onAbort, onEnrichMany, 
         <div>
           <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1">Limite de pages</label>
           <input
-            type="number" value={limit} min={1} max={500}
-            onChange={(e) => setLimit(Number(e.target.value))}
+            type="number" value={limitStr} min={1} max={500} inputMode="numeric"
+            onChange={(e) => setLimitStr(e.target.value.replace(/^0+(?=\d)/, ''))}
+            onBlur={() => setLimitStr(String(limit))}
             className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
           />
         </div>

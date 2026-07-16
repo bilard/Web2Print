@@ -1234,10 +1234,18 @@ export function useJina() {
         const jinaProducts = toProducts(jinaEntries)
         return { pages: products, source: products.length > jinaProducts.length ? 'cloud' : 'jina' }
       }
-      const tierHint = tier === 'content'
-        ? 'La page ne contient que des liens de navigation (menu/footer) — probablement une page hub : descends dans une sous-catégorie.'
-        : undefined
-      return { pages: [], source: 'none', error: [errors.join(' · '), tierHint].filter(Boolean).join(' — ') || undefined }
+      // Diagnostic détaillé : distinguer les 3 causes d'un 0-résultat.
+      const cloudTotal = cloud.links.length + cloud.navLinks.length + cloud.cardLinks.length
+      const counts = `Jina : ${jinaEntries.length} lien(s) · escalade Puppeteer : ${cloudTotal} lien(s)`
+      const nothingRendered = jinaEntries.length === 0 && cloudTotal === 0
+      const tierHint = nothingRendered
+        ? 'Page NON CHARGÉE : ni le moteur navigateur Jina ni l\'escalade Puppeteer n\'ont récupéré de lien. '
+          + 'La page est très probablement protégée par un anti-bot (captcha / DataDome) ou entièrement rendue en JS. '
+          + 'Pistes : essaie une URL de sous-catégorie plus précise, ou colle directement les URLs produit via « Plusieurs URLs » (mode Liste).'
+        : tier === 'content'
+          ? 'La page ne contient que des liens de navigation (menu/footer) — probablement une page hub : descends dans une sous-catégorie.'
+          : 'Des liens ont été trouvés mais aucun ne ressemble à une fiche produit. Ajuste le filtre « Inclure (regex) » (ex. la partie commune des URLs produit) ou vide-le.'
+      return { pages: [], source: 'none', error: [counts, errors.join(' · '), tierHint].filter(Boolean).join(' — ') || undefined }
     } finally {
       setLoading(false)
     }

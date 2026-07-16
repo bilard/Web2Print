@@ -725,6 +725,8 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     onClose()
   }
 
+  /** Rail de logs à droite : seulement en Crawl/Map, quand il y a des logs. */
+  const showRightLogs = (tab === 'crawl' || tab === 'map') && discoveryLogs.length > 0
   const canImport = result && result.rows.length > 0
   const canImportEnriched = tab === 'scrape' && !!enrichEntry?.data && !enriching
   const successfulBatchCount = batch.filter((b) => b.product).length
@@ -733,7 +735,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   return (
     <>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className={`bg-well border border-white/10 rounded-2xl w-full ${tab === 'search' ? 'max-w-4xl' : 'max-w-2xl'} max-h-[90vh] flex flex-col shadow-2xl transition-[max-width] duration-200`}>
+      <div className={`bg-well border border-white/10 rounded-2xl w-full ${tab === 'search' ? 'max-w-4xl' : showRightLogs ? 'max-w-5xl' : 'max-w-2xl'} max-h-[90vh] flex flex-col shadow-2xl transition-[max-width] duration-200`}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] shrink-0">
@@ -900,8 +902,9 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
           ))}
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        {/* Body : colonne principale (gauche) + rail de logs (droite) en Crawl/Map */}
+        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 min-w-0 overflow-y-auto p-5 space-y-4">
           {error && (
             <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
@@ -950,10 +953,6 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             />
           )}
 
-          {/* Journal de la phase découverte + filtre (crawl/map), avant enrichissement. */}
-          {(tab === 'crawl' || tab === 'map') && discoveryLogs.length > 0 && (
-            <TypedLogConsole logs={discoveryLogs} maxHeight="12rem" />
-          )}
 
           {/* Progression du batch d'enrichissement multi-URLs (tous tabs incluant scrape) */}
           {batch.length > 0 && (
@@ -1109,6 +1108,14 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
           )}
 
           {result && <ScrapingPreview result={result} />}
+        </div>
+
+        {/* Rail de logs à droite : phase découverte + filtre (Crawl/Map). */}
+        {showRightLogs && (
+          <div className="w-96 shrink-0 border-l border-white/[0.06] bg-black/20 overflow-y-auto p-3">
+            <TypedLogConsole logs={discoveryLogs} maxHeight="none" />
+          </div>
+        )}
         </div>
 
         {/* Footer */}
