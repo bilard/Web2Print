@@ -28,6 +28,7 @@ import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useBulkAttachToTaxonomy } from '@/features/taxonomy/useBulkAttachToTaxonomy'
 import { MatchPreviewModal } from '@/components/pim/MatchPreviewModal'
 import { scrapeResultToColumns } from './core/scrapeToRows'
+import { filterByInstruction } from './instructionFilter'
 import { toast } from 'sonner'
 import { useEffect } from 'react'
 import { pushAiUsageListener } from '@/features/stats/aiUsageTracking'
@@ -61,6 +62,9 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   const [autoDam, setAutoDam] = useState(() => localStorage.getItem('dam.autoCentralize') !== '0')
   const [tab, setTab] = useState<Tab>('scrape')
   const [url, setUrl] = useState(resyncSource?.url ?? '')
+  /** Instruction en langage naturel : filtre le crawl/map et oriente l'extraction
+   *  (ex. « ne garder que les perceuses Makita »). Vide = comportement inchangé. */
+  const [instruction, setInstruction] = useState('')
   const [result, setResult] = useState<ScrapeResult | null>(null)
   const [lastFields, setLastFields] = useState<ScrapingField[]>([])
   const [crawlPages, setCrawlPages] = useState<CrawlPage[]>([])
@@ -238,12 +242,24 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     }
     setResult(null)
     setLastFields(fields)
-    const res = await scrape(url, mode, fields, prompt, opts)
+    // Fusionne l'instruction globale avec le prompt avancé de l'onglet (l'instruction
+    // du haut est prioritaire) : source unique côté UI, deux consignes possibles côté LLM.
+    const mergedPrompt = [instruction.trim(), prompt.trim()].filter(Boolean).join('\n')
+    const res = await scrape(url, mode, fields, mergedPrompt, opts)
     if (res) setResult(res)
   }
 
   const handleMap = async (search?: string, rootUrl?: string): Promise<MapLink[] | null> => {
-    return map(rootUrl ?? url, search)
+    const links = await map(rootUrl ?? url, search)
+    // Filtre par instruction avant enrichissement (fail-open, transparent).
+    if (links && links.length > 0 && instruction.trim()) {
+      const outcome = await filterByInstruction(links, instruction)
+      if (outcome.applied) {
+        toast.success(`Filtre « ${instruction.trim()} » : ${outcome.kept.length} lien(s) retenu(s), ${outcome.excludedCount} exclu(s).`)
+      }
+      return outcome.kept
+    }
+    return links
   }
 
   /** Découvre les fiches produit d'une page de famille/catégorie via
@@ -282,12 +298,25 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       toast.info(`${pages.length} produit(s) — l'escalade scroll a complété la grille lazy-load.`)
     }
 
+    // Filtre par instruction (« ne garder que les perceuses Makita ») — AVANT
+    // l'enrichissement coûteux. Transparent + fail-open (jamais de cull silencieux).
+    let kept = pages
+    if (instruction.trim()) {
+      const outcome = await filterByInstruction(pages, instruction)
+      kept = outcome.kept
+      if (outcome.applied) {
+        toast.success(`Filtre « ${instruction.trim()} » : ${kept.length} correspond(ent), ${outcome.excludedCount} exclue(s).`)
+      } else {
+        toast.info(`Filtre non concluant — ${pages.length} page(s) conservée(s).`)
+      }
+    }
+
     // Multi-URL : accumule, dédoublonne par URL absolue.
     setCrawlPages((prev) => {
-      if (!rootUrl) return pages
+      if (!rootUrl) return kept
       const merged = [...prev]
       const seen = new Set(prev.map((p) => p.url))
-      for (const p of pages) {
+      for (const p of kept) {
         if (!seen.has(p.url)) { merged.push(p); seen.add(p.url) }
       }
       return merged
@@ -751,6 +780,31 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             />
           </div>
         </div>
+
+        {/* Instruction en langage naturel (sauf onglet Recherche qui EST déjà un prompt).
+             Filtre les découvertes Crawl/Map et oriente l'extraction. */}
+        {tab !== 'search' && (
+          <div className="px-5 py-3 border-b border-white/[0.06] shrink-0">
+            <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 focus-within:border-indigo-500/50 transition-colors">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-300/70 shrink-0" />
+              <input
+                type="text" value={instruction} onChange={(e) => setInstruction(e.target.value)}
+                placeholder="Instruction (optionnel) — ex. ne garder que les perceuses Makita"
+                className="flex-1 bg-transparent text-sm text-white placeholder:text-white/25 outline-none"
+              />
+              {instruction && (
+                <button onClick={() => setInstruction('')} className="text-white/25 hover:text-white/60 shrink-0" title="Effacer">
+                  <span className="text-xs">✕</span>
+                </button>
+              )}
+            </div>
+            {(tab === 'crawl' || tab === 'map') && instruction.trim() && (
+              <p className="mt-1.5 text-[10px] text-white/35">
+                Les produits découverts seront filtrés selon cette instruction (rien n'est jeté en silence : le compte exclu est affiché).
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Opt-in DAM : centraliser les images dans Google Drive après l'import. */}
         <label className="px-5 py-2.5 border-b border-white/[0.06] shrink-0 flex items-center gap-2 cursor-pointer select-none">
