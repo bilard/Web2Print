@@ -20,6 +20,8 @@ import { auth } from '@/lib/firebase/config'
 import { useExcelStore } from '@/stores/excel.store'
 import type { ExcelColumn, FieldTypeId } from '@/features/excel/types'
 import { writeSheetsToFirestore } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
+import { deserializeEnrichedFromRow } from '@/features/excel/ai-enrichment/deserializeEnriched'
+import { useEnrichmentStore } from '@/features/excel/ai-enrichment/enrichmentStore'
 import { canonicalizeSpecName, normalizeSpecLabel } from './specSynonyms'
 
 const ADOPTED_COL = 'ai_mfr_adopted'
@@ -34,7 +36,7 @@ const segName = (seg: string): string => seg.replace(/^\[[^\]]*\]/, '').split(':
 const segCanon = (seg: string): string => { const n = segName(seg); return canonicalizeSpecName(n) ?? normalizeSpecLabel(n) }
 const segValue = (seg: string): string => { const i = seg.indexOf(':'); return i >= 0 ? seg.slice(i + 1).trim() : '' }
 
-interface AdoptRecord { label: string; target: string; original: string | null }
+interface AdoptRecord { label: string; target: string; original: string | null; originalRich?: string | null }
 type AdoptedMap = Record<string, AdoptRecord>
 
 /** Tolère le format JSON (nouveau) ET l'ancien « clé | clé » (rétro-compat). */
@@ -111,12 +113,18 @@ export function useAdoptManufacturerSpec() {
         updateCell(activeSheetIndex, rowId, target.col, segs.length ? segs.join(' | ') : null)
       } else {
         // Description / avantages = cellule entière.
+        const isDesc = item.key === 'content:description'
         if (adopt) {
-          adoptedMap[item.key] = { label: item.label, target: target.col, original: curCell || null }
+          const originalRich = isDesc && typeof row.ai_description_rich === 'string' ? row.ai_description_rich : null
+          adoptedMap[item.key] = { label: item.label, target: target.col, original: curCell || null, originalRich }
           updateCell(activeSheetIndex, rowId, target.col, target.write)
+          // La valeur fabricant est du texte brut : neutraliser la version « rich » de
+          // la source (sinon la fiche continuerait d'afficher le texte source formaté).
+          if (isDesc) updateCell(activeSheetIndex, rowId, 'ai_description_rich', null)
         } else {
           const rec = adoptedMap[item.key]
           updateCell(activeSheetIndex, rowId, target.col, rec?.original ?? null)
+          if (isDesc) updateCell(activeSheetIndex, rowId, 'ai_description_rich', rec?.originalRich ?? null)
           delete adoptedMap[item.key]
         }
       }
@@ -124,6 +132,14 @@ export function useAdoptManufacturerSpec() {
       updateCell(activeSheetIndex, rowId, ADOPTED_COL, Object.keys(adoptedMap).length ? JSON.stringify(adoptedMap) : null)
 
       const fresh = useExcelStore.getState()
+      // La fiche produit (EnrichmentPanel) est rendue depuis `enrichmentStore`, PAS
+      // depuis les colonnes. Re-dérive le produit complet depuis la ligne fraîche
+      // (specs/description/avantages adoptés inclus) → mise à jour LIVE de la fiche.
+      const freshSheet = fresh.sheets[activeSheetIndex]
+      const freshRow = freshSheet?.rows.find((r) => r._id === rowId)
+      const restored = freshRow ? deserializeEnrichedFromRow(freshRow) : null
+      if (restored && freshSheet) useEnrichmentStore.getState().setData(freshSheet.name, rowId, restored.product)
+
       const savedDocId = await writeSheetsToFirestore(
         currentFileName ?? sheet.name ?? 'data_enrichi', fresh.sheets, currentDocId ?? null, currentPath ?? [],
       )
