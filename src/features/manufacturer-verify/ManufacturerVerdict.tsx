@@ -76,6 +76,25 @@ function ContentSide({ title, tone, value, field, highlight }: {
   )
 }
 
+/** Interrupteur Source ⇄ Fabricant : OFF = valeur source (master), ON = valeur
+ *  fabricant adoptée dans le master. */
+function AdoptToggle({ on, disabled, onChange }: { on: boolean; disabled?: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button" role="switch" aria-checked={on} disabled={disabled}
+      onClick={() => onChange(!on)}
+      title={on ? 'Master = Fabricant — cliquer pour revenir à la Source' : 'Master = Source — cliquer pour adopter la valeur Fabricant'}
+      className="inline-flex items-center gap-1.5 disabled:opacity-40"
+    >
+      <span className={`text-[9px] font-bold uppercase ${on ? 'text-white/25' : 'text-white/60'}`}>Src</span>
+      <span className={`relative w-8 h-4 rounded-full transition-colors ${on ? 'bg-teal-500/70' : 'bg-white/15'}`}>
+        <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
+      </span>
+      <span className={`text-[9px] font-bold uppercase ${on ? 'text-teal-300' : 'text-white/25'}`}>Fab</span>
+    </button>
+  )
+}
+
 function Tile({ n, label, tone, icon, active, onClick, ring }: {
   n: number; label: string; tone: string; icon: React.ReactNode
   active: boolean; onClick: () => void; ring: string
@@ -173,18 +192,8 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
             <div key={c.key} className={`px-4 py-3 border-t border-white/[0.04] ${c.adopted ? 'bg-teal-500/[0.06]' : ''}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-semibold text-white/55">{c.label}</span>
-                {onToggleAdopt && c.adopted ? (
-                  <span className="inline-flex items-center gap-1">
-                    <span className="text-[10px] font-semibold px-2 py-[2px] rounded-full border text-teal-300 bg-teal-500/15 border-teal-500/40">✓ Fabricant</span>
-                    <button disabled={busy} onClick={() => onToggleAdopt(c, false)} title="Annuler l'adoption"
-                      className="text-white/35 hover:text-rose-300 text-[12px] leading-none px-1 disabled:opacity-40">✕</button>
-                  </span>
-                ) : onToggleAdopt && c.mfrValue ? (
-                  <button disabled={busy} onClick={() => onToggleAdopt(c, true)}
-                    title="Adopter le texte fabricant dans la fiche (master)"
-                    className="text-[10px] font-semibold px-2 py-[2px] rounded-full border text-indigo-300 bg-indigo-500/12 border-indigo-500/40 hover:brightness-125 whitespace-nowrap disabled:opacity-40">
-                    + adopter
-                  </button>
+                {onToggleAdopt && c.mfrValue ? (
+                  <AdoptToggle on={!!c.adopted} disabled={busy} onChange={(v) => onToggleAdopt(c, v)} />
                 ) : null}
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -214,31 +223,20 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
               </div>
               {rows.map((c) => {
                 const meta = badgeFor(c)
-                const canAdopt = c.group === 'spec' && !!onToggleAdopt
+                // Toggle Source⇄Fabricant possible dès que le fabricant a une valeur
+                // et qu'il y a un choix (déjà adopté, présent seulement fabricant, ou divergent).
+                const canToggle = c.group === 'spec' && !!onToggleAdopt && !!c.mfrValue
+                  && (c.adopted || c.status === 'mfr-only' || c.status === 'diff')
                 return (
                   <div key={c.key} className={`grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center px-4 py-2 border-t border-white/[0.03] ${c.adopted ? 'bg-teal-500/[0.06]' : ''}`}>
                     <span className="text-[12px] text-white/60">{c.label}</span>
-                    <span className={`text-[12px] truncate ${c.adopted ? 'text-teal-200' : 'text-white/45'}`} title={c.sourceValue ?? ''}>{c.sourceValue ?? '—'}</span>
-                    <span className={`text-[12px] truncate ${c.mfrValue ? 'text-white/85 font-medium' : 'text-white/30'}`} title={c.mfrValue ?? ''}>
+                    <span className={`text-[12px] truncate ${c.adopted ? 'text-white/30 line-through' : 'text-white/45'}`} title={c.sourceValue ?? ''}>{c.sourceValue ?? '—'}</span>
+                    <span className={`text-[12px] truncate ${c.mfrValue ? (c.adopted ? 'text-teal-200 font-medium' : 'text-white/85 font-medium') : 'text-white/30'}`} title={c.mfrValue ?? ''}>
                       {c.mfrValue ?? '—'}
                     </span>
-                    {/* ÉTAT / action */}
-                    {canAdopt && c.adopted ? (
-                      <span className="justify-self-end inline-flex items-center gap-1 whitespace-nowrap">
-                        <span className="text-[10px] font-semibold px-2 py-[2px] rounded-full border text-teal-300 bg-teal-500/15 border-teal-500/40">✓ Fabricant</span>
-                        <button disabled={busy} onClick={() => onToggleAdopt!(c, false)} title="Annuler l'adoption"
-                          className="text-white/35 hover:text-rose-300 text-[12px] leading-none px-1 disabled:opacity-40">✕</button>
-                      </span>
-                    ) : canAdopt && (c.status === 'mfr-only' || c.status === 'diff') && c.mfrValue ? (
-                      <button disabled={busy} onClick={() => onToggleAdopt!(c, true)}
-                        title={c.status === 'diff' ? 'Adopter la valeur fabricant (remplace la source)' : 'Adopter la valeur fabricant dans la fiche (master)'}
-                        className={`justify-self-end text-[10px] font-semibold px-2 py-[2px] rounded-full border hover:brightness-125 whitespace-nowrap disabled:opacity-40 ${
-                          c.status === 'diff'
-                            ? 'text-amber-300 bg-amber-500/12 border-amber-500/40'
-                            : 'text-indigo-300 bg-indigo-500/12 border-indigo-500/40'
-                        }`}>
-                        {c.status === 'diff' ? '≠ adopter' : '+ adopter'}
-                      </button>
+                    {/* ÉTAT / toggle d'adoption */}
+                    {canToggle ? (
+                      <span className="justify-self-end"><AdoptToggle on={!!c.adopted} disabled={busy} onChange={(v) => onToggleAdopt!(c, v)} /></span>
                     ) : (
                       <span className={`justify-self-end text-[10px] font-semibold px-2 py-[2px] rounded-full border whitespace-nowrap ${meta.cls}`}>
                         {meta.sym} {meta.label}
