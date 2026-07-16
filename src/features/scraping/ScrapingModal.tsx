@@ -81,6 +81,8 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   /** Annulation demandée — affichée immédiatement dans l'UI même si
    *  l'item courant continue (enrich() n'accepte pas d'AbortSignal). */
   const [batchAborting, setBatchAborting] = useState(false)
+  /** Option « + fabricant » : à l'import, ouvre la fiche et lance la comparaison. */
+  const [verifyAfterImport, setVerifyAfterImport] = useState(false)
   /** Index de l'item du batch dont la fiche détaillée (`ProductEnrichedView`)
    *  est actuellement affichée. null = liste seule. */
   const [batchPreviewIdx, setBatchPreviewIdx] = useState<number | null>(null)
@@ -584,6 +586,12 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         setCurrentFileName(displayName)
       }
     }
+    // Option « + fabricant » : ouvrir la fiche du produit importé et y auto-lancer
+    // la « Vérification Fabricant » (le rowId réel n'existe qu'ici, après import).
+    if (verifyAfterImport && newRowIds[0]) {
+      store.setSheetRowId(newRowIds[0])
+      store.setPendingMfrVerifyRowId(newRowIds[0])
+    }
     triggerAutoClassify(newRowIds)
     if (autoDam) void migrateActiveSheet({ silent: true })
     handleClose()
@@ -1023,6 +1031,19 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         {/* Footer */}
         {(canImport || canImportEnriched || canImportBatch) && (
           <div className="px-5 py-3.5 border-t border-white/[0.06] shrink-0">
+            {canImportEnriched && (
+              <label className="flex items-center gap-2 mb-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={verifyAfterImport}
+                  onChange={(e) => setVerifyAfterImport(e.target.checked)}
+                  className="accent-indigo-500 w-3.5 h-3.5"
+                />
+                <span className="text-[12px] text-white/60">
+                  Comparer avec la data du <strong className="text-indigo-300">fabricant</strong> après l'import
+                </span>
+              </label>
+            )}
             <button
               onClick={() => {
                 if (canImportBatch) return handleImportBatch()

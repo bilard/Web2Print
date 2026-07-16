@@ -91,6 +91,56 @@ export function sheetRowToEnrichedProduct(row: ExcelRow, columns: ExcelColumn[])
   }
 }
 
+/**
+ * Reconstruit l'EnrichedProduct FABRICANT depuis les colonnes `ai_mfr_*`.
+ * Retourne null si la fiche n'a pas encore été vérifiée chez le fabricant.
+ */
+function rowToManufacturerProduct(row: ExcelRow, columns: ExcelColumn[]): EnrichedProduct | null {
+  const has = new Set(columns.map((c) => c.key))
+  if (!has.has('ai_mfr_specifications') && !has.has('ai_mfr_name') && !has.has('ai_mfr_pricing')) return null
+  const specsRaw = cell(row, 'ai_mfr_specifications')
+  const specifications = specsRaw ? parseSerializedSpecs(specsRaw) : []
+  const name = cell(row, 'ai_mfr_name')
+  const pricingRaw = cell(row, 'ai_mfr_pricing')
+  const imagesRaw = cell(row, 'ai_mfr_images')
+  if (!name && specifications.length === 0 && !pricingRaw) return null
+  return {
+    name: name ?? undefined,
+    brand: cell(row, 'ai_mfr_brand') ?? undefined,
+    model: cell(row, 'ai_mfr_model') ?? undefined,
+    manufacturerRef: cell(row, 'ai_mfr_manufacturer_ref') ?? undefined,
+    ean: cell(row, 'ai_mfr_ean') ?? undefined,
+    description: '',
+    advantages: [],
+    specifications,
+    variants: [],
+    images: imagesRaw ? imagesRaw.split(' | ').map((s) => s.trim()).filter(Boolean) : [],
+    documents: [],
+    pricing: pricingRaw ? parsePricing(pricingRaw) : undefined,
+    sourceUrl: cell(row, 'ai_mfr_source'),
+    additionalSources: [],
+    generatedAt: 0,
+  }
+}
+
+/**
+ * Recompose la comparaison Source ⇄ Fabricant d'une ligne DÉJÀ vérifiée, de façon
+ * DÉTERMINISTE (aucun LLM) : l'alignement des specs a été figé dans
+ * `ai_mfr_alignment` au moment du scrape. Retourne null si non vérifiée.
+ */
+export function buildRowComparison(row: ExcelRow, columns: ExcelColumn[]): FieldComparison[] | null {
+  const mfr = rowToManufacturerProduct(row, columns)
+  if (!mfr) return null
+  const source = sheetRowToEnrichedProduct(row, columns)
+  if (!source) return null
+  let pairs: LlmSpecPairs = {}
+  const alignRaw = cell(row, 'ai_mfr_alignment')
+  if (alignRaw) {
+    try { pairs = JSON.parse(alignRaw) as LlmSpecPairs } catch { pairs = {} }
+  }
+  return compareSourceVsManufacturer(source, mfr, pairs)
+}
+
 // ── Comparaison ──────────────────────────────────────────────────────────────
 
 function statusFor(sourceValue: string | null, mfrValue: string | null): FieldComparison['status'] {

@@ -22,6 +22,9 @@ interface ExcelState {
   taxonomyNavFilter: TaxoNavSelection
   /** Row ID for the product sheet panel */
   sheetRowId: string | null
+  /** Row ID dont la fiche doit auto-ouvrir la « Vérification Fabricant » à l'ouverture
+   *  (posé par la modale de scraping quand l'option « + fabricant » est activée). Transient. */
+  pendingMfrVerifyRowId: string | null
   /** Whether to group rows by taxonomy levels in the table */
   groupByTaxonomy: boolean
   // Actions
@@ -34,6 +37,7 @@ interface ExcelState {
   setTaxonomyFilter: (filter: { colKey: string; value: string } | null) => void
   setTaxonomyNavFilter: (filter: TaxoNavSelection) => void
   setSheetRowId: (id: string | null) => void
+  setPendingMfrVerifyRowId: (id: string | null) => void
   setCurrentFileName: (name: string | null) => void
   setCurrentDocId: (id: string | null) => void
   setCurrentPath: (path: string[]) => void
@@ -99,6 +103,7 @@ export const useExcelStore = create<ExcelState>((set) => ({
   taxonomyFilter: null,
   taxonomyNavFilter: EMPTY_TAXO_NAV,
   sheetRowId: null,
+  pendingMfrVerifyRowId: null,
   groupByTaxonomy: true,
 
   setSheets: (sheets) =>
@@ -142,6 +147,7 @@ export const useExcelStore = create<ExcelState>((set) => ({
   setTaxonomyFilter: (taxonomyFilter) => set({ taxonomyFilter }),
   setTaxonomyNavFilter: (taxonomyNavFilter) => set({ taxonomyNavFilter }),
   setSheetRowId: (sheetRowId) => set({ sheetRowId }),
+  setPendingMfrVerifyRowId: (pendingMfrVerifyRowId) => set({ pendingMfrVerifyRowId }),
   setCurrentFileName: (currentFileName) => set({ currentFileName }),
   setCurrentDocId: (currentDocId) => set({ currentDocId }),
   setCurrentPath: (currentPath) => set({ currentPath }),

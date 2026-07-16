@@ -26,7 +26,8 @@ import { DamPickButton } from '@/features/dam/DamPickButton'
 import { isDriveImageRef } from '@/features/dam/driveAssets'
 import { trashProductDamAssets } from '@/features/dam/damCleanup'
 import { scrapeFolderName } from '@/features/dam/scrapeFolder'
-import { LayoutGrid, Table as TableIcon, MoveHorizontal } from 'lucide-react'
+import { LayoutGrid, Table as TableIcon, MoveHorizontal, Factory } from 'lucide-react'
+import { ManufacturerBatchModal } from '@/features/manufacturer-verify/ManufacturerBatchModal'
 
 type SortDir = 'asc' | 'desc' | 'color' | null
 
@@ -120,8 +121,12 @@ export function DataTable() {
   // Column drag state
   const [dragColIdx, setDragColIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
+  // Vérification fabricant en lot
+  const [batchVerifyOpen, setBatchVerifyOpen] = useState(false)
 
   if (!sheet) return null
+
+  const hasScrapedProducts = sheet.columns.some((c) => c.key.startsWith('ai_') && !c.key.startsWith('ai_mfr_'))
 
   const hiddenCols = new Set(sheet.hiddenColumns ?? [])
   // Masquer aussi les colonnes utilisées comme niveaux de taxonomie quand le groupement est actif
@@ -532,6 +537,15 @@ export function DataTable() {
     <div className="flex-1 overflow-auto">
       {/* Bascule tableau / galerie (cartes produit) */}
       <div className="sticky left-0 flex justify-end items-center gap-1.5 px-2 pt-1.5">
+        {hasScrapedProducts && (
+          <button
+            onClick={() => setBatchVerifyOpen(true)}
+            className="flex items-center gap-1.5 p-1 px-2 rounded-md bg-indigo-500/12 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/20 transition-colors text-[11px] font-medium"
+            title="Comparer les produits scrapés à la data officielle du fabricant (lot)"
+          >
+            <Factory className="w-3.5 h-3.5" /> Vérifier chez le Fabricant
+          </button>
+        )}
         {dataViewMode === 'table' && (
           <button
             onClick={handleAutoFitAllColumns}
@@ -560,6 +574,8 @@ export function DataTable() {
           </button>
         </div>
       </div>
+
+      {batchVerifyOpen && <ManufacturerBatchModal onClose={() => setBatchVerifyOpen(false)} />}
 
       {dataViewMode === 'gallery' ? (
         <GalleryView rows={sortedRows} columns={visibleColumns} onOpen={setSheetRowId} />

@@ -28,7 +28,8 @@ import { enrichmentKey } from './ai-enrichment/types'
 import type { EnrichedProduct } from './ai-enrichment/types'
 import { IDENTITY_AI_KEYS } from './ai-enrichment/useSaveEnrichedProduct'
 import { ManufacturerVerifyPanel } from '@/features/manufacturer-verify/ManufacturerVerifyPanel'
-import { sheetRowToEnrichedProduct } from '@/features/manufacturer-verify/compareProducts'
+import { ManufacturerComparisonInline } from '@/features/manufacturer-verify/ManufacturerComparisonInline'
+import { sheetRowToEnrichedProduct, buildRowComparison } from '@/features/manufacturer-verify/compareProducts'
 
 const BREADCRUMB_SPLIT_RE = /\s*[›>/»·]\s*/
 
@@ -189,6 +190,17 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const enrichedProduct = useEnrichmentStore(
     (s) => s.entries[enrichmentKey(sheet?.name ?? '', rowId)]?.data ?? null,
   )
+
+  // Auto-ouverture de la « Vérification Fabricant » quand la modale de scraping a
+  // importé un produit avec l'option « + fabricant » (flag transient du store).
+  const pendingMfrVerifyRowId = useExcelStore((s) => s.pendingMfrVerifyRowId)
+  const setPendingMfrVerifyRowId = useExcelStore((s) => s.setPendingMfrVerifyRowId)
+  useEffect(() => {
+    if (pendingMfrVerifyRowId && pendingMfrVerifyRowId === rowId) {
+      setVerifyOpen(true)
+      setPendingMfrVerifyRowId(null)
+    }
+  }, [pendingMfrVerifyRowId, rowId, setPendingMfrVerifyRowId])
 
   // Split resizable entre panneau source (gauche) et enrichissement IA (droite)
   const splitContainerRef = useRef<HTMLDivElement>(null)
@@ -419,6 +431,13 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
     ? { ...rebuiltSource, sourceUrl: rebuiltSource.sourceUrl ?? enrichmentInput.knownUrl ?? null }
     : null
   const canVerify = !!verifySource && !!(verifySource.sourceUrl || verifySource.brand || verifySource.name)
+  // Comparaison persistée (recompute déterministe depuis ai_mfr_* + ai_mfr_alignment).
+  const rowComparison = buildRowComparison(row, sheet.columns)
+  const mfrHost = (() => {
+    const s = typeof row.ai_mfr_source === 'string' ? row.ai_mfr_source : null
+    if (!s) return null
+    try { return new URL(s).hostname.replace(/^www\./, '') } catch { return null }
+  })()
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -635,6 +654,13 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
           Source
         </span>
       </div>
+
+      {/* Comparaison Source ⇄ Fabricant (si la fiche a été vérifiée) */}
+      {rowComparison && rowComparison.length > 0 && (
+        <div className="shrink-0 max-h-[40%] overflow-y-auto bg-well/50">
+          <ManufacturerComparisonInline comparisons={rowComparison} mfrHost={mfrHost} />
+        </div>
+      )}
 
       {/* Tabs — "Général" retiré : c'est la vue par défaut, on n'affiche que les tabs spécialisées.
          Click sur une tab active = retour à la vue générale. */}

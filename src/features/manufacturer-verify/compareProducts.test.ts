@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { ExcelColumn, ExcelRow } from '@/features/excel/types'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
-import { sheetRowToEnrichedProduct, compareSourceVsManufacturer, summarize } from './compareProducts'
+import { sheetRowToEnrichedProduct, compareSourceVsManufacturer, summarize, buildRowComparison } from './compareProducts'
 
 const col = (key: string): ExcelColumn => ({ key, label: key, fieldType: 'text', detectedType: 'text', isPrimary: false, width: 100 })
 
@@ -68,6 +68,29 @@ describe('compareSourceVsManufacturer', () => {
     const specs = comps.filter((c) => c.group === 'spec')
     expect(specs).toHaveLength(1)
     expect(specs[0].status).toBe('match')
+  })
+
+  it('buildRowComparison recompose depuis ai_* + ai_mfr_* + ai_mfr_alignment (déterministe)', () => {
+    const columns = [
+      col('ai_specifications'), col('ai_mfr_specifications'), col('ai_mfr_source'), col('ai_mfr_alignment'),
+    ]
+    const row: ExcelRow = {
+      _id: 'r1',
+      ai_specifications: 'Puissance: 1,5 kW | Bidule maison: X',
+      ai_mfr_specifications: 'Puissance nominale absorbée: 1500 W | Truc constructeur: X',
+      ai_mfr_source: 'https://www.bosch-professional.com/fr/fr/p',
+      ai_mfr_alignment: JSON.stringify({ 'bidule maison': 'truc constructeur' }),
+    }
+    const comps = buildRowComparison(row, columns)
+    expect(comps).not.toBeNull()
+    const specs = comps!.filter((c) => c.group === 'spec')
+    // Puissance (dico + unité) + Bidule↔Truc (alignement) → 2 lignes, toutes match.
+    expect(specs).toHaveLength(2)
+    expect(specs.every((c) => c.status === 'match')).toBe(true)
+  })
+
+  it('buildRowComparison retourne null si la ligne n’a pas été vérifiée', () => {
+    expect(buildRowComparison({ _id: 'r2', ai_name: 'X' }, [col('ai_name')])).toBeNull()
   })
 
   it('summarize compte confirmés/complétés/divergents', () => {
