@@ -53,6 +53,9 @@ export interface Pricing {
   currency: string
   /** Éco-participation (FR uniquement) */
   ecoParticipation?: number
+  /** Unité de vente affichée avec le prix (verbatim source : "unité", "pièce",
+   *  "m²", "lot", "kg"…). Ex Rubix : "131,00 € HT / unité". */
+  unit?: string
   /** Date fin de promotion (ISO) — depuis JSON-LD `priceValidUntil` */
   validUntil?: string
 }

@@ -136,15 +136,16 @@ function formatAiCellPreview(key: string, raw: string): string {
         const p = JSON.parse(raw) as {
           ttc?: number; ht?: number; original?: number;
           discount?: { percent?: number; amount?: number };
-          currency?: string; ecoParticipation?: number;
+          currency?: string; ecoParticipation?: number; unit?: string;
         }
         const cur = p.currency || 'EUR'
         const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: cur, minimumFractionDigits: 2 }).format(n)
         const parts: string[] = []
-        if (p.ttc != null) parts.push(`TTC ${fmt(p.ttc)}`)
+        if (p.ttc != null) parts.push(`TTC ${fmt(p.ttc)}${p.unit ? `/${p.unit}` : ''}`)
         if (p.ht != null) parts.push(`HT ${fmt(p.ht)}`)
         if (p.original != null) parts.push(`barré ${fmt(p.original)}`)
         if (p.discount?.percent != null) parts.push(`-${p.discount.percent}%`)
+        if (p.ecoParticipation != null) parts.push(`éco ${fmt(p.ecoParticipation)}`)
         return parts.length > 0 ? parts.join(' · ') : '—'
       } catch {
         return trim(raw, 100)

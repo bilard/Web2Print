@@ -53,8 +53,8 @@ const PRICE_PATTERNS = {
   current: /prix\s+(?:actuel|de\s+vente)\s*:?\s*\n?\s*([\d\s\\u00A0\\u202F.,]+)\s*€/i,
   // ES: "precio de venta : 999,00€" / "precio especial"
   current_es: /precio\s+(?:de\s+venta|final|especial|cliente|oferta)\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
-  // "prix d'origine : 1 199,00€" / "était 1 199,00€"
-  original: /(?:prix\s+d['']origine|était|barré|barr[eé])\s*:?\s*\n?\s*([\d\s\\u00A0\\u202F.,]+)\s*€/i,
+  // "prix d'origine : 1 199,00€" / "était 1 199,00€" / "au lieu de 135,03 €" (Rubix)
+  original: /(?:prix\s+d['']origine|au\s+lieu\s+de|était|barré|barr[eé])\s*:?\s*\n?\s*([\d\s\\u00A0\\u202F.,]+)\s*€/i,
   // ES: "precio habitual : 1 199,00€" / "precio sin descuento" / "antes"
   original_es: /(?:precio\s+(?:habitual|original|sin\s+descuento|de\s+lista|cat[aá]logo|normal|pvp)|antes)\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
   // "Économisez 200,00€"
@@ -74,6 +74,12 @@ const PRICE_PATTERNS = {
   ttcPrice: /(\d[\d\s\\u00A0\\u202F.,]*)\s*€[^\w€]{0,12}TTC\b/i,
   // "Dont 3,40€ d'éco-participation" / "dont 2,50 € de participation DEEE"
   ecoPart: /(?:dont|y\s+compris)\s+([\d\s\\u00A0\\u202F.,]+)\s*€\s*(?:d['']?[ée]co[\s-]?participation|[ée]co[\s-]?part\b|de\s+participation\s+DEEE)/i,
+  // Variante libellé AVANT le montant : "Dont DEEE : 0,42 €" (Rubix) /
+  // "Éco-participation : 3,40 €". L'ancre DEEE/éco-participation est obligatoire.
+  ecoPartLabelFirst: /(?:[ée]co[\s-]?participation|(?:participation\s+)?DEEE)\s*:?\s*([\d\s\\u00A0\\u202F.,]+)\s*€/i,
+  // Unité de vente adjacente à un prix : "131,00 € HT / unité" (Rubix), "/ pièce",
+  // "/ m²". Ancrée sur un € proche pour éviter le bruit ("/min", "/mois"…).
+  saleUnit: /€[^€/]{0,20}\/\s*(unit[ée]s?|pi[èe]ces?|pce|paires?|lots?|jeux?|sets?|m²|m2|m³|m3|ml|cl|litres?|m[èe]tres?|rouleaux?|sacs?|bo[îi]tes?|cartons?|paquets?|blisters?|kg|[gl]\b|m\b)/i,
   // GBP "£49.99"
   gbp: /£\s*([\d\s\\u00A0\\u202F.,]+)/,
   // USD "$59.99"
@@ -322,11 +328,26 @@ export function parsePricingFromMarkdown(
       }
     }
 
-    // Éco-participation
+    // Éco-participation — montant AVANT le libellé ("dont 3,40 € d'éco-part")
     const ecoM = cleanMd.match(PRICE_PATTERNS.ecoPart)
     if (ecoM) {
       const n = parsePriceNumber(ecoM[1])
       if (n != null) { result.ecoParticipation = n; found = true }
+    }
+    // Éco-participation — libellé AVANT le montant ("Dont DEEE : 0,42 €" chez Rubix)
+    if (result.ecoParticipation == null) {
+      const ecoLfM = cleanMd.match(PRICE_PATTERNS.ecoPartLabelFirst)
+      if (ecoLfM) {
+        const n = parsePriceNumber(ecoLfM[1])
+        if (n != null) { result.ecoParticipation = n; found = true }
+      }
+    }
+
+    // Unité de vente ("/ unité", "/ pièce"…) — verbatim source, adjacente au prix.
+    // Complément d'un prix : n'active PAS `found` à elle seule.
+    const unitM = cleanMd.match(PRICE_PATTERNS.saleUnit)
+    if (unitM) {
+      result.unit = unitM[1].trim()
     }
 
     // Fallback : prix EUR seul si aucun TTC encore trouvé.
@@ -370,8 +391,13 @@ export function parsePricingFromMarkdown(
     console.log('[parsePricing] HT', result.ht, '≥ TTC', result.ttc, '— HT rejeté (bruit de page)')
     delete result.ht
   }
-  if (result.original != null && result.ttc != null && result.original <= result.ttc) {
-    console.log('[parsePricing] prix barré', result.original, '≤ TTC', result.ttc, '— rejeté')
+  // Un prix barré doit dépasser le prix de vente actuel. Sur les pages B2B (Rubix),
+  // le barré peut être exprimé en HT ("Au lieu de 135,03 €" au-dessus du "131,00 € HT")
+  // alors qu'un TTC plus élevé coexiste — comparer au seul TTC rejetait à tort ce
+  // barré HT. On compare donc au prix de vente le plus BAS (min HT/TTC).
+  const lowestSale = Math.min(result.ht ?? Infinity, result.ttc ?? Infinity)
+  if (result.original != null && isFinite(lowestSale) && result.original <= lowestSale) {
+    console.log('[parsePricing] prix barré', result.original, '≤ prix actuel', lowestSale, '— rejeté')
     delete result.original
   }
 
@@ -380,7 +406,7 @@ export function parsePricingFromMarkdown(
   if (found) {
     console.log('[parsePricing] result:', {
       ttc: result.ttc, ht: result.ht, original: result.original,
-      currency: result.currency,
+      currency: result.currency, unit: result.unit,
       discount: result.discount, eco: result.ecoParticipation,
     })
   } else {

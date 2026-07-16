@@ -1373,7 +1373,10 @@ function DoneState({
                     <span className="text-[14px] text-white/70">{fmt(p.ht)}</span>
                   </div>
                 )}
-                {p.original != null && p.original > (p.ttc ?? 0) && (
+                {p.unit && (
+                  <span className="text-[11px] text-white/40">/ {p.unit}</span>
+                )}
+                {p.original != null && p.original > Math.min(p.ttc ?? Infinity, p.ht ?? Infinity) && (
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-[10px] text-white/40 uppercase tracking-wider">Avant</span>
                     <span className="text-[12px] text-white/40 line-through">{fmt(p.original)}</span>

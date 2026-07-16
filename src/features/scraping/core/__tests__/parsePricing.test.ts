@@ -358,3 +358,62 @@ Franco de port à partir de 50,00 € HT`
     expect(p?.original).toBeUndefined()
   })
 })
+
+// Fixture réelle Rubix (fr.rubix.com/…/p-G3515004580) : promo B2B où le prix
+// barré est exprimé en HT ("Au lieu de 135,03 €" au-dessus du "131,00 € HT")
+// alors que le TTC (157,20 €) coexiste. Le JSON-LD ne porte que le TTC.
+describe('parsePricingFromMarkdown — Rubix promo B2B (barré HT + DEEE + unité)', () => {
+  const rubixMd = `PROMOTION
+Au lieu de 135,03 €
+131,00 € HT
+/ unité
+157,20 € TTC
+Dont DEEE : 0,42 € TTC
+En stock, expédié sous 24/48h`
+
+  it('capte barré HT, DEEE (label avant montant) et unité de vente', () => {
+    const p = parsePricingFromMarkdown(rubixMd, { ttc: 157.2, currency: 'EUR' })
+    expect(p?.ttc).toBe(157.2)
+    expect(p?.ht).toBe(131)
+    // "Au lieu de 135,03 €" : barré HT (135,03) — NE doit PAS être rejeté même
+    // s'il est ≤ TTC (157,20), car il dépasse le prix de vente le plus bas (131).
+    expect(p?.original).toBe(135.03)
+    // "Dont DEEE : 0,42 €" : libellé DEEE avant le montant.
+    expect(p?.ecoParticipation).toBe(0.42)
+    // "/ unité" : unité de vente verbatim.
+    expect(p?.unit).toBe('unité')
+  })
+
+  it('rejette toujours un barré réellement ≤ au prix le plus bas', () => {
+    // Barré 120 alors que HT=131 et TTC=157,20 → 120 < 131 : incohérent, rejeté.
+    const md = `Au lieu de 120,00 €\n131,00 € HT\n157,20 € TTC`
+    const p = parsePricingFromMarkdown(md, { ttc: 157.2 })
+    expect(p?.original).toBeUndefined()
+  })
+
+  it('markdown turndown RÉEL : **strong** barré, ^sup^ HT/TTC, blocs séparés', () => {
+    // Reproduction fidèle de la sortie turndown du HTML Rubix effectivement scrapé
+    // (<strong class="line-through"> → **…**, <sup> → ^…^, blocs en lignes vides,
+    //  commentaire HTML "/<!-- --> unité" nettoyé). Vérifie que les nouveaux
+    // signaux tiennent sur du markdown "sale", pas seulement du texte propre.
+    const md = `PROMOTION
+
+Au lieu de **135,03 €**
+
+**131,00** € ^HT^
+
+/ unité
+
+157,20 € ^TTC^
+
+Dont DEEE : 0,42 € ^TTC^
+
+En stock, expédié sous 24/48h`
+    const p = parsePricingFromMarkdown(md, { ttc: 157.2, currency: 'EUR' })
+    expect(p?.ttc).toBe(157.2)
+    expect(p?.ht).toBe(131)
+    expect(p?.original).toBe(135.03)
+    expect(p?.ecoParticipation).toBe(0.42)
+    expect(p?.unit).toBe('unité')
+  })
+})
