@@ -36,7 +36,7 @@ export function DatabaseList() {
 
   useEffect(() => {
     listSavedFiles()
-      .then((list) => setFiles([...list].sort((a, b) => a.fileName.localeCompare(b.fileName, 'fr', { sensitivity: 'base' }))))
+      .then((list) => setFiles([...list].sort((a, b) => a.fileName.localeCompare(b.fileName, 'fr', { numeric: true, sensitivity: 'base' }))))
       .catch(() => {})
   }, [])
 

@@ -1223,9 +1223,10 @@ interface TreeLevelProps {
 
 function TreeLevel(props: TreeLevelProps) {
   const { node, depth } = props
-  // Dossiers : tri alpha figé (pas de drag-drop côté dossiers).
-  const folders = [...node.folders.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
-  const files = sortSiblings(node.files)
+  // Tri alphanumérique (« ..._2026 » avant « ..._2027 ») pour dossiers ET bases.
+  const alpha = (a: string, b: string) => a.localeCompare(b, 'fr', { numeric: true, sensitivity: 'base' })
+  const folders = [...node.folders.values()].sort((a, b) => alpha(a.name, b.name))
+  const files = [...node.files].sort((a, b) => alpha(a.fileName, b.fileName))
   const fileIds = files.map((f) => f.docId)
 
   return (
