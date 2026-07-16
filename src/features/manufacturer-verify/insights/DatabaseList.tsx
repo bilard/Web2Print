@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
-import { Database, Check, Loader2, Factory } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Database, Check, Loader2, Factory, Search, X } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { aggregateInsights } from './insightsAggregate'
 import { fetchSheetsQuiet } from './fetchSheetsQuiet'
 
 interface DbFile { fileName: string; docId: string; totalRows: number; path: string[] }
+
+/** Minuscule + sans accents, pour une recherche tolérante. */
+const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
 /** Liste des bases PIM (panneau gauche de l'écran d'écarts) : sélection au clic
  *  (charge la base dans le store → l'agrégation réagit à `sheets`), avec un badge
@@ -19,10 +22,17 @@ export function DatabaseList() {
   const setSheetRowId = useExcelStore((s) => s.setSheetRowId)
 
   const [files, setFiles] = useState<DbFile[]>([])
+  const [query, setQuery] = useState('')
   const [loadingId, setLoadingId] = useState<string | null>(null)
   /** Nb de produits vérifiés fabricant par base (undefined = pas encore scanné). */
   const [mfrCounts, setMfrCounts] = useState<Record<string, number>>({})
   const scannedRef = useRef(false)
+
+  const visible = useMemo(() => {
+    const q = norm(query.trim())
+    if (!q) return files
+    return files.filter((f) => norm(f.fileName).includes(q) || f.path.some((p) => norm(p).includes(q)))
+  }, [files, query])
 
   useEffect(() => {
     listSavedFiles()
@@ -72,11 +82,33 @@ export function DatabaseList() {
         <Database className="w-4 h-4 text-indigo-300" />
         <span className="text-sm font-semibold">Bases de données</span>
       </div>
+      <div className="p-2 border-b border-white/[0.06] shrink-0">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Rechercher une base…"
+            className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-well border border-white/10 text-sm placeholder:text-white/30 focus:outline-none focus:border-indigo-500/40"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+              aria-label="Effacer la recherche"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
       <div className="flex-1 p-1.5 overflow-y-auto flex flex-col gap-0.5">
         {files.length === 0 ? (
           <div className="px-3 py-4 text-sm text-white/40">Aucune base enregistrée</div>
+        ) : visible.length === 0 ? (
+          <div className="px-3 py-4 text-sm text-white/40">Aucun résultat pour « {query} »</div>
         ) : (
-          files.map((f) => {
+          visible.map((f) => {
             const active = f.docId === currentDocId
             const count = mfrCounts[f.docId]
             return (
