@@ -41,14 +41,13 @@ export function ManufacturerInsightsScreen() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto flex gap-6 items-start">
-      {/* Colonne gauche : liste des bases (sélection + badge data fabricant). */}
-      <aside className="w-64 shrink-0 sticky top-0 self-start max-h-[calc(100vh-4rem)]">
-        <DatabaseList />
-      </aside>
+    <div className="flex-1 flex overflow-hidden">
+      {/* Panneau gauche pleine hauteur (nav des bases), comme le menu global. */}
+      <DatabaseList />
 
-      {/* Colonne droite : en-tête + statistiques. */}
-      <div className="flex-1 min-w-0">
+      {/* Zone droite scrollable : en-tête + statistiques. */}
+      <main className="flex-1 min-w-0 overflow-auto p-8">
+       <div className="max-w-6xl mx-auto">
         <header className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
             <Factory className="w-5 h-5 text-indigo-300" />
@@ -108,7 +107,8 @@ export function ManufacturerInsightsScreen() {
             {tab === 'products' && <InsightsProductTable products={data.products} onOpenProduct={openProduct} />}
           </>
         )}
-      </div>
+       </div>
+      </main>
     </div>
   )
 }

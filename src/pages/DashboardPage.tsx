@@ -572,7 +572,7 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'mfr-insights' && canSee('mfr-insights') ? (
-        <div data-tour="section-mfr-insights" className="flex-1 overflow-auto p-8 bg-background">
+        <div data-tour="section-mfr-insights" className="flex-1 flex overflow-hidden bg-background">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
