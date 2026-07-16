@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Database, Check, Loader2, Factory, Search, X } from 'lucide-react'
+import { Database, Folder, FolderOpen, Loader2, Factory, Search, X } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { aggregateInsights } from './insightsAggregate'
 import { fetchSheetsQuiet } from './fetchSheetsQuiet'
 
-interface DbFile { fileName: string; docId: string; totalRows: number; path: string[] }
+interface DbFile { fileName: string; docId: string; totalRows: number; path: string[]; updatedAt: Date | null }
 
 /** Minuscule + sans accents, pour une recherche tolérante. */
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -102,7 +102,7 @@ export function DatabaseList() {
           )}
         </div>
       </div>
-      <div className="flex-1 p-1.5 overflow-y-auto flex flex-col gap-0.5">
+      <div className="flex-1 p-1.5 overflow-y-auto flex flex-col gap-1">
         {files.length === 0 ? (
           <div className="px-3 py-4 text-sm text-white/40">Aucune base enregistrée</div>
         ) : visible.length === 0 ? (
@@ -111,31 +111,35 @@ export function DatabaseList() {
           visible.map((f) => {
             const active = f.docId === currentDocId
             const count = mfrCounts[f.docId]
+            const Icon = loadingId === f.docId ? Loader2 : active ? FolderOpen : Folder
             return (
               <button
                 key={f.docId}
                 onClick={() => select(f)}
-                className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-colors ${
-                  active ? 'bg-indigo-500/[0.12] border border-indigo-500/25' : 'border border-transparent hover:bg-white/[0.04]'
+                className={`group relative w-full flex items-center gap-1.5 pr-1.5 py-1.5 pl-2 rounded-md border text-left transition-colors ${
+                  active
+                    ? 'bg-indigo-500/[0.18] border-indigo-400/60 ring-1 ring-indigo-400/30'
+                    : 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.12]'
                 }`}
               >
-                {loadingId === f.docId
-                  ? <Loader2 className="w-4 h-4 shrink-0 animate-spin text-indigo-300" />
-                  : <Check className={`w-4 h-4 shrink-0 ${active ? 'text-indigo-400' : 'text-transparent'}`} />}
-                <div className="min-w-0 flex-1">
-                  <div className={`text-sm font-medium truncate ${active ? 'text-white' : 'text-white/85'}`}>{f.fileName}</div>
-                  {f.path.length > 0 && <div className="text-xs text-white/40 truncate">{f.path.join(' › ')}</div>}
+                {active && <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-indigo-400" />}
+                <Icon className={`w-3.5 h-3.5 shrink-0 ${loadingId === f.docId ? 'animate-spin text-indigo-300' : active ? 'text-indigo-300' : 'text-amber-300/70'}`} />
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[11.5px] font-medium truncate ${active ? 'text-indigo-100' : 'text-white/70'}`}>{f.fileName}</p>
+                  <p className={`text-[9.5px] ${active ? 'text-indigo-300/70' : 'text-white/30'}`}>
+                    {f.totalRows} produit{f.totalRows > 1 ? 's' : ''}
+                    {f.updatedAt && ` · ${f.updatedAt.toLocaleDateString('fr-FR')}`}
+                  </p>
                 </div>
                 {count > 0 && (
                   <span
-                    title={`${count} produit(s) vérifié(s) chez le fabricant`}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-300 text-[11px] font-medium shrink-0"
+                    title={`${count} produit(s) avec challenge Fabricant`}
+                    className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-indigo-500/15 text-indigo-300 text-[9px] font-semibold shrink-0"
                   >
-                    <Factory className="w-3 h-3" />
+                    <Factory className="w-2.5 h-2.5" />
                     {count}
                   </span>
                 )}
-                <span className="text-xs text-white/30 tabular-nums shrink-0 w-6 text-right">{f.totalRows}</span>
               </button>
             )
           })
