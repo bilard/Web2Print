@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
 import { generateJson } from '@/features/ai/llmRouter'
 import { useEnrichmentStore } from './enrichmentStore'
-import type { EnrichedProduct, EnrichedDocument } from './types'
+import type { EnrichedProduct, EnrichedDocument, Pricing } from './types'
 import { enrichmentKey } from './types'
 import { scrapeProductBundle, extractPrimarySourceSection } from './scrapeBundle'
 import { buildDocument, coerceDocuments } from './documentUtils'
@@ -14,6 +14,7 @@ export { isJunkImageUrl }
 import { parseDescriptionFromMarkdown as parseDescriptionFromMarkdownExternal, parseRichDescriptionFromMarkdown } from '@/features/scraping/core/parsers/parseDescription'
 import { structuredPlainToRichMarkdown, stripTrailingSpecList } from '@/lib/richText'
 import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal, extractSpecsFromHtml as extractSpecsFromHtmlExternal, isNonProductRegion, isSaneSpecPair } from '@/features/scraping/core/parsers/parseSpecifications'
+import { normalizeSpecPairs } from '@/features/scraping/core/parsers/normalizeSpecPairs'
 import { filterImagesByProductRef } from '@/features/scraping/core/parsers/filterImagesByRef'
 import { parseNamedDocLinks } from '@/features/scraping/core/parsers/parseNamedDocLinks'
 import { parsePricingFromMarkdown } from '@/features/scraping/core/parsers/parsePricing'
@@ -1652,6 +1653,10 @@ interface ManufacturerData {
    *  rendu navigateur replie la section « Voir plus » ou qu'un markdown de
    *  cache tronqué est resservi). Fusion ADDITIVE en aval, jamais remplaçante. */
   advantages: Array<{ text: string; group?: string }>
+  /** Données structurées JSON-LD/microdata du HTML fabricant (prix `offers`,
+   *  gtin/mpn, description) — source DÉTERMINISTE prioritaire pour le prix
+   *  constructeur (RRP) et la clé de correspondance EAN. */
+  structured: StructuredProductData | null
 }
 
 
@@ -2270,7 +2275,7 @@ async function jinaScrapeMaufacturerPageFallback(pageUrl: string, _jinaKey: stri
  */
 async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerData> {
   console.log('[manufacturer] fetching raw HTML →', pageUrl)
-  const data: ManufacturerData = { downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [], pictoUrls: [], advantages: [] }
+  const data: ManufacturerData = { downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [], pictoUrls: [], advantages: [], structured: null }
 
   // Voie principale : Cloud Function `fetchPageHtml` (serveur, pas de CORS),
   // avec les proxies publics en filet — les proxies seuls sont morts depuis
@@ -2288,6 +2293,18 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
   if (!html || html.length < 1000) {
     console.log('[manufacturer] no HTML available (CF + proxies down)')
     return data
+  }
+
+  // ── 0−. Données structurées JSON-LD/microdata (prix RRP, gtin, description) ──
+  try {
+    const { parseStructuredDataAny } = await import('@/features/scraping/core/structuredData')
+    data.structured = parseStructuredDataAny(html)
+    if (data.structured?.offers?.price != null) {
+      console.log('[manufacturer] ✓ JSON-LD price (RRP):', data.structured.offers.price, data.structured.offers.priceCurrency)
+    }
+    if (data.structured?.gtin) console.log('[manufacturer] ✓ JSON-LD gtin:', data.structured.gtin)
+  } catch (err) {
+    console.warn('[manufacturer] structured data parse failed:', err)
   }
 
   // ── 0. Breadcrumb depuis HTML (nav>ol/ul, BreadcrumbList microdata, etc.) ──
@@ -2876,9 +2893,10 @@ function buildManufacturerProduct(
       if (!specsMap.has(key)) specsMap.set(key, s)
     }
   }
-  // Filtre de cohérence canonique : rejette le bruit résiduel (UI, adresses,
-  // paires nom/valeur inversées). Même sanity que le reste du pipeline.
-  const specifications = [...specsMap.values()].filter((s) => isSaneSpecPair(s.name, s.value))
+  // Normaliseur universel (rejette nom-en-forme-de-valeur, dédup) PUIS sanity
+  // canonique (UI, adresses, financier). Deux garde-fous complémentaires.
+  const specifications = normalizeSpecPairs([...specsMap.values()])
+    .filter((s) => isSaneSpecPair(s.name, s.value))
 
   // Advantages : markdown (bullet points, avec groupes) + HTML statique en
   // fusion ADDITIVE — le HTML récupère la queue des listes repliées que le
@@ -3007,12 +3025,22 @@ function buildManufacturerProduct(
   // Identité (name/brand/model/refs/EAN) — liftée depuis specs Rubix-style ou
   // JSON-LD parallèle stocké dans __lastStructured. Les specs liftées sont
   // retirées du tableau `specifications` pour ne pas dupliquer dans l'UI.
-  const structuredFromGlobal = (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured ?? null
+  // Priorité au JSON-LD du HTML fabricant fraîchement parsé (rawData.structured) ;
+  // repli sur le global posé par le pipeline principal.
+  const structuredFromGlobal = rawData.structured
+    ?? (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured
+    ?? null
   const { identity, specs: specsAfterLift } = buildIdentity({
     structured: structuredFromGlobal,
     specs: specifications,
     markdown: markdownContent,
   })
+
+  // Prix constructeur (RRP) depuis JSON-LD `offers` — déterministe. C'est un prix
+  // de RÉFÉRENCE, distinct du prix revendeur (ne pas traiter comme « divergent »).
+  const mfrPricing: Pricing | undefined = structuredFromGlobal?.offers?.price != null
+    ? { ttc: structuredFromGlobal.offers.price, currency: structuredFromGlobal.offers.priceCurrency || 'EUR', validUntil: structuredFromGlobal.offers.priceValidUntil }
+    : undefined
 
   // Sous-titre : ligne courte sous le H1 (après la référence) — ex Makita
   // "18 V Li-Ion - 5 Ah - Ø 10 mm - Auto-serrant".
@@ -3051,6 +3079,7 @@ function buildManufacturerProduct(
     imageClassOverrides: Object.keys(imageClassOverrides).length > 0 ? imageClassOverrides : undefined,
     documents: deduplicateDocuments(documents),
     breadcrumb: breadcrumb.length > 0 ? breadcrumb : undefined,
+    pricing: mfrPricing,
     sourceUrl: productUrl,
     additionalSources,
     generatedAt: Date.now(),
@@ -4600,7 +4629,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         // sites : la qualité de fiche ne dépend plus du type de site détecté.
         // HTML via CF fetchPageHtml → repli Jina HTML (WAF filtrant par IP).
         const emptyRawData: ManufacturerData = {
-          downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [], pictoUrls: [], advantages: [],
+          downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [], pictoUrls: [], advantages: [], structured: null,
         }
         let rawData = emptyRawData
         if (productUrl) {

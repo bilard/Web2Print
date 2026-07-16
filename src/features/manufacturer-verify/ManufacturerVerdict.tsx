@@ -1,4 +1,4 @@
-import { Globe, Factory, Check, AlertTriangle, Plus } from 'lucide-react'
+import { Globe, Factory, Check, AlertTriangle, Plus, BadgeCheck, ShieldAlert } from 'lucide-react'
 import type { CompareStatus, FieldComparison, VerdictSummary } from './types'
 
 interface Props {
@@ -8,6 +8,8 @@ interface Props {
   mfrLabel: string
   summary: VerdictSummary
   comparisons: FieldComparison[]
+  /** Correspondance EAN/GTIN : true = même produit certifié, false = EAN différents, null = non vérifiable. */
+  eanMatch?: boolean | null
 }
 
 const hostOf = (url: string | null): string => {
@@ -23,7 +25,7 @@ const STATUS_META: Record<CompareStatus, { label: string; cls: string }> = {
 }
 
 const GROUP_LABEL: Record<FieldComparison['group'], string> = {
-  identity: 'Identité', price: 'Prix', spec: 'Spécifications techniques',
+  identity: 'Identité', price: 'Prix (indicatif)', spec: 'Spécifications techniques', content: 'Contenu marketing',
 }
 
 function Tile({ n, label, tone, icon }: { n: number; label: string; tone: string; icon: React.ReactNode }) {
@@ -38,11 +40,23 @@ function Tile({ n, label, tone, icon }: { n: number; label: string; tone: string
 }
 
 /** Vue verdict « la vérité est chez le fabricant » — comparaison Source ⇄ Fabricant. */
-export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, summary, comparisons }: Props) {
-  const groups: FieldComparison['group'][] = ['identity', 'price', 'spec']
+export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, summary, comparisons, eanMatch }: Props) {
+  const groups: FieldComparison['group'][] = ['identity', 'price', 'spec', 'content']
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Badge de certitude EAN/GTIN */}
+      {eanMatch === true && (
+        <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 px-3.5 py-2 text-[12px] text-emerald-300">
+          <BadgeCheck className="w-4 h-4 shrink-0" /> <strong>Même produit certifié</strong> — l'EAN/GTIN de la source correspond à celui du fabricant.
+        </div>
+      )}
+      {eanMatch === false && (
+        <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/25 px-3.5 py-2 text-[12px] text-rose-300">
+          <ShieldAlert className="w-4 h-4 shrink-0" /> <strong>EAN différents</strong> — la page fabricant ne correspond peut-être pas exactement au produit source.
+        </div>
+      )}
+
       {/* En-tête narratif : source ⇄ fabricant */}
       <div className="flex items-center gap-3 rounded-xl border border-indigo-500/20 bg-indigo-500/[0.06] px-4 py-3">
         <div className="flex-1 min-w-0">

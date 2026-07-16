@@ -29,29 +29,49 @@ function hostOf(url: string): string | null {
 }
 
 /** Vrai si l'URL cible la locale FR (chemin /fr/ ou /fr-fr/). */
-function isFrenchUrl(url: string): boolean {
+const isLang = (s: string) => /^[a-z]{2}$/.test(s)
+
+/** Déduit la langue de la SOURCE depuis son URL (host `fr.` ou 1er segment `/fr/`).
+ *  Générique — jamais de langue en dur. Retourne null si indéterminable. */
+function sourceLangFromUrl(url: string): string | null {
+  try {
+    const u = new URL(url)
+    const host = u.hostname.toLowerCase()
+    const hostLang = host.match(/^([a-z]{2})\./)
+    if (hostLang && isLang(hostLang[1])) return hostLang[1]
+    const seg0 = u.pathname.split('/').filter(Boolean)[0]
+    if (seg0 && isLang(seg0)) return seg0
+    // TLD national → langue probable (fr, it, es, de…).
+    const tld = host.split('.').pop()
+    if (tld && /^(fr|it|es|de|nl|pt|be)$/.test(tld)) return tld === 'be' ? 'fr' : tld
+    return null
+  } catch { return null }
+}
+
+/** Vrai si le chemin de l'URL cible la locale `lang` (/xx/ ou /xx-…). */
+function isLocaleUrl(url: string, lang: string): boolean {
   try {
     const p = new URL(url).pathname.toLowerCase()
-    return p.startsWith('/fr/') || p.startsWith('/fr-') || p === '/fr'
+    return p.startsWith(`/${lang}/`) || p.startsWith(`/${lang}-`) || p === `/${lang}`
   } catch { return false }
 }
 
 /**
- * Réécrit une URL fabricant vers sa variante FR quand le chemin porte une locale
- * (/de/de/…, /en/…, /it/it/…). Générique — segments de locale, JAMAIS par marque.
- * Retourne null si aucune locale réécrivable (déjà FR ou pas de segment locale).
+ * Réécrit une URL fabricant vers la locale `lang` quand le chemin porte une locale
+ * (/de/de/…, /en/…). Générique — segments de locale, langue PARAMÉTRÉE (jamais en dur).
+ * Retourne null si rien à réécrire (déjà `lang` ou pas de segment locale).
  */
-function toFrenchLocale(url: string): string | null {
+function toLocale(url: string, lang: string): string | null {
   try {
     const u = new URL(url)
     const segs = u.pathname.split('/').filter(Boolean)
     if (segs.length === 0) return null
-    const isLang = (s: string) => /^[a-z]{2}$/.test(s)
     let changed = false
     if (isLang(segs[0]) && segs[1] && isLang(segs[1])) {
-      if (segs[0] !== 'fr' || segs[1] !== 'fr') { segs[0] = 'fr'; segs[1] = 'fr'; changed = true }
+      // /lang/country/ → /lang/lang/ (ex: /de/de/ → /fr/fr/).
+      if (segs[0] !== lang || segs[1] !== lang) { segs[0] = lang; segs[1] = lang; changed = true }
     } else if (isLang(segs[0])) {
-      if (segs[0] !== 'fr') { segs[0] = 'fr'; changed = true }
+      if (segs[0] !== lang) { segs[0] = lang; changed = true }
     }
     if (!changed) return null
     u.pathname = '/' + segs.join('/')
@@ -168,22 +188,26 @@ export async function resolveManufacturerCandidates(input: ResolveInput): Promis
     if (candidates.some((c) => c.confidence === 'high') && candidates.length >= 3) break
   }
 
-  // Ajouter la variante FR de chaque candidat localisé (page fabricant traduite) :
-  // la démo est française, on veut comparer aux valeurs FR (et éviter le bruit
-  // d'avis en langue étrangère, non filtré par les parsers FR/EN).
+  // Langue de la SOURCE : on veut comparer aux valeurs dans la MÊME langue.
+  const lang = sourceLangFromUrl(input.url) ?? 'fr'
+
+  // Ajouter la variante « langue source » de chaque candidat localisé (site
+  // fabricant multilingue → on force la bonne langue conforme à la source).
   const expanded: ManufacturerCandidate[] = []
   const seenUrl = new Set<string>()
   for (const c of candidates) {
-    const fr = toFrenchLocale(c.url)
-    if (fr && !seenUrl.has(fr)) { seenUrl.add(fr); expanded.push({ ...c, url: fr }) }
+    const loc = toLocale(c.url, lang)
+    if (loc && !seenUrl.has(loc)) { seenUrl.add(loc); expanded.push({ ...c, url: loc }) }
     if (!seenUrl.has(c.url)) { seenUrl.add(c.url); expanded.push(c) }
   }
 
+  // Filtre langue : si le fabricant est multilingue (au moins une page dans la
+  // langue source), on SUPPRIME les pages en langue étrangère. Si aucune page
+  // dans la langue source (site mono-langue), on garde ce qu'on a.
+  const inLang = expanded.filter((c) => isLocaleUrl(c.url, lang))
+  const pool = inLang.length > 0 ? inLang : expanded
+
   const rank = { high: 0, medium: 1, low: 2 }
-  // Tri : confiance d'abord, puis pages FR en tête (à confiance égale).
-  expanded.sort((a, b) =>
-    (rank[a.confidence] - rank[b.confidence])
-    || ((isFrenchUrl(b.url) ? 1 : 0) - (isFrenchUrl(a.url) ? 1 : 0)),
-  )
-  return expanded.slice(0, 5)
+  pool.sort((a, b) => rank[a.confidence] - rank[b.confidence])
+  return pool.slice(0, 5)
 }

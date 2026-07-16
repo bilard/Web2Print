@@ -26,6 +26,8 @@ const ENRICHMENT_COLUMNS_MFR: ColDef[] = [
   { key: 'ai_mfr_manufacturer_ref', label: 'Fabricant · Réf.', fieldType: 'text', width: 160 },
   { key: 'ai_mfr_ean', label: 'Fabricant · EAN', fieldType: 'text', width: 160 },
   { key: 'ai_mfr_specifications', label: 'Fabricant · Spécifications', fieldType: 'text_long', width: 320 },
+  { key: 'ai_mfr_description', label: 'Fabricant · Description', fieldType: 'text_long', width: 320 },
+  { key: 'ai_mfr_advantages', label: 'Fabricant · Points forts', fieldType: 'text_long', width: 280 },
   { key: 'ai_mfr_pricing', label: 'Fabricant · Prix', fieldType: 'text_long', width: 200 },
   { key: 'ai_mfr_images', label: 'Fabricant · Images', fieldType: 'image', width: 160 },
   { key: 'ai_mfr_documents', label: 'Fabricant · Documents', fieldType: 'text_long', width: 260 },
@@ -56,6 +58,10 @@ function serializeManufacturer(
     ai_mfr_ean: data.ean || null,
     ai_mfr_specifications: data.specifications.length > 0
       ? data.specifications.map((s) => s.group ? `[${s.group}]${s.name}: ${s.value}` : `${s.name}: ${s.value}`).join(' | ')
+      : null,
+    ai_mfr_description: data.description || null,
+    ai_mfr_advantages: data.advantages.length > 0
+      ? data.advantages.map((a) => a.group ? `[${a.group}]${a.text}` : a.text).join(' | ')
       : null,
     ai_mfr_pricing: data.pricing ? JSON.stringify(data.pricing) : null,
     ai_mfr_images: data.images.length > 0 ? data.images.join(' | ') : null,

@@ -19,11 +19,12 @@ export function useManufacturerVerify(rowId: string) {
   const [summary, setSummary] = useState<VerdictSummary | null>(null)
   const [mfrName, setMfrName] = useState<string | null>(null)
   const [mfrUrl, setMfrUrl] = useState<string | null>(null)
+  const [eanMatch, setEanMatch] = useState<boolean | null>(null)
   const [error, setError] = useState<string | null>(null)
   const { save, saving } = useSaveManufacturerData()
 
   const reset = useCallback(() => {
-    setPhase('idle'); setCandidates([]); setComparisons([]); setSummary(null); setError(null); setMfrName(null); setMfrUrl(null)
+    setPhase('idle'); setCandidates([]); setComparisons([]); setSummary(null); setError(null); setMfrName(null); setMfrUrl(null); setEanMatch(null)
   }, [])
 
   /** Étape 1 : proposer les pages fabricant candidates (avec réf en clair). */
@@ -63,6 +64,7 @@ export function useManufacturerVerify(rowId: string) {
       setSummary(res.summary)
       setMfrName(res.mfr.name ?? candidate.brand)
       setMfrUrl(candidate.url)
+      setEanMatch(res.eanMatch)
       await save(rowId, res.mfr, { candidate, alignment: res.alignment })
       setPhase('done')
     } catch (e) {
@@ -71,5 +73,5 @@ export function useManufacturerVerify(rowId: string) {
     }
   }, [rowId, save])
 
-  return { phase, candidates, comparisons, summary, mfrName, mfrUrl, error, saving, resolve, confirm, reset }
+  return { phase, candidates, comparisons, summary, mfrName, mfrUrl, eanMatch, error, saving, resolve, confirm, reset }
 }

@@ -21,7 +21,7 @@ const CONF_META: Record<ManufacturerCandidate['confidence'], { label: string; cl
 
 /** Modal du module « Vérification Fabricant » : confirmation candidat → verdict. */
 export function ManufacturerVerifyPanel({ rowId, source, sourceLabel, onClose }: Props) {
-  const { phase, candidates, comparisons, summary, mfrName, mfrUrl, error, saving, resolve, confirm } = useManufacturerVerify(rowId)
+  const { phase, candidates, comparisons, summary, mfrName, mfrUrl, eanMatch, error, saving, resolve, confirm } = useManufacturerVerify(rowId)
 
   // Résoudre les candidats UNE seule fois par fiche. `source` change d'identité à
   // chaque render de ProductSheet (spread) et `save()` déclenche des re-renders du
@@ -121,6 +121,7 @@ export function ManufacturerVerifyPanel({ rowId, source, sourceLabel, onClose }:
               mfrLabel={mfrName ?? 'Fabricant'}
               summary={summary}
               comparisons={comparisons}
+              eanMatch={eanMatch}
             />
           )}
         </div>

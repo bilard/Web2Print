@@ -9,8 +9,9 @@ export interface FieldComparison {
   key: string
   /** Libellé d'affichage FR. */
   label: string
-  /** Famille : identité produit, prix, ou spec technique. */
-  group: 'identity' | 'price' | 'spec'
+  /** Famille : identité produit, prix (informatif), spec technique, ou contenu
+   *  marketing (description/avantages — informatif, non scoré). */
+  group: 'identity' | 'price' | 'spec' | 'content'
   /** Valeur côté source (revendeur), null si absente. */
   sourceValue: string | null
   /** Valeur côté fabricant, null si absente. */

@@ -17,6 +17,17 @@ export interface VerifyResult {
   summary: VerdictSummary
   /** Vrai si le site fabricant a bloqué l'extraction (SPA/anti-bot) — rien à comparer. */
   blocked: boolean
+  /** Correspondance EAN/GTIN source ↔ fabricant : true = certifié même produit,
+   *  false = EAN différents (probable mauvaise page), null = un côté sans EAN. */
+  eanMatch: boolean | null
+}
+
+const digits = (s: string | undefined | null) => (s ?? '').replace(/\D/g, '')
+
+/** Compare deux EAN/GTIN (tolère les zéros de tête, GTIN-13 vs GTIN-14). */
+function eanEquals(a: string | undefined, b: string | undefined): boolean {
+  const da = digits(a).replace(/^0+/, ''), db = digits(b).replace(/^0+/, '')
+  return da.length >= 8 && da === db
 }
 
 /**
@@ -29,11 +40,12 @@ export async function verifyAgainstManufacturer(
 ): Promise<VerifyResult> {
   const mfr = await scrapeManufacturerProduct(candidate.url)
   if (mfr.blockedByAntiBot) {
-    return { mfr, alignment: {}, comparisons: [], summary: { confirmed: 0, completed: 0, divergent: 0, total: 0 }, blocked: true }
+    return { mfr, alignment: {}, comparisons: [], summary: { confirmed: 0, completed: 0, divergent: 0, total: 0 }, blocked: true, eanMatch: null }
   }
   const alignment = await alignUnknownSpecs(source, mfr)
   const comparisons = compareSourceVsManufacturer(source, mfr, alignment)
-  return { mfr, alignment, comparisons, summary: summarize(comparisons), blocked: false }
+  const eanMatch = (source.ean && mfr.ean) ? eanEquals(source.ean, mfr.ean) : null
+  return { mfr, alignment, comparisons, summary: summarize(comparisons), blocked: false, eanMatch }
 }
 
 /** Résultat d'une vérification automatique (lot, sans confirmation manuelle). */
@@ -54,10 +66,23 @@ export async function verifyRowAuto(source: EnrichedProduct): Promise<AutoVerify
     manufacturerRef: source.manufacturerRef,
     name: source.name,
   })
-  const top = candidates[0]
-  if (!top) return { status: 'skipped', reason: 'aucune page fabricant trouvée' }
-  if (top.confidence !== 'high') return { status: 'skipped', reason: `confiance ${top.confidence} — revue manuelle requise` }
-  const result = await verifyAgainstManufacturer(source, top)
-  if (result.blocked) return { status: 'blocked', reason: 'site fabricant anti-bot' }
-  return { status: 'verified', candidate: top, result }
+  if (candidates.length === 0) return { status: 'skipped', reason: 'aucune page fabricant trouvée' }
+
+  // Pivot d'industrialisation : on itère les meilleurs candidats et on ne fusionne
+  // automatiquement QUE sur une correspondance EAN/GTIN certifiée (même produit,
+  // déterministe). Sans EAN concordant → skip (jamais de mauvaise fusion en masse).
+  const MAX_TRY = 3
+  let firstPlausible: { candidate: typeof candidates[number]; result: Awaited<ReturnType<typeof verifyAgainstManufacturer>> } | null = null
+  for (const candidate of candidates.slice(0, MAX_TRY)) {
+    const result = await verifyAgainstManufacturer(source, candidate)
+    if (result.blocked) continue
+    if (result.eanMatch === true) return { status: 'verified', candidate, result }
+    if (!firstPlausible && result.eanMatch !== false) firstPlausible = { candidate, result }
+  }
+  // Aucun EAN certain : on n'auto-fusionne que si la source n'a PAS d'EAN (donc
+  // vérification impossible) et que le meilleur candidat était « high ».
+  if (firstPlausible && !source.ean && candidates[0].confidence === 'high') {
+    return { status: 'verified', candidate: firstPlausible.candidate, result: firstPlausible.result }
+  }
+  return { status: 'skipped', reason: source.ean ? 'aucun EAN fabricant concordant — revue manuelle' : 'confiance insuffisante — revue manuelle' }
 }

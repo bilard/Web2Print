@@ -11,9 +11,20 @@
  */
 
 import type { ExcelColumn, ExcelRow } from '@/features/excel/types'
-import type { EnrichedProduct, EnrichedSpec, Pricing } from '@/features/excel/ai-enrichment/types'
+import type { EnrichedProduct, EnrichedSpec, EnrichedAdvantage, Pricing } from '@/features/excel/ai-enrichment/types'
+import { normalizeSpecPairs } from '@/features/scraping/core/parsers/normalizeSpecPairs'
 import { canonicalizeSpecName, canonicalLabel, normalizeSpecLabel, normalizeValueForCompare } from './specSynonyms'
 import type { FieldComparison, LlmSpecPairs, VerdictSummary } from './types'
+
+/** Parse « [Groupe]Texte | Texte2 » (avantages sérialisés) → EnrichedAdvantage[]. */
+function parseSerializedAdvantages(raw: string): EnrichedAdvantage[] {
+  return raw.split(' | ').map((chunk) => {
+    const s = chunk.trim()
+    if (!s) return null
+    const gm = s.match(/^\[([^\]]+)\](.*)$/)
+    return gm ? { text: gm[2].trim(), group: gm[1].trim() } : { text: s }
+  }).filter((a): a is EnrichedAdvantage => a !== null && !!a.text)
+}
 
 // ── Désérialisation d'une ligne (colonnes ai_*) → EnrichedProduct ────────────
 
@@ -61,7 +72,10 @@ const cell = (row: ExcelRow, key: string): string | null => {
 export function sheetRowToEnrichedProduct(row: ExcelRow, columns: ExcelColumn[]): EnrichedProduct | null {
   const has = new Set(columns.map((c) => c.key))
   const specsRaw = has.has('ai_specifications') ? cell(row, 'ai_specifications') : null
-  const specifications = specsRaw ? parseSerializedSpecs(specsRaw) : []
+  // Normaliseur universel : dédup (« Poids » ×2) + rejet des paires corrompues
+  // (nom en forme de valeur, UUID) que le scrape source peut charrier.
+  const specifications = normalizeSpecPairs(specsRaw ? parseSerializedSpecs(specsRaw) : [])
+  const advRaw = has.has('ai_advantages') ? cell(row, 'ai_advantages') : null
   const pricingRaw = has.has('ai_pricing') ? cell(row, 'ai_pricing') : null
   const imagesRaw = has.has('ai_images') ? cell(row, 'ai_images') : null
 
@@ -79,7 +93,7 @@ export function sheetRowToEnrichedProduct(row: ExcelRow, columns: ExcelColumn[])
     subtitle: cell(row, 'ai_subtitle') ?? undefined,
     description: cell(row, 'ai_description') ?? '',
     breadcrumb: undefined,
-    advantages: [],
+    advantages: advRaw ? parseSerializedAdvantages(advRaw) : [],
     specifications,
     variants: [],
     images: imagesRaw ? imagesRaw.split(' | ').map((s) => s.trim()).filter(Boolean) : [],
@@ -99,7 +113,8 @@ function rowToManufacturerProduct(row: ExcelRow, columns: ExcelColumn[]): Enrich
   const has = new Set(columns.map((c) => c.key))
   if (!has.has('ai_mfr_specifications') && !has.has('ai_mfr_name') && !has.has('ai_mfr_pricing')) return null
   const specsRaw = cell(row, 'ai_mfr_specifications')
-  const specifications = specsRaw ? parseSerializedSpecs(specsRaw) : []
+  const specifications = normalizeSpecPairs(specsRaw ? parseSerializedSpecs(specsRaw) : [])
+  const advRaw = cell(row, 'ai_mfr_advantages')
   const name = cell(row, 'ai_mfr_name')
   const pricingRaw = cell(row, 'ai_mfr_pricing')
   const imagesRaw = cell(row, 'ai_mfr_images')
@@ -110,8 +125,8 @@ function rowToManufacturerProduct(row: ExcelRow, columns: ExcelColumn[]): Enrich
     model: cell(row, 'ai_mfr_model') ?? undefined,
     manufacturerRef: cell(row, 'ai_mfr_manufacturer_ref') ?? undefined,
     ean: cell(row, 'ai_mfr_ean') ?? undefined,
-    description: '',
-    advantages: [],
+    description: cell(row, 'ai_mfr_description') ?? '',
+    advantages: advRaw ? parseSerializedAdvantages(advRaw) : [],
     specifications,
     variants: [],
     images: imagesRaw ? imagesRaw.split(' | ').map((s) => s.trim()).filter(Boolean) : [],
@@ -187,17 +202,39 @@ export function compareSourceVsManufacturer(
     if (row) out.push(row)
   }
 
-  // 2. Prix
-  const priceFields: Array<{ key: string; label: string; f: 'ttc' | 'ht' | 'original' }> = [
-    { key: 'price:ttc', label: 'Prix TTC', f: 'ttc' },
-    { key: 'price:ht', label: 'Prix HT', f: 'ht' },
-    { key: 'price:original', label: 'Prix barré', f: 'original' },
-  ]
-  for (const pf of priceFields) {
-    const sv = priceStr(source.pricing, pf.f)
-    const mv = priceStr(mfr.pricing, pf.f)
-    if (!sv && !mv) continue
-    out.push({ key: pf.key, label: pf.label, group: 'price', sourceValue: sv, mfrValue: mv, status: statusFor(sv, mv) })
+  // 2. Prix — INFORMATIF (le prix fabricant est un tarif conseillé RRP, distinct
+  //    du prix revendeur : on l'affiche côte à côte mais on ne le score jamais en
+  //    « divergent »). On confronte le prix affiché de chaque côté.
+  const srcPrice = priceStr(source.pricing, 'ttc') ?? priceStr(source.pricing, 'ht')
+  const mfrPrice = priceStr(mfr.pricing, 'ttc') ?? priceStr(mfr.pricing, 'ht')
+  if (srcPrice || mfrPrice) {
+    out.push({
+      key: 'price:main', label: 'Prix (fabricant = conseillé)', group: 'price',
+      sourceValue: srcPrice, mfrValue: mfrPrice,
+      status: mfrPrice ? (srcPrice ? 'match' : 'mfr-only') : 'source-only',
+    })
+  }
+
+  // 2bis. Contenu marketing — INFORMATIF (description, points forts). Montre ce
+  //    que le fabricant apporte, non scoré en divergent.
+  const srcDesc = (source.description ?? '').trim()
+  const mfrDesc = (mfr.description ?? '').trim()
+  if (srcDesc || mfrDesc) {
+    out.push({
+      key: 'content:description', label: 'Description', group: 'content',
+      sourceValue: srcDesc || null, mfrValue: mfrDesc || null,
+      status: mfrDesc ? (srcDesc ? 'match' : 'mfr-only') : 'source-only',
+    })
+  }
+  const srcAdv = source.advantages.length
+  const mfrAdv = mfr.advantages.length
+  if (srcAdv || mfrAdv) {
+    out.push({
+      key: 'content:advantages', label: 'Points forts', group: 'content',
+      sourceValue: srcAdv ? `${srcAdv} point${srcAdv > 1 ? 's' : ''}` : null,
+      mfrValue: mfrAdv ? `${mfrAdv} point${mfrAdv > 1 ? 's' : ''}` : null,
+      status: mfrAdv ? (srcAdv ? 'match' : 'mfr-only') : 'source-only',
+    })
   }
 
   // 3. Specs — index fabricant par clé canonique et par libellé normalisé.
@@ -254,13 +291,15 @@ export function compareSourceVsManufacturer(
   return out
 }
 
-/** Compteurs pour la vue verdict. */
+/** Compteurs pour la vue verdict. Prix + contenu = informatifs, NON scorés
+ *  (le prix fabricant est un tarif conseillé, une différence n'est pas une erreur). */
 export function summarize(comparisons: FieldComparison[]): VerdictSummary {
   let confirmed = 0, completed = 0, divergent = 0
-  for (const c of comparisons) {
+  const scored = comparisons.filter((c) => c.group === 'identity' || c.group === 'spec')
+  for (const c of scored) {
     if (c.status === 'match') confirmed++
     else if (c.status === 'mfr-only') completed++
     else if (c.status === 'diff') divergent++
   }
-  return { confirmed, completed, divergent, total: comparisons.length }
+  return { confirmed, completed, divergent, total: scored.length }
 }
