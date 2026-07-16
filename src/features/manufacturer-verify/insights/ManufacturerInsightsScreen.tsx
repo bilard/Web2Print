@@ -4,6 +4,7 @@ import { Factory, LayoutDashboard, Columns3, ListChecks, ScanSearch } from 'luci
 import { useExcelStore } from '@/stores/excel.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { aggregateInsights, type ProductStat } from './insightsAggregate'
+import { DatabaseSelect } from './DatabaseSelect'
 import { InsightsKpiCards } from './InsightsKpiCards'
 import { InsightsStatusDonut } from './InsightsStatusDonut'
 import { InsightsDivergentBars } from './InsightsDivergentBars'
@@ -23,7 +24,6 @@ const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
 export function ManufacturerInsightsScreen() {
   const navigate = useNavigate()
   const sheets = useExcelStore((s) => s.sheets)
-  const fileName = useExcelStore((s) => s.currentFileName)
   const setActiveSheet = useExcelStore((s) => s.setActiveSheet)
   const setSheetRowId = useExcelStore((s) => s.setSheetRowId)
   const [tab, setTab] = useState<Tab>('overview')
@@ -43,15 +43,15 @@ export function ManufacturerInsightsScreen() {
   return (
     <div className="max-w-7xl mx-auto">
       <header className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
           <Factory className="w-5 h-5 text-indigo-300" />
         </div>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-xl font-bold">Écarts fabricant</h1>
-          <p className="text-sm text-white/50">
-            Différences de données Source&nbsp;⇄&nbsp;Fabricant
-            {fileName ? <> · base <span className="text-white/70">{fileName}</span></> : null}
-          </p>
+          <p className="text-sm text-white/50">Différences de données Source&nbsp;⇄&nbsp;Fabricant</p>
+        </div>
+        <div className="ml-auto shrink-0">
+          <DatabaseSelect />
         </div>
       </header>
 
