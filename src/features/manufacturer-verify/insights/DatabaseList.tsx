@@ -24,7 +24,11 @@ export function DatabaseList() {
   const [mfrCounts, setMfrCounts] = useState<Record<string, number>>({})
   const scannedRef = useRef(false)
 
-  useEffect(() => { listSavedFiles().then(setFiles).catch(() => {}) }, [])
+  useEffect(() => {
+    listSavedFiles()
+      .then((list) => setFiles([...list].sort((a, b) => a.fileName.localeCompare(b.fileName, 'fr', { sensitivity: 'base' }))))
+      .catch(() => {})
+  }, [])
 
   // Scan en arrière-plan (pool de 4, sans toucher au store) pour compter les
   // produits vérifiés fabricant → badge. Base active comptée depuis le store.
