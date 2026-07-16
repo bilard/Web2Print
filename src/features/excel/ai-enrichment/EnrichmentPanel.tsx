@@ -1,17 +1,9 @@
-import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from 'react'
+import { useEffect, useState, useRef, useCallback, Fragment } from 'react'
 import {
-  Sparkles, Loader2, RefreshCw, ExternalLink, Zap, Check, AlertCircle, ImageIcon, Globe, Save, Plus, X,
-  Code2, ChevronDown, Copy, FileDown, ListOrdered, LayoutGrid, List as ListIcon, ArrowDownAZ, ArrowUpAZ, GripVertical,
-  ShieldAlert, Tag, Camera,
+  Sparkles, Loader2, RefreshCw, ExternalLink, Zap, Check, AlertCircle, Globe, Save, Plus, X,
+  Code2, ChevronDown, Copy, FileDown, ListOrdered,
+  ShieldAlert,
 } from 'lucide-react'
-import {
-  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core'
-import {
-  SortableContext, rectSortingStrategy, verticalListSortingStrategy, useSortable, arrayMove,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { VendorFieldOrderModal } from '@/features/scraping-templates/VendorFieldOrderModal'
 import { useExcelStore } from '@/stores/excel.store'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
@@ -20,8 +12,6 @@ import { useEnrichmentStore } from './enrichmentStore'
 import { TypedLogConsole } from './TypedLogConsole'
 import { looksLikeBotChallenge } from './markdownSanitize'
 import { RESELLER_HOSTS, detectBrandFromUrl } from '@/features/scraping/useJina'
-import { classifyImage, getProductRefs } from './imageFilter'
-import { useResolvedImageSrc } from '@/features/dam/useResolvedImageSrc'
 import { useProductEnrichment, type EnrichmentInput } from './useProductEnrichment'
 import { useMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
@@ -45,492 +35,6 @@ const PROVIDER_LABELS: Record<string, string> = {
   kimi: 'Kimi',
   glm: 'GLM',
   openrouter: 'OpenRouter',
-}
-
-/** Extrait le nom de fichier d'une URL d'image (dernier segment du path,
- *  query/fragment retirés, decodeURIComponent appliqué). Fallback sur l'URL
- *  brute si le parsing échoue. */
-function getImageName(url: string): string {
-  try {
-    const u = new URL(url)
-    const segments = u.pathname.split('/').filter(Boolean)
-    const last = segments[segments.length - 1]
-    if (!last) return url
-    return decodeURIComponent(last)
-  } catch {
-    return url
-  }
-}
-
-type ImageSort = 'original' | 'name-asc' | 'name-desc'
-type ImageView = 'grid' | 'list'
-
-type GridVariant = 'hero' | 'thumb' | 'default'
-
-/** Tuile/ligne sortable. Fournit un drag handle (grip) ; le reste du contenu
- *  reste interactif (clic image = ouvrir, clic X = supprimer).
- *  En vue grille, `variant='hero'` rend une image principale large (aspect 4/3,
- *  padding plus large), `variant='thumb'` rend une vignette compacte (aspect
- *  carré, padding réduit). */
-function SortableImageItem({
-  id, view, url, onRemove, onSwapTab, swapTargetTab, variant = 'default',
-}: {
-  id: string
-  view: ImageView
-  url: string
-  onRemove?: (url: string) => void
-  onSwapTab?: (url: string) => void
-  swapTargetTab?: 'photos' | 'pictos'
-  variant?: GridVariant
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
-  // Résout les références DAM (Google Drive) en blob URL affichable ; sinon URL directe.
-  const resolvedSrc = useResolvedImageSrc(url)
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 50 : undefined,
-    opacity: isDragging ? 0.7 : 1,
-  }
-
-  if (view === 'grid') {
-    const aspect = variant === 'hero' ? 'aspect-[4/3]' : 'aspect-square'
-    const imgPadding = variant === 'hero' ? 'p-3' : variant === 'thumb' ? 'p-0.5' : 'p-1'
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className={`group relative ${aspect} rounded-md overflow-hidden bg-white/5 border transition-colors ${
-          variant === 'hero' ? 'ring-1 ring-indigo-400/30' : ''
-        } ${
-          isDragging ? 'border-indigo-400/60 shadow-lg shadow-indigo-500/10' : 'border-white/[0.06] hover:border-indigo-400/40'
-        }`}
-      >
-        <a href={url} target="_blank" rel="noreferrer" className="block w-full h-full" title={getImageName(url)}>
-          <img
-            src={resolvedSrc}
-            alt=""
-            className={`w-full h-full object-contain ${imgPadding} pointer-events-none`}
-            onError={(e) => {
-              ;(e.target as HTMLImageElement).style.display = 'none'
-            }}
-          />
-        </a>
-        {variant === 'hero' && (
-          <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-indigo-500/80 text-[#fff] text-[9px] font-semibold uppercase tracking-wide pointer-events-none">
-            Principale
-          </div>
-        )}
-        <button
-          {...attributes}
-          {...listeners}
-          className="absolute top-1 left-1 w-5 h-5 flex items-center justify-center rounded bg-black/70 text-[#fff]/70 opacity-0 group-hover:opacity-100 hover:bg-black/90 hover:text-[#fff] cursor-grab active:cursor-grabbing touch-none transition-all"
-          title="Glisser pour réordonner"
-        >
-          <GripVertical className="w-3 h-3" />
-        </button>
-        <div className="absolute top-1 right-1 flex items-center gap-1">
-          {onSwapTab && (
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onSwapTab(url)
-              }}
-              className="w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-[#fff]/80 opacity-0 group-hover:opacity-100 hover:bg-indigo-500/80 hover:text-[#fff] transition-all"
-              title={swapTargetTab === 'pictos' ? 'Déplacer vers Pictos & logos' : 'Déplacer vers Photos'}
-            >
-              {swapTargetTab === 'pictos' ? <Tag className="w-3 h-3" /> : <Camera className="w-3 h-3" />}
-            </button>
-          )}
-          {onRemove && (
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onRemove(url)
-              }}
-              className="w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-[#fff]/80 opacity-0 group-hover:opacity-100 hover:bg-red-500/80 hover:text-[#fff] transition-all"
-              title="Supprimer cette image"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`group flex items-center gap-2 px-1.5 py-1 rounded-md border transition-colors ${
-        isDragging
-          ? 'bg-indigo-500/10 border-indigo-400/40 shadow-lg shadow-indigo-500/10'
-          : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.04] hover:border-indigo-400/30'
-      }`}
-    >
-      <button
-        {...attributes}
-        {...listeners}
-        className="shrink-0 cursor-grab active:cursor-grabbing text-white/15 hover:text-white/40 touch-none"
-        title="Glisser pour réordonner"
-      >
-        <GripVertical className="w-3.5 h-3.5" />
-      </button>
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className="shrink-0 w-9 h-9 rounded bg-white/5 border border-white/[0.06] overflow-hidden flex items-center justify-center"
-        title="Ouvrir"
-      >
-        <img
-          src={resolvedSrc}
-          alt=""
-          className="w-full h-full object-contain p-0.5"
-          onError={(e) => {
-            ;(e.target as HTMLImageElement).style.display = 'none'
-          }}
-        />
-      </a>
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className="flex-1 min-w-0 text-[11px] text-white/70 hover:text-indigo-300 truncate"
-        title={url}
-      >
-        {getImageName(url)}
-      </a>
-      {onSwapTab && (
-        <button
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            onSwapTab(url)
-          }}
-          className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-white/30 opacity-0 group-hover:opacity-100 hover:bg-indigo-500/20 hover:text-indigo-300 transition-all"
-          title={swapTargetTab === 'pictos' ? 'Déplacer vers Pictos & logos' : 'Déplacer vers Photos'}
-        >
-          {swapTargetTab === 'pictos' ? <Tag className="w-3 h-3" /> : <Camera className="w-3 h-3" />}
-        </button>
-      )}
-      {onRemove && (
-        <button
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            onRemove(url)
-          }}
-          className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-white/30 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-300 transition-all"
-          title="Supprimer cette image"
-        >
-          <X className="w-3 h-3" />
-        </button>
-      )}
-    </div>
-  )
-}
-
-/** Grille/liste d'images avec expand/collapse — affiche 6 par défaut, toutes au clic.
- *  Toggle vue grille/liste, tri par nom (A→Z / Z→A / ordre original) ET drag-and-drop
- *  manuel. Le drop persiste l'ordre via `onReorder` et bascule le tri sur "Ordre
- *  d'origine" (cohérent : l'utilisateur vient de fixer un ordre manuel). */
-function ImageGrid({
-  images, onRemove, onReorder, onSwapTab, swapTargetTab,
-}: {
-  images: string[]
-  onRemove?: (url: string) => void
-  onReorder?: (next: string[]) => void
-  onSwapTab?: (url: string) => void
-  swapTargetTab?: 'photos' | 'pictos'
-}) {
-  const [expanded, setExpanded] = useState(false)
-  const [view, setView] = useState<ImageView>('grid')
-  const [sort, setSort] = useState<ImageSort>('original')
-
-  const sorted = (() => {
-    if (sort === 'original') return images
-    const indexed = images.map((url, i) => ({ url, name: getImageName(url), i }))
-    indexed.sort((a, b) => {
-      const cmp = a.name.localeCompare(b.name, 'fr', { numeric: true, sensitivity: 'base' })
-      return sort === 'name-asc' ? cmp : -cmp
-    })
-    return indexed.map((x) => x.url)
-  })()
-
-  const visible = expanded ? sorted : sorted.slice(0, 6)
-
-  // ID stable par position dans `sorted` (les URLs peuvent théoriquement se
-  // répéter ; on combine url + index pour rester unique côté dnd-kit).
-  const itemId = (url: string, i: number) => `${i}::${url}`
-  const visibleIds = visible.map((url, i) => itemId(url, i))
-
-  const cycleSort = () => {
-    setSort((s) => (s === 'original' ? 'name-asc' : s === 'name-asc' ? 'name-desc' : 'original'))
-  }
-  const sortLabel = sort === 'name-asc' ? 'Nom A→Z' : sort === 'name-desc' ? 'Nom Z→A' : 'Ordre d\'origine'
-  const SortIcon = sort === 'name-desc' ? ArrowUpAZ : ArrowDownAZ
-
-  // Activation distance > 0 pour ne pas confondre clic et drag (un clic
-  // simple sur un lien ne doit pas démarrer un drag).
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
-
-  const handleDragEnd = (e: DragEndEvent) => {
-    const { active, over } = e
-    if (!over || active.id === over.id || !onReorder) return
-    const oldIdx = visibleIds.indexOf(String(active.id))
-    const newIdx = visibleIds.indexOf(String(over.id))
-    if (oldIdx < 0 || newIdx < 0) return
-    // Réordonner la sous-liste visible, puis remettre cette sous-liste en
-    // tête de l'array complet (les éventuelles images cachées par le collapse
-    // passent après — préserve leur ordre relatif).
-    const reorderedVisible = arrayMove(visible, oldIdx, newIdx)
-    const hidden = sorted.filter((u) => !visible.includes(u))
-    const next = [...reorderedVisible, ...hidden]
-    onReorder(next)
-    // Après un drag manuel, le tri par nom n'a plus de sens : on revient à
-    // l'ordre stocké pour que ce que voit l'utilisateur reflète le storage.
-    if (sort !== 'original') setSort('original')
-  }
-
-  const draggable = !!onReorder
-
-  const content = view === 'grid' ? (
-    visible.length === 0 ? null : (
-      <div className="flex flex-col gap-1.5">
-        <SortableImageItem
-          key={itemId(visible[0], 0)}
-          id={itemId(visible[0], 0)}
-          view="grid"
-          url={visible[0]}
-          onRemove={onRemove}
-          onSwapTab={onSwapTab}
-          swapTargetTab={swapTargetTab}
-          variant="hero"
-        />
-        {visible.length > 1 && (
-          <div className="grid grid-cols-5 gap-1.5">
-            {visible.slice(1).map((url, i) => (
-              <SortableImageItem
-                key={itemId(url, i + 1)}
-                id={itemId(url, i + 1)}
-                view="grid"
-                url={url}
-                onRemove={onRemove}
-                onSwapTab={onSwapTab}
-                swapTargetTab={swapTargetTab}
-                variant="thumb"
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  ) : (
-    <div className="flex flex-col gap-1">
-      {visible.map((url, i) => (
-        <SortableImageItem
-          key={itemId(url, i)}
-          id={itemId(url, i)}
-          view="list"
-          url={url}
-          onRemove={onRemove}
-          onSwapTab={onSwapTab}
-          swapTargetTab={swapTargetTab}
-        />
-      ))}
-    </div>
-  )
-
-  return (
-    <>
-      <div className="flex items-center justify-end gap-1 mb-1.5">
-        <button
-          onClick={cycleSort}
-          title={`Trier — ${sortLabel}`}
-          className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded transition-colors ${
-            sort === 'original'
-              ? 'text-white/40 hover:text-white/70 hover:bg-white/5'
-              : 'text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20'
-          }`}
-        >
-          <SortIcon className="w-3 h-3" />
-          {sortLabel}
-        </button>
-        <div className="flex items-center bg-white/[0.03] border border-white/[0.06] rounded p-0.5">
-          <button
-            onClick={() => setView('grid')}
-            title="Vue grille"
-            className={`p-0.5 rounded transition-colors ${
-              view === 'grid' ? 'bg-white/[0.08] text-white/80' : 'text-white/30 hover:text-white/60'
-            }`}
-          >
-            <LayoutGrid className="w-3 h-3" />
-          </button>
-          <button
-            onClick={() => setView('list')}
-            title="Vue liste (avec noms)"
-            className={`p-0.5 rounded transition-colors ${
-              view === 'list' ? 'bg-white/[0.08] text-white/80' : 'text-white/30 hover:text-white/60'
-            }`}
-          >
-            <ListIcon className="w-3 h-3" />
-          </button>
-        </div>
-      </div>
-
-      {draggable ? (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext
-            items={visibleIds}
-            strategy={view === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
-          >
-            {content}
-          </SortableContext>
-        </DndContext>
-      ) : content}
-
-      {sorted.length > 6 && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="mt-1.5 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
-        >
-          <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-          {expanded ? 'Réduire' : `Voir les ${sorted.length} images`}
-        </button>
-      )}
-    </>
-  )
-}
-
-/** Section "Images trouvées" avec deux onglets : Photos vs Pictos & logos.
- *  La répartition utilise `classifyImage(url, refs)` :
- *    - Si on a une référence produit (specs/title/url/variants) → URL contient
- *      la ref = photo, sinon = picto.
- *    - Pas de ref → fallback sur heuristique URL (`isPictoOrLogo`).
- *  Édition (remove/reorder) se fait dans l'onglet actif uniquement, mais le
- *  setState mute toujours `data.images` complet — on reconstruit en gardant
- *  l'ordre d'origine pour les éléments de l'autre onglet. */
-function ImagesSection({
-  data,
-  input,
-  onUpdate,
-}: {
-  data: EnrichedProduct
-  input: EnrichmentInput
-  onUpdate: (patch: Partial<EnrichedProduct>) => void
-}) {
-  const [tab, setTab] = useState<'photos' | 'pictos'>('photos')
-  const refs = useMemo(
-    () => getProductRefs({
-      specifications: data.specifications,
-      variants: data.variants,
-      title: input.title,
-      sourceUrl: data.sourceUrl ?? input.knownUrl,
-    }),
-    [data.specifications, data.variants, data.sourceUrl, input.title, input.knownUrl],
-  )
-  const images = data.images
-  const overrides = data.imageClassOverrides
-  // Classification effective : override manuel > heuristique URL.
-  const classOf = (u: string): 'photo' | 'picto' =>
-    overrides?.[u] ?? classifyImage(u, refs)
-  const photos = useMemo(() => images.filter((u) => classOf(u) === 'photo'), [images, refs, overrides])
-  const pictos = useMemo(() => images.filter((u) => classOf(u) === 'picto'), [images, refs, overrides])
-  const active = tab === 'photos' ? photos : pictos
-  const total = images.length
-
-  // Mute : retire l'URL du tableau complet `images` ET nettoie son override.
-  const handleRemove = (url: string) => {
-    const nextOverrides = { ...overrides }
-    delete nextOverrides[url]
-    onUpdate({
-      images: images.filter((u) => u !== url),
-      imageClassOverrides: Object.keys(nextOverrides).length > 0 ? nextOverrides : undefined,
-    })
-  }
-
-  // Mute : reorder se fait sur la liste de l'onglet actif. On reconstruit
-  // `images` en concaténant l'ordre demandé pour cet onglet + les éléments
-  // de l'autre onglet dans leur position d'origine. La concaténation simple
-  // (active réordonné + reste) suffit puisqu'aucune logique aval n'attend
-  // une séquence stricte entre photos et pictos.
-  const handleReorder = (nextActive: string[]) => {
-    const otherSet = new Set(tab === 'photos' ? pictos : photos)
-    const others = images.filter((u) => otherSet.has(u))
-    onUpdate({ images: [...nextActive, ...others] })
-  }
-
-  // Bascule la classification d'une URL vers l'autre onglet. Stocke uniquement
-  // si le résultat diffère de l'heuristique automatique — sinon retire l'override
-  // (évite d'accumuler des entrées qui répètent simplement le défaut).
-  const handleSwapTab = (url: string) => {
-    const current = classOf(url)
-    const next: 'photo' | 'picto' = current === 'photo' ? 'picto' : 'photo'
-    const auto = classifyImage(url, refs)
-    const nextOverrides = { ...overrides }
-    if (next === auto) delete nextOverrides[url]
-    else nextOverrides[url] = next
-    onUpdate({
-      imageClassOverrides: Object.keys(nextOverrides).length > 0 ? nextOverrides : undefined,
-    })
-  }
-
-  return (
-    <div id={sectionAnchor('images')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider flex items-center gap-1.5">
-          <ImageIcon className="w-3 h-3" />
-          {total > 0 ? `Images trouvées (${total})` : 'Aucune image trouvée'}
-        </p>
-        {total > 0 && (
-          <div className="flex items-center gap-0.5 bg-white/[0.03] border border-white/[0.06] rounded p-0.5">
-            <button
-              onClick={() => setTab('photos')}
-              className={`px-2 py-0.5 rounded text-[10px] font-medium tabular-nums transition-colors ${
-                tab === 'photos'
-                  ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30'
-                  : 'text-white/50 hover:text-white/80 border border-transparent'
-              }`}
-            >
-              Photos {photos.length > 0 && <span className="opacity-70">({photos.length})</span>}
-            </button>
-            <button
-              onClick={() => setTab('pictos')}
-              className={`px-2 py-0.5 rounded text-[10px] font-medium tabular-nums transition-colors ${
-                tab === 'pictos'
-                  ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30'
-                  : 'text-white/50 hover:text-white/80 border border-transparent'
-              }`}
-            >
-              Pictos & logos {pictos.length > 0 && <span className="opacity-70">({pictos.length})</span>}
-            </button>
-          </div>
-        )}
-      </div>
-      {total === 0 ? (
-        <p className="text-[11px] text-white/35 leading-relaxed">
-          Le scraping n'a pas détecté d'images produit exploitables. Essayez{' '}
-          <span className="text-white/60">Re-générer</span> pour relancer la recherche.
-        </p>
-      ) : active.length === 0 ? (
-        <p className="text-[11px] text-white/35 italic py-3">
-          {tab === 'photos' ? 'Aucune photo produit dans cette source.' : 'Aucun picto ou logo détecté.'}
-        </p>
-      ) : (
-        <ImageGrid
-          images={active}
-          onRemove={handleRemove}
-          onReorder={handleReorder}
-          onSwapTab={handleSwapTab}
-          swapTargetTab={tab === 'photos' ? 'pictos' : 'photos'}
-        />
-      )}
-    </div>
-  )
 }
 
 export function EnrichmentPanel({ input }: Props) {
@@ -815,7 +319,6 @@ export function EnrichmentPanel({ input }: Props) {
         {isDone && data && (
           <DoneState
             data={data}
-            input={input}
             llmRequest={llmRequest}
             onUpdate={updateData}
             scrapeCache={scrapeCache}
@@ -1153,7 +656,6 @@ function ErrorState({ error, onRetry, onRetryWithUrl }: {
 
 function DoneState({
   data,
-  input,
   llmRequest,
   onUpdate,
   scrapeCache,
@@ -1161,7 +663,6 @@ function DoneState({
   templateFieldOrder,
 }: {
   data: NonNullable<ReturnType<typeof useEnrichmentStore.getState>['entries'][string]>['data']
-  input: EnrichmentInput
   llmRequest: LlmRequestInfo | null
   onUpdate: (patch: Partial<EnrichedProduct>) => void
   scrapeCache?: { sourcesScrapped?: string[] }
@@ -1209,12 +710,11 @@ function DoneState({
     title: 'title',
     description: 'description',
     advantages: 'advantages',
-    images: 'images',
     documents: 'documents',
     variants: 'variants', variantes: 'variants', Variantes: 'variants', references: 'variants',
     specifications: 'specifications', specs: 'specifications',
   }
-  const DEFAULT_ORDER = ['images', 'pricing', 'description', 'advantages', 'specifications', 'variants', 'custom', 'documents']
+  const DEFAULT_ORDER = ['pricing', 'description', 'advantages', 'specifications', 'variants', 'custom', 'documents']
 
   const sectionOrder: string[] = []
   if (templateFieldOrder && templateFieldOrder.length > 0) {
@@ -1249,17 +749,9 @@ function DoneState({
       {llmRequest && <LlmRequestPanel request={llmRequest} />}
 
       {/* Sections ordonnées selon le template (si template match) ou ordre par défaut.
-          L'ordre `images` est lui-même géré dans la boucle, ce qui permet à
-          `vendorFieldOrder` de le déplacer à n'importe quelle position. */}
+          Les images ne sont plus rendues ici : le carrousel en tête de fiche
+          (ProductSheet) les affiche déjà — cette section faisait doublon. */}
       {sectionOrder.map((sectionKey) => {
-        if (sectionKey === 'images') return (
-          <ImagesSection
-            key="images"
-            data={data}
-            input={input}
-            onUpdate={onUpdate}
-          />
-        )
         if (sectionKey === 'description') {
           // Détection multi-source : flag explicite, description = challenge,
           // OU produit complètement vide sur une URL revendeur anti-bot.
