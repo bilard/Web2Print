@@ -8,7 +8,7 @@ import {
   MoreVertical, ExternalLink,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight, GripVertical,
-  Wand2, FolderUp, Link2, ImagePlus, X,
+  Wand2, FolderUp, Link2, ImagePlus, X, Factory,
 } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -28,6 +28,8 @@ import { useSourceSyncPrompt } from '@/features/pim/useSourceSyncPrompt'
 import type { SourceIdent } from '@/features/pim/linkedPublications'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
+import { fetchSheetsQuiet } from '@/features/manufacturer-verify/insights/fetchSheetsQuiet'
+import { aggregateInsights } from '@/features/manufacturer-verify/insights/insightsAggregate'
 const ExcelImportModal = lazy(() =>
   import('@/features/excel/ExcelImportModal').then((m) => ({ default: m.ExcelImportModal })),
 )
@@ -932,6 +934,11 @@ const normDb = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/
 /** Set vide stable : force le dépliage de tous les dossiers pendant une recherche. */
 const NO_COLLAPSE = new Set<string>()
 
+/** Cache module (survit aux remontages) du nb de produits « challenge Fabricant »
+ *  par base, invalidé quand la base change (clé = updatedAt). Évite de re-scanner
+ *  les payloads Firestore à chaque ouverture du PIM. */
+const mfrScanCache = new Map<string, { at: number; count: number }>()
+
 function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRename, onMove, onImportAt, onScrapeAt, onCreateAt, onRefresh, onReorder }: {
   files: SavedFileEntry[]
   loading: boolean
@@ -964,6 +971,39 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
     [files, q],
   )
   const tree = useMemo(() => buildDatabaseTree(filteredFiles), [filteredFiles])
+
+  // Scan en arrière-plan (pool de 4, sans toucher au store) : nb de produits
+  // « challenge Fabricant » par base → picto. Résultats mis en cache module,
+  // invalidés quand la base change (updatedAt). Base active comptée depuis le store.
+  const [mfrCounts, setMfrCounts] = useState<Record<string, number>>({})
+  useEffect(() => {
+    if (files.length === 0) return
+    let cancelled = false
+    const keyOf = (f: SavedFileEntry) => f.updatedAt?.getTime() ?? 0
+    const seed: Record<string, number> = {}
+    const toScan: SavedFileEntry[] = []
+    for (const f of files) {
+      const c = mfrScanCache.get(f.docId)
+      if (c && c.at === keyOf(f)) seed[f.docId] = c.count
+      else toScan.push(f)
+    }
+    if (Object.keys(seed).length) setMfrCounts((m) => ({ ...m, ...seed }))
+    const queue = [...toScan]
+    const worker = async () => {
+      while (queue.length) {
+        const f = queue.shift()
+        if (!f) break
+        const { sheets, currentDocId: activeId } = useExcelStore.getState()
+        const s = f.docId === activeId ? sheets : await fetchSheetsQuiet(f.docId)
+        const count = s ? aggregateInsights(s).verifiedCount : 0
+        mfrScanCache.set(f.docId, { at: keyOf(f), count })
+        if (cancelled) return
+        setMfrCounts((m) => ({ ...m, [f.docId]: count }))
+      }
+    }
+    void Promise.all(Array.from({ length: 4 }, worker))
+    return () => { cancelled = true }
+  }, [files])
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -1116,6 +1156,7 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
           <TreeLevel
             node={tree}
             depth={0}
+            mfrCounts={mfrCounts}
             collapsed={q ? NO_COLLAPSE : collapsed}
             onToggleFolder={toggleFolder}
             currentDocId={currentDocId}
@@ -1196,6 +1237,8 @@ function CreateMenu({ onCreateDb }: { onCreateDb: () => void }) {
 interface TreeLevelProps {
   node: FolderNode
   depth: number
+  /** Nb de produits « challenge Fabricant » par docId (pour le picto). */
+  mfrCounts: Record<string, number>
   collapsed: Set<string>
   onToggleFolder: (key: string) => void
   currentDocId: string | null
@@ -1323,10 +1366,12 @@ function FileRow({
   startMove,
   onLoad,
   onDelete,
+  mfrCounts,
 }: { file: SavedFileEntry } & TreeLevelProps) {
   const isActive = currentDocId === f.docId
   const isRenaming = renamingDocId === f.docId
   const isMoving = movingDocId === f.docId
+  const mfrCount = mfrCounts[f.docId] ?? 0
   const FolderIcon = isActive ? FolderOpen : Folder
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: f.docId })
 
@@ -1400,6 +1445,16 @@ function FileRow({
           </div>
         )}
       </div>
+
+      {!isRenaming && !isMoving && mfrCount > 0 && (
+        <span
+          title={`${mfrCount} produit(s) avec challenge Fabricant`}
+          className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-indigo-500/15 text-indigo-300 text-[9px] font-semibold shrink-0"
+        >
+          <Factory className="w-2.5 h-2.5" />
+          {mfrCount}
+        </span>
+      )}
 
       {isRenaming || isMoving ? (
         <button
