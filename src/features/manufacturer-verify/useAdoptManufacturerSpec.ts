@@ -1,12 +1,16 @@
 /**
  * Adoption d'une valeur FABRICANT dans le MASTER de la source.
  *
- * « La vérité est chez le fabricant » → l'utilisateur promeut une spec présente
- * seulement chez le fabricant (« + fabricant ») dans les specs du produit
- * (colonne `ai_specifications` = master). La provenance est tracée dans
- * `ai_mfr_adopted` (clés canoniques adoptées) → badge/couleur permanents + reset.
+ * « La vérité est chez le fabricant » → l'utilisateur promeut une valeur
+ * fabricant dans les données du produit. Gère 3 cibles :
+ *  - spec technique (« + fabricant » ou « ≠ diffère ») → colonne `ai_specifications`
+ *    (append si absente, REMPLACE la valeur source si divergente),
+ *  - description → `ai_description`,
+ *  - points forts → `ai_advantages`.
  *
- * Append/retrait par SEGMENT de la chaîne sérialisée (jamais d'écrasement global).
+ * La provenance + la valeur SOURCE d'origine sont tracées dans `ai_mfr_adopted`
+ * (JSON `{ [key]: { label, target, original } }`) → badge permanent + RESET fidèle
+ * (restaure l'original). Append/retrait par segment, jamais d'écrasement global.
  */
 
 import { useCallback, useState } from 'react'
@@ -22,16 +26,25 @@ const buildCol = (key: string, label: string, fieldType: FieldTypeId, width: num
   key, label, fieldType, detectedType: fieldType, isPrimary: false, width,
 })
 
-/** Segmente une chaîne « a | b | c » en préservant l'ordre. */
 const splitSegs = (raw: string): string[] => raw.split(' | ').map((s) => s.trim()).filter(Boolean)
 
-export interface AdoptSpec {
-  /** Clé stable de la ligne (ex: `spec:puissance`). */
+interface AdoptRecord { label: string; target: string; original: string | null }
+type AdoptedMap = Record<string, AdoptRecord>
+
+/** Item de comparaison à adopter/annuler. */
+export interface AdoptItem {
   key: string
-  /** Libellé affiché (nom de la spec). */
   label: string
-  /** Valeur fabricant à adopter. */
+  group: 'spec' | 'content' | 'identity' | 'price'
   value: string
+}
+
+/** Colonne cible + valeur à écrire selon le type de champ. */
+function targetFor(item: AdoptItem): { col: string; write: string } | null {
+  if (item.key === 'content:description') return { col: 'ai_description', write: item.value }
+  if (item.key === 'content:advantages') return { col: 'ai_advantages', write: item.value.split(' • ').map((s) => s.trim()).filter(Boolean).join(' | ') }
+  if (item.group === 'spec') return { col: 'ai_specifications', write: item.value }
+  return null
 }
 
 export function useAdoptManufacturerSpec() {
@@ -40,7 +53,9 @@ export function useAdoptManufacturerSpec() {
   const setCurrentDocId = useExcelStore((s) => s.setCurrentDocId)
   const [busy, setBusy] = useState(false)
 
-  const setAdopted = useCallback(async (rowId: string, spec: AdoptSpec, adopt: boolean): Promise<boolean> => {
+  const setAdopted = useCallback(async (rowId: string, item: AdoptItem, adopt: boolean): Promise<boolean> => {
+    const target = targetFor(item)
+    if (!target) return false
     const { sheets, activeSheetIndex, currentFileName, currentDocId, currentPath } = useExcelStore.getState()
     const sheet = sheets[activeSheetIndex]
     const row = sheet?.rows.find((r) => r._id === rowId)
@@ -49,32 +64,47 @@ export function useAdoptManufacturerSpec() {
 
     setBusy(true)
     try {
-      // Créer les colonnes cibles si absentes.
       const keys = new Set(sheet.columns.map((c) => c.key))
-      if (!keys.has('ai_specifications')) addColumn(activeSheetIndex, buildCol('ai_specifications', 'Spécifications', 'text_long', 320))
+      if (!keys.has(target.col)) addColumn(activeSheetIndex, buildCol(target.col, target.col, 'text_long', 320))
       if (!keys.has(ADOPTED_COL)) addColumn(activeSheetIndex, buildCol(ADOPTED_COL, 'Fabricant · Adoptées', 'text_long', 120))
 
-      const specSeg = `${spec.label}: ${spec.value}`
-      const specsRaw = typeof row.ai_specifications === 'string' ? row.ai_specifications : ''
+      let adoptedMap: AdoptedMap = {}
       const adoptedRaw = typeof row[ADOPTED_COL] === 'string' ? (row[ADOPTED_COL] as string) : ''
-      const specs = splitSegs(specsRaw)
-      const adopted = splitSegs(adoptedRaw)
+      if (adoptedRaw) { try { adoptedMap = JSON.parse(adoptedRaw) as AdoptedMap } catch { adoptedMap = {} } }
 
-      if (adopt) {
-        // Ajouter la spec au master (si pas déjà présente par libellé) + tracer la clé.
-        const already = specs.some((s) => s.toLowerCase().startsWith(`${spec.label.toLowerCase()}:`))
-        if (!already) specs.push(specSeg)
-        if (!adopted.includes(spec.key)) adopted.push(spec.key)
+      const curCell = typeof row[target.col] === 'string' ? (row[target.col] as string) : ''
+
+      if (target.col === 'ai_specifications') {
+        // Spec = segment « label: valeur » dans la chaîne pipe-séparée.
+        const segs = splitSegs(curCell)
+        const idx = segs.findIndex((s) => s.toLowerCase().replace(/^\[[^\]]*\]/, '').startsWith(`${item.label.toLowerCase()}:`))
+        if (adopt) {
+          const original = idx >= 0 ? segs[idx].replace(/^\[[^\]]*\][^:]*:|^[^:]*:/, '').trim() : null
+          adoptedMap[item.key] = { label: item.label, target: target.col, original }
+          if (idx >= 0) segs[idx] = `${item.label}: ${target.write}`
+          else segs.push(`${item.label}: ${target.write}`)
+        } else {
+          const rec = adoptedMap[item.key]
+          if (idx >= 0) {
+            if (rec?.original != null) segs[idx] = `${item.label}: ${rec.original}`
+            else segs.splice(idx, 1)
+          }
+          delete adoptedMap[item.key]
+        }
+        updateCell(activeSheetIndex, rowId, target.col, segs.length ? segs.join(' | ') : null)
       } else {
-        // Retirer du master la spec adoptée + la clé de provenance.
-        const idx = specs.findIndex((s) => s.toLowerCase().startsWith(`${spec.label.toLowerCase()}:`))
-        if (idx >= 0) specs.splice(idx, 1)
-        const ai = adopted.indexOf(spec.key)
-        if (ai >= 0) adopted.splice(ai, 1)
+        // Description / avantages = cellule entière.
+        if (adopt) {
+          adoptedMap[item.key] = { label: item.label, target: target.col, original: curCell || null }
+          updateCell(activeSheetIndex, rowId, target.col, target.write)
+        } else {
+          const rec = adoptedMap[item.key]
+          updateCell(activeSheetIndex, rowId, target.col, rec?.original ?? null)
+          delete adoptedMap[item.key]
+        }
       }
 
-      updateCell(activeSheetIndex, rowId, 'ai_specifications', specs.length ? specs.join(' | ') : null)
-      updateCell(activeSheetIndex, rowId, ADOPTED_COL, adopted.length ? adopted.join(' | ') : null)
+      updateCell(activeSheetIndex, rowId, ADOPTED_COL, Object.keys(adoptedMap).length ? JSON.stringify(adoptedMap) : null)
 
       const fresh = useExcelStore.getState()
       const savedDocId = await writeSheetsToFirestore(
@@ -95,4 +125,10 @@ export function useAdoptManufacturerSpec() {
   }, [addColumn, updateCell, setCurrentDocId])
 
   return { setAdopted, busy }
+}
+
+/** Clés adoptées lues depuis `ai_mfr_adopted` (JSON). */
+export function readAdoptedKeys(raw: string | null): Set<string> {
+  if (!raw) return new Set()
+  try { return new Set(Object.keys(JSON.parse(raw) as AdoptedMap)) } catch { return new Set() }
 }

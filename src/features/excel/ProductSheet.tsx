@@ -1063,7 +1063,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
           busy={adoptBusy}
           onToggleAdopt={(c, adopt) => {
             if (!c.mfrValue) return
-            void setAdopted(rowId, { key: c.key, label: c.label, value: c.mfrValue }, adopt)
+            void setAdopted(rowId, { key: c.key, label: c.label, group: c.group, value: c.mfrValue }, adopt)
           }}
           onClose={() => setVerdictModalOpen(false)}
         />

@@ -14,6 +14,7 @@ import type { ExcelColumn, ExcelRow } from '@/features/excel/types'
 import type { EnrichedProduct, EnrichedSpec, EnrichedAdvantage, Pricing } from '@/features/excel/ai-enrichment/types'
 import { normalizeSpecPairs } from '@/features/scraping/core/parsers/normalizeSpecPairs'
 import { isSaneSpecPair } from '@/features/scraping/core/parsers/parseSpecifications'
+import { readAdoptedKeys } from './useAdoptManufacturerSpec'
 import { canonicalizeSpecName, canonicalLabel, normalizeSpecLabel, normalizeValueForCompare } from './specSynonyms'
 import type { FieldComparison, LlmSpecPairs, VerdictSummary } from './types'
 
@@ -157,8 +158,7 @@ export function buildRowComparison(row: ExcelRow, columns: ExcelColumn[]): Field
   if (alignRaw) {
     try { pairs = JSON.parse(alignRaw) as LlmSpecPairs } catch { pairs = {} }
   }
-  const adoptedRaw = cell(row, 'ai_mfr_adopted')
-  const adoptedKeys = new Set(adoptedRaw ? adoptedRaw.split(' | ').map((s) => s.trim()).filter(Boolean) : [])
+  const adoptedKeys = readAdoptedKeys(cell(row, 'ai_mfr_adopted'))
   return compareSourceVsManufacturer(source, mfr, pairs, adoptedKeys)
 }
 

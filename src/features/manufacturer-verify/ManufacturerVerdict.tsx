@@ -170,10 +170,25 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
             Contenu marketing
           </div>
           {content.map((c) => (
-            <div key={c.key} className="px-4 py-3 border-t border-white/[0.04]">
-              <div className="text-[11px] font-semibold text-white/55 mb-2">{c.label}</div>
+            <div key={c.key} className={`px-4 py-3 border-t border-white/[0.04] ${c.adopted ? 'bg-teal-500/[0.06]' : ''}`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-semibold text-white/55">{c.label}</span>
+                {onToggleAdopt && c.adopted ? (
+                  <span className="inline-flex items-center gap-1">
+                    <span className="text-[10px] font-semibold px-2 py-[2px] rounded-full border text-teal-300 bg-teal-500/15 border-teal-500/40">✓ Fabricant</span>
+                    <button disabled={busy} onClick={() => onToggleAdopt(c, false)} title="Annuler l'adoption"
+                      className="text-white/35 hover:text-rose-300 text-[12px] leading-none px-1 disabled:opacity-40">✕</button>
+                  </span>
+                ) : onToggleAdopt && c.mfrValue ? (
+                  <button disabled={busy} onClick={() => onToggleAdopt(c, true)}
+                    title="Adopter le texte fabricant dans la fiche (master)"
+                    className="text-[10px] font-semibold px-2 py-[2px] rounded-full border text-indigo-300 bg-indigo-500/12 border-indigo-500/40 hover:brightness-125 whitespace-nowrap disabled:opacity-40">
+                    + adopter
+                  </button>
+                ) : null}
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <ContentSide title="Source (revendeur)" tone="text-white/40" value={c.sourceValue} field={c.key} />
+                <ContentSide title="Source (revendeur)" tone="text-white/40" value={c.sourceValue} field={c.key} highlight={c.adopted} />
                 <ContentSide title="Fabricant" tone="text-indigo-300/70" value={c.mfrValue} field={c.key} highlight />
               </div>
             </div>
@@ -214,11 +229,15 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
                         <button disabled={busy} onClick={() => onToggleAdopt!(c, false)} title="Annuler l'adoption"
                           className="text-white/35 hover:text-rose-300 text-[12px] leading-none px-1 disabled:opacity-40">✕</button>
                       </span>
-                    ) : canAdopt && c.status === 'mfr-only' ? (
+                    ) : canAdopt && (c.status === 'mfr-only' || c.status === 'diff') && c.mfrValue ? (
                       <button disabled={busy} onClick={() => onToggleAdopt!(c, true)}
-                        title="Adopter la valeur fabricant dans la fiche (master)"
-                        className="justify-self-end text-[10px] font-semibold px-2 py-[2px] rounded-full border text-indigo-300 bg-indigo-500/12 border-indigo-500/40 hover:bg-indigo-500/25 whitespace-nowrap disabled:opacity-40">
-                        + adopter
+                        title={c.status === 'diff' ? 'Adopter la valeur fabricant (remplace la source)' : 'Adopter la valeur fabricant dans la fiche (master)'}
+                        className={`justify-self-end text-[10px] font-semibold px-2 py-[2px] rounded-full border hover:brightness-125 whitespace-nowrap disabled:opacity-40 ${
+                          c.status === 'diff'
+                            ? 'text-amber-300 bg-amber-500/12 border-amber-500/40'
+                            : 'text-indigo-300 bg-indigo-500/12 border-indigo-500/40'
+                        }`}>
+                        {c.status === 'diff' ? '≠ adopter' : '+ adopter'}
                       </button>
                     ) : (
                       <span className={`justify-self-end text-[10px] font-semibold px-2 py-[2px] rounded-full border whitespace-nowrap ${meta.cls}`}>
