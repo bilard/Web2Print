@@ -667,7 +667,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
       {/* Comparaison Source ⇄ Fabricant (si la fiche a été vérifiée) — carte
           compacte + bouton vers l'écran plein (la colonne est trop étroite). */}
       {rowComparison && rowComparison.length > 0 && rowSummary && (
-        <div className="shrink-0 bg-well/50">
+        <div className="shrink-0">
           <ManufacturerComparisonInline
             summary={rowSummary}
             mfrHost={mfrHost}
