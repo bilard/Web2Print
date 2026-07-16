@@ -65,6 +65,10 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   /** Instruction en langage naturel : filtre le crawl/map et oriente l'extraction
    *  (ex. « ne garder que les perceuses Makita »). Vide = comportement inchangé. */
   const [instruction, setInstruction] = useState('')
+  /** Journal de la phase DÉCOUVERTE + FILTRE (crawl/map), avant enrichissement.
+   *  Rendu via TypedLogConsole (classification par regex). */
+  const [discoveryLogs, setDiscoveryLogs] = useState<string[]>([])
+  const pushDiscoveryLog = (m: string) => setDiscoveryLogs((l) => [...l, m])
   const [result, setResult] = useState<ScrapeResult | null>(null)
   const [lastFields, setLastFields] = useState<ScrapingField[]>([])
   const [crawlPages, setCrawlPages] = useState<CrawlPage[]>([])
@@ -250,12 +254,21 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   }
 
   const handleMap = async (search?: string, rootUrl?: string): Promise<MapLink[] | null> => {
-    const links = await map(rootUrl ?? url, search)
+    const target = rootUrl ?? url
+    setDiscoveryLogs([])
+    const host = (() => { try { return new URL(target).hostname.replace(/^www\./, '') } catch { return target } })()
+    pushDiscoveryLog(`Cartographie des liens sur ${host} (Map${search ? ` · « ${search} »` : ''})…`)
+    const links = await map(target, search)
+    pushDiscoveryLog(`${links?.length ?? 0} lien(s) cartographié(s)`)
     // Filtre par instruction avant enrichissement (fail-open, transparent).
     if (links && links.length > 0 && instruction.trim()) {
+      pushDiscoveryLog(`Filtre IA « ${instruction.trim()} » sur ${links.length} lien(s)…`)
       const outcome = await filterByInstruction(links, instruction)
       if (outcome.applied) {
+        pushDiscoveryLog(`✓ ${outcome.kept.length} retenu(s), ${outcome.excludedCount} exclu(s) par le filtre`)
         toast.success(`Filtre « ${instruction.trim()} » : ${outcome.kept.length} lien(s) retenu(s), ${outcome.excludedCount} exclu(s).`)
+      } else {
+        pushDiscoveryLog(`⚠ Filtre non concluant — ${links.length} lien(s) conservé(s)`)
       }
       return outcome.kept
     }
@@ -268,10 +281,15 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
    *  escalade Cloud Function Puppeteer (scroll) en filet. Plus d'échec
    *  silencieux : un toast explicite est levé si aucun produit n'est trouvé. */
   const handleCrawl = async (opts: { limit: number; includePaths: string; excludePaths: string }, rootUrl?: string) => {
-    if (!rootUrl) setRunCostUsd(0)
+    if (!rootUrl) { setRunCostUsd(0); setDiscoveryLogs([]) }
     const targetUrl = rootUrl ?? url
     // Si on est dans un loop multi-URL, on accumule plutôt qu'on reset
     if (!rootUrl) setCrawlPages([])
+
+    const host = (() => { try { return new URL(targetUrl).hostname.replace(/^www\./, '') } catch { return targetUrl } })()
+    pushDiscoveryLog(`Découverte des liens produit sur ${host} (crawl, limite ${opts.limit})…`)
+    if (opts.includePaths) pushDiscoveryLog(`Filtre d'URL — inclure : ${opts.includePaths}`)
+    if (opts.excludePaths) pushDiscoveryLog(`Filtre d'URL — exclure : ${opts.excludePaths}`)
 
     // Découverte DÉTERMINISTE (moteur navigateur Jina → lazy-load, puis escalade
     // Cloud Function Puppeteer qui scrolle). Plus de LLM ni d'échec silencieux.
@@ -282,6 +300,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     })
 
     if (pages.length === 0) {
+      pushDiscoveryLog(`✗ Aucun lien produit détecté${error ? ` — ${error}` : ''}`)
       toast.error(
         error
           ? `Découverte impossible sur cette page : ${error}. Essaie une sous-catégorie, ajuste le filtre « Inclure », ou colle les URLs en mode « Plusieurs URLs ».`
@@ -290,6 +309,8 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       if (!rootUrl) setCrawlPages([])
       return
     }
+    const SRC_LABEL: Record<string, string> = { cards: 'grille produit', content: 'liens hors navigation', cloud: 'escalade scroll (Puppeteer)', jina: 'moteur Jina', none: 'aucune' }
+    pushDiscoveryLog(`${pages.length} lien(s) découvert(s) · source : ${SRC_LABEL[source] ?? source}`)
     if (source === 'cards') {
       toast.success(`${pages.length} fiche(s) détectée(s) dans la grille produit (liens de navigation exclus).`)
     } else if (source === 'content') {
@@ -302,11 +323,14 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     // l'enrichissement coûteux. Transparent + fail-open (jamais de cull silencieux).
     let kept = pages
     if (instruction.trim()) {
+      pushDiscoveryLog(`Filtre IA « ${instruction.trim()} » sur ${pages.length} lien(s) (prompt utilisateur)…`)
       const outcome = await filterByInstruction(pages, instruction)
       kept = outcome.kept
       if (outcome.applied) {
+        pushDiscoveryLog(`✓ ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s) par le filtre`)
         toast.success(`Filtre « ${instruction.trim()} » : ${kept.length} correspond(ent), ${outcome.excludedCount} exclue(s).`)
       } else {
+        pushDiscoveryLog(`⚠ Filtre non concluant (IA indisponible ou 0 correspondance) — ${pages.length} lien(s) conservé(s)`)
         toast.info(`Filtre non concluant — ${pages.length} page(s) conservée(s).`)
       }
     }
@@ -924,6 +948,11 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
               batchRunning={batchRunning}
               onUrlSuggestion={(suggested) => setUrl(suggested)}
             />
+          )}
+
+          {/* Journal de la phase découverte + filtre (crawl/map), avant enrichissement. */}
+          {(tab === 'crawl' || tab === 'map') && discoveryLogs.length > 0 && (
+            <TypedLogConsole logs={discoveryLogs} maxHeight="12rem" />
           )}
 
           {/* Progression du batch d'enrichissement multi-URLs (tous tabs incluant scrape) */}
