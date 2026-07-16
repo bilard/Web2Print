@@ -49,6 +49,7 @@ const PriceWatchPanel = lazy(() => import('@/features/priceWatch/PriceWatchPanel
 const RetailPromoPage = lazy(() => import('@/features/retail-promo/RetailPromoPage').then((m) => ({ default: m.RetailPromoPage })))
 const CatalogHome = lazy(() => import('@/features/catalog/CatalogHome').then((m) => ({ default: m.CatalogHome })))
 const DemoExpressPage = lazy(() => import('@/features/demo-express/DemoExpressPage').then((m) => ({ default: m.DemoExpressPage })))
+const ManufacturerInsightsScreen = lazy(() => import('@/features/manufacturer-verify/insights/ManufacturerInsightsScreen').then((m) => ({ default: m.ManufacturerInsightsScreen })))
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
@@ -568,6 +569,16 @@ export default function DashboardPage() {
             </div>
           }>
             <WorkflowsPage embedded />
+          </Suspense>
+        </div>
+      ) : activeSection === 'mfr-insights' && canSee('mfr-insights') ? (
+        <div data-tour="section-mfr-insights" className="flex-1 overflow-auto p-8 bg-background">
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
+              <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+            </div>
+          }>
+            <ManufacturerInsightsScreen />
           </Suspense>
         </div>
       ) : activeSection === 'price-watch' && canSee('price-watch') ? (

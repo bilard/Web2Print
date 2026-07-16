@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, BookText, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag, Sparkles } from 'lucide-react'
+import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, BookText, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag, Sparkles, BarChart3 } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { useAccessStore } from '@/stores/access.store'
 
@@ -19,7 +19,7 @@ export type Section =
   | 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings'
   | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
   | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'retail-promo' | 'catalog'
-  | 'demo-express'
+  | 'demo-express' | 'mfr-insights'
 
 export type ModuleGroupId = 'create' | 'product-data' | 'web' | 'publish' | 'automation' | 'admin'
 
@@ -108,6 +108,13 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'action:import',  label: 'Importer une taxonomie', intent: 'taxonomies:action:import' },
     ],
   },
+  { id: 'mfr-insights', group: 'product-data', icon: BarChart3, label: 'Écarts fabricant', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300',
+    children: [
+      { id: 'tab:overview', label: "Vue d'ensemble", intent: 'mfr-insights:tab:overview' },
+      { id: 'tab:fields',   label: 'Par champ',       intent: 'mfr-insights:tab:fields' },
+      { id: 'tab:products', label: 'Par produit',     intent: 'mfr-insights:tab:products' },
+    ],
+  },
   // ── Web & veille ──
   { id: 'scraping-templates', group: 'web', icon: Database, label: 'Templates scraping', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300',
     children: [
@@ -193,6 +200,7 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
   images: 'dam.view',
   data: 'pim.view',
   taxonomies: 'taxonomies.view',
+  'mfr-insights': 'pim.view',
   'scraping-templates': 'scrapingTemplates.view',
   'scraping-hub': 'scrapingHub.view',
   workflows: 'workflows.view',
