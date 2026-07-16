@@ -1,5 +1,5 @@
 import { useState, useRef, useLayoutEffect } from 'react'
-import { Globe, Factory, Check, AlertTriangle, Plus, BadgeCheck, ShieldAlert } from 'lucide-react'
+import { Globe, Factory, Check, AlertTriangle, Plus, BadgeCheck, ShieldAlert, ExternalLink } from 'lucide-react'
 import type { CompareStatus, FieldComparison, VerdictSummary } from './types'
 
 interface Props {
@@ -157,13 +157,26 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
           <div className="text-[11px] text-white/35 truncate">{hostOf(sourceUrl)}</div>
         </div>
         <div className="text-white/25 text-lg shrink-0">⇄</div>
-        <div className="flex-1 min-w-0 text-right">
-          <div className="flex items-center justify-end gap-1.5 text-[11px] text-indigo-300/80">
-            Fabricant officiel <Factory className="w-3.5 h-3.5" />
+        {/* Côté fabricant : lien cliquable vers la fiche officielle (nouvel onglet). */}
+        {mfrUrl ? (
+          <a href={mfrUrl} target="_blank" rel="noreferrer" title={`Ouvrir la fiche officielle — ${hostOf(mfrUrl)}`}
+            className="flex-1 min-w-0 text-right group/mfr">
+            <div className="flex items-center justify-end gap-1.5 text-[11px] text-indigo-300/80">
+              Fabricant officiel <Factory className="w-3.5 h-3.5" />
+            </div>
+            <div className="text-[13px] font-semibold text-white truncate group-hover/mfr:text-indigo-200 transition-colors">{mfrLabel}</div>
+            <div className="flex items-center justify-end gap-1 text-[11px] text-indigo-300/60 truncate group-hover/mfr:text-indigo-300 transition-colors">
+              {hostOf(mfrUrl)} <ExternalLink className="w-3 h-3 shrink-0" />
+            </div>
+          </a>
+        ) : (
+          <div className="flex-1 min-w-0 text-right">
+            <div className="flex items-center justify-end gap-1.5 text-[11px] text-indigo-300/80">
+              Fabricant officiel <Factory className="w-3.5 h-3.5" />
+            </div>
+            <div className="text-[13px] font-semibold text-white truncate">{mfrLabel}</div>
           </div>
-          <div className="text-[13px] font-semibold text-white truncate">{mfrLabel}</div>
-          <div className="text-[11px] text-indigo-300/50 truncate">{hostOf(mfrUrl)}</div>
-        </div>
+        )}
       </div>
 
       {/* Compteurs — cliquables (filtre) et ÉPINGLÉS en haut au scroll (fond opaque) */}
