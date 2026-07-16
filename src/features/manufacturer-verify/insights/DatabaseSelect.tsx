@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Database, Check, Loader2 } from 'lucide-react'
+import { ChevronDown, Database, Check, Loader2, Factory } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
+import { aggregateInsights } from './insightsAggregate'
+import { fetchSheetsQuiet } from './fetchSheetsQuiet'
 
 interface DbFile { fileName: string; docId: string; totalRows: number; path: string[] }
 
@@ -19,6 +21,9 @@ export function DatabaseSelect() {
   const [files, setFiles] = useState<DbFile[]>([])
   const [open, setOpen] = useState(false)
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  /** Nb de produits vérifiés fabricant par base (undefined = pas encore scanné). */
+  const [mfrCounts, setMfrCounts] = useState<Record<string, number>>({})
+  const scannedRef = useRef(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => { listSavedFiles().then(setFiles).catch(() => {}) }, [])
@@ -29,6 +34,29 @@ export function DatabaseSelect() {
     document.addEventListener('mousedown', h)
     return () => document.removeEventListener('mousedown', h)
   }, [open])
+
+  // Au 1er ouvrir : scanne chaque base (en arrière-plan, sans toucher au store) pour
+  // compter ses produits vérifiés fabricant → badge. La base active est comptée
+  // depuis le store (pas de lecture réseau). Pool de 4 pour ne pas saturer.
+  useEffect(() => {
+    if (!open || scannedRef.current || files.length === 0) return
+    scannedRef.current = true
+    let cancelled = false
+    const queue = [...files]
+    const worker = async () => {
+      while (queue.length) {
+        const f = queue.shift()
+        if (!f) break
+        const { sheets, currentDocId: activeId } = useExcelStore.getState()
+        const s = f.docId === activeId ? sheets : await fetchSheetsQuiet(f.docId)
+        const n = s ? aggregateInsights(s).verifiedCount : 0
+        if (cancelled) return
+        setMfrCounts((m) => ({ ...m, [f.docId]: n }))
+      }
+    }
+    void Promise.all(Array.from({ length: 4 }, worker))
+    return () => { cancelled = true }
+  }, [open, files])
 
   const select = async (f: DbFile) => {
     setOpen(false)
@@ -74,7 +102,16 @@ export function DatabaseSelect() {
                   <div className="text-sm font-medium truncate">{f.fileName}</div>
                   {f.path.length > 0 && <div className="text-xs text-white/40 truncate">{f.path.join(' › ')}</div>}
                 </div>
-                <span className="text-xs text-white/35 tabular-nums shrink-0">{f.totalRows}</span>
+                {mfrCounts[f.docId] > 0 && (
+                  <span
+                    title={`${mfrCounts[f.docId]} produit(s) vérifié(s) chez le fabricant`}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-300 text-[11px] font-medium shrink-0"
+                  >
+                    <Factory className="w-3 h-3" />
+                    {mfrCounts[f.docId]}
+                  </span>
+                )}
+                <span className="text-xs text-white/35 tabular-nums shrink-0 w-6 text-right">{f.totalRows}</span>
               </button>
             ))
           )}
