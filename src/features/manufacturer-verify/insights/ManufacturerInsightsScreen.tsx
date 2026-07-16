@@ -4,7 +4,7 @@ import { Factory, LayoutDashboard, Columns3, ListChecks, ScanSearch } from 'luci
 import { useExcelStore } from '@/stores/excel.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { aggregateInsights, type ProductStat } from './insightsAggregate'
-import { DatabaseSelect } from './DatabaseSelect'
+import { DatabaseList } from './DatabaseList'
 import { InsightsKpiCards } from './InsightsKpiCards'
 import { InsightsStatusDonut } from './InsightsStatusDonut'
 import { InsightsDivergentBars } from './InsightsDivergentBars'
@@ -41,69 +41,74 @@ export function ManufacturerInsightsScreen() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <header className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
-          <Factory className="w-5 h-5 text-indigo-300" />
-        </div>
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold">Écarts fabricant</h1>
-          <p className="text-sm text-white/50">Différences de données Source&nbsp;⇄&nbsp;Fabricant</p>
-        </div>
-        <div className="ml-auto shrink-0">
-          <DatabaseSelect />
-        </div>
-      </header>
+    <div className="max-w-7xl mx-auto flex gap-6 items-start">
+      {/* Colonne gauche : liste des bases (sélection + badge data fabricant). */}
+      <aside className="w-64 shrink-0 sticky top-0 self-start max-h-[calc(100vh-4rem)]">
+        <DatabaseList />
+      </aside>
 
-      {data.verifiedCount === 0 ? (
-        <div className="bg-surface border border-white/10 rounded-xl p-12 flex flex-col items-center text-center">
-          <div className="w-14 h-14 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">
-            <ScanSearch className="w-7 h-7 text-white/40" />
+      {/* Colonne droite : en-tête + statistiques. */}
+      <div className="flex-1 min-w-0">
+        <header className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
+            <Factory className="w-5 h-5 text-indigo-300" />
           </div>
-          <h2 className="text-lg font-semibold mb-1">Aucun produit vérifié pour l'instant</h2>
-          <p className="text-sm text-white/50 max-w-md mb-5">
-            Lancez « Vérifier chez le Fabricant » sur des fiches du PIM : les écarts
-            comparés apparaîtront ici sous forme de statistiques.
-          </p>
-          <button
-            onClick={() => navigate('/dashboard', { state: { section: 'data' } })}
-            className="px-4 py-2 rounded-lg bg-indigo-500/90 hover:bg-indigo-500 text-[#fff] text-sm font-medium"
-          >
-            Ouvrir le PIM
-          </button>
-        </div>
-      ) : (
-        <>
-          <div className="flex gap-1 mb-5 border-b border-white/10">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  tab === t.id
-                    ? 'border-indigo-400 text-white'
-                    : 'border-transparent text-white/50 hover:text-white/80'
-                }`}
-              >
-                <t.icon className="w-4 h-4" />
-                {t.label}
-              </button>
-            ))}
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold">Écarts fabricant</h1>
+            <p className="text-sm text-white/50">Différences de données Source&nbsp;⇄&nbsp;Fabricant</p>
           </div>
+        </header>
 
-          {tab === 'overview' && (
-            <div className="space-y-4">
-              <InsightsKpiCards data={data} />
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                <InsightsStatusDonut title="Répartition globale des champs" counts={data.statusTotals} />
-                <InsightsDivergentBars fields={data.fields} />
-              </div>
+        {data.verifiedCount === 0 ? (
+          <div className="bg-surface border border-white/10 rounded-xl p-12 flex flex-col items-center text-center">
+            <div className="w-14 h-14 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">
+              <ScanSearch className="w-7 h-7 text-white/40" />
             </div>
-          )}
-          {tab === 'fields' && <InsightsFieldTable fields={data.fields} />}
-          {tab === 'products' && <InsightsProductTable products={data.products} onOpenProduct={openProduct} />}
-        </>
-      )}
+            <h2 className="text-lg font-semibold mb-1">Aucun produit vérifié pour cette base</h2>
+            <p className="text-sm text-white/50 max-w-md mb-5">
+              Choisissez une base à gauche (celles avec un badge&nbsp;<span className="text-indigo-300">🏭</span>&nbsp;
+              contiennent de la data fabricant), ou lancez « Vérifier chez le Fabricant » sur des fiches du PIM.
+            </p>
+            <button
+              onClick={() => navigate('/dashboard', { state: { section: 'data' } })}
+              className="px-4 py-2 rounded-lg bg-indigo-500/90 hover:bg-indigo-500 text-[#fff] text-sm font-medium"
+            >
+              Ouvrir le PIM
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-1 mb-5 border-b border-white/10">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                    tab === t.id
+                      ? 'border-indigo-400 text-white'
+                      : 'border-transparent text-white/50 hover:text-white/80'
+                  }`}
+                >
+                  <t.icon className="w-4 h-4" />
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {tab === 'overview' && (
+              <div className="space-y-4">
+                <InsightsKpiCards data={data} />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                  <InsightsStatusDonut title="Répartition globale des champs" counts={data.statusTotals} />
+                  <InsightsDivergentBars fields={data.fields} />
+                </div>
+              </div>
+            )}
+            {tab === 'fields' && <InsightsFieldTable fields={data.fields} />}
+            {tab === 'products' && <InsightsProductTable products={data.products} onOpenProduct={openProduct} />}
+          </>
+        )}
+      </div>
     </div>
   )
 }
