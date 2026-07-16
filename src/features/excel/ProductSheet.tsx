@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   ChevronLeft, ChevronRight, Copy, Check, ExternalLink, Eraser, Loader2,
-  Tag, Barcode, FileText, Play, Link2, Download, Zap, Database, Layers, Globe,
+  Tag, Barcode, FileText, Play, Link2, Download, Zap, Database, Layers, Globe, Factory,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CloseButton } from '@/components/shared/CloseButton'
@@ -25,7 +25,10 @@ import { EnrichmentPanel } from './ai-enrichment/EnrichmentPanel'
 import { ScrapedFieldsTab } from './ai-enrichment/ScrapedFieldsTab'
 import { useEnrichmentStore } from './ai-enrichment/enrichmentStore'
 import { enrichmentKey } from './ai-enrichment/types'
+import type { EnrichedProduct } from './ai-enrichment/types'
 import { IDENTITY_AI_KEYS } from './ai-enrichment/useSaveEnrichedProduct'
+import { ManufacturerVerifyPanel } from '@/features/manufacturer-verify/ManufacturerVerifyPanel'
+import { sheetRowToEnrichedProduct } from '@/features/manufacturer-verify/compareProducts'
 
 const BREADCRUMB_SPLIT_RE = /\s*[›>/»·]\s*/
 
@@ -170,6 +173,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const [activeImg, setActiveImg] = useState(0)
   const [detourBusy, setDetourBusy] = useState(false)
   const [tab, setTab] = useState<Tab>('general')
+  const [verifyOpen, setVerifyOpen] = useState(false)
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [copiedField, setCopiedField] = useState<string | null>(null)
@@ -407,6 +411,15 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
     knownUrl: firstValue(c => isUrlKey(c.key) || isUrlKey(c.label)),
   }
 
+  // Source pour la « Vérification Fabricant » : donnée scrapée live (store) sinon
+  // reconstruite depuis les colonnes ai_* persistées. sourceUrl repli sur l'URL
+  // connue de la fiche (produit importé sans colonne ai_source).
+  const rebuiltSource = enrichedProduct ?? sheetRowToEnrichedProduct(row, sheet.columns)
+  const verifySource: EnrichedProduct | null = rebuiltSource
+    ? { ...rebuiltSource, sourceUrl: rebuiltSource.sourceUrl ?? enrichmentInput.knownUrl ?? null }
+    : null
+  const canVerify = !!verifySource && !!(verifySource.sourceUrl || verifySource.brand || verifySource.name)
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -423,7 +436,18 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
             <ChevronRight className="w-3.5 h-3.5" />
           </NavBtn>
         </div>
-        <CloseButton onClick={onClose} size="sm" />
+        <div className="flex items-center gap-2">
+          {canVerify && (
+            <button
+              onClick={() => setVerifyOpen(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/12 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/25 text-[11px] font-medium transition-colors"
+              title="Comparer la fiche à la donnée officielle du fabricant"
+            >
+              <Factory className="w-3.5 h-3.5" /> Vérifier chez le Fabricant
+            </button>
+          )}
+          <CloseButton onClick={onClose} size="sm" />
+        </div>
       </div>
 
       {/* Image gallery */}
@@ -974,6 +998,15 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
           }
         }}
       />
+
+      {verifyOpen && verifySource && (
+        <ManufacturerVerifyPanel
+          rowId={rowId}
+          source={verifySource}
+          sourceLabel={title}
+          onClose={() => setVerifyOpen(false)}
+        />
+      )}
     </div>
   )
 }

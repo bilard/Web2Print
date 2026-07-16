@@ -18,7 +18,7 @@ const FIRESTORE_MAX_BYTES = 1_048_576 // 1 MB hard limit Firestore
  *  ⚠ Doit utiliser EXACTEMENT le même mécanisme que `useExcelFirebase.saveToFirebase` :
  *  on vise le `currentDocId` du store quand il existe, jamais un docId calculé à
  *  partir du fileName — sinon on dédouble la BDD côté Firestore. */
-async function writeSheetsToFirestore(
+export async function writeSheetsToFirestore(
   fileName: string,
   sheets: ExcelSheet[],
   existingDocId: string | null,

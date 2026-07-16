@@ -51,6 +51,7 @@ type LLMTask =
   | 'brief.catalogKeywords'
   | 'product.enrichment'
   | 'product.taxonomyClassification'
+  | 'product.specAlignment'
   | 'design.templateFill'
   | 'design.imageDecompose'
   | 'design.priceOCR'
@@ -89,6 +90,10 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   'product.enrichment':     { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
   // Classification taxonomique : raisonnement structuré sur libellés, Claude Opus 4.7
   'product.taxonomyClassification': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
+  // Alignement de synonymes de specs (source ⇄ fabricant) : rapprochement
+  // sémantique de libellés courts, JSON structuré. gemini-3.1-pro-preview (JSON
+  // fiable via responseSchema), Claude en fallback.
+  'product.specAlignment':  { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
   // Template Fill : copy court (≈1.5 KB JSON), Claude Opus 4.7
   'design.templateFill':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
   // Image Decompose : Vision multimodal sur image raster pour détecter zones texte + masques.
@@ -166,6 +171,7 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'brief.catalogKeywords':  0.4,
   'product.enrichment':     0,
   'product.taxonomyClassification': 0,
+  'product.specAlignment':  0,
   'design.templateFill':    0.5,
   // Extraction visuelle = déterministe (positions absolues, contenus exacts)
   'design.imageDecompose':  0,

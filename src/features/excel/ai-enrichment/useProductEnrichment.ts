@@ -3009,6 +3009,25 @@ function buildManufacturerProduct(
   }
 }
 
+/**
+ * Scrape une page produit FABRICANT et retourne un EnrichedProduct, SANS toucher
+ * au flux source. Utilisé par le module « Vérification Fabricant » pour faire
+ * co-exister source (revendeur) + fabricant et les comparer. Réutilise le chemin
+ * « PATH FABRICANT » (scraping pur : markdown Jina + REDUX/JSON-LD/PDFs) — aucun LLM.
+ * `blockedByAntiBot` est positionné quand une SPA dure ne livre aucun contenu.
+ */
+export async function scrapeManufacturerProduct(pageUrl: string): Promise<EnrichedProduct> {
+  // Éviter un lift d'identité pollué par un __lastStructured d'un scrape précédent.
+  ;(globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured = null
+  const deep = await jinaScrapeMaufacturerPage(pageUrl)
+  const markdownContent = deep?.markdown ?? null
+  const rawData = await scrapeManufacturerRawData(pageUrl)
+  const product = buildManufacturerProduct(markdownContent, rawData, pageUrl, [])
+  const empty = product.specifications.length === 0 && product.images.length === 0 && !product.description
+  if (empty && !markdownContent) product.blockedByAntiBot = true
+  return product
+}
+
 // ── Parsers markdown : extraction structurée depuis le texte brut ───────────
 
 /** Délégué vers la version canonique du parser de specs (parseSpecifications.ts).
