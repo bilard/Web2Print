@@ -4,6 +4,7 @@ import { CloseButton } from '@/components/shared/CloseButton'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { useManufacturerVerify } from './useManufacturerVerify'
 import { VerdictDonePane } from './VerdictDonePane'
+import { VerifyActivityLog } from './VerifyActivityLog'
 import type { ManufacturerCandidate } from './types'
 
 interface Props {
@@ -21,7 +22,7 @@ const CONF_META: Record<ManufacturerCandidate['confidence'], { label: string; cl
 
 /** Modal du module « Vérification Fabricant » : confirmation candidat → verdict. */
 export function ManufacturerVerifyPanel({ rowId, source, sourceLabel, onClose }: Props) {
-  const { phase, candidates, comparisons, summary, mfrName, mfrUrl, eanMatch, error, saving, resolve, confirm } = useManufacturerVerify(rowId)
+  const { phase, candidates, comparisons, summary, mfrName, mfrUrl, eanMatch, error, saving, logs, resolve, confirm } = useManufacturerVerify(rowId)
 
   // Résoudre les candidats UNE seule fois par fiche. `source` change d'identité à
   // chaque render de ProductSheet (spread) et `save()` déclenche des re-renders du
@@ -126,6 +127,9 @@ export function ManufacturerVerifyPanel({ rowId, source, sourceLabel, onClose }:
             />
           )}
         </div>
+
+        {/* Journal d'activité — flux temps réel des étapes de vérification */}
+        <VerifyActivityLog logs={logs} />
 
         {/* Footer */}
         {phase === 'done' && (

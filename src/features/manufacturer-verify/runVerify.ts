@@ -37,15 +37,27 @@ function eanEquals(a: string | undefined, b: string | undefined): boolean {
 export async function verifyAgainstManufacturer(
   source: EnrichedProduct,
   candidate: ManufacturerCandidate,
+  onLog: (m: string) => void = () => {},
 ): Promise<VerifyResult> {
+  onLog(`Extraction de la page fabricant : ${hostOf(candidate.url)}`)
   const mfr = await scrapeManufacturerProduct(candidate.url)
   if (mfr.blockedByAntiBot) {
+    onLog('⚠ Page bloquée (SPA / anti-bot) — rien à comparer')
     return { mfr, alignment: {}, comparisons: [], summary: { confirmed: 0, completed: 0, divergent: 0, total: 0 }, blocked: true, eanMatch: null }
   }
+  onLog(`${mfr.specifications.length} caractéristique(s) extraite(s)${mfr.ean ? ` · EAN ${mfr.ean}` : ''}`)
+  onLog('Alignement des libellés (dictionnaire + IA)…')
   const alignment = await alignUnknownSpecs(source, mfr)
   const comparisons = compareSourceVsManufacturer(source, mfr, alignment)
+  const summary = summarize(comparisons)
   const eanMatch = (source.ean && mfr.ean) ? eanEquals(source.ean, mfr.ean) : null
-  return { mfr, alignment, comparisons, summary: summarize(comparisons), blocked: false, eanMatch }
+  onLog(`Comparaison : ✓ ${summary.confirmed} confirmés · + ${summary.completed} complétés · ≠ ${summary.divergent} divergents`)
+  onLog(eanMatch === true ? 'EAN certifié — même produit' : eanMatch === false ? '⚠ EAN différents — variante possible' : 'EAN non vérifiable')
+  return { mfr, alignment, comparisons, summary, blocked: false, eanMatch }
+}
+
+function hostOf(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, '') } catch { return url }
 }
 
 /** Résultat d'une vérification automatique (lot, sans confirmation manuelle). */

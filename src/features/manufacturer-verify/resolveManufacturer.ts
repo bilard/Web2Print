@@ -130,19 +130,26 @@ async function resolveOfficialDomain(input: ResolveInput): Promise<{ domain: str
  * Construit la liste de candidats fabricant, triés par confiance décroissante.
  * Confiance : réf dans l'URL → high, réf dans le titre → medium, sinon low.
  */
-export async function resolveManufacturerCandidates(input: ResolveInput): Promise<ManufacturerCandidate[]> {
+export async function resolveManufacturerCandidates(
+  input: ResolveInput,
+  onLog: (m: string) => void = () => {},
+): Promise<ManufacturerCandidate[]> {
+  onLog('Analyse de la fiche source…')
   const official = await resolveOfficialDomain(input)
   const ref = (input.manufacturerRef ?? extractProductReference(input.name ?? '') ?? '').trim()
-  if (!official && !ref) return []
+  if (!official && !ref) { onLog('Ni marque ni référence exploitable — abandon'); return [] }
 
   const label = official?.label ?? detectBrandLabelFromUrl(input.url) ?? (input.brand ?? 'Fabricant')
   const domain = official?.domain ?? ''
   const refAlnum = ref ? alnum(ref) : ''
+  onLog(official ? `Fabricant : ${label}${domain ? ' · ' + domain : ''}` : `Marque : ${label} (domaine non résolu)`)
+  if (ref) onLog(`Référence recherchée : ${ref}`)
 
   // Requêtes, de la plus fiable à la plus large. L'EAN cible la VARIANTE EXACTE
   // (un kit « 2×2Ah » ≠ « solo » ont des EAN distincts) — indispensable pour
   // industrialiser : sans lui on tombe sur une variante voisine du produit.
   const ean = (input.ean ?? '').replace(/\D/g, '')
+  if (ean.length >= 8) onLog(`EAN cible : ${ean}`)
   const queries: string[] = []
   if (ean.length >= 8 && domain) queries.push(`${ean} site:${domain}`)
   if (ean.length >= 8) queries.push(`${ean} ${input.brand ?? ''}`.trim())
@@ -155,8 +162,10 @@ export async function resolveManufacturerCandidates(input: ResolveInput): Promis
   const candidates: ManufacturerCandidate[] = []
 
   for (const q of queries) {
+    onLog(`Recherche : « ${q} »`)
     let results
-    try { results = await jinaSearch(q, 8) } catch { continue }
+    try { results = await jinaSearch(q, 8) } catch { onLog('  ↳ recherche indisponible'); continue }
+    onLog(`  ↳ ${results.length} résultat(s)`)
     for (const r of results) {
       const h = hostOf(r.url)
       if (!h) continue
@@ -216,5 +225,7 @@ export async function resolveManufacturerCandidates(input: ResolveInput): Promis
 
   const rank = { high: 0, medium: 1, low: 2 }
   pool.sort((a, b) => rank[a.confidence] - rank[b.confidence])
-  return pool.slice(0, 5)
+  const out = pool.slice(0, 5)
+  onLog(`${out.length} page(s) fabricant candidate(s)${out[0] ? ` — meilleure : ${out[0].confidence}` : ''}`)
+  return out
 }
