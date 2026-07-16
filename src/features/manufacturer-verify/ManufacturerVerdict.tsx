@@ -11,6 +11,9 @@ interface Props {
   comparisons: FieldComparison[]
   /** Correspondance EAN/GTIN : true = même produit certifié, false = EAN différents, null = non vérifiable. */
   eanMatch?: boolean | null
+  /** Adopter/annuler une valeur fabricant dans le master de la source (specs). */
+  onToggleAdopt?: (c: FieldComparison, adopt: boolean) => void
+  busy?: boolean
 }
 
 const hostOf = (url: string | null): string => {
@@ -94,7 +97,7 @@ function Tile({ n, label, tone, icon, active, onClick, ring }: {
 }
 
 /** Vue verdict « la vérité est chez le fabricant » — comparaison Source ⇄ Fabricant. */
-export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, summary, comparisons, eanMatch }: Props) {
+export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, summary, comparisons, eanMatch, onToggleAdopt, busy }: Props) {
   // Le contenu marketing est rendu en BLOCS lisibles EN HAUT (texte complet),
   // pas dans le tableau (où il serait tronqué). Le tableau ne garde que le
   // comparable ligne à ligne.
@@ -196,16 +199,32 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
               </div>
               {rows.map((c) => {
                 const meta = badgeFor(c)
+                const canAdopt = c.group === 'spec' && !!onToggleAdopt
                 return (
-                  <div key={c.key} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center px-4 py-2 border-t border-white/[0.03]">
+                  <div key={c.key} className={`grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center px-4 py-2 border-t border-white/[0.03] ${c.adopted ? 'bg-teal-500/[0.06]' : ''}`}>
                     <span className="text-[12px] text-white/60">{c.label}</span>
-                    <span className="text-[12px] text-white/45 truncate" title={c.sourceValue ?? ''}>{c.sourceValue ?? '—'}</span>
+                    <span className={`text-[12px] truncate ${c.adopted ? 'text-teal-200' : 'text-white/45'}`} title={c.sourceValue ?? ''}>{c.sourceValue ?? '—'}</span>
                     <span className={`text-[12px] truncate ${c.mfrValue ? 'text-white/85 font-medium' : 'text-white/30'}`} title={c.mfrValue ?? ''}>
                       {c.mfrValue ?? '—'}
                     </span>
-                    <span className={`justify-self-end text-[10px] font-semibold px-2 py-[2px] rounded-full border whitespace-nowrap ${meta.cls}`}>
-                      {meta.sym} {meta.label}
-                    </span>
+                    {/* ÉTAT / action */}
+                    {canAdopt && c.adopted ? (
+                      <span className="justify-self-end inline-flex items-center gap-1 whitespace-nowrap">
+                        <span className="text-[10px] font-semibold px-2 py-[2px] rounded-full border text-teal-300 bg-teal-500/15 border-teal-500/40">✓ Fabricant</span>
+                        <button disabled={busy} onClick={() => onToggleAdopt!(c, false)} title="Annuler l'adoption"
+                          className="text-white/35 hover:text-rose-300 text-[12px] leading-none px-1 disabled:opacity-40">✕</button>
+                      </span>
+                    ) : canAdopt && c.status === 'mfr-only' ? (
+                      <button disabled={busy} onClick={() => onToggleAdopt!(c, true)}
+                        title="Adopter la valeur fabricant dans la fiche (master)"
+                        className="justify-self-end text-[10px] font-semibold px-2 py-[2px] rounded-full border text-indigo-300 bg-indigo-500/12 border-indigo-500/40 hover:bg-indigo-500/25 whitespace-nowrap disabled:opacity-40">
+                        + adopter
+                      </button>
+                    ) : (
+                      <span className={`justify-self-end text-[10px] font-semibold px-2 py-[2px] rounded-full border whitespace-nowrap ${meta.cls}`}>
+                        {meta.sym} {meta.label}
+                      </span>
+                    )}
                   </div>
                 )
               })}

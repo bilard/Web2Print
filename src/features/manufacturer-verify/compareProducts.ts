@@ -157,7 +157,9 @@ export function buildRowComparison(row: ExcelRow, columns: ExcelColumn[]): Field
   if (alignRaw) {
     try { pairs = JSON.parse(alignRaw) as LlmSpecPairs } catch { pairs = {} }
   }
-  return compareSourceVsManufacturer(source, mfr, pairs)
+  const adoptedRaw = cell(row, 'ai_mfr_adopted')
+  const adoptedKeys = new Set(adoptedRaw ? adoptedRaw.split(' | ').map((s) => s.trim()).filter(Boolean) : [])
+  return compareSourceVsManufacturer(source, mfr, pairs, adoptedKeys)
 }
 
 // ── Comparaison ──────────────────────────────────────────────────────────────
@@ -197,6 +199,7 @@ export function compareSourceVsManufacturer(
   source: EnrichedProduct,
   mfr: EnrichedProduct,
   llmPairs: LlmSpecPairs = {},
+  adoptedKeys: Set<string> = new Set(),
 ): FieldComparison[] {
   const out: FieldComparison[] = []
 
@@ -293,6 +296,9 @@ export function compareSourceVsManufacturer(
       status: 'mfr-only',
     })
   }
+
+  // Marquer les specs dont la valeur fabricant a été ADOPTÉE dans le master.
+  if (adoptedKeys.size > 0) for (const c of out) if (adoptedKeys.has(c.key)) c.adopted = true
 
   return out
 }

@@ -11,6 +11,8 @@ interface Props {
   summary: VerdictSummary
   comparisons: FieldComparison[]
   eanMatch?: boolean | null
+  onToggleAdopt?: (c: FieldComparison, adopt: boolean) => void
+  busy?: boolean
   onClose: () => void
 }
 

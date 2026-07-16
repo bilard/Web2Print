@@ -17,6 +17,9 @@ export interface FieldComparison {
   /** Valeur côté fabricant, null si absente. */
   mfrValue: string | null
   status: CompareStatus
+  /** Vrai si la valeur fabricant a été ADOPTÉE dans le master de la source
+   *  (provenance fabricant conservée en permanence). */
+  adopted?: boolean
 }
 
 /** Paires de specs rapprochées par le LLM (clés = libellés normalisés). */

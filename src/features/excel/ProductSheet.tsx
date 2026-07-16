@@ -31,6 +31,7 @@ import { ManufacturerVerifyPanel } from '@/features/manufacturer-verify/Manufact
 import { ManufacturerComparisonInline } from '@/features/manufacturer-verify/ManufacturerComparisonInline'
 import { ManufacturerVerdictModal } from '@/features/manufacturer-verify/ManufacturerVerdictModal'
 import { sheetRowToEnrichedProduct, buildRowComparison, summarize } from '@/features/manufacturer-verify/compareProducts'
+import { useAdoptManufacturerSpec } from '@/features/manufacturer-verify/useAdoptManufacturerSpec'
 
 const BREADCRUMB_SPLIT_RE = /\s*[›>/»·]\s*/
 
@@ -182,6 +183,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [taxoPickerOpen, setTaxoPickerOpen] = useState(false)
   const { data: taxonomies } = useTaxonomies()
+  const { setAdopted, busy: adoptBusy } = useAdoptManufacturerSpec()
   const storeBreadcrumb = useEnrichmentStore(
     (s) => s.entries[enrichmentKey(sheet?.name ?? '', rowId)]?.data?.breadcrumb,
   )
@@ -1058,6 +1060,11 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
           summary={rowSummary}
           comparisons={rowComparison}
           eanMatch={rowEanMatch}
+          busy={adoptBusy}
+          onToggleAdopt={(c, adopt) => {
+            if (!c.mfrValue) return
+            void setAdopted(rowId, { key: c.key, label: c.label, value: c.mfrValue }, adopt)
+          }}
           onClose={() => setVerdictModalOpen(false)}
         />
       )}

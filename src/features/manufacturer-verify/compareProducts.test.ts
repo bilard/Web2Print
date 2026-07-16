@@ -93,6 +93,14 @@ describe('compareSourceVsManufacturer', () => {
     expect(buildRowComparison({ _id: 'r2', ai_name: 'X' }, [col('ai_name')])).toBeNull()
   })
 
+  it('marque les specs adoptées (provenance fabricant)', () => {
+    const source = baseProduct({ specifications: [] })
+    const mfr = baseProduct({ specifications: [{ name: 'Couple', value: '35 Nm' }] })
+    const comps = compareSourceVsManufacturer(source, mfr, {}, new Set(['spec:couple']))
+    const couple = comps.find((c) => c.key === 'spec:couple')
+    expect(couple?.adopted).toBe(true)
+  })
+
   it('summarize compte confirmés/complétés/divergents', () => {
     const s = summarize([
       { key: 'a', label: 'a', group: 'spec', sourceValue: '1', mfrValue: '1', status: 'match' },
