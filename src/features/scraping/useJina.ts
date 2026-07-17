@@ -1194,8 +1194,11 @@ export function useJina() {
   // Retourne {pages, source, error} ; le caller décide du message si vide.
   const discover = useCallback(async (
     url: string,
-    opts: { includePaths?: string; excludePaths?: string; limit?: number } = {},
+    opts: { includePaths?: string; excludePaths?: string; limit?: number; instruction?: string } = {},
   ): Promise<{ pages: CrawlPage[]; source: 'cards' | 'content' | 'jina' | 'cloud' | 'firecrawl' | 'none'; error?: string; diag?: string }> => {
+    // Terme recherché (sans un éventuel « 2 » de tête) pour un diagnostic ciblé :
+    // « le HTML rendu contient-il ce mot ? » → tranche render vs extraction.
+    const probe = (opts.instruction ?? '').toLowerCase().replace(/^\d+\s*/, '').trim().split(/\s+/)[0] ?? ''
     const safeRe = (s?: string): RegExp | null => {
       const t = (s ?? '').trim()
       if (!t) return null
@@ -1328,8 +1331,12 @@ export function useJina() {
         for (const src of htmlSources) {
           const html = await src.run()
           if (!html || html.length < 1500) { diagParts.push(`${src.label}: 0`); continue }
-          const prods = toProducts(extractAnchors(html))
-          diagParts.push(`${src.label}: ${prods.length}`)
+          const anchors = extractAnchors(html)
+          const prods = toProducts(anchors)
+          // Sonde décisive : le HTML rendu contient-il le terme cherché ? + combien
+          // d'ancres produit brutes (avant filtres) vs retenues.
+          const rawHit = probe && html.toLowerCase().includes(probe) ? ` · « ${probe} » DANS LE HTML ✓` : probe ? ` · « ${probe} » absent du HTML` : ''
+          diagParts.push(`${src.label}: ${anchors.length} ancres → ${prods.length} produits${rawHit}`)
           for (const p of prods) if (!merged.has(p.url)) merged.set(p.url, p)
           if (merged.size >= 60) break // grille substantielle → stop
         }

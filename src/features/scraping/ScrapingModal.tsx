@@ -300,6 +300,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       includePaths: opts.includePaths,
       excludePaths: opts.excludePaths,
       limit: opts.limit,
+      instruction: instruction.trim() || undefined,
     })
     if (diag) pushDiscoveryLog(`Rendu par source — ${diag}`)
 
