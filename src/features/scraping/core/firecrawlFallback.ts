@@ -78,15 +78,17 @@ export async function firecrawlScrapeHtml(
   // `scroll` : pages de LISTE (grille produit lazy-load) — on défile pour
   // hydrater plus de cartes avant de capturer le HTML (sinon seul le haut de
   // page est rendu → grille tronquée).
+  // Défile en profondeur une grille lazy-load : plusieurs scrolls entrecoupés
+  // d'attentes pour laisser les cartes s'hydrater (souvent via XHR au scroll).
   const scrollActions = opts.scroll
     ? {
         actions: [
-          { type: 'wait', milliseconds: 2000 },
-          { type: 'scroll', direction: 'down' },
-          { type: 'scroll', direction: 'down' },
-          { type: 'scroll', direction: 'down' },
-          { type: 'scroll', direction: 'down' },
-          { type: 'wait', milliseconds: 2000 },
+          { type: 'wait', milliseconds: 2500 },
+          ...Array.from({ length: 10 }, () => [
+            { type: 'scroll', direction: 'down' },
+            { type: 'wait', milliseconds: 1200 },
+          ]).flat(),
+          { type: 'wait', milliseconds: 1500 },
         ],
       }
     : {}

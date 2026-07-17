@@ -1195,7 +1195,7 @@ export function useJina() {
   const discover = useCallback(async (
     url: string,
     opts: { includePaths?: string; excludePaths?: string; limit?: number } = {},
-  ): Promise<{ pages: CrawlPage[]; source: 'cards' | 'content' | 'jina' | 'cloud' | 'firecrawl' | 'none'; error?: string }> => {
+  ): Promise<{ pages: CrawlPage[]; source: 'cards' | 'content' | 'jina' | 'cloud' | 'firecrawl' | 'none'; error?: string; diag?: string }> => {
     const safeRe = (s?: string): RegExp | null => {
       const t = (s ?? '').trim()
       if (!t) return null
@@ -1323,25 +1323,27 @@ export function useJina() {
         }
         const fcKey = getApiKey('firecrawl').trim()
         // Pour une GRILLE (découverte), Firecrawl AVEC défilement d'abord : il rend
-        // le JS ET scrolle pour charger les cartes lazy-load (grille complète, pas
-        // juste le haut de page). Puis CF fetchPageHtml, puis Bright Data Web
-        // Unlocker (single-shot, sans scroll → filet). Une page de challenge fait
-        // ~1 ko → seuil de garde. On garde la source qui rend le PLUS de produits.
-        const htmlSources: Array<() => Promise<string | null>> = [
-          ...(fcKey ? [() => firecrawlScrapeHtml(url, fcKey, { scroll: true }).catch(() => null)] : []),
-          () => fetchSourceHtml(url, 25_000).catch(() => null),
-          () => brightDataScrapeHtml(url).catch(() => null),
+        // le JS ET scrolle pour charger les cartes lazy-load. Puis CF fetchPageHtml,
+        // puis Bright Data Web Unlocker (single-shot, sans scroll → filet). On
+        // FUSIONNE les produits des trois (union dédupliquée par URL) : chaque
+        // source rend un sous-ensemble différent, l'union maximise la couverture.
+        const htmlSources: Array<{ label: string; run: () => Promise<string | null> }> = [
+          ...(fcKey ? [{ label: 'Firecrawl+scroll', run: () => firecrawlScrapeHtml(url, fcKey, { scroll: true }).catch(() => null) }] : []),
+          { label: 'CF fetchPageHtml', run: () => fetchSourceHtml(url, 25_000).catch(() => null) },
+          { label: 'Bright Data', run: () => brightDataScrapeHtml(url).catch(() => null) },
         ]
-        let best: CrawlPage[] = []
-        for (const fetchHtml of htmlSources) {
-          const html = await fetchHtml()
-          if (!html || html.length < 1500) continue
+        const merged = new Map<string, CrawlPage>()
+        const diagParts: string[] = []
+        for (const src of htmlSources) {
+          const html = await src.run()
+          if (!html || html.length < 1500) { diagParts.push(`${src.label}: 0`); continue }
           const prods = toProducts(extractAnchors(html))
-          if (prods.length > best.length) best = prods
-          // Assez de signal (grille substantielle) → inutile d'appeler les autres.
-          if (best.length >= 20) break
+          diagParts.push(`${src.label}: ${prods.length}`)
+          for (const p of prods) if (!merged.has(p.url)) merged.set(p.url, p)
+          if (merged.size >= 60) break // grille substantielle → stop
         }
-        if (best.length > 0) return { pages: best, source: 'firecrawl' }
+        const all = [...merged.values()]
+        if (all.length > 0) return { pages: all, source: 'firecrawl', diag: diagParts.join(' · ') }
       }
       const tierHint = nothingRendered
         ? 'Page NON CHARGÉE : ni le moteur navigateur Jina ni l\'escalade Puppeteer n\'ont récupéré de lien. '

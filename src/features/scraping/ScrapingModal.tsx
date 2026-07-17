@@ -296,11 +296,12 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
 
     // Découverte DÉTERMINISTE (moteur navigateur Jina → lazy-load, puis escalade
     // Cloud Function Puppeteer qui scrolle). Plus de LLM ni d'échec silencieux.
-    const { pages, source, error } = await discover(targetUrl, {
+    const { pages, source, error, diag } = await discover(targetUrl, {
       includePaths: opts.includePaths,
       excludePaths: opts.excludePaths,
       limit: opts.limit,
     })
+    if (diag) pushDiscoveryLog(`Rendu par source — ${diag}`)
 
     if (pages.length === 0) {
       pushDiscoveryLog(`✗ Aucun lien produit détecté${error ? ` — ${error}` : ''}`)
