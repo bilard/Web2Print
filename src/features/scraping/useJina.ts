@@ -1284,56 +1284,47 @@ export function useJina() {
       const products = toProducts(entries)
       console.log('[discover] tier:', tier, '— candidats:', entries.length, '— retenus:', products.length)
 
-      if (products.length > 0) {
-        if (tier === 'cards' || tier === 'content') return { pages: products, source: tier }
-        // Étage `all` (CF sans classification) : sémantique historique.
-        const jinaProducts = toProducts(jinaEntries)
-        return { pages: products, source: products.length > jinaProducts.length ? 'cloud' : 'jina' }
-      }
-      // Diagnostic détaillé : distinguer les 3 causes d'un 0-résultat.
+      // Diagnostic + détection « rien rendu ».
       const cloudTotal = cloud.links.length + cloud.navLinks.length + cloud.cardLinks.length
       const counts = `Jina : ${jinaEntries.length} lien(s) · escalade Puppeteer : ${cloudTotal} lien(s)`
       const nothingRendered = jinaEntries.length === 0 && cloudTotal === 0
 
-      // Dernier recours ANTI-BOT : quand Jina ET l'escalade Puppeteer ne rendent
-      // rien (DataDome/captcha, ex. Rubix), on rejoue la MÊME cascade HTML qui
-      // marche déjà pour les fiches produit — CF fetchPageHtml → Firecrawl (stealth
-      // résidentiel + JS) → Bright Data Web Unlocker — puis on extrait les ancres
-      // du HTML rendu (liens BRUTS : l'utilisateur coche avant d'enrichir). C'est
-      // ce qui manquait : le scrape produit passe, la découverte non, car elle
-      // n'appelait pas cette cascade. Universel + fail-safe (échec → 0 lien).
-      if (nothingRendered) {
-        const extractAnchors = (html: string): [string, string][] => {
-          const out: [string, string][] = []
-          try {
-            const dom = new DOMParser().parseFromString(html, 'text/html')
-            dom.querySelectorAll('a[href]').forEach((a) => {
-              const href = a.getAttribute('href') ?? ''
-              if (!href) return
-              // Retire le contenu non-texte imbriqué (SVG/style/script) — sinon le
-              // libellé capte le CSS inline (« .rubix-logo_svg__st0{fill:gold} »).
-              a.querySelectorAll('style,script,svg').forEach((el) => el.remove())
-              let title = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
-              // Libellé résiduel de code/CSS → vide (toProducts retombera sur le slug).
-              if (/[{}<>]|fill\s*:/.test(title)) title = ''
-              out.push([title, href])
-            })
-          } catch { /* DOMParser indisponible */ }
-          return out
-        }
+      // Extraction d'ancres depuis un HTML rendu par la cascade anti-bot.
+      const extractAnchors = (html: string): [string, string][] => {
+        const out: [string, string][] = []
+        try {
+          const dom = new DOMParser().parseFromString(html, 'text/html')
+          dom.querySelectorAll('a[href]').forEach((a) => {
+            const href = a.getAttribute('href') ?? ''
+            if (!href) return
+            // Retire le contenu non-texte imbriqué (SVG/style/script) — sinon le
+            // libellé capte le CSS inline (« .rubix-logo_svg__st0{fill:gold} »).
+            a.querySelectorAll('style,script,svg').forEach((el) => el.remove())
+            let title = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
+            if (/[{}<>]|fill\s*:/.test(title)) title = ''
+            out.push([title, href])
+          })
+        } catch { /* DOMParser indisponible */ }
+        return out
+      }
+
+      // UNION : on démarre avec les produits Jina+Puppeteer PUIS on complète via
+      // la cascade anti-bot (Firecrawl scroll → CF fetchPageHtml → Bright Data),
+      // TOUJOURS pour un listing dont la grille paraît incomplète (< min(limit,24))
+      // ou si rien n'a été rendu. Une source partielle (ex. Jina proxy = 4) ne
+      // court-circuite donc PLUS les autres : on fusionne tout (dédup par URL).
+      const merged = new Map<string, CrawlPage>(products.map((p) => [p.url, p] as const))
+      const diagParts: string[] = [`Jina+Puppeteer: ${products.length}`]
+      // discover() EST toujours une découverte de listing → on complète dès que
+      // la grille paraît incomplète (ou si rien n'a été rendu).
+      const wantMore = merged.size < Math.min(limit, 24)
+      if (nothingRendered || wantMore) {
         const fcKey = getApiKey('firecrawl').trim()
-        // Pour une GRILLE (découverte), Firecrawl AVEC défilement d'abord : il rend
-        // le JS ET scrolle pour charger les cartes lazy-load. Puis CF fetchPageHtml,
-        // puis Bright Data Web Unlocker (single-shot, sans scroll → filet). On
-        // FUSIONNE les produits des trois (union dédupliquée par URL) : chaque
-        // source rend un sous-ensemble différent, l'union maximise la couverture.
         const htmlSources: Array<{ label: string; run: () => Promise<string | null> }> = [
           ...(fcKey ? [{ label: 'Firecrawl+scroll', run: () => firecrawlScrapeHtml(url, fcKey, { scroll: true }).catch(() => null) }] : []),
           { label: 'CF fetchPageHtml', run: () => fetchSourceHtml(url, 25_000).catch(() => null) },
           { label: 'Bright Data', run: () => brightDataScrapeHtml(url).catch(() => null) },
         ]
-        const merged = new Map<string, CrawlPage>()
-        const diagParts: string[] = []
         for (const src of htmlSources) {
           const html = await src.run()
           if (!html || html.length < 1500) { diagParts.push(`${src.label}: 0`); continue }
@@ -1342,9 +1333,19 @@ export function useJina() {
           for (const p of prods) if (!merged.has(p.url)) merged.set(p.url, p)
           if (merged.size >= 60) break // grille substantielle → stop
         }
-        const all = [...merged.values()]
-        if (all.length > 0) return { pages: all, source: 'firecrawl', diag: diagParts.join(' · ') }
       }
+
+      const all = [...merged.values()]
+      if (all.length > 0) {
+        const cascadeUsed = all.length > products.length || products.length === 0
+        const jinaProducts = toProducts(jinaEntries)
+        const source: 'cards' | 'content' | 'jina' | 'cloud' | 'firecrawl' =
+          cascadeUsed ? 'firecrawl'
+            : tier === 'cards' || tier === 'content' ? tier
+              : products.length > jinaProducts.length ? 'cloud' : 'jina'
+        return { pages: all, source, diag: diagParts.length > 1 ? diagParts.join(' · ') : undefined }
+      }
+
       const tierHint = nothingRendered
         ? 'Page NON CHARGÉE : ni le moteur navigateur Jina ni l\'escalade Puppeteer n\'ont récupéré de lien. '
           + 'La page est très probablement protégée par un anti-bot (captcha / DataDome) ou entièrement rendue en JS. '

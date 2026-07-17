@@ -325,6 +325,16 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       pushDiscoveryLog('⚠ Liens BRUTS (cascade anti-bot, non classifiés) — décoche les liens hors produit avant d\'enrichir, ou affine « Inclure (regex) » (ex. /p-).')
       toast.info(`${pages.length} lien(s) via la cascade anti-bot — liens bruts, vérifie/filtre avant d'enrichir.`)
     }
+    // Log précis : liste des titres découverts (tronquée) + repère du terme cherché.
+    const titles = pages.map((p) => p.title).filter(Boolean)
+    pushDiscoveryLog(`Découverts (${titles.length}) : ${titles.slice(0, 40).join(' · ')}${titles.length > 40 ? ' …' : ''}`)
+    const needle = instruction.trim().toLowerCase().replace(/^\d+\s*/, '')
+    if (needle) {
+      const hits = titles.filter((t) => t.toLowerCase().includes(needle) || (needle.length > 4 && t.toLowerCase().includes(needle.slice(0, 5))))
+      pushDiscoveryLog(hits.length
+        ? `« ${needle} » apparaît dans ${hits.length} titre(s) découvert(s) : ${hits.slice(0, 12).join(' · ')}`
+        : `⚠ « ${needle} » n'apparaît dans AUCUN des ${titles.length} titres découverts — le produit n'est pas dans ce que la page a rendu (pagination/API ?).`)
+    }
 
     // Filtre IA AVANT l'enrichissement coûteux. Deux cas :
     //  • Instruction utilisateur (« que des perforateurs ») → filtre ciblé.
@@ -344,7 +354,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         pushDiscoveryLog(`✗ Aucun lien ne correspond à « ${label} » parmi les ${pages.length} découverts. La grille n'a peut-être rendu qu'une partie des produits (anti-bot sans défilement) — essaie une sous-catégorie plus ciblée ou augmente la limite.`)
         toast.info(`Aucun « ${label} » parmi les ${pages.length} liens découverts (grille possiblement partielle).`)
       } else if (outcome.applied) {
-        pushDiscoveryLog(`✓ ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s) par le filtre`)
+        pushDiscoveryLog(`✓ ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s) : ${kept.map((p) => p.title).slice(0, 20).join(' · ')}`)
         toast.success(`Filtre « ${label} » : ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s).`)
       } else {
         pushDiscoveryLog(`⚠ Filtre non concluant (IA indisponible ou 0 correspondance) — ${pages.length} lien(s) conservé(s)`)
