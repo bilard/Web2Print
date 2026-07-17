@@ -1295,16 +1295,30 @@ export function useJina() {
       // Extraction d'ancres depuis un HTML rendu par la cascade anti-bot.
       const extractAnchors = (html: string): [string, string][] => {
         const out: [string, string][] = []
+        const clean = (s: string | null | undefined): string => {
+          const t = (s ?? '').replace(/\s+/g, ' ').trim()
+          return /[{}<>]|fill\s*:/.test(t) ? '' : t
+        }
         try {
           const dom = new DOMParser().parseFromString(html, 'text/html')
           dom.querySelectorAll('a[href]').forEach((a) => {
             const href = a.getAttribute('href') ?? ''
             if (!href) return
-            // Retire le contenu non-texte imbriqué (SVG/style/script) — sinon le
-            // libellé capte le CSS inline (« .rubix-logo_svg__st0{fill:gold} »).
-            a.querySelectorAll('style,script,svg').forEach((el) => el.remove())
-            let title = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
-            if (/[{}<>]|fill\s*:/.test(title)) title = ''
+            // VRAI nom produit, par ordre de fiabilité : aria-label / title du lien
+            // > alt de l'image de la carte (« Perforateur Bosch GBH 18V-26 F »)
+            // > titre d'un heading interne > texte du lien. Sinon vide → slug d'URL.
+            const img = a.querySelector('img')
+            const heading = a.querySelector('h1,h2,h3,h4,[class*="title" i],[class*="name" i]')
+            let title =
+              clean(a.getAttribute('aria-label')) ||
+              clean(a.getAttribute('title')) ||
+              clean(img?.getAttribute('alt')) ||
+              clean(heading?.textContent) ||
+              ''
+            if (!title) {
+              a.querySelectorAll('style,script,svg').forEach((el) => el.remove())
+              title = clean(a.textContent)
+            }
             out.push([title, href])
           })
         } catch { /* DOMParser indisponible */ }
@@ -1356,15 +1370,20 @@ export function useJina() {
           const cf = await fetchSourceHtml(pageUrl, 25_000).catch(() => null); if (cf) return cf
           return brightDataScrapeHtml(pageUrl).catch(() => null)
         }
-        for (let page = 2; base && page <= 6 && merged.size < 80; page++) {
+        // Profondeur = « Limite de pages » (plafonnée à 15 pour le coût), robuste :
+        // on tolère 2 pages vides/challenge d'affilée avant d'arrêter (un hoquet
+        // Bright Data sur une page ne doit pas stopper toute la pagination).
+        const maxPages = Math.min(Math.max(limit, 4), 15)
+        let emptyStreak = 0
+        for (let page = 2; base && page <= maxPages && merged.size < 200; page++) {
           const u = new URL(base.toString()); u.searchParams.set('page', String(page))
           const html = await fetchPageHtml(u.toString())
-          if (!html || html.length < 1500) break
+          if (!html || html.length < 1500) { diagParts.push(`page ${page}: 0`); if (++emptyStreak >= 2) break; continue }
           const before = merged.size
           for (const p of toProducts(extractAnchors(html))) if (!merged.has(p.url)) merged.set(p.url, p)
           const added = merged.size - before
           diagParts.push(`page ${page}: +${added}`)
-          if (added === 0) break // page sans nouveauté → fin de la pagination
+          if (added === 0) { if (++emptyStreak >= 2) break } else emptyStreak = 0
         }
       }
 
