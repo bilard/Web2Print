@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Globe, Loader2, Square, CheckSquare, Sparkles } from 'lucide-react'
+import { Globe, Loader2, Square, CheckSquare, Sparkles, ExternalLink } from 'lucide-react'
 import type { CrawlPage } from './useJina'
 import { BrandSuggestion } from './BrandSuggestion'
 import { UrlSourceSelector } from './UrlSourceSelector'
@@ -145,25 +145,38 @@ export function CrawlTab({ url, loading, pages, onCrawl, onAbort, onEnrichMany, 
                 try { return new URL(p.url).pathname } catch { return p.url }
               })()
               return (
-                <button
+                <div
                   key={i}
-                  onClick={() => !loading && togglePage(p.url)}
-                  disabled={loading}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${
-                    loading
-                      ? 'cursor-default'
-                      : selected.has(p.url) ? 'bg-indigo-500/10' : 'hover:bg-white/[0.03]'
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded transition-colors ${
+                    selected.has(p.url) ? 'bg-indigo-500/10' : 'hover:bg-white/[0.03]'
                   }`}
                 >
-                  {loading
-                    ? <CheckSquare className="w-3.5 h-3.5 text-emerald-400/60 shrink-0" />
-                    : selected.has(p.url)
-                      ? <CheckSquare className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                      : <Square className="w-3.5 h-3.5 text-white/20 shrink-0" />}
-                  <Globe className="w-3 h-3 text-white/20 shrink-0" />
-                  <span className="text-[11px] text-white/70 truncate flex-1" title={p.title}>{p.title || path}</span>
-                  <span className="text-[9px] text-white/25 truncate max-w-[180px]" title={p.url}>{path}</span>
-                </button>
+                  <button
+                    onClick={() => !loading && togglePage(p.url)}
+                    disabled={loading}
+                    className="flex items-center gap-2 flex-1 min-w-0 text-left disabled:cursor-default"
+                  >
+                    {loading
+                      ? <CheckSquare className="w-3.5 h-3.5 text-emerald-400/60 shrink-0" />
+                      : selected.has(p.url)
+                        ? <CheckSquare className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                        : <Square className="w-3.5 h-3.5 text-white/20 shrink-0" />}
+                    <Globe className="w-3 h-3 text-white/20 shrink-0" />
+                    <span className="text-[11px] text-white/70 truncate flex-1" title={p.title}>{p.title || path}</span>
+                  </button>
+                  <span className="text-[9px] text-white/25 truncate max-w-[180px] shrink-0" title={p.url}>{path}</span>
+                  {/* Lien direct vers la fiche produit (nouvel onglet). */}
+                  <a
+                    href={p.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    title="Ouvrir la fiche produit"
+                    className="p-1 rounded text-white/25 hover:text-indigo-300 hover:bg-white/5 shrink-0 transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               )
             })}
           </div>

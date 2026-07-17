@@ -1294,26 +1294,29 @@ export function useJina() {
 
       // Extraction d'ancres depuis un HTML rendu par la cascade anti-bot.
       const extractAnchors = (html: string): [string, string][] => {
-        const out: [string, string][] = []
         const clean = (s: string | null | undefined): string => {
           const t = (s ?? '').replace(/\s+/g, ' ').trim()
           // Rejette le bruit non-produit : CSS, « brand logo », libellés d'icône.
-          return /[{}<>]|fill\s*:/.test(t) || /^brand logo$/i.test(t) ? '' : t
+          return /[{}<>]|fill\s*:/.test(t) || /^brand logo$/i.test(t) || t.length > 140 ? '' : t
         }
+        // Une carte produit a souvent DEUX liens vers la même fiche : l'image
+        // (texte vide / « brand logo ») ET le titre (« Perforateur Bosch GBH
+        // 18V-26 F »). On garde le MEILLEUR titre par URL (le plus long non-bruit)
+        // → vrai nom produit. Vide → toProducts retombe sur le slug d'URL.
+        const best = new Map<string, string>()
+        const order: string[] = []
         try {
           const dom = new DOMParser().parseFromString(html, 'text/html')
           dom.querySelectorAll('a[href]').forEach((a) => {
             const href = a.getAttribute('href') ?? ''
             if (!href) return
             a.querySelectorAll('style,script,svg').forEach((el) => el.remove())
-            // Texte du lien d'abord (contient souvent le type produit) ; les attributs
-            // title/aria/alt sont trop souvent un logo de marque → on ne s'y fie PAS.
-            // Vide → toProducts retombe sur le slug d'URL (fiable pour le TYPE).
             const title = clean(a.textContent)
-            out.push([title, href])
+            if (!best.has(href)) { best.set(href, title); order.push(href) }
+            else if (title.length > (best.get(href) ?? '').length) best.set(href, title)
           })
         } catch { /* DOMParser indisponible */ }
-        return out
+        return order.map((h) => [best.get(h) ?? '', h] as [string, string])
       }
 
       // UNION : on démarre avec les produits Jina+Puppeteer PUIS on complète via
