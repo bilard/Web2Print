@@ -10,6 +10,26 @@ import { useAuthStore } from '@/stores/auth.store'
 type UsageListener = (entry: { tokensIn: number; tokensOut: number; costUsd: number; source?: string }) => void
 const listeners: UsageListener[] = []
 
+/** Observateurs GLOBAUX : notifiés à CHAQUE événement d'usage, indépendamment de
+ *  la pile LIFO des listeners scopés (routeurs LLM). Un routeur pousse son
+ *  listener au sommet pour compter les tokens de SON activité — mais ça masquait
+ *  le coût aux indicateurs live (badge coût du modal de scraping), qui étaient
+ *  sous le sommet et ne recevaient donc jamais les coûts LLM. Les observateurs
+ *  reçoivent tout, une fois par événement. */
+const observers: UsageListener[] = []
+function notifyObservers(entry: { tokensIn: number; tokensOut: number; costUsd: number; source?: string }): void {
+  for (const o of observers) { try { o(entry) } catch { /* un observateur ne casse pas le tracking */ } }
+}
+
+/** Enregistre un observateur global (indicateur live). Renvoie la désinscription. */
+export function addUsageObserver(observer: UsageListener): () => void {
+  observers.push(observer)
+  return () => {
+    const idx = observers.indexOf(observer)
+    if (idx !== -1) observers.splice(idx, 1)
+  }
+}
+
 // ── Coût des plateformes de scraping (Jina / Firecrawl / Bright Data) ────────
 // Tarifs publics approximatifs — l'objectif est un ordre de grandeur fiable
 // dans l'indicateur live, pas une facturation au centime.
@@ -28,10 +48,10 @@ export function recordScrapeUsage(p: { platform: ScrapePlatform; tokens?: number
   const rate = SCRAPE_RATES[p.platform]
   const costUsd = (rate.perMTokens ? ((p.tokens ?? 0) / 1_000_000) * rate.perMTokens : 0)
     + (rate.perRequest ? (p.requests ?? 1) * rate.perRequest : 0)
+  const entry = { tokensIn: p.tokens ?? 0, tokensOut: 0, costUsd, source: p.platform }
   const activeListener = listeners[listeners.length - 1]
-  if (activeListener) {
-    activeListener({ tokensIn: p.tokens ?? 0, tokensOut: 0, costUsd, source: p.platform })
-  }
+  if (activeListener) activeListener(entry)
+  notifyObservers(entry)
   return costUsd
 }
 
@@ -175,15 +195,12 @@ export function recordAiUsage(params: RecordParams): number {
   existing.byModel.set(params.model, modelLeaf)
   pending.set(params.provider, existing)
 
-  // Notifie le listener du dernier routeur actif (LIFO) — pour l'indicateur live.
+  // Notifie le listener du dernier routeur actif (LIFO, comptage scopé) PUIS les
+  // observateurs globaux (indicateurs live) qui, eux, reçoivent tout.
+  const entry = { tokensIn: params.inputTokens, tokensOut: params.outputTokens, costUsd, source: params.provider }
   const activeListener = listeners[listeners.length - 1]
-  if (activeListener) {
-    activeListener({
-      tokensIn: params.inputTokens,
-      tokensOut: params.outputTokens,
-      costUsd,
-    })
-  }
+  if (activeListener) activeListener(entry)
+  notifyObservers(entry)
 
   if (!flushTimer) {
     flushTimer = setTimeout(() => { void flushPending() }, FLUSH_DELAY_MS)

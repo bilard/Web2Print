@@ -31,7 +31,7 @@ import { scrapeResultToColumns } from './core/scrapeToRows'
 import { filterByInstruction } from './instructionFilter'
 import { toast } from 'sonner'
 import { useEffect } from 'react'
-import { pushAiUsageListener } from '@/features/stats/aiUsageTracking'
+import { addUsageObserver } from '@/features/stats/aiUsageTracking'
 
 /** Clé synthétique : la modal de scraping n'a pas de feuille — on isole dans
  *  un namespace dédié pour ne pas polluer les enrichissements de feuilles
@@ -155,10 +155,13 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   const [costBySource, setCostBySource] = useState<Record<string, number>>({})
   useEffect(() => {
     if (!open) return
-    const unsubscribe = pushAiUsageListener(({ costUsd, source }) => {
+    // Observateur GLOBAL (et non listener de pile) : reçoit TOUS les coûts, y
+    // compris les appels LLM routés par generateJson/llmRouter — qui poussaient
+    // leur propre listener au sommet et masquaient le coût au badge (→ $0.0000).
+    const unsubscribe = addUsageObserver(({ costUsd, source }) => {
       setRunCostUsd((c) => c + costUsd)
       setSessionCostUsd((c) => c + costUsd)
-      const key = source ?? 'llm'
+      const key = source && source !== 'gemini' && source !== 'claude' && source !== 'openai' ? source : 'llm'
       setCostBySource((m) => ({ ...m, [key]: (m[key] ?? 0) + costUsd }))
     })
     return unsubscribe
@@ -738,7 +741,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   return (
     <>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className={`bg-well border border-white/10 rounded-2xl w-full ${tab === 'search' ? 'max-w-4xl' : showRightLogs ? 'max-w-5xl' : 'max-w-2xl'} max-h-[90vh] flex flex-col shadow-2xl transition-[max-width] duration-200`}>
+      <div className={`bg-well border border-white/10 rounded-2xl w-full ${tab === 'search' ? 'max-w-4xl' : showRightLogs ? 'max-w-7xl' : 'max-w-2xl'} max-h-[90vh] flex flex-col shadow-2xl transition-[max-width] duration-200`}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] shrink-0">
@@ -1115,7 +1118,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
 
         {/* Rail de logs à droite : phase découverte + filtre (Crawl/Map). */}
         {showRightLogs && (
-          <div className="w-96 shrink-0 border-l border-white/[0.06] bg-black/20 overflow-y-auto p-3">
+          <div className="w-[28rem] shrink-0 border-l border-white/[0.06] bg-black/20 overflow-y-auto p-3">
             <TypedLogConsole logs={discoveryLogs} maxHeight="none" />
           </div>
         )}
