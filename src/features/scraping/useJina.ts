@@ -1297,28 +1297,19 @@ export function useJina() {
         const out: [string, string][] = []
         const clean = (s: string | null | undefined): string => {
           const t = (s ?? '').replace(/\s+/g, ' ').trim()
-          return /[{}<>]|fill\s*:/.test(t) ? '' : t
+          // Rejette le bruit non-produit : CSS, « brand logo », libellés d'icône.
+          return /[{}<>]|fill\s*:/.test(t) || /^brand logo$/i.test(t) ? '' : t
         }
         try {
           const dom = new DOMParser().parseFromString(html, 'text/html')
           dom.querySelectorAll('a[href]').forEach((a) => {
             const href = a.getAttribute('href') ?? ''
             if (!href) return
-            // VRAI nom produit, par ordre de fiabilité : aria-label / title du lien
-            // > alt de l'image de la carte (« Perforateur Bosch GBH 18V-26 F »)
-            // > titre d'un heading interne > texte du lien. Sinon vide → slug d'URL.
-            const img = a.querySelector('img')
-            const heading = a.querySelector('h1,h2,h3,h4,[class*="title" i],[class*="name" i]')
-            let title =
-              clean(a.getAttribute('aria-label')) ||
-              clean(a.getAttribute('title')) ||
-              clean(img?.getAttribute('alt')) ||
-              clean(heading?.textContent) ||
-              ''
-            if (!title) {
-              a.querySelectorAll('style,script,svg').forEach((el) => el.remove())
-              title = clean(a.textContent)
-            }
+            a.querySelectorAll('style,script,svg').forEach((el) => el.remove())
+            // Texte du lien d'abord (contient souvent le type produit) ; les attributs
+            // title/aria/alt sont trop souvent un logo de marque → on ne s'y fie PAS.
+            // Vide → toProducts retombe sur le slug d'URL (fiable pour le TYPE).
+            const title = clean(a.textContent)
             out.push([title, href])
           })
         } catch { /* DOMParser indisponible */ }
