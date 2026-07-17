@@ -47,9 +47,11 @@ export async function filterByInstruction<T extends FilterCandidate>(
         'catégories, sous-catégories, listes/gammes, méga-menu, navigation, fil d\'Ariane, ' +
         'footer, « Nos agences/marques », contact, compte, recherche, pages marketing/collection. ' +
         '(Indice : une catégorie a souvent un compteur « (1 234) » ou une URL de type liste.)\n' +
-        `2. Parmi les fiches produit restantes, conserve UNIQUEMENT celles qui correspondent à l'instruction : « ${inst} ». ` +
-        'Utilise le libellé ET le slug de l\'URL (souvent le type produit y figure).\n' +
-        'En cas de doute entre deux fiches produit, garde. Mais ne garde JAMAIS une catégorie/nav.\n' +
+        `2. Parmi les fiches produit restantes, conserve UNIQUEMENT celles dont le TYPE correspond à : « ${inst} ». ` +
+        'Utilise le libellé ET le slug de l\'URL (le type produit y figure souvent).\n' +
+        'IMPORTANT : ne garde JAMAIS un produit d\'un AUTRE type par proximité — ' +
+        'ex. si on demande « perforateur », NE GARDE PAS les perceuses/visseuses/meuleuses/décapeurs. ' +
+        'Si AUCUNE fiche ne correspond au type demandé, renvoie keep = [] (liste vide) — c\'est une réponse valide.\n' +
         'Réponds avec keep = la liste des indices (0-based) à CONSERVER.\n\n' +
         `Éléments :\n${list}`,
       schema: ResSchema,
