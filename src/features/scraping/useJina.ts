@@ -686,6 +686,30 @@ interface JinaReaderResponse {
   }
 }
 
+/** Proxy résidentiel Jina activé (défaut oui) — coupe-circuit `jina.proxy=off`. */
+function jinaProxyEnabled(): boolean {
+  try { return localStorage.getItem('jina.proxy') !== 'off' } catch { return true }
+}
+/** Pays du proxy Jina déduit de l'URL (TLD national / sous-domaine `fr.`), sinon
+ *  `auto` (Jina choisit). Générique — jamais de pays en dur. */
+function jinaProxyCountry(url: string): string {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    const sub = host.match(/^([a-z]{2})\./)
+    if (sub && /^(fr|de|es|it|nl|be|pt|uk|us)$/.test(sub[1])) return sub[1]
+    const tld = host.split('.').pop() ?? ''
+    if (/^(fr|de|es|it|nl|be|pt)$/.test(tld)) return tld
+  } catch { /* ignore */ }
+  return 'auto'
+}
+/** Locale navigateur (`fr-FR`) déduite de l'URL pour un rendu dans la bonne langue. */
+function localeFromUrl(url: string): string | null {
+  const c = jinaProxyCountry(url)
+  if (c === 'auto') return null
+  const lang = c === 'be' ? 'fr' : c === 'uk' || c === 'us' ? 'en' : c
+  return `${lang}-${c.toUpperCase()}`
+}
+
 export async function jinaRead(url: string, opts: { timeout?: number; noCache?: boolean; listing?: boolean } = {}): Promise<JinaReaderResponse['data']> {
   const extra: Record<string, string> = {}
 
@@ -716,6 +740,15 @@ export async function jinaRead(url: string, opts: { timeout?: number; noCache?: 
     // dédupliqué partiel) et aucune image (payload allégé). Cf. references/jina-api.md.
     extra['X-With-Links-Summary'] = 'all'
     extra['X-Retain-Images'] = 'none'
+    // Proxy résidentiel Jina (premium) : rend une page anti-bot (DataDome/Akamai,
+    // ex. Rubix) là où le moteur browser nu reçoit une page vide → la grille
+    // COMPLÈTE est rendue et TOUS ses liens produit remontent, au lieu de la
+    // cascade brute (ancres tronquées). Désactivable via localStorage
+    // `jina.proxy=off`. Si le plan ne le supporte pas, Jina erreur → la cascade
+    // anti-bot prend le relais (discover). Locale forcée sur la langue source.
+    if (jinaProxyEnabled()) extra['X-Proxy'] = jinaProxyCountry(url)
+    const loc = localeFromUrl(url)
+    if (loc) extra['X-Locale'] = loc
   } else if (isProtected) {
     extra['X-Engine'] = 'browser'
     // Attendre qu'un conteneur produit (pas seulement <body>) soit hydraté.
