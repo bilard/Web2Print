@@ -1335,6 +1335,32 @@ export function useJina() {
         }
       }
 
+      // PAGINATION : beaucoup de listings (Rubix, Magento, Algolia…) chargent la
+      // suite via `?page=N` — le défilement seul ne suffit pas. On récupère les
+      // pages suivantes et on UNIONNE, jusqu'à ce qu'une page n'apporte plus de
+      // nouveau produit (ou plafond). C'est ce qui débloque les produits au-delà
+      // du haut de grille (ex. perforateurs en page 2+). Universel ; s'arrête net
+      // si `?page=N` ne rend rien de neuf (site sans ce schéma → inchangé).
+      if (merged.size > 0) {
+        const base = (() => { try { const u = new URL(url); u.hash = ''; u.search = ''; return u } catch { return null } })()
+        const fcKey = getApiKey('firecrawl').trim()
+        const fetchPageHtml = async (pageUrl: string): Promise<string | null> => {
+          if (fcKey) { const h = await firecrawlScrapeHtml(pageUrl, fcKey).catch(() => null); if (h) return h }
+          const cf = await fetchSourceHtml(pageUrl, 25_000).catch(() => null); if (cf) return cf
+          return brightDataScrapeHtml(pageUrl).catch(() => null)
+        }
+        for (let page = 2; base && page <= 6 && merged.size < 80; page++) {
+          const u = new URL(base.toString()); u.searchParams.set('page', String(page))
+          const html = await fetchPageHtml(u.toString())
+          if (!html || html.length < 1500) break
+          const before = merged.size
+          for (const p of toProducts(extractAnchors(html))) if (!merged.has(p.url)) merged.set(p.url, p)
+          const added = merged.size - before
+          diagParts.push(`page ${page}: +${added}`)
+          if (added === 0) break // page sans nouveauté → fin de la pagination
+        }
+      }
+
       const all = [...merged.values()]
       if (all.length > 0) {
         const cascadeUsed = all.length > products.length || products.length === 0
