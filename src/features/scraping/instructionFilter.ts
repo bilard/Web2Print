@@ -57,11 +57,13 @@ export async function filterByInstruction<T extends FilterCandidate>(
     })
     const idx = new Set((raw.keep ?? []).filter((n) => Number.isInteger(n) && n >= 0 && n < items.length))
     const kept = items.filter((_, i) => idx.has(i))
-    // Fail-open : un filtre qui vide tout = probable dérapage LLM → on garde tout.
-    if (kept.length === 0) return { kept: items, excludedCount: 0, applied: false }
+    // Le LLM A RÉPONDU (même keep=[]) → on lui fait confiance : `applied:true`.
+    // Un keep vide = « aucun ne correspond » HONNÊTE (ne pas ré-afficher les
+    // non-correspondants). Le fail-open (garder tout) est réservé à un ÉCHEC LLM
+    // (catch ci-dessous) — jamais un import à zéro par hoquet réseau/quota.
     return { kept, excludedCount: items.length - kept.length, applied: true }
   } catch (err) {
-    console.warn('[instruction-filter] LLM indisponible — aucun filtrage', err)
+    console.warn('[instruction-filter] LLM indisponible — aucun filtrage (fail-open)', err)
     return { kept: items, excludedCount: 0, applied: false }
   }
 }

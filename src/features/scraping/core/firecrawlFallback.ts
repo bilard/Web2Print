@@ -71,8 +71,25 @@ async function firecrawlPostHtml(
 export async function firecrawlScrapeHtml(
   url: string,
   apiKey: string,
+  opts: { scroll?: boolean } = {},
 ): Promise<string | null> {
   if (!apiKey) return null
+
+  // `scroll` : pages de LISTE (grille produit lazy-load) — on défile pour
+  // hydrater plus de cartes avant de capturer le HTML (sinon seul le haut de
+  // page est rendu → grille tronquée).
+  const scrollActions = opts.scroll
+    ? {
+        actions: [
+          { type: 'wait', milliseconds: 2000 },
+          { type: 'scroll', direction: 'down' },
+          { type: 'scroll', direction: 'down' },
+          { type: 'scroll', direction: 'down' },
+          { type: 'scroll', direction: 'down' },
+          { type: 'wait', milliseconds: 2000 },
+        ],
+      }
+    : {}
 
   // Essai 1 : stealth + waitFor (premium)
   const stealthBody = {
@@ -81,6 +98,7 @@ export async function firecrawlScrapeHtml(
     onlyMainContent: false,
     proxy: 'stealth',
     waitFor: 3000,
+    ...scrollActions,
   }
   const stealthResult = await firecrawlPostHtml(stealthBody, apiKey)
   if (stealthResult) return stealthResult
@@ -91,6 +109,7 @@ export async function firecrawlScrapeHtml(
     url,
     formats: ['rawHtml'],
     onlyMainContent: false,
+    ...scrollActions,
   }
   return firecrawlPostHtml(basicBody, apiKey)
 }

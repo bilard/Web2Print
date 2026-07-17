@@ -712,6 +712,10 @@ export async function jinaRead(url: string, opts: { timeout?: number; noCache?: 
     // Attendre qu'une grille/carte produit (ou un lien produit) soit rendue
     // avant de capturer le résumé des liens.
     extra['X-Wait-For-Selector'] = 'a[href*="/product" i], a[href*="/produit" i], [class*="product" i], [class*="card" i], main'
+    // Découverte : on veut TOUS les liens de la grille (exhaustif, pas le résumé
+    // dédupliqué partiel) et aucune image (payload allégé). Cf. references/jina-api.md.
+    extra['X-With-Links-Summary'] = 'all'
+    extra['X-Retain-Images'] = 'none'
   } else if (isProtected) {
     extra['X-Engine'] = 'browser'
     // Attendre qu'un conteneur produit (pas seulement <body>) soit hydraté.
@@ -1285,18 +1289,26 @@ export function useJina() {
           return out
         }
         const fcKey = getApiKey('firecrawl').trim()
-        // Ordre = cascade produit. Une page de challenge fait ~1 ko → seuil de garde.
+        // Pour une GRILLE (découverte), Firecrawl AVEC défilement d'abord : il rend
+        // le JS ET scrolle pour charger les cartes lazy-load (grille complète, pas
+        // juste le haut de page). Puis CF fetchPageHtml, puis Bright Data Web
+        // Unlocker (single-shot, sans scroll → filet). Une page de challenge fait
+        // ~1 ko → seuil de garde. On garde la source qui rend le PLUS de produits.
         const htmlSources: Array<() => Promise<string | null>> = [
+          ...(fcKey ? [() => firecrawlScrapeHtml(url, fcKey, { scroll: true }).catch(() => null)] : []),
           () => fetchSourceHtml(url, 25_000).catch(() => null),
-          ...(fcKey ? [() => firecrawlScrapeHtml(url, fcKey).catch(() => null)] : []),
           () => brightDataScrapeHtml(url).catch(() => null),
         ]
+        let best: CrawlPage[] = []
         for (const fetchHtml of htmlSources) {
           const html = await fetchHtml()
           if (!html || html.length < 1500) continue
           const prods = toProducts(extractAnchors(html))
-          if (prods.length > 0) return { pages: prods, source: 'firecrawl' }
+          if (prods.length > best.length) best = prods
+          // Assez de signal (grille substantielle) → inutile d'appeler les autres.
+          if (best.length >= 20) break
         }
+        if (best.length > 0) return { pages: best, source: 'firecrawl' }
       }
       const tierHint = nothingRendered
         ? 'Page NON CHARGÉE : ni le moteur navigateur Jina ni l\'escalade Puppeteer n\'ont récupéré de lien. '

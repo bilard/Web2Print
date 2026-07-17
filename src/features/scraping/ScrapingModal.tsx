@@ -339,7 +339,10 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       pushDiscoveryLog(`Filtre IA « ${label} » sur ${pages.length} lien(s)…`)
       const outcome = await filterByInstruction(pages, effInstruction)
       kept = outcome.kept
-      if (outcome.applied) {
+      if (outcome.applied && kept.length === 0) {
+        pushDiscoveryLog(`✗ Aucun lien ne correspond à « ${label} » parmi les ${pages.length} découverts. La grille n'a peut-être rendu qu'une partie des produits (anti-bot sans défilement) — essaie une sous-catégorie plus ciblée ou augmente la limite.`)
+        toast.info(`Aucun « ${label} » parmi les ${pages.length} liens découverts (grille possiblement partielle).`)
+      } else if (outcome.applied) {
         pushDiscoveryLog(`✓ ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s) par le filtre`)
         toast.success(`Filtre « ${label} » : ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s).`)
       } else {
