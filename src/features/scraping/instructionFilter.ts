@@ -41,11 +41,17 @@ export async function filterByInstruction<T extends FilterCandidate>(
       task: 'web.discoveryFilter',
       version: 'web.discoveryFilter.v1',
       prompt:
-        'Tu filtres une liste de pages produit découvertes sur un site marchand.\n' +
-        "Conserve UNIQUEMENT les éléments qui correspondent à l'instruction de l'utilisateur " +
-        '(marque, catégorie, gamme…). En cas de doute, GARDE (mieux vaut garder à tort que jeter à tort).\n' +
-        'Réponds avec keep = la liste des indices (0-based) des éléments à CONSERVER.\n\n' +
-        `Instruction : ${inst}\n\nÉléments :\n${list}`,
+        'Tu filtres une liste de liens découverts sur un site marchand (grille de catégorie).\n' +
+        'Règles, dans l\'ordre :\n' +
+        '1. EXCLUS d\'office les liens qui ne sont PAS une fiche produit individuelle : ' +
+        'catégories, sous-catégories, listes/gammes, méga-menu, navigation, fil d\'Ariane, ' +
+        'footer, « Nos agences/marques », contact, compte, recherche, pages marketing/collection. ' +
+        '(Indice : une catégorie a souvent un compteur « (1 234) » ou une URL de type liste.)\n' +
+        `2. Parmi les fiches produit restantes, conserve UNIQUEMENT celles qui correspondent à l'instruction : « ${inst} ». ` +
+        'Utilise le libellé ET le slug de l\'URL (souvent le type produit y figure).\n' +
+        'En cas de doute entre deux fiches produit, garde. Mais ne garde JAMAIS une catégorie/nav.\n' +
+        'Réponds avec keep = la liste des indices (0-based) à CONSERVER.\n\n' +
+        `Éléments :\n${list}`,
       schema: ResSchema,
       schemaForLLM: RES_SCHEMA_FOR_LLM as unknown as Record<string, unknown>,
     })

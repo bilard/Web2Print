@@ -325,19 +325,26 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       toast.info(`${pages.length} lien(s) via la cascade anti-bot — liens bruts, vérifie/filtre avant d'enrichir.`)
     }
 
-    // Filtre par instruction (« ne garder que les perceuses Makita ») — AVANT
-    // l'enrichissement coûteux. Transparent + fail-open (jamais de cull silencieux).
+    // Filtre IA AVANT l'enrichissement coûteux. Deux cas :
+    //  • Instruction utilisateur (« que des perforateurs ») → filtre ciblé.
+    //  • Liens BRUTS de la cascade anti-bot sans instruction → filtre PRODUIT par
+    //    défaut (exclut catégories/nav/footer, garde les fiches produit).
+    // Transparent + fail-open (jamais de cull silencieux vers zéro).
     let kept = pages
-    if (instruction.trim()) {
-      pushDiscoveryLog(`Filtre IA « ${instruction.trim()} » sur ${pages.length} lien(s) (prompt utilisateur)…`)
-      const outcome = await filterByInstruction(pages, instruction)
+    const rawSource = source === 'firecrawl'
+    const userInstr = instruction.trim()
+    const effInstruction = userInstr || (rawSource ? 'toute fiche produit (n\'importe quel produit)' : '')
+    if (effInstruction) {
+      const label = userInstr || 'fiches produit uniquement'
+      pushDiscoveryLog(`Filtre IA « ${label} » sur ${pages.length} lien(s)…`)
+      const outcome = await filterByInstruction(pages, effInstruction)
       kept = outcome.kept
       if (outcome.applied) {
         pushDiscoveryLog(`✓ ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s) par le filtre`)
-        toast.success(`Filtre « ${instruction.trim()} » : ${kept.length} correspond(ent), ${outcome.excludedCount} exclue(s).`)
+        toast.success(`Filtre « ${label} » : ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s).`)
       } else {
         pushDiscoveryLog(`⚠ Filtre non concluant (IA indisponible ou 0 correspondance) — ${pages.length} lien(s) conservé(s)`)
-        toast.info(`Filtre non concluant — ${pages.length} page(s) conservée(s).`)
+        toast.info(`Filtre non concluant — ${pages.length} lien(s) conservé(s).`)
       }
     }
 

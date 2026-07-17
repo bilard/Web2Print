@@ -1166,8 +1166,24 @@ export function useJina() {
     }
     const slugTitle = (u: string): string => {
       try {
-        const seg = new URL(u).pathname.split('/').filter(Boolean).pop() ?? ''
-        return seg.replace(/\.\w{2,5}$/, '').replace(/[-_]+/g, ' ').trim() || new URL(u).hostname
+        const url2 = new URL(u)
+        const segs = url2.pathname.split('/').filter(Boolean)
+        if (segs.length === 0) return url2.hostname
+        // Choisit le segment le plus DESCRIPTIF (le plus de lettres/mots), en
+        // écartant les codes/SKU courts (« p-G3515003978 », « c-1049 », ids nus)
+        // et les segments de locale (« fr »). Sinon le titre serait le SKU et un
+        // filtre par type produit (« perforateur ») ne matcherait rien.
+        const score = (s: string): number => {
+          if (/^[a-z]{2}$/i.test(s)) return -1                       // locale
+          if (/^\d+$/.test(s)) return -1                             // id nu
+          if (/^[a-z]{1,2}-?[a-z]?\d{3,}$/i.test(s)) return -1       // SKU (p-G…, c-…)
+          const letters = (s.match(/[a-zà-ÿ]/gi) ?? []).length
+          const words = s.split(/[-_]/).filter(Boolean).length
+          return letters + words * 2
+        }
+        const best = segs.reduce((a, b) => (score(b) > score(a) ? b : a))
+        const chosen = score(best) > 0 ? best : segs[segs.length - 1]
+        return chosen.replace(/\.\w{2,5}$/, '').replace(/[-_]+/g, ' ').trim() || url2.hostname
       } catch { return u }
     }
     let baseHost = ''
@@ -1256,8 +1272,14 @@ export function useJina() {
             const dom = new DOMParser().parseFromString(html, 'text/html')
             dom.querySelectorAll('a[href]').forEach((a) => {
               const href = a.getAttribute('href') ?? ''
-              const title = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
-              if (href) out.push([title, href])
+              if (!href) return
+              // Retire le contenu non-texte imbriqué (SVG/style/script) — sinon le
+              // libellé capte le CSS inline (« .rubix-logo_svg__st0{fill:gold} »).
+              a.querySelectorAll('style,script,svg').forEach((el) => el.remove())
+              let title = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
+              // Libellé résiduel de code/CSS → vide (toProducts retombera sur le slug).
+              if (/[{}<>]|fill\s*:/.test(title)) title = ''
+              out.push([title, href])
             })
           } catch { /* DOMParser indisponible */ }
           return out
