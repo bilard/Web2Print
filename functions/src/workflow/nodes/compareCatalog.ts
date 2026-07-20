@@ -11,6 +11,8 @@ import { registerServerNode } from '../registry'
 import { parseSitesConfig, parsePrice, stableId } from '../../priceWatch/helpers'
 import { DEFAULT_WATCH_ID } from '../../priceWatch/paths'
 import { loadAllListings } from '../../priceWatch/catalog/store'
+import { buildReport } from '../../priceWatch/catalog/report'
+import { saveCatalogReport } from '../../priceWatch/reportStore'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '../../priceWatch/catalog/match'
 import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
@@ -119,6 +121,16 @@ registerServerNode({
       `${m.matched} produit(s) apparié(s) : ${m.matchedExact} même produit, ` +
       `${m.matchedOriginOnly} pièce d'origine (adaptable ↔ OEM). ` +
       `${m.unmatched} sans correspondance, ${m.noKey} sans clé.`)
+
+    // Persiste le RAPPORT dashboard (comme le node client) → le CRON alimente le tableau
+    // de bord Veille tarifaire sans ouvrir l'app. Non bloquant : un échec ne casse pas l'export.
+    try {
+      const report = buildReport(sourceProducts, siteRefs, indexBySite, { vatRate })
+      await saveCatalogReport(ctx.uid, watchId, report, siteRefs, Date.now(), { label: ctx.workflowName })
+      ctx.log('info', `Rapport dashboard enregistré (suivi « ${watchId} ») — visible dans Veille tarifaire.`)
+    } catch (err) {
+      ctx.log('warn', `Rapport dashboard non enregistré : ${err instanceof Error ? err.message : String(err)}`)
+    }
     return { matrix: toSheet(m.columns, m.rows) }
   },
 })

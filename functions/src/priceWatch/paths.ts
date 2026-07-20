@@ -17,3 +17,9 @@ export const competitorDoc = (uid: string, watchId: string, siteId: string) =>
   `${competitorsCol(uid, watchId)}/${siteId}`
 export const competitorPagesCol = (uid: string, watchId: string, siteId: string) =>
   `${competitorDoc(uid, watchId, siteId)}/pages`
+
+// --- Rapport dashboard (synthèse) — jumeau des chemins client (mêmes docs relus par l'app) ---
+export const watchRootDoc = (uid: string, watchId: string) => watchDoc(uid, watchId)
+export const reportLatestDoc = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/reports/latest`
+export const reportHistoryDoc = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/reports/history`
+export const REPORT_HISTORY_MAX = 90
