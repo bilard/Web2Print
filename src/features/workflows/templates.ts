@@ -43,6 +43,25 @@ const edge = (source: string, sourceHandle: string, target: string, targetHandle
   targetHandle,
 })
 
+/** Concurrents motoculture sous PrestaShop (moisson par pages liste supportée). Exclut
+ *  les marketplaces (Amazon, ManoMano, Cdiscount, Kramp) et les sites anti-bot. */
+const MOTO_COMPETITORS = [
+  'jardimax.com',
+  'pieces-tracteur-tondeuse.com',
+  'webmotoculture.com',
+  'emc-motoculture.com',
+  'matijardin.fr',
+  'pro-motoculture.com',
+  '123courroies.com',
+  'lames-tondeuses.com',
+  '190cc.fr',
+  'dppmsas.fr',
+  'pieces-de-motoculture.fr',
+  'progarden.fr',
+  'net-motoculture.fr',
+  'sodipieces.fr',
+].join('\n')
+
 export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
     id: 'scrape-to-pim',
@@ -229,6 +248,41 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       node('n2', 'export-excel', 460, 140, { columns: '' }),
     ],
     edges: [edge('n1', 'sheet', 'n2', 'sheet')],
+  },
+  {
+    id: 'veille-tarifaire-motoculture',
+    name: 'Veille tarifaire — concurrents motoculture',
+    description:
+      'Relève les prix/stock de tes produits chez les concurrents PrestaShop à partir de ta ' +
+      'référence article et de ton EAN (sans URL). ÉTAPE 1 : lance « Moisson concurrents » ' +
+      '(une ou plusieurs fois) pour remplir l’index. ÉTAPE 2 : sélectionne ton Excel dans ' +
+      '« Upload », puis lance la chaîne Upload → Comparer → Export. Les deux nodes se ' +
+      'retrouvent par le même « Identifiant de suivi ». Marketplaces (Amazon, ManoMano, ' +
+      'Cdiscount, Kramp) et sites protégés (autoportee-discount) non couverts par ce moissonneur.',
+    emoji: '💶',
+    nodes: [
+      // Étape 1 — remplit l'index concurrent (indépendant, à lancer d'abord).
+      node('harvest', 'harvest-competitor', 60, 40, {
+        watchId: 'veille-moto',
+        sites: MOTO_COMPETITORS,
+        families: 'COURROIES, FILTRATION, COUPE',
+        pageBudget: 150,
+      }),
+      // Étape 2 — ton Excel → comparaison → export.
+      node('upload', 'upload', 60, 320, { fileKey: '', fileName: '', fileSize: 0, mode: 'file' }),
+      node('compare', 'compare-catalog', 460, 320, {
+        watchId: 'veille-moto',
+        sites: MOTO_COMPETITORS,
+        refColumn: 'CODE_ARTICLE', ref2Column: '', eanColumn: 'EAN',
+        nameColumn: 'Name', familyColumn: 'Famille', priceColumn: 'Price BRUT',
+        descriptionColumn: 'Description', vatRate: 20,
+      }),
+      node('export', 'export-excel', 860, 320, { columns: '' }),
+    ],
+    edges: [
+      edge('upload', 'sheet', 'compare', 'products'),
+      edge('compare', 'matrix', 'export', 'sheet'),
+    ],
   },
 ]
 
