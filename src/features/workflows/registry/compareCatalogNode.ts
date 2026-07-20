@@ -14,6 +14,8 @@ import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
 import { loadAllListings } from '@/features/priceWatch/catalog/store'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
+import { buildReport } from '@/features/priceWatch/catalog/report'
+import { saveCatalogReport } from '@/features/priceWatch/reportStore'
 import type { CompetitorListing } from '@/features/priceWatch/catalog/prestashop'
 
 interface CompareConfig {
@@ -147,6 +149,17 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
       `${m.matched} produit(s) apparié(s) : ${m.matchedExact} même produit, ` +
       `${m.matchedOriginOnly} pièce d'origine (adaptable ↔ OEM). ` +
       `${m.unmatched} sans correspondance, ${m.noKey} sans clé.`)
+
+    // Persiste le RAPPORT dashboard (KPIs + stats/concurrent + liste rangée bornée +
+    // point de tendance). Non bloquant : un échec de persistance ne doit pas casser
+    // l'export. Le tableau de bord « Veille tarifaire » lit ce rapport par watchId.
+    try {
+      const report = buildReport(products, siteRefs, indexBySite, { vatRate })
+      await saveCatalogReport(uid, watchId, report, siteRefs, Date.now())
+      ctx.log('info', `Rapport enregistré (suivi « ${watchId} ») — visible dans le tableau de bord Veille tarifaire.`)
+    } catch (err) {
+      ctx.log('warn', `Rapport dashboard non enregistré : ${err instanceof Error ? err.message : String(err)}`)
+    }
     return { matrix: toSheet(m.columns, m.rows) }
   },
 }
