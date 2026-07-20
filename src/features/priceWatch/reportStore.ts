@@ -43,10 +43,15 @@ export interface KpiHistoryPoint {
  * donc jamais réutilisé, et le menu (alimenté par priceWatchCol) ne le liste plus.
  */
 export async function deleteWatch(uid: string, watchId: string): Promise<void> {
+  // watchId = l'id RÉEL du doc (d.id du sélecteur) — à utiliser TEL QUEL. NE PAS passer
+  // par les helpers paths (qui normalisent via stableId) : les suivis créés AVANT la
+  // canonicalisation portent un id BRUT (espaces/majuscules, ex « F1 Moisson »), et le
+  // normaliser viserait un chemin inexistant → suppression no-op silencieuse.
+  const root = `users/${uid}/priceWatch/${watchId}`
   await Promise.all([
-    deleteDoc(doc(db, watchRootDoc(uid, watchId))),
-    deleteDoc(doc(db, reportLatestDoc(uid, watchId))),
-    deleteDoc(doc(db, reportHistoryDoc(uid, watchId))),
+    deleteDoc(doc(db, root)),
+    deleteDoc(doc(db, `${root}/reports/latest`)),
+    deleteDoc(doc(db, `${root}/reports/history`)),
   ])
 }
 
