@@ -23,6 +23,7 @@ interface WorkflowsPageProps {
 type ViewMode = 'grid' | 'list'
 const VIEW_MODE_KEY = 'workflows.viewMode'
 const COLLAPSED_KEY = 'workflows.collapsedFolders'
+const TEMPLATES_OPEN_KEY = 'workflows.templatesOpen'
 
 export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
   const uid = useAuthStore((s) => s.user?.uid)
@@ -60,6 +61,12 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem(VIEW_MODE_KEY)
     return saved === 'list' ? 'list' : 'grid'
+  })
+  // Galerie de modèles repliable : par défaut REPLIÉE dès qu'on a déjà des workflows
+  // (la liste passait sous la longue galerie). `null` = pas de préférence → dérivé.
+  const [templatesPref, setTemplatesPref] = useState<boolean | null>(() => {
+    const raw = localStorage.getItem(TEMPLATES_OPEN_KEY)
+    return raw == null ? null : raw === '1'
   })
 
   useEffect(() => {
@@ -217,6 +224,8 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
 
   const knownFolderIds = new Set(folders.map((f) => f.id))
   const ungrouped = items.filter((w) => !w.folderId || !knownFolderIds.has(w.folderId))
+  // Préférence explicite si posée, sinon repliée dès qu'on a au moins un workflow.
+  const templatesOpen = templatesPref ?? items.length === 0
 
   const folderHeader = (folder: WorkflowFolder, count: number) => (
     <div className="flex items-center gap-2 mb-3">
@@ -365,12 +374,25 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
         </div>
       )}
 
-      {/* Galerie de recettes prêtes à l'emploi */}
+      {/* Galerie de recettes prêtes à l'emploi (repliable : la liste des workflows
+          passait sous une galerie de plus en plus longue). */}
       {canCreate && (
         <section className="mb-8" aria-label="Modèles de workflows">
-          <h2 className="text-[11px] uppercase tracking-wider text-white/30 mb-3">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !templatesOpen
+              setTemplatesPref(next)
+              try { localStorage.setItem(TEMPLATES_OPEN_KEY, next ? '1' : '0') } catch { /* localStorage indispo */ }
+            }}
+            aria-expanded={templatesOpen}
+            className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-white/30 hover:text-white/60 mb-3 transition-colors"
+          >
+            {templatesOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             Démarrer depuis un modèle
-          </h2>
+            <span className="text-white/20 tabular-nums normal-case tracking-normal">{WORKFLOW_TEMPLATES.length}</span>
+          </button>
+          {templatesOpen && (
           <div data-wf-section="builtin-templates" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {WORKFLOW_TEMPLATES.map((t) => (
               <button
@@ -384,6 +406,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
               </button>
             ))}
           </div>
+          )}
         </section>
       )}
 

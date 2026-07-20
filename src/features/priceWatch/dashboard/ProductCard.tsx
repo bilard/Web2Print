@@ -4,8 +4,9 @@
 // chaque concurrent apparié (prix TTC/HT, barré, écart, stock, type d'appariement,
 // image, lien). L'image + le nom concurrent servent à vérifier le bon appariement.
 import { useState } from 'react'
-import { ChevronDown, ExternalLink } from 'lucide-react'
+import { ChevronDown, ExternalLink, ImageOff } from 'lucide-react'
 import type { ProductRow } from '../catalog/report'
+import { useResolvedImage } from '@/features/catalog/useResolvedImage'
 import { eur, pct, positionOf, POSITION_TEXT, STOCK_LABEL, MATCH_LABEL } from './format'
 
 function GapBadge({ gap }: { gap: number | null }) {
@@ -14,12 +15,16 @@ function GapBadge({ gap }: { gap: number | null }) {
   return <span className={`text-xs font-medium ${POSITION_TEXT[pos]}`}>{pct(gap)}</span>
 }
 
+// L'URL de l'image concurrent est souvent protégée contre le hotlink (référent) ou
+// sans CORS : on la résout via le proxy serveur (data-URI, cache). Rendue seulement
+// à l'ouverture d'une carte → 1-3 requêtes à la fois. À défaut d'URL ou en échec :
+// placeholder neutre (jamais un carré noir).
 function Thumb({ src, alt }: { src: string | null; alt: string }) {
-  if (!src) return <div className="w-10 h-10 rounded bg-well shrink-0" />
-  return (
-    <img src={src} alt={alt} loading="lazy" className="w-10 h-10 rounded object-cover bg-well shrink-0"
-      onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden' }} />
-  )
+  const { src: resolved, resolving } = useResolvedImage(src)
+  const base = 'w-10 h-10 rounded bg-well shrink-0'
+  if (src && resolving) return <div className={`${base} animate-pulse`} />
+  if (resolved) return <img src={resolved} alt={alt} loading="lazy" className={`${base} object-cover`} />
+  return <div className={`${base} flex items-center justify-center`}><ImageOff className="w-4 h-4 text-white/20" /></div>
 }
 
 export function ProductCard({ row }: { row: ProductRow }) {
