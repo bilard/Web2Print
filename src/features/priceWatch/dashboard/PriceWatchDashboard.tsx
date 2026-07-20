@@ -1,10 +1,9 @@
 // src/features/priceWatch/dashboard/PriceWatchDashboard.tsx
-// Orchestrateur du tableau de bord catalogue : sélecteur de suivi + KPIs + graphes +
-// alertes + liste produit. Tout est lu depuis le rapport pré-agrégé (reportStore) via
-// des hooks temps réel — jamais de lignes brutes chargées côté client.
-import { useEffect, useState } from 'react'
-import { useWatchList, useCatalogReport, useReportHistory } from '../useCatalogReport'
-import { WatchSelector } from './WatchSelector'
+// Orchestrateur du tableau de bord catalogue : KPIs + graphes + alertes + liste produit.
+// Tout est lu depuis le rapport pré-agrégé (reportStore) via des hooks temps réel —
+// jamais de lignes brutes chargées côté client. La SOURCE (watchId) est choisie en amont
+// (menu du header) et passée en prop.
+import { useCatalogReport, useReportHistory } from '../useCatalogReport'
 import { KpiCards } from './KpiCards'
 import { PositionDonut } from './PositionDonut'
 import { CompetitorBars } from './CompetitorBars'
@@ -24,30 +23,14 @@ function EmptyState({ hasWatch }: { hasWatch: boolean }) {
   )
 }
 
-export function PriceWatchDashboard() {
-  const watches = useWatchList()
-  const [watchId, setWatchId] = useState<string | null>(null)
-
-  // Défaut : le suivi le plus récemment mis à jour (watches est déjà trié). Bascule
-  // seulement si l'utilisateur n'a pas encore choisi, ou si son choix a disparu.
-  useEffect(() => {
-    if (watches.length === 0) { setWatchId(null); return }
-    if (!watchId || !watches.some((w) => w.watchId === watchId)) setWatchId(watches[0].watchId)
-  }, [watches, watchId])
-
+export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   const report = useCatalogReport(watchId)
   const history = useReportHistory(watchId)
 
   return (
     <div className="space-y-5">
-      {watches.length > 1 && (
-        <div className="flex justify-end">
-          <WatchSelector watches={watches} value={watchId ?? ''} onChange={setWatchId} />
-        </div>
-      )}
-
       {!report ? (
-        <EmptyState hasWatch={watches.length > 0} />
+        <EmptyState hasWatch={!!watchId} />
       ) : (
         <>
           <KpiCards report={report} history={history} />
