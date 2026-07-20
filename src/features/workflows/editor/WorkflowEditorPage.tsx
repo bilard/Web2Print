@@ -10,6 +10,8 @@ import { useWorkflowStore, startAutosave } from '../persistence/workflow.store'
 import { loadLatestRunStates } from '../persistence/runHistoryClient'
 import { useRunContext, stepMiddleware } from '../runtime/runContext'
 import { executeWorkflow } from '../runtime/executor'
+import { validateWorkflow, type WorkflowIssue } from '../runtime/validateWorkflow'
+import { RunPreflightDialog } from './RunPreflightDialog'
 import { notifyRunOutcome } from '../runtime/notifyRunOutcome'
 import { recordAudit } from '@/lib/auditLog'
 import { nodeRegistry } from '../registry'
@@ -42,6 +44,8 @@ export function WorkflowEditorPage() {
   const [loading, setLoading] = useState(true)
   const [showGenerate, setShowGenerate] = useState(false)
   const [showSaveTemplate, setShowSaveTemplate] = useState(false)
+  // Contrôle de cohérence avant lancement : trous détectés + le mode de run demandé.
+  const [preflight, setPreflight] = useState<{ issues: WorkflowIssue[]; stepByStep: boolean } | null>(null)
 
   // Affiche sur les cartes l'état des runs SERVEUR (cron / « Lancer serveur »).
   useServerRunLive(wf?.id)
@@ -96,12 +100,19 @@ export function WorkflowEditorPage() {
   if (loading) return <div className="min-h-screen bg-background text-white p-8">Chargement…</div>
   if (!wf) return <div className="min-h-screen bg-background text-white p-8">Workflow introuvable</div>
 
-  // Exécute le workflow puis confirme le résultat : succès / avertissement / erreur.
-  // stepByStep = mode debug : pause avant chaque node jusqu'au clic « Étape suivante ».
-  const run = async (stepByStep = false) => {
+  // Exécution effective (après contrôle de cohérence). Confirme le résultat.
+  const executeNow = async (stepByStep: boolean) => {
     recordAudit({ action: 'workflow.run', module: 'workflows', targetId: wf.id, targetLabel: wf.name })
     const outcome = await executeWorkflow(wf, stepByStep ? { middleware: [stepMiddleware] } : {})
     notifyRunOutcome(outcome, wf.name)
+  }
+  // Lancement : contrôle de cohérence D'ABORD (sources / paramètres d'export manquants).
+  // Un trou → popup pour corriger (ou forcer). Rien à signaler → on lance directement.
+  // stepByStep = mode debug : pause avant chaque node jusqu'au clic « Étape suivante ».
+  const run = async (stepByStep = false) => {
+    const issues = validateWorkflow(wf, (t) => nodeRegistry.get(t))
+    if (issues.length > 0) { setPreflight({ issues, stepByStep }); return }
+    await executeNow(stepByStep)
   }
   const stop = () => ac?.abort()
   // Sauvegarde manuelle avec confirmation visuelle (succès / erreur).
@@ -234,6 +245,13 @@ export function WorkflowEditorPage() {
         {showGenerate && <PromptToFlowModal onClose={() => setShowGenerate(false)} />}
         {showSaveTemplate && uid && (
           <SaveAsTemplateDialog workflow={wf} uid={uid} onClose={() => setShowSaveTemplate(false)} />
+        )}
+        {preflight && (
+          <RunPreflightDialog
+            issues={preflight.issues}
+            onCancel={() => setPreflight(null)}
+            onProceed={() => { const s = preflight.stepByStep; setPreflight(null); void executeNow(s) }}
+          />
         )}
     </ReactFlowProvider>
   )
