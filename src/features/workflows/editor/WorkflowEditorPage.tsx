@@ -12,6 +12,7 @@ import { useRunContext, stepMiddleware } from '../runtime/runContext'
 import { executeWorkflow } from '../runtime/executor'
 import { validateWorkflow, type WorkflowIssue } from '../runtime/validateWorkflow'
 import { RunPreflightDialog } from './RunPreflightDialog'
+import { useFocusNode } from './focusNodeStore'
 import { notifyRunOutcome } from '../runtime/notifyRunOutcome'
 import { recordAudit } from '@/lib/auditLog'
 import { nodeRegistry } from '../registry'
@@ -251,6 +252,7 @@ export function WorkflowEditorPage() {
             issues={preflight.issues}
             onCancel={() => setPreflight(null)}
             onProceed={() => { const s = preflight.stepByStep; setPreflight(null); void executeNow(s) }}
+            onFocus={(nodeId) => { useFocusNode.getState().focus(nodeId); setPreflight(null) }}
           />
         )}
     </ReactFlowProvider>

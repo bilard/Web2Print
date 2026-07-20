@@ -26,6 +26,7 @@ import { nodeRegistry } from '../registry'
 import { isCompatible, portTypeRegistry } from '../runtime/ports'
 import { useConnectionDrag } from '../runtime/connectionDragStore'
 import { useRunContext } from '../runtime/runContext'
+import { useFocusNode } from './focusNodeStore'
 import type { WorkflowEdge, WorkflowNode } from '../types'
 
 const nodeTypes = { base: BaseNode }
@@ -287,6 +288,17 @@ export function WorkflowEditor() {
 
   const upsertStoreNode = useWorkflowStore((s) => s.upsertNode)
   const rfInstance = useReactFlow()
+
+  // « Sauter à ce node » (depuis le popup de cohérence) : sélectionne la carte — ce qui
+  // ouvre sa config (cf. NodeConfigPanel lit la sélection RF) — et la recadre. Déclenché
+  // par le token du store, pour re-fonctionner même sur la même carte.
+  const focusNodeId = useFocusNode((s) => s.nodeId)
+  const focusToken = useFocusNode((s) => s.token)
+  useEffect(() => {
+    if (!focusNodeId) return
+    setNodes((prev) => prev.map((n) => ({ ...n, selected: n.id === focusNodeId })))
+    rfInstance.fitView({ nodes: [{ id: focusNodeId }], duration: 400, maxZoom: 1.2, padding: 0.4 })
+  }, [focusToken, focusNodeId, rfInstance])
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault()

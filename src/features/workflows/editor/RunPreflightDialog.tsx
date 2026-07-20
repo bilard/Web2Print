@@ -2,7 +2,7 @@
 // Popup de cohérence AVANT lancement : liste les trous détectés (source non connectée,
 // paramètre / export requis manquant) par carte. L'utilisateur corrige, ou force le
 // lancement en connaissance de cause. N'apparaît QUE s'il y a au moins une incohérence.
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, ArrowRight } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import type { WorkflowIssue } from '../runtime/validateWorkflow'
 
@@ -10,9 +10,11 @@ interface Props {
   issues: WorkflowIssue[]
   onCancel: () => void
   onProceed: () => void
+  /** Ferme le popup et saute à la carte concernée (sélection + recadrage). */
+  onFocus: (nodeId: string) => void
 }
 
-export function RunPreflightDialog({ issues, onCancel, onProceed }: Props) {
+export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus }: Props) {
   // Regroupe par carte pour un affichage lisible.
   const byNode = new Map<string, { label: string; messages: string[] }>()
   for (const i of issues) {
@@ -45,7 +47,15 @@ export function RunPreflightDialog({ issues, onCancel, onProceed }: Props) {
         <ul className="space-y-2.5 max-h-[50vh] overflow-y-auto">
           {[...byNode.entries()].map(([nodeId, entry]) => (
             <li key={nodeId} className="bg-well rounded-md p-3">
-              <div className="text-sm font-medium text-white/90 mb-1.5">{entry.label}</div>
+              <button
+                type="button"
+                onClick={() => onFocus(nodeId)}
+                className="group flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-indigo-300 mb-1.5 transition-colors"
+                title="Aller à cette carte dans le flux"
+              >
+                {entry.label}
+                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
               <ul className="space-y-1">
                 {entry.messages.map((m, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-white/60">
