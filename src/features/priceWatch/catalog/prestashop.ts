@@ -26,6 +26,8 @@ export interface CompetitorListing {
   taxIncluded?: boolean
   availability?: Availability
   gtin13?: string
+  /** URL de l'image principale du produit chez le concurrent. */
+  image?: string
 }
 
 export type Availability = 'in-stock' | 'out-of-stock' | 'on-order'
@@ -139,6 +141,24 @@ function extractName(block: string): string {
   return img ? decodeEntities(img[1]).trim() : ''
 }
 
+/**
+ * URL de l'image principale d'une carte/fiche. PrestaShop charge l'image en lazy :
+ * l'URL réelle est dans `data-src` / `data-full-size-image-url` ; `src` porte souvent
+ * un placeholder SVG en `data:` — qu'on ignore. Prend la première image http(s).
+ */
+function extractImage(block: string, baseUrl?: string): string | undefined {
+  const attrs = ['data-full-size-image-url', 'data-src', 'data-original', 'src']
+  for (const attr of attrs) {
+    const re = new RegExp(`<img[^>]+${attr}=["']([^"']+)["']`, 'i')
+    const m = block.match(re)
+    const raw = m?.[1]
+    if (raw && !raw.startsWith('data:') && /\.(?:jpe?g|png|webp|gif)/i.test(raw)) {
+      return absolutize(decodeEntities(raw), baseUrl)
+    }
+  }
+  return undefined
+}
+
 /** Disponibilité déclarée. `null` si le site n'en affiche pas sur la liste. */
 export function extractAvailability(html: string): Availability | undefined {
   const schema = html.match(/schema\.org\/(InStock|OutOfStock|PreOrder|BackOrder|SoldOut|LimitedAvailability)/i)
@@ -196,6 +216,7 @@ export function parseListingPage(html: string, baseUrl?: string): CompetitorList
       url, name,
       ref: extractRef(block),
       availability: extractAvailability(block),
+      image: extractImage(block, baseUrl),
       ...extractPrices(block),
     })
   }
@@ -241,6 +262,8 @@ export function parseProductPage(html: string, url: string): CompetitorListing |
     out.name = str(product.name) ?? ''
     out.ref = str(product.sku) ?? str(product.mpn)
     out.gtin13 = str(product.gtin13) ?? str(product.gtin)
+    const img = product.image
+    out.image = str(Array.isArray(img) ? img[0] : img)
     const offersRaw = product.offers
     const offer = (Array.isArray(offersRaw) ? offersRaw[0] : offersRaw) as Record<string, unknown> | undefined
     if (offer) {
@@ -257,6 +280,7 @@ export function parseProductPage(html: string, url: string): CompetitorListing |
     out.name = h1 ? textOf(h1[1]) : ''
   }
   if (!out.ref) out.ref = extractRef(html)
+  if (!out.image) out.image = extractImage(html, url)
   if (out.price == null) {
     const zone = html.match(/<[^>]*\bcurrent-price\b[\s\S]{0,300}?<\/div>/i)
       ?? html.match(/itemprop=["']price["'][^>]*content=["']([\d.,]+)["']/i)

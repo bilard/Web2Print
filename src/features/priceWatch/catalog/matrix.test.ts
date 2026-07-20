@@ -64,6 +64,31 @@ describe('buildMatrix', () => {
     expect(full.rows).toHaveLength(3)
   })
 
+  it('remonte le nom et l’image du produit concurrent (vérification visuelle)', () => {
+    const idx = new Map<string, CompetitorListing[]>([
+      ['pm', [listing({ ref: 'BS691991', price: 98, name: 'Alternateur Briggs 691991', image: 'https://pm.fr/img/a.jpg', url: 'https://pm.fr/a.html' })]],
+      ['wm', []],
+    ])
+    const r = buildMatrix([products[0]], sites, idx)
+    const row = r.rows[0]
+    expect(row.nom_pro_motoculture_com).toBe('Alternateur Briggs 691991')
+    expect(row.image_pro_motoculture_com).toBe('https://pm.fr/img/a.jpg')
+  })
+
+  it('utilise les noms de colonnes de la source dans les en-têtes', () => {
+    const r = buildMatrix(products, sites, index, {
+      labels: { name: 'DESIGNATION', ref: 'CODE_ARTICLE', ean: 'GENCOD', price: 'PV_HT' },
+    })
+    const byKey = new Map(r.columns.map((c) => [c.key, c.label]))
+    expect(byKey.get('produit')).toBe('DESIGNATION')
+    expect(byKey.get('reference')).toBe('CODE_ARTICLE')
+    expect(byKey.get('ean')).toBe('GENCOD')
+    expect(byKey.get('mon_prix_ht')).toBe('PV_HT')
+    // Colonnes concurrent : nom source suffixé du domaine.
+    expect(byKey.get('nom_pro_motoculture_com')).toBe('DESIGNATION — pro-motoculture.com')
+    expect(byKey.get('prix_ht_pro_motoculture_com')).toBe('PV_HT — pro-motoculture.com')
+  })
+
   it('distingue un match « même produit » d’un match « pièce d’origine »', () => {
     const src: SourceProduct[] = [
       { id: 'exact', name: 'Lame', ref: 'BS691991', price: 50 },

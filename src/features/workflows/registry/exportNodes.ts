@@ -37,7 +37,9 @@ export function numberFormatFor(col: SheetColumnMeta): string | undefined {
   if (d == null && ft !== 'percent' && ft !== 'currency') return undefined
   const dec = d ?? 2
   const frac = dec > 0 ? '.' + '0'.repeat(dec) : ''
-  if (ft === 'percent') return `0${frac}"%"`
+  // Pourcentage Excel NATIF (affiche la valeur ×100 avec le signe %). La valeur stockée
+  // doit donc être un ratio — la coercition divise les colonnes `percent` par 100.
+  if (ft === 'percent') return `0${frac}%`
   if (ft === 'currency') return `#,##0${frac} €`
   return `0${frac}`
 }
@@ -116,7 +118,11 @@ const exportExcelNode: NodeSpec<
         cols.map((c) => {
           const raw = r[c.key]
           const ft = c.fieldType ?? c.detectedType
-          return ft && NUMERIC_FIELDS.has(ft) ? coerceNumeric(raw) : (raw ?? '')
+          if (!ft || !NUMERIC_FIELDS.has(ft)) return raw ?? ''
+          const num = coerceNumeric(raw)
+          // Une colonne `percent` stocke des points de % (-18,4) → ratio pour le format
+          // natif Excel « 0.0% », qui réaffiche ×100.
+          return ft === 'percent' && typeof num === 'number' ? num / 100 : num
         }),
       )
       ws = XLSX.utils.aoa_to_sheet([header, ...body])

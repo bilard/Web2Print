@@ -66,6 +66,11 @@ describe('parseListingPage — pro-motoculture (réf + prix sur la liste)', () =
   it('lit l’URL absolue de la fiche', () => {
     expect(items[0].url).toMatch(/^https:\/\/www\.pro-motoculture\.com\/.+\.html$/)
   })
+  it('extrait l’URL de l’image principale (pas le placeholder SVG)', () => {
+    const alt = items.find((i) => i.ref === 'BS691991')
+    expect(alt?.image).toMatch(/^https:\/\/www\.pro-motoculture\.com\/.+\.jpg$/)
+    expect(alt?.image).not.toMatch(/^data:/)
+  })
 })
 
 describe('parseListingPage — webmotoculture (liens obfusqués, prix TTC explicite)', () => {

@@ -42,28 +42,50 @@ const AVAIL_LABEL: Record<string, string> = {
   'in-stock': 'En stock', 'out-of-stock': 'Rupture', 'on-order': 'Sur commande',
 }
 
-/** Colonnes fixes d'identité + mon prix. */
-function baseColumns(): MatrixColumn[] {
+/** Noms de colonnes de la source, réutilisés dans les en-têtes de sortie. */
+interface SourceLabels {
+  ref?: string
+  ean?: string
+  name?: string
+  family?: string
+  price?: string
+}
+
+const DEFAULT_LABELS: Required<SourceLabels> = {
+  name: 'Produit', ref: 'Référence', ean: 'EAN', family: 'Famille', price: 'Mon prix HT',
+}
+
+/** Colonnes fixes d'identité + mon prix, nommées d'après la source. */
+function baseColumns(labels: SourceLabels): MatrixColumn[] {
+  const l = { ...DEFAULT_LABELS, ...Object.fromEntries(Object.entries(labels).filter(([, v]) => v)) }
   return [
-    { key: 'produit', label: 'Produit', kind: 'text', primary: true },
-    { key: 'reference', label: 'Référence', kind: 'text' },
-    { key: 'ean', label: 'EAN', kind: 'ean' },
-    { key: 'famille', label: 'Famille', kind: 'text' },
-    { key: 'mon_prix_ht', label: 'Mon prix HT', kind: 'price' },
+    { key: 'produit', label: l.name, kind: 'text', primary: true },
+    { key: 'reference', label: l.ref, kind: 'text' },
+    { key: 'ean', label: l.ean, kind: 'ean' },
+    { key: 'famille', label: l.family, kind: 'text' },
+    { key: 'mon_prix_ht', label: l.price, kind: 'price' },
   ]
 }
 
-/** Bloc de colonnes d'un concurrent. Le domaine suffixe la clé pour rester unique. */
-function siteColumns(domain: string): MatrixColumn[] {
+/**
+ * Bloc de colonnes d'un concurrent. Le nom du produit et le prix HT reprennent les noms
+ * de colonnes de la source, suffixés du concurrent (« Produit — pro-motoculture.com »).
+ * Le nom concurrent permet de VÉRIFIER d'un coup d'œil que l'appariement (fait par
+ * égalité exacte de clé) porte sur le bon produit.
+ */
+function siteColumns(domain: string, labels: SourceLabels): MatrixColumn[] {
   const s = domain.replace(/[^a-z0-9]+/gi, '_')
+  const l = { ...DEFAULT_LABELS, ...Object.fromEntries(Object.entries(labels).filter(([, v]) => v)) }
   return [
-    { key: `prix_ttc_${s}`, label: `${domain} — Prix TTC`, kind: 'price' },
-    { key: `prix_barre_${s}`, label: `${domain} — Prix barré TTC`, kind: 'price' },
-    { key: `prix_ht_${s}`, label: `${domain} — Prix HT`, kind: 'price' },
-    { key: `ecart_${s}`, label: `${domain} — Écart %`, kind: 'percent' },
-    { key: `stock_${s}`, label: `${domain} — Stock`, kind: 'text' },
-    { key: `match_${s}`, label: `${domain} — Correspondance`, kind: 'text' },
-    { key: `url_${s}`, label: `${domain} — Lien`, kind: 'text' },
+    { key: `nom_${s}`, label: `${l.name} — ${domain}`, kind: 'text' },
+    { key: `prix_ttc_${s}`, label: `Prix TTC — ${domain}`, kind: 'price' },
+    { key: `prix_ht_${s}`, label: `${l.price} — ${domain}`, kind: 'price' },
+    { key: `prix_barre_${s}`, label: `Prix barré TTC — ${domain}`, kind: 'price' },
+    { key: `ecart_${s}`, label: `Écart % — ${domain}`, kind: 'percent' },
+    { key: `stock_${s}`, label: `Stock — ${domain}`, kind: 'text' },
+    { key: `match_${s}`, label: `Correspondance — ${domain}`, kind: 'text' },
+    { key: `image_${s}`, label: `Image — ${domain}`, kind: 'text' },
+    { key: `url_${s}`, label: `Lien — ${domain}`, kind: 'text' },
   ]
 }
 
@@ -78,6 +100,8 @@ export interface BuildMatrixOptions {
   vatRate?: number
   /** N'inclure une ligne que si le produit est apparié quelque part. Défaut : true. */
   matchedOnly?: boolean
+  /** Noms de colonnes de la source, pour les en-têtes de sortie. */
+  labels?: SourceLabels
 }
 
 /**
@@ -93,7 +117,8 @@ export function buildMatrix(
   opts: BuildMatrixOptions = {},
 ): MatrixResult {
   const matchedOnly = opts.matchedOnly ?? true
-  const columns = [...baseColumns(), ...sites.flatMap((s) => siteColumns(s.domain))]
+  const labels = opts.labels ?? {}
+  const columns = [...baseColumns(labels), ...sites.flatMap((s) => siteColumns(s.domain, labels))]
   const lookups = new Map(sites.map((s) => [s.siteId, buildMemoryIndex(indexBySite.get(s.siteId) ?? [])]))
 
   const rows: Record<string, unknown>[] = []
@@ -124,12 +149,16 @@ export function buildMatrix(
       if (!m.proof.key.origin) exactHit = true
       const s = site.domain.replace(/[^a-z0-9]+/gi, '_')
       const cmp = comparePrices(product.price, m.listing, { vatRate: opts.vatRate })
+      row[`nom_${s}`] = m.listing.name
       row[`prix_ttc_${s}`] = cmp.priceTtc ?? ''
-      row[`prix_barre_${s}`] = cmp.listPriceTtc ?? ''
       row[`prix_ht_${s}`] = cmp.priceHt ?? ''
+      row[`prix_barre_${s}`] = cmp.listPriceTtc ?? ''
+      // Écart en points de % (-18,4) — lisible dans l'aperçu. L'export d'une colonne
+      // `percent` le convertit en vrai pourcentage Excel (÷100 + format 0.0%).
       row[`ecart_${s}`] = cmp.deltaPct ?? ''
       row[`stock_${s}`] = cmp.availability ? AVAIL_LABEL[cmp.availability] : ''
       row[`match_${s}`] = matchLabel(m.proof)
+      row[`image_${s}`] = m.listing.image ?? ''
       row[`url_${s}`] = m.listing.url
     }
 

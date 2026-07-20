@@ -11,8 +11,8 @@ describe('numberFormatFor', () => {
   it('prix (nombre 2 décimales) → 0.00', () => {
     expect(numberFormatFor({ key: 'p', fieldType: 'number', decimals: 2 })).toBe('0.00')
   })
-  it('écart (pourcentage 1 décimale) → 0.0"%"', () => {
-    expect(numberFormatFor({ key: 'e', fieldType: 'percent', decimals: 1 })).toBe('0.0"%"')
+  it('écart → format pourcentage NATIF Excel (0.0%)', () => {
+    expect(numberFormatFor({ key: 'e', fieldType: 'percent', decimals: 1 })).toBe('0.0%')
   })
   it('monétaire → séparateur milliers + €', () => {
     expect(numberFormatFor({ key: 'm', fieldType: 'currency', decimals: 2 })).toBe('#,##0.00 €')

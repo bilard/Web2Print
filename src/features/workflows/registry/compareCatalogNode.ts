@@ -136,7 +136,12 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     }
 
     const vatRate = Math.max(0, (config.vatRate || 20)) / 100
-    const m = buildMatrix(products, siteRefs, indexBySite, { vatRate })
+    // En-têtes de sortie = noms de colonnes de la source (suffixés du concurrent).
+    const labels = {
+      ref: config.refColumn, ean: config.eanColumn, name: config.nameColumn,
+      family: config.familyColumn, price: config.priceColumn,
+    }
+    const m = buildMatrix(products, siteRefs, indexBySite, { vatRate, labels })
     ctx.reportCount?.(m.matched)
     ctx.log('info',
       `${m.matched} produit(s) apparié(s) : ${m.matchedExact} même produit, ` +
