@@ -47,23 +47,23 @@ export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoin
   const expoTxt = ck.exposedPct == null ? '—' : `${Math.round(ck.exposedPct)} %`
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 2xl:grid-cols-8 gap-2">
-      <Tile label="Tenue de prix" value={holdTxt} accent="text-emerald-400" sub="aligné ou + bas"
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <Tile label="Tenue prix" value={holdTxt} accent="text-emerald-400" sub="aligné ou + bas"
         spark={<Sparkline values={s.hold} color="#34d399" />} />
-      <Tile label="Produits exposés" value={expoTxt} accent="text-rose-400"
+      <Tile label="Exposés" value={expoTxt} accent="text-rose-400"
         sub={`${k.productsUndercut}/${k.products} sous-cotés`}
         delta={d && <Delta cur={d.last.productsUndercut} prev={d.prev.productsUndercut} invert />}
         spark={<Sparkline values={s.undercut} color="#fb7185" />} />
       <Tile label="Écart médian" value={pct(ck.medianGapPct)} accent={signedPctClass(ck.medianGapPct)}
         sub={ck.truncated ? 'sur top 1000' : 'toutes paires'} />
-      <Tile label="Impact unitaire" value={eur(ck.totalGapEur)} accent="text-rose-400" sub="Σ écart vs + bas" />
-      <Tile label="Produits appariés" value={k.products.toLocaleString('fr-FR')}
+      <Tile label="Impact €" value={eur(ck.totalGapEur)} accent="text-rose-400" sub="Σ écart vs + bas" />
+      <Tile label="Appariés" value={k.products.toLocaleString('fr-FR')}
         sub={`${k.matchedExact} exact · ${k.matchedOriginOnly} orig.`}
         delta={d && <Delta cur={d.last.products} prev={d.prev.products} />}
         spark={<Sparkline values={s.products} color="#818cf8" />} />
       <Tile label="Concurrents" value={String(ck.competitorsCount)} sub={`${k.comparisons} comparaisons`} />
-      <Tile label="Ruptures conc." value={k.ruptures.toLocaleString('fr-FR')} accent="text-amber-400" sub="opportunités" />
-      <Tile label="Dernière analyse" value={when(ck.runAt)}
+      <Tile label="Ruptures" value={k.ruptures.toLocaleString('fr-FR')} accent="text-amber-400" sub="opportunités" />
+      <Tile label="Analyse" value={when(ck.runAt)}
         sub={ck.truncated ? `${ck.totalMatched} appariés (borné)` : `${ck.totalMatched} appariés`} />
     </div>
   )
