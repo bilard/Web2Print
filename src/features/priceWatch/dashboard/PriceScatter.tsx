@@ -4,14 +4,14 @@
 import { Scatter } from 'react-chartjs-2'
 import { Chart, PointElement, LinearScale, Tooltip, Legend, type TooltipItem } from 'chart.js'
 import { useThemeStore } from '@/stores/theme.store'
-import type { Cockpit } from './analytics'
+import type { Cockpit, CockpitFilter } from './analytics'
 import { POSITION_HEX, POSITION_LABEL } from './format'
 
 Chart.register(PointElement, LinearScale, Tooltip, Legend)
 
 const TONES = ['cheaper', 'aligned', 'dearer'] as const
 
-export function PriceScatter({ ck }: { ck: Cockpit }) {
+export function PriceScatter({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void }) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.55)'
@@ -43,6 +43,8 @@ export function PriceScatter({ ck }: { ck: Cockpit }) {
             data={data}
             options={{
               maintainAspectRatio: false,
+              onClick: (_e, els) => { if (els[0] && onSelect) onSelect({ position: TONES[els[0].datasetIndex] }) },
+              onHover: (e, els) => { const t = e.native?.target as HTMLElement | undefined; if (t) t.style.cursor = els[0] ? 'pointer' : 'default' },
               plugins: {
                 legend: { position: 'bottom', labels: { color: tick, boxWidth: 8, boxHeight: 8, font: { size: 10 }, usePointStyle: true } },
                 tooltip: {

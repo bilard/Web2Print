@@ -5,11 +5,14 @@ import { Doughnut } from 'react-chartjs-2'
 import { Chart, ArcElement, Tooltip, Legend, type TooltipItem } from 'chart.js'
 import { useThemeStore } from '@/stores/theme.store'
 import type { ReportKpis } from '../catalog/report'
+import type { CockpitFilter } from './analytics'
 import { POSITION_HEX, POSITION_LABEL } from './format'
 
 Chart.register(ArcElement, Tooltip, Legend)
 
-export function PositionDonut({ kpis }: { kpis: ReportKpis }) {
+const TONES = ['cheaper', 'aligned', 'dearer'] as const
+
+export function PositionDonut({ kpis, onSelect }: { kpis: ReportKpis; onSelect?: (patch: Partial<CockpitFilter>) => void }) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.7)'
   const total = kpis.cheaperThanMe + kpis.aligned + kpis.dearerThanMe
@@ -34,6 +37,8 @@ export function PositionDonut({ kpis }: { kpis: ReportKpis }) {
             data={data}
             options={{
               cutout: '62%',
+              onClick: (_e, els) => { if (els[0] && onSelect) onSelect({ position: TONES[els[0].index] }) },
+              onHover: (e, els) => { const t = e.native?.target as HTMLElement | undefined; if (t) t.style.cursor = els[0] ? 'pointer' : 'default' },
               plugins: {
                 legend: { position: 'bottom', labels: { color: tick, boxWidth: 12, padding: 12, font: { size: 11 } } },
                 tooltip: {

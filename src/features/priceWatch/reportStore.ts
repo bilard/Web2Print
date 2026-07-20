@@ -4,7 +4,7 @@
 // stats par concurrent (≤ N sites) et une liste produit RANGÉE + PLAFONNÉE ; le doc
 // `history` accumule des points KPI minuscules pour la tendance. Jamais 75 000 lignes
 // en base — la liste complète, c'est l'export Excel (cf. audit scalabilité).
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX } from './paths'
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
@@ -34,6 +34,20 @@ export interface KpiHistoryPoint {
    *  `s` = siteId, `g` = écart % (null si aucun prix). ABSENT des points écrits avant
    *  cette feature → à traiter comme un trou dans la courbe (jamais 0). */
   comp?: { s: string; g: number | null }[]
+}
+
+/**
+ * Supprime un suivi du sélecteur : doc racine + rapports `latest`/`history`. La
+ * sous-collection `competitors/{siteId}/pages` reste orpheline (Firestore client ne
+ * supprime pas récursivement) — sans impact : le watchId auto = workflowId est unique,
+ * donc jamais réutilisé, et le menu (alimenté par priceWatchCol) ne le liste plus.
+ */
+export async function deleteWatch(uid: string, watchId: string): Promise<void> {
+  await Promise.all([
+    deleteDoc(doc(db, watchRootDoc(uid, watchId))),
+    deleteDoc(doc(db, reportLatestDoc(uid, watchId))),
+    deleteDoc(doc(db, reportHistoryDoc(uid, watchId))),
+  ])
 }
 
 function stripUndefined<T>(value: T): T {

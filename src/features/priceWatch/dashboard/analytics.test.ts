@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest'
 import type { StoredReport } from '../reportStore'
 import type { KpiHistoryPoint } from '../reportStore'
-import { buildCockpit, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries } from './analytics'
+import { buildCockpit, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries, EMPTY_FILTER } from './analytics'
 
 const cell = (siteId: string, domain: string, priceHt: number, gapPct: number, stock: 'in-stock' | 'out-of-stock' = 'in-stock') => ({
   siteId, domain, name: 'x', url: '', image: null,
@@ -66,16 +66,18 @@ describe('buildCockpit', () => {
 })
 
 describe('filtre global', () => {
-  it('filterProducts par position / famille / recherche', () => {
-    expect(filterProducts(report.products, { q: '', famille: 'all', position: 'cheaper' }).map((p) => p.id)).toEqual(['1', '2'])
-    expect(filterProducts(report.products, { q: '', famille: 'all', position: 'dearer' }).map((p) => p.id)).toEqual(['3'])
-    expect(filterProducts(report.products, { q: '', famille: 'F1', position: 'all' })).toHaveLength(2)
-    expect(filterProducts(report.products, { q: 'P1', famille: 'all', position: 'all' })).toHaveLength(1)
+  it('filterProducts par position / famille / recherche / concurrent', () => {
+    expect(filterProducts(report.products, { ...EMPTY_FILTER, position: 'cheaper' }).map((p) => p.id)).toEqual(['1', '2'])
+    expect(filterProducts(report.products, { ...EMPTY_FILTER, position: 'dearer' }).map((p) => p.id)).toEqual(['3'])
+    expect(filterProducts(report.products, { ...EMPTY_FILTER, famille: 'F1' })).toHaveLength(2)
+    expect(filterProducts(report.products, { ...EMPTY_FILTER, q: 'P1' })).toHaveLength(1)
+    // concurrent 'b' apparié aux produits 1 et 3
+    expect(filterProducts(report.products, { ...EMPTY_FILTER, competitor: 'b' }).map((p) => p.id)).toEqual(['1', '3'])
   })
 
   it('buildCockpit filtré : blocs dérivés réduits, headline global inchangé', () => {
     const full = buildCockpit(report)
-    const filtered = buildCockpit(report, { q: '', famille: 'F1', position: 'all' })
+    const filtered = buildCockpit(report, { ...EMPTY_FILTER, famille: 'F1' })
     expect(filtered.filterActive).toBe(true)
     expect(filtered.filteredCount).toBe(2)
     expect(filtered.scatter).toHaveLength(2)

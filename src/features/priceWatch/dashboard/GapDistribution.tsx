@@ -5,12 +5,12 @@
 import { Bar } from 'react-chartjs-2'
 import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, type TooltipItem } from 'chart.js'
 import { useThemeStore } from '@/stores/theme.store'
-import type { Cockpit } from './analytics'
+import type { Cockpit, CockpitFilter } from './analytics'
 import { POSITION_HEX } from './format'
 
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip)
 
-export function GapDistribution({ ck }: { ck: Cockpit }) {
+export function GapDistribution({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void }) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.55)'
@@ -43,6 +43,8 @@ export function GapDistribution({ ck }: { ck: Cockpit }) {
             data={data}
             options={{
               maintainAspectRatio: false,
+              onClick: (_e, els) => { if (els[0] && onSelect) onSelect({ position: bins[els[0].index].tone }) },
+              onHover: (e, els) => { const t = e.native?.target as HTMLElement | undefined; if (t) t.style.cursor = els[0] ? 'pointer' : 'default' },
               plugins: {
                 legend: { display: false },
                 tooltip: {

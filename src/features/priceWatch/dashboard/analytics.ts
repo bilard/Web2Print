@@ -38,12 +38,13 @@ export interface CockpitFilter {
   q: string
   famille: string // 'all' | nom de famille
   position: 'all' | Tone
+  competitor: string // 'all' | siteId
 }
 
-export const EMPTY_FILTER: CockpitFilter = { q: '', famille: 'all', position: 'all' }
+export const EMPTY_FILTER: CockpitFilter = { q: '', famille: 'all', position: 'all', competitor: 'all' }
 
 function isFilterActive(f: CockpitFilter): boolean {
-  return !!f.q.trim() || f.famille !== 'all' || f.position !== 'all'
+  return !!f.q.trim() || f.famille !== 'all' || f.position !== 'all' || f.competitor !== 'all'
 }
 
 export function filterProducts(products: ProductRow[], f: CockpitFilter): ProductRow[] {
@@ -51,6 +52,7 @@ export function filterProducts(products: ProductRow[], f: CockpitFilter): Produc
   return products.filter((p) => {
     if (f.position !== 'all' && toneOf(p.bestGapPct) !== f.position) return false
     if (f.famille !== 'all' && familyKey(p.famille) !== f.famille) return false
+    if (f.competitor !== 'all' && !p.competitors.some((c) => c.siteId === f.competitor)) return false
     if (needle && ![p.name, p.reference, p.ean].some((s) => s?.toLowerCase().includes(needle))) return false
     return true
   })

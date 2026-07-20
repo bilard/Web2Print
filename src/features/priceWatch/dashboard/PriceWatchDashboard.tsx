@@ -12,9 +12,10 @@ import { CompetitorRanking } from './CompetitorRanking'
 import { PriceScatter } from './PriceScatter'
 import { HeatmapMatrix } from './HeatmapMatrix'
 import { CompetitorTrend } from './CompetitorTrend'
+import { OpportunityPanel } from './OpportunityPanel'
 import { AnalyticsTable } from './AnalyticsTable'
 import { ProductList } from './ProductList'
-import { ChevronDown, Search, X } from 'lucide-react'
+import { ChevronDown, Search, RotateCcw } from 'lucide-react'
 
 function EmptyState({ hasWatch }: { hasWatch: boolean }) {
   return (
@@ -40,6 +41,14 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
 
   if (!report || !ck) return <EmptyState hasWatch={!!watchId} />
   const set = (patch: Partial<CockpitFilter>) => setFilter((f) => ({ ...f, ...patch }))
+  // Clic sur un graphe : bascule le filtre (re-cliquer la valeur active la désactive).
+  const toggle = (patch: Partial<CockpitFilter>) => setFilter((f) => {
+    const keys = Object.keys(patch) as (keyof CockpitFilter)[]
+    const allMatch = keys.every((k) => f[k] === patch[k])
+    const next = { ...f }
+    for (const k of keys) next[k] = (allMatch ? EMPTY_FILTER[k] : patch[k]!) as never
+    return next
+  })
 
   return (
     <div className="space-y-3" data-pw-section="cockpit">
@@ -68,23 +77,34 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
           {ck.familyKeys.map((f) => <option key={f} value={f}>{f}</option>)}
         </select>
         {ck.filterActive && (
-          <button onClick={() => setFilter(EMPTY_FILTER)} className="flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-200">
-            <X className="w-3.5 h-3.5" /> {ck.filteredCount}/{ck.totalCount}
-          </button>
+          <>
+            <span className="text-[11px] text-white/45 tabular-nums">{ck.filteredCount}/{ck.totalCount}</span>
+            <button onClick={() => setFilter(EMPTY_FILTER)}
+              className="flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-200 border border-indigo-400/30 rounded px-2 py-1.5">
+              <RotateCcw className="w-3.5 h-3.5" /> Réinitialiser l’affichage
+            </button>
+          </>
         )}
       </div>
+      {ck.filterActive && (
+        <div className="text-[11px] text-white/40 -mt-1 px-1">
+          Vue filtrée — les graphes et tableaux ci-dessous portent sur {ck.filteredCount} produit(s). Les KPIs de tête restent globaux.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
-        <div className="xl:col-span-3"><PositionDonut kpis={report.kpis} /></div>
-        <div className="xl:col-span-5"><GapDistribution ck={ck} /></div>
-        <div className="xl:col-span-4"><CompetitorRanking ck={ck} /></div>
+        <div className="xl:col-span-3"><PositionDonut kpis={report.kpis} onSelect={toggle} /></div>
+        <div className="xl:col-span-5"><GapDistribution ck={ck} onSelect={toggle} /></div>
+        <div className="xl:col-span-4"><CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} /></div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div><PriceScatter ck={ck} /></div>
-        <div><HeatmapMatrix ck={ck} /></div>
+        <div><PriceScatter ck={ck} onSelect={toggle} /></div>
+        <div><HeatmapMatrix ck={ck} onSelect={toggle} /></div>
         <div><CompetitorTrend history={history} sites={report.sites} /></div>
       </div>
+
+      <OpportunityPanel ck={ck} />
 
       <AnalyticsTable ck={ck} />
 
