@@ -43,23 +43,16 @@ const edge = (source: string, sourceHandle: string, target: string, targetHandle
   targetHandle,
 })
 
-/** Concurrents motoculture sous PrestaShop (moisson par pages liste supportée). Exclut
- *  les marketplaces (Amazon, ManoMano, Cdiscount, Kramp) et les sites anti-bot. */
+/** Sites de démarrage : 3 concurrents PrestaShop éprouvés (moisson par pages liste
+ *  validée en conditions réelles). Extensible aux autres PrestaShop motoculture
+ *  (jardimax, matijardin, 123courroies, lames-tondeuses, 190cc, dppmsas,
+ *  pieces-de-motoculture, progarden, net-motoculture, sodipieces,
+ *  pieces-tracteur-tondeuse). Hors périmètre : marketplaces (Amazon, ManoMano,
+ *  Cdiscount, Kramp) et sites anti-bot (autoportee-discount). */
 const MOTO_COMPETITORS = [
-  'jardimax.com',
-  'pieces-tracteur-tondeuse.com',
+  'pro-motoculture.com',
   'webmotoculture.com',
   'emc-motoculture.com',
-  'matijardin.fr',
-  'pro-motoculture.com',
-  '123courroies.com',
-  'lames-tondeuses.com',
-  '190cc.fr',
-  'dppmsas.fr',
-  'pieces-de-motoculture.fr',
-  'progarden.fr',
-  'net-motoculture.fr',
-  'sodipieces.fr',
 ].join('\n')
 
 export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
@@ -266,7 +259,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         watchId: 'veille-moto',
         sites: MOTO_COMPETITORS,
         families: 'COURROIES, FILTRATION, COUPE',
-        pageBudget: 150,
+        pageBudget: 90,
       }),
       // Étape 2 — ton Excel → comparaison → export.
       node('upload', 'upload', 60, 320, { fileKey: '', fileName: '', fileSize: 0, mode: 'file' }),
@@ -280,6 +273,9 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       node('export', 'export-excel', 860, 320, { columns: '' }),
     ],
     edges: [
+      // L'edge Moisson → Comparer ne transporte pas de donnée : il force la moisson à
+      // tourner AVANT la comparaison dans un même lancement (sinon carnet vide → 0 ligne).
+      edge('harvest', 'status', 'compare', 'harvest'),
       edge('upload', 'sheet', 'compare', 'products'),
       edge('compare', 'matrix', 'export', 'sheet'),
     ],

@@ -28,7 +28,7 @@ interface CompareConfig {
   descriptionColumn: string
   vatRate: number
 }
-interface CompareInputs { products?: ExcelSheet }
+interface CompareInputs { products?: ExcelSheet; harvest?: unknown }
 type CompareOutputs = { matrix: ExcelSheet }
 
 function cell(row: Record<string, unknown>, col: string | undefined): string | undefined {
@@ -55,7 +55,13 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     "(node « Moisson concurrents »). Produit la matrice produit × concurrent : prix TTC, " +
     "prix barré, prix HT recalculé, écart %, stock, lien. Appariement par égalité exacte.",
   icon: Scale,
-  inputs: [{ name: 'products', type: 'sheet', required: true }],
+  inputs: [
+    { name: 'products', type: 'sheet', required: true },
+    // Entrée d'ORDONNANCEMENT (facultative) : brancher la sortie de « Moisson
+    // concurrents » ici force la moisson à tourner AVANT la comparaison dans un même
+    // run. La donnée est ignorée — l'index est relu depuis Firestore, pas depuis l'edge.
+    { name: 'harvest', type: 'any' },
+  ],
   outputs: [{ name: 'matrix', type: 'sheet' }],
   configSchema: [
     { name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)', required: true, help: 'Mêmes domaines que la moisson.' },
