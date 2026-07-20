@@ -13,6 +13,7 @@ import { PriceScatter } from './PriceScatter'
 import { HeatmapMatrix } from './HeatmapMatrix'
 import { CompetitorTrend } from './CompetitorTrend'
 import { OpportunityPanel } from './OpportunityPanel'
+import { CatalogTree } from './CatalogTree'
 import { AnalyticsTable } from './AnalyticsTable'
 import { ProductList } from './ProductList'
 import { ChevronDown, Search, RotateCcw } from 'lucide-react'
@@ -51,7 +52,9 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   })
 
   return (
-    <div className="space-y-3" data-pw-section="cockpit">
+    <div className="flex flex-col lg:flex-row gap-3" data-pw-section="cockpit">
+      <CatalogTree ck={ck} active={filter.famille} onSelect={(f) => set({ famille: f })} />
+      <div className="flex-1 min-w-0 space-y-3">
       {report.truncated && (
         <div className="bg-amber-500/10 border border-amber-500/25 rounded-md px-3 py-2 text-xs text-amber-300">
           {report.totalMatched.toLocaleString('fr-FR')} produits appariés — le détail est borné aux 1000 les moins bien
@@ -116,6 +119,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         </button>
         {detailOpen && <div className="px-4 pb-4"><ProductList report={report} /></div>}
       </section>
+      </div>
     </div>
   )
 }

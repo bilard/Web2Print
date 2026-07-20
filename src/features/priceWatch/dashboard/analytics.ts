@@ -111,6 +111,8 @@ export interface Cockpit {
   competitors: CompetitorAnalytics[]
   families: FamilyStat[]
   familyKeys: string[]
+  /** Familles du catalogue COMPLET (non filtré) pour la navigation — stable au filtrage. */
+  allFamilies: { famille: string; count: number; undercut: number }[]
   heatmap: Record<string, Record<string, HeatCell>>
   opportunities: Opportunity[]
   totalGapEur: number
@@ -218,10 +220,16 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
   const families: FamilyStat[] = [...famAgg.entries()]
     .map(([famille, a]) => ({ famille, products: a.n, undercut: a.undercut, avgGapPct: mean(a.gaps) }))
     .sort((a, b) => b.products - a.products)
-  // Colonnes heatmap : familles calculées sur le catalogue COMPLET (stables au filtrage).
-  const allFamAgg = new Map<string, number>()
-  for (const p of products) allFamAgg.set(familyKey(p.famille), (allFamAgg.get(familyKey(p.famille)) ?? 0) + 1)
-  const familyKeys = [...allFamAgg.entries()].sort((a, b) => b[1] - a[1]).slice(0, maxFamilies).map(([f]) => f)
+  // Familles du catalogue COMPLET (navigation + colonnes heatmap) — stables au filtrage.
+  const allFamAgg = new Map<string, { count: number; undercut: number }>()
+  for (const p of products) {
+    const k = familyKey(p.famille)
+    const e = allFamAgg.get(k) ?? { count: 0, undercut: 0 }
+    e.count++; if (p.undercut) e.undercut++
+    allFamAgg.set(k, e)
+  }
+  const allFamilies = [...allFamAgg.entries()].map(([famille, e]) => ({ famille, count: e.count, undercut: e.undercut })).sort((a, b) => b.count - a.count)
+  const familyKeys = allFamilies.slice(0, maxFamilies).map((f) => f.famille)
 
   const heatAgg = new Map<string, Map<string, number[]>>()
   for (const { p, c } of cells) {
@@ -268,7 +276,7 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
     filterActive: active, filteredCount: view.length, totalCount: products.length,
     priceHoldPct, exposedPct,
     gapValues, histogram: buildHistogram(gapValues), medianGapPct: median(gapValues), meanGapPct: mean(gapValues),
-    competitors, families, familyKeys, heatmap, opportunities,
+    competitors, families, familyKeys, allFamilies, heatmap, opportunities,
     totalGapEur: Math.round(totalGapEur * 100) / 100,
     scatter, tableRows: buildTableRows(view),
   }
