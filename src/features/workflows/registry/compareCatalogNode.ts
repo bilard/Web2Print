@@ -12,7 +12,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { parseSitesConfig, parsePrice, stableId } from '@/features/priceWatch/core'
 import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
 import { loadAllListings } from '@/features/priceWatch/catalog/store'
-import { buildMatrix, type SiteRef } from '@/features/priceWatch/catalog/matrix'
+import { buildMatrix, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
 import type { CompetitorListing } from '@/features/priceWatch/catalog/prestashop'
 
@@ -37,12 +37,25 @@ function cell(row: Record<string, unknown>, col: string | undefined): string | u
   return v == null ? undefined : String(v).trim() || undefined
 }
 
-/** Convertit la matrice pure en ExcelSheet. */
-function toSheet(cols: { key: string; label: string; type: 'text' | 'number'; primary?: boolean }[], rows: Record<string, unknown>[]): ExcelSheet {
-  const columns: ExcelColumn[] = cols.map((c) => ({
-    key: c.key, label: c.label, fieldType: c.type, detectedType: c.type,
-    isPrimary: !!c.primary, width: c.type === 'number' ? 120 : 180,
-  }))
+/** kind de colonne matrice → type de champ + décimales Excel (format de cellule). */
+const KIND_TO_FIELD: Record<MatrixColumn['kind'], { fieldType: ExcelColumn['fieldType']; decimals?: number }> = {
+  text: { fieldType: 'text' },
+  ean: { fieldType: 'barcode', decimals: 0 },
+  price: { fieldType: 'number', decimals: 2 },
+  percent: { fieldType: 'percent', decimals: 1 },
+}
+
+/** Convertit la matrice pure en ExcelSheet, en portant le format de chaque colonne
+ *  (fieldType + decimals) pour que l'export .xlsx type correctement les cellules. */
+function toSheet(cols: MatrixColumn[], rows: Record<string, unknown>[]): ExcelSheet {
+  const columns: ExcelColumn[] = cols.map((c) => {
+    const f = KIND_TO_FIELD[c.kind]
+    return {
+      key: c.key, label: c.label, fieldType: f.fieldType, detectedType: f.fieldType,
+      isPrimary: !!c.primary, width: c.kind === 'text' ? 180 : 120,
+      ...(f.decimals != null ? { decimals: f.decimals } : {}),
+    }
+  })
   return { name: 'Veille tarifaire', columns, rows: rows as ExcelRow[], taxonomy: [] }
 }
 

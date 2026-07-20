@@ -14,10 +14,12 @@ export interface SiteRef {
   domain: string
 }
 
-interface MatrixColumn {
+export interface MatrixColumn {
   key: string
   label: string
-  type: 'text' | 'number'
+  /** Nature de la colonne → pilote le FORMAT de cellule Excel à l'export
+   *  (ean = entier sans décimale, price = 2 décimales, percent = 1 décimale + %). */
+  kind: 'text' | 'ean' | 'price' | 'percent'
   primary?: boolean
 }
 
@@ -43,11 +45,11 @@ const AVAIL_LABEL: Record<string, string> = {
 /** Colonnes fixes d'identité + mon prix. */
 function baseColumns(): MatrixColumn[] {
   return [
-    { key: 'produit', label: 'Produit', type: 'text', primary: true },
-    { key: 'reference', label: 'Référence', type: 'text' },
-    { key: 'ean', label: 'EAN', type: 'text' },
-    { key: 'famille', label: 'Famille', type: 'text' },
-    { key: 'mon_prix_ht', label: 'Mon prix HT', type: 'number' },
+    { key: 'produit', label: 'Produit', kind: 'text', primary: true },
+    { key: 'reference', label: 'Référence', kind: 'text' },
+    { key: 'ean', label: 'EAN', kind: 'ean' },
+    { key: 'famille', label: 'Famille', kind: 'text' },
+    { key: 'mon_prix_ht', label: 'Mon prix HT', kind: 'price' },
   ]
 }
 
@@ -55,13 +57,13 @@ function baseColumns(): MatrixColumn[] {
 function siteColumns(domain: string): MatrixColumn[] {
   const s = domain.replace(/[^a-z0-9]+/gi, '_')
   return [
-    { key: `prix_ttc_${s}`, label: `${domain} — Prix TTC`, type: 'number' },
-    { key: `prix_barre_${s}`, label: `${domain} — Prix barré TTC`, type: 'number' },
-    { key: `prix_ht_${s}`, label: `${domain} — Prix HT`, type: 'number' },
-    { key: `ecart_${s}`, label: `${domain} — Écart %`, type: 'number' },
-    { key: `stock_${s}`, label: `${domain} — Stock`, type: 'text' },
-    { key: `match_${s}`, label: `${domain} — Correspondance`, type: 'text' },
-    { key: `url_${s}`, label: `${domain} — Lien`, type: 'text' },
+    { key: `prix_ttc_${s}`, label: `${domain} — Prix TTC`, kind: 'price' },
+    { key: `prix_barre_${s}`, label: `${domain} — Prix barré TTC`, kind: 'price' },
+    { key: `prix_ht_${s}`, label: `${domain} — Prix HT`, kind: 'price' },
+    { key: `ecart_${s}`, label: `${domain} — Écart %`, kind: 'percent' },
+    { key: `stock_${s}`, label: `${domain} — Stock`, kind: 'text' },
+    { key: `match_${s}`, label: `${domain} — Correspondance`, kind: 'text' },
+    { key: `url_${s}`, label: `${domain} — Lien`, kind: 'text' },
   ]
 }
 

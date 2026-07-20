@@ -6,13 +6,49 @@ import { FileDown, Presentation, FileType2, Download } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 
+interface SheetColumnMeta {
+  key: string
+  label?: string
+  fieldType?: string
+  detectedType?: string
+  decimals?: number
+}
+
 interface SheetInput {
   sheet: {
     name?: string
     rows?: Array<Record<string, unknown>>
-    columns?: Array<{ key: string; label?: string }>
+    columns?: SheetColumnMeta[]
     [key: string]: unknown
   } | null
+}
+
+/** Types de champ dont la cellule Excel doit être NUMÉRIQUE. */
+const NUMERIC_FIELDS = new Set(['number', 'currency', 'percent', 'barcode', 'auto_number', 'rating', 'duration'])
+
+/** Format de nombre Excel (cell.z) pour une colonne, ou undefined (format Général).
+ *  N'impose un format que si la colonne le précise (decimals) ou si son type l'exige
+ *  (code-barres/pourcentage/monétaire) — sinon on ne touche à rien (rétro-compat). */
+export function numberFormatFor(col: SheetColumnMeta): string | undefined {
+  const ft = col.fieldType ?? col.detectedType
+  if (!ft || !NUMERIC_FIELDS.has(ft)) return undefined
+  const d = col.decimals
+  if (ft === 'barcode' || ft === 'auto_number') return '0'
+  if (d == null && ft !== 'percent' && ft !== 'currency') return undefined
+  const dec = d ?? 2
+  const frac = dec > 0 ? '.' + '0'.repeat(dec) : ''
+  if (ft === 'percent') return `0${frac}"%"`
+  if (ft === 'currency') return `#,##0${frac} €`
+  return `0${frac}`
+}
+
+/** Coerce une valeur vers un nombre pour une colonne numérique. '' / non-numérique
+ *  → laissé tel quel (cellule vide plutôt que 0 trompeur). */
+export function coerceNumeric(value: unknown): number | string | null {
+  if (value == null || value === '') return null
+  if (typeof value === 'number') return value
+  const n = Number(String(value).replace(',', '.'))
+  return Number.isFinite(n) ? n : (value as string)
 }
 
 interface ExportResult {
@@ -64,14 +100,43 @@ const exportExcelNode: NodeSpec<
       .map((s) => s.trim())
       .filter(Boolean)
 
-    const filteredRows = filterCols.length
-      ? rows.map((r) =>
-          Object.fromEntries(filterCols.map((c) => [c, r[c]])),
-        )
-      : rows
-
     const XLSX = await import('xlsx')
-    const ws = XLSX.utils.json_to_sheet(filteredRows)
+    const allCols = inputs.sheet?.columns ?? []
+    // Colonnes retenues (filtre par clé si fourni), sinon toutes les colonnes déclarées.
+    const cols: SheetColumnMeta[] = filterCols.length
+      ? filterCols.map((k) => allCols.find((c) => c.key === k) ?? { key: k })
+      : allCols
+
+    let ws: ReturnType<typeof XLSX.utils.aoa_to_sheet>
+    if (cols.length > 0) {
+      // Feuille pilotée par les métadonnées : en-têtes = LABELS, cellules typées
+      // (nombres réels) et formatées (EAN entier, prix 2 décimales, % …).
+      const header = cols.map((c) => c.label || c.key)
+      const body = rows.map((r) =>
+        cols.map((c) => {
+          const raw = r[c.key]
+          const ft = c.fieldType ?? c.detectedType
+          return ft && NUMERIC_FIELDS.has(ft) ? coerceNumeric(raw) : (raw ?? '')
+        }),
+      )
+      ws = XLSX.utils.aoa_to_sheet([header, ...body])
+      // Applique le format de nombre par colonne (cell.z), lignes de données seulement.
+      cols.forEach((c, ci) => {
+        const fmt = numberFormatFor(c)
+        if (!fmt) return
+        for (let ri = 1; ri <= rows.length; ri++) {
+          const addr = XLSX.utils.encode_cell({ c: ci, r: ri })
+          const cell = ws[addr] as { t?: string; z?: string } | undefined
+          if (cell && cell.t === 'n') cell.z = fmt
+        }
+      })
+    } else {
+      // Repli : aucune métadonnée de colonnes → comportement historique.
+      const filteredRows = filterCols.length
+        ? rows.map((r) => Object.fromEntries(filterCols.map((c) => [c, r[c]])))
+        : rows
+      ws = XLSX.utils.json_to_sheet(filteredRows)
+    }
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, inputs.sheet?.name ?? 'Sheet1')
 
