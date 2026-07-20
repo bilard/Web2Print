@@ -101,7 +101,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
   run: async (ctx, config, inputs) => {
     const uid = useAuthStore.getState().user?.uid
     if (!uid) throw new Error('Utilisateur non connecté.')
-    const watchId = (config.watchId || DEFAULT_WATCH_ID).trim()
+    const watchId = stableId((config.watchId || DEFAULT_WATCH_ID).trim())
     const sites = parseSitesConfig(config.sites)
     const rawRows = (inputs.products?.rows ?? []) as Record<string, unknown>[]
 
@@ -136,7 +136,21 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
       const listings = await loadAllListings(uid, watchId, s.siteId)
       indexBySite.set(s.siteId, listings)
       ctx.log('info', `${s.domain} : ${listings.length} produit(s) dans l'index.`)
-      if (listings.length === 0) ctx.log('warn', `${s.domain} : index vide — lance d'abord « Moisson concurrents ».`)
+    }
+
+    // Garde-fou : index vide sur TOUS les sites = la moisson n'a rien écrit sous CE
+    // suivi. Cause classique : l'« Identifiant du suivi » de « Moisson concurrents »
+    // diffère de celui-ci (casse/espace) → chemins Firestore distincts. On échoue ICI
+    // avec un message actionnable plutôt que de produire une matrice vide qui fera
+    // planter l'export en aval avec un message trompeur. (Un index NON vide qui apparie
+    // 0 produit reste légitime — c'est un recouvrement partiel, pas une erreur.)
+    const totalListings = [...indexBySite.values()].reduce((n, l) => n + l.length, 0)
+    if (totalListings === 0) {
+      throw new Error(
+        `Index concurrent vide pour les ${sites.length} site(s) sous le suivi « ${watchId} ». ` +
+        `Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi ` +
+        `(« ${watchId} ») et qu'il a bien été lancé avant.`,
+      )
     }
 
     const vatRate = Math.max(0, (config.vatRate || 20)) / 100

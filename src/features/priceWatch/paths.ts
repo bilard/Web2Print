@@ -1,7 +1,15 @@
 // src/features/priceWatch/paths.ts
 // Chemins Firestore du module Veille tarifaire. matchKey = `${productId}__${siteId}`.
 // Interne : composé par les helpers de collection ci-dessous (non exporté — cf. knip).
-const watchDoc = (uid: string, watchId: string) => `users/${uid}/priceWatch/${watchId}`
+import { stableId } from './core'
+
+// Point d'étranglement UNIQUE : tous les chemins d'un suivi passent par ici. Le watchId
+// est canonicalisé (stableId) pour que « F1 Moisson », « f1 moisson », « F1  Moisson »
+// pointent tous au MÊME document — sinon un même identifiant retapé avec une casse ou un
+// espace différent entre les nodes « Moisson » et « Comparer » vise deux docs distincts
+// (index écrit ici, relu là → vide). stableId est idempotent sur les ids déjà propres
+// (« veille-moto », « f1moisson » inchangés) → aucune migration des suivis existants.
+const watchDoc = (uid: string, watchId: string) => `users/${uid}/priceWatch/${stableId(watchId)}`
 /** Collection des suivis d'un utilisateur (pour lister/choisir le suivi actif). */
 export const priceWatchCol = (uid: string) => `users/${uid}/priceWatch`
 /** Doc racine d'un suivi : méta (libellé, updatedAt, lastReportAt) pour le sélecteur. */

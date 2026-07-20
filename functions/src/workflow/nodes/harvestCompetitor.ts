@@ -38,7 +38,7 @@ function statusSheet(rows: Record<string, unknown>[]) {
 registerServerNode({
   type: 'harvest-competitor',
   run: async (ctx, config) => {
-    const watchId = String(config.watchId || DEFAULT_WATCH_ID).trim() || DEFAULT_WATCH_ID
+    const watchId = stableId(String(config.watchId || DEFAULT_WATCH_ID).trim() || DEFAULT_WATCH_ID)
     const sites = parseSitesConfig(String(config.sites ?? ''))
     if (sites.length === 0) {
       ctx.log('warn', 'Aucun site concurrent configuré.')

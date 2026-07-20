@@ -74,7 +74,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, Record<string, never>, Harv
   run: async (ctx, config) => {
     const uid = useAuthStore.getState().user?.uid
     if (!uid) throw new Error('Utilisateur non connecté.')
-    const watchId = (config.watchId || DEFAULT_WATCH_ID).trim()
+    const watchId = stableId((config.watchId || DEFAULT_WATCH_ID).trim())
     const sites = parseSitesConfig(config.sites)
     if (sites.length === 0) {
       ctx.log('warn', 'Aucun site concurrent configuré.')

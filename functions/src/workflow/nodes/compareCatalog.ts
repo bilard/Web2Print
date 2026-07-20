@@ -51,7 +51,7 @@ function toSheet(cols: MatrixColumn[], rows: Record<string, unknown>[]) {
 registerServerNode({
   type: 'compare-catalog',
   run: async (ctx, config, inputs) => {
-    const watchId = String(config.watchId || DEFAULT_WATCH_ID).trim() || DEFAULT_WATCH_ID
+    const watchId = stableId(String(config.watchId || DEFAULT_WATCH_ID).trim() || DEFAULT_WATCH_ID)
     const sites = parseSitesConfig(String(config.sites ?? ''))
     const products = (inputs.products ?? {}) as SheetLike
     const rawRows = products.rows ?? []
@@ -95,7 +95,18 @@ registerServerNode({
       const listings = await loadAllListings(ctx.uid, watchId, s.siteId)
       indexBySite.set(s.siteId, listings)
       ctx.log('info', `${s.domain} : ${listings.length} produit(s) dans l'index.`)
-      if (listings.length === 0) ctx.log('warn', `${s.domain} : index vide — lance d'abord « Moisson concurrents ».`)
+    }
+
+    // Garde-fou (jumeau du client) : index vide sur TOUS les sites = la moisson n'a rien
+    // écrit sous CE suivi (identifiant de suivi divergent, casse/espace, ou moisson non
+    // lancée). Échec explicite plutôt qu'une matrice vide qui ferait planter l'export.
+    const totalListings = [...indexBySite.values()].reduce((n, l) => n + l.length, 0)
+    if (totalListings === 0) {
+      throw new Error(
+        `Index concurrent vide pour les ${sites.length} site(s) sous le suivi « ${watchId} ». ` +
+        `Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi ` +
+        `(« ${watchId} ») et qu'il a bien été lancé avant.`,
+      )
     }
 
     const vatRate = Math.max(0, Number(config.vatRate) || 20) / 100
