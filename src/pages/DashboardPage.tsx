@@ -562,7 +562,7 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'workflows' && canSee('workflows') ? (
-        <div data-tour="section-workflows" className="flex-1 overflow-hidden">
+        <div data-tour="section-workflows" className="flex-1 flex overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
