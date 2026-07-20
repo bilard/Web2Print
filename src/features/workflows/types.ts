@@ -139,6 +139,10 @@ export interface NodeRunState {
 
 export interface RunContextApi {
   signal: AbortSignal
+  /** Id du workflow en cours — sert d'identité par défaut (ex. suivi de veille). Absent dans un body de loop. */
+  workflowId?: string
+  /** Nom du workflow en cours — libellé lisible par défaut (ex. nom du suivi affiché). */
+  workflowName?: string
   log: (level: 'info' | 'warn' | 'error', msg: string) => void
   setProgress?: (pct: number) => void
   /** Signale le connecteur (ex. 'jina', 'brightdata', 'llm') en cours d'usage — affiché en live sur la carte. */

@@ -239,6 +239,8 @@ export async function executeWorkflowHeadless(
         {
           uid: opts.uid,
           signal: opts.signal,
+          workflowId: wf.id,
+          workflowName: wf.name,
           log: (lv, m) => log(lv, m, node.id),
           rawConfig: node.config,
           reportConnector: (cid) => {

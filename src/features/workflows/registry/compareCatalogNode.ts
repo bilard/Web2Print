@@ -89,11 +89,11 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Mon prix (HT)' },
     { name: 'descriptionColumn', kind: 'columnRef', label: 'Colonne Description', help: 'Sert à extraire les réf. d’origine (« Remplace origine: … ») pour les pièces adaptables.' },
     { name: 'vatRate', kind: 'number', label: 'TVA concurrents (%)', help: 'Pour recalculer le HT depuis le TTC affiché. Défaut : 20.' },
-    { name: 'watchId', kind: 'text', label: 'Identifiant du suivi', help: 'Partagé avec « Moisson concurrents ».' },
-    { name: 'label', kind: 'text', label: 'Nom du suivi (affiché)', help: 'Libellé lisible dans le menu « Source » du tableau de bord. Vide → l’identifiant est affiché.' },
+    { name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est automatiquement celui du workflow (le même que « Moisson concurrents » du workflow). Ne remplis que pour partager un suivi entre plusieurs workflows.' },
+    { name: 'label', kind: 'text', label: 'Nom du suivi (affiché)', help: 'Libellé dans le menu « Source » du tableau de bord. Vide → le nom du workflow est utilisé.' },
   ],
   defaultConfig: {
-    watchId: DEFAULT_WATCH_ID, label: '', sites: '', vatRate: 20,
+    watchId: '', label: '', sites: '', vatRate: 20,
     refColumn: 'reference', ref2Column: '', eanColumn: 'ean', nameColumn: 'name',
     familyColumn: 'family', priceColumn: 'price', descriptionColumn: 'description',
   },
@@ -101,7 +101,9 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
   run: async (ctx, config, inputs) => {
     const uid = useAuthStore.getState().user?.uid
     if (!uid) throw new Error('Utilisateur non connecté.')
-    const watchId = stableId((config.watchId || DEFAULT_WATCH_ID).trim())
+    // Identité du suivi : l'id du workflow par défaut → même suivi que « Moisson
+    // concurrents » du même workflow, sans rien saisir. Override manuel possible.
+    const watchId = stableId((config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
     const sites = parseSitesConfig(config.sites)
     const rawRows = (inputs.products?.rows ?? []) as Record<string, unknown>[]
 
@@ -171,7 +173,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // l'export. Le tableau de bord « Veille tarifaire » lit ce rapport par watchId.
     try {
       const report = buildReport(products, siteRefs, indexBySite, { vatRate })
-      await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() })
+      await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '' })
       ctx.log('info', `Rapport enregistré (suivi « ${watchId} ») — visible dans le tableau de bord Veille tarifaire.`)
     } catch (err) {
       ctx.log('warn', `Rapport dashboard non enregistré : ${err instanceof Error ? err.message : String(err)}`)

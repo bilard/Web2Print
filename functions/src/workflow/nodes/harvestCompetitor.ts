@@ -38,7 +38,9 @@ function statusSheet(rows: Record<string, unknown>[]) {
 registerServerNode({
   type: 'harvest-competitor',
   run: async (ctx, config) => {
-    const watchId = stableId(String(config.watchId || DEFAULT_WATCH_ID).trim() || DEFAULT_WATCH_ID)
+    // Identité du suivi : l'id du workflow par défaut (partagé avec « Comparer catalogue »
+    // du même workflow, sans saisie). Override manuel possible pour partager entre workflows.
+    const watchId = stableId(String(config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
     const sites = parseSitesConfig(String(config.sites ?? ''))
     if (sites.length === 0) {
       ctx.log('warn', 'Aucun site concurrent configuré.')

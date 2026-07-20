@@ -15,6 +15,10 @@ export interface ServerRunCtx {
   uid: string
   log: (level: LogLevel, msg: string) => void
   signal: AbortSignal
+  /** Id du workflow — identité par défaut (ex. suivi de veille). Absent dans un body de loop. */
+  workflowId?: string
+  /** Nom du workflow — libellé lisible par défaut. */
+  workflowName?: string
   /** Config brut (sans interpolation des {{...}}) — pour les nodes qui ré-interpolent
    *  par ligne (ex : send-telegram en mode « 1 message par ligne »). */
   rawConfig?: unknown

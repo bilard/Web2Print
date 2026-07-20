@@ -256,7 +256,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     nodes: [
       // Étape 1 — remplit l'index concurrent (indépendant, à lancer d'abord).
       node('harvest', 'harvest-competitor', 60, 40, {
-        watchId: 'veille-moto',
+        watchId: '',
         sites: MOTO_COMPETITORS,
         families: 'COURROIES, FILTRATION, COUPE',
         pageBudget: 90,
@@ -264,7 +264,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       // Étape 2 — ton Excel → comparaison → export.
       node('upload', 'upload', 60, 320, { fileKey: '', fileName: '', fileSize: 0, mode: 'file' }),
       node('compare', 'compare-catalog', 460, 320, {
-        watchId: 'veille-moto',
+        watchId: '',
         sites: MOTO_COMPETITORS,
         refColumn: 'CODE_ARTICLE', ref2Column: '', eanColumn: 'EAN',
         nameColumn: 'Name', familyColumn: 'Famille', priceColumn: 'Price BRUT',

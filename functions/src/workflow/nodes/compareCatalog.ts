@@ -51,7 +51,9 @@ function toSheet(cols: MatrixColumn[], rows: Record<string, unknown>[]) {
 registerServerNode({
   type: 'compare-catalog',
   run: async (ctx, config, inputs) => {
-    const watchId = stableId(String(config.watchId || DEFAULT_WATCH_ID).trim() || DEFAULT_WATCH_ID)
+    // Identité du suivi : l'id du workflow par défaut (même suivi que « Moisson
+    // concurrents » du workflow, sans saisie). Override manuel possible.
+    const watchId = stableId(String(config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
     const sites = parseSitesConfig(String(config.sites ?? ''))
     const products = (inputs.products ?? {}) as SheetLike
     const rawRows = products.rows ?? []

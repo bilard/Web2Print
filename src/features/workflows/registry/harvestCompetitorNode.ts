@@ -63,9 +63,9 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, Record<string, never>, Harv
       name: 'pageBudget', kind: 'number', label: 'Pages par run',
       help: 'Nombre de pages liste moissonnées à chaque exécution. Réparti entre les sites.',
     },
-    { name: 'watchId', kind: 'text', label: 'Identifiant du suivi', help: 'Partagé avec le node « Comparer catalogue ».' },
+    { name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est automatiquement celui du workflow (partagé avec « Comparer catalogue » du même workflow). Ne remplis que pour partager un même suivi entre plusieurs workflows.' },
   ],
-  defaultConfig: { watchId: DEFAULT_WATCH_ID, sites: '', families: '', pageBudget: 40 },
+  defaultConfig: { watchId: '', sites: '', families: '', pageBudget: 40 },
   cardSummary: (c) => {
     const n = parseSitesConfig(c.sites).length
     return n ? `${n} site(s) · ${c.pageBudget}/run${c.families.trim() ? ` · ${c.families.trim()}` : ''}` : ''
@@ -74,7 +74,10 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, Record<string, never>, Harv
   run: async (ctx, config) => {
     const uid = useAuthStore.getState().user?.uid
     if (!uid) throw new Error('Utilisateur non connecté.')
-    const watchId = stableId((config.watchId || DEFAULT_WATCH_ID).trim())
+    // Identité du suivi : l'id du workflow par défaut (→ Moisson & Comparer du même
+    // workflow partagent forcément le même suivi, sans rien saisir). Override manuel
+    // possible pour partager un suivi entre workflows.
+    const watchId = stableId((config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
     const sites = parseSitesConfig(config.sites)
     if (sites.length === 0) {
       ctx.log('warn', 'Aucun site concurrent configuré.')
