@@ -280,6 +280,30 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       edge('compare', 'matrix', 'export', 'sheet'),
     ],
   },
+  {
+    id: 'veille-tarifaire-moisson-cron',
+    name: 'Veille tarifaire — moisson planifiée (cron)',
+    description:
+      'Rafraîchit CHAQUE NUIT l’index des prix concurrents, en headless sur le serveur. ' +
+      'La moisson n’a besoin d’aucun fichier : elle parcourt les catalogues concurrents et ' +
+      'écrit l’index (même « Identifiant de suivi » que la comparaison). Active le node « Cron » ' +
+      '(interrupteur), puis lance la comparaison quand tu veux — elle relira l’index frais. ' +
+      'Chaque tick avale un lot de pages puis reprend : plusieurs nuits couvrent tout le catalogue.',
+    emoji: '🌙',
+    nodes: [
+      // Le node Cron n'a pas d'edge : sa présence + son interrupteur écrivent le planning
+      // serveur (workflowSchedules) ; le scheduler exécute alors tout le graphe en headless.
+      node('cron', 'cron', 60, 40, { enabled: false, every: 1, unit: 'day', atTime: '03:00', weekday: 1 }),
+      // Moisson = source (aucune entrée) → tourne parfaitement en headless (fetch direct).
+      node('harvest', 'harvest-competitor', 60, 220, {
+        watchId: 'veille-moto',
+        sites: MOTO_COMPETITORS,
+        families: 'COURROIES, FILTRATION, COUPE',
+        pageBudget: 90,
+      }),
+    ],
+    edges: [],
+  },
 ]
 
 /** Instancie un workflow complet (ids/horodatage frais) depuis un template. */

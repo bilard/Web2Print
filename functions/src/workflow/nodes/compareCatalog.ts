@@ -1,0 +1,111 @@
+// functions/src/workflow/nodes/compareCatalog.ts
+// Jumeau SERVEUR (headless/cron) du node « Comparer catalogue »
+// (src/features/workflows/registry/compareCatalogNode.ts). Croise la feuille de
+// produits source (réf/EAN/prix) avec l'index concurrent persistant alimenté par
+// « Moisson concurrents », et produit la matrice produit × concurrent (prix TTC
+// verbatim + barré + HT recalculé + écart % + stock + lien). L'index est RELU depuis
+// Firestore, jamais reçu par un edge — le gros volume ne transite pas par la mémoire
+// du run (cf. audit scalabilité). Logique métier partagée via les modules purs
+// dupliqués sous functions/src/priceWatch/catalog/.
+import { registerServerNode } from '../registry'
+import { parseSitesConfig, parsePrice, stableId } from '../../priceWatch/helpers'
+import { DEFAULT_WATCH_ID } from '../../priceWatch/paths'
+import { loadAllListings } from '../../priceWatch/catalog/store'
+import { buildMatrix, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
+import { extractOriginRefs, type SourceProduct } from '../../priceWatch/catalog/match'
+import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
+
+interface SheetLike {
+  columns?: unknown[]
+  rows?: Record<string, unknown>[]
+}
+
+function cell(row: Record<string, unknown>, col: string | undefined): string | undefined {
+  if (!col) return undefined
+  const v = row[col]
+  return v == null ? undefined : String(v).trim() || undefined
+}
+
+/** kind de colonne matrice → type de champ + décimales Excel (format de cellule). */
+const KIND_TO_FIELD: Record<MatrixColumn['kind'], { fieldType: string; decimals?: number }> = {
+  text: { fieldType: 'text' },
+  ean: { fieldType: 'barcode', decimals: 0 },
+  price: { fieldType: 'number', decimals: 2 },
+  percent: { fieldType: 'percent', decimals: 1 },
+}
+
+/** Convertit la matrice pure en feuille (mêmes clés/labels que le client → l'export
+ *  Sheets natif reprend les libellés et types de colonnes). */
+function toSheet(cols: MatrixColumn[], rows: Record<string, unknown>[]) {
+  const columns = cols.map((c) => {
+    const f = KIND_TO_FIELD[c.kind]
+    return {
+      key: c.key, label: c.label, fieldType: f.fieldType, detectedType: f.fieldType,
+      isPrimary: !!c.primary, width: c.kind === 'text' ? 180 : 120,
+      ...(f.decimals != null ? { decimals: f.decimals } : {}),
+    }
+  })
+  return { name: 'Veille tarifaire', columns, rows, taxonomy: [] }
+}
+
+registerServerNode({
+  type: 'compare-catalog',
+  run: async (ctx, config, inputs) => {
+    const watchId = String(config.watchId || DEFAULT_WATCH_ID).trim() || DEFAULT_WATCH_ID
+    const sites = parseSitesConfig(String(config.sites ?? ''))
+    const products = (inputs.products ?? {}) as SheetLike
+    const rawRows = products.rows ?? []
+
+    if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { matrix: toSheet([], []) } }
+    if (rawRows.length === 0) { ctx.log('warn', 'Feuille de produits vide en entrée.'); return { matrix: toSheet([], []) } }
+
+    const refColumn = config.refColumn as string | undefined
+    const ref2Column = config.ref2Column as string | undefined
+    const eanColumn = config.eanColumn as string | undefined
+    const nameColumn = config.nameColumn as string | undefined
+    const familyColumn = config.familyColumn as string | undefined
+    const priceColumn = config.priceColumn as string | undefined
+    const descriptionColumn = config.descriptionColumn as string | undefined
+
+    // Produits source : identité + clés (dont réf d'origine extraites de la description).
+    const sourceProducts: SourceProduct[] = []
+    const seen = new Set<string>()
+    for (const row of rawRows) {
+      const ref = cell(row, refColumn)
+      const ean = cell(row, eanColumn)
+      const name = cell(row, nameColumn) ?? ref ?? ean ?? ''
+      const id = stableId(ref ?? ean ?? name)
+      if (seen.has(id)) continue
+      seen.add(id)
+      const priceRaw = cell(row, priceColumn)
+      const price = priceRaw != null ? parsePrice(priceRaw) : NaN
+      sourceProducts.push({
+        id, name, ref, ref2: cell(row, ref2Column), ean,
+        originRefs: extractOriginRefs(cell(row, descriptionColumn)),
+        price: Number.isNaN(price) ? undefined : price,
+        ...(cell(row, familyColumn) ? { family: cell(row, familyColumn) } as object : {}),
+      })
+    }
+
+    // Relecture de l'index concurrent depuis Firestore (pas via un edge).
+    const siteRefs: SiteRef[] = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
+    const indexBySite = new Map<string, CompetitorListing[]>()
+    for (const s of siteRefs) {
+      if (ctx.signal.aborted) break
+      const listings = await loadAllListings(ctx.uid, watchId, s.siteId)
+      indexBySite.set(s.siteId, listings)
+      ctx.log('info', `${s.domain} : ${listings.length} produit(s) dans l'index.`)
+      if (listings.length === 0) ctx.log('warn', `${s.domain} : index vide — lance d'abord « Moisson concurrents ».`)
+    }
+
+    const vatRate = Math.max(0, Number(config.vatRate) || 20) / 100
+    // En-têtes de sortie = noms de colonnes de la source (suffixés du concurrent).
+    const labels = { ref: refColumn, ean: eanColumn, name: nameColumn, family: familyColumn, price: priceColumn }
+    const m = buildMatrix(sourceProducts, siteRefs, indexBySite, { vatRate, labels })
+    ctx.log('info',
+      `${m.matched} produit(s) apparié(s) : ${m.matchedExact} même produit, ` +
+      `${m.matchedOriginOnly} pièce d'origine (adaptable ↔ OEM). ` +
+      `${m.unmatched} sans correspondance, ${m.noKey} sans clé.`)
+    return { matrix: toSheet(m.columns, m.rows) }
+  },
+})
