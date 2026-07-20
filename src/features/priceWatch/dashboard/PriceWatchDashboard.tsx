@@ -1,19 +1,20 @@
 // src/features/priceWatch/dashboard/PriceWatchDashboard.tsx
 // Cockpit BI de la veille tarifaire (dense, façon terminal). Tout est dérivé du rapport
-// pré-agrégé (reportStore) via buildCockpit (pur). La SOURCE (watchId) est choisie en
-// amont (menu du header) et passée en prop.
+// pré-agrégé via buildCockpit (pur). UN moteur de recherche global filtre les blocs
+// dérivés (les KPIs headline restent globaux). SOURCE (watchId) choisie dans le header.
 import { useMemo, useState } from 'react'
 import { useCatalogReport, useReportHistory } from '../useCatalogReport'
-import { buildCockpit } from './analytics'
+import { buildCockpit, EMPTY_FILTER, type CockpitFilter } from './analytics'
 import { KpiStrip } from './KpiStrip'
 import { PositionDonut } from './PositionDonut'
 import { GapDistribution } from './GapDistribution'
 import { CompetitorRanking } from './CompetitorRanking'
+import { PriceScatter } from './PriceScatter'
 import { HeatmapMatrix } from './HeatmapMatrix'
-import { TrendChart } from './TrendChart'
+import { CompetitorTrend } from './CompetitorTrend'
 import { AnalyticsTable } from './AnalyticsTable'
 import { ProductList } from './ProductList'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Search, X } from 'lucide-react'
 
 function EmptyState({ hasWatch }: { hasWatch: boolean }) {
   return (
@@ -27,24 +28,51 @@ function EmptyState({ hasWatch }: { hasWatch: boolean }) {
   )
 }
 
+const selCls = 'bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-white/10 focus:outline-none focus:border-white/25'
+
 export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   const report = useCatalogReport(watchId)
   const history = useReportHistory(watchId)
-  const ck = useMemo(() => (report ? buildCockpit(report) : null), [report])
+  const [filter, setFilter] = useState<CockpitFilter>(EMPTY_FILTER)
+  const ck = useMemo(() => (report ? buildCockpit(report, filter) : null), [report, filter])
+
   const [detailOpen, setDetailOpen] = useState(false)
 
   if (!report || !ck) return <EmptyState hasWatch={!!watchId} />
+  const set = (patch: Partial<CockpitFilter>) => setFilter((f) => ({ ...f, ...patch }))
 
   return (
     <div className="space-y-3" data-pw-section="cockpit">
       {report.truncated && (
         <div className="bg-amber-500/10 border border-amber-500/25 rounded-md px-3 py-2 text-xs text-amber-300">
           {report.totalMatched.toLocaleString('fr-FR')} produits appariés — le détail est borné aux 1000 les moins bien
-          positionnés. Les distributions/heatmap portent sur cet échantillon (l’exhaustif est dans l’export Excel du workflow).
+          positionnés. Distributions/heatmap/scatter portent sur cet échantillon (l’exhaustif est dans l’export Excel).
         </div>
       )}
 
       <KpiStrip ck={ck} history={history} />
+
+      {/* Moteur de recherche global : pilote tous les blocs dérivés. */}
+      <div className="flex flex-wrap items-center gap-2 bg-surface rounded-lg px-3 py-2 border border-white/5">
+        <Search className="w-4 h-4 text-white/40" />
+        <input value={filter.q} onChange={(e) => set({ q: e.target.value })} placeholder="Filtrer la donnée BI — réf, EAN, nom du produit…"
+          className="bg-transparent text-white/85 text-sm flex-1 min-w-[180px] focus:outline-none placeholder:text-white/30" />
+        <select value={filter.position} onChange={(e) => set({ position: e.target.value as CockpitFilter['position'] })} className={selCls}>
+          <option value="all">Toutes positions</option>
+          <option value="cheaper">Concurrent moins cher</option>
+          <option value="aligned">Aligné</option>
+          <option value="dearer">Je suis moins cher</option>
+        </select>
+        <select value={filter.famille} onChange={(e) => set({ famille: e.target.value })} className={selCls}>
+          <option value="all">Toutes familles</option>
+          {ck.familyKeys.map((f) => <option key={f} value={f}>{f}</option>)}
+        </select>
+        {ck.filterActive && (
+          <button onClick={() => setFilter(EMPTY_FILTER)} className="flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-200">
+            <X className="w-3.5 h-3.5" /> {ck.filteredCount}/{ck.totalCount}
+          </button>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
         <div className="xl:col-span-3"><PositionDonut kpis={report.kpis} /></div>
@@ -53,11 +81,12 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2"><HeatmapMatrix ck={ck} /></div>
-        <div className="lg:col-span-1"><TrendChart history={history} /></div>
+        <div><PriceScatter ck={ck} /></div>
+        <div><HeatmapMatrix ck={ck} /></div>
+        <div><CompetitorTrend history={history} sites={report.sites} /></div>
       </div>
 
-      <AnalyticsTable report={report} ck={ck} />
+      <AnalyticsTable ck={ck} />
 
       <section className="bg-surface rounded-lg">
         <button type="button" onClick={() => setDetailOpen((o) => !o)}

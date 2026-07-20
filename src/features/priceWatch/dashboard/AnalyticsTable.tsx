@@ -1,40 +1,27 @@
 // src/features/priceWatch/dashboard/AnalyticsTable.tsx
 // Tableau analytique maître (terminal dense) : 1 produit / ligne, colonnes fixes + une
-// heat-cell d'écart par concurrent. Triable (clic en-tête), filtrable (recherche /
-// position / famille), exportable CSV. C'est le « où agir » + « explorer la donnée brute ».
+// heat-cell d'écart par concurrent. Triable (clic en-tête), exportable CSV. Le FILTRE
+// est global (piloté par la recherche du cockpit) → les lignes arrivent déjà filtrées.
 import { useMemo, useState } from 'react'
-import type { StoredReport } from '../reportStore'
 import type { Cockpit, TableRow } from './analytics'
-import { buildTableRows, rowsToCsv } from './analytics'
+import { rowsToCsv } from './analytics'
 import { eur, pct, heatColor, POSITION_LABEL, POSITION_TEXT } from './format'
 
 type SortKey = 'name' | 'famille' | 'myPriceHt' | 'bestGapPct'
 const num = (v: number | null) => (v == null ? Number.POSITIVE_INFINITY : v)
 
-export function AnalyticsTable({ report, ck }: { report: StoredReport; ck: Cockpit }) {
+export function AnalyticsTable({ ck }: { ck: Cockpit }) {
   const comps = ck.competitors
-  const allRows = useMemo(() => buildTableRows(report.products), [report])
-  const [q, setQ] = useState('')
-  const [tone, setTone] = useState<'all' | 'cheaper' | 'aligned' | 'dearer'>('all')
-  const [fam, setFam] = useState('all')
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'bestGapPct', dir: 1 })
 
   const rows = useMemo(() => {
-    const needle = q.trim().toLowerCase()
-    let r = allRows.filter((x) => {
-      if (tone !== 'all' && x.tone !== tone) return false
-      if (fam !== 'all' && (x.famille ?? 'Autres') !== fam) return false
-      if (needle && ![x.name, x.reference, x.ean].some((s) => s?.toLowerCase().includes(needle))) return false
-      return true
-    })
     const { key, dir } = sort
-    r = [...r].sort((a, b) => {
+    return [...ck.tableRows].sort((a, b) => {
       const av = a[key], bv = b[key]
       if (typeof av === 'string' || typeof bv === 'string') return dir * String(av ?? '').localeCompare(String(bv ?? ''))
       return dir * (num(av as number | null) - num(bv as number | null))
     })
-    return r
-  }, [allRows, q, tone, fam, sort])
+  }, [ck.tableRows, sort])
 
   const exportCsv = () => {
     const csv = rowsToCsv(rows, comps)
@@ -53,24 +40,10 @@ export function AnalyticsTable({ report, ck }: { report: StoredReport; ck: Cockp
 
   return (
     <div className="bg-surface rounded-lg p-4" data-pw-section="table">
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        <div className="text-sm font-semibold text-white mr-auto">Détail produits ({rows.length})</div>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher réf, EAN, nom…"
-          className="bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-white/10 w-48 focus:outline-none focus:border-white/25" />
-        <select value={tone} onChange={(e) => setTone(e.target.value as typeof tone)}
-          className="bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-white/10">
-          <option value="all">Toutes positions</option>
-          <option value="cheaper">Concurrent moins cher</option>
-          <option value="aligned">Aligné</option>
-          <option value="dearer">Je suis moins cher</option>
-        </select>
-        <select value={fam} onChange={(e) => setFam(e.target.value)}
-          className="bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-white/10">
-          <option value="all">Toutes familles</option>
-          {ck.families.map((f) => <option key={f.famille} value={f.famille}>{f.famille}</option>)}
-        </select>
-        <button onClick={exportCsv}
-          className="bg-well text-white/70 text-xs rounded px-3 py-1.5 border border-white/10 hover:text-white hover:border-white/25">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="text-sm font-semibold text-white">Détail produits</div>
+        <span className="text-[11px] text-white/40">{rows.length}{ck.filterActive ? ` / ${ck.totalCount}` : ''}</span>
+        <button onClick={exportCsv} className="ml-auto bg-well text-white/70 text-xs rounded px-3 py-1.5 border border-white/10 hover:text-white hover:border-white/25">
           Export CSV
         </button>
       </div>
@@ -91,7 +64,9 @@ export function AnalyticsTable({ report, ck }: { report: StoredReport; ck: Cockp
             </tr>
           </thead>
           <tbody>
-            {rows.map((r: TableRow) => (
+            {rows.length === 0 ? (
+              <tr><td colSpan={5 + comps.length} className="text-center text-white/40 py-8">Aucun produit ne correspond à la recherche.</td></tr>
+            ) : rows.map((r: TableRow) => (
               <tr key={r.id} className="border-t border-white/5 text-right hover:bg-white/[0.03]">
                 <td className="text-left py-1.5 pl-3 text-white/85 max-w-[240px] truncate" title={r.name}>
                   {r.name}<span className="text-white/35"> · {r.reference ?? '—'}</span>

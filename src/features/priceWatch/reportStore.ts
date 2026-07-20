@@ -30,6 +30,10 @@ export interface KpiHistoryPoint {
   dearerThanMe: number
   aligned: number
   productsUndercut: number
+  /** Écart moyen (avgGapPct FIABLE, agrégé serveur) par concurrent à cette analyse.
+   *  `s` = siteId, `g` = écart % (null si aucun prix). ABSENT des points écrits avant
+   *  cette feature → à traiter comme un trou dans la courbe (jamais 0). */
+  comp?: { s: string; g: number | null }[]
 }
 
 function stripUndefined<T>(value: T): T {
@@ -77,6 +81,7 @@ export async function saveCatalogReport(
     dearerThanMe: report.kpis.dearerThanMe,
     aligned: report.kpis.aligned,
     productsUndercut: report.kpis.productsUndercut,
+    comp: report.byCompetitor.map((c) => ({ s: c.siteId, g: c.avgGapPct })),
   }
   const hRef = doc(db, reportHistoryDoc(uid, watchId))
   const prev = (await getDoc(hRef)).data()?.points as KpiHistoryPoint[] | undefined

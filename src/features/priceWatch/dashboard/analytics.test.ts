@@ -1,7 +1,8 @@
 // src/features/priceWatch/dashboard/analytics.test.ts
 import { describe, it, expect } from 'vitest'
 import type { StoredReport } from '../reportStore'
-import { buildCockpit, buildTableRows, rowsToCsv } from './analytics'
+import type { KpiHistoryPoint } from '../reportStore'
+import { buildCockpit, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries } from './analytics'
 
 const cell = (siteId: string, domain: string, priceHt: number, gapPct: number, stock: 'in-stock' | 'out-of-stock' = 'in-stock') => ({
   siteId, domain, name: 'x', url: '', image: null,
@@ -61,6 +62,55 @@ describe('buildCockpit', () => {
     const b = Object.fromEntries(ck.histogram.map((h) => [h.label, h.count]))
     expect(b['-30 à -20%']).toBe(2)
     expect(b['3 à 10%']).toBe(2)
+  })
+})
+
+describe('filtre global', () => {
+  it('filterProducts par position / famille / recherche', () => {
+    expect(filterProducts(report.products, { q: '', famille: 'all', position: 'cheaper' }).map((p) => p.id)).toEqual(['1', '2'])
+    expect(filterProducts(report.products, { q: '', famille: 'all', position: 'dearer' }).map((p) => p.id)).toEqual(['3'])
+    expect(filterProducts(report.products, { q: '', famille: 'F1', position: 'all' })).toHaveLength(2)
+    expect(filterProducts(report.products, { q: 'P1', famille: 'all', position: 'all' })).toHaveLength(1)
+  })
+
+  it('buildCockpit filtré : blocs dérivés réduits, headline global inchangé', () => {
+    const full = buildCockpit(report)
+    const filtered = buildCockpit(report, { q: '', famille: 'F1', position: 'all' })
+    expect(filtered.filterActive).toBe(true)
+    expect(filtered.filteredCount).toBe(2)
+    expect(filtered.scatter).toHaveLength(2)
+    // headline identiques (jamais filtrés)
+    expect(filtered.priceHoldPct).toBe(full.priceHoldPct)
+    expect(filtered.exposedPct).toBe(full.exposedPct)
+  })
+
+  it('scatter = un point par produit chiffré (prix × meilleur écart)', () => {
+    const ck = buildCockpit(report)
+    expect(ck.scatter).toHaveLength(3)
+    expect(ck.scatter[0]).toMatchObject({ x: 100, y: -20, tone: 'cheaper' })
+  })
+})
+
+describe('séries temporelles', () => {
+  const history: KpiHistoryPoint[] = [
+    { at: 1, products: 3, cheaperThanMe: 3, dearerThanMe: 1, aligned: 0, productsUndercut: 2, comp: [{ s: 'a', g: -18 }, { s: 'b', g: 4 }] },
+    { at: 2, products: 3, cheaperThanMe: 2, dearerThanMe: 2, aligned: 0, productsUndercut: 2, comp: [{ s: 'a', g: -22 }] },
+  ]
+
+  it('competitorSeries : une série par site, null = trou (jamais 0)', () => {
+    const { at, series } = competitorSeries(history, report.sites)
+    expect(at).toEqual([1, 2])
+    const a = series.find((s) => s.siteId === 'a')!
+    const b = series.find((s) => s.siteId === 'b')!
+    expect(a.points).toEqual([-18, -22])
+    expect(b.points).toEqual([4, null]) // absent du 2e point → trou
+  })
+
+  it('sparkSeries : dérive tenue/exposés/appariés des points', () => {
+    const s = sparkSeries(history)
+    expect(s.undercut).toEqual([2, 2])
+    expect(s.products).toEqual([3, 3])
+    expect(s.hold[0]).toBe(25) // (0+1)/(0+1+3)
   })
 })
 
