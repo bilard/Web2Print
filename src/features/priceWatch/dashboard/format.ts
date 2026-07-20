@@ -51,6 +51,20 @@ export const POSITION_TEXT: Record<Position, string> = {
   dearer: 'text-emerald-400',
 }
 
+/**
+ * Couleur diverging d'un écart % pour les cellules de heatmap / tableau (fond).
+ * Échelle : rose (concurrent moins cher = alerte) ↔ neutre ↔ émeraude (je suis moins
+ * cher). Intensité proportionnelle à |écart|, clampée à ±clamp %. Alpha modéré pour
+ * garder le texte lisible par-dessus. Rendu identique en clair/sombre (superposé au fond).
+ */
+export function heatColor(gapPct: number | null, clamp = 25): string {
+  if (gapPct == null) return 'transparent'
+  const t = Math.max(-1, Math.min(1, gapPct / clamp)) // -1 (rose) .. +1 (émeraude)
+  const a = Math.min(0.42, Math.abs(t) * 0.42)
+  const [r, g, b] = t < 0 ? [251, 113, 133] : [52, 211, 153] // rose / émeraude
+  return `rgba(${r}, ${g}, ${b}, ${a.toFixed(3)})`
+}
+
 export const STOCK_LABEL: Record<string, string> = {
   'in-stock': 'En stock', 'out-of-stock': 'Rupture', 'on-order': 'Sur commande',
 }
