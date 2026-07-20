@@ -20,6 +20,7 @@ import type { CompetitorListing } from '@/features/priceWatch/catalog/prestashop
 
 interface CompareConfig {
   watchId: string
+  label: string
   sites: string
   refColumn: string
   ref2Column: string
@@ -89,9 +90,10 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     { name: 'descriptionColumn', kind: 'columnRef', label: 'Colonne Description', help: 'Sert à extraire les réf. d’origine (« Remplace origine: … ») pour les pièces adaptables.' },
     { name: 'vatRate', kind: 'number', label: 'TVA concurrents (%)', help: 'Pour recalculer le HT depuis le TTC affiché. Défaut : 20.' },
     { name: 'watchId', kind: 'text', label: 'Identifiant du suivi', help: 'Partagé avec « Moisson concurrents ».' },
+    { name: 'label', kind: 'text', label: 'Nom du suivi (affiché)', help: 'Libellé lisible dans le menu « Source » du tableau de bord. Vide → l’identifiant est affiché.' },
   ],
   defaultConfig: {
-    watchId: DEFAULT_WATCH_ID, sites: '', vatRate: 20,
+    watchId: DEFAULT_WATCH_ID, label: '', sites: '', vatRate: 20,
     refColumn: 'reference', ref2Column: '', eanColumn: 'ean', nameColumn: 'name',
     familyColumn: 'family', priceColumn: 'price', descriptionColumn: 'description',
   },
@@ -155,7 +157,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // l'export. Le tableau de bord « Veille tarifaire » lit ce rapport par watchId.
     try {
       const report = buildReport(products, siteRefs, indexBySite, { vatRate })
-      await saveCatalogReport(uid, watchId, report, siteRefs, Date.now())
+      await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() })
       ctx.log('info', `Rapport enregistré (suivi « ${watchId} ») — visible dans le tableau de bord Veille tarifaire.`)
     } catch (err) {
       ctx.log('warn', `Rapport dashboard non enregistré : ${err instanceof Error ? err.message : String(err)}`)
