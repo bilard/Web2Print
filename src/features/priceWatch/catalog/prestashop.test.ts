@@ -93,6 +93,26 @@ describe('parseListingPage — webmotoculture (liens obfusqués, prix TTC explic
   })
 })
 
+describe('parseListingPage — emc-motoculture (libellé sr-only avant le prix, EAN en slug)', () => {
+  const items = parseListingPage(fixture('emc-motoculture'))
+
+  it('extrait les cartes', () => {
+    expect(items.length).toBeGreaterThanOrEqual(1)
+  })
+  it('lit le vrai prix malgré le libellé « Prix » qui le précède', () => {
+    // Le piège : <span class="sr-only">Prix</span> avant <span class="price">10,18 €</span>.
+    for (const item of items) {
+      expect(item.price).toBeGreaterThan(0)
+    }
+  })
+  it('reconnaît la mention TTC', () => {
+    expect(items[0].taxIncluded).toBe(true)
+  })
+  it('conserve l’URL de fiche (EAN dans le slug)', () => {
+    expect(items[0].url).toMatch(/^https:\/\/www\.emc-motoculture\.com\/.+\.html$/)
+  })
+})
+
 describe('parseListingPage — jardimax (pas de référence sur la liste)', () => {
   const items = parseListingPage(fixture('jardimax'))
 

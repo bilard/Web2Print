@@ -26,6 +26,19 @@ describe('indexKeysOf', () => {
   it('ignore une référence trop courte', () => {
     expect(indexKeysOf(listing({ ref: 'A2' }))).toEqual([])
   })
+  it('indexe la réf en tête de titre (emc)', () => {
+    const keys = indexKeysOf(listing({ name: '002748 - Courroie pour tondeuse', ref: undefined }))
+    expect(keys).toContain('002748')
+  })
+  it('n’indexe pas un premier mot sans chiffre', () => {
+    expect(indexKeysOf(listing({ name: 'Alternateur Briggs', ref: undefined }))).toEqual([])
+  })
+  it('indexe l’EAN présent dans le slug d’URL (emc)', () => {
+    const keys = indexKeysOf(listing({
+      url: 'https://emc.fr/courroie/3226-002748-courroie-3582323305460.html', ref: undefined,
+    }))
+    expect(keys).toContain('3582323305460')
+  })
 })
 
 describe('matchProduct', () => {

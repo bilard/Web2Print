@@ -6,7 +6,7 @@
 // moissonnée. Le node de matching relit toutes les pages d'un site pour reconstruire
 // l'index en mémoire — quelques centaines de lectures, largement sous les plafonds.
 import {
-  doc, collection, getDoc, getDocs, setDoc, writeBatch, serverTimestamp,
+  doc, collection, getDoc, getDocs, setDoc, serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { competitorDoc, competitorPagesCol } from '../paths'
@@ -98,15 +98,4 @@ export async function loadAllListings(
 export async function countPages(uid: string, watchId: string, siteId: string): Promise<number> {
   const snap = await getDocs(collection(db, competitorPagesCol(uid, watchId, siteId)))
   return snap.size
-}
-
-/** Vide l'index d'un concurrent (avant un rebuild manuel). Batch de 400. */
-export async function clearCompetitor(uid: string, watchId: string, siteId: string): Promise<void> {
-  const snap = await getDocs(collection(db, competitorPagesCol(uid, watchId, siteId)))
-  const refs = snap.docs.map((d) => d.ref)
-  for (let i = 0; i < refs.length; i += 400) {
-    const batch = writeBatch(db)
-    for (const ref of refs.slice(i, i + 400)) batch.delete(ref)
-    await batch.commit()
-  }
 }

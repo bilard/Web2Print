@@ -9,13 +9,13 @@
 
 import {
   candidateKeys, proveMatch, normalizeRef, stripLeadingZeros, normalizeEan,
-  isInternalBarcode, MIN_REF_LEN,
+  isInternalBarcode, MIN_REF_LEN, WEAK_REF_LEN,
   type JoinKey, type MatchProof, type SourceProductKeys,
 } from './keys'
 import type { CompetitorListing, Availability } from './prestashop'
 
 /** TVA française de droit commun. Paramétrable : certaines familles en dérogent. */
-export const DEFAULT_VAT_RATE = 0.2
+const DEFAULT_VAT_RATE = 0.2
 
 /**
  * Clés sous lesquelles indexer un produit relevé chez un concurrent. Un même produit
@@ -25,28 +25,44 @@ export const DEFAULT_VAT_RATE = 0.2
  */
 export function indexKeysOf(listing: CompetitorListing): string[] {
   const out = new Set<string>()
-  const ref = normalizeRef(listing.ref)
-  if (ref.length >= MIN_REF_LEN) {
+  const addRef = (raw: string) => {
+    const ref = normalizeRef(raw)
+    if (ref.length < MIN_REF_LEN) return
     out.add(ref)
     const nz = stripLeadingZeros(ref)
     if (nz.length >= MIN_REF_LEN) out.add(nz)
   }
-  const ean = normalizeEan(listing.gtin13)
-  // Un code-barres interne à la boutique n'est pas une clé de jointure : l'indexer
-  // exposerait à des collisions entre enseignes.
-  if (ean && !isInternalBarcode(ean)) out.add(ean)
+  const addEan = (raw: string) => {
+    const ean = normalizeEan(raw)
+    // Un code-barres interne à la boutique n'est pas une clé de jointure : l'indexer
+    // exposerait à des collisions entre enseignes.
+    if (ean && !isInternalBarcode(ean)) out.add(ean)
+  }
+
+  if (listing.ref) addRef(listing.ref)
+  addEan(listing.gtin13 ?? '')
+
+  // Réf en tête de titre (emc : « 002748 - Courroie … ») : seulement si assez longue
+  // pour discriminer et si elle contient un chiffre (un mot seul n'est pas une réf).
+  const lead = String(listing.name ?? '').trim().split(/[\s|/]+/)[0] ?? ''
+  if (lead.length >= WEAK_REF_LEN && /\d/.test(lead)) addRef(lead)
+
+  // EAN dans le slug d'URL (emc : « …-3582323305460.html »). Indexer permet le lookup ;
+  // la preuve d'appariement reste exigée par proveMatch.
+  for (const m of String(listing.url ?? '').matchAll(/\d{13}/g)) addEan(m[0])
+
   return [...out]
 }
 
 /** Clés à interroger pour un produit source, dans l'ordre de fiabilité. */
-export function lookupKeysOf(p: SourceProductKeys): JoinKey[] {
+function lookupKeysOf(p: SourceProductKeys): JoinKey[] {
   return candidateKeys(p)
 }
 
 /** Résout une clé d'index en produits concurrents candidats. */
 export type IndexLookup = (key: string) => CompetitorListing[] | undefined
 
-export type MatchOutcome = 'matched' | 'not-found' | 'no-key'
+type MatchOutcome = 'matched' | 'not-found' | 'no-key'
 
 export interface SourceProduct extends SourceProductKeys {
   id: string

@@ -17,6 +17,8 @@ import './exportNodes'
 import './logicNodes'
 import './priceWatchNode'
 import './priceWatchTrackNode'
+import './harvestCompetitorNode'
+import './compareCatalogNode'
 import './listProductsNode'
 import './crawlNode'
 import './webScrapingNode' // node unifié (doit suivre les anciens : il les référence)

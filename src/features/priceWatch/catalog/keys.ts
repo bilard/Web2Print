@@ -67,13 +67,17 @@ export function isInternalBarcode(ean: string): boolean {
 
 /** Type de clé, du plus fiable au moins fiable. Sert à ordonner les tentatives et à
  *  tracer PAR QUOI un appariement a été obtenu (auditable dans le résultat). */
-export type JoinKeyKind = 'ean' | 'ref' | 'ref-nozero'
+type JoinKeyKind = 'ean' | 'ref' | 'ref-nozero'
 
 export interface JoinKey {
   kind: JoinKeyKind
   value: string
   /** Clé courte : n'autorise que l'égalité sur un champ d'identité déclaré. */
   weak: boolean
+  /** Clé issue d'une référence d'ORIGINE (« Remplace origine: … »), pas du produit
+   *  lui-même. Un match sur une telle clé compare une pièce adaptable à la pièce
+   *  d'origine qu'elle remplace — utile, mais PAS le même produit. À signaler. */
+  origin: boolean
 }
 
 export interface SourceProductKeys {
@@ -94,23 +98,30 @@ export interface SourceProductKeys {
 export function candidateKeys(p: SourceProductKeys): JoinKey[] {
   const out: JoinKey[] = []
   const seen = new Set<string>()
-  const push = (kind: JoinKeyKind, value: string) => {
+  const push = (kind: JoinKeyKind, value: string, origin: boolean) => {
     if (!value) return
     const dedup = `${kind}:${value}`
     if (seen.has(dedup)) return
     seen.add(dedup)
-    out.push({ kind, value, weak: kind !== 'ean' && value.length < WEAK_REF_LEN })
+    out.push({ kind, value, weak: kind !== 'ean' && value.length < WEAK_REF_LEN, origin })
   }
 
   const ean = normalizeEan(p.ean)
-  if (ean && !isInternalBarcode(ean)) push('ean', ean)
+  if (ean && !isInternalBarcode(ean)) push('ean', ean, false)
 
-  for (const raw of [p.ref, p.ref2, ...(p.originRefs ?? [])]) {
+  // Références propres du produit d'abord (origin=false), références d'origine ensuite
+  // (origin=true) : un match exact prime toujours sur un match « pièce d'origine ».
+  const ownRefs = [p.ref, p.ref2].filter(Boolean) as string[]
+  const originRefs = (p.originRefs ?? [])
+  for (const [raw, isOrigin] of [
+    ...ownRefs.map((r) => [r, false] as const),
+    ...originRefs.map((r) => [r, true] as const),
+  ]) {
     const ref = normalizeRef(raw)
     if (ref.length < MIN_REF_LEN) continue
-    push('ref', ref)
+    push('ref', ref, isOrigin)
     const nz = stripLeadingZeros(ref)
-    if (nz !== ref && nz.length >= MIN_REF_LEN) push('ref-nozero', nz)
+    if (nz !== ref && nz.length >= MIN_REF_LEN) push('ref-nozero', nz, isOrigin)
   }
   return out
 }
@@ -129,7 +140,7 @@ export interface CompetitorIdentity {
   name?: string
 }
 
-export type MatchEvidence = 'gtin13' | 'ean-in-url' | 'sku' | 'mpn' | 'ref-in-name'
+type MatchEvidence = 'gtin13' | 'ean-in-url' | 'sku' | 'mpn' | 'ref-in-name'
 
 export interface MatchProof {
   key: JoinKey

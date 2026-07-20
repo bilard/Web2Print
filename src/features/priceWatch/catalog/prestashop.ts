@@ -163,11 +163,16 @@ function extractPrices(block: string): Pick<CompetitorListing, 'price' | 'listPr
   if (contentAttr) out.price = parsePriceFragment(contentAttr[1])
 
   if (out.price == null) {
-    const zone = block.match(/<[^>]*\b(?:product-price|price)\b[^>]*>([\s\S]{0,200}?)<\/span>/i)
-    if (zone) out.price = parsePriceFragment(zone[1])
+    // Itère les éléments de classe `price` et garde le PREMIER qui donne un nombre :
+    // un libellé `sr-only` « Prix » précède parfois le vrai prix (emc), et une capture
+    // naïve s'arrêterait dessus. On saute donc les fragments sans chiffre.
+    for (const m of block.matchAll(/<(?:span|div|p)[^>]*class=["'][^"']*\bprice\b[^"']*["'][^>]*>([\s\S]{0,160}?)<\/(?:span|div|p)>/gi)) {
+      const p = parsePriceFragment(m[1])
+      if (p != null) { out.price = p; break }
+    }
   }
 
-  const regular = block.match(/<[^>]*\bregular-price\b[^>]*>([\s\S]{0,200}?)<\/span>/i)
+  const regular = block.match(/<[^>]*\b(?:regular-price|product-price--old|old-price)\b[^>]*>([\s\S]{0,200}?)<\/(?:span|div)>/i)
   if (regular) out.listPrice = parsePriceFragment(regular[1])
 
   const txt = textOf(block)
