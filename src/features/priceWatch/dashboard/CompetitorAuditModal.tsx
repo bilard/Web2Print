@@ -33,8 +33,12 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  // Rétrocompat : un rapport écrit avant cette feature n'a pas de champ `audit`.
+  const EMPTY: CompetitorAudit = { indexed: 0, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 }
   // Les sites qui ont collecté le plus de fiches d'abord ; à collecte égale, alpha.
-  const rows = [...stats].sort((a, b) => b.audit.indexed - a.audit.indexed || a.domain.localeCompare(b.domain))
+  const rows = stats
+    .map((s) => ({ ...s, audit: s.audit ?? EMPTY }))
+    .sort((a, b) => b.audit.indexed - a.audit.indexed || a.domain.localeCompare(b.domain))
 
   return createPortal(
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8" onClick={onClose}>

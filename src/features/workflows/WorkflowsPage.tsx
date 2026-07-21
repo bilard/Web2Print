@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import {
   ArrowLeft, LayoutGrid, List, Plus, Trash2, Workflow as WorkflowIcon,
-  Folder, FolderPlus, Pencil, Check, X, ChevronDown, ChevronRight,
+  Folder, FolderPlus, Pencil, Check, X, ChevronDown, ChevronRight, Star,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import {
@@ -12,8 +12,9 @@ import {
 } from './persistence/workflowsApi'
 import { useCan } from '@/features/access/useAccess'
 import { OptionHelp } from '@/components/shared/OptionHelp'
-import { WORKFLOW_TEMPLATES, workflowFromTemplate, type WorkflowTemplate } from './templates'
+import { workflowFromTemplate, type WorkflowTemplate } from './templates'
 import { UserTemplatesSection } from './UserTemplatesSection'
+import { SaveAsTemplateDialog } from './editor/SaveAsTemplateDialog'
 import type { Workflow, WorkflowFolder } from './types'
 
 interface WorkflowsPageProps {
@@ -23,7 +24,6 @@ interface WorkflowsPageProps {
 type ViewMode = 'grid' | 'list'
 const VIEW_MODE_KEY = 'workflows.viewMode'
 const COLLAPSED_KEY = 'workflows.collapsedFolders'
-const TEMPLATES_OPEN_KEY = 'workflows.templatesOpen'
 
 export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
   const uid = useAuthStore((s) => s.user?.uid)
@@ -62,12 +62,10 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
     const saved = localStorage.getItem(VIEW_MODE_KEY)
     return saved === 'list' ? 'list' : 'grid'
   })
-  // Galerie de modèles repliable : par défaut REPLIÉE dès qu'on a déjà des workflows
-  // (la liste passait sous la longue galerie). `null` = pas de préférence → dérivé.
-  const [templatesPref, setTemplatesPref] = useState<boolean | null>(() => {
-    const raw = localStorage.getItem(TEMPLATES_OPEN_KEY)
-    return raw == null ? null : raw === '1'
-  })
+  // Workflow ciblé par le dialog « Enregistrer comme modèle » (null = fermé).
+  const [templateFor, setTemplateFor] = useState<Workflow | null>(null)
+  // Bump pour forcer UserTemplatesSection à relire après création d'un modèle.
+  const [templatesVersion, setTemplatesVersion] = useState(0)
 
   useEffect(() => {
     localStorage.setItem(VIEW_MODE_KEY, viewMode)
@@ -91,12 +89,9 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
 
   useModuleIntent('workflows', (action) => {
     if (action === 'action:new') { void create(); return }
-    const sel = action === 'action:my-templates'
-      ? '[data-wf-section="my-templates"]'
-      : action === 'action:builtin-templates'
-      ? '[data-wf-section="builtin-templates"]'
-      : null
-    if (sel) document.querySelector<HTMLElement>(sel)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (action === 'action:my-templates') {
+      document.querySelector<HTMLElement>('[data-wf-section="my-templates"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   })
 
   const createFromTemplate = async (template: WorkflowTemplate) => {
@@ -180,15 +175,27 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             </p>
             <div className="mt-2">{folderSelect(wf)}</div>
           </div>
-          {canDelete && (
-            <button
-              onClick={(e) => { e.stopPropagation(); remove(wf.id) }}
-              className="text-neutral-500 hover:text-red-400 p-1 shrink-0"
-              aria-label="Supprimer"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
+          <div className="flex items-center gap-0.5 shrink-0">
+            {canCreate && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setTemplateFor(wf) }}
+                className="text-neutral-500 hover:text-amber-400 p-1"
+                aria-label="Enregistrer comme modèle"
+                title="Enregistrer ce workflow comme modèle"
+              >
+                <Star className="w-4 h-4" />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={(e) => { e.stopPropagation(); remove(wf.id) }}
+                className="text-neutral-500 hover:text-red-400 p-1"
+                aria-label="Supprimer"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="flex items-center justify-between gap-4">
@@ -201,6 +208,16 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             <span className="text-xs text-neutral-500 tabular-nums">
               {wf.nodes.length} nodes · {wf.edges.length} liens
             </span>
+            {canCreate && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setTemplateFor(wf) }}
+                className="text-neutral-500 hover:text-amber-400 p-1"
+                aria-label="Enregistrer comme modèle"
+                title="Enregistrer ce workflow comme modèle"
+              >
+                <Star className="w-4 h-4" />
+              </button>
+            )}
             {canDelete && (
               <button
                 onClick={(e) => { e.stopPropagation(); remove(wf.id) }}
@@ -224,8 +241,6 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
 
   const knownFolderIds = new Set(folders.map((f) => f.id))
   const ungrouped = items.filter((w) => !w.folderId || !knownFolderIds.has(w.folderId))
-  // Préférence explicite si posée, sinon repliée dès qu'on a au moins un workflow.
-  const templatesOpen = templatesPref ?? items.length === 0
 
   const folderHeader = (folder: WorkflowFolder, count: number) => (
     <div className="flex items-center gap-2 mb-3">
@@ -374,46 +389,12 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
         </div>
       )}
 
-      {/* Galerie de recettes prêtes à l'emploi (repliable : la liste des workflows
-          passait sous une galerie de plus en plus longue). */}
-      {canCreate && (
-        <section className="mb-8" aria-label="Modèles de workflows">
-          <button
-            type="button"
-            onClick={() => {
-              const next = !templatesOpen
-              setTemplatesPref(next)
-              try { localStorage.setItem(TEMPLATES_OPEN_KEY, next ? '1' : '0') } catch { /* localStorage indispo */ }
-            }}
-            aria-expanded={templatesOpen}
-            className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-white/30 hover:text-white/60 mb-3 transition-colors"
-          >
-            {templatesOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-            Démarrer depuis un modèle
-            <span className="text-white/20 tabular-nums normal-case tracking-normal">{WORKFLOW_TEMPLATES.length}</span>
-          </button>
-          {templatesOpen && (
-          <div data-wf-section="builtin-templates" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {WORKFLOW_TEMPLATES.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => void createFromTemplate(t)}
-                className="text-left bg-surface border border-white/[0.06] rounded-lg p-3.5 hover:border-indigo-500/60 hover:bg-white/[0.02] transition-colors group"
-              >
-                <div className="text-xl mb-2" aria-hidden="true">{t.emoji}</div>
-                <div className="text-[13px] font-medium text-white/80 group-hover:text-white">{t.name}</div>
-                <p className="text-[11px] text-white/35 mt-1 leading-snug">{t.description}</p>
-              </button>
-            ))}
-          </div>
-          )}
-        </section>
-      )}
-
-      {/* Modèles créés par l'utilisateur (privés) */}
+      {/* Modèles créés par l'utilisateur (privés). Les modèles se créent depuis un
+          workflow existant (bouton ⭐ sur chaque carte), plus depuis une galerie. */}
       {canCreate && uid && (
         <div data-wf-section="my-templates">
           <UserTemplatesSection
+            key={templatesVersion}
             uid={uid}
             canEdit={canEdit}
             canDelete={canDelete}
@@ -466,6 +447,15 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             </section>
           )}
         </div>
+      )}
+
+      {templateFor && uid && (
+        <SaveAsTemplateDialog
+          workflow={templateFor}
+          uid={uid}
+          onClose={() => setTemplateFor(null)}
+          onSaved={() => setTemplatesVersion((v) => v + 1)}
+        />
       )}
     </>
   )
