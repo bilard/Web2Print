@@ -57,7 +57,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       {/* Colonne gauche : navigation par famille + liste des concurrents (Benchmark).
           Plus logique/lisible que le rail droit — la navigation (familles + concurrents)
           est regroupée à gauche, les données à droite (demande utilisateur). */}
-      <div className="lg:w-72 shrink-0 space-y-3 lg:sticky lg:top-3 self-start">
+      <div className="lg:w-96 shrink-0 space-y-3 lg:sticky lg:top-3 self-start">
         <CatalogTree ck={ck} active={filter.famille} onSelect={(f) => set({ famille: f })} />
         <CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} />
       </div>

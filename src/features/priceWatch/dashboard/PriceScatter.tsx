@@ -30,7 +30,7 @@ export function PriceScatter({ ck, onSelect, height = 240 }: { ck: Cockpit; onSe
   }
 
   return (
-    <div className="bg-surface rounded-lg p-4">
+    <div className="bg-surface rounded-lg p-4 flex flex-col h-full">
       <div className="flex items-baseline justify-between mb-3">
         <div className="text-sm font-semibold text-white">Prix × écart concurrent</div>
         <div className="text-[11px] text-white/35">{pts.length} produits{ck.truncated ? ' · top 1000' : ''}</div>
@@ -38,7 +38,7 @@ export function PriceScatter({ ck, onSelect, height = 240 }: { ck: Cockpit; onSe
       {pts.length === 0 ? (
         <div className="text-white/40 text-sm py-10 text-center">Aucun produit chiffré dans la vue.</div>
       ) : (
-        <div style={{ height }}>
+        <div className="flex-1" style={{ minHeight: height }}>
           <Scatter
             data={data}
             options={{

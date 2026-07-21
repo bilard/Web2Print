@@ -38,7 +38,7 @@ export function CompetitorTrend({ history, sites, height = 220 }: {
   }
 
   return (
-    <div className="bg-surface rounded-lg p-4 h-full">
+    <div className="bg-surface rounded-lg p-4">
       <div className="flex items-baseline justify-between mb-3">
         <div className="text-sm font-semibold text-white">Flux des écarts par concurrent</div>
         <div className="text-[11px] text-white/35">écart moyen %</div>
