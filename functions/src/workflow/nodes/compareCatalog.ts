@@ -10,7 +10,7 @@
 import { registerServerNode } from '../registry'
 import { parseSitesConfig, parsePrice, stableId } from '../../priceWatch/helpers'
 import { DEFAULT_WATCH_ID } from '../../priceWatch/paths'
-import { loadAllListings, loadCompetitorMeta } from '../../priceWatch/catalog/store'
+import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
 import { buildReport } from '../../priceWatch/catalog/report'
 import { saveCatalogReport } from '../../priceWatch/reportStore'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
@@ -132,6 +132,10 @@ registerServerNode({
     try {
       const report = buildReport(sourceProducts, siteRefs, indexBySite, { vatRate, harvestBySite })
       await saveCatalogReport(ctx.uid, watchId, report, siteRefs, Date.now(), { label: ctx.workflowName })
+      // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact
+      // (annule la dérive de l'incrément live de la moisson).
+      await Promise.all(report.byCompetitor.map((c) =>
+        saveCompetitorMeta(ctx.uid, watchId, c.siteId, { productCount: c.audit.indexed })))
       ctx.log('info', `Rapport dashboard enregistré (suivi « ${watchId} ») — visible dans Veille tarifaire.`)
     } catch (err) {
       ctx.log('warn', `Rapport dashboard non enregistré : ${err instanceof Error ? err.message : String(err)}`)

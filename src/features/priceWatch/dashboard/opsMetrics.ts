@@ -15,6 +15,9 @@ import type { CompetitorStat } from '../catalog/report'
  *  Se met à jour à CHAQUE passe de moisson → prime sur le snapshot figé du rapport. */
 export interface HarvestMeta {
   domain?: string
+  /** Nombre de produits indexés — mis à jour EN COURS de moisson (toutes les N pages) puis
+   *  remis à la valeur dédupliquée exacte au « Comparer ». Fait ticker « Fiches collectées ». */
+  productCount?: number
   pageCount?: number
   harvestProgress?: number
   harvestSweeps?: number
@@ -55,7 +58,9 @@ export interface OpsCockpit {
 }
 
 function opsCompetitorOf(s: CompetitorStat, live?: HarvestMeta): OpsCompetitor {
-  const indexed = s.audit?.indexed ?? 0
+  // Compte LIVE de la moisson en cours s'il existe (tick pendant le run), sinon le
+  // snapshot dédupliqué du dernier Comparer.
+  const indexed = live?.productCount ?? s.audit?.indexed ?? 0
   const h = s.harvest
   // La méta LIVE prime sur le snapshot du rapport (elle bouge pendant la moisson).
   const sweeps = live?.harvestSweeps ?? h?.sweeps ?? 0

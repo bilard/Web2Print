@@ -64,6 +64,7 @@ export function useCompetitorMeta(watchId: string | null): Map<string, HarvestMe
           const upd = data.updatedAt
           m.set(d.id, {
             domain: typeof data.domain === 'string' ? data.domain : undefined,
+            productCount: typeof data.productCount === 'number' ? data.productCount : undefined,
             pageCount: typeof data.pageCount === 'number' ? data.pageCount : undefined,
             harvestProgress: typeof data.harvestProgress === 'number' ? data.harvestProgress : undefined,
             harvestSweeps: typeof data.harvestSweeps === 'number' ? data.harvestSweeps : undefined,

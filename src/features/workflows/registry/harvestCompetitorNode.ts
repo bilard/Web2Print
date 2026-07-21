@@ -101,8 +101,9 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, Record<string, never>, Harv
         savePage: (siteId, pageId, url, page, products) => savePage(uid, watchId, siteId, pageId, url, page, products),
         // Progression live (toutes les 15 pages) : la jauge Balayage avance et le heartbeat
         // reste vert pendant le run, sans attendre la fin du site.
-        onProgress: (_p, cursor) => saveCompetitorMeta(uid, watchId, cfg.siteId, {
+        onProgress: (_p, productsIndexed, cursor) => saveCompetitorMeta(uid, watchId, cfg.siteId, {
           domain: site.domain,
+          productCount: (prevMeta?.productCount ?? 0) + productsIndexed, // fait ticker « Fiches collectées »
           harvestProgress: harvestProgress(cursor),
           harvestSweeps: cursor.sweeps,
           cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + (Date.now() - t0),
@@ -115,6 +116,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, Record<string, never>, Harv
       const pagesTotal = await countPages(uid, watchId, cfg.siteId)
       await saveCompetitorMeta(uid, watchId, cfg.siteId, {
         pageCount: pagesTotal,
+        productCount: (prevMeta?.productCount ?? 0) + res.productsIndexed,
         lastHarvestMs: elapsedMs,
         cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,
         harvestProgress: res.sweepComplete ? 1 : harvestProgress(res.cursor),

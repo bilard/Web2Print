@@ -11,7 +11,7 @@ import type { ExcelSheet, ExcelColumn, ExcelRow } from '@/features/excel/types'
 import { useAuthStore } from '@/stores/auth.store'
 import { parseSitesConfig, parsePrice, stableId } from '@/features/priceWatch/core'
 import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
-import { loadAllListings, loadCompetitorMeta } from '@/features/priceWatch/catalog/store'
+import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
 import { buildReport } from '@/features/priceWatch/catalog/report'
@@ -180,6 +180,9 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     try {
       const report = buildReport(products, siteRefs, indexBySite, { vatRate, harvestBySite })
       await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '' })
+      // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact.
+      await Promise.all(report.byCompetitor.map((c) =>
+        saveCompetitorMeta(uid, watchId, c.siteId, { productCount: c.audit.indexed })))
       ctx.log('info', `Rapport enregistré (suivi « ${watchId} ») — visible dans le tableau de bord Veille tarifaire.`)
     } catch (err) {
       ctx.log('warn', `Rapport dashboard non enregistré : ${err instanceof Error ? err.message : String(err)}`)

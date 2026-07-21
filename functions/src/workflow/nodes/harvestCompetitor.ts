@@ -67,8 +67,9 @@ registerServerNode({
         savePage: (siteId, pageId, url, page, products) => savePage(ctx.uid, watchId, siteId, pageId, url, page, products),
         // Progression live (toutes les 15 pages) : jauge Balayage + heartbeat avancent
         // pendant le run cron, sans attendre la fin du site.
-        onProgress: (_p, cursor) => saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
+        onProgress: (_p, productsIndexed, cursor) => saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
           domain: site.domain,
+          productCount: (prevMeta?.productCount ?? 0) + productsIndexed, // fait ticker « Fiches collectées »
           harvestProgress: harvestProgress(cursor),
           harvestSweeps: cursor.sweeps,
           cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + (Date.now() - t0),
@@ -81,6 +82,7 @@ registerServerNode({
       const pagesTotal = await countPages(ctx.uid, watchId, cfg.siteId)
       await saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
         pageCount: pagesTotal,
+        productCount: (prevMeta?.productCount ?? 0) + res.productsIndexed,
         lastHarvestMs: elapsedMs,
         cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,
         harvestProgress: res.sweepComplete ? 1 : harvestProgress(res.cursor),
