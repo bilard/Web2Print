@@ -93,15 +93,23 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, Record<string, never>, Harv
       ctx.reportConnector?.('jina')
       const cfg: CompetitorConfig = { siteId: stableId(site.domain), domain: site.domain, families }
       const prevMeta = await loadCompetitorMeta(uid, watchId, cfg.siteId)
+      const t0 = Date.now()
       const deps: HarvestDeps = {
         fetchHtml: (url) => fetchSourceHtml(url),
         loadCursor: async () => prevMeta?.cursor ?? null,
         saveCursor: (siteId, cursor) => saveCompetitorMeta(uid, watchId, siteId, { domain: site.domain, cursor }),
         savePage: (siteId, pageId, url, page, products) => savePage(uid, watchId, siteId, pageId, url, page, products),
+        // Progression live (toutes les 15 pages) : la jauge Balayage avance et le heartbeat
+        // reste vert pendant le run, sans attendre la fin du site.
+        onProgress: (_p, cursor) => saveCompetitorMeta(uid, watchId, cfg.siteId, {
+          domain: site.domain,
+          harvestProgress: harvestProgress(cursor),
+          harvestSweeps: cursor.sweeps,
+          cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + (Date.now() - t0),
+        }),
         log: (m) => ctx.log('info', m),
         signal: ctx.signal,
       }
-      const t0 = Date.now()
       const res = await harvestPass(cfg, deps, perSite)
       const elapsedMs = Date.now() - t0
       const pagesTotal = await countPages(uid, watchId, cfg.siteId)

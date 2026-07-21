@@ -29,9 +29,15 @@ export interface HarvestDeps {
   saveCursor: (siteId: string, cursor: HarvestCursor) => Promise<void>
   /** Enregistre les produits d'une page (doc réécrit → refresh sans doublon). */
   savePage: (siteId: string, pageId: string, url: string, page: number, products: CompetitorListing[]) => Promise<void>
+  /** Progression EN COURS de passe (toutes les N pages) → rafraîchit la méta live (jauge
+   *  Balayage + heartbeat) pendant le run, sans attendre la fin. Optionnel. */
+  onProgress?: (pagesFetched: number, cursor: HarvestCursor) => void | Promise<void>
   log?: (msg: string) => void
   signal?: AbortSignal
 }
+
+/** Cadence des remontées de progression live (en pages). */
+const PROGRESS_EVERY = 15
 
 export interface HarvestPassResult {
   siteId: string
@@ -108,6 +114,8 @@ export async function harvestPass(
     pagesFetched++
     cursor = advance(cursor, { hadItems, hasNext })
     await deps.saveCursor(cfg.siteId, cursor)
+    // Remontée live périodique (jauge Balayage + heartbeat) sans attendre la fin du site.
+    if (deps.onProgress && pagesFetched % PROGRESS_EVERY === 0) await deps.onProgress(pagesFetched, cursor)
   }
 
   return {
