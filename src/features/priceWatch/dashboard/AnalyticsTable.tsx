@@ -57,7 +57,7 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
               {th('bestGapPct', 'Meilleur écart', 'pr-2')}
               <th className="pb-2 font-medium pr-2">Position</th>
               {comps.map((c) => (
-                <th key={c.siteId} className="pb-2 font-medium px-1 min-w-[56px]" title={c.domain}>
+                <th key={c.siteId} className="pb-2 font-medium px-1 min-w-[68px]" title={c.domain}>
                   <div className="max-w-[64px] truncate mx-auto">{c.domain.replace(/^www\./, '').split('.')[0]}</div>
                 </th>
               ))}
@@ -81,11 +81,12 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
                 </td>
                 {comps.map((c) => {
                   const g = r.gapBySite[c.siteId]
+                  const price = r.priceBySite[c.siteId]
                   return (
-                    <td key={c.siteId} className="px-1 text-center text-white/80 border-l border-white/[0.04]"
+                    <td key={c.siteId} className="px-1 text-center text-white/85 border-l border-white/[0.04] whitespace-nowrap"
                       style={{ backgroundColor: g == null ? undefined : heatColor(g) }}
-                      title={g == null ? '' : `${c.domain} : ${pct(g)} (${eur(r.priceBySite[c.siteId])})`}>
-                      {g == null ? <span className="text-white/15">·</span> : `${g > 0 ? '+' : ''}${Math.round(g)}`}
+                      title={price == null ? '' : `${c.domain} : ${eur(price)}${g == null ? '' : ` — écart ${pct(g)}`}`}>
+                      {price == null ? <span className="text-white/15">·</span> : `${Math.round(price)} €`}
                     </td>
                   )
                 })}

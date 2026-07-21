@@ -159,11 +159,11 @@ const csvCell = (v: string | number | null): string => {
 
 /** Export CSV (séparateur `;`, décimales FR) : produit + écart par concurrent. */
 export function rowsToCsv(rows: TableRow[], competitors: { siteId: string; domain: string }[]): string {
-  const head = ['Référence', 'EAN', 'Produit', 'Famille', 'Mon prix HT', 'Meilleur écart %', ...competitors.map((c) => `${c.domain} (écart %)`)]
+  const head = ['Référence', 'EAN', 'Produit', 'Famille', 'Mon prix HT', 'Meilleur écart %', ...competitors.map((c) => `${c.domain} (prix HT)`)]
   const dec = (v: number | null) => (v == null ? '' : String(v).replace('.', ','))
   const lines = rows.map((r) =>
     [csvCell(r.reference), csvCell(r.ean), csvCell(r.name), csvCell(r.famille ?? ''), dec(r.myPriceHt), dec(r.bestGapPct),
-      ...competitors.map((c) => dec(r.gapBySite[c.siteId] ?? null))].join(';'),
+      ...competitors.map((c) => dec(r.priceBySite[c.siteId] ?? null))].join(';'),
   )
   return [head.join(';'), ...lines].join('\n')
 }
