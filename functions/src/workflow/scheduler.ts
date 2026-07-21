@@ -208,18 +208,24 @@ export const workflowCronScheduler = onSchedule(
         atTime: s.atTime ?? undefined, weekday: s.weekday ?? undefined,
         afterCompletion: !!s.afterCompletion,
       }
+      // VERROU anti-chevauchement, posé AVANT le run : on repousse nextRunAt au-delà du
+      // budget de run et on marque 'running'. Sans ça, chaque tick (1×/min) relancerait le
+      // même workflow pendant qu'il tourne encore (moisson longue) → empilement de runs et
+      // planning jamais avancé (dashboard figé). `lastRunAt = now` = DÉBUT du run (affiché).
+      // Si le process meurt en cours, le verrou expire seul (nextRunAt ~30 min → reprise auto).
+      await docSnap.ref.update({ lastRunAt: now, lastStatus: 'running', nextRunAt: now + RUN_TIMEOUT_MS + 120_000 })
       try {
         const result = await runWorkflow(wf, s.uid, 'cron')
         // Mode « après la fin » : ancrer la prochaine échéance sur la FIN du run (Date.now()
         // ici = après le await), pas sur le début du tick → ni chevauchement, ni temps mort.
         const anchor = cron.afterCompletion ? Date.now() : now
-        // Run en pause (timeout reprenable) : on reprogramme AU PLUS TÔT (prochain tick)
-        // pour reprendre là où on s'est arrêté, sans avancer à la prochaine échéance.
-        const nextRunAt = result.paused ? now : computeNextRun(cron, anchor)
+        // Run en pause (timeout reprenable) : reprogrammer AU PLUS TÔT (prochain tick) pour
+        // reprendre là où on s'est arrêté, sans avancer à la prochaine échéance.
+        const nextRunAt = result.paused ? Date.now() + 5_000 : computeNextRun(cron, anchor)
         const lastStatus = result.paused ? 'running' : result.status
-        await docSnap.ref.update({ lastRunAt: now, lastStatus, nextRunAt })
+        await docSnap.ref.update({ lastStatus, nextRunAt })
       } catch (err) {
-        await docSnap.ref.update({ lastRunAt: now, lastStatus: 'error', nextRunAt: computeNextRun(cron, cron.afterCompletion ? Date.now() : now) })
+        await docSnap.ref.update({ lastStatus: 'error', nextRunAt: computeNextRun(cron, cron.afterCompletion ? Date.now() : now) })
         console.error('workflowCronScheduler: échec', s.workflowId, err)
       }
     }
