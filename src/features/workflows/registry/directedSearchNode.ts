@@ -104,7 +104,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     // Curseur persistant : on reprend là où le dernier tick s'est arrêté (le cron accumule
     // au fil des passages, comme la moisson). Stocké dans une méta dédiée (pseudo-site ignoré
     // par « Comparer », qui n'itère que les sites configurés).
-    const CURSOR_META = '__directed_cursor__'
+    const CURSOR_META = 'directed_cursor' // pas de __…__ : Firestore réserve ces ids
     const startCursor = (await loadCompetitorMeta(uid, watchId, CURSOR_META))?.productCount ?? 0
     ctx.reportConnector?.('jina')
     const pass = await directedPass(products, sites, startCursor % Math.max(1, products.length), budget, {

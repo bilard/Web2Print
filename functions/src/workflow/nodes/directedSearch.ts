@@ -58,7 +58,7 @@ registerServerNode({
       .filter((p) => p.ref || p.ean)
 
     const budget = Math.max(1, Number(config.productBudget) || 20)
-    const CURSOR_META = '__directed_cursor__'
+    const CURSOR_META = 'directed_cursor' // pas de __…__ : Firestore réserve ces ids
     const startCursor = (await loadCompetitorMeta(ctx.uid, watchId, CURSOR_META))?.productCount ?? 0
     const pass = await directedPass(products, sites, startCursor % Math.max(1, products.length), budget, {
       fetchHtml: async (url) => { try { return await fetchHtml(url, 20000) } catch { return null } },
