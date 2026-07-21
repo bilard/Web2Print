@@ -2,6 +2,7 @@
 // Benchmark concurrentiel dense : un concurrent par ligne, trié par agressivité
 // (écart moyen le plus négatif = casse les prix le plus). avgGapPct est FIABLE (agrégé
 // serveur) ; médiane/plage sont recalculées (biais possible si truncated → mention).
+import { Link2, TrendingDown, Sigma, AlignCenterHorizontal, PackageX } from 'lucide-react'
 import type { Cockpit, CockpitFilter, CompetitorAnalytics } from './analytics'
 import { pct } from './format'
 
@@ -34,11 +35,11 @@ export function CompetitorRanking({ ck, onSelect, active, onOpenAudit, progressB
           <thead>
             <tr className="text-white/40 text-[10px] uppercase tracking-wide text-right">
               <th className="text-left font-medium pb-2">Concurrent</th>
-              <th className="font-medium pb-2 cursor-help" title="Appariés : nombre de tes produits retrouvés chez ce concurrent">App.</th>
-              <th className="font-medium pb-2 cursor-help" title="« Me bat » : % de produits où ce concurrent est MOINS CHER que toi">Me bat</th>
-              <th className="font-medium pb-2 cursor-help" title="Écart de prix MOYEN (concurrent vs toi). Négatif = il est moins cher en moyenne">Moyen</th>
-              <th className="font-medium pb-2 cursor-help" title="Écart de prix MÉDIAN (plus robuste que la moyenne, ignore les valeurs extrêmes)">Médian</th>
-              <th className="font-medium pb-2 cursor-help" title="Ruptures : produits en rupture de stock chez ce concurrent (opportunités pour toi)">Rupt.</th>
+              <th className="font-medium pb-2 cursor-help" title="Appariés : nombre de tes produits retrouvés chez ce concurrent"><Link2 className="w-3.5 h-3.5 inline-block" /></th>
+              <th className="font-medium pb-2 cursor-help" title="« Me bat » : % de produits où ce concurrent est MOINS CHER que toi"><TrendingDown className="w-3.5 h-3.5 inline-block" /></th>
+              <th className="font-medium pb-2 cursor-help" title="Écart de prix MOYEN (concurrent vs toi). Négatif = il est moins cher en moyenne"><Sigma className="w-3.5 h-3.5 inline-block" /></th>
+              <th className="font-medium pb-2 cursor-help" title="Écart de prix MÉDIAN (plus robuste que la moyenne, ignore les valeurs extrêmes)"><AlignCenterHorizontal className="w-3.5 h-3.5 inline-block" /></th>
+              <th className="font-medium pb-2 cursor-help" title="Ruptures : produits en rupture de stock chez ce concurrent (opportunités pour toi)"><PackageX className="w-3.5 h-3.5 inline-block" /></th>
             </tr>
           </thead>
           <tbody>
