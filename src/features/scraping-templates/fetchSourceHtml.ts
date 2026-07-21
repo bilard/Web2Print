@@ -1,6 +1,7 @@
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { getApiKey } from '@/lib/apiKeys'
+import { recordScrapeUsage } from '@/features/stats/aiUsageTracking'
 
 const callFetchPageHtml = httpsCallable<{ url: string }, { html: string; length: number }>(
   functions,
@@ -47,7 +48,12 @@ export async function fetchSourceHtml(url: string, timeoutMs = 20_000): Promise<
     clearTimeout(timer)
     if (res.ok) {
       const html = await res.text()
-      if (html && html.length > 500 && !CHALLENGE_RE.test(html.slice(0, 3000))) return html
+      if (html && html.length > 500 && !CHALLENGE_RE.test(html.slice(0, 3000))) {
+        // Facturation Jina réelle (le CF gratuit a échoué → on a payé du Reader).
+        // Tokens estimés chars/4 quand l'API ne les renvoie pas.
+        recordScrapeUsage({ platform: 'jina', tokens: Math.ceil(html.length / 4) })
+        return html
+      }
     }
   } catch {
     /* repli proxies publics */

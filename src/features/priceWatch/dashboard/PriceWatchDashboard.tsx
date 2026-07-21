@@ -15,6 +15,7 @@ import { CompetitorTrend } from './CompetitorTrend'
 import { OpportunityPanel } from './OpportunityPanel'
 import { CatalogTree } from './CatalogTree'
 import { HarvestProgress } from './HarvestProgress'
+import { ScrapeSpendWidget } from './ScrapeSpendWidget'
 import { CompetitorAuditModal } from './CompetitorAuditModal'
 import { AnalyticsTable } from './AnalyticsTable'
 import { ProductList } from './ProductList'
@@ -64,6 +65,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <CatalogTree ck={ck} active={filter.famille} onSelect={(f) => set({ famille: f })} />
         <CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} onOpenAudit={() => setAuditOpen(true)} />
         <HarvestProgress stats={report.byCompetitor} />
+        <ScrapeSpendWidget />
       </div>
       <div className="flex-1 min-w-0 space-y-3">
       {report.truncated && (
