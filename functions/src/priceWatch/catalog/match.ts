@@ -69,6 +69,8 @@ export interface SourceProduct extends SourceProductKeys {
   name: string
   /** Prix de vente du catalogue source. Hors taxes par convention ERP. */
   price?: number
+  /** Lien de la fiche produit sur le site de la source (pour vérification 1 clic). */
+  url?: string
 }
 
 export interface MatchResult {

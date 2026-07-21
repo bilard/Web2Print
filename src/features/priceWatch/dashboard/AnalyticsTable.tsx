@@ -6,6 +6,10 @@ import { useMemo, useState } from 'react'
 import type { Cockpit, TableRow } from './analytics'
 import { rowsToCsv } from './analytics'
 import { eur, pct, heatColor, POSITION_LABEL, POSITION_TEXT } from './format'
+import { Search } from 'lucide-react'
+
+const googleSearch = (r: TableRow) =>
+  `https://www.google.com/search?q=${encodeURIComponent(`${r.reference ?? ''} ${r.name}`.trim())}`
 
 type SortKey = 'name' | 'famille' | 'myPriceHt' | 'bestGapPct'
 const num = (v: number | null) => (v == null ? Number.POSITIVE_INFINITY : v)
@@ -71,11 +75,21 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
               <tr><td colSpan={5 + comps.length} className="text-center text-white/40 py-8">Aucun produit ne correspond à la recherche.</td></tr>
             ) : rows.map((r: TableRow) => (
               <tr key={r.id} className="border-t border-white/5 text-right hover:bg-white/[0.03]">
-                <td className="text-left py-1.5 pl-3 max-w-[240px] truncate" title={`Rechercher « ${r.name}${r.reference ? ` · ${r.reference}` : ''} »`}>
-                  <a href={`https://www.google.com/search?q=${encodeURIComponent(`${r.reference ?? ''} ${r.name}`.trim())}`}
-                    target="_blank" rel="noopener noreferrer" className="text-white/85 hover:text-indigo-300 hover:underline">
-                    {r.name}<span className="text-white/35"> · {r.reference ?? '—'}</span>
-                  </a>
+                <td className="text-left py-1.5 pl-3 max-w-[240px]">
+                  <div className="flex items-center gap-1.5">
+                    {r.sourceUrl
+                      ? <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" title={`Ouvrir la fiche source — ${r.name}`}
+                          className="truncate text-white/85 hover:text-indigo-300 hover:underline">
+                          {r.name}<span className="text-white/35"> · {r.reference ?? '—'}</span>
+                        </a>
+                      : <span className="truncate text-white/85" title={r.name}>
+                          {r.name}<span className="text-white/35"> · {r.reference ?? '—'}</span>
+                        </span>}
+                    <a href={googleSearch(r)} target="_blank" rel="noopener noreferrer" title="Rechercher ce produit sur Google"
+                      className="shrink-0 text-white/25 hover:text-white/70" onClick={(e) => e.stopPropagation()}>
+                      <Search className="w-3 h-3" />
+                    </a>
+                  </div>
                 </td>
                 <td className="text-left text-white/45 max-w-[120px] truncate">{r.famille ?? '—'}</td>
                 <td className="pr-2 text-white/80">{eur(r.myPriceHt)}</td>

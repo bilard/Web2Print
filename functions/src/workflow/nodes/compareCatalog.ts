@@ -70,6 +70,7 @@ registerServerNode({
     const familyColumn = config.familyColumn as string | undefined
     const priceColumn = config.priceColumn as string | undefined
     const descriptionColumn = config.descriptionColumn as string | undefined
+    const urlColumn = config.urlColumn as string | undefined
 
     // Produits source : identité + clés (dont réf d'origine extraites de la description).
     const sourceProducts: SourceProduct[] = []
@@ -87,6 +88,7 @@ registerServerNode({
         id, name, ref, ref2: cell(row, ref2Column), ean,
         originRefs: extractOriginRefs(cell(row, descriptionColumn)),
         price: Number.isNaN(price) ? undefined : price,
+        ...(cell(row, urlColumn) ? { url: cell(row, urlColumn) } as object : {}),
         ...(cell(row, familyColumn) ? { family: cell(row, familyColumn) } as object : {}),
       })
     }

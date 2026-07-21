@@ -29,6 +29,7 @@ interface CompareConfig {
   familyColumn: string
   priceColumn: string
   descriptionColumn: string
+  urlColumn: string
   vatRate: number
 }
 interface CompareInputs { products?: ExcelSheet; harvest?: unknown }
@@ -88,6 +89,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     { name: 'familyColumn', kind: 'columnRef', label: 'Colonne Famille' },
     { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Mon prix (HT)' },
     { name: 'descriptionColumn', kind: 'columnRef', label: 'Colonne Description', help: 'Sert à extraire les réf. d’origine (« Remplace origine: … ») pour les pièces adaptables.' },
+    { name: 'urlColumn', kind: 'columnRef', label: 'Colonne URL (fiche source)', help: 'Lien de la fiche produit sur VOTRE site — rend le nom cliquable dans le tableau pour vérifier le prix. Optionnel.' },
     { name: 'vatRate', kind: 'number', label: 'TVA concurrents (%)', help: 'Pour recalculer le HT depuis le TTC affiché. Défaut : 20.' },
     { name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est automatiquement celui du workflow (le même que « Moisson concurrents » du workflow). Ne remplis que pour partager un suivi entre plusieurs workflows.' },
     { name: 'label', kind: 'text', label: 'Nom du suivi (affiché)', help: 'Libellé dans le menu « Source » du tableau de bord. Vide → le nom du workflow est utilisé.' },
@@ -95,7 +97,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
   defaultConfig: {
     watchId: '', label: '', sites: '', vatRate: 20,
     refColumn: 'reference', ref2Column: '', eanColumn: 'ean', nameColumn: 'name',
-    familyColumn: 'family', priceColumn: 'price', descriptionColumn: 'description',
+    familyColumn: 'family', priceColumn: 'price', descriptionColumn: 'description', urlColumn: '',
   },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
@@ -126,6 +128,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
         id, name, ref, ref2: cell(row, config.ref2Column), ean,
         originRefs: extractOriginRefs(cell(row, config.descriptionColumn)),
         price: Number.isNaN(price) ? undefined : price,
+        ...(cell(row, config.urlColumn) ? { url: cell(row, config.urlColumn) } as object : {}),
         ...(cell(row, config.familyColumn) ? { family: cell(row, config.familyColumn) } as object : {}),
       })
     }

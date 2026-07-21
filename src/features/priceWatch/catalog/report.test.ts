@@ -86,9 +86,9 @@ describe('buildReport', () => {
 describe('rankProducts', () => {
   it('classe les produits les plus sous-cotés en tête', () => {
     const rows: ProductRow[] = [
-      { id: '1', name: 'A', reference: null, ean: null, famille: null, myPriceHt: null, competitors: [], bestGapPct: -5, undercut: true },
-      { id: '2', name: 'B', reference: null, ean: null, famille: null, myPriceHt: null, competitors: [], bestGapPct: -40, undercut: true },
-      { id: '3', name: 'C', reference: null, ean: null, famille: null, myPriceHt: null, competitors: [], bestGapPct: 12, undercut: false },
+      { id: '1', name: 'A', reference: null, ean: null, famille: null, myPriceHt: null, sourceUrl: null, competitors: [], bestGapPct: -5, undercut: true },
+      { id: '2', name: 'B', reference: null, ean: null, famille: null, myPriceHt: null, sourceUrl: null, competitors: [], bestGapPct: -40, undercut: true },
+      { id: '3', name: 'C', reference: null, ean: null, famille: null, myPriceHt: null, sourceUrl: null, competitors: [], bestGapPct: 12, undercut: false },
     ]
     expect(rankProducts(rows).map((r) => r.id)).toEqual(['2', '1', '3'])
   })

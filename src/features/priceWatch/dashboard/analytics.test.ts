@@ -21,9 +21,9 @@ const report: StoredReport = {
   ],
   sites: [{ siteId: 'a', domain: 'a.com' }, { siteId: 'b', domain: 'b.com' }],
   products: [
-    { id: '1', name: 'P1', reference: 'R1', ean: null, famille: 'F1', myPriceHt: 100, bestGapPct: -20, undercut: true, competitors: [cell('a', 'a.com', 80, -20, 'out-of-stock'), cell('b', 'b.com', 105, 5)] },
-    { id: '2', name: 'P2', reference: 'R2', ean: null, famille: 'F1', myPriceHt: 50, bestGapPct: -20, undercut: true, competitors: [cell('a', 'a.com', 40, -20)] },
-    { id: '3', name: 'P3', reference: 'R3', ean: null, famille: null, myPriceHt: 30, bestGapPct: 10, undercut: false, competitors: [cell('b', 'b.com', 33, 10)] },
+    { id: '1', name: 'P1', reference: 'R1', ean: null, famille: 'F1', myPriceHt: 100, bestGapPct: -20, undercut: true, sourceUrl: null, competitors: [cell('a', 'a.com', 80, -20, 'out-of-stock'), cell('b', 'b.com', 105, 5)] },
+    { id: '2', name: 'P2', reference: 'R2', ean: null, famille: 'F1', myPriceHt: 50, bestGapPct: -20, undercut: true, sourceUrl: null, competitors: [cell('a', 'a.com', 40, -20)] },
+    { id: '3', name: 'P3', reference: 'R3', ean: null, famille: null, myPriceHt: 30, bestGapPct: 10, undercut: false, sourceUrl: null, competitors: [cell('b', 'b.com', 33, 10)] },
   ],
   totalMatched: 3,
   truncated: false,
@@ -130,7 +130,7 @@ describe('buildTableRows + rowsToCsv', () => {
     const csv = rowsToCsv(rows, report.sites)
     const lines = csv.split('\n')
     expect(lines).toHaveLength(4) // header + 3
-    expect(lines[0]).toContain('a.com (écart %)')
+    expect(lines[0]).toContain('a.com (prix HT)')
     expect(lines[1].split(';')[0]).toBe('R1')
   })
 })

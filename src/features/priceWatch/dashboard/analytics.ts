@@ -89,6 +89,7 @@ export interface TableRow {
   myPriceHt: number | null; bestGapPct: number | null; tone: Tone | null; nComp: number
   gapBySite: Record<string, number | null>; priceBySite: Record<string, number | null>
   urlBySite: Record<string, string | null> // fiche concurrent (pour vérifier le prix en 1 clic)
+  sourceUrl: string | null // fiche produit sur le site de la source
 }
 
 export interface Cockpit {
@@ -149,7 +150,7 @@ export function buildTableRows(products: ProductRow[]): TableRow[] {
     return {
       id: p.id, name: p.name, reference: p.reference, ean: p.ean, famille: p.famille,
       myPriceHt: p.myPriceHt, bestGapPct: p.bestGapPct, tone: toneOf(p.bestGapPct),
-      nComp: p.competitors.length, gapBySite, priceBySite, urlBySite,
+      nComp: p.competitors.length, gapBySite, priceBySite, urlBySite, sourceUrl: p.sourceUrl,
     }
   })
 }

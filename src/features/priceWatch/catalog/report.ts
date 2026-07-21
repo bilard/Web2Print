@@ -39,6 +39,8 @@ export interface ProductRow {
   ean: string | null
   famille: string | null
   myPriceHt: number | null
+  /** Lien de la fiche produit sur le site de la source (null si non renseigné). */
+  sourceUrl: string | null
   competitors: CompetitorCell[]
   /** Écart le plus négatif (concurrent le moins cher face à moi). null si aucun prix. */
   bestGapPct: number | null
@@ -157,6 +159,7 @@ export function buildReport(
       reference: product.ref ?? null, ean: product.ean ?? null,
       famille: (product as SourceProduct & { family?: string }).family ?? null,
       myPriceHt: product.price ?? null,
+      sourceUrl: product.url ?? null,
       competitors: cells, bestGapPct, undercut,
     })
   }
