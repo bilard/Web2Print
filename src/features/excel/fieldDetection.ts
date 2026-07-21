@@ -78,6 +78,11 @@ export function detectColumnType(values: CellValue[]): FieldTypeId {
   return bestType
 }
 
+// Réductions sûres : `Math.min(...arr)` throw un RangeError au-delà de ~65 k arguments
+// (spread), ce qui casse la détection sur un gros catalogue. On boucle.
+const minOf = (a: number[]) => a.reduce((m, v) => (v < m ? v : m), Infinity)
+const maxOf = (a: number[]) => a.reduce((m, v) => (v > m ? v : m), -Infinity)
+
 export function computeColumnStats(values: CellValue[], fieldType: FieldTypeId) {
   const nonEmpty = values.filter((v) => v !== null && v !== undefined && v !== '')
 
@@ -99,8 +104,8 @@ export function computeColumnStats(values: CellValue[], fieldType: FieldTypeId) 
       .filter((n) => !isNaN(n))
 
     if (nums.length > 0) {
-      stats.min = Math.min(...nums)
-      stats.max = Math.max(...nums)
+      stats.min = minOf(nums)
+      stats.max = maxOf(nums)
       stats.avg = Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 100) / 100
     }
   } else if (fieldType === 'date') {
@@ -113,8 +118,8 @@ export function computeColumnStats(values: CellValue[], fieldType: FieldTypeId) 
   } else if (fieldType === 'text' || fieldType === 'text_long') {
     const lengths = nonEmpty.map((v) => String(v).length)
     if (lengths.length > 0) {
-      stats.min = Math.min(...lengths)
-      stats.max = Math.max(...lengths)
+      stats.min = minOf(lengths)
+      stats.max = maxOf(lengths)
       stats.avg = Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length)
     }
   }

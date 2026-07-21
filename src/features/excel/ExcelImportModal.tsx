@@ -31,6 +31,9 @@ interface Props {
 
 type Source = 'local' | 'url' | 'new'
 
+/** Plafond d'import PIM (hors démo). Proxy conservateur du mur 1 Mo/document Firestore
+ *  + rendu non virtualisé — au-delà l'onglet fige et l'enregistrement échoue. */
+const MAX_PIM_IMPORT_ROWS = 12_000
 
 export function ExcelImportModal({ open, onClose, targetPath }: Props) {
   const [source, setSource] = useState<Source>('local')
@@ -163,6 +166,22 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
     const importedRows = finalSheets.reduce((acc, s) => acc + s.rows.length, 0)
     if (quota.isDemo && importedRows > quota.pimRows.limit) {
       toast.error(`Limite démo : ${quota.pimRows.limit} lignes maximum par base (fichier : ${importedRows}).`)
+      return
+    }
+
+    // Garde-fou VOLUME (hors démo) : le PIM stocke la feuille dans UN document
+    // (JSON) — un doc Firestore est plafonné à ~1 Mo, et le tableau rend toutes les
+    // lignes sans virtualisation. Au-delà de ~MAX_PIM_IMPORT_ROWS, l'onglet fige et la
+    // sauvegarde échoue (données perdues). On refuse AVANT le freeze, en orientant vers
+    // la bonne source à cette échelle (Google Sheets, lue par le workflow côté serveur).
+    if (!quota.isDemo && importedRows > MAX_PIM_IMPORT_ROWS) {
+      toast.error(
+        `Fichier trop volumineux pour le PIM : ${importedRows.toLocaleString('fr-FR')} lignes. ` +
+        `Le PIM garde la feuille dans un seul document (max ~1 Mo) — au-delà de quelques milliers de lignes ` +
+        `l'onglet fige et l'enregistrement échoue. Pour un gros catalogue, branche « Import Google Sheets » ` +
+        `dans un workflow, ou importe un sous-ensemble (par famille).`,
+        { duration: 12_000 },
+      )
       return
     }
 
