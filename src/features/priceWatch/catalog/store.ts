@@ -38,6 +38,8 @@ export interface CompetitorMeta {
   lastHarvestMs?: number
   /** Cumul (ms) de toutes les passes de moisson de ce concurrent (calibrage du cron). */
   cumulHarvestMs?: number
+  /** Progression du balayage 0..1 (part des catégories parcourues). 1 = catalogue balayé. */
+  harvestProgress?: number
   updatedAt?: number
 }
 

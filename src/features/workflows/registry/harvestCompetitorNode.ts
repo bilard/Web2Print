@@ -109,6 +109,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, Record<string, never>, Harv
         pageCount: pagesTotal,
         lastHarvestMs: elapsedMs,
         cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,
+        harvestProgress: res.sweepComplete ? 1 : harvestProgress(res.cursor),
       })
       ctx.reportCount?.(rows.reduce((s, r) => s + Number(r.productsIndexed ?? 0), 0) + res.productsIndexed)
       rows.push({

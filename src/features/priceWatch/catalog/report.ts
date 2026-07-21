@@ -77,7 +77,7 @@ export interface CompetitorStat {
   /** Taux de remplissage des champs sur les fiches collectées (popup d'audit). */
   audit: CompetitorAudit
   /** Durée de moisson (ms) : dernière passe + cumul. Absent si jamais mesuré. */
-  harvest?: { lastMs: number; cumulMs: number }
+  harvest?: { lastMs: number; cumulMs: number; progress: number }
 }
 
 /** Taux de remplissage des champs attendus sur les fiches collectées d'un site. */
@@ -133,7 +133,7 @@ interface BuildReportOptions {
   /** Bande d'indifférence (%) sous laquelle deux prix sont « alignés ». Défaut : 1. */
   alignedPct?: number
   /** Durées de moisson par siteId (dernière passe + cumul), pour l'audit. */
-  harvestBySite?: Map<string, { lastMs: number; cumulMs: number }>
+  harvestBySite?: Map<string, { lastMs: number; cumulMs: number; progress: number }>
 }
 
 /**

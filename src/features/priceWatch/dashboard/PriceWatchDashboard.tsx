@@ -14,6 +14,7 @@ import { HeatmapMatrix } from './HeatmapMatrix'
 import { CompetitorTrend } from './CompetitorTrend'
 import { OpportunityPanel } from './OpportunityPanel'
 import { CatalogTree } from './CatalogTree'
+import { HarvestProgress } from './HarvestProgress'
 import { CompetitorAuditModal } from './CompetitorAuditModal'
 import { AnalyticsTable } from './AnalyticsTable'
 import { ProductList } from './ProductList'
@@ -62,6 +63,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       <div className="lg:w-96 shrink-0 space-y-3 lg:sticky lg:top-3 self-start">
         <CatalogTree ck={ck} active={filter.famille} onSelect={(f) => set({ famille: f })} />
         <CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} onOpenAudit={() => setAuditOpen(true)} />
+        <HarvestProgress stats={report.byCompetitor} />
       </div>
       <div className="flex-1 min-w-0 space-y-3">
       {report.truncated && (

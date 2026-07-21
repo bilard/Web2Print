@@ -29,6 +29,7 @@ export interface CompetitorMeta {
   pageCount?: number
   lastHarvestMs?: number
   cumulHarvestMs?: number
+  harvestProgress?: number
   updatedAt?: number
 }
 

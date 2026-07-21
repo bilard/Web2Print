@@ -75,6 +75,7 @@ registerServerNode({
         pageCount: pagesTotal,
         lastHarvestMs: elapsedMs,
         cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,
+        harvestProgress: res.sweepComplete ? 1 : harvestProgress(res.cursor),
       })
       rows.push({
         site: site.domain,
