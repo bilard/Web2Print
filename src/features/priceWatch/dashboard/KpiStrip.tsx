@@ -64,7 +64,12 @@ export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoin
       <Tile label="Concurrents" value={String(ck.competitorsCount)} sub={`${k.comparisons} comparaisons`} />
       <Tile label="Ruptures" value={k.ruptures.toLocaleString('fr-FR')} accent="text-amber-400" sub="opportunités" />
       <Tile label="Analyse" value={when(ck.runAt)}
-        sub={ck.truncated ? `${ck.totalMatched} appariés (borné)` : `${ck.totalMatched} appariés`} />
+        sub={ck.truncated ? `${ck.totalMatched} appariés (borné)` : `${ck.totalMatched} appariés`}
+        spark={
+          <span className="flex items-center gap-1 text-[9px] font-medium text-emerald-400/80 tracking-wide" title="Le tableau de bord se met à jour tout seul à chaque analyse — pas besoin de recharger">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> EN DIRECT
+          </span>
+        } />
     </div>
   )
 }
