@@ -71,7 +71,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
 
       {/* KPIs fixés en haut au scroll vertical (demande utilisateur). Fond opaque pour
           couvrir le contenu qui défile derrière. */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm py-2 -my-2">
+      <div className="sticky top-0 z-30 bg-background py-2 -my-2 shadow-lg shadow-background">
         <KpiStrip ck={ck} history={history} />
       </div>
 
