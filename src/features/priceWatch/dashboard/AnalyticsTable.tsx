@@ -11,7 +11,10 @@ type SortKey = 'name' | 'famille' | 'myPriceHt' | 'bestGapPct'
 const num = (v: number | null) => (v == null ? Number.POSITIVE_INFINITY : v)
 
 export function AnalyticsTable({ ck }: { ck: Cockpit }) {
-  const comps = ck.competitors
+  // On n'affiche que les concurrents qui ont AU MOINS un produit apparié : les sites à 0
+  // (n'ont pas ce catalogue) n'ajoutaient que des colonnes vides. Le Benchmark garde la
+  // vue exhaustive des 19 sites ; ici on densifie.
+  const comps = ck.competitors.filter((c) => c.matched > 0)
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'bestGapPct', dir: 1 })
 
   const rows = useMemo(() => {

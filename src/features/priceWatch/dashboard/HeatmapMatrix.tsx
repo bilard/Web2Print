@@ -7,7 +7,8 @@ import { heatColor } from './format'
 
 export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void }) {
   const cols = ck.familyKeys
-  const rows = ck.competitors
+  // Seuls les concurrents avec au moins un apparié : évite 16 lignes vides.
+  const rows = ck.competitors.filter((c) => c.matched > 0)
 
   if (cols.length === 0 || rows.length === 0) {
     return (
