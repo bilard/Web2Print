@@ -17,7 +17,7 @@ interface ScheduleDoc {
 // largement le défaut httpsCallable de 70 s → « deadline-exceeded » alors que le run
 // serveur aboutissait. L'état des cartes vient en parallèle via useServerRunLive.
 const runNow = httpsCallable<{ workflowId: string }, { status: string; nodeCount: number; errorCount: number }>(
-  functions, 'runWorkflowNow', { timeout: 540_000 },
+  functions, 'runWorkflowNow', { timeout: 1800_000 },
 )
 
 export function CronStatusPanel({ workflowId }: { workflowId: string }) {

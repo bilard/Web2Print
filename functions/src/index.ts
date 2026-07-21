@@ -56,6 +56,9 @@ export { onUserAccessChange } from './access/onUserAccessChange'
 // --- Workflow cron serveur ---
 export { workflowCronScheduler, runWorkflowNow } from './workflow/scheduler'
 
+// --- TEMPORAIRE : diagnostic lecture seule (à supprimer après) ---
+export { pwDebug } from './workflow/pwDebug'
+
 // --- Workflow webhook entrant (déclenchement externe) ---
 export { workflowWebhook } from './workflow/webhookTrigger'
 
