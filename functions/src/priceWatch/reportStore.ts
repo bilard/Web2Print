@@ -9,7 +9,7 @@ import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat,
 
 const PRODUCT_CAP = 1000
 
-export interface StoredReport {
+interface StoredReport {
   runAt: number
   kpis: ReportKpis
   byCompetitor: CompetitorStat[]
@@ -19,7 +19,7 @@ export interface StoredReport {
   truncated: boolean
 }
 
-export interface KpiHistoryPoint {
+interface KpiHistoryPoint {
   at: number
   products: number
   cheaperThanMe: number

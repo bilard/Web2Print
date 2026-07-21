@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, BookText, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag, Sparkles, BarChart3 } from 'lucide-react'
+import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, BookText, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag, Sparkles, BarChart3, Wallet } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { useAccessStore } from '@/stores/access.store'
 
@@ -19,7 +19,7 @@ export type Section =
   | 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings'
   | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
   | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'retail-promo' | 'catalog'
-  | 'demo-express' | 'mfr-insights'
+  | 'demo-express' | 'mfr-insights' | 'finances'
 
 export type ModuleGroupId = 'create' | 'product-data' | 'web' | 'publish' | 'automation' | 'admin'
 
@@ -183,6 +183,7 @@ export const MODULE_ITEMS: ModuleItem[] = [
     ],
   },
   // ── Administration ──
+  { id: 'finances', group: 'admin', icon: Wallet, label: 'Finances', accent: 'text-emerald-400', activeBg: 'bg-emerald-500/[0.1]', activeText: 'text-emerald-300' },
   { id: 'access', group: 'admin', icon: ShieldCheck, label: 'Utilisateurs & rôles', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300',
     children: [
       { id: 'tab:users', label: 'Utilisateurs', intent: 'access:tab:users' },
@@ -214,7 +215,7 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
 
 /** `access` = admin uniquement ; sinon owner OU permission `.view` présente. */
 function canSeeModule(id: Section, isAdmin: boolean, permissions: Set<string>): boolean {
-  if (id === 'access') return isAdmin
+  if (id === 'access' || id === 'finances') return isAdmin
   const perm = SECTION_PERMISSION[id]
   return isAdmin || !perm || permissions.has(perm)
 }

@@ -30,6 +30,7 @@ const CONTEXT_TO_ARTICLE: Record<HelpContext, string> = {
   catalog: 'getting-started',
   'demo-express': 'getting-started',
   'mfr-insights': 'pim',
+  finances: 'getting-started',
   editor: 'editor',
 }
 

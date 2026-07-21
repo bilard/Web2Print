@@ -27,6 +27,11 @@ interface RemoveBgUsage {
   costUsd: number
 }
 
+interface ScrapeUsage {
+  total: number
+  byPlatform: Record<string, { tokens: number; requests: number; costUsd: number }>
+}
+
 /** Coûts IA agrégés du mois (un total + le détail par provider). */
 export type AiCostStats = UsageStats['aiCost']
 
@@ -40,11 +45,25 @@ interface UsageStats {
   }
   brightData: BrightDataUsage
   removebg: RemoveBgUsage
+  scrape: ScrapeUsage
 }
 
 const emptyProvider = (): AiProviderUsage => ({ tokensIn: 0, tokensOut: 0, costUsd: 0, byModel: {} })
 const emptyBrightData = (): BrightDataUsage => ({ requests: 0, costUsd: 0 })
 const emptyRemoveBg = (): RemoveBgUsage => ({ images: 0, credits: 0, costUsd: 0 })
+const emptyScrape = (): ScrapeUsage => ({ total: 0, byPlatform: {} })
+
+async function fetchScrape(userId: string): Promise<ScrapeUsage> {
+  const month = new Date().toISOString().slice(0, 7)
+  const snap = await getDoc(doc(db, 'scrapeUsage', `${userId}_${month}`))
+  if (!snap.exists()) return emptyScrape()
+  const data = snap.data() as { total?: { costUsd?: number }; byPlatform?: Record<string, { tokens?: number; requests?: number; costUsd?: number }> }
+  const byPlatform: ScrapeUsage['byPlatform'] = {}
+  for (const [k, v] of Object.entries(data.byPlatform ?? {})) {
+    byPlatform[k] = { tokens: v?.tokens ?? 0, requests: v?.requests ?? 0, costUsd: v?.costUsd ?? 0 }
+  }
+  return { total: data.total?.costUsd ?? 0, byPlatform }
+}
 
 export async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   const month = new Date().toISOString().slice(0, 7)
@@ -127,8 +146,13 @@ async function fetchStats(userId: string): Promise<UsageStats> {
       console.warn('[useUsageStats] fetchRemoveBg failed:', e)
       return emptyRemoveBg()
     })
-  const [snap, aiCost, brightData, removebg] = await Promise.all([
-    getDocs(q), safeAiCost(), safeBrightData(), safeRemoveBg(),
+  const safeScrape = (): Promise<ScrapeUsage> =>
+    fetchScrape(userId).catch((e) => {
+      console.warn('[useUsageStats] fetchScrape failed:', e)
+      return emptyScrape()
+    })
+  const [snap, aiCost, brightData, removebg, scrape] = await Promise.all([
+    getDocs(q), safeAiCost(), safeBrightData(), safeRemoveBg(), safeScrape(),
   ])
 
   let totalBytes = 0
@@ -145,6 +169,7 @@ async function fetchStats(userId: string): Promise<UsageStats> {
     aiCost,
     brightData,
     removebg,
+    scrape,
   }
 }
 

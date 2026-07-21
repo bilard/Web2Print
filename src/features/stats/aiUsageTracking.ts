@@ -46,12 +46,22 @@ const SCRAPE_RATES: Record<ScrapePlatform, { perMTokens?: number; perRequest?: n
  *  plateformes facturées à la requête. */
 export function recordScrapeUsage(p: { platform: ScrapePlatform; tokens?: number; requests?: number }): number {
   const rate = SCRAPE_RATES[p.platform]
-  const costUsd = (rate.perMTokens ? ((p.tokens ?? 0) / 1_000_000) * rate.perMTokens : 0)
-    + (rate.perRequest ? (p.requests ?? 1) * rate.perRequest : 0)
-  const entry = { tokensIn: p.tokens ?? 0, tokensOut: 0, costUsd, source: p.platform }
+  const tokens = p.tokens ?? 0
+  const requests = p.requests ?? (rate.perRequest ? 1 : 0)
+  const costUsd = (rate.perMTokens ? (tokens / 1_000_000) * rate.perMTokens : 0)
+    + (rate.perRequest ? requests * rate.perRequest : 0)
+  const entry = { tokensIn: tokens, tokensOut: 0, costUsd, source: p.platform }
   const activeListener = listeners[listeners.length - 1]
   if (activeListener) activeListener(entry)
   notifyObservers(entry)
+  // Persistance (batchée) — jina/firecrawl seulement ; brightdata a sa propre
+  // collection (brightDataUsageTracking) → pas de double comptage.
+  if (p.platform !== 'brightdata') {
+    const e = pendingScrape.get(p.platform) ?? { tokens: 0, requests: 0, costUsd: 0 }
+    e.tokens += tokens; e.requests += requests; e.costUsd += costUsd
+    pendingScrape.set(p.platform, e)
+    scheduleFlush()
+  }
   return costUsd
 }
 
@@ -96,14 +106,22 @@ interface PendingEntry extends PendingLeaf {
 const FLUSH_DELAY_MS = 5_000
 
 const pending: Map<AiProvider, PendingEntry> = new Map()
+/** Buffer scrape (jina/firecrawl) → persisté dans `scrapeUsage/{uid}_{month}`. */
+interface PendingScrapeLeaf { tokens: number; requests: number; costUsd: number }
+const pendingScrape: Map<ScrapePlatform, PendingScrapeLeaf> = new Map()
 let flushTimer: ReturnType<typeof setTimeout> | null = null
+
+function scheduleFlush() {
+  if (!flushTimer) flushTimer = setTimeout(() => { void flushPending() }, FLUSH_DELAY_MS)
+}
 
 async function flushPending() {
   flushTimer = null
-  if (pending.size === 0) return
+  if (pending.size === 0 && pendingScrape.size === 0) return
   const userId = useAuthStore.getState().user?.uid
   if (!userId) {
     pending.clear()
+    pendingScrape.clear()
     return
   }
   const month = new Date().toISOString().slice(0, 7)
@@ -136,21 +154,39 @@ async function flushPending() {
     }
     totalCost += entry.costUsd
   }
+  const hadAi = pending.size > 0
   pending.clear()
 
-  try {
-    await setDoc(
-      doc(db, 'aiUsage', docId),
-      {
-        ownerId: userId,
-        month,
-        byProvider,
-        total: { costUsd: increment(totalCost) },
-      },
-      { merge: true },
-    )
-  } catch (e) {
-    console.warn('[aiUsageTracking] flushPending failed:', e)
+  if (hadAi) {
+    try {
+      await setDoc(
+        doc(db, 'aiUsage', docId),
+        { ownerId: userId, month, byProvider, total: { costUsd: increment(totalCost) } },
+        { merge: true },
+      )
+    } catch (e) {
+      console.warn('[aiUsageTracking] flushPending failed:', e)
+    }
+  }
+
+  // Scrape (jina/firecrawl) — collection `scrapeUsage/{uid}_{month}`, agrégat mensuel.
+  if (pendingScrape.size > 0) {
+    const byPlatform: Record<string, { tokens: ReturnType<typeof increment>; requests: ReturnType<typeof increment>; costUsd: ReturnType<typeof increment> }> = {}
+    let scrapeTotal = 0
+    for (const [platform, e] of pendingScrape) {
+      byPlatform[platform] = { tokens: increment(e.tokens), requests: increment(e.requests), costUsd: increment(e.costUsd) }
+      scrapeTotal += e.costUsd
+    }
+    pendingScrape.clear()
+    try {
+      await setDoc(
+        doc(db, 'scrapeUsage', docId),
+        { ownerId: userId, month, byPlatform, total: { costUsd: increment(scrapeTotal) } },
+        { merge: true },
+      )
+    } catch (e) {
+      console.warn('[aiUsageTracking] scrape flush failed:', e)
+    }
   }
 }
 
@@ -202,8 +238,6 @@ export function recordAiUsage(params: RecordParams): number {
   if (activeListener) activeListener(entry)
   notifyObservers(entry)
 
-  if (!flushTimer) {
-    flushTimer = setTimeout(() => { void flushPending() }, FLUSH_DELAY_MS)
-  }
+  scheduleFlush()
   return costUsd
 }
