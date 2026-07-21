@@ -45,20 +45,30 @@ export interface CategoryLink {
  * `https://host/{id}-{slug}` (sans `.html` final, qui signe une fiche produit).
  * Dédupliqués, restreints au host cible.
  */
+// Chemin d'une catégorie PrestaShop : `/{id}-{slug}` en segment FINAL, précédé au plus
+// d'un segment de locale (`/fr`, `/fr-fr`, `/en`…). Exclut de fait les pages CMS
+// (`/content/…`), les assets (`/modules/…css`) et les fiches (`…​.html`, qui ne finissent
+// pas par `[a-z0-9-]`). Insensible à la casse.
+const CATEGORY_PATH = /^(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/(\d+)-([a-z0-9-]+)\/?$/i
+
 export function extractCategoryLinks(html: string, baseUrl: string): CategoryLink[] {
-  let host: string
-  try { host = new URL(baseUrl).host } catch { return [] }
-  const esc = host.replace(/[.]/g, '\\.')
-  const re = new RegExp(`href=["'](https?://${esc}/(\\d+-[a-z0-9-]+))["']`, 'gi')
+  let base: URL
+  try { base = new URL(baseUrl) } catch { return [] }
+  // Host comparé SANS `www.` : le domaine configuré (« 123courroies.com ») et les liens
+  // internes (« www.123courroies.com », parfois en http) doivent apparier malgré tout.
+  const baseHost = base.host.replace(/^www\./i, '')
   const seen = new Set<string>()
   const out: CategoryLink[] = []
-  for (const m of html.matchAll(re)) {
-    const url = m[1]
-    if (url.endsWith('.html')) continue // fiche produit, pas catégorie
-    const slug = m[2].replace(/^\d+-/, '')
+  for (const m of html.matchAll(/href=["']([^"']+)["']/gi)) {
+    let u: URL
+    try { u = new URL(m[1], base) } catch { continue } // relatif résolu, absolu conservé
+    if (u.host.replace(/^www\./i, '') !== baseHost) continue // même site (hors sous-domaines tiers)
+    const pm = u.pathname.match(CATEGORY_PATH)
+    if (!pm) continue
+    const url = `${u.origin}${u.pathname.replace(/\/$/, '')}`
     if (seen.has(url)) continue
     seen.add(url)
-    out.push({ url, slug })
+    out.push({ url, slug: pm[2] })
   }
   return out
 }

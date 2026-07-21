@@ -43,6 +43,20 @@ describe('extractCategoryLinks', () => {
   it('déduplique', () => {
     expect(extractCategoryLinks(html, base).filter((l) => l.slug === 'courroies')).toHaveLength(1)
   })
+  it('gère le préfixe de locale (/fr/…) — matijardin', () => {
+    const links = extractCategoryLinks('<a href="https://www.m.fr/fr/950-promos">P</a>', 'https://www.m.fr/')
+    expect(links.map((l) => l.slug)).toEqual(['promos'])
+  })
+  it('apparie malgré www/http différents entre domaine configuré et liens — 123courroies', () => {
+    const h = '<a href="http://www.c.fr/5-toutes-nos-courroies">A</a><a href="/34-courroie-crantee">B</a>'
+    // Domaine configuré SANS www ; liens en www/http et relatif → tout doit apparier.
+    const links = extractCategoryLinks(h, 'http://c.fr/')
+    expect(links.map((l) => l.slug).sort()).toEqual(['courroie-crantee', 'toutes-nos-courroies'])
+  })
+  it('exclut les pages CMS (/content/…) et les assets', () => {
+    const h = '<a href="https://www.c.fr/fr/content/33-qui-sommes-nous">CMS</a><a href="https://www.c.fr/modules/x/grid-1-7-module.css">CSS</a>'
+    expect(extractCategoryLinks(h, 'https://www.c.fr/')).toHaveLength(0)
+  })
 })
 
 describe('selectCategories', () => {
