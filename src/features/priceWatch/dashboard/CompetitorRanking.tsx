@@ -40,8 +40,9 @@ export function CompetitorRanking({ ck, onSelect, active, onOpenAudit, progressB
       {rows.length === 0 ? (
         <div className="text-white/40 text-sm py-8 text-center">Aucun concurrent chiffré.</div>
       ) : (
+        <div className="max-h-[460px] overflow-y-auto overscroll-contain -mx-1 px-1">
         <table className="w-full text-xs tabular-nums">
-          <thead>
+          <thead className="sticky top-0 z-10 bg-surface">
             <tr className="text-[10px] uppercase tracking-wide text-right bg-well">
               <th className="text-left font-semibold py-2 pl-2 rounded-l-md text-white/60">Concurrent</th>
               {HEAD_COLS.map((c, i) => {
@@ -86,6 +87,7 @@ export function CompetitorRanking({ ck, onSelect, active, onOpenAudit, progressB
             })}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   )
