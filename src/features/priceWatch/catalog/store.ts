@@ -57,9 +57,11 @@ export async function loadCompetitorMeta(
 export async function saveCompetitorMeta(
   uid: string, watchId: string, siteId: string, meta: Partial<CompetitorMeta>,
 ): Promise<void> {
+  // ⚠ serverTimestamp() HORS de stripUndefined : ce dernier recurse dans le sentinel
+  // FieldValue et le détruit (updatedAt devient illisible → heartbeat live mort).
   await setDoc(
     doc(db, competitorDoc(uid, watchId, siteId)),
-    stripUndefined({ ...meta, updatedAt: serverTimestamp() }),
+    { ...stripUndefined(meta), updatedAt: serverTimestamp() },
     { merge: true },
   )
 }
@@ -74,7 +76,7 @@ export async function savePage(
 ): Promise<void> {
   await setDoc(
     doc(db, competitorPagesCol(uid, watchId, siteId), pageDocId),
-    stripUndefined({ url, page, products, harvestedAt: serverTimestamp() }),
+    { ...stripUndefined({ url, page, products }), harvestedAt: serverTimestamp() },
   )
 }
 

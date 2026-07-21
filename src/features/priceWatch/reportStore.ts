@@ -134,7 +134,8 @@ export async function saveCatalogReport(
   // Méta du suivi (fait exister le doc racine → listé par le sélecteur de suivi).
   await setDoc(
     doc(db, watchRootDoc(uid, watchId)),
-    stripUndefined({ label: opts.label, updatedAt: serverTimestamp(), lastReportAt: runAt }),
+    // serverTimestamp() HORS de stripUndefined (sinon le sentinel est détruit) — comme le twin serveur.
+    { ...stripUndefined({ label: opts.label, lastReportAt: runAt }), updatedAt: serverTimestamp() },
     { merge: true },
   )
 }

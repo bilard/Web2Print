@@ -46,8 +46,10 @@ export async function loadCompetitorMeta(
 export async function saveCompetitorMeta(
   uid: string, watchId: string, siteId: string, meta: Partial<CompetitorMeta>,
 ): Promise<void> {
+  // ⚠ serverTimestamp() HORS de stripUndefined : ce dernier recurse dans le sentinel
+  // FieldValue et le détruit (updatedAt illisible → heartbeat live mort).
   await getFirestore().doc(competitorDoc(uid, watchId, siteId)).set(
-    stripUndefined({ ...meta, updatedAt: FieldValue.serverTimestamp() }),
+    { ...stripUndefined(meta), updatedAt: FieldValue.serverTimestamp() },
     { merge: true },
   )
 }
@@ -58,7 +60,7 @@ export async function savePage(
   pageDocId: string, url: string, page: number, products: CompetitorListing[],
 ): Promise<void> {
   await getFirestore().collection(competitorPagesCol(uid, watchId, siteId)).doc(pageDocId).set(
-    stripUndefined({ url, page, products, harvestedAt: FieldValue.serverTimestamp() }),
+    { ...stripUndefined({ url, page, products }), harvestedAt: FieldValue.serverTimestamp() },
   )
 }
 
