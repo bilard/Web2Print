@@ -108,7 +108,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
 
       {/* Graphes en pleine largeur (le Benchmark est passé à gauche). */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-        <ExpandableChart render={(h) => <PositionDonut kpis={report.kpis} onSelect={toggle} height={h} />} />
+        <ExpandableChart render={(h) => <PositionDonut kpis={report.kpis} onSelect={toggle} height={h ?? 300} />} />
         <ExpandableChart render={(h) => <GapDistribution ck={ck} onSelect={toggle} height={h ?? 300} />} />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
