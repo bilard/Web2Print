@@ -9,6 +9,7 @@ import { db } from '@/lib/firebase/config'
 import { Layers, Timer, RefreshCw, Fuel, Radio, CalendarClock, Activity } from 'lucide-react'
 import type { StoredReport } from '../reportStore'
 import { Gauge } from './Gauge'
+import { AnimatedNumber } from './AnimatedNumber'
 import { buildOpsCockpit } from './opsMetrics'
 import { useCompetitorMeta } from '../useCatalogReport'
 import { useScrapeSpend } from './useScrapeSpend'
@@ -32,7 +33,7 @@ function useWorkflowSchedule(workflowId: string | null): ScheduleDoc | null {
 
 /** Tuile compteur : icône + label en tête, grand chiffre, sous-texte. */
 function Cell({ icon: Icon, tint, label, value, sub, children }: {
-  icon: typeof Layers; tint: string; label: string; value?: string; sub?: string; children?: React.ReactNode
+  icon: typeof Layers; tint: string; label: string; value?: React.ReactNode; sub?: string; children?: React.ReactNode
 }) {
   return (
     <div className="bg-well rounded-lg px-3 py-3 flex flex-col items-center text-center min-w-0">
@@ -122,7 +123,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
             {/* Balayage : ce qui RESTE à traiter (moyenne des concurrents actifs). */}
             <div className="bg-well rounded-lg px-4 py-3 flex flex-col items-center">
               <Gauge value={ck.avgProgress} color="#818cf8">
-                <div className="text-xl font-semibold text-white tabular-nums">{Math.round(ck.avgProgress * 100)}%</div>
+                <div className="text-xl font-semibold text-white tabular-nums"><AnimatedNumber value={ck.avgProgress * 100} format={(n) => `${Math.round(n)}%`} /></div>
                 <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">balayage</div>
               </Gauge>
               <div className="text-[11px] text-white/40 mt-1">{remainingPct}% restant à traiter</div>
@@ -130,7 +131,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
             {/* Cycles bouclés : concurrents ayant fini ≥ 1 balayage complet. */}
             <div className="bg-well rounded-lg px-4 py-3 flex flex-col items-center">
               <Gauge value={ck.sitesActive ? ck.sitesComplete / ck.sitesActive : 0} color="#34d399">
-                <div className="text-xl font-semibold text-white tabular-nums">×{ck.cyclesDone}</div>
+                <div className="text-xl font-semibold text-white tabular-nums">×<AnimatedNumber value={ck.cyclesDone} /></div>
                 <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">cycles</div>
               </Gauge>
               <div className="text-[11px] text-white/40 mt-1">{ck.sitesComplete}/{ck.sitesActive} bouclés</div>
@@ -138,7 +139,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1 min-w-[280px]">
               <Cell icon={Layers} tint="text-sky-400" label="Fiches collectées"
-                value={ck.totalIndexed.toLocaleString('fr-FR')} sub={`${ck.sitesActive}/${ck.sitesTotal} concurrents actifs`} />
+                value={<AnimatedNumber value={ck.totalIndexed} />} sub={`${ck.sitesActive}/${ck.sitesTotal} concurrents actifs`} />
               <Cell icon={Timer} tint="text-violet-400" label="Temps de moisson"
                 value={duration(ck.totalCumulMs)} sub="cumulé, tous concurrents" />
               <Cell icon={RefreshCw} tint="text-amber-400" label="Durée d’un cycle"

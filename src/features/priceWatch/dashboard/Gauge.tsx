@@ -3,6 +3,7 @@
 // L'arc sert au COUP D'ŒIL ; le NOMBRE au centre porte la vérité (skill dataviz).
 // `value` 0..1 remplit l'arc ; `children` = contenu central (grand chiffre + label).
 import type { ReactNode } from 'react'
+import { useAnimatedValue } from './AnimatedNumber'
 
 const START = 135 // départ bas-gauche (repère SVG, y vers le bas)
 const SWEEP = 270
@@ -24,7 +25,8 @@ export function Gauge({ value, color = '#818cf8', size = 104, children }: {
   size?: number
   children: ReactNode
 }) {
-  const v = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0))
+  const target = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0))
+  const v = useAnimatedValue(target, 900) // l'arc « balaie » vers la nouvelle valeur
   const stroke = 7
   const r = (size - stroke) / 2
   const c = size / 2

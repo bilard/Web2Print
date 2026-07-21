@@ -6,6 +6,7 @@ import type { Cockpit } from './analytics'
 import { trendDelta, sparkSeries } from './analytics'
 import { eur, pct, when } from './format'
 import { Sparkline } from './Sparkline'
+import { AnimatedNumber } from './AnimatedNumber'
 
 function Delta({ cur, prev, invert }: { cur: number; prev: number | undefined; invert?: boolean }) {
   if (prev == null || prev === cur) return null
@@ -19,7 +20,7 @@ function Delta({ cur, prev, invert }: { cur: number; prev: number | undefined; i
 }
 
 function Tile({ label, value, sub, accent, delta, spark }: {
-  label: string; value: string; sub?: string; accent?: string; delta?: React.ReactNode; spark?: React.ReactNode
+  label: string; value: React.ReactNode; sub?: string; accent?: string; delta?: React.ReactNode; spark?: React.ReactNode
 }) {
   return (
     <div className="bg-surface rounded-md px-3 py-2.5 border border-white/5 min-w-0">
@@ -43,8 +44,8 @@ export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoin
   const k = ck.kpis
   const d = trendDelta(history)
   const s = sparkSeries(history)
-  const holdTxt = ck.priceHoldPct == null ? '—' : `${Math.round(ck.priceHoldPct)} %`
-  const expoTxt = ck.exposedPct == null ? '—' : `${Math.round(ck.exposedPct)} %`
+  const holdTxt = ck.priceHoldPct == null ? '—' : <AnimatedNumber value={ck.priceHoldPct} format={(n) => `${Math.round(n)} %`} />
+  const expoTxt = ck.exposedPct == null ? '—' : <AnimatedNumber value={ck.exposedPct} format={(n) => `${Math.round(n)} %`} />
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -54,15 +55,15 @@ export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoin
         sub={`${k.productsUndercut}/${k.products} sous-cotés`}
         delta={d && <Delta cur={d.last.productsUndercut} prev={d.prev.productsUndercut} invert />}
         spark={<Sparkline values={s.undercut} color="#fb7185" />} />
-      <Tile label="Écart médian" value={pct(ck.medianGapPct)} accent={signedPctClass(ck.medianGapPct)}
+      <Tile label="Écart médian" value={ck.medianGapPct == null ? '—' : <AnimatedNumber value={ck.medianGapPct} format={pct} />} accent={signedPctClass(ck.medianGapPct)}
         sub={ck.truncated ? 'sur top 1000' : 'toutes paires'} />
-      <Tile label="Impact €" value={eur(ck.totalGapEur)} accent="text-rose-400" sub="Σ écart vs + bas" />
-      <Tile label="Appariés" value={k.products.toLocaleString('fr-FR')}
+      <Tile label="Impact €" value={<AnimatedNumber value={ck.totalGapEur} format={eur} />} accent="text-rose-400" sub="Σ écart vs + bas" />
+      <Tile label="Appariés" value={<AnimatedNumber value={k.products} />}
         sub={`${k.matchedExact} exact · ${k.matchedOriginOnly} orig.`}
         delta={d && <Delta cur={d.last.products} prev={d.prev.products} />}
         spark={<Sparkline values={s.products} color="#818cf8" />} />
-      <Tile label="Concurrents" value={String(ck.competitorsCount)} sub={`${k.comparisons} comparaisons`} />
-      <Tile label="Ruptures" value={k.ruptures.toLocaleString('fr-FR')} accent="text-amber-400" sub="opportunités" />
+      <Tile label="Concurrents" value={<AnimatedNumber value={ck.competitorsCount} />} sub={`${k.comparisons} comparaisons`} />
+      <Tile label="Ruptures" value={<AnimatedNumber value={k.ruptures} />} accent="text-amber-400" sub="opportunités" />
       <Tile label="Analyse" value={when(ck.runAt)}
         sub={ck.truncated ? `${ck.totalMatched} appariés (borné)` : `${ck.totalMatched} appariés`}
         spark={
