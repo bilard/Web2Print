@@ -583,7 +583,7 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'price-watch' && canSee('price-watch') ? (
-        <div data-tour="section-price-watch" className="flex-1 overflow-auto p-8 bg-background">
+        <div data-tour="section-price-watch" className="flex-1 overflow-auto px-8 pb-8 bg-background">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />

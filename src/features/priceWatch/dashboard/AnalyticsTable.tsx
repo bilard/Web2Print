@@ -71,8 +71,11 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
               <tr><td colSpan={5 + comps.length} className="text-center text-white/40 py-8">Aucun produit ne correspond à la recherche.</td></tr>
             ) : rows.map((r: TableRow) => (
               <tr key={r.id} className="border-t border-white/5 text-right hover:bg-white/[0.03]">
-                <td className="text-left py-1.5 pl-3 text-white/85 max-w-[240px] truncate" title={r.name}>
-                  {r.name}<span className="text-white/35"> · {r.reference ?? '—'}</span>
+                <td className="text-left py-1.5 pl-3 max-w-[240px] truncate" title={`Rechercher « ${r.name}${r.reference ? ` · ${r.reference}` : ''} »`}>
+                  <a href={`https://www.google.com/search?q=${encodeURIComponent(`${r.reference ?? ''} ${r.name}`.trim())}`}
+                    target="_blank" rel="noopener noreferrer" className="text-white/85 hover:text-indigo-300 hover:underline">
+                    {r.name}<span className="text-white/35"> · {r.reference ?? '—'}</span>
+                  </a>
                 </td>
                 <td className="text-left text-white/45 max-w-[120px] truncate">{r.famille ?? '—'}</td>
                 <td className="pr-2 text-white/80">{eur(r.myPriceHt)}</td>
@@ -85,11 +88,16 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
                 {comps.map((c) => {
                   const g = r.gapBySite[c.siteId]
                   const price = r.priceBySite[c.siteId]
+                  const url = r.urlBySite[c.siteId]
                   return (
-                    <td key={c.siteId} className="px-1 text-center text-white/85 border-l border-white/[0.04] whitespace-nowrap"
+                    <td key={c.siteId} className="px-1 text-center border-l border-white/[0.04] whitespace-nowrap"
                       style={{ backgroundColor: g == null ? undefined : heatColor(g) }}
-                      title={price == null ? '' : `${c.domain} : ${eur(price)}${g == null ? '' : ` — écart ${pct(g)}`}`}>
-                      {price == null ? <span className="text-white/15">·</span> : `${Math.round(price)} €`}
+                      title={price == null ? '' : `${c.domain} : ${eur(price)}${g == null ? '' : ` — écart ${pct(g)}`}${url ? ' — clic : ouvrir la fiche' : ''}`}>
+                      {price == null
+                        ? <span className="text-white/15">·</span>
+                        : url
+                          ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-white/90 hover:text-[#fff] hover:underline">{Math.round(price)} €</a>
+                          : <span className="text-white/85">{Math.round(price)} €</span>}
                     </td>
                   )
                 })}

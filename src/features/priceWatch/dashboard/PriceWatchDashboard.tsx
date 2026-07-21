@@ -71,7 +71,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
 
       {/* KPIs fixés en haut au scroll vertical (demande utilisateur). Fond opaque pour
           couvrir le contenu qui défile derrière. */}
-      <div className="sticky top-0 z-30 bg-background py-2 -my-2 relative before:content-[''] before:absolute before:inset-x-0 before:bottom-full before:h-8 before:bg-background">
+      <div className="sticky top-0 z-30 bg-background py-3 -my-1 shadow-lg shadow-background/80">
         <KpiStrip ck={ck} history={history} />
       </div>
 
@@ -109,7 +109,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       {/* Graphes en pleine largeur (le Benchmark est passé à gauche). */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
         <ExpandableChart render={(h) => <PositionDonut kpis={report.kpis} onSelect={toggle} height={h} />} />
-        <ExpandableChart render={(h) => <GapDistribution ck={ck} onSelect={toggle} height={h} />} />
+        <ExpandableChart render={(h) => <GapDistribution ck={ck} onSelect={toggle} height={h ?? 300} />} />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
         <ExpandableChart render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} />
