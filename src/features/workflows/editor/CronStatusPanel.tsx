@@ -78,6 +78,7 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <b className="text-emerald-300">En cours</b>
           {sched.lastRunAt && <span className="text-indigo-200/80">· démarré {hhmm(sched.lastRunAt)} (il y a {formatCountdown(now - sched.lastRunAt)})</span>}
+          <span className="text-indigo-200/70">· prochaine {hhmm(sched.nextRunAt)}</span>
         </span>
       ) : (
         <span title="Planification serveur active">

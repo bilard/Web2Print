@@ -161,7 +161,10 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                     <div className="text-lg font-semibold text-emerald-300 leading-none flex items-center justify-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />En cours
                     </div>
-                    <div className="text-[11px] text-white/40 mt-1">{sched?.lastRunAt ? `démarré ${hhmm(sched.lastRunAt)}` : ''}</div>
+                    <div className="text-[11px] text-white/40 mt-1">
+                      {sched?.lastRunAt ? `démarré ${hhmm(sched.lastRunAt)}` : ''}
+                      {sched?.lastRunAt && ' · '}prochaine {hhmm(sched!.nextRunAt)}
+                    </div>
                   </>
                 ) : (
                   <>
