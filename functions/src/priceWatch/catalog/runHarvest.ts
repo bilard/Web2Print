@@ -6,6 +6,7 @@
 // le tick suivant reprend. Jamais de balayage complet en un run (cf. audit : budget
 // ~500 s, le node DOIT se terminer pour que le checkpoint survive).
 import { parseListingPage, nextListingUrl, pageUrl } from './prestashop'
+import { parseListingGeneric } from './genericListing'
 import { extractCategoryLinks, selectCategories, keywordsForFamilies } from './categories'
 import {
   initCursor, currentTarget, advance, openSweep, pageDocId,
@@ -103,7 +104,9 @@ export async function harvestPass(
     let hasNext = false
 
     if (html) {
-      const products = parseListingPage(html, url)
+      // PrestaShop d'abord (rapide) ; sinon extraction GÉNÉRIQUE JSON-LD (toute techno).
+      let products = parseListingPage(html, url)
+      if (products.length === 0) products = parseListingGeneric(html, url)
       hadItems = products.length > 0
       hasNext = nextListingUrl(html, url) != null
       if (hadItems) {
