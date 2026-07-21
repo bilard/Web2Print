@@ -164,12 +164,10 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                   </>
                 ) : (
                   <>
-                    <div className="text-2xl font-semibold text-white tabular-nums leading-none">
-                      {overdue ? <span className="text-emerald-300 text-lg">imminent</span> : hhmm(sched!.nextRunAt)}
-                    </div>
+                    <div className="text-2xl font-semibold text-white tabular-nums leading-none">{hhmm(sched!.nextRunAt)}</div>
                     <div className="text-[11px] text-white/40 mt-1">
-                      {overdue ? '' : `dans ${formatCountdown(sched!.nextRunAt - now)} · `}
-                      {sched?.lastRunAt ? `dernier ${hhmm(sched.lastRunAt)}${sched.lastStatus === 'error' ? ' ⚠' : ''}` : 'jamais exécuté'}
+                      <span className={overdue ? 'text-emerald-300' : ''}>{overdue ? 'imminent' : `dans ${formatCountdown(sched!.nextRunAt - now)}`}</span>
+                      {sched?.lastRunAt ? ` · dernier ${hhmm(sched.lastRunAt)}${sched.lastStatus === 'error' ? ' ⚠' : ''}` : ''}
                     </div>
                   </>
                 )}
