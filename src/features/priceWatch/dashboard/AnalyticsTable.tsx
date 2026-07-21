@@ -47,13 +47,17 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
 
   return (
     <div className="bg-surface rounded-lg p-4" data-pw-section="table">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-1">
         <div className="text-sm font-semibold text-white">Détail produits</div>
         <span className="text-[11px] text-white/40">{rows.length}{ck.filterActive ? ` / ${ck.totalCount}` : ''}</span>
         <button onClick={exportCsv} className="ml-auto bg-well text-white/70 text-xs rounded px-3 py-1.5 border border-white/10 hover:text-white hover:border-white/25">
           Export CSV
         </button>
       </div>
+      <p className="text-[11px] text-white/40 mb-3">
+        Prix concurrents en <span className="text-white/70">HT</span>, convertis du TTC affiché sur leurs sites (÷ TVA) — comparables à vos prix F1 déjà HT.
+        Survolez une cellule pour voir le TTC d’origine.
+      </p>
       <div className="overflow-auto max-h-[520px] rounded border border-white/5">
         <table className="w-full text-xs tabular-nums">
           <thead className="sticky top-0 bg-surface-2 z-10 text-white/40 text-[10px] uppercase tracking-wide">
@@ -102,11 +106,12 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
                 {comps.map((c) => {
                   const g = r.gapBySite[c.siteId]
                   const price = r.priceBySite[c.siteId]
+                  const ttc = r.ttcBySite[c.siteId]
                   const url = r.urlBySite[c.siteId]
                   return (
                     <td key={c.siteId} className="px-1 text-center border-l border-white/[0.04] whitespace-nowrap"
                       style={{ backgroundColor: g == null ? undefined : heatColor(g) }}
-                      title={price == null ? '' : `${c.domain} : ${eur(price)}${g == null ? '' : ` — écart ${pct(g)}`}${url ? ' — clic : ouvrir la fiche' : ''}`}>
+                      title={price == null ? '' : `${c.domain} · ${eur(price)} HT${ttc != null ? ` (${eur(ttc)} TTC affiché sur le site)` : ''}${g == null ? '' : ` · écart ${pct(g)}`}${url ? ' · clic : ouvrir la fiche' : ''}`}>
                       {price == null
                         ? <span className="text-white/15">·</span>
                         : url

@@ -88,6 +88,7 @@ export interface TableRow {
   id: string; name: string; reference: string | null; ean: string | null; famille: string | null
   myPriceHt: number | null; bestGapPct: number | null; tone: Tone | null; nComp: number
   gapBySite: Record<string, number | null>; priceBySite: Record<string, number | null>
+  ttcBySite: Record<string, number | null> // prix TTC AFFICHÉ sur le site concurrent (le HT en est dérivé)
   urlBySite: Record<string, string | null> // fiche concurrent (pour vérifier le prix en 1 clic)
   sourceUrl: string | null // fiche produit sur le site de la source
 }
@@ -146,11 +147,12 @@ export function buildTableRows(products: ProductRow[]): TableRow[] {
     const gapBySite: Record<string, number | null> = {}
     const priceBySite: Record<string, number | null> = {}
     const urlBySite: Record<string, string | null> = {}
-    for (const c of p.competitors) { gapBySite[c.siteId] = c.gapPct; priceBySite[c.siteId] = c.priceHt; urlBySite[c.siteId] = c.url || null }
+    const ttcBySite: Record<string, number | null> = {}
+    for (const c of p.competitors) { gapBySite[c.siteId] = c.gapPct; priceBySite[c.siteId] = c.priceHt; ttcBySite[c.siteId] = c.priceTtc; urlBySite[c.siteId] = c.url || null }
     return {
       id: p.id, name: p.name, reference: p.reference, ean: p.ean, famille: p.famille,
       myPriceHt: p.myPriceHt, bestGapPct: p.bestGapPct, tone: toneOf(p.bestGapPct),
-      nComp: p.competitors.length, gapBySite, priceBySite, urlBySite, sourceUrl: p.sourceUrl,
+      nComp: p.competitors.length, gapBySite, priceBySite, ttcBySite, urlBySite, sourceUrl: p.sourceUrl,
     }
   })
 }
