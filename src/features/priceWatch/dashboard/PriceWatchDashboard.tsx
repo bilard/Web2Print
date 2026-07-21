@@ -66,7 +66,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
           Plus logique/lisible que le rail droit — la navigation (familles + concurrents)
           est regroupée à gauche, les données à droite (demande utilisateur). */}
       <div className="lg:w-96 shrink-0 space-y-3 lg:sticky lg:top-3 self-start">
-        <CatalogTree ck={ck} active={filter.famille} onSelect={(f) => set({ famille: f })} />
+        <CatalogTree ck={ck} active={filter.famille} onSelect={(f) => toggle({ famille: f })} />
         <CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} onOpenAudit={() => setAuditOpen(true)}
           progressBySite={new Map(report.byCompetitor
             .filter((c) => c.harvest && c.audit.indexed > 0) // pas de barre si 0 fiche collectée (« complet » trompeur)
