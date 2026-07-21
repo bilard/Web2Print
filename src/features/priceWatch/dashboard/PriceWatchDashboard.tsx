@@ -69,7 +69,11 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         </div>
       )}
 
-      <KpiStrip ck={ck} history={history} />
+      {/* KPIs fixés en haut au scroll vertical (demande utilisateur). Fond opaque pour
+          couvrir le contenu qui défile derrière. */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm py-2 -my-2">
+        <KpiStrip ck={ck} history={history} />
+      </div>
 
       {/* Moteur de recherche global : pilote tous les blocs dérivés. */}
       <div className="flex flex-wrap items-center gap-2 bg-surface rounded-lg px-3 py-2 border border-white/5">
@@ -103,11 +107,11 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       )}
 
       {/* Graphes en pleine largeur (le Benchmark est passé à gauche). */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
         <ExpandableChart render={(h) => <PositionDonut kpis={report.kpis} onSelect={toggle} height={h} />} />
         <ExpandableChart render={(h) => <GapDistribution ck={ck} onSelect={toggle} height={h} />} />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
         <ExpandableChart render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} />
         <ExpandableChart render={() => <HeatmapMatrix ck={ck} onSelect={toggle} />} />
       </div>

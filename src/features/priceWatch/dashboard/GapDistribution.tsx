@@ -28,7 +28,7 @@ export function GapDistribution({ ck, onSelect, height = 190 }: { ck: Cockpit; o
   }
 
   return (
-    <div className="bg-surface rounded-lg p-4 flex flex-col h-full">
+    <div className="bg-surface rounded-lg p-4">
       <div className="flex items-baseline justify-between mb-3">
         <div className="text-sm font-semibold text-white">Distribution des écarts</div>
         <div className="text-[11px] text-white/35">
@@ -38,7 +38,7 @@ export function GapDistribution({ ck, onSelect, height = 190 }: { ck: Cockpit; o
       {total === 0 ? (
         <div className="text-white/40 text-sm py-10 text-center">Pas encore de paires chiffrées.</div>
       ) : (
-        <div className="flex-1" style={{ minHeight: height }}>
+        <div style={{ height }}>
           <Bar
             data={data}
             options={{
