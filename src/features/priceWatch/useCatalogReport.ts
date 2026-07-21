@@ -7,8 +7,9 @@ import { useEffect, useState } from 'react'
 import { collection, doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
-import { priceWatchCol, reportLatestDoc, reportHistoryDoc } from './paths'
+import { priceWatchCol, reportLatestDoc, reportHistoryDoc, competitorsCol } from './paths'
 import type { StoredReport, KpiHistoryPoint } from './reportStore'
+import type { HarvestMeta } from './dashboard/opsMetrics'
 
 export interface WatchSummary {
   watchId: string
@@ -40,6 +41,43 @@ export function useWatchList(): WatchSummary[] {
     )
   }, [uid])
   return items
+}
+
+/**
+ * Méta de moisson par concurrent, EN LIVE (onSnapshot sur `competitors`). Se met à jour
+ * à CHAQUE passe de moisson, sans attendre un « Comparer catalogue » → alimente le cockpit
+ * opérationnel pour qu'il bouge en direct pendant la collecte. Les docs curseur (recherche
+ * dirigée) sont ignorés.
+ */
+export function useCompetitorMeta(watchId: string | null): Map<string, HarvestMeta> {
+  const uid = useAuthStore((s) => s.user?.uid)
+  const [meta, setMeta] = useState<Map<string, HarvestMeta>>(() => new Map())
+  useEffect(() => {
+    if (!uid || !watchId) { setMeta(new Map()); return }
+    return onSnapshot(
+      collection(db, competitorsCol(uid, watchId)),
+      (snap) => {
+        const m = new Map<string, HarvestMeta>()
+        snap.forEach((d) => {
+          const data = d.data() as Record<string, unknown>
+          if (data.domain === 'directed-cursor') return // doc curseur, pas un concurrent
+          const upd = data.updatedAt
+          m.set(d.id, {
+            domain: typeof data.domain === 'string' ? data.domain : undefined,
+            pageCount: typeof data.pageCount === 'number' ? data.pageCount : undefined,
+            harvestProgress: typeof data.harvestProgress === 'number' ? data.harvestProgress : undefined,
+            harvestSweeps: typeof data.harvestSweeps === 'number' ? data.harvestSweeps : undefined,
+            cumulHarvestMs: typeof data.cumulHarvestMs === 'number' ? data.cumulHarvestMs : undefined,
+            lastHarvestMs: typeof data.lastHarvestMs === 'number' ? data.lastHarvestMs : undefined,
+            updatedAt: typeof upd === 'number' ? upd : (upd as { toMillis?: () => number })?.toMillis?.(),
+          })
+        })
+        setMeta(m)
+      },
+      () => setMeta(new Map()),
+    )
+  }, [uid, watchId])
+  return meta
 }
 
 /** Rapport `latest` d'un suivi (KPIs + stats/concurrent + liste produit bornée). */

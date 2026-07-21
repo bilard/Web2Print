@@ -46,6 +46,21 @@ describe('buildOpsCockpit', () => {
     expect(ck.slowestCycle).toBeNull()
   })
 
+  it('la méta LIVE prime sur le snapshot du rapport (bouge sans « Comparer »)', () => {
+    const rep = report([
+      { siteId: 'a', domain: 'a.fr', matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, audit: audit(100),
+        harvest: { lastMs: 1000, cumulMs: 4000, progress: 0.4, sweeps: 2 } }, // snapshot figé
+    ])
+    const live = new Map([['a', { harvestProgress: 0.9, harvestSweeps: 5, cumulHarvestMs: 10000, updatedAt: 5_000 }]])
+    const ck = buildOpsCockpit(rep, live)
+    const c = ck.competitors[0]
+    expect(c.progress).toBeCloseTo(0.9) // live, pas 0.4
+    expect(c.sweeps).toBe(5)            // live, pas 2
+    expect(c.cycleMs).toBe(2000)        // 10000 / 5 (live)
+    expect(ck.avgProgress).toBeCloseTo(0.9)
+    expect(ck.lastCollectAt).toBe(5_000)
+  })
+
   it('reste robuste sans données de moisson (rapport ancien)', () => {
     const ck = buildOpsCockpit(report([
       { siteId: 'a', domain: 'a.fr', matched: 5, cheaper: 1, ruptures: 0, avgGapPct: -2, audit: audit(30) },

@@ -10,6 +10,7 @@ import { Layers, Timer, RefreshCw, Fuel, Radio, CalendarClock, Activity } from '
 import type { StoredReport } from '../reportStore'
 import { Gauge } from './Gauge'
 import { buildOpsCockpit } from './opsMetrics'
+import { useCompetitorMeta } from '../useCatalogReport'
 import { useScrapeSpend } from './useScrapeSpend'
 import { duration, ago, compactNum } from './format'
 import { formatCountdown } from '@/features/workflows/runtime/cronSchedule'
@@ -50,7 +51,8 @@ function Cell({ icon: Icon, tint, label, value, sub, children }: {
 }
 
 export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId: string | null }) {
-  const ck = buildOpsCockpit(report)
+  const liveMeta = useCompetitorMeta(watchId)
+  const ck = buildOpsCockpit(report, liveMeta)
   const spend = useScrapeSpend()
   const sched = useWorkflowSchedule(watchId)
   const [now, setNow] = useState(() => Date.now())
@@ -63,6 +65,8 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const remainingPct = Math.round((1 - ck.avgProgress) * 100)
   const cronOn = !!sched?.enabled
   const nextIn = cronOn ? formatCountdown(sched!.nextRunAt - now) : null
+  // Collecte « en cours » = une méta de moisson a bougé il y a moins de 2 min.
+  const collecting = ck.lastCollectAt != null && now - ck.lastCollectAt < 120_000
 
   return (
     <section className="bg-surface rounded-lg p-4" data-pw-section="cockpit">
@@ -70,10 +74,20 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
         <Activity className="w-4 h-4 text-indigo-400" />
         <h2 className="text-sm font-semibold text-white">Cockpit opérationnel</h2>
         <span className="flex items-center gap-1 text-[9px] font-medium text-emerald-400/80 tracking-wide ml-1"
-          title="Se met à jour tout seul — le rapport et la consommation arrivent en direct">
+          title="Se met à jour tout seul — la moisson et la consommation arrivent en direct">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> EN DIRECT
         </span>
-        <span className="text-[11px] text-white/40 ml-auto">dernière analyse {ago(ck.runAt, now)}</span>
+        {collecting && (
+          <span className="flex items-center gap-1 text-[9px] font-medium text-amber-300 tracking-wide"
+            title="Une passe de moisson a écrit des données il y a moins de 2 min">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" /> COLLECTE EN COURS
+          </span>
+        )}
+        <span className="text-[11px] text-white/40 ml-auto">
+          {ck.lastCollectAt != null && <span className="text-white/55">moisson {ago(ck.lastCollectAt, now)}</span>}
+          {ck.lastCollectAt != null && <span className="text-white/25"> · </span>}
+          analyse {ago(ck.runAt, now)}
+        </span>
       </div>
 
       {!ck.hasData ? (
