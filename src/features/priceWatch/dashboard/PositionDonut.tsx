@@ -12,7 +12,7 @@ Chart.register(ArcElement, Tooltip, Legend)
 
 const TONES = ['cheaper', 'aligned', 'dearer'] as const
 
-export function PositionDonut({ kpis, onSelect }: { kpis: ReportKpis; onSelect?: (patch: Partial<CockpitFilter>) => void }) {
+export function PositionDonut({ kpis, onSelect, height }: { kpis: ReportKpis; onSelect?: (patch: Partial<CockpitFilter>) => void; height?: number }) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.7)'
   const total = kpis.cheaperThanMe + kpis.aligned + kpis.dearerThanMe
@@ -32,7 +32,7 @@ export function PositionDonut({ kpis, onSelect }: { kpis: ReportKpis; onSelect?:
       {total === 0 ? (
         <div className="text-white/40 text-sm py-8 text-center">Aucune comparaison chiffrée.</div>
       ) : (
-        <div className="mx-auto" style={{ maxWidth: 260 }}>
+        <div className="mx-auto" style={{ maxWidth: height ? Math.min(height, 420) : 260 }}>
           <Doughnut
             data={data}
             options={{

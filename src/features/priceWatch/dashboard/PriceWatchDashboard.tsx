@@ -16,6 +16,7 @@ import { OpportunityPanel } from './OpportunityPanel'
 import { CatalogTree } from './CatalogTree'
 import { AnalyticsTable } from './AnalyticsTable'
 import { ProductList } from './ProductList'
+import { ExpandableChart } from '@/components/shared/ExpandableChart'
 import { ChevronDown, Search, RotateCcw } from 'lucide-react'
 
 function EmptyState({ hasWatch }: { hasWatch: boolean }) {
@@ -96,15 +97,15 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       )}
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
-        <div className="xl:col-span-3"><PositionDonut kpis={report.kpis} onSelect={toggle} /></div>
-        <div className="xl:col-span-5"><GapDistribution ck={ck} onSelect={toggle} /></div>
+        <div className="xl:col-span-3"><ExpandableChart render={(h) => <PositionDonut kpis={report.kpis} onSelect={toggle} height={h} />} /></div>
+        <div className="xl:col-span-5"><ExpandableChart render={(h) => <GapDistribution ck={ck} onSelect={toggle} height={h} />} /></div>
         <div className="xl:col-span-4"><CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} /></div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div><PriceScatter ck={ck} onSelect={toggle} /></div>
-        <div><HeatmapMatrix ck={ck} onSelect={toggle} /></div>
-        <div><CompetitorTrend history={history} sites={report.sites} /></div>
+        <div><ExpandableChart render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} /></div>
+        <div><ExpandableChart render={() => <HeatmapMatrix ck={ck} onSelect={toggle} />} /></div>
+        <div><ExpandableChart render={(h) => <CompetitorTrend history={history} sites={report.sites} height={h} />} /></div>
       </div>
 
       <OpportunityPanel ck={ck} />

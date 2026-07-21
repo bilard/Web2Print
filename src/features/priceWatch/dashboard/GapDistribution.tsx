@@ -10,7 +10,7 @@ import { POSITION_HEX } from './format'
 
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip)
 
-export function GapDistribution({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void }) {
+export function GapDistribution({ ck, onSelect, height = 190 }: { ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void; height?: number }) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.55)'
@@ -38,7 +38,7 @@ export function GapDistribution({ ck, onSelect }: { ck: Cockpit; onSelect?: (pat
       {total === 0 ? (
         <div className="text-white/40 text-sm py-10 text-center">Pas encore de paires chiffrées.</div>
       ) : (
-        <div style={{ height: 190 }}>
+        <div style={{ height }}>
           <Bar
             data={data}
             options={{

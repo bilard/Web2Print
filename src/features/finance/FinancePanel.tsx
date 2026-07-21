@@ -8,6 +8,7 @@ import { useAiSettingsStore } from '@/stores/aiSettings.store'
 import { buildCostRows, costTotals, eur } from './costModel'
 import { CostTrend } from './CostTrend'
 import { ConnectorTable } from './ConnectorTable'
+import { ExpandableChart } from '@/components/shared/ExpandableChart'
 import { Loader2 } from 'lucide-react'
 
 const fmtTokens = (n: number) =>
@@ -59,7 +60,7 @@ export function FinancePanel() {
           sub={budgeted.length ? `sur ${budgeted.length} connecteur(s) plafonné(s)` : 'aucun plafond défini'} />
       </div>
 
-      <CostTrend history={history ?? []} />
+      <ExpandableChart render={(h) => <CostTrend history={history ?? []} height={h} />} />
       <ConnectorTable rows={rows} />
     </div>
   )

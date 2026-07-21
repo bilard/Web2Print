@@ -11,7 +11,7 @@ Chart.register(PointElement, LinearScale, Tooltip, Legend)
 
 const TONES = ['cheaper', 'aligned', 'dearer'] as const
 
-export function PriceScatter({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void }) {
+export function PriceScatter({ ck, onSelect, height = 240 }: { ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void; height?: number }) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.55)'
@@ -38,7 +38,7 @@ export function PriceScatter({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch:
       {pts.length === 0 ? (
         <div className="text-white/40 text-sm py-10 text-center">Aucun produit chiffré dans la vue.</div>
       ) : (
-        <div style={{ height: 240 }}>
+        <div style={{ height }}>
           <Scatter
             data={data}
             options={{

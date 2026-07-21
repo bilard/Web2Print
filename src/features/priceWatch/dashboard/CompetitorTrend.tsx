@@ -14,8 +14,8 @@ Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, L
 // Palette catégorielle fixe (assignée par index de concurrent, jamais recyclée).
 const CAT = ['#818cf8', '#38bdf8', '#fbbf24', '#34d399', '#fb7185', '#c084fc', '#2dd4bf', '#fb923c']
 
-export function CompetitorTrend({ history, sites }: {
-  history: KpiHistoryPoint[]; sites: { siteId: string; domain: string }[]
+export function CompetitorTrend({ history, sites, height = 220 }: {
+  history: KpiHistoryPoint[]; sites: { siteId: string; domain: string }[]; height?: number
 }) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'
@@ -49,7 +49,7 @@ export function CompetitorTrend({ history, sites }: {
           (ou planifie-le) pour suivre l’évolution des prix concurrents dans le temps.
         </div>
       ) : (
-        <div style={{ height: 220 }}>
+        <div style={{ height }}>
           <Line
             data={data}
             options={{

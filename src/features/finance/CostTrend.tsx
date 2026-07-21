@@ -14,7 +14,7 @@ const MONTH_FMT = new Intl.DateTimeFormat('fr-FR', { month: 'short', year: '2-di
 const label = (m: string) => MONTH_FMT.format(new Date(`${m}-01T00:00:00`))
 const e = (usd: number) => Math.round(usd * USD_TO_EUR * 100) / 100
 
-export function CostTrend({ history }: { history: MonthUsage[] }) {
+export function CostTrend({ history, height = 220 }: { history: MonthUsage[]; height?: number }) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.55)'
@@ -35,7 +35,7 @@ export function CostTrend({ history }: { history: MonthUsage[] }) {
       {!hasData ? (
         <div className="text-white/40 text-sm py-12 text-center">Pas encore d’historique de coûts.</div>
       ) : (
-        <div style={{ height: 220 }}>
+        <div style={{ height }}>
           <Bar
             data={data}
             options={{
