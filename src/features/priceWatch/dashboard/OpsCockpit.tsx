@@ -67,12 +67,15 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const cronOn = !!sched?.enabled
   const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   const overdue = cronOn && sched!.nextRunAt <= now
-  // Collecte « en cours » = une méta de moisson a bougé il y a moins de 2 min.
-  const collecting = ck.lastCollectAt != null && now - ck.lastCollectAt < 120_000
-  // Rapport gelé : le cron est actif mais aucune analyse fraîche depuis > 20 min ET aucune
-  // collecte récente → le dernier run n'a probablement pas abouti (à signaler franchement).
+  // Collecte « en cours » = une méta de moisson a bougé récemment (< 3 min).
+  const collecting = ck.lastCollectAt != null && now - ck.lastCollectAt < 180_000
+  // Signal UNIFIÉ « ça tourne » : un run serveur est actif (verrou → lastStatus 'running')
+  // OU une passe de moisson a écrit récemment. Header ET tuile doivent s'appuyer dessus,
+  // sinon l'un dit « à l'arrêt » pendant que l'autre dit « En cours » (contradiction vue).
+  const scrapeActive = collecting || sched?.lastStatus === 'running'
+  // Rapport gelé : le cron est actif mais rien ne tourne ET aucune analyse fraîche > 20 min.
   const reportAgeMs = now - ck.runAt
-  const stalled = cronOn && !collecting && reportAgeMs > 20 * 60_000
+  const stalled = cronOn && !scrapeActive && reportAgeMs > 20 * 60_000
 
   return (
     <section className="bg-surface rounded-lg p-4" data-pw-section="cockpit">
@@ -80,16 +83,17 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
         <Activity className="w-4 h-4 text-indigo-400" />
         <h2 className="text-sm font-semibold text-white">Cockpit opérationnel</h2>
 
-        {/* Statut LIVE toujours présent : on sait EN PERMANENCE si les robots tournent. */}
-        {collecting ? (
+        {/* Statut LIVE toujours présent : on sait EN PERMANENCE si les robots tournent.
+            Signal unifié (scrapeActive) → jamais en contradiction avec la tuile « moisson ». */}
+        {scrapeActive ? (
           <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300 bg-emerald-500/12 border border-emerald-500/30 rounded-full px-2.5 py-0.5"
-            title={`Une passe de moisson a écrit il y a moins de 2 min${ck.lastCollectDomain ? ` (${ck.lastCollectDomain})` : ''}`}>
+            title="Un run serveur est actif ou une passe de moisson a écrit récemment">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Scraping en cours{ck.lastCollectDomain ? ` · ${ck.lastCollectDomain.replace(/^www\./, '')}` : ''}
+            Scraping en cours{collecting && ck.lastCollectDomain ? ` · ${ck.lastCollectDomain.replace(/^www\./, '')}` : ''}
           </span>
         ) : (
           <span className="flex items-center gap-1.5 text-[11px] font-medium text-white/55 bg-white/[0.05] border border-white/10 rounded-full px-2.5 py-0.5"
-            title="Aucune passe de moisson écrite depuis plus de 2 min">
+            title="Aucun run actif ni collecte récente">
             <span className="w-2 h-2 rounded-full bg-white/40" />
             Scraping à l’arrêt{ck.lastCollectAt != null ? ` · dernière collecte ${ago(ck.lastCollectAt, now)}` : ''}
           </span>
@@ -156,7 +160,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                     <div className="text-sm font-medium text-white/50 leading-none mt-1">manuel</div>
                     <div className="text-[11px] text-white/35 mt-1">cron non activé</div>
                   </>
-                ) : collecting || sched?.lastStatus === 'running' ? (
+                ) : scrapeActive ? (
                   <>
                     <div className="text-lg font-semibold text-emerald-300 leading-none flex items-center justify-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />En cours
