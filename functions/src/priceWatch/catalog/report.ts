@@ -55,7 +55,7 @@ export interface CompetitorStat {
   ruptures: number
   avgGapPct: number | null
   audit: CompetitorAudit
-  harvest?: { lastMs: number; cumulMs: number; progress: number }
+  harvest?: { lastMs: number; cumulMs: number; progress: number; sweeps: number }
 }
 
 export function auditListings(listings: CompetitorListing[]): CompetitorAudit {
@@ -102,7 +102,7 @@ function matchKindOf(proof: { key: { origin: boolean; kind: string }; evidence: 
 interface BuildReportOptions {
   vatRate?: number
   alignedPct?: number
-  harvestBySite?: Map<string, { lastMs: number; cumulMs: number; progress: number }>
+  harvestBySite?: Map<string, { lastMs: number; cumulMs: number; progress: number; sweeps: number }>
 }
 
 export function buildReport(

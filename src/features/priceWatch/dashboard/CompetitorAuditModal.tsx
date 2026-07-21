@@ -107,7 +107,8 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
                 <th className="text-left font-medium pb-2">Concurrent</th>
                 <th className="font-medium pb-2 pr-3">Fiches</th>
                 <th className="font-medium pb-2 px-2 whitespace-nowrap" title="Durée de la dernière passe de moisson">Dern.</th>
-                <th className="font-medium pb-2 px-2 pr-3 whitespace-nowrap" title="Cumul du temps de moisson (calibrage du cron)">Cumul</th>
+                <th className="font-medium pb-2 px-2 whitespace-nowrap" title="Cumul du temps de moisson (calibrage du cron)">Cumul</th>
+                <th className="font-medium pb-2 px-2 pr-3 whitespace-nowrap" title="Nombre de balayages COMPLETS du catalogue (cycles à 100 %)">Cycles</th>
                 {FIELDS.map((f) => <th key={f.key} className="font-medium pb-2 px-1 min-w-[64px]">{f.label}</th>)}
                 <th className="font-medium pb-2 px-2 pl-3 text-center border-l border-white/[0.06] min-w-[92px]" title="Test avant scraping : quelques pages témoins">Sonde</th>
               </tr>
@@ -120,7 +121,12 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
                   </td>
                   <td className="pr-3 text-white/55">{r.audit.indexed.toLocaleString('fr-FR')}</td>
                   <td className="px-2 text-white/45 whitespace-nowrap">{fmtDuration(r.harvest?.lastMs)}</td>
-                  <td className="px-2 pr-3 text-white/45 whitespace-nowrap">{fmtDuration(r.harvest?.cumulMs)}</td>
+                  <td className="px-2 text-white/45 whitespace-nowrap">{fmtDuration(r.harvest?.cumulMs)}</td>
+                  <td className="px-2 pr-3 text-center tabular-nums whitespace-nowrap">
+                    {r.harvest?.sweeps != null
+                      ? <span className={r.harvest.sweeps > 0 ? 'text-emerald-300' : 'text-white/40'}>×{r.harvest.sweeps}</span>
+                      : <span className="text-white/25">·</span>}
+                  </td>
                   {FIELDS.map((f) => {
                     const v = r.audit[f.key]
                     const s = cellStyle(v, r.audit.indexed)

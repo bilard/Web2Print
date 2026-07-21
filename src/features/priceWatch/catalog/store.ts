@@ -40,6 +40,8 @@ export interface CompetitorMeta {
   cumulHarvestMs?: number
   /** Progression du balayage 0..1 (part des catégories parcourues). 1 = catalogue balayé. */
   harvestProgress?: number
+  /** Nombre de balayages COMPLETS du catalogue (cycles à 100 %) déjà effectués. */
+  harvestSweeps?: number
   updatedAt?: number
 }
 

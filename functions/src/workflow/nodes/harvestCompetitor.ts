@@ -76,6 +76,7 @@ registerServerNode({
         lastHarvestMs: elapsedMs,
         cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,
         harvestProgress: res.sweepComplete ? 1 : harvestProgress(res.cursor),
+        harvestSweeps: res.cursor.sweeps,
       })
       rows.push({
         site: site.domain,

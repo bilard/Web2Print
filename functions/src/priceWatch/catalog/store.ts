@@ -30,6 +30,7 @@ export interface CompetitorMeta {
   lastHarvestMs?: number
   cumulHarvestMs?: number
   harvestProgress?: number
+  harvestSweeps?: number
   updatedAt?: number
 }
 

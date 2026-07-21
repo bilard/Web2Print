@@ -96,11 +96,11 @@ registerServerNode({
     // Relecture de l'index concurrent depuis Firestore (pas via un edge).
     const siteRefs: SiteRef[] = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
     const indexBySite = new Map<string, CompetitorListing[]>()
-    const harvestBySite = new Map<string, { lastMs: number; cumulMs: number; progress: number }>()
+    const harvestBySite = new Map<string, { lastMs: number; cumulMs: number; progress: number; sweeps: number }>()
     for (const s of siteRefs) {
       if (ctx.signal.aborted) break
       const meta = await loadCompetitorMeta(ctx.uid, watchId, s.siteId)
-      if (meta?.cumulHarvestMs != null) harvestBySite.set(s.siteId, { lastMs: meta.lastHarvestMs ?? 0, cumulMs: meta.cumulHarvestMs, progress: meta.harvestProgress ?? 0 })
+      if (meta?.cumulHarvestMs != null) harvestBySite.set(s.siteId, { lastMs: meta.lastHarvestMs ?? 0, cumulMs: meta.cumulHarvestMs, progress: meta.harvestProgress ?? 0, sweeps: meta.harvestSweeps ?? 0 })
       const listings = await loadAllListings(ctx.uid, watchId, s.siteId)
       indexBySite.set(s.siteId, listings)
       ctx.log('info', `${s.domain} : ${listings.length} produit(s) dans l'index.`)

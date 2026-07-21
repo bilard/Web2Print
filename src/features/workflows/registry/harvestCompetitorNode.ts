@@ -110,6 +110,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, Record<string, never>, Harv
         lastHarvestMs: elapsedMs,
         cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,
         harvestProgress: res.sweepComplete ? 1 : harvestProgress(res.cursor),
+        harvestSweeps: res.cursor.sweeps,
       })
       ctx.reportCount?.(rows.reduce((s, r) => s + Number(r.productsIndexed ?? 0), 0) + res.productsIndexed)
       rows.push({
