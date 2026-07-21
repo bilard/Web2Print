@@ -13,8 +13,15 @@ import { parseSitesConfig, stableId } from '../../priceWatch/helpers'
 import { DEFAULT_WATCH_ID } from '../../priceWatch/paths'
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
 import { directedPass, type DirectedSourceProduct, type DirectedSite } from '../../priceWatch/catalog/searchDirected'
+import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
+import { jinaSearch } from '../jina'
+import { firecrawlScrapeProduct } from '../../scraper/firecrawlProduct'
+import { getUserApiKey } from '../apiKeys'
 
 const VAT = 0.2
+
+/** Domaine nu (pour l'opérateur `site:` et la comparaison). */
+const bare = (d: string): string => d.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/^www\./i, '')
 
 const RESULT_COLUMNS = [
   { key: 'produit', label: 'Produit', fieldType: 'text', detectedType: 'text', isPrimary: true, width: 220 },
@@ -41,8 +48,29 @@ registerServerNode({
     if (!sheet.rows || sheet.rows.length === 0) {
       throw new Error('Recherche dirigée : aucune donnée produit en entrée.')
     }
-    const sites: DirectedSite[] = parseSitesConfig(String(config.sites ?? '')).map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
+    // Sites « génériques » (marketplaces non-PrestaShop) : recherche web + Firecrawl.
+    const genericDomains = new Set(String(config.genericSites ?? '').split(/[\n,]/).map((d) => bare(d.trim())).filter(Boolean))
+    const sites: DirectedSite[] = parseSitesConfig(String(config.sites ?? '')).map((s) => ({
+      siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)),
+    }))
     if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { results: resultsSheet([]) } }
+
+    // Dépendances du mode générique (chargées seulement si ≥ 1 site générique → pas de coût sinon).
+    const hasGeneric = sites.some((s) => s.generic)
+    const firecrawlKey = hasGeneric ? (await getUserApiKey(ctx.uid, 'firecrawl')) : ''
+    if (hasGeneric && !firecrawlKey) ctx.log('warn', 'Sites génériques configurés mais aucune clé Firecrawl — ils seront ignorés.')
+    const searchWeb = async (query: string): Promise<string[]> => {
+      try { return (await jinaSearch(ctx.uid, query)).map((r) => r.url).filter(Boolean) } catch { return [] }
+    }
+    const extractProduct = async (url: string): Promise<CompetitorListing | null> => {
+      const p = await firecrawlScrapeProduct(url, firecrawlKey)
+      if (!p || p.price == null) return null
+      return {
+        url, name: p.name ?? '', ref: p.reference, price: p.price, currency: p.currency,
+        taxIncluded: true, // prix affiché B2C = TTC
+        availability: p.inStock == null ? undefined : (p.inStock ? 'in-stock' : 'out-of-stock'),
+      }
+    }
 
     const refCol = String(config.refColumn ?? '').trim()
     const eanCol = String(config.eanColumn ?? '').trim()
@@ -62,6 +90,7 @@ registerServerNode({
     const startCursor = (await loadCompetitorMeta(ctx.uid, watchId, CURSOR_META))?.productCount ?? 0
     const pass = await directedPass(products, sites, startCursor % Math.max(1, products.length), budget, {
       fetchHtml: async (url) => { try { return await fetchHtml(url, 20000) } catch { return null } },
+      ...(hasGeneric && firecrawlKey ? { searchWeb, extractProduct } : {}),
       signal: ctx.signal,
       log: (m) => ctx.log('info', m),
     })

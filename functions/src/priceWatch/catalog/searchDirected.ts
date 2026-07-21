@@ -17,7 +17,51 @@ export interface SearchDeps {
   /** Récupère le HTML rendu d'une URL (même dépendance que la moisson : CF côté client,
    *  fetch direct côté serveur). */
   fetchHtml: (url: string) => Promise<string | null>
+  /** Recherche web (`site:domaine réf`) → URLs candidates. Alimente le mode GÉNÉRIQUE
+   *  (marketplaces non-PrestaShop). Optionnel : sans lui, seul le moteur du site est utilisé. */
+  searchWeb?: (query: string) => Promise<string[]>
+  /** Extraction produit générique (Firecrawl rendu JS + schéma) d'UNE fiche → listing.
+   *  Optionnel ; requis avec searchWeb pour le mode générique. */
+  extractProduct?: (url: string) => Promise<CompetitorListing | null>
   log?: (msg: string) => void
+}
+
+/** Domaine nu (sans protocole, sans www, sans chemin) pour un opérateur `site:`. */
+function bareDomain(domain: string): string {
+  return domain.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/^www\./i, '')
+}
+
+/**
+ * Mode GÉNÉRIQUE (toute techno, marketplaces) : pour chaque clé, cherche `site:domaine clé`
+ * sur le web, puis extrait les fiches candidates via Firecrawl (rendu JS + anti-bot) et
+ * renvoie le premier apparié par PREUVE EXACTE. Ciblé par réf → coût borné (crédits).
+ */
+async function searchProductGeneric(
+  product: SourceProductKeys,
+  domain: string,
+  deps: SearchDeps,
+): Promise<DirectedHit | null> {
+  if (!deps.searchWeb || !deps.extractProduct) return null
+  const keys = candidateKeys(product)
+  if (keys.length === 0) return null
+  const site = bareDomain(domain)
+  const queries = [...new Set(keys.map((k) => k.value))]
+  const tried = new Set<string>()
+  for (const query of queries) {
+    const urls = await deps.searchWeb(`site:${site} ${query}`)
+    for (const url of urls.slice(0, 3)) {
+      if (tried.has(url)) continue
+      tried.add(url)
+      const listing = await deps.extractProduct(url)
+      if (!listing) continue
+      const proof = proveMatch(keys, toIdentity(listing))
+      if (proof) {
+        deps.log?.(`${domain} (générique) : « ${query} » → ${listing.name} (preuve ${proof.evidence})`)
+        return { listing, evidence: proof.evidence, query }
+      }
+    }
+  }
+  return null
 }
 
 /** Convertit un résultat de recherche en identité appariable (pour proveMatch). */
@@ -50,7 +94,11 @@ export async function searchProductOnSite(
   product: SourceProductKeys,
   domain: string,
   deps: SearchDeps,
+  opts?: { generic?: boolean },
 ): Promise<DirectedHit | null> {
+  // Site GÉNÉRIQUE (marketplace / non-PrestaShop) : recherche web + Firecrawl, PAS le
+  // moteur de recherche PrestaShop (inexistant / bloqué chez ces sites).
+  if (opts?.generic) return searchProductGeneric(product, domain, deps)
   const keys = candidateKeys(product)
   if (keys.length === 0) return null
   // Un terme de recherche par valeur de clé distincte (réf, réf sans zéros, EAN).
@@ -78,6 +126,8 @@ export interface DirectedSourceProduct extends SourceProductKeys {
 export interface DirectedSite {
   siteId: string
   domain: string
+  /** true = site non-PrestaShop / marketplace → mode générique (recherche web + Firecrawl). */
+  generic?: boolean
 }
 
 export interface DirectedPassResult {
@@ -113,7 +163,7 @@ export async function directedPass(
     const p = products[i]
     for (const site of sites) {
       if (deps.signal?.aborted) break
-      const hit = await searchProductOnSite(p, site.domain, deps)
+      const hit = await searchProductOnSite(p, site.domain, deps, { generic: site.generic })
       if (hit) results.push({ productId: p.id, siteId: site.siteId, hit })
     }
   }

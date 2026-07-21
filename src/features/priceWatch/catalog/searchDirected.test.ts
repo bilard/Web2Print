@@ -71,3 +71,37 @@ describe('searchDirected — recherche dirigée par clé', () => {
     expect(r2.results.map((x) => x.productId)).toEqual(['p2'])
   })
 })
+
+describe('searchDirected — mode GÉNÉRIQUE (marketplaces)', () => {
+  it('cherche sur le web puis extrait via Firecrawl, apparié par la réf extraite', async () => {
+    const calls: string[] = []
+    const hit = await searchProductOnSite(
+      { ref: 'A97' },
+      'kramp.com',
+      {
+        fetchHtml: async () => { throw new Error('ne doit pas fetcher le moteur PrestaShop en mode générique') },
+        searchWeb: async (q) => { calls.push(q); return ['https://www.kramp.com/shop/p/courroie-a97'] },
+        // Firecrawl extrait la référence de la fiche → preuve par égalité exacte.
+        extractProduct: async (url) => ({ url, name: 'Courroie A97', ref: 'A97', price: 19.9, currency: 'EUR', taxIncluded: true }),
+      },
+      { generic: true },
+    )
+    expect(calls[0]).toBe('site:kramp.com A97')
+    expect(hit?.listing.price).toBe(19.9)
+    expect(hit?.evidence).toBeDefined()
+  })
+
+  it('rend null si l’extraction ne donne pas de preuve exacte', async () => {
+    const hit = await searchProductOnSite(
+      { ref: 'A97' },
+      'kramp.com',
+      {
+        fetchHtml: async () => null,
+        searchWeb: async () => ['https://www.kramp.com/shop/p/autre-produit-123'],
+        extractProduct: async (url) => ({ url, name: 'Autre produit', price: 10, currency: 'EUR' }),
+      },
+      { generic: true },
+    )
+    expect(hit).toBeNull()
+  })
+})

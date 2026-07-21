@@ -18,6 +18,7 @@ import { directedPass, type DirectedSourceProduct, type DirectedSite } from '@/f
 
 interface DirectedConfig {
   sites: string
+  genericSites: string
   refColumn: string
   eanColumn: string
   nameColumn: string
@@ -64,13 +65,14 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
       name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)', required: true,
       help: 'Domaine par ligne. Ex : « jardimax.com ». Le moteur de recherche PrestaShop est interrogé.',
     },
+    { name: 'genericSites', kind: 'textarea', label: 'Sites GÉNÉRIQUES (marketplaces, un par ligne)', help: 'Amazon, Cdiscount, Kramp… : recherche web par réf + Firecrawl (rendu JS + anti-bot). Nécessite une clé Firecrawl. Coût par réf — commence par 1 site pour valider.' },
     { name: 'refColumn', kind: 'text', label: 'Colonne Référence', help: 'Ex : ARTICLECODE. Cherchée en premier.' },
     { name: 'eanColumn', kind: 'text', label: 'Colonne EAN', help: 'Ex : EAN. Cherchée si la réf ne donne rien.' },
     { name: 'nameColumn', kind: 'text', label: 'Colonne Nom (affichage)', help: 'Optionnel — pour l’affichage du résultat.' },
     { name: 'productBudget', kind: 'number', label: 'Produits par run', help: 'Nombre de produits testés par exécution. Chacun est cherché sur tous les sites.' },
     { name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est celui du workflow (partagé avec « Comparer catalogue » du même workflow — les prix trouvés remontent alors dans le dashboard).' },
   ],
-  defaultConfig: { sites: '', refColumn: '', eanColumn: '', nameColumn: '', productBudget: 20, watchId: '' },
+  defaultConfig: { sites: '', genericSites: '', refColumn: '', eanColumn: '', nameColumn: '', productBudget: 20, watchId: '' },
   cardSummary: (c) => {
     const n = parseSitesConfig(c.sites).length
     return n ? `${n} site(s) · ${c.productBudget} produits/run` : ''
@@ -84,7 +86,9 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     const watchId = stableId((config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
     const sheet = inputs.products
     if (!sheet?.rows?.length) throw new Error('Recherche dirigée : aucune donnée produit en entrée.')
-    const sites: DirectedSite[] = parseSitesConfig(config.sites).map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
+    const bare = (d: string) => d.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/^www\./i, '')
+    const genericDomains = new Set((config.genericSites ?? '').split(/[\n,]/).map((d) => bare(d.trim())).filter(Boolean))
+    const sites: DirectedSite[] = parseSitesConfig(config.sites).map((s) => ({ siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)) }))
     if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { results: resultsSheet([]) } }
 
     const refCol = config.refColumn.trim()
