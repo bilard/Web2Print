@@ -12,6 +12,14 @@ import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat,
 /** Plafond de produits persistés dans `latest` (les plus sous-cotés d'abord). Au-delà,
  *  `truncated` est vrai et l'utilisateur bascule sur l'export Excel pour l'exhaustif. */
 const PRODUCT_CAP = 1000
+// Budget d'octets du doc `latest` : marge sous la limite dure Firestore de 1 048 576 o
+// (place laissée aux clés serializées + méta). Un dépassement = écriture REFUSÉE.
+const DOC_BYTE_BUDGET = 950_000
+
+/** Taille UTF-8 (universelle client/serveur, contrairement à Buffer). */
+function utf8Bytes(s: string): number {
+  return new TextEncoder().encode(s).length
+}
 
 export interface StoredReport {
   runAt: number
@@ -79,8 +87,24 @@ export async function saveCatalogReport(
   runAt: number,
   opts: { label?: string } = {},
 ): Promise<void> {
+  // Cap par OCTETS, pas seulement par nombre : Firestore REFUSE tout doc > 1 048 576 o
+  // (INVALID_ARGUMENT). À l'échelle F1 (des milliers d'appariés × 17 concurrents avec
+  // prix/URL/image par cellule), 1000 produits dépassaient 1,1 Mo → écriture rejetée et
+  // dashboard figé sur le dernier rapport valide. On garde les mieux classés
+  // (rankProducts) tant qu'on tient le budget, et on marque `truncated` dès qu'on coupe.
   const ranked = rankProducts(report.products)
-  const capped = ranked.slice(0, PRODUCT_CAP)
+  const overhead = utf8Bytes(JSON.stringify({
+    runAt, kpis: report.kpis, byCompetitor: report.byCompetitor, sites,
+    products: [], totalMatched: report.products.length, truncated: true,
+  }))
+  const capped: ProductRow[] = []
+  let used = overhead
+  for (let i = 0; i < ranked.length && i < PRODUCT_CAP; i++) {
+    const size = utf8Bytes(JSON.stringify(ranked[i])) + 1 // +1 : virgule de séparation
+    if (used + size > DOC_BYTE_BUDGET) break
+    capped.push(ranked[i])
+    used += size
+  }
   const stored: StoredReport = {
     runAt,
     kpis: report.kpis,
@@ -88,7 +112,7 @@ export async function saveCatalogReport(
     sites,
     products: capped,
     totalMatched: report.products.length,
-    truncated: report.products.length > PRODUCT_CAP,
+    truncated: capped.length < report.products.length,
   }
   await setDoc(doc(db, reportLatestDoc(uid, watchId)), stripUndefined(stored))
 

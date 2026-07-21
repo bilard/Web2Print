@@ -181,7 +181,7 @@ export async function runOne(uid: string, workflowId: string, trigger: 'cron' | 
 
 // Scanner : toutes les minutes, exécute les plannings dûs (et purge les orphelins).
 export const workflowCronScheduler = onSchedule(
-  { schedule: 'every 1 minutes', region: 'europe-west1', timeoutSeconds: 540, memory: '512MiB' },
+  { schedule: 'every 1 minutes', region: 'europe-west1', timeoutSeconds: 540, memory: '1GiB' },
   async () => {
     const db = getFirestore()
     const now = Date.now()
@@ -227,7 +227,7 @@ export const workflowCronScheduler = onSchedule(
 
 // Callable : exécution immédiate (bouton « Lancer maintenant (serveur) »).
 export const runWorkflowNow = onCall(
-  { region: 'europe-west1', timeoutSeconds: 540, memory: '512MiB' },
+  { region: 'europe-west1', timeoutSeconds: 540, memory: '1GiB' },
   async (req) => {
     const uid = req.auth?.uid
     if (!uid) throw new HttpsError('unauthenticated', 'Connexion requise.')

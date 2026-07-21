@@ -8,6 +8,14 @@ import { reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX } f
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
 
 const PRODUCT_CAP = 1000
+// Budget d'octets du doc `latest` : marge sous la limite dure Firestore de 1 048 576 o.
+// Un dépassement = écriture REFUSÉE (INVALID_ARGUMENT) → dashboard figé.
+const DOC_BYTE_BUDGET = 950_000
+
+/** Taille UTF-8 (universelle, parité avec le client). */
+function utf8Bytes(s: string): number {
+  return Buffer.byteLength(s, 'utf8')
+}
 
 interface StoredReport {
   runAt: number
@@ -57,8 +65,22 @@ export async function saveCatalogReport(
   opts: { label?: string } = {},
 ): Promise<void> {
   const db = getFirestore()
+  // Cap par OCTETS (pas seulement par nombre) : Firestore refuse tout doc > 1 048 576 o.
+  // À l'échelle F1 (milliers d'appariés × 17 concurrents) 1000 produits dépassaient 1,1 Mo
+  // → écriture rejetée, dashboard figé. On garde les mieux classés tant qu'on tient.
   const ranked = rankProducts(report.products)
-  const capped = ranked.slice(0, PRODUCT_CAP)
+  const overhead = utf8Bytes(JSON.stringify({
+    runAt, kpis: report.kpis, byCompetitor: report.byCompetitor, sites,
+    products: [], totalMatched: report.products.length, truncated: true,
+  }))
+  const capped: ProductRow[] = []
+  let used = overhead
+  for (let i = 0; i < ranked.length && i < PRODUCT_CAP; i++) {
+    const size = utf8Bytes(JSON.stringify(ranked[i])) + 1
+    if (used + size > DOC_BYTE_BUDGET) break
+    capped.push(ranked[i])
+    used += size
+  }
   const stored: StoredReport = {
     runAt,
     kpis: report.kpis,
@@ -66,7 +88,7 @@ export async function saveCatalogReport(
     sites,
     products: capped,
     totalMatched: report.products.length,
-    truncated: report.products.length > PRODUCT_CAP,
+    truncated: capped.length < report.products.length,
   }
   await db.doc(reportLatestDoc(uid, watchId)).set(stripUndefined(stored))
 
