@@ -28,7 +28,7 @@ export function CatalogTree({ ck, active, onSelect }: {
         <span className="text-white/35 tabular-nums">{total}</span>
       </button>
 
-      <div className="mt-1 max-h-[70vh] overflow-y-auto space-y-0.5">
+      <div className="mt-1 max-h-[300px] overflow-y-auto overscroll-contain space-y-0.5 pr-0.5">
         {fams.map((f) => {
           const on = active === f.famille
           return (

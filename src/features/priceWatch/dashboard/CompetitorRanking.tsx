@@ -9,6 +9,15 @@ import { pct } from './format'
 const gapClass = (v: number | null) =>
   v == null ? 'text-white/40' : v < -1 ? 'text-rose-400' : v > 1 ? 'text-emerald-400' : 'text-amber-400'
 
+// En-têtes chiffrés : picto coloré + infobulle (tooltip CSS fiable, pas le title natif).
+const HEAD_COLS = [
+  { Icon: Link2, color: 'text-indigo-400', tip: 'Appariés : tes produits retrouvés chez ce concurrent' },
+  { Icon: TrendingDown, color: 'text-rose-400', tip: '« Me bat » : % de produits où ce concurrent est MOINS CHER que toi' },
+  { Icon: Sigma, color: 'text-sky-400', tip: 'Écart de prix MOYEN (négatif = il est moins cher en moyenne)' },
+  { Icon: AlignCenterHorizontal, color: 'text-violet-400', tip: 'Écart de prix MÉDIAN (ignore les valeurs extrêmes)' },
+  { Icon: PackageX, color: 'text-amber-400', tip: 'Ruptures de stock chez ce concurrent (opportunités pour toi)' },
+]
+
 export function CompetitorRanking({ ck, onSelect, active, onOpenAudit, progressBySite }: {
   ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void; active?: string; onOpenAudit?: () => void
   /** Progression du balayage par siteId (0..1) — barre « thermomètre » sous chaque nom. */
@@ -33,13 +42,19 @@ export function CompetitorRanking({ ck, onSelect, active, onOpenAudit, progressB
       ) : (
         <table className="w-full text-xs tabular-nums">
           <thead>
-            <tr className="text-white/40 text-[10px] uppercase tracking-wide text-right">
-              <th className="text-left font-medium pb-2">Concurrent</th>
-              <th className="font-medium pb-2 cursor-help" title="Appariés : nombre de tes produits retrouvés chez ce concurrent"><Link2 className="w-3.5 h-3.5 inline-block" /></th>
-              <th className="font-medium pb-2 cursor-help" title="« Me bat » : % de produits où ce concurrent est MOINS CHER que toi"><TrendingDown className="w-3.5 h-3.5 inline-block" /></th>
-              <th className="font-medium pb-2 cursor-help" title="Écart de prix MOYEN (concurrent vs toi). Négatif = il est moins cher en moyenne"><Sigma className="w-3.5 h-3.5 inline-block" /></th>
-              <th className="font-medium pb-2 cursor-help" title="Écart de prix MÉDIAN (plus robuste que la moyenne, ignore les valeurs extrêmes)"><AlignCenterHorizontal className="w-3.5 h-3.5 inline-block" /></th>
-              <th className="font-medium pb-2 cursor-help" title="Ruptures : produits en rupture de stock chez ce concurrent (opportunités pour toi)"><PackageX className="w-3.5 h-3.5 inline-block" /></th>
+            <tr className="text-[10px] uppercase tracking-wide text-right bg-well">
+              <th className="text-left font-semibold py-2 pl-2 rounded-l-md text-white/60">Concurrent</th>
+              {HEAD_COLS.map((c, i) => {
+                const Icon = c.Icon
+                return (
+                  <th key={i} className={`relative group py-2 px-1 ${i === HEAD_COLS.length - 1 ? 'pr-2 rounded-r-md' : ''}`}>
+                    <Icon className={`w-4 h-4 inline-block ${c.color}`} />
+                    <span className="pointer-events-none absolute z-30 top-full mt-1 right-0 whitespace-nowrap rounded bg-background border border-white/15 px-2 py-1 text-[10px] normal-case tracking-normal text-white/85 opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                      {c.tip}
+                    </span>
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>
