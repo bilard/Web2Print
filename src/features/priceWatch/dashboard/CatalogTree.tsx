@@ -23,7 +23,7 @@ export function CatalogTree({ ck, active, onSelect }: {
       <div className="text-[10px] text-white/30 px-1 mb-2">Famille · {fams.length}</div>
 
       <button onClick={() => onSelect('all')}
-        className={`w-full flex items-center justify-between text-left rounded px-2 py-1.5 text-xs ${active === 'all' ? 'bg-indigo-500/15 text-white' : 'text-white/70 hover:bg-white/[0.04]'}`}>
+        className={`w-full flex items-center justify-between text-left rounded px-2 py-1.5 text-xs select-none focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-400/50 ${active === 'all' ? 'bg-indigo-500/15 text-white' : 'text-white/70 hover:bg-white/[0.04]'}`}>
         <span>Tout le catalogue</span>
         <span className="text-white/35 tabular-nums">{total}</span>
       </button>
@@ -33,7 +33,7 @@ export function CatalogTree({ ck, active, onSelect }: {
           const on = active === f.famille
           return (
             <button key={f.famille} onClick={() => onSelect(f.famille)}
-              className={`w-full flex items-center justify-between text-left rounded pl-4 pr-2 py-1.5 text-xs ${on ? 'bg-indigo-500/15 text-white' : 'text-white/70 hover:bg-white/[0.04]'}`}>
+              className={`w-full flex items-center justify-between text-left rounded pl-4 pr-2 py-1.5 text-xs select-none focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-400/50 ${on ? 'bg-indigo-500/15 text-white' : 'text-white/70 hover:bg-white/[0.04]'}`}>
               <span className="truncate" title={f.famille}>{f.famille}</span>
               <span className="flex items-center gap-1.5 shrink-0">
                 {f.undercut > 0 && <span className="w-1.5 h-1.5 rounded-full bg-rose-400/80" title={`${f.undercut} produit(s) sous-coté(s)`} />}
