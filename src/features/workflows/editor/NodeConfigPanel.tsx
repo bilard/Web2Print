@@ -423,7 +423,9 @@ export function NodeConfigPanel() {
                   availableColumns={availableColumns}
                 />
               ) : (
-                spec.configSchema.map((f) => (
+                spec.configSchema
+                  .filter((f) => !f.hiddenWhen?.(node.config as Record<string, unknown>))
+                  .map((f) => (
                   <label key={f.name} className="block">
                     <span className="text-xs text-white/60 mb-1 block">{f.label}</span>
                     <ConfigFieldRenderer

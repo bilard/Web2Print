@@ -46,7 +46,9 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
       name: 'atTime',
       kind: 'text',
       label: 'Heure (HH:MM)',
-      help: 'Heure de déclenchement pour jour / semaine / mois (Europe/Paris). Ex : 14:30. Ignoré pour « heure(s) » et le mode « après la fin ».',
+      help: 'Heure de déclenchement pour jour / semaine / mois (Europe/Paris). Ex : 14:30.',
+      // Sans effet en cadence infra-journalière ou en mode « après la fin » → masqué.
+      hiddenWhen: (c) => !!c.afterCompletion || c.unit === 'minute' || c.unit === 'hour',
     },
     {
       name: 'weekday',
@@ -54,6 +56,8 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
       label: 'Jour (unité semaine)',
       options: WEEKDAY_OPTIONS,
       default: '1',
+      // N'a de sens que pour l'unité « semaine » et hors mode « après la fin ».
+      hiddenWhen: (c) => !!c.afterCompletion || c.unit !== 'week',
     },
   ],
   defaultConfig: { enabled: false, every: 1, unit: 'day', afterCompletion: false, atTime: '09:00', weekday: 1 },
