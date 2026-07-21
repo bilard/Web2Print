@@ -27,9 +27,10 @@ export interface ConfigField {
   options?: { value: string; label: string }[]
   default?: unknown
   help?: string
-  /** Masque le champ quand il n'a aucun effet dans l'état courant de la config (évite
-   *  d'afficher des réglages ignorés — ex : « Heure » quand le cron relance après la fin). */
-  hiddenWhen?: (config: Record<string, unknown>) => boolean
+  /** Grise + désactive le champ (sans le cacher) quand il n'a aucun effet dans l'état
+   *  courant — ex : « Heure » quand le cron relance après la fin. Le champ reste visible
+   *  pour ne pas dérouter, avec la mention « sans effet ici ». */
+  disabledWhen?: (config: Record<string, unknown>) => boolean
 }
 
 type NodeRuntime = 'client' | 'server' | 'any'

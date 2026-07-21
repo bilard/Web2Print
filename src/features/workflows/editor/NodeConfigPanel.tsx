@@ -423,11 +423,13 @@ export function NodeConfigPanel() {
                   availableColumns={availableColumns}
                 />
               ) : (
-                spec.configSchema
-                  .filter((f) => !f.hiddenWhen?.(node.config as Record<string, unknown>))
-                  .map((f) => (
-                  <label key={f.name} className="block">
-                    <span className="text-xs text-white/60 mb-1 block">{f.label}</span>
+                spec.configSchema.map((f) => {
+                  const off = f.disabledWhen?.(node.config as Record<string, unknown>) ?? false
+                  return (
+                  <label key={f.name} className={`block ${off ? 'opacity-40 pointer-events-none select-none' : ''}`}>
+                    <span className="text-xs text-white/60 mb-1 block">
+                      {f.label}{off ? <span className="text-[10px] text-amber-400/70 ml-2">— sans effet ici</span> : null}
+                    </span>
                     <ConfigFieldRenderer
                       field={f}
                       value={(node.config as Record<string, unknown>)[f.name]}
@@ -440,7 +442,8 @@ export function NodeConfigPanel() {
                     />
                     {f.help ? <span className="text-[11px] text-white/30 mt-1 block">{f.help}</span> : null}
                   </label>
-                ))
+                  )
+                })
               )}
               {wf && <ConnectionsPanel node={node} wf={wf} onRemoveEdge={removeEdge} />}
             </div>
