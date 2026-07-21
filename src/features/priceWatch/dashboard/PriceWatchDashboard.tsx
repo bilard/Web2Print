@@ -63,7 +63,9 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       <div className="lg:w-96 shrink-0 space-y-3 lg:sticky lg:top-3 self-start">
         <CatalogTree ck={ck} active={filter.famille} onSelect={(f) => set({ famille: f })} />
         <CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} onOpenAudit={() => setAuditOpen(true)}
-          progressBySite={new Map(report.byCompetitor.filter((c) => c.harvest).map((c) => [c.siteId, c.harvest!.progress]))} />
+          progressBySite={new Map(report.byCompetitor
+            .filter((c) => c.harvest && c.audit.indexed > 0) // pas de barre si 0 fiche collectée (« complet » trompeur)
+            .map((c) => [c.siteId, c.harvest!.progress]))} />
         <ScrapeSpendWidget />
       </div>
       <div className="flex-1 min-w-0 space-y-3">
