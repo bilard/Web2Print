@@ -83,18 +83,22 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
   return createPortal(
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8" onClick={onClose}>
       <div className="w-full max-w-4xl bg-surface rounded-lg border border-white/10 relative max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-surface px-5 py-4 border-b border-white/10 flex items-baseline gap-3">
-          <h2 className="text-base font-semibold text-white">Audit de la collecte par concurrent</h2>
-          <span className="text-[11px] text-white/40">% des fiches collectées portant chaque champ</span>
-          <button type="button" onClick={() => void probeAll()} disabled={probingAll}
-            title="Teste chaque concurrent sur quelques pages témoins, sans lancer la moisson complète"
-            className="ml-auto text-[11px] text-indigo-300 hover:text-indigo-200 border border-indigo-400/30 rounded px-2 py-1 disabled:opacity-50 whitespace-nowrap">
-            {probingAll ? 'Sonde en cours…' : 'Tout sonder (test)'}
-          </button>
-          <button type="button" onClick={onClose} title="Fermer (Échap)"
-            className="p-1.5 rounded bg-well border border-white/10 text-white/60 hover:text-white">
-            <X className="w-4 h-4" />
-          </button>
+        <div className="sticky top-0 bg-background px-5 py-4 border-b border-white/10 relative flex items-center">
+          <div className="flex-1 text-center px-24">
+            <h2 className="text-base font-semibold text-white">Audit de la collecte par concurrent</h2>
+            <span className="text-[11px] text-white/40">% des fiches collectées portant chaque champ</span>
+          </div>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            <button type="button" onClick={() => void probeAll()} disabled={probingAll}
+              title="Teste chaque concurrent sur quelques pages témoins, sans lancer la moisson complète"
+              className="text-[11px] text-indigo-300 hover:text-indigo-200 border border-indigo-400/30 rounded px-2 py-1 disabled:opacity-50 whitespace-nowrap">
+              {probingAll ? 'Sonde en cours…' : 'Tout sonder (test)'}
+            </button>
+            <button type="button" onClick={onClose} title="Fermer (Échap)"
+              className="p-1.5 rounded bg-well border border-white/10 text-white/60 hover:text-white">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
         <div className="p-5">
           <table className="w-full text-xs tabular-nums">

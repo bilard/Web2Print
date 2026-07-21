@@ -14,7 +14,6 @@ import { HeatmapMatrix } from './HeatmapMatrix'
 import { CompetitorTrend } from './CompetitorTrend'
 import { OpportunityPanel } from './OpportunityPanel'
 import { CatalogTree } from './CatalogTree'
-import { HarvestProgress } from './HarvestProgress'
 import { ScrapeSpendWidget } from './ScrapeSpendWidget'
 import { CompetitorAuditModal } from './CompetitorAuditModal'
 import { AnalyticsTable } from './AnalyticsTable'
@@ -63,8 +62,8 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
           est regroupée à gauche, les données à droite (demande utilisateur). */}
       <div className="lg:w-96 shrink-0 space-y-3 lg:sticky lg:top-3 self-start">
         <CatalogTree ck={ck} active={filter.famille} onSelect={(f) => set({ famille: f })} />
-        <CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} onOpenAudit={() => setAuditOpen(true)} />
-        <HarvestProgress stats={report.byCompetitor} />
+        <CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} onOpenAudit={() => setAuditOpen(true)}
+          progressBySite={new Map(report.byCompetitor.filter((c) => c.harvest).map((c) => [c.siteId, c.harvest!.progress]))} />
         <ScrapeSpendWidget />
       </div>
       <div className="flex-1 min-w-0 space-y-3">

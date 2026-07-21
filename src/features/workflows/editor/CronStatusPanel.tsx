@@ -68,8 +68,12 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
     <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-indigo-500/15 border border-indigo-500/30 text-indigo-200 text-xs">
       <CalendarClock className="w-3.5 h-3.5" />
       <span title="Planification serveur active">
-        Prochaine · {formatCountdown(sched.nextRunAt - now)}
-        {sched.lastStatus ? ` · dernier : ${sched.lastStatus}` : ''}
+        {running
+          ? 'Run serveur en cours…'
+          : <>Prochaine · {formatCountdown(sched.nextRunAt - now)}
+            {sched.lastRunAt
+              ? ` · dernier il y a ${formatCountdown(now - sched.lastRunAt)}${sched.lastStatus === 'error' ? ' ⚠' : ' ✓'}`
+              : ' · pas encore exécuté'}</>}
       </span>
       {running ? (
         <button

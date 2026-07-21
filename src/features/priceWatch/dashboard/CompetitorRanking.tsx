@@ -8,8 +8,10 @@ import { pct } from './format'
 const gapClass = (v: number | null) =>
   v == null ? 'text-white/40' : v < -1 ? 'text-rose-400' : v > 1 ? 'text-emerald-400' : 'text-amber-400'
 
-export function CompetitorRanking({ ck, onSelect, active, onOpenAudit }: {
+export function CompetitorRanking({ ck, onSelect, active, onOpenAudit, progressBySite }: {
   ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void; active?: string; onOpenAudit?: () => void
+  /** Progression du balayage par siteId (0..1) — barre « thermomètre » sous chaque nom. */
+  progressBySite?: Map<string, number>
 }) {
   const rows = ck.competitors
 
@@ -45,8 +47,18 @@ export function CompetitorRanking({ ck, onSelect, active, onOpenAudit }: {
               return (
                 <tr key={r.siteId} onClick={() => onSelect?.({ competitor: r.siteId })}
                   className={`border-t border-white/5 text-right cursor-pointer hover:bg-white/[0.04] ${active === r.siteId ? 'bg-indigo-500/10' : ''}`}>
-                  <td className="text-left py-1.5 text-white/85 truncate max-w-[150px]" title={r.domain}>
-                    {r.domain.replace(/^www\./, '')}
+                  <td className="text-left py-1.5" title={r.domain}>
+                    <div className="truncate max-w-[150px] text-white/85">{r.domain.replace(/^www\./, '')}</div>
+                    {(() => {
+                      const prog = progressBySite?.get(r.siteId)
+                      if (prog == null) return null
+                      const pct = Math.min(100, Math.round(prog * 100))
+                      return (
+                        <div className="mt-1 h-1 rounded-full bg-well overflow-hidden max-w-[150px]" title={`Balayage ${pct}%`}>
+                          <div className={`h-full ${pct >= 100 ? 'bg-emerald-500' : 'bg-indigo-400'}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      )
+                    })()}
                   </td>
                   <td className="text-white/55">{r.matched}</td>
                   <td className={beat >= 50 ? 'text-rose-400' : 'text-white/60'}>{beat}%</td>
