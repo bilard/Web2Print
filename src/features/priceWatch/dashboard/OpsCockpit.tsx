@@ -1,0 +1,153 @@
+// src/features/priceWatch/dashboard/OpsCockpit.tsx
+// Cockpit opérationnel de la veille (tableau de bord voiture) : d'un coup d'œil, où en
+// est la collecte — fiches traitées, balayage restant, cycles bouclés, temps consommé,
+// tokens Jina, prochaine moisson. Tout est LIVE (le rapport et la conso arrivent en
+// onSnapshot ; countdown au tic). Lecture seule, aucun bouton d'action ici.
+import { useEffect, useState } from 'react'
+import { doc, onSnapshot } from 'firebase/firestore'
+import { db } from '@/lib/firebase/config'
+import { Layers, Timer, RefreshCw, Fuel, Radio, CalendarClock, Activity } from 'lucide-react'
+import type { StoredReport } from '../reportStore'
+import { Gauge } from './Gauge'
+import { buildOpsCockpit } from './opsMetrics'
+import { useScrapeSpend } from './useScrapeSpend'
+import { duration, ago, compactNum } from './format'
+import { formatCountdown } from '@/features/workflows/runtime/cronSchedule'
+
+interface ScheduleDoc { enabled: boolean; nextRunAt: number; lastRunAt?: number; lastStatus?: string }
+
+/** Abonnement best-effort au planning du workflow (clé = workflowId ; pour F1 Pro le
+ *  watchId EST l'id du workflow). Absent → pas de compteur (jamais de faux countdown). */
+function useWorkflowSchedule(workflowId: string | null): ScheduleDoc | null {
+  const [sched, setSched] = useState<ScheduleDoc | null>(null)
+  useEffect(() => {
+    if (!workflowId) { setSched(null); return }
+    return onSnapshot(doc(db, 'workflowSchedules', workflowId),
+      (s) => setSched(s.exists() ? (s.data() as ScheduleDoc) : null),
+      () => setSched(null))
+  }, [workflowId])
+  return sched
+}
+
+/** Tuile compteur : icône + label en tête, grand chiffre, sous-texte. */
+function Cell({ icon: Icon, tint, label, value, sub, children }: {
+  icon: typeof Layers; tint: string; label: string; value?: string; sub?: string; children?: React.ReactNode
+}) {
+  return (
+    <div className="bg-well rounded-lg px-3 py-3 flex flex-col items-center text-center min-w-0">
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <Icon className={`w-3.5 h-3.5 ${tint}`} />
+        <span className="text-[10px] uppercase tracking-wide text-white/45 truncate">{label}</span>
+      </div>
+      {children ?? (
+        <>
+          <div className="text-2xl font-semibold text-white tabular-nums leading-none">{value}</div>
+          {sub && <div className="text-[11px] text-white/40 mt-1 truncate max-w-full">{sub}</div>}
+        </>
+      )}
+    </div>
+  )
+}
+
+export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId: string | null }) {
+  const ck = buildOpsCockpit(report)
+  const spend = useScrapeSpend()
+  const sched = useWorkflowSchedule(watchId)
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const jina = spend?.byPlatform.jina
+  const remainingPct = Math.round((1 - ck.avgProgress) * 100)
+  const cronOn = !!sched?.enabled
+  const nextIn = cronOn ? formatCountdown(sched!.nextRunAt - now) : null
+
+  return (
+    <section className="bg-surface rounded-lg p-4" data-pw-section="cockpit">
+      <div className="flex items-center gap-2 mb-3">
+        <Activity className="w-4 h-4 text-indigo-400" />
+        <h2 className="text-sm font-semibold text-white">Cockpit opérationnel</h2>
+        <span className="flex items-center gap-1 text-[9px] font-medium text-emerald-400/80 tracking-wide ml-1"
+          title="Se met à jour tout seul — le rapport et la consommation arrivent en direct">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> EN DIRECT
+        </span>
+        <span className="text-[11px] text-white/40 ml-auto">dernière analyse {ago(ck.runAt, now)}</span>
+      </div>
+
+      {!ck.hasData ? (
+        <p className="text-sm text-white/45 py-4 text-center">
+          En attente de moisson — lance le node « Moisson concurrents » du workflow pour peupler ces compteurs.
+        </p>
+      ) : (
+        <>
+          {/* Deux jauges rondes (ratios) + tuiles compteurs. */}
+          <div className="flex flex-wrap items-stretch gap-3">
+            {/* Balayage : ce qui RESTE à traiter (moyenne des concurrents actifs). */}
+            <div className="bg-well rounded-lg px-4 py-3 flex flex-col items-center">
+              <Gauge value={ck.avgProgress} color="#818cf8">
+                <div className="text-xl font-semibold text-white tabular-nums">{Math.round(ck.avgProgress * 100)}%</div>
+                <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">balayage</div>
+              </Gauge>
+              <div className="text-[11px] text-white/40 mt-1">{remainingPct}% restant à traiter</div>
+            </div>
+            {/* Cycles bouclés : concurrents ayant fini ≥ 1 balayage complet. */}
+            <div className="bg-well rounded-lg px-4 py-3 flex flex-col items-center">
+              <Gauge value={ck.sitesActive ? ck.sitesComplete / ck.sitesActive : 0} color="#34d399">
+                <div className="text-xl font-semibold text-white tabular-nums">×{ck.cyclesDone}</div>
+                <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">cycles</div>
+              </Gauge>
+              <div className="text-[11px] text-white/40 mt-1">{ck.sitesComplete}/{ck.sitesActive} bouclés</div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1 min-w-[280px]">
+              <Cell icon={Layers} tint="text-sky-400" label="Fiches collectées"
+                value={ck.totalIndexed.toLocaleString('fr-FR')} sub={`${ck.sitesActive}/${ck.sitesTotal} concurrents actifs`} />
+              <Cell icon={Timer} tint="text-violet-400" label="Temps de moisson"
+                value={duration(ck.totalCumulMs)} sub="cumulé, tous concurrents" />
+              <Cell icon={RefreshCw} tint="text-amber-400" label="Durée d’un cycle"
+                value={ck.slowestCycle ? duration(ck.slowestCycle.cycleMs) : '—'}
+                sub={ck.slowestCycle ? `le + lent · ${ck.slowestCycle.domain.replace(/^www\./, '')}` : 'aucun cycle bouclé'} />
+              <Cell icon={Fuel} tint="text-emerald-400" label="Jina (ce mois)"
+                value={jina ? compactNum(jina.tokens) : '0'}
+                sub={jina ? `${jina.requests.toLocaleString('fr-FR')} req · $${jina.costUsd.toFixed(2)}` : 'aucune requête'} />
+              <Cell icon={Radio} tint="text-indigo-400" label="Concurrents actifs"
+                value={`${ck.sitesActive}/${ck.sitesTotal}`} sub={`${ck.sitesComplete} à 100%`} />
+              <Cell icon={CalendarClock} tint={cronOn ? 'text-emerald-400' : 'text-white/40'} label="Prochaine moisson">
+                {cronOn ? (
+                  <>
+                    <div className="text-lg font-semibold text-emerald-300 tabular-nums leading-none">{nextIn}</div>
+                    <div className="text-[11px] text-white/40 mt-1">
+                      {sched?.lastRunAt ? `dernier ${ago(sched.lastRunAt, now)}${sched.lastStatus === 'error' ? ' ⚠' : ''}` : 'cron actif'}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-sm font-medium text-white/50 leading-none mt-1">manuel</div>
+                    <div className="text-[11px] text-white/35 mt-1">cron non activé</div>
+                  </>
+                )}
+              </Cell>
+            </div>
+          </div>
+
+          {/* Qui scrape quoi : les concurrents par volume, barre de balayage + cycles. */}
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5">
+            {ck.competitors.filter((c) => c.indexed > 0).slice(0, 12).map((c) => (
+              <div key={c.siteId} className="flex items-center gap-2 text-xs">
+                <span className="truncate text-white/75 flex-1 min-w-0" title={c.domain}>{c.domain.replace(/^www\./, '')}</span>
+                <div className="h-1.5 w-16 rounded-full bg-white/[0.06] overflow-hidden shrink-0"
+                  title={`Balayage ${Math.round(c.progress * 100)}%`}>
+                  <div className={`h-full ${c.progress >= 1 ? 'bg-emerald-500' : 'bg-indigo-400'}`} style={{ width: `${Math.round(c.progress * 100)}%` }} />
+                </div>
+                <span className="tabular-nums text-white/50 w-12 text-right shrink-0">{compactNum(c.indexed)}</span>
+                <span className={`tabular-nums w-7 text-right shrink-0 ${c.sweeps > 0 ? 'text-emerald-300/80' : 'text-white/30'}`}>×{c.sweeps}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  )
+}

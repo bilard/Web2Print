@@ -21,6 +21,35 @@ export function when(ts: number | null | undefined): string {
   return ts ? dateFmt.format(ts) : '—'
 }
 
+/** Durée lisible compacte : « 12 s », « 3 min », « 1 h 20 ». '—' si non mesurée / nulle. */
+export function duration(ms: number | null | undefined): string {
+  if (ms == null || !Number.isFinite(ms) || ms <= 0) return '—'
+  const s = Math.round(ms / 1000)
+  if (s < 60) return `${s} s`
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m} min`
+  const h = Math.floor(m / 60)
+  return `${h} h ${String(m % 60).padStart(2, '0')}`
+}
+
+/** Ancienneté relative : « il y a 3 min », « il y a 2 h », « il y a 4 j ». '—' si absente. */
+export function ago(ts: number | null | undefined, now = Date.now()): string {
+  if (!ts) return '—'
+  const s = Math.max(0, Math.round((now - ts) / 1000))
+  if (s < 60) return `il y a ${s} s`
+  const m = Math.floor(s / 60)
+  if (m < 60) return `il y a ${m} min`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `il y a ${h} h`
+  return `il y a ${Math.floor(h / 24)} j`
+}
+
+const compactFmt = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 })
+/** Nombre compact pour les gros compteurs : 27936 → « 28 k », 1250000 → « 1,3 M ». */
+export function compactNum(n: number | null | undefined): string {
+  return n == null ? '—' : compactFmt.format(n)
+}
+
 type Position = 'cheaper' | 'aligned' | 'dearer'
 
 /** Position d'un concurrent face à moi, à partir de l'écart % (bande d'alignement). */

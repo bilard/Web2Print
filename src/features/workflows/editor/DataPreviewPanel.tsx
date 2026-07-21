@@ -37,7 +37,12 @@ import { parseExcelFile } from '@/features/excel/useExcelImport'
 import { usePreviewFocus } from './previewFocus.store'
 import { PanelResizeHandle, usePanelResize } from './usePanelResize'
 import { isChartSpec } from '../registry/chartSpec'
+import { PersistedWatchPreview } from './PersistedWatchPreview'
 import type { NodeRunState, NodeStatus, Workflow } from '../types'
+
+// Nodes de veille tarifaire dont la donnée est PERSISTÉE (rapport Firestore du suivi) :
+// pour ceux-là, une carte sans run en session montre l'état déjà collecté, pas un vide.
+const WATCH_NODE_TYPES = new Set(['harvest-competitor', 'compare-catalog'])
 
 // chart.js + react-chartjs-2 chargés en lazy : hors du chunk éditeur tant qu'aucun
 // graphe n'est affiché.
@@ -1147,14 +1152,28 @@ export function DataPreviewPanel() {
             ) : (
               renderPreview(target.value)
             )
-          ) : (
-            <div className="flex items-center gap-2 text-xs text-neutral-500 italic py-3">
-              <Table2 className="w-3.5 h-3.5" />
-              {selectedId
-                ? 'Cette carte n’a pas encore de données — lance le workflow (ou la carte) pour voir sa sortie ici.'
-                : 'Sélectionne une carte, ou lance le workflow pour voir l’aperçu ici.'}
-            </div>
-          )}
+          ) : (() => {
+            const emptyMsg = (
+              <div className="flex items-center gap-2 text-xs text-neutral-500 italic py-3">
+                <Table2 className="w-3.5 h-3.5" />
+                {selectedId
+                  ? 'Cette carte n’a pas encore de données — lance le workflow (ou la carte) pour voir sa sortie ici.'
+                  : 'Sélectionne une carte, ou lance le workflow pour voir l’aperçu ici.'}
+              </div>
+            )
+            const selNode = selectedId ? wf?.nodes.find((n) => n.id === selectedId) : undefined
+            // Node de veille : montre l'état DÉJÀ COLLECTÉ (rapport persisté) au lieu du vide.
+            if (selNode && WATCH_NODE_TYPES.has(selNode.type)) {
+              return (
+                <PersistedWatchPreview
+                  configWatchId={(selNode.config as { watchId?: unknown }).watchId}
+                  workflowId={wf?.id}
+                  fallback={emptyMsg}
+                />
+              )
+            }
+            return emptyMsg
+          })()}
         </div>
       ) : null}
     </div>

@@ -14,6 +14,7 @@ import { HeatmapMatrix } from './HeatmapMatrix'
 import { CompetitorTrend } from './CompetitorTrend'
 import { OpportunityPanel } from './OpportunityPanel'
 import { CatalogTree } from './CatalogTree'
+import { OpsCockpit } from './OpsCockpit'
 import { ScrapeSpendWidget } from './ScrapeSpendWidget'
 import { CompetitorAuditModal } from './CompetitorAuditModal'
 import { AnalyticsTable } from './AnalyticsTable'
@@ -56,6 +57,10 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   })
 
   return (
+    <div className="space-y-3">
+    {/* Cockpit opérationnel (pleine largeur, en tête) : où en est la collecte —
+        volumétrie, temps, cycles, tokens, prochaine moisson. Distinct du BI prix. */}
+    <OpsCockpit report={report} watchId={watchId} />
     <div className="flex flex-col lg:flex-row gap-3" data-pw-section="comparison">
       {/* Colonne gauche : navigation par famille + liste des concurrents (Benchmark).
           Plus logique/lisible que le rail droit — la navigation (familles + concurrents)
@@ -137,6 +142,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       </section>
       </div>
       {auditOpen && <CompetitorAuditModal stats={report.byCompetitor} onClose={() => setAuditOpen(false)} />}
+    </div>
     </div>
   )
 }
