@@ -76,6 +76,9 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   // Rapport gelé : le cron est actif mais rien ne tourne ET aucune analyse fraîche > 20 min.
   const reportAgeMs = now - ck.runAt
   const stalled = cronOn && !scrapeActive && reportAgeMs > 20 * 60_000
+  // Site en cours de moisson (heartbeat) + s'il ne produit rien (anti-bot / bloqué), le dire.
+  const curSite = collecting && ck.lastCollectDomain ? ck.competitors.find((c) => c.domain === ck.lastCollectDomain) : null
+  const curLabel = curSite ? `${curSite.domain.replace(/^www\./, '')}${curSite.indexed === 0 ? ' · bloqué' : ''}` : null
 
   return (
     <section className="bg-surface rounded-lg p-4" data-pw-section="cockpit">
@@ -89,7 +92,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
           <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300 bg-emerald-500/12 border border-emerald-500/30 rounded-full px-2.5 py-0.5"
             title="Un run serveur est actif ou une passe de moisson a écrit récemment">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Scraping en cours{collecting && ck.lastCollectDomain ? ` · ${ck.lastCollectDomain.replace(/^www\./, '')}` : ''}
+            Scraping en cours{curLabel ? ` · ${curLabel}` : ''}
           </span>
         ) : cronOn ? (
           <span className="flex items-center gap-1.5 text-[11px] font-medium text-sky-300 bg-sky-500/10 border border-sky-500/25 rounded-full px-2.5 py-0.5"
