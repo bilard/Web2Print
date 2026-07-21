@@ -67,28 +67,48 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const nextIn = cronOn ? formatCountdown(sched!.nextRunAt - now) : null
   // Collecte « en cours » = une méta de moisson a bougé il y a moins de 2 min.
   const collecting = ck.lastCollectAt != null && now - ck.lastCollectAt < 120_000
+  // Rapport gelé : le cron est actif mais aucune analyse fraîche depuis > 20 min ET aucune
+  // collecte récente → le dernier run n'a probablement pas abouti (à signaler franchement).
+  const reportAgeMs = now - ck.runAt
+  const stalled = cronOn && !collecting && reportAgeMs > 20 * 60_000
 
   return (
     <section className="bg-surface rounded-lg p-4" data-pw-section="cockpit">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
         <Activity className="w-4 h-4 text-indigo-400" />
         <h2 className="text-sm font-semibold text-white">Cockpit opérationnel</h2>
-        <span className="flex items-center gap-1 text-[9px] font-medium text-emerald-400/80 tracking-wide ml-1"
-          title="Se met à jour tout seul — la moisson et la consommation arrivent en direct">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> EN DIRECT
-        </span>
-        {collecting && (
-          <span className="flex items-center gap-1 text-[9px] font-medium text-amber-300 tracking-wide"
-            title="Une passe de moisson a écrit des données il y a moins de 2 min">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" /> COLLECTE EN COURS
+
+        {/* Statut LIVE toujours présent : on sait EN PERMANENCE si les robots tournent. */}
+        {collecting ? (
+          <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300 bg-emerald-500/12 border border-emerald-500/30 rounded-full px-2.5 py-0.5"
+            title={`Une passe de moisson a écrit il y a moins de 2 min${ck.lastCollectDomain ? ` (${ck.lastCollectDomain})` : ''}`}>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            Scraping en cours{ck.lastCollectDomain ? ` · ${ck.lastCollectDomain.replace(/^www\./, '')}` : ''}
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-[11px] font-medium text-white/55 bg-white/[0.05] border border-white/10 rounded-full px-2.5 py-0.5"
+            title="Aucune passe de moisson écrite depuis plus de 2 min">
+            <span className="w-2 h-2 rounded-full bg-white/40" />
+            Scraping à l’arrêt{ck.lastCollectAt != null ? ` · dernière collecte ${ago(ck.lastCollectAt, now)}` : ''}
           </span>
         )}
+
         <span className="text-[11px] text-white/40 ml-auto">
-          {ck.lastCollectAt != null && <span className="text-white/55">moisson {ago(ck.lastCollectAt, now)}</span>}
-          {ck.lastCollectAt != null && <span className="text-white/25"> · </span>}
-          analyse {ago(ck.runAt, now)}
+          {cronOn
+            ? <>cron actif · prochain {nextIn}{sched?.lastStatus === 'error' ? <span className="text-rose-300"> · dernier run en erreur ⚠</span> : ''}</>
+            : 'cron inactif (manuel)'}
+          <span className="text-white/25"> · </span>analyse {ago(ck.runAt, now)}
         </span>
       </div>
+
+      {/* Rapport gelé malgré un cron actif : le dire FRANCHEMENT, avec la marche à suivre. */}
+      {stalled && (
+        <div className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200">
+          ⚠ Le tableau de bord n’a pas été rafraîchi depuis <b>{ago(ck.runAt, now)}</b> alors que le cron est actif —
+          le dernier run n’a probablement pas produit de rapport. Relance le workflow (bouton <b>Run</b>), ou
+          désactive puis réactive le cron pour le débloquer.
+        </div>
+      )}
 
       {!ck.hasData ? (
         <p className="text-sm text-white/45 py-4 text-center">

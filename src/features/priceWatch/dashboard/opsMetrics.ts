@@ -47,6 +47,8 @@ export interface OpsCockpit {
   /** Dernière écriture de méta de moisson (heartbeat live) — null si aucune. Distinct de
    *  runAt (dernier « Comparer ») : prouve que la moisson tourne même sans nouveau rapport. */
   lastCollectAt: number | null
+  /** Domaine dont la méta a bougé en dernier (le concurrent en cours de collecte). */
+  lastCollectDomain: string | null
   /** true dès qu'au moins un concurrent a collecté des fiches (sinon : en attente). */
   hasData: boolean
   competitors: OpsCompetitor[] // triés par fiches décroissantes
@@ -92,14 +94,18 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
 
   // Heartbeat de moisson : la plus récente écriture de méta (bouge à chaque passe).
   let lastCollectAt: number | null = null
-  if (liveMeta) for (const m of liveMeta.values()) {
-    if (m.updatedAt != null && (lastCollectAt == null || m.updatedAt > lastCollectAt)) lastCollectAt = m.updatedAt
+  let lastCollectDomain: string | null = null
+  if (liveMeta) for (const [siteId, m] of liveMeta.entries()) {
+    if (m.updatedAt != null && (lastCollectAt == null || m.updatedAt > lastCollectAt)) {
+      lastCollectAt = m.updatedAt
+      lastCollectDomain = m.domain ?? competitors.find((c) => c.siteId === siteId)?.domain ?? null
+    }
   }
 
   return {
     totalIndexed, totalCumulMs, avgProgress,
     sitesActive: active.length, sitesTotal: competitors.length, sitesComplete,
-    cyclesDone, slowestCycle, runAt: report.runAt, lastCollectAt,
+    cyclesDone, slowestCycle, runAt: report.runAt, lastCollectAt, lastCollectDomain,
     hasData: totalIndexed > 0,
     competitors,
   }
