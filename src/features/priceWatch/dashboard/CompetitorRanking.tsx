@@ -34,11 +34,11 @@ export function CompetitorRanking({ ck, onSelect, active, onOpenAudit, progressB
           <thead>
             <tr className="text-white/40 text-[10px] uppercase tracking-wide text-right">
               <th className="text-left font-medium pb-2">Concurrent</th>
-              <th className="font-medium pb-2">App.</th>
-              <th className="font-medium pb-2">Me bat</th>
-              <th className="font-medium pb-2">Moyen</th>
-              <th className="font-medium pb-2">Médian</th>
-              <th className="font-medium pb-2">Rupt.</th>
+              <th className="font-medium pb-2 cursor-help" title="Appariés : nombre de tes produits retrouvés chez ce concurrent">App.</th>
+              <th className="font-medium pb-2 cursor-help" title="« Me bat » : % de produits où ce concurrent est MOINS CHER que toi">Me bat</th>
+              <th className="font-medium pb-2 cursor-help" title="Écart de prix MOYEN (concurrent vs toi). Négatif = il est moins cher en moyenne">Moyen</th>
+              <th className="font-medium pb-2 cursor-help" title="Écart de prix MÉDIAN (plus robuste que la moyenne, ignore les valeurs extrêmes)">Médian</th>
+              <th className="font-medium pb-2 cursor-help" title="Ruptures : produits en rupture de stock chez ce concurrent (opportunités pour toi)">Rupt.</th>
             </tr>
           </thead>
           <tbody>
