@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseListingPage } from './prestashop'
-import { searchProductOnSite, searchUrl } from './searchDirected'
+import { searchProductOnSite, searchUrl, directedPass } from './searchDirected'
 
 const fixture = (name: string) =>
   readFileSync(join(__dirname, '__fixtures__', `listing-${name}.html`), 'utf-8')
@@ -45,5 +45,29 @@ describe('searchDirected — recherche dirigée par clé', () => {
       fetchHtml: async () => fixture('jardimax'),
     })
     expect(hit).toBeNull()
+  })
+
+  it('directedPass avance le curseur du budget et rattache les hits par produit', async () => {
+    const html = fixture('pro-motoculture')
+    const knownRef = parseListingPage(html).find((l) => (l.ref?.length ?? 0) >= 5)!.ref!
+    const sites = [{ siteId: 's1', domain: 'pro-motoculture.com' }]
+    const products = [
+      { id: 'p0', ref: knownRef },
+      { id: 'p1', ref: 'INEXISTANT999' },
+      { id: 'p2', ref: knownRef },
+    ]
+    const deps = { fetchHtml: async () => html }
+
+    const r1 = await directedPass(products, sites, 0, 2, deps)
+    expect(r1.processed).toBe(2)
+    expect(r1.nextCursor).toBe(2)
+    expect(r1.done).toBe(false)
+    expect(r1.results.map((x) => x.productId)).toEqual(['p0']) // p1 sans réf connue → pas de hit
+
+    const r2 = await directedPass(products, sites, r1.nextCursor, 2, deps)
+    expect(r2.processed).toBe(1)
+    expect(r2.done).toBe(true)
+    expect(r2.nextCursor).toBe(0) // balayage terminé → recommence au prochain cycle
+    expect(r2.results.map((x) => x.productId)).toEqual(['p2'])
   })
 })

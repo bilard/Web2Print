@@ -12,6 +12,7 @@ import { indexKeysOf, buildMemoryIndex, matchProduct } from './match'
 import { foldText, keywordsForFamilies } from './categories'
 import { MAX_PAGES_PER_CATEGORY, initCursor, advance } from './harvest'
 import { planCategories, type CompetitorConfig, type HarvestDeps } from './runHarvest'
+import { searchUrl, directedPass, searchProductOnSite } from './searchDirected'
 
 describe('prestashop (parité serveur)', () => {
   it('parse les prix marchands', () => {
@@ -80,5 +81,27 @@ describe('runHarvest (parité serveur)', () => {
     }
     const cats = await planCategories(cfg, deps)
     expect(cats).toEqual(['https://www.x.fr/10-courroies'])
+  })
+})
+
+describe('searchDirected (parité serveur)', () => {
+  it('searchUrl construit l’URL du moteur de recherche PrestaShop', () => {
+    expect(searchUrl('jardimax.com', 'A97')).toBe(
+      'https://jardimax.com/recherche?controller=search&s=A97',
+    )
+  })
+  it('directedPass avance le curseur du budget même sans résultat', async () => {
+    const products = [{ id: 'p0', ref: 'ABC123' }, { id: 'p1', ref: 'DEF456' }]
+    const r = await directedPass(products, [{ siteId: 's', domain: 'x.fr' }], 0, 1, {
+      fetchHtml: async () => '',
+    })
+    expect(r.processed).toBe(1)
+    expect(r.nextCursor).toBe(1)
+    expect(r.done).toBe(false)
+    expect(r.results).toEqual([])
+  })
+  it('searchProductOnSite renvoie null sans HTML', async () => {
+    const hit = await searchProductOnSite({ ref: 'ABC123' }, 'x.fr', { fetchHtml: async () => null })
+    expect(hit).toBeNull()
   })
 })
