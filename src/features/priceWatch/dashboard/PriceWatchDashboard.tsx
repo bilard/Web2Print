@@ -53,8 +53,14 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   })
 
   return (
-    <div className="flex flex-col lg:flex-row gap-3" data-pw-section="cockpit">
-      <CatalogTree ck={ck} active={filter.famille} onSelect={(f) => set({ famille: f })} />
+    <div className="flex flex-col lg:flex-row gap-3" data-pw-section="comparison">
+      {/* Colonne gauche : navigation par famille + liste des concurrents (Benchmark).
+          Plus logique/lisible que le rail droit — la navigation (familles + concurrents)
+          est regroupée à gauche, les données à droite (demande utilisateur). */}
+      <div className="lg:w-72 shrink-0 space-y-3 lg:sticky lg:top-3 self-start">
+        <CatalogTree ck={ck} active={filter.famille} onSelect={(f) => set({ famille: f })} />
+        <CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} />
+      </div>
       <div className="flex-1 min-w-0 space-y-3">
       {report.truncated && (
         <div className="bg-amber-500/10 border border-amber-500/25 rounded-md px-3 py-2 text-xs text-amber-300">
@@ -96,23 +102,17 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         </div>
       )}
 
-      {/* Benchmark (haut, 19 concurrents) en RAIL latéral droit ; les graphes remplissent
-          la colonne gauche sur plusieurs rangées → plus de trou sous les graphes courts. */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 items-start">
-        <div className="xl:col-span-8 space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <ExpandableChart render={(h) => <PositionDonut kpis={report.kpis} onSelect={toggle} height={h} />} />
-            <ExpandableChart render={(h) => <GapDistribution ck={ck} onSelect={toggle} height={h} />} />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <ExpandableChart render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} />
-            <ExpandableChart render={() => <HeatmapMatrix ck={ck} onSelect={toggle} />} />
-          </div>
-          <ExpandableChart render={(h) => <CompetitorTrend history={history} sites={report.sites} height={h} />} />
-          <OpportunityPanel ck={ck} />
-        </div>
-        <div className="xl:col-span-4"><CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} /></div>
+      {/* Graphes en pleine largeur (le Benchmark est passé à gauche). */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <ExpandableChart render={(h) => <PositionDonut kpis={report.kpis} onSelect={toggle} height={h} />} />
+        <ExpandableChart render={(h) => <GapDistribution ck={ck} onSelect={toggle} height={h} />} />
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <ExpandableChart render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} />
+        <ExpandableChart render={() => <HeatmapMatrix ck={ck} onSelect={toggle} />} />
+      </div>
+      <ExpandableChart render={(h) => <CompetitorTrend history={history} sites={report.sites} height={h} />} />
+      <OpportunityPanel ck={ck} />
 
       <AnalyticsTable ck={ck} />
 

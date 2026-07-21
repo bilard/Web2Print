@@ -15,7 +15,7 @@ export function CatalogTree({ ck, active, onSelect }: {
   const total = fams.reduce((n, f) => n + f.count, 0)
 
   return (
-    <aside className="bg-surface rounded-lg p-3 w-full lg:w-52 shrink-0 lg:sticky lg:top-3 self-start">
+    <aside className="bg-surface rounded-lg p-3 w-full">
       <div className="flex items-center gap-1.5 mb-2 px-1">
         <Layers className="w-3.5 h-3.5 text-white/40" />
         <span className="text-xs font-semibold text-white/80">Navigation</span>

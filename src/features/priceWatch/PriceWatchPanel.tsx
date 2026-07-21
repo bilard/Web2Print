@@ -51,16 +51,19 @@ export function PriceWatchPanel() {
 
       <PriceWatchDashboard watchId={watchId} />
 
-      {legacyMatches.length > 0 && (
-        <section className="border-t border-white/10 pt-4">
-          <button type="button" onClick={() => setLegacyOpen((o) => !o)}
-            className="flex items-center gap-2 text-sm font-semibold text-white/70 hover:text-white">
-            <ChevronDown className={`w-4 h-4 transition-transform ${legacyOpen ? 'rotate-180' : ''}`} />
-            Suivi par recherche ({legacyMatches.length})
-          </button>
-          {legacyOpen && <div className="mt-3"><ComparisonTab /></div>}
-        </section>
-      )}
+      {/* Section « À confirmer » : toujours présente (le menu y renvoie via l'intent
+          section:pending). Regroupe les appariements INCERTAINS à valider — pour l'instant
+          l'ancien suivi par recherche ; y arriveront les correspondances par nom. */}
+      <section data-pw-section="pending" className="border-t border-white/10 pt-4">
+        <button type="button" onClick={() => setLegacyOpen((o) => !o)}
+          className="flex items-center gap-2 text-sm font-semibold text-white/70 hover:text-white">
+          <ChevronDown className={`w-4 h-4 transition-transform ${legacyOpen ? 'rotate-180' : ''}`} />
+          À confirmer{legacyMatches.length > 0 ? ` (${legacyMatches.length})` : ''}
+        </button>
+        {legacyOpen && (legacyMatches.length > 0
+          ? <div className="mt-3"><ComparisonTab /></div>
+          : <p className="mt-3 text-sm text-white/40">Aucun appariement à confirmer pour l’instant. Les correspondances incertaines (par nom, quand il n’y a ni EAN ni référence commune) apparaîtront ici pour validation.</p>)}
+      </section>
     </div>
   )
 }
