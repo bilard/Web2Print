@@ -64,7 +64,8 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const jina = spend?.byPlatform.jina
   const remainingPct = Math.round((1 - ck.avgProgress) * 100)
   const cronOn = !!sched?.enabled
-  const nextIn = cronOn ? formatCountdown(sched!.nextRunAt - now) : null
+  const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  const overdue = cronOn && sched!.nextRunAt <= now
   // Collecte « en cours » = une méta de moisson a bougé il y a moins de 2 min.
   const collecting = ck.lastCollectAt != null && now - ck.lastCollectAt < 120_000
   // Rapport gelé : le cron est actif mais aucune analyse fraîche depuis > 20 min ET aucune
@@ -149,17 +150,27 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
               <Cell icon={Radio} tint="text-indigo-400" label="Concurrents actifs"
                 value={`${ck.sitesActive}/${ck.sitesTotal}`} sub={`${ck.sitesComplete} à 100%`} />
               <Cell icon={CalendarClock} tint={cronOn ? 'text-emerald-400' : 'text-white/40'} label="Prochaine moisson">
-                {cronOn ? (
-                  <>
-                    <div className="text-lg font-semibold text-emerald-300 tabular-nums leading-none">{nextIn}</div>
-                    <div className="text-[11px] text-white/40 mt-1">
-                      {sched?.lastRunAt ? `dernier ${ago(sched.lastRunAt, now)}${sched.lastStatus === 'error' ? ' ⚠' : ''}` : 'cron actif'}
-                    </div>
-                  </>
-                ) : (
+                {!cronOn ? (
                   <>
                     <div className="text-sm font-medium text-white/50 leading-none mt-1">manuel</div>
                     <div className="text-[11px] text-white/35 mt-1">cron non activé</div>
+                  </>
+                ) : collecting || sched?.lastStatus === 'running' ? (
+                  <>
+                    <div className="text-lg font-semibold text-emerald-300 leading-none flex items-center justify-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />En cours
+                    </div>
+                    <div className="text-[11px] text-white/40 mt-1">{sched?.lastRunAt ? `démarré ${hhmm(sched.lastRunAt)}` : ''}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-2xl font-semibold text-white tabular-nums leading-none">
+                      {overdue ? <span className="text-emerald-300 text-lg">imminent</span> : hhmm(sched!.nextRunAt)}
+                    </div>
+                    <div className="text-[11px] text-white/40 mt-1">
+                      {overdue ? '' : `dans ${formatCountdown(sched!.nextRunAt - now)} · `}
+                      {sched?.lastRunAt ? `dernier ${hhmm(sched.lastRunAt)}${sched.lastStatus === 'error' ? ' ⚠' : ''}` : 'jamais exécuté'}
+                    </div>
                   </>
                 )}
               </Cell>
