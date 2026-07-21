@@ -16,8 +16,8 @@ const report: StoredReport = {
     comparisons: 4, cheaperThanMe: 3, aligned: 0, dearerThanMe: 1, ruptures: 1, productsUndercut: 2,
   },
   byCompetitor: [
-    { siteId: 'a', domain: 'a.com', matched: 3, cheaper: 2, ruptures: 1, avgGapPct: -20 },
-    { siteId: 'b', domain: 'b.com', matched: 2, cheaper: 1, ruptures: 0, avgGapPct: 5 },
+    { siteId: 'a', domain: 'a.com', matched: 3, cheaper: 2, ruptures: 1, avgGapPct: -20, audit: { indexed: 0, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 } },
+    { siteId: 'b', domain: 'b.com', matched: 2, cheaper: 1, ruptures: 0, avgGapPct: 5, audit: { indexed: 0, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 } },
   ],
   sites: [{ siteId: 'a', domain: 'a.com' }, { siteId: 'b', domain: 'b.com' }],
   products: [

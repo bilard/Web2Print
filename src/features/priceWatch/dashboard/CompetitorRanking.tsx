@@ -8,16 +8,22 @@ import { pct } from './format'
 const gapClass = (v: number | null) =>
   v == null ? 'text-white/40' : v < -1 ? 'text-rose-400' : v > 1 ? 'text-emerald-400' : 'text-amber-400'
 
-export function CompetitorRanking({ ck, onSelect, active }: {
-  ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void; active?: string
+export function CompetitorRanking({ ck, onSelect, active, onOpenAudit }: {
+  ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void; active?: string; onOpenAudit?: () => void
 }) {
   const rows = ck.competitors
 
   return (
     <div className="bg-surface rounded-lg p-4 h-full">
-      <div className="flex items-baseline justify-between mb-3">
+      <div className="flex items-baseline justify-between mb-3 gap-2">
         <div className="text-sm font-semibold text-white">Benchmark concurrents</div>
-        <div className="text-[11px] text-white/35">tri par agressivité</div>
+        {onOpenAudit && (
+          <button type="button" onClick={onOpenAudit}
+            className="text-[11px] text-indigo-300 hover:text-indigo-200 border border-indigo-400/30 rounded px-2 py-0.5">
+            Audit collecte
+          </button>
+        )}
+        <div className="text-[11px] text-white/35 ml-auto">tri par agressivité</div>
       </div>
       {rows.length === 0 ? (
         <div className="text-white/40 text-sm py-8 text-center">Aucun concurrent chiffré.</div>

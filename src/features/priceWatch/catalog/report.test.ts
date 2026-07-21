@@ -1,6 +1,6 @@
 // src/features/priceWatch/catalog/report.test.ts
 import { describe, it, expect } from 'vitest'
-import { buildReport, rankProducts, type ProductRow } from './report'
+import { buildReport, rankProducts, auditListings, type ProductRow, type CompetitorAudit } from './report'
 import type { SiteRef } from './matrix'
 import type { SourceProduct } from './match'
 import type { CompetitorListing } from './prestashop'
@@ -91,5 +91,25 @@ describe('rankProducts', () => {
       { id: '3', name: 'C', reference: null, ean: null, famille: null, myPriceHt: null, sourceUrl: null, competitors: [], bestGapPct: 12, undercut: false },
     ]
     expect(rankProducts(rows).map((r) => r.id)).toEqual(['2', '1', '3'])
+  })
+})
+
+describe('auditListings', () => {
+  it('calcule les taux de remplissage des champs collectés', () => {
+    const l = (o: Partial<CompetitorListing>): CompetitorListing => ({ url: 'u', name: 'n', ...o })
+    const audit: CompetitorAudit = auditListings([
+      l({ price: 10, listPrice: 12, availability: 'in-stock', image: 'i', ref: 'R1' }),
+      l({ price: 20, name: '', ref: 'R2' }), // pas de nom, pas d'image, pas de barré
+      l({ ref: 'R3', name: '' }), // ni prix ni rien, pas de nom
+    ])
+    expect(audit.indexed).toBe(3)
+    expect(audit.pctPrice).toBe(67)     // 2/3
+    expect(audit.pctListPrice).toBe(33) // 1/3
+    expect(audit.pctName).toBe(33)      // seul le 1er a un nom non vide
+    expect(audit.pctRef).toBe(100)      // 3/3
+  })
+  it('renvoie des taux à 0 pour un site sans fiche collectée', () => {
+    expect(auditListings([]).indexed).toBe(0)
+    expect(auditListings([]).pctPrice).toBe(0)
   })
 })

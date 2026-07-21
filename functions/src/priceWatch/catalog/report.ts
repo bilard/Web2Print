@@ -37,6 +37,16 @@ export interface ProductRow {
   undercut: boolean
 }
 
+export interface CompetitorAudit {
+  indexed: number
+  pctPrice: number
+  pctListPrice: number
+  pctStock: number
+  pctName: number
+  pctImage: number
+  pctRef: number
+}
+
 export interface CompetitorStat {
   siteId: string
   domain: string
@@ -44,6 +54,23 @@ export interface CompetitorStat {
   cheaper: number
   ruptures: number
   avgGapPct: number | null
+  audit: CompetitorAudit
+}
+
+export function auditListings(listings: CompetitorListing[]): CompetitorAudit {
+  const indexed = listings.length
+  if (!indexed) return { indexed: 0, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 }
+  let price = 0, listPrice = 0, stock = 0, name = 0, image = 0, ref = 0
+  for (const l of listings) {
+    if (l.price != null) price++
+    if (l.listPrice != null) listPrice++
+    if (l.availability) stock++
+    if (l.name && l.name.trim()) name++
+    if (l.image) image++
+    if (l.ref || l.gtin13) ref++
+  }
+  const pct = (n: number) => Math.round((n / indexed) * 100)
+  return { indexed, pctPrice: pct(price), pctListPrice: pct(listPrice), pctStock: pct(stock), pctName: pct(name), pctImage: pct(image), pctRef: pct(ref) }
 }
 
 export interface ReportKpis {
@@ -87,7 +114,7 @@ export function buildReport(
 
   const rows: ProductRow[] = []
   const stat = new Map<string, CompetitorStat & { _gapSum: number; _gapN: number }>()
-  for (const s of sites) stat.set(s.siteId, { siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, _gapSum: 0, _gapN: 0 })
+  for (const s of sites) stat.set(s.siteId, { siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, audit: auditListings(indexBySite.get(s.siteId) ?? []), _gapSum: 0, _gapN: 0 })
 
   const kpis: ReportKpis = {
     products: 0, matchedExact: 0, matchedOriginOnly: 0, sites: sites.length,
@@ -142,6 +169,7 @@ export function buildReport(
   const byCompetitor: CompetitorStat[] = [...stat.values()].map((s) => ({
     siteId: s.siteId, domain: s.domain, matched: s.matched, cheaper: s.cheaper, ruptures: s.ruptures,
     avgGapPct: s._gapN ? Math.round((s._gapSum / s._gapN) * 10) / 10 : null,
+    audit: s.audit,
   }))
 
   return { kpis, byCompetitor, products: rows }

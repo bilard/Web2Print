@@ -2,7 +2,7 @@
 // Parité SERVEUR de buildReport/rankProducts (jumeau du test client). Prouve que le
 // rapport écrit par le cron est identique à celui du client sur les mêmes entrées.
 import { describe, it, expect } from 'vitest'
-import { buildReport, rankProducts, type ProductRow } from './report'
+import { buildReport, rankProducts, auditListings, type ProductRow , type CompetitorAudit } from './report'
 import type { SiteRef } from './matrix'
 import type { SourceProduct } from './match'
 import type { CompetitorListing } from './prestashop'
@@ -71,5 +71,19 @@ describe('rankProducts (serveur)', () => {
       { id: '3', name: 'C', reference: null, ean: null, famille: null, myPriceHt: null, sourceUrl: null, competitors: [], bestGapPct: 12, undercut: false },
     ]
     expect(rankProducts(rows).map((r) => r.id)).toEqual(['2', '1', '3'])
+  })
+})
+
+describe('auditListings (serveur)', () => {
+  it('calcule les taux de remplissage', () => {
+    const l = (o: Partial<CompetitorListing>): CompetitorListing => ({ url: 'u', name: 'n', ...o })
+    const audit: CompetitorAudit = auditListings([
+      l({ price: 10, listPrice: 12, availability: 'in-stock', image: 'i', ref: 'R1' }),
+      l({ price: 20, name: '', ref: 'R2' }),
+      l({ ref: 'R3' }),
+    ])
+    expect(audit.indexed).toBe(3)
+    expect(audit.pctPrice).toBe(67)
+    expect(audit.pctRef).toBe(100)
   })
 })

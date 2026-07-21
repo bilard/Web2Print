@@ -14,6 +14,7 @@ import { HeatmapMatrix } from './HeatmapMatrix'
 import { CompetitorTrend } from './CompetitorTrend'
 import { OpportunityPanel } from './OpportunityPanel'
 import { CatalogTree } from './CatalogTree'
+import { CompetitorAuditModal } from './CompetitorAuditModal'
 import { AnalyticsTable } from './AnalyticsTable'
 import { ProductList } from './ProductList'
 import { ExpandableChart } from '@/components/shared/ExpandableChart'
@@ -40,6 +41,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   const ck = useMemo(() => (report ? buildCockpit(report, filter) : null), [report, filter])
 
   const [detailOpen, setDetailOpen] = useState(false)
+  const [auditOpen, setAuditOpen] = useState(false)
 
   if (!report || !ck) return <EmptyState hasWatch={!!watchId} />
   const set = (patch: Partial<CockpitFilter>) => setFilter((f) => ({ ...f, ...patch }))
@@ -59,7 +61,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
           est regroupée à gauche, les données à droite (demande utilisateur). */}
       <div className="lg:w-96 shrink-0 space-y-3 lg:sticky lg:top-3 self-start">
         <CatalogTree ck={ck} active={filter.famille} onSelect={(f) => set({ famille: f })} />
-        <CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} />
+        <CompetitorRanking ck={ck} onSelect={toggle} active={filter.competitor} onOpenAudit={() => setAuditOpen(true)} />
       </div>
       <div className="flex-1 min-w-0 space-y-3">
       {report.truncated && (
@@ -129,6 +131,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         {detailOpen && <div className="px-4 pb-4"><ProductList report={report} /></div>}
       </section>
       </div>
+      {auditOpen && <CompetitorAuditModal stats={report.byCompetitor} onClose={() => setAuditOpen(false)} />}
     </div>
   )
 }
