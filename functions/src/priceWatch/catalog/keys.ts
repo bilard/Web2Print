@@ -140,7 +140,33 @@ export interface CompetitorIdentity {
   name?: string
 }
 
-type MatchEvidence = 'gtin13' | 'ean-in-url' | 'sku' | 'mpn' | 'ref-in-name'
+type MatchEvidence = 'gtin13' | 'ean-in-url' | 'ref-in-url' | 'sku' | 'mpn' | 'ref-in-name'
+
+/**
+ * Références candidates extraites du SLUG d'une URL produit, l'ID PrestaShop retiré.
+ * PrestaShop construit `/{catégorie}/{id}-{slug-descriptif}.html` ; le PREMIER token
+ * numérique est l'identifiant interne du site (jamais une réf constructeur) — on le
+ * retire pour ne pas apparier un produit à l'ID d'un autre. Les tokens restants d'au
+ * On ne retient que les tokens PUREMENT numériques d'au moins WEAK_REF_LEN chiffres :
+ * cela écarte d'un coup les mots (« lame », « stiga ») ET les cotes avec unité
+ * (« 510mm », « 51cm »), sans logique d'unités à maintenir. Une réf constructeur dans
+ * un slug PrestaShop est numérique dans la quasi-totalité des cas terrain.
+ * `…/173085-lame-510mm-stiga-181004383-0.html` → ['181004383'] (173085 = id retiré,
+ * 510mm = non numérique, 0 = trop court).
+ */
+export function refTokensFromUrl(url: string | null | undefined): string[] {
+  const path = String(url ?? '').split(/[?#]/)[0]
+  const last = path.split('/').filter(Boolean).pop() ?? ''
+  const slug = last.replace(/\.html?$/i, '').replace(/^\d+-/, '')
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const tok of slug.split(/[^0-9]+/)) {
+    if (tok.length < WEAK_REF_LEN || seen.has(tok)) continue
+    seen.add(tok)
+    out.push(tok)
+  }
+  return out
+}
 
 export interface MatchProof {
   key: JoinKey
@@ -199,6 +225,14 @@ export function proveMatch(keys: JoinKey[], id: CompetitorIdentity): MatchProof 
     // Référence en tête de titre : égalité du premier token seulement, et clé assez
     // longue pour ne pas se confondre avec un autre code (`A35` ⊂ `LA35`).
     if (!key.weak && nameRef && nameRef === key.value) return { key, evidence: 'ref-in-name' }
+    // Référence dans le slug d'URL (autoportee : `…-181004383-0.html`) : token entier
+    // du slug (ID PrestaShop retiré), clé forte uniquement. Comme `ref-in-name`, jamais
+    // sur clé faible — un code de 5+ caractères délimité n'est pas fortuit.
+    if (!key.weak) {
+      for (const r of refTokensFromUrl(id.url)) {
+        if (r === key.value || stripLeadingZeros(r) === key.value) return { key, evidence: 'ref-in-url' }
+      }
+    }
   }
   return null
 }

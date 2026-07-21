@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   normalizeRef, stripLeadingZeros, normalizeEan, isInternalBarcode,
-  candidateKeys, proveMatch,
+  candidateKeys, proveMatch, refTokensFromUrl,
 } from './keys'
 
 describe('normalizeRef', () => {
@@ -157,5 +157,36 @@ describe('proveMatch — refus (le cœur de la justesse)', () => {
   })
   it('refuse quand la source n’a aucune clé exploitable', () => {
     expect(proveMatch(candidateKeys({}), { sku: 'X1' })).toBeNull()
+  })
+})
+
+describe('refTokensFromUrl — réf dans le slug (autoportee)', () => {
+  it('extrait la réf du slug, l’ID PrestaShop et les cotes courtes écartés', () => {
+    // /{catégorie}/{id}-{slug}.html — 173085 = id retiré, 510/0 trop courts.
+    expect(refTokensFromUrl('https://www.autoportee-discount.fr/lames-de-tondeuse/173085-lame-510mm-stiga-181004383-0.html'))
+      .toEqual(['181004383'])
+  })
+  it('gère l’absence de catégorie et les query strings', () => {
+    expect(refTokensFromUrl('https://x.fr/173085-lame-181004383-0.html?src=fs')).toEqual(['181004383'])
+  })
+  it('renvoie [] quand le slug ne porte que l’id et du texte', () => {
+    expect(refTokensFromUrl('https://www.jardimax.com/p/134027-lame-mulching-51cm-tondeuse-stiga.html')).toEqual([])
+  })
+})
+
+describe('proveMatch — ref-in-url', () => {
+  it('prouve une réf d’origine présente dans le slug d’URL', () => {
+    const keys = candidateKeys({ originRefs: ['181004383'] })
+    const proof = proveMatch(keys, { url: 'https://www.autoportee-discount.fr/lames-de-tondeuse/173085-lame-510mm-stiga-181004383-0.html' })
+    expect(proof?.evidence).toBe('ref-in-url')
+  })
+  it('ne prend PAS l’ID PrestaShop du slug pour une réf (pas de faux positif)', () => {
+    // Une source dont la réf vaut par malchance l'ID interne 173085 ne doit pas matcher.
+    const keys = candidateKeys({ ref: '173085' })
+    expect(proveMatch(keys, { url: 'https://x.fr/cat/173085-lame-181004383-0.html' })).toBeNull()
+  })
+  it('ne prouve jamais par l’URL une clé faible (< 5 caractères)', () => {
+    const keys = candidateKeys({ ref: '510' })
+    expect(proveMatch(keys, { url: 'https://x.fr/cat/99-piece-510-x.html' })).toBeNull()
   })
 })

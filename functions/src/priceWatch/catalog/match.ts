@@ -9,7 +9,7 @@
 
 import {
   candidateKeys, proveMatch, normalizeRef, stripLeadingZeros, normalizeEan,
-  isInternalBarcode, MIN_REF_LEN, WEAK_REF_LEN,
+  isInternalBarcode, refTokensFromUrl, MIN_REF_LEN, WEAK_REF_LEN,
   type JoinKey, type MatchProof, type SourceProductKeys,
 } from './keys'
 import type { CompetitorListing, Availability } from './prestashop'
@@ -50,6 +50,10 @@ export function indexKeysOf(listing: CompetitorListing): string[] {
   // EAN dans le slug d'URL (emc : « …-3582323305460.html »). Indexer permet le lookup ;
   // la preuve d'appariement reste exigée par proveMatch.
   for (const m of String(listing.url ?? '').matchAll(/\d{13}/g)) addEan(m[0])
+
+  // Réf constructeur dans le slug d'URL (autoportee : « …-181004383-0.html »), l'ID
+  // PrestaShop retiré. La preuve reste exigée (proveMatch → 'ref-in-url').
+  for (const r of refTokensFromUrl(listing.url)) addRef(r)
 
   return [...out]
 }
