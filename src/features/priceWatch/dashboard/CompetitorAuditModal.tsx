@@ -3,10 +3,20 @@
 // quel % porte chaque champ attendu (prix, prix barré, stock, nom, image, réf).
 // Rend visible « rien collecté » vs « champ manquant » vs « scrape complet », pour
 // distinguer un vrai trou de parsing d'un site qui ne publie pas la donnée.
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X } from 'lucide-react'
+import { X, Loader2, Check, EuroIcon, Ban } from 'lucide-react'
 import type { CompetitorStat, CompetitorAudit } from '../catalog/report'
+import { probeCompetitor, type ProbeResult } from '../catalog/probe'
+import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
+
+type ProbeState = { loading: boolean; result?: ProbeResult }
+
+const VERDICT: Record<ProbeResult['verdict'], { label: string; cls: string; Icon: typeof Check }> = {
+  ok: { label: 'Éligible', cls: 'text-emerald-300', Icon: Check },
+  'no-price': { label: 'Pas de prix', cls: 'text-rose-300', Icon: EuroIcon },
+  blocked: { label: 'Bloqué', cls: 'text-white/40', Icon: Ban },
+}
 
 const FIELDS: { key: Exclude<keyof CompetitorAudit, 'indexed'>; label: string }[] = [
   { key: 'pctPrice', label: 'Prix' },
@@ -37,6 +47,9 @@ function cellStyle(pct: number, indexed: number): { bg: string; txt: string } {
 }
 
 export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat[]; onClose: () => void }) {
+  const [probes, setProbes] = useState<Record<string, ProbeState>>({})
+  const [probingAll, setProbingAll] = useState(false)
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
@@ -50,14 +63,36 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
     .map((s) => ({ ...s, audit: s.audit ?? EMPTY }))
     .sort((a, b) => b.audit.indexed - a.audit.indexed || a.domain.localeCompare(b.domain))
 
+  // Sonde d'éligibilité : scrape témoin (quelques pages) via la même couche que la
+  // moisson, SANS persister — pour décider AVANT de lancer la collecte complète.
+  const runProbe = async (siteId: string, domain: string) => {
+    setProbes((p) => ({ ...p, [siteId]: { loading: true } }))
+    try {
+      const result = await probeCompetitor({ siteId, domain, families: [] }, { fetchHtml: (url) => fetchSourceHtml(url) })
+      setProbes((p) => ({ ...p, [siteId]: { loading: false, result } }))
+    } catch {
+      setProbes((p) => ({ ...p, [siteId]: { loading: false, result: { audit: EMPTY, categoriesFound: 0, verdict: 'blocked' } } }))
+    }
+  }
+  const probeAll = async () => {
+    setProbingAll(true)
+    for (const r of rows) await runProbe(r.siteId, r.domain)
+    setProbingAll(false)
+  }
+
   return createPortal(
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8" onClick={onClose}>
       <div className="w-full max-w-4xl bg-surface rounded-lg border border-white/10 relative max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 bg-surface px-5 py-4 border-b border-white/10 flex items-baseline gap-3">
           <h2 className="text-base font-semibold text-white">Audit de la collecte par concurrent</h2>
           <span className="text-[11px] text-white/40">% des fiches collectées portant chaque champ</span>
+          <button type="button" onClick={() => void probeAll()} disabled={probingAll}
+            title="Teste chaque concurrent sur quelques pages témoins, sans lancer la moisson complète"
+            className="ml-auto text-[11px] text-indigo-300 hover:text-indigo-200 border border-indigo-400/30 rounded px-2 py-1 disabled:opacity-50 whitespace-nowrap">
+            {probingAll ? 'Sonde en cours…' : 'Tout sonder (test)'}
+          </button>
           <button type="button" onClick={onClose} title="Fermer (Échap)"
-            className="ml-auto p-1.5 rounded bg-well border border-white/10 text-white/60 hover:text-white">
+            className="p-1.5 rounded bg-well border border-white/10 text-white/60 hover:text-white">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -70,6 +105,7 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
                 <th className="font-medium pb-2 px-2 whitespace-nowrap" title="Durée de la dernière passe de moisson">Dern.</th>
                 <th className="font-medium pb-2 px-2 pr-3 whitespace-nowrap" title="Cumul du temps de moisson (calibrage du cron)">Cumul</th>
                 {FIELDS.map((f) => <th key={f.key} className="font-medium pb-2 px-1 min-w-[64px]">{f.label}</th>)}
+                <th className="font-medium pb-2 px-2 pl-3 text-center border-l border-white/[0.06] min-w-[92px]" title="Test avant scraping : quelques pages témoins">Sonde</th>
               </tr>
             </thead>
             <tbody>
@@ -90,6 +126,24 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
                       </td>
                     )
                   })}
+                  <td className="px-2 pl-3 text-center border-l border-white/[0.06] whitespace-nowrap">
+                    {(() => {
+                      const st = probes[r.siteId]
+                      if (!st) return (
+                        <button type="button" onClick={() => void runProbe(r.siteId, r.domain)}
+                          className="text-[11px] text-indigo-300 hover:text-indigo-200 border border-indigo-400/30 rounded px-2 py-0.5">Sonder</button>
+                      )
+                      if (st.loading || !st.result) return <Loader2 className="w-3.5 h-3.5 animate-spin inline text-white/50" />
+                      const v = VERDICT[st.result.verdict]
+                      const Icon = v.Icon
+                      return (
+                        <span className={`inline-flex items-center gap-1 ${v.cls}`}
+                          title={`Échantillon témoin : ${st.result.audit.indexed} fiche(s) · prix ${st.result.audit.pctPrice}% · ${st.result.categoriesFound} catégorie(s) trouvée(s)`}>
+                          <Icon className="w-3.5 h-3.5" />{v.label}
+                        </span>
+                      )
+                    })()}
+                  </td>
                 </tr>
               ))}
             </tbody>
