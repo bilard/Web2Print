@@ -15,11 +15,12 @@ import './gdriveExport' // jumeau serveur gdrive-export (upload Drive via jeton 
 import './higgsfield'   // jumeau serveur higgsfield (génération image/vidéo via SDK)
 import './harvestCompetitor' // jumeau serveur harvest-competitor (moisson index concurrent, cron)
 import './compareCatalog'    // jumeau serveur compare-catalog (matrice produit × concurrent)
+import './directedSearch'    // jumeau serveur directed-search (recherche dirigée réf/EAN, cron)
 
 /** Types présents côté client mais non exécutables côté serveur (navigateur/OAuth/canvas). */
 export const SERVER_UNSUPPORTED = new Set<string>([
   'export-pdf', 'image-to-svg', 'pdf-to-svg', 'decompose',
-  'gdrive-import', 'save-dam', 'directed-search', // directed-search : jumeau serveur à venir (pilote client d'abord)
+  'gdrive-import', 'save-dam',
   'import-idml', 'import-svg', 'import-pptx', 'import-image',
   'import-csv', 'upload', 'export-excel', 'export-pptx', 'generate-image',
   'chart', // rendu PNG via <canvas> (client) ; le graphe en cron passe par l'option Sheets natif

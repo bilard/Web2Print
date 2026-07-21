@@ -9,8 +9,11 @@ import { ScanSearch } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet, ExcelRow } from '@/features/excel/types'
+import { useAuthStore } from '@/stores/auth.store'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
+import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
+import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
 import { directedPass, type DirectedSourceProduct, type DirectedSite } from '@/features/priceWatch/catalog/searchDirected'
 
 interface DirectedConfig {
@@ -19,6 +22,7 @@ interface DirectedConfig {
   eanColumn: string
   nameColumn: string
   productBudget: number
+  watchId: string
 }
 type DirectedInputs = { products: ExcelSheet }
 type DirectedOutputs = { results: ExcelSheet }
@@ -63,15 +67,21 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     { name: 'refColumn', kind: 'text', label: 'Colonne Référence', help: 'Ex : ARTICLECODE. Cherchée en premier.' },
     { name: 'eanColumn', kind: 'text', label: 'Colonne EAN', help: 'Ex : EAN. Cherchée si la réf ne donne rien.' },
     { name: 'nameColumn', kind: 'text', label: 'Colonne Nom (affichage)', help: 'Optionnel — pour l’affichage du résultat.' },
-    { name: 'productBudget', kind: 'number', label: 'Produits par run', help: 'Nombre de produits testés par exécution (pilote). Chacun est cherché sur tous les sites.' },
+    { name: 'productBudget', kind: 'number', label: 'Produits par run', help: 'Nombre de produits testés par exécution. Chacun est cherché sur tous les sites.' },
+    { name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est celui du workflow (partagé avec « Comparer catalogue » du même workflow — les prix trouvés remontent alors dans le dashboard).' },
   ],
-  defaultConfig: { sites: '', refColumn: '', eanColumn: '', nameColumn: '', productBudget: 20 },
+  defaultConfig: { sites: '', refColumn: '', eanColumn: '', nameColumn: '', productBudget: 20, watchId: '' },
   cardSummary: (c) => {
     const n = parseSitesConfig(c.sites).length
     return n ? `${n} site(s) · ${c.productBudget} produits/run` : ''
   },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
+    const uid = useAuthStore.getState().user?.uid
+    if (!uid) throw new Error('Utilisateur non connecté.')
+    // Même identité de suivi que « Comparer catalogue » du workflow → les prix trouvés
+    // alimentent le même index et remontent dans le dashboard « Comparatif ».
+    const watchId = stableId((config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
     const sheet = inputs.products
     if (!sheet?.rows?.length) throw new Error('Recherche dirigée : aucune donnée produit en entrée.')
     const sites: DirectedSite[] = parseSitesConfig(config.sites).map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
@@ -91,12 +101,26 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
       .filter((p) => p.ref || p.ean)
 
     const budget = Math.max(1, config.productBudget)
+    // Curseur persistant : on reprend là où le dernier tick s'est arrêté (le cron accumule
+    // au fil des passages, comme la moisson). Stocké dans une méta dédiée (pseudo-site ignoré
+    // par « Comparer », qui n'itère que les sites configurés).
+    const CURSOR_META = '__directed_cursor__'
+    const startCursor = (await loadCompetitorMeta(uid, watchId, CURSOR_META))?.productCount ?? 0
     ctx.reportConnector?.('jina')
-    const pass = await directedPass(products, sites, 0, budget, {
+    const pass = await directedPass(products, sites, startCursor % Math.max(1, products.length), budget, {
       fetchHtml: (url) => fetchSourceHtml(url),
       signal: ctx.signal,
       log: (m) => ctx.log('info', m),
     })
+
+    // Persistance dans l'index concurrent (même store que la moisson) : chaque hit devient
+    // une « page » d'un produit → « Comparer catalogue » le relira et l'affichera dans le
+    // dashboard, sans faux positif (l'appariement a été prouvé par proveMatch).
+    for (const res of pass.results) {
+      const l = res.hit.listing
+      await savePage(uid, watchId, res.siteId, `search-${res.productId}`, l.url ?? '', 1, [l])
+    }
+    await saveCompetitorMeta(uid, watchId, CURSOR_META, { domain: 'directed-cursor', productCount: pass.nextCursor })
 
     const nameById = new Map(sheet.rows.map((r, i) => [String((r as { _id?: unknown })._id ?? i), nameCol ? String(r[nameCol] ?? '') : '']))
     const refById = new Map(products.map((p) => [p.id, p]))
@@ -118,7 +142,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
       }
     })
     ctx.reportCount?.(rows.length)
-    ctx.log('info', `${rows.length} prix trouvé(s) sur ${pass.processed} produit(s) × ${sites.length} site(s).`)
+    ctx.log('info', `${rows.length} prix trouvé(s) sur ${pass.processed} produit(s) [curseur ${startCursor} → ${pass.nextCursor} / ${products.length}] × ${sites.length} site(s).`)
     return { results: resultsSheet(rows) }
   },
 }
