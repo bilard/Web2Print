@@ -191,7 +191,7 @@ export const workflowCronScheduler = onSchedule(
     for (const docSnap of due.docs) {
       const s = docSnap.data() as {
         uid: string; workflowId: string; every: number; unit: CronConfig['unit']
-        atTime?: string | null; weekday?: number | null
+        atTime?: string | null; weekday?: number | null; afterCompletion?: boolean
       }
       // Planning orphelin : le workflow a été supprimé sans nettoyer son cron.
       // On purge le doc pour arrêter la boucle d'échec (sinon réessai chaque minute
@@ -205,16 +205,20 @@ export const workflowCronScheduler = onSchedule(
       const cron: CronConfig = {
         enabled: true, every: s.every, unit: s.unit,
         atTime: s.atTime ?? undefined, weekday: s.weekday ?? undefined,
+        afterCompletion: !!s.afterCompletion,
       }
       try {
         const result = await runWorkflow(wf, s.uid, 'cron')
+        // Mode « après la fin » : ancrer la prochaine échéance sur la FIN du run (Date.now()
+        // ici = après le await), pas sur le début du tick → ni chevauchement, ni temps mort.
+        const anchor = cron.afterCompletion ? Date.now() : now
         // Run en pause (timeout reprenable) : on reprogramme AU PLUS TÔT (prochain tick)
         // pour reprendre là où on s'est arrêté, sans avancer à la prochaine échéance.
-        const nextRunAt = result.paused ? now : computeNextRun(cron, now)
+        const nextRunAt = result.paused ? now : computeNextRun(cron, anchor)
         const lastStatus = result.paused ? 'running' : result.status
         await docSnap.ref.update({ lastRunAt: now, lastStatus, nextRunAt })
       } catch (err) {
-        await docSnap.ref.update({ lastRunAt: now, lastStatus: 'error', nextRunAt: computeNextRun(cron, now) })
+        await docSnap.ref.update({ lastRunAt: now, lastStatus: 'error', nextRunAt: computeNextRun(cron, cron.afterCompletion ? Date.now() : now) })
         console.error('workflowCronScheduler: échec', s.workflowId, err)
       }
     }

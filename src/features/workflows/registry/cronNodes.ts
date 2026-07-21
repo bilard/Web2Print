@@ -37,10 +37,16 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
     { name: 'every', kind: 'number', label: 'Tous les', default: 1 },
     { name: 'unit', kind: 'select', label: 'Unité', options: SERVER_UNITS, default: 'day' },
     {
+      name: 'afterCompletion',
+      kind: 'checkbox',
+      label: 'Relancer après la FIN du run (scraping continu)',
+      help: 'Idéal pour un scraping qui avance par tranches : le prochain run part « Tous les X » APRÈS la fin du précédent, sans cadence fixe — ni chevauchement, ni temps mort. L\'heure et le jour ci-dessous sont ignorés dans ce mode.',
+    },
+    {
       name: 'atTime',
       kind: 'text',
       label: 'Heure (HH:MM)',
-      help: 'Heure de déclenchement pour jour / semaine / mois (Europe/Paris). Ex : 14:30. Ignoré pour « heure(s) ».',
+      help: 'Heure de déclenchement pour jour / semaine / mois (Europe/Paris). Ex : 14:30. Ignoré pour « heure(s) » et le mode « après la fin ».',
     },
     {
       name: 'weekday',
@@ -50,7 +56,7 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
       default: '1',
     },
   ],
-  defaultConfig: { enabled: false, every: 1, unit: 'day', atTime: '09:00', weekday: 1 },
+  defaultConfig: { enabled: false, every: 1, unit: 'day', afterCompletion: false, atTime: '09:00', weekday: 1 },
   // Résumé du planning affiché directement sur la carte (préfixe ⏸ si inactif).
   cardSummary: (config) => `${config.enabled ? '' : '⏸ '}${describeCron(config)}`,
   runtime: 'server',

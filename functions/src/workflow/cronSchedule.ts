@@ -9,6 +9,10 @@ export interface CronConfig {
   atTime?: string
   /** 0=dimanche … 6=samedi — jour cible de l'unité 'week'. */
   weekday?: number
+  /** Mode « scraping continu » : le prochain run est planifié `every`×`unit` APRÈS la
+   *  FIN du run précédent (pas sur une cadence fixe). Évite chevauchement et temps mort
+   *  quand la durée d'un run varie. `atTime`/`weekday` ignorés dans ce mode. */
+  afterCompletion?: boolean
 }
 
 /** Fuseau d'ancrage de l'horloge murale (« 14:30 » = 14:30 à Paris, été comme hiver). */

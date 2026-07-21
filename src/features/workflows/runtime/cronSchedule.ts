@@ -16,6 +16,9 @@ export interface CronConfig {
   atTime?: string
   /** 0=dimanche … 6=samedi — jour cible de l'unité 'week'. */
   weekday?: number
+  /** Mode « scraping continu » : prochain run planifié `every`×`unit` APRÈS la FIN du
+   *  run précédent (pas de cadence fixe). `atTime`/`weekday` ignorés. */
+  afterCompletion?: boolean
 }
 
 /** Fuseau d'ancrage de l'horloge murale (« 14:30 » = 14:30 à Paris). */
@@ -130,6 +133,8 @@ export function computeNextRun(cfg: CronConfig, from: number): number {
 export function describeCron(cfg: CronConfig): string {
   const every = normalizeEvery(cfg.every)
   const unit = CRON_UNIT_OPTIONS.find((u) => u.value === cfg.unit)?.label ?? cfg.unit
+  // Mode « après la fin » : cadence relative, l'heure/jour ne s'appliquent pas.
+  if (cfg.afterCompletion) return `${every} ${unit} après la fin`
   const at = cfg.atTime && /^\d{1,2}:\d{2}$/.test(cfg.atTime) ? ` à ${cfg.atTime}` : ''
   if (cfg.unit === 'week' && cfg.weekday != null) {
     if (Number(cfg.weekday) < 0) return `tous les jours${at}`

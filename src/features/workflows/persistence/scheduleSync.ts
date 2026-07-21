@@ -17,7 +17,7 @@ function findActiveCron(wf: Workflow): CronConfig | null {
         const n = Math.trunc(Number(c.weekday))
         weekday = n < 0 ? -1 : ((n % 7) + 7) % 7 // -1 = « Tous les jours »
       }
-      return { enabled: true, every: normalizeEvery(c.every ?? 1), unit, atTime, weekday }
+      return { enabled: true, every: normalizeEvery(c.every ?? 1), unit, atTime, weekday, afterCompletion: !!c.afterCompletion }
     }
   }
   return null
@@ -31,6 +31,7 @@ export async function syncWorkflowSchedule(uid: string, wf: Workflow): Promise<v
   await setDoc(ref, {
     uid, workflowId: wf.id, name: wf.name,
     enabled: true, every: cron.every, unit: cron.unit,
+    afterCompletion: !!cron.afterCompletion,
     // Firestore refuse `undefined` → null pour les champs optionnels absents.
     atTime: cron.atTime ?? null,
     weekday: cron.weekday ?? null,
