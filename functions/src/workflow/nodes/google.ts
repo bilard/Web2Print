@@ -661,3 +661,89 @@ registerServerNode({
     return { result: { sent: true, count: 1 } }
   },
 })
+
+// ---------------------------------------------------------------------------
+// gsheets-import (jumeau SERVEUR) — lit un Google Sheet via l'API Sheets `values`
+// et le convertit en Sheet wire-compatible avec le node client (parseExcelFile).
+// Débloque la SOURCE d'un workflow cron : headless ne peut pas lire un Upload
+// navigateur, mais peut lire un Google Sheets du Drive de l'utilisateur.
+//
+// Parité des CLÉS de colonnes : parseExcelFile passe par `sheet_to_json`, donc
+// clé = en-tête (ligne 1) ; doublons suffixés `_1/_2`, en-tête vide → `__EMPTY[_N]`.
+// On reproduit exactement ce nommage pour que « Comparer catalogue » retrouve
+// ses colonnes (réf / EAN) à l'identique en cron comme en test client.
+//
+// Léger : aucune dépendance `xlsx`, aucun export binaire. L'API `values` renvoie
+// la matrice typée (UNFORMATTED_VALUE) en UNE requête — supporte 75k+ lignes en
+// RAM ; les sorties sont ensuite tronquées (capOutputs) avant écriture Firestore.
+// Scope : `auth/drive` (serveur) couvre déjà l'API Sheets, cf. gsheets-export.
+// ---------------------------------------------------------------------------
+
+/** Reproduit le nommage de colonnes de SheetJS `sheet_to_json` sur la ligne d'en-tête. */
+function sheetKeysFromHeader(header: unknown[]): string[] {
+  const seen = new Map<string, number>()
+  let emptyIdx = 0
+  return header.map((cell) => {
+    const raw = cell == null ? '' : String(cell).trim()
+    if (raw === '') {
+      const key = emptyIdx === 0 ? '__EMPTY' : `__EMPTY_${emptyIdx}`
+      emptyIdx++
+      return key
+    }
+    const n = seen.get(raw) ?? 0
+    seen.set(raw, n + 1)
+    return n === 0 ? raw : `${raw}_${n}`
+  })
+}
+
+/** Liste les onglets (titre + position) d'un classeur, triés par index. */
+async function listSheetTabs(token: string, id: string): Promise<{ title: string; index: number }[]> {
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties(title,index)`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+  if (!res.ok) throw new Error(`Sheets get ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  const json = (await res.json()) as { sheets?: { properties?: { title?: string; index?: number } }[] }
+  return (json.sheets ?? [])
+    .map((s) => ({ title: s.properties?.title ?? 'Sheet1', index: s.properties?.index ?? 0 }))
+    .sort((a, b) => a.index - b.index)
+}
+
+registerServerNode({
+  type: 'gsheets-import',
+  run: async (ctx, config) => {
+    const fileId = String(config.fileId ?? '').trim()
+    if (!fileId) throw new Error('gsheets-import : aucun Google Sheets sélectionné (config.fileId vide).')
+    const token = await getGoogleAccessToken(ctx.uid)
+
+    const tabs = await listSheetTabs(token, fileId)
+    if (tabs.length === 0) throw new Error('gsheets-import : le classeur ne contient aucun onglet.')
+    const idx = Math.max(0, Math.min(Number(config.sheetIndex ?? 0), tabs.length - 1))
+    const title = tabs[idx].title
+    ctx.log('info', `Import GSheet ${String(config.fileName ?? fileId)} — onglet #${idx} « ${title} »…`)
+
+    const enc = encodeURIComponent(title)
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${fileId}/values/${enc}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+    if (!res.ok) throw new Error(`Sheets values ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+    const json = (await res.json()) as { values?: unknown[][] }
+    const matrix = json.values ?? []
+    if (matrix.length === 0) throw new Error(`gsheets-import : l'onglet « ${title} » est vide.`)
+
+    const keys = sheetKeysFromHeader(matrix[0])
+    const columns = keys.map((key, i) => ({ key, label: key, isPrimary: i === 0 }))
+    const rows: Record<string, unknown>[] = []
+    for (let r = 1; r < matrix.length; r++) {
+      const cells = matrix[r] ?? []
+      // Ignorer les lignes entièrement vides (parité sheet_to_json).
+      if (cells.every((c) => c == null || String(c).trim() === '')) continue
+      const row: Record<string, unknown> = { _id: `row_${rows.length}` }
+      for (let c = 0; c < keys.length; c++) row[keys[c]] = cells[c] ?? null
+      rows.push(row)
+    }
+    ctx.log('info', `${rows.length} ligne(s) × ${keys.length} colonne(s) chargée(s) depuis « ${title} ».`)
+    return { sheet: { name: title, columns, rows, taxonomy: [] } }
+  },
+})
