@@ -64,17 +64,30 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
     }
   }
 
+  // Heure « 23:41 » (concrète, ce que l'utilisateur veut voir).
+  const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  // « En cours » = run lancé depuis ce client, OU le serveur a marqué le planning en cours.
+  const isRunning = running || sched.lastStatus === 'running'
+  const overdue = sched.nextRunAt <= now
+
   return (
     <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-indigo-500/15 border border-indigo-500/30 text-indigo-200 text-xs">
-      <CalendarClock className="w-3.5 h-3.5" />
-      <span title="Planification serveur active">
-        {running
-          ? 'Run serveur en cours…'
-          : <>Prochaine · {formatCountdown(sched.nextRunAt - now)}
-            {sched.lastRunAt
-              ? ` · dernier il y a ${formatCountdown(now - sched.lastRunAt)}${sched.lastStatus === 'error' ? ' ⚠' : ' ✓'}`
-              : ' · pas encore exécuté'}</>}
-      </span>
+      <CalendarClock className="w-3.5 h-3.5 shrink-0" />
+      {isRunning ? (
+        <span className="flex items-center gap-1.5" title="Un run serveur est en cours d’exécution">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <b className="text-emerald-300">En cours</b>
+          {sched.lastRunAt && <span className="text-indigo-200/80">· démarré {hhmm(sched.lastRunAt)} (il y a {formatCountdown(now - sched.lastRunAt)})</span>}
+        </span>
+      ) : (
+        <span title="Planification serveur active">
+          {sched.lastRunAt
+            ? <>Dernier <b>{hhmm(sched.lastRunAt)}</b> <span className="text-indigo-200/70">(il y a {formatCountdown(now - sched.lastRunAt)})</span> {sched.lastStatus === 'error' ? <span className="text-rose-300">⚠</span> : <span className="text-emerald-300">✓</span>}</>
+            : <span className="text-indigo-200/70">Jamais exécuté</span>}
+          <span className="text-indigo-300/50"> · </span>
+          Prochain <b>{hhmm(sched.nextRunAt)}</b> <span className="text-indigo-200/70">({overdue ? 'imminent' : `dans ${formatCountdown(sched.nextRunAt - now)}`})</span>
+        </span>
+      )}
       {running ? (
         <button
           onClick={onStop}
