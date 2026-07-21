@@ -169,15 +169,28 @@ export function comparePrices(
   // (supposer du HT) sous-estimerait le prix concurrent de 20 % et produirait des
   // alertes de positionnement fausses.
   const isHt = listing.taxIncluded === false
+  const priceHt = round2(isHt ? listing.price : listing.price / (1 + vat))
+
+  // Garde-fou anti-prix-aberrant : un prix concurrent quasi nul (< 1 €), ou plus creux
+  // que -60 % face au prix source, trahit presque toujours une erreur de PARSING — le
+  // sélecteur de prix du thème PrestaShop a capté une quantité, un « 0 » ou un fragment
+  // au lieu du prix (cf. pro-motoculture : « 0 €/2 €/5 € » sur des courroies à 20 €). On
+  // écarte ce concurrent : mieux vaut PAS de prix qu'un faux qui pollue le classement et
+  // les alertes. Seuil heuristique — les vrais écarts observés restent au-dessus de -55 %.
+  const provisionalPct = sourcePriceHt != null && sourcePriceHt > 0
+    ? ((priceHt - sourcePriceHt) / sourcePriceHt) * 100
+    : 0
+  if (priceHt < 1 || provisionalPct < -60) return out // { availability } seul — prix rejeté
+
   out.priceTtc = round2(isHt ? listing.price * (1 + vat) : listing.price)
-  out.priceHt = round2(isHt ? listing.price : listing.price / (1 + vat))
+  out.priceHt = priceHt
   if (listing.listPrice != null) {
     out.listPriceTtc = round2(isHt ? listing.listPrice * (1 + vat) : listing.listPrice)
   }
 
   if (sourcePriceHt != null && sourcePriceHt > 0) {
-    out.deltaHt = round2(out.priceHt - sourcePriceHt)
-    out.deltaPct = Math.round(((out.priceHt - sourcePriceHt) / sourcePriceHt) * 1000) / 10
+    out.deltaHt = round2(priceHt - sourcePriceHt)
+    out.deltaPct = Math.round(((priceHt - sourcePriceHt) / sourcePriceHt) * 1000) / 10
     out.position = Math.abs(out.deltaPct) < alignedPct
       ? 'aligned'
       : out.deltaPct > 0 ? 'cheaper' : 'more-expensive'
