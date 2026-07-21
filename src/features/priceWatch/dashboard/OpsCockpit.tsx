@@ -83,19 +83,25 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
         <Activity className="w-4 h-4 text-indigo-400" />
         <h2 className="text-sm font-semibold text-white">Cockpit opérationnel</h2>
 
-        {/* Statut LIVE toujours présent : on sait EN PERMANENCE si les robots tournent.
-            Signal unifié (scrapeActive) → jamais en contradiction avec la tuile « moisson ». */}
+        {/* Statut LIVE en 3 états clairs : EN COURS (run actif/collecte récente) /
+            EN ATTENTE (cron actif, entre deux runs — normal, PAS cassé) / ARRÊTÉ (cron off). */}
         {scrapeActive ? (
           <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300 bg-emerald-500/12 border border-emerald-500/30 rounded-full px-2.5 py-0.5"
             title="Un run serveur est actif ou une passe de moisson a écrit récemment">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             Scraping en cours{collecting && ck.lastCollectDomain ? ` · ${ck.lastCollectDomain.replace(/^www\./, '')}` : ''}
           </span>
+        ) : cronOn ? (
+          <span className="flex items-center gap-1.5 text-[11px] font-medium text-sky-300 bg-sky-500/10 border border-sky-500/25 rounded-full px-2.5 py-0.5"
+            title="Cron actif — pause programmée entre deux moissons (le scraping n'est pas arrêté)">
+            <span className="w-2 h-2 rounded-full bg-sky-400" />
+            En attente du prochain run · {overdue ? 'imminent' : hhmm(sched!.nextRunAt)}
+          </span>
         ) : (
           <span className="flex items-center gap-1.5 text-[11px] font-medium text-white/55 bg-white/[0.05] border border-white/10 rounded-full px-2.5 py-0.5"
-            title="Aucun run actif ni collecte récente">
+            title="Cron non activé — aucune moisson planifiée">
             <span className="w-2 h-2 rounded-full bg-white/40" />
-            Scraping à l’arrêt{ck.lastCollectAt != null ? ` · dernière collecte ${ago(ck.lastCollectAt, now)}` : ''}
+            Scraping à l’arrêt (cron off){ck.lastCollectAt != null ? ` · dernière ${ago(ck.lastCollectAt, now)}` : ''}
           </span>
         )}
 
