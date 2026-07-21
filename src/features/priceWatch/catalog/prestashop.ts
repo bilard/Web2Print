@@ -182,11 +182,21 @@ function extractPrices(block: string): Pick<CompetitorListing, 'price' | 'listPr
   const contentAttr = block.match(/<[^>]*\bproduct-price\b[^>]*\bcontent=["']([\d.,]+)["']/i)
   if (contentAttr) out.price = parsePriceFragment(contentAttr[1])
 
+  // Microdata schema.org : `<span itemprop="price" content="2.18">` (les deux ordres
+  // d'attributs). Signal générique, gardé (ne s'active que si aucun prix trouvé).
+  if (out.price == null) {
+    const micro = block.match(/itemprop=["']price["'][^>]*\bcontent=["']([\d.,]+)["']/i)
+      ?? block.match(/\bcontent=["']([\d.,]+)["'][^>]*itemprop=["']price["']/i)
+    if (micro) out.price = parsePriceFragment(micro[1])
+  }
+
   if (out.price == null) {
     // Itère les éléments de classe `price` et garde le PREMIER qui donne un nombre :
     // un libellé `sr-only` « Prix » précède parfois le vrai prix (emc), et une capture
     // naïve s'arrêterait dessus. On saute donc les fragments sans chiffre.
-    for (const m of block.matchAll(/<(?:span|div|p)[^>]*class=["'][^"']*\bprice\b[^"']*["'][^>]*>([\s\S]{0,160}?)<\/(?:span|div|p)>/gi)) {
+    // Cap large (800) : certains thèmes bourrent le span de blancs — le prix de
+    // pieces-tracteur est à ~222 car. de l'ouverture, un cap à 160 le manquait.
+    for (const m of block.matchAll(/<(?:span|div|p)[^>]*class=["'][^"']*\bprice\b[^"']*["'][^>]*>([\s\S]{0,800}?)<\/(?:span|div|p)>/gi)) {
       const p = parsePriceFragment(m[1])
       if (p != null) { out.price = p; break }
     }

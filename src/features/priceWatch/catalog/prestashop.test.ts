@@ -118,6 +118,29 @@ describe('parseListingPage — emc-motoculture (libellé sr-only avant le prix, 
   })
 })
 
+describe('parseListingPage — pieces-tracteur (span « price » bourré de blancs)', () => {
+  const items = parseListingPage(fixture('pieces-tracteur'), 'https://www.pieces-tracteur-tondeuse.com/')
+
+  it('extrait la carte', () => {
+    expect(items.length).toBeGreaterThanOrEqual(1)
+  })
+  it('lit le prix malgré ~222 caractères d’espaces avant le nombre', () => {
+    // Le <span class="price"> a 222 car. de blancs avant « 2,18 € » — un cap à 160
+    // le manquait (0 % prix). Non-régression : cap élargi à 800.
+    expect(items[0].price).toBeCloseTo(2.18)
+  })
+})
+
+describe('extractPrices — microdata itemprop="price"', () => {
+  it('lit le prix depuis un attribut content microdata', () => {
+    const block =
+      '<article class="product-miniature"><a href="/9-x.html"><span class="product-title">X</span></a>' +
+      '<span itemprop="price" content="12.90">12,90 €</span></article>'
+    const items = parseListingPage(block, 'https://x.com/')
+    expect(items[0]?.price).toBeCloseTo(12.9)
+  })
+})
+
 describe('parseListingPage — jardimax (pas de référence sur la liste)', () => {
   const items = parseListingPage(fixture('jardimax'))
 
