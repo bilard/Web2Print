@@ -96,7 +96,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
 
         <span className="text-[11px] text-white/40 ml-auto">
           {cronOn
-            ? <>cron actif · prochain {nextIn}{sched?.lastStatus === 'error' ? <span className="text-rose-300"> · dernier run en erreur ⚠</span> : ''}</>
+            ? <>cron actif · prochain {overdue ? 'imminent' : hhmm(sched!.nextRunAt)}{sched?.lastStatus === 'error' ? <span className="text-rose-300"> · dernier run en erreur ⚠</span> : ''}</>
             : 'cron inactif (manuel)'}
           <span className="text-white/25"> · </span>analyse {ago(ck.runAt, now)}
         </span>
