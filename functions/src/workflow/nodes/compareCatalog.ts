@@ -10,7 +10,7 @@
 import { registerServerNode } from '../registry'
 import { parseSitesConfig, parsePrice, stableId } from '../../priceWatch/helpers'
 import { DEFAULT_WATCH_ID } from '../../priceWatch/paths'
-import { loadAllListings } from '../../priceWatch/catalog/store'
+import { loadAllListings, loadCompetitorMeta } from '../../priceWatch/catalog/store'
 import { buildReport } from '../../priceWatch/catalog/report'
 import { saveCatalogReport } from '../../priceWatch/reportStore'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
@@ -96,8 +96,11 @@ registerServerNode({
     // Relecture de l'index concurrent depuis Firestore (pas via un edge).
     const siteRefs: SiteRef[] = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
     const indexBySite = new Map<string, CompetitorListing[]>()
+    const harvestBySite = new Map<string, { lastMs: number; cumulMs: number }>()
     for (const s of siteRefs) {
       if (ctx.signal.aborted) break
+      const meta = await loadCompetitorMeta(ctx.uid, watchId, s.siteId)
+      if (meta?.cumulHarvestMs != null) harvestBySite.set(s.siteId, { lastMs: meta.lastHarvestMs ?? 0, cumulMs: meta.cumulHarvestMs })
       const listings = await loadAllListings(ctx.uid, watchId, s.siteId)
       indexBySite.set(s.siteId, listings)
       ctx.log('info', `${s.domain} : ${listings.length} produit(s) dans l'index.`)
@@ -127,7 +130,7 @@ registerServerNode({
     // Persiste le RAPPORT dashboard (comme le node client) → le CRON alimente le tableau
     // de bord Veille tarifaire sans ouvrir l'app. Non bloquant : un échec ne casse pas l'export.
     try {
-      const report = buildReport(sourceProducts, siteRefs, indexBySite, { vatRate })
+      const report = buildReport(sourceProducts, siteRefs, indexBySite, { vatRate, harvestBySite })
       await saveCatalogReport(ctx.uid, watchId, report, siteRefs, Date.now(), { label: ctx.workflowName })
       ctx.log('info', `Rapport dashboard enregistré (suivi « ${watchId} ») — visible dans Veille tarifaire.`)
     } catch (err) {

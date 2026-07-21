@@ -11,7 +11,7 @@ import type { ExcelSheet, ExcelColumn, ExcelRow } from '@/features/excel/types'
 import { useAuthStore } from '@/stores/auth.store'
 import { parseSitesConfig, parsePrice, stableId } from '@/features/priceWatch/core'
 import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
-import { loadAllListings } from '@/features/priceWatch/catalog/store'
+import { loadAllListings, loadCompetitorMeta } from '@/features/priceWatch/catalog/store'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
 import { buildReport } from '@/features/priceWatch/catalog/report'
@@ -136,8 +136,11 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // Relecture de l'index concurrent depuis Firestore (pas via un edge).
     const siteRefs: SiteRef[] = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
     const indexBySite = new Map<string, CompetitorListing[]>()
+    const harvestBySite = new Map<string, { lastMs: number; cumulMs: number }>()
     for (const s of siteRefs) {
       if (ctx.signal.aborted) break
+      const meta = await loadCompetitorMeta(uid, watchId, s.siteId)
+      if (meta?.cumulHarvestMs != null) harvestBySite.set(s.siteId, { lastMs: meta.lastHarvestMs ?? 0, cumulMs: meta.cumulHarvestMs })
       const listings = await loadAllListings(uid, watchId, s.siteId)
       indexBySite.set(s.siteId, listings)
       ctx.log('info', `${s.domain} : ${listings.length} produit(s) dans l'index.`)
@@ -175,7 +178,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // point de tendance). Non bloquant : un échec de persistance ne doit pas casser
     // l'export. Le tableau de bord « Veille tarifaire » lit ce rapport par watchId.
     try {
-      const report = buildReport(products, siteRefs, indexBySite, { vatRate })
+      const report = buildReport(products, siteRefs, indexBySite, { vatRate, harvestBySite })
       await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '' })
       ctx.log('info', `Rapport enregistré (suivi « ${watchId} ») — visible dans le tableau de bord Veille tarifaire.`)
     } catch (err) {

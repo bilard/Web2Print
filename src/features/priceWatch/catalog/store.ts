@@ -34,6 +34,10 @@ export interface CompetitorMeta {
   productCount?: number
   /** Nombre de pages moissonnées. */
   pageCount?: number
+  /** Durée (ms) de la DERNIÈRE passe de moisson de ce concurrent. */
+  lastHarvestMs?: number
+  /** Cumul (ms) de toutes les passes de moisson de ce concurrent (calibrage du cron). */
+  cumulHarvestMs?: number
   updatedAt?: number
 }
 

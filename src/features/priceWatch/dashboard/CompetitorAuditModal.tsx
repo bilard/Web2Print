@@ -17,6 +17,16 @@ const FIELDS: { key: Exclude<keyof CompetitorAudit, 'indexed'>; label: string }[
   { key: 'pctRef', label: 'Réf' },
 ]
 
+/** Durée lisible : « 12 s », « 3 min », « 1 h 20 ». '·' si non mesuré. */
+function fmtDuration(ms?: number): string {
+  if (ms == null) return '·'
+  const s = Math.round(ms / 1000)
+  if (s < 60) return `${s} s`
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m} min`
+  return `${Math.floor(m / 60)} h ${m % 60} min`
+}
+
 /** Fond de cellule selon le taux : rose (0 / faible) → ambre → émeraude. */
 function cellStyle(pct: number, indexed: number): { bg: string; txt: string } {
   if (indexed === 0) return { bg: 'transparent', txt: 'text-white/25' }
@@ -57,6 +67,8 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
               <tr className="text-white/40 text-[10px] uppercase tracking-wide text-right">
                 <th className="text-left font-medium pb-2">Concurrent</th>
                 <th className="font-medium pb-2 pr-3">Fiches</th>
+                <th className="font-medium pb-2 px-2 whitespace-nowrap" title="Durée de la dernière passe de moisson">Dern.</th>
+                <th className="font-medium pb-2 px-2 pr-3 whitespace-nowrap" title="Cumul du temps de moisson (calibrage du cron)">Cumul</th>
                 {FIELDS.map((f) => <th key={f.key} className="font-medium pb-2 px-1 min-w-[64px]">{f.label}</th>)}
               </tr>
             </thead>
@@ -67,6 +79,8 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
                     {r.domain.replace(/^www\./, '')}
                   </td>
                   <td className="pr-3 text-white/55">{r.audit.indexed.toLocaleString('fr-FR')}</td>
+                  <td className="px-2 text-white/45 whitespace-nowrap">{fmtDuration(r.harvest?.lastMs)}</td>
+                  <td className="px-2 pr-3 text-white/45 whitespace-nowrap">{fmtDuration(r.harvest?.cumulMs)}</td>
                   {FIELDS.map((f) => {
                     const v = r.audit[f.key]
                     const s = cellStyle(v, r.audit.indexed)

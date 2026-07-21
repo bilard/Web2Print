@@ -27,6 +27,8 @@ export interface CompetitorMeta {
   cursor?: HarvestCursor
   productCount?: number
   pageCount?: number
+  lastHarvestMs?: number
+  cumulHarvestMs?: number
   updatedAt?: number
 }
 

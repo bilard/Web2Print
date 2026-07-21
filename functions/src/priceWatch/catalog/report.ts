@@ -55,6 +55,7 @@ export interface CompetitorStat {
   ruptures: number
   avgGapPct: number | null
   audit: CompetitorAudit
+  harvest?: { lastMs: number; cumulMs: number }
 }
 
 export function auditListings(listings: CompetitorListing[]): CompetitorAudit {
@@ -101,6 +102,7 @@ function matchKindOf(proof: { key: { origin: boolean; kind: string }; evidence: 
 interface BuildReportOptions {
   vatRate?: number
   alignedPct?: number
+  harvestBySite?: Map<string, { lastMs: number; cumulMs: number }>
 }
 
 export function buildReport(
@@ -114,7 +116,7 @@ export function buildReport(
 
   const rows: ProductRow[] = []
   const stat = new Map<string, CompetitorStat & { _gapSum: number; _gapN: number }>()
-  for (const s of sites) stat.set(s.siteId, { siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, audit: auditListings(indexBySite.get(s.siteId) ?? []), _gapSum: 0, _gapN: 0 })
+  for (const s of sites) stat.set(s.siteId, { siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, audit: auditListings(indexBySite.get(s.siteId) ?? []), harvest: opts.harvestBySite?.get(s.siteId), _gapSum: 0, _gapN: 0 })
 
   const kpis: ReportKpis = {
     products: 0, matchedExact: 0, matchedOriginOnly: 0, sites: sites.length,
@@ -170,6 +172,7 @@ export function buildReport(
     siteId: s.siteId, domain: s.domain, matched: s.matched, cheaper: s.cheaper, ruptures: s.ruptures,
     avgGapPct: s._gapN ? Math.round((s._gapSum / s._gapN) * 10) / 10 : null,
     audit: s.audit,
+    ...(s.harvest ? { harvest: s.harvest } : {}),
   }))
 
   return { kpis, byCompetitor, products: rows }

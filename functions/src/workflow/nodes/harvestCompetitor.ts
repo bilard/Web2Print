@@ -55,20 +55,27 @@ registerServerNode({
     for (const site of sites) {
       if (ctx.signal.aborted) break
       const cfg: CompetitorConfig = { siteId: stableId(site.domain), domain: site.domain, families }
+      const prevMeta = await loadCompetitorMeta(ctx.uid, watchId, cfg.siteId)
       const deps: HarvestDeps = {
         // Fetch DIRECT : sur le runtime CF c'est la même IP que fetchPageHtml (validé live).
         fetchHtml: async (url) => {
           try { return await fetchHtml(url, 20000) } catch { return null }
         },
-        loadCursor: async (siteId) => (await loadCompetitorMeta(ctx.uid, watchId, siteId))?.cursor ?? null,
+        loadCursor: async () => prevMeta?.cursor ?? null,
         saveCursor: (siteId, cursor) => saveCompetitorMeta(ctx.uid, watchId, siteId, { domain: site.domain, cursor }),
         savePage: (siteId, pageId, url, page, products) => savePage(ctx.uid, watchId, siteId, pageId, url, page, products),
         log: (m) => ctx.log('info', m),
         signal: ctx.signal,
       }
+      const t0 = Date.now()
       const res = await harvestPass(cfg, deps, perSite)
+      const elapsedMs = Date.now() - t0
       const pagesTotal = await countPages(ctx.uid, watchId, cfg.siteId)
-      await saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, { pageCount: pagesTotal })
+      await saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
+        pageCount: pagesTotal,
+        lastHarvestMs: elapsedMs,
+        cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,
+      })
       rows.push({
         site: site.domain,
         pagesFetched: res.pagesFetched,

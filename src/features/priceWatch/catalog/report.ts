@@ -76,6 +76,8 @@ export interface CompetitorStat {
   avgGapPct: number | null
   /** Taux de remplissage des champs sur les fiches collectées (popup d'audit). */
   audit: CompetitorAudit
+  /** Durée de moisson (ms) : dernière passe + cumul. Absent si jamais mesuré. */
+  harvest?: { lastMs: number; cumulMs: number }
 }
 
 /** Taux de remplissage des champs attendus sur les fiches collectées d'un site. */
@@ -130,6 +132,8 @@ interface BuildReportOptions {
   vatRate?: number
   /** Bande d'indifférence (%) sous laquelle deux prix sont « alignés ». Défaut : 1. */
   alignedPct?: number
+  /** Durées de moisson par siteId (dernière passe + cumul), pour l'audit. */
+  harvestBySite?: Map<string, { lastMs: number; cumulMs: number }>
 }
 
 /**
@@ -148,7 +152,7 @@ export function buildReport(
 
   const rows: ProductRow[] = []
   const stat = new Map<string, CompetitorStat & { _gapSum: number; _gapN: number }>()
-  for (const s of sites) stat.set(s.siteId, { siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, audit: auditListings(indexBySite.get(s.siteId) ?? []), _gapSum: 0, _gapN: 0 })
+  for (const s of sites) stat.set(s.siteId, { siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, audit: auditListings(indexBySite.get(s.siteId) ?? []), harvest: opts.harvestBySite?.get(s.siteId), _gapSum: 0, _gapN: 0 })
 
   const kpis: ReportKpis = {
     products: 0, matchedExact: 0, matchedOriginOnly: 0, sites: sites.length,
@@ -204,6 +208,7 @@ export function buildReport(
     siteId: s.siteId, domain: s.domain, matched: s.matched, cheaper: s.cheaper, ruptures: s.ruptures,
     avgGapPct: s._gapN ? Math.round((s._gapSum / s._gapN) * 10) / 10 : null,
     audit: s.audit,
+    ...(s.harvest ? { harvest: s.harvest } : {}),
   }))
 
   return { kpis, byCompetitor, products: rows }
