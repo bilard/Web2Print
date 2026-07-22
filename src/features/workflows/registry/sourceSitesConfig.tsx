@@ -4,7 +4,7 @@
 // onSnapshot — indépendant de tout run). Clé de lecture = watchId dérivé comme au
 // runtime (config sinon id du workflow courant).
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, ClipboardPaste } from 'lucide-react'
+import { Plus, ClipboardPaste, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWorkflowStore } from '../persistence/workflow.store'
@@ -53,6 +53,7 @@ export function SourceSitesConfig({ config, onChange }: {
   const [importing, setImporting] = useState(false)
   const [importText, setImportText] = useState('')
   const [sort, setSort] = useState<SortMode>('manual')
+  const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<SiteStatus | null>(null)
   const [credsRow, setCredsRow] = useState<number | null>(null)
   const [scrapingId, setScrapingId] = useState<string | null>(null)
@@ -154,6 +155,9 @@ export function SourceSitesConfig({ config, onChange }: {
     const stats = statsFor(r.domain)
     return { r, i, stats, status: siteStatus({ enabled: r.enabled, live: isLive(stats), ...stats }) }
   })
+  // Recherche live (autocomplétion) : filtre par domaine.
+  const q = search.trim().toLowerCase()
+  if (q) displayRows = displayRows.filter((d) => normalizeDomain(d.r.domain).toLowerCase().includes(q))
   // Filtre par statut : clic sur un compteur de l'en-tête → n'afficher que ces sites.
   if (statusFilter) displayRows = displayRows.filter((d) => d.status === statusFilter)
   if (sort === 'status') {
@@ -215,6 +219,24 @@ export function SourceSitesConfig({ config, onChange }: {
             </button>
           </div>
         </div>
+        {/* Recherche ÉPINGLÉE (autocomplétion) — filtre la liste au fil de la frappe. */}
+        {rows.length > 1 && (
+          <div className="flex items-center gap-1.5 bg-well border border-white/10 rounded-lg px-2 py-1 focus-within:border-indigo-500/50">
+            <Search className="w-3.5 h-3.5 text-white/30 shrink-0" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher un site…"
+              className="flex-1 min-w-0 bg-transparent text-xs text-white/80 placeholder:text-white/25 focus:outline-none"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} title="Effacer" className="shrink-0 text-white/30 hover:text-white/70">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Badges PAR STATUT — centrés, toujours affichés, cliquables pour filtrer. */}
         {rows.length > 0 && (
           <div className="flex flex-wrap justify-center items-center gap-1.5 pt-0.5">
@@ -263,7 +285,7 @@ export function SourceSitesConfig({ config, onChange }: {
         </p>
       ) : displayRows.length === 0 ? (
         <p className="text-[11px] text-white/30 italic">
-          Aucun site pour ce filtre. <button onClick={() => setStatusFilter(null)} className="text-indigo-400 hover:text-indigo-300 not-italic">Afficher tout</button>
+          Aucun site {q ? `pour « ${search.trim()} »` : 'pour ce filtre'}. <button onClick={() => { setStatusFilter(null); setSearch('') }} className="text-indigo-400 hover:text-indigo-300 not-italic">Afficher tout</button>
         </p>
       ) : (
         <div className="flex flex-col gap-1">
