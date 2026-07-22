@@ -5,12 +5,15 @@
 // runtime (config sinon id du workflow courant).
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, ClipboardPaste } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth.store'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { useCompetitorMeta, useCatalogReport } from '@/features/priceWatch/useCatalogReport'
 import { stableId } from '@/features/priceWatch/core'
+import { harvestOneSite } from '@/features/priceWatch/catalog/runSingleSite'
 import {
   normalizeDomain, deriveWatchId, importSitesIntoRows, siteStatus, siteStatusRank,
-  type SourceSiteRow, type SiteStatus,
+  rowsToCompetitorSites, type SourceSiteRow, type SiteStatus,
 } from '@/features/priceWatch/sourceSites'
 import { SourceSitesRowItem, type SiteRowStats } from './sourceSitesRow'
 import { SiteCredentialsForm } from './sourceSitesCreds'
@@ -31,6 +34,7 @@ export function SourceSitesConfig({ config, onChange }: {
   availableColumns?: string[]
 }) {
   const workflowId = useWorkflowStore((s) => s.current?.id)
+  const uid = useAuthStore((s) => s.user?.uid)
   const rows = useMemo(() => config.sites ?? [], [config.sites])
   const watchId = deriveWatchId(config.watchId ?? '', workflowId)
   const metaMap = useCompetitorMeta(watchId)
@@ -50,6 +54,26 @@ export function SourceSitesConfig({ config, onChange }: {
   const [sort, setSort] = useState<SortMode>('manual')
   const [statusFilter, setStatusFilter] = useState<SiteStatus | null>(null)
   const [credsRow, setCredsRow] = useState<number | null>(null)
+  const [scrapingId, setScrapingId] = useState<string | null>(null)
+
+  // Moisson manuelle d'UN site (bouton ▶) : réutilise le moteur, budget court (test),
+  // met à jour le tableau en direct (onSnapshot). Le domaine sert de clé de « en cours ».
+  const scrapeSite = async (r: SourceSiteRow) => {
+    const domain = normalizeDomain(r.domain)
+    if (!uid || !domain) return
+    // Construit le CompetitorSite comme à l'émission (engine forcé / auth / champs).
+    const site = rowsToCompetitorSites([{ ...r, enabled: true }])[0]
+    if (!site) return
+    setScrapingId(domain)
+    try {
+      const res = await harvestOneSite(uid, watchId, site, { pageBudget: 12 })
+      toast.success(`${domain} : +${res.productsIndexed} produit(s) sur ${res.pagesFetched} page(s)${res.engine ? ` (via ${res.engine})` : ''}`)
+    } catch (e) {
+      toast.error(`${domain} : ${e instanceof Error ? e.message : 'échec de la moisson'}`)
+    } finally {
+      setScrapingId(null)
+    }
+  }
 
   const statsFor = (domain: string): SiteRowStats => {
     const siteId = stableId(normalizeDomain(domain))
@@ -241,6 +265,8 @@ export function SourceSitesConfig({ config, onChange }: {
                 onToggle={(enabled) => patchRow(i, { enabled })}
                 onEngine={(engine) => patchRow(i, engine === 'auto' ? { engine: undefined } : { engine })}
                 onAuth={() => setCredsRow((c) => (c === i ? null : i))}
+                onScrape={() => void scrapeSite(r)}
+                scraping={scrapingId === normalizeDomain(r.domain)}
                 onRemove={() => { onChange({ ...config, sites: rows.filter((_, j) => j !== i) }); setCredsRow(null) }}
               />
               {credsRow === i && (

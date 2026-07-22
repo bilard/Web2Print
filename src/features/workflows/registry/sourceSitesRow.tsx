@@ -4,7 +4,7 @@
 //   dernière passe) · corbeille ; niveau 2 — moteur forcé + chips de stats insécables.
 // Pendant la moisson : ring vert pulsé + barre de balayage animée (progress-indeterminate).
 // Après la passe : badge verdict lisible d'un coup d'œil, pop fx-result s'il vient de tomber.
-import { Trash2, Lock, LockOpen } from 'lucide-react'
+import { Trash2, Lock, LockOpen, Play, Loader2 } from 'lucide-react'
 import { agoShort } from '@/features/priceWatch/dashboard/format'
 import { siteStatus, SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
 
@@ -75,7 +75,7 @@ function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute'): JSX.E
   )
 }
 
-export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live, now, onToggle, onEngine, onAuth, onRemove }: {
+export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live, now, onToggle, onEngine, onAuth, onScrape, scraping, onRemove }: {
   domain: string
   enabled: boolean
   engine: string
@@ -90,6 +90,10 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
   onEngine: (engine: string) => void
   /** Ouvre le mini-formulaire d'identifiants (accès connecté). */
   onAuth: () => void
+  /** Lance une moisson de CE site seul (bouton ▶). */
+  onScrape: () => void
+  /** true = ce site est en cours de moisson manuelle (spinner). */
+  scraping: boolean
   onRemove: () => void
 }) {
   const scraped = stats.updatedAt != null
@@ -117,6 +121,14 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
         <span className="text-xs text-white/80 truncate flex-1 min-w-0" title={domain}>
           {domain.replace(/^www\./, '')}
         </span>
+        <button
+          onClick={onScrape}
+          disabled={scraping || live}
+          title="Scraper ce site maintenant (moisson de ce concurrent seul)"
+          className="shrink-0 transition-colors p-0.5 text-white/25 hover:text-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {scraping ? <Loader2 className="w-3 h-3 animate-spin text-emerald-400" /> : <Play className="w-3 h-3" />}
+        </button>
         <button
           onClick={onAuth}
           title={auth ? 'Accès connecté configuré — modifier les identifiants' : 'Configurer un accès connecté (prix visibles uniquement authentifié)'}
