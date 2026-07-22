@@ -5,6 +5,7 @@ import type { Workflow, WorkflowFolder } from '../types'
 import type { UserWorkflowTemplate } from '../templates'
 import { CURRENT_SCHEMA_VERSION, migrate } from './migrations'
 import { syncWorkflowSchedule } from './scheduleSync'
+import { stripUndefined } from '@/features/retail-promo/stripUndefined'
 
 const col = (uid: string) => collection(db, 'users', uid, 'workflows')
 const folderCol = (uid: string) => collection(db, 'users', uid, 'workflowFolders')
@@ -23,7 +24,10 @@ export async function getWorkflow(uid: string, id: string): Promise<Workflow | n
 
 export async function saveWorkflow(uid: string, wf: Workflow): Promise<void> {
   const next: Workflow = { ...wf, schemaVersion: CURRENT_SCHEMA_VERSION, updatedAt: Date.now() }
-  await setDoc(doc(col(uid), wf.id), next)
+  // Firestore rejette tout `undefined` (ex. config de node avec un champ optionnel
+  // remis à undefined). On nettoie récursivement avant l'écriture — cf. reference
+  // firestore setdoc undefined trap.
+  await setDoc(doc(col(uid), wf.id), stripUndefined(next))
   await syncWorkflowSchedule(uid, wf).catch((e) => console.warn('syncWorkflowSchedule:', e))
 }
 

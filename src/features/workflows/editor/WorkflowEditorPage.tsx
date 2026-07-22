@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { notify } from '@/lib/notify'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon, BarChart3, BookmarkPlus } from 'lucide-react'
+import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon, BarChart3, BookmarkPlus, Check, Loader2, CircleDot } from 'lucide-react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useAuthStore } from '@/stores/auth.store'
 import { getWorkflow, saveWorkflow } from '../persistence/workflowsApi'
@@ -37,6 +37,8 @@ export function WorkflowEditorPage() {
   const wf = useWorkflowStore((s) => s.current)
   const setCurrent = useWorkflowStore((s) => s.setCurrent)
   const dirty = useWorkflowStore((s) => s.dirty)
+  const saving = useWorkflowStore((s) => s.saving)
+  const lastSavedAt = useWorkflowStore((s) => s.lastSavedAt)
   const isRunning = useRunContext((s) => s.isRunning)
   const pausedNodeId = useRunContext((s) => s.pausedNodeId)
   const canRun = useCan('workflows.run')
@@ -161,7 +163,23 @@ export function WorkflowEditorPage() {
               aria-label="Nom du workflow"
             />
           </nav>
-          <span className="text-xs text-neutral-500 shrink-0">{dirty ? 'Modifications…' : 'Enregistré'}</span>
+          {/* État de sauvegarde CLAIR : en cours / non enregistré (ambre) / enregistré (vert). */}
+          {saving ? (
+            <span className="text-xs text-white/50 shrink-0 flex items-center gap-1.5" title="Enregistrement en cours">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Enregistrement…
+            </span>
+          ) : dirty ? (
+            <span className="text-xs text-amber-400 shrink-0 flex items-center gap-1.5" title="Modifications non enregistrées">
+              <CircleDot className="w-3.5 h-3.5" /> Non enregistré
+            </span>
+          ) : (
+            <span
+              className="text-xs text-emerald-400 shrink-0 flex items-center gap-1.5"
+              title={lastSavedAt ? `Enregistré à ${new Date(lastSavedAt).toLocaleTimeString('fr-FR')}` : 'À jour'}
+            >
+              <Check className="w-3.5 h-3.5" /> Enregistré
+            </span>
+          )}
           <button
             data-tour="wf-generate-ai"
             onClick={() => setShowGenerate(true)}

@@ -53,11 +53,15 @@ function statusBadge(status: 'ok' | 'empty' | 'error' | 'never' | 'disabled', s:
     status === 'ok' ? `+${products.toLocaleString('fr-FR')}` :
     status === 'empty' ? `${pages} p` :
     status === 'error' ? '0 page' : ''
+  const engineLabel = s.lastEngine ? (ENGINE_LABELS[s.lastEngine] ?? s.lastEngine) : null
   const title =
     status === 'ok' ? `Dernière passe : ${products} produit(s) indexé(s) sur ${pages} page(s)` :
     status === 'empty' ? `${pages} page(s) lue(s) mais aucun produit extrait — gabarit de liste non reconnu ?` :
-    status === 'error' ? 'Aucune page lue — site bloqué ou inaccessible (essaie un autre moteur / accès connecté)' :
-    'Jamais moissonné'
+    status === 'error'
+      ? (engineLabel
+          ? `Page bien récupérée (via ${engineLabel}) mais AUCUN catalogue PrestaShop trouvé — marketplace ou structure non reconnue. Utilise la « Recherche dirigée » pour ce site.`
+          : 'Aucune page récupérée — site bloqué / inaccessible (essaie un autre moteur ou un accès connecté).')
+      : 'Jamais moissonné'
   return { cls: TONE_BADGE[meta.tone], icon: meta.icon, label: meta.label, detail, title }
 }
 

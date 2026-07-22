@@ -71,7 +71,17 @@ export function SourceSitesConfig({ config, onChange }: {
   const isLive = (s: SiteRowStats) => s.updatedAt != null && now - s.updatedAt < LIVE_WINDOW_MS
 
   const patchRow = (i: number, patch: Partial<SourceSiteRow>) =>
-    onChange({ ...config, sites: rows.map((r, j) => (j === i ? { ...r, ...patch } : r)) })
+    onChange({
+      ...config,
+      sites: rows.map((r, j) => {
+        if (j !== i) return r
+        const merged = { ...r, ...patch } as SourceSiteRow & Record<string, unknown>
+        // Une clé mise à `undefined` (moteur 'auto', auth retiré) doit être RETIRÉE,
+        // pas conservée à undefined — Firestore refuse undefined à l'enregistrement.
+        for (const k of Object.keys(patch)) if ((patch as Record<string, unknown>)[k] === undefined) delete merged[k]
+        return merged
+      }),
+    })
 
   const addSite = () => {
     const domain = normalizeDomain(draft)
@@ -177,7 +187,7 @@ export function SourceSitesConfig({ config, onChange }: {
             )}
             {nStatus('ok') > 0 && filterPill('ok', nStatus('ok'), 'ok', 'OK')}
             {nStatus('empty') > 0 && filterPill('empty', nStatus('empty'), 'warn', 'sans produit')}
-            {nStatus('error') > 0 && filterPill('error', nStatus('error'), 'err', 'bloqués')}
+            {nStatus('error') > 0 && filterPill('error', nStatus('error'), 'err', 'sans catalogue')}
             {nStatus('never') > 0 && filterPill('never', nStatus('never'), 'mute', 'jamais')}
             {statusFilter && (
               <button onClick={() => setStatusFilter(null)} className="text-[10px] text-indigo-400/80 hover:text-indigo-300 px-1" title="Retirer le filtre">

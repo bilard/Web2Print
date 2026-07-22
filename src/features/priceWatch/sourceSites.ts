@@ -104,7 +104,7 @@ export const SITE_STATUS_META: Record<SiteStatus, { label: string; short: string
   live:     { label: 'En cours',     short: 'en cours',     icon: '●', tone: 'ok' },
   ok:       { label: 'OK',           short: 'OK',           icon: '✓', tone: 'ok' },
   empty:    { label: 'Sans produit', short: 'sans produit', icon: '⚠', tone: 'warn' },
-  error:    { label: 'Bloqué',       short: 'bloqués',      icon: '✗', tone: 'err' },
+  error:    { label: 'Sans catalogue', short: 'sans catalogue', icon: '✗', tone: 'err' },
   never:    { label: 'Jamais',       short: 'jamais',       icon: '○', tone: 'mute' },
   disabled: { label: 'Désactivé',    short: 'désactivés',   icon: '—', tone: 'mute' },
 }
