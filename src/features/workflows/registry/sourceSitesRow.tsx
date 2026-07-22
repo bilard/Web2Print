@@ -100,16 +100,16 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
         live ? 'bg-emerald-500/[0.07] ring-1 ring-emerald-400/40' : 'bg-white/[0.03]'
       } ${enabled ? '' : 'opacity-45'}`}
     >
-      {/* Niveau 1 : activer · domaine · activité · suppr */}
-      <div className="flex items-center gap-2 min-w-0">
+      {/* Niveau 1 : activer · domaine (nom COMPLET, retour à la ligne si long) · activité · suppr */}
+      <div className="flex items-start gap-2 min-w-0">
         <input
           type="checkbox"
           checked={enabled}
           onChange={(e) => onToggle(e.target.checked)}
-          className="shrink-0 accent-indigo-500"
+          className="shrink-0 accent-indigo-500 mt-0.5"
           title={enabled ? 'Désactiver ce site' : 'Activer ce site'}
         />
-        <span className="text-xs text-white/80 truncate flex-1 min-w-0" title={domain}>
+        <span className="text-xs text-white/80 break-words leading-tight flex-1 min-w-0" title={domain}>
           {domain.replace(/^www\./, '')}
         </span>
         {live ? (
