@@ -102,10 +102,13 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
   const badge = status === 'live' ? null : statusBadge(status as 'ok' | 'empty' | 'error' | 'never' | 'disabled', stats)
   // Le verdict vient de tomber (< 2 min) → pop d'apparition pour attirer l'œil.
   const fresh = stats.lastPassAt != null && now - stats.lastPassAt < 2 * 60_000
+  // « En cours » = heartbeat de moisson récent OU relance manuelle immédiate (bouton ▶) :
+  // le clic doit allumer la carte SANS attendre le prochain battement Firestore.
+  const working = live || scraping
   return (
     <div
       className={`relative rounded-lg px-2 py-1.5 transition-colors ${
-        live ? 'bg-emerald-500/[0.07] ring-1 ring-emerald-400/40' : 'bg-white/[0.03]'
+        working ? 'bg-emerald-500/[0.07] ring-1 ring-emerald-400/40' : 'bg-white/[0.03]'
       } ${enabled ? '' : 'opacity-45'}`}
     >
       {/* Niveau 1 : activer · domaine (nom complet sur UNE ligne, pleine largeur) · suppr.
@@ -145,10 +148,10 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
         </button>
       </div>
       {/* Ligne d'ÉTAT (badge de statut / scraping en cours) — sous le nom, pleine largeur. */}
-      {live ? (
+      {working ? (
         <div className="flex items-center gap-1.5 pl-6 mt-1 text-[10px] font-medium text-emerald-300">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-          En cours…
+          {scraping ? 'Scraping en cours…' : 'En cours…'}
         </div>
       ) : badge ? (
         <div className="pl-6 mt-1">
@@ -186,7 +189,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
         )}
       </div>
       {/* Barre de balayage animée pendant la moisson (très visible, style TopProgressBar) */}
-      {live && (
+      {working && (
         <div className="absolute bottom-0 left-1 right-1 h-[3px] overflow-hidden rounded-full" aria-hidden>
           <div className="progress-indeterminate absolute top-0 h-full w-1/3 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
         </div>
