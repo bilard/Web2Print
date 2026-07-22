@@ -104,7 +104,11 @@ export function WorkflowEditor() {
       return
     }
     if (loadedWfId.current !== wf.id) {
-      setNodes(wf.nodes.map(toRfNode))
+      // Sélection par défaut à l'ouverture : le node « Sites sources » s'il existe (son
+      // tableau d'activité s'ouvre direct dans le panneau de config). Sans lui, aucune
+      // sélection auto — l'utilisateur clique. Posé dès l'init pour éviter tout écrasement.
+      const autoId = wf.nodes.find((n) => n.type === 'source-sites')?.id
+      setNodes(wf.nodes.map((n) => (n.id === autoId ? { ...toRfNode(n), selected: true } : toRfNode(n))))
       setEdges(wf.edges.map((e) => toRfEdge(e, wf.nodes)))
       loadedWfId.current = wf.id
       return
