@@ -22,7 +22,7 @@ const LIVE_WINDOW_MS = 2 * 60_000
 
 type SortMode = 'manual' | 'status' | 'products'
 const SORT_LABELS: Record<SortMode, string> = {
-  manual: 'Ordre manuel', status: 'Par statut', products: 'Par produits',
+  manual: 'Sans tri', status: 'Par statut', products: 'Par produits',
 }
 
 export function SourceSitesConfig({ config, onChange }: {
@@ -128,8 +128,8 @@ export function SourceSitesConfig({ config, onChange }: {
           ligne 1 = titre + import ; ligne 2 = activité (en cours | bilan dernier run). */}
       <div className="sticky top-0 z-10 bg-surface-2 -mt-1 pt-1 pb-1.5 border-b border-white/5 flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[10px] uppercase tracking-wider text-white/30 whitespace-nowrap truncate">
-            Sites concurrents {rows.length ? `· ${active}/${rows.length} actifs` : ''}
+          <p className="text-[10px] uppercase tracking-wider text-white/30 whitespace-nowrap shrink-0">
+            {rows.length ? `${active}/${rows.length} actifs` : 'Sites'}
           </p>
           <div className="shrink-0 flex items-center gap-2">
             {rows.length > 1 && (

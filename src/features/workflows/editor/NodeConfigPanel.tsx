@@ -392,7 +392,7 @@ export function NodeConfigPanel() {
                   : 'border-transparent text-white/40 hover:text-white/80'
               }`}
             >
-              Config
+              Configuration
             </button>
             <button
               type="button"
