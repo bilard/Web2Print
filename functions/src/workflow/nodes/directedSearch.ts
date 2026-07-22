@@ -62,6 +62,15 @@ registerServerNode({
     }))
     if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { results: resultsSheet([]) } }
 
+    // Fenêtre AVAL déjà atteinte (la moisson a consommé la part des nodes à curseur) :
+    // passe repoussée au prochain tick — le curseur ne bouge pas, « Comparer » garde sa
+    // fenêtre CE run. Une passe démarrée avant l'échéance va au bout (bornée par
+    // productBudget), la réserve absorbe ce débordement.
+    if (ctx.deadlineAt && Date.now() > ctx.deadlineAt) {
+      ctx.log('info', 'Budget réservé au comparatif — recherche dirigée repoussée au prochain tick.')
+      return { results: resultsSheet([]) }
+    }
+
     // Dépendances du mode générique (chargées seulement si ≥ 1 site générique → pas de coût sinon).
     const hasGeneric = sites.some((s) => s.generic)
     const firecrawlKey = hasGeneric ? (await getUserApiKey(ctx.uid, 'firecrawl')) : ''

@@ -29,6 +29,11 @@ export interface ServerRunCtx {
    *  le scheduler bascule alors sur l'échéance calendaire de relance (cf. CycleCalendar)
    *  au lieu d'enchaîner à la cadence rapide. */
   reportCycleComplete?: () => void
+  /** Échéance (epoch ms) à laquelle les nodes À CURSEUR (moisson, recherche dirigée)
+   *  doivent rendre la main pour laisser leur fenêtre aux nodes AVAL (Comparer, exports).
+   *  Sans elle, la moisson consomme tout le budget du run et le comparatif — dernier du
+   *  graphe — est interrompu à CHAQUE run (dashboard jamais rafraîchi). */
+  deadlineAt?: number
 }
 
 type ServerRun = (

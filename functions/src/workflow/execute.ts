@@ -89,6 +89,8 @@ export async function executeWorkflowHeadless(
     /** Notifié à CHAQUE node terminé avec succès (sortie COMPLÈTE, non tronquée) pour
      *  que l'appelant la persiste durablement (checkpoint de reprise). */
     onNodeDone?: (nodeId: string, output: Record<string, unknown>) => void | Promise<void>
+    /** Échéance de restitution pour les nodes à curseur (cf. ServerRunCtx.deadlineAt). */
+    deadlineAt?: number
   },
 ): Promise<HeadlessResult> {
   const logs: RunLog[] = []
@@ -252,6 +254,7 @@ export async function executeWorkflowHeadless(
             if (!arr.includes(cid)) arr.push(cid)
           },
           reportCycleComplete: () => { cycleComplete = true },
+          deadlineAt: opts.deadlineAt,
         },
         cfg, inputs,
       )

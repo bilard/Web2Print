@@ -85,6 +85,12 @@ registerServerNode({
     const rows: Record<string, unknown>[] = []
     for (const site of sites) {
       if (ctx.signal.aborted) break
+      // Fenêtre AVAL atteinte : on rend la main — le curseur persiste, la moisson des
+      // sites restants reprend au prochain tick, et « Comparer » a sa fenêtre CE run.
+      if (ctx.deadlineAt && Date.now() > ctx.deadlineAt) {
+        ctx.log('info', `Budget réservé au comparatif — moisson interrompue proprement (${rows.length}/${sites.length} site(s) ce run, la suite au prochain tick).`)
+        break
+      }
       const cfg: CompetitorConfig = { siteId: stableId(site.domain), domain: site.domain, families }
       const prevMeta = metas.get(cfg.siteId)
       if (cycleMode && !allDoneBefore && prevMeta?.cursor?.done) {

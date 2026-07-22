@@ -110,7 +110,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
   const working = live || scraping
   return (
     <div
-      className={`relative rounded-lg px-2 py-1.5 transition-colors ${
+      className={`relative rounded-lg px-2 py-1.5 overflow-hidden transition-colors ${
         working ? 'bg-emerald-500/[0.07] ring-1 ring-emerald-400/40' : 'bg-white/[0.03]'
       } ${enabled ? '' : 'opacity-45'}`}
     >
@@ -133,8 +133,10 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
         </span>
       </div>
       {/* Niveau 2 — ÉTAT + PILOTAGE : verdict de la dernière passe à gauche ; à droite le
-          groupe scraping (moteur · ▶ scraper · accès connecté · reset · retirer). */}
-      <div className="flex items-center gap-1.5 pl-6 mt-1">
+          groupe scraping (moteur · ▶ scraper · accès connecté · reset · retirer).
+          flex-wrap : si le badge est large, le groupe passe DESSOUS au lieu d'élargir la
+          carte (débordement horizontal = tout le panneau rogné). */}
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-6 mt-1">
         {working ? (
           <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />

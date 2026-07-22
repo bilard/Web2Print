@@ -26,6 +26,12 @@ const RUN_TIMEOUT_MS = 1_700_000
  * ordonnés par échéance). Évite qu'un lot massif fasse expirer toute la Function. */
 const MAX_SCHEDULES_PER_TICK = 25
 
+/** Fenêtre de fin de run RÉSERVÉE aux nodes AVAL (Comparer catalogue, exports) : les
+ * nodes à curseur (moisson, recherche dirigée) rendent la main à RUN_TIMEOUT − RESERVE.
+ * Sans elle, la moisson consommait tout le budget à chaque run et le comparatif —
+ * dernier du graphe — était interrompu systématiquement (dashboard jamais rafraîchi). */
+const DOWNSTREAM_RESERVE_MS = 600_000
+
 /** Types de nodes RÉ-EXÉCUTABLES sans risque même interrompus en plein vol : lecture/
  *  transformation pure, aucun effet de bord externe. La reprise ne saute QUE les nodes
  *  déjà terminés ; si un node NON terminé d'un autre type (gsheets-export, send-gmail,
@@ -115,6 +121,9 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
     const result = await executeWorkflowHeadless(wf, {
       uid,
       signal: ac.signal,
+      // Échéance de restitution des nodes à curseur : ancrée sur CE tick (pas sur le
+      // startedAt logique d'une série de reprises — chaque tranche a sa pleine fenêtre).
+      deadlineAt: Date.now() + RUN_TIMEOUT_MS - DOWNSTREAM_RESERVE_MS,
       resume: prior ? { outputs: prior.outputs } : undefined,
       // Checkpoint cron : persiste chaque sortie de node dès qu'il réussit. On ne le
       // compte « repris » que si la persistance a RÉELLEMENT eu lieu (pas un node trop gros).
