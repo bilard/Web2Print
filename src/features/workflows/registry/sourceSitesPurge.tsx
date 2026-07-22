@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { Trash2, Loader2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
-import { purgeScrapingData, type ScrapeDataType } from '@/features/priceWatch/catalog/purgeScraping'
+import { purgeScrapingData, type PurgeProgress, type ScrapeDataType } from '@/features/priceWatch/catalog/purgeScraping'
 
 const TYPE_META: { key: ScrapeDataType; label: string; hint: string }[] = [
   { key: 'listings', label: 'Fiches collectées', hint: 'index produits/prix moissonné (le gros volume)' },
@@ -22,6 +22,7 @@ export function PurgeScrapingPanel({ uid, watchId, sites, onClose }: {
   const [selSites, setSelSites] = useState<Set<string>>(() => new Set(sites.map((s) => s.siteId)))
   const [types, setTypes] = useState<Set<ScrapeDataType>>(() => new Set<ScrapeDataType>(['listings', 'counters', 'cursors']))
   const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState<PurgeProgress | null>(null)
 
   const toggle = <T,>(set: Set<T>, v: T): Set<T> => {
     const next = new Set(set); next.has(v) ? next.delete(v) : next.add(v); return next
@@ -36,16 +37,20 @@ export function PurgeScrapingPanel({ uid, watchId, sites, onClose }: {
     const scope = needsSites ? `${selSites.size}/${sites.length} site(s)` : 'suivi'
     if (!window.confirm(`Vider : ${typeLabels}\nPortée : ${scope}\n\nCette action est DÉFINITIVE et irréversible.`)) return
     setBusy(true)
+    setProgress(null)
     try {
-      const res = await purgeScrapingData(uid, watchId, [...selSites], types)
+      const res = await purgeScrapingData(uid, watchId, [...selSites], types, setProgress)
       toast.success(`Données vidées : ${res.pagesDeleted} fiche(s)${needsSites ? ` sur ${res.sites} site(s)` : ''}.`)
       onClose()
     } catch (e) {
       toast.error(`Échec de la purge : ${e instanceof Error ? e.message : 'inconnu'}`)
     } finally {
       setBusy(false)
+      setProgress(null)
     }
   }
+
+  const domainOf = (siteId: string) => sites.find((s) => s.siteId === siteId)?.domain ?? siteId
 
   return (
     <div className="rounded-lg bg-well border border-rose-500/25 p-2.5 flex flex-col gap-2">
@@ -93,6 +98,22 @@ export function PurgeScrapingPanel({ uid, watchId, sites, onClose }: {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Purge en cours : avancement live (site en cours + compteur de fiches, lot par lot) */}
+      {busy && (
+        <div className="flex items-center gap-1.5 text-[10px] text-rose-200/90 border-t border-white/5 pt-1.5">
+          <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+          {progress ? (
+            <span className="min-w-0 truncate">
+              {domainOf(progress.siteId)}
+              {progress.siteCount > 1 && <span className="text-white/40"> · site {progress.siteIndex}/{progress.siteCount}</span>}
+              <span className="text-white/40"> · </span>{progress.pagesDeleted} fiche(s) supprimée(s)
+            </span>
+          ) : (
+            <span>Suppression en cours…</span>
+          )}
         </div>
       )}
 

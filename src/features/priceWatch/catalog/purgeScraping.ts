@@ -2,7 +2,7 @@
 // Purge SÉLECTIVE des données de scraping d'un suivi, par site × par type de donnée.
 // Alimente le popup « Vider les données de scraping » (node Sites sources). Destructif.
 // Adaptateur Firestore fin : aucun état métier, juste des suppressions ciblées.
-import { doc, collection, getDocs, deleteDoc, setDoc, deleteField } from 'firebase/firestore'
+import { doc, collection, getDocs, deleteDoc, setDoc, deleteField, query, limit, writeBatch } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { competitorDoc, competitorPagesCol, reportLatestDoc, reportHistoryDoc } from '../paths'
 
@@ -26,6 +26,20 @@ export interface PurgeResult {
   sites: number
 }
 
+/** Avancement live de la purge (affiché dans le popup pendant l'opération). */
+export interface PurgeProgress {
+  /** Site en cours (index 1-based) et total. */
+  siteIndex: number
+  siteCount: number
+  /** Identifiant du site en cours. */
+  siteId: string
+  /** Fiches supprimées cumulées (tous sites), mis à jour lot par lot. */
+  pagesDeleted: number
+}
+
+/** Taille des lots (writeBatch plafonne à 500) : 1 aller-retour Firestore par lot. */
+const DELETE_BATCH = 400
+
 /**
  * Vide les données de scraping choisies. `siteIds` = sites concernés (par
  * `listings`/`counters`/`cursors`) ; `report` est au niveau SUIVI (indépendant des sites).
@@ -33,6 +47,7 @@ export interface PurgeResult {
  */
 export async function purgeScrapingData(
   uid: string, watchId: string, siteIds: string[], types: Set<ScrapeDataType>,
+  onProgress?: (p: PurgeProgress) => void,
 ): Promise<PurgeResult> {
   // Rapport dashboard : niveau suivi.
   if (types.has('report')) {
@@ -51,11 +66,22 @@ export async function purgeScrapingData(
   // que de laisser un doc aux champs effacés un à un.
   const wipeMeta = types.has('counters') && types.has('cursors')
   let pagesDeleted = 0
-  for (const siteId of siteIds) {
+  for (const [i, siteId] of siteIds.entries()) {
+    onProgress?.({ siteIndex: i + 1, siteCount: siteIds.length, siteId, pagesDeleted })
     if (types.has('listings')) {
-      const pages = await getDocs(collection(db, competitorPagesCol(uid, watchId, siteId)))
-      await Promise.all(pages.docs.map((d) => deleteDoc(d.ref)))
-      pagesDeleted += pages.size
+      // Paginé : on lit puis supprime lot par lot (writeBatch = 1 aller-retour), sans
+      // jamais charger l'index entier — sur des milliers de fiches, deleteDoc un à un
+      // faisait tourner le spinner sans fin.
+      for (;;) {
+        const pages = await getDocs(query(collection(db, competitorPagesCol(uid, watchId, siteId)), limit(DELETE_BATCH)))
+        if (pages.empty) break
+        const batch = writeBatch(db)
+        pages.docs.forEach((d) => batch.delete(d.ref))
+        await batch.commit()
+        pagesDeleted += pages.size
+        onProgress?.({ siteIndex: i + 1, siteCount: siteIds.length, siteId, pagesDeleted })
+        if (pages.size < DELETE_BATCH) break
+      }
     }
     if (wipeMeta) {
       await deleteDoc(doc(db, competitorDoc(uid, watchId, siteId))).catch(() => {})
