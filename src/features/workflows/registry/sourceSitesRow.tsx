@@ -113,48 +113,51 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
         working ? 'bg-emerald-500/[0.07] ring-1 ring-emerald-400/40' : 'bg-white/[0.03]'
       } ${enabled ? '' : 'opacity-45'}`}
     >
-      {/* Niveau 1 : activer · domaine (nom complet sur UNE ligne, pleine largeur) · suppr.
-          Le badge de statut descend sur sa propre ligne pour libérer toute la largeur. */}
-      <div className="flex items-center gap-2 min-w-0">
+      {/* Niveau 1 : activer · domaine EN ENTIER (s'enroule sur 2 lignes si long, jamais
+          tronqué) · actions. Alignement haut → les boutons restent en tête pendant que le
+          nom s'enroule dessous. */}
+      <div className="flex items-start gap-2 min-w-0">
         <input
           type="checkbox"
           checked={enabled}
           onChange={(e) => onToggle(e.target.checked)}
-          className="shrink-0 accent-indigo-500"
+          className="shrink-0 mt-1 accent-indigo-500"
           title={enabled ? 'Désactiver ce site' : 'Activer ce site'}
         />
-        <span className="text-sm font-semibold text-white truncate flex-1 min-w-0" title={domain}>
+        <span className="flex-1 min-w-0 text-sm font-semibold text-white leading-snug break-words" title={domain}>
           {domain.replace(/^www\./, '')}
         </span>
-        <button
-          onClick={onScrape}
-          disabled={scraping || live}
-          title="Scraper ce site maintenant (moisson de ce concurrent seul)"
-          className="shrink-0 transition-colors p-1 rounded hover:bg-white/5 text-white/35 hover:text-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {scraping ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" /> : <Play className="w-3.5 h-3.5" />}
-        </button>
-        <button
-          onClick={onAuth}
-          title={auth ? 'Accès connecté configuré — modifier les identifiants' : 'Configurer un accès connecté (prix visibles uniquement authentifié)'}
-          className={`shrink-0 transition-colors p-1 rounded hover:bg-white/5 ${auth ? 'text-emerald-400 hover:text-emerald-300' : 'text-white/35 hover:text-indigo-400'}`}
-        >
-          {auth ? <Lock className="w-3.5 h-3.5" /> : <LockOpen className="w-3.5 h-3.5" />}
-        </button>
-        <button
-          onClick={onReset}
-          title="Réinitialiser les données collectées de ce site (efface tout, re-scrape propre)"
-          className="shrink-0 text-white/35 hover:text-amber-400 transition-colors p-1 rounded hover:bg-white/5"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={onRemove}
-          title="Retirer ce site"
-          className="shrink-0 text-white/35 hover:text-red-400 transition-colors p-1 rounded hover:bg-white/5"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        <div className="shrink-0 flex items-center gap-0.5 -mr-1">
+          <button
+            onClick={onScrape}
+            disabled={scraping || live}
+            title="Scraper ce site maintenant (moisson de ce concurrent seul)"
+            className="transition-colors p-1 rounded hover:bg-white/5 text-white/35 hover:text-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {scraping ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" /> : <Play className="w-3.5 h-3.5" />}
+          </button>
+          <button
+            onClick={onAuth}
+            title={auth ? 'Accès connecté configuré — modifier les identifiants' : 'Configurer un accès connecté (prix visibles uniquement authentifié)'}
+            className={`transition-colors p-1 rounded hover:bg-white/5 ${auth ? 'text-emerald-400 hover:text-emerald-300' : 'text-white/35 hover:text-indigo-400'}`}
+          >
+            {auth ? <Lock className="w-3.5 h-3.5" /> : <LockOpen className="w-3.5 h-3.5" />}
+          </button>
+          <button
+            onClick={onReset}
+            title="Réinitialiser les données collectées de ce site (efface tout, re-scrape propre)"
+            className="text-white/35 hover:text-amber-400 transition-colors p-1 rounded hover:bg-white/5"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={onRemove}
+            title="Retirer ce site"
+            className="text-white/35 hover:text-red-400 transition-colors p-1 rounded hover:bg-white/5"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
       {/* Ligne 2 : ÉTAT/verdict + moteur sur UNE ligne (gain de hauteur). */}
       <div className="flex items-center gap-2 pl-6 mt-1">
@@ -180,8 +183,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
           {ENGINE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </div>
-      {/* Ligne 3 : stats groupées par logique — collecte (produits·prix·balayage),
-          comparaison (appariés), technique (via·scrape). Une ligne dense, sans vides. */}
+      {/* Ligne 3 : stats en 2 groupes logiques séparés d'un trait fin —
+          COLLECTE/COMPARAISON (produits·prix·balayage·appariés) | TECHNIQUE (via·scrape). */}
       {scraped && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pl-6 mt-1 text-[10px]">
           {chip('produits', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute')}
@@ -190,6 +193,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
             ? chip('balayé', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
             : stats.harvestProgress != null && chip('balayage', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
           {stats.matched != null && chip('appariés', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute')}
+          <span className="w-px h-2.5 bg-white/10 mx-0.5 shrink-0" aria-hidden />
           {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
           {chip('scrape', agoShort(stats.updatedAt, now), 'mute')}
         </div>
