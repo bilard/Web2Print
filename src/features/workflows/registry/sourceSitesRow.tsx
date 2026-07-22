@@ -156,47 +156,44 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
-      {/* Ligne d'ÉTAT (badge de statut / scraping en cours) — sous le nom, pleine largeur. */}
-      {working ? (
-        <div className="flex items-center gap-1.5 pl-6 mt-1 text-[10px] font-medium text-emerald-300">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-          {scraping ? 'Scraping en cours…' : 'En cours…'}
-        </div>
-      ) : badge ? (
-        <div className="pl-6 mt-1">
+      {/* Ligne 2 : ÉTAT/verdict + moteur sur UNE ligne (gain de hauteur). */}
+      <div className="flex items-center gap-2 pl-6 mt-1">
+        {working ? (
+          <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
+            {scraping ? 'Scraping…' : 'En cours…'}
+          </span>
+        ) : badge ? (
           <span
             title={badge.title}
             className={`inline-flex items-center whitespace-nowrap text-[10px] font-medium tabular-nums border rounded-md px-1.5 py-0.5 ${badge.cls} ${fresh ? 'fx-result' : ''}`}
           >
             {badge.icon} {badge.label}{badge.detail ? ` · ${badge.detail}` : ''}
           </span>
-        </div>
-      ) : null}
-      {/* Niveau 2 : moteur + chips de stats (wrap propre, jamais de coupure interne) */}
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pl-6 mt-1 text-[10px]">
+        ) : <span className="text-[10px] text-white/20 italic">jamais scrapé</span>}
         <select
           value={engine}
           onChange={(e) => onEngine(e.target.value)}
           title="Moteur de scraping (Auto = cascade standard)"
-          className="shrink-0 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
+          className="ml-auto shrink-0 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
         >
           {ENGINE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        {scraped ? (
-          <>
-            {chip('produits', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute')}
-            {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn')}
-            {stats.matched != null && chip('appariés', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute')}
-            {swept
-              ? chip('balayé', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
-              : stats.harvestProgress != null && chip('balayage', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
-            {chip('scrape', agoShort(stats.updatedAt, now), 'mute')}
-            {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
-          </>
-        ) : (
-          <span className="text-white/20 italic whitespace-nowrap">jamais scrapé</span>
-        )}
       </div>
+      {/* Ligne 3 : stats groupées par logique — collecte (produits·prix·balayage),
+          comparaison (appariés), technique (via·scrape). Une ligne dense, sans vides. */}
+      {scraped && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pl-6 mt-1 text-[10px]">
+          {chip('produits', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute')}
+          {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn')}
+          {swept
+            ? chip('balayé', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
+            : stats.harvestProgress != null && chip('balayage', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
+          {stats.matched != null && chip('appariés', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute')}
+          {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
+          {chip('scrape', agoShort(stats.updatedAt, now), 'mute')}
+        </div>
+      )}
       {/* Barre de balayage animée pendant la moisson (très visible, style TopProgressBar) */}
       {working && (
         <div className="absolute bottom-0 left-1 right-1 h-[3px] overflow-hidden rounded-full" aria-hidden>
