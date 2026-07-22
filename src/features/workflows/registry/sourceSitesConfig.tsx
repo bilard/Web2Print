@@ -11,6 +11,7 @@ import { useWorkflowStore } from '../persistence/workflow.store'
 import { useCompetitorMeta, useCatalogReport } from '@/features/priceWatch/useCatalogReport'
 import { stableId } from '@/features/priceWatch/core'
 import { harvestOneSite } from '@/features/priceWatch/catalog/runSingleSite'
+import { resetCompetitorData } from '@/features/priceWatch/catalog/store'
 import {
   normalizeDomain, deriveWatchId, importSitesIntoRows, siteStatus, siteStatusRank,
   rowsToCompetitorSites, type SourceSiteRow, type SiteStatus,
@@ -72,6 +73,19 @@ export function SourceSitesConfig({ config, onChange }: {
       toast.error(`${domain} : ${e instanceof Error ? e.message : 'échec de la moisson'}`)
     } finally {
       setScrapingId(null)
+    }
+  }
+
+  // Réinitialise les données collectées d'un site (destructif → confirmation).
+  const resetSite = async (r: SourceSiteRow) => {
+    const domain = normalizeDomain(r.domain)
+    if (!uid || !domain) return
+    if (!window.confirm(`Effacer toutes les données collectées de ${domain} ?\n\nLe prochain scrape repartira de zéro (utile après un passage en accès connecté pour purger les fiches sans prix).`)) return
+    try {
+      const n = await resetCompetitorData(uid, watchId, stableId(domain))
+      toast.success(`${domain} : ${n} page(s) effacée(s). Relance ▶ pour re-scraper proprement.`)
+    } catch (e) {
+      toast.error(`${domain} : ${e instanceof Error ? e.message : 'échec de la réinitialisation'}`)
     }
   }
 
@@ -267,6 +281,7 @@ export function SourceSitesConfig({ config, onChange }: {
                 onAuth={() => setCredsRow((c) => (c === i ? null : i))}
                 onScrape={() => void scrapeSite(r)}
                 scraping={scrapingId === normalizeDomain(r.domain)}
+                onReset={() => void resetSite(r)}
                 onRemove={() => { onChange({ ...config, sites: rows.filter((_, j) => j !== i) }); setCredsRow(null) }}
               />
               {credsRow === i && (

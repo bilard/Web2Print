@@ -64,6 +64,15 @@ function extractCardPrice(block: string): { price?: number; listPrice?: number }
   return { price: sorted[0], listPrice: sorted[sorted.length - 1] }
 }
 
+/** HT / TTC lu dans le TEXTE de la carte (« 9,33 € HT » vs « 12,50 € TTC ») — pour que
+ *  la comparaison de prix soit alignée (comparePrices divise par la TVA seulement si TTC). */
+function extractTaxIncluded(block: string): boolean | undefined {
+  const txt = block.replace(/<[^>]+>/g, ' ')
+  if (/\bTTC\b/i.test(txt)) return true
+  if (/\bHT\b/.test(txt)) return false
+  return undefined
+}
+
 function extractCardImage(block: string, baseUrl?: string): string | undefined {
   const m = block.match(/<img\b[^>]*\b(?:data-(?:full-size-image-url|src|original|lazy)|src)=["']([^"']+)["']/i)
   const src = m?.[1]
@@ -93,7 +102,7 @@ function parseMicrodataProducts(html: string, baseUrl?: string): CompetitorListi
     const url = extractCardUrl(block, baseUrl)
       ?? absUrl(block.match(/itemprop=["']url["'][^>]*(?:href|content)=["']([^"']+)["']/i)?.[1] ?? '', baseUrl)
     if (name && price != null && url) {
-      out.push({ url, name, price, ref: extractCardRef(block), image: extractCardImage(block, baseUrl), currency: 'EUR' })
+      out.push({ url, name, price, ref: extractCardRef(block), image: extractCardImage(block, baseUrl), currency: 'EUR', ...(extractTaxIncluded(block) !== undefined ? { taxIncluded: extractTaxIncluded(block) } : {}) })
     }
   }
   return out
@@ -113,7 +122,7 @@ function parseDomCards(html: string, baseUrl?: string): CompetitorListing[] {
     const { price, listPrice } = extractCardPrice(block)
     const name = extractCardName(block)
     if (url && price != null && name) {
-      out.push({ url, name, price, listPrice, ref: extractCardRef(block), image: extractCardImage(block, baseUrl), currency: 'EUR' })
+      out.push({ url, name, price, listPrice, ref: extractCardRef(block), image: extractCardImage(block, baseUrl), currency: 'EUR', ...(extractTaxIncluded(block) !== undefined ? { taxIncluded: extractTaxIncluded(block) } : {}) })
     }
   }
   return out

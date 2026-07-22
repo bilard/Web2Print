@@ -6,7 +6,7 @@
 // moissonnée. Le node de matching relit toutes les pages d'un site pour reconstruire
 // l'index en mémoire — quelques centaines de lectures, largement sous les plafonds.
 import {
-  doc, collection, getDoc, getDocs, setDoc, serverTimestamp,
+  doc, collection, getDoc, getDocs, setDoc, deleteDoc, serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { competitorDoc, competitorPagesCol } from '../paths'
@@ -116,4 +116,16 @@ export async function loadAllListings(
 export async function countPages(uid: string, watchId: string, siteId: string): Promise<number> {
   const snap = await getDocs(collection(db, competitorPagesCol(uid, watchId, siteId)))
   return snap.size
+}
+
+/**
+ * RÉINITIALISE un concurrent : supprime toutes ses pages moissonnées ET son doc méta
+ * (curseur, compteurs). Le prochain scrape repart de zéro — utile après un changement
+ * d'accès (ex. passage en connecté) pour purger les fiches sans prix. Destructif.
+ */
+export async function resetCompetitorData(uid: string, watchId: string, siteId: string): Promise<number> {
+  const pages = await getDocs(collection(db, competitorPagesCol(uid, watchId, siteId)))
+  await Promise.all(pages.docs.map((d) => deleteDoc(d.ref)))
+  await deleteDoc(doc(db, competitorDoc(uid, watchId, siteId))).catch(() => {})
+  return pages.size
 }

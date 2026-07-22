@@ -51,6 +51,15 @@ describe('parseListingDomCards', () => {
     expect(parseListingDomCards(html, BASE)).toEqual([])
   })
 
+  it('détecte HT / TTC dans le texte (stats alignées)', () => {
+    const ht = `
+      <div class="product"><a class="product-name" href="/p/1.html">Courroie A97</a><span class="regular-price">9,33 € HT</span></div>
+      <div class="product"><a class="product-name" href="/p/2.html">Courroie B45</a><span class="regular-price">11,67 € HT</span></div>`
+    expect(parseListingDomCards(ht, BASE).every((c) => c.taxIncluded === false)).toBe(true)
+    const ttc = ht.replace(/HT/g, 'TTC')
+    expect(parseListingDomCards(ttc, BASE).every((c) => c.taxIncluded === true)).toBe(true)
+  })
+
   it('garde-fou : rejette « Ajouter au panier » comme nom', () => {
     const html = `
       <div class="product"><a href="/fr/1-x.html">Ajouter au panier</a><span class="price">9,90 €</span></div>

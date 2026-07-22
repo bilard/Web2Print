@@ -4,7 +4,7 @@
 //   dernière passe) · corbeille ; niveau 2 — moteur forcé + chips de stats insécables.
 // Pendant la moisson : ring vert pulsé + barre de balayage animée (progress-indeterminate).
 // Après la passe : badge verdict lisible d'un coup d'œil, pop fx-result s'il vient de tomber.
-import { Trash2, Lock, LockOpen, Play, Loader2 } from 'lucide-react'
+import { Trash2, Lock, LockOpen, Play, Loader2, RotateCcw } from 'lucide-react'
 import { agoShort } from '@/features/priceWatch/dashboard/format'
 import { siteStatus, SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
 
@@ -75,7 +75,7 @@ function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute'): JSX.E
   )
 }
 
-export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live, now, onToggle, onEngine, onAuth, onScrape, scraping, onRemove }: {
+export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live, now, onToggle, onEngine, onAuth, onScrape, scraping, onReset, onRemove }: {
   domain: string
   enabled: boolean
   engine: string
@@ -94,6 +94,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
   onScrape: () => void
   /** true = ce site est en cours de moisson manuelle (spinner). */
   scraping: boolean
+  /** Réinitialise les données collectées de ce site (destructif). */
+  onReset: () => void
   onRemove: () => void
 }) {
   const scraped = stats.updatedAt != null
@@ -121,30 +123,37 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
           className="shrink-0 accent-indigo-500"
           title={enabled ? 'Désactiver ce site' : 'Activer ce site'}
         />
-        <span className="text-xs text-white/80 truncate flex-1 min-w-0" title={domain}>
+        <span className="text-sm font-semibold text-white truncate flex-1 min-w-0" title={domain}>
           {domain.replace(/^www\./, '')}
         </span>
         <button
           onClick={onScrape}
           disabled={scraping || live}
           title="Scraper ce site maintenant (moisson de ce concurrent seul)"
-          className="shrink-0 transition-colors p-0.5 text-white/25 hover:text-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="shrink-0 transition-colors p-1 rounded hover:bg-white/5 text-white/35 hover:text-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {scraping ? <Loader2 className="w-3 h-3 animate-spin text-emerald-400" /> : <Play className="w-3 h-3" />}
+          {scraping ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" /> : <Play className="w-3.5 h-3.5" />}
         </button>
         <button
           onClick={onAuth}
           title={auth ? 'Accès connecté configuré — modifier les identifiants' : 'Configurer un accès connecté (prix visibles uniquement authentifié)'}
-          className={`shrink-0 transition-colors p-0.5 ${auth ? 'text-emerald-400 hover:text-emerald-300' : 'text-white/20 hover:text-indigo-400'}`}
+          className={`shrink-0 transition-colors p-1 rounded hover:bg-white/5 ${auth ? 'text-emerald-400 hover:text-emerald-300' : 'text-white/35 hover:text-indigo-400'}`}
         >
-          {auth ? <Lock className="w-3 h-3" /> : <LockOpen className="w-3 h-3" />}
+          {auth ? <Lock className="w-3.5 h-3.5" /> : <LockOpen className="w-3.5 h-3.5" />}
+        </button>
+        <button
+          onClick={onReset}
+          title="Réinitialiser les données collectées de ce site (efface tout, re-scrape propre)"
+          className="shrink-0 text-white/35 hover:text-amber-400 transition-colors p-1 rounded hover:bg-white/5"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={onRemove}
           title="Retirer ce site"
-          className="shrink-0 text-white/20 hover:text-red-400 transition-colors p-0.5"
+          className="shrink-0 text-white/35 hover:text-red-400 transition-colors p-1 rounded hover:bg-white/5"
         >
-          <Trash2 className="w-3 h-3" />
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
       {/* Ligne d'ÉTAT (badge de statut / scraping en cours) — sous le nom, pleine largeur. */}
