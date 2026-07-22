@@ -25,6 +25,9 @@ export interface CompetitorSite {
   fields?: string[]
   /** Moteur forcé (node « Sites sources »). Absent = 'auto'. */
   engine?: SiteEngine
+  /** Site à prix CONNECTÉS : la moisson passe par la CF `fetchPageHtmlAuth` (login cookie).
+   *  Les identifiants vivent en Firestore (users/{uid}.siteCredentials[host]), pas ici. */
+  auth?: boolean
 }
 
 export type MatchStatus = 'auto' | 'confirmed' | 'pending' | 'rejected'

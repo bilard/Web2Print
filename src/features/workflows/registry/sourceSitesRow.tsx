@@ -4,7 +4,7 @@
 //   dernière passe) · corbeille ; niveau 2 — moteur forcé + chips de stats insécables.
 // Pendant la moisson : ring vert pulsé + barre de balayage animée (progress-indeterminate).
 // Après la passe : badge verdict lisible d'un coup d'œil, pop fx-result s'il vient de tomber.
-import { Trash2 } from 'lucide-react'
+import { Trash2, Lock, LockOpen } from 'lucide-react'
 import { agoShort } from '@/features/priceWatch/dashboard/format'
 
 export interface SiteRowStats {
@@ -24,7 +24,8 @@ export interface SiteRowStats {
 /** Libellés du moteur réellement utilisé. 'cloudFunction' = fetch serveur (Cloud
  *  Function fetchPageHtml, palier 1 gratuit de la cascade Auto). */
 const ENGINE_LABELS: Record<string, string> = {
-  cloudFunction: 'Serveur', jina: 'Jina', proxy: 'Proxy', firecrawl: 'Firecrawl', brightdata: 'BD',
+  cloudFunction: 'Serveur', jina: 'Jina', proxy: 'Proxy', firecrawl: 'Firecrawl',
+  brightdata: 'BD', authenticated: 'Connecté',
 }
 const ENGINE_OPTIONS = [
   { value: 'auto', label: 'Auto' },
@@ -66,10 +67,12 @@ function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute'): JSX.E
   )
 }
 
-export function SourceSitesRowItem({ domain, enabled, engine, stats, live, now, onToggle, onEngine, onRemove }: {
+export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live, now, onToggle, onEngine, onAuth, onRemove }: {
   domain: string
   enabled: boolean
   engine: string
+  /** Site à prix connectés (identifiants configurés). */
+  auth: boolean
   stats: SiteRowStats
   /** true = heartbeat de moisson récent → scraping en cours (ring pulsé + barre animée). */
   live: boolean
@@ -77,6 +80,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, stats, live, now, 
   now: number
   onToggle: (enabled: boolean) => void
   onEngine: (engine: string) => void
+  /** Ouvre le mini-formulaire d'identifiants (accès connecté). */
+  onAuth: () => void
   onRemove: () => void
 }) {
   const scraped = stats.updatedAt != null
@@ -115,6 +120,13 @@ export function SourceSitesRowItem({ domain, enabled, engine, stats, live, now, 
             {verdict.text}
           </span>
         ) : null}
+        <button
+          onClick={onAuth}
+          title={auth ? 'Accès connecté configuré — modifier les identifiants' : 'Configurer un accès connecté (prix visibles uniquement authentifié)'}
+          className={`shrink-0 transition-colors p-0.5 ${auth ? 'text-emerald-400 hover:text-emerald-300' : 'text-white/20 hover:text-indigo-400'}`}
+        >
+          {auth ? <Lock className="w-3 h-3" /> : <LockOpen className="w-3 h-3" />}
+        </button>
         <button
           onClick={onRemove}
           title="Retirer ce site"

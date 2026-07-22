@@ -17,12 +17,14 @@ vi.mock('@/features/scraping/core/firecrawlFallback', () => ({
   firecrawlScrapeHtml: fcMock,
 }))
 vi.mock('@/lib/apiKeys', () => ({ getApiKey: keyMock }))
+const authMock = vi.hoisted(() => vi.fn())
+vi.mock('./authFetchClient', () => ({ fetchAuthHtml: authMock }))
 
 import { buildSiteFetcher } from './siteFetch'
 
 beforeEach(() => {
   jinaMock.mockReset(); cascadeMock.mockReset(); bdMock.mockReset(); fcMock.mockReset()
-  keyMock.mockReset(); keyMock.mockReturnValue('')
+  authMock.mockReset(); keyMock.mockReset(); keyMock.mockReturnValue('')
 })
 
 describe('buildSiteFetcher', () => {
@@ -68,6 +70,23 @@ describe('buildSiteFetcher', () => {
   it("forçage 'firecrawl' sans clé : erreur claire (pas de repli silencieux)", async () => {
     const f = buildSiteFetcher('firecrawl')
     await expect(f.fetchHtml('https://a.fr')).rejects.toThrow(/clé absente/i)
+  })
+
+  it('auth : passe par la CF authentifiée avec le host configuré (pas dérivé de l’URL)', async () => {
+    authMock.mockResolvedValue('<html>connecté</html>')
+    const f = buildSiteFetcher(undefined, { auth: true, host: 'progarden.fr' })
+    expect(await f.fetchHtml('https://www.progarden.fr/101-abc')).toBe('<html>connecté</html>')
+    expect(authMock).toHaveBeenCalledWith('https://www.progarden.fr/101-abc', 'progarden.fr')
+    expect(f.lastEngine()).toBe('authenticated')
+    expect(cascadeMock).not.toHaveBeenCalled()
+  })
+
+  it('auth prime sur le moteur forcé (les prix ne sont visibles que connecté)', async () => {
+    authMock.mockResolvedValue('<html>ok</html>')
+    const f = buildSiteFetcher('brightdata', { auth: true, host: 'progarden.fr' })
+    await f.fetchHtml('https://progarden.fr/x')
+    expect(authMock).toHaveBeenCalled()
+    expect(bdMock).not.toHaveBeenCalled()
   })
 
   it('échec : lastEngine reste undefined (rien à persister)', async () => {

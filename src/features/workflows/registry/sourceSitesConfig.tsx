@@ -13,6 +13,7 @@ import {
   type SourceSiteRow,
 } from '@/features/priceWatch/sourceSites'
 import { SourceSitesRowItem, type SiteRowStats } from './sourceSitesRow'
+import { SiteCredentialsForm } from './sourceSitesCreds'
 import type { SourceSitesNodeConfig } from './sourceSitesNode'
 
 /** Heartbeat de moisson plus récent que cette fenêtre = « scraping en cours »
@@ -47,6 +48,7 @@ export function SourceSitesConfig({ config, onChange }: {
   const [importing, setImporting] = useState(false)
   const [importText, setImportText] = useState('')
   const [sort, setSort] = useState<SortMode>('manual')
+  const [credsRow, setCredsRow] = useState<number | null>(null)
 
   const statsFor = (domain: string): SiteRowStats => {
     const siteId = stableId(normalizeDomain(domain))
@@ -204,18 +206,30 @@ export function SourceSitesConfig({ config, onChange }: {
       ) : (
         <div className="flex flex-col gap-1">
           {displayRows.map(({ r, i, stats }) => (
-            <SourceSitesRowItem
-              key={stableId(normalizeDomain(r.domain)) + i}
-              domain={r.domain}
-              enabled={r.enabled}
-              engine={r.engine ?? 'auto'}
-              stats={stats}
-              live={isLive(stats)}
-              now={now}
-              onToggle={(enabled) => patchRow(i, { enabled })}
-              onEngine={(engine) => patchRow(i, engine === 'auto' ? { engine: undefined } : { engine })}
-              onRemove={() => onChange({ ...config, sites: rows.filter((_, j) => j !== i) })}
-            />
+            <div key={stableId(normalizeDomain(r.domain)) + i}>
+              <SourceSitesRowItem
+                domain={r.domain}
+                enabled={r.enabled}
+                engine={r.engine ?? 'auto'}
+                auth={!!r.auth}
+                stats={stats}
+                live={isLive(stats)}
+                now={now}
+                onToggle={(enabled) => patchRow(i, { enabled })}
+                onEngine={(engine) => patchRow(i, engine === 'auto' ? { engine: undefined } : { engine })}
+                onAuth={() => setCredsRow((c) => (c === i ? null : i))}
+                onRemove={() => { onChange({ ...config, sites: rows.filter((_, j) => j !== i) }); setCredsRow(null) }}
+              />
+              {credsRow === i && (
+                <SiteCredentialsForm
+                  host={normalizeDomain(r.domain)}
+                  hasCreds={!!r.auth}
+                  onSaved={() => patchRow(i, { auth: true })}
+                  onCleared={() => patchRow(i, { auth: undefined })}
+                  onClose={() => setCredsRow(null)}
+                />
+              )}
+            </div>
           ))}
         </div>
       )}

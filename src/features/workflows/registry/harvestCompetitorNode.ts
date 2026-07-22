@@ -95,10 +95,12 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     const rows: Record<string, unknown>[] = []
     for (const site of sites) {
       if (ctx.signal.aborted) break
-      // Moteur par site : forcé via « Sites sources » (jina | brightdata) sinon cascade auto.
-      const fetcher = buildSiteFetcher(site.engine)
+      // Moteur par site : site authentifié (login cookie) sinon moteur forcé
+      // (jina | firecrawl | brightdata) sinon cascade auto.
+      const fetcher = buildSiteFetcher(site.engine, { auth: site.auth, host: site.domain })
       ctx.reportConnector?.(fetcher.connectorId)
-      if (site.engine) ctx.log('info', `${site.domain} : moteur forcé « ${site.engine} ».`)
+      if (site.auth) ctx.log('info', `${site.domain} : accès authentifié (login cookie).`)
+      else if (site.engine) ctx.log('info', `${site.domain} : moteur forcé « ${site.engine} ».`)
       const cfg: CompetitorConfig = { siteId: stableId(site.domain), domain: site.domain, families }
       const prevMeta = await loadCompetitorMeta(uid, watchId, cfg.siteId)
       const t0 = Date.now()

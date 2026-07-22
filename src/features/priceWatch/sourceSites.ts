@@ -13,8 +13,10 @@ export interface SourceSiteRow {
   /** Champs à scraper, séparés par des virgules (même format que « | price, stock »). */
   fields?: string
   enabled: boolean
-  /** 'auto' (défaut) | 'jina' | 'brightdata'. */
+  /** 'auto' (défaut) | 'jina' | 'firecrawl' | 'brightdata'. */
   engine?: string
+  /** Site à prix connectés : identifiants saisis dans l'UI, stockés en Firestore. */
+  auth?: boolean
 }
 
 /** Payload émis sur le port `sites` : identité du suivi + sites ACTIFS uniquement. */
@@ -47,6 +49,7 @@ export function rowsToCompetitorSites(rows: SourceSiteRow[]): CompetitorSite[] {
       id, domain,
       fields: fields.length ? fields : ['price'],
       ...(engine && engine !== 'auto' ? { engine } : {}),
+      ...(row.auth ? { auth: true } : {}),
     })
   }
   return out

@@ -9,6 +9,7 @@
 import { fetchJinaHtml, fetchSourceHtmlWithEngine } from '@/features/scraping-templates/fetchSourceHtml'
 import { brightDataScrapeHtml } from '@/features/scraping/core/brightDataFallback'
 import { firecrawlScrapeHtml } from '@/features/scraping/core/firecrawlFallback'
+import { fetchAuthHtml } from './authFetchClient'
 import { getApiKey } from '@/lib/apiKeys'
 import type { SiteEngine } from '../types'
 
@@ -20,8 +21,24 @@ export interface SiteFetcher {
   connectorId: 'jina' | 'firecrawl' | 'brightdata'
 }
 
-export function buildSiteFetcher(engine?: SiteEngine): SiteFetcher {
+/** @param opts.auth site à prix connectés → passe par la CF `fetchPageHtmlAuth`.
+ *  @param opts.host domaine configuré = clé Firestore des identifiants (requis si auth). */
+export function buildSiteFetcher(engine?: SiteEngine, opts?: { auth?: boolean; host?: string }): SiteFetcher {
   let last: string | undefined
+  // Site authentifié : le login cookie serveur PRIME sur le moteur (les prix ne sont
+  // visibles que connecté). Le moteur forcé éventuel n'a pas de sens ici.
+  if (opts?.auth && opts.host) {
+    const host = opts.host
+    return {
+      connectorId: 'jina', // pastille neutre ; l'auth est un canal, pas un fournisseur externe facturé
+      lastEngine: () => last,
+      fetchHtml: async (url) => {
+        const html = await fetchAuthHtml(url, host)
+        if (html) last = 'authenticated'
+        return html
+      },
+    }
+  }
   if (engine === 'brightdata') {
     return {
       connectorId: 'brightdata',

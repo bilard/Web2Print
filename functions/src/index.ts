@@ -68,6 +68,9 @@ export { llmProxy } from './llm/llmProxy'
 // --- Listing des modèles par provider (GET /models serveur, sans CORS) ---
 export { listModels } from './llm/listModels'
 
+// --- Fetch authentifié (login cookie PrestaShop) pour sites à prix connectés ---
+export { fetchPageHtmlAuth } from './scraper/fetchPageHtmlAuth'
+
 // --- Higgsfield (génération image/vidéo IA, clé per-user, SDK officiel) ---
 export { higgsfieldGenerate } from './higgsfield/higgsfieldGenerate'
 export { higgsfieldCatalog } from './higgsfield/higgsfieldCatalog'
