@@ -4,7 +4,9 @@ import { db } from '@/lib/firebase/config'
 import type { Workflow } from '../types'
 import { computeNextRun, normalizeEvery, type CronConfig, type CronUnit } from '../runtime/cronSchedule'
 
-function findActiveCron(wf: Workflow): CronConfig | null {
+/** Renvoie la config du 1ᵉʳ node cron ACTIVÉ d'un workflow, sinon null. Utilisé pour
+ *  la synchro du planning ET pour le badge « CRON » de la liste des workflows. */
+export function findActiveCron(wf: Workflow): CronConfig | null {
   for (const n of wf.nodes) {
     if (n.type !== 'cron') continue
     const c = n.config as Partial<CronConfig>

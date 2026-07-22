@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import {
   ArrowLeft, LayoutGrid, List, Plus, Trash2, Workflow as WorkflowIcon,
-  Folder, FolderPlus, Pencil, Check, X, ChevronDown, ChevronRight, Star,
+  Folder, FolderPlus, Pencil, Check, X, ChevronDown, ChevronRight, Star, Clock,
 } from 'lucide-react'
+import { findActiveCron } from './persistence/scheduleSync'
+import { describeCron } from './runtime/cronSchedule'
 import { useAuthStore } from '@/stores/auth.store'
 import {
   listWorkflows, newWorkflow, saveWorkflow, deleteWorkflow, setWorkflowFolder,
@@ -156,6 +158,25 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
       </select>
     ) : null
 
+  // Badge « CRON » (planification active) : cadence lisible, affiché sur la carte.
+  const cronBadge = (wf: Workflow) => {
+    const cron = findActiveCron(wf)
+    if (!cron) return null
+    return (
+      <span
+        title={`Planification active — s'exécute ${describeCron(cron)}`}
+        className="inline-flex items-center gap-1 shrink-0 text-[10px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded px-1.5 py-0.5 whitespace-nowrap"
+      >
+        <Clock className="w-3 h-3" /> CRON · {describeCron(cron)}
+      </span>
+    )
+  }
+  // Tri : workflows planifiés (CRON actif) EN HAUT, le reste après (ordre d'origine stable).
+  const cronFirst = (list: Workflow[]) => {
+    const active = new Set(list.filter((w) => findActiveCron(w)).map((w) => w.id))
+    return [...list].sort((a, b) => Number(active.has(b.id)) - Number(active.has(a.id)))
+  }
+
   const card = (wf: Workflow) => (
     <li
       key={wf.id}
@@ -169,7 +190,10 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
       {viewMode === 'grid' ? (
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="font-medium truncate">{wf.name}</h2>
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="font-medium truncate">{wf.name}</h2>
+              {cronBadge(wf)}
+            </div>
             <p className="text-sm text-neutral-500 mt-1">
               {wf.nodes.length} nodes · {wf.edges.length} liens
             </p>
@@ -202,6 +226,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
           <div className="flex items-center gap-3 min-w-0">
             <WorkflowIcon className="w-4 h-4 text-indigo-400 shrink-0" aria-hidden="true" />
             <h2 className="font-medium truncate">{wf.name}</h2>
+            {cronBadge(wf)}
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {folderSelect(wf)}
@@ -235,7 +260,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
 
   const cardList = (list: Workflow[]) => (
     <ul className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'flex flex-col gap-2'}>
-      {list.map(card)}
+      {cronFirst(list).map(card)}
     </ul>
   )
 
