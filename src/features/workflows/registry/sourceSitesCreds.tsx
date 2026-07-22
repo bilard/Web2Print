@@ -74,7 +74,8 @@ export function SiteCredentialsForm({ host, hasCreds, onSaved, onCleared, onClos
       </p>
       <input
         value={email} onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email du compte"
+        placeholder="Login"
+        autoComplete="off"
         className="bg-surface-2 border border-white/10 rounded px-2 py-1 text-xs text-white/80 focus:outline-none focus:border-emerald-500/50"
       />
       <div className="flex gap-1.5">

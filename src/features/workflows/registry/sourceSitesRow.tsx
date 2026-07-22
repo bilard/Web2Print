@@ -6,6 +6,7 @@
 // Après la passe : badge verdict lisible d'un coup d'œil, pop fx-result s'il vient de tomber.
 import { Trash2, Lock, LockOpen } from 'lucide-react'
 import { agoShort } from '@/features/priceWatch/dashboard/format'
+import { siteStatus, SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
 
 export interface SiteRowStats {
   products?: number
@@ -34,27 +35,30 @@ const ENGINE_OPTIONS = [
   { value: 'brightdata', label: 'Bright Data' },
 ]
 
-/** Verdict de la dernière passe : vert = produits indexés, ambre = pages lues mais rien
- *  extrait, rouge = aucune page (site bloqué/inaccessible). null = jamais moissonné. */
-function passVerdict(s: SiteRowStats): { cls: string; text: string; title: string } | null {
-  if (s.lastPassAt == null) return null
+const TONE_BADGE: Record<'ok' | 'warn' | 'err' | 'mute', string> = {
+  ok: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/25',
+  warn: 'text-amber-300 bg-amber-500/10 border-amber-500/25',
+  err: 'text-rose-300 bg-rose-500/10 border-rose-500/25',
+  mute: 'text-white/40 bg-white/[0.04] border-white/10',
+}
+
+/** Badge de statut d'une ligne : mot LISIBLE (OK / Sans produit / Bloqué / Jamais) +
+ *  détail chiffré, sans dépendre du tooltip. null pour un site désactivé (ligne grisée). */
+function statusBadge(status: 'ok' | 'empty' | 'error' | 'never' | 'disabled', s: SiteRowStats): { cls: string; icon: string; label: string; detail: string; title: string } | null {
+  if (status === 'disabled') return null
+  const meta = SITE_STATUS_META[status]
   const pages = s.lastPassPages ?? 0
   const products = s.lastPassProducts ?? 0
-  if (pages === 0) return {
-    cls: 'text-rose-300 bg-rose-500/10 border-rose-500/25',
-    text: '✗ 0 page',
-    title: 'Dernière passe : aucune page lue — site bloqué ou inaccessible (essaie un autre moteur)',
-  }
-  if (products === 0) return {
-    cls: 'text-amber-300 bg-amber-500/10 border-amber-500/25',
-    text: `⚠ 0 produit · ${pages} p`,
-    title: `Dernière passe : ${pages} page(s) lue(s) mais aucun produit extrait — gabarit de liste non reconnu ?`,
-  }
-  return {
-    cls: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/25',
-    text: `✓ +${products.toLocaleString('fr-FR')} · ${pages} p`,
-    title: `Dernière passe : ${products} produit(s) indexé(s) sur ${pages} page(s)`,
-  }
+  const detail =
+    status === 'ok' ? `+${products.toLocaleString('fr-FR')}` :
+    status === 'empty' ? `${pages} p` :
+    status === 'error' ? '0 page' : ''
+  const title =
+    status === 'ok' ? `Dernière passe : ${products} produit(s) indexé(s) sur ${pages} page(s)` :
+    status === 'empty' ? `${pages} page(s) lue(s) mais aucun produit extrait — gabarit de liste non reconnu ?` :
+    status === 'error' ? 'Aucune page lue — site bloqué ou inaccessible (essaie un autre moteur / accès connecté)' :
+    'Jamais moissonné'
+  return { cls: TONE_BADGE[meta.tone], icon: meta.icon, label: meta.label, detail, title }
 }
 
 function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute'): JSX.Element {
@@ -86,7 +90,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
 }) {
   const scraped = stats.updatedAt != null
   const swept = (stats.harvestProgress ?? 0) >= 1
-  const verdict = passVerdict(stats)
+  const status = siteStatus({ enabled, live, lastPassAt: stats.lastPassAt, lastPassPages: stats.lastPassPages, lastPassProducts: stats.lastPassProducts })
+  const badge = status === 'live' ? null : statusBadge(status as 'ok' | 'empty' | 'error' | 'never' | 'disabled', stats)
   // Le verdict vient de tomber (< 2 min) → pop d'apparition pour attirer l'œil.
   const fresh = stats.lastPassAt != null && now - stats.lastPassAt < 2 * 60_000
   return (
@@ -110,14 +115,14 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
         {live ? (
           <span className="shrink-0 flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-            scraping…
+            En cours…
           </span>
-        ) : verdict ? (
+        ) : badge ? (
           <span
-            title={verdict.title}
-            className={`shrink-0 whitespace-nowrap text-[10px] font-medium tabular-nums border rounded-md px-1.5 py-0.5 ${verdict.cls} ${fresh ? 'fx-result' : ''}`}
+            title={badge.title}
+            className={`shrink-0 whitespace-nowrap text-[10px] font-medium tabular-nums border rounded-md px-1.5 py-0.5 ${badge.cls} ${fresh ? 'fx-result' : ''}`}
           >
-            {verdict.text}
+            {badge.icon} {badge.label}{badge.detail ? ` · ${badge.detail}` : ''}
           </span>
         ) : null}
         <button

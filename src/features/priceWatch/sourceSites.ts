@@ -98,6 +98,17 @@ export function siteStatusRank(status: SiteStatus): number {
   return STATUS_RANK[status]
 }
 
+/** Libellé + tonalité + pastille de chaque statut, pour un affichage LISIBLE sans
+ *  survol (badge de ligne + bilan d'en-tête partagent cette source unique). */
+export const SITE_STATUS_META: Record<SiteStatus, { label: string; short: string; icon: string; tone: 'ok' | 'warn' | 'err' | 'mute' }> = {
+  live:     { label: 'En cours',     short: 'en cours',     icon: '●', tone: 'ok' },
+  ok:       { label: 'OK',           short: 'OK',           icon: '✓', tone: 'ok' },
+  empty:    { label: 'Sans produit', short: 'sans produit', icon: '⚠', tone: 'warn' },
+  error:    { label: 'Bloqué',       short: 'bloqués',      icon: '✗', tone: 'err' },
+  never:    { label: 'Jamais',       short: 'jamais',       icon: '○', tone: 'mute' },
+  disabled: { label: 'Désactivé',    short: 'désactivés',   icon: '—', tone: 'mute' },
+}
+
 export interface ResolvedSites {
   watchId: string
   sites: CompetitorSite[]

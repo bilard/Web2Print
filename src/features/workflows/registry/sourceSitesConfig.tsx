@@ -143,20 +143,17 @@ export function SourceSitesConfig({ config, onChange }: {
           </div>
         </div>
         {liveCount > 0 ? (
-          <p className="text-[10px] flex items-center gap-1.5 text-emerald-300 whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-            moisson en cours · {liveCount} site{liveCount > 1 ? 's' : ''}
+          <p className="text-[10px] flex items-center gap-1.5 text-emerald-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" aria-hidden />
+            Moisson en cours · {liveCount} site{liveCount > 1 ? 's' : ''}
           </p>
         ) : recent.length > 0 ? (
-          <p
-            className="text-[10px] tabular-nums flex items-center gap-1.5 whitespace-nowrap"
-            title={`Dernière moisson (< 30 min) : ${runOk} site(s) OK, ${runWarn} sans produit, ${runErr} en échec — ${runProducts} produit(s) indexé(s)`}
-          >
-            <span className="text-white/40">dernier run</span>
-            {runProducts > 0 && <span className="text-emerald-300">+{runProducts.toLocaleString('fr-FR')}</span>}
-            <span className="text-emerald-300">{runOk}✓</span>
-            {runWarn > 0 && <span className="text-amber-300">{runWarn}⚠</span>}
-            {runErr > 0 && <span className="text-rose-300">{runErr}✗</span>}
+          <p className="text-[10px] tabular-nums flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span className="text-white/40">Dernier run :</span>
+            {runProducts > 0 && <span className="text-emerald-300">+{runProducts.toLocaleString('fr-FR')} produits</span>}
+            <span className="text-emerald-300">{runOk} OK</span>
+            {runWarn > 0 && <span className="text-amber-300">{runWarn} sans produit</span>}
+            {runErr > 0 && <span className="text-rose-300">{runErr} bloqués</span>}
           </p>
         ) : null}
       </div>
