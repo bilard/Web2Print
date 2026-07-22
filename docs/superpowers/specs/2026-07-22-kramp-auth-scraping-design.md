@@ -10,11 +10,20 @@ Kramp.com (distributeur B2B pièces agricoles/motoculture) **cache ses prix tant
 
 Récupérer les prix kramp **connecté**, apparier par **preuve exacte** (réf/EAN), et les faire remonter dans le dashboard « Veille tarifaire » comme n'importe quel concurrent — **sans** file « À confirmer » (le match exact suffit, zéro faux positif).
 
-## Approche retenue : A (session authentifiée par tick), seam pour B
+## Phase 0 — RÉSULTATS (2026-07-22, GATE PASSÉ) → pivot moteur
 
-À chaque tick cron, ouvrir **un** Chrome distant Bright Data (Scraping Browser), se connecter **une fois**, réutiliser la session pour les ~20 réfs du budget, déconnecter en fin de tick. Le fetcher authentifié est exposé derrière une **interface abstraite** `AuthFetcher { fetchHtml(url), close() }` pour qu'un futur passage à B (récolte de cookies + réutilisation via Web Unlocker, moins cher, login amorti sur plusieurs ticks) soit un remplacement de l'implémentation sans toucher aux appelants.
+Reconnaissance live (browserWs Bright Data + clés prod) :
+- ❌ **Bright Data Scraping Browser INTERDIT la saisie de mot de passe** (`Forbidden action: password typing is not allowed`, y compris via `element.value`). **L'approche A (login Bright Data) est morte.**
+- ✅ **Firecrawl `actions` sait se connecter** : `url=login.kramp.com`, actions `write` #username / input[type=password], `click` button[name=login-btn]. Pas de blocage mot de passe.
+- ✅ **Navigation en session dans le MÊME appel** via action `executeJavascript` (`location.assign(url)`) — Firecrawl n'a pas d'action `navigate`. Les **prix connectés sont visibles** (ex. 246,84 €).
+- ✅ **Recherche par réf** : URL path-based `https://www.kramp.com/shop-fr/fr/search/<réf>`. Réf F1 `092.48.801` → fiche `…/p/courroie-trapézoïdale--09248801`, **prix 12,06 €**, **match EXACT** (l'ID URL = réf sans points). L'EAN n'est PAS indexé par kramp → la réf fabricant est la clé.
+- Sélecteurs login : `#username`, `input[type=password]`, `button[name=login-btn]`. Fiche produit : `/shop-fr/fr/p/<slug>--<id>`.
 
-**Pourquoi pas B d'emblée** : plomberie cookies (sérialisation/expiration/domaine) + risque prix-en-JS non matérialisés par le Web Unlocker HTTP. Optimisation prématurée tant que le login et la couverture ne sont pas prouvés.
+## Approche retenue : Firecrawl `actions` (login intégré), 1 appel = login + recherche + fiche
+
+Le moteur n'est PAS Bright Data mais **Firecrawl `actions`** (déjà câblé serveur via `firecrawlScrapeProduct`). Un lookup kramp = **un appel Firecrawl** : login → `executeJavascript` vers `/search/<réf>` → scrape (liste) → `executeJavascript` vers la fiche → scrape (prix), OU login → search → fiche selon ce qui tient dans une chaîne d'actions. Session portée à l'intérieur de l'appel (Firecrawl ne persiste pas entre appels).
+
+**Coût / seam B** : login-par-réf est coûteux. Piste d'optimisation (à mesurer, pas à construire d'emblée) = **une chaîne d'actions par TICK** qui logge une fois puis enchaîne N `executeJavascript`+`scrape` (N réfs) → login amorti. Le fetcher reste derrière une interface abstraite `AuthFetcher` pour permettre cette évolution sans toucher aux appelants.
 
 ## Invariants de sûreté
 
@@ -24,13 +33,11 @@ Récupérer les prix kramp **connecté**, apparier par **preuve exacte** (réf/E
 
 ## Composants
 
-### 1. `functions/src/scraper/authSession.ts` (NOUVEAU) — fetcher authentifié Bright Data
-- Factory `openKrampSession(creds): Promise<AuthFetcher>` :
-  - `getBrightDataBrowserWs()` → `puppeteer.connect(wsEndpoint)` (réutilise `scrapingBrowserCore` : puppeteer-extra + stealth, require paresseux).
-  - **Login** : `goto(loginUrl)` = `https://login.kramp.com/` (**sous-domaine SSO dédié** → flux de redirection vers `kramp.com/shop` après authentification, à mapper en Phase 0). Remplir champs identifiant/mot de passe, soumettre, **suivre la redirection**, attendre l'état connecté (cookie de session partagé sur `.kramp.com` ou sélecteur post-login). Throw explicite si le login échoue (pas de scraping non authentifié silencieux).
-  - Retourne `{ fetchHtml(url) → HTML (même page/onglet réutilisé), close() → browser.disconnect() }`.
-- Interface `AuthFetcher` = seam pour l'implémentation B ultérieure.
-- ⚠️ Sélecteurs login/kramp = **inconnus à ce stade** → découverts en Phase 0.
+### 1. `functions/src/scraper/krampFirecrawl.ts` (NOUVEAU) — lookup authentifié via Firecrawl actions
+- `krampLookup(query, apiKey): Promise<{ html: string, finalUrl: string } | null>` — un appel Firecrawl `/v2/scrape` avec la chaîne d'actions : `write` login (#username, input[type=password]), `click` button[name=login-btn], `wait`, `executeJavascript` → `location.assign('…/shop-fr/fr/search/<query>')`, `wait`, `scrape`. Renvoie le HTML/markdown de la page de recherche connectée.
+- Identifiants lus depuis `users/{uid}.siteCredentials.kramp` (login/password), clé Firecrawl depuis `apiKeys.overrides.firecrawl`.
+- Interface `AuthFetcher` conservée = seam pour l'optim « login-once-par-tick » (chaîne multi-scrape) ultérieure, sans toucher aux appelants.
+- ⚠️ Ne JAMAIS journaliser login/password.
 
 ### 2. `functions/src/priceWatch/catalog/krampParse.ts` (NOUVEAU, PUR + jumeau client) — découverte & extraction kramp
 - `krampSearchUrl(ref): string` — URL de recherche interne kramp par référence.
