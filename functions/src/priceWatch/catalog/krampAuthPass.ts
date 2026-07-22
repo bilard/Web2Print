@@ -1,10 +1,12 @@
-// Passe kramp AUTHENTIFIÉE d'un lot de produits, en 2 phases (chacune = 1 appel scrape,
-// login amorti) : (1) recherche par réf, repli EAN → URLs fiches ; (2) fiches → prix.
-// Appariement par PREUVE EXACTE (proveMatch, réf/EAN normalisés). Serveur-only.
+// Passe kramp AUTHENTIFIÉE d'un lot de produits, EN UNE PHASE : la page de recherche
+// connectée /search/<réf> porte déjà URL fiche + réf + nom + prix HT. Pour chaque produit
+// on cherche par réf BRUTE (kramp indexe la réf affichée, avec ses points) puis par EAN en
+// repli, on lit la page de recherche, et on apparie par PREUVE EXACTE (proveMatch, réf/EAN
+// normalisés). Serveur-only.
 import type { DirectedSourceProduct } from './searchDirected'
 import type { CompetitorListing } from './prestashop'
 import { candidateKeys, proveMatch } from './keys'
-import { parseKrampSearchUrls, parseKrampProduct } from './krampParse'
+import { parseKrampSearchListing } from './krampParse'
 
 export interface KrampScrapeDep {
   /** login + navigation + scrape → map(url cible → markdown connecté). Injecté. */
@@ -20,54 +22,42 @@ export interface KrampHit {
 
 const searchUrl = (q: string): string => `https://www.kramp.com/shop-fr/fr/search/${encodeURIComponent(q)}`
 
-/** Sépare les valeurs de clés en réfs (essayées d'abord) et EAN (repli). */
-function refThenEan(keys: ReturnType<typeof candidateKeys>): { refs: string[]; eans: string[] } {
-  const refs: string[] = [], eans: string[] = []
-  for (const k of keys) (k.kind === 'ean' ? eans : refs).push(k.value)
-  return { refs: [...new Set(refs)], eans: [...new Set(eans)] }
+/** Requêtes de recherche kramp d'un produit : réf(s) BRUTE(S) d'abord, EAN en repli.
+ *  On cherche par la valeur AFFICHÉE (kramp l'indexe telle quelle), pas la forme normalisée. */
+function searchQueries(p: DirectedSourceProduct): string[] {
+  const out: string[] = []
+  for (const v of [p.ref, p.ref2, p.ean]) {
+    const q = String(v ?? '').trim()
+    if (q && !out.includes(q)) out.push(q)
+  }
+  return out
 }
 
 export async function krampAuthPass(products: DirectedSourceProduct[], deps: KrampScrapeDep): Promise<KrampHit[]> {
   if (deps.signal?.aborted || products.length === 0) return []
-  const keysByProduct = new Map(products.map((p) => [p.id, candidateKeys(p)]))
 
-  // Phase 1 : une recherche par réf (1re) + une par EAN (repli) pour chaque produit,
-  // toutes dans UN appel scrape (login amorti).
-  const phase1: { productId: string; refQ?: string; eanQ?: string }[] = []
-  const searchTargets: string[] = []
-  for (const p of products) {
-    const { refs, eans } = refThenEan(keysByProduct.get(p.id)!)
-    const refQ = refs[0], eanQ = eans[0]
-    if (!refQ && !eanQ) continue
-    phase1.push({ productId: p.id, refQ, eanQ })
-    if (refQ) searchTargets.push(searchUrl(refQ))
-    if (eanQ) searchTargets.push(searchUrl(eanQ))
-  }
-  if (searchTargets.length === 0 || deps.signal?.aborted) return []
-  const searchMd = await deps.scrape([...new Set(searchTargets)])
+  // Une URL de recherche par requête de chaque produit (réf brute, puis EAN), toutes
+  // regroupées ; deps.scrape gère l'appel réseau (une page par requête, login amorti).
+  const queriesByProduct = new Map(products.map((p) => [p.id, searchQueries(p)]))
+  const targets = new Set<string>()
+  for (const qs of queriesByProduct.values()) for (const q of qs) targets.add(searchUrl(q))
+  if (targets.size === 0 || deps.signal?.aborted) return []
+  const md = await deps.scrape([...targets])
 
-  // Produit → 1re URL fiche trouvée (réf d'abord, sinon EAN).
-  const productUrlByProduct = new Map<string, string>()
-  for (const x of phase1) {
-    const fromRef = x.refQ ? parseKrampSearchUrls(searchMd.get(searchUrl(x.refQ)) ?? '') : []
-    const fromEan = x.eanQ ? parseKrampSearchUrls(searchMd.get(searchUrl(x.eanQ)) ?? '') : []
-    const url = fromRef[0] ?? fromEan[0]
-    if (url) productUrlByProduct.set(x.productId, url)
-  }
-  if (productUrlByProduct.size === 0 || deps.signal?.aborted) return []
-
-  // Phase 2 : scrape des fiches → prix, puis preuve exacte.
-  const prodUrls = [...new Set(productUrlByProduct.values())]
-  const prodMd = await deps.scrape(prodUrls)
   const hits: KrampHit[] = []
-  for (const [productId, url] of productUrlByProduct) {
-    const listing = parseKrampProduct(prodMd.get(url) ?? '', url)
+  for (const p of products) {
+    // 1re requête qui donne une fiche avec prix (réf d'abord, EAN en repli).
+    let listing: CompetitorListing | null = null
+    for (const q of queriesByProduct.get(p.id) ?? []) {
+      listing = parseKrampSearchListing(md.get(searchUrl(q)) ?? '')
+      if (listing) break
+    }
     if (!listing) continue
-    const proof = proveMatch(keysByProduct.get(productId)!, {
+    const proof = proveMatch(candidateKeys(p), {
       sku: listing.ref, gtin13: listing.gtin13, url: listing.url, name: listing.name,
     })
     if (proof) {
-      hits.push({ productId, listing, evidence: proof.evidence })
+      hits.push({ productId: p.id, listing, evidence: proof.evidence })
       deps.log?.(`kramp : ${listing.name} ${listing.price}€ (preuve ${proof.evidence})`)
     }
   }

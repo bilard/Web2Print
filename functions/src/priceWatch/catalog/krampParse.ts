@@ -1,5 +1,6 @@
 // Parsers PURS des pages kramp CONNECTÉES (via Firecrawl markdown). Serveur-only.
-// Prix = libellé « Prix brut » (HT, tarif B2B). Textes VERBATIM (aucune reformulation IA).
+// La page de RECHERCHE connectée /search/<réf> porte déjà tout (URL fiche + réf + nom +
+// prix HT), donc une seule page suffit. Prix = tarif B2B HT. Textes VERBATIM (aucune IA).
 import type { CompetitorListing } from './prestashop'
 
 /** Réf kramp = segment après le DERNIER « -- » de l'URL fiche : /p/<slug>--<ref>.
@@ -23,13 +24,20 @@ export function parseKrampSearchUrls(markdown: string): string[] {
   return [...new Set(markdown.match(re) ?? [])]
 }
 
-/** Fiche produit kramp connectée → listing appariable. Prix = montant € après « Prix brut ».
- *  null si aucun prix (pas une fiche exploitable). */
-export function parseKrampProduct(markdown: string, url: string): CompetitorListing | null {
+/** Page de RECHERCHE kramp connectée → listing appariable. Pour un résultat exact, la page
+ *  /search/<réf> porte l'URL fiche, la réf (dans l'URL), le nom et le prix HT. On prend la
+ *  1re fiche et le 1er prix €. null si aucun prix (aucun résultat exploitable). */
+export function parseKrampSearchListing(markdown: string): CompetitorListing | null {
+  const url = parseKrampSearchUrls(markdown)[0]
+  if (!url) return null
   const ref = krampRefFromUrl(url)
-  const nameM = markdown.match(/^#{1,3}\s+(?!Prix brut)(.+)$/m)
-  const name = nameM ? nameM[1].trim() : ''
-  const priceM = markdown.match(/Prix brut[^\d]{0,40}?([\d\s.]+,\d{2})\s*€/i)
+  // Nom : le libellé de lien le plus long pointant vers CETTE fiche (hors image `![…]` et
+  // hors lien dont le texte n'est que la réf).
+  const name = [...markdown.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)]
+    .filter((m) => m[2] === url && !m[1].startsWith('!') && m[1].trim() !== ref)
+    .map((m) => m[1].trim())
+    .sort((a, b) => b.length - a.length)[0] ?? ''
+  const priceM = markdown.match(/(\d[\d\s.]*,\d{2})\s*€/)
   const price = priceM ? parseFrPrice(priceM[1]) : null
   if (price == null) return null
   return { url, name, ref, price, currency: 'EUR', taxIncluded: false }
