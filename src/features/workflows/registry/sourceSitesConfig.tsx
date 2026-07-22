@@ -88,16 +88,15 @@ export function SourceSitesConfig({ config, onChange }: {
   }
 
   const active = rows.filter((r) => r.enabled).length
-  const liveCount = rows.filter((r) => isLive(statsFor(r.domain))).length
-  // Bilan agrégé de la dernière session de moisson (passes < 30 min) : réponse
-  // immédiate à « il vient de finir — qu'est-ce qui a marché ? ».
-  const recent = rows
-    .map((r) => statsFor(r.domain))
-    .filter((s) => s.lastPassAt != null && now - (s.lastPassAt as number) < 30 * 60_000)
-  const runOk = recent.filter((s) => (s.lastPassPages ?? 0) > 0 && (s.lastPassProducts ?? 0) > 0).length
-  const runWarn = recent.filter((s) => (s.lastPassPages ?? 0) > 0 && (s.lastPassProducts ?? 0) === 0).length
-  const runErr = recent.filter((s) => (s.lastPassPages ?? 0) === 0).length
-  const runProducts = recent.reduce((n, s) => n + (s.lastPassProducts ?? 0), 0)
+  // Statut COURANT de chaque site (état persisté) → totaux par statut TOUJOURS affichés
+  // dans l'en-tête (pas seulement après un run récent), et cliquables pour filtrer.
+  const statuses = rows.map((r) => {
+    const s = statsFor(r.domain)
+    return siteStatus({ enabled: r.enabled, live: isLive(s), ...s })
+  })
+  const nStatus = (k: SiteStatus) => statuses.filter((x) => x === k).length
+  const liveCount = nStatus('live')
+  const totalProducts = rows.reduce((n, r) => n + (statsFor(r.domain).products ?? 0), 0)
 
   // Ordre d'AFFICHAGE (ni le tri ni le filtre ne touchent config.sites : l'ordre
   // d'émission reste manuel). Projection {row, index d'origine, stats, statut} — l'index
@@ -154,32 +153,27 @@ export function SourceSitesConfig({ config, onChange }: {
             </button>
           </div>
         </div>
-        {liveCount > 0 ? (
-          <p className="text-[10px] flex items-center gap-1.5 flex-wrap">
-            <span className="flex items-center gap-1.5 text-emerald-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" aria-hidden />
-              Moisson en cours ·
-            </span>
-            {filterPill('live', liveCount, 'text-emerald-300', `site${liveCount > 1 ? 's' : ''}`)}
-          </p>
-        ) : recent.length > 0 ? (
+        {/* Totaux PAR STATUT — toujours affichés, cliquables pour filtrer la liste. */}
+        {rows.length > 0 && (
           <p className="text-[10px] tabular-nums flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-            <span className="text-white/40">Dernier run :</span>
-            {runProducts > 0 && <span className="text-emerald-300 mr-0.5">+{runProducts.toLocaleString('fr-FR')} produits</span>}
-            {filterPill('ok', runOk, 'text-emerald-300', 'OK')}
-            {runWarn > 0 && filterPill('empty', runWarn, 'text-amber-300', 'sans produit')}
-            {runErr > 0 && filterPill('error', runErr, 'text-rose-300', 'bloqués')}
+            {liveCount > 0 && (
+              <span className="flex items-center gap-1 mr-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" aria-hidden />
+                {filterPill('live', liveCount, 'text-emerald-300', 'en cours')}
+              </span>
+            )}
+            {nStatus('ok') > 0 && filterPill('ok', nStatus('ok'), 'text-emerald-300', 'OK')}
+            {nStatus('empty') > 0 && filterPill('empty', nStatus('empty'), 'text-amber-300', 'sans produit')}
+            {nStatus('error') > 0 && filterPill('error', nStatus('error'), 'text-rose-300', 'bloqués')}
+            {nStatus('never') > 0 && filterPill('never', nStatus('never'), 'text-white/40', 'jamais')}
+            {totalProducts > 0 && <span className="text-white/30 ml-0.5">· {totalProducts.toLocaleString('fr-FR')} produits</span>}
             {statusFilter && (
-              <button onClick={() => setStatusFilter(null)} className="text-white/40 hover:text-white/70 ml-0.5" title="Retirer le filtre">
+              <button onClick={() => setStatusFilter(null)} className="text-indigo-400/80 hover:text-indigo-300 ml-0.5" title="Retirer le filtre">
                 ✕ tout
               </button>
             )}
           </p>
-        ) : statusFilter ? (
-          <button onClick={() => setStatusFilter(null)} className="text-[10px] text-white/40 hover:text-white/70 self-start" title="Retirer le filtre">
-            ✕ filtre actif — afficher tout
-          </button>
-        ) : null}
+        )}
       </div>
 
       {importing && (
