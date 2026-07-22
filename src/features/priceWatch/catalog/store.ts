@@ -9,9 +9,22 @@ import {
   doc, collection, getDoc, getDocs, setDoc, deleteDoc, serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { competitorDoc, competitorPagesCol } from '../paths'
+import { competitorDoc, competitorPagesCol, watchRootDoc } from '../paths'
 import type { CompetitorListing } from './prestashop'
 import type { HarvestCursor } from './harvest'
+
+/** Crée/rafraîchit le doc RACINE du suivi. À appeler dès la MOISSON : sans lui, le doc
+ *  parent reste virtuel (seules les sous-collections existent) → le suivi n'apparaît pas
+ *  dans la liste (WatchSelector) et le dashboard dit « Aucune veille » tant que le 1ᵉʳ
+ *  « Comparer catalogue » n'a pas abouti. `label` (nom du workflow) posé s'il est fourni
+ *  — `customLabel` (renommage manuel) reste prioritaire à l'affichage. */
+export async function touchWatch(uid: string, watchId: string, label?: string): Promise<void> {
+  await setDoc(
+    doc(db, watchRootDoc(uid, watchId)),
+    { ...(label ? { label } : {}), updatedAt: serverTimestamp() },
+    { merge: true },
+  ).catch(() => {})
+}
 
 /** Retire les `undefined` (rejetés par Firestore) en préservant null/objets/arrays. */
 function stripUndefined<T>(value: T): T {

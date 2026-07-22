@@ -73,9 +73,11 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   // OU une passe de moisson a écrit récemment. Header ET tuile doivent s'appuyer dessus,
   // sinon l'un dit « à l'arrêt » pendant que l'autre dit « En cours » (contradiction vue).
   const scrapeActive = collecting || sched?.lastStatus === 'running'
+  // runAt = 0 : aucune analyse « Comparer » encore (cockpit sur rapport vide, moisson seule).
+  const hasReport = ck.runAt > 0
   // Rapport gelé : le cron est actif mais rien ne tourne ET aucune analyse fraîche > 20 min.
   const reportAgeMs = now - ck.runAt
-  const stalled = cronOn && !scrapeActive && reportAgeMs > 20 * 60_000
+  const stalled = hasReport && cronOn && !scrapeActive && reportAgeMs > 20 * 60_000
   // Site en cours de moisson (heartbeat) + s'il ne produit rien (anti-bot / bloqué), le dire.
   const curSite = collecting && ck.lastCollectDomain ? ck.competitors.find((c) => c.domain === ck.lastCollectDomain) : null
   const curLabel = curSite ? `${curSite.domain.replace(/^www\./, '')}${curSite.indexed === 0 ? ' · bloqué' : ''}` : null
@@ -112,7 +114,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
           {cronOn
             ? <>cron actif · prochain {overdue ? 'imminent' : hhmm(sched!.nextRunAt)}{sched?.lastStatus === 'error' ? <span className="text-rose-300"> · dernier run en erreur ⚠</span> : ''}</>
             : 'cron inactif (manuel)'}
-          <span className="text-white/25"> · </span>analyse {ago(ck.runAt, now)}
+          <span className="text-white/25"> · </span>analyse {hasReport ? ago(ck.runAt, now) : 'à venir (1ᵉʳ « Comparer »)'}
         </span>
       </div>
 

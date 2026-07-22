@@ -15,7 +15,7 @@ import { fetchHtml } from '../../scraper/fetchHtml'
 import { stableId } from '../../priceWatch/helpers'
 import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '../../priceWatch/catalog/runHarvest'
-import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages } from '../../priceWatch/catalog/store'
+import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '../../priceWatch/catalog/store'
 import { harvestProgress } from '../../priceWatch/catalog/harvest'
 
 /** Mode « cycle calendaire » : porté par le doc workflowSchedules du workflow (champ
@@ -65,6 +65,9 @@ registerServerNode({
     const pageBudget = Math.max(1, Number(config.pageBudget) || 40)
     // Budget réparti équitablement entre les sites (au moins 1 page chacun).
     const perSite = Math.max(1, Math.floor(pageBudget / sites.length))
+
+    // Le suivi existe dès la 1ʳᵉ moisson (liste + dashboard), sans attendre « Comparer ».
+    await touchWatch(ctx.uid, watchId, ctx.workflowName)
 
     // Mode cycle : metas préchargées pour décider GLOBALEMENT — tous les balayages
     // terminés = le run d'échéance calendaire rouvre un cycle pour TOUS en même temps ;

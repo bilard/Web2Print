@@ -4,6 +4,7 @@
 // dérivés (les KPIs headline restent globaux). SOURCE (watchId) choisie dans le header.
 import { useMemo, useState } from 'react'
 import { useCatalogReport, useReportHistory } from '../useCatalogReport'
+import type { StoredReport } from '../reportStore'
 import { buildCockpit, EMPTY_FILTER, type CockpitFilter } from './analytics'
 import { KpiStrip } from './KpiStrip'
 import { PositionDonut } from './PositionDonut'
@@ -21,6 +22,18 @@ import { AnalyticsTable } from './AnalyticsTable'
 import { ProductList } from './ProductList'
 import { ExpandableChart } from '@/components/shared/ExpandableChart'
 import { ChevronDown, Search, RotateCcw } from 'lucide-react'
+
+/** Rapport « vide » : permet d'afficher le Cockpit opérationnel (jauges de moisson LIVE,
+ *  alimentées par les métas concurrents) AVANT le premier « Comparer catalogue ».
+ *  `runAt: 0` = aucune analyse encore (géré par OpsCockpit). */
+const EMPTY_REPORT: StoredReport = {
+  runAt: 0,
+  kpis: {
+    products: 0, matchedExact: 0, matchedOriginOnly: 0, sites: 0, comparisons: 0,
+    cheaperThanMe: 0, aligned: 0, dearerThanMe: 0, ruptures: 0, productsUndercut: 0,
+  },
+  byCompetitor: [], sites: [], products: [], totalMatched: 0, truncated: false,
+}
 
 function EmptyState({ hasWatch }: { hasWatch: boolean }) {
   return (
@@ -45,7 +58,16 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   const [detailOpen, setDetailOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
 
-  if (!report || !ck) return <EmptyState hasWatch={!!watchId} />
+  // Pas encore de comparatif : le Cockpit opérationnel s'affiche quand même (la moisson
+  // vit dans les métas concurrents, indépendantes du rapport « Comparer »).
+  if (!report || !ck) {
+    return (
+      <div className="space-y-3">
+        {watchId && <OpsCockpit report={EMPTY_REPORT} watchId={watchId} />}
+        <EmptyState hasWatch={!!watchId} />
+      </div>
+    )
+  }
   const set = (patch: Partial<CockpitFilter>) => setFilter((f) => ({ ...f, ...patch }))
   // Clic sur un graphe : bascule le filtre (re-cliquer la valeur active la désactive).
   const toggle = (patch: Partial<CockpitFilter>) => setFilter((f) => {

@@ -5,7 +5,7 @@
 // (cron) et la comparaison client relisent donc le MÊME index. Seule différence :
 // admin SDK (firebase-admin) au lieu du SDK web.
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
-import { competitorDoc, competitorPagesCol } from '../paths'
+import { competitorDoc, competitorPagesCol, watchRootDoc } from '../paths'
 import type { CompetitorListing } from './prestashop'
 import type { HarvestCursor } from './harvest'
 
@@ -39,6 +39,17 @@ export interface CompetitorMeta {
   lastPassPages?: number
   lastPassProducts?: number
   lastPassAt?: number
+}
+
+/** Crée/rafraîchit le doc RACINE du suivi. À appeler dès la MOISSON : sans lui, le doc
+ *  parent reste virtuel (seules les sous-collections existent) → le suivi n'apparaît pas
+ *  dans la liste côté client tant que le 1ᵉʳ « Comparer catalogue » n'a pas abouti.
+ *  `customLabel` (renommage manuel) reste prioritaire à l'affichage. */
+export async function touchWatch(uid: string, watchId: string, label?: string): Promise<void> {
+  await getFirestore().doc(watchRootDoc(uid, watchId)).set(
+    { ...(label ? { label } : {}), updatedAt: FieldValue.serverTimestamp() },
+    { merge: true },
+  ).catch(() => {})
 }
 
 /** Lit la méta + le curseur d'un concurrent. null si jamais moissonné. */

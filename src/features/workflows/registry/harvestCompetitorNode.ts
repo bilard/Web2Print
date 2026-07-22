@@ -14,7 +14,7 @@ import { buildSiteFetcher } from '@/features/priceWatch/catalog/siteFetch'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
 import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '@/features/priceWatch/catalog/runHarvest'
-import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages } from '@/features/priceWatch/catalog/store'
+import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '@/features/priceWatch/catalog/store'
 import { harvestProgress } from '@/features/priceWatch/catalog/harvest'
 
 interface HarvestConfig {
@@ -104,6 +104,9 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     const families = config.families.split(',').map((f) => f.trim()).filter(Boolean)
     // Budget réparti équitablement entre les sites (au moins 1 page chacun).
     const perSite = Math.max(1, Math.floor(Math.max(1, config.pageBudget) / sites.length))
+
+    // Le suivi existe dès la 1ʳᵉ moisson (liste + dashboard), sans attendre « Comparer ».
+    await touchWatch(uid, watchId, ctx.workflowName)
 
     // Mode cycle (parité serveur) : metas préchargées pour décider GLOBALEMENT — tous
     // les balayages terminés = réouverture d'un cycle pour TOUS en même temps ; sinon

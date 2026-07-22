@@ -113,18 +113,17 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
         working ? 'bg-emerald-500/[0.07] ring-1 ring-emerald-400/40' : 'bg-white/[0.03]'
       } ${enabled ? '' : 'opacity-45'}`}
     >
-      {/* Niveau 1 : activer · domaine EN ENTIER (s'enroule sur 2 lignes si long, jamais
-          tronqué) · actions. Alignement haut → les boutons restent en tête pendant que le
-          nom s'enroule dessous. */}
-      <div className="flex items-start gap-2 min-w-0">
+      {/* Niveau 1 : activer · domaine sur UNE SEULE ligne (tronqué avec … si long, nom
+          complet au survol) · actions. */}
+      <div className="flex items-center gap-2 min-w-0">
         <input
           type="checkbox"
           checked={enabled}
           onChange={(e) => onToggle(e.target.checked)}
-          className="shrink-0 mt-1 accent-indigo-500"
+          className="shrink-0 accent-indigo-500"
           title={enabled ? 'Désactiver ce site' : 'Activer ce site'}
         />
-        <span className="flex-1 min-w-0 text-sm font-semibold text-white leading-snug break-words" title={domain}>
+        <span className="flex-1 min-w-0 text-sm font-semibold text-white truncate" title={domain}>
           {domain.replace(/^www\./, '')}
         </span>
         <div className="shrink-0 flex items-center gap-0.5 -mr-1">
@@ -183,19 +182,23 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
           {ENGINE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </div>
-      {/* Ligne 3 : stats en 2 groupes logiques séparés d'un trait fin —
-          COLLECTE/COMPARAISON (produits·prix·balayage·appariés) | TECHNIQUE (via·scrape). */}
+      {/* Stats en 2 RANGÉES logiques fixes (pas de wrap aléatoire) :
+          rangée DONNÉES (produits · prix · appariés) puis rangée MOISSON (balayage ·
+          moteur · dernier scrape). */}
       {scraped && (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pl-6 mt-1 text-[10px]">
-          {chip('produits', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute')}
-          {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn')}
-          {swept
-            ? chip('balayé', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
-            : stats.harvestProgress != null && chip('balayage', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
-          {stats.matched != null && chip('appariés', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute')}
-          <span className="w-px h-2.5 bg-white/10 mx-0.5 shrink-0" aria-hidden />
-          {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
-          {chip('scrape', agoShort(stats.updatedAt, now), 'mute')}
+        <div className="pl-6 mt-1 space-y-0.5 text-[10px]">
+          <div className="flex items-center gap-x-2.5 overflow-hidden">
+            {chip('produits', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute')}
+            {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn')}
+            {stats.matched != null && chip('appariés', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute')}
+          </div>
+          <div className="flex items-center gap-x-2.5 overflow-hidden">
+            {swept
+              ? chip('balayé', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
+              : stats.harvestProgress != null && chip('balayage', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
+            {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
+            {chip('scrape', agoShort(stats.updatedAt, now), 'mute')}
+          </div>
         </div>
       )}
       {/* Barre de balayage animée pendant la moisson (très visible, style TopProgressBar) */}
