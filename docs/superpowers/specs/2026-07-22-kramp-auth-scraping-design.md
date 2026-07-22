@@ -27,7 +27,7 @@ Récupérer les prix kramp **connecté**, apparier par **preuve exacte** (réf/E
 ### 1. `functions/src/scraper/authSession.ts` (NOUVEAU) — fetcher authentifié Bright Data
 - Factory `openKrampSession(creds): Promise<AuthFetcher>` :
   - `getBrightDataBrowserWs()` → `puppeteer.connect(wsEndpoint)` (réutilise `scrapingBrowserCore` : puppeteer-extra + stealth, require paresseux).
-  - **Login** : `goto(loginUrl)`, remplir champs identifiant/mot de passe, soumettre, attendre l'état connecté (cookie/session ou sélecteur post-login). Throw explicite si le login échoue (pas de scraping non authentifié silencieux).
+  - **Login** : `goto(loginUrl)` = `https://login.kramp.com/` (**sous-domaine SSO dédié** → flux de redirection vers `kramp.com/shop` après authentification, à mapper en Phase 0). Remplir champs identifiant/mot de passe, soumettre, **suivre la redirection**, attendre l'état connecté (cookie de session partagé sur `.kramp.com` ou sélecteur post-login). Throw explicite si le login échoue (pas de scraping non authentifié silencieux).
   - Retourne `{ fetchHtml(url) → HTML (même page/onglet réutilisé), close() → browser.disconnect() }`.
 - Interface `AuthFetcher` = seam pour l'implémentation B ultérieure.
 - ⚠️ Sélecteurs login/kramp = **inconnus à ce stade** → découverts en Phase 0.
@@ -58,7 +58,7 @@ persist hits → dashboard (identique aux autres directed hits)
 
 ## Plan par phases (go/no-go tôt)
 
-- **Phase 0 — Reconnaissance & validation (GATE)** : smoke local puppeteer-core connecté au Scraping Browser Bright Data (browserWs lu depuis `config/brightdata`). Vérifier : (1) le login kramp réussit ; (2) la recherche interne par réf sort la bonne fiche ; (3) le prix est présent dans le HTML connecté ; (4) **5 réfs F1 réelles** matchent (kramp porte-t-il tes réfs ?). Capturer des fixtures HTML. **Si le login est infranchissable ou kramp ne porte pas les réfs → on s'arrête là et on rapporte.**
+- **Phase 0 — Reconnaissance & validation (GATE)** : smoke local puppeteer-core connecté au Scraping Browser Bright Data (browserWs lu depuis `config/brightdata`). Vérifier : (1) le login kramp (SSO `login.kramp.com` → redirection) réussit ; (2) la recherche interne **par réf fabricant ET par EAN** sort la bonne fiche ; (3) le prix est présent dans le HTML connecté ; (4) **5 réfs F1 réelles** matchent (kramp porte-t-il tes réfs ?). Les deux clés (réf, EAN) sont déjà couvertes par `candidateKeys`/`proveMatch`. Capturer des fixtures HTML. **Si le login est infranchissable ou kramp ne porte pas les réfs → on s'arrête là et on rapporte.**
 - **Phase 1** — `authSession.ts` + `krampParse.ts` (+ tests purs sur fixtures Phase 0).
 - **Phase 2** — Intégration `directedSearch.ts` + config (kramp dans `sites` + reconnaissance auto via `siteCredentials`). Déploiement functions.
 - **Phase 3** — Observation en prod (diagnostic) : taux d'appariement kramp réel. Décision d'étendre / d'optimiser vers B selon le coût Bright Data.
