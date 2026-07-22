@@ -28,6 +28,10 @@ export interface SearchDeps {
    *  pas dépasser le budget de run et faire tuer la Function. */
   signal?: { aborted: boolean }
   log?: (msg: string) => void
+  /** Progression : appelé après CHAQUE produit traité (processed/total de la passe,
+   *  hits cumulés) — alimente le compteur live et les logs du node (sinon la passe
+   *  est silencieuse entre deux trouvailles et semble « tourner dans le vide »). */
+  onProduct?: (processed: number, total: number, hits: number) => void
 }
 
 /** Domaine nu (sans protocole, sans www, sans chemin) pour un opérateur `site:`. */
@@ -193,6 +197,7 @@ export async function directedPass(
       const hit = await searchProductOnSite(p, site.domain, deps, { generic: site.generic })
       if (hit) results.push({ productId: p.id, siteId: site.siteId, hit })
     }
+    deps.onProduct?.(i - start + 1, end - start, results.length)
   }
   const done = i >= products.length
   return { results, nextCursor: done ? 0 : i, done, processed: i - start }

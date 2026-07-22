@@ -120,10 +120,39 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     const CURSOR_META = 'directed_cursor' // pas de __…__ : Firestore réserve ces ids
     const startCursor = (await loadCompetitorMeta(uid, watchId, CURSOR_META))?.productCount ?? 0
     ctx.reportConnector?.('jina')
+    // Disjoncteur par site : un site qui ne répond pas fait payer TOUTE la cascade de
+    // repli (~1-2 min) à CHAQUE requête — sur une passe de 20 produits, un seul site
+    // mort = plus d'une heure de vide. Après 5 échecs consécutifs, le site est ignoré
+    // pour le reste de la passe (réessayé au run suivant).
+    const FAILS_MAX = 5
+    const fails = new Map<string, number>()
+    const skipped = new Set<string>()
+    const fetchWithBreaker = async (url: string): Promise<string | null> => {
+      const host = (url.match(/^https?:\/\/([^/]+)/i)?.[1] ?? url).toLowerCase()
+      if (skipped.has(host)) return null
+      const html = await fetchSourceHtml(url)
+      if (html) {
+        fails.set(host, 0)
+      } else {
+        const n = (fails.get(host) ?? 0) + 1
+        fails.set(host, n)
+        if (n >= FAILS_MAX) {
+          skipped.add(host)
+          ctx.log('warn', `${host} : ${FAILS_MAX} échecs consécutifs — site ignoré pour le reste de la passe.`)
+        }
+      }
+      return html
+    }
     const pass = await directedPass(products, sites, startCursor % Math.max(1, products.length), budget, {
-      fetchHtml: (url) => fetchSourceHtml(url),
+      fetchHtml: fetchWithBreaker,
       signal: ctx.signal,
       log: (m) => ctx.log('info', m),
+      // Battement de progression : compteur live sur la carte + un log par produit —
+      // sans ça la passe semble « tourner dans le vide » entre deux trouvailles.
+      onProduct: (processed, total, hits) => {
+        ctx.reportCount?.(hits)
+        ctx.log('info', `— produit ${processed}/${total} · ${hits} prix trouvé(s)${skipped.size ? ` · ${skipped.size} site(s) ignoré(s)` : ''}`)
+      },
     })
 
     // Persistance dans l'index concurrent (même store que la moisson) : chaque hit devient

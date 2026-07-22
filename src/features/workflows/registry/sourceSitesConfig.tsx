@@ -90,34 +90,38 @@ export function SourceSitesConfig({ config, onChange }: {
   const runProducts = recent.reduce((n, s) => n + (s.lastPassProducts ?? 0), 0)
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-wider text-white/30 flex items-center gap-2">
-          <span>Sites concurrents {rows.length ? `· ${active}/${rows.length} actifs` : ''}</span>
-          {liveCount > 0 ? (
-            <span className="normal-case tracking-normal flex items-center gap-1 text-emerald-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-              {liveCount} en cours
-            </span>
-          ) : recent.length > 0 ? (
-            <span
-              className="normal-case tracking-normal tabular-nums flex items-center gap-1.5"
-              title={`Dernière moisson (< 30 min) : ${runOk} site(s) OK, ${runWarn} sans produit, ${runErr} en échec — ${runProducts} produit(s) indexé(s)`}
-            >
-              <span className="text-white/40">dernier run</span>
-              {runProducts > 0 && <span className="text-emerald-300">+{runProducts.toLocaleString('fr-FR')}</span>}
-              <span className="text-emerald-300">{runOk}✓</span>
-              {runWarn > 0 && <span className="text-amber-300">{runWarn}⚠</span>}
-              {runErr > 0 && <span className="text-rose-300">{runErr}✗</span>}
-            </span>
-          ) : null}
-        </p>
-        <button
-          onClick={() => setImporting((v) => !v)}
-          title="Coller une liste (un site par ligne)"
-          className="flex items-center gap-1 text-[10px] text-white/40 hover:text-indigo-400 transition-colors"
-        >
-          <ClipboardPaste className="w-3 h-3" /> Importer une liste
-        </button>
+      {/* En-tête ÉPINGLÉ au scroll (le conteneur scrollant est le panneau bg-surface-2) :
+          ligne 1 = titre + import ; ligne 2 = activité (en cours | bilan dernier run). */}
+      <div className="sticky top-0 z-10 bg-surface-2 -mt-1 pt-1 pb-1.5 border-b border-white/5 flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] uppercase tracking-wider text-white/30 whitespace-nowrap truncate">
+            Sites concurrents {rows.length ? `· ${active}/${rows.length} actifs` : ''}
+          </p>
+          <button
+            onClick={() => setImporting((v) => !v)}
+            title="Coller une liste (un site par ligne)"
+            className="shrink-0 flex items-center gap-1 text-[10px] whitespace-nowrap text-white/40 hover:text-indigo-400 transition-colors"
+          >
+            <ClipboardPaste className="w-3 h-3" /> Importer
+          </button>
+        </div>
+        {liveCount > 0 ? (
+          <p className="text-[10px] flex items-center gap-1.5 text-emerald-300 whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
+            moisson en cours · {liveCount} site{liveCount > 1 ? 's' : ''}
+          </p>
+        ) : recent.length > 0 ? (
+          <p
+            className="text-[10px] tabular-nums flex items-center gap-1.5 whitespace-nowrap"
+            title={`Dernière moisson (< 30 min) : ${runOk} site(s) OK, ${runWarn} sans produit, ${runErr} en échec — ${runProducts} produit(s) indexé(s)`}
+          >
+            <span className="text-white/40">dernier run</span>
+            {runProducts > 0 && <span className="text-emerald-300">+{runProducts.toLocaleString('fr-FR')}</span>}
+            <span className="text-emerald-300">{runOk}✓</span>
+            {runWarn > 0 && <span className="text-amber-300">{runWarn}⚠</span>}
+            {runErr > 0 && <span className="text-rose-300">{runErr}✗</span>}
+          </p>
+        ) : null}
       </div>
 
       {importing && (

@@ -104,6 +104,10 @@ export function WorkflowEditorPage() {
   // Exécution effective (après contrôle de cohérence). Confirme le résultat.
   const executeNow = async (stepByStep: boolean) => {
     recordAudit({ action: 'workflow.run', module: 'workflows', targetId: wf.id, targetLabel: wf.name })
+    // Panneau par défaut pendant le run : si le workflow a un node « Sites sources »,
+    // on le sélectionne (ouvre son tableau d'activité live) SANS recadrer la vue.
+    const sitesNode = wf.nodes.find((n) => n.type === 'source-sites')
+    if (sitesNode) useFocusNode.getState().focus(sitesNode.id, { fit: false })
     const outcome = await executeWorkflow(wf, stepByStep ? { middleware: [stepMiddleware] } : {})
     notifyRunOutcome(outcome, wf.name)
   }

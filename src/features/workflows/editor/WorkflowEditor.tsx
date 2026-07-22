@@ -294,11 +294,14 @@ export function WorkflowEditor() {
   // par le token du store, pour re-fonctionner même sur la même carte.
   const focusNodeId = useFocusNode((s) => s.nodeId)
   const focusToken = useFocusNode((s) => s.token)
+  const focusFit = useFocusNode((s) => s.fit)
   useEffect(() => {
     if (!focusNodeId) return
     setNodes((prev) => prev.map((n) => ({ ...n, selected: n.id === focusNodeId })))
-    rfInstance.fitView({ nodes: [{ id: focusNodeId }], duration: 400, maxZoom: 1.2, padding: 0.4 })
-  }, [focusToken, focusNodeId, rfInstance])
+    // fit: false = sélection silencieuse (ex : auto-sélection de « Sites sources » au
+    // lancement d'un run) — on ouvre la config sans déplacer la vue de l'utilisateur.
+    if (focusFit) rfInstance.fitView({ nodes: [{ id: focusNodeId }], duration: 400, maxZoom: 1.2, padding: 0.4 })
+  }, [focusToken, focusNodeId, focusFit, rfInstance])
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault()
