@@ -99,6 +99,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
   onRemove: () => void
 }) {
   const scraped = stats.updatedAt != null
+  const shortName = domain.replace(/^www\./, '')
   const swept = (stats.harvestProgress ?? 0) >= 1
   const status = siteStatus({ enabled, live, lastPassAt: stats.lastPassAt, lastPassPages: stats.lastPassPages, lastPassProducts: stats.lastPassProducts })
   const badge = status === 'live' ? null : statusBadge(status as 'ok' | 'empty' | 'error' | 'never' | 'disabled', stats)
@@ -113,8 +114,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
         working ? 'bg-emerald-500/[0.07] ring-1 ring-emerald-400/40' : 'bg-white/[0.03]'
       } ${enabled ? '' : 'opacity-45'}`}
     >
-      {/* Niveau 1 : activer · domaine sur UNE SEULE ligne (tronqué avec … si long, nom
-          complet au survol) · actions. */}
+      {/* Niveau 1 — IDENTITÉ : activer · nom COMPLET sur une seule ligne, jamais tronqué
+          (taille de police adaptée à la longueur pour tenir dans le panneau). */}
       <div className="flex items-center gap-2 min-w-0">
         <input
           type="checkbox"
@@ -123,10 +124,39 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
           className="shrink-0 accent-indigo-500"
           title={enabled ? 'Désactiver ce site' : 'Activer ce site'}
         />
-        <span className="flex-1 min-w-0 text-sm font-semibold text-white truncate" title={domain}>
-          {domain.replace(/^www\./, '')}
+        <span
+          className={`flex-1 min-w-0 whitespace-nowrap font-semibold text-white ${
+            shortName.length > 26 ? 'text-[11px]' : shortName.length > 20 ? 'text-xs' : 'text-sm'
+          }`}
+        >
+          {shortName}
         </span>
-        <div className="shrink-0 flex items-center gap-0.5 -mr-1">
+      </div>
+      {/* Niveau 2 — ÉTAT + PILOTAGE : verdict de la dernière passe à gauche ; à droite le
+          groupe scraping (moteur · ▶ scraper · accès connecté · reset · retirer). */}
+      <div className="flex items-center gap-1.5 pl-6 mt-1">
+        {working ? (
+          <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
+            {scraping ? 'Scraping…' : 'En cours…'}
+          </span>
+        ) : badge ? (
+          <span
+            title={badge.title}
+            className={`inline-flex items-center whitespace-nowrap text-[10px] font-medium tabular-nums border rounded-md px-1.5 py-0.5 ${badge.cls} ${fresh ? 'fx-result' : ''}`}
+          >
+            {badge.icon} {badge.label}{badge.detail ? ` · ${badge.detail}` : ''}
+          </span>
+        ) : <span className="text-[10px] text-white/20 italic">jamais scrapé</span>}
+        <div className="ml-auto shrink-0 flex items-center gap-0.5">
+          <select
+            value={engine}
+            onChange={(e) => onEngine(e.target.value)}
+            title="Moteur de scraping (Auto = cascade standard)"
+            className="bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 mr-1 focus:outline-none focus:border-indigo-500/50"
+          >
+            {ENGINE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
           <button
             onClick={onScrape}
             disabled={scraping || live}
@@ -157,30 +187,6 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
-      </div>
-      {/* Ligne 2 : ÉTAT/verdict + moteur sur UNE ligne (gain de hauteur). */}
-      <div className="flex items-center gap-2 pl-6 mt-1">
-        {working ? (
-          <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-            {scraping ? 'Scraping…' : 'En cours…'}
-          </span>
-        ) : badge ? (
-          <span
-            title={badge.title}
-            className={`inline-flex items-center whitespace-nowrap text-[10px] font-medium tabular-nums border rounded-md px-1.5 py-0.5 ${badge.cls} ${fresh ? 'fx-result' : ''}`}
-          >
-            {badge.icon} {badge.label}{badge.detail ? ` · ${badge.detail}` : ''}
-          </span>
-        ) : <span className="text-[10px] text-white/20 italic">jamais scrapé</span>}
-        <select
-          value={engine}
-          onChange={(e) => onEngine(e.target.value)}
-          title="Moteur de scraping (Auto = cascade standard)"
-          className="ml-auto shrink-0 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
-        >
-          {ENGINE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
       </div>
       {/* Stats en 2 RANGÉES logiques fixes (pas de wrap aléatoire) :
           rangée DONNÉES (produits · prix · appariés) puis rangée MOISSON (balayage ·
