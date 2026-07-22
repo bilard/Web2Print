@@ -5,7 +5,7 @@
 // concurrent sans lancer tout le workflow (ex. vérifier progarden en accès connecté).
 import { harvestPass, type CompetitorConfig } from './runHarvest'
 import { buildSiteFetcher } from './siteFetch'
-import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages } from './store'
+import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, loadAllListings } from './store'
 import { harvestProgress } from './harvest'
 import { stableId } from '../core'
 import type { CompetitorSite } from '../types'
@@ -14,6 +14,8 @@ export interface SingleHarvestResult {
   productsIndexed: number
   pagesFetched: number
   engine?: string
+  /** % de fiches avec prix dans l'index (diagnostic immédiat des prix). */
+  pctPrice: number
 }
 
 /**
@@ -53,6 +55,10 @@ export async function harvestOneSite(
 
   const elapsedMs = Date.now() - t0
   const pagesTotal = await countPages(uid, watchId, siteId)
+  // % de prix EN DIRECT depuis l'index (le chip n'attend plus « Comparer catalogue »).
+  const listings = await loadAllListings(uid, watchId, siteId)
+  const withPrice = listings.filter((l) => l.price != null).length
+  const pctPrice = listings.length ? Math.round((withPrice / listings.length) * 100) : 0
   await saveCompetitorMeta(uid, watchId, siteId, {
     domain: site.domain,
     pageCount: pagesTotal,
@@ -65,6 +71,7 @@ export async function harvestOneSite(
     lastPassPages: res.pagesFetched,
     lastPassProducts: res.productsIndexed,
     lastPassAt: Date.now(),
+    pctPrice,
   })
-  return { productsIndexed: res.productsIndexed, pagesFetched: res.pagesFetched, engine: fetcher.lastEngine() }
+  return { productsIndexed: res.productsIndexed, pagesFetched: res.pagesFetched, engine: fetcher.lastEngine(), pctPrice }
 }

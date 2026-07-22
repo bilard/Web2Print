@@ -29,6 +29,8 @@ export interface HarvestMeta {
   lastPassPages?: number
   lastPassProducts?: number
   lastPassAt?: number
+  /** % de fiches avec prix (live depuis l'index, cf. CompetitorMeta.pctPrice). */
+  pctPrice?: number
   updatedAt?: number
 }
 

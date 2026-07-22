@@ -68,7 +68,7 @@ export function SourceSitesConfig({ config, onChange }: {
     setScrapingId(domain)
     try {
       const res = await harvestOneSite(uid, watchId, site, { pageBudget: 12 })
-      toast.success(`${domain} : +${res.productsIndexed} produit(s) sur ${res.pagesFetched} page(s)${res.engine ? ` (via ${res.engine})` : ''}`)
+      toast.success(`${domain} : +${res.productsIndexed} produit(s) · ${res.pctPrice}% avec prix${res.engine ? ` (via ${res.engine})` : ''}`)
     } catch (e) {
       toast.error(`${domain} : ${e instanceof Error ? e.message : 'échec de la moisson'}`)
     } finally {
@@ -95,7 +95,8 @@ export function SourceSitesConfig({ config, onChange }: {
     const stat = report?.byCompetitor.find((c) => c.siteId === siteId)
     return {
       products: meta?.productCount,
-      pctPrice: stat?.audit.pctPrice,
+      // Live depuis l'index (mis à jour au scrape) prioritaire sur le rapport « Comparer ».
+      pctPrice: meta?.pctPrice ?? stat?.audit.pctPrice,
       matched: stat?.matched,
       updatedAt: meta?.updatedAt,
       lastEngine: meta?.lastEngine,

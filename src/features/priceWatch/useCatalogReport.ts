@@ -74,6 +74,7 @@ export function useCompetitorMeta(watchId: string | null): Map<string, HarvestMe
             lastPassPages: typeof data.lastPassPages === 'number' ? data.lastPassPages : undefined,
             lastPassProducts: typeof data.lastPassProducts === 'number' ? data.lastPassProducts : undefined,
             lastPassAt: typeof data.lastPassAt === 'number' ? data.lastPassAt : undefined,
+            pctPrice: typeof data.pctPrice === 'number' ? data.pctPrice : undefined,
             updatedAt: typeof upd === 'number' ? upd : (upd as { toMillis?: () => number })?.toMillis?.(),
           })
         })

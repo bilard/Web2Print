@@ -50,6 +50,9 @@ export interface CompetitorMeta {
   lastPassPages?: number
   lastPassProducts?: number
   lastPassAt?: number
+  /** % de fiches indexées portant un prix (calculé en direct depuis l'index à la fin
+   *  d'une passe) — le chip « prix % » n'attend plus le node « Comparer catalogue ». */
+  pctPrice?: number
   updatedAt?: number
 }
 
