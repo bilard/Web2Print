@@ -12,7 +12,7 @@ import type { ExcelSheet, ExcelRow } from '@/features/excel/types'
 import { useAuthStore } from '@/stores/auth.store'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
-import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
+import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
 import { directedPass, type DirectedSourceProduct, type DirectedSite } from '@/features/priceWatch/catalog/searchDirected'
 
@@ -25,7 +25,7 @@ interface DirectedConfig {
   productBudget: number
   watchId: string
 }
-type DirectedInputs = { products: ExcelSheet }
+type DirectedInputs = { products: ExcelSheet; sites?: unknown }
 type DirectedOutputs = { results: ExcelSheet }
 
 const VAT = 0.2
@@ -58,12 +58,14 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     "la réf sur ses listes mais l'expose en recherche). Appariement par preuve EXACTE, zéro faux positif.",
   icon: ScanSearch,
   connectors: ['jina'],
-  inputs: [{ name: 'products', type: 'sheet' }],
+  // Port `sites` (facultatif) : brancher un node « Sites sources » remplace la textarea
+  // ci-dessous ET l'identifiant de suivi (même liste que Moisson/Comparer, garanti).
+  inputs: [{ name: 'products', type: 'sheet' }, { name: 'sites', type: 'sites' }],
   outputs: [{ name: 'results', type: 'sheet' }],
   configSchema: [
     {
-      name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)', required: true,
-      help: 'Domaine par ligne. Ex : « jardimax.com ». Le moteur de recherche PrestaShop est interrogé.',
+      name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)',
+      help: 'Domaine par ligne. Ex : « jardimax.com ». Le moteur de recherche PrestaShop est interrogé. IGNORÉ si un node « Sites sources » est branché sur le port sites.',
     },
     { name: 'genericSites', kind: 'textarea', label: 'Sites GÉNÉRIQUES (marketplaces, un par ligne)', help: 'Amazon, Cdiscount, Kramp… : recherche web par réf + Firecrawl (rendu JS + anti-bot). Nécessite une clé Firecrawl. Coût par réf — commence par 1 site pour valider.' },
     { name: 'refColumn', kind: 'text', label: 'Colonne Référence', help: 'Ex : ARTICLECODE. Cherchée en premier.' },
@@ -81,14 +83,21 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
   run: async (ctx, config, inputs) => {
     const uid = useAuthStore.getState().user?.uid
     if (!uid) throw new Error('Utilisateur non connecté.')
-    // Même identité de suivi que « Comparer catalogue » du workflow → les prix trouvés
-    // alimentent le même index et remontent dans le dashboard « Comparatif ».
-    const watchId = stableId((config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
+    // Sites + identité de suivi : le port `sites` (node « Sites sources ») GAGNE ; sinon
+    // repli config locale. Même suivi que « Comparer catalogue » du workflow → les prix
+    // trouvés alimentent le même index et remontent dans le dashboard « Comparatif ».
+    const resolved = resolveSitesInput(inputs.sites, {
+      sitesText: config.sites, watchIdRaw: config.watchId, workflowId: ctx.workflowId,
+    })
+    const watchId = resolved.watchId
+    if (resolved.fromPort) ctx.log('info', `Liste reçue du node « Sites sources » : ${resolved.sites.length} site(s) actif(s).`)
     const sheet = inputs.products
     if (!sheet?.rows?.length) throw new Error('Recherche dirigée : aucune donnée produit en entrée.')
     const bare = (d: string) => d.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/^www\./i, '')
+    // La textarea « Sites GÉNÉRIQUES » reste le MARQUEUR marketplace : les domaines
+    // listés ici (qu'ils viennent du port ou de la textarea sites) passent par Firecrawl.
     const genericDomains = new Set((config.genericSites ?? '').split(/[\n,]/).map((d) => bare(d.trim())).filter(Boolean))
-    const sites: DirectedSite[] = parseSitesConfig(config.sites).map((s) => ({ siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)) }))
+    const sites: DirectedSite[] = resolved.sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)) }))
     if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { results: resultsSheet([]) } }
 
     const refCol = config.refColumn.trim()

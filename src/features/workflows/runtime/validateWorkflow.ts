@@ -26,6 +26,8 @@ const SEMANTIC_CHECKS: Record<string, (config: Record<string, unknown>, wired: (
     wired('sites') || !isEmpty(c.sites) ? null : 'Aucun site : renseigne « Sites concurrents » ou branche un node « Sites sources ».',
   'compare-catalog': (c, wired) =>
     wired('sites') || !isEmpty(c.sites) ? null : 'Aucun site : renseigne « Sites concurrents » ou branche un node « Sites sources ».',
+  'directed-search': (c, wired) =>
+    wired('sites') || !isEmpty(c.sites) ? null : 'Aucun site : renseigne « Sites concurrents » ou branche un node « Sites sources ».',
   'source-sites': (c) =>
     Array.isArray(c.sites) && (c.sites as { enabled?: boolean }[]).some((r) => r?.enabled)
       ? null : 'Aucun site actif dans le gestionnaire — ajoute ou active au moins un site.',
