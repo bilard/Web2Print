@@ -11,8 +11,8 @@
 // les modules purs dupliqués sous functions/src/priceWatch/catalog/.
 import { registerServerNode } from '../registry'
 import { fetchHtml } from '../../scraper/fetchHtml'
-import { parseSitesConfig, stableId } from '../../priceWatch/helpers'
-import { DEFAULT_WATCH_ID } from '../../priceWatch/paths'
+import { stableId } from '../../priceWatch/helpers'
+import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '../../priceWatch/catalog/runHarvest'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages } from '../../priceWatch/catalog/store'
 import { harvestProgress } from '../../priceWatch/catalog/harvest'
@@ -37,11 +37,13 @@ function statusSheet(rows: Record<string, unknown>[]) {
 
 registerServerNode({
   type: 'harvest-competitor',
-  run: async (ctx, config) => {
-    // Identité du suivi : l'id du workflow par défaut (partagé avec « Comparer catalogue »
-    // du même workflow, sans saisie). Override manuel possible pour partager entre workflows.
-    const watchId = stableId(String(config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
-    const sites = parseSitesConfig(String(config.sites ?? ''))
+  run: async (ctx, config, inputs) => {
+    // Sites + watchId : le port `sites` (node « Sites sources ») GAGNE, sinon config locale.
+    const resolved = resolveSitesInput(inputs.sites, {
+      sitesText: String(config.sites ?? ''), watchIdRaw: String(config.watchId ?? ''), workflowId: ctx.workflowId,
+    })
+    const watchId = resolved.watchId
+    const sites = resolved.sites
     if (sites.length === 0) {
       ctx.log('warn', 'Aucun site concurrent configuré.')
       return { status: statusSheet([]) }

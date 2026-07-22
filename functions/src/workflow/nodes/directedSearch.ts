@@ -9,8 +9,8 @@
 // reportConnector/reportCount. Logique partagée via les modules purs dupliqués.
 import { registerServerNode } from '../registry'
 import { fetchHtml } from '../../scraper/fetchHtml'
-import { parseSitesConfig, stableId } from '../../priceWatch/helpers'
-import { DEFAULT_WATCH_ID } from '../../priceWatch/paths'
+import { stableId } from '../../priceWatch/helpers'
+import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
 import { directedPass, type DirectedSourceProduct, type DirectedSite, type DirectedHit } from '../../priceWatch/catalog/searchDirected'
 import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
@@ -46,14 +46,18 @@ interface SheetLike { rows?: Record<string, unknown>[] }
 registerServerNode({
   type: 'directed-search',
   run: async (ctx, config, inputs) => {
-    const watchId = stableId(String(config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
+    // Sites + watchId : le port `sites` (node « Sites sources ») GAGNE, sinon config locale.
+    const resolved = resolveSitesInput(inputs.sites, {
+      sitesText: String(config.sites ?? ''), watchIdRaw: String(config.watchId ?? ''), workflowId: ctx.workflowId,
+    })
+    const watchId = resolved.watchId
     const sheet = (inputs.products ?? {}) as SheetLike
     if (!sheet.rows || sheet.rows.length === 0) {
       throw new Error('Recherche dirigée : aucune donnée produit en entrée.')
     }
     // Sites « génériques » (marketplaces non-PrestaShop) : recherche web + Firecrawl.
     const genericDomains = new Set(String(config.genericSites ?? '').split(/[\n,]/).map((d) => bare(d.trim())).filter(Boolean))
-    const sites: DirectedSite[] = parseSitesConfig(String(config.sites ?? '')).map((s) => ({
+    const sites: DirectedSite[] = resolved.sites.map((s) => ({
       siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)),
     }))
     if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { results: resultsSheet([]) } }

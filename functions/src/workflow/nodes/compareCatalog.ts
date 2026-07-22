@@ -8,8 +8,8 @@
 // du run (cf. audit scalabilité). Logique métier partagée via les modules purs
 // dupliqués sous functions/src/priceWatch/catalog/.
 import { registerServerNode } from '../registry'
-import { parseSitesConfig, parsePrice, stableId } from '../../priceWatch/helpers'
-import { DEFAULT_WATCH_ID } from '../../priceWatch/paths'
+import { parsePrice, stableId } from '../../priceWatch/helpers'
+import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
 import { buildReport } from '../../priceWatch/catalog/report'
 import { saveCatalogReport } from '../../priceWatch/reportStore'
@@ -55,8 +55,12 @@ registerServerNode({
   run: async (ctx, config, inputs) => {
     // Identité du suivi : l'id du workflow par défaut (même suivi que « Moisson
     // concurrents » du workflow, sans saisie). Override manuel possible.
-    const watchId = stableId(String(config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
-    const sites = parseSitesConfig(String(config.sites ?? ''))
+    // Sites + watchId : le port `sites` (node « Sites sources ») GAGNE, sinon config locale.
+    const resolved = resolveSitesInput(inputs.sites, {
+      sitesText: String(config.sites ?? ''), watchIdRaw: String(config.watchId ?? ''), workflowId: ctx.workflowId,
+    })
+    const watchId = resolved.watchId
+    const sites = resolved.sites
     const products = (inputs.products ?? {}) as SheetLike
     const rawRows = products.rows ?? []
 

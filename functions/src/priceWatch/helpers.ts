@@ -5,10 +5,16 @@
 // wire-compatible avec le client (mêmes ids stables, même parsing de prix).
 
 /** Site concurrent parsé depuis la config « un domaine par ligne ». */
+export type SiteEngine = 'auto' | 'jina' | 'firecrawl' | 'brightdata'
+
 export interface CompetitorSite {
   id: string
   domain: string
   fields: string[]
+  /** Moteur forcé (node « Sites sources »). Absent = 'auto'. */
+  engine?: SiteEngine
+  /** Site à prix connectés (identifiants en Firestore siteCredentials). */
+  auth?: boolean
 }
 
 /** Identifiant Firestore stable et déterministe (clé relationnelle nettoyée). */
