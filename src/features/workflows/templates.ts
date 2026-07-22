@@ -138,37 +138,9 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     ],
     edges: [edge('n1', 'sheet', 'n2', 'sheet'), edge('n2', 'changes', 'n3', 'data')],
   },
-  {
-    id: 'price-watch-matrix',
-    name: 'Veille tarifaire (matrice concurrents)',
-    description:
-      'Prend TES produits (page liste ou catalogue) et les compare chez plusieurs concurrents : ' +
-      'appariement SKU/EAN puis nom, scrape du prix, et remplit le tableau de bord « Veille tarifaire » (suivi veille-1). ' +
-      'Alerte Telegram seulement si un concurrent est moins cher ou a bougé.',
-    emoji: '📊',
-    nodes: [
-      node('n0', 'cron', 80, 40, { enabled: false, every: 1, unit: 'day', atTime: '08:00', weekday: 1 }),
-      node('n1', 'list-products', 80, 200, { urls: '', family: '', maxProducts: 40 }),
-      node('n2', 'price-watch-track', 460, 200, {
-        watchId: 'veille-1',
-        thresholdPct: 0,
-        sites: '',
-        skuColumn: 'sku',
-        eanColumn: 'ean',
-        nameColumn: 'name',
-        brandColumn: 'brand',
-        priceColumn: 'price',
-      }),
-      node('n3', 'send-telegram', 840, 200, {
-        botToken: '',
-        chatId: '',
-        text: '📊 Veille prix — {{message}}',
-        parseMode: 'none',
-        iterate: true,
-      }),
-    ],
-    edges: [edge('n1', 'sheet', 'n2', 'products'), edge('n2', 'changes', 'n3', 'data')],
-  },
+  // Le template « Veille tarifaire (matrice concurrents) » (node price-watch-track,
+  // appariement LLM) a été retiré 2026-07-22 : supplanté par « Veille tarifaire —
+  // concurrents motoculture » (Sites sources → Moisson/Comparer, preuve exacte).
   {
     id: 'price-compare-sites',
     name: 'Comparer mes prix aux concurrents → Excel',

@@ -32,6 +32,18 @@ export function duration(ms: number | null | undefined): string {
   return `${h} h ${String(m % 60).padStart(2, '0')}`
 }
 
+/** Ancienneté compacte pour les espaces étroits : « 45 s », « 3 min », « 2 h », « 4 j ». */
+export function agoShort(ts: number | null | undefined, now = Date.now()): string {
+  if (!ts) return '—'
+  const s = Math.max(0, Math.round((now - ts) / 1000))
+  if (s < 60) return `${s} s`
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m} min`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h} h`
+  return `${Math.floor(h / 24)} j`
+}
+
 /** Ancienneté relative : « il y a 3 min », « il y a 2 h », « il y a 4 j ». '—' si absente. */
 export function ago(ts: number | null | undefined, now = Date.now()): string {
   if (!ts) return '—'

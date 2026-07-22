@@ -45,6 +45,11 @@ function alertsToSheet(alerts: PriceWatchAlert[]): ExcelSheet {
 
 const priceWatchTrackNode: NodeSpec<TrackConfig, TrackInputs, { changes?: ExcelSheet; all: ExcelSheet }> = {
   type: 'price-watch-track',
+  // DÉPRÉCIÉ (2026-07-22) : veille v1 à appariement LLM, supplantée par le module
+  // catalogue (Sites sources → Moisson/Comparer/Recherche dirigée, preuve exacte).
+  // Masqué de la palette ; reste exécutable pour les workflows existants. Le flux
+  // d'alertes (port `changes` → Telegram) sera réintroduit côté Comparer.
+  hidden: true,
   category: 'logic',
   label: 'Veille tarifaire',
   description:

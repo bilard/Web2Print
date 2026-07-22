@@ -3,7 +3,7 @@
 // concurrents avec stats persistées LIVE (useCompetitorMeta + useCatalogReport,
 // onSnapshot — indépendant de tout run). Clé de lecture = watchId dérivé comme au
 // runtime (config sinon id du workflow courant).
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Plus, ClipboardPaste } from 'lucide-react'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { useCompetitorMeta, useCatalogReport } from '@/features/priceWatch/useCatalogReport'
@@ -13,6 +13,10 @@ import {
 } from '@/features/priceWatch/sourceSites'
 import { SourceSitesRowItem, type SiteRowStats } from './sourceSitesRow'
 import type { SourceSitesNodeConfig } from './sourceSitesNode'
+
+/** Heartbeat de moisson plus récent que cette fenêtre = « scraping en cours »
+ *  (la moisson écrit la méta toutes les ~15 pages pendant la passe). */
+const LIVE_WINDOW_MS = 2 * 60_000
 
 export function SourceSitesConfig({ config, onChange }: {
   config: SourceSitesNodeConfig
@@ -24,6 +28,14 @@ export function SourceSitesConfig({ config, onChange }: {
   const watchId = deriveWatchId(config.watchId ?? '', workflowId)
   const metaMap = useCompetitorMeta(watchId)
   const report = useCatalogReport(watchId)
+
+  // Horloge partagée (tick 30 s) : rafraîchit « scrape il y a X » et l'état live
+  // même sans écriture Firestore (le heartbeat vieillit → le surlignage s'éteint).
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000)
+    return () => clearInterval(t)
+  }, [])
 
   const [draft, setDraft] = useState('')
   const [importing, setImporting] = useState(false)
@@ -39,8 +51,11 @@ export function SourceSitesConfig({ config, onChange }: {
       matched: stat?.matched,
       updatedAt: meta?.updatedAt,
       lastEngine: meta?.lastEngine,
+      harvestProgress: meta?.harvestProgress,
+      harvestSweeps: meta?.harvestSweeps,
     }
   }
+  const isLive = (s: SiteRowStats) => s.updatedAt != null && now - s.updatedAt < LIVE_WINDOW_MS
 
   const patchRow = (i: number, patch: Partial<SourceSiteRow>) =>
     onChange({ ...config, sites: rows.map((r, j) => (j === i ? { ...r, ...patch } : r)) })
@@ -60,11 +75,18 @@ export function SourceSitesConfig({ config, onChange }: {
   }
 
   const active = rows.filter((r) => r.enabled).length
+  const liveCount = rows.filter((r) => isLive(statsFor(r.domain))).length
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-wider text-white/30">
-          Sites concurrents {rows.length ? `· ${active}/${rows.length} actifs` : ''}
+        <p className="text-[10px] uppercase tracking-wider text-white/30 flex items-center gap-2">
+          <span>Sites concurrents {rows.length ? `· ${active}/${rows.length} actifs` : ''}</span>
+          {liveCount > 0 && (
+            <span className="normal-case tracking-normal flex items-center gap-1 text-emerald-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
+              {liveCount} en cours
+            </span>
+          )}
         </p>
         <button
           onClick={() => setImporting((v) => !v)}
@@ -119,18 +141,23 @@ export function SourceSitesConfig({ config, onChange }: {
         </p>
       ) : (
         <div className="flex flex-col gap-1">
-          {rows.map((r, i) => (
-            <SourceSitesRowItem
-              key={stableId(normalizeDomain(r.domain)) + i}
-              domain={r.domain}
-              enabled={r.enabled}
-              engine={r.engine ?? 'auto'}
-              stats={statsFor(r.domain)}
-              onToggle={(enabled) => patchRow(i, { enabled })}
-              onEngine={(engine) => patchRow(i, engine === 'auto' ? { engine: undefined } : { engine })}
-              onRemove={() => onChange({ ...config, sites: rows.filter((_, j) => j !== i) })}
-            />
-          ))}
+          {rows.map((r, i) => {
+            const stats = statsFor(r.domain)
+            return (
+              <SourceSitesRowItem
+                key={stableId(normalizeDomain(r.domain)) + i}
+                domain={r.domain}
+                enabled={r.enabled}
+                engine={r.engine ?? 'auto'}
+                stats={stats}
+                live={isLive(stats)}
+                now={now}
+                onToggle={(enabled) => patchRow(i, { enabled })}
+                onEngine={(engine) => patchRow(i, engine === 'auto' ? { engine: undefined } : { engine })}
+                onRemove={() => onChange({ ...config, sites: rows.filter((_, j) => j !== i) })}
+              />
+            )
+          })}
         </div>
       )}
 
