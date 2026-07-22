@@ -135,11 +135,18 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       if (site.auth) ctx.log('info', `${site.domain} : accès authentifié (login cookie).`)
       else if (site.engine) ctx.log('info', `${site.domain} : moteur forcé « ${site.engine} ».`)
       const t0 = Date.now()
+      // % de prix de la passe : accumulé au fil des pages sauvées (aucune lecture en plus).
+      let passProducts = 0
+      let passWithPrice = 0
       const deps: HarvestDeps = {
         fetchHtml: fetcher.fetchHtml,
         loadCursor: async () => prevMeta?.cursor ?? null,
         saveCursor: (siteId, cursor) => saveCompetitorMeta(uid, watchId, siteId, { domain: site.domain, cursor }),
-        savePage: (siteId, pageId, url, page, products) => savePage(uid, watchId, siteId, pageId, url, page, products),
+        savePage: (siteId, pageId, url, page, products) => {
+          passProducts += products.length
+          passWithPrice += products.filter((p) => p.price != null).length
+          return savePage(uid, watchId, siteId, pageId, url, page, products)
+        },
         // Progression live (toutes les 15 pages) : la jauge Balayage avance et le heartbeat
         // reste vert pendant le run, sans attendre la fin du site.
         onProgress: (_p, productsIndexed, cursor) => saveCompetitorMeta(uid, watchId, cfg.siteId, {
@@ -162,6 +169,9 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
         cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,
         harvestProgress: res.sweepComplete ? 1 : harvestProgress(res.cursor),
         harvestSweeps: res.cursor.sweeps,
+        // Chip « prix % » live (parité moisson manuelle ▶) : % sur la passe courante ;
+        // passe sans produit → on garde l'ancien % (pas de 0 trompeur).
+        ...(passProducts > 0 ? { pctPrice: Math.round((passWithPrice / passProducts) * 100) } : {}),
         // Télémétrie moteur : quel palier a réellement servi (affiché dans « Sites sources »).
         ...(fetcher.lastEngine() ? { lastEngine: fetcher.lastEngine() } : {}),
         // Verdict de la passe (✓/⚠/✗ dans « Sites sources ») : pages lues + produits.

@@ -211,16 +211,6 @@ export function SourceSitesConfig({ config, onChange }: {
           </div>
           <div className="shrink-0 flex items-center gap-2">
             {rows.length > 1 && (
-              <button
-                onClick={toggleAll}
-                title={allEnabled ? 'Désélectionner tous les sites' : 'Sélectionner tous les sites'}
-                className="flex items-center gap-1 text-[10px] whitespace-nowrap text-white/40 hover:text-indigo-400 transition-colors"
-              >
-                {allEnabled ? <Square className="w-3 h-3" /> : <CheckSquare className="w-3 h-3" />}
-                {allEnabled ? 'Aucun' : 'Tous'}
-              </button>
-            )}
-            {rows.length > 1 && (
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortMode)}
@@ -250,6 +240,17 @@ export function SourceSitesConfig({ config, onChange }: {
             )}
           </div>
         </div>
+        {/* Sélection globale — pill visible, pleine ligne (pas dans l'en-tête surchargé). */}
+        {rows.length > 1 && (
+          <button
+            onClick={toggleAll}
+            title={allEnabled ? 'Désactiver tous les sites de la moisson' : 'Activer tous les sites de la moisson'}
+            className="self-start inline-flex items-center gap-1.5 text-[11px] font-medium border border-indigo-500/40 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 rounded-md px-2 py-1 transition-colors"
+          >
+            {allEnabled ? <Square className="w-3.5 h-3.5" /> : <CheckSquare className="w-3.5 h-3.5" />}
+            {allEnabled ? 'Tout désélectionner' : `Tout sélectionner (${rows.length})`}
+          </button>
+        )}
         {/* Recherche ÉPINGLÉE (autocomplétion) — filtre la liste au fil de la frappe. */}
         {rows.length > 1 && (
           <div className="flex items-center gap-1.5 bg-well border border-white/10 rounded-lg px-2 py-1 focus-within:border-indigo-500/50">

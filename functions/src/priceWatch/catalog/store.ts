@@ -32,6 +32,13 @@ export interface CompetitorMeta {
   harvestProgress?: number
   harvestSweeps?: number
   updatedAt?: number
+  /** % de produits avec prix sur la dernière passe (chip « prix » du node Sites sources). */
+  pctPrice?: number
+  /** Moteur de la dernière passe ('cloudFunction' = fetch serveur) + bilan (✓/⚠/✗). */
+  lastEngine?: string
+  lastPassPages?: number
+  lastPassProducts?: number
+  lastPassAt?: number
 }
 
 /** Lit la méta + le curseur d'un concurrent. null si jamais moissonné. */

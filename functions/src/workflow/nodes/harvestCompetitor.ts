@@ -92,6 +92,9 @@ registerServerNode({
         continue
       }
       const t0 = Date.now()
+      // % de prix de la passe : accumulé au fil des pages sauvées (aucune lecture en plus).
+      let passProducts = 0
+      let passWithPrice = 0
       const deps: HarvestDeps = {
         // Fetch DIRECT : sur le runtime CF c'est la même IP que fetchPageHtml (validé live).
         fetchHtml: async (url) => {
@@ -99,7 +102,11 @@ registerServerNode({
         },
         loadCursor: async () => prevMeta?.cursor ?? null,
         saveCursor: (siteId, cursor) => saveCompetitorMeta(ctx.uid, watchId, siteId, { domain: site.domain, cursor }),
-        savePage: (siteId, pageId, url, page, products) => savePage(ctx.uid, watchId, siteId, pageId, url, page, products),
+        savePage: (siteId, pageId, url, page, products) => {
+          passProducts += products.length
+          passWithPrice += products.filter((p) => p.price != null).length
+          return savePage(ctx.uid, watchId, siteId, pageId, url, page, products)
+        },
         // Progression live (toutes les 15 pages) : jauge Balayage + heartbeat avancent
         // pendant le run cron, sans attendre la fin du site.
         onProgress: (_p, productsIndexed, cursor) => saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
@@ -123,6 +130,13 @@ registerServerNode({
         cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,
         harvestProgress: res.sweepComplete ? 1 : harvestProgress(res.cursor),
         harvestSweeps: res.cursor.sweeps,
+        // Chip « prix % » live (parité moisson manuelle ▶) : % sur la passe courante ;
+        // passe sans produit → on garde l'ancien % (pas de 0 trompeur).
+        ...(passProducts > 0 ? { pctPrice: Math.round((passWithPrice / passProducts) * 100) } : {}),
+        lastEngine: 'cloudFunction',
+        lastPassPages: res.pagesFetched,
+        lastPassProducts: res.productsIndexed,
+        lastPassAt: Date.now(),
       })
       rows.push({
         site: site.domain,
