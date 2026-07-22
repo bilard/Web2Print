@@ -50,10 +50,10 @@ const edge = (source: string, sourceHandle: string, target: string, targetHandle
  *  pieces-tracteur-tondeuse). Hors périmètre : marketplaces (Amazon, ManoMano,
  *  Cdiscount, Kramp) et sites anti-bot (autoportee-discount). */
 const MOTO_COMPETITORS = [
-  'pro-motoculture.com',
-  'webmotoculture.com',
-  'emc-motoculture.com',
-].join('\n')
+  { domain: 'pro-motoculture.com', enabled: true },
+  { domain: 'webmotoculture.com', enabled: true },
+  { domain: 'emc-motoculture.com', enabled: true },
+]
 
 export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
@@ -247,17 +247,20 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     name: 'Veille tarifaire — concurrents motoculture',
     description:
       'Relève les prix/stock de tes produits chez les concurrents PrestaShop à partir de ta ' +
-      'référence article et de ton EAN (sans URL). ÉTAPE 1 : lance « Moisson concurrents » ' +
-      '(une ou plusieurs fois) pour remplir l’index. ÉTAPE 2 : sélectionne ton Excel dans ' +
-      '« Upload », puis lance la chaîne Upload → Comparer → Export. Les deux nodes se ' +
-      'retrouvent par le même « Identifiant de suivi ». Marketplaces (Amazon, ManoMano, ' +
-      'Cdiscount, Kramp) et sites protégés (autoportee-discount) non couverts par ce moissonneur.',
+      'référence article et de ton EAN (sans URL). La liste des sites vit dans « Sites ' +
+      'sources » (activation par site, moteur, stats) et alimente Moisson ET Comparer. ' +
+      'ÉTAPE 1 : lance « Moisson concurrents » (une ou plusieurs fois) pour remplir ' +
+      'l’index. ÉTAPE 2 : sélectionne ton Excel dans « Upload », puis lance la chaîne ' +
+      'Upload → Comparer → Export. Marketplaces (Amazon, ManoMano, Cdiscount, Kramp) et ' +
+      'sites protégés (autoportee-discount) non couverts par ce moissonneur.',
     emoji: '💶',
     nodes: [
+      // Source unique des sites : émise vers Moisson ET Comparer (même watchId garanti).
+      node('sites', 'source-sites', 60, 40, { watchId: '', sites: MOTO_COMPETITORS }),
       // Étape 1 — remplit l'index concurrent (indépendant, à lancer d'abord).
-      node('harvest', 'harvest-competitor', 60, 40, {
+      node('harvest', 'harvest-competitor', 460, 40, {
         watchId: '',
-        sites: MOTO_COMPETITORS,
+        sites: '',
         families: 'COURROIES, FILTRATION, COUPE',
         pageBudget: 90,
       }),
@@ -265,7 +268,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       node('upload', 'upload', 60, 320, { fileKey: '', fileName: '', fileSize: 0, mode: 'file' }),
       node('compare', 'compare-catalog', 460, 320, {
         watchId: '',
-        sites: MOTO_COMPETITORS,
+        sites: '',
         refColumn: 'CODE_ARTICLE', ref2Column: '', eanColumn: 'EAN',
         nameColumn: 'Name', familyColumn: 'Famille', priceColumn: 'Price BRUT',
         descriptionColumn: 'Description', vatRate: 20,
@@ -273,6 +276,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       node('export', 'export-excel', 860, 320, { columns: '' }),
     ],
     edges: [
+      edge('sites', 'sites', 'harvest', 'sites'),
+      edge('sites', 'sites', 'compare', 'sites'),
       // L'edge Moisson → Comparer ne transporte pas de donnée : il force la moisson à
       // tourner AVANT la comparaison dans un même lancement (sinon carnet vide → 0 ligne).
       edge('harvest', 'status', 'compare', 'harvest'),
