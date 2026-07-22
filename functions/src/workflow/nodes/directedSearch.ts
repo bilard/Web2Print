@@ -12,11 +12,14 @@ import { fetchHtml } from '../../scraper/fetchHtml'
 import { parseSitesConfig, stableId } from '../../priceWatch/helpers'
 import { DEFAULT_WATCH_ID } from '../../priceWatch/paths'
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
-import { directedPass, type DirectedSourceProduct, type DirectedSite } from '../../priceWatch/catalog/searchDirected'
+import { directedPass, type DirectedSourceProduct, type DirectedSite, type DirectedHit } from '../../priceWatch/catalog/searchDirected'
 import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
 import { jinaSearch } from '../jina'
 import { firecrawlScrapeProduct } from '../../scraper/firecrawlProduct'
 import { getUserApiKey } from '../apiKeys'
+import { getSiteCredentials } from '../../scraper/siteCredentials'
+import { krampBatchScrape } from '../../scraper/krampFirecrawl'
+import { krampAuthPass } from '../../priceWatch/catalog/krampAuthPass'
 
 const VAT = 0.2
 
@@ -98,12 +101,40 @@ registerServerNode({
     const budget = Math.max(1, Number(config.productBudget) || 20)
     const CURSOR_META = 'directed_cursor' // pas de __…__ : Firestore réserve ces ids
     const startCursor = (await loadCompetitorMeta(ctx.uid, watchId, CURSOR_META))?.productCount ?? 0
-    const pass = await directedPass(products, sites, startCursor % Math.max(1, products.length), budget, {
+
+    // Sites AUTHENTIFIÉS (identifiants dans siteCredentials) : traités par krampAuthPass
+    // (login Firecrawl), PAS par la passe générique. Les autres sites suivent le flux existant.
+    const authByDomain = new Map<string, Awaited<ReturnType<typeof getSiteCredentials>>>()
+    for (const s of sites) {
+      const cred = await getSiteCredentials(ctx.uid, bare(s.domain))
+      if (cred) authByDomain.set(s.siteId, cred)
+    }
+    const regularSites = sites.filter((s) => !authByDomain.has(s.siteId))
+
+    // Tranche de produits du tick (identique pour la passe générique et la passe auth).
+    const startIdx = startCursor % Math.max(1, products.length)
+    const slice = products.slice(startIdx, startIdx + budget)
+
+    const pass = await directedPass(products, regularSites, startIdx, budget, {
       fetchHtml: async (url) => { try { return await fetchHtml(url, 20000) } catch { return null } },
       ...(hasGeneric && firecrawlKey ? { searchWeb, extractProduct } : {}),
       signal: ctx.signal,
       log: (m) => ctx.log('info', m),
     })
+
+    // Passe AUTHENTIFIÉE (kramp…) : un site auth = un lot krampAuthPass sur la tranche.
+    for (const [siteId, cred] of authByDomain) {
+      if (ctx.signal?.aborted) break
+      const key = firecrawlKey || (await getUserApiKey(ctx.uid, 'firecrawl'))
+      if (!key) { ctx.log('warn', `Site authentifié ${cred!.host} mais aucune clé Firecrawl — ignoré.`); continue }
+      const authHits = await krampAuthPass(slice, {
+        scrape: (urls) => krampBatchScrape(urls, cred!, key, 200_000),
+        signal: ctx.signal,
+        log: (m) => ctx.log('info', m),
+      })
+      for (const h of authHits) pass.results.push({ productId: h.productId, siteId, hit: { listing: h.listing, evidence: h.evidence as DirectedHit['evidence'], query: h.listing.ref ?? '' } })
+      ctx.log('info', `Auth ${cred!.host} : ${authHits.length} prix apparié(s) sur ${slice.length} produit(s).`)
+    }
 
     for (const res of pass.results) {
       const l = res.hit.listing
