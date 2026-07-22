@@ -85,8 +85,12 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
           <b className="text-emerald-300">En cours</b>
           {sched.lastRunAt && <span className="text-indigo-200/80">· démarré {hhmm(sched.lastRunAt)} (il y a {formatCountdown(now - sched.lastRunAt)})</span>}
           {/* Pendant un run, nextRunAt = échéance du VERROU : l'heure à laquelle le
-              scanner reprendra la main quoi qu'il arrive (fin, pause ou crash). */}
-          <span className="text-indigo-200/70">· reprise auto ≤ {hhmm(sched.nextRunAt)}</span>
+              scanner reprendra la main quoi qu'il arrive (fin, pause ou crash).
+              Décompte LIVE (tick 1 s du panneau) pour voir l'échéance approcher. */}
+          <span className="text-indigo-200/70">
+            · reprise auto ≤ {hhmm(sched.nextRunAt)}{' '}
+            {overdue ? '(imminente)' : <>(dans <span className="tabular-nums">{formatCountdown(sched.nextRunAt - now)}</span>)</>}
+          </span>
         </span>
       ) : sched.cycleWaiting ? (
         <span title="Cycle de moisson terminé à 100 % — relance à l'échéance calendaire">
