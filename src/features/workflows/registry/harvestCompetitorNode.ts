@@ -8,7 +8,7 @@ import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet } from '@/features/excel/types'
 import { useAuthStore } from '@/stores/auth.store'
-import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
+import { buildSiteFetcher } from '@/features/priceWatch/catalog/siteFetch'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
 import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '@/features/priceWatch/catalog/runHarvest'
@@ -95,12 +95,15 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     const rows: Record<string, unknown>[] = []
     for (const site of sites) {
       if (ctx.signal.aborted) break
-      ctx.reportConnector?.('jina')
+      // Moteur par site : forcé via « Sites sources » (jina | brightdata) sinon cascade auto.
+      const fetcher = buildSiteFetcher(site.engine)
+      ctx.reportConnector?.(fetcher.connectorId)
+      if (site.engine) ctx.log('info', `${site.domain} : moteur forcé « ${site.engine} ».`)
       const cfg: CompetitorConfig = { siteId: stableId(site.domain), domain: site.domain, families }
       const prevMeta = await loadCompetitorMeta(uid, watchId, cfg.siteId)
       const t0 = Date.now()
       const deps: HarvestDeps = {
-        fetchHtml: (url) => fetchSourceHtml(url),
+        fetchHtml: fetcher.fetchHtml,
         loadCursor: async () => prevMeta?.cursor ?? null,
         saveCursor: (siteId, cursor) => saveCompetitorMeta(uid, watchId, siteId, { domain: site.domain, cursor }),
         savePage: (siteId, pageId, url, page, products) => savePage(uid, watchId, siteId, pageId, url, page, products),
@@ -126,6 +129,8 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
         cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,
         harvestProgress: res.sweepComplete ? 1 : harvestProgress(res.cursor),
         harvestSweeps: res.cursor.sweeps,
+        // Télémétrie moteur : quel palier a réellement servi (affiché dans « Sites sources »).
+        ...(fetcher.lastEngine() ? { lastEngine: fetcher.lastEngine() } : {}),
       })
       ctx.reportCount?.(rows.reduce((s, r) => s + Number(r.productsIndexed ?? 0), 0) + res.productsIndexed)
       rows.push({

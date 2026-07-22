@@ -38,6 +38,7 @@ export function SourceSitesConfig({ config, onChange }: {
       pctPrice: stat?.audit.pctPrice,
       matched: stat?.matched,
       updatedAt: meta?.updatedAt,
+      lastEngine: meta?.lastEngine,
     }
   }
 

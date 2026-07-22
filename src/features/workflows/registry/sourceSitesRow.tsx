@@ -10,6 +10,13 @@ export interface SiteRowStats {
   pctPrice?: number
   matched?: number
   updatedAt?: number
+  /** Moteur ayant réellement fourni le HTML à la dernière passe (télémétrie). */
+  lastEngine?: string
+}
+
+/** Libellés courts du moteur réellement utilisé (CompetitorMeta.lastEngine). */
+const ENGINE_LABELS: Record<string, string> = {
+  cloudFunction: 'CF', jina: 'Jina', proxy: 'Proxy', brightdata: 'BD',
 }
 
 const ENGINE_OPTIONS = [
@@ -76,6 +83,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, stats, onToggle, o
             {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn')}
             {stats.matched != null && chip('appariés', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute')}
             {chip('scrape', ago(stats.updatedAt as number), 'mute')}
+            {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
           </>
         ) : (
           <span className="text-white/20 italic">jamais scrapé</span>

@@ -23,6 +23,8 @@ export interface HarvestMeta {
   harvestSweeps?: number
   cumulHarvestMs?: number
   lastHarvestMs?: number
+  /** Moteur ayant fourni le HTML à la dernière passe (cf. CompetitorMeta.lastEngine). */
+  lastEngine?: string
   updatedAt?: number
 }
 

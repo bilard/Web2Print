@@ -42,6 +42,9 @@ export interface CompetitorMeta {
   harvestProgress?: number
   /** Nombre de balayages COMPLETS du catalogue (cycles à 100 %) déjà effectués. */
   harvestSweeps?: number
+  /** Moteur ayant réellement fourni le HTML à la dernière passe
+   *  ('cloudFunction' | 'jina' | 'proxy' | 'brightdata') — affiché dans « Sites sources ». */
+  lastEngine?: string
   updatedAt?: number
 }
 
