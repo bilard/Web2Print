@@ -112,12 +112,18 @@ export function SourceSitesConfig({ config, onChange }: {
   } else if (sort === 'products') {
     displayRows.sort((a, b) => (b.stats.products ?? -1) - (a.stats.products ?? -1) || a.i - b.i)
   }
-  // Compteur cliquable de l'en-tête : bascule le filtre sur ce statut.
-  const filterPill = (key: SiteStatus, count: number, cls: string, label: string) => (
+  // Badge de statut cliquable de l'en-tête : bordé, teinté, bascule le filtre sur ce statut.
+  const TONE_PILL: Record<'ok' | 'warn' | 'err' | 'mute', string> = {
+    ok: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30',
+    warn: 'text-amber-300 bg-amber-500/10 border-amber-500/30',
+    err: 'text-rose-300 bg-rose-500/10 border-rose-500/30',
+    mute: 'text-white/50 bg-white/[0.05] border-white/15',
+  }
+  const filterPill = (key: SiteStatus, count: number, tone: 'ok' | 'warn' | 'err' | 'mute', label: string) => (
     <button
       onClick={() => setStatusFilter((f) => (f === key ? null : key))}
       title={statusFilter === key ? 'Afficher tous les sites' : `N'afficher que : ${label}`}
-      className={`rounded px-1 -mx-0.5 transition-colors ${cls} ${statusFilter === key ? 'ring-1 ring-current' : 'hover:bg-white/[0.06]'}`}
+      className={`inline-flex items-center gap-1 text-[10px] font-medium tabular-nums border rounded-md px-2 py-0.5 whitespace-nowrap transition ${TONE_PILL[tone]} ${statusFilter === key ? 'ring-1 ring-current' : 'opacity-90 hover:opacity-100'}`}
     >
       {count} {label}
     </button>
@@ -128,9 +134,16 @@ export function SourceSitesConfig({ config, onChange }: {
           ligne 1 = titre + import ; ligne 2 = activité (en cours | bilan dernier run). */}
       <div className="sticky top-0 z-10 bg-surface-2 -mt-1 pt-1 pb-1.5 border-b border-white/5 flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[10px] uppercase tracking-wider text-white/30 whitespace-nowrap shrink-0">
-            {rows.length ? `${active}/${rows.length} actifs` : 'Sites'}
-          </p>
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-wider text-white/30 whitespace-nowrap">
+              {rows.length ? `${active}/${rows.length} actifs` : 'Sites'}
+            </p>
+            {totalProducts > 0 && (
+              <p className="text-[10px] text-white/30 tabular-nums whitespace-nowrap">
+                {totalProducts.toLocaleString('fr-FR')} produits
+              </p>
+            )}
+          </div>
           <div className="shrink-0 flex items-center gap-2">
             {rows.length > 1 && (
               <select
@@ -153,26 +166,25 @@ export function SourceSitesConfig({ config, onChange }: {
             </button>
           </div>
         </div>
-        {/* Totaux PAR STATUT — toujours affichés, cliquables pour filtrer la liste. */}
+        {/* Badges PAR STATUT — centrés, toujours affichés, cliquables pour filtrer. */}
         {rows.length > 0 && (
-          <p className="text-[10px] tabular-nums flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <div className="flex flex-wrap justify-center items-center gap-1.5 pt-0.5">
             {liveCount > 0 && (
-              <span className="flex items-center gap-1 mr-0.5">
+              <span className="inline-flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" aria-hidden />
-                {filterPill('live', liveCount, 'text-emerald-300', 'en cours')}
+                {filterPill('live', liveCount, 'ok', 'en cours')}
               </span>
             )}
-            {nStatus('ok') > 0 && filterPill('ok', nStatus('ok'), 'text-emerald-300', 'OK')}
-            {nStatus('empty') > 0 && filterPill('empty', nStatus('empty'), 'text-amber-300', 'sans produit')}
-            {nStatus('error') > 0 && filterPill('error', nStatus('error'), 'text-rose-300', 'bloqués')}
-            {nStatus('never') > 0 && filterPill('never', nStatus('never'), 'text-white/40', 'jamais')}
-            {totalProducts > 0 && <span className="text-white/30 ml-0.5">· {totalProducts.toLocaleString('fr-FR')} produits</span>}
+            {nStatus('ok') > 0 && filterPill('ok', nStatus('ok'), 'ok', 'OK')}
+            {nStatus('empty') > 0 && filterPill('empty', nStatus('empty'), 'warn', 'sans produit')}
+            {nStatus('error') > 0 && filterPill('error', nStatus('error'), 'err', 'bloqués')}
+            {nStatus('never') > 0 && filterPill('never', nStatus('never'), 'mute', 'jamais')}
             {statusFilter && (
-              <button onClick={() => setStatusFilter(null)} className="text-indigo-400/80 hover:text-indigo-300 ml-0.5" title="Retirer le filtre">
+              <button onClick={() => setStatusFilter(null)} className="text-[10px] text-indigo-400/80 hover:text-indigo-300 px-1" title="Retirer le filtre">
                 ✕ tout
               </button>
             )}
-          </p>
+          </div>
         )}
       </div>
 
