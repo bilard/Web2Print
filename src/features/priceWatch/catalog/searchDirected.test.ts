@@ -105,3 +105,17 @@ describe('searchDirected — mode GÉNÉRIQUE (marketplaces)', () => {
     expect(hit).toBeNull()
   })
 })
+
+describe('preferProductUrls', () => {
+  it('remonte les fiches produit avant les catégories/recherche', async () => {
+    const { preferProductUrls } = await import('./searchDirected')
+    const ranked = preferProductUrls([
+      'https://www.manomano.fr/cat/courroie-alpina',
+      'https://www.manomano.fr/p/courroie-alpina-al7-210323553',
+      'https://www.cdiscount.com/jardin/r-courroie+ggp.html',
+      'https://www.cdiscount.com/jardin/x/f-1632601-auc17198.html',
+    ])
+    expect(ranked[0]).toContain('/p/')
+    expect(ranked[ranked.length - 1]).toMatch(/\/r-|\/cat\//)
+  })
+})

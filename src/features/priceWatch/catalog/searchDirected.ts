@@ -32,6 +32,27 @@ function bareDomain(domain: string): string {
 }
 
 /**
+ * Classe les URLs candidates : FICHES PRODUIT d'abord, pages catégorie/recherche/blog en
+ * dernier. Une recherche « site:X réf » renvoie souvent des catégories — on veut la fiche.
+ * Générique (patterns communs à Amazon /dp/, Cdiscount /f-…​.html, Shopify /products/…).
+ */
+export function preferProductUrls(urls: string[]): string[] {
+  const score = (u: string): number => {
+    let s = 0
+    if (/\/(?:p|dp|vp|product|products|prod|item|itm)\//i.test(u)) s += 3
+    if (/\/f-\d+-/i.test(u)) s += 3          // Cdiscount : fiche produit
+    if (/-\d{6,}(?:\.html?)?(?:[?#]|$)/i.test(u)) s += 1 // id produit en fin d'URL
+    if (/\/(?:cat|categorie|category|r|recherche|search|k|blog|guide|conseils|aide)\//i.test(u)) s -= 5
+    if (/\/(?:cat|r)-/i.test(u)) s -= 5      // manomano /cat/…, cdiscount /r-…
+    return s
+  }
+  return urls
+    .map((u, i) => ({ u, s: score(u), i }))
+    .sort((a, b) => b.s - a.s || a.i - b.i)
+    .map((x) => x.u)
+}
+
+/**
  * Mode GÉNÉRIQUE (toute techno, marketplaces) : pour chaque clé, cherche `site:domaine clé`
  * sur le web, puis extrait les fiches candidates via Firecrawl (rendu JS + anti-bot) et
  * renvoie le premier apparié par PREUVE EXACTE. Ciblé par réf → coût borné (crédits).
@@ -48,7 +69,7 @@ async function searchProductGeneric(
   const queries = [...new Set(keys.map((k) => k.value))]
   const tried = new Set<string>()
   for (const query of queries) {
-    const urls = await deps.searchWeb(`site:${site} ${query}`)
+    const urls = preferProductUrls(await deps.searchWeb(`site:${site} ${query}`))
     for (const url of urls.slice(0, 3)) {
       if (tried.has(url)) continue
       tried.add(url)
