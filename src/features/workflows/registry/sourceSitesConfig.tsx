@@ -10,7 +10,7 @@ import { useCompetitorMeta, useCatalogReport } from '@/features/priceWatch/useCa
 import { stableId } from '@/features/priceWatch/core'
 import {
   normalizeDomain, deriveWatchId, importSitesIntoRows, siteStatus, siteStatusRank,
-  type SourceSiteRow,
+  type SourceSiteRow, type SiteStatus,
 } from '@/features/priceWatch/sourceSites'
 import { SourceSitesRowItem, type SiteRowStats } from './sourceSitesRow'
 import { SiteCredentialsForm } from './sourceSitesCreds'
@@ -48,6 +48,7 @@ export function SourceSitesConfig({ config, onChange }: {
   const [importing, setImporting] = useState(false)
   const [importText, setImportText] = useState('')
   const [sort, setSort] = useState<SortMode>('manual')
+  const [statusFilter, setStatusFilter] = useState<SiteStatus | null>(null)
   const [credsRow, setCredsRow] = useState<number | null>(null)
 
   const statsFor = (domain: string): SiteRowStats => {
@@ -98,19 +99,30 @@ export function SourceSitesConfig({ config, onChange }: {
   const runErr = recent.filter((s) => (s.lastPassPages ?? 0) === 0).length
   const runProducts = recent.reduce((n, s) => n + (s.lastPassProducts ?? 0), 0)
 
-  // Ordre d'AFFICHAGE (le tri ne touche jamais config.sites : l'ordre d'émission reste
-  // l'ordre manuel). On trie une projection {row, index d'origine, stats} — l'index
-  // d'origine est réutilisé pour toggle/engine/remove afin de ne pas décaler la config.
-  const displayRows = rows.map((r, i) => ({ r, i, stats: statsFor(r.domain) }))
+  // Ordre d'AFFICHAGE (ni le tri ni le filtre ne touchent config.sites : l'ordre
+  // d'émission reste manuel). Projection {row, index d'origine, stats, statut} — l'index
+  // d'origine sert à toggle/engine/remove sans décaler la config.
+  let displayRows = rows.map((r, i) => {
+    const stats = statsFor(r.domain)
+    return { r, i, stats, status: siteStatus({ enabled: r.enabled, live: isLive(stats), ...stats }) }
+  })
+  // Filtre par statut : clic sur un compteur de l'en-tête → n'afficher que ces sites.
+  if (statusFilter) displayRows = displayRows.filter((d) => d.status === statusFilter)
   if (sort === 'status') {
-    displayRows.sort((a, b) => {
-      const ra = siteStatusRank(siteStatus({ enabled: a.r.enabled, live: isLive(a.stats), ...a.stats }))
-      const rb = siteStatusRank(siteStatus({ enabled: b.r.enabled, live: isLive(b.stats), ...b.stats }))
-      return ra - rb || a.i - b.i // rang égal → ordre manuel stable
-    })
+    displayRows.sort((a, b) => siteStatusRank(a.status) - siteStatusRank(b.status) || a.i - b.i)
   } else if (sort === 'products') {
     displayRows.sort((a, b) => (b.stats.products ?? -1) - (a.stats.products ?? -1) || a.i - b.i)
   }
+  // Compteur cliquable de l'en-tête : bascule le filtre sur ce statut.
+  const filterPill = (key: SiteStatus, count: number, cls: string, label: string) => (
+    <button
+      onClick={() => setStatusFilter((f) => (f === key ? null : key))}
+      title={statusFilter === key ? 'Afficher tous les sites' : `N'afficher que : ${label}`}
+      className={`rounded px-1 -mx-0.5 transition-colors ${cls} ${statusFilter === key ? 'ring-1 ring-current' : 'hover:bg-white/[0.06]'}`}
+    >
+      {count} {label}
+    </button>
+  )
   return (
     <div className="flex flex-col gap-2">
       {/* En-tête ÉPINGLÉ au scroll (le conteneur scrollant est le panneau bg-surface-2) :
@@ -143,18 +155,30 @@ export function SourceSitesConfig({ config, onChange }: {
           </div>
         </div>
         {liveCount > 0 ? (
-          <p className="text-[10px] flex items-center gap-1.5 text-emerald-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" aria-hidden />
-            Moisson en cours · {liveCount} site{liveCount > 1 ? 's' : ''}
+          <p className="text-[10px] flex items-center gap-1.5 flex-wrap">
+            <span className="flex items-center gap-1.5 text-emerald-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" aria-hidden />
+              Moisson en cours ·
+            </span>
+            {filterPill('live', liveCount, 'text-emerald-300', `site${liveCount > 1 ? 's' : ''}`)}
           </p>
         ) : recent.length > 0 ? (
-          <p className="text-[10px] tabular-nums flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <p className="text-[10px] tabular-nums flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <span className="text-white/40">Dernier run :</span>
-            {runProducts > 0 && <span className="text-emerald-300">+{runProducts.toLocaleString('fr-FR')} produits</span>}
-            <span className="text-emerald-300">{runOk} OK</span>
-            {runWarn > 0 && <span className="text-amber-300">{runWarn} sans produit</span>}
-            {runErr > 0 && <span className="text-rose-300">{runErr} bloqués</span>}
+            {runProducts > 0 && <span className="text-emerald-300 mr-0.5">+{runProducts.toLocaleString('fr-FR')} produits</span>}
+            {filterPill('ok', runOk, 'text-emerald-300', 'OK')}
+            {runWarn > 0 && filterPill('empty', runWarn, 'text-amber-300', 'sans produit')}
+            {runErr > 0 && filterPill('error', runErr, 'text-rose-300', 'bloqués')}
+            {statusFilter && (
+              <button onClick={() => setStatusFilter(null)} className="text-white/40 hover:text-white/70 ml-0.5" title="Retirer le filtre">
+                ✕ tout
+              </button>
+            )}
           </p>
+        ) : statusFilter ? (
+          <button onClick={() => setStatusFilter(null)} className="text-[10px] text-white/40 hover:text-white/70 self-start" title="Retirer le filtre">
+            ✕ filtre actif — afficher tout
+          </button>
         ) : null}
       </div>
 
@@ -199,6 +223,10 @@ export function SourceSitesConfig({ config, onChange }: {
       {rows.length === 0 ? (
         <p className="text-[11px] text-white/30 italic">
           Aucun site. Ajoute un domaine ou importe la liste d'un node « Moisson concurrents » existant.
+        </p>
+      ) : displayRows.length === 0 ? (
+        <p className="text-[11px] text-white/30 italic">
+          Aucun site pour ce filtre. <button onClick={() => setStatusFilter(null)} className="text-indigo-400 hover:text-indigo-300 not-italic">Afficher tout</button>
         </p>
       ) : (
         <div className="flex flex-col gap-1">
