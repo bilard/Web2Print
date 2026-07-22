@@ -42,7 +42,7 @@ import type { NodeRunState, NodeStatus, Workflow } from '../types'
 
 // Nodes de veille tarifaire dont la donnée est PERSISTÉE (rapport Firestore du suivi) :
 // pour ceux-là, une carte sans run en session montre l'état déjà collecté, pas un vide.
-const WATCH_NODE_TYPES = new Set(['harvest-competitor', 'compare-catalog'])
+const WATCH_NODE_TYPES = new Set(['harvest-competitor', 'compare-catalog', 'source-sites'])
 
 // chart.js + react-chartjs-2 chargés en lazy : hors du chunk éditeur tant qu'aucun
 // graphe n'est affiché.

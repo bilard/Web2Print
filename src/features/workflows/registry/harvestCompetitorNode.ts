@@ -10,7 +10,7 @@ import type { ExcelSheet } from '@/features/excel/types'
 import { useAuthStore } from '@/stores/auth.store'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
-import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
+import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '@/features/priceWatch/catalog/runHarvest'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages } from '@/features/priceWatch/catalog/store'
 import { harvestProgress } from '@/features/priceWatch/catalog/harvest'
@@ -21,6 +21,7 @@ interface HarvestConfig {
   families: string
   pageBudget: number
 }
+interface HarvestInputs { sites?: unknown }
 type HarvestOutputs = { status: ExcelSheet }
 
 function statusSheet(rows: Record<string, unknown>[]): ExcelSheet {
@@ -38,7 +39,7 @@ function statusSheet(rows: Record<string, unknown>[]): ExcelSheet {
   }
 }
 
-const harvestCompetitorNode: NodeSpec<HarvestConfig, Record<string, never>, HarvestOutputs> = {
+const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutputs> = {
   type: 'harvest-competitor',
   category: 'import',
   label: 'Moisson concurrents',
@@ -48,12 +49,14 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, Record<string, never>, Harv
     "rafraîchissent. Ne fait transiter aucune donnée volumineuse — l'index vit dans Firestore.",
   icon: TrendingUpDown,
   connectors: ['jina'],
-  inputs: [],
+  // Port `sites` (facultatif) : brancher un node « Sites sources » remplace la textarea
+  // ci-dessous ET l'identifiant de suivi — une seule liste à maintenir.
+  inputs: [{ name: 'sites', type: 'sites' }],
   outputs: [{ name: 'status', type: 'sheet' }],
   configSchema: [
     {
-      name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)', required: true,
-      help: 'Domaine par ligne. Ex : « pro-motoculture.com ». PrestaShop supporté nativement.',
+      name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)',
+      help: 'Domaine par ligne. Ex : « pro-motoculture.com ». PrestaShop supporté nativement. IGNORÉ si un node « Sites sources » est branché sur le port sites.',
     },
     {
       name: 'families', kind: 'text', label: 'Familles ciblées (séparées par des virgules)',
@@ -71,14 +74,16 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, Record<string, never>, Harv
     return n ? `${n} site(s) · ${c.pageBudget}/run${c.families.trim() ? ` · ${c.families.trim()}` : ''}` : ''
   },
   runtime: 'client',
-  run: async (ctx, config) => {
+  run: async (ctx, config, inputs) => {
     const uid = useAuthStore.getState().user?.uid
     if (!uid) throw new Error('Utilisateur non connecté.')
-    // Identité du suivi : l'id du workflow par défaut (→ Moisson & Comparer du même
-    // workflow partagent forcément le même suivi, sans rien saisir). Override manuel
-    // possible pour partager un suivi entre workflows.
-    const watchId = stableId((config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
-    const sites = parseSitesConfig(config.sites)
+    // Sites + identité du suivi : le port `sites` (node « Sites sources ») GAGNE ;
+    // sinon repli sur la config locale historique (textarea + watchId, dérivé de
+    // l'id du workflow par défaut → Moisson & Comparer partagent le même suivi).
+    const { watchId, sites, fromPort } = resolveSitesInput(inputs.sites, {
+      sitesText: config.sites, watchIdRaw: config.watchId, workflowId: ctx.workflowId,
+    })
+    if (fromPort) ctx.log('info', `Liste reçue du node « Sites sources » : ${sites.length} site(s) actif(s).`)
     if (sites.length === 0) {
       ctx.log('warn', 'Aucun site concurrent configuré.')
       return { status: statusSheet([]) }

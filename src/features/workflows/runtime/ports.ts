@@ -116,6 +116,14 @@ export function registerBuiltinPorts(): void {
       Previewer: NoopPreviewer,
     },
     {
+      // Payload du node « Sites sources » : { watchId, sites: CompetitorSite[] }.
+      type: 'sites',
+      label: 'Sites',
+      color: '#14b8a6',
+      validator: (v) => typeof v === 'object' && v !== null && Array.isArray((v as { sites?: unknown }).sites),
+      Previewer: NoopPreviewer,
+    },
+    {
       type: 'any',
       label: 'Any',
       color: '#6366f1',

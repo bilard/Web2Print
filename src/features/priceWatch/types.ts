@@ -12,6 +12,10 @@ export interface TrackedProduct {
   sourceRowId?: string
 }
 
+/** Moteur de scraping forcé pour un site. 'auto' (défaut) = cascade existante
+ *  (Cloud Function → Jina → proxies). Honoré par la moisson (phase 2 Sites sources). */
+export type SiteEngine = 'auto' | 'jina' | 'brightdata'
+
 export interface CompetitorSite {
   id: string
   domain: string // ex: "exemple.com"
@@ -19,6 +23,8 @@ export interface CompetitorSite {
   urlPattern?: string
   /** Champs à extraire sur ce site (ex: ['price', 'availability']). Défaut : ['price']. */
   fields?: string[]
+  /** Moteur forcé (node « Sites sources »). Absent = 'auto'. */
+  engine?: SiteEngine
 }
 
 export type MatchStatus = 'auto' | 'confirmed' | 'pending' | 'rejected'

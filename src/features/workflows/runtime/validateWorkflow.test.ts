@@ -68,4 +68,38 @@ describe('validateWorkflow', () => {
     const w = wf({ nodes: [node('z', 'inexistant')], edges: [] })
     expect(validateWorkflow(w, getSpec)[0].message).toMatch(/inconnu/i)
   })
+
+  describe('sites via port OU config (Sites sources)', () => {
+    const REG2: Record<string, NodeSpec> = {
+      ...REG,
+      'source-sites': spec({ type: 'source-sites', label: 'Sites sources', outputs: [{ name: 'sites', type: 'sites' }] }),
+      'harvest-competitor': spec({
+        type: 'harvest-competitor', label: 'Moisson',
+        inputs: [{ name: 'sites', type: 'sites' }],
+        configSchema: [{ name: 'sites', kind: 'textarea', label: 'Sites concurrents' }],
+      }),
+    }
+    const getSpec2 = (t: string) => REG2[t]
+
+    it('harvest sans textarea NI port branché → erreur', () => {
+      const w = wf({ nodes: [node('h', 'harvest-competitor', { sites: '' })], edges: [] })
+      expect(validateWorkflow(w, getSpec2).find((i) => i.nodeId === 'h')?.message).toMatch(/Sites sources/)
+    })
+
+    it('harvest avec port sites branché et textarea vide → OK', () => {
+      const w = wf({
+        nodes: [node('s', 'source-sites', { sites: [{ domain: 'a.fr', enabled: true }] }), node('h', 'harvest-competitor', { sites: '' })],
+        edges: [edge('s', 'sites', 'h', 'sites')],
+      })
+      expect(validateWorkflow(w, getSpec2)).toEqual([])
+    })
+
+    it('source-sites sans aucun site actif → erreur', () => {
+      const w = wf({
+        nodes: [node('s', 'source-sites', { sites: [{ domain: 'a.fr', enabled: false }] }), node('h', 'harvest-competitor', { sites: 'x.fr' })],
+        edges: [edge('s', 'sites', 'h', 'sites')],
+      })
+      expect(validateWorkflow(w, getSpec2).find((i) => i.nodeId === 's')?.message).toMatch(/actif/i)
+    })
+  })
 })

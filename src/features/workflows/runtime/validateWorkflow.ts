@@ -16,9 +16,19 @@ export interface WorkflowIssue {
   message: string
 }
 
-/** Complétude non exprimable via `required` (valeur portée par la ConfigComponent). */
-const SEMANTIC_CHECKS: Record<string, (config: Record<string, unknown>) => string | null> = {
+/** Complétude non exprimable via `required` (valeur portée par la ConfigComponent,
+ *  ou satisfiable par un PORT branché — 2ᵉ argument = « ce port est-il câblé ? »). */
+const SEMANTIC_CHECKS: Record<string, (config: Record<string, unknown>, wired: (port: string) => boolean) => string | null> = {
   upload: (c) => (c.fileKey ? null : 'Aucun fichier sélectionné — ouvre la config du node.'),
+  // La liste des sites peut venir du port `sites` (node « Sites sources ») OU de la
+  // textarea locale — requis « l'un ou l'autre », inexprimable en configSchema.required.
+  'harvest-competitor': (c, wired) =>
+    wired('sites') || !isEmpty(c.sites) ? null : 'Aucun site : renseigne « Sites concurrents » ou branche un node « Sites sources ».',
+  'compare-catalog': (c, wired) =>
+    wired('sites') || !isEmpty(c.sites) ? null : 'Aucun site : renseigne « Sites concurrents » ou branche un node « Sites sources ».',
+  'source-sites': (c) =>
+    Array.isArray(c.sites) && (c.sites as { enabled?: boolean }[]).some((r) => r?.enabled)
+      ? null : 'Aucun site actif dans le gestionnaire — ajoute ou active au moins un site.',
 }
 
 function isEmpty(v: unknown): boolean {
@@ -67,7 +77,8 @@ export function validateWorkflow(
       }
     }
     // 2. Contrôles sémantiques.
-    const sem = SEMANTIC_CHECKS[node.type]?.(config)
+    const wiredPort = (port: string) => wf.edges.some((e) => e.target === node.id && e.targetHandle === port)
+    const sem = SEMANTIC_CHECKS[node.type]?.(config, wiredPort)
     if (sem) issues.push({ nodeId: node.id, nodeLabel: label, severity: 'error', message: sem })
   }
   return issues

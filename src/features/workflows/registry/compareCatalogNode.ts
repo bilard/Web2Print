@@ -9,8 +9,8 @@ import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet, ExcelColumn, ExcelRow } from '@/features/excel/types'
 import { useAuthStore } from '@/stores/auth.store'
-import { parseSitesConfig, parsePrice, stableId } from '@/features/priceWatch/core'
-import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
+import { parsePrice, stableId } from '@/features/priceWatch/core'
+import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
@@ -32,7 +32,7 @@ interface CompareConfig {
   urlColumn: string
   vatRate: number
 }
-interface CompareInputs { products?: ExcelSheet; harvest?: unknown }
+interface CompareInputs { products?: ExcelSheet; harvest?: unknown; sites?: unknown }
 type CompareOutputs = { matrix: ExcelSheet }
 
 function cell(row: Record<string, unknown>, col: string | undefined): string | undefined {
@@ -78,10 +78,13 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // concurrents » ici force la moisson à tourner AVANT la comparaison dans un même
     // run. La donnée est ignorée — l'index est relu depuis Firestore, pas depuis l'edge.
     { name: 'harvest', type: 'any' },
+    // Port `sites` (facultatif) : brancher un node « Sites sources » remplace la
+    // textarea sites ET l'identifiant de suivi (même liste que la moisson, garanti).
+    { name: 'sites', type: 'sites' },
   ],
   outputs: [{ name: 'matrix', type: 'sheet' }],
   configSchema: [
-    { name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)', required: true, help: 'Mêmes domaines que la moisson.' },
+    { name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)', help: 'Mêmes domaines que la moisson. IGNORÉ si un node « Sites sources » est branché sur le port sites.' },
     { name: 'refColumn', kind: 'columnRef', label: 'Colonne Référence', help: 'Référence article / constructeur.' },
     { name: 'ref2Column', kind: 'columnRef', label: 'Colonne Référence 2', help: 'Référence secondaire éventuelle.' },
     { name: 'eanColumn', kind: 'columnRef', label: 'Colonne EAN' },
@@ -103,10 +106,13 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
   run: async (ctx, config, inputs) => {
     const uid = useAuthStore.getState().user?.uid
     if (!uid) throw new Error('Utilisateur non connecté.')
-    // Identité du suivi : l'id du workflow par défaut → même suivi que « Moisson
-    // concurrents » du même workflow, sans rien saisir. Override manuel possible.
-    const watchId = stableId((config.watchId || '').trim() || ctx.workflowId || DEFAULT_WATCH_ID)
-    const sites = parseSitesConfig(config.sites)
+    // Sites + identité du suivi : le port `sites` (node « Sites sources ») GAGNE ;
+    // sinon repli config locale (textarea + watchId dérivé de l'id du workflow →
+    // même suivi que « Moisson concurrents » du même workflow, sans rien saisir).
+    const { watchId, sites, fromPort } = resolveSitesInput(inputs.sites, {
+      sitesText: config.sites, watchIdRaw: config.watchId, workflowId: ctx.workflowId,
+    })
+    if (fromPort) ctx.log('info', `Liste reçue du node « Sites sources » : ${sites.length} site(s) actif(s).`)
     const rawRows = (inputs.products?.rows ?? []) as Record<string, unknown>[]
 
     if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { matrix: toSheet([], []) } }
