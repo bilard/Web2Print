@@ -43,15 +43,18 @@ export async function harvestOneSite(
     loadCursor: async () => prevMeta?.cursor ?? null,
     saveCursor: (id, cursor) => saveCompetitorMeta(uid, watchId, id, { domain: site.domain, cursor }),
     savePage: (id, pageId, url, page, products) => savePage(uid, watchId, id, pageId, url, page, products),
-    onProgress: (_p, productsIndexed, cursor) => saveCompetitorMeta(uid, watchId, siteId, {
+    // Remontée LIVE à CHAQUE page (progressEvery: 1) : le tableau bouge en direct.
+    onProgress: (pagesFetched, productsIndexed, cursor) => saveCompetitorMeta(uid, watchId, siteId, {
       domain: site.domain,
       productCount: (prevMeta?.productCount ?? 0) + productsIndexed,
       harvestProgress: harvestProgress(cursor),
       harvestSweeps: cursor.sweeps,
+      lastPassPages: pagesFetched,
+      lastPassProducts: productsIndexed,
     }),
     log: opts.log,
     signal: opts.signal,
-  }, pageBudget)
+  }, pageBudget, 1)
 
   const elapsedMs = Date.now() - t0
   const pagesTotal = await countPages(uid, watchId, siteId)

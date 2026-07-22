@@ -81,6 +81,7 @@ export async function harvestPass(
   cfg: CompetitorConfig,
   deps: HarvestDeps,
   pageBudget: number,
+  progressEvery: number = PROGRESS_EVERY,
 ): Promise<HarvestPassResult> {
   let cursor = await deps.loadCursor(cfg.siteId)
 
@@ -126,7 +127,7 @@ export async function harvestPass(
     cursor = advance(cursor, { hadItems, hasNext })
     await deps.saveCursor(cfg.siteId, cursor)
     // Remontée live périodique (jauge Balayage + heartbeat) sans attendre la fin du site.
-    if (deps.onProgress && pagesFetched % PROGRESS_EVERY === 0) await deps.onProgress(pagesFetched, productsIndexed, cursor)
+    if (deps.onProgress && pagesFetched % Math.max(1, progressEvery) === 0) await deps.onProgress(pagesFetched, productsIndexed, cursor)
   }
 
   return {
