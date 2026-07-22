@@ -200,26 +200,8 @@ export function SourceSitesConfig({ config, onChange }: {
         </div>
       )}
 
-      {/* Ajout d'un site */}
-      <div className="flex gap-1.5">
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') addSite() }}
-          placeholder="exemple.com"
-          className="flex-1 bg-well border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white/80 focus:outline-none focus:border-indigo-500/50"
-        />
-        <button
-          onClick={addSite}
-          disabled={!normalizeDomain(draft)}
-          title="Ajouter le site"
-          className="shrink-0 bg-white/5 hover:bg-white/10 disabled:opacity-30 text-white/60 px-2 rounded-lg transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Tableau des sites */}
+      {/* Tableau des sites — contenu PRINCIPAL, visible immédiatement (le champ d'ajout
+          est descendu sous la liste pour ne pas la pousser hors de l'écran). */}
       {rows.length === 0 ? (
         <p className="text-[11px] text-white/30 italic">
           Aucun site. Ajoute un domaine ou importe la liste d'un node « Moisson concurrents » existant.
@@ -258,6 +240,25 @@ export function SourceSitesConfig({ config, onChange }: {
           ))}
         </div>
       )}
+
+      {/* Ajout d'un site (sous la liste) */}
+      <div className="flex gap-1.5">
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') addSite() }}
+          placeholder="Ajouter un site : exemple.com"
+          className="flex-1 bg-well border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white/80 focus:outline-none focus:border-indigo-500/50"
+        />
+        <button
+          onClick={addSite}
+          disabled={!normalizeDomain(draft)}
+          title="Ajouter le site"
+          className="shrink-0 bg-white/5 hover:bg-white/10 disabled:opacity-30 text-white/60 px-2 rounded-lg transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
       {/* Identifiant du suivi (avancé) */}
       <label className="block mt-1">
