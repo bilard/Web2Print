@@ -75,11 +75,16 @@ export function buildSiteFetcher(engine?: SiteEngine, opts?: { auth?: boolean; h
       },
     }
   }
+  // Mode AUTO : cascade Serveur → Jina → Firecrawl → Bright Data → proxies. `last`
+  // sert de MÉMO — une fois qu'un moteur (souvent payant) a débloqué ce site, les
+  // pages suivantes l'essaient en premier au lieu de re-payer l'échec des paliers
+  // gratuits à chaque page (garde-fou anti-gouffre de crédits).
   return {
     connectorId: 'jina',
     lastEngine: () => last,
     fetchHtml: async (url) => {
-      const r = await fetchSourceHtmlWithEngine(url)
+      const prefer = last === 'firecrawl' || last === 'brightdata' ? last : undefined
+      const r = await fetchSourceHtmlWithEngine(url, 20_000, prefer)
       if (r) last = r.engine
       return r?.html ?? null
     },
