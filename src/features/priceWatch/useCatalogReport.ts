@@ -71,6 +71,9 @@ export function useCompetitorMeta(watchId: string | null): Map<string, HarvestMe
             cumulHarvestMs: typeof data.cumulHarvestMs === 'number' ? data.cumulHarvestMs : undefined,
             lastHarvestMs: typeof data.lastHarvestMs === 'number' ? data.lastHarvestMs : undefined,
             lastEngine: typeof data.lastEngine === 'string' ? data.lastEngine : undefined,
+            lastPassPages: typeof data.lastPassPages === 'number' ? data.lastPassPages : undefined,
+            lastPassProducts: typeof data.lastPassProducts === 'number' ? data.lastPassProducts : undefined,
+            lastPassAt: typeof data.lastPassAt === 'number' ? data.lastPassAt : undefined,
             updatedAt: typeof upd === 'number' ? upd : (upd as { toMillis?: () => number })?.toMillis?.(),
           })
         })

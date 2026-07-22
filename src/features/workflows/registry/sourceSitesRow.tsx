@@ -1,9 +1,9 @@
 // src/features/workflows/registry/sourceSitesRow.tsx
 // Ligne dense (2 niveaux) du tableau « Sites sources » :
-//   niveau 1 — activation · domaine (pleine largeur) · état live · corbeille ;
-//   niveau 2 — moteur forcé + chips de stats (insécables, retour à la ligne propre).
-// L'état « scraping en cours » (heartbeat Firestore < 2 min) est surligné en vert pulsé ;
-// un catalogue entièrement balayé affiche « balayé ×N ».
+//   niveau 1 — activation · domaine · ACTIVITÉ (scraping… animé | verdict ✓/⚠/✗ de la
+//   dernière passe) · corbeille ; niveau 2 — moteur forcé + chips de stats insécables.
+// Pendant la moisson : ring vert pulsé + barre de balayage animée (progress-indeterminate).
+// Après la passe : badge verdict lisible d'un coup d'œil, pop fx-result s'il vient de tomber.
 import { Trash2 } from 'lucide-react'
 import { agoShort } from '@/features/priceWatch/dashboard/format'
 
@@ -12,24 +12,46 @@ export interface SiteRowStats {
   pctPrice?: number
   matched?: number
   updatedAt?: number
-  /** Moteur ayant réellement fourni le HTML à la dernière passe (télémétrie). */
   lastEngine?: string
-  /** Progression du balayage 0..1 (1 = catalogue entièrement parcouru). */
   harvestProgress?: number
-  /** Nombre de balayages complets déjà effectués. */
   harvestSweeps?: number
+  /** Résultat de la dernière passe de moisson (verdict). */
+  lastPassPages?: number
+  lastPassProducts?: number
+  lastPassAt?: number
 }
 
-/** Libellés courts du moteur réellement utilisé (CompetitorMeta.lastEngine). */
 const ENGINE_LABELS: Record<string, string> = {
   cloudFunction: 'CF', jina: 'Jina', proxy: 'Proxy', brightdata: 'BD',
 }
-
 const ENGINE_OPTIONS = [
   { value: 'auto', label: 'Auto' },
   { value: 'jina', label: 'Jina' },
   { value: 'brightdata', label: 'Bright Data' },
 ]
+
+/** Verdict de la dernière passe : vert = produits indexés, ambre = pages lues mais rien
+ *  extrait, rouge = aucune page (site bloqué/inaccessible). null = jamais moissonné. */
+function passVerdict(s: SiteRowStats): { cls: string; text: string; title: string } | null {
+  if (s.lastPassAt == null) return null
+  const pages = s.lastPassPages ?? 0
+  const products = s.lastPassProducts ?? 0
+  if (pages === 0) return {
+    cls: 'text-rose-300 bg-rose-500/10 border-rose-500/25',
+    text: '✗ 0 page',
+    title: 'Dernière passe : aucune page lue — site bloqué ou inaccessible (essaie un autre moteur)',
+  }
+  if (products === 0) return {
+    cls: 'text-amber-300 bg-amber-500/10 border-amber-500/25',
+    text: `⚠ 0 produit · ${pages} p`,
+    title: `Dernière passe : ${pages} page(s) lue(s) mais aucun produit extrait — gabarit de liste non reconnu ?`,
+  }
+  return {
+    cls: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/25',
+    text: `✓ +${products.toLocaleString('fr-FR')} · ${pages} p`,
+    title: `Dernière passe : ${products} produit(s) indexé(s) sur ${pages} page(s)`,
+  }
+}
 
 function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute'): JSX.Element {
   const color = tone === 'ok' ? 'text-emerald-300' : tone === 'warn' ? 'text-amber-300' : 'text-white/40'
@@ -46,9 +68,9 @@ export function SourceSitesRowItem({ domain, enabled, engine, stats, live, now, 
   enabled: boolean
   engine: string
   stats: SiteRowStats
-  /** true = heartbeat de moisson récent → scraping en cours (surligné + pulsé). */
+  /** true = heartbeat de moisson récent → scraping en cours (ring pulsé + barre animée). */
   live: boolean
-  /** Horloge partagée du parent (tick 30 s) — évite un Date.now() par ligne. */
+  /** Horloge partagée du parent (tick 30 s). */
   now: number
   onToggle: (enabled: boolean) => void
   onEngine: (engine: string) => void
@@ -56,13 +78,16 @@ export function SourceSitesRowItem({ domain, enabled, engine, stats, live, now, 
 }) {
   const scraped = stats.updatedAt != null
   const swept = (stats.harvestProgress ?? 0) >= 1
+  const verdict = passVerdict(stats)
+  // Le verdict vient de tomber (< 2 min) → pop d'apparition pour attirer l'œil.
+  const fresh = stats.lastPassAt != null && now - stats.lastPassAt < 2 * 60_000
   return (
     <div
-      className={`rounded-lg px-2 py-1.5 transition-colors ${
+      className={`relative rounded-lg px-2 py-1.5 transition-colors ${
         live ? 'bg-emerald-500/[0.07] ring-1 ring-emerald-400/40' : 'bg-white/[0.03]'
       } ${enabled ? '' : 'opacity-45'}`}
     >
-      {/* Niveau 1 : activer · domaine · état · suppr */}
+      {/* Niveau 1 : activer · domaine · activité · suppr */}
       <div className="flex items-center gap-2 min-w-0">
         <input
           type="checkbox"
@@ -75,16 +100,16 @@ export function SourceSitesRowItem({ domain, enabled, engine, stats, live, now, 
           {domain.replace(/^www\./, '')}
         </span>
         {live ? (
-          <span className="shrink-0 flex items-center gap-1.5 text-[10px] text-emerald-300 whitespace-nowrap">
+          <span className="shrink-0 flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
             scraping…
           </span>
-        ) : swept ? (
+        ) : verdict ? (
           <span
-            className="shrink-0 text-[10px] text-emerald-300/80 whitespace-nowrap"
-            title={`Catalogue entièrement balayé ${stats.harvestSweeps ? `×${stats.harvestSweeps}` : ''}`}
+            title={verdict.title}
+            className={`shrink-0 whitespace-nowrap text-[10px] font-medium tabular-nums border rounded-md px-1.5 py-0.5 ${verdict.cls} ${fresh ? 'fx-result' : ''}`}
           >
-            balayé{stats.harvestSweeps ? ` ×${stats.harvestSweeps}` : ''} ✓
+            {verdict.text}
           </span>
         ) : null}
         <button
@@ -110,7 +135,9 @@ export function SourceSitesRowItem({ domain, enabled, engine, stats, live, now, 
             {chip('produits', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute')}
             {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn')}
             {stats.matched != null && chip('appariés', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute')}
-            {!swept && stats.harvestProgress != null && chip('balayage', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
+            {swept
+              ? chip('balayé', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
+              : stats.harvestProgress != null && chip('balayage', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
             {chip('scrape', agoShort(stats.updatedAt, now), 'mute')}
             {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
           </>
@@ -118,6 +145,12 @@ export function SourceSitesRowItem({ domain, enabled, engine, stats, live, now, 
           <span className="text-white/20 italic whitespace-nowrap">jamais scrapé</span>
         )}
       </div>
+      {/* Barre de balayage animée pendant la moisson (très visible, style TopProgressBar) */}
+      {live && (
+        <div className="absolute bottom-0 left-1 right-1 h-[3px] overflow-hidden rounded-full" aria-hidden>
+          <div className="progress-indeterminate absolute top-0 h-full w-1/3 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+        </div>
+      )}
     </div>
   )
 }

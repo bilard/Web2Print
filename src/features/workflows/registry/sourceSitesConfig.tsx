@@ -53,6 +53,9 @@ export function SourceSitesConfig({ config, onChange }: {
       lastEngine: meta?.lastEngine,
       harvestProgress: meta?.harvestProgress,
       harvestSweeps: meta?.harvestSweeps,
+      lastPassPages: meta?.lastPassPages,
+      lastPassProducts: meta?.lastPassProducts,
+      lastPassAt: meta?.lastPassAt,
     }
   }
   const isLive = (s: SiteRowStats) => s.updatedAt != null && now - s.updatedAt < LIVE_WINDOW_MS
@@ -76,17 +79,37 @@ export function SourceSitesConfig({ config, onChange }: {
 
   const active = rows.filter((r) => r.enabled).length
   const liveCount = rows.filter((r) => isLive(statsFor(r.domain))).length
+  // Bilan agrégé de la dernière session de moisson (passes < 30 min) : réponse
+  // immédiate à « il vient de finir — qu'est-ce qui a marché ? ».
+  const recent = rows
+    .map((r) => statsFor(r.domain))
+    .filter((s) => s.lastPassAt != null && now - (s.lastPassAt as number) < 30 * 60_000)
+  const runOk = recent.filter((s) => (s.lastPassPages ?? 0) > 0 && (s.lastPassProducts ?? 0) > 0).length
+  const runWarn = recent.filter((s) => (s.lastPassPages ?? 0) > 0 && (s.lastPassProducts ?? 0) === 0).length
+  const runErr = recent.filter((s) => (s.lastPassPages ?? 0) === 0).length
+  const runProducts = recent.reduce((n, s) => n + (s.lastPassProducts ?? 0), 0)
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <p className="text-[10px] uppercase tracking-wider text-white/30 flex items-center gap-2">
           <span>Sites concurrents {rows.length ? `· ${active}/${rows.length} actifs` : ''}</span>
-          {liveCount > 0 && (
+          {liveCount > 0 ? (
             <span className="normal-case tracking-normal flex items-center gap-1 text-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
               {liveCount} en cours
             </span>
-          )}
+          ) : recent.length > 0 ? (
+            <span
+              className="normal-case tracking-normal tabular-nums flex items-center gap-1.5"
+              title={`Dernière moisson (< 30 min) : ${runOk} site(s) OK, ${runWarn} sans produit, ${runErr} en échec — ${runProducts} produit(s) indexé(s)`}
+            >
+              <span className="text-white/40">dernier run</span>
+              {runProducts > 0 && <span className="text-emerald-300">+{runProducts.toLocaleString('fr-FR')}</span>}
+              <span className="text-emerald-300">{runOk}✓</span>
+              {runWarn > 0 && <span className="text-amber-300">{runWarn}⚠</span>}
+              {runErr > 0 && <span className="text-rose-300">{runErr}✗</span>}
+            </span>
+          ) : null}
         </p>
         <button
           onClick={() => setImporting((v) => !v)}

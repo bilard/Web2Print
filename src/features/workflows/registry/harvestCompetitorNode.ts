@@ -131,6 +131,10 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
         harvestSweeps: res.cursor.sweeps,
         // Télémétrie moteur : quel palier a réellement servi (affiché dans « Sites sources »).
         ...(fetcher.lastEngine() ? { lastEngine: fetcher.lastEngine() } : {}),
+        // Verdict de la passe (✓/⚠/✗ dans « Sites sources ») : pages lues + produits.
+        lastPassPages: res.pagesFetched,
+        lastPassProducts: res.productsIndexed,
+        lastPassAt: Date.now(),
       })
       ctx.reportCount?.(rows.reduce((s, r) => s + Number(r.productsIndexed ?? 0), 0) + res.productsIndexed)
       rows.push({

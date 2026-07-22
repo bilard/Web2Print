@@ -45,6 +45,11 @@ export interface CompetitorMeta {
   /** Moteur ayant réellement fourni le HTML à la dernière passe
    *  ('cloudFunction' | 'jina' | 'proxy' | 'brightdata') — affiché dans « Sites sources ». */
   lastEngine?: string
+  /** Résultat de la DERNIÈRE passe de moisson (verdict ✓/⚠/✗ dans « Sites sources ») :
+   *  pages lues, produits indexés, horodatage de fin. */
+  lastPassPages?: number
+  lastPassProducts?: number
+  lastPassAt?: number
   updatedAt?: number
 }
 

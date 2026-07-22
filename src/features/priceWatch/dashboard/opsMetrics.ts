@@ -25,6 +25,10 @@ export interface HarvestMeta {
   lastHarvestMs?: number
   /** Moteur ayant fourni le HTML à la dernière passe (cf. CompetitorMeta.lastEngine). */
   lastEngine?: string
+  /** Résultat de la dernière passe de moisson (cf. CompetitorMeta.lastPass*). */
+  lastPassPages?: number
+  lastPassProducts?: number
+  lastPassAt?: number
   updatedAt?: number
 }
 
