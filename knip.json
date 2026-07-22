@@ -28,7 +28,8 @@
       ],
       "ignoreBinaries": [
         "firebase"
-      ]
+      ],
+      "ignoreExportsUsedInFile": true
     }
   }
 }
