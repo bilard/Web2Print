@@ -17,6 +17,7 @@ export interface ConnectorMeta {
 const CONNECTORS: Record<string, ConnectorMeta> = {
   jina:       { label: 'Jina',       color: 'text-sky-300',     dot: 'bg-sky-400/70' },
   brightdata: { label: 'Bright Data', color: 'text-orange-300', dot: 'bg-orange-400/70' },
+  firecrawl:  { label: 'Firecrawl',  color: 'text-rose-300',    dot: 'bg-rose-400/70' },
   llm:      { label: 'LLM',      color: 'text-violet-300',  dot: 'bg-violet-400/70' },
   vision:   { label: 'Vision',   color: 'text-amber-300',   dot: 'bg-amber-400/70' },
   image:    { label: 'Image IA', color: 'text-pink-300',    dot: 'bg-pink-400/70' },

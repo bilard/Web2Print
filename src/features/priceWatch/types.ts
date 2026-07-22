@@ -13,8 +13,8 @@ export interface TrackedProduct {
 }
 
 /** Moteur de scraping forcé pour un site. 'auto' (défaut) = cascade existante
- *  (Cloud Function → Jina → proxies). Honoré par la moisson (phase 2 Sites sources). */
-export type SiteEngine = 'auto' | 'jina' | 'brightdata'
+ *  (fetch serveur → Jina → proxies). Honoré par la moisson (node « Sites sources »). */
+export type SiteEngine = 'auto' | 'jina' | 'firecrawl' | 'brightdata'
 
 export interface CompetitorSite {
   id: string

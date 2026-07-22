@@ -23,7 +23,7 @@ export interface SourceSitesPayload {
   sites: CompetitorSite[]
 }
 
-const ENGINES: readonly SiteEngine[] = ['auto', 'jina', 'brightdata']
+const ENGINES: readonly SiteEngine[] = ['auto', 'jina', 'firecrawl', 'brightdata']
 
 /** Nettoie une saisie de domaine (mêmes règles que parseSitesConfig). */
 export function normalizeDomain(raw: string): string {

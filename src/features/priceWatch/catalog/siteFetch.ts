@@ -2,11 +2,14 @@
 // Fetch HTML d'un site concurrent pendant la moisson, avec moteur FORCÉ par site
 // (node « Sites sources ») et télémétrie du moteur réellement utilisé (persistée en
 // `CompetitorMeta.lastEngine`, affichée dans le tableau de gestion).
-//   - 'jina'       → Jina Reader seul (pas de CF ni proxy) ;
+//   - 'jina'       → Jina Reader seul (pas de fetch serveur ni proxy) ;
+//   - 'firecrawl'  → Firecrawl rendu JS + scroll (grilles lazy-load, payant/crédit) ;
 //   - 'brightdata' → Scraping Browser Bright Data (anti-bot durs, payant) ;
-//   - défaut       → cascade standard Cloud Function → Jina → proxies.
+//   - défaut       → cascade standard fetch serveur → Jina → proxies.
 import { fetchJinaHtml, fetchSourceHtmlWithEngine } from '@/features/scraping-templates/fetchSourceHtml'
 import { brightDataScrapeHtml } from '@/features/scraping/core/brightDataFallback'
+import { firecrawlScrapeHtml } from '@/features/scraping/core/firecrawlFallback'
+import { getApiKey } from '@/lib/apiKeys'
 import type { SiteEngine } from '../types'
 
 export interface SiteFetcher {
@@ -14,7 +17,7 @@ export interface SiteFetcher {
   /** Dernier moteur ayant réellement fourni du HTML pendant la passe. */
   lastEngine: () => string | undefined
   /** Pastille connecteur à annoncer via ctx.reportConnector. */
-  connectorId: 'jina' | 'brightdata'
+  connectorId: 'jina' | 'firecrawl' | 'brightdata'
 }
 
 export function buildSiteFetcher(engine?: SiteEngine): SiteFetcher {
@@ -26,6 +29,20 @@ export function buildSiteFetcher(engine?: SiteEngine): SiteFetcher {
       fetchHtml: async (url) => {
         const html = await brightDataScrapeHtml(url)
         if (html) last = 'brightdata'
+        return html
+      },
+    }
+  }
+  if (engine === 'firecrawl') {
+    return {
+      connectorId: 'firecrawl',
+      lastEngine: () => last,
+      fetchHtml: async (url) => {
+        const key = getApiKey('firecrawl').trim()
+        if (!key) throw new Error('Moteur Firecrawl forcé mais clé absente — renseigne-la dans Réglages → Connecteurs.')
+        // scroll: pages LISTE lazy-load — on défile pour hydrater la grille complète.
+        const html = await firecrawlScrapeHtml(url, key, { scroll: true })
+        if (html) last = 'firecrawl'
         return html
       },
     }

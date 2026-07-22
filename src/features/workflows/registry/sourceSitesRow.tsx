@@ -21,12 +21,15 @@ export interface SiteRowStats {
   lastPassAt?: number
 }
 
+/** Libellés du moteur réellement utilisé. 'cloudFunction' = fetch serveur (Cloud
+ *  Function fetchPageHtml, palier 1 gratuit de la cascade Auto). */
 const ENGINE_LABELS: Record<string, string> = {
-  cloudFunction: 'CF', jina: 'Jina', proxy: 'Proxy', brightdata: 'BD',
+  cloudFunction: 'Serveur', jina: 'Jina', proxy: 'Proxy', firecrawl: 'Firecrawl', brightdata: 'BD',
 }
 const ENGINE_OPTIONS = [
   { value: 'auto', label: 'Auto' },
   { value: 'jina', label: 'Jina' },
+  { value: 'firecrawl', label: 'Firecrawl' },
   { value: 'brightdata', label: 'Bright Data' },
 ]
 

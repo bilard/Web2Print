@@ -4,6 +4,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const jinaMock = vi.hoisted(() => vi.fn())
 const cascadeMock = vi.hoisted(() => vi.fn())
 const bdMock = vi.hoisted(() => vi.fn())
+const fcMock = vi.hoisted(() => vi.fn())
+const keyMock = vi.hoisted(() => vi.fn(() => ''))
 vi.mock('@/features/scraping-templates/fetchSourceHtml', () => ({
   fetchJinaHtml: jinaMock,
   fetchSourceHtmlWithEngine: cascadeMock,
@@ -11,11 +13,16 @@ vi.mock('@/features/scraping-templates/fetchSourceHtml', () => ({
 vi.mock('@/features/scraping/core/brightDataFallback', () => ({
   brightDataScrapeHtml: bdMock,
 }))
+vi.mock('@/features/scraping/core/firecrawlFallback', () => ({
+  firecrawlScrapeHtml: fcMock,
+}))
+vi.mock('@/lib/apiKeys', () => ({ getApiKey: keyMock }))
 
 import { buildSiteFetcher } from './siteFetch'
 
 beforeEach(() => {
-  jinaMock.mockReset(); cascadeMock.mockReset(); bdMock.mockReset()
+  jinaMock.mockReset(); cascadeMock.mockReset(); bdMock.mockReset(); fcMock.mockReset()
+  keyMock.mockReset(); keyMock.mockReturnValue('')
 })
 
 describe('buildSiteFetcher', () => {
@@ -45,6 +52,22 @@ describe('buildSiteFetcher', () => {
     expect(f.lastEngine()).toBe('brightdata')
     expect(cascadeMock).not.toHaveBeenCalled()
     expect(jinaMock).not.toHaveBeenCalled()
+  })
+
+  it("forçage 'firecrawl' : scroll grille + pastille firecrawl", async () => {
+    keyMock.mockReturnValue('fc-key')
+    fcMock.mockResolvedValue('<html>fc</html>')
+    const f = buildSiteFetcher('firecrawl')
+    expect(f.connectorId).toBe('firecrawl')
+    expect(await f.fetchHtml('https://a.fr')).toBe('<html>fc</html>')
+    expect(fcMock).toHaveBeenCalledWith('https://a.fr', 'fc-key', { scroll: true })
+    expect(f.lastEngine()).toBe('firecrawl')
+    expect(cascadeMock).not.toHaveBeenCalled()
+  })
+
+  it("forçage 'firecrawl' sans clé : erreur claire (pas de repli silencieux)", async () => {
+    const f = buildSiteFetcher('firecrawl')
+    await expect(f.fetchHtml('https://a.fr')).rejects.toThrow(/clé absente/i)
   })
 
   it('échec : lastEngine reste undefined (rien à persister)', async () => {
