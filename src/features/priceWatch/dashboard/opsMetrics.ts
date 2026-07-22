@@ -78,12 +78,25 @@ function opsCompetitorOf(s: CompetitorStat, live?: HarvestMeta): OpsCompetitor {
     siteId: s.siteId, domain: s.domain, indexed,
     progress, sweeps, cumulMs,
     cycleMs: sweeps > 0 ? Math.round(cumulMs / sweeps) : null,
-    pctPrice: s.audit?.pctPrice ?? 0,
+    // % prix LIVE (mis à jour au scrape depuis l'index) prioritaire sur le rapport figé.
+    pctPrice: live?.pctPrice ?? s.audit?.pctPrice ?? 0,
   }
 }
 
 export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, HarvestMeta>): OpsCockpit {
-  const competitors = report.byCompetitor
+  const inReport = new Set(report.byCompetitor.map((s) => s.siteId))
+  // Sites présents dans le LIVE mais pas (encore) dans le rapport « Comparer » (ex.
+  // fraîchement scrapés / réinitialisés) → on les ajoute pour que le tableau bouge en
+  // direct sans attendre une comparaison. Doc curseur (recherche dirigée) ignoré.
+  const liveOnly: CompetitorStat[] = liveMeta
+    ? [...liveMeta.entries()]
+        .filter(([siteId, m]) => !inReport.has(siteId) && m.domain && m.domain !== 'directed-cursor')
+        .map(([siteId, m]) => ({
+          siteId, domain: m.domain as string, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null,
+          audit: { indexed: 0, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 },
+        }))
+    : []
+  const competitors = [...report.byCompetitor, ...liveOnly]
     .map((s) => opsCompetitorOf(s, liveMeta?.get(s.siteId)))
     .sort((a, b) => b.indexed - a.indexed || a.domain.localeCompare(b.domain))
   // « Actif » = a collecté ≥ 1 fiche. Garde-fou : un site à 0 fiche mais `progress=1`
