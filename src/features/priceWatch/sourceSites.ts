@@ -64,6 +64,37 @@ export function deriveWatchId(configWatchId: string, workflowId: string | undefi
   return stableId((configWatchId || '').trim() || workflowId || DEFAULT_WATCH_ID)
 }
 
+/** Statut d'un site dérivé de ses stats, pour le tri et l'affichage. Ordre = priorité
+ *  d'attention (le plus urgent en premier). */
+export type SiteStatus = 'live' | 'error' | 'empty' | 'ok' | 'never' | 'disabled'
+
+const STATUS_RANK: Record<SiteStatus, number> = {
+  live: 0, error: 1, empty: 2, ok: 3, never: 4, disabled: 5,
+}
+
+export interface SiteStatusInput {
+  enabled: boolean
+  live: boolean
+  lastPassAt?: number
+  lastPassPages?: number
+  lastPassProducts?: number
+}
+
+/** Statut courant d'un site (fonction pure). Un site désactivé est 'disabled' quel que
+ *  soit son historique ; sinon : en cours > échec (0 page) > sans produit > OK > jamais. */
+export function siteStatus(s: SiteStatusInput): SiteStatus {
+  if (!s.enabled) return 'disabled'
+  if (s.live) return 'live'
+  if (s.lastPassAt == null) return 'never'
+  if ((s.lastPassPages ?? 0) === 0) return 'error'
+  if ((s.lastPassProducts ?? 0) === 0) return 'empty'
+  return 'ok'
+}
+
+export function siteStatusRank(status: SiteStatus): number {
+  return STATUS_RANK[status]
+}
+
 export interface ResolvedSites {
   watchId: string
   sites: CompetitorSite[]

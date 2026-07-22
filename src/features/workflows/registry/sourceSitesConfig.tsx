@@ -9,7 +9,8 @@ import { useWorkflowStore } from '../persistence/workflow.store'
 import { useCompetitorMeta, useCatalogReport } from '@/features/priceWatch/useCatalogReport'
 import { stableId } from '@/features/priceWatch/core'
 import {
-  normalizeDomain, deriveWatchId, importSitesIntoRows, type SourceSiteRow,
+  normalizeDomain, deriveWatchId, importSitesIntoRows, siteStatus, siteStatusRank,
+  type SourceSiteRow,
 } from '@/features/priceWatch/sourceSites'
 import { SourceSitesRowItem, type SiteRowStats } from './sourceSitesRow'
 import type { SourceSitesNodeConfig } from './sourceSitesNode'
@@ -17,6 +18,11 @@ import type { SourceSitesNodeConfig } from './sourceSitesNode'
 /** Heartbeat de moisson plus récent que cette fenêtre = « scraping en cours »
  *  (la moisson écrit la méta toutes les ~15 pages pendant la passe). */
 const LIVE_WINDOW_MS = 2 * 60_000
+
+type SortMode = 'manual' | 'status' | 'products'
+const SORT_LABELS: Record<SortMode, string> = {
+  manual: 'Ordre manuel', status: 'Par statut', products: 'Par produits',
+}
 
 export function SourceSitesConfig({ config, onChange }: {
   config: SourceSitesNodeConfig
@@ -40,6 +46,7 @@ export function SourceSitesConfig({ config, onChange }: {
   const [draft, setDraft] = useState('')
   const [importing, setImporting] = useState(false)
   const [importText, setImportText] = useState('')
+  const [sort, setSort] = useState<SortMode>('manual')
 
   const statsFor = (domain: string): SiteRowStats => {
     const siteId = stableId(normalizeDomain(domain))
@@ -88,6 +95,20 @@ export function SourceSitesConfig({ config, onChange }: {
   const runWarn = recent.filter((s) => (s.lastPassPages ?? 0) > 0 && (s.lastPassProducts ?? 0) === 0).length
   const runErr = recent.filter((s) => (s.lastPassPages ?? 0) === 0).length
   const runProducts = recent.reduce((n, s) => n + (s.lastPassProducts ?? 0), 0)
+
+  // Ordre d'AFFICHAGE (le tri ne touche jamais config.sites : l'ordre d'émission reste
+  // l'ordre manuel). On trie une projection {row, index d'origine, stats} — l'index
+  // d'origine est réutilisé pour toggle/engine/remove afin de ne pas décaler la config.
+  const displayRows = rows.map((r, i) => ({ r, i, stats: statsFor(r.domain) }))
+  if (sort === 'status') {
+    displayRows.sort((a, b) => {
+      const ra = siteStatusRank(siteStatus({ enabled: a.r.enabled, live: isLive(a.stats), ...a.stats }))
+      const rb = siteStatusRank(siteStatus({ enabled: b.r.enabled, live: isLive(b.stats), ...b.stats }))
+      return ra - rb || a.i - b.i // rang égal → ordre manuel stable
+    })
+  } else if (sort === 'products') {
+    displayRows.sort((a, b) => (b.stats.products ?? -1) - (a.stats.products ?? -1) || a.i - b.i)
+  }
   return (
     <div className="flex flex-col gap-2">
       {/* En-tête ÉPINGLÉ au scroll (le conteneur scrollant est le panneau bg-surface-2) :
@@ -97,13 +118,27 @@ export function SourceSitesConfig({ config, onChange }: {
           <p className="text-[10px] uppercase tracking-wider text-white/30 whitespace-nowrap truncate">
             Sites concurrents {rows.length ? `· ${active}/${rows.length} actifs` : ''}
           </p>
-          <button
-            onClick={() => setImporting((v) => !v)}
-            title="Coller une liste (un site par ligne)"
-            className="shrink-0 flex items-center gap-1 text-[10px] whitespace-nowrap text-white/40 hover:text-indigo-400 transition-colors"
-          >
-            <ClipboardPaste className="w-3 h-3" /> Importer
-          </button>
+          <div className="shrink-0 flex items-center gap-2">
+            {rows.length > 1 && (
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as SortMode)}
+                title="Trier l'affichage (n'affecte pas l'ordre d'exécution)"
+                className="bg-well border border-white/10 rounded text-[10px] text-white/50 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
+              >
+                {(Object.keys(SORT_LABELS) as SortMode[]).map((m) => (
+                  <option key={m} value={m}>{SORT_LABELS[m]}</option>
+                ))}
+              </select>
+            )}
+            <button
+              onClick={() => setImporting((v) => !v)}
+              title="Coller une liste (un site par ligne)"
+              className="flex items-center gap-1 text-[10px] whitespace-nowrap text-white/40 hover:text-indigo-400 transition-colors"
+            >
+              <ClipboardPaste className="w-3 h-3" /> Importer
+            </button>
+          </div>
         </div>
         {liveCount > 0 ? (
           <p className="text-[10px] flex items-center gap-1.5 text-emerald-300 whitespace-nowrap">
@@ -168,23 +203,20 @@ export function SourceSitesConfig({ config, onChange }: {
         </p>
       ) : (
         <div className="flex flex-col gap-1">
-          {rows.map((r, i) => {
-            const stats = statsFor(r.domain)
-            return (
-              <SourceSitesRowItem
-                key={stableId(normalizeDomain(r.domain)) + i}
-                domain={r.domain}
-                enabled={r.enabled}
-                engine={r.engine ?? 'auto'}
-                stats={stats}
-                live={isLive(stats)}
-                now={now}
-                onToggle={(enabled) => patchRow(i, { enabled })}
-                onEngine={(engine) => patchRow(i, engine === 'auto' ? { engine: undefined } : { engine })}
-                onRemove={() => onChange({ ...config, sites: rows.filter((_, j) => j !== i) })}
-              />
-            )
-          })}
+          {displayRows.map(({ r, i, stats }) => (
+            <SourceSitesRowItem
+              key={stableId(normalizeDomain(r.domain)) + i}
+              domain={r.domain}
+              enabled={r.enabled}
+              engine={r.engine ?? 'auto'}
+              stats={stats}
+              live={isLive(stats)}
+              now={now}
+              onToggle={(enabled) => patchRow(i, { enabled })}
+              onEngine={(engine) => patchRow(i, engine === 'auto' ? { engine: undefined } : { engine })}
+              onRemove={() => onChange({ ...config, sites: rows.filter((_, j) => j !== i) })}
+            />
+          ))}
         </div>
       )}
 

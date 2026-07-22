@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   rowsToCompetitorSites, isSourceSitesPayload, resolveSitesInput, importSitesIntoRows,
-  normalizeDomain, deriveWatchId, type SourceSiteRow,
+  normalizeDomain, deriveWatchId, siteStatus, siteStatusRank, type SourceSiteRow,
 } from './sourceSites'
 
 describe('normalizeDomain', () => {
@@ -78,6 +78,23 @@ describe('resolveSitesInput', () => {
   it('le watchId manuel du fallback est respecté (dérivation historique)', () => {
     const r = resolveSitesInput(undefined, { ...fallback, watchIdRaw: 'Mon Suivi' })
     expect(r.watchId).toBe(deriveWatchId('Mon Suivi', 'wf_123'))
+  })
+})
+
+describe('siteStatus + tri', () => {
+  it('désactivé prime sur tout historique', () => {
+    expect(siteStatus({ enabled: false, live: true, lastPassAt: 1, lastPassPages: 9, lastPassProducts: 9 })).toBe('disabled')
+  })
+  it('en cours > échec > sans produit > OK > jamais', () => {
+    expect(siteStatus({ enabled: true, live: true })).toBe('live')
+    expect(siteStatus({ enabled: true, live: false, lastPassAt: 1, lastPassPages: 0 })).toBe('error')
+    expect(siteStatus({ enabled: true, live: false, lastPassAt: 1, lastPassPages: 5, lastPassProducts: 0 })).toBe('empty')
+    expect(siteStatus({ enabled: true, live: false, lastPassAt: 1, lastPassPages: 5, lastPassProducts: 3 })).toBe('ok')
+    expect(siteStatus({ enabled: true, live: false })).toBe('never')
+  })
+  it('les rangs ordonnent live<error<empty<ok<never<disabled', () => {
+    const order = (['live', 'error', 'empty', 'ok', 'never', 'disabled'] as const).map(siteStatusRank)
+    expect(order).toEqual([...order].sort((a, b) => a - b))
   })
 })
 
