@@ -29,9 +29,24 @@ export async function jinaRead(
   return { title: json.data?.title ?? '', content: json.data?.content ?? '' }
 }
 
-export async function jinaSearch(uid: string, query: string): Promise<{ title: string; url: string; snippet: string }[]> {
-  const res = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, { headers: await jinaHeaders(uid) })
-  if (!res.ok) throw new Error(`Jina search ${res.status}`)
-  const json = (await res.json()) as { data?: { title?: string; url?: string; content?: string }[] }
-  return (json.data ?? []).map((d) => ({ title: d.title ?? '', url: d.url ?? '', snippet: (d.content ?? '').slice(0, 500) }))
+// Borne de temps d'une recherche Jina : sans elle, un `fetch` vers s.jina.ai qui pend
+// (moteur navigateur headless bloqué) ne revient JAMAIS — pas de timeout par défaut. Sous
+// cron, ça fait dépasser le timeout de la Function → run tué par la plateforme, checkpoint
+// non purgé, dashboard figé. On combine ce timeout interne au signal d'abort du run.
+const JINA_SEARCH_TIMEOUT_MS = 30_000
+
+export async function jinaSearch(uid: string, query: string, signal?: AbortSignal): Promise<{ title: string; url: string; snippet: string }[]> {
+  const ctrl = new AbortController()
+  const t = setTimeout(() => ctrl.abort(), JINA_SEARCH_TIMEOUT_MS)
+  const onAbort = () => ctrl.abort()
+  if (signal) { if (signal.aborted) ctrl.abort(); else signal.addEventListener('abort', onAbort) }
+  try {
+    const res = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, { headers: await jinaHeaders(uid), signal: ctrl.signal })
+    if (!res.ok) throw new Error(`Jina search ${res.status}`)
+    const json = (await res.json()) as { data?: { title?: string; url?: string; content?: string }[] }
+    return (json.data ?? []).map((d) => ({ title: d.title ?? '', url: d.url ?? '', snippet: (d.content ?? '').slice(0, 500) }))
+  } finally {
+    clearTimeout(t)
+    if (signal) signal.removeEventListener('abort', onAbort)
+  }
 }

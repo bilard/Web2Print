@@ -23,6 +23,10 @@ export interface SearchDeps {
   /** Extraction produit générique (Firecrawl rendu JS + schéma) d'UNE fiche → listing.
    *  Optionnel ; requis avec searchWeb pour le mode générique. */
   extractProduct?: (url: string) => Promise<CompetitorListing | null>
+  /** Signal d'abort (timeout serveur) : surveillé DANS les boucles internes du mode
+   *  générique (searchWeb + Firecrawl, jusqu'à ~9 appels lents par produit·site) pour ne
+   *  pas dépasser le budget de run et faire tuer la Function. */
+  signal?: { aborted: boolean }
   log?: (msg: string) => void
 }
 
@@ -69,8 +73,10 @@ async function searchProductGeneric(
   const queries = [...new Set(keys.map((k) => k.value))]
   const tried = new Set<string>()
   for (const query of queries) {
+    if (deps.signal?.aborted) break // budget de run épuisé → on s'arrête proprement
     const urls = preferProductUrls(await deps.searchWeb(`site:${site} ${query}`))
     for (const url of urls.slice(0, 3)) {
+      if (deps.signal?.aborted) break
       if (tried.has(url)) continue
       tried.add(url)
       const listing = await deps.extractProduct(url)

@@ -59,12 +59,22 @@ registerServerNode({
     const hasGeneric = sites.some((s) => s.generic)
     const firecrawlKey = hasGeneric ? (await getUserApiKey(ctx.uid, 'firecrawl')) : ''
     if (hasGeneric && !firecrawlKey) ctx.log('warn', 'Sites génériques configurés mais aucune clé Firecrawl — ils seront ignorés.')
+    // Compteurs de diagnostic du mode générique : sans eux, une couverture marketplace
+    // faible (les réfs OEM ne sont pas vendues sur amazon/cdiscount…) est indistinguable
+    // d'une panne. On les journalise en fin de passe pour rendre la réalité VISIBLE.
+    let genQueries = 0, genNoUrls = 0, genExtracted = 0
     const searchWeb = async (query: string): Promise<string[]> => {
-      try { return (await jinaSearch(ctx.uid, query)).map((r) => r.url).filter(Boolean) } catch { return [] }
+      genQueries++
+      try {
+        const urls = (await jinaSearch(ctx.uid, query, ctx.signal)).map((r) => r.url).filter(Boolean)
+        if (urls.length === 0) genNoUrls++ // 0 URL = réf non référencée sur ce marketplace (ou 422 Jina)
+        return urls
+      } catch { genNoUrls++; return [] }
     }
     const extractProduct = async (url: string): Promise<CompetitorListing | null> => {
       const p = await firecrawlScrapeProduct(url, firecrawlKey)
       if (!p || p.price == null) return null
+      genExtracted++
       return {
         url, name: p.name ?? '', ref: p.reference, price: p.price, currency: p.currency,
         taxIncluded: true, // prix affiché B2C = TTC
@@ -121,6 +131,11 @@ registerServerNode({
       }
     })
     ctx.log('info', `${rows.length} prix trouvé(s) sur ${pass.processed} produit(s) [curseur ${startCursor} → ${pass.nextCursor} / ${products.length}] × ${sites.length} site(s).`)
+    if (hasGeneric && firecrawlKey) {
+      const genericSiteIds = new Set(sites.filter((s) => s.generic).map((s) => s.siteId))
+      const genMatched = pass.results.filter((r) => genericSiteIds.has(r.siteId)).length
+      ctx.log('info', `Générique (${[...genericSiteIds].length} site(s)) : ${genQueries} recherche(s) web · ${genNoUrls} sans résultat (réf non vendue / 422) · ${genExtracted} fiche(s) extraite(s) Firecrawl · ${genMatched} appariée(s) par preuve exacte.`)
+    }
     return { results: resultsSheet(rows) }
   },
 })
