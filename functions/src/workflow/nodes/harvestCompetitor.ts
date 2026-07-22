@@ -9,6 +9,7 @@
 // que la validation live. Persistance via l'adaptateur admin-SDK. Pas de reportCount
 // (absent du ctx serveur). Toute la logique métier est partagée avec le client via
 // les modules purs dupliqués sous functions/src/priceWatch/catalog/.
+import { getFirestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
 import { fetchHtml } from '../../scraper/fetchHtml'
 import { stableId } from '../../priceWatch/helpers'
@@ -16,6 +17,18 @@ import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '../../priceWatch/catalog/runHarvest'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages } from '../../priceWatch/catalog/store'
 import { harvestProgress } from '../../priceWatch/catalog/harvest'
+
+/** Mode « cycle calendaire » : porté par le doc workflowSchedules du workflow (champ
+ *  `cycle` posé par le node Cron). En mode cycle, un site terminé ATTEND les autres au
+ *  lieu de rouvrir son balayage — le cycle a une fin globale (→ relance au calendrier).
+ *  Fail-open : doc absent/illisible = comportement continu historique. */
+async function isCycleMode(workflowId: string | undefined): Promise<boolean> {
+  if (!workflowId) return false
+  try {
+    const snap = await getFirestore().doc(`workflowSchedules/${workflowId}`).get()
+    return !!(snap.exists && (snap.data()?.cycle as { enabled?: boolean } | undefined)?.enabled)
+  } catch { return false }
+}
 
 /** Colonnes de la feuille de statut (parité avec le node client). */
 const STATUS_COLUMNS = [
@@ -53,11 +66,31 @@ registerServerNode({
     // Budget réparti équitablement entre les sites (au moins 1 page chacun).
     const perSite = Math.max(1, Math.floor(pageBudget / sites.length))
 
+    // Mode cycle : metas préchargées pour décider GLOBALEMENT — tous les balayages
+    // terminés = le run d'échéance calendaire rouvre un cycle pour TOUS en même temps ;
+    // sinon les sites terminés attendent (skip) que les retardataires finissent.
+    const cycleMode = await isCycleMode(ctx.workflowId)
+    const metas = new Map<string, Awaited<ReturnType<typeof loadCompetitorMeta>>>()
+    for (const site of sites) {
+      const siteId = stableId(site.domain)
+      metas.set(siteId, await loadCompetitorMeta(ctx.uid, watchId, siteId))
+    }
+    const allDoneBefore = sites.every((s) => metas.get(stableId(s.domain))?.cursor?.done === true)
+    if (cycleMode && allDoneBefore) ctx.log('info', 'Nouveau cycle : réouverture des balayages de tous les sites.')
+
+    let doneCount = 0
     const rows: Record<string, unknown>[] = []
     for (const site of sites) {
       if (ctx.signal.aborted) break
       const cfg: CompetitorConfig = { siteId: stableId(site.domain), domain: site.domain, families }
-      const prevMeta = await loadCompetitorMeta(ctx.uid, watchId, cfg.siteId)
+      const prevMeta = metas.get(cfg.siteId)
+      if (cycleMode && !allDoneBefore && prevMeta?.cursor?.done) {
+        doneCount++
+        const pagesTotal = await countPages(ctx.uid, watchId, cfg.siteId)
+        rows.push({ site: site.domain, pagesFetched: 0, productsIndexed: 0, pagesTotal, progress: 'complet' })
+        ctx.log('info', `${site.domain} : balayage terminé — en attente de la fin du cycle.`)
+        continue
+      }
       const t0 = Date.now()
       const deps: HarvestDeps = {
         // Fetch DIRECT : sur le runtime CF c'est la même IP que fetchPageHtml (validé live).
@@ -80,6 +113,7 @@ registerServerNode({
         signal: ctx.signal,
       }
       const res = await harvestPass(cfg, deps, perSite)
+      if (res.sweepComplete) doneCount++
       const elapsedMs = Date.now() - t0
       const pagesTotal = await countPages(ctx.uid, watchId, cfg.siteId)
       await saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
@@ -98,6 +132,12 @@ registerServerNode({
         progress: res.sweepComplete ? 'complet' : `${Math.round(harvestProgress(res.cursor) * 100)} %`,
       })
       ctx.log('info', `${site.domain} : +${res.productsIndexed} produit(s) sur ${res.pagesFetched} page(s) (index : ${pagesTotal} pages).`)
+    }
+    // Cycle complet : TOUS les sites à 100 % ce run → le scheduler bascule sur
+    // l'échéance calendaire de relance au lieu d'enchaîner à la cadence rapide.
+    if (cycleMode && !ctx.signal.aborted && doneCount === sites.length) {
+      ctx.reportCycleComplete?.()
+      ctx.log('info', `Cycle complet : ${sites.length} site(s) à 100 % — prochaine relance à l'échéance calendaire.`)
     }
     return { status: statusSheet(rows) }
   },

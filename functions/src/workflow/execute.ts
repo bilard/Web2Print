@@ -20,6 +20,9 @@ export interface HeadlessResult {
    *  d'idempotence de la reprise : un node à effet de bord démarré mais non terminé ne doit
    *  pas être ré-exécuté (doublons). */
   startedNodes: string[]
+  /** Un node a signalé (ctx.reportCycleComplete) que le cycle de moisson est terminé à
+   *  100 % — le scheduler bascule sur l'échéance calendaire de relance. */
+  cycleComplete: boolean
 }
 
 interface LoopPair { eachId: string; collectId: string; bodyIds: Set<string> }
@@ -106,6 +109,7 @@ export async function executeWorkflowHeadless(
   const errored = new Set<string>()
   const skipped = new Set<string>()
   const started = new Set<string>() // nodes entrés dans spec.run (garde reprise)
+  let cycleComplete = false // posé par ctx.reportCycleComplete (fin de cycle de moisson)
 
   const loops = detectLoops(wf.nodes, wf.edges)
   const internalIds = new Set<string>()
@@ -124,7 +128,7 @@ export async function executeWorkflowHeadless(
   try { ordered = topoSort(mainNodes, [...mainEdges, ...synthEdges]) }
   catch (err) {
     log('error', err instanceof Error ? err.message : String(err))
-    return { status: 'error', nodeCount: 0, errorCount: 1, logs, nodeOutputs, nodeStates: {}, nodeConnectors, startedNodes: [] }
+    return { status: 'error', nodeCount: 0, errorCount: 1, logs, nodeOutputs, nodeStates: {}, nodeConnectors, startedNodes: [], cycleComplete: false }
   }
 
   const runBody = async (pair: LoopPair, item: unknown, idx: number): Promise<unknown> => {
@@ -247,6 +251,7 @@ export async function executeWorkflowHeadless(
             const arr = (nodeConnectors[node.id] ??= [])
             if (!arr.includes(cid)) arr.push(cid)
           },
+          reportCycleComplete: () => { cycleComplete = true },
         },
         cfg, inputs,
       )
@@ -304,5 +309,5 @@ export async function executeWorkflowHeadless(
   // cette trace reste le seul accès à ce détail. Visible via `firebase functions:log`.
   const trace = logs.map((l) => `  ${l.level} [${l.node ?? '-'}] ${l.msg}`).join('\n')
   console.log(`[wf:${wf.name}] trace:\n${trace}`)
-  return { status, nodeCount, errorCount, logs, nodeOutputs, nodeStates, nodeConnectors, startedNodes: [...started] }
+  return { status, nodeCount, errorCount, logs, nodeOutputs, nodeStates, nodeConnectors, startedNodes: [...started], cycleComplete }
 }

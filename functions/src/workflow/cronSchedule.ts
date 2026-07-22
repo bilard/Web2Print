@@ -13,6 +13,28 @@ export interface CronConfig {
    *  FIN du run précédent (pas sur une cadence fixe). Évite chevauchement et temps mort
    *  quand la durée d'un run varie. `atTime`/`weekday` ignorés dans ce mode. */
   afterCompletion?: boolean
+  /** Relance calendaire du CYCLE de moisson (veille) : quand le cycle est terminé à
+   *  100 % sur tous les sites, la cadence s'arrête et le cycle complet repart à
+   *  l'échéance décrite ici (au lieu d'enchaîner en continu). */
+  cycle?: CycleCalendar | null
+}
+
+/** Récurrence de relance du cycle : quotidien / jours de semaine / quantième / dates précises. */
+export type CycleKind = 'day' | 'week' | 'month' | 'dates'
+
+export interface CycleCalendar {
+  enabled: boolean
+  kind: CycleKind
+  /** 'HH:MM' — heure de relance, fuseau Europe/Paris. */
+  atTime: string
+  /** kind 'day' : tous les N jours · kind 'month' : tous les N mois. */
+  every?: number
+  /** kind 'week' : jours cochés (0=dimanche … 6=samedi), multi. */
+  weekdays?: number[]
+  /** kind 'month' : quantième 1..31 (clampé au dernier jour des mois courts). */
+  monthday?: number
+  /** kind 'dates' : dates précises 'YYYY-MM-DD' (one-shot chacune). */
+  dates?: string[]
 }
 
 /** Fuseau d'ancrage de l'horloge murale (« 14:30 » = 14:30 à Paris, été comme hiver). */
@@ -113,4 +135,83 @@ export function computeNextRun(cfg: CronConfig, from: number): number {
   const d = new Date(from)
   d.setUTCMonth(d.getUTCMonth() + every)
   return d.getTime()
+}
+
+/** Valide/normalise une config calendrier brute (doc Firestore) en `CycleCalendar` sûr,
+ *  TOUS champs définis. Renvoie null si absent ou désactivé. ⚠️ Jumeau client identique
+ *  (src/features/workflows/runtime/cronSchedule.ts). */
+export function sanitizeCycle(raw: unknown): CycleCalendar | null {
+  if (!raw || typeof raw !== 'object') return null
+  const c = raw as Record<string, unknown>
+  if (!c.enabled) return null
+  const kind = (['day', 'week', 'month', 'dates'] as CycleKind[]).includes(c.kind as CycleKind)
+    ? (c.kind as CycleKind) : 'day'
+  const atTime = typeof c.atTime === 'string' && /^\d{1,2}:\d{2}$/.test(c.atTime) ? c.atTime : '07:00'
+  const weekdays = Array.isArray(c.weekdays)
+    ? [...new Set(c.weekdays.map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6))].sort((a, b) => a - b)
+    : []
+  const dates = Array.isArray(c.dates)
+    ? [...new Set(c.dates.map(String).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)))].sort()
+    : []
+  return {
+    enabled: true, kind, atTime,
+    every: normalizeEvery(Number(c.every ?? 1)),
+    weekdays,
+    monthday: Math.min(31, Math.max(1, Math.trunc(Number(c.monthday)) || 1)),
+    dates,
+  }
+}
+
+/**
+ * Prochaine échéance calendaire de relance de cycle strictement après `from`
+ * (horloge murale Europe/Paris à `atTime`), ou null si plus aucune échéance
+ * (kind 'dates' avec toutes les dates passées). ⚠️ Jumeau client identique.
+ */
+export function computeNextCycleRun(cal: CycleCalendar, from: number): number | null {
+  const { h, mi } = parseAtTime(cal.atTime)
+  const p = tzParts(from)
+  const every = normalizeEvery(cal.every ?? 1)
+
+  if (cal.kind === 'dates') {
+    let best: number | null = null
+    for (const d of cal.dates ?? []) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d)
+      if (!m) continue
+      const cand = parisWallToEpoch(Number(m[1]), Number(m[2]), Number(m[3]), h, mi)
+      if (cand > from && (best == null || cand < best)) best = cand
+    }
+    return best
+  }
+
+  if (cal.kind === 'week') {
+    const days = (cal.weekdays ?? []).filter((n) => n >= 0 && n <= 6)
+    // Aucun jour coché → repli quotidien (plutôt que « jamais »).
+    for (let k = 0; k < 400; k++) {
+      const cand = parisWallToEpoch(p.y, p.mo, p.d + k, h, mi)
+      if (cand <= from) continue
+      if (days.length === 0 || days.includes(tzParts(cand).weekday)) return cand
+    }
+    return from + 604_800_000
+  }
+
+  if (cal.kind === 'month') {
+    const md = Math.min(31, Math.max(1, Math.trunc(cal.monthday ?? 1)))
+    for (let k = 0; k < 60; k++) {
+      const total = p.mo - 1 + every * k
+      const y = p.y + Math.floor(total / 12)
+      const mo = (total % 12) + 1
+      // Quantième clampé au dernier jour du mois (le « 31 » vaut « fin de mois »).
+      const dim = new Date(Date.UTC(y, mo, 0)).getUTCDate()
+      const cand = parisWallToEpoch(y, mo, Math.min(md, dim), h, mi)
+      if (cand > from) return cand
+    }
+    return from + 2_592_000_000
+  }
+
+  // 'day' : tous les N jours à atTime.
+  for (let k = 0; k < 1000; k++) {
+    const cand = parisWallToEpoch(p.y, p.mo, p.d + every * k, h, mi)
+    if (cand > from) return cand
+  }
+  return from + 86_400_000 * every
 }

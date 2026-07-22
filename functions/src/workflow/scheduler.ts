@@ -9,7 +9,7 @@ import { writeRunLive } from './runLive'
 import {
   loadCheckpoint, saveNodeOutput, saveCheckpointMeta, clearCheckpoint, MAX_RESUME_ATTEMPTS,
 } from './checkpoint'
-import { computeNextRun, type CronConfig } from './cronSchedule'
+import { computeNextRun, computeNextCycleRun, sanitizeCycle, type CronConfig } from './cronSchedule'
 import type { ServerWorkflow } from './types'
 import './nodes/index' // enregistre les nodes (effet de bord)
 
@@ -126,6 +126,10 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
       },
     })
 
+    // Fin de cycle : signalée ce tick, OU lors d'une tranche précédente du même run
+    // (le node signaleur, déjà checkpointé, n'est pas ré-exécuté à la reprise).
+    const cycleComplete = result.cycleComplete || !!prior?.cycleComplete
+
     // Garde d'idempotence : un node à effet de bord DÉMARRÉ mais non terminé serait
     // ré-exécuté en entier à la reprise (doublons Sheets/mail/webhook). On ne reprend que
     // si tout node straddlé est d'un type pur ré-exécutable.
@@ -138,7 +142,7 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
     const canResume = trigger === 'cron' && abortReason === 'timeout' && ac.signal.aborted
       && completed.size > priorDone && attempts + 1 < MAX_RESUME_ATTEMPTS && !unsafeStraddle
     if (canResume) {
-      await saveCheckpointMeta(uid, wf.id, { runId, startedAt, attempts: attempts + 1 })
+      await saveCheckpointMeta(uid, wf.id, { runId, startedAt, attempts: attempts + 1, cycleComplete })
       // Aperçu en pause : les nodes faits = success, le reste = pending (reprise au tick suivant).
       const pausedStates: Record<string, 'success' | 'pending'> = {}
       for (const n of wf.nodes) pausedStates[n.id] = completed.has(n.id) ? 'success' : 'pending'
@@ -147,7 +151,7 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
         logs: result.logs.slice(-200), nodeOutputs: capOutputsForPreview(result.nodeOutputs),
         nodeConnectors: result.nodeConnectors,
       })
-      return { ...result, paused: true }
+      return { ...result, cycleComplete, paused: true }
     }
 
     // Sinon, run terminé : succès/partiel, STOP volontaire, ou reprise impossible/épuisée.
@@ -162,7 +166,7 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
       nodeOutputs: capOutputsForPreview(result.nodeOutputs),
       nodeConnectors: result.nodeConnectors,
     })
-    return { ...result, paused: false }
+    return { ...result, cycleComplete, paused: false }
   } catch (err) {
     if (trigger === 'cron') await clearCheckpoint(uid, wf.id).catch(() => {})
     await writeRunLive(uid, wf.id, { runId, endedAt: Date.now(), status: 'error' })
@@ -180,6 +184,43 @@ export async function runOne(uid: string, workflowId: string, trigger: 'cron' | 
   return runWorkflow(wf, uid, trigger)
 }
 
+/** Forme du doc `workflowSchedules/{workflowId}` lue par le scanner. */
+interface ScheduleDocData {
+  uid: string; workflowId: string; every: number; unit: CronConfig['unit']
+  atTime?: string | null; weekday?: number | null; afterCompletion?: boolean
+  cycle?: unknown
+}
+
+/**
+ * Champs de planning à écrire APRÈS un run. Trois issues :
+ *  - run en pause (timeout reprenable) → reprise au plus tôt (prochain tick) ;
+ *  - cycle de moisson terminé à 100 % ET relance calendaire configurée → prochaine
+ *    échéance du calendrier (`cycleWaiting` affiché côté client) ; dates précises
+ *    épuisées → la planification se désactive proprement ;
+ *  - sinon → cadence normale (ancrée fin de run en mode « après la fin »).
+ */
+function afterRunPatch(
+  s: ScheduleDocData,
+  result: { paused: boolean; cycleComplete: boolean; status: string },
+  tickStart: number,
+): Record<string, unknown> {
+  const lastStatus = result.paused ? 'running' : result.status
+  if (result.paused) return { lastStatus, nextRunAt: Date.now() + 5_000 }
+  const cycle = sanitizeCycle(s.cycle)
+  if (cycle && result.cycleComplete) {
+    const next = computeNextCycleRun(cycle, Date.now())
+    if (next == null) return { lastStatus: 'done', enabled: false, cycleWaiting: false }
+    return { lastStatus, nextRunAt: next, cycleWaiting: true }
+  }
+  const cron: CronConfig = {
+    enabled: true, every: s.every, unit: s.unit,
+    atTime: s.atTime ?? undefined, weekday: s.weekday ?? undefined,
+    afterCompletion: !!s.afterCompletion,
+  }
+  const anchor = cron.afterCompletion ? Date.now() : tickStart
+  return { lastStatus, nextRunAt: computeNextRun(cron, anchor), cycleWaiting: false }
+}
+
 // Scanner : toutes les minutes, exécute les plannings dûs (et purge les orphelins).
 export const workflowCronScheduler = onSchedule(
   { schedule: 'every 1 minutes', region: 'europe-west1', timeoutSeconds: 1800, memory: '1GiB' },
@@ -190,10 +231,7 @@ export const workflowCronScheduler = onSchedule(
       .where('enabled', '==', true).where('nextRunAt', '<=', now)
       .orderBy('nextRunAt', 'asc').limit(MAX_SCHEDULES_PER_TICK).get()
     for (const docSnap of due.docs) {
-      const s = docSnap.data() as {
-        uid: string; workflowId: string; every: number; unit: CronConfig['unit']
-        atTime?: string | null; weekday?: number | null; afterCompletion?: boolean
-      }
+      const s = docSnap.data() as ScheduleDocData
       // Planning orphelin : le workflow a été supprimé sans nettoyer son cron.
       // On purge le doc pour arrêter la boucle d'échec (sinon réessai chaque minute
       // à l'infini, jamais de run réel). Le client purge aussi à la suppression.
@@ -216,14 +254,7 @@ export const workflowCronScheduler = onSchedule(
       await docSnap.ref.update({ lastRunAt: now, lastStatus: 'running', nextRunAt: now + RUN_TIMEOUT_MS + 120_000 })
       try {
         const result = await runWorkflow(wf, s.uid, 'cron')
-        // Mode « après la fin » : ancrer la prochaine échéance sur la FIN du run (Date.now()
-        // ici = après le await), pas sur le début du tick → ni chevauchement, ni temps mort.
-        const anchor = cron.afterCompletion ? Date.now() : now
-        // Run en pause (timeout reprenable) : reprogrammer AU PLUS TÔT (prochain tick) pour
-        // reprendre là où on s'est arrêté, sans avancer à la prochaine échéance.
-        const nextRunAt = result.paused ? Date.now() + 5_000 : computeNextRun(cron, anchor)
-        const lastStatus = result.paused ? 'running' : result.status
-        await docSnap.ref.update({ lastStatus, nextRunAt })
+        await docSnap.ref.update(afterRunPatch(s, result, now))
       } catch (err) {
         await docSnap.ref.update({ lastStatus: 'error', nextRunAt: computeNextRun(cron, cron.afterCompletion ? Date.now() : now) })
         console.error('workflowCronScheduler: échec', s.workflowId, err)
@@ -240,7 +271,14 @@ export const runWorkflowNow = onCall(
     if (!uid) throw new HttpsError('unauthenticated', 'Connexion requise.')
     const workflowId = String((req.data as { workflowId?: string })?.workflowId ?? '')
     if (!workflowId) throw new HttpsError('invalid-argument', 'workflowId requis.')
+    const startedAt = Date.now()
     const result = await runOne(uid, workflowId, 'manual')
+    // Resynchroniser le planning : un run manuel peut TERMINER le cycle (→ attendre
+    // l'échéance calendaire) ou le RELANCER pendant l'attente (→ reprendre la cadence).
+    const ref = getFirestore().doc(`workflowSchedules/${workflowId}`)
+    const sched = await ref.get().catch(() => null)
+    const s = sched?.exists ? (sched.data() as ScheduleDocData & { enabled?: boolean }) : null
+    if (s?.enabled && s.uid === uid) await ref.update(afterRunPatch(s, result, startedAt)).catch(() => {})
     return { status: result.status, nodeCount: result.nodeCount, errorCount: result.errorCount }
   },
 )

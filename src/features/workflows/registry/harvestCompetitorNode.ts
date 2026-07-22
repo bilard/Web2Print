@@ -4,9 +4,11 @@
 // ticks successifs accumulent puis rafraîchissent l'index. Aucune donnée volumineuse ne
 // transite par la mémoire du run — le matching relira l'index (cf. audit scalabilité).
 import { TrendingUpDown } from 'lucide-react'
+import { doc, getDoc } from 'firebase/firestore'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet } from '@/features/excel/types'
+import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { buildSiteFetcher } from '@/features/priceWatch/catalog/siteFetch'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
@@ -23,6 +25,17 @@ interface HarvestConfig {
 }
 interface HarvestInputs { sites?: unknown }
 type HarvestOutputs = { status: ExcelSheet }
+
+/** Mode « cycle calendaire » (parité serveur) : porté par le doc workflowSchedules du
+ *  workflow (champ `cycle` posé par le node Cron). En mode cycle, un site terminé ATTEND
+ *  les autres au lieu de rouvrir son balayage. Fail-open : doc absent = mode continu. */
+async function isCycleMode(workflowId: string | undefined): Promise<boolean> {
+  if (!workflowId) return false
+  try {
+    const snap = await getDoc(doc(db, 'workflowSchedules', workflowId))
+    return !!(snap.exists() && (snap.data()?.cycle as { enabled?: boolean } | undefined)?.enabled)
+  } catch { return false }
+}
 
 function statusSheet(rows: Record<string, unknown>[]): ExcelSheet {
   return {
@@ -92,17 +105,35 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     // Budget réparti équitablement entre les sites (au moins 1 page chacun).
     const perSite = Math.max(1, Math.floor(Math.max(1, config.pageBudget) / sites.length))
 
+    // Mode cycle (parité serveur) : metas préchargées pour décider GLOBALEMENT — tous
+    // les balayages terminés = réouverture d'un cycle pour TOUS en même temps ; sinon
+    // les sites terminés attendent (skip) que les retardataires finissent.
+    const cycleMode = await isCycleMode(ctx.workflowId)
+    const metas = new Map<string, Awaited<ReturnType<typeof loadCompetitorMeta>>>()
+    for (const site of sites) {
+      const siteId = stableId(site.domain)
+      metas.set(siteId, await loadCompetitorMeta(uid, watchId, siteId))
+    }
+    const allDoneBefore = sites.every((s) => metas.get(stableId(s.domain))?.cursor?.done === true)
+    if (cycleMode && allDoneBefore) ctx.log('info', 'Nouveau cycle : réouverture des balayages de tous les sites.')
+
     const rows: Record<string, unknown>[] = []
     for (const site of sites) {
       if (ctx.signal.aborted) break
+      const cfg: CompetitorConfig = { siteId: stableId(site.domain), domain: site.domain, families }
+      const prevMeta = metas.get(cfg.siteId)
+      if (cycleMode && !allDoneBefore && prevMeta?.cursor?.done) {
+        const pagesTotal = await countPages(uid, watchId, cfg.siteId)
+        rows.push({ site: site.domain, pagesFetched: 0, productsIndexed: 0, pagesTotal, progress: 'complet' })
+        ctx.log('info', `${site.domain} : balayage terminé — en attente de la fin du cycle.`)
+        continue
+      }
       // Moteur par site : site authentifié (login cookie) sinon moteur forcé
       // (jina | firecrawl | brightdata) sinon cascade auto.
       const fetcher = buildSiteFetcher(site.engine, { auth: site.auth, host: site.domain })
       ctx.reportConnector?.(fetcher.connectorId)
       if (site.auth) ctx.log('info', `${site.domain} : accès authentifié (login cookie).`)
       else if (site.engine) ctx.log('info', `${site.domain} : moteur forcé « ${site.engine} ».`)
-      const cfg: CompetitorConfig = { siteId: stableId(site.domain), domain: site.domain, families }
-      const prevMeta = await loadCompetitorMeta(uid, watchId, cfg.siteId)
       const t0 = Date.now()
       const deps: HarvestDeps = {
         fetchHtml: fetcher.fetchHtml,

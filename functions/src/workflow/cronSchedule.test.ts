@@ -1,6 +1,6 @@
 // functions/src/workflow/cronSchedule.test.ts
 import { describe, it, expect } from 'vitest'
-import { computeNextRun, normalizeEvery } from './cronSchedule'
+import { computeNextRun, computeNextCycleRun, normalizeEvery, sanitizeCycle } from './cronSchedule'
 
 // Helpers de vérification : relisent le résultat en horloge murale Europe/Paris.
 const parisHM = (ts: number) =>
@@ -72,5 +72,43 @@ describe('computeNextRun — mois', () => {
     const next = computeNextRun({ enabled: true, every: 2, unit: 'month', atTime: '08:00' }, from)
     expect(parisHM(next)).toBe('08:00')
     expect(new Date(next).getUTCMonth()).toBe(7) // août (0-indexé)
+  })
+})
+
+// ————— Relance calendaire du cycle (parité client) —————
+const parisDate = (ts: number) =>
+  new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ts))
+
+describe('computeNextCycleRun (serveur)', () => {
+  it('week : prochain jour coché (vendredi) à l’heure voulue', () => {
+    const next = computeNextCycleRun({ enabled: true, kind: 'week', atTime: '07:00', weekdays: [5] }, from)
+    expect(next).not.toBeNull()
+    expect(parisWeekday(next!)).toBe('Fri')
+    expect(parisHM(next!)).toBe('07:00')
+    expect(parisDate(next!)).toBe('12/06/2026')
+  })
+  it('day : tous les 2 jours à 07:00 (aujourd’hui 07:00 déjà passé → +2 j)', () => {
+    const next = computeNextCycleRun({ enabled: true, kind: 'day', atTime: '07:00', every: 2 }, from)
+    expect(parisHM(next!)).toBe('07:00')
+    expect(parisDate(next!)).toBe('13/06/2026')
+  })
+  it('month : quantième clampé au dernier jour des mois courts (31 → 30 juin)', () => {
+    const next = computeNextCycleRun({ enabled: true, kind: 'month', atTime: '07:00', monthday: 31, every: 1 }, from)
+    expect(parisDate(next!)).toBe('30/06/2026')
+  })
+  it('dates : plus proche date future ; toutes passées → null', () => {
+    const next = computeNextCycleRun(
+      { enabled: true, kind: 'dates', atTime: '07:00', dates: ['2026-01-01', '2026-10-14', '2026-07-01'] }, from,
+    )
+    expect(parisDate(next!)).toBe('01/07/2026')
+    expect(computeNextCycleRun({ enabled: true, kind: 'dates', atTime: '07:00', dates: ['2026-01-01'] }, from)).toBeNull()
+  })
+})
+
+describe('sanitizeCycle (serveur)', () => {
+  it('null si absent/désactivé ; normalise et déduplique sinon', () => {
+    expect(sanitizeCycle(undefined)).toBeNull()
+    const c = sanitizeCycle({ enabled: true, kind: 'week', atTime: 'bad', weekdays: [5, 5, 9, 1], dates: ['2026-10-14', 'nope'] })!
+    expect(c).toEqual({ enabled: true, kind: 'week', atTime: '07:00', every: 1, weekdays: [1, 5], monthday: 1, dates: ['2026-10-14'] })
   })
 })

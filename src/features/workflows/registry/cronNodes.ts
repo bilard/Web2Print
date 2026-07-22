@@ -2,7 +2,9 @@
 import { CalendarClock } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
-import { describeCron, type CronConfig } from '../runtime/cronSchedule'
+import { describeCron, describeCycle, type CronConfig } from '../runtime/cronSchedule'
+import { CronConfigUi } from './cronConfigUi'
+import { DEFAULT_CYCLE } from './cronCycleUi'
 
 const SERVER_UNITS = [
   { value: 'minute', label: 'minute(s)' },
@@ -28,7 +30,7 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
   category: 'import',
   label: 'Cron (planifié)',
   description:
-    "Déclencheur planifié : exécute le workflow côté serveur à cadence régulière (minute / heure / jour / semaine / mois). « Heure » = à HH:MM (jour/semaine/mois) ; « Jour » = jour de semaine ciblé (unité semaine). Fuseau Europe/Paris. Le scanner serveur tourne toutes les minutes (granularité minimale 1 min). Active « Planification » et sauvegarde pour enregistrer.",
+    "Déclencheur planifié : exécute le workflow côté serveur à cadence régulière (minute / heure / jour / semaine / mois). « Heure » = à HH:MM (jour/semaine/mois) ; « Jour » = jour de semaine ciblé (unité semaine). Fuseau Europe/Paris. Le scanner serveur tourne toutes les minutes (granularité minimale 1 min). En option, la « Relance du cycle (calendrier) » suspend la cadence quand la moisson atteint 100 % sur tous les sites et relance le cycle complet au calendrier choisi (quotidien, jours de semaine, quantième mensuel ou dates précises). Active « Planification » et sauvegarde pour enregistrer.",
   icon: CalendarClock,
   inputs: [],
   outputs: [{ name: 'tick', type: 'any' }],
@@ -60,9 +62,14 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
       disabledWhen: (c) => !!c.afterCompletion,
     },
   ],
-  defaultConfig: { enabled: false, every: 1, unit: 'day', afterCompletion: false, atTime: '09:00', weekday: 1 },
+  defaultConfig: {
+    enabled: false, every: 1, unit: 'day', afterCompletion: false, atTime: '09:00', weekday: 1,
+    cycle: { ...DEFAULT_CYCLE },
+  },
   // Résumé du planning affiché directement sur la carte (préfixe ⏸ si inactif).
-  cardSummary: (config) => `${config.enabled ? '' : '⏸ '}${describeCron(config)}`,
+  cardSummary: (config) =>
+    `${config.enabled ? '' : '⏸ '}${describeCron(config)}${config.cycle?.enabled ? ` · ${describeCycle(config.cycle)}` : ''}`,
+  ConfigComponent: CronConfigUi,
   runtime: 'server',
   run: async (ctx, config) => {
     const at = new Date().toISOString()

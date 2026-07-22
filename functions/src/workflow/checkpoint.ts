@@ -21,6 +21,10 @@ export interface Checkpoint {
   startedAt: number
   attempts: number
   outputs: Record<string, Record<string, unknown>>
+  /** Un node a signalé « cycle de moisson complet » lors d'une tranche PRÉCÉDENTE de ce
+   *  run. À la reprise, le node (déjà terminé) n'est pas ré-exécuté et ne re-signalerait
+   *  pas — le flag doit survivre pour que le scheduler bascule bien sur le calendrier. */
+  cycleComplete?: boolean
 }
 
 const metaRef = (uid: string, wfId: string) =>
@@ -38,7 +42,7 @@ const MAX_NODE_BYTES = 900_000
 export async function loadCheckpoint(uid: string, wfId: string): Promise<Checkpoint | null> {
   const meta = await metaRef(uid, wfId).get().catch(() => null)
   if (!meta || !meta.exists) return null
-  const m = meta.data() as { runId?: string; startedAt?: number; attempts?: number }
+  const m = meta.data() as { runId?: string; startedAt?: number; attempts?: number; cycleComplete?: boolean }
   if (!m.runId || typeof m.startedAt !== 'number') return null
   if (Date.now() - m.startedAt > STALE_MS) { await clearCheckpoint(uid, wfId); return null }
   const nodes = await nodesCol(uid, wfId).get().catch(() => null)
@@ -46,7 +50,7 @@ export async function loadCheckpoint(uid: string, wfId: string): Promise<Checkpo
   for (const d of nodes?.docs ?? []) {
     outputs[d.id] = (d.data() as { output?: Record<string, unknown> }).output ?? {}
   }
-  return { runId: m.runId, startedAt: m.startedAt, attempts: m.attempts ?? 0, outputs }
+  return { runId: m.runId, startedAt: m.startedAt, attempts: m.attempts ?? 0, outputs, cycleComplete: !!m.cycleComplete }
 }
 
 /** Persiste la sortie complète d'un node terminé. Best-effort : un échec (trop gros,
@@ -63,7 +67,7 @@ export async function saveNodeOutput(
 }
 
 export async function saveCheckpointMeta(
-  uid: string, wfId: string, meta: { runId: string; startedAt: number; attempts: number },
+  uid: string, wfId: string, meta: { runId: string; startedAt: number; attempts: number; cycleComplete: boolean },
 ): Promise<void> {
   await metaRef(uid, wfId).set(meta).catch(() => {})
 }

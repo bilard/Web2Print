@@ -25,6 +25,10 @@ export interface ServerRunCtx {
   /** Signale un connecteur réellement utilisé par le node (ex « jina », « brightdata »,
    *  « llm ») — remonté au client pour afficher le bon badge sur la carte. */
   reportConnector?: (connectorId: string) => void
+  /** Signale que le CYCLE de moisson est terminé à 100 % (tous les sites balayés) —
+   *  le scheduler bascule alors sur l'échéance calendaire de relance (cf. CycleCalendar)
+   *  au lieu d'enchaîner à la cadence rapide. */
+  reportCycleComplete?: () => void
 }
 
 type ServerRun = (

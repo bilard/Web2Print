@@ -11,6 +11,8 @@ import { useRunContext } from '../runtime/runContext'
 interface ScheduleDoc {
   enabled: boolean; every: number; unit: string
   nextRunAt: number; lastRunAt?: number; lastStatus?: string
+  /** Cycle de moisson terminé à 100 % — nextRunAt = prochaine échéance CALENDAIRE. */
+  cycleWaiting?: boolean
 }
 
 // timeout aligné sur la Function (540 s) : un run avec escalade Bright Data dépasse
@@ -66,6 +68,10 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
 
   // Heure « 23:41 » (concrète, ce que l'utilisateur veut voir).
   const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  // Échéance calendaire (souvent à plusieurs jours) : jour + heure, pas seulement HH:MM.
+  const dayTime = (ms: number) => new Date(ms).toLocaleString('fr-FR', {
+    weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+  })
   // « En cours » = run lancé depuis ce client, OU le serveur a marqué le planning en cours.
   const isRunning = running || sched.lastStatus === 'running'
   const overdue = sched.nextRunAt <= now
@@ -79,6 +85,13 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
           <b className="text-emerald-300">En cours</b>
           {sched.lastRunAt && <span className="text-indigo-200/80">· démarré {hhmm(sched.lastRunAt)} (il y a {formatCountdown(now - sched.lastRunAt)})</span>}
           <span className="text-indigo-200/70">· prochaine {hhmm(sched.nextRunAt)}</span>
+        </span>
+      ) : sched.cycleWaiting ? (
+        <span title="Cycle de moisson terminé à 100 % — relance à l'échéance calendaire">
+          <b className="text-emerald-300">Cycle terminé ✓</b>
+          <span className="text-indigo-300/50"> · </span>
+          Relance <b className="capitalize">{dayTime(sched.nextRunAt)}</b>{' '}
+          <span className="text-indigo-200/70">({overdue ? 'imminente' : `dans ${formatCountdown(sched.nextRunAt - now)}`})</span>
         </span>
       ) : (
         <span title="Planification serveur active">
