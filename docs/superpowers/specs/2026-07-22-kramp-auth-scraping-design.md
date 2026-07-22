@@ -16,7 +16,7 @@ Reconnaissance live (browserWs Bright Data + clés prod) :
 - ❌ **Bright Data Scraping Browser INTERDIT la saisie de mot de passe** (`Forbidden action: password typing is not allowed`, y compris via `element.value`). **L'approche A (login Bright Data) est morte.**
 - ✅ **Firecrawl `actions` sait se connecter** : `url=login.kramp.com`, actions `write` #username / input[type=password], `click` button[name=login-btn]. Pas de blocage mot de passe.
 - ✅ **Navigation en session dans le MÊME appel** via action `executeJavascript` (`location.assign(url)`) — Firecrawl n'a pas d'action `navigate`. Les **prix connectés sont visibles** (ex. 246,84 €).
-- ✅ **Recherche par réf** : URL path-based `https://www.kramp.com/shop-fr/fr/search/<réf>`. Réf F1 `092.48.801` → fiche `…/p/courroie-trapézoïdale--09248801`, **prix 12,06 €**, **match EXACT** (l'ID URL = réf sans points). L'EAN n'est PAS indexé par kramp → la réf fabricant est la clé.
+- ✅ **Recherche par réf** : URL path-based `https://www.kramp.com/shop-fr/fr/search/<réf>`. Réf F1 `092.48.801` → fiche `…/p/courroie-trapézoïdale--09248801`, **prix 12,06 €**, **match EXACT** (l'ID URL = réf sans points). Recherche **par réf ET par EAN** supportée par kramp (confirmé utilisateur) : réf fabricant d'abord, **EAN en repli** si la réf est exotique. (Mon test EAN 4049582633196 était « sans correspondance » car ce produit précis n'est pas chez kramp, pas parce que l'EAN serait non cherchable.)
 - Sélecteurs login : `#username`, `input[type=password]`, `button[name=login-btn]`. Fiche produit : `/shop-fr/fr/p/<slug>--<id>`.
 
 ## Approche retenue : Firecrawl `actions` (login intégré), 1 appel = login + recherche + fiche
