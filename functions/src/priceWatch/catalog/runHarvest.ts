@@ -7,7 +7,9 @@
 // ~500 s, le node DOIT se terminer pour que le checkpoint survive).
 import { parseListingPage, nextListingUrl, pageUrl } from './prestashop'
 import { parseListingGeneric } from './genericListing'
+import { parseListingDomCards } from './genericCards'
 import { extractCategoryLinks, selectCategories, keywordsForFamilies } from './categories'
+import { discoverGenericListings } from './genericDiscovery'
 import {
   initCursor, currentTarget, advance, openSweep, pageDocId,
   type HarvestCursor,
@@ -61,9 +63,14 @@ function homeUrl(domain: string): string {
  */
 export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): Promise<string[]> {
   const home = await deps.fetchHtml(homeUrl(cfg.domain))
-  if (!home) return []
-  const links = extractCategoryLinks(home, homeUrl(cfg.domain))
-  return selectCategories(links, keywordsForFamilies(cfg.families))
+  const keywords = keywordsForFamilies(cfg.families)
+  // 1. PrestaShop 1.7 (rapide, éprouvé) : liens catégories `/{id}-{slug}` de l'accueil.
+  if (home) {
+    const ps = selectCategories(extractCategoryLinks(home, homeUrl(cfg.domain)), keywords)
+    if (ps.length > 0) return ps
+  }
+  // 2. GÉNÉRIQUE toute techno : sitemap (structure de confiance) puis liens home.
+  return discoverGenericListings(cfg.domain, deps.fetchHtml, home, { keywords })
 }
 
 /**
@@ -107,6 +114,7 @@ export async function harvestPass(
       // PrestaShop d'abord (rapide) ; sinon extraction GÉNÉRIQUE JSON-LD (toute techno).
       let products = parseListingPage(html, url)
       if (products.length === 0) products = parseListingGeneric(html, url)
+      if (products.length === 0) products = parseListingDomCards(html, url)
       hadItems = products.length > 0
       hasNext = nextListingUrl(html, url) != null
       if (hadItems) {
