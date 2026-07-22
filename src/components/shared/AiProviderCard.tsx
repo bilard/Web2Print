@@ -8,7 +8,8 @@ import {
   getApiKey, setApiKey, isApiKeyOverridden, resetApiKey, getEnvDefault, testApiKey,
   type ApiTestResult,
 } from '@/lib/apiKeys'
-import { AI_MODELS, type AiProvider, type AiModelInfo } from '@/lib/aiModels'
+import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
+import { fetchModelsViaServer } from '@/lib/aiModelsListing'
 import { useAiSettingsStore, isReasoningProvider, type ReasoningProvider } from '@/stores/aiSettings.store'
 import { recordAudit } from '@/lib/auditLog'
 
@@ -28,155 +29,6 @@ function formatPricing(pricing: { input: number; output: number }): string {
   if (pricing.input === 0 && pricing.output === 0) return '— · 1M tok'
   const fmt = (n: number) => (n < 1 ? n.toFixed(2) : n.toString())
   return `$${fmt(pricing.input)} in / $${fmt(pricing.output)} out · 1M tok`
-}
-
-/** Adapter par provider pour récupérer la liste des modèles texte/JSON.
- *
- *  - `url(apiKey)` : URL de listing ; Gemini passe la clé en query, les autres en header.
- *  - `headers(apiKey)` : optionnel — Anthropic a `x-api-key`, les autres `Bearer`.
- *  - `extract(data)` : map réponse → AiModelInfo[] avec filtres provider-spécifiques.
- *  - `fallbackOnError` : seed list si l'endpoint est 404 (ex. Kimi). Sans ça → throw.
- */
-interface ProviderModelsAdapter {
-  url: (apiKey: string) => string
-  headers?: (apiKey: string) => Record<string, string>
-  extract: (data: unknown) => AiModelInfo[]
-  fallbackOnError?: AiModelInfo[]
-}
-
-function bearer(apiKey: string): Record<string, string> {
-  return { Authorization: `Bearer ${apiKey}` }
-}
-
-function pickArr<T>(data: unknown, key: 'data' | 'models'): T[] {
-  if (typeof data !== 'object' || data === null) return []
-  const arr = (data as Record<string, unknown>)[key]
-  return Array.isArray(arr) ? (arr as T[]) : []
-}
-
-const PROVIDER_MODEL_ADAPTERS: Record<AiProvider, ProviderModelsAdapter> = {
-  claude: {
-    url: () => 'https://api.anthropic.com/v1/models',
-    headers: (apiKey) => ({
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    }),
-    extract: (data) =>
-      pickArr<{ id: string; display_name?: string }>(data, 'data')
-        .filter((m) => m.id.startsWith('claude-'))
-        .map((m) => ({ id: m.id, label: m.display_name ?? m.id, pricing: { input: 0, output: 0 } })),
-  },
-  gemini: {
-    url: (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
-    extract: (data) =>
-      pickArr<{ name: string; displayName?: string }>(data, 'models')
-        .map((m) => ({ id: m.name.replace(/^models\//, ''), label: m.displayName ?? m.name }))
-        .filter((m) => m.id.startsWith('gemini-') && !/(image|tts|embedding|aqa)/i.test(m.id))
-        .map((m) => ({ id: m.id, label: m.label, pricing: { input: 0, output: 0 } })),
-  },
-  openai: {
-    url: () => 'https://api.openai.com/v1/models',
-    headers: bearer,
-    extract: (data) =>
-      pickArr<{ id: string }>(data, 'data')
-        .filter((m) =>
-          (m.id.startsWith('gpt-') || /^o\d/.test(m.id)) &&
-          !/(audio|realtime|search|tts|whisper|image|moderation)/i.test(m.id)
-        )
-        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } })),
-  },
-  deepseek: {
-    url: () => 'https://api.deepseek.com/v1/models',
-    headers: bearer,
-    extract: (data) =>
-      pickArr<{ id: string }>(data, 'data')
-        .filter((m) => m.id.startsWith('deepseek-'))
-        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } })),
-  },
-  qwen: {
-    url: () => 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models',
-    headers: bearer,
-    extract: (data) =>
-      pickArr<{ id: string }>(data, 'data')
-        .filter((m) => /^qwen/i.test(m.id) && !/(audio|tts|asr|embedding|image|vl-)/i.test(m.id))
-        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } })),
-  },
-  openrouter: {
-    // OpenRouter expose ~300 modèles avec pricing en USD par TOKEN (string).
-    // On convertit en USD par 1M tokens (* 1e6) pour cohérence avec AI_MODELS.
-    url: () => 'https://openrouter.ai/api/v1/models',
-    headers: bearer,
-    extract: (data) => {
-      type RawModel = {
-        id: string
-        name?: string
-        pricing?: { prompt?: string; completion?: string }
-        architecture?: { modality?: string }
-      }
-      return pickArr<RawModel>(data, 'data')
-        .filter((m) => {
-          const mod = m.architecture?.modality ?? ''
-          if (/image|audio|embedding/i.test(mod)) return false
-          if (/(embedding|tts|whisper|asr|image-generation|moderation)/i.test(m.id)) return false
-          return true
-        })
-        .map((m) => {
-          const inUsd = parseFloat(m.pricing?.prompt ?? '0') * 1e6
-          const outUsd = parseFloat(m.pricing?.completion ?? '0') * 1e6
-          return {
-            id: m.id,
-            label: m.name ?? m.id,
-            pricing: {
-              input: Number.isFinite(inUsd) ? inUsd : 0,
-              output: Number.isFinite(outUsd) ? outUsd : 0,
-            },
-          }
-        })
-    },
-  },
-  kimi: {
-    // Kimi Code (OpenAI-compatible) n'a pas d'endpoint /models documenté ; on tente,
-    // et on retombe sur le modèle fixe en cas de 404 ou erreur réseau.
-    url: () => 'https://api.kimi.com/coding/v1/models',
-    headers: bearer,
-    extract: (data) =>
-      pickArr<{ id: string }>(data, 'data')
-        .filter((m) => /^kimi/i.test(m.id) || /^moonshot/i.test(m.id))
-        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } })),
-    fallbackOnError: [{ id: 'kimi-for-coding', label: 'Kimi for Coding', pricing: { input: 0, output: 0 } }],
-  },
-  glm: {
-    // GLM (Z.ai) — endpoint OpenAI-compatible. On tente /models et on retombe sur le
-    // seed en cas de 404 / CORS (comme Kimi).
-    url: () => 'https://api.z.ai/api/paas/v4/models',
-    headers: bearer,
-    extract: (data) =>
-      pickArr<{ id: string }>(data, 'data')
-        .filter((m) => /glm/i.test(m.id))
-        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } })),
-    fallbackOnError: AI_MODELS.glm,
-  },
-}
-
-async function fetchModelsFromProvider(
-  provider: AiProvider,
-  apiKey: string,
-): Promise<AiModelInfo[]> {
-  const adapter = PROVIDER_MODEL_ADAPTERS[provider]
-  try {
-    const res = await fetch(adapter.url(apiKey), {
-      headers: adapter.headers?.(apiKey),
-    })
-    if (!res.ok) {
-      if (adapter.fallbackOnError) return adapter.fallbackOnError
-      throw new Error(`${provider} ${res.status}`)
-    }
-    return adapter.extract(await res.json())
-  } catch (err) {
-    if (adapter.fallbackOnError) return adapter.fallbackOnError
-    throw err
-  }
 }
 
 export function AiProviderCard({ provider, apiKeyId, label, description, logo, apiKeyUrl, noteForGemini }: AiProviderCardProps) {
@@ -263,11 +115,12 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
   }
 
   const handleRefreshModels = async () => {
-    const key = getApiKey(apiKeyId)
-    if (!key) return
+    // Listing via la CF `listModels` (GET serveur, sans CORS). Le bouton reste
+    // cliquable même sans clé perso : le serveur renvoie une erreur claire si la
+    // clé manque, plutôt qu'un no-op silencieux.
     setRefreshing(true)
     try {
-      const fetched = await fetchModelsFromProvider(provider, key)
+      const fetched = await fetchModelsViaServer(provider)
       setFetchedModels(provider, fetched)
       const known = new Set(models.map((m) => m.id))
       const newCount = fetched.filter((m) => !known.has(m.id)).length
@@ -397,7 +250,7 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
           <p className="text-[10px] uppercase tracking-wider text-white/30">Modèle texte/JSON</p>
           <button
             onClick={handleRefreshModels}
-            disabled={!keyValue || refreshing}
+            disabled={refreshing}
             title="Récupérer les modèles disponibles"
             className="flex items-center gap-1 text-[10px] text-white/40 hover:text-indigo-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >

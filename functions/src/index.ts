@@ -65,6 +65,9 @@ export { pluginApi } from './plugin/pluginApi'
 // --- Proxy LLM authentifié (clé Firestore + budget mensuel bloquant) ---
 export { llmProxy } from './llm/llmProxy'
 
+// --- Listing des modèles par provider (GET /models serveur, sans CORS) ---
+export { listModels } from './llm/listModels'
+
 // --- Higgsfield (génération image/vidéo IA, clé per-user, SDK officiel) ---
 export { higgsfieldGenerate } from './higgsfield/higgsfieldGenerate'
 export { higgsfieldCatalog } from './higgsfield/higgsfieldCatalog'

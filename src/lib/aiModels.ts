@@ -15,6 +15,8 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'claude-haiku-4-5',  label: 'Claude Haiku 4.5',  pricing: { input: 0.80, output: 4 } },
   ],
   gemini: [
+    // Tarif calqué sur 3.5 Flash en attendant la grille officielle (à ajuster).
+    { id: 'gemini-3.6-flash',               label: 'Gemini 3.6 Flash',                pricing: { input: 1.50,  output: 9 } },
     { id: 'gemini-3.5-flash',               label: 'Gemini 3.5 Flash',                pricing: { input: 1.50,  output: 9 },    isDefault: true },
     { id: 'gemini-3.1-pro-preview',         label: 'Gemini 3.1 Pro Preview',          pricing: { input: 1.25,  output: 10 } },
     { id: 'gemini-3.1-flash',               label: 'Gemini 3.1 Flash',                pricing: { input: 0.30,  output: 2.50 } },
@@ -86,6 +88,7 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'openai/gpt-oss-120b:free',                 label: 'gpt-oss 120B (free)',                        pricing: { input: 0,    output: 0 } },
 
     // Google — Gemini
+    { id: 'google/gemini-3.6-flash',                  label: 'Gemini 3.6 Flash',                           pricing: { input: 1.50, output: 9 } },
     { id: 'google/gemini-3.5-flash',                  label: 'Gemini 3.5 Flash',                           pricing: { input: 1.50, output: 9 } },
     { id: 'google/gemini-3.1-pro-preview',            label: 'Gemini 3.1 Pro Preview',                     pricing: { input: 2,    output: 12 } },
     { id: 'google/gemini-3.1-flash-lite',             label: 'Gemini 3.1 Flash Lite',                      pricing: { input: 0.25, output: 1.50 } },
