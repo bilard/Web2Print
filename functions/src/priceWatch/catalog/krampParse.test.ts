@@ -19,6 +19,8 @@ describe('krampParse', () => {
   it('krampRefFromUrl : réf = segment après « -- »', () => {
     expect(krampRefFromUrl('https://www.kramp.com/shop-fr/fr/p/x--09248801')).toBe('09248801')
     expect(krampRefFromUrl('https://www.kramp.com/shop-fr/fr/p/r%C3%A9servoir--1134381601')).toBe('1134381601')
+    expect(krampRefFromUrl('https://www.kramp.com/shop-fr/fr/p/produit--foo--12345')).toBe('12345') // slug à double « -- » → dernier segment
+    expect(krampRefFromUrl('https://www.kramp.com/shop-fr/fr/p/x--09248801?utm=a#frag')).toBe('09248801') // query/hash ignorés
     expect(krampRefFromUrl('https://www.kramp.com/shop-fr/fr/no-ref')).toBe('')
   })
   it('parseFrPrice : nombre français → number', () => {

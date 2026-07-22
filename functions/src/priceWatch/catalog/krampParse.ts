@@ -2,10 +2,12 @@
 // Prix = libellé « Prix brut » (HT, tarif B2B). Textes VERBATIM (aucune reformulation IA).
 import type { CompetitorListing } from './prestashop'
 
-/** Réf kramp = segment après le dernier « -- » de l'URL fiche : /p/<slug>--<ref>. */
+/** Réf kramp = segment après le DERNIER « -- » de l'URL fiche : /p/<slug>--<ref>.
+ *  On prend le dernier séparateur (un slug peut contenir « -- ») et on retire query/hash. */
 export function krampRefFromUrl(url: string): string {
-  const m = url.match(/--([^/?#]+)(?:[/?#]|$)/)
-  return m ? decodeURIComponent(m[1]) : ''
+  const path = url.split(/[?#]/)[0]
+  const i = path.lastIndexOf('--')
+  return i >= 0 ? decodeURIComponent(path.slice(i + 2)) : ''
 }
 
 /** Prix français « 1 234,56 » → 1234.56 ; null si non parsable ou ≤ 0. */
