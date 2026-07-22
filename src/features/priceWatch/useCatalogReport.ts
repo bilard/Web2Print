@@ -28,11 +28,16 @@ export function useWatchList(): WatchSummary[] {
       collection(db, priceWatchCol(uid)),
       (snap) => {
         const out: WatchSummary[] = snap.docs.map((d) => {
-          const data = d.data() as { label?: string; updatedAt?: { toMillis?: () => number } | number; lastReportAt?: number }
+          const data = d.data() as {
+            label?: string; customLabel?: string
+            updatedAt?: { toMillis?: () => number } | number; lastReportAt?: number
+          }
           const upd = typeof data.updatedAt === 'number'
             ? data.updatedAt
             : (data.updatedAt?.toMillis?.() ?? data.lastReportAt ?? 0)
-          return { watchId: d.id, label: data.label, updatedAt: upd, lastReportAt: data.lastReportAt }
+          // `customLabel` = renommage manuel (Gérer les suivis), PRIORITAIRE sur `label`
+          // (nom du workflow, réécrit à chaque rapport par « Comparer catalogue »).
+          return { watchId: d.id, label: data.customLabel || data.label, updatedAt: upd, lastReportAt: data.lastReportAt }
         })
         out.sort((a, b) => b.updatedAt - a.updatedAt)
         setItems(out)

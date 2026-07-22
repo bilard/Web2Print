@@ -35,6 +35,11 @@ const RESUMABLE_STRADDLE = new Set<string>([
   'list-products', 'scrape-url', 'web-scraping', 'web-search', 'enrichment', 'compare-prices',
   'transform-filter', 'transform-rename', 'transform-set-fields', 'transform-sort', 'transform-text',
   'if-else', 'pipe', 'text-input',
+  // Veille tarifaire : avancement par CURSEUR persisté (savePage/saveCursor réécrivent les
+  // mêmes docs) ou lecture pure — la ré-exécution après interruption ne doublonne rien.
+  // Sans eux, un timeout en pleine moisson (fréquent : 19 sites) rendait la reprise
+  // impossible → le run repartait de zéro à chaque tick (« le cron s'arrête au 1ᵉʳ run »).
+  'harvest-competitor', 'compare-catalog', 'source-sites', 'directed-search', 'gsheets-import',
 ])
 
 async function loadWorkflow(uid: string, workflowId: string): Promise<ServerWorkflow | null> {

@@ -4,7 +4,7 @@
 // onSnapshot — indépendant de tout run). Clé de lecture = watchId dérivé comme au
 // runtime (config sinon id du workflow courant).
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, ClipboardPaste, Search, X, Trash2 } from 'lucide-react'
+import { Plus, ClipboardPaste, Search, X, Trash2, CheckSquare, Square } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWorkflowStore } from '../persistence/workflow.store'
@@ -147,6 +147,9 @@ export function SourceSitesConfig({ config, onChange }: {
   }
 
   const active = rows.filter((r) => r.enabled).length
+  // Tout sélectionner / désélectionner : bascule l'activation de TOUS les sites d'un clic.
+  const allEnabled = rows.length > 0 && rows.every((r) => r.enabled)
+  const toggleAll = () => onChange({ ...config, sites: rows.map((r) => ({ ...r, enabled: !allEnabled })) })
   // Statut COURANT de chaque site (état persisté) → totaux par statut TOUJOURS affichés
   // dans l'en-tête (pas seulement après un run récent), et cliquables pour filtrer.
   const statuses = rows.map((r) => {
@@ -207,6 +210,16 @@ export function SourceSitesConfig({ config, onChange }: {
             )}
           </div>
           <div className="shrink-0 flex items-center gap-2">
+            {rows.length > 1 && (
+              <button
+                onClick={toggleAll}
+                title={allEnabled ? 'Désélectionner tous les sites' : 'Sélectionner tous les sites'}
+                className="flex items-center gap-1 text-[10px] whitespace-nowrap text-white/40 hover:text-indigo-400 transition-colors"
+              >
+                {allEnabled ? <Square className="w-3 h-3" /> : <CheckSquare className="w-3 h-3" />}
+                {allEnabled ? 'Aucun' : 'Tous'}
+              </button>
+            )}
             {rows.length > 1 && (
               <select
                 value={sort}

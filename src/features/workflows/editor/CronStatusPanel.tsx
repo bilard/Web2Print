@@ -80,11 +80,13 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
     <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-indigo-500/15 border border-indigo-500/30 text-indigo-200 text-xs">
       <CalendarClock className="w-3.5 h-3.5 shrink-0" />
       {isRunning ? (
-        <span className="flex items-center gap-1.5" title="Un run serveur est en cours d’exécution">
+        <span className="flex items-center gap-1.5" title="Un run serveur est en cours d’exécution. Un workflow long avance par tranches : interrompu au budget, il REPREND automatiquement au tick suivant (checkpoint).">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <b className="text-emerald-300">En cours</b>
           {sched.lastRunAt && <span className="text-indigo-200/80">· démarré {hhmm(sched.lastRunAt)} (il y a {formatCountdown(now - sched.lastRunAt)})</span>}
-          <span className="text-indigo-200/70">· prochaine {hhmm(sched.nextRunAt)}</span>
+          {/* Pendant un run, nextRunAt = échéance du VERROU : l'heure à laquelle le
+              scanner reprendra la main quoi qu'il arrive (fin, pause ou crash). */}
+          <span className="text-indigo-200/70">· reprise auto ≤ {hhmm(sched.nextRunAt)}</span>
         </span>
       ) : sched.cycleWaiting ? (
         <span title="Cycle de moisson terminé à 100 % — relance à l'échéance calendaire">
@@ -102,15 +104,17 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
           Prochain <b>{hhmm(sched.nextRunAt)}</b> <span className="text-indigo-200/70">({overdue ? 'imminent' : `dans ${formatCountdown(sched.nextRunAt - now)}`})</span>
         </span>
       )}
-      {running ? (
+      {isRunning ? (
+        // STOP disponible pour TOUT run serveur en cours — lancé d'ici, par le cron, ou
+        // depuis un autre poste (le flag d'abandon Firestore est lu par l'executor).
         <button
           onClick={onStop}
           className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-500/25 hover:bg-red-500/40 text-red-200"
-          title="Arrêter le run serveur en cours"
+          title="Arrêter le run serveur en cours (la planification reste active — décoche « Planification active » dans le node Cron pour la suspendre)"
         >
           <Square className="w-3 h-3" />
           STOP
-          <Loader2 className="w-3 h-3 animate-spin" />
+          {running && <Loader2 className="w-3 h-3 animate-spin" />}
         </button>
       ) : (
         <button
