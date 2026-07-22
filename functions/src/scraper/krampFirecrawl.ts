@@ -11,8 +11,9 @@ import type { SiteCredentials } from './siteCredentials'
 
 const FIRECRAWL_SCRAPE = 'https://api.firecrawl.dev/v2/scrape'
 
-/** UN appel Firecrawl : login kramp puis navigation vers `target` → markdown de la page. */
-async function scrapeOne(target: string, creds: SiteCredentials, firecrawlKey: string, timeoutMs: number): Promise<string> {
+/** UN appel Firecrawl : login kramp puis navigation vers `target` → markdown de la page.
+ *  Le `signal` du run (timeout serveur / STOP) interrompt aussi le fetch en vol. */
+async function scrapeOne(target: string, creds: SiteCredentials, firecrawlKey: string, timeoutMs: number, signal?: AbortSignal): Promise<string> {
   const actions: Record<string, unknown>[] = [
     { type: 'wait', milliseconds: 2500 },
     { type: 'click', selector: '#username' }, { type: 'write', text: creds.login },
@@ -23,6 +24,8 @@ async function scrapeOne(target: string, creds: SiteCredentials, firecrawlKey: s
   ]
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), timeoutMs)
+  const onAbort = () => ctrl.abort()
+  if (signal) { if (signal.aborted) ctrl.abort(); else signal.addEventListener('abort', onAbort) }
   try {
     const res = await fetch(FIRECRAWL_SCRAPE, {
       method: 'POST', signal: ctrl.signal,
@@ -38,15 +41,19 @@ async function scrapeOne(target: string, creds: SiteCredentials, firecrawlKey: s
   } catch (e) {
     logger.warn(`[kramp] Firecrawl erreur réseau : ${e instanceof Error ? e.message : e}`)
     return ''
-  } finally { clearTimeout(t) }
+  } finally { clearTimeout(t); if (signal) signal.removeEventListener('abort', onAbort) }
 }
 
-/** Login + scrape, UNE page (une requête réseau) par URL cible. Renvoie map(url → markdown). */
+/** Login + scrape, UNE page (une requête réseau) par URL cible. Renvoie map(url → markdown).
+ *  Interrompt la boucle dès que `signal` est aborté (ne brûle plus de crédits). */
 export async function krampBatchScrape(
-  targetUrls: string[], creds: SiteCredentials, firecrawlKey: string, timeoutMs = 90_000,
+  targetUrls: string[], creds: SiteCredentials, firecrawlKey: string, timeoutMs = 90_000, signal?: AbortSignal,
 ): Promise<Map<string, string>> {
   const out = new Map<string, string>()
   if (!firecrawlKey || targetUrls.length === 0) return out
-  for (const u of targetUrls) out.set(u, await scrapeOne(u, creds, firecrawlKey, timeoutMs))
+  for (const u of targetUrls) {
+    if (signal?.aborted) break
+    out.set(u, await scrapeOne(u, creds, firecrawlKey, timeoutMs, signal))
+  }
   return out
 }

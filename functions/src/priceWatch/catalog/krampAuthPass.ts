@@ -1,12 +1,13 @@
 // Passe kramp AUTHENTIFIÉE d'un lot de produits, EN UNE PHASE : la page de recherche
 // connectée /search/<réf> porte déjà URL fiche + réf + nom + prix HT. Pour chaque produit
 // on cherche par réf BRUTE (kramp indexe la réf affichée, avec ses points) puis par EAN en
-// repli, on lit la page de recherche, et on apparie par PREUVE EXACTE (proveMatch, réf/EAN
-// normalisés). Serveur-only.
+// repli — fetch PARESSEUX : dès qu'une requête apparie, on ne fetch pas les suivantes.
+// Le prix retenu est celui de la CARTE prouvée (proveMatch exact), jamais un € d'ailleurs.
+// Serveur-only.
 import type { DirectedSourceProduct } from './searchDirected'
 import type { CompetitorListing } from './prestashop'
 import { candidateKeys, proveMatch } from './keys'
-import { parseKrampSearchListing } from './krampParse'
+import { parseKrampSearchCards } from './krampParse'
 
 export interface KrampScrapeDep {
   /** login + navigation + scrape → map(url cible → markdown connecté). Injecté. */
@@ -34,31 +35,34 @@ function searchQueries(p: DirectedSourceProduct): string[] {
 }
 
 export async function krampAuthPass(products: DirectedSourceProduct[], deps: KrampScrapeDep): Promise<KrampHit[]> {
-  if (deps.signal?.aborted || products.length === 0) return []
-
-  // Une URL de recherche par requête de chaque produit (réf brute, puis EAN), toutes
-  // regroupées ; deps.scrape gère l'appel réseau (une page par requête, login amorti).
-  const queriesByProduct = new Map(products.map((p) => [p.id, searchQueries(p)]))
-  const targets = new Set<string>()
-  for (const qs of queriesByProduct.values()) for (const q of qs) targets.add(searchUrl(q))
-  if (targets.size === 0 || deps.signal?.aborted) return []
-  const md = await deps.scrape([...targets])
-
   const hits: KrampHit[] = []
   for (const p of products) {
-    // 1re requête qui donne une fiche avec prix (réf d'abord, EAN en repli).
-    let listing: CompetitorListing | null = null
-    for (const q of queriesByProduct.get(p.id) ?? []) {
-      listing = parseKrampSearchListing(md.get(searchUrl(q)) ?? '')
-      if (listing) break
+    if (deps.signal?.aborted) break
+    const keys = candidateKeys(p)
+    if (keys.length === 0) continue
+    let hit: KrampHit | null = null
+    for (const q of searchQueries(p)) {
+      if (deps.signal?.aborted) break
+      const url = searchUrl(q)
+      const md = (await deps.scrape([url])).get(url) ?? ''
+      // On PROUVE chaque carte de la page (pas seulement la 1re) et on retient le prix de
+      // la carte appariée — corrige le rattachement de prix ET les résultats multiples.
+      for (const c of parseKrampSearchCards(md)) {
+        const proof = proveMatch(keys, { sku: c.ref, url: c.url, name: c.name })
+        if (proof) {
+          hit = {
+            productId: p.id,
+            listing: { url: c.url, name: c.name, ref: c.ref, price: c.price, currency: 'EUR', taxIncluded: false },
+            evidence: proof.evidence,
+          }
+          break
+        }
+      }
+      if (hit) break // réf appariée → repli EAN inutile (économie de crédits)
     }
-    if (!listing) continue
-    const proof = proveMatch(candidateKeys(p), {
-      sku: listing.ref, gtin13: listing.gtin13, url: listing.url, name: listing.name,
-    })
-    if (proof) {
-      hits.push({ productId: p.id, listing, evidence: proof.evidence })
-      deps.log?.(`kramp : ${listing.name} ${listing.price}€ (preuve ${proof.evidence})`)
+    if (hit) {
+      hits.push(hit)
+      deps.log?.(`kramp : ${hit.listing.name} ${hit.listing.price}€ (preuve ${hit.evidence})`)
     }
   }
   return hits

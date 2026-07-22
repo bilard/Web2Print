@@ -111,9 +111,8 @@ registerServerNode({
     }
     const regularSites = sites.filter((s) => !authByDomain.has(s.siteId))
 
-    // Tranche de produits du tick (identique pour la passe générique et la passe auth).
+    // Index de départ du tick pour la passe générique (la passe auth a son propre curseur).
     const startIdx = startCursor % Math.max(1, products.length)
-    const slice = products.slice(startIdx, startIdx + budget)
 
     const pass = await directedPass(products, regularSites, startIdx, budget, {
       fetchHtml: async (url) => { try { return await fetchHtml(url, 20000) } catch { return null } },
@@ -122,18 +121,29 @@ registerServerNode({
       log: (m) => ctx.log('info', m),
     })
 
-    // Passe AUTHENTIFIÉE (kramp…) : un site auth = un lot krampAuthPass sur la tranche.
-    for (const [siteId, cred] of authByDomain) {
-      if (ctx.signal?.aborted) break
+    // Passe AUTHENTIFIÉE (kramp…) : budget PETIT dédié (chaque login Firecrawl coûte des
+    // crédits) et CURSEUR PROPRE avancé À CHAQUE tick — même si le run est interrompu — pour
+    // ne jamais rejouer la même tranche en boucle (garde anti-gouffre à crédits + progression
+    // garantie sur tout le catalogue). Le signal du run est transmis jusqu'au fetch Firecrawl.
+    if (authByDomain.size > 0) {
+      const authBudget = Math.max(1, Number(config.authBudget) || 5)
+      const AUTH_CURSOR_META = 'directed_auth_cursor'
+      const authStart = ((await loadCompetitorMeta(ctx.uid, watchId, AUTH_CURSOR_META))?.productCount ?? 0) % Math.max(1, products.length)
+      const authSlice = products.slice(authStart, authStart + authBudget)
       const key = firecrawlKey || (await getUserApiKey(ctx.uid, 'firecrawl'))
-      if (!key) { ctx.log('warn', `Site authentifié ${cred!.host} mais aucune clé Firecrawl — ignoré.`); continue }
-      const authHits = await krampAuthPass(slice, {
-        scrape: (urls) => krampBatchScrape(urls, cred!, key, 200_000),
-        signal: ctx.signal,
-        log: (m) => ctx.log('info', m),
-      })
-      for (const h of authHits) pass.results.push({ productId: h.productId, siteId, hit: { listing: h.listing, evidence: h.evidence as DirectedHit['evidence'], query: h.listing.ref ?? '' } })
-      ctx.log('info', `Auth ${cred!.host} : ${authHits.length} prix apparié(s) sur ${slice.length} produit(s).`)
+      for (const [siteId, cred] of authByDomain) {
+        if (ctx.signal?.aborted) break
+        if (!key) { ctx.log('warn', `Site authentifié ${cred!.host} mais aucune clé Firecrawl — ignoré.`); break }
+        const authHits = await krampAuthPass(authSlice, {
+          scrape: (urls) => krampBatchScrape(urls, cred!, key, 90_000, ctx.signal),
+          signal: ctx.signal,
+          log: (m) => ctx.log('info', m),
+        })
+        for (const h of authHits) pass.results.push({ productId: h.productId, siteId, hit: { listing: h.listing, evidence: h.evidence as DirectedHit['evidence'], query: h.listing.ref ?? '' } })
+        ctx.log('info', `Auth ${cred!.host} : ${authHits.length}/${authSlice.length} prix apparié(s) [curseur auth ${authStart} → ${authStart + authBudget} / ${products.length}].`)
+      }
+      const authNext = authStart + authBudget >= products.length ? 0 : authStart + authBudget
+      await saveCompetitorMeta(ctx.uid, watchId, AUTH_CURSOR_META, { domain: 'directed-auth-cursor', productCount: authNext })
     }
 
     for (const res of pass.results) {
@@ -149,14 +159,19 @@ registerServerNode({
     const rows = pass.results.map((res, i) => {
       const l = res.hit.listing
       const src = srcById.get(res.productId)
-      const ttc = l.price ?? null
+      // Respecte la base de taxe du listing : kramp = HT (taxIncluded false), marketplaces
+      // B2C = TTC. On dérive l'autre montant, sans jamais présenter un HT comme du TTC.
+      const price = l.price ?? null
+      const isHt = l.taxIncluded === false
+      const prixHt = price == null ? null : (isHt ? price : Math.round((price / (1 + VAT)) * 100) / 100)
+      const prixTtc = price == null ? null : (isHt ? Math.round(price * (1 + VAT) * 100) / 100 : price)
       return {
         _id: `hit_${i}`,
         produit: nameById.get(res.productId) || l.name || src?.ref || '',
         ref: src?.ref ?? '', ean: src?.ean ?? '',
         site: domainById.get(res.siteId) ?? res.siteId,
-        prixTtc: ttc,
-        prixHt: ttc != null ? Math.round((ttc / (1 + VAT)) * 100) / 100 : null,
+        prixTtc,
+        prixHt,
         preuve: res.hit.evidence,
         lien: l.url ?? '',
       }
