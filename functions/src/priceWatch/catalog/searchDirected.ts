@@ -38,7 +38,7 @@ function bareDomain(domain: string): string {
 /**
  * Classe les URLs candidates : FICHES PRODUIT d'abord, pages catégorie/recherche/blog en
  * dernier. Une recherche « site:X réf » renvoie souvent des catégories — on veut la fiche.
- * Générique (patterns communs à Amazon /dp/, Cdiscount /f-…​.html, Shopify /products/…).
+ * Générique (patterns communs à Amazon /dp/, Cdiscount /f-….html, Shopify /products/…).
  */
 export function preferProductUrls(urls: string[]): string[] {
   const score = (u: string): number => {

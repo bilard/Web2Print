@@ -47,7 +47,7 @@ export interface CategoryLink {
  */
 // Chemin d'une catégorie PrestaShop : `/{id}-{slug}` en segment FINAL, précédé au plus
 // d'un segment de locale (`/fr`, `/fr-fr`, `/en`…). Exclut de fait les pages CMS
-// (`/content/…`), les assets (`/modules/…css`) et les fiches (`…​.html`, qui ne finissent
+// (`/content/…`), les assets (`/modules/…css`) et les fiches (`….html`, qui ne finissent
 // pas par `[a-z0-9-]`). Insensible à la casse.
 const CATEGORY_PATH = /^(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/(\d+)-([a-z0-9-]+)\/?$/i
 
