@@ -36,8 +36,23 @@ async function scrapeOne(target: string, creds: SiteCredentials, firecrawlKey: s
       }),
     })
     if (!res.ok) { logger.warn(`[kramp] Firecrawl ${res.status}`); return '' }
-    const json = (await res.json()) as { data?: { markdown?: string } }
-    return json.data?.markdown ?? ''
+    const json = (await res.json()) as { data?: { markdown?: string; metadata?: { sourceURL?: string; url?: string; statusCode?: number; title?: string } } }
+    const md = json.data?.markdown ?? ''
+    // DIAGNOSTIC (sûr : markdown = donnée produit, PAS les creds). Répond à la seule
+    // question discriminante : Firecrawl a-t-il rendu la PAGE DE RECHERCHE (produits/prix)
+    // ou est-il resté sur login.kramp.com ? metadata.sourceURL/statusCode = page finale
+    // réellement capturée. has€ + longueur + tête = login OK ? navigation OK ? prix présents ?
+    const meta = json.data?.metadata ?? {}
+    logger.info('[kramp][diag]', {
+      cible: target,
+      pageCapturee: meta.sourceURL || meta.url || '?',
+      statusPage: meta.statusCode,
+      titre: meta.title,
+      mdLen: md.length,
+      aEuro: md.includes('€'),
+      tete: md.slice(0, 400).replace(/\s+/g, ' '),
+    })
+    return md
   } catch (e) {
     logger.warn(`[kramp] Firecrawl erreur réseau : ${e instanceof Error ? e.message : e}`)
     return ''
