@@ -100,31 +100,19 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
         live ? 'bg-emerald-500/[0.07] ring-1 ring-emerald-400/40' : 'bg-white/[0.03]'
       } ${enabled ? '' : 'opacity-45'}`}
     >
-      {/* Niveau 1 : activer · domaine (nom COMPLET, retour à la ligne si long) · activité · suppr */}
-      <div className="flex items-start gap-2 min-w-0">
+      {/* Niveau 1 : activer · domaine (nom complet sur UNE ligne, pleine largeur) · suppr.
+          Le badge de statut descend sur sa propre ligne pour libérer toute la largeur. */}
+      <div className="flex items-center gap-2 min-w-0">
         <input
           type="checkbox"
           checked={enabled}
           onChange={(e) => onToggle(e.target.checked)}
-          className="shrink-0 accent-indigo-500 mt-0.5"
+          className="shrink-0 accent-indigo-500"
           title={enabled ? 'Désactiver ce site' : 'Activer ce site'}
         />
-        <span className="text-xs text-white/80 break-words leading-tight flex-1 min-w-0" title={domain}>
+        <span className="text-xs text-white/80 truncate flex-1 min-w-0" title={domain}>
           {domain.replace(/^www\./, '')}
         </span>
-        {live ? (
-          <span className="shrink-0 flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-            En cours…
-          </span>
-        ) : badge ? (
-          <span
-            title={badge.title}
-            className={`shrink-0 whitespace-nowrap text-[10px] font-medium tabular-nums border rounded-md px-1.5 py-0.5 ${badge.cls} ${fresh ? 'fx-result' : ''}`}
-          >
-            {badge.icon} {badge.label}{badge.detail ? ` · ${badge.detail}` : ''}
-          </span>
-        ) : null}
         <button
           onClick={onAuth}
           title={auth ? 'Accès connecté configuré — modifier les identifiants' : 'Configurer un accès connecté (prix visibles uniquement authentifié)'}
@@ -140,6 +128,22 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
           <Trash2 className="w-3 h-3" />
         </button>
       </div>
+      {/* Ligne d'ÉTAT (badge de statut / scraping en cours) — sous le nom, pleine largeur. */}
+      {live ? (
+        <div className="flex items-center gap-1.5 pl-6 mt-1 text-[10px] font-medium text-emerald-300">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
+          En cours…
+        </div>
+      ) : badge ? (
+        <div className="pl-6 mt-1">
+          <span
+            title={badge.title}
+            className={`inline-flex items-center whitespace-nowrap text-[10px] font-medium tabular-nums border rounded-md px-1.5 py-0.5 ${badge.cls} ${fresh ? 'fx-result' : ''}`}
+          >
+            {badge.icon} {badge.label}{badge.detail ? ` · ${badge.detail}` : ''}
+          </span>
+        </div>
+      ) : null}
       {/* Niveau 2 : moteur + chips de stats (wrap propre, jamais de coupure interne) */}
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pl-6 mt-1 text-[10px]">
         <select
