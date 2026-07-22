@@ -4,7 +4,7 @@
 // onSnapshot — indépendant de tout run). Clé de lecture = watchId dérivé comme au
 // runtime (config sinon id du workflow courant).
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, ClipboardPaste, Search, X } from 'lucide-react'
+import { Plus, ClipboardPaste, Search, X, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWorkflowStore } from '../persistence/workflow.store'
@@ -19,6 +19,7 @@ import {
 } from '@/features/priceWatch/sourceSites'
 import { SourceSitesRowItem, type SiteRowStats } from './sourceSitesRow'
 import { SiteCredentialsForm } from './sourceSitesCreds'
+import { PurgeScrapingPanel } from './sourceSitesPurge'
 import type { SourceSitesNodeConfig } from './sourceSitesNode'
 
 /** Heartbeat de moisson plus récent que cette fenêtre = « scraping en cours »
@@ -58,6 +59,7 @@ export function SourceSitesConfig({ config, onChange }: {
   const [statusFilter, setStatusFilter] = useState<SiteStatus | null>(null)
   const [credsRow, setCredsRow] = useState<number | null>(null)
   const [scrapingId, setScrapingId] = useState<string | null>(null)
+  const [purging, setPurging] = useState(false)
 
   // Moisson manuelle d'UN site (bouton ▶) : réutilise le moteur, budget court (test),
   // met à jour le tableau en direct (onSnapshot). Le domaine sert de clé de « en cours ».
@@ -224,6 +226,15 @@ export function SourceSitesConfig({ config, onChange }: {
             >
               <ClipboardPaste className="w-3 h-3" /> Importer
             </button>
+            {rows.length > 0 && (
+              <button
+                onClick={() => setPurging((v) => !v)}
+                title="Vider les données de scraping (par site, par type)"
+                className="flex items-center gap-1 text-[10px] whitespace-nowrap text-white/40 hover:text-rose-400 transition-colors"
+              >
+                <Trash2 className="w-3 h-3" /> Vider
+              </button>
+            )}
           </div>
         </div>
         {/* Recherche ÉPINGLÉE (autocomplétion) — filtre la liste au fil de la frappe. */}
@@ -265,6 +276,18 @@ export function SourceSitesConfig({ config, onChange }: {
           </div>
         )}
       </div>
+
+      {purging && uid && (
+        <PurgeScrapingPanel
+          uid={uid}
+          watchId={watchId}
+          sites={[...new Map(rows.map((r) => {
+            const d = normalizeDomain(r.domain)
+            return [stableId(d), { domain: d, siteId: stableId(d) }] as const
+          })).values()]}
+          onClose={() => setPurging(false)}
+        />
+      )}
 
       {importing && (
         <div className="flex flex-col gap-1.5">
