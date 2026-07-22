@@ -4,10 +4,45 @@
 // stats par concurrent (≤ N sites) et une liste produit RANGÉE + PLAFONNÉE ; le doc
 // `history` accumule des points KPI minuscules pour la tendance. Jamais 75 000 lignes
 // en base — la liste complète, c'est l'export Excel (cf. audit scalabilité).
-import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, getDocs, collection, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX } from './paths'
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
+import type { SourceProduct } from './catalog/match'
+
+// ── Catalogue SOURCE persisté (pour recalculer le benchmark hors workflow) ──────────
+// Le node « Comparer » écrit ici les produits source + la TVA ; le recalcul mono-site
+// (après un ▶) les relit pour reconstruire le rapport sans relancer tout le workflow.
+const sourceCol = (uid: string, watchId: string) => `${watchRootDoc(uid, watchId)}/reportSource`
+const SOURCE_CHUNK = 2000
+
+/** Persiste le catalogue source (chunké sous la limite 1 Mo/doc) + la TVA. Remplace tout. */
+export async function saveSourceCatalog(uid: string, watchId: string, products: SourceProduct[], vatRate: number): Promise<void> {
+  const col = sourceCol(uid, watchId)
+  // Purge les anciens chunks (catalogue plus petit qu'avant → pas d'orphelins).
+  const existing = await getDocs(collection(db, col)).catch(() => null)
+  if (existing) await Promise.all(existing.docs.map((d) => deleteDoc(d.ref)))
+  const chunks = Math.max(1, Math.ceil(products.length / SOURCE_CHUNK))
+  await setDoc(doc(db, col, '_meta'), { vatRate, chunks, count: products.length, at: Date.now() })
+  for (let i = 0; i < chunks; i++) {
+    await setDoc(doc(db, col, `chunk_${i}`), { products: products.slice(i * SOURCE_CHUNK, (i + 1) * SOURCE_CHUNK) })
+  }
+}
+
+/** Relit le catalogue source persisté. null si jamais écrit (aucun « Comparer » lancé). */
+export async function loadSourceCatalog(uid: string, watchId: string): Promise<{ products: SourceProduct[]; vatRate: number } | null> {
+  const col = sourceCol(uid, watchId)
+  const meta = await getDoc(doc(db, col, '_meta'))
+  if (!meta.exists()) return null
+  const vatRate = (meta.data()?.vatRate as number) ?? 20
+  const chunks = (meta.data()?.chunks as number) ?? 0
+  const products: SourceProduct[] = []
+  for (let i = 0; i < chunks; i++) {
+    const c = await getDoc(doc(db, col, `chunk_${i}`))
+    if (c.exists()) products.push(...((c.data()?.products as SourceProduct[]) ?? []))
+  }
+  return { products, vatRate }
+}
 
 /** Plafond de produits persistés dans `latest` (les plus sous-cotés d'abord). Au-delà,
  *  `truncated` est vrai et l'utilisateur bascule sur l'export Excel pour l'exhaustif. */

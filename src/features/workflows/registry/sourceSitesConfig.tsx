@@ -12,6 +12,7 @@ import { useCompetitorMeta, useCatalogReport } from '@/features/priceWatch/useCa
 import { stableId } from '@/features/priceWatch/core'
 import { harvestOneSite } from '@/features/priceWatch/catalog/runSingleSite'
 import { resetCompetitorData } from '@/features/priceWatch/catalog/store'
+import { recomputeReport } from '@/features/priceWatch/catalog/recomputeReport'
 import {
   normalizeDomain, deriveWatchId, importSitesIntoRows, siteStatus, siteStatusRank,
   rowsToCompetitorSites, type SourceSiteRow, type SiteStatus,
@@ -70,6 +71,12 @@ export function SourceSitesConfig({ config, onChange }: {
     try {
       const res = await harvestOneSite(uid, watchId, site, { pageBudget: 12 })
       toast.success(`${domain} : +${res.productsIndexed} produit(s) · ${res.pctPrice}% avec prix${res.engine ? ` (via ${res.engine})` : ''}`)
+      // Recalcule le benchmark (appariés, écarts) pour TOUS les sites actifs, à partir
+      // du catalogue source persisté — le dashboard se met à jour sans relancer le run.
+      const siteRefs = rowsToCompetitorSites(rows).map((s) => ({ siteId: s.id, domain: s.domain }))
+      const rec = await recomputeReport(uid, watchId, siteRefs)
+      if (rec) toast.success(`Benchmark recalculé — ${rec.matched} produit(s) apparié(s)`)
+      else toast.info('Lance « Comparer catalogue » une fois pour activer le recalcul du benchmark.')
     } catch (e) {
       toast.error(`${domain} : ${e instanceof Error ? e.message : 'échec de la moisson'}`)
     } finally {

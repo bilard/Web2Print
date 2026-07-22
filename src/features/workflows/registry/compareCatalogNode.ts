@@ -15,7 +15,7 @@ import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '@/featu
 import { buildMatrix, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
 import { buildReport } from '@/features/priceWatch/catalog/report'
-import { saveCatalogReport } from '@/features/priceWatch/reportStore'
+import { saveCatalogReport, saveSourceCatalog } from '@/features/priceWatch/reportStore'
 import type { CompetitorListing } from '@/features/priceWatch/catalog/prestashop'
 
 interface CompareConfig {
@@ -186,6 +186,9 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     try {
       const report = buildReport(products, siteRefs, indexBySite, { vatRate, harvestBySite })
       await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '' })
+      // Persiste le catalogue source → le recalcul mono-site (après un ▶ dans « Sites
+      // sources ») pourra reconstruire le benchmark sans relancer tout le workflow.
+      await saveSourceCatalog(uid, watchId, products, vatRate).catch((e) => ctx.log('warn', `Catalogue source non persisté : ${e instanceof Error ? e.message : String(e)}`))
       // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact.
       await Promise.all(report.byCompetitor.map((c) =>
         saveCompetitorMeta(uid, watchId, c.siteId, { productCount: c.audit.indexed })))
