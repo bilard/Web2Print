@@ -41,7 +41,12 @@ export function PriceScatter({ ck, onSelect, height }: { ck: Cockpit; onSelect?:
       {pts.length === 0 ? (
         <div className="text-white/40 text-sm py-10 text-center">Aucun produit chiffré dans la vue.</div>
       ) : (
-        <div className="flex-1 min-h-[240px]" style={height != null ? { height, flex: 'none' } : undefined}>
+        // ⚠ Chart.js (maintainAspectRatio:false) dans un conteneur SANS hauteur propre
+        // entre en boucle de croissance (canvas ↑ → div ↑ → canvas ↑ : page qui enfle à
+        // l'infini, constaté en prod). Le canvas est donc en ABSOLU dans un conteneur
+        // relative : la hauteur de la rangée reste dictée par la heatmap voisine.
+        <div className="flex-1 min-h-[240px] relative" style={height != null ? { height, flex: 'none' } : undefined}>
+          <div className="absolute inset-0">
           <Scatter
             data={data}
             options={{
@@ -66,6 +71,7 @@ export function PriceScatter({ ck, onSelect, height }: { ck: Cockpit; onSelect?:
               },
             }}
           />
+          </div>
         </div>
       )}
     </div>

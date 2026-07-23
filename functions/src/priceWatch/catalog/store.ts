@@ -34,6 +34,10 @@ export interface CompetitorMeta {
   updatedAt?: number
   /** % de produits avec prix sur la dernière passe (chip « prix » du node Sites sources). */
   pctPrice?: number
+  /** Compteurs CUMULÉS du balayage courant (base du pctPrice) — remis à zéro à la
+   *  réouverture d'un sweep. Sans eux, le %% serait celui de la dernière passe seule. */
+  sweepProducts?: number
+  sweepWithPrice?: number
   /** Moteur de la dernière passe ('cloudFunction' = fetch serveur) + bilan (✓/⚠/✗). */
   lastEngine?: string
   lastPassPages?: number

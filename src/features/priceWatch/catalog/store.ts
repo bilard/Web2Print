@@ -66,6 +66,10 @@ export interface CompetitorMeta {
   /** % de fiches indexées portant un prix (calculé en direct depuis l'index à la fin
    *  d'une passe) — le chip « prix % » n'attend plus le node « Comparer catalogue ». */
   pctPrice?: number
+  /** Compteurs CUMULÉS du balayage courant (base du pctPrice) — remis à zéro à la
+   *  réouverture d'un sweep. Sans eux, le %% serait celui de la dernière passe seule. */
+  sweepProducts?: number
+  sweepWithPrice?: number
   updatedAt?: number
 }
 

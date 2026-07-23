@@ -132,6 +132,13 @@ registerServerNode({
       if (res.sweepComplete) doneCount++
       const elapsedMs = Date.now() - t0
       const pagesTotal = await countPages(ctx.uid, watchId, cfg.siteId)
+      // % de prix CUMULÉ sur le balayage courant, pas sur la seule passe : une passe qui
+      // tombe sur des catégories sans prix statiques (promos AJAX…) affichait « 0 % »
+      // alors que l'index du site est sain. Compteurs remis à zéro quand la passe a
+      // ROUVERT un balayage (le curseur précédent était done).
+      const newSweep = prevMeta?.cursor?.done === true
+      const sweepProducts = (newSweep ? 0 : prevMeta?.sweepProducts ?? 0) + passProducts
+      const sweepWithPrice = (newSweep ? 0 : prevMeta?.sweepWithPrice ?? 0) + passWithPrice
       await saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
         pageCount: pagesTotal,
         productCount: (prevMeta?.productCount ?? 0) + res.productsIndexed,
@@ -139,9 +146,9 @@ registerServerNode({
         cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,
         harvestProgress: res.sweepComplete ? 1 : harvestProgress(res.cursor),
         harvestSweeps: res.cursor.sweeps,
-        // Chip « prix % » live (parité moisson manuelle ▶) : % sur la passe courante ;
-        // passe sans produit → on garde l'ancien % (pas de 0 trompeur).
-        ...(passProducts > 0 ? { pctPrice: Math.round((passWithPrice / passProducts) * 100) } : {}),
+        sweepProducts,
+        sweepWithPrice,
+        ...(sweepProducts > 0 ? { pctPrice: Math.round((sweepWithPrice / sweepProducts) * 100) } : {}),
         lastEngine: 'cloudFunction',
         lastPassPages: res.pagesFetched,
         lastPassProducts: res.productsIndexed,
