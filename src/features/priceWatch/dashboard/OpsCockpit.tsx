@@ -16,7 +16,11 @@ import { useScrapeSpend } from './useScrapeSpend'
 import { duration, ago, compactNum } from './format'
 import { formatCountdown } from '@/features/workflows/runtime/cronSchedule'
 
-interface ScheduleDoc { enabled: boolean; nextRunAt: number; lastRunAt?: number; lastStatus?: string }
+interface ScheduleDoc {
+  enabled: boolean; nextRunAt: number; lastRunAt?: number; lastStatus?: string
+  /** Cycle de moisson terminé à 100 % (tous les sites) — attend l'échéance calendaire. */
+  cycleWaiting?: boolean
+}
 
 /** Abonnement best-effort au planning du workflow (clé = workflowId ; pour F1 Pro le
  *  watchId EST l'id du workflow). Absent → pas de compteur (jamais de faux countdown). */
@@ -65,7 +69,14 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const jina = spend?.byPlatform.jina
   const remainingPct = Math.round((1 - ck.avgProgress) * 100)
   const cronOn = !!sched?.enabled
+  // Cycle COMPLET = le planning l'a acté (cycleWaiting, mode calendaire) OU tous les
+  // concurrents actifs ont bouclé leur balayage (sitesComplete === sitesActive).
+  const cycleComplete = !!sched?.cycleWaiting || (ck.sitesActive > 0 && ck.sitesComplete >= ck.sitesActive)
   const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  // Échéance calendaire (souvent à plusieurs jours) : jour + heure, pas seulement HH:MM.
+  const dayTime = (ms: number) => new Date(ms).toLocaleString('fr-FR', {
+    weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+  })
   const overdue = cronOn && sched!.nextRunAt <= now
   // Collecte « en cours » = une méta de moisson a bougé récemment (< 3 min).
   const collecting = ck.lastCollectAt != null && now - ck.lastCollectAt < 180_000
@@ -143,13 +154,35 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
               </Gauge>
               <div className="text-[11px] text-white/40 mt-1">{remainingPct}% restant à traiter</div>
             </div>
-            {/* Cycles bouclés : concurrents ayant fini ≥ 1 balayage complet. */}
-            <div className="bg-well rounded-lg px-4 py-3 flex flex-col items-center">
+            {/* Avancement du CYCLE courant. L'ancien « ×cyclesDone » (min des balayages sur
+                TOUS les sites) restait à 0 tant qu'un seul site n'avait pas bouclé → jamais
+                alimenté. On montre désormais la progression réelle (sites bouclés / actifs)
+                et, quand TOUS ont fini, un « ✓ Cycle complet » explicite (cycleWaiting du
+                planning) avec la date de relance — la réponse à « c'est complet quand ? ». */}
+            <div className="bg-well rounded-lg px-4 py-3 flex flex-col items-center"
+              title={cycleComplete
+                ? 'Tous les concurrents ont bouclé leur balayage — cycle complet. Relance à l’échéance du planning.'
+                : `${ck.sitesComplete} concurrent(s) sur ${ck.sitesActive} ont bouclé leur balayage ce cycle.`}>
               <Gauge value={ck.sitesActive ? ck.sitesComplete / ck.sitesActive : 0} color="#34d399">
-                <div className="text-xl font-semibold text-white tabular-nums">×<AnimatedNumber value={ck.cyclesDone} /></div>
-                <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">cycles</div>
+                {cycleComplete ? (
+                  <>
+                    <div className="text-2xl font-semibold text-emerald-300 leading-none">✓</div>
+                    <div className="text-[9px] uppercase tracking-wide text-emerald-300/70 mt-0.5">cycle complet</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-xl font-semibold text-white tabular-nums">{ck.sitesComplete}/{ck.sitesActive}</div>
+                    <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">sites bouclés</div>
+                  </>
+                )}
               </Gauge>
-              <div className="text-[11px] text-white/40 mt-1">{ck.sitesComplete}/{ck.sitesActive} bouclés</div>
+              <div className="text-[11px] text-white/40 mt-1 text-center">
+                {cycleComplete
+                  ? (cronOn ? <>relance <b className="capitalize">{dayTime(sched!.nextRunAt)}</b></> : 'cycle complet')
+                  : ck.cyclesDone > 0
+                    ? `cycle en cours · ×${ck.cyclesDone} complet(s)`
+                    : 'cycle en cours'}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1 min-w-[280px]">

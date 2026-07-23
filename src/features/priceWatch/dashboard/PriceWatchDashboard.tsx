@@ -24,7 +24,6 @@ import { ExpandableChart } from '@/components/shared/ExpandableChart'
 import { ChevronDown, RotateCcw } from 'lucide-react'
 import { useLiveReportRefresh } from './useLiveReportRefresh'
 import { SearchAutocomplete } from './SearchAutocomplete'
-import { WorkflowConsole } from './WorkflowConsole'
 
 /** Rapport « vide » : permet d'afficher le Cockpit opérationnel (jauges de moisson LIVE,
  *  alimentées par les métas concurrents) AVANT le premier « Comparer catalogue ».
@@ -71,7 +70,6 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
     return (
       <div className="space-y-3">
         {watchId && <OpsCockpit report={EMPTY_REPORT} watchId={watchId} />}
-        {watchId && <WorkflowConsole watchId={watchId} />}
         <EmptyState hasWatch={!!watchId} />
       </div>
     )
@@ -91,9 +89,6 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
     {/* Cockpit opérationnel (pleine largeur, en tête) : où en est la collecte —
         volumétrie, temps, cycles, tokens, prochaine moisson. Distinct du BI prix. */}
     <OpsCockpit report={report} watchId={watchId} />
-    {/* Console live du workflow : trafic + erreurs en couleur (le run serveur n'est
-        plus une boîte noire — demande utilisateur). */}
-    <WorkflowConsole watchId={watchId} />
     <div className="flex flex-col lg:flex-row gap-3" data-pw-section="comparison">
       {/* Colonne gauche : navigation par famille + liste des concurrents (Benchmark).
           Plus logique/lisible que le rail droit — la navigation (familles + concurrents)
