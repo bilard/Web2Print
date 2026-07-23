@@ -3,25 +3,46 @@
 // liste des suivis (pour le sélecteur), rapport `latest`, tendance `history`. Toute
 // la donnée est pré-agrégée à l'écriture (cf. reportStore) → le dashboard ne charge
 // jamais de lignes brutes.
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { collection, doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { priceWatchCol, reportLatestDoc, reportHistoryDoc, competitorsCol } from './paths'
 import type { StoredReport, KpiHistoryPoint } from './reportStore'
 import type { HarvestMeta } from './dashboard/opsMetrics'
+import { stableId } from './core'
+import { listWorkflows } from '@/features/workflows/persistence/workflowsApi'
 
 export interface WatchSummary {
   watchId: string
   label?: string
   updatedAt: number
   lastReportAt?: number
+  /** Workflow d'origine du suivi (si connu) → lien « Ouvrir le workflow » dans le sélecteur. */
+  workflowId?: string
 }
 
 /** Liste des suivis de l'utilisateur, du plus récemment mis à jour au plus ancien. */
 export function useWatchList(): WatchSummary[] {
   const uid = useAuthStore((s) => s.user?.uid)
   const [items, setItems] = useState<WatchSummary[]>([])
+  // Index `stableId(workflowId) → workflowId` : retrouve le workflow d'origine des suivis
+  // créés AVANT la persistance de `workflowId` (leur watchId par défaut = stableId(wfId),
+  // cf. deriveWatchId). Chargé une fois ; ne backfille que les suivis sans workflowId stocké.
+  const [wfIndex, setWfIndex] = useState<Map<string, string>>(() => new Map())
+  useEffect(() => {
+    if (!uid) { setWfIndex(new Map()); return }
+    let alive = true
+    listWorkflows(uid)
+      .then((wfs) => {
+        if (!alive) return
+        const m = new Map<string, string>()
+        for (const wf of wfs) m.set(stableId(wf.id), wf.id)
+        setWfIndex(m)
+      })
+      .catch(() => { if (alive) setWfIndex(new Map()) })
+    return () => { alive = false }
+  }, [uid])
   useEffect(() => {
     if (!uid) { setItems([]); return }
     return onSnapshot(
@@ -29,7 +50,7 @@ export function useWatchList(): WatchSummary[] {
       (snap) => {
         const out: WatchSummary[] = snap.docs.map((d) => {
           const data = d.data() as {
-            label?: string; customLabel?: string
+            label?: string; customLabel?: string; workflowId?: string
             updatedAt?: { toMillis?: () => number } | number; lastReportAt?: number
           }
           const upd = typeof data.updatedAt === 'number'
@@ -37,7 +58,7 @@ export function useWatchList(): WatchSummary[] {
             : (data.updatedAt?.toMillis?.() ?? data.lastReportAt ?? 0)
           // `customLabel` = renommage manuel (Gérer les suivis), PRIORITAIRE sur `label`
           // (nom du workflow, réécrit à chaque rapport par « Comparer catalogue »).
-          return { watchId: d.id, label: data.customLabel || data.label, updatedAt: upd, lastReportAt: data.lastReportAt }
+          return { watchId: d.id, label: data.customLabel || data.label, updatedAt: upd, lastReportAt: data.lastReportAt, workflowId: data.workflowId }
         })
         out.sort((a, b) => b.updatedAt - a.updatedAt)
         setItems(out)
@@ -45,7 +66,11 @@ export function useWatchList(): WatchSummary[] {
       () => setItems([]),
     )
   }, [uid])
-  return items
+  // Rétro-remplit `workflowId` (repli déterministe) sans écraser une valeur déjà persistée.
+  return useMemo(
+    () => items.map((w) => (w.workflowId ? w : { ...w, workflowId: wfIndex.get(w.watchId) })),
+    [items, wfIndex],
+  )
 }
 
 /**

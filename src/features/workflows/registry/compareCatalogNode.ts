@@ -185,7 +185,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // l'export. Le tableau de bord « Veille tarifaire » lit ce rapport par watchId.
     try {
       const report = buildReport(products, siteRefs, indexBySite, { vatRate, harvestBySite })
-      await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '' })
+      await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '', workflowId: ctx.workflowId })
       // Persiste le catalogue source → le recalcul mono-site (après un ▶ dans « Sites
       // sources ») pourra reconstruire le benchmark sans relancer tout le workflow.
       await saveSourceCatalog(uid, watchId, products, vatRate).catch((e) => ctx.log('warn', `Catalogue source non persisté : ${e instanceof Error ? e.message : String(e)}`))

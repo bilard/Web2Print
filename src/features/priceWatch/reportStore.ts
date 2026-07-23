@@ -120,7 +120,7 @@ export async function saveCatalogReport(
   report: CatalogReport,
   sites: { siteId: string; domain: string }[],
   runAt: number,
-  opts: { label?: string } = {},
+  opts: { label?: string; workflowId?: string } = {},
 ): Promise<void> {
   // Cap par OCTETS, pas seulement par nombre : Firestore REFUSE tout doc > 1 048 576 o
   // (INVALID_ARGUMENT). À l'échelle F1 (des milliers d'appariés × 17 concurrents avec
@@ -170,7 +170,9 @@ export async function saveCatalogReport(
   await setDoc(
     doc(db, watchRootDoc(uid, watchId)),
     // serverTimestamp() HORS de stripUndefined (sinon le sentinel est détruit) — comme le twin serveur.
-    { ...stripUndefined({ label: opts.label, lastReportAt: runAt }), updatedAt: serverTimestamp() },
+    // `workflowId` : origine du suivi → le sélecteur « Source » propose un lien « Ouvrir le
+    // workflow ». Absent (recalcul mono-site) → stripUndefined le retire, merge préserve l'existant.
+    { ...stripUndefined({ label: opts.label, workflowId: opts.workflowId, lastReportAt: runAt }), updatedAt: serverTimestamp() },
     { merge: true },
   )
 }
