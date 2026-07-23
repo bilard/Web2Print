@@ -16,6 +16,7 @@ import { directedPass, type DirectedSourceProduct, type DirectedSite, type Direc
 import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
 import { jinaSearch } from '../jina'
 import { firecrawlScrapeProduct } from '../../scraper/firecrawlProduct'
+import { creditsExhausted } from '../../scraper/creditBreaker'
 import { getUserApiKey } from '../apiKeys'
 import { getSiteCredentials } from '../../scraper/siteCredentials'
 import { krampBatchScrape } from '../../scraper/krampFirecrawl'
@@ -194,6 +195,10 @@ registerServerNode({
       const genericSiteIds = new Set(sites.filter((s) => s.generic).map((s) => s.siteId))
       const genMatched = pass.results.filter((r) => genericSiteIds.has(r.siteId)).length
       ctx.log('info', `Générique (${[...genericSiteIds].length} site(s)) : ${genQueries} recherche(s) web · ${genNoUrls} sans résultat (réf non vendue / 422) · ${genExtracted} fiche(s) extraite(s) Firecrawl · ${genMatched} appariée(s) par preuve exacte.`)
+      // Alerte VISIBLE dans le rail de logs : sans elle, « 0 fiche extraite » à cause d'un
+      // compte à sec est indistinguable d'une couverture marketplace réellement éparse.
+      if (creditsExhausted('firecrawl')) ctx.log('warn', 'Crédits Firecrawl ÉPUISÉS — extraction générique suspendue (appels sautés). Recharger sur firecrawl.dev.')
+      if (creditsExhausted('jina')) ctx.log('warn', 'Crédits Jina ÉPUISÉS — recherches web suspendues (appels sautés). Recharger sur jina.ai.')
     }
     return { results: resultsSheet(rows) }
   },

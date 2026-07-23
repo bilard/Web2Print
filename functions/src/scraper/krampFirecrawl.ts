@@ -8,6 +8,7 @@
 // la dernière page. Le login est donc réamorti à chaque page. Ne JAMAIS journaliser creds.
 import * as logger from 'firebase-functions/logger'
 import type { SiteCredentials } from './siteCredentials'
+import { creditsExhausted, isCreditError, tripCredits } from './creditBreaker'
 
 const FIRECRAWL_SCRAPE = 'https://api.firecrawl.dev/v2/scrape'
 
@@ -35,7 +36,12 @@ async function scrapeOne(target: string, creds: SiteCredentials, firecrawlKey: s
         proxy: 'stealth', waitFor: 2000, actions, formats: ['markdown'],
       }),
     })
-    if (!res.ok) { logger.warn(`[kramp] Firecrawl ${res.status}`); return '' }
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      if (isCreditError(res.status, body)) tripCredits('firecrawl', `${res.status} ${body.slice(0, 120)}`)
+      else logger.warn(`[kramp] Firecrawl ${res.status}`)
+      return ''
+    }
     const json = (await res.json()) as { data?: { markdown?: string; metadata?: { sourceURL?: string; url?: string; statusCode?: number; title?: string } } }
     const md = json.data?.markdown ?? ''
     // DIAGNOSTIC (sûr : markdown = donnée produit, PAS les creds). Répond à la seule
@@ -67,7 +73,7 @@ export async function krampBatchScrape(
   const out = new Map<string, string>()
   if (!firecrawlKey || targetUrls.length === 0) return out
   for (const u of targetUrls) {
-    if (signal?.aborted) break
+    if (signal?.aborted || creditsExhausted('firecrawl')) break
     out.set(u, await scrapeOne(u, creds, firecrawlKey, timeoutMs, signal))
   }
   return out

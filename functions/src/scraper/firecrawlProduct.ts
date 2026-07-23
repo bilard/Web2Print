@@ -5,6 +5,7 @@
 // Utilisé par la recherche dirigée pour les marketplaces (cdiscount, kramp…) où le HTML
 // brut ne contient pas les prix (chargés en JS) — cf. project_price_watch_generic_any_tech.
 import * as logger from 'firebase-functions/logger'
+import { creditsExhausted, isCreditError, tripCredits } from './creditBreaker'
 
 const FIRECRAWL_SCRAPE = 'https://api.firecrawl.dev/v2/scrape'
 
@@ -32,7 +33,7 @@ const PRODUCT_SCHEMA = {
  * la clé manque, si l'API échoue, ou si aucun prix n'est extrait (pas une fiche produit).
  */
 export async function firecrawlScrapeProduct(url: string, apiKey: string, timeoutMs = 70_000): Promise<GenericProduct | null> {
-  if (!apiKey) return null
+  if (!apiKey || creditsExhausted('firecrawl')) return null
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), timeoutMs)
   try {
@@ -49,7 +50,8 @@ export async function firecrawlScrapeProduct(url: string, apiKey: string, timeou
     })
     if (!res.ok) {
       const body = await res.text().catch(() => '')
-      logger.warn(`[firecrawl-product] ${res.status} for ${url}: ${body.slice(0, 200)}`)
+      if (isCreditError(res.status, body)) tripCredits('firecrawl', `${res.status} ${body.slice(0, 120)}`)
+      else logger.warn(`[firecrawl-product] ${res.status} for ${url}: ${body.slice(0, 200)}`)
       return null
     }
     const json = (await res.json()) as { data?: { json?: GenericProduct } }

@@ -25,6 +25,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { defineSecret } from 'firebase-functions/params'
 import { logger } from 'firebase-functions/v2'
 import { getBrightDataToken } from './brightDataToken'
+import { creditsExhausted, tripCredits } from './creditBreaker'
 
 const BRIGHTDATA_API_TOKEN = defineSecret('BRIGHTDATA_API_TOKEN')
 const BRIGHTDATA_ZONE = defineSecret('BRIGHTDATA_ZONE')
@@ -98,6 +99,9 @@ export async function callBrightData(
   country: string,
   sessionCookies?: string,
 ): Promise<{ html: string; status: number }> {
+  if (creditsExhausted('brightdata')) {
+    throw new HttpsError('resource-exhausted', 'Bright Data : crédits épuisés — appel sauté (circuit ouvert, reprise auto ≤ 15 min après recharge).')
+  }
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
   try {
@@ -120,6 +124,7 @@ export async function callBrightData(
         throw new HttpsError('unauthenticated', `Bright Data auth refusée (${res.status}) : ${snippet}`)
       }
       if (res.status === 402) {
+        tripCredits('brightdata', `402 ${snippet.slice(0, 120)}`)
         throw new HttpsError('resource-exhausted', `Bright Data : balance insuffisante. Recharger sur le dashboard. ${snippet}`)
       }
       if (res.status === 429) {
@@ -137,6 +142,7 @@ export async function callBrightData(
     // vide passe pour un succès et le client escalade pour rien vers le
     // Scraping Browser (qui répond alors 403 « Account is suspended »).
     if (html.length === 0) {
+      tripCredits('brightdata', 'réponse vide — compte suspendu ou zone inactive')
       throw new HttpsError(
         'failed-precondition',
         'Bright Data a renvoyé une réponse vide — compte suspendu ou zone inactive (vérifier le dashboard Bright Data : solde/facturation).',

@@ -6,6 +6,7 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import { callBrightData, detectCountry } from '../scraper/brightDataUnlocker'
 import { scrapeViaScrapingBrowser } from '../scraper/scrapingBrowserCore'
+import { creditsExhausted, isCreditError, tripCredits } from '../scraper/creditBreaker'
 
 /** En dessous de ce nombre de chars de TEXTE UTILE (après htmlToText), le tier 1 est
  *  probablement une page de blocage/challenge (DataDome) — gros HTML mais ~aucun texte
@@ -16,6 +17,11 @@ const TIER1_MIN_TEXT = 800
  *  tier 1 = Web Unlocker (HTTP, rapide, moins cher) → tier 2 = Scraping Browser
  *  (Puppeteer, anti-bot durs) si le tier 1 ne ramène pas de texte exploitable. */
 export async function brightDataRead(url: string): Promise<{ html: string }> {
+  // Circuit ouvert (solde à sec / compte suspendu) : on saute AUSSI le tier 2 — le
+  // Scraping Browser est facturé sur le même compte, inutile de payer un échec de plus.
+  if (creditsExhausted('brightdata')) {
+    throw new Error('Bright Data : crédits épuisés — appel sauté (reprise auto ≤ 15 min après recharge).')
+  }
   const data = (await getFirestore().doc('config/brightdata').get()).data() ?? {}
   const token = String(data.apiToken ?? '').trim()
   const zone = String(data.zone ?? '').trim() || 'web_unlocker1'
@@ -40,7 +46,9 @@ export async function brightDataRead(url: string): Promise<{ html: string }> {
         console.log(`[bd] escalade Scraping Browser : ${t2Text} chars utiles (tier1 : ${tier1Text}).`)
         if (t2Text > tier1Text) html = t2
       } catch (e) {
-        console.warn('[bd] tier2 Scraping Browser KO :', e instanceof Error ? e.message.slice(0, 400) : e)
+        const msg = e instanceof Error ? e.message : String(e)
+        if (isCreditError(0, msg)) tripCredits('brightdata', msg.slice(0, 120))
+        console.warn('[bd] tier2 Scraping Browser KO :', msg.slice(0, 400))
       }
     } else {
       console.warn(`[bd] tier1 insuffisant (${tier1Text} chars utiles) et Scraping Browser NON configuré (config/brightdata.browserWs) → pas d'escalade.`)
