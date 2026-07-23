@@ -98,7 +98,13 @@ function extractRef(block: string): string | undefined {
   }
   const sku = block.match(/itemprop=["']sku["'][^>]*>([^<]+)</i)
     ?? block.match(/<[^>]*itemprop=["']sku["'][^>]*content=["']([^"']+)["']/i)
-  return sku ? textOf(sku[1]) || undefined : undefined
+  if (sku) return textOf(sku[1]) || undefined
+  // Label « Référence: X » en texte libre (jardimax : simple <p> stylé, sans classe ni
+  // itemprop). Strict : le code doit contenir un chiffre — « référence, une pièce… »
+  // (texte marketing) ne matche pas.
+  const label = textOf(block).match(/\br[ée]f(?:\.|[ée]rence)?\s*[:.]\s*([A-Za-z0-9][A-Za-z0-9._/-]{2,30})/i)
+  const code = label?.[1]?.trim()
+  return code && /\d/.test(code) ? code : undefined
 }
 
 /**

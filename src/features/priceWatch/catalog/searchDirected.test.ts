@@ -17,12 +17,13 @@ describe('searchDirected — recherche dirigée par clé', () => {
     )
   })
 
-  it('les cartes de LISTE jardimax n’exposent pas de réf → la moisson par liste les rate', () => {
-    // Cœur du problème : sur une page catégorie, jardimax n’affiche pas la référence.
-    // L’appariement par réf est donc impossible depuis la moisson — mais la page de
-    // RECHERCHE, elle, l’affiche (« RÉFÉRENCE: A97 » vérifié en live). D’où la recherche dirigée.
-    const withRef = parseListingPage(fixture('jardimax')).find((l) => (l.ref?.length ?? 0) >= 4)
-    expect(withRef).toBeUndefined()
+  it('les cartes de RECHERCHE jardimax livrent leur réf (label « Référence: » texte libre)', () => {
+    // La page CATÉGORIE jardimax n’affiche pas la référence (l’index moissonné reste sans
+    // clé — constaté en prod), mais la page de RECHERCHE l’affiche dans un simple <p>
+    // (« RÉFÉRENCE: 325110501/0 »). Le repli label d’extractRef doit la capter pour que
+    // la recherche dirigée puisse prouver l’appariement.
+    const refs = parseListingPage(fixture('jardimax')).map((l) => l.ref).filter(Boolean)
+    expect(refs).toContain('325110501/0')
   })
 
   it('apparie un produit à un résultat de recherche par sa réf (HTML réel avec réf)', async () => {
@@ -117,5 +118,53 @@ describe('preferProductUrls', () => {
     ])
     expect(ranked[0]).toContain('/p/')
     expect(ranked[ranked.length - 1]).toMatch(/\/r-|\/cat\//)
+  })
+})
+
+describe('searchDirected — carte recherche avec « Référence: » en texte libre (jardimax)', () => {
+  // Markup RÉEL relevé le 2026-07-23 sur /recherche?s=181004383 : la réf est dans un
+  // simple <p> stylé (ni classe product-reference, ni itemprop=sku), avec le suffixe
+  // de déclinaison PrestaShop « /0 ».
+  const card = `
+    <article class="product-item product-miniature js-product-miniature" data-id-product="134027" itemscope itemtype="http://schema.org/Product">
+      <div class="thumbnail-container">
+        <h3 class="product-title" itemprop="name"><a href="https://www.jardimax.com/p/134027-lame-mulching-51cm-tondeuse-stiga.html">Lame mulching tondeuse Ariens, GGP, Stiga</a></h3>
+        <p style="padding:0;margin:0;text-align:center;font-size:14px;text-transform:uppercase;">Référence: 181004383/0</p>
+        <span class="price">34,90 €</span>
+      </div>
+    </article>`
+
+  it('parseListingPage lit la réf malgré l’absence de markup dédié', () => {
+    const l = parseListingPage(card)
+    expect(l).toHaveLength(1)
+    expect(l[0].ref).toBe('181004383/0')
+  })
+
+  it('searchProductOnSite apparie la réf source à la carte (evidence sku)', async () => {
+    const hit = await searchProductOnSite({ ref: '181004383' }, 'jardimax.com', {
+      fetchHtml: async () => card,
+    })
+    expect(hit).not.toBeNull()
+    expect(hit!.evidence).toBe('sku')
+    expect(hit!.listing.price).toBe(34.9)
+  })
+})
+
+describe('directedPass — débit', () => {
+  it('interroge les sites d’un produit en PARALLÈLE (un site lent ne bloque pas les autres)', async () => {
+    let concurrent = 0
+    let maxConcurrent = 0
+    const deps = {
+      fetchHtml: async () => {
+        concurrent++
+        maxConcurrent = Math.max(maxConcurrent, concurrent)
+        await new Promise((r) => setTimeout(r, 5))
+        concurrent--
+        return null
+      },
+    }
+    const sites = ['a', 'b', 'c'].map((s) => ({ siteId: s, domain: `${s}.fr` }))
+    await directedPass([{ id: 'p', ref: 'REF12345' }], sites, 0, 1, deps)
+    expect(maxConcurrent).toBeGreaterThan(1)
   })
 })

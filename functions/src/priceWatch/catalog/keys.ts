@@ -184,14 +184,19 @@ function leadingToken(name: string | undefined): string {
   return normalizeRef(first)
 }
 
-/** Un champ d'identité déclaré porte-t-il exactement cette référence ? */
+/** Un champ d'identité déclaré porte-t-il exactement cette référence ?
+ *  Une déclinaison PrestaShop « 181004383/0 » doit prouver « 181004383 » : normaliser
+ *  la chaîne entière collerait le suffixe de variante (« 1810043830 ») et l'égalité
+ *  exacte raterait — la partie AVANT le premier « / » est donc testée aussi. */
 function refEqualsDeclared(key: JoinKey, id: CompetitorIdentity): MatchEvidence | null {
   for (const [field, evidence] of [['sku', 'sku'], ['mpn', 'mpn']] as const) {
     const raw = id[field]
     if (!raw) continue
-    const norm = normalizeRef(raw)
-    if (!norm) continue
-    if (norm === key.value || stripLeadingZeros(norm) === key.value) return evidence
+    for (const cand of [String(raw), String(raw).split('/')[0]]) {
+      const norm = normalizeRef(cand)
+      if (!norm) continue
+      if (norm === key.value || stripLeadingZeros(norm) === key.value) return evidence
+    }
   }
   return null
 }

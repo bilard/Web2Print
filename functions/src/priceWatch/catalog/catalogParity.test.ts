@@ -6,8 +6,9 @@
 import { describe, it, expect } from 'vitest'
 import {
   parsePriceFragment, splitProductBlocks, extractAvailability,
-  parseJsonLdObjects, parseProductPage,
+  parseJsonLdObjects, parseProductPage, parseListingPage,
 } from './prestashop'
+import { candidateKeys, proveMatch } from './keys'
 import { indexKeysOf, buildMemoryIndex, matchProduct } from './match'
 import { foldText, keywordsForFamilies } from './categories'
 import { MAX_PAGES_PER_CATEGORY, initCursor, advance } from './harvest'
@@ -103,5 +104,28 @@ describe('searchDirected (parité serveur)', () => {
   it('searchProductOnSite renvoie null sans HTML', async () => {
     const hit = await searchProductOnSite({ ref: 'ABC123' }, 'x.fr', { fetchHtml: async () => null })
     expect(hit).toBeNull()
+  })
+})
+
+describe('appariement jardimax (parité serveur)', () => {
+  it('sku à déclinaison « /0 » prouve la réf principale (proveMatch)', () => {
+    const keys = candidateKeys({ ref: '181004383' })
+    expect(proveMatch(keys, { sku: '181004383/0' })?.evidence).toBe('sku')
+  })
+  it('extractRef lit le label « Référence: » en texte libre (via parseListingPage)', () => {
+    const card = `<article class="product-miniature">
+      <h3 class="product-title"><a href="https://www.jardimax.com/p/134027-lame.html">Lame mulching</a></h3>
+      <p>Référence: 181004383/0</p><span class="price">34,90 €</span></article>`
+    expect(parseListingPage(card)[0]?.ref).toBe('181004383/0')
+  })
+  it('directedPass interroge les sites en parallèle', async () => {
+    let concurrent = 0, maxConcurrent = 0
+    const deps = { fetchHtml: async () => {
+      concurrent++; maxConcurrent = Math.max(maxConcurrent, concurrent)
+      await new Promise((r) => setTimeout(r, 5)); concurrent--; return null
+    } }
+    const sites = ['a', 'b', 'c'].map((s) => ({ siteId: s, domain: `${s}.fr` }))
+    await directedPass([{ id: 'p', ref: 'REF12345' }], sites, 0, 1, deps)
+    expect(maxConcurrent).toBeGreaterThan(1)
   })
 })

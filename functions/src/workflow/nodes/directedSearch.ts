@@ -13,8 +13,9 @@ import { stableId } from '../../priceWatch/helpers'
 import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
 import { directedPass, type DirectedSourceProduct, type DirectedSite, type DirectedHit } from '../../priceWatch/catalog/searchDirected'
-import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
-import { jinaSearch } from '../jina'
+import { parseProductPage, parsePriceFragment, type CompetitorListing } from '../../priceWatch/catalog/prestashop'
+import { jinaSearch, jinaRead } from '../jina'
+import { brightDataRead } from '../brightData'
 import { firecrawlScrapeProduct } from '../../scraper/firecrawlProduct'
 import { creditsExhausted } from '../../scraper/creditBreaker'
 import { getUserApiKey } from '../apiKeys'
@@ -75,11 +76,11 @@ registerServerNode({
     // Dépendances du mode générique (chargées seulement si ≥ 1 site générique → pas de coût sinon).
     const hasGeneric = sites.some((s) => s.generic)
     const firecrawlKey = hasGeneric ? (await getUserApiKey(ctx.uid, 'firecrawl')) : ''
-    if (hasGeneric && !firecrawlKey) ctx.log('warn', 'Sites génériques configurés mais aucune clé Firecrawl — ils seront ignorés.')
+    if (hasGeneric && !firecrawlKey) ctx.log('warn', 'Sites génériques sans clé Firecrawl — extraction via les replis Bright Data puis Jina.')
     // Compteurs de diagnostic du mode générique : sans eux, une couverture marketplace
     // faible (les réfs OEM ne sont pas vendues sur amazon/cdiscount…) est indistinguable
     // d'une panne. On les journalise en fin de passe pour rendre la réalité VISIBLE.
-    let genQueries = 0, genNoUrls = 0, genExtracted = 0
+    let genQueries = 0, genNoUrls = 0, genExtracted = 0, genViaBd = 0, genViaJina = 0
     const searchWeb = async (query: string): Promise<string[]> => {
       genQueries++
       try {
@@ -88,15 +89,46 @@ registerServerNode({
         return urls
       } catch { genNoUrls++; return [] }
     }
+    // Extraction d'UNE fiche marketplace, en CASCADE : Firecrawl (rendu JS + schéma) →
+    // Bright Data (Web Unlocker/Scraping Browser + parseurs déterministes JSON-LD/microdata)
+    // → Jina Reader (markdown, dernier recours). On ne cascade que si le palier est
+    // INDISPONIBLE (clé absente / crédits épuisés — circuit breaker), pas quand il a
+    // répondu « pas une fiche produit » : sinon chaque échec légitime paierait 3 fetchs.
     const extractProduct = async (url: string): Promise<CompetitorListing | null> => {
-      const p = await firecrawlScrapeProduct(url, firecrawlKey)
-      if (!p || p.price == null) return null
-      genExtracted++
-      return {
-        url, name: p.name ?? '', ref: p.reference, price: p.price, currency: p.currency,
-        taxIncluded: true, // prix affiché B2C = TTC
-        availability: p.inStock == null ? undefined : (p.inStock ? 'in-stock' : 'out-of-stock'),
+      if (firecrawlKey && !creditsExhausted('firecrawl')) {
+        const p = await firecrawlScrapeProduct(url, firecrawlKey)
+        if (p && p.price != null) {
+          genExtracted++
+          return {
+            url, name: p.name ?? '', ref: p.reference, price: p.price, currency: p.currency,
+            taxIncluded: true, // prix affiché B2C = TTC
+            availability: p.inStock == null ? undefined : (p.inStock ? 'in-stock' : 'out-of-stock'),
+          }
+        }
+        // Firecrawl a répondu (pas une fiche / rien d'extrait) → pas de cascade.
+        // S'il vient de disjoncter (402 pendant CET appel), on enchaîne sur les replis.
+        if (!creditsExhausted('firecrawl')) return null
       }
+      try {
+        const { html } = await brightDataRead(url)
+        const fiche = parseProductPage(html, url)
+        if (fiche && fiche.price != null) {
+          genExtracted++; genViaBd++
+          return { ...fiche, taxIncluded: fiche.taxIncluded ?? true }
+        }
+      } catch { /* Bright Data indisponible (non configuré / crédits) → Jina */ }
+      try {
+        const { title, content } = await jinaRead(ctx.uid, url)
+        // Markdown : 1er montant « € » du contenu = prix principal de la fiche (le prix
+        // produit précède les blocs de recommandations). Identité prouvée ensuite par
+        // proveMatch (réf/EAN dans titre ou URL) — jamais le nom seul.
+        const price = parsePriceFragment(content.match(/\d[\d\s.,\u00a0\u202f]*\s*€/)?.[0] ?? '')
+        if (title && price != null && price > 0) {
+          genExtracted++; genViaJina++
+          return { url, name: title, price, currency: 'EUR', taxIncluded: true }
+        }
+      } catch { /* Jina indisponible aussi → null */ }
+      return null
     }
 
     const refCol = String(config.refColumn ?? '').trim()
@@ -130,7 +162,7 @@ registerServerNode({
 
     const pass = await directedPass(products, regularSites, startIdx, budget, {
       fetchHtml: async (url) => { try { return await fetchHtml(url, 20000) } catch { return null } },
-      ...(hasGeneric && firecrawlKey ? { searchWeb, extractProduct } : {}),
+      ...(hasGeneric ? { searchWeb, extractProduct } : {}),
       signal: ctx.signal,
       log: (m) => ctx.log('info', m),
     })
@@ -191,10 +223,11 @@ registerServerNode({
       }
     })
     ctx.log('info', `${rows.length} prix trouvé(s) sur ${pass.processed} produit(s) [curseur ${startCursor} → ${pass.nextCursor} / ${products.length}] × ${sites.length} site(s).`)
-    if (hasGeneric && firecrawlKey) {
+    if (hasGeneric) {
       const genericSiteIds = new Set(sites.filter((s) => s.generic).map((s) => s.siteId))
       const genMatched = pass.results.filter((r) => genericSiteIds.has(r.siteId)).length
-      ctx.log('info', `Générique (${[...genericSiteIds].length} site(s)) : ${genQueries} recherche(s) web · ${genNoUrls} sans résultat (réf non vendue / 422) · ${genExtracted} fiche(s) extraite(s) Firecrawl · ${genMatched} appariée(s) par preuve exacte.`)
+      const viaRepli = genViaBd + genViaJina > 0 ? ` (dont ${genViaBd} Bright Data · ${genViaJina} Jina)` : ''
+      ctx.log('info', `Générique (${[...genericSiteIds].length} site(s)) : ${genQueries} recherche(s) web · ${genNoUrls} sans résultat (réf non vendue / 422) · ${genExtracted} fiche(s) extraite(s)${viaRepli} · ${genMatched} appariée(s) par preuve exacte.`)
       // Alerte VISIBLE dans le rail de logs : sans elle, « 0 fiche extraite » à cause d'un
       // compte à sec est indistinguable d'une couverture marketplace réellement éparse.
       if (creditsExhausted('firecrawl')) ctx.log('warn', 'Crédits Firecrawl ÉPUISÉS — extraction générique suspendue (appels sautés). Recharger sur firecrawl.dev.')

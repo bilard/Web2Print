@@ -188,11 +188,15 @@ export async function directedPass(
   for (; i < end; i++) {
     if (deps.signal?.aborted) break
     const p = products[i]
-    for (const site of sites) {
-      if (deps.signal?.aborted) break
-      const hit = await searchProductOnSite(p, site.domain, deps, { generic: site.generic })
-      if (hit) results.push({ productId: p.id, siteId: site.siteId, hit })
-    }
+    // Sites interrogés EN PARALLÈLE : en séquence, le débit d'une passe est la SOMME
+    // des latences (19 sites × 2-20 s = quelques produits par run seulement) ; en
+    // parallèle il est borné par le site le plus lent. Promise.all préserve l'ordre.
+    const hits = await Promise.all(sites.map(async (site) => {
+      if (deps.signal?.aborted) return null
+      const hit = await searchProductOnSite(p, site.domain, deps, { generic: site.generic }).catch(() => null)
+      return hit ? { productId: p.id, siteId: site.siteId, hit } : null
+    }))
+    for (const h of hits) if (h) results.push(h)
   }
   const done = i >= products.length
   return { results, nextCursor: done ? 0 : i, done, processed: i - start }

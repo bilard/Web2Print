@@ -190,3 +190,17 @@ describe('proveMatch — ref-in-url', () => {
     expect(proveMatch(keys, { url: 'https://x.fr/cat/99-piece-510-x.html' })).toBeNull()
   })
 })
+
+describe('proveMatch — déclinaison PrestaShop « réf/variante »', () => {
+  it('un sku déclaré « 181004383/0 » prouve la clé « 181004383 » (suffixe de déclinaison)', () => {
+    // jardimax affiche « Référence: 181004383/0 » (réf constructeur + « /0 » de variante
+    // PrestaShop). Normaliser la chaîne entière collerait le suffixe (« 1810043830 »)
+    // et l'égalité exacte échouerait — la partie AVANT « / » doit aussi être testée.
+    const keys = candidateKeys({ ref: '181004383' })
+    expect(proveMatch(keys, { sku: '181004383/0' })?.evidence).toBe('sku')
+  })
+  it('ne prouve PAS une réf différente malgré le slash (pas de préfixe laxiste)', () => {
+    const keys = candidateKeys({ ref: '18100438' }) // réf plus courte : ≠ 181004383
+    expect(proveMatch(keys, { sku: '181004383/0' })).toBeNull()
+  })
+})
