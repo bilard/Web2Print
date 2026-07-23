@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react'
 import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
-import { CalendarClock, Play, Loader2, Square } from 'lucide-react'
+import { CalendarClock, Play, Loader2, Square, PauseCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { auth, db, functions } from '@/lib/firebase/config'
 import { formatCountdown } from '../runtime/cronSchedule'
 import { useRunContext } from '../runtime/runContext'
+import { useWorkflowStore } from '../persistence/workflow.store'
+import { saveWorkflow } from '../persistence/workflowsApi'
 
 interface ScheduleDoc {
   enabled: boolean; every: number; unit: string
@@ -68,6 +70,30 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
     }
   }
 
+  // SUSPENDRE LE FLUX : STOP n'arrête qu'UN run — le cron relance au tick suivant. Pour
+  // vraiment arrêter le flux, on désactive le node Cron (enabled=false). `saveWorkflow`
+  // resynchronise le planning : `findActiveCron` renvoie null → le doc workflowSchedules
+  // est SUPPRIMÉ → le scanner ne reprend plus ce workflow. On abandonne aussi le run en
+  // cours au passage (pour un arrêt immédiat et complet).
+  const onSuspend = async () => {
+    const uid = auth.currentUser?.uid
+    const wf = useWorkflowStore.getState().current
+    if (!uid || !wf) return
+    const cronNode = wf.nodes.find((n) => n.type === 'cron' && (n.config as { enabled?: boolean })?.enabled)
+    if (!cronNode) { toast.info('Aucun cron actif à suspendre.'); return }
+    try {
+      const nextNodes = wf.nodes.map((n) =>
+        n.id === cronNode.id ? { ...n, config: { ...(n.config as object), enabled: false } } : n)
+      const next = { ...wf, nodes: nextNodes }
+      useWorkflowStore.getState().setNodes(nextNodes)
+      await setDoc(doc(db, 'users', uid, 'workflowAbort', workflowId), { requested: true, ts: Date.now() }) // arrête un run en cours
+      await saveWorkflow(uid, next) // supprime le planning → plus de relance
+      toast.success('Flux suspendu — le cron ne relancera plus. Réactive « Planification active » dans le node Cron pour reprendre.')
+    } catch (e) {
+      toast.error(`Impossible de suspendre : ${e instanceof Error ? e.message : e}`)
+    }
+  }
+
   // Heure « 23:41 » (concrète, ce que l'utilisateur veut voir).
   const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   // Échéance calendaire (souvent à plusieurs jours) : jour + heure, pas seulement HH:MM.
@@ -116,7 +142,7 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
         <button
           onClick={onStop}
           className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-500/25 hover:bg-red-500/40 text-red-200"
-          title="Arrêter le run serveur en cours (la planification reste active — décoche « Planification active » dans le node Cron pour la suspendre)"
+          title="Arrêter le run serveur EN COURS. ⚠ Le cron le relancera au prochain tick — utilise « Suspendre » pour arrêter le flux durablement."
         >
           <Square className="w-3 h-3" />
           STOP
@@ -132,6 +158,16 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
           Lancer (serveur)
         </button>
       )}
+      {/* SUSPENDRE : arrête le flux DURABLEMENT (désactive le cron) — toujours dispo tant
+          que la planification est active, que le run soit en cours ou entre deux runs. */}
+      <button
+        onClick={onSuspend}
+        className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/35 text-amber-200"
+        title="Suspendre le flux : désactive le cron (plus aucune relance) et arrête le run en cours. Réactivable dans le node Cron."
+      >
+        <PauseCircle className="w-3 h-3" />
+        Suspendre
+      </button>
     </div>
   )
 }
