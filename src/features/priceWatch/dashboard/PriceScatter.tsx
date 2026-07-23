@@ -11,7 +11,8 @@ Chart.register(PointElement, LinearScale, Tooltip, Legend)
 
 const TONES = ['cheaper', 'aligned', 'dearer'] as const
 
-export function PriceScatter({ ck, onSelect, height = 240 }: { ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void; height?: number }) {
+// `height` : fournie en modale (agrandi) ; absente en grille → la carte remplit la rangée.
+export function PriceScatter({ ck, onSelect, height }: { ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void; height?: number }) {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.55)'
@@ -30,7 +31,9 @@ export function PriceScatter({ ck, onSelect, height = 240 }: { ck: Cockpit; onSe
   }
 
   return (
-    <div className="bg-surface rounded-lg p-4">
+    // h-full + flex-col : dans la grille items-stretch, le nuage occupe TOUTE la hauteur
+    // de la carte (alignée sur la heatmap voisine) ; en modale, `height` explicite prime.
+    <div className="bg-surface rounded-lg p-4 h-full flex flex-col">
       <div className="flex items-baseline justify-between mb-3">
         <div className="text-sm font-semibold text-white">Prix × écart concurrent</div>
         <div className="text-[11px] text-white/35">{pts.length} produits{ck.truncated ? ' · top 1000' : ''}</div>
@@ -38,7 +41,7 @@ export function PriceScatter({ ck, onSelect, height = 240 }: { ck: Cockpit; onSe
       {pts.length === 0 ? (
         <div className="text-white/40 text-sm py-10 text-center">Aucun produit chiffré dans la vue.</div>
       ) : (
-        <div style={{ height }}>
+        <div className="flex-1 min-h-[240px]" style={height != null ? { height, flex: 'none' } : undefined}>
           <Scatter
             data={data}
             options={{

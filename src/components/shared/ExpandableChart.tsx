@@ -20,7 +20,9 @@ export function ExpandableChart({ render, largeHeight = 560 }: {
   }, [open])
 
   return (
-    <div className="relative group">
+    // h-full : dans une grille `items-stretch`, la carte s'étire sur la hauteur de la
+    // rangée (alignement scatter ↔ heatmap) ; sans grille stretch, hauteur auto inchangée.
+    <div className="relative group h-full">
       {render()}
       <button type="button" onClick={() => setOpen(true)} title="Agrandir"
         className="absolute top-3 right-3 z-10 p-1.5 rounded bg-well/80 border border-white/10 text-white/40 opacity-0 group-hover:opacity-100 hover:text-white hover:border-white/25 transition">

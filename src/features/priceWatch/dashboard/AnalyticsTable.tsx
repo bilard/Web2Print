@@ -8,6 +8,8 @@ import type { Cockpit, TableRow } from './analytics'
 import { rowsToCsv, groupRowsByFamily } from './analytics'
 import { eur, pct, heatColor, POSITION_LABEL, POSITION_TEXT } from './format'
 import { Search, ChevronDown, ChevronRight } from 'lucide-react'
+import type { ProductRow } from '../catalog/report'
+import { SearchAutocomplete } from './SearchAutocomplete'
 
 const googleSearch = (r: TableRow) =>
   `https://www.google.com/search?q=${encodeURIComponent(`${r.reference ?? ''} ${r.name}`.trim())}`
@@ -15,20 +17,25 @@ const googleSearch = (r: TableRow) =>
 type SortKey = 'name' | 'myPriceHt' | 'bestGapPct'
 const num = (v: number | null) => (v == null ? Number.POSITIVE_INFINITY : v)
 
-export function AnalyticsTable({ ck }: { ck: Cockpit }) {
+export function AnalyticsTable({ ck, searchQ, onSearch, onPickFamily, products }: {
+  ck: Cockpit
+  /** Recherche GLOBALE du cockpit, exposée aussi ici (demande : champ visible sur le tableau). */
+  searchQ: string
+  onSearch: (q: string) => void
+  onPickFamily: (famille: string) => void
+  products: ProductRow[]
+}) {
   // On n'affiche que les concurrents qui ont AU MOINS un produit apparié : les sites à 0
   // (n'ont pas ce catalogue) n'ajoutaient que des colonnes vides. Le Benchmark garde la
   // vue exhaustive des 19 sites ; ici on densifie.
   const comps = ck.competitors.filter((c) => c.matched > 0)
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'name', dir: 1 })
-  // TREEVIEW : familles repliables (clic en-tête de groupe). Tout déplié par défaut.
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
-  const toggleFam = (fam: string) => setCollapsed((prev) => {
-    const next = new Set(prev)
-    if (next.has(fam)) next.delete(fam)
-    else next.add(fam)
-    return next
-  })
+  // TREEVIEW en ACCORDÉON : tout FERMÉ par défaut, un seul nœud famille ouvert à la
+  // fois (ouvrir un nœud ferme l'autre). Une recherche/un filtre actif déplie tout —
+  // les résultats doivent être visibles sans rouvrir les familles une à une.
+  const [openFam, setOpenFam] = useState<string | null>(null)
+  const isOpen = (fam: string) => ck.filterActive || openFam === fam
+  const toggleFam = (fam: string) => setOpenFam((prev) => (prev === fam ? null : fam))
 
   // Tri DANS chaque groupe (les familles, elles, restent alphabétiques).
   const groups = useMemo(() => {
@@ -62,11 +69,9 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
       <div className="flex items-center gap-2 mb-1">
         <div className="text-sm font-semibold text-white">Détail produits</div>
         <span className="text-[11px] text-white/40">{rowCount}{ck.filterActive ? ` / ${ck.totalCount}` : ''}</span>
-        <button
-          onClick={() => setCollapsed(collapsed.size === groups.length ? new Set() : new Set(groups.map((g) => g.famille)))}
-          className="ml-auto bg-well text-white/70 text-xs rounded px-3 py-1.5 border border-white/10 hover:text-white hover:border-white/25">
-          {collapsed.size === groups.length ? 'Tout déplier' : 'Tout replier'}
-        </button>
+        <div className="ml-auto flex-1 max-w-md bg-well rounded px-3 py-1.5 border border-white/10">
+          <SearchAutocomplete value={searchQ} onChange={onSearch} onPickFamily={onPickFamily} products={products} />
+        </div>
         <button onClick={exportCsv} className="bg-well text-white/70 text-xs rounded px-3 py-1.5 border border-white/10 hover:text-white hover:border-white/25">
           Export CSV
         </button>
@@ -98,17 +103,17 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
               // horizontal (sticky left dans une cellule pleine largeur).
               <tr key={`fam:${g.famille}`} onClick={() => toggleFam(g.famille)}
                 className="border-t border-white/10 bg-surface-2/90 cursor-pointer select-none hover:bg-surface-2">
-                <td colSpan={4 + comps.length} className="py-1">
+                <td colSpan={4 + comps.length} className="py-1.5">
                   <div className="sticky left-0 w-max flex items-center gap-2 pl-2 pr-4">
-                    {collapsed.has(g.famille)
-                      ? <ChevronRight className="w-3.5 h-3.5 text-amber-300/70" />
-                      : <ChevronDown className="w-3.5 h-3.5 text-amber-300/70" />}
+                    {isOpen(g.famille)
+                      ? <ChevronDown className="w-3.5 h-3.5 text-amber-300/70" />
+                      : <ChevronRight className="w-3.5 h-3.5 text-amber-300/70" />}
                     <span className="text-[10px] uppercase tracking-wide font-semibold text-amber-300/90">{g.famille}</span>
                     <span className="text-[10px] text-white/35 tabular-nums">{g.rows.length}</span>
                   </div>
                 </td>
               </tr>,
-              ...(collapsed.has(g.famille) ? [] : g.rows).map((r: TableRow) => (
+              ...(isOpen(g.famille) ? g.rows : []).map((r: TableRow) => (
               <tr key={r.id} className="border-t border-white/5 text-right hover:bg-white/[0.03]">
                 {/* Nom COMPLET du produit (demande : plus de troncature) — la colonne
                     s'élargit et le libellé passe sur plusieurs lignes si nécessaire. */}

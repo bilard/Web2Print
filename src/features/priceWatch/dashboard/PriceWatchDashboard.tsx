@@ -151,14 +151,17 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <ExpandableChart render={(h) => <PositionDonut kpis={report.kpis} onSelect={toggle} height={h ?? 300} />} />
         <ExpandableChart render={(h) => <GapDistribution ck={ck} onSelect={toggle} height={h ?? 300} />} />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+      {/* items-stretch : le scatter s'étire sur toute la hauteur de la heatmap voisine. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
         <ExpandableChart render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} />
         <ExpandableChart render={() => <HeatmapMatrix ck={ck} onSelect={toggle} />} />
       </div>
       <ExpandableChart render={(h) => <CompetitorTrend history={history} sites={report.sites} height={h} />} />
       <OpportunityPanel ck={ck} />
 
-      <AnalyticsTable ck={ck} />
+      <AnalyticsTable ck={ck} searchQ={filter.q} onSearch={(q) => set({ q })}
+        onPickFamily={(famille) => setFilter((f) => ({ ...f, famille, q: '' }))}
+        products={report.products} />
 
       <section className="bg-surface rounded-lg">
         <button type="button" onClick={() => setDetailOpen((o) => !o)}
