@@ -5,7 +5,7 @@ import { initializeApp, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { executeWorkflowHeadless } from './execute'
 import { writeRunHistory } from './runHistory'
-import { writeRunLive } from './runLive'
+import { writeRunLive, appendRunLiveError } from './runLive'
 import {
   loadCheckpoint, saveNodeOutput, saveCheckpointMeta, clearCheckpoint, MAX_RESUME_ATTEMPTS,
 } from './checkpoint'
@@ -184,6 +184,8 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
   } catch (err) {
     if (trigger === 'cron') await clearCheckpoint(uid, wf.id).catch(() => {})
     await writeRunLive(uid, wf.id, { runId, endedAt: Date.now(), status: 'error' })
+    // Le POURQUOI du crash, visible dans la console du dashboard (sinon boîte noire).
+    await appendRunLiveError(uid, wf.id, `Run interrompu : ${err instanceof Error ? err.message : String(err)}`)
     throw err
   } finally {
     clearTimeout(timer)
@@ -270,7 +272,13 @@ export const workflowCronScheduler = onSchedule(
         const result = await runWorkflow(wf, s.uid, 'cron')
         await docSnap.ref.update(afterRunPatch(s, result, now))
       } catch (err) {
-        await docSnap.ref.update({ lastStatus: 'error', nextRunAt: computeNextRun(cron, cron.afterCompletion ? Date.now() : now) })
+        await docSnap.ref.update({
+          lastStatus: 'error',
+          // Message persisté : le bandeau/console du dashboard peut dire POURQUOI.
+          lastError: (err instanceof Error ? err.message : String(err)).slice(0, 500),
+          lastErrorAt: Date.now(),
+          nextRunAt: computeNextRun(cron, cron.afterCompletion ? Date.now() : now),
+        })
         console.error('workflowCronScheduler: échec', s.workflowId, err)
       }
     }

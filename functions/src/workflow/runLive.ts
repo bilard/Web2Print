@@ -28,3 +28,14 @@ export async function writeRunLive(uid: string, workflowId: string, data: Partia
     .set(data, { merge: true })
     .catch(() => {})
 }
+
+/** Ajoute une ligne d'ERREUR aux logs live SANS écraser l'historique du run (arrayUnion).
+ *  Sans elle, un crash de run ne laissait qu'un `status: 'error'` muet — introuvable
+ *  depuis l'app (« dernier run en erreur » sans aucun détail). */
+export async function appendRunLiveError(uid: string, workflowId: string, msg: string): Promise<void> {
+  const { FieldValue } = await import('firebase-admin/firestore')
+  await getFirestore()
+    .doc(`users/${uid}/workflowRunsLive/${workflowId}`)
+    .set({ logs: FieldValue.arrayUnion({ ts: Date.now(), level: 'error', msg: msg.slice(0, 600) }) }, { merge: true })
+    .catch(() => {})
+}

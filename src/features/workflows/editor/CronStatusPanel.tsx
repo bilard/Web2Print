@@ -11,6 +11,8 @@ import { useRunContext } from '../runtime/runContext'
 interface ScheduleDoc {
   enabled: boolean; every: number; unit: string
   nextRunAt: number; lastRunAt?: number; lastStatus?: string
+  /** Message du dernier échec (persisté par le scheduler) — affiché au survol du ⚠. */
+  lastError?: string
   /** Cycle de moisson terminé à 100 % — nextRunAt = prochaine échéance CALENDAIRE. */
   cycleWaiting?: boolean
 }
@@ -102,7 +104,7 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
       ) : (
         <span title="Planification serveur active">
           {sched.lastRunAt
-            ? <>Dernier <b>{hhmm(sched.lastRunAt)}</b> <span className="text-indigo-200/70">(il y a {formatCountdown(now - sched.lastRunAt)})</span> {sched.lastStatus === 'error' ? <span className="text-rose-300">⚠</span> : <span className="text-emerald-300">✓</span>}</>
+            ? <>Dernier <b>{hhmm(sched.lastRunAt)}</b> <span className="text-indigo-200/70">(il y a {formatCountdown(now - sched.lastRunAt)})</span> {sched.lastStatus === 'error' ? <span className="text-rose-300 cursor-help" title={sched.lastError ?? 'Dernier run en erreur'}>⚠</span> : <span className="text-emerald-300">✓</span>}</>
             : <span className="text-indigo-200/70">Jamais exécuté</span>}
           <span className="text-indigo-300/50"> · </span>
           Prochain <b>{hhmm(sched.nextRunAt)}</b> <span className="text-indigo-200/70">({overdue ? 'imminent' : `dans ${formatCountdown(sched.nextRunAt - now)}`})</span>
