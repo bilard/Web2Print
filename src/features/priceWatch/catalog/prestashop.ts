@@ -202,7 +202,9 @@ function extractPrices(block: string): Pick<CompetitorListing, 'price' | 'listPr
     // naïve s'arrêterait dessus. On saute donc les fragments sans chiffre.
     // Cap large (800) : certains thèmes bourrent le span de blancs — le prix de
     // pieces-tracteur est à ~222 car. de l'ouverture, un cap à 160 le manquait.
-    for (const m of block.matchAll(/<(?:span|div|p)[^>]*class=["'][^"']*\bprice\b[^"']*["'][^>]*>([\s\S]{0,800}?)<\/(?:span|div|p)>/gi)) {
+    // `(?:\b|_)` : les thèmes BEM nomment la classe `…__price` (matijardin) — un
+    // underscore est un caractère de MOT, `\bprice\b` ne le matche pas.
+    for (const m of block.matchAll(/<(?:span|div|p)[^>]*class=["'][^"']*(?:\b|_)price(?:\b|_)[^"']*["'][^>]*>([\s\S]{0,800}?)<\/(?:span|div|p)>/gi)) {
       const p = parsePriceFragment(m[1])
       if (p != null) { out.price = p; break }
     }

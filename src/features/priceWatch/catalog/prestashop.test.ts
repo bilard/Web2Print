@@ -227,3 +227,26 @@ describe('pagination', () => {
     expect(pageUrl('https://x.fr/10-cat?page=2', 3)).toBe('https://x.fr/10-cat?page=3')
   })
 })
+
+describe('extractPrices — classe BEM « __price » (matijardin)', () => {
+  it('lit le prix d’un span product-miniature__price (underscore ≠ frontière de mot)', () => {
+    // Markup RÉEL matijardin 2026-07-23 : le thème BEM nomme le span
+    // `product-miniature__price` — `\bprice\b` ne matche pas après « __ » (l'underscore
+    // est un caractère de mot) → 84 % des fiches sans prix alors que le prix est là.
+    const card = `<article class="product-miniature js-product-miniature" data-id-product="6791">
+      <a href="https://www.matijardin.fr/fr/6791-condensateur.html" class="product-miniature__link">
+        <img class="product-miniature__image lazy product-image" alt="Condensateur pour débroussailleuse Mitsubishi, Kaaz"
+          src="https://www.matijardin.fr/18123-home_default/condensateur.jpg" />
+        <h3 class="product-miniature__title">Condensateur pour débroussailleuse</h3></a>
+      <div class="product-miniature__prices">
+        <div class="product-miniature__discount-price"></div>
+        <span class="product-miniature__price" aria-label="Prix">
+          5,22 €
+        </span>
+      </div>
+    </article>`
+    const out = parseListingPage(card, 'https://www.matijardin.fr/fr/1518-condensateurs')
+    expect(out).toHaveLength(1)
+    expect(out[0].price).toBe(5.22)
+  })
+})

@@ -7,7 +7,7 @@ import { useMemo, useState } from 'react'
 import type { Cockpit, TableRow } from './analytics'
 import { rowsToCsv, groupRowsByFamily } from './analytics'
 import { eur, pct, heatColor, POSITION_LABEL, POSITION_TEXT } from './format'
-import { Search } from 'lucide-react'
+import { Search, ChevronDown, ChevronRight } from 'lucide-react'
 
 const googleSearch = (r: TableRow) =>
   `https://www.google.com/search?q=${encodeURIComponent(`${r.reference ?? ''} ${r.name}`.trim())}`
@@ -21,6 +21,14 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
   // vue exhaustive des 19 sites ; ici on densifie.
   const comps = ck.competitors.filter((c) => c.matched > 0)
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'name', dir: 1 })
+  // TREEVIEW : familles repliables (clic en-tête de groupe). Tout déplié par défaut.
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+  const toggleFam = (fam: string) => setCollapsed((prev) => {
+    const next = new Set(prev)
+    if (next.has(fam)) next.delete(fam)
+    else next.add(fam)
+    return next
+  })
 
   // Tri DANS chaque groupe (les familles, elles, restent alphabétiques).
   const groups = useMemo(() => {
@@ -54,7 +62,12 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
       <div className="flex items-center gap-2 mb-1">
         <div className="text-sm font-semibold text-white">Détail produits</div>
         <span className="text-[11px] text-white/40">{rowCount}{ck.filterActive ? ` / ${ck.totalCount}` : ''}</span>
-        <button onClick={exportCsv} className="ml-auto bg-well text-white/70 text-xs rounded px-3 py-1.5 border border-white/10 hover:text-white hover:border-white/25">
+        <button
+          onClick={() => setCollapsed(collapsed.size === groups.length ? new Set() : new Set(groups.map((g) => g.famille)))}
+          className="ml-auto bg-well text-white/70 text-xs rounded px-3 py-1.5 border border-white/10 hover:text-white hover:border-white/25">
+          {collapsed.size === groups.length ? 'Tout déplier' : 'Tout replier'}
+        </button>
+        <button onClick={exportCsv} className="bg-well text-white/70 text-xs rounded px-3 py-1.5 border border-white/10 hover:text-white hover:border-white/25">
           Export CSV
         </button>
       </div>
@@ -81,27 +94,32 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
             {rowCount === 0 ? (
               <tr><td colSpan={4 + comps.length} className="text-center text-white/40 py-8">Aucun produit ne correspond à la recherche.</td></tr>
             ) : groups.map((g) => [
-              // En-tête de groupe : le libellé est FIXE au scroll horizontal (sticky left
-              // dans une cellule pleine largeur) — la famille reste lisible en balayant
-              // les colonnes concurrents.
-              <tr key={`fam:${g.famille}`} className="border-t border-white/10 bg-surface-2/90">
+              // Nœud famille de la treeview : repliable au clic, libellé FIXE au scroll
+              // horizontal (sticky left dans une cellule pleine largeur).
+              <tr key={`fam:${g.famille}`} onClick={() => toggleFam(g.famille)}
+                className="border-t border-white/10 bg-surface-2/90 cursor-pointer select-none hover:bg-surface-2">
                 <td colSpan={4 + comps.length} className="py-1">
-                  <div className="sticky left-0 w-max flex items-center gap-2 pl-3 pr-4">
+                  <div className="sticky left-0 w-max flex items-center gap-2 pl-2 pr-4">
+                    {collapsed.has(g.famille)
+                      ? <ChevronRight className="w-3.5 h-3.5 text-amber-300/70" />
+                      : <ChevronDown className="w-3.5 h-3.5 text-amber-300/70" />}
                     <span className="text-[10px] uppercase tracking-wide font-semibold text-amber-300/90">{g.famille}</span>
                     <span className="text-[10px] text-white/35 tabular-nums">{g.rows.length}</span>
                   </div>
                 </td>
               </tr>,
-              ...g.rows.map((r: TableRow) => (
+              ...(collapsed.has(g.famille) ? [] : g.rows).map((r: TableRow) => (
               <tr key={r.id} className="border-t border-white/5 text-right hover:bg-white/[0.03]">
-                <td className="text-left py-1.5 pl-3 max-w-[240px]">
-                  <div className="flex items-center gap-1.5">
+                {/* Nom COMPLET du produit (demande : plus de troncature) — la colonne
+                    s'élargit et le libellé passe sur plusieurs lignes si nécessaire. */}
+                <td className="text-left py-1.5 pl-6 pr-2 min-w-[280px] max-w-[420px]">
+                  <div className="flex items-start gap-1.5">
                     {r.sourceUrl
-                      ? <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" title={`Ouvrir la fiche source — ${r.name}`}
-                          className="truncate text-white/85 hover:text-indigo-300 hover:underline">
+                      ? <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" title="Ouvrir la fiche source"
+                          className="whitespace-normal break-words leading-snug text-white/85 hover:text-indigo-300 hover:underline">
                           {r.name}<span className="text-white/35"> · {r.reference ?? '—'}</span>
                         </a>
-                      : <span className="truncate text-white/85" title={r.name}>
+                      : <span className="whitespace-normal break-words leading-snug text-white/85">
                           {r.name}<span className="text-white/35"> · {r.reference ?? '—'}</span>
                         </span>}
                     <a href={googleSearch(r)} target="_blank" rel="noopener noreferrer" title="Rechercher ce produit sur Google"
