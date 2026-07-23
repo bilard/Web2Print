@@ -5,7 +5,7 @@ import { initializeApp, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { executeWorkflowHeadless } from './execute'
 import { writeRunHistory } from './runHistory'
-import { writeRunLive, appendRunLiveError } from './runLive'
+import { writeRunLive, appendRunLiveError, humanizeError } from './runLive'
 import {
   loadCheckpoint, saveNodeOutput, saveCheckpointMeta, clearCheckpoint, MAX_RESUME_ATTEMPTS,
 } from './checkpoint'
@@ -77,7 +77,11 @@ function capOutputsForPreview(outputs: Record<string, Record<string, unknown>>, 
     }
     out[id] = p2
   }
-  return out
+  // ⚠ JSON round-trip = retire les `undefined` (ex : node Export Sheets → webViewLink
+  // undefined). Firestore VALIDE .set() de façon SYNCHRONE et lève sur un undefined —
+  // sans ce nettoyage, l'aperçu faisait planter TOUT le run (le .catch de writeRunLive
+  // n'attrape pas un throw synchrone). Cf. reference_firestore_setdoc_undefined_trap.
+  try { return JSON.parse(JSON.stringify(out)) } catch { return {} }
 }
 
 /** Exécute un workflow déjà chargé (boucle d'abort + historique + état live + reprise). */
@@ -274,8 +278,8 @@ export const workflowCronScheduler = onSchedule(
       } catch (err) {
         await docSnap.ref.update({
           lastStatus: 'error',
-          // Message persisté : le bandeau/console du dashboard peut dire POURQUOI.
-          lastError: (err instanceof Error ? err.message : String(err)).slice(0, 500),
+          // Message persisté (traduit en FR) : le bandeau/console peut dire POURQUOI.
+          lastError: humanizeError(err instanceof Error ? err.message : String(err)).slice(0, 500),
           lastErrorAt: Date.now(),
           nextRunAt: computeNextRun(cron, cron.afterCompletion ? Date.now() : now),
         })
