@@ -83,19 +83,31 @@ function extractCardImage(block: string, baseUrl?: string): string | undefined {
 /** Référence : label EXPLICITE « Réf/Référence/SKU » suivi d'un code contenant un chiffre.
  *  Strict pour éviter les faux positifs (« quantité » → « ity », etc.). */
 function extractCardRef(block: string): string | undefined {
-  const m = block.match(/itemprop=["']sku["'][^>]*content=["']([^"']+)["']/i)
-    || block.match(/\b(?:r[ée]f(?:\.|érence)?|sku|mpn|code)\b[\s:]*(?:<[^>]+>[\s:]*)?([A-Z0-9][A-Z0-9._/-]{2,30})/i)
-  const ref = m?.[1]?.trim()
-  // Un vrai code produit contient au moins un chiffre.
-  return ref && /\d/.test(ref) ? ref : undefined
+  const sku = block.match(/itemprop=["']sku["'][^>]*content=["']([^"']+)["']/i)?.[1]?.trim()
+  if (sku && /\d/.test(sku)) return sku
+  // Repli label. Le label peut être HTML-ENCODÉ (« R&eacute;f. 07-17-703-25 » chez
+  // 190cc) → regex sur la version décodée. Séparateur ([:.] ou espace) OBLIGATOIRE
+  // après le mot : sans lui, `class="referal"` matcherait « ref » + « eral ». On
+  // balaie TOUTES les occurrences : un vrai code produit contient au moins un chiffre.
+  for (const m of decode(block).matchAll(/\b(?:r[ée]f(?:\.|[ée]rence)?|sku|mpn|code)(?:\s*[:.]\s*|\s+)(?:<[^>]+>[\s:]*)?([A-Z0-9][A-Z0-9._/-]{2,30})/gi)) {
+    const ref = m[1]?.trim()
+    if (ref && /\d/.test(ref)) return ref
+  }
+  return undefined
 }
 
-/** Palier 1 — microdata schema.org/Product (blocs itemscope). */
+/** Palier 1 — microdata schema.org/Product (blocs itemscope).
+ *  Découpage d'un début d'itemscope Product au SUIVANT (borné), jamais par appariement
+ *  de balise fermante : une carte réelle contient des dizaines de <div> imbriqués et le
+ *  `[\s\S]*?<\/div>` non-greedy s'arrêtait au premier </div> — bloc tronqué sans nom ni
+ *  prix, 0 produit extrait (constaté sur 190cc.fr, 48 cartes ignorées). */
 function parseMicrodataProducts(html: string, baseUrl?: string): CompetitorListing[] {
   const out: CompetitorListing[] = []
-  const re = /<([a-z0-9]+)\b[^>]*itemscope[^>]*itemtype=["'][^"']*schema\.org\/Product["'][\s\S]*?<\/\1>/gi
-  for (const m of html.matchAll(re)) {
-    const block = m[0]
+  const starts = [...html.matchAll(/<[a-z0-9]+\b[^>]*itemscope[^>]*itemtype=["'][^"']*schema\.org\/Product["'][^>]*>/gi)]
+  for (let i = 0; i < starts.length; i++) {
+    const from = starts[i].index ?? 0
+    const to = i + 1 < starts.length ? (starts[i + 1].index ?? html.length) : Math.min(from + 8000, html.length)
+    const block = html.slice(from, Math.min(to, from + 8000))
     const name = extractCardName(block) ?? (block.match(/itemprop=["']name["'][^>]*content=["']([^"']+)["']/i)?.[1])
     const priceAttr = block.match(/itemprop=["']price["'][^>]*content=["']([^"']+)["']/i)?.[1]
     const price = priceAttr ? parsePriceFragment(priceAttr) : extractCardPrice(block).price

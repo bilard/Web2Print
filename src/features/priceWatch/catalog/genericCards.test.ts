@@ -68,3 +68,50 @@ describe('parseListingDomCards', () => {
     expect(parseListingDomCards(html, BASE)).toEqual([])
   })
 })
+
+describe('microdata Product à DOM profondément imbriqué (190cc.fr)', () => {
+  // Markup RÉEL (condensé) relevé le 2026-07-23 : chaque carte est un bloc
+  // itemscope Product contenant PLUSIEURS <div> imbriqués — l'appariement de balise
+  // fermante non-greedy s'arrêtait au premier </div> et tronquait la carte (0 produit
+  // sur 48). Le prix est un <meta itemprop="price">, la réf un label HTML-ENCODÉ
+  // (« R&eacute;f. 07-17-703-25 »).
+  const card = (id: number, ref: string, price: string, name: string, slug: string) => `
+    <div itemscope itemtype="http://schema.org/Product" class="product-content">
+      <div class="product-ctn cc19-row" data-id-product="${id}">
+        <div class="product-img-ctn cc19-sm3">
+          <div class="product-tag"><p><span>Pi&egrave;ce d&rsquo;origine garantie</span></p></div>
+          <img class="img-responsive" itemprop="image" src="https://www.190cc.fr/${id}-home_default/x.jpg" alt="${name}" />
+        </div>
+        <div class="product-infos cc19-sm6">
+          <h3 itemprop="name" class="product-name">
+            <a class="referal" href="https://www.190cc.fr/fr/${slug}.html" title="${name}">${name}</a>
+          </h3>
+          <p class="product-ref">R&eacute;f. ${ref}</p>
+          <div class="cc19-flex">
+            <div itemprop="offers" itemscope itemtype="http://schema.org/Offer" class="product-price">
+              <meta itemprop="price" content="${price}" />
+              <span class="price">${price.replace('.', ',')} &euro;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`
+  const page = `<div class="products-list product-anchor">
+    ${card(331, '07-17-703-25', '8.4', 'Filtre air Briggs Stratton Quantum', 'filtre-air-briggs-stratton-quantum')}
+    ${card(332, '07-17-704-26', '12.9', 'Filtre air Honda GCV160', 'filtre-air-honda-gcv160')}
+  </div>`
+
+  it('extrait les cartes malgré l’imbrication (nom + prix microdata + URL)', () => {
+    const out = parseListingDomCards(page, 'https://www.190cc.fr/fr/moteur/filtre-moteur/filtre-a-air/')
+    expect(out).toHaveLength(2)
+    expect(out[0].name).toContain('Briggs')
+    expect(out[0].price).toBe(8.4)
+    expect(out[0].url).toBe('https://www.190cc.fr/fr/filtre-air-briggs-stratton-quantum.html')
+  })
+
+  it('lit la réf malgré le label HTML-encodé « R&eacute;f. »', () => {
+    const out = parseListingDomCards(page, 'https://www.190cc.fr/')
+    expect(out[0].ref).toBe('07-17-703-25')
+    expect(out[1].ref).toBe('07-17-704-26')
+  })
+})
