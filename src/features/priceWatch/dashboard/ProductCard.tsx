@@ -4,7 +4,7 @@
 // chaque concurrent apparié (prix TTC/HT, barré, écart, stock, type d'appariement,
 // image, lien). L'image + le nom concurrent servent à vérifier le bon appariement.
 import { useState } from 'react'
-import { ChevronDown, ExternalLink, ImageOff } from 'lucide-react'
+import { ChevronDown, ImageOff } from 'lucide-react'
 import type { ProductRow } from '../catalog/report'
 import { useResolvedImage } from '@/features/catalog/useResolvedImage'
 import { eur, pct, positionOf, POSITION_TEXT, STOCK_LABEL, MATCH_LABEL } from './format'
@@ -81,9 +81,6 @@ export function ProductCard({ row }: { row: ProductRow }) {
                 <div className="flex items-center justify-end gap-2">
                   <span className="text-[11px] text-white/40">{eur(c.priceHt)} HT</span>
                   <GapBadge gap={c.gapPct} />
-                  <a href={c.url} target="_blank" rel="noreferrer" className="text-white/40 hover:text-white" title="Ouvrir la fiche">
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
                 </div>
               </div>
             </div>
