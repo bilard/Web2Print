@@ -19,10 +19,11 @@ import { RadarCompetitorFlow } from './RadarCompetitorFlow'
 import { RadarFamilies } from './RadarFamilies'
 import { RadarHeatmap } from './RadarHeatmap'
 import { RadarProducts } from './RadarProducts'
+import { RadarCosts } from './RadarCosts'
 import { RadarInstallHint } from './RadarInstallHint'
 import { useOrientation } from './useOrientation'
 
-type Tab = 'apercu' | 'position' | 'concurrents' | 'familles' | 'produits' | 'volume'
+type Tab = 'apercu' | 'position' | 'concurrents' | 'familles' | 'produits' | 'volume' | 'couts'
 const TABS = [
   { value: 'apercu' as const, label: 'Aperçu' },
   { value: 'position' as const, label: 'Positionnement' },
@@ -30,6 +31,7 @@ const TABS = [
   { value: 'familles' as const, label: 'Familles' },
   { value: 'produits' as const, label: 'Produits' },
   { value: 'volume' as const, label: 'Collecte' },
+  { value: 'couts' as const, label: 'Coûts' },
 ]
 
 /** Masonry 2 colonnes en paysage (les cartes se répartissent sur la largeur). */
@@ -120,6 +122,7 @@ export function RadarApp() {
             )}
             {tab === 'produits' && <RadarProducts products={report?.products ?? []} />}
             {tab === 'volume' && <RadarVolume ops={ops} />}
+            {tab === 'couts' && <RadarCosts />}
             <RadarInstallHint />
           </>
         ) : (
