@@ -1,0 +1,138 @@
+/* Surface immersive « radarPrice » — thème sombre committé, langage visuel iOS.
+   Choix assumé : cette PWA force le mode sombre (moniteur glançable) indépendamment
+   du thème global de l'app. Tout est scopé sous .radar-root pour ne rien fuir. */
+.radar-root {
+  --radar-bg: #08080a;
+  --radar-surface: #141418;
+  --radar-surface-2: #1c1c22;
+  --radar-hair: rgba(255, 255, 255, 0.08);
+  --radar-hair-2: rgba(255, 255, 255, 0.14);
+  --radar-text: #f5f5f7;
+  --radar-text-2: #a1a1a6;
+  --radar-text-3: #6a6a70;
+  --radar-accent: #6366f1;
+  --radar-accent-2: #818cf8;
+  --radar-accent-soft: rgba(99, 102, 241, 0.16);
+  --radar-live: #30d158;
+  /* positionnement prix (validé dataviz, CVD ΔE ≥ 57 sur fond sombre) */
+  --radar-good: #30d158; /* je suis moins cher / bien positionné */
+  --radar-warn: #d97706; /* aligné */
+  --radar-bad: #ff453a; /* un concurrent me bat */
+
+  color-scheme: dark;
+  background: var(--radar-bg);
+  color: var(--radar-text);
+  font-family: -apple-system, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.radar-rounded {
+  font-family: 'SF Pro Rounded', ui-rounded, -apple-system, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+.radar-tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Zones sûres iOS (status-bar translucide + encoche + bord home) */
+.radar-safe-top {
+  padding-top: max(env(safe-area-inset-top), 14px);
+}
+.radar-safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 20px);
+}
+.radar-safe-x {
+  padding-left: max(env(safe-area-inset-left), 16px);
+  padding-right: max(env(safe-area-inset-right), 16px);
+}
+
+.radar-card {
+  background: var(--radar-surface);
+  border: 0.5px solid var(--radar-hair);
+  border-radius: 22px;
+}
+.radar-inset {
+  background: var(--radar-surface-2);
+  border-radius: 14px;
+}
+
+/* Barre de titre translucide façon iOS */
+.radar-topbar {
+  background: color-mix(in srgb, var(--radar-bg) 72%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid transparent;
+  transition: border-color 0.2s ease;
+}
+.radar-topbar[data-scrolled='true'] {
+  border-bottom-color: var(--radar-hair);
+}
+
+/* Point « en direct » qui respire + halo */
+.radar-live-dot {
+  animation: radar-breathe 2s ease-in-out infinite;
+}
+@keyframes radar-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.5;
+  }
+}
+
+.radar-spin {
+  animation: radar-spin-kf 0.8s linear infinite;
+}
+@keyframes radar-spin-kf {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Apparition en douceur des sections */
+.radar-in {
+  animation: radar-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes radar-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.radar-noscroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.radar-noscroll::-webkit-scrollbar {
+  display: none;
+}
+
+.radar-tap {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.radar-tap:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-live-dot,
+  .radar-spin,
+  .radar-in {
+    animation: none !important;
+  }
+}

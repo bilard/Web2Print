@@ -63,13 +63,14 @@ export const collectAnalytics = onRequest(
       res.status(204).end()
       return
     }
-    // La PWA d'analytics « Pulse » (/pulse) est une console interne réservée au
-    // propriétaire : on ne journalise JAMAIS ses consultations (ni Analytics, ni
-    // Telegram). Sinon le propriétaire s'auto-notifie à chaque ouverture de son
-    // propre tableau de bord — et au démarrage à froid de la PWA, la 1re page vue
-    // part AVANT que Firebase restaure la session (donc « anonyme », échappant à
-    // l'exclusion par uid/luid). Ce filtre par chemin est indépendant de l'auth.
-    if (doc.path === '/pulse' || doc.path.startsWith('/pulse/')) {
+    // Les PWA internes « Pulse » (/pulse, trafic) et « radarPrice » (/radarprice, veille
+    // tarifaire) sont des consoles réservées au propriétaire : on ne journalise JAMAIS
+    // leurs consultations (ni Analytics, ni Telegram). Sinon le propriétaire s'auto-notifie
+    // à chaque ouverture — et au démarrage à froid de la PWA, la 1re page vue part AVANT que
+    // Firebase restaure la session (donc « anonyme », échappant à l'exclusion par uid/luid).
+    // Ce filtre par chemin est indépendant de l'auth.
+    const p = doc.path
+    if (p === '/pulse' || p.startsWith('/pulse/') || p === '/radarprice' || p.startsWith('/radarprice/')) {
       res.status(204).end()
       return
     }

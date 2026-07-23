@@ -13,6 +13,7 @@ const WorkflowEditorPage = lazy(() => import('@/pages/WorkflowEditorPage'))
 const WorkflowResultsPage = lazy(() => import('@/pages/WorkflowResultsPage'))
 const CatalogBuilderPage = lazy(() => import('@/pages/CatalogBuilderPage'))
 const PulsePage = lazy(() => import('@/pages/PulsePage'))
+const RadarPage = lazy(() => import('@/pages/RadarPage'))
 
 function PageLoader() {
   return (
@@ -34,6 +35,16 @@ export const router = createBrowserRouter([
     element: (
       <Suspense fallback={<PageLoader />}>
         <PulsePage />
+      </Suspense>
+    ),
+  },
+  {
+    // PWA mobile de veille tarifaire (« radarPrice »). Hors ProtectedRoute : gating
+    // plein écran géré par RadarGate, sans chrome desktop.
+    path: '/radarprice',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <RadarPage />
       </Suspense>
     ),
   },

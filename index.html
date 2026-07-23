@@ -4,8 +4,10 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- PWA « Pulse » (suivi du trafic sur /pulse) : manifest + intégration iOS.
-         Sur les autres routes de l'app ces balises sont inertes. -->
+    <!-- PWA internes servies par le même shell app : « Pulse » (/pulse, trafic) par
+         défaut, « radarPrice » (/radarprice, veille tarifaire) via bascule ci-dessous.
+         Un seul <link rel=manifest> par document → on écrase les 3 balises spécifiques
+         quand l'URL vise /radarprice (sinon on installerait Pulse). Inertes ailleurs. -->
     <link rel="manifest" href="/pulse.webmanifest" />
     <meta name="theme-color" content="#08080A" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -13,6 +15,21 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Pulse" />
     <link rel="apple-touch-icon" href="/pulse-icon-180.png" />
+    <script>
+      // Bascule PWA par chemin : /radarprice → son manifest, son icône, son titre.
+      // Défaut (Pulse) conservé pour toute autre route. Exécuté avant « Ajouter à
+      // l'écran d'accueil » (la PWA s'ouvre directement à son URL).
+      try {
+        if (location.pathname.indexOf('/radarprice') === 0) {
+          var m = document.querySelector('link[rel="manifest"]')
+          if (m) m.href = '/radarprice.webmanifest'
+          var ico = document.querySelector('link[rel="apple-touch-icon"]')
+          if (ico) ico.href = '/radarprice-icon-180.png'
+          var t = document.querySelector('meta[name="apple-mobile-web-app-title"]')
+          if (t) t.content = 'radarPrice'
+        }
+      } catch (e) { /* rester sur le défaut Pulse */ }
+    </script>
     <!-- Shell de l'app authentifiée (sert toutes les routes SPA via _app.html) :
          aucune valeur de référencement, on demande aux moteurs de ne pas l'indexer.
          Les pages publiques (promo racine, /digital/, /docs/) sont des fichiers

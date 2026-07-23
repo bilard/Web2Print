@@ -1,0 +1,20 @@
+{
+  "name": "radarPrice",
+  "short_name": "radarPrice",
+  "description": "Ta veille tarifaire, en direct",
+  "id": "/radarprice",
+  "start_url": "/radarprice",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#08080A",
+  "theme_color": "#08080A",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "/radarprice-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/radarprice-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/radarprice-icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
