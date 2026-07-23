@@ -8,7 +8,17 @@ import { RadarHero } from './RadarHero'
 import { RadarKpiGrid } from './RadarKpiGrid'
 import { RadarOpportunities } from './RadarOpportunities'
 import { RadarCompetitors } from './RadarCompetitors'
+import { RadarSegmented } from './RadarSegmented'
+import { RadarVolume } from './RadarVolume'
+import { RadarStats } from './RadarStats'
 import { RadarInstallHint } from './RadarInstallHint'
+
+type Tab = 'apercu' | 'volume' | 'stats'
+const TABS = [
+  { value: 'apercu' as const, label: 'Aperçu' },
+  { value: 'volume' as const, label: 'Volumétrie' },
+  { value: 'stats' as const, label: 'Statistiques' },
+]
 
 /** Écran plein d'un message centré (états vides), thème radar committé. */
 function Centered({ title, sub }: { title: string; sub: string }) {
@@ -44,6 +54,7 @@ export function RadarApp() {
   const hold = useMemo(() => sparkSeries(history).hold, [history])
 
   const [scrolled, setScrolled] = useState(false)
+  const [tab, setTab] = useState<Tab>('apercu')
 
   if (watches.length === 0) {
     return <Centered title="Aucune veille" sub="Lance un workflow « Comparer catalogue » pour alimenter ta veille tarifaire, puis reviens ici." />
@@ -59,10 +70,17 @@ export function RadarApp() {
       <main className="radar-safe-x radar-safe-bottom mx-auto max-w-lg space-y-4 pt-2">
         {cockpit ? (
           <>
-            <RadarHero cockpit={cockpit} holdSeries={hold} ops={ops} />
-            <RadarKpiGrid cockpit={cockpit} />
-            <RadarOpportunities cockpit={cockpit} />
-            <RadarCompetitors cockpit={cockpit} />
+            <RadarSegmented options={TABS} value={tab} onChange={setTab} ariaLabel="Vues radarPrice" />
+            {tab === 'apercu' && (
+              <>
+                <RadarHero cockpit={cockpit} holdSeries={hold} ops={ops} />
+                <RadarKpiGrid cockpit={cockpit} />
+                <RadarOpportunities cockpit={cockpit} />
+                <RadarCompetitors cockpit={cockpit} />
+              </>
+            )}
+            {tab === 'volume' && <RadarVolume ops={ops} />}
+            {tab === 'stats' && <RadarStats cockpit={cockpit} />}
             <RadarInstallHint />
           </>
         ) : (

@@ -49,6 +49,17 @@ export function timeAgo(ms: number | null | undefined, now: number = Date.now())
   return new Date(ms).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }
 
+/** Durée compacte depuis des ms (« 2 h 05 », « 45 min », « 12 s ») ; 0/null → tiret. */
+export function fmtDuration(ms: number | null | undefined): string {
+  if (ms == null || ms <= 0) return '—'
+  const s = Math.round(ms / 1000)
+  if (s < 60) return `${s} s`
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m} min`
+  const h = Math.floor(m / 60)
+  return `${h} h ${String(m % 60).padStart(2, '0')}`
+}
+
 /** Heure « 14:32 » (dernier run). */
 export function hhmm(ms: number | null | undefined): string {
   if (ms == null) return '—'

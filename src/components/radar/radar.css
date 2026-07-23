@@ -112,6 +112,18 @@
   }
 }
 
+/* Contrôle segmenté iOS (menu d'onglets) */
+.radar-seg {
+  background: var(--radar-surface-2);
+  border-radius: 12px;
+  padding: 3px;
+}
+.radar-seg-thumb {
+  background: color-mix(in srgb, var(--radar-accent) 26%, var(--radar-surface));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  border-radius: 9px;
+}
+
 .radar-noscroll {
   -ms-overflow-style: none;
   scrollbar-width: none;
