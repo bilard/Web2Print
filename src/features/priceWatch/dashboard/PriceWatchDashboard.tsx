@@ -22,6 +22,7 @@ import { AnalyticsTable } from './AnalyticsTable'
 import { ProductList } from './ProductList'
 import { ExpandableChart } from '@/components/shared/ExpandableChart'
 import { ChevronDown, Search, RotateCcw } from 'lucide-react'
+import { useLiveReportRefresh } from './useLiveReportRefresh'
 
 /** Rapport « vide » : permet d'afficher le Cockpit opérationnel (jauges de moisson LIVE,
  *  alimentées par les métas concurrents) AVANT le premier « Comparer catalogue ».
@@ -52,6 +53,10 @@ const selCls = 'bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-
 export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   const report = useCatalogReport(watchId)
   const history = useReportHistory(watchId)
+  // Pendant une moisson, recalcule périodiquement le rapport depuis l'index persisté :
+  // les tuiles d'analyse (appariés, tenue prix…) bougent EN LIVE, sans attendre le
+  // prochain run serveur (~30 min). Throttlé + onglet visible uniquement.
+  useLiveReportRefresh(watchId, report)
   const [filter, setFilter] = useState<CockpitFilter>(EMPTY_FILTER)
   const ck = useMemo(() => (report ? buildCockpit(report, filter) : null), [report, filter])
 
