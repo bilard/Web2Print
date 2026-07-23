@@ -39,8 +39,9 @@ export function WatchSelector({ watches, value, onChange }: {
       {activeWorkflowId && (
         <button type="button" onClick={() => navigate(`/workflows/${activeWorkflowId}`)}
           title="Ouvrir le workflow d'origine"
-          className="p-1.5 rounded border border-white/10 text-indigo-400 hover:text-indigo-300 hover:border-indigo-400/40">
+          className="flex items-center gap-1.5 px-2 py-1.5 rounded border border-white/10 text-indigo-400 hover:text-indigo-300 hover:border-indigo-400/40">
           <Workflow className="w-3.5 h-3.5" />
+          <span className="text-xs font-medium">Workflow</span>
         </button>
       )}
       <WatchManager open={manage} onOpenChange={setManage} watches={watches} activeId={value} />
