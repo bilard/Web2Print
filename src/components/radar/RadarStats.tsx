@@ -15,13 +15,14 @@ function Chip({ label, value, tone }: { label: string; value: string; tone?: str
 }
 
 /** Onglet Statistiques : distribution des écarts, appariement, familles (buildCockpit). */
-export function RadarStats({ cockpit }: { cockpit: Cockpit }) {
+export function RadarStats({ cockpit, landscape = false }: { cockpit: Cockpit; landscape?: boolean }) {
   const { kpis, histogram, families, medianGapPct, meanGapPct, truncated } = cockpit
   const maxBin = Math.max(1, ...histogram.map((b) => b.count))
   const maxFam = Math.max(1, ...families.map((f) => f.products))
 
   return (
-    <div className="space-y-4">
+    // Paysage : masonry 2 colonnes (les 3 cartes se répartissent sur la largeur).
+    <div className="space-y-4 landscape:columns-2 landscape:gap-4 landscape:space-y-0 landscape:[&>*]:mb-4 landscape:[&>*]:break-inside-avoid">
       {/* Distribution des écarts */}
       <section className="radar-card radar-in px-4 py-4">
         <div className="mb-3 flex items-center gap-2">
@@ -74,7 +75,7 @@ export function RadarStats({ cockpit }: { cockpit: Cockpit }) {
             <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>sous-cotés · écart moy</span>
           </div>
           <ul className="space-y-3">
-            {families.slice(0, 8).map((f) => (
+            {families.slice(0, landscape ? 12 : 8).map((f) => (
               <li key={f.famille}>
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="truncate pr-2 font-medium">{f.famille}</span>

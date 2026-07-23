@@ -15,7 +15,7 @@ function Tile({ label, value, sub, tone }: { label: string; value: string; sub: 
 export function RadarKpiGrid({ cockpit }: { cockpit: Cockpit }) {
   const { kpis, exposedPct, medianGapPct, totalGapEur, competitorsCount } = cockpit
   return (
-    <section className="radar-in grid grid-cols-2 gap-3">
+    <section className="radar-in grid grid-cols-2 gap-3 landscape:grid-cols-4">
       <Tile
         label="Exposés"
         value={fmtPct(exposedPct)}

@@ -27,7 +27,7 @@ export function RadarVolume({ ops }: { ops: OpsCockpit | null }) {
 
   return (
     <div className="space-y-4">
-      <section className="radar-in grid grid-cols-2 gap-3">
+      <section className="radar-in grid grid-cols-2 gap-3 landscape:grid-cols-4">
         <Stat icon={<Database size={13} />} label="Fiches" value={fmtInt(ops.totalIndexed)} sub={`${ops.sitesActive}/${ops.sitesTotal} sites actifs`} />
         <Stat icon={<Gauge size={13} />} label="Balayage" value={fmtPct(ops.avgProgress * 100)} sub={`${ops.cyclesDone} cycle(s) bouclé(s)`} />
         <Stat icon={<Timer size={13} />} label="Temps moisson" value={fmtDuration(ops.totalCumulMs)} sub={ops.slowestCycle ? `goulot ${ops.slowestCycle.domain}` : 'cumul toutes passes'} />
@@ -40,7 +40,7 @@ export function RadarVolume({ ops }: { ops: OpsCockpit | null }) {
           <h2 className="text-[15px] font-semibold">Fiches par concurrent</h2>
           <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>% avec prix</span>
         </div>
-        <ul className="space-y-3">
+        <ul className="grid gap-y-3 landscape:grid-cols-2 landscape:gap-x-8">
           {ops.competitors.map((c) => (
             <li key={c.siteId}>
               <div className="flex items-center justify-between text-[13px]">

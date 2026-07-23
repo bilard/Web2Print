@@ -13,7 +13,7 @@ export function RadarHeader({ watches, value, onChange, runAt, scrolled }: {
 }) {
   return (
     <header className="radar-topbar radar-safe-top radar-safe-x sticky top-0 z-20 pb-2.5" data-scrolled={scrolled}>
-      <div className="mx-auto flex max-w-lg items-center justify-between gap-3 pt-1">
+      <div className="mx-auto flex max-w-lg items-center justify-between gap-3 pt-1 landscape:max-w-5xl">
         <div className="min-w-0">
           <h1 className="radar-rounded text-[22px] font-bold leading-none">radarPrice</h1>
           <div className="mt-1 flex items-center gap-1.5">

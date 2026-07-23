@@ -2,11 +2,9 @@ import { Swords } from 'lucide-react'
 import type { Cockpit } from '@/features/priceWatch/dashboard/analytics'
 import { fmtGapPct, fmtInt, fmtPct } from '@/features/priceWatch/radar/radarFormat'
 
-const MAX = 5
-
 /** Benchmark concurrents : triés du plus agressif (écart moyen le plus négatif) au moins. */
-export function RadarCompetitors({ cockpit }: { cockpit: Cockpit }) {
-  const items = cockpit.competitors.filter((c) => c.matched > 0).slice(0, MAX)
+export function RadarCompetitors({ cockpit, landscape = false }: { cockpit: Cockpit; landscape?: boolean }) {
+  const items = cockpit.competitors.filter((c) => c.matched > 0).slice(0, landscape ? 8 : 5)
   if (items.length === 0) return null
 
   return (

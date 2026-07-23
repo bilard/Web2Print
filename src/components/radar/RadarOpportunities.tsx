@@ -2,11 +2,9 @@ import { TrendingDown } from 'lucide-react'
 import type { Cockpit } from '@/features/priceWatch/dashboard/analytics'
 import { fmtEur, fmtEurCompact, fmtGapPct } from '@/features/priceWatch/radar/radarFormat'
 
-const MAX = 6
-
 /** Top opportunités « où baisser » : produits où je suis le plus cher, triés par impact € unitaire. */
-export function RadarOpportunities({ cockpit }: { cockpit: Cockpit }) {
-  const items = cockpit.opportunities.slice(0, MAX)
+export function RadarOpportunities({ cockpit, landscape = false }: { cockpit: Cockpit; landscape?: boolean }) {
+  const items = cockpit.opportunities.slice(0, landscape ? 10 : 6)
   if (items.length === 0) return null
 
   return (

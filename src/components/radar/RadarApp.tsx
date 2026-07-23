@@ -12,6 +12,7 @@ import { RadarSegmented } from './RadarSegmented'
 import { RadarVolume } from './RadarVolume'
 import { RadarStats } from './RadarStats'
 import { RadarInstallHint } from './RadarInstallHint'
+import { useOrientation } from './useOrientation'
 
 type Tab = 'apercu' | 'volume' | 'stats'
 const TABS = [
@@ -55,6 +56,7 @@ export function RadarApp() {
 
   const [scrolled, setScrolled] = useState(false)
   const [tab, setTab] = useState<Tab>('apercu')
+  const landscape = useOrientation()
 
   if (watches.length === 0) {
     return <Centered title="Aucune veille" sub="Lance un workflow « Comparer catalogue » pour alimenter ta veille tarifaire, puis reviens ici." />
@@ -67,7 +69,7 @@ export function RadarApp() {
     >
       <RadarHeader watches={watches} value={watchId ?? ''} onChange={setWatchId} runAt={report?.runAt ?? null} scrolled={scrolled} />
 
-      <main className="radar-safe-x radar-safe-bottom mx-auto max-w-lg space-y-4 pt-2">
+      <main className="radar-safe-x radar-safe-bottom mx-auto max-w-lg space-y-4 pt-2 landscape:max-w-5xl">
         {cockpit ? (
           <>
             <RadarSegmented options={TABS} value={tab} onChange={setTab} ariaLabel="Vues radarPrice" />
@@ -75,12 +77,15 @@ export function RadarApp() {
               <>
                 <RadarHero cockpit={cockpit} holdSeries={hold} ops={ops} />
                 <RadarKpiGrid cockpit={cockpit} />
-                <RadarOpportunities cockpit={cockpit} />
-                <RadarCompetitors cockpit={cockpit} />
+                {/* Paysage : les deux listes passent côte à côte (2 colonnes). */}
+                <div className="grid gap-4 landscape:grid-cols-2 landscape:items-start">
+                  <RadarOpportunities cockpit={cockpit} landscape={landscape} />
+                  <RadarCompetitors cockpit={cockpit} landscape={landscape} />
+                </div>
               </>
             )}
             {tab === 'volume' && <RadarVolume ops={ops} />}
-            {tab === 'stats' && <RadarStats cockpit={cockpit} />}
+            {tab === 'stats' && <RadarStats cockpit={cockpit} landscape={landscape} />}
             <RadarInstallHint />
           </>
         ) : (
