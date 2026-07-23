@@ -121,9 +121,9 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
           {/* Pendant un run, nextRunAt = échéance du VERROU : l'heure à laquelle le
               scanner reprendra la main quoi qu'il arrive (fin, pause ou crash).
               Décompte LIVE (tick 1 s du panneau) pour voir l'échéance approcher. */}
-          <span className="text-indigo-200/70 pl-3">
-            reprise auto ≤ {hhmm(sched.nextRunAt)}{' '}
-            {overdue ? '(imminente)' : <>(dans <span className="tabular-nums">{formatCountdown(sched.nextRunAt - now)}</span>)</>}
+          <span className="pl-3 text-amber-300/90">
+            reprise auto ≤ <b className="text-amber-200">{hhmm(sched.nextRunAt)}</b>{' '}
+            {overdue ? <b className="text-amber-200">(imminente)</b> : <>(dans <b className="tabular-nums text-amber-200">{formatCountdown(sched.nextRunAt - now)}</b>)</>}
           </span>
         </span>
       ) : sched.cycleWaiting ? (

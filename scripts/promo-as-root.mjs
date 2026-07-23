@@ -23,6 +23,19 @@ copyFileSync(appShell, appShellRenamed)       // shell app préservé pour le re
 copyFileSync(promo, appShell)                 // promo promue à la racine
 console.log('[promo-as-root] site-web/index.html ← promo ; shell app → site-web/_app.html')
 
+// Shell dédié « radarPrice » : /radarprice est réécrit vers _radar.html (cf. firebase.json).
+// iOS Safari CAPTURE apple-mobile-web-app-title / apple-touch-icon / manifest au chargement
+// initial du HTML et IGNORE toute modification JS ultérieure au moment de « Ajouter à
+// l'écran d'accueil » → le script de bascule d'index.html ne suffit pas. On grave donc les
+// balises PWA radarPrice dans un HTML distinct (copie du shell app, mêmes assets absolus).
+const radarShell = join(dist, '_radar.html')
+const radarHtml = readFileSync(appShellRenamed, 'utf8')
+  .replace(/\/pulse\.webmanifest/g, '/radarprice.webmanifest')
+  .replace(/\/pulse-icon-180\.png/g, '/radarprice-icon-180.png')
+  .replace(/content="Pulse"/, 'content="radarPrice"')
+writeFileSync(radarShell, radarHtml)
+console.log('[promo-as-root] _radar.html ← shell app + balises PWA radarPrice gravées')
+
 // Cache-buster des service workers des PWA internes (Pulse, radarPrice) : on tamponne
 // la version du cache avec l'horodatage du build. Le contenu du SW change donc à CHAQUE
 // déploiement → iOS réinstalle le SW → le handler `activate` purge les anciens caches et

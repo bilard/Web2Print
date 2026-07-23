@@ -15,6 +15,10 @@
         }
       },
       {
+        "source": "/radarprice{,/**}",
+        "destination": "/_radar.html"
+      },
+      {
         "source": "**",
         "destination": "/_app.html"
       }
