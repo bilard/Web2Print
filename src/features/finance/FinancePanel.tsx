@@ -8,6 +8,7 @@ import { useAiSettingsStore } from '@/stores/aiSettings.store'
 import { buildCostRows, costTotals, eur } from './costModel'
 import { CostTrend } from './CostTrend'
 import { ConnectorTable } from './ConnectorTable'
+import { BillingLinks } from './BillingLinks'
 import { ExpandableChart } from '@/components/shared/ExpandableChart'
 import { Loader2 } from 'lucide-react'
 
@@ -60,6 +61,7 @@ export function FinancePanel() {
           sub={budgeted.length ? `sur ${budgeted.length} connecteur(s) plafonné(s)` : 'aucun plafond défini'} />
       </div>
 
+      <BillingLinks />
       <ExpandableChart render={(h) => <CostTrend history={history ?? []} height={h} />} />
       <ConnectorTable rows={rows} />
     </div>
