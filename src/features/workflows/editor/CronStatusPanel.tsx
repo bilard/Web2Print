@@ -1,5 +1,5 @@
 // src/features/workflows/editor/CronStatusPanel.tsx
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { CalendarClock, Play, Loader2, Square, PauseCircle } from 'lucide-react'
@@ -26,7 +26,7 @@ const runNow = httpsCallable<{ workflowId: string }, { status: string; nodeCount
   functions, 'runWorkflowNow', { timeout: 1800_000 },
 )
 
-export function CronStatusPanel({ workflowId }: { workflowId: string }) {
+export function CronStatusPanel({ workflowId, children }: { workflowId: string; children?: ReactNode }) {
   const [sched, setSched] = useState<ScheduleDoc | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [running, setRunning] = useState(false)
@@ -41,7 +41,9 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
     return () => clearInterval(id)
   }, [sched?.enabled])
 
-  if (!sched?.enabled) return null
+  // Sans planification active : pas de bloc de statut, mais les contrôles de run
+  // (Pas à pas / Run) doivent rester visibles → on les rend nus.
+  if (!sched?.enabled) return <>{children}</>
 
   const onRun = async () => {
     setRunning(true)
@@ -176,6 +178,9 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
         <PauseCircle className="w-3 h-3" />
         Suspendre
       </button>
+      {/* Contrôles de run (Pas à pas / Run / Stop / Étape) intégrés DANS le bloc,
+          séparés des actions serveur par un filet vertical. */}
+      {children && <div className="flex items-center gap-2 pl-2 ml-1 border-l border-white/15">{children}</div>}
     </div>
   )
 }
