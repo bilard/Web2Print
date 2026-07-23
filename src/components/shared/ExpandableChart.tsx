@@ -6,9 +6,14 @@ import { useState, useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Maximize2, X } from 'lucide-react'
 
-export function ExpandableChart({ render, largeHeight = 560 }: {
+export function ExpandableChart({ render, largeHeight = 560, className = '' }: {
   render: (height?: number) => ReactNode
   largeHeight?: number
+  /** Classes du wrapper inline — passer `h-full` UNIQUEMENT dans une grille
+   *  `items-stretch` (cartes alignées). Jamais par défaut : dans une colonne flex à
+   *  hauteur déterminée, `h-full` étire le wrapper à TOUTE la colonne (vide géant vu
+   *  en prod sous « Flux des écarts »). */
+  className?: string
 }) {
   const [open, setOpen] = useState(false)
 
@@ -20,9 +25,7 @@ export function ExpandableChart({ render, largeHeight = 560 }: {
   }, [open])
 
   return (
-    // h-full : dans une grille `items-stretch`, la carte s'étire sur la hauteur de la
-    // rangée (alignement scatter ↔ heatmap) ; sans grille stretch, hauteur auto inchangée.
-    <div className="relative group h-full">
+    <div className={`relative group ${className}`}>
       {render()}
       <button type="button" onClick={() => setOpen(true)} title="Agrandir"
         className="absolute top-3 right-3 z-10 p-1.5 rounded bg-well/80 border border-white/10 text-white/40 opacity-0 group-hover:opacity-100 hover:text-white hover:border-white/25 transition">
