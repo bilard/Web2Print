@@ -125,19 +125,23 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
           </span>
         </span>
       ) : sched.cycleWaiting ? (
-        <span title="Cycle de moisson terminé à 100 % — relance à l'échéance calendaire">
+        // 2 lignes pour réduire la largeur : ligne 1 = état, ligne 2 = prochaine relance.
+        <span className="flex flex-col gap-0.5 leading-tight" title="Cycle de moisson terminé à 100 % — relance à l'échéance calendaire">
           <b className="text-emerald-300">Cycle terminé ✓</b>
-          <span className="text-indigo-300/50"> · </span>
-          Relance <b className="capitalize">{dayTime(sched.nextRunAt)}</b>{' '}
-          <span className="text-indigo-200/70">({overdue ? 'imminente' : `dans ${formatCountdown(sched.nextRunAt - now)}`})</span>
+          <span className="text-indigo-200/70">
+            Relance <b className="capitalize text-indigo-200">{dayTime(sched.nextRunAt)}</b>{' '}
+            ({overdue ? 'imminente' : `dans ${formatCountdown(sched.nextRunAt - now)}`})
+          </span>
         </span>
       ) : (
-        <span title="Planification serveur active">
-          {sched.lastRunAt
-            ? <>Dernier <b>{hhmm(sched.lastRunAt)}</b> <span className="text-indigo-200/70">(il y a {formatCountdown(now - sched.lastRunAt)})</span> {sched.lastStatus === 'error' ? <span className="text-rose-300 cursor-help" title={sched.lastError ?? 'Dernier run en erreur'}>⚠</span> : <span className="text-emerald-300">✓</span>}</>
-            : <span className="text-indigo-200/70">Jamais exécuté</span>}
-          <span className="text-indigo-300/50"> · </span>
-          Prochain <b>{hhmm(sched.nextRunAt)}</b> <span className="text-indigo-200/70">({overdue ? 'imminent' : `dans ${formatCountdown(sched.nextRunAt - now)}`})</span>
+        // 2 lignes pour réduire la largeur : ligne 1 = dernier run, ligne 2 = prochain run.
+        <span className="flex flex-col gap-0.5 leading-tight" title="Planification serveur active">
+          <span>
+            {sched.lastRunAt
+              ? <>Dernier <b>{hhmm(sched.lastRunAt)}</b> <span className="text-indigo-200/70">(il y a {formatCountdown(now - sched.lastRunAt)})</span> {sched.lastStatus === 'error' ? <span className="text-rose-300 cursor-help" title={sched.lastError ?? 'Dernier run en erreur'}>⚠</span> : <span className="text-emerald-300">✓</span>}</>
+              : <span className="text-indigo-200/70">Jamais exécuté</span>}
+          </span>
+          <span>Prochain <b>{hhmm(sched.nextRunAt)}</b> <span className="text-indigo-200/70">({overdue ? 'imminent' : `dans ${formatCountdown(sched.nextRunAt - now)}`})</span></span>
         </span>
       )}
       {isRunning ? (
