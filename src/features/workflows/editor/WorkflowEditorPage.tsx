@@ -254,15 +254,18 @@ export function WorkflowEditorPage() {
             </button>
           )}
         </header>
+        {/* La console (RunPanel) vit SOUS le canevas, pas en pleine largeur : le panneau
+            de droite (liste des concurrents « Sites sources ») garde ainsi toute la
+            hauteur et s'affiche en entier — demande utilisateur. */}
         <div className="flex-1 flex overflow-hidden">
           <NodePalette />
           <div className="flex-1 flex flex-col min-w-0">
             <WorkflowEditor />
             <DataPreviewPanel />
+            <RunPanel />
           </div>
           <NodeConfigPanel />
         </div>
-        <RunPanel />
       </div>
         <TourLauncher tourId="workflow" />
         {showGenerate && <PromptToFlowModal onClose={() => setShowGenerate(false)} />}
