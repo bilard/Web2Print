@@ -8,18 +8,32 @@ import { RadarHero } from './RadarHero'
 import { RadarKpiGrid } from './RadarKpiGrid'
 import { RadarOpportunities } from './RadarOpportunities'
 import { RadarCompetitors } from './RadarCompetitors'
-import { RadarSegmented } from './RadarSegmented'
+import { RadarTabs } from './RadarTabs'
 import { RadarVolume } from './RadarVolume'
-import { RadarStats } from './RadarStats'
+import { RadarPositionDonut } from './RadarPositionDonut'
+import { RadarDistribution } from './RadarDistribution'
+import { RadarScatter } from './RadarScatter'
+import { RadarMatching } from './RadarMatching'
+import { RadarBenchmark } from './RadarBenchmark'
+import { RadarCompetitorFlow } from './RadarCompetitorFlow'
+import { RadarFamilies } from './RadarFamilies'
+import { RadarHeatmap } from './RadarHeatmap'
+import { RadarProducts } from './RadarProducts'
 import { RadarInstallHint } from './RadarInstallHint'
 import { useOrientation } from './useOrientation'
 
-type Tab = 'apercu' | 'volume' | 'stats'
+type Tab = 'apercu' | 'position' | 'concurrents' | 'familles' | 'produits' | 'volume'
 const TABS = [
   { value: 'apercu' as const, label: 'Aperçu' },
-  { value: 'volume' as const, label: 'Volumétrie' },
-  { value: 'stats' as const, label: 'Statistiques' },
+  { value: 'position' as const, label: 'Positionnement' },
+  { value: 'concurrents' as const, label: 'Concurrents' },
+  { value: 'familles' as const, label: 'Familles' },
+  { value: 'produits' as const, label: 'Produits' },
+  { value: 'volume' as const, label: 'Collecte' },
 ]
+
+/** Masonry 2 colonnes en paysage (les cartes se répartissent sur la largeur). */
+const MASONRY = 'space-y-4 landscape:columns-2 landscape:gap-4 landscape:space-y-0 landscape:[&>*]:mb-4 landscape:[&>*]:break-inside-avoid'
 
 /** Écran plein d'un message centré (états vides), thème radar committé. */
 function Centered({ title, sub }: { title: string; sub: string }) {
@@ -72,7 +86,7 @@ export function RadarApp() {
       <main className="radar-safe-x radar-safe-bottom mx-auto max-w-lg space-y-4 pt-2 landscape:max-w-5xl">
         {cockpit ? (
           <>
-            <RadarSegmented options={TABS} value={tab} onChange={setTab} ariaLabel="Vues radarPrice" />
+            <RadarTabs options={TABS} value={tab} onChange={setTab} ariaLabel="Vues radarPrice" />
             {tab === 'apercu' && (
               <>
                 <RadarHero cockpit={cockpit} holdSeries={hold} ops={ops} />
@@ -84,8 +98,28 @@ export function RadarApp() {
                 </div>
               </>
             )}
+            {tab === 'position' && (
+              <div className={MASONRY}>
+                <RadarPositionDonut cockpit={cockpit} />
+                <RadarDistribution cockpit={cockpit} />
+                <RadarScatter cockpit={cockpit} />
+                <RadarMatching cockpit={cockpit} />
+              </div>
+            )}
+            {tab === 'concurrents' && (
+              <div className={MASONRY}>
+                <RadarBenchmark cockpit={cockpit} />
+                <RadarCompetitorFlow history={history} sites={report?.sites ?? []} />
+              </div>
+            )}
+            {tab === 'familles' && (
+              <div className={MASONRY}>
+                <RadarFamilies cockpit={cockpit} />
+                <RadarHeatmap cockpit={cockpit} />
+              </div>
+            )}
+            {tab === 'produits' && <RadarProducts products={report?.products ?? []} />}
             {tab === 'volume' && <RadarVolume ops={ops} />}
-            {tab === 'stats' && <RadarStats cockpit={cockpit} landscape={landscape} />}
             <RadarInstallHint />
           </>
         ) : (
