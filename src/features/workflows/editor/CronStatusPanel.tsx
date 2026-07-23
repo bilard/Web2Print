@@ -108,15 +108,19 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
     <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-indigo-500/15 border border-indigo-500/30 text-indigo-200 text-xs">
       <CalendarClock className="w-3.5 h-3.5 shrink-0" />
       {isRunning ? (
-        <span className="flex items-center gap-1.5" title="Un run serveur est en cours d’exécution. Un workflow long avance par tranches : interrompu au budget, il REPREND automatiquement au tick suivant (checkpoint).">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <b className="text-emerald-300">En cours</b>
-          {sched.lastRunAt && <span className="text-indigo-200/80">· démarré {hhmm(sched.lastRunAt)} (il y a {formatCountdown(now - sched.lastRunAt)})</span>}
+        // Texte sur 2 lignes pour réduire la largeur : ligne 1 = statut + démarré,
+        // ligne 2 = reprise auto (le segment le plus long).
+        <span className="flex flex-col gap-0.5 leading-tight" title="Un run serveur est en cours d’exécution. Un workflow long avance par tranches : interrompu au budget, il REPREND automatiquement au tick suivant (checkpoint).">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <b className="text-emerald-300">En cours</b>
+            {sched.lastRunAt && <span className="text-indigo-200/80">· démarré {hhmm(sched.lastRunAt)} (il y a {formatCountdown(now - sched.lastRunAt)})</span>}
+          </span>
           {/* Pendant un run, nextRunAt = échéance du VERROU : l'heure à laquelle le
               scanner reprendra la main quoi qu'il arrive (fin, pause ou crash).
               Décompte LIVE (tick 1 s du panneau) pour voir l'échéance approcher. */}
-          <span className="text-indigo-200/70">
-            · reprise auto ≤ {hhmm(sched.nextRunAt)}{' '}
+          <span className="text-indigo-200/70 pl-3">
+            reprise auto ≤ {hhmm(sched.nextRunAt)}{' '}
             {overdue ? '(imminente)' : <>(dans <span className="tabular-nums">{formatCountdown(sched.nextRunAt - now)}</span>)</>}
           </span>
         </span>
