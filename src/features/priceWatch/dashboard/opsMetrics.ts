@@ -71,9 +71,13 @@ function opsCompetitorOf(s: CompetitorStat, live?: HarvestMeta): OpsCompetitor {
   const indexed = live?.productCount ?? s.audit?.indexed ?? 0
   const h = s.harvest
   // La méta LIVE prime sur le snapshot du rapport (elle bouge pendant la moisson).
-  const sweeps = live?.harvestSweeps ?? h?.sweeps ?? 0
   const cumulMs = live?.cumulHarvestMs ?? h?.cumulMs ?? 0
   const progress = Math.max(0, Math.min(1, live?.harvestProgress ?? h?.progress ?? 0))
+  // ⚠ `sweeps` (curseur) n'est incrémenté qu'à la RÉOUVERTURE du balayage suivant
+  // (openSweep) : en mode cycle calendaire, un site 100 % bouclé qui ATTEND la relance
+  // resterait à ×0 pendant toute l'attente. Un balayage terminé (progress=1) compte
+  // donc comme cycle bouclé — et son temps est déjà dans cumulMs (durée plus exacte).
+  const sweeps = (live?.harvestSweeps ?? h?.sweeps ?? 0) + (progress >= 1 ? 1 : 0)
   return {
     siteId: s.siteId, domain: s.domain, indexed,
     progress, sweeps, cumulMs,

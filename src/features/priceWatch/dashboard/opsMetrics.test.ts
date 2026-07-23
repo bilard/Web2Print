@@ -26,10 +26,11 @@ describe('buildOpsCockpit', () => {
     expect(ck.totalIndexed).toBe(150)
     expect(ck.totalCumulMs).toBe(14000)
     expect(ck.sitesActive).toBe(2)
-    // durée d'un cycle = cumulMs / sweeps → a: 2000, b: 3000 → le plus lent = b (3000).
-    expect(ck.competitors.find((c) => c.siteId === 'a')?.cycleMs).toBe(2000)
+    // a : progress=1 → son balayage terminé compte (4+1 = 5 cycles) → 8000/5 = 1600.
+    // b : en cours (0.5) → 2 cycles → 6000/2 = 3000 → le plus lent = b.
+    expect(ck.competitors.find((c) => c.siteId === 'a')?.cycleMs).toBe(1600)
     expect(ck.slowestCycle).toEqual({ domain: 'b.fr', cycleMs: 3000 })
-    // cycles GARANTIS = min(sweeps) = 2 ; balayage moyen = (1 + 0.5) / 2 = 0.75.
+    // cycles GARANTIS = min(5, 2) = 2 ; balayage moyen = (1 + 0.5) / 2 = 0.75.
     expect(ck.cyclesDone).toBe(2)
     expect(ck.avgProgress).toBeCloseTo(0.75)
   })
@@ -69,5 +70,22 @@ describe('buildOpsCockpit', () => {
     expect(ck.totalCumulMs).toBe(0)
     expect(ck.competitors[0].cycleMs).toBeNull()
     expect(ck.slowestCycle).toBeNull()
+  })
+})
+
+describe('buildOpsCockpit — balayage terminé en ATTENTE du cycle calendaire', () => {
+  it('compte un balayage done (progress=1) comme cycle bouclé même si sweeps=0', () => {
+    // `sweeps` n'est incrémenté qu'à la RÉOUVERTURE du balayage suivant (openSweep).
+    // En mode cycle calendaire, un site fini attend la relance : sans correction, un
+    // site 100 % bouclé affichait ×0 pendant des heures (constaté : « 0/13 bouclés »
+    // avec 8 sites terminés, tuile durée de cycle vide).
+    const ck = buildOpsCockpit(report([
+      { siteId: 'a', domain: 'a.fr', matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, audit: audit(100),
+        harvest: { lastMs: 1000, cumulMs: 9000, progress: 1, sweeps: 0 } },
+    ]))
+    expect(ck.sitesComplete).toBe(1)
+    expect(ck.cyclesDone).toBe(1)
+    // Durée d'un cycle calculable dès le premier balayage bouclé.
+    expect(ck.slowestCycle).toEqual({ domain: 'a.fr', cycleMs: 9000 })
   })
 })
