@@ -157,6 +157,7 @@ function AiTab() {
         description="Raisonnement briefs, panier, deck, design"
         logo={<ClaudeLogo />}
         apiKeyUrl="https://console.anthropic.com/settings/keys"
+        billingUrl="https://platform.claude.com/settings/billing"
       />
       <AiProviderCard
         provider="openai"

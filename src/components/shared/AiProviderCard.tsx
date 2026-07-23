@@ -21,6 +21,8 @@ interface AiProviderCardProps {
   logo?: React.ReactNode
   /** URL de la console pour générer / récupérer la clé API. */
   apiKeyUrl?: string
+  /** URL du tableau de bord de facturation du fournisseur (solde, factures). */
+  billingUrl?: string
   /** Si true, affiche la note "image gen utilise toujours Image IA" (carte Gemini uniquement). */
   noteForGemini?: boolean
 }
@@ -31,7 +33,7 @@ function formatPricing(pricing: { input: number; output: number }): string {
   return `$${fmt(pricing.input)} in / $${fmt(pricing.output)} out · 1M tok`
 }
 
-export function AiProviderCard({ provider, apiKeyId, label, description, logo, apiKeyUrl, noteForGemini }: AiProviderCardProps) {
+export function AiProviderCard({ provider, apiKeyId, label, description, logo, apiKeyUrl, billingUrl, noteForGemini }: AiProviderCardProps) {
   // ── API key state (mirrors ApiKeyRow)
   const [editing, setEditing] = useState(false)
   const [visible, setVisible] = useState(false)
@@ -167,6 +169,19 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
                   className="flex items-center gap-1 text-[10px] text-indigo-400/70 hover:text-indigo-300 transition-colors"
                 >
                   <span>Obtenir une clé</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+              {billingUrl && (
+                <a
+                  href={billingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Facturation & solde (nouvel onglet)"
+                  onClick={stop}
+                  className="flex items-center gap-1 text-[10px] text-amber-400/70 hover:text-amber-300 transition-colors"
+                >
+                  <span>Billing</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
               )}
