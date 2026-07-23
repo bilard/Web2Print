@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Loader2, CheckCircle2, XCircle, Wifi, Eye, EyeOff, KeyRound, CreditCard } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle, Wifi, Eye, EyeOff, KeyRound, ExternalLink } from 'lucide-react'
 import { BrightDataLogo } from '@/features/ai/providerLogos'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
@@ -141,13 +141,14 @@ export function BrightDataConnectorRow() {
             <KeyRound className="w-3 h-3" />
           </a>
           <a
-            href="https://brightdata.com/cp/billing"
+            href="https://brightdata.fr/cp/billing/invoices"
             target="_blank"
             rel="noopener noreferrer"
-            title="Recharger la balance / facturation"
-            className="text-white/20 hover:text-emerald-400 transition-colors p-1 rounded hover:bg-white/5"
+            title="Facturation & solde (nouvel onglet)"
+            className="flex items-center gap-1 text-[10px] text-amber-400/70 hover:text-amber-300 transition-colors"
           >
-            <CreditCard className="w-3 h-3" />
+            <span>Billing</span>
+            <ExternalLink className="w-3 h-3" />
           </a>
           <button
             onClick={handleTest}

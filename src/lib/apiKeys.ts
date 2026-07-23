@@ -143,7 +143,7 @@ export const API_KEYS: ApiKeyConfig[] = [
     description: 'Clé API Jina — scraping et recherche produit',
     links: {
       manage: 'https://jina.ai/api-dashboard/key-manager',
-      billing: 'https://jina.ai/api-dashboard/recharge',
+      billing: 'https://jina.ai/api-dashboard',
     },
   },
   {
@@ -153,7 +153,7 @@ export const API_KEYS: ApiKeyConfig[] = [
     description: 'Clé API Firecrawl — scraping anti-bot fallback',
     links: {
       manage: 'https://www.firecrawl.dev/app/api-keys',
-      billing: 'https://www.firecrawl.dev/pricing',
+      billing: 'https://www.firecrawl.dev/app/t/LsorYp6HkrX/usage',
     },
   },
   {

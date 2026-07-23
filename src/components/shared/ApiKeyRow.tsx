@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react'
-import { Eye, EyeOff, RotateCcw, CheckCircle2, XCircle, Loader2, Wifi, ExternalLink, KeyRound, CreditCard } from 'lucide-react'
+import { Eye, EyeOff, RotateCcw, CheckCircle2, XCircle, Loader2, Wifi, ExternalLink, KeyRound } from 'lucide-react'
 import {
   getApiKey, setApiKey, isApiKeyOverridden, resetApiKey, getEnvDefault, getApiKeyLinks,
   testApiKey, type ApiTestResult, type ApiTestAction,
@@ -102,10 +102,11 @@ export function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer 
               href={links.billing}
               target="_blank"
               rel="noopener noreferrer"
-              title="Acheter des crédits / facturation"
-              className="text-white/20 hover:text-emerald-400 transition-colors p-1 rounded hover:bg-white/5"
+              title="Facturation & solde (nouvel onglet)"
+              className="flex items-center gap-1 text-[10px] text-amber-400/70 hover:text-amber-300 transition-colors"
             >
-              <CreditCard className="w-3 h-3" />
+              <span>Billing</span>
+              <ExternalLink className="w-3 h-3" />
             </a>
           )}
           <button onClick={handleTest} title="Tester la connexion" className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5">
