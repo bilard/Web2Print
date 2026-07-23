@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest'
 import type { StoredReport } from '../reportStore'
 import type { KpiHistoryPoint } from '../reportStore'
-import { buildCockpit, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries, EMPTY_FILTER } from './analytics'
+import { buildCockpit, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries, EMPTY_FILTER, matchesQuery, groupRowsByFamily, type TableRow } from './analytics'
 
 const cell = (siteId: string, domain: string, priceHt: number, gapPct: number, stock: 'in-stock' | 'out-of-stock' = 'in-stock') => ({
   siteId, domain, name: 'x', url: '', image: null,
@@ -132,5 +132,32 @@ describe('buildTableRows + rowsToCsv', () => {
     expect(lines).toHaveLength(4) // header + 3
     expect(lines[0]).toContain('a.com (prix HT)')
     expect(lines[1].split(';')[0]).toBe('R1')
+  })
+})
+
+describe('matchesQuery — recherche full-text insensible aux accents', () => {
+  const p = { name: 'COURROIE CRANTÉE 5/8', reference: '5304753', ean: '4049582968960', famille: 'ÉLECTRICITÉ' }
+  it('matche sans accents ni casse', () => {
+    expect(matchesQuery(p, 'crantee')).toBe(true)
+    expect(matchesQuery(p, 'electricite')).toBe(true)
+  })
+  it('multi-mots : CHAQUE mot doit se retrouver quelque part', () => {
+    expect(matchesQuery(p, 'courroie 5304')).toBe(true)
+    expect(matchesQuery(p, 'courroie inexistant')).toBe(false)
+  })
+  it('réf et EAN sont cherchables ; requête vide matche tout', () => {
+    expect(matchesQuery(p, '404958')).toBe(true)
+    expect(matchesQuery(p, '  ')).toBe(true)
+  })
+})
+
+describe('groupRowsByFamily — groupes triés alphabétiquement', () => {
+  const mk = (id: string, famille: string | null): TableRow =>
+    ({ id, name: id, reference: null, ean: null, famille, myPriceHt: 1, bestGapPct: null, tone: null,
+       sourceUrl: null, gapBySite: {}, priceBySite: {}, ttcBySite: {}, urlBySite: {} }) as unknown as TableRow
+  it('familles en ordre alphabétique, ordre des lignes préservé dans chaque groupe', () => {
+    const groups = groupRowsByFamily([mk('p1', 'Moteur'), mk('p2', 'Courroies'), mk('p3', 'Moteur'), mk('p4', null)])
+    expect(groups.map((g) => g.famille)).toEqual(['Autres', 'Courroies', 'Moteur'])
+    expect(groups[2].rows.map((r) => r.id)).toEqual(['p1', 'p3'])
   })
 })

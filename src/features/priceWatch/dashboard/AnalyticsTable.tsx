@@ -1,17 +1,18 @@
 // src/features/priceWatch/dashboard/AnalyticsTable.tsx
-// Tableau analytique maître (terminal dense) : 1 produit / ligne, colonnes fixes + une
-// heat-cell d'écart par concurrent. Triable (clic en-tête), exportable CSV. Le FILTRE
-// est global (piloté par la recherche du cockpit) → les lignes arrivent déjà filtrées.
+// Tableau analytique maître (terminal dense), GROUPÉ PAR FAMILLE : familles en ordre
+// alphabétique (en-tête de groupe FIXE au scroll horizontal), produits triés par nom
+// dans chaque groupe (ou par la colonne cliquée). Heat-cell d'écart par concurrent,
+// export CSV. Le FILTRE est global (recherche du cockpit) → lignes déjà filtrées.
 import { useMemo, useState } from 'react'
 import type { Cockpit, TableRow } from './analytics'
-import { rowsToCsv } from './analytics'
+import { rowsToCsv, groupRowsByFamily } from './analytics'
 import { eur, pct, heatColor, POSITION_LABEL, POSITION_TEXT } from './format'
 import { Search } from 'lucide-react'
 
 const googleSearch = (r: TableRow) =>
   `https://www.google.com/search?q=${encodeURIComponent(`${r.reference ?? ''} ${r.name}`.trim())}`
 
-type SortKey = 'name' | 'famille' | 'myPriceHt' | 'bestGapPct'
+type SortKey = 'name' | 'myPriceHt' | 'bestGapPct'
 const num = (v: number | null) => (v == null ? Number.POSITIVE_INFINITY : v)
 
 export function AnalyticsTable({ ck }: { ck: Cockpit }) {
@@ -19,19 +20,22 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
   // (n'ont pas ce catalogue) n'ajoutaient que des colonnes vides. Le Benchmark garde la
   // vue exhaustive des 19 sites ; ici on densifie.
   const comps = ck.competitors.filter((c) => c.matched > 0)
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'bestGapPct', dir: 1 })
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'name', dir: 1 })
 
-  const rows = useMemo(() => {
+  // Tri DANS chaque groupe (les familles, elles, restent alphabétiques).
+  const groups = useMemo(() => {
     const { key, dir } = sort
-    return [...ck.tableRows].sort((a, b) => {
+    const sorted = [...ck.tableRows].sort((a, b) => {
       const av = a[key], bv = b[key]
-      if (typeof av === 'string' || typeof bv === 'string') return dir * String(av ?? '').localeCompare(String(bv ?? ''))
+      if (typeof av === 'string' || typeof bv === 'string') return dir * String(av ?? '').localeCompare(String(bv ?? ''), 'fr')
       return dir * (num(av as number | null) - num(bv as number | null))
     })
+    return groupRowsByFamily(sorted)
   }, [ck.tableRows, sort])
+  const rowCount = groups.reduce((n, g) => n + g.rows.length, 0)
 
   const exportCsv = () => {
-    const csv = rowsToCsv(rows, comps)
+    const csv = rowsToCsv(groups.flatMap((g) => g.rows), comps)
     const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url; a.download = `veille-${ck.runAt}.csv`; a.click()
@@ -49,7 +53,7 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
     <div className="bg-surface rounded-lg p-4" data-pw-section="table">
       <div className="flex items-center gap-2 mb-1">
         <div className="text-sm font-semibold text-white">Détail produits</div>
-        <span className="text-[11px] text-white/40">{rows.length}{ck.filterActive ? ` / ${ck.totalCount}` : ''}</span>
+        <span className="text-[11px] text-white/40">{rowCount}{ck.filterActive ? ` / ${ck.totalCount}` : ''}</span>
         <button onClick={exportCsv} className="ml-auto bg-well text-white/70 text-xs rounded px-3 py-1.5 border border-white/10 hover:text-white hover:border-white/25">
           Export CSV
         </button>
@@ -63,7 +67,6 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
           <thead className="sticky top-0 bg-surface-2 z-10 text-white/40 text-[10px] uppercase tracking-wide">
             <tr className="text-right">
               {th('name', 'Produit', 'text-left pl-3')}
-              {th('famille', 'Famille', 'text-left')}
               {th('myPriceHt', 'Mon prix HT', 'pr-2')}
               {th('bestGapPct', 'Meilleur écart', 'pr-2')}
               <th className="pb-2 font-medium pr-2">Position</th>
@@ -75,9 +78,21 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
-              <tr><td colSpan={5 + comps.length} className="text-center text-white/40 py-8">Aucun produit ne correspond à la recherche.</td></tr>
-            ) : rows.map((r: TableRow) => (
+            {rowCount === 0 ? (
+              <tr><td colSpan={4 + comps.length} className="text-center text-white/40 py-8">Aucun produit ne correspond à la recherche.</td></tr>
+            ) : groups.map((g) => [
+              // En-tête de groupe : le libellé est FIXE au scroll horizontal (sticky left
+              // dans une cellule pleine largeur) — la famille reste lisible en balayant
+              // les colonnes concurrents.
+              <tr key={`fam:${g.famille}`} className="border-t border-white/10 bg-surface-2/90">
+                <td colSpan={4 + comps.length} className="py-1">
+                  <div className="sticky left-0 w-max flex items-center gap-2 pl-3 pr-4">
+                    <span className="text-[10px] uppercase tracking-wide font-semibold text-amber-300/90">{g.famille}</span>
+                    <span className="text-[10px] text-white/35 tabular-nums">{g.rows.length}</span>
+                  </div>
+                </td>
+              </tr>,
+              ...g.rows.map((r: TableRow) => (
               <tr key={r.id} className="border-t border-white/5 text-right hover:bg-white/[0.03]">
                 <td className="text-left py-1.5 pl-3 max-w-[240px]">
                   <div className="flex items-center gap-1.5">
@@ -95,7 +110,6 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
                     </a>
                   </div>
                 </td>
-                <td className="text-left text-white/45 max-w-[120px] truncate">{r.famille ?? '—'}</td>
                 <td className="pr-2 text-white/80">{eur(r.myPriceHt)}</td>
                 <td className={`pr-2 font-medium ${r.tone ? POSITION_TEXT[r.tone] : 'text-white/40'}`}>{pct(r.bestGapPct)}</td>
                 <td className="pr-2">
@@ -121,7 +135,8 @@ export function AnalyticsTable({ ck }: { ck: Cockpit }) {
                   )
                 })}
               </tr>
-            ))}
+              )),
+            ])}
           </tbody>
         </table>
       </div>

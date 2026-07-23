@@ -9,6 +9,7 @@
 // FILTRE global ne touche QUE les blocs dérivés — les headline restent globaux (kpis).
 import type { StoredReport, KpiHistoryPoint } from '../reportStore'
 import type { ProductRow, ReportKpis } from '../catalog/report'
+import { foldText } from '../catalog/categories'
 
 type Cell = ProductRow['competitors'][number]
 type Tone = 'cheaper' | 'aligned' | 'dearer'
@@ -47,14 +48,24 @@ function isFilterActive(f: CockpitFilter): boolean {
   return !!f.q.trim() || f.famille !== 'all' || f.position !== 'all' || f.competitor !== 'all'
 }
 
+/** Recherche FULL-TEXT insensible aux accents/casse : chaque mot de la requête doit se
+ *  retrouver dans le nom, la réf, l'EAN ou la famille (« courroie 5304 » = ET logique). */
+export function matchesQuery(
+  p: { name: string; reference: string | null; ean: string | null; famille: string | null },
+  q: string,
+): boolean {
+  const tokens = foldText(q).split(/\s+/).filter(Boolean)
+  if (tokens.length === 0) return true
+  const hay = foldText([p.name, p.reference ?? '', p.ean ?? '', p.famille ?? ''].join(' '))
+  return tokens.every((t) => hay.includes(t))
+}
+
 export function filterProducts(products: ProductRow[], f: CockpitFilter): ProductRow[] {
-  const needle = f.q.trim().toLowerCase()
   return products.filter((p) => {
     if (f.position !== 'all' && toneOf(p.bestGapPct) !== f.position) return false
     if (f.famille !== 'all' && familyKey(p.famille) !== f.famille) return false
     if (f.competitor !== 'all' && !p.competitors.some((c) => c.siteId === f.competitor)) return false
-    if (needle && ![p.name, p.reference, p.ean].some((s) => s?.toLowerCase().includes(needle))) return false
-    return true
+    return matchesQuery(p, f.q)
   })
 }
 
@@ -163,6 +174,23 @@ const csvCell = (v: string | number | null): string => {
 }
 
 /** Export CSV (séparateur `;`, décimales FR) : produit + écart par concurrent. */
+export interface FamilyGroup { famille: string; rows: TableRow[] }
+
+/** Groupe les lignes du tableau par famille, familles en ordre alphabétique (fr).
+ *  L'ordre des lignes DANS chaque groupe est préservé (tri fait par l'appelant). */
+export function groupRowsByFamily(rows: TableRow[]): FamilyGroup[] {
+  const by = new Map<string, TableRow[]>()
+  for (const r of rows) {
+    const k = familyKey(r.famille)
+    const arr = by.get(k)
+    if (arr) arr.push(r)
+    else by.set(k, [r])
+  }
+  return [...by.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], 'fr'))
+    .map(([famille, grouped]) => ({ famille, rows: grouped }))
+}
+
 export function rowsToCsv(rows: TableRow[], competitors: { siteId: string; domain: string }[]): string {
   const head = ['Référence', 'EAN', 'Produit', 'Famille', 'Mon prix HT', 'Meilleur écart %', ...competitors.map((c) => `${c.domain} (prix HT)`)]
   const dec = (v: number | null) => (v == null ? '' : String(v).replace('.', ','))

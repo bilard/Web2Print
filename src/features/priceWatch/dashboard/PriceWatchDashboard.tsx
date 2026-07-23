@@ -21,8 +21,9 @@ import { CompetitorAuditModal } from './CompetitorAuditModal'
 import { AnalyticsTable } from './AnalyticsTable'
 import { ProductList } from './ProductList'
 import { ExpandableChart } from '@/components/shared/ExpandableChart'
-import { ChevronDown, Search, RotateCcw } from 'lucide-react'
+import { ChevronDown, RotateCcw } from 'lucide-react'
 import { useLiveReportRefresh } from './useLiveReportRefresh'
+import { SearchAutocomplete } from './SearchAutocomplete'
 
 /** Rapport « vide » : permet d'afficher le Cockpit opérationnel (jauges de moisson LIVE,
  *  alimentées par les métas concurrents) AVANT le premier « Comparer catalogue ».
@@ -114,11 +115,11 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <KpiStrip ck={ck} history={history} />
       </div>
 
-      {/* Moteur de recherche global : pilote tous les blocs dérivés. */}
+      {/* Moteur de recherche global (full-text + autocomplétion) : pilote tous les blocs dérivés. */}
       <div className="flex flex-wrap items-center gap-2 bg-surface rounded-lg px-3 py-2 border border-white/5">
-        <Search className="w-4 h-4 text-white/40" />
-        <input value={filter.q} onChange={(e) => set({ q: e.target.value })} placeholder="Filtrer la donnée BI — réf, EAN, nom du produit…"
-          className="bg-transparent text-white/85 text-sm flex-1 min-w-[180px] focus:outline-none placeholder:text-white/30" />
+        <SearchAutocomplete value={filter.q} onChange={(q) => set({ q })}
+          onPickFamily={(famille) => setFilter((f) => ({ ...f, famille, q: '' }))}
+          products={report.products} />
         <select value={filter.position} onChange={(e) => set({ position: e.target.value as CockpitFilter['position'] })} className={selCls}>
           <option value="all">Toutes positions</option>
           <option value="cheaper">Concurrent moins cher</option>
