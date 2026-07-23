@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Eye, EyeOff, RotateCcw, CheckCircle2, XCircle, Loader2, Wifi,
-  ChevronDown, RefreshCw, Info, ExternalLink, Search, ArrowUp,
+  ChevronDown, RefreshCw, Info, ExternalLink, Search, ArrowUp, KeyRound,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -159,32 +159,6 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
               {testStatus === 'ok' && <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />}
               {testStatus === 'error' && <XCircle className="w-3.5 h-3.5 text-red-400" />}
               {testStatus === 'empty' && <XCircle className="w-3.5 h-3.5 text-white/20" />}
-              {apiKeyUrl && (
-                <a
-                  href={apiKeyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Obtenir une clé API"
-                  onClick={stop}
-                  className="flex items-center gap-1 text-[10px] text-indigo-400/70 hover:text-indigo-300 transition-colors"
-                >
-                  <span>Obtenir une clé</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
-              {billingUrl && (
-                <a
-                  href={billingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Facturation & solde (nouvel onglet)"
-                  onClick={stop}
-                  className="flex items-center gap-1 text-[10px] text-amber-400/70 hover:text-amber-300 transition-colors"
-                >
-                  <span>Billing</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
             </div>
             <p className="text-[10px] text-white/30">{description}</p>
           </div>
@@ -209,6 +183,31 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
                 Remonter
               </button>
             )
+          )}
+          {apiKeyUrl && (
+            <a
+              href={apiKeyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Obtenir / gérer la clé API"
+              onClick={stop}
+              className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5"
+            >
+              <KeyRound className="w-3 h-3" />
+            </a>
+          )}
+          {billingUrl && (
+            <a
+              href={billingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Facturation & solde (nouvel onglet)"
+              onClick={stop}
+              className="flex items-center gap-1 text-[10px] text-amber-400/70 hover:text-amber-300 transition-colors"
+            >
+              <span>Billing</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
           )}
           <button onClick={(e) => { stop(e); handleTestKey() }} title="Tester la connexion" className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5">
             <Wifi className="w-3 h-3" />
