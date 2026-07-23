@@ -148,9 +148,12 @@ export function RunPanel() {
   const wf = useWorkflowStore((s) => s.current)
   const states = useRunContext((s) => s.nodeStates)
   const [tab, setTab] = useState<Tab>('console')
+  // ⚠ Nouvelle clé (v2) : l'ancienne 'runLogs' pouvait être mémorisée REPLIÉE (l'ancien
+  // panneau « Run logs ») → la console arrivait repliée, invisible sous « Aperçu données ».
+  // Repartir d'une clé neuve la rouvre par défaut pour tout le monde.
   const { height, collapsed, setHeight, toggleCollapsed, minHeight, maxHeightVh } = usePanelResize({
-    storageKey: 'web2print.bottomPanel.runLogs',
-    defaultHeight: 220,
+    storageKey: 'web2print.bottomPanel.workflowConsole.v2',
+    defaultHeight: 240,
     minHeight: 140,
   })
   const nodeName = (id: string) => {
