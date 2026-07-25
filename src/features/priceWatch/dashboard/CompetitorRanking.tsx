@@ -71,7 +71,7 @@ export function CompetitorRanking({ ck, onSelect, active, onOpenAudit, progressB
                       if (prog == null) return null
                       const pct = Math.min(100, Math.round(prog * 100))
                       return (
-                        <div className="mt-1 h-1 rounded-full bg-well overflow-hidden max-w-[150px]" title={`Balayage ${pct}%`}>
+                        <div className="mt-1 h-1 rounded-full bg-well overflow-hidden max-w-[150px]" title={`Familles parcourues ${pct} %`}>
                           <div className={`h-full ${pct >= 100 ? 'bg-emerald-500' : 'bg-indigo-400'}`} style={{ width: `${pct}%` }} />
                         </div>
                       )

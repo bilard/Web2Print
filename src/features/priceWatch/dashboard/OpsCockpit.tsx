@@ -150,7 +150,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
             <div className="bg-well rounded-lg px-4 py-3 flex flex-col items-center">
               <Gauge value={ck.avgProgress} color="#818cf8">
                 <div className="text-xl font-semibold text-white tabular-nums"><AnimatedNumber value={ck.avgProgress * 100} format={(n) => `${Math.round(n)}%`} /></div>
-                <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">balayage</div>
+                <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">familles</div>
               </Gauge>
               <div className="text-[11px] text-white/40 mt-1">{remainingPct}% restant à traiter</div>
             </div>
@@ -233,7 +233,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
               <div key={c.siteId} className="flex items-center gap-2 text-xs">
                 <span className="truncate text-white/75 flex-1 min-w-0" title={c.domain}>{c.domain.replace(/^www\./, '')}</span>
                 <div className="h-1.5 w-16 rounded-full bg-white/[0.06] overflow-hidden shrink-0"
-                  title={`Balayage ${Math.round(c.progress * 100)}%`}>
+                  title={`Familles parcourues ${Math.round(c.progress * 100)} %`}>
                   <div className={`h-full ${c.progress >= 1 ? 'bg-emerald-500' : 'bg-indigo-400'}`} style={{ width: `${Math.round(c.progress * 100)}%` }} />
                 </div>
                 <span className="tabular-nums text-white/50 w-12 text-right shrink-0">{compactNum(c.indexed)}</span>

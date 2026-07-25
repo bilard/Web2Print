@@ -211,8 +211,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
           </div>
           <div className="flex items-center gap-x-2.5 overflow-hidden">
             {swept
-              ? chip('balayé', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
-              : stats.harvestProgress != null && chip('balayage', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
+              ? chip('familles', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
+              : stats.harvestProgress != null && chip('familles', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
             {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
             {chip('scrape', agoShort(stats.harvestBeatAt ?? stats.updatedAt, now), 'mute')}
           </div>

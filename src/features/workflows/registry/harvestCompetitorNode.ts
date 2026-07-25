@@ -45,7 +45,7 @@ function statusSheet(rows: Record<string, unknown>[]): ExcelSheet {
       { key: 'pagesFetched', label: 'Pages ce run', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 120 },
       { key: 'productsIndexed', label: 'Produits ce run', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 140 },
       { key: 'pagesTotal', label: 'Pages indexées', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 140 },
-      { key: 'progress', label: 'Balayage', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
+      { key: 'progress', label: 'Familles', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
     ],
     rows: rows.map((r, i) => ({ _id: `site_${i}`, ...r })),
     taxonomy: [],

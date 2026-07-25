@@ -70,8 +70,8 @@ export function RadarScrapingRow({ row, now, watchId, workflowId, cfg, onChanged
         {row.pctPrice != null && <Chip label="prix" value={fmtPct(row.pctPrice)} tone={row.pctPrice >= 80 ? 'ok' : 'warn'} />}
         {row.matched != null && <Chip label="appariés ici" value={fmtInt(row.matched)} tone={row.matched > 0 ? 'ok' : 'mute'} />}
         {swept
-          ? <Chip label="balayé" value={`×${row.sweeps || 1} ✓`} tone="ok" />
-          : row.progress > 0 && <Chip label="balayage" value={fmtPct(row.progress * 100)} />}
+          ? <Chip label="familles" value={`×${row.sweeps || 1} ✓`} tone="ok" />
+          : row.progress > 0 && <Chip label="familles" value={fmtPct(row.progress * 100)} />}
         {row.lastEngine && <Chip label="via" value={ENGINE_LABELS[row.lastEngine] ?? row.lastEngine} />}
         {/* Le dernier SCRAPE, pas la dernière écriture : `updatedAt` bouge aussi quand le
             node « Comparer » réécrit toutes les métas (→ « à l'instant » sur un site

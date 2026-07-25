@@ -46,7 +46,7 @@ export function PersistedWatchPreview({ configWatchId, workflowId, fallback }: {
               <th className="text-left px-2 py-1.5 font-medium">Concurrent</th>
               <th className="px-2 py-1.5 font-medium">Fiches</th>
               <th className="px-2 py-1.5 font-medium">Prix %</th>
-              <th className="px-2 py-1.5 font-medium">Balayage</th>
+              <th className="px-2 py-1.5 font-medium">Familles</th>
               <th className="px-2 py-1.5 font-medium">Cycles</th>
               <th className="px-2 py-1.5 font-medium">Temps cumulé</th>
             </tr>

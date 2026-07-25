@@ -24,7 +24,7 @@ export function RadarCollectStats({ ops }: { ops: OpsCockpit }) {
   return (
     <section className="radar-in grid grid-cols-2 gap-3 landscape:grid-cols-4">
       <Stat icon={<Database size={13} />} label="Fiches" value={fmtInt(ops.totalIndexed)} sub={`${ops.sitesActive}/${ops.sitesTotal} sites actifs`} />
-      <Stat icon={<Gauge size={13} />} label="Balayage" value={fmtPct(ops.avgProgress * 100)} sub={`${ops.cyclesDone} cycle(s) bouclé(s)`} />
+      <Stat icon={<Gauge size={13} />} label="Familles" value={fmtPct(ops.avgProgress * 100)} sub={`${ops.cyclesDone} cycle(s) bouclé(s)`} />
       <Stat icon={<Timer size={13} />} label="Temps moisson" value={fmtDuration(ops.totalCumulMs)} sub={ops.slowestCycle ? `goulot ${ops.slowestCycle.domain}` : 'cumul toutes passes'} />
       <Stat icon={<RefreshCw size={13} />} label="Dernière collecte" value={ops.lastCollectAt ? timeAgo(ops.lastCollectAt) : '—'} sub={lastDomain} />
     </section>
