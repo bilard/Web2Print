@@ -91,6 +91,14 @@ describe('filtre global', () => {
     expect(ck.scatter).toHaveLength(3)
     expect(ck.scatter[0]).toMatchObject({ x: 100, y: -20, tone: 'cheaper' })
   })
+
+  it('scatter : le domaine est celui qui PORTE l’écart affiché (min gapPct)', () => {
+    const ck = buildCockpit(report)
+    // P1 : a.com à -20 % et b.com à +5 % → l'écart du point vient de a.com.
+    expect(ck.scatter[0]).toMatchObject({ y: -20, domain: 'a.com' })
+    // P3 : un seul concurrent chiffré.
+    expect(ck.scatter[2]).toMatchObject({ y: 10, domain: 'b.com' })
+  })
 })
 
 describe('séries temporelles', () => {

@@ -93,7 +93,12 @@ interface Opportunity {
   myPriceHt: number | null; minPriceHt: number | null; minDomain: string | null
   gapPct: number | null; gapEur: number | null
 }
-interface ScatterPoint { x: number; y: number; tone: Tone; name: string }
+interface ScatterPoint {
+  x: number; y: number; tone: Tone; name: string
+  /** Concurrent qui PORTE l'écart affiché (celui du gapPct le plus bas, = `bestGapPct`).
+   *  Sans lui, le point disait « -55 % » sans dire face à qui. */
+  domain: string | null
+}
 
 export interface TableRow {
   id: string; name: string; reference: string | null; ean: string | null; famille: string | null
@@ -301,7 +306,15 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
   const scatter: ScatterPoint[] = []
   for (const p of view) {
     if (p.myPriceHt == null || p.bestGapPct == null) continue
-    scatter.push({ x: p.myPriceHt, y: p.bestGapPct, tone: toneOf(p.bestGapPct) ?? 'aligned', name: p.name })
+    // `bestGapPct` = min(gapPct) sur les concurrents chiffrés (cf. report.ts) : on reprend
+    // LA cellule de ce minimum, jamais « le moins cher » recalculé autrement — deux règles
+    // différentes afficheraient un domaine incohérent avec le pourcentage du point.
+    const holder = p.competitors.reduce<Cell | null>(
+      (m, c) => (c.gapPct != null && (m == null || (c.gapPct as number) < (m.gapPct as number)) ? c : m), null)
+    scatter.push({
+      x: p.myPriceHt, y: p.bestGapPct, tone: toneOf(p.bestGapPct) ?? 'aligned', name: p.name,
+      domain: holder?.domain ?? null,
+    })
   }
 
   return {

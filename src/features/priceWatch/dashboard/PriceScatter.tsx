@@ -23,7 +23,7 @@ export function PriceScatter({ ck, onSelect, height }: { ck: Cockpit; onSelect?:
   const data = {
     datasets: TONES.map((t) => ({
       label: POSITION_LABEL[t],
-      data: pts.filter((p) => p.tone === t).map((p) => ({ x: p.x, y: p.y, name: p.name })),
+      data: pts.filter((p) => p.tone === t).map((p) => ({ x: p.x, y: p.y, name: p.name, domain: p.domain })),
       backgroundColor: POSITION_HEX[t] + alpha,
       pointRadius: r,
       pointHoverRadius: r + 2,
@@ -58,9 +58,11 @@ export function PriceScatter({ ck, onSelect, height }: { ck: Cockpit; onSelect?:
                 tooltip: {
                   callbacks: {
                     label: (i: TooltipItem<'scatter'>) => {
-                      const d = i.raw as { x: number; y: number; name: string }
+                      const d = i.raw as { x: number; y: number; name: string; domain: string | null }
                       const g = Math.round(d.y * 10) / 10
-                      return ` ${d.name} · ${d.x.toLocaleString('fr-FR')} € · ${g > 0 ? '+' : ''}${g}%`
+                      // Le concurrent EN TÊTE : un écart sans son porteur n'est pas actionnable.
+                      const who = d.domain ? ` · ${d.domain.replace(/^www\./, '')}` : ''
+                      return ` ${d.name} · ${d.x.toLocaleString('fr-FR')} € · ${g > 0 ? '+' : ''}${g}%${who}`
                     },
                   },
                 },
