@@ -9,6 +9,7 @@ import { useMemo, useState } from 'react'
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import type { PriceEvent } from '../priceEvents'
 import { summarizeMoves, eventsSince } from '../priceEvents'
+import { matchesQuery, EMPTY_FILTER, type CockpitFilter } from './analytics'
 import { eur, pct, agoShort } from './format'
 
 const WINDOWS = [7, 30, 90] as const
@@ -23,15 +24,29 @@ function Stat({ label, value, accent, sub }: { label: string; value: string; acc
   )
 }
 
-export function PriceMoves({ events, now = Date.now() }: { events: PriceEvent[]; now?: number }) {
+export function PriceMoves({ events, filter = EMPTY_FILTER }: { events: PriceEvent[]; filter?: CockpitFilter }) {
   const [days, setDays] = useState<number>(30)
   const [onlyDown, setOnlyDown] = useState(false)
+  // `now` FIGÉ au montage : un `Date.now()` appelé au rendu changerait à chaque frame et
+  // invaliderait les mémos ci-dessous — recalcul de la fenêtre sur des milliers de
+  // mouvements à chaque render, pour un axe temps qui n'a pas bougé.
+  const [now] = useState(() => Date.now())
 
-  const view = useMemo(() => {
-    const win = eventsSince(events, days, now)
-    return onlyDown ? win.filter((e) => e.pctChange < 0) : win
-  }, [events, days, onlyDown, now])
-  const sum = useMemo(() => summarizeMoves(eventsSince(events, days, now)), [events, days, now])
+  // Le journal obéit au moteur de recherche global comme les autres blocs dérivés :
+  // chercher une réf doit montrer SES mouvements, pas ceux de tout le catalogue.
+  const scoped = useMemo(() => {
+    let out = eventsSince(events, days, now)
+    if (filter.competitor !== 'all') out = out.filter((e) => e.sid === filter.competitor)
+    if (filter.q.trim()) {
+      out = out.filter((e) => matchesQuery(
+        { name: e.name, reference: e.ref, ean: null, famille: null }, filter.q,
+      ))
+    }
+    return out
+  }, [events, days, now, filter.competitor, filter.q])
+
+  const view = useMemo(() => (onlyDown ? scoped.filter((e) => e.pctChange < 0) : scoped), [scoped, onlyDown])
+  const sum = useMemo(() => summarizeMoves(scoped), [scoped])
 
   // Les plus récents d'abord ; à date égale, le mouvement le plus marqué en tête.
   const rows = useMemo(
@@ -67,6 +82,9 @@ export function PriceMoves({ events, now = Date.now() }: { events: PriceEvent[];
         </div>
       ) : (
         <>
+        {(filter.q.trim() || filter.competitor !== 'all') && (
+          <div className="text-[11px] text-white/40 mb-2">Vue filtrée — journal restreint à votre recherche.</div>
+        )}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
             <Stat label="Mouvements" value={sum.total.toLocaleString('fr-FR')} sub={`sur ${days} jours`} />
             <Stat label="Baisses" value={sum.down.toLocaleString('fr-FR')} accent="text-rose-400"

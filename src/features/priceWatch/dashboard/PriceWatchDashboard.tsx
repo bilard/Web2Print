@@ -165,7 +165,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <ExpandableChart render={(h) => <PriceIndexTrend history={history} height={h} />} />
         <ExpandableChart render={(h) => <CompetitorTrend history={history} sites={report.sites} height={h} />} />
       </div>
-      <PriceMoves events={priceMoves} />
+      <PriceMoves events={priceMoves} filter={filter} />
       <OpportunityPanel ck={ck} />
 
       <AnalyticsTable ck={ck} searchQ={filter.q} onSearch={(q) => set({ q })}
