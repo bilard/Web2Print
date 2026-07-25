@@ -15,6 +15,8 @@ export interface CompetitorSite {
   engine?: SiteEngine
   /** Site à prix connectés (identifiants en Firestore siteCredentials). */
   auth?: boolean
+  /** Pages par run RÉSERVÉES à ce site (vide = part du budget commun). */
+  pageBudget?: number
 }
 
 /** Identifiant Firestore stable et déterministe (clé relationnelle nettoyée). */

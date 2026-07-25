@@ -12,6 +12,10 @@ export interface SourceSiteRow {
   fields?: string
   enabled: boolean
   engine?: string
+  /** Site à prix connectés (identifiants en Firestore siteCredentials). */
+  auth?: boolean
+  /** Pages par run réservées à ce site (vide = part du budget commun). */
+  pageBudget?: number
 }
 
 export interface SourceSitesPayload {
@@ -41,7 +45,14 @@ export function rowsToCompetitorSites(rows: SourceSiteRow[]): CompetitorSite[] {
       id, domain,
       fields: fields.length ? fields : ['price'],
       ...(engine && engine !== 'auto' ? { engine } : {}),
-      ...((row as { auth?: boolean }).auth ? { auth: true } : {}),
+      ...(row.auth ? { auth: true } : {}),
+      // ⚠ Ce champ manquait au jumeau serveur : le budget réservé d'un site (saisi dans
+      // « Sites sources ») était perdu à la conversion, donc `splitPageBudget` ne voyait
+      // AUCUN site explicite et partageait tout équitablement. Relevé en prod :
+      // leroymerlin.fr réservé à 5 pages recevait 33 pages/tick (500 ÷ 15 sites) à
+      // 13,5 s la page en Bright Data — 7,4 min de cycle mangées par un seul concurrent.
+      ...(Number.isFinite(row.pageBudget) && (row.pageBudget as number) > 0
+        ? { pageBudget: Math.floor(row.pageBudget as number) } : {}),
     })
   }
   return out
