@@ -3,7 +3,7 @@ import { Radio } from 'lucide-react'
 import type { StoredReport } from '@/features/priceWatch/reportStore'
 import type { HarvestMeta } from '@/features/priceWatch/dashboard/opsMetrics'
 import { SITE_STATUS_META, type SiteStatus } from '@/features/priceWatch/sourceSites'
-import { buildScrapeRows, countByStatus } from '@/features/priceWatch/radar/scrapeState'
+import { buildScrapeRows, countByStatus, type RunPulse } from '@/features/priceWatch/radar/scrapeState'
 import { fmtInt } from '@/features/priceWatch/radar/radarFormat'
 import { RadarScrapingRow } from './RadarScrapingRow'
 
@@ -20,12 +20,14 @@ const PILL_TONE: Record<'ok' | 'warn' | 'err' | 'mute', { fg: string; bg: string
 /** Onglet « Scraping » : le tableau LIVE de la moisson, site par site (jumeau mobile du
  *  tableau « Sites sources » de l'app). Lecture seule — les commandes du run sont dans le
  *  bandeau épinglé en tête d'écran. */
-export function RadarScraping({ report, meta, now }: {
+export function RadarScraping({ report, meta, now, pulse }: {
   report: StoredReport | null
   meta: Map<string, HarvestMeta>
   now: number
+  /** Arbitre de « ça tourne encore » : sans lui, les cartes clignotent après un STOP. */
+  pulse: RunPulse
 }) {
-  const rows = useMemo(() => buildScrapeRows(report, meta, now), [report, meta, now])
+  const rows = useMemo(() => buildScrapeRows(report, meta, now, pulse), [report, meta, now, pulse])
   const counts = useMemo(() => countByStatus(rows), [rows])
   const [filter, setFilter] = useState<SiteStatus | null>(null)
   const shown = filter ? rows.filter((r) => r.status === filter) : rows

@@ -3,7 +3,7 @@ import { Radar, Gauge, Target, Users, FolderTree, Package, Database, Radio, Wall
 import { useWatchList, useCatalogReport, useReportHistory, useCompetitorMeta } from '@/features/priceWatch/useCatalogReport'
 import { buildCockpit, sparkSeries } from '@/features/priceWatch/dashboard/analytics'
 import { buildOpsCockpit } from '@/features/priceWatch/dashboard/opsMetrics'
-import { scrapeStatus } from '@/features/priceWatch/radar/scrapeState'
+import { runPulse, scrapeStatus } from '@/features/priceWatch/radar/scrapeState'
 import { RadarHeader } from './RadarHeader'
 import { RadarHero } from './RadarHero'
 import { RadarKpiGrid } from './RadarKpiGrid'
@@ -25,7 +25,7 @@ import { RadarScraping } from './RadarScraping'
 import { RadarScrapeBadge } from './RadarScrapeBadge'
 import { RadarScheduleBar } from './RadarScheduleBar'
 import { RadarInstallHint } from './RadarInstallHint'
-import { useRadarSchedule, useNowTick } from './useRadarSchedule'
+import { useRadarSchedule, useRadarRunLive, useNowTick } from './useRadarSchedule'
 import { useOrientation } from './useOrientation'
 
 type Tab = 'apercu' | 'position' | 'concurrents' | 'familles' | 'produits' | 'volume' | 'scraping' | 'couts'
@@ -85,10 +85,14 @@ export function RadarApp() {
   // bandeau muet et un STOP sans effet, en silence.
   const workflowId = watches.find((w) => w.watchId === watchId)?.workflowId ?? watchId
   const sched = useRadarSchedule(workflowId)
+  const runLive = useRadarRunLive(workflowId)
   // Décompte à la seconde seulement là où il se voit (bandeau du planificateur) : ailleurs
   // un tick 1 s re-rendrait tous les graphes chaque seconde pour rien.
   const now = useNowTick(tab === 'scraping' ? 1000 : 30_000)
-  const status = useMemo(() => scrapeStatus(ops, sched, now), [ops, sched, now])
+  // Ce qui tourne RÉELLEMENT : sans cet arbitre, le dernier battement de moisson faisait
+  // clignoter les cartes pendant 3 min après un STOP ou une suspension.
+  const pulse = useMemo(() => runPulse(sched, runLive, now), [sched, runLive, now])
+  const status = useMemo(() => scrapeStatus(ops, sched, pulse, now), [ops, sched, pulse, now])
   const landscape = useOrientation()
 
   if (watches.length === 0) {
@@ -120,7 +124,7 @@ export function RadarApp() {
             avant le premier rapport (c'est justement là qu'on le regarde). */}
         {tab === 'scraping' ? (
           <>
-            <RadarScraping report={report} meta={liveMeta} now={now} />
+            <RadarScraping report={report} meta={liveMeta} now={now} pulse={pulse} />
             <RadarInstallHint />
           </>
         ) : cockpit ? (
@@ -128,7 +132,7 @@ export function RadarApp() {
             {tab === 'apercu' && (
               <>
                 <RadarScrapeBadge status={status} onClick={() => setTab('scraping')} />
-                <RadarHero cockpit={cockpit} holdSeries={hold} ops={ops} />
+                <RadarHero cockpit={cockpit} holdSeries={hold} ops={ops} collectActive={status.state === 'running'} />
                 <RadarKpiGrid cockpit={cockpit} />
                 {/* Paysage : les deux listes passent côte à côte (2 colonnes). */}
                 <div className="grid gap-4 landscape:grid-cols-2 landscape:items-start">

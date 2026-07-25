@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import type { RadarSchedule } from '@/features/priceWatch/radar/scrapeState'
+import { useAuthStore } from '@/stores/auth.store'
+import type { RadarSchedule, RadarRunLive } from '@/features/priceWatch/radar/scrapeState'
 
 /** Planning serveur du workflow, en temps réel. ⚠ La clé est l'id du WORKFLOW — le
  *  watchId en est dérivé (stableId) et peut différer : lire au mauvais chemin donne un
@@ -15,6 +16,21 @@ export function useRadarSchedule(workflowId: string | null): RadarSchedule | nul
       () => setSched(null))
   }, [workflowId])
   return sched
+}
+
+/** État live du run serveur. Écrit pour TOUT déclencheur (cron, « Lancer » manuel,
+ *  webhook) et porteur de `endedAt` — c'est lui qui dit si quelque chose tourne encore,
+ *  là où le planning est muet (run manuel) ou supprimé (flux suspendu). */
+export function useRadarRunLive(workflowId: string | null): RadarRunLive | null {
+  const uid = useAuthStore((s) => s.user?.uid)
+  const [live, setLive] = useState<RadarRunLive | null>(null)
+  useEffect(() => {
+    if (!uid || !workflowId) { setLive(null); return }
+    return onSnapshot(doc(db, 'users', uid, 'workflowRunsLive', workflowId),
+      (s) => setLive(s.exists() ? (s.data() as RadarRunLive) : null),
+      () => setLive(null))
+  }, [uid, workflowId])
+  return live
 }
 
 /** Horloge partagée : re-rend le composant au rythme demandé pour que les décomptes

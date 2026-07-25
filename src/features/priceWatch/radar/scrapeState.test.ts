@@ -1,9 +1,19 @@
 import { describe, it, expect } from 'vitest'
-import { buildScrapeRows, countByStatus, isCursorDomain, scrapeStatus, LIVE_WINDOW_MS } from './scrapeState'
+import {
+  buildScrapeRows, countByStatus, isCursorDomain, runPulse, scrapeStatus, LIVE_WINDOW_MS,
+  type RunPulse,
+} from './scrapeState'
 import type { OpsCockpit } from '../dashboard/opsMetrics'
 import type { StoredReport } from '../reportStore'
 
 const NOW = 1_700_000_000_000
+
+/** Un run serveur tourne (cas nominal d'une moisson). */
+const RUNNING: RunPulse = { active: true, endedAt: null }
+/** Plus rien ne tourne : dernier run terminé il y a 10 s (STOP / fin normale). */
+const ENDED: RunPulse = { active: false, endedAt: NOW - 10_000 }
+/** Aucun run serveur jamais observé (moisson d'un site lancée à la main depuis l'app). */
+const UNKNOWN: RunPulse = { active: false, endedAt: null }
 
 const ops = (patch: Partial<OpsCockpit> = {}): OpsCockpit => ({
   totalIndexed: 10, totalCumulMs: 0, avgProgress: 0.5, sitesActive: 1, sitesTotal: 1,
@@ -21,31 +31,66 @@ describe('isCursorDomain', () => {
   })
 })
 
+describe('runPulse', () => {
+  it('actif dès que l’état live du run dit « running »', () => {
+    expect(runPulse(null, { status: 'running', startedAt: NOW - 60_000 }, NOW).active).toBe(true)
+  })
+
+  it('ignore un run « running » zombie (process mort sans écrire sa fin)', () => {
+    expect(runPulse(null, { status: 'running', startedAt: NOW - 40 * 60_000 }, NOW).active).toBe(false)
+  })
+
+  it('retient la fin du run — état live prioritaire sur le planning', () => {
+    expect(runPulse({ enabled: true, nextRunAt: NOW, lastEndAt: NOW - 900_000 }, { status: 'success', endedAt: NOW - 60_000 }, NOW))
+      .toMatchObject({ active: false, endedAt: NOW - 60_000 })
+  })
+
+  it('se rabat sur le planning quand aucun état live n’existe', () => {
+    expect(runPulse({ enabled: true, nextRunAt: NOW, lastStatus: 'running' }, null, NOW).active).toBe(true)
+  })
+})
+
 describe('scrapeStatus', () => {
   it('en cours quand une passe de moisson vient d’écrire', () => {
-    const s = scrapeStatus(ops({ lastCollectAt: NOW - 10_000, lastCollectDomain: 'www.exemple.com' }), null, NOW)
+    const s = scrapeStatus(ops({ lastCollectAt: NOW - 10_000, lastCollectDomain: 'www.exemple.com' }), null, RUNNING, NOW)
     expect(s.state).toBe('running')
     expect(s.label).toBe('Scraping en cours · exemple.com')
   })
 
   it('en cours sans nommer un doc curseur', () => {
-    const s = scrapeStatus(ops({ lastCollectAt: NOW - 10_000, lastCollectDomain: 'directed-auth-cursor' }), null, NOW)
+    const s = scrapeStatus(ops({ lastCollectAt: NOW - 10_000, lastCollectDomain: 'directed-auth-cursor' }), null, RUNNING, NOW)
     expect(s.state).toBe('running')
     expect(s.label).toBe('Scraping en cours')
   })
 
-  it('en cours si le run serveur détient le verrou, même sans heartbeat frais', () => {
-    const s = scrapeStatus(ops({ lastCollectAt: NOW - 10 * LIVE_WINDOW_MS }), { enabled: true, nextRunAt: NOW + 60_000, lastStatus: 'running' }, NOW)
-    expect(s.state).toBe('running')
-  })
-
   it('en attente quand le cron est actif entre deux runs', () => {
-    const s = scrapeStatus(ops(), { enabled: true, nextRunAt: NOW + 600_000 }, NOW)
+    const s = scrapeStatus(ops(), { enabled: true, nextRunAt: NOW + 600_000 }, UNKNOWN, NOW)
     expect(s.state).toBe('waiting')
   })
 
   it('à l’arrêt sans planification', () => {
-    expect(scrapeStatus(ops(), null, NOW).state).toBe('idle')
+    expect(scrapeStatus(ops(), null, UNKNOWN, NOW).state).toBe('idle')
+  })
+
+  it('un battement ANTÉRIEUR à la fin du run ne fait plus « en cours » (après STOP)', () => {
+    // Battement tout frais (20 s)… mais le run s'est terminé après lui.
+    const s = scrapeStatus(ops({ lastCollectAt: NOW - 20_000, lastCollectDomain: 'www.exemple.com' }),
+      { enabled: true, nextRunAt: NOW + 60_000, lastStatus: 'stopped' }, ENDED, NOW)
+    expect(s.state).toBe('waiting')
+  })
+
+  it('après une SUSPENSION, le battement résiduel ne fait plus « en cours »', () => {
+    // Ordre réel : dernier battement (20 s), PUIS fin du run (10 s) — le planning a été
+    // supprimé par la suspension, seul l'état live subsiste.
+    const s = scrapeStatus(ops({ lastCollectAt: NOW - 20_000, lastCollectDomain: 'www.exemple.com' }), null, ENDED, NOW)
+    expect(s.state).toBe('idle')
+  })
+
+  it('un battement POSTÉRIEUR à la fin du dernier run reste vivant (run manuel)', () => {
+    const s = scrapeStatus(ops({ lastCollectAt: NOW - 5_000, lastCollectDomain: 'www.exemple.com' }),
+      { enabled: true, nextRunAt: NOW + 60_000, lastStatus: 'success' },
+      { active: false, endedAt: NOW - 300_000 }, NOW)
+    expect(s.state).toBe('running')
   })
 })
 
@@ -60,21 +105,27 @@ describe('buildScrapeRows', () => {
 
   it('exclut les docs curseur et fait primer la méta LIVE', () => {
     const meta = new Map([['a', { domain: 'a.com', productCount: 140, pctPrice: 95, updatedAt: NOW - 5_000, lastPassAt: NOW - 5_000, lastPassPages: 20, lastPassProducts: 40 }]])
-    const rows = buildScrapeRows(report, meta, NOW)
+    const rows = buildScrapeRows(report, meta, NOW, RUNNING)
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ domain: 'a.com', products: 140, pctPrice: 95, matched: 12, live: true, status: 'live' })
   })
 
   it('ne déclare EN COURS que le site le plus récent (le node Comparer réécrit tout d’un coup)', () => {
-    // Signature d'une passe « Comparer » : toutes les métas rafraîchies en quelques secondes.
     const meta = new Map([
       ['a', { domain: 'a.com', productCount: 100, updatedAt: NOW - 3_000, lastPassAt: NOW - 600_000, lastPassPages: 20, lastPassProducts: 40 }],
       ['b', { domain: 'b.com', productCount: 50, updatedAt: NOW - 2_000, lastPassAt: NOW - 600_000, lastPassPages: 20, lastPassProducts: 40 }],
       ['c', { domain: 'c.com', productCount: 10, updatedAt: NOW - 1_000, lastPassAt: NOW - 600_000, lastPassPages: 20, lastPassProducts: 40 }],
     ])
-    const rows = buildScrapeRows(report, meta, NOW)
+    const rows = buildScrapeRows(report, meta, NOW, RUNNING)
     expect(rows.filter((r) => r.live).map((r) => r.domain)).toEqual(['c.com'])
     expect(countByStatus(rows).live).toBe(1)
+  })
+
+  it('aucune ligne « en cours » quand le run est terminé (STOP / suspension)', () => {
+    const meta = new Map([['a', { domain: 'a.com', productCount: 140, updatedAt: NOW - 20_000, lastPassAt: NOW - 20_000, lastPassPages: 20, lastPassProducts: 40 }]])
+    const rows = buildScrapeRows(report, meta, NOW, ENDED)
+    expect(rows.filter((r) => r.live)).toHaveLength(0)
+    expect(rows[0].status).toBe('ok')
   })
 
   it('ajoute un site présent en LIVE seulement et trie ce qui bouge d’abord', () => {
@@ -82,7 +133,7 @@ describe('buildScrapeRows', () => {
       ['b', { domain: 'b.com', productCount: 5, updatedAt: NOW - 1_000, lastPassAt: NOW - 1_000, lastPassPages: 3, lastPassProducts: 5 }],
       ['a', { domain: 'a.com', productCount: 300, updatedAt: NOW - 3 * LIVE_WINDOW_MS, lastPassAt: NOW - 3 * LIVE_WINDOW_MS, lastPassPages: 0, lastPassProducts: 0 }],
     ])
-    const rows = buildScrapeRows(report, meta, NOW)
+    const rows = buildScrapeRows(report, meta, NOW, RUNNING)
     expect(rows.map((r) => r.domain)).toEqual(['b.com', 'a.com'])
     expect(countByStatus(rows)).toMatchObject({ live: 1, error: 1 })
   })

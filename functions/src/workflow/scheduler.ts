@@ -235,11 +235,15 @@ function afterRunPatch(
   // action invisible, donc perçue comme un bouton mort.
   const lastStatus = result.paused ? 'running' : result.stopped ? 'stopped' : result.status
   if (result.paused) return { lastStatus, nextRunAt: Date.now() + 5_000 }
+  // Heure de FIN du run : le client s'en sert pour savoir si un battement de moisson est
+  // ANTÉRIEUR à la fin (donc mort) ou postérieur (donc vivant). Sans elle, une carte
+  // continuait de clignoter 3 min après un STOP — le battement survivait au run.
+  const lastEndAt = Date.now()
   const cycle = sanitizeCycle(s.cycle)
   if (cycle && result.cycleComplete) {
     const next = computeNextCycleRun(cycle, Date.now())
-    if (next == null) return { lastStatus: 'done', enabled: false, cycleWaiting: false }
-    return { lastStatus, nextRunAt: next, cycleWaiting: true }
+    if (next == null) return { lastStatus: 'done', enabled: false, cycleWaiting: false, lastEndAt }
+    return { lastStatus, nextRunAt: next, cycleWaiting: true, lastEndAt }
   }
   const cron: CronConfig = {
     enabled: true, every: s.every, unit: s.unit,
@@ -247,7 +251,7 @@ function afterRunPatch(
     afterCompletion: !!s.afterCompletion,
   }
   const anchor = cron.afterCompletion ? Date.now() : tickStart
-  return { lastStatus, nextRunAt: computeNextRun(cron, anchor), cycleWaiting: false }
+  return { lastStatus, nextRunAt: computeNextRun(cron, anchor), cycleWaiting: false, lastEndAt }
 }
 
 // Scanner : toutes les minutes, exécute les plannings dûs (et purge les orphelins).
@@ -290,6 +294,8 @@ export const workflowCronScheduler = onSchedule(
           // Message persisté (traduit en FR) : le bandeau/console peut dire POURQUOI.
           lastError: humanizeError(err instanceof Error ? err.message : String(err)).slice(0, 500),
           lastErrorAt: Date.now(),
+          lastEndAt: Date.now(), // run terminé (en échec) : les battements antérieurs sont morts
+
           nextRunAt: computeNextRun(cron, cron.afterCompletion ? Date.now() : now),
         })
         console.error('workflowCronScheduler: échec', s.workflowId, err)

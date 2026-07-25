@@ -6,10 +6,13 @@ import { fmtInt, fmtPct, timeAgo } from '@/features/priceWatch/radar/radarFormat
 
 /** Héros : le chiffre de tête « Tenue prix » (% où je suis aligné ou moins cher) avec sa
  *  tendance, une barre de position (moins cher / aligné / je perds) et l'état de collecte. */
-export function RadarHero({ cockpit, holdSeries, ops }: {
+export function RadarHero({ cockpit, holdSeries, ops, collectActive }: {
   cockpit: Cockpit
   holdSeries: number[]
   ops: OpsCockpit | null
+  /** « Ça tourne » calculé par scrapeStatus (planning + battement) — source UNIQUE :
+   *  la fenêtre locale de 5 min laissait le point vert respirer après un STOP. */
+  collectActive: boolean
 }) {
   const { kpis, priceHoldPct } = cockpit
   // Position au niveau comparaison (kpis, fiable) : concurrent moins cher = je perds.
@@ -18,9 +21,6 @@ export function RadarHero({ cockpit, holdSeries, ops }: {
   const win = kpis.dearerThanMe
   const total = lose + align + win || 1
   const seg = (n: number) => `${(n / total) * 100}%`
-
-  // Collecte « active » = un battement de moisson de moins de 5 min.
-  const collectActive = ops?.lastCollectAt != null && Date.now() - ops.lastCollectAt < 5 * 60_000
 
   return (
     <section className="radar-card radar-in overflow-hidden px-5 pt-5 pb-4">

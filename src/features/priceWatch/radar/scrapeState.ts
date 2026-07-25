@@ -21,6 +21,52 @@ export interface RadarSchedule {
   lastStatus?: string
   /** Cycle de moisson bouclé à 100 % : la relance suit l'échéance calendaire. */
   cycleWaiting?: boolean
+  /** Fin du dernier run serveur — un battement de moisson ANTÉRIEUR est mort. */
+  lastEndAt?: number
+}
+
+/** État live du run serveur (`users/{uid}/workflowRunsLive/{workflowId}`) — écrit pour
+ *  TOUT déclencheur (cron, manuel, webhook), contrairement au planning. */
+export interface RadarRunLive {
+  status?: string
+  startedAt?: number
+  endedAt?: number
+}
+
+/** Au-delà du budget de run + marge, un `status: 'running'` est un zombie (process mort
+ *  sans écrire sa fin) : on cesse de le croire, sinon « en cours » à vie. */
+const STALE_RUN_MS = 31 * 60_000
+
+/** Ce qui tourne VRAIMENT côté serveur, et depuis quand plus rien ne tourne. */
+export interface RunPulse {
+  active: boolean
+  /** Fin du dernier run connu (null = aucun run serveur jamais observé). */
+  endedAt: number | null
+}
+
+export function runPulse(sched: RadarSchedule | null, live: RadarRunLive | null, now: number): RunPulse {
+  const liveRunning = live?.status === 'running' && live.startedAt != null && now - live.startedAt < STALE_RUN_MS
+  return {
+    active: liveRunning || sched?.lastStatus === 'running',
+    endedAt: live?.endedAt ?? sched?.lastEndAt ?? null,
+  }
+}
+
+/**
+ * Un battement de moisson est-il VIVANT ? L'état du run fait autorité sur le battement :
+ * après un STOP (ou une suspension) la dernière méta écrite reste « fraîche » pendant
+ * toute la fenêtre de heartbeat, et les cartes continuaient de clignoter alors que plus
+ * rien ne tournait. Règles :
+ *  - run serveur en cours → vivant (le battement dit seulement QUEL site travaille) ;
+ *  - run terminé → vivant seulement si le battement est POSTÉRIEUR à la fin du run ;
+ *  - aucun run serveur jamais observé → on garde le battement (moisson d'un site lancée
+ *    à la main depuis l'app, qui n'écrit aucun état de run).
+ */
+function isBeatAlive(beatAt: number | null | undefined, pulse: RunPulse, now: number): boolean {
+  if (beatAt == null || now - beatAt >= LIVE_WINDOW_MS) return false
+  if (pulse.active) return true
+  if (pulse.endedAt == null) return true
+  return beatAt > pulse.endedAt
 }
 
 /** Docs techniques de la recherche dirigée (`directed-cursor`, `directed-auth-cursor`) :
@@ -40,9 +86,9 @@ export interface ScrapeStatus {
 /** État du scraping en 3 valeurs claires : EN COURS (run serveur actif ou passe de
  *  moisson récente) / EN ATTENTE (cron actif, pause entre deux runs — normal) /
  *  ARRÊTÉ (aucune planification). Miroir du Cockpit opérationnel de l'app. */
-export function scrapeStatus(ops: OpsCockpit | null, sched: RadarSchedule | null, now: number): ScrapeStatus {
-  const collecting = ops?.lastCollectAt != null && now - ops.lastCollectAt < LIVE_WINDOW_MS
-  if (collecting || sched?.lastStatus === 'running') {
+export function scrapeStatus(ops: OpsCockpit | null, sched: RadarSchedule | null, pulse: RunPulse, now: number): ScrapeStatus {
+  const collecting = isBeatAlive(ops?.lastCollectAt, pulse, now)
+  if (collecting || pulse.active) {
     // Le domaine n'est nommé que si c'est un vrai concurrent (jamais un doc curseur).
     const domain = collecting && !isCursorDomain(ops?.lastCollectDomain) ? ops?.lastCollectDomain ?? null : null
     const site = domain ? ops?.competitors.find((c) => c.domain === domain) : null
@@ -84,6 +130,8 @@ export function buildScrapeRows(
   report: StoredReport | null,
   meta: Map<string, HarvestMeta>,
   now: number,
+  /** Ce qui tourne côté serveur : arbitre « ça bouge encore ? » (cf. isBeatAlive). */
+  pulse: RunPulse = { active: false, endedAt: null },
 ): ScrapeRow[] {
   const byId = new Map<string, { domain: string; matched: number | null; indexed: number; pctPrice: number | null }>()
   for (const c of report?.byCompetitor ?? []) {
@@ -113,7 +161,7 @@ export function buildScrapeRows(
   for (const [siteId, base] of byId.entries()) {
     if (isCursorDomain(base.domain)) continue
     const m = meta.get(siteId)
-    const live = m?.updatedAt != null && m.updatedAt === freshest && now - m.updatedAt < LIVE_WINDOW_MS
+    const live = m?.updatedAt != null && m.updatedAt === freshest && isBeatAlive(m.updatedAt, pulse, now)
     rows.push({
       siteId,
       domain: base.domain,
