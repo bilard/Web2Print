@@ -67,6 +67,15 @@ export function deriveWatchId(configWatchId: string, workflowId: string | undefi
   return stableId((configWatchId || '').trim() || workflowId || DEFAULT_WATCH_ID)
 }
 
+/**
+ * Fenêtre du battement de moisson (`harvestBeatAt`) au-delà de laquelle un site n'est plus
+ * « en cours ». UNIQUE pour toute l'appli : l'app et la PWA radarPrice ont affiché des
+ * comptes contradictoires (« 0 en cours » ici, « 2 en cours » là) tant qu'elles avaient
+ * chacune la leur. Large (3 min) car le battement n'est écrit que toutes les ~15 pages :
+ * plus court, un site lent clignoterait entre deux passes.
+ */
+export const HARVEST_LIVE_WINDOW_MS = 3 * 60_000
+
 /** Statut d'un site dérivé de ses stats, pour le tri et l'affichage. Ordre = priorité
  *  d'attention (le plus urgent en premier). */
 export type SiteStatus = 'live' | 'error' | 'empty' | 'ok' | 'never' | 'disabled'

@@ -4,13 +4,12 @@
 // live. Source unique : une seule fenêtre de heartbeat, un seul vocabulaire de statuts.
 import type { StoredReport } from '../reportStore'
 import type { HarvestMeta, OpsCockpit } from '../dashboard/opsMetrics'
-import { siteStatus, type SiteStatus } from '../sourceSites'
+import { siteStatus, HARVEST_LIVE_WINDOW_MS, type SiteStatus } from '../sourceSites'
 import { hhmm, timeAgo } from './radarFormat'
 
-/** Fenêtre du heartbeat de moisson : au-delà, le site n'est plus « en cours ». Valeur
- *  UNIQUE pour toute la PWA — deux fenêtres différentes afficheraient « Scraping en
- *  cours » au-dessus de lignes toutes éteintes (contradiction vue à l'écran). */
-export const LIVE_WINDOW_MS = 3 * 60_000
+/** Fenêtre du battement de moisson — RÉEXPORT de la constante partagée avec l'app
+ *  (`sourceSites.ts`) : deux valeurs différentes = deux comptes contradictoires à l'écran. */
+export const LIVE_WINDOW_MS = HARVEST_LIVE_WINDOW_MS
 
 /** Doc `workflowSchedules/{workflowId}` — clé = id du WORKFLOW, pas le watchId. */
 export interface RadarSchedule {
@@ -121,6 +120,8 @@ export interface ScrapeRow {
   progress: number
   sweeps: number
   lastEngine?: string
+  /** Dernier battement de MOISSON (le chip « scrape » ; `updatedAt` mentirait). */
+  harvestBeatAt?: number
   updatedAt?: number
   lastPassPages?: number
   lastPassProducts?: number
@@ -170,6 +171,7 @@ export function buildScrapeRows(
       progress: Math.max(0, Math.min(1, m?.harvestProgress ?? 0)),
       sweeps: m?.harvestSweeps ?? 0,
       lastEngine: m?.lastEngine,
+      harvestBeatAt: m?.harvestBeatAt,
       updatedAt: m?.updatedAt,
       lastPassPages: m?.lastPassPages,
       lastPassProducts: m?.lastPassProducts,

@@ -73,7 +73,10 @@ export function RadarScrapingRow({ row, now, watchId, workflowId, cfg, onChanged
           ? <Chip label="balayé" value={`×${row.sweeps || 1} ✓`} tone="ok" />
           : row.progress > 0 && <Chip label="balayage" value={fmtPct(row.progress * 100)} />}
         {row.lastEngine && <Chip label="via" value={ENGINE_LABELS[row.lastEngine] ?? row.lastEngine} />}
-        {row.updatedAt != null && <Chip label="scrape" value={timeAgo(row.updatedAt, now)} />}
+        {/* Le dernier SCRAPE, pas la dernière écriture : `updatedAt` bouge aussi quand le
+            node « Comparer » réécrit toutes les métas (→ « à l'instant » sur un site
+            moissonné il y a 9 min). */}
+        {(row.harvestBeatAt ?? row.updatedAt) != null && <Chip label="scrape" value={timeAgo(row.harvestBeatAt ?? row.updatedAt, now)} />}
       </div>
       <RadarSiteActions domain={row.domain} watchId={watchId} workflowId={workflowId} row={cfg} onChanged={onChanged} />
       {row.live && (

@@ -14,7 +14,7 @@ import { harvestOneSite } from '@/features/priceWatch/catalog/runSingleSite'
 import { resetCompetitorData } from '@/features/priceWatch/catalog/store'
 import { recomputeReport } from '@/features/priceWatch/catalog/recomputeReport'
 import {
-  normalizeDomain, deriveWatchId, importSitesIntoRows, siteStatus, siteStatusRank,
+  normalizeDomain, deriveWatchId, importSitesIntoRows, siteStatus, siteStatusRank, HARVEST_LIVE_WINDOW_MS,
   rowsToCompetitorSites, type SourceSiteRow, type SiteStatus,
 } from '@/features/priceWatch/sourceSites'
 import { SourceSitesRowItem, type SiteRowStats } from './sourceSitesRow'
@@ -22,9 +22,9 @@ import { SiteCredentialsForm } from './sourceSitesCreds'
 import { PurgeScrapingPanel } from './sourceSitesPurge'
 import type { SourceSitesNodeConfig } from './sourceSitesNode'
 
-/** Heartbeat de moisson plus récent que cette fenêtre = « scraping en cours »
- *  (la moisson écrit la méta toutes les ~15 pages pendant la passe). */
-const LIVE_WINDOW_MS = 2 * 60_000
+/** Fenêtre du battement de moisson : constante PARTAGÉE avec la PWA radarPrice — deux
+ *  valeurs différentes affichaient des comptes contradictoires d'un écran à l'autre. */
+const LIVE_WINDOW_MS = HARVEST_LIVE_WINDOW_MS
 
 type SortMode = 'manual' | 'status' | 'products'
 const SORT_LABELS: Record<SortMode, string> = {
