@@ -184,3 +184,51 @@ describe('directedPass — débit', () => {
     expect(maxConcurrent).toBeGreaterThan(1)
   })
 })
+
+describe('directedPass — parallélisme borné sur les produits', () => {
+  const sites = [{ siteId: 'a', domain: 'a.fr' }]
+  const products = Array.from({ length: 9 }, (_, i) => ({ id: `p${i}`, ref: `REF${100 + i}00` }))
+
+  it('traite les produits de front (9 × 20 ms ≪ 180 ms séquentiels)', async () => {
+    const t0 = Date.now()
+    await directedPass(products, sites, 0, 9, {
+      fetchHtml: async () => { await new Promise((r) => setTimeout(r, 20)); return null },
+    })
+    expect(Date.now() - t0).toBeLessThan(140)
+  })
+
+  it('avance le curseur du budget complet quand tout est traité', async () => {
+    const r = await directedPass(products, sites, 0, 5, { fetchHtml: async () => null })
+    expect(r.processed).toBe(5)
+    expect(r.nextCursor).toBe(5)
+    expect(r.done).toBe(false)
+  })
+
+  it('interrompu : le curseur ne dépasse PAS le préfixe contigu traité', async () => {
+    // Abort dès le 2e produit entamé : les tâches en vol se terminent, les suivantes non.
+    // Le curseur ne doit jamais sauter des produits jamais cherchés (perte silencieuse).
+    const signal = { aborted: false }
+    let started = 0
+    const r = await directedPass(products, sites, 0, 9, {
+      fetchHtml: async () => { if (++started >= 2) signal.aborted = true; return null },
+      signal,
+    })
+    expect(r.nextCursor).toBeLessThanOrEqual(started)
+    expect(r.nextCursor).toBeGreaterThanOrEqual(0)
+  })
+
+  it('résultats rendus dans l’ordre des produits malgré des fins désordonnées', async () => {
+    const slow = new Map([['REF10000', 30], ['REF10100', 5], ['REF10200', 15]])
+    const card = (ref: string) => `<article class="product-miniature">
+      <h3 class="product-title"><a href="https://a.fr/${ref}.html">Produit ${ref}</a></h3>
+      <p>Référence: ${ref}</p><span class="price">10,00 €</span></article>`
+    const r = await directedPass(products.slice(0, 3), sites, 0, 3, {
+      fetchHtml: async (url) => {
+        const ref = [...slow.keys()].find((k) => url.includes(k))
+        await new Promise((res) => setTimeout(res, ref ? slow.get(ref)! : 1))
+        return ref ? card(ref) : null
+      },
+    })
+    expect(r.results.map((x) => x.productId)).toEqual(['p0', 'p1', 'p2'])
+  })
+})

@@ -12,6 +12,7 @@
 
 import { parseListingPage, type CompetitorListing } from './prestashop'
 import { candidateKeys, proveMatch, type SourceProductKeys, type MatchProof } from './keys'
+import { mapWithConcurrency } from '../concurrency'
 
 export interface SearchDeps {
   /** Récupère le HTML rendu d'une URL (même dépendance que la moisson : CF côté client,
@@ -172,6 +173,12 @@ export interface DirectedPassResult {
   processed: number
 }
 
+/** Produits cherchés de front. Chacun lance déjà une requête PAR SITE : à 15 sites,
+ *  3 produits = 45 requêtes en vol, réparties sur 15 domaines distincts (3 par domaine).
+ *  Monter ce plafond accélère d'autant, au risque de déclencher les limites de débit des
+ *  fournisseurs et le circuit-breaker de crédits. */
+const DIRECTED_CONCURRENCY = 3
+
 /**
  * UNE passe de recherche dirigée (un tick), bornée par `budget` produits. Reprend au
  * curseur, interroge chaque site pour chaque produit, et renvoie les appariés + le
@@ -185,12 +192,21 @@ export async function directedPass(
   budget: number,
   deps: SearchDeps & { signal?: { aborted: boolean } },
 ): Promise<DirectedPassResult> {
-  const results: DirectedPassResult['results'] = []
   const start = Math.min(Math.max(cursor, 0), products.length)
   const end = Math.min(products.length, start + Math.max(budget, 0))
-  let i = start
-  for (; i < end; i++) {
-    if (deps.signal?.aborted) break
+  const indices = Array.from({ length: Math.max(0, end - start) }, (_, k) => start + k)
+
+  // Produits traités EN PARALLÈLE BORNÉ. Les sites l'étaient déjà, mais chaque produit
+  // attendait le site le PLUS LENT avant de passer au suivant : mesuré en production,
+  // 20 produits par run de 11 min, soit ~29 jours pour un seul tour d'un catalogue de
+  // 75 000 références. Le facteur limitant est la latence réseau, pas le calcul — donc
+  // on en couvre plusieurs de front. Borné : chaque produit lance déjà une requête par
+  // site, et le produit de ces deux parallélismes doit rester supportable pour les
+  // fournisseurs (et pour le circuit-breaker de crédits).
+  const completed = new Set<number>()
+  const byIndex = new Map<number, DirectedPassResult['results']>()
+  await mapWithConcurrency(indices, DIRECTED_CONCURRENCY, async (i) => {
+    if (deps.signal?.aborted) return
     const p = products[i]
     // Sites interrogés EN PARALLÈLE : en séquence, le débit d'une passe est la SOMME
     // des latences (19 sites × 2-20 s = quelques produits par run seulement) ; en
@@ -200,9 +216,23 @@ export async function directedPass(
       const hit = await searchProductOnSite(p, site.domain, deps, { generic: site.generic }).catch(() => null)
       return hit ? { productId: p.id, siteId: site.siteId, hit } : null
     }))
-    for (const h of hits) if (h) results.push(h)
-    deps.onProduct?.(i - start + 1, end - start, results.length)
-  }
+    if (deps.signal?.aborted) return
+    byIndex.set(i, hits.filter((h): h is NonNullable<typeof h> => h != null))
+    completed.add(i)
+    deps.onProduct?.(completed.size, indices.length, [...byIndex.values()].reduce((n, r) => n + r.length, 0))
+  })
+
+  // Curseur avancé au plus grand préfixe CONTIGU réellement traité. En parallèle, une
+  // interruption laisse des trous : avancer jusqu'à `end` sauterait silencieusement des
+  // produits jamais cherchés — exactement le genre de perte muette qui fait croire à un
+  // catalogue « couvert ». Les produits au-delà du trou seront refaits au tick suivant.
+  let i = start
+  while (completed.has(i)) i++
+  // Ordre STABLE (indice croissant) malgré des fins dans le désordre : deux runs sur les
+  // mêmes données doivent produire la même sortie.
+  const results: DirectedPassResult['results'] = []
+  for (let k = start; k < end; k++) { const r = byIndex.get(k); if (r) results.push(...r) }
+
   const done = i >= products.length
   return { results, nextCursor: done ? 0 : i, done, processed: i - start }
 }
