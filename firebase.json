@@ -88,7 +88,7 @@
         ]
       },
       {
-        "source": "/@(dashboard|login|editor|onboarding|workflows|data|scraping-templates|taxonomies|catalog){,/**}",
+        "source": "/@(dashboard|login|editor|onboarding|workflows|data|scraping-templates|taxonomies|catalog|radarprice|pulse){,/**}",
         "headers": [
           {
             "key": "Cache-Control",
