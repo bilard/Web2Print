@@ -40,6 +40,8 @@ const STALE_RUN_MS = 31 * 60_000
 /** Ce qui tourne VRAIMENT côté serveur, et depuis quand plus rien ne tourne. */
 export interface RunPulse {
   active: boolean
+  /** Début du run en cours (ou du dernier connu). */
+  startedAt: number | null
   /** Fin du dernier run connu (null = aucun run serveur jamais observé). */
   endedAt: number | null
 }
@@ -48,6 +50,7 @@ export function runPulse(sched: RadarSchedule | null, live: RadarRunLive | null,
   const liveRunning = live?.status === 'running' && live.startedAt != null && now - live.startedAt < STALE_RUN_MS
   return {
     active: liveRunning || sched?.lastStatus === 'running',
+    startedAt: live?.startedAt ?? sched?.lastRunAt ?? null,
     endedAt: live?.endedAt ?? sched?.lastEndAt ?? null,
   }
 }
@@ -131,7 +134,7 @@ export function buildScrapeRows(
   meta: Map<string, HarvestMeta>,
   now: number,
   /** Ce qui tourne côté serveur : arbitre « ça bouge encore ? » (cf. isBeatAlive). */
-  pulse: RunPulse = { active: false, endedAt: null },
+  pulse: RunPulse = { active: false, startedAt: null, endedAt: null },
 ): ScrapeRow[] {
   const byId = new Map<string, { domain: string; matched: number | null; indexed: number; pctPrice: number | null }>()
   for (const c of report?.byCompetitor ?? []) {

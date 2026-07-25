@@ -9,11 +9,11 @@ import type { StoredReport } from '../reportStore'
 const NOW = 1_700_000_000_000
 
 /** Un run serveur tourne (cas nominal d'une moisson). */
-const RUNNING: RunPulse = { active: true, endedAt: null }
+const RUNNING: RunPulse = { active: true, startedAt: NOW - 60_000, endedAt: null }
 /** Plus rien ne tourne : dernier run terminé il y a 10 s (STOP / fin normale). */
-const ENDED: RunPulse = { active: false, endedAt: NOW - 10_000 }
+const ENDED: RunPulse = { active: false, startedAt: NOW - 600_000, endedAt: NOW - 10_000 }
 /** Aucun run serveur jamais observé (moisson d'un site lancée à la main depuis l'app). */
-const UNKNOWN: RunPulse = { active: false, endedAt: null }
+const UNKNOWN: RunPulse = { active: false, startedAt: null, endedAt: null }
 
 const ops = (patch: Partial<OpsCockpit> = {}): OpsCockpit => ({
   totalIndexed: 10, totalCumulMs: 0, avgProgress: 0.5, sitesActive: 1, sitesTotal: 1,
@@ -89,7 +89,7 @@ describe('scrapeStatus', () => {
   it('un battement POSTÉRIEUR à la fin du dernier run reste vivant (run manuel)', () => {
     const s = scrapeStatus(ops({ lastCollectAt: NOW - 5_000, lastCollectDomain: 'www.exemple.com' }),
       { enabled: true, nextRunAt: NOW + 60_000, lastStatus: 'success' },
-      { active: false, endedAt: NOW - 300_000 }, NOW)
+      { active: false, startedAt: NOW - 900_000, endedAt: NOW - 300_000 }, NOW)
     expect(s.state).toBe('running')
   })
 })

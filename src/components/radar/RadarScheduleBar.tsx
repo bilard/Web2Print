@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatCountdown } from '@/features/workflows/runtime/cronSchedule'
 import { hhmm } from '@/features/priceWatch/radar/radarFormat'
-import type { RadarSchedule } from '@/features/priceWatch/radar/scrapeState'
+import type { RadarSchedule, RunPulse } from '@/features/priceWatch/radar/scrapeState'
 import { runWorkflowNow, stopServerRun, suspendWorkflow } from '@/features/priceWatch/radar/radarScheduleActions'
 
 /** Échéance calendaire (souvent à plusieurs jours) : jour + heure, pas seulement HH:MM. */
@@ -33,8 +33,12 @@ function Action({ onClick, busy, tone, icon: Icon, label }: {
 /** Bandeau du planificateur, ÉPINGLÉ en tête de l'onglet Scraping (rendu dans la barre
  *  de titre sticky) : où en est le run serveur et les commandes STOP / Suspendre /
  *  Lancer. Parité avec le CronStatusPanel de l'app. */
-export function RadarScheduleBar({ sched, workflowId, now }: {
+export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
   sched: RadarSchedule | null
+  /** Ce qui tourne VRAIMENT : un « Lancer » manuel (ou un flux suspendu en cours de run)
+   *  n'apparaît PAS dans le planning — sans lui, le bandeau proposait « Lancer » pendant
+   *  qu'un run tournait, et n'offrait aucun STOP pour l'arrêter. */
+  pulse: RunPulse
   workflowId: string | null
   now: number
 }) {
@@ -43,7 +47,8 @@ export function RadarScheduleBar({ sched, workflowId, now }: {
   // Arrêt demandé mais pas encore acté par le serveur (poll toutes les 3 s) : sans cet
   // état transitoire, l'écran reste « En cours » et l'action paraît sans effet.
   const [stopAsked, setStopAsked] = useState(false)
-  const running = sched?.lastStatus === 'running'
+  const running = pulse.active
+  const startedAt = pulse.startedAt
   const stopped = sched?.lastStatus === 'stopped'
   const overdue = !!sched && sched.nextRunAt <= now
   // Le serveur a rendu la main (run terminé/arrêté) → la demande d'arrêt est consommée.
@@ -92,9 +97,9 @@ export function RadarScheduleBar({ sched, workflowId, now }: {
             <p className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full radar-live-dot" style={{ background: 'var(--radar-live)' }} />
               <b style={{ color: 'var(--radar-live)' }}>En cours</b>
-              {sched?.lastRunAt != null && (
+              {startedAt != null && (
                 <span className="truncate" style={{ color: 'var(--radar-text-2)' }}>
-                  · démarré {hhmm(sched.lastRunAt)} (il y a {formatCountdown(now - sched.lastRunAt)})
+                  · démarré {hhmm(startedAt)} (il y a {formatCountdown(now - startedAt)})
                 </span>
               )}
             </p>
@@ -107,9 +112,14 @@ export function RadarScheduleBar({ sched, workflowId, now }: {
               // Pendant un run, nextRunAt = échéance du VERROU anti-chevauchement (budget
               // de run + marge), PAS la cadence : l'heure à laquelle le scanner reprend la
               // main quoi qu'il arrive (fin, pause ou crash).
-              <p className="mt-0.5 radar-tnum" style={{ color: '#fbbf24' }}>
-                reprise auto ≤ <b>{hhmm(sched!.nextRunAt)}</b> {overdue ? <b>(imminente)</b> : <>(dans <b>{formatCountdown(sched!.nextRunAt - now)}</b>)</>}
-              </p>
+              sched ? (
+                <p className="mt-0.5 radar-tnum" style={{ color: '#fbbf24' }}>
+                  reprise auto ≤ <b>{hhmm(sched.nextRunAt)}</b> {overdue ? <b>(imminente)</b> : <>(dans <b>{formatCountdown(sched.nextRunAt - now)}</b>)</>}
+                </p>
+              ) : (
+                // Run lancé à la main sans planification : aucun verrou, aucune relance.
+                <p className="mt-0.5" style={{ color: 'var(--radar-text-2)' }}>run manuel · aucune relance programmée</p>
+              )
             )}
           </>
         ) : stopped ? (

@@ -116,7 +116,7 @@ export function RadarApp() {
         scrolled={scrolled} viewLabel={viewLabel} onOpenMenu={() => setMenuOpen(true)}
       >
         {/* Onglet Scraping : le bandeau du planificateur reste ÉPINGLÉ au scroll. */}
-        {tab === 'scraping' && <RadarScheduleBar sched={sched} workflowId={workflowId} now={now} />}
+        {tab === 'scraping' && <RadarScheduleBar sched={sched} pulse={pulse} workflowId={workflowId} now={now} />}
       </RadarHeader>
 
       <main className="radar-safe-x radar-safe-bottom mx-auto max-w-lg space-y-4 pt-2 landscape:max-w-5xl">
