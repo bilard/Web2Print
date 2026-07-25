@@ -12,6 +12,8 @@
 import { prestashopLogin, fetchWithJar } from '../../scraper/prestashopLogin'
 import { getSiteCredentials } from '../../scraper/siteCredentials'
 import { brightDataRead } from '../../workflow/brightData'
+import { firecrawlScrapeHtml } from '../../scraper/firecrawlHtml'
+import { getUserApiKey } from '../../workflow/apiKeys'
 import { fetchHtml } from '../../scraper/fetchHtml'
 import type { CompetitorSite } from '../helpers'
 
@@ -81,6 +83,23 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
         // Scraping Browser et le circuit-breaker crédits : rien à réimplémenter ici.
         const res = await brightDataRead(url).catch(() => null)
         if (res?.html) { last = 'brightdata'; return res.html }
+        return null
+      },
+    }
+  }
+
+  if (site.engine === 'firecrawl') {
+    return {
+      lastEngine: () => last,
+      fetchHtml: async (url) => {
+        // Clé PAR UTILISATEUR (comme le client) : pas de clé = pas de lecture. On ne
+        // retombe PAS en direct — un site réglé sur Firecrawl l'est parce que le direct
+        // ne donne rien ; le faire en silence produirait des pages vides à chaque tick.
+        const key = await getUserApiKey(uid, 'firecrawl').catch(() => '')
+        if (!key) return null
+        // `scroll` : pages LISTE lazy-load — parité exacte avec `siteFetch` côté client.
+        const html = await firecrawlScrapeHtml(url, key, { scroll: true }).catch(() => null)
+        if (html) { last = 'firecrawl'; return html }
         return null
       },
     }
