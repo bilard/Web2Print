@@ -127,16 +127,61 @@ export function toCell(v: unknown, fmt: GFormat | null): string | number {
   return s
 }
 
-/** Récupère le 1er onglet (titre + gid) d'un spreadsheet. */
-async function getFirstTab(token: string, id: string): Promise<{ title: string; gid: number }> {
+/** Récupère le 1er onglet (titre, gid) et la taille ACTUELLE de sa grille — cette
+ *  dernière sert à rendre au classeur les cellules vides en fin d'export (cf. trimGrid). */
+async function getFirstTab(
+  token: string, id: string,
+): Promise<{ title: string; gid: number; rowCount: number; columnCount: number }> {
   const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties(title,sheetId)`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties(title,sheetId,gridProperties)`,
     { headers: { Authorization: `Bearer ${token}` } },
   )
   if (!res.ok) throw new Error(`Sheets get ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
-  const json = (await res.json()) as { sheets?: { properties?: { title?: string; sheetId?: number } }[] }
+  const json = (await res.json()) as {
+    sheets?: { properties?: {
+      title?: string; sheetId?: number; gridProperties?: { rowCount?: number; columnCount?: number }
+    } }[]
+  }
   const p = json.sheets?.[0]?.properties
-  return { title: p?.title ?? 'Sheet1', gid: p?.sheetId ?? 0 }
+  return {
+    title: p?.title ?? 'Sheet1',
+    gid: p?.sheetId ?? 0,
+    rowCount: p?.gridProperties?.rowCount ?? 0,
+    columnCount: p?.gridProperties?.columnCount ?? 0,
+  }
+}
+
+/**
+ * Ramène la grille de l'onglet à la taille RÉELLEMENT écrite.
+ *
+ * ⚠ Un classeur Google plafonne à 10 millions de cellules, TOUTES FEUILLES CONFONDUES, et
+ * `values:clear` ne rend rien : il vide les valeurs, pas la grille. Un onglet qui a compté
+ * une fois 75 000 lignes × 130 colonnes garde ces cellules réservées à jamais, vides mais
+ * comptées — jusqu'à ce que l'export échoue en « vous dépasserez le nombre maximum de
+ * 10000000 cellules ». On ne réduit JAMAIS en dessous de ce qui vient d'être écrit
+ * (colonnes formule comprises) et on n'agrandit pas : l'écriture s'en charge.
+ */
+async function trimGrid(
+  token: string, id: string, gid: number,
+  rowCount: number, columnCount: number,
+  current: { rowCount: number; columnCount: number },
+): Promise<void> {
+  const rows = Math.max(1, rowCount)
+  const cols = Math.max(1, columnCount)
+  if (current.rowCount <= rows && current.columnCount <= cols) return
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      requests: [{
+        updateSheetProperties: {
+          properties: { sheetId: gid, gridProperties: { rowCount: rows, columnCount: cols } },
+          fields: 'gridProperties.rowCount,gridProperties.columnCount',
+        },
+      }],
+    }),
+  })
+  if (!res.ok) throw new Error(`Sheets trim ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
 }
 
 /** Écrit la matrice de valeurs (RAW, types préservés) dans l'onglet, après l'avoir vidé. */
@@ -153,7 +198,20 @@ async function writeValues(token: string, id: string, title: string, matrix: (st
       body: JSON.stringify({ values: matrix }),
     },
   )
-  if (!res.ok) throw new Error(`Sheets values ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  if (!res.ok) {
+    const body = (await res.text().catch(() => '')).slice(0, 300)
+    // Quota de CLASSEUR (10 M de cellules, tous onglets) : le message brut de Google ne
+    // dit pas quoi faire, et les cellules vides d'anciens exports en sont la cause n°1.
+    if (/10000000|10 000 000/.test(body)) {
+      throw new Error(
+        'Classeur Google plein (10 millions de cellules, tous onglets confondus). '
+        + 'Les onglets gardent les cellules des exports précédents même vidées : supprimez '
+        + 'les onglets obsolètes, ou les lignes/colonnes vides (« Supprimer », pas « Effacer »), '
+        + 'ou exportez vers un classeur dédié.',
+      )
+    }
+    throw new Error(`Sheets values ${res.status}: ${body.slice(0, 200)}`)
+  }
 }
 
 /** Applique un numberFormat par colonne (ligne d'en-tête exclue). Non bloquant. */
@@ -461,7 +519,7 @@ registerServerNode({
       verb = 'créé'
     }
 
-    const { title, gid } = await getFirstTab(token, id)
+    const { title, gid, rowCount: gridRows, columnCount: gridCols } = await getFirstTab(token, id)
     if (verb === 'créé') {
       await setSpreadsheetTimeZone(token, id).catch((e) =>
         ctx.log('warn', `Fuseau horaire ignoré : ${e instanceof Error ? e.message : e}`),
@@ -486,6 +544,19 @@ registerServerNode({
         ctx.log('warn', `Couleurs conditionnelles ignorées : ${e instanceof Error ? e.message : e}`),
       )
     }
+
+    // Rend au classeur les cellules des exports PRÉCÉDENTS (grille conservée par Google
+    // même après `values:clear`) — sans quoi le quota de 10 M finit par bloquer l'export.
+    // Après les colonnes formule et les formats : on ne coupe donc rien de ce qui vient
+    // d'être posé. Non bloquant : l'export a déjà réussi à ce stade.
+    await trimGrid(token, id, gid, matrix.length, (matrix[0]?.length ?? 1) + formulas.length,
+      { rowCount: gridRows, columnCount: gridCols })
+      .then(() => {
+        const before = gridRows * gridCols
+        const after = matrix.length * ((matrix[0]?.length ?? 1) + formulas.length)
+        if (before > after) ctx.log('info', `Grille ajustée : ${(before - after).toLocaleString('fr-FR')} cellule(s) rendue(s) au classeur.`)
+      })
+      .catch((e) => ctx.log('warn', `Ajustement de la grille ignoré : ${e instanceof Error ? e.message : e}`))
 
     // Graphe natif optionnel (cron compris) : inséré via l'API après écriture des valeurs.
     const chartX = String(config.chartXColumn ?? '').trim()
