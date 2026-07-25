@@ -99,8 +99,12 @@ export function RadarApp() {
   const viewLabel = MENU.find((m) => m.value === tab)?.label ?? 'Aperçu'
 
   return (
+    // h-[100dvh] (et non min-h) : avec min-height la racine GRANDIT avec son contenu, ne
+    // déborde jamais → c'est le document qui défile et la barre sticky s'en va avec lui.
+    // Hauteur fixe = cette div EST le conteneur de défilement, l'en-tête (et le bandeau
+    // épinglé) restent collés en haut.
     <div
-      className="radar-root radar-noscroll min-h-[100dvh] overflow-y-auto"
+      className="radar-root radar-noscroll h-[100dvh] overflow-y-auto"
       onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 4)}
     >
       <RadarHeader
