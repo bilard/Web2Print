@@ -7,8 +7,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { collection, doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
-import { priceWatchCol, reportLatestDoc, reportHistoryDoc, competitorsCol } from './paths'
+import { priceWatchCol, reportLatestDoc, reportHistoryDoc, competitorsCol, priceEventsDoc } from './paths'
 import type { StoredReport, KpiHistoryPoint } from './reportStore'
+import type { PriceEvent } from './priceEvents'
 import type { HarvestMeta } from './dashboard/opsMetrics'
 import { stableId } from './core'
 import { listWorkflows } from '@/features/workflows/persistence/workflowsApi'
@@ -130,6 +131,21 @@ export function useCatalogReport(watchId: string | null): StoredReport | null {
     )
   }, [uid, watchId])
   return report
+}
+
+/** Journal des changements de prix (plus récents d'abord, borné à l'écriture). */
+export function usePriceEvents(watchId: string | null): PriceEvent[] {
+  const uid = useAuthStore((s) => s.user?.uid)
+  const [events, setEvents] = useState<PriceEvent[]>([])
+  useEffect(() => {
+    if (!uid || !watchId) { setEvents([]); return }
+    return onSnapshot(
+      doc(db, priceEventsDoc(uid, watchId)),
+      (snap) => setEvents((snap.data()?.events as PriceEvent[]) ?? []),
+      () => setEvents([]),
+    )
+  }, [uid, watchId])
+  return events
 }
 
 /** Points de tendance KPI d'un suivi (ring-buffer). */

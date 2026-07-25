@@ -3,7 +3,7 @@
 // pré-agrégé via buildCockpit (pur). UN moteur de recherche global filtre les blocs
 // dérivés (les KPIs headline restent globaux). SOURCE (watchId) choisie dans le header.
 import { useMemo, useState } from 'react'
-import { useCatalogReport, useReportHistory } from '../useCatalogReport'
+import { useCatalogReport, useReportHistory, usePriceEvents } from '../useCatalogReport'
 import type { StoredReport } from '../reportStore'
 import { buildCockpit, EMPTY_FILTER, type CockpitFilter } from './analytics'
 import { KpiStrip } from './KpiStrip'
@@ -14,6 +14,7 @@ import { PriceScatter } from './PriceScatter'
 import { HeatmapMatrix } from './HeatmapMatrix'
 import { CompetitorTrend } from './CompetitorTrend'
 import { PriceIndexTrend } from './PriceIndexTrend'
+import { PriceMoves } from './PriceMoves'
 import { OpportunityPanel } from './OpportunityPanel'
 import { CatalogTree } from './CatalogTree'
 import { OpsCockpit } from './OpsCockpit'
@@ -55,6 +56,7 @@ const selCls = 'bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-
 export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   const report = useCatalogReport(watchId)
   const history = useReportHistory(watchId)
+  const priceMoves = usePriceEvents(watchId)
   // Pendant une moisson, recalcule périodiquement le rapport depuis l'index persisté :
   // les tuiles d'analyse (appariés, tenue prix…) bougent EN LIVE, sans attendre le
   // prochain run serveur (~30 min). Throttlé + onglet visible uniquement.
@@ -163,6 +165,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <ExpandableChart render={(h) => <PriceIndexTrend history={history} height={h} />} />
         <ExpandableChart render={(h) => <CompetitorTrend history={history} sites={report.sites} height={h} />} />
       </div>
+      <PriceMoves events={priceMoves} />
       <OpportunityPanel ck={ck} />
 
       <AnalyticsTable ck={ck} searchQ={filter.q} onSearch={(q) => set({ q })}

@@ -6,10 +6,14 @@
 // en base — la liste complète, c'est l'export Excel (cf. audit scalabilité).
 import { doc, getDoc, getDocs, collection, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX } from './paths'
+import {
+  reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX,
+  priceStateCol, priceEventsDoc, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES, PRICE_STATE_CHUNK,
+} from './paths'
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
 import type { SourceProduct } from './catalog/match'
 import { retainHistory } from './history'
+import { diffPrices, mergeEvents, type PriceState, type PriceEvent } from './priceEvents'
 
 // ── Catalogue SOURCE persisté (pour recalculer le benchmark hors workflow) ──────────
 // Le node « Comparer » écrit ici les produits source + la TVA ; le recalcul mono-site
@@ -55,6 +59,68 @@ const DOC_BYTE_BUDGET = 950_000
 /** Taille UTF-8 (universelle client/serveur, contrairement à Buffer). */
 function utf8Bytes(s: string): number {
   return new TextEncoder().encode(s).length
+}
+
+// ── Journal des changements de prix ────────────────────────────────────────────────
+// L'état (dernier prix connu par cellule) est chunké : à l'échelle F1 (milliers
+// d'appariés × N concurrents) il dépasse largement 1 Mo. Le journal, lui, est un seul
+// doc borné — c'est lui que le dashboard lit.
+
+/** Relit l'état des prix (toutes tranches fusionnées). Objet vide si jamais écrit. */
+async function loadPriceState(uid: string, watchId: string): Promise<PriceState> {
+  const snap = await getDocs(collection(db, priceStateCol(uid, watchId))).catch(() => null)
+  if (!snap) return {}
+  const state: PriceState = {}
+  for (const d of snap.docs) Object.assign(state, (d.data()?.entries as PriceState) ?? {})
+  return state
+}
+
+/** Réécrit l'état par tranches, en purgeant les tranches devenues excédentaires. */
+async function savePriceState(uid: string, watchId: string, state: PriceState): Promise<void> {
+  const col = priceStateCol(uid, watchId)
+  const keys = Object.keys(state)
+  const chunks = Math.max(1, Math.ceil(keys.length / PRICE_STATE_CHUNK))
+  for (let i = 0; i < chunks; i++) {
+    const slice = keys.slice(i * PRICE_STATE_CHUNK, (i + 1) * PRICE_STATE_CHUNK)
+    const entries: PriceState = {}
+    for (const k of slice) entries[k] = state[k]
+    await setDoc(doc(db, col, `chunk_${i}`), { entries })
+  }
+  // Purge des tranches au-delà du besoin courant (état rétréci → pas d'orphelins qui
+  // ressusciteraient de vieux prix au prochain diff).
+  const existing = await getDocs(collection(db, col)).catch(() => null)
+  if (existing) {
+    await Promise.all(existing.docs
+      .filter((d) => { const n = Number(d.id.replace('chunk_', '')); return Number.isFinite(n) && n >= chunks })
+      .map((d) => deleteDoc(d.ref)))
+  }
+}
+
+/** Relit le journal des mouvements (plus récents d'abord). Le dashboard, lui, s'abonne
+ *  au doc en direct (usePriceEvents) — cette lecture ponctuelle sert au diff. */
+async function loadPriceEvents(uid: string, watchId: string): Promise<PriceEvent[]> {
+  const snap = await getDoc(doc(db, priceEventsDoc(uid, watchId))).catch(() => null)
+  return (snap?.data()?.events as PriceEvent[] | undefined) ?? []
+}
+
+/**
+ * Diffe les relevés d'une analyse COMPLÈTE contre l'état persisté et journalise les
+ * mouvements. Best-effort : un échec ici ne doit jamais faire échouer l'écriture du
+ * rapport lui-même (le journal est un plus, le rapport est le cœur).
+ */
+async function recordPriceMoves(uid: string, watchId: string, rows: ProductRow[], at: number): Promise<void> {
+  try {
+    const prev = await loadPriceState(uid, watchId)
+    const { events, state } = diffPrices(prev, rows, at)
+    await savePriceState(uid, watchId, state)
+    if (events.length === 0) return
+    const journal = await loadPriceEvents(uid, watchId)
+    await setDoc(doc(db, priceEventsDoc(uid, watchId)), {
+      events: mergeEvents(journal, events, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES),
+    })
+  } catch (e) {
+    console.warn('[veille] journal des changements de prix non écrit :', e instanceof Error ? e.message : e)
+  }
 }
 
 export interface StoredReport {
@@ -163,6 +229,11 @@ export async function saveCatalogReport(
   // courbe pour une raison qui n'a rien à voir avec les prix, et 90 points de capacité
   // partaient en six heures de moisson.
   if (opts.trend !== false) {
+    // Journal des mouvements : diffé sur `report.products` COMPLET (avant rankProducts et
+    // le plafond d'octets) — sur la liste tronquée, un produit qui se réaligne sortirait
+    // de l'échantillon et son mouvement serait invisible.
+    await recordPriceMoves(uid, watchId, report.products, runAt)
+
     const point: KpiHistoryPoint = {
       at: runAt,
       products: report.kpis.products,

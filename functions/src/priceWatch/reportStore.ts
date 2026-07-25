@@ -4,7 +4,11 @@
 // client (le dashboard relit indistinctement les rapports écrits par le client ET par
 // le cron) : `comp[]` par concurrent dans l'historique, PRODUCT_CAP=1000, ring-buffer 90.
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
-import { reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX } from './paths'
+import {
+  reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX,
+  priceStateCol, priceEventsDoc, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES, PRICE_STATE_CHUNK,
+} from './paths'
+import { diffPrices, mergeEvents, type PriceState, type PriceEvent } from './priceEvents'
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
 import type { SourceProduct } from './catalog/match'
 import { retainHistory } from './history'
@@ -30,6 +34,57 @@ export async function saveSourceCatalog(
     await db.doc(`${col}/chunk_${i}`).set(
       { products: stripUndefined(products.slice(i * SOURCE_CHUNK, (i + 1) * SOURCE_CHUNK)) },
     )
+  }
+}
+
+// ── Journal des changements de prix (jumeau du client) ─────────────────────────────
+// Sans ce bloc, un suivi piloté UNIQUEMENT par le cron n'aurait jamais de journal : le
+// dashboard afficherait « aucun mouvement » alors que les prix bougent à chaque nuit.
+
+/** Relit l'état des prix (toutes tranches fusionnées). Objet vide si jamais écrit. */
+async function loadPriceState(uid: string, watchId: string): Promise<PriceState> {
+  const snap = await getFirestore().collection(priceStateCol(uid, watchId)).get().catch(() => null)
+  if (!snap) return {}
+  const state: PriceState = {}
+  for (const d of snap.docs) Object.assign(state, (d.data()?.entries as PriceState) ?? {})
+  return state
+}
+
+/** Réécrit l'état par tranches, en purgeant les tranches devenues excédentaires. */
+async function savePriceState(uid: string, watchId: string, state: PriceState): Promise<void> {
+  const db = getFirestore()
+  const col = priceStateCol(uid, watchId)
+  const keys = Object.keys(state)
+  const chunks = Math.max(1, Math.ceil(keys.length / PRICE_STATE_CHUNK))
+  for (let i = 0; i < chunks; i++) {
+    const slice = keys.slice(i * PRICE_STATE_CHUNK, (i + 1) * PRICE_STATE_CHUNK)
+    const entries: PriceState = {}
+    for (const k of slice) entries[k] = state[k]
+    await db.doc(`${col}/chunk_${i}`).set({ entries })
+  }
+  const existing = await db.collection(col).get().catch(() => null)
+  if (existing) {
+    await Promise.all(existing.docs
+      .filter((d) => { const n = Number(d.id.replace('chunk_', '')); return Number.isFinite(n) && n >= chunks })
+      .map((d) => d.ref.delete()))
+  }
+}
+
+/** Diffe l'analyse contre l'état persisté et journalise les mouvements. Best-effort :
+ *  un échec ici ne doit jamais faire échouer l'écriture du rapport. */
+async function recordPriceMoves(uid: string, watchId: string, rows: ProductRow[], at: number): Promise<void> {
+  try {
+    const db = getFirestore()
+    const prev = await loadPriceState(uid, watchId)
+    const { events, state } = diffPrices(prev, rows, at)
+    await savePriceState(uid, watchId, state)
+    if (events.length === 0) return
+    const jRef = db.doc(priceEventsDoc(uid, watchId))
+    const snap = await jRef.get()
+    const journal = ((snap.exists ? snap.data()?.events : undefined) as PriceEvent[] | undefined) ?? []
+    await jRef.set({ events: mergeEvents(journal, events, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES) })
+  } catch (e) {
+    console.warn('[veille] journal des changements de prix non écrit :', e instanceof Error ? e.message : e)
   }
 }
 
@@ -126,6 +181,11 @@ export async function saveCatalogReport(
   // pourraient perdre un point — probabilité négligeable, acceptée.
   // Le cron ne produit QUE des analyses complètes : pas de `trend: false` ici (le
   // recalcul partiel est un geste client, cf. jumeau).
+  // Journal des mouvements : diffé sur `report.products` COMPLET (avant rankProducts et
+  // le plafond d'octets) — sur la liste tronquée, un produit qui se réaligne sortirait de
+  // l'échantillon et son mouvement serait invisible.
+  await recordPriceMoves(uid, watchId, report.products, runAt)
+
   const point: KpiHistoryPoint = {
     at: runAt,
     products: report.kpis.products,

@@ -23,3 +23,11 @@ export const watchRootDoc = (uid: string, watchId: string) => watchDoc(uid, watc
 export const reportLatestDoc = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/reports/latest`
 export const reportHistoryDoc = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/reports/history`
 export const REPORT_HISTORY_MAX = 90
+
+// Journal des changements de prix — chemins IDENTIQUES au client (le dashboard lit ce
+// que le cron écrit). Cf. src/features/priceWatch/priceEvents.ts pour le pourquoi.
+export const priceStateCol = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/priceState`
+export const priceEventsDoc = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/reports/priceEvents`
+export const PRICE_EVENTS_MAX = 2000
+export const PRICE_EVENTS_BYTES = 900_000
+export const PRICE_STATE_CHUNK = 5000

@@ -42,3 +42,18 @@ export const reportHistoryDoc = (uid: string, watchId: string) =>
   `${watchDoc(uid, watchId)}/reports/history`
 /** Nombre de points KPI conservés pour la courbe de tendance. */
 export const REPORT_HISTORY_MAX = 90
+
+// --- Journal des changements de prix ---
+// `priceState` (chunké) = dernier prix connu par cellule produit × concurrent ; il sert
+// UNIQUEMENT de référence de diff. `priceEvents` = journal borné des mouvements, ce que
+// lit le dashboard. Reconstruire l'évolution depuis les snapshots de `latest` est exclu
+// (liste plafonnée → biais de survie, cf. priceEvents.ts).
+export const priceStateCol = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/priceState`
+export const priceEventsDoc = (uid: string, watchId: string) =>
+  `${watchDoc(uid, watchId)}/reports/priceEvents`
+/** Mouvements conservés dans le journal (double plafond avec PRICE_EVENTS_BYTES). */
+export const PRICE_EVENTS_MAX = 2000
+/** Budget d'octets du doc journal — marge sous la limite dure Firestore de 1 048 576 o. */
+export const PRICE_EVENTS_BYTES = 900_000
+/** Entrées d'état par document (borne la taille de chaque chunk). */
+export const PRICE_STATE_CHUNK = 5000
