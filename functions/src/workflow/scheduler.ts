@@ -172,7 +172,7 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
         logs: result.logs.slice(-200), nodeOutputs: capOutputsForPreview(result.nodeOutputs),
         nodeConnectors: result.nodeConnectors,
       })
-      return { ...result, cycleComplete, paused: true }
+      return { ...result, cycleComplete, paused: true, stopped: false }
     }
 
     // Sinon, run terminé : succès/partiel, STOP volontaire, ou reprise impossible/épuisée.
@@ -187,7 +187,10 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
       nodeOutputs: capOutputsForPreview(result.nodeOutputs),
       nodeConnectors: result.nodeConnectors,
     })
-    return { ...result, cycleComplete, paused: false }
+    // `status: finalStatus` (et non result.status) : le run interrompu remonte VRAIMENT
+    // comme tel jusqu'au planning et au bouton « Lancer » — l'historique le notait déjà,
+    // le planning l'ignorait.
+    return { ...result, status: finalStatus, cycleComplete, paused: false, stopped: abortReason === 'stop' }
   } catch (err) {
     if (trigger === 'cron') await clearCheckpoint(uid, wf.id).catch(() => {})
     await writeRunLive(uid, wf.id, { runId, endedAt: Date.now(), status: 'error' })
@@ -224,10 +227,13 @@ interface ScheduleDocData {
  */
 function afterRunPatch(
   s: ScheduleDocData,
-  result: { paused: boolean; cycleComplete: boolean; status: string },
+  result: { paused: boolean; cycleComplete: boolean; status: string; stopped?: boolean },
   tickStart: number,
 ): Record<string, unknown> {
-  const lastStatus = result.paused ? 'running' : result.status
+  // 'stopped' = arrêt VOLONTAIRE (bouton STOP), distinct d'un échec : sans ça le planning
+  // écrivait le statut brut du run et l'utilisateur voyait « ✓ » après avoir tout arrêté —
+  // action invisible, donc perçue comme un bouton mort.
+  const lastStatus = result.paused ? 'running' : result.stopped ? 'stopped' : result.status
   if (result.paused) return { lastStatus, nextRunAt: Date.now() + 5_000 }
   const cycle = sanitizeCycle(s.cycle)
   if (cycle && result.cycleComplete) {

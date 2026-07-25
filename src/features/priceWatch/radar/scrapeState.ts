@@ -17,6 +17,7 @@ export interface RadarSchedule {
   enabled: boolean
   nextRunAt: number
   lastRunAt?: number
+  /** 'running' | 'stopped' (STOP volontaire) | 'error' | 'success' | 'partial' | 'done'. */
   lastStatus?: string
   /** Cycle de moisson bouclé à 100 % : la relance suit l'échéance calendaire. */
   cycleWaiting?: boolean
@@ -97,11 +98,22 @@ export function buildScrapeRows(
     if (!byId.has(siteId) && m.domain) byId.set(siteId, { domain: m.domain, matched: null, indexed: 0, pctPrice: null })
   }
 
+  // ⚠ « En cours » = LE site le plus récemment écrit, et lui seul. Le node « Comparer »
+  // réécrit la méta de TOUS les concurrents d'un coup (productCount/pctPrice) : se fier au
+  // seul `updatedAt` frais affichait « 12 en cours » alors que le moissonneur est
+  // séquentiel — au plus un site travaille à un instant donné.
+  let freshest = 0
+  for (const [siteId, m] of meta.entries()) {
+    if (m.updatedAt != null && m.updatedAt > freshest && !isCursorDomain(byId.get(siteId)?.domain ?? m.domain)) {
+      freshest = m.updatedAt
+    }
+  }
+
   const rows: ScrapeRow[] = []
   for (const [siteId, base] of byId.entries()) {
     if (isCursorDomain(base.domain)) continue
     const m = meta.get(siteId)
-    const live = m?.updatedAt != null && now - m.updatedAt < LIVE_WINDOW_MS
+    const live = m?.updatedAt != null && m.updatedAt === freshest && now - m.updatedAt < LIVE_WINDOW_MS
     rows.push({
       siteId,
       domain: base.domain,

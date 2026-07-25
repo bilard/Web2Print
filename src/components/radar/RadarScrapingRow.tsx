@@ -36,12 +36,22 @@ export function RadarScrapingRow({ row, now }: { row: ScrapeRow; now: number }) 
   const swept = row.progress >= 1
 
   return (
+    // Site en moisson : carte franchement verte (halo + liseré épais), lisible d'un coup
+    // d'œil en plein soleil sur iPhone — même intention que le ring pulsé de l'app.
     <li className="radar-card relative overflow-hidden px-3.5 py-3"
-      style={row.live ? { borderColor: 'rgba(48, 209, 88, 0.4)', background: 'rgba(48, 209, 88, 0.05)' } : undefined}>
+      style={row.live ? {
+        borderColor: 'rgba(48, 209, 88, 0.75)',
+        boxShadow: '0 0 0 1.5px rgba(48, 209, 88, 0.45), 0 0 18px rgba(48, 209, 88, 0.18)',
+        background: 'linear-gradient(180deg, rgba(48, 209, 88, 0.16), rgba(48, 209, 88, 0.07))',
+      } : undefined}>
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">{row.domain.replace(/^www\./, '')}</span>
-        <span className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold radar-tnum"
-          style={{ color: tone.fg, background: tone.bg }}>
+        {/* Badge PLEIN quand ça moissonne (vert saturé, texte sombre) : la ligne active
+            doit se repérer sans lire, y compris en plein soleil. */}
+        <span className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-bold radar-tnum"
+          style={row.live
+            ? { color: '#04270f', background: 'var(--radar-live)' }
+            : { color: tone.fg, background: tone.bg, fontWeight: 600 }}>
           {meta.icon} {meta.label}{detail}
         </span>
       </div>

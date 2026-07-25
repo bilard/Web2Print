@@ -65,6 +65,18 @@ describe('buildScrapeRows', () => {
     expect(rows[0]).toMatchObject({ domain: 'a.com', products: 140, pctPrice: 95, matched: 12, live: true, status: 'live' })
   })
 
+  it('ne déclare EN COURS que le site le plus récent (le node Comparer réécrit tout d’un coup)', () => {
+    // Signature d'une passe « Comparer » : toutes les métas rafraîchies en quelques secondes.
+    const meta = new Map([
+      ['a', { domain: 'a.com', productCount: 100, updatedAt: NOW - 3_000, lastPassAt: NOW - 600_000, lastPassPages: 20, lastPassProducts: 40 }],
+      ['b', { domain: 'b.com', productCount: 50, updatedAt: NOW - 2_000, lastPassAt: NOW - 600_000, lastPassPages: 20, lastPassProducts: 40 }],
+      ['c', { domain: 'c.com', productCount: 10, updatedAt: NOW - 1_000, lastPassAt: NOW - 600_000, lastPassPages: 20, lastPassProducts: 40 }],
+    ])
+    const rows = buildScrapeRows(report, meta, NOW)
+    expect(rows.filter((r) => r.live).map((r) => r.domain)).toEqual(['c.com'])
+    expect(countByStatus(rows).live).toBe(1)
+  })
+
   it('ajoute un site présent en LIVE seulement et trie ce qui bouge d’abord', () => {
     const meta = new Map([
       ['b', { domain: 'b.com', productCount: 5, updatedAt: NOW - 1_000, lastPassAt: NOW - 1_000, lastPassPages: 3, lastPassProducts: 5 }],

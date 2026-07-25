@@ -140,7 +140,15 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
         <span className="flex flex-col gap-0.5 leading-tight" title="Planification serveur active">
           <span>
             {sched.lastRunAt
-              ? <>Dernier <b>{hhmm(sched.lastRunAt)}</b> <span className="text-indigo-200/70">(il y a {formatCountdown(now - sched.lastRunAt)})</span> {sched.lastStatus === 'error' ? <span className="text-rose-300 cursor-help" title={sched.lastError ?? 'Dernier run en erreur'}>⚠</span> : <span className="text-emerald-300">✓</span>}</>
+              ? <>Dernier <b>{hhmm(sched.lastRunAt)}</b> <span className="text-indigo-200/70">(il y a {formatCountdown(now - sched.lastRunAt)})</span> {
+                  // 'stopped' = STOP volontaire, à ne pas confondre avec un échec (⚠) ni
+                  // avec une fin normale (✓) — sinon l'arrêt demandé reste invisible.
+                  sched.lastStatus === 'stopped'
+                    ? <span className="text-rose-300 cursor-help" title="Run interrompu par le bouton STOP. ⚠ Le cron relancera au prochain tick — « Suspendre » pour arrêter durablement.">■ arrêté</span>
+                    : sched.lastStatus === 'error'
+                      ? <span className="text-rose-300 cursor-help" title={sched.lastError ?? 'Dernier run en erreur'}>⚠</span>
+                      : <span className="text-emerald-300">✓</span>
+                }</>
               : <span className="text-indigo-200/70">Jamais exécuté</span>}
           </span>
           <span>Prochain <b>{hhmm(sched.nextRunAt)}</b> <span className="text-indigo-200/70">({overdue ? 'imminent' : `dans ${formatCountdown(sched.nextRunAt - now)}`})</span></span>
