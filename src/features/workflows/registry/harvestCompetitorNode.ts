@@ -19,6 +19,7 @@ import { applyTargetingBuckets, buildTargetingPrompt, familiesFromRows, TARGETIN
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '@/features/priceWatch/catalog/runHarvest'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '@/features/priceWatch/catalog/store'
 import { harvestProgress } from '@/features/priceWatch/catalog/harvest'
+import { mapWithConcurrency, HARVEST_CONCURRENCY } from '@/features/priceWatch/concurrency'
 
 interface HarvestConfig {
   watchId: string
@@ -150,16 +151,20 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     const allDoneBefore = sites.every((s) => metas.get(stableId(s.domain))?.cursor?.done === true)
     if (cycleMode && allDoneBefore) ctx.log('info', 'Nouveau cycle : réouverture des balayages de tous les sites.')
 
-    const rows: Record<string, unknown>[] = []
-    for (const site of sites) {
-      if (ctx.signal.aborted) break
+    // Sites moissonnés EN PARALLÈLE BORNÉ (parité serveur). Ils sont indépendants —
+    // chacun son fetcher, son curseur, son document `competitors/{siteId}` — et les
+    // enchaîner ne laissait qu'UN SEUL fetch en vol pour tout le système alors qu'une
+    // page liste coûte plusieurs secondes. Le plafond évite la rafale (limites de débit
+    // des fournisseurs, Bright Data facturé à la requête).
+    let indexedSoFar = 0
+    const results = await mapWithConcurrency(sites, HARVEST_CONCURRENCY, async (site) => {
+      if (ctx.signal.aborted) return null
       const cfg: CompetitorConfig = { siteId: stableId(site.domain), domain: site.domain, families }
       const prevMeta = metas.get(cfg.siteId)
       if (cycleMode && !allDoneBefore && prevMeta?.cursor?.done) {
         const pagesTotal = await countPages(uid, watchId, cfg.siteId)
-        rows.push({ site: site.domain, pagesFetched: 0, productsIndexed: 0, pagesTotal, progress: 'complet' })
         ctx.log('info', `${site.domain} : balayage terminé — en attente de la fin du cycle.`)
-        continue
+        return { site: site.domain, pagesFetched: 0, productsIndexed: 0, pagesTotal, progress: 'complet' }
       }
       // Moteur par site : site authentifié (login cookie) sinon moteur forcé
       // (jina | firecrawl | brightdata) sinon cascade auto.
@@ -234,16 +239,21 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
         lastPassProducts: res.productsIndexed,
         lastPassAt: Date.now(),
       })
-      ctx.reportCount?.(rows.reduce((s, r) => s + Number(r.productsIndexed ?? 0), 0) + res.productsIndexed)
-      rows.push({
+      // Compteur CUMULÉ partagé : en parallèle, dériver le total d'un tableau en cours
+      // de remplissage donnerait une valeur différente selon l'ordre d'arrivée.
+      indexedSoFar += res.productsIndexed
+      ctx.reportCount?.(indexedSoFar)
+      ctx.log('info', `${site.domain} : +${res.productsIndexed} produit(s) sur ${res.pagesFetched} page(s) (index : ${pagesTotal} pages).`)
+      return {
         site: site.domain,
         pagesFetched: res.pagesFetched,
         productsIndexed: res.productsIndexed,
         pagesTotal,
         progress: res.sweepComplete ? 'complet' : `${Math.round(harvestProgress(res.cursor) * 100)} %`,
-      })
-      ctx.log('info', `${site.domain} : +${res.productsIndexed} produit(s) sur ${res.pagesFetched} page(s) (index : ${pagesTotal} pages).`)
-    }
+      }
+    })
+    // L'ordre d'entrée est préservé : le tableau de statut reste stable d'un run à l'autre.
+    const rows: Record<string, unknown>[] = results.filter((r): r is NonNullable<typeof r> => r != null)
     return { status: statusSheet(rows) }
   },
 }

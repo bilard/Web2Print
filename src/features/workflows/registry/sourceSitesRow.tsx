@@ -5,7 +5,7 @@
 // Pendant la moisson : ring vert pulsé + barre de balayage animée (progress-indeterminate).
 // Après la passe : badge verdict lisible d'un coup d'œil, pop fx-result s'il vient de tomber.
 import { Trash2, Lock, LockOpen, Play, Loader2, RotateCcw } from 'lucide-react'
-import { agoShort } from '@/features/priceWatch/dashboard/format'
+import { agoShort, pct } from '@/features/priceWatch/dashboard/format'
 import { siteStatus, SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
 
 export interface SiteRowStats {
@@ -16,6 +16,10 @@ export interface SiteRowStats {
   harvestBeatAt?: number
   pctPrice?: number
   matched?: number
+  /** Produits où CE concurrent est moins cher que vous (alerte). */
+  cheaper?: number
+  /** Écart % moyen du concurrent face à VOS prix. < 0 = il vend moins cher que vous. */
+  avgGapPct?: number | null
   updatedAt?: number
   lastEngine?: string
   harvestProgress?: number
@@ -240,16 +244,25 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           et `flex-wrap` ne renvoie à la ligne que si le panneau est vraiment étroit. */}
       {scraped && (
         <div className="pl-6 mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px]">
-          {chip('produits', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute',
+          {/* D'ABORD la COMPARAISON — c'est la raison d'être du site : où se situent VOS
+              prix face à lui. Les compteurs de collecte (combien de fiches il expose,
+              où en est le balayage) ne disent rien de commercial et passent après.
+              Compteur PAR SITE = paires produit×concurrent : le KPI du tableau de bord
+              compte des produits DISTINCTS, donc additionner les sites le dépasse
+              forcément (un produit vendu par 5 concurrents pèse 5 ici, 1 là-bas). */}
+          {stats.matched != null && chip('appariés', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute',
+            'Vos produits retrouvés CHEZ CE CONCURRENT. N’additionnez pas les sites : un produit vendu par plusieurs concurrents est compté une fois par site, mais une seule fois dans le total du tableau de bord.')}
+          {stats.avgGapPct != null && chip('son écart', pct(stats.avgGapPct), stats.avgGapPct < -1 ? 'warn' : 'ok',
+            'Écart moyen de SES prix face aux vôtres, sur les produits appariés. Négatif = il vend moins cher que vous.')}
+          {stats.cheaper != null && stats.matched != null && stats.matched > 0 && chip(
+            'moins cher sur', `${stats.cheaper.toLocaleString('fr-FR')}/${stats.matched.toLocaleString('fr-FR')}`,
+            stats.cheaper > 0 ? 'warn' : 'ok',
+            'Nombre de vos produits sur lesquels CE concurrent est moins cher que vous.')}
+          {/* Ensuite seulement, la collecte. */}
+          {chip('fiches', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute',
             'Fiches distinctes relevées sur CE site (doublons de pagination exclus). Ce n’est pas votre catalogue : c’est le sien.')}
           {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn',
             'Part des fiches relevées ici qui portent un prix. Un site qui charge ses prix en JavaScript reste bas.')}
-          {/* Compteur PAR SITE = paires produit×concurrent. Le KPI du tableau de bord
-              compte des produits DISTINCTS : additionner les sites le dépasse forcément
-              (un produit vendu par 5 concurrents pèse 5 ici, 1 là-bas). Dit explicitement,
-              sinon l'écart passe pour une incohérence. */}
-          {stats.matched != null && chip('appariés ici', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute',
-            'Vos produits retrouvés CHEZ CE CONCURRENT. N’additionnez pas les sites : un produit vendu par plusieurs concurrents est compté une fois par site, mais une seule fois dans le total du tableau de bord.')}
           {swept
             ? chip('familles', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
             : stats.harvestProgress != null && chip('familles', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}

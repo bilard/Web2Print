@@ -110,6 +110,9 @@ export function SourceSitesConfig({ config, onChange }: {
       // Live depuis l'index (mis à jour au scrape) prioritaire sur le rapport « Comparer ».
       pctPrice: meta?.pctPrice ?? stat?.audit.pctPrice,
       matched: stat?.matched,
+      // Comparaison PRIX (ce que la veille cherche) — déjà agrégée par « Comparer ».
+      cheaper: stat?.cheaper,
+      avgGapPct: stat?.avgGapPct,
       updatedAt: meta?.updatedAt,
       lastEngine: meta?.lastEngine,
       harvestProgress: meta?.harvestProgress,

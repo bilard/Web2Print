@@ -16,6 +16,7 @@ import { resolveSitesInput, sitesForRole, splitPageBudget } from '../../priceWat
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '../../priceWatch/catalog/runHarvest'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '../../priceWatch/catalog/store'
 import { harvestProgress } from '../../priceWatch/catalog/harvest'
+import { mapWithConcurrency, HARVEST_CONCURRENCY } from '../../priceWatch/concurrency'
 import { buildServerFetcher } from '../../priceWatch/catalog/serverFetcher'
 import { applyTargeting, buildTargetingPrompt, familiesFromRows } from '../../priceWatch/catalog/categoryTargeting'
 import { callLlm } from '../llm'
@@ -96,23 +97,30 @@ registerServerNode({
     if (cycleMode && allDoneBefore) ctx.log('info', 'Nouveau cycle : réouverture des balayages de tous les sites.')
 
     let doneCount = 0
-    const rows: Record<string, unknown>[] = []
-    for (const site of sites) {
-      if (ctx.signal.aborted) break
-      // Fenêtre AVAL atteinte : on rend la main — le curseur persiste, la moisson des
-      // sites restants reprend au prochain tick, et « Comparer » a sa fenêtre CE run.
+    let skippedByDeadline = 0
+    // Sites moissonnés EN PARALLÈLE BORNÉ. Ils sont indépendants (chacun son fetcher, son
+    // curseur, son document `competitors/{siteId}`) : les enchaîner séquentiellement ne
+    // laissait qu'UN SEUL fetch en vol pour tout le système, alors qu'une page liste coûte
+    // plusieurs secondes chez le fournisseur. Le plafond évite la rafale (limites de débit
+    // + Bright Data facturé à la requête).
+    const results = await mapWithConcurrency(sites, HARVEST_CONCURRENCY, async (site) => {
+      if (ctx.signal.aborted) return null
+      // Fenêtre AVAL atteinte : ce site ne DÉMARRE pas — son curseur persiste et il
+      // reprendra au prochain tick, « Comparer » gardant sa fenêtre CE run. ⚠ En
+      // parallèle, ce contrôle doit vivre DANS la tâche : une sortie de boucle ne dirait
+      // rien aux sites déjà en vol (ceux-là s'arrêtent sur `ctx.signal`, vérifié page
+      // par page par harvestPass).
       if (ctx.deadlineAt && Date.now() > ctx.deadlineAt) {
-        ctx.log('info', `Budget réservé au comparatif — moisson interrompue proprement (${rows.length}/${sites.length} site(s) ce run, la suite au prochain tick).`)
-        break
+        skippedByDeadline++
+        return null
       }
       const cfg: CompetitorConfig = { siteId: stableId(site.domain), domain: site.domain, families }
       const prevMeta = metas.get(cfg.siteId)
       if (cycleMode && !allDoneBefore && prevMeta?.cursor?.done) {
         doneCount++
         const pagesTotal = await countPages(ctx.uid, watchId, cfg.siteId)
-        rows.push({ site: site.domain, pagesFetched: 0, productsIndexed: 0, pagesTotal, progress: 'complet' })
         ctx.log('info', `${site.domain} : balayage terminé — en attente de la fin du cycle.`)
-        continue
+        return { site: site.domain, pagesFetched: 0, productsIndexed: 0, pagesTotal, progress: 'complet' }
       }
       const t0 = Date.now()
       // % de prix de la passe : accumulé au fil des pages sauvées (aucune lecture en plus).
@@ -176,14 +184,20 @@ registerServerNode({
         lastPassProducts: res.productsIndexed,
         lastPassAt: Date.now(),
       })
-      rows.push({
+      ctx.log('info', `${site.domain} : +${res.productsIndexed} produit(s) sur ${res.pagesFetched} page(s) (index : ${pagesTotal} pages).`)
+      return {
         site: site.domain,
         pagesFetched: res.pagesFetched,
         productsIndexed: res.productsIndexed,
         pagesTotal,
         progress: res.sweepComplete ? 'complet' : `${Math.round(harvestProgress(res.cursor) * 100)} %`,
-      })
-      ctx.log('info', `${site.domain} : +${res.productsIndexed} produit(s) sur ${res.pagesFetched} page(s) (index : ${pagesTotal} pages).`)
+      }
+    })
+    // `mapWithConcurrency` préserve l'ordre d'entrée : le tableau de statut reste stable
+    // d'un run à l'autre malgré des fins dans le désordre.
+    const rows: Record<string, unknown>[] = results.filter((r): r is NonNullable<typeof r> => r != null)
+    if (skippedByDeadline > 0) {
+      ctx.log('info', `Budget réservé au comparatif — ${skippedByDeadline} site(s) non démarré(s) ce run, la suite au prochain tick.`)
     }
     // Cycle complet : TOUS les sites à 100 % ce run → le scheduler bascule sur
     // l'échéance calendaire de relance au lieu d'enchaîner à la cadence rapide.
