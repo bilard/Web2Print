@@ -42,6 +42,27 @@ describe('advance', () => {
     expect(c.done).toBe(true)
     expect(currentTarget(c)).toBeNull()
   })
+  it('clôt la catégorie quand la page suivante répète la précédente', () => {
+    // Terrain : un site dont « ?page=N » renvoie toujours la page 1 a fait moissonner
+    // 5 601 pages pour 230 produits réels — budget de moisson brûlé à vide.
+    let c = initCursor(cats)
+    c = advance(c, { hadItems: true, hasNext: true, signature: 'A' })
+    expect(currentTarget(c)?.page).toBe(2)
+    c = advance(c, { hadItems: true, hasNext: true, signature: 'A' })
+    expect(currentTarget(c)).toEqual({ categoryUrl: 'https://c.fr/2-b', page: 1 })
+  })
+  it('continue de paginer tant que le contenu change', () => {
+    let c = initCursor(cats)
+    c = advance(c, { hadItems: true, hasNext: true, signature: 'A' })
+    c = advance(c, { hadItems: true, hasNext: true, signature: 'B' })
+    expect(currentTarget(c)).toEqual({ categoryUrl: 'https://c.fr/1-a', page: 3 })
+  })
+  it('ne confond pas deux catégories qui commencent pareil', () => {
+    let c = initCursor(cats)
+    c = advance(c, { hadItems: true, hasNext: false, signature: 'A' }) // → cat 2
+    c = advance(c, { hadItems: true, hasNext: true, signature: 'A' })
+    expect(currentTarget(c)).toEqual({ categoryUrl: 'https://c.fr/2-b', page: 2 })
+  })
   it('respecte le plafond de pages par catégorie', () => {
     let c: HarvestCursor = { categories: cats, catIndex: 0, page: MAX_PAGES_PER_CATEGORY, sweeps: 0, done: false }
     c = advance(c, { hadItems: true, hasNext: true })

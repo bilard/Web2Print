@@ -12,7 +12,7 @@ import { parsePrice, stableId } from '../../priceWatch/helpers'
 import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
 import { buildReport } from '../../priceWatch/catalog/report'
-import { saveCatalogReport } from '../../priceWatch/reportStore'
+import { saveCatalogReport, saveSourceCatalog } from '../../priceWatch/reportStore'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '../../priceWatch/catalog/match'
 import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
@@ -97,6 +97,16 @@ registerServerNode({
       })
     }
 
+    // Le dédoublonnage ci-dessus se fait sur `ref ?? ean ?? name` : une colonne de
+    // référence mal mappée fait retomber l'identité sur le NOM, et des milliers de
+    // lignes distinctes s'effondrent alors en une poignée. Rendre l'écart visible.
+    ctx.log('info', `${sourceProducts.length} produit(s) source retenus sur ${rawRows.length} ligne(s).`)
+    if (sourceProducts.length < rawRows.length * 0.9) {
+      ctx.log('warn',
+        `${rawRows.length - sourceProducts.length} ligne(s) source écartées comme doublons — ` +
+        `vérifie la « Colonne Référence » (identité repliée sur le nom si elle est absente).`)
+    }
+
     // Relecture de l'index concurrent depuis Firestore (pas via un edge).
     const siteRefs: SiteRef[] = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
     const indexBySite = new Map<string, CompetitorListing[]>()
@@ -136,6 +146,10 @@ registerServerNode({
     try {
       const report = buildReport(sourceProducts, siteRefs, indexBySite, { vatRate, harvestBySite })
       await saveCatalogReport(ctx.uid, watchId, report, siteRefs, Date.now(), { label: ctx.workflowName })
+      // Catalogue source (comme le node client) : sans lui, un suivi alimenté seulement
+      // par le cron n'a rien à relire pour un recalcul mono-site après un ▶.
+      await saveSourceCatalog(ctx.uid, watchId, sourceProducts, vatRate)
+        .catch((e) => ctx.log('warn', `Catalogue source non persisté : ${e instanceof Error ? e.message : String(e)}`))
       // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact
       // (annule la dérive de l'incrément live de la moisson).
       await Promise.all(report.byCompetitor.map((c) =>

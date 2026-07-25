@@ -9,7 +9,7 @@ import {
   parseJsonLdObjects, parseProductPage, parseListingPage,
 } from './prestashop'
 import { candidateKeys, proveMatch } from './keys'
-import { indexKeysOf, buildMemoryIndex, matchProduct } from './match'
+import { indexKeysOf, buildMemoryIndex, matchProduct, dedupeListings } from './match'
 import { foldText, keywordsForFamilies } from './categories'
 import { MAX_PAGES_PER_CATEGORY, initCursor, advance } from './harvest'
 import { planCategories, type CompetitorConfig, type HarvestDeps } from './runHarvest'
@@ -51,6 +51,25 @@ describe('match (parité serveur)', () => {
     const lookup = buildMemoryIndex(listings)
     const r = matchProduct({ id: 'a', name: 'Alt', ref: 'BS691991' }, 's', lookup)
     expect(r.outcome).toBe('matched')
+  })
+  it('apparie une réf constructeur lue en fin de libellé', () => {
+    const lookup = buildMemoryIndex([
+      { url: 'https://x.fr/a.html', name: 'Courroie tondeuse autoportée VIKING 6151-704-2110', price: 8.4 },
+    ])
+    const r = matchProduct({ id: 'a', name: 'Courroie', originRefs: ['6151-704-2110'] }, 's', lookup)
+    expect(r.outcome).toBe('matched')
+    expect(r.proof?.evidence).toBe('ref-in-title')
+  })
+  it('écarte une clé de libellé ambiguë (deux fiches distinctes)', () => {
+    const lookup = buildMemoryIndex([
+      { url: 'https://x.fr/a.html', name: 'Lame adaptable 181004383 gauche' },
+      { url: 'https://x.fr/b.html', name: 'Lame adaptable 181004383 droite' },
+    ])
+    expect(matchProduct({ id: 'a', name: 'L', ref: '181004383' }, 's', lookup).outcome).toBe('not-found')
+  })
+  it('déduplique les fiches répétées par la pagination', () => {
+    const dup = { url: 'https://x.fr/a.html', name: 'Alternateur', ref: 'BS691991' }
+    expect(dedupeListings([dup, dup, { ...dup, url: 'https://x.fr/b.html' }])).toHaveLength(2)
   })
 })
 

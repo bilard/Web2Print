@@ -140,7 +140,53 @@ export interface CompetitorIdentity {
   name?: string
 }
 
-type MatchEvidence = 'gtin13' | 'ean-in-url' | 'ref-in-url' | 'sku' | 'mpn' | 'ref-in-name'
+type MatchEvidence = 'gtin13' | 'ean-in-url' | 'ref-in-url' | 'sku' | 'mpn' | 'ref-in-name' | 'ref-in-title'
+
+/**
+ * Cote dimensionnelle avec unité (`510MM`, `1000ML`, `12V`) — jamais une référence.
+ * Sans ce filtre, chaque libellé de pièce émettrait des clés de jointure fantômes.
+ */
+const DIMENSION_WITH_UNIT = /^\d+(?:[.,]\d+)?(?:MM|CM|M|L|KG|G|ML|CC|CV|V|W|A|AH|MAH|PO|T|H)$/
+/** Dimension `LxH` (`200X25`) : une cote, pas une référence — dans un TITRE seulement. */
+const DIMENSION_PAIR = /^\d+X\d+$/
+
+/**
+ * Références candidates lues dans un TEXTE LIBRE (libellé produit d'un marchand).
+ *
+ * Constat terrain décisif : chez la moitié des concurrents relevés, la référence
+ * constructeur n'est ni dans un champ déclaré (`sku`/`mpn`) ni en tête de titre — elle
+ * est EN FIN de libellé (« Courroie tondeuse autoportée VIKING 6151-704-2110 »,
+ * « Fusible VAPORMATIC VLC2208 »). Ne lire que le premier mot rend ces catalogues
+ * entiers non joignables, alors que la référence y est écrite en clair.
+ *
+ * Chaque mot est testé entier (les séparateurs internes sont normalisés :
+ * `6151-704-2110` → `61517042110`) PUIS redécoupé sur `/` et `,`, qui séparent des
+ * références distinctes (« 5127500-00/6,5127500-80/8 »).
+ *
+ * Filtres — le risque ici est le FAUX POSITIF, pas le trou : un token doit contenir un
+ * chiffre, faire au moins WEAK_REF_LEN caractères, et n'être ni une cote avec unité ni
+ * une dimension `LxH`. Le second verrou est ailleurs : une clé issue d'un titre ne
+ * prouve un appariement que si elle est forte (cf. `proveMatch`), et l'index écarte
+ * celles qui désignent plusieurs produits (cf. `buildMemoryIndex`).
+ */
+export function refTokensFromText(text: string | null | undefined): string[] {
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const word of String(text ?? '').split(/[\s|]+/)) {
+    // Ponctuation de bord retirée ; celle de l'intérieur est traitée par normalizeRef.
+    const cleaned = word.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '')
+    if (!cleaned) continue
+    for (const part of [cleaned, ...cleaned.split(/[,/]/)]) {
+      const norm = normalizeRef(part)
+      if (norm.length < WEAK_REF_LEN || !/\d/.test(norm)) continue
+      if (DIMENSION_WITH_UNIT.test(norm) || DIMENSION_PAIR.test(norm)) continue
+      if (seen.has(norm)) continue
+      seen.add(norm)
+      out.push(norm)
+    }
+  }
+  return out
+}
 
 /**
  * Références candidates extraites du SLUG d'une URL produit, l'ID PrestaShop retiré.
@@ -236,6 +282,12 @@ export function proveMatch(keys: JoinKey[], id: CompetitorIdentity): MatchProof 
     if (!key.weak) {
       for (const r of refTokensFromUrl(id.url)) {
         if (r === key.value || stripLeadingZeros(r) === key.value) return { key, evidence: 'ref-in-url' }
+      }
+      // Référence ailleurs dans le LIBELLÉ (« … VIKING 6151-704-2110 ») : égalité exacte
+      // sur un mot entier du titre, jamais une inclusion — `12345` ne prouve pas
+      // `123456`. Preuve la plus faible du jeu, donc testée en dernier.
+      for (const t of refTokensFromText(id.name)) {
+        if (t === key.value || stripLeadingZeros(t) === key.value) return { key, evidence: 'ref-in-title' }
       }
     }
   }

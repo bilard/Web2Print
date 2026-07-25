@@ -1,7 +1,7 @@
 // src/features/priceWatch/catalog/match.test.ts
 import { describe, it, expect } from 'vitest'
 import {
-  indexKeysOf, buildMemoryIndex, matchProduct, comparePrices, extractOriginRefs,
+  indexKeysOf, titleKeysOf, buildMemoryIndex, matchProduct, comparePrices, extractOriginRefs,
   type IndexLookup,
 } from './match'
 import type { CompetitorListing } from './prestashop'
@@ -38,6 +38,56 @@ describe('indexKeysOf', () => {
       url: 'https://emc.fr/courroie/3226-002748-courroie-3582323305460.html', ref: undefined,
     }))
     expect(keys).toContain('3582323305460')
+  })
+})
+
+describe('titleKeysOf — références lues dans le libellé complet', () => {
+  it('indexe la réf constructeur en fin de titre', () => {
+    expect(titleKeysOf(listing({ name: 'Courroie tondeuse autoportée VIKING 6151-704-2110' })))
+      .toContain('61517042110')
+  })
+  it('n’émet rien pour un libellé sans référence', () => {
+    expect(titleKeysOf(listing({ name: 'Pochette feuilles à joint à découper' }))).toEqual([])
+  })
+})
+
+describe('buildMemoryIndex — garde-fous d’index', () => {
+  it('rend consultable une réf lue dans le titre', () => {
+    const idx = buildMemoryIndex([
+      listing({ url: 'https://c.fr/a.html', name: 'Courroie autoportée VIKING 6151-704-2110' }),
+    ])
+    expect(idx('61517042110')).toHaveLength(1)
+  })
+  it('ÉCARTE une clé de titre ambiguë (deux produits distincts la portent)', () => {
+    // Un libellé partagé par deux fiches différentes ne prouve rien : mieux vaut un trou
+    // qu'un faux prix. Les clés DÉCLARÉES, elles, restent (collision assumée + preuve).
+    const idx = buildMemoryIndex([
+      listing({ url: 'https://c.fr/a.html', name: 'Lame adaptable 181004383 gauche' }),
+      listing({ url: 'https://c.fr/b.html', name: 'Lame adaptable 181004383 droite' }),
+    ])
+    expect(idx('181004383')).toBeUndefined()
+  })
+  it('ne confond pas les doublons de pagination avec une ambiguïté', () => {
+    // La même fiche relevée sur deux pages liste = une seule fiche : la clé reste bonne.
+    const dup = { url: 'https://c.fr/a.html', name: 'Lame adaptable 181004383 gauche' }
+    const idx = buildMemoryIndex([listing(dup), listing(dup)])
+    expect(idx('181004383')).toHaveLength(1)
+  })
+  it('déduplique les fiches répétées et préserve celle qui porte un prix', () => {
+    const idx = buildMemoryIndex([
+      listing({ url: 'https://c.fr/a.html', ref: 'REF12345' }),
+      listing({ url: 'https://c.fr/a.html', ref: 'REF12345', price: 19.9 }),
+    ])
+    const hits = idx('REF12345')
+    expect(hits).toHaveLength(1)
+    expect(hits?.[0].price).toBe(19.9)
+  })
+  it('une clé déclarée l’emporte : le titre n’ajoute pas de candidat parasite', () => {
+    const idx = buildMemoryIndex([
+      listing({ url: 'https://c.fr/a.html', ref: 'REF12345', name: 'Courroie REF12345' }),
+      listing({ url: 'https://c.fr/b.html', name: 'Autre courroie REF12345 compatible' }),
+    ])
+    expect(idx('REF12345')).toHaveLength(1)
   })
 })
 

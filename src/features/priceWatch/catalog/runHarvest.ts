@@ -11,7 +11,7 @@ import { parseListingDomCards } from './genericCards'
 import { extractCategoryLinks, selectCategories, keywordsForFamilies } from './categories'
 import { discoverGenericListings } from './genericDiscovery'
 import {
-  initCursor, currentTarget, advance, openSweep, pageDocId,
+  initCursor, currentTarget, advance, openSweep, pageDocId, pageSignature,
   type HarvestCursor,
 } from './harvest'
 import type { CompetitorListing } from './prestashop'
@@ -112,6 +112,7 @@ export async function harvestPass(
     const html = await deps.fetchHtml(url)
     let hadItems = false
     let hasNext = false
+    let signature: string | undefined
 
     if (html) {
       // Extraction en cascade : PrestaShop 1.7 (rapide) → JSON-LD ItemList → microdata/
@@ -121,13 +122,14 @@ export async function harvestPass(
       if (products.length === 0) products = parseListingDomCards(html, url)
       hadItems = products.length > 0
       hasNext = nextListingUrl(html, url) != null
+      signature = pageSignature(products.map((p) => p.url))
       if (hadItems) {
         await deps.savePage(cfg.siteId, pageDocId(target.categoryUrl, target.page), url, target.page, products)
         productsIndexed += products.length
       }
     }
     pagesFetched++
-    cursor = advance(cursor, { hadItems, hasNext })
+    cursor = advance(cursor, { hadItems, hasNext, signature })
     await deps.saveCursor(cfg.siteId, cursor)
     // Remontée live périodique (jauge Balayage + heartbeat) sans attendre la fin du site.
     if (deps.onProgress && pagesFetched % Math.max(1, progressEvery) === 0) await deps.onProgress(pagesFetched, productsIndexed, cursor)

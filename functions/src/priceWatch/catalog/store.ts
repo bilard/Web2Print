@@ -8,6 +8,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { competitorDoc, competitorPagesCol, watchRootDoc } from '../paths'
 import type { CompetitorListing } from './prestashop'
 import type { HarvestCursor } from './harvest'
+import { dedupeListings } from './match'
 
 /** Retire les `undefined` (rejetés par Firestore) en préservant null/objets/arrays. */
 function stripUndefined<T>(value: T): T {
@@ -102,7 +103,10 @@ export async function loadAllListings(
     const data = d.data() as PageDoc
     if (Array.isArray(data.products)) out.push(...data.products)
   })
-  return out
+  // Jumeau du client : les pages liste se recouvrent d'un balayage à l'autre (jusqu'à
+  // 97 % de doublons relevés sur un site). Dédupliquer ICI aligne matching, audit et
+  // compteurs sur le nombre de fiches RÉEL — et divise d'autant la mémoire du cron.
+  return dedupeListings(out)
 }
 
 /** Nombre de pages moissonnées pour un concurrent (pour la méta / l'affichage). */

@@ -12,6 +12,7 @@ import { db } from '@/lib/firebase/config'
 import { competitorDoc, competitorPagesCol, watchRootDoc } from '../paths'
 import type { CompetitorListing } from './prestashop'
 import type { HarvestCursor } from './harvest'
+import { dedupeListings } from './match'
 
 /** Crée/rafraîchit le doc RACINE du suivi. À appeler dès la MOISSON : sans lui, le doc
  *  parent reste virtuel (seules les sous-collections existent) → le suivi n'apparaît pas
@@ -129,7 +130,10 @@ export async function loadAllListings(
     const data = d.data() as PageDoc
     if (Array.isArray(data.products)) out.push(...data.products)
   })
-  return out
+  // Les pages liste se recouvrent d'un balayage à l'autre : un site relevé a rendu 8 130
+  // fiches pour 230 URL réelles (97 % de doublons). Dédupliquer ICI garde tous les
+  // consommateurs (matching, audit, compteurs) sur le nombre de fiches RÉEL.
+  return dedupeListings(out)
 }
 
 /** Nombre de pages moissonnées pour un concurrent (pour la méta / l'affichage). */

@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   normalizeRef, stripLeadingZeros, normalizeEan, isInternalBarcode,
-  candidateKeys, proveMatch, refTokensFromUrl,
+  candidateKeys, proveMatch, refTokensFromUrl, refTokensFromText,
 } from './keys'
 
 describe('normalizeRef', () => {
@@ -157,6 +157,70 @@ describe('proveMatch — refus (le cœur de la justesse)', () => {
   })
   it('refuse quand la source n’a aucune clé exploitable', () => {
     expect(proveMatch(candidateKeys({}), { sku: 'X1' })).toBeNull()
+  })
+})
+
+describe('refTokensFromText — réf constructeur dans le TITRE', () => {
+  // Relevé terrain : chez la moitié des marchands, la référence constructeur n'est ni
+  // dans un champ déclaré ni en tête de titre — elle est EN FIN de libellé.
+  it('extrait une réf à séparateurs en fin de titre (pieces-tracteur-tondeuse)', () => {
+    expect(refTokensFromText('Courroie tondeuse autoportée VIKING 6151-704-2110'))
+      .toContain('61517042110')
+  })
+  it('extrait une réf alphanumérique (autoportee)', () => {
+    expect(refTokensFromText('Fusible VAPORMATIC VLC2208')).toContain('VLC2208')
+    expect(refTokensFromText('Fusible HELLA 8JS742901051')).toContain('8JS742901051')
+  })
+  it('extrait plusieurs réfs d’un même titre (190cc)', () => {
+    const t = refTokensFromText('Guide Oregon 160SXE041 ou 160SDEA041 pour tronçonneuse')
+    expect(t).toContain('160SXE041')
+    expect(t).toContain('160SDEA041')
+  })
+  it('sépare les réfs collées par « / » et « , » (lames-tondeuses)', () => {
+    const t = refTokensFromText('Couteau pour Flymo 5127500-00/6,5127500-80/8. L : 82 mm')
+    expect(t).toContain('512750000')
+    expect(t).toContain('512750080')
+  })
+  it('écarte les cotes avec unité — jamais une référence', () => {
+    expect(refTokensFromText('Racloir à béton 30 cm')).toEqual([])
+    expect(refTokensFromText('Couteau pour Flymo longueur 82MM')).toEqual([])
+    expect(refTokensFromText('Bombe insecticide guêpes et frelons. 1000 ml')).toEqual([])
+  })
+  it('écarte les dimensions NxM (200x25 = une cote, pas une réf)', () => {
+    expect(refTokensFromText('Truelle d’ardoisier 200x25')).not.toContain('200X25')
+  })
+  it('écarte les mots sans chiffre et les tokens trop courts', () => {
+    expect(refTokensFromText('Bougie Champion')).toEqual([])
+    expect(refTokensFromText('Couteaux tondeuse. Coupe 11,8 cm. Par 2.')).toEqual([])
+  })
+  it('tolère vide/null', () => {
+    expect(refTokensFromText('')).toEqual([])
+    expect(refTokensFromText(null)).toEqual([])
+  })
+})
+
+describe('proveMatch — ref-in-title', () => {
+  it('prouve une réf d’origine citée en fin de titre concurrent', () => {
+    const keys = candidateKeys({ originRefs: ['6151-704-2110'] })
+    const proof = proveMatch(keys, { name: 'Courroie tondeuse autoportée VIKING 6151-704-2110' })
+    expect(proof?.evidence).toBe('ref-in-title')
+    expect(proof?.key.origin).toBe(true)
+  })
+  it('prouve une réf constructeur alphanumérique en fin de titre', () => {
+    const keys = candidateKeys({ ref: 'VLC2208' })
+    expect(proveMatch(keys, { name: 'Fusible VAPORMATIC VLC2208' })?.evidence).toBe('ref-in-title')
+  })
+  it('ne prouve JAMAIS par le titre une clé faible (< 5 caractères)', () => {
+    const keys = candidateKeys({ ref: 'A35' })
+    expect(proveMatch(keys, { name: 'Courroie plate A35 renforcée' })).toBeNull()
+  })
+  it('n’apparie pas une clé simplement INCLUSE dans un token du titre', () => {
+    const keys = candidateKeys({ ref: '12345' })
+    expect(proveMatch(keys, { name: 'Lame universelle 123456 pour tondeuse' })).toBeNull()
+  })
+  it('préfère une preuve déclarée (sku) à une preuve de titre', () => {
+    const keys = candidateKeys({ ref: 'VLC2208' })
+    expect(proveMatch(keys, { sku: 'VLC2208', name: 'Fusible VAPORMATIC VLC2208' })?.evidence).toBe('sku')
   })
 })
 

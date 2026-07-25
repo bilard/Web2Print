@@ -6,6 +6,31 @@
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX } from './paths'
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
+import type { SourceProduct } from './catalog/match'
+
+// ── Catalogue SOURCE persisté — jumeau de saveSourceCatalog côté client ─────────────
+// Sans lui, un suivi alimenté UNIQUEMENT par le cron n'a pas de catalogue source en
+// base : le recalcul mono-site (bouton ▶ de « Sites sources ») ne peut rien reconstruire.
+const sourceCol = (uid: string, watchId: string) => `${watchRootDoc(uid, watchId)}/reportSource`
+const SOURCE_CHUNK = 2000
+
+/** Persiste le catalogue source (chunké sous la limite 1 Mo/doc) + la TVA. Remplace tout. */
+export async function saveSourceCatalog(
+  uid: string, watchId: string, products: SourceProduct[], vatRate: number,
+): Promise<void> {
+  const db = getFirestore()
+  const col = sourceCol(uid, watchId)
+  // Purge des anciens chunks (catalogue rétréci → pas d'orphelins).
+  const existing = await db.collection(col).get().catch(() => null)
+  if (existing) await Promise.all(existing.docs.map((d) => d.ref.delete()))
+  const chunks = Math.max(1, Math.ceil(products.length / SOURCE_CHUNK))
+  await db.doc(`${col}/_meta`).set({ vatRate, chunks, count: products.length, at: Date.now() })
+  for (let i = 0; i < chunks; i++) {
+    await db.doc(`${col}/chunk_${i}`).set(
+      { products: stripUndefined(products.slice(i * SOURCE_CHUNK, (i + 1) * SOURCE_CHUNK)) },
+    )
+  }
+}
 
 const PRODUCT_CAP = 1000
 // Budget d'octets du doc `latest` : marge sous la limite dure Firestore de 1 048 576 o.

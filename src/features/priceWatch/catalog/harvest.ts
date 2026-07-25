@@ -24,6 +24,9 @@ export interface HarvestCursor {
   sweeps: number
   /** Le balayage courant est terminé — le prochain tick rouvrira un balayage. */
   done: boolean
+  /** Empreinte du contenu de la page précédente DANS LA CATÉGORIE COURANTE — sert à
+   *  détecter une pagination inopérante. Absente au début d'une catégorie. */
+  lastSignature?: string
 }
 
 /** Plafond de pages par catégorie : garde-fou contre une pagination sans fin
@@ -50,6 +53,9 @@ export interface PageResult {
   hadItems: boolean
   /** Une page suivante existe-t-elle (rel="next" détecté) ? */
   hasNext: boolean
+  /** Empreinte du contenu relevé (cf. `pageSignature`). Deux pages consécutives de
+   *  même empreinte = la pagination du site ne fonctionne pas. */
+  signature?: string
 }
 
 /**
@@ -59,14 +65,35 @@ export interface PageResult {
  * - plus de catégorie → balayage terminé (le prochain `openSweep` rebouclera)
  *
  * Une page vide clôt la catégorie : une liste paginée ne comporte pas de trou.
+ *
+ * Une page qui REPÈTE la précédente la clôt aussi. Certains sites servent la page 1
+ * pour tout `?page=N` : sans ce verrou, chaque catégorie consomme le plafond entier de
+ * requêtes pour ré-indexer les mêmes fiches (relevé : 5 601 pages moissonnées pour
+ * 230 produits réels). Le budget d'un tick est la ressource rare — il doit aller aux
+ * catalogues qui se paginent vraiment.
  */
 export function advance(cursor: HarvestCursor, result: PageResult): HarvestCursor {
-  const canPaginate = result.hadItems && result.hasNext && cursor.page < MAX_PAGES_PER_CATEGORY
-  if (canPaginate) return { ...cursor, page: cursor.page + 1 }
+  const repeated = result.signature != null && result.signature === cursor.lastSignature
+  const canPaginate = result.hadItems && result.hasNext && !repeated
+    && cursor.page < MAX_PAGES_PER_CATEGORY
+  if (canPaginate) return { ...cursor, page: cursor.page + 1, lastSignature: result.signature }
 
+  // Changement de catégorie : l'empreinte repart à zéro (deux catégories peuvent
+  // légitimement commencer par les mêmes produits).
   const nextCat = cursor.catIndex + 1
-  if (nextCat < cursor.categories.length) return { ...cursor, catIndex: nextCat, page: 1 }
-  return { ...cursor, catIndex: cursor.categories.length, page: 1, done: true }
+  if (nextCat < cursor.categories.length) {
+    return { ...cursor, catIndex: nextCat, page: 1, lastSignature: undefined }
+  }
+  return { ...cursor, catIndex: cursor.categories.length, page: 1, done: true, lastSignature: undefined }
+}
+
+/**
+ * Empreinte du contenu d'une page liste : nombre de fiches + URLs des trois premières.
+ * Suffisant pour distinguer deux pages d'une même catégorie, insensible à l'ordre des
+ * champs et aux variations de prix (une page relevée deux fois reste identique).
+ */
+export function pageSignature(urls: (string | undefined)[]): string {
+  return `${urls.length}|${urls.slice(0, 3).map((u) => String(u ?? '')).join('|')}`
 }
 
 /**

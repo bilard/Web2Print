@@ -139,6 +139,16 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
       })
     }
 
+    // Le dédoublonnage ci-dessus se fait sur `ref ?? ean ?? name` : une colonne de
+    // référence mal mappée fait retomber l'identité sur le NOM, et des milliers de
+    // lignes distinctes s'effondrent alors en une poignée. Rendre l'écart visible.
+    ctx.log('info', `${products.length} produit(s) source retenus sur ${rawRows.length} ligne(s).`)
+    if (products.length < rawRows.length * 0.9) {
+      ctx.log('warn',
+        `${rawRows.length - products.length} ligne(s) source écartées comme doublons — ` +
+        `vérifie la « Colonne Référence » (identité repliée sur le nom si elle est absente).`)
+    }
+
     // Relecture de l'index concurrent depuis Firestore (pas via un edge).
     const siteRefs: SiteRef[] = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
     const indexBySite = new Map<string, CompetitorListing[]>()

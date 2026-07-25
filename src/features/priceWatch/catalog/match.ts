@@ -9,7 +9,7 @@
 
 import {
   candidateKeys, proveMatch, normalizeRef, stripLeadingZeros, normalizeEan,
-  isInternalBarcode, refTokensFromUrl, MIN_REF_LEN, WEAK_REF_LEN,
+  isInternalBarcode, refTokensFromUrl, refTokensFromText, MIN_REF_LEN, WEAK_REF_LEN,
   type JoinKey, type MatchProof, type SourceProductKeys,
 } from './keys'
 import type { CompetitorListing, Availability } from './prestashop'
@@ -116,15 +116,73 @@ export function matchProduct(
   return { productId: product.id, siteId, outcome: 'not-found' }
 }
 
-/** Index en mémoire — pour les tests et les volumes modestes. */
-export function buildMemoryIndex(listings: CompetitorListing[]): IndexLookup {
-  const map = new Map<string, CompetitorListing[]>()
+/**
+ * Clés lues dans le LIBELLÉ complet de la fiche, hors celles déjà émises par
+ * `indexKeysOf`. Chez la moitié des marchands relevés, la référence constructeur n'est
+ * écrite QUE là (« Courroie tondeuse autoportée VIKING 6151-704-2110 »).
+ *
+ * Séparées des clés sûres parce qu'elles n'ont pas le même statut : un libellé peut
+ * citer la référence d'un produit VOISIN (compatibilités, déclinaisons). `buildMemoryIndex`
+ * écarte donc celles qui désignent plusieurs fiches distinctes.
+ */
+export function titleKeysOf(listing: CompetitorListing): string[] {
+  const already = new Set(indexKeysOf(listing))
+  return refTokensFromText(listing.name).filter((k) => !already.has(k))
+}
+
+/**
+ * Une seule fiche par URL. Les pages liste se recouvrent (pagination re-balayée d'un
+ * cycle à l'autre) : sur le terrain, un site est monté à 97 % de doublons. Sans cette
+ * passe, l'index gonfle la mémoire, fausse les compteurs de fiches, et fait passer une
+ * même fiche vue N fois pour N produits homonymes (donc pour une clé ambiguë).
+ *
+ * Entre deux relevés d'une même URL, on garde le plus RENSEIGNÉ (un relevé sans prix
+ * arrive quand le thème charge le prix en AJAX) — jamais simplement le dernier.
+ */
+export function dedupeListings(listings: CompetitorListing[]): CompetitorListing[] {
+  const byUrl = new Map<string, CompetitorListing>()
+  const score = (l: CompetitorListing) =>
+    (l.price != null ? 4 : 0) + (l.ref || l.gtin13 ? 2 : 0) + (l.availability ? 1 : 0)
   for (const l of listings) {
+    const url = String(l.url ?? '')
+    if (!url) continue
+    const prev = byUrl.get(url)
+    if (!prev || score(l) > score(prev)) byUrl.set(url, l)
+  }
+  return [...byUrl.values()]
+}
+
+/**
+ * Index en mémoire d'un catalogue concurrent.
+ *
+ * Deux niveaux de clés : celles d'`indexKeysOf` (référence/code-barres déclarés, EAN
+ * d'URL) sont posées telles quelles ; celles du libellé ne sont posées que si elles
+ * restent NON AMBIGUËS — une clé de titre qui désigne deux fiches distinctes est
+ * retirée, et une clé déjà portée par une clé sûre n'est jamais renforcée par un titre.
+ * Principe du module : un trou vaut mieux qu'un faux prix.
+ */
+export function buildMemoryIndex(listings: CompetitorListing[]): IndexLookup {
+  const unique = dedupeListings(listings)
+  const map = new Map<string, CompetitorListing[]>()
+  for (const l of unique) {
     for (const key of indexKeysOf(l)) {
       const bucket = map.get(key)
       if (bucket) bucket.push(l)
       else map.set(key, [l])
     }
+  }
+  // Clés de titre : collectées à part, puis versées seulement si elles restent seules.
+  const fromTitle = new Map<string, CompetitorListing[]>()
+  for (const l of unique) {
+    for (const key of titleKeysOf(l)) {
+      if (map.has(key)) continue // une clé déclarée fait foi
+      const bucket = fromTitle.get(key)
+      if (bucket) bucket.push(l)
+      else fromTitle.set(key, [l])
+    }
+  }
+  for (const [key, bucket] of fromTitle) {
+    if (bucket.length === 1) map.set(key, bucket)
   }
   return (key) => map.get(key)
 }
