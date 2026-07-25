@@ -65,10 +65,10 @@ function statusBadge(status: 'ok' | 'empty' | 'error' | 'never' | 'disabled', s:
   return { cls: TONE_BADGE[meta.tone], icon: meta.icon, label: meta.label, detail, title }
 }
 
-function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute'): JSX.Element {
+function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute', title?: string): JSX.Element {
   const color = tone === 'ok' ? 'text-emerald-300' : tone === 'warn' ? 'text-amber-300' : 'text-white/40'
   return (
-    <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+    <span className="inline-flex items-baseline gap-1 whitespace-nowrap" title={title}>
       <span className="text-white/25">{label}</span>
       <span className={`tabular-nums ${color}`}>{value}</span>
     </span>
@@ -194,9 +194,16 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
       {scraped && (
         <div className="pl-6 mt-1 space-y-0.5 text-[10px]">
           <div className="flex items-center gap-x-2.5 overflow-hidden">
-            {chip('produits', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute')}
-            {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn')}
-            {stats.matched != null && chip('appariés', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute')}
+            {chip('produits', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute',
+              'Fiches distinctes relevées sur CE site (doublons de pagination exclus). Ce n’est pas votre catalogue : c’est le sien.')}
+            {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn',
+              'Part des fiches relevées ici qui portent un prix. Un site qui charge ses prix en JavaScript reste bas.')}
+            {/* Compteur PAR SITE = paires produit×concurrent. Le KPI du tableau de bord
+                compte des produits DISTINCTS : additionner les sites le dépasse forcément
+                (un produit vendu par 5 concurrents pèse 5 ici, 1 là-bas). Dit explicitement,
+                sinon l'écart passe pour une incohérence. */}
+            {stats.matched != null && chip('appariés ici', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute',
+              'Vos produits retrouvés CHEZ CE CONCURRENT. N’additionnez pas les sites : un produit vendu par plusieurs concurrents est compté une fois par site, mais une seule fois dans le total du tableau de bord.')}
           </div>
           <div className="flex items-center gap-x-2.5 overflow-hidden">
             {swept

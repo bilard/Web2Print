@@ -19,11 +19,13 @@ function Delta({ cur, prev, invert }: { cur: number; prev: number | undefined; i
   )
 }
 
-function Tile({ label, value, sub, accent, delta, spark }: {
+function Tile({ label, value, sub, accent, delta, spark, title }: {
   label: string; value: React.ReactNode; sub?: string; accent?: string; delta?: React.ReactNode; spark?: React.ReactNode
+  /** Infobulle — sert à lever les ambiguïtés de comptage (produits vs paires). */
+  title?: string
 }) {
   return (
-    <div className="bg-surface rounded-md px-3 py-2.5 border border-white/5 min-w-0">
+    <div className="bg-surface rounded-md px-3 py-2.5 border border-white/5 min-w-0" title={title}>
       <div className="flex items-start justify-between gap-1">
         <div className="text-white/40 text-[10px] uppercase tracking-wide truncate">{label}</div>
         {spark}
@@ -58,7 +60,10 @@ export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoin
       <Tile label="Écart médian" value={ck.medianGapPct == null ? '—' : <AnimatedNumber value={ck.medianGapPct} format={pct} />} accent={signedPctClass(ck.medianGapPct)}
         sub={ck.truncated ? 'sur top 1000' : 'toutes paires'} />
       <Tile label="Impact €" value={<AnimatedNumber value={ck.totalGapEur} format={eur} />} accent="text-rose-400" sub="Σ écart vs + bas" />
-      <Tile label="Appariés" value={<AnimatedNumber value={k.products} />}
+      <Tile label="Produits appariés" value={<AnimatedNumber value={k.products} />}
+        title={'Vos produits retrouvés chez AU MOINS UN concurrent — comptés une seule fois, '
+          + 'même vendus par plusieurs. Le compteur « appariés ici » de chaque site compte, lui, '
+          + 'une fois par site : leur somme est donc toujours supérieure à ce total.'}
         sub={`${k.matchedExact} exact · ${k.matchedOriginOnly} orig.`}
         delta={d && <Delta cur={d.last.products} prev={d.prev.products} />}
         spark={<Sparkline values={s.products} color="#818cf8" />} />
