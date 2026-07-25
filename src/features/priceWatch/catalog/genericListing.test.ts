@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { parseListingGeneric } from './genericListing'
 
 describe('parseListingGeneric (toute techno, JSON-LD)', () => {
@@ -34,5 +36,24 @@ describe('parseListingGeneric (toute techno, JSON-LD)', () => {
 
   it('rend [] quand aucun Product JSON-LD', () => {
     expect(parseListingGeneric('<html><body>rien</body></html>')).toEqual([])
+  })
+})
+
+describe('gabarit CollectionPage (enseignes : castorama, Kingfisher…)', () => {
+  const html = readFileSync(join(__dirname, '__fixtures__', 'listing-castorama.html'), 'utf-8')
+
+  it('descend dans mainEntity → ItemList → ListItem.item', () => {
+    const out = parseListingGeneric(html, 'https://www.castorama.fr/abri-de-jardin-metal/cat_id_0003374.cat')
+    // Sans la descente `mainEntity`, la page entière rendait 0 produit.
+    expect(out.length).toBe(3)
+    expect(out[0]).toMatchObject({ price: 569, currency: 'EUR', ref: '3222871201653' })
+    expect(out[0].url).toMatch(/^https:\/\/www\.castorama\.fr\//)
+  })
+
+  it('décode les entités HTML du JSON-LD (nom lisible, URL d’image utilisable)', () => {
+    const out = parseListingGeneric(html, 'https://www.castorama.fr/')
+    expect(out[0].name).toContain("d'ancrage")
+    expect(out[0].name).not.toContain('&apos;')
+    expect(out[0].image).not.toContain('&amp;')
   })
 })

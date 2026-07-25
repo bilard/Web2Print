@@ -11,12 +11,17 @@ type Availability = NonNullable<CompetitorListing['availability']>
 
 const LD_JSON_RE = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
 
-/** Aplati @graph, ItemList.itemListElement (+ ListItem.item) et ProductGroup.hasVariant. */
+/** Aplati @graph, mainEntity (CollectionPage/SearchResultsPage), ItemList.itemListElement
+ *  (+ ListItem.item) et ProductGroup.hasVariant. */
 function flatten(node: unknown, out: Record<string, unknown>[]): void {
   if (Array.isArray(node)) { for (const n of node) flatten(n, out); return }
   if (!node || typeof node !== 'object') return
   const obj = node as Record<string, unknown>
   if (Array.isArray(obj['@graph'])) flatten(obj['@graph'], out)
+  // `CollectionPage`/`SearchResultsPage` rangent leur ItemList sous `mainEntity` : sans
+  // cette descente, une page catégorie entière rendait 0 produit (constaté sur castorama,
+  // 51 Product publiés et invisibles). Mot-clé schema.org standard, pas un cas par-site.
+  if (obj.mainEntity && typeof obj.mainEntity === 'object') flatten(obj.mainEntity, out)
   if (Array.isArray(obj.itemListElement)) flatten(obj.itemListElement, out)
   if (obj.item && typeof obj.item === 'object') flatten(obj.item, out) // ListItem → item
   if (Array.isArray(obj.hasVariant)) flatten(obj.hasVariant, out)
@@ -29,7 +34,21 @@ const typesOf = (o: Record<string, unknown>): string[] => {
 }
 const isProduct = (o: Record<string, unknown>): boolean => typesOf(o).some((t) => /product/i.test(t))
 
-const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+/** Décode les entités HTML des chaînes JSON-LD (`&apos;`, `&amp;`, `&#39;`, `&eacute;`…).
+ *  Le JSON-LD transporte du texte HTML-échappé : sans ça, les noms sortaient avec
+ *  « &apos; » et les URLs d'image avec « &amp; » (image cassée à l'affichage). */
+const NAMED: Record<string, string> = {
+  amp: '&', apos: "'", quot: '"', lt: '<', gt: '>', nbsp: ' ', eacute: 'é', egrave: 'è',
+  agrave: 'à', ccedil: 'ç', ocirc: 'ô', ecirc: 'ê', ugrave: 'ù', deg: '°', euro: '€',
+}
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&([a-z]+);/gi, (m, n) => NAMED[String(n).toLowerCase()] ?? m)
+}
+
+const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? decodeEntities(v.trim()) : undefined)
 
 function num(v: unknown): number | undefined {
   if (typeof v === 'number' && isFinite(v)) return v

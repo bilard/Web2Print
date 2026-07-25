@@ -10,6 +10,7 @@ import { parseListingGeneric } from './genericListing'
 import { parseListingDomCards } from './genericCards'
 import { extractCategoryLinks, selectCategories, keywordsForFamilies } from './categories'
 import { discoverGenericListings } from './genericDiscovery'
+import { candidateListingUrls, probeListingUrls } from './probeListings'
 import {
   initCursor, currentTarget, advance, openSweep, pageDocId, pageSignature,
   type HarvestCursor,
@@ -70,7 +71,25 @@ export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): 
     if (ps.length > 0) return ps
   }
   // 2. GÉNÉRIQUE toute techno : sitemap (structure de confiance) puis liens home.
-  return discoverGenericListings(cfg.domain, deps.fetchHtml, home, { keywords })
+  const generic = await discoverGenericListings(cfg.domain, deps.fetchHtml, home, { keywords })
+  if (generic.length > 0) return generic
+  // 3. SONDAGE (dernier recours, coûteux) : les étages 1 et 2 devinent d'après l'URL et
+  //    restent muets sur les plateformes maison (castorama : `…/cat_id_0003374.cat`).
+  //    Ici on ouvre quelques liens internes et on garde ceux qui contiennent VRAIMENT des
+  //    produits — le contenu tranche, pas la convention de chemin. Sans accueil lisible
+  //    (403 anti-bot), il n'y a aucun candidat : on ne dépense rien.
+  if (!home) return []
+  const candidates = candidateListingUrls(home, cfg.domain, { keywords })
+  if (candidates.length === 0) return []
+  deps.log?.(`${cfg.domain} : motif d'URL inconnu — sondage de ${candidates.length} lien(s) candidat(s).`)
+  return probeListingUrls(candidates, deps.fetchHtml, countListingProducts, { log: deps.log })
+}
+
+/** Produits d'une page, même cascade que la moisson (PrestaShop → JSON-LD → cartes DOM). */
+function countListingProducts(html: string, url: string): number {
+  return parseListingPage(html, url).length
+    || parseListingGeneric(html, url).length
+    || parseListingDomCards(html, url).length
 }
 
 /**
