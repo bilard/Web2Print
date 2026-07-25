@@ -12,7 +12,7 @@ import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { buildSiteFetcher } from '@/features/priceWatch/catalog/siteFetch'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
-import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
+import { resolveSitesInput , splitPageBudget } from '@/features/priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '@/features/priceWatch/catalog/runHarvest'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '@/features/priceWatch/catalog/store'
 import { harvestProgress } from '@/features/priceWatch/catalog/harvest'
@@ -102,8 +102,9 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       return { status: statusSheet([]) }
     }
     const families = config.families.split(',').map((f) => f.trim()).filter(Boolean)
-    // Budget réparti équitablement entre les sites (au moins 1 page chacun).
-    const perSite = Math.max(1, Math.floor(Math.max(1, config.pageBudget) / sites.length))
+    // Budget : un site peut RÉSERVER ses pages (concurrent coûteux à brider) ; le reste
+    // est partagé équitablement entre les autres.
+    const budgets = splitPageBudget(sites, config.pageBudget)
 
     // Le suivi existe dès la 1ʳᵉ moisson (liste + dashboard), sans attendre « Comparer ».
     await touchWatch(uid, watchId, ctx.workflowName)
@@ -163,7 +164,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
         log: (m) => ctx.log('info', m),
         signal: ctx.signal,
       }
-      const res = await harvestPass(cfg, deps, perSite)
+      const res = await harvestPass(cfg, deps, budgets.get(site.id) ?? 1)
       const elapsedMs = Date.now() - t0
       const pagesTotal = await countPages(uid, watchId, cfg.siteId)
       // % de prix CUMULÉ sur le balayage courant, pas sur la seule passe : une passe qui

@@ -79,10 +79,12 @@ function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute', title?
   )
 }
 
-export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live, now, onToggle, onEngine, onAuth, onScrape, scraping, onReset, onRemove }: {
+export function SourceSitesRowItem({ domain, enabled, engine, auth, pageBudget, stats, live, now, onToggle, onEngine, onAuth, onBudget, onScrape, scraping, onReset, onRemove }: {
   domain: string
   enabled: boolean
   engine: string
+  /** Pages RÉSERVÉES à ce site par run (vide = part du budget commun). */
+  pageBudget?: number
   /** Site à prix connectés (identifiants configurés). */
   auth: boolean
   stats: SiteRowStats
@@ -94,6 +96,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
   onEngine: (engine: string) => void
   /** Ouvre le mini-formulaire d'identifiants (accès connecté). */
   onAuth: () => void
+  /** Réserve un budget de pages pour ce site (undefined = revenir au partage commun). */
+  onBudget: (pages: number | undefined) => void
   /** Lance une moisson de CE site seul (bouton ▶). */
   onScrape: () => void
   /** true = ce site est en cours de moisson manuelle (spinner). */
@@ -191,6 +195,17 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
         >
           {ENGINE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
+        {/* Budget RÉSERVÉ : bride un concurrent coûteux (Bright Data est facturé à la
+            requête) sans rationner les sites gratuits. Vide = part du budget commun. */}
+        <input
+          type="number"
+          min={1}
+          value={pageBudget ?? ''}
+          onChange={(e) => onBudget(e.target.value.trim() ? Math.max(1, Number(e.target.value)) : undefined)}
+          placeholder="pages"
+          title="Pages par run réservées à ce site. Vide = part du budget commun."
+          className="shrink-0 w-16 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
+        />
       </div>
       {/* Stats en 2 RANGÉES logiques fixes (pas de wrap aléatoire) :
           rangée DONNÉES (produits · prix · appariés) puis rangée MOISSON (balayage ·

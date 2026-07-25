@@ -77,3 +77,28 @@ describe('selectCategories', () => {
     expect(selectCategories(links, ['carburateur'])).toEqual([])
   })
 })
+
+describe('keywordsForFamilies — familles hors dictionnaire', () => {
+  it('dérive les mots-clés du libellé (plus aucune famille ignorée en silence)', () => {
+    expect(keywordsForFamilies(['CYLINDRES, PISTONS, BIELLES ET SEGMENTS']))
+      .toEqual(expect.arrayContaining(['cylindre', 'piston', 'bielle', 'segment']))
+    expect(keywordsForFamilies(['JOINTS'])).toContain('joint')
+  })
+
+  it('ne rend JAMAIS une liste vide pour une famille nommée', () => {
+    // Vide = « aucun filtre » côté moisson : la famille inconnue faisait balayer TOUT.
+    for (const fam of ['PIECES ORIGINE', 'CHASSIS ET PIECES MECANIQUES', 'ROULEMENTS, PNEUMATIQUES ET CHAMBRES A AIR']) {
+      expect(keywordsForFamilies([fam]).length).toBeGreaterThan(0)
+    }
+  })
+
+  it('garde les synonymes du dictionnaire pour les familles connues', () => {
+    const kw = keywordsForFamilies(['COUPE'])
+    expect(kw).toContain('lame')       // synonyme métier
+    expect(kw).toContain('coupe')      // mot du libellé
+  })
+
+  it('ignore les mots grammaticaux et les mots trop courts', () => {
+    expect(keywordsForFamilies(['PIECES ET ACCESSOIRES'])).not.toContain('et')
+  })
+})

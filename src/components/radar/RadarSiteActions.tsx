@@ -41,7 +41,7 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
   onChanged: () => void
 }) {
   const uid = useAuthStore((s) => s.user?.uid)
-  const [busy, setBusy] = useState<'scrape' | 'toggle' | 'engine' | 'reset' | 'remove' | null>(null)
+  const [busy, setBusy] = useState<'scrape' | 'toggle' | 'engine' | 'budget' | 'reset' | 'remove' | null>(null)
   const [creds, setCreds] = useState(false)
   const host = normalizeDomain(domain)
   const enabled = row?.enabled !== false
@@ -71,6 +71,16 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
   const onEngine = (engine: string) => guard('engine', async () => {
     await patchSourceSite(uid!, workflowId!, host, { engine: engine === 'auto' ? undefined : engine })
     onChanged()
+  })
+
+  // Budget RÉSERVÉ à ce site : bride un concurrent coûteux (Bright Data est facturé à la
+  // requête) sans rationner les gratuits. Vide = part du budget commun.
+  const onBudget = (raw: string) => guard('budget', async () => {
+    const pages = raw.trim() ? Math.max(1, Math.floor(Number(raw))) : undefined
+    if (raw.trim() && !Number.isFinite(pages)) return
+    await patchSourceSite(uid!, workflowId!, host, { pageBudget: pages })
+    onChanged()
+    toast.success(pages ? `${host} : ${pages} page(s) par run.` : `${host} : budget partagé.`)
   })
 
   const onReset = () => {
@@ -116,9 +126,19 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
           </IconBtn>
         )}
         {row && (
+          <input
+            type="number" min={1} defaultValue={row.pageBudget ?? ''}
+            onBlur={(e) => { if (String(row.pageBudget ?? '') !== e.target.value.trim()) onBudget(e.target.value) }}
+            placeholder="pages" aria-label="Pages par run réservées à ce site"
+            title="Pages par run réservées à ce site. Vide = part du budget commun."
+            className="radar-inset ml-auto h-[34px] w-[72px] px-2 text-[12px]"
+            style={{ color: 'var(--radar-text-2)', border: '0.5px solid var(--radar-hair)' }}
+          />
+        )}
+        {row && (
           <select value={row.engine ?? 'auto'} onChange={(e) => onEngine(e.target.value)}
             aria-label="Moteur de scraping" title="Moteur de scraping (Auto = cascade standard)"
-            className="radar-inset ml-auto h-[34px] px-2 text-[12px]"
+            className="radar-inset h-[34px] px-2 text-[12px]"
             style={{ color: 'var(--radar-text-2)', border: '0.5px solid var(--radar-hair)' }}>
             {ENGINES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>

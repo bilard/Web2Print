@@ -26,11 +26,36 @@ const FAMILY_KEYWORDS: Record<string, string[]> = {
   'LANCEURS ET DEMARREURS': ['lanceur', 'demarreur'],
 }
 
-/** Mots-clés de catégorie pour un ensemble de familles. Familles inconnues ignorées. */
+/** Mots grammaticaux : ne discriminent aucune catégorie (« PIECES ET ACCESSOIRES »). */
+const STOP_WORDS = new Set([
+  'et', 'ou', 'de', 'des', 'du', 'la', 'le', 'les', 'un', 'une', 'aux', 'pour', 'avec',
+  'sur', 'sans', 'par', 'en', 'dans', 'autres', 'autre', 'divers', 'ref', 'nc',
+])
+
+/**
+ * Mots-clés dérivés du LIBELLÉ de la famille : chaque mot signifiant (≥ 4 lettres, hors
+ * mots vides) devient un motif de slug, au singulier grossier (« COURROIES » → courroie).
+ *
+ * ⚠ Sans cette dérivation, seules les 7 familles du dictionnaire ci-dessus étaient
+ * comprises : les autres (« PIECES ORIGINE », « JOINTS », « CYLINDRES, PISTONS… »)
+ * étaient ignorées EN SILENCE, la liste de mots-clés retombait à vide — et vide signifie
+ * « aucun filtre », donc la moisson balayait tout le catalogue du concurrent, l'inverse
+ * exact de l'intention. Un mot-clé surnuméraire élargit la moisson, il ne casse rien.
+ */
+function keywordsFromLabel(family: string): string[] {
+  return foldText(family)
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 4 && !STOP_WORDS.has(w))
+    .map((w) => (w.endsWith('s') && w.length > 4 ? w.slice(0, -1) : w))
+}
+
+/** Mots-clés de catégorie pour un ensemble de familles : synonymes du dictionnaire quand
+ *  la famille y figure, PLUS les mots de son propre libellé (toute famille compte). */
 export function keywordsForFamilies(families: string[]): string[] {
   const out = new Set<string>()
   for (const fam of families) {
     for (const kw of FAMILY_KEYWORDS[fam.toUpperCase().trim()] ?? []) out.add(foldText(kw))
+    for (const kw of keywordsFromLabel(fam)) out.add(kw)
   }
   return [...out]
 }

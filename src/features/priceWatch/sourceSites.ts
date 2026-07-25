@@ -17,6 +17,8 @@ export interface SourceSiteRow {
   engine?: string
   /** Site à prix connectés : identifiants saisis dans l'UI, stockés en Firestore. */
   auth?: boolean
+  /** Pages par run réservées à ce site (vide = part du budget commun). */
+  pageBudget?: number
 }
 
 /** Payload émis sur le port `sites` : identité du suivi + sites ACTIFS uniquement. */
@@ -50,6 +52,8 @@ export function rowsToCompetitorSites(rows: SourceSiteRow[]): CompetitorSite[] {
       fields: fields.length ? fields : ['price'],
       ...(engine && engine !== 'auto' ? { engine } : {}),
       ...(row.auth ? { auth: true } : {}),
+      ...(Number.isFinite(row.pageBudget) && (row.pageBudget as number) > 0
+        ? { pageBudget: Math.floor(row.pageBudget as number) } : {}),
     })
   }
   return out
@@ -159,4 +163,33 @@ export function importSitesIntoRows(text: string, existing: SourceSiteRow[]): So
     added.push({ domain: site.domain, enabled: true, ...(fields && fields !== 'price' ? { fields } : {}) })
   }
   return [...existing, ...added]
+}
+
+/**
+ * Répartit le budget de pages d'un run entre les sites. Un site qui déclare son propre
+ * `pageBudget` est servi EN PREMIER et à sa valeur exacte ; le reste du budget est partagé
+ * équitablement entre les autres. Sans cette réservation, un concurrent coûteux
+ * (Bright Data, facturé à la requête) recevait la même part qu'un site gratuit.
+ *
+ * Garde-fous : au moins 1 page par site (sinon un site ne serait jamais visité), et les
+ * budgets explicites ne sont PAS rognés quand ils dépassent le total — c'est un choix
+ * assumé de l'utilisateur, on ne le contredit pas en silence.
+ */
+export function splitPageBudget(
+  sites: { id: string; pageBudget?: number }[], totalBudget: number,
+): Map<string, number> {
+  const out = new Map<string, number>()
+  const total = Math.max(1, Math.floor(totalBudget))
+  const explicit = sites.filter((s) => Number.isFinite(s.pageBudget) && (s.pageBudget as number) > 0)
+  const shared = sites.filter((s) => !explicit.includes(s))
+  let reserved = 0
+  for (const s of explicit) {
+    const b = Math.max(1, Math.floor(s.pageBudget as number))
+    out.set(s.id, b)
+    reserved += b
+  }
+  const rest = Math.max(0, total - reserved)
+  const per = shared.length > 0 ? Math.max(1, Math.floor(rest / shared.length)) : 0
+  for (const s of shared) out.set(s.id, per)
+  return out
 }

@@ -1,8 +1,7 @@
 // src/features/priceWatch/sourceSites.test.ts
 import { describe, it, expect } from 'vitest'
 import {
-  rowsToCompetitorSites, isSourceSitesPayload, resolveSitesInput, importSitesIntoRows,
-  normalizeDomain, deriveWatchId, siteStatus, siteStatusRank, type SourceSiteRow,
+  rowsToCompetitorSites, isSourceSitesPayload, resolveSitesInput, importSitesIntoRows, normalizeDomain, deriveWatchId, siteStatus, siteStatusRank, type SourceSiteRow, splitPageBudget,
 } from './sourceSites'
 
 describe('normalizeDomain', () => {
@@ -107,5 +106,35 @@ describe('importSitesIntoRows', () => {
     expect(rows[1].domain).toBe('www.jardimax.com')
     expect(rows[1].enabled).toBe(true)
     expect(rows[2].fields).toBe('price, stock')
+  })
+})
+
+describe('splitPageBudget', () => {
+  const s = (id: string, pageBudget?: number) => ({ id, pageBudget })
+
+  it('sert d’abord les budgets réservés, partage le reste', () => {
+    const b = splitPageBudget([s('cher', 10), s('a'), s('b')], 100)
+    expect(b.get('cher')).toBe(10)
+    expect(b.get('a')).toBe(45)
+    expect(b.get('b')).toBe(45)
+  })
+
+  it('bride vraiment un concurrent coûteux (cas Bright Data)', () => {
+    // Avant : 500/12 = 41 pages pour tout le monde, y compris le site facturé à la requête.
+    const sites = [s('leroymerlin', 5), ...Array.from({ length: 11 }, (_, i) => s(`ps${i}`))]
+    const b = splitPageBudget(sites, 500)
+    expect(b.get('leroymerlin')).toBe(5)
+    expect(b.get('ps0')).toBe(45)
+  })
+
+  it('garantit au moins 1 page par site', () => {
+    const b = splitPageBudget([s('a'), s('b'), s('c')], 2)
+    expect([...b.values()]).toEqual([1, 1, 1])
+  })
+
+  it('ne rogne pas un budget explicite plus grand que le total (choix assumé)', () => {
+    const b = splitPageBudget([s('gros', 80), s('autre')], 50)
+    expect(b.get('gros')).toBe(80)
+    expect(b.get('autre')).toBe(1)
   })
 })

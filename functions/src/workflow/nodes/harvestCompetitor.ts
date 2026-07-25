@@ -13,7 +13,7 @@ import { getFirestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
 import { fetchHtml } from '../../scraper/fetchHtml'
 import { stableId } from '../../priceWatch/helpers'
-import { resolveSitesInput } from '../../priceWatch/sourceSites'
+import { resolveSitesInput, splitPageBudget } from '../../priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '../../priceWatch/catalog/runHarvest'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '../../priceWatch/catalog/store'
 import { harvestProgress } from '../../priceWatch/catalog/harvest'
@@ -64,7 +64,9 @@ registerServerNode({
     const families = String(config.families ?? '').split(',').map((f) => f.trim()).filter(Boolean)
     const pageBudget = Math.max(1, Number(config.pageBudget) || 40)
     // Budget réparti équitablement entre les sites (au moins 1 page chacun).
-    const perSite = Math.max(1, Math.floor(pageBudget / sites.length))
+    // Budget : un site peut RÉSERVER ses pages (concurrent coûteux à brider) ; le reste
+    // est partagé équitablement entre les autres.
+    const budgets = splitPageBudget(sites, pageBudget)
 
     // Le suivi existe dès la 1ʳᵉ moisson (liste + dashboard), sans attendre « Comparer ».
     await touchWatch(ctx.uid, watchId, ctx.workflowName)
@@ -129,7 +131,7 @@ registerServerNode({
         log: (m) => ctx.log('info', m),
         signal: ctx.signal,
       }
-      const res = await harvestPass(cfg, deps, perSite)
+      const res = await harvestPass(cfg, deps, budgets.get(site.id) ?? 1)
       if (res.sweepComplete) doneCount++
       const elapsedMs = Date.now() - t0
       const pagesTotal = await countPages(ctx.uid, watchId, cfg.siteId)

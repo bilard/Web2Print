@@ -28,6 +28,9 @@ export interface CompetitorSite {
   /** Site à prix CONNECTÉS : la moisson passe par la CF `fetchPageHtmlAuth` (login cookie).
    *  Les identifiants vivent en Firestore (users/{uid}.siteCredentials[host]), pas ici. */
   auth?: boolean
+  /** Pages par run RÉSERVÉES à ce site. Absent = part du budget commun. Sert à brider un
+   *  concurrent coûteux (Bright Data facturé à la requête) sans rationner les gratuits. */
+  pageBudget?: number
 }
 
 export type MatchStatus = 'auto' | 'confirmed' | 'pending' | 'rejected'

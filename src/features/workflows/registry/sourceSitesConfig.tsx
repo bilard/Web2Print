@@ -345,11 +345,13 @@ export function SourceSitesConfig({ config, onChange }: {
                 enabled={r.enabled}
                 engine={r.engine ?? 'auto'}
                 auth={!!r.auth}
+                pageBudget={r.pageBudget}
                 stats={stats}
                 live={isLive(stats)}
                 now={now}
                 onToggle={(enabled) => patchRow(i, { enabled })}
                 onEngine={(engine) => patchRow(i, engine === 'auto' ? { engine: undefined } : { engine })}
+                onBudget={(pageBudget) => patchRow(i, { pageBudget })}
                 onAuth={() => setCredsRow((c) => (c === i ? null : i))}
                 onScrape={() => void scrapeSite(r)}
                 scraping={scrapingId === normalizeDomain(r.domain)}
