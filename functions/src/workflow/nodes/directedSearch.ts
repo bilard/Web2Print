@@ -14,6 +14,7 @@ import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
 import { directedPass, type DirectedSourceProduct, type DirectedSite, type DirectedHit } from '../../priceWatch/catalog/searchDirected'
 import { parseProductPage, parsePriceFragment, type CompetitorListing } from '../../priceWatch/catalog/prestashop'
+import { extractOriginRefs } from '../../priceWatch/catalog/match'
 import { jinaSearch, jinaRead } from '../jina'
 import { brightDataRead } from '../brightData'
 import { firecrawlScrapeProduct } from '../../scraper/firecrawlProduct'
@@ -134,15 +135,20 @@ registerServerNode({
     const refCol = String(config.refColumn ?? '').trim()
     const eanCol = String(config.eanColumn ?? '').trim()
     const nameCol = String(config.nameColumn ?? '').trim()
+    const descCol = String(config.descriptionColumn ?? '').trim()
     if (!refCol && !eanCol) throw new Error('Recherche dirigée : renseigne au moins une colonne Référence ou EAN.')
 
+    // Réf d'ORIGINE (jumeau du client) : sur un catalogue de pièces adaptables, la réf
+    // article et l'EAN sont propres au distributeur — aucun concurrent ne les porte.
+    // Sans cette colonne, la recherche dirigée interroge des clés introuvables et rend 0.
     const products: DirectedSourceProduct[] = sheet.rows
       .map((r, i) => ({
         id: String((r as { _id?: unknown })._id ?? i),
         ref: refCol ? String(r[refCol] ?? '').trim() || undefined : undefined,
         ean: eanCol ? String(r[eanCol] ?? '').trim() || undefined : undefined,
+        originRefs: descCol ? extractOriginRefs(String(r[descCol] ?? '')) : undefined,
       }))
-      .filter((p) => p.ref || p.ean)
+      .filter((p) => p.ref || p.ean || p.originRefs?.length)
 
     const budget = Math.max(1, Number(config.productBudget) || 20)
     const CURSOR_META = 'directed_cursor' // pas de __…__ : Firestore réserve ces ids
@@ -223,6 +229,12 @@ registerServerNode({
       }
     })
     ctx.log('info', `${rows.length} prix trouvé(s) sur ${pass.processed} produit(s) [curseur ${startCursor} → ${pass.nextCursor} / ${products.length}] × ${sites.length} site(s).`)
+    if (rows.length === 0) {
+      ctx.log('warn',
+        'Aucun prix trouvé sur cette passe. Vérifie que les clés interrogées existent CHEZ LES CONCURRENTS : ' +
+        'une référence article et un EAN propres au distributeur sont introuvables ailleurs. ' +
+        'Sur un catalogue de pièces adaptables, renseigne « Colonne Description (réf. d’origine) ».')
+    }
     if (hasGeneric) {
       const genericSiteIds = new Set(sites.filter((s) => s.generic).map((s) => s.siteId))
       const genMatched = pass.results.filter((r) => genericSiteIds.has(r.siteId)).length

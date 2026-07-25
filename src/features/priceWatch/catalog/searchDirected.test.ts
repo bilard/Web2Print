@@ -148,6 +148,22 @@ describe('searchDirected — carte recherche avec « Référence: » en texte li
     expect(hit!.evidence).toBe('sku')
     expect(hit!.listing.price).toBe(34.9)
   })
+
+  it('cherche par réf d’ORIGINE quand la réf article est un code interne', async () => {
+    // Cas F1 : ARTICLECODE (« 1108817 ») et l'EAN sont propres au distributeur — aucun
+    // concurrent ne les porte. Seule la réf d'origine citée dans la description joint.
+    const queried: string[] = []
+    const hit = await searchProductOnSite(
+      { ref: '1108817', ean: '3582321842592', originRefs: ['181004383'] },
+      'jardimax.com',
+      { fetchHtml: async (u) => { queried.push(u); return u.includes('181004383') ? card : '' } },
+    )
+    expect(hit).not.toBeNull()
+    expect(hit!.query).toBe('181004383')
+    expect(hit!.evidence).toBe('sku')
+    // La réf article et l'EAN restent essayés d'abord (ils priment quand ils joignent).
+    expect(queried.some((u) => u.includes('1108817'))).toBe(true)
+  })
 })
 
 describe('directedPass — débit', () => {
