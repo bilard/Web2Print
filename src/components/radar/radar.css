@@ -124,6 +124,19 @@
   border-radius: 9px;
 }
 
+/* Feuille de navigation (menu hamburger) : glisse depuis le bord droit */
+.radar-menu-panel {
+  animation: radar-slide-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes radar-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
 .radar-noscroll {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -144,7 +157,8 @@
 @media (prefers-reduced-motion: reduce) {
   .radar-live-dot,
   .radar-spin,
-  .radar-in {
+  .radar-in,
+  .radar-menu-panel {
     animation: none !important;
   }
 }

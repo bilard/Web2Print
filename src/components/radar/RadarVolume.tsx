@@ -1,18 +1,8 @@
-import { Database, Timer, Gauge, RefreshCw } from 'lucide-react'
+import { Database } from 'lucide-react'
 import type { OpsCockpit } from '@/features/priceWatch/dashboard/opsMetrics'
-import { fmtInt, fmtPct, fmtDuration, timeAgo } from '@/features/priceWatch/radar/radarFormat'
-
-function Stat({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
-  return (
-    <div className="radar-card px-4 py-3.5">
-      <div className="flex items-center gap-1.5" style={{ color: 'var(--radar-text-2)' }}>
-        {icon}<span className="text-[12px]">{label}</span>
-      </div>
-      <p className="radar-rounded radar-tnum mt-1 text-[24px] font-bold leading-none">{value}</p>
-      {sub && <p className="mt-1 text-[11px]" style={{ color: 'var(--radar-text-3)' }}>{sub}</p>}
-    </div>
-  )
-}
+import { fmtInt, fmtPct } from '@/features/priceWatch/radar/radarFormat'
+import { isCursorDomain } from '@/features/priceWatch/radar/scrapeState'
+import { RadarCollectStats } from './RadarCollectStats'
 
 /** Onglet Volumétrie : combien de fiches collectées, chez qui, à quel rythme (buildOpsCockpit). */
 export function RadarVolume({ ops }: { ops: OpsCockpit | null }) {
@@ -23,16 +13,13 @@ export function RadarVolume({ ops }: { ops: OpsCockpit | null }) {
       </div>
     )
   }
-  const maxIndexed = Math.max(1, ...ops.competitors.map((c) => c.indexed))
+  // Les docs curseur de la recherche dirigée ne sont pas des concurrents : jamais listés.
+  const competitors = ops.competitors.filter((c) => !isCursorDomain(c.domain))
+  const maxIndexed = Math.max(1, ...competitors.map((c) => c.indexed))
 
   return (
     <div className="space-y-4">
-      <section className="radar-in grid grid-cols-2 gap-3 landscape:grid-cols-4">
-        <Stat icon={<Database size={13} />} label="Fiches" value={fmtInt(ops.totalIndexed)} sub={`${ops.sitesActive}/${ops.sitesTotal} sites actifs`} />
-        <Stat icon={<Gauge size={13} />} label="Balayage" value={fmtPct(ops.avgProgress * 100)} sub={`${ops.cyclesDone} cycle(s) bouclé(s)`} />
-        <Stat icon={<Timer size={13} />} label="Temps moisson" value={fmtDuration(ops.totalCumulMs)} sub={ops.slowestCycle ? `goulot ${ops.slowestCycle.domain}` : 'cumul toutes passes'} />
-        <Stat icon={<RefreshCw size={13} />} label="Dernière collecte" value={ops.lastCollectAt ? timeAgo(ops.lastCollectAt) : '—'} sub={ops.lastCollectDomain ?? undefined} />
-      </section>
+      <RadarCollectStats ops={ops} />
 
       <section className="radar-card radar-in px-4 py-4">
         <div className="mb-2 flex items-center gap-2">
@@ -41,7 +28,7 @@ export function RadarVolume({ ops }: { ops: OpsCockpit | null }) {
           <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>% avec prix</span>
         </div>
         <ul className="grid gap-y-3 landscape:grid-cols-2 landscape:gap-x-8">
-          {ops.competitors.map((c) => (
+          {competitors.map((c) => (
             <li key={c.siteId}>
               <div className="flex items-center justify-between text-[13px]">
                 <span className="truncate pr-2 font-medium">{c.domain}</span>

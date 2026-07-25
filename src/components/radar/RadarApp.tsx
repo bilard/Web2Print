@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Radar } from 'lucide-react'
+import { Radar, Gauge, Target, Users, FolderTree, Package, Database, Radio, Wallet } from 'lucide-react'
 import { useWatchList, useCatalogReport, useReportHistory, useCompetitorMeta } from '@/features/priceWatch/useCatalogReport'
 import { buildCockpit, sparkSeries } from '@/features/priceWatch/dashboard/analytics'
 import { buildOpsCockpit } from '@/features/priceWatch/dashboard/opsMetrics'
+import { scrapeStatus } from '@/features/priceWatch/radar/scrapeState'
 import { RadarHeader } from './RadarHeader'
 import { RadarHero } from './RadarHero'
 import { RadarKpiGrid } from './RadarKpiGrid'
 import { RadarOpportunities } from './RadarOpportunities'
 import { RadarCompetitors } from './RadarCompetitors'
-import { RadarTabs } from './RadarTabs'
+import { RadarMenu, type RadarMenuItem } from './RadarMenu'
 import { RadarVolume } from './RadarVolume'
+import { RadarCollectStats } from './RadarCollectStats'
 import { RadarPositionDonut } from './RadarPositionDonut'
 import { RadarDistribution } from './RadarDistribution'
-import { RadarScatter } from './RadarScatter'
 import { RadarMatching } from './RadarMatching'
 import { RadarBenchmark } from './RadarBenchmark'
 import { RadarCompetitorFlow } from './RadarCompetitorFlow'
@@ -20,18 +21,23 @@ import { RadarFamilies } from './RadarFamilies'
 import { RadarHeatmap } from './RadarHeatmap'
 import { RadarProducts } from './RadarProducts'
 import { RadarCosts } from './RadarCosts'
+import { RadarScraping } from './RadarScraping'
+import { RadarScrapeBadge } from './RadarScrapeBadge'
+import { RadarScheduleBar } from './RadarScheduleBar'
 import { RadarInstallHint } from './RadarInstallHint'
+import { useRadarSchedule, useNowTick } from './useRadarSchedule'
 import { useOrientation } from './useOrientation'
 
-type Tab = 'apercu' | 'position' | 'concurrents' | 'familles' | 'produits' | 'volume' | 'couts'
-const TABS = [
-  { value: 'apercu' as const, label: 'Aperçu' },
-  { value: 'position' as const, label: 'Positionnement' },
-  { value: 'concurrents' as const, label: 'Concurrents' },
-  { value: 'familles' as const, label: 'Familles' },
-  { value: 'produits' as const, label: 'Produits' },
-  { value: 'volume' as const, label: 'Collecte' },
-  { value: 'couts' as const, label: 'Coûts' },
+type Tab = 'apercu' | 'position' | 'concurrents' | 'familles' | 'produits' | 'volume' | 'scraping' | 'couts'
+const MENU: readonly RadarMenuItem<Tab>[] = [
+  { value: 'apercu', label: 'Aperçu', icon: Gauge },
+  { value: 'position', label: 'Positionnement', icon: Target },
+  { value: 'concurrents', label: 'Concurrents', icon: Users },
+  { value: 'familles', label: 'Familles', icon: FolderTree },
+  { value: 'produits', label: 'Produits', icon: Package },
+  { value: 'volume', label: 'Collecte', icon: Database },
+  { value: 'scraping', label: 'Scraping', icon: Radio },
+  { value: 'couts', label: 'Coûts', icon: Wallet },
 ]
 
 /** Masonry 2 colonnes en paysage (les cartes se répartissent sur la largeur). */
@@ -72,25 +78,52 @@ export function RadarApp() {
 
   const [scrolled, setScrolled] = useState(false)
   const [tab, setTab] = useState<Tab>('apercu')
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // ⚠ Le planning et l'abandon de run sont clefés par l'id du WORKFLOW, pas par le
+  // watchId (qui en est dérivé via stableId) — lire au mauvais chemin donnerait un
+  // bandeau muet et un STOP sans effet, en silence.
+  const workflowId = watches.find((w) => w.watchId === watchId)?.workflowId ?? watchId
+  const sched = useRadarSchedule(workflowId)
+  // Décompte à la seconde seulement là où il se voit (bandeau du planificateur) : ailleurs
+  // un tick 1 s re-rendrait tous les graphes chaque seconde pour rien.
+  const now = useNowTick(tab === 'scraping' ? 1000 : 30_000)
+  const status = useMemo(() => scrapeStatus(ops, sched, now), [ops, sched, now])
   const landscape = useOrientation()
 
   if (watches.length === 0) {
     return <Centered title="Aucune veille" sub="Lance un workflow « Comparer catalogue » pour alimenter ta veille tarifaire, puis reviens ici." />
   }
 
+  const items = MENU.map((m) => (m.value === 'scraping' ? { ...m, hint: status.state === 'running' ? 'en cours' : undefined } : m))
+  const viewLabel = MENU.find((m) => m.value === tab)?.label ?? 'Aperçu'
+
   return (
     <div
       className="radar-root radar-noscroll min-h-[100dvh] overflow-y-auto"
       onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 4)}
     >
-      <RadarHeader watches={watches} value={watchId ?? ''} onChange={setWatchId} runAt={report?.runAt ?? null} scrolled={scrolled} />
+      <RadarHeader
+        watches={watches} value={watchId ?? ''} onChange={setWatchId} runAt={report?.runAt ?? null}
+        scrolled={scrolled} viewLabel={viewLabel} onOpenMenu={() => setMenuOpen(true)}
+      >
+        {/* Onglet Scraping : le bandeau du planificateur reste ÉPINGLÉ au scroll. */}
+        {tab === 'scraping' && <RadarScheduleBar sched={sched} workflowId={workflowId} now={now} />}
+      </RadarHeader>
 
       <main className="radar-safe-x radar-safe-bottom mx-auto max-w-lg space-y-4 pt-2 landscape:max-w-5xl">
-        {cockpit ? (
+        {/* Le suivi du scraping ne dépend PAS d'un « Comparer » : il reste consultable
+            avant le premier rapport (c'est justement là qu'on le regarde). */}
+        {tab === 'scraping' ? (
           <>
-            <RadarTabs options={TABS} value={tab} onChange={setTab} ariaLabel="Vues radarPrice" />
+            <RadarScraping report={report} meta={liveMeta} now={now} />
+            <RadarInstallHint />
+          </>
+        ) : cockpit ? (
+          <>
             {tab === 'apercu' && (
               <>
+                <RadarScrapeBadge status={status} onClick={() => setTab('scraping')} />
                 <RadarHero cockpit={cockpit} holdSeries={hold} ops={ops} />
                 <RadarKpiGrid cockpit={cockpit} />
                 {/* Paysage : les deux listes passent côte à côte (2 colonnes). */}
@@ -101,12 +134,14 @@ export function RadarApp() {
               </>
             )}
             {tab === 'position' && (
-              <div className={MASONRY}>
-                <RadarPositionDonut cockpit={cockpit} />
-                <RadarDistribution cockpit={cockpit} />
-                <RadarScatter cockpit={cockpit} />
-                <RadarMatching cockpit={cockpit} />
-              </div>
+              <>
+                {ops && <RadarCollectStats ops={ops} />}
+                <div className={MASONRY}>
+                  <RadarPositionDonut cockpit={cockpit} />
+                  <RadarDistribution cockpit={cockpit} />
+                  <RadarMatching cockpit={cockpit} />
+                </div>
+              </>
             )}
             {tab === 'concurrents' && (
               <div className={MASONRY}>
@@ -129,6 +164,8 @@ export function RadarApp() {
           <RadarSkeleton />
         )}
       </main>
+
+      <RadarMenu open={menuOpen} items={items} value={tab} onSelect={setTab} onClose={() => setMenuOpen(false)} />
     </div>
   )
 }

@@ -1,0 +1,129 @@
+// src/features/priceWatch/radar/scrapeState.ts
+// État LIVE du scraping pour la PWA « radarPrice » — dérivation PURE (aucun React),
+// partagée par le badge de l'écran principal, le bandeau du planificateur et le tableau
+// live. Source unique : une seule fenêtre de heartbeat, un seul vocabulaire de statuts.
+import type { StoredReport } from '../reportStore'
+import type { HarvestMeta, OpsCockpit } from '../dashboard/opsMetrics'
+import { siteStatus, type SiteStatus } from '../sourceSites'
+import { hhmm, timeAgo } from './radarFormat'
+
+/** Fenêtre du heartbeat de moisson : au-delà, le site n'est plus « en cours ». Valeur
+ *  UNIQUE pour toute la PWA — deux fenêtres différentes afficheraient « Scraping en
+ *  cours » au-dessus de lignes toutes éteintes (contradiction vue à l'écran). */
+export const LIVE_WINDOW_MS = 3 * 60_000
+
+/** Doc `workflowSchedules/{workflowId}` — clé = id du WORKFLOW, pas le watchId. */
+export interface RadarSchedule {
+  enabled: boolean
+  nextRunAt: number
+  lastRunAt?: number
+  lastStatus?: string
+  /** Cycle de moisson bouclé à 100 % : la relance suit l'échéance calendaire. */
+  cycleWaiting?: boolean
+}
+
+/** Docs techniques de la recherche dirigée (`directed-cursor`, `directed-auth-cursor`) :
+ *  ce ne sont pas des concurrents — ni ligne de tableau, ni compteur, ni libellé. */
+export function isCursorDomain(domain: string | undefined | null): boolean {
+  return !!domain && /(^|[-_])cursor$/.test(domain)
+}
+
+type ScrapeState = 'running' | 'waiting' | 'idle'
+
+export interface ScrapeStatus {
+  state: ScrapeState
+  /** Libellé prêt à afficher (badge). */
+  label: string
+}
+
+/** État du scraping en 3 valeurs claires : EN COURS (run serveur actif ou passe de
+ *  moisson récente) / EN ATTENTE (cron actif, pause entre deux runs — normal) /
+ *  ARRÊTÉ (aucune planification). Miroir du Cockpit opérationnel de l'app. */
+export function scrapeStatus(ops: OpsCockpit | null, sched: RadarSchedule | null, now: number): ScrapeStatus {
+  const collecting = ops?.lastCollectAt != null && now - ops.lastCollectAt < LIVE_WINDOW_MS
+  if (collecting || sched?.lastStatus === 'running') {
+    // Le domaine n'est nommé que si c'est un vrai concurrent (jamais un doc curseur).
+    const domain = collecting && !isCursorDomain(ops?.lastCollectDomain) ? ops?.lastCollectDomain ?? null : null
+    const site = domain ? ops?.competitors.find((c) => c.domain === domain) : null
+    const suffix = domain ? ` · ${domain.replace(/^www\./, '')}${site && site.indexed === 0 ? ' · bloqué' : ''}` : ''
+    return { state: 'running', label: `Scraping en cours${suffix}` }
+  }
+  if (sched?.enabled) {
+    const overdue = sched.nextRunAt <= now
+    return { state: 'waiting', label: `En attente du prochain run · ${overdue ? 'imminent' : hhmm(sched.nextRunAt)}` }
+  }
+  const last = ops?.lastCollectAt != null ? ` · dernière ${timeAgo(ops.lastCollectAt, now)}` : ''
+  return { state: 'idle', label: `Scraping à l’arrêt (cron off)${last}` }
+}
+
+/** Une ligne du tableau live : l'état d'un concurrent, méta LIVE prioritaire sur le
+ *  snapshot figé du dernier « Comparer catalogue ». */
+export interface ScrapeRow {
+  siteId: string
+  domain: string
+  status: SiteStatus
+  /** Heartbeat récent → moisson en cours sur ce site. */
+  live: boolean
+  products: number
+  pctPrice: number | null
+  /** Paires produit×concurrent trouvées CHEZ CE SITE (figé au dernier « Comparer »). */
+  matched: number | null
+  progress: number
+  sweeps: number
+  lastEngine?: string
+  updatedAt?: number
+  lastPassPages?: number
+  lastPassProducts?: number
+}
+
+/** Lignes du tableau live : union des concurrents du rapport et des métas LIVE (un site
+ *  fraîchement scrapé apparaît sans attendre un « Comparer »). Tri = ce qui bouge d'abord,
+ *  puis le plus gros catalogue. */
+export function buildScrapeRows(
+  report: StoredReport | null,
+  meta: Map<string, HarvestMeta>,
+  now: number,
+): ScrapeRow[] {
+  const byId = new Map<string, { domain: string; matched: number | null; indexed: number; pctPrice: number | null }>()
+  for (const c of report?.byCompetitor ?? []) {
+    byId.set(c.siteId, {
+      domain: c.domain,
+      matched: c.matched ?? null,
+      indexed: c.audit?.indexed ?? 0,
+      pctPrice: c.audit?.pctPrice ?? null,
+    })
+  }
+  for (const [siteId, m] of meta.entries()) {
+    if (!byId.has(siteId) && m.domain) byId.set(siteId, { domain: m.domain, matched: null, indexed: 0, pctPrice: null })
+  }
+
+  const rows: ScrapeRow[] = []
+  for (const [siteId, base] of byId.entries()) {
+    if (isCursorDomain(base.domain)) continue
+    const m = meta.get(siteId)
+    const live = m?.updatedAt != null && now - m.updatedAt < LIVE_WINDOW_MS
+    rows.push({
+      siteId,
+      domain: base.domain,
+      status: siteStatus({ enabled: true, live, lastPassAt: m?.lastPassAt, lastPassPages: m?.lastPassPages, lastPassProducts: m?.lastPassProducts }),
+      live,
+      products: m?.productCount ?? base.indexed,
+      pctPrice: m?.pctPrice ?? base.pctPrice,
+      matched: base.matched,
+      progress: Math.max(0, Math.min(1, m?.harvestProgress ?? 0)),
+      sweeps: m?.harvestSweeps ?? 0,
+      lastEngine: m?.lastEngine,
+      updatedAt: m?.updatedAt,
+      lastPassPages: m?.lastPassPages,
+      lastPassProducts: m?.lastPassProducts,
+    })
+  }
+  return rows.sort((a, b) => Number(b.live) - Number(a.live) || b.products - a.products || a.domain.localeCompare(b.domain))
+}
+
+/** Compte des lignes par statut (pastilles de filtre de l'onglet Scraping). */
+export function countByStatus(rows: ScrapeRow[]): Record<SiteStatus, number> {
+  const out = { live: 0, error: 0, empty: 0, ok: 0, never: 0, disabled: 0 }
+  for (const r of rows) out[r.status] += 1
+  return out
+}
