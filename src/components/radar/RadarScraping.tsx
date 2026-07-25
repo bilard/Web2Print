@@ -6,6 +6,9 @@ import { SITE_STATUS_META, type SiteStatus } from '@/features/priceWatch/sourceS
 import { buildScrapeRows, countByStatus, type RunPulse } from '@/features/priceWatch/radar/scrapeState'
 import { fmtInt } from '@/features/priceWatch/radar/radarFormat'
 import { RadarScrapingRow } from './RadarScrapingRow'
+import { useRadarSourceSites } from './useRadarSourceSites'
+import { normalizeDomain } from '@/features/priceWatch/sourceSites'
+import { stableId } from '@/features/priceWatch/core'
 
 /** Ordre d'attention des pastilles de filtre (le plus urgent d'abord). */
 const FILTERS: SiteStatus[] = ['live', 'error', 'empty', 'ok', 'never']
@@ -20,13 +23,16 @@ const PILL_TONE: Record<'ok' | 'warn' | 'err' | 'mute', { fg: string; bg: string
 /** Onglet « Scraping » : le tableau LIVE de la moisson, site par site (jumeau mobile du
  *  tableau « Sites sources » de l'app). Lecture seule — les commandes du run sont dans le
  *  bandeau épinglé en tête d'écran. */
-export function RadarScraping({ report, meta, now, pulse }: {
+export function RadarScraping({ report, meta, now, pulse, watchId, workflowId }: {
   report: StoredReport | null
   meta: Map<string, HarvestMeta>
   now: number
   /** Arbitre de « ça tourne encore » : sans lui, les cartes clignotent après un STOP. */
   pulse: RunPulse
+  watchId: string | null
+  workflowId: string | null
 }) {
+  const sites = useRadarSourceSites(workflowId)
   const rows = useMemo(() => buildScrapeRows(report, meta, now, pulse), [report, meta, now, pulse])
   const counts = useMemo(() => countByStatus(rows), [rows])
   const [filter, setFilter] = useState<SiteStatus | null>(null)
@@ -76,7 +82,10 @@ export function RadarScraping({ report, meta, now, pulse }: {
       </section>
 
       <ul className="space-y-2 landscape:grid landscape:grid-cols-2 landscape:gap-2 landscape:space-y-0">
-        {shown.map((r) => <RadarScrapingRow key={r.siteId} row={r} now={now} />)}
+        {shown.map((r) => (
+          <RadarScrapingRow key={r.siteId} row={r} now={now} watchId={watchId} workflowId={workflowId}
+            cfg={sites.byId.get(stableId(normalizeDomain(r.domain)))} onChanged={sites.reload} />
+        ))}
       </ul>
 
       {/* Désambiguïsation reprise de l'app : ne JAMAIS additionner les « appariés ici ». */}

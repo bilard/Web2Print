@@ -1,6 +1,8 @@
 import { SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
 import type { ScrapeRow } from '@/features/priceWatch/radar/scrapeState'
 import { fmtInt, fmtPct, timeAgo } from '@/features/priceWatch/radar/radarFormat'
+import type { SourceSiteRow } from '@/features/priceWatch/sourceSites'
+import { RadarSiteActions } from './RadarSiteActions'
 
 /** Libellés du moteur réellement utilisé (parité tableau « Sites sources » de l'app). */
 const ENGINE_LABELS: Record<string, string> = {
@@ -26,7 +28,15 @@ function Chip({ label, value, tone = 'mute' }: { label: string; value: string; t
 
 /** Ligne du tableau live : identité + verdict de la dernière passe + chiffres clés.
  *  Pendant la moisson : liseré vert + barre de balayage animée (comme dans l'app). */
-export function RadarScrapingRow({ row, now }: { row: ScrapeRow; now: number }) {
+export function RadarScrapingRow({ row, now, watchId, workflowId, cfg, onChanged }: {
+  row: ScrapeRow
+  now: number
+  watchId: string | null
+  workflowId: string | null
+  /** Config du site dans le node « Sites sources » (absente = site hors liste éditable). */
+  cfg: SourceSiteRow | undefined
+  onChanged: () => void
+}) {
   const meta = SITE_STATUS_META[row.status]
   const tone = TONE[meta.tone]
   const detail =
@@ -65,6 +75,7 @@ export function RadarScrapingRow({ row, now }: { row: ScrapeRow; now: number }) 
         {row.lastEngine && <Chip label="via" value={ENGINE_LABELS[row.lastEngine] ?? row.lastEngine} />}
         {row.updatedAt != null && <Chip label="scrape" value={timeAgo(row.updatedAt, now)} />}
       </div>
+      <RadarSiteActions domain={row.domain} watchId={watchId} workflowId={workflowId} row={cfg} onChanged={onChanged} />
       {row.live && (
         <div className="absolute bottom-0 left-2 right-2 h-[3px] overflow-hidden rounded-full" aria-hidden>
           <div className="progress-indeterminate absolute top-0 h-full w-1/3 rounded-full"

@@ -124,7 +124,7 @@ export function RadarApp() {
             avant le premier rapport (c'est justement là qu'on le regarde). */}
         {tab === 'scraping' ? (
           <>
-            <RadarScraping report={report} meta={liveMeta} now={now} pulse={pulse} />
+            <RadarScraping report={report} meta={liveMeta} now={now} pulse={pulse} watchId={watchId} workflowId={workflowId} />
             <RadarInstallHint />
           </>
         ) : cockpit ? (

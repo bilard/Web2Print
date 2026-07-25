@@ -10,6 +10,10 @@ import { siteStatus, SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
 
 export interface SiteRowStats {
   products?: number
+  /** Battement de MOISSON (écrit par une passe de scraping seulement). ⚠ `updatedAt` ne
+   *  convient PAS pour « en cours » : le node « Comparer » réécrit la méta de TOUS les
+   *  concurrents dans la même rafale → « 12 en cours » alors que rien ne scrapait. */
+  harvestBeatAt?: number
   pctPrice?: number
   matched?: number
   updatedAt?: number
@@ -210,7 +214,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, stats, live,
               ? chip('balayé', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
               : stats.harvestProgress != null && chip('balayage', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
             {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
-            {chip('scrape', agoShort(stats.updatedAt, now), 'mute')}
+            {chip('scrape', agoShort(stats.harvestBeatAt ?? stats.updatedAt, now), 'mute')}
           </div>
         </div>
       )}

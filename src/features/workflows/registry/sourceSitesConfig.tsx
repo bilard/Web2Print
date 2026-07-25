@@ -105,6 +105,8 @@ export function SourceSitesConfig({ config, onChange }: {
     const stat = report?.byCompetitor.find((c) => c.siteId === siteId)
     return {
       products: meta?.productCount,
+      // Battement de MOISSON : seule preuve qu'une passe tourne sur CE site.
+      harvestBeatAt: meta?.harvestBeatAt,
       // Live depuis l'index (mis à jour au scrape) prioritaire sur le rapport « Comparer ».
       pctPrice: meta?.pctPrice ?? stat?.audit.pctPrice,
       matched: stat?.matched,
@@ -117,7 +119,10 @@ export function SourceSitesConfig({ config, onChange }: {
       lastPassAt: meta?.lastPassAt,
     }
   }
-  const isLive = (s: SiteRowStats) => s.updatedAt != null && now - s.updatedAt < LIVE_WINDOW_MS
+  // ⚠ « En cours » se lit sur le battement de MOISSON, jamais sur `updatedAt` : le node
+  // « Comparer » réécrit la méta des 13 concurrents dans une seule rafale (constaté : tous
+  // au même timestamp à la milliseconde), ce qui affichait « 12 en cours » au repos.
+  const isLive = (s: SiteRowStats) => s.harvestBeatAt != null && now - s.harvestBeatAt < LIVE_WINDOW_MS
 
   const patchRow = (i: number, patch: Partial<SourceSiteRow>) =>
     onChange({
