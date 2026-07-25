@@ -7,7 +7,7 @@ import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, 
 import { useThemeStore } from '@/stores/theme.store'
 import type { KpiHistoryPoint } from '../reportStore'
 import { competitorSeries } from './analytics'
-import { when } from './format'
+import { pct, positionOf, POSITION_LABEL, when } from './format'
 
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend)
 
@@ -39,9 +39,19 @@ export function CompetitorTrend({ history, sites, height = 220 }: {
 
   return (
     <div className="bg-surface rounded-lg p-4">
-      <div className="flex items-baseline justify-between mb-3">
-        <div className="text-sm font-semibold text-white">Flux des écarts par concurrent</div>
-        <div className="text-[11px] text-white/35">écart moyen %</div>
+      {/* Le titre seul (« écart moyen % ») ne disait ni de QUOI l'écart est mesuré, ni ce
+          que signifie son signe : un « 159,7 » nu est illisible. Le sens est rappelé ici
+          ET dans chaque ligne de l'infobulle, là où on lit la valeur. */}
+      <div className="mb-3">
+        <div className="flex items-baseline justify-between">
+          <div className="text-sm font-semibold text-white">Flux des écarts par concurrent</div>
+          <div className="text-[11px] text-white/35">écart moyen %</div>
+        </div>
+        <div className="text-[11px] text-white/40 mt-0.5">
+          Prix du concurrent comparé aux vôtres, moyenné sur les produits appariés.
+          <span className="text-emerald-400/70"> + = il vend plus cher que vous</span> ·
+          <span className="text-rose-400/70"> − = il casse les prix</span>.
+        </div>
       </div>
       {!enough ? (
         <div className="text-white/40 text-sm py-12 text-center px-4">
@@ -57,6 +67,21 @@ export function CompetitorTrend({ history, sites, height = 220 }: {
               interaction: { mode: 'index', intersect: false },
               plugins: {
                 legend: { position: 'bottom', labels: { color: tick, boxWidth: 10, boxHeight: 2, font: { size: 10 } } },
+                tooltip: {
+                  // Concurrents triés du plus AGRESSIF au plus cher : l'ordre des séries
+                  // (arbitraire) obligeait à comparer huit nombres à l'œil pour trouver
+                  // celui qui casse les prix — la seule chose qu'on cherche ici.
+                  itemSort: (a, b) => (a.parsed.y ?? 0) - (b.parsed.y ?? 0),
+                  callbacks: {
+                    title: (items) => `${items[0]?.label ?? ''} — écart moyen vs vos prix`,
+                    label: (item) => {
+                      const v = item.parsed.y
+                      if (v == null) return `${item.dataset.label} : non relevé`
+                      const position = positionOf(v)
+                      return `${item.dataset.label} : ${pct(v)}${position ? ` — ${POSITION_LABEL[position].toLowerCase()}` : ''}`
+                    },
+                  },
+                },
               },
               scales: {
                 x: { grid: { display: false }, ticks: { color: tick, font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } },
