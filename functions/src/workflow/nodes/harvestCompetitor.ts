@@ -75,7 +75,7 @@ registerServerNode({
     const familyColumn = String(config.familyColumn ?? '').trim()
     const families = typedFamilies.length ? typedFamilies : familiesFromRows(sourceRows, familyColumn)
     if (!typedFamilies.length && families.length) ctx.log('info', `${families.length} famille(s) lues dans la colonne « ${familyColumn} ».`)
-    const pageBudget = Math.max(1, Number(config.pageBudget) || 40)
+    const pageBudget = Math.max(1, Number(config.pageBudget) || 160)
     // Budget réparti équitablement entre les sites (au moins 1 page chacun).
     // Budget : un site peut RÉSERVER ses pages (concurrent coûteux à brider) ; le reste
     // est partagé équitablement entre les autres.

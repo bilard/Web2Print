@@ -74,10 +74,10 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     { name: 'eanColumn', kind: 'text', label: 'Colonne EAN', help: 'Ex : EAN. Cherchée si la réf ne donne rien.' },
     { name: 'nameColumn', kind: 'text', label: 'Colonne Nom (affichage)', help: 'Optionnel — pour l’affichage du résultat.' },
     { name: 'descriptionColumn', kind: 'text', label: 'Colonne Description (réf. d’origine)', help: 'Ex : TEXT_VENTE_FR. DÉCISIF sur un catalogue de pièces adaptables : si ta référence article est un code INTERNE, aucun concurrent ne la porte — seules les réf. d’origine citées ici (« Origine: … ») permettent de trouver le produit.' },
-    { name: 'productBudget', kind: 'number', label: 'Produits par run', help: 'Nombre de produits testés par exécution. Chacun est cherché sur tous les sites.' },
+    { name: 'productBudget', kind: 'number', label: 'Produits par run', help: 'Nombre de produits testés par exécution. Chacun est cherché sur tous les sites. Les produits sont désormais traités 3 de front : ce budget tient dans le même temps qu’un tiers de sa valeur auparavant. ⚠ C’est LE plafond du débit — à 20/run, un catalogue de 75 000 réf. demande ~29 jours pour un seul tour.' },
     { name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est celui du workflow (partagé avec « Comparer catalogue » du même workflow — les prix trouvés remontent alors dans le dashboard).' },
   ],
-  defaultConfig: { sites: '', genericSites: '', refColumn: '', eanColumn: '', nameColumn: '', descriptionColumn: '', productBudget: 20, watchId: '' },
+  defaultConfig: { sites: '', genericSites: '', refColumn: '', eanColumn: '', nameColumn: '', descriptionColumn: '', productBudget: 60, watchId: '' },
   cardSummary: (c) => {
     const n = parseSitesConfig(c.sites).length
     return n ? `${n} site(s) · ${c.productBudget} produits/run` : ''

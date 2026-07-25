@@ -151,7 +151,7 @@ registerServerNode({
       }))
       .filter((p) => p.ref || p.ean || p.originRefs?.length)
 
-    const budget = Math.max(1, Number(config.productBudget) || 20)
+    const budget = Math.max(1, Number(config.productBudget) || 60)
     const CURSOR_META = 'directed_cursor' // pas de __…__ : Firestore réserve ces ids
     const startCursor = (await loadCompetitorMeta(ctx.uid, watchId, CURSOR_META))?.productCount ?? 0
 
