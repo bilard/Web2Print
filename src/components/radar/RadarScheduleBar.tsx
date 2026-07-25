@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { CalendarClock, Loader2, PauseCircle, Play, Square } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
-import { formatCountdown } from '@/features/workflows/runtime/cronSchedule'
-import { hhmm } from '@/features/priceWatch/radar/radarFormat'
+import { fmtCountdown, hhmm } from '@/features/priceWatch/radar/radarFormat'
 import type { RadarSchedule, RunPulse } from '@/features/priceWatch/radar/scrapeState'
 import { runWorkflowNow, stopServerRun, suspendWorkflow } from '@/features/priceWatch/radar/radarScheduleActions'
 
@@ -84,7 +83,7 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
   })
 
   const relance = sched?.enabled
-    ? <>relance {overdue ? <b>imminente</b> : <>à <b>{hhmm(sched.nextRunAt)}</b> (dans <b className="radar-tnum">{formatCountdown(sched.nextRunAt - now)}</b>)</>}</>
+    ? <>relance {overdue ? <b>imminente</b> : <>à <b>{hhmm(sched.nextRunAt)}</b> (dans <b className="radar-tnum">{fmtCountdown(sched.nextRunAt - now)}</b>)</>}</>
     : null
 
   return (
@@ -99,7 +98,7 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
               <b style={{ color: 'var(--radar-live)' }}>En cours</b>
               {startedAt != null && (
                 <span className="truncate" style={{ color: 'var(--radar-text-2)' }}>
-                  · démarré {hhmm(startedAt)} (il y a {formatCountdown(now - startedAt)})
+                  · démarré {hhmm(startedAt)} (il y a {fmtCountdown(now - startedAt)})
                 </span>
               )}
             </p>
@@ -114,7 +113,7 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
               // main quoi qu'il arrive (fin, pause ou crash).
               sched ? (
                 <p className="mt-0.5 radar-tnum" style={{ color: '#fbbf24' }}>
-                  reprise auto ≤ <b>{hhmm(sched.nextRunAt)}</b> {overdue ? <b>(imminente)</b> : <>(dans <b>{formatCountdown(sched.nextRunAt - now)}</b>)</>}
+                  reprise auto ≤ <b>{hhmm(sched.nextRunAt)}</b> {overdue ? <b>(imminente)</b> : <>(dans <b>{fmtCountdown(sched.nextRunAt - now)}</b>)</>}
                 </p>
               ) : (
                 // Run lancé à la main sans planification : aucun verrou, aucune relance.
@@ -135,7 +134,7 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
           <>
             <p><b style={{ color: 'var(--radar-live)' }}>Cycle terminé ✓</b></p>
             <p className="mt-0.5 truncate" style={{ color: 'var(--radar-text-2)' }}>
-              Relance <b className="capitalize">{dayTime(sched.nextRunAt)}</b> ({overdue ? 'imminente' : `dans ${formatCountdown(sched.nextRunAt - now)}`})
+              Relance <b className="capitalize">{dayTime(sched.nextRunAt)}</b> ({overdue ? 'imminente' : `dans ${fmtCountdown(sched.nextRunAt - now)}`})
             </p>
           </>
         ) : sched?.enabled ? (
@@ -146,7 +145,7 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
                 : 'Jamais exécuté'}
             </p>
             <p className="mt-0.5 radar-tnum" style={{ color: 'var(--radar-text-2)' }}>
-              Prochain <b style={{ color: 'var(--radar-text)' }}>{hhmm(sched.nextRunAt)}</b> ({overdue ? 'imminent' : `dans ${formatCountdown(sched.nextRunAt - now)}`})
+              Prochain <b style={{ color: 'var(--radar-text)' }}>{hhmm(sched.nextRunAt)}</b> ({overdue ? 'imminent' : `dans ${fmtCountdown(sched.nextRunAt - now)}`})
             </p>
           </>
         ) : (
