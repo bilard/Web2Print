@@ -27,7 +27,9 @@ export function OpportunityPanel({ ck }: { ck: Cockpit }) {
               <th className="font-medium pb-2">Mon prix</th>
               <th className="font-medium pb-2">Moins cher</th>
               <th className="font-medium pb-2">Écart</th>
-              <th className="font-medium pb-2 w-[26%]">Impact €</th>
+              {/* « Impact » laissait croire à un montant de CA — c'est un écart À L'UNITÉ,
+                  sans volume de ventes derrière. Le titre le dit maintenant. */}
+              <th className="font-medium pb-2 w-[26%]" title="Écart à l’unité entre votre prix et le meilleur prix concurrent. Pas un montant de chiffre d’affaires : le volume de ventes n’est pas connu.">Écart à l’unité</th>
             </tr>
           </thead>
           <tbody>

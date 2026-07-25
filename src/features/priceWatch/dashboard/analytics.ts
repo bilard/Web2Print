@@ -122,6 +122,13 @@ export interface Cockpit {
   // Headline FIABLE (kpis, jamais filtré)
   priceHoldPct: number | null
   exposedPct: number | null
+  /** Indice tarif base 100 vs médiane marché. 100 = au niveau du marché, > 100 = plus cher. */
+  priceIndex: number | null
+  /** Indice tarif vs le MEILLEUR prix marché (exposition au discounter). */
+  priceIndexBest: number | null
+  /** L'indice vient d'un repli calculé sur `products[]` (rapport antérieur à `kpis.priceIndex`)
+   *  → BIAISÉ vers les produits les moins bien positionnés quand `truncated`. À signaler en UI. */
+  priceIndexBiased: boolean
   // Recalc depuis products (filtrés) — biais truncated marqué en UI
   gapValues: number[]
   histogram: HistBin[]
@@ -137,6 +144,26 @@ export interface Cockpit {
   totalGapEur: number
   scatter: ScatterPoint[]
   tableRows: TableRow[]
+}
+
+/**
+ * Repli d'indice tarif pour les rapports écrits AVANT `kpis.priceIndex` : recalcul depuis
+ * `products[]`. ⚠ Biaisé vers les moins bien positionnés quand `truncated` — l'appelant
+ * lève `priceIndexBiased`. Même formule que `priceIndices` de catalog/report.ts.
+ */
+function priceIndexFallback(rows: ProductRow[]): { priceIndex: number | null; priceIndexBest: number | null } {
+  const vsMedian: number[] = []
+  const vsBest: number[] = []
+  for (const r of rows) {
+    if (r.myPriceHt == null || r.myPriceHt <= 0) continue
+    const prices = r.competitors.map((c) => c.priceHt).filter((p): p is number => p != null && p > 0)
+    if (prices.length === 0) continue
+    const mkt = median(prices)
+    if (mkt != null && mkt > 0) vsMedian.push((r.myPriceHt / mkt) * 100)
+    vsBest.push((r.myPriceHt / Math.min(...prices)) * 100)
+  }
+  const round = (v: number | null) => (v == null ? null : Math.round(v * 10) / 10)
+  return { priceIndex: round(median(vsMedian)), priceIndexBest: round(median(vsBest)) }
 }
 
 const HIST_EDGES = [-30, -20, -10, -ALIGN_BAND, ALIGN_BAND, 10, 20, 30]
@@ -214,6 +241,14 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
   // Headline TOUJOURS depuis kpis (global, non biaisé, jamais filtré).
   const priceHoldPct = kpis.comparisons > 0 ? ((kpis.aligned + kpis.dearerThanMe) / kpis.comparisons) * 100 : null
   const exposedPct = kpis.products > 0 ? (kpis.productsUndercut / kpis.products) * 100 : null
+
+  // Indice tarif : PRIORITÉ à la valeur pré-calculée par buildReport (catalogue complet,
+  // non biaisée par le plafond). Repli sur `products[]` uniquement pour les rapports
+  // antérieurs à ce champ — signalé par `priceIndexBiased`.
+  const hasStoredIndex = kpis.priceIndex != null || kpis.priceIndexBest != null
+  const fallbackIndex = hasStoredIndex ? null : priceIndexFallback(products)
+  const priceIndex = hasStoredIndex ? (kpis.priceIndex ?? null) : (fallbackIndex?.priceIndex ?? null)
+  const priceIndexBest = hasStoredIndex ? (kpis.priceIndexBest ?? null) : (fallbackIndex?.priceIndexBest ?? null)
 
   // Cellules chiffrées de la VUE.
   const cells: { p: ProductRow; c: Cell }[] = []
@@ -321,6 +356,7 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
     kpis, truncated, totalMatched, runAt, competitorsCount: sites.length,
     filterActive: active, filteredCount: view.length, totalCount: products.length,
     priceHoldPct, exposedPct,
+    priceIndex, priceIndexBest, priceIndexBiased: !hasStoredIndex && priceIndex != null,
     gapValues, histogram: buildHistogram(gapValues), medianGapPct: median(gapValues), meanGapPct: mean(gapValues),
     competitors, families, familyKeys, allFamilies, heatmap, opportunities,
     totalGapEur: Math.round(totalGapEur * 100) / 100,
@@ -335,11 +371,19 @@ export function trendDelta(history: KpiHistoryPoint[]): { prev: KpiHistoryPoint;
   return { prev: history[history.length - 2], last: history[history.length - 1] }
 }
 
+/** Série de l'INDICE TARIF dans le temps. Ne remonte que les points portant `pi`
+ *  (analyses postérieures à la feature) — un point sans indice est un trou, pas un 0. */
+export function priceIndexSeries(history: KpiHistoryPoint[]): { at: number[]; values: number[] } {
+  const pts = history.filter((h) => h.pi != null)
+  return { at: pts.map((h) => h.at), values: pts.map((h) => h.pi as number) }
+}
+
 /** Séries scalaires pour les sparklines des KPIs (dérivées des points d'historique). */
-export function sparkSeries(history: KpiHistoryPoint[]): { undercut: number[]; hold: number[]; products: number[] } {
+export function sparkSeries(history: KpiHistoryPoint[]): { undercut: number[]; hold: number[]; products: number[]; index: number[] } {
   return {
     undercut: history.map((h) => h.productsUndercut),
     products: history.map((h) => h.products),
+    index: history.filter((h) => h.pi != null).map((h) => h.pi as number),
     hold: history.map((h) => {
       const comp = h.aligned + h.dearerThanMe + h.cheaperThanMe
       return comp > 0 ? Math.round(((h.aligned + h.dearerThanMe) / comp) * 100) : 0

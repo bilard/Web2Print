@@ -68,6 +68,43 @@ describe('buildReport', () => {
     expect(rr.byCompetitor.find((c) => c.siteId === 'pm')!.ruptures).toBe(1)
   })
 
+  it('calcule l’indice tarif base 100 (médiane des ratios)', () => {
+    // A : mon prix 100 vs marché 80 → 125. B : mon prix 5 vs marché 9,75 → 51,3.
+    // Médiane de deux valeurs = leur moyenne → 88,1.
+    expect(r.kpis.priceIndex).toBeCloseTo(88.1, 1)
+    expect(r.kpis.priceIndexBest).toBeCloseTo(88.1, 1) // un seul concurrent chiffré par produit
+  })
+
+  it('indice > 100 quand je suis au-dessus du marché', () => {
+    const src: SourceProduct[] = [{ id: 'a', name: 'Alt', ref: 'BS691991', price: 120 }]
+    const idx = new Map<string, CompetitorListing[]>([
+      ['pm', [listing({ ref: 'BS691991', price: 120, url: 'https://pm.fr/a.html' })]], // 100 HT
+      ['wm', []],
+    ])
+    expect(buildReport(src, sites, idx).kpis.priceIndex).toBe(120)
+  })
+
+  it('l’indice vs le + bas est plus sévère que vs la médiane', () => {
+    const src: SourceProduct[] = [{ id: 'a', name: 'Alt', ref: 'BS691991', price: 100 }]
+    // Concurrents : 96 et 60 TTC → 80 et 50 HT. Médiane 65, min 50.
+    const idx = new Map<string, CompetitorListing[]>([
+      ['pm', [listing({ ref: 'BS691991', price: 96, url: 'https://pm.fr/a.html' })]],
+      ['wm', [listing({ ref: 'BS691991', price: 60, url: 'https://wm.fr/a.html' })]],
+    ])
+    const rr = buildReport(src, sites, idx)
+    expect(rr.kpis.priceIndex).toBeGreaterThan(100)
+    expect(rr.kpis.priceIndexBest!).toBeGreaterThan(rr.kpis.priceIndex!)
+  })
+
+  it('ignore les produits sans prix exploitable (pas de division par zéro)', () => {
+    const src: SourceProduct[] = [{ id: 'a', name: 'Alt', ref: 'BS691991', price: 0 }]
+    const idx = new Map<string, CompetitorListing[]>([
+      ['pm', [listing({ ref: 'BS691991', price: 96, url: 'https://pm.fr/a.html' })]],
+      ['wm', []],
+    ])
+    expect(buildReport(src, sites, idx).kpis.priceIndex).toBeNull()
+  })
+
   it('distingue appariement exact et pièce d’origine', () => {
     const src: SourceProduct[] = [
       { id: 'adapt', name: 'Lame adaptable', ref: '1100010', originRefs: ['532134149'], price: 7 },

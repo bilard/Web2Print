@@ -7,6 +7,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX } from './paths'
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
 import type { SourceProduct } from './catalog/match'
+import { retainHistory } from './history'
 
 // ── Catalogue SOURCE persisté — jumeau de saveSourceCatalog côté client ─────────────
 // Sans lui, un suivi alimenté UNIQUEMENT par le cron n'a pas de catalogue source en
@@ -52,7 +53,7 @@ interface StoredReport {
   truncated: boolean
 }
 
-interface KpiHistoryPoint {
+export interface KpiHistoryPoint {
   at: number
   products: number
   cheaperThanMe: number
@@ -62,6 +63,9 @@ interface KpiHistoryPoint {
   /** Écart moyen par concurrent (identique au client — alimente la courbe « flux par
    *  concurrent »). Sans ce champ, un run cron n'y contribuerait pas. */
   comp?: { s: string; g: number | null }[]
+  /** Indice tarif base 100 vs médiane marché (kpis.priceIndex) à cette analyse.
+   *  Sans lui, un run cron ne contribuerait pas à la courbe d'indice. */
+  pi?: number | null
 }
 
 function stripUndefined<T>(value: T): T {
@@ -117,9 +121,11 @@ export async function saveCatalogReport(
   }
   await db.doc(reportLatestDoc(uid, watchId)).set(stripUndefined(stored))
 
-  // Tendance : ring-buffer de points KPI (read-modify-write, doc minuscule). ⚠ pas de
-  // transaction : un run client et un run cron du MÊME suivi simultanés pourraient perdre
-  // un point — probabilité négligeable pour 90 points, acceptée.
+  // Tendance : point KPI + rétention journalière (read-modify-write, doc minuscule).
+  // ⚠ pas de transaction : un run client et un run cron du MÊME suivi simultanés
+  // pourraient perdre un point — probabilité négligeable, acceptée.
+  // Le cron ne produit QUE des analyses complètes : pas de `trend: false` ici (le
+  // recalcul partiel est un geste client, cf. jumeau).
   const point: KpiHistoryPoint = {
     at: runAt,
     products: report.kpis.products,
@@ -128,11 +134,12 @@ export async function saveCatalogReport(
     aligned: report.kpis.aligned,
     productsUndercut: report.kpis.productsUndercut,
     comp: report.byCompetitor.map((c) => ({ s: c.siteId, g: c.avgGapPct })),
+    pi: report.kpis.priceIndex ?? null,
   }
   const hRef = db.doc(reportHistoryDoc(uid, watchId))
   const snap = await hRef.get()
   const prev = (snap.exists ? snap.data()?.points : undefined) as KpiHistoryPoint[] | undefined
-  const points = [...(prev ?? []), point].slice(-REPORT_HISTORY_MAX)
+  const points = retainHistory([...(prev ?? []), point], runAt, REPORT_HISTORY_MAX)
   await hRef.set({ points })
 
   // Méta du suivi (fait exister le doc racine → listé par le sélecteur). serverTimestamp

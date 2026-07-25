@@ -113,6 +113,27 @@ export interface ReportKpis {
   ruptures: number
   /** Produits dont AU MOINS un concurrent est moins cher que moi. */
   productsUndercut: number
+  /**
+   * INDICE TARIF base 100 vs la MÉDIANE du marché : médiane, sur les produits chiffrés,
+   * de (mon prix ÷ prix médian des concurrents appariés) × 100.
+   *   100 = je suis au niveau du marché · 105 = je suis 5 % au-dessus · 95 = 5 % en dessous.
+   *
+   * ⚠ Calculé ICI, sur le catalogue COMPLET, donc FIABLE — contrairement à toute
+   * statistique recalculée par le dashboard depuis `products[]`, plafonné et rangé par
+   * écart le plus négatif (cf. en-tête d'analytics.ts).
+   *
+   * ⚠ Les prix source sont des TARIFS non remisés : c'est un indice de positionnement
+   * CATALOGUE, pas un indice net client. Libellé « indice tarif » en UI, jamais « indice
+   * de compétitivité ».
+   *
+   * Médiane des ratios (et non ratio des sommes) : sans volume de ventes, un panier
+   * moyen surpondérerait mécaniquement les articles chers. La médiane est l'indice
+   * non pondéré robuste aux valeurs aberrantes. Absent des rapports antérieurs.
+   */
+  priceIndex?: number | null
+  /** Même indice, mais vs le MEILLEUR prix marché (le concurrent le moins cher).
+   *  Toujours ≥ priceIndex. Mesure l'exposition au discounter, pas au marché médian. */
+  priceIndexBest?: number | null
 }
 
 export interface CatalogReport {
@@ -120,6 +141,34 @@ export interface CatalogReport {
   byCompetitor: CompetitorStat[]
   /** Tous les produits appariés (la persistance range et plafonne avant écriture). */
   products: ProductRow[]
+}
+
+/** Médiane d'une série (null si vide). Robuste aux prix aberrants d'un mauvais parsing. */
+function median(xs: number[]): number | null {
+  if (xs.length === 0) return null
+  const s = [...xs].sort((a, b) => a - b)
+  const mid = Math.floor(s.length / 2)
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2
+}
+
+/**
+ * Indices tarifaires base 100 depuis les produits appariés COMPLETS (cf. ReportKpis).
+ * Un produit ne contribue que s'il a mon prix > 0 et au moins un prix concurrent > 0 —
+ * un prix nul/absent ferait diverger le ratio.
+ */
+function priceIndices(rows: ProductRow[]): { priceIndex: number | null; priceIndexBest: number | null } {
+  const vsMedian: number[] = []
+  const vsBest: number[] = []
+  for (const r of rows) {
+    if (r.myPriceHt == null || r.myPriceHt <= 0) continue
+    const prices = r.competitors.map((c) => c.priceHt).filter((p): p is number => p != null && p > 0)
+    if (prices.length === 0) continue
+    const mkt = median(prices)
+    if (mkt != null && mkt > 0) vsMedian.push((r.myPriceHt / mkt) * 100)
+    vsBest.push((r.myPriceHt / Math.min(...prices)) * 100)
+  }
+  const round = (v: number | null) => (v == null ? null : Math.round(v * 10) / 10)
+  return { priceIndex: round(median(vsMedian)), priceIndexBest: round(median(vsBest)) }
 }
 
 function matchKindOf(proof: { key: { origin: boolean; kind: string }; evidence: string }): MatchKind {
@@ -203,6 +252,11 @@ export function buildReport(
       competitors: cells, bestGapPct, undercut,
     })
   }
+
+  // Indices tarifaires : calculés sur `rows` COMPLET, avant tout classement/plafond.
+  const { priceIndex, priceIndexBest } = priceIndices(rows)
+  kpis.priceIndex = priceIndex
+  kpis.priceIndexBest = priceIndexBest
 
   const byCompetitor: CompetitorStat[] = [...stat.values()].map((s) => ({
     siteId: s.siteId, domain: s.domain, matched: s.matched, cheaper: s.cheaper, ruptures: s.ruptures,

@@ -13,6 +13,7 @@ import { CompetitorRanking } from './CompetitorRanking'
 import { PriceScatter } from './PriceScatter'
 import { HeatmapMatrix } from './HeatmapMatrix'
 import { CompetitorTrend } from './CompetitorTrend'
+import { PriceIndexTrend } from './PriceIndexTrend'
 import { OpportunityPanel } from './OpportunityPanel'
 import { CatalogTree } from './CatalogTree'
 import { OpsCockpit } from './OpsCockpit'
@@ -156,7 +157,12 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <ExpandableChart className="h-full" render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} />
         <ExpandableChart className="h-full" render={() => <HeatmapMatrix ck={ck} onSelect={toggle} />} />
       </div>
-      <ExpandableChart render={(h) => <CompetitorTrend history={history} sites={report.sites} height={h} />} />
+      {/* Deux lectures temporelles complémentaires : MA dérive (indice, une courbe) et
+          celle de CHAQUE concurrent (flux des écarts). */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+        <ExpandableChart render={(h) => <PriceIndexTrend history={history} height={h} />} />
+        <ExpandableChart render={(h) => <CompetitorTrend history={history} sites={report.sites} height={h} />} />
+      </div>
       <OpportunityPanel ck={ck} />
 
       <AnalyticsTable ck={ck} searchQ={filter.q} onSearch={(q) => set({ q })}

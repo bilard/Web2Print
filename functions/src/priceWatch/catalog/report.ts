@@ -85,12 +85,42 @@ export interface ReportKpis {
   dearerThanMe: number
   ruptures: number
   productsUndercut: number
+  /** INDICE TARIF base 100 vs la MÉDIANE du marché (cf. jumeau client pour le détail).
+   *  Calculé sur le catalogue COMPLET donc FIABLE. Tarifs source non remisés : indice de
+   *  positionnement CATALOGUE, jamais « compétitivité ». */
+  priceIndex?: number | null
+  /** Même indice vs le MEILLEUR prix marché (exposition au discounter). */
+  priceIndexBest?: number | null
 }
 
 export interface CatalogReport {
   kpis: ReportKpis
   byCompetitor: CompetitorStat[]
   products: ProductRow[]
+}
+
+/** Médiane d'une série (null si vide). Robuste aux prix aberrants d'un mauvais parsing. */
+function median(xs: number[]): number | null {
+  if (xs.length === 0) return null
+  const s = [...xs].sort((a, b) => a - b)
+  const mid = Math.floor(s.length / 2)
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2
+}
+
+/** Indices tarifaires base 100 depuis les produits appariés COMPLETS (cf. ReportKpis). */
+function priceIndices(rows: ProductRow[]): { priceIndex: number | null; priceIndexBest: number | null } {
+  const vsMedian: number[] = []
+  const vsBest: number[] = []
+  for (const r of rows) {
+    if (r.myPriceHt == null || r.myPriceHt <= 0) continue
+    const prices = r.competitors.map((c) => c.priceHt).filter((p): p is number => p != null && p > 0)
+    if (prices.length === 0) continue
+    const mkt = median(prices)
+    if (mkt != null && mkt > 0) vsMedian.push((r.myPriceHt / mkt) * 100)
+    vsBest.push((r.myPriceHt / Math.min(...prices)) * 100)
+  }
+  const round = (v: number | null) => (v == null ? null : Math.round(v * 10) / 10)
+  return { priceIndex: round(median(vsMedian)), priceIndexBest: round(median(vsBest)) }
 }
 
 function matchKindOf(proof: { key: { origin: boolean; kind: string }; evidence: string }): MatchKind {
@@ -167,6 +197,11 @@ export function buildReport(
       competitors: cells, bestGapPct, undercut,
     })
   }
+
+  // Indices tarifaires : calculés sur `rows` COMPLET, avant tout classement/plafond.
+  const { priceIndex, priceIndexBest } = priceIndices(rows)
+  kpis.priceIndex = priceIndex
+  kpis.priceIndexBest = priceIndexBest
 
   const byCompetitor: CompetitorStat[] = [...stat.values()].map((s) => ({
     siteId: s.siteId, domain: s.domain, matched: s.matched, cheaper: s.cheaper, ruptures: s.ruptures,

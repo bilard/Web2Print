@@ -9,6 +9,7 @@ import { db } from '@/lib/firebase/config'
 import { reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX } from './paths'
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
 import type { SourceProduct } from './catalog/match'
+import { retainHistory } from './history'
 
 // ── Catalogue SOURCE persisté (pour recalculer le benchmark hors workflow) ──────────
 // Le node « Comparer » écrit ici les produits source + la TVA ; le recalcul mono-site
@@ -77,6 +78,9 @@ export interface KpiHistoryPoint {
    *  `s` = siteId, `g` = écart % (null si aucun prix). ABSENT des points écrits avant
    *  cette feature → à traiter comme un trou dans la courbe (jamais 0). */
   comp?: { s: string; g: number | null }[]
+  /** Indice tarif base 100 vs médiane marché (kpis.priceIndex) à cette analyse.
+   *  Absent des points antérieurs → trou dans la courbe, jamais 0. */
+  pi?: number | null
 }
 
 /**
@@ -120,7 +124,7 @@ export async function saveCatalogReport(
   report: CatalogReport,
   sites: { siteId: string; domain: string }[],
   runAt: number,
-  opts: { label?: string; workflowId?: string } = {},
+  opts: { label?: string; workflowId?: string; trend?: boolean } = {},
 ): Promise<void> {
   // Cap par OCTETS, pas seulement par nombre : Firestore REFUSE tout doc > 1 048 576 o
   // (INVALID_ARGUMENT). À l'échelle F1 (des milliers d'appariés × 17 concurrents avec
@@ -151,20 +155,29 @@ export async function saveCatalogReport(
   }
   await setDoc(doc(db, reportLatestDoc(uid, watchId)), stripUndefined(stored))
 
-  // Tendance : ring-buffer de points KPI (lecture-modif-écriture, doc minuscule).
-  const point: KpiHistoryPoint = {
-    at: runAt,
-    products: report.kpis.products,
-    cheaperThanMe: report.kpis.cheaperThanMe,
-    dearerThanMe: report.kpis.dearerThanMe,
-    aligned: report.kpis.aligned,
-    productsUndercut: report.kpis.productsUndercut,
-    comp: report.byCompetitor.map((c) => ({ s: c.siteId, g: c.avgGapPct })),
+  // Tendance : point KPI + rétention (lecture-modif-écriture, doc minuscule).
+  //
+  // ⚠ `trend: false` = analyse PARTIELLE (recalcul live pendant une moisson, ▶ manuel
+  // d'un site) : `latest` est bien réécrit — les tuiles bougent en direct — mais AUCUN
+  // point d'historique n'est émis. Sinon l'index encore incomplet ferait bouger la
+  // courbe pour une raison qui n'a rien à voir avec les prix, et 90 points de capacité
+  // partaient en six heures de moisson.
+  if (opts.trend !== false) {
+    const point: KpiHistoryPoint = {
+      at: runAt,
+      products: report.kpis.products,
+      cheaperThanMe: report.kpis.cheaperThanMe,
+      dearerThanMe: report.kpis.dearerThanMe,
+      aligned: report.kpis.aligned,
+      productsUndercut: report.kpis.productsUndercut,
+      comp: report.byCompetitor.map((c) => ({ s: c.siteId, g: c.avgGapPct })),
+      pi: report.kpis.priceIndex ?? null,
+    }
+    const hRef = doc(db, reportHistoryDoc(uid, watchId))
+    const prev = (await getDoc(hRef)).data()?.points as KpiHistoryPoint[] | undefined
+    const points = retainHistory([...(prev ?? []), point], runAt, REPORT_HISTORY_MAX)
+    await setDoc(hRef, { points })
   }
-  const hRef = doc(db, reportHistoryDoc(uid, watchId))
-  const prev = (await getDoc(hRef)).data()?.points as KpiHistoryPoint[] | undefined
-  const points = [...(prev ?? []), point].slice(-REPORT_HISTORY_MAX)
-  await setDoc(hRef, { points })
 
   // Méta du suivi (fait exister le doc racine → listé par le sélecteur de suivi).
   await setDoc(

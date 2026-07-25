@@ -30,7 +30,11 @@ export async function recomputeReport(
   for (const s of siteRefs) indexBySite.set(s.siteId, await loadAllListings(uid, watchId, s.siteId))
 
   const report = buildReport(src.products, siteRefs, indexBySite, { vatRate: src.vatRate })
-  await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), opts)
+  // `trend: false` — ce recalcul est PARTIEL par nature : il tombe au milieu d'une
+  // moisson (index concurrent encore incomplet) ou juste après le ▶ d'un seul site.
+  // Il rafraîchit le dashboard, mais ne doit PAS marquer l'historique : la courbe
+  // raconterait la progression du scraping, pas le mouvement des prix.
+  await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { ...opts, trend: false })
   // Recale le compteur « fiches » sur le compte dédupliqué exact (comme le node Comparer).
   await Promise.all(report.byCompetitor.map((c) =>
     saveCompetitorMeta(uid, watchId, c.siteId, { productCount: c.audit.indexed })))
