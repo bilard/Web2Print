@@ -104,6 +104,45 @@ function matchesKeywords(url: string, keywords?: string[]): boolean {
   return keywords.some((k) => u.includes(k.toLowerCase()))
 }
 
+/** Profondeur d'un chemin (nombre de segments). */
+function depthOf(url: string): number {
+  try { return new URL(url).pathname.split('/').filter(Boolean).length } catch { return 0 }
+}
+
+/**
+ * Ordonne des catégories de sitemap pour maximiser le rendement produit.
+ *
+ * Un sitemap hiérarchique liste du général au particulier : prendre les N premières donne
+ * des pages de RAYON, qui n'affichent que des sous-rayons (constaté sur leroymerlin :
+ * 12 pages lues → 8 produits). Les FEUILLES portent les grilles. On trie donc par
+ * profondeur décroissante, mais en round-robin par rayon de tête — sinon les 250 URLs
+ * retenues viendraient toutes du même univers.
+ */
+export function orderByLeafFirst(urls: string[]): string[] {
+  const groups = new Map<string, string[]>()
+  for (const u of urls) {
+    let head = ''
+    try {
+      const segs = new URL(u).pathname.split('/').filter(Boolean)
+      head = segs.slice(0, 2).join('/') // ex. `produits/salle-de-bains`
+    } catch { /* URL exotique : groupe commun */ }
+    const arr = groups.get(head)
+    if (arr) arr.push(u); else groups.set(head, [u])
+  }
+  for (const arr of groups.values()) arr.sort((a, b) => depthOf(b) - depthOf(a) || a.localeCompare(b))
+  const lists = [...groups.values()]
+  const out: string[] = []
+  for (let i = 0; out.length < urls.length; i++) {
+    // Tour i : une URL par univers, la plus profonde d'abord. Sans ce tri, un univers
+    // réduit à sa seule page de rayon (`/produits/`) passait en tête de tout le lot.
+    const round = lists.map((l) => l[i]).filter((u): u is string => !!u)
+    if (round.length === 0) break
+    round.sort((a, b) => depthOf(b) - depthOf(a) || a.localeCompare(b))
+    out.push(...round)
+  }
+  return out
+}
+
 /**
  * Découvre des URLs de pages listes via sitemap. Préfère les catégories ; à défaut,
  * renvoie des fiches produit (la moisson les scrape une par une — plus lent mais couvre
@@ -121,7 +160,7 @@ export async function discoverViaSitemap(
 
   // 1. Catégories issues du sous-sitemap « catégories » (structure de confiance).
   const cats = clean(categoryLocs).filter((u) => matchesKeywords(u, keywords))
-  if (cats.length > 0) return cats.slice(0, maxUrls)
+  if (cats.length > 0) return orderByLeafFirst(cats).slice(0, maxUrls)
 
   // 2. À défaut, catégories reconnues par motif de chemin dans les sitemaps « autres ».
   const byPath = clean(otherLocs).filter((u) => LISTING_PATH_RE.test(u) && matchesKeywords(u, keywords))

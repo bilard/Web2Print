@@ -1,6 +1,6 @@
 // src/features/priceWatch/catalog/genericDiscovery.test.ts
 import { describe, it, expect } from 'vitest'
-import { discoverViaSitemap, extractGenericCategoryLinks } from './genericDiscovery'
+import { discoverViaSitemap, extractGenericCategoryLinks, orderByLeafFirst } from './genericDiscovery'
 
 const idx = `<?xml version="1.0"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap><loc>https://www.shop.fr/homeandcategories_sitemap.xml</loc></sitemap>
@@ -65,5 +65,35 @@ describe('extractGenericCategoryLinks', () => {
     expect(links).toContain('https://www.shop.fr/collections/courroies')
     expect(links.some((u) => u.includes('/panier'))).toBe(false)
     expect(links.some((u) => u.includes('ext.com'))).toBe(false)
+  })
+})
+
+describe('orderByLeafFirst', () => {
+  const urls = [
+    'https://x.fr/produits/',
+    'https://x.fr/produits/salle-de-bains/',
+    'https://x.fr/produits/salle-de-bains/meuble/plan-de-travail/bois-massif/',
+    'https://x.fr/produits/salle-de-bains/meuble/',
+    'https://x.fr/produits/jardin/',
+    'https://x.fr/produits/jardin/tondeuse/autoportee/',
+  ]
+
+  it('sert les feuilles avant les rayons (les rayons n’ont pas de grille produit)', () => {
+    const out = orderByLeafFirst(urls)
+    expect(out[0]).toMatch(/bois-massif|autoportee/)
+    // La page de rayon la plus générale passe APRÈS les feuilles de chaque univers.
+    const racine = out.indexOf('https://x.fr/produits/')
+    expect(racine).toBeGreaterThan(out.findIndex((u) => u.includes('bois-massif')))
+    expect(racine).toBeGreaterThan(out.findIndex((u) => u.includes('autoportee')))
+  })
+
+  it('alterne les univers : 250 URLs ne viennent pas toutes du même rayon', () => {
+    const out = orderByLeafFirst(urls)
+    const univers = out.slice(0, 2).map((u) => u.split('/')[4])
+    expect(new Set(univers).size).toBe(2)
+  })
+
+  it('ne perd aucune URL', () => {
+    expect(orderByLeafFirst(urls).sort()).toEqual([...urls].sort())
   })
 })
