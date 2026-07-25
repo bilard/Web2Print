@@ -135,8 +135,10 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
         working ? 'bg-emerald-500/[0.07] ring-1 ring-emerald-400/40' : 'bg-white/[0.03]'
       } ${enabled ? '' : 'opacity-45'}`}
     >
-      {/* Niveau 1 — IDENTITÉ + ACTIONS : activer · nom COMPLET sur une seule ligne
-          (police adaptée à la longueur, jamais tronqué) · ▶ 🔓 ↺ 🗑 à droite. */}
+      {/* Niveau 1 — IDENTITÉ + ÉTAT + ACTIONS : activer · nom COMPLET sur une seule ligne
+          (police adaptée à la longueur, jamais tronqué) · verdict de la dernière passe ·
+          ▶ 🔓 ↺ 🗑 à droite. L'état tenait une rangée à lui seul : à 17 concurrents, cette
+          ligne quasi vide faisait défiler une carte de plus par écran pour rien. */}
       <div className="flex items-center gap-1.5 min-w-0">
         <input
           type="checkbox"
@@ -146,12 +148,27 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           title={enabled ? 'Désactiver ce site' : 'Activer ce site'}
         />
         <span
-          className={`flex-1 min-w-0 whitespace-nowrap font-semibold text-white ${
+          className={`shrink-0 whitespace-nowrap font-semibold text-white ${
             shortName.length > 30 ? 'text-[10px]' : shortName.length > 24 ? 'text-[11px]' : shortName.length > 18 ? 'text-xs' : 'text-sm'
           }`}
         >
           {shortName}
         </span>
+        <div className="flex-1 min-w-0 flex items-center overflow-hidden">
+          {working ? (
+            <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
+              {scraping ? 'Scraping…' : 'En cours…'}
+            </span>
+          ) : badge ? (
+            <span
+              title={badge.title}
+              className={`inline-flex items-center whitespace-nowrap text-[10px] font-medium tabular-nums border rounded-md px-1.5 py-0.5 ${badge.cls} ${fresh ? 'fx-result' : ''}`}
+            >
+              {badge.icon} {badge.label}{badge.detail ? ` · ${badge.detail}` : ''}
+            </span>
+          ) : <span className="text-[10px] text-white/20 italic whitespace-nowrap">jamais scrapé</span>}
+        </div>
         <div className="shrink-0 flex items-center gap-0.5 -mr-1">
           <button
             onClick={onScrape}
@@ -184,25 +201,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           </button>
         </div>
       </div>
-      {/* Niveau 2 — ÉTAT : verdict de la dernière passe, seul sur sa ligne. Il porte un
-          compteur variable (« Sans produit · 35 p ») et cohabitait mal avec les réglages :
-          à trois contrôles, la rangée débordait de la carte et « pages » sortait du cadre. */}
-      <div className="flex items-center gap-1.5 pl-6 mt-1 min-w-0">
-        {working ? (
-          <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-            {scraping ? 'Scraping…' : 'En cours…'}
-          </span>
-        ) : badge ? (
-          <span
-            title={badge.title}
-            className={`inline-flex items-center whitespace-nowrap text-[10px] font-medium tabular-nums border rounded-md px-1.5 py-0.5 ${badge.cls} ${fresh ? 'fx-result' : ''}`}
-          >
-            {badge.icon} {badge.label}{badge.detail ? ` · ${badge.detail}` : ''}
-          </span>
-        ) : <span className="text-[10px] text-white/20 italic">jamais scrapé</span>}
-      </div>
-      {/* Niveau 3 — RÉGLAGES du site, dans l'ordre où on les décide : PAR QUEL canal on
+      {/* Niveau 2 — RÉGLAGES du site, dans l'ordre où on les décide : PAR QUEL canal on
           le relève, PAR QUEL moteur on le lit, COMBIEN de pages on lui réserve. `flex-wrap`
           garantit qu'aucun contrôle ne sort de la carte, quelle que soit la largeur du
           panneau. */}
@@ -235,30 +234,27 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           className="shrink-0 w-14 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
         />
       </div>
-      {/* Stats en 2 RANGÉES logiques fixes (pas de wrap aléatoire) :
-          rangée DONNÉES (produits · prix · appariés) puis rangée MOISSON (balayage ·
-          moteur · dernier scrape). */}
+      {/* Niveau 3 — STATS sur UNE rangée : données (produits · prix · appariés) puis
+          moisson (familles · moteur · dernier scrape). Elles occupaient deux rangées pour
+          éviter un wrap aléatoire ; l'ordre logique suffit à les lire de gauche à droite,
+          et `flex-wrap` ne renvoie à la ligne que si le panneau est vraiment étroit. */}
       {scraped && (
-        <div className="pl-6 mt-1 space-y-0.5 text-[10px]">
-          <div className="flex items-center gap-x-2.5 overflow-hidden">
-            {chip('produits', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute',
-              'Fiches distinctes relevées sur CE site (doublons de pagination exclus). Ce n’est pas votre catalogue : c’est le sien.')}
-            {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn',
-              'Part des fiches relevées ici qui portent un prix. Un site qui charge ses prix en JavaScript reste bas.')}
-            {/* Compteur PAR SITE = paires produit×concurrent. Le KPI du tableau de bord
-                compte des produits DISTINCTS : additionner les sites le dépasse forcément
-                (un produit vendu par 5 concurrents pèse 5 ici, 1 là-bas). Dit explicitement,
-                sinon l'écart passe pour une incohérence. */}
-            {stats.matched != null && chip('appariés ici', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute',
-              'Vos produits retrouvés CHEZ CE CONCURRENT. N’additionnez pas les sites : un produit vendu par plusieurs concurrents est compté une fois par site, mais une seule fois dans le total du tableau de bord.')}
-          </div>
-          <div className="flex items-center gap-x-2.5 overflow-hidden">
-            {swept
-              ? chip('familles', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
-              : stats.harvestProgress != null && chip('familles', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
-            {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
-            {chip('scrape', agoShort(stats.harvestBeatAt ?? stats.updatedAt, now), 'mute')}
-          </div>
+        <div className="pl-6 mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px]">
+          {chip('produits', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute',
+            'Fiches distinctes relevées sur CE site (doublons de pagination exclus). Ce n’est pas votre catalogue : c’est le sien.')}
+          {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn',
+            'Part des fiches relevées ici qui portent un prix. Un site qui charge ses prix en JavaScript reste bas.')}
+          {/* Compteur PAR SITE = paires produit×concurrent. Le KPI du tableau de bord
+              compte des produits DISTINCTS : additionner les sites le dépasse forcément
+              (un produit vendu par 5 concurrents pèse 5 ici, 1 là-bas). Dit explicitement,
+              sinon l'écart passe pour une incohérence. */}
+          {stats.matched != null && chip('appariés ici', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute',
+            'Vos produits retrouvés CHEZ CE CONCURRENT. N’additionnez pas les sites : un produit vendu par plusieurs concurrents est compté une fois par site, mais une seule fois dans le total du tableau de bord.')}
+          {swept
+            ? chip('familles', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
+            : stats.harvestProgress != null && chip('familles', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
+          {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
+          {chip('scrape', agoShort(stats.harvestBeatAt ?? stats.updatedAt, now), 'mute')}
         </div>
       )}
       {/* Barre de balayage animée pendant la moisson (très visible, style TopProgressBar) */}
