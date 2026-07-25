@@ -73,11 +73,11 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     },
     {
       name: 'families', kind: 'text', label: 'Familles ciblées (séparées par des virgules)',
-      help: 'Ex : « COURROIES, FILTRATION, COUPE ». Vide = catalogue complet (plus long).',
+      help: 'Ex : « COURROIES, FILTRATION, COUPE ». Toute famille de votre colonne Famille convient : les mots du libellé servent de filtre sur les URLs du concurrent. Vide = catalogue complet (plus long, et plus cher sur un site payant).',
     },
     {
       name: 'pageBudget', kind: 'number', label: 'Pages par run',
-      help: 'Nombre de pages liste moissonnées à chaque exécution. Réparti entre les sites.',
+      help: 'Pages liste moissonnées à chaque exécution, partagées entre les sites. Un site peut RÉSERVER son propre budget (champ « pages » de sa carte dans « Sites sources ») — utile pour brider un concurrent payant sans rationner les gratuits.',
     },
     { name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est automatiquement celui du workflow (partagé avec « Comparer catalogue » du même workflow). Ne remplis que pour partager un même suivi entre plusieurs workflows.' },
   ],
