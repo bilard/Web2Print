@@ -11,6 +11,7 @@ import { parseListingDomCards } from './genericCards'
 import { extractCategoryLinks, selectCategories, keywordsForFamilies } from './categories'
 import { discoverGenericListings } from './genericDiscovery'
 import { candidateListingUrls, probeListingUrls } from './probeListings'
+import { MIN_PATHS_TO_TARGET } from './categoryTargeting'
 import {
   initCursor, currentTarget, advance, openSweep, pageDocId, pageSignature,
   type HarvestCursor,
@@ -33,6 +34,10 @@ export interface HarvestDeps {
   saveCursor: (siteId: string, cursor: HarvestCursor) => Promise<void>
   /** Enregistre les produits d'une page (doc réécrit → refresh sans doublon). */
   savePage: (siteId: string, pageId: string, url: string, page: number, products: CompetitorListing[]) => Promise<void>
+  /** Ciblage IA des catégories : reçoit les familles source et le plan brut, renvoie le
+   *  plan RETENU (ou null pour « garde tout »). Injecté par le node — le module reste pur
+   *  et testable sans LLM. Absent = comportement historique (filtre par mots-clés seul). */
+  selectCategories?: (families: string[], urls: string[]) => Promise<string[] | null>
   /** Progression EN COURS de passe (toutes les N pages) → rafraîchit la méta live (jauge
    *  Balayage + heartbeat) pendant le run, sans attendre la fin. Optionnel. */
   onProgress?: (pagesFetched: number, productsIndexed: number, cursor: HarvestCursor) => void | Promise<void>
@@ -68,11 +73,11 @@ export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): 
   // 1. PrestaShop 1.7 (rapide, éprouvé) : liens catégories `/{id}-{slug}` de l'accueil.
   if (home) {
     const ps = selectCategories(extractCategoryLinks(home, homeUrl(cfg.domain)), keywords)
-    if (ps.length > 0) return ps
+    if (ps.length > 0) return targetPlan(cfg, deps, ps)
   }
   // 2. GÉNÉRIQUE toute techno : sitemap (structure de confiance) puis liens home.
   const generic = await discoverGenericListings(cfg.domain, deps.fetchHtml, home, { keywords })
-  if (generic.length > 0) return generic
+  if (generic.length > 0) return targetPlan(cfg, deps, generic)
   // 3. SONDAGE (dernier recours, coûteux) : les étages 1 et 2 devinent d'après l'URL et
   //    restent muets sur les plateformes maison (castorama : `…/cat_id_0003374.cat`).
   //    Ici on ouvre quelques liens internes et on garde ceux qui contiennent VRAIMENT des
@@ -83,6 +88,30 @@ export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): 
   if (candidates.length === 0) return []
   deps.log?.(`${cfg.domain} : motif d'URL inconnu — sondage de ${candidates.length} lien(s) candidat(s).`)
   return probeListingUrls(candidates, deps.fetchHtml, countListingProducts, { log: deps.log })
+}
+
+/**
+ * Réordonne/réduit un plan de moisson par appariement IA des vocabulaires (cf.
+ * `categoryTargeting.ts`). Le filtre par mots-clés amont ne sait pas voir qu'un
+ * concurrent range les courroies sous « transmission » ; ici on soumet ses catégories
+ * RÉELLES au modèle avec les libellés RÉELS des familles source.
+ *
+ * FAIL-OPEN à chaque étage (pas de familles, plan trop court, pas d'injection, LLM en
+ * erreur, réponse illisible) : on rend le plan d'origine. Un ciblage qui échoue ne doit
+ * JAMAIS vider une moisson — c'est le mode de panne que ce module est censé supprimer.
+ */
+async function targetPlan(cfg: CompetitorConfig, deps: HarvestDeps, urls: string[]): Promise<string[]> {
+  if (!deps.selectCategories || cfg.families.length === 0) return urls
+  if (urls.length < MIN_PATHS_TO_TARGET) return urls
+  try {
+    const kept = await deps.selectCategories(cfg.families, urls)
+    if (!kept || kept.length === 0) return urls
+    deps.log?.(`${cfg.domain} : ciblage IA — ${kept.length}/${urls.length} catégorie(s) retenue(s).`)
+    return kept
+  } catch (e) {
+    deps.log?.(`${cfg.domain} : ciblage IA indisponible (${e instanceof Error ? e.message.slice(0, 120) : e}) — catalogue complet.`)
+    return urls
+  }
 }
 
 /** Produits d'une page, même cascade que la moisson (PrestaShop → JSON-LD → cartes DOM). */

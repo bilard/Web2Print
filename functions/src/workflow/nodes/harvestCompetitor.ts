@@ -17,6 +17,8 @@ import { harvestPass, type CompetitorConfig, type HarvestDeps } from '../../pric
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '../../priceWatch/catalog/store'
 import { harvestProgress } from '../../priceWatch/catalog/harvest'
 import { buildServerFetcher } from '../../priceWatch/catalog/serverFetcher'
+import { applyTargeting, buildTargetingPrompt, familiesFromRows } from '../../priceWatch/catalog/categoryTargeting'
+import { callLlm } from '../llm'
 
 /** Mode « cycle calendaire » : porté par le doc workflowSchedules du workflow (champ
  *  `cycle` posé par le node Cron). En mode cycle, un site terminé ATTEND les autres au
@@ -65,7 +67,13 @@ registerServerNode({
       ctx.log('warn', 'Aucun site concurrent configuré.')
       return { status: statusSheet([]) }
     }
-    const families = String(config.families ?? '').split(',').map((f) => f.trim()).filter(Boolean)
+    // Familles ciblées : le champ texte est un OVERRIDE explicite ; sinon elles sont
+    // dérivées de la feuille source branchée (colonne Famille) — parité client.
+    const typedFamilies = String(config.families ?? '').split(',').map((f) => f.trim()).filter(Boolean)
+    const sourceRows = ((inputs.products ?? {}) as { rows?: Record<string, unknown>[] }).rows ?? []
+    const familyColumn = String(config.familyColumn ?? '').trim()
+    const families = typedFamilies.length ? typedFamilies : familiesFromRows(sourceRows, familyColumn)
+    if (!typedFamilies.length && families.length) ctx.log('info', `${families.length} famille(s) lues dans la colonne « ${familyColumn} ».`)
     const pageBudget = Math.max(1, Number(config.pageBudget) || 40)
     // Budget réparti équitablement entre les sites (au moins 1 page chacun).
     // Budget : un site peut RÉSERVER ses pages (concurrent coûteux à brider) ; le reste
@@ -117,6 +125,10 @@ registerServerNode({
       const fetcher = buildServerFetcher(ctx.uid, site)
       const deps: HarvestDeps = {
         fetchHtml: fetcher.fetchHtml,
+        // Ciblage IA du plan de moisson (parité client) : appariement des vocabulaires.
+        // `targetPlan` rattrape toute erreur → le plan complet, jamais un plan vide.
+        selectCategories: async (fams, urls) =>
+          applyTargeting((await callLlm(ctx.uid, buildTargetingPrompt(fams, urls))).text, urls),
         loadCursor: async () => prevMeta?.cursor ?? null,
         saveCursor: (siteId, cursor) => saveCompetitorMeta(ctx.uid, watchId, siteId, { domain: site.domain, cursor }),
         savePage: (siteId, pageId, url, page, products) => {

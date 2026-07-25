@@ -4,6 +4,7 @@
 // ticks successifs accumulent puis rafraîchissent l'index. Aucune donnée volumineuse ne
 // transite par la mémoire du run — le matching relira l'index (cf. audit scalabilité).
 import { TrendingUpDown } from 'lucide-react'
+import { z } from 'zod'
 import { doc, getDoc } from 'firebase/firestore'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
@@ -13,6 +14,8 @@ import { useAuthStore } from '@/stores/auth.store'
 import { buildSiteFetcher } from '@/features/priceWatch/catalog/siteFetch'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
 import { resolveSitesInput, sitesForRole, splitPageBudget } from '@/features/priceWatch/sourceSites'
+import { generateJson } from '@/features/ai/llmRouter'
+import { applyTargetingBuckets, buildTargetingPrompt, familiesFromRows, TARGETING_SCHEMA_FOR_LLM } from '@/features/priceWatch/catalog/categoryTargeting'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '@/features/priceWatch/catalog/runHarvest'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '@/features/priceWatch/catalog/store'
 import { harvestProgress } from '@/features/priceWatch/catalog/harvest'
@@ -21,10 +24,21 @@ interface HarvestConfig {
   watchId: string
   sites: string
   families: string
+  /** Colonne de la feuille source d'où lire les familles (si `families` est vide). */
+  familyColumn: string
   pageBudget: number
 }
-interface HarvestInputs { sites?: unknown }
+interface HarvestInputs { sites?: unknown; products?: ExcelSheet }
 type HarvestOutputs = { status: ExcelSheet }
+
+/** Réponse attendue du ciblage IA : des INDEX dans la liste soumise (jamais des URLs,
+ *  que le modèle pourrait inventer). Le tri en trois seaux est décrit dans
+ *  `categoryTargeting.ts` — on ne garde ici que `pertinent` + `incertain`. */
+const targetingSchema = z.object({
+  pertinent: z.array(z.number()).default([]),
+  incertain: z.array(z.number()).default([]),
+  horsSujet: z.array(z.number()).default([]),
+})
 
 /** Mode « cycle calendaire » (parité serveur) : porté par le doc workflowSchedules du
  *  workflow (champ `cycle` posé par le node Cron). En mode cycle, un site terminé ATTEND
@@ -64,7 +78,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
   connectors: ['jina'],
   // Port `sites` (facultatif) : brancher un node « Sites sources » remplace la textarea
   // ci-dessous ET l'identifiant de suivi — une seule liste à maintenir.
-  inputs: [{ name: 'sites', type: 'sites' }],
+  inputs: [{ name: 'products', type: 'sheet' }, { name: 'sites', type: 'sites' }],
   outputs: [{ name: 'status', type: 'sheet' }],
   configSchema: [
     {
@@ -73,7 +87,11 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     },
     {
       name: 'families', kind: 'text', label: 'Familles ciblées (séparées par des virgules)',
-      help: 'Ex : « COURROIES, FILTRATION, COUPE ». Toute famille de votre colonne Famille convient : les mots du libellé servent de filtre sur les URLs du concurrent. Vide = catalogue complet (plus long, et plus cher sur un site payant).',
+      help: 'Laisse VIDE si tu branches ta feuille source sur le port « products » : les familles sont alors lues dans la colonne ci-dessous, toujours à jour. Remplis-le pour FORCER un ciblage précis (« COURROIES, FILTRATION »). Vide et sans feuille = catalogue complet.',
+    },
+    {
+      name: 'familyColumn', kind: 'text', label: 'Colonne Famille de la source',
+      help: 'Ex : Famille. Utilisée quand la feuille source est branchée : les familles distinctes en sont extraites, puis une IA apparie VOTRE vocabulaire à celui du concurrent (« COURROIES » retrouve son rayon « transmission »). Sans IA disponible, le catalogue complet est balayé — jamais moins.',
     },
     {
       name: 'pageBudget', kind: 'number', label: 'Pages par run',
@@ -81,7 +99,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     },
     { name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est automatiquement celui du workflow (partagé avec « Comparer catalogue » du même workflow). Ne remplis que pour partager un même suivi entre plusieurs workflows.' },
   ],
-  defaultConfig: { watchId: '', sites: '', families: '', pageBudget: 40 },
+  defaultConfig: { watchId: '', sites: '', families: '', familyColumn: 'Famille', pageBudget: 40 },
   cardSummary: (c) => {
     const n = parseSitesConfig(c.sites).length
     return n ? `${n} site(s) · ${c.pageBudget}/run${c.families.trim() ? ` · ${c.families.trim()}` : ''}` : ''
@@ -105,7 +123,14 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       ctx.log('warn', 'Aucun site concurrent configuré.')
       return { status: statusSheet([]) }
     }
-    const families = config.families.split(',').map((f) => f.trim()).filter(Boolean)
+    // Familles ciblées : le champ texte est un OVERRIDE explicite ; sinon elles sont
+    // dérivées de la feuille source branchée (colonne Famille) — le vocabulaire vient
+    // ainsi de la source elle-même, sans ressaisie ni dérive.
+    const typed = config.families.split(',').map((f) => f.trim()).filter(Boolean)
+    const families = typed.length
+      ? typed
+      : familiesFromRows(inputs.products?.rows ?? [], config.familyColumn?.trim() ?? '')
+    if (!typed.length && families.length) ctx.log('info', `${families.length} famille(s) lues dans la colonne « ${config.familyColumn?.trim()} ».`)
     // Budget : un site peut RÉSERVER ses pages (concurrent coûteux à brider) ; le reste
     // est partagé équitablement entre les autres.
     const budgets = splitPageBudget(sites, config.pageBudget)
@@ -148,6 +173,19 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       let passWithPrice = 0
       const deps: HarvestDeps = {
         fetchHtml: fetcher.fetchHtml,
+        // Ciblage IA du plan de moisson : appariement des vocabulaires (familles source ↔
+        // catégories réelles du concurrent). Une erreur ici ne doit jamais réduire la
+        // moisson — `targetPlan` rattrape et rend le plan complet.
+        selectCategories: async (fams, urls) => applyTargetingBuckets(
+          await generateJson<Record<string, number[]>>({
+            task: 'web.discoveryFilter',
+            version: 'priceWatch.categoryTargeting.v1',
+            prompt: buildTargetingPrompt(fams, urls),
+            schema: targetingSchema,
+            schemaForLLM: TARGETING_SCHEMA_FOR_LLM as unknown as Record<string, unknown>,
+          }),
+          urls,
+        ),
         loadCursor: async () => prevMeta?.cursor ?? null,
         saveCursor: (siteId, cursor) => saveCompetitorMeta(uid, watchId, siteId, { domain: site.domain, cursor }),
         savePage: (siteId, pageId, url, page, products) => {
