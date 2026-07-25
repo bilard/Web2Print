@@ -4,19 +4,19 @@
 // liste des catalogues concurrents et alimente l'index Firestore persistant, un lot
 // borné de pages par tick. Sur cron, les ticks accumulent puis rafraîchissent.
 //
-// Différences avec le client : fetch HTML DIRECT (fetchHtml) au lieu de la CF
-// fetchPageHtml — c'est la MÊME IP datacenter que la CF, donc le même comportement
-// que la validation live. Persistance via l'adaptateur admin-SDK. Pas de reportCount
+// Le canal de lecture suit la config du site (accès connecté / moteur forcé) via
+// `buildServerFetcher` — parité avec le client. En direct, c'est la MÊME IP datacenter
+// que la CF fetchPageHtml, donc le même comportement que la validation live. Persistance via l'adaptateur admin-SDK. Pas de reportCount
 // (absent du ctx serveur). Toute la logique métier est partagée avec le client via
 // les modules purs dupliqués sous functions/src/priceWatch/catalog/.
 import { getFirestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
-import { fetchHtml } from '../../scraper/fetchHtml'
 import { stableId } from '../../priceWatch/helpers'
 import { resolveSitesInput, splitPageBudget } from '../../priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '../../priceWatch/catalog/runHarvest'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '../../priceWatch/catalog/store'
 import { harvestProgress } from '../../priceWatch/catalog/harvest'
+import { buildServerFetcher } from '../../priceWatch/catalog/serverFetcher'
 
 /** Mode « cycle calendaire » : porté par le doc workflowSchedules du workflow (champ
  *  `cycle` posé par le node Cron). En mode cycle, un site terminé ATTEND les autres au
@@ -106,11 +106,13 @@ registerServerNode({
       // % de prix de la passe : accumulé au fil des pages sauvées (aucune lecture en plus).
       let passProducts = 0
       let passWithPrice = 0
+      // ⚠ Le canal de lecture suit la CONFIG du site (accès connecté, moteur forcé).
+      // Avant, le serveur lisait toujours en direct et anonyme : les sites à prix
+      // connectés (progarden, sodipieces) indexaient des milliers de fiches à « prix
+      // 0 % » sur chaque tick de cron, et un site en Bright Data restait bloqué.
+      const fetcher = buildServerFetcher(ctx.uid, site)
       const deps: HarvestDeps = {
-        // Fetch DIRECT : sur le runtime CF c'est la même IP que fetchPageHtml (validé live).
-        fetchHtml: async (url) => {
-          try { return await fetchHtml(url, 20000) } catch { return null }
-        },
+        fetchHtml: fetcher.fetchHtml,
         loadCursor: async () => prevMeta?.cursor ?? null,
         saveCursor: (siteId, cursor) => saveCompetitorMeta(ctx.uid, watchId, siteId, { domain: site.domain, cursor }),
         savePage: (siteId, pageId, url, page, products) => {
@@ -153,7 +155,7 @@ registerServerNode({
         sweepProducts,
         sweepWithPrice,
         ...(sweepProducts > 0 ? { pctPrice: Math.round((sweepWithPrice / sweepProducts) * 100) } : {}),
-        lastEngine: 'cloudFunction',
+        lastEngine: fetcher.lastEngine() ?? 'cloudFunction',
         lastPassPages: res.pagesFetched,
         lastPassProducts: res.productsIndexed,
         lastPassAt: Date.now(),
