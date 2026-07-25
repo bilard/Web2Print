@@ -46,6 +46,7 @@ export async function harvestOneSite(
     // Remontée LIVE à CHAQUE page (progressEvery: 1) : le tableau bouge en direct.
     onProgress: (pagesFetched, productsIndexed, cursor) => saveCompetitorMeta(uid, watchId, siteId, {
       domain: site.domain,
+      harvestBeatAt: Date.now(), // battement de MOISSON (le « Comparer » ne l'écrit jamais)
       productCount: (prevMeta?.productCount ?? 0) + productsIndexed,
       harvestProgress: harvestProgress(cursor),
       harvestSweeps: cursor.sweeps,
@@ -65,6 +66,7 @@ export async function harvestOneSite(
   await saveCompetitorMeta(uid, watchId, siteId, {
     domain: site.domain,
     pageCount: pagesTotal,
+    harvestBeatAt: Date.now(), // battement de MOISSON (le « Comparer » ne l'écrit jamais)
     productCount: (prevMeta?.productCount ?? 0) + res.productsIndexed,
     lastHarvestMs: elapsedMs,
     cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,

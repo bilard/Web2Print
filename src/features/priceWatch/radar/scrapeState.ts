@@ -149,22 +149,16 @@ export function buildScrapeRows(
     if (!byId.has(siteId) && m.domain) byId.set(siteId, { domain: m.domain, matched: null, indexed: 0, pctPrice: null })
   }
 
-  // ⚠ « En cours » = LE site le plus récemment écrit, et lui seul. Le node « Comparer »
-  // réécrit la méta de TOUS les concurrents d'un coup (productCount/pctPrice) : se fier au
-  // seul `updatedAt` frais affichait « 12 en cours » alors que le moissonneur est
-  // séquentiel — au plus un site travaille à un instant donné.
-  let freshest = 0
-  for (const [siteId, m] of meta.entries()) {
-    if (m.updatedAt != null && m.updatedAt > freshest && !isCursorDomain(byId.get(siteId)?.domain ?? m.domain)) {
-      freshest = m.updatedAt
-    }
-  }
-
   const rows: ScrapeRow[] = []
   for (const [siteId, base] of byId.entries()) {
     if (isCursorDomain(base.domain)) continue
     const m = meta.get(siteId)
-    const live = m?.updatedAt != null && m.updatedAt === freshest && isBeatAlive(m.updatedAt, pulse, now)
+    // ⚠ « En cours » se lit sur `harvestBeatAt` — écrit UNIQUEMENT par une passe de
+    // scraping. `updatedAt` bouge aussi quand le node « Comparer » réécrit la méta de TOUS
+    // les concurrents dans la même rafale (constaté : 13 sites à la même milliseconde),
+    // ce qui les allumait tous. Plusieurs sites peuvent être actifs à la fois : les nodes
+    // « Moisson » et « Recherche dirigée » tournent en parallèle.
+    const live = isBeatAlive(m?.harvestBeatAt, pulse, now)
     rows.push({
       siteId,
       domain: base.domain,

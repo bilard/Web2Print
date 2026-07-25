@@ -30,6 +30,11 @@ export interface CompetitorMeta {
   pageCount?: number
   lastHarvestMs?: number
   cumulHarvestMs?: number
+  /** Battement de MOISSON : horodatage écrit UNIQUEMENT par une passe de scraping.
+   *  ⚠ Ne PAS se fier à `updatedAt` pour dire « en cours » : le node « Comparer » réécrit
+   *  la méta de TOUS les concurrents dans la même rafale (même milliseconde), ce qui les
+   *  faisait tous passer pour actifs. */
+  harvestBeatAt?: number
   harvestProgress?: number
   harvestSweeps?: number
   updatedAt?: number

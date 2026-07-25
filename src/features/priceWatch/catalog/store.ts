@@ -52,6 +52,11 @@ export interface CompetitorMeta {
   lastHarvestMs?: number
   /** Cumul (ms) de toutes les passes de moisson de ce concurrent (calibrage du cron). */
   cumulHarvestMs?: number
+  /** Battement de MOISSON : horodatage écrit UNIQUEMENT par une passe de scraping.
+   *  ⚠ Ne PAS se fier à `updatedAt` pour dire « en cours » : le node « Comparer » réécrit
+   *  la méta de TOUS les concurrents dans la même rafale (même milliseconde), ce qui les
+   *  faisait tous passer pour actifs. */
+  harvestBeatAt?: number
   /** Progression du balayage 0..1 (part des catégories parcourues). 1 = catalogue balayé. */
   harvestProgress?: number
   /** Nombre de balayages COMPLETS du catalogue (cycles à 100 %) déjà effectués. */

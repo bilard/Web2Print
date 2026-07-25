@@ -120,6 +120,7 @@ registerServerNode({
         // pendant le run cron, sans attendre la fin du site.
         onProgress: (_p, productsIndexed, cursor) => saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
           domain: site.domain,
+          harvestBeatAt: Date.now(), // battement de MOISSON (le « Comparer » ne l'écrit jamais)
           productCount: (prevMeta?.productCount ?? 0) + productsIndexed, // fait ticker « Fiches collectées »
           harvestProgress: harvestProgress(cursor),
           harvestSweeps: cursor.sweeps,
@@ -141,6 +142,7 @@ registerServerNode({
       const sweepWithPrice = (newSweep ? 0 : prevMeta?.sweepWithPrice ?? 0) + passWithPrice
       await saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
         pageCount: pagesTotal,
+        harvestBeatAt: Date.now(), // battement de MOISSON (le « Comparer » ne l'écrit jamais)
         productCount: (prevMeta?.productCount ?? 0) + res.productsIndexed,
         lastHarvestMs: elapsedMs,
         cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + elapsedMs,

@@ -19,6 +19,9 @@ export interface HarvestMeta {
    *  remis à la valeur dédupliquée exacte au « Comparer ». Fait ticker « Fiches collectées ». */
   productCount?: number
   pageCount?: number
+  /** Battement de MOISSON (écrit par une passe de scraping seulement, jamais par le
+   *  node « Comparer ») — seule preuve honnête que ce site travaille MAINTENANT. */
+  harvestBeatAt?: number
   harvestProgress?: number
   harvestSweeps?: number
   cumulHarvestMs?: number
@@ -122,12 +125,16 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
     if (!slowestCycle || c.cycleMs > slowestCycle.cycleMs) slowestCycle = { domain: c.domain, cycleMs: c.cycleMs }
   }
 
-  // Heartbeat de moisson : la plus récente écriture de méta (bouge à chaque passe).
+  // Heartbeat de moisson : le plus récent battement de SCRAPING. ⚠ `updatedAt` ne convient
+  // PAS — le node « Comparer » réécrit la méta de tous les concurrents dans une seule
+  // rafale (même milliseconde), ce qui faisait passer tout le monde pour « en cours ».
+  // Repli sur updatedAt tant qu'aucune passe n'a écrit le nouveau champ (métas anciennes).
   let lastCollectAt: number | null = null
   let lastCollectDomain: string | null = null
   if (liveMeta) for (const [siteId, m] of liveMeta.entries()) {
-    if (m.updatedAt != null && (lastCollectAt == null || m.updatedAt > lastCollectAt)) {
-      lastCollectAt = m.updatedAt
+    const beat = m.harvestBeatAt ?? m.updatedAt
+    if (beat != null && (lastCollectAt == null || beat > lastCollectAt)) {
+      lastCollectAt = beat
       lastCollectDomain = m.domain ?? competitors.find((c) => c.siteId === siteId)?.domain ?? null
     }
   }

@@ -96,6 +96,7 @@ export function useCompetitorMeta(watchId: string | null): Map<string, HarvestMe
             domain: typeof data.domain === 'string' ? data.domain : undefined,
             productCount: typeof data.productCount === 'number' ? data.productCount : undefined,
             pageCount: typeof data.pageCount === 'number' ? data.pageCount : undefined,
+            harvestBeatAt: typeof data.harvestBeatAt === 'number' ? data.harvestBeatAt : undefined,
             harvestProgress: typeof data.harvestProgress === 'number' ? data.harvestProgress : undefined,
             harvestSweeps: typeof data.harvestSweeps === 'number' ? data.harvestSweeps : undefined,
             cumulHarvestMs: typeof data.cumulHarvestMs === 'number' ? data.cumulHarvestMs : undefined,

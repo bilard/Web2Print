@@ -104,25 +104,36 @@ describe('buildScrapeRows', () => {
   } as unknown as StoredReport
 
   it('exclut les docs curseur et fait primer la méta LIVE', () => {
-    const meta = new Map([['a', { domain: 'a.com', productCount: 140, pctPrice: 95, updatedAt: NOW - 5_000, lastPassAt: NOW - 5_000, lastPassPages: 20, lastPassProducts: 40 }]])
+    const meta = new Map([['a', { domain: 'a.com', productCount: 140, pctPrice: 95, updatedAt: NOW - 5_000, harvestBeatAt: NOW - 5_000, lastPassAt: NOW - 5_000, lastPassPages: 20, lastPassProducts: 40 }]])
     const rows = buildScrapeRows(report, meta, NOW, RUNNING)
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ domain: 'a.com', products: 140, pctPrice: 95, matched: 12, live: true, status: 'live' })
   })
 
-  it('ne déclare EN COURS que le site le plus récent (le node Comparer réécrit tout d’un coup)', () => {
+  it('une rafale du node « Comparer » n’allume AUCUNE ligne (updatedAt frais partout)', () => {
+    // Signature observée en prod : les 13 métas réécrites à la même milliseconde, sans
+    // qu'aucune moisson ne tourne → aucun `harvestBeatAt` récent.
+    const burst = NOW - 2_000
     const meta = new Map([
-      ['a', { domain: 'a.com', productCount: 100, updatedAt: NOW - 3_000, lastPassAt: NOW - 600_000, lastPassPages: 20, lastPassProducts: 40 }],
-      ['b', { domain: 'b.com', productCount: 50, updatedAt: NOW - 2_000, lastPassAt: NOW - 600_000, lastPassPages: 20, lastPassProducts: 40 }],
-      ['c', { domain: 'c.com', productCount: 10, updatedAt: NOW - 1_000, lastPassAt: NOW - 600_000, lastPassPages: 20, lastPassProducts: 40 }],
+      ['a', { domain: 'a.com', productCount: 100, updatedAt: burst, harvestBeatAt: NOW - 900_000, lastPassAt: NOW - 900_000, lastPassPages: 20, lastPassProducts: 40 }],
+      ['b', { domain: 'b.com', productCount: 50, updatedAt: burst, harvestBeatAt: NOW - 900_000, lastPassAt: NOW - 900_000, lastPassPages: 20, lastPassProducts: 40 }],
+      ['c', { domain: 'c.com', productCount: 10, updatedAt: burst, harvestBeatAt: NOW - 900_000, lastPassAt: NOW - 900_000, lastPassPages: 20, lastPassProducts: 40 }],
     ])
     const rows = buildScrapeRows(report, meta, NOW, RUNNING)
-    expect(rows.filter((r) => r.live).map((r) => r.domain)).toEqual(['c.com'])
-    expect(countByStatus(rows).live).toBe(1)
+    expect(rows.filter((r) => r.live)).toHaveLength(0)
+  })
+
+  it('plusieurs sites peuvent être EN COURS (moisson + recherche dirigée en parallèle)', () => {
+    const meta = new Map([
+      ['a', { domain: 'a.com', productCount: 100, updatedAt: NOW - 3_000, harvestBeatAt: NOW - 3_000, lastPassAt: NOW - 600_000, lastPassPages: 20, lastPassProducts: 40 }],
+      ['b', { domain: 'b.com', productCount: 50, updatedAt: NOW - 2_000, harvestBeatAt: NOW - 2_000, lastPassAt: NOW - 600_000, lastPassPages: 20, lastPassProducts: 40 }],
+    ])
+    const rows = buildScrapeRows(report, meta, NOW, RUNNING)
+    expect(rows.filter((r) => r.live).map((r) => r.domain).sort()).toEqual(['a.com', 'b.com'])
   })
 
   it('aucune ligne « en cours » quand le run est terminé (STOP / suspension)', () => {
-    const meta = new Map([['a', { domain: 'a.com', productCount: 140, updatedAt: NOW - 20_000, lastPassAt: NOW - 20_000, lastPassPages: 20, lastPassProducts: 40 }]])
+    const meta = new Map([['a', { domain: 'a.com', productCount: 140, updatedAt: NOW - 20_000, harvestBeatAt: NOW - 20_000, lastPassAt: NOW - 20_000, lastPassPages: 20, lastPassProducts: 40 }]])
     const rows = buildScrapeRows(report, meta, NOW, ENDED)
     expect(rows.filter((r) => r.live)).toHaveLength(0)
     expect(rows[0].status).toBe('ok')
@@ -130,8 +141,8 @@ describe('buildScrapeRows', () => {
 
   it('ajoute un site présent en LIVE seulement et trie ce qui bouge d’abord', () => {
     const meta = new Map([
-      ['b', { domain: 'b.com', productCount: 5, updatedAt: NOW - 1_000, lastPassAt: NOW - 1_000, lastPassPages: 3, lastPassProducts: 5 }],
-      ['a', { domain: 'a.com', productCount: 300, updatedAt: NOW - 3 * LIVE_WINDOW_MS, lastPassAt: NOW - 3 * LIVE_WINDOW_MS, lastPassPages: 0, lastPassProducts: 0 }],
+      ['b', { domain: 'b.com', productCount: 5, updatedAt: NOW - 1_000, harvestBeatAt: NOW - 1_000, lastPassAt: NOW - 1_000, lastPassPages: 3, lastPassProducts: 5 }],
+      ['a', { domain: 'a.com', productCount: 300, updatedAt: NOW - 3 * LIVE_WINDOW_MS, harvestBeatAt: NOW - 3 * LIVE_WINDOW_MS, lastPassAt: NOW - 3 * LIVE_WINDOW_MS, lastPassPages: 0, lastPassProducts: 0 }],
     ])
     const rows = buildScrapeRows(report, meta, NOW, RUNNING)
     expect(rows.map((r) => r.domain)).toEqual(['b.com', 'a.com'])
