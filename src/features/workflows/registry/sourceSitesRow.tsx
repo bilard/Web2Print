@@ -43,9 +43,9 @@ const ENGINE_OPTIONS = [
  *  Un généraliste (Leroy Merlin, marketplace) doit passer en « Recherche dirigée » :
  *  balayer ses catégories coûte des heures pour presque aucun produit apparié. */
 const MODE_OPTIONS = [
-  { value: '', label: 'Moisson + Recherche' },
-  { value: 'harvest', label: 'Moisson seule' },
-  { value: 'directed', label: 'Recherche dirigée' },
+  { value: '', label: 'Les deux' },
+  { value: 'harvest', label: 'Moisson' },
+  { value: 'directed', label: 'Recherche' },
 ]
 
 const TONE_BADGE: Record<'ok' | 'warn' | 'err' | 'mute', string> = {
@@ -184,9 +184,10 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           </button>
         </div>
       </div>
-      {/* Niveau 2 — ÉTAT + MOTEUR, alignés à gauche : verdict de la dernière passe puis
-          sélecteur de moteur juste à côté. */}
-      <div className="flex items-center gap-1.5 pl-6 mt-1">
+      {/* Niveau 2 — ÉTAT : verdict de la dernière passe, seul sur sa ligne. Il porte un
+          compteur variable (« Sans produit · 35 p ») et cohabitait mal avec les réglages :
+          à trois contrôles, la rangée débordait de la carte et « pages » sortait du cadre. */}
+      <div className="flex items-center gap-1.5 pl-6 mt-1 min-w-0">
         {working ? (
           <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
@@ -200,6 +201,20 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
             {badge.icon} {badge.label}{badge.detail ? ` · ${badge.detail}` : ''}
           </span>
         ) : <span className="text-[10px] text-white/20 italic">jamais scrapé</span>}
+      </div>
+      {/* Niveau 3 — RÉGLAGES du site, dans l'ordre où on les décide : PAR QUEL canal on
+          le relève, PAR QUEL moteur on le lit, COMBIEN de pages on lui réserve. `flex-wrap`
+          garantit qu'aucun contrôle ne sort de la carte, quelle que soit la largeur du
+          panneau. */}
+      <div className="flex flex-wrap items-center gap-1 pl-6 mt-1">
+        <select
+          value={mode ?? ''}
+          onChange={(e) => onMode(e.target.value)}
+          title="Canal de relevé — « Moisson » balaie ses catégories, « Recherche » interroge son moteur par référence, « Les deux » fait les deux. Un généraliste (marketplace, grande surface de bricolage) n'a d'intérêt qu'en Recherche : balayer ses rayons coûte des heures pour presque aucun produit apparié."
+          className="shrink-0 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
+        >
+          {MODE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
         <select
           value={engine}
           onChange={(e) => onEngine(e.target.value)}
@@ -207,14 +222,6 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           className="shrink-0 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
         >
           {ENGINE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-        <select
-          value={mode ?? ''}
-          onChange={(e) => onMode(e.target.value)}
-          title="Canal de relevé : moisson par catégories, recherche dirigée par référence, ou les deux."
-          className="shrink-0 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
-        >
-          {MODE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         {/* Budget RÉSERVÉ : bride un concurrent coûteux (Bright Data est facturé à la
             requête) sans rationner les sites gratuits. Vide = part du budget commun. */}
@@ -225,7 +232,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           onChange={(e) => onBudget(e.target.value.trim() ? Math.max(1, Number(e.target.value)) : undefined)}
           placeholder="pages"
           title="Pages par run réservées à ce site. Vide = part du budget commun."
-          className="shrink-0 w-16 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
+          className="shrink-0 w-14 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
         />
       </div>
       {/* Stats en 2 RANGÉES logiques fixes (pas de wrap aléatoire) :
