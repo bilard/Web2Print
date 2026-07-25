@@ -98,24 +98,65 @@ export function diffPrices(prev: PriceState, rows: ProductRow[], at: number): {
   return { events, state }
 }
 
+/** Taille UTF-8 (identique côté client et serveur). */
+const utf8Bytes = (s: string): number => Buffer.byteLength(s, 'utf8')
+
 /**
  * Fusionne les nouveaux mouvements dans le journal, plus RÉCENTS d'abord, sous double
  * plafond (nombre + octets — Firestore refuse tout doc > 1 048 576 o, cf. `latest`).
+ *
+ * DÉDUPLIQUE sur (at, pid, sid) : le journal est écrit AVANT l'état (cf. recordPriceMoves),
+ * donc si l'écriture de l'état échoue, l'analyse suivante rediffe contre les mêmes prix et
+ * ré-émet les mêmes mouvements. Ce choix est délibéré — un doublon se rattrape, une baisse
+ * de prix manquée ne se rattrape pas — et la dédup le rend indolore.
  */
 export function mergeEvents(
   prev: PriceEvent[], fresh: PriceEvent[], maxCount: number, maxBytes: number,
 ): PriceEvent[] {
   const all = [...fresh, ...prev].sort((a, b) => b.at - a.at)
+  const seen = new Set<string>()
   const kept: PriceEvent[] = []
   let used = 32 // enveloppe { "events": [] }
   for (const e of all) {
     if (kept.length >= maxCount) break
-    const size = Buffer.byteLength(JSON.stringify(e), 'utf8') + 1
+    const id = `${e.at}|${e.pid}|${e.sid}`
+    if (seen.has(id)) continue
+    const size = utf8Bytes(JSON.stringify(e)) + 1
     if (used + size > maxBytes) break
+    seen.add(id)
     kept.push(e)
     used += size
   }
   return kept
+}
+
+/**
+ * Découpe l'état en tranches sous un budget d'OCTETS (pas un nombre d'entrées).
+ *
+ * ⚠ Un cap par comptage a DÉJÀ fait rejeter un doc à l'échelle F1 : Firestore refuse tout
+ * doc > 1 048 576 o (INVALID_ARGUMENT), et la clé d'une entrée est de longueur variable
+ * (`stableId` retombe sur le NOM du produit quand ni réf ni EAN n'existent). Comme
+ * l'écriture de l'état est best-effort, l'échec serait silencieux : « le journal reste
+ * vide » sans rien d'autre à voir.
+ */
+export function chunkState(state: PriceState, maxBytes: number): PriceState[] {
+  const chunks: PriceState[] = []
+  let cur: PriceState = {}
+  let used = 16 // enveloppe { "entries": {} }
+  for (const [k, v] of Object.entries(state)) {
+    const size = utf8Bytes(JSON.stringify({ [k]: v })) + 1
+    if (used + size > maxBytes && Object.keys(cur).length > 0) {
+      chunks.push(cur)
+      cur = {}
+      used = 16
+    }
+    cur[k] = v
+    used += size
+  }
+  // Toujours au moins une tranche : un état vide doit écraser l'ancien chunk_0, sinon de
+  // vieux prix ressusciteraient au prochain diff.
+  if (Object.keys(cur).length > 0 || chunks.length === 0) chunks.push(cur)
+  return chunks
 }
 
 // Les dérivations d'affichage (summarizeMoves, eventsSince) vivent côté client

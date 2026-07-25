@@ -55,5 +55,7 @@ export const priceEventsDoc = (uid: string, watchId: string) =>
 export const PRICE_EVENTS_MAX = 2000
 /** Budget d'octets du doc journal — marge sous la limite dure Firestore de 1 048 576 o. */
 export const PRICE_EVENTS_BYTES = 900_000
-/** Entrées d'état par document (borne la taille de chaque chunk). */
-export const PRICE_STATE_CHUNK = 5000
+/** Budget d'OCTETS par tranche d'état. Un cap par NOMBRE d'entrées ne protège pas :
+ *  la clé est de longueur variable (stableId retombe sur le nom du produit) et Firestore
+ *  refuse tout doc > 1 048 576 o. Cf. chunkState. */
+export const PRICE_STATE_BYTES = 900_000

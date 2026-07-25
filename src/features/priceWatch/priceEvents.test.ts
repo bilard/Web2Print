@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { diffPrices, mergeEvents, summarizeMoves, eventsSince, stateKey, type PriceEvent, type PriceState } from './priceEvents'
+import { diffPrices, mergeEvents, chunkState, summarizeMoves, eventsSince, stateKey, type PriceEvent, type PriceState } from './priceEvents'
 import type { ProductRow } from './catalog/report'
 
 const T0 = new Date('2026-07-01T09:00:00').getTime()
@@ -114,5 +114,40 @@ describe('eventsSince', () => {
     const now = T0 + 30 * DAY
     const kept = eventsSince([ev(now - 2 * DAY, -5), ev(now - 20 * DAY, -5)], 7, now)
     expect(kept).toHaveLength(1)
+  })
+})
+
+describe('chunkState', () => {
+  it('découpe sous le budget d’octets, jamais un doc au-delà', () => {
+    const state = Object.fromEntries(
+      Array.from({ length: 300 }, (_, i) => [`produit-au-nom-tres-long-${i}|concurrent-${i}`, { p: 123.45, t: T0 }]),
+    )
+    const parts = chunkState(state, 4_000)
+    expect(parts.length).toBeGreaterThan(1)
+    for (const part of parts) {
+      expect(new TextEncoder().encode(JSON.stringify(part)).length).toBeLessThanOrEqual(4_000)
+    }
+    // Aucune entrée perdue ni dupliquée.
+    expect(parts.reduce((n, p) => n + Object.keys(p).length, 0)).toBe(300)
+  })
+
+  it('état vide → une tranche vide (écrase l’ancien chunk_0)', () => {
+    expect(chunkState({}, 900_000)).toEqual([{}])
+  })
+
+  it('une entrée plus grosse que le budget reste écrite (jamais silencieusement perdue)', () => {
+    const parts = chunkState({ 'a|b': { p: 1, t: T0 } }, 4)
+    expect(parts.flatMap((p) => Object.keys(p))).toEqual(['a|b'])
+  })
+})
+
+describe('mergeEvents — déduplication', () => {
+  it('un mouvement ré-émis après un échec d’état n’apparaît qu’une fois', () => {
+    const e = ev(T0, -10)
+    expect(mergeEvents([e], [e], 100, 1_000_000)).toHaveLength(1)
+  })
+
+  it('deux concurrents au même instant restent deux mouvements distincts', () => {
+    expect(mergeEvents([], [ev(T0, -10, 'pm'), ev(T0, -10, 'wm')], 100, 1_000_000)).toHaveLength(2)
   })
 })

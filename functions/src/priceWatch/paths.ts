@@ -30,4 +30,5 @@ export const priceStateCol = (uid: string, watchId: string) => `${watchDoc(uid, 
 export const priceEventsDoc = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/reports/priceEvents`
 export const PRICE_EVENTS_MAX = 2000
 export const PRICE_EVENTS_BYTES = 900_000
-export const PRICE_STATE_CHUNK = 5000
+/** Budget d'OCTETS par tranche d'état (jamais un cap par nombre — cf. chunkState). */
+export const PRICE_STATE_BYTES = 900_000

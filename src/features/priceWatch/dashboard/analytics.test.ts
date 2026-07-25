@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest'
 import type { StoredReport } from '../reportStore'
 import type { KpiHistoryPoint } from '../reportStore'
-import { buildCockpit, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries, EMPTY_FILTER, matchesQuery, groupRowsByFamily, type TableRow } from './analytics'
+import { buildCockpit, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries, priceIndexSeries, EMPTY_FILTER, matchesQuery, groupRowsByFamily, type TableRow } from './analytics'
 
 const cell = (siteId: string, domain: string, priceHt: number, gapPct: number, stock: 'in-stock' | 'out-of-stock' = 'in-stock') => ({
   siteId, domain, name: 'x', url: '', image: null,
@@ -102,9 +102,11 @@ describe('filtre global', () => {
 })
 
 describe('séries temporelles', () => {
+  // `pi` présent = point écrit APRÈS l'assainissement de l'axe temps, donc issu d'une
+  // analyse COMPLÈTE. C'est ce que les courbes tracent.
   const history: KpiHistoryPoint[] = [
-    { at: 1, products: 3, cheaperThanMe: 3, dearerThanMe: 1, aligned: 0, productsUndercut: 2, comp: [{ s: 'a', g: -18 }, { s: 'b', g: 4 }] },
-    { at: 2, products: 3, cheaperThanMe: 2, dearerThanMe: 2, aligned: 0, productsUndercut: 2, comp: [{ s: 'a', g: -22 }] },
+    { at: 1, products: 3, cheaperThanMe: 3, dearerThanMe: 1, aligned: 0, productsUndercut: 2, pi: 104, comp: [{ s: 'a', g: -18 }, { s: 'b', g: 4 }] },
+    { at: 2, products: 3, cheaperThanMe: 2, dearerThanMe: 2, aligned: 0, productsUndercut: 2, pi: 101, comp: [{ s: 'a', g: -22 }] },
   ]
 
   it('competitorSeries : une série par site, null = trou (jamais 0)', () => {
@@ -114,6 +116,24 @@ describe('séries temporelles', () => {
     const b = series.find((s) => s.siteId === 'b')!
     expect(a.points).toEqual([-18, -22])
     expect(b.points).toEqual([4, null]) // absent du 2e point → trou
+  })
+
+  it('competitorSeries écarte les points ANTÉRIEURS à l’assainissement (sans `pi`)', () => {
+    // Ces points-là provenaient en majorité de recalculs partiels relancés toutes les
+    // 4 min pendant une moisson : l'écart moyen y bougeait parce que l'index grossissait.
+    const pollué: KpiHistoryPoint[] = [
+      { at: 0, products: 1, cheaperThanMe: 0, dearerThanMe: 0, aligned: 0, productsUndercut: 0, comp: [{ s: 'a', g: -99 }] },
+      ...history,
+    ]
+    expect(competitorSeries(pollué, report.sites).at).toEqual([1, 2])
+  })
+
+  it('priceIndexSeries : ne remonte que les points portant l’indice', () => {
+    const mixte: KpiHistoryPoint[] = [
+      { at: 0, products: 1, cheaperThanMe: 0, dearerThanMe: 0, aligned: 0, productsUndercut: 0 },
+      ...history,
+    ]
+    expect(priceIndexSeries(mixte)).toEqual({ at: [1, 2], values: [104, 101] })
   })
 
   it('sparkSeries : dérive tenue/exposés/appariés des points', () => {

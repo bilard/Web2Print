@@ -6,7 +6,7 @@
 // le client n'aurait pas vus. Ce test exerce les fonctions clés côté serveur.
 import { describe, it, expect } from 'vitest'
 import { retainHistory } from './history'
-import { diffPrices, mergeEvents, stateKey } from './priceEvents'
+import { diffPrices, mergeEvents, chunkState, stateKey } from './priceEvents'
 import type { ProductRow } from './catalog/report'
 
 const DAY = 86_400_000
@@ -59,6 +59,16 @@ describe('priceEvents (parité serveur)', () => {
     expect(state[stateKey('a', 'pm')].p).toBe(80)
   })
 
+  it('chunkState borne par OCTETS (jamais par nombre d’entrées)', () => {
+    const state = Object.fromEntries(
+      Array.from({ length: 300 }, (_, i) => [`produit-au-nom-tres-long-${i}|concurrent-${i}`, { p: 123.45, t: NOW }]),
+    )
+    const parts = chunkState(state, 4_000)
+    expect(parts.length).toBeGreaterThan(1)
+    for (const part of parts) expect(Buffer.byteLength(JSON.stringify(part), 'utf8')).toBeLessThanOrEqual(4_000)
+    expect(parts.reduce((n, p) => n + Object.keys(p).length, 0)).toBe(300)
+  })
+
   it('mergeEvents borne par octets (Buffer côté Node, parité de mesure)', () => {
     const ev = (at: number) => ({
       at, pid: 'p', name: 'Produit', ref: null, sid: 'pm', dom: 'pm.fr',
@@ -66,5 +76,13 @@ describe('priceEvents (parité serveur)', () => {
     })
     const many = Array.from({ length: 500 }, (_, i) => ev(NOW + i))
     expect(mergeEvents([], many, 500, 2_000).length).toBeLessThan(500)
+  })
+
+  it('mergeEvents déduplique un mouvement ré-émis (ordre journal-first)', () => {
+    const e = {
+      at: NOW, pid: 'p', name: 'Produit', ref: null, sid: 'pm', dom: 'pm.fr',
+      from: 100, to: 90, pctChange: -10, mine: 100, gapAfter: null,
+    }
+    expect(mergeEvents([e], [e], 100, 1_000_000)).toHaveLength(1)
   })
 })

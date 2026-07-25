@@ -8,12 +8,12 @@ import { doc, getDoc, getDocs, collection, setDoc, deleteDoc, serverTimestamp } 
 import { db } from '@/lib/firebase/config'
 import {
   reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX,
-  priceStateCol, priceEventsDoc, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES, PRICE_STATE_CHUNK,
+  priceStateCol, priceEventsDoc, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES, PRICE_STATE_BYTES,
 } from './paths'
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
 import type { SourceProduct } from './catalog/match'
 import { retainHistory } from './history'
-import { diffPrices, mergeEvents, type PriceState, type PriceEvent } from './priceEvents'
+import { diffPrices, mergeEvents, chunkState, type PriceState, type PriceEvent } from './priceEvents'
 
 // ── Catalogue SOURCE persisté (pour recalculer le benchmark hors workflow) ──────────
 // Le node « Comparer » écrit ici les produits source + la TVA ; le recalcul mono-site
@@ -75,16 +75,13 @@ async function loadPriceState(uid: string, watchId: string): Promise<PriceState>
   return state
 }
 
-/** Réécrit l'état par tranches, en purgeant les tranches devenues excédentaires. */
+/** Réécrit l'état par tranches (budget d'OCTETS), en purgeant les tranches excédentaires. */
 async function savePriceState(uid: string, watchId: string, state: PriceState): Promise<void> {
   const col = priceStateCol(uid, watchId)
-  const keys = Object.keys(state)
-  const chunks = Math.max(1, Math.ceil(keys.length / PRICE_STATE_CHUNK))
+  const parts = chunkState(state, PRICE_STATE_BYTES)
+  const chunks = parts.length
   for (let i = 0; i < chunks; i++) {
-    const slice = keys.slice(i * PRICE_STATE_CHUNK, (i + 1) * PRICE_STATE_CHUNK)
-    const entries: PriceState = {}
-    for (const k of slice) entries[k] = state[k]
-    await setDoc(doc(db, col, `chunk_${i}`), { entries })
+    await setDoc(doc(db, col, `chunk_${i}`), { entries: parts[i] })
   }
   // Purge des tranches au-delà du besoin courant (état rétréci → pas d'orphelins qui
   // ressusciteraient de vieux prix au prochain diff).
@@ -112,12 +109,17 @@ async function recordPriceMoves(uid: string, watchId: string, rows: ProductRow[]
   try {
     const prev = await loadPriceState(uid, watchId)
     const { events, state } = diffPrices(prev, rows, at)
+    // ⚠ ORDRE : le JOURNAL d'abord, l'état ensuite. Si l'état avançait en premier et que
+    // le journal échouait, le mouvement serait perdu DÉFINITIVEMENT (le prix de référence
+    // aurait déjà bougé). Dans l'ordre inverse, un échec de l'état fait ré-émettre les
+    // mêmes mouvements au tour suivant — et mergeEvents les déduplique.
+    if (events.length > 0) {
+      const journal = await loadPriceEvents(uid, watchId)
+      await setDoc(doc(db, priceEventsDoc(uid, watchId)), {
+        events: mergeEvents(journal, events, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES),
+      })
+    }
     await savePriceState(uid, watchId, state)
-    if (events.length === 0) return
-    const journal = await loadPriceEvents(uid, watchId)
-    await setDoc(doc(db, priceEventsDoc(uid, watchId)), {
-      events: mergeEvents(journal, events, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES),
-    })
   } catch (e) {
     console.warn('[veille] journal des changements de prix non écrit :', e instanceof Error ? e.message : e)
   }

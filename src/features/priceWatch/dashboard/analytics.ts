@@ -394,12 +394,18 @@ export function sparkSeries(history: KpiHistoryPoint[]): { undercut: number[]; h
 export interface CompetitorSeries { siteId: string; domain: string; points: (number | null)[] }
 
 /** Écart moyen par concurrent dans le temps (depuis history[].comp). null = trou (jamais 0).
- *  Ne remonte que les points portant `comp` (écrits depuis la feature). */
+ *
+ *  ⚠ Filtré sur la PRÉSENCE de `pi`, pas seulement de `comp`. Les points écrits avant
+ *  l'assainissement de l'axe temps portaient `comp` mais provenaient pour beaucoup de
+ *  recalculs PARTIELS (relancés toutes les 4 min pendant une moisson) : l'écart moyen y
+ *  bougeait parce que l'index grossissait, pas parce qu'un prix avait bougé. Tout point
+ *  écrit depuis porte `pi` (toujours sérialisé, `?? null`) — c'est le marqueur
+ *  « analyse complète » qui nettoie la courbe sans migration de données. */
 export function competitorSeries(
   history: KpiHistoryPoint[],
   sites: { siteId: string; domain: string }[],
 ): { at: number[]; series: CompetitorSeries[] } {
-  const pts = history.filter((h) => Array.isArray(h.comp))
+  const pts = history.filter((h) => Array.isArray(h.comp) && 'pi' in h)
   const at = pts.map((h) => h.at)
   const series = sites.map((s) => ({
     siteId: s.siteId,

@@ -22,10 +22,14 @@ export const DETAIL_WINDOW_DAYS = 14
 
 const DAY_MS = 86_400_000
 
-/** Clé de journée civile LOCALE (« 2026-07-25 ») — le rollup regroupe par jour vécu. */
+/** Clé de journée civile UTC (« 2026-07-25 ») — le rollup regroupe par journée. */
 function dayKey(ts: number): string {
+  // UTC obligatoire : le client tourne en Europe/Paris, le cron en UTC, et les deux
+  // écrivent le MÊME doc `history`. En heure locale, un point à 00h30 Paris serait le
+  // jour D pour l'un et D−1 pour l'autre → le rollup garderait un point différent selon
+  // qui a tourné en dernier. (Un test de parité mono-fuseau ne peut pas voir ça.)
   const d = new Date(ts)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
 }
 
 /** Ne garde que le DERNIER point de chaque journée (le plus représentatif : il porte

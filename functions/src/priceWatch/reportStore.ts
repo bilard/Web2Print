@@ -6,9 +6,9 @@
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import {
   reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX,
-  priceStateCol, priceEventsDoc, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES, PRICE_STATE_CHUNK,
+  priceStateCol, priceEventsDoc, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES, PRICE_STATE_BYTES,
 } from './paths'
-import { diffPrices, mergeEvents, type PriceState, type PriceEvent } from './priceEvents'
+import { diffPrices, mergeEvents, chunkState, type PriceState, type PriceEvent } from './priceEvents'
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
 import type { SourceProduct } from './catalog/match'
 import { retainHistory } from './history'
@@ -50,17 +50,14 @@ async function loadPriceState(uid: string, watchId: string): Promise<PriceState>
   return state
 }
 
-/** Réécrit l'état par tranches, en purgeant les tranches devenues excédentaires. */
+/** Réécrit l'état par tranches (budget d'OCTETS), en purgeant les tranches excédentaires. */
 async function savePriceState(uid: string, watchId: string, state: PriceState): Promise<void> {
   const db = getFirestore()
   const col = priceStateCol(uid, watchId)
-  const keys = Object.keys(state)
-  const chunks = Math.max(1, Math.ceil(keys.length / PRICE_STATE_CHUNK))
+  const parts = chunkState(state, PRICE_STATE_BYTES)
+  const chunks = parts.length
   for (let i = 0; i < chunks; i++) {
-    const slice = keys.slice(i * PRICE_STATE_CHUNK, (i + 1) * PRICE_STATE_CHUNK)
-    const entries: PriceState = {}
-    for (const k of slice) entries[k] = state[k]
-    await db.doc(`${col}/chunk_${i}`).set({ entries })
+    await db.doc(`${col}/chunk_${i}`).set({ entries: parts[i] })
   }
   const existing = await db.collection(col).get().catch(() => null)
   if (existing) {
@@ -77,12 +74,16 @@ async function recordPriceMoves(uid: string, watchId: string, rows: ProductRow[]
     const db = getFirestore()
     const prev = await loadPriceState(uid, watchId)
     const { events, state } = diffPrices(prev, rows, at)
+    // ⚠ ORDRE : le JOURNAL d'abord, l'état ensuite (cf. jumeau client). Un échec de l'état
+    // fait ré-émettre les mêmes mouvements au tour suivant — mergeEvents les déduplique.
+    // L'ordre inverse perdrait le mouvement DÉFINITIVEMENT.
+    if (events.length > 0) {
+      const jRef = db.doc(priceEventsDoc(uid, watchId))
+      const snap = await jRef.get()
+      const journal = ((snap.exists ? snap.data()?.events : undefined) as PriceEvent[] | undefined) ?? []
+      await jRef.set({ events: mergeEvents(journal, events, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES) })
+    }
     await savePriceState(uid, watchId, state)
-    if (events.length === 0) return
-    const jRef = db.doc(priceEventsDoc(uid, watchId))
-    const snap = await jRef.get()
-    const journal = ((snap.exists ? snap.data()?.events : undefined) as PriceEvent[] | undefined) ?? []
-    await jRef.set({ events: mergeEvents(journal, events, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES) })
   } catch (e) {
     console.warn('[veille] journal des changements de prix non écrit :', e instanceof Error ? e.message : e)
   }
