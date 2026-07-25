@@ -39,6 +39,15 @@ const ENGINE_OPTIONS = [
   { value: 'brightdata', label: 'Bright Data' },
 ]
 
+/** Canal de relevé du site. Vide = les deux (comportement historique).
+ *  Un généraliste (Leroy Merlin, marketplace) doit passer en « Recherche dirigée » :
+ *  balayer ses catégories coûte des heures pour presque aucun produit apparié. */
+const MODE_OPTIONS = [
+  { value: '', label: 'Moisson + Recherche' },
+  { value: 'harvest', label: 'Moisson seule' },
+  { value: 'directed', label: 'Recherche dirigée' },
+]
+
 const TONE_BADGE: Record<'ok' | 'warn' | 'err' | 'mute', string> = {
   ok: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/25',
   warn: 'text-amber-300 bg-amber-500/10 border-amber-500/25',
@@ -79,10 +88,12 @@ function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute', title?
   )
 }
 
-export function SourceSitesRowItem({ domain, enabled, engine, auth, pageBudget, stats, live, now, onToggle, onEngine, onAuth, onBudget, onScrape, scraping, onReset, onRemove }: {
+export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBudget, stats, live, now, onToggle, onEngine, onMode, onAuth, onBudget, onScrape, scraping, onReset, onRemove }: {
   domain: string
   enabled: boolean
   engine: string
+  /** Canal de relevé ('' = moisson ET recherche dirigée). */
+  mode?: string
   /** Pages RÉSERVÉES à ce site par run (vide = part du budget commun). */
   pageBudget?: number
   /** Site à prix connectés (identifiants configurés). */
@@ -94,6 +105,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, pageBudget, 
   now: number
   onToggle: (enabled: boolean) => void
   onEngine: (engine: string) => void
+  /** Change le canal de relevé ('' = les deux). */
+  onMode: (mode: string) => void
   /** Ouvre le mini-formulaire d'identifiants (accès connecté). */
   onAuth: () => void
   /** Réserve un budget de pages pour ce site (undefined = revenir au partage commun). */
@@ -194,6 +207,14 @@ export function SourceSitesRowItem({ domain, enabled, engine, auth, pageBudget, 
           className="shrink-0 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
         >
           {ENGINE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <select
+          value={mode ?? ''}
+          onChange={(e) => onMode(e.target.value)}
+          title="Canal de relevé : moisson par catégories, recherche dirigée par référence, ou les deux."
+          className="shrink-0 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
+        >
+          {MODE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         {/* Budget RÉSERVÉ : bride un concurrent coûteux (Bright Data est facturé à la
             requête) sans rationner les sites gratuits. Vide = part du budget commun. */}

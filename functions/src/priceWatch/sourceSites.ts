@@ -3,7 +3,7 @@
 // Résout la liste des sites concurrents : le port `sites` (node « Sites sources ») GAGNE,
 // sinon repli sur la config locale (textarea + watchId). Émission/consommation identiques
 // au client pour que le cron se comporte comme le run interactif.
-import type { CompetitorSite, SiteEngine } from './helpers'
+import type { CompetitorSite, SiteEngine, SiteMode } from './helpers'
 import { parseSitesConfig, stableId } from './helpers'
 import { DEFAULT_WATCH_ID } from './paths'
 
@@ -16,6 +16,8 @@ export interface SourceSiteRow {
   auth?: boolean
   /** Pages par run réservées à ce site (vide = part du budget commun). */
   pageBudget?: number
+  /** 'harvest' | 'directed'. Vide = les deux canaux (comportement historique). */
+  mode?: string
 }
 
 export interface SourceSitesPayload {
@@ -24,6 +26,7 @@ export interface SourceSitesPayload {
 }
 
 const ENGINES: readonly SiteEngine[] = ['auto', 'jina', 'firecrawl', 'brightdata']
+const MODES: readonly SiteMode[] = ['harvest', 'directed']
 
 export function normalizeDomain(raw: string): string {
   return (raw ?? '').trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '')
@@ -53,9 +56,18 @@ export function rowsToCompetitorSites(rows: SourceSiteRow[]): CompetitorSite[] {
       // 13,5 s la page en Bright Data — 7,4 min de cycle mangées par un seul concurrent.
       ...(Number.isFinite(row.pageBudget) && (row.pageBudget as number) > 0
         ? { pageBudget: Math.floor(row.pageBudget as number) } : {}),
+      ...(MODES.includes(row.mode as SiteMode) ? { mode: row.mode as SiteMode } : {}),
     })
   }
   return out
+}
+
+/**
+ * Sites concernés par UN canal de relevé (jumeau serveur — cf. le module client pour le
+ * détail). Un site sans `mode` est servi aux DEUX canaux ; le comparatif ne filtre jamais.
+ */
+export function sitesForRole<T extends { mode?: SiteMode }>(sites: T[], role: SiteMode): T[] {
+  return sites.filter((s) => !s.mode || s.mode === role)
 }
 
 export function isSourceSitesPayload(v: unknown): v is SourceSitesPayload {

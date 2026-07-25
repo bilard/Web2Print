@@ -12,7 +12,7 @@ import type { ExcelSheet, ExcelRow } from '@/features/excel/types'
 import { useAuthStore } from '@/stores/auth.store'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
-import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
+import { resolveSitesInput, sitesForRole } from '@/features/priceWatch/sourceSites'
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
 import { directedPass, type DirectedSourceProduct, type DirectedSite } from '@/features/priceWatch/catalog/searchDirected'
 import { extractOriginRefs } from '@/features/priceWatch/catalog/match'
@@ -100,7 +100,9 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     // La textarea « Sites GÉNÉRIQUES » reste le MARQUEUR marketplace : les domaines
     // listés ici (qu'ils viennent du port ou de la textarea sites) passent par Firecrawl.
     const genericDomains = new Set((config.genericSites ?? '').split(/[\n,]/).map((d) => bare(d.trim())).filter(Boolean))
-    const sites: DirectedSite[] = resolved.sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)) }))
+    // Un site marqué « moisson » ne passe PAS par la recherche dirigée (payante à la réf).
+    const sites: DirectedSite[] = sitesForRole(resolved.sites, 'directed')
+      .map((s) => ({ siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)) }))
     if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { results: resultsSheet([]) } }
 
     const refCol = config.refColumn.trim()

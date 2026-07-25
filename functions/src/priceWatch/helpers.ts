@@ -7,6 +7,10 @@
 /** Site concurrent parsé depuis la config « un domaine par ligne ». */
 export type SiteEngine = 'auto' | 'jina' | 'firecrawl' | 'brightdata'
 
+/** Canal de relevé d'un site. Absent = les DEUX (comportement historique).
+ *  'harvest' = moisson par catégories ; 'directed' = recherche dirigée réf/EAN. */
+export type SiteMode = 'harvest' | 'directed'
+
 export interface CompetitorSite {
   id: string
   domain: string
@@ -17,6 +21,8 @@ export interface CompetitorSite {
   auth?: boolean
   /** Pages par run RÉSERVÉES à ce site (vide = part du budget commun). */
   pageBudget?: number
+  /** Canal de relevé de ce site. Absent = moisson ET recherche dirigée. */
+  mode?: SiteMode
 }
 
 /** Identifiant Firestore stable et déterministe (clé relationnelle nettoyée). */

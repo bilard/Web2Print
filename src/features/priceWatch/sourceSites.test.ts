@@ -1,7 +1,7 @@
 // src/features/priceWatch/sourceSites.test.ts
 import { describe, it, expect } from 'vitest'
 import {
-  rowsToCompetitorSites, isSourceSitesPayload, resolveSitesInput, importSitesIntoRows, normalizeDomain, deriveWatchId, siteStatus, siteStatusRank, type SourceSiteRow, splitPageBudget,
+  rowsToCompetitorSites, isSourceSitesPayload, resolveSitesInput, importSitesIntoRows, normalizeDomain, deriveWatchId, siteStatus, siteStatusRank, type SourceSiteRow, splitPageBudget, sitesForRole,
 } from './sourceSites'
 
 describe('normalizeDomain', () => {
@@ -34,6 +34,16 @@ describe('rowsToCompetitorSites', () => {
     const sites = rowsToCompetitorSites(rows)
     expect(sites.find((s) => s.domain === 'rubix.fr')?.engine).toBe('brightdata')
     expect(sites.find((s) => s.domain === 'net-motoculture.fr')?.engine).toBeUndefined()
+  })
+
+  it('porte le canal de relevé et ignore une valeur inconnue', () => {
+    const sites = rowsToCompetitorSites([
+      { domain: 'www.leroymerlin.fr', enabled: true, mode: 'directed' },
+      { domain: 'b.fr', enabled: true, mode: 'harvest' },
+      { domain: 'c.fr', enabled: true, mode: 'both' }, // hors liste → les deux canaux
+      { domain: 'd.fr', enabled: true },
+    ])
+    expect(sites.map((s) => s.mode)).toEqual(['directed', 'harvest', undefined, undefined])
   })
 
   it('ignore un moteur inconnu (config corrompue)', () => {
@@ -136,5 +146,24 @@ describe('splitPageBudget', () => {
     const b = splitPageBudget([s('gros', 80), s('autre')], 50)
     expect(b.get('gros')).toBe(80)
     expect(b.get('autre')).toBe(1)
+  })
+})
+
+describe('sitesForRole', () => {
+  // Le node « Sites sources » alimente la moisson ET la recherche dirigée : sans ce
+  // filtre, un généraliste ajouté pour la recherche dirigée était aussi balayé par
+  // catégories (leroymerlin : 250 catégories de salle de bains, 14 produits en 32 min).
+  const sites = [
+    { id: 'a', mode: 'directed' as const },
+    { id: 'b', mode: 'harvest' as const },
+    { id: 'c' }, // sans mode = les deux canaux (rétrocompatibilité)
+  ]
+
+  it('la moisson ignore les sites en recherche dirigée seule', () => {
+    expect(sitesForRole(sites, 'harvest').map((s) => s.id)).toEqual(['b', 'c'])
+  })
+
+  it('la recherche dirigée ignore les sites en moisson seule', () => {
+    expect(sitesForRole(sites, 'directed').map((s) => s.id)).toEqual(['a', 'c'])
   })
 })

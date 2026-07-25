@@ -16,6 +16,13 @@ export interface TrackedProduct {
  *  (fetch serveur → Jina → proxies). Honoré par la moisson (node « Sites sources »). */
 export type SiteEngine = 'auto' | 'jina' | 'firecrawl' | 'brightdata'
 
+/** Rôle d'un site dans le suivi. Absent = les DEUX (comportement historique).
+ *  - 'harvest'  : moisson par catégories seulement (catalogue spécialisé).
+ *  - 'directed' : recherche dirigée réf/EAN seulement — le bon canal pour un
+ *    généraliste (Leroy Merlin, marketplaces) dont le catalogue est sans rapport
+ *    avec la source : le balayer par catégories coûte des heures pour ~0 produit. */
+export type SiteMode = 'harvest' | 'directed'
+
 export interface CompetitorSite {
   id: string
   domain: string // ex: "exemple.com"
@@ -31,6 +38,8 @@ export interface CompetitorSite {
   /** Pages par run RÉSERVÉES à ce site. Absent = part du budget commun. Sert à brider un
    *  concurrent coûteux (Bright Data facturé à la requête) sans rationner les gratuits. */
   pageBudget?: number
+  /** Canal de relevé de ce site. Absent = moisson ET recherche dirigée. */
+  mode?: SiteMode
 }
 
 export type MatchStatus = 'auto' | 'confirmed' | 'pending' | 'rejected'

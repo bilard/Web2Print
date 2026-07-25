@@ -12,7 +12,7 @@ import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { buildSiteFetcher } from '@/features/priceWatch/catalog/siteFetch'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
-import { resolveSitesInput , splitPageBudget } from '@/features/priceWatch/sourceSites'
+import { resolveSitesInput, sitesForRole, splitPageBudget } from '@/features/priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '@/features/priceWatch/catalog/runHarvest'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '@/features/priceWatch/catalog/store'
 import { harvestProgress } from '@/features/priceWatch/catalog/harvest'
@@ -93,10 +93,14 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     // Sites + identité du suivi : le port `sites` (node « Sites sources ») GAGNE ;
     // sinon repli sur la config locale historique (textarea + watchId, dérivé de
     // l'id du workflow par défaut → Moisson & Comparer partagent le même suivi).
-    const { watchId, sites, fromPort } = resolveSitesInput(inputs.sites, {
+    const { watchId, sites: allSites, fromPort } = resolveSitesInput(inputs.sites, {
       sitesText: config.sites, watchIdRaw: config.watchId, workflowId: ctx.workflowId,
     })
-    if (fromPort) ctx.log('info', `Liste reçue du node « Sites sources » : ${sites.length} site(s) actif(s).`)
+    // Un site marqué « recherche dirigée » n'est PAS balayé par catégories (généraliste
+    // dont le catalogue est sans rapport avec la source : coût énorme, rendement nul).
+    const sites = sitesForRole(allSites, 'harvest')
+    const skipped = allSites.length - sites.length
+    if (fromPort) ctx.log('info', `Liste reçue du node « Sites sources » : ${sites.length} site(s) à moissonner${skipped > 0 ? ` (${skipped} en recherche dirigée seule)` : ''}.`)
     if (sites.length === 0) {
       ctx.log('warn', 'Aucun site concurrent configuré.')
       return { status: statusSheet([]) }

@@ -344,6 +344,7 @@ export function SourceSitesConfig({ config, onChange }: {
                 domain={r.domain}
                 enabled={r.enabled}
                 engine={r.engine ?? 'auto'}
+                mode={r.mode ?? ''}
                 auth={!!r.auth}
                 pageBudget={r.pageBudget}
                 stats={stats}
@@ -351,6 +352,7 @@ export function SourceSitesConfig({ config, onChange }: {
                 now={now}
                 onToggle={(enabled) => patchRow(i, { enabled })}
                 onEngine={(engine) => patchRow(i, engine === 'auto' ? { engine: undefined } : { engine })}
+                onMode={(mode) => patchRow(i, mode ? { mode } : { mode: undefined })}
                 onBudget={(pageBudget) => patchRow(i, { pageBudget })}
                 onAuth={() => setCredsRow((c) => (c === i ? null : i))}
                 onScrape={() => void scrapeSite(r)}

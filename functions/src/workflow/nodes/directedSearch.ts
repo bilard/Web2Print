@@ -10,7 +10,7 @@
 import { registerServerNode } from '../registry'
 import { fetchHtml } from '../../scraper/fetchHtml'
 import { stableId } from '../../priceWatch/helpers'
-import { resolveSitesInput } from '../../priceWatch/sourceSites'
+import { resolveSitesInput, sitesForRole } from '../../priceWatch/sourceSites'
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
 import { directedPass, type DirectedSourceProduct, type DirectedSite, type DirectedHit } from '../../priceWatch/catalog/searchDirected'
 import { parseProductPage, parsePriceFragment, type CompetitorListing } from '../../priceWatch/catalog/prestashop'
@@ -60,7 +60,8 @@ registerServerNode({
     }
     // Sites « génériques » (marketplaces non-PrestaShop) : recherche web + Firecrawl.
     const genericDomains = new Set(String(config.genericSites ?? '').split(/[\n,]/).map((d) => bare(d.trim())).filter(Boolean))
-    const sites: DirectedSite[] = resolved.sites.map((s) => ({
+    // Un site marqué « moisson » ne passe PAS par la recherche dirigée (payante à la réf).
+    const sites: DirectedSite[] = sitesForRole(resolved.sites, 'directed').map((s) => ({
       siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)),
     }))
     if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { results: resultsSheet([]) } }

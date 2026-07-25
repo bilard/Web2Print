@@ -12,7 +12,7 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
 import { stableId } from '../../priceWatch/helpers'
-import { resolveSitesInput, splitPageBudget } from '../../priceWatch/sourceSites'
+import { resolveSitesInput, sitesForRole, splitPageBudget } from '../../priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '../../priceWatch/catalog/runHarvest'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '../../priceWatch/catalog/store'
 import { harvestProgress } from '../../priceWatch/catalog/harvest'
@@ -56,7 +56,11 @@ registerServerNode({
       sitesText: String(config.sites ?? ''), watchIdRaw: String(config.watchId ?? ''), workflowId: ctx.workflowId,
     })
     const watchId = resolved.watchId
-    const sites = resolved.sites
+    // Un site marqué « recherche dirigée » n'est PAS balayé par catégories (généraliste
+    // dont le catalogue est sans rapport avec la source : coût énorme, rendement nul).
+    const sites = sitesForRole(resolved.sites, 'harvest')
+    const skipped = resolved.sites.length - sites.length
+    if (skipped > 0) ctx.log('info', `${skipped} site(s) en recherche dirigée seule — non moissonné(s).`)
     if (sites.length === 0) {
       ctx.log('warn', 'Aucun site concurrent configuré.')
       return { status: statusSheet([]) }

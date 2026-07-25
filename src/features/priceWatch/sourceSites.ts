@@ -3,7 +3,7 @@
 // node qui l'émet sur un port ; « Moisson concurrents » et « Comparer catalogue » la
 // consomment via l'edge (priorité) ou retombent sur leur config locale (rétrocompat).
 // Aucune dépendance Firebase/React — tout est testable unitairement.
-import type { CompetitorSite, SiteEngine } from './types'
+import type { CompetitorSite, SiteEngine, SiteMode } from './types'
 import { parseSitesConfig, stableId } from './core'
 import { DEFAULT_WATCH_ID } from './paths'
 
@@ -19,6 +19,8 @@ export interface SourceSiteRow {
   auth?: boolean
   /** Pages par run réservées à ce site (vide = part du budget commun). */
   pageBudget?: number
+  /** 'harvest' | 'directed'. Vide = les deux canaux (comportement historique). */
+  mode?: string
 }
 
 /** Payload émis sur le port `sites` : identité du suivi + sites ACTIFS uniquement. */
@@ -28,6 +30,7 @@ export interface SourceSitesPayload {
 }
 
 const ENGINES: readonly SiteEngine[] = ['auto', 'jina', 'firecrawl', 'brightdata']
+const MODES: readonly SiteMode[] = ['harvest', 'directed']
 
 /** Nettoie une saisie de domaine (mêmes règles que parseSitesConfig). */
 export function normalizeDomain(raw: string): string {
@@ -54,6 +57,7 @@ export function rowsToCompetitorSites(rows: SourceSiteRow[]): CompetitorSite[] {
       ...(row.auth ? { auth: true } : {}),
       ...(Number.isFinite(row.pageBudget) && (row.pageBudget as number) > 0
         ? { pageBudget: Math.floor(row.pageBudget as number) } : {}),
+      ...(MODES.includes(row.mode as SiteMode) ? { mode: row.mode as SiteMode } : {}),
     })
   }
   return out
@@ -146,6 +150,21 @@ export function resolveSitesInput(
     sites: parseSitesConfig(fallback.sitesText),
     fromPort: false,
   }
+}
+
+/**
+ * Sites concernés par UN canal de relevé. Le node « Sites sources » alimente à la fois
+ * la moisson, la recherche dirigée et le comparatif : sans ce filtre, un généraliste
+ * ajouté pour la recherche dirigée était AUSSI balayé par catégories. Relevé en prod :
+ * leroymerlin.fr faisait moissonner 250 catégories de salle de bains face à un catalogue
+ * de pièces de motoculture — 32 min de Bright Data pour 14 produits indexés.
+ *
+ * Un site sans `mode` reste servi aux DEUX canaux (rétrocompatibilité : toutes les
+ * configs existantes fonctionnent à l'identique). Le comparatif, lui, ne filtre jamais —
+ * il lit l'index, quelle que soit la façon dont il a été alimenté.
+ */
+export function sitesForRole<T extends { mode?: SiteMode }>(sites: T[], role: SiteMode): T[] {
+  return sites.filter((s) => !s.mode || s.mode === role)
 }
 
 /**
