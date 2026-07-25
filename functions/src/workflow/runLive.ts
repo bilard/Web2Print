@@ -21,15 +21,24 @@ export interface RunLiveDoc {
   nodeConnectors?: Record<string, string[]>
 }
 
-/** Upsert (merge) le doc d'état live. Non bloquant : ne fait JAMAIS échouer le run.
- *  ⚠ try/catch ENGLOBANT (pas seulement `.catch`) : Firestore `.set()` valide ses données
- *  de façon SYNCHRONE et LÈVE (pas une promesse rejetée) sur un `undefined` imbriqué —
- *  un `.catch` seul laisserait ce throw remonter et crasher le run. */
-export async function writeRunLive(uid: string, workflowId: string, data: Partial<RunLiveDoc>): Promise<void> {
+/**
+ * Upsert du doc d'état live. Non bloquant : ne fait JAMAIS échouer le run.
+ *
+ * `replace` REMPLACE le document au lieu de le fusionner — obligatoire au démarrage d'un
+ * run neuf. Le merge Firestore fusionne les maps clé à clé : `nodeStates` conservait donc
+ * les entrées de nodes SUPPRIMÉS du graphe, affichés « en erreur » indéfiniment sur les
+ * cartes, et un `endedAt` périmé survivait au nouveau `startedAt` (durée de run absurde).
+ *
+ * ⚠ try/catch ENGLOBANT (pas seulement `.catch`) : Firestore `.set()` valide ses données
+ * de façon SYNCHRONE et LÈVE (pas une promesse rejetée) sur un `undefined` imbriqué —
+ * un `.catch` seul laisserait ce throw remonter et crasher le run.
+ */
+export async function writeRunLive(
+  uid: string, workflowId: string, data: Partial<RunLiveDoc>, opts: { replace?: boolean } = {},
+): Promise<void> {
   try {
-    await getFirestore()
-      .doc(`users/${uid}/workflowRunsLive/${workflowId}`)
-      .set(data, { merge: true })
+    const ref = getFirestore().doc(`users/${uid}/workflowRunsLive/${workflowId}`)
+    await (opts.replace ? ref.set(data) : ref.set(data, { merge: true }))
   } catch { /* état live best-effort — ne bloque jamais l'exécution */ }
 }
 

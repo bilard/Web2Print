@@ -113,10 +113,13 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
   } else {
     const initial: Record<string, 'pending'> = {}
     for (const n of wf.nodes) initial[n.id] = 'pending'
+    // REMPLACEMENT (pas merge) : un run neuf ne doit hériter d'aucun état du précédent —
+    // ni les `nodeStates` de nodes depuis supprimés du graphe (affichés « en erreur »
+    // à jamais sur les cartes), ni l'`endedAt` du run passé.
     await writeRunLive(uid, wf.id, {
       runId, trigger, startedAt, status: 'running', nodeStates: initial, logs: [],
       nodeOutputs: {}, nodeConnectors: {},
-    })
+    }, { replace: true })
   }
   try {
     // Streaming des logs : écriture throttlée (≥ 2 s) pour que l'onglet Logs se
