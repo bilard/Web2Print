@@ -6,7 +6,7 @@
 
 export type InboxStatus = 'pending' | 'processing' | 'done' | 'error'
 
-export type InboxDirection = 'in' | 'out'
+type InboxDirection = 'in' | 'out'
 
 export interface InboxLogEntry {
   ts: number
