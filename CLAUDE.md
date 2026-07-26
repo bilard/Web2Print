@@ -27,7 +27,13 @@ React 18, Vite 8, TypeScript strict (cible ES2022), Fabric.js v7, Zustand v4, Re
 ## Commandes & vérification
 - Dev : `npm run dev` (Vite)
 - Build : `npm run build` (= `tsc -b && vite build`)
+- **Audit complet : `npm run audit`** (`--fast` sans la duplication) — types, lint, tests, code mort, cycles + indicateurs de dette. Skill `/nettoyage` pour traiter ce qu'il révèle.
 - **Types : `npx tsc -b`** — ⚠️ le projet utilise des *project references* ; `tsc --noEmit` seul ne vérifie RIEN (`tsconfig.json` racine a `files: []` + `references`). Toujours utiliser `tsc -b`.
-- Lint : `npm run lint` (eslint, warnings tolérés mais erreurs bloquantes)
+- Lint : `npm run lint` — baseline **0 warning** depuis 2026-07-26, à maintenir.
 - Tests : `npm run test:run` (Vitest)
-- Code mort : `npx knip` — baseline **exit 0** depuis 2026-06-09 ; toute nouvelle sortie = vrai code mort à traiter. Le faux positif connu (`@types/chrome` de `extension/`) est déclaré dans `knip.json` (`ignoreDependencies`). Convention : un symbole utilisé seulement dans son fichier ne doit PAS être exporté (les nodes de workflow s'enregistrent par effet de bord sans export).
+- Code mort : `npm run dead` (knip) — baseline **exit 0** depuis 2026-06-09 ; toute nouvelle sortie = vrai code mort à traiter. Le faux positif connu (`@types/chrome` de `extension/`) est déclaré dans `knip.json` (`ignoreDependencies`). Convention : un symbole utilisé seulement dans son fichier ne doit PAS être exporté (les nodes de workflow s'enregistrent par effet de bord sans export).
+- Dépendances circulaires : `npm run cycles` (madge) — baseline **0** depuis 2026-07-26. Cause récurrente : un type ou un état exporté depuis un module de composant. Les sortir dans un module `*Types.ts` dédié.
+
+## Logs
+- Traces de debug (scraping, enrichissement, export) : `debugLog` de `src/lib/debugLog.ts`, jamais `console.log` — actif en dev, ou en prod via `localStorage.setItem('debug','1')` puis rechargement. `console.warn`/`error`/`info` restent libres (vraies anomalies). La règle eslint `no-console` ne vise que `src/**` : Cloud Functions et scripts Node gardent `console` comme canal de log légitime.
+- Run à conserver côté serveur : `recordPipelineRun` (`src/lib/pipelineLog.ts`).
