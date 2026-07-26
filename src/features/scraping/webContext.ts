@@ -9,7 +9,8 @@
 // fonction renvoie ce qui a pu être récupéré.
 
 import { jinaRead } from '@/features/scraping/useJina'
-import { jinaSearch, type SearchResult } from '@/features/excel/ai-enrichment/useProductEnrichment'
+import { jinaSearch } from '@/features/excel/ai-enrichment/useProductEnrichment'
+import { type SearchResult } from '@/features/excel/ai-enrichment/searchScoring'
 
 const URL_RE = /https?:\/\/[^\s<>()]+/gi
 const MAX_URLS = 2

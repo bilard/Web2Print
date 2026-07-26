@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
-import { jinaSearch, isJunkUrl, type SearchResult } from '@/features/excel/ai-enrichment/useProductEnrichment'
+import { jinaSearch } from '@/features/excel/ai-enrichment/useProductEnrichment'
+import { isJunkUrl, type SearchResult } from '@/features/excel/ai-enrichment/searchScoring'
 
 /**
  * Planificateur de recherche de l'onglet « Recherche » du scraping.
