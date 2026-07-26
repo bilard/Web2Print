@@ -10,7 +10,7 @@ import { enrichmentKey } from './types'
 import { scrapeProductBundle, extractPrimarySourceSection } from './scrapeBundle'
 import { buildDocument, coerceDocuments } from './documentUtils'
 import { sanitizeJinaMarkdown, looksLikeBotChallenge } from './markdownSanitize'
-import { extractLongestProseParagraph } from './enrichmentSanitize'
+import { extractLongestProseParagraph, isNavLikeDescription } from './enrichmentSanitize'
 import { isJunkImageUrl } from './imageFilter'
 import { buildIdentity, stripInternalSentinels,
   MEGA_SPEC_NAME_RE, splitMegaSpecValue,
@@ -522,31 +522,6 @@ function filterDocumentsByProductRef(
   return kept
 }
 
-/** Termes de navigation/footer site qui n'ont rien à faire dans une description
- *  produit. Pas de `\b` car les liens markdown adjacents `[A](url)[B](url)`
- *  rendus en texte donnent "AB" sans whitespace ni word boundary entre. */
-const NAV_TERMS_RE = /(nos\s+services?|le\s+blog(?:\s*RS)?|aide\s*&\s*contact|mentions?\s+l[eé]gales?|politique\s+de\s+(?:confidentialit[eé]|cookies?|protection)|centre\s+d['’]aide|mon\s+compte|se\s+connecter|s['’]identifier|s['’]enregistrer|newsletter|carri[eè]re|contactez[\s-]nous|[àa]\s+propos|secteurs?\s+industriels?|suivez[\s-]nous|mon\s+panier|liste\s+de\s+souhaits|suivi\s+de\s+colis|voir\s+le\s+panier)/gi
-
-/** Métadonnées de fiche produit qui ne sont PAS une description marketing.
- *  Pattern : "Code commande RS:… Référence fabricant:… Marque:…" */
-const METADATA_LINE_RE = /^[^.]*?\b(code\s+commande|r[eé]f[eé]rence\s+fabricant|num[eé]ro\s+(de\s+)?(?:s[eé]rie|article)|sku|ean|gtin|code[\s-]?barres?)\s*:/i
-
-/** Détecte si une description ressemble à de la navigation ou du footer
- *  (≥2 termes nav, OU ratio nav-words / total-words > 30% OU ne contient que
- *  des métadonnées sans phrase descriptive). */
-function isNavLikeDescription(text: string): boolean {
-  if (!text || text.length < 20) return false
-  const matches = text.match(NAV_TERMS_RE)
-  if (matches && matches.length >= 2) return true
-  if (matches && matches.length >= 1) {
-    const words = text.split(/\s+/).filter(Boolean).length
-    if (words < 30) return true
-  }
-  // Description = uniquement métadonnées techniques sans phrase
-  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean)
-  if (lines.length > 0 && lines.every(l => METADATA_LINE_RE.test(l))) return true
-  return false
-}
 
 // ── Lift identité depuis specs / structuredData / markdown ──────────────────
 // Les identifiants (nom, marque, modèle, refs distributeur/fabricant, EAN)
