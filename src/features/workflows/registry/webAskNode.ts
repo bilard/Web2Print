@@ -1,4 +1,3 @@
-// src/features/workflows/registry/webAskNode.ts
 // Node « Question web (IA) » : combine recherche web + LLM. Récupère le contexte web
 // (recherche Jina + lecture réelle des premières pages) puis fait SYNTHÉTISER une
 // réponse par le LLM, ancrée sur les sources. Pendant « workflow » du chat Telegram.

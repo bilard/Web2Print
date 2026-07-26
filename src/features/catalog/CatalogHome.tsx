@@ -1,4 +1,3 @@
-// src/features/catalog/CatalogHome.tsx
 // Section Dashboard du module : liste des catalogues + création.
 // Le builder lui-même est plein écran sur /catalog/:id.
 import { useEffect, useState } from 'react'

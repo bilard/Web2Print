@@ -1,4 +1,3 @@
-// src/components/taxonomy/TaxonomyEmptyState.tsx
 import { FolderTree, Upload } from 'lucide-react'
 
 interface TaxonomyEmptyStateProps {

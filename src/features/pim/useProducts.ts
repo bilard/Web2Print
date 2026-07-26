@@ -1,4 +1,3 @@
-// src/features/pim/useProducts.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { saveProducts } from './usePimFirebase'

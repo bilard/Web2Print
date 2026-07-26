@@ -1,4 +1,3 @@
-// src/features/taxonomy/taxonomyUtils.ts
 import type { TaxonomyNode, TaxonomyNodeWithChildren } from './types'
 
 /** Construit un arbre hiérarchique depuis la map plate. */

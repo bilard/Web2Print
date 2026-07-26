@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/Gauge.tsx
 // Compteur rond façon tableau de bord (arc 270°, gap en bas comme un compte-tours).
 // L'arc sert au COUP D'ŒIL ; le NOMBRE au centre porte la vérité (skill dataviz).
 // `value` 0..1 remplit l'arc ; `children` = contenu central (grand chiffre + label).

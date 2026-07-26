@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/ProductEditPanel.tsx
 // Édition de la DATA d'un produit depuis l'Aperçu (double-clic sur une fiche) :
 // formulaire riche sur toutes les colonnes, avec DEUX portées de sauvegarde —
 // « Publication » (corrections propres à ce catalogue, rowOverrides) ou

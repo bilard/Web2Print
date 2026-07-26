@@ -1,4 +1,3 @@
-// src/features/fonts/FontSelectOptions.tsx
 // Options partagées de TOUS les sélecteurs de polices de l'app : « Mes polices »
 // (fichiers uploadés + familles Google ajoutées par URL) puis le catalogue
 // Google Fonts intégré. À rendre à l'intérieur d'un <select>.

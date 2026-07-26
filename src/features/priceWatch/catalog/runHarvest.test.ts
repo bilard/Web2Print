@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/runHarvest.test.ts
 // Teste l'orchestration de moisson avec des E/S factices — aucun réseau, aucune BD.
 import { describe, it, expect } from 'vitest'
 import { harvestPass, planCategories, type HarvestDeps, type CompetitorConfig } from './runHarvest'

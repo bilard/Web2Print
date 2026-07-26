@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/CatalogTree.tsx
 // Navigation catalogue (arborescence) à gauche du cockpit. Aujourd'hui un seul niveau
 // existe dans le rapport : la FAMILLE. Structure prête pour Univers > Famille > Sous-
 // famille dès que ces colonnes seront mappées à la source (cf. buildReport). Chaque

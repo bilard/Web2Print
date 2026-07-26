@@ -1,4 +1,3 @@
-// src/features/telegram/executeWorkflowAndCollect.ts
 // 2c : exécute un workflow via le moteur client puis récupère le 1er fichier produit (export)
 // depuis le store de run. À n'appeler qu'en série (un run à la fois par onglet).
 import { executeWorkflow } from '@/features/workflows/runtime/executor'

@@ -1,4 +1,3 @@
-// src/features/workflows/registry/formulaInsert.ts
 // Pont d'insertion : le champ formule actuellement focalisé enregistre son
 // inséreur (insertion au curseur) ; le popup (clic sur une fonction / colonne)
 // l'appelle pour insérer le texte dans CE champ.

@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/genericCards.test.ts
 import { describe, it, expect } from 'vitest'
 import { parseListingDomCards } from './genericCards'
 

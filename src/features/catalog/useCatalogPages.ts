@@ -1,4 +1,3 @@
-// src/features/catalog/useCatalogPages.ts
 // Source unique de la pagination : Aperçu ET Export consomment le même résultat.
 import { useMemo } from 'react'
 import { useCatalogStore } from '@/stores/catalog.store'

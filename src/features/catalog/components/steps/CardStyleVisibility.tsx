@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/CardStyleVisibility.tsx
 // Liste « Éléments affichés » du panneau Style des fiches : TOUS les objets de
 // la fiche (image, marque, nom, prix, prix barré compris) + les champs libres
 // (TVA, entretien…) masquables UN PAR UN sous « Détails ».

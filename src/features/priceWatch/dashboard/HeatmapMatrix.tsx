@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/HeatmapMatrix.tsx
 // Heatmap concurrent × famille : écart moyen (concurrent vs moi) par croisement.
 // Fond diverging (rose = concurrent moins cher, émeraude = je suis moins cher). Repère
 // d'un coup d'œil OÙ un concurrent est agressif (colonne/famille rouge). Recalc → mention.

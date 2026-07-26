@@ -1,4 +1,3 @@
-// src/lib/aiModelsListing.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const callMock = vi.hoisted(() => vi.fn())

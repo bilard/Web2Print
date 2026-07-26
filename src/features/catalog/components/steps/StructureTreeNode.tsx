@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/StructureTreeNode.tsx
 // Ligne d'arbre récursive : libellé renommable (double-clic), compteur produits
 // du sous-arbre, réordonnancement parmi les frères. L'arbre lui-même n'est jamais
 // stocké — seuls les édits (renames/order) le sont, via useCatalogStore.

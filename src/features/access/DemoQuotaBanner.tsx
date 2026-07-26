@@ -1,4 +1,3 @@
-// src/features/access/DemoQuotaBanner.tsx
 import { AlertTriangle } from 'lucide-react'
 
 /** Champ de quota concerné par le module hôte. */

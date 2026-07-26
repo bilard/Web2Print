@@ -1,4 +1,3 @@
-// src/features/telegram/TelegramInboxView.tsx
 // Boîte de réception Telegram : liste temps réel des messages entrants + statut, envoi d'un
 // message vers le chat (App → Telegram) et actions par message (éditer / supprimer via InboxItem).
 import { useState } from 'react'

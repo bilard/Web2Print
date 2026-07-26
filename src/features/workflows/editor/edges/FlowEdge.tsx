@@ -1,4 +1,3 @@
-// src/features/workflows/editor/edges/FlowEdge.tsx
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from '@xyflow/react'
 import { getPortColor } from '../../runtime/ports'
 import { useRunContext } from '../../runtime/runContext'

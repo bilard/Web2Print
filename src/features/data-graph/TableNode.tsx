@@ -1,4 +1,3 @@
-// src/features/data-graph/TableNode.tsx
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { useThemeStore } from '@/stores/theme.store'
 import { DOMAIN_HEX, type FieldSchema, type TableSchema } from './firestoreSchema'

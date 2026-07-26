@@ -1,4 +1,3 @@
-// src/features/priceWatch/components/ComparisonTab.tsx
 // Tableau de bord lecture-seule : tout est dérivé des docs `matches` (produits
 // et sites sont configurés dans le flux, pas persistés ici). Affiche la file
 // « à confirmer » + la matrice comparative produit × site.

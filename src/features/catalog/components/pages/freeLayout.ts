@@ -1,4 +1,3 @@
-// src/features/catalog/components/pages/freeLayout.ts
 // Repli + fusion + moteur (aimant/liaisons) de la disposition libre — LE mode de
 // rendu des fiches produit.
 import type { CardBox, CardObjectId, CatalogCardStyle } from '../../catalogTypes'

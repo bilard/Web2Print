@@ -1,4 +1,3 @@
-// src/features/workflows/editor/configFields/index.tsx
 import type { ConfigField } from '../../types'
 
 interface FieldProps {

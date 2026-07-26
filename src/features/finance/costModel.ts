@@ -1,4 +1,3 @@
-// src/features/finance/costModel.ts
 // Modèle de coûts UNIFIÉ du tableau de bord Finances. PUR (testable). Agrège tous les
 // connecteurs (LLM par provider + Jina/Firecrawl + Bright Data + Remove.bg) en lignes
 // homogènes {volume, coût, budget, restant}. Les coûts sont STOCKÉS en USD ; l'€ est une

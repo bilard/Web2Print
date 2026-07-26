@@ -1,4 +1,3 @@
-// src/features/navigation/CommandPalette.tsx
 // Palette de commandes globale (⌘K / Ctrl+K) : recherche et navigation entre les
 // modules + actions rapides. Montée une fois dans ProtectedRoute, disponible partout.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'

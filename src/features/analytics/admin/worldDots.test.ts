@@ -1,4 +1,3 @@
-// src/features/analytics/admin/worldDots.test.ts
 import { describe, expect, it } from 'vitest'
 import { buildDots, countryBox } from './worldDots'
 import type { CityCount } from '../metrics'

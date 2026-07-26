@@ -1,4 +1,3 @@
-// src/features/workflows/results/classifyResult.ts
 // Sélectionne et classe les sorties à visualiser pour un run. Un panneau par sortie
 // TERMINALE ; si une sortie terminale est un « puits » (lien/fichier/json), on remonte
 // d'un cran chercher la 1re donnée visualisable en amont (ex. la sheet du node compare

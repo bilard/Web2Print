@@ -1,4 +1,3 @@
-// src/features/finance/ConnectorTable.tsx
 // Tableau dense des coûts par connecteur (mois courant) : volume, coût €, budget, restant.
 import type { CostRow } from './costModel'
 import { eur } from './costModel'

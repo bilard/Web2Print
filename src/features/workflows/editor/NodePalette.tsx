@@ -1,4 +1,3 @@
-// src/features/workflows/editor/NodePalette.tsx
 import type { DragEvent } from 'react'
 import { Lock } from 'lucide-react'
 import { useReactFlow } from '@xyflow/react'

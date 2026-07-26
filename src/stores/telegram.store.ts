@@ -1,4 +1,3 @@
-// src/stores/telegram.store.ts
 // Config Telegram globale (bot token + chat id par défaut). Partagée par le worker de
 // réception ET utilisée par défaut par le node d'envoi quand ses champs sont vides.
 // Persistée en localStorage et synchronisée avec Firestore users/{uid}.telegram

@@ -1,4 +1,3 @@
-// src/features/access/admin/AuditLogView.tsx
 // Affichage filtrable du journal d'audit : QUI (utilisateur) / QUOI (action) / QUAND
 // (plage de dates). Réutilisé par l'onglet admin (showWho) et la vue « Mon activité ».
 import { useMemo, useState } from 'react'

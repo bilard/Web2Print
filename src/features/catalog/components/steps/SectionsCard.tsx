@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/SectionsCard.tsx
 // Carte « Sections » de l'étape Prompt : densité par défaut (toutes sections),
 // toggle taille ∝ prix, puis une ligne par nœud de l'arbre (PlanSectionRow).
 // ACCORDÉON à tous les niveaux : replier un nœud masque ses sous-lignes et sa

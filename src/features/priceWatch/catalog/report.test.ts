@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/report.test.ts
 import { describe, it, expect } from 'vitest'
 import { buildReport, rankProducts, auditListings, type ProductRow, type CompetitorAudit } from './report'
 import type { SiteRef } from './matrix'

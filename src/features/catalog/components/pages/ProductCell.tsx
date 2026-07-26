@@ -1,4 +1,3 @@
-// src/features/catalog/components/pages/ProductCell.tsx
 // Fiche produit d'une cellule de grille (toutes identiques ; les grandes cartes
 // sont la même fiche MAGNIFIÉE par scale dans ProductGridPage), rendue en
 // DISPOSITION LIBRE (LE mode) :

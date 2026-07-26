@@ -1,4 +1,3 @@
-// src/features/analytics/admin/AnalyticsLiveFeed.tsx
 // Fil LIVE des visites, au format du flux Telegram : 🟢 une ligne par page
 // d'un utilisateur connecté, 🔵 arrivée d'un visiteur anonyme — lieu, page,
 // heure. Temps réel (onSnapshot) ; vos propres visites sont exclues, comme

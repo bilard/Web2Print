@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/prestashop.test.ts
 // Les fixtures de __fixtures__/ sont des cartes produit RÉELLES, capturées sur les
 // pages catégorie des concurrents. Elles garantissent la non-régression face aux
 // variantes de thème (obfuscation base64 des liens, référence en tête de titre…).

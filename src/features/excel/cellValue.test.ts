@@ -1,4 +1,3 @@
-// src/features/excel/cellValue.test.ts
 import { describe, it, expect } from 'vitest'
 import { cellValue } from './cellValue'
 import type { ExcelColumn, ExcelRow } from './types'

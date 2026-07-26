@@ -1,4 +1,3 @@
-// src/features/access/rolesApi.ts
 import { collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import type { UsageCounters } from './permissions'

@@ -1,4 +1,3 @@
-// src/components/radar/radarCostRows.ts
 // Construit les lignes du tableau « Consommation IA & Scraping » de radarPrice : TOUS les
 // providers IA (même à 0, comme le desktop) + connecteurs scraping/image. PUR.
 import { AI_MODELS, type AiProvider } from '@/lib/aiModels'

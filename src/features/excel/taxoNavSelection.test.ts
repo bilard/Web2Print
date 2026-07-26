@@ -1,4 +1,3 @@
-// src/features/excel/taxoNavSelection.test.ts
 import { describe, it, expect } from 'vitest'
 import {
   EMPTY_TAXO_NAV, hasTaxoNav, isSamePath, isPathPrefix,

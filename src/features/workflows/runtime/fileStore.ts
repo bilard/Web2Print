@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/fileStore.ts
 // Persistent IndexedDB-backed store for Files uploaded via the Upload node.
 // Files cannot be persisted in Firestore, so we keep them in IndexedDB on
 // the user's device. They survive page reloads but stay local to the

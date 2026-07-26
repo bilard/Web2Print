@@ -1,4 +1,3 @@
-// src/components/taxonomy/TaxonomySidebar.tsx
 import { useState } from 'react'
 import { Plus, MoreVertical } from 'lucide-react'
 import {

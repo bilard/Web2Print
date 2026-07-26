@@ -1,4 +1,3 @@
-// src/features/workflows/registry/priceWatchTrackNode.ts
 // Node « Veille tarifaire » : prend une FEUILLE DE PRODUITS en entrée (depuis
 // n'importe quelle source du flux — Upload, PIM, Scrape) + une liste de sites
 // concurrents en config (domaine | champs), retrouve chaque produit chez les

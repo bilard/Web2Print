@@ -1,4 +1,3 @@
-// src/features/onboarding/ResumeSetupButton.tsx
 import { Sparkles } from 'lucide-react'
 import { useOnboardingStore } from './onboarding.store'
 

@@ -1,4 +1,3 @@
-// src/features/export/declineLayout.test.ts
 import { describe, it, expect } from 'vitest'
 import { projectObjectsToFormat } from './declineLayout'
 

@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/AnalyticsTable.tsx
 // Tableau analytique maître (terminal dense), GROUPÉ PAR FAMILLE : familles en ordre
 // alphabétique (en-tête de groupe FIXE au scroll horizontal), produits triés par nom
 // dans chaque groupe (ou par la colonne cliquée). Heat-cell d'écart par concurrent,

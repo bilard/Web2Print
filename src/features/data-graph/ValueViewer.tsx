@@ -1,4 +1,3 @@
-// src/features/data-graph/ValueViewer.tsx
 import { useMemo, useState } from 'react'
 import { formatCell, prettyValue, parseMaybeJson, asSheets, asObjectRows } from './formatValue'
 

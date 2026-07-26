@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/probe.ts
 // Sonde d'ÉLIGIBILITÉ d'un concurrent : scrape quelques pages catégorie témoins SANS
 // rien persister, pour mesurer ce que le site expose (prix, stock, nom, image, réf)
 // AVANT de lancer la moisson complète. Objectif : ne pas dépenser de tokens à moissonner

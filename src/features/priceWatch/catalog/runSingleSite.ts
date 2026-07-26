@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/runSingleSite.ts
 // Moisson d'UN SEUL concurrent, à la demande (bouton ▶ dans « Sites sources »).
 // Réutilise exactement le moteur du node « Moisson concurrents » (harvestPass +
 // buildSiteFetcher + store), mais pour un site isolé — pour tester/relancer un

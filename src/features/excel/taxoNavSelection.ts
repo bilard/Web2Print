@@ -1,4 +1,3 @@
-// src/features/excel/taxoNavSelection.ts
 // Modèle PUR de la sélection multi-nœuds du navigateur de taxonomie.
 // Une sélection = des CHEMINS de colonnes (chaque chemin = chaîne racine→nœud,
 // ex. { level1: 'Plomberie', level2: 'Instruments' }) en UNION entre eux, +

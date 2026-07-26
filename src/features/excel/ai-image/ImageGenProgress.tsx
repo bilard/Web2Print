@@ -1,4 +1,3 @@
-// src/features/excel/ai-image/ImageGenProgress.tsx
 // Aperçu du test (1 image), compteurs de progression et journal du traitement.
 import { useEffect, useRef } from 'react'
 import type { ImageGenItem } from './useColumnImageGen'

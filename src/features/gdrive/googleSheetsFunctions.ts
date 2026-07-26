@@ -1,4 +1,3 @@
-// src/features/gdrive/googleSheetsFunctions.ts
 // Catalogue des fonctions Google Sheets pour l'autocomplétion + la référence des
 // colonnes-formule. Organisé en GROUPES (par catégorie) ; une liste plate est
 // dérivée pour l'autocomplétion.

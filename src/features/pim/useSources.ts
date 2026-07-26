@@ -1,4 +1,3 @@
-// src/features/pim/useSources.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { saveSources } from './usePimFirebase'
 import { usePimStore } from '@/stores/pim.store'

@@ -1,4 +1,3 @@
-// src/features/workflows/registry/listProductsNode.test.ts
 import { describe, it, expect } from 'vitest'
 import { resolveEan, pickListingUrl, parseListingItemList, parseListingDataLayer, dedupListing, mergeListing, shouldRetryExtraction, MAX_EXTRACT_TRIES, RETRY_EXTRACT_MIN_CONTENT, shouldEscalateToBrowser, ESCALATE_BELOW_COUNT, htmlToText } from './listProductsNode'
 

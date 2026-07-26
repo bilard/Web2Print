@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/executor.ts
 import type { Workflow, WorkflowNode, WorkflowEdge, RunContextApi, NodeRunState } from '../types'
 import { nodeRegistry } from '../registry'
 import { topoSort } from './topo'

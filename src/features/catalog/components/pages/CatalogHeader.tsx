@@ -1,4 +1,3 @@
-// src/features/catalog/components/pages/CatalogHeader.tsx
 // Header data-driven : breadcrumb Univers › Famille › Sous-famille de la page,
 // calé au bord EXTÉRIEUR de la planche (verso = gauche, recto = droite), comme le folio.
 interface Props { breadcrumb: string[]; pageNumber: number }

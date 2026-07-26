@@ -1,4 +1,3 @@
-// src/features/easycatalog/ecZip.ts
 import JSZip from 'jszip'
 import * as XLSX from 'xlsx'
 import type { ExcelSheet } from '@/features/excel/types'

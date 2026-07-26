@@ -1,4 +1,3 @@
-// src/features/workflows/results/types.ts
 import type { ChartSpec } from '../registry/chartSpec'
 
 /** Nature du résultat d'une sortie de node → pilote le rendu contextuel. */

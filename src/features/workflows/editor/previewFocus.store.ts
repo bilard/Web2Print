@@ -1,4 +1,3 @@
-// src/features/workflows/editor/previewFocus.store.ts
 // Tiny ephemeral store linking config-side column chips → DataPreviewPanel.
 // Clicking a column chip increments `pulse` so the preview can re-scroll even
 // when the same column is focused twice in a row.

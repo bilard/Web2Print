@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/useScrapeSpend.ts
 // Consommation scraping du MOIS COURANT, EN LIVE (onSnapshot sur scrapeUsage/{uid}_{mois}).
 // Alimente le compteur Jina du dashboard veille, sans passer par le module Finances.
 import { useEffect, useState } from 'react'

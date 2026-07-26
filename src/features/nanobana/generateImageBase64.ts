@@ -1,4 +1,3 @@
-// src/features/nanobana/generateImageBase64.ts
 // Appel BRUT à l'Image IA (Gemini, cascade de modèles) : renvoie l'image générée en
 // base64, SANS upload. Extrait de useImageGeneration pour être réutilisable par des
 // modules qui n'ont pas de projet éditeur ouvert (uploadToGallery exige

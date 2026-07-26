@@ -1,4 +1,3 @@
-// src/features/workflows/persistence/migrations.test.ts
 import { describe, it, expect } from 'vitest'
 import { CURRENT_SCHEMA_VERSION, migrate } from './migrations'
 

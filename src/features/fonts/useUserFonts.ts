@@ -1,4 +1,3 @@
-// src/features/fonts/useUserFonts.ts
 // Chargement des polices utilisateur : injection via l'API FontFace dans
 // document.fonts (partagé avec les rendus hors écran de l'export — waitAssets
 // attend document.fonts.ready avant capture html2canvas).

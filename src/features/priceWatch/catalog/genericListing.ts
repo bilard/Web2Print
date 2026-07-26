@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/genericListing.ts
 // Extracteur LISTE GÉNÉRIQUE (toute techno de site), SERVER-SAFE : regex + JSON, AUCUN
 // DOMParser (contrairement à features/scraping/core/structuredData.ts, client-only). Lit le
 // JSON-LD schema.org (`ItemList`/`Product`/`ProductGroup.hasVariant`/`@graph`) qu'exposent la

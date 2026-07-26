@@ -1,4 +1,3 @@
-// src/features/workflows/registry/sourceSitesRow.tsx
 // Ligne dense (2 niveaux) du tableau « Sites sources » :
 //   niveau 1 — activation · domaine · ACTIVITÉ (scraping… animé | verdict ✓/⚠/✗ de la
 //   dernière passe) · corbeille ; niveau 2 — moteur forcé + chips de stats insécables.

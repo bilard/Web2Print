@@ -1,4 +1,3 @@
-// src/features/workflows/registry/sourceSitesConfig.tsx
 // Panneau de config du node « Sites sources » : tableau de gestion des sites
 // concurrents avec stats persistées LIVE (useCompetitorMeta + useCatalogReport,
 // onSnapshot — indépendant de tout run). Clé de lecture = watchId dérivé comme au

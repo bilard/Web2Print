@@ -1,4 +1,3 @@
-// src/features/workflows/registry/webSearchNode.ts
 // Node source « Recherche web » : interroge le web (Jina Search) sur une requête,
 // lit réellement le contenu des premières pages de résultats, et produit :
 //  - un `sheet` (tableau titre/url/description) exploitable en aval (transform, export…) ;

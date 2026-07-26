@@ -1,4 +1,3 @@
-// src/features/taxonomy/parsers/parseXlsx.ts
 import * as XLSX from 'xlsx'
 import type { TaxonomyNode } from '../types'
 import { nodesFromRows } from './sharedParser'

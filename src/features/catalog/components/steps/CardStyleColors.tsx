@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/CardStyleColors.tsx
 // Sous-panneau « couleurs » du style de fiches, COMPACT : grille 2 colonnes,
 // un item = étiquette + pastille couleur ; dégradé = lien « ◐ » discret sur
 // l'étiquette (fin de dégradé + ✕ = retour à l'uni). Angle commun, arrondi.

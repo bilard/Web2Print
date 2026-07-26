@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/categoryTargeting.test.ts
 import { describe, it, expect } from 'vitest'
 import {
   applyTargeting, applyTargetingBuckets, buildTargetingPrompt, familiesFromRows, pathOf,

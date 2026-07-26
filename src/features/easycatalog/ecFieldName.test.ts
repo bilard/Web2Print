@@ -1,4 +1,3 @@
-// src/features/easycatalog/ecFieldName.test.ts
 import { describe, it, expect } from 'vitest'
 import { sanitizeEcName, buildEcFieldNames } from './ecFieldName'
 import type { ExcelColumn } from '@/features/excel/types'

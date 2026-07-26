@@ -1,4 +1,3 @@
-// src/features/app/useVersionCheck.ts
 // Détection des déploiements : l'app (SPA) reste sur son bundle tant que
 // l'onglet n'est pas rechargé — on polle /version.json (émis à chaque build,
 // cf. vite.config.ts) et on propose « Recharger » dès qu'un build plus récent

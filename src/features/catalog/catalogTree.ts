@@ -1,4 +1,3 @@
-// src/features/catalog/catalogTree.ts
 // Construction déterministe de l'arbre Univers/Famille/Sous-famille depuis les
 // lignes de merge. Les édits utilisateur (renames/order/moves) s'appliquent AVANT
 // le regroupement : la fusion de nœuds = deux libellés identiques au même parent.

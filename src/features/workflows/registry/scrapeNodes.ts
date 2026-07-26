@@ -1,4 +1,3 @@
-// src/features/workflows/registry/scrapeNodes.ts
 import { Globe } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'

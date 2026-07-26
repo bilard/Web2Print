@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/genericDiscovery.test.ts
 import { describe, it, expect } from 'vitest'
 import { discoverViaSitemap, extractGenericCategoryLinks, orderByLeafFirst } from './genericDiscovery'
 

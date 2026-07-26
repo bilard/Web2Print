@@ -1,4 +1,3 @@
-// src/features/workflows/persistence/migrations.ts
 import type { Workflow } from '../types'
 
 export const CURRENT_SCHEMA_VERSION = 1

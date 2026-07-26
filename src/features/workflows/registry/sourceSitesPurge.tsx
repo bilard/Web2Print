@@ -1,4 +1,3 @@
-// src/features/workflows/registry/sourceSitesPurge.tsx
 // Popup « Vider les données de scraping » (node Sites sources) : choix des SITES et des
 // TYPES de données à purger, récap + confirmation. Destructif → double garde (confirm).
 import { useState } from 'react'

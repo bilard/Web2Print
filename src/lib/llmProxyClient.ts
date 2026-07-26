@@ -1,4 +1,3 @@
-// src/lib/llmProxyClient.ts
 /**
  * Client du proxy LLM serveur (`llmProxy` Cloud Function).
  *

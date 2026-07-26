@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/match.test.ts
 import { describe, it, expect } from 'vitest'
 import {
   indexKeysOf, titleKeysOf, buildMemoryIndex, matchProduct, comparePrices, extractOriginRefs,

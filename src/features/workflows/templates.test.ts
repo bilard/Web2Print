@@ -1,4 +1,3 @@
-// src/features/workflows/templates.test.ts
 // Intégrité de la galerie : chaque template ne référence que des types de nodes
 // enregistrés, des ports existants et des connexions compatibles.
 import { describe, it, expect, beforeAll } from 'vitest'

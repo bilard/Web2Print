@@ -1,4 +1,3 @@
-// src/features/analytics/track.ts
 // Pages « virtuelles » : les modules du dashboard ne changent PAS l'URL (section en
 // état local React, cf. navigation/modules.ts) — le beacon (public/analytics-beacon.js)
 // ne voit donc rien. On lui pousse un chemin synthétique `/dashboard/<section>`,

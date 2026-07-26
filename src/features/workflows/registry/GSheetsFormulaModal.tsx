@@ -1,4 +1,3 @@
-// src/features/workflows/registry/GSheetsFormulaModal.tsx
 // Popup confortable pour gérer les colonnes-formule de l'export Google Sheets :
 // éditeur large (en-tête + formule avec autocomplétion) + panneau de référence
 // (colonnes disponibles, fonctions courantes).

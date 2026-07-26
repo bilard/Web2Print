@@ -1,4 +1,3 @@
-// src/features/priceWatch/sourceSites.ts
 // Logique pure du node « Sites sources » : la liste des sites concurrents vit dans UN
 // node qui l'émet sur un port ; « Moisson concurrents » et « Comparer catalogue » la
 // consomment via l'edge (priorité) ou retombent sur leur config locale (rétrocompat).

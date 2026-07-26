@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/ProductImageField.tsx
 // Vignette d'un champ IMAGE du panneau d'édition produit : l'image est résolue
 // comme sur les fiches (Drive/DAM → blob, URL externe → proxy) et cliquable —
 // elle ouvre le lien stocké en cellule (webViewLink Drive = l'asset dans le DAM).

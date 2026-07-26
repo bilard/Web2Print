@@ -1,4 +1,3 @@
-// src/features/workflows/promptToFlow/validateGraph.ts
 import { nodeRegistry } from '../registry'
 import { isCompatible } from '../runtime/ports'
 import { topoSort } from '../runtime/topo'

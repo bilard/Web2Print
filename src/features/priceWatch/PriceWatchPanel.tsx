@@ -1,4 +1,3 @@
-// src/features/priceWatch/PriceWatchPanel.tsx
 // Tableau de bord de la veille tarifaire. Vue principale : le comparatif CATALOGUE
 // (moisson + « Comparer catalogue »), pré-agrégé en rapport. Vue secondaire (repliée) :
 // l'ancien suivi par recherche (node « Veille prix »), affiché seulement s'il a des

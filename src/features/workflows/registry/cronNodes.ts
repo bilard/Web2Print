@@ -1,4 +1,3 @@
-// src/features/workflows/registry/cronNodes.ts
 import { CalendarClock } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'

@@ -1,4 +1,3 @@
-// src/features/workflows/registry/telegramNodes.tsx
 import { Send } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'

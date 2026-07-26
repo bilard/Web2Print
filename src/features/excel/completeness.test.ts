@@ -1,4 +1,3 @@
-// src/features/excel/completeness.test.ts
 import { describe, it, expect } from 'vitest'
 import { rowCompleteness, averageCompleteness, completenessTone } from './completeness'
 import type { ExcelColumn, ExcelRow } from './types'

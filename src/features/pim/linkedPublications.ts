@@ -1,4 +1,3 @@
-// src/features/pim/linkedPublications.ts
 // PIM = source unique de vérité : recense les PUBLICATIONS reliées à une source
 // (catalogues + fiches promo) et fournit le rechargement des données fraîches.
 import { listCatalogs } from '@/features/catalog/catalogsApi'

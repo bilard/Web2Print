@@ -1,4 +1,3 @@
-// src/features/excel/fieldFreshness.ts
 // Fraîcheur par champ des produits PIM : chaque ProductField porte un
 // `updatedAt` (stampé au merge quand la valeur CHANGE — mergeStrategy.ts) ;
 // pimProductsToSheet le transporte dans `row._fieldUpdatedAt` et DataTable

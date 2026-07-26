@@ -1,4 +1,3 @@
-// src/features/workflows/registry/analyticsReport.ts
 // Collecte le trafic du site (collection `analyticsEvents`, owner-only) sur une
 // période donnée et le rend en HTML/CSS autonome — destiné à être stocké sur Drive
 // ou envoyé par mail (rapport de fréquentation). Mêmes métriques que l'onglet

@@ -1,4 +1,3 @@
-// src/features/ai/providerLogos.tsx
 // Logos SVG inline des providers IA et connecteurs, partagés entre SettingsPanel,
 // le wizard d'onboarding (cascade) et les lignes connecteurs extraites.
 

@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/PreviewTextToolbar.tsx
 // Barre de PARAGRAPHE du header de l'aperçu (façon éditeur) : gras / italique /
 // souligné + alignement, appliqués au BLOC TEXTE SÉLECTIONNÉ dans l'aperçu.
 // Écrit cardStyle.textStyle[obj] — rendu identique aperçu / catalogue / export.

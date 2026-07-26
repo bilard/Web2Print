@@ -1,4 +1,3 @@
-// src/features/excel/numberParse.test.ts
 import { describe, it, expect } from 'vitest'
 import { parseCellNumber } from './numberParse'
 

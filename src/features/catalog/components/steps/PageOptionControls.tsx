@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/PageOptionControls.tsx
 // Contrôles partagés du panneau « Fond de page » (aperçu) : section, toggle,
 // slider et champ texte — mêmes idiomes que le reste de l'app (options à droite).
 import type { ReactNode } from 'react'

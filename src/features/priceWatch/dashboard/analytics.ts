@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/analytics.ts
 // Dérivations analytiques du cockpit Veille tarifaire. PUR (sans React, testable).
 //
 // ⚠ Garde-fou `truncated` : `report.products` est RANGÉ par écart le plus négatif puis

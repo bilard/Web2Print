@@ -1,4 +1,3 @@
-// src/features/navigation/usePaletteCommands.test.ts
 import { describe, it, expect } from 'vitest'
 import { Search } from 'lucide-react'
 import { filterCommands, type PaletteCommand } from './usePaletteCommands'

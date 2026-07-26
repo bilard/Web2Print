@@ -1,4 +1,3 @@
-// src/features/workflows/editor/PersistedWatchPreview.tsx
 // Aperçu des données DÉJÀ COLLECTÉES (persistées) pour un node de veille tarifaire
 // (« Moisson concurrents » / « Comparer catalogue »), affiché quand la carte n'a pas
 // (encore) tourné dans la session : au lieu d'un « lance le workflow » vide, on lit le

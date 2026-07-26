@@ -1,4 +1,3 @@
-// src/features/workflows/registry/enrichmentNodes.ts
 import { Sparkles } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'

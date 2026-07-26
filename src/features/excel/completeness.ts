@@ -1,4 +1,3 @@
-// src/features/excel/completeness.ts
 // Score de complétude d'une ligne : % de colonnes visibles réellement remplies.
 // Pure (testable) — utilisé par DataTable pour la pastille par ligne et la moyenne globale.
 import type { ExcelRow, ExcelColumn, CellValue } from './types'

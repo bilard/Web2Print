@@ -1,4 +1,3 @@
-// src/features/analytics/admin/AnalyticsKpiCards.tsx
 import { type Kpis, deltaPct } from '../metrics'
 
 function Delta({ cur, prev }: { cur: number; prev: number }) {

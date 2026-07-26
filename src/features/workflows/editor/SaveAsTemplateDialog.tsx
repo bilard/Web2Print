@@ -1,4 +1,3 @@
-// src/features/workflows/editor/SaveAsTemplateDialog.tsx
 // Capture le workflow courant comme modèle réutilisable (création ou mise à jour
 // du graphe d'un modèle existant). La config des nodes est embarquée telle quelle.
 import { useEffect, useState } from 'react'

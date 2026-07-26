@@ -1,4 +1,3 @@
-// src/features/workflows/editor/WorkflowEditorPage.tsx
 import { useCallback, useEffect, useState } from 'react'
 import { notify } from '@/lib/notify'
 import { useNavigate, useParams } from 'react-router-dom'

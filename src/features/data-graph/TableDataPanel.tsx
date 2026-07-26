@@ -1,4 +1,3 @@
-// src/features/data-graph/TableDataPanel.tsx
 import { useEffect, useMemo, useState } from 'react'
 import { Search, Loader2, Braces, Copy, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'

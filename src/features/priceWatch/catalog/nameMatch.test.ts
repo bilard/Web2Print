@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/nameMatch.test.ts
 import { describe, it, expect } from 'vitest'
 import { nameTokens, buildNameIndex, nameMatchCandidates } from './nameMatch'
 import type { CompetitorListing } from './prestashop'

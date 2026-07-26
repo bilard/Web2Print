@@ -1,4 +1,3 @@
-// src/features/onboarding/OnboardingWizard.tsx
 import { useEffect, useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'

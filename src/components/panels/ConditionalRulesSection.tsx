@@ -1,4 +1,3 @@
-// src/components/panels/ConditionalRulesSection.tsx
 //
 // Panneau « Règles conditionnelles » de l'objet/calque sélectionné (façon
 // EasyCatalog). Lit/écrit obj.data.conditionalRules, rejoue l'aperçu sur la

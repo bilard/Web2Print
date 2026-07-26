@@ -1,4 +1,3 @@
-// src/features/workflows/registry/logicNodes.ts
 import { GitBranch, Repeat, Pipette, Sigma } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'

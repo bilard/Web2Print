@@ -1,4 +1,3 @@
-// src/lib/aiModelsListing.ts
 /**
  * Récupération de la liste des modèles texte/JSON d'un provider.
  *

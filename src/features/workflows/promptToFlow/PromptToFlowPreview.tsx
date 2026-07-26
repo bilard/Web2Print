@@ -1,4 +1,3 @@
-// src/features/workflows/promptToFlow/PromptToFlowPreview.tsx
 import { AlertTriangle, ArrowDown } from 'lucide-react'
 import type { ValidatedGraph } from './types'
 

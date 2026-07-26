@@ -1,4 +1,3 @@
-// src/features/catalog/catalogFlatplan.ts
 // Moteur PUR du chemin de fer (flat plan) : clés de page stables, ordre manuel
 // persisté (pageOrder), regroupement en planches et statistiques. La couverture,
 // le sommaire et la 4e restent verrouillés à leur place ; seules les pages

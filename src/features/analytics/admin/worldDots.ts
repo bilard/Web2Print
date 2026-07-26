@@ -1,4 +1,3 @@
-// src/features/analytics/admin/worldDots.ts
 // Projection + construction des points de la carte du monde (pur, testable).
 import type { CityCount } from '../metrics'
 import type { CityCoords } from '../useCityCoords'

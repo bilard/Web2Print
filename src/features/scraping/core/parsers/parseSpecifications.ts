@@ -1,4 +1,3 @@
-// src/features/scraping/core/parsers/parseSpecifications.ts
 //
 // Extraction des spécifications produit depuis du HTML ou du markdown.
 // Recopié depuis useProductEnrichment.ts (extractSpecsFromHtml l.991, parseSpecsFromMarkdown

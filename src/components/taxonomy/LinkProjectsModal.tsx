@@ -1,4 +1,3 @@
-// src/components/taxonomy/LinkProjectsModal.tsx
 import { useEffect, useMemo, useState } from 'react'
 import { X, FileImage, Search, Link as LinkIcon, Check } from 'lucide-react'
 import { useProjects } from '@/features/projects/useProjects'

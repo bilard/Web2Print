@@ -1,4 +1,3 @@
-// src/features/brandkit/useBrandKit.ts
 // Kit de marque GLOBAL (par utilisateur, partagé entre tous les projets) :
 // couleurs stockées dans users/{uid}.brandKit. Chargement one-shot au montage
 // (pas de hook de sync permanent — cf. pièges des hooks de sync Firestore).

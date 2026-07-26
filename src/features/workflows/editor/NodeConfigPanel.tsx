@@ -1,4 +1,3 @@
-// src/features/workflows/editor/NodeConfigPanel.tsx
 import { useMemo, useState } from 'react'
 import { useStore } from '@xyflow/react'
 import { ArrowRight, ArrowLeft, X, Link2, Trash2, AlertTriangle } from 'lucide-react'

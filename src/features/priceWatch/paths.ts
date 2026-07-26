@@ -1,4 +1,3 @@
-// src/features/priceWatch/paths.ts
 // Chemins Firestore du module Veille tarifaire. matchKey = `${productId}__${siteId}`.
 // Interne : composé par les helpers de collection ci-dessous (non exporté — cf. knip).
 import { stableId } from './core'

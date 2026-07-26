@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/harvest.ts
 // Moteur de moisson à curseur. PUR : la logique de parcours (quelle page ensuite,
 // quand s'arrêter, comment reprendre) ne connaît ni le réseau ni Firestore.
 //

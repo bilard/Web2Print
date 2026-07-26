@@ -1,4 +1,3 @@
-// src/features/demo-express/types.ts
 // Types du module « Démo express » : pipeline d'ensemencement du studio
 // (PIM, DAM, catalogue, promo, workflow) avec les données du site d'un prospect.
 

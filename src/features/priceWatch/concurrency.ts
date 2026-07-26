@@ -1,4 +1,3 @@
-// src/features/priceWatch/concurrency.ts
 // Exécution en PARALLÈLE BORNÉ. PUR (dupliqué côté serveur).
 //
 // La moisson traitait ses concurrents dans un `for … await` : un seul fetch en vol pour

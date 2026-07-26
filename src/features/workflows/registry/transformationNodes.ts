@@ -1,4 +1,3 @@
-// src/features/workflows/registry/transformationNodes.ts
 import {
   Wand2,
   Filter as FilterIcon,

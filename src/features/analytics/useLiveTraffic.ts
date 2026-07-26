@@ -1,4 +1,3 @@
-// src/features/analytics/useLiveTraffic.ts
 // Flux LIVE des visites (onSnapshot temps réel) — le même trafic que les
 // alertes Telegram (🟢 page d'un utilisateur connecté, 🔵 session anonyme),
 // affiché DANS l'app. Complète useAnalyticsEvents (polling 60 s, période) :

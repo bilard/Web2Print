@@ -1,4 +1,3 @@
-// src/features/analytics/admin/AnalyticsTopLists.tsx
 import { topBy, topSourceCategories, pageLabel, type AnalyticsEvent } from '../metrics'
 import { AnalyticsCountriesTable } from './AnalyticsCountriesTable'
 

@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/probe.test.ts
 import { describe, it, expect } from 'vitest'
 import { probeCompetitor } from './probe'
 

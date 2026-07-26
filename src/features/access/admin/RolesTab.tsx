@@ -1,4 +1,3 @@
-// src/features/access/admin/RolesTab.tsx
 import { useEffect, useState } from 'react'
 import { Plus, Trash2, Save, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'

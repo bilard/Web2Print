@@ -1,4 +1,3 @@
-// src/features/priceWatch/runPriceWatch.ts
 // Orchestrateur CLIENT du pipeline de veille tarifaire : découverte → scrape →
 // validation LLM → diff/positionnement → alertes. Réutilise gatherWebContext
 // (recherche) et enrichRow (scrape champs). Persiste matchs + historique.

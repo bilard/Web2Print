@@ -1,4 +1,3 @@
-// src/features/access/PendingAccessScreen.tsx
 import { ShieldAlert } from 'lucide-react'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useAuthStore } from '@/stores/auth.store'

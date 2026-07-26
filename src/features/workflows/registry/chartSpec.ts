@@ -1,4 +1,3 @@
-// src/features/workflows/registry/chartSpec.ts
 // Logique PARTAGÉE entre le node Graphique (rendu PNG offscreen) et l'aperçu éditeur
 // (ChartPreview, react-chartjs-2) : agrégation des données + construction de la config
 // Chart.js. Aucune dépendance à React ni à chart.js ici (juste des types/objets).

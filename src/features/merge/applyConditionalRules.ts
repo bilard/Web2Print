@@ -1,4 +1,3 @@
-// src/features/merge/applyConditionalRules.ts
 //
 // Applique l'effet visuel résolu (conditionalRules.ts) sur un objet Fabric, de
 // façon RÉVERSIBLE par ligne : on mémorise la valeur d'origine de chaque

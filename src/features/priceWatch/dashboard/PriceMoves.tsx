@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/PriceMoves.tsx
 // MOUVEMENTS DE PRIX : ce qui a bougé chez les concurrents, quand, de combien.
 // Le reste du cockpit montre des NIVEAUX (où j'en suis) ; cet écran montre le MOUVEMENT
 // (ce qui vient de changer) — c'est là qu'un acheteur décide de réagir.

@@ -1,4 +1,3 @@
-// src/features/workflows/registry/approvalNode.tsx
 // Node « Approbation Telegram » : met le run en PAUSE, envoie la question sur Telegram
 // avec des boutons inline ✅/❌, et reprend sur le port `approved` ou `rejected` selon
 // le clic. La décision transite par Firestore : le webhook (Function) écrit le verdict

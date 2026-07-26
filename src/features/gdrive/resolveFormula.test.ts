@@ -1,4 +1,3 @@
-// src/features/gdrive/resolveFormula.test.ts
 import { describe, it, expect } from 'vitest'
 import { resolveFormula, buildFormulaCell } from './gdriveCore'
 

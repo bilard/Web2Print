@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/StepFieldMapping.tsx
 // Carte « Correspondance des champs » de l'étape Structure : associe chaque champ
 // de FICHE (nom/image/prix…) à une colonne source, et gère les champs libres.
 // Le devinage reste le défaut ; un choix ici pose un override qui prime et survit.

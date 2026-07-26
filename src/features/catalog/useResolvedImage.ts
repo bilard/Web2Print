@@ -1,4 +1,3 @@
-// src/features/catalog/useResolvedImage.ts
 // Résolution d'une cellule image PIM (Drive webViewLink privé OU URL externe sans
 // CORS) vers une URL affichable ET capturable par html2canvas (blob:/data: same-origin).
 // Réplique le pattern `resolveImg` de features/retail-promo/steps/StepRender.tsx :

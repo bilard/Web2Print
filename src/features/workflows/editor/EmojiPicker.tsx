@@ -1,4 +1,3 @@
-// src/features/workflows/editor/EmojiPicker.tsx
 // Sélecteur d'émoji pour les modèles de workflow : bouton affichant l'émoji
 // courant + popover de grille. Liste curée orientée automatisation / data /
 // e-commerce. Saisie libre conservée en repli (champ texte du popover).

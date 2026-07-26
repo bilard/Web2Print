@@ -1,4 +1,3 @@
-// src/features/dam/scrapeFolder.ts
 // Nom du sous-dossier DAM (Drive) d'un scraping : le nom de la feuille, sinon le
 // hostname de l'URL source. Source UNIQUE — utilisée à l'upload (rangement) ET à
 // la suppression (corbeille par emplacement), pour garantir la correspondance.

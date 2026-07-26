@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/ports.test.ts
 import { describe, it, expect, beforeEach } from 'vitest'
 import { portTypeRegistry, registerBuiltinPorts, isCompatible } from './ports'
 

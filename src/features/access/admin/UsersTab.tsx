@@ -1,4 +1,3 @@
-// src/features/access/admin/UsersTab.tsx
 import { useEffect, useMemo, useState } from 'react'
 import { Search, Ban, RotateCcw, CheckCircle2, Plus, Minus, Clock, ShieldCheck, Trash2, AlertTriangle } from 'lucide-react'
 import { PERMISSIONS, permissionsByModule, permissionLabel } from '@/features/access/permissions'

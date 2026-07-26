@@ -1,4 +1,3 @@
-// src/features/priceWatch/history.ts
 // Politique de RÉTENTION de l'historique KPI. PUR (testable, dupliqué côté serveur).
 //
 // Le ring-buffer brut (`slice(-90)`) avait deux défauts qui rendaient toute courbe

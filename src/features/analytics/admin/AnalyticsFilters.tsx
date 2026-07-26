@@ -1,4 +1,3 @@
-// src/features/analytics/admin/AnalyticsFilters.tsx
 import { topBy, topSourceCategories, pageLabel, type AnalyticsEvent, type EventFilter } from '../metrics'
 import { useUsersMap } from '../useUsersMap'
 

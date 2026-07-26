@@ -1,4 +1,3 @@
-// src/features/merge/pimSource.ts
 // Source PIM pour le moteur de merge (« re-skin de promo ») : les produits master
 // d'un projet PIM deviennent les lignes du panneau Données. Changer de produit
 // ré-applique tous les bindings du canvas (textes {{...}}, images src, couleurs)

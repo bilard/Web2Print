@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/connectionDragStore.ts
 // Tiny store that tracks the in-progress port drag so that *other* nodes can
 // highlight their compatible ports while the user is connecting.
 import { create } from 'zustand'

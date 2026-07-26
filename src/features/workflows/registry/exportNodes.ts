@@ -1,4 +1,3 @@
-// src/features/workflows/registry/exportNodes.ts
 import { FileDown, Presentation, FileType2, Download } from 'lucide-react'
 // Libs d'export lourdes (xlsx ~484 Ko, pptxgenjs ~268 Ko, html2canvas ~196 Ko, jspdf)
 // chargées dynamiquement DANS chaque `run` : sinon elles cascadent dès l'ouverture

@@ -1,4 +1,3 @@
-// src/features/settings/GoogleServerConnect.tsx
 // Connexion Google « accès serveur » (OAuth offline) : autorise UNE FOIS Drive +
 // Gmail ; le refresh token est stocké côté serveur (users/{uid}.googleServer) et
 // permet aux workflows cron/webhook/Telegram d'utiliser les outils Google sans

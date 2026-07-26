@@ -1,4 +1,3 @@
-// src/features/finance/types.ts
 // Vue minimale des stats d'usage consommée par le modèle de coûts (découple costModel
 // de useUsageStats → testable sans Firestore).
 export interface UsageStatsLike {

@@ -1,4 +1,3 @@
-// src/features/merge/autoMatch.test.ts
 import { describe, it, expect } from 'vitest'
 import { computeAutoMatch, type MatchableText, type ColumnLike } from './autoMatch'
 

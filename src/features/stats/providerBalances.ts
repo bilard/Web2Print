@@ -1,4 +1,3 @@
-// src/features/stats/providerBalances.ts
 // Soldes RÉELS récupérés par API — uniquement DeepSeek et OpenRouter (seuls providers
 // à exposer un endpoint de solde ; Claude/OpenAI/Gemini/Qwen/Kimi gèrent le solde dans
 // leur console de facturation, pas via API). Les autres → restant calculé (budget −

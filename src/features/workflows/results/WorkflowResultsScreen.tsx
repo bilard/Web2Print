@@ -1,4 +1,3 @@
-// src/features/workflows/results/WorkflowResultsScreen.tsx
 // Écran dédié « Résultats » d'un workflow (Phase 1) : visualisation contextuelle du
 // dernier run (dashboard / table / graphe / galerie / document) + export PNG/PDF.
 import { useEffect, useRef, useState } from 'react'

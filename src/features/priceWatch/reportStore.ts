@@ -1,4 +1,3 @@
-// src/features/priceWatch/reportStore.ts
 // Persistance du RAPPORT de comparaison catalogue (synthèse dashboard). Écrit par le
 // node « Comparer catalogue ». Contrat BORNÉ : le doc `latest` porte les KPIs, les
 // stats par concurrent (≤ N sites) et une liste produit RANGÉE + PLAFONNÉE ; le doc

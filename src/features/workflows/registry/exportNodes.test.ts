@@ -1,4 +1,3 @@
-// src/features/workflows/registry/exportNodes.test.ts
 // Formats de cellule à l'export .xlsx : EAN entier, prix 2 décimales, % … (cf. demande
 // « typer les champs dans le bon format Excel »).
 import { describe, it, expect } from 'vitest'

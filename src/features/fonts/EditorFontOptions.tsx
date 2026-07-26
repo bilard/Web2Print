@@ -1,4 +1,3 @@
-// src/features/fonts/EditorFontOptions.tsx
 // Options des sélecteurs de police de l'ÉDITEUR (PropertiesPanel, TextToolbar) :
 // « Mes polices » (uploads + Google ajoutées par URL), puis les fonts du document
 // (IDML importé), puis le catalogue Google Fonts de l'éditeur. Chaque option

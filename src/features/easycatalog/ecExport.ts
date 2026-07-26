@@ -1,4 +1,3 @@
-// src/features/easycatalog/ecExport.ts
 import type { ExcelSheet, FieldTypeId } from '@/features/excel/types'
 
 export type EcDelimiter = 'tab' | 'comma'

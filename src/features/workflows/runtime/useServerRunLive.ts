@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/useServerRunLive.ts
 // Affiche sur les cartes de l'éditeur l'état du dernier run SERVEUR (cron / « Lancer
 // serveur ») : sans ça, un run headless est invisible côté navigateur. S'abonne au doc
 // users/{uid}/workflowRunsLive/{workflowId} écrit par les Functions et hydrate le runContext.

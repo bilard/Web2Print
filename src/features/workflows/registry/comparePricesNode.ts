@@ -1,4 +1,3 @@
-// src/features/workflows/registry/comparePricesNode.ts
 // Node « Comparer les prix » : compare les produits d'une SOURCE (port `source`)
 // aux mêmes produits chez un ou plusieurs CONCURRENTS (port `concurrents`).
 // Sortie ANCRÉE SOURCE : une ligne par produit source (TOUS conservés), avec le

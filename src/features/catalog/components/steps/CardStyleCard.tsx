@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/CardStyleCard.tsx
 // Panneau « Style des fiches » (aside droit, comme « Fond de page ») : réglages
 // COSMÉTIQUES bornés (typo/police par champ, couleurs & dégradés des objets,
 // taille de l'image, visibilité) appliqués par variables CSS par-dessus le

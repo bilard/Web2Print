@@ -1,4 +1,3 @@
-// src/features/scraping/core/__tests__/parseSpecifications.test.ts
 import { describe, it, expect } from 'vitest'
 import {
   parseSpecsFromMarkdown,

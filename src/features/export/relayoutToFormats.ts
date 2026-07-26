@@ -1,4 +1,3 @@
-// src/features/export/relayoutToFormats.ts
 // Orchestration du re-layout multi-format : envoie l'image source + les descripteurs
 // au LLM (1 seul appel pour tous les formats), applique le placement renvoyé, et
 // RETOMBE sur projectObjectsToFormat (homothétie) en cas d'échec. Ne lève jamais.

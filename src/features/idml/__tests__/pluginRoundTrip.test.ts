@@ -1,4 +1,3 @@
-// src/features/idml/__tests__/pluginRoundTrip.test.ts
 import { describe, it, expect } from 'vitest'
 import { flattenXmlElementStory, extractStoryFields } from '@/features/idml/xmlElementStory'
 

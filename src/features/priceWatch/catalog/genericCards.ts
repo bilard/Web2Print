@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/genericCards.ts
 // Extraction GÉNÉRIQUE des produits d'une page liste, en 3ᵉ palier (après le parseur
 // PrestaShop et le JSON-LD ItemList) pour les sites qui exposent des cartes en HTML
 // SANS données structurées (ex. PrestaShop 1.6, thèmes maison). Deux signaux, du plus

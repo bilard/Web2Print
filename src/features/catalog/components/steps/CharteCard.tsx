@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/CharteCard.tsx
 // Carte « Charte & éléments joints » de l'étape Prompt : joignez PDF de charte,
 // logo ou visuels de marque → palette + typos extraites AUTOMATIQUEMENT
 // (moteur créatif : la charte pilote le plan IA et peut s'appliquer au thème).

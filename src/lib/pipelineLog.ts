@@ -1,4 +1,3 @@
-// src/lib/pipelineLog.ts
 // Observabilité des pipelines longs (enrichissement PIM, décomposition
 // Image/PDF→SVG) : chaque run écrit son issue + ses dernières étapes dans
 // Firestore `pipelineRuns` — l'« étage logs prod » du diagnostic, sans devoir

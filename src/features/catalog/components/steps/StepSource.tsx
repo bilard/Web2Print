@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/StepSource.tsx
 // Étape 1 du wizard « Catalogue studio » : connecter un projet PIM ou un dataset
 // Excel legacy comme source, puis choisir les produits à inclure dans le catalogue.
 import { useMemo, useState } from 'react'

@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/genericDiscovery.ts
 // Découverte GÉNÉRIQUE de pages listes (toute techno), en repli de la découverte
 // PrestaShop (categories.ts). Deux voies, dans l'ordre :
 //   1. sitemap.xml (via robots.txt « Sitemap: » puis /sitemap.xml) — déterministe,

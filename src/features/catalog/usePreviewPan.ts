@@ -1,4 +1,3 @@
-// src/features/catalog/usePreviewPan.ts
 // PAN à la barre d'ESPACE (outil main façon Adobe/Figma) sur l'aperçu de fiche :
 // espace MAINTENU → un voile capte le pointeur (le drag des blocs est suspendu),
 // glisser déplace le conteneur de l'aperçu (scrollLeft + scrollTop) — et LUI

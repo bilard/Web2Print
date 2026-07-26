@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/WatchSelector.tsx
 // Sélecteur de la SOURCE du tableau de bord (le suivi actif) + accès au gestionnaire de
 // suivis (suppression des résidus de test). Le `<select>` reste pour CHOISIR ; la
 // suppression multiple passe par la modale WatchManager (pas de dropdown custom fragile).

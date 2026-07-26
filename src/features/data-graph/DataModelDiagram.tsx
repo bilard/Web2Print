@@ -1,4 +1,3 @@
-// src/features/data-graph/DataModelDiagram.tsx
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ReactFlow, ReactFlowProvider, Background, Panel, applyNodeChanges, useReactFlow,

@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/SearchAutocomplete.tsx
 // Moteur de recherche global du cockpit avec AUTOCOMPLÉTION : suggère en frappant des
 // familles (→ filtre famille) et des produits (nom · réf, → requête précise). Full-text
 // insensible aux accents via matchesQuery. Navigation clavier ↑ ↓ Entrée Échap.

@@ -1,4 +1,3 @@
-// src/features/dam/uploadImageToDam.ts
 // Pont GÉNÉRIQUE d'upload d'une image vers le DAM (Google Drive) : damUpload
 // (serveur) récupère une URL, pas un blob → dépôt des octets en Storage temp,
 // downloadURL re-téléchargé par la CF (validation magic-bytes) puis nettoyage.

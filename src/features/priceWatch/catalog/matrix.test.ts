@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/matrix.test.ts
 import { describe, it, expect } from 'vitest'
 import { buildMatrix, type SiteRef } from './matrix'
 import type { SourceProduct } from './match'

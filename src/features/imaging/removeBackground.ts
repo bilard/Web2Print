@@ -1,4 +1,3 @@
-// src/features/imaging/removeBackground.ts
 // Moteur de détourage automatique de l'app — deux étages :
 //   1) rembg (Cloud Run, gratuit/illimité, modèle isnet-general-use) par DÉFAUT ;
 //   2) Remove.bg (API payante) si la clé est configurée ET que l'utilisateur ne

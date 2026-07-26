@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/PageOptionsPanel.tsx
 // Panneau « Fond de page » de l'aperçu (options à droite, comme partout dans
 // l'app) : options CONTEXTUELLES selon la page affichée — couverture/4e
 // (textes, visuel, échelles), ouverture (éléments de l'affiche), pages

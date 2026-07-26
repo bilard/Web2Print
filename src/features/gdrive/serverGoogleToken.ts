@@ -1,4 +1,3 @@
-// src/features/gdrive/serverGoogleToken.ts
 // Récupère un access token Google côté ÉDITEUR en réutilisant le jeton SERVEUR
 // (refresh token, rafraîchi automatiquement) au lieu du popup navigateur (~1 h +
 // écran « appli non validée »). Cache client ~50 min ; le serveur re-mint au-delà.

@@ -1,4 +1,3 @@
-// src/features/scraping/readPageWithEscalation.ts
 // Lecture d'une page web avec ESCALADE de connecteurs : Jina d'abord, puis
 // Bright Data (Web Unlocker → Scraping Browser) si Jina est bloqué / vide /
 // renvoie un challenge anti-bot. Chaque palier est tracé via `log`.

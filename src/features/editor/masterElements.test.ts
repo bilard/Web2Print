@@ -1,4 +1,3 @@
-// src/features/editor/masterElements.test.ts
 import { describe, it, expect } from 'vitest'
 import { upsertMasterObject, removeMasterObject } from './masterElements'
 

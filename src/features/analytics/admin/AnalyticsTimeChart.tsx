@@ -1,4 +1,3 @@
-// src/features/analytics/admin/AnalyticsTimeChart.tsx
 import { Line } from 'react-chartjs-2'
 import {
   Chart,

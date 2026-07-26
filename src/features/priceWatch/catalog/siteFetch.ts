@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/siteFetch.ts
 // Fetch HTML d'un site concurrent pendant la moisson, avec moteur FORCÉ par site
 // (node « Sites sources ») et télémétrie du moteur réellement utilisé (persistée en
 // `CompetitorMeta.lastEngine`, affichée dans le tableau de gestion).

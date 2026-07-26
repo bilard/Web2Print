@@ -1,4 +1,3 @@
-// src/features/finance/FinancePanel.tsx
 // Tableau de bord FINANCES : coûts réels + tokens par connecteur (LLM, Jina, Firecrawl,
 // Bright Data, Remove.bg), budgets/restant, historique mensuel. Global à l'app : les
 // coûts sont trackés par provider/mois, JAMAIS par run → non rattachables à un module.

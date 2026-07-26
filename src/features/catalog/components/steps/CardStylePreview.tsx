@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/CardStylePreview.tsx
 // Aperçu de la fiche : UNE SEULE réplique RÉALISTE de la cellule imprimée (mêmes
 // px + même --cat-fit, zoomée pour l'édition) + overlay de disposition libre
 // (drag/resize, aimant, liaisons) et palette d'ancrage liquide.

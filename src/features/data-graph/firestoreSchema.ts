@@ -1,4 +1,3 @@
-// src/features/data-graph/firestoreSchema.ts
 import {
   User, Shield, LayoutTemplate, Boxes, Package, Database, Tags,
   FileText, Workflow as WorkflowIcon, Play, Images, Activity, FileCode, Rows3,

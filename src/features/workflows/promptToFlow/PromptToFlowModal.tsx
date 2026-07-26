@@ -1,4 +1,3 @@
-// src/features/workflows/promptToFlow/PromptToFlowModal.tsx
 import { useState } from 'react'
 import { Sparkles, Loader2 } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'

@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/Sparkline.tsx
 // Mini-courbe SVG pour les tuiles KPI. < 2 points → rien (pas de pic trompeur).
 export function Sparkline({ values, color = '#818cf8', width = 60, height = 16 }: {
   values: number[]; color?: string; width?: number; height?: number

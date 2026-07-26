@@ -1,4 +1,3 @@
-// src/features/gdrive/gdriveCore.ts
 // Helpers non-React pour l'API Google Drive / Google Sheets, utilisés par les
 // nodes de workflow. Lecture (drive.readonly) ET écriture (drive.file) supposées
 // granted via le flow OAuth de useGoogleDrive / useGoogleSheetsImport.

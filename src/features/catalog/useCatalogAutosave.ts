@@ -1,4 +1,3 @@
-// src/features/catalog/useCatalogAutosave.ts
 // Autosauvegarde debouncée du catalogue : chaque mutation du store (hors données
 // brutes rechargées) réécrit users/{uid}/catalogs/{id} après 2 s d'inactivité.
 import { useEffect, useRef, useState } from 'react'

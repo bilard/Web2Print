@@ -1,4 +1,3 @@
-// src/features/dam/damCleanup.ts
 // Suppression des assets DAM (Drive) — TOUJOURS vers la CORBEILLE (récupérable).
 // Approche par EMPLACEMENT+NOM (CF damTrashByName) : robuste, indépendante des
 // liens en cellule (qui peuvent ne pas être persistés). Plus les opérations

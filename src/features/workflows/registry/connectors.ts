@@ -1,4 +1,3 @@
-// src/features/workflows/registry/connectors.ts
 // Registre des « connecteurs » (services externes) affichés en pastilles sous le
 // titre de chaque carte de node. Source unique : un node peut soit déclarer
 // `connectors` dans sa NodeSpec, soit hériter du mapping par type ci-dessous.

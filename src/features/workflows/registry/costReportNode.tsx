@@ -1,4 +1,3 @@
-// src/features/workflows/registry/costReportNode.tsx
 // Node « Rapport de coûts IA » : génère un HTML/CSS autonome récapitulant la
 // consommation IA & scraping du mois (mêmes données que le panneau live), prêt à
 // être archivé sur Drive (→ Export Google Drive) ou envoyé par mail (→ Envoyer via

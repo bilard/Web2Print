@@ -1,4 +1,3 @@
-// src/features/excel/ai-image/useColumnImageGen.ts
 // Hook de génération de visuels produits par IA pour une colonne image du PIM :
 // prompt résolu par ligne → image (Nano Banana/Gemini ou Higgsfield) → upload DAM
 // Google Drive (sous-dossier au nom du sheet) → webViewLink écrit dans la cellule.

@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/nameMatch.ts
 // Appariement par NOM — fallback INCERTAIN, voie SÉPARÉE (« À confirmer »). Ne produit
 // que des CANDIDATS à validation humaine ; n'entre JAMAIS dans le comparatif réel (on ne
 // touche pas proveMatch). Un seuil de distinctivité écarte les noms génériques (« VIS »,

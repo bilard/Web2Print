@@ -1,4 +1,3 @@
-// src/features/priceWatch/radar/radarAuth.ts
 // Connexion Google robuste de la PWA « radarPrice » (popup d'abord, repli redirection).
 // Miroir de pulseAuth : le popup est le seul chemin fiable en PWA standalone iOS.
 import {

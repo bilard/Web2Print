@@ -1,4 +1,3 @@
-// src/features/finance/BillingLinks.tsx
 // Accès direct aux tableaux de bord de facturation des connecteurs externes (Claude, Firecrawl,
 // Jina, Bright Data). Les coûts affichés ici sont notre estimation interne ; ces liens ouvrent
 // la facturation OFFICIELLE de chaque fournisseur pour vérifier/recharger le solde.

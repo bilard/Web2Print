@@ -1,4 +1,3 @@
-// src/features/excel/ai-image/imageGenEngine.ts
 // Moteur PUR de génération de visuels produits par IA (testable sans React ni réseau).
 // Construit un job par ligne (prompt résolu depuis les colonnes), puis exécute la file
 // avec concurrence limitée, skip des cellules déjà remplies, circuit-breaker et abort.

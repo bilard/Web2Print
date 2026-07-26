@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/CardStyleTypo.tsx
 // Sous-panneau « typo » du style de fiches : échelle ET police pour CHAQUE champ
 // texte mappé (nom, description, prix, marque, référence, unité, cartouche promo).
 // « Police du thème » = hérite des polices du plan (titres ou texte selon le champ).

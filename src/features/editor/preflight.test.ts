@@ -1,4 +1,3 @@
-// src/features/editor/preflight.test.ts
 import { describe, it, expect } from 'vitest'
 import { runPreflight, type PreflightObjectInfo } from './preflight'
 

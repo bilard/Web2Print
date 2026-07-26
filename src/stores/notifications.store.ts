@@ -1,4 +1,3 @@
-// src/stores/notifications.store.ts
 // Centre de notifications global : historique persistant (localStorage) des
 // évènements importants (runs de workflows, exports, erreurs), alimenté via
 // lib/notify.ts qui double chaque entrée d'un toast Sonner.

@@ -1,4 +1,3 @@
-// src/features/workflows/registry/crawlNode.ts
 // Node « Crawl » (mode du node unifié Web Scraping) : URL(s) de page catégorie →
 // découverte des liens de fiches produit (Cloud Function extractBreadcrumb : cardLinks
 // via Puppeteer scroll/anti-bot) → enrichissement complet de chaque fiche (enrichRow,

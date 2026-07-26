@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/FlatplanStatsBar.tsx
 // Bandeau de statistiques du chemin de fer + taille des vignettes + reset de
 // l'ordre manuel.
 import { BookOpen, Grid3X3, Layers, Package, RotateCcw, Star } from 'lucide-react'

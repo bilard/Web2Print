@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/StepPreview.tsx
 // Étape 4 du wizard « Catalogue studio » : aperçu page à page de la pagination live.
 // Une seule page montée à la fois (perf sur 100+ pages) ; rail en ARBRE structuré
 // par univers (PreviewPageTree), léger — pas de CatalogPageView par vignette.

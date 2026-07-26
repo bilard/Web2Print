@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/matrix.ts
 // Construction de la matrice comparative produit × concurrent. PUR.
 //
 // Une ligne par produit source apparié à au moins un concurrent. Colonnes fixes

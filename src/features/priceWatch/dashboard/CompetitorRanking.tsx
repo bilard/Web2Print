@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/CompetitorRanking.tsx
 // Benchmark concurrentiel dense : un concurrent par ligne, trié par agressivité
 // (écart moyen le plus négatif = casse les prix le plus). avgGapPct est FIABLE (agrégé
 // serveur) ; médiane/plage sont recalculées (biais possible si truncated → mention).

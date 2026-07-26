@@ -1,4 +1,3 @@
-// src/features/workflows/editor/CronStatusPanel.tsx
 import { useEffect, useState, type ReactNode } from 'react'
 import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'

@@ -1,4 +1,3 @@
-// src/features/catalog/cropMarks.ts
 // Traits de coupe aux 4 coins, en mm, dans la marge de fond perdu.
 // Page PDF = (w+2b) × (h+2b) ; zone rognée = (b,b)-(b+w,b+h). GAP entre trait et zone.
 const GAP_MM = 1

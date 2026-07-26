@@ -1,4 +1,3 @@
-// src/features/workflows/editor/nodes/BaseNode.tsx
 import type { ReactNode } from 'react'
 import { useMemo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'

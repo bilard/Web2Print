@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/CardObjectSettings.tsx
 // Panneau « Bloc sélectionné » : TOUS les réglages de l'objet cliqué dans
 // l'aperçu, regroupés en TÊTE de « Style des fiches » — taille, police,
 // liaison, rotation (par variante), visibilité et cases couleur (fond + textes).

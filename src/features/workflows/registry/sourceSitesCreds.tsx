@@ -1,4 +1,3 @@
-// src/features/workflows/registry/sourceSitesCreds.tsx
 // Mini-formulaire « accès connecté » d'un site (node Sites sources) : saisit
 // email/mot de passe/URL de connexion et les écrit dans Firestore
 // users/{uid}.siteCredentials[host] — lisible par soi seul (règles), JAMAIS dans le

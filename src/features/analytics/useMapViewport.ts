@@ -1,4 +1,3 @@
-// src/features/analytics/useMapViewport.ts
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type MouseEvent } from 'react'
 
 export interface MapBox {

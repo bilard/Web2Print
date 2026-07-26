@@ -1,4 +1,3 @@
-// src/features/easycatalog/ecZip.test.ts
 import { describe, it, expect } from 'vitest'
 import JSZip from 'jszip'
 import { buildEcZip } from './ecZip'

@@ -1,4 +1,3 @@
-// src/features/access/admin/PermissionTree.tsx
 import { ChevronRight, Check, Lock } from 'lucide-react'
 import { permissionParent, permissionLabel, type PermissionDef } from '@/features/access/permissions'
 import { moduleMeta, type ModuleMeta } from '@/features/access/moduleMeta'

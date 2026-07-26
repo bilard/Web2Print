@@ -1,4 +1,3 @@
-// src/components/canvas/MergeConnectorOverlay.tsx
 import { useEffect, useState } from 'react'
 import type { Canvas, FabricObject } from 'fabric'
 import { useUIStore } from '@/stores/ui.store'

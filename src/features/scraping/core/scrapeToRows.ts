@@ -1,4 +1,3 @@
-// src/features/scraping/core/scrapeToRows.ts
 import type { ScrapeResult, ScrapingField } from '../useJina'
 import type { ExcelColumn } from '@/features/excel/types'
 

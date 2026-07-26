@@ -1,4 +1,3 @@
-// src/features/workflows/registry/persistenceNodes.ts
 import { Database } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'

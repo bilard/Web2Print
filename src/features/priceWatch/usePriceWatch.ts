@@ -1,4 +1,3 @@
-// src/features/priceWatch/usePriceWatch.ts
 // Hooks lecture/validation du module Veille tarifaire. Les produits + sites sont
 // désormais configurés DANS LE FLUX (node price-watch-track) ; ce module n'est
 // plus qu'un tableau de bord lecture-seule des matchs (+ file « à confirmer »).

@@ -1,4 +1,3 @@
-// src/features/workflows/registry/priceWatchNode.ts
 // Node « Veille prix » : compare les valeurs (prix) de la sheet d'entrée avec
 // celles mémorisées au run précédent (users/{uid}/priceWatch/{watchId}) et
 // n'émet le port `changes` QUE s'il y a des variations au-delà du seuil —

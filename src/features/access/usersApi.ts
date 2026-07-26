@@ -1,4 +1,3 @@
-// src/features/access/usersApi.ts
 import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 

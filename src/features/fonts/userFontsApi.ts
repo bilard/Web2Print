@@ -1,4 +1,3 @@
-// src/features/fonts/userFontsApi.ts
 // Polices utilisateur (« Mes polices ») : fichier dans Storage users/{uid}/fonts/,
 // méta dans Firestore users/{uid}/userFonts — upsert par famille (slug).
 import { collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'

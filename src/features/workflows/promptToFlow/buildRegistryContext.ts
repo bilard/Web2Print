@@ -1,4 +1,3 @@
-// src/features/workflows/promptToFlow/buildRegistryContext.ts
 import { nodeRegistry } from '../registry'
 import type { Port, NodeSpec } from '../types'
 

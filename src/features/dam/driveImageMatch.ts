@@ -1,4 +1,3 @@
-// src/features/dam/driveImageMatch.ts
 // Logique pure de correspondance entre une valeur de cellule (nom de fichier,
 // éventuellement préfixé d'un dossier et avec une extension différente) et un
 // fichier image présent dans un dossier Google Drive.

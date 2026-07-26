@@ -1,4 +1,3 @@
-// src/features/dam/DedupDriveModal.tsx
 // Déduplique un dossier Drive par CONTENU (md5) : aperçu des doublons → mise en
 // corbeille (récupérable) des copies, en gardant le plus ancien de chaque groupe.
 import { useState, useEffect, useCallback } from 'react'

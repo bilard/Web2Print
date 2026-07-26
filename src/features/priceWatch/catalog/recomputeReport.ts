@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/recomputeReport.ts
 // Recalcule le RAPPORT dashboard (benchmark : appariés, écarts, ruptures) SANS relancer
 // tout le workflow — après une moisson manuelle (▶) dans « Sites sources ». Relit le
 // catalogue source persisté par le node « Comparer » + l'index frais de chaque site,

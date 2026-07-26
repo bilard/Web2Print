@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/PageSimPreview.tsx
 // Simulation de PAGE dans « Prompt & style » : N copies du produit échantillon
 // passées dans le VRAI moteur (paginateCatalog, mode uniforme + grille
 // représentative — identique à useCatalogPages) et rendues par la VRAIE page

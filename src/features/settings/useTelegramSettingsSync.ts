@@ -1,4 +1,3 @@
-// src/features/settings/useTelegramSettingsSync.ts
 // Synchronise la config Telegram globale (bot token + chat id) avec Firestore
 // users/{uid}.telegram : hydrate au login, pousse les changements (debounce).
 // Calqué sur useAiSettingsSync. Le bot token est un secret : il vit dans le document

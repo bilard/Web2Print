@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/HeaderBandOptions.tsx
 // Section « Bandeau taxonomie » (Univers › Famille) : partagée entre le panneau
 // « Fond de page » de l'Aperçu (pages produits) et l'aside « Style des fiches »
 // de Prompt & style. Le bandeau est un élément de PAGE : il se voit sur les

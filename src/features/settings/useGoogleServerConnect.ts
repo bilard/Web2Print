@@ -1,4 +1,3 @@
-// src/features/settings/useGoogleServerConnect.ts
 // Logique du connecteur Google « accès serveur » (OAuth offline) : hydratation
 // Firestore (users/{uid}.googleServer + config/googleOAuth admin-only),
 // sauvegarde du client OAuth, ouverture du consentement et test RÉEL de la

@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/exportResult.ts
 // Détection du résultat d'export dans les outputs d'un node (partagé entre le RunPanel et le
 // worker Telegram). Un node d'export produit un objet { url, filename, mime? }.
 

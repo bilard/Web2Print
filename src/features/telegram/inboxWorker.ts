@@ -1,4 +1,3 @@
-// src/features/telegram/inboxWorker.ts
 // Logique pure du worker : claim → traitement métier → done/error. Le traitement (`process`)
 // et les I/O sont injectés via `deps`, ce qui rend la logique testable sans émulateur.
 // Le `process` porte le comportement courant (2b : générer un workflow ; 2c : exécuter).

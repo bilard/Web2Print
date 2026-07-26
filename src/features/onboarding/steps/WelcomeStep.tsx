@@ -1,4 +1,3 @@
-// src/features/onboarding/steps/WelcomeStep.tsx
 import { Sparkles, KeyRound, Cpu, Plug, Compass } from 'lucide-react'
 
 const ITEMS = [

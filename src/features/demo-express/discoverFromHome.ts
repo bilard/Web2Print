@@ -1,4 +1,3 @@
-// src/features/demo-express/discoverFromHome.ts
 // Descente automatique depuis l'URL DE BASE du prospect : l'accueil est un
 // « hub » (menu, pas de cartes produit) — on récupère ses liens par DEUX
 // sources en parallèle, comme discover() : Jina Reader (règle « Jina

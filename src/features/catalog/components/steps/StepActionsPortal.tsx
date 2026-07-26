@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/StepActionsPortal.tsx
 // Téléporte les actions d'une étape (Générer, Continuer…) dans le slot de la
 // barre d'étapes (CatalogStepsNav) — toujours visibles, même page scrollée.
 import { useEffect, useState, type ReactNode } from 'react'

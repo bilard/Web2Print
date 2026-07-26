@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/store.ts
 // Persistance de l'index catalogue concurrent. Adaptateurs Firestore FINS : toute la
 // logique métier vit dans les modules purs (harvest, match, keys, prestashop).
 //

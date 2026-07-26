@@ -1,4 +1,3 @@
-// src/features/access/admin/AuditTab.tsx
 // Onglet admin : journal d'audit complet (toutes les actions de tous les utilisateurs),
 // filtrable QUI / QUOI / QUAND.
 import { useAuditLogAll } from '../useAuditLog'

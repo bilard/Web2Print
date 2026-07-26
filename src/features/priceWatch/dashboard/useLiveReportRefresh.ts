@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/useLiveReportRefresh.ts
 // Actualisation LIVE du rapport « Comparer » pendant la moisson : entre deux runs serveur
 // (~30 min), les tuiles d'analyse (appariés, tenue prix, écart, impact) restaient figées
 // alors que l'index concurrent grossit en continu. Quand la collecte est ACTIVE et que le

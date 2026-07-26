@@ -1,4 +1,3 @@
-// src/features/merge/updateSourceCell.ts
 // Écrit UNE cellule dans la SOURCE partagée (dataset Excel legacy ou projet PIM) :
 // tous les canaux qui relisent la source (Catalogue studio, promo, exports…)
 // voient la nouvelle valeur. Excel = read-modify-write du JSON de feuilles

@@ -1,4 +1,3 @@
-// src/features/merge/excelSource.ts
 // Source Excel legacy (`excel_data` + `excel_data_payload`) pour le moteur de merge.
 // Miroir de pimSource.ts pour les datasets Excel historiques (module Données) :
 // utilisé par la promo retail ET le catalogue studio pour éviter deux implémentations

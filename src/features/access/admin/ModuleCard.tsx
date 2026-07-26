@@ -1,4 +1,3 @@
-// src/features/access/admin/ModuleCard.tsx
 import { useState, type ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { moduleMeta } from '@/features/access/moduleMeta'

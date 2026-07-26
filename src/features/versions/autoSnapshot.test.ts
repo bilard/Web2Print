@@ -1,4 +1,3 @@
-// src/features/versions/autoSnapshot.test.ts
 import { describe, it, expect } from 'vitest'
 import {
   AUTO_SNAPSHOT_THROTTLE_MS,

@@ -1,4 +1,3 @@
-// src/features/catalog/components/pages/CatalogFooter.tsx
 interface Props { pageNumber: number; totalPages: number; catalogName: string; showName?: boolean }
 
 export function CatalogFooter({ pageNumber, totalPages, catalogName, showName = true }: Props) {

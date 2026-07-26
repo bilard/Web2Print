@@ -1,4 +1,3 @@
-// src/features/workflows/registry/decomposeNode.ts
 //
 // Node workflow "Décomposer (SVG éditable)" :
 //   input  : SVG produit par image-to-svg / pdf-to-svg (fichier portant l'image bg verrouillée)

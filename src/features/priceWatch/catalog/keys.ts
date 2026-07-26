@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/keys.ts
 // Clés de jointure entre le catalogue source et un catalogue concurrent. PUR.
 //
 // Constat terrain (motoculture, 5 concurrents PrestaShop) : CHAQUE site expose une

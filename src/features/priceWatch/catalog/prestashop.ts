@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/prestashop.ts
 // Extracteur de catalogue PrestaShop 1.7. PUR : entrée = HTML, sortie = données.
 //
 // UN SEUL extracteur pour tous les sites (cf. « pas de scrapers par fournisseur ») :

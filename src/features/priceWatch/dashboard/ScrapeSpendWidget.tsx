@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/ScrapeSpendWidget.tsx
 // Compteur de consommation scraping EN LIVE dans le dashboard veille (surtout Jina, la
 // couche de fetch de la moisson/recherche dirigée). Évite d'ouvrir Paramètres/Finances.
 import { useScrapeSpend } from './useScrapeSpend'

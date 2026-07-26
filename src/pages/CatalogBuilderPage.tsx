@@ -1,4 +1,3 @@
-// src/pages/CatalogBuilderPage.tsx
 // Builder plein écran d'un catalogue. Charge le doc, reconnecte la source PIM si
 // besoin (les lignes ne sont pas persistées), puis rend l'étape active.
 import { lazy, Suspense, useEffect, useState } from 'react'

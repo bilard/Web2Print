@@ -1,4 +1,3 @@
-// src/features/easycatalog/useEasyCatalogExport.ts
 import type { ExcelSheet } from '@/features/excel/types'
 import { buildEcZip, type EcExportOptions } from './ecZip'
 

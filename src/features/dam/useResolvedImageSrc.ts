@@ -1,4 +1,3 @@
-// src/features/dam/useResolvedImageSrc.ts
 // Résout une valeur image affichable : si c'est une référence Google Drive (DAM),
 // télécharge les octets authentifiés → blob URL (mémoïsé) ; sinon renvoie la valeur
 // telle quelle. À utiliser partout où l'on rend `<img src>` d'une donnée produit

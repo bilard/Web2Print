@@ -1,4 +1,3 @@
-// src/features/access/moduleMeta.ts
 // Identité visuelle par module (icône + classes de couleur) pour les écrans RBAC.
 // Les noms de clés correspondent EXACTEMENT au champ `module` de `permissions.ts`.
 import {

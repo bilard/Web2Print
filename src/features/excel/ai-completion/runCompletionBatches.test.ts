@@ -1,4 +1,3 @@
-// src/features/excel/ai-completion/runCompletionBatches.test.ts
 import { describe, it, expect, vi } from 'vitest'
 import { runCompletionBatches } from './columnCompletionEngine'
 import type { ExcelColumn, ExcelRow } from '@/features/excel/types'

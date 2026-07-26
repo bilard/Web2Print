@@ -1,4 +1,3 @@
-// src/features/data-graph/useTableData.ts
 import { useEffect, useState } from 'react'
 import { collection, query, where, limit, onSnapshot, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'

@@ -1,4 +1,3 @@
-// src/features/workflows/editor/RunPreflightDialog.tsx
 // Popup de cohérence AVANT lancement : liste les trous détectés (source non connectée,
 // paramètre / export requis manquant) par carte. L'utilisateur corrige, ou force le
 // lancement en connaissance de cause. N'apparaît QUE s'il y a au moins une incohérence.

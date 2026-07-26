@@ -1,4 +1,3 @@
-// src/features/dam/autoTag.ts
 // Tagging IA automatique des assets DAM : appelle la callable damAnalyzeImage
 // (Gemini, déjà utilisée par l'onglet « Analyse IA » de la lightbox) puis
 // persiste tags + couleur dominante + description sur le doc dam_assets.

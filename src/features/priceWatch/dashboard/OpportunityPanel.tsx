@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/OpportunityPanel.tsx
 // Top opportunités : produits où je suis le plus cher, triés par écart UNITAIRE € (mon
 // prix HT − meilleur prix concurrent HT — PAS un revenu : ni volume ni marge en données).
 // Où baisser en priorité. Lit la vue filtrée (participe au cross-filter du cockpit).

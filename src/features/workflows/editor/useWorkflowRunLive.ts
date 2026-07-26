@@ -1,4 +1,3 @@
-// src/features/workflows/editor/useWorkflowRunLive.ts
 // Abonnement au run SERVEUR live d'un workflow pour la console de suivi (éditeur) :
 // le doc `users/{uid}/workflowRunsLive/{workflowId}` porte le flux de logs chronologique
 // (200 derniers, streamé ~2 s pendant le run) et `workflowSchedules/{workflowId}` porte

@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/PageOptionsTheme.tsx
 // Sections « Thème graphique » et « Modèles » du panneau Fond de page :
 // couleurs + polices (globales, aperçu live sur la page affichée) et modèles
 // réutilisables inter-catalogues (thème + styles fiches/pages, sans données).

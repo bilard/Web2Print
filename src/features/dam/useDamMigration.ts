@@ -1,4 +1,3 @@
-// src/features/dam/useDamMigration.ts
 // Centralise les images d'une feuille dans le DAM (Google Drive) : pour chaque
 // cellule de colonne `image` (ou `url` dont la valeur ressemble à une image),
 // télécharge les octets via le proxy serveur `imageProxy` (contourne CORS), les

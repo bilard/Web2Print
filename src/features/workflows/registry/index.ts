@@ -1,4 +1,3 @@
-// src/features/workflows/registry/index.ts
 import type { NodeSpec } from '../types'
 
 class NodeRegistry {

@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/authFetchClient.ts
 // Client de la CF `fetchPageHtmlAuth` : récupère le HTML d'une page en étant connecté
 // au site (login cookie serveur). Utilisé par la moisson pour les sites marqués `auth`
 // (prix visibles uniquement authentifié, ex. progarden). Les identifiants ne transitent

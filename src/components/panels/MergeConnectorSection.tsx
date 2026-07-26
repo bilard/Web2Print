@@ -1,4 +1,3 @@
-// src/components/panels/MergeConnectorSection.tsx
 import { Link2 } from 'lucide-react'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { collectObjectsDeep } from '@/features/editor/deepObjects'

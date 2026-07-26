@@ -1,4 +1,3 @@
-// src/lib/notify.ts
 // Notification unifiée : toast Sonner immédiat + entrée persistante dans le
 // centre de notifications (cloche globale). À utiliser pour les évènements
 // que l'utilisateur peut vouloir retrouver après coup (fin de run, export,

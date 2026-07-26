@@ -1,4 +1,3 @@
-// src/features/retail-promo/components/CustomFieldsEditor.tsx
 // Éditeur de champs libres partagé (Catalogue studio + Création studio) : chaque
 // ligne mappe une colonne source arbitraire, nommée par l'utilisateur (le nom sert
 // de repère — seules les VALEURS sont affichées sur la fiche, en zone « détails »).

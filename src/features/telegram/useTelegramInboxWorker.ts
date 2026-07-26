@@ -1,4 +1,3 @@
-// src/features/telegram/useTelegramInboxWorker.ts
 // Worker Telegram : écoute les messages pending, génère un workflow (2b) puis l'exécute (2c) et
 // renvoie le fichier produit. Monté UNIQUEMENT sur la page Telegram (onglet dédié) pour isoler
 // le store de run de l'éditeur. Les messages sont traités EN SÉRIE (un executeWorkflow à la

@@ -1,4 +1,3 @@
-// src/lib/gmailAuth.ts
 // Construction du message MIME + envoi via Gmail API.
 // Le jeton d'accès est fourni par l'APPELANT. Côté client comme côté serveur (cron),
 // les nodes Gmail réutilisent désormais le jeton du connecteur Google SERVEUR

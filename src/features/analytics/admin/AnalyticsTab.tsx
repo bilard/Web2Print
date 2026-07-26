@@ -1,4 +1,3 @@
-// src/features/analytics/admin/AnalyticsTab.tsx
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { Download, Trash2, Bell, BellOff, FilterX } from 'lucide-react'
 import { toast } from 'sonner'

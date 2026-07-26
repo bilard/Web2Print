@@ -1,4 +1,3 @@
-// src/features/dam/ImportFolderToDriveModal.tsx
 // Modal : importer N images d'un dossier local vers un dossier Google Drive choisi.
 import { useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'

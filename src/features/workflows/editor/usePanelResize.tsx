@@ -1,4 +1,3 @@
-// src/features/workflows/editor/usePanelResize.tsx
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface PanelState {

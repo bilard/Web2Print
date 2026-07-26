@@ -1,4 +1,3 @@
-// src/features/priceWatch/radar/radarScheduleActions.ts
 // Actions du planificateur depuis la PWA radarPrice (parité CronStatusPanel de l'app) :
 // arrêter LE run en cours, suspendre DURABLEMENT le flux, ou lancer une passe serveur.
 // ⚠ Toutes ces opérations sont clefées par l'id du WORKFLOW (pas le watchId).

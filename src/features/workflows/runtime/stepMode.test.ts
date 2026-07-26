@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/stepMode.test.ts
 // Mécanique du mode pas-à-pas : pause avant node, reprise au clic, déblocage sur abort.
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useRunContext, stepMiddleware } from './runContext'

@@ -1,4 +1,3 @@
-// src/features/demo-express/demoWorkflow.test.ts
 // Le workflow ensemencé par la Démo express doit refléter TOUT le pipeline
 // (pas seulement scrape → Excel) : chaque carte référence un node enregistré,
 // chaque edge relie des ports existants et compatibles, et aucune sortie du

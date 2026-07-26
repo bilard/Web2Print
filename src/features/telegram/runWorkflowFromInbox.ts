@@ -1,4 +1,3 @@
-// src/features/telegram/runWorkflowFromInbox.ts
 // Logique PURE de la commande /run : résoudre un workflow sauvegardé par son nom, et y injecter
 // le texte d'entrée. Aucune dépendance Firebase — l'orchestration (listWorkflows + exécution)
 // reste dans le worker. Testable isolément.

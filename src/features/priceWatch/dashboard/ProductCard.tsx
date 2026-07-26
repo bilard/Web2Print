@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/ProductCard.tsx
 // Carte CENTRÉE PRODUIT (pas de table large → directement adaptée mobile). Repliée :
 // identité + mon prix + meilleur écart concurrent (badge). Dépliée : le détail de
 // chaque concurrent apparié (prix TTC/HT, barré, écart, stock, type d'appariement,

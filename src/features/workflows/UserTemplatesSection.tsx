@@ -1,4 +1,3 @@
-// src/features/workflows/UserTemplatesSection.tsx
 // Section « Mes modèles » de la page Workflows : modèles créés par l'utilisateur
 // (privés). Clic = instancier un workflow ; crayon = éditer les infos ; corbeille
 // = supprimer. L'édition du graphe se fait en instanciant puis « Modèle » dans

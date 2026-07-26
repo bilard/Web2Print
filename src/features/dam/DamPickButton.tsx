@@ -1,4 +1,3 @@
-// src/features/dam/DamPickButton.tsx
 // Bouton « Choisir dans le DAM » : ouvre le picker Google Drive et écrit le
 // webViewLink de l'asset choisi (référence stable, ré-résolue à l'affichage par
 // driveAssets). Réutilise le picker existant des workflows.

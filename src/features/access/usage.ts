@@ -1,4 +1,3 @@
-// src/features/access/usage.ts
 // Compteurs d'usage cumulés par compte (`users/{uid}.usage.{pimRows,damAssets}`),
 // support des quotas des comptes « démo ». L'incrément client est le compteur de
 // vérité pour le PIM (import batch direct) ; pour le DAM, la Cloud Function

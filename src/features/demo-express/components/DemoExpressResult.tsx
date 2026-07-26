@@ -1,4 +1,3 @@
-// src/features/demo-express/components/DemoExpressResult.tsx
 // Panneau « Découvrez vos données » : une carte par module ensemencé, chaque
 // bouton deep-linke vers le module (section du Dashboard ou vraie route).
 import { useNavigate } from 'react-router-dom'

@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/PreviewPageTree.tsx
 // Rail de l'aperçu en ARBRE : couverture/sommaire/4e à la racine, chaque univers
 // (ouverture) repliable avec ses pages produits en dessous (famille + nb fiches,
 // ★ si la page porte une vedette).

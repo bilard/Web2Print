@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/FlatplanLightbox.tsx
 // Page réelle en grand depuis le chemin de fer : rendu CatalogPageView à
 // l'échelle, navigation ←/→, ouverture directe dans l'étape Aperçu.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'

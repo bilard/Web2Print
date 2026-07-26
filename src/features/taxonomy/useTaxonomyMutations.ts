@@ -1,4 +1,3 @@
-// src/features/taxonomy/useTaxonomyMutations.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   doc,

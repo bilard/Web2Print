@@ -1,4 +1,3 @@
-// src/features/analytics/usePeriod.ts
 import { useMemo, useState } from 'react'
 
 export type PeriodKey = 'today' | '7d' | '30d' | '90d' | '12m' | 'custom'

@@ -1,4 +1,3 @@
-// src/features/access/permissions.ts
 /** Catalogue central de toutes les permissions de l'app. Source de vérité : l'écran admin
  *  génère sa matrice à partir d'ici et `useCan` valide contre ces clés.
  *  Convention : `<module>.view` gate la visibilité du module ; les clés plus fines gatent

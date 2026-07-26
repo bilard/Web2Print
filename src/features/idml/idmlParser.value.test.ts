@@ -1,4 +1,3 @@
-// src/features/idml/idmlParser.value.test.ts
 import { describe, it, expect } from 'vitest'
 import { parseIdml } from './idmlParser'
 

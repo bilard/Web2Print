@@ -1,4 +1,3 @@
-// src/features/export/relayoutMultiFormat.ts
 // Déclinaisons multi-format v3 — re-layout piloté par LLM. Module PUR (aucune
 // dépendance Fabric/React) : traduit les objets Fabric sérialisés en descripteurs
 // pour le LLM, et traduit le placement renvoyé (boîtes en %) en objets transformés

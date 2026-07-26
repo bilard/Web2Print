@@ -1,4 +1,3 @@
-// src/features/easycatalog/EasyCatalogExportModal.tsx
 import { useMemo, useState } from 'react'
 import { Download } from 'lucide-react'
 import { toast } from 'sonner'

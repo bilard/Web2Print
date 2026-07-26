@@ -1,4 +1,3 @@
-// src/features/catalog/charte/inspiration.ts
 // « Source d'inspiration » par URL (Dribbble, Behance, Pinterest, n'importe quelle
 // page ou image directe) : récupère le VISUEL principal (og:image via la CF
 // fetchPageHtml, octets via la CF imageProxy — CORS/SSRF gérés serveur), en

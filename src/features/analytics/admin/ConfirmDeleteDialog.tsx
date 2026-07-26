@@ -1,4 +1,3 @@
-// src/features/analytics/admin/ConfirmDeleteDialog.tsx
 // Dialogue de confirmation destructive partagé par les trois suppressions
 // de l'onglet Analytics (vider tout, purger mes visites, supprimer le résultat).
 import type { ReactNode } from 'react'

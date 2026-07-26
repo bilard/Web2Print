@@ -1,4 +1,3 @@
-// src/features/catalog/useCoverImage.ts
 // Visuel de couverture via Image IA (Gemini). Ne passe PAS par useImageGeneration
 // (dont l'upload final vers la galerie exige useEditorStore.projectId — toujours
 // null sur /catalog/:id, aucun projet éditeur n'y est ouvert → échec systématique).

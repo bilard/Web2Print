@@ -1,4 +1,3 @@
-// src/features/demo-express/DemoExpressPage.tsx
 // Conteneur du wizard « Démo express » : formulaire (société + URL) →
 // progression du pipeline d'ensemencement → panneau « Découvrez vos données ».
 import { Sparkles } from 'lucide-react'

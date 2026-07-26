@@ -1,4 +1,3 @@
-// src/features/workflows/registry/GSheetsFormulaColumns.tsx
 // Éditeur des colonnes-formule de l'export Google Sheets : liste (en-tête + formule)
 // avec autocomplétion des fonctions Google Sheets ET des noms de colonnes ({col}).
 import { useEffect, useMemo, useRef, useState } from 'react'

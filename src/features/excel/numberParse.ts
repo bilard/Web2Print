@@ -1,4 +1,3 @@
-// src/features/excel/numberParse.ts
 // Parse une valeur de cellule en nombre, tolérant les DEUX conventions :
 // FR (« 1 199,00 », virgule décimale) et EN (« 1,199.00 » / « 24.90 », point
 // décimal). L'ancien parseur supprimait TOUS les points comme séparateurs de

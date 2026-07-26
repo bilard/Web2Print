@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/FlatplanThumb.tsx
 // Vignette SCHÉMATIQUE d'une page du chemin de fer : pas de rendu réel (perf sur
 // 100+ pages) mais la vraie structure — grille et spans des slots issus du
 // packing, vedette en accent, bandeau coloré par univers. Le clic ouvre la page

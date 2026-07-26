@@ -1,4 +1,3 @@
-// src/features/merge/pimSource.test.ts
 import { describe, it, expect } from 'vitest'
 import { isPimSource, pimProjectIdFromSource, makePimSourceRef } from './pimSource'
 

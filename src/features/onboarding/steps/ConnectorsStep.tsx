@@ -1,4 +1,3 @@
-// src/features/onboarding/steps/ConnectorsStep.tsx
 import { Plug } from 'lucide-react'
 import { GDriveConnectorRow } from '@/features/gdrive/GDriveConnectorRow'
 import { BrightDataConnectorRow } from '@/features/scraping/BrightDataConnectorRow'

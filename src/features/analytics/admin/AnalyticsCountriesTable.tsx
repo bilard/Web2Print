@@ -1,4 +1,3 @@
-// src/features/analytics/admin/AnalyticsCountriesTable.tsx
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { countryGroupStats, countryName, type AnalyticsEvent } from '../metrics'

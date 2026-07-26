@@ -1,4 +1,3 @@
-// src/features/workflows/promptToFlow/layoutGraph.ts
 import type { WorkflowNode, WorkflowEdge } from '../types'
 
 const COL_W = 320

@@ -1,4 +1,3 @@
-// src/features/workflows/registry/costReport.ts
 // Collecte les coûts IA & scraping du mois courant (mêmes sources que le panneau
 // live `LiveLlmUsagePanel`) et les rend en HTML/CSS autonome — destiné à être
 // stocké sur Drive ou envoyé par mail (suivi des dépenses Tokens). Le data-shaping

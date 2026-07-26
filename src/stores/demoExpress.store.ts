@@ -1,4 +1,3 @@
-// src/stores/demoExpress.store.ts
 // État du wizard « Démo express » : phase, progression des étapes du pipeline
 // d'ensemencement et liens vers les artefacts créés. L'orchestrateur
 // (useDemoExpress) écrit ici ; les composants UI ne font que lire.

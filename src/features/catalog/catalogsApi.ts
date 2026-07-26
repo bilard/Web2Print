@@ -1,4 +1,3 @@
-// src/features/catalog/catalogsApi.ts
 // CRUD users/{uid}/catalogs — même pattern que promoTemplatesApi (stripUndefined
 // à la frontière : un seul undefined ferait rejeter tout le setDoc).
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'

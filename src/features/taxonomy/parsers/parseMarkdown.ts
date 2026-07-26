@@ -1,4 +1,3 @@
-// src/features/taxonomy/parsers/parseMarkdown.ts
 import type { TaxonomyNode } from '../types'
 
 /**

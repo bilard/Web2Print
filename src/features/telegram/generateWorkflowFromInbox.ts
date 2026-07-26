@@ -1,4 +1,3 @@
-// src/features/telegram/generateWorkflowFromInbox.ts
 // Orchestration 2b : depuis le texte d'un message Telegram, génère un workflow via le pipeline
 // Prompt-to-Flow existant et le sauvegarde dans users/{uid}/workflows. Découplé de l'UI.
 import { generateWorkflow } from '@/features/workflows/promptToFlow/generateWorkflow'

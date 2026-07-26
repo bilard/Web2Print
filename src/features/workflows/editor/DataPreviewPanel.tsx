@@ -1,4 +1,3 @@
-// src/features/workflows/editor/DataPreviewPanel.tsx
 import {
   Fragment,
   Suspense,

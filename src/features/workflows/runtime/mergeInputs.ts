@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/mergeInputs.ts
 // Fusion fan-in : quand PLUSIEURS edges arrivent sur le même port d'entrée d'un node
 // (ex : 2 nodes « Produits » câblés sur `concurrents` de compare-prices). Sans ça,
 // l'executor écrasait (dernière valeur gagne) → une sheet vide pouvait effacer une

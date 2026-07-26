@@ -1,4 +1,3 @@
-// src/features/workflows/registry/harvestCompetitorNode.ts
 // Node « Moisson concurrents » : parcourt les catalogues concurrents (pages liste) et
 // alimente un index Firestore persistant, un lot borné de pages par run. Sur cron, les
 // ticks successifs accumulent puis rafraîchissent l'index. Aucune donnée volumineuse ne

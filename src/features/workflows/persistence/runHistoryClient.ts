@@ -1,4 +1,3 @@
-// src/features/workflows/persistence/runHistoryClient.ts
 // Persiste un SNAPSHOT durable d'un run CLIENT (éditeur) dans users/{uid}/workflowRuns —
 // parité avec le serveur (functions/src/workflow/runHistory.ts) pour l'écran Résultats /
 // l'historique. Non bloquant. Cap sheets ≤100 lignes + JSON-sanitize (les blobs d'images

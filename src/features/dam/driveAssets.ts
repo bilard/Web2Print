@@ -1,4 +1,3 @@
-// src/features/dam/driveAssets.ts
 // Résolution d'une référence image Google Drive (le webViewLink stocké dans une
 // cellule image du PIM/DAM) vers une URL AFFICHABLE, téléchargée AUTHENTIFIÉE
 // côté navigateur. Les assets restent PRIVÉS (jamais de partage public) : on lit

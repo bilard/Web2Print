@@ -1,4 +1,3 @@
-// src/features/catalog/masterWrite.ts
 // Sauvegarde « dans le Master » d'une fiche éditée depuis l'Aperçu du catalogue :
 // écrit la correction DANS LA SOURCE (projet PIM ou dataset Excel du module
 // Données) — tous les canaux qui relisent cette source la verront.

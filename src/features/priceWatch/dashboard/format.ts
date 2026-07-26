@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/format.ts
 // Formatage + sémantique de couleurs du tableau de bord Veille tarifaire.
 // Convention métier : un concurrent MOINS cher que moi est une ALERTE (rose) ;
 // à l'inverse, être moins cher est bon (émeraude) ; à l'équilibre = aligné (ambre).

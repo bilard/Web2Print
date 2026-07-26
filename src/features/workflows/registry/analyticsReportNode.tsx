@@ -1,4 +1,3 @@
-// src/features/workflows/registry/analyticsReportNode.tsx
 // Node « Rapport de fréquentation » : génère un HTML/CSS autonome récapitulant le
 // trafic du site (pages vues, visiteurs, sessions, durée, top pages/sources/pays) sur
 // une période, prêt à être archivé sur Drive (→ Export Google Drive) ou envoyé par mail

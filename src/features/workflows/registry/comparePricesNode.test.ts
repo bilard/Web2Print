@@ -1,4 +1,3 @@
-// src/features/workflows/registry/comparePricesNode.test.ts
 import { describe, it, expect } from 'vitest'
 import { compareSourceToCompetitors, comparePeers, referenceTokens, normName } from './comparePricesNode'
 

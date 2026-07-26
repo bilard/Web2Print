@@ -1,4 +1,3 @@
-// src/features/workflows/results/columnTypes.ts
 // Détection de types de colonnes pour la visualisation. CLÉ : exclure les IDENTIFIANTS
 // (EAN/GTIN/SKU/réf/code, ou nombres ≥12 chiffres) des séries numériques — sinon un EAN
 // à 13 chiffres (~5e12) écrase l'échelle du graphe et pollue les KPI.

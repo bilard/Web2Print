@@ -1,4 +1,3 @@
-// src/features/scraping/webContext.ts
 //
 // Récupération de contexte web GÉNÉRIQUE, réutilisable partout dans l'app
 // (chat Telegram, nodes de workflow, etc.) :

@@ -1,4 +1,3 @@
-// src/features/catalog/components/CatalogStepsNav.tsx
 import type { CatalogStep } from '@/stores/catalog.store'
 
 const STEPS: { id: CatalogStep; label: string }[] = [

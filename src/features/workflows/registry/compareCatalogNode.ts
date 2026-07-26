@@ -1,4 +1,3 @@
-// src/features/workflows/registry/compareCatalogNode.ts
 // Node « Comparer catalogue » : croise ta feuille de produits (réf/EAN/prix) avec
 // l'index concurrent persistant (alimenté par « Moisson concurrents »), et produit la
 // matrice produit × concurrent (prix TTC verbatim + barré + HT recalculé + écart +

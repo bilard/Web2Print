@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/interpolate.ts
 // Templating { { path.x } } pour les configs de node dans un body de boucle.
 
 const TOKEN_RE = /\{\{\s*([^{}]+?)\s*\}\}/g

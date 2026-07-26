@@ -1,4 +1,3 @@
-// src/features/catalog/usePreviewZoomPan.ts
 // Zoom & pan de l'aperçu : pincement trackpad / Ctrl(Cmd)+molette (ancré sous le
 // curseur) et PAN à la barre d'espace maintenue + glisser (façon outils de design).
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'

@@ -1,4 +1,3 @@
-// src/features/excel/ai-image/ColumnImageGenModal.tsx
 // Modal « Visuels (IA) » : génère les images produits (Nano Banana ou Higgsfield) depuis
 // les colonnes ([Nom], [Description]…), les stocke dans le DAM Drive et écrit le lien
 // dans la colonne image. Par défaut, seules les cellules vides sont générées.

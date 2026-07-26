@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/validateWorkflow.ts
 // Contrôle de COHÉRENCE avant lancement : détecte les trous (source non connectée,
 // paramètre requis / d'export manquant) AVANT d'exécuter, pour ne plus les découvrir
 // après coup. Deux sources de vérité :

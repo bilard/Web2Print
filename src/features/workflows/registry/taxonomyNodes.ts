@@ -1,4 +1,3 @@
-// src/features/workflows/registry/taxonomyNodes.ts
 import { Network } from 'lucide-react'
 import { doc, setDoc, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'

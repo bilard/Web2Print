@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/report.ts
 // Synthèse du comparatif catalogue pour le TABLEAU DE BORD. PUR.
 //
 // Le dashboard ne doit JAMAIS recalculer à partir des lignes brutes (à l'échelle

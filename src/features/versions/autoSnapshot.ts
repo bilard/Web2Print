@@ -1,4 +1,3 @@
-// src/features/versions/autoSnapshot.ts
 // Snapshots AUTOMATIQUES de filet de sécurité, en complément des versions
 // manuelles (useVersions) : à chaque sauvegarde réussie, au plus une fois par
 // fenêtre de 10 min, l'état du document est copié dans un ring buffer de 10

@@ -1,4 +1,3 @@
-// src/features/workflows/editor/WorkflowEditor.tsx
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import {

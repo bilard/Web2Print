@@ -1,4 +1,3 @@
-// src/features/dam/useDamFolderUpload.ts
 // Importe N images locales (un dossier) vers un dossier Google Drive choisi.
 //
 // Pont : `damUpload` (serveur) récupère une URL, pas un blob local. On dépose

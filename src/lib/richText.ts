@@ -1,4 +1,3 @@
-// src/lib/richText.ts
 // Représentation minimale du gras inline issu du scraping (source verbatim).
 //
 // Le scraping produit conserve le **gras** de la source sous forme de markdown

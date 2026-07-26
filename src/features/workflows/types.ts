@@ -1,4 +1,3 @@
-// src/features/workflows/types.ts
 import type { ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
 

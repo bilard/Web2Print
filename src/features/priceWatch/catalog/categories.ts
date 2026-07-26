@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/categories.ts
 // Découverte des pages catégorie d'un concurrent, filtrées par famille. PUR.
 //
 // La moisson ciblée (familles à forte concurrence) a besoin des URLs de catégorie du

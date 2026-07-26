@@ -1,4 +1,3 @@
-// src/features/workflows/registry/chartNode.tsx
 // Node « Graphique » (type Power BI) : transforme une Sheet en graphe (barres,
 // lignes, aire, camembert). Sorties : `chart` (spec d'aperçu interactif, cf.
 // DataPreviewPanel), `assets` (1 PNG réutilisable Telegram/Drive/export) et `file`.

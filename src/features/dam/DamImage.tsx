@@ -1,4 +1,3 @@
-// src/features/dam/DamImage.tsx
 // Vignette image tolérante aux références Google Drive (DAM) : une valeur de cellule
 // peut être une URL CDN directe OU un webViewLink Drive d'un asset PRIVÉ. Dans ce
 // dernier cas on télécharge les octets authentifiés (blob: mémoïsé) avant d'afficher.

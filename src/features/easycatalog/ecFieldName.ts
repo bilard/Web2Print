@@ -1,4 +1,3 @@
-// src/features/easycatalog/ecFieldName.ts
 import type { ExcelColumn } from '@/features/excel/types'
 
 /** Assainit un libellé en nom de champ EasyCatalog : garde lettres/chiffres (accents inclus), collapse le reste en '_'. */

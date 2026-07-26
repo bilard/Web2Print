@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/PriceWatchDashboard.tsx
 // Cockpit BI de la veille tarifaire (dense, façon terminal). Tout est dérivé du rapport
 // pré-agrégé via buildCockpit (pur). UN moteur de recherche global filtre les blocs
 // dérivés (les KPIs headline restent globaux). SOURCE (watchId) choisie dans le header.

@@ -1,4 +1,3 @@
-// src/features/analytics/useSessionAlerts.ts
 // Interrupteur des alertes Telegram de visite (« log live » : 🟢 une ligne par
 // page d'un utilisateur connecté, 🔵 un ping par session anonyme). Pilote le
 // coupe-circuit SERVEUR `users/{uid}.telegram.sessionAlerts`, lu par la CF

@@ -1,4 +1,3 @@
-// src/features/access/MyActivityTab.tsx
 // Vue « Mon activité » : chaque utilisateur voit SES propres actions (QUOI/QUAND),
 // avec possibilité de vider son propre historique.
 import { useState } from 'react'

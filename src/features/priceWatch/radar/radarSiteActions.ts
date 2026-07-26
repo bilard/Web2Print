@@ -1,4 +1,3 @@
-// src/features/priceWatch/radar/radarSiteActions.ts
 // Actions par CONCURRENT depuis la PWA radarPrice (parité du tableau « Sites sources » de
 // l'app) : activer/désactiver, forcer un moteur, scraper ce site seul, purger ses données,
 // le retirer. Tout ce qui touche à la config vit dans le node « Sites sources » du

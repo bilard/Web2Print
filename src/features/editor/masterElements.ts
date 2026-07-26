@@ -1,4 +1,3 @@
-// src/features/editor/masterElements.ts
 // « Master pages » v1 : répéter un objet (logo, pagination, mentions…) sur
 // toutes les pages du document. L'objet porte un data.masterId ; ré-appliquer
 // remplace les copies existantes sur chaque page (positions/styles resynchronisés).

@@ -1,4 +1,3 @@
-// src/features/telegram/TelegramSettings.tsx
 import { useState, useEffect } from 'react'
 import { CheckCircle2, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { useTelegramStore } from '@/stores/telegram.store'

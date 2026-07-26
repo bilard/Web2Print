@@ -1,4 +1,3 @@
-// src/features/workflows/persistence/workflow.store.ts
 import { create } from 'zustand'
 import type { Workflow, WorkflowNode, WorkflowEdge } from '../types'
 import { saveWorkflow } from './workflowsApi'

@@ -1,4 +1,3 @@
-// src/features/workflows/registry/webResultsSheet.ts
 // Helper partagé : transforme des résultats de recherche web en ExcelSheet
 // (utilisé par les nodes « Recherche web » et « Question web (IA) »).
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'

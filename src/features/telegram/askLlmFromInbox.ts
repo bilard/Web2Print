@@ -1,4 +1,3 @@
-// src/features/telegram/askLlmFromInbox.ts
 //
 // Appel LLM « libre » depuis la boîte Telegram : un message texte nu (sans commande
 // /flow /run /clear) est transmis au LLM ACTIVÉ et sa réponse est renvoyée sur Telegram.

@@ -1,4 +1,3 @@
-// src/components/taxonomy/TaxonomyTree.tsx
 import { useEffect, useRef } from 'react'
 import {
   DndContext,

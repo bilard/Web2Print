@@ -1,4 +1,3 @@
-// src/features/onboarding/steps/AiStep.tsx
 import { AiCascadeEditor } from '@/features/ai/AiCascadeEditor'
 import { ResetLlmModelsButton } from '@/features/ai/ResetLlmModelsButton'
 

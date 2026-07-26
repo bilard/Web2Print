@@ -1,4 +1,3 @@
-// src/features/catalog/catalogTypes.ts
 // Types du module Catalogue studio. Le moteur (catalogTree/catalogEngine) est pur :
 // il ne dépend que de ces types + MergeRow/MergeColumn.
 import type { DataSourceRef } from '@/stores/merge.store'

@@ -1,4 +1,3 @@
-// src/features/telegram/inboxDelete.ts
 // Logique PURE de décision pour la suppression cross-Telegram (aucune dépendance Firebase, donc
 // testable isolément). L'orchestration effective (appels Telegram + Firestore) est dans useTelegramInbox.
 import type { InboxMessage } from './useTelegramInbox'

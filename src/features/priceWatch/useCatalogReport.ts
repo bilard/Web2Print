@@ -1,4 +1,3 @@
-// src/features/priceWatch/useCatalogReport.ts
 // Hooks lecture-seule (temps réel) du tableau de bord Veille tarifaire catalogue :
 // liste des suivis (pour le sélecteur), rapport `latest`, tendance `history`. Toute
 // la donnée est pré-agrégée à l'écriture (cf. reportStore) → le dashboard ne charge

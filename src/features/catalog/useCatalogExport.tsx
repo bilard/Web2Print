@@ -1,4 +1,3 @@
-// src/features/catalog/useCatalogExport.tsx
 // Export PDF : rend chaque page hors écran (createRoot + flushSync), attend polices
 // et images, capture html2canvas (scale = dpi/96), ajoute une page jsPDF en mm.
 // Mode print : page agrandie du fond perdu + traits de coupe (drawCropMarks).

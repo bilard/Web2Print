@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/StepStructure.tsx
 // Étape 2 du wizard « Catalogue studio » : mapping des niveaux (Univers/Famille/
 // Sous-famille), format de page, puis arbre de la taxonomie (renommable/réordonnable).
 // L'arbre est TOUJOURS recalculé depuis rawRows+levelKeys+treeEdits — jamais stocké.

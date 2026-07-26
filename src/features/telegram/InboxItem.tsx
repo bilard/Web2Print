@@ -1,4 +1,3 @@
-// src/features/telegram/InboxItem.tsx
 // Un message de la boîte de réception, avec menu d'actions (éditer / supprimer).
 import { useState } from 'react'
 import { toast } from 'sonner'

@@ -1,4 +1,3 @@
-// src/features/versions/useVersions.ts
 // Historique de versions du document : snapshots des champs de CONTENU du doc
 // projet (projects/{id}/versions), restauration = ré-écriture des champs puis
 // rechargement de l'éditeur (même chemin de chargement que d'habitude — pas de

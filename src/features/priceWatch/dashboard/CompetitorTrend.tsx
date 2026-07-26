@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/CompetitorTrend.tsx
 // Flux des écarts de prix par concurrent dans le temps (écart moyen FIABLE / analyse).
 // Une ligne = un concurrent (catégoriel, ordre fixe par siteId + légende). `null` = trou
 // (concurrent absent d'une analyse), jamais 0. Ne se peuple qu'aux analyses répétées.

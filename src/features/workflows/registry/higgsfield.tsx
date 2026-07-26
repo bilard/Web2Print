@@ -1,4 +1,3 @@
-// src/features/workflows/registry/higgsfield.tsx
 // Node « Higgsfield » : génération image (Soul) / vidéo (DoP image→vidéo) via le
 // callable serveur `higgsfieldGenerate`. Paramètres riches : style preset (106),
 // mouvement/caméra (121) chargés en LIVE via `higgsfieldCatalog`, force, seed,

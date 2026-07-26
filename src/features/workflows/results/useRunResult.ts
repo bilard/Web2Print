@@ -1,4 +1,3 @@
-// src/features/workflows/results/useRunResult.ts
 // Source de données de l'écran Résultats : historique DURABLE des runs (users/{uid}/
 // workflowRuns, écrit par le serveur ET le client) + repli sur le dernier run live
 // (workflowRunsLive serveur / runContext client même session) si aucun snapshot.

@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/GapDistribution.tsx
 // Distribution des écarts prix (concurrent vs moi) sur toutes les paires produit×
 // concurrent. Chaque barre = une tranche d'écart, colorée diverging (rose = concurrent
 // moins cher, ambre = aligné, émeraude = je suis moins cher). L'insight « où est la masse ».

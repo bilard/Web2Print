@@ -1,4 +1,3 @@
-// src/features/workflows/registry/webScrapingNode.tsx
 // Node UNIFIÉ « Web Scraping » : un seul node avec un sélecteur de Mode (Scrape /
 // Liste / Recherche / Question) qui aiguille vers les runs des anciens nodes (devenus
 // alias dépréciés, masqués de la palette). Unifie l'UX côté workflow sans réécrire le

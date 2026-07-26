@@ -1,4 +1,3 @@
-// src/features/pim/useSourceSyncPrompt.ts
 // Détecte les MODIFICATIONS de la source ouverte dans la page Données (rafale
 // d'éditions débouncée) et déclenche le popup « publications reliées ».
 // Période de grâce après chaque changement de source : les chargements de

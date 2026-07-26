@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/TemplatesBar.tsx
 // Bloc « Modèles » du plan catalogue : appliquer / enregistrer / supprimer un modèle
 // réutilisable (thème + grille par défaut, sans données).
 import { useEffect, useState } from 'react'

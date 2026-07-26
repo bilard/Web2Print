@@ -1,4 +1,3 @@
-// src/features/priceWatch/priceEvents.ts
 // JOURNAL DES CHANGEMENTS DE PRIX — noyau PUR (dupliqué côté serveur).
 //
 // Pourquoi un journal plutôt qu'une série de niveaux : on ne peut PAS reconstruire

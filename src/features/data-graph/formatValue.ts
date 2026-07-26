@@ -1,4 +1,3 @@
-// src/features/data-graph/formatValue.ts
 const DATE_KEYS = /^(createdAt|updatedAt|startedAt|endedAt|lastSeenAt|lastSyncAt|expiresAt|receivedAt|at)$/
 
 /** Valeur d'une cellule → texte court (dates lisibles, objets/arrays tronqués en JSON). */

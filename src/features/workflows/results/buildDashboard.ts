@@ -1,4 +1,3 @@
-// src/features/workflows/results/buildDashboard.ts
 // Dashboard DÉTERMINISTE depuis une sheet : colonnes numériques (hors identifiants) →
 // KPI + séries, 1re colonne catégorielle → axe X. Réutilise aggregateChartData. Doit
 // être bon en standalone — l'IA (regenerateViz) remplit la même DashboardSpec pour affiner.

@@ -1,4 +1,3 @@
-// src/features/imaging/detourImage.ts
 // Détourage d'un asset référencé par une cellule/valeur (webViewLink Drive ou URL)
 // → PNG alpha uploadé dans le DAM (sous-dossier « Détourés ») → nouveau webViewLink.
 import { extractDriveFileId, isDriveImageRef, resolveDriveImageUrl } from '@/features/dam/driveAssets'

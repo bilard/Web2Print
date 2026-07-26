@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/probeListings.ts
 // Découverte de pages LISTE par SONDAGE — dernier recours quand le motif d'URL ne dit
 // rien (plateformes maison, SPA, enseignes). Principe : au lieu de deviner d'après le
 // chemin (`/categorie/`, `/collections/`…), on ouvre quelques liens internes et on garde

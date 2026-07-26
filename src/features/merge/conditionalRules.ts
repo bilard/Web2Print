@@ -1,4 +1,3 @@
-// src/features/merge/conditionalRules.ts
 //
 // Règles conditionnelles par objet, façon EasyCatalog (« Nouvelle action ») :
 // une condition sur la valeur d'un champ de la ligne courante déclenche une

@@ -1,4 +1,3 @@
-// src/features/priceWatch/sourceSites.test.ts
 import { describe, it, expect } from 'vitest'
 import {
   rowsToCompetitorSites, isSourceSitesPayload, resolveSitesInput, importSitesIntoRows, normalizeDomain, deriveWatchId, siteStatus, siteStatusRank, type SourceSiteRow, splitPageBudget, sitesForRole,

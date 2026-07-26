@@ -1,4 +1,3 @@
-// src/features/workflows/registry/priceWatchNode.test.ts
 import { describe, it, expect } from 'vitest'
 import { diffPriceRows, parsePrice } from './priceWatchNode'
 

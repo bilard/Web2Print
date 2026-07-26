@@ -1,4 +1,3 @@
-// src/features/stats/useUsageHistory.ts
 // Historique multi-mois des coûts par connecteur (le seul vrai ajout au suivi existant,
 // limité au mois courant). Lit les N derniers docs mensuels par ID déterministe
 // (`{uid}_{YYYY-MM}`) → série temporelle. ⚠ Jina/Firecrawl (scrapeUsage) n'existent qu'à

@@ -1,4 +1,3 @@
-// src/features/workflows/registry/sourceSitesNode.tsx
 // Node « Sites sources » : gestionnaire CENTRAL des sites concurrents de la veille
 // tarifaire. La liste (activation par site, moteur forcé, stats de collecte) vit ICI et
 // est émise sur le port `sites` — « Moisson concurrents » et « Comparer catalogue » la

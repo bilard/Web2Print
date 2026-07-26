@@ -1,4 +1,3 @@
-// src/features/stats/usePipelineRuns.ts
 // Lecture des runs de pipelines persistés par recordPipelineRun (pipelineLog.ts)
 // pour l'onglet Statistiques : les 50 derniers runs du user, du plus récent au
 // plus ancien. Index composite requis : pipelineRuns (ownerId ASC, createdAt DESC).

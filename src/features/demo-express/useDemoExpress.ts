@@ -1,4 +1,3 @@
-// src/features/demo-express/useDemoExpress.ts
 // Orchestrateur de la « Démo express » : depuis le site d'un prospect, ensemence
 // tout le studio — charte (analyse d'inspiration), produits (crawl + moteur
 // d'enrichissement PIM), images (DAM Drive), feuille PIM persistée, catalogue

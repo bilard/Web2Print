@@ -1,4 +1,3 @@
-// src/features/data-graph/useDiagramLayout.ts
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import type { Node } from '@xyflow/react'

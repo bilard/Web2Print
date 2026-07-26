@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/executor.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { Box } from 'lucide-react'
 import { executeWorkflow } from './executor'

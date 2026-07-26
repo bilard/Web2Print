@@ -1,4 +1,3 @@
-// src/pages/TaxonomiesPage.tsx
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, Loader2, Filter, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'

@@ -1,4 +1,3 @@
-// src/features/analytics/admin/AnalyticsUsers.tsx
 import type { AnalyticsEvent } from '../metrics'
 import { useUsersMap } from '../useUsersMap'
 

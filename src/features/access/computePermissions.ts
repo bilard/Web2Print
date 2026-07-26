@@ -1,4 +1,3 @@
-// src/features/access/computePermissions.ts
 import { ADMIN_PERMISSION, ALL_PERMISSION_KEYS } from './permissions'
 
 export interface EffectiveInput {

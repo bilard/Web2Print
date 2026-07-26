@@ -1,4 +1,3 @@
-// src/features/merge/fitToZone.test.ts
 import { describe, it, expect } from 'vitest'
 import { fitScaleForWidth, clampFitFont, MIN_FIT_FONT } from './fitToZone'
 

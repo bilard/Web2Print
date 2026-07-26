@@ -1,4 +1,3 @@
-// src/features/merge/fitToZone.ts
 // « Réduire pour tenir dans la zone » (auto-fit v2) — cœur pur du calcul d'échelle
 // de police. L'application réelle (mesure Fabric, styles par caractère) vit dans
 // useDataMerge ; ici uniquement la logique géométrique testable.

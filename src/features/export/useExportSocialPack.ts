@@ -1,4 +1,3 @@
-// src/features/export/useExportSocialPack.ts
 // Déclinaisons multi-format v1 : exporte le design en pack de formats sociaux
 // (post carré, story, paysage, bannière). Le design est rendu une fois pleine
 // page puis posé en « contain » centré sur chaque format, fond = couleur de

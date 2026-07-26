@@ -1,4 +1,3 @@
-// src/features/priceWatch/radar/scrapeState.ts
 // État LIVE du scraping pour la PWA « radarPrice » — dérivation PURE (aucun React),
 // partagée par le badge de l'écran principal, le bandeau du planificateur et le tableau
 // live. Source unique : une seule fenêtre de heartbeat, un seul vocabulaire de statuts.

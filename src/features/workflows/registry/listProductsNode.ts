@@ -1,4 +1,3 @@
-// src/features/workflows/registry/listProductsNode.ts
 // Node « Produits d'une page liste » : prend une ou plusieurs URLs de page
 // catégorie / résultats de recherche e-commerce (PAS des fiches produit), lit
 // la page via Jina en mode `listing` (moteur navigateur + lazy-load), puis fait

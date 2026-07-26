@@ -1,4 +1,3 @@
-// src/lib/domExport.ts
 // Export d'un élément du DOM en PNG / PDF (html2canvas + jsPDF, chargés en lazy —
 // déjà des dépendances des nodes export). Fond sombre pour matcher le thème.
 const BG = '#0b0b0f'

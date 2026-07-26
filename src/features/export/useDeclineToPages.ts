@@ -1,4 +1,3 @@
-// src/features/export/useDeclineToPages.ts
 // Déclinaisons multi-format v3 — crée une page éditable par format cible. Le
 // re-layout est piloté par LLM (relayoutToFormats), avec repli géométrique
 // (projectObjectsToFormat) garanti. Rend la page source en PNG pour le LLM.

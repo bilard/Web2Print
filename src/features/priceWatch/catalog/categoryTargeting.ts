@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/categoryTargeting.ts
 // Ciblage des catégories d'un concurrent par APPARIEMENT DE VOCABULAIRES. PUR.
 //
 // Le filtre historique (categories.ts) traduit une famille source en mots-clés attendus

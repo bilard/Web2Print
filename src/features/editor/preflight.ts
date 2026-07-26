@@ -1,4 +1,3 @@
-// src/features/editor/preflight.ts
 // Preflight d'impression : contrôles pré-export sur les objets du canvas.
 // Cœur pur (runPreflight, testable) + collecteur Fabric (collectPreflightInfo).
 import type { Canvas, FabricObject, FabricImage, Textbox } from 'fabric'

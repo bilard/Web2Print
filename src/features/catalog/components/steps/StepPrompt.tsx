@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/StepPrompt.tsx
 // Étape 3 du wizard « Catalogue studio » : carte prompt (génération EN HAUT),
 // puis cartes Style des fiches et Sections. Thème, couvertures et fonds de
 // page s'éditent dans l'Aperçu (panneau « Fond de page », PageOptionsPanel).

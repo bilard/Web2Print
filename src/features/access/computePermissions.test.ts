@@ -1,4 +1,3 @@
-// src/features/access/computePermissions.test.ts
 import { describe, it, expect } from 'vitest'
 import { computeEffectivePermissions, isPending } from './computePermissions'
 import { ADMIN_PERMISSION, ALL_PERMISSION_KEYS } from './permissions'

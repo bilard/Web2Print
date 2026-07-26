@@ -1,4 +1,3 @@
-// src/lib/firebase/emulators.ts
 // Branche le SDK Firebase sur les émulateurs locaux quand VITE_USE_EMULATORS=1
 // (harnais E2E Playwright — voir playwright.config.ts). Module séparé pour ne
 // pas toucher config.ts (interdit) ; importé en tête de main.tsx, donc exécuté

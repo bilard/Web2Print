@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/match.ts
 // Appariement catalogue source ↔ index concurrent, et calcul des écarts. PUR.
 //
 // L'appariement ne construit JAMAIS de table en mémoire à partir du catalogue

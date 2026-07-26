@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/SourceGroupList.tsx
 // Un groupe de sources connectables (projets PIM ou datasets Excel) dans le
 // panneau gauche de l'étape Source du catalogue.
 import { Loader2, Package } from 'lucide-react'

@@ -1,4 +1,3 @@
-// src/features/onboarding/steps/FinishStep.tsx
 import { Compass, CheckCircle2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useTourStore } from '@/features/tour/tour.store'

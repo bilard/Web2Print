@@ -1,4 +1,3 @@
-// src/components/panels/ConditionalRuleRow.tsx
 import { Trash2 } from 'lucide-react'
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import type { MergeColumn } from '@/stores/merge.store'

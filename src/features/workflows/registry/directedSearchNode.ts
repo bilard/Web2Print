@@ -1,4 +1,3 @@
-// src/features/workflows/registry/directedSearchNode.ts
 // Node « Recherche dirigée » (PILOTE). Complément de la moisson par liste : pour chaque
 // produit source, interroge le moteur de recherche de chaque concurrent (réf puis EAN) et
 // récupère le prix du résultat APPARIÉ PAR PREUVE EXACTE (zéro faux positif). Trouve ce

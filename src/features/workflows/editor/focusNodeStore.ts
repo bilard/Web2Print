@@ -1,4 +1,3 @@
-// src/features/workflows/editor/focusNodeStore.ts
 // Signal transitoire « sauter à ce node » : le popup de cohérence (ou tout autre
 // panneau) demande le focus d'une carte ; l'éditeur ReactFlow y répond en la
 // SÉLECTIONNANT (ouvre sa config) et — sauf `fit: false` — en la CENTRANT.

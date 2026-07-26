@@ -1,4 +1,3 @@
-// src/features/workflows/results/ResultPanelView.tsx
 // Rend UN panneau de résultat selon son kind, en réutilisant les aperçus existants
 // (SheetPreview / AssetGridPreview / ExportPreview / ChartPreview). Le dashboard offre
 // le choix du type de graphe + « Régénérer avec l'IA » (insights + dashboard composé).

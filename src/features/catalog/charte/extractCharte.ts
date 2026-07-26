@@ -1,4 +1,3 @@
-// src/features/catalog/charte/extractCharte.ts
 // Extraction AUTOMATIQUE d'une charte graphique depuis des éléments joints
 // (PDF de charte, logo, visuels de marque) : palette dominante par quantification
 // de pixels + noms de polices lus dans le PDF. Tout devient de la DONNÉE

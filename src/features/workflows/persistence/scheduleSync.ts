@@ -1,4 +1,3 @@
-// src/features/workflows/persistence/scheduleSync.ts
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import type { Workflow } from '../types'

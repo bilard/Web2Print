@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/validateWorkflow.test.ts
 import { describe, it, expect } from 'vitest'
 import { validateWorkflow } from './validateWorkflow'
 import type { Workflow, NodeSpec } from '../types'

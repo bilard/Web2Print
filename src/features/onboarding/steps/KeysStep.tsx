@@ -1,4 +1,3 @@
-// src/features/onboarding/steps/KeysStep.tsx
 import { ApiKeyRow } from '@/components/shared/ApiKeyRow'
 import { API_KEYS } from '@/lib/apiKeys'
 import { LLM_KEY_IDS, RECOMMENDED_KEY_IDS } from '../onboardingKeys'

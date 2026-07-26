@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/runHarvest.ts
 // Orchestrateur d'une PASSE de moisson (un tick). Les E/S (fetch HTML, Firestore) sont
 // injectées → testable sans réseau, et réutilisable à l'identique client/serveur.
 //

@@ -1,4 +1,3 @@
-// src/features/merge/loadColumns.ts
 //
 // Charge UNIQUEMENT le schéma de colonnes d'une source de données (sans les
 // lignes ni l'aperçu de fusion). Sert à peupler les listes de champs (ex. règles

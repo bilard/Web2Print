@@ -1,4 +1,3 @@
-// src/features/navigation/usePaletteCommands.ts
 // Source des commandes de la palette ⌘K : modules visibles (mêmes droits que la
 // sidebar) + actions globales (réglages, thème). Fournit aussi le filtre de recherche
 // (insensible aux accents, tous les mots de la requête doivent matcher).

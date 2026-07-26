@@ -1,4 +1,3 @@
-// src/features/demo-express/buildDemoSheet.ts
 // Construction déterministe de la feuille PIM « Démo {Société} » depuis les
 // produits enrichis : colonnes conventionnelles (devinables par promoMapping et
 // guessLevelKeys), breadcrumb expansé en 3 niveaux de taxonomie, taxonomie de

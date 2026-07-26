@@ -1,4 +1,3 @@
-// src/features/export/declineLayout.ts
 // Déclinaisons multi-format v2 — re-projection géométrique du design vers des
 // pages éditables aux ratios cibles. Contrairement au « Pack social » (v1) qui
 // letterboxe un PNG figé, on transforme les objets Fabric eux-mêmes (scale

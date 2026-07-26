@@ -1,4 +1,3 @@
-// src/features/data-graph/buildDiagram.ts
 import type { Node, Edge } from '@xyflow/react'
 import { TABLES, RELATIONS, DOMAIN_HEX, type TableSchema } from './firestoreSchema'
 

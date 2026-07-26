@@ -1,4 +1,3 @@
-// src/components/shared/ExpandableChart.tsx
 // Enveloppe un graphe (rendu via render-prop) avec un bouton « agrandir » qui l'ouvre
 // dans une modale plein écran — les cartes en grille sont trop petites pour lire les
 // valeurs. Le même graphe est re-rendu avec une plus grande hauteur en modale.

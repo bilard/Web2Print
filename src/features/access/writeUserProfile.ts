@@ -1,4 +1,3 @@
-// src/features/access/writeUserProfile.ts
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import type { User } from 'firebase/auth'

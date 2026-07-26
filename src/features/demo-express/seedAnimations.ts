@@ -1,4 +1,3 @@
-// src/features/demo-express/seedAnimations.ts
 // Étape « Animations HTML produits » de la Démo express : pour chaque produit
 // enrichi, une composition multi-scènes DÉTERMINISTE (aucun appel IA — nom,
 // marque, prix, image produit en fond, couleurs de la charte) est compilée en

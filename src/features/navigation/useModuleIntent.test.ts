@@ -1,4 +1,3 @@
-// src/features/navigation/useModuleIntent.test.ts
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useModuleIntentStore } from '@/stores/moduleIntent.store'
 

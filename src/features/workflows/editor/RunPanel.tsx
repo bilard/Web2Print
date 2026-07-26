@@ -1,4 +1,3 @@
-// src/features/workflows/editor/RunPanel.tsx
 // Panneau bas de l'éditeur de workflow. Deux onglets :
 //  - CONSOLE : flux LIVE chronologique de tout le run serveur (moisson, recherche
 //    dirigée, comparaison, erreurs) en couleur type terminal — suivi par workflow, en

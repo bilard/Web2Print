@@ -1,4 +1,3 @@
-// src/features/workflows/registry/communicationNodes.tsx
 import { useState, useRef } from 'react'
 import { Mail, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
 import { nodeRegistry } from './index'

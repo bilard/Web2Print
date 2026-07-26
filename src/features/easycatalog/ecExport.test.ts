@@ -1,4 +1,3 @@
-// src/features/easycatalog/ecExport.test.ts
 import { describe, it, expect } from 'vitest'
 import { ecTypeFor, imageFileName, resolveKeyInfo } from './ecExport'
 import { buildCsv } from './ecExport'

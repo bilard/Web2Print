@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/searchDirected.ts
 // Recherche DIRIGÉE (complément de la moisson par liste). Au lieu d'aspirer les listes
 // catégorie par catégorie — qui rate les produits tant que la couverture est partielle —
 // on interroge le MOTEUR DE RECHERCHE du concurrent avec les clés du produit source

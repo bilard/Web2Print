@@ -1,4 +1,3 @@
-// src/features/workflows/results/regenerateViz.ts
 // Phase 2 — « Régénérer avec l'IA » : à partir d'un échantillon de la sheet + le contexte
 // (nom du node/workflow), un LLM compose un dashboard pertinent (colonnes, types de
 // graphes, KPI) + des insights en français. Coût : uniquement au clic (hybride).

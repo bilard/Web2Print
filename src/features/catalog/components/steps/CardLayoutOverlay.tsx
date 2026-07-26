@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/CardLayoutOverlay.tsx
 // Overlay d'édition de la disposition libre : glisse chaque objet (data-object-id)
 // et redimensionne via 8 poignées — tout stocké en % de la carte (dynamique).
 import { useLayoutEffect, useMemo, useState, type RefObject, type PointerEvent as ReactPointerEvent } from 'react'

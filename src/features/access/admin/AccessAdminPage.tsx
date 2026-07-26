@@ -1,4 +1,3 @@
-// src/features/access/admin/AccessAdminPage.tsx
 import { useState } from 'react'
 import { Users, Shield, ScrollText, BarChart3 } from 'lucide-react'
 import { UsersTab } from './UsersTab'

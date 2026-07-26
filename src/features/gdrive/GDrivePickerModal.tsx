@@ -1,4 +1,3 @@
-// src/features/gdrive/GDrivePickerModal.tsx
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import {

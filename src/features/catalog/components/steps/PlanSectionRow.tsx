@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/PlanSectionRow.tsx
 // Une ligne de section du plan : hiérarchie visuelle par niveau, teintée par la
 // COULEUR DU CHAPITRE (sélecteur sur la ligne d'univers — texte + fond dégressifs
 // sur chaque niveau), densité de grille (UNIVERS seulement — flux continu ;

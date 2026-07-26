@@ -1,4 +1,3 @@
-// src/features/pim/SourceSyncModal.tsx
 // Popup « source modifiée » : liste les PUBLICATIONS reliées à la base ouverte.
 // Catalogues = toujours à jour (relecture auto à l'ouverture) — informatif.
 // Fiches promo = instantanés → cases à cocher + mise à jour explicite par canal.

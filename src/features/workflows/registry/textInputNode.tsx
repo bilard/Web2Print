@@ -1,4 +1,3 @@
-// src/features/workflows/registry/textInputNode.tsx
 // Node source « Saisie texte » : produit un texte saisi à la main (sans fichier).
 // Utile comme entrée d'un workflow : message, prompt, valeur à interpoler en aval.
 import { Type } from 'lucide-react'

@@ -1,4 +1,3 @@
-// src/features/excel/ai-image/imageGenEngine.test.ts
 import { describe, it, expect, vi } from 'vitest'
 import { buildImageJobs, runImageGenQueue, type ImageGenJob, type ImageGenStatus } from './imageGenEngine'
 import type { ExcelColumn, ExcelRow } from '@/features/excel/types'

@@ -1,4 +1,3 @@
-// src/features/scraping/core/__tests__/parseAdvantages.test.ts
 import { describe, it, expect } from 'vitest'
 import { parseAdvantagesFromMarkdown, parseAdvantagesFromHtml, mergeGroupsIntoAdvantages, mergeAdvantagesAdditive } from '../parsers/parseAdvantages'
 

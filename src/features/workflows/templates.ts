@@ -1,4 +1,3 @@
-// src/features/workflows/templates.ts
 // Galerie de recettes prêtes à l'emploi : chaque template instancie un workflow
 // complet (nodes + edges + configs par défaut) que l'utilisateur n'a plus qu'à
 // paramétrer (URLs, projet PIM…). Les connexions n'utilisent que des paires de

@@ -1,4 +1,3 @@
-// src/features/excel/GalleryView.tsx
 // Vue galerie de la table de données : cartes produit (visuel, titre, prix,
 // complétude). Détection heuristique des colonnes image/titre — aucune config.
 import { useMemo } from 'react'

@@ -1,4 +1,3 @@
-// src/features/telegram/useTelegramInbox.ts
 // Lecture temps réel de la boîte de réception Telegram (collection telegramInbox).
 // Lecture seule : le traitement est fait par useTelegramInboxWorker.
 import { useEffect, useState } from 'react'

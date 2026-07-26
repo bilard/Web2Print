@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/OpsCockpit.tsx
 // Cockpit opérationnel de la veille (tableau de bord voiture) : d'un coup d'œil, où en
 // est la collecte — fiches traitées, balayage restant, cycles bouclés, temps consommé,
 // tokens Jina, prochaine moisson. Tout est LIVE (le rapport et la conso arrivent en

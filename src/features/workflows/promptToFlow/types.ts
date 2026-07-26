@@ -1,4 +1,3 @@
-// src/features/workflows/promptToFlow/types.ts
 import type { WorkflowNode, WorkflowEdge } from '../types'
 
 /** Node tel que renvoyé par le LLM : ref locale, pas d'id ni de position. */

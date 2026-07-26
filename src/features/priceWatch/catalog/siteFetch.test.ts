@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/siteFetch.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const jinaMock = vi.hoisted(() => vi.fn())

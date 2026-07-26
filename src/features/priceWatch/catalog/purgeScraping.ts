@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/purgeScraping.ts
 // Purge SÉLECTIVE des données de scraping d'un suivi, par site × par type de donnée.
 // Alimente le popup « Vider les données de scraping » (node Sites sources). Destructif.
 // Adaptateur Firestore fin : aucun état métier, juste des suppressions ciblées.

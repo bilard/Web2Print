@@ -1,4 +1,3 @@
-// src/features/workflows/registry/webhookNode.tsx
 // Node « Webhook / Make » : POST HTTP sortant générique. Passerelle d'intégration —
 // pousse les données du workflow vers une URL de webhook externe (typiquement le
 // module « Custom Webhook » de Make, qui distribue ensuite vers 2000+ apps SaaS).

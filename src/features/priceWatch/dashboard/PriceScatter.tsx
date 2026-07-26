@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/PriceScatter.tsx
 // Nuage de points : mon prix HT (x) × meilleur écart concurrent (y). Repère les zones —
 // produits chers ET battus (bas-droite = à corriger). Couleur diverging par position.
 import { Scatter } from 'react-chartjs-2'

@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/notifyRunOutcome.ts
 // Message visible de fin de process (toast) — appliqué à TOUS les chemins
 // d'exécution (Run global, Pas à pas, RUN par carte).
 import { notify } from '@/lib/notify'

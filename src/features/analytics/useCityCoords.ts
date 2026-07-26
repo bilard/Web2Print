@@ -1,4 +1,3 @@
-// src/features/analytics/useCityCoords.ts
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { CityCount } from './metrics'

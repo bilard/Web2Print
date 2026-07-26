@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/WatchManager.tsx
 // Modale « Gérer les suivis » : liste TOUS les suivis, chacun renommable (customLabel,
 // prioritaire sur le nom du workflow que « Comparer catalogue » réécrit à chaque rapport)
 // et supprimable directement. Confirmation INLINE par ligne (pas de 2e modale imbriquée,

@@ -1,4 +1,3 @@
-// src/features/workflows/registry/aiNodes.ts
 import { ImagePlus } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'

@@ -1,4 +1,3 @@
-// src/features/catalog/components/pages/catalogCss.ts
 // CSS partagé des pages du catalogue (aperçu React + capture html2canvas).
 // 1 mm = 96/25.4 px CSS → une page A4 portrait fait 794×1123 px.
 import type React from 'react'

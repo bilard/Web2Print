@@ -1,4 +1,3 @@
-// src/features/excel/ai-completion/ColumnCompletionModal.tsx
 import { useMemo, useState } from 'react'
 import { Wand2, X } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'

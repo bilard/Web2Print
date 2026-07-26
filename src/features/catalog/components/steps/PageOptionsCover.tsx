@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/PageOptionsCover.tsx
 // Options contextuelles de la COUVERTURE et de la 4E : textes, éléments
 // affichés, échelles, assombrissement du visuel et génération du visuel IA.
 import { useState } from 'react'

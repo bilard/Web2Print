@@ -1,4 +1,3 @@
-// src/features/demo-express/components/DemoExpressProgress.tsx
 // Checklist live du pipeline : une ligne par étape (spinner/ok/avertissement/
 // erreur/sautée) + journal console (actions, appels IA, connecteurs) + arrêt.
 import { useEffect, useRef, useState } from 'react'

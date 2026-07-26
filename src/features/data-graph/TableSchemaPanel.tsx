@@ -1,4 +1,3 @@
-// src/features/data-graph/TableSchemaPanel.tsx
 import { createContext, useContext, type ReactNode } from 'react'
 import { KeyRound, Link2, ArrowRight, Table2, Eye } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'

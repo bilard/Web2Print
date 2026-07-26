@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/ports.ts
 import type { ComponentType } from 'react'
 import type { PortType } from '../types'
 

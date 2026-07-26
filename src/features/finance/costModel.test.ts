@@ -1,4 +1,3 @@
-// src/features/finance/costModel.test.ts
 import { describe, it, expect } from 'vitest'
 import { buildCostRows, costTotals } from './costModel'
 import type { UsageStatsLike } from './types'

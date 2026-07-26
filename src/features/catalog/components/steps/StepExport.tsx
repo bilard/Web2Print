@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/StepExport.tsx
 // Étape 5 du wizard « Catalogue studio » : export PDF écran (léger, aperçu web) ou
 // print pro (DPI + fond perdu + traits de coupe). Barre de progression pendant l'export.
 import { useState } from 'react'

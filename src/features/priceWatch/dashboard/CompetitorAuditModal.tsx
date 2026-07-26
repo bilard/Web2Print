@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/CompetitorAuditModal.tsx
 // Popup d'audit de la collecte par concurrent : sur les fiches COLLECTÉES (indexées),
 // quel % porte chaque champ attendu (prix, prix barré, stock, nom, image, réf).
 // Rend visible « rien collecté » vs « champ manquant » vs « scrape complet », pour

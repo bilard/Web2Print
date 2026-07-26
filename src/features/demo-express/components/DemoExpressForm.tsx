@@ -1,4 +1,3 @@
-// src/features/demo-express/components/DemoExpressForm.tsx
 // Écran d'entrée du wizard : nom de la société + URL de base de son site +
 // volumétrie du scraping (nombre de produits échantillonnés sur ses univers).
 import { useState } from 'react'

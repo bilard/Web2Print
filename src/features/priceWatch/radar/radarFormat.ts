@@ -1,4 +1,3 @@
-// src/features/priceWatch/radar/radarFormat.ts
 // Formatteurs de la PWA « radarPrice ». PUR, sans React. isIos/isStandalone dupliqués
 // (10 lignes) pour garder la surface radar auto-contenue, indépendante de la feature
 // analytics (Pulse).

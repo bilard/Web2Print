@@ -1,4 +1,3 @@
-// src/lib/telegramApi.ts
 // Couche d'accès à l'API Bot Telegram. Appels fetch directs depuis le navigateur :
 // api.telegram.org renvoie Access-Control-Allow-Origin: *, donc pas de proxy.
 

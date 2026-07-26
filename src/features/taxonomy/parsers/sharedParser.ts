@@ -1,4 +1,3 @@
-// src/features/taxonomy/parsers/sharedParser.ts
 import type { TaxonomyNode } from '../types'
 
 // Match label columns: level_1, Nom_Niveau1, Niveau_1, Nom_Level1.

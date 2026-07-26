@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/StepFlatplan.tsx
 // Étape « Chemin de fer » : toutes les pages en planches (doubles pages), tri
 // manuel par glisser-déposer (persisté dans pageOrder), navigation par la
 // taxonomie à gauche, stats globales en bandeau, clic = page en grand.

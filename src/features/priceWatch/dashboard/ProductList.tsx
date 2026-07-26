@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/ProductList.tsx
 // Liste complète des produits appariés, centrée produit (cartes dépliables). Recherche
 // (nom/référence), filtre par concurrent et par position, pagination client. La liste
 // persistée est déjà rangée + plafonnée ; l'exhaustif reste l'export Excel.

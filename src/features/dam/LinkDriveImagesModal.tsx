@@ -1,4 +1,3 @@
-// src/features/dam/LinkDriveImagesModal.tsx
 // Lie les images d'un dossier Google Drive aux lignes de la feuille active, par
 // correspondance de nom de fichier → écrit le webViewLink Drive dans une colonne
 // image (rendue par DamImage). Écriture en un seul setSheets (cf. useDamMigration).

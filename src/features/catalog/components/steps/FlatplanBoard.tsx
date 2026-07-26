@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/FlatplanBoard.tsx
 // Nappe de planches du chemin de fer : pages groupées par doubles pages
 // (verso/recto), tri manuel par glisser-déposer (@dnd-kit) des pages d'ouverture
 // et de produits — couverture, sommaire et 4e restent verrouillés.

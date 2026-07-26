@@ -1,4 +1,3 @@
-// src/features/workflows/editor/ChartPreview.tsx
 // Aperçu interactif d'un ChartSpec dans le panneau « Aperçu données ». Importé en
 // lazy par DataPreviewPanel pour ne pas embarquer chart.js dans le chunk éditeur.
 import { Chart } from 'react-chartjs-2'

@@ -1,4 +1,3 @@
-// src/features/navigation/ModuleTree.tsx
 import { useState, useCallback } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'

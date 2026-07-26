@@ -1,4 +1,3 @@
-// src/features/fonts/UserFontsPanel.tsx
 // « Mes polices » : upload de fichiers .woff2/.woff/.ttf/.otf + ajout d'une
 // famille GOOGLE FONTS par URL collée (specimen ou css2) ou nom. Liste avec
 // suppression ; chaque chip s'affiche dans SA police (aperçu).

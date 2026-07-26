@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/PositionDonut.tsx
 // Répartition des comparaisons produit×concurrent chiffrées : concurrent moins cher /
 // aligné / je suis moins cher. Donut chart.js (responsive → OK mobile).
 import { Doughnut } from 'react-chartjs-2'

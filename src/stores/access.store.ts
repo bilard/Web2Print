@@ -1,4 +1,3 @@
-// src/stores/access.store.ts
 import { create } from 'zustand'
 import { DEMO_LIMITS, type UsageCounters } from '@/features/access/permissions'
 import { emptyUsage } from '@/features/access/usage'

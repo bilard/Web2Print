@@ -1,4 +1,3 @@
-// src/features/imaging/DetourImageButton.tsx
 // Bouton compact « Détourer » (cellules image PIM…) : détoure la 1re image de la
 // valeur via le moteur partagé (rembg/Remove.bg) et renvoie la valeur mise à jour
 // (webViewLink du PNG détouré uploadé dans le DAM « Détourés »).

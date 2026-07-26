@@ -1,4 +1,3 @@
-// src/features/merge/RegenerateBgPanel.tsx
 // Re-skin v2 : régénère le FOND verrouillé d'un flyer décomposé (calque
 // image-bg-locked) via Nano Banana, en passant le fond actuel comme image de
 // référence. Les overlays éditables (textes {{champ}}, images liées) restent

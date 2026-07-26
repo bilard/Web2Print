@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/keys.test.ts
 // Cas issus d'un relevé terrain sur 5 concurrents PrestaShop (motoculture).
 import { describe, it, expect } from 'vitest'
 import {

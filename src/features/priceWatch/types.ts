@@ -1,4 +1,3 @@
-// src/features/priceWatch/types.ts
 // Types partagés du module Veille tarifaire. Pas de dépendance Firebase/React.
 
 export interface TrackedProduct {

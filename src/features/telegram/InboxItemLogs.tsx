@@ -1,4 +1,3 @@
-// src/features/telegram/InboxItemLogs.tsx
 // Section repliable des logs de traitement d'un message Telegram (accumulés par le worker).
 import { useEffect, useState } from 'react'
 import { ChevronRight, ChevronDown } from 'lucide-react'

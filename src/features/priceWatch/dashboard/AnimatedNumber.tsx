@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/AnimatedNumber.tsx
 // Comptage animé : quand la valeur change (nouveau rapport/méta via onSnapshot), le nombre
 // « roule » de l'ancienne à la nouvelle valeur (~700 ms, easing), pour VOIR la donnée évoluer.
 // rAF uniquement pendant la transition → aucun coût au repos. Timestamp fourni par rAF

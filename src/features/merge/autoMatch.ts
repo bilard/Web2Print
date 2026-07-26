@@ -1,4 +1,3 @@
-// src/features/merge/autoMatch.ts
 // Auto-matching sémantique du re-skin : propose automatiquement les liaisons
 // {{champ}} sur les Textbox d'un design décomposé — prix (motif monétaire,
 // plus grande taille), titre (plus grande taille restante), description

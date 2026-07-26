@@ -1,4 +1,3 @@
-// src/features/workflows/persistence/workflowsApi.ts
 import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, updateDoc, query, orderBy, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import type { Workflow, WorkflowFolder } from '../types'

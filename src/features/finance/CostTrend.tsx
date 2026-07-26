@@ -1,4 +1,3 @@
-// src/features/finance/CostTrend.tsx
 // Évolution mensuelle du coût, empilée par catégorie (LLM / Scraping / Image). Le vrai
 // ajout au suivi existant (mois courant seul). ⚠ Jina/Firecrawl (scrapeUsage) n'existent
 // qu'à partir de leur instrumentation → mois antérieurs sous-estimés côté Scraping.

@@ -1,4 +1,3 @@
-// src/features/priceWatch/core.ts
 // Logique PURE de la veille tarifaire (aucune dépendance Firebase/React).
 // Dupliquée côté serveur (functions/.../priceWatchTrack.ts) — convention
 // wire-compatible (cf. parsePrice/diffPriceRows du node price-watch).

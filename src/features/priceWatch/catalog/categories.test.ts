@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/categories.test.ts
 import { describe, it, expect } from 'vitest'
 import {
   foldText, keywordsForFamilies, extractCategoryLinks, selectCategories,

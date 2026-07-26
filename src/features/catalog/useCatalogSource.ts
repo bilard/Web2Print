@@ -1,4 +1,3 @@
-// src/features/catalog/useCatalogSource.ts
 // Connexion de la source (projet PIM ou dataset Excel legacy) : charge lignes+colonnes,
 // auto-mappe champs fiche et niveaux taxonomiques, sélectionne tout par défaut.
 import { useEffect, useState } from 'react'

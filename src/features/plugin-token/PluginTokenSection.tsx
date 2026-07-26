@@ -1,4 +1,3 @@
-// src/features/plugin-token/PluginTokenSection.tsx
 import { useEffect, useState } from 'react'
 import { Plug, Copy, Trash2, RefreshCw, X, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'

@@ -1,4 +1,3 @@
-// src/features/priceWatch/catalog/harvest.test.ts
 import { describe, it, expect } from 'vitest'
 import {
   initCursor, currentTarget, advance, openSweep, harvestProgress, pageDocId,

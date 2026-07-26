@@ -1,4 +1,3 @@
-// src/features/demo-express/demoWorkflow.ts
 // Workflow « Démo {Société} » ensemencé dans la liste du prospect : instancié
 // depuis un template codé en dur (déterministe, contrairement à Prompt-to-Flow)
 // avec les URLs produits réellement découvertes sur son site. Il rejoue TOUT le

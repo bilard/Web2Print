@@ -1,4 +1,3 @@
-// src/features/analytics/admin/AnalyticsWorldMap.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Minus, Plus, RotateCcw } from 'lucide-react'
 import { cityCounts, type AnalyticsEvent } from '../metrics'

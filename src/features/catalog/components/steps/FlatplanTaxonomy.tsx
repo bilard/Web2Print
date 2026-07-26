@@ -1,4 +1,3 @@
-// src/features/catalog/components/steps/FlatplanTaxonomy.tsx
 // Rail gauche du chemin de fer : la taxonomie (univers › famille › sous-famille)
 // avec les stats de chaque nœud (produits, pages, plage p. X–Y). Cliquer un nœud
 // surligne ses pages dans la nappe et y fait défiler la vue.

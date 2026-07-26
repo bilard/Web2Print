@@ -1,4 +1,3 @@
-// src/features/analytics/admin/AnalyticsRecent.tsx
 import { Fragment, useMemo, useState } from 'react'
 import { ChevronDown, ChevronLeft, ChevronRight, Users, List } from 'lucide-react'
 import type { AnalyticsEvent } from '../metrics'

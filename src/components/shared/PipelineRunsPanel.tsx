@@ -1,4 +1,3 @@
-// src/components/shared/PipelineRunsPanel.tsx
 // Viewer des runs de pipelines (enrichissement PIM, décomposition) — onglet
 // Statistiques. Liste compacte + détail dépliable (étapes / erreur) : c'est
 // l'« étage logs prod » du diagnostic, sans ouvrir la console Firestore.

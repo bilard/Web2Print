@@ -1,4 +1,3 @@
-// src/features/analytics/uidBridge.ts
 // Expose l'uid Firebase au beacon vanilla (public/analytics-beacon.js).
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase/config'

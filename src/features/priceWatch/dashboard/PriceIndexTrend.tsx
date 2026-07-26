@@ -1,4 +1,3 @@
-// src/features/priceWatch/dashboard/PriceIndexTrend.tsx
 // ÉVOLUTION de l'indice tarif (base 100 = médiane marché) analyse après analyse.
 // La seule courbe qui répond à « est-ce que je dérive ? » d'un coup d'œil : au-dessus de
 // la ligne 100 je vends plus cher que le marché, en dessous je vends moins cher.

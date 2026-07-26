@@ -1,4 +1,3 @@
-// src/features/brandkit/useObjectStyles.ts
 // Styles d'objets réutilisables (globaux, par utilisateur) : capture des
 // propriétés visuelles d'un objet sélectionné, application en 1 clic sur la
 // sélection. Stockage users/{uid}.objectStyles, chargement one-shot (mêmes

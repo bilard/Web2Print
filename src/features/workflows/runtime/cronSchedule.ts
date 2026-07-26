@@ -1,4 +1,3 @@
-// src/features/workflows/runtime/cronSchedule.ts
 // Helpers purs pour la planification (node "Cron"). Aucune dépendance React /
 // Firebase → testables isolément. ⚠️ La logique de `computeNextRun` doit rester
 // IDENTIQUE à celle du serveur (functions/src/workflow/cronSchedule.ts) : le

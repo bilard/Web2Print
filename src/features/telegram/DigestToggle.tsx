@@ -1,4 +1,3 @@
-// src/features/telegram/DigestToggle.tsx
 // Opt-in au digest Telegram quotidien (08:00) : flag users/{uid}.telegram.dailyDigest.
 // Écriture ciblée en merge — le deep-merge de setDoc préserve botToken/chatId,
 // et réciproquement le sync de la config ne touche pas ce flag.
