@@ -19,7 +19,7 @@ import {
 import { SourceSitesRowItem, type SiteRowStats } from './sourceSitesRow'
 import { SiteCredentialsForm } from './sourceSitesCreds'
 import { PurgeScrapingPanel } from './sourceSitesPurge'
-import type { SourceSitesNodeConfig } from './sourceSitesNode'
+import type { SourceSitesNodeConfig } from './sourceSitesTypes'
 
 /** Fenêtre du battement de moisson : constante PARTAGÉE avec la PWA radarPrice — deux
  *  valeurs différentes affichaient des comptes contradictoires d'un écran à l'autre. */

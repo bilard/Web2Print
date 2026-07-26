@@ -1,7 +1,7 @@
 // Section repliable des logs de traitement d'un message Telegram (accumulés par le worker).
 import { useEffect, useState } from 'react'
 import { ChevronRight, ChevronDown } from 'lucide-react'
-import type { InboxLogEntry, InboxStatus } from './useTelegramInbox'
+import type { InboxLogEntry, InboxStatus } from './inboxTypes'
 
 /**
  * Tonalité d'une ligne de log par sémantique (pas seulement le niveau) pour la lisibilité :

@@ -1,40 +1,21 @@
 import { useEffect, useState } from 'react'
 import type { ScrapingTemplate } from './types'
 import { listTemplates } from './templatesStore'
+import { readTemplatesCache, peekTemplatesCache, writeTemplatesCache, onTemplatesInvalidated } from './templatesCache'
 import { templateMatchesUrl } from './engine'
 
-/**
- * Retourne le template qui matche une URL donnée, ou null.
- * Cache en mémoire pour éviter de refetch à chaque check de domaine.
- */
-let cachedTemplates: ScrapingTemplate[] | null = null
-let cacheTimestamp = 0
-const CACHE_TTL_MS = 30_000
-
-/** Listeners notifiés à chaque invalidation : permet aux hooks actifs de
- *  refetch sans avoir à bump manuellement un refreshKey. */
-const invalidationListeners = new Set<() => void>()
-
+/** Templates du cache, refetchés si le TTL est passé. Sur échec réseau, on
+ *  renvoie le dernier contenu connu plutôt que rien. */
 async function getCachedTemplates(): Promise<ScrapingTemplate[]> {
-  const now = Date.now()
-  if (cachedTemplates && (now - cacheTimestamp) < CACHE_TTL_MS) return cachedTemplates
+  const fresh = readTemplatesCache()
+  if (fresh) return fresh
   try {
-    const fresh = await listTemplates()
-    cachedTemplates = fresh
-    cacheTimestamp = now
-    return fresh
+    const list = await listTemplates()
+    writeTemplatesCache(list)
+    return list
   } catch {
-    return cachedTemplates ?? []
+    return peekTemplatesCache() ?? []
   }
-}
-
-/** Invalide le cache ET notifie tous les hooks actifs pour qu'ils refetch. */
-export function invalidateTemplatesCache() {
-  cachedTemplates = null
-  cacheTimestamp = 0
-  invalidationListeners.forEach((fn) => {
-    try { fn() } catch { /* swallow listener errors */ }
-  })
 }
 
 /**
@@ -48,11 +29,7 @@ export function useMatchingTemplate(
   const [match, setMatch] = useState<ScrapingTemplate | null>(null)
   // Bump automatique quand invalidateTemplatesCache() est appelé de n'importe où.
   const [autoVersion, setAutoVersion] = useState(0)
-  useEffect(() => {
-    const fn = () => setAutoVersion((v) => v + 1)
-    invalidationListeners.add(fn)
-    return () => { invalidationListeners.delete(fn) }
-  }, [])
+  useEffect(() => onTemplatesInvalidated(() => setAutoVersion((v) => v + 1)), [])
 
   useEffect(() => {
     let cancelled = false

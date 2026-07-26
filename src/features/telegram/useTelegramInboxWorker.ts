@@ -11,13 +11,8 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { sendTelegramMessage, sendTelegramDocument, deleteTelegramMessage } from '@/lib/telegramApi'
 import { addOutboxMessage, clearAllInbox, deleteInboxMessage } from './useTelegramInbox'
-import {
-  processInboxMessage,
-  parseInboxCommand,
-  type InboxDoc,
-  type InboxWorkerDeps,
-  type InboxLogEntry,
-} from './inboxWorker'
+import { processInboxMessage, parseInboxCommand, type InboxDoc, type InboxWorkerDeps } from './inboxWorker'
+import type { InboxLogEntry } from './inboxTypes'
 import { generateAndSaveWorkflow, requiresManualFile } from './generateWorkflowFromInbox'
 import { executeWorkflowAndCollect, type ExecutionResult } from './executeWorkflowAndCollect'
 import { resolveRun, injectInput } from './runWorkflowFromInbox'

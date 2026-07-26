@@ -1,7 +1,7 @@
 import { collection, doc, getDocs, setDoc, deleteDoc, query, orderBy, where, writeBatch } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { scrapingTemplateSchema, type ScrapingTemplate } from './types'
-import { invalidateTemplatesCache } from './useMatchingTemplate'
+import { invalidateTemplatesCache } from './templatesCache'
 
 const COLLECTION = 'scrapingTemplates'
 

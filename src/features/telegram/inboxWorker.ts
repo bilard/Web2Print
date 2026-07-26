@@ -12,11 +12,6 @@ export interface InboxDoc {
 }
 
 /** Une ligne de log de traitement d'un message (même forme que NodeRunState.logs). */
-export interface InboxLogEntry {
-  ts: number
-  level: 'info' | 'warn' | 'error'
-  msg: string
-}
 
 export interface InboxWorkerDeps {
   /** Passe le doc de pending → processing dans une transaction. true si ce worker a gagné. */

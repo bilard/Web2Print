@@ -4,7 +4,7 @@ import { executeWorkflow } from '@/features/workflows/runtime/executor'
 import { useRunContext } from '@/features/workflows/runtime/runContext'
 import { findExportResult } from '@/features/workflows/runtime/exportResult'
 import type { Workflow } from '@/features/workflows/types'
-import type { InboxLogEntry } from './inboxWorker'
+import type { InboxLogEntry } from './inboxTypes'
 
 export interface ExecutionResult {
   nodeCount: number

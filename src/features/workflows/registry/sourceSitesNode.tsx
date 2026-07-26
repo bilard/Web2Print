@@ -6,15 +6,11 @@ import { ListChecks } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import {
-  rowsToCompetitorSites, deriveWatchId,
-  type SourceSiteRow, type SourceSitesPayload,
+  rowsToCompetitorSites, deriveWatchId, type SourceSitesPayload,
 } from '@/features/priceWatch/sourceSites'
 import { SourceSitesConfig } from './sourceSitesConfig'
+import type { SourceSitesNodeConfig } from './sourceSitesTypes'
 
-export interface SourceSitesNodeConfig {
-  watchId: string
-  sites: SourceSiteRow[]
-}
 type SourceSitesOutputs = { sites: SourceSitesPayload }
 
 const sourceSitesNode: NodeSpec<SourceSitesNodeConfig, Record<string, never>, SourceSitesOutputs> = {

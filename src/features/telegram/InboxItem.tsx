@@ -2,13 +2,8 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { MoreVertical, Pencil, Trash2, Check, X, Send } from 'lucide-react'
-import {
-  statusMeta,
-  deleteInboxMessageEverywhere,
-  updateInboxText,
-  type DeleteOutcome,
-  type InboxMessage,
-} from './useTelegramInbox'
+import { statusMeta, deleteInboxMessageEverywhere, updateInboxText, type DeleteOutcome } from './useTelegramInbox'
+import type { InboxMessage } from './inboxTypes'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { InboxItemLogs } from './InboxItemLogs'
 

@@ -20,35 +20,9 @@ import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { deleteTelegramMessage, deleteTelegramMessages } from '@/lib/telegramApi'
 import { classifyDeletable, withinDeleteWindow, type DeleteOutcome } from './inboxDelete'
-import type { InboxLogEntry } from './inboxWorker'
+import type { InboxStatus, InboxMessage } from './inboxTypes'
 
 export type { DeleteOutcome } from './inboxDelete'
-export type { InboxLogEntry } from './inboxWorker'
-
-export type InboxStatus = 'pending' | 'processing' | 'done' | 'error'
-
-/** 'in' = reçu depuis Telegram (worker). 'out' = poussé par l'app (composer / réponse worker). */
-type InboxDirection = 'in' | 'out'
-
-export interface InboxMessage {
-  // string pour les messages sortants (id synthétique `out-…`), number pour les update_id Telegram.
-  updateId: number | string
-  // number pour les chats Telegram réels ; string possible pour un @canal (envoi depuis un node).
-  chatId: number | string
-  fromUsername: string | null
-  text: string
-  status: InboxStatus
-  /** Absent sur les anciens docs → traité comme 'in'. */
-  direction?: InboxDirection
-  /** message_id Telegram — requis pour supprimer le message côté Telegram. Absent sur les docs antérieurs. */
-  messageId?: number
-  errorMessage?: string
-  receivedAt?: { toMillis: () => number } | null
-  generatedWorkflowId?: string
-  generatedWorkflowName?: string
-  /** Logs de traitement, accumulés par le worker pendant le run. */
-  logs?: InboxLogEntry[]
-}
 
 export function useTelegramInbox(): { messages: InboxMessage[]; loading: boolean } {
   const user = useAuthStore((s) => s.user)

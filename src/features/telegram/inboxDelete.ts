@@ -1,6 +1,6 @@
 // Logique PURE de décision pour la suppression cross-Telegram (aucune dépendance Firebase, donc
 // testable isolément). L'orchestration effective (appels Telegram + Firestore) est dans useTelegramInbox.
-import type { InboxMessage } from './useTelegramInbox'
+import type { InboxMessage } from './inboxTypes'
 
 // Telegram refuse deleteMessage au-delà de 48 h après envoi.
 export const TELEGRAM_DELETE_WINDOW_MS = 48 * 60 * 60 * 1000
