@@ -2533,6 +2533,16 @@
   .vt-mv.dn .pc{color:#34d399}.vt-mv.up .pc{color:#fb7185}.vt-mv.st .pc{color:#fbbf24}
   .vt-mv .ago{font-size:8px;color:var(--faint);flex:none;width:46px;text-align:right}
   .vt-m1{animation-delay:6.7s}.vt-m2{animation-delay:7.05s}.vt-m3{animation-delay:7.4s}
+  .vt-mvs{position:relative}
+  .vt-sk{position:absolute;inset:0;display:flex;flex-direction:column;animation:vtSkOut var(--vtD) linear infinite}
+  .vt-sk i{flex:1;border-top:1px solid var(--line)}
+  .vt-sk i::after{content:"";display:block;position:relative;top:50%;transform:translateY(-50%);margin-left:10px;height:6px;border-radius:3px;background:rgba(255,255,255,.07);animation:vtSkPulse 1.7s ease-in-out infinite}
+  .vt-sk i:nth-child(1)::after{width:38%}
+  .vt-sk i:nth-child(2)::after{width:54%;animation-delay:.28s}
+  .vt-sk i:nth-child(3)::after{width:30%;animation-delay:.56s}
+  .vt-mh .n{opacity:0;animation:vtCell var(--vtD) linear infinite;animation-delay:7.5s}
+  @keyframes vtSkOut{0%,45%{opacity:1}48%,100%{opacity:0}}
+  @keyframes vtSkPulse{0%,100%{opacity:.45}50%{opacity:1}}
   .vt-alert{display:flex;align-items:center;gap:7px}
   .vt-drop{flex:1;min-width:0;display:flex;align-items:center;gap:9px;background:linear-gradient(90deg,rgba(251,113,133,.15),rgba(251,113,133,.03));border:1px solid rgba(251,113,133,.32);border-radius:10px;padding:6px 10px;opacity:0;animation:vtCell var(--vtD) linear infinite 7.9s,vtPulse var(--vtD) ease-in-out infinite}
   .vt-drop .dico{width:24px;height:24px;border-radius:7px;background:rgba(251,113,133,.18);color:#fb7185;display:grid;place-items:center;flex:none}
@@ -2567,6 +2577,8 @@
     .vt-tr .kw .ref{opacity:1;animation:none}
     .vt-harv .bar>i{width:100%;animation:none}
     .vt-spark .ln{stroke-dashoffset:0;animation:none}
+    .vt-sk{display:none}
+    .vt-mh .n{opacity:1;animation:none}
     .vt-drop{opacity:1;animation:none}
     .vt-live i{animation:none}
   }
@@ -2644,9 +2656,12 @@
             <!-- ACTE 4 — journal des mouvements, alerte, mobile -->
             <div class="vt-moves">
               <div class="vt-mh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>Move log<span class="n">3 since 06:00</span></div>
-              <div class="vt-mv dn vt-m1"><span class="ar">▼</span><span class="dom">vertvif.fr</span><span class="ref">RLM18E40H</span><span class="old">229,00 €</span><span>→ 214,90 €</span><span class="pc">−6,2 %</span><span class="ago">4 min</span></div>
-              <div class="vt-mv up vt-m2"><span class="ar">▲</span><span class="dom">luxojardi.fr</span><span class="ref">RM18X</span><span class="old">929,00 €</span><span>→ 949,00 €</span><span class="pc">+2,2 %</span><span class="ago">12 min</span></div>
-              <div class="vt-mv st vt-m3"><span class="ar">●</span><span class="dom">motoprairie.com</span><span class="ref">DB52X</span><span>back in stock · 184,00 €</span><span class="pc">stock</span><span class="ago">26 min</span></div>
+              <div class="vt-mvs">
+                <div class="vt-sk" aria-hidden="true"><i></i><i></i><i></i></div>
+                <div class="vt-mv dn vt-m1"><span class="ar">▼</span><span class="dom">vertvif.fr</span><span class="ref">RLM18E40H</span><span class="old">229,00 €</span><span>→ 214,90 €</span><span class="pc">−6,2 %</span><span class="ago">4 min</span></div>
+                <div class="vt-mv up vt-m2"><span class="ar">▲</span><span class="dom">luxojardi.fr</span><span class="ref">RM18X</span><span class="old">929,00 €</span><span>→ 949,00 €</span><span class="pc">+2,2 %</span><span class="ago">12 min</span></div>
+                <div class="vt-mv st vt-m3"><span class="ar">●</span><span class="dom">motoprairie.com</span><span class="ref">DB52X</span><span>back in stock · 184,00 €</span><span class="pc">stock</span><span class="ago">26 min</span></div>
+              </div>
             </div>
             <div class="vt-alert">
               <div class="vt-drop"><span class="dico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"/><path d="M21 17v-6h-6"/></svg></span><span class="dx">Threshold crossed&nbsp;: <b>6,2 % drop</b> at VertVif<br/><span class="ref">RLM18E40H</span> · you move from <b>cheaper</b> to <b>pricier</b> (+4,10 €)</span></div>
