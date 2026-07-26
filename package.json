@@ -20,7 +20,8 @@
     "audit:fast": "node scripts/code-audit.mjs --fast",
     "cycles": "madge --circular --extensions ts,tsx src",
     "dead": "knip",
-    "dup": "jscpd src --min-lines 30 --min-tokens 120 --reporters console --silent --format \"typescript,tsx\""
+    "dup": "jscpd src --min-lines 30 --min-tokens 120 --reporters console --silent --format \"typescript,tsx\"",
+    "dup:symbols": "node scripts/dup-symbols.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

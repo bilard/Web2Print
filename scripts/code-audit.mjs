@@ -171,6 +171,12 @@ metric('console.log hors debugLog', consoleLeaks, 'doit rester à 0 — passer p
 const todos = sh(`grep -rnE "(TODO|FIXME|HACK|XXX)[: ]" src functions/src --include="*.ts" --include="*.tsx"`).out
 metric('TODO / FIXME / HACK', todos.trim() ? todos.trim().split('\n').length : 0, '')
 
+// Doublons COURTS, invisibles pour jscpd (seuil 30 lignes) : c'est là que
+// vivent les helpers recopiés, ceux qui divergent en silence.
+const dupSym = sh('node scripts/dup-symbols.mjs')
+const dupCount = Number((dupSym.out.match(/(\d+) fonction\(s\) dupliquée/) || [0, 0])[1])
+metric('Fonctions dupliquées à l’identique', dupCount, dupCount ? 'détail : npm run dup:symbols' : '')
+
 if (!FAST) {
   log('▸ Duplication (jscpd)…')
   const dup = sh('npm run --silent dup')
