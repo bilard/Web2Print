@@ -8,7 +8,7 @@
  * réelles (cf. revue advisor 2026-05-08).
  */
 import { describe, it, expect } from 'vitest'
-import { liftIdentityFromSpecs } from './useProductEnrichment'
+import { liftIdentityFromSpecs } from './liftIdentity'
 
 describe('liftIdentityFromSpecs — chips Rubix-style', () => {
   it('lifte les 4 chips identité (BOSCH/RUBIX/FABRICANT/EAN) en retirant des specs', () => {

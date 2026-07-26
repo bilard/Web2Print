@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { splitMegaSpecValue } from './useProductEnrichment'
+import { splitMegaSpecValue } from './liftIdentity'
 
 describe('splitMegaSpecValue', () => {
   // Méga-valeur RÉELLE produite par le LLM sur une fiche Castorama (2026-07-12) :
