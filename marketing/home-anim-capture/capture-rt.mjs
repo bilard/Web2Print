@@ -27,7 +27,11 @@ const FPS = 30;            // fps de sortie
 const XFADE = 0.4;         // crossfade de sécurité (s)
 const MIN_LOOP = 2.0;      // durée mini d'un tour (s)
 const MAX_LOOP = 16.0;     // garde-fou (s)
-const REC_SEC = 14.0;      // fenêtre d'enregistrement fixe (≥ plus longue boucle attendue)
+const REC_SEC = Number(process.env.REC_SEC) || 14.0;   // fenêtre d'enregistrement (env REC_SEC)
+// ⚠ Période FORCÉE (env LOOP_SEC) : la détection par autocorrélation se trompe sur les maquettes
+// 100 % CSS dont le cycle finit sur un long palier immobile (elle y voit une boucle de 2 s).
+// Quand la période est connue (var CSS `--vtD`), la passer en dur : REC_SEC=<p+1.2> LOOP_SEC=<p>.
+const LOOP_FORCED = Number(process.env.LOOP_SEC) || 0;
 const VP = { width: 1440, height: 1650 }; // viewport (assez haut pour la plus grande fenêtre)
 const arg = (process.argv[2] || 'aic').trim();
 
@@ -214,6 +218,7 @@ for (const { idx, slug } of targets) {
       process.stdout.write(` → histoire complète ${loopT.toFixed(1)}s (err ${Math.round(gMin / FSZ)})`);
     }
   }
+  if (LOOP_FORCED > 0) { loopT = Math.min(LOOP_FORCED, frames[frames.length - 1].t); process.stdout.write(` → période forcée ${loopT.toFixed(1)}s`); }
   const T = loopT;
   const d = Math.min(XFADE, T / 3);
   if (T > MIN_LOOP && d > 0.1) {

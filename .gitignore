@@ -83,3 +83,7 @@ ui-debug.log
 
 # vidéos d'animations (régénérables via marketing/home-anim-capture/capture-rt.mjs)
 public/animations/out/
+
+# cartes sociales (vidéos régénérables via marketing/home-anim-capture/capture-social.mjs)
+marketing/social-cards/*.mp4
+marketing/social-cards/*.jpg
