@@ -1646,7 +1646,7 @@
   <ol>
     <li><a href="#templates" data-spy="templates"><span class="mn-num"><svg><use href="#m-mapper"/></svg></span>Mapear</a></li>
     <li><a href="#scraper"   data-spy="scraper"><span class="mn-num"><svg><use href="#m-collecter"/></svg></span>Recopilar</a></li>
-    <li><a href="#veille"    data-spy="veille"><span class="mn-num"><svg><use href="#m-veille"/></svg></span>Vigilar</a></li>
+    <li><a href="#veille"    data-spy="veille"><span class="mn-num"><svg><use href="#m-veille"/></svg></span>Vigilancia de precios</a></li>
   </ol>
 
   <div class="mn-grp">Producir y difundir</div>
@@ -2002,7 +2002,7 @@
           </div>
           <div>
             <div class="dx-grp-h">Recopilar la web</div>
-            <div class="dx-grp-chips"><a href="#templates">Mapear</a><a href="#scraper">Recopilar</a><a href="#veille">Vigilar</a></div>
+            <div class="dx-grp-chips"><a href="#templates">Mapear</a><a href="#scraper">Recopilar</a><a href="#veille">Vigilancia de precios</a></div>
           </div>
           <div>
             <div class="dx-grp-h">Producir y difundir</div>
@@ -2424,8 +2424,8 @@
       </div>
 
 <style>
-  /* ===== 11 — SURVEILLER · Veille tarifaire (maquette animée en boucle) ===== */
-  .vt-body{min-height:392px;display:flex;flex-direction:column;gap:9px;padding:16px;font-family:var(--body);background:#08080d;--vtD:9s}
+  /* ===== 11 — VEILLE TARIFAIRE (cockpit animé en boucle, 4 actes) ===== */
+  .vt-body{min-height:392px;display:flex;flex-direction:column;gap:8px;padding:15px;font-family:var(--body);background:#08080d;--vtD:14s}
   .vt-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .vt-q{display:inline-flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--ink)}
   .vt-q svg{width:13px;height:13px;color:var(--muted)}
@@ -2433,135 +2433,227 @@
   .vt-live i{width:6px;height:6px;border-radius:50%;background:#34d399;animation:vtBlink 1.6s infinite}
   .vt-cron{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:7px;padding:4px 9px}
   .vt-cron b{color:#a5b4fc;font-weight:700}
+  .vt-cron svg{width:12px;height:12px}
+
+  /* ACTE 1 (0 → 2,6 s) — les sites sources s'allument un par un, la moisson progresse */
+  .vt-src{display:flex;align-items:center;gap:5px;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:6px 9px}
+  .vt-src .lb{font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-right:1px}
+  .vt-site{display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:2px 6px;font-size:9px;font-family:var(--mono);color:var(--faint);opacity:.3;animation:vtSite var(--vtD) linear infinite}
+  .vt-site em{font-style:normal;font-size:7px;text-transform:uppercase;letter-spacing:.03em;border-radius:4px;padding:1px 4px;font-family:var(--body);font-weight:700}
+  .vt-site em.h{background:rgba(52,211,153,.16);color:#34d399}
+  .vt-site em.d{background:rgba(168,85,247,.2);color:#c4b5fd}
+  .vt-site em.a{background:rgba(251,191,36,.16);color:#fbbf24}
+  .vt-s2{animation-delay:.3s}.vt-s3{animation-delay:.6s}.vt-s4{animation-delay:.9s}.vt-s5{animation-delay:1.2s}.vt-s6{animation-delay:1.5s}
+  .vt-harv{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:9px;color:var(--muted);font-family:var(--mono);white-space:nowrap}
+  .vt-harv .bar{width:66px;height:4px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+  .vt-harv .bar>i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#6366f1,#22d3ee);width:4%;animation:vtHarv var(--vtD) linear infinite}
+  .vt-cnt{position:relative;display:inline-block;min-width:62px;height:11px;color:#a5b4fc;font-weight:700}
+  .vt-cnt i{position:absolute;left:0;top:0;font-style:normal;opacity:0;animation:vtTick var(--vtD) linear infinite}
+  .vt-cnt i:nth-child(2){animation-delay:.55s}.vt-cnt i:nth-child(3){animation-delay:1.1s}
+  .vt-cnt i:nth-child(4){animation-delay:1.65s;animation-name:vtTickHold}
+
+  /* ACTE 2 (2,6 → 5,4 s) — le comparatif se remplit ligne par ligne */
   .vt-tbl{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
-  .vt-tr{display:grid;grid-template-columns:1.8fr .82fr .82fr .82fr .72fr .92fr;align-items:center;gap:6px;padding:7px 11px;font-size:11.5px;border-top:1px solid var(--line)}
-  .vt-tr.h{border-top:0;background:var(--surface2);color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .vt-tr{display:grid;grid-template-columns:2.2fr .64fr .64fr .64fr .64fr .7fr .78fr;align-items:center;gap:6px;padding:6px 10px;font-size:11px;border-top:1px solid var(--line)}
+  .vt-tr.h span:last-child{padding-left:6px}
+  .vt-tr.h{border-top:0;background:var(--surface2);color:var(--muted);font-size:8.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
   .vt-tr .p{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .vt-tr .ref{font-family:var(--mono);font-size:8.5px;color:var(--faint)}
+  .vt-tr .ref{font-family:var(--mono);font-size:8px;color:var(--faint)}
   .vt-num{font-variant-numeric:tabular-nums;text-align:right}
   .vt-mine{color:var(--ink);font-weight:700}
   .vt-comp,.vt-gap,.vt-pos{opacity:0;animation:vtCell var(--vtD) linear infinite}
   .vt-comp{color:var(--muted)}
+  .vt-out{font-size:8px;font-weight:700;color:#fbbf24}
   .vt-gap{font-weight:700}
   .vt-gap.up{color:#34d399}.vt-gap.down{color:#fb7185}
-  .vt-pos{justify-self:start;font-size:9px;font-weight:700;border-radius:6px;padding:2px 7px}
+  .vt-pos{justify-self:start;margin-left:4px;font-size:8.5px;font-weight:700;border-radius:6px;padding:2px 6px;white-space:nowrap}
   .vt-pos.win{background:rgba(52,211,153,.16);color:#34d399}
   .vt-pos.lose{background:rgba(251,113,133,.16);color:#fb7185}
-  .vt-r1 .vt-comp,.vt-r1 .vt-gap,.vt-r1 .vt-pos{animation-delay:.35s}
-  .vt-r2 .vt-comp,.vt-r2 .vt-gap,.vt-r2 .vt-pos{animation-delay:.75s}
-  .vt-r3 .vt-comp,.vt-r3 .vt-gap,.vt-r3 .vt-pos{animation-delay:1.15s}
-  .vt-r4 .vt-comp,.vt-r4 .vt-gap,.vt-r4 .vt-pos{animation-delay:1.55s}
-  .vt-r5 .vt-comp,.vt-r5 .vt-gap,.vt-r5 .vt-pos{animation-delay:1.95s}
-  .vt-r6 .vt-comp,.vt-r6 .vt-gap,.vt-r6 .vt-pos{animation-delay:2.35s}
-  .vt-r7 .vt-comp,.vt-r7 .vt-gap,.vt-r7 .vt-pos{animation-delay:2.75s}
-  .vt-r8 .vt-comp,.vt-r8 .vt-gap,.vt-r8 .vt-pos{animation-delay:3.15s}
-  .vt-r9 .vt-comp,.vt-r9 .vt-gap,.vt-r9 .vt-pos{animation-delay:3.55s}
+  .vt-r1 .vt-comp,.vt-r1 .vt-gap,.vt-r1 .vt-pos{animation-delay:2.6s}
+  .vt-r2 .vt-comp,.vt-r2 .vt-gap,.vt-r2 .vt-pos{animation-delay:2.95s}
+  .vt-r3 .vt-comp,.vt-r3 .vt-gap,.vt-r3 .vt-pos{animation-delay:3.3s}
+  .vt-r4 .vt-comp,.vt-r4 .vt-gap,.vt-r4 .vt-pos{animation-delay:3.65s}
+  .vt-r5 .vt-comp,.vt-r5 .vt-gap,.vt-r5 .vt-pos{animation-delay:4s}
+  .vt-r6 .vt-comp,.vt-r6 .vt-gap,.vt-r6 .vt-pos{animation-delay:4.35s}
+  /* la cle de jointure qui a servi a rattacher la ligne, en surbrillance fugace */
+  .vt-tr .kw{position:relative;display:inline-block;min-width:50px}
+  .vt-k{position:absolute;left:0;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:7px;font-weight:700;letter-spacing:.03em;color:#22d3ee;background:rgba(34,211,238,.16);border:1px solid rgba(34,211,238,.35);border-radius:4px;padding:1px 4px;opacity:0;animation:vtKey var(--vtD) linear infinite}
+  .vt-tr .kw .ref{animation:vtRefHide var(--vtD) linear infinite}
+  .vt-r1 .vt-k,.vt-r1 .kw .ref{animation-delay:2.45s}.vt-r2 .vt-k,.vt-r2 .kw .ref{animation-delay:2.8s}.vt-r3 .vt-k,.vt-r3 .kw .ref{animation-delay:3.15s}
+  .vt-r4 .vt-k,.vt-r4 .kw .ref{animation-delay:3.5s}.vt-r5 .vt-k,.vt-r5 .kw .ref{animation-delay:3.85s}.vt-r6 .vt-k,.vt-r6 .kw .ref{animation-delay:4.2s}
   /* couleur des prix par enseigne */
   .vt-num.c-lux{color:#fbbf24}
   .vt-num.c-vert{color:#38bdf8}
-  /* statistiques */
-  .vt-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
-  .vt-kpi{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 9px;display:flex;flex-direction:column;gap:1px}
-  .vt-kpi b{font-size:15px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1.1}
-  .vt-kpi span{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
-  .vt-kpi.win b{color:#34d399}.vt-kpi.lose b{color:#fb7185}.vt-kpi.alert b{color:#fbbf24}
-  .vt-alert{display:flex;align-items:center;gap:9px}
-  .vt-drop{flex:1;display:flex;align-items:center;gap:9px;background:linear-gradient(90deg,rgba(251,113,133,.15),rgba(251,113,133,.03));border:1px solid rgba(251,113,133,.32);border-radius:10px;padding:7px 11px;animation:vtPulse var(--vtD) ease-in-out infinite}
-  .vt-drop .dico{width:26px;height:26px;border-radius:7px;background:rgba(251,113,133,.18);color:#fb7185;display:grid;place-items:center;flex:none}
-  .vt-drop .dico svg{width:15px;height:15px}
-  .vt-drop .dx{font-size:11px;color:var(--ink);line-height:1.35}
+  .vt-num.c-moto{color:#f472b6}
+
+  /* ACTE 3 (5,4 → 8,2 s) — le cockpit : indicateurs, indice tarif, matrice */
+  .vt-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  .vt-kpi{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:6px 8px;display:flex;flex-direction:column;gap:1px;min-width:0}
+  .vt-kpi b{font-size:14px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1.1;white-space:nowrap}
+  .vt-kpi span{font-size:7.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vt-kpi em{font-style:normal;font-size:8px;font-weight:700;color:var(--faint)}
+  .vt-kpi em.up{color:#fb7185}.vt-kpi em.dn{color:#34d399}
+  .vt-kpi.win b{color:#34d399}.vt-kpi.lose b{color:#fb7185}.vt-kpi.alert b{color:#fbbf24}.vt-kpi.idx b{color:#a5b4fc}
+  .vt-charts{display:grid;grid-template-columns:1.12fr 1fr;gap:7px}
+  .vt-card{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:7px 9px;display:flex;flex-direction:column;gap:5px;min-width:0}
+  .vt-card .ch{font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px}
+  .vt-card .ch b{margin-left:auto;font-size:10.5px;color:#a5b4fc;font-variant-numeric:tabular-nums}
+  .vt-spark{width:100%;height:44px;display:block;overflow:visible}
+  .vt-spark .base{fill:none;stroke:rgba(255,255,255,.18);stroke-width:1;stroke-dasharray:3 3}
+  .vt-spark .ln{fill:none;stroke:#a5b4fc;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:300;stroke-dashoffset:300;animation:vtDraw var(--vtD) ease-out infinite}
+  .vt-spark .dot{fill:#a5b4fc;opacity:0;animation:vtStep var(--vtD) linear infinite;animation-delay:6.1s}
+  .vt-spark .bl{font-size:6.5px;fill:var(--faint);font-family:var(--mono)}
+  .vt-hm{display:grid;grid-template-columns:auto repeat(4,1fr);gap:3px;align-items:center}
+  .vt-hm .rh{font-size:7.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px}
+  .vt-hm .hh{font-size:7px;color:var(--faint);font-family:var(--mono);text-align:center;white-space:nowrap;overflow:hidden}
+  .vt-hm .c{height:12px;border-radius:3px;opacity:0;animation:vtStep var(--vtD) linear infinite;background:rgba(255,255,255,.07)}
+  .vt-hm .c.w1{background:rgba(52,211,153,.5)}.vt-hm .c.w2{background:rgba(52,211,153,.26)}
+  .vt-hm .c.l1{background:rgba(251,113,133,.5)}.vt-hm .c.l2{background:rgba(251,113,133,.26)}
+  .vt-hm .c.n0{background:rgba(255,255,255,.07)}
+  .vt-lg{gap:4px;letter-spacing:.02em;text-transform:none;font-size:7.5px;flex-wrap:nowrap;white-space:nowrap}
+  .vt-lg i{width:8px;height:8px;border-radius:2px;flex:none}
+  .vt-lg i.w{background:rgba(52,211,153,.5)}.vt-lg i.l{background:rgba(251,113,133,.5)}.vt-lg i.n{background:rgba(255,255,255,.09)}
+  .vt-lg i:not(:first-child){margin-left:5px}
+  .vt-hm .hr1{animation-delay:5.4s}.vt-hm .hr2{animation-delay:5.55s}.vt-hm .hr3{animation-delay:5.7s}.vt-hm .hr4{animation-delay:5.85s}
+
+  /* ACTE 4 (8,2 → 10,6 s) — journal des mouvements, alerte, mobile */
+  .vt-moves{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+  .vt-mh{display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--surface2);font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+  .vt-mh svg{width:11px;height:11px}
+  .vt-mh .n{margin-left:auto;color:#fbbf24;font-family:var(--mono);letter-spacing:0}
+  .vt-mv{display:flex;align-items:center;gap:7px;padding:5px 10px;border-top:1px solid var(--line);font-size:10.5px;color:var(--ink);opacity:0;animation:vtStep var(--vtD) linear infinite}
+  .vt-mv .ar{width:15px;height:15px;border-radius:5px;display:grid;place-items:center;flex:none;font-size:9px;font-weight:800;line-height:1}
+  .vt-mv.dn .ar{background:rgba(52,211,153,.16);color:#34d399}
+  .vt-mv.up .ar{background:rgba(251,113,133,.16);color:#fb7185}
+  .vt-mv.st .ar{background:rgba(251,191,36,.16);color:#fbbf24}
+  .vt-mv .dom{font-family:var(--mono);font-size:9px;color:var(--muted);flex:none}
+  .vt-mv .ref{font-family:var(--mono);font-size:8px;color:var(--faint)}
+  .vt-mv .old{color:var(--faint);text-decoration:line-through;font-size:9.5px}
+  .vt-mv .pc{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums;flex:none}
+  .vt-mv.dn .pc{color:#34d399}.vt-mv.up .pc{color:#fb7185}.vt-mv.st .pc{color:#fbbf24}
+  .vt-mv .ago{font-size:8px;color:var(--faint);flex:none;width:46px;text-align:right}
+  .vt-m1{animation-delay:6.7s}.vt-m2{animation-delay:7.05s}.vt-m3{animation-delay:7.4s}
+  .vt-alert{display:flex;align-items:center;gap:7px}
+  .vt-drop{flex:1;min-width:0;display:flex;align-items:center;gap:9px;background:linear-gradient(90deg,rgba(251,113,133,.15),rgba(251,113,133,.03));border:1px solid rgba(251,113,133,.32);border-radius:10px;padding:6px 10px;opacity:0;animation:vtCell var(--vtD) linear infinite 7.9s,vtPulse var(--vtD) ease-in-out infinite}
+  .vt-drop .dico{width:24px;height:24px;border-radius:7px;background:rgba(251,113,133,.18);color:#fb7185;display:grid;place-items:center;flex:none}
+  .vt-drop .dico svg{width:14px;height:14px}
+  .vt-drop .dx{font-size:10.5px;color:var(--ink);line-height:1.35}
   .vt-drop .dx b{color:#fb7185}
-  .vt-drop .dx .ref{font-family:var(--mono);font-size:8.5px;color:var(--faint)}
-  .vt-drop .dold{color:var(--faint);text-decoration:line-through;font-size:10px}
-  .vt-tg{flex:none;display:flex;align-items:center;gap:7px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.32);border-radius:10px;padding:7px 10px;font-size:11px;color:#7dd3fc;opacity:0;animation:vtCell var(--vtD) linear infinite;animation-delay:4.2s}
-  .vt-tg svg{width:14px;height:14px}
-  .vt-foot{display:flex;gap:8px;font-size:10px;color:var(--muted)}
+  .vt-drop .dx .ref{font-family:var(--mono);font-size:8px;color:var(--faint)}
+  .vt-drop .dold{color:var(--faint);text-decoration:line-through;font-size:9.5px}
+  .vt-tg{flex:none;display:flex;align-items:center;gap:6px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.32);border-radius:10px;padding:6px 9px;font-size:10.5px;color:#7dd3fc;opacity:0;animation:vtCell var(--vtD) linear infinite;animation-delay:8.3s}
+  .vt-tg svg{width:13px;height:13px}
+  .vt-rp{flex:none;display:flex;align-items:center;gap:6px;background:rgba(99,102,241,.13);border:1px solid rgba(99,102,241,.34);border-radius:10px;padding:6px 9px;font-size:10.5px;color:#a5b4fc;opacity:0;animation:vtCell var(--vtD) linear infinite;animation-delay:8.6s}
+  .vt-rp svg{width:13px;height:13px}
+  .vt-foot{display:flex;gap:7px;font-size:9.5px;color:var(--muted);flex-wrap:wrap}
   .vt-foot span{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
   .vt-foot .dot{width:6px;height:6px;border-radius:50%}
-  /* mini-workflow CRON */
-  .vt-flow{border-top:1px dashed var(--line2);padding-top:11px;display:flex;flex-direction:column;gap:8px}
-  .vf-h{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;align-items:center;gap:7px}
-  .vf-h .run{margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:#34d399;font-weight:700}
-  .vf-h .run i{width:6px;height:6px;border-radius:50%;background:#34d399;animation:vtBlink 1.6s infinite}
-  .vf-chain{display:flex;align-items:center}
-  .vf-node{flex:1;min-width:0;display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 9px}
-  .vf-node .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;flex:none}
-  .vf-node .ic svg{width:14px;height:14px}
-  .vf-node .tx{min-width:0}
-  .vf-node b{display:block;font-size:10px;color:var(--ink);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .vf-node em{font-style:normal;font-size:8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-  .vf-node.cron{border-color:rgba(99,102,241,.45);background:rgba(99,102,241,.06);flex:1.35}
-  .vf-node.cron .ic{background:rgba(99,102,241,.18);color:#a5b4fc}
-  .vf-node.src .ic{background:rgba(34,211,238,.16);color:#22d3ee}
-  .vf-node.cmp .ic{background:rgba(168,85,247,.16);color:#c4b5fd}
-  .vf-node.out1 .ic{background:rgba(52,211,153,.16);color:#34d399}
-  .vf-node.out2 .ic{background:rgba(56,189,248,.16);color:#7dd3fc}
-  .vf-link{flex:none;width:24px;height:2px;border-radius:2px;position:relative;background:linear-gradient(90deg,#6366f1 0 45%,transparent 45% 100%);background-size:13px 100%;background-repeat:repeat-x;animation:vfFlow .8s linear infinite}
-  .vf-link::after{content:"";position:absolute;right:-4px;top:50%;transform:translateY(-50%);border:4px solid transparent;border-left-color:#6366f1;opacity:.7}
-  @keyframes vfFlow{to{background-position:13px 0}}
-  @media(prefers-reduced-motion:reduce){.vf-link{animation:none}.vf-h .run i{animation:none}}
-  @keyframes vtCell{0%{opacity:0;transform:translateY(4px)}6%{opacity:1;transform:none}94%{opacity:1}100%{opacity:0}}
+  @keyframes vtCell{0%{opacity:0;transform:translateY(4px)}4%{opacity:1;transform:none}96%{opacity:1}100%{opacity:0}}
+  @keyframes vtStep{0%{opacity:0;transform:translateY(5px)}2.5%{opacity:1;transform:none}100%{opacity:1}}
+  @keyframes vtRefHide{0%,1%{opacity:1}3%,12%{opacity:0}14%,100%{opacity:1}}
+  @keyframes vtKey{0%,1%{opacity:0}3%{opacity:1}9%{opacity:1}13%{opacity:0}100%{opacity:0}}
+  @keyframes vtSite{0%,1%{opacity:.3;color:var(--faint)}4%{opacity:1;color:var(--ink)}100%{opacity:1;color:var(--ink)}}
+  @keyframes vtHarv{0%{width:4%}19%{width:100%}100%{width:100%}}
+  @keyframes vtTick{0%{opacity:0}1%{opacity:1}3.6%{opacity:1}4%{opacity:0}100%{opacity:0}}
+  @keyframes vtTickHold{0%{opacity:0}1%,100%{opacity:1}}
+  @keyframes vtDraw{0%,26%{stroke-dashoffset:300}43%,100%{stroke-dashoffset:0}}
   @keyframes vtBlink{0%,100%{opacity:1}50%{opacity:.25}}
-  @keyframes vtPulse{0%,40%,100%{box-shadow:0 0 0 0 rgba(251,113,133,0)}55%{box-shadow:0 0 0 4px rgba(251,113,133,.14)}}
-  @media(prefers-reduced-motion:reduce){.vt-comp,.vt-gap,.vt-pos,.vt-tg{opacity:1;animation:none}.vt-drop,.vt-live i{animation:none}}
+  @keyframes vtPulse{0%,58%,100%{box-shadow:0 0 0 0 rgba(251,113,133,0)}64%{box-shadow:0 0 0 4px rgba(251,113,133,.16)}}
+  @media(prefers-reduced-motion:reduce){
+    .vt-comp,.vt-gap,.vt-pos,.vt-tg,.vt-rp,.vt-mv,.vt-hm .c,.vt-spark .dot,.vt-cnt i{opacity:1;animation:none}
+    .vt-cnt i:nth-child(1),.vt-cnt i:nth-child(2),.vt-cnt i:nth-child(3){opacity:0}
+    .vt-site{opacity:1;color:var(--ink);animation:none}
+    .vt-k{opacity:0;animation:none}
+    .vt-tr .kw .ref{opacity:1;animation:none}
+    .vt-harv .bar>i{width:100%;animation:none}
+    .vt-spark .ln{stroke-dashoffset:0;animation:none}
+    .vt-drop{opacity:1;animation:none}
+    .vt-live i{animation:none}
+  }
 </style>
 
       <div class="scene" id="veille">
         <div class="scene-text">
-          <span class="scene-num grad-text">11 — VIGILAR</span>
-          <h2>Sus precios, siempre<br/>frente a la competencia.</h2>
-          <p>Sepa en todo momento <b>dónde se sitúa</b>. IBS-Studio localiza <b>cada uno de sus productos en sus competidores</b> — emparejado por <b>EAN, luego código de modelo, luego nombre</b>, nunca a ciegas — scrapea sus <b>precios reales</b> y elabora una <b>tabla de posicionamiento</b>&nbsp;: precio competidor, <b>diferencia en € y en %</b>, y quién es el más barato. Dos vigilancias en una&nbsp;: la <b>vigilancia competitiva</b> (frente a las demás enseñas) y la <b>vigilancia de precios</b> (alerta en cuanto un precio se mueve). Todo <b>en piloto automático</b>&nbsp;: un cron diario se ejecuta <b>en el servidor</b>, actualiza un <b>Google Sheet</b> y le avisa por <b>Telegram</b> — sin siquiera abrir la aplicación.</p>
-          <ul class="scene-list"><li>Emparejamiento EAN › código de modelo › nombre</li><li>Diferencia € / % + posición vs cada competidor</li><li>Vigilancia de precios&nbsp;: alerta ante la mínima variación</li><li>Cron diario → Google Sheets + Telegram</li></ul>
+          <span class="scene-num grad-text">11 — VIGILANCIA DE PRECIOS</span>
+          <h2>El precio del mercado,<br/>medido mientras usted duerme.</h2>
+          <p>Cargue su catálogo — <b>basta una columna de referencias o de EAN</b>, sin ninguna URL de la competencia que teclear — y designe las enseñas a vigilar. IBS-Studio va a buscar sus productos en cada una de ellas por <b>dos canales complementarios</b>&nbsp;: la <b>cosecha</b>, que barre sus lineales página tras página, y la <b>búsqueda dirigida</b>, que rastrea una referencia concreta sitio por sitio. Cada precio recogido se vincula a SU producto mediante una <b>clave de unión exacta</b> — EAN y después referencia del fabricante — nunca por parecido. Entonces abre un <b>cuadro de mando</b>&nbsp;: <b>índice tarifario base 100</b> frente a la mediana del mercado, parte del catálogo mantenida al precio correcto, productos expuestos, <b>desviación unitaria acumulada en euros</b>, matriz familias × competidores, y un <b>registro que fecha cada movimiento de precio</b>. La toma se ejecuta <b>en el servidor</b> a la hora fijada&nbsp;; la alerta llega a <b>Telegram</b> o a <b>radarPrice</b>, la aplicación móvil de la vigilancia.</p>
+          <ul class="scene-list"><li>Basta un Excel de referencias&nbsp;: cero URL de la competencia</li><li>Dos canales&nbsp;: cosecha de lineales · búsqueda dirigida ref/EAN</li><li>Emparejamiento por clave exacta + escalada anti-bot en sitios bloqueados</li><li>Cuadro de mando&nbsp;: índice, sostenimiento, expuestos, desviación, roturas</li><li>Registro de movimientos → alerta Telegram y radarPrice (móvil)</li></ul>
           <button class="scene-more" aria-expanded="false" aria-controls="d-veille"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Entender este módulo</button>
-          <div class="scene-detail" id="d-veille"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">El problema</span><p>Vigilar los precios de decenas de competidores a mano es imposible&nbsp;: los surtidos difieren, las referencias no coinciden, y un precio puede desplomarse de un día para otro sin que usted lo vea.</p></div><div class="sd-block"><span class="sd-k">Cómo funciona</span><ol class="sd-steps"><li>Proporcione su <b>catálogo fuente</b> (una página de lista, un Excel o un Google Sheet) y una o varias <b>páginas de la competencia</b>.</li><li>El motor empareja cada producto por <b>EAN, luego código de modelo, luego nombre normalizado</b>, scrapea los precios reales (escalado anti-bot) y calcula <b>diferencia &amp; posición</b>.</li><li>Un node <b>Vigilancia de precios</b> memoriza la lectura anterior y solo <b>alerta si un precio ha variado</b> por encima de un umbral.</li></ol></div><div class="sd-block"><span class="sd-k">Opciones</span><div class="sd-opts"><span>Fuente&nbsp;: URL · Excel · Google Sheets</span><span>N competidores</span><span>Match EAN / código de modelo / nombre</span><span>Diferencia € y %</span><span>Posición&nbsp;: más barato / más caro</span><span>Umbral de variación %</span><span>Cron diario headless</span><span>Google Sheets&nbsp;: crear o actualizar</span><span>Alerta Telegram</span></div></div><div class="sd-block"><span class="sd-k">El resultado</span><p>Una tabla de posicionamiento mantenida al día sola, y una alerta en cuanto un competidor baja un precio — para reaccionar antes que sus clientes.</p></div><div class="sd-block"><span class="sd-k help">Ayuda integrada</span><p class="sd-note">Extracto del manual integrado (botón «&nbsp;?&nbsp;» en la app) — sección «&nbsp;Vigilancia tarifaria&nbsp;».</p><div class="sd-help"><div class="sdh"><b>Vigilancia tarifaria</b> — módulo dedicado + node de workflow «&nbsp;Comparar los precios&nbsp;»&nbsp;: dos entradas (fuente / competidores), salida anclada en sus productos (todos conservados, un precio por competidor, diferencia y posición).</div><div class="sdh"><b>Vigilancia de precios</b> — node que compara con la lectura anterior y solo emite las filas cuyo precio ha cambiado&nbsp;: ideal justo antes de una alerta Telegram (un mensaje por producto).</div><div class="sdh"><b>Automático</b> — un node Cron dispara todo en el servidor (sin navegador)&nbsp;; la exportación Google Sheets puede crear un archivo nuevo o reescribir el mismo cada día.</div><div class="sdh"><b>Fiabilidad</b> — emparejamiento determinista (EAN luego código de modelo) antes de cualquier recurso al nombre&nbsp;; anti-bot Jina / Bright Data en los sitios blindados.</div></div></div></div></div>
+          <div class="scene-detail" id="d-veille"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">El problema</span><p>Seguir a decenas de enseñas a mano es imposible&nbsp;: los surtidos no coinciden, la misma referencia se escribe de forma distinta en cada sitio, los catálogos de la competencia no publican una URL por producto — y una bajada de precio pasa desapercibida hasta que un cliente se la señala.</p></div><div class="sd-block"><span class="sd-k">Cómo funciona</span><ol class="sd-steps"><li>Declare sus <b>sitios fuente</b> una vez por todas (dominio, <b>canal</b> — cosecha de lineales o búsqueda dirigida —, motor de recogida, presupuesto de páginas) y cargue su catálogo&nbsp;: bastan <b>referencia o EAN + su precio</b>.</li><li>La toma se ejecuta <b>en el servidor</b>&nbsp;: la cosecha pagina los lineales, la búsqueda dirigida rastrea las referencias que faltan, y cada página encontrada se vincula a su producto por una <b>clave de unión exacta</b> — un emparejamiento dudoso pasa a la cola «&nbsp;por confirmar&nbsp;» en lugar de falsear una cifra.</li><li>El <b>cuadro de mando</b> se recalcula solo (índice tarifario, sostenimiento del precio, expuestos, desviación acumulada, oportunidades) y el <b>registro de movimientos</b> fecha cada variación&nbsp;; las alertas salen por Telegram y radarPrice.</li></ol></div><div class="sd-block"><span class="sd-k">Opciones</span><div class="sd-opts"><span>Catálogo&nbsp;: Excel · Google Sheets · página de listado</span><span>N sitios competidores</span><span>Canal por sitio&nbsp;: cosecha / búsqueda dirigida</span><span>Motores&nbsp;: auto · Jina · Firecrawl · Bright Data</span><span>Sitios con precios tras login (credenciales)</span><span>Presupuesto de páginas por sitio</span><span>Clave de unión por sitio (EAN · ref.)</span><span>Cola «&nbsp;por confirmar&nbsp;»&nbsp;: confirmar / rechazar</span><span>Índice tarifario base 100</span><span>Desviación unitaria acumulada €</span><span>Umbral de variación %</span><span>Relanzamiento programado (cron servidor)</span><span>Exportar a Excel / Google Sheets</span><span>Alerta Telegram</span><span>radarPrice (aplicación móvil)</span></div></div><div class="sd-block"><span class="sd-k">El resultado</span><p>Un posicionamiento cuantificado que se mantiene solo, el euro de desviación nombrado producto a producto, y una alerta en cuanto un competidor rompe un precio — para reaccionar antes que sus clientes.</p></div><div class="sd-block"><span class="sd-k help">Ayuda integrada</span><p class="sd-note">Extracto del manual integrado (botón «&nbsp;?&nbsp;» en la app) — sección «&nbsp;Vigilancia de precios&nbsp;».</p><div class="sd-help"><div class="sdh"><b>Encontrar el producto sin dar una URL</b> — usted solo aporta el <b>dominio</b>&nbsp;: para cada producto la búsqueda se acota a ese sitio (por referencia y después por marca + nombre) y prefiere el candidato cuya URL o título lleva la referencia. Validada la ficha correcta, su <b>URL queda fijada</b> — las tomas siguientes vuelven directamente a ella.</div><div class="sdh"><b>Emparejamiento autoritativo frente a «&nbsp;por confirmar&nbsp;»</b> — si el <b>EAN leído en la página</b> es idéntico al suyo, la correspondencia es segura (100&nbsp;%, sin llamada a la IA). Si no, un modelo puntúa la correspondencia&nbsp;: por encima de <b>0,7</b> la ficha se fija automáticamente&nbsp;; por debajo pasa a la cola «&nbsp;por confirmar&nbsp;» y <b>no se recoge ningún precio</b> hasta que usted decida.</div><div class="sdh"><b>Confirmar / Rechazar</b> — el cuadro de mando es de solo lectura para los precios pero ofrece una acción&nbsp;: <b>Confirmar</b> fija la ficha, <b>Rechazar</b> descarta definitivamente ese par producto × sitio (el competidor no vende ese producto, o la página hallada es la equivocada).</div><div class="sdh"><b>Detectar un mal emparejamiento</b> — pase el cursor sobre un precio&nbsp;: la ayuda emergente «&nbsp;Recogido&nbsp;: …&nbsp;» muestra el <b>nombre y el EAN realmente leídos</b> en la página del competidor. Un precio competidor inferior al suyo aparece en rojo.</div><div class="sdh"><b>Campos recogidos por sitio</b> — cada línea admite una lista de campos&nbsp;: <span class="mono">ejemplo.es | price, availability</span>. Sin indicación, solo se recoge el <b>precio</b>. La recogida reutiliza el motor del PIM (datos estructurados JSON-LD en primer lugar).</div><div class="sdh"><b>Identificador del seguimiento</b> — memoriza entre dos tomas las <b>URL fijadas</b> y el <b>histórico de precios</b>. Mantenga el mismo identificador para seguir un catálogo en el tiempo&nbsp;; cámbielo para iniciar un seguimiento distinto.</div><div class="sdh"><b>Dos familias de alertas</b> — el <b>posicionamiento</b> (su precio comparado con los de la competencia) y la <b>variación</b> (un precio se movió más allá del umbral&nbsp;%). El puerto <span class="mono">changes</span> solo se activa si hay movimiento&nbsp;: ideal para enviar un mensaje de Telegram únicamente cuando ocurre algo.</div><div class="sdh"><b>En piloto automático</b> — el relanzamiento programado dispara la toma <b>en el servidor</b>, con el navegador cerrado&nbsp;; la exportación a Google Sheets puede crear un archivo o reescribir el mismo cada día.</div></div></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
-          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Vigilancia tarifaria — posicionamiento</span></div>
-          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:80%;--y1:24%;--x2:88%;--y2:46%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Vigilancia de precios — cuadro de mando</span></div>
+          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:63%;--y1:41%;--x2:22%;--y2:60%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="vt-body">
             <div class="vt-top">
-              <span class="vt-q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>CoupeTout · cortacéspedes <span class="vt-live"><i></i>live</span></span>
-              <span class="vt-cron"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Próxima&nbsp;: <b>08:00</b> · servidor</span>
+              <span class="vt-q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>CoupeTout · jardinería — 528 ref. <span class="vt-live"><i></i>toma en curso</span></span>
+              <span class="vt-cron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Próxima&nbsp;: <b>06:00</b> · servidor</span>
             </div>
+            <!-- ACTE 1 — sites sources : chaque enseigne s'allume avec son canal de relevé -->
+            <div class="vt-src">
+              <span class="lb">Sitios fuente</span>
+              <span class="vt-site vt-s1">luxojardi.fr<em class="h">cosecha</em></span>
+              <span class="vt-site vt-s2">vertvif.fr<em class="h">cosecha</em></span>
+              <span class="vt-site vt-s3">motoprairie.com<em class="h">cosecha</em></span>
+              <span class="vt-site vt-s4">gramineo.eu<em class="d">dirigida</em></span>
+              <span class="vt-site vt-s5">brindherbe.fr<em class="d">dirigida</em></span>
+              <span class="vt-site vt-s6">tondimarche.fr<em class="a">con login</em></span>
+              <span class="vt-harv"><span class="bar"><i></i></span><span class="vt-cnt"><i>0 fichas</i><i>418 fichas</i><i>1 130 fichas</i><i>1 862 fichas</i></span></span>
+            </div>
+            <!-- ACTE 2 — le comparatif se remplit, clé de jointure à l'appui -->
             <div class="vt-tbl">
-              <div class="vt-tr h"><span>Producto</span><span class="vt-num">Mi precio</span><span class="vt-num" style="color:#fbbf24">LuxoJardi</span><span class="vt-num" style="color:#38bdf8">VertVif</span><span class="vt-num">Diferencia</span><span>Posición</span></div>
-              <div class="vt-tr vt-r1"><span class="p">Cortacésped eléc. 1800W<span class="ref"> RLM18E40H</span></span><span class="vt-num vt-mine">219,00</span><span class="vt-num vt-comp c-lux">208,99</span><span class="vt-num vt-comp c-vert">214,90</span><span class="vt-num vt-gap down">+10,01</span><span class="vt-pos lose">más caro</span></div>
-              <div class="vt-tr vt-r2"><span class="p">Cortacésped 1500W<span class="ref"> RLM15E36H</span></span><span class="vt-num vt-mine">149,00</span><span class="vt-num vt-comp c-lux">169,00</span><span class="vt-num vt-comp c-vert">159,99</span><span class="vt-num vt-gap up">−10,99</span><span class="vt-pos win">más barato</span></div>
-              <div class="vt-tr vt-r3"><span class="p">Cortacésped 36V batería<span class="ref"> RLM36X41H50</span></span><span class="vt-num vt-mine">349,00</span><span class="vt-num vt-comp c-lux">360,99</span><span class="vt-num vt-comp c-vert">355,00</span><span class="vt-num vt-gap up">−6,00</span><span class="vt-pos win">más barato</span></div>
-              <div class="vt-tr vt-r4"><span class="p">Pack 18V One+<span class="ref"> RLM18X33B40</span></span><span class="vt-num vt-mine">229,00</span><span class="vt-num vt-comp c-lux">229,99</span><span class="vt-num vt-comp c-vert">232,49</span><span class="vt-num vt-gap up">−0,99</span><span class="vt-pos win">más barato</span></div>
-              <div class="vt-tr vt-r5"><span class="p">Cortacésped híbrido<span class="ref"> RY18LMH37A</span></span><span class="vt-num vt-mine">399,90</span><span class="vt-num vt-comp c-lux">387,65</span><span class="vt-num vt-comp c-vert">399,99</span><span class="vt-num vt-gap down">+12,25</span><span class="vt-pos lose">más caro</span></div>
-              <div class="vt-tr vt-r6"><span class="p">Cortacésped 40V brushless<span class="ref"> RY40LM48</span></span><span class="vt-num vt-mine">459,00</span><span class="vt-num vt-comp c-lux">449,00</span><span class="vt-num vt-comp c-vert">469,90</span><span class="vt-num vt-gap down">+10,00</span><span class="vt-pos lose">más caro</span></div>
-              <div class="vt-tr vt-r7"><span class="p">Cortabordes 18V<span class="ref"> RLT1825</span></span><span class="vt-num vt-mine">79,90</span><span class="vt-num vt-comp c-lux">84,90</span><span class="vt-num vt-comp c-vert">82,50</span><span class="vt-num vt-gap up">−2,60</span><span class="vt-pos win">más barato</span></div>
-              <div class="vt-tr vt-r8"><span class="p">Robot cortacésped<span class="ref"> RM18X</span></span><span class="vt-num vt-mine">899,00</span><span class="vt-num vt-comp c-lux">949,00</span><span class="vt-num vt-comp c-vert">879,00</span><span class="vt-num vt-gap down">+20,00</span><span class="vt-pos lose">más caro</span></div>
-              <div class="vt-tr vt-r9"><span class="p">Cortacésped manual<span class="ref"> RLM33</span></span><span class="vt-num vt-mine">99,00</span><span class="vt-num vt-comp c-lux">105,00</span><span class="vt-num vt-comp c-vert">109,00</span><span class="vt-num vt-gap up">−6,00</span><span class="vt-pos win">más barato</span></div>
+              <div class="vt-tr h"><span>Producto</span><span class="vt-num">Mi precio</span><span class="vt-num" style="color:#fbbf24">LuxoJardi</span><span class="vt-num" style="color:#38bdf8">VertVif</span><span class="vt-num" style="color:#f472b6">MotoPrairie</span><span class="vt-num">Desv. med.</span><span>Posición</span></div>
+              <div class="vt-tr vt-r1"><span class="p">Cortacésp. térm. 46 cm <span class="kw"><span class="ref">TM46B</span><b class="vt-k">EAN</b></span></span><span class="vt-num vt-mine">289,00</span><span class="vt-num vt-comp c-lux">279,90</span><span class="vt-num vt-comp c-vert">299,00</span><span class="vt-num vt-comp c-moto">284,50</span><span class="vt-num vt-gap down">+4,50</span><span class="vt-pos lose">más caro</span></div>
+              <div class="vt-tr vt-r2"><span class="p">Cortacésp. eléc. 1800 W <span class="kw"><span class="ref">RLM18E40H</span><b class="vt-k">EAN</b></span></span><span class="vt-num vt-mine">219,00</span><span class="vt-num vt-comp c-lux">208,99</span><span class="vt-num vt-comp c-vert">214,90</span><span class="vt-num vt-comp c-moto">224,00</span><span class="vt-num vt-gap down">+4,10</span><span class="vt-pos lose">más caro</span></div>
+              <div class="vt-tr vt-r3"><span class="p">Robot cortacésped <span class="kw"><span class="ref">RM18X</span><b class="vt-k">REF</b></span></span><span class="vt-num vt-mine">899,00</span><span class="vt-num vt-comp c-lux">949,00</span><span class="vt-num vt-comp c-vert">879,00</span><span class="vt-num vt-comp c-moto">929,00</span><span class="vt-num vt-gap up">−30,00</span><span class="vt-pos win">más barato</span></div>
+              <div class="vt-tr vt-r4"><span class="p">Desbroz. 52 cm³ <span class="kw"><span class="ref">DB52X</span><b class="vt-k">REF</b></span></span><span class="vt-num vt-mine">179,00</span><span class="vt-num vt-comp vt-out">sin stock</span><span class="vt-num vt-comp c-vert">189,90</span><span class="vt-num vt-comp c-moto">184,00</span><span class="vt-num vt-gap up">−7,95</span><span class="vt-pos win">más barato</span></div>
+              <div class="vt-tr vt-r5"><span class="p">Cortabordes 18 V <span class="kw"><span class="ref">RLT1825</span><b class="vt-k">EAN</b></span></span><span class="vt-num vt-mine">79,90</span><span class="vt-num vt-comp c-lux">84,90</span><span class="vt-num vt-comp c-vert">82,50</span><span class="vt-num vt-comp c-moto">79,00</span><span class="vt-num vt-gap up">−2,60</span><span class="vt-pos win">más barato</span></div>
+              <div class="vt-tr vt-r6"><span class="p">Soplador 40 V <span class="kw"><span class="ref">RY40BL</span><b class="vt-k">EAN</b></span></span><span class="vt-num vt-mine">149,00</span><span class="vt-num vt-comp c-lux">139,00</span><span class="vt-num vt-comp c-vert">144,90</span><span class="vt-num vt-comp c-moto">141,50</span><span class="vt-num vt-gap down">+7,50</span><span class="vt-pos lose">más caro</span></div>
             </div>
+            <!-- ACTE 3 — le cockpit : indicateurs, indice tarif base 100, matrice familles × concurrents -->
             <div class="vt-stats">
-              <div class="vt-kpi"><b>9</b><span>Productos seguidos</span></div>
-              <div class="vt-kpi"><b>2</b><span>Competidores</span></div>
-              <div class="vt-kpi win"><b>5</b><span>Más barato</span></div>
-              <div class="vt-kpi lose"><b>4</b><span>Más caro</span></div>
-              <div class="vt-kpi win"><b>−0,6&nbsp;%</b><span>Diferencia media</span></div>
-              <div class="vt-kpi alert"><b>1</b><span>Alerta 24&nbsp;h</span></div>
+              <div class="vt-kpi idx"><b>101,3</b><span>Índice tarif. <em class="up">▲ 0,8</em></span></div>
+              <div class="vt-kpi win"><b>63 %</b><span>Sosten. precio</span></div>
+              <div class="vt-kpi lose"><b>152</b><span>Expuestos</span></div>
+              <div class="vt-kpi lose"><b>1 284 €</b><span>Desv. acum.</span></div>
+              <div class="vt-kpi"><b>412<em>/528</em></b><span>Emparejados</span></div>
+              <div class="vt-kpi alert"><b>17</b><span>Roturas</span></div>
             </div>
-            <div class="vt-alert">
-              <div class="vt-drop"><span class="dico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"/><path d="M21 17v-6h-6"/></svg></span><span class="dx">Vigilancia de precios — <b>bajada detectada</b> en VertVif<br/><span class="ref">RLM15E36H</span> · <span class="dold">169,00 €</span> → <b>149,99 €</b> (−11,2 %)</span></div>
-              <div class="vt-tg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>Telegram enviado</div>
-            </div>
-            <div class="vt-foot"><span><i class="dot" style="background:#34d399"></i>→ Google Sheet actualizado</span><span><i class="dot" style="background:#38bdf8"></i>→ Alerta Telegram</span><span><i class="dot" style="background:#a5b4fc"></i>9 productos · 2 competidores · lectura diaria</span></div>
-            <div class="vt-flow">
-              <div class="vf-h">Automatización — workflow planificado <span class="run"><i></i>en curso</span></div>
-              <div class="vf-chain">
-                <div class="vf-node cron"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="tx"><b>CRON · 08:00</b><em>todos los días · servidor</em></span></div>
-                <span class="vf-link"></span>
-                <div class="vf-node src"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg></span><span class="tx"><b>Productos lista</b><em>fuente + competidores</em></span></div>
-                <span class="vf-link"></span>
-                <div class="vf-node cmp"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 7h14"/><path d="m5 7-2.5 5h5z"/><path d="m19 7-2.5 5h5z"/></svg></span><span class="tx"><b>Comparar</b><em>EAN · código · nombre</em></span></div>
-                <span class="vf-link"></span>
-                <div class="vf-node out1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></svg></span><span class="tx"><b>Google Sheets</b><em>actualización</em></span></div>
-                <span class="vf-link"></span>
-                <div class="vf-node out2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></span><span class="tx"><b>Telegram</b><em>alerta</em></span></div>
+            <div class="vt-charts">
+              <div class="vt-card">
+                <div class="ch">Índice tarifario · 30 días <b>101,3</b></div>
+                <svg class="vt-spark" viewBox="0 0 220 44" preserveAspectRatio="none" aria-hidden="true">
+                  <line class="base" x1="4" y1="24" x2="216" y2="24"/>
+                  <polyline class="ln" points="4,8 23,10 42,9.5 62,13.5 81,12 100,16 120,14.5 139,18 158,19.5 178,17 197,19 216,17.5"/>
+                  <circle class="dot" cx="216" cy="17.5" r="2.6"/>
+                </svg>
+                <div class="ch" style="letter-spacing:.03em">base 100 = mediana del mercado</div>
+              </div>
+              <div class="vt-card">
+                <div class="ch">Familias × competidores</div>
+                <div class="vt-hm">
+                  <span></span><span class="hh">luxo</span><span class="hh">vert</span><span class="hh">moto</span><span class="hh">gram</span>
+                  <span class="rh">Cortacésped</span><i class="c hr1 l1"></i><i class="c hr1 w2"></i><i class="c hr1 l2"></i><i class="c hr1 w1"></i>
+                  <span class="rh">Robots</span><i class="c hr2 w1"></i><i class="c hr2 l2"></i><i class="c hr2 w2"></i><i class="c hr2 n0"></i>
+                  <span class="rh">Desbroz.</span><i class="c hr3 w2"></i><i class="c hr3 w1"></i><i class="c hr3 w2"></i><i class="c hr3 l2"></i>
+                  <span class="rh">Sopladores</span><i class="c hr4 l1"></i><i class="c hr4 l2"></i><i class="c hr4 l1"></i><i class="c hr4 w2"></i>
+                </div>
+                <div class="ch vt-lg"><i class="w"></i>más barato<i class="l"></i>más caro<i class="n"></i>no vendido</div>
               </div>
             </div>
+            <!-- ACTE 4 — journal des mouvements, alerte, mobile -->
+            <div class="vt-moves">
+              <div class="vt-mh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>Registro de movimientos<span class="n">3 desde 06:00</span></div>
+              <div class="vt-mv dn vt-m1"><span class="ar">▼</span><span class="dom">vertvif.fr</span><span class="ref">RLM18E40H</span><span class="old">229,00 €</span><span>→ 214,90 €</span><span class="pc">−6,2 %</span><span class="ago">4 min</span></div>
+              <div class="vt-mv up vt-m2"><span class="ar">▲</span><span class="dom">luxojardi.fr</span><span class="ref">RM18X</span><span class="old">929,00 €</span><span>→ 949,00 €</span><span class="pc">+2,2 %</span><span class="ago">12 min</span></div>
+              <div class="vt-mv st vt-m3"><span class="ar">●</span><span class="dom">motoprairie.com</span><span class="ref">DB52X</span><span>repuesto en stock · 184,00 €</span><span class="pc">stock</span><span class="ago">26 min</span></div>
+            </div>
+            <div class="vt-alert">
+              <div class="vt-drop"><span class="dico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"/><path d="M21 17v-6h-6"/></svg></span><span class="dx">Umbral superado&nbsp;: <b>bajada del 6,2 %</b> en VertVif<br/><span class="ref">RLM18E40H</span> · pasa de <b>más barato</b> a <b>más caro</b> (+4,10 €)</span></div>
+              <div class="vt-tg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>Telegram</div>
+              <div class="vt-rp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>radarPrice</div>
+            </div>
+            <div class="vt-foot"><span><i class="dot" style="background:#34d399"></i>Cosecha&nbsp;: 1 862 fichas · 6 sitios</span><span><i class="dot" style="background:#c4b5fd"></i>Búsqueda dirigida&nbsp;: 94 ref.</span><span><i class="dot" style="background:#a5b4fc"></i>→ Google Sheets actualizado</span></div>
           </div>
         </div></div>
       </div>
