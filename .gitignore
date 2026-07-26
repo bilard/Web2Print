@@ -50,7 +50,27 @@ Trafic/
 PowerPoint/
 Taxonomies/
 .playwright-mcp/
-.claude/
+# .claude/ reste local (settings.local.json = chemins machine, logos), SAUF les
+# skills du projet : ils encodent des procédures et méritent un historique.
+.claude/*
+!.claude/skills/
+# Skills vendorisés = liens symboliques vers .agents/ (ignoré) : les suivre
+# donnerait des liens morts dans un clone neuf.
+.claude/skills/animejs
+.claude/skills/caveman
+.claude/skills/contribute-catalog
+.claude/skills/css-animations
+.claude/skills/gsap
+.claude/skills/hyperframes
+.claude/skills/hyperframes-cli
+.claude/skills/hyperframes-media
+.claude/skills/hyperframes-registry
+.claude/skills/lottie
+.claude/skills/remotion-to-hyperframes
+.claude/skills/tailwind
+.claude/skills/three
+.claude/skills/waapi
+.claude/skills/website-to-hyperframes
 env.local
 .agents/
 
