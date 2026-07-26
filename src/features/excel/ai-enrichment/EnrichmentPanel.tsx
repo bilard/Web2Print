@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/debugLog'
 import { useEffect, useState, useRef, useCallback, Fragment } from 'react'
 import {
   Sparkles, Loader2, RefreshCw, ExternalLink, Zap, Check, AlertCircle, Globe, Save, Plus, X,
@@ -60,7 +61,7 @@ export function EnrichmentPanel({ input }: Props) {
     const row = sheet?.rows.find((r) => r._id === input.rowId)
     const restored = deserializeEnrichedFromRow(row)
     if (restored) {
-      console.log('[enrichment] rehydrating from sheet row', input.rowId)
+      debugLog('[enrichment] rehydrating from sheet row', input.rowId)
       setData(input.sheetName, input.rowId, restored.product)
       if (restored.llmRequest) {
         useEnrichmentStore.getState().setLlmRequest(input.sheetName, input.rowId, restored.llmRequest)
@@ -239,15 +240,13 @@ export function EnrichmentPanel({ input }: Props) {
             .filter((h): h is string => !!h && h !== primaryHost)
           const uniqueExtra = Array.from(new Set(extraHosts))
 
-          if (import.meta.env.DEV) {
-            console.log('[enrichment-badges]', {
-              sourceUrl: data.sourceUrl,
-              additionalSources: data.additionalSources,
-              primaryUrl,
-              primaryHost,
-              uniqueExtra,
-            })
-          }
+          debugLog('[enrichment-badges]', {
+            sourceUrl: data.sourceUrl,
+            additionalSources: data.additionalSources,
+            primaryUrl,
+            primaryHost,
+            uniqueExtra,
+          })
 
           return (
             <div className="flex items-center gap-3 px-4 pb-2 pt-0.5 min-w-0 flex-wrap">

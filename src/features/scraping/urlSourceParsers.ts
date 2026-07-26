@@ -1,3 +1,5 @@
+import { debugLog } from '@/lib/debugLog'
+
 /**
  * Parseurs d'URLs depuis sources externes : textarea libre, fichier CSV/Excel,
  * Google Sheet (export CSV via Drive API).
@@ -166,7 +168,7 @@ export async function extractUrlsFromGoogleSheet(
   if (urlCol < 0) {
     const all = rows.map((r) => r.join(' ')).join('\n')
     const urls = extractUrlsFromText(all)
-    console.log('[gsheet-import] text-fallback →', urls.length, 'URLs:', urls)
+    debugLog('[gsheet-import] text-fallback →', urls.length, 'URLs:', urls)
     return { urls, detectedColumn: null, rowCount: dataRows.length, method: 'text-fallback' }
   }
 
@@ -183,7 +185,7 @@ export async function extractUrlsFromGoogleSheet(
     seen.add(cell)
     out.push(cell)
   }
-  console.log(`[gsheet-import] ${isNamedHeader ? 'header' : 'heuristic'} → colonne "${colHeader}", ${out.length} URLs:`, out)
+  debugLog(`[gsheet-import] ${isNamedHeader ? 'header' : 'heuristic'} → colonne "${colHeader}", ${out.length} URLs:`, out)
   return {
     urls: out,
     detectedColumn: colHeader,

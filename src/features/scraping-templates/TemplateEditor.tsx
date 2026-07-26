@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/debugLog'
 import { useState } from 'react'
 import { Plus, Trash2, Play, Save, FlaskConical, Loader2, Download, Upload, MousePointer, Code2, MessageSquare, ChevronDown } from 'lucide-react'
 import type { ScrapingTemplate, FieldSelector, GroupSelector, SelectorStrategy } from './types'
@@ -93,7 +94,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
   const save = async () => {
     setSaving(true)
     try {
-      console.log('[TemplateEditor] saving template', template)
+      debugLog('[TemplateEditor] saving template', template)
       const { syncedCount } = await saveTemplateWithVendorSync(template)
       if (syncedCount > 0) {
         toast.success(`Template enregistré — prompt fournisseur propagé à ${syncedCount} autre(s) template(s)`)

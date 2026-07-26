@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/debugLog'
 import JSZip from 'jszip'
 import type { AspectFormat } from './types'
 
@@ -92,7 +93,7 @@ function buildAutoplayScript(compositionId: string): string {
 (function () {
   var COMP_ID = ${JSON.stringify(compositionId)};
   var DBG = '[hyperframes/standalone]';
-  console.log(DBG, 'bootstrap démarré, composition=', COMP_ID);
+  debugLog(DBG, 'bootstrap démarré, composition=', COMP_ID);
 
   function showError(msg, detail) {
     console.error(DBG, msg, detail);
@@ -307,20 +308,20 @@ function buildAutoplayScript(compositionId: string): string {
       return false;
     }
     var vars = window.__hyperframes.getVariables();
-    console.log(DBG, 'vars reçues :', vars);
+    debugLog(DBG, 'vars reçues :', vars);
     // Détail composition pour vérifier que enforceAnimationIntent a bien
     // injecté entryAnim variés et customAnimations selon le brief.
     if (vars && vars.composition) {
       var comp = vars.composition;
-      console.log(DBG, 'composition.transition =', comp.transition, '| pace =', comp.pace, '| theme =', comp.theme);
-      console.log(DBG, 'composition.palette =', comp.palette);
+      debugLog(DBG, 'composition.transition =', comp.transition, '| pace =', comp.pace, '| theme =', comp.theme);
+      debugLog(DBG, 'composition.palette =', comp.palette);
       if (Array.isArray(comp.scenes)) {
         comp.scenes.forEach(function (s, i) {
           var animCount = Array.isArray(s.customAnimations) ? s.customAnimations.length : 0;
-          console.log(DBG, '  scene[' + i + '] type=' + s.type + ' entryAnim=' + (s.entryAnim || '(default)') + ' customAnimations=' + animCount);
+          debugLog(DBG, '  scene[' + i + '] type=' + s.type + ' entryAnim=' + (s.entryAnim || '(default)') + ' customAnimations=' + animCount);
           if (animCount > 0) {
             s.customAnimations.forEach(function (a, j) {
-              console.log(DBG, '    anim[' + j + ']', a);
+              debugLog(DBG, '    anim[' + j + ']', a);
             });
           }
         });
@@ -332,7 +333,7 @@ function buildAutoplayScript(compositionId: string): string {
   function waitForTimeline(retriesLeft, elapsedMs, onFound) {
     var tl = window.__timelines && window.__timelines[COMP_ID];
     if (tl && typeof tl.play === 'function') {
-      console.log(DBG, 'timeline trouvée, duration=', tl.duration(), 's');
+      debugLog(DBG, 'timeline trouvée, duration=', tl.duration(), 's');
       onFound(tl);
       return;
     }
@@ -461,7 +462,7 @@ async function buildSelfContainedHtml(opts: ExportOptions): Promise<string> {
   // timings GSAP par ce facteur (template par défaut = 10s ; pour 5s →
   // durationScale = 0.5 ; pour 30s → durationScale = 3).
   const durationScale = opts.durationSec ? opts.durationSec / 10 : 1
-  console.log('[exportHtmlZip] opts.durationSec=', opts.durationSec, '→ durationScale=', durationScale)
+  debugLog('[exportHtmlZip] opts.durationSec=', opts.durationSec, '→ durationScale=', durationScale)
   const variablesWithScale = {
     ...opts.variables,
     durationScale,

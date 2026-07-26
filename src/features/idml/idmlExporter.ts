@@ -12,6 +12,7 @@
  * pour éviter toute corruption des attributs ou namespaces IDML.
  */
 
+import { debugLog } from '@/lib/debugLog'
 import JSZip from 'jszip'
 import type { FabricObject } from 'fabric'
 
@@ -1897,7 +1898,7 @@ export async function exportIdmlModified(
     zip.file(graphicPath, graphicXml)
   }
 
-  console.log('[idml-export] patches appliqués →', { color: colorPatchCount, pos: posPatchCount })
+  debugLog('[idml-export] patches appliqués →', { color: colorPatchCount, pos: posPatchCount })
 
   const idmlBlob = await zip.generateAsync({
     type: 'blob',

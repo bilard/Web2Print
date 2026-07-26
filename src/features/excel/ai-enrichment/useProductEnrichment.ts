@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/debugLog'
 import { useCallback, useState } from 'react'
 import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
@@ -165,7 +166,7 @@ function parseBreadcrumbFromMarkdown(md: string): string[] {
       out.push(t)
     }
     if (out.length >= 2) {
-      console.log('[post-process] ✓ breadcrumb from markdown:', out)
+      debugLog('[post-process] ✓ breadcrumb from markdown:', out)
       return out
     }
   }
@@ -212,7 +213,7 @@ function finalizeDescription(current: string, markdownContent: string | null): {
 
 function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: string | null): EnrichedProduct {
   if (!markdownContent || markdownContent.length < 100) {
-    console.log('[post-process] no markdown content, skipping')
+    debugLog('[post-process] no markdown content, skipping')
     return enriched
   }
 
@@ -235,13 +236,13 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
   if (needsFallback) {
     if (desc && (looksLikeUrl || looksLikeCode || isTrackingUrl || isLowProse || isCaptcha)) {
       const reason = isCaptcha ? 'CAPTCHA/challenge' : looksLikeUrl ? 'URL' : looksLikeCode ? 'code' : isTrackingUrl ? 'tracking' : 'low-prose'
-      console.log(`[post-process] ⚠ description LLM = ${reason} — fallback prose`)
+      debugLog(`[post-process] ⚠ description LLM = ${reason} — fallback prose`)
     }
     const fallback = extractLongestProseParagraph(markdownContent)
     // Refuse aussi le fallback s'il est lui-même une page CAPTCHA
     const fallbackOk = fallback && fallback.length >= 50 && !looksLikeBotChallenge(fallback)
     if (fallbackOk) {
-      console.log('[post-process] ✓ description fallback prose paragraph (', fallback.length, 'chars)')
+      debugLog('[post-process] ✓ description fallback prose paragraph (', fallback.length, 'chars)')
       enriched = { ...enriched, description: fallback }
     } else if (looksLikeUrl || looksLikeCode || isTrackingUrl || isLowProse || isCaptcha) {
       // Pas de fallback prose disponible — préfère vide à la pollution.
@@ -249,13 +250,13 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
     }
   }
 
-  console.log('[post-process] markdown length:', markdownContent.length, 'chars')
+  debugLog('[post-process] markdown length:', markdownContent.length, 'chars')
   // Log les lignes contenant des keywords features/avantages pour debug
   const featureLines = markdownContent.split('\n')
     .filter(l => /les\s*\+|avantage|caract[eé]ristique|points?\s*forts?|features?/i.test(l))
     .slice(0, 10)
   if (featureLines.length > 0) {
-    console.log('[post-process] feature-related lines in markdown:', featureLines.map(l => l.trim().slice(0, 80)))
+    debugLog('[post-process] feature-related lines in markdown:', featureLines.map(l => l.trim().slice(0, 80)))
   }
 
   let { advantages, specifications, variants, description } = enriched
@@ -268,19 +269,19 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
   const mdDescription = parseDescriptionFromMarkdown(markdownContent)
   const mdDescIsChallenge = looksLikeBotChallenge(mdDescription)
   if (mdIsChallenge || mdDescIsChallenge) {
-    console.log('[post-process] ⚠ markdown / description = CAPTCHA — pas de remplacement')
+    debugLog('[post-process] ⚠ markdown / description = CAPTCHA — pas de remplacement')
     if (looksLikeBotChallenge(description)) {
-      console.log('[post-process] ⚠ description LLM = CAPTCHA → vidée')
+      debugLog('[post-process] ⚠ description LLM = CAPTCHA → vidée')
       description = ''
     }
   } else if (mdDescription && mdDescription.length > 40) {
     if (!description || description.length < 40 || looksLikeBotChallenge(description)) {
       description = mdDescription
-      console.log('[post-process] ✓ description from markdown:', description.slice(0, 80) + '…')
+      debugLog('[post-process] ✓ description from markdown:', description.slice(0, 80) + '…')
     } else if (mdDescription.length > description.length * 1.5) {
       // Le markdown a un texte significativement plus riche → le préférer
       description = mdDescription
-      console.log('[post-process] ✓ replaced description with richer markdown version:', description.slice(0, 80) + '…')
+      debugLog('[post-process] ✓ replaced description with richer markdown version:', description.slice(0, 80) + '…')
     }
   }
 
@@ -289,17 +290,17 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
   // Règle : on ne remplace QUE si le markdown a STRICTEMENT PLUS d'items.
   // Sinon, on essaie d'ajouter les groupes aux items existants par matching textuel.
   const mdAdvantages = parseAdvantagesFromMarkdown(markdownContent)
-  console.log('[post-process] markdown advantages:', mdAdvantages.length, 'items,', mdAdvantages.filter(a => a.group).length, 'grouped')
-  console.log('[post-process] existing advantages:', advantages.length, 'items')
+  debugLog('[post-process] markdown advantages:', mdAdvantages.length, 'items,', mdAdvantages.filter(a => a.group).length, 'grouped')
+  debugLog('[post-process] existing advantages:', advantages.length, 'items')
   if (mdAdvantages.length > 0) {
     if (mdAdvantages.length > advantages.length) {
       // Markdown a strictement plus d'items → le préférer
       advantages = mdAdvantages
-      console.log('[post-process] ✓ replaced with markdown advantages:', advantages.length, 'items')
+      debugLog('[post-process] ✓ replaced with markdown advantages:', advantages.length, 'items')
     } else if (mdAdvantages.some(a => a.group) && !advantages.some(a => a.group)) {
       // Markdown a des groupes, les items existants n'en ont pas → enrichir par matching
       advantages = mergeGroupsIntoAdvantages(advantages, mdAdvantages)
-      console.log('[post-process] ✓ merged groups into existing advantages:', advantages.length, 'items,', advantages.filter(a => a.group).length, 'grouped')
+      debugLog('[post-process] ✓ merged groups into existing advantages:', advantages.length, 'items,', advantages.filter(a => a.group).length, 'grouped')
     }
   }
 
@@ -314,14 +315,14 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
       })
       return match?.group ? { ...spec, group: match.group } : spec
     })
-    console.log('[post-process] ✓ specs grouped:', specifications.filter(s => s.group).length, '/', specifications.length)
+    debugLog('[post-process] ✓ specs grouped:', specifications.filter(s => s.group).length, '/', specifications.length)
   }
 
   // ── 3. Variants : extraire du markdown ──
   if (!variants || variants.length === 0) {
     variants = parseVariantsFromMarkdown(markdownContent)
     if (variants.length > 0) {
-      console.log('[post-process] ✓ variants:', variants.length)
+      debugLog('[post-process] ✓ variants:', variants.length)
     }
   }
 
@@ -360,7 +361,7 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
         ...specifications,
         ...commonProps.map(p => ({ name: p.name, value: p.value, group: 'Caractéristiques' })),
       ]
-      console.log('[post-process] ✓', commonProps.length, 'props communes déplacées vers specifications')
+      debugLog('[post-process] ✓', commonProps.length, 'props communes déplacées vers specifications')
     }
   }
 
@@ -376,7 +377,7 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
     bareAdded += 1
   }
   if (bareAdded > 0) {
-    console.log('[post-process] ✓ added', bareAdded, 'PDF docs from markdown')
+    debugLog('[post-process] ✓ added', bareAdded, 'PDF docs from markdown')
   }
 
   // ── 5. Documents titrés `[Titre](url)` depuis markdown links — préserve le label ──
@@ -511,7 +512,7 @@ function filterDocumentsByProductRef(
     kept.push(doc)
   }
   if (rejected.length > 0) {
-    console.log('[sanitize] filterDocumentsByProductRef: kept', kept.length, '/ rejected', rejected.length, '(other-SKU or generic)')
+    debugLog('[sanitize] filterDocumentsByProductRef: kept', kept.length, '/ rejected', rejected.length, '(other-SKU or generic)')
   }
   return kept
 }
@@ -804,11 +805,11 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
   // Description : vider si c'est du cookie/GDPR (court ou long) ou du nav/footer
   let description = enriched.description
   if (description && (isGarbageContent(description) || isMainlyGarbage(description))) {
-    console.log('[sanitize] garbage description detected, clearing')
+    debugLog('[sanitize] garbage description detected, clearing')
     description = ''
   }
   if (description && isNavLikeDescription(description)) {
-    console.log('[sanitize] nav/footer description detected, clearing')
+    debugLog('[sanitize] nav/footer description detected, clearing')
     description = ''
   }
   // Description : retirer les lignes qui sont des listes de téléchargements
@@ -834,7 +835,7 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
       .replace(/\n{3,}/g, '\n\n')
       .trim()
     if (cleaned !== description) {
-      console.log('[sanitize] stripped document/URL lines from description')
+      debugLog('[sanitize] stripped document/URL lines from description')
       description = cleaned
     }
   }
@@ -873,7 +874,7 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
     if (MEGA_SPEC_NAME_RE.test(s.name.trim())) {
       const split = splitMegaSpecValue(s.value)
       if (split.length >= 3) {
-        console.log('[sanitize] mega-spec «', s.name, '» re-découpée en', split.length, 'paires')
+        debugLog('[sanitize] mega-spec «', s.name, '» re-découpée en', split.length, 'paires')
         preSpecs.push(...split.map((p) => ({ ...p, group: s.group })))
         continue
       }
@@ -962,13 +963,13 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
   const safetyHits = keptSpecs.filter((s) => SAFETY_TEXT_RE.test(`${s.name} ${s.value}`)).length
   let finalKept = keptSpecs
   if (keptSpecs.length >= 10 && safetyHits / keptSpecs.length >= 0.5) {
-    console.log('[sanitize] ⚠ dropping ALL', keptSpecs.length, 'specs — manual/safety content (', safetyHits, 'hits)')
+    debugLog('[sanitize] ⚠ dropping ALL', keptSpecs.length, 'specs — manual/safety content (', safetyHits, 'hits)')
     finalKept = []
   }
   if (rejectedSpecs.length > 0 || finalKept.length < keptSpecs.length) {
-    console.log('[sanitize] filtered', rejectedSpecs.length + (keptSpecs.length - finalKept.length), 'junk specs; kept', finalKept.length)
-    console.log('[sanitize] REJECTED specs (sample 20):', rejectedSpecs.slice(0, 20).map(s => ({ name: s.name.slice(0, 40), value: s.value.slice(0, 40), group: s.group })))
-    console.log('[sanitize] KEPT specs:', finalKept.map(s => ({ name: s.name, value: s.value.slice(0, 60), group: s.group })))
+    debugLog('[sanitize] filtered', rejectedSpecs.length + (keptSpecs.length - finalKept.length), 'junk specs; kept', finalKept.length)
+    debugLog('[sanitize] REJECTED specs (sample 20):', rejectedSpecs.slice(0, 20).map(s => ({ name: s.name.slice(0, 40), value: s.value.slice(0, 40), group: s.group })))
+    debugLog('[sanitize] KEPT specs:', finalKept.map(s => ({ name: s.name, value: s.value.slice(0, 60), group: s.group })))
   }
 
   // Avantages : nettoyer les noms de groupes fragments ("ET avantages",
@@ -1292,7 +1293,7 @@ function scoreResult(r: SearchResult, sourceTokens: string[], brand?: string, re
     const refNorm = reference.toLowerCase().replace(/[^a-z0-9]/g, '')
     if (refNorm.length >= 3 && pathNorm.includes(refNorm)) {
       s += 20
-      console.log('[scoring] ref in URL! +20:', reference, '→', pathname)
+      debugLog('[scoring] ref in URL! +20:', reference, '→', pathname)
     }
   }
 
@@ -1355,7 +1356,7 @@ function scoreResult(r: SearchResult, sourceTokens: string[], brand?: string, re
  * puis DuckDuckGo Lite via r.jina.ai (gratuit, sans clé) en fallback.
  */
 export async function jinaSearch(query: string, limit = 10): Promise<SearchResult[]> {
-  console.log('[jina-search] →', { query, limit })
+  debugLog('[jina-search] →', { query, limit })
   const jinaKey = getApiKey('jina')
 
   // ── Tentative 1 : endpoint de recherche dédié s.jina.ai ──
@@ -1376,7 +1377,7 @@ export async function jinaSearch(query: string, limit = 10): Promise<SearchResul
         .filter((d): d is { url: string; title?: string; description?: string } => typeof d.url === 'string' && d.url.startsWith('http'))
         .slice(0, limit)
         .map((d) => ({ url: d.url, title: d.title, description: d.description }))
-      console.log('[jina-search] [s.jina.ai] parsed', results.length, 'results')
+      debugLog('[jina-search] [s.jina.ai] parsed', results.length, 'results')
       recordScrapeUsage({ platform: 'jina', tokens: results.length * 500 })
       if (results.length > 0) return results
     } else {
@@ -1434,7 +1435,7 @@ export async function jinaSearch(query: string, limit = 10): Promise<SearchResul
     }
   }
 
-  console.log('[jina-search] [ddg-lite] parsed', results.length, 'results:', results.map((r) => r.url))
+  debugLog('[jina-search] [ddg-lite] parsed', results.length, 'results:', results.map((r) => r.url))
   return results
 }
 
@@ -1443,7 +1444,7 @@ export async function jinaSearch(query: string, limit = 10): Promise<SearchResul
  * Scrape une page via Jina Reader (r.jina.ai) → markdown.
  */
 async function jinaScrapeMarkdown(pageUrl: string): Promise<string | null> {
-  console.log('[jina-reader] scraping →', pageUrl)
+  debugLog('[jina-reader] scraping →', pageUrl)
   const jinaKey = getApiKey('jina')
 
   // Utiliser le mode JSON (comme useJina.ts) — retourne le markdown + images map + links map
@@ -1457,7 +1458,7 @@ async function jinaScrapeMarkdown(pageUrl: string): Promise<string | null> {
   }
   if (jinaKey) {
     headers['Authorization'] = `Bearer ${jinaKey}`
-    console.log('[jina-reader] ✓ using API key (paid mode)')
+    debugLog('[jina-reader] ✓ using API key (paid mode)')
   }
 
   const res = await fetch(`https://r.jina.ai/${pageUrl}`, { headers })
@@ -1477,7 +1478,7 @@ async function jinaScrapeMarkdown(pageUrl: string): Promise<string | null> {
   if (!md || md.length < 50) return null
   recordScrapeUsage({ platform: 'jina', tokens: json?.data?.usage?.tokens ?? Math.round(md.length / 4) })
 
-  console.log('[jina-reader] JSON mode → content:', md.length, 'chars, images:', Object.keys(imagesMap ?? {}).length, ', links:', Object.keys(linksMap ?? {}).length)
+  debugLog('[jina-reader] JSON mode → content:', md.length, 'chars, images:', Object.keys(imagesMap ?? {}).length, ', links:', Object.keys(linksMap ?? {}).length)
 
   // Nettoyage agressif du markdown avant LLM (cookies, nav, facettes, pricing,
   // catalog listings…). Cf. markdownSanitize.ts pour le détail des patterns.
@@ -1491,7 +1492,7 @@ async function jinaScrapeMarkdown(pageUrl: string): Promise<string | null> {
         + imgEntries.map(([, url]) => url).join('\n')
         + '\nJINA_EXTRACTED_IMAGES_END'
       md += imgSection
-      console.log('[jina-reader] ✓ injected', imgEntries.length, 'images from JSON response')
+      debugLog('[jina-reader] ✓ injected', imgEntries.length, 'images from JSON response')
     }
   }
 
@@ -1504,7 +1505,7 @@ async function jinaScrapeMarkdown(pageUrl: string): Promise<string | null> {
         + docEntries.map(([title, url]) => `${title}##${url}`).join('\n')
         + '\nJINA_EXTRACTED_DOWNLOADS_END'
       md += dlSection
-      console.log('[jina-reader] ✓ injected', docEntries.length, 'documents from JSON response')
+      debugLog('[jina-reader] ✓ injected', docEntries.length, 'documents from JSON response')
     }
   }
 
@@ -1518,7 +1519,7 @@ async function jinaScrapeMarkdown(pageUrl: string): Promise<string | null> {
  * 3. Parse le contenu pour les JSON-LD / sections cachées
  */
 async function scrapeHtmlFallback(pageUrl: string): Promise<string | null> {
-  console.log('[html-fallback] multi-strategy scrape →', pageUrl)
+  debugLog('[html-fallback] multi-strategy scrape →', pageUrl)
 
   // ── Stratégie 1 : Jina Reader en mode JSON (contient parfois plus de data) ──
   try {
@@ -1537,13 +1538,13 @@ async function scrapeHtmlFallback(pageUrl: string): Promise<string | null> {
       const json = await res.json()
       const content = json?.data?.content || json?.content || ''
       const html = json?.data?.html || json?.html || ''
-      console.log('[html-fallback] Jina JSON → content:', content?.length, 'chars, html:', html?.length, 'chars')
+      debugLog('[html-fallback] Jina JSON → content:', content?.length, 'chars, html:', html?.length, 'chars')
 
       // Si on a le HTML rendu, parser le DOM
       if (html && html.length > 500) {
         const result = extractSpecsFromHtml(html)
         if (result && result.split('\n').filter((l: string) => l.startsWith('|')).length >= 3) {
-          console.log('[html-fallback] ✓ extracted specs from Jina HTML output')
+          debugLog('[html-fallback] ✓ extracted specs from Jina HTML output')
           return result
         }
       }
@@ -1553,7 +1554,7 @@ async function scrapeHtmlFallback(pageUrl: string): Promise<string | null> {
         // Le content JSON peut avoir plus de données que le markdown standard
         const specCount = parseSpecsFromMarkdown(content).length
         if (specCount >= 3) {
-          console.log('[html-fallback] ✓ Jina JSON content has', specCount, 'specs')
+          debugLog('[html-fallback] ✓ Jina JSON content has', specCount, 'specs')
           return content
         }
       }
@@ -1573,16 +1574,16 @@ async function scrapeHtmlFallback(pageUrl: string): Promise<string | null> {
       if (!res.ok) continue
       const html = await res.text()
       if (!html || html.length < 500) continue
-      console.log('[html-fallback] CORS proxy got', html.length, 'chars from', proxyUrl.split('?')[0])
+      debugLog('[html-fallback] CORS proxy got', html.length, 'chars from', proxyUrl.split('?')[0])
       const result = extractSpecsFromHtml(html)
       if (result && result.split('\n').filter((l: string) => l.startsWith('|')).length >= 2) {
-        console.log('[html-fallback] ✓ extracted specs from CORS proxy HTML')
+        debugLog('[html-fallback] ✓ extracted specs from CORS proxy HTML')
         return result
       }
     } catch { /* proxy failed, try next */ }
   }
 
-  console.log('[html-fallback] all strategies exhausted')
+  debugLog('[html-fallback] all strategies exhausted')
   return null
 }
 
@@ -1672,7 +1673,7 @@ interface DeepScrapeResult {
  * pour forcer le rendu complet des accordéons / sections dynamiques.
  */
 async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeResult | null> {
-  console.log('[jina-manufacturer] deep scraping →', pageUrl)
+  debugLog('[jina-manufacturer] deep scraping →', pageUrl)
 
   // JavaScript injecté dans la page via Jina injectPageScript.
   // IMPORTANT : le script s'exécute AVANT les scripts de la page.
@@ -2166,7 +2167,7 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
     }
 
     // POST avec injectPageScript pour exécuter le JS d'expansion des accordéons
-    console.log('[jina-manufacturer] POST with injectPageScript to expand accordions')
+    debugLog('[jina-manufacturer] POST with injectPageScript to expand accordions')
     const res = await fetch('https://r.jina.ai/', {
       method: 'POST',
       headers: {
@@ -2212,7 +2213,7 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
     // parseDescriptionFromMarkdown en aval.
     md = sanitizeJinaMarkdown(md)
 
-    console.log('[jina-manufacturer] POST got', md.length, 'chars (with JS accordion expand)')
+    debugLog('[jina-manufacturer] POST got', md.length, 'chars (with JS accordion expand)')
     recordScrapeUsage({ platform: 'jina', tokens: Math.round(md.length / 4) })
 
     // Injecter images et documents PDF depuis le JSON response
@@ -2220,7 +2221,7 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
       const imgEntries = Object.entries(postImages).filter(([, url]) => typeof url === 'string' && url.startsWith('http'))
       if (imgEntries.length > 0 && md.indexOf('JINA_EXTRACTED_IMAGES_START') === -1) {
         md += '\n\nJINA_EXTRACTED_IMAGES_START\n' + imgEntries.map(([, url]) => url).join('\n') + '\nJINA_EXTRACTED_IMAGES_END'
-        console.log('[jina-manufacturer] ✓ injected', imgEntries.length, 'images from POST JSON')
+        debugLog('[jina-manufacturer] ✓ injected', imgEntries.length, 'images from POST JSON')
       }
     }
     if (postLinks && typeof postLinks === 'object') {
@@ -2228,13 +2229,13 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
       const docEntries = Object.entries(postLinks).filter(([, href]) => DOC_EXT.test(href))
       if (docEntries.length > 0 && md.indexOf('JINA_EXTRACTED_DOWNLOADS_START') === -1) {
         md += '\n\nJINA_EXTRACTED_DOWNLOADS_START\n' + docEntries.map(([title, url]) => `${title}##${url}`).join('\n') + '\nJINA_EXTRACTED_DOWNLOADS_END'
-        console.log('[jina-manufacturer] ✓ injected', docEntries.length, 'documents from POST JSON')
+        debugLog('[jina-manufacturer] ✓ injected', docEntries.length, 'documents from POST JSON')
       }
     }
 
     const deepSpecs = parseSpecsFromMarkdown(md).length
     const deepAdvs = parseAdvantagesFromMarkdown(md).length
-    console.log('[jina-manufacturer] POST scrape quality:', { specs: deepSpecs, advantages: deepAdvs })
+    debugLog('[jina-manufacturer] POST scrape quality:', { specs: deepSpecs, advantages: deepAdvs })
 
     // TOUJOURS fusionner avec le GET JSON pour avoir un maximum de données
     // Le POST capture les accordéons expandés, le GET capture la structure + images JSON
@@ -2242,11 +2243,11 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
     if (basicMd) {
       const basicSpecs = parseSpecsFromMarkdown(basicMd).length
       const basicAdvs = parseAdvantagesFromMarkdown(basicMd).length
-      console.log('[jina-manufacturer] basic scrape quality:', { specs: basicSpecs, advantages: basicAdvs })
+      debugLog('[jina-manufacturer] basic scrape quality:', { specs: basicSpecs, advantages: basicAdvs })
       // Fusionner les deux sources (dédoublonner specs au moment du parsing)
       if (basicMd.length > 200) {
         md = md + '\n\n' + basicMd
-        console.log('[jina-manufacturer] ✓ merged POST + JSON →', md.length, 'chars')
+        debugLog('[jina-manufacturer] ✓ merged POST + JSON →', md.length, 'chars')
       }
     }
 
@@ -2261,7 +2262,7 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
 /** Fallback GET pour le scraping fabricant (sans injection JS) — utilise le mode JSON */
 async function jinaScrapeMaufacturerPageFallback(pageUrl: string, _jinaKey: string): Promise<DeepScrapeResult | null> {
   // Réutilise jinaScrapeMarkdown qui est déjà en mode JSON avec images/links
-  console.log('[jina-manufacturer-fallback] falling back to JSON mode scrape')
+  debugLog('[jina-manufacturer-fallback] falling back to JSON mode scrape')
   const fallbackMd = await jinaScrapeMarkdown(pageUrl)
   return fallbackMd ? { markdown: fallbackMd, html: null, source: 'get-fallback' as const } : null
 }
@@ -2274,7 +2275,7 @@ async function jinaScrapeMaufacturerPageFallback(pageUrl: string, _jinaKey: stri
  * - Embedded JSON in script tags
  */
 async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerData> {
-  console.log('[manufacturer] fetching raw HTML →', pageUrl)
+  debugLog('[manufacturer] fetching raw HTML →', pageUrl)
   const data: ManufacturerData = { downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [], pictoUrls: [], advantages: [], structured: null }
 
   // Voie principale : Cloud Function `fetchPageHtml` (serveur, pas de CORS),
@@ -2285,13 +2286,13 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
   try {
     const { fetchSourceHtml } = await import('@/features/scraping-templates/fetchSourceHtml')
     html = (await fetchSourceHtml(pageUrl)) ?? ''
-    if (html) console.log('[manufacturer] HTML fetched:', html.length, 'chars')
+    if (html) debugLog('[manufacturer] HTML fetched:', html.length, 'chars')
   } catch (err) {
     console.warn('[manufacturer] fetchSourceHtml failed:', err)
   }
 
   if (!html || html.length < 1000) {
-    console.log('[manufacturer] no HTML available (CF + proxies down)')
+    debugLog('[manufacturer] no HTML available (CF + proxies down)')
     return data
   }
 
@@ -2300,9 +2301,9 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
     const { parseStructuredDataAny } = await import('@/features/scraping/core/structuredData')
     data.structured = parseStructuredDataAny(html)
     if (data.structured?.offers?.price != null) {
-      console.log('[manufacturer] ✓ JSON-LD price (RRP):', data.structured.offers.price, data.structured.offers.priceCurrency)
+      debugLog('[manufacturer] ✓ JSON-LD price (RRP):', data.structured.offers.price, data.structured.offers.priceCurrency)
     }
-    if (data.structured?.gtin) console.log('[manufacturer] ✓ JSON-LD gtin:', data.structured.gtin)
+    if (data.structured?.gtin) debugLog('[manufacturer] ✓ JSON-LD gtin:', data.structured.gtin)
   } catch (err) {
     console.warn('[manufacturer] structured data parse failed:', err)
   }
@@ -2313,7 +2314,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
     const items = extractBreadcrumbFromHtml(html)
     if (items.length > 0) {
       data.breadcrumb = items
-      console.log('[manufacturer] ✓ breadcrumb from HTML:', items)
+      debugLog('[manufacturer] ✓ breadcrumb from HTML:', items)
     }
   } catch (err) {
     console.warn('[manufacturer] breadcrumb extraction failed:', err)
@@ -2327,12 +2328,12 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
   const scopeHtml = extractProductScope(html)
   if (scopeHtml) {
     data.productScopeText = productScopeText(scopeHtml)
-    console.log('[manufacturer] ✓ product scope:', scopeHtml.length, 'chars (page:', html.length, ')')
+    debugLog('[manufacturer] ✓ product scope:', scopeHtml.length, 'chars (page:', html.length, ')')
   }
   data.advantages = scopeHtml ? parseAdvantagesFromHtml(scopeHtml) : []
   if (data.advantages.length === 0) data.advantages = parseAdvantagesFromHtml(html)
   if (data.advantages.length > 0) {
-    console.log('[manufacturer] ✓ advantages from HTML:', data.advantages.length)
+    debugLog('[manufacturer] ✓ advantages from HTML:', data.advantages.length)
   }
 
   // ── 0ter. EAN depuis le widget Icecat Live (plateforme standard) ──
@@ -2342,7 +2343,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
   const icecatGtin = parseIcecatGtin(html)
   if (icecatGtin) {
     data.specs.push({ name: 'EAN', value: icecatGtin })
-    console.log('[manufacturer] ✓ EAN from Icecat widget:', icecatGtin)
+    debugLog('[manufacturer] ✓ EAN from Icecat widget:', icecatGtin)
   }
 
   // ── 1. Parse window.__REDUX_STORE (TTI Group / sites Relay) ──
@@ -2366,7 +2367,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
       const store = JSON.parse(reduxJson)
       const pd = store?.productDetail
       if (pd) {
-        console.log('[manufacturer] REDUX_STORE.productDetail found — keys:', Object.keys(pd))
+        debugLog('[manufacturer] REDUX_STORE.productDetail found — keys:', Object.keys(pd))
 
         // Downloads (PDFs)
         if (Array.isArray(pd.downloads)) {
@@ -2377,7 +2378,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
               data.downloads.push({ name: String(name), url })
             }
           }
-          console.log('[manufacturer] ✓ downloads:', data.downloads.length)
+          debugLog('[manufacturer] ✓ downloads:', data.downloads.length)
         }
 
         // Specs : chercher dans toutes les clés possibles du productDetail
@@ -2423,7 +2424,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
             }
           }
           if (data.specs.length > 0) {
-            console.log('[manufacturer] ✓ specs from REDUX key "' + key + '":', data.specs.length)
+            debugLog('[manufacturer] ✓ specs from REDUX key "' + key + '":', data.specs.length)
             break
           }
         }
@@ -2442,7 +2443,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
                   for (const item of obj) {
                     data.specs.push({ name: String(item.name), value: String(item.value), group: group || undefined })
                   }
-                  console.log('[manufacturer] ✓ deep-found', obj.length, 'specs under key "' + parentKey + '"')
+                  debugLog('[manufacturer] ✓ deep-found', obj.length, 'specs under key "' + parentKey + '"')
                 }
               }
               for (const item of obj) deepFindSpecs(item, depth + 1, parentKey)
@@ -2453,7 +2454,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
             }
           }
           deepFindSpecs(pd)
-          if (data.specs.length > 0) console.log('[manufacturer] ✓ deep search found', data.specs.length, 'specs total')
+          if (data.specs.length > 0) debugLog('[manufacturer] ✓ deep search found', data.specs.length, 'specs total')
         }
 
         // Variants
@@ -2472,7 +2473,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
             }
             if (ref) data.variants.push({ reference: String(ref), label: String(label), properties })
           }
-          console.log('[manufacturer] ✓ variants:', data.variants.length)
+          debugLog('[manufacturer] ✓ variants:', data.variants.length)
         }
 
         // Images
@@ -2489,7 +2490,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
             if (typeof url === 'string' && /^https?:\/\//.test(url)) data.images.push(url)
           }
         }
-        console.log('[manufacturer] ✓ images:', data.images.length)
+        debugLog('[manufacturer] ✓ images:', data.images.length)
 
         // Description from REDUX
         if (pd.description && typeof pd.description === 'string' && pd.description.length > 30) {
@@ -2523,7 +2524,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
         }
         data.pictoUrls = [...new Set(data.pictoUrls)]
         if (data.pictoUrls.length > 0) {
-          console.log('[manufacturer] ✓ picto/badge URLs (provenance):', data.pictoUrls.length)
+          debugLog('[manufacturer] ✓ picto/badge URLs (provenance):', data.pictoUrls.length)
         }
       }
 
@@ -2542,7 +2543,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
                 }
               }
               if (data.specs.length > 0) {
-                console.log('[manufacturer] ✓ specs from REDUX store.' + topKey + '.' + k + ':', data.specs.length)
+                debugLog('[manufacturer] ✓ specs from REDUX store.' + topKey + '.' + k + ':', data.specs.length)
                 break
               }
             }
@@ -2600,7 +2601,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
         for (const img of sd.images) {
           if (!data.images.includes(img)) data.images.push(img)
         }
-        if (sd.specs.length > 0) console.log('[manufacturer] ✓ specs from structured-data (hasVariant aware):', sd.specs.length)
+        if (sd.specs.length > 0) debugLog('[manufacturer] ✓ specs from structured-data (hasVariant aware):', sd.specs.length)
       }
     } catch (err) {
       console.warn('[manufacturer] structured-data parse failed:', err)
@@ -2622,7 +2623,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
     for (const img of parsed) {
       if (!isJunkImageUrl(img) && !data.images.includes(img)) { data.images.push(img); added++ }
     }
-    if (added > 0) console.log('[manufacturer] ✓ images from raw HTML:', added)
+    if (added > 0) debugLog('[manufacturer] ✓ images from raw HTML:', added)
   } catch (err) {
     console.warn('[manufacturer] HTML image parse failed:', err)
   }
@@ -2725,7 +2726,7 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
           techCount++
         }
       }
-      if (techCount > 0) console.log('[manufacturer] ✓ specs from techspecs HTML rows:', techCount)
+      if (techCount > 0) debugLog('[manufacturer] ✓ specs from techspecs HTML rows:', techCount)
 
       // ── Tables de specs en <div> (convention body-row / body-cell) ──
       // Beaucoup de fabricants (Bosch Professional & co) rendent la fiche
@@ -2765,9 +2766,9 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
           divCount++
         }
       }
-      if (divCount > 0) console.log('[manufacturer] ✓ specs from <div> table rows:', divCount)
+      if (divCount > 0) debugLog('[manufacturer] ✓ specs from <div> table rows:', divCount)
 
-      if (data.specs.length > 0) console.log('[manufacturer] ✓ specs from HTML DOM:', data.specs.length)
+      if (data.specs.length > 0) debugLog('[manufacturer] ✓ specs from HTML DOM:', data.specs.length)
     } catch (err) {
       console.warn('[manufacturer] HTML DOM spec extraction failed:', err)
     }
@@ -2783,10 +2784,10 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
         data.downloads.push({ name: filename, url })
       }
     }
-    console.log('[manufacturer] ✓ PDF links from HTML:', data.downloads.length)
+    debugLog('[manufacturer] ✓ PDF links from HTML:', data.downloads.length)
   }
 
-  console.log('[manufacturer] raw data summary:', {
+  debugLog('[manufacturer] raw data summary:', {
     downloads: data.downloads.length,
     variants: data.variants.length,
     images: data.images.length,
@@ -2871,7 +2872,7 @@ function buildManufacturerProduct(
   productUrl: string,
   additionalSources: string[],
 ): EnrichedProduct {
-  console.log('[manufacturer-build] combining markdown + raw data')
+  debugLog('[manufacturer-build] combining markdown + raw data')
 
   // Specs : priorité aux données REDUX/JSON-LD, enrichies par le markdown
   const mdSpecs = markdownContent ? parseSpecsFromMarkdown(markdownContent) : []
@@ -2906,7 +2907,7 @@ function buildManufacturerProduct(
     const beforeCount = advantages.length
     advantages = mergeAdvantagesAdditive(advantages, rawData.advantages)
     if (advantages.length > beforeCount) {
-      console.log('[manufacturer-build] ✓ advantages completed from HTML:', beforeCount, '→', advantages.length)
+      debugLog('[manufacturer-build] ✓ advantages completed from HTML:', beforeCount, '→', advantages.length)
     }
   }
   // + pictogrammes d'équipement (section "Symbols" des fiches fabricant)
@@ -2916,13 +2917,13 @@ function buildManufacturerProduct(
     for (const p of pictos) {
       if (!seenAdv.has(p.text.toLowerCase())) advantages.push(p)
     }
-    if (pictos.length > 0) console.log('[manufacturer-build] ✓ pictos:', pictos.length)
+    if (pictos.length > 0) debugLog('[manufacturer-build] ✓ pictos:', pictos.length)
   }
 
   // Description : REDUX > markdown (avec filtrage du cookie/GDPR banner)
   let description = rawData.description || ''
   if (description && (isGarbageContent(description) || isMainlyGarbage(description))) {
-    console.log('[manufacturer-build] garbage description from REDUX, clearing')
+    debugLog('[manufacturer-build] garbage description from REDUX, clearing')
     description = ''
   }
   if (!description || description.length < 30) {
@@ -2952,7 +2953,7 @@ function buildManufacturerProduct(
       if (!seen.has(url)) { images.push(url); seen.add(url) }
     }
   }
-  console.log('[manufacturer-build] images:', images.length)
+  debugLog('[manufacturer-build] images:', images.length)
 
   // Documents : libellés visibles du markdown > Jina injected > REDUX > PDFs bruts
   const documents: EnrichedDocument[] = []
@@ -2969,7 +2970,7 @@ function buildManufacturerProduct(
   if (markdownContent) {
     const named = parseNamedDocLinks(markdownContent)
     for (const d of named) pushDocBuild(d.url, d.name)
-    if (named.length > 0) console.log('[manufacturer-build] ✓ named doc links:', named.length)
+    if (named.length > 0) debugLog('[manufacturer-build] ✓ named doc links:', named.length)
   }
   // Puis : le bloc JINA_EXTRACTED_DOWNLOADS injecté par le script.
   // ⚠ injecté au format `titre##url` (cf. jinaScrapeMaufacturerPage) — l'ancien
@@ -2992,7 +2993,7 @@ function buildManufacturerProduct(
           pushDocBuild(trimmed)
         }
       }
-      console.log('[manufacturer-build] ✓ Jina injected downloads:', documents.length)
+      debugLog('[manufacturer-build] ✓ Jina injected downloads:', documents.length)
     }
   }
   // REDUX/HTML downloads : merge inconditionnel — ils portent les vrais titres
@@ -3009,7 +3010,7 @@ function buildManufacturerProduct(
     for (const m of mdLinks) pushDocBuild(m[2].trim(), m[1].trim())
   }
 
-  console.log('[manufacturer-build] result:', {
+  debugLog('[manufacturer-build] result:', {
     specs: specifications.length,
     advantages: advantages.length,
     variants: variants.length,
@@ -3054,7 +3055,7 @@ function buildManufacturerProduct(
     identity.model, identity.manufacturerRef, identity.distributorRef, identity.ean,
   ])
   if (productImages.length !== uniqueImages.length) {
-    console.log('[manufacturer-build] ✓ images filtrées par référence :', uniqueImages.length, '→', productImages.length)
+    debugLog('[manufacturer-build] ✓ images filtrées par référence :', uniqueImages.length, '→', productImages.length)
   }
 
   // Pictos par provenance (REDUX standardsFeaturesIcons & co) : ré-ajoutés
@@ -3467,7 +3468,7 @@ function parseImagesFromMarkdown(md: string): string[] {
       deduped.push(url)
     }
   }
-  console.log('[parseImagesFromMarkdown] fullMdLen=', fullMd.length, 'raw=', images.length, 'productMatch=', productImages.length, 'final=', deduped.length, 'sample:', deduped.slice(0, 3))
+  debugLog('[parseImagesFromMarkdown] fullMdLen=', fullMd.length, 'raw=', images.length, 'productMatch=', productImages.length, 'final=', deduped.length, 'sample:', deduped.slice(0, 3))
   return deduped
 }
 
@@ -3533,14 +3534,14 @@ async function enrichProductCoreInner(
       ;(globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked = false
       const log = (msg: string) => addLog(sheetName, rowId, msg)
       try {
-        console.log('[enrichment] START', { sheetName, rowId, title, brand, reference: reference ?? sku, knownUrl })
+        debugLog('[enrichment] START', { sheetName, rowId, title, brand, reference: reference ?? sku, knownUrl })
         log(`Démarrage — ${title} ${brand ?? ''}`)
         // ── Étape 0 : Vérifier le cache scraping (Re-générer réutilise les mêmes données) ──
         let cached = getScrapeCache(sheetName, rowId)
         // Invalide le cache si le markdown est en fait une page CAPTCHA / challenge
         // bot → force un nouveau scrape pour tenter Firecrawl HTML mode.
         if (cached?.markdownContent && looksLikeBotChallenge(cached.markdownContent)) {
-          console.log('[enrichment] ⚠ cached markdown is CAPTCHA/challenge — invalidating cache')
+          debugLog('[enrichment] ⚠ cached markdown is CAPTCHA/challenge — invalidating cache')
           log(`Cache invalidé — ancienne donnée était une page CAPTCHA`)
           clearScrapeCache(sheetName, rowId)
           cached = undefined
@@ -3561,7 +3562,7 @@ async function enrichProductCoreInner(
           if (brandHasKnownDomains && !cachedIsManufacturer) {
             // La marque a un site officiel connu mais le cache pointe vers un revendeur
             // → invalider entièrement le cache pour forcer une nouvelle recherche
-            console.log('[enrichment] ⚠ cache URL', cached.productUrl, 'is NOT manufacturer site for brand', brand, '— invalidating cache for fresh search')
+            debugLog('[enrichment] ⚠ cache URL', cached.productUrl, 'is NOT manufacturer site for brand', brand, '— invalidating cache for fresh search')
             log(`Cache invalidé — ${cached.productUrl} n'est pas le site fabricant ${brand}`)
             // Ne pas réutiliser le cache — laisser productUrl null pour déclencher la recherche
           } else {
@@ -3574,14 +3575,14 @@ async function enrichProductCoreInner(
             productUrl = cached.productUrl
             additionalSources = cached.additionalSources
             usedCache = true
-            console.log('[enrichment] ★ using scrape cache →', { url: productUrl, specs: cachedSpecCount, mdLen: cached.markdownContent?.length })
+            debugLog('[enrichment] ★ using scrape cache →', { url: productUrl, specs: cachedSpecCount, mdLen: cached.markdownContent?.length })
             log(`Cache réutilisé — ${cachedSpecCount} specs, ${cached.markdownContent?.length ?? 0} chars`)
           } else {
             // Cache pauvre — garder l'URL mais re-scraper
             productUrl = cached.productUrl
             additionalSources = cached.additionalSources
             usedCache = false
-            console.log('[enrichment] ⚠ cache has only', cachedSpecCount, 'specs — will re-scrape and try fallbacks')
+            debugLog('[enrichment] ⚠ cache has only', cachedSpecCount, 'specs — will re-scrape and try fallbacks')
           }
           }
         } else if (!productUrl) {
@@ -3711,14 +3712,14 @@ async function enrichProductCoreInner(
           const processSearchResults = (results: SearchResult[], q: string): boolean => {
             const clean = results.filter((r) => {
               const junk = isJunkUrl(r.url)
-              if (junk) console.log('[enrichment] rejecting junk URL:', r.url)
+              if (junk) debugLog('[enrichment] rejecting junk URL:', r.url)
               return !junk
             })
             if (clean.length === 0) return false
             const scored = clean
               .map((r) => ({ r, score: scoreResult(r, sourceTokens, brand, reference ?? sku) }))
               .sort((a, b) => b.score - a.score)
-            console.log('[enrichment] scored results:', scored.map((s) => ({ url: s.r.url, score: s.score })))
+            debugLog('[enrichment] scored results:', scored.map((s) => ({ url: s.r.url, score: s.score })))
             const top = scored[0]
             // Mémoriser le top même si score <= 0 pour servir de filet de secours
             if (!fallbackBox.current || top.score > fallbackBox.current.score) {
@@ -3744,7 +3745,7 @@ async function enrichProductCoreInner(
           // ── Recherche via Jina (DuckDuckGo) ──
           for (const q of queries) {
             try {
-              console.log('[enrichment] [Jina] trying search query:', q)
+              debugLog('[enrichment] [Jina] trying search query:', q)
               log(`Recherche : ${q.length > 80 ? q.slice(0, 77) + '…' : q}`)
               const results = await jinaSearch(q, 10)
               if (processSearchResults(results, q)) break
@@ -3759,7 +3760,7 @@ async function enrichProductCoreInner(
           // pénalisée). Accepter le meilleur plutôt que d'échouer complètement.
           if (!pickBox.current && fallbackBox.current) {
             pickBox.current = fallbackBox.current
-            console.log('[enrichment] ⚠ using fallback pick (score ≤ 0) →', fallbackBox.current.url, 'score:', fallbackBox.current.score)
+            debugLog('[enrichment] ⚠ using fallback pick (score ≤ 0) →', fallbackBox.current.url, 'score:', fallbackBox.current.score)
             log(`⚠ Filet de secours : ${fallbackBox.current.url} (score ${fallbackBox.current.score})`)
           }
 
@@ -3767,7 +3768,7 @@ async function enrichProductCoreInner(
           if (finalPick) {
             productUrl = finalPick.url
             additionalSources = finalPick.extras
-            console.log('[enrichment] ✓ final pick →', { url: productUrl, score: finalPick.score, query: finalPick.query })
+            debugLog('[enrichment] ✓ final pick →', { url: productUrl, score: finalPick.score, query: finalPick.query })
             log(`✓ URL trouvée : ${productUrl} (score ${finalPick.score})`)
           }
 
@@ -3776,7 +3777,7 @@ async function enrichProductCoreInner(
           if (finalPick && brandSlug && Object.keys(MANUFACTURER_DOMAINS).includes(brandSlug)) {
             const isAlreadyManufacturer = detectManufacturerSite(finalPick.url)
             if (!isAlreadyManufacturer) {
-              console.log('[enrichment] ⚡ best pick is NOT manufacturer site — trying final manufacturer probe for', brandSlug)
+              debugLog('[enrichment] ⚡ best pick is NOT manufacturer site — trying final manufacturer probe for', brandSlug)
               log(`URL n'est pas le site fabricant — recherche sur site officiel ${brandSlug}…`)
               const mfrDomains = MANUFACTURER_DOMAINS[brandSlug]
               if (mfrDomains) {
@@ -3785,7 +3786,7 @@ async function enrichProductCoreInner(
                 for (const domain of mfrDomains) {
                   try {
                     const probeQuery = `${probeTerms} site:${domain}`
-                    console.log('[enrichment] [manufacturer-probe] trying:', probeQuery)
+                    debugLog('[enrichment] [manufacturer-probe] trying:', probeQuery)
                     const probeResults = await jinaSearch(probeQuery, 5)
                     const probeClean = probeResults.filter((r) => !isJunkUrl(r.url))
                     const probeMfr = probeClean.filter((r) => detectManufacturerSite(r.url))
@@ -3795,7 +3796,7 @@ async function enrichProductCoreInner(
                         .sort((a, b) => b.score - a.score)
                       if (scored[0].score > 0) {
                         // Remplacer le pick par le résultat fabricant — mettre l'ancien dans extras
-                        console.log('[enrichment] ✓ manufacturer probe found:', scored[0].r.url, 'score:', scored[0].score)
+                        debugLog('[enrichment] ✓ manufacturer probe found:', scored[0].r.url, 'score:', scored[0].score)
                         log(`✓ Site fabricant trouvé : ${scored[0].r.url}`)
                         additionalSources = [finalPick.url, ...finalPick.extras]
                         productUrl = scored[0].r.url
@@ -4150,7 +4151,7 @@ async function enrichProductCoreInner(
               ].filter(Boolean).join(', ')
               if (fields.length > 0) {
                 log(`✓ JSON-LD Schema.org extrait : ${fields}`)
-                console.log('[enrichment] structured-data:', structuredData)
+                debugLog('[enrichment] structured-data:', structuredData)
               }
             }
             ;(globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured = structuredData
@@ -4159,7 +4160,7 @@ async function enrichProductCoreInner(
             log(`✗ Scrape échec : ${String(err).slice(0, 200)}`)
           }
           if (markdownContent) {
-            console.log('[enrichment] markdown preview (first 3000 chars):\n', markdownContent.slice(0, 3000))
+            debugLog('[enrichment] markdown preview (first 3000 chars):\n', markdownContent.slice(0, 3000))
           }
 
           // ── Repli SUR LA MÊME URL : le rendu « deep » (navigateur, onglets) peut
@@ -4172,7 +4173,7 @@ async function enrichProductCoreInner(
               const simpleMd = await jinaScrapeMarkdown(productUrl)
               if (simpleMd && parseDescriptionFromMarkdown(simpleMd).length >= 30) {
                 log('✓ Repli GET simple Jina — la description manquait au rendu deep')
-                console.log('[enrichment] deep render sans description → bascule sur jinaScrapeMarkdown (même URL)')
+                debugLog('[enrichment] deep render sans description → bascule sur jinaScrapeMarkdown (même URL)')
                 markdownContent = scoreMd(simpleMd) >= scoreMd(markdownContent)
                   ? simpleMd
                   : `${markdownContent ?? ''}\n\n${simpleMd}` // fusion si le deep avait d'autres specs
@@ -4182,18 +4183,18 @@ async function enrichProductCoreInner(
 
           // ── Fallback : si le markdown est trop court/pauvre, essayer des sources alternatives ──
           const primaryScore = scoreMd(markdownContent)
-          console.log('[enrichment] primary markdown score:', primaryScore, '(', markdownContent?.length ?? 0, 'chars)')
+          debugLog('[enrichment] primary markdown score:', primaryScore, '(', markdownContent?.length ?? 0, 'chars)')
           log(`Score qualité markdown : ${primaryScore} (specs×3 + avantages×2)`)
           if (primaryScore < 10 && additionalSources.length > 0) {
-            console.log('[enrichment] ⚡ primary scrape insufficient (score', primaryScore, '), trying alternatives…')
+            debugLog('[enrichment] ⚡ primary scrape insufficient (score', primaryScore, '), trying alternatives…')
             log(`Score trop faible — test de ${additionalSources.length} source(s) alternative(s)…`)
             for (const altUrl of additionalSources.slice(0, 3)) {
               try {
                 const altMd = await jinaScrapeMarkdown(altUrl)
                 const altScore = scoreMd(altMd)
-                console.log('[enrichment] alt source:', altUrl, '→ score', altScore, '(', altMd?.length ?? 0, 'chars)')
+                debugLog('[enrichment] alt source:', altUrl, '→ score', altScore, '(', altMd?.length ?? 0, 'chars)')
                 if (altScore > primaryScore) {
-                  console.log('[enrichment] ✓ alternative source is better:', altUrl)
+                  debugLog('[enrichment] ✓ alternative source is better:', altUrl)
                   log(`✓ Meilleure source alternative : ${new URL(altUrl).hostname}`)
                   markdownContent = altMd
                   break
@@ -4209,7 +4210,7 @@ async function enrichProductCoreInner(
           const isBotChallenge = looksLikeBotChallenge(markdownContent ?? '')
           if (isBotChallenge) {
             log(`⚠ Page CAPTCHA / challenge bot détectée — fallback forcé`)
-            console.log('[enrichment] ⚠ bot challenge detected in markdown, forcing fallback')
+            debugLog('[enrichment] ⚠ bot challenge detected in markdown, forcing fallback')
             // Marque le contexte global pour propager le flag jusqu'au build final.
             ;(globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked = true
           }
@@ -4234,7 +4235,7 @@ async function enrichProductCoreInner(
                   const fcSanitized = sanitizeJinaMarkdown(fcResult.markdown)
                   const fcScore = scoreMd(fcSanitized)
                   const fcIsChallenge = looksLikeBotChallenge(fcSanitized)
-                  console.log('[enrichment] firecrawl score:', fcScore, '(', fcSanitized.length, 'chars)', fcIsChallenge ? '⚠ challenge' : '')
+                  debugLog('[enrichment] firecrawl score:', fcScore, '(', fcSanitized.length, 'chars)', fcIsChallenge ? '⚠ challenge' : '')
                   if (fcIsChallenge) {
                     log(`⚠ Firecrawl aussi bloqué par challenge bot — escalade Bright Data`)
                     firecrawlChallenge = true
@@ -4277,7 +4278,7 @@ async function enrichProductCoreInner(
                 const bdSanitized = sanitizeJinaMarkdown(bdResult.markdown)
                 const bdScore = scoreMd(bdSanitized)
                 const bdIsChallenge = looksLikeBotChallenge(bdSanitized)
-                console.log('[enrichment] brightdata score:', bdScore, '(', bdSanitized.length, 'chars)', bdIsChallenge ? '⚠ challenge' : '')
+                debugLog('[enrichment] brightdata score:', bdScore, '(', bdSanitized.length, 'chars)', bdIsChallenge ? '⚠ challenge' : '')
                 if (bdIsChallenge) {
                   log(`⚠ Bright Data : page challenge détectée — abandon`)
                 } else {
@@ -4343,7 +4344,7 @@ async function enrichProductCoreInner(
           //   - le LLM ne soit pas appelé sur du contenu challenge (= hallucination)
           //   - le pipeline produise un EnrichedProduct vide avec blockedByAntiBot=true
           if (markdownContent && looksLikeBotChallenge(markdownContent)) {
-            console.log('[enrichment] ⚠ markdown is still CAPTCHA after all fallbacks — clearing to prevent hallucination')
+            debugLog('[enrichment] ⚠ markdown is still CAPTCHA after all fallbacks — clearing to prevent hallucination')
             log(`⚠ Toutes les sources renvoient un CAPTCHA — abandon (pas d'hallucination IA)`)
             markdownContent = ''
             ;(globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked = true
@@ -4364,7 +4365,7 @@ async function enrichProductCoreInner(
                   if (mfgMd) {
                     const mfgSanitized = sanitizeJinaMarkdown(mfgMd)
                     const mfgScore = scoreMd(mfgSanitized)
-                    console.log('[enrichment] manufacturer score:', mfgScore, '(', mfgSanitized.length, 'chars)')
+                    debugLog('[enrichment] manufacturer score:', mfgScore, '(', mfgSanitized.length, 'chars)')
                     if (mfgScore > scoreAfterFc) {
                       log(`✓ Site fabricant meilleur (${mfgScore} > ${scoreAfterFc})`)
                       markdownContent = `## [Source: ${mfgSearchUrl}]\n\n${mfgSanitized}`
@@ -4383,7 +4384,7 @@ async function enrichProductCoreInner(
         // ── Fallback HTML : si on a < 5 specs (cache OU scrape frais), tenter extraction HTML ──
         const currentSpecCount = markdownContent ? parseSpecsFromMarkdown(markdownContent).length : 0
         if (currentSpecCount < 5 && productUrl) {
-          console.log('[enrichment] ⚡ only', currentSpecCount, 'specs — trying HTML fallback for accordion/hidden content…')
+          debugLog('[enrichment] ⚡ only', currentSpecCount, 'specs — trying HTML fallback for accordion/hidden content…')
           log(`Seulement ${currentSpecCount} specs — fallback HTML (accordéons/contenus cachés)…`)
           setProgress(sheetName, rowId, {
             status: 'scraping',
@@ -4393,10 +4394,10 @@ async function enrichProductCoreInner(
             const htmlMd = await scrapeHtmlFallback(productUrl)
             if (htmlMd) {
               const htmlSpecs = parseSpecsFromMarkdown(htmlMd).length
-              console.log('[enrichment] HTML fallback →', htmlSpecs, 'specs (', htmlMd.length, 'chars)')
+              debugLog('[enrichment] HTML fallback →', htmlSpecs, 'specs (', htmlMd.length, 'chars)')
               if (htmlSpecs > currentSpecCount) {
                 markdownContent = (markdownContent ?? '') + '\n\n' + htmlMd
-                console.log('[enrichment] ✓ merged HTML fallback →', markdownContent.length, 'chars total')
+                debugLog('[enrichment] ✓ merged HTML fallback →', markdownContent.length, 'chars total')
                 log(`✓ HTML fallback : +${htmlSpecs} specs fusionnées`)
               }
             }
@@ -4417,7 +4418,7 @@ async function enrichProductCoreInner(
             sourcesScrapped: lastBundle?.sourcesScrapped,
           })
           ;(globalThis as unknown as { __lastBundle?: unknown }).__lastBundle = undefined
-          console.log('[enrichment] ★ scrape cache saved for', enrichmentKey(sheetName, rowId))
+          debugLog('[enrichment] ★ scrape cache saved for', enrichmentKey(sheetName, rowId))
         }
 
         // ── Étape 3 : Construction depuis les données scrapées ────────
@@ -4429,7 +4430,7 @@ async function enrichProductCoreInner(
         // (REDUX_STORE, JSON-LD) pour les PDFs, variants, images.
         const manufacturerBrand = productUrl ? detectManufacturerSite(productUrl) : null
         if (manufacturerBrand && productUrl) {
-          console.log('[enrichment] ★ MANUFACTURER SITE DETECTED:', manufacturerBrand, '— pure scraping mode')
+          debugLog('[enrichment] ★ MANUFACTURER SITE DETECTED:', manufacturerBrand, '— pure scraping mode')
           log(`★ Site fabricant ${manufacturerBrand} détecté — mode scraping pur (0 IA)`)
           setProgress(sheetName, rowId, {
             status: 'scraping',
@@ -4448,7 +4449,7 @@ async function enrichProductCoreInner(
           log(`Construction de la fiche produit (markdown + HTML brut)…`)
           const mfrBuild = buildManufacturerProduct(markdownContent, rawData, productUrl, additionalSources)
 
-          console.log('[enrichment] ★ MANUFACTURER BUILD RESULT:', {
+          debugLog('[enrichment] ★ MANUFACTURER BUILD RESULT:', {
             specs: mfrBuild.specifications.length,
             advantages: mfrBuild.advantages.length,
             docs: mfrBuild.documents.length,
@@ -4465,7 +4466,7 @@ async function enrichProductCoreInner(
             // Scraping insuffisant (site SPA, lazy-loading, Jina sans crédits…)
             // → Basculer vers le LLM pour compléter les specs manquantes
             // tout en conservant les données scrapées (avantages, images, PDFs)
-            console.log('[enrichment] ⚠ manufacturer scraping insufficient (', mfrBuild.specifications.length, 'specs) — falling back to LLM boost')
+            debugLog('[enrichment] ⚠ manufacturer scraping insufficient (', mfrBuild.specifications.length, 'specs) — falling back to LLM boost')
             log(`⚠ Specs insuffisantes (${mfrBuild.specifications.length}) — complément via IA…`)
             setProgress(sheetName, rowId, {
               status: 'reasoning',
@@ -4686,17 +4687,17 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             const namesSeen = new Set(mdSpecs.map(s => s.name.toLowerCase()))
             mdSpecs.push(...rawData.specs.filter(sp => !namesSeen.has(sp.name.toLowerCase())))
           }
-          console.log('[enrichment] parseDescriptionFromMarkdown returned:', mdDescription.length, 'chars. First 200:', JSON.stringify(mdDescription.slice(0, 200)))
+          debugLog('[enrichment] parseDescriptionFromMarkdown returned:', mdDescription.length, 'chars. First 200:', JSON.stringify(mdDescription.slice(0, 200)))
 
           if (!mdDescription || mdDescription.length < 30) {
             const h1Match = markdownContent?.match(/^#\s+(.+)/m)
             if (h1Match) {
               mdDescription = h1Match[1].replace(/\*\*/g, '').trim()
-              console.log('[enrichment] mdDescription < 30 → fallback H1:', JSON.stringify(mdDescription))
+              debugLog('[enrichment] mdDescription < 30 → fallback H1:', JSON.stringify(mdDescription))
             }
           }
 
-          console.log('[enrichment] direct build attempt:', { specs: mdSpecs.length, advantages: mdAdvantages.length, descLen: mdDescription.length, hasMarkdown, hasRichStructured })
+          debugLog('[enrichment] direct build attempt:', { specs: mdSpecs.length, advantages: mdAdvantages.length, descLen: mdDescription.length, hasMarkdown, hasRichStructured })
 
           // Seuil abaissé quand structured-data ou HTML brut riche : 3 specs
           // suffisent (vs 5 pour markdown-only) car la donnée est de meilleure qualité.
@@ -4803,8 +4804,8 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               images: [...new Set(mergedDirectImages)],
               pricing: mdPricing ?? undefined,
             }
-            console.log('[enrichment-images-direct] structured=', structuredImages.length, 'direct=', directImages.length, 'merged=', mergedDirectImages.length, 'final=', directBuild.images?.length, 'sample:', directBuild.images?.slice(0, 3))
-            console.log('[enrichment] ★ markdown direct build succeeded')
+            debugLog('[enrichment-images-direct] structured=', structuredImages.length, 'direct=', directImages.length, 'merged=', mergedDirectImages.length, 'final=', directBuild.images?.length, 'sample:', directBuild.images?.slice(0, 3))
+            debugLog('[enrichment] ★ markdown direct build succeeded')
             if (mdPricing) {
               const priceParts = [
                 mdPricing.ttc != null && `TTC ${mdPricing.ttc}€`,
@@ -4820,7 +4821,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         }
 
         if (directBuild) {
-          console.log('[enrichment] ★ DIRECT BUILD — bypassing LLM entirely')
+          debugLog('[enrichment] ★ DIRECT BUILD — bypassing LLM entirely')
           log(`★ Build direct (sans IA) — ${directBuild.specifications?.length ?? 0} specs, ${directBuild.advantages?.length ?? 0} avantages`)
           setProgress(sheetName, rowId, {
             status: 'reasoning',
@@ -4889,7 +4890,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           ))
           if (antiBotBlocked && !hasAnyStructuredData) {
             log(`⚠ Site bloqué par anti-bot ET aucune donnée structurée — skip LLM (pas d'hallucination)`)
-            console.log('[enrichment] anti-bot blocked + no structured data → returning empty product, skipping LLM')
+            debugLog('[enrichment] anti-bot blocked + no structured data → returning empty product, skipping LLM')
             enriched = {
               description: '',
               advantages: [],
@@ -5071,7 +5072,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             ...llmSdImages,
             ...rawData.images.filter((u) => /^https?:\/\//.test(u) && !isJunkImageUrl(u)),
           ]))
-          console.log('[enrichment-images] PATH=B(LLM) mdImages=', mdImages.length, 'llmImages=', llmImages.length, 'sdImages=', llmSdImages.length, 'merged=', mergedImages.length, 'sample:', mergedImages.slice(0, 3))
+          debugLog('[enrichment-images] PATH=B(LLM) mdImages=', mdImages.length, 'llmImages=', llmImages.length, 'sdImages=', llmSdImages.length, 'merged=', mergedImages.length, 'sample:', mergedImages.slice(0, 3))
 
           // Documents : LLM + extraction directe du markdown (URLs .pdf simples + liens titrés)
           const mdDocUrls: string[] = markdownContent
@@ -5101,7 +5102,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               (v: unknown) => v && typeof v === 'object' && typeof (v as Record<string, unknown>).reference === 'string'
             ) : []
           if (llmVariants.length > 0) {
-            console.log('[enrichment] LLM extracted', llmVariants.length, 'variants')
+            debugLog('[enrichment] LLM extracted', llmVariants.length, 'variants')
           }
 
           // Identité (name/brand/model/refs/EAN) — même stratégie que PATH A :

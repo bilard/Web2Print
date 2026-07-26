@@ -14,6 +14,7 @@
  * d'afficher un message clair (`getLastBrightDataError()`).
  */
 
+import { debugLog } from '@/lib/debugLog'
 import { httpsCallable, type FunctionsError } from 'firebase/functions'
 import TurndownService from 'turndown'
 import { functions } from '@/lib/firebase/config'
@@ -193,7 +194,7 @@ async function callScrape(url: string): Promise<string | null> {
       void recordBrightDataUsage()
       return data.html
     }
-    console.log('[brightdata] Web Unlocker bloqué/challenge → escalade Scraping Browser')
+    debugLog('[brightdata] Web Unlocker bloqué/challenge → escalade Scraping Browser')
   } catch (e) {
     lastError = mapError(e)
     console.warn('[brightdata] web unlocker failed:', lastError, '→ escalade Scraping Browser')
@@ -208,7 +209,7 @@ async function callScrape(url: string): Promise<string | null> {
       lastError = null
       lastSuccess = { country: 'browser', attempts: 1, durationMs: r.data.durationMs ?? 0, lengthBytes: html.length, source: 'scraping-browser' }
       void recordBrightDataUsage()
-      console.log('[brightdata] ✓ Scraping Browser a débloqué', url)
+      debugLog('[brightdata] ✓ Scraping Browser a débloqué', url)
       return html
     }
     console.warn('[brightdata] Scraping Browser : page challenge ou vide')
@@ -283,7 +284,7 @@ function extractImagesFromHtml(html: string, baseUrl: string): string[] {
     parseSrcset(source.getAttribute('srcset') || source.getAttribute('data-srcset'))
   }
 
-  console.log('[brightdata] extractImagesFromHtml:', result.length, 'URLs candidates')
+  debugLog('[brightdata] extractImagesFromHtml:', result.length, 'URLs candidates')
   return result
 }
 

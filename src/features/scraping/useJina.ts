@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/debugLog'
 import { useState, useCallback, useRef } from 'react'
 import { httpsCallable } from 'firebase/functions'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
@@ -909,22 +910,22 @@ export function extractBreadcrumbFromHtml(html: string): string[] {
   }
 
   if (candidates.length === 0) {
-    console.log('[extractBreadcrumbFromHtml] no candidate found — HTML preview:', html.slice(0, 500))
+    debugLog('[extractBreadcrumbFromHtml] no candidate found — HTML preview:', html.slice(0, 500))
     return []
   }
 
   // Log détaillé (sortir chaque candidat séparément pour que les items soient
   // visibles dans la console Chrome, qui collapse `Array(5)` sinon).
-  console.log('[extractBreadcrumbFromHtml] total candidates:', candidates.length)
+  debugLog('[extractBreadcrumbFromHtml] total candidates:', candidates.length)
   candidates.forEach((c, i) => {
-    console.log(`  candidate #${i} (n=${c.items.length}, sel="${c.selector}") :`, JSON.stringify(c.items))
+    debugLog(`  candidate #${i} (n=${c.items.length}, sel="${c.selector}") :`, JSON.stringify(c.items))
   })
 
   // Le breadcrumb visible est typiquement le plus court ; le SEO/catégorie est
   // plus long. À égalité de longueur, garder l'ordre de découverte.
   candidates.sort((a, b) => a.items.length - b.items.length)
   const picked = candidates[0]
-  console.log(`[extractBreadcrumbFromHtml] picked (shortest): ${picked.items.length} items from "${picked.selector}"`, picked.items)
+  debugLog(`[extractBreadcrumbFromHtml] picked (shortest): ${picked.items.length} items from "${picked.selector}"`, picked.items)
   return picked.items
 }
 
@@ -1067,14 +1068,14 @@ export function useJina() {
       const finalBreadcrumb = hasManualCrumb ? manualCrumb : cloudResult.items
       const cloudImages = cloudResult.images ?? []
       if (wantsBreadcrumb) {
-        console.log(
+        debugLog(
           '[scrape] breadcrumb source:',
           hasManualCrumb ? 'manual' : 'cloud',
           finalBreadcrumb,
         )
       }
       if (wantsImages) {
-        console.log('[scrape] cloud images count:', cloudImages.length)
+        debugLog('[scrape] cloud images count:', cloudImages.length)
       }
 
       // 2. Construire le prompt contextuel : instructions par défaut + prompt
@@ -1285,7 +1286,7 @@ export function useJina() {
         cloudCardLinks: cloud.cardLinks,
       })
       const products = toProducts(entries)
-      console.log('[discover] tier:', tier, '— candidats:', entries.length, '— retenus:', products.length)
+      debugLog('[discover] tier:', tier, '— candidats:', entries.length, '— retenus:', products.length)
 
       // Diagnostic + détection « rien rendu ».
       const cloudTotal = cloud.links.length + cloud.navLinks.length + cloud.cardLinks.length

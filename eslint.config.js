@@ -12,6 +12,10 @@ export default tseslint.config(
   {
     ignores: [
       'site-web/**',
+      // Outillage vendorisé (skills, plugins) : pas du code applicatif.
+      '.agents/**',
+      '.claude/**',
+      '.superpowers/**',
       'dist/**',
       'build/**',
       'node_modules/**',
@@ -75,6 +79,24 @@ export default tseslint.config(
       'no-case-declarations': 'off',
       'no-useless-assignment': 'off',
       'prefer-const': 'warn',
+    },
+  },
+  {
+    // `no-console` ne vise QUE l'application navigateur : côté Cloud Functions,
+    // scripts Node et service worker, `console` EST le canal de log légitime
+    // (Cloud Logging, sortie CLI).
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: [
+      '**/*.test.{ts,tsx}',
+      '**/__tests__/**',
+      'src/test/**',
+      'src/lib/debugLog.ts', // l'implémentation du logger gaté
+    ],
+    rules: {
+      // Les traces de debug passent par `debugLog` (src/lib/debugLog.ts), gaté
+      // en production. `warn`/`error`/`info` restent libres : ce sont de vraies
+      // anomalies ou des messages de démarrage, ils doivent atteindre la console.
+      'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
     },
   },
 )

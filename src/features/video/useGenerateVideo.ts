@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/debugLog'
 import { useMutation } from '@tanstack/react-query'
 import { captureCurrentPageSvg, type CapturedObjectAnim } from './utils/captureSvg'
 import { extractBriefContextFromFiles, type FileExtractionSkip } from './utils/extractBriefContextFromFiles'
@@ -322,7 +323,7 @@ export function useGenerateVideo(opts?: {
             aspect,
             targetDurationSec: input.targetDurationSec,
           })
-          console.log('[video] composition Gemini:', {
+          debugLog('[video] composition Gemini:', {
             transition: composition.transition,
             scenes: composition.scenes.map((s) => ({
               type: s.type,

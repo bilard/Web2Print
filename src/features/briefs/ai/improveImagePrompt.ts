@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/debugLog'
 import { generateText } from '@/features/chat/ai/chatRouter'
 
 export interface ImproveImageRef {
@@ -170,7 +171,7 @@ export async function generateImprovementQuestions(
     throw new Error('Réponse Gemini sans tableau "questions".')
   }
   const questions = parsed.questions.filter(isImprovementQuestion)
-  console.log(
+  debugLog(
     `[improvementQuestions] ✓ ${provider}/${model} refs=${imageRefs.length} q=${questions.length}`,
   )
   return questions
@@ -210,7 +211,7 @@ export async function improveImagePrompt(
     onProviderFailed: ({ provider, error }) =>
       console.warn(`[improveImagePrompt] ${provider} a échoué, fallback. Cause:`, error.message),
   })
-  console.log(
+  debugLog(
     `[improveImagePrompt] ✓ ${provider}/${model} refs=${imageRefs.length} answers=${answers.length} len=${text.length}`,
   )
   return stripWrappingQuotes(text)

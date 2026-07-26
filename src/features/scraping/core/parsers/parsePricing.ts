@@ -11,6 +11,7 @@
  *   - devise (EUR/USD/GBP)
  */
 
+import { debugLog } from '@/lib/debugLog'
 import type { Pricing } from '@/features/excel/ai-enrichment/types'
 
 const NBSP = ' ' // espace insécable U+00A0
@@ -388,7 +389,7 @@ export function parsePricingFromMarkdown(
   //    (HT == TTC toléré : le fallback « prix EUR seul » recopie le montant HT
   //    en TTC quand la page n'affiche qu'un prix HT.)
   if (result.ht != null && result.ttc != null && result.ht > result.ttc) {
-    console.log('[parsePricing] HT', result.ht, '≥ TTC', result.ttc, '— HT rejeté (bruit de page)')
+    debugLog('[parsePricing] HT', result.ht, '≥ TTC', result.ttc, '— HT rejeté (bruit de page)')
     delete result.ht
   }
   // Un prix barré doit dépasser le prix de vente actuel. Sur les pages B2B (Rubix),
@@ -397,14 +398,14 @@ export function parsePricingFromMarkdown(
   // barré HT. On compare donc au prix de vente le plus BAS (min HT/TTC).
   const lowestSale = Math.min(result.ht ?? Infinity, result.ttc ?? Infinity)
   if (result.original != null && isFinite(lowestSale) && result.original <= lowestSale) {
-    console.log('[parsePricing] prix barré', result.original, '≤ prix actuel', lowestSale, '— rejeté')
+    debugLog('[parsePricing] prix barré', result.original, '≤ prix actuel', lowestSale, '— rejeté')
     delete result.original
   }
 
   // Diagnostic — visible dans la console DevTools, utile pour comprendre
   // pourquoi un prix manque sur un site spécifique.
   if (found) {
-    console.log('[parsePricing] result:', {
+    debugLog('[parsePricing] result:', {
       ttc: result.ttc, ht: result.ht, original: result.original,
       currency: result.currency, unit: result.unit,
       discount: result.discount, eco: result.ecoParticipation,
@@ -412,7 +413,7 @@ export function parsePricingFromMarkdown(
   } else {
     // Log un échantillon de la fenêtre prix pour debug
     const eurMatches = [...cleanMd.matchAll(/(\d[\d\s.,]*)\s*€/g)].slice(0, 5).map(m => m[0])
-    console.log('[parsePricing] no price detected. €-matches sample:', eurMatches)
+    debugLog('[parsePricing] no price detected. €-matches sample:', eurMatches)
   }
 
   return found ? result : null

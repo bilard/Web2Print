@@ -3,6 +3,7 @@
  * Utilisé en fallback quand Jina retourne un markdown trop pauvre (anti-bot Akamai).
  */
 
+import { debugLog } from '@/lib/debugLog'
 import { recordScrapeUsage } from '@/features/stats/aiUsageTracking'
 
 interface FirecrawlExtract {
@@ -106,7 +107,7 @@ export async function firecrawlScrapeHtml(
   if (stealthResult) return stealthResult
 
   // Essai 2 : basic (fallback gracieux si stealth pas disponible / payload invalide)
-  console.log('[firecrawl] stealth failed, trying basic mode')
+  debugLog('[firecrawl] stealth failed, trying basic mode')
   const basicBody = {
     url,
     formats: ['rawHtml'],
@@ -195,7 +196,7 @@ export async function firecrawlScrape(
   if (stealthResult) return stealthResult
 
   // Essai 2 : basic (fallback gracieux — fonctionne sur Hobby tier)
-  console.log('[firecrawl] stealth failed, trying basic mode')
+  debugLog('[firecrawl] stealth failed, trying basic mode')
   const basicBody = {
     url,
     formats: ['markdown', jsonFormat],

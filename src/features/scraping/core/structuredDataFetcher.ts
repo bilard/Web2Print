@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/debugLog'
 import { parseStructuredDataAny, type StructuredProductData } from './structuredData'
 import { looksLikeBotChallenge } from '@/features/excel/ai-enrichment/markdownSanitize'
 import { firecrawlScrapeHtml } from './firecrawlFallback'
@@ -88,7 +89,7 @@ export async function extractStructuredDataFromUrl(
   // Short-circuit : host déjà identifié comme DataDome → on saute à Bright Data.
   const knownBlocked = isHostKnownBlocked(url)
   if (knownBlocked) {
-    console.log('[structured-data] host known blocked, skipping to Bright Data')
+    debugLog('[structured-data] host known blocked, skipping to Bright Data')
   }
 
   if (!knownBlocked) {
@@ -100,11 +101,11 @@ export async function extractStructuredDataFromUrl(
       if (html && !htmlLooksLikeChallenge(html)) {
         const data = parseStructuredDataAny(html)
         if (data) {
-          console.log('[structured-data] ✓ Cloud Function HTML extracted product data')
+          debugLog('[structured-data] ✓ Cloud Function HTML extracted product data')
           return data
         }
       } else if (html) {
-        console.log('[structured-data] Cloud Function returned challenge page — cascading')
+        debugLog('[structured-data] Cloud Function returned challenge page — cascading')
       }
     } catch (err) {
       console.warn('[structured-data] Cloud Function fetch failed:', err)
@@ -115,7 +116,7 @@ export async function extractStructuredDataFromUrl(
       const html = await fetchWithTimeout(proxy(url), timeoutMs)
       if (!html) continue
       if (htmlLooksLikeChallenge(html)) {
-        console.log('[structured-data] CORS proxy returned challenge page — skipping')
+        debugLog('[structured-data] CORS proxy returned challenge page — skipping')
         continue
       }
       const data = parseStructuredDataAny(html)
@@ -152,7 +153,7 @@ export async function extractStructuredDataFromUrl(
         const data = parseStructuredDataAny(html)
         if (data) return data
       } else if (html) {
-        console.log('[structured-data] Jina returned challenge page — trying Firecrawl')
+        debugLog('[structured-data] Jina returned challenge page — trying Firecrawl')
       }
     } finally {
       if (jinaTimeout) clearTimeout(jinaTimeout)
@@ -166,11 +167,11 @@ export async function extractStructuredDataFromUrl(
         if (html && !htmlLooksLikeChallenge(html)) {
           const data = parseStructuredDataAny(html)
           if (data) {
-            console.log('[structured-data] ✓ Firecrawl HTML mode extracted product data')
+            debugLog('[structured-data] ✓ Firecrawl HTML mode extracted product data')
             return data
           }
         } else if (html) {
-          console.log('[structured-data] Firecrawl also returned challenge page — escalating to Bright Data')
+          debugLog('[structured-data] Firecrawl also returned challenge page — escalating to Bright Data')
           markHostBlocked(url)
         }
       } catch (err) {
@@ -185,11 +186,11 @@ export async function extractStructuredDataFromUrl(
     if (html && !htmlLooksLikeChallenge(html)) {
       const data = parseStructuredDataAny(html)
       if (data) {
-        console.log('[structured-data] ✓ Bright Data extracted product data')
+        debugLog('[structured-data] ✓ Bright Data extracted product data')
         return data
       }
     } else if (html) {
-      console.log('[structured-data] Bright Data also returned challenge')
+      debugLog('[structured-data] Bright Data also returned challenge')
     }
   } catch (err) {
     console.warn('[structured-data] Bright Data fetch failed:', err)

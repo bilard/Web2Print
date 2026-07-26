@@ -4,6 +4,7 @@
 // l.2378, extractCharacteristicsBlobs l.2889, parseCharacteristicsBlob l.2903,
 // truncateBeforeNonProductSections l.2930).
 
+import { debugLog } from '@/lib/debugLog'
 import { isGarbageContent, isCmpUiPair } from './garbageFilter'
 
 export interface Specification {
@@ -281,13 +282,13 @@ export function extractSpecsFromHtml(html: string): string | null {
   }
 
   if (mdParts.length === 0) {
-    console.log('[html-fallback] no structured data found in HTML')
+    debugLog('[html-fallback] no structured data found in HTML')
     return null
   }
 
   const result = mdParts.join('\n').trim()
   const specLines = result.split('\n').filter(l => l.startsWith('|')).length
-  console.log('[html-fallback] extracted', result.length, 'chars,', specLines, 'spec lines')
+  debugLog('[html-fallback] extracted', result.length, 'chars,', specLines, 'spec lines')
   return result
 }
 
@@ -538,7 +539,7 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
       }
     }
     if (specs.length > 0) {
-      console.log('[parseSpecs] ✓ Jina injected specs:', specs.length)
+      debugLog('[parseSpecs] ✓ Jina injected specs:', specs.length)
     }
   }
 

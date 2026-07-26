@@ -1,3 +1,5 @@
+import { debugLog } from '@/lib/debugLog'
+
 /**
  * API key management: localStorage override > .env fallback
  * Keys are stored in localStorage so they persist across sessions
@@ -426,7 +428,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
       if (res.ok) {
         const json = await res.json() as unknown
         // Log pour debug si parsing échoue (visible dans la console navigateur)
-        console.log('[firecrawl] credit-usage response:', json)
+        debugLog('[firecrawl] credit-usage response:', json)
 
         // Recherche récursive : trouve le 1er nombre dont la clé contient
         // "remain" ou "credit" (priorité aux clés "remain*"). Profondeur max 6
