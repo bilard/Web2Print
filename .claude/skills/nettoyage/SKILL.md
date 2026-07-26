@@ -82,6 +82,11 @@ pas se corrige ou se `git checkout --` — jamais de commit rouge.
 ⚠ Si le total de tests **augmente**, c'est probablement un fichier de test
 temporaire oublié dans `src/` : le retirer avant de commiter.
 
+⚠ **Toujours vérifier depuis la racine du dépôt.** Un `cd` dans un sous-dossier
+persiste d'une commande à l'autre, et `npx tsc -b` y échoue alors sur
+`Cannot read file '.../<dossier>/tsconfig.json'` — un faux échec qui n'a rien
+à voir avec le code.
+
 ## Prouver qu'un lot est neutre
 
 `tsc` et les tests prouvent que ça compile et que rien de couvert ne casse.
