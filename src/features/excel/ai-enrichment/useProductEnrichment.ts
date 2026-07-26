@@ -29,7 +29,7 @@ import { parseDescriptionFromMarkdown, parseRichDescriptionFromMarkdown } from '
 import { structuredPlainToRichMarkdown, stripTrailingSpecList } from '@/lib/richText'
 import { parseSpecsFromMarkdown } from '@/features/scraping/core/parsers/parseSpecifications'
 import { parsePricingFromMarkdown } from '@/features/scraping/core/parsers/parsePricing'
-import { parseAdvantagesFromMarkdown, mergeAdvantagesAdditive } from '@/features/scraping/core/parsers/parseAdvantages'
+import { parseAdvantagesFromMarkdown, mergeAdvantagesAdditive, mergeGroupsIntoAdvantages } from '@/features/scraping/core/parsers/parseAdvantages'
 import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
 import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
@@ -76,39 +76,6 @@ function logLlmRequest(
 }
 
 
-/**
- * Fusionne les groupes du markdown dans les avantages existants par matching textuel.
- * Ne supprime JAMAIS d'items existants — ajoute uniquement les groupes et éventuellement
- * les items manquants du markdown.
- */
-function mergeGroupsIntoAdvantages(
-  existing: Array<{ text: string; group?: string }>,
-  mdAdvantages: Array<{ text: string; group?: string }>,
-): Array<{ text: string; group?: string }> {
-  const normalize = (s: string) => s.toLowerCase().replace(/[^a-zàâéèêëîïôùûüç0-9]/g, ' ').replace(/\s+/g, ' ').trim()
-
-  // Essayer de matcher chaque item existant avec un item markdown pour récupérer son groupe
-  const result = existing.map(adv => {
-    if (adv.group) return adv // déjà groupé
-    const normAdv = normalize(adv.text)
-    const match = mdAdvantages.find(md => {
-      const normMd = normalize(md.text)
-      return normMd === normAdv || normMd.includes(normAdv) || normAdv.includes(normMd)
-    })
-    return match?.group ? { ...adv, group: match.group } : adv
-  })
-
-  // Ajouter les items markdown qui n'ont pas de correspondance dans l'existant
-  const existingNorms = new Set(existing.map(a => normalize(a.text)))
-  for (const md of mdAdvantages) {
-    const normMd = normalize(md.text)
-    if (!existingNorms.has(normMd) && ![...existingNorms].some(e => e.includes(normMd) || normMd.includes(e))) {
-      result.push(md)
-    }
-  }
-
-  return result
-}
 
 /**
  * Post-processing : enrichit un EnrichedProduct avec les données du markdown source.

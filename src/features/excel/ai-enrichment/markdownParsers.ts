@@ -11,6 +11,7 @@
 // Le nettoyage AMONT du Markdown vit dans `markdownSanitize.ts`.
 import { debugLog } from '@/lib/debugLog'
 import { isJunkImageUrl } from './imageFilter'
+import { extractCharacteristicsBlobs, parseCharacteristicsBlob } from '@/features/scraping/core/parsers/parseSpecifications'
 
 
 
@@ -162,40 +163,7 @@ export function parseVariantsFromMarkdown(md: string): Array<{ reference: string
   return variants
 }
 
-/** Extrait tous les blobs "Caractéristiques <contenu> Voir moins" du markdown, dans l'ordre. */
-function extractCharacteristicsBlobs(md: string): string[] {
-  const blobs: string[] = []
-  const re = /Caract[eé]ristiques\s+([^|]+?)\s+Voir\s+moins/gi
-  let m: RegExpExecArray | null
-  while ((m = re.exec(md)) !== null) {
-    const content = m[1].trim()
-    if (content.length > 20 && content.includes(' : ')) blobs.push(content)
-  }
-  return blobs
-}
 
-/** Parse un blob inline "K1 : V1 K2 : V2 ..." en paires nom/valeur.
- *  Le parser repère les frontières via le pattern d'un nom de clé
- *  (majuscule initiale + lettres/espaces/apostrophes/tirets + " : "). */
-function parseCharacteristicsBlob(blob: string): Record<string, string> {
-  const result: Record<string, string> = {}
-  // Nettoyage léger
-  const cleaned = blob.replace(/\s+/g, ' ').trim()
-  // Pattern : clé = majuscule initiale (accents OK), ≤6 mots alphabétiques ; puis " : " ; puis
-  // valeur jusqu'au prochain pattern de clé ou fin. Lookahead non-greedy.
-  const pat = /([A-ZÉÈÊÀÂÎÔÛÇ][A-Za-zÀ-ÿ'’\- ]*?)\s*:\s*(.+?)(?=\s+[A-ZÉÈÊÀÂÎÔÛÇ][A-Za-zÀ-ÿ'’\- ]*?\s*:\s|\s*$)/g
-  let m: RegExpExecArray | null
-  while ((m = pat.exec(cleaned)) !== null) {
-    const key = m[1].trim()
-    const value = m[2].trim()
-    if (!key || !value) continue
-    // Filtrer clés trop courtes ou clairement du bruit
-    if (key.length < 2 || key.length > 60) continue
-    if (/tarif|prix|price/i.test(key)) continue
-    result[key] = value
-  }
-  return result
-}
 
 /** Extrait toutes les URLs d'images produit depuis le markdown Jina.
  *  Gère : ![alt](url), Images Summary Jina, URLs brutes avec extension,

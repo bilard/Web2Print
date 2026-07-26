@@ -32,6 +32,10 @@ for (const f of files) {
       .map((l) => l.replace(/\/\/.*$/, '').trimEnd())   // ignore les commentaires de fin
       .filter((l) => l.trim() && !l.trim().startsWith('*') && !l.trim().startsWith('/*'))
       .join('\n')
+      // ⚠ Normaliser `export ` : le cas le PLUS fréquent est une version
+      // canonique exportée et une copie locale privée. Sans ça le détecteur
+      // rate précisément les doublons qu'on cherche.
+      .replace(/^export /, '')
     const key = createHash('sha1').update(body).digest('hex')
     if (!bySig.has(key)) bySig.set(key, { name: m[1], lines: end - i + 1, where: [] })
     bySig.get(key).where.push(`${f}:${i + 1}`)
