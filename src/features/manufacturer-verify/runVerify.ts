@@ -4,7 +4,7 @@
  */
 
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
-import { scrapeManufacturerProduct } from '@/features/excel/ai-enrichment/useProductEnrichment'
+import { scrapeManufacturerProduct } from '@/features/excel/ai-enrichment/manufacturerScrape'
 import { alignUnknownSpecs } from './alignSpecs'
 import { compareSourceVsManufacturer, summarize } from './compareProducts'
 import { resolveManufacturerCandidates } from './resolveManufacturer'
