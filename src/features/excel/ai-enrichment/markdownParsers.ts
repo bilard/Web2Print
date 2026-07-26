@@ -365,3 +365,68 @@ export function parseImagesFromMarkdown(md: string): string[] {
  *  run dans Firestore `pipelineRuns` (diagnostic prod sans reproduction).
  *  Couvre TOUS les appelants (PIM, node workflow, Telegram) — le moteur réel
  *  est enrichProductCoreInner. */
+
+
+/**
+ * Extrait le fil d'Ariane depuis l'en-tête markdown de Jina.
+ * Stratégie : prendre la portion AVANT le premier H1 (où le breadcrumb apparaît
+ * typiquement), repérer une ligne contenant ≥ 1 séparateur (`>`, `›`, `»`, `→`)
+ * et ≥ 2 textes de liens markdown, filtrer les termes de navigation génériques,
+ * dédupliquer en préservant l'ordre.
+ */
+export function parseBreadcrumbFromMarkdown(md: string): string[] {
+  if (!md) return []
+
+  const h1Idx = md.search(/^#\s+/m)
+  const headPart = h1Idx > 0 ? md.slice(0, h1Idx) : md.slice(0, 4000)
+  const lines = headPart.split('\n').map((l) => l.trim()).filter(Boolean)
+
+  // Termes de navigation site, pas du breadcrumb produit
+  const NAV_RE = /^(menu|recherche|fermer|connexion|connectez|se\s+connecter|inscription|inscrire|panier|wishlist|liste\s+de\s+souhaits?|mon\s+compte|aide|contact|nous\s+contacter|langue|country|english|fran[çc]ais|skip|aller\s+au|retour\s+(en\s+)?haut|tous?\s+les?\s+(produits|cat[eé]gories)|voir\s+(tout|plus))/i
+
+  // Texte d'un lien markdown — on capture aussi du texte final hors lien éventuel
+  const mdLinkRe = /\[([^\]\n]+?)\]\(([^)]+)\)/g
+
+  for (const line of lines) {
+    if (line.length > 800) continue
+    const sepCount = (line.match(/[›>»→]/g) ?? []).length
+    if (sepCount < 1) continue
+
+    const linkTexts: string[] = []
+    for (const m of line.matchAll(mdLinkRe)) {
+      const t = m[1].replace(/^!\[.*?\]\(.*?\)\s*/, '').trim()
+      if (!t || t.length > 80) continue
+      if (/^[›>»→/|·]+$/.test(t)) continue
+      if (/^!?\[.*\]/.test(t)) continue
+      if (NAV_RE.test(t)) continue
+      linkTexts.push(t)
+    }
+
+    if (linkTexts.length < 2 || linkTexts.length > 8) continue
+
+    // Tenter de récupérer le dernier segment (souvent texte brut, pas un lien)
+    // après le dernier séparateur de la ligne
+    const lastSep = Math.max(line.lastIndexOf('›'), line.lastIndexOf('>'), line.lastIndexOf('»'), line.lastIndexOf('→'))
+    if (lastSep > 0) {
+      const tail = line.slice(lastSep + 1).replace(mdLinkRe, '').trim()
+      if (tail && tail.length <= 80 && !/^[›>»→/|·]+$/.test(tail) && !NAV_RE.test(tail)) {
+        linkTexts.push(tail)
+      }
+    }
+
+    const seen = new Set<string>()
+    const out: string[] = []
+    for (const t of linkTexts) {
+      const key = t.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push(t)
+    }
+    if (out.length >= 2) {
+      debugLog('[post-process] ✓ breadcrumb from markdown:', out)
+      return out
+    }
+  }
+
+  return []
+}
