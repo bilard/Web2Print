@@ -8,7 +8,7 @@
 import { Line } from 'react-chartjs-2'
 import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip } from 'chart.js'
 import { useThemeStore } from '@/stores/theme.store'
-import type { KpiHistoryPoint } from '../reportStore'
+import type { KpiHistoryPoint } from '../types'
 import { priceIndexSeries } from './analytics'
 import { when } from './format'
 

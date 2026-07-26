@@ -5,7 +5,7 @@ import { useRetailPromoStore } from './retailPromo.store'
 import { PropertySection as Section, inputCls } from '@/components/shared/panel'
 import { PromoShapeOptions } from './PromoShapeOptions'
 import { PromoTextOptions } from './PromoTextOptions'
-import { STYLE_KEYS, type PromoColorKey } from './RetailPromoCard'
+import { STYLE_KEYS, type PromoColorKey } from './promoCardTypes'
 import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import { UserFontsPanel } from '@/features/fonts/UserFontsPanel'
 

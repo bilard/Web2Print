@@ -3,7 +3,7 @@ import { auth, db } from '@/lib/firebase/config'
 import { stripUndefined } from './stripUndefined'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey, CustomFieldMap } from './promoTypes'
-import type { PromoTemplateConfig, PromoColorKey } from './RetailPromoCard'
+import type { PromoTemplateConfig, PromoColorKey } from './promoCardTypes'
 
 /** Fiche promo enregistrée (métadonnées + habillage ; les lignes vivent dans un doc payload séparé). */
 export interface SavedPromoMeta {

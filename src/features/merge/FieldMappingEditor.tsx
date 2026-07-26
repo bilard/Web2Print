@@ -1,6 +1,6 @@
 import { useMergeStore } from '@/stores/merge.store'
 import { useShallow } from 'zustand/react/shallow'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { collectObjectsDeep } from '@/features/editor/deepObjects'
 import { variableMatchesColumn } from './mergeEngine'
 

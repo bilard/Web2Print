@@ -7,7 +7,7 @@ import {
   DEFAULT_RULE_OPACITY, DEFAULT_RULE_SCALE,
   type ConditionalRule, type RuleOperator, type RuleActionType,
 } from '@/features/merge/conditionalRules'
-import { STYLE_KEYS, type PromoBlockId } from './RetailPromoCard'
+import { STYLE_KEYS, type PromoBlockId } from './promoCardTypes'
 import { RULE_SYNTHETIC_COLUMNS } from './promoRuleFields'
 
 const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `r${Math.round(performance.now() * 1000)}`)

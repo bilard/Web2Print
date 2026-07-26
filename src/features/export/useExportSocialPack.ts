@@ -4,7 +4,7 @@
 // page. V2 (re-layout adaptatif par zones) documentée dans le design doc.
 import { useCallback } from 'react'
 import JSZip from 'jszip'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useEditorStore } from '@/stores/editor.store'
 import { recordAudit } from '@/lib/auditLog'
 import { useUIStore } from '@/stores/ui.store'

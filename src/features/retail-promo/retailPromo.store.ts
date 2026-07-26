@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey, CustomFieldMap } from './promoTypes'
 import type { ConditionalRule } from '@/features/merge/conditionalRules'
-import { DEFAULT_PROMO_CONFIG, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId, type ElementStyle, type BlockFill, type ShapeStyle } from './RetailPromoCard'
+import { DEFAULT_PROMO_CONFIG, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId, type ElementStyle, type BlockFill, type ShapeStyle } from './promoCardTypes'
 
 interface RetailPromoState {
   step: 'source' | 'mapping' | 'template'

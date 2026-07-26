@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Activity } from 'lucide-react'
 import { competitorSeries } from '@/features/priceWatch/dashboard/analytics'
-import type { KpiHistoryPoint } from '@/features/priceWatch/reportStore'
+import type { KpiHistoryPoint } from '@/features/priceWatch/types'
 import { RadarSparkline } from './RadarSparkline'
 import { fmtGapPct } from '@/features/priceWatch/radar/radarFormat'
 

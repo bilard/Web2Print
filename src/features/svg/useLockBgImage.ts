@@ -18,7 +18,7 @@
 import { useEffect } from 'react'
 import { Group } from 'fabric'
 import type { FabricObject } from 'fabric'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useEditorStore } from '@/stores/editor.store'
 import { isBgLockedMarker } from './bgLockMarker'
 

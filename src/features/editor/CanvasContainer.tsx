@@ -28,17 +28,8 @@ import { Relief3DOverlay } from '@/features/animation3d/Relief3DOverlay'
 import { useAutoPlayPersisted } from '@/features/animation3d/useAutoPlayPersisted'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
-import { setGlobalFabricCanvas } from './globalCanvas'
+import { setGlobalFabricCanvas, setEditorCommands, setGlobalFitCanvas } from './globalCanvas'
 import { collectObjectsDeep } from './deepObjects'
-
-// Ré-export pour compat : les consommateurs de l'éditeur (chunks lazy) continuent
-// d'importer `globalFabricCanvas` depuis ce module. La VRAIE déclaration vit dans
-// `globalCanvas.ts` afin que les consommateurs eager légers ne tirent pas Fabric.
-export { globalFabricCanvas } from './globalCanvas'
-export let globalUndo: (() => void) | null = null
-export let globalRedo: (() => void) | null = null
-export let globalSnapshot: (() => void) | null = null
-export let globalFitCanvas: (() => void) | null = null
 
 interface ContextMenuState { x: number; y: number }
 
@@ -151,10 +142,10 @@ export function CanvasContainer() {
 
   // Expose fit globally
   useEffect(() => {
-    globalFitCanvas = () => {
+    setGlobalFitCanvas(() => {
       if (containerRef.current) fitToContainer(containerRef.current)
-    }
-    return () => { globalFitCanvas = null }
+    })
+    return () => setGlobalFitCanvas(null)
   }, [fitToContainer])
 
 
@@ -343,11 +334,9 @@ export function CanvasContainer() {
   }, [fabricRef])
 
   useEffect(() => {
-    globalUndo = undo
-    globalRedo = redo
-    globalSnapshot = snapshot
-    return () => { globalUndo = null; globalRedo = null; globalSnapshot = null }
-  }, [undo, redo])
+    setEditorCommands({ undo, redo, snapshot })
+    return () => setEditorCommands({ undo: null, redo: null, snapshot: null })
+  }, [undo, redo, snapshot])
 
   // Compute guide positions in screen coords
   const vt = fabricRef.current?.viewportTransform ?? [1, 0, 0, 1, 0, 0]

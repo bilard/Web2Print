@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { IText } from 'fabric'
-import { globalFabricCanvas } from './CanvasContainer'
+import { globalFabricCanvas } from './globalCanvas'
 import { useEditorStore } from '@/stores/editor.store'
 
 export interface TextSegment {

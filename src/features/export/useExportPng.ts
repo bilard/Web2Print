@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import type { Canvas } from 'fabric'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useEditorStore } from '@/stores/editor.store'
 import { recordAudit } from '@/lib/auditLog'
 

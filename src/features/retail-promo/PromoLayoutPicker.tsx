@@ -1,5 +1,5 @@
 import { useRetailPromoStore } from './retailPromo.store'
-import { PROMO_LAYOUTS } from './RetailPromoCard'
+import { PROMO_LAYOUTS } from './promoCardTypes'
 
 /** Sélecteur de variante de mise en page (structure graphique). */
 export function PromoLayoutPicker() {

@@ -3,7 +3,7 @@ import { Eye, EyeOff, Type, Square, ImageIcon, Circle, Search, ChevronRight, Che
 import { useRetailPromoStore } from './retailPromo.store'
 import { extractPromoFields } from './promoMapping'
 import { toCardData } from './promoCardData'
-import type { PromoBlockId, RetailCardData } from './RetailPromoCard'
+import type { PromoBlockId, RetailCardData } from './promoCardTypes'
 
 type IconKind = 'block' | 'text' | 'image' | 'badge'
 interface LayerNode { id: PromoBlockId; label: string; isText: boolean; icon: IconKind; children?: LayerNode[] }

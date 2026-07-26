@@ -12,6 +12,7 @@ import {
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
 import type { SourceProduct } from './catalog/match'
 import { retainHistory } from './history'
+import type { KpiHistoryPoint } from './types'
 import { diffPrices, mergeEvents, chunkState, type PriceState, type PriceEvent } from './priceEvents'
 
 // ── Catalogue SOURCE persisté (pour recalculer le benchmark hors workflow) ──────────
@@ -132,22 +133,6 @@ export interface StoredReport {
   products: ProductRow[]
   totalMatched: number
   truncated: boolean
-}
-
-export interface KpiHistoryPoint {
-  at: number
-  products: number
-  cheaperThanMe: number
-  dearerThanMe: number
-  aligned: number
-  productsUndercut: number
-  /** Écart moyen (avgGapPct FIABLE, agrégé serveur) par concurrent à cette analyse.
-   *  `s` = siteId, `g` = écart % (null si aucun prix). ABSENT des points écrits avant
-   *  cette feature → à traiter comme un trou dans la courbe (jamais 0). */
-  comp?: { s: string; g: number | null }[]
-  /** Indice tarif base 100 vs médiane marché (kpis.priceIndex) à cette analyse.
-   *  Absent des points antérieurs → trou dans la courbe, jamais 0. */
-  pi?: number | null
 }
 
 /**

@@ -6,7 +6,8 @@
 // les produits les moins bien positionnés quand `truncated=true`. Les métriques FIABLES
 // en toute circonstance sont `report.kpis` (headline) et `byCompetitor.avgGapPct`. Le
 // FILTRE global ne touche QUE les blocs dérivés — les headline restent globaux (kpis).
-import type { StoredReport, KpiHistoryPoint } from '../reportStore'
+import type { StoredReport } from '../reportStore'
+import type { KpiHistoryPoint } from '../types'
 import type { ProductRow, ReportKpis } from '../catalog/report'
 import { foldText } from '../catalog/categories'
 

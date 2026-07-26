@@ -3,7 +3,7 @@
 // remplace les copies existantes sur chaque page (positions/styles resynchronisés).
 import type { FabricObject } from 'fabric'
 import { usePagesStore } from '@/stores/pages.store'
-import { globalFabricCanvas, globalSnapshot } from './CanvasContainer'
+import { globalFabricCanvas, globalSnapshot } from './globalCanvas'
 import { syncToStore } from './useAddObject'
 import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
 

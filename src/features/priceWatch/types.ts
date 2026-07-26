@@ -88,3 +88,22 @@ export interface PriceWatchAlert {
   variationPct?: number
   message: string
 }
+
+/** Point de la courbe KPI d'un suivi : un par analyse complète.
+ *  Vit ici (et non dans `reportStore`) pour que `history.ts` puisse le typer
+ *  sans dépendre du store — le store dépend déjà de `history`. */
+export interface KpiHistoryPoint {
+  at: number
+  products: number
+  cheaperThanMe: number
+  dearerThanMe: number
+  aligned: number
+  productsUndercut: number
+  /** Écart moyen (avgGapPct FIABLE, agrégé serveur) par concurrent à cette analyse.
+   *  `s` = siteId, `g` = écart % (null si aucun prix). ABSENT des points écrits avant
+   *  cette feature → à traiter comme un trou dans la courbe (jamais 0). */
+  comp?: { s: string; g: number | null }[]
+  /** Indice tarif base 100 vs médiane marché (kpis.priceIndex) à cette analyse.
+   *  Absent des points antérieurs → trou dans la courbe, jamais 0. */
+  pi?: number | null
+}

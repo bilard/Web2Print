@@ -1,6 +1,7 @@
 import type { RuleEffect } from '@/features/merge/conditionalRules'
 import { boldMarkdownToHtml, flattenRichMarkdown } from '@/lib/richText'
-import { PROMO_CSS, FONTS_HREF, splitPrice, idealText, layoutTune, elementCss, blockBgCss, blockBoxCssString, STYLE_KEYS, type RetailCardData, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId } from './RetailPromoCard'
+import { STYLE_KEYS, type RetailCardData, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId } from './promoCardTypes'
+import { PROMO_CSS, FONTS_HREF, splitPrice, idealText, layoutTune, elementCss, blockBgCss, blockBoxCssString } from './promoStyles'
 
 type Effects = Partial<Record<PromoBlockId, RuleEffect>>
 

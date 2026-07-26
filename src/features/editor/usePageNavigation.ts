@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { globalFabricCanvas } from './CanvasContainer'
+import { globalFabricCanvas } from './globalCanvas'
 import { usePagesStore } from '@/stores/pages.store'
 import { syncToStore } from './useAddObject'
 import { FABRIC_SERIALIZED_PROPS } from './serializationProps'

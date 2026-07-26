@@ -1,7 +1,7 @@
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage, auth } from '@/lib/firebase/config'
 import { generateCurrentPageSvg } from '@/features/export/useExportSvg'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useEditorStore, type CanvasObjectProps } from '@/stores/editor.store'
 import type { Animation3DConfig } from '@/features/animation3d/types'
 

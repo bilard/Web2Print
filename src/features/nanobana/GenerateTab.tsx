@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Sparkles, Loader2, AlertCircle, Plus, Check, ImageIcon, X, Square } from 'lucide-react'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useNanoBanaStore } from '@/stores/nanobana.store'
 import { useImageGeneration } from './useImageGeneration'
 import type { GalleryImage, GenerationRequest } from './types'

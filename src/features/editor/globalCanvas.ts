@@ -15,3 +15,28 @@ export function setGlobalFabricCanvas(canvas: Canvas | null): void {
   // Exposé sur window pour l'inspection en console (debug prod sans source maps).
   ;(window as Window & { __fabricCanvas?: Canvas | null }).__fabricCanvas = canvas
 }
+
+/**
+ * Commandes de l'éditeur exposées hors composant, pour les mêmes raisons que le
+ * canvas : un panneau ou un hook d'export doit pouvoir déclencher un snapshot
+ * sans importer `CanvasContainer` — donc sans tirer Fabric et Three.
+ *
+ * `CanvasContainer` en est la seule source : il les branche au montage et les
+ * remet à `null` au démontage, via les setters ci-dessous.
+ */
+export let globalUndo: (() => void) | null = null
+export let globalRedo: (() => void) | null = null
+export let globalSnapshot: (() => void) | null = null
+export let globalFitCanvas: (() => void) | null = null
+
+export function setEditorCommands(
+  commands: { undo: (() => void) | null; redo: (() => void) | null; snapshot: (() => void) | null },
+): void {
+  globalUndo = commands.undo
+  globalRedo = commands.redo
+  globalSnapshot = commands.snapshot
+}
+
+export function setGlobalFitCanvas(fit: (() => void) | null): void {
+  globalFitCanvas = fit
+}

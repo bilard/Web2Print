@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { Group, util } from 'fabric'
-import { globalFabricCanvas, globalSnapshot } from './CanvasContainer'
+import { globalFabricCanvas, globalSnapshot } from './globalCanvas'
 import { syncToStore } from './useAddObject'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'

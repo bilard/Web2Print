@@ -4,7 +4,7 @@ import { GradientPicker, DEFAULT_GRADIENT } from '@/components/shared/GradientPi
 import { useRetailPromoStore } from './retailPromo.store'
 import { PropertySection as Section, NumField, SelectField, SliderField, SegButtons } from '@/components/shared/panel'
 import { PromoConditionalSection } from './PromoConditionalSection'
-import { STYLE_KEYS, type PromoBlockId, type PromoColorKey, type BlockFill } from './RetailPromoCard'
+import { STYLE_KEYS, type PromoBlockId, type PromoColorKey, type BlockFill } from './promoCardTypes'
 
 const BLEND_MODES: Array<{ v: string; label: string }> = [
   { v: 'normal', label: 'Normal' }, { v: 'multiply', label: 'Multiplier' }, { v: 'screen', label: 'Écran' },

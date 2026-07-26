@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { FabricImage, Group, type FabricObject } from 'fabric'
 import { Sparkles, Loader2 } from 'lucide-react'
-import { globalFabricCanvas, globalSnapshot } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas, globalSnapshot } from '@/features/editor/globalCanvas'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { useEditorStore } from '@/stores/editor.store'
 import { generateImage } from '@/features/briefs/ai/geminiImageClient'

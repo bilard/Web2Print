@@ -1,7 +1,6 @@
 import type { TourStep } from './types'
 import { useUIStore } from '@/stores/ui.store'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
-
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 /** Sélectionne le premier objet éditable du canvas pour peupler le panneau Propriétés. */
 function selectFirstObject() {
   const canvas = globalFabricCanvas

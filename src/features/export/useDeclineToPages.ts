@@ -3,7 +3,7 @@
 // (projectObjectsToFormat) garanti. Rend la page source en PNG pour le LLM.
 import { useCallback } from 'react'
 import type { Canvas } from 'fabric'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { FABRIC_SERIALIZED_PROPS } from '@/features/editor/serializationProps'
 import { usePagesStore } from '@/stores/pages.store'
 import { useUIStore } from '@/stores/ui.store'

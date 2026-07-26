@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { FabricImage, type Canvas, type Group } from 'fabric'
 import { parseSvgToFabric } from './svgToFabric'
-import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/globalCanvas'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { globalSave } from '@/features/editor/useAutoSave'
 

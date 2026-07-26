@@ -5,7 +5,7 @@
 import { formatPrice } from './priceParse'
 import { computeRemiseLabel } from './promoMapping'
 import type { PromoFields, CustomFieldMap } from './promoTypes'
-import type { RetailCardData } from './RetailPromoCard'
+import type { RetailCardData } from './promoCardTypes'
 
 /** Texte de validité affiché en pied de page. */
 function validText(f: PromoFields): string {

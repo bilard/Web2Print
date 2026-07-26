@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { Textbox } from 'fabric'
-import { globalFabricCanvas } from './CanvasContainer'
+import { globalFabricCanvas } from './globalCanvas'
 import { syncToStore } from './useAddObject'
 import { useMergeStore } from '@/stores/merge.store'
 import { resolveText, remapStyles } from '@/features/merge/mergeEngine'

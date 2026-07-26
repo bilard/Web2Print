@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { globalFabricCanvas } from './CanvasContainer'
+import { globalFabricCanvas } from './globalCanvas'
 import { useEditorStore } from '@/stores/editor.store'
 import { syncToStore } from './useAddObject'
 import { findById, findParentGroup, wouldCreateCycle } from './layerTreeOps'

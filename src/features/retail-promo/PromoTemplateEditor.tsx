@@ -7,7 +7,7 @@ import { RULE_SYNTHETIC_COLUMNS, augmentRowForRules } from './promoRuleFields'
 import { generatePromoTemplate } from './useGeneratePromoTemplate'
 import { listPromoTemplates, savePromoTemplate, deletePromoTemplate, type UserPromoTemplate } from './promoTemplatesApi'
 import { PromoLayoutPicker } from './PromoLayoutPicker'
-import type { PromoTemplateConfig } from './RetailPromoCard'
+import type { PromoTemplateConfig } from './promoCardTypes'
 
 const TOGGLES: Array<{ key: keyof PromoTemplateConfig; label: string }> = [
   { key: 'showCategory', label: 'Catégorie' },

@@ -4,7 +4,7 @@
 // ligne courante et persiste. Le moteur et l'applier vivent dans features/merge.
 import { useEffect, useState } from 'react'
 import { ChevronRight, GitBranch, Plus } from 'lucide-react'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { collectObjectsDeep } from '@/features/editor/deepObjects'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { useMergeStore, type MergeColumn } from '@/stores/merge.store'

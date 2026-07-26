@@ -12,7 +12,7 @@ import { getIdmlBuffer } from '@/features/idml/idmlSource'
 import { extractIdmlContents, buildMultiPageIdml, type PatchOptions } from './idmlPatcher'
 import { templatizeEcContents } from './ecTemplatizer'
 import { templatizeXmlElementContents } from '@/features/idml/xmlElementStory'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { resolveFileName } from './mergeEngine'
 import { collectObjectsDeep } from '@/features/editor/deepObjects'
 

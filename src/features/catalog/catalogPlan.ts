@@ -3,7 +3,7 @@
 // (la génération ne doit JAMAIS être bloquée par un échec IA).
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
-import { FONT_OPTIONS } from '@/features/retail-promo/RetailPromoCard'
+import { FONT_OPTIONS } from '@/features/retail-promo/promoCardTypes'
 import { CARD_OBJECT_IDS, CATALOG_GRIDS, DEFAULT_CARD_STYLE, type CardBox, type CardObjectId, type CatalogCardStyle, type CatalogGrid, type CatalogCharte, type CatalogPlan, type CatalogSectionPlan, type CatalogTreeNode } from './catalogTypes'
 import { flattenTree, subtreeProductCount } from './catalogTree'
 

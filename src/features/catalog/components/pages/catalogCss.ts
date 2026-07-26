@@ -3,7 +3,7 @@
 import type React from 'react'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey, CustomFieldMap } from '@/features/retail-promo/promoTypes'
-import { FONTS_HREF } from '@/features/retail-promo/RetailPromoCard'
+import { FONTS_HREF } from '@/features/retail-promo/promoStyles'
 import { DEFAULT_CARD_STYLE, DEFAULT_PAGE_STYLE, GRID_DIMS, type CatalogCardStyle, type CatalogFormat, type CatalogGrid, type CatalogPageStyle, type CatalogPlan, type CatalogTheme } from '../../catalogTypes'
 
 const PX_PER_MM = 96 / 25.4

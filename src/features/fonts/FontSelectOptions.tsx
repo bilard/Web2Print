@@ -1,7 +1,7 @@
 // Options partagées de TOUS les sélecteurs de polices de l'app : « Mes polices »
 // (fichiers uploadés + familles Google ajoutées par URL) puis le catalogue
 // Google Fonts intégré. À rendre à l'intérieur d'un <select>.
-import { FONT_OPTIONS } from '@/features/retail-promo/RetailPromoCard'
+import { FONT_OPTIONS } from '@/features/retail-promo/promoCardTypes'
 import { useUserFonts } from './useUserFonts'
 
 export function FontSelectOptions() {

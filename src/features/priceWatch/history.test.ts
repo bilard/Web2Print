@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { retainHistory, DETAIL_WINDOW_DAYS } from './history'
-import type { KpiHistoryPoint } from './reportStore'
+import type { KpiHistoryPoint } from './types'
 
 const DAY = 86_400_000
 const NOW = new Date('2026-07-25T12:00:00').getTime()

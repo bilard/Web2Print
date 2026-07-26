@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { globalFabricCanvas } from './CanvasContainer'
+import { globalFabricCanvas } from './globalCanvas'
 import { globalObjOps } from './useObjectOperations'
 
 function isInputFocused() {

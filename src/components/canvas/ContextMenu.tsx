@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useObjectOperations } from '@/features/editor/useObjectOperations'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { repeatSelectedOnAllPages, removeSelectedFromOtherPages } from '@/features/editor/masterElements'
 import { usePagesStore } from '@/stores/pages.store'
 

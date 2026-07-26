@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Plus, X, Check, Brush } from 'lucide-react'
 import { toast } from 'sonner'
 import { useObjectStyles, captureStyle, applyStyle } from '@/features/brandkit/useObjectStyles'
-import { globalFabricCanvas, globalSnapshot } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas, globalSnapshot } from '@/features/editor/globalCanvas'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { PropertySection } from '@/components/shared/panel'
 

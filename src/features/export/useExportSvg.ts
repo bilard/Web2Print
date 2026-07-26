@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { FabricImage, type FabricObject } from 'fabric'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
 import { buildFontFaceCss } from '@/features/assets/fontBufferRegistry'

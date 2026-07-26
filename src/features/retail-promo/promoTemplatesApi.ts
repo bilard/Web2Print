@@ -1,6 +1,6 @@
 import { collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
-import type { PromoTemplateConfig } from './RetailPromoCard'
+import type { PromoTemplateConfig } from './promoCardTypes'
 import { stripUndefined } from './stripUndefined'
 
 export interface UserPromoTemplate {

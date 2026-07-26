@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { FabricImage, FabricObject } from 'fabric'
-import { globalFabricCanvas } from '../../../features/editor/CanvasContainer'
+import { globalFabricCanvas } from '../../../features/editor/globalCanvas'
 import { syncToStore } from '../../../features/editor/useAddObject'
 import type { DamImage } from '../types'
 

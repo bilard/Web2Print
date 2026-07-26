@@ -3,7 +3,7 @@ import { ColorPicker } from '@/components/shared/ColorPicker'
 import { useRetailPromoStore } from './retailPromo.store'
 import { PropertySection as Section, NumField, SegButtons, inputCls } from '@/components/shared/panel'
 import { PromoConditionalSection } from './PromoConditionalSection'
-import type { PromoColorKey, ElementStyle } from './RetailPromoCard'
+import type { PromoColorKey, ElementStyle } from './promoCardTypes'
 import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import type { PromoFieldKey } from './promoTypes'
 

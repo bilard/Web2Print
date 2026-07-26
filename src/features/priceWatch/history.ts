@@ -14,7 +14,7 @@
 // D'où le rollup : détail complet sur les 14 derniers jours, puis un point par journée
 // civile au-delà. À cadence quotidienne, 90 points ≈ 3 mois d'historique lisible, et le
 // doc reste minuscule.
-import type { KpiHistoryPoint } from './reportStore'
+import type { KpiHistoryPoint } from './types'
 
 /** Fenêtre de détail : en deçà, TOUS les points sont conservés. */
 export const DETAIL_WINDOW_DAYS = 14

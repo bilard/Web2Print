@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState, type RefObject, type PointerEvent as ReactPointerEvent } from 'react'
-import type { PromoTemplateConfig, PromoColorKey, PromoBlockId } from './RetailPromoCard'
+import type { PromoTemplateConfig, PromoColorKey, PromoBlockId } from './promoCardTypes'
 
 type Handle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { StoredReport } from '../reportStore'
-import type { KpiHistoryPoint } from '../reportStore'
+import type { KpiHistoryPoint } from '../types'
 import { buildCockpit, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries, priceIndexSeries, EMPTY_FILTER, matchesQuery, groupRowsByFamily, type TableRow } from './analytics'
 
 const cell = (siteId: string, domain: string, priceHt: number, gapPct: number, stock: 'in-stock' | 'out-of-stock' = 'in-stock') => ({

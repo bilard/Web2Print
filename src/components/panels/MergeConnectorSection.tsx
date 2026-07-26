@@ -1,5 +1,5 @@
 import { Link2 } from 'lucide-react'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { collectObjectsDeep } from '@/features/editor/deepObjects'
 
 export function MergeConnectorSection({ selectedObjectId }: { selectedObjectId: string | null }) {

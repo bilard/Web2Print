@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { AlertTriangle, OctagonAlert, CheckCircle2 } from 'lucide-react'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { collectPreflightInfo, runPreflight, type PreflightIssue } from '@/features/editor/preflight'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'

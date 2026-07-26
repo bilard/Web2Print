@@ -1,6 +1,6 @@
 // Bandeau de KPI dense. Métriques FIABLES (kpis, non biaisées par le cap ni par le
 // filtre). Delta + sparkline vs l'historique. Chiffres en tabular-nums.
-import type { KpiHistoryPoint } from '../reportStore'
+import type { KpiHistoryPoint } from '../types'
 import type { Cockpit } from './analytics'
 import { trendDelta, sparkSeries } from './analytics'
 import { eur, pct, when } from './format'

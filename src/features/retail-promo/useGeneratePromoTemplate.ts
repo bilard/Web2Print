@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
-import { FONT_OPTIONS, PROMO_LAYOUT_IDS, type PromoLayoutId, type PromoTemplateConfig, type PromoBlockId } from './RetailPromoCard'
+import { FONT_OPTIONS, PROMO_LAYOUT_IDS, type PromoLayoutId, type PromoTemplateConfig, type PromoBlockId } from './promoCardTypes'
 import { OPERATOR_LABELS, ACTION_LABELS, actionWithDefaults, type ConditionalRule, type RuleOperator, type RuleActionType } from '@/features/merge/conditionalRules'
 
 const FontEnum = z.enum(FONT_OPTIONS)

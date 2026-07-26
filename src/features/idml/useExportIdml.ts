@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import JSZip from 'jszip'
 import { getIdmlBuffer, globalIdmlSource } from './idmlSource'
 import { exportIdmlModified } from './idmlExporter'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useEditorStore } from '@/stores/editor.store'
 import { recordAudit } from '@/lib/auditLog'
 

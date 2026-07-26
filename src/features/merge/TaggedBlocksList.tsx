@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link2 } from 'lucide-react'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { collectObjectsDeep } from '@/features/editor/deepObjects'
 import { useLayers } from '@/features/editor/useLayers'
 
