@@ -12,6 +12,7 @@
  * pour éviter toute corruption des attributs ou namespaces IDML.
  */
 
+import { parseXml, directChildren } from './idmlXml'
 import { debugLog } from '@/lib/debugLog'
 import JSZip from 'jszip'
 import type { FabricObject } from 'fabric'
@@ -293,9 +294,6 @@ function patchElementAttribute(
 
 // ─── XML helpers (pour Stories uniquement) ──────────────────────────────────
 
-function parseXml(xml: string): Document {
-  return new DOMParser().parseFromString(xml, 'application/xml')
-}
 
 function serializeXml(doc: Document, originalXml: string): string {
   const serialized = new XMLSerializer().serializeToString(doc)
@@ -306,16 +304,6 @@ function serializeXml(doc: Document, originalXml: string): string {
   return serialized
 }
 
-function directChildren(parent: Element, tagName: string): Element[] {
-  const result: Element[] = []
-  for (let i = 0; i < parent.childNodes.length; i++) {
-    const child = parent.childNodes[i]
-    if (child.nodeType === 1 && (child as Element).tagName === tagName) {
-      result.push(child as Element)
-    }
-  }
-  return result
-}
 
 function cleanText(t: string): string {
   return t.replace(/[\ufeff\u200b\u200c\u200d]/g, '').replace(/\u2028/g, '\n')

@@ -10,6 +10,7 @@
  * - Style cascade: CharacterStyleRange → AppliedCharacterStyle → ParagraphStyleRange → AppliedParagraphStyle
  */
 
+import { parseXml, attr, directChildren, propText } from './idmlXml'
 import { parseEcTag, parseEcImageField } from '@/features/easycatalog/ecIdmlImport'
 import { flattenXmlElementStory, valueXmlElementStory, extractStoryFields } from './xmlElementStory'
 import { parseBackingStoryImageFields, parseBackingStoryTagTree, type TagTreeNode } from './xmlBackingStory'
@@ -159,33 +160,6 @@ interface StyleDef {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function parseXml(xmlStr: string): Document {
-  return new DOMParser().parseFromString(xmlStr, 'application/xml')
-}
-
-function attr(el: Element, name: string, fallback = ''): string {
-  return el.getAttribute(name) ?? fallback
-}
-
-/** Get direct child elements by tag name (`:scope >` doesn't work on XML docs from DOMParser) */
-function directChildren(parent: Element, tagName: string): Element[] {
-  const result: Element[] = []
-  for (let i = 0; i < parent.childNodes.length; i++) {
-    const child = parent.childNodes[i]
-    if (child.nodeType === 1 && (child as Element).tagName === tagName) {
-      result.push(child as Element)
-    }
-  }
-  return result
-}
-
-/** Get text content from a <Properties><TagName> child element */
-function propText(el: Element, tagName: string): string | null {
-  const propsArr = directChildren(el, 'Properties')
-  if (propsArr.length === 0) return null
-  const children = directChildren(propsArr[0], tagName)
-  return children.length > 0 ? (children[0].textContent?.trim() || null) : null
-}
 
 type Mat = [number, number, number, number, number, number]
 
