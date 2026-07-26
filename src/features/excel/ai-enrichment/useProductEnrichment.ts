@@ -12,6 +12,9 @@ import { buildDocument, coerceDocuments } from './documentUtils'
 import { sanitizeJinaMarkdown, looksLikeBotChallenge } from './markdownSanitize'
 import { extractLongestProseParagraph, isNavLikeDescription } from './enrichmentSanitize'
 import { isJunkImageUrl } from './imageFilter'
+// Filtre des contenus parasites : version CANONIQUE et testée, partagée avec le
+// node de scraping. Le PIM en avait une copie amputée (cf. commit).
+import { isGarbageContent, isMainlyGarbage } from '@/features/scraping/core/parsers/garbageFilter'
 import { buildIdentity, stripInternalSentinels,
   MEGA_SPEC_NAME_RE, splitMegaSpecValue,
 } from './liftIdentity'
@@ -72,14 +75,6 @@ function logLlmRequest(
   })
 }
 
-// ── Filtrage des contenus parasites (cookie banners, GDPR, reCAPTCHA) ───────
-
-const GARBAGE_RE = /\b(cookie[s ]?|gdpr|your privacy|recaptcha|captcha|consent manager|targeting cookies?|functional cookies?|performance cookies?|strictly necessary|strictement\s+n[eé]cessaire|necessary cookies?|checkbox.?label|onetrust|cookiebot|manage preferences|cookie settings|politique de confidentialit[eé]|param[eè]tres? des? cookies?|refuser les cookies?|accepter les cookies?|we use cookies|this site is exceeding|we and our partners store|non-sensitive information|personali[sz]ed ads|ad measurement|audience insights|legitimate interest|store and\/or access|advertising purposes?|consent purposes?|personalised content|accept all|reject all|aspsessionid[a-z]*|asp\.net|prestataire\s+de\s+traitement|dur[eé]e\s+de\s+conservation|finalit[eé]\s+du\s+traitement|statistique|analytique|pr[eé]f[eé]rences?|ciblage|publicit[eé]|marketing)\b/i
-
-/** Détecte si un texte est du contenu parasite (cookie banner, GDPR, reCAPTCHA) */
-function isGarbageContent(text: string): boolean {
-  return GARBAGE_RE.test(text)
-}
 
 /**
  * Fusionne les groupes du markdown dans les avantages existants par matching textuel.
@@ -442,14 +437,6 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
   return { ...enriched, description: finalDescription, descriptionRich, advantages, specifications, variants, documents: cleanedDocuments, breadcrumb }
 }
 
-/** Détecte si un texte est principalement du contenu cookie/GDPR (ratio de lignes garbage) */
-function isMainlyGarbage(text: string): boolean {
-  const lines = text.split(/\n/).filter(l => l.trim().length > 10)
-  if (lines.length === 0) return false
-  const garbageLines = lines.filter(l => GARBAGE_RE.test(l))
-  // Si plus de 30% des lignes sont garbage → considérer comme parasite
-  return garbageLines.length / lines.length > 0.3
-}
 
 /** Métiers/personae courants affichés sur les sites fabricants (menus "Mon profil"
  *  style Nicoll) — si une spec mappe deux items de cette liste, c'est un form
