@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { parseParamLines, rowsToSheet } from './browserActRows'
 import { parseBrowserActRows } from '@/features/scraping/core/browserAct'
 
@@ -58,5 +60,23 @@ describe('rowsToSheet', () => {
 
   it('sans ligne : feuille vide exploitable (pas de colonne fantôme)', () => {
     expect(rowsToSheet([], 'BrowserAct')).toMatchObject({ columns: [], rows: [], taxonomy: [] })
+  })
+})
+
+describe('enregistrement du node', () => {
+  // Les nodes s'enregistrent par EFFET DE BORD à l'import : un oubli dans `builtin.ts`
+  // ne casse aucun type, le node disparaît simplement de la palette.
+  it('« BrowserAct (bot) » est dans la palette, étape Import', async () => {
+    await import('./browserActNode')
+    const { nodeRegistry } = await import('./index')
+    const spec = nodeRegistry.get('browseract')
+    expect(spec).toBeDefined()
+    expect(spec?.category).toBe('import')
+    expect(spec?.hidden).toBeFalsy()
+  })
+
+  it('est importé par builtin.ts (sinon absent à l’exécution)', () => {
+    const builtin = readFileSync(join(__dirname, 'builtin.ts'), 'utf-8')
+    expect(builtin).toContain("import './browserActNode'")
   })
 })

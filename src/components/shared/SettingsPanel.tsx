@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, type ReactNode } from 'react'
-import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, Sparkles, Flame, Plus, RefreshCw, Cookie, Trash2, Network, ScrollText } from 'lucide-react'
+import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, Sparkles, Flame, Plus, RefreshCw, Cookie, Trash2, Network, ScrollText, Bot } from 'lucide-react'
 import { DataModelDiagram } from '@/features/data-graph/DataModelDiagram'
 import { MyActivityTab } from '@/features/access/MyActivityTab'
 import {
@@ -458,6 +458,10 @@ function ConnectorsTab() {
       <ApiKeyRow id="jina" label="Jina AI" description="Scraping et recherche web" logo={<JinaLogo />} placeholder="jina_..." />
       <ApiKeyRow id="firecrawl" label="Firecrawl" description="Scraping anti-bot fallback (Akamai, Cloudflare)" logo={<FirecrawlLogo />} placeholder="fc-..." />
       <BrightDataConnectorRow />
+      {/* BrowserAct n'est PAS un lecteur d'URL comme les trois précédents : il exécute des
+          « bots » construits dans son tableau de bord. Le test de la clé liste les vôtres —
+          leur identifiant est ce que demande le node « BrowserAct (bot) ». */}
+      <ApiKeyRow id="browseract" label="BrowserAct" description="Exécute vos « bots » (Amazon, LinkedIn, anti-bot durs) — via le node « BrowserAct (bot) » d'un workflow" logo={<Bot className="w-5 h-5 text-teal-300" />} />
       <ApiKeyRow id="scrapfly" label="ScrapFly" description="Réservée — pas de CORS browser-side, en attente d'une Cloud Function proxy" logo={<ScrapflyLogo />} placeholder="scp-live-..." />
       <HiggsfieldConnectorRow />
       <GDriveConnectorRow />
