@@ -31,10 +31,25 @@ export interface SiteFetcher {
 /** Plafond d'exécutions de bot par passe et par site (chaque appel = une tâche facturée). */
 const BROWSERACT_MAX_CALLS_PER_PASS = 20
 
+/**
+ * Attente maximale d'UNE exécution de bot dans une boucle de moisson.
+ *
+ * ⚠ Relevé en prod : à 300 s, un bot qui n'aboutit jamais (version non publiée, paramètre
+ * d'entrée mal nommé, file d'attente du palier gratuit) coûtait 5 minutes PAR PAGE, soit
+ * 100 minutes pour un seul site avant d'atteindre le plafond d'appels — un run entier
+ * bloqué sans le moindre résultat. Un bot utilisable dans une boucle répond en moins de
+ * deux minutes ; au-delà, c'est le node « BrowserAct (bot) » qu'il faut utiliser, où
+ * l'attente est explicite et réglable.
+ */
+const BROWSERACT_PAGE_TIMEOUT_MS = 120_000
+
 /** @param opts.auth site à prix connectés → passe par la CF `fetchPageHtmlAuth`.
  *  @param opts.host domaine configuré = clé Firestore des identifiants (requis si auth).
  *  @param opts.botId identifiant du bot BrowserAct (requis avec le moteur 'browseract'). */
-export function buildSiteFetcher(engine?: SiteEngine, opts?: { auth?: boolean; host?: string; botId?: string }): SiteFetcher {
+export function buildSiteFetcher(
+  engine?: SiteEngine,
+  opts?: { auth?: boolean; host?: string; botId?: string; signal?: AbortSignal },
+): SiteFetcher {
   let last: string | undefined
   // Site authentifié : le login cookie serveur PRIME sur le moteur (les prix ne sont
   // visibles que connecté). Le moteur forcé éventuel n'a pas de sens ici.
@@ -83,6 +98,9 @@ export function buildSiteFetcher(engine?: SiteEngine, opts?: { auth?: boolean; h
         'BrowserAct n’a pas de primitive « lis cette URL » : il exécute un bot de ton tableau de bord.')
     }
     let calls = 0
+    // Disjoncteur : un bot qui n'aboutit pas une fois n'aboutira pas davantage la
+    // suivante. Sans lui, chaque page repayait l'attente complète.
+    let broken = false
     return {
       connectorId: 'browseract',
       lastEngine: () => last,
@@ -94,9 +112,19 @@ export function buildSiteFetcher(engine?: SiteEngine, opts?: { auth?: boolean; h
         // run. Sans ce plafond, une passe de moisson à plusieurs centaines de pages
         // viderait le compte. C'est aussi pourquoi ce moteur est fait pour la RECHERCHE
         // DIRIGÉE (quelques pages par produit), pas pour balayer un catalogue.
-        if (calls >= BROWSERACT_MAX_CALLS_PER_PASS) return null
+        if (broken || calls >= BROWSERACT_MAX_CALLS_PER_PASS) return null
         calls++
-        const res = await runBrowserActWorkflow(key, botId, { url }, { timeoutMs: 300_000 })
+        const res = await runBrowserActWorkflow(key, botId, { url }, {
+          timeoutMs: BROWSERACT_PAGE_TIMEOUT_MS,
+          signal: opts?.signal,
+        })
+        if (res == null || res.status !== 'finished') {
+          broken = true
+          console.warn(
+            `[browseract] bot « ${botId} » ${res ? `resté « ${res.status} »` : 'non démarré'} — site abandonné pour cette passe. ` +
+            'Vérifie qu’une version est PUBLIÉE et que son paramètre d’entrée s’appelle « url ».')
+          return null
+        }
         // La STRUCTURE de sortie du bot est inconnue (il est construit site par site) :
         // `botOutputToHtml` déduit les champs par nom de clé PUIS par forme de valeur.
         const html = botOutputToHtml(res?.output, url)

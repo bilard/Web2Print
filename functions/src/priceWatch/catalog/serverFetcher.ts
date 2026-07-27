@@ -53,6 +53,10 @@ async function jinaHtml(url: string, timeoutMs: number): Promise<string | null> 
 /** Plafond d'exécutions de bot par passe et par site (chaque appel = une tâche facturée). */
 const BROWSERACT_MAX_CALLS_PER_PASS = 20
 
+/** Attente maximale d'UNE exécution de bot. Parité avec `siteFetch` côté client : à 300 s,
+ *  un bot qui n'aboutit jamais coûtait 5 min PAR PAGE et bloquait le run entier. */
+const BROWSERACT_PAGE_TIMEOUT_MS = 120_000
+
 export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs = 20_000): ServerFetcher {
   let last: string | undefined
   let jar: string | null = null
@@ -99,18 +103,21 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
     // les parseurs en aval lisent du HTML, pas des lignes JSON.
     const botId = (site.botId ?? '').trim()
     let calls = 0
+    // Disjoncteur : un bot qui n'aboutit pas une fois n'aboutira pas la suivante.
+    let broken = false
     return {
       lastEngine: () => last,
       fetchHtml: async (url) => {
-        if (!botId || calls >= BROWSERACT_MAX_CALLS_PER_PASS) return null
+        if (broken || !botId || calls >= BROWSERACT_MAX_CALLS_PER_PASS) return null
         const key = await getUserApiKey(uid, 'browseract').catch(() => '')
         if (!key) return null
         calls++
         // Un bot ne rend JAMAIS de HTML (sortie JSON/CSV/XML/Markdown) et sa STRUCTURE
         // est inconnue : `botOutputToHtml` déduit les champs puis emballe les fiches en
         // JSON-LD, ce qui en fait une source comme une autre pour la suite du pipeline.
-        const out = await runBrowserActBot(key, botId, { url }, 300_000)
-        const html = botOutputToHtml(out ?? undefined, url)
+        const out = await runBrowserActBot(key, botId, { url }, BROWSERACT_PAGE_TIMEOUT_MS)
+        if (out == null) { broken = true; return null }
+        const html = botOutputToHtml(out, url)
         if (!html) return null
         last = 'browseract'
         return html

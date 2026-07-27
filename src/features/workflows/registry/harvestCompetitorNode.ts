@@ -20,6 +20,10 @@ import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatc
 import { harvestProgress } from '@/features/priceWatch/catalog/harvest'
 import { mapWithConcurrency, HARVEST_CONCURRENCY } from '@/features/priceWatch/concurrency'
 
+/** Fenêtre d'un run lancé depuis le NAVIGATEUR. Un run planifié est borné par le serveur
+ *  (`ctx.deadlineAt` = RUN_TIMEOUT − RESERVE) ; côté client, RIEN ne bornait la passe. */
+const HARVEST_CLIENT_WINDOW_MS = 10 * 60_000
+
 interface HarvestConfig {
   watchId: string
   sites: string
@@ -137,6 +141,12 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     // Budget : un site peut RÉSERVER ses pages (concurrent coûteux à brider) ; le reste
     // est partagé équitablement entre les autres.
     const budgets = splitPageBudget(sites, config.pageBudget)
+    // ⚠ Échéance CLIENT. Un run planifié est borné par le serveur (`ctx.deadlineAt`) ;
+    // un run lancé depuis le navigateur ne l'était par RIEN — un site lent pouvait le
+    // faire durer des heures, sans résultat visible et sans rendre la main. Le curseur
+    // étant persisté page par page, s'arrêter à l'échéance ne perd aucun travail : la
+    // passe suivante reprend exactement où celle-ci s'arrête.
+    const deadlineAt = Date.now() + HARVEST_CLIENT_WINDOW_MS
 
     // Le suivi existe dès la 1ʳᵉ moisson (liste + dashboard), sans attendre « Comparer ».
     await touchWatch(uid, watchId, ctx.workflowName)
@@ -170,7 +180,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       }
       // Moteur par site : site authentifié (login cookie) sinon moteur forcé
       // (jina | firecrawl | brightdata) sinon cascade auto.
-      const fetcher = buildSiteFetcher(site.engine, { auth: site.auth, host: site.domain, botId: site.botId })
+      const fetcher = buildSiteFetcher(site.engine, { auth: site.auth, host: site.domain, botId: site.botId, signal: ctx.signal })
       ctx.reportConnector?.(fetcher.connectorId)
       if (site.auth) ctx.log('info', `${site.domain} : accès authentifié (login cookie).`)
       else if (site.engine) ctx.log('info', `${site.domain} : moteur forcé « ${site.engine} ».`)
@@ -212,6 +222,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
         }),
         log: (m) => ctx.log('info', m),
         signal: ctx.signal,
+        deadlineAt,
       }
       const res = await harvestPass(cfg, deps, budgets.get(site.id) ?? 1)
       const elapsedMs = Date.now() - t0

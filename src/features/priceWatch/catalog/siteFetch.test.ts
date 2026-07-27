@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const jinaMock = vi.hoisted(() => vi.fn())
 const cascadeMock = vi.hoisted(() => vi.fn())
@@ -16,14 +16,17 @@ vi.mock('@/features/scraping/core/firecrawlFallback', () => ({
   firecrawlScrapeHtml: fcMock,
 }))
 vi.mock('@/lib/apiKeys', () => ({ getApiKey: keyMock }))
+const baMock = vi.hoisted(() => vi.fn())
+vi.mock('@/features/scraping/core/browserAct', () => ({ runBrowserActWorkflow: baMock }))
 const authMock = vi.hoisted(() => vi.fn())
 vi.mock('./authFetchClient', () => ({ fetchAuthHtml: authMock }))
 
 import { buildSiteFetcher } from './siteFetch'
+import { parseListingGeneric } from './genericListing'
 
 beforeEach(() => {
   jinaMock.mockReset(); cascadeMock.mockReset(); bdMock.mockReset(); fcMock.mockReset()
-  authMock.mockReset(); keyMock.mockReset(); keyMock.mockReturnValue('')
+  authMock.mockReset(); baMock.mockReset(); keyMock.mockReset(); keyMock.mockReturnValue('')
 })
 
 describe('buildSiteFetcher', () => {
@@ -103,5 +106,37 @@ describe('moteur BrowserAct', () => {
 
   it('annonce la pastille de connecteur BrowserAct', () => {
     expect(buildSiteFetcher('browseract', { botId: 'wf_123' }).connectorId).toBe('browseract')
+  })
+})
+
+describe('BrowserAct — disjoncteur', () => {
+  // Relevé en prod : un bot qui n'aboutit jamais coûtait 5 min PAR PAGE, soit 100 min
+  // pour un seul site avant d'atteindre le plafond d'appels — run bloqué, aucun résultat.
+  it('abandonne le site dès la PREMIÈRE exécution non terminée', async () => {
+    const calls: string[] = []
+    keyMock.mockReturnValue('k')
+    baMock.mockImplementation(async (_k: string, _b: string, p: Record<string, string>) => {
+      calls.push(p.url)
+      return { status: 'running' } // jamais 'finished' : bot non publié / paramètre absent
+    })
+    const f = buildSiteFetcher('browseract', { botId: 'wf_1' })
+    expect(await f.fetchHtml('https://x.fr/1')).toBeNull()
+    expect(await f.fetchHtml('https://x.fr/2')).toBeNull()
+    expect(await f.fetchHtml('https://x.fr/3')).toBeNull()
+    expect(calls).toEqual(['https://x.fr/1']) // une seule tentative, pas trois
+  })
+
+  it('une exécution aboutie alimente la moisson (fiches déduites)', async () => {
+    keyMock.mockReturnValue('k')
+    baMock.mockResolvedValue({
+      status: 'finished',
+      output: JSON.stringify([
+        { designation: 'Courroie A97', montant: '24,90 €', page: 'https://x.fr/a97' },
+        { designation: 'Lame 45 cm', montant: '18,00 €', page: 'https://x.fr/l45' },
+      ]),
+    })
+    const html = await buildSiteFetcher('browseract', { botId: 'wf_1' }).fetchHtml('https://x.fr/liste')
+    expect(html).toBeTruthy()
+    expect(parseListingGeneric(html!, 'https://x.fr/liste')).toHaveLength(2)
   })
 })
