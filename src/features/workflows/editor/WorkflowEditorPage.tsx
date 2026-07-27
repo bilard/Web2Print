@@ -102,6 +102,19 @@ export function WorkflowEditorPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [goToList, showGenerate])
 
+  // Contrôle PERMANENT : les incohérences n'apparaissaient qu'au clic sur « Lancer », et
+  // seulement s'il y en avait — un workflow mal câblé se signalait donc au pire moment,
+  // ou jamais (run planifié, lancement depuis une carte). Recalculé à chaque édition.
+  //
+  // ⚠ DÉCLARÉ AVANT les retours anticipés (« Chargement… », « introuvable ») : un hook
+  // posé après eux change le nombre de hooks entre deux rendus — React error #310.
+  // D'où le `wf` optionnel géré ici plutôt qu'un appel plus bas.
+  const liveIssues = useMemo(
+    () => (wf ? validateWorkflow(wf, (t) => nodeRegistry.get(t)) : []),
+    [wf],
+  )
+  const liveErrors = liveIssues.filter((i) => i.severity === 'error').length
+
   if (loading) return <div className="min-h-screen bg-background text-white p-8">Chargement…</div>
   if (!wf) return <div className="min-h-screen bg-background text-white p-8">Workflow introuvable</div>
 
@@ -115,15 +128,6 @@ export function WorkflowEditorPage() {
     const outcome = await executeWorkflow(wf, stepByStep ? { middleware: [stepMiddleware] } : {})
     notifyRunOutcome(outcome, wf.name)
   }
-  // Contrôle PERMANENT : les incohérences n'apparaissaient qu'au clic sur « Lancer », et
-  // seulement s'il y en avait — un workflow mal câblé se signalait donc au pire moment,
-  // ou jamais (run planifié, lancement depuis une carte). Recalculé à chaque édition.
-  const liveIssues = useMemo(
-    () => validateWorkflow(wf, (t) => nodeRegistry.get(t)),
-    [wf],
-  )
-  const liveErrors = liveIssues.filter((i) => i.severity === 'error').length
-
   // Lancement : contrôle de cohérence D'ABORD (sources / paramètres d'export manquants).
   // Un trou → popup pour corriger (ou forcer). Rien à signaler → on lance directement.
   // stepByStep = mode debug : pause avant chaque node jusqu'au clic « Étape suivante ».

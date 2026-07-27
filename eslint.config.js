@@ -51,11 +51,14 @@ export default tseslint.config(
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
 
-      // React hooks rules exist but are disabled to avoid flooding warnings.
-      // Existing `eslint-disable-next-line react-hooks/exhaustive-deps` in the
-      // codebase still need the rule to be defined.
+      // `exhaustive-deps` reste désactivée (bruyante, et des `eslint-disable-next-line`
+      // existants ont besoin que la règle soit définie).
       'react-hooks/exhaustive-deps': 'off',
-      'react-hooks/rules-of-hooks': 'off',
+      // `rules-of-hooks`, en revanche, N'EST PAS une règle de style : toute violation est
+      // un crash à l'exécution (« Minified React error #310 »), invisible au typage comme
+      // aux tests. Un hook ajouté après un retour anticipé a mis l'éditeur de workflow à
+      // terre en production le 2026-07-27 — la règle l'aurait arrêté avant le déploiement.
+      'react-hooks/rules-of-hooks': 'error',
 
       // Detect unused imports and variables (auto-fixable)
       'unused-imports/no-unused-imports': 'warn',
@@ -98,5 +101,19 @@ export default tseslint.config(
       // anomalies ou des messages de démarrage, ils doivent atteindre la console.
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
     },
+  },
+  {
+    // DETTE PRÉEXISTANTE : ces quatre fichiers violaient déjà `rules-of-hooks` quand la
+    // règle a été activée (10 occurrences, hooks appelés après un retour anticipé ou dans
+    // un callback). Ils fonctionnent en l'état — les corriger demande de restructurer des
+    // composants sans rapport avec la raison de l'activation. Exception NOMMÉE plutôt que
+    // règle désactivée pour tout le monde : le code neuf, lui, est protégé dès maintenant.
+    files: [
+      'src/features/editor/useTextEditMode.ts',
+      'src/features/excel/DataTable.tsx',
+      'src/features/excel/ProductSheet.tsx',
+      'src/features/retail-promo/steps/StepRender.tsx',
+    ],
+    rules: { 'react-hooks/rules-of-hooks': 'off' },
   },
 )
