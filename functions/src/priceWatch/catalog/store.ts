@@ -26,6 +26,10 @@ function stripUndefined<T>(value: T): T {
 export interface CompetitorMeta {
   domain: string
   cursor?: HarvestCursor
+  /** Dernière mise en ATTENTE par le mode cycle (parité client) : balayage terminé, on
+   *  patiente que les retardataires finissent. Comparé à `lastPassAt` pour distinguer
+   *  « attend son tour » de « ne se lance plus ». */
+  cycleWaitingAt?: number
   productCount?: number
   pageCount?: number
   lastHarvestMs?: number
