@@ -84,7 +84,12 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
   ],
   outputs: [{ name: 'matrix', type: 'sheet' }],
   configSchema: [
-    { name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)', help: 'Mêmes domaines que la moisson. IGNORÉ si un node « Sites sources » est branché sur le port sites.' },
+    {
+      name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)',
+      help: 'Mêmes domaines que la moisson. IGNORÉ si un node « Sites sources » est branché sur le port sites.',
+      disabledWhen: (_c, wired) => wired('sites'),
+      disabledNote: 'fourni par « Sites sources »',
+    },
     { name: 'refColumn', kind: 'columnRef', label: 'Colonne Référence', help: 'Référence article / constructeur.' },
     { name: 'ref2Column', kind: 'columnRef', label: 'Colonne Référence 2', help: 'Référence secondaire éventuelle.' },
     { name: 'eanColumn', kind: 'columnRef', label: 'Colonne EAN' },
@@ -94,7 +99,11 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     { name: 'descriptionColumn', kind: 'columnRef', label: 'Colonne Description', help: 'Sert à extraire les réf. d’origine (« Remplace origine: … ») pour les pièces adaptables.' },
     { name: 'urlColumn', kind: 'columnRef', label: 'Colonne URL (fiche source)', help: 'Lien de la fiche produit sur VOTRE site — rend le nom cliquable dans le tableau pour vérifier le prix. Optionnel.' },
     { name: 'vatRate', kind: 'number', label: 'TVA concurrents (%)', help: 'Pour recalculer le HT depuis le TTC affiché. Défaut : 20.' },
-    { name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est automatiquement celui du workflow (le même que « Moisson concurrents » du workflow). Ne remplis que pour partager un suivi entre plusieurs workflows.' },
+    {
+      name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est automatiquement celui du workflow (le même que « Moisson concurrents » du workflow). Ne remplis que pour partager un suivi entre plusieurs workflows.',
+      disabledWhen: (_c, wired) => wired('sites'),
+      disabledNote: 'fourni par « Sites sources »',
+    },
     { name: 'label', kind: 'text', label: 'Nom du suivi (affiché)', help: 'Libellé dans le menu « Source » du tableau de bord. Vide → le nom du workflow est utilisé.' },
   ],
   defaultConfig: {

@@ -27,9 +27,14 @@ export interface ConfigField {
   default?: unknown
   help?: string
   /** Grise + désactive le champ (sans le cacher) quand il n'a aucun effet dans l'état
-   *  courant — ex : « Heure » quand le cron relance après la fin. Le champ reste visible
-   *  pour ne pas dérouter, avec la mention « sans effet ici ». */
-  disabledWhen?: (config: Record<string, unknown>) => boolean
+   *  courant — ex : « Heure » quand le cron relance après la fin, ou « Sites concurrents »
+   *  quand un node « Sites sources » est branché et l'emporte. Le champ reste visible pour
+   *  ne pas dérouter, avec la mention `disabledNote`.
+   *  2ᵉ argument : « ce port d'entrée est-il câblé ? » — un champ rendu inutile par une
+   *  connexion ne peut pas le savoir depuis la seule config. */
+  disabledWhen?: (config: Record<string, unknown>, wired: (port: string) => boolean) => boolean
+  /** Raison affichée quand `disabledWhen` est vrai. Défaut : « sans effet ici ». */
+  disabledNote?: string
 }
 
 type NodeRuntime = 'client' | 'server' | 'any'

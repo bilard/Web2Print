@@ -423,11 +423,14 @@ export function NodeConfigPanel() {
                 />
               ) : (
                 spec.configSchema.map((f) => {
-                  const off = f.disabledWhen?.(node.config as Record<string, unknown>) ?? false
+                  // Un champ peut être rendu inutile par une CONNEXION (le port gagne
+                  // sur la config locale) : `disabledWhen` reçoit donc le graphe.
+                  const isWired = (port: string) => (wf?.edges ?? []).some((e) => e.target === node.id && e.targetHandle === port)
+                  const off = f.disabledWhen?.(node.config as Record<string, unknown>, isWired) ?? false
                   return (
                   <label key={f.name} className={`block ${off ? 'opacity-40 pointer-events-none select-none' : ''}`}>
                     <span className="text-xs text-white/60 mb-1 block">
-                      {f.label}{off ? <span className="text-[10px] text-amber-400/70 ml-2">— sans effet ici</span> : null}
+                      {f.label}{off ? <span className="text-[10px] text-amber-400/70 ml-2">— {f.disabledNote ?? 'sans effet ici'}</span> : null}
                     </span>
                     <ConfigFieldRenderer
                       field={f}
