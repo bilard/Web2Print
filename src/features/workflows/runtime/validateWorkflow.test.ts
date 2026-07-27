@@ -102,3 +102,80 @@ describe('validateWorkflow', () => {
     })
   })
 })
+
+describe('cohérence ENTRE nodes (Veille tarifaire)', () => {
+  const spec = (type: string, label: string): NodeSpec => ({
+    type, label, description: '', category: 'utility', icon: (() => null) as never,
+    inputs: [], outputs: [], configSchema: [], defaultConfig: {}, runtime: 'client',
+    run: async () => ({}),
+  })
+  const SPECS: Record<string, NodeSpec> = {
+    'harvest-competitor': spec('harvest-competitor', 'Moisson concurrents'),
+    'compare-catalog': spec('compare-catalog', 'Comparer catalogue'),
+    'source-sites': spec('source-sites', 'Sites sources'),
+  }
+  const getSpec = (t: string) => SPECS[t]
+  const wf = (nodes: { id: string; type: string; config?: Record<string, unknown> }[], edges: [string, string, string?][]): Workflow => ({
+    id: 'wfF1', schemaVersion: 1, name: 'F1', description: '', ownerId: 'u',
+    createdAt: 0, updatedAt: 0,
+    nodes: nodes.map((n) => ({ ...n, position: { x: 0, y: 0 }, config: n.config ?? {} })) as Workflow['nodes'],
+    edges: edges.map(([source, target, targetHandle], i) => ({
+      id: `e${i}`, source, sourceHandle: 'out', target, targetHandle: targetHandle ?? 'in',
+    })),
+  })
+
+  it('DEUX suivis dans le même workflow : la moisson écrit où le comparatif ne lit pas', () => {
+    // Divergence réaliste : un node renommé, l'autre oublié.
+    const issues = validateWorkflow(wf([
+      { id: 'h', type: 'harvest-competitor', config: { watchId: 'F1 Pro', sites: 'x.fr' } },
+      { id: 'c', type: 'compare-catalog', config: { watchId: 'F1 Pro 2026', sites: 'x.fr' } },
+    ], [['h', 'c']]), getSpec)
+    const errs = issues.filter((i) => i.severity === 'error')
+    expect(errs).toHaveLength(2)
+    expect(errs[0].message).toMatch(/0 apparié/)
+  })
+
+  it('casse et espaces ne divergent PAS (stableId normalise)', () => {
+    const issues = validateWorkflow(wf([
+      { id: 'h', type: 'harvest-competitor', config: { watchId: 'F1 Pro', sites: 'x.fr' } },
+      { id: 'c', type: 'compare-catalog', config: { watchId: 'f1  PRO', sites: 'x.fr' } },
+    ], [['h', 'c']]), getSpec)
+    expect(issues.filter((i) => i.severity === 'error')).toHaveLength(0)
+  })
+
+  it('même identifiant de suivi : aucune alerte croisée', () => {
+    const issues = validateWorkflow(wf([
+      { id: 'h', type: 'harvest-competitor', config: { watchId: 'F1 Pro', sites: 'x.fr' } },
+      { id: 'c', type: 'compare-catalog', config: { watchId: 'F1 Pro', sites: 'x.fr' } },
+    ], [['h', 'c']]), getSpec)
+    expect(issues.filter((i) => i.severity === 'error')).toHaveLength(0)
+  })
+
+  it('un « Sites sources » branché impose SON suivi aux deux nodes', () => {
+    // Les watchId locaux DIVERGENT, mais le port `sites` les aligne : pas d'erreur.
+    const issues = validateWorkflow(wf([
+      { id: 's', type: 'source-sites', config: { watchId: 'F1 Pro', sites: [{ domain: 'x.fr', enabled: true }] } },
+      { id: 'h', type: 'harvest-competitor', config: { watchId: 'autre' } },
+      { id: 'c', type: 'compare-catalog', config: { watchId: 'encore-autre' } },
+    ], [['s', 'h', 'sites'], ['s', 'c', 'sites'], ['h', 'c']]), getSpec)
+    expect(issues.filter((i) => i.severity === 'error')).toHaveLength(0)
+  })
+
+  it('comparatif NON branché derrière la moisson : avertit qu’il lira l’index précédent', () => {
+    const issues = validateWorkflow(wf([
+      { id: 'h', type: 'harvest-competitor', config: { watchId: 'F1', sites: 'x.fr' } },
+      { id: 'c', type: 'compare-catalog', config: { watchId: 'F1', sites: 'x.fr' } },
+      { id: 's', type: 'source-sites', config: { watchId: 'F1', sites: [{ domain: 'x.fr', enabled: true }] } },
+    ], [['s', 'h', 'sites'], ['s', 'c', 'sites']]), getSpec)
+    const warn = issues.filter((i) => i.severity === 'warning')
+    expect(warn).toHaveLength(1)
+    expect(warn[0].message).toMatch(/run précédent/)
+  })
+
+  it('comparatif seul (recalcul) : aucun avertissement', () => {
+    const issues = validateWorkflow(wf([
+      { id: 'c', type: 'compare-catalog', config: { watchId: 'F1', sites: 'x.fr' } },
+    ], []), getSpec)
+    expect(issues.filter((i) => i.severity === 'warning')).toHaveLength(0)
+  })
+})
