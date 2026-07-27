@@ -26,6 +26,7 @@ const CONNECTORS: Record<string, ConnectorMeta> = {
   telegram: { label: 'Telegram', color: 'text-cyan-300',    dot: 'bg-cyan-400/70' },
   make:     { label: 'Make',     color: 'text-fuchsia-300', dot: 'bg-fuchsia-400/70' },
   higgsfield: { label: 'Higgsfield', color: 'text-indigo-300', dot: 'bg-indigo-400/70' },
+  browseract: { label: 'BrowserAct', color: 'text-teal-300',   dot: 'bg-teal-400/70' },
 }
 
 /**

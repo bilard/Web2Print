@@ -33,6 +33,7 @@ import './webhookNode'
 import './approvalNode'
 import './decomposeNode'
 import './higgsfield'
+import './browserActNode'
 import './cronNodes'
 
 let initialized = false

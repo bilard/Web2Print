@@ -1,4 +1,5 @@
 import { debugLog } from '@/lib/debugLog'
+import { listBrowserActWorkflows } from '@/features/scraping/core/browserAct'
 
 /**
  * API key management: localStorage override > .env fallback
@@ -156,6 +157,16 @@ export const API_KEYS: ApiKeyConfig[] = [
     links: {
       manage: 'https://www.firecrawl.dev/app/api-keys',
       billing: 'https://www.firecrawl.dev/app/t/LsorYp6HkrX/usage',
+    },
+  },
+  {
+    id: 'browseract',
+    label: 'BrowserAct',
+    envVar: 'VITE_BROWSERACT_API_KEY',
+    description: 'Clé API BrowserAct — exécute des « bots » construits dans leur tableau de bord (Amazon, LinkedIn, sites à anti-bot dur). ⚠ Ce n’est pas un lecteur d’URL : chaque usage exige l’identifiant d’un bot.',
+    links: {
+      manage: 'https://www.browseract.com/dashboard',
+      billing: 'https://www.browseract.com/pricing',
     },
   },
   {
@@ -469,6 +480,21 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
       if (res.status === 401 || res.status === 403) return { status: 'error', message: 'Clé invalide' }
       if (res.status === 402) return { status: 'error', message: 'Crédits épuisés (HTTP 402)', action: { label: 'Acheter des crédits', url: 'https://www.firecrawl.dev/pricing' } }
       return { status: 'error', message: `Erreur ${res.status}` }
+    }
+
+    if (id === 'browseract') {
+      // Ping authentifié : lister les bots du compte. Distingue les trois cas qui comptent
+      // — clé refusée, compte sans bot (rien à exécuter), compte utilisable.
+      const workflows = await listBrowserActWorkflows(key, 100)
+      if (workflows == null) return { status: 'error', message: 'Clé refusée par api.browseract.com' }
+      if (workflows.length === 0) {
+        return {
+          status: 'error',
+          message: 'Clé valide, mais aucun bot dans le compte — un bot est obligatoire pour scraper',
+          action: { label: 'Créer un bot', url: 'https://www.browseract.com/dashboard' },
+        }
+      }
+      return { status: 'ok', message: `Connecté — ${workflows.length} bot(s) : ${workflows.slice(0, 3).map((w) => w.name).join(', ')}${workflows.length > 3 ? '…' : ''}` }
     }
 
     if (id === 'scrapfly') {
