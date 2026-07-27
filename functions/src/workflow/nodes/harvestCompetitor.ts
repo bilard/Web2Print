@@ -156,6 +156,8 @@ registerServerNode({
         }),
         log: (m) => ctx.log('info', m),
         signal: ctx.signal,
+        // Le TEMPS gouverne la passe ; `pageBudget` n'est plus qu'un plafond de sécurité.
+        deadlineAt: ctx.deadlineAt,
       }
       const res = await harvestPass(cfg, deps, budgets.get(site.id) ?? 1)
       if (res.sweepComplete) doneCount++

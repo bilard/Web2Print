@@ -95,11 +95,14 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     },
     {
       name: 'pageBudget', kind: 'number', label: 'Pages par run',
-      help: 'Pages liste moissonnées à chaque exécution, partagées entre les sites. Un site peut RÉSERVER son propre budget (champ « pages » de sa carte dans « Sites sources ») — utile pour brider un concurrent payant sans rationner les gratuits. ⚠ C\'est LE plafond du débit : paralléliser raccourcit le run, ce champ décide du volume collecté.',
+      help: 'Pages liste moissonnées à chaque exécution, partagées entre les sites. Un site peut RÉSERVER son propre budget (champ « pages » de sa carte dans « Sites sources ») — utile pour brider un concurrent payant sans rationner les gratuits. ⚠ C\'est LE plafond du débit. Sur un run PLANIFIÉ (cron), la fenêtre de temps borne désormais la passe d\'elle-même : ce champ n\'est plus qu\'un plafond de sécurité, voyez large. Sur un run lancé depuis le navigateur, il n\'y a pas d\'échéance — c\'est lui qui décide de la durée.',
     },
     { name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est automatiquement celui du workflow (partagé avec « Comparer catalogue » du même workflow). Ne remplis que pour partager un même suivi entre plusieurs workflows.' },
   ],
-  defaultConfig: { watchId: '', sites: '', families: '', familyColumn: 'Famille', pageBudget: 160 },
+  // 800 pages : la fenêtre de moisson d'un run planifié est d'environ 18 min
+  // (RUN_TIMEOUT 1700 s − RESERVE 600 s) et un tour à 160 pages n'en consommait que 3.
+  // La restitution sur échéance (`deadlineAt`) garantit qu'un budget large ne déborde pas.
+  defaultConfig: { watchId: '', sites: '', families: '', familyColumn: 'Famille', pageBudget: 800 },
   cardSummary: (c) => {
     const n = parseSitesConfig(c.sites).length
     return n ? `${n} site(s) · ${c.pageBudget}/run${c.families.trim() ? ` · ${c.families.trim()}` : ''}` : ''

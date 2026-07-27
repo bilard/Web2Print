@@ -47,6 +47,17 @@ export interface HarvestDeps {
   force?: boolean
   /** Horloge injectable (tests). Défaut : `Date.now`. */
   now?: () => number
+  /**
+   * Échéance de restitution (ms epoch) : la passe rend la main dès qu'elle est franchie,
+   * curseur persisté, MÊME si le budget de pages n'est pas épuisé.
+   *
+   * ⚠ C'est ce qui rend un gros budget de pages SÛR. Sans elle, `pageBudget` est le seul
+   * gouverneur : le régler haut pour collecter davantage risquait de faire dépasser la
+   * fenêtre du run et d'affamer les nodes aval (« Comparer »), le régler bas bridait la
+   * collecte alors que le temps était disponible. Avec elle, le budget redevient un
+   * simple plafond de sécurité et c'est le TEMPS qui décide.
+   */
+  deadlineAt?: number
   log?: (msg: string) => void
   signal?: AbortSignal
 }
@@ -217,6 +228,12 @@ export async function harvestPass(
 
   for (let i = 0; i < pageBudget; i++) {
     if (deps.signal?.aborted) break
+    // Restitution sur ÉCHÉANCE : le curseur est déjà persisté page par page, la reprise
+    // au tick suivant est exacte.
+    if (deps.deadlineAt != null && (deps.now ?? Date.now)() > deps.deadlineAt) {
+      deps.log?.(`${cfg.domain} : fenêtre de run atteinte après ${pagesFetched} page(s) — reprise au prochain passage.`)
+      break
+    }
     const target = currentTarget(cursor)
     if (!target) break
 

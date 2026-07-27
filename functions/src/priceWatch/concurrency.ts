@@ -13,8 +13,13 @@
 // limites de débit des fournisseurs et le circuit-breaker de crédits.
 
 /** Plafond de sites moissonnés simultanément. Au-delà, les fournisseurs limitent (et
- *  Bright Data est facturé à la requête : mieux vaut un débit régulier qu'une rafale). */
-export const HARVEST_CONCURRENCY = 4
+ *  Bright Data est facturé à la requête : mieux vaut un débit régulier qu'une rafale).
+ *
+ *  Relevé en prod (2026-07-27) : un tour complet sur ~16 concurrents durait 3 min pour
+ *  une fenêtre de moisson de ~18 min (RUN_TIMEOUT 1700 s − RESERVE 600 s). Le débit était
+ *  donc bridé par le parallélisme et le budget de pages, pas par le temps disponible.
+ *  Porté à 8 : à 4 sites de front, les trois quarts de la fenêtre restaient inutilisés. */
+export const HARVEST_CONCURRENCY = 8
 
 /**
  * `items.map(fn)` avec au plus `limit` exécutions simultanées. L'ORDRE des résultats

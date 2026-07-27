@@ -237,3 +237,37 @@ describe('mise en veille de la découverte après un échec', () => {
     expect(d.cursors.get('c')?.planFailedAt).toBeUndefined()
   })
 })
+
+describe('restitution sur échéance', () => {
+  // Sans elle, `pageBudget` est le seul gouverneur : le régler haut pour collecter
+  // davantage risquait de faire déborder la fenêtre du run et d'affamer « Comparer ».
+  it('rend la main à l’échéance, budget de pages NON épuisé', async () => {
+    const deps = memoryDeps(fakeSite({ 'https://www.c.fr/1-courroies': 50 }))
+    let clock = 1_000
+    const r = await harvestPass(cfg, {
+      ...deps,
+      // Chaque lecture d'horloge avance de 10 s : la 3ᵉ page franchit l'échéance.
+      now: () => (clock += 10_000),
+      deadlineAt: 1_000 + 25_000,
+    }, 100)
+    expect(r.pagesFetched).toBeLessThan(100)
+    expect(r.pagesFetched).toBeGreaterThan(0)
+    expect(r.sweepComplete).toBe(false)
+  })
+
+  it('le curseur persiste — la passe suivante reprend où celle-ci s’arrête', async () => {
+    const deps = memoryDeps(fakeSite({ 'https://www.c.fr/1-courroies': 50 }))
+    let clock = 1_000
+    await harvestPass(cfg, { ...deps, now: () => (clock += 10_000), deadlineAt: 1_000 + 25_000 }, 100)
+    const stopped = deps.cursors.get('c')!
+    expect(stopped.done).toBe(false)
+    const r2 = await harvestPass(cfg, deps, 3)
+    expect(r2.pagesFetched).toBe(3) // reprise normale, sans échéance
+  })
+
+  it('sans échéance, le budget de pages reste le gouverneur (comportement inchangé)', async () => {
+    const deps = memoryDeps(fakeSite({ 'https://www.c.fr/1-courroies': 50 }))
+    const r = await harvestPass(cfg, deps, 4)
+    expect(r.pagesFetched).toBe(4)
+  })
+})
