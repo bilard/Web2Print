@@ -14,6 +14,7 @@ import type { SourceProduct } from './catalog/match'
 import { retainHistory } from './history'
 import type { KpiHistoryPoint } from './types'
 import { diffPrices, mergeEvents, chunkState, type PriceState, type PriceEvent } from './priceEvents'
+import { stripUndefined } from '@/lib/stripUndefined'
 
 // ── Catalogue SOURCE persisté (pour recalculer le benchmark hors workflow) ──────────
 // Le node « Comparer » écrit ici les produits source + la TVA ; le recalcul mono-site
@@ -30,7 +31,15 @@ export async function saveSourceCatalog(uid: string, watchId: string, products: 
   const chunks = Math.max(1, Math.ceil(products.length / SOURCE_CHUNK))
   await setDoc(doc(db, col, '_meta'), { vatRate, chunks, count: products.length, at: Date.now() })
   for (let i = 0; i < chunks; i++) {
-    await setDoc(doc(db, col, `chunk_${i}`), { products: products.slice(i * SOURCE_CHUNK, (i + 1) * SOURCE_CHUNK) })
+    // ⚠ stripUndefined OBLIGATOIRE : un SourceProduct porte des champs facultatifs posés
+    // EXPLICITEMENT à `undefined` par le node « Comparer » (`ref`/`ref2`/`ean` quand la
+    // colonne n'est pas mappée, `price` quand la cellule n'est pas un nombre). Firestore
+    // refuse alors le doc ENTIER — « Unsupported field value: undefined ». Le jumeau
+    // serveur nettoyait déjà ; le client, non : le catalogue source n'était jamais
+    // persisté depuis un run navigateur, et le recalcul mono-site (▶) restait aveugle.
+    await setDoc(doc(db, col, `chunk_${i}`), {
+      products: stripUndefined(products.slice(i * SOURCE_CHUNK, (i + 1) * SOURCE_CHUNK)),
+    })
   }
 }
 
@@ -152,18 +161,6 @@ export async function deleteWatch(uid: string, watchId: string): Promise<void> {
     deleteDoc(doc(db, `${root}/reports/latest`)),
     deleteDoc(doc(db, `${root}/reports/history`)),
   ])
-}
-
-function stripUndefined<T>(value: T): T {
-  if (Array.isArray(value)) return value.map(stripUndefined) as unknown as T
-  if (value && typeof value === 'object') {
-    const out: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      if (v !== undefined) out[k] = stripUndefined(v)
-    }
-    return out as T
-  }
-  return value
 }
 
 /**

@@ -1,6 +1,6 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
-import { stripUndefined } from './stripUndefined'
+import { stripUndefined } from '@/lib/stripUndefined'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey, CustomFieldMap } from './promoTypes'
 import type { PromoTemplateConfig, PromoColorKey } from './promoCardTypes'

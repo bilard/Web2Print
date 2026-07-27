@@ -11,6 +11,7 @@ import { db } from '@/lib/firebase/config'
 import { competitorDoc, competitorPagesCol, watchRootDoc } from '../paths'
 import type { CompetitorListing } from './prestashop'
 import type { HarvestCursor } from './harvest'
+import { stripUndefined } from '@/lib/stripUndefined'
 import { dedupeListings } from './match'
 
 /** Crée/rafraîchit le doc RACINE du suivi. À appeler dès la MOISSON : sans lui, le doc
@@ -26,18 +27,6 @@ export async function touchWatch(uid: string, watchId: string, label?: string): 
   ).catch(() => {})
 }
 
-/** Retire les `undefined` (rejetés par Firestore) en préservant null/objets/arrays. */
-function stripUndefined<T>(value: T): T {
-  if (Array.isArray(value)) return value.map(stripUndefined) as unknown as T
-  if (value && typeof value === 'object' && !(value instanceof Date)) {
-    const out: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      if (v !== undefined) out[k] = stripUndefined(v)
-    }
-    return out as T
-  }
-  return value
-}
 
 export interface CompetitorMeta {
   domain: string

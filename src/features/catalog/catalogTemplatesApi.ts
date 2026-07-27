@@ -1,7 +1,7 @@
 // Modèles réutilisables (thème + grille par défaut + style de fiches, SANS données).
 import { collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
-import { stripUndefined } from '@/features/retail-promo/stripUndefined'
+import { stripUndefined } from '@/lib/stripUndefined'
 import type { CatalogCardStyle, CatalogGrid, CatalogPageStyle, CatalogTheme } from './catalogTypes'
 
 export interface CatalogTemplate {

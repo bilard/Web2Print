@@ -2,7 +2,7 @@
 // à la frontière : un seul undefined ferait rejeter tout le setDoc).
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
-import { stripUndefined } from '@/features/retail-promo/stripUndefined'
+import { stripUndefined } from '@/lib/stripUndefined'
 import { EMPTY_TREE_EDITS } from './catalogTree'
 import { CATALOG_FORMAT_PRESETS, type CatalogDoc } from './catalogTypes'
 import type { DataSourceRef } from '@/stores/merge.store'

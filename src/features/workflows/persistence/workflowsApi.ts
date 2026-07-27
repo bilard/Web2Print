@@ -4,7 +4,7 @@ import type { Workflow, WorkflowFolder } from '../types'
 import type { UserWorkflowTemplate } from '../templates'
 import { CURRENT_SCHEMA_VERSION, migrate } from './migrations'
 import { syncWorkflowSchedule } from './scheduleSync'
-import { stripUndefined } from '@/features/retail-promo/stripUndefined'
+import { stripUndefined } from '@/lib/stripUndefined'
 
 const col = (uid: string) => collection(db, 'users', uid, 'workflows')
 const folderCol = (uid: string) => collection(db, 'users', uid, 'workflowFolders')
