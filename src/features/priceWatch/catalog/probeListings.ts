@@ -61,8 +61,13 @@ export function candidateListingUrls(html: string, domain: string, opts: Candida
     if (ASSET_RE.test(u.pathname)) continue
     if (NON_LISTING_RE.test(u.pathname.toLowerCase())) continue
     const clean = `${u.origin}${u.pathname}`
-    if (seen.has(clean)) continue
-    seen.add(clean)
+    // Dédup INSENSIBLE au `www.` et au `/` final : une même page publiée sous deux formes
+    // entrerait deux fois au plan, donc sous deux `pageDocId` — « fiches » gonflées par
+    // des doublons. L'URL est conservée telle quelle (forcer `www.` casserait les sites
+    // dont seul le domaine nu résout).
+    const key = `${bare(u.hostname)}${u.pathname.replace(/\/$/, '')}`
+    if (seen.has(key)) continue
+    seen.add(key)
     urls.push(clean)
   }
 

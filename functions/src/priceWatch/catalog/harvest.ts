@@ -27,6 +27,10 @@ export interface HarvestCursor {
   /** Empreinte du contenu de la page précédente DANS LA CATÉGORIE COURANTE — sert à
    *  détecter une pagination inopérante. Absente au début d'une catégorie. */
   lastSignature?: string
+  /** URL de la page suivante VUE sur la page précédente (`rel="next"`). Prime sur le
+   *  repli `?page=N`, que les sites paginant par segment de chemin ignorent. Absente
+   *  au début d'une catégorie et quand le thème n'expose pas `rel="next"`. */
+  nextUrl?: string
 }
 
 /** Plafond de pages par catégorie : garde-fou contre une pagination sans fin
@@ -56,6 +60,8 @@ export interface PageResult {
   /** Empreinte du contenu relevé (cf. `pageSignature`). Deux pages consécutives de
    *  même empreinte = la pagination du site ne fonctionne pas. */
   signature?: string
+  /** URL de la page suivante annoncée par la page (`rel="next"`), si elle en annonce une. */
+  nextUrl?: string
 }
 
 /**
@@ -76,15 +82,15 @@ export function advance(cursor: HarvestCursor, result: PageResult): HarvestCurso
   const repeated = result.signature != null && result.signature === cursor.lastSignature
   const canPaginate = result.hadItems && result.hasNext && !repeated
     && cursor.page < MAX_PAGES_PER_CATEGORY
-  if (canPaginate) return { ...cursor, page: cursor.page + 1, lastSignature: result.signature }
+  if (canPaginate) return { ...cursor, page: cursor.page + 1, lastSignature: result.signature, nextUrl: result.nextUrl }
 
-  // Changement de catégorie : l'empreinte repart à zéro (deux catégories peuvent
-  // légitimement commencer par les mêmes produits).
+  // Changement de catégorie : l'empreinte ET l'URL de suite repartent à zéro (deux
+  // catégories peuvent légitimement commencer par les mêmes produits).
   const nextCat = cursor.catIndex + 1
   if (nextCat < cursor.categories.length) {
-    return { ...cursor, catIndex: nextCat, page: 1, lastSignature: undefined }
+    return { ...cursor, catIndex: nextCat, page: 1, lastSignature: undefined, nextUrl: undefined }
   }
-  return { ...cursor, catIndex: cursor.categories.length, page: 1, done: true, lastSignature: undefined }
+  return { ...cursor, catIndex: cursor.categories.length, page: 1, done: true, lastSignature: undefined, nextUrl: undefined }
 }
 
 /**

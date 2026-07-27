@@ -1,10 +1,11 @@
 // src/features/priceWatch/catalog/genericCards.ts
 // Extraction GÉNÉRIQUE des produits d'une page liste, en 3ᵉ palier (après le parseur
 // PrestaShop et le JSON-LD ItemList) pour les sites qui exposent des cartes en HTML
-// SANS données structurées (ex. PrestaShop 1.6, thèmes maison). Deux signaux, du plus
+// SANS données structurées (ex. PrestaShop 1.6, thèmes maison). Trois signaux, du plus
 // fiable au plus heuristique :
 //   1. microdata schema.org/Product (itemprop) — structuré, sûr ;
-//   2. cartes DOM répétées (conteneur class~=product contenant prix + lien) — best-effort.
+//   2. payload produit JSON porté par un attribut `data-*` (datalayer / ajout au panier) ;
+//   3. cartes DOM répétées (conteneur class~=product contenant prix + lien) — best-effort.
 // PUR + server-safe (regex, pas de DOMParser). Garde-fous stricts : un item n'est retenu
 // que s'il a URL + prix + nom ; il faut ≥ 2 items (une liste en a plusieurs) ; dédup URL.
 import { parsePriceFragment, type CompetitorListing } from './prestashop'
@@ -120,7 +121,118 @@ function parseMicrodataProducts(html: string, baseUrl?: string): CompetitorListi
   return out
 }
 
-/** Palier 2 — cartes DOM répétées (conteneur class~=product). Best-effort, borné. */
+/**
+ * Lit l'objet JSON qui commence à `start` (un `{`) en suivant l'imbrication et les chaînes.
+ *
+ * ⚠ La valeur de l'attribut ne peut PAS servir de délimiteur : un thème qui sérialise un
+ * nom contenant une apostrophe casse son propre `data-x='…'` (relevé sur swap-europe :
+ * `data-piece='{"name":"Poire d'amorçage…'` — l'attribut se ferme au milieu du JSON, et
+ * un découpage par quotes rendait un fragment inparsable). Les chaînes JSON, elles, sont
+ * toujours entre guillemets doubles échappés : l'imbrication est un délimiteur fiable.
+ */
+function readJsonObject(html: string, start: number, max = 4000): string | null {
+  let depth = 0
+  let inStr = false
+  let esc = false
+  const end = Math.min(html.length, start + max)
+  for (let i = start; i < end; i++) {
+    const ch = html[i]
+    if (inStr) {
+      if (esc) esc = false
+      else if (ch === '\\') esc = true
+      else if (ch === '"') inStr = false
+      continue
+    }
+    if (ch === '"') inStr = true
+    else if (ch === '{') depth++
+    else if (ch === '}' && --depth === 0) return html.slice(start, i + 1)
+  }
+  return null
+}
+
+/** Clés admises pour chaque champ d'un payload produit, toutes conventions confondues. */
+const KEY_NAME = ['name', 'title', 'item_name', 'productname', 'label', 'libelle']
+const KEY_URL = ['url', 'link', 'href', 'producturl', 'permalink']
+const KEY_PRICE = ['price', 'user_price', 'unit_price', 'value', 'amount', 'prix']
+const KEY_REF = ['ref', 'sku', 'reference', 'mpn', 'code', 'item_id']
+const KEY_IMAGE = ['image', 'img', 'picture', 'thumbnail', 'photo']
+
+/** Première valeur non vide parmi `keys` (comparaison de clés insensible à la casse). */
+function pick(obj: Record<string, unknown>, keys: string[]): unknown {
+  const lower = new Map(Object.keys(obj).map((k) => [k.toLowerCase(), k]))
+  for (const k of keys) {
+    const real = lower.get(k)
+    const v = real != null ? obj[real] : undefined
+    if (v != null && v !== '') return v
+  }
+  return undefined
+}
+
+function asNumber(v: unknown): number | undefined {
+  if (typeof v === 'number') return isFinite(v) && v > 0 ? v : undefined
+  if (typeof v !== 'string') return undefined
+  const n = parsePriceFragment(v)
+  return n != null && n > 0 ? n : undefined
+}
+
+/** Combien de caractères, avant le payload, forment le texte visible de la carte. */
+const CARD_LOOKBEHIND = 4000
+
+/**
+ * Palier 2 — payload produit JSON porté par un attribut `data-*` (convention datalayer /
+ * ajout au panier : `data-product`, `data-item`, `data-gtm-product`, `data-piece`…).
+ *
+ * Le signal n'est PAS le nom de l'attribut mais son CONTENU : un objet JSON portant à la
+ * fois un nom, une URL de fiche et un prix. C'est souvent la seule structure exploitable
+ * des plateformes maison, qui ne publient ni microdata ni classe « product » — sur
+ * swap-europe les cartes s'appellent `piecePlug`, et les trois paliers rendaient 0.
+ *
+ * Le prix RETENU reste celui LU DANS LE TEXTE de la carte (et avec lui la mention TTC/HT) :
+ * le payload transporte fréquemment le prix HT du back-office alors que la grille affiche
+ * le TTC. Le prix du payload ne sert que de repli.
+ */
+function parseDataPayloadProducts(html: string, baseUrl?: string): CompetitorListing[] {
+  const out: CompetitorListing[] = []
+  let prevEnd = 0
+  for (const m of html.matchAll(/\bdata-[a-z0-9-]+\s*=\s*["']?\s*(?=\{)/gi)) {
+    const at = (m.index ?? 0) + m[0].length
+    const raw = readJsonObject(html, at)
+    if (!raw) continue
+    let obj: unknown
+    // Un attribut en guillemets doubles encode ses propres `"` en entités : 2ᵉ tentative.
+    try { obj = JSON.parse(raw) } catch { try { obj = JSON.parse(decode(raw)) } catch { continue } }
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) continue
+    const rec = obj as Record<string, unknown>
+    const name = pick(rec, KEY_NAME)
+    const url = pick(rec, KEY_URL)
+    const payloadPrice = asNumber(pick(rec, KEY_PRICE))
+    if (typeof name !== 'string' || name.trim().length < 4) continue
+    if (typeof url !== 'string' || !url.includes('/')) continue
+    if (payloadPrice == null) continue
+    const abs = absUrl(url, baseUrl)
+    if (!abs) continue
+    // Texte visible de la carte : du payload précédent (ou d'une fenêtre bornée) jusqu'ici.
+    const block = html.slice(Math.max(prevEnd, at - CARD_LOOKBEHIND), at)
+    prevEnd = at + raw.length
+    const { price, listPrice } = extractCardPrice(block)
+    const ref = pick(rec, KEY_REF)
+    const image = pick(rec, KEY_IMAGE)
+    const taxIncluded = extractTaxIncluded(block)
+    out.push({
+      url: abs,
+      name: decode(name.trim()).slice(0, 200),
+      price: price ?? payloadPrice,
+      listPrice,
+      ref: ref != null && String(ref).trim() ? String(ref).trim() : undefined,
+      image: typeof image === 'string' ? absUrl(image, baseUrl) : undefined,
+      currency: 'EUR',
+      ...(taxIncluded !== undefined ? { taxIncluded } : {}),
+    })
+  }
+  return out
+}
+
+/** Palier 3 — cartes DOM répétées (conteneur class~=product). Best-effort, borné. */
 function parseDomCards(html: string, baseUrl?: string): CompetitorListing[] {
   // Débuts de carte : <li|article|div class="…product…"> (mot « product » dans une classe).
   const starts = [...html.matchAll(/<(?:li|article|div)\b[^>]*class=["'][^"']*\bproduct[a-z0-9_-]*\b[^"']*["'][^>]*>/gi)]
@@ -140,16 +252,22 @@ function parseDomCards(html: string, baseUrl?: string): CompetitorListing[] {
   return out
 }
 
+/** Dédup par URL (les conteneurs imbriqués peuvent produire des doublons). */
+function dedupe(cards: CompetitorListing[]): CompetitorListing[] {
+  const seen = new Set<string>()
+  return cards.filter((c) => (seen.has(c.url) ? false : (seen.add(c.url), true)))
+}
+
 /**
- * Extrait les produits d'une page liste sans données structurées JSON-LD.
- * Renvoie [] (pas un demi-résultat douteux) si moins de 2 produits complets trouvés —
- * garde-fou : soit ce n'est pas une page liste, soit la techno n'est pas couverte.
+ * Extrait les produits d'une page liste sans données structurées JSON-LD : microdata,
+ * puis payload `data-*`, puis cartes DOM. Le premier palier à ≥ 2 produits gagne.
+ * Renvoie [] (pas un demi-résultat douteux) si aucun n'atteint 2 — garde-fou : soit ce
+ * n'est pas une page liste, soit la techno n'est pas couverte.
  */
 export function parseListingDomCards(html: string, baseUrl?: string): CompetitorListing[] {
-  const micro = parseMicrodataProducts(html, baseUrl)
-  const cards = micro.length >= 2 ? micro : parseDomCards(html, baseUrl)
-  // Dédup par URL (les conteneurs imbriqués peuvent produire des doublons).
-  const seen = new Set<string>()
-  const deduped = cards.filter((c) => (seen.has(c.url) ? false : (seen.add(c.url), true)))
-  return deduped.length >= 2 ? deduped : []
+  for (const tier of [parseMicrodataProducts, parseDataPayloadProducts, parseDomCards]) {
+    const cards = dedupe(tier(html, baseUrl))
+    if (cards.length >= 2) return cards
+  }
+  return []
 }

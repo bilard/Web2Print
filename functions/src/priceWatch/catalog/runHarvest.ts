@@ -87,7 +87,7 @@ export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): 
   const candidates = candidateListingUrls(home, cfg.domain, { keywords })
   if (candidates.length === 0) return []
   deps.log?.(`${cfg.domain} : motif d'URL inconnu — sondage de ${candidates.length} lien(s) candidat(s).`)
-  return probeListingUrls(candidates, deps.fetchHtml, countListingProducts, { log: deps.log })
+  return probeListingUrls(candidates, deps.fetchHtml, (html, url) => extractListingProducts(html, url).length, { log: deps.log })
 }
 
 /**
@@ -114,11 +114,26 @@ async function targetPlan(cfg: CompetitorConfig, deps: HarvestDeps, urls: string
   }
 }
 
-/** Produits d'une page, même cascade que la moisson (PrestaShop → JSON-LD → cartes DOM). */
-function countListingProducts(html: string, url: string): number {
-  return parseListingPage(html, url).length
-    || parseListingGeneric(html, url).length
-    || parseListingDomCards(html, url).length
+/**
+ * Produits d'une page liste, en cascade PrestaShop → JSON-LD → cartes DOM.
+ *
+ * ⚠ Le premier palier NON VIDE ne gagne pas. Une page catégorie qui se publie elle-même
+ * en JSON-LD `Product` — pratique SEO courante ; swap-europe annonce « Pièces détachées
+ * pour tondeuses » à 0,29 € — rendait 1 pseudo-produit qui masquait les 30 vraies cartes
+ * du DOM, et faisait échouer la sonde (`minProducts = 4`) donc la découverte entière.
+ *
+ * Règle : le premier palier à ≥ 2 items gagne (une liste en a plusieurs par définition) ;
+ * à défaut, le plus fourni — ce qui préserve la page FICHE isolée, moissonnée une par une
+ * quand le sitemap ne donne que des produits, et qui n'expose légitimement qu'un item.
+ */
+export function extractListingProducts(html: string, url: string): CompetitorListing[] {
+  let best: CompetitorListing[] = []
+  for (const parse of [parseListingPage, parseListingGeneric, parseListingDomCards]) {
+    const items = parse(html, url)
+    if (items.length >= 2) return items
+    if (items.length > best.length) best = items
+  }
+  return best
 }
 
 /**
@@ -156,20 +171,24 @@ export async function harvestPass(
     const target = currentTarget(cursor)
     if (!target) break
 
-    const url = target.page === 1 ? target.categoryUrl : pageUrl(target.categoryUrl, target.page)
+    // Page 2+ : l'URL VUE sur la page précédente (`rel="next"`) prime sur `?page=N`.
+    // Un site qui pagine par segment de chemin (`/tondeuse/2` chez swap-europe) ignore
+    // `?page=2` et resert la page 1 : le verrou d'empreinte fermait alors la catégorie
+    // au bout de 2 requêtes, soit 1 page utile sur 18.
+    const url = target.page === 1 ? target.categoryUrl : (cursor.nextUrl ?? pageUrl(target.categoryUrl, target.page))
     const html = await deps.fetchHtml(url)
     let hadItems = false
-    let hasNext = false
+    let nextUrl: string | undefined
     let signature: string | undefined
 
     if (html) {
       // Extraction en cascade : PrestaShop 1.7 (rapide) → JSON-LD ItemList → microdata/
       // cartes DOM génériques (garde-fous stricts : [] plutôt qu'un prix douteux).
-      let products = parseListingPage(html, url)
-      if (products.length === 0) products = parseListingGeneric(html, url)
-      if (products.length === 0) products = parseListingDomCards(html, url)
+      const products = extractListingProducts(html, url)
       hadItems = products.length > 0
-      hasNext = nextListingUrl(html, url) != null
+      const next = nextListingUrl(html, url)
+      // Un `rel="next"` pointant sur la page courante est une boucle : pas de suivante.
+      nextUrl = next && next !== url ? next : undefined
       signature = pageSignature(products.map((p) => p.url))
       if (hadItems) {
         await deps.savePage(cfg.siteId, pageDocId(target.categoryUrl, target.page), url, target.page, products)
@@ -177,7 +196,7 @@ export async function harvestPass(
       }
     }
     pagesFetched++
-    cursor = advance(cursor, { hadItems, hasNext, signature })
+    cursor = advance(cursor, { hadItems, hasNext: nextUrl != null, signature, nextUrl })
     await deps.saveCursor(cfg.siteId, cursor)
     // Remontée live périodique (jauge Balayage + heartbeat) sans attendre la fin du site.
     if (deps.onProgress && pagesFetched % Math.max(1, progressEvery) === 0) await deps.onProgress(pagesFetched, productsIndexed, cursor)

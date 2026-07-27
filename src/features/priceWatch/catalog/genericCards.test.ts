@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { parseListingDomCards } from './genericCards'
 
 const BASE = 'https://www.shop.fr/fr/moteur/courroies/'
@@ -112,5 +114,44 @@ describe('microdata Product à DOM profondément imbriqué (190cc.fr)', () => {
     const out = parseListingDomCards(page, 'https://www.190cc.fr/')
     expect(out[0].ref).toBe('07-17-703-25')
     expect(out[1].ref).toBe('07-17-704-26')
+  })
+})
+
+describe('payload produit dans un attribut data-* (plateforme maison)', () => {
+  // Markup RÉEL (extrait, blocs « compatibilité » élagués) relevé le 2026-07-27 sur
+  // https://swap-europe.com/fr/jardinage/tondeuse : aucune classe « product » (les cartes
+  // s'appellent `piecePlug`), aucune microdata — mais chaque bouton d'ajout au panier porte
+  // le produit complet en JSON dans `data-piece`. Les trois paliers rendaient 0.
+  const html = readFileSync(join(__dirname, '__fixtures__', 'listing-swap-europe.html'), 'utf-8')
+  const CAT = 'https://www.swap-europe.com/fr/jardinage/tondeuse'
+
+  it('extrait les cartes d’une plateforme sans classe « product » ni microdata', () => {
+    const out = parseListingDomCards(html, CAT)
+    expect(out).toHaveLength(3)
+    expect(out[0]).toMatchObject({
+      ref: '20282735',
+      url: 'https://swap-europe.com/fr/tronconneuse-souffleur/poire-d-amorcage-22-2mm-/20282735',
+    })
+    expect(out[0].name).toContain('Poire')
+  })
+
+  it('retient le prix AFFICHÉ (TTC) et non le prix du payload (HT)', () => {
+    const out = parseListingDomCards(html, CAT)
+    // data-piece porte price=2.05 (HT) ; la grille affiche « 2,46 € TTC ».
+    expect(out[0].price).toBe(2.46)
+    expect(out[0].taxIncluded).toBe(true)
+  })
+
+  it('survit à un attribut cassé par une apostrophe dans le nom', () => {
+    // `data-piece='{"name":"Poire d'amorçage…'` : l'attribut se ferme au milieu du JSON.
+    // Le découpage par imbrication d'accolades doit quand même rendre l'objet complet.
+    expect(parseListingDomCards(html, CAT)[0].name).toContain("d'amor")
+  })
+
+  it('garde-fou : un data-* sans nom/prix/URL n’est pas un produit', () => {
+    // `data-settings='{"preventScroll": true}'` est présent 3 fois dans la fixture.
+    const only = `<div data-settings='{"preventScroll": true}'></div>
+      <div data-cfg='{"a":1}'></div>`
+    expect(parseListingDomCards(only, CAT)).toEqual([])
   })
 })

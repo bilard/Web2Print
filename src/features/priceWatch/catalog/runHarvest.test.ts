@@ -1,6 +1,6 @@
 // Teste l'orchestration de moisson avec des E/S factices — aucun réseau, aucune BD.
 import { describe, it, expect } from 'vitest'
-import { harvestPass, planCategories, type HarvestDeps, type CompetitorConfig } from './runHarvest'
+import { harvestPass, planCategories, extractListingProducts, type HarvestDeps, type CompetitorConfig } from './runHarvest'
 import type { HarvestCursor } from './harvest'
 
 const cfg: CompetitorConfig = { siteId: 'c', domain: 'c.fr', families: ['COURROIES'] }
@@ -102,5 +102,65 @@ describe('harvestPass', () => {
     ac.abort()
     const r = await harvestPass(cfg, { ...deps, signal: ac.signal }, 5)
     expect(r.pagesFetched).toBe(0)
+  })
+})
+
+describe('extractListingProducts (cascade)', () => {
+  const URL_CAT = 'https://www.c.fr/fr/jardinage/tondeuse'
+  // Page catégorie qui se publie elle-même en JSON-LD Product (pratique SEO courante) :
+  // 1 pseudo-produit à 0,29 € qui masquait les vraies cartes du DOM.
+  const selfProduct = `<script type="application/ld+json">${JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'Product',
+    name: 'Pièces détachées pour tondeuses', url: URL_CAT,
+    offers: { '@type': 'Offer', price: 0.29, priceCurrency: 'EUR' },
+  })}</script>`
+  const card = (n: number) =>
+    `<div class="product"><a href="https://www.c.fr/p${n}.html">Courroie ${n}</a><span>1${n},90 €</span></div>`
+
+  it('la catégorie déguisée en Product ne masque plus les cartes du DOM', () => {
+    const out = extractListingProducts(`<html>${selfProduct}${card(1)}${card(2)}${card(3)}</html>`, URL_CAT)
+    expect(out).toHaveLength(3)
+    expect(out.map((p) => p.price)).not.toContain(0.29)
+  })
+
+  it('préserve la page FICHE, qui n’expose légitimement qu’un produit', () => {
+    const out = extractListingProducts(`<html>${selfProduct}</html>`, URL_CAT)
+    expect(out).toHaveLength(1)
+    expect(out[0].price).toBe(0.29)
+  })
+})
+
+describe('pagination par segment de chemin', () => {
+  // Site qui ignore `?page=N` et pagine par `/N` (swap-europe) : sans suivi du
+  // `rel="next"`, la page 2 resert la page 1 → verrou d'empreinte → 1 page sur N.
+  function pathPaginatedSite(pages: number) {
+    const base = 'https://www.c.fr/1-courroies'
+    const card = (p: number, i: number) =>
+      `<div class="product"><a href="https://www.c.fr/p${p}-${i}.html">Courroie ${p}-${i}</a><span>${p}${i},00 €</span></div>`
+    return async (url: string): Promise<string | null> => {
+      if (url === 'https://www.c.fr/') return `<a href="${base}">cat</a>`
+      const m = url.match(/^https:\/\/www\.c\.fr\/1-courroies(?:\/(\d+))?(?:\?.*)?$/)
+      if (!m) return null
+      const page = Number(m[1] ?? 1) // `?page=N` NON honoré : toujours la page 1
+      if (page > pages) return '<html>vide</html>'
+      const next = page < pages ? `<link rel="next" href="${base}/${page + 1}">` : ''
+      return `<html>${next}${card(page, 1)}${card(page, 2)}</html>`
+    }
+  }
+
+  it('suit le rel="next" et moissonne toutes les pages', async () => {
+    const deps = memoryDeps(pathPaginatedSite(4))
+    const r = await harvestPass(cfg, deps, 10)
+    expect(r.pagesFetched).toBe(4)
+    expect(r.productsIndexed).toBe(8) // 4 pages × 2 produits, aucun doublon
+    expect(r.sweepComplete).toBe(true)
+  })
+
+  it('reprend la pagination au tick suivant (URL suivante persistée)', async () => {
+    const deps = memoryDeps(pathPaginatedSite(4))
+    await harvestPass(cfg, deps, 2)
+    expect(deps.cursors.get('c')?.nextUrl).toBe('https://www.c.fr/1-courroies/3')
+    const r2 = await harvestPass(cfg, deps, 10)
+    expect(r2.productsIndexed).toBe(4) // pages 3 et 4
   })
 })
