@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  rowsToCompetitorSites, isSourceSitesPayload, resolveSitesInput, importSitesIntoRows, normalizeDomain, deriveWatchId, siteStatus, siteStatusRank, type SourceSiteRow, splitPageBudget, sitesForRole,
-} from './sourceSites'
+import { rowsToCompetitorSites, isSourceSitesPayload, resolveSitesInput, importSitesIntoRows, normalizeDomain, deriveWatchId, siteStatus, siteStatusRank, type SourceSiteRow, splitPageBudget, sitesForRole } from './sourceSites'
 
 describe('normalizeDomain', () => {
   it('retire le protocole et le chemin', () => {
@@ -164,5 +162,37 @@ describe('sitesForRole', () => {
 
   it('la recherche dirigée ignore les sites en moisson seule', () => {
     expect(sitesForRole(sites, 'directed').map((s) => s.id)).toEqual(['a', 'c'])
+  })
+})
+
+describe('statut « attend le cycle »', () => {
+  // Le mode cycle SAUTE un site dont le balayage est terminé jusqu'à ce que les
+  // retardataires finissent. La carte affichait alors « OK » avec un scrape vieux de
+  // plusieurs jours : impossible de distinguer « attend son tour » de « ne part plus ».
+  const base = { enabled: true, live: false, lastPassPages: 12, lastPassProducts: 300 }
+
+  it('mis en attente APRÈS sa dernière passe → « waiting »', () => {
+    expect(siteStatus({ ...base, lastPassAt: 1_000, cycleWaitingAt: 2_000 })).toBe('waiting')
+  })
+
+  it('reparti depuis → « ok » (le marqueur est antérieur à la passe)', () => {
+    expect(siteStatus({ ...base, lastPassAt: 3_000, cycleWaitingAt: 2_000 })).toBe('ok')
+  })
+
+  it('l’attente prime sur le verdict de contenu (0 produit à la dernière passe)', () => {
+    expect(siteStatus({ ...base, lastPassProducts: 0, lastPassAt: 1_000, cycleWaitingAt: 2_000 })).toBe('waiting')
+  })
+
+  it('mais JAMAIS sur « en cours » ni sur un site désactivé', () => {
+    expect(siteStatus({ ...base, live: true, lastPassAt: 1_000, cycleWaitingAt: 2_000 })).toBe('live')
+    expect(siteStatus({ ...base, enabled: false, lastPassAt: 1_000, cycleWaitingAt: 2_000 })).toBe('disabled')
+  })
+
+  it('sans mode cycle, rien ne change', () => {
+    expect(siteStatus({ ...base, lastPassAt: 1_000 })).toBe('ok')
+  })
+
+  it('trié AVANT « OK » : c’est une anomalie à regarder', () => {
+    expect(siteStatusRank('waiting')).toBeLessThan(siteStatusRank('ok'))
   })
 })

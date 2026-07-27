@@ -28,6 +28,10 @@ export interface HarvestMeta {
   lastHarvestMs?: number
   /** Moteur ayant fourni le HTML à la dernière passe (cf. CompetitorMeta.lastEngine). */
   lastEngine?: string
+  /** Mise en attente par le mode cycle (cf. CompetitorMeta.cycleWaitingAt) : balayage
+   *  terminé, on patiente que les retardataires finissent. Distingue « attend son tour »
+   *  de « ne se lance plus » — sans lui la carte affichait « OK » depuis des jours. */
+  cycleWaitingAt?: number
   /** Résultat de la dernière passe de moisson (cf. CompetitorMeta.lastPass*). */
   lastPassPages?: number
   lastPassProducts?: number

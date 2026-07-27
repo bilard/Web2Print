@@ -119,6 +119,9 @@ registerServerNode({
       if (cycleMode && !allDoneBefore && prevMeta?.cursor?.done) {
         doneCount++
         const pagesTotal = await countPages(ctx.uid, watchId, cfg.siteId)
+        // Marqueur d'ATTENTE (parité client) : la carte doit dire « attend le cycle »
+        // plutôt que d'afficher « OK » avec un horodatage de plusieurs jours.
+        await saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, { domain: site.domain, cycleWaitingAt: Date.now() })
         ctx.log('info', `${site.domain} : balayage terminé — en attente de la fin du cycle.`)
         return { site: site.domain, pagesFetched: 0, productsIndexed: 0, pagesTotal, progress: 'complet' }
       }

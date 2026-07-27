@@ -28,6 +28,8 @@ export interface SiteRowStats {
   lastEngine?: string
   harvestProgress?: number
   harvestSweeps?: number
+  /** Mise en attente par le mode cycle (balayage terminé, on patiente les retardataires). */
+  cycleWaitingAt?: number
   /** Résultat de la dernière passe de moisson (verdict). */
   lastPassPages?: number
   lastPassProducts?: number
@@ -65,7 +67,7 @@ const TONE_BADGE: Record<'ok' | 'warn' | 'err' | 'mute', string> = {
 
 /** Badge de statut d'une ligne : mot LISIBLE (OK / Sans produit / Bloqué / Jamais) +
  *  détail chiffré, sans dépendre du tooltip. null pour un site désactivé (ligne grisée). */
-function statusBadge(status: 'ok' | 'empty' | 'error' | 'never' | 'disabled', s: SiteRowStats): { cls: string; icon: string; label: string; detail: string; title: string } | null {
+function statusBadge(status: 'ok' | 'empty' | 'error' | 'waiting' | 'never' | 'disabled', s: SiteRowStats): { cls: string; icon: string; label: string; detail: string; title: string } | null {
   if (status === 'disabled') return null
   const meta = SITE_STATUS_META[status]
   const pages = s.lastPassPages ?? 0
@@ -78,6 +80,8 @@ function statusBadge(status: 'ok' | 'empty' | 'error' | 'never' | 'disabled', s:
   const title =
     status === 'ok' ? `Dernière passe : ${products} produit(s) indexé(s) sur ${pages} page(s)` :
     status === 'empty' ? `${pages} page(s) lue(s) mais aucun produit extrait — gabarit de liste non reconnu ?` :
+    status === 'waiting'
+      ? 'Son balayage est TERMINÉ. Le mode cycle attend que tous les concurrents aient fini avant d’en rouvrir un pour tous — ce site ne repartira donc qu’à la fin du cycle. Désactive le cycle dans le planning si tu veux qu’il reparte tout de suite.' :
     status === 'error'
       ? (engineLabel
           ? `Page bien récupérée (via ${engineLabel}) mais AUCUN catalogue PrestaShop trouvé — marketplace ou structure non reconnue. Utilise la « Recherche dirigée » pour ce site.`
@@ -130,8 +134,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
   const scraped = stats.updatedAt != null
   const shortName = domain.replace(/^www\./, '')
   const swept = (stats.harvestProgress ?? 0) >= 1
-  const status = siteStatus({ enabled, live, lastPassAt: stats.lastPassAt, lastPassPages: stats.lastPassPages, lastPassProducts: stats.lastPassProducts })
-  const badge = status === 'live' ? null : statusBadge(status as 'ok' | 'empty' | 'error' | 'never' | 'disabled', stats)
+  const status = siteStatus({ enabled, live, lastPassAt: stats.lastPassAt, lastPassPages: stats.lastPassPages, lastPassProducts: stats.lastPassProducts, cycleWaitingAt: stats.cycleWaitingAt })
+  const badge = status === 'live' ? null : statusBadge(status as 'ok' | 'empty' | 'error' | 'waiting' | 'never' | 'disabled', stats)
   // Le verdict vient de tomber (< 2 min) → pop d'apparition pour attirer l'œil.
   const fresh = stats.lastPassAt != null && now - stats.lastPassAt < 2 * 60_000
   // « En cours » = heartbeat de moisson récent OU relance manuelle immédiate (bouton ▶) :

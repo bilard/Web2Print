@@ -86,10 +86,10 @@ export const HARVEST_LIVE_WINDOW_MS = 3 * 60_000
 
 /** Statut d'un site dérivé de ses stats, pour le tri et l'affichage. Ordre = priorité
  *  d'attention (le plus urgent en premier). */
-export type SiteStatus = 'live' | 'error' | 'empty' | 'ok' | 'never' | 'disabled'
+export type SiteStatus = 'live' | 'error' | 'empty' | 'waiting' | 'ok' | 'never' | 'disabled'
 
 const STATUS_RANK: Record<SiteStatus, number> = {
-  live: 0, error: 1, empty: 2, ok: 3, never: 4, disabled: 5,
+  live: 0, error: 1, empty: 2, waiting: 3, ok: 4, never: 5, disabled: 6,
 }
 
 export interface SiteStatusInput {
@@ -98,6 +98,9 @@ export interface SiteStatusInput {
   lastPassAt?: number
   lastPassPages?: number
   lastPassProducts?: number
+  /** Dernière fois que le MODE CYCLE a mis ce site en attente (balayage terminé, on
+   *  patiente que les retardataires finissent avant de rouvrir un cycle pour tous). */
+  cycleWaitingAt?: number
 }
 
 /** Statut courant d'un site (fonction pure). Un site désactivé est 'disabled' quel que
@@ -106,6 +109,12 @@ export function siteStatus(s: SiteStatusInput): SiteStatus {
   if (!s.enabled) return 'disabled'
   if (s.live) return 'live'
   if (s.lastPassAt == null) return 'never'
+  // ⚠ EN ATTENTE avant tout verdict de contenu : en mode cycle, un site dont le balayage
+  // est terminé est SAUTÉ à chaque passe jusqu'à ce que les retardataires finissent. Sans
+  // ce statut, il affichait « OK » avec un horodatage vieux de plusieurs jours — on ne
+  // pouvait pas distinguer « attend son tour » de « ne se lance plus ». Le marqueur est
+  // postérieur à la dernière passe RÉELLE : dès qu'il moissonne, il repasse en OK.
+  if ((s.cycleWaitingAt ?? 0) > s.lastPassAt) return 'waiting'
   if ((s.lastPassPages ?? 0) === 0) return 'error'
   if ((s.lastPassProducts ?? 0) === 0) return 'empty'
   return 'ok'
@@ -121,6 +130,7 @@ export const SITE_STATUS_META: Record<SiteStatus, { label: string; short: string
   live:     { label: 'En cours',     short: 'en cours',     icon: '●', tone: 'ok' },
   ok:       { label: 'OK',           short: 'OK',           icon: '✓', tone: 'ok' },
   empty:    { label: 'Sans produit', short: 'sans produit', icon: '⚠', tone: 'warn' },
+  waiting:  { label: 'Attend le cycle', short: 'en attente', icon: '⏸', tone: 'mute' },
   error:    { label: 'Sans catalogue', short: 'sans catalogue', icon: '✗', tone: 'err' },
   never:    { label: 'Jamais',       short: 'jamais',       icon: '○', tone: 'mute' },
   disabled: { label: 'Désactivé',    short: 'désactivés',   icon: '—', tone: 'mute' },

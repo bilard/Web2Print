@@ -175,6 +175,9 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       const prevMeta = metas.get(cfg.siteId)
       if (cycleMode && !allDoneBefore && prevMeta?.cursor?.done) {
         const pagesTotal = await countPages(uid, watchId, cfg.siteId)
+        // Marqueur d'ATTENTE : sans lui la carte reste « OK » avec un scrape vieux de
+        // plusieurs jours, et rien n'explique pourquoi le site ne part pas.
+        await saveCompetitorMeta(uid, watchId, cfg.siteId, { domain: site.domain, cycleWaitingAt: Date.now() })
         ctx.log('info', `${site.domain} : balayage terminé — en attente de la fin du cycle.`)
         return { site: site.domain, pagesFetched: 0, productsIndexed: 0, pagesTotal, progress: 'complet' }
       }

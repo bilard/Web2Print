@@ -32,6 +32,11 @@ export interface CompetitorMeta {
   domain: string
   /** Curseur de moisson (repris au tick suivant). Absent avant la 1ʳᵉ moisson. */
   cursor?: HarvestCursor
+  /** Dernière mise en ATTENTE par le mode cycle : balayage terminé, on patiente que les
+   *  retardataires finissent avant de rouvrir un cycle pour tous. Comparé à `lastPassAt`
+   *  pour distinguer « attend son tour » de « ne se lance plus » — sans lui, la carte
+   *  affichait « OK » avec un horodatage vieux de plusieurs jours. */
+  cycleWaitingAt?: number
   /** Nombre de produits actuellement indexés (dérivé, pour l'affichage). */
   productCount?: number
   /** Nombre de pages moissonnées. */

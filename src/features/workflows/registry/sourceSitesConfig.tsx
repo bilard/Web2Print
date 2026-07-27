@@ -116,6 +116,7 @@ export function SourceSitesConfig({ config, onChange }: {
       medGapPct: stat?.medGapPct,
       updatedAt: meta?.updatedAt,
       lastEngine: meta?.lastEngine,
+      cycleWaitingAt: meta?.cycleWaitingAt,
       harvestProgress: meta?.harvestProgress,
       harvestSweeps: meta?.harvestSweeps,
       lastPassPages: meta?.lastPassPages,
