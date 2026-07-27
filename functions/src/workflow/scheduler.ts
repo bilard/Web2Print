@@ -4,6 +4,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { executeWorkflowHeadless } from './execute'
+import { preflightWarnings } from './preflight'
 import { writeRunHistory } from './runHistory'
 import { writeRunLive, appendRunLiveError, humanizeError } from './runLive'
 import {
@@ -121,6 +122,14 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
       nodeOutputs: {}, nodeConnectors: {},
     }, { replace: true })
   }
+  // Cohérence ENTRE nodes, AVANT d'exécuter. Le contrôle de l'éditeur ne tourne qu'au
+  // clic sur « Lancer » : un run planifié pouvait produire un rapport vide chaque nuit
+  // sans que rien n'en dise la cause. Journalisé, jamais bloquant.
+  const preflight = preflightWarnings(wf)
+  if (preflight.length > 0) {
+    await writeRunLive(uid, wf.id, { logs: preflight.map((msg) => ({ ts: Date.now(), level: 'warn' as const, msg })) })
+  }
+
   try {
     // Streaming des logs : écriture throttlée (≥ 2 s) pour que l'onglet Logs se
     // remplisse PENDANT le run (sinon « En cours… Aucun log » jusqu'à la fin).

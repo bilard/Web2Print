@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { notify } from '@/lib/notify'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon, BarChart3, BookmarkPlus, Check, Loader2, CircleDot } from 'lucide-react'
@@ -11,6 +11,7 @@ import { useRunContext, stepMiddleware } from '../runtime/runContext'
 import { executeWorkflow } from '../runtime/executor'
 import { validateWorkflow, type WorkflowIssue } from '../runtime/validateWorkflow'
 import { RunPreflightDialog } from './RunPreflightDialog'
+import { PreflightBanner } from './PreflightBanner'
 import { useFocusNode } from './focusNodeStore'
 import { notifyRunOutcome } from '../runtime/notifyRunOutcome'
 import { recordAudit } from '@/lib/auditLog'
@@ -47,7 +48,9 @@ export function WorkflowEditorPage() {
   const [showGenerate, setShowGenerate] = useState(false)
   const [showSaveTemplate, setShowSaveTemplate] = useState(false)
   // Contrôle de cohérence avant lancement : trous détectés + le mode de run demandé.
-  const [preflight, setPreflight] = useState<{ issues: WorkflowIssue[]; stepByStep: boolean } | null>(null)
+  // `inspectOnly` : ouvert depuis le bandeau, pas depuis « Lancer » → pas de bouton
+  // « Lancer quand même », on vient seulement lire ce qui cloche.
+  const [preflight, setPreflight] = useState<{ issues: WorkflowIssue[]; stepByStep: boolean; inspectOnly?: boolean } | null>(null)
 
   // Affiche sur les cartes l'état des runs SERVEUR (cron / « Lancer serveur »).
   useServerRunLive(wf?.id)
@@ -112,6 +115,15 @@ export function WorkflowEditorPage() {
     const outcome = await executeWorkflow(wf, stepByStep ? { middleware: [stepMiddleware] } : {})
     notifyRunOutcome(outcome, wf.name)
   }
+  // Contrôle PERMANENT : les incohérences n'apparaissaient qu'au clic sur « Lancer », et
+  // seulement s'il y en avait — un workflow mal câblé se signalait donc au pire moment,
+  // ou jamais (run planifié, lancement depuis une carte). Recalculé à chaque édition.
+  const liveIssues = useMemo(
+    () => validateWorkflow(wf, (t) => nodeRegistry.get(t)),
+    [wf],
+  )
+  const liveErrors = liveIssues.filter((i) => i.severity === 'error').length
+
   // Lancement : contrôle de cohérence D'ABORD (sources / paramètres d'export manquants).
   // Un trou → popup pour corriger (ou forcer). Rien à signaler → on lance directement.
   // stepByStep = mode debug : pause avant chaque node jusqu'au clic « Étape suivante ».
@@ -135,6 +147,11 @@ export function WorkflowEditorPage() {
   return (
     <ReactFlowProvider>
       <div className="h-screen bg-background text-white flex flex-col">
+        <PreflightBanner
+          issues={liveIssues}
+          errors={liveErrors}
+          onOpen={() => setPreflight({ issues: liveIssues, stepByStep: false, inspectOnly: true })}
+        />
         <header className="border-b border-neutral-800 px-3 py-2 flex items-center gap-2">
           <button
             onClick={goToList}
@@ -279,7 +296,7 @@ export function WorkflowEditorPage() {
           <RunPreflightDialog
             issues={preflight.issues}
             onCancel={() => setPreflight(null)}
-            onProceed={() => { const s = preflight.stepByStep; setPreflight(null); void executeNow(s) }}
+            onProceed={preflight.inspectOnly ? undefined : () => { const s = preflight.stepByStep; setPreflight(null); void executeNow(s) }}
             onFocus={(nodeId) => { useFocusNode.getState().focus(nodeId); setPreflight(null) }}
           />
         )}

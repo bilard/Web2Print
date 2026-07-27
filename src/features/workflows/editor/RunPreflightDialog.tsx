@@ -8,7 +8,8 @@ import type { WorkflowIssue } from '../runtime/validateWorkflow'
 interface Props {
   issues: WorkflowIssue[]
   onCancel: () => void
-  onProceed: () => void
+  /** Absent = consultation seule (ouvert depuis le bandeau, pas depuis « Lancer »). */
+  onProceed?: () => void
   /** Ferme le popup et saute à la carte concernée (sélection + recadrage). */
   onFocus: (nodeId: string) => void
 }
@@ -68,22 +69,26 @@ export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus }: Pro
         </ul>
 
         <p className="text-[11px] text-white/35 leading-snug">
-          Ces manques feront échouer ou tronquer le run. Corrige-les, ou lance quand même si c'est volontaire (test partiel).
+          {onProceed
+            ? "Ces manques feront échouer ou tronquer le run. Corrige-les, ou lance quand même si c'est volontaire (test partiel)."
+            : 'Consultation — clique une carte pour aller la corriger. Ce contrôle tourne aussi avant chaque lancement.'}
         </p>
 
         <div className="flex justify-end gap-2 pt-1">
-          <button
-            onClick={onProceed}
-            className="px-3 py-1.5 rounded text-white/50 hover:text-white/80 text-sm transition-colors"
-          >
-            Lancer quand même
-          </button>
+          {onProceed && (
+            <button
+              onClick={onProceed}
+              className="px-3 py-1.5 rounded text-white/50 hover:text-white/80 text-sm transition-colors"
+            >
+              Lancer quand même
+            </button>
+          )}
           <button
             onClick={onCancel}
             className="px-4 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm font-medium"
             autoFocus
           >
-            Corriger
+            {onProceed ? 'Corriger' : 'Fermer'}
           </button>
         </div>
       </div>
