@@ -16,6 +16,7 @@ import { firecrawlScrapeHtml } from '../../scraper/firecrawlHtml'
 import { getUserApiKey } from '../../workflow/apiKeys'
 import { fetchHtml } from '../../scraper/fetchHtml'
 import { runBrowserActBot } from '../../scraper/browserAct'
+import { botOutputToHtml } from './botListing'
 import type { CompetitorSite } from '../helpers'
 
 export interface ServerFetcher {
@@ -105,10 +106,14 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
         const key = await getUserApiKey(uid, 'browseract').catch(() => '')
         if (!key) return null
         calls++
-        const out = (await runBrowserActBot(key, botId, { url }, 300_000))?.trim()
-        if (!out || !out.includes('<')) return null
+        // Un bot ne rend JAMAIS de HTML (sortie JSON/CSV/XML/Markdown) et sa STRUCTURE
+        // est inconnue : `botOutputToHtml` déduit les champs puis emballe les fiches en
+        // JSON-LD, ce qui en fait une source comme une autre pour la suite du pipeline.
+        const out = await runBrowserActBot(key, botId, { url }, 300_000)
+        const html = botOutputToHtml(out ?? undefined, url)
+        if (!html) return null
         last = 'browseract'
-        return out
+        return html
       },
     }
   }

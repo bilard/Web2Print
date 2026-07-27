@@ -5,7 +5,10 @@
 //   - 'firecrawl'  → Firecrawl rendu JS + scroll (grilles lazy-load, payant/crédit) ;
 //   - 'brightdata' → Scraping Browser Bright Data (anti-bot durs, payant) ;
 //   - 'browseract' → exécution d'un BOT BrowserAct (Amazon, LinkedIn, anti-bot durs).
-//     ⚠ Une page = une TÂCHE facturée et longue, et l'ID du bot est obligatoire :
+//     ⚠ Un bot ne rend JAMAIS le HTML d'une page : ses formats de sortie sont JSON, CSV,
+//     XML ou Markdown. Ses lignes sont donc converties en document JSON-LD synthétique
+//     (`botOutputToHtml`), ce qui en fait une source comme une autre pour la suite du
+//     pipeline. Une page = une TÂCHE facturée et longue, l'ID du bot est obligatoire :
 //     réservé à la RECHERCHE DIRIGÉE (quelques pages par produit), plafonné par passe ;
 //   - défaut       → cascade standard fetch serveur → Jina → proxies.
 import { fetchJinaHtml, fetchSourceHtmlWithEngine } from '@/features/scraping-templates/fetchSourceHtml'
@@ -14,6 +17,7 @@ import { firecrawlScrapeHtml } from '@/features/scraping/core/firecrawlFallback'
 import { fetchAuthHtml } from './authFetchClient'
 import { getApiKey } from '@/lib/apiKeys'
 import { runBrowserActWorkflow } from '@/features/scraping/core/browserAct'
+import { botOutputToHtml } from './botListing'
 import type { SiteEngine } from '../types'
 
 export interface SiteFetcher {
@@ -93,17 +97,15 @@ export function buildSiteFetcher(engine?: SiteEngine, opts?: { auth?: boolean; h
         if (calls >= BROWSERACT_MAX_CALLS_PER_PASS) return null
         calls++
         const res = await runBrowserActWorkflow(key, botId, { url }, { timeoutMs: 300_000 })
-        const out = res?.output?.trim()
-        if (!out) return null
-        // Le bot DOIT rendre le contenu de la page : les parseurs en aval lisent du HTML
-        // (JSON-LD, microdata, cartes). Un bot qui rend des lignes JSON n'a pas sa place
-        // ici — on le dit plutôt que de rendre 0 produit sans explication.
-        if (!out.includes('<')) {
-          console.warn('[browseract] le bot n’a pas rendu de HTML — pour ce moteur, il doit restituer le contenu de la page.')
+        // La STRUCTURE de sortie du bot est inconnue (il est construit site par site) :
+        // `botOutputToHtml` déduit les champs par nom de clé PUIS par forme de valeur.
+        const html = botOutputToHtml(res?.output, url)
+        if (!html) {
+          console.warn('[browseract] le bot n’a rendu aucune fiche exploitable — vérifie ses champs de sortie (nom/prix/référence).')
           return null
         }
         last = 'browseract'
-        return out
+        return html
       },
     }
   }

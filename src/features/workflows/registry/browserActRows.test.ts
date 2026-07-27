@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseParamLines, rowsToSheet } from './browserActRows'
-import { parseBrowserActRows } from '@/features/scraping/core/browserAct'
+import { parseBotRows } from '@/features/priceWatch/catalog/botListing'
 
 describe('parseParamLines', () => {
   it('lit les paires « nom = valeur », ignore vides et commentaires', () => {
@@ -23,25 +23,25 @@ describe('parseParamLines', () => {
   })
 })
 
-describe('parseBrowserActRows', () => {
+describe('parseBotRows', () => {
   it('accepte un tableau JSON', () => {
-    expect(parseBrowserActRows('[{"name":"A","price":"9,90"},{"name":"B"}]')).toHaveLength(2)
+    expect(parseBotRows('[{"name":"A","price":"9,90"},{"name":"B"}]')).toHaveLength(2)
   })
 
   it('déballe une enveloppe usuelle du bot', () => {
-    expect(parseBrowserActRows('{"results":[{"name":"A"},{"name":"B"}]}')).toEqual([
+    expect(parseBotRows('{"results":[{"name":"A"},{"name":"B"}]}')).toEqual([
       { name: 'A' }, { name: 'B' },
     ])
   })
 
   it('accepte du JSONL', () => {
-    expect(parseBrowserActRows('{"name":"A"}\n{"name":"B"}\nbruit')).toHaveLength(2)
+    expect(parseBotRows('{"name":"A"}\n{"name":"B"}\nbruit')).toHaveLength(2)
   })
 
   it('fail-closed : sortie non tabulaire → aucune ligne (jamais un demi-enregistrement)', () => {
-    expect(parseBrowserActRows('Le produit coûte 9,90 €')).toEqual([])
-    expect(parseBrowserActRows('')).toEqual([])
-    expect(parseBrowserActRows(undefined)).toEqual([])
+    expect(parseBotRows('Le produit coûte 9,90 €')).toEqual([])
+    expect(parseBotRows('')).toEqual([])
+    expect(parseBotRows(undefined)).toEqual([])
   })
 })
 

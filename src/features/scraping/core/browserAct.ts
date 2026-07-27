@@ -205,36 +205,3 @@ export async function runBrowserActWorkflow(
   log?.(`BrowserAct : tâche ${taskId} toujours « ${last?.status ?? 'inconnue'} » après ${Math.round(timeoutMs / 1000)} s — abandon.`)
   return last
 }
-
-/**
- * Lignes de données d'une sortie de bot. `output.string` n'a pas de format garanti : on
- * accepte un tableau JSON, un objet JSON unique, ou du JSONL (une ligne = un objet).
- *
- * FAIL-CLOSED sur la forme : ce qui n'est pas un objet exploitable est ignoré, on ne rend
- * jamais un demi-enregistrement. C'est un exécuteur payant et asynchrone — le mode de
- * panne à éviter est d'écrire des données douteuses dans le catalogue.
- */
-export function parseBrowserActRows(output: string | undefined): Record<string, unknown>[] {
-  const raw = output?.trim()
-  if (!raw) return []
-  const asRows = (v: unknown): Record<string, unknown>[] => {
-    if (Array.isArray(v)) return v.flatMap(asRows)
-    if (v && typeof v === 'object') {
-      const o = v as Record<string, unknown>
-      // Un bot enveloppe souvent ses lignes (`{ data: [...] }`, `{ results: [...] }`).
-      for (const k of ['data', 'items', 'results', 'rows', 'products']) {
-        if (Array.isArray(o[k])) return asRows(o[k])
-      }
-      return [o]
-    }
-    return []
-  }
-  try { return asRows(JSON.parse(raw)) } catch { /* JSONL ci-dessous */ }
-  const rows: Record<string, unknown>[] = []
-  for (const line of raw.split('\n')) {
-    const t = line.trim()
-    if (!t.startsWith('{')) continue
-    try { rows.push(...asRows(JSON.parse(t))) } catch { /* ligne illisible : ignorée */ }
-  }
-  return rows
-}

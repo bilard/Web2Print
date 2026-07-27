@@ -14,9 +14,8 @@ import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet } from '@/features/excel/types'
 import { getApiKey } from '@/lib/apiKeys'
-import {
-  runBrowserActWorkflow, parseBrowserActRows, listBrowserActWorkflows,
-} from '@/features/scraping/core/browserAct'
+import { runBrowserActWorkflow, listBrowserActWorkflows } from '@/features/scraping/core/browserAct'
+import { parseBotRows } from '@/features/priceWatch/catalog/botListing'
 import { parseParamLines, rowsToSheet } from './browserActRows'
 
 interface BrowserActConfig {
@@ -122,7 +121,7 @@ const browserActNode: NodeSpec<BrowserActConfig, BrowserActInputs, BrowserActOut
       )
     }
 
-    const rows = parseBrowserActRows(result.output)
+    const rows = parseBotRows(result.output)
     if (rows.length === 0) {
       // La sortie n'est pas exploitable en tableau : on ne fabrique PAS de demi-feuille,
       // on rend le texte brut pour que l'utilisateur voie ce que son bot a produit.
