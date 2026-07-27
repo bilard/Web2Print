@@ -350,6 +350,7 @@ export function SourceSitesConfig({ config, onChange }: {
                 mode={r.mode ?? ''}
                 auth={!!r.auth}
                 pageBudget={r.pageBudget}
+                botId={r.botId}
                 stats={stats}
                 live={isLive(stats)}
                 now={now}
@@ -357,6 +358,7 @@ export function SourceSitesConfig({ config, onChange }: {
                 onEngine={(engine) => patchRow(i, engine === 'auto' ? { engine: undefined } : { engine })}
                 onMode={(mode) => patchRow(i, mode ? { mode } : { mode: undefined })}
                 onBudget={(pageBudget) => patchRow(i, { pageBudget })}
+                onBotId={(botId) => patchRow(i, { botId: botId.trim() || undefined })}
                 onAuth={() => setCredsRow((c) => (c === i ? null : i))}
                 onScrape={() => void scrapeSite(r)}
                 scraping={scrapingId === normalizeDomain(r.domain)}

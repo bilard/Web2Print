@@ -5,7 +5,7 @@
 // wire-compatible avec le client (mêmes ids stables, même parsing de prix).
 
 /** Site concurrent parsé depuis la config « un domaine par ligne ». */
-export type SiteEngine = 'auto' | 'jina' | 'firecrawl' | 'brightdata'
+export type SiteEngine = 'auto' | 'jina' | 'firecrawl' | 'brightdata' | 'browseract'
 
 /** Canal de relevé d'un site. Absent = les DEUX (comportement historique).
  *  'harvest' = moisson par catégories ; 'directed' = recherche dirigée réf/EAN. */
@@ -21,6 +21,9 @@ export interface CompetitorSite {
   auth?: boolean
   /** Pages par run RÉSERVÉES à ce site (vide = part du budget commun). */
   pageBudget?: number
+  /** Identifiant du bot BrowserAct (moteur 'browseract' uniquement) — sans lui, il n'y a
+   *  rien à exécuter : l'API n'a pas de primitive « lis cette URL ». */
+  botId?: string
   /** Canal de relevé de ce site. Absent = moisson ET recherche dirigée. */
   mode?: SiteMode
 }

@@ -95,3 +95,13 @@ describe('buildSiteFetcher', () => {
     expect(f.lastEngine()).toBeUndefined()
   })
 })
+
+describe('moteur BrowserAct', () => {
+  it('exige un bot : sans lui, l’erreur explique POURQUOI (pas de primitive « lis cette URL »)', () => {
+    expect(() => buildSiteFetcher('browseract')).toThrow(/bot/i)
+  })
+
+  it('annonce la pastille de connecteur BrowserAct', () => {
+    expect(buildSiteFetcher('browseract', { botId: 'wf_123' }).connectorId).toBe('browseract')
+  })
+})

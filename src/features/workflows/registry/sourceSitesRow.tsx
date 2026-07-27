@@ -38,13 +38,14 @@ export interface SiteRowStats {
  *  Function fetchPageHtml, palier 1 gratuit de la cascade Auto). */
 const ENGINE_LABELS: Record<string, string> = {
   cloudFunction: 'Serveur', jina: 'Jina', proxy: 'Proxy', firecrawl: 'Firecrawl',
-  brightdata: 'BD', authenticated: 'Connecté',
+  brightdata: 'BD', authenticated: 'Connecté', browseract: 'BrowserAct',
 }
 const ENGINE_OPTIONS = [
   { value: 'auto', label: 'Auto' },
   { value: 'jina', label: 'Jina' },
   { value: 'firecrawl', label: 'Firecrawl' },
   { value: 'brightdata', label: 'Bright Data' },
+  { value: 'browseract', label: 'BrowserAct (bot)' },
 ]
 
 /** Canal de relevé du site. Vide = les deux (comportement historique).
@@ -96,7 +97,7 @@ function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute', title?
   )
 }
 
-export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBudget, stats, live, now, onToggle, onEngine, onMode, onAuth, onBudget, onScrape, scraping, onReset, onRemove }: {
+export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBudget, botId, stats, live, now, onToggle, onEngine, onMode, onAuth, onBudget, onBotId, onScrape, scraping, onReset, onRemove }: {
   domain: string
   enabled: boolean
   engine: string
@@ -104,6 +105,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
   mode?: string
   /** Pages RÉSERVÉES à ce site par run (vide = part du budget commun). */
   pageBudget?: number
+  /** ID du bot BrowserAct — obligatoire avec ce moteur, inutile avec les autres. */
+  botId?: string
   /** Site à prix connectés (identifiants configurés). */
   auth: boolean
   stats: SiteRowStats
@@ -119,6 +122,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
   onAuth: () => void
   /** Réserve un budget de pages pour ce site (undefined = revenir au partage commun). */
   onBudget: (pages: number | undefined) => void
+  /** Renseigne l'ID du bot BrowserAct. */
+  onBotId: (botId: string) => void
   /** Lance une moisson de CE site seul (bouton ▶). */
   onScrape: () => void
   /** true = ce site est en cours de moisson manuelle (spinner). */
@@ -241,6 +246,21 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           title="Pages par run réservées à ce site. Vide = part du budget commun."
           className="shrink-0 w-14 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
         />
+        {/* BrowserAct n'a pas de primitive « lis cette URL » : sans bot, il n'y a rien à
+            exécuter. Le champ n'apparaît donc QUE pour ce moteur, et son absence se voit
+            (bordure ambre) plutôt que d'échouer au premier fetch. */}
+        {engine === 'browseract' && (
+          <input
+            type="text"
+            value={botId ?? ''}
+            onChange={(e) => onBotId(e.target.value)}
+            placeholder="ID du bot"
+            title="Identifiant du bot BrowserAct à exécuter pour ce site. Le test de la clé (Réglages › Connecteurs) liste vos bots. Le bot doit restituer le CONTENU de la page — une exécution par page, facturée."
+            className={`shrink-0 w-24 bg-well border rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50 ${
+              (botId ?? '').trim() ? 'border-white/10' : 'border-amber-500/50'
+            }`}
+          />
+        )}
       </div>
       {/* Niveau 3 — STATS sur UNE rangée : données (produits · prix · appariés) puis
           moisson (familles · moteur · dernier scrape). Elles occupaient deux rangées pour

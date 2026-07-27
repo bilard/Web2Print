@@ -15,6 +15,7 @@ import { brightDataRead } from '../../workflow/brightData'
 import { firecrawlScrapeHtml } from '../../scraper/firecrawlHtml'
 import { getUserApiKey } from '../../workflow/apiKeys'
 import { fetchHtml } from '../../scraper/fetchHtml'
+import { runBrowserActBot } from '../../scraper/browserAct'
 import type { CompetitorSite } from '../helpers'
 
 export interface ServerFetcher {
@@ -48,6 +49,9 @@ async function jinaHtml(url: string, timeoutMs: number): Promise<string | null> 
  * et ferait sonner les alarmes du site) ; si elle échoue, on retombe sur le direct plutôt
  * que d'abandonner le site — un catalogue sans prix vaut mieux qu'aucun catalogue.
  */
+/** Plafond d'exécutions de bot par passe et par site (chaque appel = une tâche facturée). */
+const BROWSERACT_MAX_CALLS_PER_PASS = 20
+
 export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs = 20_000): ServerFetcher {
   let last: string | undefined
   let jar: string | null = null
@@ -84,6 +88,27 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
         const res = await brightDataRead(url).catch(() => null)
         if (res?.html) { last = 'brightdata'; return res.html }
         return null
+      },
+    }
+  }
+
+  if (site.engine === 'browseract') {
+    // Parité exacte avec `siteFetch` côté client : bot OBLIGATOIRE, plafond par passe
+    // (une page = une TÂCHE facturée), et la sortie doit être le CONTENU de la page —
+    // les parseurs en aval lisent du HTML, pas des lignes JSON.
+    const botId = (site.botId ?? '').trim()
+    let calls = 0
+    return {
+      lastEngine: () => last,
+      fetchHtml: async (url) => {
+        if (!botId || calls >= BROWSERACT_MAX_CALLS_PER_PASS) return null
+        const key = await getUserApiKey(uid, 'browseract').catch(() => '')
+        if (!key) return null
+        calls++
+        const out = (await runBrowserActBot(key, botId, { url }, 300_000))?.trim()
+        if (!out || !out.includes('<')) return null
+        last = 'browseract'
+        return out
       },
     }
   }
