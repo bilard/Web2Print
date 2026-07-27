@@ -76,8 +76,11 @@ const browserActNode: NodeSpec<BrowserActConfig, BrowserActInputs, BrowserActOut
     },
   ],
   defaultConfig: { workflowId: '', parameters: '', inputParam: 'url', timeoutSec: 300 },
-  // 'client' : l'API BrowserAct autorise les appels navigateur (CORS reflète l'origine et
-  // accepte l'en-tête `authorization`), aucun proxy Cloud Function n'est nécessaire.
+  // 'client' tant que le canal navigateur n'est pas confirmé par un appel authentifié réel
+  // (cf. l'hypothèse CORS dans `browserAct.ts`). ⚠ Conséquence assumée : ce node ne tourne
+  // PAS dans `executeWorkflowHeadless`, donc ni en cron, ni par webhook, ni depuis Telegram.
+  // L'ouvrir au serveur demande un jumeau côté functions lisant la clé par `getUserApiKey`,
+  // sur le modèle de `workflow/nodes/harvestCompetitor.ts`.
   runtime: 'client',
   cardSummary: (config) => (config.workflowId ? `bot ${config.workflowId.slice(0, 12)}` : 'bot non choisi'),
   run: async (ctx, config, inputs) => {

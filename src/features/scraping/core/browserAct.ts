@@ -10,8 +10,11 @@
 //   • asynchrone et facturé à la TÂCHE, avec 1 tâche concurrente en gratuit / 20 en payant
 //     → utilisable PAR PRODUIT (recherche dirigée, fiche PIM), jamais par page de liste.
 //
-// L'API accepte les appels navigateur (CORS reflète l'origine et autorise `authorization`),
-// donc pas de proxy Cloud Function nécessaire — contrairement à ScrapFly.
+// HYPOTHÈSE à confirmer au premier appel authentifié : le PRÉFLIGHT reflète l'origine et
+// autorise `authorization`, donc les appels navigateur devraient passer sans proxy Cloud
+// Function. Ce n'est PAS une mesure — faute de clé, la réponse 200 authentifiée n'a jamais
+// été observée, et ScrapFly (cf. `apiKeys.ts`) s'est révélé bloqué côté navigateur APRÈS un
+// préflight en apparence permissif. Si ça tombe, le remède est un jumeau côté functions.
 //
 // Fail-open partout : toute erreur rend null / [] et laisse l'appelant poursuivre avec les
 // moteurs existants. Un exécuteur payant indisponible ne doit jamais casser une passe.
