@@ -13,7 +13,7 @@ export interface TrackedProduct {
 
 /** Moteur de scraping forcé pour un site. 'auto' (défaut) = cascade existante
  *  (fetch serveur → Jina → proxies). Honoré par la moisson (node « Sites sources »). */
-export type SiteEngine = 'auto' | 'jina' | 'firecrawl' | 'brightdata' | 'browseract'
+export type SiteEngine = 'auto' | 'jina' | 'firecrawl' | 'brightdata'
 
 /** Rôle d'un site dans le suivi. Absent = les DEUX (comportement historique).
  *  - 'harvest'  : moisson par catégories seulement (catalogue spécialisé).
@@ -39,10 +39,6 @@ export interface CompetitorSite {
   pageBudget?: number
   /** Canal de relevé de ce site. Absent = moisson ET recherche dirigée. */
   mode?: SiteMode
-  /** Identifiant du bot BrowserAct à exécuter (moteur 'browseract' uniquement).
-   *  ⚠ OBLIGATOIRE avec ce moteur : l'API BrowserAct n'a pas de primitive « lis cette
-   *  URL », elle exécute un bot construit dans leur tableau de bord. */
-  botId?: string
 }
 
 export type MatchStatus = 'auto' | 'confirmed' | 'pending' | 'rejected'

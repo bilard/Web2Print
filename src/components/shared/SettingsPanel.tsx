@@ -459,9 +459,10 @@ function ConnectorsTab() {
       <ApiKeyRow id="firecrawl" label="Firecrawl" description="Scraping anti-bot fallback (Akamai, Cloudflare)" logo={<FirecrawlLogo />} placeholder="fc-..." />
       <BrightDataConnectorRow />
       {/* BrowserAct n'est PAS un lecteur d'URL comme les trois précédents : il exécute des
-          « bots » construits dans son tableau de bord. Le test de la clé liste les vôtres —
-          leur identifiant est ce que demande le node « BrowserAct (bot) ». */}
-      <ApiKeyRow id="browseract" label="BrowserAct" description="Exécute vos « bots » (Amazon, LinkedIn, anti-bot durs) — via le node « BrowserAct (bot) » d'un workflow" logo={<Bot className="w-5 h-5 text-teal-300" />} />
+          « bots » construits dans son tableau de bord. Il n'est donc PAS un moteur de
+          scraping — l'exécuter page par page polluait la moisson. Usage : le node
+          « BrowserAct (bot) » d'un workflow, explicite et ponctuel. */}
+      <ApiKeyRow id="browseract" label="BrowserAct" description="Exécute vos « bots » (Amazon, LinkedIn, anti-bot durs). Uniquement via le node « BrowserAct (bot) » d'un workflow — ce n'est pas un moteur de scraping." logo={<Bot className="w-5 h-5 text-teal-300" />} />
       <ApiKeyRow id="scrapfly" label="ScrapFly" description="Réservée — pas de CORS browser-side, en attente d'une Cloud Function proxy" logo={<ScrapflyLogo />} placeholder="scp-live-..." />
       <HiggsfieldConnectorRow />
       <GDriveConnectorRow />

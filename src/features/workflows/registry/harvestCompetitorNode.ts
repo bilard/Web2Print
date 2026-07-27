@@ -180,7 +180,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       }
       // Moteur par site : site authentifié (login cookie) sinon moteur forcé
       // (jina | firecrawl | brightdata) sinon cascade auto.
-      const fetcher = buildSiteFetcher(site.engine, { auth: site.auth, host: site.domain, botId: site.botId, signal: ctx.signal })
+      const fetcher = buildSiteFetcher(site.engine, { auth: site.auth, host: site.domain })
       ctx.reportConnector?.(fetcher.connectorId)
       if (site.auth) ctx.log('info', `${site.domain} : accès authentifié (login cookie).`)
       else if (site.engine) ctx.log('info', `${site.domain} : moteur forcé « ${site.engine} ».`)

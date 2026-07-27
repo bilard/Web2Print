@@ -12,10 +12,9 @@ export interface SourceSiteRow {
   /** Champs à scraper, séparés par des virgules (même format que « | price, stock »). */
   fields?: string
   enabled: boolean
-  /** 'auto' (défaut) | 'jina' | 'firecrawl' | 'brightdata' | 'browseract'. */
+  /** 'auto' (défaut) | 'jina' | 'firecrawl' | 'brightdata'. Un moteur retiré depuis
+   *  (ex. 'browseract') n'est plus reconnu → le site retombe sur 'auto'. */
   engine?: string
-  /** Identifiant du bot BrowserAct (moteur 'browseract' uniquement). */
-  botId?: string
   /** Site à prix connectés : identifiants saisis dans l'UI, stockés en Firestore. */
   auth?: boolean
   /** Pages par run réservées à ce site (vide = part du budget commun). */
@@ -30,7 +29,7 @@ export interface SourceSitesPayload {
   sites: CompetitorSite[]
 }
 
-const ENGINES: readonly SiteEngine[] = ['auto', 'jina', 'firecrawl', 'brightdata', 'browseract']
+const ENGINES: readonly SiteEngine[] = ['auto', 'jina', 'firecrawl', 'brightdata']
 const MODES: readonly SiteMode[] = ['harvest', 'directed']
 
 /** Nettoie une saisie de domaine (mêmes règles que parseSitesConfig). */
@@ -59,9 +58,6 @@ export function rowsToCompetitorSites(rows: SourceSiteRow[]): CompetitorSite[] {
       ...(Number.isFinite(row.pageBudget) && (row.pageBudget as number) > 0
         ? { pageBudget: Math.floor(row.pageBudget as number) } : {}),
       ...(MODES.includes(row.mode as SiteMode) ? { mode: row.mode as SiteMode } : {}),
-      // L'identifiant de bot n'accompagne QUE le moteur BrowserAct — sans lui, il n'y a
-      // rien à exécuter (l'API n'a pas de primitive « lis cette URL »).
-      ...(engine === 'browseract' && (row.botId ?? '').trim() ? { botId: (row.botId as string).trim() } : {}),
     })
   }
   return out

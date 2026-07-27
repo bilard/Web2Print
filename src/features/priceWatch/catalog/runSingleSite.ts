@@ -32,7 +32,7 @@ export async function harvestOneSite(
   const pageBudget = opts.pageBudget ?? 10
   const families = opts.families ?? []
   const siteId = stableId(site.domain)
-  const fetcher = buildSiteFetcher(site.engine, { auth: site.auth, host: site.domain, botId: site.botId })
+  const fetcher = buildSiteFetcher(site.engine, { auth: site.auth, host: site.domain })
   const prevMeta = await loadCompetitorMeta(uid, watchId, siteId)
   const t0 = Date.now()
 

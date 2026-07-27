@@ -20,8 +20,6 @@ import { SourceSitesRowItem, type SiteRowStats } from './sourceSitesRow'
 import { SiteCredentialsForm } from './sourceSitesCreds'
 import { PurgeScrapingPanel } from './sourceSitesPurge'
 import type { SourceSitesNodeConfig } from './sourceSitesTypes'
-import { listBrowserActWorkflows, type BrowserActWorkflow } from '@/features/scraping/core/browserAct'
-import { getApiKey } from '@/lib/apiKeys'
 
 /** Fenêtre du battement de moisson : constante PARTAGÉE avec la PWA radarPrice — deux
  *  valeurs différentes affichaient des comptes contradictoires d'un écran à l'autre. */
@@ -46,26 +44,12 @@ export function SourceSitesConfig({ config, onChange }: {
 
   // Horloge partagée (tick 30 s) : rafraîchit « scrape il y a X » et l'état live
   // même sans écriture Firestore (le heartbeat vieillit → le surlignage s'éteint).
-  // Bots BrowserAct du compte : chargés UNE fois, dès qu'un site utilise ce moteur.
-  // Sans eux, la carte réclamait un identifiant opaque que rien dans l'app n'affichait —
-  // le test de la clé ne donnait que les NOMS. On propose la liste au lieu de la deviner.
-  const [bots, setBots] = useState<BrowserActWorkflow[] | null>(null)
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000)
     return () => clearInterval(t)
   }, [])
 
-  // Chargement paresseux : aucun appel tant qu'aucun site n'est réglé sur BrowserAct.
-  const usesBrowserAct = rows.some((r) => r.engine === 'browseract')
-  useEffect(() => {
-    if (!usesBrowserAct || bots != null) return
-    const key = getApiKey('browseract').trim()
-    if (!key) { setBots([]); return }
-    let alive = true
-    listBrowserActWorkflows(key).then((list) => { if (alive) setBots(list ?? []) })
-    return () => { alive = false }
-  }, [usesBrowserAct, bots])
 
   const [draft, setDraft] = useState('')
   const [importing, setImporting] = useState(false)
@@ -367,8 +351,6 @@ export function SourceSitesConfig({ config, onChange }: {
                 mode={r.mode ?? ''}
                 auth={!!r.auth}
                 pageBudget={r.pageBudget}
-                botId={r.botId}
-                bots={bots}
                 stats={stats}
                 live={isLive(stats)}
                 now={now}
@@ -376,7 +358,6 @@ export function SourceSitesConfig({ config, onChange }: {
                 onEngine={(engine) => patchRow(i, engine === 'auto' ? { engine: undefined } : { engine })}
                 onMode={(mode) => patchRow(i, mode ? { mode } : { mode: undefined })}
                 onBudget={(pageBudget) => patchRow(i, { pageBudget })}
-                onBotId={(botId) => patchRow(i, { botId: botId.trim() || undefined })}
                 onAuth={() => setCredsRow((c) => (c === i ? null : i))}
                 onScrape={() => void scrapeSite(r)}
                 scraping={scrapingId === normalizeDomain(r.domain)}

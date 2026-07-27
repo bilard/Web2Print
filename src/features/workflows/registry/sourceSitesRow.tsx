@@ -6,7 +6,6 @@
 import { Trash2, Lock, LockOpen, Play, Loader2, RotateCcw } from 'lucide-react'
 import { agoShort, pct } from '@/features/priceWatch/dashboard/format'
 import { siteStatus, SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
-import type { BrowserActWorkflow } from '@/features/scraping/core/browserAct'
 
 export interface SiteRowStats {
   products?: number
@@ -46,7 +45,6 @@ const ENGINE_OPTIONS = [
   { value: 'jina', label: 'Jina' },
   { value: 'firecrawl', label: 'Firecrawl' },
   { value: 'brightdata', label: 'Bright Data' },
-  { value: 'browseract', label: 'BrowserAct (bot)' },
 ]
 
 /** Canal de relevé du site. Vide = les deux (comportement historique).
@@ -98,7 +96,7 @@ function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute', title?
   )
 }
 
-export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBudget, botId, bots, stats, live, now, onToggle, onEngine, onMode, onAuth, onBudget, onBotId, onScrape, scraping, onReset, onRemove }: {
+export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBudget, stats, live, now, onToggle, onEngine, onMode, onAuth, onBudget, onScrape, scraping, onReset, onRemove }: {
   domain: string
   enabled: boolean
   engine: string
@@ -106,10 +104,6 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
   mode?: string
   /** Pages RÉSERVÉES à ce site par run (vide = part du budget commun). */
   pageBudget?: number
-  /** ID du bot BrowserAct — obligatoire avec ce moteur, inutile avec les autres. */
-  botId?: string
-  /** Bots du compte BrowserAct. null = pas encore chargés ; [] = aucun (ou clé absente). */
-  bots?: BrowserActWorkflow[] | null
   /** Site à prix connectés (identifiants configurés). */
   auth: boolean
   stats: SiteRowStats
@@ -125,8 +119,6 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
   onAuth: () => void
   /** Réserve un budget de pages pour ce site (undefined = revenir au partage commun). */
   onBudget: (pages: number | undefined) => void
-  /** Renseigne l'ID du bot BrowserAct. */
-  onBotId: (botId: string) => void
   /** Lance une moisson de CE site seul (bouton ▶). */
   onScrape: () => void
   /** true = ce site est en cours de moisson manuelle (spinner). */
@@ -231,7 +223,9 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           {MODE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         <select
-          value={engine}
+          // Un moteur retiré depuis (ex. BrowserAct) laisserait un select VIDE :
+          // on retombe explicitement sur Auto, qui est le comportement réel.
+          value={ENGINE_OPTIONS.some((o) => o.value === engine) ? engine : 'auto'}
           onChange={(e) => onEngine(e.target.value)}
           title="Moteur de scraping (Auto = cascade standard)"
           className="shrink-0 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
@@ -252,35 +246,6 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
         {/* BrowserAct n'a pas de primitive « lis cette URL » : sans bot, il n'y a rien à
             exécuter. Le champ n'apparaît donc QUE pour ce moteur, et son absence se voit
             (bordure ambre) plutôt que d'échouer au premier fetch. */}
-        {engine === 'browseract' && (
-          // Liste des bots du compte dès qu'elle est connue : le champ demandait un
-          // identifiant opaque que rien n'affichait (le test de la clé ne donne que les
-          // noms). Repli en saisie libre si le compte est illisible — jamais de blocage.
-          bots && bots.length > 0 ? (
-            <select
-              value={botId ?? ''}
-              onChange={(e) => onBotId(e.target.value)}
-              title="Bot BrowserAct exécuté pour ce site. Il doit restituer le CONTENU de la page (les parseurs lisent du HTML) et accepter un paramètre « url ». Une exécution par page, facturée."
-              className={`shrink-0 max-w-[150px] bg-well border rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50 ${
-                (botId ?? '').trim() ? 'border-white/10' : 'border-amber-500/50'
-              }`}
-            >
-              <option value="">— choisir un bot —</option>
-              {bots.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
-          ) : (
-            <input
-              type="text"
-              value={botId ?? ''}
-              onChange={(e) => onBotId(e.target.value)}
-              placeholder={bots ? 'ID du bot' : 'chargement…'}
-              title="Identifiant du bot BrowserAct. Renseignez la clé dans Réglages › Connecteurs pour choisir dans la liste de vos bots."
-              className={`shrink-0 w-24 bg-well border rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50 ${
-                (botId ?? '').trim() ? 'border-white/10' : 'border-amber-500/50'
-              }`}
-            />
-          )
-        )}
       </div>
       {/* Niveau 3 — STATS sur UNE rangée : données (produits · prix · appariés) puis
           moisson (familles · moteur · dernier scrape). Elles occupaient deux rangées pour

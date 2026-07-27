@@ -163,7 +163,7 @@ export const API_KEYS: ApiKeyConfig[] = [
     id: 'browseract',
     label: 'BrowserAct',
     envVar: 'VITE_BROWSERACT_API_KEY',
-    description: 'Clé API BrowserAct — exécute des « bots » construits dans leur tableau de bord (Amazon, LinkedIn, sites à anti-bot dur). ⚠ Ce n’est pas un lecteur d’URL : chaque usage exige l’identifiant d’un bot.',
+    description: 'Clé API BrowserAct — exécute des « bots » construits dans leur tableau de bord (Amazon, LinkedIn, sites à anti-bot dur). ⚠ Ce n’est pas un moteur de scraping : uniquement le node « BrowserAct (bot) » d’un workflow.',
     links: {
       manage: 'https://www.browseract.com/dashboard',
       billing: 'https://www.browseract.com/pricing',
