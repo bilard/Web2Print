@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { candidateListingUrls, probeListingUrls } from './probeListings'
+import { candidateListingUrls, probeListingUrls, shapeMates, childListings } from './probeListings'
 
 /** Home d'enseigne : quelques catégories (forme répétée), des fiches (autre forme
  *  répétée), des pages maison uniques, des assets. Motifs calqués sur castorama.fr. */
@@ -86,5 +86,74 @@ describe('probeListingUrls', () => {
   it('rend [] quand rien ne contient de liste (jamais d’URL au hasard)', async () => {
     const found = await probeListingUrls(['https://x.fr/d'], fetchHtml, count)
     expect(found).toEqual([])
+  })
+})
+
+describe('shapeMates — une forme jugée liste vaut pour tous ses membres', () => {
+  // Cas RÉEL swap-europe : la sonde confirme `/fr/pieces/tondeuse` (32 produits) et le
+  // plan n'en retenait que celle-là, alors que ses sœurs de MÊME forme (`3:w`) sont
+  // autant de rayons du même gabarit.
+  const home = `
+    <a href="https://swap-europe.com/fr/pieces/tondeuse">Tondeuse</a>
+    <a href="https://swap-europe.com/fr/jardinage/tondeuse">Tondeuse jardin</a>
+    <a href="https://swap-europe.com/fr/pieces/souffleur">Souffleur</a>
+    <a href="https://swap-europe.com/fr/pieces-ryobi">Ryobi</a>
+    <a href="https://swap-europe.com/fr/mentions-legales">Mentions</a>`
+
+  it('rend les sœurs de forme, sans la page confirmée elle-même', () => {
+    const mates = shapeMates(home, 'swap-europe.com', ['https://swap-europe.com/fr/pieces/tondeuse'])
+    expect(mates).toEqual([
+      'https://swap-europe.com/fr/jardinage/tondeuse',
+      'https://swap-europe.com/fr/pieces/souffleur',
+    ])
+  })
+
+  it('n’attrape pas les formes NON confirmées', () => {
+    const mates = shapeMates(home, 'swap-europe.com', ['https://swap-europe.com/fr/pieces/tondeuse'])
+    expect(mates).not.toContain('https://swap-europe.com/fr/pieces-ryobi') // forme 2:w-w
+  })
+
+  it('rend [] sans page confirmée (jamais un plan inventé)', () => {
+    expect(shapeMates(home, 'swap-europe.com', [])).toEqual([])
+  })
+
+  it('exclut le légal/éditorial comme le reste du module', () => {
+    const mates = shapeMates(home, 'swap-europe.com', ['https://swap-europe.com/fr/pieces-ryobi'])
+    expect(mates.join()).not.toContain('mentions-legales')
+  })
+})
+
+describe('childListings — descente hiérarchique', () => {
+  // Markup RÉEL (condensé) de https://swap-europe.com/fr/debroussailleuse-et-coupe-bordure :
+  // sous-rayons, pagination en SEGMENT, variantes de tri en QUERY, et fiches produit.
+  const parent = 'https://swap-europe.com/fr/debroussailleuse-et-coupe-bordure'
+  const html = `
+    <a href="${parent}/moteur">Moteur</a>
+    <a href="${parent}/transmission">Transmission</a>
+    <a href="${parent}/2">2</a>
+    <a href="${parent}/18">18</a>
+    <a href="${parent}?sort=price_asc">Prix croissant</a>
+    <a href="${parent}?display=grid">Grille</a>
+    <a href="${parent}/moteur/bougie-nkg-bpmr7a/20282735">Bougie</a>
+    <a href="https://swap-europe.com/fr/pieces/tondeuse">Autre rayon</a>`
+
+  it('retient les sous-rayons, écarte la pagination par segment', () => {
+    expect(childListings(html, parent)).toEqual([`${parent}/moteur`, `${parent}/transmission`])
+  })
+
+  it('ne duplique pas le parent via ses variantes de tri (query ignorée)', () => {
+    expect(childListings(html, parent).some((u) => u.includes('sort=') || u.includes('display='))).toBe(false)
+  })
+
+  it('ne descend que d’UN niveau (une fiche produit n’est pas un rayon)', () => {
+    expect(childListings(html, parent).join()).not.toContain('20282735')
+  })
+
+  it('ignore un rayon frère qui n’est pas sous le parent', () => {
+    expect(childListings(html, parent).join()).not.toContain('/pieces/tondeuse')
+  })
+
+  it('rend [] sur une page sans hiérarchie', () => {
+    expect(childListings('<a href="/fr/autre">x</a>', parent)).toEqual([])
   })
 })

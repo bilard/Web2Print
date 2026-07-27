@@ -108,6 +108,88 @@ export function candidateListingUrls(html: string, domain: string, opts: Candida
   return out
 }
 
+
+/** Liens internes plausibles d'une page, dédupliqués et normalisés (origine + chemin). */
+function internalLinks(html: string, domain: string, base: string): URL[] {
+  const host = bare(domain)
+  const seen = new Set<string>()
+  const out: URL[] = []
+  for (const m of html.matchAll(/href\s*=\s*["']([^"'#\s]+)["']/gi)) {
+    const raw = m[1].trim()
+    if (!raw || /^(?:mailto|tel|javascript):/i.test(raw)) continue
+    let u: URL
+    try { u = new URL(raw, base) } catch { continue }
+    if (bare(u.hostname) !== host) continue
+    if (u.pathname === '/' || u.pathname.length < 4) continue
+    if (ASSET_RE.test(u.pathname)) continue
+    if (NON_LISTING_RE.test(u.pathname.toLowerCase())) continue
+    // Normalisé SANS query : `?sort=price_asc`, `?display=grid`, `?page=2` sont des vues
+    // de la MÊME page. Sans ça le plan se remplit de variantes de tri.
+    const clean = `${u.origin}${u.pathname}`
+    if (seen.has(clean)) continue
+    seen.add(clean)
+    out.push(u)
+  }
+  return out
+}
+
+/**
+ * URLs de la page d'accueil qui PARTAGENT la forme d'une page liste confirmée.
+ *
+ * ⚠ C'est le rendement principal du sondage, et il était jeté. `candidateListingUrls`
+ * regroupe par forme et n'en sonde qu'un représentant — précisément parce qu'« une seule
+ * sonde suffit à juger toute une forme ». Mais le plan ne retenait QUE le représentant :
+ * sur swap-europe, `/fr/pieces/tondeuse` était confirmée à 32 produits pendant que ses
+ * 20 sœurs de même forme (`/fr/jardinage/tondeuse`, `/fr/pieces/souffleur`…) étaient
+ * écartées. Juger une forme et n'en garder qu'un membre revient à sonder pour rien.
+ *
+ * Les URLs déjà confirmées sont exclues du retour (l'appelant les a déjà).
+ */
+export function shapeMates(html: string, domain: string, confirmed: string[], max = 200): string[] {
+  const shapes = new Set<string>()
+  for (const u of confirmed) {
+    try { shapes.add(pathShape(new URL(u).pathname)) } catch { /* URL exotique : ignorée */ }
+  }
+  if (shapes.size === 0) return []
+  const already = new Set(confirmed.map((u) => { try { const x = new URL(u); return `${bare(x.hostname)}${x.pathname.replace(/\/$/, '')}` } catch { return u } }))
+  const out: string[] = []
+  for (const u of internalLinks(html, domain, `https://www.${bare(domain)}/`)) {
+    if (!shapes.has(pathShape(u.pathname))) continue
+    if (already.has(`${bare(u.hostname)}${u.pathname.replace(/\/$/, '')}`)) continue
+    out.push(`${u.origin}${u.pathname}`)
+    if (out.length >= max) break
+  }
+  return out
+}
+
+/**
+ * Sous-rayons d'une page liste : liens du MÊME site dont le chemin est celui du parent
+ * PLUS EXACTEMENT un segment, ce segment n'étant pas purement numérique (ce serait la
+ * pagination `/tondeuse/2`). Signal universel de hiérarchie de catalogue — aucune
+ * convention par site.
+ *
+ * Extrait du HTML DÉJÀ récupéré par la sonde : la descente ne coûte aucune requête.
+ */
+export function childListings(html: string, parentUrl: string, max = 40): string[] {
+  let base: URL
+  try { base = new URL(parentUrl) } catch { return [] }
+  const parentSegs = base.pathname.split('/').filter(Boolean)
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const u of internalLinks(html, base.hostname, parentUrl)) {
+    const segs = u.pathname.split('/').filter(Boolean)
+    if (segs.length !== parentSegs.length + 1) continue
+    if (parentSegs.some((s, i) => s.toLowerCase() !== segs[i].toLowerCase())) continue
+    if (/^\d+$/.test(segs[segs.length - 1])) continue // pagination, pas un sous-rayon
+    const clean = `${u.origin}${u.pathname}`
+    if (seen.has(clean)) continue
+    seen.add(clean)
+    out.push(clean)
+    if (out.length >= max) break
+  }
+  return out
+}
+
 export interface ProbeOptions {
   /** Nombre maximum de pages ouvertes (chaque sonde = 1 fetch facturable). */
   maxProbes?: number
@@ -115,6 +197,9 @@ export interface ProbeOptions {
   minProducts?: number
   /** Nombre de listes suffisant pour arrêter le sondage. */
   enough?: number
+  /** Appelé pour chaque page CONFIRMÉE comme liste, avec son HTML déjà en main. Permet
+   *  d'en extraire les sous-rayons (`childListings`) sans une seule requête de plus. */
+  onListing?: (url: string, html: string) => void
   log?: (m: string) => void
 }
 
@@ -130,9 +215,13 @@ export async function probeListingUrls(
   countProducts: (html: string, url: string) => number,
   opts: ProbeOptions = {},
 ): Promise<string[]> {
-  const maxProbes = opts.maxProbes ?? 10
+  // Budgets ÉLARGIS : à 10 sondes / 6 listes, swap-europe ne retenait que 3 rayons sur
+  // les 6 que sa page d'accueil expose réellement — les trois autres étaient en 14ᵉ, 15ᵉ
+  // et 16ᵉ position. Une sonde est un fetch, mais elle n'a lieu qu'à l'OUVERTURE d'un
+  // balayage, et un plan plus large espace justement les ré-ouvertures.
+  const maxProbes = opts.maxProbes ?? 24
   const minProducts = opts.minProducts ?? 4
-  const enough = opts.enough ?? 6
+  const enough = opts.enough ?? 12
   const found: string[] = []
   let probes = 0
 
@@ -144,6 +233,7 @@ export async function probeListingUrls(
     const n = countProducts(html, url)
     if (n >= minProducts) {
       found.push(url)
+      opts.onListing?.(url, html)
       opts.log?.(`sonde : ${url} → ${n} produit(s), retenue comme page liste.`)
     }
   }

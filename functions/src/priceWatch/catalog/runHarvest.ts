@@ -10,7 +10,7 @@ import { parseListingGeneric } from './genericListing'
 import { parseListingDomCards } from './genericCards'
 import { extractCategoryLinks, selectCategories, keywordsForFamilies } from './categories'
 import { discoverGenericListings } from './genericDiscovery'
-import { candidateListingUrls, probeListingUrls } from './probeListings'
+import { candidateListingUrls, probeListingUrls, childListings, shapeMates } from './probeListings'
 import { MIN_PATHS_TO_TARGET } from './categoryTargeting'
 import {
   initCursor, currentTarget, advance, openSweep, pageDocId, pageSignature,
@@ -87,7 +87,41 @@ export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): 
   const candidates = candidateListingUrls(home, cfg.domain, { keywords })
   if (candidates.length === 0) return []
   deps.log?.(`${cfg.domain} : motif d'URL inconnu — sondage de ${candidates.length} lien(s) candidat(s).`)
-  return probeListingUrls(candidates, deps.fetchHtml, (html, url) => extractListingProducts(html, url).length, { log: deps.log })
+
+  // Les sous-rayons se lisent dans le HTML que la sonde a DÉJÀ récupéré : la descente
+  // hiérarchique ne coûte pas une requête de plus.
+  const children: string[] = []
+  const confirmed = await probeListingUrls(
+    candidates, deps.fetchHtml, (html, url) => extractListingProducts(html, url).length,
+    { log: deps.log, onListing: (url, html) => children.push(...childListings(html, url)) },
+  )
+  if (confirmed.length === 0) return []
+
+  // Une forme d'URL jugée liste vaut pour TOUS ses membres — c'est la raison d'être du
+  // regroupement par forme, et le plan n'en retenait que le représentant sondé.
+  const mates = shapeMates(home, cfg.domain, confirmed)
+  const plan = dedupeUrls([...confirmed, ...children, ...mates]).slice(0, MAX_PLAN)
+  deps.log?.(
+    `${cfg.domain} : ${confirmed.length} page(s) liste confirmée(s) → plan de ${plan.length} ` +
+    `(+${children.length} sous-rayon(s), +${mates.length} de même gabarit).`)
+  return targetPlan(cfg, deps, plan)
+}
+
+/** Plafond du plan de moisson — aligné sur la découverte par sitemap. */
+const MAX_PLAN = 250
+
+/** Dédup insensible au `www.` et au `/` final (deux formes = deux `pageDocId` = doublons). */
+function dedupeUrls(urls: string[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const u of urls) {
+    let key = u
+    try { const x = new URL(u); key = `${x.hostname.replace(/^www\./i, '')}${x.pathname.replace(/\/$/, '')}` } catch { /* URL exotique : clé brute */ }
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(u)
+  }
+  return out
 }
 
 /**
