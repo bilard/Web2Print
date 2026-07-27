@@ -15,6 +15,7 @@ import { buildMatrix, type SiteRef, type MatrixColumn } from '@/features/priceWa
 import { extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
 import { buildReport } from '@/features/priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '@/features/priceWatch/reportStore'
+import { resolveCompareColumns, hasNoJoinKey } from '@/features/priceWatch/catalog/compareColumns'
 import type { CompetitorListing } from '@/features/priceWatch/catalog/prestashop'
 
 interface CompareConfig {
@@ -114,6 +115,35 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     if (fromPort) ctx.log('info', `Liste reçue du node « Sites sources » : ${sites.length} site(s) actif(s).`)
     const rawRows = (inputs.products?.rows ?? []) as Record<string, unknown>[]
 
+    // Colonnes RÉSOLUES contre la feuille réellement branchée. Les valeurs par défaut du
+    // node (`reference`, `ean`, `price`…) ne sont jamais vides : si la source nomme ses
+    // en-têtes autrement, elles pointaient dans le vide et le run réussissait en
+    // n'appariant rien. Un choix explicite VALIDE prime toujours ; on ne devine que ce
+    // qui ne désignait aucune colonne existante.
+    const sheetColumns = (inputs.products?.columns ?? []).map((c) => ({ key: c.key, label: c.label }))
+    const resolved = resolveCompareColumns(sheetColumns, {
+      ref: config.refColumn, ref2: config.ref2Column, ean: config.eanColumn,
+      name: config.nameColumn, family: config.familyColumn, price: config.priceColumn,
+      description: config.descriptionColumn, url: config.urlColumn,
+    })
+    const col = {
+      ref: resolved.columns.ref, ref2: resolved.columns.ref2, ean: resolved.columns.ean,
+      name: resolved.columns.name, family: resolved.columns.family, price: resolved.columns.price,
+      description: resolved.columns.description, url: resolved.columns.url,
+    }
+    if (resolved.guessed.length > 0) {
+      ctx.log('warn', `Colonnes introuvables dans la feuille, retrouvées automatiquement : ${
+        resolved.guessed.map((f) => `${f} → « ${col[f]} »`).join(', ')}. Corrige la config du node pour figer le mapping.`)
+    }
+    if (resolved.missing.length > 0) {
+      ctx.log('warn', `Colonnes configurées absentes de la feuille et introuvables : ${resolved.missing.join(', ')}. En-têtes disponibles : ${sheetColumns.map((c) => c.key).join(', ').slice(0, 300)}`)
+    }
+    if (sheetColumns.length > 0 && hasNoJoinKey(resolved)) {
+      throw new Error(
+        'Aucune clé de jointure dans la feuille source (ni référence, ni référence 2, ni EAN) : ' +
+        `la comparaison ne peut rien apparier. En-têtes reçus : ${sheetColumns.map((c) => c.key).join(', ').slice(0, 300)}`)
+    }
+
     if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { matrix: toSheet([], []) } }
     if (rawRows.length === 0) { ctx.log('warn', 'Feuille de produits vide en entrée.'); return { matrix: toSheet([], []) } }
 
@@ -121,20 +151,20 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     const products: SourceProduct[] = []
     const seen = new Set<string>()
     for (const row of rawRows) {
-      const ref = cell(row, config.refColumn)
-      const ean = cell(row, config.eanColumn)
-      const name = cell(row, config.nameColumn) ?? ref ?? ean ?? ''
+      const ref = cell(row, col.ref)
+      const ean = cell(row, col.ean)
+      const name = cell(row, col.name) ?? ref ?? ean ?? ''
       const id = stableId(ref ?? ean ?? name)
       if (seen.has(id)) continue
       seen.add(id)
-      const priceRaw = cell(row, config.priceColumn)
+      const priceRaw = cell(row, col.price)
       const price = priceRaw != null ? parsePrice(priceRaw) : NaN
       products.push({
-        id, name, ref, ref2: cell(row, config.ref2Column), ean,
-        originRefs: extractOriginRefs(cell(row, config.descriptionColumn)),
+        id, name, ref, ref2: cell(row, col.ref2), ean,
+        originRefs: extractOriginRefs(cell(row, col.description)),
         price: Number.isNaN(price) ? undefined : price,
-        ...(cell(row, config.urlColumn) ? { url: cell(row, config.urlColumn) } as object : {}),
-        ...(cell(row, config.familyColumn) ? { family: cell(row, config.familyColumn) } as object : {}),
+        ...(cell(row, col.url) ? { url: cell(row, col.url) } as object : {}),
+        ...(cell(row, col.family) ? { family: cell(row, col.family) } as object : {}),
       })
     }
 
@@ -178,9 +208,9 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
 
     const vatRate = Math.max(0, (config.vatRate || 20)) / 100
     // En-têtes de sortie = noms de colonnes de la source (suffixés du concurrent).
+    // En-têtes de sortie : les noms RÉELS de la feuille, pas ceux configurés.
     const labels = {
-      ref: config.refColumn, ean: config.eanColumn, name: config.nameColumn,
-      family: config.familyColumn, price: config.priceColumn,
+      ref: col.ref, ean: col.ean, name: col.name, family: col.family, price: col.price,
     }
     const m = buildMatrix(products, siteRefs, indexBySite, { vatRate, labels })
     ctx.reportCount?.(m.matched)
