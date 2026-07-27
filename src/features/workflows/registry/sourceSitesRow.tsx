@@ -6,6 +6,7 @@
 import { Trash2, Lock, LockOpen, Play, Loader2, RotateCcw } from 'lucide-react'
 import { agoShort, pct } from '@/features/priceWatch/dashboard/format'
 import { siteStatus, SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
+import type { BrowserActWorkflow } from '@/features/scraping/core/browserAct'
 
 export interface SiteRowStats {
   products?: number
@@ -97,7 +98,7 @@ function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute', title?
   )
 }
 
-export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBudget, botId, stats, live, now, onToggle, onEngine, onMode, onAuth, onBudget, onBotId, onScrape, scraping, onReset, onRemove }: {
+export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBudget, botId, bots, stats, live, now, onToggle, onEngine, onMode, onAuth, onBudget, onBotId, onScrape, scraping, onReset, onRemove }: {
   domain: string
   enabled: boolean
   engine: string
@@ -107,6 +108,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
   pageBudget?: number
   /** ID du bot BrowserAct — obligatoire avec ce moteur, inutile avec les autres. */
   botId?: string
+  /** Bots du compte BrowserAct. null = pas encore chargés ; [] = aucun (ou clé absente). */
+  bots?: BrowserActWorkflow[] | null
   /** Site à prix connectés (identifiants configurés). */
   auth: boolean
   stats: SiteRowStats
@@ -250,16 +253,33 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
             exécuter. Le champ n'apparaît donc QUE pour ce moteur, et son absence se voit
             (bordure ambre) plutôt que d'échouer au premier fetch. */}
         {engine === 'browseract' && (
-          <input
-            type="text"
-            value={botId ?? ''}
-            onChange={(e) => onBotId(e.target.value)}
-            placeholder="ID du bot"
-            title="Identifiant du bot BrowserAct à exécuter pour ce site. Le test de la clé (Réglages › Connecteurs) liste vos bots. Le bot doit restituer le CONTENU de la page — une exécution par page, facturée."
-            className={`shrink-0 w-24 bg-well border rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50 ${
-              (botId ?? '').trim() ? 'border-white/10' : 'border-amber-500/50'
-            }`}
-          />
+          // Liste des bots du compte dès qu'elle est connue : le champ demandait un
+          // identifiant opaque que rien n'affichait (le test de la clé ne donne que les
+          // noms). Repli en saisie libre si le compte est illisible — jamais de blocage.
+          bots && bots.length > 0 ? (
+            <select
+              value={botId ?? ''}
+              onChange={(e) => onBotId(e.target.value)}
+              title="Bot BrowserAct exécuté pour ce site. Il doit restituer le CONTENU de la page (les parseurs lisent du HTML) et accepter un paramètre « url ». Une exécution par page, facturée."
+              className={`shrink-0 max-w-[150px] bg-well border rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50 ${
+                (botId ?? '').trim() ? 'border-white/10' : 'border-amber-500/50'
+              }`}
+            >
+              <option value="">— choisir un bot —</option>
+              {bots.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={botId ?? ''}
+              onChange={(e) => onBotId(e.target.value)}
+              placeholder={bots ? 'ID du bot' : 'chargement…'}
+              title="Identifiant du bot BrowserAct. Renseignez la clé dans Réglages › Connecteurs pour choisir dans la liste de vos bots."
+              className={`shrink-0 w-24 bg-well border rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50 ${
+                (botId ?? '').trim() ? 'border-white/10' : 'border-amber-500/50'
+              }`}
+            />
+          )
         )}
       </div>
       {/* Niveau 3 — STATS sur UNE rangée : données (produits · prix · appariés) puis

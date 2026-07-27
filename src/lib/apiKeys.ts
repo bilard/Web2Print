@@ -494,7 +494,9 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
           action: { label: 'Créer un bot', url: 'https://www.browseract.com/dashboard' },
         }
       }
-      return { status: 'ok', message: `Connecté — ${workflows.length} bot(s) : ${workflows.slice(0, 3).map((w) => w.name).join(', ')}${workflows.length > 3 ? '…' : ''}` }
+      // Le NOM ne suffit pas : c'est l'ID que réclament la carte de site et le node.
+      const named = workflows.slice(0, 3).map((w) => `${w.name} (${w.id})`).join(' · ')
+      return { status: 'ok', message: `Connecté — ${workflows.length} bot(s) : ${named}${workflows.length > 3 ? ' …' : ''}` }
     }
 
     if (id === 'scrapfly') {
