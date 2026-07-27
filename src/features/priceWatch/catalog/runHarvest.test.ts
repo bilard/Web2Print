@@ -1,5 +1,7 @@
 // Teste l'orchestration de moisson avec des E/S factices — aucun réseau, aucune BD.
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { harvestPass, planCategories, extractListingProducts, type HarvestDeps, type CompetitorConfig } from './runHarvest'
 import type { HarvestCursor } from './harvest'
 
@@ -162,5 +164,23 @@ describe('pagination par segment de chemin', () => {
     expect(deps.cursors.get('c')?.nextUrl).toBe('https://www.c.fr/1-courroies/3')
     const r2 = await harvestPass(cfg, deps, 10)
     expect(r2.productsIndexed).toBe(4) // pages 3 et 4
+  })
+})
+
+describe('extractListingProducts — non-régression sur les sites déjà couverts', () => {
+  const fixture = (name: string) =>
+    readFileSync(join(__dirname, '__fixtures__', `listing-${name}.html`), 'utf-8')
+
+  // La cascade est ce que ce correctif a changé : ces deux fixtures vérifient qu'un site
+  // servi par le palier PrestaShop et un site servi par le JSON-LD gagnent toujours.
+  it('jardimax (cartes PrestaShop) reste servi par le palier 1', () => {
+    const out = extractListingProducts(fixture('jardimax'), 'https://www.jardimax.com/')
+    expect(out.length).toBeGreaterThanOrEqual(2)
+    expect(out.every((p) => p.url.startsWith('http'))).toBe(true)
+  })
+
+  it('castorama (JSON-LD de page catégorie) reste servi par le palier 2', () => {
+    const out = extractListingProducts(fixture('castorama'), 'https://www.castorama.fr/')
+    expect(out.length).toBeGreaterThanOrEqual(2)
   })
 })
