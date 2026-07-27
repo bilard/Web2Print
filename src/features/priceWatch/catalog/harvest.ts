@@ -30,7 +30,20 @@ export interface HarvestCursor {
    *  repli `?page=N`, que les sites paginant par segment de chemin ignorent. Absente
    *  au début d'une catégorie et quand le thème n'expose pas `rel="next"`. */
   nextUrl?: string
+  /**
+   * Horodatage du dernier échec de PLANIFICATION (aucune catégorie trouvée).
+   *
+   * Sans lui, un site que la découverte ne sait pas lire repaie le sondage ENTIER à
+   * chaque tick — jusqu'à 24 requêtes pour rendre [] — et recommence au tick suivant,
+   * sur tous les concurrents à la fois. Le curseur mémorise donc l'échec et la
+   * planification est mise en veille le temps du délai de reprise.
+   */
+  planFailedAt?: number
 }
+
+/** Délai avant de re-tenter une planification qui n'a rien trouvé. Un site illisible ne
+ *  redevient pas lisible en une minute ; une relance MANUELLE (▶) l'ignore. */
+export const PLAN_RETRY_COOLDOWN_MS = 2 * 60 * 60 * 1000
 
 /** Plafond de pages par catégorie : garde-fou contre une pagination sans fin
  *  (page inexistante renvoyant la page 1). Cohérent avec le node list-products. */

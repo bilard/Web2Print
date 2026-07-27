@@ -38,6 +38,9 @@ export async function harvestOneSite(
 
   const cfg: CompetitorConfig = { siteId, domain: site.domain, families }
   const res = await harvestPass(cfg, {
+    // Relance MANUELLE : ignore la mise en veille de la découverte — l'utilisateur vient
+    // de changer un réglage (moteur, identifiants) et attend un re-sondage immédiat.
+    force: true,
     fetchHtml: fetcher.fetchHtml,
     loadCursor: async () => prevMeta?.cursor ?? null,
     saveCursor: (id, cursor) => saveCompetitorMeta(uid, watchId, id, { domain: site.domain, cursor }),

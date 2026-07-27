@@ -14,7 +14,7 @@ import { candidateListingUrls, probeListingUrls, childListings, shapeMates } fro
 import { MIN_PATHS_TO_TARGET } from './categoryTargeting'
 import {
   initCursor, currentTarget, advance, openSweep, pageDocId, pageSignature,
-  type HarvestCursor,
+  PLAN_RETRY_COOLDOWN_MS, type HarvestCursor,
 } from './harvest'
 import type { CompetitorListing } from './prestashop'
 
@@ -41,6 +41,12 @@ export interface HarvestDeps {
   /** Progression EN COURS de passe (toutes les N pages) → rafraîchit la méta live (jauge
    *  Balayage + heartbeat) pendant le run, sans attendre la fin. Optionnel. */
   onProgress?: (pagesFetched: number, productsIndexed: number, cursor: HarvestCursor) => void | Promise<void>
+  /** Ignore le délai de reprise après un échec de planification — la relance MANUELLE
+   *  (▶ d'un site) doit re-sonder tout de suite, l'utilisateur vient de changer un
+   *  réglage (moteur, identifiants). */
+  force?: boolean
+  /** Horloge injectable (tests). Défaut : `Date.now`. */
+  now?: () => number
   log?: (msg: string) => void
   signal?: AbortSignal
 }
@@ -186,14 +192,23 @@ export async function harvestPass(
 
   // Ouvrir ou rouvrir un balayage si nécessaire (premier passage, ou balayage terminé
   // → refresh sur un plan de catégories rafraîchi).
+  const now = (deps.now ?? Date.now)()
   if (!cursor || cursor.done) {
+    // Planification en veille après un échec récent : ne PAS repayer le sondage (jusqu'à
+    // 24 requêtes) à chaque tick sur un site que la découverte ne sait pas lire.
+    if (!deps.force && cursor?.planFailedAt != null && now - cursor.planFailedAt < PLAN_RETRY_COOLDOWN_MS) {
+      deps.log?.(`${cfg.domain} : découverte en veille (aucune catégorie trouvée il y a moins de ${Math.round(PLAN_RETRY_COOLDOWN_MS / 60000)} min) — relance manuelle ▶ pour re-sonder.`)
+      return { siteId: cfg.siteId, pagesFetched: 0, productsIndexed: 0, sweepComplete: true, cursor }
+    }
     const categories = await planCategories(cfg, deps)
     if (categories.length === 0) {
       deps.log?.(`${cfg.domain} : aucune catégorie cible trouvée (accueil injoignable ou familles absentes).`)
-      const empty = cursor ?? initCursor([])
+      const empty = { ...(cursor ?? initCursor([])), planFailedAt: now }
+      await deps.saveCursor(cfg.siteId, empty)
       return { siteId: cfg.siteId, pagesFetched: 0, productsIndexed: 0, sweepComplete: true, cursor: empty }
     }
-    cursor = cursor ? openSweep(cursor, categories) : initCursor(categories)
+    // Plan retrouvé : la veille n'a plus lieu d'être.
+    cursor = cursor ? { ...openSweep(cursor, categories), planFailedAt: undefined } : initCursor(categories)
     deps.log?.(`${cfg.domain} : balayage de ${categories.length} catégorie(s).`)
   }
 

@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { harvestPass, planCategories, extractListingProducts, type HarvestDeps, type CompetitorConfig } from './runHarvest'
-import type { HarvestCursor } from './harvest'
+import { PLAN_RETRY_COOLDOWN_MS, type HarvestCursor } from './harvest'
 
 const cfg: CompetitorConfig = { siteId: 'c', domain: 'c.fr', families: ['COURROIES'] }
 
@@ -182,5 +182,58 @@ describe('extractListingProducts — non-régression sur les sites déjà couver
   it('castorama (JSON-LD de page catégorie) reste servi par le palier 2', () => {
     const out = extractListingProducts(fixture('castorama'), 'https://www.castorama.fr/')
     expect(out.length).toBeGreaterThanOrEqual(2)
+  })
+})
+
+describe('mise en veille de la découverte après un échec', () => {
+  // Le sondage coûte jusqu'à 24 requêtes. Sur un site que la découverte ne sait pas lire,
+  // il rendait [] puis recommençait au tick SUIVANT — sur tous les concurrents à la fois.
+  const blind = { siteId: 'c', domain: 'c.fr', families: [] }
+
+  function counting() {
+    let fetches = 0
+    const d = memoryDeps(async (url) => { fetches++; return url === 'https://www.c.fr/' ? '<html>rien</html>' : null })
+    return { d, fetches: () => fetches }
+  }
+
+  it('le 2ᵉ tick ne repaie pas la découverte', async () => {
+    const { d, fetches } = counting()
+    await harvestPass(blind, d, 5)
+    const afterFirst = fetches()
+    expect(afterFirst).toBeGreaterThan(0)
+    const r = await harvestPass(blind, d, 5)
+    expect(fetches()).toBe(afterFirst) // aucune requête de plus
+    expect(r.pagesFetched).toBe(0)
+  })
+
+  it('l’échec est PERSISTÉ (sinon le tick suivant repart de zéro)', async () => {
+    const { d } = counting()
+    await harvestPass(blind, d, 5)
+    expect(d.cursors.get('c')?.planFailedAt).toBeGreaterThan(0)
+  })
+
+  it('la veille expire — la découverte re-tente après le délai', async () => {
+    const { d, fetches } = counting()
+    await harvestPass(blind, d, 5)
+    const afterFirst = fetches()
+    const later = Date.now() + PLAN_RETRY_COOLDOWN_MS + 1
+    await harvestPass(blind, { ...d, now: () => later }, 5)
+    expect(fetches()).toBeGreaterThan(afterFirst)
+  })
+
+  it('la relance MANUELLE (force) ignore la veille', async () => {
+    const { d, fetches } = counting()
+    await harvestPass(blind, d, 5)
+    const afterFirst = fetches()
+    await harvestPass(blind, { ...d, force: true }, 5)
+    expect(fetches()).toBeGreaterThan(afterFirst)
+  })
+
+  it('un plan retrouvé lève la veille', async () => {
+    const d = memoryDeps(fakeSite({ 'https://www.c.fr/1-courroies': 1 }))
+    d.cursors.set('c', { categories: [], catIndex: 0, page: 1, sweeps: 0, done: true, planFailedAt: 1 })
+    const r = await harvestPass({ ...blind, families: ['COURROIES'] }, { ...d, now: () => PLAN_RETRY_COOLDOWN_MS + 2 }, 5)
+    expect(r.productsIndexed).toBeGreaterThan(0)
+    expect(d.cursors.get('c')?.planFailedAt).toBeUndefined()
   })
 })
