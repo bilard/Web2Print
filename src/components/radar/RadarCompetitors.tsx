@@ -16,7 +16,10 @@ export function RadarCompetitors({ cockpit, landscape = false }: { cockpit: Cock
       </div>
       <ul className="divide-y" style={{ borderColor: 'var(--radar-hair)' }}>
         {items.map((c) => {
-          const aggressive = c.avgGapPct != null && c.avgGapPct < 0
+          // Médiane (repli moyenne pour les rapports antérieurs) : la moyenne d'un ratio
+          // non borné en haut dérive sur quelques appariements aberrants.
+          const gap = c.medianGapPct ?? c.avgGapPct
+          const aggressive = gap != null && gap < 0
           return (
             <li key={c.siteId} className="flex items-center gap-3 py-2.5">
               <div className="min-w-0 flex-1">
@@ -26,7 +29,7 @@ export function RadarCompetitors({ cockpit, landscape = false }: { cockpit: Cock
                 </p>
               </div>
               <p className="radar-tnum shrink-0 text-[15px] font-semibold" style={{ color: aggressive ? 'var(--radar-bad)' : 'var(--radar-good)' }}>
-                {fmtGapPct(c.avgGapPct)}
+                {fmtGapPct(gap)}
               </p>
             </li>
           )

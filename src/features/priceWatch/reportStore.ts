@@ -224,7 +224,7 @@ export async function saveCatalogReport(
       dearerThanMe: report.kpis.dearerThanMe,
       aligned: report.kpis.aligned,
       productsUndercut: report.kpis.productsUndercut,
-      comp: report.byCompetitor.map((c) => ({ s: c.siteId, g: c.avgGapPct })),
+      comp: report.byCompetitor.map((c) => ({ s: c.siteId, g: c.avgGapPct, gm: c.medGapPct ?? null })),
       pi: report.kpis.priceIndex ?? null,
     }
     const hRef = doc(db, reportHistoryDoc(uid, watchId))

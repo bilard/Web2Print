@@ -275,12 +275,18 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
         cheaperRate: matched > 0 ? cheaper / matched : 0,
         ruptures: s.ruptures,
         avgGapPct: active ? mean(gaps) : s.avgGapPct,
-        medianGapPct: median(gaps),
+        // Hors filtre, la médiane vient de l'agrégat SERVEUR (calculé sur TOUS les
+        // produits appariés, avant le plafond PRODUCT_CAP) : recalculée ici elle
+        // hériterait du biais décrit en tête de fichier. Repli sur l'échantillon pour
+        // les rapports persistés avant `medGapPct`.
+        medianGapPct: active ? median(gaps) : (s.medGapPct ?? median(gaps)),
         minGapPct: gaps.length ? Math.min(...gaps) : null,
         maxGapPct: gaps.length ? Math.max(...gaps) : null,
       }
     })
-    .sort((a, b) => (a.avgGapPct ?? 0) - (b.avgGapPct ?? 0))
+    // Trié sur la MÉDIANE : la moyenne d'un ratio non borné en haut classe en tête
+    // un concurrent qui n'a que quelques appariements aberrants.
+    .sort((a, b) => (a.medianGapPct ?? 0) - (b.medianGapPct ?? 0))
 
   // Familles (centré produit, sur la vue).
   const famAgg = new Map<string, { n: number; undercut: number; gaps: number[] }>()
@@ -393,7 +399,8 @@ export function sparkSeries(history: KpiHistoryPoint[]): { undercut: number[]; h
 
 export interface CompetitorSeries { siteId: string; domain: string; points: (number | null)[] }
 
-/** Écart moyen par concurrent dans le temps (depuis history[].comp). null = trou (jamais 0).
+/** Écart par concurrent dans le temps (depuis history[].comp) : MÉDIANE quand le point
+ *  la porte (`gm`), moyenne pour les points antérieurs. null = trou (jamais 0).
  *
  *  ⚠ Filtré sur la PRÉSENCE de `pi`, pas seulement de `comp`. Les points écrits avant
  *  l'assainissement de l'axe temps portaient `comp` mais provenaient pour beaucoup de
@@ -412,7 +419,8 @@ export function competitorSeries(
     domain: s.domain,
     points: pts.map((h) => {
       const found = h.comp?.find((c) => c.s === s.siteId)
-      return found ? found.g : null
+      // `gm` (médiane) prime ; `g` (moyenne) ne sert qu'aux points écrits avant elle.
+      return found ? (found.gm ?? found.g) : null
     }),
   }))
   return { at, series }

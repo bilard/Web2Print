@@ -149,3 +149,46 @@ describe('auditListings', () => {
     expect(auditListings([]).pctPrice).toBe(0)
   })
 })
+
+describe('medGapPct — écart de position robuste', () => {
+  // Reproduit le cas prod : sos-accessoire affichait « son écart +313,7 % » sur 32
+  // produits appariés. La moyenne est ici structurellement fausse — l'écart est un
+  // RATIO, non borné vers le haut (lot de 10 face à l'unité, variante mal appariée)
+  // alors que comparePrices REJETTE déjà tout écart sous −60 % comme erreur de parsing.
+  const site: SiteRef[] = [{ siteId: 's', domain: 's.fr' }]
+
+  /** n produits à mon prix 100 HT ; le concurrent affiche `pct` % d'écart HT. */
+  function scenario(gapsPct: number[]) {
+    const products: SourceProduct[] = gapsPct.map((_, i) => ({
+      id: `p${i}`, name: `Produit ${i}`, ref: `REF${i}`, price: 100,
+    }))
+    const listings: CompetitorListing[] = gapsPct.map((g, i) =>
+      // Prix affiché TTC (défaut B2C) → comparePrices le ramène en HT via la TVA 20 %.
+      listing({ ref: `REF${i}`, price: Math.round(100 * (1 + g / 100) * 1.2 * 100) / 100, url: `https://s.fr/${i}.html` }))
+    return buildReport(products, site, new Map([['s', listings]]))
+  }
+
+  it('quelques valeurs extrêmes emportent la moyenne, pas la médiane', () => {
+    // 29 produits à +50 %, 3 aberrations à +2900 % → moyenne ≈ +317 %, médiane +50 %.
+    const gaps = [...Array(29).fill(50), 2900, 2900, 2900]
+    const s = scenario(gaps).byCompetitor[0]
+    expect(s.matched).toBe(32)
+    expect(s.avgGapPct).toBeGreaterThan(300)   // le chiffre qui s'affichait en prod
+    expect(s.medGapPct).toBeCloseTo(50, 0)     // la position réelle du concurrent
+  })
+
+  it('sans valeur extrême, médiane et moyenne concordent', () => {
+    const s = scenario([-10, 0, 10]).byCompetitor[0]
+    expect(s.medGapPct).toBeCloseTo(0, 0)
+    expect(Math.abs((s.avgGapPct ?? 0) - (s.medGapPct ?? 0))).toBeLessThan(1)
+  })
+
+  it('médiane d’un effectif PAIR = moyenne des deux valeurs centrales', () => {
+    expect(scenario([0, 10, 20, 30]).byCompetitor[0].medGapPct).toBeCloseTo(15, 0)
+  })
+
+  it('null — et non 0 — quand aucun produit n’est chiffré', () => {
+    const r = buildReport([{ id: 'x', name: 'Vis' }], site, new Map([['s', []]]))
+    expect(r.byCompetitor[0].medGapPct).toBeNull()
+  })
+})

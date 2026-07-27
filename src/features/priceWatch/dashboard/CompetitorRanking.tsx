@@ -1,6 +1,7 @@
 // Benchmark concurrentiel dense : un concurrent par ligne, trié par agressivité
-// (écart moyen le plus négatif = casse les prix le plus). avgGapPct est FIABLE (agrégé
-// serveur) ; médiane/plage sont recalculées (biais possible si truncated → mention).
+// (écart MÉDIAN le plus négatif = casse les prix le plus). Moyenne et médiane sont
+// agrégées serveur hors filtre (fiables même si `truncated`) ; sous filtre elles sont
+// recalculées sur l'échantillon, donc biaisées quand le rapport est tronqué.
 import { Link2, TrendingDown, Sigma, AlignCenterHorizontal, PackageX } from 'lucide-react'
 import type { Cockpit, CockpitFilter, CompetitorAnalytics } from './analytics'
 import { pct } from './format'
@@ -12,8 +13,8 @@ const gapClass = (v: number | null) =>
 const HEAD_COLS = [
   { Icon: Link2, color: 'text-indigo-400', tip: 'Appariés : tes produits retrouvés chez ce concurrent' },
   { Icon: TrendingDown, color: 'text-rose-400', tip: '« Me bat » : % de produits où ce concurrent est MOINS CHER que toi' },
-  { Icon: Sigma, color: 'text-sky-400', tip: 'Écart de prix MOYEN (négatif = il est moins cher en moyenne)' },
-  { Icon: AlignCenterHorizontal, color: 'text-violet-400', tip: 'Écart de prix MÉDIAN (ignore les valeurs extrêmes)' },
+  { Icon: Sigma, color: 'text-sky-400', tip: 'Écart de prix MOYEN — indicatif seulement : quelques appariements aberrants (lot vs unité) le tirent vers le haut' },
+  { Icon: AlignCenterHorizontal, color: 'text-violet-400', tip: 'Écart de prix MÉDIAN — la position réelle du concurrent (ignore les valeurs extrêmes). C’est cette colonne qui trie le tableau.' },
   { Icon: PackageX, color: 'text-amber-400', tip: 'Ruptures de stock chez ce concurrent (opportunités pour toi)' },
 ]
 

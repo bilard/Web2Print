@@ -71,12 +71,41 @@ export interface CompetitorStat {
   /** Produits où CE concurrent est moins cher que moi. */
   cheaper: number
   ruptures: number
-  /** Écart % moyen (concurrent vs moi) sur les produits chiffrés. null si aucun. */
+  /** Écart % MOYEN (concurrent vs moi) sur les produits chiffrés. null si aucun.
+   *  ⚠ Conservé pour les rapports déjà persistés et l'historique — ne PAS l'afficher :
+   *  cf. `medGapPct`, qui est la statistique de position à présenter. */
   avgGapPct: number | null
+  /**
+   * Écart % MÉDIAN (concurrent vs moi) sur les produits chiffrés. null si aucun.
+   *
+   * C'est le chiffre à afficher. La moyenne est structurellement fausse ici : l'écart
+   * est un RATIO, non borné vers le haut (un lot de 10 face à votre unité, une variante
+   * plus chère mal appariée → +900 %) alors que `comparePrices` REJETTE déjà tout écart
+   * sous −60 % comme erreur de parsing. La distribution est donc tronquée d'un seul
+   * côté, et la moyenne dérive vers le haut. Relevé en prod : sos-accessoire affichait
+   * « +313,7 % » sur 32 produits — 3 valeurs aberrantes suffisent à produire ce chiffre.
+   *
+   * Agrégé AVANT `rankProducts` (donc sur TOUS les produits appariés) : contrairement
+   * aux stats recalculées depuis `products[].competitors[]`, il reste fiable quand le
+   * rapport est tronqué à PRODUCT_CAP.
+   *
+   * FACULTATIF : les rapports persistés AVANT son introduction n'en ont pas — les
+   * surfaces d'affichage retombent alors sur `avgGapPct`.
+   */
+  medGapPct?: number | null
   /** Taux de remplissage des champs sur les fiches collectées (popup d'audit). */
   audit: CompetitorAudit
   /** Durée de moisson (ms) : dernière passe + cumul. Absent si jamais mesuré. */
   harvest?: { lastMs: number; cumulMs: number; progress: number; sweeps: number }
+}
+
+/** Médiane d'écarts %, arrondie au dixième. null si aucun écart chiffré. */
+function medianPct(gaps: number[]): number | null {
+  if (gaps.length === 0) return null
+  const s = [...gaps].sort((a, b) => a - b)
+  const mid = Math.floor(s.length / 2)
+  const m = s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2
+  return Math.round(m * 10) / 10
 }
 
 /** Taux de remplissage des champs attendus sur les fiches collectées d'un site. */
@@ -199,8 +228,8 @@ export function buildReport(
   const lookups = new Map(sites.map((s) => [s.siteId, buildMemoryIndex(indexBySite.get(s.siteId) ?? [])]))
 
   const rows: ProductRow[] = []
-  const stat = new Map<string, CompetitorStat & { _gapSum: number; _gapN: number }>()
-  for (const s of sites) stat.set(s.siteId, { siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, audit: auditListings(indexBySite.get(s.siteId) ?? []), harvest: opts.harvestBySite?.get(s.siteId), _gapSum: 0, _gapN: 0 })
+  const stat = new Map<string, CompetitorStat & { _gapSum: number; _gapN: number; _gaps: number[] }>()
+  for (const s of sites) stat.set(s.siteId, { siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, medGapPct: null, audit: auditListings(indexBySite.get(s.siteId) ?? []), harvest: opts.harvestBySite?.get(s.siteId), _gapSum: 0, _gapN: 0, _gaps: [] })
 
   const kpis: ReportKpis = {
     products: 0, matchedExact: 0, matchedOriginOnly: 0, sites: sites.length,
@@ -222,7 +251,7 @@ export function buildReport(
       if (stock === 'out-of-stock') { st.ruptures++; kpis.ruptures++ }
       if (gap != null) {
         kpis.comparisons++
-        st._gapSum += gap; st._gapN++
+        st._gapSum += gap; st._gapN++; st._gaps.push(gap)
         if (gap < -alignedPct) { kpis.cheaperThanMe++; st.cheaper++ }
         else if (gap > alignedPct) kpis.dearerThanMe++
         else kpis.aligned++
@@ -260,6 +289,7 @@ export function buildReport(
   const byCompetitor: CompetitorStat[] = [...stat.values()].map((s) => ({
     siteId: s.siteId, domain: s.domain, matched: s.matched, cheaper: s.cheaper, ruptures: s.ruptures,
     avgGapPct: s._gapN ? Math.round((s._gapSum / s._gapN) * 10) / 10 : null,
+    medGapPct: medianPct(s._gaps),
     audit: s.audit,
     ...(s.harvest ? { harvest: s.harvest } : {}),
   }))

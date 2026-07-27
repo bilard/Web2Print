@@ -99,10 +99,14 @@ export interface KpiHistoryPoint {
   dearerThanMe: number
   aligned: number
   productsUndercut: number
-  /** Écart moyen (avgGapPct FIABLE, agrégé serveur) par concurrent à cette analyse.
-   *  `s` = siteId, `g` = écart % (null si aucun prix). ABSENT des points écrits avant
-   *  cette feature → à traiter comme un trou dans la courbe (jamais 0). */
-  comp?: { s: string; g: number | null }[]
+  /** Écart par concurrent à cette analyse (agrégé serveur, donc fiable même si le
+   *  rapport est tronqué). `s` = siteId, `g` = écart % MOYEN, `gm` = écart % MÉDIAN.
+   *  ABSENT des points écrits avant cette feature → à traiter comme un trou dans la
+   *  courbe (jamais 0).
+   *  ⚠ `gm` n'existe que depuis l'introduction de la médiane : la courbe préfère `gm`
+   *  et retombe sur `g` pour les points antérieurs. La moyenne dérive vers le haut
+   *  (ratio non borné en haut, tronqué à −60 % en bas) — cf. `CompetitorStat.medGapPct`. */
+  comp?: { s: string; g: number | null; gm?: number | null }[]
   /** Indice tarif base 100 vs médiane marché (kpis.priceIndex) à cette analyse.
    *  Absent des points antérieurs → trou dans la courbe, jamais 0. */
   pi?: number | null

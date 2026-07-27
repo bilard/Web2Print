@@ -112,6 +112,7 @@ export function SourceSitesConfig({ config, onChange }: {
       // Comparaison PRIX (ce que la veille cherche) — déjà agrégée par « Comparer ».
       cheaper: stat?.cheaper,
       avgGapPct: stat?.avgGapPct,
+      medGapPct: stat?.medGapPct,
       updatedAt: meta?.updatedAt,
       lastEngine: meta?.lastEngine,
       harvestProgress: meta?.harvestProgress,

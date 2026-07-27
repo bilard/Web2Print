@@ -1,14 +1,21 @@
-// functions/src/priceWatch/catalog/report.ts
-// Synthèse du comparatif catalogue pour le TABLEAU DE BORD. PUR. Jumeau SERVEUR de
-// src/features/priceWatch/catalog/report.ts — garder IDENTIQUE (le dashboard client
-// relit indistinctement les rapports écrits par le client ET par le cron serveur).
+// src/features/priceWatch/catalog/report.ts
+// Synthèse du comparatif catalogue pour le TABLEAU DE BORD. PUR.
+//
+// Le dashboard ne doit JAMAIS recalculer à partir des lignes brutes (à l'échelle
+// 75 000 × N concurrents, c'est le mur mémoire/1 Mo déjà documenté). Ce module
+// pré-calcule, au moment de la comparaison, des résumés BORNÉS : KPIs, stats par
+// concurrent (≤ N sites), et une liste centrée PRODUIT que la persistance range et
+// plafonne. L'alerte reine : « un concurrent est moins cher que moi ».
 import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct } from './match'
 import type { SiteRef } from './matrix'
 import type { CompetitorListing } from './prestashop'
 
+// Types internes au module (référencés par les interfaces exportées ci-dessous ;
+// non exportés — le dashboard lit ces champs via ProductRow, cf. knip).
 type MatchKind = 'exact-ean' | 'exact-ref' | 'origin'
 type Stock = 'in-stock' | 'out-of-stock' | 'on-order'
 
+/** Relevé d'UN concurrent pour un produit (structuré, prêt pour la carte produit). */
 interface CompetitorCell {
   siteId: string
   domain: string
@@ -18,11 +25,13 @@ interface CompetitorCell {
   priceTtc: number | null
   priceHt: number | null
   listPriceTtc: number | null
+  /** Écart % du concurrent vs mon prix HT. < 0 = le concurrent est moins cher que moi. */
   gapPct: number | null
   stock: Stock | null
   match: MatchKind
 }
 
+/** Un produit apparié à ≥ 1 concurrent, avec ses relevés (centré produit → mobile). */
 export interface ProductRow {
   id: string
   name: string
@@ -33,11 +42,20 @@ export interface ProductRow {
   /** Lien de la fiche produit sur le site de la source (null si non renseigné). */
   sourceUrl: string | null
   competitors: CompetitorCell[]
+  /** Écart le plus négatif (concurrent le moins cher face à moi). null si aucun prix. */
   bestGapPct: number | null
+  /** Au moins un concurrent est moins cher que moi (hors bande d'alignement). */
   undercut: boolean
 }
 
+/**
+ * Audit de la donnée COLLECTÉE chez un concurrent (indépendant de l'appariement) :
+ * sur l'ensemble des fiches indexées du site, quel pourcentage porte chaque champ
+ * attendu. Rend visible « scrape complet » vs « champ manquant » vs « rien collecté ».
+ * Taux 0-100 (arrondis, compacts en base).
+ */
 export interface CompetitorAudit {
+  /** Nombre de fiches indexées pour ce site. */
   indexed: number
   pctPrice: number
   pctListPrice: number
@@ -51,13 +69,47 @@ export interface CompetitorStat {
   siteId: string
   domain: string
   matched: number
+  /** Produits où CE concurrent est moins cher que moi. */
   cheaper: number
   ruptures: number
+  /** Écart % MOYEN (concurrent vs moi) sur les produits chiffrés. null si aucun.
+   *  ⚠ Conservé pour les rapports déjà persistés et l'historique — ne PAS l'afficher :
+   *  cf. `medGapPct`, qui est la statistique de position à présenter. */
   avgGapPct: number | null
+  /**
+   * Écart % MÉDIAN (concurrent vs moi) sur les produits chiffrés. null si aucun.
+   *
+   * C'est le chiffre à afficher. La moyenne est structurellement fausse ici : l'écart
+   * est un RATIO, non borné vers le haut (un lot de 10 face à votre unité, une variante
+   * plus chère mal appariée → +900 %) alors que `comparePrices` REJETTE déjà tout écart
+   * sous −60 % comme erreur de parsing. La distribution est donc tronquée d'un seul
+   * côté, et la moyenne dérive vers le haut. Relevé en prod : sos-accessoire affichait
+   * « +313,7 % » sur 32 produits — 3 valeurs aberrantes suffisent à produire ce chiffre.
+   *
+   * Agrégé AVANT `rankProducts` (donc sur TOUS les produits appariés) : contrairement
+   * aux stats recalculées depuis `products[].competitors[]`, il reste fiable quand le
+   * rapport est tronqué à PRODUCT_CAP.
+   *
+   * FACULTATIF : les rapports persistés AVANT son introduction n'en ont pas — les
+   * surfaces d'affichage retombent alors sur `avgGapPct`.
+   */
+  medGapPct?: number | null
+  /** Taux de remplissage des champs sur les fiches collectées (popup d'audit). */
   audit: CompetitorAudit
+  /** Durée de moisson (ms) : dernière passe + cumul. Absent si jamais mesuré. */
   harvest?: { lastMs: number; cumulMs: number; progress: number; sweeps: number }
 }
 
+/** Médiane d'écarts %, arrondie au dixième. null si aucun écart chiffré. */
+function medianPct(gaps: number[]): number | null {
+  if (gaps.length === 0) return null
+  const s = [...gaps].sort((a, b) => a - b)
+  const mid = Math.floor(s.length / 2)
+  const m = s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2
+  return Math.round(m * 10) / 10
+}
+
+/** Taux de remplissage des champs attendus sur les fiches collectées d'un site. */
 export function auditListings(listings: CompetitorListing[]): CompetitorAudit {
   const indexed = listings.length
   if (!indexed) return { indexed: 0, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 }
@@ -75,27 +127,48 @@ export function auditListings(listings: CompetitorListing[]): CompetitorAudit {
 }
 
 export interface ReportKpis {
+  /** Produits appariés à ≥ 1 concurrent. */
   products: number
   matchedExact: number
   matchedOriginOnly: number
   sites: number
+  /** Comparaisons produit×concurrent chiffrées des deux côtés. */
   comparisons: number
+  /** Comparaisons où le concurrent est moins cher que moi (alerte). */
   cheaperThanMe: number
   aligned: number
+  /** Comparaisons où JE suis moins cher (bon positionnement). */
   dearerThanMe: number
   ruptures: number
+  /** Produits dont AU MOINS un concurrent est moins cher que moi. */
   productsUndercut: number
-  /** INDICE TARIF base 100 vs la MÉDIANE du marché (cf. jumeau client pour le détail).
-   *  Calculé sur le catalogue COMPLET donc FIABLE. Tarifs source non remisés : indice de
-   *  positionnement CATALOGUE, jamais « compétitivité ». */
+  /**
+   * INDICE TARIF base 100 vs la MÉDIANE du marché : médiane, sur les produits chiffrés,
+   * de (mon prix ÷ prix médian des concurrents appariés) × 100.
+   *   100 = je suis au niveau du marché · 105 = je suis 5 % au-dessus · 95 = 5 % en dessous.
+   *
+   * ⚠ Calculé ICI, sur le catalogue COMPLET, donc FIABLE — contrairement à toute
+   * statistique recalculée par le dashboard depuis `products[]`, plafonné et rangé par
+   * écart le plus négatif (cf. en-tête d'analytics.ts).
+   *
+   * ⚠ Les prix source sont des TARIFS non remisés : c'est un indice de positionnement
+   * CATALOGUE, pas un indice net client. Libellé « indice tarif » en UI, jamais « indice
+   * de compétitivité ».
+   *
+   * Médiane des ratios (et non ratio des sommes) : sans volume de ventes, un panier
+   * moyen surpondérerait mécaniquement les articles chers. La médiane est l'indice
+   * non pondéré robuste aux valeurs aberrantes. Absent des rapports antérieurs.
+   */
   priceIndex?: number | null
-  /** Même indice vs le MEILLEUR prix marché (exposition au discounter). */
+  /** Même indice, mais vs le MEILLEUR prix marché (le concurrent le moins cher).
+   *  Toujours ≥ priceIndex. Mesure l'exposition au discounter, pas au marché médian. */
   priceIndexBest?: number | null
 }
 
 export interface CatalogReport {
   kpis: ReportKpis
   byCompetitor: CompetitorStat[]
+  /** Tous les produits appariés (la persistance range et plafonne avant écriture). */
   products: ProductRow[]
 }
 
@@ -107,7 +180,11 @@ function median(xs: number[]): number | null {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2
 }
 
-/** Indices tarifaires base 100 depuis les produits appariés COMPLETS (cf. ReportKpis). */
+/**
+ * Indices tarifaires base 100 depuis les produits appariés COMPLETS (cf. ReportKpis).
+ * Un produit ne contribue que s'il a mon prix > 0 et au moins un prix concurrent > 0 —
+ * un prix nul/absent ferait diverger le ratio.
+ */
 function priceIndices(rows: ProductRow[]): { priceIndex: number | null; priceIndexBest: number | null } {
   const vsMedian: number[] = []
   const vsBest: number[] = []
@@ -131,10 +208,17 @@ function matchKindOf(proof: { key: { origin: boolean; kind: string }; evidence: 
 
 interface BuildReportOptions {
   vatRate?: number
+  /** Bande d'indifférence (%) sous laquelle deux prix sont « alignés ». Défaut : 1. */
   alignedPct?: number
+  /** Durées de moisson par siteId (dernière passe + cumul), pour l'audit. */
   harvestBySite?: Map<string, { lastMs: number; cumulMs: number; progress: number; sweeps: number }>
 }
 
+/**
+ * Construit la synthèse dashboard depuis les produits source + l'index concurrent.
+ * Réutilise l'appariement par égalité exacte (matchProduct) et la comparaison de prix
+ * (comparePrices) — jamais d'approximation. Structuré centré produit.
+ */
 export function buildReport(
   products: SourceProduct[],
   sites: SiteRef[],
@@ -145,8 +229,8 @@ export function buildReport(
   const lookups = new Map(sites.map((s) => [s.siteId, buildMemoryIndex(indexBySite.get(s.siteId) ?? [])]))
 
   const rows: ProductRow[] = []
-  const stat = new Map<string, CompetitorStat & { _gapSum: number; _gapN: number }>()
-  for (const s of sites) stat.set(s.siteId, { siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, audit: auditListings(indexBySite.get(s.siteId) ?? []), harvest: opts.harvestBySite?.get(s.siteId), _gapSum: 0, _gapN: 0 })
+  const stat = new Map<string, CompetitorStat & { _gapSum: number; _gapN: number; _gaps: number[] }>()
+  for (const s of sites) stat.set(s.siteId, { siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, medGapPct: null, audit: auditListings(indexBySite.get(s.siteId) ?? []), harvest: opts.harvestBySite?.get(s.siteId), _gapSum: 0, _gapN: 0, _gaps: [] })
 
   const kpis: ReportKpis = {
     products: 0, matchedExact: 0, matchedOriginOnly: 0, sites: sites.length,
@@ -168,7 +252,7 @@ export function buildReport(
       if (stock === 'out-of-stock') { st.ruptures++; kpis.ruptures++ }
       if (gap != null) {
         kpis.comparisons++
-        st._gapSum += gap; st._gapN++
+        st._gapSum += gap; st._gapN++; st._gaps.push(gap)
         if (gap < -alignedPct) { kpis.cheaperThanMe++; st.cheaper++ }
         else if (gap > alignedPct) kpis.dearerThanMe++
         else kpis.aligned++
@@ -206,6 +290,7 @@ export function buildReport(
   const byCompetitor: CompetitorStat[] = [...stat.values()].map((s) => ({
     siteId: s.siteId, domain: s.domain, matched: s.matched, cheaper: s.cheaper, ruptures: s.ruptures,
     avgGapPct: s._gapN ? Math.round((s._gapSum / s._gapN) * 10) / 10 : null,
+    medGapPct: medianPct(s._gaps),
     audit: s.audit,
     ...(s.harvest ? { harvest: s.harvest } : {}),
   }))
@@ -213,6 +298,7 @@ export function buildReport(
   return { kpis, byCompetitor, products: rows }
 }
 
+/** Range les produits par écart le plus négatif (les plus « sous-cotés » d'abord). */
 export function rankProducts(rows: ProductRow[]): ProductRow[] {
   return [...rows].sort((a, b) => {
     const av = a.bestGapPct ?? Infinity

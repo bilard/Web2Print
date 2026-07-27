@@ -24,13 +24,16 @@ export function RadarBenchmark({ cockpit }: { cockpit: Cockpit }) {
       </div>
       <ul className="space-y-3">
         {items.map((c) => {
-          const aggressive = c.avgGapPct != null && c.avgGapPct < 0
+          // Médiane (repli moyenne pour les rapports antérieurs) : la moyenne d'un ratio
+          // non borné en haut dérive sur quelques appariements aberrants.
+          const gap = c.medianGapPct ?? c.avgGapPct
+          const aggressive = gap != null && gap < 0
           return (
             <li key={c.siteId} className="radar-inset px-3 py-2.5">
               <div className="flex items-center justify-between">
                 <span className="truncate pr-2 text-[13px] font-medium">{c.domain}</span>
                 <span className="radar-tnum shrink-0 text-[15px] font-bold" style={{ color: aggressive ? 'var(--radar-bad)' : 'var(--radar-good)' }}>
-                  {fmtGapPct(c.avgGapPct)}
+                  {fmtGapPct(gap)}
                 </span>
               </div>
               <div className="mt-2 grid grid-cols-4 gap-2">

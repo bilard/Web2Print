@@ -17,8 +17,13 @@ export interface SiteRowStats {
   matched?: number
   /** Produits où CE concurrent est moins cher que vous (alerte). */
   cheaper?: number
-  /** Écart % moyen du concurrent face à VOS prix. < 0 = il vend moins cher que vous. */
+  /** Écart % MOYEN du concurrent face à VOS prix. Conservé pour les rapports persistés
+   *  avant la médiane — c'est `medGapPct` qui s'affiche. */
   avgGapPct?: number | null
+  /** Écart % MÉDIAN du concurrent face à VOS prix. < 0 = il vend moins cher que vous.
+   *  Statistique de position : la moyenne d'un ratio non borné en haut (lot de 10 face à
+   *  votre unité, variante mal appariée) dérivait à +300 % sur quelques aberrations. */
+  medGapPct?: number | null
   updatedAt?: number
   lastEngine?: string
   harvestProgress?: number
@@ -251,8 +256,16 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
               forcément (un produit vendu par 5 concurrents pèse 5 ici, 1 là-bas). */}
           {stats.matched != null && chip('appariés', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute',
             'Vos produits retrouvés CHEZ CE CONCURRENT. N’additionnez pas les sites : un produit vendu par plusieurs concurrents est compté une fois par site, mais une seule fois dans le total du tableau de bord.')}
-          {stats.avgGapPct != null && chip('son écart', pct(stats.avgGapPct), stats.avgGapPct < -1 ? 'warn' : 'ok',
-            'Écart moyen de SES prix face aux vôtres, sur les produits appariés. Négatif = il vend moins cher que vous.')}
+          {(() => {
+            // Médiane d'abord ; moyenne en repli pour les rapports antérieurs.
+            const gap = stats.medGapPct ?? stats.avgGapPct
+            if (gap == null) return null
+            const isMedian = stats.medGapPct != null
+            return chip('son écart', pct(gap), gap < -1 ? 'warn' : 'ok',
+              isMedian
+                ? 'Écart MÉDIAN de SES prix face aux vôtres, sur les produits appariés. Négatif = il vend moins cher que vous. La médiane et non la moyenne : quelques appariements aberrants (lot de 10 face à votre unité) suffisent à faire dériver une moyenne à +300 %.'
+                : 'Écart MOYEN de SES prix face aux vôtres (rapport antérieur à la médiane) — relancez « Comparer catalogue » pour obtenir la médiane, plus fiable.')
+          })()}
           {stats.cheaper != null && stats.matched != null && stats.matched > 0 && chip(
             'moins cher sur', `${stats.cheaper.toLocaleString('fr-FR')}/${stats.matched.toLocaleString('fr-FR')}`,
             stats.cheaper > 0 ? 'warn' : 'ok',
