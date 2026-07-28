@@ -426,6 +426,9 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
       // imagePrompt à donner au générateur d'image. Ici c'est explicitement imposé.
       `EXCEPTION COUVERTURE : dès que la demande évoque la COUVERTURE, son VISUEL, son ILLUSTRATION ou son AMBIANCE, renvoie OBLIGATOIREMENT l'objet cover COMPLET (title, subtitle, baseline, imagePrompt, layout) — ` +
       `imagePrompt EN ANGLAIS, traduction fidèle de la demande (sujet, ambiance, style graphique), photo/illustration sans AUCUN texte incrusté. ` +
+      // Un brief « … via Nano banana 2 » nomme le MOTEUR de génération : le modèle
+      // en faisait un objet de la scène (« a Nano banana 2 tool as the centerpiece »).
+      `Un nom de MOTEUR d'image cité dans la demande (Nano Banana, Imagen, Midjourney, DALL·E, Firefly, Stable Diffusion…) est une consigne d'outillage, JAMAIS un élément à représenter : ne le fais figurer sous aucune forme dans imagePrompt. ` +
       `Rappels : theme = polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')} ; sections = densité parmi ${CATALOG_GRIDS.join('/')} sur les nœuds de NIVEAU 1, vedettes = ids AVANT le tiret des exemples ; ` +
       `cardStyle = uniquement les clés concernées (hex #rrggbb). Si tu changes des couleurs : ${antiMono}`
     : `Produis un plan complet : thème (couleurs hex cohérentes avec la demande, polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')}), ` +
