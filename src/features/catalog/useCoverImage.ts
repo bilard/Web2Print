@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth, storage } from '@/lib/firebase/config'
 import { generateImageBase64 } from '@/features/nanobana/generateImageBase64'
+import { removeBackground } from '@/features/imaging/removeBackground'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { pagePx } from './components/pages/catalogCss'
 
@@ -20,35 +21,62 @@ function base64ToBlob(base64: string, mimeType: string): Blob {
 }
 
 /**
- * Brief d'EMBLÈME de marque : un SYMBOLE, jamais de lettrage — le nom reste
- * composé typographiquement (un modèle d'image l'orthographierait mal).
+ * Brief d'EMBLÈME de marque. Nano Banana est un modèle INSTRUIT : il suit une
+ * consigne de design formulée en phrases, là où un empilement de mots-clés
+ * (style Midjourney) le fait dériver. On lui donne donc un cahier des charges
+ * de graphiste — dont la contrainte qui compte vraiment en print : rester
+ * lisible à 10 mm. Jamais de lettrage : le nom est composé typographiquement
+ * (un modèle d'image l'orthographierait mal).
  */
 export function emblemPrompt(name: string, accent: string): string {
-  return `Minimal flat vector brand emblem for a professional retail tools catalogue named "${name}". `
-    + `Simple geometric symbol only, NO text, NO letters, NO words. `
-    + `Solid ${accent} accent with dark neutral tones, plain pure white background, crisp edges, no gradient, no photorealism, centered, generous margins.`
+  return `Design a brand emblem for a professional tools and hardware retailer called "${name}".\n`
+    + `It must be ONE single simple geometric mark with a strong silhouette — the kind of icon that stays perfectly readable when printed at 10 mm wide.\n`
+    + `Style: flat vector, solid fills, even confident strokes, balanced geometry, generous empty margin all around, perfectly centred.\n`
+    + `Colours: only two — ${accent} and a dark neutral. Nothing else.\n`
+    + `Background: plain pure white, completely uniform.\n`
+    + `Do not add: text, letters, numbers, words, monograms, gradients, shadows, bevels, 3D, reflections, photorealism, mascots, or a second competing symbol.`
+}
+
+/**
+ * Brief de COUVERTURE : le sujet vient du plan IA, la RÉALISATION est imposée
+ * ici. Formulé en consignes de brief photo (cadrage, mise au point, lumière,
+ * fond, interdits) plutôt qu'en liste de mots-clés — c'est ce que Nano Banana
+ * exécute le mieux. Les deux ratés observés sont explicitement bannis : sujet
+ * noyé dans le flou, et marques inventées sur les outils.
+ */
+function coverPrompt(subject: string): string {
+  return `Front cover photograph for a printed professional trade catalogue.\n`
+    + `Subject: ${subject.trim().replace(/[.\s]+$/, '')}.\n`
+    + `Framing: vertical portrait. The hero products sit in the lower half, shot from a natural three-quarter working angle, close enough to fill the frame with confidence.\n`
+    + `Focus: the hero products are TACK SHARP, clean and instantly recognisable, with fine detail on materials and edges. Only the far background falls off softly — never blur or hide the main subject.\n`
+    + `Light: professional studio lighting, soft key light with controlled specular highlights, gentle fill, no harsh shadow, no colour cast.\n`
+    + `Background: calm and tidy — a plain seamless backdrop or an uncluttered work surface — so headline text can sit in the upper area without fighting the image.\n`
+    + `Rendering: honest high-end commercial product photography, natural accurate colours, medium contrast, fine texture. No HDR, no heavy filter, no illustration, no 3D render look.\n`
+    + `Do not include: any text, letters, numbers, brand names or logos on the objects; watermarks; people or hands; office desks, computers or window views; messy piles; empty flat white areas.`
 }
 
 /** Cibles d'un visuel de catalogue : couverture, 4e, ou LOGO de marque. */
 export type CoverTarget = 'cover' | 'back' | 'logo'
 
-/**
- * DIRECTION ARTISTIQUE imposée aux couvertures, en plus du sujet demandé.
- * Sans elle, le modèle rendait des scènes d'intérieur banales (bureau, fenêtre,
- * fouillis) : correctes mais indignes d'une couverture de catalogue. On exige
- * donc le vocabulaire du shooting publicitaire — et de la PLACE pour les textes,
- * qui viennent se poser par-dessus.
- */
-function withArtDirection(prompt: string, target: CoverTarget): string {
-  if (target === 'logo') return prompt
-  return `${prompt.trim().replace(/[.\s]+$/, '')}. `
-    + `Award-winning commercial advertising photography for a premium retail catalogue cover. `
-    + `Studio-grade controlled lighting, crisp specular highlights, shallow depth of field, hero product staging. `
-    // « generous empty negative space » produisait un APLAT BLANC sur la moitié
-    // de l'image : on demande une zone CALME (flou, dégradé), pas du vide.
-    + `Uncluttered composition that keeps one side calmer and less busy for headline text — softly defocused or gently graded background there, never a flat empty white block. `
-    + `Rich contrast, colour-graded, ultra sharp focus, high-end editorial quality, shot on medium format. `
-    + `No text, no letters, no logo, no watermark, no people, no office interior, no window view, no clutter, no messy background.`
+/** Le sujet du plan IA passe par le brief photo ; l'emblème a le sien. */
+function finalPrompt(prompt: string, target: CoverTarget): string {
+  return target === 'logo' ? prompt : coverPrompt(prompt)
+}
+
+/** Détoure l'emblème (rembg → PNG alpha recadré au sujet). Échec = image intacte. */
+async function cutout(blob: Blob, mimeType: string): Promise<{ blob: Blob; mimeType: string }> {
+  const src = URL.createObjectURL(blob)
+  try {
+    const { url } = await removeBackground(src)
+    const png = await (await fetch(url)).blob()
+    URL.revokeObjectURL(url)
+    return { blob: png, mimeType: 'image/png' }
+  } catch (e) {
+    console.warn('[catalogue] détourage de l’emblème indisponible, fond conservé :', e)
+    return { blob, mimeType }
+  } finally {
+    URL.revokeObjectURL(src)
+  }
 }
 
 export function useCoverImage() {
@@ -78,8 +106,14 @@ export function useCoverImage() {
       const s = useCatalogStore.getState()
       // Un logo est CARRÉ (emblème), pas au format de la page.
       const { w, h } = target === 'logo' ? { w: 512, h: 512 } : pagePx(s.format)
-      const { mimeType, base64 } = await generateImageBase64({ prompt: withArtDirection(prompt, target), targetWidth: w, targetHeight: h })
-      apply(target, await uploadToCovers(uid, base64ToBlob(base64, mimeType), mimeType, target))
+      const { mimeType, base64 } = await generateImageBase64({ prompt: finalPrompt(prompt, target), targetWidth: w, targetHeight: h })
+      // L'EMBLÈME est détouré : Nano Banana ne sait pas produire d'alpha, et son
+      // fond blanc formait un cartouche disgracieux sur les bandeaux colorés.
+      // Échec du détourage → on garde l'image pleine (jamais de blocage).
+      const shaped = target === 'logo'
+        ? await cutout(base64ToBlob(base64, mimeType), mimeType)
+        : { blob: base64ToBlob(base64, mimeType), mimeType }
+      apply(target, await uploadToCovers(uid, shaped.blob, shaped.mimeType, target))
       toast.success(target === 'logo' ? 'Emblème généré' : 'Visuel de couverture généré')
     } catch (e) {
       toast.error(`Génération du visuel échouée — ${target === 'logo' ? 'logo typographique conservé' : 'couverture typographique conservée'} (${e instanceof Error ? e.message : 'erreur'})`)
