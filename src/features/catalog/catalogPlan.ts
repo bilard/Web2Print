@@ -3,6 +3,7 @@
 // (la génération ne doit JAMAIS être bloquée par un échec IA).
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
+import { debugLog } from '@/lib/debugLog'
 import { FONT_OPTIONS } from '@/features/retail-promo/promoCardTypes'
 import { CARD_OBJECT_IDS, CATALOG_GRIDS, DEFAULT_CARD_STYLE, type CardBox, type CardObjectId, type CatalogCardStyle, type CatalogGrid, type CatalogCharte, type CatalogPlan, type CatalogSectionPlan, type CatalogTreeNode } from './catalogTypes'
 import { flattenTree, subtreeProductCount } from './catalogTree'
@@ -43,6 +44,7 @@ const CardStyleAISchema = z.object({
 export const PlanSchema = z.object({
   theme: ThemeSchema.optional(),
   sections: z.array(SectionSchema).optional(),
+  brandName: z.string().optional(),
   cover: z.object({ title: z.string(), subtitle: z.string().optional(), baseline: z.string().optional(), imagePrompt: z.string(), layout: z.enum(['classic', 'panel', 'poster']).optional() }).optional(),
   backCover: z.object({ title: z.string(), text: z.string() }).optional(),
   tocTitle: z.string().optional(),
@@ -95,6 +97,7 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
       required: ['title', 'text'],
     },
     tocTitle: { type: 'string' },
+    brandName: { type: 'string', description: "NOM DE MARQUE à composer en logo (couverture + bandeau de chaque page). À renvoyer dès que la demande évoque un logo, une marque ou une enseigne — recopie le nom EXACTEMENT (respecte guillemets, casse et orthographe de la demande), sans slogan ni mention d'outil" },
     cardStyle: {
       type: 'object',
       description: "OPTIONNEL — style des fiches produit (hex #rrggbb). En CRÉATION : renvoie une palette VARIÉE coordonnée au thème (jamais monochrome). En MODIFICATION : uniquement les clés que la demande impose.",
@@ -342,6 +345,10 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
       : (current?.cover ?? { title: catalogName || 'Catalogue', subtitle: '', baseline: '', imagePrompt: '' }),
     backCover: raw.backCover ?? current?.backCover ?? { title: catalogName || 'Catalogue', text: '' },
     tocTitle: raw.tocTitle || current?.tocTitle || 'Sommaire',
+    // Marque : bornée (le logo typographique doit tenir dans un bandeau).
+    ...(raw.brandName?.trim() || current?.brandName
+      ? { brandName: (raw.brandName?.trim() || current?.brandName || '').slice(0, 40) }
+      : {}),
     // Réglages manuels préservés ; les couleurs demandées au prompt s'appliquent par-dessus.
     ...(hasCardStyle ? { cardStyle: { ...DEFAULT_CARD_STYLE, ...current?.cardStyle, ...aiCardStyle } } : {}),
     ...(current?.pageStyle ? { pageStyle: current.pageStyle } : {}),
@@ -429,6 +436,9 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
       // Un brief « … via Nano banana 2 » nomme le MOTEUR de génération : le modèle
       // en faisait un objet de la scène (« a Nano banana 2 tool as the centerpiece »).
       `Un nom de MOTEUR d'image cité dans la demande (Nano Banana, Imagen, Midjourney, DALL·E, Firefly, Stable Diffusion…) est une consigne d'outillage, JAMAIS un élément à représenter : ne le fais figurer sous aucune forme dans imagePrompt. ` +
+      // « Créer un logo "Distriland" » restait lettre morte : rien ne portait le
+      // nom de marque. brandName est composé en logo (couverture + bandeaux).
+      `EXCEPTION MARQUE : si la demande OU LES CONSIGNES CRÉA évoquent un LOGO, une MARQUE ou une ENSEIGNE, renvoie brandName avec le nom EXACT tel qu'écrit (guillemets/casse d'origine respectés) — c'est LUI qui sera composé en logo, et il ne remplace NI le titre NI le sous-titre de couverture. ` +
       `Rappels : theme = polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')} ; sections = densité parmi ${CATALOG_GRIDS.join('/')} sur les nœuds de NIVEAU 1, vedettes = ids AVANT le tiret des exemples ; ` +
       `cardStyle = uniquement les clés concernées (hex #rrggbb). Si tu changes des couleurs : ${antiMono}`
     : `Produis un plan complet : thème (couleurs hex cohérentes avec la demande, polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')}), ` +
@@ -450,6 +460,9 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
           (ctx.charte.colors.length ? `- Palette imposée : ${ctx.charte.colors.join(', ')} (répartis-la : accent, bandeaux, badges — reste DANS ces teintes ou leurs nuances proches).\n` : '') +
           (ctx.charte.fonts.length ? `- Typographies de la marque : ${ctx.charte.fonts.join(', ')} (choisis les polices du thème PARMI ${FONT_OPTIONS.join(', ')} en te rapprochant LE PLUS de ces familles).\n` : '') +
           (ctx.charte.notes ? `- Consignes créa (graphique & structure) : ${ctx.charte.notes}\n` : '') +
+          // Les consignes créa sont un CANAL DE DEMANDE à part entière : une demande
+          // de logo écrite ici doit remplir brandName, comme si elle était dans le brief.
+          `- MARQUE : si ces consignes nomment un LOGO, une MARQUE ou une ENSEIGNE (ex. « créer un logo "X" »), renvoie OBLIGATOIREMENT brandName = le nom EXACT — il sera composé en logo sur la couverture ET dans le bandeau de chaque page. Ce n'est ni le titre ni le sous-titre de couverture.\n` +
           `- STRUCTURE : si les consignes décrivent une composition (couverture éditoriale, fiches en LISTE 1 colonne, densité), APPLIQUE-les : cover.layout ('panel' maquette éditoriale, 'poster' visuel plein cadre), productsPerPage 2-3 = LISTE pleine largeur, 4-8 = grille. Si un ARCHÉTYPE COUVERTURE est imposé, renvoie OBLIGATOIREMENT l'objet cover complet (title, imagePrompt, layout).\n` +
           `- COMPOSITION DES FICHES : reproduis la maquette AVEC les leviers : cardStyle.cardBg (fond des FICHES — jaune/sombre si le modèle le veut), theme.pageBg (fond de PAGE, noir si le modèle est dark), kickerBg (pastille type chip), cardStyle.shape (coins/chips/prix/sticker/image/ombre — la STRUCTURE graphique) et cardStyle.layout (positions % des blocs) pour rapprocher la maquette du modèle — ose des placements différents du gabarit par défaut. Si un FOND DE PAGE ou un FOND DES FICHES est imposé dans les consignes, recopie ces hex EXACTEMENT dans theme.pageBg et cardStyle.cardBg (ex. page noire + fiches jaunes).\n` + '\n'
         : '') +
@@ -457,6 +470,10 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
     schema: PlanSchema,
     schemaForLLM: SCHEMA_FOR_LLM,
   })
+  // Quelles clés le modèle a-t-il RÉELLEMENT renvoyées ? En modification ciblée,
+  // tout ce qui est omis est conservé — un brief qui semble « pas pris en compte »
+  // est presque toujours un brief dont les clés concernées n'ont pas été émises.
+  debugLog('[catalog.plan] clés renvoyées :', Object.keys(raw).filter((k) => raw[k as keyof RawCatalogPlan] != null).join(', ') || '(aucune)')
   const notes = ctx.charte?.notes ?? ''
   const plan = enforceLightPageBg(sanitizeCatalogPlan(raw, ctx.tree, ctx.catalogName, current), { notes, brief, current })
   return applyCharteBackgrounds(plan, notes)

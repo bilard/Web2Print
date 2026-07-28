@@ -44,6 +44,8 @@ interface CatalogState {
   format: CatalogFormat
   coverImageUrl: string | null
   backCoverImageUrl: string | null
+  /** Visuel du LOGO de marque (Storage) — repli sur le logo typographique (plan.brandName). */
+  logoUrl: string | null
   /** Ordre manuel des pages du chemin de fer (clés stables, vide = ordre moteur). */
   pageOrder: string[]
   /** Corrections produit propres à CE catalogue (sauvegarde « publication »). */
@@ -79,6 +81,7 @@ interface CatalogState {
   setFormat: (format: CatalogFormat) => void
   setCoverImageUrl: (url: string | null) => void
   setBackCoverImageUrl: (url: string | null) => void
+  setLogoUrl: (url: string | null) => void
   setPageOrder: (order: string[]) => void
   setPreviewIndex: (index: number | null) => void
   /** Pose/retire les corrections publication d'une ligne ('' ou null = champ rendu à la source). */
@@ -108,6 +111,7 @@ const defaultState = {
   format: CATALOG_FORMAT_PRESETS[0].format,
   coverImageUrl: null as string | null,
   backCoverImageUrl: null as string | null,
+  logoUrl: null as string | null,
   pageOrder: [] as string[],
   rowOverrides: {} as CatalogRowOverrides,
   previewIndex: null as number | null,
@@ -145,6 +149,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     levelKeys: doc.levelKeys, treeEdits: doc.treeEdits, prompt: doc.prompt, plan: withNormalizedLinks(doc.plan), charte: doc.charte ?? null,
     fieldMap: doc.fieldMap, fieldMapOverrides: doc.fieldMapOverrides, customFields: doc.customFields,
     format: doc.format, coverImageUrl: doc.coverImageUrl, backCoverImageUrl: doc.backCoverImageUrl,
+    logoUrl: doc.logoUrl ?? null,
     pageOrder: doc.pageOrder, rowOverrides: doc.rowOverrides ?? {}, previewIndex: null,
     // Purge la session précédente (autre catalogue) : rawRows/rawColumns sont
     // rechargés depuis sourceRef par CatalogBuilderPage (garde rawRows.length===0).
@@ -156,7 +161,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
       id: s.catalogId ?? '', name: s.name, sourceRef: s.sourceRef, selectedRowIds: s.selectedRowIds,
       levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
       fieldMap: s.fieldMap, fieldMapOverrides: s.fieldMapOverrides, customFields: s.customFields,
-      format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
+      format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl, logoUrl: s.logoUrl,
       pageOrder: s.pageOrder, rowOverrides: s.rowOverrides, charte: s.charte,
     }
   },
@@ -209,6 +214,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   setFormat: (format) => set({ format }),
   setCoverImageUrl: (coverImageUrl) => set({ coverImageUrl }),
   setBackCoverImageUrl: (backCoverImageUrl) => set({ backCoverImageUrl }),
+  setLogoUrl: (logoUrl) => set({ logoUrl }),
   setPageOrder: (pageOrder) => set({ pageOrder }),
   setPreviewIndex: (previewIndex) => set({ previewIndex }),
   setRowOverride: (rowId, patch) => set((s) => {
@@ -239,7 +245,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     rawColumns: s.rawColumns, rawRows: s.rawRows, selectedRowIds: s.selectedRowIds,
     levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
     fieldMap: s.fieldMap, fieldMapOverrides: s.fieldMapOverrides, customFields: s.customFields,
-    format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
+    format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl, logoUrl: s.logoUrl,
     pageOrder: s.pageOrder, rowOverrides: s.rowOverrides, charte: s.charte,
   }),
 }))

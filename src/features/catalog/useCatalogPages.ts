@@ -55,9 +55,9 @@ export function useCatalogPages(): CatalogPagesResult {
     const ctx: CatalogRenderCtx = {
       plan, format: s.format, rowsById: new Map(rows.map((r) => [r._id, r])), columns: s.rawColumns,
       fieldMap: s.fieldMap, customFields: s.customFields, catalogName: s.name, totalPages: pages.length,
-      coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl,
+      coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl, logoUrl: s.logoUrl,
       universeColors: universeColors(pages, plan.sections),
     }
     return { pages, ctx, keys, tree }
-  }, [s.rawRows, s.rawColumns, s.selectedRowIds, s.levelKeys, s.treeEdits, s.plan, s.format, s.fieldMap, s.customFields, s.name, s.coverImageUrl, s.backCoverImageUrl, s.pageOrder, s.rowOverrides])
+  }, [s.rawRows, s.rawColumns, s.selectedRowIds, s.levelKeys, s.treeEdits, s.plan, s.format, s.fieldMap, s.customFields, s.name, s.coverImageUrl, s.backCoverImageUrl, s.logoUrl, s.pageOrder, s.rowOverrides])
 }

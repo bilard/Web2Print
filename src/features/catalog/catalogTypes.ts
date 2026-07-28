@@ -297,6 +297,12 @@ export interface CatalogPageStyle {
   /** 4e de couverture. */
   backScale: number
   showBackRule: boolean
+  /** LOGO DE MARQUE (optionnels — styles persistés avant la fonctionnalité).
+   *  Affiché sur la couverture et/ou dans le bandeau de CHAQUE page produit. */
+  showCoverLogo?: boolean
+  showHeaderLogo?: boolean
+  /** Échelle du logo (1 = taille de référence : ~18 mm en couverture, ~7 mm en bandeau). */
+  logoScale?: number
 }
 
 export const DEFAULT_PAGE_STYLE: CatalogPageStyle = {
@@ -308,6 +314,9 @@ export const DEFAULT_PAGE_STYLE: CatalogPageStyle = {
   showOpenerNum: true, showOpenerChip: true, showOpenerCount: true, showOpenerPanel: true, openerTitleScale: 1,
   coverTitleScale: 1, showCoverBaseline: true, showCoverSubtitle: true, showCoverRule: true, coverOverlay: 55,
   backScale: 1, showBackRule: true,
+  // Logo : affiché DÈS qu'il existe (nom de marque ou visuel) — sans nom ni
+  // visuel, les composants ne rendent rien, donc aucun défaut à désactiver.
+  showCoverLogo: true, showHeaderLogo: true, logoScale: 1,
 }
 
 export interface CatalogPlan {
@@ -321,6 +330,9 @@ export interface CatalogPlan {
   /** Taille des fiches proportionnelle au prix (paliers médiane/P80 par univers). Absent = actif. */
   sizeByPrice?: boolean
   sections: CatalogSectionPlan[]
+  /** MARQUE du catalogue : rendue en logo typographique (police de titre + accent
+   *  du thème) quand aucun visuel de logo n'est chargé. Vide = pas de logo. */
+  brandName?: string
   cover: { title: string; subtitle: string; baseline: string; imagePrompt: string; layout?: CatalogCoverLayout }
   backCover: { title: string; text: string }
   tocTitle: string
@@ -398,6 +410,8 @@ export interface CatalogDoc {
   customFields: CustomFieldMap
   format: CatalogFormat
   coverImageUrl: string | null
+  /** Visuel du logo de marque (Storage) — absent sur les catalogues antérieurs. */
+  logoUrl?: string | null
   backCoverImageUrl: string | null
   /** Ordre manuel des pages (clés stables du chemin de fer, cf. catalogFlatplan). Vide = ordre du moteur. */
   pageOrder: string[]

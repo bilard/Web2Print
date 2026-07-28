@@ -1,5 +1,6 @@
 import type { CatalogRenderCtx } from './catalogCss'
 import { mergedPageStyle } from './catalogCss'
+import { CatalogLogo } from './CatalogLogo'
 
 interface Props { ctx: CatalogRenderCtx; variant: 'cover' | 'back' }
 
@@ -15,6 +16,7 @@ export function CoverPage({ ctx, variant }: Props) {
   if (variant === 'back') {
     return (
       <div className="cat-back" style={style}>
+        <CatalogLogo plan={plan} logoUrl={ctx.logoUrl} place="cover" />
         {ps.showBackRule && <div className="cat-back-rule" />}
         <div className="cat-back-title">{plan.backCover.title}</div>
         {plan.backCover.text && <div className="cat-back-text">{plan.backCover.text}</div>}
@@ -32,6 +34,7 @@ export function CoverPage({ ctx, variant }: Props) {
           {ps.showCoverBaseline && plan.cover.baseline && <div className="cat-coverp-chip">{plan.cover.baseline}</div>}
         </div>
         <div className="cat-coverp-panel">
+          <CatalogLogo plan={plan} logoUrl={ctx.logoUrl} place="cover" />
           <h1 className="cat-coverp-title">{plan.cover.title}</h1>
           {ps.showCoverSubtitle && plan.cover.subtitle && <div className="cat-coverp-sub">{plan.cover.subtitle}</div>}
         </div>
@@ -47,6 +50,7 @@ export function CoverPage({ ctx, variant }: Props) {
     return (
       <div className="cat-cover cat-coverz" style={style}>
         <div className="cat-coverz-in">
+          <CatalogLogo plan={plan} logoUrl={ctx.logoUrl} place="cover" />
           {ps.showCoverBaseline && plan.cover.baseline && <div className="cat-cover-band">{plan.cover.baseline}</div>}
           <h1 className="cat-coverz-title">{plan.cover.title}</h1>
           {ps.showCoverSubtitle && plan.cover.subtitle && <div className="cat-cover-sub">{plan.cover.subtitle}</div>}
@@ -57,6 +61,7 @@ export function CoverPage({ ctx, variant }: Props) {
   return (
     <div className="cat-cover" style={style}>
       <div className="cat-cover-panel" style={img ? undefined : { background: 'none' }}>
+        <CatalogLogo plan={plan} logoUrl={ctx.logoUrl} place="cover" />
         {ps.showCoverBaseline && plan.cover.baseline && <div className="cat-cover-band">{plan.cover.baseline}</div>}
         <h1 className="cat-cover-title">{plan.cover.title}</h1>
         {ps.showCoverSubtitle && plan.cover.subtitle && <div className="cat-cover-sub">{plan.cover.subtitle}</div>}

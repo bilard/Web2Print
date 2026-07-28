@@ -26,7 +26,9 @@ export function CatalogPageView({ page, ctx }: Props) {
       ...(chapterColor ? ({ '--cat-head-bg': chapterColor, '--cat-head-ink': '#fff' } as CSSProperties) : {}),
     }}>
       <style>{CATALOG_CSS}</style>
-      {page.kind === 'products' && ps.showHeader && <CatalogHeader breadcrumb={page.breadcrumb} pageNumber={page.pageNumber} />}
+      {page.kind === 'products' && ps.showHeader && (
+        <CatalogHeader breadcrumb={page.breadcrumb} pageNumber={page.pageNumber} plan={ctx.plan} logoUrl={ctx.logoUrl} />
+      )}
       {page.kind === 'cover' && <CoverPage ctx={ctx} variant="cover" />}
       {page.kind === 'back-cover' && <CoverPage ctx={ctx} variant="back" />}
       {page.kind === 'toc' && <TocPage ctx={ctx} entries={page.entries} first={page.pageNumber === 2} />}

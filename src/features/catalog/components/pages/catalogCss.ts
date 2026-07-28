@@ -72,6 +72,8 @@ export interface CatalogRenderCtx {
   totalPages: number
   coverImageUrl: string | null
   backCoverImageUrl: string | null
+  /** Visuel du logo de marque — repli typographique sur `plan.brandName` si absent. */
+  logoUrl?: string | null
   /** univers → couleur cyclique (palette du chemin de fer) — utilisé si pageStyle.chapterColors. */
   universeColors?: Map<string, string>
   /** Double-clic sur une fiche produit → édition de la data (Aperçu seulement ; absent à l'export). */
@@ -263,6 +265,23 @@ export const CATALOG_CSS = `
   font-size:calc(12px * var(--cat-p-head,1) * var(--cat-p-head-crumb,1));
   opacity:.85; text-transform:uppercase; letter-spacing:.06em; color:var(--cat-head-crumb-ink,inherit); }
 .cat-head-sep { opacity:.5; }
+/* ── Logo de marque « emblème + nom » : bandeau (petit, poussé au bord OPPOSÉ à
+   la taxonomie) et couverture (grand). Le raster est BORNÉ en hauteur : il est
+   répliqué sur toutes les pages, un visuel 1K non borné alourdirait rendu et
+   export. Le nom porte le filet accent SEULEMENT quand il est seul (sans
+   emblème) — sinon l'emblème fait déjà la marque visuelle. */
+.cat-logo { display:inline-flex; align-items:center; }
+.cat-logo-img { width:auto; object-fit:contain; }
+.cat-logo-txt { font-family:var(--cat-font-h); font-weight:900; text-transform:uppercase; white-space:nowrap; }
+.cat-logo--head { margin-left:auto; align-self:center; gap:8px; }
+.cat-head--recto .cat-logo--head { margin-left:0; margin-right:auto; order:-1; }
+.cat-logo--head .cat-logo-img { height:calc(26px * var(--cat-logo-s,1)); max-width:120px; }
+.cat-logo--head .cat-logo-txt { font-size:calc(15px * var(--cat-logo-s,1) * var(--cat-p-head,1)); letter-spacing:.04em; }
+.cat-logo--head > .cat-logo-txt:first-child { border-left:3px solid var(--cat-accent); padding-left:8px; }
+.cat-logo--cover { align-self:flex-start; gap:14px; margin-bottom:18px; }
+.cat-logo--cover .cat-logo-img { height:calc(64px * var(--cat-logo-s,1)); max-width:40%; }
+.cat-logo--cover .cat-logo-txt { font-size:calc(30px * var(--cat-logo-s,1) * var(--cat-p-cover,1)); letter-spacing:.06em; }
+.cat-logo--cover > .cat-logo-txt:first-child { border-left:8px solid var(--cat-accent); padding-left:14px; }
 
 /* ── Footer : folio en pastille accent ──────────────────────────────── */
 .cat-foot { flex:none; margin-top:auto; padding:0 32px 14px; display:flex; align-items:center; justify-content:space-between; font-size:10px; }

@@ -9,6 +9,7 @@ import { DEFAULT_PAGE_STYLE } from '../../catalogTypes'
 import { mergedPageStyle } from '../pages/catalogCss'
 import { OptSection, OptSlider, OptToggle, optFieldClass } from './PageOptionControls'
 import { HeaderBandOptions } from './HeaderBandOptions'
+import { LogoBrandOptions } from './LogoBrandOptions'
 import { PageOptionsCover } from './PageOptionsCover'
 import { PageOptionsTheme } from './PageOptionsTheme'
 
@@ -92,8 +93,10 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
           </>
         )}
 
-        {/* Thème (couleurs/polices) + Modèles : globaux, visibles sur TOUTES les pages
-            — permet de styler en live et de récupérer le modèle dans un autre catalogue. */}
+        {/* Logo + Thème (couleurs/polices) + Modèles : GLOBAUX, visibles sur toutes
+            les pages — le logo se pose à la fois en couverture et dans le bandeau
+            de chaque page, il n'appartient donc à aucun type de page. */}
+        <LogoBrandOptions plan={plan} setPlan={setPlan} style={style} patchStyle={patch} />
         <PageOptionsTheme plan={plan} setPlan={setPlan} />
 
         <p className="text-[11px] text-white/40 leading-relaxed">

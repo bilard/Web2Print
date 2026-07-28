@@ -19,32 +19,61 @@ function base64ToBlob(base64: string, mimeType: string): Blob {
   return new Blob([bytes], { type: mimeType })
 }
 
+/** Cibles d'un visuel de catalogue : couverture, 4e, ou LOGO de marque. */
+export type CoverTarget = 'cover' | 'back' | 'logo'
+
 export function useCoverImage() {
   const [generating, setGenerating] = useState(false)
 
-  const generateCover = async (prompt: string, target: 'cover' | 'back') => {
+  /** Range un blob dans le bucket à CORS ouvert et renvoie son URL publique. */
+  const uploadToCovers = async (uid: string, blob: Blob, mimeType: string, target: CoverTarget): Promise<string> => {
+    const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/svg+xml' ? 'svg' : 'jpg'
+    const fileRef = storageRef(storage, `users/${uid}/catalogCovers/${Date.now()}_${target}.${ext}`)
+    await uploadBytes(fileRef, blob, { contentType: mimeType })
+    return getDownloadURL(fileRef)
+  }
+
+  const apply = (target: CoverTarget, url: string) => {
+    const s = useCatalogStore.getState()
+    if (target === 'cover') s.setCoverImageUrl(url)
+    else if (target === 'back') s.setBackCoverImageUrl(url)
+    else s.setLogoUrl(url)
+  }
+
+  const generateCover = async (prompt: string, target: CoverTarget) => {
     if (!prompt.trim()) { toast.error('Renseignez d’abord le prompt image (plan IA ou saisie manuelle)'); return }
     const uid = auth.currentUser?.uid
     if (!uid) { toast.error('Connexion requise pour générer un visuel'); return }
     setGenerating(true)
     try {
       const s = useCatalogStore.getState()
-      const { w, h } = pagePx(s.format)
+      // Un logo est CARRÉ (emblème), pas au format de la page.
+      const { w, h } = target === 'logo' ? { w: 512, h: 512 } : pagePx(s.format)
       const { mimeType, base64 } = await generateImageBase64({ prompt, targetWidth: w, targetHeight: h })
-      const blob = base64ToBlob(base64, mimeType)
-      const ext = mimeType === 'image/png' ? 'png' : 'jpg'
-      const path = `users/${uid}/catalogCovers/${Date.now()}_${target}.${ext}`
-      const fileRef = storageRef(storage, path)
-      await uploadBytes(fileRef, blob, { contentType: mimeType })
-      const url = await getDownloadURL(fileRef)
-      if (target === 'cover') s.setCoverImageUrl(url)
-      else s.setBackCoverImageUrl(url)
-      toast.success('Visuel de couverture généré')
+      apply(target, await uploadToCovers(uid, base64ToBlob(base64, mimeType), mimeType, target))
+      toast.success(target === 'logo' ? 'Emblème généré' : 'Visuel de couverture généré')
     } catch (e) {
-      toast.error(`Génération du visuel échouée — couverture typographique conservée (${e instanceof Error ? e.message : 'erreur'})`)
+      toast.error(`Génération du visuel échouée — ${target === 'logo' ? 'logo typographique conservé' : 'couverture typographique conservée'} (${e instanceof Error ? e.message : 'erreur'})`)
     } finally {
       setGenerating(false)
     }
   }
-  return { generating, generateCover }
+
+  /** Visuel FOURNI par l'utilisateur (son vrai logo) — même bucket, donc même
+   *  garantie CORS à l'export que les visuels générés. */
+  const uploadImage = async (file: File, target: CoverTarget) => {
+    const uid = auth.currentUser?.uid
+    if (!uid) { toast.error('Connexion requise pour charger un visuel'); return }
+    setGenerating(true)
+    try {
+      apply(target, await uploadToCovers(uid, file, file.type || 'image/png', target))
+      toast.success('Visuel chargé')
+    } catch (e) {
+      toast.error(`Chargement impossible (${e instanceof Error ? e.message : 'erreur'})`)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  return { generating, generateCover, uploadImage }
 }
