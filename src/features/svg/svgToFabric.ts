@@ -18,6 +18,7 @@ import { parseTextElements } from './svgTextParser'
 import { remapStylesToFabric } from './textboxConverter'
 import type { TextMetadata } from './svgTextParser'
 import { neutralizePlaceholderImages } from './neutralizePlaceholderImages'
+import { debugLog } from '@/lib/debugLog'
 
 export interface SvgParseResult {
   objects: FabricObject[]
@@ -718,6 +719,81 @@ function getCascadedNumber(
   return undefined
 }
 
+/* -------------------------------------------------------------------------
+ * Recadrage de la page sur le fond du design
+ * ----------------------------------------------------------------------- */
+
+/** Le fond doit couvrir l'essentiel du viewBox et en toucher presque les bords. */
+const BG_MIN_AREA_RATIO = 0.8
+const BG_MAX_EDGE_RATIO = 0.12
+
+/**
+ * Recadre la page sur le RECTANGLE DE FOND du design, et retourne le décalage
+ * à appliquer aux objets.
+ *
+ * Illustrator, quand « Utiliser les plans de travail » n'est pas coché, exporte
+ * un `viewBox` égal à la boîte du CONTENU — pas au plan de travail. Tout ce qui
+ * déborde (ombre portée, forme en fond perdu) agrandit donc la page et décale
+ * le design dedans. Vu sur `Flyer.svg` : plan de travail 630 × 414 pt, mais
+ * viewBox 642,52 × 428,23 avec le design à +8,25 / +9,06.
+ *
+ * On retrouve le format réel via le rectangle de fond : le plus grand `Rect` du
+ * document, s'il couvre au moins 80 % du viewBox et en épouse les bords à 12 %
+ * près. Sans fond identifiable, on garde le viewBox (comportement d'origine),
+ * et un fond déjà calé sur le viewBox donne un recadrage nul.
+ */
+function fitPageToBackground(
+  objects: FabricObject[],
+  viewW: number,
+  viewH: number
+): { width: number; height: number; dx: number; dy: number } | null {
+  // Géométrie SANS le contour : Fabric donne strokeWidth = 1 par défaut aux
+  // formes SVG (même sans trait peint), et `getBoundingRect()` l'inclut — la
+  // page ferait alors 1 pt de trop dans chaque dimension.
+  const boxOf = (o: FabricObject) => {
+    const w = (o.width ?? 0) * (o.scaleX ?? 1)
+    const h = (o.height ?? 0) * (o.scaleY ?? 1)
+    return {
+      left: (o.left ?? 0) - (o.originX === 'center' ? w / 2 : 0),
+      top: (o.top ?? 0) - (o.originY === 'center' ? h / 2 : 0),
+      width: w,
+      height: h,
+    }
+  }
+
+  let best: { box: ReturnType<typeof boxOf>; area: number } | null = null
+  for (const obj of objects) {
+    if (!(obj instanceof Rect) || (obj.angle ?? 0) !== 0) continue
+    const box = boxOf(obj)
+    const area = box.width * box.height
+    if (!best || area > best.area) best = { box, area }
+  }
+  if (!best) return null
+
+  const r = best.box
+  const viewArea = viewW * viewH
+  if (!(viewArea > 0) || best.area / viewArea < BG_MIN_AREA_RATIO) return null
+
+  const edge = Math.max(
+    r.left / viewW,
+    r.top / viewH,
+    (viewW - (r.left + r.width)) / viewW,
+    (viewH - (r.top + r.height)) / viewH
+  )
+  if (!(edge >= 0) || edge > BG_MAX_EDGE_RATIO) return null
+
+  return { width: r.width, height: r.height, dx: r.left, dy: r.top }
+}
+
+/** Décale tous les objets — utilisé quand la page est recadrée sur le fond. */
+function translateObjects(objects: FabricObject[], dx: number, dy: number): void {
+  if (dx === 0 && dy === 0) return
+  for (const obj of objects) {
+    obj.set({ left: (obj.left ?? 0) - dx, top: (obj.top ?? 0) - dy })
+    obj.setCoords()
+  }
+}
+
 export interface SvgParseOptions {
   /**
    * Aplatit la structure : chaque élément du SVG devient un objet indépendant
@@ -765,8 +841,25 @@ export async function parseSvgToFabric(
   const dims = extractViewBox(svgText) ?? { width: 1920, height: 1080 }
   const optsWidth = Number((parsed.options as Record<string, unknown>)?.width)
   const optsHeight = Number((parsed.options as Record<string, unknown>)?.height)
-  const width = Number.isFinite(optsWidth) && optsWidth > 0 ? optsWidth : dims.width
-  const height = Number.isFinite(optsHeight) && optsHeight > 0 ? optsHeight : dims.height
+  let width = Number.isFinite(optsWidth) && optsWidth > 0 ? optsWidth : dims.width
+  let height = Number.isFinite(optsHeight) && optsHeight > 0 ? optsHeight : dims.height
+
+  // Import d'un .svg : recadre la page sur le fond du design quand le viewBox
+  // est plus large que le plan de travail (export Illustrator « boîte du
+  // contenu »). Sans ça la page est trop grande ET le design décalé dedans.
+  if (options.flatten) {
+    const page = fitPageToBackground(objects, width, height)
+    if (page && (page.dx > 0.5 || page.dy > 0.5 || Math.abs(page.width - width) > 0.5)) {
+      debugLog('[SVG] page recadrée sur le fond', {
+        viewBox: `${width.toFixed(2)}×${height.toFixed(2)}`,
+        page: `${page.width.toFixed(2)}×${page.height.toFixed(2)}`,
+        offset: `${page.dx.toFixed(2)},${page.dy.toFixed(2)}`,
+      })
+      translateObjects(objects, page.dx, page.dy)
+      width = page.width
+      height = page.height
+    }
+  }
 
   decorateAll(objects)
 

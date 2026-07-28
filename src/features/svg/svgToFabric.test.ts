@@ -360,3 +360,68 @@ describe('parseSvgToFabric — option flatten (import .svg)', () => {
     expect(objects.some((o) => o instanceof Group)).toBe(false)
   })
 })
+
+describe('parseSvgToFabric — page recadrée sur le fond (import .svg)', () => {
+  // Export Illustrator « boîte du contenu » : le viewBox est plus grand que le
+  // plan de travail parce qu'une ombre déborde, et le design est décalé dedans.
+  const OVERSIZED_SVG = `<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 160">
+  <g id="Calque_1">
+    <path d="M0,0 L20,0 L20,20 Z" fill="#000" opacity=".4"/>
+    <rect x="10" y="8" width="200" height="145" fill="#1a3e40"/>
+    <rect x="30" y="30" width="40" height="20" fill="#fff"/>
+  </g>
+</svg>`
+
+  it('ramène la page au format du fond et recale le design sur 0,0', async () => {
+    const { objects, width, height } = await parseSvgToFabric(OVERSIZED_SVG, { flatten: true })
+    expect(width).toBeCloseTo(200, 3)
+    expect(height).toBeCloseTo(145, 3)
+
+    const bg = objects.find((o) => o.fill === '#1a3e40')!
+    const bgLeft = (bg.left ?? 0) - (bg.originX === 'center' ? ((bg.width ?? 0) * (bg.scaleX ?? 1)) / 2 : 0)
+    const bgTop = (bg.top ?? 0) - (bg.originY === 'center' ? ((bg.height ?? 0) * (bg.scaleY ?? 1)) / 2 : 0)
+    expect(bgLeft).toBeCloseTo(0, 3)
+    expect(bgTop).toBeCloseTo(0, 3)
+
+    // Les autres objets suivent le même décalage (design non déformé)
+    const white = objects.find((o) => o.fill === '#fff')!
+    const wLeft = (white.left ?? 0) - (white.originX === 'center' ? ((white.width ?? 0) * (white.scaleX ?? 1)) / 2 : 0)
+    expect(wLeft).toBeCloseTo(20, 3)
+  })
+
+  it('ne touche à rien quand le fond est déjà calé sur le viewBox', async () => {
+    const svg = `<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 145">
+  <g id="Calque_1">
+    <rect x="0" y="0" width="200" height="145" fill="#1a3e40"/>
+    <rect x="20" y="22" width="40" height="20" fill="#fff"/>
+  </g>
+</svg>`
+    const { objects, width, height } = await parseSvgToFabric(svg, { flatten: true })
+    expect(width).toBeCloseTo(200, 3)
+    expect(height).toBeCloseTo(145, 3)
+    const white = objects.find((o) => o.fill === '#fff')!
+    const wLeft = (white.left ?? 0) - (white.originX === 'center' ? ((white.width ?? 0) * (white.scaleX ?? 1)) / 2 : 0)
+    expect(wLeft).toBeCloseTo(20, 3)
+  })
+
+  it('garde le viewBox quand aucun fond ne couvre la page', async () => {
+    const svg = `<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <g id="Calque_1">
+    <rect x="10" y="10" width="60" height="40" fill="red"/>
+    <text x="10" y="200">Titre</text>
+  </g>
+</svg>`
+    const { width, height } = await parseSvgToFabric(svg, { flatten: true })
+    expect(width).toBeCloseTo(400, 3)
+    expect(height).toBeCloseTo(300, 3)
+  })
+
+  it('ne recadre PAS hors du mode flatten (PDF→SVG, image→SVG)', async () => {
+    const { width, height } = await parseSvgToFabric(OVERSIZED_SVG)
+    expect(width).toBeCloseTo(220, 3)
+    expect(height).toBeCloseTo(160, 3)
+  })
+})
