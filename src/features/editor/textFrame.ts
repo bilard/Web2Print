@@ -69,8 +69,8 @@ type PatchedTextbox = Textbox & {
   __textFramePatched?: boolean
   /** Garde anti-récursion pendant l'ajustement de largeur automatique. */
   __textFrameSizing?: boolean
-  /** Vrai dès la première composition : l'ancrage ne compense qu'après elle. */
-  __textFrameMeasured?: boolean
+  /** Décalage d'ancrage DÉJÀ appliqué au centre — rend la compensation absolue. */
+  __tfAnchorOffset?: { dx: number; dy: number }
   _styleMap?: Record<number, { line: number }>
   _textLines?: unknown[]
   _clearCache?: () => void
@@ -103,6 +103,16 @@ export function getTextFrame(obj: FabricObject | null | undefined): TextFramePro
 /** Vrai si l'objet est un Textbox porteur d'un cadre InDesign. */
 export function isTextFrame(obj: FabricObject | null | undefined): boolean {
   return obj instanceof Textbox && getTextFrame(obj) !== null
+}
+
+/**
+ * Vrai si le bloc pilote lui-même sa largeur. Les mécanismes d'auto-ajustement
+ * historiques doivent s'effacer devant lui : deux logiques concurrentes sur
+ * `width` font glisser le bloc à chaque recomposition.
+ */
+export function isAutoWidthFrame(obj: FabricObject | null | undefined): boolean {
+  const mode = getTextFrame(obj)?.autoSizing
+  return mode === 'width' || mode === 'both'
 }
 
 /**
@@ -191,16 +201,34 @@ const UNWRAPPED_WIDTH = 100000
 const MIN_FRAME_WIDTH = 4
 
 /**
- * Compense la position pour que le point d'ancrage du redimensionnement
- * automatique reste immobile. L'objet a son origine au centre : agrandir de `dw`
- * écarte chaque bord de `dw/2`, il faut donc rendre ce demi-écart au bord ancré.
- * Le décalage est exprimé en local, puis porté dans le monde par scale + rotation.
+ * Décalage ABSOLU à appliquer au centre pour que le bord ancré reste immobile,
+ * exprimé par rapport aux dimensions de référence du cadre. L'objet a son origine
+ * au centre : s'élargir de `w - frameW` écarte chaque bord de la moitié, il faut
+ * donc rendre ce demi-écart au bord ancré.
  */
-function keepAnchorFixed(tb: PatchedTextbox, f: TextFrameProps, dw: number, dh: number): void {
+function anchorOffset(tb: PatchedTextbox, f: TextFrameProps): { dx: number; dy: number } {
+  const dw = (tb.width ?? 0) - f.frameW
+  const dh = (tb.height ?? 0) - f.frameH
   const ax = f.anchorX ?? 'center'
   const ay = f.anchorY ?? 'center'
-  const dxLocal = ax === 'left' ? dw / 2 : ax === 'right' ? -dw / 2 : 0
-  const dyLocal = ay === 'top' ? dh / 2 : ay === 'bottom' ? -dh / 2 : 0
+  return {
+    dx: ax === 'left' ? dw / 2 : ax === 'right' ? -dw / 2 : 0,
+    dy: ay === 'top' ? dh / 2 : ay === 'bottom' ? -dh / 2 : 0,
+  }
+}
+
+/**
+ * Replace le bloc sur son point d'ancrage. Le décalage appliqué est mémorisé et
+ * seul l'ÉCART est reporté : la position finale ne dépend donc que de la taille
+ * courante, jamais du nombre d'appels. Compenser des deltas successifs faisait
+ * dériver le bloc un peu plus à chaque chargement de données.
+ */
+function keepAnchorFixed(tb: PatchedTextbox, f: TextFrameProps): void {
+  const wanted = anchorOffset(tb, f)
+  const applied = tb.__tfAnchorOffset ?? { dx: 0, dy: 0 }
+  const dxLocal = wanted.dx - applied.dx
+  const dyLocal = wanted.dy - applied.dy
+  tb.__tfAnchorOffset = wanted
   if (dxLocal === 0 && dyLocal === 0) return
   const dx = dxLocal * (tb.scaleX ?? 1)
   const dy = dyLocal * (tb.scaleY ?? 1)
@@ -275,8 +303,6 @@ export function patchTextFrame(textbox: FabricObject): void {
     const f = getTextFrame(this)
     if (!f) { origInitDimensions(); return }
     const mode = f.autoSizing ?? 'off'
-    const widthBefore = this.width ?? 0
-    const heightBefore = this.height ?? 0
     origInitDimensions()
 
     // Largeur automatique : le cadre se cale sur le texte NON REPLIÉ.
@@ -315,21 +341,7 @@ export function patchTextFrame(textbox: FabricObject): void {
 
     // Le cadre grandit depuis son point d'ancrage InDesign : avec un ancrage à
     // droite, c'est le bord DROIT qui reste en place — pas le centre.
-    // Seules les dimensions RÉELLEMENT automatiques sont compensées, et jamais à
-    // la première composition : celle-ci ne fait qu'installer le cadre importé,
-    // elle ne traduit aucun changement de contenu.
-    if (!this.__textFrameSizing) {
-      const autoW = mode === 'width' || mode === 'both'
-      const autoH = mode === 'height' || mode === 'both'
-      if (this.__textFrameMeasured) {
-        keepAnchorFixed(
-          this, f,
-          autoW ? (this.width ?? 0) - widthBefore : 0,
-          autoH ? (this.height ?? 0) - heightBefore : 0,
-        )
-      }
-      this.__textFrameMeasured = true
-    }
+    if (!this.__textFrameSizing && mode !== 'off') keepAnchorFixed(this, f)
   }
 
   // ── Origine verticale du texte : marges + justification verticale ────────
@@ -408,6 +420,10 @@ export function patchTextFrame(textbox: FabricObject): void {
   }
 
   tb.__textFramePatched = true
+  // La position courante intègre DÉJÀ le décalage correspondant à la taille
+  // courante — au rechargement d'un projet, notamment. L'enregistrer évite de le
+  // réappliquer et de faire glisser le bloc à chaque ouverture.
+  tb.__tfAnchorOffset = anchorOffset(tb, getTextFrame(textbox) as TextFrameProps)
   // Le cadre change la hauteur : recomposer immédiatement.
   tb.dirty = true
   tb._clearCache?.()

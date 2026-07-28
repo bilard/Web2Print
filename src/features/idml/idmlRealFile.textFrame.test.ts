@@ -106,6 +106,53 @@ describe.skipIf(!existsSync(REAL_FILE))('IDML réel — blocs de texte', () => {
     expect(rightEdge()).toBeCloseTo(edge0, 4)
   })
 
+  it('ne dérive pas quand on recharge les données en boucle', async () => {
+    const docModel = await loadRealDocument()
+    const prix = docModel.objects.find((o) => o.mergeTemplate === '{{Prix_normal}}')
+    const [block] = await idmlToFabricObjects([prix as IdmlObject])
+    const tb = block as Textbox
+    const setText = (t: string) => {
+      tb.set({ text: t })
+      ;(tb as unknown as { initDimensions: () => void }).initDimensions()
+    }
+    setText('100,00')
+    const left = tb.left ?? 0
+    const width = tb.width ?? 0
+
+    // Vingt lignes de données, alternées : la position ne doit dépendre QUE de la
+    // valeur affichée — pas du nombre de recompositions déjà subies.
+    for (let i = 0; i < 20; i++) setText(i % 2 === 0 ? '9,90' : '1 234,56')
+    setText('100,00')
+    expect(tb.left ?? 0).toBeCloseTo(left, 4)
+    expect(tb.width ?? 0).toBeCloseTo(width, 4)
+
+    // Recomposer sans rien changer ne déplace rien non plus.
+    for (let i = 0; i < 5; i++) (tb as unknown as { initDimensions: () => void }).initDimensions()
+    expect(tb.left ?? 0).toBeCloseTo(left, 4)
+  })
+
+  it('capture la typographie du prix : entier gros, devise en exposant, centimes petits', async () => {
+    // Le gabarit « 22€,99 » porte trois styles imbriqués InDesign. C'est de lui
+    // que la fusion tire le formatage de chaque valeur (cf. buildPriceStyles).
+    const docModel = await loadRealDocument()
+    const prix = docModel.objects.find((o) => o.mergeTemplate === '{{Prix_normal}}')
+    const [block] = await idmlToFabricObjects([prix as IdmlObject])
+    const pf = (block.data as { priceFormat?: {
+      integerStyle?: { fontSize?: number }
+      currencyStyle?: { fontSize?: number; deltaY?: number }
+      decimalsStyle?: { fontSize?: number }
+      currency?: string
+    } }).priceFormat
+    expect(pf).toBeDefined()
+    expect(pf?.currency).toBe('€')
+    const entier = pf?.integerStyle?.fontSize ?? 0
+    const devise = pf?.currencyStyle?.fontSize ?? 0
+    const centimes = pf?.decimalsStyle?.fontSize ?? 0
+    expect(entier).toBeGreaterThan(centimes)   // « 22 » plus gros que « ,99 »
+    expect(centimes).toBeGreaterThan(devise)   // « ,99 » plus gros que « € »
+    expect(pf?.currencyStyle?.deltaY).toBeLessThan(0) // devise remontée en exposant
+  })
+
   it('donne à chaque bloc la hauteur de son cadre InDesign', async () => {
     const docModel = await loadRealDocument()
     const frames = docModel.objects.filter(

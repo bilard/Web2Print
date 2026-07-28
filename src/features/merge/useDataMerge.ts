@@ -13,7 +13,7 @@ import { applyConditionalRulesForRow } from './applyConditionalRules'
 import { formatPriceParts, type PriceSegment } from './priceFormat'
 import { fitScaleForWidth, clampFitFont, MIN_FIT_FONT, FIT_SHRINK_STEP } from './fitToZone'
 import { collectObjectsDeep, refreshAncestorGroups } from '@/features/editor/deepObjects'
-import { applyTextFrame, isTextFrame } from '@/features/editor/textFrame'
+import { applyTextFrame, isTextFrame, isAutoWidthFrame } from '@/features/editor/textFrame'
 import { isPimSource, pimProjectIdFromSource, loadPimMergeData } from './pimSource'
 import { cellValue } from '@/features/excel/cellValue'
 import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
@@ -160,6 +160,7 @@ async function applyRowToCanvas(
         const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
         const priceFormat = obj.data.priceFormat as PriceFormatStyle | undefined
         const priceParts = priceFormat ? formatPriceParts(resolved, priceFormat.currency, 2) : null
+        const priceApplied = Boolean(priceFormat && priceParts)
         if (priceFormat && priceParts) {
           obj.set('text', priceParts.text)
           ;(obj as any).styles = buildPriceStyles(priceParts.segments, priceFormat)
@@ -175,8 +176,14 @@ async function applyRowToCanvas(
           const base = (obj.data!.baseFontSize as number | undefined) ?? obj.fontSize ?? 16
           fitTextToZone(obj, obj.data!.fitZone as FitZone, base)
         } else if (obj instanceof Textbox && isSinglePlaceholder) {
-          autoFitPlaceholderWidth(obj)
-          if (tStyles && Object.keys(tStyles).length > 0) {
+          // Un bloc de texte en LARGEUR AUTOMATIQUE gère déjà son cadre — marges,
+          // retraits et point d'ancrage compris. Y superposer l'auto-fit historique
+          // (qui force aussi scaleX à 1) le faisait glisser à chaque ligne de données.
+          if (!isAutoWidthFrame(obj)) autoFitPlaceholderWidth(obj)
+          // Les styles de prix viennent d'être posés par rôle (entier / devise /
+          // centimes) : les réécrire depuis le gabarit les remplacerait par le
+          // style uniforme du placeholder, et le prix perdrait sa typographie.
+          if (!priceApplied && tStyles && Object.keys(tStyles).length > 0) {
             const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
             ;(obj as any).styles = remapped
           }
