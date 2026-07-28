@@ -53,8 +53,15 @@ export function emblemPrompt(name: string, accent: string): string {
  */
 const ENGINE_MENTION_RE = /\b(?:via|avec|using|with)\s+(?:nano\s*bananas?(?:\s*(?:2|pro))?|imagen|midjourney|dall[·.\s-]?e\s*\d*|firefly|stable\s*diffusion|flux)\b\s*(?:et|and)?\s*/gi
 
+/** Le prompt réclame-t-il lui-même du lettrage dans l'image ? */
+const WANTS_TEXT_RE = /\b(?:textes?|lettrages?|titres?|typographies?|slogans?|mots?|inscriptions?|écritures?|text|lettering|headline|typography)\b/i
+
 function coverBackdropPrompt(prompt: string): string {
   const cleaned = prompt.replace(ENGINE_MENTION_RE, '').replace(/\s{2,}/g, ' ').trim()
+  // PRIORITÉ AU PROMPT DE L'UTILISATEUR : la consigne « sans texte » est placée
+  // en dernier, donc en position de force face au modèle. Si la demande réclame
+  // elle-même du lettrage, on ne l'ajoute PAS — sinon on écraserait la demande.
+  if (WANTS_TEXT_RE.test(cleaned)) return cleaned
   return `${cleaned}\n\n`
     + `IMPORTANT — c'est une image de FOND, pas une couverture finie : `
     + `AUCUN texte, AUCUNE lettre, AUCUN chiffre, AUCUN mot, AUCUN titre, AUCUN logo, AUCUNE enseigne, AUCUN panneau écrit, AUCUN filigrane nulle part dans l'image. `
