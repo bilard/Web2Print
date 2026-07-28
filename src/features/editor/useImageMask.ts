@@ -774,6 +774,15 @@ function enterCropPattern(rect: FabricObject): void {
   // le rendu final du design reste donc identique.
   ;(snapshot as any)._clipPath = (rect as any).clipPath ?? null
   ;(rect as any).clipPath = undefined
+  // ⚠️ CADRE INSAISISSABLE — cause du « recadrage qui ne fonctionne pas » sur
+  // les blocs issus d'un import SVG (l'IDML, lui, marchait) : `decorateAll`
+  // pose `perPixelTargetFind` sur toutes les formes SVG, et le cadre de
+  // recadrage reçoit un remplissage à 0,1 % d'opacité — arrondi à transparent.
+  // Le ciblage au pixel considérait donc chaque clic comme tombant « à côté » :
+  // ni saisie du cadre, ni poignées. On repasse au ciblage par cadre pendant le
+  // recadrage, et on restaure le réglage d'origine en sortie.
+  ;(snapshot as any)._perPixelTargetFind = (rect as any).perPixelTargetFind ?? false
+  ;(rect as any).perPixelTargetFind = false
   ;(snapshot as any)._borderColor = (rect as any).borderColor
   ;(snapshot as any)._borderScaleFactor = (rect as any).borderScaleFactor
   ;(snapshot as any)._padding = (rect as any).padding
@@ -879,6 +888,7 @@ function enterCropPattern(rect: FabricObject): void {
   canvas.add(...pDims)
   canvas.bringObjectToFront(rect)
   canvas.add(pGridV1, pGridV2, pGridH1, pGridH2)
+
   canvas.setActiveObject(rect)
   _state = { kind: 'pattern', canvas, rect, ghost, snapshot }
   notify()
@@ -922,6 +932,7 @@ function cancelCropPattern(): void {
     strokeUniform: snapshot.strokeUniform,
     shadow: (snapshot as any)._shadow ?? null,
     clipPath: (snapshot as any)._clipPath ?? undefined,
+    perPixelTargetFind: (snapshot as any)._perPixelTargetFind ?? false,
     borderColor: (snapshot as any)._borderColor,
     borderScaleFactor: (snapshot as any)._borderScaleFactor,
     padding: (snapshot as any)._padding,
@@ -1005,6 +1016,7 @@ function applyCropPattern(): void {
     strokeUniform: snapshot.strokeUniform,
     shadow: (snapshot as any)._shadow ?? null,
     clipPath: (snapshot as any)._clipPath ?? undefined,
+    perPixelTargetFind: (snapshot as any)._perPixelTargetFind ?? false,
     borderColor: (snapshot as any)._borderColor,
     borderScaleFactor: (snapshot as any)._borderScaleFactor,
     padding: (snapshot as any)._padding,
