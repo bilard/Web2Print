@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth, storage } from '@/lib/firebase/config'
-import { generateImageBase64 } from '@/features/nanobana/generateImageBase64'
+import { generateImageBase64, NANO_BANANA_PRO_MODELS } from '@/features/nanobana/generateImageBase64'
 import { removeBackground } from '@/features/imaging/removeBackground'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { pagePx } from './components/pages/catalogCss'
@@ -38,38 +38,18 @@ export function emblemPrompt(name: string, accent: string): string {
 }
 
 /**
- * Brief de COUVERTURE : le sujet vient du plan IA, la RÉALISATION est imposée
- * ici. Formulé en consignes de brief photo (cadrage, mise au point, lumière,
- * fond, interdits) plutôt qu'en liste de mots-clés — c'est ce que Nano Banana
- * exécute le mieux. Les deux ratés observés sont explicitement bannis : sujet
- * noyé dans le flou, et marques inventées sur les outils.
+ * ⚠ AUCUN HABILLAGE. Le prompt de couverture part à Nano Banana TEL QUEL,
+ * exactement comme l'utilisateur l'a écrit dans le champ « Visuel de
+ * couverture ». Les briefs photo maison (packshot studio, direction
+ * artistique, listes d'interdits) ont été retirés : ils dénaturaient la
+ * demande — « une illustration d'ambiance dans un atelier » finissait en
+ * packshot sur fond gris. Le prompt appartient à l'utilisateur ; s'il veut
+ * changer le rendu, il édite ce champ.
  */
-function coverPrompt(subject: string): string {
-  // Tout est PRESCRIT, presque rien n'est interdit : un modèle d'image exécute
-  // ce qu'on lui demande de faire et ignore largement les négations. Décrire un
-  // décor (« workshop ») suffisait à faire apparaître murs, fenêtre et lumière
-  // du jour, quel que soit le nombre d'interdits ajoutés ensuite. On impose donc
-  // un PACKSHOT STUDIO : le sujet est seul, sur un fond fabriqué.
-  return `Studio packshot photograph, shot on a professional cyclorama sweep for the front cover of a printed trade catalogue.\n`
-    + `Subject, filling the UPPER two thirds of the frame: ${subject.trim().replace(/[.\s]+$/, '')}.\n`
-    + `The subject is the ONLY thing in the picture. It rests on a smooth seamless studio floor that curves up into a plain graduated backdrop in soft neutral grey. `
-    + `The backdrop is completely empty — bare seamless paper, nothing standing on it, nothing hanging on it.\n`
-    // La maquette pose ses textes (panneau accent, titres, bandeau) dans la
-    // MOITIÉ BASSE : un sujet placé bas s'y faisait recouvrir intégralement.
-    + `Framing: vertical portrait, eye-level three-quarter angle, subject sitting high in the frame with a clean margin around it; the BOTTOM THIRD is empty backdrop only, reserved for headline text.\n`
-    + `Focus: every product edge razor sharp front to back, fine material texture visible — brushed metal, matte plastic, rubber grip.\n`
-    + `Light: two-softbox studio setup, soft directional key from the upper left, gentle fill from the right, crisp controlled specular highlights, one soft contact shadow under the products.\n`
-    + `Rendering: honest high-end commercial product photography, accurate neutral colours, medium contrast, no filter, no illustration, no 3D render look.\n`
-    + `Keep the objects completely unbranded: bare surfaces, no text, no letters, no numbers, no logos anywhere in the image. No people, no hands.`
-}
 
 /** Cibles d'un visuel de catalogue : couverture, 4e, ou LOGO de marque. */
 export type CoverTarget = 'cover' | 'back' | 'logo'
 
-/** Le sujet du plan IA passe par le brief photo ; l'emblème a le sien. */
-function finalPrompt(prompt: string, target: CoverTarget): string {
-  return target === 'logo' ? prompt : coverPrompt(prompt)
-}
 
 /** Détoure l'emblème (rembg → PNG alpha recadré au sujet). Échec = image intacte. */
 async function cutout(blob: Blob, mimeType: string): Promise<{ blob: Blob; mimeType: string }> {
@@ -111,7 +91,7 @@ export function useCoverImage() {
   }
 
   const generateCover = async (prompt: string, target: CoverTarget) => {
-    if (!prompt.trim()) { toast.error('Renseignez d’abord le prompt image (plan IA ou saisie manuelle)'); return }
+    if (!prompt.trim()) { toast.error('Écrivez d’abord votre prompt (Prompt global ou champ « Visuel de couverture »)'); return }
     const uid = auth.currentUser?.uid
     if (!uid) { toast.error('Connexion requise pour générer un visuel'); return }
     setGenerating(true)
@@ -119,7 +99,12 @@ export function useCoverImage() {
       const s = useCatalogStore.getState()
       // Un logo est CARRÉ (emblème), pas au format de la page.
       const { w, h } = target === 'logo' ? { w: 512, h: 512 } : pagePx(s.format)
-      const { mimeType, base64 } = await generateImageBase64({ prompt: finalPrompt(prompt, target), targetWidth: w, targetHeight: h })
+      // Couverture et logo partent à l'IMPRESSION et ne sont générés qu'une
+      // fois : on demande explicitement « Nano Banana 2 » (Gemini 3 Pro Image)
+      // en tête de cascade. La cascade par défaut attaquait le modèle FLASH.
+      const { mimeType, base64 } = await generateImageBase64({
+        prompt, targetWidth: w, targetHeight: h, models: NANO_BANANA_PRO_MODELS,
+      })
       // L'EMBLÈME est détouré : Nano Banana ne sait pas produire d'alpha, et son
       // fond blanc formait un cartouche disgracieux sur les bandeaux colorés.
       // Échec du détourage → on garde l'image pleine (jamais de blocage).

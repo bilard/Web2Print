@@ -5,12 +5,32 @@
 import { llmPostWithFallback } from '@/lib/llmProxyClient'
 import type { GenerationRequest } from './types'
 
-// Image IA, fallback to other live image models if not available
+// Image IA, fallback to other live image models if not available.
+// ⚠ Cascade par DÉFAUT : le rapide d'abord (volume, itérations d'éditeur).
 const NANO_BANANA_MODELS = [
   'gemini-2.5-flash-image',
   'gemini-3.1-flash-image-preview',
   'gemini-3-pro-image-preview',
   'nano-banana-pro-preview',
+] as const
+
+/**
+ * Cascade QUALITÉ — « Nano Banana 2 » (Gemini 3 Pro Image) EN PREMIER, repli
+ * vers les modèles rapides seulement s'il est indisponible.
+ * À passer via `models` pour les visuels qu'on ne génère qu'une fois et qui
+ * partent à l'impression (couverture de catalogue, logo) : la cascade par
+ * défaut attaque `gemini-2.5-flash-image`, dont le rendu ne tient pas la
+ * comparaison sur une scène d'ambiance riche.
+ */
+export const NANO_BANANA_PRO_MODELS = [
+  // Génération d'image de la génération 3.6 (pendant image de gemini-3.6-flash,
+  // le modèle choisi dans les Réglages IA) : tenté en premier. S'il n'est pas
+  // exposé par l'API, la cascade passe au suivant sans échouer.
+  'gemini-3.6-flash-image',
+  'gemini-3-pro-image-preview',
+  'nano-banana-pro-preview',
+  'gemini-3.1-flash-image-preview',
+  'gemini-2.5-flash-image',
 ] as const
 
 export interface GeneratedImageBase64 { mimeType: string; base64: string }

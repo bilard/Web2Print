@@ -45,7 +45,7 @@ export const PlanSchema = z.object({
   theme: ThemeSchema.optional(),
   sections: z.array(SectionSchema).optional(),
   brandName: z.string().optional(),
-  cover: z.object({ title: z.string(), subtitle: z.string().optional(), baseline: z.string().optional(), imagePrompt: z.string(), layout: z.enum(['classic', 'panel', 'poster']).optional() }).optional(),
+  cover: z.object({ title: z.string(), subtitle: z.string().optional(), baseline: z.string().optional(), imagePrompt: z.string().optional(), layout: z.enum(['classic', 'panel', 'poster']).optional() }).optional(),
   backCover: z.object({ title: z.string(), text: z.string() }).optional(),
   tocTitle: z.string().optional(),
   cardStyle: CardStyleAISchema,
@@ -86,14 +86,9 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
       type: 'object',
       properties: {
         title: { type: 'string' }, subtitle: { type: 'string' }, baseline: { type: 'string' },
-        // ⚠ Décrire un LIEU (« a professional workshop with… ») fait fabriquer un
-        // décor : murs, fenêtre, lumière du jour — un modèle d'image suit le
-        // positif et ignore les interdits posés plus loin. On exige donc un sujet
-        // PRODUIT ; la facture photo est imposée ensuite, côté application.
-        imagePrompt: { type: 'string', description: "EN ANGLAIS, 1 phrase : LES PRODUITS À PHOTOGRAPHIER en gros plan (lesquels, matières, couleurs, agencement), rien d'autre. INTERDIT de décrire un LIEU ou une AMBIANCE (pas de 'workshop', 'garage', 'store', 'room', 'window', 'daylight', 'background') : le décor est imposé par l'application. Ex. « a cordless impact driver, a socket set and a coiled tape measure in matte black and red, arranged in a tight overlapping group »" },
         layout: { type: 'string', enum: ['classic', 'panel', 'poster'], description: "ARCHÉTYPE de composition : 'classic' = photo assombrie + textes bas-gauche · 'panel' = éditorial print (bande latérale sombre, grand panneau accent chevauchant la photo, bandeau infos bas) — choisis-le pour les inspirations maquettes/minimalistes · 'poster' = titre géant centré sur la photo" },
       },
-      required: ['title', 'imagePrompt'],
+      required: ['title'],
     },
     backCover: {
       type: 'object',
@@ -345,7 +340,10 @@ export function sanitizeCatalogPlan(raw: RawCatalogPlan, tree: CatalogTreeNode[]
     sizeByPrice: current?.sizeByPrice ?? true,
     sections,
     cover: raw.cover
-      ? { title: raw.cover.title || catalogName, subtitle: raw.cover.subtitle ?? '', baseline: raw.cover.baseline ?? '', imagePrompt: raw.cover.imagePrompt, layout: raw.cover.layout ?? current?.cover.layout ?? 'classic' }
+      // imagePrompt : JAMAIS réécrit par l'IA — c'est le prompt de l'UTILISATEUR
+      // (Prompt global ou champ « Visuel de couverture »), envoyé tel quel à
+      // Nano Banana. On conserve donc l'existant.
+      ? { title: raw.cover.title || catalogName, subtitle: raw.cover.subtitle ?? '', baseline: raw.cover.baseline ?? '', imagePrompt: current?.cover.imagePrompt ?? '', layout: raw.cover.layout ?? current?.cover.layout ?? 'classic' }
       : (current?.cover ?? { title: catalogName || 'Catalogue', subtitle: '', baseline: '', imagePrompt: '' }),
     backCover: raw.backCover ?? current?.backCover ?? { title: catalogName || 'Catalogue', text: '' },
     tocTitle: raw.tocTitle || current?.tocTitle || 'Sommaire',
@@ -435,11 +433,8 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
       // Un brief « illustration/visuel de couverture » ne changeait RIEN de visible :
       // le modèle omettait cover (consigne de modification ciblée), donc aucun
       // imagePrompt à donner au générateur d'image. Ici c'est explicitement imposé.
-      `EXCEPTION COUVERTURE : dès que la demande évoque la COUVERTURE, son VISUEL, son ILLUSTRATION ou son AMBIANCE, renvoie OBLIGATOIREMENT l'objet cover COMPLET (title, subtitle, baseline, imagePrompt, layout) — ` +
-      `imagePrompt EN ANGLAIS, traduction fidèle de la demande (sujet, ambiance, style graphique), photo/illustration sans AUCUN texte incrusté. ` +
-      // Un brief « … via Nano banana 2 » nomme le MOTEUR de génération : le modèle
-      // en faisait un objet de la scène (« a Nano banana 2 tool as the centerpiece »).
-      `Un nom de MOTEUR d'image cité dans la demande (Nano Banana, Imagen, Midjourney, DALL·E, Firefly, Stable Diffusion…) est une consigne d'outillage, JAMAIS un élément à représenter : ne le fais figurer sous aucune forme dans imagePrompt. ` +
+      `EXCEPTION COUVERTURE : dès que la demande évoque la COUVERTURE, renvoie OBLIGATOIREMENT l'objet cover (title, subtitle, baseline, layout). ` +
+      `N'écris JAMAIS de prompt d'image : le visuel est produit à partir du prompt de l'utilisateur, tel qu'il l'a écrit. ` +
       // « Créer un logo "Distriland" » restait lettre morte : rien ne portait le
       // nom de marque. brandName est composé en logo (couverture + bandeaux).
       `EXCEPTION MARQUE : si la demande OU LES CONSIGNES CRÉA évoquent un LOGO, une MARQUE ou une ENSEIGNE, renvoie brandName avec le nom EXACT tel qu'écrit (guillemets/casse d'origine respectés) — c'est LUI qui sera composé en logo, et il ne remplace NI le titre NI le sous-titre de couverture. ` +
@@ -448,7 +443,6 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
     : `Produis un plan complet : thème (couleurs hex cohérentes avec la demande, polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')}), ` +
       `une section par nodeId — la densité (productsPerPage parmi ${CATALOG_GRIDS.join('/')}) ne compte que sur les nœuds de NIVEAU 1 (flux continu : les produits des sous-familles remplissent les pages sans vide) : choisis DENSE (4 à 8/page), jamais 1-2 sauf univers premium très court. 0-2 produits vedette par section ` +
       `choisis parmi les exemples (renvoie l'id AVANT le tiret), textes de couverture et 4e de couverture en FRANÇAIS, ` +
-      `et un imagePrompt de couverture en anglais (photo réaliste, sans texte). ` +
       `Renvoie AUSSI cardStyle avec des couleurs d'objets VARIÉES coordonnées au thème. ${antiMono}`
   const raw = await generateJson<RawCatalogPlan>({
     task: 'catalog.plan',
@@ -467,7 +461,7 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
           // Les consignes créa sont un CANAL DE DEMANDE à part entière : une demande
           // de logo écrite ici doit remplir brandName, comme si elle était dans le brief.
           `- MARQUE : si ces consignes nomment un LOGO, une MARQUE ou une ENSEIGNE (ex. « créer un logo "X" »), renvoie OBLIGATOIREMENT brandName = le nom EXACT — il sera composé en logo sur la couverture ET dans le bandeau de chaque page. Ce n'est ni le titre ni le sous-titre de couverture.\n` +
-          `- STRUCTURE : si les consignes décrivent une composition (couverture éditoriale, fiches en LISTE 1 colonne, densité), APPLIQUE-les : cover.layout ('panel' maquette éditoriale, 'poster' visuel plein cadre), productsPerPage 2-3 = LISTE pleine largeur, 4-8 = grille. Si un ARCHÉTYPE COUVERTURE est imposé, renvoie OBLIGATOIREMENT l'objet cover complet (title, imagePrompt, layout).\n` +
+          `- STRUCTURE : si les consignes décrivent une composition (couverture éditoriale, fiches en LISTE 1 colonne, densité), APPLIQUE-les : cover.layout ('panel' maquette éditoriale, 'poster' visuel plein cadre), productsPerPage 2-3 = LISTE pleine largeur, 4-8 = grille. Si un ARCHÉTYPE COUVERTURE est imposé, renvoie OBLIGATOIREMENT l'objet cover (title, layout).\n` +
           `- COMPOSITION DES FICHES : reproduis la maquette AVEC les leviers : cardStyle.cardBg (fond des FICHES — jaune/sombre si le modèle le veut), theme.pageBg (fond de PAGE, noir si le modèle est dark), kickerBg (pastille type chip), cardStyle.shape (coins/chips/prix/sticker/image/ombre — la STRUCTURE graphique) et cardStyle.layout (positions % des blocs) pour rapprocher la maquette du modèle — ose des placements différents du gabarit par défaut. Si un FOND DE PAGE ou un FOND DES FICHES est imposé dans les consignes, recopie ces hex EXACTEMENT dans theme.pageBg et cardStyle.cardBg (ex. page noire + fiches jaunes).\n` + '\n'
         : '') +
       `${consigne}\n\nDemande : ${brief}`,
