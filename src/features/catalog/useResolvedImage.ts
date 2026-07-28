@@ -17,7 +17,7 @@ function isReady(url: string): boolean {
 }
 
 /** Essaie chaque candidat de la chaîne jusqu'au premier qui se résout (repli). */
-async function resolveCatalogImage(value: string): Promise<string | undefined> {
+export async function resolveCatalogImage(value: string): Promise<string | undefined> {
   for (const candidate of imageChainCandidates(value)) {
     const resolved = await resolveOne(candidate)
     if (resolved) return resolved

@@ -79,8 +79,11 @@ export function StepPrompt() {
   // Fiche exemple pour l'aperçu live du style : produit choisi via 👁 (carte
   // Sections), sinon 1er produit sélectionné — AVEC les champs libres pour que
   // l'aperçu montre la même zone « Détails » que le catalogue.
+  // TOUJOURS via rowsById : `selectedRows` porte les lignes BRUTES, donc l'aperçu
+  // ignorait les surcharges (visuel détouré, correction de données) tant qu'aucun
+  // produit n'était choisi au 👁 — l'aperçu montrait alors autre chose que les pages.
   const sampleRow = useMemo(
-    () => (previewRowId ? rowsById.get(previewRowId) : null) ?? selectedRows[0] ?? null,
+    () => (previewRowId ? rowsById.get(previewRowId) : null) ?? (selectedRows[0] ? rowsById.get(selectedRows[0]._id) : null) ?? null,
     [previewRowId, rowsById, selectedRows],
   )
   const sampleFields = useMemo(

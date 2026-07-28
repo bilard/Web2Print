@@ -8,6 +8,7 @@ import { CARD_OBJECT_IDS, type CardObjectId, type CatalogCardStyle, type Catalog
 import { freeLayoutBox } from '../pages/freeLayout'
 import { ColorObjectField, OBJ_COLOR_KEYS, colorDefs } from './CardStyleColors'
 import { CARD_TYPO_FIELDS, OBJ_LABEL, objectLinkPatch } from './CardStyleTypo'
+import { CutoutAllImagesButton } from './CutoutAllImagesButton'
 
 interface Props {
   obj: CardObjectId
@@ -77,6 +78,8 @@ export function CardObjectSettings({ obj, style, theme, patch, wide }: Props) {
           {colors.map((def) => <ColorObjectField key={def.key} def={def} style={style} patch={patch} />)}
         </div>
       )}
+      {/* Le visuel produit se règle ici — c'est donc ici qu'on le détoure. */}
+      {obj === 'image' && <CutoutAllImagesButton />}
       {obj !== 'image' && (
         <label className="flex items-center gap-1.5 text-[10px] text-white/40"
           title="Liaison : ce bloc est soudé à DROITE du bloc choisi et le suit partout">
