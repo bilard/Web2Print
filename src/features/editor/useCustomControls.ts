@@ -272,6 +272,13 @@ export function applySquareCropControls(obj: {
       cloned[key].sizeY = CROP_HANDLE_SIZE
     }
   }
-  // Supprime la poignée de rotation (le crop n'a pas de rotation)
-  if (cloned.mtr) delete cloned.mtr
+  // Masque la poignée de rotation (le recadrage ne tourne pas).
+  //
+  // ⚠️ NE PAS la SUPPRIMER de la table : `oCoords` conserve sa clé `mtr`, et
+  // Fabric parcourt `oCoords` puis lit `controls[key].shouldActivate` — sur une
+  // clé supprimée, il lisait `undefined.shouldActivate` et levait une exception
+  // à CHAQUE mousedown/mousemove. `findTarget` échouant, plus aucun événement
+  // n'était émis : le mode recadrage devenait totalement inerte (ni glissement,
+  // ni poignées, ni validation au clic).
+  if (cloned.mtr) cloned.mtr.visible = false
 }
