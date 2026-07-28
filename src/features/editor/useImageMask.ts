@@ -889,6 +889,49 @@ function enterCropPattern(rect: FabricObject): void {
   canvas.bringObjectToFront(rect)
   canvas.add(pGridV1, pGridV2, pGridH1, pGridH2)
 
+  // ── LE geste de recadrage ────────────────────────────────────────────────
+  // Glisser déplace l'IMAGE sous le cadre ; le cadre, lui, reste en place.
+  // C'est le geste attendu de tout outil de recadrage (Canva, InDesign).
+  //
+  // Sans ça, glisser au centre du cadre déplaçait le CADRE — c'est-à-dire le
+  // bloc dans la page — pendant que l'image restait immobile : on déformait la
+  // mise en page sans jamais recadrer la photo. Mesuré : un glissement de
+  // 50 px déplaçait le bloc de 242 px et l'image de 0.
+  // Les poignées continuent de redimensionner le bloc.
+  ;(snapshot as any)._lockMovementX = (rect as any).lockMovementX ?? false
+  ;(snapshot as any)._lockMovementY = (rect as any).lockMovementY ?? false
+  ;(rect as any).set({ lockMovementX: true, lockMovementY: true, hoverCursor: 'grab' })
+  // L'aperçu ne capte rien lui-même : le handler ci-dessous gère le geste, pour
+  // qu'il marche aussi bien dans le cadre que sur le débord de l'image.
+  ;(ghost as any).set({ selectable: false, evented: false })
+
+  let dragFrom: Point | null = null
+  const onCropDown = (e: { e: MouseEvent | TouchEvent | PointerEvent }) => {
+    if ((rect as any).__corner) return // poignée saisie → redimensionnement
+    const p = canvas.getScenePoint(e.e as MouseEvent)
+    const g = ghost.getBoundingRect()
+    const onImage = p.x >= g.left && p.x <= g.left + g.width && p.y >= g.top && p.y <= g.top + g.height
+    if (!onImage && !rect.containsPoint(p)) return
+    dragFrom = p
+  }
+  const onCropMove = (e: { e: MouseEvent | TouchEvent | PointerEvent }) => {
+    if (!dragFrom) return
+    const p = canvas.getScenePoint(e.e as MouseEvent)
+    ghost.set({
+      left: (ghost.left ?? 0) + (p.x - dragFrom.x),
+      top: (ghost.top ?? 0) + (p.y - dragFrom.y),
+    })
+    ghost.setCoords()
+    dragFrom = p
+    canvas.setCursor('grabbing')
+    canvas.requestRenderAll()
+  }
+  const onCropUp = () => { dragFrom = null }
+  canvas.on('mouse:down', onCropDown)
+  canvas.on('mouse:move', onCropMove)
+  canvas.on('mouse:up', onCropUp)
+  ;(rect as any)._cropDragHandlers = { onCropDown, onCropMove, onCropUp }
+
   canvas.setActiveObject(rect)
   _state = { kind: 'pattern', canvas, rect, ghost, snapshot }
   notify()
@@ -902,6 +945,20 @@ function cancelCropPattern(): void {
   for (const o of canvas.getObjects().filter((x: any) => x.data?.isCropGrid || x.data?.isCropDim)) {
     canvas.remove(o)
   }
+  // Détacher le geste « glisser pour recadrer » et rendre au bloc sa mobilité
+  const dragHandlers = (rect as any)._cropDragHandlers
+  if (dragHandlers) {
+    canvas.off('mouse:down', dragHandlers.onCropDown)
+    canvas.off('mouse:move', dragHandlers.onCropMove)
+    canvas.off('mouse:up', dragHandlers.onCropUp)
+    delete (rect as any)._cropDragHandlers
+  }
+  ;(rect as any).set({
+    lockMovementX: (snapshot as any)._lockMovementX ?? false,
+    lockMovementY: (snapshot as any)._lockMovementY ?? false,
+    hoverCursor: undefined,
+  })
+
   // Détacher précisément les handlers de sync stockés lors de l'entrée
   const syncGridP = (rect as any)._cropSyncGridP
   if (syncGridP) {
@@ -959,6 +1016,20 @@ function applyCropPattern(): void {
   for (const o of canvas.getObjects().filter((x: any) => x.data?.isCropGrid || x.data?.isCropDim)) {
     canvas.remove(o)
   }
+  // Détacher le geste « glisser pour recadrer » et rendre au bloc sa mobilité
+  const dragHandlers = (rect as any)._cropDragHandlers
+  if (dragHandlers) {
+    canvas.off('mouse:down', dragHandlers.onCropDown)
+    canvas.off('mouse:move', dragHandlers.onCropMove)
+    canvas.off('mouse:up', dragHandlers.onCropUp)
+    delete (rect as any)._cropDragHandlers
+  }
+  ;(rect as any).set({
+    lockMovementX: (snapshot as any)._lockMovementX ?? false,
+    lockMovementY: (snapshot as any)._lockMovementY ?? false,
+    hoverCursor: undefined,
+  })
+
   // Détacher précisément les handlers de sync stockés lors de l'entrée
   const syncGridP = (rect as any)._cropSyncGridP
   if (syncGridP) {
