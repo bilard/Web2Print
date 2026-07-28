@@ -4,12 +4,6 @@ import { CatalogLogo } from './CatalogLogo'
 
 interface Props { ctx: CatalogRenderCtx; variant: 'cover' | 'back' }
 
-/** Le nom du catalogue est-il déjà porté par le logo de marque ? (casse/accents ignorés) */
-function sameAsBrand(catalogName: string, brandName?: string): boolean {
-  const norm = (v: string) => v.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-  return !!brandName?.trim() && norm(catalogName) === norm(brandName)
-}
-
 export function CoverPage({ ctx, variant }: Props) {
   const { plan } = ctx
   const ps = mergedPageStyle(plan.pageStyle)
@@ -44,10 +38,8 @@ export function CoverPage({ ctx, variant }: Props) {
           <h1 className="cat-coverp-title">{plan.cover.title}</h1>
           {ps.showCoverSubtitle && plan.cover.subtitle && <div className="cat-coverp-sub">{plan.cover.subtitle}</div>}
         </div>
+        {/* Millésime seul, posé sur la photo — le nom vit dans le logo du panneau. */}
         <div className="cat-coverp-foot">
-          {/* Le nom du catalogue n'est répété en pied QUE s'il diffère du logo :
-              « DISTRILAND » composé en logo puis redit en bas faisait doublon. */}
-          <div className="cat-coverp-foot-info">{sameAsBrand(ctx.catalogName, plan.brandName) ? '' : ctx.catalogName}</div>
           <div className="cat-coverp-foot-chip">{new Date().getFullYear()}</div>
         </div>
       </div>
