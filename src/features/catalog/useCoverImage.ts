@@ -38,14 +38,28 @@ export function emblemPrompt(name: string, accent: string): string {
 }
 
 /**
- * ⚠ AUCUN HABILLAGE. Le prompt de couverture part à Nano Banana TEL QUEL,
- * exactement comme l'utilisateur l'a écrit dans le champ « Visuel de
- * couverture ». Les briefs photo maison (packshot studio, direction
- * artistique, listes d'interdits) ont été retirés : ils dénaturaient la
- * demande — « une illustration d'ambiance dans un atelier » finissait en
- * packshot sur fond gris. Le prompt appartient à l'utilisateur ; s'il veut
- * changer le rendu, il édite ce champ.
+ * ⚠ LE PROMPT DE L'UTILISATEUR EST ENVOYÉ TEL QUEL. Les briefs photo maison
+ * (packshot studio, direction artistique, listes d'interdits) ont été retirés :
+ * ils dénaturaient la demande — « une illustration d'ambiance dans un atelier »
+ * finissait en packshot sur fond gris.
+ *
+ * Deux seuls ajustements, tous deux demandés explicitement :
+ *  1. mention du MOTEUR retirée — « via Nano Banana 2 » se retrouvait DESSINÉ
+ *     dans l'image (lettrage « NANO BANANA 2 » et banane jaune au centre) ;
+ *  2. consigne « décor sans aucun texte » ajoutée — le visuel est un FOND sur
+ *     lequel la maquette pose ensuite ses propres titres, logo et bandeaux ;
+ *     sans elle, le modèle dessine une couverture complète et les deux
+ *     typographies se superposent.
  */
+const ENGINE_MENTION_RE = /\b(?:via|avec|using|with)\s+(?:nano\s*bananas?(?:\s*(?:2|pro))?|imagen|midjourney|dall[·.\s-]?e\s*\d*|firefly|stable\s*diffusion|flux)\b\s*(?:et|and)?\s*/gi
+
+function coverBackdropPrompt(prompt: string): string {
+  const cleaned = prompt.replace(ENGINE_MENTION_RE, '').replace(/\s{2,}/g, ' ').trim()
+  return `${cleaned}\n\n`
+    + `IMPORTANT — c'est une image de FOND, pas une couverture finie : `
+    + `AUCUN texte, AUCUNE lettre, AUCUN chiffre, AUCUN mot, AUCUN titre, AUCUN logo, AUCUNE enseigne, AUCUN panneau écrit, AUCUN filigrane nulle part dans l'image. `
+    + `Les titres seront ajoutés par-dessus par la mise en page.`
+}
 
 /** Cibles d'un visuel de catalogue : couverture, 4e, ou LOGO de marque. */
 export type CoverTarget = 'cover' | 'back' | 'logo'
@@ -103,7 +117,8 @@ export function useCoverImage() {
       // fois : on demande explicitement « Nano Banana 2 » (Gemini 3 Pro Image)
       // en tête de cascade. La cascade par défaut attaquait le modèle FLASH.
       const { mimeType, base64 } = await generateImageBase64({
-        prompt, targetWidth: w, targetHeight: h, models: NANO_BANANA_PRO_MODELS,
+        prompt: target === 'logo' ? prompt : coverBackdropPrompt(prompt),
+        targetWidth: w, targetHeight: h, models: NANO_BANANA_PRO_MODELS,
       })
       // L'EMBLÈME est détouré : Nano Banana ne sait pas produire d'alpha, et son
       // fond blanc formait un cartouche disgracieux sur les bandeaux colorés.
