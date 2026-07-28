@@ -250,13 +250,13 @@ export function StepPrompt() {
               {plan && (
                 <div className="pt-1 space-y-2 border-t border-border/60">
                   <p className="text-[11px] text-white/50">
-                    Visuel de couverture — <b className="text-white/70">votre prompt part tel quel</b> à Nano Banana 2,
-                    sans reformulation. Vide = le Prompt global ci-dessus est utilisé.
+                    Visuel de couverture — <b className="text-white/70">le prompt ci-dessus part tel quel</b> à Nano Banana 2,
+                    sans reformulation.
                   </p>
-                  {/* Repli sur le Prompt global : ce que l'utilisateur a écrit EST
-                      le brief image — aucune traduction, aucun habillage. */}
-                  <CoverVisualField target="cover" prompt={plan.cover.imagePrompt || prompt} imageUrl={coverImageUrl} rows={2}
-                    onPrompt={(v) => setPlan({ ...plan, cover: { ...plan.cover, imagePrompt: v } })} />
+                  {/* AUCUN second champ : le Prompt global est juste au-dessus,
+                      le recopier ici créait deux zones jumelles. Un prompt image
+                      DISTINCT reste possible dans l'Aperçu › Fond de page. */}
+                  <CoverVisualField target="cover" prompt={plan.cover.imagePrompt || prompt} imageUrl={coverImageUrl} />
                 </div>
               )}
             </section>

@@ -1,9 +1,9 @@
-// Bloc « Visuel IA » d'une couverture : prompt image + génération Nano Banana +
-// vignette du résultat. PARTAGÉ entre le panneau « Fond de page » de l'Aperçu
-// (PageOptionsCover) et la carte « Prompt global » de l'étape Prompt — le brief
-// global écrit ce prompt via le plan IA, il doit pouvoir être lancé SUR PLACE
-// (sans ce chemin, un brief « illustration de couverture » n'avait aucun effet
-// visible tant qu'on n'ouvrait pas l'Aperçu).
+// Bloc « Visuel IA » d'une couverture : génération Nano Banana + vignette du
+// résultat, avec ou sans champ de prompt. PARTAGÉ entre le panneau « Fond de
+// page » de l'Aperçu (PageOptionsCover, champ éditable) et la carte « Prompt
+// global » de l'étape Prompt (SANS champ : le Prompt global est déjà affiché
+// juste au-dessus — l'afficher une seconde fois faisait deux zones jumelles
+// où l'on ne savait plus laquelle commandait).
 import { Loader2, Wand2 } from 'lucide-react'
 import { useCoverImage } from '../../useCoverImage'
 import { optFieldClass } from './PageOptionControls'
@@ -11,9 +11,10 @@ import { optFieldClass } from './PageOptionControls'
 interface Props {
   /** Cible du visuel généré : couverture ou 4e de couverture. */
   target: 'cover' | 'back'
-  /** Prompt image (EN) — `plan.cover.imagePrompt` pour la couverture. */
+  /** Prompt envoyé TEL QUEL au générateur d'image. */
   prompt: string
-  onPrompt: (v: string) => void
+  /** Absent = prompt non éditable ici (il est saisi ailleurs) : pas de champ. */
+  onPrompt?: (v: string) => void
   /** Visuel déjà généré (aperçu en vignette). */
   imageUrl: string | null
   rows?: number
@@ -23,10 +24,12 @@ export function CoverVisualField({ target, prompt, onPrompt, imageUrl, rows = 3 
   const { generating, generateCover } = useCoverImage()
   return (
     <>
-      <textarea value={prompt} onChange={(e) => onPrompt(e.target.value)} rows={rows}
-        placeholder="Prompt du visuel (EN)" className={`${optFieldClass} resize-none`} />
+      {onPrompt && (
+        <textarea value={prompt} onChange={(e) => onPrompt(e.target.value)} rows={rows}
+          placeholder="Prompt du visuel" className={`${optFieldClass} resize-none`} />
+      )}
       <div className="flex items-center gap-2">
-        <button type="button" disabled={generating} onClick={() => void generateCover(prompt, target)}
+        <button type="button" disabled={generating || !prompt.trim()} onClick={() => void generateCover(prompt, target)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[#fff] text-xs font-medium">
           {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />} Générer le visuel
         </button>
