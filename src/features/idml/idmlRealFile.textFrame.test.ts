@@ -37,10 +37,26 @@ async function loadRealDocument(): Promise<IdmlDocument> {
 }
 
 describe.skipIf(!existsSync(REAL_FILE))('IDML réel — blocs de texte', () => {
+  it('absorbe la pastille circulaire dans son bloc de texte', async () => {
+    // « +55g GRATUIT » est un bloc de texte OVALE dans InDesign : sa forme ne doit
+    // pas rester un calque séparé du texte qu'elle contient.
+    const docModel = await loadRealDocument()
+    const pastille = docModel.objects.find((o) => o.mergeTemplate === '{{Free_complement}}')
+    expect(pastille?.isOvalFrame).toBe(true)
+    expect(pastille?.frameSvgPath).toBeTruthy()
+
+    const objs = await idmlToFabricObjects([pastille as IdmlObject])
+    expect(objs).toHaveLength(1)
+    expect(objs[0]).toBeInstanceOf(Textbox)
+    const frame = getTextFrame(objs[0])
+    expect(frame?.svgPath).toBe(pastille?.frameSvgPath)
+    expect(frame?.fill).toBe('#3657ad')
+  })
+
   it('convertit chaque bloc de texte rempli en UN seul objet Fabric', async () => {
     const docModel = await loadRealDocument()
     const frames = docModel.objects.filter(
-      (o) => o.type === 'TextFrame' && (o.paragraphs?.length ?? 0) > 0 && !o.frameSvgPath,
+      (o) => o.type === 'TextFrame' && (o.paragraphs?.length ?? 0) > 0,
     )
     expect(frames.length).toBeGreaterThan(0)
 

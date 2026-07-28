@@ -17,7 +17,7 @@
  * `toObject()`/`loadFromJSON()` de Fabric, et `patchTextFrame` les réactive
  * au rechargement du projet.
  */
-import { Textbox } from 'fabric'
+import { Path, Textbox } from 'fabric'
 import type { FabricObject } from 'fabric'
 
 export type VerticalAlign = 'top' | 'center' | 'bottom'
@@ -48,6 +48,11 @@ export interface TextFrameProps {
   strokeDashArray?: number[] | null
   /** Arrondi uniforme des 4 coins (unités locales). */
   cornerRadius?: number
+  /**
+   * Forme du cadre quand il n'est pas rectangulaire (ovale, tracé libre), en
+   * données SVG centrées sur 0,0. Elle remplace le rectangle arrondi au rendu.
+   */
+  svgPath?: string
   insetTop?: number
   insetRight?: number
   insetBottom?: number
@@ -71,6 +76,8 @@ type PatchedTextbox = Textbox & {
   __textFrameSizing?: boolean
   /** Décalage d'ancrage DÉJÀ appliqué au centre — rend la compensation absolue. */
   __tfAnchorOffset?: { dx: number; dy: number }
+  /** Forme du cadre mise en cache, indexée par sa signature de rendu. */
+  __tfPath?: { key: string; path: Path | null }
   _styleMap?: Record<number, { line: number }>
   _textLines?: unknown[]
   _clearCache?: () => void
@@ -240,6 +247,33 @@ function keepAnchorFixed(tb: PatchedTextbox, f: TextFrameProps): void {
   tb.setCoords()
 }
 
+/**
+ * Forme du cadre non rectangulaire, sous forme d'objet Fabric `Path` réutilisé
+ * d'un rendu à l'autre. Passer par Fabric plutôt que par `Path2D` nous donne le
+ * recentrage (`pathOffset`) et la peinture fond/contour déjà écrits.
+ */
+function framePath(tb: PatchedTextbox, f: TextFrameProps): Path | null {
+  if (!f.svgPath) return null
+  const strokeW = f.strokeWidth ?? 0
+  const key = `${f.svgPath}|${f.fill}|${f.stroke}|${strokeW}|${f.strokeDashArray?.join(',')}`
+  if (tb.__tfPath?.key === key) return tb.__tfPath.path
+  try {
+    const path = new Path(f.svgPath, {
+      fill: f.fill && f.fill !== 'transparent' ? f.fill : '',
+      stroke: strokeW > 0 && f.stroke && f.stroke !== 'transparent' ? f.stroke : undefined,
+      strokeWidth: strokeW,
+      strokeDashArray: f.strokeDashArray ?? undefined,
+      originX: 'center', originY: 'center',
+    })
+    tb.__tfPath = { key, path }
+    return path
+  } catch (e) {
+    console.warn('[textFrame] forme de cadre illisible :', e)
+    tb.__tfPath = { key, path: null as unknown as Path }
+    return null
+  }
+}
+
 /** Trace le rectangle du cadre, arrondi si besoin, avec un décalage `inset`. */
 function traceFrame(ctx: CanvasRenderingContext2D, w: number, h: number, radius: number, inset: number): void {
   const iw = Math.max(w - inset * 2, 0)
@@ -265,6 +299,19 @@ function renderFrame(ctx: CanvasRenderingContext2D, tb: PatchedTextbox, f: TextF
   const strokeW = f.strokeWidth ?? 0
   const stroke = strokeW > 0 && f.stroke && f.stroke !== 'transparent' ? f.stroke : null
   if (!fill && !stroke) return
+
+  // Cadre non rectangulaire (cercle, bulle, tracé libre) : le bloc peint sa
+  // propre forme, mise à l'échelle de ses dimensions courantes.
+  const shape = framePath(tb, f)
+  if (shape) {
+    const pw = shape.width || w
+    const ph = shape.height || h
+    ctx.save()
+    if (pw > 0 && ph > 0) ctx.scale(w / pw, h / ph)
+    ;(shape as unknown as { _render: (c: CanvasRenderingContext2D) => void })._render(ctx)
+    ctx.restore()
+    return
+  }
 
   const radius = f.cornerRadius ?? 0
   ctx.save()

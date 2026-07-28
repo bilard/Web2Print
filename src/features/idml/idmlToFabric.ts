@@ -469,29 +469,7 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
       // un bloc de texte InDesign. Seuls les cadres non rectangulaires (ovale, tracé
       // libre) gardent une forme de fond distincte, que le rendu custom ne sait pas peindre.
       const tfCr = obj.cornerRadius ? obj.cornerRadius * Math.min(Math.abs(obj.scaleX), Math.abs(obj.scaleY)) : 0
-      const usesPathFrame = Boolean(obj.frameSvgPath)
       const results: FabricObject[] = []
-
-      if (usesPathFrame && (bgFill !== 'transparent' || hasFrameStroke)) {
-        // Oval/curved background shape
-        try {
-          const bgShape = new Path(obj.frameSvgPath as string, {
-            left: cx, top: cy, originX: 'center', originY: 'center',
-            scaleX: 1, scaleY: 1, angle: 0,
-            fill: bgFill,
-            stroke: hasFrameStroke ? frameStrokeColor : undefined,
-            strokeWidth: frameStrokeW,
-            opacity: obj.opacity,
-            shadow: makeShadow(obj),
-            // ID Fabric distinct du Textbox pour éviter les doublons dans le panneau Calques.
-            // `idmlRefId` permet à l'exporter de retrouver l'élément IDML d'origine.
-            data: { ...makeData(obj, 'TextFrameBg'), type: 'path', id: `${obj.id}__bg`, idmlRefId: obj.id },
-          })
-          results.push(bgShape)
-        } catch (e) {
-          console.warn('[idmlToFabric] TextFrame bg path error:', e)
-        }
-      }
 
       // Compute lineHeight multiplier from IDML Leading
       // Fabric.js has a single lineHeight for the whole Textbox (= ratio of baseFontSize).
@@ -566,6 +544,9 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
           splitByGrapheme: false,
           stroke: '', strokeWidth: 0,
           opacity: obj.opacity,
+          // L'ombre portée du bloc voyageait sur la forme de fond ; celle-ci ayant
+          // fusionné dans le bloc, c'est lui qui la porte désormais.
+          shadow: makeShadow(obj),
           data: {
             ...makeData(obj, fullText.slice(0, 30) || 'Texte'),
             idmlPtScale: sY,
@@ -645,13 +626,15 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
         applyTextFrame(textbox, {
           frameW: adjustedWidth,
           frameH: Math.max(displayH, 1),
-          // Un cadre non rectangulaire garde sa forme de fond distincte : ne pas
-          // repeindre un rectangle par-dessus.
-          fill: usesPathFrame || bgFill === 'transparent' ? null : bgFill,
-          stroke: usesPathFrame || !hasFrameStroke ? null : frameStrokeColor,
-          strokeWidth: usesPathFrame ? 0 : frameStrokeW / hScaleFactor,
+          // Un cadre non rectangulaire (ovale, bulle, tracé libre) est peint par le
+          // bloc lui-même à partir de sa forme — comme dans InDesign, où le texte
+          // vit DANS la forme et n'en est pas un objet distinct.
+          svgPath: obj.frameSvgPath,
+          fill: bgFill === 'transparent' ? null : bgFill,
+          stroke: hasFrameStroke ? frameStrokeColor : null,
+          strokeWidth: frameStrokeW / hScaleFactor,
           strokeAlign: obj.strokeAlignment ?? 'center',
-          cornerRadius: usesPathFrame ? 0 : tfCr / hScaleFactor,
+          cornerRadius: tfCr / hScaleFactor,
           insetTop: toLocalY(obj.insetTop ?? 0),
           insetBottom: toLocalY(obj.insetBottom ?? 0),
           insetLeft: toLocalX(obj.insetLeft ?? 0),

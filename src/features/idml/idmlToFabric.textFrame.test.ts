@@ -63,6 +63,34 @@ describe('import IDML — le bloc de texte est UN seul objet', () => {
     expect(objs[0].stroke).toBe('#000000')
   })
 
+  it('absorbe aussi les cadres NON rectangulaires (ovale, bulle)', async () => {
+    // Cercle centré sur 0,0 — comme le pastille « +55g GRATUIT » d'un prospectus.
+    const circle = 'M 0 18 C 10 18 18 10 18 0 C 18 -10 10 -18 0 -18 C -10 -18 -18 -10 -18 0 C -18 10 -10 18 0 18 z'
+    const objs = await idmlToFabricObjects([
+      textFrame({ frameSvgPath: circle, isOvalFrame: true, fill: { r: 54, g: 87, b: 173, a: 1 } }),
+    ])
+    // Un seul objet : la forme n'est plus un calque distinct du texte.
+    expect(objs).toHaveLength(1)
+    expect(objs[0]).toBeInstanceOf(Textbox)
+    expect(getTextFrame(objs[0])).toMatchObject({ svgPath: circle, fill: '#3657ad' })
+  })
+
+  it('peint une forme de cadre sans planter', async () => {
+    const circle = 'M 0 18 C 10 18 18 10 18 0 C 18 -10 10 -18 0 -18 C -10 -18 -18 -10 -18 0 C -18 10 -10 18 0 18 z'
+    const [block] = await idmlToFabricObjects([
+      textFrame({ frameSvgPath: circle, fill: { r: 54, g: 87, b: 173, a: 1 }, stroke: { r: 0, g: 0, b: 0, a: 1 }, strokeWeight: 1 }),
+    ])
+    const ctx = document.createElement('canvas').getContext('2d') as CanvasRenderingContext2D
+    expect(() => block.render(ctx)).not.toThrow()
+  })
+
+  it('porte l’ombre du bloc, qui voyageait sur la forme de fond', async () => {
+    const [block] = await idmlToFabricObjects([
+      textFrame({ shadow: { opacity: 75, offsetX: 2, offsetY: 3, blur: 4 } }),
+    ])
+    expect(block.shadow).toBeTruthy()
+  })
+
   it('reprend la hauteur du cadre InDesign, pas celle du texte', async () => {
     const [block] = await idmlToFabricObjects([textFrame({ height: 90 })])
     expect(block.height).toBe(90)
