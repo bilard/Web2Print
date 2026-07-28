@@ -121,12 +121,17 @@ describe('svgTextParser', () => {
     `
     const result = parseTextElements(svg)
     expect(result).toHaveLength(1)
-    // Should find all tspan descendants recursively
-    expect(result[0].tspans).toHaveLength(2)
+    // Le texte est découpé en SEGMENTS : chaque portion n'apparaît qu'une fois,
+    // avec le style de son tspan le plus proche. Collecter en plus le tspan
+    // parent (qui contient déjà « Inner ») dupliquait le texte à l'import
+    // (« TITRE » → « TITRETITRE » sur les exports Illustrator).
+    expect(result[0].tspans).toHaveLength(3)
     expect(result[0].tspans[0].textContent).toContain('Outer')
     expect(result[0].tspans[0].styles.fill).toBe('red')
     expect(result[0].tspans[1].textContent).toBe('Inner')
     expect(result[0].tspans[1].styles.fill).toBe('blue')
+    expect(result[0].tspans[2].textContent).toContain('More')
+    expect(result[0].tspans[2].styles.fill).toBe('red')
   })
 
   it('deeply nested tspans maintain cumulative positions', () => {

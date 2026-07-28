@@ -26,6 +26,10 @@ export interface TspanInfo {
   styles: TextStyle
   cumulativeStart: number
   cumulativeEnd: number
+  /** Index de LIGNE visuelle (issu du `y` du tspan). Illustrator émet une ligne
+   *  par valeur de `y` — sans cette information les lignes seraient concaténées
+   *  bout à bout ("TITREtexte" au lieu de "TITRE\ntexte"). */
+  line?: number
 }
 
 /**
@@ -72,37 +76,27 @@ const NUMERIC_ATTRIBUTES = new Set(['font-size', 'letter-spacing'])
  * @param el - The XML element to extract styles from
  * @returns TextStyle object with all extracted styles
  */
-function extractStyles(el: Element): TextStyle {
+function extractStyles(
+  el: Element,
+  cssRules?: Record<string, Record<string, string>>
+): TextStyle {
   const styles: TextStyle = {}
 
-  // Try to get computed styles (if available in DOM context)
-  let computedStyleMap: Record<string, string> = {}
-  try {
-    if (typeof window !== 'undefined' && window.getComputedStyle) {
-      const computed = window.getComputedStyle(el)
-      // Map CSS properties to TextStyle properties
-      computedStyleMap = {
-        fill: computed.fill || '',
-        fontFamily: computed.fontFamily || '',
-        fontSize: computed.fontSize || '',
-        fontWeight: computed.fontWeight || '',
-        fontStyle: computed.fontStyle || '',
-        textDecoration: computed.textDecoration || '',
-        baselineShift: computed.baselineShift || '',
-        letterSpacing: computed.letterSpacing || '',
-      }
-    }
-  } catch {
-    // If getComputedStyle fails, continue with attribute extraction
-  }
-
-  // Extract attributes (takes precedence over computed styles)
+  // Pas de `getComputedStyle` ici : le document vient de `DOMParser` et n'est
+  // PAS attaché au DOM — le navigateur n'y applique donc aucune feuille de
+  // style et ne renvoie que des valeurs par défaut (`fill: rgb(0,0,0)`,
+  // `font-family: "depends on user agent"`). Ces valeurs bidon écrasaient la
+  // cascade et repeignaient tous les textes en noir. On résout les classes
+  // nous-mêmes via `cssRules`.
   for (const [attrName, styleProp] of Object.entries(STYLE_ATTRIBUTE_MAP)) {
     let value = el.getAttribute(attrName)
 
-    // Fall back to computed style if attribute not set
-    if (value === null && computedStyleMap[styleProp]) {
-      value = computedStyleMap[styleProp]
+    // Puis le style inline et les règles de classe du <style> du document.
+    // Indispensable pour Illustrator, qui met TOUT dans des classes
+    // (`.cls-2 { fill:#009640; font-family:Montserrat-ExtraBold }`) : sans ça
+    // les couleurs et polices par portion de texte étaient perdues.
+    if ((value === null || value === '') && cssRules) {
+      value = getCascadedAttr(el, attrName, cssRules)
     }
 
     if (value !== null && value !== '') {
@@ -128,25 +122,69 @@ function extractStyles(el: Element): TextStyle {
   return styles
 }
 
-/**
- * Recursively extract all tspan elements from a parent element
- * @param el - Parent element to search
- * @returns Array of tspan elements in document order
- */
-function getAllTspanDescendants(el: Element): Element[] {
-  const tspans: Element[] = []
-  const stack = Array.from(el.children)
+interface TextSegment {
+  textContent: string
+  /** Styles cascadés : ceux du <text>, puis de chaque <tspan> ancêtre, puis les siens. */
+  styles: TextStyle
+  /** `y` effectif (hérité de l'ancêtre le plus proche qui en porte un). */
+  y: number | null
+}
 
-  while (stack.length > 0) {
-    const current = stack.shift()!
-    if (current.tagName.toLowerCase() === 'tspan') {
-      tspans.push(current)
+/**
+ * Découpe un `<text>` en SEGMENTS de texte, dans l'ordre du document, avec les
+ * styles cascadés depuis les ancêtres.
+ *
+ * On parcourt les NŒUDS (texte + tspans) et non les éléments : chaque portion
+ * de texte n'est comptée qu'une fois, quel que soit l'imbriquement.
+ *
+ * ⚠️ Illustrator IMBRIQUE les tspans — un tspan de style enveloppe les tspans
+ * de positionnement :
+ *   `<tspan class="cls-2"><tspan x="0" y="0">TITRE</tspan></tspan>`
+ * Ramasser tous les descendants comptait le texte DEUX fois (celui du parent,
+ * qui contient déjà celui de l'enfant) : « TITRE » devenait « TITRETITRE ».
+ * Un tspan peut aussi mêler texte propre et tspans enfants
+ * (`<tspan fill="red">Outer<tspan fill="blue">Inner</tspan>More</tspan>`) —
+ * d'où le parcours par nœuds, qui donne trois segments correctement stylés.
+ */
+function collectTextSegments(
+  textEl: Element,
+  cssRules: Record<string, Record<string, string>>
+): TextSegment[] {
+  const out: TextSegment[] = []
+
+  const walk = (el: Element, inherited: TextStyle, inheritedY: number | null): void => {
+    const styles = { ...inherited, ...extractStyles(el, cssRules) }
+    const yAttr = el.getAttribute('y')
+    const y = yAttr !== null && yAttr !== '' && Number.isFinite(parseFloat(yAttr))
+      ? parseFloat(yAttr)
+      : inheritedY
+
+    let hadChild = false
+    for (const node of Array.from(el.childNodes)) {
+      if (node.nodeType === 3) {
+        const textContent = node.textContent ?? ''
+        // On garde les espaces INTRA-LIGNE (séparateurs entre deux portions
+        // stylées : les perdre collerait les mots), mais pas l'indentation du
+        // fichier — reconnaissable à son saut de ligne.
+        if (textContent.trim() || (textContent && !textContent.includes('\n'))) {
+          out.push({ textContent, styles, y })
+          hadChild = true
+        }
+      } else if (
+        node.nodeType === 1 &&
+        (node as Element).tagName.toLowerCase() === 'tspan'
+      ) {
+        walk(node as Element, styles, y)
+        hadChild = true
+      }
     }
-    // Add children to stack for recursive traversal
-    stack.unshift(...Array.from(current.children))
+    // `<tspan></tspan>` : aucun contenu, mais on conserve le segment vide pour
+    // que l'indexation des tspans reste alignée sur le document source.
+    if (!hadChild && el !== textEl) out.push({ textContent: '', styles, y })
   }
 
-  return tspans
+  walk(textEl, extractStyles(textEl, cssRules), null)
+  return out
 }
 
 /**
@@ -178,36 +216,39 @@ export function parseTextElements(svgText: string): TextMetadata[] {
     const tspans: TspanInfo[] = []
     let cumulativePos = 0
 
-    // Get all tspan descendants (recursively)
-    const tspanElements = getAllTspanDescendants(textEl)
+    const leaves = collectTextSegments(textEl, cssRules)
 
-    if (tspanElements.length === 0) {
+    if (leaves.length === 0) {
       // If no tspan children, treat the text element itself as one tspan
       const textContent = textEl.textContent || ''
-      const styles = extractStyles(textEl)
+      const styles = extractStyles(textEl, cssRules)
       tspans.push({
         textContent,
         styles,
         cumulativeStart: 0,
         cumulativeEnd: textContent.length,
+        line: 0,
       })
     } else {
-      // Process each tspan descendant
-      // Join with \n to preserve original SVG line breaks
-      tspanElements.forEach((tspanEl, idx) => {
-        const textContent = tspanEl.textContent || ''
-        const styles = extractStyles(tspanEl)
+      // Une LIGNE par valeur de `y` : c'est ainsi qu'Illustrator encode les
+      // retours à la ligne (les tspans d'une même ligne se suivent en `x`).
+      const lineOfY = new Map<number, number>()
+      let nextLine = 0
+      leaves.forEach(({ textContent, styles, y }, idx) => {
+        const key = y ?? 0
+        if (!lineOfY.has(key)) lineOfY.set(key, nextLine++)
 
         tspans.push({
           textContent,
           styles,
           cumulativeStart: cumulativePos,
           cumulativeEnd: cumulativePos + textContent.length,
+          line: lineOfY.get(key)!,
         })
 
         cumulativePos += textContent.length
         // Add newline between tspans to preserve multi-line layout (except after last)
-        if (idx < tspanElements.length - 1) {
+        if (idx < leaves.length - 1) {
           cumulativePos += 1
         }
       })

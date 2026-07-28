@@ -1,4 +1,5 @@
 import type { TspanInfo, TextStyle } from './svgTextParser'
+import { cleanFontFamily } from './fontFamily'
 
 /**
  * Char-level style accepté par Fabric.Textbox.toObject().
@@ -32,11 +33,6 @@ interface FabricCharStyle {
  */
 export type FabricStyleMap = Record<number, Record<number, FabricCharStyle>>
 
-function cleanFontFamily(ff: string | undefined): string | undefined {
-  if (!ff) return undefined
-  const first = ff.split(',')[0].trim().replace(/^['"]|['"]$/g, '')
-  return first || undefined
-}
 
 /**
  * Convertit un TextStyle SVG en style char-level reconnu par Fabric.

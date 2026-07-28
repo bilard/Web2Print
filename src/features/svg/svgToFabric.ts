@@ -13,17 +13,22 @@ import {
   Shadow,
   type FabricObject,
 } from 'fabric'
-import { registerDynamicFontVariant } from '@/features/assets/useFonts'
+import { registerDynamicFontVariant, loadFont, AVAILABLE_FONTS } from '@/features/assets/useFonts'
 import { parseTextElements } from './svgTextParser'
 import { remapStylesToFabric } from './textboxConverter'
 import type { TextMetadata } from './svgTextParser'
 import { neutralizePlaceholderImages } from './neutralizePlaceholderImages'
 import { debugLog } from '@/lib/debugLog'
+import { cleanFontFamily } from './fontFamily'
 
 export interface SvgParseResult {
   objects: FabricObject[]
   width: number
   height: number
+  /** Résolue quand les polices du fichier sont chargées — le canvas doit alors
+   *  être re-rendu, sinon les textes restent affichés dans la police de
+   *  substitution utilisée au moment du premier rendu. */
+  fontsReady: Promise<void>
 }
 
 function extractViewBox(svgText: string): { width: number; height: number } | null {
@@ -44,11 +49,72 @@ function extractViewBox(svgText: string): { width: number; height: number } | nu
   return null
 }
 
-/** Nettoie une font-family CSS ("NALHand, 'NAL Hand'") → "NALHand". */
-function cleanFontFamily(ff: unknown): string | undefined {
-  if (typeof ff !== 'string' || !ff) return undefined
-  const first = ff.split(',')[0].trim().replace(/^['"]|['"]$/g, '')
-  return first || undefined
+/** Facteurs de conversion vers le POINT typographique (unité du canvas, 72 dpi). */
+const UNIT_TO_PT: Record<string, number> = {
+  mm: 72 / 25.4,
+  cm: 720 / 25.4,
+  in: 72,
+  pt: 1,
+  pc: 12,
+  q: 72 / (25.4 * 4),
+}
+
+/**
+ * Convertit en points les `width`/`height` exprimés en unité PHYSIQUE.
+ *
+ * Fabric lit `width="210mm"` à 96 dpi CSS → 793,7 px, alors que le canvas du
+ * projet raisonne à 72 dpi (1 px = 1 pt) : un A4 arrivait donc en 280 × 396 mm,
+ * gonflé de 33 %. En réécrivant l'attribut en points (210 mm → 595,28), Fabric
+ * calcule lui-même le bon rapport viewBox → viewport, donc la page ET l'échelle
+ * des objets sont justes.
+ *
+ * Les valeurs sans unité ou en `px` ne sont pas touchées (comportement d'origine).
+ */
+function normalizePhysicalSize(svgText: string): string {
+  // On isole la balise <svg …> racine, puis on y remplace les DEUX attributs :
+  // un `replace` global sur `<svg …width…>` ne peut pas re-matcher l'ouverture
+  // de balise pour le second attribut et n'en convertirait qu'un.
+  const tag = /<svg\b[^>]*>/i.exec(svgText)
+  if (!tag) return svgText
+
+  let changed = false
+  const converted = tag[0].replace(
+    /\s(width|height)\s*=\s*"([\d.]+)(mm|cm|in|pt|pc|q)"/gi,
+    (full, attr: string, value: string, unit: string) => {
+      const factor = UNIT_TO_PT[unit.toLowerCase()]
+      const n = parseFloat(value)
+      if (!factor || !Number.isFinite(n)) return full
+      changed = true
+      return ` ${attr}="${(n * factor).toFixed(2)}"`
+    }
+  )
+  if (!changed) return svgText
+
+  debugLog('[SVG] tailles physiques converties en points')
+  return svgText.slice(0, tag.index) + converted + svgText.slice(tag.index + tag[0].length)
+}
+
+
+/**
+ * Reconstruit le texte d'un `<text>` Illustrator : les tspans d'une même LIGNE
+ * (même `y`) sont concaténés, les lignes séparées par `\n`.
+ *
+ * Illustrator découpe une ligne en autant de tspans qu'il y a de paires de
+ * crénage (`<tspan x="0">t</tspan><tspan x="19.68">e</tspan>…`) : concaténer
+ * sans tenir compte du `y` collait toutes les lignes bout à bout
+ * (« TITREtexte » au lieu de « TITRE » / « texte »).
+ */
+function joinTspansByLine(tspans: TextMetadata['tspans']): string {
+  const lines: string[] = []
+  for (const tspan of tspans) {
+    const line = tspan.line ?? 0
+    lines[line] = (lines[line] ?? '') + tspan.textContent
+  }
+  return lines
+    .map((line) => (line ?? '').replace(/[^\S\n]+/g, ' '))
+    .join('\n')
+    .replace(/[ \t]+$/gm, '')
+    .trim()
 }
 
 /**
@@ -143,11 +209,7 @@ function fabricTextToEditableText(
           .map((tspan) => tspan.textContent.replace(/[^\S\n]+/g, ' ').trim())
           .filter((line) => line.length > 0)
           .join('\n')
-      : metadata.tspans
-          .map((tspan) => tspan.textContent)
-          .join('')
-          .replace(/\s+/g, ' ')
-          .trim()
+      : joinTspansByLine(metadata.tspans)
 
     // Styles char-level : uniquement si les tspans apportent une information
     // qui n'est pas déjà dans le texte simple (ex: portion en couleur différente).
@@ -474,19 +536,47 @@ function svgId(): string {
 }
 
 /** Parcourt récursivement et enregistre chaque fontFamily utilisé pour qu'il apparaisse dans le TextToolbar. */
-function registerUsedFonts(objects: FabricObject[]) {
+function registerUsedFonts(objects: FabricObject[], families = new Set<string>()) {
   for (const obj of objects) {
     if (obj instanceof Group) {
-      registerUsedFonts((obj._objects ?? []) as FabricObject[])
+      registerUsedFonts((obj._objects ?? []) as FabricObject[], families)
       continue
     }
     if (obj instanceof IText || obj instanceof Textbox || obj instanceof FabricText) {
       const family = (obj as unknown as { fontFamily?: string }).fontFamily
       if (typeof family === 'string' && family.trim()) {
         registerDynamicFontVariant(family, '400', 'normal', '', family)
+        families.add(family.trim())
+      }
+      // Les portions stylées (couleur/police par mot) portent leur propre famille.
+      const styles = (obj as unknown as { styles?: Record<string, Record<string, { fontFamily?: string }>> }).styles
+      for (const line of Object.values(styles ?? {})) {
+        for (const st of Object.values(line ?? {})) {
+          if (typeof st?.fontFamily === 'string' && st.fontFamily.trim()) {
+            registerDynamicFontVariant(st.fontFamily, '400', 'normal', '', st.fontFamily)
+            families.add(st.fontFamily.trim())
+          }
+        }
       }
     }
   }
+  return families
+}
+
+/**
+ * Charge depuis Google Fonts les familles rencontrées dans le SVG.
+ *
+ * Sans ça, une famille déclarée par le fichier mais absente du poste tombe sur
+ * une police de substitution à empattements : le rendu ne ressemble plus à
+ * l'original et les textes, plus larges, débordent de leur cadre. L'échec (une
+ * famille qui n'existe pas chez Google) est silencieux et sans conséquence.
+ */
+function loadUsedFonts(families: Set<string>): Promise<void> {
+  const jobs = [...families].map((family) => {
+    const known = AVAILABLE_FONTS.find((f) => f.family.toLowerCase() === family.toLowerCase())
+    return loadFont(known ?? { family, label: family, weights: [400, 700] })
+  })
+  return Promise.all(jobs).then(() => undefined)
 }
 
 /** Parcourt l'arbre (y compris les enfants de Group) et applique data + flags Fabric. */
@@ -565,7 +655,12 @@ function augmentSvgWithTextWidths(svgText: string): string {
     if (textEl.getAttribute('width')) continue
 
     const fontSize = getCascadedNumber(textEl, 'font-size', cssRules) ?? 16
-    const tspans = Array.from(textEl.querySelectorAll('tspan'))
+    // Seules les FEUILLES portent du texte : un tspan de style qui enveloppe
+    // des tspans de position (Illustrator) compterait sinon ses caractères une
+    // seconde fois et gonflerait la largeur inférée.
+    const tspans = Array.from(textEl.querySelectorAll('tspan')).filter(
+      (t) => t.querySelector('tspan') === null
+    )
     if (tspans.length === 0) continue
 
     const groups = groupTspansByY(tspans)
@@ -813,7 +908,7 @@ export async function parseSvgToFabric(
 ): Promise<SvgParseResult> {
   // Phase 0: Neutralise placeholder images before Fabric parsing
   // (Fabric crashes on <image href="placeholder:XXX">)
-  const neutralizedSvg = neutralizePlaceholderImages(svgText)
+  const neutralizedSvg = normalizePhysicalSize(neutralizePlaceholderImages(svgText))
 
   // Phase 1: Augment SVG with missing width attributes
   const augmentedSvg = augmentSvgWithTextWidths(neutralizedSvg)
@@ -828,7 +923,7 @@ export async function parseSvgToFabric(
 
   // Phase 4: Upgrade texts with metadata
   const flatObjects = upgradeTextsInPlace(rawObjects, textMetadataMap)
-  registerUsedFonts(flatObjects)
+  const fontsReady = loadUsedFonts(registerUsedFonts(flatObjects))
 
   // Reconstruit la hiérarchie des <g> depuis le XML source. Fallback : liste plate.
   const structure = parseSvgStructure(augmentedSvg)
@@ -863,5 +958,5 @@ export async function parseSvgToFabric(
 
   decorateAll(objects)
 
-  return { objects, width, height }
+  return { objects, width, height, fontsReady }
 }

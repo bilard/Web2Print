@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import { FabricImage, type Canvas, type Group } from 'fabric'
+import { FabricImage, type Canvas, type Group, type FabricObject } from 'fabric'
 import { parseSvgToFabric, type SvgParseOptions } from './svgToFabric'
 import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/globalCanvas'
 import { syncToStore } from '@/features/editor/useAddObject'
@@ -29,6 +29,27 @@ async function reloadHttpImagesWithCors(canvas: Canvas): Promise<void> {
       console.warn('[SVG Parse] CORS reload failed for image:', src, err)
     }
   }))
+}
+
+/** Invalide le cache des textes (et recalcule le wrap des cadres) après un
+ *  changement de police disponible. */
+function refreshTextObjects(canvas: Canvas): void {
+  const visit = (objects: FabricObject[]) => {
+    for (const obj of objects) {
+      const group = obj as unknown as { _objects?: FabricObject[] }
+      if (group._objects) {
+        visit(group._objects)
+        obj.set('dirty', true)
+        continue
+      }
+      const asText = obj as FabricObject & { text?: unknown; initDimensions?: () => void }
+      if (typeof asText.text !== 'string') continue
+      asText.initDimensions?.()
+      obj.set('dirty', true)
+      obj.setCoords()
+    }
+  }
+  visit(canvas.getObjects())
 }
 
 function waitForCanvas(timeoutMs: number): Promise<typeof globalFabricCanvas> {
@@ -68,7 +89,7 @@ export function useSvgParse() {
       const svgText = await file.text()
 
       setState((s) => ({ ...s, step: 'parsing' }))
-      const { objects, width, height } = await parseSvgToFabric(svgText, options)
+      const { objects, width, height, fontsReady } = await parseSvgToFabric(svgText, options)
 
       setState((s) => ({ ...s, step: 'rendering', objectCount: objects.length }))
 
@@ -98,6 +119,15 @@ export function useSvgParse() {
 
       canvas.requestRenderAll()
       syncToStore(canvas)
+
+      // Les polices du fichier arrivent APRÈS ce premier rendu : sans re-rendu
+      // les textes resteraient affichés dans la police de substitution (et un
+      // Textbox garderait le retour à la ligne calculé sur ses métriques).
+      void fontsReady.then(() => document.fonts.ready).then(() => {
+        refreshTextObjects(canvas)
+        canvas.requestRenderAll()
+        syncToStore(canvas)
+      }).catch(() => { /* police indisponible : le rendu de repli reste affiché */ })
 
       requestAnimationFrame(() => {
         if (globalFitCanvas) globalFitCanvas()
