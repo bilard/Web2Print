@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { FabricImage, FabricObject } from 'fabric'
 import { globalFabricCanvas } from '../../../features/editor/globalCanvas'
 import { syncToStore } from '../../../features/editor/useAddObject'
+import { findFabricObjectDeep } from '../../../features/editor/deepObjects'
 import type { DamImage } from '../types'
 
 /** Capture pixels from a FabricImage into a persistable data URL. */
@@ -63,11 +64,9 @@ export function useDamCanvasInsert() {
     const canvas = globalFabricCanvas
     if (!canvas) return
 
-    // Find the target object — by explicit id if provided, else the active selection
-    let target: FabricObject | null = null
-    if (targetId) {
-      target = canvas.getObjects().find((o) => (o.data as any)?.id === targetId) ?? null
-    }
+    // Find the target object — by explicit id if provided, else the active
+    // selection. La recherche descend DANS les groupes (imports IDML/PPTX).
+    let target: FabricObject | null = findFabricObjectDeep(canvas, targetId) ?? null
     if (!target) target = canvas.getActiveObject() ?? null
     if (!target) {
       // Nothing to replace — fallback to inserting

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { Heart, Bookmark, FolderPlus, FolderMinus, Download, Check, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useDamStore } from '../../../stores/dam.store'
 import { useUIStore } from '../../../stores/ui.store'
 import { useDamFavorites } from '../hooks/useDamFavorites'
@@ -8,6 +9,7 @@ import { useDamCollections } from '../hooks/useDamCollections'
 import { useDamCanvasInsert } from '../hooks/useDamCanvasInsert'
 import { globalFabricCanvas } from '../../editor/globalCanvas'
 import { applyImageFill } from '../../editor/applyImageFill'
+import { findFabricObjectDeep } from '../../editor/deepObjects'
 import type { DamImage } from '../types'
 import { useCan } from '@/features/access/useAccess'
 
@@ -42,10 +44,21 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
   // Retourne true si l'application a réussi.
   const applyAsFill = useCallback((): boolean => {
     const canvas = globalFabricCanvas
-    if (!canvas || !damPickerTargetId) return false
-    const target = canvas.getObjects().find((o) => (o.data as any)?.id === damPickerTargetId)
-    if (!target) return false
+    if (!canvas) {
+      toast.error('Aucun canvas actif')
+      return false
+    }
+    // Cible explicite (id mémorisé à l'ouverture du picker), sinon la sélection
+    // courante. La recherche descend DANS les groupes : un bloc sélectionné à
+    // l'intérieur d'un import IDML/PPTX est invisible pour `getObjects()`.
+    const target =
+      findFabricObjectDeep(canvas, damPickerTargetId) ?? canvas.getActiveObject() ?? null
+    if (!target) {
+      toast.error('Sélectionnez d’abord le bloc à remplir')
+      return false
+    }
     applyImageFill(target, canvas, image.previewUrl)
+    toast.success('Image incorporée dans le bloc')
     return true
   }, [image.previewUrl, damPickerTargetId])
 

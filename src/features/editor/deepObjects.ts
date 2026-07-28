@@ -16,6 +16,25 @@ export function collectObjectsDeep(objects: FabricObject[]): FabricObject[] {
   return out
 }
 
+/**
+ * Recherche un objet Fabric par `data.id` dans TOUT le canvas, enfants de
+ * Groups inclus.
+ *
+ * `canvas.getObjects().find(…)` ne voit que le premier niveau : un objet
+ * sélectionné à l'intérieur d'un bloc (import IDML/PPTX, ou SVG non aplati)
+ * y est introuvable — les panneaux échouaient alors en silence (couleur non
+ * appliquée, image du DAM non incorporée).
+ */
+export function findFabricObjectDeep(
+  canvas: { getObjects: () => FabricObject[] } | null | undefined,
+  id: string | null | undefined,
+): FabricObject | undefined {
+  if (!canvas || !id) return undefined
+  return collectObjectsDeep(canvas.getObjects()).find(
+    (o) => (o.data as { id?: string } | undefined)?.id === id,
+  )
+}
+
 /** Recherche par id dans l'ARBRE du store éditeur (children des groupes inclus). */
 export function findStoreObjectDeep<T extends { id: string; children?: T[] }>(
   objects: T[],

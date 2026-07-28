@@ -301,64 +301,106 @@ function parseSvgStructure(svgText: string): StructNode[] {
   return topLevel
 }
 
+type LeafNode = Extract<StructNode, { kind: 'leaf' }>
+
+/**
+ * Applique sur l'objet Fabric les métadonnées portées par l'élément SVG source
+ * (id, data-role, data-shadow, data-merge-frame).
+ *
+ * Retourne l'objet à utiliser : le même en général, un NOUVEAU Textbox quand
+ * `data-merge-frame` impose un cadre fixe.
+ */
+function decorateLeaf(obj: FabricObject, node: LeafNode, groupPath?: string[]): FabricObject {
+  const anyObj = obj as FabricObject & { data?: Record<string, unknown> }
+  const existing = anyObj.data ?? {}
+  anyObj.data = {
+    ...existing,
+    ...(node.name ? { name: node.name } : {}),
+    ...(node.role ? { role: node.role } : {}),
+    // Chemin des <g> d'origine, conservé même après aplatissement : permet
+    // d'afficher l'origine du calque et de re-grouper plus tard.
+    ...(groupPath && groupPath.length > 0 ? { groupPath } : {}),
+  }
+  // data-shadow (ombre portée détectée dans le PDF) → ombre Fabric native,
+  // éditable ensuite via le panneau Ombre et sérialisée par défaut.
+  if (node.shadowJson) {
+    try {
+      const sh = JSON.parse(node.shadowJson) as { color: string; blur: number; offsetX: number; offsetY: number }
+      obj.set('shadow', new Shadow(sh))
+    } catch { /* data-shadow malformé : ignoré */ }
+  }
+  // data-merge-frame (champ {{…}} d'un bloc marketing PDF) → Textbox à
+  // CADRE FIXE : largeur du bloc + alignement du design. La substitution
+  // de fusion garde alors le formatage d'origine (un IText s'étendrait
+  // vers la droite et les valeurs longues déborderaient sans wrap).
+  if (node.mergeFrame && obj instanceof IText && !(obj instanceof Textbox)) {
+    const [l, w, align] = node.mergeFrame.split(',')
+    const left = parseFloat(l)
+    const width = parseFloat(w)
+    if (Number.isFinite(left) && Number.isFinite(width) && width > 0) {
+      const src = obj as IText
+      const tb = new Textbox(src.text ?? '', {
+        left,
+        top: src.top,
+        width,
+        fontSize: src.fontSize,
+        fontFamily: src.fontFamily,
+        fontWeight: src.fontWeight,
+        fontStyle: src.fontStyle,
+        fill: src.fill,
+        lineHeight: src.lineHeight,
+        charSpacing: src.charSpacing,
+        textAlign: align === 'right' || align === 'center' ? align : 'left',
+        originX: 'left',
+        originY: 'top',
+        editable: true,
+        objectCaching: true,
+      })
+      ;(tb as FabricObject & { data?: Record<string, unknown> }).data = {
+        ...(anyObj.data ?? {}),
+        // applyRow NE doit PAS auto-fit ce cadre (l'auto-fit single-
+        // placeholder réduirait width → alignement du design perdu).
+        mergeFrame: true,
+      }
+      return tb
+    }
+  }
+  return obj
+}
+
+/**
+ * Décore les objets plats SANS reconstruire de Group : chaque élément du SVG
+ * devient un objet indépendant du canvas.
+ *
+ * Les positions restent exactes : `loadSVGFromString` a déjà appliqué à chaque
+ * feuille la matrice cumulée de ses `<g>` parents. On ne reconstruit donc PAS
+ * le tableau (contrairement à `buildHierarchy`) — on décore `flat` en place et
+ * on le retourne tel quel, ce qui préserve l'ordre d'empilement et rend
+ * impossible la perte d'un objet si l'indexation de `parseSvgStructure` se
+ * désynchronisait.
+ */
+function flattenHierarchy(flat: FabricObject[], struct: StructNode[]): FabricObject[] {
+  const out = [...flat]
+  const visit = (node: StructNode, path: string[]) => {
+    if (node.kind === 'leaf') {
+      const obj = out[node.index]
+      if (obj) out[node.index] = decorateLeaf(obj, node, path)
+      return
+    }
+    const nextPath = node.name ? [...path, node.name] : path
+    for (const child of node.children) visit(child, nextPath)
+  }
+  for (const node of struct) visit(node, [])
+  return out
+}
+
 /** Assemble les objets Fabric plats en une hiérarchie nested en suivant la struct SVG. */
 function buildHierarchy(flat: FabricObject[], struct: StructNode[]): FabricObject[] {
   function build(node: StructNode): FabricObject | null {
     if (node.kind === 'leaf') {
       const obj = flat[node.index]
       if (!obj) return null
-      const anyObj = obj as FabricObject & { data?: Record<string, unknown> }
-      const existing = anyObj.data ?? {}
-      anyObj.data = {
-        ...existing,
-        ...(node.name ? { name: node.name } : {}),
-        ...(node.role ? { role: node.role } : {}),
-      }
-      // data-shadow (ombre portée détectée dans le PDF) → ombre Fabric native,
-      // éditable ensuite via le panneau Ombre et sérialisée par défaut.
-      if (node.shadowJson) {
-        try {
-          const sh = JSON.parse(node.shadowJson) as { color: string; blur: number; offsetX: number; offsetY: number }
-          obj.set('shadow', new Shadow(sh))
-        } catch { /* data-shadow malformé : ignoré */ }
-      }
-      // data-merge-frame (champ {{…}} d'un bloc marketing PDF) → Textbox à
-      // CADRE FIXE : largeur du bloc + alignement du design. La substitution
-      // de fusion garde alors le formatage d'origine (un IText s'étendrait
-      // vers la droite et les valeurs longues déborderaient sans wrap).
-      if (node.mergeFrame && obj instanceof IText && !(obj instanceof Textbox)) {
-        const [l, w, align] = node.mergeFrame.split(',')
-        const left = parseFloat(l)
-        const width = parseFloat(w)
-        if (Number.isFinite(left) && Number.isFinite(width) && width > 0) {
-          const src = obj as IText
-          const tb = new Textbox(src.text ?? '', {
-            left,
-            top: src.top,
-            width,
-            fontSize: src.fontSize,
-            fontFamily: src.fontFamily,
-            fontWeight: src.fontWeight,
-            fontStyle: src.fontStyle,
-            fill: src.fill,
-            lineHeight: src.lineHeight,
-            charSpacing: src.charSpacing,
-            textAlign: align === 'right' || align === 'center' ? align : 'left',
-            originX: 'left',
-            originY: 'top',
-            editable: true,
-            objectCaching: true,
-          })
-          ;(tb as FabricObject & { data?: Record<string, unknown> }).data = {
-            ...(anyObj.data ?? {}),
-            // applyRow NE doit PAS auto-fit ce cadre (l'auto-fit single-
-            // placeholder réduirait width → alignement du design perdu).
-            mergeFrame: true,
-          }
-          return tb
-        }
-      }
-      return obj
+      return decorateLeaf(obj, node)
     }
     const children = node.children
       .map(build)
@@ -632,7 +674,23 @@ function getCascadedNumber(
   return undefined
 }
 
-export async function parseSvgToFabric(svgText: string): Promise<SvgParseResult> {
+export interface SvgParseOptions {
+  /**
+   * Aplatit la structure : chaque élément du SVG devient un objet indépendant
+   * du canvas (aucun Group reconstruit). Utilisé par l'import d'un fichier .svg
+   * — chaque bloc est alors directement sélectionnable, recolorable et
+   * remplaçable par une image, sans avoir à entrer dans un groupe.
+   *
+   * Laissé à `false` pour PDF→SVG et image→SVG : leurs blocs marketing
+   * (`data-role`) et la décomposition Vision s'appuient sur la hiérarchie.
+   */
+  flatten?: boolean
+}
+
+export async function parseSvgToFabric(
+  svgText: string,
+  options: SvgParseOptions = {}
+): Promise<SvgParseResult> {
   // Phase 0: Neutralise placeholder images before Fabric parsing
   // (Fabric crashes on <image href="placeholder:XXX">)
   const neutralizedSvg = neutralizePlaceholderImages(svgText)
@@ -654,9 +712,11 @@ export async function parseSvgToFabric(svgText: string): Promise<SvgParseResult>
 
   // Reconstruit la hiérarchie des <g> depuis le XML source. Fallback : liste plate.
   const structure = parseSvgStructure(augmentedSvg)
-  const objects = structure.length > 0
-    ? buildHierarchy(flatObjects, structure)
-    : flatObjects
+  const objects = structure.length === 0
+    ? flatObjects
+    : options.flatten
+      ? flattenHierarchy(flatObjects, structure)
+      : buildHierarchy(flatObjects, structure)
 
   const dims = extractViewBox(svgText) ?? { width: 1920, height: 1080 }
   const optsWidth = Number((parsed.options as Record<string, unknown>)?.width)

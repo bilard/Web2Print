@@ -148,7 +148,12 @@ export default function EditorPage() {
 
       if ((type === 'svg' || type === 'image-to-svg' || type === 'pdf-to-svg') && files.length > 0) {
         const svgText = type === 'pdf-to-svg' ? await files[0].text() : null
-        await parseSvg(files[0])
+        // Fichier .svg importé : tout est DÉGROUPÉ — chaque bloc reste à sa
+        // position mais devient un objet indépendant (sélection, couleur,
+        // remplacement par une image du DAM sans entrer dans un groupe).
+        // Les conversions PDF→SVG / image→SVG conservent leur hiérarchie :
+        // leurs blocs marketing et la décomposition Vision en dépendent.
+        await parseSvg(files[0], { flatten: type === 'svg' })
         // Conversions raster→SVG : on enchaîne automatiquement la décomposition
         // (Vision → textes/formes éditables). Un .svg vectoriel importé n'a pas de
         // calque image-bg-locked, donc canDecompose restera false → pas de décompo.

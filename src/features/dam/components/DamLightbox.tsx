@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import {
   Heart, Bookmark, Plus, Download, ExternalLink,
   Ruler, Palette, MonitorSmartphone, MapPin, Tag, Sparkles, Loader2, Info, Camera,
@@ -12,6 +13,9 @@ import { useUIStore } from '../../../stores/ui.store'
 import { useDamFavorites } from '../hooks/useDamFavorites'
 import { useDamSaveImage } from '../hooks/useDamSaveImage'
 import { useDamCanvasInsert } from '../hooks/useDamCanvasInsert'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
+import { findFabricObjectDeep } from '@/features/editor/deepObjects'
+import { applyImageFill } from '@/features/editor/applyImageFill'
 import { useDamVariants } from '../hooks/useDamVariants'
 import { useCan } from '@/features/access/useAccess'
 import { CloseButton } from '@/components/shared/CloseButton'
@@ -270,6 +274,21 @@ export function DamLightbox() {
   const aspectRatio = (image.width / image.height).toFixed(2)
 
   const handleInsert = () => {
+    // Mode "fill" : le picker a été ouvert depuis un bloc sélectionné —
+    // l'image doit remplir CE bloc, pas atterrir au centre de la page.
+    if (damPickerMode === 'fill') {
+      const canvas = globalFabricCanvas
+      const target = findFabricObjectDeep(canvas, damPickerTargetId) ?? canvas?.getActiveObject()
+      if (!canvas || !target) {
+        toast.error('Sélectionnez d’abord le bloc à remplir')
+        return
+      }
+      applyImageFill(target, canvas, image.previewUrl)
+      toast.success('Image incorporée dans le bloc')
+      closeLightbox()
+      setDamPickerOpen(false)
+      return
+    }
     if (damPickerMode === 'replace') {
       replaceOnCanvas(image, damPickerTargetId ?? undefined)
       closeLightbox()
@@ -318,7 +337,7 @@ export function DamLightbox() {
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs bg-indigo-500 text-[#fff] hover:bg-indigo-600 transition"
             >
               <Plus className="w-3.5 h-3.5" />
-              {damPickerMode === 'replace' ? 'Remplacer' : 'Canvas'}
+              {damPickerMode === 'replace' ? 'Remplacer' : damPickerMode === 'fill' ? 'Remplir le bloc' : 'Canvas'}
             </button>
             <a
               href={image.fullUrl}

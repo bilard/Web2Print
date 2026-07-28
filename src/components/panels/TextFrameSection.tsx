@@ -2,6 +2,7 @@
 // Le rendu correspondant vit dans features/editor/textFrame.ts.
 import { AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd } from 'lucide-react'
 import { globalFabricCanvas } from '@/features/editor/globalCanvas'
+import { findFabricObjectDeep } from '@/features/editor/deepObjects'
 import { syncToStore } from '@/features/editor/useAddObject'
 import {
   applyTextFrame, getTextFrame, indentsFor,
@@ -76,9 +77,7 @@ function GroupLabel({ children }: { children: React.ReactNode }) {
  */
 function useSelectedTextFrame(selectedObjectId: string | null) {
   const canvas = globalFabricCanvas
-  const fObj = selectedObjectId
-    ? canvas?.getObjects().find((o) => o.data?.id === selectedObjectId)
-    : undefined
+  const fObj = findFabricObjectDeep(canvas, selectedObjectId)
   if (!canvas || !fObj || fObj.data?.type !== 'text') return null
 
   const frame: TextFrameProps = getTextFrame(fObj) ?? {

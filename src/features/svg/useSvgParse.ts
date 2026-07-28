@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { FabricImage, type Canvas, type Group } from 'fabric'
-import { parseSvgToFabric } from './svgToFabric'
+import { parseSvgToFabric, type SvgParseOptions } from './svgToFabric'
 import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/globalCanvas'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { globalSave } from '@/features/editor/useAutoSave'
@@ -59,7 +59,7 @@ export function useSvgParse() {
   const [state, setState] = useState<SvgParseState>({ step: 'idle', objectCount: 0, error: null })
   const runningRef = useRef(false)
 
-  const parseAndRender = useCallback(async (file: File) => {
+  const parseAndRender = useCallback(async (file: File, options: SvgParseOptions = {}) => {
     if (runningRef.current) return
     runningRef.current = true
     setState({ step: 'reading', objectCount: 0, error: null })
@@ -68,7 +68,7 @@ export function useSvgParse() {
       const svgText = await file.text()
 
       setState((s) => ({ ...s, step: 'parsing' }))
-      const { objects, width, height } = await parseSvgToFabric(svgText)
+      const { objects, width, height } = await parseSvgToFabric(svgText, options)
 
       setState((s) => ({ ...s, step: 'rendering', objectCount: objects.length }))
 

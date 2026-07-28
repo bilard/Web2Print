@@ -30,7 +30,7 @@ import { useUIStore } from '@/stores/ui.store'
 import { useDamStore } from '@/stores/dam.store'
 import type { DamTab } from '@/features/dam/types'
 import { ImageMaskSection } from './ImageMaskSection'
-import { findStoreObjectDeep } from '@/features/editor/deepObjects'
+import { findStoreObjectDeep, findFabricObjectDeep } from '@/features/editor/deepObjects'
 import { MergeConnectorSection } from './MergeConnectorSection'
 import { ConditionalRulesSection } from './ConditionalRulesSection'
 import { TextFrameSection, ParagraphIndentsSection } from './TextFrameSection'
@@ -76,7 +76,7 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
 
   const applyUrl = (url: string, name?: string) => {
     const canvas = globalFabricCanvas
-    const fObj = canvas?.getObjects().find((o) => (o as any).data?.id === objId)
+    const fObj = findFabricObjectDeep(canvas, objId)
     if (!fObj || !canvas) return
     if (name) (fObj as any).data = { ...(fObj as any).data, fillImageName: name }
     applyImageFill(fObj, canvas, url)
@@ -116,7 +116,7 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
           <button
             onClick={() => {
               const canvas = globalFabricCanvas
-              const fObj = canvas?.getObjects().find((o) => (o as any).data?.id === objId)
+              const fObj = findFabricObjectDeep(canvas, objId)
               if (!fObj || !canvas) return
               ;(fObj as any).data = { ...(fObj as any).data, fillImage: null }
               fObj.set('fill', 'transparent')
@@ -359,7 +359,7 @@ export function PropertiesPanel() {
   const applyToFabric = (patch: Partial<CanvasObjectProps>) => {
     if (!obj) return
     const canvas = globalFabricCanvas
-    const fObj = canvas?.getObjects().find((o) => (o as any).data?.id === obj.id)
+    const fObj = findFabricObjectDeep(canvas, obj.id)
     if (!fObj || !canvas) return
 
     if ('x' in patch) {
@@ -456,7 +456,7 @@ export function PropertiesPanel() {
   const applyGradient = (gradient: GradientConfig) => {
     if (!obj) return
     const canvas = globalFabricCanvas
-    const fObj = canvas?.getObjects().find((o) => (o as any).data?.id === obj.id)
+    const fObj = findFabricObjectDeep(canvas, obj.id)
     if (!fObj || !canvas) return
 
     const w = (fObj as any).width ?? 100
@@ -532,7 +532,7 @@ export function PropertiesPanel() {
                     {(['solid', 'gradient', 'image', 'none'] as const).map(ft => (
                       <button key={ft} onClick={() => {
                         const canvas = globalFabricCanvas
-                        const fObj = canvas?.getObjects().find((o) => (o as any).data?.id === obj.id)
+                        const fObj = findFabricObjectDeep(canvas, obj.id)
                         if (!fObj || !canvas) return
                         // Clear image fillType marker when switching away
                         if (ft !== 'image') {
@@ -728,7 +728,7 @@ export function PropertiesPanel() {
                       onClick={() => {
                         const canvas = globalFabricCanvas
                         if (!canvas) return
-                        const fObj = canvas.getObjects().find((o) => (o as any).data?.id === obj.id)
+                        const fObj = findFabricObjectDeep(canvas, obj.id)
                         if (!fObj) return
                         const tb = fObj as any
                         if (typeof tb.calcTextWidth === 'function') {
@@ -750,9 +750,7 @@ export function PropertiesPanel() {
 
                 {/* ── Cadrage (FabricImage ou shape avec fill image) ── */}
                 {(() => {
-                  const fObj = globalFabricCanvas?.getObjects().find(
-                    (o) => (o as any).data?.id === obj.id,
-                  )
+                  const fObj = findFabricObjectDeep(globalFabricCanvas, obj.id)
                   if (!fObj) return null
                   const isImage = (fObj as any).type === 'image'
                   const isPatternFilled = (fObj as any).fill?.type === 'pattern'
