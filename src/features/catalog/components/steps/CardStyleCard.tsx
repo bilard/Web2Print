@@ -23,22 +23,34 @@ interface CardStyleCardProps {
   selectedObject?: CardObjectId | null
   /** Désélectionne l'objet (✕ du panneau « Bloc sélectionné »). */
   onClearSelection?: () => void
+  /** Sélectionne un bloc depuis le panneau (liste « Éléments affichés ») — même
+   *  sélection que le clic dans l'aperçu. */
+  onSelectObject?: (id: CardObjectId) => void
   /** Carte d'aperçu LARGE (repli 2 colonnes) — propagé au panneau typo (liaisons). */
   wide?: boolean
 }
 
-export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection, wide }: CardStyleCardProps) {
+export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection, onSelectObject, wide }: CardStyleCardProps) {
   const style: CatalogCardStyle = { ...DEFAULT_CARD_STYLE, ...plan.cardStyle }
   const patch = (p: Partial<CatalogCardStyle>) => setPlan({ ...plan, cardStyle: { ...style, ...p } })
   // Bandeau taxonomie (Univers › Famille) = élément de PAGE (pageStyle) — exposé
   // ici aussi pour tout régler sans changer d'onglet.
   const pageStyle = mergedPageStyle(plan.pageStyle)
   const patchPage = (p: Partial<CatalogPageStyle>) => setPlan({ ...plan, pageStyle: { ...pageStyle, ...p } })
-  // Sélection d'un bloc → le panneau regroupé apparaît EN TÊTE : on y scrolle.
+  // Sélection d'un bloc DEPUIS L'APERÇU → le panneau regroupé apparaît EN TÊTE :
+  // on y scrolle. Sélection depuis la LISTE « Éléments affichés » (déjà dans ce
+  // panneau, tout en bas) : surtout PAS — le scroll éjecterait la liste de
+  // l'écran en plein travail.
   const selRef = useRef<HTMLDivElement | null>(null)
+  const fromPanel = useRef(false)
   useEffect(() => {
+    if (fromPanel.current) { fromPanel.current = false; return }
     if (selectedObject) selRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
   }, [selectedObject])
+  const selectFromPanel = (id: CardObjectId) => {
+    fromPanel.current = true
+    onSelectObject?.(id)
+  }
 
   return (
     <div className="p-3 space-y-3">
@@ -128,8 +140,9 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
         </label>
       </PropertySection>
 
-      <PropertySection title="Éléments affichés" help="Champs libres (TVA, entretien...) masquables un par un sous « Détails ».">
-        <CardStyleVisibility style={style} patch={patch} />
+      <PropertySection title="Éléments affichés" help="Ordre = position dans la fiche (glisser-déposer). Champs libres (TVA, entretien...) masquables un par un sous « Détails ».">
+        <CardStyleVisibility style={style} patch={patch} selected={selectedObject}
+          onSelect={onSelectObject ? selectFromPanel : undefined} wide={wide} />
       </PropertySection>
 
       <HeaderBandOptions style={pageStyle} patch={patchPage} theme={plan.theme}

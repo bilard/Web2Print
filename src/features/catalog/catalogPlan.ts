@@ -421,6 +421,11 @@ export async function generateCatalogPlan(brief: string, ctx: CatalogPlanContext
     ? `Un plan EXISTE DÉJÀ : ta réponse est une MODIFICATION CIBLÉE. Renvoie UNIQUEMENT les clés que la demande impose de changer ` +
       `(ex. demande sur la couleur des prix/vedettes → cardStyle SEUL ; demande sur l'ambiance/les couleurs générales → theme). ` +
       `OMETS complètement theme, sections, cover, backCover, tocTitle et cardStyle s'ils ne sont pas concernés — ils seront conservés tels quels. ` +
+      // Un brief « illustration/visuel de couverture » ne changeait RIEN de visible :
+      // le modèle omettait cover (consigne de modification ciblée), donc aucun
+      // imagePrompt à donner au générateur d'image. Ici c'est explicitement imposé.
+      `EXCEPTION COUVERTURE : dès que la demande évoque la COUVERTURE, son VISUEL, son ILLUSTRATION ou son AMBIANCE, renvoie OBLIGATOIREMENT l'objet cover COMPLET (title, subtitle, baseline, imagePrompt, layout) — ` +
+      `imagePrompt EN ANGLAIS, traduction fidèle de la demande (sujet, ambiance, style graphique), photo/illustration sans AUCUN texte incrusté. ` +
       `Rappels : theme = polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')} ; sections = densité parmi ${CATALOG_GRIDS.join('/')} sur les nœuds de NIVEAU 1, vedettes = ids AVANT le tiret des exemples ; ` +
       `cardStyle = uniquement les clés concernées (hex #rrggbb). Si tu changes des couleurs : ${antiMono}`
     : `Produis un plan complet : thème (couleurs hex cohérentes avec la demande, polices STRICTEMENT parmi ${FONT_OPTIONS.join(', ')}), ` +

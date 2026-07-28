@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { test, expect } from 'vitest'
 import { CARD_OBJECT_IDS, DEFAULT_CARD_STYLE } from '../../catalogTypes'
-import { applyMagneticFlow, freeLayoutBox, isWideCard, normalizeCardLinks, FREE_DEFAULT_LAYOUT, FREE_WIDE_LAYOUT } from './freeLayout'
+import { applyMagneticFlow, cardObjectOrder, freeLayoutBox, isWideCard, normalizeCardLinks, reorderCardObjects, FREE_DEFAULT_LAYOUT, FREE_WIDE_LAYOUT } from './freeLayout'
 
 test('normalizeCardLinks : un override ref→unit + le lien PAR DÉFAUT unit→ref = cycle → le lien retour est posé à null (persistant)', () => {
   // Défauts : unit.link='ref'. Override : ref.link='unit' → cycle effectif.
@@ -396,4 +396,50 @@ test('FREE_DEFAULT_LAYOUT : design complet calqué sur l\'auto (bandeau, pile de
   expect(unit.link).toBe('ref')         // unité SOUDÉE à la réf
   expect(price.ax).toBe('r')            // prix ancré bas-droite (liquide)
   expect(price.ay).toBe('b')
+})
+
+test('reorderCardObjects : permute les y existants (aucune position inventée)', () => {
+  // Ordre par défaut : name (52) au-dessus de description (58). On l'inverse.
+  const out = reorderCardObjects(DEFAULT_CARD_STYLE, false, ['brand', 'description', 'name'], 'description')
+  expect(freeLayoutBox('brand', out).y).toBe(48)
+  expect(freeLayoutBox('description', out).y).toBe(52) // a pris le slot du nom
+  expect(freeLayoutBox('name', out).y).toBe(58)        // a pris celui de la description
+  // Les autres réglages de la boîte survivent (largeur hand-tunée).
+  expect(freeLayoutBox('name', out).w).toBe(92)
+  // La variante LARGE n'est pas touchée par un réordonnancement vertical.
+  expect(out.layoutWide).toEqual(DEFAULT_CARD_STYLE.layoutWide)
+})
+
+test('reorderCardObjects : le bloc DÉPLACÉ est désancré/délié — les autres gardent leur nature', () => {
+  // Prix ancré bas-droite : glissé dans la liste, il rejoint le flux vertical.
+  const out = reorderCardObjects(DEFAULT_CARD_STYLE, false, ['name', 'price', 'description'], 'price')
+  const price = freeLayoutBox('price', out)
+  expect(price.ay).toBe('t')      // désancré : sinon le glisser n'aurait AUCUN effet
+  expect(price.y).toBe(58)        // slot intermédiaire (52 · 58 · le sien, le plus bas)
+  expect(price.ax).toBe('r')      // l'ancrage HORIZONTAL, lui, est conservé
+  // L'unité (soudée à la réf) n'est pas le bloc déplacé : sa liaison survit.
+  const out2 = reorderCardObjects(DEFAULT_CARD_STYLE, false, ['name', 'unit', 'description'], 'name')
+  expect(freeLayoutBox('unit', out2).link).toBe('ref')
+  expect(freeLayoutBox('unit', out2).y).toBe(FREE_DEFAULT_LAYOUT.unit.y) // hors flux : intacte
+})
+
+test('reorderCardObjects : écrit dans le jeu d\'overrides de la variante ÉDITÉE', () => {
+  const out = reorderCardObjects(DEFAULT_CARD_STYLE, true, ['name', 'brand'], 'name')
+  expect(freeLayoutBox('name', out, true).y).toBe(FREE_WIDE_LAYOUT.brand.y)
+  expect(out.layout).toEqual(DEFAULT_CARD_STYLE.layout) // variante verticale intacte
+})
+
+test('reorderCardObjects : moins de 2 blocs dans le flux = aucun changement', () => {
+  expect(reorderCardObjects(DEFAULT_CARD_STYLE, false, ['name'], 'name')).toBe(DEFAULT_CARD_STYLE)
+})
+
+test('cardObjectOrder : la liste suit l\'ordre RÉEL de la fiche (ancré bas en dernier)', () => {
+  const ids = ['price', 'name', 'promo', 'image', 'description'] as const
+  expect(cardObjectOrder(DEFAULT_CARD_STYLE, false, [...ids]))
+    .toEqual(['promo', 'image', 'name', 'description', 'price']) // prix ancré BAS → fin de liste
+  // Après un déplacement, la liste reflète la nouvelle position (aller-retour cohérent).
+  const moved = reorderCardObjects(DEFAULT_CARD_STYLE, false, ['name', 'description'], 'description')
+  expect(cardObjectOrder(moved, false, ['name', 'description'])).toEqual(['name', 'description'])
+  const swapped = reorderCardObjects(DEFAULT_CARD_STYLE, false, ['description', 'name'], 'description')
+  expect(cardObjectOrder(swapped, false, ['name', 'description'])).toEqual(['description', 'name'])
 })

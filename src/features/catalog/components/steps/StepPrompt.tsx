@@ -19,6 +19,7 @@ import { CardStylePreview } from './CardStylePreview'
 import { PageSimPreview } from './PageSimPreview'
 import { PreviewTextToolbar } from './PreviewTextToolbar'
 import { CharteCard } from './CharteCard'
+import { CoverVisualField } from './CoverVisualField'
 import { usePreviewPan } from '../../usePreviewPan'
 import { SectionsCard } from './SectionsCard'
 import { StepActionsPortal } from './StepActionsPortal'
@@ -37,6 +38,7 @@ export function StepPrompt() {
   const fieldMap = useCatalogStore((s) => s.fieldMap)
   const customFields = useCatalogStore((s) => s.customFields)
   const format = useCatalogStore((s) => s.format)
+  const coverImageUrl = useCatalogStore((s) => s.coverImageUrl)
   const setPrompt = useCatalogStore((s) => s.setPrompt)
   const setPlan = useCatalogStore((s) => s.setPlan)
   const setStep = useCatalogStore((s) => s.setStep)
@@ -108,8 +110,15 @@ export function StepPrompt() {
       setPlan(await generateCatalogPlan(prompt, { catalogName: name, tree, sampleNames, charte }, plan))
       toast.success('Plan généré — ajustez-le librement ci-dessous')
     } catch (e) {
-      setPlan(defaultCatalogPlan(tree, name))
-      toast.error(`IA indisponible (${String((e as Error).message).slice(0, 120)}) — plan par défaut appliqué`)
+      // Repli NON DESTRUCTIF : un plan existant (style des fiches, fonds de page,
+      // vedettes, couvertures — des heures de réglages) n'est JAMAIS remplacé par
+      // le plan neutre. Sans plan, le défaut débloque la première génération.
+      if (plan) {
+        toast.error(`IA indisponible (${String((e as Error).message).slice(0, 120)}) — plan actuel CONSERVÉ`)
+      } else {
+        setPlan(defaultCatalogPlan(tree, name))
+        toast.error(`IA indisponible (${String((e as Error).message).slice(0, 120)}) — plan par défaut appliqué`)
+      }
     } finally {
       setBusy(false)
     }
@@ -224,6 +233,18 @@ export function StepPrompt() {
                   Sans IA, un plan par défaut (grille homogène, thème neutre) reste disponible dès le premier clic.
                 </p>
               )}
+              {/* DÉBOUCHÉ VISUEL du brief : « Générer le plan (IA) » traduit la
+                  demande en prompt image (EN) ; le visuel se lance ICI, sans
+                  passer par l'Aperçu — même bouton que le panneau « Fond de page ». */}
+              {plan && (
+                <div className="pt-1 space-y-2 border-t border-border/60">
+                  <p className="text-[11px] text-white/50">
+                    Visuel de couverture — prompt écrit par le plan IA d'après votre demande, modifiable.
+                  </p>
+                  <CoverVisualField target="cover" prompt={plan.cover.imagePrompt} imageUrl={coverImageUrl} rows={2}
+                    onPrompt={(v) => setPlan({ ...plan, cover: { ...plan.cover, imagePrompt: v } })} />
+                </div>
+              )}
             </section>
             {/* Moteur créatif : éléments joints (charte PDF, logo, visuels) → palette
                 + typos extraites, consignes libres — le tout pilote le plan IA. */}
@@ -325,7 +346,8 @@ export function StepPrompt() {
       {plan && (
         <aside className="w-80 shrink-0 border-l border-border bg-surface overflow-y-auto">
           <CardStyleCard plan={plan} setPlan={setPlan} selectedObject={selectedObject}
-            onClearSelection={() => setSelectedObject(null)} wide={simWide ?? previewWide} />
+            onClearSelection={() => setSelectedObject(null)} onSelectObject={setSelectedObject}
+            wide={simWide ?? previewWide} />
         </aside>
       )}
     </div>

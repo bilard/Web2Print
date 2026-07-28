@@ -1,152 +1,109 @@
 // Liste « Éléments affichés » du panneau Style des fiches : TOUS les objets de
-// la fiche (image, marque, nom, prix, prix barré compris) + les champs libres
-// (TVA, entretien…) masquables UN PAR UN sous « Détails ».
+// la fiche (image, marque, nom, prix compris) + les champs libres (TVA,
+// entretien…) masquables un par un sous « Détails ».
+// La liste est ORDONNÉE COMME LA FICHE (tri par position verticale réelle) :
+// glisser une ligne réordonne les blocs dans la fiche, cliquer son nom
+// sélectionne le bloc (mêmes réglages que la sélection dans l'aperçu).
 import { useMemo } from 'react'
-import { toast } from 'sonner'
-import { useCatalogStore } from '@/stores/catalog.store'
-import { UNCAPPED, isSpecsDetailField, extractPromoFields, countDetailData } from '@/features/retail-promo/promoMapping'
-import type { CatalogCardStyle } from '../../catalogTypes'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import { cardObjectOrder, reorderCardObjects } from '../pages/freeLayout'
+import type { CardObjectId, CatalogCardStyle } from '../../catalogTypes'
+import { DetailsFieldsPanel } from './DetailsFieldsPanel'
+import { SortableVisibilityRow, VisibilityRow } from './VisibilityRow'
 
 type ShowKey = keyof Pick<CatalogCardStyle,
   'showPromo' | 'showImage' | 'showSticker' | 'showKicker' | 'showBandRule' | 'showVedette' | 'showBrand' | 'showName'
   | 'showDesc' | 'showRef' | 'showUnit' | 'showPrice' | 'showWas' | 'showDetails'>
 
-/** Ordre = ordre visuel de la fiche (conventions retail). */
-const VISIBILITY: { key: ShowKey; label: string }[] = [
-  { key: 'showPromo', label: 'Cartouche promo' },
-  { key: 'showImage', label: 'Image' },
-  { key: 'showSticker', label: 'Sticker remise' },
-  { key: 'showKicker', label: 'Sous-famille' },
-  { key: 'showBandRule', label: 'Filet du bandeau de section' },
-  { key: 'showVedette', label: 'Ruban vedette' },
-  { key: 'showBrand', label: 'Marque' },
-  { key: 'showName', label: 'Nom' },
-  { key: 'showDesc', label: 'Description' },
-  { key: 'showRef', label: 'Référence' },
-  { key: 'showUnit', label: 'Unité' },
-  { key: 'showPrice', label: 'Prix' },
-  { key: 'showWas', label: 'Prix barré' },
-  { key: 'showDetails', label: 'Détails' },
+/** Objets de fiche déplaçables : une ligne triable chacun (l'ordre affiché vient
+ *  de leur position réelle). `showWas` et `showBandRule` n'en sont pas : le prix
+ *  barré vit DANS le bloc prix, le filet est un élément de PAGE. */
+const OBJECTS: { key: ShowKey; obj: CardObjectId; label: string }[] = [
+  { key: 'showPromo', obj: 'promo', label: 'Cartouche promo' },
+  { key: 'showVedette', obj: 'vedette', label: 'Ruban vedette' },
+  { key: 'showImage', obj: 'image', label: 'Image' },
+  { key: 'showKicker', obj: 'kicker', label: 'Sous-famille' },
+  { key: 'showSticker', obj: 'sticker', label: 'Sticker remise' },
+  { key: 'showBrand', obj: 'brand', label: 'Marque' },
+  { key: 'showName', obj: 'name', label: 'Nom' },
+  { key: 'showDesc', obj: 'description', label: 'Description' },
+  { key: 'showDetails', obj: 'details', label: 'Détails' },
+  { key: 'showRef', obj: 'ref', label: 'Référence' },
+  { key: 'showUnit', obj: 'unit', label: 'Unité' },
+  { key: 'showPrice', obj: 'price', label: 'Prix' },
 ]
 
 interface Props {
   style: CatalogCardStyle
   patch: (p: Partial<CatalogCardStyle>) => void
+  /** Bloc sélectionné dans l'aperçu — la liste le met en évidence et le pilote. */
+  selected?: CardObjectId | null
+  onSelect?: (id: CardObjectId) => void
+  /** Variante ÉDITÉE (pleine largeur) : le réordonnancement écrit dans SON jeu de positions. */
+  wide?: boolean
 }
 
-export function CardStyleVisibility({ style, patch }: Props) {
-  // Champs libres du catalogue (TVA, avantages…) : une case par champ, indentée
-  // sous « Détails » — masquer un champ retire SA ligne de la zone, pas la zone.
-  const customFields = useCatalogStore((s) => s.customFields)
-  const rawRows = useCatalogStore((s) => s.rawRows)
-  const rawColumns = useCatalogStore((s) => s.rawColumns)
-  const fieldMap = useCatalogStore((s) => s.fieldMap)
-  const selectedRowIds = useCatalogStore((s) => s.selectedRowIds)
-  const plan = useCatalogStore((s) => s.plan)
-  const setPlan = useCatalogStore((s) => s.setPlan)
-  /** Couplage mode ↔ densité : l'exhaustif n'est visible qu'avec de GRANDES cartes. */
-  const setAllSectionsGrid = (grid: 2 | 4) => {
-    if (!plan) return
-    setPlan({ ...plan, sections: plan.sections.map((sec) => ({ ...sec, productsPerPage: grid, randomDensity: false })) })
+export function CardStyleVisibility({ style, patch, selected, onSelect, wide = false }: Props) {
+  // Souris/tactile + CLAVIER (poignée au focus : Espace saisit, ↑↓ déplacent,
+  // Espace dépose) — le panneau reste pilotable sans souris.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+  const byObj = useMemo(() => new Map(OBJECTS.map((o) => [o.obj, o])), [])
+  const order = useMemo(() => cardObjectOrder(style, wide, OBJECTS.map((o) => o.obj)), [style, wide])
+
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e
+    if (!over || active.id === over.id) return
+    const from = order.indexOf(active.id as CardObjectId)
+    const to = order.indexOf(over.id as CardObjectId)
+    if (from < 0 || to < 0) return
+    // Le tableau de CARACTÉRISTIQUES n'a pas de ligne propre (il est régi par
+    // « Détails ») : il suit toujours immédiatement le bloc Détails.
+    const moved = arrayMove(order, from, to).flatMap((id) => (id === 'details' ? ['details' as const, 'specs' as const] : [id]))
+    const next = reorderCardObjects(style, wide, moved, active.id as CardObjectId)
+    patch(wide ? { layoutWide: next.layoutWide } : { layout: next.layout })
   }
-  const hidden = style.hiddenDetails ?? []
-  const hasSpecsField = customFields.some(isSpecsDetailField)
-  // Comptes RÉELS pour « Auto » : maximum de puces / de specs parmi les
-  // produits SÉLECTIONNÉS — les champs affichent alors le nombre exact.
-  const autoCounts = useMemo(() => {
-    const sel = new Set(selectedRowIds)
-    let bullets = 0
-    let specs = 0
-    for (const row of rawRows) {
-      if (sel.size > 0 && !sel.has(row._id)) continue
-      const c = countDetailData(customFields, extractPromoFields(row, rawColumns, fieldMap, customFields))
-      bullets = Math.max(bullets, c.bullets)
-      specs = Math.max(specs, c.specs)
-    }
-    return { bullets: Math.max(1, bullets), specs }
-  }, [rawRows, rawColumns, fieldMap, customFields, selectedRowIds])
-  const toggleDetail = (id: string, visible: boolean) =>
-    patch({ hiddenDetails: visible ? hidden.filter((h) => h !== id) : [...hidden, id] })
 
   return (
-    <div className="flex flex-col gap-2">
-      {VISIBILITY.map(({ key, label }) => (
-        <div key={key}>
-          <label className="flex items-center gap-1.5 text-xs text-white/40 cursor-pointer select-none">
-            {/* !== false : les clés optionnelles (showBandRule) valent true sur les styles persistés anciens. */}
-            <input type="checkbox" checked={style[key] !== false} onChange={(e) => patch({ [key]: e.target.checked } as Partial<CatalogCardStyle>)}
-              className="accent-indigo-600" />
-            {label}
-          </label>
-          {key === 'showDetails' && style.showDetails && customFields.length > 0 && (
-            <div className="flex flex-col gap-1.5 mt-1.5 ml-5 pl-2 border-l border-white/10">
-              {customFields.map((cf) => (
-                <label key={cf.id} className="flex items-center gap-1.5 text-[11px] text-white/40 cursor-pointer select-none">
-                  <input type="checkbox" checked={!hidden.includes(cf.id)} onChange={(e) => toggleDetail(cf.id, e.target.checked)}
-                    className="accent-indigo-600" />
-                  {(cf.label || cf.column || 'Champ').trim()}
-                </label>
-              ))}
-              <label className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
-                Puces max (vide = toutes)
-                <input type="number" min={1} max={UNCAPPED} placeholder="toutes"
-                  value={style.maxBulletLines != null && style.maxBulletLines < UNCAPPED ? style.maxBulletLines : ''}
-                  onChange={(e) => patch({ maxBulletLines: e.target.value === '' ? UNCAPPED : Math.max(1, Math.min(UNCAPPED, Number(e.target.value) || 1)) })}
-                  className="w-16 px-2 py-0.5 rounded-md bg-well text-[11px] text-white outline-none border border-white/10 focus:border-[#6366f1] placeholder:text-white/25" />
-              </label>
-              {hasSpecsField && (
-                <label className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
-                  Spécifications max (vide = toutes)
-                  <input type="number" min={0} max={UNCAPPED} placeholder="toutes"
-                    value={style.maxSpecLines != null && style.maxSpecLines < UNCAPPED ? style.maxSpecLines : ''}
-                    onChange={(e) => patch({ maxSpecLines: e.target.value === '' ? UNCAPPED : Math.max(0, Math.min(UNCAPPED, Number(e.target.value) || 0)) })}
-                    className="w-16 px-2 py-0.5 rounded-md bg-well text-[11px] text-white outline-none border border-white/10 focus:border-[#6366f1] placeholder:text-white/25" />
-                </label>
-              )}
-              {(() => {
-                const exhaustive = (style.maxBulletLines ?? UNCAPPED) >= autoCounts.bullets
-                  && (style.maxSpecLines ?? UNCAPPED) >= autoCounts.specs
-                const on = 'bg-indigo-600 border-indigo-500 text-[#fff]'
-                const off = 'bg-well border-white/10 text-white/60 hover:text-white'
-                return (
-                  <div className="space-y-1">
-                    <div className="flex gap-1.5">
-                      <button type="button"
-                        onClick={() => {
-                          patch({ maxBulletLines: UNCAPPED, maxSpecLines: UNCAPPED })
-                          setAllSectionsGrid(2)
-                          toast.success('Mode EXHAUSTIF : toute la donnée source + grandes cartes (2 produits/page) sur toutes les sections', {
-                            description: 'Densité ajustable section par section dans le panneau Sections.',
-                          })
-                        }}
-                        title="Toute la donnée source (puces intégrales + toutes les specs) ET grandes cartes : toutes les sections passent en 2 produits/page"
-                        className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${exhaustive ? on : off}`}>
-                        {exhaustive ? '✓ Exhaustif' : 'Exhaustif'}
-                      </button>
-                      <button type="button"
-                        onClick={() => {
-                          patch({ maxBulletLines: 5, maxSpecLines: 6 })
-                          setAllSectionsGrid(4)
-                          toast.success('Mode CONDENSÉ : 5 puces · 6 specs + grille 4 produits/page', {
-                            description: 'Quotas ajustables dans les champs, densité dans le panneau Sections.',
-                          })
-                        }}
-                        title="Version condensée : 5 puces et 6 spécifications par fiche, grille 4 produits/page — ajustez ensuite les quotas dans les champs ci-dessus"
-                        className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${!exhaustive ? on : off}`}>
-                        {!exhaustive ? '✓ Condensé' : 'Condensé'}
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-white/35">
-                      Data source : {autoCounts.bullets} puce(s) · {autoCounts.specs} spec(s) max par fiche
-                    </p>
-                  </div>
-                )
-              })()}
-            </div>
-          )}
+    <div className="flex flex-col gap-0.5">
+      <p className="text-[10px] text-white/35 leading-snug mb-1">
+        Ordre = position dans la fiche. Glissez ⠿ pour déplacer un bloc, cliquez son nom pour le régler.
+      </p>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={order} strategy={verticalListSortingStrategy}>
+          {order.map((obj) => {
+            const item = byObj.get(obj)!
+            return (
+              <SortableVisibilityRow key={obj} id={obj} label={item.label} selected={selected === obj} onSelect={onSelect}
+                checked={style[item.key] !== false}
+                onCheck={(v) => patch({ [item.key]: v } as Partial<CatalogCardStyle>)} />
+            )
+          })}
+        </SortableContext>
+      </DndContext>
+      {/* Élément de PAGE (pas un bloc de fiche) : hors du jeu déplaçable. */}
+      <VisibilityRow id={null} label="Filet du bandeau de section" checked={style.showBandRule !== false}
+        onCheck={(v) => patch({ showBandRule: v })} />
+      {/* Sous-réglages HORS de la liste triable : imbriqués dans une ligne, leur
+          hauteur (200 px pour les Détails) fausserait la géométrie du
+          glisser-déposer — le bloc visé n'était jamais celui sous le curseur. */}
+      {style.showPrice !== false && (
+        <label className="flex items-center gap-1.5 mt-2 text-[11px] text-white/40 cursor-pointer select-none">
+          <input type="checkbox" checked={style.showWas !== false} onChange={(e) => patch({ showWas: e.target.checked })}
+            className="accent-indigo-600" />
+          Prix barré <span className="text-white/25">(dans le bloc Prix)</span>
+        </label>
+      )}
+      {style.showDetails !== false && (
+        <div className="mt-2 pt-2 border-t border-white/10">
+          <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider">Contenu des Détails</p>
+          <DetailsFieldsPanel style={style} patch={patch} />
         </div>
-      ))}
-      <label className="flex items-center gap-1.5 text-xs text-white/40">
+      )}
+      <label className="flex items-center gap-1.5 mt-1 text-xs text-white/40">
         Texte du ruban
         <input value={style.vedetteLabel} onChange={(e) => patch({ vedetteLabel: e.target.value })} placeholder="Vedette"
           className="w-28 px-2 py-1 rounded-md bg-well text-xs text-white outline-none border border-white/10 focus:border-[#6366f1]" />

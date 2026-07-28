@@ -541,6 +541,66 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
 }
 
 /**
+ * RÉORDONNE verticalement des objets de fiche (glisser-déposer de la liste
+ * « Éléments affichés »). L'ordre vertical du rendu est le tri par `y`
+ * (cf. la chaîne de flux ci-dessus) : on PERMUTE les `y` existants — les
+ * positions hand-tunées (respirations, largeurs, échelles) sont conservées
+ * telles quelles, seul leur ordre change. Aucun nombre magique.
+ *
+ * `movedId` = le seul bloc que le geste autorise à REJOINDRE le flux vertical :
+ * s'il était ancré bas (prix) ou soudé à un autre bloc (unité → réf), il est
+ * désancré/délié — sans quoi le glisser n'aurait aucun effet visible. Les autres
+ * blocs ancrés/liés gardent leur nature et ne bougent pas d'un cran.
+ *
+ * Écrit dans le jeu d'overrides de la variante ÉDITÉE (layout / layoutWide).
+ */
+/**
+ * ORDRE VERTICAL RÉEL des objets dans la fiche — la liste « Éléments affichés »
+ * s'affiche dans cet ordre (elle reflète la fiche, et le glisser-déposer la
+ * réécrit). Un bloc ancré BAS passe après tous les blocs du flux (son `y` est un
+ * écart au bord bas : 2 % = tout en bas) ; un bloc centré se range au milieu.
+ */
+export function cardObjectOrder(style: CatalogCardStyle, wide: boolean, ids: CardObjectId[]): CardObjectId[] {
+  const rank = (id: CardObjectId): number => {
+    const b = freeLayoutBox(id, style, wide)
+    const ay = b.ay ?? 't'
+    return ay === 'b' ? 200 - b.y : ay === 'c' ? 50 : b.y
+  }
+  return ids.map((id, i) => ({ id, r: rank(id), i }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .map((x) => x.id)
+}
+
+export function reorderCardObjects(
+  style: CatalogCardStyle,
+  wide: boolean,
+  orderedIds: CardObjectId[],
+  movedId: CardObjectId,
+): CatalogCardStyle {
+  const boxOf = (id: CardObjectId) => freeLayoutBox(id, style, wide)
+  const anchored = (b: CardBox) => (b.ay ?? 't') !== 't' || b.link != null
+  const flow = orderedIds.filter((id) => id === movedId || !anchored(boxOf(id)))
+  if (flow.length < 2) return style
+  // `y` d'un bloc ancré BAS = écart au bord bas (2 % = tout en bas) : tel quel il
+  // polluerait l'échelle de slots. Il entre donc comme « le plus bas du flux ».
+  const yMax = Math.max(...flow.map((id) => boxOf(id).y))
+  const yOf = (id: CardObjectId) => {
+    const b = boxOf(id)
+    return (b.ay ?? 't') === 't' ? b.y : yMax + 1
+  }
+  const slots = flow.map(yOf).sort((a, b) => a - b)
+  const key = wide ? ('layoutWide' as const) : ('layout' as const)
+  const layout = { ...(style[key] ?? {}) }
+  flow.forEach((id, i) => {
+    const b = boxOf(id)
+    layout[id] = id === movedId
+      ? { ...b, y: slots[i], ay: 't' as const, link: null, lx: 0, ly: 0 }
+      : { ...b, y: slots[i] }
+  })
+  return { ...style, [key]: layout }
+}
+
+/**
  * Purge les CYCLES de liaison au niveau de la DONNÉE (défauts fusionnés compris —
  * un override `ref→unit` forme un cycle avec le lien PAR DÉFAUT `unit→ref`) : le
  * premier lien déclaré (ordre CARD_OBJECT_IDS) gagne, le lien retour est posé à
