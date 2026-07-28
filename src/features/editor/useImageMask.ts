@@ -754,10 +754,15 @@ function enterCropPattern(rect: FabricObject): void {
   } as any)
   ;(ghost as any).data = { id: CROP_GHOST_ID, isCropGhost: true }
 
+  // Position du bloc dans la pile, pour la restaurer en sortie.
+  ;(snapshot as any)._zIndex = canvas.getObjects().indexOf(rect)
+
   canvas.add(ghost)
-  // Placer le ghost juste sous le rect pour qu'il reste cliquable autour
-  const idx = canvas.getObjects().indexOf(rect)
-  if (idx >= 0) canvas.moveObjectTo(ghost, idx)
+  // Aperçu AU PREMIER PLAN : le bloc image d'un design est presque toujours
+  // recouvert par d'autres objets (aplat de couleur, titres). En le laissant à
+  // sa place dans la pile, on recadrait à l'aveugle — la moitié de l'aperçu
+  // était masquée par le design. Le voile ajouté plus bas isole la zone.
+  canvas.bringObjectToFront(ghost)
 
   // Transformer le rect en cadre crop : fill quasi-transparent, contour fin indigo
   // Sauvegarder shadow/border pour restauration en cancel/apply (les objets IDML
@@ -812,11 +817,38 @@ function enterCropPattern(rect: FabricObject): void {
   const pGridH1 = mkGridLineP('__crop_grid_h1__')
   const pGridH2 = mkGridLineP('__crop_grid_h2__')
 
+  // Voile assombrissant autour du cadre (même principe qu'en mode image) :
+  // l'aperçu passe au premier plan, donc sans voile le design resterait
+  // visible tout autour et l'on ne distinguerait plus la zone recadrée.
+  const pDims = [0, 1, 2, 3].map((i) => {
+    const r = new Rect({
+      left: 0, top: 0, width: 0, height: 0,
+      originX: 'left', originY: 'top',
+      fill: 'rgba(0,0,0,0.5)',
+      selectable: false, evented: false, excludeFromExport: true,
+      objectCaching: false, strokeWidth: 0,
+    } as any)
+    ;(r as any).data = { id: `__crop_dim_p${i}__`, isCropDim: true }
+    return r
+  })
+  const [pDimTop, pDimBottom, pDimLeft, pDimRight] = pDims
+  const DIM_FAR_P = 100000
+
   const syncGridP = () => {
     const fx = (rect as any).left ?? 0
     const fy = (rect as any).top ?? 0
     const fw = ((rect as any).width ?? 0) * ((rect as any).scaleX ?? 1)
     const fh = ((rect as any).height ?? 0) * ((rect as any).scaleY ?? 1)
+    const z = canvas.getZoom() || 1
+    const p = 2 / z
+    pDimTop.set({ left: -DIM_FAR_P, top: -DIM_FAR_P, width: DIM_FAR_P * 2, height: DIM_FAR_P + fy - p })
+    pDimBottom.set({ left: -DIM_FAR_P, top: fy + fh + p, width: DIM_FAR_P * 2, height: DIM_FAR_P })
+    pDimLeft.set({ left: -DIM_FAR_P, top: fy - p, width: DIM_FAR_P + fx - p, height: fh + 2 * p })
+    pDimRight.set({ left: fx + fw + p, top: fy - p, width: DIM_FAR_P, height: fh + 2 * p })
+    for (const r of pDims) {
+      r.setCoords()
+      ;(r as any).dirty = true
+    }
     const v1x = fx + fw / 3
     const v2x = fx + (fw * 2) / 3
     const h1y = fy + fh / 3
@@ -843,6 +875,9 @@ function enterCropPattern(rect: FabricObject): void {
   ;(rect as any)._origCropControls = (rect as any).controls
   applySquareCropControls(rect as any)
 
+  // Ordre : aperçu → voile → cadre → grille (le cadre doit rester cliquable).
+  canvas.add(...pDims)
+  canvas.bringObjectToFront(rect)
   canvas.add(pGridV1, pGridV2, pGridH1, pGridH2)
   canvas.setActiveObject(rect)
   _state = { kind: 'pattern', canvas, rect, ghost, snapshot }
@@ -853,8 +888,8 @@ function enterCropPattern(rect: FabricObject): void {
 function cancelCropPattern(): void {
   if (!_state || _state.kind !== 'pattern') return
   const { canvas, rect, ghost, snapshot } = _state
-  // Remove grid lines tagged with isCropGrid
-  for (const o of canvas.getObjects().filter((x: any) => x.data?.isCropGrid)) {
+  // Remove grid lines + voiles (isCropGrid / isCropDim)
+  for (const o of canvas.getObjects().filter((x: any) => x.data?.isCropGrid || x.data?.isCropDim)) {
     canvas.remove(o)
   }
   // Détacher précisément les handlers de sync stockés lors de l'entrée
@@ -895,6 +930,10 @@ function cancelCropPattern(): void {
   ;(rect as any)._cacheCanvas = null
   rect.setCoords()
   canvas.remove(ghost)
+  // Le bloc avait été remonté au premier plan pour l'aperçu : il retrouve sa
+  // place exacte dans la pile, sinon il masquerait le reste du design.
+  const zIndex = (snapshot as any)._zIndex
+  if (typeof zIndex === 'number' && zIndex >= 0) canvas.moveObjectTo(rect, zIndex)
   canvas.setActiveObject(rect)
   _state = null
   notify()
@@ -905,8 +944,8 @@ function applyCropPattern(): void {
   if (!_state || _state.kind !== 'pattern') return
   const { canvas, rect, ghost, snapshot } = _state
 
-  // Remove grid lines tagged with isCropGrid
-  for (const o of canvas.getObjects().filter((x: any) => x.data?.isCropGrid)) {
+  // Remove grid lines + voiles (isCropGrid / isCropDim)
+  for (const o of canvas.getObjects().filter((x: any) => x.data?.isCropGrid || x.data?.isCropDim)) {
     canvas.remove(o)
   }
   // Détacher précisément les handlers de sync stockés lors de l'entrée
@@ -979,6 +1018,10 @@ function applyCropPattern(): void {
   ;(rect as any)._cacheCanvas = null
   rect.setCoords()
   canvas.remove(ghost)
+  // Le bloc avait été remonté au premier plan pour l'aperçu : il retrouve sa
+  // place exacte dans la pile, sinon il masquerait le reste du design.
+  const zIndex = (snapshot as any)._zIndex
+  if (typeof zIndex === 'number' && zIndex >= 0) canvas.moveObjectTo(rect, zIndex)
   canvas.setActiveObject(rect)
   _state = null
   notify()
