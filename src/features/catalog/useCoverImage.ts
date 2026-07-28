@@ -19,8 +19,37 @@ function base64ToBlob(base64: string, mimeType: string): Blob {
   return new Blob([bytes], { type: mimeType })
 }
 
+/**
+ * Brief d'EMBLÈME de marque : un SYMBOLE, jamais de lettrage — le nom reste
+ * composé typographiquement (un modèle d'image l'orthographierait mal).
+ */
+export function emblemPrompt(name: string, accent: string): string {
+  return `Minimal flat vector brand emblem for a professional retail tools catalogue named "${name}". `
+    + `Simple geometric symbol only, NO text, NO letters, NO words. `
+    + `Solid ${accent} accent with dark neutral tones, plain pure white background, crisp edges, no gradient, no photorealism, centered, generous margins.`
+}
+
 /** Cibles d'un visuel de catalogue : couverture, 4e, ou LOGO de marque. */
 export type CoverTarget = 'cover' | 'back' | 'logo'
+
+/**
+ * DIRECTION ARTISTIQUE imposée aux couvertures, en plus du sujet demandé.
+ * Sans elle, le modèle rendait des scènes d'intérieur banales (bureau, fenêtre,
+ * fouillis) : correctes mais indignes d'une couverture de catalogue. On exige
+ * donc le vocabulaire du shooting publicitaire — et de la PLACE pour les textes,
+ * qui viennent se poser par-dessus.
+ */
+function withArtDirection(prompt: string, target: CoverTarget): string {
+  if (target === 'logo') return prompt
+  return `${prompt.trim().replace(/[.\s]+$/, '')}. `
+    + `Award-winning commercial advertising photography for a premium retail catalogue cover. `
+    + `Studio-grade controlled lighting, crisp specular highlights, shallow depth of field, hero product staging. `
+    // « generous empty negative space » produisait un APLAT BLANC sur la moitié
+    // de l'image : on demande une zone CALME (flou, dégradé), pas du vide.
+    + `Uncluttered composition that keeps one side calmer and less busy for headline text — softly defocused or gently graded background there, never a flat empty white block. `
+    + `Rich contrast, colour-graded, ultra sharp focus, high-end editorial quality, shot on medium format. `
+    + `No text, no letters, no logo, no watermark, no people, no office interior, no window view, no clutter, no messy background.`
+}
 
 export function useCoverImage() {
   const [generating, setGenerating] = useState(false)
@@ -49,7 +78,7 @@ export function useCoverImage() {
       const s = useCatalogStore.getState()
       // Un logo est CARRÉ (emblème), pas au format de la page.
       const { w, h } = target === 'logo' ? { w: 512, h: 512 } : pagePx(s.format)
-      const { mimeType, base64 } = await generateImageBase64({ prompt, targetWidth: w, targetHeight: h })
+      const { mimeType, base64 } = await generateImageBase64({ prompt: withArtDirection(prompt, target), targetWidth: w, targetHeight: h })
       apply(target, await uploadToCovers(uid, base64ToBlob(base64, mimeType), mimeType, target))
       toast.success(target === 'logo' ? 'Emblème généré' : 'Visuel de couverture généré')
     } catch (e) {

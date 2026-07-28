@@ -21,6 +21,7 @@ import { PreviewTextToolbar } from './PreviewTextToolbar'
 import { CharteCard } from './CharteCard'
 import { CoverVisualField } from './CoverVisualField'
 import { usePreviewPan } from '../../usePreviewPan'
+import { emblemPrompt, useCoverImage } from '../../useCoverImage'
 import { SectionsCard } from './SectionsCard'
 import { StepActionsPortal } from './StepActionsPortal'
 
@@ -43,6 +44,8 @@ export function StepPrompt() {
   const setPlan = useCatalogStore((s) => s.setPlan)
   const setStep = useCatalogStore((s) => s.setStep)
   const [busy, setBusy] = useState(false)
+  // Création AUTOMATIQUE de l'emblème quand le plan désigne une marque (cf. generate).
+  const { generateCover } = useCoverImage()
   // Objet sélectionné dans l'overlay de disposition libre → met en évidence + focus le curseur correspondant.
   const [selectedObject, setSelectedObject] = useState<CardObjectId | null>(null)
   // Produit affiché dans l'aperçu (👁 sur les puces de la carte Sections) + variante.
@@ -107,8 +110,16 @@ export function StepPrompt() {
       // `plan` courant transmis : régénérer PRÉSERVE les réglages manuels (style
       // des fiches, fonds de page, couleurs de chapitres) — l'IA n'écrase que ce
       // qu'elle renvoie explicitement.
-      setPlan(await generateCatalogPlan(prompt, { catalogName: name, tree, sampleNames, charte }, plan))
+      const next = await generateCatalogPlan(prompt, { catalogName: name, tree, sampleNames, charte }, plan)
+      setPlan(next)
       toast.success('Plan généré — ajustez-le librement ci-dessous')
+      // « Créer un logo "X" » demande une CRÉATION, pas un bouton à trouver : dès
+      // que le plan désigne une marque et qu'aucun visuel n'existe, l'emblème est
+      // produit dans la foulée. Jamais d'écrasement d'un logo déjà chargé.
+      const brand = next.brandName?.trim()
+      if (brand && !useCatalogStore.getState().logoUrl) {
+        await generateCover(emblemPrompt(brand, next.theme.accent), 'logo')
+      }
     } catch (e) {
       // Repli NON DESTRUCTIF : un plan existant (style des fiches, fonds de page,
       // vedettes, couvertures — des heures de réglages) n'est JAMAIS remplacé par

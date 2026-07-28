@@ -7,7 +7,7 @@ import { useRef } from 'react'
 import { Loader2, Paperclip, Sparkles, X } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import type { CatalogPageStyle, CatalogPlan } from '../../catalogTypes'
-import { useCoverImage } from '../../useCoverImage'
+import { emblemPrompt, useCoverImage } from '../../useCoverImage'
 import { OptSection, OptSlider, OptToggle, optFieldClass } from './PageOptionControls'
 
 interface Props {
@@ -15,13 +15,6 @@ interface Props {
   setPlan: (plan: CatalogPlan) => void
   style: CatalogPageStyle
   patchStyle: (p: Partial<CatalogPageStyle>) => void
-}
-
-/** Brief d'EMBLÈME (jamais de lettrage : le nom reste typographique). */
-function emblemPrompt(name: string, accent: string): string {
-  return `Minimal flat vector brand emblem for a professional retail tools catalogue named "${name}". `
-    + `Simple geometric symbol only, NO text, NO letters, NO words. `
-    + `Solid ${accent} accent with dark neutral tones, plain pure white background, crisp edges, no gradient, no photorealism, centered, generous margins.`
 }
 
 export function LogoBrandOptions({ plan, setPlan, style, patchStyle }: Props) {
