@@ -1,6 +1,7 @@
 // Options contextuelles de la COUVERTURE et de la 4E : textes, éléments
 // affichés, échelles, assombrissement du visuel et génération du visuel IA.
 import { useState } from 'react'
+import { useCatalogStore } from '@/stores/catalog.store'
 import type { CatalogPageStyle, CatalogPlan } from '../../catalogTypes'
 import { CoverVisualField } from './CoverVisualField'
 import { OptSection, OptSlider, OptToggle, optFieldClass } from './PageOptionControls'
@@ -16,6 +17,7 @@ interface Props {
 
 export function PageOptionsCover({ variant, plan, setPlan, style, patchStyle, imageUrl }: Props) {
   const [backPrompt, setBackPrompt] = useState('')
+  const globalPrompt = useCatalogStore((s) => s.prompt)
   const isCover = variant === 'cover'
   const setCover = (p: Partial<CatalogPlan['cover']>) => setPlan({ ...plan, cover: { ...plan.cover, ...p } })
   const setBack = (p: Partial<CatalogPlan['backCover']>) => setPlan({ ...plan, backCover: { ...plan.backCover, ...p } })
@@ -56,8 +58,15 @@ export function PageOptionsCover({ variant, plan, setPlan, style, patchStyle, im
         <OptSlider label="Assombrissement visuel" value={style.coverOverlay} min={0} max={80} step={5} unit="%" onChange={(v) => patchStyle({ coverOverlay: v })} />
       </OptSection>
       <OptSection title="Visuel IA">
-        <CoverVisualField target={variant} prompt={prompt} imageUrl={imageUrl}
+        {/* Champ vide = on retombe sur le Prompt global, comme à l'étape Prompt :
+            sans ce repli, le bouton restait désactivé alors qu'un prompt existe. */}
+        <CoverVisualField target={variant} prompt={prompt || (isCover ? globalPrompt : '')} imageUrl={imageUrl}
           onPrompt={(v) => (isCover ? setCover({ imagePrompt: v }) : setBackPrompt(v))} />
+        {isCover && !prompt.trim() && globalPrompt.trim() && (
+          <p className="text-[10px] text-white/40 leading-snug">
+            Champ vide : c'est le Prompt global de l'étape « Prompt &amp; style » qui part.
+          </p>
+        )}
       </OptSection>
     </>
   )

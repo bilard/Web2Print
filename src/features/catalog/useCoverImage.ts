@@ -62,10 +62,15 @@ function coverBackdropPrompt(prompt: string): string {
   // en dernier, donc en position de force face au modèle. Si la demande réclame
   // elle-même du lettrage, on ne l'ajoute PAS — sinon on écraserait la demande.
   if (WANTS_TEXT_RE.test(cleaned)) return cleaned
+  // ⚠ NE PAS interdire TOUT texte : dans un commerce, la signalétique, les
+  // emballages et les marques FONT la scène. Les bannir donnait un magasin
+  // stérilisé — rayons anonymes, cartons nus, ambiance irréelle. On ne bannit
+  // donc que le LETTRAGE DE COUVERTURE superposé, celui qui entrerait en
+  // concurrence avec la typographie de la maquette.
   return `${cleaned}\n\n`
-    + `IMPORTANT — c'est une image de FOND, pas une couverture finie : `
-    + `AUCUN texte, AUCUNE lettre, AUCUN chiffre, AUCUN mot, AUCUN titre, AUCUN logo, AUCUNE enseigne, AUCUN panneau écrit, AUCUN filigrane nulle part dans l'image. `
-    + `Les titres seront ajoutés par-dessus par la mise en page.`
+    + `IMPORTANT — produis la PHOTO SEULE, pas une couverture déjà composée. `
+    + `N'ajoute par-dessus l'image AUCUN titre, AUCUN gros lettrage, AUCUN bandeau ou cartouche de texte, AUCUN slogan, AUCUN filigrane, AUCUN logo plaqué en surimpression : les titres du catalogue seront posés ensuite par la mise en page. `
+    + `En revanche, tout ce qui appartient NATURELLEMENT à la scène doit rester présent et crédible — signalétique de rayon, panneaux du magasin, emballages, étiquettes, marques sur les produits : c'est ce qui rend le lieu vivant et réaliste.`
 }
 
 /** Cibles d'un visuel de catalogue : couverture, 4e, ou LOGO de marque. */
