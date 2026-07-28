@@ -11,6 +11,22 @@ import { Rect, Ellipse, Line, Textbox, Path, Shadow, FabricImage } from 'fabric'
 import type { FabricObject } from 'fabric'
 import type { IdmlObject, IdmlColor, IdmlParagraph } from './idmlParser'
 import { resolveAvailableFont } from '@/features/assets/useFonts'
+import { applyTextFrame, type AutoSizing } from '@/features/editor/textFrame'
+
+/**
+ * Traduit AutoSizingType d'InDesign en mode de redimensionnement du bloc.
+ * `UseNoLineBreaksForAutoSizing` implique une largeur automatique même quand
+ * AutoSizingType est absent.
+ */
+function idmlAutoSizing(obj: IdmlObject): AutoSizing {
+  const raw = obj.autoSizingType ?? ''
+  const height = /height/i.test(raw)
+  const width = /width/i.test(raw) || Boolean(obj.noLineBreaks)
+  if (height && width) return 'both'
+  if (height) return 'height'
+  if (width) return 'width'
+  return 'off'
+}
 
 // GIF 1×1 transparent : src sûr pour un FabricImage placeholder (pas de crash Fabric,
 // instanceof FabricImage = true → débloque la branche binding 'src' du merge).
@@ -346,30 +362,36 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
     case 'TextFrame': {
       const paras = obj.paragraphs ?? []
       const bgFill = colorToHex(obj.fill)
+      // Contour du CADRE (InDesign « Options de contour ») — jusqu'ici perdu à l'import.
+      const frameStrokeColor = colorToHex(obj.stroke)
+      const frameStrokeW = frameStrokeColor !== 'transparent' ? (obj.strokeWeight || 0) : 0
+      const hasFrameStroke = frameStrokeW > 0
 
       if (paras.length === 0) {
         // Empty TextFrame with oval/curved path → render as Path shape
-        if (obj.frameSvgPath && bgFill !== 'transparent') {
+        if (obj.frameSvgPath && (bgFill !== 'transparent' || hasFrameStroke)) {
           try {
             return new Path(obj.frameSvgPath, {
               left: cx, top: cy, originX: 'center', originY: 'center',
               scaleX: 1, scaleY: 1, angle: 0,
               fill: bgFill,
-              stroke: '', strokeWidth: 0,
+              stroke: hasFrameStroke ? frameStrokeColor : undefined,
+              strokeWidth: frameStrokeW,
               opacity: obj.opacity,
               shadow: makeShadow(obj),
               data: makeData(obj, 'TextFrameBg'),
             })
           } catch { /* fall through */ }
         }
-        if (bgFill !== 'transparent') {
+        if (bgFill !== 'transparent' || hasFrameStroke) {
           const tfCr = obj.cornerRadius ? obj.cornerRadius * Math.min(Math.abs(obj.scaleX), Math.abs(obj.scaleY)) : 0
           return new Rect({
             left: cx, top: cy, originX: 'center', originY: 'center',
             width: displayW, height: displayH, angle,
             rx: tfCr, ry: tfCr,
             fill: bgFill,
-            stroke: '', strokeWidth: 0,
+            stroke: hasFrameStroke ? frameStrokeColor : undefined,
+            strokeWidth: frameStrokeW,
             opacity: obj.opacity,
             shadow: makeShadow(obj),
             data: makeData(obj, 'TextFrameBg'),
@@ -429,45 +451,32 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
         }
       }
 
-      // Always use a separate background shape when TextFrame has a fill
-      // (Fabric.js backgroundColor only covers text height, not full InDesign frame)
+      // Le cadre est porté par le Textbox lui-même (cf. features/editor/textFrame.ts) :
+      // fond, contour et arrondi sont peints sous le texte, dans UN SEUL objet — comme
+      // un bloc de texte InDesign. Seuls les cadres non rectangulaires (ovale, tracé
+      // libre) gardent une forme de fond distincte, que le rendu custom ne sait pas peindre.
       const tfCr = obj.cornerRadius ? obj.cornerRadius * Math.min(Math.abs(obj.scaleX), Math.abs(obj.scaleY)) : 0
-      const needsSeparateBg = bgFill !== 'transparent'
+      const usesPathFrame = Boolean(obj.frameSvgPath)
       const results: FabricObject[] = []
 
-      if (needsSeparateBg) {
-        if (obj.frameSvgPath) {
-          // Oval/curved background shape
-          try {
-            const bgShape = new Path(obj.frameSvgPath, {
-              left: cx, top: cy, originX: 'center', originY: 'center',
-              scaleX: 1, scaleY: 1, angle: 0,
-              fill: bgFill,
-              stroke: '', strokeWidth: 0,
-              opacity: obj.opacity,
-              shadow: makeShadow(obj),
-              // ID Fabric distinct du Textbox pour éviter les doublons dans le panneau Calques.
-              // `idmlRefId` permet à l'exporter de retrouver l'élément IDML d'origine.
-              data: { ...makeData(obj, 'TextFrameBg'), type: 'path', id: `${obj.id}__bg`, idmlRefId: obj.id },
-            })
-            results.push(bgShape)
-          } catch (e) {
-            console.warn('[idmlToFabric] TextFrame bg path error:', e)
-          }
-        } else {
-          // Rectangular background with rounded corners
-          const bgRect = new Rect({
+      if (usesPathFrame && (bgFill !== 'transparent' || hasFrameStroke)) {
+        // Oval/curved background shape
+        try {
+          const bgShape = new Path(obj.frameSvgPath as string, {
             left: cx, top: cy, originX: 'center', originY: 'center',
-            width: displayW, height: displayH, angle,
-            rx: tfCr, ry: tfCr,
+            scaleX: 1, scaleY: 1, angle: 0,
             fill: bgFill,
-            stroke: '', strokeWidth: 0,
+            stroke: hasFrameStroke ? frameStrokeColor : undefined,
+            strokeWidth: frameStrokeW,
             opacity: obj.opacity,
             shadow: makeShadow(obj),
-            // Voir commentaire ci-dessus : id distinct + idmlRefId pour le mapping export.
-            data: { ...makeData(obj, 'TextFrameBg'), type: 'rect', id: `${obj.id}__bg`, idmlRefId: obj.id },
+            // ID Fabric distinct du Textbox pour éviter les doublons dans le panneau Calques.
+            // `idmlRefId` permet à l'exporter de retrouver l'élément IDML d'origine.
+            data: { ...makeData(obj, 'TextFrameBg'), type: 'path', id: `${obj.id}__bg`, idmlRefId: obj.id },
           })
-          results.push(bgRect)
+          results.push(bgShape)
+        } catch (e) {
+          console.warn('[idmlToFabric] TextFrame bg path error:', e)
         }
       }
 
@@ -514,18 +523,20 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
       const insL = (obj.insetLeft ?? 0) * sX
       const insR = (obj.insetRight ?? 0) * sX
 
-      // Reduce text width by horizontal insets
+      // Largeur utile (hors marges) — sert au calibrage de l'auto-fit de fusion.
       const insetTextWidth = Math.max(textWidth - insL - insR, 10)
-      // When UseNoLineBreaksForAutoSizing is set, InDesign auto-expands the frame
-      // to fit all text on one line. Use a very large initial width, then shrink-wrap will reduce it.
-      const noBreakWidth = obj.noLineBreaks ? Math.max(insetTextWidth, 5000) : insetTextWidth
-      // Apply horizontal scale: compress text via scaleX, expand width to compensate.
-      // Add generous buffer to prevent false line-wrapping: Fabric.js measures
-      // uncompressed glyphs in the wider box, which can cause wrapping that
-      // wouldn't occur in InDesign where glyphs are truly compressed.
-      const adjustedWidth = hScaleFactor !== 1
-        ? (noBreakWidth / hScaleFactor) + fontSize
-        : noBreakWidth
+      // Largeur du CADRE en unités locales du Textbox : `scaleX` porte l'échelle
+      // horizontale InDesign, et les marges sont RÉSERVÉES à la composition par le
+      // patch de bloc — plus besoin de les soustraire de la largeur ici.
+      const frameWLocal = Math.max(textWidth / hScaleFactor, 10)
+      // UseNoLineBreaksForAutoSizing : InDesign élargit le cadre pour tenir sur une
+      // ligne. On part très large, le shrink-wrap ramène ensuite à la bonne largeur.
+      // Buffer d'un cadratin quand hScale ≠ 1 : Fabric mesure des glyphes non
+      // compressés dans une boîte élargie, ce qui provoquerait un retour à la ligne
+      // qui n'existe pas dans InDesign.
+      const adjustedWidth = obj.noLineBreaks
+        ? Math.max(frameWLocal, 5000)
+        : frameWLocal + (hScaleFactor !== 1 ? fontSize : 0)
 
       try {
         const resolvedFont = resolveAvailableFont(firstPara.fontFamily) || 'Arial'
@@ -545,7 +556,6 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
           splitByGrapheme: false,
           stroke: '', strokeWidth: 0,
           opacity: obj.opacity,
-          backgroundColor: (!needsSeparateBg && bgFill !== 'transparent') ? bgFill : undefined,
           data: {
             ...makeData(obj, fullText.slice(0, 30) || 'Texte'),
             idmlPtScale: sY,
@@ -565,7 +575,8 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
             ...(obj.mergeTemplate && (!obj.autoSizingType || obj.autoSizingType === 'Off') ? {
               fitToZone: true,
               fitZone: {
-                width: adjustedWidth,
+                // Zone utile = cadre moins les marges, dans le repère local du Textbox.
+                width: Math.max(insetTextWidth / hScaleFactor, 10),
                 height: Math.max(displayH - insT - insB, 4),
               },
               baseFontSize: fontSize,
@@ -611,69 +622,64 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
         // Apply per-character charSpacing monkey-patch (for IDML tracking)
         patchPerCharSpacing(textbox)
 
-        // Shrink-wrap: only for center-aligned or noLineBreaks textboxes.
-        // For left/right/justify aligned text, the frame width determines alignment edge —
-        // shrinking would shift text visually.
-        const canShrinkWrap = firstPara.alignment === 'center' || obj.noLineBreaks
-        if (canShrinkWrap) {
+        // ── Le cadre InDesign, porté par le Textbox lui-même ─────────────────
+        // Marges, retraits et arrondi vivent dans le repère LOCAL du Textbox :
+        // l'horizontal passe par scaleX (= hScaleFactor), le vertical par scaleY (= 1).
+        const toLocalX = (ptValue: number) => (ptValue * sX) / hScaleFactor
+        const toLocalY = (ptValue: number) => ptValue * sY
+        applyTextFrame(textbox, {
+          frameW: adjustedWidth,
+          frameH: Math.max(displayH, 1),
+          // Un cadre non rectangulaire garde sa forme de fond distincte : ne pas
+          // repeindre un rectangle par-dessus.
+          fill: usesPathFrame || bgFill === 'transparent' ? null : bgFill,
+          stroke: usesPathFrame || !hasFrameStroke ? null : frameStrokeColor,
+          strokeWidth: usesPathFrame ? 0 : frameStrokeW / hScaleFactor,
+          strokeAlign: obj.strokeAlignment ?? 'center',
+          cornerRadius: usesPathFrame ? 0 : tfCr / hScaleFactor,
+          insetTop: toLocalY(obj.insetTop ?? 0),
+          insetBottom: toLocalY(obj.insetBottom ?? 0),
+          insetLeft: toLocalX(obj.insetLeft ?? 0),
+          insetRight: toLocalX(obj.insetRight ?? 0),
+          verticalAlign: obj.verticalJustification ?? 'top',
+          autoSizing: idmlAutoSizing(obj),
+          paraIndents: paras.map((p) => ({
+            left: p.leftIndent ? toLocalX(p.leftIndent) : undefined,
+            right: p.rightIndent ? toLocalX(p.rightIndent) : undefined,
+            firstLine: p.firstLineIndent ? toLocalX(p.firstLineIndent) : undefined,
+            lastLine: p.lastLineIndent ? toLocalX(p.lastLineIndent) : undefined,
+            spaceBefore: p.spaceBefore ? toLocalY(p.spaceBefore) : undefined,
+            spaceAfter: p.spaceAfter ? toLocalY(p.spaceAfter) : undefined,
+          })),
+        })
+
+        // Shrink-wrap : réservé aux cadres à largeur automatique
+        // (UseNoLineBreaksForAutoSizing). Pour un cadre fixe, la largeur du bloc EST
+        // le bord d'alignement — la rétrécir décalerait le texte à l'écran.
+        if (obj.noLineBreaks) {
           const numLines = textbox.textLines?.length ?? 1
           let maxLineW = 0
           for (let li = 0; li < numLines; li++) {
             const lw = (textbox as any).getLineWidth?.(li) ?? 0
             if (lw > maxLineW) maxLineW = lw
           }
-          const contentWidth = maxLineW + fontSize * 0.3
+          const insetsLocal = toLocalX((obj.insetLeft ?? 0) + (obj.insetRight ?? 0))
+          const contentWidth = maxLineW + insetsLocal + fontSize * 0.3
           if (contentWidth > 10 && contentWidth < adjustedWidth * 0.95) {
             textbox.set({ width: contentWidth })
+            applyTextFrame(textbox, { frameW: contentWidth })
           }
         }
 
-        // Compute vertical + horizontal offset for insets + vertical justification
-        // InDesign default is TopAlign — text starts from top of frame
-        const textH = textbox.height * (textbox.scaleY ?? 1)
-        const vjust = obj.verticalJustification ?? 'top'
-
-        // Horizontal offset from insets
-        const localDx = (insL - insR) / 2
-
-        // When hScaleFactor != 1, Fabric.js textH can be inflated by false line-wrapping
-        // (wider unscaled box causes wrapping that wouldn't happen in InDesign).
-        // In that case, estimate text height from paragraph data.
-        // When hScaleFactor == 1, always trust Fabric.js textH — no false wrapping possible.
-        let posTextH: number
-        if (hScaleFactor !== 1 && textH > displayH) {
-          const estimatedTextH = paras.reduce((sum, p) =>
-            sum + (p.fontSize * sY) * fabricLineHeight, 0)
-          posTextH = estimatedTextH
-        } else {
-          posTextH = textH
-        }
-
-        let localDy = 0
-        if (vjust === 'top') {
-          // Text top aligns to frame top + insetTop
-          localDy = -(displayH / 2) + insT + posTextH / 2
-        } else if (vjust === 'center') {
-          // Text centered in available area (between insets)
-          localDy = (insT - insB) / 2
-        } else if (vjust === 'bottom') {
-          // Text bottom aligns to frame bottom - insetBottom
-          localDy = (displayH / 2) - insB - posTextH / 2
-        }
-
-        // Rotate local offset to world coordinates
-        const rad = (angle * Math.PI) / 180
-        const finalCx = cx + localDx * Math.cos(rad) - localDy * Math.sin(rad)
-        const finalCy = cy + localDx * Math.sin(rad) + localDy * Math.cos(rad)
-
-        textbox.set({ left: finalCx, top: finalCy, angle })
-        // Override idmlCx/idmlCy to match the actual Fabric position (which includes inset
-        // + vertical-justification offsets). The exporter uses (fab.left - idmlCx) as delta,
+        // Le Textbox EST le cadre : son centre est celui du bloc InDesign.
+        // Marges et justification verticale déplacent le texte À L'INTÉRIEUR
+        // (cf. _getTopOffset dans textFrame.ts), plus l'objet lui-même.
+        textbox.set({ left: cx, top: cy, angle })
         const tbData = (textbox as FabricObject & { data: Record<string, unknown> }).data
-        tbData.idmlCx = finalCx
-        tbData.idmlCy = finalCy
-        tbData.idmlW = textbox.width * (textbox.scaleX ?? 1)
-        tbData.idmlH = textbox.height * (textbox.scaleY ?? 1)
+        tbData.idmlCx = cx
+        tbData.idmlCy = cy
+        tbData.idmlW = (textbox.width ?? 0) * (textbox.scaleX ?? 1)
+        tbData.idmlH = textbox.height ?? displayH
         tbData.originalTextColor = colorToHex(firstPara.color, '#000000')
         tbData.originalFillColor = bgFill
         tbData.idmlOrigFontSize = fontSize

@@ -33,6 +33,8 @@ import { ImageMaskSection } from './ImageMaskSection'
 import { findStoreObjectDeep } from '@/features/editor/deepObjects'
 import { MergeConnectorSection } from './MergeConnectorSection'
 import { ConditionalRulesSection } from './ConditionalRulesSection'
+import { TextFrameSection, ParagraphIndentsSection } from './TextFrameSection'
+import { applyTextFrame, isTextFrame } from '@/features/editor/textFrame'
 
 const FILL_IMAGE_SOURCES: { tab: DamTab; label: string; icon: typeof ImageIcon }[] = [
   { tab: 'stock', label: 'Stock', icon: ImageIcon },
@@ -395,14 +397,23 @@ export function PropertiesPanel() {
       if (obj.type === 'text') {
         // Preserve existing scaleX (e.g. hScaleFactor from IDML horizontal scale)
         const curScaleX = fObj.scaleX ?? 1
-        ;(fObj as any).set({ width: patch.width / curScaleX })
+        const localW = patch.width / curScaleX
+        ;(fObj as any).set({ width: localW })
+        // Un bloc de texte : la largeur saisie est celle du CADRE.
+        if (isTextFrame(fObj)) applyTextFrame(fObj, { frameW: localW })
       } else {
         const origW = (fObj as any).width ?? 1
         if (origW > 0) fObj.set('scaleX', patch.width! / origW)
       }
     }
     if ('height' in patch && patch.height !== undefined) {
-      if (obj.type !== 'text') {
+      if (obj.type === 'text') {
+        // Sur un bloc de texte, la hauteur est celle du cadre — l'appliquer via
+        // scaleY déformerait les glyphes au lieu d'agrandir le bloc.
+        if (isTextFrame(fObj)) {
+          applyTextFrame(fObj, { frameH: patch.height / (fObj.scaleY ?? 1) })
+        }
+      } else {
         const origH = (fObj as any).height ?? 1
         if (origH > 0) fObj.set('scaleY', patch.height! / origH)
       }
@@ -413,9 +424,13 @@ export function PropertiesPanel() {
       const s = patch.shadow
       fObj.set('shadow', s ? new Shadow({ color: s.color, blur: s.blur, offsetX: s.offsetX, offsetY: s.offsetY }) : null)
     }
-    // Corner radius
-    if ('cornerRadius' in patch && fObj.type === 'rect') {
-      (fObj as any).set({ rx: patch.cornerRadius, ry: patch.cornerRadius })
+    // Corner radius — un bloc de texte arrondit son CADRE, pas une boîte Fabric.
+    if ('cornerRadius' in patch) {
+      if (fObj.type === 'rect') {
+        (fObj as any).set({ rx: patch.cornerRadius, ry: patch.cornerRadius })
+      } else if (obj.type === 'text') {
+        applyTextFrame(fObj, { cornerRadius: patch.cornerRadius ?? 0 })
+      }
     }
     // Text props
     if ('charSpacing' in patch) (fObj as any).set('charSpacing', patch.charSpacing)
@@ -587,6 +602,9 @@ export function PropertiesPanel() {
                   )}
                 </Section>
 
+                {/* ── Bloc de texte (cadre InDesign) ── */}
+                {obj.type === 'text' && <TextFrameSection selectedObjectId={selectedObjectId} />}
+
                 {/* ── Contour ── */}
                 <Section title="Contour" tourId="prop-stroke" help="Bordure de l'objet : couleur, épaisseur, style de trait (continu, tirets, points), et forme des extrémités/angles.">
 
@@ -685,7 +703,7 @@ export function PropertiesPanel() {
                   </div>
                   <Row>
                     <NumInput label="Rotation" value={obj.angle} onChange={(v) => applyToFabric({ angle: v })} unit="°" />
-                    {obj.type === 'rect' && (
+                    {(obj.type === 'rect' || obj.type === 'text') && (
                       <NumInput label="Arrondi" value={obj.cornerRadius ?? 0} onChange={(v) => applyToFabric({ cornerRadius: v })} />
                     )}
                   </Row>
@@ -843,6 +861,9 @@ export function PropertiesPanel() {
                     <NumInput label="Interligne" value={obj.lineHeight ?? 1.16} onChange={(v) => applyToFabric({ lineHeight: v })} unit="×" step={0.1} />
                   </Row>
                 </Section>
+
+                {/* ── Retrait et espacement ── */}
+                <ParagraphIndentsSection selectedObjectId={selectedObjectId} />
 
                 {/* ── Transformation texte ── */}
                 <Section title="Transformation" tourId="prop-texttransform" help="Casse du texte : majuscules, minuscules, ou capitales en début de mot — sans réécrire le contenu.">

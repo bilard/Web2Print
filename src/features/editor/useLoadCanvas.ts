@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Canvas, IText, Textbox, classRegistry, Rect, Ellipse, Group, Path, Line, FabricImage, Circle, Polygon, Triangle } from 'fabric'
 import { patchPerCharSpacing } from '@/features/idml/idmlToFabric'
+import { patchTextFrame } from './textFrame'
 import { doc, getDoc } from 'firebase/firestore'
 import { ref, getDownloadURL, listAll } from 'firebase/storage'
 import { db, storage } from '@/lib/firebase/config'
@@ -459,6 +460,13 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           }
 
           fixAndReattach(canvas)
+
+          // Réactiver le rendu « bloc de texte » (cadre + marges + retraits) : les
+          // valeurs survivent dans data.textFrame, mais le patch d'instance, lui,
+          // ne se sérialise pas.
+          for (const obj of canvas.getObjects()) {
+            if (obj instanceof Textbox) patchTextFrame(obj)
+          }
 
           // Re-apply per-character charSpacing (tracking IDML) from separate Firestore field
           try {

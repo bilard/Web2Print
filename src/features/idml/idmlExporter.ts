@@ -1179,19 +1179,23 @@ export async function exportIdmlModified(
     const id = (fab.data as any)?.idmlRefId ?? fab.data?.id
     if (!id) continue
 
+    // Un bloc de texte porte désormais son propre cadre (fond, contour, arrondi) :
+    // le fond à comparer n'est plus celui du Textbox — `fill` y est la couleur du
+    // TEXTE — mais celui du cadre, dans data.textFrame.
+    const textFrame = (fab.data as { textFrame?: { fill?: string | null } } | undefined)?.textFrame
+
     if ((fab.type === 'textbox' || fab.type === 'i-text') && fab.data?.type === 'text') {
       textboxMap.set(id, obj)
-      continue
-    }
-
-    if (fab.type === 'image' && fab.data?.type === 'image' && fab.data.name) {
+      // Sans cadre, rien de plus à patcher côté géométrie/remplissage.
+      if (!textFrame) continue
+    } else if (fab.type === 'image' && fab.data?.type === 'image' && fab.data.name) {
       imageMap.set(id, obj)
       continue
+    } else if (!fab.data?.type || fab.data.type === 'text' || fab.data.type === 'image') {
+      continue
     }
 
-    if (!fab.data?.type || fab.data.type === 'text' || fab.data.type === 'image') continue
-
-    const rawFill = fab.fill
+    const rawFill = textFrame ? textFrame.fill : fab.fill
     // Pattern/Gradient fills are not exportable as IDML color — treat as unchanged
     const currentFill = typeof rawFill === 'string' ? rawFill : null
     const origFill = fab.data.originalFillColor

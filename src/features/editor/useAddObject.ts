@@ -139,7 +139,8 @@ function fabricObjToProps(o: FabricObject, index: number, parentId?: string): Ca
     angle: Math.round(o.angle ?? 0),
     flipX: o.flipX ?? false,
     flipY: o.flipY ?? false,
-    cornerRadius: (o as any).rx ?? 0,
+    // Un bloc de texte porte son arrondi dans son cadre, pas dans un rx Fabric.
+    cornerRadius: (o as any).rx ?? (d.textFrame as { cornerRadius?: number } | undefined)?.cornerRadius ?? 0,
     shadow: fabricShadowToConfig(o.shadow),
     fillType,
     gradient: isGrad ? (d.gradient ?? fabricGradientToConfig(fill)) : (d.gradient ?? null),

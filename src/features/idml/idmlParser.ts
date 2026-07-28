@@ -54,6 +54,13 @@ interface StyleDef {
   tracking?: number         // letter-spacing in 1/1000 em (InDesign "Approche")
   skew?: number             // italic angle in degrees (InDesign "Oblique simulée")
   strikeThru?: boolean      // StrikeThru attribute
+  // Retrait et espacement (panneau « Retrait et espacement » d'InDesign), en pt
+  leftIndent?: number
+  rightIndent?: number
+  firstLineIndent?: number
+  lastLineIndent?: number
+  spaceBefore?: number
+  spaceAfter?: number
   grepStyles?: GrepStyleMapping[]
   nestedStyles?: NestedStyleRule[]
 }
@@ -310,6 +317,24 @@ function parseStyleDef(el: Element): StyleDef {
   const strikeThru = el.getAttribute('StrikeThru')
   if (strikeThru === 'true') def.strikeThru = true
 
+  // Retrait et espacement — attribut, ou <Properties><LeftIndent type="unit">.
+  // 0 est une valeur explicite qui ANNULE le style parent : ne pas filtrer par || undefined.
+  const INDENT_ATTRS = [
+    ['LeftIndent', 'leftIndent'],
+    ['RightIndent', 'rightIndent'],
+    ['FirstLineIndent', 'firstLineIndent'],
+    ['LastLineIndent', 'lastLineIndent'],
+    ['SpaceBefore', 'spaceBefore'],
+    ['SpaceAfter', 'spaceAfter'],
+  ] as const
+  for (const [xmlName, key] of INDENT_ATTRS) {
+    let raw = el.getAttribute(xmlName)
+    if (raw == null) raw = propText(el, xmlName)
+    if (raw == null || raw === '') continue
+    const val = parseFloat(raw)
+    if (!isNaN(val)) def[key] = val
+  }
+
   // BasedOn — in <Properties><BasedOn>
   const basedOn = propText(el, 'BasedOn')
   if (basedOn && !basedOn.startsWith('$ID/')) def.basedOn = basedOn
@@ -548,6 +573,21 @@ function buildStyleMaps(resources: Record<string, string>): {
   return { paraStyles, charStyles }
 }
 
+/**
+ * Extrait les retraits/espacements d'un style résolu vers un IdmlParagraph.
+ * Les valeurs nulles sont omises pour ne pas alourdir le JSON du projet.
+ */
+function indentsFromStyle(def: StyleDef): Partial<IdmlParagraph> {
+  const out: Partial<IdmlParagraph> = {}
+  if (def.leftIndent) out.leftIndent = def.leftIndent
+  if (def.rightIndent) out.rightIndent = def.rightIndent
+  if (def.firstLineIndent) out.firstLineIndent = def.firstLineIndent
+  if (def.lastLineIndent) out.lastLineIndent = def.lastLineIndent
+  if (def.spaceBefore) out.spaceBefore = def.spaceBefore
+  if (def.spaceAfter) out.spaceAfter = def.spaceAfter
+  return out
+}
+
 function pickDefined(obj: StyleDef): Partial<StyleDef> {
   const result: Partial<StyleDef> = {}
   if (obj.fontSize !== undefined) result.fontSize = obj.fontSize
@@ -563,6 +603,12 @@ function pickDefined(obj: StyleDef): Partial<StyleDef> {
   if (obj.tracking !== undefined) result.tracking = obj.tracking
   if (obj.skew !== undefined) result.skew = obj.skew
   if (obj.strikeThru !== undefined) result.strikeThru = obj.strikeThru
+  if (obj.leftIndent !== undefined) result.leftIndent = obj.leftIndent
+  if (obj.rightIndent !== undefined) result.rightIndent = obj.rightIndent
+  if (obj.firstLineIndent !== undefined) result.firstLineIndent = obj.firstLineIndent
+  if (obj.lastLineIndent !== undefined) result.lastLineIndent = obj.lastLineIndent
+  if (obj.spaceBefore !== undefined) result.spaceBefore = obj.spaceBefore
+  if (obj.spaceAfter !== undefined) result.spaceAfter = obj.spaceAfter
   if (obj.grepStyles !== undefined) result.grepStyles = obj.grepStyles
   if (obj.nestedStyles !== undefined) result.nestedStyles = obj.nestedStyles
   return result
@@ -752,6 +798,7 @@ function parseStory(
           horizontalScale: paraHScale && paraHScale !== 100 ? paraHScale : undefined,
           verticalScale: paraVScale && paraVScale !== 100 ? paraVScale : undefined,
           tracking: paraTracking !== undefined && paraTracking !== 0 ? paraTracking : undefined,
+          ...indentsFromStyle(paraDefaults),
         }
       }
     }
@@ -1478,9 +1525,10 @@ function parseElement(
     if (maxRadius > 0 && (hasRoundedCorner || cornerOptions.every(o => !o))) {
       cornerRadius = maxRadius
     }
-    // Fallback to ObjectStyle corner radius — only for Rectangles (not TextFrames)
-    // Only apply when CornerOption is explicitly "RoundedCorner" (not "None" which is InDesign default)
-    if (!cornerRadius && type === 'Rectangle' && objStyle?.cornerRadius && objStyle.cornerOption === 'RoundedCorner') {
+    // Repli sur le style d'objet (onglet « Options de contour et d'arrondi »).
+    // Uniquement quand CornerOption vaut explicitement "RoundedCorner" — "None"
+    // est la valeur par défaut d'InDesign et ne doit rien arrondir.
+    if (!cornerRadius && objStyle?.cornerRadius && objStyle.cornerOption === 'RoundedCorner') {
       cornerRadius = objStyle.cornerRadius
     }
   }
@@ -1572,6 +1620,10 @@ function parseElement(
     const autoSizingType = tfpEls.length > 0
       ? (tfpEls[0].getAttribute('AutoSizingType') || undefined)
       : undefined
+    // Point d'ancrage du redimensionnement auto (InDesign : la poignée qui reste fixe).
+    const autoSizingReferencePoint = tfpEls.length > 0
+      ? (tfpEls[0].getAttribute('AutoSizingReferencePoint') || undefined)
+      : undefined
 
     // Detect non-rectangular TextFrame (Oval, custom shape) by checking PathGeometry curves
     const framePts = parsePathPoints(el)
@@ -1651,6 +1703,7 @@ function parseElement(
       verticalJustification: verticalJustification !== 'top' ? verticalJustification : undefined,
       noLineBreaks: noLineBreaks || undefined,
       autoSizingType,
+      autoSizingReferencePoint,
       ...(merge ? { mergeTemplate: merge.template, mergeFields: merge.fields, mergeTemplateParas: merge.templateParas } : {}),
     }
   }

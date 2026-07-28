@@ -77,6 +77,8 @@ export interface IdmlObject {
   noLineBreaks?: boolean
   // TextFrame AutoSizingType: 'HeightOnly'/'HeightAndWidth' = cadre auto-grandissant ; 'Off'/absent = fixe
   autoSizingType?: string
+  // TextFrame AutoSizingReferencePoint (point d'ancrage du redimensionnement auto)
+  autoSizingReferencePoint?: string
   // True for anchored frames (position relative to parent text flow, not absolute)
   isAnchored?: boolean
   // EasyCatalog : nom du champ image lié (cadre Rectangle portant ECPageItemData="2 2 <champ>")
@@ -103,6 +105,13 @@ export interface IdmlParagraph {
   horizontalScale?: number  // percentage (100 = normal, 75 = 75% width)
   verticalScale?: number    // percentage (100 = normal)
   tracking?: number         // letter-spacing in 1/1000 em (InDesign "Approche")
+  // Retrait et espacement (panneau « Retrait et espacement » d'InDesign), en pt
+  leftIndent?: number
+  rightIndent?: number
+  firstLineIndent?: number
+  lastLineIndent?: number
+  spaceBefore?: number
+  spaceAfter?: number
   charStyles?: Record<number, CharStyleOverride>  // per-character overrides keyed by char index
 }
 
