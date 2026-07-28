@@ -111,7 +111,11 @@ export function applyTextFrame(textbox: FabricObject, props: Partial<TextFramePr
   const current: TextFrameProps = getTextFrame(textbox)
     ?? { frameW: tb.width ?? 0, frameH: tb.height ?? 0, autoSizing: 'height' }
   const next: TextFrameProps = { ...current, ...props }
-  tb.data = { ...(tb.data ?? {}), textFrame: next }
+  // MUTER `data`, ne pas le remplacer : il circule par référence (cf. useAutoSave,
+  // connecteurs de fusion, règles conditionnelles). Le remplacer périmerait
+  // silencieusement toute référence prise ailleurs — les liens de champs en tête.
+  if (!tb.data) tb.data = {}
+  tb.data.textFrame = next
   patchTextFrame(textbox)
   // Les retraits et les marges changent la largeur de composition → recomposer.
   tb.dirty = true

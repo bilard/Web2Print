@@ -461,11 +461,33 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
 
           fixAndReattach(canvas)
 
+          // ── Données de fusion D'ABORD ────────────────────────────────────
+          // Elles sont restaurées AVANT toute manipulation de rendu : tout ce bloc
+          // vit dans un try/catch géant, et un patch de rendu qui échoue faisait
+          // sauter silencieusement la source de données ET le mapping des champs —
+          // les placeholders {{…}} restaient alors bruts, puis l'auto-save
+          // réenregistrait le store vide, rendant la perte définitive.
+          if (data.dataSource) {
+            try {
+              setSavedDataSource(JSON.parse(data.dataSource))
+            } catch { /* ignore */ }
+          }
+          restoreMergeData<string>(data.mergeFormulas, (s, k, v) => s.setFormula(k, v))
+          restoreMergeData<boolean>(data.mergeHideLineIfEmpty, (s, k, v) => s.setHideLineIfEmpty(k, v))
+          restoreMergeData<FormulaConfig>(data.mergeFormulaConfigs, (s, k, v) => s.setFormulaConfig(k, v))
+          restoreMergeData<string>(data.mergeFieldMap, (s, k, v) => s.setFieldMap(k, v))
+
           // Réactiver le rendu « bloc de texte » (cadre + marges + retraits) : les
           // valeurs survivent dans data.textFrame, mais le patch d'instance, lui,
-          // ne se sérialise pas.
+          // ne se sérialise pas. Isolé par objet : un bloc qui échoue ne doit pas
+          // emporter le reste du chargement.
           for (const obj of canvas.getObjects()) {
-            if (obj instanceof Textbox) patchTextFrame(obj)
+            if (!(obj instanceof Textbox)) continue
+            try {
+              patchTextFrame(obj)
+            } catch (e) {
+              console.warn(`[Load] bloc de texte "${obj.data?.id ?? '?'}" non patché :`, e)
+            }
           }
 
           // Re-apply per-character charSpacing (tracking IDML) from separate Firestore field
@@ -491,20 +513,14 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           // Re-measure text with loaded fonts
           for (const obj of canvas.getObjects()) {
             if (obj instanceof IText || obj instanceof Textbox) {
-              ;(obj as any).dirty = true
-              ;(obj as any).initDimensions()
+              try {
+                ;(obj as any).dirty = true
+                ;(obj as any).initDimensions()
+              } catch (e) {
+                console.warn(`[Load] remesure du texte "${obj.data?.id ?? '?'}" échouée :`, e)
+              }
             }
           }
-
-          if (data.dataSource) {
-            try {
-              setSavedDataSource(JSON.parse(data.dataSource))
-            } catch { /* ignore */ }
-          }
-          restoreMergeData<string>(data.mergeFormulas, (s, k, v) => s.setFormula(k, v))
-          restoreMergeData<boolean>(data.mergeHideLineIfEmpty, (s, k, v) => s.setHideLineIfEmpty(k, v))
-          restoreMergeData<FormulaConfig>(data.mergeFormulaConfigs, (s, k, v) => s.setFormulaConfig(k, v))
-          restoreMergeData<string>(data.mergeFieldMap, (s, k, v) => s.setFieldMap(k, v))
         }
 
         // Print marks are now handled by usePrintMarksSync hook (live updates when params change)

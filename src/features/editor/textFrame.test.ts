@@ -125,6 +125,20 @@ describe('textFrame — survie à la sauvegarde', () => {
   })
 })
 
+describe('textFrame — cohabitation avec les données de fusion', () => {
+  it('conserve la référence de `data` et les liens de champs', () => {
+    const tb = new Textbox('{{Prix}}', { width: 200 })
+    const data = { id: 'u42', type: 'text', templateText: '{{Prix}}', mergeFields: ['Prix'] }
+    ;(tb as unknown as { data: typeof data }).data = data
+    applyTextFrame(tb, { frameW: 200, frameH: 60, fill: '#ffff00' })
+    // `data` circule par référence dans l'auto-save et les connecteurs : le
+    // remplacer périmerait ces références.
+    expect((tb as unknown as { data: unknown }).data).toBe(data)
+    expect((data as { templateText?: string }).templateText).toBe('{{Prix}}')
+    expect(getTextFrame(tb)?.fill).toBe('#ffff00')
+  })
+})
+
 describe('textFrame — rendu', () => {
   it('peint un cadre arrondi et bordé sans planter', () => {
     const tb = makeBlock({ fill: '#ffff00', stroke: '#0000ff', strokeWidth: 3, cornerRadius: 8 })
