@@ -344,10 +344,14 @@ export const CATALOG_CSS = `
 .cat-cell[data-sh-sticker="rect"] .cat-price-sticker { border-radius:10px; aspect-ratio:auto; padding:8px 14px; }
 .cat-cell[data-sh-sticker="star"] .cat-price-sticker { border-radius:0;
   clip-path:polygon(50% 0%,61% 12%,76% 6%,79% 22%,95% 25%,88% 39%,100% 50%,88% 61%,95% 75%,79% 78%,76% 94%,61% 88%,50% 100%,39% 88%,24% 94%,21% 78%,5% 75%,12% 61%,0% 50%,12% 39%,5% 25%,21% 22%,24% 6%,39% 12%); }
-/* Image AMPLIFIÉE : déborde de sa boîte avec ombre portée (détouré mis en avant) */
+/* Visuel MIS EN AVANT : ombre portée, fond effacé — mais CONTENU dans sa boîte.
+   L'amplification (scale 1.16) supposait une image avec des marges autour du
+   produit ; sur un visuel DÉTOURÉ, le produit touche déjà les bords et tout
+   agrandissement le fait sortir de son bloc (au-dessus du bandeau, sous les
+   textes). Le cadrage reste donc à l'échelle 1, object-fit:contain fait le reste. */
 .cat-cell[data-sh-image="overflow"] .cat-cell-img-in { overflow:visible; }
-.cat-cell[data-sh-image="overflow"] .cat-cell-img-in img { transform:scale(1.16); filter:drop-shadow(0 10px 18px rgba(0,0,0,.28)); }
-.cat-cell[data-sh-image="overflow"] .cat-obj[data-object-id="image"] { overflow:visible !important; background:none; }
+.cat-cell[data-sh-image="overflow"] .cat-cell-img-in img { filter:drop-shadow(0 10px 18px rgba(0,0,0,.28)); }
+.cat-cell[data-sh-image="overflow"] .cat-obj[data-object-id="image"] { background:none; }
 /* Ombre portée des fiches */
 .cat-cell[data-sh-shadow] { box-shadow:0 10px 26px rgba(0,0,0,.22); }
 
