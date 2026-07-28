@@ -263,6 +263,12 @@ function enterCropImage(img: FabricImage): void {
   const fullLeft = visLeft - cropX * sx
   const fullTop = visTop - cropY * sy
 
+  // Une image issue d'un <g clip-path> (Illustrator) ou d'un masque IDML porte
+  // un clipPath : il masquerait l'aperçu pendant le recadrage. Écarté ici,
+  // restauré à la validation comme à l'annulation.
+  ;(snapshot as any)._clipPath = (img as any).clipPath ?? null
+  ;(img as any).clipPath = undefined
+
   ;(img as any).set({
     width: natW,
     height: natH,
@@ -434,6 +440,7 @@ function cancelCropImage(): void {
     lockScalingY: snapshot.lockScalingY,
     lockRotation: snapshot.lockRotation,
     hasControls: snapshot.hasControls,
+    clipPath: (snapshot as any)._clipPath ?? undefined,
   })
   ;(image as any).dirty = true
   image.setCoords()
@@ -617,6 +624,7 @@ function applyCropImage(): void {
     lockScalingY: snapshot.lockScalingY,
     lockRotation: snapshot.lockRotation,
     hasControls: snapshot.hasControls,
+    clipPath: (snapshot as any)._clipPath ?? undefined,
   })
   // Re-force scaleX/scaleY au cas où set() les aurait touchés
   ;(image as any).scaleX = sx
@@ -755,6 +763,12 @@ function enterCropPattern(rect: FabricObject): void {
   // Sauvegarder shadow/border pour restauration en cancel/apply (les objets IDML
   // peuvent avoir un shadow ou un border qui créerait un halo visible).
   ;(snapshot as any)._shadow = (rect as any).shadow
+  // Un bloc issu d'un <g clip-path> Illustrator porte un clipPath : il rognait
+  // le cadre de recadrage ET ses poignées, réduisant l'outil à une bande
+  // inutilisable. On l'écarte le temps du recadrage et on le remet ensuite —
+  // le rendu final du design reste donc identique.
+  ;(snapshot as any)._clipPath = (rect as any).clipPath ?? null
+  ;(rect as any).clipPath = undefined
   ;(snapshot as any)._borderColor = (rect as any).borderColor
   ;(snapshot as any)._borderScaleFactor = (rect as any).borderScaleFactor
   ;(snapshot as any)._padding = (rect as any).padding
@@ -872,6 +886,7 @@ function cancelCropPattern(): void {
     strokeDashArray: snapshot.strokeDashArray,
     strokeUniform: snapshot.strokeUniform,
     shadow: (snapshot as any)._shadow ?? null,
+    clipPath: (snapshot as any)._clipPath ?? undefined,
     borderColor: (snapshot as any)._borderColor,
     borderScaleFactor: (snapshot as any)._borderScaleFactor,
     padding: (snapshot as any)._padding,
@@ -950,6 +965,7 @@ function applyCropPattern(): void {
     strokeDashArray: snapshot.strokeDashArray,
     strokeUniform: snapshot.strokeUniform,
     shadow: (snapshot as any)._shadow ?? null,
+    clipPath: (snapshot as any)._clipPath ?? undefined,
     borderColor: (snapshot as any)._borderColor,
     borderScaleFactor: (snapshot as any)._borderScaleFactor,
     padding: (snapshot as any)._padding,
