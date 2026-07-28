@@ -17,6 +17,7 @@ import { registerFontBuffer } from '@/features/assets/fontBufferRegistry'
 import { downloadIdmlFromStorage, globalIdmlSource } from '@/features/idml/idmlSource'
 import { applyPrintDefaults } from '@/features/print/printDefaults'
 import { autoFitPlaceholderWidth } from '@/features/merge/useDataMerge'
+import { reloadCorsSources } from './corsReload'
 
 /**
  * Drop any legacy `clipPath` left on a FabricImage by older saves.
@@ -460,6 +461,12 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           }
 
           fixAndReattach(canvas)
+
+          // Images distantes rechargées en CORS anonyme : `loadFromJSON` recrée
+          // les Pattern sans `crossOrigin`, ce qui souille le canvas et casse
+          // `findTarget` — plus aucun objet n'était sélectionnable après
+          // réouverture du projet.
+          await reloadCorsSources(canvas)
 
           // ── Données de fusion D'ABORD ────────────────────────────────────
           // Elles sont restaurées AVANT toute manipulation de rendu : tout ce bloc

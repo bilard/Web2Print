@@ -1,0 +1,77 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"/><title>Cycle save/load</title>
+<style>body{background:#111;color:#eee;font-family:system-ui;margin:16px}
+#log{white-space:pre-wrap;font:12px/1.6 ui-monospace,monospace;color:#a7f3d0}</style></head>
+<body><canvas id="c" width="630" height="414"></canvas><canvas id="c2" width="630" height="414"></canvas><div id="log"></div>
+<script type="module">
+import { Canvas } from 'fabric'
+import { parseSvgToFabric } from '/src/features/svg/svgToFabric.ts'
+import { applyImageFill } from '/src/features/editor/applyImageFill.ts'
+import { FABRIC_SERIALIZED_PROPS } from '/src/features/editor/serializationProps.ts'
+const log=(...a)=>{document.getElementById('log').textContent+='\n'+a.join(' ')}
+const state=(o)=>`sel=${o.selectable} evt=${o.evented} ctrl=${o.hasControls} lockX=${o.lockScalingX} lockY=${o.lockScalingY} pxFind=${o.perPixelTargetFind} clip=${o.clipPath?'oui':'non'} id=${(o.data?.id??'—').slice(0,12)}`
+
+const svgText = await (await fetch('/__f.svg')).text()
+const { objects, fontsReady } = await parseSvgToFabric(svgText, { flatten:true })
+await fontsReady
+const canvas = new Canvas('c', { backgroundColor:'#fff', renderOnAddRemove:false })
+for (const o of objects) canvas.add(o)
+const target = objects.find(o => String(o.data?.name ?? '').startsWith('_PLACE_YOUR_IMAGE'))
+const url='data:image/svg+xml;base64,'+btoa('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="#f97316"/></svg>')
+await applyImageFill(target, canvas, url)
+canvas.renderAll()
+log('=== AVANT enregistrement ===')
+log('bloc image :', state(target))
+log('1er path   :', state(objects[1]))
+log('1er texte  :', state(objects.find(o=>o.text!==undefined)))
+
+const json = canvas.toObject(FABRIC_SERIALIZED_PROPS)
+const canvas2 = new Canvas('c2', { backgroundColor:'#fff', renderOnAddRemove:false })
+await canvas2.loadFromJSON(JSON.parse(JSON.stringify(json)))
+canvas2.renderAll()
+const objs2 = canvas2.getObjects()
+const t2 = objs2.find(o => String(o.data?.name ?? '').startsWith('_PLACE_YOUR_IMAGE'))
+log('')
+log('=== APRÈS rechargement ===')
+log('objets rechargés :', objs2.length, '/', objects.length)
+log('bloc image :', t2 ? state(t2) : '❌ INTROUVABLE')
+log('1er path   :', state(objs2[1]))
+log('1er texte  :', state(objs2.find(o=>o.text!==undefined)))
+// Ciblage : le bloc image répond-il au clic en son centre ?
+if (t2) {
+  const c = t2.getCenterPoint()
+  const hit = canvas2.findTarget({ clientX: 0, clientY: 0, ...{} }) // placeholder
+  log('fill du bloc image après reload :', typeof t2.fill === 'object' ? (t2.fill.type ?? 'objet') : t2.fill)
+  log('centre du bloc :', Math.round(c.x), Math.round(c.y))
+  log('containsPoint(centre) :', t2.containsPoint(c))
+  void hit
+}
+// Zones cliquables (aCoords) vs rendu : un décalage rendrait la sélection impossible
+const geom = (o) => { const b = o.getBoundingRect(); return `bbox ${b.left.toFixed(1)},${b.top.toFixed(1)} ${b.width.toFixed(1)}x${b.height.toFixed(1)}` }
+log('')
+log('=== ZONE CLIQUABLE vs RENDU ===')
+for (const [label, o1, o2] of [['bloc image', target, t2], ['1er path', objects[1], objs2[1]]]) {
+  log(`  ${label} avant : ${geom(o1)}`)
+  log(`  ${label} après : ${o2 ? geom(o2) : '—'}`)
+}
+const hits = (cv, x, y) => cv.getObjects().filter(o => o.selectable !== false && o.containsPoint(new (Object.getPrototypeOf(cv.getObjects()[0].getCenterPoint()).constructor)(x, y))).map(o => (o.data?.name || o.type)).join(', ') || 'AUCUN'
+log('')
+log('=== objets sous le point (containsPoint) ===')
+for (const [x,y] of [[470,205],[120,300],[400,60]]) log(`  (${x},${y}) avant: ${hits(canvas,x,y)}  |  après: ${hits(canvas2,x,y)}`)
+// Test de CIBLAGE réel : quel objet répond à un clic à ces points ?
+const probe = (cv, x, y) => {
+  const el = cv.upperCanvasEl
+  const r = el.getBoundingClientRect()
+  const ev = new MouseEvent('mousedown', { clientX: r.left + x, clientY: r.top + y, bubbles: true })
+  const t = cv.findTarget(ev)
+  return t ? `${t.type}/${(t.data?.name || t.text || '').toString().slice(0,22)}` : 'RIEN'
+}
+const pts = [[470,205],[500,120],[120,300],[400,60]]
+log('')
+log('=== CIBLAGE (clic) ===')
+for (const [x,y] of pts) log(`  (${x},${y})  avant: ${probe(canvas,x,y).padEnd(30)} après: ${probe(canvas2,x,y)}`)
+if (t2) {
+  log('isTargetTransparent au centre — avant :', canvas.isTargetTransparent(target, 470, 205), ' après :', canvas2.isTargetTransparent(t2, 470, 205))
+  log('pattern source chargée après reload :', !!(t2.fill && t2.fill.source && (t2.fill.source.complete ?? true)))
+}
+log('READY')
+</script></body></html>

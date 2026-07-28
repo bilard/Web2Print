@@ -6,6 +6,7 @@ import { syncToStore } from './useAddObject'
 import { gradientToFabric } from '@/components/shared/GradientPicker'
 import { applyCustomControls, applyCustomControlsToObject } from './useCustomControls'
 import { refreshAncestorGroups } from './deepObjects'
+import { makeTargetFindSafe } from './corsReload'
 import { useThemeStore } from '@/stores/theme.store'
 
 /** Contour de page (hors document) — couleur programmatique Fabric, suit le thème. */
@@ -160,6 +161,11 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
       // sans tolérance, les traits fins (marques de coupe…) seraient incliquables.
       targetFindTolerance: 6,
     })
+
+    // Le ciblage au pixel lit les pixels de l'objet : si une image distante a
+    // souillé le canvas, l'exception remonte jusqu'à `findTarget` et l'éditeur
+    // devient inerte (plus aucune sélection possible). Repli sur le cadre.
+    makeTargetFindSafe(canvas)
 
     // Double-clic sur un Group : ENTRE dans le bloc sans le dégrouper —
     // sélectionne l'enfant visé, et si c'est un texte, ouvre directement
