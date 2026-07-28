@@ -193,7 +193,7 @@ export const useUIStore = create<UIState>((set) => ({
   activeTool: 'select',
   setActiveTool: (tool) => set({ activeTool: tool }),
   rightPanels: [
-    { id: 'page',         collapsed: false },
+    { id: 'page',         collapsed: true },
     { id: 'print',        collapsed: true },
     { id: 'data',         collapsed: true },
     { id: 'layers',       collapsed: true },

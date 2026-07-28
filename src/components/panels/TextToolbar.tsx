@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react'
+import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Tags } from 'lucide-react'
 import { useEditorStore } from '@/stores/editor.store'
+import { useUIStore } from '@/stores/ui.store'
 import { useTextEditor, getCurrentTextStyle, getActivePtScale } from '@/features/editor/useTextEditor'
 import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { EditorFontOptions } from '@/features/fonts/EditorFontOptions'
@@ -37,6 +38,8 @@ export function TextToolbar() {
   const { selectedObjectId, selectedObjectIds, canvasObjects } = useEditorStore()
   const fabricRef = { current: globalFabricCanvas as Canvas | null }
   const { applyStyle } = useTextEditor(fabricRef)
+  const showMergeBadges = useUIStore((s) => s.showMergeBadges)
+  const setShowMergeBadges = useUIStore((s) => s.setShowMergeBadges)
 
   // All selected text objects (supports multi-selection) — arbre aplati :
   // un texte sélectionné DANS un Group (double-clic) doit afficher la toolbar.
@@ -198,6 +201,17 @@ export function TextToolbar() {
           title="Couleur du texte"
         />
       </div>
+
+      <div className="w-px h-5 bg-white/10 mx-1" />
+
+      {/* Noms des balises XML posés sur les blocs liés à un champ */}
+      <ToolBtn
+        active={showMergeBadges}
+        onClick={() => setShowMergeBadges(!showMergeBadges)}
+        title={showMergeBadges ? 'Masquer les noms de balises XML' : 'Afficher les noms de balises XML'}
+      >
+        <Tags className="w-3.5 h-3.5" />
+      </ToolBtn>
     </div>
   )
 }
