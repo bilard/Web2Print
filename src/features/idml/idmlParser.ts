@@ -1145,8 +1145,10 @@ function processAnchoredFrames(
 
     let paragraphs = storiesMap.get(af.parentStory) ?? []
 
-    // For auto-sized frames (WidthOnly), InDesign shrinks width to fit content.
-    // In Fabric.js we use fixed width, so force center alignment to keep text centered.
+    // Cadre ancré à largeur automatique : InDesign rétrécit le cadre sur son
+    // contenu. On garde ici une largeur fixe + centrage — et on NE propage
+    // délibérément PAS `autoSizingType` à l'objet retourné : le bloc appliquerait
+    // alors sa propre auto-largeur, et les deux corrections se cumuleraient.
     if (af.autoSizingType && /width/i.test(af.autoSizingType) && paragraphs.length > 0) {
       paragraphs = paragraphs.map(p => ({ ...p, alignment: 'center' as const }))
     }

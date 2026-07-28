@@ -13,6 +13,7 @@ import { applyConditionalRulesForRow } from './applyConditionalRules'
 import { formatPriceParts, type PriceSegment } from './priceFormat'
 import { fitScaleForWidth, clampFitFont, MIN_FIT_FONT, FIT_SHRINK_STEP } from './fitToZone'
 import { collectObjectsDeep, refreshAncestorGroups } from '@/features/editor/deepObjects'
+import { applyTextFrame, isTextFrame } from '@/features/editor/textFrame'
 import { isPimSource, pimProjectIdFromSource, loadPimMergeData } from './pimSource'
 import { cellValue } from '@/features/excel/cellValue'
 import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
@@ -593,6 +594,12 @@ export function useDataMerge() {
       const sy = obj.scaleY ?? 1
       obj.set({ fontSize: (obj.fontSize ?? 16) * sy, scaleX: 1, scaleY: 1 })
       if (obj instanceof Textbox) obj.set({ width: zoneW })
+      // « Ajuster à la zone » et le redimensionnement automatique d'un bloc de
+      // texte s'excluent : l'un réduit la police pour tenir dans un cadre fixe,
+      // l'autre agrandit le cadre. La zone capturée devient donc LE cadre.
+      if (isTextFrame(obj)) {
+        applyTextFrame(obj, { autoSizing: 'off', frameW: zoneW, frameH: zoneH })
+      }
       ;(obj as unknown as { initDimensions?: () => void }).initDimensions?.()
       obj.data.baseFontSize = obj.fontSize
       const fz: FitZone = { width: zoneW, height: zoneH }

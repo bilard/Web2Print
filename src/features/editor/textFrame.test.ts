@@ -105,6 +105,47 @@ describe('indentsFor — priorité des sources', () => {
   })
 })
 
+describe('textFrame — survie à la sauvegarde', () => {
+  it('sérialise le cadre dans data (FABRIC_SERIALIZED_PROPS inclut « data »)', () => {
+    const tb = makeBlock({ fill: '#ffff00', stroke: '#ff0000', strokeWidth: 2, cornerRadius: 6, frameH: 140 })
+    const json = tb.toObject(['data']) as { data?: { textFrame?: TextFrameProps } }
+    expect(json.data?.textFrame).toMatchObject({
+      fill: '#ffff00', stroke: '#ff0000', strokeWidth: 2, cornerRadius: 6, frameH: 140,
+    })
+  })
+
+  it('retrouve sa hauteur de cadre après rechargement', () => {
+    const source = makeBlock({ frameH: 140 })
+    const json = source.toObject(['data']) as { data?: Record<string, unknown> }
+    // Simule loadFromJSON : un Textbox nu qui récupère `data`, puis le patch de load.
+    const reloaded = new Textbox('Bonjour le monde', { width: 200, fontSize: 20 })
+    ;(reloaded as unknown as { data?: unknown }).data = json.data
+    patchTextFrame(reloaded)
+    expect(reloaded.height).toBe(140)
+  })
+})
+
+describe('textFrame — rendu', () => {
+  it('peint un cadre arrondi et bordé sans planter', () => {
+    const tb = makeBlock({ fill: '#ffff00', stroke: '#0000ff', strokeWidth: 3, cornerRadius: 8 })
+    const el = document.createElement('canvas')
+    el.width = 400
+    el.height = 300
+    const ctx = el.getContext('2d')
+    expect(ctx).toBeTruthy()
+    expect(() => tb.render(ctx as CanvasRenderingContext2D)).not.toThrow()
+  })
+
+  it('peint aussi les contours intérieur et extérieur', () => {
+    const el = document.createElement('canvas')
+    const ctx = el.getContext('2d') as CanvasRenderingContext2D
+    for (const strokeAlign of ['inside', 'outside', 'center'] as const) {
+      const tb = makeBlock({ stroke: '#000000', strokeWidth: 4, cornerRadius: 5, strokeAlign })
+      expect(() => tb.render(ctx)).not.toThrow()
+    }
+  })
+})
+
 describe('patchTextFrame — idempotence et non-régression', () => {
   it('ne patche pas un Textbox sans cadre', () => {
     const tb = new Textbox('sans cadre', { width: 120 })

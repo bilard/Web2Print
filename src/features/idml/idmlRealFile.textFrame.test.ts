@@ -1,0 +1,80 @@
+// Garde de non-régression sur un VRAI IDML du repo : le chemin complet
+// dézippage → parseIdml → objets Fabric, pour vérifier qu'un bloc de texte
+// InDesign arrive bien en UN seul objet portant son cadre.
+// (le fichier vit dans le repo ; le test est ignoré s'il est absent)
+import { describe, it, expect } from 'vitest'
+import { existsSync, readFileSync } from 'node:fs'
+import JSZip from 'jszip'
+import { Textbox } from 'fabric'
+import { parseIdml } from './idmlParser'
+import { idmlToFabricObjects } from './idmlToFabric'
+import { getTextFrame } from '@/features/editor/textFrame'
+import type { IdmlDocument } from './idmlTypes'
+
+const REAL_FILE = 'IMPORTS/Monoprix/XML/Snipet_PROMO_converted.idml'
+
+/** Dézippe l'IDML et regroupe ses parties comme le fait `unzipIdml` côté navigateur. */
+async function loadRealDocument(): Promise<IdmlDocument> {
+  const zip = await JSZip.loadAsync(readFileSync(REAL_FILE))
+  const spreads: Record<string, string> = {}
+  const stories: Record<string, string> = {}
+  const resources: Record<string, string> = {}
+  const masterSpreads: Record<string, string> = {}
+  let designMap = ''
+
+  for (const [path, entry] of Object.entries(zip.files)) {
+    if (entry.dir) continue
+    const lower = path.toLowerCase()
+    if (!lower.endsWith('.xml')) continue
+    const xml = await entry.async('text')
+    if (lower.startsWith('masterspreads/')) masterSpreads[path] = xml
+    else if (lower.startsWith('spreads/')) spreads[path] = xml
+    else if (lower.startsWith('stories/')) stories[path] = xml
+    else if (lower.startsWith('resources/')) resources[path] = xml
+    else if (lower === 'designmap.xml') designMap = xml
+  }
+  return parseIdml(spreads, stories, resources, designMap, masterSpreads)
+}
+
+describe.skipIf(!existsSync(REAL_FILE))('IDML réel — blocs de texte', () => {
+  it('convertit chaque bloc de texte rempli en UN seul objet Fabric', async () => {
+    const docModel = await loadRealDocument()
+    const frames = docModel.objects.filter(
+      (o) => o.type === 'TextFrame' && (o.paragraphs?.length ?? 0) > 0 && !o.frameSvgPath,
+    )
+    expect(frames.length).toBeGreaterThan(0)
+
+    const objs = await idmlToFabricObjects(frames)
+    // Un bloc = un objet : plus aucun rectangle de fond « __bg ».
+    expect(objs).toHaveLength(frames.length)
+    expect(objs.some((o) => String(o.data?.id ?? '').endsWith('__bg'))).toBe(false)
+    expect(objs.every((o) => o instanceof Textbox)).toBe(true)
+  })
+
+  it('reporte le fond des blocs remplis sur leur cadre', async () => {
+    const docModel = await loadRealDocument()
+    const filled = docModel.objects.filter(
+      // `fill` peut exister avec alpha 0 (« Sans » dans InDesign) : ce n'est pas un fond.
+      (o) => o.type === 'TextFrame' && (o.paragraphs?.length ?? 0) > 0 && !o.frameSvgPath
+        && Boolean(o.fill) && (o.fill?.a ?? 0) > 0,
+    )
+    if (filled.length === 0) return // rien à vérifier dans ce fichier
+    const objs = await idmlToFabricObjects(filled)
+    for (const o of objs) {
+      expect(getTextFrame(o)?.fill).toMatch(/^#[0-9a-f]{6}$/)
+    }
+  })
+
+  it('donne à chaque bloc la hauteur de son cadre InDesign', async () => {
+    const docModel = await loadRealDocument()
+    const frames = docModel.objects.filter(
+      (o) => o.type === 'TextFrame' && (o.paragraphs?.length ?? 0) > 0 && !o.frameSvgPath
+        && (!o.autoSizingType || o.autoSizingType === 'Off') && !o.noLineBreaks,
+    )
+    if (frames.length === 0) return
+    const objs = await idmlToFabricObjects(frames)
+    objs.forEach((o, i) => {
+      expect(o.height).toBeCloseTo(frames[i].height * frames[i].scaleY, 1)
+    })
+  })
+})
