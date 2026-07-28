@@ -368,58 +368,102 @@ function decorateLeaf(obj: FabricObject, node: LeafNode, groupPath?: string[]): 
   return obj
 }
 
+type GroupNode = Extract<StructNode, { kind: 'group' }>
+
+/** `<g id="Calque_1">`, `<g id="Layer_2">` — un CALQUE Illustrator, pas un groupe d'objets. */
+const LAYER_ID_RE = /^_?(calque|layer|calc|couche)[\s_-]*\d*$/i
+
 /**
- * Décore les objets plats SANS reconstruire de Group : chaque élément du SVG
- * devient un objet indépendant du canvas.
+ * Un `<g>` qui n'existe que pour CONTENIR d'autres blocs, et qu'il faut donc
+ * dissoudre à l'import :
+ *   - un calque Illustrator (`id="Calque_1"`) ;
+ *   - un wrapper technique à un seul enfant (`isolation`, `<g clip-path>`
+ *     autour d'un unique objet — Fabric reporte l'écrêtage sur la feuille) ;
+ *   - un conteneur qui ne rassemble que des groupes.
  *
- * Les positions restent exactes : `loadSVGFromString` a déjà appliqué à chaque
- * feuille la matrice cumulée de ses `<g>` parents. On ne reconstruit donc PAS
- * le tableau (contrairement à `buildHierarchy`) — on décore `flat` en place et
- * on le retourne tel quel, ce qui préserve l'ordre d'empilement et rend
- * impossible la perte d'un objet si l'indexation de `parseSvgStructure` se
- * désynchronisait.
+ * Tout autre `<g>` est un VRAI groupe d'objets (lettrage vectorisé, pictogramme,
+ * bloc composé) : le dissoudre éclaterait le bloc en dizaines de tracés — un
+ * numéro de téléphone converti en contours deviendrait un objet par caractère.
  */
-function flattenHierarchy(flat: FabricObject[], struct: StructNode[]): FabricObject[] {
-  const out = [...flat]
-  const visit = (node: StructNode, path: string[]) => {
+function isContainerGroup(node: GroupNode): boolean {
+  if (node.children.length <= 1) return true
+  if (node.children.every((c) => c.kind === 'group')) return true
+  return !!node.name && LAYER_ID_RE.test(node.name)
+}
+
+interface Block { node: StructNode; path: string[] }
+
+/** Descend dans les conteneurs et retourne les BLOCS de premier niveau. */
+function collectBlocks(nodes: StructNode[], path: string[], out: Block[]): void {
+  for (const node of nodes) {
     if (node.kind === 'leaf') {
-      const obj = out[node.index]
-      if (obj) out[node.index] = decorateLeaf(obj, node, path)
-      return
+      out.push({ node, path })
+      continue
     }
     const nextPath = node.name ? [...path, node.name] : path
-    for (const child of node.children) visit(child, nextPath)
+    if (isContainerGroup(node)) collectBlocks(node.children, nextPath, out)
+    else out.push({ node, path: nextPath })
   }
-  for (const node of struct) visit(node, [])
-  return out
+}
+
+/**
+ * Dissout les CONTENEURS (calques, wrappers) pour que chaque bloc du design
+ * arrive comme un objet indépendant du canvas — sans éclater les groupes qui
+ * forment un bloc unique aux yeux du graphiste.
+ *
+ * Les positions restent exactes : `loadSVGFromString` a déjà appliqué à chaque
+ * feuille la matrice cumulée de ses `<g>` parents.
+ */
+function flattenHierarchy(flat: FabricObject[], struct: StructNode[]): FabricObject[] {
+  let blocks: Block[] = []
+  collectBlocks(struct, [], blocks)
+
+  // Garde-fou : jamais un unique méga-bloc. Un `<g>` racine non reconnu comme
+  // conteneur (id exotique, plusieurs enfants dessinés) est dissous quand même,
+  // sinon l'import redonnerait UN seul objet — le défaut qu'on corrige.
+  for (;;) {
+    const only = blocks.length === 1 ? blocks[0] : null
+    if (!only || only.node.kind !== 'group') break
+    const next: Block[] = []
+    collectBlocks(only.node.children, only.path, next)
+    if (next.length === 0) break
+    blocks = next
+  }
+
+  return blocks
+    .map(({ node, path }) => buildNode(flat, node, path))
+    .filter((o): o is FabricObject => o !== null)
+}
+
+/** Construit l'objet Fabric d'un nœud : la feuille décorée, ou le Group de ses enfants. */
+function buildNode(flat: FabricObject[], node: StructNode, groupPath?: string[]): FabricObject | null {
+  if (node.kind === 'leaf') {
+    const obj = flat[node.index]
+    if (!obj) return null
+    return decorateLeaf(obj, node, groupPath)
+  }
+  const children = node.children
+    .map((c) => buildNode(flat, c))
+    .filter((c): c is FabricObject => c !== null)
+  if (children.length === 0) return null
+  // subTargetCheck SANS interactive : simple clic = le bloc entier
+  // (déplaçable d'un tenant), double-clic = entre dans le groupe (les
+  // subTargets remontent dans mouse:dblclick, cf. useCanvas).
+  const group = new Group(children, { subTargetCheck: true, interactive: false })
+  const anyGroup = group as FabricObject & { data?: Record<string, unknown> }
+  anyGroup.data = {
+    ...(anyGroup.data ?? {}),
+    type: 'group',
+    name: node.name ?? '',
+    ...(node.role ? { role: node.role } : {}),
+    ...(groupPath && groupPath.length > 0 ? { groupPath } : {}),
+  }
+  return group
 }
 
 /** Assemble les objets Fabric plats en une hiérarchie nested en suivant la struct SVG. */
 function buildHierarchy(flat: FabricObject[], struct: StructNode[]): FabricObject[] {
-  function build(node: StructNode): FabricObject | null {
-    if (node.kind === 'leaf') {
-      const obj = flat[node.index]
-      if (!obj) return null
-      return decorateLeaf(obj, node)
-    }
-    const children = node.children
-      .map(build)
-      .filter((c): c is FabricObject => c !== null)
-    if (children.length === 0) return null
-    // subTargetCheck SANS interactive : simple clic = le bloc entier
-    // (déplaçable d'un tenant), double-clic = entre dans le groupe (les
-    // subTargets remontent dans mouse:dblclick, cf. useCanvas).
-    const group = new Group(children, { subTargetCheck: true, interactive: false })
-    const anyGroup = group as FabricObject & { data?: Record<string, unknown> }
-    anyGroup.data = {
-      ...(anyGroup.data ?? {}),
-      type: 'group',
-      name: node.name ?? '',
-      ...(node.role ? { role: node.role } : {}),
-    }
-    return group
-  }
-  return struct.map(build).filter((o): o is FabricObject => o !== null)
+  return struct.map((n) => buildNode(flat, n)).filter((o): o is FabricObject => o !== null)
 }
 
 let svgCounter = 0

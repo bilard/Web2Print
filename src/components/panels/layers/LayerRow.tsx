@@ -100,6 +100,9 @@ export function LayerRow({
       ) : (
         <span
           onDoubleClick={(e) => { e.stopPropagation(); setIsEditing(true) }}
+          // Calque d'origine du fichier importé (Illustrator) : conservé à
+          // l'import même quand le calque lui-même a été dissous.
+          title={obj.groupPath?.length ? `Calque : ${obj.groupPath.join(' / ')}` : undefined}
           className={`text-xs truncate flex-1 ${isGroup ? 'text-white/90 font-medium' : 'text-white/70'} ${
             !obj.name ? 'italic text-white/50' : ''
           }`}

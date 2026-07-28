@@ -257,22 +257,22 @@ describe('parseSvgToFabric — hiérarchie des groupes', () => {
 })
 
 describe('parseSvgToFabric — option flatten (import .svg)', () => {
+  // Structure type d'un export Illustrator : un wrapper d'isolation, un calque,
+  // puis les blocs du design — dont un groupe d'objets (`bloc`) qui doit RESTER
+  // un bloc unique.
   const NESTED_SVG = `<?xml version="1.0"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
-  <g id="Calque_1">
-    <g id="bloc">
-      <rect x="10" y="20" width="40" height="30" fill="red"/>
-      <rect x="60" y="20" width="40" height="30" fill="blue"/>
+  <g class="isolate">
+    <g id="Calque_1">
+      <g id="bloc">
+        <rect x="10" y="20" width="40" height="30" fill="red"/>
+        <rect x="60" y="20" width="40" height="30" fill="blue"/>
+      </g>
+      <rect x="120" y="20" width="40" height="30" fill="green"/>
+      <rect x="180" y="20" width="40" height="30" fill="black"/>
     </g>
-    <rect x="120" y="20" width="40" height="30" fill="green"/>
   </g>
 </svg>`
-
-  it('ne produit aucun Group : chaque élément devient un objet indépendant', async () => {
-    const { objects } = await parseSvgToFabric(NESTED_SVG, { flatten: true })
-    expect(objects).toHaveLength(3)
-    expect(objects.some((o) => o instanceof Group)).toBe(false)
-  })
 
   // Fabric positionne les formes parsées depuis un SVG sur leur CENTRE
   // (originX/originY = 'center') : on ramène au coin haut-gauche pour comparer
@@ -282,22 +282,21 @@ describe('parseSvgToFabric — option flatten (import .svg)', () => {
     y: (o.top ?? 0) - (o.originY === 'center' ? ((o.height ?? 0) * (o.scaleY ?? 1)) / 2 : 0),
   })
 
-  it('conserve EXACTEMENT la position de chaque objet dans la page', async () => {
+  it('dissout le calque et les wrappers, mais PRÉSERVE les groupes d’objets', async () => {
     const { objects } = await parseSvgToFabric(NESTED_SVG, { flatten: true })
+    // bloc (groupe) + 2 rects, et non 4 objets éclatés ni 1 méga-bloc
+    expect(objects).toHaveLength(3)
+    expect(objects[0]).toBeInstanceOf(Group)
+    expect((objects[0] as Group).getObjects()).toHaveLength(2)
+    expect(objects[1]).not.toBeInstanceOf(Group)
+    expect(objects[2]).not.toBeInstanceOf(Group)
+  })
 
-    // Positions ABSOLUES du SVG source, y compris pour les deux rects qui
-    // vivaient dans <g id="bloc"> : Fabric a déjà appliqué aux feuilles la
-    // matrice cumulée de leurs <g> parents lors du parse.
-    const expected = [
-      { left: 10, top: 20 },
-      { left: 60, top: 20 },
-      { left: 120, top: 20 },
-    ]
-    objects.forEach((o, i) => {
-      const p = topLeftOf(o)
-      expect(p.x).toBeCloseTo(expected[i].left, 3)
-      expect(p.y).toBeCloseTo(expected[i].top, 3)
-    })
+  it('conserve EXACTEMENT la position des objets sortis du calque', async () => {
+    const { objects } = await parseSvgToFabric(NESTED_SVG, { flatten: true })
+    const green = topLeftOf(objects[1])
+    expect(green.x).toBeCloseTo(120, 3)
+    expect(green.y).toBeCloseTo(20, 3)
   })
 
   it('applique les transforms des <g> parents aux objets dégroupés', async () => {
@@ -316,26 +315,48 @@ describe('parseSvgToFabric — option flatten (import .svg)', () => {
     expect(p.y).toBeCloseTo(75, 3)
   })
 
-  it('conserve l’ordre d’empilement (z-order) des feuilles', async () => {
+  it('conserve l’ordre d’empilement (z-order) des blocs', async () => {
     const { objects } = await parseSvgToFabric(NESTED_SVG, { flatten: true })
-    expect(objects.map((o) => o.fill)).toEqual(['red', 'blue', 'green'])
+    expect(objects.slice(1).map((o) => o.fill)).toEqual(['green', 'black'])
   })
 
-  it('mémorise le chemin des groupes d’origine dans data.groupPath', async () => {
+  it('mémorise le nom du calque d’origine dans data.groupPath', async () => {
     const { objects } = await parseSvgToFabric(NESTED_SVG, { flatten: true })
-    const data = (objects[0] as unknown as { data: { groupPath?: string[] } }).data
-    expect(data.groupPath).toEqual(['Calque_1', 'bloc'])
+    const data = (objects[1] as unknown as { data: { groupPath?: string[] } }).data
+    expect(data.groupPath).toEqual(['Calque_1'])
+    const groupData = (objects[0] as unknown as { data: { groupPath?: string[]; name: string } }).data
+    expect(groupData.groupPath).toEqual(['Calque_1', 'bloc'])
+    expect(groupData.name).toBe('bloc')
   })
 
-  it('applique les métadonnées de feuille (id SVG) comme en mode groupé', async () => {
+  it('dissout un <g clip-path> qui n’enveloppe qu’un seul objet', async () => {
     const svg = `<?xml version="1.0"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <g id="wrapper">
-    <rect id="_PLACE_YOUR_IMAGE_" x="0" y="0" width="50" height="50"/>
+  <g id="Calque_1">
+    <g class="clip">
+      <rect id="_PLACE_YOUR_IMAGE_" x="0" y="0" width="50" height="50"/>
+    </g>
+    <rect x="60" y="0" width="20" height="20"/>
   </g>
 </svg>`
     const { objects } = await parseSvgToFabric(svg, { flatten: true })
+    expect(objects).toHaveLength(2)
+    expect(objects[0]).not.toBeInstanceOf(Group)
     const data = (objects[0] as unknown as { data: { name: string } }).data
     expect(data.name).toBe('_PLACE_YOUR_IMAGE_')
+  })
+
+  it('ne laisse JAMAIS un unique méga-bloc, même sans id de calque reconnu', async () => {
+    const svg = `<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="Artboard_XYZ">
+    <rect x="0" y="0" width="20" height="20"/>
+    <rect x="40" y="0" width="20" height="20"/>
+    <text x="10" y="80">Titre</text>
+  </g>
+</svg>`
+    const { objects } = await parseSvgToFabric(svg, { flatten: true })
+    expect(objects).toHaveLength(3)
+    expect(objects.some((o) => o instanceof Group)).toBe(false)
   })
 })

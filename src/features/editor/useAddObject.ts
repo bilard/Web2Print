@@ -162,6 +162,7 @@ function fabricObjToProps(o: FabricObject, index: number, parentId?: string): Ca
     hasConditionalRules: Array.isArray(d.conditionalRules) && d.conditionalRules.length > 0,
     children,
     parentId,
+    groupPath: Array.isArray(d.groupPath) ? (d.groupPath as string[]) : undefined,
   }
 }
 

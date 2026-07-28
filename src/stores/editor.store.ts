@@ -67,6 +67,9 @@ export interface CanvasObjectProps {
   // Hiérarchie groupes
   children?: CanvasObjectProps[]
   parentId?: string
+  // Calque(s) d'origine du fichier importé (SVG/Illustrator), conservé même
+  // après dissolution des conteneurs — affiché en infobulle dans les Calques.
+  groupPath?: string[]
   // 3D animation (Animation3DPanel)
   animation3D?: import('@/features/animation3d/types').Animation3DConfig | null
 }
