@@ -54,6 +54,10 @@ export interface TextFrameProps {
   insetLeft?: number
   verticalAlign?: VerticalAlign
   autoSizing?: AutoSizing
+  /** Bord horizontal qui reste fixe quand le cadre s'auto-redimensionne. */
+  anchorX?: 'left' | 'center' | 'right'
+  /** Bord vertical qui reste fixe quand le cadre s'auto-redimensionne. */
+  anchorY?: 'top' | 'center' | 'bottom'
   /** Retraits appliqués à tout le bloc (valeurs éditées dans la palette). */
   indents?: ParagraphIndents
   /** Retraits par paragraphe (index de ligne logique), issus de l'import IDML. */
@@ -65,6 +69,8 @@ type PatchedTextbox = Textbox & {
   __textFramePatched?: boolean
   /** Garde anti-récursion pendant l'ajustement de largeur automatique. */
   __textFrameSizing?: boolean
+  /** Vrai dès la première composition : l'ancrage ne compense qu'après elle. */
+  __textFrameMeasured?: boolean
   _styleMap?: Record<number, { line: number }>
   _textLines?: unknown[]
   _clearCache?: () => void
@@ -179,6 +185,33 @@ function extraSpacingAfterLine(tb: PatchedTextbox, f: TextFrameProps, i: number)
   return extra
 }
 
+/** Largeur de mesure « sans repli » — au-delà de toute page imprimable. */
+const UNWRAPPED_WIDTH = 100000
+/** Un cadre ne descend pas sous cette largeur, sinon Fabric ne sait plus composer. */
+const MIN_FRAME_WIDTH = 4
+
+/**
+ * Compense la position pour que le point d'ancrage du redimensionnement
+ * automatique reste immobile. L'objet a son origine au centre : agrandir de `dw`
+ * écarte chaque bord de `dw/2`, il faut donc rendre ce demi-écart au bord ancré.
+ * Le décalage est exprimé en local, puis porté dans le monde par scale + rotation.
+ */
+function keepAnchorFixed(tb: PatchedTextbox, f: TextFrameProps, dw: number, dh: number): void {
+  const ax = f.anchorX ?? 'center'
+  const ay = f.anchorY ?? 'center'
+  const dxLocal = ax === 'left' ? dw / 2 : ax === 'right' ? -dw / 2 : 0
+  const dyLocal = ay === 'top' ? dh / 2 : ay === 'bottom' ? -dh / 2 : 0
+  if (dxLocal === 0 && dyLocal === 0) return
+  const dx = dxLocal * (tb.scaleX ?? 1)
+  const dy = dyLocal * (tb.scaleY ?? 1)
+  const rad = ((tb.angle ?? 0) * Math.PI) / 180
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+  tb.left = (tb.left ?? 0) + dx * cos - dy * sin
+  tb.top = (tb.top ?? 0) + dx * sin + dy * cos
+  tb.setCoords()
+}
+
 /** Trace le rectangle du cadre, arrondi si besoin, avec un décalage `inset`. */
 function traceFrame(ctx: CanvasRenderingContext2D, w: number, h: number, radius: number, inset: number): void {
   const iw = Math.max(w - inset * 2, 0)
@@ -242,14 +275,22 @@ export function patchTextFrame(textbox: FabricObject): void {
     const f = getTextFrame(this)
     if (!f) { origInitDimensions(); return }
     const mode = f.autoSizing ?? 'off'
+    const widthBefore = this.width ?? 0
+    const heightBefore = this.height ?? 0
     origInitDimensions()
 
-    // Largeur automatique : le cadre se cale sur la ligne la plus longue.
+    // Largeur automatique : le cadre se cale sur le texte NON REPLIÉ.
     // `width` reste la largeur du cadre — c'est elle que Fabric expose aux
     // poignées latérales, on ne la réécrit donc JAMAIS en cadre fixe, sinon un
     // redimensionnement à la souris serait annulé à la recomposition suivante.
     if ((mode === 'width' || mode === 'both') && !this.__textFrameSizing) {
+      this.__textFrameSizing = true
       const insH = (f.insetLeft ?? 0) + (f.insetRight ?? 0)
+      // Mesurer d'abord sans contrainte : mesurer le texte DÉJÀ REPLIÉ donnerait
+      // un point fixe dégénéré — le cadre resterait à jamais à sa largeur étroite,
+      // et ne rétrécirait pas non plus quand on efface des caractères.
+      this._set('width', UNWRAPPED_WIDTH)
+      origInitDimensions()
       let maxLineW = 0
       for (let i = 0; i < (this._textLines?.length ?? 0); i++) {
         const ind = indentsFor(f, paraIndexOf(this, i))
@@ -257,13 +298,10 @@ export function patchTextFrame(textbox: FabricObject): void {
           (isFirstLineOfPara(this, i) ? (ind.firstLine ?? 0) : 0)
         if (lw > maxLineW) maxLineW = lw
       }
-      const target = Math.max(maxLineW + insH, this.getMinWidth?.() ?? 0)
-      if (target > 0 && Math.abs((this.width ?? 0) - target) > 0.5) {
-        this.__textFrameSizing = true
-        this._set('width', target)
-        origInitDimensions()
-        this.__textFrameSizing = false
-      }
+      const target = Math.max(maxLineW + insH, MIN_FRAME_WIDTH)
+      this._set('width', target)
+      origInitDimensions()
+      this.__textFrameSizing = false
     }
 
     const insV = (f.insetTop ?? 0) + (f.insetBottom ?? 0)
@@ -273,6 +311,24 @@ export function patchTextFrame(textbox: FabricObject): void {
       this.height = Math.max(contentH, f.frameH)
     } else {
       this.height = f.frameH > 0 ? f.frameH : contentH
+    }
+
+    // Le cadre grandit depuis son point d'ancrage InDesign : avec un ancrage à
+    // droite, c'est le bord DROIT qui reste en place — pas le centre.
+    // Seules les dimensions RÉELLEMENT automatiques sont compensées, et jamais à
+    // la première composition : celle-ci ne fait qu'installer le cadre importé,
+    // elle ne traduit aucun changement de contenu.
+    if (!this.__textFrameSizing) {
+      const autoW = mode === 'width' || mode === 'both'
+      const autoH = mode === 'height' || mode === 'both'
+      if (this.__textFrameMeasured) {
+        keepAnchorFixed(
+          this, f,
+          autoW ? (this.width ?? 0) - widthBefore : 0,
+          autoH ? (this.height ?? 0) - heightBefore : 0,
+        )
+      }
+      this.__textFrameMeasured = true
     }
   }
 

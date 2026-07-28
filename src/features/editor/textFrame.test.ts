@@ -27,6 +27,73 @@ describe('textFrame — dimensions du bloc', () => {
   })
 })
 
+describe('textFrame — largeur automatique', () => {
+  const type = (tb: Textbox, text: string) => {
+    tb.set({ text })
+    ;(tb as unknown as { initDimensions: () => void }).initDimensions()
+  }
+
+  it('tient sur une seule ligne au lieu de replier le texte', () => {
+    // Cadre étroit + texte long : InDesign élargit le cadre, il ne replie pas.
+    const tb = makeBlock({ frameW: 40, autoSizing: 'width' }, 'des mots des mots des mots')
+    expect(tb.textLines.length).toBe(1)
+    expect(tb.width).toBeGreaterThan(40)
+  })
+
+  it('rétrécit quand on supprime des caractères', () => {
+    const tb = makeBlock({ autoSizing: 'width' }, '788888888888888888888888')
+    const large = tb.width ?? 0
+    type(tb, '73,05')
+    expect(tb.width).toBeLessThan(large / 2)
+  })
+
+  it('élargit le cadre quand on ajoute des caractères', () => {
+    const tb = makeBlock({ autoSizing: 'width' }, '73,05')
+    const petit = tb.width ?? 0
+    type(tb, '73,05 avec beaucoup plus de texte encore')
+    expect(tb.width).toBeGreaterThan(petit)
+  })
+
+  it('tient compte du retrait droit dans la largeur du cadre', () => {
+    const sans = makeBlock({ autoSizing: 'width' }, '22,99')
+    const avec = makeBlock({ autoSizing: 'width', indents: { right: 17 } }, '22,99')
+    expect((avec.width ?? 0) - (sans.width ?? 0)).toBeCloseTo(17, 1)
+  })
+})
+
+describe('textFrame — point d’ancrage du redimensionnement', () => {
+  const grow = (anchorX: 'left' | 'center' | 'right') => {
+    const tb = makeBlock({ autoSizing: 'width', anchorX, anchorY: 'top' }, 'court')
+    tb.set({ left: 300, top: 100 })
+    const rightEdgeBefore = 300 + (tb.width ?? 0) / 2
+    const leftEdgeBefore = 300 - (tb.width ?? 0) / 2
+    tb.set({ text: 'un texte nettement plus long qu’avant' })
+    ;(tb as unknown as { initDimensions: () => void }).initDimensions()
+    return {
+      leftEdge: (tb.left ?? 0) - (tb.width ?? 0) / 2,
+      rightEdge: (tb.left ?? 0) + (tb.width ?? 0) / 2,
+      leftEdgeBefore, rightEdgeBefore,
+    }
+  }
+
+  it('ancré à droite : le bord DROIT ne bouge pas, le cadre s’étend à gauche', () => {
+    const r = grow('right')
+    expect(r.rightEdge).toBeCloseTo(r.rightEdgeBefore, 5)
+    expect(r.leftEdge).toBeLessThan(r.leftEdgeBefore)
+  })
+
+  it('ancré à gauche : le bord GAUCHE ne bouge pas', () => {
+    const r = grow('left')
+    expect(r.leftEdge).toBeCloseTo(r.leftEdgeBefore, 5)
+    expect(r.rightEdge).toBeGreaterThan(r.rightEdgeBefore)
+  })
+
+  it('ancré au centre : les deux bords s’écartent également', () => {
+    const r = grow('center')
+    expect(r.leftEdgeBefore - r.leftEdge).toBeCloseTo(r.rightEdge - r.rightEdgeBefore, 5)
+  })
+})
+
 describe('textFrame — justification verticale', () => {
   const topOf = (tb: Textbox) => (tb as unknown as { _getTopOffset: () => number })._getTopOffset()
 

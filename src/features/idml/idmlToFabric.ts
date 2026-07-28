@@ -18,6 +18,19 @@ import { applyTextFrame, type AutoSizing } from '@/features/editor/textFrame'
  * `UseNoLineBreaksForAutoSizing` implique une largeur automatique même quand
  * AutoSizingType est absent.
  */
+/**
+ * Traduit AutoSizingReferencePoint (« TopLeftPoint », « RightCenterPoint »…) en
+ * bords fixes. InDesign fait grandir le cadre À PARTIR de ce point : avec
+ * « RightCenterPoint », le bord droit ne bouge pas et le cadre s'étend vers la
+ * gauche. Sans valeur, InDesign ancre en haut à gauche.
+ */
+function idmlAnchor(obj: IdmlObject): { anchorX: 'left' | 'center' | 'right'; anchorY: 'top' | 'center' | 'bottom' } {
+  const raw = obj.autoSizingReferencePoint ?? ''
+  const anchorX = /left/i.test(raw) ? 'left' : /right/i.test(raw) ? 'right' : /center/i.test(raw) ? 'center' : 'left'
+  const anchorY = /top/i.test(raw) ? 'top' : /bottom/i.test(raw) ? 'bottom' : /center/i.test(raw) ? 'center' : 'top'
+  return { anchorX, anchorY }
+}
+
 function idmlAutoSizing(obj: IdmlObject): AutoSizing {
   const raw = obj.autoSizingType ?? ''
   const height = /height/i.test(raw)
@@ -529,14 +542,11 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
       // horizontale InDesign, et les marges sont RÉSERVÉES à la composition par le
       // patch de bloc — plus besoin de les soustraire de la largeur ici.
       const frameWLocal = Math.max(textWidth / hScaleFactor, 10)
-      // UseNoLineBreaksForAutoSizing : InDesign élargit le cadre pour tenir sur une
-      // ligne. On part très large, le shrink-wrap ramène ensuite à la bonne largeur.
       // Buffer d'un cadratin quand hScale ≠ 1 : Fabric mesure des glyphes non
       // compressés dans une boîte élargie, ce qui provoquerait un retour à la ligne
-      // qui n'existe pas dans InDesign.
-      const adjustedWidth = obj.noLineBreaks
-        ? Math.max(frameWLocal, 5000)
-        : frameWLocal + (hScaleFactor !== 1 ? fontSize : 0)
+      // qui n'existe pas dans InDesign. Les cadres à largeur automatique
+      // (UseNoLineBreaksForAutoSizing) sont recalibrés par le bloc lui-même.
+      const adjustedWidth = frameWLocal + (hScaleFactor !== 1 ? fontSize : 0)
 
       try {
         const resolvedFont = resolveAvailableFont(firstPara.fontFamily) || 'Arial'
@@ -622,6 +632,11 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
         // Apply per-character charSpacing monkey-patch (for IDML tracking)
         patchPerCharSpacing(textbox)
 
+        // Placer le bloc AVANT de poser son cadre : si le redimensionnement
+        // automatique recalibre la largeur, le bloc doit pivoter autour de son
+        // bord ancré (cf. keepAnchorFixed), pas repartir de son centre.
+        textbox.set({ left: cx, top: cy, angle })
+
         // ── Le cadre InDesign, porté par le Textbox lui-même ─────────────────
         // Marges, retraits et arrondi vivent dans le repère LOCAL du Textbox :
         // l'horizontal passe par scaleX (= hScaleFactor), le vertical par scaleY (= 1).
@@ -643,6 +658,7 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
           insetRight: toLocalX(obj.insetRight ?? 0),
           verticalAlign: obj.verticalJustification ?? 'top',
           autoSizing: idmlAutoSizing(obj),
+          ...idmlAnchor(obj),
           paraIndents: paras.map((p) => ({
             left: p.leftIndent ? toLocalX(p.leftIndent) : undefined,
             right: p.rightIndent ? toLocalX(p.rightIndent) : undefined,
@@ -653,31 +669,13 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
           })),
         })
 
-        // Shrink-wrap : réservé aux cadres à largeur automatique
-        // (UseNoLineBreaksForAutoSizing). Pour un cadre fixe, la largeur du bloc EST
-        // le bord d'alignement — la rétrécir décalerait le texte à l'écran.
-        if (obj.noLineBreaks) {
-          const numLines = textbox.textLines?.length ?? 1
-          let maxLineW = 0
-          for (let li = 0; li < numLines; li++) {
-            const lw = (textbox as any).getLineWidth?.(li) ?? 0
-            if (lw > maxLineW) maxLineW = lw
-          }
-          const insetsLocal = toLocalX((obj.insetLeft ?? 0) + (obj.insetRight ?? 0))
-          const contentWidth = maxLineW + insetsLocal + fontSize * 0.3
-          if (contentWidth > 10 && contentWidth < adjustedWidth * 0.95) {
-            textbox.set({ width: contentWidth })
-            applyTextFrame(textbox, { frameW: contentWidth })
-          }
-        }
-
-        // Le Textbox EST le cadre : son centre est celui du bloc InDesign.
-        // Marges et justification verticale déplacent le texte À L'INTÉRIEUR
-        // (cf. _getTopOffset dans textFrame.ts), plus l'objet lui-même.
-        textbox.set({ left: cx, top: cy, angle })
+        // Le Textbox EST le cadre. Marges et justification verticale déplacent le
+        // texte À L'INTÉRIEUR (cf. _getTopOffset dans textFrame.ts), plus l'objet.
+        // Le centre de référence pour l'export est celui réellement obtenu — le
+        // redimensionnement automatique a pu décaler le bloc sur son bord ancré.
         const tbData = (textbox as FabricObject & { data: Record<string, unknown> }).data
-        tbData.idmlCx = cx
-        tbData.idmlCy = cy
+        tbData.idmlCx = textbox.left ?? cx
+        tbData.idmlCy = textbox.top ?? cy
         tbData.idmlW = (textbox.width ?? 0) * (textbox.scaleX ?? 1)
         tbData.idmlH = textbox.height ?? displayH
         tbData.originalTextColor = colorToHex(firstPara.color, '#000000')
