@@ -356,6 +356,11 @@ interface ObjectStyleDef {
   insetLeft?: number
   insetRight?: number
   verticalJustification?: 'top' | 'center' | 'bottom'
+  // Dimensionnement automatique — vit le plus souvent DANS le style d'objet
+  // (onglet « Dimension. auto »), pas sur le bloc lui-même.
+  autoSizingType?: string
+  autoSizingReferencePoint?: string
+  noLineBreaks?: boolean
 }
 
 /**
@@ -465,6 +470,11 @@ function buildObjectStyleMap(resources: Record<string, string>): Map<string, Obj
           const vjAttr = tfp.getAttribute('VerticalJustification')
           if (vjAttr === 'CenterAlign') def.verticalJustification = 'center'
           else if (vjAttr === 'BottomAlign') def.verticalJustification = 'bottom'
+          const ast = tfp.getAttribute('AutoSizingType')
+          if (ast && ast !== 'Off') def.autoSizingType = ast
+          const asrp = tfp.getAttribute('AutoSizingReferencePoint')
+          if (asrp) def.autoSizingReferencePoint = asrp
+          if (tfp.getAttribute('UseNoLineBreaksForAutoSizing') === 'true') def.noLineBreaks = true
         }
         map.set(id, def)
       }
@@ -1612,20 +1622,19 @@ function parseElement(
       else if (vjAttr === 'BottomAlign') verticalJustification = 'bottom'
       else if (vjAttr === 'TopAlign') verticalJustification = 'top'
     }
-    // Check for UseNoLineBreaksForAutoSizing (text must stay on one line)
-    let noLineBreaks = false
-    if (tfpEls.length > 0) {
-      const nlb = tfpEls[0].getAttribute('UseNoLineBreaksForAutoSizing')
-      if (nlb === 'true') noLineBreaks = true
-    }
-    // AutoSizingType : 'HeightOnly'/'HeightAndWidth' = cadre qui grandit ; 'Off'/absent = fixe.
-    const autoSizingType = tfpEls.length > 0
-      ? (tfpEls[0].getAttribute('AutoSizingType') || undefined)
-      : undefined
+    // Dimensionnement automatique — le TextFramePreference inline prime, mais il
+    // est le plus souvent MUET : InDesign range ces réglages dans le style d'objet
+    // (« Dimension. auto »). Les ignorer fige des blocs conçus pour s'adapter.
+    const tfpAttr = (name: string) =>
+      tfpEls.length > 0 ? (tfpEls[0].getAttribute(name) || undefined) : undefined
+    const noLineBreaks = tfpAttr('UseNoLineBreaksForAutoSizing') === 'true' || Boolean(objStyle?.noLineBreaks)
+    // 'HeightOnly'/'WidthOnly'/'HeightAndWidth' = cadre qui grandit ; 'Off'/absent = fixe.
+    const inlineAutoSizing = tfpAttr('AutoSizingType')
+    const autoSizingType = (inlineAutoSizing && inlineAutoSizing !== 'Off')
+      ? inlineAutoSizing
+      : (inlineAutoSizing === 'Off' ? inlineAutoSizing : objStyle?.autoSizingType)
     // Point d'ancrage du redimensionnement auto (InDesign : la poignée qui reste fixe).
-    const autoSizingReferencePoint = tfpEls.length > 0
-      ? (tfpEls[0].getAttribute('AutoSizingReferencePoint') || undefined)
-      : undefined
+    const autoSizingReferencePoint = tfpAttr('AutoSizingReferencePoint') ?? objStyle?.autoSizingReferencePoint
 
     // Detect non-rectangular TextFrame (Oval, custom shape) by checking PathGeometry curves
     const framePts = parsePathPoints(el)

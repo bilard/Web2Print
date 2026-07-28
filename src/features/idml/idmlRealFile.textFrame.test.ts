@@ -9,7 +9,7 @@ import { Textbox } from 'fabric'
 import { parseIdml } from './idmlParser'
 import { idmlToFabricObjects } from './idmlToFabric'
 import { getTextFrame } from '@/features/editor/textFrame'
-import type { IdmlDocument } from './idmlTypes'
+import type { IdmlDocument, IdmlObject } from './idmlTypes'
 
 const REAL_FILE = 'IMPORTS/Monoprix/XML/Snipet_PROMO_converted.idml'
 
@@ -63,6 +63,47 @@ describe.skipIf(!existsSync(REAL_FILE))('IDML réel — blocs de texte', () => {
     for (const o of objs) {
       expect(getTextFrame(o)?.fill).toMatch(/^#[0-9a-f]{6}$/)
     }
+  })
+
+  it('hérite du dimensionnement automatique porté par le STYLE D\'OBJET', async () => {
+    // Le bloc prix ne déclare rien : « Largeur seulement / milieu droit » vit dans
+    // ObjectStyle/Price. L'ignorer figeait le cadre et repliait le prix fusionné.
+    const docModel = await loadRealDocument()
+    const prix = docModel.objects.find((o) => o.mergeTemplate === '{{Prix_normal}}')
+    expect(prix).toBeDefined()
+    expect(prix?.autoSizingType).toBe('WidthOnly')
+    expect(prix?.autoSizingReferencePoint).toBe('RightCenterPoint')
+
+    const [block] = await idmlToFabricObjects([prix as IdmlObject])
+    expect(getTextFrame(block)).toMatchObject({ autoSizing: 'width', anchorX: 'right', anchorY: 'center' })
+    expect((block as Textbox).textLines).toHaveLength(1)
+  })
+
+  it('garde le prix fusionné sur une ligne, bord droit immobile', async () => {
+    const docModel = await loadRealDocument()
+    const prix = docModel.objects.find((o) => o.mergeTemplate === '{{Prix_normal}}')
+    const [block] = await idmlToFabricObjects([prix as IdmlObject])
+    const tb = block as Textbox
+    const rightEdge = () => (tb.left ?? 0) + (tb.width ?? 0) / 2
+    const edge0 = rightEdge()
+    const width0 = tb.width ?? 0
+
+    const setText = (t: string) => {
+      tb.set({ text: t })
+      ;(tb as unknown as { initDimensions: () => void }).initDimensions()
+    }
+
+    // Une valeur plus longue élargit le cadre VERS LA GAUCHE, sans replier.
+    setText('1 234,56')
+    expect(tb.textLines).toHaveLength(1)
+    expect(tb.width ?? 0).toBeGreaterThan(width0)
+    expect(rightEdge()).toBeCloseTo(edge0, 4)
+
+    // Une valeur plus courte le rétrécit — le bord droit ne bouge toujours pas.
+    setText('9,90')
+    expect(tb.textLines).toHaveLength(1)
+    expect(tb.width ?? 0).toBeLessThan(width0)
+    expect(rightEdge()).toBeCloseTo(edge0, 4)
   })
 
   it('donne à chaque bloc la hauteur de son cadre InDesign', async () => {
