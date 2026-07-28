@@ -555,8 +555,11 @@ export const CATALOG_CSS = `
 .cat-coverp-chip { writing-mode:vertical-rl; transform:rotate(180deg); background:var(--cat-accent); color:var(--cat-ink);
   font-family:var(--cat-font-h); font-weight:800; font-size:20px; letter-spacing:.12em; text-transform:uppercase;
   padding:26px 10px; border-radius:2px; max-height:46%; overflow:hidden; }
-.cat-coverp-panel { position:absolute; left:32%; right:10%; top:44%; bottom:14%; background:var(--cat-accent);
-  color:var(--cat-ink); padding:7% 6%; display:flex; flex-direction:column; justify-content:flex-start; box-shadow:0 18px 60px rgba(0,0,0,.18); }
+/* Panneau ancré par le BAS, hauteur suivant le CONTENU (aucun top fixe) :
+   avec une zone figée à 44 %→86 %, un titre court laissait un immense aplat
+   d'accent qui masquait la photo. Plafonné pour rester une bande, jamais un mur. */
+.cat-coverp-panel { position:absolute; left:34%; right:10%; bottom:16%; max-height:46%; background:var(--cat-accent);
+  color:var(--cat-ink); padding:5% 5%; display:flex; flex-direction:column; justify-content:flex-start; overflow:hidden; box-shadow:0 18px 60px rgba(0,0,0,.18); }
 .cat-coverp-title { font-family:var(--cat-font-h); font-weight:900; font-size:calc(56px * var(--cat-p-cover,1)); line-height:1.02; }
 .cat-coverp-sub { font-family:var(--cat-font-b); font-size:calc(17px * var(--cat-p-cover,1)); margin-top:18px; opacity:.85; max-width:34ch; }
 .cat-coverp-foot { position:absolute; left:0; right:0; bottom:0; height:14%; background:var(--cat-bg); color:var(--cat-ink);
