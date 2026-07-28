@@ -562,12 +562,8 @@ export const CATALOG_CSS = `
   color:var(--cat-ink); padding:5% 5%; display:flex; flex-direction:column; justify-content:flex-start; overflow:hidden; box-shadow:0 18px 60px rgba(0,0,0,.18); }
 .cat-coverp-title { font-family:var(--cat-font-h); font-weight:900; font-size:calc(56px * var(--cat-p-cover,1)); line-height:1.02; }
 .cat-coverp-sub { font-family:var(--cat-font-b); font-size:calc(17px * var(--cat-p-cover,1)); margin-top:18px; opacity:.85; max-width:34ch; }
-/* Plus de bandeau plein en bas : depuis que le nom n'y est plus répété, il ne
-   restait qu'un large aplat clair qui amputait la photo. Seule la pastille du
-   millésime subsiste, posée SUR l'image. */
-.cat-coverp-foot { position:absolute; right:6%; bottom:5%; display:flex; align-items:center; justify-content:flex-end; }
-.cat-coverp-foot-chip { background:var(--cat-head-bg); color:var(--cat-head-ink); font-family:var(--cat-font-h);
-  font-weight:700; font-size:15px; padding:10px 26px; letter-spacing:.08em; }
+/* Aucun pied sur la couverture « panel » : ni bandeau, ni nom, ni millésime —
+   la photo occupe toute la page, l'identité vit dans le panneau d'accent. */
 /* ── Couverture ARCHÉTYPE « poster » : titre géant centré sur la photo. ── */
 .cat-coverz { justify-content:center; }
 .cat-coverz-in { padding:8%; display:flex; flex-direction:column; align-items:center; text-align:center; gap:18px; }

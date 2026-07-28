@@ -38,10 +38,6 @@ export function CoverPage({ ctx, variant }: Props) {
           <h1 className="cat-coverp-title">{plan.cover.title}</h1>
           {ps.showCoverSubtitle && plan.cover.subtitle && <div className="cat-coverp-sub">{plan.cover.subtitle}</div>}
         </div>
-        {/* Millésime seul, posé sur la photo — le nom vit dans le logo du panneau. */}
-        <div className="cat-coverp-foot">
-          <div className="cat-coverp-foot-chip">{new Date().getFullYear()}</div>
-        </div>
       </div>
     )
   }
