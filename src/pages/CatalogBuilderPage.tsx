@@ -12,6 +12,7 @@ import { defaultPromoFieldMap, defaultCustomFields } from '@/features/retail-pro
 import { ensureUserFontsLoaded } from '@/features/fonts/useUserFonts'
 import { useCatalogAutosave } from '@/features/catalog/useCatalogAutosave'
 import { CatalogStepsNav } from '@/features/catalog/components/CatalogStepsNav'
+import { useApplyKnownCutouts } from '@/features/catalog/useCatalogCutout'
 
 const StepSource = lazy(() => import('@/features/catalog/components/steps/StepSource').then((m) => ({ default: m.StepSource })))
 const StepStructure = lazy(() => import('@/features/catalog/components/steps/StepStructure').then((m) => ({ default: m.StepStructure })))
@@ -25,6 +26,9 @@ export default function CatalogBuilderPage() {
   const navigate = useNavigate()
   const s = useCatalogStore()
   const { saving } = useCatalogAutosave()
+  // Un produit qui entre dans le catalogue reprend le détourage déjà produit
+  // pour son visuel (aucun nouveau traitement) — cf. useCatalogCutout.
+  useApplyKnownCutouts()
   const [ready, setReady] = useState(false)
 
   useEffect(() => {

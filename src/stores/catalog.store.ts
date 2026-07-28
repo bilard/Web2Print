@@ -46,6 +46,11 @@ interface CatalogState {
   backCoverImageUrl: string | null
   /** Visuel du LOGO de marque (Storage) — repli sur le logo typographique (plan.brandName). */
   logoUrl: string | null
+  /** Détourages déjà produits, clefés par URL SOURCE : un produit ré-ajouté (ou
+   *  partageant son visuel) retrouve sa version détourée SANS nouveau traitement. */
+  cutoutBySource: Record<string, string>
+  /** L'utilisateur a lancé le détourage au moins une fois → les nouveaux produits le sont aussi. */
+  autoCutout: boolean
   /** Ordre manuel des pages du chemin de fer (clés stables, vide = ordre moteur). */
   pageOrder: string[]
   /** Corrections produit propres à CE catalogue (sauvegarde « publication »). */
@@ -82,6 +87,8 @@ interface CatalogState {
   setCoverImageUrl: (url: string | null) => void
   setBackCoverImageUrl: (url: string | null) => void
   setLogoUrl: (url: string | null) => void
+  /** Mémorise des détourages (source → détouré) et, optionnellement, arme le détourage automatique. */
+  rememberCutouts: (entries: Record<string, string>, auto?: boolean) => void
   setPageOrder: (order: string[]) => void
   setPreviewIndex: (index: number | null) => void
   /** Pose/retire les corrections publication d'une ligne ('' ou null = champ rendu à la source). */
@@ -112,6 +119,8 @@ const defaultState = {
   coverImageUrl: null as string | null,
   backCoverImageUrl: null as string | null,
   logoUrl: null as string | null,
+  cutoutBySource: {} as Record<string, string>,
+  autoCutout: false,
   pageOrder: [] as string[],
   rowOverrides: {} as CatalogRowOverrides,
   previewIndex: null as number | null,
@@ -149,7 +158,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     levelKeys: doc.levelKeys, treeEdits: doc.treeEdits, prompt: doc.prompt, plan: withNormalizedLinks(doc.plan), charte: doc.charte ?? null,
     fieldMap: doc.fieldMap, fieldMapOverrides: doc.fieldMapOverrides, customFields: doc.customFields,
     format: doc.format, coverImageUrl: doc.coverImageUrl, backCoverImageUrl: doc.backCoverImageUrl,
-    logoUrl: doc.logoUrl ?? null,
+    logoUrl: doc.logoUrl ?? null, cutoutBySource: doc.cutoutBySource ?? {}, autoCutout: doc.autoCutout ?? false,
     pageOrder: doc.pageOrder, rowOverrides: doc.rowOverrides ?? {}, previewIndex: null,
     // Purge la session précédente (autre catalogue) : rawRows/rawColumns sont
     // rechargés depuis sourceRef par CatalogBuilderPage (garde rawRows.length===0).
@@ -162,6 +171,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
       levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
       fieldMap: s.fieldMap, fieldMapOverrides: s.fieldMapOverrides, customFields: s.customFields,
       format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl, logoUrl: s.logoUrl,
+      cutoutBySource: s.cutoutBySource, autoCutout: s.autoCutout,
       pageOrder: s.pageOrder, rowOverrides: s.rowOverrides, charte: s.charte,
     }
   },
@@ -215,6 +225,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   setCoverImageUrl: (coverImageUrl) => set({ coverImageUrl }),
   setBackCoverImageUrl: (backCoverImageUrl) => set({ backCoverImageUrl }),
   setLogoUrl: (logoUrl) => set({ logoUrl }),
+  rememberCutouts: (entries, auto) => set((s) => ({ cutoutBySource: { ...s.cutoutBySource, ...entries }, autoCutout: auto ?? s.autoCutout })),
   setPageOrder: (pageOrder) => set({ pageOrder }),
   setPreviewIndex: (previewIndex) => set({ previewIndex }),
   setRowOverride: (rowId, patch) => set((s) => {
@@ -246,6 +257,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
     levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
     fieldMap: s.fieldMap, fieldMapOverrides: s.fieldMapOverrides, customFields: s.customFields,
     format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl, logoUrl: s.logoUrl,
+    cutoutBySource: s.cutoutBySource, autoCutout: s.autoCutout,
     pageOrder: s.pageOrder, rowOverrides: s.rowOverrides, charte: s.charte,
   }),
 }))

@@ -3,7 +3,7 @@
 // est rangé dans Firebase Storage, et l'URL écrite en SURCHARGE de ligne
 // (rowOverrides) — la source (Excel/PIM) n'est jamais modifiée, et « Réinitialiser »
 // rend les visuels d'origine.
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth, storage } from '@/lib/firebase/config'
@@ -49,13 +49,25 @@ export function useCatalogCutout() {
       // ⚠ Dans une URL Firebase Storage le chemin est ENCODÉ (`users%2F…%2FcatalogCutouts%2F`) :
       // chercher « /catalogCutouts/ » ne matchait jamais et tout était re-détouré.
       .filter((t) => t.src && !isCutoutUrl(t.src))
-    if (targets.length === 0) { toast.info('Tous les visuels sont déjà détourés'); return }
+
+    // 1) RÉUTILISATION IMMÉDIATE : un visuel déjà détouré (même URL source sur un
+    //    autre produit, ou produit ré-ajouté après un changement de sélection) est
+    //    repris tel quel — aucun traitement, aucun coût.
+    const known = s.cutoutBySource
+    const reused = targets.filter((t) => known[t.src])
+    for (const t of reused) useCatalogStore.getState().setRowOverride(t.id, { [column]: known[t.src] })
+    const todo = targets.filter((t) => !known[t.src])
+    if (todo.length === 0) {
+      useCatalogStore.getState().rememberCutouts({}, true)
+      toast.success(reused.length > 0 ? `${reused.length} visuel(s) repris du détourage déjà fait` : 'Tous les visuels sont déjà détourés')
+      return
+    }
 
     abort.current = false
-    setProgress({ done: 0, total: targets.length, failed: 0 })
+    setProgress({ done: 0, total: todo.length, failed: 0 })
     let done = 0
     let failed = 0
-    const queue = [...targets]
+    const queue = [...todo]
 
     const worker = async () => {
       for (;;) {
@@ -72,13 +84,17 @@ export function useCatalogCutout() {
           URL.revokeObjectURL(url)
           const fileRef = storageRef(storage, `users/${uid}/${CUTOUT_DIR}/${item.id}_${Date.now()}.png`)
           await uploadBytes(fileRef, png, { contentType: 'image/png' })
-          useCatalogStore.getState().setRowOverride(item.id, { [column]: await getDownloadURL(fileRef) })
+          const cutoutUrl = await getDownloadURL(fileRef)
+          useCatalogStore.getState().setRowOverride(item.id, { [column]: cutoutUrl })
+          // Mémorisé par URL SOURCE : tout produit qui réapparaît avec ce visuel
+          // le récupérera sans repasser par le service de détourage.
+          useCatalogStore.getState().rememberCutouts({ [item.src]: cutoutUrl }, true)
         } catch (e) {
           failed++
           console.warn('[catalogue] détourage échoué pour', item.id, e)
         }
         done++
-        setProgress({ done, total: targets.length, failed })
+        setProgress({ done, total: todo.length, failed })
       }
     }
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker))
@@ -105,4 +121,31 @@ export function useCatalogCutout() {
   }
 
   return { progress, cutoutAll, cancel, resetAll }
+}
+
+/**
+ * Applique les détourages DÉJÀ produits aux produits qui viennent d'entrer dans
+ * le catalogue (changement de sélection, ajout de lignes). Purement local :
+ * aucun appel au service, aucun coût — on ne fait que reposer une URL connue.
+ * Le détourage des visuels INCONNUS reste un geste explicite (bouton).
+ */
+export function useApplyKnownCutouts(): void {
+  const rawRows = useCatalogStore((s) => s.rawRows)
+  const selectedRowIds = useCatalogStore((s) => s.selectedRowIds)
+  const autoCutout = useCatalogStore((s) => s.autoCutout)
+
+  useEffect(() => {
+    if (!autoCutout) return
+    const s = useCatalogStore.getState()
+    const column = s.fieldMap.image
+    if (!column) return
+    const selected = new Set(selectedRowIds)
+    for (const row of rawRows) {
+      if (selected.size > 0 && !selected.has(row._id)) continue
+      const current = String(s.rowOverrides[row._id]?.[column] ?? row[column] ?? '').trim()
+      if (!current || isCutoutUrl(current)) continue
+      const known = s.cutoutBySource[current]
+      if (known) s.setRowOverride(row._id, { [column]: known })
+    }
+  }, [rawRows, selectedRowIds, autoCutout])
 }

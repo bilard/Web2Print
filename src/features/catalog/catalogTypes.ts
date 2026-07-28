@@ -412,6 +412,9 @@ export interface CatalogDoc {
   coverImageUrl: string | null
   /** Visuel du logo de marque (Storage) — absent sur les catalogues antérieurs. */
   logoUrl?: string | null
+  /** Détourages déjà produits, clefés par URL source (absent sur les catalogues antérieurs). */
+  cutoutBySource?: Record<string, string>
+  autoCutout?: boolean
   backCoverImageUrl: string | null
   /** Ordre manuel des pages (clés stables du chemin de fer, cf. catalogFlatplan). Vide = ordre du moteur. */
   pageOrder: string[]

@@ -15,7 +15,7 @@ export function newCatalogDoc(name: string): CatalogDoc {
   return {
     id: '', name, sourceRef: null, selectedRowIds: [], levelKeys: {}, treeEdits: EMPTY_TREE_EDITS,
     prompt: '', plan: null, fieldMap: {}, fieldMapOverrides: {}, customFields: [], format: CATALOG_FORMAT_PRESETS[0].format,
-    coverImageUrl: null, backCoverImageUrl: null, logoUrl: null, pageOrder: [],
+    coverImageUrl: null, backCoverImageUrl: null, logoUrl: null, cutoutBySource: {}, autoCutout: false, pageOrder: [],
   }
 }
 
