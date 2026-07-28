@@ -86,7 +86,11 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
       type: 'object',
       properties: {
         title: { type: 'string' }, subtitle: { type: 'string' }, baseline: { type: 'string' },
-        imagePrompt: { type: 'string', description: 'prompt EN ANGLAIS pour générer le visuel de couverture (photo réaliste, sans texte incrusté)' },
+        // ⚠ Décrire un LIEU (« a professional workshop with… ») fait fabriquer un
+        // décor : murs, fenêtre, lumière du jour — un modèle d'image suit le
+        // positif et ignore les interdits posés plus loin. On exige donc un sujet
+        // PRODUIT ; la facture photo est imposée ensuite, côté application.
+        imagePrompt: { type: 'string', description: "EN ANGLAIS, 1 phrase : LES PRODUITS À PHOTOGRAPHIER en gros plan (lesquels, matières, couleurs, agencement), rien d'autre. INTERDIT de décrire un LIEU ou une AMBIANCE (pas de 'workshop', 'garage', 'store', 'room', 'window', 'daylight', 'background') : le décor est imposé par l'application. Ex. « a cordless impact driver, a socket set and a coiled tape measure in matte black and red, arranged in a tight overlapping group »" },
         layout: { type: 'string', enum: ['classic', 'panel', 'poster'], description: "ARCHÉTYPE de composition : 'classic' = photo assombrie + textes bas-gauche · 'panel' = éditorial print (bande latérale sombre, grand panneau accent chevauchant la photo, bandeau infos bas) — choisis-le pour les inspirations maquettes/minimalistes · 'poster' = titre géant centré sur la photo" },
       },
       required: ['title', 'imagePrompt'],

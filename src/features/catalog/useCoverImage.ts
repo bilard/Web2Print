@@ -45,14 +45,22 @@ export function emblemPrompt(name: string, accent: string): string {
  * noyé dans le flou, et marques inventées sur les outils.
  */
 function coverPrompt(subject: string): string {
-  return `Front cover photograph for a printed professional trade catalogue.\n`
-    + `Subject: ${subject.trim().replace(/[.\s]+$/, '')}.\n`
-    + `Framing: vertical portrait. The hero products sit in the lower half, shot from a natural three-quarter working angle, close enough to fill the frame with confidence.\n`
-    + `Focus: the hero products are TACK SHARP, clean and instantly recognisable, with fine detail on materials and edges. Only the far background falls off softly — never blur or hide the main subject.\n`
-    + `Light: professional studio lighting, soft key light with controlled specular highlights, gentle fill, no harsh shadow, no colour cast.\n`
-    + `Background: calm and tidy — a plain seamless backdrop or an uncluttered work surface — so headline text can sit in the upper area without fighting the image.\n`
-    + `Rendering: honest high-end commercial product photography, natural accurate colours, medium contrast, fine texture. No HDR, no heavy filter, no illustration, no 3D render look.\n`
-    + `Do not include: any text, letters, numbers, brand names or logos on the objects; watermarks; people or hands; office desks, computers or window views; messy piles; empty flat white areas.`
+  // Tout est PRESCRIT, presque rien n'est interdit : un modèle d'image exécute
+  // ce qu'on lui demande de faire et ignore largement les négations. Décrire un
+  // décor (« workshop ») suffisait à faire apparaître murs, fenêtre et lumière
+  // du jour, quel que soit le nombre d'interdits ajoutés ensuite. On impose donc
+  // un PACKSHOT STUDIO : le sujet est seul, sur un fond fabriqué.
+  return `Studio packshot photograph, shot on a professional cyclorama sweep for the front cover of a printed trade catalogue.\n`
+    + `Subject, filling the UPPER two thirds of the frame: ${subject.trim().replace(/[.\s]+$/, '')}.\n`
+    + `The subject is the ONLY thing in the picture. It rests on a smooth seamless studio floor that curves up into a plain graduated backdrop in soft neutral grey. `
+    + `The backdrop is completely empty — bare seamless paper, nothing standing on it, nothing hanging on it.\n`
+    // La maquette pose ses textes (panneau accent, titres, bandeau) dans la
+    // MOITIÉ BASSE : un sujet placé bas s'y faisait recouvrir intégralement.
+    + `Framing: vertical portrait, eye-level three-quarter angle, subject sitting high in the frame with a clean margin around it; the BOTTOM THIRD is empty backdrop only, reserved for headline text.\n`
+    + `Focus: every product edge razor sharp front to back, fine material texture visible — brushed metal, matte plastic, rubber grip.\n`
+    + `Light: two-softbox studio setup, soft directional key from the upper left, gentle fill from the right, crisp controlled specular highlights, one soft contact shadow under the products.\n`
+    + `Rendering: honest high-end commercial product photography, accurate neutral colours, medium contrast, no filter, no illustration, no 3D render look.\n`
+    + `Keep the objects completely unbranded: bare surfaces, no text, no letters, no numbers, no logos anywhere in the image. No people, no hands.`
 }
 
 /** Cibles d'un visuel de catalogue : couverture, 4e, ou LOGO de marque. */
@@ -72,7 +80,12 @@ async function cutout(blob: Blob, mimeType: string): Promise<{ blob: Blob; mimeT
     URL.revokeObjectURL(url)
     return { blob: png, mimeType: 'image/png' }
   } catch (e) {
+    // Repli VISIBLE : un carré blanc autour du logo doit s'expliquer, sinon il
+    // se confond avec « la fonctionnalité n'est pas déployée ».
     console.warn('[catalogue] détourage de l’emblème indisponible, fond conservé :', e)
+    toast.warning('Emblème généré, mais le détourage a échoué — le fond blanc est conservé', {
+      description: 'Service de détourage indisponible. Relancez « Emblème IA » ou chargez un PNG transparent.',
+    })
     return { blob, mimeType }
   } finally {
     URL.revokeObjectURL(src)
