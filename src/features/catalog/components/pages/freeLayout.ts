@@ -561,8 +561,16 @@ export function applyMagneticFlow(card: HTMLElement, style: CatalogCardStyle, wi
  * écart au bord bas : 2 % = tout en bas) ; un bloc centré se range au milieu.
  */
 export function cardObjectOrder(style: CatalogCardStyle, wide: boolean, ids: CardObjectId[]): CardObjectId[] {
-  const rank = (id: CardObjectId): number => {
+  const rank = (id: CardObjectId, seen = new Set<CardObjectId>()): number => {
     const b = freeLayoutBox(id, style, wide)
+    // Bloc LIÉ : il est rendu contre sa CIBLE (soudé à sa droite), pas à son `y`
+    // stocké — il se range juste après elle. Sans ça, glisser la réf en tête de
+    // fiche laissait l'unité affichée en bas de liste alors qu'elle la suivait
+    // en haut. `seen` borne les chaînes (les cycles sont déjà purgés en amont).
+    if (b.link && !seen.has(id)) {
+      seen.add(id)
+      return rank(b.link, seen) + 0.01
+    }
     const ay = b.ay ?? 't'
     return ay === 'b' ? 200 - b.y : ay === 'c' ? 50 : b.y
   }

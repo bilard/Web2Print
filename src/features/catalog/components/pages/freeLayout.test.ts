@@ -443,3 +443,13 @@ test('cardObjectOrder : la liste suit l\'ordre RÉEL de la fiche (ancré bas en 
   const swapped = reorderCardObjects(DEFAULT_CARD_STYLE, false, ['description', 'name'], 'description')
   expect(cardObjectOrder(swapped, false, ['name', 'description'])).toEqual(['description', 'name'])
 })
+
+test('cardObjectOrder : un bloc LIÉ suit sa cible dans la liste (jamais son y stocké)', () => {
+  // Défaut : unit (y 94) est soudée à ref (y 90) → elle la suit.
+  expect(cardObjectOrder(DEFAULT_CARD_STYLE, false, ['unit', 'name', 'ref']))
+    .toEqual(['name', 'ref', 'unit'])
+  // Réf glissée EN TÊTE : l'unité soudée reste juste derrière elle, en tête aussi.
+  const moved = reorderCardObjects(DEFAULT_CARD_STYLE, false, ['ref', 'brand', 'name'], 'ref')
+  expect(cardObjectOrder(moved, false, ['brand', 'name', 'ref', 'unit']))
+    .toEqual(['ref', 'unit', 'brand', 'name'])
+})
