@@ -386,12 +386,8 @@ export function comparePeers(
 const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, ComparePricesOutputs> = {
   type: 'compare-prices',
   category: 'logic',
-  label: 'Comparer les prix',
-  description:
-    'Compare les produits d’une SOURCE aux mêmes produits chez des CONCURRENTS (deux entrées). ' +
-    'Sortie : une ligne par produit source (tous conservés), prix par concurrent, écart et position. ' +
-    'Appariement par référence modèle (tolérant aux troncatures, ex RBC36X2↔RBC36X26B), EAN en secours. ' +
-    'Les deux entrées acceptent une page liste (URL) ou un import Excel/Sheets.',
+  labelKey: 'node.compare-prices.label',
+  descriptionKey: 'node.compare-prices.desc',
   icon: Scale,
   inputs: [
     // source optionnel : en mode « entre pairs » (noSource) on n'a pas de source,

@@ -50,10 +50,8 @@ const priceWatchTrackNode: NodeSpec<TrackConfig, TrackInputs, { changes?: ExcelS
   // d'alertes (port `changes` → Telegram) sera réintroduit côté Comparer.
   hidden: true,
   category: 'logic',
-  label: 'Veille tarifaire',
-  description:
-    "Compare les prix de tes produits (feuille en entrée) chez des concurrents (sites en config). " +
-    "Retrouve chaque produit (SKU/EAN, sinon nom+marque), scrape le prix, et n'émet « changes » que s'il y a des alertes (positionnement / variation).",
+  labelKey: 'node.price-watch-track.label',
+  descriptionKey: 'node.price-watch-track.desc',
   icon: TrendingUpDown,
   inputs: [{ name: 'products', type: 'sheet', required: true }],
   outputs: [

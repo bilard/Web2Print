@@ -567,9 +567,8 @@ const sendGmailNode: NodeSpec<
 > = {
   type: 'send-gmail',
   category: 'communication',
-  label: 'Envoyer via Gmail',
-  description:
-    "Envoie un email via Gmail API en réutilisant la connexion Google globale (Paramètres → Connecteurs). Une seule connexion, partagée avec le cron — rien à reconnecter.",
+  labelKey: 'node.send-gmail.label',
+  descriptionKey: 'node.send-gmail.desc',
   icon: Mail,
   inputs: [
     { name: 'data', type: 'any' },

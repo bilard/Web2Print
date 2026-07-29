@@ -192,9 +192,8 @@ const webhookNode: NodeSpec<
 > = {
   type: 'webhook-post',
   category: 'communication',
-  label: 'Webhook / Make',
-  description:
-    'Envoie une requête HTTP (POST/PUT/PATCH) vers une URL de webhook externe. Passerelle vers Make et ses 2000+ apps : pousse les données du workflow, récupère optionnellement la réponse.',
+  labelKey: 'node.webhook-post.label',
+  descriptionKey: 'node.webhook-post.desc',
   icon: Webhook,
   inputs: [{ name: 'data', type: 'any' }],
   outputs: [

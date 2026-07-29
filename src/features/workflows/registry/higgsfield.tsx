@@ -462,9 +462,8 @@ function HiggsfieldConfigUi({
 const higgsfieldNode: NodeSpec<HiggsfieldConfig, HiggsfieldInputs, { assets: HiggsfieldAsset[]; file: File | null }> = {
   type: 'higgsfield',
   category: 'enrichment',
-  label: 'Higgsfield (image/vidéo IA)',
-  description:
-    'Génère une image (Soul) ou une vidéo (DoP image→vidéo) via Higgsfield — styles & mouvements/caméra du catalogue. Sort des assets chaînables vers Save DAM.',
+  labelKey: 'node.higgsfield.label',
+  descriptionKey: 'node.higgsfield.desc',
   icon: Clapperboard,
   connectors: ['higgsfield'],
   inputs: [

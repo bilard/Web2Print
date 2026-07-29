@@ -73,11 +73,8 @@ function statusSheet(rows: Record<string, unknown>[]): ExcelSheet {
 const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutputs> = {
   type: 'harvest-competitor',
   category: 'import',
-  label: 'Moisson concurrents',
-  description:
-    "Parcourt les catalogues concurrents (pages liste) et construit un index persistant " +
-    "prix/référence/stock. Un lot de pages par run ; sur cron, les ticks accumulent puis " +
-    "rafraîchissent. Ne fait transiter aucune donnée volumineuse — l'index vit dans Firestore.",
+  labelKey: 'node.harvest-competitor.label',
+  descriptionKey: 'node.harvest-competitor.desc',
   icon: TrendingUpDown,
   connectors: ['jina'],
   // Port `sites` (facultatif) : brancher un node « Sites sources » remplace la textarea

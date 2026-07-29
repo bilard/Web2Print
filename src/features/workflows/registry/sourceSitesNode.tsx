@@ -16,11 +16,8 @@ type SourceSitesOutputs = { sites: SourceSitesPayload }
 const sourceSitesNode: NodeSpec<SourceSitesNodeConfig, Record<string, never>, SourceSitesOutputs> = {
   type: 'source-sites',
   category: 'import',
-  label: 'Sites sources',
-  description:
-    "Gestionnaire central des sites concurrents : activation individuelle, moteur de " +
-    "scraping, stats de collecte par site. Branche sa sortie sur « Moisson concurrents » " +
-    "et « Comparer catalogue » — une seule liste à maintenir, watchId partagé garanti.",
+  labelKey: 'node.source-sites.label',
+  descriptionKey: 'node.source-sites.desc',
   icon: ListChecks,
   inputs: [],
   outputs: [{ name: 'sites', type: 'sites' }],

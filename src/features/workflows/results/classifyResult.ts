@@ -7,6 +7,7 @@ import { nodeRegistry } from '../registry'
 import { numericColumnKeys } from './columnTypes'
 import type { Workflow } from '../types'
 import type { ResultKind, ResultPanel } from './types'
+import { t } from '@/lib/i18n'
 
 const PORT_PRIORITY = ['chart', 'sheet', 'products', 'result', 'assets', 'file']
 const VISUAL: ResultKind[] = ['dashboard', 'table', 'chart', 'gallery']
@@ -55,7 +56,7 @@ function classifyValue(value: unknown): ResultKind {
 function labelFor(wf: Workflow, id: string): string {
   const node = wf.nodes.find((n) => n.id === id)
   const spec = node ? nodeRegistry.get(node.type) : undefined
-  return spec?.label ?? node?.type ?? id
+  return spec ? t(spec.labelKey) : node?.type ?? id
 }
 
 function panelFor(wf: Workflow, id: string, outputs: Record<string, Record<string, unknown>>): ResultPanel | null {

@@ -3,19 +3,19 @@ import { validateWorkflow } from './validateWorkflow'
 import type { Workflow, NodeSpec } from '../types'
 
 const spec = (over: Partial<NodeSpec>): NodeSpec => ({
-  type: 't', category: 'import', label: 'T', description: '', icon: (() => null) as unknown as NodeSpec['icon'],
+  type: 't', category: 'import', labelKey: 'node.upload.label', icon: (() => null) as unknown as NodeSpec['icon'],
   inputs: [], outputs: [], configSchema: [], defaultConfig: {}, runtime: 'client',
   run: async () => ({}), ...over,
 })
 
 const REG: Record<string, NodeSpec> = {
-  upload: spec({ type: 'upload', label: 'Upload' }),
+  upload: spec({ type: 'upload', labelKey: 'node.upload.label' }),
   compare: spec({
-    type: 'compare', label: 'Comparer',
+    type: 'compare', labelKey: 'node.upload.label',
     inputs: [{ name: 'products', type: 'sheet', required: true }, { name: 'harvest', type: 'any' }],
     configSchema: [{ name: 'sites', kind: 'textarea', label: 'Sites concurrents', required: true }],
   }),
-  export: spec({ type: 'export', label: 'Export', inputs: [{ name: 'sheet', type: 'sheet', required: true }] }),
+  export: spec({ type: 'export', labelKey: 'node.upload.label', inputs: [{ name: 'sheet', type: 'sheet', required: true }] }),
 }
 const getSpec = (t: string) => REG[t]
 
@@ -71,9 +71,9 @@ describe('validateWorkflow', () => {
   describe('sites via port OU config (Sites sources)', () => {
     const REG2: Record<string, NodeSpec> = {
       ...REG,
-      'source-sites': spec({ type: 'source-sites', label: 'Sites sources', outputs: [{ name: 'sites', type: 'sites' }] }),
+      'source-sites': spec({ type: 'source-sites', labelKey: 'node.upload.label', outputs: [{ name: 'sites', type: 'sites' }] }),
       'harvest-competitor': spec({
-        type: 'harvest-competitor', label: 'Moisson',
+        type: 'harvest-competitor', labelKey: 'node.upload.label',
         inputs: [{ name: 'sites', type: 'sites' }],
         configSchema: [{ name: 'sites', kind: 'textarea', label: 'Sites concurrents' }],
       }),
@@ -104,8 +104,8 @@ describe('validateWorkflow', () => {
 })
 
 describe('cohérence ENTRE nodes (Veille tarifaire)', () => {
-  const spec = (type: string, label: string): NodeSpec => ({
-    type, label, description: '', category: 'utility', icon: (() => null) as never,
+  const spec = (type: string, _label: string): NodeSpec => ({
+    type, labelKey: 'node.upload.label',  category: 'utility', icon: (() => null) as never,
     inputs: [], outputs: [], configSchema: [], defaultConfig: {}, runtime: 'client',
     run: async () => ({}),
   })

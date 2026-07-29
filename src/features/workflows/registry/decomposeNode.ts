@@ -54,9 +54,8 @@ const decomposeNode: NodeSpec<
 > = {
   type: 'decompose',
   category: 'transformation',
-  label: 'Décomposer (SVG éditable)',
-  description:
-    'Analyse le SVG via Google Vision et superpose des blocs de texte Fabric éditables (bandeaux, prix, mentions). Réutilise le même moteur que le bouton « Décomposer » de l\'éditeur.',
+  labelKey: 'node.decompose.label',
+  descriptionKey: 'node.decompose.desc',
   icon: Wand2,
   inputs: [{ name: 'svg', type: 'file', required: true }],
   outputs: [{ name: 'svg', type: 'file' }],

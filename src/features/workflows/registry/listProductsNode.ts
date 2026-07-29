@@ -424,11 +424,8 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
   hidden: true,
   // Source autonome (URL → produits) : doit pouvoir démarrer un workflow seule.
   category: 'import',
-  label: 'Produits d’une page liste',
-  description:
-    'Lit une page CATÉGORIE / résultats de recherche e-commerce (pas une fiche) via Jina (mode listing, anti-bot), ' +
-    'puis fait extraire par le LLM tous les produits affichés : nom, marque, EAN, prix, URL. ' +
-    'Chaque ligne est taguée par « site ». Chaîner avec « Comparer les prix » pour un tableau source↔cible.',
+  labelKey: 'node.list-products.label',
+  descriptionKey: 'node.list-products.desc',
   icon: ListChecks,
   inputs: [],
   outputs: [{ name: 'sheet', type: 'sheet' }],

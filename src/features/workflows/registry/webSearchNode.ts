@@ -33,10 +33,8 @@ export const webSearchNode: NodeSpec<WebSearchConfig, WebSearchInputs, WebSearch
   type: 'web-search',
   hidden: true,
   category: 'import',
-  label: 'Recherche web',
-  description:
-    'Interroge le web (Jina) sur une requête et lit les premières pages de résultats. ' +
-    'Produit un tableau (titre/url/description) et un texte de synthèse réutilisable en aval.',
+  labelKey: 'node.web-search.label',
+  descriptionKey: 'node.web-search.desc',
   icon: Search,
   inputs: [{ name: 'query', type: 'any', required: false }],
   outputs: [

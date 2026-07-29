@@ -1,5 +1,6 @@
 import { nodeRegistry } from '../registry'
 import type { Port, NodeSpec } from '../types'
+import { translate } from '@/lib/i18n'
 
 function fmtPorts(ports: Port[]): string {
   if (ports.length === 0) return '(aucun)'
@@ -31,8 +32,8 @@ function fmtConfig(spec: NodeSpec): string {
 
 function fmtNode(spec: NodeSpec): string {
   return [
-    `- type: ${spec.type} | cat: ${spec.category} | ${spec.label}`,
-    `  desc: ${spec.description}`,
+    `- type: ${spec.type} | cat: ${spec.category} | ${translate('fr', spec.labelKey)}`,
+    `  desc: ${spec.descriptionKey ? translate('fr', spec.descriptionKey) : ''}`,
     `  in: ${fmtPorts(spec.inputs)}`,
     `  out: ${fmtPorts(spec.outputs)}`,
     `  config: ${fmtConfig(spec)}`,

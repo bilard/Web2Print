@@ -61,7 +61,8 @@ function ConnectionsPanel({ node, wf, onRemoveEdge }: ConnectionsPanelProps) {
   const labelFor = (id: string) => {
     const n = wf.nodes.find((x) => x.id === id)
     if (!n) return id.slice(0, 8)
-    return nodeRegistry.get(n.type)?.label ?? n.type
+    const sp = nodeRegistry.get(n.type)
+    return sp ? t(sp.labelKey) : n.type
   }
 
   const renderEdge = (e: WorkflowEdge, dir: 'in' | 'out') => {
@@ -144,10 +145,10 @@ function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
   const sourceNode = wf.nodes.find((n) => n.id === edge.source)
   const targetNode = wf.nodes.find((n) => n.id === edge.target)
   const sourceLabel = sourceNode
-    ? nodeRegistry.get(sourceNode.type)?.label ?? sourceNode.type
+    ? (() => { const sp = nodeRegistry.get(sourceNode.type); return sp ? t(sp.labelKey) : sourceNode.type })()
     : edge.source
   const targetLabel = targetNode
-    ? nodeRegistry.get(targetNode.type)?.label ?? targetNode.type
+    ? (() => { const sp = nodeRegistry.get(targetNode.type); return sp ? t(sp.labelKey) : targetNode.type })()
     : edge.target
   const sourceSpec = sourceNode ? nodeRegistry.get(sourceNode.type) : undefined
   const targetSpec = targetNode ? nodeRegistry.get(targetNode.type) : undefined
@@ -384,7 +385,7 @@ export function NodeConfigPanel() {
         </p>
       ) : (
         <div className="flex flex-col min-h-0 flex-1 space-y-3">
-          <div className="text-sm font-medium text-white shrink-0">{spec.label}</div>
+          <div className="text-sm font-medium text-white shrink-0">{t(spec.labelKey)}</div>
 
           {/* Onglets Config / Logs */}
           <div className="flex items-center gap-1 border-b border-white/10 shrink-0">

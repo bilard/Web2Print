@@ -47,9 +47,8 @@ const generateImageNode: NodeSpec<
 > = {
   type: 'generate-image',
   category: 'enrichment',
-  label: 'Génération image (Image IA)',
-  description:
-    "Génère une ou plusieurs images via Gemini Image IA à partir d'un prompt (option : image de référence en entrée).",
+  labelKey: 'node.generate-image.label',
+  descriptionKey: 'node.generate-image.desc',
   icon: ImagePlus,
   inputs: [{ name: 'reference', type: 'file', required: false }],
   outputs: [

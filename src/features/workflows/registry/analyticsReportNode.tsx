@@ -77,9 +77,8 @@ function AnalyticsReportConfigUi({
 const analyticsReportNode: NodeSpec<AnalyticsReportConfig, Record<string, never>, AnalyticsReportOutputs> = {
   type: 'analytics-report',
   category: 'export',
-  label: 'Rapport de fréquentation',
-  description:
-    'Génère un rapport HTML du trafic du site (pages vues, visiteurs, sessions, durée, top pages/sources/pays) sur une période — à stocker sur Drive ou envoyer par mail.',
+  labelKey: 'node.analytics-report.label',
+  descriptionKey: 'node.analytics-report.desc',
   icon: BarChart3,
   inputs: [],
   // `file` en tête : sortie à relier vers « Export Google Drive » (port file) ou

@@ -82,9 +82,8 @@ const priceWatchNode: NodeSpec<
 > = {
   type: 'price-watch',
   category: 'logic',
-  label: 'Veille prix',
-  description:
-    "Compare les prix de la sheet avec ceux du run précédent (état mémorisé) et n'émet « changes » que si des prix ont varié au-delà du seuil — idéal avant un node Telegram.",
+  labelKey: 'node.price-watch.label',
+  descriptionKey: 'node.price-watch.desc',
   icon: TrendingUpDown,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [

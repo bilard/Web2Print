@@ -12,8 +12,7 @@ const stub = (
 ): NodeSpec => ({
   type,
   category: 'utility',
-  label: type,
-  description: '',
+  labelKey: 'node.upload.label',
   icon: Box,
   inputs:
     type === 'parse'

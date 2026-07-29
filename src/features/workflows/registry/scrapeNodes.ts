@@ -91,10 +91,8 @@ const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, ScrapeUrlO
   type: 'scrape-url',
   hidden: true,
   category: 'import',
-  label: 'Scrape URL',
-  description:
-    'Scrape une ou plusieurs URLs via Jina + LLM (cascade scrape produit complet). ' +
-    'Modèle IA routé automatiquement par tâche (toujours à jour) — pas de réglage manuel.',
+  labelKey: 'node.scrape-url.label',
+  descriptionKey: 'node.scrape-url.desc',
   icon: Globe,
   inputs: [],
   outputs: [

@@ -175,9 +175,8 @@ export const sendTelegramNode: NodeSpec<
 > = {
   type: 'send-telegram',
   category: 'communication',
-  label: 'Envoyer via Telegram',
-  description:
-    "Envoie un message (et un fichier optionnel) vers un chat Telegram via un bot. Appel direct à l'API, aucun backend.",
+  labelKey: 'node.send-telegram.label',
+  descriptionKey: 'node.send-telegram.desc',
   icon: Send,
   inputs: [
     { name: 'data', type: 'any' },

@@ -47,10 +47,8 @@ export const webAskNode: NodeSpec<WebAskConfig, WebAskInputs, WebAskOutputs> = {
   // doit pouvoir démarrer un workflow seule. La palette verrouille l'enrichissement
   // tant qu'aucun import n'est posé. Cohérent avec web-search / scrape-url (sources web).
   category: 'import',
-  label: 'Question web (IA)',
-  description:
-    'Pose une question : recherche le web (Jina), lit les premières pages, puis fait ' +
-    "synthétiser une réponse par le LLM ancrée sur les sources. Sortie : réponse (text) + sources (sheet).",
+  labelKey: 'node.web-ask.label',
+  descriptionKey: 'node.web-ask.desc',
   icon: Sparkles,
   inputs: [{ name: 'question', type: 'any', required: false }],
   outputs: [

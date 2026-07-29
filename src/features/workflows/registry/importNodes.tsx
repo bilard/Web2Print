@@ -32,8 +32,8 @@ interface CsvConfig {
 const importCsvNode: NodeSpec<CsvConfig, { file: File }, { sheet: unknown }> = {
   type: 'import-csv',
   category: 'import',
-  label: 'Parser Excel/CSV',
-  description: "Transformateur : prend un fichier .csv/.xlsx en entrée et produit une Sheet (premier onglet).",
+  labelKey: 'node.import-csv.label',
+  descriptionKey: 'node.import-csv.desc',
   icon: FileSpreadsheet,
   inputs: [{ name: 'file', type: 'file', required: true }],
   outputs: [{ name: 'sheet', type: 'sheet' }],
@@ -62,9 +62,8 @@ interface IdmlConfig {}
 const importIdmlNode: NodeSpec<IdmlConfig, { file?: File; files?: File[] }, { sheet: unknown }> = {
   type: 'import-idml',
   category: 'import',
-  label: 'Import IDML',
-  description:
-    "Charge un .idml seul (port 'file') ou un dossier Assembly complet avec PDF + fonts + Links (port 'files').",
+  labelKey: 'node.import-idml.label',
+  descriptionKey: 'node.import-idml.desc',
   icon: FileText,
   inputs: [
     { name: 'file', type: 'file' },
@@ -100,8 +99,8 @@ interface SvgConfig {}
 const importSvgNode: NodeSpec<SvgConfig, { file: File }, { sheet: unknown }> = {
   type: 'import-svg',
   category: 'import',
-  label: 'Import SVG',
-  description: 'Charge un .svg. (Phase 2 : produira une Sheet avec les métadonnées du document.)',
+  labelKey: 'node.import-svg.label',
+  descriptionKey: 'node.import-svg.desc',
   icon: FileImage,
   inputs: [{ name: 'file', type: 'file', required: true }],
   outputs: [{ name: 'sheet', type: 'sheet' }],
@@ -122,9 +121,8 @@ interface ImageToSvgConfig {}
 const imageToSvgNode: NodeSpec<ImageToSvgConfig, { file: File }, { svg: File }> = {
   type: 'image-to-svg',
   category: 'import',
-  label: 'Image → SVG éditable',
-  description:
-    "Transformateur : prend une image raster (.png/.jpg/.webp/.gif) et produit un SVG éditable (raster verrouillé en fond + overlays vectoriels décomposables).",
+  labelKey: 'node.image-to-svg.label',
+  descriptionKey: 'node.image-to-svg.desc',
   icon: Wand2,
   inputs: [{ name: 'file', type: 'file', required: true }],
   outputs: [{ name: 'svg', type: 'file' }],
@@ -148,9 +146,8 @@ interface PdfToSvgConfig {}
 const pdfToSvgNode: NodeSpec<PdfToSvgConfig, { file: File }, { svg: File }> = {
   type: 'pdf-to-svg',
   category: 'import',
-  label: 'PDF → SVG éditable',
-  description:
-    "Transformateur : rasterise la page 1 d'un .pdf et produit un SVG éditable (raster verrouillé en fond + overlays vectoriels décomposables).",
+  labelKey: 'node.pdf-to-svg.label',
+  descriptionKey: 'node.pdf-to-svg.desc',
   icon: FileType,
   inputs: [{ name: 'file', type: 'file', required: true }],
   outputs: [{ name: 'svg', type: 'file' }],
@@ -174,9 +171,8 @@ interface ImportPptxConfig {}
 const importPptxNode: NodeSpec<ImportPptxConfig, { file: File }, { file: File }> = {
   type: 'import-pptx',
   category: 'import',
-  label: 'Import PPTX',
-  description:
-    "Charge un .pptx (PowerPoint) et le passe en aval. L'édition des slides se fait dans l'éditeur après import.",
+  labelKey: 'node.import-pptx.label',
+  descriptionKey: 'node.import-pptx.desc',
   icon: Presentation,
   inputs: [{ name: 'file', type: 'file', required: true }],
   outputs: [{ name: 'file', type: 'file' }],
@@ -199,9 +195,8 @@ interface ImportImageConfig {}
 const importImageNode: NodeSpec<ImportImageConfig, { file: File }, { file: File }> = {
   type: 'import-image',
   category: 'import',
-  label: 'Importer une image',
-  description:
-    'Charge une image raster (.png/.jpg/.webp/.gif) et la passe en aval — typiquement vers « Image → SVG éditable ».',
+  labelKey: 'node.import-image.label',
+  descriptionKey: 'node.import-image.desc',
   icon: ImageIcon,
   inputs: [{ name: 'file', type: 'file', required: true }],
   outputs: [{ name: 'file', type: 'file' }],
@@ -625,9 +620,8 @@ const uploadNode: NodeSpec<
 > = {
   type: 'upload',
   category: 'import',
-  label: 'Upload',
-  description:
-    'Sélectionne un fichier ou un dossier local. Les CSV/Excel sont auto-parsés : leurs colonnes deviennent des variables {{...}} et les rows sortent sur le port `rows`.',
+  labelKey: 'node.upload.label',
+  descriptionKey: 'node.upload.desc',
   icon: Upload,
   inputs: [],
   outputs: [

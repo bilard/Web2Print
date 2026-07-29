@@ -40,11 +40,8 @@ const crawlNode: NodeSpec<CrawlConfig, Record<string, never>, CrawlOutputs> = {
   type: 'crawl',
   hidden: true,
   category: 'import',
-  label: 'Crawl (découverte de fiches)',
-  description:
-    'URL de page catégorie → découvre les liens de fiches produit (cartes de la grille, ' +
-    'anti-bot + scroll) → enrichit CHAQUE fiche (specs, images, docs…) → une feuille. ' +
-    'Plus profond que « Liste » (qui lit la page seule). Client uniquement (pas de cron).',
+  labelKey: 'node.crawl.label',
+  descriptionKey: 'node.crawl.desc',
   icon: Network,
   inputs: [],
   outputs: [

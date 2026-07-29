@@ -3,6 +3,7 @@ import { isCompatible } from '../runtime/ports'
 import { topoSort } from '../runtime/topo'
 import type { WorkflowNode, WorkflowEdge } from '../types'
 import type { RawGraph, GraphIssue, ValidatedGraph } from './types'
+import { t } from '@/lib/i18n'
 
 function defaultGenId(i: number): string {
   return `n_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`
@@ -110,7 +111,7 @@ export function validateGraph(
     const spec = nodeRegistry.get(n.type)!
     for (const p of spec.inputs) {
       if (p.required && !edges.some((e) => e.target === n.id && e.targetHandle === p.name)) {
-        issues.push({ level: 'warning', message: `Entrée requise "${p.name}" non connectée sur ${spec.label}.` })
+        issues.push({ level: 'warning', message: `Entrée requise "${p.name}" non connectée sur ${t(spec.labelKey)}.` })
       }
     }
   }

@@ -20,10 +20,8 @@ const enrichmentNode: NodeSpec<
 > = {
   type: 'enrichment',
   category: 'enrichment',
-  label: 'Enrichissement',
-  description:
-    "Scrape les URLs d'une colonne et complète les champs cibles via LLM. " +
-    'Modèle IA routé automatiquement par tâche (toujours à jour) — pas de réglage manuel.',
+  labelKey: 'node.enrichment.label',
+  descriptionKey: 'node.enrichment.desc',
   icon: Sparkles,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [

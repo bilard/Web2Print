@@ -173,9 +173,8 @@ const telegramApprovalNode: NodeSpec<
 > = {
   type: 'telegram-approval',
   category: 'communication',
-  label: 'Approbation Telegram',
-  description:
-    'Met le run en pause et demande une validation humaine sur Telegram (boutons ✅/❌). Reprend sur le port « approved » ou « rejected » selon la réponse.',
+  labelKey: 'node.telegram-approval.label',
+  descriptionKey: 'node.telegram-approval.desc',
   icon: UserCheck,
   inputs: [
     { name: 'data', type: 'any' },

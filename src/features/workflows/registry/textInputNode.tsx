@@ -35,9 +35,8 @@ function TextInputConfigUi({ config, onChange }: TextInputConfigUiProps) {
 export const textInputNode: NodeSpec<TextInputConfig, Record<string, never>, { text: string }> = {
   type: 'text-input',
   category: 'import',
-  label: 'Saisie texte',
-  description:
-    "Saisis un texte directement, sans fichier — source pour un message, un prompt ou une valeur à interpoler.",
+  labelKey: 'node.text-input.label',
+  descriptionKey: 'node.text-input.desc',
   icon: Type,
   inputs: [],
   outputs: [{ name: 'text', type: 'any' }],

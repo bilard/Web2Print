@@ -13,6 +13,7 @@
 // PUR : le resolver de spec est injecté (testable sans registre).
 import type { Workflow, NodeSpec } from '../types'
 import { deriveWatchId } from '@/features/priceWatch/sourceSites'
+import { t } from '@/lib/i18n'
 
 export interface WorkflowIssue {
   nodeId: string
@@ -90,7 +91,7 @@ function crossNodeIssues(
 ): WorkflowIssue[] {
   const issues: WorkflowIssue[] = []
   const active = wf.nodes.filter((n) => willRun(n.id))
-  const labelOf = (t: string) => getSpec(t)?.label ?? t
+  const labelOf = (type: string) => { const sp = getSpec(type); return sp ? t(sp.labelKey) : type }
 
   // 1. Un seul suivi par workflow. La moisson écrit sous `watchId`, le comparatif relit
   //    sous le sien : deux valeurs = index introuvable, rapport vide, aucun message.
@@ -149,7 +150,7 @@ export function validateWorkflow(
   for (const node of wf.nodes) {
     if (!willRun(node.id)) continue
     const spec = getSpec(node.type)
-    const label = spec?.label ?? node.type
+    const label = spec ? t(spec.labelKey) : node.type
     if (!spec) {
       issues.push({ nodeId: node.id, nodeLabel: label, severity: 'error', message: `Type de node inconnu (« ${node.type} »).` })
       continue

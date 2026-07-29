@@ -44,11 +44,8 @@ const browserActNode: NodeSpec<BrowserActConfig, BrowserActInputs, BrowserActOut
   // 'import' : c'est une SOURCE autonome (un bot rend des données sans entrée amont),
   // donc elle doit pouvoir démarrer un workflow seule.
   category: 'import',
-  label: 'BrowserAct (bot)',
-  description:
-    'Exécute un bot BrowserAct et récupère ses données. Pour les sites qu’aucun lecteur ' +
-    'de page ne passe (Amazon, LinkedIn, anti-bot durs) : le bot est construit dans le ' +
-    'tableau de bord BrowserAct, ce node le lance avec ses paramètres et attend le résultat.',
+  labelKey: 'node.browseract.label',
+  descriptionKey: 'node.browseract.desc',
   icon: Bot,
   connectors: ['browseract'],
   inputs: [{ name: 'value', type: 'any', required: false }],

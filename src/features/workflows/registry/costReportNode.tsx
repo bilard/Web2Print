@@ -66,9 +66,8 @@ function CostReportConfigUi({
 const costReportNode: NodeSpec<CostReportConfig, Record<string, never>, CostReportOutputs> = {
   type: 'cost-report',
   category: 'export',
-  label: 'Rapport de coûts IA',
-  description:
-    'Génère un rapport HTML/CSS de la consommation IA & scraping du mois (tokens, coûts €/$, soldes, Bright Data) — à stocker sur Drive ou envoyer par mail.',
+  labelKey: 'node.cost-report.label',
+  descriptionKey: 'node.cost-report.desc',
   icon: ReceiptText,
   inputs: [],
   // `file` en tête : c'est la sortie à relier vers « Export Google Drive » (port file)

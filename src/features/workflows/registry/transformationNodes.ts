@@ -41,9 +41,8 @@ const setFieldsNode: NodeSpec<
 > = {
   type: 'transform-set-fields',
   category: 'transformation',
-  label: 'Définir / réécrire colonnes',
-  description:
-    "Ajoute ou modifie des colonnes, une entrée par ligne. `col = template {{x}}` (texte interpolé) OU `col := expression` (calcul JS sur la ligne, ex. row.a - row.b). Les nouvelles colonnes sont ajoutées à l'export.",
+  labelKey: 'node.transform-set-fields.label',
+  descriptionKey: 'node.transform-set-fields.desc',
   icon: Wand2,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'sheet', type: 'sheet' }],
@@ -150,9 +149,8 @@ const filterNode: NodeSpec<
 > = {
   type: 'transform-filter',
   category: 'transformation',
-  label: 'Filtrer lignes',
-  description:
-    "Garde les lignes pour lesquelles l'expression JS retourne true. La ligne courante est exposée via `row`.",
+  labelKey: 'node.transform-filter.label',
+  descriptionKey: 'node.transform-filter.desc',
   icon: FilterIcon,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'sheet', type: 'sheet' }],
@@ -211,8 +209,8 @@ const sortNode: NodeSpec<
 > = {
   type: 'transform-sort',
   category: 'transformation',
-  label: 'Trier lignes',
-  description: 'Trie les lignes selon la valeur d\'une colonne.',
+  labelKey: 'node.transform-sort.label',
+  descriptionKey: 'node.transform-sort.desc',
   icon: ArrowDownUp,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'sheet', type: 'sheet' }],
@@ -284,8 +282,8 @@ const renameColumnsNode: NodeSpec<
 > = {
   type: 'transform-rename',
   category: 'transformation',
-  label: 'Renommer colonnes',
-  description: 'Renomme une ou plusieurs colonnes (mapping ancien = nouveau, une entrée par ligne).',
+  labelKey: 'node.transform-rename.label',
+  descriptionKey: 'node.transform-rename.desc',
   icon: PenLine,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'sheet', type: 'sheet' }],
@@ -343,9 +341,8 @@ const textOpNode: NodeSpec<
 > = {
   type: 'transform-text',
   category: 'transformation',
-  label: 'Opération texte',
-  description:
-    'Applique une opération texte (minuscules, majuscules, trim, remplacement, extraction regex) sur une colonne.',
+  labelKey: 'node.transform-text.label',
+  descriptionKey: 'node.transform-text.desc',
   icon: TypeIcon,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'sheet', type: 'sheet' }],

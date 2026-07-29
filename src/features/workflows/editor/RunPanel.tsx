@@ -113,7 +113,7 @@ function NodesTab() {
           <div key={id} className="bg-surface rounded p-2 text-xs">
             <div className="flex items-center justify-between gap-2">
               <span className="text-neutral-300 truncate">
-                {spec?.label ?? node?.type ?? id} <span className="text-neutral-600">· {st.status}</span>
+                {spec ? t(spec.labelKey) : node?.type ?? id} <span className="text-neutral-600">· {st.status}</span>
               </span>
               <div className="flex items-center gap-2 shrink-0">
                 {exportResult ? (
@@ -161,7 +161,8 @@ export function RunPanel() {
   })
   const nodeName = (id: string) => {
     const n = wf?.nodes.find((x) => x.id === id)
-    return (n && (nodeRegistry.get(n.type)?.label || n.type)) || id
+    const sp = n ? nodeRegistry.get(n.type) : undefined
+    return (sp ? t(sp.labelKey) : n?.type) || id
   }
   const nodeCount = Object.keys(states).filter((id) => (wf?.nodes ?? []).some((n) => n.id === id)).length
 

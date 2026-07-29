@@ -66,11 +66,8 @@ function toSheet(cols: MatrixColumn[], rows: Record<string, unknown>[]): ExcelSh
 const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs> = {
   type: 'compare-catalog',
   category: 'logic',
-  label: 'Comparer catalogue',
-  description:
-    "Croise ta feuille produits (référence / EAN / prix) avec l'index concurrent " +
-    "(node « Moisson concurrents »). Produit la matrice produit × concurrent : prix TTC, " +
-    "prix barré, prix HT recalculé, écart %, stock, lien. Appariement par égalité exacte.",
+  labelKey: 'node.compare-catalog.label',
+  descriptionKey: 'node.compare-catalog.desc',
   icon: Scale,
   inputs: [
     { name: 'products', type: 'sheet', required: true },

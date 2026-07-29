@@ -27,9 +27,8 @@ const WEEKDAY_OPTIONS = [
 const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string } }> = {
   type: 'cron',
   category: 'import',
-  label: 'Cron (planifié)',
-  description:
-    "Déclencheur planifié : exécute le workflow côté serveur à cadence régulière (minute / heure / jour / semaine / mois). « Heure » = à HH:MM (jour/semaine/mois) ; « Jour » = jour de semaine ciblé (unité semaine). Fuseau Europe/Paris. Le scanner serveur tourne toutes les minutes (granularité minimale 1 min). En option, la « Relance du cycle (calendrier) » suspend la cadence quand la moisson atteint 100 % sur tous les sites et relance le cycle complet au calendrier choisi (quotidien, jours de semaine, quantième mensuel ou dates précises). Active « Planification » et sauvegarde pour enregistrer.",
+  labelKey: 'node.cron.label',
+  descriptionKey: 'node.cron.desc',
   icon: CalendarClock,
   inputs: [],
   outputs: [{ name: 'tick', type: 'any' }],

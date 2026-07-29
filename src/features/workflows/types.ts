@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
+import type { TranslationKey } from '@/lib/i18n'
 
 export type PortType = string
 
@@ -50,8 +51,10 @@ export interface NodeSpec<C = unknown, I = unknown, O = unknown> {
     | 'utility'
     | 'logic'
     | 'communication'
-  label: string
-  description: string
+  /** ⚠️ CLÉS de traduction. Le `type` reste l'identifiant : c'est lui que
+   *  l'IA « prompt-to-flow » émet et que le moteur compare. */
+  labelKey: TranslationKey
+  descriptionKey?: TranslationKey
   icon: LucideIcon
   /** Masqué de la palette « + » (toujours enregistré/exécutable pour les workflows
    *  existants). Ex : anciens nodes de scraping remplacés par le node unifié. */

@@ -237,7 +237,8 @@ export function WorkflowEditorPage() {
               <>
                 {pausedNodeId && (() => {
                   const pausedNode = wf.nodes.find((n) => n.id === pausedNodeId)
-                  const label = pausedNode ? nodeRegistry.get(pausedNode.type)?.label ?? pausedNode.type : '?'
+                  const psp = pausedNode ? nodeRegistry.get(pausedNode.type) : undefined
+                  const label = psp ? t(psp.labelKey) : pausedNode?.type ?? '?'
                   return (
                     <button
                       onClick={() => useRunContext.getState().continueStep()}

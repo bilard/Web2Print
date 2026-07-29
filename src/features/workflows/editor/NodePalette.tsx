@@ -241,7 +241,7 @@ export function NodePalette() {
                   </h4>
                   {!step.required && unlocked ? (
                     <span className="text-[9px] text-neutral-600 uppercase tracking-wider">
-                      optionnel
+                      {t('wfp.optional')}
                     </span>
                   ) : null}
                 </div>
@@ -266,10 +266,10 @@ export function NodePalette() {
                           draggable
                           onDragStart={(e) => onDragStart(e, spec)}
                           className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] text-left bg-well border ${step.accent.border} ${step.accent.hoverBg} transition-colors cursor-grab active:cursor-grabbing`}
-                          title={spec.description}
+                          title={spec.descriptionKey ? t(spec.descriptionKey) : undefined}
                         >
                           <Icon className={`w-3.5 h-3.5 shrink-0 ${step.accent.text}`} />
-                          <span className="truncate text-white/90">{spec.label}</span>
+                          <span className="truncate text-white/90">{t(spec.labelKey)}</span>
                         </button>
                       </li>
                     )
@@ -286,7 +286,7 @@ export function NodePalette() {
                           title={prevLabel ? t('wfp.availableAfter', { label: prevLabel }) : t('wfp.locked')}
                         >
                           <Icon className="w-3.5 h-3.5 shrink-0 text-neutral-700" />
-                          <span className="truncate">{spec.label}</span>
+                          <span className="truncate">{t(spec.labelKey)}</span>
                         </div>
                       </li>
                     )

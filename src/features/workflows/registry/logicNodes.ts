@@ -13,9 +13,8 @@ const ifElseNode: NodeSpec<
 > = {
   type: 'if-else',
   category: 'logic',
-  label: 'If / Else',
-  description:
-    "Branche conditionnelle. Évalue une expression JS sur la valeur d'entrée et forwarde sur le port 'then' ou 'else'.",
+  labelKey: 'node.if-else.label',
+  descriptionKey: 'node.if-else.desc',
   icon: GitBranch,
   inputs: [{ name: 'value', type: 'any' }],
   outputs: [
@@ -57,9 +56,8 @@ const pipeNode: NodeSpec<
 > = {
   type: 'pipe',
   category: 'logic',
-  label: 'Pipe (chaîner expressions)',
-  description:
-    "Applique séquentiellement N expressions JS à la valeur d'entrée (style pipe / compose).",
+  labelKey: 'node.pipe.label',
+  descriptionKey: 'node.pipe.desc',
   icon: Pipette,
   inputs: [{ name: 'value', type: 'any' }],
   outputs: [{ name: 'result', type: 'any' }],
@@ -112,9 +110,8 @@ const loopEachNode: NodeSpec<
 > = {
   type: 'loop-each',
   category: 'logic',
-  label: 'Loop (each)',
-  description:
-    "Itère sur un tableau. Pour chaque élément, exécute le sous-graphe jusqu'au node 'Loop Collect' connecté en aval. Les configs des nodes du body peuvent référencer {{item}} ou {{item.X}}.",
+  labelKey: 'node.loop-each.label',
+  descriptionKey: 'node.loop-each.desc',
   icon: Repeat,
   inputs: [{ name: 'items', type: 'any', required: true }],
   outputs: [{ name: 'item', type: 'any' }],
@@ -146,9 +143,8 @@ const loopCollectNode: NodeSpec<
 > = {
   type: 'loop-collect',
   category: 'logic',
-  label: 'Loop (collect)',
-  description:
-    "Marque la fin d'une boucle foreach. Aggrège chaque valeur reçue sur 'item' en un tableau émis sur 'results'.",
+  labelKey: 'node.loop-collect.label',
+  descriptionKey: 'node.loop-collect.desc',
   icon: Sigma,
   inputs: [{ name: 'item', type: 'any' }],
   outputs: [{ name: 'results', type: 'any' }],

@@ -12,7 +12,7 @@ const makeWorkflow = (nodes: Workflow['nodes'], edges: Workflow['edges']): Workf
 })
 
 const noopSpec = (type: string, body?: (inputs: any) => unknown): NodeSpec => ({
-  type, category: 'utility', label: type, description: '', icon: Box,
+  type, category: 'utility', labelKey: 'node.upload.label', icon: Box,
   inputs: [{ name: 'in', type: 'sheet', required: false }],
   outputs: [{ name: 'out', type: 'sheet' }],
   configSchema: [], defaultConfig: {}, runtime: 'client',
@@ -149,20 +149,20 @@ describe('executeWorkflow', () => {
   it('runs loop body N times and aggregates results', async () => {
     // Source : émet un array de 3 éléments sur "items"
     nodeRegistry.register({
-      type: 'source-array', category: 'utility', label: 's', description: '', icon: Box,
+      type: 'source-array', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [], outputs: [{ name: 'items', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async () => ({ items: [{ name: 'a' }, { name: 'b' }, { name: 'c' }] }),
     })
     // Loop-each / Loop-collect : enregistrés avec le bon type, l'executor les gère
     nodeRegistry.register({
-      type: 'loop-each', category: 'logic', label: 'loop', description: '', icon: Box,
+      type: 'loop-each', category: 'logic', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'items', type: 'any' }], outputs: [{ name: 'item', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async (_c, _cfg, inputs) => ({ item: (inputs as any).items?.[0] }),
     })
     nodeRegistry.register({
-      type: 'loop-collect', category: 'logic', label: 'collect', description: '', icon: Box,
+      type: 'loop-collect', category: 'logic', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'item', type: 'any' }], outputs: [{ name: 'results', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async () => ({ results: [] }),
@@ -170,7 +170,7 @@ describe('executeWorkflow', () => {
     // Body : un node identité qui transforme item.name en uppercase via interpolation
     // Pour vérifier l'interpolation, on utilise un node qui retourne sa config 'value'.
     nodeRegistry.register({
-      type: 'echo-config', category: 'utility', label: 'echo', description: '', icon: Box,
+      type: 'echo-config', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'in', type: 'any' }], outputs: [{ name: 'out', type: 'any' }],
       configSchema: [], defaultConfig: { value: '' }, runtime: 'client',
       run: async (_c, config: any) => ({ out: config.value }),
@@ -198,7 +198,7 @@ describe('executeWorkflow', () => {
 
   it('loop exposes item props at root (CSV column names with spaces)', async () => {
     nodeRegistry.register({
-      type: 'source-csv', category: 'utility', label: 's', description: '', icon: Box,
+      type: 'source-csv', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [], outputs: [{ name: 'items', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async () => ({
@@ -209,19 +209,19 @@ describe('executeWorkflow', () => {
       }),
     })
     nodeRegistry.register({
-      type: 'loop-each', category: 'logic', label: 'loop', description: '', icon: Box,
+      type: 'loop-each', category: 'logic', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'items', type: 'any' }], outputs: [{ name: 'item', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async () => ({ item: undefined }),
     })
     nodeRegistry.register({
-      type: 'loop-collect', category: 'logic', label: 'collect', description: '', icon: Box,
+      type: 'loop-collect', category: 'logic', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'item', type: 'any' }], outputs: [{ name: 'results', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async () => ({ results: [] }),
     })
     nodeRegistry.register({
-      type: 'echo-config', category: 'utility', label: 'echo', description: '', icon: Box,
+      type: 'echo-config', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'in', type: 'any' }], outputs: [{ name: 'out', type: 'any' }],
       configSchema: [], defaultConfig: { value: '' }, runtime: 'client',
       run: async (_c, config: any) => ({ out: config.value }),
@@ -248,7 +248,7 @@ describe('executeWorkflow', () => {
 
   it('extracts rows from a Sheet object input (port `sheet` of Upload)', async () => {
     nodeRegistry.register({
-      type: 'source-sheet', category: 'utility', label: 's', description: '', icon: Box,
+      type: 'source-sheet', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [], outputs: [{ name: 'sheet', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async () => ({
@@ -263,7 +263,7 @@ describe('executeWorkflow', () => {
       }),
     })
     nodeRegistry.register({
-      type: 'echo-config', category: 'utility', label: 'echo', description: '', icon: Box,
+      type: 'echo-config', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'in', type: 'any' }], outputs: [{ name: 'out', type: 'any' }],
       configSchema: [], defaultConfig: { value: '' }, runtime: 'client',
       run: async (_c, config: any) => ({ out: config.value }),
@@ -283,13 +283,13 @@ describe('executeWorkflow', () => {
 
   it('joins array-of-rows columns by comma for interpolation (no loop, no iterate)', async () => {
     nodeRegistry.register({
-      type: 'source-rows', category: 'utility', label: 's', description: '', icon: Box,
+      type: 'source-rows', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [], outputs: [{ name: 'rows', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async () => ({ rows: [{ 'Nom produit': 'Perceuse', Prix: 99 }, { 'Nom produit': 'Marteau', Prix: 25 }] }),
     })
     nodeRegistry.register({
-      type: 'echo-config', category: 'utility', label: 'echo', description: '', icon: Box,
+      type: 'echo-config', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'in', type: 'any' }], outputs: [{ name: 'out', type: 'any' }],
       configSchema: [], defaultConfig: { value: '' }, runtime: 'client',
       run: async (_c, config: any) => ({ out: config.value }),
@@ -310,7 +310,7 @@ describe('executeWorkflow', () => {
   it('ignores re-entrant executeWorkflow calls', async () => {
     let callCount = 0
     nodeRegistry.register({
-      type: 'slow', category: 'utility', label: 's', description: '', icon: Box,
+      type: 'slow', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [], outputs: [{ name: 'out', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async () => {
@@ -386,25 +386,25 @@ describe('executeWorkflow', () => {
 
   it('loop with empty array produces empty results', async () => {
     nodeRegistry.register({
-      type: 'source-empty', category: 'utility', label: 's', description: '', icon: Box,
+      type: 'source-empty', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [], outputs: [{ name: 'items', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async () => ({ items: [] }),
     })
     nodeRegistry.register({
-      type: 'loop-each', category: 'logic', label: 'loop', description: '', icon: Box,
+      type: 'loop-each', category: 'logic', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'items', type: 'any' }], outputs: [{ name: 'item', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async () => ({ item: undefined }),
     })
     nodeRegistry.register({
-      type: 'loop-collect', category: 'logic', label: 'collect', description: '', icon: Box,
+      type: 'loop-collect', category: 'logic', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'item', type: 'any' }], outputs: [{ name: 'results', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async () => ({ results: [] }),
     })
     nodeRegistry.register({
-      type: 'pass', category: 'utility', label: 'pass', description: '', icon: Box,
+      type: 'pass', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'in', type: 'any' }], outputs: [{ name: 'out', type: 'any' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async (_c, _cfg, inputs: any) => ({ out: inputs.in }),
@@ -433,7 +433,7 @@ describe('executeWorkflow', () => {
     // séquentielles, maxInFlight reste à 1 ; en parallèle il dépasse 1.
     for (const t of ['s1', 's2', 's3']) {
       nodeRegistry.register({
-        type: t, category: 'utility', label: t, description: '', icon: Box,
+        type: t, category: 'utility', labelKey: 'node.upload.label', icon: Box,
         inputs: [], outputs: [{ name: 'out', type: 'sheet' }],
         configSchema: [], defaultConfig: {}, runtime: 'client',
         run: async () => {
@@ -447,7 +447,7 @@ describe('executeWorkflow', () => {
     }
     // Join : fan-in des 3 sources sur le même port → fusion des rows.
     nodeRegistry.register({
-      type: 'join', category: 'utility', label: 'join', description: '', icon: Box,
+      type: 'join', category: 'utility', labelKey: 'node.upload.label', icon: Box,
       inputs: [{ name: 'in', type: 'sheet' }], outputs: [{ name: 'out', type: 'sheet' }],
       configSchema: [], defaultConfig: {}, runtime: 'client',
       run: async (_c, _cfg, inputs: any) => ({ out: inputs.in }),

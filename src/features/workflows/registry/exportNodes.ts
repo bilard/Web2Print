@@ -73,8 +73,8 @@ const exportExcelNode: NodeSpec<
 > = {
   type: 'export-excel',
   category: 'export',
-  label: 'Export Excel',
-  description: 'Génère un .xlsx depuis une Sheet.',
+  labelKey: 'node.export-excel.label',
+  descriptionKey: 'node.export-excel.desc',
   icon: FileDown,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'result', type: 'export-result' }],
@@ -173,8 +173,8 @@ const exportPptxNode: NodeSpec<
 > = {
   type: 'export-pptx',
   category: 'export',
-  label: 'Export PPTX',
-  description: 'Génère un .pptx avec une slide par row (MVP minimal).',
+  labelKey: 'node.export-pptx.label',
+  descriptionKey: 'node.export-pptx.desc',
   icon: Presentation,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'result', type: 'export-result' }],
@@ -285,9 +285,8 @@ const exportPdfNode: NodeSpec<
 > = {
   type: 'export-pdf',
   category: 'export',
-  label: 'Export HTML → PDF',
-  description:
-    'Rend un gabarit HTML par row (placeholders {{colonne}}) et génère un PDF multi-pages.',
+  labelKey: 'node.export-pdf.label',
+  descriptionKey: 'node.export-pdf.desc',
   icon: FileType2,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'result', type: 'export-result' }],
@@ -520,9 +519,8 @@ async function rasterizeInlinedSvg(
 const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; result: ExportResult }> = {
   type: 'export-design',
   category: 'export',
-  label: 'Export (design)',
-  description:
-    'Exporte un design SVG (issu de Image→SVG / PDF→SVG) dans le format choisi : PNG, PDF, PPTX, HTML ou SVG. Sort le fichier produit (port "file", à connecter vers Drive ou la pièce jointe Gmail) + un résultat téléchargeable.',
+  labelKey: 'node.export-design.label',
+  descriptionKey: 'node.export-design.desc',
   icon: Download,
   inputs: [{ name: 'file', type: 'file', required: true }],
   outputs: [

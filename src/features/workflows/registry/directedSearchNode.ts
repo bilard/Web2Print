@@ -52,11 +52,8 @@ function resultsSheet(rows: ExcelRow[]): ExcelSheet {
 const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutputs> = {
   type: 'directed-search',
   category: 'import',
-  label: 'Recherche dirigée',
-  description:
-    "Cherche chaque produit (réf puis EAN) sur le moteur de recherche des concurrents et " +
-    "récupère le prix — trouve ce que la moisson par liste rate (ex. jardimax n'affiche pas " +
-    "la réf sur ses listes mais l'expose en recherche). Appariement par preuve EXACTE, zéro faux positif.",
+  labelKey: 'node.directed-search.label',
+  descriptionKey: 'node.directed-search.desc',
   icon: ScanSearch,
   connectors: ['jina'],
   // Port `sites` (facultatif) : brancher un node « Sites sources » remplace la textarea

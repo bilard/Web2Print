@@ -153,8 +153,8 @@ function ChartConfigUi({
 const chartNode: NodeSpec<ChartNodeConfig, { sheet: SheetIn }, ChartOutputs> = {
   type: 'chart',
   category: 'transformation',
-  label: 'Graphique',
-  description: "Génère un graphe (barres, lignes, aire, camembert) depuis une Sheet — aperçu + image PNG réutilisable.",
+  labelKey: 'node.chart.label',
+  descriptionKey: 'node.chart.desc',
   icon: BarChart3,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [

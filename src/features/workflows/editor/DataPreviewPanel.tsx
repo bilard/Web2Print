@@ -1017,7 +1017,7 @@ export function DataPreviewPanel() {
   const labelFor = (id: string) => {
     const node = wf?.nodes.find((n) => n.id === id)
     const spec = node ? nodeRegistry.get(node.type) : undefined
-    return spec?.label ?? node?.type ?? id
+    return spec ? tr(spec.labelKey) : node?.type ?? id
   }
   // Aucun node sélectionné ? On retombe sur le 1er Upload configuré du workflow,
   // pour que le panel affiche d'office la donnée principale au lieu d'un message

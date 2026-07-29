@@ -67,11 +67,8 @@ function WebScrapingConfig({ config, onChange }: { config: Cfg; onChange: (c: Cf
 const webScrapingNode: NodeSpec<Cfg, Record<string, unknown>, Record<string, unknown>> = {
   type: 'web-scraping',
   category: 'import',
-  label: 'Web Scraping',
-  description:
-    'Récupère des données du web (Jina / Bright Data / LLM) selon un Mode : Scrape (URL → champs), ' +
-    'Liste (pages catégorie → produits, avec pagination), Recherche web, Question web (IA). ' +
-    'Remplace les anciens nodes Scrape URL / Produits d’une page liste / Recherche / Question.',
+  labelKey: 'node.web-scraping.label',
+  descriptionKey: 'node.web-scraping.desc',
   icon: Globe,
   // Ports superset des modes : query/question en entrée (Recherche/Question),
   // sheet/text/assets en sortie. Les URLs des modes Scrape/Liste sont en config.

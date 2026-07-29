@@ -21,8 +21,8 @@ const savePimNode: NodeSpec<
 > = {
   type: 'save-pim',
   category: 'persistence',
-  label: 'Save PIM',
-  description: 'Persiste les rows comme produits PIM dans le projet cible.',
+  labelKey: 'node.save-pim.label',
+  descriptionKey: 'node.save-pim.desc',
   icon: Database,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'result', type: 'pim-products' }],

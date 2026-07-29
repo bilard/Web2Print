@@ -12,6 +12,7 @@ import { useWorkflowStore } from '../../persistence/workflow.store'
 import { useCan } from '@/features/access/useAccess'
 import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Download, Play, Square } from 'lucide-react'
 import type { NodeSpec, Port } from '../../types'
+import { useTranslation } from '@/lib/i18n'
 
 interface ExportPayload {
   url: string
@@ -173,6 +174,7 @@ function handleClass(highlight: DragHighlight): string {
 }
 
 export function BaseNode({ id, data, selected }: NodeProps) {
+  const { t } = useTranslation()
   const nodeType = (data as { type?: string }).type
   const spec = nodeType ? nodeRegistry.get(nodeType) : undefined
   const status = useRunContext((s) => s.nodeStates[id]?.status ?? 'pending')
@@ -241,7 +243,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
             <Icon className={`w-6 h-6 ${cat.icon}`} aria-hidden="true" />
           </div>
           <span className="mt-2 text-[11px] font-medium text-white text-center leading-tight">
-            {spec.label}
+            {t(spec.labelKey)}
           </span>
 
           {/* Connecteurs / services externes — live pendant un run, sinon déclaration statique */}
@@ -321,7 +323,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
               onClick={(e) => {
                 e.stopPropagation()
                 const wf = useWorkflowStore.getState().current
-                if (wf) void executeWorkflow(wf, { fromNodeId: id }).then((o) => notifyRunOutcome(o, spec.label))
+                if (wf) void executeWorkflow(wf, { fromNodeId: id }).then((o) => notifyRunOutcome(o, t(spec.labelKey)))
               }}
               className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
               title="Exécuter depuis ce node (lui + tout l'aval)"

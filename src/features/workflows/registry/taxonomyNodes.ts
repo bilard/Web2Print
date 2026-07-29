@@ -39,9 +39,8 @@ const importTaxonomyNode: NodeSpec<
 > = {
   type: 'import-taxonomy',
   category: 'persistence',
-  label: 'Import Taxonomie',
-  description:
-    "Construit une taxonomie hiérarchique depuis les colonnes de niveau d'une Sheet et la persiste dans Firestore.",
+  labelKey: 'node.import-taxonomy.label',
+  descriptionKey: 'node.import-taxonomy.desc',
   icon: Network,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'result', type: 'pim-products' }],
