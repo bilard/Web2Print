@@ -1870,4 +1870,590 @@ You can stack **several rules** on the same object:
 - they are evaluated **in order**;
 - for the same property, **the last matching rule wins** (e.g. two "Change the colour" rules → the second one wins);
 - the exception: **Change the size** is **cumulative** (the factors multiply).`,
+
+  [`Le module **Workflows** chaîne les fonctions de IBS-Studio (import, scraping, IA, transformation, export, envoi) dans un **graphe visuel**. Chaque **node** est une brique ; tu les relies par leurs ports (entrées/sorties typés).`]:
+    `The **Workflows** module chains IBS-Studio's functions together (import, scraping, AI, transformation, export, sending) into a **visual graph**. Each **node** is a building block; you join them through their ports (typed inputs/outputs).`,
+
+  [`### Deux façons de construire
+
+- **Manuel** : glisse les nodes depuis la palette (à gauche), relie-les, configure chacun (panneau de droite), puis **Run**.
+- **IA (Prompt-to-Flow)** : bouton **« Générer (IA) »** → décris ton besoin en langage naturel, un LLM construit le graphe complet (nodes + liaisons + config) à partir du catalogue. Disponible aussi via \`/flow\` sur Telegram.
+
+La **palette est progressive** : commence par un node **Import** (source), puis enrichis / transforme / sauvegarde / exporte / communique.`]:
+    `### Two ways to build
+
+- **By hand**: drag the nodes out of the palette (on the left), join them up, configure each one (right-hand panel), then **Run**.
+- **With AI (Prompt-to-Flow)**: **"Generate (AI)"** button → describe what you need in plain language and an LLM builds the whole graph (nodes + links + configuration) from the catalogue. Also available through \`/flow\` on Telegram.
+
+The **palette is progressive**: start with an **Import** node (the source), then enrich / transform / save / export / communicate.`,
+
+  [`### Catalogue des nodes
+
+Déplie une catégorie pour voir ses nodes.`]:
+    `### Node catalogue
+
+Unfold a category to see its nodes.`,
+
+  [`### Node « Web Scraping » unifié
+
+Un **seul node** \`Web Scraping\` couvre toutes les façons de ramener des données du web, via un **sélecteur de Mode** :
+
+- **Scrape** — une ou plusieurs URLs → champs produit (Jina + IA).
+- **Liste** — pages catégorie → liste de produits.
+- **Crawl** — découverte de fiches sur un site (côté client).
+- **Recherche web** — requête → pages lues + tableau de résultats.
+- **Question web (IA)** — question → réponse synthétisée + sources.
+
+Le formulaire s'adapte au mode choisi ; tu n'as donc pas à hésiter entre quatre nodes différents.`]:
+    `### The unified "Web scraping" node
+
+A **single** \`Web scraping\` node covers every way of bringing data back from the web, through a **Mode** selector:
+
+- **Scrape** — one or more URLs → product fields (Jina + AI).
+- **List** — category pages → a list of products.
+- **Crawl** — discovering records across a site (client-side).
+- **Web search** — a query → pages read + a table of results.
+- **Web question (AI)** — a question → a synthesised answer + sources.
+
+The form adapts to the mode chosen, so you never have to hesitate between four different nodes.`,
+
+  [`### Node « Graphique »
+
+Le node **« Graphique »** transforme un tableau en **image de graphe** (PNG, via chart.js). Choisis le **type** — **Barres, Lignes, Aire, Camembert, Anneau** — la **colonne d'axe X**, la ou les **colonnes de valeurs** et une **agrégation** facultative. Il sort à la fois le graphe, l'**asset image** (réutilisable par un Export design ou un envoi Telegram/Gmail) et le **fichier PNG**.
+
+Pour un Google Sheets, pas besoin de ce node : le node **Export Google Sheets** propose une case **« Insérer un graphique »** qui ajoute un graphe **natif** dans la feuille (type, colonne X, colonnes de valeurs).`]:
+    `### The "Chart" node
+
+The **"Chart"** node turns a table into a **chart image** (PNG, via chart.js). Choose the **type** — **Bar, Line, Area, Pie, Doughnut** — the **X-axis column**, the **value column(s)** and an optional **aggregation**. It outputs the chart, the **image asset** (reusable by a design export or a Telegram/Gmail send) and the **PNG file**.
+
+For a Google Sheet, you do not need this node: the **Google Sheets export** node offers an **"Insert a chart"** tick box that adds a **native** chart to the sheet (type, X column, value columns).`,
+
+  [`### Écran « Résultat »
+
+Le bouton **« Résultat »** dans l'en-tête de l'éditeur ouvre une page dédiée (\`/workflows/:id/result\`) qui **visualise le dernier run** sous la forme la plus pertinente : **Tableau de bord**, **Tableau**, **Graphique**, **Galerie** (images), **Document** ou **Données** (JSON). Le sélecteur en haut permet de basculer de vue, **« Régénérer avec l'IA »** recompose un tableau de bord avec insights, et tout l'écran s'**exporte en PNG ou PDF**.`]:
+    `### The "Result" screen
+
+The **"Result"** button in the editor header opens a dedicated page (\`/workflows/:id/result\`) that **visualises the last run** in whichever shape suits it best: **Dashboard**, **Table**, **Chart**, **Gallery** (images), **Document** or **Data** (JSON). The selector at the top switches views, **"Regenerate with AI"** rebuilds a dashboard with insights, and the whole screen **exports as PNG or PDF**.`,
+
+  [`### Mes modèles (modèles personnalisés)
+
+Au-delà de la galerie prête à l'emploi, tu peux **enregistrer ton propre montage** : le bouton **« Modèle »** dans l'éditeur sauvegarde le graphe courant comme modèle réutilisable (création ou mise à jour). Tous tes modèles apparaissent dans la section **« Mes modèles »** de la page Workflows, où tu peux **les réutiliser** (un clic crée un workflow), **éditer leurs infos** ou **les supprimer**. Stockés par compte (\`users/{uid}/workflowTemplates\`).`]:
+    `### My templates (custom templates)
+
+Beyond the ready-made gallery, you can **save your own assembly**: the **"Template"** button in the editor saves the current graph as a reusable template (creating or updating one). All your templates appear in the **"My templates"** section of the Workflows page, where you can **reuse** them (one click creates a workflow), **edit their details** or **delete** them. Stored per account (\`users/{uid}/workflowTemplates\`).`,
+
+  [`### Arrêter un run serveur (STOP)
+
+Un workflow lancé par le **cron** ou un **webhook** tourne sans navigateur. Le panneau d'état du Cron affiche alors un bouton rouge **STOP** : il pose un **drapeau d'abandon** que l'exécuteur serveur **interroge en continu** et le run s'arrête sous quelques secondes — sans avoir à attendre la fin du node en cours.`]:
+    `### Stopping a server run (STOP)
+
+A workflow started by the **cron** or by a **webhook** runs with no browser. The Cron status panel then shows a red **STOP** button: it raises an **abort flag** that the server executor **polls continuously**, and the run stops within a few seconds — without waiting for the current node to finish.`,
+
+  [`### Exemples de pipelines
+
+- **Veille** : Recherche web → Export Excel → Envoyer via Gmail.
+- **Réponse sourcée** : Question web (IA) → Envoyer via Telegram.
+- **Fiches produit** : Scrape URL → Enrichissement → Save PIM → Export PPTX.
+- **Batch** : Upload (Excel d'URLs) → Enrichissement → Save DAM.`]:
+    `### Example pipelines
+
+- **Monitoring**: Web search → Excel export → Send by Gmail.
+- **Sourced answer**: Web question (AI) → Send by Telegram.
+- **Product records**: Scrape URL → Enrichment → Save to PIM → PPTX export.
+- **Batch**: Upload (an Excel of URLs) → Enrichment → Save to DAM.`,
+
+  [`_Les nodes IA (Scrape, Enrichissement, Décomposer, Génération de workflow, Question web) routent automatiquement vers un modèle adapté et à jour — aucun réglage de modèle à faire._`]:
+    `_The AI nodes (Scrape, Enrichment, Break apart, Workflow generation, Web question) route automatically to a suitable, up-to-date model — there is no model setting to make._`,
+
+  [`### Piloter depuis Telegram
+
+Les workflows se déclenchent aussi à distance : \`/flow <demande>\` génère et exécute un workflow, \`/run <nom>\` rejoue un workflow sauvegardé — et le fichier produit revient sur Telegram.`]:
+    `### Driving them from Telegram
+
+Workflows can also be triggered remotely: \`/flow <request>\` generates and runs a workflow, \`/run <name>\` replays a saved one — and the file it produces comes back over Telegram.`,
+
+  [`### Modèles prêts à l'emploi
+
+La page Workflows propose une galerie **« Démarrer depuis un modèle »** : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel, **Veille tarifaire (matrice concurrents)** — tes produits comparés chez plusieurs concurrents (appariement SKU/EAN puis nom), tableau de bord « Veille tarifaire » rempli et alerte Telegram seulement si un concurrent est moins cher ou a bougé. Un clic crée le workflow complet — il ne reste qu'à coller tes URLs et choisir le projet cible.`]:
+    `### Ready-made templates
+
+The Workflows page offers a **"Start from a template"** gallery: Scrape a site → PIM, Daily monitoring → Telegram (cron), Scrape → approval ✅ → PIM, Web search → Excel, **Price monitoring (competitor matrix)** — your products compared across several competitors (matched on SKU/EAN, then on name), the "Price monitoring" dashboard filled in and a Telegram alert only when a competitor is cheaper or has moved. One click creates the whole workflow — all that is left is to paste your URLs and choose the target project.`,
+
+  [`### Approbation humaine (Telegram)
+
+Le node **« Approbation Telegram »** met le run en pause et envoie la question sur Telegram avec des boutons **✅ Approuver / ❌ Refuser**. Le workflow reprend sur le port \`approved\` ou \`rejected\` selon le clic — idéal pour valider un PDF ou un import avant publication.
+
+- Délai maximal configurable ; à expiration : échec du run ou refus automatique.
+- Le chat doit être dans l'**allowlist du webhook** (Réglages → Telegram), sinon les clics sont ignorés.`]:
+    `### Human approval (Telegram)
+
+The **"Telegram approval"** node pauses the run and sends the question over Telegram with **✅ Approve / ❌ Reject** buttons. The workflow resumes on the \`approved\` or \`rejected\` port depending on the click — ideal for signing off a PDF or an import before publication.
+
+- A configurable maximum delay; on expiry: the run fails, or it is rejected automatically.
+- The chat must be on the **webhook allowlist** (Settings → Telegram), otherwise the clicks are ignored.`,
+
+  [`### Veille prix
+
+Le node **« Veille prix »** mémorise les prix du run précédent (par identifiant de suivi) et n'émet le port \`changes\` **que si un prix a varié** au-delà du seuil — les lignes émises portent \`ancien_prix\`, \`nouveau_prix\` et \`variation_pct\`, prêtes pour un message Telegram (« 1 message par ligne »). Un second port \`all\` émet **toutes** les lignes à chaque run (pour archiver un relevé complet, par exemple). Le premier relevé est silencieux, et **aucun message n'est envoyé** quand rien n'a bougé. Fonctionne aussi en **cron serveur** (sans navigateur ouvert). Modèle prêt à l'emploi : **Veille prix → alerte Telegram** (cron quotidien).`]:
+    `### Price watch
+
+The **"Price watch"** node remembers the previous run's prices (by tracking identifier) and only fires the \`changes\` port **when a price has moved** beyond the threshold — the rows it emits carry \`ancien_prix\`, \`nouveau_prix\` and \`variation_pct\`, ready for a Telegram message ("1 message per row"). A second port, \`all\`, emits **every** row on every run (to archive a complete reading, for instance). The first reading is silent, and **no message is sent** when nothing has moved. It also works under the **server cron** (with no browser open). Ready-made template: **Price watch → Telegram alert** (daily cron).`,
+
+  [`### Planifier (cron serveur)
+
+Le node **« Cron »** exécute le workflow **côté serveur, navigateur fermé** : cadence à la **minute, heure, jour, semaine ou mois**, heure précise **HH:MM**, jour de semaine ciblé ou **« Tous les jours »** — fuseau **Europe/Paris**, granularité minimale 1 minute. Active **« Planification »** dans le node puis **sauvegarde** le workflow pour armer le cron ; l'éditeur affiche l'état et le compte à rebours du prochain run, et chaque exécution apparaît dans l'historique.
+
+- **Compatibles serveur** : Scrape URL, Recherche web, Enrichissement IA, Saisie texte, toutes les **transformations** (Définir colonnes, Filtrer, Trier, Renommer, Opération texte), la **logique** (If/Else, Pipe, Loop each/collect), Save PIM, Veille prix, Envoyer via Telegram — et, après connexion **« Google — accès serveur »** (Paramètres → Connecteurs), **Export Google Sheets** et **Envoyer via Gmail**.
+- **Nécessitent le navigateur** : rendus graphiques (PDF, Excel, PPTX, génération d'image, décomposition SVG, Export design), imports de fichiers locaux (Upload, IDML/SVG/PPTX/image), Import/Export Google Drive côté client, Save DAM et Approbation Telegram — un run serveur qui en contient s'arrête avec un message explicite.`]:
+    `### Scheduling (server cron)
+
+The **"Cron"** node runs the workflow **server-side, with the browser closed**: a cadence by the **minute, hour, day, week or month**, an exact **HH:MM** time, a targeted weekday or **"Every day"** — the **Europe/Paris** time zone, with a minimum granularity of 1 minute. Switch **"Scheduling"** on in the node, then **save** the workflow to arm the cron; the editor shows the state and the countdown to the next run, and each execution appears in the history.
+
+- **Server-compatible**: Scrape URL, Web search, AI enrichment, Text input, all the **transformations** (Set columns, Filter, Sort, Rename, Text operation), the **logic** (If/Else, Pipe, Loop each/collect), Save to PIM, Price watch, Send by Telegram — and, once **"Google — server access"** is connected (Settings → Connectors), **Google Sheets export** and **Send by Gmail**.
+- **Need the browser**: graphic rendering (PDF, Excel, PPTX, image generation, SVG break-apart, design export), local file imports (Upload, IDML/SVG/PPTX/image), client-side Google Drive import/export, Save to DAM and Telegram approval — a server run containing any of these stops with an explicit message.`,
+
+  [`### Webhook entrant (déclenchement externe)
+
+Le bouton **Webhook** dans l'en-tête de l'éditeur génère une **URL secrète** pour déclencher ce workflow depuis l'extérieur (Zapier, Make, un ERP, un simple \`curl\`) :
+
+\`\`\`
+curl -X POST -H "X-Webhook-Secret: <secret>" "<URL>?id=<workflowId>"
+\`\`\`
+
+L'exécution se fait **côté serveur** (mêmes nodes que le cron) et apparaît dans l'historique des runs. Le secret se régénère à tout moment ; désactiver le webhook coupe immédiatement l'accès.`]:
+    `### Inbound webhook (external trigger)
+
+The **Webhook** button in the editor header generates a **secret URL** to trigger this workflow from outside (Zapier, Make, an ERP, a plain \`curl\`):
+
+\`\`\`
+curl -X POST -H "X-Webhook-Secret: <secret>" "<URL>?id=<workflowId>"
+\`\`\`
+
+Execution happens **server-side** (the same nodes as the cron) and appears in the run history. The secret can be regenerated at any time; switching the webhook off cuts access immediately.`,
+
+  [`### Débugger pas à pas
+
+Le bouton **« Pas à pas »** (à côté de Run) exécute le workflow node par node : le run se met en pause avant chaque étape — le bouton ambre **« Étape : <node> »** dans l'en-tête exécute la suivante. Entre deux étapes, inspecte les sorties dans le panneau de prévisualisation. **Stop** interrompt proprement, même en pause.`]:
+    `### Debugging step by step
+
+The **"Step by step"** button (next to Run) executes the workflow node by node: the run pauses before each step — the amber **"Step: <node>"** button in the header runs the next one. Between two steps, inspect the outputs in the preview panel. **Stop** interrupts cleanly, even while paused.`,
+
+  [`Le module **Catalogue studio** assemble automatiquement un catalogue multi-pages à partir de vos données produits : vous choisissez une source (PIM ou Excel), une structure, un style, et l'IA compose les pages. Vous gardez la main sur le **chemin de fer** (l'ordre et le contenu des pages) avant d'exporter en PDF.`]:
+    `The **Catalogue studio** module automatically assembles a multi-page catalogue from your product data: you choose a source (PIM or Excel), a structure and a style, and the AI composes the pages. You keep control of the **flatplan** (the order and content of the pages) before exporting to PDF.`,
+
+  [`### Créer un catalogue
+1. Ouvrez **Catalogue studio** depuis le menu latéral (groupe *Publication*).
+2. Cliquez **Nouveau catalogue** (ou reprenez-en un dans *Mes catalogues*).
+3. L'assistant en **6 étapes** s'ouvre. Vous pouvez naviguer librement entre les étapes une fois la source choisie ; le travail est **sauvegardé automatiquement**.`]:
+    `### Creating a catalogue
+1. Open **Catalogue studio** from the side menu (*Publishing* group).
+2. Click **New catalogue** (or pick one up again from *My catalogues*).
+3. The **6-step** assistant opens. You can move freely between the steps once the source is chosen; your work is **saved automatically**.`,
+
+  [`### Les 6 étapes de l'assistant
+
+**1 · Source** — Choisissez d'où viennent les produits : un **projet PIM** ou un **dataset Excel** importé. Chaque ligne devient un produit du catalogue.
+
+**2 · Structure** — Organisez le catalogue en sections (rubriques, familles). Reliez une **taxonomie** pour regrouper les produits par catégorie et donner son plan au catalogue.
+
+**3 · Prompt & style** — Décrivez le rendu voulu en langage naturel et posez la **charte graphique** (voir plus bas). L'IA en déduit la mise en page, les couleurs et les typographies.
+
+**4 · Chemin de fer** — Le *flatplan* : chaque page est une vignette. **Glissez-déposez** pour réordonner, déplacer un produit d'une page à l'autre, ajouter ou retirer des pages. C'est ici que vous validez le déroulé.
+
+**5 · Aperçu** — Le rendu page par page, fidèle à l'export.
+
+**6 · Export** — Génération du fichier final (voir *Exporter*).`]:
+    `### The 6 steps of the assistant
+
+**1 · Source** — Choose where the products come from: a **PIM project** or an imported **Excel dataset**. Each row becomes a product in the catalogue.
+
+**2 · Structure** — Organise the catalogue into sections (headings, families). Link a **taxonomy** to group the products by category and give the catalogue its plan.
+
+**3 · Prompt & style** — Describe the look you want in plain language and set the **brand identity** (see below). The AI works out the layout, the colours and the typography from it.
+
+**4 · Flatplan** — Each page is a thumbnail. **Drag and drop** to reorder, to move a product from one page to another, to add or remove pages. This is where you sign off the running order.
+
+**5 · Preview** — The rendering page by page, faithful to the export.
+
+**6 · Export** — Generating the final file (see *Exporting*).`,
+
+  [`### Charte graphique & source d'inspiration
+À l'étape **Prompt & style**, la carte **Charte & éléments joints** pilote le moteur créatif :
+- **Éléments joints** : ajoutez un logo, une charte PDF ou des visuels de référence.
+- **Source d'inspiration** : collez une **URL** (Dribbble, Behance, ou une image directe). Le studio l'analyse et en extrait la **palette de couleurs** et les **typographies détectées**, qui pilotent ensuite le plan généré par l'IA — pour un catalogue qui « ressemble à » votre référence.`]:
+    `### Brand identity & source of inspiration
+At the **Prompt & style** step, the **Identity & attachments** card drives the creative engine:
+- **Attachments**: add a logo, a brand-guidelines PDF or reference visuals.
+- **Source of inspiration**: paste a **URL** (Dribbble, Behance, or a direct image). The studio analyses it and extracts the **colour palette** and the **typefaces detected**, which then drive the plan the AI generates — for a catalogue that "looks like" your reference.`,
+
+  [`### Densité des fiches : Exhaustif ou Condensé
+Dans le panneau **« Style des fiches »** (étape **Prompt & style**), section **« Éléments affichés »**, deux boutons sous **« Détails »** pilotent d'un clic la quantité de données ET la densité de grille :
+
+- **« Exhaustif »** — toute la donnée source (puces intégrales + toutes les spécifications) et toutes les sections passent en **2 produits/page** (grandes cartes). C'est le régime **par défaut** d'un nouveau catalogue.
+- **« Condensé »** — **5 puces · 6 specs** par fiche et grille **4 produits/page**.
+
+Les quotas restent ajustables finement via **« Puces max (vide = toutes) »** et **« Spécifications max (vide = toutes) »**, et la densité section par section dans le panneau *Sections*. La ligne **« Data source : N puce(s) · N spec(s) max par fiche »** affiche les comptes **réels** des produits sélectionnés — vous savez toujours ce que contient votre source, sans plafond caché.`]:
+    `### Product-page density: Exhaustive or Condensed
+In the **"Product page style"** panel (**Prompt & style** step), **"Displayed elements"** section, two buttons under **"Details"** control, in one click, both the amount of data AND the grid density:
+
+- **"Exhaustive"** — all the source data (complete bullets + every specification) and every section switches to **2 products per page** (large cards). This is a new catalogue's **default** setting.
+- **"Condensed"** — **5 bullets · 6 specs** per product and a **4 products per page** grid.
+
+The quotas remain finely adjustable through **"Max bullets (empty = all)"** and **"Max specifications (empty = all)"**, and the density section by section in the *Sections* panel. The line **"Data source: N bullet(s) · N spec(s) max per product"** shows the **real** counts of the products selected — you always know what your source holds, with no hidden ceiling.`,
+
+  [`### Tableau « Caractéristiques » et bloc Description
+Les **spécifications techniques** détectées dans la source sont rendues en **tableau de paires nom/valeur sur 2 colonnes** : nom en gras à gauche, valeur en couleur d'accent à droite, chaque paire sur un fond teinté, titre en pastille. Les valeurs ne sont **jamais tronquées** (aucune ellipse) : une valeur longue passe à la ligne aux espaces, sans couper un mot.
+
+Le tableau est un **bloc de disposition à part entière** — **« Caractéristiques »** — déplaçable indépendamment de « Détails », en pleine largeur au bas de la fiche par défaut. Il dispose de sa propre ligne **« Caractéristiques »** dans **« Texte : taille & police »** : son échelle se multiplie par-dessus celle de **« Détails »** (1× = suit Détails exactement) et sa police peut différer (**« Police du thème »** = hérite).
+
+Le bloc **Description** affiche le texte **intégral** de la source : il n'est jamais sacrifié au partage de hauteur avec les autres blocs (coupe en tout dernier recours seulement). Sélectionnez-le dans l'aperçu pour activer **« Texte sur 2 colonnes »** : le texte est réparti en deux moitiés équilibrées côte à côte, à l'identique dans l'export.`]:
+    `### The "Characteristics" table and the Description block
+The **technical specifications** detected in the source are rendered as a **table of name/value pairs across 2 columns**: the name in bold on the left, the value in the accent colour on the right, each pair on a tinted background, the title in a pill. Values are **never truncated** (no ellipsis): a long value wraps at the spaces, without breaking a word.
+
+The table is a **layout block in its own right** — **"Characteristics"** — movable independently of "Details", full width at the bottom of the product page by default. It has its own **"Characteristics"** line in **"Text: size & font"**: its scale multiplies on top of the one for **"Details"** (1× = follows Details exactly) and its font can differ (**"Theme font"** = inherit).
+
+The **Description** block shows the **complete** text from the source: it is never sacrificed when sharing height with the other blocks (it is cut only as an absolute last resort). Select it in the preview to switch **"Text in 2 columns"** on: the text is spread across two balanced halves side by side, identically in the export.`,
+
+  [`### « Taille identique sur toutes les fiches »
+En tête de **« Texte : taille & police »**, la case **« Taille identique sur toutes les fiches »** neutralise la hiérarchie automatique (fiches vedette magnifiées, ajustement de taille par page) : tous les produits du catalogue partagent la même taille de texte, de façon **déterministe** — deux rendus successifs donnent le même résultat.
+
+La liste des réglages typo est désormais **groupée par thème** pour rester lisible : **Badges & rubans**, **Identité produit**, **Description & détails**, **Prix**. Chaque groupe conserve l'ordre visuel de la fiche et se met à jour en direct quand vous déplacez les blocs.`]:
+    `### "Same size on every product page"
+At the top of **"Text: size & font"**, the **"Same size on every product page"** tick box switches off the automatic hierarchy (magnified featured pages, per-page size adjustment): every product in the catalogue shares the same text size, **deterministically** — two successive renderings give the same result.
+
+The list of typography settings is now **grouped by theme** to stay readable: **Badges & ribbons**, **Product identity**, **Description & details**, **Price**. Each group keeps the product page's visual order and updates live as you move the blocks around.`,
+
+  [`### Bandeau taxonomie (Univers › Famille)
+Le bandeau de tête des pages produits affiche l'**Univers** et la **Famille** courants. Sa section de réglages, **« Bandeau taxonomie (Univers › Famille) »**, est disponible à la fois dans le panneau **« Fond de page »** de l'Aperçu et dans **« Style des fiches »** de **Prompt & style** — le bandeau y est visible dans l'aperçu, plus besoin de changer d'onglet. Il apparaît aussi sur les pages vedette (1 produit/page).`]:
+    `### Taxonomy strip (Universe › Family)
+The strip at the head of the product pages shows the current **Universe** and **Family**. Its settings section, **"Taxonomy strip (Universe › Family)"**, is available both in the **"Page background"** panel of the Preview and in **"Product page style"** under **Prompt & style** — the strip is visible in the preview there, so there is no need to switch tabs. It also appears on the featured pages (1 product per page).`,
+
+  [`### Couleurs du thème dès « Prompt & style »
+La section **« Couleurs du thème »** du panneau **« Style des fiches »** expose les couleurs **globales** (accent, fond, bandeau…) — les mêmes pastilles que le panneau « Fond de page » de l'Aperçu, **synchronisées** : plus besoin d'aller à l'étape Aperçu pour ajuster le thème.
+
+Un **choix explicite de couleur gagne toujours** sur la variante de forme : si vous fixez la couleur d'une pastille sous-famille ou d'un prix, elle est respectée même quand la forme choisie (chip « plain », souligné, prix en texte nu) proposait sa propre teinte. Par ailleurs, un **garde-fou de lisibilité** contrôle les couleurs de texte proposées par l'IA contre le fond effectif des fiches : une encre illisible est automatiquement corrigée ou écartée.`]:
+    `### Theme colours from "Prompt & style" onwards
+The **"Theme colours"** section of the **"Product page style"** panel exposes the **global** colours (accent, background, strip…) — the same swatches as the Preview's "Page background" panel, kept **in sync**: no need to go to the Preview step to adjust the theme.
+
+An **explicit colour choice always wins** over the shape variant: if you fix the colour of a sub-family pill or of a price, it is respected even when the chosen shape (a "plain" chip, an underline, a price as bare text) suggested a tint of its own. Alongside that, a **legibility guard** checks the text colours the AI proposes against the pages' effective background: unreadable ink is corrected or discarded automatically.`,
+
+  [`### Ruban vedette
+Mettez un produit en avant d'un clic : **double-cliquez sa fiche dans l'Aperçu** pour ouvrir l'édition du produit, puis activez **« Ruban vedette (mise en avant dans ce catalogue) »**. Le produit devient une **grande carte 2×2** ornée du ruban — 1 vedette au maximum par page, jamais la page entière. Le réglage a une **portée publication** : il est enregistré dans CE catalogue, sans toucher la source PIM/Excel.
+
+Le ruban se personnalise dans **« Style des fiches »** : champ **« Texte du ruban »** (défaut *Vedette*), ligne **« Ruban vedette »** dans la typo et les couleurs, et case **« Ruban vedette »** dans **« Éléments affichés »** pour le masquer globalement.`]:
+    `### Featured ribbon
+Push a product forward in one click: **double-click its page in the Preview** to open the product for editing, then switch **"Featured ribbon (highlighted in this catalogue)"** on. The product becomes a **large 2×2 card** wearing the ribbon — at most one featured item per page, never the whole page. The setting has **publication scope**: it is saved in THIS catalogue, without touching the PIM/Excel source.
+
+The ribbon is customised under **"Product page style"**: a **"Ribbon text"** field (default *Featured*), a **"Featured ribbon"** line in the typography and the colours, and a **"Featured ribbon"** tick box under **"Displayed elements"** to hide it globally.`,
+
+  [`### Champs devinés & lien vers la fiche source
+À la connexion de la source, les champs de fiche (nom, image, prix, prix barré, marque, référence, unité, description) ET les champs libres de la zone **« Détails »** (TVA, avantages, spécifications…) sont **devinés automatiquement** depuis les colonnes. La carte **« Correspondance des champs »** (étape **Structure**) permet de corriger : votre choix est conservé et prime sur le re-devinage (bouton **« Auto »** pour y revenir). Dans **« Champs supplémentaires »**, choisir une colonne **pré-remplit « Nom du champ »** s'il est encore vide — vous gardez la main pour le personnaliser.
+
+Si une colonne d'URL produit est présente, chaque fiche porte un **lien de contrôle vers la fiche produit source** : une pastille apparaît **au survol** en haut à droite (**« Ouvrir la fiche source »**) et ouvre la page d'origine dans un nouvel onglet. Visible uniquement au survol, elle n'est **jamais capturée à l'export**.`]:
+    `### Guessed fields & link to the source record
+When the source is connected, the product-page fields (name, image, price, was-price, brand, reference, unit, description) AND the free fields of the **"Details"** area (VAT, benefits, specifications…) are **guessed automatically** from the columns. The **"Field mapping"** card (**Structure** step) lets you correct them: your choice is kept and takes priority over re-guessing (an **"Auto"** button takes you back). Under **"Additional fields"**, choosing a column **pre-fills "Field name"** if it is still empty — you keep control to customise it.
+
+If a product-URL column is present, each page carries a **control link to the source product record**: a pill appears **on hover** at the top right (**"Open the source record"**) and opens the original page in a new tab. Visible only on hover, it is **never captured in the export**.`,
+
+  [`### Exporter
+À l'étape **Export**, deux sorties :
+- **PDF écran** — léger, pour l'aperçu et le partage web.
+- **PDF print pro** — haute définition, prêt pour l'impression.
+
+Le data-merge par produit et les autres formats de sortie sont détaillés dans la section **Export multi-format**.`]:
+    `### Exporting
+At the **Export** step, two outputs:
+- **Screen PDF** — light, for previewing and sharing on the web.
+- **Pro print PDF** — high definition, ready for the press.
+
+The per-product data merge and the other output formats are covered in the **Multi-format export** section.`,
+
+  [`### Bon à savoir
+- La source est **relue au chargement** du catalogue : si le PIM évolue, rouvrez le catalogue pour repartir des données à jour.
+- Pour des fiches promo unitaires (affiches, étiquettes) plutôt qu'un catalogue complet, voyez **Création studio**.
+- La composition des pages et la palette sont générées par IA à partir de la charte : soignez le prompt et les éléments joints pour un meilleur résultat.`]:
+    `### Worth knowing
+- The source is **read again when the catalogue loads**: if the PIM has moved on, reopen the catalogue to start from the up-to-date data.
+- For one-off promo pieces (posters, labels) rather than a full catalogue, see **Creation studio**.
+- The page composition and the palette are generated by AI from the brand identity: put care into the prompt and the attachments for a better result.`,
+
+  [`L'éditeur exporte vers sept formats. Chaque format vise un usage précis.`]:
+    `The editor exports to seven formats. Each one is aimed at a specific use.`,
+
+  [`_Dialogue Exporter : choix du format puis options imprimeur (marques de coupe, bleed)._`]:
+    `_The Export dialogue: choose the format, then the printer's options (crop marks, bleed)._`,
+
+  [`### Formats disponibles
+
+| Format | Usage |
+|---|---|
+| **PDF** | Catalogue, BAT, fichier imprimeur — supporte print marks et bleed |
+| **IDML** | Retour à InDesign pour finition graphique (ZIP avec dossier \`Links/\` si la maquette contient des images) |
+| **PPTX** | Présentation commerciale, démo client |
+| **SVG** | Web, intégration site, réseaux sociaux statiques |
+| **PNG** | Vignettes, miniatures, social media — résolution **72** (Web), **150** (Standard) ou **300 dpi** (Impression) |
+| **HTML** | Dossier web complet (ZIP : \`index.html\`, \`style.css\`, \`assets/\`) — textes sélectionnables, formes en CSS |
+| **Pack social** | ZIP de déclinaisons prêtes à poster : post carré 1080×1080, story 1080×1920, paysage 1920×1080, bannière 1500×500 (design centré, fond = couleur de page) |
+
+Tous les exports sont fidèles à la maquette en cours dans l'éditeur. Le data-merge actif influence le contenu mais pas le format.`]:
+    `### Available formats
+
+| Format | Use |
+|---|---|
+| **PDF** | Catalogue, proof, printer's file — supports print marks and bleed |
+| **IDML** | Back to InDesign for graphic finishing (a ZIP with a \`Links/\` folder if the layout holds images) |
+| **PPTX** | Sales presentation, client demo |
+| **SVG** | Web, embedding in a site, static social media |
+| **PNG** | Thumbnails, previews, social media — resolution **72** (Web), **150** (Standard) or **300 dpi** (Print) |
+| **HTML** | A complete web folder (ZIP: \`index.html\`, \`style.css\`, \`assets/\`) — selectable text, shapes in CSS |
+| **Social pack** | A ZIP of ready-to-post sizes: square post 1080×1080, story 1080×1920, landscape 1920×1080, banner 1500×500 (design centred, background = page colour) |
+
+Every export is faithful to the layout currently in the editor. An active data merge affects the content but not the format.`,
+
+  [`### Export PDF avec options imprimeur
+
+1. Règle d'abord le **fond perdu** et les repères dans le panneau **Impression** de l'éditeur (c'est lui qui fait foi — la modale d'export n'a pas de champ bleed)
+2. Bouton **Exporter** → choisis **PDF**
+3. Coche **« Export print (traits de coupe + bleed) »** : le canvas est étendu au fond perdu défini dans Impression et des traits de coupe en L sont ajoutés aux 4 coins
+4. Lance l'export
+
+Les traits de coupe sont en taille **physique** (par défaut 3,5 mm de longueur, 1 mm d'offset — réglables de 2 à 10 mm dans le panneau Impression), identiques quelle que soit la taille du document. Le panneau Impression propose aussi les **hirondelles de repérage** et la **zone de sécurité** ; lance un **Preflight** avant l'export final (voir la section _L'éditeur_).`]:
+    `### PDF export with printer's options
+
+1. First set the **bleed** and the marks in the editor's **Print** panel (that panel is the authority — the export dialogue has no bleed field)
+2. **Export** button → choose **PDF**
+3. Tick **"Print export (crop marks + bleed)"**: the canvas is extended to the bleed defined under Print and L-shaped crop marks are added at the 4 corners
+4. Start the export
+
+The crop marks are at a **physical** size (by default 3.5 mm long, 1 mm offset — adjustable from 2 to 10 mm in the Print panel), identical whatever the document's size. The Print panel also offers **registration marks** and the **safe area**; run a **Preflight** before the final export (see _The editor_ section).`,
+
+  [`### Export batch (plusieurs fichiers)
+
+Quand le data-merge est actif, l'export génère **une variante par ligne** de la BDD :
+
+1. Ouvre le panneau Data Merge → vérifie le mapping placeholders ↔ colonnes
+2. Choisis la **plage de lignes** à exporter et le mode : **PDF multi-pages** (un seul PDF, une page par ligne) ou **ZIP de fichiers individuels** (PDF/PNG/PPTX)
+3. Le **nom des fichiers** se personnalise avec les colonnes : pattern \`export_{{colonne}}\` (par défaut \`export_{{_id}}\`, ex. \`export_{{reference}}\`)
+4. Le streaming progressif affiche l'avancement, abandon possible à tout moment
+
+Concrètement : 200 lignes × PDF = 200 PDFs en quelques minutes. Les performances dépendent du modèle de la machine et du nombre d'images embarquées.`]:
+    `### Batch export (several files)
+
+When the data merge is active, the export generates **one variation per row** of the database:
+
+1. Open the Data merge panel → check the placeholder ↔ column mapping
+2. Choose the **range of rows** to export and the mode: **multi-page PDF** (a single PDF, one page per row) or a **ZIP of individual files** (PDF/PNG/PPTX)
+3. The **file names** are customisable from the columns: pattern \`export_{{column}}\` (by default \`export_{{_id}}\`, e.g. \`export_{{reference}}\`)
+4. Progressive streaming shows how far it has got, and you can abandon at any time
+
+In practice: 200 rows × PDF = 200 PDFs in a few minutes. Performance depends on the machine and on how many images are embedded.`,
+
+  [`### Export IDML (retour InDesign)
+
+Quand tu veux que ta graphiste finisse à la main dans InDesign :
+
+1. Configure ta maquette + data-merge dans IBS-Studio
+2. Export **IDML** → IBS-Studio reconstruit un fichier IDML standard avec les valeurs déjà mergées. Si la maquette contient des images, tu obtiens un **ZIP** : \`xxx_modified.idml\` + dossier \`Links/\` (à garder côte à côte pour qu'InDesign résolve les liens)
+3. Ouvre dans InDesign → ajustements graphiques fins
+4. Exporte le PDF final depuis InDesign
+
+En mode batch (data-merge actif), l'export **IDML multi-pages** produit un seul \`.idml\` avec **une planche par ligne de données** — et si la maquette vient d'un gabarit **EasyCatalog**, les marqueurs de champs sont conservés (round-trip complet, voir la section _EasyCatalog_).
+
+Ce flow combine **automatisation** (IBS-Studio fait le merge en série) et **contrôle créatif** (InDesign fait la finition).`]:
+    `### IDML export (back to InDesign)
+
+When you want a designer to finish the job by hand in InDesign:
+
+1. Set your layout + data merge up in IBS-Studio
+2. Export **IDML** → IBS-Studio rebuilds a standard IDML file with the values already merged. If the layout holds images, you get a **ZIP**: \`xxx_modified.idml\` + a \`Links/\` folder (keep them side by side so InDesign resolves the links)
+3. Open it in InDesign → fine graphic adjustments
+4. Export the final PDF from InDesign
+
+In batch mode (with the data merge active), the **multi-page IDML** export produces a single \`.idml\` with **one spread per data row** — and if the layout comes from an **EasyCatalog** template, the field markers are preserved (a complete round trip, see the _EasyCatalog_ section).
+
+This flow combines **automation** (IBS-Studio does the merge in bulk) and **creative control** (InDesign does the finishing).`,
+
+  [`### Pages déclinées vs Pack social — quelle différence ?
+
+Les deux partent des mêmes quatre ratios (post carré 1080×1080, story/reel 1080×1920, paysage 1920×1080, bannière 1500×500), mais ne produisent **pas** la même chose :
+
+| | **Pack social** | **Pages déclinées** |
+|---|---|---|
+| Sortie | ZIP de **PNG** prêts à poster | **Pages éditables** ajoutées au document (rien n'est téléchargé) |
+| Méthode | Le design est rendu **figé** puis posé en « contain » centré, fond = couleur de page | Re-layout **piloté par IA** (directeur artistique) : chaque élément est replacé selon le ratio cible |
+| Quand l'utiliser | Tu veux juste les visuels, sans retouche | Tu veux **retoucher** chaque format avant export |
+
+« Pages déclinées » envoie à l'IA un aperçu de la page **plus** la liste de ses éléments (boîtes en %), et reçoit un placement par format : le fond pleine page **couvre** (cover), le reste (titre, prix, photo, logo) est **placé en respectant son ratio** (contain). Si l'IA est indisponible (ou le rendu CORS échoue), un **repli géométrique** garanti s'applique (mise à l'échelle « contain » + centrage) — un toast t'avertit du mode utilisé.`]:
+    `### Derived pages vs Social pack — what is the difference?
+
+Both start from the same four ratios (square post 1080×1080, story/reel 1080×1920, landscape 1920×1080, banner 1500×500), but they do **not** produce the same thing:
+
+| | **Social pack** | **Derived pages** |
+|---|---|---|
+| Output | A ZIP of ready-to-post **PNGs** | **Editable pages** added to the document (nothing is downloaded) |
+| Method | The design is rendered **flat**, then placed "contained" and centred, background = page colour | **AI-driven** re-layout (an art director): every element is repositioned for the target ratio |
+| When to use it | You just want the visuals, with no retouching | You want to **retouch** each format before exporting |
+
+"Derived pages" sends the AI a preview of the page **plus** the list of its elements (boxes as percentages), and gets back a placement per format: the full-page background **covers**, everything else (title, price, photo, logo) is **placed respecting its ratio** (contain). If the AI is unavailable (or the CORS rendering fails), a guaranteed **geometric fallback** applies ("contain" scaling + centring) — a toast tells you which mode was used.`,
+
+  [`### Ce que contient vraiment chaque fichier
+
+- **PDF** : une image **haute résolution** du canvas (rendu ×2, qualité maximale) **plus** une couche de **texte invisible sélectionnable/cherchable** posée sur chaque bloc de texte. Le PDF reste donc « plat » visuellement mais le texte est copiable.
+- **PPTX** : une **slide unique** aux dimensions exactes du canvas (converties px→pouces), image en fond + textes éditables dans PowerPoint. Pas de multi-masters — pour des cas complexes, préfère PDF.
+- **HTML** : le visuel vient d'un **PNG** ; par-dessus, chaque texte devient un \`<div>\` positionné, **transparent mais sélectionnable** (\`user-select:text\`, \`aria-label\`) — bon pour l'accessibilité et le SEO.
+- **SVG** : vectoriel **réimportable** dans Illustrator, Figma ou l'éditeur. Les images liées sont **embarquées en data-URL** (sinon Illustrator affiche « fichier lié introuvable »), et les \`clipPath\` / dégradés sont **normalisés** pour les lecteurs SVG stricts.`]:
+    `### What each file really holds
+
+- **PDF**: a **high-resolution** image of the canvas (rendered at ×2, maximum quality) **plus** a layer of **invisible, selectable and searchable text** laid over each text block. The PDF therefore stays visually "flat", but the text can be copied.
+- **PPTX**: a **single slide** at the canvas's exact dimensions (converted px→inches), with an image as the background + text editable in PowerPoint. No multiple masters — for complex cases, prefer PDF.
+- **HTML**: the visual comes from a **PNG**; on top of it, each text becomes a positioned \`<div>\`, **transparent but selectable** (\`user-select:text\`, \`aria-label\`) — good for accessibility and SEO.
+- **SVG**: vector artwork you can **re-import** into Illustrator, Figma or the editor. Linked images are **embedded as data URLs** (otherwise Illustrator reports "linked file not found"), and the \`clipPath\` blocks and gradients are **normalised** for strict SVG readers.`,
+
+  [`### SVG : compatibilité Illustrator / Figma
+
+L'export SVG ne se contente pas du \`toSVG()\` brut de Fabric, il le **réécrit** pour les éditeurs vectoriels exigeants :
+
+- les **images** (DAM, Unsplash, IDML lié) sont converties en \`data:\` URL le temps de l'export — Illustrator n'essaie plus de résoudre un lien disque ;
+- les blocs \`<clipPath>\` sont regroupés dans un \`<defs>\` unique (sinon couleurs/dégradés « disparaissent ») ;
+- les \`<stop>\` de dégradé sont **triés par offset** et l'alpha \`rgba()\` est séparé en \`stop-opacity\` (sinon rect noir dans Illustrator).
+
+Limite : une image chargée **sans CORS** ne peut pas être embarquée (canvas « tainté ») — son URL d'origine est laissée telle quelle. Charge tes images depuis une source CORS-friendly avant l'export SVG final.`]:
+    `### SVG: Illustrator / Figma compatibility
+
+The SVG export does not settle for Fabric's raw \`toSVG()\`, it **rewrites** it for demanding vector editors:
+
+- the **images** (DAM, Unsplash, linked IDML) are converted into \`data:\` URLs for the duration of the export — Illustrator no longer tries to resolve a link on disk;
+- the \`<clipPath>\` blocks are gathered into a single \`<defs>\` (otherwise colours and gradients "vanish");
+- the gradient \`<stop>\` elements are **sorted by offset** and the \`rgba()\` alpha is split out into \`stop-opacity\` (otherwise you get a black rectangle in Illustrator).
+
+The limit: an image loaded **without CORS** cannot be embedded (a "tainted" canvas) — its original URL is left as it stands. Load your images from a CORS-friendly source before the final SVG export.`,
+
+  [`### Bonnes pratiques
+
+- **Toujours faire un export test** sur 1 ligne avant de lancer un batch de 200 — tu détectes les problèmes de fonts ou d'images manquantes plus vite
+- **Vérifier les fonts** : si un fallback Arial s'est appliqué, ton imprimeur le verra. Charge tes fonts dans \`public/fonts/\` au préalable
+- **PDF imprimeur** : demande à ton imprimeur la valeur de bleed exacte (souvent 3 ou 5 mm) avant l'export final
+- **PPTX** : évite-le pour les cas complexes (multi-masters), préfère PDF + conversion PPTX externe si besoin`]:
+    `### Good practice
+
+- **Always run a test export** on one row before launching a batch of 200 — you spot font problems or missing images far sooner
+- **Check the fonts**: if an Arial fallback has kicked in, your printer will see it. Load your fonts into \`public/fonts/\` beforehand
+- **Printer's PDF**: ask your printer for the exact bleed value (often 3 or 5 mm) before the final export
+- **PPTX**: avoid it for complex cases (multiple masters) — prefer PDF plus an external PPTX conversion if you need one`,
+
+  [`Connecte un bot Telegram à IBS-Studio pour **discuter avec l'IA**, **générer des workflows** en langage naturel et **recevoir les fichiers produits** — directement dans la messagerie.`]:
+    `Connect a Telegram bot to IBS-Studio to **talk to the AI**, **generate workflows** in plain language and **receive the files produced** — straight in the messenger.`,
+
+  [`### Mise en route
+
+1. **Paramètres → Connecteurs** : colle le *bot token* (obtenu via BotFather) et ton *chat ID*.
+2. Ouvre l'onglet **Telegram** dans le menu latéral : c'est lui qui fait tourner le « worker » qui traite les messages.
+3. C'est tout : le **répondeur serveur** traite tes messages même app fermée (voir « Réponses sans navigateur » plus bas). L'onglet Telegram sert à suivre la conversation — et prend le relais pour les workflows à rendu graphique (PDF, visuels) ou à fichier manuel.
+4. Une **clé LLM** (Gemini, Claude ou DeepSeek) doit être configurée dans les Paramètres.`]:
+    `### Getting started
+
+1. **Settings → Connectors**: paste the *bot token* (obtained from BotFather) and your *chat ID*.
+2. Open the **Telegram** tab in the side menu: it is what runs the "worker" that processes the messages.
+3. That is all: the **server-side responder** handles your messages even with the app closed (see "Answers without a browser" below). The Telegram tab is there to follow the conversation — and it takes over for workflows with graphic output (PDF, artwork) or a manual file.
+4. An **LLM key** (Gemini, Claude or DeepSeek) must be configured in Settings.`,
+
+  [`### Commandes disponibles`]:
+    `### Available commands`,
+
+  [`### Bon à savoir
+
+- **Conversation bidirectionnelle** : messages entrants ET sortants sont journalisés dans l'onglet Telegram.
+- **Fichiers** : un workflow qui produit un export (Excel, PDF, PPTX…) renvoie le fichier en pièce jointe ; sinon un résumé.
+- **Workflows nécessitant un fichier manuel** (node Upload/Import) ne sont pas exécutables en auto : reformule avec une URL à scraper ou des données dans le message.
+- **Suppression** : supprimer un message dans l'app le retire aussi de Telegram (< 48 h). L'inverse (effacer depuis le téléphone) n'est pas détectable par un bot — utilise \`/clear\`.
+- **Nettoyage auto** : la boîte se purge localement après 7 jours.`]:
+    `### Worth knowing
+
+- **Two-way conversation**: incoming AND outgoing messages are logged in the Telegram tab.
+- **Files**: a workflow that produces an export (Excel, PDF, PPTX…) sends the file back as an attachment; otherwise a summary.
+- **Workflows that need a manual file** (an Upload/Import node) cannot run automatically: rephrase with a URL to scrape, or with the data in the message.
+- **Deletion**: deleting a message in the app also removes it from Telegram (within 48 h). The reverse (deleting from the phone) is not something a bot can detect — use \`/clear\`.
+- **Automatic clean-up**: the inbox purges itself locally after 7 days.`,
+
+  [`### Réponses sans navigateur (répondeur serveur)
+
+Plus besoin d'avoir l'app ouverte : un **répondeur serveur** traite vos messages dès leur arrivée —
+
+- **Questions** : réponse LLM immédiate, **avec recherche web automatique** (Jina) quand la question l'exige (prix, actualité, contenu d'une URL) — sources citées.
+- **/flow <demande>** : le workflow est **généré par IA et exécuté côté serveur** (scrape, enrichissement, veille prix, PIM, notification), puis sauvegardé dans l'app.
+- **/run <nom>** : exécution serveur d'un workflow sauvegardé, résumé en retour.
+- **Outils Google sans navigateur** : après avoir connecté **Google (accès serveur)** dans Réglages → Connecteurs (une seule fois), \`/flow\` peut **créer des Google Sheets dans votre Drive** et **envoyer des Gmail** depuis le serveur. Ne collez JAMAIS d'identifiants dans le chat — l'autorisation se donne uniquement dans l'app.
+- Seuls les workflows avec **rendu graphique** (PDF, visuels) ou **fichier manuel** attendent l'ouverture de l'app (un message vous prévient ; le worker navigateur prend le relais).
+
+Si l'app est ouverte en même temps, un seul des deux répond (jamais de doublon).`]:
+    `### Answers without a browser (server-side responder)
+
+You no longer need the app open: a **server-side responder** handles your messages as soon as they arrive —
+
+- **Questions**: an immediate LLM answer, **with an automatic web search** (Jina) when the question calls for one (prices, news, the content of a URL) — sources cited.
+- **/flow <request>**: the workflow is **generated by AI and executed server-side** (scrape, enrichment, price watch, PIM, notification), then saved in the app.
+- **/run <name>**: server-side execution of a saved workflow, with a summary in return.
+- **Google tools without a browser**: once **Google (server access)** is connected under Settings → Connectors (a one-off), \`/flow\` can **create Google Sheets in your Drive** and **send Gmail** from the server. NEVER paste credentials into the chat — authorisation is given in the app and nowhere else.
+- Only workflows with **graphic output** (PDF, artwork) or a **manual file** wait for the app to be opened (a message tells you so; the browser worker then takes over).
+
+If the app happens to be open at the same time, only one of the two answers (never a duplicate).`,
+
+  [`### Approbation humaine dans un workflow
+
+Le node **« Approbation Telegram »** (catégorie *Communication* dans l'éditeur de workflow) met le run **en pause** et demande une validation à un humain, directement dans la messagerie :
+
+- Le bot envoie ta **question** avec deux boutons inline **✅ Approuver / ❌ Refuser**. Le workflow reprend ensuite sur le port **« approved »** ou **« rejected »** selon le clic.
+- Si le port **attachment** est connecté (ex : un PDF généré), le **fichier est joint** au message et la question sert de **légende**.
+- **Délai max** réglable (minutes) ; à l'expiration, au choix : **échouer** (stoppe le run) ou **refuser** (part par le port « rejected »).
+- Le **premier clic gagne** (transaction serveur) ; les clics tardifs sont ignorés et les boutons retirés après décision.
+
+⚠️ Le chat ciblé doit figurer dans l'**allowlist du webhook** (Réglages → Telegram), sinon les clics sont ignorés. Bot token et Chat ID se laissent vides pour réutiliser ceux des Connecteurs.`]:
+    `### Human approval inside a workflow
+
+The **"Telegram approval"** node (*Communication* category in the workflow editor) **pauses** the run and asks a human for sign-off, right in the messenger:
+
+- The bot sends your **question** with two inline buttons, **✅ Approve / ❌ Reject**. The workflow then resumes on the **"approved"** or **"rejected"** port depending on the click.
+- If the **attachment** port is connected (a generated PDF, say), the **file is attached** to the message and the question serves as the **caption**.
+- An adjustable **maximum delay** (in minutes); on expiry, your choice of: **fail** (stopping the run) or **reject** (leaving by the "rejected" port).
+- The **first click wins** (a server transaction); late clicks are ignored and the buttons are removed once the decision is made.
+
+⚠️ The target chat must appear on the **webhook allowlist** (Settings → Telegram), otherwise the clicks are ignored. Leave the bot token and chat ID empty to reuse the ones from Connectors.`,
+
+  [`### Sécurité : secret + allowlist
+
+Le webhook entrant n'accepte un message que si **deux conditions** sont réunies :
+
+- Le **secret token** envoyé par Telegram correspond au \`webhookSecret\` enregistré côté serveur (toute requête sans le bon en-tête \`X-Telegram-Bot-Api-Secret-Token\` est rejetée en *401*).
+- Le **chat ID** émetteur figure dans l'**allowlist** (\`allowedChatIds\`). Les messages — et les clics d'approbation — venant d'un chat non listé sont **silencieusement ignorés**.
+
+Deux réglages distincts cohabitent donc : la **config webhook** (secret + allowlist, partagée) et ta **config personnelle** (bot token + chat ID, par utilisateur, dans Connecteurs). C'est cette dernière que lisent le répondeur serveur et le digest.`]:
+    `### Security: secret + allowlist
+
+The inbound webhook only accepts a message when **two conditions** are met:
+
+- The **secret token** sent by Telegram matches the \`webhookSecret\` recorded server-side (any request without the right \`X-Telegram-Bot-Api-Secret-Token\` header is rejected with a *401*).
+- The sending **chat ID** appears on the **allowlist** (\`allowedChatIds\`). Messages — and approval clicks — from a chat that is not listed are **silently ignored**.
+
+Two distinct settings therefore live side by side: the **webhook configuration** (secret + allowlist, shared) and your **personal configuration** (bot token + chat ID, per user, under Connectors). It is the latter that the server-side responder and the digest read.`,
+
+  [`### Pourquoi jamais de double réponse
+
+À l'arrivée d'un message, le répondeur serveur tente un **claim transactionnel** : il fait passer la fiche de \`pending\` à \`processing\` (et s'attribue \`workerId: 'server'\`) en une seule transaction. Si l'app était déjà en train de la traiter, le claim échoue et le serveur s'efface — **un seul des deux répond**. À l'inverse, quand le message nécessite l'app (rendu graphique ou fichier manuel), le serveur **rend la main** : il repasse la fiche en \`pending\` avec un drapeau \`serverDeferred\`, et le worker du navigateur la reprend à la prochaine ouverture.`]:
+    `### Why you never get a double answer
+
+When a message arrives, the server-side responder attempts a **transactional claim**: it moves the record from \`pending\` to \`processing\` (and assigns itself \`workerId: 'server'\`) in a single transaction. If the app was already handling it, the claim fails and the server steps aside — **only one of the two answers**. Conversely, when the message needs the app (graphic output or a manual file), the server **hands back**: it returns the record to \`pending\` with a \`serverDeferred\` flag, and the browser worker picks it up next time you open the app.`,
+
+  [`### Digest quotidien
+
+Dans **Réglages → Connecteurs → Telegram**, activez le **digest quotidien** : chaque matin à **08:00** (heure de Paris), le bot envoie un résumé des dernières 24 h — workflows réussis/en échec (avec les noms) et messages en attente de traitement. **Rien n'est envoyé s'il ne s'est rien passé.**`]:
+    `### Daily digest
+
+Under **Settings → Connectors → Telegram**, switch the **daily digest** on: every morning at **08:00** (Paris time), the bot sends a summary of the last 24 hours — workflows that succeeded or failed (with their names) and messages waiting to be processed. **Nothing is sent if nothing happened.**`,
+
+  [`### Voir aussi
+
+\`/flow\` et \`/run\` s'appuient sur le module **Workflows** : la génération par IA et l'exécution sont les mêmes que dans l'éditeur de workflow.`]:
+    `### See also
+
+\`/flow\` and \`/run\` rely on the **Workflows** module: the AI generation and the execution are the same as in the workflow editor.`,
 }
