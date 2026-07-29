@@ -3389,4 +3389,640 @@ The image is placed on the **canvas** of a new project — it **stays an image**
 
   [`Le module **Création studio** permet de créer et de gérer des promotions pour le point de vente : affiches, étiquettes, flyers et autres supports prêts à l'impression ou à la diffusion digitale.`]:
     `The **Creation studio** module lets you create and manage promotions for the shop floor: posters, shelf labels, flyers and other pieces ready for print or for digital display.`,
+
+  [`Ouvrir « Nouveau document »`]:
+    `Open "New document"`,
+
+  [`Ouvrir Démo express`]:
+    `Open Express demo`,
+
+  [`Ouvrir Catalogue studio`]:
+    `Open Catalogue studio`,
+
+  [`Ouvrir le PIM`]:
+    `Open the PIM`,
+
+  [`Ouvrir Workflows`]:
+    `Open Workflows`,
+
+  [`Ouvrir la Veille tarifaire`]:
+    `Open Price monitoring`,
+
+  [`Ouvrir le DAM`]:
+    `Open the DAM`,
+
+  [`Ouvrir Telegram`]:
+    `Open Telegram`,
+
+  [`Ouvrir les Réglages`]:
+    `Open Settings`,
+
+  [`Configurer clés & modèles (Réglages → IA)`]:
+    `Configure keys & models (Settings → AI)`,
+
+  [`Gérer les rôles (Utilisateurs & rôles)`]:
+    `Manage the roles (Users & roles)`,
+
+  [`Sauvegarder`]:
+    `Save`,
+
+  [`Sélection`]:
+    `Select`,
+
+  [`Texte`]:
+    `Text`,
+
+  [`Rectangle`]:
+    `Rectangle`,
+
+  [`Ellipse`]:
+    `Ellipse`,
+
+  [`Ligne`]:
+    `Line`,
+
+  [`Image / DAM`]:
+    `Image / DAM`,
+
+  [`Panneau Calques`]:
+    `Layers panel`,
+
+  [`Zoom arrière`]:
+    `Zoom out`,
+
+  [`Zoom 100 %`]:
+    `Zoom 100 %`,
+
+  [`Zoom avant`]:
+    `Zoom in`,
+
+  [`Paramètres de la page`]:
+    `Page settings`,
+
+  [`Grille`]:
+    `Grid`,
+
+  [`Snap`]:
+    `Snap`,
+
+  [`Panneau de droite de l'éditeur (Propriétés / Calques)`]:
+    `The editor's right-hand panel (Properties / Layers)`,
+
+  [`Espace Données (créer / gérer la source)`]:
+    `The Data area (create / manage the source)`,
+
+  [`Espace Données (créer/gérer la base)`]:
+    `The Data area (create/manage the database)`,
+
+  [`Espace Données`]:
+    `The Data area`,
+
+  [`Exporter par lot (une variante par ligne)`]:
+    `Batch export (one variation per row)`,
+
+  [`Exporter (par lot) depuis l'éditeur`]:
+    `Export (in bulk) from the editor`,
+
+  [`Bouton Exporter (depuis l'éditeur)`]:
+    `The Export button (from the editor)`,
+
+  [`Ouvrir Animation`]:
+    `Open Animation`,
+
+  [`Voir les animations dans le DAM`]:
+    `See the animations in the DAM`,
+
+  [`Génération d'image (DAM)`]:
+    `Image generation (DAM)`,
+
+  [`Génération d'image dédiée (DAM)`]:
+    `Dedicated image generation (DAM)`,
+
+  [`Importer un IDML`]:
+    `Import an IDML`,
+
+  [`Réglages → Token du plugin InDesign`]:
+    `Settings → InDesign plug-in token`,
+
+  [`Ouvrir Importer`]:
+    `Open Import`,
+
+  [`Voir Image → SVG éditable`]:
+    `See Image → editable SVG`,
+
+  [`Gérer les templates scraping`]:
+    `Manage the scraping templates`,
+
+  [`Ouvrir Templates scraping`]:
+    `Open Scraping templates`,
+
+  [`Ouvrir les Taxonomies`]:
+    `Open Taxonomies`,
+
+  [`Ouvrir Taxonomies`]:
+    `Open Taxonomies`,
+
+  [`Export (ouvre un projet d'abord)`]:
+    `Export (open a project first)`,
+
+  [`Ouvrir Scraping Hub`]:
+    `Open the Scraping Hub`,
+
+  [`Construire le workflow (Workflows)`]:
+    `Build the workflow (Workflows)`,
+
+  [`Configurer les alertes (Telegram)`]:
+    `Configure the alerts (Telegram)`,
+
+  [`Ouvrir Création studio`]:
+    `Open Creation studio`,
+
+  [`Ouvrir le Chat IA`]:
+    `Open the AI Chat`,
+
+  [`Ouvrir Utilisateurs & rôles`]:
+    `Open Users & roles`,
+
+  [`Réglages → Mon activité`]:
+    `Settings → My activity`,
+
+  [`Utilisateurs & rôles → Journal (admin)`]:
+    `Users & roles → Log (admin)`,
+
+  [`Gérer les permissions (Utilisateurs & rôles)`]:
+    `Manage the permissions (Users & roles)`,
+
+  [`Ouvrir Paramètres → Données`]:
+    `Open Settings → Data`,
+
+  [`Renseigne **au moins une clé API** parmi Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi, GLM (Z.ai) ou OpenRouter, puis teste-la. Tant qu'aucune clé valide n'est saisie, le bouton **Suivant** reste désactivé (*« Renseignez au moins une clé LLM »*). C'est la seule étape réellement bloquante.`]:
+    `Enter **at least one API key** among Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi, GLM (Z.ai) and OpenRouter, then test it. Until a valid key is entered, the **Next** button stays disabled (*"Enter at least one LLM key"*). This is the only genuinely blocking step.`,
+
+  [`Choisis le modèle de chaque fournisseur et l'ordre de la **cascade de raisonnement** (le premier qui répond gagne, les suivants servent de secours). Le bouton **« Mettre à jour tous les LLM (dernières versions) »** réaligne d'un clic toute la sélection sur les modèles phares du catalogue.`]:
+    `Choose each provider's model and the order of the **reasoning cascade** (the first to answer wins, the rest act as fallbacks). The **"Update all LLMs (latest versions)"** button realigns the whole selection with the catalogue's flagship models in one click.`,
+
+  [`Branche **Google Drive**, **Bright Data** (scraping) et **Telegram** si tu en as besoin. Cette étape peut être passée et complétée plus tard dans *Réglages → Connecteurs*.`]:
+    `Plug in **Google Drive**, **Bright Data** (scraping) and **Telegram** if you need them. This step can be skipped and completed later under *Settings → Connectors*.`,
+
+  [`Récapitulatif de ton profil, puis le choix de **lancer la visite guidée du tableau de bord** ou de terminer directement.`]:
+    `A summary of your profile, then the choice of **starting the guided tour of the dashboard** or finishing straight away.`,
+
+  [`Insertion d'images sans quitter l'éditeur : onglets **Galerie**, **Upload**, **IA** (génération depuis un prompt, 5 ratios, image-to-image si un objet est sélectionné), **Stock**, **Mes images**, **Favoris**, **Collections**, **Récents** — les mêmes sources que le DAM.`]:
+    `Inserting images without leaving the editor: **Gallery**, **Upload**, **AI** (generation from a prompt, 5 ratios, image-to-image if an object is selected), **Stock**, **My images**, **Favourites**, **Collections** and **Recent** tabs — the same sources as the DAM.`,
+
+  [`Les **images et polices du projet** (onglets avec compteurs). Glisse une image sur le canvas, ou utilise les polices importées (IDML) dans tes textes.`]:
+    `The **project's images and fonts** (tabs with counters). Drag an image onto the canvas, or use the imported (IDML) fonts in your text.`,
+
+  [`Format de page : **presets** (A4/A3/A5, Full HD, 4K, 16:9, post & story Instagram, couverture Facebook) ou dimensions personnalisées en mm. **Fond de page** : couleur unie, dégradé ou image (upload ou glisser-déposer). C'est aussi ici que se gèrent les pages multiples.`]:
+    `Page format: **presets** (A4/A3/A5, Full HD, 4K, 16:9, Instagram post & story, Facebook cover) or custom dimensions in mm. **Page background**: solid colour, gradient or image (upload or drag-and-drop). This is also where multiple pages are managed.`,
+
+  [`Tout le pré-presse : **DPI**, **fond perdu** (bleed), **traits de coupe** (longueur 2–10 mm, décalage 0–3 mm, épaisseur, couleur), **hirondelles de repérage** (registration marks), **zone de sécurité** (marge, pointillés paramétrables) et la section **Preflight** (voir plus bas). Tu peux enregistrer tous ces réglages comme une **famille de paramètres** (preset d'impression) réutilisable d'un projet à l'autre : un sélecteur en haut du panneau permet de **créer**, **mettre à jour** ou **supprimer** un preset et de l'appliquer en un clic.`]:
+    `Everything pre-press: **DPI**, **bleed**, **crop marks** (2–10 mm long, 0–3 mm offset, thickness, colour), **registration marks**, **safe area** (margin, adjustable dashes) and the **Preflight** section (see below). You can save all these settings as a **parameter family** (a print preset) reusable from one project to the next: a selector at the top of the panel lets you **create**, **update** or **delete** a preset and apply it in one click.`,
+
+  [`Applique des **animations 3D** à un objet (flip 3D, relief, particules…) via des presets, avec lecture/arrêt et **enregistrement vidéo** (export MP4/WebM) du rendu animé.`]:
+    `Applies **3D animations** to an object (3D flip, extrusion, particles…) through presets, with play/stop and **video recording** (MP4/WebM export) of the animated result.`,
+
+  [`Une **liaison** \`{{champ}}\` (ou « Lier à un champ ») **remplace le contenu** d'un élément par la valeur de la colonne (texte, image). Une **règle conditionnelle** ne remplace rien : elle **change l'apparence ou la visibilité** de l'élément selon une condition. Les deux se combinent : un bloc prix peut afficher \`{{prix}}\` **et** passer en rouge si \`stock\` est inférieur à 5.`]:
+    `A **binding** \`{{field}}\` (or "Link to a field") **replaces the content** of an element with the column's value (text, image). A **conditional rule** replaces nothing: it **changes the element's appearance or visibility** according to a condition. The two combine: a price block can display \`{{price}}\` **and** turn red if \`stock\` is under 5.`,
+
+  [`Si une propriété est **à la fois** pilotée par une liaison de données (ex. couleur câblée sur une colonne) **et** par une règle qui la modifie (Changer la couleur / Changer l'opacité), les deux peuvent se contredire. IBS-Studio l'**avertit** au lieu de masquer le conflit. Solution : pilote la propriété **soit** par la liaison, **soit** par la règle, pas les deux.`]:
+    `If a property is driven **both** by a data binding (a colour wired to a column, say) **and** by a rule that changes it (Change the colour / Change the opacity), the two can contradict each other. IBS-Studio **warns you** rather than hiding the conflict. The fix: drive the property **either** through the binding **or** through the rule, not both.`,
+
+  [`Connecte une **source de données** (Excel, Google Sheets, PIM…) depuis le panneau **Publipostage**. Sans aucune source — jamais branchée — il n'y a pas de colonnes à tester. Si une source a déjà été utilisée, ses champs restent proposés même hors connexion live (les règles s'évalueront alors à la fusion / à l'export).`]:
+    `Connect a **data source** (Excel, Google Sheets, PIM…) from the **Mail merge** panel. With no source at all — never connected — there are no columns to test. If a source has already been used, its fields stay on offer even without a live connection (the rules will then be evaluated at merge / export time).`,
+
+  [`L'aperçu live nécessite une **source connectée** (panneau Publipostage). Hors connexion, la règle est bien **enregistrée** sur l'objet, mais son effet ne sera visible qu'au moment du publipostage / de l'export par lot. Reconnecte la source pour retrouver l'aperçu immédiat.`]:
+    `The live preview needs a **connected source** (Mail merge panel). Without one, the rule is still **saved** onto the object, but its effect will only be visible at merge / batch-export time. Reconnect the source to get the immediate preview back.`,
+
+  [`Le panneau reprend la logique des **actions conditionnelles d'EasyCatalog** (Contient, Est, Est égal à, Cacher…). Les actions propres au flux InDesign (« Conserver avec suivant », reflow) n'ont pas de sens sur un canvas en positionnement absolu et sont volontairement absentes. À la place, IBS-Studio ajoute les transformations **couleur**, **opacité** et **taille**.`]:
+    `The panel takes up the logic of **EasyCatalog's conditional actions** (Contains, Is, Is equal to, Hide…). The actions specific to the InDesign flow ("Keep with next", reflow) make no sense on an absolutely-positioned canvas and are deliberately absent. In their place, IBS-Studio adds the **colour**, **opacity** and **size** transformations.`,
+
+  [`Décris ton **sujet**, et optionnellement l'**audience**, l'**objectif**, le **ton**, la **marque** et un **caption**. L'IA compose une **séquence de 2 à 5 scènes** (accroche → visuel → appel à l'action) avec titres, chiffres clés, icônes et transitions, puis choisit un thème visuel et une palette cohérents.`]:
+    `Describe your **subject**, and optionally the **audience**, the **objective**, the **tone**, the **brand** and a **caption**. The AI composes a **sequence of 2 to 5 scenes** (hook → visual → call to action) with titles, key figures, icons and transitions, then chooses a coherent visual theme and palette.`,
+
+  [`Depuis l'éditeur, on capture le **SVG du projet courant** et l'IA l'**anime** (apparitions, rythme, easing) selon une consigne de style. Idéal pour transformer une création print en teaser animé.`]:
+    `From the editor, the **current project's SVG** is captured and the AI **animates** it (entrances, pace, easing) according to a style instruction. Ideal for turning a print creation into an animated teaser.`,
+
+  [`Glisse des **images, PDF ou SVG** pour enrichir le brief : l'IA les lit (texte + visuel) et s'en sert comme contexte.`]:
+    `Drag in **images, PDFs or SVGs** to enrich the brief: the AI reads them (text + visual) and uses them as context.`,
+
+  [`Vérifie que l'IDML provient bien d'un document **piloté par EasyCatalog** (les champs y sont insérés via le panneau EasyCatalog, repérables aux crochets verts). Un texte tapé à la main n'est pas un champ. La reconnaissance a été validée sur InDesign 2026 ; des versions très anciennes peuvent stocker les champs différemment.`]:
+    `Check that the IDML really comes from a document **driven by EasyCatalog** (its fields are inserted through the EasyCatalog panel and can be spotted by their green brackets). Text typed by hand is not a field. Recognition has been validated on InDesign 2026; very old versions may store the fields differently.`,
+
+  [`Une **URL** d'image (ex. lien Firebase/DAM) se charge directement. Un simple **nom de fichier** est résolu via ton stockage si le fichier y existe. Le binding image se branche tout seul sur le cadre EasyCatalog importé.
+
+À l'export EasyCatalog, les colonnes image sont aussi inscrites dans le zip sous forme de **noms de fichiers** dans la donnée, et un manifeste \`images.csv\` (colonnes \`ecFieldName, row_key, url, filename\`) te donne la table URL → fichier pour rapatrier les visuels dans le dossier image du data source.`]:
+    `An image **URL** (a Firebase/DAM link, say) loads directly. A plain **file name** is resolved through your storage if the file is there. The image binding wires itself to the imported EasyCatalog frame.
+
+On EasyCatalog export, the image columns are also written into the zip as **file names** in the data, and an \`images.csv\` manifest (columns \`ecFieldName, row_key, url, filename\`) gives you the URL → file table for bringing the visuals into the data source's image folder.`,
+
+  [`IBS-Studio prend ta **colonne primaire** comme clé EasyCatalog **si** toutes ses valeurs sont uniques et non vides. Sinon, il **synthétise** une clé \`_ec_key\` (\`row_1\`, \`row_2\`, …) pour garantir une re-synchronisation fiable. Le \`README.txt\` du zip rappelle quel champ sert de clé et s'il a été généré.
+
+Les **noms de champs** exportés sont assainis pour rester stables : lettres et chiffres (accents inclus) conservés, le reste collapsé en \`_\`, et dédoublonnage insensible à la casse (suffixe \`_2\`, \`_3\`…). C'est la même règle qui permet aux noms de matcher au publipostage.`]:
+    `IBS-Studio uses your **primary column** as the EasyCatalog key **if** all its values are unique and non-empty. Otherwise it **synthesises** an \`_ec_key\` key (\`row_1\`, \`row_2\`, …) to guarantee a dependable re-synchronisation. The zip's \`README.txt\` reminds you which field acts as the key, and whether it was generated.
+
+The **field names** exported are sanitised so they stay stable: letters and digits (accents included) are kept, everything else collapses into \`_\`, and duplicates are resolved case-insensitively (a \`_2\`, \`_3\`… suffix). It is the same rule that lets the names match at merge time.`,
+
+  [`- Les champs sous **forme qualifiée** (référence data source complète, marqueurs \`$ID/2\`/\`$ID/3\`) ne sont pas encore convertis en placeholders et restent en texte ; seule la forme simple \`$ID/4\`/\`$ID/5\` est reconnue.
+- Un champ **vide** dans le gabarit d'origine génère quand même son placeholder à l'import (la paire de marqueurs suffit).
+- À l'export IDML, les **images** ne sont pas ré-incorporées dans le fichier : EasyCatalog les re-tire depuis sa propre source à la réouverture (le cadre et son champ sont conservés).`]:
+    `- Fields in **qualified form** (a complete data-source reference, \`$ID/2\`/\`$ID/3\` markers) are not converted into placeholders yet and stay as text; only the simple \`$ID/4\`/\`$ID/5\` form is recognised.
+- A field left **empty** in the original template still produces its placeholder on import (the pair of markers is enough).
+- On IDML export, the **images** are not re-embedded into the file: EasyCatalog pulls them from its own source when reopening (the frame and its field are preserved).`,
+
+  [`Les deux aboutissent au même résultat (champs \`{{…}}\` connectés). **EasyCatalog** s'impose si ton flux print l'utilise déjà (re-synchro côté InDesign). **Le balisage XML natif** est gratuit, intégré à InDesign, et suffit pour brancher une base et fusionner depuis le web. Tu peux mélanger : IBS-Studio lit les deux à l'import.`]:
+    `Both end up at the same result (connected \`{{…}}\` fields). **EasyCatalog** is the obvious choice if your print flow already uses it (re-synchronisation on the InDesign side). **Native XML tagging** is free, built into InDesign, and enough to plug a database in and merge from the web. You can mix the two: IBS-Studio reads both on import.`,
+
+  [`Les crochets \`[ ]\` n'apparaissent que sur du **texte** balisé. Si tu as appliqué la balise au **cadre** (rectangle) au lieu du texte, tu obtiens un cadre coloré dans la Structure mais pas de crochets — et la valeur ne sera pas remplacée. Sélectionne le **texte** du bloc puis ré-applique la balise.`]:
+    `The \`[ ]\` brackets only appear on tagged **text**. If you applied the tag to the **frame** (the rectangle) instead of the text, you get a coloured frame in the Structure but no brackets — and the value will not be replaced. Select the block's **text**, then apply the tag again.`,
+
+  [`Le nom de la balise doit correspondre au **nom de la colonne** de ta base. La **casse**, les **accents** et les espaces/underscores sont tolérés à la correspondance (ex. \`Prix normal\` ↔ colonne \`Prix_normal\`). En cas de doute, copie le nom exact depuis l'**Espace Données**.`]:
+    `The tag's name must match your database's **column name**. **Case**, **accents** and spaces/underscores are tolerated in the matching (e.g. \`Prix normal\` ↔ the \`Prix_normal\` column). When in doubt, copy the exact name from the **Data area**.`,
+
+  [`Le plug-in est distribué en **mode développeur (UXP)** : il se charge manuellement à chaque session via l'UXP Developer Tool. Vérifie que le **token** collé est bien celui généré dans **Réglages → Token du plugin InDesign** (chaque utilisateur a le sien). Rappel : le balisage XML natif (étape 1) ne nécessite **aucun** plug-in et reste la voie recommandée.`]:
+    `The plug-in ships in **developer mode (UXP)**: it is loaded by hand each session through the UXP Developer Tool. Check that the **token** you pasted is the one generated under **Settings → InDesign plug-in token** (each user has their own). A reminder: native XML tagging (step 1) needs **no** plug-in at all and remains the recommended route.`,
+
+  [`Une fois ta base branchée, tu peux faire **réagir** un élément à la valeur de chaque ligne (masquer un bandeau « PROMO » hors promotion, passer un prix en rouge sous un seuil de stock, agrandir un picto « nouveauté »…). C'est le rôle des **Règles conditionnelles** : sélectionne l'objet dans l'éditeur, ouvre le panneau **Propriétés → Règles conditionnelles** et compose tes conditions. Balisage XML (ou EasyCatalog) pour brancher la donnée **+** règles conditionnelles pour la mise en forme = l'alternative complète à un flux print piloté par données. Voir la section **Règles conditionnelles**.`]:
+    `Once your database is plugged in, you can make an element **react** to each row's value (hide a "SALE" banner outside a promotion, turn a price red below a stock threshold, enlarge a "new" pictogram…). That is what **Conditional rules** are for: select the object in the editor, open the **Properties → Conditional rules** panel and compose your conditions. XML tagging (or EasyCatalog) to plug the data in **+** conditional rules for the formatting = the complete alternative to a data-driven print workflow. See the **Conditional rules** section.`,
+
+  [`Quand le PDF passe par la **conversion vectorielle**, l'import ne se contente pas de séparer texte et fond — il reconstruit des objets vraiment manipulables :
+
+- **Blocs de texte regroupés** : un **prix composé** (« 22 DT ,99 »), une **bulle** (« 30 % d'économie »), une **pastille** (« +55g GRATUIT ») sont rassemblés en **un seul groupe** déplaçable d'un tenant, au lieu de mots éparpillés.
+- **Ombres portées InDesign** → converties en **ombre native** éditable depuis le panneau Ombre (au lieu d'un voile gris).
+- **Images CMYK** (photos InDesign/Adobe) → ré-encodées en **RGB** pour éviter le rendu noir/inversé des navigateurs.
+- **Marques d'impression** (traits de coupe, repères) et **doublons d'impression** (passe blanche + passe encrée superposées) sont déballés/dédoublonnés pour ne pas bloquer la sélection ni polluer les calques.`]:
+    `When the PDF goes through the **vector conversion**, the import does more than separate text from background — it rebuilds objects you can genuinely work with:
+
+- **Grouped text blocks**: a **composite price** ("22 DT ,99"), a **bubble** ("30 % off"), a **flash** ("+55g FREE") are gathered into **a single group** that moves as one, instead of scattered words.
+- **InDesign drop shadows** → converted into a **native shadow**, editable from the Shadow panel (rather than a grey veil).
+- **CMYK images** (InDesign/Adobe photos) → re-encoded to **RGB** to avoid the black/inverted rendering browsers give them.
+- **Print marks** (crop marks, registration) and **print duplicates** (a white pass and an inked pass laid on top of each other) are unpacked and de-duplicated so they neither block selection nor clutter the layers.`,
+
+  [`Pour que le rendu ne retombe pas sur une police par défaut :
+
+- Les **polices embarquées** dans le PDF (sous-ensembles TrueType) sont **extraites et chargées** sous leur vraie famille (« WRZTFA+ArialNarrow-Bold » → *Arial Narrow*, gras).
+- Les familles non extractibles (ex. **Bebas Neue**) sont récupérées depuis **Google Fonts**, en graisses **400 et 700** (pour éviter un faux-gras synthétique).
+- La **chasse** de chaque texte est ensuite **calée sur sa largeur d'origine** : le texte condensé du design (« 30 % » comprimé) ne déborde plus sur son voisin, même si la police de rendu n'a pas les métriques exactes.`]:
+    `So the rendering does not fall back on a default font:
+
+- The **fonts embedded** in the PDF (TrueType subsets) are **extracted and loaded** under their real family ("WRZTFA+ArialNarrow-Bold" → *Arial Narrow*, bold).
+- Families that cannot be extracted (**Bebas Neue**, for instance) are fetched from **Google Fonts**, in weights **400 and 700** (to avoid synthetic faux bold).
+- Each text's **tracking** is then **set against its original width**: the design's condensed text (a squeezed "30 %") no longer runs over its neighbour, even when the rendering font does not have the exact metrics.`,
+
+  [`Si le PDF d'origine contient déjà des **champs de fusion** \`{{…}}\` (publipostage), l'import les reconnaît et leur attache leur **cadre de composition** : largeur du bloc + **alignement détecté** sur la géométrie réelle (bords droits communs → aligné à droite, centres → centré).
+
+Ces champs deviennent des **Textbox à cadre fixe** : à la fusion, les valeurs longues **reviennent à la ligne** dans le cadre au lieu de déborder, et l'alignement du design est conservé. Le moteur de publipostage descend aussi **dans les blocs groupés** pour retrouver ces champs.`]:
+    `If the original PDF already holds **merge fields** \`{{…}}\`, the import recognises them and attaches their **composition frame**: the block width + the **alignment detected** from the real geometry (shared right edges → right-aligned, shared centres → centred).
+
+These fields become **fixed-frame text boxes**: at merge time, long values **wrap** inside the frame instead of overflowing, and the design's alignment is preserved. The mail-merge engine also goes down **into grouped blocks** to find these fields.`,
+
+  [`- **Page 1 uniquement** : les pages suivantes sont ignorées. Pour un multi-pages fidèle, préférez _Import InDesign (IDML)_.
+- Idéal pour **repartir d'un PDF existant** (BAT, ancien document) quand le fichier source InDesign n'est plus disponible.
+- Un PDF **scanné ou totalement aplati** n'a pas de calque texte : on passe alors par l'**OCR** (« Décomposer »), de fidélité moindre.
+- Le SVG généré est **marqué** pour que l'éditeur **n'enclenche pas l'OCR** quand un calque texte natif est déjà présent.`]:
+    `- **Page 1 only**: the following pages are ignored. For a faithful multi-page import, prefer _InDesign import (IDML)_.
+- Ideal for **starting again from an existing PDF** (a proof, an old document) when the InDesign source file is no longer available.
+- A **scanned or completely flattened** PDF has no text layer: we then go through **OCR** ("Break apart"), which is less faithful.
+- The SVG produced is **marked** so the editor **does not trigger OCR** when a native text layer is already there.`,
+
+  [`Recherche dans **Pexels & Unsplash** (millions de photos libres de droits) avec filtres source / orientation / couleur.`]:
+    `Searches **Pexels & Unsplash** (millions of royalty-free photos) with source / orientation / colour filters.`,
+
+  [`Tes images **sauvegardées** — depuis la banque ou issues de la génération IA.`]:
+    `Your **saved** images — from the stock library or produced by AI generation.`,
+
+  [`Les images que tu as marquées d'un **♥** pour un accès rapide.`]:
+    `The images you have marked with a **♥** for quick access.`,
+
+  [`Des **dossiers d'organisation** que tu crées et remplis toi-même.`]:
+    `**Organising folders** that you create and fill yourself.`,
+
+  [`Les **derniers ajouts**, triés par date.`]:
+    `The **latest additions**, sorted by date.`,
+
+  [`Les **images et les polices** du projet courant, prêtes à glisser sur le canvas.`]:
+    `The current project's **images and fonts**, ready to drag onto the canvas.`,
+
+  [`Génération d'images par IA (**Gemini / Image IA**) — voir le détail des paramètres plus bas.`]:
+    `AI image generation (**Gemini / AI Image**) — see the settings in detail below.`,
+
+  [`Tes **compositions vidéo** (HyperFrames).`]:
+    `Your **video compositions** (HyperFrames).`,
+
+  [`Accès à tes **fichiers Google Drive** une fois ton compte connecté.`]:
+    `Access to your **Google Drive files** once your account is connected.`,
+
+  [`Décris l'image à générer. Tu peux **coller une image** dans le champ : elle rejoint les *fichiers de référence*. Deux assistants :
+
+- **« Améliorer »** — réécrit ton prompt en **une passe** (sujet, style, composition, éclairage, qualité), en tenant compte des références.
+- **« Avec questions »** — l'IA pose **3 à 6 questions ciblées** (environnement, éclairage, mise en page, ambiance…) ; tes réponses affinent le prompt. Utile quand le brief est flou.`]:
+    `Describe the image you want. You can **paste an image** into the field: it joins the *reference files*. Two assistants:
+
+- **"Improve"** — rewrites your prompt in **one pass** (subject, style, composition, lighting, quality), taking the references into account.
+- **"With questions"** — the AI asks **3 to 6 targeted questions** (setting, lighting, layout, mood…); your answers sharpen the prompt. Useful when the brief is vague.`,
+
+  [`Bouton **« Ajouter des fichiers »** (ou colle une image). **Tous formats** : images, logos, **PDF**, **SVG** (rastérisé en PNG, **plafonné à 2048 px**). Les références sont **transmises telles quelles** à Image IA qui les **voit** : il préserve leur structure et n'applique que les changements demandés (branding, texte, décor). Vignette + **✕** pour retirer.`]:
+    `The **"Add files"** button (or paste an image). **Any format**: images, logos, **PDF**, **SVG** (rasterised to PNG, **capped at 2048 px**). The references are **passed as they stand** to AI Image, which **sees** them: it preserves their structure and applies only the changes you asked for (branding, text, setting). Thumbnail + **✕** to remove.`,
+
+  [`- **Images & texte** _(défaut)_ : image **+ texte** — le modèle peut commenter brièvement.
+- **Images seul.** : **image uniquement** — force la sortie visuelle et empêche le modèle de répondre en mode conversationnel (utile s'il « parle » au lieu de générer).`]:
+    `- **Images & text** _(default)_: image **+ text** — the model may add a brief comment.
+- **Images only**: **image alone** — forces visual output and stops the model answering conversationally (useful when it "talks" instead of generating).`,
+
+  [`Curseur, pas de 0,1. Règle la créativité :
+
+- **0 — Précis** : déterministe, fidèle au prompt/références.
+- **2 — Créatif** : plus de liberté et de variation.
+
+Reproduire une référence → baisse vers 0 ; explorer → monte vers 2.`]:
+    `A slider, in steps of 0.1. Sets the creativity:
+
+- **0 — Precise**: deterministic, faithful to the prompt/references.
+- **2 — Creative**: more freedom and more variation.
+
+Reproducing a reference → move down towards 0; exploring → move up towards 2.`,
+
+  [`\`Auto\` · \`1:1\` · \`16:9\` · \`9:16\` · \`4:3\` · \`3:4\`.
+
+- **Auto** _(défaut)_ : le modèle choisit le cadrage adapté au prompt/références (aucune contrainte envoyée).
+- Les autres **imposent** le rapport : \`1:1\` carré (réseaux), \`16:9\` / \`4:3\` paysage, \`9:16\` / \`3:4\` portrait.`]:
+    `\`Auto\` · \`1:1\` · \`16:9\` · \`9:16\` · \`4:3\` · \`3:4\`.
+
+- **Auto** _(default)_: the model chooses the framing that suits the prompt/references (no constraint is sent).
+- The others **impose** the ratio: \`1:1\` square (social), \`16:9\` / \`4:3\` landscape, \`9:16\` / \`3:4\` portrait.`,
+
+  [`\`1K\` _(défaut)_ · \`2K\` · \`4K\`. Définition du visuel. ⚠️ **2K et 4K sont 2 à 3× plus lents** — réserve-les au rendu final, reste en 1K pour itérer.`]:
+    `\`1K\` _(default)_ · \`2K\` · \`4K\`. The visual's resolution. ⚠️ **2K and 4K are 2 to 3× slower** — keep them for the final render and stay on 1K while you iterate.`,
+
+  [`\`1\` _(défaut)_ · \`2\` · \`4\`. Génère **N variations** en parallèle du même prompt — pour comparer plusieurs propositions d'un coup.`]:
+    `\`1\` _(default)_ · \`2\` · \`4\`. Generates **N variations** of the same prompt in parallel — to compare several proposals at once.`,
+
+  [`Bouton **« Générer »**. Pour chaque image :
+
+- **Télécharger** — PNG en local.
+- **Sauvegarder** — vers **« Mes images »** (prompt d'origine, prompt amélioré et Q/R conservés en métadonnées).
+- **Insérer dans l'éditeur** — place l'image dans le projet ouvert.
+
+**Réinitialiser / Effacer** vide les résultats. Idéal pour visuels d'ambiance, mockups, illustrations ; pour de **vraies photos produit**, privilégie la banque ou le scraping.`]:
+    `The **"Generate"** button. For each image:
+
+- **Download** — a PNG on your machine.
+- **Save** — into **"My images"** (the original prompt, the improved prompt and the Q&A are kept as metadata).
+- **Insert into the editor** — places the image in the project you have open.
+
+**Reset / Clear** empties the results. Ideal for mood shots, mock-ups and illustrations; for **genuine product photos**, prefer the stock library or scraping.`,
+
+  [`**Zoom** avant/arrière + ajustement, **Rotation** par 90°, **Miroir** horizontal et vertical.`]:
+    `**Zoom** in/out + fit, **Rotate** by 90°, **Mirror** horizontally and vertically.`,
+
+  [`Masque interactif à **8 poignées**, grille des **tiers**, **contraintes de ratio** (libre, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3).`]:
+    `An interactive mask with **8 handles**, a **rule-of-thirds** grid, and **ratio constraints** (free, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3).`,
+
+  [`Sliders **Luminosité**, **Contraste**, **Saturation**, **Teinte** (rendu via filtre CSS, non destructif).`]:
+    `**Brightness**, **Contrast**, **Saturation** and **Hue** sliders (rendered through a CSS filter, non-destructive).`,
+
+  [`Formats **PNG / JPEG / WebP**, avec réglage de **qualité** (JPEG/WebP) et d'**échelle** (% de la résolution native).`]:
+    `**PNG / JPEG / WebP** formats, with **quality** (JPEG/WebP) and **scale** settings (a percentage of the native resolution).`,
+
+  [`Annule **toutes** les retouches et revient à l'image d'origine.`]:
+    `Cancels **every** edit and returns to the original image.`,
+
+  [`Une base Firestore **dédiée** « Démo {Société} » avec les produits enrichis et leur taxonomie — jamais d'écrasement de vos données existantes. Si le studio est vierge (cas nominal du compte démo), la base est chargée à l'écran.`]:
+    `A **dedicated** Firestore database, "Demo {Company}", holding the enriched products and their taxonomy — your existing data is never overwritten. If the studio is empty (the standard case on a demo account), the database is loaded on screen.`,
+
+  [`Une image par produit déposée dans le Drive, dossier **« Démo {Société} »**. Si le Drive n'est pas connecté ou le quota atteint, les cellules gardent les URLs externes des images (qui restent affichées).`]:
+    `One image per product put into the Drive, in the **"Demo {Company}"** folder. If the Drive is not connected or the quota is reached, the cells keep the images' external URLs (which still display).`,
+
+  [`Un catalogue **lié à la source** PIM, monté avec la charte du site (palette extraite), un plan IA piloté par vos consignes créatives et une couverture générée.`]:
+    `A catalogue **linked to the PIM source**, built with the site's brand identity (an extracted palette), an AI plan steered by your creative instructions, and a generated cover.`,
+
+  [`Une carte promo **data-driven** aux couleurs du prospect (accent et bandeau issus de la charte), sur l'instantané complet des produits.`]:
+    `A **data-driven** promo card in the prospect's colours (accent and banner taken from the brand identity), over the complete snapshot of the products.`,
+
+  [`Un workflow prêt à rejouer : **Scraper des URLs** (jusqu'à 3 vraies URLs produits du site) → **Export Excel**. Idéal pour montrer l'automatisation en live.`]:
+    `A workflow ready to replay: **Scrape URLs** (up to 3 real product URLs from the site) → **Excel export**. Ideal for demonstrating the automation live.`,
+
+  [`Les **règles rédactionnelles** de l'équipe (markdown) : conventions de nommage, formats de prix, langue des descriptions… Stockées dans Firestore et **partagées par toute l'équipe**, elles servent de référence commune aux enrichissements. L'édition requiert la permission *Éditer les règles de scraping*.`]:
+    `The team's **editorial rules** (markdown): naming conventions, price formats, the language of descriptions… Stored in Firestore and **shared across the whole team**, they act as the common reference for enrichment. Editing requires the *Edit the scraping rules* permission.`,
+
+  [`Vue d'ensemble de **tous les templates groupés par domaine fournisseur** : déplie un fournisseur pour voir ses templates et leur état, et ouvre directement l'éditeur de template d'un clic.`]:
+    `An overview of **every template grouped by supplier domain**: unfold a supplier to see its templates and their state, and open the template editor directly in one click.`,
+
+  [`Le **journal des dernières requêtes** de scraping (30 max, rafraîchi toutes les 2 s) : pour chaque appel, le contenu renvoyé par Jina et la réponse du LLM. Indispensable pour comprendre pourquoi un champ revient vide — bouton **Vider** pour repartir à zéro.`]:
+    `The **log of the latest scraping requests** (30 max, refreshed every 2 s): for each call, the content Jina returned and the LLM's answer. Indispensable for understanding why a field comes back empty — the **Clear** button starts you afresh.`,
+
+  [`Avant de relever un prix, le node vérifie que la page décrit **exactement** ton produit. Si l'**EAN relevé sur la page est identique** à celui du produit, l'appariement est **autoritaire** (confiance 100 %, sans appel au modèle IA). Sinon, un **modèle IA** note la correspondance de 0 à 1 : au-dessus de **0,7** la fiche est épinglée **automatiquement** (statut « auto ») et le prix est relevé ; en dessous, la fiche passe **« à confirmer »** et **aucun prix n'est relevé** tant que tu n'as pas tranché.`]:
+    `Before recording a price, the node checks that the page describes **exactly** your product. If the **EAN read on the page is identical** to the product's, the match is **authoritative** (100 % confidence, with no call to an AI model). Otherwise an **AI model** scores the match from 0 to 1: above **0.7** the page is pinned **automatically** (status "auto") and the price is recorded; below that, the page becomes **"to confirm"** and **no price is recorded** until you have decided.`,
+
+  [`Le tableau de bord est en lecture seule pour les **prix**, mais propose **une action** : une file **« À confirmer »** liste les appariements incertains (avec le % de confiance et un lien vers la page). **Confirmer** épingle la fiche → elle sera relevée aux prochains runs ; **Rejeter** l'écarte **définitivement** → ce couple produit × site est **ignoré** lors de tous les runs suivants (utile quand le concurrent ne vend pas ce produit, ou que la page trouvée est la mauvaise).`]:
+    `The dashboard is read-only where **prices** are concerned, but it offers **one action**: a **"To confirm"** queue lists the uncertain matches (with the confidence percentage and a link to the page). **Confirm** pins the page → it will be read on the following runs; **Reject** sets it aside **permanently** → that product × site pair is **ignored** on every subsequent run (useful when the competitor does not sell the product, or the page found is the wrong one).`,
+
+  [`Dans **« Sites concurrents »**, chaque ligne accepte une liste de champs après une barre verticale : \`amazon.fr | price, availability\`. Sans champs précisés, seul le **prix** (\`price\`) est relevé. Le scraping réutilise le **moteur du PIM** (données structurées JSON-LD en priorité).`]:
+    `Under **"Competitor sites"**, each line accepts a list of fields after a vertical bar: \`amazon.fr | price, availability\`. With no fields given, only the **price** (\`price\`) is recorded. The scraping reuses the **PIM engine** (structured JSON-LD data first).`,
+
+  [`Dans le comparatif, **survole un prix** : une infobulle **« Relevé : … »** affiche le **nom** et l'**EAN réellement lus sur la page concurrente**. Si l'identité relevée ne correspond pas à ton produit, c'est que la fiche trouvée est la mauvaise — **Rejette** la correspondance pour la corriger. Un prix concurrent **inférieur** au tien s'affiche en **rouge**.`]:
+    `In the comparison, **hover a price**: a **"Recorded: …"** tooltip shows the **name** and the **EAN actually read on the competitor's page**. If the identity recorded does not match your product, the page found is the wrong one — **Reject** the match to correct it. A competitor price **lower** than yours is shown in **red**.`,
+
+  [`Le champ **« Identifiant du suivi »** du node mémorise, entre deux runs, les **URLs concurrentes épinglées** et l'**historique des prix** (30 derniers relevés par couple produit × site). Garde le même identifiant pour suivre un catalogue dans le temps ; change-le pour démarrer un suivi distinct.`]:
+    `The node's **"Tracking identifier"** field remembers, between runs, the **pinned competitor URLs** and the **price history** (the last 30 readings per product × site pair). Keep the same identifier to follow a catalogue over time; change it to start a separate track.`,
+
+  [`Deux familles d'alertes : le **positionnement** (comparaison de ton prix — colonne « Mon prix » — à celui des concurrents) et la **variation** (un prix concurrent a changé depuis le dernier run, au-delà du **seuil %** configuré). Le port \`changes\` du node ne s'active **que** s'il y a des alertes — idéal pour n'envoyer un message Telegram qu'en cas de mouvement.`]:
+    `Two families of alert: **positioning** (comparing your price — the "My price" column — with the competitors') and **movement** (a competitor's price has changed since the last run, beyond the **percentage threshold** configured). The node's \`changes\` port only fires **when** there are alerts — ideal for sending a Telegram message only when something moves.`,
+
+  [`Pour un comparatif ponctuel **prix A | prix B | écart** entre plusieurs enseignes (sans alertes), utilise plutôt les nodes **« Produits d'une page liste »** + **« Comparer les prix »** dans un workflow. Modèles prêts à l'emploi : **« Comparer mes prix aux concurrents → Excel »** et **« Comparaison de prix quotidienne → Google Sheets »** (cron).`]:
+    `For a one-off **price A | price B | gap** comparison across several retailers (with no alerts), use the **"Products from a listing page"** + **"Compare prices"** nodes in a workflow instead. Ready-made templates: **"Compare my prices with the competition → Excel"** and **"Daily price comparison → Google Sheets"** (cron).`,
+
+  [`Branche le port \`changes\` du node sur **« Envoyer via Telegram »** (« 1 message par ligne ») pour être prévenu à chaque mouvement de prix — y compris quand le workflow tourne en **cron serveur**, navigateur fermé.`]:
+    `Wire the node's \`changes\` port to **"Send by Telegram"** ("1 message per row") to be told about every price movement — including when the workflow runs under the **server cron**, with the browser closed.`,
+
+  [`Le fond a **deux régimes explicites**, pilotés par l'interrupteur **« Couleurs par chapitre (fond = couleur de l'univers) »** :
+- **Activé** : fond = couleur du **chapitre** — une pastille par univers, nommée d'après l'**univers réel** de votre taxonomie (ex. **« Fond Outillage »**), modifiable ici ou dans le panneau Sections / chemin de fer. La couleur « Bandeau » du thème est alors ignorée sur les pages produits.
+- **Désactivé** : fond = couleur **« Bandeau »** du thème, via la pastille **« Fond bandeau »**.`]:
+    `The background has **two explicit regimes**, driven by the **"Colours per chapter (background = the universe's colour)"** switch:
+- **On**: background = the **chapter's** colour — one swatch per universe, named after your taxonomy's **real universe** (e.g. **"Tools background"**), editable here or in the Sections / flatplan panel. The theme's "Banner" colour is then ignored on the product pages.
+- **Off**: background = the theme's **"Banner"** colour, through the **"Banner background"** swatch.`,
+
+  [`Au-delà du curseur **« Taille »** global, chaque niveau se règle séparément : **« Taille Univers »** et **« Taille Famille »** (échelles multiplicatives, 1× = suit la taille globale), **« Police Univers »** / **« Police Famille »** (**« Police du thème »** = hérite) et couleurs de texte **« Txt Univers »** / **« Txt Famille »**.`]:
+    `Beyond the overall **"Size"** slider, each level is set separately: **"Universe size"** and **"Family size"** (multiplicative scales, 1× = follows the overall size), **"Universe font"** / **"Family font"** (**"Theme font"** = inherit) and the text colours **"Universe txt"** / **"Family txt"**.`,
+
+  [`Le filet sous le bandeau se pilote comme un objet à part : case **« Filet du bandeau de section »** dans **« Éléments affichés »** pour l'afficher/masquer, et pastille **« Filet section »** dans les couleurs (par défaut : couleur d'accent du thème).`]:
+    `The rule under the strip is controlled as an object in its own right: a **"Section strip rule"** tick box under **"Displayed elements"** to show or hide it, and a **"Section rule"** swatch among the colours (the theme's accent colour by default).`,
+
+  [`| Node | Rôle |
+|---|---|
+| Upload | Fichier/dossier local (auto-parse CSV/Excel : colonnes en \`{{…}}\` + lignes) |
+| Saisie texte | Texte saisi à la main (prompt, valeur à interpoler) |
+| Parser Excel/CSV | CSV/XLSX → tableau |
+| Import IDML / SVG / PPTX / image | Charge un fichier InDesign / SVG / PowerPoint / image |
+| Image → SVG · PDF → SVG | Convertit un raster / PDF en SVG éditable (décomposition Vision) |
+| Import Google Sheets · Import Google Drive | Source depuis Google Sheets / Drive |
+| **Scrape URL** | Scrape 1+ URLs (Jina + IA, pipeline produit complet) |
+| **Recherche web** ⭐ | Cherche sur le web + lit les pages → tableau + texte de synthèse |
+| **Question web (IA)** ⭐ | Question → recherche web + réponse synthétisée par le LLM (+ sources) |
+| Cron (planifié) | Déclencheur serveur récurrent — voir « Planifier » plus bas |`]:
+    `| Node | Role |
+|---|---|
+| Upload | A local file/folder (CSV/Excel auto-parsed: columns as \`{{…}}\` + rows) |
+| Text input | Text typed by hand (a prompt, a value to interpolate) |
+| Excel/CSV parser | CSV/XLSX → a table |
+| Import IDML / SVG / PPTX / image | Loads an InDesign / SVG / PowerPoint / image file |
+| Image → SVG · PDF → SVG | Converts a raster / PDF into an editable SVG (Vision break-apart) |
+| Google Sheets import · Google Drive import | Source from Google Sheets / Drive |
+| **Scrape URL** | Scrapes one or more URLs (Jina + AI, the complete product pipeline) |
+| **Web search** ⭐ | Searches the web + reads the pages → a table + a summary text |
+| **Web question (AI)** ⭐ | A question → web search + an answer synthesised by the LLM (+ sources) |
+| Cron (scheduled) | A recurring server trigger — see "Scheduling" below |`,
+
+  [`| Node | Rôle |
+|---|---|
+| Enrichissement | Scrape les URLs d'une colonne et complète les champs via IA |
+| Génération image (Image IA) | Génère des images depuis un prompt |
+| Décomposer (SVG éditable) | Analyse un SVG (Vision IA) en calques éditables |`]:
+    `| Node | Role |
+|---|---|
+| Enrichment | Scrapes the URLs in a column and completes the fields with AI |
+| Image generation (AI Image) | Generates images from a prompt |
+| Break apart (editable SVG) | Analyses an SVG (Vision AI) into editable layers |`,
+
+  [`| Node | Rôle |
+|---|---|
+| Définir / réécrire colonnes | Templates \`{{col}}\` appliqués par ligne |
+| Filtrer lignes | Garde les lignes satisfaisant une expression sur \`row\` |
+| Trier lignes | Tri par colonne (croissant/décroissant, texte/nombre) |
+| Renommer colonnes | Mapping \`ancien = nouveau\` |
+| Opération texte | minuscules / MAJUSCULES / trim / remplacement / extraction regex sur une colonne |`]:
+    `| Node | Role |
+|---|---|
+| Set / rewrite columns | \`{{col}}\` templates applied row by row |
+| Filter rows | Keeps the rows satisfying an expression on \`row\` |
+| Sort rows | Sorts by column (ascending/descending, text/number) |
+| Rename columns | An \`old = new\` mapping |
+| Text operation | lowercase / UPPERCASE / trim / replace / regex extraction on a column |`,
+
+  [`| Node | Rôle |
+|---|---|
+| Save PIM | Persiste les lignes comme produits (Firestore) |
+| Import Taxonomie | Construit une taxonomie hiérarchique |
+| Save DAM | Upload les assets vers Google Drive |`]:
+    `| Node | Role |
+|---|---|
+| Save to PIM | Persists the rows as products (Firestore) |
+| Taxonomy import | Builds a hierarchical taxonomy |
+| Save to DAM | Uploads the assets to Google Drive |`,
+
+  [`| Node | Rôle |
+|---|---|
+| Export Excel / PPTX / HTML→PDF | Génère le fichier depuis un tableau |
+| Export (design) | Rend un fichier de design (SVG décomposé ou édité) en **PNG / PDF / PPTX / HTML / SVG**, résolution 72/150/300 dpi |
+| Export Google Sheets / Google Drive | Crée un Sheet / dépose le fichier dans Drive |`]:
+    `| Node | Role |
+|---|---|
+| Excel / PPTX / HTML→PDF export | Generates the file from a table |
+| Export (design) | Renders a design file (a broken-apart or edited SVG) as **PNG / PDF / PPTX / HTML / SVG**, at 72/150/300 dpi |
+| Google Sheets / Google Drive export | Creates a Sheet / puts the file into the Drive |`,
+
+  [`| Node | Rôle |
+|---|---|
+| If / Else | Branche selon une condition |
+| Pipe | Chaîne des expressions de transformation |
+| Loop (each) | Itère sur un tableau — le sous-graphe s'exécute par élément (\`{{item}}\`) |
+| Loop (collect) | Clôt la boucle et agrège les résultats en tableau |`]:
+    `| Node | Role |
+|---|---|
+| If / Else | Branches according to a condition |
+| Pipe | Chains transformation expressions together |
+| Loop (each) | Iterates over an array — the sub-graph runs per element (\`{{item}}\`) |
+| Loop (collect) | Closes the loop and aggregates the results into a table |`,
+
+  [`| Node | Rôle |
+|---|---|
+| Envoyer via Gmail | Envoie un email (+ pièces jointes) |
+| Envoyer via Telegram | Envoie un message / document |
+| Approbation Telegram | Pause + question ✅/❌ sur Telegram — voir « Approbation humaine » |
+| Veille prix | Compare aux prix du run précédent — voir « Veille prix » |`]:
+    `| Node | Role |
+|---|---|
+| Send by Gmail | Sends an e-mail (+ attachments) |
+| Send by Telegram | Sends a message / document |
+| Telegram approval | Pause + a ✅/❌ question on Telegram — see "Human approval" |
+| Price watch | Compares against the previous run's prices — see "Price watch" |`,
+
+  [`Le bot répond via le LLM. Si l'info demandée est récente (score, actu, prix) ou si tu colles une **URL**, il **cherche sur le web et lit les pages** avant de répondre. La réponse cite ses **sources** et le modèle utilisé.`]:
+    `The bot answers through the LLM. If the information asked for is recent (a score, the news, a price), or if you paste a **URL**, it **searches the web and reads the pages** before answering. The reply cites its **sources** and the model used.`,
+
+  [`**Génère un workflow par IA** depuis ta demande, l'**exécute**, et te **renvoie le fichier** produit.
+
+Ex : \`/flow scrape https://exemple.com/categorie et exporte un Excel\`.`]:
+    `**Generates a workflow with AI** from your request, **runs it**, and **sends you back the file** it produces.
+
+For example: \`/flow scrape https://example.com/category and export an Excel file\`.`,
+
+  [`**Exécute un workflow déjà sauvegardé** (par son nom) ; le texte éventuel sert d'entrée. **\`/run\` seul liste** les workflows disponibles.`]:
+    `**Runs a workflow that has already been saved** (by its name); any text supplied is used as the input. **\`/run\` on its own lists** the workflows available.`,
+
+  [`**Vide la boîte de réception** — côté app ET côté Telegram (messages de moins de 48 h). Alias : \`/purge\`, \`/vider\`.`]:
+    `**Empties the inbox** — on the app side AND on the Telegram side (messages less than 48 h old). Aliases: \`/purge\`, \`/vider\`.`,
+
+  [`Commande de service Telegram — **ignorée**, elle n'encombre pas la boîte.`]:
+    `A Telegram service command — **ignored**, it does not clutter the inbox.`,
+
+  [`Le chat garde le **fil de la conversation** pendant la session (les **30 derniers messages** sont transmis au modèle — au-delà, le début du fil sort du contexte). ⚠️ L'historique n'est **pas conservé** : rafraîchir la page démarre une nouvelle conversation. Le bouton *Nouvelle conversation* remet à zéro.`]:
+    `The chat keeps the **thread of the conversation** through the session (the **last 30 messages** are passed to the model — beyond that, the start of the thread falls out of context). ⚠️ The history is **not kept**: refreshing the page starts a new conversation. The *New conversation* button clears everything.`,
+
+  [`Joins des **images** (PNG, JPEG, WebP, GIF) pour les faire analyser — analyse possible avec les modèles **multimodaux** (Claude, Gemini, OpenAI) ; les autres fournisseurs ignorent les images. Ou des **fichiers texte** (TXT, MD, CSV, JSON, code…) dont le contenu est lu (tronqué au-delà de ~50 000 caractères). Tu peux aussi **capturer l'écran** : le navigateur te laisse choisir la fenêtre ou l'onglet à capturer.`]:
+    `Attach **images** (PNG, JPEG, WebP, GIF) to have them analysed — analysis is possible with the **multimodal** models (Claude, Gemini, OpenAI); the other providers ignore images. Or **text files** (TXT, MD, CSV, JSON, code…) whose content is read (truncated beyond about 50,000 characters). You can also **capture the screen**: the browser lets you choose the window or tab to capture.`,
+
+  [`Choisis la catégorie **Image** : le champ de saisie passe en mode génération (moteur Image IA). Joins des images de référence pour les éditer. Sous chaque image générée : **Télécharger** ou **Sauvegarder dans le DAM** (elle rejoint « Mes images »).`]:
+    `Choose the **Image** category: the input field switches to generation mode (the AI Image engine). Attach reference images to edit them. Under each generated image: **Download** or **Save to the DAM** (it joins "My images").`,
+
+  [`Dicte ta demande au **micro** : la parole est transcrite en texte dans la zone de saisie.`]:
+    `Dictate your request into the **microphone**: your speech is transcribed as text into the input box.`,
+
+  [`Des **catégories** (Écrire, Apprendre, Code, Vie quotidienne, Idées, Image, Mes prompts) proposent des prompts prêts à l'emploi. Crée, modifie et mets en **favori** (★) tes propres prompts — les favoris et les plus utilisés remontent en tête de liste. Clique un prompt pour le **pré-remplir** dans la zone de saisie (libre à toi de l'ajuster avant d'envoyer).`]:
+    `**Categories** (Writing, Learning, Code, Everyday life, Ideas, Image, My prompts) offer ready-made prompts. Create, edit and **favourite** (★) your own — favourites and the most-used rise to the top of the list. Click a prompt to **pre-fill** it into the input box (you are free to adjust it before sending).`,
+
+  [`Le menu **⋯** de chaque prompt permet de le **renommer / éditer**, le **dupliquer** (crée une copie « *titre* (copie) » à adapter) ou le **supprimer**. Chaque usage est **comptabilisé** : les prompts les plus sollicités et les favoris sont mis en avant. Tes prompts sont **enregistrés sur ton compte** (synchronisés via Firestore) : on les retrouve d'une session à l'autre, contrairement à l'historique de conversation.`]:
+    `Each prompt's **⋯** menu lets you **rename / edit** it, **duplicate** it (creating a "*title* (copy)" to adapt) or **delete** it. Every use is **counted**: the most-called-upon prompts and the favourites are brought forward. Your prompts are **saved onto your account** (synchronised through Firestore): you find them again from one session to the next, unlike the conversation history.`,
+
+  [`Au-delà du rôle, tu peux **accorder** ou **retirer** des permissions individuelles à un utilisateur précis (ex. lui ouvrir l'export sans changer son rôle). *Réinitialiser les surcharges* efface ces ajustements.`]:
+    `Beyond the role, you can **grant** or **withdraw** individual permissions for a specific user (opening exports to them without changing their role, say). *Reset the overrides* clears those adjustments.`,
+
+  [`**Bloquer** suspend totalement un compte sans le supprimer : plus aucun accès, même avec un rôle. **Réactiver** lui rend ses droits.`]:
+    `**Block** suspends an account entirely without deleting it: no access at all, even with a role. **Reactivate** gives its rights back.`,
+
+  [`Le détail (avant → après, ou la taille) n'apparaît que sur les actions **postérieures** à l'ajout de la fonctionnalité. Les entrées sont **immuables** : elles ne se complètent pas rétroactivement. Refais l'action pour voir le détail sur la nouvelle entrée.`]:
+    `The detail (before → after, or the size) only appears on actions **later** than the addition of the feature. Entries are **immutable**: they are not filled in retrospectively. Redo the action to see the detail on the new entry.`,
+
+  [`Chaque sauvegarde de base crée une entrée. Si la **taille** (lignes/colonnes) n'a pas changé, la ligne montre seulement la taille ; si tu as ajouté/supprimé des lignes, elle montre l'avant → après. Pour suivre une **valeur** précise, regarde plutôt l'action « Cellule modifiée ».`]:
+    `Every save of a database creates an entry. If the **size** (rows/columns) has not changed, the line shows only the size; if you added or deleted rows, it shows before → after. To follow a specific **value**, look at the "Cell modified" action instead.`,
+
+  [`Seul l'**administrateur** (ou le propriétaire) voit le Journal de tous les utilisateurs, avec le filtre **Qui**. Un utilisateur standard ne voit que **ses** actions, dans Réglages → Mon activité.`]:
+    `Only the **administrator** (or the owner) sees the Log for every user, with the **Who** filter. A standard user sees only **their own** actions, under Settings → My activity.`,
+
+  [`Le compte **propriétaire est exclu du tracking côté serveur** : ses pages vues ne sont ni enregistrées ni notifiées, y compris sur les pages publiques (le dernier compte connecté sur le navigateur est reconnu même sans être authentifié sur la landing). Les statistiques reflètent donc uniquement le trafic réel de vos visiteurs et utilisateurs.`]:
+    `The **owner's account is excluded from tracking server-side**: its page views are neither recorded nor notified, including on the public pages (the last account signed in on the browser is recognised even without being authenticated on the landing page). The statistics therefore reflect only the real traffic of your visitors and users.`,
+
+  [`**Site web** = les pages publiques (accueil, landing promo, documentation) ; **Application** = l'usage de l'app par les utilisateurs connectés (chaque module ouvert dans le dashboard compte comme une page, même sans changement d'URL). Pratique pour séparer l'audience marketing de l'activité produit.`]:
+    `**Website** = the public pages (home page, promo landing, documentation); **Application** = signed-in users' use of the app (each module opened in the dashboard counts as a page, even without a change of URL). Handy for separating the marketing audience from product activity.`,
+
+  [`Le message apparaît quand aucune consultation n'existe dans la fenêtre choisie : élargissez la période (90 j, 12 mois) ou vérifiez les dates « Du / Au » en mode **Perso**. Si des données existent mais que la combinaison de filtres ne retient rien, le message devient « Aucune donnée pour ces filtres » — remettez les filtres sur « Tous ».`]:
+    `The message appears when no views exist in the window you chose: widen the period (90 d, 12 months) or check the "From / To" dates in **Custom** mode. If data exists but the combination of filters keeps nothing, the message becomes "No data for these filters" — put the filters back to "All".`,
+
+  [`Colle le **bot token** (via BotFather) et ton **chat ID** pour piloter l'app depuis Telegram. C'est ici que le bot du module Telegram puise sa configuration.`]:
+    `Paste the **bot token** (from BotFather) and your **chat ID** to drive the app from Telegram. This is where the Telegram module's bot draws its configuration.`,
+
+  [`Connecte ton **Google Drive** (OAuth) pour que les workflows et le node *save-dam* y déposent des fichiers.`]:
+    `Connect your **Google Drive** (OAuth) so the workflows and the *save-dam* node can put files into it.`,
+
+  [`Autorise **une seule fois** (bouton « Connecter ») le **serveur** à agir pour toi quand l'app est fermée : les workflows planifiés (cron), le webhook et \`/flow\` sur Telegram peuvent alors **créer des Google Sheets dans ton Drive** et **envoyer des Gmail**. Distinct de la connexion Google Drive ci-dessus (utilisée par le navigateur). Aucun mot de passe stocké — un jeton révocable à tout moment depuis ton compte Google. Ne colle **jamais** d'identifiants dans le chat Telegram : l'autorisation se donne uniquement ici.`]:
+    `Authorise the **server**, **once** (the "Connect" button), to act for you when the app is closed: the scheduled workflows (cron), the webhook and \`/flow\` on Telegram can then **create Google Sheets in your Drive** and **send Gmail**. Distinct from the Google Drive connection above (which the browser uses). No password is stored — a token, revocable at any time from your Google account. **Never** paste credentials into the Telegram chat: authorisation is given here and nowhere else.`,
+
+  [`Tokens des services de scraping et de traitement d'image. **Bright Data** propose le *Web Unlocker* et, en escalade, le *Scraping Browser* (tier 2) pour les sites les plus protégés.`]:
+    `Tokens for the scraping and image-processing services. **Bright Data** offers the *Web Unlocker* and, as an escalation, the *Scraping Browser* (tier 2) for the most heavily protected sites.`,
+
+  [`Le diagramme se construit à partir de \`TABLES\` et \`RELATIONS\` dans \`features/data-graph/firestoreSchema.ts\`. Ajouter une collection ou un lien = compléter ces deux listes ; le rendu et les cardinalités suivent automatiquement.`]:
+    `The diagram is built from \`TABLES\` and \`RELATIONS\` in \`features/data-graph/firestoreSchema.ts\`. Adding a collection or a link means completing those two lists; the rendering and the cardinalities follow automatically.`,
+
+  [`L'explorateur expose la structure et les données brutes de **tout** l'espace de travail (tous comptes confondus). L'onglet **Données** des Paramètres — comme **Firebase** — est donc réservé au **propriétaire**.`]:
+    `The explorer exposes the structure and the raw data of the **whole** workspace (all accounts together). The **Data** tab of Settings — like **Firebase** — is therefore reserved for the **owner**.`,
 }
