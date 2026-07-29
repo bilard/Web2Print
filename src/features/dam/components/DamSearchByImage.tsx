@@ -1,8 +1,10 @@
 import { useCallback, useRef } from 'react'
 import { Camera, Loader2 } from 'lucide-react'
 import { useDamSearchByImage } from '../hooks/useDamSearchByImage'
+import { useTranslation } from '@/lib/i18n'
 
 export function DamSearchByImage() {
+  const { t } = useTranslation()
   const { searchByImage, uploading } = useDamSearchByImage()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -30,7 +32,7 @@ export function DamSearchByImage() {
         ) : (
           <Camera className="w-4 h-4" />
         )}
-        <span>Chercher par image</span>
+        <span>{t('dam.searchByImage')}</span>
       </button>
     </>
   )

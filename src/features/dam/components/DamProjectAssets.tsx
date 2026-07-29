@@ -6,6 +6,7 @@ import { useDamStore } from '@/stores/dam.store'
 import { useProjectAssets, parseFontName, type AssetItem } from '@/features/assets/useProjectAssets'
 import type { DamImage } from '../types'
 import type { ProjectData } from '@/types/project'
+import { useTranslation } from '@/lib/i18n'
 
 /** Load an image and return its natural dimensions. */
 function loadImageDimensions(url: string): Promise<{ width: number; height: number }> {
@@ -74,6 +75,7 @@ function useProjectMeta(projectId: string | null) {
 }
 
 export function DamProjectAssets() {
+  const { t } = useTranslation()
   const selectedProjectId = useDamStore((s) => s.selectedProjectId)
   const setSelectedProjectId = useDamStore((s) => s.setSelectedProjectId)
   const openLightbox = useDamStore((s) => s.openLightbox)
@@ -102,7 +104,7 @@ export function DamProjectAssets() {
         <button
           onClick={() => setSelectedProjectId(null)}
           className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-white transition"
-          title="Retour aux projets"
+          title={t('dam.backToProjects')}
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -139,7 +141,7 @@ export function DamProjectAssets() {
           onClick={reload}
           disabled={loading}
           className="p-1.5 text-white/30 hover:text-white/70 rounded-md hover:bg-white/5 transition-colors"
-          title="Rafraichir"
+          title={t('dam.refresh')}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
         </button>
@@ -155,7 +157,7 @@ export function DamProjectAssets() {
 
         {!loading && tab === 'images' && (
           images.length === 0 ? (
-            <p className="text-sm text-white/30 text-center py-12">Aucune image</p>
+            <p className="text-sm text-white/30 text-center py-12">{t('dam.noImage')}</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {images.map((img) => (
@@ -196,7 +198,7 @@ export function DamProjectAssets() {
 
         {!loading && tab === 'fonts' && (
           fonts.length === 0 ? (
-            <p className="text-sm text-white/30 text-center py-12">Aucune font</p>
+            <p className="text-sm text-white/30 text-center py-12">{t('dam.noFont')}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {fonts.map((f) => {
@@ -219,7 +221,7 @@ export function DamProjectAssets() {
                       )
                       e.dataTransfer.effectAllowed = 'copy'
                     }}
-                    title="Glisser sur un texte du canvas pour appliquer la font"
+                    title={t('dam.dragFont')}
                   >
                     <span
                       className="text-2xl text-white/60 shrink-0 leading-none"

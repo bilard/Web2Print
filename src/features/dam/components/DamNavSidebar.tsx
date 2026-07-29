@@ -8,30 +8,34 @@ import { useUserAnimations } from '../../video/useUserAnimations'
 import { useAccessStore } from '../../../stores/access.store'
 import type { DamTab } from '../types'
 import { OptionHelp } from '../../../components/shared/OptionHelp'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 interface NavItem {
   id: DamTab
-  label: string
+  labelKey: TranslationKey
   icon: typeof Home
   /** Permission requise pour afficher l'entrée (absent = toujours visible). */
   perm?: string
-  /** Texte d'aide contextuelle affiché au survol du « ? ». */
-  help?: string
+  /** Clé de l'aide contextuelle affichée au survol du « ? ». */
+  help?: TranslationKey
 }
 
+// Les libellés réutilisent les clés du menu de navigation (`nav.images.*`) :
+// une seule traduction pour un même intitulé dans la sidebar et dans le DAM.
 const NAV_ITEMS: NavItem[] = [
-  { id: 'stock', label: 'Banque d\'images', icon: Home, help: 'Recherchez des images libres de droits (Pexels, Unsplash) à insérer directement sur le canvas.' },
-  { id: 'my-images', label: 'Mes images', icon: ImagePlus, help: 'Vos images uploadées et enregistrées, réutilisables dans tous vos projets.' },
-  { id: 'favorites', label: 'Favoris', icon: Star, help: 'Les images que vous avez marquées d\'une étoile pour les retrouver vite.' },
-  { id: 'collections', label: 'Collections', icon: FolderOpen, help: 'Regroupez vos images par thème ou campagne dans des dossiers.' },
-  { id: 'recent', label: 'Récents', icon: Clock, help: 'Les dernières images utilisées ou ajoutées récemment.' },
-  { id: 'projects', label: 'Projets', icon: Briefcase, help: 'Les visuels rattachés à chacun de vos projets.' },
-  { id: 'generate', label: 'Création d\'image', icon: Sparkles, perm: 'dam.generate', help: 'Générez des images par IA (Image IA) à partir d\'une description texte.' },
-  { id: 'videos', label: 'Animations HTML', icon: FileCode2, perm: 'dam.animations', help: 'Vos animations / vidéos HTML (HyperFrames) réutilisables.' },
-  { id: 'gdrive', label: 'Google Drive', icon: HardDrive, perm: 'dam.gdrive', help: 'Parcourez et importez des fichiers depuis votre Google Drive connecté.' },
+  { id: 'stock', labelKey: 'nav.images.stock', icon: Home, help: 'dam.desc.stock' },
+  { id: 'my-images', labelKey: 'nav.images.mine', icon: ImagePlus, help: 'dam.desc.myImages' },
+  { id: 'favorites', labelKey: 'nav.images.favorites', icon: Star, help: 'dam.desc.favorites' },
+  { id: 'collections', labelKey: 'nav.images.collections', icon: FolderOpen, help: 'dam.desc.collections' },
+  { id: 'recent', labelKey: 'nav.images.recent', icon: Clock, help: 'dam.desc.recent' },
+  { id: 'projects', labelKey: 'nav.images.projects', icon: Briefcase, help: 'dam.desc.projects' },
+  { id: 'generate', labelKey: 'dam.gen.title', icon: Sparkles, perm: 'dam.generate', help: 'dam.desc.generate' },
+  { id: 'videos', labelKey: 'nav.images.videos', icon: FileCode2, perm: 'dam.animations', help: 'dam.desc.videos' },
+  { id: 'gdrive', labelKey: 'nav.images.gdrive', icon: HardDrive, perm: 'dam.gdrive', help: 'dam.desc.gdrive' },
 ]
 
 export function DamNavSidebar() {
+  const { t } = useTranslation()
   const { activeTab, setActiveTab } = useDamStore()
   const perms = useAccessStore((s) => s.permissions)
   const isOwner = useAccessStore((s) => s.isOwner)
@@ -53,7 +57,7 @@ export function DamNavSidebar() {
 
   return (
     <nav
-      aria-label="Navigation DAM"
+      aria-label={t('dam.nav')}
       className="w-[230px] bg-background border-r border-white/5 flex flex-col shrink-0"
     >
       <div className="flex items-center gap-2.5 px-5 h-14 border-b border-white/5">
@@ -87,8 +91,8 @@ export function DamNavSidebar() {
                   }`}
                   strokeWidth={isActive ? 2.2 : 1.8}
                 />
-                <span className="flex-1 truncate text-left">{item.label}</span>
-                {item.help && <OptionHelp text={item.help} />}
+                <span className="flex-1 truncate text-left">{t(item.labelKey)}</span>
+                {item.help && <OptionHelp text={t(item.help)} />}
                 {count !== undefined && count > 0 && (
                   <span
                     className={`text-[11px] tabular-nums px-1.5 py-px rounded ${

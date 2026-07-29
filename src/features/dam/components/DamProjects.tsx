@@ -4,17 +4,19 @@ import { useProjects } from '@/features/projects/useProjects'
 import { useDamStore } from '@/stores/dam.store'
 import type { ProjectData } from '@/types/project'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { useTranslation, intlLocale, type Locale } from '@/lib/i18n'
 
-function formatDate(ts: number): string {
+function formatDate(ts: number, locale: Locale): string {
   try {
     const d = new Date(ts)
-    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+    return d.toLocaleDateString(intlLocale(locale), { day: '2-digit', month: 'short', year: 'numeric' })
   } catch {
     return ''
   }
 }
 
 function ProjectCard({ project, onOpen }: { project: ProjectData; onOpen: () => void }) {
+  const { t, locale } = useTranslation()
   return (
     <button
       type="button"
@@ -37,13 +39,14 @@ function ProjectCard({ project, onOpen }: { project: ProjectData; onOpen: () => 
       </div>
       <div className="p-2.5">
         <div className="text-sm text-white/80 font-medium truncate">{project.title || 'Sans titre'}</div>
-        <div className="text-[10px] text-white/40 mt-0.5">Modifié {formatDate(project.updatedAt)}</div>
+        <div className="text-[10px] text-white/40 mt-0.5">{t('dam.modified', { date: formatDate(project.updatedAt, locale) })}</div>
       </div>
     </button>
   )
 }
 
 function ProjectRow({ project, onOpen }: { project: ProjectData; onOpen: () => void }) {
+  const { t, locale } = useTranslation()
   return (
     <button
       type="button"
@@ -64,13 +67,14 @@ function ProjectRow({ project, onOpen }: { project: ProjectData; onOpen: () => v
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-sm text-white/80 font-medium truncate">{project.title || 'Sans titre'}</div>
-        <div className="text-[10px] text-white/40 mt-0.5">Modifié {formatDate(project.updatedAt)}</div>
+        <div className="text-[10px] text-white/40 mt-0.5">{t('dam.modified', { date: formatDate(project.updatedAt, locale) })}</div>
       </div>
     </button>
   )
 }
 
 export function DamProjects() {
+  const { t } = useTranslation()
   const { data: projects = [], isLoading } = useProjects()
   const setSelectedProjectId = useDamStore((s) => s.setSelectedProjectId)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -87,8 +91,8 @@ export function DamProjects() {
     return (
       <EmptyState
         icon={Briefcase}
-        title="Aucun projet"
-        hint="Les visuels de vos documents apparaissent ici dès que vous créez un projet dans la Bibliothèque."
+        title={t('dam.noProject')}
+        hint={t('dam.noProject.hint')}
       />
     )
   }
@@ -99,13 +103,13 @@ export function DamProjects() {
         <div
           className="flex items-center gap-0.5 bg-white/[0.04] border border-white/[0.08] rounded-lg p-0.5"
           role="group"
-          aria-label="Mode d'affichage"
+          aria-label={t('dam.viewMode')}
         >
           <button
             type="button"
             onClick={() => setViewMode('grid')}
             aria-pressed={viewMode === 'grid'}
-            title="Vue vignettes"
+            title={t('dam.thumbnails')}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
               viewMode === 'grid'
                 ? 'bg-indigo-500/15 text-indigo-300'
@@ -113,13 +117,13 @@ export function DamProjects() {
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Vignettes</span>
+            <span className="hidden sm:inline">{t('dam.thumbnails')}</span>
           </button>
           <button
             type="button"
             onClick={() => setViewMode('list')}
             aria-pressed={viewMode === 'list'}
-            title="Vue liste"
+            title={t('dam.listView')}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
               viewMode === 'list'
                 ? 'bg-indigo-500/15 text-indigo-300'
@@ -127,7 +131,7 @@ export function DamProjects() {
             }`}
           >
             <List className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Liste</span>
+            <span className="hidden sm:inline">{t('dam.list')}</span>
           </button>
         </div>
       </div>

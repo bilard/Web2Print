@@ -4,8 +4,10 @@ import { useDamStore } from '../../../stores/dam.store'
 import { useDamSearch } from '../hooks/useDamSearch'
 import { DamImageCard } from './DamImageCard'
 import { DamMasonry } from './DamMasonry'
+import { useTranslation } from '@/lib/i18n'
 
 export function DamImageGrid() {
+  const { t } = useTranslation()
   const { results, loading, hasMore } = useDamStore()
   const { loadMore } = useDamSearch()
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -30,7 +32,7 @@ export function DamImageGrid() {
   if (!loading && results.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-white/30 text-sm">
-        Recherchez des images pour commencer
+        {t('dam.searchToStart')}
       </div>
     )
   }

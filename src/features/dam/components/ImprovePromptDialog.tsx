@@ -9,6 +9,7 @@ import {
   type ImprovementQuestion,
 } from '@/features/briefs/ai/improveImagePrompt'
 import { CloseButton } from '@/components/shared/CloseButton'
+import { useTranslation } from '@/lib/i18n'
 
 interface Props {
   open: boolean
@@ -27,6 +28,7 @@ type Stage = 'loading-questions' | 'answering' | 'generating' | 'error'
  * 3. Gemini réécrit le prompt en intégrant les réponses comme source autoritaire
  */
 export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: Props) {
+  const { t } = useTranslation()
   const [stage, setStage] = useState<Stage>('loading-questions')
   const [questions, setQuestions] = useState<ImprovementQuestion[]>([])
   const [selections, setSelections] = useState<Record<string, string>>({})
@@ -46,7 +48,7 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
       .then((qs) => {
         if (cancelled) return
         if (qs.length === 0) {
-          setErrorMessage('Aucune question pertinente détectée. Lance "Améliorer" directement.')
+          setErrorMessage(t('dam.improve.noQuestion'))
           setStage('error')
           return
         }
@@ -111,12 +113,12 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-indigo-400" />
-            <div className="text-sm font-medium text-white/90">Améliorer avec questions</div>
+            <div className="text-sm font-medium text-white/90">{t('dam.improve.title')}</div>
           </div>
           <CloseButton
             onClick={onClose}
             disabled={stage === 'generating'}
-            title="Fermer (Esc)"
+            title={t('dam.close')}
           />
         </div>
 
@@ -125,7 +127,7 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
           {stage === 'loading-questions' && (
             <div className="flex flex-col items-center justify-center py-12 gap-3 text-white/60">
               <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
-              <div className="text-sm">Analyse du brief et des références…</div>
+              <div className="text-sm">{t('dam.improve.analysing')}</div>
             </div>
           )}
 
@@ -198,7 +200,7 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
                         onChange={(e) =>
                           setCustomInputs((c) => ({ ...c, [q.id]: e.target.value }))
                         }
-                        placeholder="Ta réponse…"
+                        placeholder={t('dam.improve.answer')}
                         className="w-full bg-surface-2 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50"
                       />
                     )}

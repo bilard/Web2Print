@@ -12,6 +12,7 @@ import { applyImageFill } from '../../editor/applyImageFill'
 import { findFabricObjectDeep } from '../../editor/deepObjects'
 import type { DamImage } from '../types'
 import { useCan } from '@/features/access/useAccess'
+import { useTranslation } from '@/lib/i18n'
 
 interface Props {
   image: DamImage
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function DamImageCard({ image, collectionId, onRemovedFromCollection, onDeleted }: Props) {
+  const { t } = useTranslation()
   const { openLightbox } = useDamStore()
   const { damPickerMode, damPickerTargetId, setDamPickerOpen } = useUIStore()
   const { insertOnCanvas, replaceOnCanvas } = useDamCanvasInsert()
@@ -45,7 +47,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
   const applyAsFill = useCallback((): boolean => {
     const canvas = globalFabricCanvas
     if (!canvas) {
-      toast.error('Aucun canvas actif')
+      toast.error(t('dam.noCanvas'))
       return false
     }
     // Cible explicite (id mémorisé à l'ouverture du picker), sinon la sélection
@@ -54,11 +56,11 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
     const target =
       findFabricObjectDeep(canvas, damPickerTargetId) ?? canvas.getActiveObject() ?? null
     if (!target) {
-      toast.error('Sélectionnez d’abord le bloc à remplir')
+      toast.error(t('dam.selectBlockFirst'))
       return false
     }
     applyImageFill(target, canvas, image.previewUrl)
-    toast.success('Image incorporée dans le bloc')
+    toast.success(t('dam.imageEmbedded'))
     return true
   }, [image.previewUrl, damPickerTargetId])
 
@@ -128,7 +130,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
       onDragStart={handleDragStart}
       onClick={handleCardClick}
       onDoubleClick={handleCardDoubleClick}
-      title="Clic : insérer — Double-clic : remplacer le bloc actif"
+      title={t('dam.card.insert')}
       className="group relative rounded-md overflow-hidden cursor-pointer bg-white/5"
       style={{ aspectRatio: `${image.width}/${image.height}` }}
     >
@@ -147,7 +149,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
               toggleFavorite(image)
             }}
             className={`p-1 rounded ${fav ? 'bg-red-500/80 text-[#fff]' : 'bg-black/60 text-[#fff]/80 hover:bg-black/80'}`}
-            title={fav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            title={t(fav ? 'dam.card.removeFavorite' : 'dam.card.addFavorite')}
           >
             <Heart className="w-3.5 h-3.5" fill={fav ? 'currentColor' : 'none'} />
           </button>
@@ -157,7 +159,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
               toggleSave(image)
             }}
             className={`p-1 rounded ${saved ? 'bg-indigo-500/80 text-[#fff]' : 'bg-black/60 text-[#fff]/80 hover:bg-black/80'}`}
-            title={saved ? 'Retirer de mes images' : 'Sauvegarder'}
+            title={t(saved ? 'dam.card.unsave' : 'dam.card.save')}
           >
             <Bookmark className="w-3.5 h-3.5" fill={saved ? 'currentColor' : 'none'} />
           </button>
@@ -168,7 +170,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
                 setShowCollections((v) => !v)
               }}
               className="p-1 rounded bg-black/60 text-[#fff]/80 hover:bg-black/80"
-              title="Ajouter à une collection"
+              title={t('dam.card.addToCollection')}
             >
               <FolderPlus className="w-3.5 h-3.5" />
             </button>
@@ -196,7 +198,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
               </div>
             )}
           </div>
-          <button onClick={handleDownload} className="p-1 rounded bg-black/60 text-[#fff]/80 hover:bg-black/80" title="Télécharger">
+          <button onClick={handleDownload} className="p-1 rounded bg-black/60 text-[#fff]/80 hover:bg-black/80" title={t('dam.card.download')}>
             <Download className="w-3.5 h-3.5" />
           </button>
           {saved && canDelete && (
@@ -206,7 +208,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
                 const label = image.description?.trim() || `image ${image.sourceProvider}`
                 if (
                   confirm(
-                    `Supprimer définitivement « ${label} » ?\n\nToutes les variantes, références de collections et favoris associés seront également supprimés. Cette action est irréversible.`
+                    t('dam.card.deleteConfirm', { label })
                   )
                 ) {
                   try {
@@ -219,7 +221,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
                 }
               }}
               className="p-1 rounded bg-black/60 text-[#fff]/80 hover:bg-red-500/80 hover:text-[#fff]"
-              title="Supprimer définitivement"
+              title={t('dam.card.deleteForever')}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -232,7 +234,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
                 onRemovedFromCollection?.(image.id)
               }}
               className="p-1 rounded bg-red-500/60 text-[#fff] hover:bg-red-500/80"
-              title="Retirer de la collection"
+              title={t('dam.card.removeFromCollection')}
             >
               <FolderMinus className="w-3.5 h-3.5" />
             </button>

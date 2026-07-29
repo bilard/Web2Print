@@ -5,8 +5,10 @@ import { useAuthStore } from '../../../stores/auth.store'
 import { DamImageCard } from './DamImageCard'
 import { DamMasonry } from './DamMasonry'
 import type { DamImage } from '../types'
+import { useTranslation } from '@/lib/i18n'
 
 export function DamFavorites() {
+  const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const [images, setImages] = useState<DamImage[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,11 +43,11 @@ export function DamFavorites() {
   }, [user?.uid])
 
   if (loading) {
-    return <div className="flex-1 flex items-center justify-center text-white/30 text-sm">Chargement...</div>
+    return <div className="flex-1 flex items-center justify-center text-white/30 text-sm">{t('dam.loading')}</div>
   }
 
   if (images.length === 0) {
-    return <div className="flex-1 flex items-center justify-center text-white/30 text-sm">Aucun favori</div>
+    return <div className="flex-1 flex items-center justify-center text-white/30 text-sm">{t('dam.noFavorite')}</div>
   }
 
   return (

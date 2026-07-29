@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import type { DamCropMask } from '../types'
 import { DEFAULT_MASK } from '../utils/renderEditedImage'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 export interface ColorFilters {
   brightness: number
@@ -94,14 +95,16 @@ const EXPORT_FORMATS = [
   { value: 'image/webp', label: 'WebP', lossless: false },
 ]
 
-const FILTER_SLIDERS: { key: keyof ColorFilters; label: string; min: number; max: number; unit: string }[] = [
-  { key: 'brightness', label: 'Luminosité', min: 0, max: 200, unit: '%' },
-  { key: 'contrast', label: 'Contraste', min: 0, max: 200, unit: '%' },
-  { key: 'saturation', label: 'Saturation', min: 0, max: 200, unit: '%' },
-  { key: 'hue', label: 'Teinte', min: 0, max: 360, unit: 'deg' },
+// Constante de MODULE : la clé est stockée, la traduction se fait au rendu.
+const FILTER_SLIDERS: { key: keyof ColorFilters; labelKey: TranslationKey; min: number; max: number; unit: string }[] = [
+  { key: 'brightness', labelKey: 'dam.tool.brightness', min: 0, max: 200, unit: '%' },
+  { key: 'contrast', labelKey: 'dam.filter.contrast', min: 0, max: 200, unit: '%' },
+  { key: 'saturation', labelKey: 'dam.filter.saturation', min: 0, max: 200, unit: '%' },
+  { key: 'hue', labelKey: 'dam.filter.hue', min: 0, max: 360, unit: 'deg' },
 ]
 
 export function DamImageToolbar(props: Props) {
+  const { t } = useTranslation()
   const {
     zoom, onZoomChange, onRotate, flipH, onFlipH, flipV, onFlipV,
     filters, onFiltersChange, activeTool, onToolChange,
@@ -118,7 +121,7 @@ export function DamImageToolbar(props: Props) {
   )
 
   const handleSaveClick = useCallback(() => {
-    const name = prompt('Nom de la variante :', `Version ${variantsCount + 1}`)
+    const name = prompt(t('dam.variantName'), t('dam.variantDefault', { n: variantsCount + 1 }))
     if (name && name.trim()) onSaveVariant(name.trim())
   }, [onSaveVariant, variantsCount])
 
@@ -127,25 +130,25 @@ export function DamImageToolbar(props: Props) {
       {/* Toolbar row */}
       <div className="flex items-center gap-0.5 px-4 py-1 border-b border-white/5">
         <div className="flex items-center gap-0.5 pr-2 border-r border-white/10 mr-2">
-          <ToolBtn icon={ZoomOut} label="Dézoomer" onClick={() => onZoomChange(Math.max(0.1, zoom - 0.25))} />
+          <ToolBtn icon={ZoomOut} label={t('dam.tool.zoomOut')} onClick={() => onZoomChange(Math.max(0.1, zoom - 0.25))} />
           <span className="text-[10px] text-white/40 font-mono w-10 text-center">{Math.round(zoom * 100)}%</span>
-          <ToolBtn icon={ZoomIn} label="Zoomer" onClick={() => onZoomChange(Math.min(5, zoom + 0.25))} />
-          <ToolBtn icon={Maximize2} label="Ajuster" onClick={() => onZoomChange(1)} />
+          <ToolBtn icon={ZoomIn} label={t('dam.tool.zoomIn')} onClick={() => onZoomChange(Math.min(5, zoom + 0.25))} />
+          <ToolBtn icon={Maximize2} label={t('dam.tool.fit')} onClick={() => onZoomChange(1)} />
         </div>
 
         <div className="flex items-center gap-0.5 pr-2 border-r border-white/10 mr-2">
-          <ToolBtn icon={RotateCw} label="Rotation 90deg" onClick={onRotate} />
-          <ToolBtn icon={FlipHorizontal2} label="Miroir H" active={flipH} onClick={onFlipH} />
-          <ToolBtn icon={FlipVertical2} label="Miroir V" active={flipV} onClick={onFlipV} />
+          <ToolBtn icon={RotateCw} label={t('dam.tool.rotate')} onClick={onRotate} />
+          <ToolBtn icon={FlipHorizontal2} label={t('dam.tool.mirrorH')} active={flipH} onClick={onFlipH} />
+          <ToolBtn icon={FlipVertical2} label={t('dam.tool.mirrorV')} active={flipV} onClick={onFlipV} />
         </div>
 
         <div className="flex items-center gap-0.5 pr-2 border-r border-white/10 mr-2">
-          <ToolBtn icon={Crop} label="Recadrer" active={activeTool === 'crop'} onClick={() => toggle('crop')} />
-          <ToolBtn icon={Palette} label="Colorimétrie" active={activeTool === 'colors'} onClick={() => toggle('colors')} />
-          <ToolBtn icon={Download} label="Exporter" active={activeTool === 'export'} onClick={() => toggle('export')} />
+          <ToolBtn icon={Crop} label={t('dam.tool.crop')} active={activeTool === 'crop'} onClick={() => toggle('crop')} />
+          <ToolBtn icon={Palette} label={t('dam.tool.colour')} active={activeTool === 'colors'} onClick={() => toggle('colors')} />
+          <ToolBtn icon={Download} label={t('dam.tool.export')} active={activeTool === 'export'} onClick={() => toggle('export')} />
         </div>
 
-        <ToolBtn icon={RotateCcw} label="Réinitialiser" onClick={onReset} />
+        <ToolBtn icon={RotateCcw} label={t('dam.tool.reset')} onClick={onReset} />
 
         {/* Variants actions — right side */}
         <div className="ml-auto flex items-center gap-1">
@@ -154,7 +157,7 @@ export function DamImageToolbar(props: Props) {
               onClick={onUpdateVariant}
               disabled={!isDirty || saving}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              title="Mettre à jour la variante ouverte"
+              title={t('dam.tool.updateVariant')}
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Mettre à jour
@@ -165,7 +168,7 @@ export function DamImageToolbar(props: Props) {
               onClick={handleSaveClick}
               disabled={!isDirty || saving}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              title="Enregistrer en tant que nouvelle variante"
+              title={t('dam.tool.newVariant')}
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               {isVariantLoaded ? 'Nouvelle variante' : 'Enregistrer variante'}
@@ -178,7 +181,7 @@ export function DamImageToolbar(props: Props) {
                 ? 'bg-indigo-500/20 text-indigo-400'
                 : 'bg-white/5 text-white/60 hover:bg-white/10'
             }`}
-            title="Afficher les versions"
+            title={t('dam.tool.showVersions')}
           >
             <Layers className="w-3.5 h-3.5" />
             Versions
@@ -213,12 +216,13 @@ export function DamImageToolbar(props: Props) {
 }
 
 function ColorPanel({ filters, onChange }: { filters: ColorFilters; onChange: (f: Partial<ColorFilters>) => void }) {
+  const { t } = useTranslation()
   return (
     <div className="px-4 py-2.5 border-b border-white/5 flex gap-6">
       {FILTER_SLIDERS.map((s) => (
         <div key={s.key} className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[9px] text-white/40 uppercase tracking-wider">{s.label}</span>
+            <span className="text-[9px] text-white/40 uppercase tracking-wider">{t(s.labelKey)}</span>
             <span className="text-[9px] text-white/40 font-mono">{filters[s.key]}{s.unit === 'deg' ? '°' : ''}</span>
           </div>
           <input
@@ -258,6 +262,7 @@ function CropPanel({
   imageWidth: number
   imageHeight: number
 }) {
+  const { t } = useTranslation()
   const maskW = Math.round(mask.width * imageWidth)
   const maskH = Math.round(mask.height * imageHeight)
   const isFull = mask.x === 0 && mask.y === 0 && mask.width === 1 && mask.height === 1
@@ -297,7 +302,7 @@ function CropPanel({
 
   return (
     <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-3 flex-wrap">
-      <span className="text-[9px] text-white/40 uppercase tracking-wider shrink-0">Ratio</span>
+      <span className="text-[9px] text-white/40 uppercase tracking-wider shrink-0">{t('dam.tool.ratio')}</span>
       <div className="flex gap-1">
         {CROP_RATIOS.map((r) => (
           <button
@@ -317,7 +322,7 @@ function CropPanel({
       <button
         onClick={toggleEnabled}
         disabled={isFull}
-        title={mask.enabled ? 'Désactiver le masque' : 'Activer le masque'}
+        title={t(mask.enabled ? 'dam.tool.maskOff' : 'dam.tool.maskOn')}
         className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] transition disabled:opacity-30 ${
           mask.enabled
             ? 'bg-indigo-500/20 text-indigo-400'
@@ -325,7 +330,7 @@ function CropPanel({
         }`}
       >
         {mask.enabled ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-        {mask.enabled ? 'Masque actif' : 'Masque masqué'}
+        {t(mask.enabled ? 'dam.tool.maskActive' : 'dam.tool.maskHidden')}
       </button>
 
       <button
@@ -337,7 +342,7 @@ function CropPanel({
 
       <div className="ml-auto text-[9px] text-white/30 font-mono">
         {isFull ? (
-          <span>Glisse pour recadrer</span>
+          <span>{t('dam.tool.dragToCrop')}</span>
         ) : (
           <span>
             {maskW} x {maskH} px
@@ -357,6 +362,7 @@ function ExportPanel({
   imageWidth: number
   imageHeight: number
 }) {
+  const { t } = useTranslation()
   const [format, setFormat] = useState('image/png')
   const [quality, setQuality] = useState(92)
   const [scale, setScale] = useState(1)
@@ -372,7 +378,7 @@ function ExportPanel({
   return (
     <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-6">
       <div>
-        <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1">Format</div>
+        <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1">{t('dam.tool.format')}</div>
         <div className="flex gap-1">
           {EXPORT_FORMATS.map((f) => (
             <button
@@ -391,7 +397,7 @@ function ExportPanel({
       {!isLossless && (
         <div className="min-w-[120px]">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[9px] text-white/40 uppercase tracking-wider">Qualité</span>
+            <span className="text-[9px] text-white/40 uppercase tracking-wider">{t('dam.tool.quality')}</span>
             <span className="text-[9px] text-white/40 font-mono">{quality}%</span>
           </div>
           <input
@@ -408,7 +414,7 @@ function ExportPanel({
       )}
 
       <div>
-        <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1">Échelle</div>
+        <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1">{t('dam.tool.scale')}</div>
         <div className="flex gap-1">
           {[0.5, 1, 1.5, 2].map((s) => (
             <button

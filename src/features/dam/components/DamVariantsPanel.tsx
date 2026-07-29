@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Layers, Trash2, Pencil, Check, X as XIcon, Clock, Star, LifeBuoy, Loader2 } from 'lucide-react'
 import type { DamImage, DamImageVariant } from '../types'
+import { useTranslation, intlLocale, type Locale } from '@/lib/i18n'
 
 interface Props {
   originalImage: DamImage
@@ -14,11 +15,11 @@ interface Props {
   onRecoverOrphans: () => Promise<number>
 }
 
-function formatDate(ts: number | { seconds: number } | null | undefined): string {
+function formatDate(ts: number | { seconds: number } | null | undefined, locale: Locale): string {
   if (!ts) return ''
   const ms = typeof ts === 'number' ? ts : ts.seconds * 1000
   const d = new Date(ms)
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleDateString(intlLocale(locale), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
 function editBadges(variant: DamImageVariant): string[] {
@@ -49,6 +50,7 @@ export function DamVariantsPanel({
   onRename,
   onRecoverOrphans,
 }: Props) {
+  const { t, locale } = useTranslation()
   const originalActive = loadedVariantId === null
   const [recovering, setRecovering] = useState(false)
   const [recoveryMsg, setRecoveryMsg] = useState<string | null>(null)
@@ -58,10 +60,10 @@ export function DamVariantsPanel({
     setRecoveryMsg(null)
     try {
       const n = await onRecoverOrphans()
-      setRecoveryMsg(n > 0 ? `${n} variante${n > 1 ? 's' : ''} récupérée${n > 1 ? 's' : ''}` : 'Aucun orphelin trouvé')
+      setRecoveryMsg(n > 0 ? `${n} variante${n > 1 ? 's' : ''} récupérée${n > 1 ? 's' : ''}` : t('dam.noOrphan'))
     } catch (err) {
       console.error('Recovery failed:', err)
-      setRecoveryMsg('Erreur pendant la récupération')
+      setRecoveryMsg(t('dam.recoverError'))
     } finally {
       setRecovering(false)
       setTimeout(() => setRecoveryMsg(null), 4000)
@@ -86,12 +88,12 @@ export function DamVariantsPanel({
     <div className="w-[260px] bg-surface-2 border-l border-white/5 overflow-y-auto shrink-0 flex flex-col">
       <div className="px-4 pt-4 pb-3 border-b border-white/5 flex items-center gap-2">
         <Layers className="w-3.5 h-3.5 text-indigo-400" />
-        <div className="text-xs font-medium text-white/80">Versions</div>
+        <div className="text-xs font-medium text-white/80">{t('dam.versions')}</div>
         <button
           onClick={handleRecover}
           disabled={recovering}
           className="ml-auto flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 disabled:opacity-40"
-          title="Récupérer les fichiers orphelins de Storage"
+          title={t('dam.recoverOrphans')}
         >
           {recovering ? <Loader2 className="w-3 h-3 animate-spin" /> : <LifeBuoy className="w-3 h-3" />}
           Récupérer
@@ -114,11 +116,11 @@ export function DamVariantsPanel({
           <button
             onClick={onLoadOriginal}
             className="w-full aspect-video bg-surface-2 relative overflow-hidden"
-            title="Revenir à l'original"
+            title={t('dam.backToOriginal')}
           >
             <img
               src={originalImage.previewUrl}
-              alt="Original"
+              alt={t('dam.original')}
               className="w-full h-full object-cover"
             />
             <div className="absolute top-1 left-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/90 text-black text-[9px] font-medium">
@@ -127,7 +129,7 @@ export function DamVariantsPanel({
             </div>
           </button>
           <div className="px-2.5 py-2">
-            <div className="text-[11px] text-white/80 font-medium truncate">Image originale</div>
+            <div className="text-[11px] text-white/80 font-medium truncate">{t('dam.originalImage')}</div>
             <div className="flex items-center gap-1 mt-0.5 text-[9px] text-white/30">
               <span className="capitalize">{originalImage.sourceProvider}</span>
               <span className="ml-auto font-mono">
@@ -175,7 +177,7 @@ export function DamVariantsPanel({
                     }
                   }}
                   className="w-full aspect-video bg-surface-2 relative overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-                  title="Charger cette variante"
+                  title={t('dam.loadVariant')}
                 >
                   <img
                     src={v.renderedThumbUrl}
@@ -189,7 +191,7 @@ export function DamVariantsPanel({
                         startRename(v)
                       }}
                       className="p-1 rounded bg-black/60 text-[#fff]/70 hover:text-[#fff]"
-                      title="Renommer"
+                      title={t('dam.rename')}
                     >
                       <Pencil className="w-3 h-3" />
                     </button>
@@ -199,7 +201,7 @@ export function DamVariantsPanel({
                         if (confirm(`Supprimer la variante "${v.name}" ?`)) onDelete(v)
                       }}
                       className="p-1 rounded bg-black/60 text-[#fff]/70 hover:text-red-400"
-                      title="Supprimer"
+                      title={t('dam.delete')}
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -233,7 +235,7 @@ export function DamVariantsPanel({
 
                   <div className="flex items-center gap-1 mt-0.5 text-[9px] text-white/30">
                     <Clock className="w-2.5 h-2.5" />
-                    {formatDate(v.createdAt as unknown as number)}
+                    {formatDate(v.createdAt as unknown as number, locale)}
                     <span className="ml-auto font-mono">
                       {v.renderedWidth}x{v.renderedHeight}
                     </span>

@@ -3,6 +3,7 @@ import { Search, X } from 'lucide-react'
 import { useDamStore } from '../../../stores/dam.store'
 import { useDamSearch } from '../hooks/useDamSearch'
 import { useDamAutocomplete } from '../hooks/useDamAutocomplete'
+import { useTranslation } from '@/lib/i18n'
 
 /**
  * Rend un label d'autocomplétion avec le préfixe saisi en gras,
@@ -27,6 +28,7 @@ function HighlightedSuggestion({ term, query }: { term: string; query: string })
 }
 
 export function DamSearchBar() {
+  const { t } = useTranslation()
   const { query, setQuery } = useDamStore()
   const { search } = useDamSearch()
   const {
@@ -120,7 +122,7 @@ export function DamSearchBar() {
           onKeyDown={handleKeyDown}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
-          placeholder="Rechercher"
+          placeholder={t('dam.searchBar')}
           className="flex-1 bg-transparent text-sm text-white placeholder:text-white/30 outline-none"
           aria-autocomplete="list"
           aria-expanded={showDropdown}
@@ -132,7 +134,7 @@ export function DamSearchBar() {
           <button
             onClick={handleClear}
             className="text-white/30 hover:text-white/60"
-            aria-label="Effacer la recherche"
+            aria-label={t('dam.clearSearch')}
           >
             <X className="w-3.5 h-3.5" />
           </button>

@@ -2,21 +2,26 @@ import { useDamStore } from '../../../stores/dam.store'
 import { DAM_COLORS } from '../types'
 import { DamSearchBar } from './DamSearchBar'
 import { DamSearchByImage } from './DamSearchByImage'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
+// Uniformément des CLÉS : un tableau mixte label/labelKey produit un type union
+// où `labelKey` devient optionnel, et `t()` refuse alors `undefined`.
 const SOURCES = [
-  { value: 'all' as const, label: 'Toutes' },
-  { value: 'pexels' as const, label: 'Pexels' },
-  { value: 'unsplash' as const, label: 'Unsplash' },
+  { value: 'all' as const, labelKey: 'dam.source.all' as TranslationKey },
+  { value: 'pexels' as const, labelKey: 'dam.source.pexels' as TranslationKey },
+  { value: 'unsplash' as const, labelKey: 'dam.source.unsplash' as TranslationKey },
 ]
 
+// Constante de MODULE : la clé est stockée, la traduction se fait au rendu.
 const ORIENTATIONS = [
-  { value: 'all' as const, label: 'Tout' },
-  { value: 'landscape' as const, label: 'Paysage' },
-  { value: 'portrait' as const, label: 'Portrait' },
-  { value: 'square' as const, label: 'Carré' },
+  { value: 'all' as const, labelKey: 'dam.orientation.all' as TranslationKey },
+  { value: 'landscape' as const, labelKey: 'dam.orientation.landscape' as TranslationKey },
+  { value: 'portrait' as const, labelKey: 'dam.orientation.portrait' as TranslationKey },
+  { value: 'square' as const, labelKey: 'dam.meta.square' as TranslationKey },
 ]
 
 export function DamSidebar() {
+  const { t } = useTranslation()
   const { filters, setFilters } = useDamStore()
 
   return (
@@ -25,7 +30,7 @@ export function DamSidebar() {
       <DamSearchByImage />
 
       <div>
-        <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Source</div>
+        <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">{t('dam.meta.source')}</div>
         <div className="flex flex-wrap gap-1">
           {SOURCES.map((s) => (
             <button
@@ -37,14 +42,14 @@ export function DamSidebar() {
                   : 'bg-white/5 text-white/50 hover:bg-white/10'
               }`}
             >
-              {s.label}
+              {t(s.labelKey)}
             </button>
           ))}
         </div>
       </div>
 
       <div>
-        <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Orientation</div>
+        <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">{t('dam.meta.orientation')}</div>
         <div className="flex flex-wrap gap-1">
           {ORIENTATIONS.map((o) => (
             <button
@@ -56,14 +61,14 @@ export function DamSidebar() {
                   : 'bg-white/5 text-white/50 hover:bg-white/10'
               }`}
             >
-              {o.label}
+              {t(o.labelKey)}
             </button>
           ))}
         </div>
       </div>
 
       <div>
-        <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Couleur dominante</div>
+        <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">{t('dam.meta.dominantColour')}</div>
         <div className="flex flex-wrap gap-1.5">
           {DAM_COLORS.map((c) => (
             <button

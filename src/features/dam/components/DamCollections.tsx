@@ -8,6 +8,7 @@ import { DamImageCard } from './DamImageCard'
 import { DamMasonry } from './DamMasonry'
 import type { DamImage } from '../types'
 import type { DamCollection } from '../types'
+import { useTranslation } from '@/lib/i18n'
 
 function CollectionCard({
   col,
@@ -171,6 +172,7 @@ function CollectionRow({
 }
 
 export function DamCollections() {
+  const { t } = useTranslation()
   const canCollection = useCan('dam.collection')
   const { collections, loading, createCollection, deleteCollection } = useDamCollections()
   const [newName, setNewName] = useState('')
@@ -223,7 +225,7 @@ export function DamCollections() {
         </div>
 
         {loadingImages ? (
-          <div className="flex-1 flex items-center justify-center text-white/30 text-sm">Chargement...</div>
+          <div className="flex-1 flex items-center justify-center text-white/30 text-sm">{t('dam.loading')}</div>
         ) : colImages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-white/30 text-sm">
             Aucune image dans cette collection
@@ -251,19 +253,19 @@ export function DamCollections() {
   return (
     <div className="flex-1 overflow-y-auto p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-white/70">Collections</h3>
+        <h3 className="text-sm font-medium text-white/70">{t('dam.collections')}</h3>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setViewMode('grid')}
             className={`p-1.5 rounded transition ${viewMode === 'grid' ? 'bg-white/10 text-white/70' : 'text-white/30 hover:text-white/50'}`}
-            title="Vue grille"
+            title={t('dam.gridView')}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setViewMode('list')}
             className={`p-1.5 rounded transition ${viewMode === 'list' ? 'bg-white/10 text-white/70' : 'text-white/30 hover:text-white/50'}`}
-            title="Vue liste"
+            title={t('dam.listView')}
           >
             <List className="w-3.5 h-3.5" />
           </button>
@@ -285,7 +287,7 @@ export function DamCollections() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-            placeholder="Nom de la collection"
+            placeholder={t('dam.collectionName')}
             className="flex-1 bg-surface-2 border border-white/10 rounded px-2 py-1.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50"
           />
           <button onClick={handleCreate} className="px-3 py-1.5 rounded bg-indigo-500 text-[#fff] text-sm hover:bg-indigo-600">
@@ -298,9 +300,9 @@ export function DamCollections() {
       )}
 
       {loading ? (
-        <div className="text-center text-white/30 text-sm py-8">Chargement...</div>
+        <div className="text-center text-white/30 text-sm py-8">{t('dam.loading')}</div>
       ) : collections.length === 0 ? (
-        <div className="text-center text-white/30 text-sm py-8">Aucune collection</div>
+        <div className="text-center text-white/30 text-sm py-8">{t('dam.noCollection')}</div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-3 gap-4">
           {collections.map((col) => (

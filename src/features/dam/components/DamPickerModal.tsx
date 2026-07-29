@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useUIStore } from '@/stores/ui.store'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { DamPage } from './DamPage'
+import { useTranslation } from '@/lib/i18n'
 
 /**
  * Full-screen modal qui affiche l'interface DamPage (onglets Stock / Mes images /
@@ -10,6 +11,7 @@ import { DamPage } from './DamPage'
  * la DamLightbox déjà intégrée à DamPage (bouton "Canvas").
  */
 export function DamPickerModal() {
+  const { t } = useTranslation()
   const { damPickerOpen, setDamPickerOpen } = useUIStore()
 
   useEffect(() => {
@@ -27,8 +29,8 @@ export function DamPickerModal() {
     <div className="fixed inset-0 z-[90] bg-background flex flex-col">
       {/* Header with close button */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 shrink-0">
-        <div className="text-xs font-medium text-white/70">Bibliothèque d'images</div>
-        <CloseButton onClick={() => setDamPickerOpen(false)} title="Fermer (Esc)" />
+        <div className="text-xs font-medium text-white/70">{t('dam.picker.title')}</div>
+        <CloseButton onClick={() => setDamPickerOpen(false)} title={t('dam.close')} />
       </div>
 
       {/* DamPage — uses the same UI as the dashboard images section */}

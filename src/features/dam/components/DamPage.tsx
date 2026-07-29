@@ -16,23 +16,25 @@ import { GDrivePanel } from '../../gdrive/GDrivePanel'
 import { UserAnimationsList } from '../../video/UserAnimationsList'
 import { useCan, useQuota } from '../../access/useAccess'
 import { DemoQuotaBanner } from '../../access/DemoQuotaBanner'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 // Onglets où le quota d'assets DAM possédés a du sens (on exclut « Stock » = banque
 // Adobe non possédée, et « videos » = animations HTML hors compteur images).
 const OWNED_ASSET_TABS = new Set(['my-images', 'favorites', 'collections', 'recent', 'projects', 'generate', 'gdrive'])
 
-const TAB_TITLES: Record<string, string> = {
-  stock: 'Banque d\'images',
-  'my-images': 'Mes images',
-  favorites: 'Favoris',
-  collections: 'Collections',
-  recent: 'Récents',
-  projects: 'Projets',
-  videos: 'Animations HTML',
-  gdrive: 'Google Drive',
+const TAB_TITLES: Record<string, TranslationKey> = {
+  stock: 'nav.images.stock',
+  'my-images': 'nav.images.mine',
+  favorites: 'nav.images.favorites',
+  collections: 'nav.images.collections',
+  recent: 'nav.images.recent',
+  projects: 'nav.images.projects',
+  videos: 'nav.images.videos',
+  gdrive: 'nav.images.gdrive',
 }
 
 export function DamPage() {
+  const { t } = useTranslation()
   const { activeTab, totalResults, selectedProjectId } = useDamStore()
   const setActiveTab = useDamStore((s) => s.setActiveTab)
   const gdriveConnected = useGDriveStore((s) => s.connected)
@@ -58,7 +60,7 @@ export function DamPage() {
         {TAB_TITLES[activeTab] && (
           <div className="flex items-center justify-between px-6 h-14 shrink-0 border-b border-white/5">
             <h1 className="text-[15px] font-semibold text-white tracking-tight">
-              {TAB_TITLES[activeTab]}
+              {t(TAB_TITLES[activeTab])}
             </h1>
             {activeTab === 'stock' && totalResults > 0 && (
               <span className="text-[11px] text-white/40">

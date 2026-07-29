@@ -6,6 +6,7 @@ import { useDamSearchByImage } from '../hooks/useDamSearchByImage'
 import { useDamCanvasInsert } from '../hooks/useDamCanvasInsert'
 import { useDamFavorites } from '../hooks/useDamFavorites'
 import type { DamImage } from '../types'
+import { useTranslation } from '@/lib/i18n'
 
 const SOURCES = [
   { value: 'all' as const, label: 'Tout' },
@@ -14,6 +15,7 @@ const SOURCES = [
 ]
 
 export function DamStockTab() {
+  const { t } = useTranslation()
   const { query, setQuery, filters, setFilters, results, loading, hasMore, lastError } = useDamStore()
   const { search, loadMore } = useDamSearch()
   const { searchByImage, uploading } = useDamSearchByImage()
@@ -83,7 +85,7 @@ export function DamStockTab() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Rechercher..."
+            placeholder={t('dam.search')}
             className="flex-1 bg-transparent text-xs text-white placeholder:text-white/30 outline-none"
           />
           {query && (
@@ -137,7 +139,7 @@ export function DamStockTab() {
           <div className="text-center text-[10px] mt-8 px-3">
             {lastError ? (
               <div className="space-y-2">
-                <div className="text-red-400">Erreur de chargement</div>
+                <div className="text-red-400">{t('dam.loadError')}</div>
                 <div className="text-white/40 break-words">{lastError}</div>
                 <button
                   onClick={() => search()}
@@ -148,7 +150,7 @@ export function DamStockTab() {
               </div>
             ) : (
               <div className="text-white/20">
-                {query.trim() ? 'Aucun résultat' : 'Aucune image disponible'}
+                {query.trim() ? t('dam.noResult') : 'Aucune image disponible'}
               </div>
             )}
           </div>
@@ -164,7 +166,7 @@ export function DamStockTab() {
                 }}
                 onClick={() => handleImageClick(image)}
                 onDoubleClick={() => handleImageDoubleClick(image)}
-                title="Clic : insérer — Double-clic : remplacer le bloc actif"
+                title={t('dam.card.insert')}
                 className="group relative aspect-square rounded overflow-hidden cursor-pointer bg-white/5"
               >
                 <img

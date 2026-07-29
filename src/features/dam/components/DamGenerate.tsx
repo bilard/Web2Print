@@ -24,6 +24,7 @@ import {
 import { ImprovePromptDialog } from './ImprovePromptDialog'
 import { ImageZoomOverlay } from './ImageZoomOverlay'
 import { autoTagAsset } from '../autoTag'
+import { useTranslation } from '@/lib/i18n'
 
 type AspectRatio = ImageAspectRatio
 type Resolution = ImageSize
@@ -159,6 +160,7 @@ function formatSize(bytes: number): string {
 }
 
 export function DamGenerate() {
+  const { t } = useTranslation()
   const [prompt, setPrompt] = useState('')
   /** Prompt brut avant la première amélioration IA. Effacé à chaque nouvelle génération ou
    *  remis à zéro quand l'utilisateur édite manuellement le textarea après amélioration. */
@@ -217,8 +219,8 @@ export function DamGenerate() {
           previewUrl: mimeType.startsWith('image/') ? URL.createObjectURL(file) : undefined,
         })
       } catch (err) {
-        console.error('Lecture du fichier échouée:', err)
-        toast.error(`Impossible de lire ${file.name}`)
+        console.error('Reading the file failed:', err)
+        toast.error(t('dam.gen.readError', { name: file.name }))
       }
     }
     if (added.length > 0) setRefs((prev) => [...prev, ...added])
@@ -250,8 +252,8 @@ export function DamGenerate() {
         await handleAddRefs(imageFiles)
         toast.success(
           imageFiles.length === 1
-            ? 'Image collée ajoutée aux références'
-            : `${imageFiles.length} images collées ajoutées aux références`,
+            ? t('dam.gen.pasted')
+            : t('dam.gen.pasted.other', { count: imageFiles.length }),
         )
       }
     },
@@ -276,8 +278,8 @@ export function DamGenerate() {
       setPrompt(improved)
       toast.success(
         imageRefs.length > 0
-          ? `Prompt amélioré (${imageRefs.length} image${imageRefs.length > 1 ? 's' : ''} analysée${imageRefs.length > 1 ? 's' : ''})`
-          : 'Prompt amélioré',
+          ? t('dam.gen.improved', { count: imageRefs.length })
+          : t('dam.gen.improved.plain'),
       )
     } catch (err) {
       console.error('Improve prompt failed:', err)
@@ -327,7 +329,7 @@ export function DamGenerate() {
       setImages(results)
     } catch (err) {
       console.error('Generation failed:', err)
-      setError(err instanceof Error ? err.message : 'Erreur de génération')
+      setError(err instanceof Error ? err.message : t('dam.gen.error'))
     } finally {
       setGenerating(false)
     }
@@ -345,7 +347,7 @@ export function DamGenerate() {
   const handleSave = useCallback(
     async (img: GeneratedImage, index: number) => {
       if (!userId) {
-        toast.error('Connectez-vous pour sauvegarder dans le DAM.')
+        toast.error(t('dam.gen.signInToSave'))
         return
       }
       if (img.savedId || img.saving) return
@@ -406,7 +408,7 @@ export function DamGenerate() {
             i === index ? { ...p, savedId: id, saving: false } : p,
           ),
         )
-        toast.success('Image sauvegardée dans Mes images')
+        toast.success(t('dam.gen.savedToDam'))
       } catch (err) {
         console.error('Save to DAM failed:', err)
         setImages((prev) =>
@@ -421,7 +423,7 @@ export function DamGenerate() {
   const handleInsertCanvas = useCallback(
     (img: GeneratedImage) => {
       if (!projectId) {
-        toast.error("Aucun projet ouvert dans l'éditeur.")
+        toast.error(t('dam.gen.noProject'))
         return
       }
       const damImage = {
@@ -459,37 +461,37 @@ export function DamGenerate() {
       <div className="w-[260px] bg-surface-2 border-r border-white/5 p-4 flex flex-col gap-4 overflow-y-auto shrink-0">
         <div className="flex items-center gap-2 mb-1">
           <Sparkles className="w-4 h-4 text-indigo-400" />
-          <span className="text-xs font-medium text-white/80">Création d'image</span>
+          <span className="text-xs font-medium text-white/80">{t('dam.gen.title')}</span>
         </div>
 
         {/* Prompt */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <div className="text-[9px] text-white/40 uppercase tracking-wider">Prompt</div>
+            <div className="text-[9px] text-white/40 uppercase tracking-wider">{t('dam.gen.prompt')}</div>
             <div className="flex items-center gap-0.5">
               <button
                 type="button"
                 onClick={() => setImproveDialogOpen(true)}
                 disabled={!prompt.trim() || improving || generating}
                 className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-                title="Améliorer avec questions ciblées — Gemini analyse ton brief + tes images et te demande des précisions sur les points ambigus avant de générer le prompt"
+                title={t('dam.gen.improve.help')}
               >
                 <MessageCircleQuestion className="w-2.5 h-2.5" />
-                Avec questions
+                {t('dam.gen.withQuestions')}
               </button>
               <button
                 type="button"
                 onClick={handleImprovePrompt}
                 disabled={!prompt.trim() || improving || generating}
                 className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-                title="Réécriture one-shot du prompt pour Image IA (sujet, style, composition, éclairage, qualité)"
+                title={t('dam.gen.rewrite.help')}
               >
                 {improving ? (
                   <Loader2 className="w-2.5 h-2.5 animate-spin" />
                 ) : (
                   <Wand2 className="w-2.5 h-2.5" />
                 )}
-                {improving ? 'En cours…' : 'Améliorer'}
+                {t(improving ? 'dam.gen.inProgress' : 'dam.gen.improve')}
               </button>
             </div>
           </div>
@@ -504,7 +506,7 @@ export function DamGenerate() {
               if (clarifications !== null) setClarifications(null)
             }}
             onPaste={handlePromptPaste}
-            placeholder="Décrivez l'image à générer... (collez une image ou du texte)"
+            placeholder={t('dam.gen.describe')}
             rows={4}
             className="w-full min-h-[96px] bg-[#fff] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#111] placeholder:text-[#111]/40 outline-none focus:border-indigo-500/50 resize-y"
           />
@@ -514,7 +516,7 @@ export function DamGenerate() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <div className="text-[9px] text-white/40 uppercase tracking-wider">
-              Fichiers de référence
+              {t('dam.gen.refFiles')}
             </div>
             {refs.length > 0 && (
               <span className="text-[9px] text-white/30 tabular-nums">{refs.length}</span>
@@ -548,7 +550,7 @@ export function DamGenerate() {
                         type="button"
                         onClick={() => setZoomSrc(r.previewUrl ?? null)}
                         className="w-7 h-7 rounded bg-white/5 overflow-hidden flex items-center justify-center shrink-0 cursor-zoom-in relative group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-                        title="Agrandir"
+                        title={t('dam.gen.enlarge')}
                       >
                         <img src={r.previewUrl} alt="" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
@@ -568,7 +570,7 @@ export function DamGenerate() {
                       type="button"
                       onClick={() => handleRemoveRef(r.id)}
                       className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white/80 transition"
-                      title="Retirer"
+                      title={t('dam.gen.remove')}
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -583,7 +585,7 @@ export function DamGenerate() {
               className="flex items-center justify-center gap-1.5 w-full px-2 py-1.5 rounded text-[10px] text-white/55 hover:text-white/85 hover:bg-white/5 transition"
             >
               <Paperclip className="w-3 h-3" />
-              {refs.length === 0 ? 'Ajouter des fichiers' : 'Ajouter d\'autres fichiers'}
+              {t(refs.length === 0 ? 'dam.gen.addFiles' : 'dam.gen.addMoreFiles')}
             </button>
           </div>
 
@@ -600,13 +602,13 @@ export function DamGenerate() {
             }}
           />
           <p className="text-[9px] text-white/30 mt-1 leading-snug">
-            Images, logos, PDF… Tous formats acceptés et passés en référence à Image IA.
+            {t('dam.gen.refFiles.hint')}
           </p>
         </div>
 
         {/* Output format */}
         <div>
-          <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Format de sortie</div>
+          <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">{t('dam.gen.outputFormat')}</div>
           <div className="flex gap-1">
             <button
               onClick={() => setConfig((c) => ({ ...c, outputFormat: 'images-text' }))}
@@ -616,7 +618,7 @@ export function DamGenerate() {
                   : 'bg-white/5 text-white/50 hover:bg-white/10'
               }`}
             >
-              Images & texte
+              {t('dam.gen.imagesAndText')}
             </button>
             <button
               onClick={() => setConfig((c) => ({ ...c, outputFormat: 'images-only' }))}
@@ -626,7 +628,7 @@ export function DamGenerate() {
                   : 'bg-white/5 text-white/50 hover:bg-white/10'
               }`}
             >
-              Images seul.
+              {t('dam.gen.imagesOnly')}
             </button>
           </div>
         </div>
@@ -634,7 +636,7 @@ export function DamGenerate() {
         {/* Temperature */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <div className="text-[9px] text-white/40 uppercase tracking-wider">Température</div>
+            <div className="text-[9px] text-white/40 uppercase tracking-wider">{t('dam.gen.temperature')}</div>
             <span className="text-[10px] text-white/50 font-mono">{config.temperature.toFixed(1)}</span>
           </div>
           <input
@@ -649,14 +651,14 @@ export function DamGenerate() {
               [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-500"
           />
           <div className="flex justify-between text-[9px] text-white/20 mt-0.5">
-            <span>Précis</span>
-            <span>Créatif</span>
+            <span>{t('dam.gen.precise')}</span>
+            <span>{t('dam.gen.creative')}</span>
           </div>
         </div>
 
         {/* Aspect ratio */}
         <div>
-          <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Ratio</div>
+          <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">{t('dam.gen.ratio')}</div>
           <div className="flex flex-wrap gap-1">
             {ASPECT_RATIOS.map((ar) => (
               <button
@@ -676,7 +678,7 @@ export function DamGenerate() {
 
         {/* Resolution */}
         <div>
-          <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Résolution</div>
+          <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">{t('dam.gen.resolution')}</div>
           <div className="flex gap-1">
             {RESOLUTIONS.map((r) => (
               <button
@@ -696,7 +698,7 @@ export function DamGenerate() {
 
         {/* Number of images */}
         <div>
-          <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Nombre d'images</div>
+          <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">{t('dam.gen.count')}</div>
           <div className="flex gap-1">
             {[1, 2, 4].map((n) => (
               <button
@@ -718,7 +720,7 @@ export function DamGenerate() {
         <button
           onClick={handleGenerate}
           disabled={!prompt.trim() || generating || damQuotaFull}
-          title={damQuotaFull ? 'Plafond démo atteint — contactez-nous pour lever le plafond de visuels' : undefined}
+          title={damQuotaFull ? t('pim.quota.visuals') : undefined}
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-500 text-[#fff] text-sm font-medium hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition mt-2"
         >
           {generating ? (
@@ -729,7 +731,7 @@ export function DamGenerate() {
           ) : (
             <>
               <Sparkles className="w-4 h-4" />
-              Générer
+              {t('dam.gen.generate')}
             </>
           )}
         </button>
@@ -740,7 +742,7 @@ export function DamGenerate() {
         {images.length === 0 && !generating && !error && (
           <div className="flex-1 flex flex-col items-center justify-center text-white/20 gap-3">
             <Sparkles className="w-12 h-12" />
-            <div className="text-sm">Entrez un prompt pour générer des images</div>
+            <div className="text-sm">{t('dam.gen.enterPrompt')}</div>
             <div className="text-[10px] text-white/10 max-w-[300px] text-center">
               Powered by Gemini — Image IA
             </div>
@@ -750,7 +752,7 @@ export function DamGenerate() {
         {generating && (
           <div className="flex-1 flex flex-col items-center justify-center text-white/30 gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-            <div className="text-sm">Génération en cours...</div>
+            <div className="text-sm">{t('dam.gen.generating')}</div>
           </div>
         )}
 
@@ -764,7 +766,7 @@ export function DamGenerate() {
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="text-xs text-white/50">
-                {images.length} image{images.length > 1 ? 's' : ''} générée{images.length > 1 ? 's' : ''}
+                {t(images.length > 1 ? 'dam.gen.imagesGenerated.other' : 'dam.gen.imagesGenerated.one', { count: images.length })}
               </div>
               <button
                 onClick={() => {
@@ -785,7 +787,7 @@ export function DamGenerate() {
                     type="button"
                     onClick={() => setZoomSrc(img.url)}
                     className="group rounded-lg overflow-hidden bg-surface-2 relative cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-                    title="Cliquer pour agrandir"
+                    title={t('dam.gen.clickToEnlarge')}
                   >
                     <img
                       src={img.url}
@@ -800,7 +802,7 @@ export function DamGenerate() {
                     <button
                       onClick={() => handleDownload(img, i)}
                       className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-xs transition"
-                      title="Télécharger en .png sur ton ordinateur"
+                      title={t('dam.gen.downloadPng')}
                     >
                       <Download className="w-3.5 h-3.5" />
                       Télécharger
@@ -815,8 +817,8 @@ export function DamGenerate() {
                       }`}
                       title={
                         img.savedId
-                          ? 'Déjà sauvegardé dans Mes images'
-                          : 'Sauvegarder dans le DAM (onglet Mes images)'
+                          ? t('dam.gen.alreadySaved')
+                          : t('dam.gen.saveToDam')
                       }
                     >
                       {img.saving ? (
@@ -826,7 +828,7 @@ export function DamGenerate() {
                       ) : (
                         <Save className="w-3.5 h-3.5" />
                       )}
-                      {img.savedId ? 'Sauvegardé' : img.saving ? 'En cours…' : 'Sauvegarder'}
+                      {t(img.savedId ? 'dam.gen.savedShort' : img.saving ? 'dam.gen.inProgress' : 'dam.gen.save')}
                     </button>
                     <button
                       onClick={() => handleInsertCanvas(img)}
@@ -838,8 +840,8 @@ export function DamGenerate() {
                       }`}
                       title={
                         canInsertCanvas
-                          ? "Ouvrir le projet dans l'éditeur et y insérer l'image"
-                          : "Ouvre d'abord un projet dans l'éditeur pour pouvoir y insérer cette image"
+                          ? t('dam.gen.insertCanvas')
+                          : t('dam.gen.insertCanvas.off')
                       }
                     >
                       <Plus className="w-3.5 h-3.5" />

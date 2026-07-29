@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
+import { useTranslation } from '@/lib/i18n'
 
 interface Props {
   open: boolean
@@ -22,6 +23,7 @@ const DOUBLE_CLICK_TARGET_ZOOM = 2.5
  * - Esc / clic backdrop = fermeture
  */
 export function ImageZoomOverlay({ open, src, alt, onClose }: Props) {
+  const { t } = useTranslation()
   const [zoom, setZoom] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
@@ -133,25 +135,25 @@ export function ImageZoomOverlay({ open, src, alt, onClose }: Props) {
         <button
           onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z / 1.25))}
           className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 transition"
-          title="Zoom arrière (-)"
+          title={t('dam.zoomOut')}
         >
           <ZoomOut className="w-4 h-4" />
         </button>
         <button
           onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z * 1.25))}
           className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 transition"
-          title="Zoom avant (+)"
+          title={t('dam.zoomIn')}
         >
           <ZoomIn className="w-4 h-4" />
         </button>
         <button
           onClick={reset}
           className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 transition"
-          title="Réinitialiser (0)"
+          title={t('dam.zoomReset')}
         >
           <RotateCcw className="w-4 h-4" />
         </button>
-        <CloseButton onClick={onClose} title="Fermer (Esc)" />
+        <CloseButton onClick={onClose} title={t('dam.close')} />
       </div>
 
       {/* Bottom hint */}

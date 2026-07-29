@@ -8,12 +8,14 @@ import type { DamImage } from '../types'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ImageOff, Sparkles } from 'lucide-react'
 import { useDamStore } from '../../../stores/dam.store'
+import { useTranslation } from '@/lib/i18n'
 
 interface Props {
   sortBy?: 'addedAt' | 'usageCount'
 }
 
 export function DamRecentImages({ sortBy = 'addedAt' }: Props) {
+  const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const [images, setImages] = useState<DamImage[]>([])
   const [loading, setLoading] = useState(true)
@@ -83,16 +85,16 @@ export function DamRecentImages({ sortBy = 'addedAt' }: Props) {
   }, [images, tagFilter])
 
   if (loading) {
-    return <div className="flex-1 flex items-center justify-center text-white/30 text-sm">Chargement...</div>
+    return <div className="flex-1 flex items-center justify-center text-white/30 text-sm">{t('dam.loading')}</div>
   }
 
   if (images.length === 0) {
     return (
       <EmptyState
         icon={ImageOff}
-        title="Aucune image sauvegardée"
-        hint="Générez une image par IA ou sauvegardez un visuel depuis le Stock — elle sera taguée automatiquement pour la recherche."
-        action={{ label: 'Créer une image par IA', icon: Sparkles, onClick: () => useDamStore.getState().setActiveTab('generate') }}
+        title={t('dam.recent.empty')}
+        hint={t('dam.recent.hint')}
+        action={{ label: t('dam.recent.create'), icon: Sparkles, onClick: () => useDamStore.getState().setActiveTab('generate') }}
       />
     )
   }
@@ -104,7 +106,7 @@ export function DamRecentImages({ sortBy = 'addedAt' }: Props) {
         type="text"
         value={tagFilter}
         onChange={(e) => setTagFilter(e.target.value)}
-        placeholder="Filtrer par tags ou description… (ex : bouteille verte)"
+        placeholder={t('dam.recent.filter')}
         className="w-full mb-3 bg-white/5 border border-white/10 rounded-md px-3 py-1.5 text-xs text-white placeholder:text-white/25 focus:border-indigo-500 outline-none"
       />
       <DamMasonry
