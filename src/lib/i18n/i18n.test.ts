@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { fr } from './fr'
 import { en } from './en'
 import { translate, intlLocale, formatDate } from './index'
@@ -35,7 +37,11 @@ describe('intégrité des caractères', () => {
   // produit du mojibake (« Aperçu » → « AperÃ§u »). Ça passe tsc, le lint ET
   // les tests de parité : seul un contrôle sur les octets l'attrape. Vécu le
   // 29/07/2026 — 47 valeurs FR corrompues sont parties en production.
-  const MOJIBAKE = /Ã.|Â[«»·]|â€|â\u0080/
+  // `Ã` SUIVI d'un octet de continuation (\u0080-\u00bf) : c'est la signature
+  // de l'UTF-8 relu en latin-1 (é→Ã©, ç→Ã§, à→Ã ). On n'attrape PAS « Ã » suivi
+  // d'une lettre ASCII : `OBSERVA[ÇC][ÃA]O` dans les regex multilingues du
+  // scraping est légitime, et un garde-fou qui crie au loup finit désactivé.
+  const MOJIBAKE = /Ã[\u0080-\u00bf]|Â[«»·°]|â€[\u0080-\u00bf]/
 
   it("ne contient aucune séquence d'encodage cassée", () => {
     const offences: string[] = []
@@ -46,6 +52,27 @@ describe('intégrité des caractères', () => {
       }
     }
     expect(offences, `mojibake détecté :\n${offences.join('\n')}`).toEqual([])
+  })
+
+  // Le contrôle ci-dessus ne voit QUE les catalogues. Or la corruption vient de
+  // scripts d'édition qui touchent aussi les composants : un `title=` ou une
+  // chaîne restée en dur peut être atteinte sans qu'aucune clé ne bouge.
+  it('ne laisse aucun mojibake dans les sources', () => {
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const full = join(dir, e.name)
+        if (e.isDirectory()) return walk(full)
+        return /\.tsx?$/.test(e.name) ? [full] : []
+      })
+    const offences: string[] = []
+    for (const file of walk('src')) {
+      if (file.endsWith('i18n.test.ts')) continue // contient le motif lui-même
+      readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+        const hit = line.match(MOJIBAKE)
+        if (hit) offences.push(`${file}:${i + 1} → « ${hit[0]} »`)
+      })
+    }
+    expect(offences, `mojibake détecté dans les sources :\n${offences.join('\n')}`).toEqual([])
   })
 })
 
