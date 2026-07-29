@@ -4,7 +4,7 @@ import './comparePrices'
 import { getServerNode } from '../registry'
 import type { ServerRunCtx } from '../types'
 
-const ctx: ServerRunCtx = { uid: 'u', log: () => {}, signal: new AbortController().signal }
+const ctx: ServerRunCtx = { uid: 'u', locale: 'fr' as const, log: () => {}, signal: new AbortController().signal }
 const run = (config: any, inputs: any) => getServerNode('compare-prices')!.run(ctx, config, inputs)
 const CFG = {
   nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',

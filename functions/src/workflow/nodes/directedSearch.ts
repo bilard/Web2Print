@@ -23,6 +23,7 @@ import { getUserApiKey } from '../apiKeys'
 import { getSiteCredentials } from '../../scraper/siteCredentials'
 import { krampBatchScrape } from '../../scraper/krampFirecrawl'
 import { krampAuthPass } from '../../priceWatch/catalog/krampAuthPass'
+import { t } from '../../i18n'
 
 const VAT = 0.2
 
@@ -64,7 +65,7 @@ registerServerNode({
     const sites: DirectedSite[] = sitesForRole(resolved.sites, 'directed').map((s) => ({
       siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)),
     }))
-    if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { results: resultsSheet([]) } }
+    if (sites.length === 0) { ctx.log('warn', t(ctx.locale, 'run.noCompetitor')); return { results: resultsSheet([]) } }
 
     // Fenêtre AVAL déjà atteinte (la moisson a consommé la part des nodes à curseur) :
     // passe repoussée au prochain tick — le curseur ne bouge pas, « Comparer » garde sa

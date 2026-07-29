@@ -20,6 +20,7 @@ import { mapWithConcurrency, HARVEST_CONCURRENCY } from '../../priceWatch/concur
 import { buildServerFetcher } from '../../priceWatch/catalog/serverFetcher'
 import { applyTargeting, buildTargetingPrompt, familiesFromRows } from '../../priceWatch/catalog/categoryTargeting'
 import { callLlm } from '../llm'
+import { t } from '../../i18n'
 
 /** Mode « cycle calendaire » : porté par le doc workflowSchedules du workflow (champ
  *  `cycle` posé par le node Cron). En mode cycle, un site terminé ATTEND les autres au
@@ -65,7 +66,7 @@ registerServerNode({
     const skipped = resolved.sites.length - sites.length
     if (skipped > 0) ctx.log('info', `${skipped} site(s) en recherche dirigée seule — non moissonné(s).`)
     if (sites.length === 0) {
-      ctx.log('warn', 'Aucun site concurrent configuré.')
+      ctx.log('warn', t(ctx.locale, 'run.noCompetitor'))
       return { status: statusSheet([]) }
     }
     // Familles ciblées : le champ texte est un OVERRIDE explicite ; sinon elles sont

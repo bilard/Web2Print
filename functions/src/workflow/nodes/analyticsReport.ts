@@ -16,6 +16,7 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
 import { makeServerFile } from './serverFile'
 import { getOwnerUid } from '../../email/ownerMailer'
+import { t } from '../../i18n'
 
 // ───────────────────────────── Métriques (copie de src/features/analytics/metrics.ts) ──
 type Area = 'promo' | 'docs' | 'app' | 'other'
@@ -605,7 +606,7 @@ registerServerNode({
 
     const period: AnalyticsPeriod = isPeriod(config.period) ? config.period : '30d'
     const title = String(config.title ?? '')
-    ctx.log('info', `Agrégation du trafic (${PERIOD_LABEL[period]}, headless)…`)
+    ctx.log('info', t(ctx.locale, 'run.aggregatingTraffic', { period: PERIOD_LABEL[period] }))
     const report = await collectAnalyticsReportServer(period, title)
 
     const day = new Date().toISOString().slice(0, 10)

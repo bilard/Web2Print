@@ -6,6 +6,7 @@
 // réf exacte → réf tolérante (préfixe, RBC36X2↔RBC36X26B) → EAN identique (secours)
 // → nom normalisé. Sortie { sheet: { columns, rows } } pour gsheets-export.
 import { registerServerNode } from '../registry'
+import { t } from '../../i18n'
 
 interface SheetLike { rows?: Record<string, unknown>[]; [k: string]: unknown }
 interface Cfg {
@@ -188,7 +189,7 @@ registerServerNode({
     // Mode « entre pairs » (sans source).
     if (c.noSource === true) {
       const all = [...sourceRows, ...competitorRows]
-      if (all.length === 0) { ctx.log('warn', 'Aucun produit en entrée.'); return { sheet: { columns: [], rows: [] } } }
+      if (all.length === 0) { ctx.log('warn', t(ctx.locale, 'run.noProduct')); return { sheet: { columns: [], rows: [] } } }
       const { columns, rows, sites, matched } = comparePeers(all, cfg)
       ctx.log('info', `${rows.length} produit(s) distinct(s) sur ${sites.length} enseigne(s) (${matched} chez ≥2).`)
       return { sheet: { columns, rows } }
@@ -319,7 +320,7 @@ registerServerNode({
     }
     out.sort((a, b) => (Number(b.ecart_pct) || -1e9) - (Number(a.ecart_pct) || -1e9))
 
-    ctx.log('info', `${out.length} produit(s) source — ${matched} apparié(s) chez ${compSites.length} concurrent(s) : ${compSites.join(', ') || '—'}.`)
+    ctx.log('info', `${t(ctx.locale, 'run.matched', { count: out.length, matched, sites: compSites.length })} : ${compSites.join(', ') || '—'}.`)
     return { sheet: { columns, rows: out, colorRules: POSITION_COLOR_RULES } }
   },
 })

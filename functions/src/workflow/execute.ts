@@ -5,6 +5,7 @@ import { interpolate, buildInterpolationContext } from './interpolate'
 import { getServerNode } from './registry'
 import { SERVER_UNSUPPORTED, SERVER_SKIP_VISUAL } from './nodes/index'
 import { mergeInputValue } from './mergeInputs'
+import { getUserLocale } from '../i18n'
 
 export interface HeadlessResult {
   status: 'success' | 'error' | 'partial'
@@ -93,6 +94,8 @@ export async function executeWorkflowHeadless(
     deadlineAt?: number
   },
 ): Promise<HeadlessResult> {
+  // Résolue UNE fois par run : une lecture Firestore, pas une par message.
+  const locale = await getUserLocale(opts.uid)
   const logs: RunLog[] = []
   const log = (level: RunLog['level'], msg: string, node?: string) => {
     logs.push({ ts: Date.now(), level, node, msg })
@@ -152,7 +155,7 @@ export async function executeWorkflowHeadless(
       const ctx = buildInterpolationContext(subInputs, { ...itemProps, item, index: idx })
       const cfg = interpolate(bn.config, ctx) as Record<string, unknown>
       const result = await spec.run(
-        { uid: opts.uid, signal: opts.signal, log: (lv, m) => log(lv, `[loop#${idx}] ${m}`, bn.id), rawConfig: bn.config },
+        { uid: opts.uid, locale, signal: opts.signal, log: (lv, m) => log(lv, `[loop#${idx}] ${m}`, bn.id), rawConfig: bn.config },
         cfg, subInputs,
       )
       sub.set(bn.id, result ?? {})
@@ -244,6 +247,7 @@ export async function executeWorkflowHeadless(
       const result = await spec.run(
         {
           uid: opts.uid,
+          locale,
           signal: opts.signal,
           workflowId: wf.id,
           workflowName: wf.name,

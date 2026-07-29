@@ -1,3 +1,4 @@
+import type { Locale } from '../i18n'
 // functions/src/workflow/types.ts
 export interface ServerNode { id: string; type: string; position?: unknown; config: unknown }
 export interface ServerEdge {
@@ -13,6 +14,10 @@ export interface RunLog { ts: number; level: LogLevel; node?: string; msg: strin
 
 export interface ServerRunCtx {
   uid: string
+  /** Langue de l'utilisateur, résolue UNE fois au début du run (pas par message).
+   *  Les logs serveur atterrissent dans la même console que ceux du client :
+   *  sans elle, un run cron logue en français sous une interface anglaise. */
+  locale: Locale
   log: (level: LogLevel, msg: string) => void
   signal: AbortSignal
   /** Id du workflow — identité par défaut (ex. suivi de veille). Absent dans un body de loop. */

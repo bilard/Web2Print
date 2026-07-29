@@ -4,7 +4,7 @@ import './pure'
 import { getServerNode } from '../registry'
 import type { ServerRunCtx } from '../types'
 
-const ctx: ServerRunCtx = { uid: 'u', log: () => {}, signal: new AbortController().signal }
+const ctx: ServerRunCtx = { uid: 'u', locale: 'fr' as const, log: () => {}, signal: new AbortController().signal }
 const run = (type: string, config: any, inputs: any) => getServerNode(type)!.run(ctx, config, inputs)
 
 describe('nodes purs', () => {

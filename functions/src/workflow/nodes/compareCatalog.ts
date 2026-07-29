@@ -16,6 +16,7 @@ import { saveCatalogReport, saveSourceCatalog } from '../../priceWatch/reportSto
 import { buildMatrix, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '../../priceWatch/catalog/match'
 import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
+import { t } from '../../i18n'
 
 interface SheetLike {
   columns?: unknown[]
@@ -64,8 +65,8 @@ registerServerNode({
     const products = (inputs.products ?? {}) as SheetLike
     const rawRows = products.rows ?? []
 
-    if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { matrix: toSheet([], []) } }
-    if (rawRows.length === 0) { ctx.log('warn', 'Feuille de produits vide en entrée.'); return { matrix: toSheet([], []) } }
+    if (sites.length === 0) { ctx.log('warn', t(ctx.locale, 'run.noCompetitor')); return { matrix: toSheet([], []) } }
+    if (rawRows.length === 0) { ctx.log('warn', t(ctx.locale, 'run.emptySheet')); return { matrix: toSheet([], []) } }
 
     const refColumn = config.refColumn as string | undefined
     const ref2Column = config.ref2Column as string | undefined
@@ -149,14 +150,14 @@ registerServerNode({
       // Catalogue source (comme le node client) : sans lui, un suivi alimenté seulement
       // par le cron n'a rien à relire pour un recalcul mono-site après un ▶.
       await saveSourceCatalog(ctx.uid, watchId, sourceProducts, vatRate)
-        .catch((e) => ctx.log('warn', `Catalogue source non persisté : ${e instanceof Error ? e.message : String(e)}`))
+        .catch((e) => ctx.log('warn', t(ctx.locale, 'run.sourceCatalogNotPersisted', { message: e instanceof Error ? e.message : String(e) })))
       // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact
       // (annule la dérive de l'incrément live de la moisson).
       await Promise.all(report.byCompetitor.map((c) =>
         saveCompetitorMeta(ctx.uid, watchId, c.siteId, { productCount: c.audit.indexed })))
-      ctx.log('info', `Rapport dashboard enregistré (suivi « ${watchId} ») — visible dans Veille tarifaire.`)
+      ctx.log('info', t(ctx.locale, 'run.dashboardSaved', { watchId }))
     } catch (err) {
-      ctx.log('warn', `Rapport dashboard non enregistré : ${err instanceof Error ? err.message : String(err)}`)
+      ctx.log('warn', t(ctx.locale, 'run.dashboardNotSaved', { message: err instanceof Error ? err.message : String(err) }))
     }
     return { matrix: toSheet(m.columns, m.rows) }
   },
