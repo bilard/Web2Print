@@ -3,6 +3,7 @@
 // modules qui n'ont pas de projet éditeur ouvert (uploadToGallery exige
 // useEditorStore.projectId) — ex. la couverture d'un catalogue (/catalog/:id).
 import { llmPostWithFallback } from '@/lib/llmProxyClient'
+import { recordAiUsage } from '@/features/stats/aiUsageTracking'
 import type { GenerationRequest } from './types'
 
 // Image IA, fallback to other live image models if not available.
@@ -33,7 +34,19 @@ export const NANO_BANANA_PRO_MODELS = [
   'gemini-2.5-flash-image',
 ] as const
 
-export interface GeneratedImageBase64 { mimeType: string; base64: string }
+export interface GeneratedImageBase64 {
+  mimeType: string
+  base64: string
+  /** Modèle qui a RÉELLEMENT répondu (la cascade peut avoir basculé). */
+  model: string
+  inputTokens: number
+  outputTokens: number
+  /** Coût USD de cette image, calculé sur la grille tarifaire du modèle. */
+  costUsd: number
+}
+
+/** Output facturé par image quand l'API ne renvoie pas usageMetadata (~1290 tokens). */
+const IMAGE_OUTPUT_TOKENS = 1290
 
 /** Map target dimensions to the best Image IA imageSize */
 function pickImageSize(w?: number, h?: number): string {
@@ -115,7 +128,9 @@ export async function generateImageBase64(request: GenerationRequest): Promise<G
   // budget bloquant), fallback direct standard.
   let response: Awaited<ReturnType<typeof llmPostWithFallback>> | null = null
   let lastError = ''
+  let usedModel = ''
   for (const model of request.models ?? NANO_BANANA_MODELS) {
+    usedModel = model
     response = await llmPostWithFallback('gemini', model, requestBody, 90_000)
     if (response.ok) {
       break
@@ -180,5 +195,14 @@ export async function generateImageBase64(request: GenerationRequest): Promise<G
 
   const mimeType: string = inlineData.mime_type ?? inlineData.mimeType
   const base64: string = inlineData.data
-  return { mimeType, base64 }
+
+  // COMPTABILISATION : la génération d'image n'était comptée NULLE PART — ni
+  // tokens, ni coût, alors qu'une image Pro coûte plus cher qu'un appel texte.
+  // L'output est facturé en « image tokens » (~1290/image) ; à défaut de
+  // usageMetadata, on retombe sur cette estimation pour ne jamais afficher 0.
+  const usage = data.usageMetadata ?? data.usage_metadata
+  const inputTokens = Number(usage?.promptTokenCount ?? usage?.prompt_token_count ?? 0) || 0
+  const outputTokens = Number(usage?.candidatesTokenCount ?? usage?.candidates_token_count ?? 0) || IMAGE_OUTPUT_TOKENS
+  const costUsd = recordAiUsage({ provider: 'gemini', model: usedModel, inputTokens, outputTokens })
+  return { mimeType, base64, model: usedModel, inputTokens, outputTokens, costUsd }
 }

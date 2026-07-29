@@ -6,7 +6,7 @@ import { ImagePlus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { useColumnImageGen, type ImageGenEngine } from './useColumnImageGen'
-import { ImageGenTestPreview, ImageGenCounters, ImageGenLog } from './ImageGenProgress'
+import { ImageGenTestPreview, ImageGenCounters, ImageGenLog, ImageGenUsage } from './ImageGenProgress'
 import type { ExcelRow } from '@/features/excel/types'
 
 interface Props { open: boolean; onClose: () => void; visibleRowIds: string[] }
@@ -15,7 +15,7 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
   const sheets = useExcelStore((s) => s.sheets)
   const activeSheetIndex = useExcelStore((s) => s.activeSheetIndex)
   const sheet = sheets[activeSheetIndex]
-  const { items, log, running, runTest, runAll, abort, ensureTargetColumn } = useColumnImageGen()
+  const { items, log, running, usage, runTest, runAll, abort, ensureTargetColumn } = useColumnImageGen()
 
   const imageCols = useMemo(() => (sheet?.columns ?? []).filter((c) => c.fieldType === 'image'), [sheet])
   const [engine, setEngine] = useState<ImageGenEngine>('nano')
@@ -25,14 +25,16 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
     const cols = sheet?.columns ?? []
     const nameCol = cols.find((c) => c.isPrimary) ?? cols.find((c) => /nom|d[ée]signation|libell[ée]|name|titre/i.test(c.label))
     const descCol = cols.find((c) => /desc/i.test(c.label))
-    const refs = `[${nameCol?.label ?? 'Nom'}]${descCol ? ` [${descCol.label}]` : ''}`
-    // ⚠ Distinguer le texte AJOUTÉ (légendes, listes de caractéristiques —
-    // toujours mal orthographiées) du lettrage porté PAR le produit (étiquette,
-    // marque), qui doit rester. Une simple négation en fin de phrase ne suffisait
-    // pas : les visuels sortaient avec un titre et des puces fautives incrustés.
-    return `Photo packshot professionnelle du produit SEUL, sur fond blanc uni, éclairage studio, ombre portée douce, cadrage centré, style catalogue e-commerce : ${refs}\n\n`
-      + `IMPORTANT : n'ajoute AUCUN texte par-dessus l'image — aucun titre, aucune légende, aucune liste de caractéristiques, aucune puce, aucun prix, aucun filigrane. `
-      + `Le seul lettrage visible est celui imprimé sur le produit lui-même (étiquette, marque), qui doit rester net et crédible. Rien d'autre que le produit dans le cadre.`
+    // ⚠ CAUSE RÉELLE des titres et listes de puces incrustés (« VISSEUIE »,
+    // « BATIERIE ») : la DESCRIPTION injectée EST une liste de caractéristiques.
+    // Reçue brute, le modèle la prend pour du contenu à afficher et la dessine.
+    // Elle est donc explicitement cadrée comme une aide à l'IDENTIFICATION —
+    // et le nom du produit n'est plus injecté dans une phrase de composition.
+    return `Photo packshot professionnelle, produit SEUL au centre du cadre, sur fond blanc uni, éclairage studio, ombre portée douce, style catalogue e-commerce.\n\n`
+      + `Produit à représenter : [${nameCol?.label ?? 'Nom'}]\n`
+      + (descCol ? `Caractéristiques (elles servent UNIQUEMENT à savoir quel objet dessiner — ne les écris JAMAIS dans l'image) : [${descCol.label}]\n` : '')
+      + `\nINTERDIT dans l'image : tout texte ajouté — titre, légende, liste à puces, caractéristiques, mesures, prix, logo plaqué, filigrane, cartouche. `
+      + `Le seul lettrage acceptable est celui imprimé sur le produit lui-même (étiquette, marque), net et crédible. Rien d'autre que le produit dans le cadre.`
   })
   const [destKey, setDestKey] = useState<string>(imageCols[0]?.key ?? '__new__')
   const [onlyEmpty, setOnlyEmpty] = useState(true)
@@ -129,6 +131,7 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
 
           {testSrc && <ImageGenTestPreview src={testSrc} />}
           {items.length > 0 && <ImageGenCounters items={items} />}
+          <ImageGenUsage usage={usage} />
           <ImageGenLog lines={log} />
         </div>
 

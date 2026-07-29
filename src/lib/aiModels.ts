@@ -24,6 +24,9 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     // Génération d'image (Image IA). Output facturé en "image tokens" :
     // ~1290 output tokens / image @ $30/1M → ~$0.039 / image. Input texte standard.
     { id: 'gemini-3.1-flash-image-preview', label: 'Gemini 3.1 Flash Image (NB2)',    pricing: { input: 0.30,  output: 30 } },
+    { id: 'gemini-3-pro-image-preview',      label: 'Gemini 3 Pro Image (Nano Banana 2)', pricing: { input: 1.25,  output: 120 } },
+    { id: 'nano-banana-pro-preview',         label: 'Nano Banana Pro',                 pricing: { input: 1.25,  output: 120 } },
+    { id: 'gemini-2.5-flash-image',          label: 'Gemini 2.5 Flash Image (NB1)',    pricing: { input: 0.30,  output: 30 } },
   ],
   openai: [
     // Famille GPT-5.6 (préversion juin 2026) : Sol = flagship, Terra = équilibré, Luna = éco.

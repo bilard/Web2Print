@@ -25,6 +25,25 @@ function Counter({ value, label, tone, always }: { value: number; label: string;
   )
 }
 
+/** Conso du lot : tokens consommés et coût réel, à côté de l'avancement. */
+export function ImageGenUsage({ usage }: { usage: { tokensIn: number; tokensOut: number; costUsd: number; model: string } }) {
+  const tokens = usage.tokensIn + usage.tokensOut
+  if (tokens === 0 && usage.costUsd === 0) return null
+  const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)} k` : String(n))
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] text-white/50">
+      <span>
+        <b className="text-white/80 tabular-nums">{fmt(tokens)}</b> tokens
+        <span className="text-white/35"> ({fmt(usage.tokensIn)} entrée · {fmt(usage.tokensOut)} image)</span>
+      </span>
+      <span>
+        Coût <b className="text-amber-300 tabular-nums">{usage.costUsd < 0.01 ? '< 0,01' : usage.costUsd.toFixed(2)} $</b>
+      </span>
+      {usage.model && <span className="text-white/35">{usage.model}</span>}
+    </div>
+  )
+}
+
 /**
  * Avancement d'un lot de génération : le lot dure plusieurs minutes et c'est le
  * SEUL retour visible. On donne d'abord la question qu'on se pose vraiment —

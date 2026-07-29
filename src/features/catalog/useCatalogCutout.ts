@@ -164,10 +164,21 @@ export function useApplyKnownCutouts(): void {
     const selected = new Set(selectedRowIds)
     for (const row of rawRows) {
       if (selected.size > 0 && !selected.has(row._id)) continue
-      const current = String(s.rowOverrides[row._id]?.[column] ?? row[column] ?? '').trim()
-      if (!current || isCutoutUrl(current)) continue
-      const known = s.cutoutBySource[current]
-      if (known) s.setRowOverride(row._id, { [column]: known })
+      const source = String(row[column] ?? '').trim()
+      const override = String(s.rowOverrides[row._id]?.[column] ?? '').trim()
+      // Détourage ATTENDU pour la source ACTUELLE de la ligne.
+      const expected = source ? s.cutoutBySource[source] : undefined
+
+      // ⚠ DÉTOURAGE PÉRIMÉ : la surcharge masque la source. Si le visuel d'origine
+      // a été remplacé (visuel régénéré dans le module Données), l'ancien détourage
+      // continuerait d'être affiché indéfiniment. On le retire — remplacé par le
+      // détourage de la NOUVELLE source s'il existe déjà, sinon par la source nue.
+      if (override && isCutoutUrl(override) && override !== expected) {
+        s.setRowOverride(row._id, { [column]: expected ?? null })
+        continue
+      }
+      // Produit qui vient d'entrer : on repose son détourage connu, gratuitement.
+      if (!override && expected) s.setRowOverride(row._id, { [column]: expected })
     }
   }, [rawRows, selectedRowIds, autoCutout])
 }

@@ -39,17 +39,24 @@ const higgsfieldFn = httpsCallable<Record<string, unknown>, { assets: Higgsfield
 )
 
 /** Génère UNE image (sans upload) ; renvoie une source affichable (data: ou URL CDN). */
-async function generateOne(engine: ImageGenEngine, prompt: string): Promise<{ src: string; ext: string }> {
+/** Conso d'UNE génération — nulle pour Higgsfield, qui ne facture pas au token. */
+export interface GenUsage { tokensIn: number; tokensOut: number; costUsd: number; model: string }
+
+async function generateOne(engine: ImageGenEngine, prompt: string): Promise<{ src: string; ext: string; usage: GenUsage }> {
   if (engine === 'higgsfield') {
     const { assets } = (await higgsfieldFn({
       mode: 'image', prompt, aspectRatio: '1:1', quality: '1080p', videoModel: 'dop-lite', batchSize: 1,
     })).data
     const img = assets.find((a) => a.type === 'image')
     if (!img) throw new Error('Higgsfield n\'a renvoyé aucune image')
-    return { src: img.url, ext: (img.mimeType.split('/')[1] || 'jpg').replace('jpeg', 'jpg') }
+    return { src: img.url, ext: (img.mimeType.split('/')[1] || 'jpg').replace('jpeg', 'jpg'), usage: { tokensIn: 0, tokensOut: 0, costUsd: 0, model: 'higgsfield' } }
   }
-  const { mimeType, base64 } = await generateImageBase64({ prompt, aspectRatio: '1:1' })
-  return { src: `data:${mimeType};base64,${base64}`, ext: (mimeType.split('/')[1] || 'png').replace('jpeg', 'jpg') }
+  const { mimeType, base64, model, inputTokens, outputTokens, costUsd } = await generateImageBase64({ prompt, aspectRatio: '1:1' })
+  return {
+    src: `data:${mimeType};base64,${base64}`,
+    ext: (mimeType.split('/')[1] || 'png').replace('jpeg', 'jpg'),
+    usage: { tokensIn: inputTokens, tokensOut: outputTokens, costUsd, model },
+  }
 }
 
 /** Nom de fichier Drive : valeur de la colonne primaire (ou 1re colonne) + id court. */
@@ -72,6 +79,9 @@ const ENGINE_LABEL: Record<ImageGenEngine, string> = { nano: 'Nano Banana', higg
 
 export function useColumnImageGen() {
   const [items, setItems] = useState<ImageGenItem[]>([])
+  // Conso CUMULÉE du lot : la génération d'image n'était comptée nulle part,
+  // alors qu'une image Pro coûte plus qu'un appel texte.
+  const [usage, setUsage] = useState<GenUsage>({ tokensIn: 0, tokensOut: 0, costUsd: 0, model: '' })
   const [log, setLog] = useState<string[]>([])
   const [running, setRunning] = useState(false)
   const abortRef = useRef({ current: false })
@@ -84,7 +94,15 @@ export function useColumnImageGen() {
     if (!job) throw new Error('Aucune ligne éligible (cellules déjà remplies ou colonnes référencées vides)')
     setRunning(true)
     try {
-      return (await generateOne(input.engine, job.prompt)).src
+      // Le test est un appel FACTURÉ comme un autre : il doit compter.
+      const gen = await generateOne(input.engine, job.prompt)
+      setUsage((u) => ({
+        tokensIn: u.tokensIn + gen.usage.tokensIn,
+        tokensOut: u.tokensOut + gen.usage.tokensOut,
+        costUsd: u.costUsd + gen.usage.costUsd,
+        model: gen.usage.model || u.model,
+      }))
+      return gen.src
     } finally {
       setRunning(false)
     }
@@ -111,7 +129,14 @@ export function useColumnImageGen() {
           pushLog(`⏳ ${label(job.rowId)} — génération ${ENGINE_LABEL[input.engine]}…`)
           let src: string, ext: string
           try {
-            ({ src, ext } = await generateOne(input.engine, job.prompt))
+            const gen = await generateOne(input.engine, job.prompt)
+            ;({ src, ext } = gen)
+            setUsage((u) => ({
+              tokensIn: u.tokensIn + gen.usage.tokensIn,
+              tokensOut: u.tokensOut + gen.usage.tokensOut,
+              costUsd: u.costUsd + gen.usage.costUsd,
+              model: gen.usage.model || u.model,
+            }))
           } catch (e) {
             throw new Error(`génération (${ENGINE_LABEL[input.engine]}) : ${e instanceof Error ? e.message : 'erreur inconnue'}`, { cause: e })
           }
@@ -155,5 +180,5 @@ export function useColumnImageGen() {
 
   const abort = useCallback(() => { abortRef.current.current = true }, [])
 
-  return { items, log, running, runTest, runAll, abort, ensureTargetColumn }
+  return { items, log, running, usage, runTest, runAll, abort, ensureTargetColumn }
 }
