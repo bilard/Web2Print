@@ -450,34 +450,40 @@ export default function DashboardPage() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] text-white/50 truncate">{user?.displayName}</p>
+                <p className="text-[12px] text-white/50 truncate" title={user?.displayName ?? undefined}>{user?.displayName}</p>
               </div>
-              <LocaleSwitcher className="flex-shrink-0" />
-              <ThemeToggle
-                className="flex-shrink-0 p-1 rounded text-white/20 hover:text-white/50 hover:bg-white/[0.04]"
-                iconClassName="w-3.5 h-3.5"
-              />
-              <button
-                data-help-id="dashboard.sidebar.settings"
-                onClick={() => setActiveSection('settings')}
-                className={`flex-shrink-0 p-1 rounded transition-colors ${
-                  activeSection === 'settings'
-                    ? 'text-indigo-400 bg-indigo-500/10'
-                    : 'text-white/20 hover:text-white/50 hover:bg-white/[0.04]'
-                }`}
-                title={t('dashboard.settings')}
-                aria-label={t('dashboard.settings')}
-              >
-                <Settings className="w-3.5 h-3.5" aria-hidden="true" />
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="text-white/20 hover:text-white/50 transition-colors flex-shrink-0 p-1 rounded hover:bg-white/[0.04]"
-                title={t('dashboard.signOut')}
-                aria-label={t('dashboard.signOut')}
-              >
-                <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
-              </button>
+              {/* Les 4 contrôles sont groupés dans leur propre rangée serrée : avec
+                  `gap-2.5` sur chacun, la place restante pour le nom tombait à 25 px
+                  (« Fr… »). Ici le nom en récupère ~67 — plus qu'avant l'ajout de la
+                  langue. Variante `compact` : le groupe FR|EN complet ne tient pas. */}
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                <LocaleSwitcher compact />
+                <ThemeToggle
+                  className="p-1 rounded text-white/20 hover:text-white/50 hover:bg-white/[0.04]"
+                  iconClassName="w-3.5 h-3.5"
+                />
+                <button
+                  data-help-id="dashboard.sidebar.settings"
+                  onClick={() => setActiveSection('settings')}
+                  className={`p-1 rounded transition-colors ${
+                    activeSection === 'settings'
+                      ? 'text-indigo-400 bg-indigo-500/10'
+                      : 'text-white/20 hover:text-white/50 hover:bg-white/[0.04]'
+                  }`}
+                  title={t('dashboard.settings')}
+                  aria-label={t('dashboard.settings')}
+                >
+                  <Settings className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  className="text-white/20 hover:text-white/50 transition-colors p-1 rounded hover:bg-white/[0.04]"
+                  title={t('dashboard.signOut')}
+                  aria-label={t('dashboard.signOut')}
+                >
+                  <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
@@ -488,7 +494,13 @@ export default function DashboardPage() {
                   <span className="text-[11px] font-medium text-white/40">{user?.displayName?.charAt(0) ?? '?'}</span>
                 </div>
               )}
-              <LocaleSwitcher compact />
+              {/* ⚠️ PAS de sélecteur de langue ici. Le pied de la sidebar REPLIÉE
+                  (56 px) est déjà recouvert par les pastilles flottantes
+                  `fixed bottom-4/bottom-16 left-4` (modules, notifications) :
+                  tout élément ajouté remonte le bouton de thème SOUS la cloche
+                  et le rend incliquable — mesuré via elementFromPoint. La langue
+                  se change dans la sidebar dépliée ou dans le tiroir de modules,
+                  tous deux accessibles depuis cet état. */}
               <ThemeToggle
                 className="p-1 rounded text-white/20 hover:text-white/50 hover:bg-white/[0.04]"
                 iconClassName="w-3.5 h-3.5"

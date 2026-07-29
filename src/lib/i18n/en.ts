@@ -170,6 +170,19 @@ export const en: Record<TranslationKey, string> = {
   'palette.untitled': 'Untitled',
   'palette.noResults': 'No results for “{query}”',
   'palette.esc': 'esc',
+  'palette.hint.navigate': 'navigate',
+  'palette.hint.open': 'open',
+  'palette.hint.close': 'close',
+
+  // — Theme switcher —————————————————————————————————————————————————
+  'theme.aria': 'Change theme',
+  'theme.hint': '{current} on — {action}',
+  'theme.dark': 'Dark mode',
+  'theme.light': 'Light mode',
+  'theme.system': 'Follow the system',
+  'theme.action.toLight': 'switch to light mode',
+  'theme.action.toSystem': 'follow the system',
+  'theme.action.toDark': 'switch to dark mode',
 
   // — Notifications ——————————————————————————————————————————————————
   'notif.title': 'Notifications',

@@ -121,9 +121,9 @@ export function CommandPalette() {
           </div>
 
           <div className="px-4 py-2 border-t border-white/[0.06] text-[10px] text-white/25 flex gap-3">
-            <span>↑↓ naviguer</span>
-            <span>↵ ouvrir</span>
-            <span>⌘K fermer</span>
+            <span>↑↓ {t('palette.hint.navigate')}</span>
+            <span>↵ {t('palette.hint.open')}</span>
+            <span>⌘K {t('palette.hint.close')}</span>
           </div>
         </div>
       </div>

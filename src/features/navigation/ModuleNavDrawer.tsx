@@ -9,6 +9,7 @@ import { useSignOut } from '@/features/auth/useAuth'
 import { useUIStore } from '@/stores/ui.store'
 import { useVisibleModules } from './modules'
 import { useTranslation } from '@/lib/i18n'
+import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher'
 import { ResumeSetupButton } from '@/features/onboarding/ResumeSetupButton'
 import { ModuleTree } from './ModuleTree'
 
@@ -131,6 +132,7 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
                 </div>
               )}
               <p className="flex-1 min-w-0 text-[12px] text-white/50 truncate">{user?.displayName ?? user?.email ?? ''}</p>
+              <LocaleSwitcher compact />
               <ThemeToggle />
               <button
                 onClick={() => { setOpen(false); setSettingsOpen(true) }}

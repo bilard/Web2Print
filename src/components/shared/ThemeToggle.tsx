@@ -1,16 +1,17 @@
 import { Sun, Moon, Monitor } from 'lucide-react'
 import { useThemeStore, type ThemePref } from '@/stores/theme.store'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 const NEXT: Record<ThemePref, ThemePref> = { dark: 'light', light: 'system', system: 'dark' }
-const LABELS: Record<ThemePref, string> = {
-  dark: 'Mode sombre',
-  light: 'Mode clair',
-  system: 'Suivre le système',
+const LABELS: Record<ThemePref, TranslationKey> = {
+  dark: 'theme.dark',
+  light: 'theme.light',
+  system: 'theme.system',
 }
-const ACTION: Record<ThemePref, string> = {
-  dark: 'passer en mode clair',
-  light: 'suivre le système',
-  system: 'passer en mode sombre',
+const ACTION: Record<ThemePref, TranslationKey> = {
+  dark: 'theme.action.toLight',
+  light: 'theme.action.toSystem',
+  system: 'theme.action.toDark',
 }
 
 interface ThemeToggleProps {
@@ -26,13 +27,14 @@ export function ThemeToggle({
 }: ThemeToggleProps) {
   const themePref = useThemeStore((s) => s.themePref)
   const setThemePref = useThemeStore((s) => s.setThemePref)
+  const { t } = useTranslation()
   const Icon = themePref === 'light' ? Sun : themePref === 'dark' ? Moon : Monitor
   return (
     <button
       onClick={() => setThemePref(NEXT[themePref])}
       className={`transition-colors ${className}`}
-      title={`${LABELS[themePref]} actif — ${ACTION[themePref]}`}
-      aria-label="Changer de thème"
+      title={t('theme.hint', { current: t(LABELS[themePref]), action: t(ACTION[themePref]) })}
+      aria-label={t('theme.aria')}
     >
       <Icon className={iconClassName} aria-hidden="true" />
     </button>

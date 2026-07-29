@@ -166,6 +166,19 @@ export const fr = {
   'palette.untitled': 'Sans titre',
   'palette.noResults': 'Aucun résultat pour « {query} »',
   'palette.esc': 'esc',
+  'palette.hint.navigate': 'naviguer',
+  'palette.hint.open': 'ouvrir',
+  'palette.hint.close': 'fermer',
+
+  // — Sélecteur de thème —————————————————————————————————————————————
+  'theme.aria': 'Changer de thème',
+  'theme.hint': '{current} actif — {action}',
+  'theme.dark': 'Mode sombre',
+  'theme.light': 'Mode clair',
+  'theme.system': 'Suivre le système',
+  'theme.action.toLight': 'passer en mode clair',
+  'theme.action.toSystem': 'suivre le système',
+  'theme.action.toDark': 'passer en mode sombre',
 
   // — Notifications ——————————————————————————————————————————————————
   'notif.title': 'Notifications',
