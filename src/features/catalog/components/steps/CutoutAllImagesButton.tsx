@@ -24,9 +24,10 @@ export function CutoutAllImagesButton() {
             <X className="w-3.5 h-3.5" />
           </button>
         ) : (
-          <button type="button" onClick={resetAll} title="Rendre à tous les produits leur visuel d'origine"
-            className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-well">
-            <Undo2 className="w-3.5 h-3.5" />
+          <button type="button" onClick={resetAll}
+            title="Rend à tous les produits leur visuel d'origine et oublie les détourages déjà faits — le prochain « Détourer » repart d'un traitement neuf"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-md border border-border bg-well text-[11px] text-white/70 hover:text-white hover:border-indigo-500">
+            <Undo2 className="w-3.5 h-3.5" /> Repartir de zéro
           </button>
         )}
       </div>
@@ -36,7 +37,8 @@ export function CutoutAllImagesButton() {
         </div>
       )}
       <p className="text-[10px] text-white/35 leading-snug">
-        Le fond de chaque visuel est retiré. Les images d'origine ne sont pas modifiées — la flèche ↺ les restaure.
+        Le fond de chaque visuel est retiré ; vos images d'origine ne sont pas modifiées.
+        Un visuel déjà détouré est réutilisé tel quel — « Repartir de zéro » pour un traitement neuf.
       </p>
     </div>
   )

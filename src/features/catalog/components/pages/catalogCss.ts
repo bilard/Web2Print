@@ -315,7 +315,10 @@ export const CATALOG_CSS = `
    défaut) — inline-flex la réduisait à la largeur du texte, design ≠ auto. */
 .cat-free .cat-cell-promo { display:block; width:100%; }
 .cat-free .cat-cell-img-in { position:static; top:auto; left:auto; right:auto; bottom:auto; width:100%; height:100%; }
-.cat-free .cat-obj[data-object-id="image"] { background:linear-gradient(180deg,#fafbfc 0%,#eef1f4 100%); }
+/* Bloc image SANS fond : le dégradé gris clair d'origine faisait cartouche
+   derrière les visuels sur fond blanc, mais forme un rectangle gris parasite
+   autour d'un produit détouré — le fond de la fiche suffit. */
+.cat-free .cat-obj[data-object-id="image"] { background:none; }
 .cat-free .cat-cell-body { display:contents; }
 /* ── GRAMMAIRE DE FORMES (moteur créatif v2) : chaque descripteur CardShape a son
    rendu CSS déterministe — data-attrs posés par ProductCell, identiques aperçu /
