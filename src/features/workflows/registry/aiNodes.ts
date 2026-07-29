@@ -59,21 +59,21 @@ const generateImageNode: NodeSpec<
     {
       name: 'prompt',
       kind: 'textarea',
-      label: 'Prompt',
+      labelKey: 'node.generate-image.f1',
       required: true,
-      help: "Description textuelle de l'image à générer.",
+      helpKey: 'node.generate-image.f2',
     },
     {
       name: 'count',
       kind: 'number',
-      label: "Nombre d'images",
+      labelKey: 'node.generate-image.f3',
       default: 1,
-      help: 'Génère N variations en parallèle (1-4 recommandé).',
+      helpKey: 'node.generate-image.f4',
     },
     {
       name: 'aspectRatio',
       kind: 'select',
-      label: 'Ratio',
+      labelKey: 'node.generate-image.f5',
       default: '1:1',
       options: [
         { value: '1:1', label: 'Carré (1:1)' },

@@ -25,8 +25,8 @@ const ifElseNode: NodeSpec<
     {
       name: 'expression',
       kind: 'expression',
-      label: 'Condition',
-      help: "Expression JS qui retourne un booléen. Utilise `value` pour la valeur d'entrée. Ex : value > 10, value === 'ok', value?.length > 0",
+      labelKey: 'node.if-else.f1',
+      helpKey: 'node.if-else.f2',
     },
   ],
   defaultConfig: { expression: 'true' },
@@ -65,8 +65,8 @@ const pipeNode: NodeSpec<
     {
       name: 'expressions',
       kind: 'textarea',
-      label: 'Expressions (1 par ligne)',
-      help: "Chaque ligne = une expression JS appliquée séquentiellement. Utilise `value` pour la valeur courante. Ex :\nvalue.rows\nvalue.filter(r => r.active)\nvalue.length",
+      labelKey: 'node.pipe.f1',
+      helpKey: 'node.pipe.f2',
     },
   ],
   defaultConfig: { expressions: '' },

@@ -39,21 +39,21 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
     {
       name: 'afterCompletion',
       kind: 'checkbox',
-      label: 'Relancer après la FIN du run (scraping continu)',
+      labelKey: 'node.cron.f1',
       help: 'Idéal pour un scraping qui avance par tranches : le prochain run part « Tous les X » APRÈS la fin du précédent, sans cadence fixe — ni chevauchement, ni temps mort. L\'heure et le jour ci-dessous sont ignorés dans ce mode.',
     },
     {
       name: 'atTime',
       kind: 'text',
-      label: 'Heure (HH:MM)',
-      help: 'Heure de déclenchement pour jour / semaine / mois (Europe/Paris). Ex : 14:30. Sans effet en cadence « heure(s) »/« minute(s) ».',
+      labelKey: 'node.cron.f2',
+      helpKey: 'node.cron.f3',
       // Grisé UNIQUEMENT en mode « après la fin » (demande utilisateur) — sinon éditable.
       disabledWhen: (c) => !!c.afterCompletion,
     },
     {
       name: 'weekday',
       kind: 'select',
-      label: 'Jour (unité semaine)',
+      labelKey: 'node.cron.f4',
       options: WEEKDAY_OPTIONS,
       default: '1',
       // Grisé UNIQUEMENT en mode « après la fin » (demande utilisateur) — sinon éditable.

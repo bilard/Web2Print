@@ -48,14 +48,14 @@ const importTaxonomyNode: NodeSpec<
     {
       name: 'name',
       kind: 'text',
-      label: 'Nom de la taxonomie',
+      labelKey: 'node.import-taxonomy.f1',
       required: true,
       default: 'Taxonomie importée',
     },
     {
       name: 'levelMap',
       kind: 'text',
-      label: 'Mapping niveaux (optionnel)',
+      labelKey: 'node.import-taxonomy.f2',
       default: '',
       help:
         'Format `colKey:1,colKey:2,...`. Si vide, utilise `taxonomyLevels` de la Sheet (auto-rempli par le scrape avec breadcrumb).',

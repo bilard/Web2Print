@@ -63,9 +63,9 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
   configSchema: [
     {
       name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)',
-      help: 'Domaine par ligne. Ex : « jardimax.com ». Le moteur de recherche PrestaShop est interrogé. IGNORÉ si un node « Sites sources » est branché sur le port sites.',
+      helpKey: 'node.directed-search.f1',
       disabledWhen: (_c, wired) => wired('sites'),
-      disabledNote: 'fourni par « Sites sources »',
+      disabledNoteKey: 'node.directed-search.f2',
     },
     { name: 'genericSites', kind: 'textarea', label: 'Sites GÉNÉRIQUES (marketplaces, un par ligne)', help: 'Amazon, Cdiscount, Kramp… : recherche web par réf + Firecrawl (rendu JS + anti-bot). Nécessite une clé Firecrawl. Coût par réf — commence par 1 site pour valider.' },
     { name: 'refColumn', kind: 'text', label: 'Colonne Référence', help: 'Ex : ARTICLECODE. Cherchée en premier.' },
@@ -76,7 +76,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     {
       name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est celui du workflow (partagé avec « Comparer catalogue » du même workflow — les prix trouvés remontent alors dans le dashboard).',
       disabledWhen: (_c, wired) => wired('sites'),
-      disabledNote: 'fourni par « Sites sources »',
+      disabledNoteKey: 'node.directed-search.f3',
     },
   ],
   defaultConfig: { sites: '', genericSites: '', refColumn: '', eanColumn: '', nameColumn: '', descriptionColumn: '', productBudget: 60, watchId: '' },

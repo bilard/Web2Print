@@ -82,7 +82,7 @@ const exportExcelNode: NodeSpec<
     {
       name: 'columns',
       kind: 'text',
-      label: 'Colonnes (séparées par virgule, vide = toutes)',
+      labelKey: 'node.export-excel.f1',
       default: '',
     },
   ],
@@ -182,7 +182,7 @@ const exportPptxNode: NodeSpec<
     {
       name: 'titleColumn',
       kind: 'text',
-      label: 'Colonne pour le titre des slides',
+      labelKey: 'node.export-pptx.f1',
       default: 'title',
     },
   ],
@@ -294,13 +294,13 @@ const exportPdfNode: NodeSpec<
     {
       name: 'template',
       kind: 'textarea',
-      label: 'Gabarit HTML (placeholders {{colonne}})',
+      labelKey: 'node.export-pdf.f1',
       default: DEFAULT_PDF_TEMPLATE,
     },
     {
       name: 'orientation',
       kind: 'select',
-      label: 'Orientation',
+      labelKey: 'node.export-pdf.f2',
       options: [
         { value: 'portrait', label: 'Portrait' },
         { value: 'landscape', label: 'Paysage' },
@@ -310,7 +310,7 @@ const exportPdfNode: NodeSpec<
     {
       name: 'pageBreakPerRow',
       kind: 'checkbox',
-      label: 'Une page par ligne',
+      labelKey: 'node.export-pdf.f3',
       default: true,
     },
   ],
@@ -531,7 +531,7 @@ const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; re
     {
       name: 'format',
       kind: 'select',
-      label: 'Format de sortie',
+      labelKey: 'node.export-design.f1',
       options: [
         { value: 'png', label: 'PNG (image haute résolution)' },
         { value: 'pdf', label: 'PDF (document imprimable)' },
@@ -544,7 +544,7 @@ const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; re
     {
       name: 'resolution',
       kind: 'select',
-      label: 'Résolution (PNG / PDF / PPTX)',
+      labelKey: 'node.export-design.f2',
       options: [
         { value: '72', label: '72 dpi (écran)' },
         { value: '150', label: '150 dpi (standard)' },

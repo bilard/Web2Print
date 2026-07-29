@@ -84,17 +84,17 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
   configSchema: [
     {
       name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)',
-      help: 'Domaine par ligne. Ex : « pro-motoculture.com ». PrestaShop supporté nativement. IGNORÉ si un node « Sites sources » est branché sur le port sites.',
+      helpKey: 'node.harvest-competitor.f1',
       disabledWhen: (_c, wired) => wired('sites'),
-      disabledNote: 'fourni par « Sites sources »',
+      disabledNoteKey: 'node.harvest-competitor.f2',
     },
     {
       name: 'families', kind: 'text', label: 'Familles ciblées (séparées par des virgules)',
-      help: 'Laisse VIDE si tu branches ta feuille source sur le port « products » : les familles sont alors lues dans la colonne ci-dessous, toujours à jour. Remplis-le pour FORCER un ciblage précis (« COURROIES, FILTRATION »). Vide et sans feuille = catalogue complet.',
+      helpKey: 'node.harvest-competitor.f3',
     },
     {
       name: 'familyColumn', kind: 'text', label: 'Colonne Famille de la source',
-      help: 'Ex : Famille. Utilisée quand la feuille source est branchée : les familles distinctes en sont extraites, puis une IA apparie VOTRE vocabulaire à celui du concurrent (« COURROIES » retrouve son rayon « transmission »). Sans IA disponible, le catalogue complet est balayé — jamais moins.',
+      helpKey: 'node.harvest-competitor.f4',
     },
     {
       name: 'pageBudget', kind: 'number', label: 'Pages par run',
@@ -102,9 +102,9 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     },
     {
       name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)',
-      help: 'Laisse VIDE : le suivi est automatiquement celui du workflow (partagé avec « Comparer catalogue » du même workflow). Ne remplis que pour partager un même suivi entre plusieurs workflows.',
+      helpKey: 'node.harvest-competitor.f5',
       disabledWhen: (_c, wired) => wired('sites'),
-      disabledNote: 'fourni par « Sites sources »',
+      disabledNoteKey: 'node.harvest-competitor.f6',
     },
   ],
   // 800 pages : la fenêtre de moisson d'un run planifié est d'environ 18 min

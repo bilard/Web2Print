@@ -22,11 +22,16 @@ type ConfigFieldKind =
 export interface ConfigField {
   name: string
   kind: ConfigFieldKind
-  label: string
+  /** Libellé BRUT (nom de colonne dynamique, valeur issue des données…). */
+  label?: string
+  /** Libellé traduit — préféré à `label` quand présent. */
+  labelKey?: TranslationKey
   required?: boolean
   options?: { value: string; label: string }[]
   default?: unknown
   help?: string
+  helpKey?: TranslationKey
+  disabledNoteKey?: TranslationKey
   /** Grise + désactive le champ (sans le cacher) quand il n'a aucun effet dans l'état
    *  courant — ex : « Heure » quand le cron relance après la fin, ou « Sites concurrents »
    *  quand un node « Sites sources » est branché et l'emporte. Le champ reste visible pour

@@ -1,4 +1,5 @@
 import type { ConfigField } from '../../types'
+import { t } from '@/lib/i18n'
 
 interface FieldProps {
   field: ConfigField
@@ -13,7 +14,7 @@ export function ConfigFieldRenderer({ field, value, onChange }: FieldProps) {
     case 'text':
     case 'expression':
     case 'columnRef':
-      return <input type="text" className={inputCls} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} placeholder={field.help} />
+      return <input type="text" className={inputCls} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} placeholder={field.helpKey ? t(field.helpKey) : field.help} />
     case 'textarea':
       return <textarea className={inputCls + ' min-h-[80px]'} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} />
     case 'number': {

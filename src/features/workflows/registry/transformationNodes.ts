@@ -50,8 +50,8 @@ const setFieldsNode: NodeSpec<
     {
       name: 'assignments',
       kind: 'textarea',
-      label: 'Affectations (une par ligne)',
-      help: "« = » template texte, « := » expression calculée.\nEx :\nlabel = {{brand}} — {{name}}\necart := row.price - row.price_concurrent\npct := Math.round((row.price / row.ref - 1) * 100)\nmoins_cher := row.price < row.price_concurrent ? 'oui' : 'non'\n{{...}} = colonnes (mode texte) ; row.X = colonnes (mode expression).",
+      labelKey: 'node.transform-set-fields.f1',
+      helpKey: 'node.transform-set-fields.f2',
     },
   ],
   defaultConfig: { assignments: '' },
@@ -158,8 +158,8 @@ const filterNode: NodeSpec<
     {
       name: 'expression',
       kind: 'expression',
-      label: 'Condition (sur `row`)',
-      help: "Ex : row.price > 0 — row.status === 'active' — !!row.url",
+      labelKey: 'node.transform-filter.f1',
+      helpKey: 'node.transform-filter.f2',
     },
   ],
   defaultConfig: { expression: 'true' },
@@ -219,7 +219,7 @@ const sortNode: NodeSpec<
     {
       name: 'direction',
       kind: 'select',
-      label: 'Sens',
+      labelKey: 'node.transform-sort.f1',
       default: 'asc',
       options: [
         { value: 'asc', label: 'Croissant' },
@@ -229,7 +229,7 @@ const sortNode: NodeSpec<
     {
       name: 'type',
       kind: 'select',
-      label: 'Comparaison',
+      labelKey: 'node.transform-sort.f2',
       default: 'string',
       options: [
         { value: 'string', label: 'Texte (alphabétique)' },
@@ -291,8 +291,8 @@ const renameColumnsNode: NodeSpec<
     {
       name: 'mapping',
       kind: 'textarea',
-      label: 'Mapping (une par ligne)',
-      help: 'Ex :\nproduct_name = title\nproduit.prix = price',
+      labelKey: 'node.transform-rename.f1',
+      helpKey: 'node.transform-rename.f2',
     },
   ],
   defaultConfig: { mapping: '' },
@@ -351,12 +351,12 @@ const textOpNode: NodeSpec<
     {
       name: 'target',
       kind: 'text',
-      label: 'Colonne cible (vide = même que source)',
+      labelKey: 'node.transform-text.f1',
     },
     {
       name: 'operation',
       kind: 'select',
-      label: 'Opération',
+      labelKey: 'node.transform-text.f2',
       default: 'lowercase',
       options: [
         { value: 'lowercase', label: 'Minuscules' },
@@ -369,8 +369,8 @@ const textOpNode: NodeSpec<
     {
       name: 'pattern',
       kind: 'text',
-      label: 'Motif (replace / regex)',
-      help: "Pour 'Remplacer' : sous-chaîne littérale. Pour 'Extraire' : regex sans délimiteurs (ex : \\d+).",
+      labelKey: 'node.transform-text.f3',
+      helpKey: 'node.transform-text.f4',
     },
     { name: 'replacement', kind: 'text', label: 'Remplacement (replace uniquement)' },
   ],

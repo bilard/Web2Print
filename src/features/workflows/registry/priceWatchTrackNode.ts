@@ -62,9 +62,9 @@ const priceWatchTrackNode: NodeSpec<TrackConfig, TrackInputs, { changes?: ExcelS
     {
       name: 'sites',
       kind: 'textarea',
-      label: 'Sites concurrents (un par ligne)',
+      labelKey: 'node.price-watch-track.f1',
       required: true,
-      help: 'Format : « domaine » ou « domaine | champ1, champ2 ». Ex : « amazon.fr | price, availability ». Sans champs → price.',
+      helpKey: 'node.price-watch-track.f2',
     },
     { name: 'nameColumn', kind: 'columnRef', label: 'Colonne Nom', help: 'Colonne du nom produit dans la feuille d’entrée.' },
     { name: 'brandColumn', kind: 'columnRef', label: 'Colonne Marque', help: 'Repli relationnel avec le nom si pas de SKU/EAN.' },

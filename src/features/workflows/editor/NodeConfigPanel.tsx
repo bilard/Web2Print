@@ -437,7 +437,7 @@ export function NodeConfigPanel() {
                   return (
                   <label key={f.name} className={`block ${off ? 'opacity-40 pointer-events-none select-none' : ''}`}>
                     <span className="text-xs text-white/60 mb-1 block">
-                      {f.label}{off ? <span className="text-[10px] text-amber-400/70 ml-2">— {f.disabledNote ?? 'sans effet ici'}</span> : null}
+                      {f.labelKey ? t(f.labelKey) : f.label}{off ? <span className="text-[10px] text-amber-400/70 ml-2">— {f.disabledNoteKey ? t(f.disabledNoteKey) : f.disabledNote ?? t('wfn.noEffectHere')}</span> : null}
                     </span>
                     <ConfigFieldRenderer
                       field={f}
@@ -449,7 +449,7 @@ export function NodeConfigPanel() {
                         })
                       }
                     />
-                    {f.help ? <span className="text-[11px] text-white/30 mt-1 block">{f.help}</span> : null}
+                    {(f.helpKey || f.help) ? <span className="text-[11px] text-white/30 mt-1 block">{f.helpKey ? t(f.helpKey) : f.help}</span> : null}
                   </label>
                   )
                 })

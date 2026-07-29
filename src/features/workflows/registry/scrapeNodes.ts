@@ -103,22 +103,22 @@ const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, ScrapeUrlO
     {
       name: 'urls',
       kind: 'textarea',
-      label: 'URLs (une par ligne ou séparées par virgule)',
+      labelKey: 'node.scrape-url.f1',
       required: true,
     },
     {
       name: 'template',
       kind: 'select',
-      label: 'Template de champs',
+      labelKey: 'node.scrape-url.f2',
       default: 'product_full',
       options: TEMPLATE_OPTIONS,
     },
     {
       name: 'customFields',
       kind: 'text',
-      label: 'Champs personnalisés (si Personnalisé, séparés par virgule)',
+      labelKey: 'node.scrape-url.f3',
       default: '',
-      help: 'Ignoré si un template est sélectionné',
+      helpKey: 'node.scrape-url.f4',
     },
   ],
   defaultConfig: {

@@ -56,19 +56,19 @@ const browserActNode: NodeSpec<BrowserActConfig, BrowserActInputs, BrowserActOut
   configSchema: [
     {
       name: 'workflowId', kind: 'text', label: 'ID du bot', required: true,
-      help: 'Tableau de bord BrowserAct → votre bot → son identifiant. Le test de la clé (Réglages › Clés API) liste les bots du compte.',
+      helpKey: 'node.browseract.f1',
     },
     {
       name: 'parameters', kind: 'textarea', label: 'Paramètres',
-      help: 'Une paire « nom = valeur » par ligne, avec les noms définis par le bot (ex. « url = https://… »).',
+      helpKey: 'node.browseract.f2',
     },
     {
       name: 'inputParam', kind: 'text', label: 'Paramètre alimenté par l’entrée', default: 'url',
-      help: 'Nom du paramètre qui reçoit la valeur branchée en entrée. Elle prime sur la même clé ci-dessus.',
+      helpKey: 'node.browseract.f3',
     },
     {
       name: 'timeoutSec', kind: 'number', label: 'Attente max (s)', default: 300,
-      help: 'Un bot navigue réellement le site : compter des minutes, pas des secondes.',
+      helpKey: 'node.browseract.f4',
     },
   ],
   defaultConfig: { workflowId: '', parameters: '', inputParam: 'url', timeoutSec: 300 },

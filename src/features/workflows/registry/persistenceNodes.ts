@@ -30,14 +30,14 @@ const savePimNode: NodeSpec<
     {
       name: 'projectId',
       kind: 'text',
-      label: 'Project ID PIM',
+      labelKey: 'node.save-pim.f1',
       required: true,
-      help: 'ID Firestore du projet PIM cible',
+      helpKey: 'node.save-pim.f2',
     },
     {
       name: 'sourceId',
       kind: 'text',
-      label: 'Source ID',
+      labelKey: 'node.save-pim.f3',
       required: true,
       default: 'workflow-import',
       help: 'ID de la source. Si elle n\'existe pas dans le projet, les produits seront créés mais invisibles dans la liste des sources (à corriger en phase 2).',

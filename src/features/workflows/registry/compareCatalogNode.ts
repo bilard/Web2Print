@@ -83,9 +83,9 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
   configSchema: [
     {
       name: 'sites', kind: 'textarea', label: 'Sites concurrents (un par ligne)',
-      help: 'Mêmes domaines que la moisson. IGNORÉ si un node « Sites sources » est branché sur le port sites.',
+      helpKey: 'node.compare-catalog.f1',
       disabledWhen: (_c, wired) => wired('sites'),
-      disabledNote: 'fourni par « Sites sources »',
+      disabledNoteKey: 'node.compare-catalog.f2',
     },
     { name: 'refColumn', kind: 'columnRef', label: 'Colonne Référence', help: 'Référence article / constructeur.' },
     { name: 'ref2Column', kind: 'columnRef', label: 'Colonne Référence 2', help: 'Référence secondaire éventuelle.' },
@@ -99,7 +99,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     {
       name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)', help: 'Laisse VIDE : le suivi est automatiquement celui du workflow (le même que « Moisson concurrents » du workflow). Ne remplis que pour partager un suivi entre plusieurs workflows.',
       disabledWhen: (_c, wired) => wired('sites'),
-      disabledNote: 'fourni par « Sites sources »',
+      disabledNoteKey: 'node.compare-catalog.f3',
     },
     { name: 'label', kind: 'text', label: 'Nom du suivi (affiché)', help: 'Libellé dans le menu « Source » du tableau de bord. Vide → le nom du workflow est utilisé.' },
   ],
