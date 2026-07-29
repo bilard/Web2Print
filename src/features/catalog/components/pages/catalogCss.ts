@@ -555,9 +555,13 @@ export const CATALOG_CSS = `
 .cat-cover { flex:1; display:flex; flex-direction:column; justify-content:flex-end; padding:0;
   background-size:cover; background-position:center; position:relative; }
 .cat-cover-panel { padding:40px 48px 48px; background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.28) 22%,rgba(0,0,0,.45) 100%); }
-.cat-cover-band { align-self:flex-start; display:inline-block; background:var(--cat-accent); color:#fff; padding:10px 22px;
-  border-radius:4px; font-family:var(--cat-font-h); font-weight:800; letter-spacing:.16em; text-transform:uppercase; font-size:calc(13px * var(--cat-p-cover,1)); margin-bottom:20px; transform:rotate(-2deg); }
-.cat-cover-title { font-family:var(--cat-font-h); font-weight:900; font-size:calc(64px * var(--cat-p-cover,1)); line-height:1; text-transform:uppercase; }
+/* Pastille de promesse client : pleine, ARRONDIE, jamais inclinée — un ruban de
+   travers fait « soldes », pas « enseigne de confiance ». */
+.cat-cover-band { align-self:flex-start; display:inline-block; background:var(--cat-accent); color:#fff; padding:9px 20px;
+  border-radius:999px; font-family:var(--cat-font-h); font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+  font-size:calc(12px * var(--cat-p-cover,1)); margin-bottom:18px; }
+.cat-cover-title { font-family:var(--cat-font-h); font-weight:900; font-size:calc(58px * var(--cat-p-cover,1));
+  line-height:1.04; letter-spacing:-.005em; text-wrap:balance; }
 .cat-cover-sub { font-family:var(--cat-font-h); font-size:calc(24px * var(--cat-p-cover,1)); font-weight:700; margin-top:14px; opacity:.95; text-transform:uppercase; letter-spacing:.04em; }
 .cat-cover-rule { width:120px; height:6px; background:var(--cat-accent); margin-top:24px; }
 /* ── Couverture ARCHÉTYPE « panel » (éditorial, moteur créatif) : bande latérale
@@ -566,9 +570,9 @@ export const CATALOG_CSS = `
 .cat-coverp { flex:1; position:relative; overflow:hidden; }
 .cat-coverp-spine { position:absolute; left:0; top:0; bottom:0; width:13%; background:var(--cat-head-bg);
   display:flex; justify-content:center; padding-top:6%; }
-.cat-coverp-chip { writing-mode:vertical-rl; transform:rotate(180deg); background:var(--cat-accent); color:var(--cat-ink);
+.cat-coverp-chip { writing-mode:vertical-rl; transform:rotate(180deg); border-radius:999px; background:var(--cat-accent); color:var(--cat-ink);
   font-family:var(--cat-font-h); font-weight:800; font-size:20px; letter-spacing:.12em; text-transform:uppercase;
-  padding:26px 10px; border-radius:2px; max-height:46%; overflow:hidden; }
+  padding:26px 12px; max-height:46%; overflow:hidden; }
 /* Panneau ancré par le BAS, hauteur suivant le CONTENU (aucun top fixe) :
    avec une zone figée à 44 %→86 %, un titre court laissait un immense aplat
    d'accent qui masquait la photo. Plafonné pour rester une bande, jamais un mur. */
@@ -576,8 +580,8 @@ export const CATALOG_CSS = `
    de flotter), largeur généreuse, marges régulières. Le logo respire au-dessus du
    titre grâce à un filet de séparation — hiérarchie MARQUE › TITRE › PROMESSE. */
 .cat-coverp-panel { position:absolute; left:13%; right:14%; bottom:12%; max-height:52%; background:var(--cat-accent);
-  color:var(--cat-ink); padding:44px 46px; display:flex; flex-direction:column; justify-content:flex-start; overflow:hidden;
-  box-shadow:0 24px 70px rgba(0,0,0,.28); }
+  color:var(--cat-ink); padding:40px 44px; border-radius:20px; display:flex; flex-direction:column; justify-content:flex-start;
+  overflow:hidden; box-shadow:0 24px 70px rgba(0,0,0,.28); }
 .cat-coverp-panel .cat-logo--cover { margin-bottom:22px; padding-bottom:20px; border-bottom:2px solid currentColor;
   align-self:stretch; opacity:.92; }
 .cat-coverp-title { font-family:var(--cat-font-h); font-weight:900; font-size:calc(54px * var(--cat-p-cover,1));
@@ -593,20 +597,22 @@ export const CATALOG_CSS = `
    dégradé qui garantit la lisibilité, marque en tête, filet accent pour lier
    titre et sous-titre. Marges généreuses et régulières. ── */
 .cat-coverz { justify-content:space-between; position:relative; }
-/* Voile DIRECTIONNEL (et non un assombrissement uniforme) : la photo reste
-   lisible en haut, le texte est garanti contrasté en bas. */
+/* Registre GRANDE SURFACE BRICOLAGE (B2C) : la photo de magasin est le sujet, on
+   ne l'assombrit donc QUE là où le texte se pose. Voile très léger et court. */
 .cat-coverz::after { content:''; position:absolute; inset:0; pointer-events:none;
-  background:linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.66) 26%, rgba(0,0,0,.18) 55%, rgba(0,0,0,0) 78%); }
-.cat-coverz-head { position:relative; z-index:1; padding:7% 8% 0; }
-.cat-coverz-in { position:relative; z-index:1; padding:0 8% 8%; display:flex; flex-direction:column;
-  align-items:flex-start; text-align:left; gap:0; max-width:92%; }
-.cat-coverz .cat-cover-band { margin-bottom:16px; }
-.cat-coverz-title { font-family:var(--cat-font-h); font-weight:900;
-  font-size:calc(74px * var(--cat-p-cover,1)); line-height:.92; letter-spacing:-.015em;
-  text-transform:uppercase; text-wrap:balance; overflow-wrap:break-word; }
-/* Filet accent : lie le titre au sous-titre, signe graphique du catalogue. */
-.cat-coverz .cat-cover-sub { margin-top:22px; padding-top:18px; border-top:5px solid var(--cat-accent);
-  display:inline-block; font-size:calc(20px * var(--cat-p-cover,1)); letter-spacing:.06em; }
+  background:linear-gradient(to top, rgba(0,0,0,.42) 0%, rgba(0,0,0,.14) 22%, rgba(0,0,0,0) 42%); }
+.cat-coverz-head { position:relative; z-index:1; padding:6% 7% 0; }
+/* Bloc éditorial sur CARTOUCHE CLAIR arrondi — la signature des catalogues de
+   grande surface : chaleureux, très lisible, jamais un aplat sombre austère. */
+.cat-coverz-in { position:relative; z-index:1; margin:0 7% 7%; padding:34px 38px 36px; border-radius:20px;
+  background:#fff; color:var(--cat-ink); display:flex; flex-direction:column;
+  align-items:flex-start; text-align:left; gap:0; box-shadow:0 22px 60px rgba(0,0,0,.26); }
+.cat-coverz .cat-cover-band { margin-bottom:18px; }
+.cat-coverz-title { font-family:var(--cat-font-h); font-weight:900; color:var(--cat-accent);
+  font-size:calc(60px * var(--cat-p-cover,1)); line-height:1.02; letter-spacing:-.005em;
+  text-wrap:balance; overflow-wrap:break-word; }
+.cat-coverz .cat-cover-sub { margin-top:14px; display:inline-block; opacity:.78;
+  font-size:calc(19px * var(--cat-p-cover,1)); letter-spacing:.01em; text-transform:none; line-height:1.4; }
 
 /* ── Sommaire ───────────────────────────────────────────────────────── */
 .cat-toc { flex:1; padding:40px 48px; }

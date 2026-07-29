@@ -10,9 +10,9 @@ interface Props { ctx: CatalogRenderCtx; variant: 'cover' | 'back' }
  * composition : le titre est alors masqué et le sous-titre prend sa place, ce
  * qui donne la hiérarchie attendue — marque, puis promesse éditoriale.
  */
-function titleRepeatsBrand(title: string, brandName?: string): boolean {
+function repeatsBrand(text: string | undefined, brandName?: string): boolean {
   const norm = (v: string) => v.trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
-  return !!brandName?.trim() && !!title.trim() && norm(title) === norm(brandName)
+  return !!brandName?.trim() && !!text?.trim() && norm(text) === norm(brandName)
 }
 
 export function CoverPage({ ctx, variant }: Props) {
@@ -21,7 +21,10 @@ export function CoverPage({ ctx, variant }: Props) {
   const img = variant === 'cover' ? ctx.coverImageUrl : ctx.backCoverImageUrl
   // Assombrissement réglable du visuel (haut léger → bas plus marqué, lisibilité du titre).
   const o = Math.min(80, Math.max(0, ps.coverOverlay)) / 100
-  const dupTitle = titleRepeatsBrand(plan.cover.title, plan.brandName)
+  const dupTitle = repeatsBrand(plan.cover.title, plan.brandName)
+  // Le sous-titre aussi peut redire la marque (« Distriland » sous un logo
+  // DISTRILAND) : dans ce cas il n'apporte rien et disparaît.
+  const sub = repeatsBrand(plan.cover.subtitle, plan.brandName) ? '' : plan.cover.subtitle
   const style = img
     ? { backgroundImage: `linear-gradient(rgba(0,0,0,${(o * 0.27).toFixed(3)}), rgba(0,0,0,${o.toFixed(3)})), url(${img})`, backgroundSize: 'cover', backgroundPosition: 'center', color: '#fff' }
     : { background: plan.theme.headerBg, color: plan.theme.headerInk }
@@ -48,10 +51,10 @@ export function CoverPage({ ctx, variant }: Props) {
         <div className="cat-coverp-panel">
           <CatalogLogo plan={plan} logoUrl={ctx.logoUrl} place="cover" />
           {dupTitle
-            ? <h1 className="cat-coverp-title">{plan.cover.subtitle || plan.cover.title}</h1>
+            ? <h1 className="cat-coverp-title">{sub || plan.cover.title}</h1>
             : <>
                 <h1 className="cat-coverp-title">{plan.cover.title}</h1>
-                {ps.showCoverSubtitle && plan.cover.subtitle && <div className="cat-coverp-sub">{plan.cover.subtitle}</div>}
+                {ps.showCoverSubtitle && sub && <div className="cat-coverp-sub">{sub}</div>}
               </>}
         </div>
       </div>
@@ -68,8 +71,8 @@ export function CoverPage({ ctx, variant }: Props) {
         </div>
         <div className="cat-coverz-in">
           {ps.showCoverBaseline && plan.cover.baseline && <div className="cat-cover-band">{plan.cover.baseline}</div>}
-          <h1 className="cat-coverz-title">{dupTitle ? (plan.cover.subtitle || plan.cover.title) : plan.cover.title}</h1>
-          {!dupTitle && ps.showCoverSubtitle && plan.cover.subtitle && <div className="cat-cover-sub">{plan.cover.subtitle}</div>}
+          <h1 className="cat-coverz-title">{dupTitle ? (sub || plan.cover.title) : plan.cover.title}</h1>
+          {!dupTitle && ps.showCoverSubtitle && sub && <div className="cat-cover-sub">{sub}</div>}
         </div>
       </div>
     )
@@ -79,8 +82,8 @@ export function CoverPage({ ctx, variant }: Props) {
       <div className="cat-cover-panel" style={img ? undefined : { background: 'none' }}>
         <CatalogLogo plan={plan} logoUrl={ctx.logoUrl} place="cover" />
         {ps.showCoverBaseline && plan.cover.baseline && <div className="cat-cover-band">{plan.cover.baseline}</div>}
-        <h1 className="cat-cover-title">{dupTitle ? (plan.cover.subtitle || plan.cover.title) : plan.cover.title}</h1>
-        {!dupTitle && ps.showCoverSubtitle && plan.cover.subtitle && <div className="cat-cover-sub">{plan.cover.subtitle}</div>}
+        <h1 className="cat-cover-title">{dupTitle ? (sub || plan.cover.title) : plan.cover.title}</h1>
+        {!dupTitle && ps.showCoverSubtitle && sub && <div className="cat-cover-sub">{sub}</div>}
         {ps.showCoverRule && <div className="cat-cover-rule" />}
       </div>
     </div>
