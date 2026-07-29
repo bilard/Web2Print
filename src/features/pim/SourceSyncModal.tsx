@@ -32,7 +32,19 @@ export function SourceSyncModal({ ident, open, onClose }: Props) {
     return () => { cancelled = true }
   }, [open])
 
-  if (!open || !pubs) return null
+  // AUCUNE décision à prendre : les catalogues lisent la source EN DIRECT
+  // (« à jour automatiquement »), seules les fiches promo sont des instantanés
+  // à rafraîchir. Sans promo reliée, la fenêtre s'ouvrait sur un écran où rien
+  // n'était cliquable — elle interrompait pour rien. On informe et on referme.
+  useEffect(() => {
+    if (!open || !pubs || pubs.promos.length > 0) return
+    if (pubs.catalogs.length > 0) {
+      toast.success(`Source mise à jour — ${pubs.catalogs.length} catalogue(s) reliés suivent automatiquement`)
+    }
+    onClose()
+  }, [open, pubs, onClose])
+
+  if (!open || !pubs || pubs.promos.length === 0) return null
 
   const toggle = (id: string) => setChecked((s) => {
     const next = new Set(s)

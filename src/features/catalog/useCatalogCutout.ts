@@ -9,10 +9,22 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import { auth, storage } from '@/lib/firebase/config'
 import { removeBackground } from '@/features/imaging/removeBackground'
 import { useCatalogStore } from '@/stores/catalog.store'
+import { saveCatalog } from './catalogsApi'
 import { resolveCatalogImage } from './useResolvedImage'
 
 /** Détourages simultanés : au-delà, le service de détourage sature et renvoie des erreurs. */
 const CONCURRENCY = 3
+
+/** Sauvegarde du catalogue toutes les N images traitées (le lot survit à un changement de module). */
+const SAVE_EVERY = 5
+
+/** Persiste le catalogue immédiatement, sans dépendre de l'autosauvegarde de la page. */
+async function persist(): Promise<void> {
+  const s = useCatalogStore.getState()
+  if (!s.catalogId) return
+  try { await saveCatalog(s.toDoc()) }
+  catch (e) { console.warn('[catalogue] sauvegarde des détourages différée', e) }
+}
 
 /** Dossier de rangement des PNG détourés — sert aussi de marqueur « déjà traité ».
  *  Testé SANS séparateur : l'URL Storage encode les `/` en `%2F`. */
@@ -64,6 +76,7 @@ export function useCatalogCutout() {
     }
 
     abort.current = false
+    let sinceSave = 0
     setProgress({ done: 0, total: todo.length, failed: 0 })
     let done = 0
     let failed = 0
@@ -89,6 +102,11 @@ export function useCatalogCutout() {
           // Mémorisé par URL SOURCE : tout produit qui réapparaît avec ce visuel
           // le récupérera sans repasser par le service de détourage.
           useCatalogStore.getState().rememberCutouts({ [item.src]: cutoutUrl }, true)
+          // SAUVEGARDE au fil de l'eau : le lot dure des minutes et l'utilisateur
+          // change de module entre-temps. L'autosauvegarde est portée par la page
+          // du catalogue — démontée, elle ne sauve plus rien, et les détourages
+          // déjà payés seraient perdus. On persiste donc nous-mêmes, périodiquement.
+          if (++sinceSave >= SAVE_EVERY) { sinceSave = 0; await persist() }
         } catch (e) {
           failed++
           console.warn('[catalogue] détourage échoué pour', item.id, e)
@@ -98,6 +116,7 @@ export function useCatalogCutout() {
       }
     }
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker))
+    await persist() // dernier lot + réutilisations : rien ne doit rester non sauvegardé
     setProgress(null)
 
     const ok = done - failed
