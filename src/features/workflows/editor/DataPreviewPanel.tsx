@@ -1140,7 +1140,7 @@ export function DataPreviewPanel() {
                 : 'border-neutral-800 text-neutral-500 hover:text-neutral-300 hover:bg-white/[0.03]'
             }`}
           >
-            <Braces className="w-3 h-3" /> Tout
+            <Braces className="w-3 h-3" /> {t('wfd.pageAll')}
           </button>
         ) : null}
       </div>
