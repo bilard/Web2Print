@@ -58,10 +58,12 @@ import { DemoQuotaBanner } from '@/features/access/DemoQuotaBanner'
 import { EasyCatalogExportModal } from '@/features/easycatalog/EasyCatalogExportModal'
 import { OptionHelp } from '@/components/shared/OptionHelp'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
+import { useTranslation, intlLocale } from '@/lib/i18n'
 
 type RightTab = 'fields' | 'taxonomy'
 
 export default function DataPage({ embedded = false }: { embedded?: boolean }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const {
     sheets, activeSheetIndex, importModalOpen, searchQuery, currentFileName, currentDocId, currentPath,
@@ -376,16 +378,16 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         <>
           {/* ─── AFFICHAGE ─── */}
           <div>
-            <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest px-3 mb-1">Affichage</p>
+            <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest px-3 mb-1">{t('pim.display')}</p>
             <div className="space-y-px">
               <button onClick={() => setShowNav(!showNav)} className={sidebarBtn(showNav)}>
                 <FolderTree className="w-4 h-4 opacity-50" aria-hidden="true" />
-                Navigation
+                {t('pim.nav')}
                 {showNav && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400/80" />}
               </button>
               <button onClick={() => setGroupByTaxonomy(!groupByTaxonomy)} className={sidebarBtn(groupByTaxonomy)}>
                 {groupByTaxonomy ? <Group className="w-4 h-4 opacity-50" aria-hidden="true" /> : <List className="w-4 h-4 opacity-50" aria-hidden="true" />}
-                Grouper
+                {t('pim.group')}
                 {groupByTaxonomy && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400/80" />}
               </button>
             </div>
@@ -395,11 +397,11 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
 
       {/* ─── PANNEAUX ─── toujours visible */}
       <div>
-        <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest px-3 mb-1">Panneaux</p>
+        <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest px-3 mb-1">{t('pim.panels')}</p>
         <div className="space-y-px">
           <button onClick={() => setShowBdd(!showBdd)} className={sidebarBtn(showBdd)}>
             <Cloud className="w-4 h-4 opacity-50" aria-hidden="true" />
-            Bases de donnees
+            {t('pim.databases')}
             {savedFiles.length > 0 && <span className="ml-auto text-[9px] text-white/30">{savedFiles.length}</span>}
             {showBdd && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-indigo-400/80" />}
           </button>
@@ -407,12 +409,12 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             <>
               <button onClick={() => handleToggleRightTab('fields')} className={sidebarBtn(showRight && rightTab === 'fields')}>
                 <Columns3 className="w-4 h-4 opacity-50" aria-hidden="true" />
-                Champs
+                {t('pim.fields')}
                 {showRight && rightTab === 'fields' && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400/80" />}
               </button>
               <button onClick={() => handleToggleRightTab('taxonomy')} className={sidebarBtn(showRight && rightTab === 'taxonomy')}>
                 <Tag className="w-4 h-4 opacity-50" aria-hidden="true" />
-                Taxonomie
+                {t('pim.taxonomy')}
                 {showRight && rightTab === 'taxonomy' && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400/80" />}
               </button>
             </>
@@ -448,7 +450,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           {/* Nom du fichier — masqué si identique à la feuille active (projet 1 feuille) */}
           {sheets.length > 1 && (
             <span className="text-[13px] font-medium text-white/50">
-              {currentFileName ?? 'Données'}
+              {currentFileName ?? t('pim.data')}
             </span>
           )}
           {/* Save status */}
@@ -465,7 +467,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           )}
           {/* Nom de la sheet active (les onglets ont migré dans la SheetsColumn latérale) */}
           <h1 className="text-[13px] font-medium text-white/70">
-            {sheet?.name ?? currentFileName ?? 'Données'}
+            {sheet?.name ?? currentFileName ?? t('pim.data')}
           </h1>
         </div>
 
@@ -482,7 +484,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               </button>
               <button onClick={handleSave} disabled={saving} className={`${headerBtn} disabled:opacity-40`}>
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Sauver
+                {t('pim.save')}
               </button>
               {canExport && (
                 <button
@@ -490,20 +492,20 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                   className={headerBtn}
                 >
                   <Download className="w-3.5 h-3.5" />
-                  Exporter
+                  {t('pim.export')}
                 </button>
               )}
               {canExport && (
                 <button onClick={() => setEcExportOpen(true)} className={headerBtn}>
                   <Download className="w-3.5 h-3.5" />
-                  EasyCatalog
+                  {t('pim.easycatalog')}
                 </button>
               )}
               <button
                 onClick={() => migrateActiveSheet()}
                 disabled={damRunning}
                 className={`${headerBtn} disabled:opacity-40`}
-                title="Centraliser les images (URLs externes) dans le DAM Google Drive et pointer les cellules dessus"
+                title={t('pim.centraliseImages')}
               >
                 {damRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FolderUp className="w-3.5 h-3.5" />}
                 DAM
@@ -511,10 +513,10 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               <button
                 onClick={() => setLinkImagesOpen(true)}
                 className={headerBtn}
-                title="Lier les images d'un dossier Google Drive aux lignes, par correspondance de nom de fichier"
+                title={t('pim.linkImages.help')}
               >
                 <Link2 className="w-3.5 h-3.5" />
-                Lier images
+                {t('pim.linkImages')}
               </button>
             </>
           )}
@@ -528,7 +530,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             <Search className="w-3.5 h-3.5 text-white/25" />
             <input
               type="text"
-              placeholder="Rechercher..."
+              placeholder={t('pim.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent text-[12px] text-white/60 placeholder:text-white/25 outline-none flex-1"
@@ -547,7 +549,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 className={`p-1.5 rounded-md transition-colors ${
                   showNav ? 'bg-white/[0.08] text-white/60' : 'text-white/25 hover:text-white/50 hover:bg-white/[0.04]'
                 }`}
-                title="Navigation taxonomie"
+                title={t('pim.taxonomyNav')}
               >
                 <FolderTree className="w-3.5 h-3.5" />
               </button>
@@ -556,7 +558,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 className={`p-1.5 rounded-md transition-colors ${
                   groupByTaxonomy ? 'bg-white/[0.08] text-white/60' : 'text-white/25 hover:text-white/50 hover:bg-white/[0.04]'
                 }`}
-                title={groupByTaxonomy ? 'Degrouper la taxonomie' : 'Grouper par taxonomie'}
+                title={t(groupByTaxonomy ? 'pim.ungroupTaxonomy' : 'pim.groupByTaxonomy')}
               >
                 {groupByTaxonomy ? <Group className="w-3.5 h-3.5" /> : <List className="w-3.5 h-3.5" />}
               </button>
@@ -565,7 +567,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 className={`p-1.5 rounded-md transition-colors ${
                   showRight ? 'bg-white/[0.08] text-white/60' : 'text-white/25 hover:text-white/50 hover:bg-white/[0.04]'
                 }`}
-                title="Panneaux"
+                title={t('pim.panels')}
               >
                 <Tag className="w-3.5 h-3.5" />
               </button>
@@ -582,12 +584,12 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             <div className="px-3 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
               <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider flex items-center gap-1.5">
                 <Cloud className="w-3.5 h-3.5 text-indigo-300" />
-                Bases de donnees
+                {t('pim.databases')}
               </h3>
               <button
                 onClick={() => setShowBdd(false)}
                 className="p-1 text-white/40 hover:text-white/80 hover:bg-white/10 rounded transition-colors"
-                title="Fermer la colonne"
+                title={t('pim.closeColumn')}
               >
                 <PanelLeftClose className="w-3.5 h-3.5" />
               </button>
@@ -613,11 +615,11 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           <button
             onClick={() => setShowBdd(true)}
             className="w-8 bg-surface-2 border-r border-white/[0.06] hover:bg-white/[0.04] hover:border-indigo-500/30 flex flex-col items-center gap-2 pt-3 shrink-0 transition-colors group"
-            title="Ouvrir Bases de données"
+            title={t('pim.openDatabases')}
           >
             <ChevronsRight className="w-5 h-5 text-white/60 group-hover:text-indigo-400" />
             <span className="text-[10px] font-semibold tracking-wider text-white/40 group-hover:text-white/70 [writing-mode:vertical-rl] rotate-180">
-              Bases
+              {t('pim.databases.short')}
             </span>
           </button>
         )}
@@ -636,11 +638,11 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               disabled={!hasSelectedDb || pimReached}
               data-tour="opt-pim-import"
               className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-white/5 disabled:hover:bg-white/5 disabled:text-white/25 disabled:cursor-not-allowed text-[#fff] text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
-              title={pimReached ? 'Plafond démo atteint — supprimez des lignes pour importer à nouveau' : hasSelectedDb ? 'Importer un fichier' : 'Sélectionnez une base de données'}
+              title={pimReached ? t('pim.quota.rows') : hasSelectedDb ? t('pim.import') : t('pim.selectDatabase')}
             >
               <Upload className="w-4 h-4" />
-              Importer un fichier
-              <OptionHelp text="Charge un fichier Excel/CSV dans la base sélectionnée : chaque ligne devient une fiche produit." />
+              {t('pim.import')}
+              <OptionHelp text={t('pim.import.help')} />
             </button>
             )}
             {canScrape && (
@@ -649,11 +651,11 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               disabled={!hasSelectedDb || pimReached}
               data-tour="opt-pim-scrape"
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
-              title={pimReached ? 'Plafond démo atteint — supprimez des lignes pour scraper à nouveau' : hasSelectedDb ? 'Scraper le web' : 'Sélectionnez une base de données'}
+              title={pimReached ? t('pim.quota.scrape') : hasSelectedDb ? t('pim.scrape') : t('pim.selectDatabase')}
             >
               <Globe className="w-4 h-4" />
-              Scraper le web
-              <OptionHelp text="Enrichit vos produits depuis une ou plusieurs URL : extraction des specs, images et descriptions (via Jina + IA)." />
+              {t('pim.scrape')}
+              <OptionHelp text={t('pim.scrape.help')} />
             </button>
             )}
             {canScrape && (
@@ -662,10 +664,10 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               disabled={!hasSelectedDb}
               data-tour="opt-pim-ai-completion"
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
-              title={hasSelectedDb ? 'Compléter une colonne par IA' : 'Sélectionnez une base de données'}
+              title={hasSelectedDb ? t('pim.aiColumn') : t('pim.selectDatabase')}
             >
               <Wand2 className="w-4 h-4" />
-              IA complétion
+              {t('pim.aiFill')}
             </button>
             )}
             {canScrape && (
@@ -674,10 +676,10 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               disabled={!hasSelectedDb || damQuotaFull}
               data-tour="opt-pim-ai-visuals"
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
-              title={damQuotaFull ? 'Plafond démo atteint — contactez-nous pour lever le plafond de visuels' : hasSelectedDb ? 'Générer les visuels produits par IA (Nano Banana / Higgsfield) → DAM Drive' : 'Sélectionnez une base de données'}
+              title={damQuotaFull ? t('pim.quota.visuals') : hasSelectedDb ? t('pim.visuals.help') : t('pim.selectDatabase')}
             >
               <ImagePlus className="w-4 h-4" />
-              Visuels (IA)
+              {t('pim.visuals')}
             </button>
             )}
             {canCreate && (
@@ -686,11 +688,11 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               disabled={!hasSelectedDb}
               data-tour="opt-pim-create"
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
-              title={hasSelectedDb ? 'Créer un tableau vide' : 'Sélectionnez une base de données'}
+              title={hasSelectedDb ? t('pim.createEmpty.title') : t('pim.selectDatabase')}
             >
               <Plus className="w-4 h-4" />
-              Creer vide
-              <OptionHelp text="Crée un tableau de données vierge dans la base, pour saisir des produits à la main ou définir vos colonnes." />
+              {t('pim.createEmpty')}
+              <OptionHelp text={t('pim.createEmpty.help')} />
             </button>
             )}
           </div>
@@ -711,11 +713,11 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 <button
                   onClick={() => setShowNav(true)}
                   className="w-8 bg-well border-r border-white/10 hover:bg-white/[0.04] hover:border-indigo-500/30 flex flex-col items-center gap-2 pt-3 shrink-0 transition-colors group"
-                  title="Ouvrir Navigation"
+                  title={t('pim.openNav')}
                 >
                   <ChevronsRight className="w-5 h-5 text-white/60 group-hover:text-indigo-400" />
                   <span className="text-[10px] font-semibold tracking-wider text-white/40 group-hover:text-white/70 [writing-mode:vertical-rl] rotate-180">
-                    Navigation
+                    {t('pim.nav')}
                   </span>
                 </button>
               )}
@@ -759,7 +761,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                     <button
                       onClick={() => setShowRight(false)}
                       className="px-2 text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors border-l border-white/10"
-                      title="Fermer la colonne"
+                      title={t('pim.closeColumn')}
                     >
                       <PanelRightClose className="w-3.5 h-3.5" />
                     </button>
@@ -778,11 +780,11 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 <button
                   onClick={() => setShowRight(true)}
                   className="w-8 bg-well border-l border-white/10 hover:bg-white/[0.04] hover:border-indigo-500/30 flex flex-col items-center gap-2 pt-3 shrink-0 transition-colors group"
-                  title="Ouvrir Champs / Taxonomie"
+                  title={t('pim.openFields')}
                 >
                   <ChevronsLeft className="w-5 h-5 text-white/60 group-hover:text-indigo-400" />
                   <span className="text-[10px] font-semibold tracking-wider text-white/40 group-hover:text-white/70 [writing-mode:vertical-rl]">
-                    Champs / Taxo
+                    {t('pim.fieldsTaxo')}
                   </span>
                 </button>
               ))}
@@ -796,12 +798,12 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-white/70 mb-2">
-                    {hasSelectedDb ? 'Aucune donnee' : 'Aucune base selectionnee'}
+                    {t(hasSelectedDb ? 'pim.empty.noData' : 'pim.empty.noDatabase')}
                   </h2>
                   <p className="text-sm text-white/40">
                     {hasSelectedDb
-                      ? 'Choisissez un type d\'import dans le menu ci-dessus.'
-                      : 'Selectionnez une base de donnees a gauche, ou creez-en une via le bouton +.'}
+                      ? t('pim.empty.chooseImport')
+                      : t('pim.empty.selectDatabase')}
                   </p>
                 </div>
               </div>
@@ -953,6 +955,7 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
   onRefresh: () => void
   onReorder: (orderedDocIds: string[]) => void | Promise<void>
 }) {
+  const { t } = useTranslation()
   const canCreate = useCan('pim.create')
   const canImport = useCan('pim.import')
   const canScrape = useCan('pim.scrape')
@@ -1079,10 +1082,10 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
             <button
               onClick={(e) => { e.stopPropagation(); setOpenAddMenu(openAddMenu === '__root_create__' ? null : '__root_create__') }}
               className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-white/60 hover:text-white/90 hover:bg-white/[0.06] transition-colors"
-              title="Créer une nouvelle base"
+              title={t('pim.createDatabase')}
             >
               <Plus className="w-3 h-3" />
-              Créer
+              {t('pim.create')}
             </button>
             )}
             {canCreate && (canImport || canScrape) && <div className="w-px h-3 bg-white/10" />}
@@ -1090,10 +1093,10 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
             <button
               onClick={(e) => { e.stopPropagation(); setOpenAddMenu(openAddMenu === '__root_import__' ? null : '__root_import__') }}
               className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-white/60 hover:text-white/90 hover:bg-white/[0.06] transition-colors"
-              title="Importer ou scraper"
+              title={t('pim.importOrScrape')}
             >
               <Upload className="w-3 h-3" />
-              Import
+              {t('pim.import.short')}
             </button>
             )}
           </div>
@@ -1114,7 +1117,7 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
           onClick={onRefresh}
           className="text-[10px] text-white/30 hover:text-white/60 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
         >
-          Rafraichir
+          {t('pim.refresh')}
         </button>
       </div>
 
@@ -1124,14 +1127,14 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher une base…"
+            placeholder={t('pim.searchDatabase')}
             className="w-full pl-8 pr-7 py-1.5 rounded-md bg-well border border-white/10 text-[12px] placeholder:text-white/30 focus:outline-none focus:border-indigo-500/40"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
-              aria-label="Effacer la recherche"
+              aria-label={t('pim.clearSearch')}
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -1148,9 +1151,9 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
           <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
         </div>
       ) : files.length === 0 ? (
-        <p className="text-xs text-white/25 text-center py-4">Aucune base de données</p>
+        <p className="text-xs text-white/25 text-center py-4">{t('pim.noDatabase')}</p>
       ) : filteredFiles.length === 0 ? (
-        <p className="text-xs text-white/25 text-center py-4">Aucun résultat pour « {query} »</p>
+        <p className="text-xs text-white/25 text-center py-4">{t('pim.noResult', { query })}</p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <TreeLevel
@@ -1368,6 +1371,7 @@ function FileRow({
   onDelete,
   mfrCounts,
 }: { file: SavedFileEntry } & TreeLevelProps) {
+  const { t, locale } = useTranslation()
   const isActive = currentDocId === f.docId
   const isRenaming = renamingDocId === f.docId
   const isMoving = movingDocId === f.docId
@@ -1402,7 +1406,7 @@ function FileRow({
         {...attributes}
         {...listeners}
         className="shrink-0 cursor-grab active:cursor-grabbing text-white/15 hover:text-white/40 opacity-0 group-hover:opacity-100 transition-opacity touch-none"
-        title="Glisser pour réordonner"
+        title={t('pim.reorder')}
       >
         <GripVertical className="w-3 h-3" />
       </button>
@@ -1426,7 +1430,7 @@ function FileRow({
             autoFocus
             value={moveValue}
             onChange={(e) => setMoveValue(e.target.value)}
-            placeholder="B2B / Perceuses / Milwaukee"
+            placeholder={t('pim.taxonomyExample')}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
               if (e.key === 'Enter') { e.preventDefault(); void commitMove(f) }
@@ -1439,8 +1443,8 @@ function FileRow({
           <div className="cursor-pointer" onClick={() => onLoad(f.docId)}>
             <p className={`text-[11.5px] font-medium truncate ${isActive ? 'text-indigo-100' : 'text-white/70'}`}>{f.fileName}</p>
             <p className={`text-[9.5px] ${isActive ? 'text-indigo-300/70' : 'text-white/30'}`}>
-              {f.totalRows} produit{f.totalRows > 1 ? 's' : ''}
-              {f.updatedAt && ` · ${f.updatedAt.toLocaleDateString('fr-FR')}`}
+              {t(f.totalRows > 1 ? 'pim.products.other' : 'pim.products.one', { count: f.totalRows })}
+              {f.updatedAt && ` · ${f.updatedAt.toLocaleDateString(intlLocale(locale))}`}
             </p>
           </div>
         )}
@@ -1448,7 +1452,7 @@ function FileRow({
 
       {!isRenaming && !isMoving && mfrCount > 0 && (
         <span
-          title={`${mfrCount} produit(s) avec challenge Fabricant`}
+          title={t('pim.mfrChallenge', { count: mfrCount })}
           className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-indigo-500/15 text-indigo-300 text-[9px] font-semibold shrink-0"
         >
           <Factory className="w-2.5 h-2.5" />
@@ -1464,7 +1468,7 @@ function FileRow({
             else void commitMove(f)
           }}
           className="p-0.5 text-emerald-300/80 hover:text-emerald-300 hover:bg-emerald-500/10 rounded transition-colors"
-          title="Valider"
+          title={t('pim.validate')}
         >
           <Check className="w-3.5 h-3.5" />
         </button>
@@ -1487,21 +1491,21 @@ function FileRow({
             className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-white/60 hover:bg-white/[0.06] hover:text-white/90 transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-            Ouvrir
+            {t('pim.open')}
           </button>
           <button
             onClick={() => startRename(f)}
             className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-white/60 hover:bg-white/[0.06] hover:text-white/90 transition-colors"
           >
             <Pencil className="w-3.5 h-3.5 text-amber-400" />
-            Renommer
+            {t('pim.rename')}
           </button>
           <button
             onClick={() => startMove(f)}
             className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-white/60 hover:bg-white/[0.06] hover:text-white/90 transition-colors"
           >
             <FolderTree className="w-3.5 h-3.5 text-indigo-400" />
-            Déplacer vers…
+            {t('pim.moveTo')}
           </button>
           <a
             href={`https://console.firebase.google.com/project/web2print-6fe5a/firestore/databases/-default-/data/excel_data/${f.docId}`}
@@ -1519,7 +1523,7 @@ function FileRow({
             className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Supprimer
+            {t('pim.delete')}
           </button>
         </div>
       )}
