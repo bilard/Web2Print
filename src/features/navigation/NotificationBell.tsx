@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Bell, CheckCheck, Trash2, CircleCheck, CircleX, TriangleAlert, Info } from 'lucide-react'
 import { useNotificationsStore, type NotificationLevel } from '@/stores/notifications.store'
+import { useTranslation } from '@/lib/i18n'
 
 const LEVEL_ICON: Record<NotificationLevel, { icon: typeof Info; cls: string }> = {
   success: { icon: CircleCheck, cls: 'text-emerald-400' },
@@ -30,6 +31,7 @@ export function NotificationBell({ variant = 'fab' }: { variant?: 'fab' | 'inlin
   const items = useNotificationsStore((s) => s.items)
   const markAllRead = useNotificationsStore((s) => s.markAllRead)
   const clear = useNotificationsStore((s) => s.clear)
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const unread = items.filter((n) => !n.read).length
@@ -55,8 +57,8 @@ export function NotificationBell({ variant = 'fab' }: { variant?: 'fab' | 'inlin
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        title="Notifications"
-        aria-label="Ouvrir les notifications"
+        title={t('notif.title')}
+        aria-label={t('notif.open')}
         aria-expanded={open}
         className={
           isInline
@@ -75,18 +77,18 @@ export function NotificationBell({ variant = 'fab' }: { variant?: 'fab' | 'inlin
       {open && (
         <div className={`absolute left-0 ${isInline ? 'bottom-full mb-2' : 'bottom-12'} w-80 max-h-96 bg-surface-2 border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-150 z-50`}>
           <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06]">
-            <span className="text-[12px] font-medium text-white/70">Notifications</span>
+            <span className="text-[12px] font-medium text-white/70">{t('notif.title')}</span>
             <div className="flex items-center gap-1">
               <button
                 onClick={markAllRead}
-                title="Tout marquer comme lu"
+                title={t('notif.markAllRead')}
                 className="p-1 rounded text-white/30 hover:text-white/60 hover:bg-white/[0.04]"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={clear}
-                title="Vider l'historique"
+                title={t('notif.clear')}
                 className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-white/[0.04]"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -95,7 +97,7 @@ export function NotificationBell({ variant = 'fab' }: { variant?: 'fab' | 'inlin
           </div>
           <div className="flex-1 overflow-y-auto">
             {items.length === 0 ? (
-              <p className="text-[12px] text-white/25 text-center py-8">Aucune notification</p>
+              <p className="text-[12px] text-white/25 text-center py-8">{t('notif.empty')}</p>
             ) : (
               items.map((n) => {
                 const { icon: Icon, cls } = LEVEL_ICON[n.level]

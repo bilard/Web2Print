@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useUIStore } from '@/stores/ui.store'
 import { useVisibleModules } from './modules'
+import { useTranslation } from '@/lib/i18n'
 import { ResumeSetupButton } from '@/features/onboarding/ResumeSetupButton'
 import { ModuleTree } from './ModuleTree'
 
@@ -38,6 +39,7 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
   const modules = useVisibleModules()
   const user = useAuthStore((s) => s.user)
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen)
+  const { t } = useTranslation()
   const signOut = useSignOut()
   const handleSignOut = async () => {
     setOpen(false)
@@ -71,8 +73,8 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
       <button
         type="button"
         onClick={() => setOpen(true)}
-        title="Modules (menu)"
-        aria-label="Ouvrir le menu des modules"
+        title={t('nav.drawer.menu')}
+        aria-label={t('nav.drawer.open')}
         aria-haspopup="menu"
         aria-expanded={open}
         className={
@@ -94,14 +96,14 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
           />
           {/* Drawer */}
           <nav
-            aria-label="Modules"
+            aria-label={t('nav.drawer.title')}
             className="fixed inset-y-0 left-0 z-50 w-64 bg-surface-2 border-r border-white/[0.06]
               flex flex-col shadow-2xl
               animate-in slide-in-from-left duration-200"
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-              <span className="text-[13px] font-medium text-white/70">Modules</span>
-              <CloseButton onClick={() => setOpen(false)} title="Fermer le menu" />
+              <span className="text-[13px] font-medium text-white/70">{t('nav.drawer.title')}</span>
+              <CloseButton onClick={() => setOpen(false)} title={t('nav.drawer.close')} />
             </div>
 
             <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
@@ -132,16 +134,16 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
               <ThemeToggle />
               <button
                 onClick={() => { setOpen(false); setSettingsOpen(true) }}
-                title="Paramètres"
-                aria-label="Paramètres"
+                title={t('dashboard.settings')}
+                aria-label={t('dashboard.settings')}
                 className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <Settings className="w-4 h-4" aria-hidden="true" />
               </button>
               <button
                 onClick={handleSignOut}
-                title="Se déconnecter"
-                aria-label="Se déconnecter"
+                title={t('dashboard.signOut')}
+                aria-label={t('dashboard.signOut')}
                 className="p-1.5 rounded-md text-white/40 hover:text-red-300 hover:bg-red-500/10 transition-colors"
               >
                 <LogOut className="w-4 h-4" aria-hidden="true" />

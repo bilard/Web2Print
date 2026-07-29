@@ -32,6 +32,8 @@ import { useAccessStore } from '@/stores/access.store'
 import { TourLauncher } from '@/features/tour/TourLauncher'
 import { registerTourSectionNavigator } from '@/features/tour/tour.store'
 import { MODULE_ITEMS as menuItems, SECTION_PERMISSION, groupModules, type Section } from '@/features/navigation/modules'
+import { useTranslation } from '@/lib/i18n'
+import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher'
 import { ModuleTree } from '@/features/navigation/ModuleTree'
 import { useModuleIntentStore } from '@/stores/moduleIntent.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
@@ -60,6 +62,7 @@ export default function DashboardPage() {
   const permissions = useAccessStore((s) => s.permissions)
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
   const setHelpContext = useHelpStore((s) => s.setActiveContext)
   const setModuleIntent = useModuleIntentStore((s) => s.set)
   const querySection = new URLSearchParams(location.search).get('section') as Section | null
@@ -336,6 +339,9 @@ export default function DashboardPage() {
     return isAdmin || !perm || permissions.has(perm)
   }
   const visibleMenuItems = menuItems.filter((m) => canSee(m.id))
+  // Libellé du module ouvert, pour l'`aria-label` de la zone de contenu.
+  const activeModule = menuItems.find((m) => m.id === activeSection)
+  const activeLabel = activeModule ? t(activeModule.labelKey) : undefined
 
   return (
     <div className="h-screen bg-background text-white flex overflow-hidden">
@@ -344,15 +350,15 @@ export default function DashboardPage() {
       {/* Sidebar */}
       <aside
         className={`${sidebarOpen ? 'w-56' : 'w-14'} bg-surface-2 border-r border-white/[0.06] flex flex-col shrink-0 transition-[width] duration-200`}
-        aria-label="Menu principal"
+        aria-label={t('dashboard.mainMenu')}
       >
         {/* Logo (clic = toggle sidebar) */}
         <div className={`py-4 flex items-center ${sidebarOpen ? 'px-4' : 'px-0 justify-center'}`}>
           <button
             onClick={toggleSidebar}
             className={`flex items-center rounded-md transition-colors hover:bg-white/[0.04] ${sidebarOpen ? 'gap-2 flex-1 min-w-0 px-1 py-1 -mx-1' : 'p-1'}`}
-            title={sidebarOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-            aria-label={sidebarOpen ? 'Fermer le menu principal' : 'Ouvrir le menu principal'}
+            title={t(sidebarOpen ? 'dashboard.sidebar.close' : 'dashboard.sidebar.open')}
+            aria-label={t(sidebarOpen ? 'dashboard.sidebar.closeAria' : 'dashboard.sidebar.openAria')}
           >
             <img
               src="/logo.png"
@@ -368,7 +374,7 @@ export default function DashboardPage() {
         <nav
           data-tour="sidebar"
           className={`${sidebarOpen ? 'px-2' : 'px-1.5'} pb-3 space-y-0.5 min-h-0 overflow-y-auto overscroll-contain`}
-          aria-label="Navigation des modules"
+          aria-label={t('dashboard.moduleNav')}
         >
           {sidebarOpen ? (
             <ModuleTree
@@ -384,16 +390,16 @@ export default function DashboardPage() {
                 ref: m.id === 'blank' ? newProjectHighlight.ref : undefined,
                 className: m.id === 'blank' ? newProjectHighlight.className : undefined,
                 tabIndex: activeSection === m.id ? 0 : -1,
-                title: m.label,
+                title: t(m.labelKey),
                 'data-help-id': `dashboard.sidebar.${m.id}`,
-                'aria-label': m.label,
+                'aria-label': t(m.labelKey),
                 onKeyDown: (e) => handleKeyDown(e, m.id),
               })}
             />
           ) : (
             groupModules(visibleMenuItems).map(({ group, items }, gi) => (
               <div key={group.id} className={gi > 0 ? 'mt-1 pt-1 border-t border-white/[0.06]' : ''}>
-                {items.map(({ id, icon: Icon, label, accent, activeBg, activeText }) => {
+                {items.map(({ id, icon: Icon, labelKey, accent, activeBg, activeText }) => {
                   const isActive = activeSection === id
                   return (
                     <button
@@ -404,8 +410,8 @@ export default function DashboardPage() {
                       role="menuitem"
                       tabIndex={isActive ? 0 : -1}
                       aria-current={isActive ? 'page' : undefined}
-                      aria-label={label}
-                      title={label}
+                      aria-label={t(labelKey)}
+                      title={t(labelKey)}
                       onClick={() => setActiveSection(id)}
                       onKeyDown={(e) => handleKeyDown(e, id)}
                       className={`w-full flex items-center justify-center px-0 py-[7px] rounded-md text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-2 ${
@@ -446,6 +452,7 @@ export default function DashboardPage() {
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] text-white/50 truncate">{user?.displayName}</p>
               </div>
+              <LocaleSwitcher className="flex-shrink-0" />
               <ThemeToggle
                 className="flex-shrink-0 p-1 rounded text-white/20 hover:text-white/50 hover:bg-white/[0.04]"
                 iconClassName="w-3.5 h-3.5"
@@ -458,16 +465,16 @@ export default function DashboardPage() {
                     ? 'text-indigo-400 bg-indigo-500/10'
                     : 'text-white/20 hover:text-white/50 hover:bg-white/[0.04]'
                 }`}
-                title="Paramètres"
-                aria-label="Paramètres"
+                title={t('dashboard.settings')}
+                aria-label={t('dashboard.settings')}
               >
                 <Settings className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
               <button
                 onClick={handleSignOut}
                 className="text-white/20 hover:text-white/50 transition-colors flex-shrink-0 p-1 rounded hover:bg-white/[0.04]"
-                title="Se déconnecter"
-                aria-label="Se déconnecter"
+                title={t('dashboard.signOut')}
+                aria-label={t('dashboard.signOut')}
               >
                 <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
@@ -481,6 +488,7 @@ export default function DashboardPage() {
                   <span className="text-[11px] font-medium text-white/40">{user?.displayName?.charAt(0) ?? '?'}</span>
                 </div>
               )}
+              <LocaleSwitcher compact />
               <ThemeToggle
                 className="p-1 rounded text-white/20 hover:text-white/50 hover:bg-white/[0.04]"
                 iconClassName="w-3.5 h-3.5"
@@ -493,16 +501,16 @@ export default function DashboardPage() {
                     ? 'text-indigo-400 bg-indigo-500/10'
                     : 'text-white/20 hover:text-white/50 hover:bg-white/[0.04]'
                 }`}
-                title="Paramètres"
-                aria-label="Paramètres"
+                title={t('dashboard.settings')}
+                aria-label={t('dashboard.settings')}
               >
                 <Settings className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
               <button
                 onClick={handleSignOut}
                 className="text-white/20 hover:text-white/50 transition-colors p-1 rounded hover:bg-white/[0.04]"
-                title="Se déconnecter"
-                aria-label="Se déconnecter"
+                title={t('dashboard.signOut')}
+                aria-label={t('dashboard.signOut')}
               >
                 <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
@@ -636,15 +644,15 @@ export default function DashboardPage() {
             selectedNodeId={filterNodeId}
             onSelectNode={handleFilterSelect}
           />
-          <main className="flex-1 p-8 overflow-auto" role="main" aria-label="Bibliothèque">
+          <main className="flex-1 p-8 overflow-auto" role="main" aria-label={t('nav.library')}>
             {/* Hors du conteneur centré : le toggle reste ancré au bord DROIT du module
                 quelle que soit la largeur d'écran (sinon il flotte au bord de la colonne 6xl). */}
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-xl font-bold">
-                Mes projets
+                {t('library.title')}
                 {filterNodeId && (
                   <span className="text-sm font-normal text-white/40 ml-3">
-                    ({filteredProjects.length} résultat{filteredProjects.length !== 1 ? 's' : ''})
+                    {t(filteredProjects.length === 1 ? 'library.results.one' : 'library.results.other', { count: filteredProjects.length })}
                   </span>
                 )}
               </h1>
@@ -654,13 +662,13 @@ export default function DashboardPage() {
                   <div
                     className="flex items-center gap-0.5 bg-white/[0.04] border border-white/[0.08] rounded-lg p-0.5"
                     role="group"
-                    aria-label="Mode d'affichage"
+                    aria-label={t('library.viewMode')}
                   >
                     <button
                       type="button"
                       onClick={() => handleViewModeChange('grid')}
                       aria-pressed={viewMode === 'grid'}
-                      title="Vue vignettes"
+                      title={t('library.view.grid')}
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
                         viewMode === 'grid'
                           ? 'bg-indigo-500/15 text-indigo-300'
@@ -668,13 +676,13 @@ export default function DashboardPage() {
                       }`}
                     >
                       <LayoutGrid className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Vignettes</span>
+                      <span className="hidden sm:inline">{t('library.view.gridShort')}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleViewModeChange('list')}
                       aria-pressed={viewMode === 'list'}
-                      title="Vue liste"
+                      title={t('library.view.list')}
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
                         viewMode === 'list'
                           ? 'bg-indigo-500/15 text-indigo-300'
@@ -682,7 +690,7 @@ export default function DashboardPage() {
                       }`}
                     >
                       <List className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Liste</span>
+                      <span className="hidden sm:inline">{t('library.view.listShort')}</span>
                     </button>
                   </div>
               </div>
@@ -694,23 +702,23 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between gap-3 mb-4 bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2">
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="text-[13px] text-white/60 tabular-nums">
-                      {selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}
+                      {t(selectedIds.size === 1 ? 'library.selected.one' : 'library.selected.other', { count: selectedIds.size })}
                     </span>
                     <button
                       type="button"
                       onClick={toggleSelectAll}
                       className="text-[12px] text-indigo-300 hover:text-indigo-200 transition-colors"
                     >
-                      {allSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+                      {t(allSelected ? 'library.deselectAll' : 'library.selectAll')}
                     </button>
                     <button
                       type="button"
                       onClick={clearSelection}
                       className="flex items-center gap-1 text-[12px] text-white/40 hover:text-white/70 transition-colors"
-                      title="Effacer la sélection"
+                      title={t('library.clearSelection')}
                     >
                       <X className="w-3 h-3" />
-                      Effacer
+                      {t('library.clear')}
                     </button>
                   </div>
                   {canDeleteProject && (
@@ -725,7 +733,7 @@ export default function DashboardPage() {
                       ) : (
                         <Trash2 className="w-3.5 h-3.5" />
                       )}
-                      Supprimer ({selectedIds.size})
+                      {t('library.delete', { count: selectedIds.size })}
                     </button>
                   )}
                 </div>
@@ -734,34 +742,34 @@ export default function DashboardPage() {
               {isLoading && (
                 <div className="flex items-center justify-center py-24" role="status">
                   <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" aria-hidden="true" />
-                  <span className="sr-only">Chargement des projets...</span>
+                  <span className="sr-only">{t('library.loading')}</span>
                 </div>
               )}
 
               {isError && (
                 <div className="flex flex-col items-center justify-center py-24 gap-2" role="alert">
-                  <p className="text-red-400 text-sm">Erreur lors du chargement des projets</p>
+                  <p className="text-red-400 text-sm">{t('library.error')}</p>
                 </div>
               )}
 
               {!isLoading && !isError && filteredProjects.length === 0 && !filterNodeId && projects?.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 gap-4 text-white/40">
                   <Library className="w-16 h-16 opacity-20" aria-hidden="true" />
-                  <p className="text-lg font-medium text-white/30">Bibliothèque vide</p>
-                  <p className="text-sm text-white/20">Créez votre premier document pour commencer</p>
+                  <p className="text-lg font-medium text-white/30">{t('library.empty.title')}</p>
+                  <p className="text-sm text-white/20">{t('library.empty.subtitle')}</p>
                   <button
                     onClick={() => setActiveSection('blank')}
                     className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-[#fff] font-medium px-6 py-2.5 rounded-lg transition-colors text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     <Plus className="w-4 h-4" aria-hidden="true" />
-                    Créer un document
+                    {t('dashboard.createDocument')}
                   </button>
                 </div>
               )}
 
               {!isLoading && !isError && filterNodeId && filteredProjects.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 gap-2 text-white/40">
-                  <p className="text-sm">Aucun projet dans cette catégorie</p>
+                  <p className="text-sm">{t('library.empty.filtered')}</p>
                 </div>
               )}
 
@@ -773,7 +781,7 @@ export default function DashboardPage() {
                       : 'flex flex-col gap-1.5'
                   }
                   role="list"
-                  aria-label="Liste des projets"
+                  aria-label={t('library.list')}
                 >
                   {filteredProjects.map((project) => (
                     <ProjectCard
@@ -826,7 +834,7 @@ export default function DashboardPage() {
         <main
           className={`flex-1 ${activeSection === 'settings' ? 'overflow-hidden' : 'p-8 overflow-auto'}`}
           role="main"
-          aria-label={menuItems.find((m) => m.id === activeSection)?.label}
+          aria-label={activeLabel}
         >
           {activeSection === 'settings' ? (
             // Settings : header (titre + onglets) FIXE en haut, puis 2 colonnes
@@ -836,13 +844,13 @@ export default function DashboardPage() {
                 fillHeight
                 header={
                   <div className="flex items-baseline gap-3 flex-wrap">
-                    <h1 className="text-xl font-bold">Paramètres</h1>
+                    <h1 className="text-xl font-bold">{t('dashboard.settings')}</h1>
                     <span className="text-[11px] font-mono text-white/30">v0.1.0</span>
                     <a
                       href="https://app.hyperframe.ai/dashboard"
                       target="_blank"
                       rel="noopener noreferrer"
-                      title="Ouvrir l'app officielle — vérifier que vous êtes sur la bonne version"
+                      title={t('dashboard.officialApp')}
                       className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors self-center"
                     >
                       app.hyperframe.ai
@@ -858,7 +866,7 @@ export default function DashboardPage() {
               {/* ─── NOUVEAU DOCUMENT VIERGE ─── */}
               {activeSection === 'blank' && (
                 <div data-tour="section-blank">
-                  <h1 className="text-xl font-bold mb-6">Créer un document</h1>
+                  <h1 className="text-xl font-bold mb-6">{t('dashboard.createDocument')}</h1>
                   <NewDocumentPanel
                     onConfirm={handleCreate}
                     loading={createProject.isPending}
@@ -869,7 +877,7 @@ export default function DashboardPage() {
               {/* ─── IMPORTER ─── */}
               {activeSection === 'import' && canSee('import') && (
                 <div data-tour="section-import">
-                  <h1 className="text-xl font-bold mb-6">Importer</h1>
+                  <h1 className="text-xl font-bold mb-6">{t('dashboard.import')}</h1>
                   <ImportPanel
                     onImport={handleImport}
                     loading={importLoading || createProject.isPending}

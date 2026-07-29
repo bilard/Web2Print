@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Search, CornerDownLeft } from 'lucide-react'
 import { useAccessLoading, useIsPending, useIsBlocked } from '@/features/access/useAccess'
-import { usePaletteCommands, filterCommands } from './usePaletteCommands'
+import { usePaletteCommands, filterCommands, PALETTE_GROUPS } from './usePaletteCommands'
+import { useTranslation } from '@/lib/i18n'
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false)
@@ -12,6 +13,7 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null)
   const close = useCallback(() => setOpen(false), [])
   const commands = usePaletteCommands(close, open)
+  const { t } = useTranslation()
 
   const accessLoading = useAccessLoading()
   const pending = useIsPending()
@@ -35,17 +37,18 @@ export function CommandPalette() {
     if (!open) return
     setQuery('')
     setSelected(0)
-    const t = setTimeout(() => inputRef.current?.focus(), 0)
-    return () => clearTimeout(t)
+    const focusTimer = setTimeout(() => inputRef.current?.focus(), 0)
+    return () => clearTimeout(focusTimer)
   }, [open])
 
   const filtered = useMemo(() => filterCommands(commands, query), [commands, query])
-  const groups = useMemo(() => {
-    const order: ('Projets récents' | 'Modules' | 'Actions')[] = ['Projets récents', 'Modules', 'Actions']
-    return order
-      .map((g) => ({ name: g, items: filtered.filter((c) => c.group === g) }))
-      .filter((g) => g.items.length > 0)
-  }, [filtered])
+  // Regroupement sur l'ID (stable), en-tête traduit à l'affichage.
+  const groups = useMemo(
+    () => PALETTE_GROUPS
+      .map((g) => ({ ...g, items: filtered.filter((c) => c.groupId === g.id) }))
+      .filter((g) => g.items.length > 0),
+    [filtered],
+  )
 
   if (!open) return null
 
@@ -67,7 +70,7 @@ export function CommandPalette() {
   let flatIdx = -1
 
   return (
-    <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label="Palette de commandes">
+    <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label={t('palette.title')}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" onClick={close} aria-hidden="true" />
       <div className="absolute left-1/2 top-[18%] -translate-x-1/2 w-[min(560px,calc(100vw-2rem))]">
         <div className="bg-surface-2 border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -81,19 +84,19 @@ export function CommandPalette() {
                 setSelected(0)
               }}
               onKeyDown={onKeyDown}
-              placeholder="Rechercher un module ou une action…"
+              placeholder={t('palette.placeholder')}
               className="flex-1 bg-transparent py-3.5 text-[14px] text-white placeholder:text-white/25 outline-none"
             />
-            <kbd className="text-[10px] text-white/25 border border-white/10 rounded px-1.5 py-0.5 shrink-0">esc</kbd>
+            <kbd className="text-[10px] text-white/25 border border-white/10 rounded px-1.5 py-0.5 shrink-0">{t('palette.esc')}</kbd>
           </div>
 
           <div className="max-h-[320px] overflow-y-auto py-2">
             {filtered.length === 0 && (
-              <div className="px-4 py-6 text-center text-[13px] text-white/30">Aucun résultat pour « {query} »</div>
+              <div className="px-4 py-6 text-center text-[13px] text-white/30">{t('palette.noResults', { query })}</div>
             )}
             {groups.map((group) => (
-              <div key={group.name}>
-                <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-wider text-white/25">{group.name}</div>
+              <div key={group.id}>
+                <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-wider text-white/25">{t(group.labelKey)}</div>
                 {group.items.map((cmd) => {
                   flatIdx++
                   const idx = flatIdx

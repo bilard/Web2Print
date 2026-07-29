@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { useAccessStore } from '@/stores/access.store'
 import { groupModules, type ModuleItem, type ModuleChild, type Section } from './modules'
+import { useTranslation } from '@/lib/i18n'
 
 const STORE_KEY = 'nav:tree:expanded'
 
@@ -38,6 +39,7 @@ interface ModuleTreeProps {
 export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, moduleRowExtras }: ModuleTreeProps) {
   const isAdmin = useIsAdmin()
   const permissions = useAccessStore((s) => s.permissions)
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState<Record<string, boolean>>(readExpanded)
 
   const toggle = useCallback((id: string) => {
@@ -69,7 +71,7 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
             <button
               type="button"
               onClick={() => toggle(m.id)}
-              aria-label={`${isOpen ? 'Replier' : 'Déplier'} ${m.label}`}
+              aria-label={t(isOpen ? 'nav.tree.collapse' : 'nav.tree.expand', { module: t(m.labelKey) })}
               aria-expanded={isOpen}
               className="p-1.5 text-white/30 hover:text-white/70 transition-transform"
             >
@@ -91,7 +93,7 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
             {...rowRest}
           >
             <Icon className={`w-4 h-4 shrink-0 opacity-70 ${m.accent}`} />
-            <span className="flex-1">{m.label}</span>
+            <span className="flex-1">{t(m.labelKey)}</span>
           </button>
         </div>
         {isOpen && kids.length > 0 && (
@@ -104,7 +106,7 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
                 className="w-full flex items-center gap-2 px-2.5 py-[5px] rounded-md text-[12.5px] text-left
                   text-white/40 hover:text-white/75 hover:bg-white/[0.04] transition-colors"
               >
-                <span className="flex-1">{c.label}</span>
+                <span className="flex-1">{t(c.labelKey)}</span>
               </button>
             ))}
           </div>
@@ -118,7 +120,7 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
       {groupModules(modules).map(({ group, items }, gi) => (
         <div key={group.id} className={gi > 0 ? 'pt-3' : ''}>
           <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 select-none">
-            {group.label}
+            {t(group.labelKey)}
           </div>
           {items.map(renderModule)}
         </div>
