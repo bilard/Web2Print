@@ -3,7 +3,7 @@
 // est rangé dans Firebase Storage, et l'URL écrite en SURCHARGE de ligne
 // (rowOverrides) — la source (Excel/PIM) n'est jamais modifiée, et « Réinitialiser »
 // rend les visuels d'origine.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth, storage } from '@/lib/firebase/config'
@@ -38,12 +38,36 @@ export function isCutoutUrl(src: string): boolean {
 
 export interface CutoutProgress { done: number; total: number; failed: number }
 
-export function useCatalogCutout() {
-  const [progress, setProgress] = useState<CutoutProgress | null>(null)
-  // Annulation coopérative : le lot peut être long (des dizaines de visuels).
-  const abort = useRef(false)
+/**
+ * ÉTAT DU LOT HORS REACT. Le panneau qui porte le bouton est démonté dès qu'on
+ * change d'étape ou de module : un état local faisait « repartir » l'affichage à
+ * zéro et perdait la main sur le traitement. Ici le lot vit dans le module, les
+ * composants ne font que s'y abonner — il continue en tâche de fond et se
+ * retrouve intact au retour.
+ */
+const runState = {
+  progress: null as CutoutProgress | null,
+  abort: false,
+  running: false,
+  listeners: new Set<() => void>(),
+}
 
-  const cancel = () => { abort.current = true }
+function setRunProgress(p: CutoutProgress | null): void {
+  runState.progress = p
+  for (const l of runState.listeners) l()
+}
+
+export function useCatalogCutout() {
+  const [progress, setProgress] = useState<CutoutProgress | null>(runState.progress)
+  // Abonnement à l'état global : le panneau réaffiche l'avancement RÉEL au retour.
+  useEffect(() => {
+    const sync = () => setProgress(runState.progress)
+    runState.listeners.add(sync)
+    sync()
+    return () => { runState.listeners.delete(sync) }
+  }, [])
+
+  const cancel = () => { runState.abort = true }
 
   /** Détoure les visuels des produits SÉLECTIONNÉS ; ceux déjà détourés sont ignorés. */
   const cutoutAll = async () => {
@@ -75,9 +99,11 @@ export function useCatalogCutout() {
       return
     }
 
-    abort.current = false
+    if (runState.running) { toast.info('Un détourage est déjà en cours'); return }
+    runState.abort = false
+    runState.running = true
     let sinceSave = 0
-    setProgress({ done: 0, total: todo.length, failed: 0 })
+    setRunProgress({ done: 0, total: todo.length, failed: 0 })
     let done = 0
     let failed = 0
     const queue = [...todo]
@@ -85,7 +111,7 @@ export function useCatalogCutout() {
     const worker = async () => {
       for (;;) {
         const item = queue.shift()
-        if (!item || abort.current) return
+        if (!item || runState.abort) return
         try {
           // La cellule contient souvent un lien Drive PRIVÉ (401 pour un service
           // externe) : on la résout d'abord en blob/data-URI, exactement comme le
@@ -112,15 +138,21 @@ export function useCatalogCutout() {
           console.warn('[catalogue] détourage échoué pour', item.id, e)
         }
         done++
-        setProgress({ done, total: todo.length, failed })
+        setRunProgress({ done, total: todo.length, failed })
       }
     }
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker))
-    await persist() // dernier lot + réutilisations : rien ne doit rester non sauvegardé
-    setProgress(null)
+    try {
+      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker))
+      await persist() // dernier lot + réutilisations : rien ne doit rester non sauvegardé
+    } finally {
+      // Toujours relâcher le verrou : une exception laisserait le bouton bloqué
+      // sur « un détourage est déjà en cours » pour le reste de la session.
+      runState.running = false
+      setRunProgress(null)
+    }
 
     const ok = done - failed
-    if (abort.current) toast.info(`Détourage interrompu — ${ok} visuel(s) traité(s)`)
+    if (runState.abort) toast.info(`Détourage interrompu — ${ok} visuel(s) traité(s)`)
     else if (failed === 0) toast.success(`${ok} visuel(s) détouré(s)`)
     else toast.warning(`${ok} visuel(s) détouré(s), ${failed} échec(s)`, { description: 'Les visuels en échec gardent leur image d’origine.' })
   }

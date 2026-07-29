@@ -353,7 +353,11 @@ export const CATALOG_CSS = `
    agrandissement le fait sortir de son bloc (au-dessus du bandeau, sous les
    textes). Le cadrage reste donc à l'échelle 1, object-fit:contain fait le reste. */
 .cat-cell[data-sh-image="overflow"] .cat-cell-img-in { overflow:visible; }
-.cat-cell[data-sh-image="overflow"] .cat-cell-img-in img { filter:drop-shadow(0 10px 18px rgba(0,0,0,.28)); }
+/* ⚠ PAS d'ombre portée sur l'image. drop-shadow épouse la SILHOUETTE : superbe
+   sur un visuel détouré, mais sur une image OPAQUE (fond blanc, 1024×1024) elle
+   dessine un rectangle gris autour — la « bande grise » signalée. Le CSS ne peut
+   pas distinguer les deux cas ; on renonce à l'ombre plutôt que d'en produire une
+   fausse un produit sur deux. */
 .cat-cell[data-sh-image="overflow"] .cat-obj[data-object-id="image"] { background:none; }
 /* Ombre portée des fiches */
 .cat-cell[data-sh-shadow] { box-shadow:0 10px 26px rgba(0,0,0,.22); }
