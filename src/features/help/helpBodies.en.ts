@@ -3129,4 +3129,264 @@ A **double-click** on a table opens the collection's **real content**, updated i
     `### Layout that persists
 
 **Move the tables** by dragging: their **position is saved** onto your profile (Firestore) and **restored** next time you open it. Compose the map that matches the way you read your data.`,
+
+  [`IBS-Studio accepte les fichiers PowerPoint au format \`.pptx\` et les transforme en projets éditables. Utile pour récupérer une présentation existante et la transformer en template.`]:
+    `IBS-Studio accepts PowerPoint files in \`.pptx\` format and turns them into editable projects. Useful for picking up an existing presentation and turning it into a template.`,
+
+  [`### Importer un PPTX
+
+1. Tableau de bord → **Importer**
+2. Sélectionne le \`.pptx\`
+3. Le parser extrait textes, images et formes — y compris le **thème** (les couleurs de thème sont résolues) et les **transparences** de remplissage
+4. La slide devient une page éditable dans IBS-Studio
+
+⚠️ **Seule la première slide est importée.** Pour une présentation multi-slides, découpe le fichier en plusieurs \`.pptx\` (un par slide à récupérer) ou passe par le chemin IDML.
+
+Une fois importé, tu peux modifier le contenu, ajouter des placeholders pour le data-merge, et exporter dans n'importe quel format.`]:
+    `### Importing a PPTX
+
+1. Dashboard → **Import**
+2. Select the \`.pptx\`
+3. The parser extracts text, images and shapes — including the **theme** (theme colours are resolved) and fill **transparency**
+4. The slide becomes an editable page in IBS-Studio
+
+⚠️ **Only the first slide is imported.** For a multi-slide presentation, split the file into several \`.pptx\` files (one per slide you want) or go via the IDML route.
+
+Once imported, you can change the content, add placeholders for the data merge, and export in any format.`,
+
+  [`### Cas d'usage type
+
+**Présentation commerciale dynamique** : ton équipe vente part d'un PPTX modèle. Tu l'importes une fois, tu mappes les placeholders sur ta BDD produits, et chaque commercial génère sa version personnalisée (logo client, prix négocié, références prioritaires).
+
+**Reverse engineering** : un client te fournit un PPTX que tu dois reproduire. Importe-le, capture la mise en page, exporte en IDML pour finition graphique.`]:
+    `### Typical use cases
+
+**A dynamic sales presentation**: your sales team starts from a PPTX template. You import it once, map the placeholders onto your product database, and every salesperson generates their own version (client logo, negotiated price, priority references).
+
+**Reverse engineering**: a client hands you a PPTX you have to reproduce. Import it, capture the layout, export to IDML for graphic finishing.`,
+
+  [`### Limites
+
+- **Multi-slides** : seule la **slide 1** est lue — les suivantes sont ignorées
+- **Animations PowerPoint** : non supportées (IBS-Studio exporte du print/statique)
+- **SmartArt** : ignorés à l'import (non convertis en formes)
+- **Round-trip PPTX → Fabric → PPTX** : fonctionnel sur des slides simples, à valider sur cas complexes (plusieurs masters, mises en page custom)
+
+Pour un export 100% fidèle vers PowerPoint, garde l'export PPTX pour des cas simples ; pour l'impression haut de gamme, privilégie le path PDF ou IDML.`]:
+    `### Limits
+
+- **Multiple slides**: only **slide 1** is read — the rest are ignored
+- **PowerPoint animations**: not supported (IBS-Studio exports print/static work)
+- **SmartArt**: ignored on import (not converted into shapes)
+- **PPTX → Fabric → PPTX round trip**: works on simple slides, to be validated on complex cases (several masters, custom layouts)
+
+For a completely faithful export to PowerPoint, keep the PPTX export for simple cases; for high-end printing, prefer the PDF or IDML route.`,
+
+  [`Cet import crée (ou complète) une **base de données produits** dans le PIM à partir d'un fichier. C'est le point d'entrée le plus rapide pour démarrer un catalogue.`]:
+    `This import creates (or extends) a **product database** in the PIM from a file. It is the quickest way into a new catalogue.`,
+
+  [`### Formats supportés
+
+| Format | Usage |
+|---|---|
+| **.xlsx / .xls** | Catalogue Excel classique, multi-feuilles supporté |
+| **.csv / .tsv** | Export ERP (séparateur virgule ou tabulation), détection auto des types de colonnes |
+| **Google Sheets** | Via OAuth Google — disponible dans le panneau **Publipostage** de l'éditeur et via les nodes Workflow (pas dans cette modale d'import) |
+
+L'import détecte automatiquement les types de colonnes : texte, nombre, booléen, date, **formule** (stockée puis évaluée au moment de la fusion) et **dictionnaire** (colonne à valeurs répétitives → liste de choix).`]:
+    `### Supported formats
+
+| Format | Use |
+|---|---|
+| **.xlsx / .xls** | A classic Excel catalogue, multiple sheets supported |
+| **.csv / .tsv** | An ERP export (comma- or tab-separated), with automatic column-type detection |
+| **Google Sheets** | Through Google OAuth — available in the editor's **Mail merge** panel and through the Workflow nodes (not in this import dialogue) |
+
+The import automatically detects the column types: text, number, boolean, date, **formula** (stored, then evaluated at merge time) and **dictionary** (a column of repeating values → a list of choices).`,
+
+  [`### Importer un fichier
+
+1. Ouvre **PIM** depuis le menu.
+2. Clique **Importer un fichier** (ou *Créer vide* pour partir d'une base vierge).
+3. Sélectionne ton fichier.
+4. Vérifie les colonnes détectées.
+5. Valide → la base est créée et synchronisée sur Firebase.`]:
+    `### Importing a file
+
+1. Open the **PIM** from the menu.
+2. Click **Import a file** (or *Create empty* to start from a blank database).
+3. Select your file.
+4. Check the columns that were detected.
+5. Confirm → the database is created and synchronised to Firebase.`,
+
+  [`### Et ensuite ?
+
+Une fois la base importée, tout se passe dans le **PIM** : enrichir les fiches par IA, gérer les champs structurés (spécifications, variants, documents, images) et exporter en série. Voir la section **PIM**.`]:
+    `### And then?
+
+Once the database is imported, everything happens in the **PIM**: enriching the records with AI, managing the structured fields (specifications, variants, documents, images) and exporting in bulk. See the **PIM** section.`,
+
+  [`Le module **Veille tarifaire** est un **tableau de bord en lecture seule** : il affiche les résultats de tes suivis de prix (un produit par ligne, le prix relevé chez chaque concurrent, ton positionnement et les écarts). La **collecte se configure dans un workflow** — le module ne fait que présenter les résultats du dernier relevé.`]:
+    `The **Price monitoring** module is a **read-only dashboard**: it displays the results of your price tracking (one product per row, the price recorded at each competitor, your positioning and the gaps). **Collection is configured in a workflow** — the module only presents the results of the latest reading.`,
+
+  [`### Comment ça se met en place
+
+Tout part d'un **workflow** contenant le node **« Veille tarifaire »** :
+
+1. Une **feuille de produits** en entrée (ton catalogue : SKU/EAN, Nom, Marque, et ton prix).
+2. Les **sites concurrents** à surveiller (un domaine par ligne, ex : \`amazon.fr\`).
+3. Le node retrouve chaque produit chez chaque concurrent (SKU/EAN, sinon Nom + Marque), scrape le prix, puis émet des **alertes** de **positionnement** (tu es plus cher/moins cher) et de **variation** (un prix a bougé au-delà du seuil).
+
+Lance le workflow (à la main, en **cron serveur**, ou depuis Telegram) : le module Veille tarifaire affiche alors le dernier relevé.`]:
+    `### How it is set up
+
+It all starts from a **workflow** containing the **"Price monitoring"** node:
+
+1. A **product sheet** as the input (your catalogue: SKU/EAN, Name, Brand, and your price).
+2. The **competitor sites** to watch (one domain per line, e.g. \`amazon.fr\`).
+3. The node finds each product at each competitor (by SKU/EAN, failing that by Name + Brand), scrapes the price, then raises **alerts** about **positioning** (you are dearer or cheaper) and about **movement** (a price has shifted beyond the threshold).
+
+Run the workflow (by hand, under the **server cron**, or from Telegram): the Price monitoring module then shows the latest reading.`,
+
+  [`### Comment chaque produit est retrouvé chez un concurrent
+
+Tu ne fournis **que le domaine** d'un concurrent — pas l'URL de chaque fiche. Pour chaque produit, le node lance une **recherche web cantonnée à ce domaine** (\`site:domaine\`) : d'abord par **SKU** (ou EAN à défaut), puis par **Marque + Nom**. Comme le premier résultat d'un domaine est souvent une page catégorie ou un accessoire, le node **préfère le candidat dont l'URL ou le titre contient le SKU/EAN** ; sinon il retient le premier résultat du domaine.
+
+Une fois la bonne fiche trouvée et validée, son **URL est épinglée** : les runs suivants la réutilisent directement (plus de recherche), ce qui fige le suivi sur la bonne page.`]:
+    `### How each product is found at a competitor
+
+You supply **only the domain** of a competitor — not the URL of each page. For every product, the node runs a **web search confined to that domain** (\`site:domain\`): first by **SKU** (or by EAN failing that), then by **Brand + Name**. Because a domain's first result is often a category page or an accessory, the node **prefers the candidate whose URL or title contains the SKU/EAN**; otherwise it keeps the domain's first result.
+
+Once the right page is found and validated, its **URL is pinned**: the following runs reuse it directly (no more searching), which fixes the tracking on the right page.`,
+
+  [`### Voir aussi
+
+Le détail des nodes (« Veille tarifaire », « Veille prix », « Comparer les prix ») et de la planification **cron serveur** est dans la section **Workflows** ; l'envoi d'alertes est couvert par **Telegram**.`]:
+    `### See also
+
+The detail of the nodes ("Price monitoring", "Price watch", "Compare prices") and of **server cron** scheduling is in the **Workflows** section; sending alerts is covered under **Telegram**.`,
+
+  [`IBS-Studio journalise les actions importantes : qui les a faites, quand, sur quoi, et — pour les changements de valeur — **avant → après**. Deux écrans selon ton rôle :
+
+- **Mon activité** (tout le monde) : tes propres actions, dans **Réglages → Mon activité**.
+- **Journal** (administrateur) : *toutes* les actions de *tous* les utilisateurs, dans **Utilisateurs & rôles → Journal**.`]:
+    `IBS-Studio logs the actions that matter: who performed them, when, on what, and — for value changes — **before → after**. Two screens, depending on your role:
+
+- **My activity** (everyone): your own actions, under **Settings → My activity**.
+- **Log** (administrator): *every* action by *every* user, under **Users & roles → Log**.`,
+
+  [`### Les filtres : QUI / QUOI / QUAND
+
+- **Type** : le module concerné (Accès, Données, Export, Workflows, IA, Réglages…).
+- **Quoi** : l'action précise (la liste se restreint au type choisi).
+- **Qui** *(Journal admin uniquement)* : l'utilisateur.
+- **Quand** : une plage de dates (Du / au).
+
+Chaque ligne montre **Quand · Action · Module · Cible**. Quand une valeur change, une ligne s'affiche dessous : **Avant** (en orange) **→ Après** (en vert) — ex. \`Avant : 79,95 € → Après : 84,95 €\`.`]:
+    `### The filters: WHO / WHAT / WHEN
+
+- **Type**: the module concerned (Access, Data, Export, Workflows, AI, Settings…).
+- **What**: the precise action (the list narrows to the type you chose).
+- **Who** *(admin Log only)*: the user.
+- **When**: a date range (From / to).
+
+Each row shows **When · Action · Module · Target**. When a value changes, a line appears beneath it: **Before** (in orange) **→ After** (in green) — e.g. \`Before: €79.95 → After: €84.95\`.`,
+
+  [`### Ce qui est journalisé
+
+- **Accès / rôles** : connexion, attribution/retrait de rôle, blocage/déblocage, permission accordée/révoquée, rôle modifié, suppression d'utilisateur.
+- **Données** : import, enregistrement (avec la taille lignes/colonnes), renommage, déplacement, suppression d'une base, et **édition manuelle d'une cellule** (valeur avant → après).
+- **Projets** : création, modification, renommage, duplication, suppression ; **versions** (création, restauration, snapshot auto).
+- **Exports** : PDF, PNG, PPTX, SVG, HTML, IDML, pack social, pages déclinées, export par lot.
+- **Automatisation / IA** : exécution de workflow, complétion de colonne, génération de workflow.
+- **Réglages** : thème, modèle IA par défaut, budget IA mensuel.
+
+> Les remplissages **en masse** (IA, taxonomie, enrichissement) et la **sauvegarde automatique** ne sont pas journalisés ligne par ligne, pour ne pas noyer le journal.`]:
+    `### What is logged
+
+- **Access / roles**: sign-in, role assigned/withdrawn, blocking/unblocking, permission granted/revoked, role changed, user deleted.
+- **Data**: import, save (with the row/column size), rename, move, deletion of a database, and **manual editing of a cell** (value before → after).
+- **Projects**: creation, modification, rename, duplication, deletion; **versions** (creation, restore, automatic snapshot).
+- **Exports**: PDF, PNG, PPTX, SVG, HTML, IDML, social pack, derived pages, batch export.
+- **Automation / AI**: workflow execution, column completion, workflow generation.
+- **Settings**: theme, default AI model, monthly AI budget.
+
+> **Bulk** fills (AI, taxonomy, enrichment) and **automatic saving** are not logged row by row, so as not to drown the log.`,
+
+  [`### Vider son historique
+
+Dans **Mon activité**, le bouton **« Vider l'historique »** (avec confirmation) supprime **tes propres** entrées. Chaque utilisateur ne peut effacer que les siennes ; l'administrateur peut tout supprimer.
+
+> Le journal est volontairement **immuable** (une entrée n'est jamais modifiée). La purge est la seule suppression possible, et elle est tracée par l'absence d'entrées — utile pour nettoyer des données de test.`]:
+    `### Clearing your history
+
+Under **My activity**, the **"Clear the history"** button (with a confirmation) deletes **your own** entries. Each user can only erase their own; the administrator can delete everything.
+
+> The log is deliberately **immutable** (an entry is never modified). Purging is the only deletion possible, and it shows up as an absence of entries — useful for cleaning up test data.`,
+
+  [`Carte **« PDF → SVG éditable »** (sous-titre *Page 1 rasterisée + overlays*). Convertit un **\`.pdf\`** en projet éditable.`]:
+    `The **"PDF → editable SVG"** card (subtitle *Page 1 rasterised + overlays*). Converts a **\`.pdf\`** into an editable project.`,
+
+  [`### Comment ça marche
+
+1. Si le PDF contient un **calque texte natif** exploitable, la conversion vectorielle est tentée d'abord : les textes arrivent **exacts** (pas d'OCR).
+2. Sinon, la **page 1** est **rasterisée** et verrouillée en fond, puis la **même décomposition** que _Image → SVG éditable_ s'applique : les **textes détectés** deviennent des calques éditables (overlays).
+3. Les images **CMYK** embarquées sont automatiquement ré-encodées en RGB (pas de couleurs inversées).
+
+⚠️ **Seule la page 1 est traitée** — les pages suivantes sont ignorées. Pour repartir d'un **PDF existant** (BAT, ancien document) sans disposer du fichier source InDesign. Pour un import multi-pages fidèle avec fonts, préfère _Import InDesign (IDML)_.`]:
+    `### How it works
+
+1. If the PDF holds a usable **native text layer**, the vector conversion is tried first: the text comes through **exactly** (no OCR).
+2. Otherwise **page 1** is **rasterised** and locked as the background, then the **same break-apart** as _Image → editable SVG_ applies: the **text detected** becomes editable layers (overlays).
+3. Embedded **CMYK** images are automatically re-encoded to RGB (no inverted colours).
+
+⚠️ **Only page 1 is processed** — the following pages are ignored. Use it to start again from an **existing PDF** (a proof, an old document) when you do not have the InDesign source file. For a faithful multi-page import with fonts, prefer _InDesign import (IDML)_.`,
+
+  [`### Texte natif vs OCR — trois niveaux
+
+L'import suit une **cascade** : il garde toujours le niveau le plus fidèle disponible.
+
+1. **Conversion vectorielle (MuPDF)** — tentée d'abord. Si le PDF contient du **vrai texte**, le document devient un SVG complet : paths exacts, images, et chaque mot reste du **texte réel** avec sa position, sa taille, sa couleur et sa graisse d'origine. **Zéro OCR.**
+2. **Repli rasterisé + calque texte natif** — si le vectoriel échoue, la page 1 est rasterisée et verrouillée en fond, MAIS le **calque texte natif** du PDF est tout de même lu (positions et tailles exactes) : chaque mot redevient un \`<text>\` éditable posé par-dessus le fond, effacé du raster quand son fond est uni. **Toujours pas d'OCR.**
+3. **OCR (« Décomposer »)** — uniquement quand le PDF est **aplati** (texte vectorisé/scanné, aucun mot détecté) : on retombe alors sur la décomposition Vision de _Image → SVG éditable_.
+
+Autrement dit, « rasterisé » ne veut **pas** dire « OCR » : tant que le PDF garde un calque texte, vos textes restent exacts.`]:
+    `### Native text vs OCR — three levels
+
+The import follows a **cascade**: it always keeps the most faithful level available.
+
+1. **Vector conversion (MuPDF)** — tried first. If the PDF holds **real text**, the document becomes a complete SVG: exact paths, images, and every word stays **real text** with its original position, size, colour and weight. **No OCR whatsoever.**
+2. **Rasterised fallback + native text layer** — if the vector route fails, page 1 is rasterised and locked as the background, BUT the PDF's **native text layer** is still read (exact positions and sizes): every word becomes an editable \`<text>\` laid over the background, erased from the raster where its background is plain. **Still no OCR.**
+3. **OCR ("Break apart")** — only when the PDF is **flattened** (text outlined or scanned, no word detected): we then fall back on the Vision break-apart of _Image → editable SVG_.
+
+In other words, "rasterised" does **not** mean "OCR": as long as the PDF keeps a text layer, your text stays exact.`,
+
+  [`Carte **« Importer une image »** de l'écran Importer. Formats acceptés : \`.png\`, \`.jpg\`, \`.webp\`, \`.gif\`, \`.svg\`.
+
+L'image est posée sur le **canvas** d'un nouveau projet — elle **reste une image** (pas de décomposition). Tu peux ensuite la déplacer, la redimensionner et ajouter d'autres éléments par-dessus.`]:
+    `The **"Import an image"** card on the Import screen. Accepted formats: \`.png\`, \`.jpg\`, \`.webp\`, \`.gif\`, \`.svg\`.
+
+The image is placed on the **canvas** of a new project — it **stays an image** (nothing is broken apart). You can then move it, resize it and add other elements on top.`,
+
+  [`Pour **éditer le texte** d'une image existante (et pas seulement la poser), utilise plutôt _Image → SVG éditable_.`]:
+    `To **edit the text** of an existing image (rather than just place it), use _Image → editable SVG_ instead.`,
+
+  [`Carte **« Importer SVG »** (sous-titre *Vectoriel éditable*). Charge un fichier \`.svg\` en **calques vectoriels éditables** : formes, textes et chemins deviennent des objets manipulables dans l'éditeur.`]:
+    `The **"Import SVG"** card (subtitle *Editable vector*). Loads an \`.svg\` file as **editable vector layers**: shapes, text and paths become objects you can work with in the editor.`,
+
+  [`### Quand l'utiliser
+
+- Un **logo** vectoriel à retoucher ou recolorer.
+- Un visuel **déjà vectorisé** (export Illustrator/Figma) à intégrer dans une maquette.
+
+⚠️ À ne pas confondre avec **Image → SVG éditable**, qui part d'un **raster** (PNG/JPG) : là, l'image reste un fond verrouillé et seuls les textes détectés deviennent éditables.`]:
+    `### When to use it
+
+- A vector **logo** to retouch or recolour.
+- A visual **already in vector form** (an Illustrator/Figma export) to drop into a layout.
+
+⚠️ Not to be confused with **Image → editable SVG**, which starts from a **raster** (PNG/JPG): there, the image stays a locked background and only the text detected becomes editable.`,
+
+  [`Le module **Création studio** permet de créer et de gérer des promotions pour le point de vente : affiches, étiquettes, flyers et autres supports prêts à l'impression ou à la diffusion digitale.`]:
+    `The **Creation studio** module lets you create and manage promotions for the shop floor: posters, shelf labels, flyers and other pieces ready for print or for digital display.`,
 }
