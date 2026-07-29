@@ -111,10 +111,10 @@ export const MODULES = [
     "features": [
       {
         "title": "Express demo (new module)",
-        "desc": "A wizard that seeds the entire studio from a prospect's website: company + URL → automatic department discovery, product scraping, PIM project, images in the DAM, demo catalog, promo card and workflow."
+        "desc": "A wizard that seeds the entire studio from a prospect's website: company + URL → automatic department discovery, product scraping, PIM project, images in the DAM, demo catalogue, promo card and workflow."
       },
       {
-        "title": "Studio catalog: custom product cards",
+        "title": "Studio catalogue: custom product cards",
         "desc": "• Card density: Exhaustive (all the source data, 2 cards/page) and Condensed (4 cards/page) modes, with adjustable \"Max bullets\" / \"Max specifications\" caps."
       },
       {
@@ -1013,7 +1013,7 @@ export const MODULES = [
     "cat": "Data",
     "icon": "🎯",
     "title": "Express demo",
-    "intro": "Enter a prospect's company and website: the studio fills itself — products, images, catalog, promo and workflow in the prospect's colours.",
+    "intro": "Enter a prospect's company and website: the studio fills itself — products, images, catalogue, promo and workflow in the prospect's colours.",
     "features": [
       {
         "title": "Launch a demo step by step",
@@ -1028,8 +1028,8 @@ export const MODULES = [
         "desc": "Every product page spotted goes through the PIM's enrichment engine (the same one as the Scraping module): name, description, reference, specifications, price, EAN, images… Editorial pages (business landing pages, guides) aren't thrown away: the demo drills back…"
       },
       {
-        "title": "Creative guidelines: drive the catalog plan",
-        "desc": "The Creative guidelines field (optional) drives the creative plan of the AI-generated catalog: layout, density, mood, cover (e.g. \"clean premium catalog, full-width list cards, summer-garden-mood cover\")."
+        "title": "Creative guidelines: drive the catalogue plan",
+        "desc": "The Creative guidelines field (optional) drives the creative plan of the AI-generated catalogue: layout, density, mood, cover (e.g. \"clean premium catalogue, full-width list cards, summer-garden-mood cover\")."
       },
       {
         "title": "Live log: a console pinned to the bottom of the screen",
@@ -1048,8 +1048,8 @@ export const MODULES = [
         "desc": "One image per product dropped into Drive, in a \"Demo {Company}\" folder. If Drive isn't connected or the quota is reached, the cells keep the images' external URLs (which remain displayed)."
       },
       {
-        "title": "Studio catalog",
-        "desc": "A catalog linked to the PIM source, assembled with the site's brand kit (extracted palette), an AI plan driven by your creative guidelines and a generated cover."
+        "title": "Studio catalogue",
+        "desc": "A catalogue linked to the PIM source, assembled with the site's brand kit (extracted palette), an AI plan driven by your creative guidelines and a generated cover."
       },
       {
         "title": "Promo sheet",
@@ -1061,7 +1061,7 @@ export const MODULES = [
       },
       {
         "title": "Good to know",
-        "desc": "• A clean failure rather than a junk catalog: without a single sheet carrying a product identity (reference/EAN — or price + real specs), the demo seeds nothing and invites you to try a department or product page URL."
+        "desc": "• A clean failure rather than a junk catalogue: without a single sheet carrying a product identity (reference/EAN — or price + real specs), the demo seeds nothing and invites you to try a department or product page URL."
       }
     ],
     "shortcuts": []
@@ -1391,16 +1391,16 @@ export const MODULES = [
     "id": "catalog",
     "cat": "Data",
     "icon": "📕",
-    "title": "Studio catalog",
-    "intro": "Generate a complete product catalog — from the PIM selection to a print-ready PDF — through an AI-driven 6-step wizard.",
+    "title": "Studio catalogue",
+    "intro": "Generate a complete product catalogue — from the PIM selection to a print-ready PDF — through an AI-driven 6-step wizard.",
     "features": [
       {
-        "title": "Create a catalog",
-        "desc": "1. Open Studio catalog from the side menu (Publishing group). 2. Click New catalog (or resume one from My catalogs). 3. The 6-step wizard opens."
+        "title": "Create a catalogue",
+        "desc": "1. Open Studio catalogue from the side menu (Publishing group). 2. Click New catalogue (or resume one from My catalogues). 3. The 6-step wizard opens."
       },
       {
         "title": "The wizard's 6 steps",
-        "desc": "1 · Source — Choose where the products come from: a PIM project or an imported Excel dataset. Each row becomes a catalog product. 2 · Structure — Organize the catalog into sections (headings, families)."
+        "desc": "1 · Source — Choose where the products come from: a PIM project or an imported Excel dataset. Each row becomes a catalogue product. 2 · Structure — Organise the catalogue into sections (headings, families)."
       },
       {
         "title": "Brand kit & inspiration source",
@@ -1416,7 +1416,7 @@ export const MODULES = [
       },
       {
         "title": "\"Same size on all cards\"",
-        "desc": "At the top of \"Text: size & font\", the \"Same size on all cards\" checkbox neutralises the automatic hierarchy (magnified featured cards, per-page size adjustment): every product in the catalog shares the same size…"
+        "desc": "At the top of \"Text: size & font\", the \"Same size on all cards\" checkbox neutralises the automatic hierarchy (magnified featured cards, per-page size adjustment): every product in the catalogue shares the same size…"
       },
       {
         "title": "Taxonomy banner (Universe › Family)",
@@ -1440,7 +1440,7 @@ export const MODULES = [
       },
       {
         "title": "Featured ribbon",
-        "desc": "Put a product forward in one click: double-click its card in the Preview to open product editing, then enable \"Featured ribbon (highlighted in this catalog)\"."
+        "desc": "Put a product forward in one click: double-click its card in the Preview to open product editing, then enable \"Featured ribbon (highlighted in this catalogue)\"."
       },
       {
         "title": "Guessed fields & link to the source sheet",
@@ -1452,7 +1452,7 @@ export const MODULES = [
       },
       {
         "title": "Good to know",
-        "desc": "• The source is re-read when the catalog loads: if the PIM changes, reopen the catalog to start from up-to-date data. • For standalone promo sheets (posters, labels) rather than a full catalog, see Studio creation."
+        "desc": "• The source is re-read when the catalogue loads: if the PIM changes, reopen the catalogue to start from up-to-date data. • For standalone promo sheets (posters, labels) rather than a full catalogue, see Studio creation."
       }
     ],
     "shortcuts": []
@@ -2619,36 +2619,36 @@ export const STRINGS = {
   "Rechercher (Ctrl+K)": "Search (Ctrl+K)",
   "Fonctions": "Features",
   "Raccourcis clavier": "Keyboard shortcuts",
-  "Catalogue studio": "Studio catalog",
-  "Générez un catalogue produits complet — de la sélection PIM au PDF prêt à imprimer — via un assistant en 6 étapes piloté par IA.": "Generate a complete product catalog — from the PIM selection to a print-ready PDF — through an AI-driven 6-step wizard.",
-  "Créer un catalogue": "Create a catalog",
-  "1. Ouvrez Catalogue studio depuis le menu latéral (groupe Publication). 2. Cliquez Nouveau catalogue (ou reprenez-en un dans Mes catalogues). 3. L'assistant en 6 étapes s'ouvre.": "1. Open Studio catalog from the side menu (Publishing group). 2. Click New catalog (or resume one from My catalogs). 3. The 6-step wizard opens.",
+  "Catalogue studio": "Studio catalogue",
+  "Générez un catalogue produits complet — de la sélection PIM au PDF prêt à imprimer — via un assistant en 6 étapes piloté par IA.": "Generate a complete product catalogue — from the PIM selection to a print-ready PDF — through an AI-driven 6-step wizard.",
+  "Créer un catalogue": "Create a catalogue",
+  "1. Ouvrez Catalogue studio depuis le menu latéral (groupe Publication). 2. Cliquez Nouveau catalogue (ou reprenez-en un dans Mes catalogues). 3. L'assistant en 6 étapes s'ouvre.": "1. Open Studio catalogue from the side menu (Publishing group). 2. Click New catalogue (or resume one from My catalogues). 3. The 6-step wizard opens.",
   "Les 6 étapes de l'assistant": "The wizard's 6 steps",
-  "1 · Source — Choisissez d'où viennent les produits : un projet PIM ou un dataset Excel importé. Chaque ligne devient un produit du catalogue. 2 · Structure — Organisez le catalogue en sections (rubriques, familles).": "1 · Source — Choose where the products come from: a PIM project or an imported Excel dataset. Each row becomes a catalog product. 2 · Structure — Organize the catalog into sections (headings, families).",
+  "1 · Source — Choisissez d'où viennent les produits : un projet PIM ou un dataset Excel importé. Chaque ligne devient un produit du catalogue. 2 · Structure — Organisez le catalogue en sections (rubriques, familles).": "1 · Source — Choose where the products come from: a PIM project or an imported Excel dataset. Each row becomes a catalogue product. 2 · Structure — Organise the catalogue into sections (headings, families).",
   "Charte graphique & source d'inspiration": "Brand kit & inspiration source",
   "À l'étape Prompt & style, la carte Charte & éléments joints pilote le moteur créatif : • Éléments joints : ajoutez un logo, une charte PDF ou des visuels de référence.": "In the Prompt & style step, the Brand kit & attachments card drives the creative engine: • Attachments: add a logo, a brand-guidelines PDF or reference visuals.",
   "Exporter": "Export",
   "À l'étape Export, deux sorties : • PDF écran — léger, pour l'aperçu et le partage web. • PDF print pro — haute définition, prêt pour l'impression.": "In the Export step, two outputs: • Screen PDF — lightweight, for preview and web sharing. • Pro print PDF — high resolution, ready for printing.",
-  "• La source est relue au chargement du catalogue : si le PIM évolue, rouvrez le catalogue pour repartir des données à jour. • Pour des fiches promo unitaires (affiches, étiquettes) plutôt qu'un catalogue complet, voyez Création studio.": "• The source is re-read when the catalog loads: if the PIM changes, reopen the catalog to start from up-to-date data. • For standalone promo sheets (posters, labels) rather than a full catalog, see Studio creation.",
+  "• La source est relue au chargement du catalogue : si le PIM évolue, rouvrez le catalogue pour repartir des données à jour. • Pour des fiches promo unitaires (affiches, étiquettes) plutôt qu'un catalogue complet, voyez Création studio.": "• The source is re-read when the catalogue loads: if the PIM changes, reopen the catalogue to start from up-to-date data. • For standalone promo sheets (posters, labels) rather than a full catalogue, see Studio creation.",
   "Ce qui vient d'arriver dans l'application — juin et juillet 2026.": "What's just landed in the app — June and July 2026.",
   "Démo express (nouveau module)": "Express demo (new module)",
-  "Un wizard qui ensemence tout le studio depuis le site d'un prospect : société + URL → découverte automatique des rayons, scraping des produits, projet PIM, images au DAM, catalogue démo, carte promo et workflow.": "A wizard that seeds the entire studio from a prospect's website: company + URL → automatic department discovery, product scraping, PIM project, images in the DAM, demo catalog, promo card and workflow.",
-  "Catalogue studio : fiches produit sur mesure": "Studio catalog: custom product cards",
+  "Un wizard qui ensemence tout le studio depuis le site d'un prospect : société + URL → découverte automatique des rayons, scraping des produits, projet PIM, images au DAM, catalogue démo, carte promo et workflow.": "A wizard that seeds the entire studio from a prospect's website: company + URL → automatic department discovery, product scraping, PIM project, images in the DAM, demo catalogue, promo card and workflow.",
+  "Catalogue studio : fiches produit sur mesure": "Studio catalogue: custom product cards",
   "• Densité des fiches : modes Exhaustif (toute la donnée source, 2 fiches/page) et Condensé (4 fiches/page), plafonds « Puces max » / « Spécifications max » réglables.": "• Card density: Exhaustive (all the source data, 2 cards/page) and Condensed (4 cards/page) modes, with adjustable \"Max bullets\" / \"Max specifications\" caps.",
   "Scraping : textes fidèles et galeries pleine résolution": "Scraping: faithful text and full-resolution galleries",
   "• Extraction verbatim : les textes de la fiche (description, points forts) sont recopiés de la source, jamais rédigés par l'IA — structure (paragraphes, listes) préservée.": "• Verbatim extraction: the sheet's text (description, highlights) is copied from the source, never written by the AI — structure (paragraphs, lists) preserved.",
   "Fréquentation & trafic (administration)": "Audience & traffic (administration)",
   "Tableau de bord d'audience maison (aucun tiers) dans Utilisateurs & rôles → Analytics : visites par période (« Aujourd'hui », 90 j, dates libres), pays et villes, journal de consultation groupé par utilisateur, « Trafic en direct », alertes…": "A home-grown audience dashboard (no third party) in Users & roles → Analytics: visits by period (\"Today\", 90 d, free dates), countries and cities, browsing log grouped by user, \"Live traffic\", alerts…",
   "Démo express": "Express demo",
-  "Saisissez la société et le site d’un prospect : le studio se remplit tout seul — produits, images, catalogue, promo et workflow à ses couleurs.": "Enter a prospect's company and website: the studio fills itself — products, images, catalog, promo and workflow in the prospect's colours.",
+  "Saisissez la société et le site d’un prospect : le studio se remplit tout seul — produits, images, catalogue, promo et workflow à ses couleurs.": "Enter a prospect's company and website: the studio fills itself — products, images, catalogue, promo and workflow in the prospect's colours.",
   "Lancer une démo pas à pas": "Launch a demo step by step",
   "1. Renseignez la Société du prospect (ex. Jardiland) et le Site du prospect : l'adresse d'accueil suffit, la démo descend toute seule dans les rayons du site et échantillonne les produits répartis sur ses univers. 2.": "1. Fill in the prospect's Company (e.g. Jardiland) and the prospect's Website: the home address is enough, the demo drills down into the site's departments on its own and samples products spread across its universes. 2.",
   "Découverte automatique des rayons (et étage anti-bot)": "Automatic department discovery (and anti-bot stage)",
   "Vous donnez l'URL de base du site, pas une page de listing. Si l'accueil est un « hub » sans cartes produit, la démo descend automatiquement dans les rubriques du menu et prélève quelques produits par rayon, pour couvrir la taxonomie du pro…": "You provide the site's base URL, not a listing page. If the home page is a \"hub\" with no product cards, the demo automatically drills down into the menu's sections and picks a few products per department, to cover the prospect's…",
   "Enrichissement des fiches : le vrai moteur PIM": "Sheet enrichment: the real PIM engine",
   "Chaque page produit repérée passe dans le moteur d'enrichissement du PIM (le même que le module Scraping) : nom, description, référence, spécifications, prix, EAN, images… Les pages éditoriales (landing métier, guide) ne sont pas jetées : l…": "Every product page spotted goes through the PIM's enrichment engine (the same one as the Scraping module): name, description, reference, specifications, price, EAN, images… Editorial pages (business landing pages, guides) aren't thrown away: the demo drills back…",
-  "Consignes créatives : pilotez le plan du catalogue": "Creative guidelines: drive the catalog plan",
-  "Le champ Consignes créatives (optionnel) pilote le plan créatif du catalogue généré par l'IA : mise en page, densité, ambiance, couverture (ex. « catalogue premium épuré, fiches en liste pleine largeur, couverture ambiance jardin d'été »).": "The Creative guidelines field (optional) drives the creative plan of the AI-generated catalog: layout, density, mood, cover (e.g. \"clean premium catalog, full-width list cards, summer-garden-mood cover\").",
+  "Consignes créatives : pilotez le plan du catalogue": "Creative guidelines: drive the catalogue plan",
+  "Le champ Consignes créatives (optionnel) pilote le plan créatif du catalogue généré par l'IA : mise en page, densité, ambiance, couverture (ex. « catalogue premium épuré, fiches en liste pleine largeur, couverture ambiance jardin d'été »).": "The Creative guidelines field (optional) drives the creative plan of the AI-generated catalogue: layout, density, mood, cover (e.g. \"clean premium catalogue, full-width list cards, summer-garden-mood cover\").",
   "Journal live : une console fixée en bas de l'écran": "Live log: a console pinned to the bottom of the screen",
   "Pendant le run, un Journal façon terminal est fixé en bas de l'écran (repliable d'un clic, barre de défilement visible).": "During the run, a terminal-style Log is pinned to the bottom of the screen (collapsible in one click, visible scrollbar).",
   "« Découvrez vos données » : tout est relié": "\"Discover your data\": everything is connected",
@@ -2657,12 +2657,12 @@ export const STRINGS = {
   "Une base Firestore dédiée « Démo {Société} » avec les produits enrichis et leur taxonomie — jamais d'écrasement de vos données existantes. Si le studio est vierge (cas nominal du compte démo), la base est chargée à l'écran.": "A dedicated \"Demo {Company}\" Firestore database with the enriched products and their taxonomy — your existing data is never overwritten. If the studio is blank (the demo account's nominal case), the database is loaded on screen.",
   "DAM — images": "DAM — images",
   "Une image par produit déposée dans le Drive, dossier « Démo {Société} ». Si le Drive n'est pas connecté ou le quota atteint, les cellules gardent les URLs externes des images (qui restent affichées).": "One image per product dropped into Drive, in a \"Demo {Company}\" folder. If Drive isn't connected or the quota is reached, the cells keep the images' external URLs (which remain displayed).",
-  "Un catalogue lié à la source PIM, monté avec la charte du site (palette extraite), un plan IA piloté par vos consignes créatives et une couverture générée.": "A catalog linked to the PIM source, assembled with the site's brand kit (extracted palette), an AI plan driven by your creative guidelines and a generated cover.",
+  "Un catalogue lié à la source PIM, monté avec la charte du site (palette extraite), un plan IA piloté par vos consignes créatives et une couverture générée.": "A catalogue linked to the PIM source, assembled with the site's brand kit (extracted palette), an AI plan driven by your creative guidelines and a generated cover.",
   "Fiche promo": "Promo sheet",
   "Une carte promo data-driven aux couleurs du prospect (accent et bandeau issus de la charte), sur l'instantané complet des produits.": "A data-driven promo card in the prospect's colours (accent and banner taken from the brand kit), over the complete product snapshot.",
   "Workflow « Démo {Société} »": "\"Demo {Company}\" workflow",
   "Un workflow prêt à rejouer : Scraper des URLs (jusqu'à 3 vraies URLs produits du site) → Export Excel. Idéal pour montrer l'automatisation en live.": "A workflow ready to replay: Scrape URLs (up to 3 real product URLs from the site) → Excel export. Ideal for demonstrating the automation live.",
-  "• Échec franc plutôt que catalogue parasite : sans la moindre fiche à identité produit (référence/EAN — ou prix + vraies specs), la démo n'ensemence rien et vous invite à essayer une URL de rayon ou de fiche produit.": "• A clean failure rather than a junk catalog: without a single sheet carrying a product identity (reference/EAN — or price + real specs), the demo seeds nothing and invites you to try a department or product page URL.",
+  "• Échec franc plutôt que catalogue parasite : sans la moindre fiche à identité produit (référence/EAN — ou prix + vraies specs), la démo n'ensemence rien et vous invite à essayer une URL de rayon ou de fiche produit.": "• A clean failure rather than a junk catalogue: without a single sheet carrying a product identity (reference/EAN — or price + real specs), the demo seeds nothing and invites you to try a department or product page URL.",
   "Textes fidèles à la source (verbatim)": "Text faithful to the source (verbatim)",
   "L'IA recopie les textes de la page, elle ne les rédige jamais. La description et les avantages sont extraits mot pour mot depuis la source — sans reformuler, sans résumer, sans traduire.": "The AI copies the page's text, it never writes it. The description and the benefits are extracted word for word from the source — no rephrasing, no summarising, no translating.",
   "Même qualité sur fabricants et retailers (passe HTML brut)": "The same quality on manufacturers and retailers (raw-HTML pass)",
@@ -2678,7 +2678,7 @@ export const STRINGS = {
   "Tableau « Caractéristiques » et bloc Description": "\"Specifications\" table and Description block",
   "Les spécifications techniques détectées dans la source sont rendues en tableau de paires nom/valeur sur 2 colonnes : nom en gras à gauche, valeur en couleur d'accent à droite, chaque paire sur un fond teinté, titre en pastille.": "The technical specifications detected in the source are rendered as a table of name/value pairs over 2 columns: name in bold on the left, value in the accent colour on the right, each pair on a tinted background, title as a pill.",
   "« Taille identique sur toutes les fiches »": "\"Same size on all cards\"",
-  "En tête de « Texte : taille & police », la case « Taille identique sur toutes les fiches » neutralise la hiérarchie automatique (fiches vedette magnifiées, ajustement de taille par page) : tous les produits du catalogue partagent la même ta…": "At the top of \"Text: size & font\", the \"Same size on all cards\" checkbox neutralises the automatic hierarchy (magnified featured cards, per-page size adjustment): every product in the catalog shares the same size…",
+  "En tête de « Texte : taille & police », la case « Taille identique sur toutes les fiches » neutralise la hiérarchie automatique (fiches vedette magnifiées, ajustement de taille par page) : tous les produits du catalogue partagent la même ta…": "At the top of \"Text: size & font\", the \"Same size on all cards\" checkbox neutralises the automatic hierarchy (magnified featured cards, per-page size adjustment): every product in the catalogue shares the same size…",
   "Bandeau taxonomie (Univers › Famille)": "Taxonomy banner (Universe › Family)",
   "Le bandeau de tête des pages produits affiche l'Univers et la Famille courants. Sa section de réglages, « Bandeau taxonomie (Univers › Famille) », est disponible à la fois dans le panneau « Fond de page » de l'Aperçu et dans « Style des fic…": "The header banner of the product pages shows the current Universe and Family. Its settings section, \"Taxonomy banner (Universe › Family)\", is available both in the Preview's \"Page background\" panel and in \"Card sty…",
   "Régime de couleur du fond du bandeau": "Banner background colour modes",
@@ -2690,7 +2690,7 @@ export const STRINGS = {
   "Couleurs du thème dès « Prompt & style »": "Theme colours right from \"Prompt & style\"",
   "La section « Couleurs du thème » du panneau « Style des fiches » expose les couleurs globales (accent, fond, bandeau…) — les mêmes pastilles que le panneau « Fond de page » de l'Aperçu, synchronisées : plus besoin d'aller à l'étape Aperçu p…": "The \"Theme colours\" section of the \"Card style\" panel exposes the global colours (accent, background, banner…) — the same swatches as the Preview's \"Page background\" panel, kept in sync: no more need to go to the Preview step t…",
   "Ruban vedette": "Featured ribbon",
-  "Mettez un produit en avant d'un clic : double-cliquez sa fiche dans l'Aperçu pour ouvrir l'édition du produit, puis activez « Ruban vedette (mise en avant dans ce catalogue) ».": "Put a product forward in one click: double-click its card in the Preview to open product editing, then enable \"Featured ribbon (highlighted in this catalog)\".",
+  "Mettez un produit en avant d'un clic : double-cliquez sa fiche dans l'Aperçu pour ouvrir l'édition du produit, puis activez « Ruban vedette (mise en avant dans ce catalogue) ».": "Put a product forward in one click: double-click its card in the Preview to open product editing, then enable \"Featured ribbon (highlighted in this catalogue)\".",
   "Champs devinés & lien vers la fiche source": "Guessed fields & link to the source sheet",
   "À la connexion de la source, les champs de fiche (nom, image, prix, prix barré, marque, référence, unité, description) ET les champs libres de la zone « Détails » (TVA, avantages, spécifications…) sont devinés automatiquement depuis les col…": "When the source is connected, the card fields (name, image, price, strikethrough price, brand, reference, unit, description) AND the free fields of the \"Details\" area (VAT, benefits, specifications…) are guessed automatically from the col…",
   "La page Workflows propose une galerie « Démarrer depuis un modèle » : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel, Veille tarifaire (matrice concurrents) — tes produits co…": "The Workflows page offers a \"Start from a template\" gallery: Scrape a site → PIM, Daily monitoring → Telegram (cron), Scrape → approval ✅ → PIM, Web search → Excel, Price monitoring (competitor matrix) — your products compared…",
