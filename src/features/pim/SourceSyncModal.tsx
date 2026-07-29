@@ -1,5 +1,6 @@
 // Popup « source modifiée » : liste les PUBLICATIONS reliées à la base ouverte.
-// Catalogues = toujours à jour (relecture auto à l'ouverture) — informatif.
+// Catalogues = toujours à jour (relecture auto à l'ouverture) : ils n'ouvrent JAMAIS
+// le popup à eux seuls — sans fiche promo à rafraîchir, il n'y a rien à décider.
 // Fiches promo = instantanés → cases à cocher + mise à jour explicite par canal.
 // S'il n'y a AUCUNE publication reliée, le popup se ferme sans s'afficher.
 import { useEffect, useState } from 'react'
@@ -32,15 +33,12 @@ export function SourceSyncModal({ ident, open, onClose }: Props) {
     return () => { cancelled = true }
   }, [open])
 
-  // AUCUNE décision à prendre : les catalogues lisent la source EN DIRECT
-  // (« à jour automatiquement »), seules les fiches promo sont des instantanés
-  // à rafraîchir. Sans promo reliée, la fenêtre s'ouvrait sur un écran où rien
-  // n'était cliquable — elle interrompait pour rien. On informe et on referme.
+  // AUCUNE décision à prendre = AUCUNE interruption. Les catalogues lisent la
+  // source EN DIRECT ; seules les fiches promo sont des instantanés à
+  // rafraîchir. Sans promo reliée, il n'y a rien à demander ni même à
+  // annoncer : signaler « tout va bien » interromprait tout autant.
   useEffect(() => {
     if (!open || !pubs || pubs.promos.length > 0) return
-    if (pubs.catalogs.length > 0) {
-      toast.success(`Source mise à jour — ${pubs.catalogs.length} catalogue(s) reliés suivent automatiquement`)
-    }
     onClose()
   }, [open, pubs, onClose])
 
