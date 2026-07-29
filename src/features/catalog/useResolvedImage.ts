@@ -2,15 +2,19 @@
 // CORS) vers une URL affichable ET capturable par html2canvas (blob:/data: same-origin).
 // Réplique le pattern `resolveImg` de features/retail-promo/steps/StepRender.tsx :
 // Drive → blob authentifié (resolveDriveImageUrl) ; sinon → callable `imageProxy`
-// (contourne CORS) → data-URI. Cache module par URL (résolue une seule fois/session).
+// (contourne CORS) → data-URI. AUCUN cache : la fraîcheur des visuels prime.
 import { useEffect, useState } from 'react'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { imageChainCandidates, isDriveImageRef, extractDriveFileId, resolveDriveImageUrl } from '@/features/dam/driveAssets'
 
 const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(functions, 'imageProxy')
-// Cache module : une URL résolue une seule fois (data-URI/blob, ou null si échec).
-const imgCache = new Map<string, string | null>()
+// ⚠ AUCUN CACHE de résolution. Un visuel régénéré côté Données réutilise le même
+// fichier Drive (même URL) : tout cache servait éternellement l'ancienne image —
+// le PIM montrait le nouveau visuel, le catalogue l'ancien. La fraîcheur prime
+// sur l'économie d'appels ; seuls les ÉCHECS sont mémorisés, le temps du montage,
+// pour ne pas marteler le proxy ni inonder la console.
+const failedOnce = new Set<string>()
 
 function isReady(url: string): boolean {
   return url.startsWith('data:') || url.startsWith('blob:')
@@ -27,7 +31,7 @@ export async function resolveCatalogImage(value: string): Promise<string | undef
 
 async function resolveOne(url: string): Promise<string | undefined> {
   if (isReady(url)) return url
-  if (imgCache.has(url)) return imgCache.get(url) ?? undefined
+  if (failedOnce.has(url)) return undefined
   try {
     let resolved: string
     if (isDriveImageRef(url)) {
@@ -40,13 +44,12 @@ async function resolveOne(url: string): Promise<string | undefined> {
       const { data } = await imageProxyFn({ url })
       resolved = `data:${data.mimeType};base64,${data.data}`
     }
-    imgCache.set(url, resolved)
     return resolved
   } catch (e) {
-    // Échec loggé (une fois par URL grâce au cache) : un placeholder silencieux
-    // rendrait le diagnostic impossible en production.
+    // Échec loggé UNE fois par URL : un placeholder silencieux rendrait le
+    // diagnostic impossible en production.
     console.warn('[catalog] résolution image échouée :', url, e)
-    imgCache.set(url, null)
+    failedOnce.add(url)
     return undefined
   }
 }

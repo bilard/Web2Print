@@ -256,7 +256,10 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   storage: createJSONStorage(() => safeSessionStorage),
   partialize: (s) => ({
     catalogId: s.catalogId, name: s.name, step: s.step, sourceRef: s.sourceRef,
-    rawColumns: s.rawColumns, rawRows: s.rawRows, selectedRowIds: s.selectedRowIds,
+    // ⚠ rawColumns / rawRows NE SONT PLUS persistés : une copie de la base en
+    // session servait des données périmées (visuel régénéré invisible dans le
+    // catalogue). Ils sont relus depuis la source à chaque ouverture.
+    selectedRowIds: s.selectedRowIds,
     levelKeys: s.levelKeys, treeEdits: s.treeEdits, prompt: s.prompt, plan: s.plan,
     fieldMap: s.fieldMap, fieldMapOverrides: s.fieldMapOverrides, customFields: s.customFields,
     format: s.format, coverImageUrl: s.coverImageUrl, backCoverImageUrl: s.backCoverImageUrl, logoUrl: s.logoUrl,
