@@ -10,6 +10,7 @@ import type { PriceEvent } from '../priceEvents'
 import { summarizeMoves, eventsSince } from '../priceEvents'
 import { matchesQuery, EMPTY_FILTER, type CockpitFilter } from './analytics'
 import { eur, pct, agoShort } from './format'
+import { useTranslation } from '@/lib/i18n'
 
 const WINDOWS = [7, 30, 90] as const
 
@@ -24,6 +25,7 @@ function Stat({ label, value, accent, sub }: { label: string; value: string; acc
 }
 
 export function PriceMoves({ events, filter = EMPTY_FILTER }: { events: PriceEvent[]; filter?: CockpitFilter }) {
+  const { t } = useTranslation()
   const [days, setDays] = useState<number>(30)
   const [onlyDown, setOnlyDown] = useState(false)
   // `now` FIGÉ au montage : un `Date.now()` appelé au rendu changerait à chaque frame et
@@ -57,11 +59,11 @@ export function PriceMoves({ events, filter = EMPTY_FILTER }: { events: PriceEve
     <div className="bg-surface rounded-lg p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
         <div>
-          <div className="text-sm font-semibold text-white">Mouvements de prix <span className="text-white/40 font-normal">— ce qui vient de bouger</span></div>
+          <div className="text-sm font-semibold text-white">{t('pw.moves.title')} <span className="text-white/40 font-normal">— ce qui vient de bouger</span></div>
           <div className="text-[11px] text-white/40 mt-0.5">
             Chaque changement de prix relevé chez un concurrent, comparé au relevé précédent.
-            <span className="text-rose-400/70"> baisse = pression sur vous</span> ·
-            <span className="text-emerald-400/70"> hausse = vous gagnez du terrain</span>.
+            <span className="text-rose-400/70"> {t('pw.moves.down')}</span> ·
+            <span className="text-emerald-400/70"> {t('pw.moves.up')}</span>.
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -82,15 +84,15 @@ export function PriceMoves({ events, filter = EMPTY_FILTER }: { events: PriceEve
       ) : (
         <>
         {(filter.q.trim() || filter.competitor !== 'all') && (
-          <div className="text-[11px] text-white/40 mb-2">Vue filtrée — journal restreint à votre recherche.</div>
+          <div className="text-[11px] text-white/40 mb-2">{t('pw.moves.filtered')}</div>
         )}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-            <Stat label="Mouvements" value={sum.total.toLocaleString('fr-FR')} sub={`sur ${days} jours`} />
-            <Stat label="Baisses" value={sum.down.toLocaleString('fr-FR')} accent="text-rose-400"
+            <Stat label={t('pw.moves.count')} value={sum.total.toLocaleString('fr-FR')} sub={`sur ${days} jours`} />
+            <Stat label={t('pw.moves.decreases')} value={sum.down.toLocaleString('fr-FR')} accent="text-rose-400"
               sub={sum.avgDownPct == null ? '—' : `${pct(sum.avgDownPct)} en moyenne`} />
-            <Stat label="Hausses" value={sum.up.toLocaleString('fr-FR')} accent="text-emerald-400"
+            <Stat label={t('pw.moves.increases')} value={sum.up.toLocaleString('fr-FR')} accent="text-emerald-400"
               sub={sum.avgUpPct == null ? '—' : `${pct(sum.avgUpPct)} en moyenne`} />
-            <Stat label="Le plus actif" value={sum.byCompetitor[0]?.dom.replace(/^www\./, '') ?? '—'}
+            <Stat label={t('pw.moves.mostActive')} value={sum.byCompetitor[0]?.dom.replace(/^www\./, '') ?? '—'}
               sub={sum.byCompetitor[0] ? `${sum.byCompetitor[0].moves} mouvements · ${sum.byCompetitor[0].down} baisses` : undefined} />
           </div>
 
@@ -100,19 +102,19 @@ export function PriceMoves({ events, filter = EMPTY_FILTER }: { events: PriceEve
           </label>
 
           {rows.length === 0 ? (
-            <div className="text-white/40 text-sm py-8 text-center">Aucun mouvement sur cette fenêtre.</div>
+            <div className="text-white/40 text-sm py-8 text-center">{t('pw.moves.empty')}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs tabular-nums min-w-[640px]">
                 <thead>
                   <tr className="text-white/40 text-[10px] uppercase tracking-wide text-right">
-                    <th className="text-left font-medium pb-2">Produit</th>
-                    <th className="text-left font-medium pb-2">Concurrent</th>
-                    <th className="font-medium pb-2">Avant</th>
-                    <th className="font-medium pb-2">Après</th>
-                    <th className="font-medium pb-2">Variation</th>
-                    <th className="font-medium pb-2">Mon écart</th>
-                    <th className="font-medium pb-2">Quand</th>
+                    <th className="text-left font-medium pb-2">{t('pw.col.product')}</th>
+                    <th className="text-left font-medium pb-2">{t('pw.col.competitor')}</th>
+                    <th className="font-medium pb-2">{t('pw.col.before')}</th>
+                    <th className="font-medium pb-2">{t('pw.col.after')}</th>
+                    <th className="font-medium pb-2">{t('pw.col.change')}</th>
+                    <th className="font-medium pb-2">{t('pw.col.myGap')}</th>
+                    <th className="font-medium pb-2">{t('pw.col.when')}</th>
                   </tr>
                 </thead>
                 <tbody>

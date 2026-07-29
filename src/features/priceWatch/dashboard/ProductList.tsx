@@ -6,6 +6,7 @@ import { Search } from 'lucide-react'
 import type { StoredReport } from '../reportStore'
 import { ProductCard } from './ProductCard'
 import { foldText } from '../catalog/categories'
+import { useTranslation } from '@/lib/i18n'
 
 const PAGE = 60
 type PosFilter = 'all' | 'undercut' | 'well-placed'
@@ -13,6 +14,7 @@ type PosFilter = 'all' | 'undercut' | 'well-placed'
 const selectCls = 'bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-white/10 focus:outline-none focus:border-white/25'
 
 export function ProductList({ report }: { report: StoredReport }) {
+  const { t } = useTranslation()
   const [q, setQ] = useState('')
   const [site, setSite] = useState('')
   const [pos, setPos] = useState<PosFilter>('all')
@@ -42,10 +44,10 @@ export function ProductList({ report }: { report: StoredReport }) {
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-white/30 absolute left-2 top-1/2 -translate-y-1/2" />
             <input value={q} onChange={(e) => { setQ(e.target.value); setShown(PAGE) }}
-              placeholder="Rechercher…" className={`${selectCls} pl-7 w-40`} />
+              placeholder={t('dam.search')} className={`${selectCls} pl-7 w-40`} />
           </div>
           <select value={pos} onChange={(e) => { setPos(e.target.value as PosFilter); setShown(PAGE) }} className={selectCls}>
-            <option value="all">Toutes positions</option>
+            <option value="all">{t('pw.filter.allPositions')}</option>
             <option value="undercut">Concurrent moins cher</option>
             <option value="well-placed">Je suis bien placé</option>
           </select>

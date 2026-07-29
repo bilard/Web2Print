@@ -25,6 +25,7 @@ import { ExpandableChart } from '@/components/shared/ExpandableChart'
 import { ChevronDown, RotateCcw } from 'lucide-react'
 import { useLiveReportRefresh } from './useLiveReportRefresh'
 import { SearchAutocomplete } from './SearchAutocomplete'
+import { useTranslation } from '@/lib/i18n'
 
 /** Rapport « vide » : permet d'afficher le Cockpit opérationnel (jauges de moisson LIVE,
  *  alimentées par les métas concurrents) AVANT le premier « Comparer catalogue ».
@@ -53,6 +54,7 @@ function EmptyState({ hasWatch }: { hasWatch: boolean }) {
 const selCls = 'bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-white/10 focus:outline-none focus:border-white/25'
 
 export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
+  const { t } = useTranslation()
   const report = useCatalogReport(watchId)
   const history = useReportHistory(watchId)
   const priceMoves = usePriceEvents(watchId)
@@ -123,13 +125,13 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
           onPickFamily={(famille) => setFilter((f) => ({ ...f, famille, q: '' }))}
           products={report.products} />
         <select value={filter.position} onChange={(e) => set({ position: e.target.value as CockpitFilter['position'] })} className={selCls}>
-          <option value="all">Toutes positions</option>
+          <option value="all">{t('pw.filter.allPositions')}</option>
           <option value="cheaper">Concurrent moins cher</option>
           <option value="aligned">Aligné</option>
           <option value="dearer">Je suis moins cher</option>
         </select>
         <select value={filter.famille} onChange={(e) => set({ famille: e.target.value })} className={selCls}>
-          <option value="all">Toutes familles</option>
+          <option value="all">{t('pw.filter.allFamilies')}</option>
           {ck.familyKeys.map((f) => <option key={f} value={f}>{f}</option>)}
         </select>
         {ck.filterActive && (

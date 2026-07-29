@@ -14,6 +14,7 @@ import { useCompetitorMeta } from '../useCatalogReport'
 import { useScrapeSpend } from './useScrapeSpend'
 import { duration, ago, compactNum } from './format'
 import { formatCountdown } from '@/features/workflows/runtime/cronSchedule'
+import { useTranslation, intlLocale } from '@/lib/i18n'
 
 interface ScheduleDoc {
   enabled: boolean; nextRunAt: number; lastRunAt?: number; lastStatus?: string
@@ -55,6 +56,7 @@ function Cell({ icon: Icon, tint, label, value, sub, children }: {
 }
 
 export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId: string | null }) {
+  const { t, locale } = useTranslation()
   const liveMeta = useCompetitorMeta(watchId)
   const ck = buildOpsCockpit(report, liveMeta)
   const spend = useScrapeSpend()
@@ -90,41 +92,41 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const stalled = hasReport && cronOn && !scrapeActive && reportAgeMs > 20 * 60_000
   // Site en cours de moisson (heartbeat) + s'il ne produit rien (anti-bot / bloqué), le dire.
   const curSite = collecting && ck.lastCollectDomain ? ck.competitors.find((c) => c.domain === ck.lastCollectDomain) : null
-  const curLabel = curSite ? `${curSite.domain.replace(/^www\./, '')}${curSite.indexed === 0 ? ' · bloqué' : ''}` : null
+  const curLabel = curSite ? `${curSite.domain.replace(/^www\./, '')}${curSite.indexed === 0 ? t('pw.ops.blocked') : ''}` : null
 
   return (
     <section className="bg-surface rounded-lg p-4" data-pw-section="cockpit">
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <Activity className="w-4 h-4 text-indigo-400" />
-        <h2 className="text-sm font-semibold text-white">Cockpit opérationnel</h2>
+        <h2 className="text-sm font-semibold text-white">{t('pw.ops.title')}</h2>
 
         {/* Statut LIVE en 3 états clairs : EN COURS (run actif/collecte récente) /
             EN ATTENTE (cron actif, entre deux runs — normal, PAS cassé) / ARRÊTÉ (cron off). */}
         {scrapeActive ? (
           <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300 bg-emerald-500/12 border border-emerald-500/30 rounded-full px-2.5 py-0.5"
-            title="Un run serveur est actif ou une passe de moisson a écrit récemment">
+            title={t('pw.ops.active')}>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             Scraping en cours{curLabel ? ` · ${curLabel}` : ''}
           </span>
         ) : cronOn ? (
           <span className="flex items-center gap-1.5 text-[11px] font-medium text-sky-300 bg-sky-500/10 border border-sky-500/25 rounded-full px-2.5 py-0.5"
-            title="Cron actif — pause programmée entre deux moissons (le scraping n'est pas arrêté)">
+            title={t('pw.ops.cronPaused')}>
             <span className="w-2 h-2 rounded-full bg-sky-400" />
             En attente du prochain run · {overdue ? 'imminent' : hhmm(sched!.nextRunAt)}
           </span>
         ) : (
           <span className="flex items-center gap-1.5 text-[11px] font-medium text-white/55 bg-white/[0.05] border border-white/10 rounded-full px-2.5 py-0.5"
-            title="Cron non activé — aucune moisson planifiée">
+            title={t('pw.ops.cronOff')}>
             <span className="w-2 h-2 rounded-full bg-white/40" />
-            Scraping à l’arrêt (cron off){ck.lastCollectAt != null ? ` · dernière ${ago(ck.lastCollectAt, now)}` : ''}
+            {t('pw.ops.stopped')}{ck.lastCollectAt != null ? t('pw.ops.lastRun', { ago: ago(ck.lastCollectAt, now) }) : ''}
           </span>
         )}
 
         <span className="text-[11px] text-white/40 ml-auto">
           {cronOn
             ? <>cron actif · prochain {overdue ? 'imminent' : hhmm(sched!.nextRunAt)}{sched?.lastStatus === 'error' ? <span className="text-rose-300"> · dernier run en erreur ⚠</span> : ''}</>
-            : 'cron inactif (manuel)'}
-          <span className="text-white/25"> · </span>analyse {hasReport ? ago(ck.runAt, now) : 'à venir (1ᵉʳ « Comparer »)'}
+            : t('pw.ops.cronInactive')}
+          <span className="text-white/25"> · </span>{t('pw.ops.analysedAgo', { ago: hasReport ? ago(ck.runAt, now) : t('pw.ops.upcoming') })}
         </span>
       </div>
 
@@ -132,7 +134,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
       {stalled && (
         <div className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200">
           ⚠ Le tableau de bord n’a pas été rafraîchi depuis <b>{ago(ck.runAt, now)}</b> alors que le cron est actif —
-          le dernier run n’a probablement pas produit de rapport. Relance le workflow (bouton <b>Run</b>), ou
+          le dernier run n’a probablement pas produit de rapport. Relance le workflow (bouton <b>{t('pw.ops.run')}</b>), ou
           désactive puis réactive le cron pour le débloquer.
         </div>
       )}
@@ -149,9 +151,9 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
             <div className="bg-well rounded-lg px-4 py-3 flex flex-col items-center">
               <Gauge value={ck.avgProgress} color="#818cf8">
                 <div className="text-xl font-semibold text-white tabular-nums"><AnimatedNumber value={ck.avgProgress * 100} format={(n) => `${Math.round(n)}%`} /></div>
-                <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">familles</div>
+                <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">{t('pw.ops.families')}</div>
               </Gauge>
-              <div className="text-[11px] text-white/40 mt-1">{remainingPct}% restant à traiter</div>
+              <div className="text-[11px] text-white/40 mt-1">{t('pw.ops.remaining', { pct: remainingPct })}</div>
             </div>
             {/* Avancement du CYCLE courant. L'ancien « ×cyclesDone » (min des balayages sur
                 TOUS les sites) restait à 0 tant qu'un seul site n'avait pas bouclé → jamais
@@ -160,56 +162,56 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                 planning) avec la date de relance — la réponse à « c'est complet quand ? ». */}
             <div className="bg-well rounded-lg px-4 py-3 flex flex-col items-center"
               title={cycleComplete
-                ? 'Tous les concurrents ont bouclé leur balayage — cycle complet. Relance à l’échéance du planning.'
+                ? t('pw.ops.cycleDone.title')
                 : `${ck.sitesComplete} concurrent(s) sur ${ck.sitesActive} ont bouclé leur balayage ce cycle.`}>
               <Gauge value={ck.sitesActive ? ck.sitesComplete / ck.sitesActive : 0} color="#34d399">
                 {cycleComplete ? (
                   <>
                     <div className="text-2xl font-semibold text-emerald-300 leading-none">✓</div>
-                    <div className="text-[9px] uppercase tracking-wide text-emerald-300/70 mt-0.5">cycle complet</div>
+                    <div className="text-[9px] uppercase tracking-wide text-emerald-300/70 mt-0.5">{t('pw.ops.cycleDone')}</div>
                   </>
                 ) : (
                   <>
                     <div className="text-xl font-semibold text-white tabular-nums">{ck.sitesComplete}/{ck.sitesActive}</div>
-                    <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">sites bouclés</div>
+                    <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">{t('pw.ops.sitesDone')}</div>
                   </>
                 )}
               </Gauge>
               <div className="text-[11px] text-white/40 mt-1 text-center">
                 {cycleComplete
-                  ? (cronOn ? <>relance <b className="capitalize">{dayTime(sched!.nextRunAt)}</b></> : 'cycle complet')
+                  ? (cronOn ? <>{t('pw.ops.restart')} <b className="capitalize">{dayTime(sched!.nextRunAt)}</b></> : t('pw.ops.cycleDone'))
                   : ck.cyclesDone > 0
-                    ? `cycle en cours · ×${ck.cyclesDone} complet(s)`
-                    : 'cycle en cours'}
+                    ? t('pw.ops.cycleRunning.done', { done: ck.cyclesDone })
+                    : t('pw.ops.cycleRunning')}
               </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1 min-w-[280px]">
-              <Cell icon={Layers} tint="text-sky-400" label="Fiches collectées"
-                value={<AnimatedNumber value={ck.totalIndexed} />} sub={`${ck.sitesActive}/${ck.sitesTotal} concurrents actifs`} />
-              <Cell icon={Timer} tint="text-violet-400" label="Temps de moisson"
-                value={duration(ck.totalCumulMs)} sub="cumulé, tous concurrents" />
-              <Cell icon={RefreshCw} tint="text-amber-400" label="Durée d’un cycle"
+              <Cell icon={Layers} tint="text-sky-400" label={t('pw.ops.recordsCollected')}
+                value={<AnimatedNumber value={ck.totalIndexed} />} sub={t('pw.ops.activeCompetitors.sub', { active: ck.sitesActive, total: ck.sitesTotal })} />
+              <Cell icon={Timer} tint="text-violet-400" label={t('pw.ops.harvestTime')}
+                value={duration(ck.totalCumulMs)} sub={t('pw.ops.cumulative')} />
+              <Cell icon={RefreshCw} tint="text-amber-400" label={t('pw.ops.cycleDuration')}
                 value={ck.slowestCycle ? duration(ck.slowestCycle.cycleMs) : '—'}
-                sub={ck.slowestCycle ? `le + lent · ${ck.slowestCycle.domain.replace(/^www\./, '')}` : 'aucun cycle bouclé'} />
-              <Cell icon={Fuel} tint="text-emerald-400" label="Jina (ce mois)"
+                sub={ck.slowestCycle ? t('pw.ops.slowest', { domain: ck.slowestCycle.domain.replace(/^www\./, '') }) : t('pw.ops.noCycle')} />
+              <Cell icon={Fuel} tint="text-emerald-400" label={t('pw.ops.jina')}
                 value={jina ? compactNum(jina.tokens) : '0'}
-                sub={jina ? `${jina.requests.toLocaleString('fr-FR')} req · $${jina.costUsd.toFixed(2)}` : 'aucune requête'} />
-              <Cell icon={Radio} tint="text-indigo-400" label="Concurrents actifs"
-                value={`${ck.sitesActive}/${ck.sitesTotal}`} sub={`${ck.sitesComplete} à 100%`} />
-              <Cell icon={CalendarClock} tint={cronOn ? 'text-emerald-400' : 'text-white/40'} label="Prochaine moisson">
+                sub={jina ? t('pw.ops.jina.sub', { req: jina.requests.toLocaleString(intlLocale(locale)), cost: `$${jina.costUsd.toFixed(2)}` }) : t('pw.ops.noRequest')} />
+              <Cell icon={Radio} tint="text-indigo-400" label={t('pw.ops.activeCompetitors')}
+                value={`${ck.sitesActive}/${ck.sitesTotal}`} sub={t('pw.ops.atFull', { count: ck.sitesComplete })} />
+              <Cell icon={CalendarClock} tint={cronOn ? 'text-emerald-400' : 'text-white/40'} label={t('pw.ops.nextHarvest')}>
                 {!cronOn ? (
                   <>
-                    <div className="text-sm font-medium text-white/50 leading-none mt-1">manuel</div>
-                    <div className="text-[11px] text-white/35 mt-1">cron non activé</div>
+                    <div className="text-sm font-medium text-white/50 leading-none mt-1">{t('pw.ops.manual')}</div>
+                    <div className="text-[11px] text-white/35 mt-1">{t('pw.ops.cronOff.short')}</div>
                   </>
                 ) : scrapeActive ? (
                   <>
                     <div className="text-lg font-semibold text-emerald-300 leading-none flex items-center justify-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />En cours
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />{t('wfx.running')}
                     </div>
                     <div className="text-[11px] text-white/40 mt-1">
-                      {sched?.lastRunAt ? `démarré ${hhmm(sched.lastRunAt)}` : ''}
+                      {sched?.lastRunAt ? t('pw.ops.startedAt', { time: hhmm(sched.lastRunAt) }) : ''}
                       {sched?.lastRunAt && ' · '}prochaine {hhmm(sched!.nextRunAt)}
                     </div>
                   </>

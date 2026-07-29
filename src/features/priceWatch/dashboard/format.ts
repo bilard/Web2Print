@@ -1,4 +1,5 @@
 // Formatage + sémantique de couleurs du tableau de bord Veille tarifaire.
+import { t } from '@/lib/i18n'
 // Convention métier : un concurrent MOINS cher que moi est une ALERTE (rose) ;
 // à l'inverse, être moins cher est bon (émeraude) ; à l'équilibre = aligné (ambre).
 
@@ -47,12 +48,12 @@ export function agoShort(ts: number | null | undefined, now = Date.now()): strin
 export function ago(ts: number | null | undefined, now = Date.now()): string {
   if (!ts) return '—'
   const s = Math.max(0, Math.round((now - ts) / 1000))
-  if (s < 60) return `il y a ${s} s`
+  if (s < 60) return t('pw.ago.seconds', { n: s })
   const m = Math.floor(s / 60)
-  if (m < 60) return `il y a ${m} min`
+  if (m < 60) return t('pw.ago.minutes', { n: m })
   const h = Math.floor(m / 60)
-  if (h < 24) return `il y a ${h} h`
-  return `il y a ${Math.floor(h / 24)} j`
+  if (h < 24) return t('pw.ago.hours', { n: h })
+  return t('pw.ago.days', { n: Math.floor(h / 24) })
 }
 
 const compactFmt = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 })

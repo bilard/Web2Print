@@ -4,12 +4,14 @@
 // nœud pilote le FILTRE global du cockpit (une seule source de vérité, pas un 2e chemin).
 import type { Cockpit } from './analytics'
 import { Layers } from 'lucide-react'
+import { useTranslation } from '@/lib/i18n'
 
 export function CatalogTree({ ck, active, onSelect }: {
   ck: Cockpit
   active: string // filter.famille ('all' | famille)
   onSelect: (famille: string) => void
 }) {
+  const { t } = useTranslation()
   const fams = ck.allFamilies
   const total = fams.reduce((n, f) => n + f.count, 0)
 
@@ -17,13 +19,13 @@ export function CatalogTree({ ck, active, onSelect }: {
     <aside className="bg-surface rounded-lg p-3 w-full">
       <div className="flex items-center gap-1.5 mb-2 px-1">
         <Layers className="w-3.5 h-3.5 text-white/40" />
-        <span className="text-xs font-semibold text-white/80">Navigation</span>
+        <span className="text-xs font-semibold text-white/80">{t('pw.nav.title')}</span>
       </div>
-      <div className="text-[10px] text-white/30 px-1 mb-2">Famille · {fams.length}</div>
+      <div className="text-[10px] text-white/30 px-1 mb-2">{t('pw.nav.family', { count: fams.length })}</div>
 
       <button onClick={() => onSelect('all')}
         className={`w-full flex items-center justify-between text-left rounded px-2 py-1.5 text-xs select-none focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-400/50 ${active === 'all' ? 'bg-indigo-500/15 text-white' : 'text-white/70 hover:bg-white/[0.04]'}`}>
-        <span>Tout le catalogue</span>
+        <span>{t('pw.nav.all')}</span>
         <span className="text-white/35 tabular-nums">{total}</span>
       </button>
 

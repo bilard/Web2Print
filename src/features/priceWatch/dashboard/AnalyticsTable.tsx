@@ -9,6 +9,7 @@ import { eur, pct, heatColor, POSITION_LABEL, POSITION_TEXT } from './format'
 import { Search, ChevronDown, ChevronRight } from 'lucide-react'
 import type { ProductRow } from '../catalog/report'
 import { SearchAutocomplete } from './SearchAutocomplete'
+import { useTranslation } from '@/lib/i18n'
 
 const googleSearch = (r: TableRow) =>
   `https://www.google.com/search?q=${encodeURIComponent(`${r.reference ?? ''} ${r.name}`.trim())}`
@@ -24,6 +25,7 @@ export function AnalyticsTable({ ck, searchQ, onSearch, onPickFamily, products }
   onPickFamily: (famille: string) => void
   products: ProductRow[]
 }) {
+  const { t } = useTranslation()
   // On n'affiche que les concurrents qui ont AU MOINS un produit apparié : les sites à 0
   // (n'ont pas ce catalogue) n'ajoutaient que des colonnes vides. Le Benchmark garde la
   // vue exhaustive des 19 sites ; ici on densifie.
@@ -66,7 +68,7 @@ export function AnalyticsTable({ ck, searchQ, onSearch, onPickFamily, products }
   return (
     <div className="bg-surface rounded-lg p-4" data-pw-section="table">
       <div className="flex items-center gap-2 mb-1">
-        <div className="text-sm font-semibold text-white">Détail produits</div>
+        <div className="text-sm font-semibold text-white">{t('pw.table.title')}</div>
         <span className="text-[11px] text-white/40">{rowCount}{ck.filterActive ? ` / ${ck.totalCount}` : ''}</span>
         <div className="ml-auto flex-1 max-w-md bg-well rounded px-3 py-1.5 border border-white/10">
           <SearchAutocomplete value={searchQ} onChange={onSearch} onPickFamily={onPickFamily} products={products} />
@@ -85,8 +87,8 @@ export function AnalyticsTable({ ck, searchQ, onSearch, onPickFamily, products }
             <tr className="text-right">
               {th('name', 'Produit', 'text-left pl-3')}
               {th('myPriceHt', 'Mon prix HT', 'pr-2')}
-              {th('bestGapPct', 'Meilleur écart', 'pr-2')}
-              <th className="pb-2 font-medium pr-2">Position</th>
+              {th('bestGapPct', t('pw.table.bestGap'), 'pr-2')}
+              <th className="pb-2 font-medium pr-2">{t('pw.table.position')}</th>
               {comps.map((c) => (
                 <th key={c.siteId} className="pb-2 font-medium px-1 min-w-[68px]" title={c.domain}>
                   <div className="max-w-[64px] truncate mx-auto">{c.domain.replace(/^www\./, '').split('.')[0]}</div>
@@ -96,7 +98,7 @@ export function AnalyticsTable({ ck, searchQ, onSearch, onPickFamily, products }
           </thead>
           <tbody>
             {rowCount === 0 ? (
-              <tr><td colSpan={4 + comps.length} className="text-center text-white/40 py-8">Aucun produit ne correspond à la recherche.</td></tr>
+              <tr><td colSpan={4 + comps.length} className="text-center text-white/40 py-8">{t('pw.table.empty')}</td></tr>
             ) : groups.map((g) => [
               // Nœud famille de la treeview : repliable au clic, libellé FIXE au scroll
               // horizontal (sticky left dans une cellule pleine largeur).
@@ -119,14 +121,14 @@ export function AnalyticsTable({ ck, searchQ, onSearch, onPickFamily, products }
                 <td className="text-left py-1.5 pl-6 pr-2 min-w-[280px] max-w-[420px]">
                   <div className="flex items-start gap-1.5">
                     {r.sourceUrl
-                      ? <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" title="Ouvrir la fiche source"
+                      ? <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" title={t('pw.table.openSource')}
                           className="whitespace-normal break-words leading-snug text-white/85 hover:text-indigo-300 hover:underline">
                           {r.name}<span className="text-white/35"> · {r.reference ?? '—'}</span>
                         </a>
                       : <span className="whitespace-normal break-words leading-snug text-white/85">
                           {r.name}<span className="text-white/35"> · {r.reference ?? '—'}</span>
                         </span>}
-                    <a href={googleSearch(r)} target="_blank" rel="noopener noreferrer" title="Rechercher ce produit sur Google"
+                    <a href={googleSearch(r)} target="_blank" rel="noopener noreferrer" title={t('pw.table.googleSearch')}
                       className="shrink-0 text-white/25 hover:text-white/70" onClick={(e) => e.stopPropagation()}>
                       <Search className="w-3 h-3" />
                     </a>

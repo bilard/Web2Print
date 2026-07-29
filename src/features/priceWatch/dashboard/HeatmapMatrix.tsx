@@ -3,8 +3,10 @@
 // d'un coup d'œil OÙ un concurrent est agressif (colonne/famille rouge). Recalc → mention.
 import type { Cockpit, CockpitFilter } from './analytics'
 import { heatColor } from './format'
+import { useTranslation } from '@/lib/i18n'
 
 export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void }) {
+  const { t } = useTranslation()
   const cols = ck.familyKeys
   // Seuls les concurrents avec au moins un apparié : évite 16 lignes vides.
   const rows = ck.competitors.filter((c) => c.matched > 0)
@@ -13,7 +15,7 @@ export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch
     return (
       <div className="bg-surface rounded-lg p-4">
         <div className="text-sm font-semibold text-white mb-3">Écart par concurrent × famille</div>
-        <div className="text-white/40 text-sm py-8 text-center">Pas assez de données (familles absentes).</div>
+        <div className="text-white/40 text-sm py-8 text-center">{t('pw.chart.notEnough')}</div>
       </div>
     )
   }
@@ -22,7 +24,7 @@ export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch
     <div className="bg-surface rounded-lg p-4">
       <div className="flex items-baseline justify-between mb-3">
         <div className="text-sm font-semibold text-white">Écart par concurrent × famille</div>
-        <div className="text-[11px] text-white/35">écart moyen %{ck.truncated ? ' · sur top 1000' : ''}</div>
+        <div className="text-[11px] text-white/35">{t('pw.chart.avgGap')}{ck.truncated ? t('pw.chart.onTop1000') : ''}</div>
       </div>
       <div className="overflow-x-auto">
         <table className="border-separate border-spacing-0.5 text-xs tabular-nums">

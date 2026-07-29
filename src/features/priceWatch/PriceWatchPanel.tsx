@@ -10,8 +10,10 @@ import { useWatchList } from './useCatalogReport'
 import { usePriceMatches } from './usePriceWatch'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { ChevronDown } from 'lucide-react'
+import { useTranslation } from '@/lib/i18n'
 
 export function PriceWatchPanel() {
+  const { t } = useTranslation()
   const legacyMatches = usePriceMatches()
   const [legacyOpen, setLegacyOpen] = useState(false)
 
@@ -37,12 +39,11 @@ export function PriceWatchPanel() {
     <div className="space-y-6 pt-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Veille tarifaire</h1>
+          <h1 className="text-xl font-semibold text-white">{t('pw.title')}</h1>
           <p className="text-sm text-white/50">
-            Positionnement de tes prix face aux concurrents. La configuration (produits en
-            entrée, sites, familles) se fait dans un workflow, via les nodes
-            <span className="text-white/80"> « Moisson concurrents »</span> et
-            <span className="text-white/80"> « Comparer catalogue »</span>.
+            {t('pw.intro.before')}
+            <span className="text-white/80"> « {t('node.harvest-competitor.label')} »</span>{t('pw.intro.and')}
+            <span className="text-white/80"> « {t('node.compare-catalog.label')} »</span>.
           </p>
         </div>
         <WatchSelector watches={watches} value={watchId ?? ''} onChange={setWatchId} />
@@ -61,7 +62,7 @@ export function PriceWatchPanel() {
         </button>
         {legacyOpen && (legacyMatches.length > 0
           ? <div className="mt-3"><ComparisonTab /></div>
-          : <p className="mt-3 text-sm text-white/40">Aucun appariement à confirmer pour l’instant. Les correspondances incertaines (par nom, quand il n’y a ni EAN ni référence commune) apparaîtront ici pour validation.</p>)}
+          : <p className="mt-3 text-sm text-white/40">{t('pw.noPending')}</p>)}
       </section>
     </div>
   )

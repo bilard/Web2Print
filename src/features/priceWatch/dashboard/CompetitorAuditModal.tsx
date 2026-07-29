@@ -8,22 +8,23 @@ import { X, Loader2, Check, EuroIcon, Ban } from 'lucide-react'
 import type { CompetitorStat, CompetitorAudit } from '../catalog/report'
 import { probeCompetitor, type ProbeResult } from '../catalog/probe'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 type ProbeState = { loading: boolean; result?: ProbeResult }
 
-const VERDICT: Record<ProbeResult['verdict'], { label: string; cls: string; Icon: typeof Check }> = {
-  ok: { label: 'Éligible', cls: 'text-emerald-300', Icon: Check },
-  'no-price': { label: 'Pas de prix', cls: 'text-rose-300', Icon: EuroIcon },
-  blocked: { label: 'Bloqué', cls: 'text-white/40', Icon: Ban },
+const VERDICT: Record<ProbeResult['verdict'], { labelKey: TranslationKey; cls: string; Icon: typeof Check }> = {
+  ok: { labelKey: 'pw.audit.eligible', cls: 'text-emerald-300', Icon: Check },
+  'no-price': { labelKey: 'pw.audit.noPrice', cls: 'text-rose-300', Icon: EuroIcon },
+  blocked: { labelKey: 'pw.audit.blocked', cls: 'text-white/40', Icon: Ban },
 }
 
-const FIELDS: { key: Exclude<keyof CompetitorAudit, 'indexed'>; label: string }[] = [
-  { key: 'pctPrice', label: 'Prix' },
-  { key: 'pctListPrice', label: 'Prix barré' },
-  { key: 'pctStock', label: 'Stock' },
-  { key: 'pctName', label: 'Nom' },
-  { key: 'pctImage', label: 'Image' },
-  { key: 'pctRef', label: 'Réf' },
+const FIELDS: { key: Exclude<keyof CompetitorAudit, 'indexed'>; labelKey: TranslationKey }[] = [
+  { key: 'pctPrice', labelKey: 'pw.audit.price' },
+  { key: 'pctListPrice', labelKey: 'pw.audit.strikePrice' },
+  { key: 'pctStock', labelKey: 'pw.audit.stock' },
+  { key: 'pctName', labelKey: 'pw.audit.name' },
+  { key: 'pctImage', labelKey: 'pw.audit.image' },
+  { key: 'pctRef', labelKey: 'pw.audit.ref' },
 ]
 
 /** Durée lisible : « 12 s », « 3 min », « 1 h 20 ». '·' si non mesuré. */
@@ -46,6 +47,7 @@ function cellStyle(pct: number, indexed: number): { bg: string; txt: string } {
 }
 
 export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat[]; onClose: () => void }) {
+  const { t } = useTranslation()
   const [probes, setProbes] = useState<Record<string, ProbeState>>({})
   const [probingAll, setProbingAll] = useState(false)
 
@@ -84,16 +86,16 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
       <div className="w-full max-w-4xl bg-surface rounded-lg border border-white/10 relative max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 bg-background px-5 py-4 border-b border-white/10 relative flex items-center">
           <div className="flex-1 text-center px-24">
-            <h2 className="text-base font-semibold text-white">Audit de la collecte par concurrent</h2>
-            <span className="text-[11px] text-white/40">% des fiches collectées portant chaque champ</span>
+            <h2 className="text-base font-semibold text-white">{t('pw.audit.title')}</h2>
+            <span className="text-[11px] text-white/40">{t('pw.audit.fieldsNote')}</span>
           </div>
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
             <button type="button" onClick={() => void probeAll()} disabled={probingAll}
-              title="Teste chaque concurrent sur quelques pages témoins, sans lancer la moisson complète"
+              title={t('pw.audit.help')}
               className="text-[11px] text-indigo-300 hover:text-indigo-200 border border-indigo-400/30 rounded px-2 py-1 disabled:opacity-50 whitespace-nowrap">
               {probingAll ? 'Sonde en cours…' : 'Tout sonder (test)'}
             </button>
-            <button type="button" onClick={onClose} title="Fermer (Échap)"
+            <button type="button" onClick={onClose} title={t('pw.audit.close')}
               className="p-1.5 rounded bg-well border border-white/10 text-white/60 hover:text-white">
               <X className="w-4 h-4" />
             </button>
@@ -103,13 +105,13 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
           <table className="w-full text-xs tabular-nums">
             <thead>
               <tr className="text-white/40 text-[10px] uppercase tracking-wide text-right">
-                <th className="text-left font-medium pb-2">Concurrent</th>
-                <th className="font-medium pb-2 pr-3">Fiches</th>
-                <th className="font-medium pb-2 px-2 whitespace-nowrap" title="Durée de la dernière passe de moisson">Dern.</th>
-                <th className="font-medium pb-2 px-2 whitespace-nowrap" title="Cumul du temps de moisson (calibrage du cron)">Cumul</th>
-                <th className="font-medium pb-2 px-2 pr-3 whitespace-nowrap" title="Nombre de balayages COMPLETS du catalogue (cycles à 100 %)">Cycles</th>
-                {FIELDS.map((f) => <th key={f.key} className="font-medium pb-2 px-1 min-w-[64px]">{f.label}</th>)}
-                <th className="font-medium pb-2 px-2 pl-3 text-center border-l border-white/[0.06] min-w-[92px]" title="Test avant scraping : quelques pages témoins">Sonde</th>
+                <th className="text-left font-medium pb-2">{t('pw.col.competitor')}</th>
+                <th className="font-medium pb-2 pr-3">{t('pw.audit.records')}</th>
+                <th className="font-medium pb-2 px-2 whitespace-nowrap" title={t('pw.audit.last.title')}>{t('pw.audit.last')}</th>
+                <th className="font-medium pb-2 px-2 whitespace-nowrap" title={t('pw.audit.total.title')}>{t('pw.audit.total')}</th>
+                <th className="font-medium pb-2 px-2 pr-3 whitespace-nowrap" title={t('pw.audit.cycles.title')}>{t('pw.audit.cycles')}</th>
+                {FIELDS.map((f) => <th key={f.key} className="font-medium pb-2 px-1 min-w-[64px]">{t(f.labelKey)}</th>)}
+                <th className="font-medium pb-2 px-2 pl-3 text-center border-l border-white/[0.06] min-w-[92px]" title={t('pw.audit.probe.title')}>{t('pw.audit.probe')}</th>
               </tr>
             </thead>
             <tbody>
@@ -140,15 +142,15 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
                       const st = probes[r.siteId]
                       if (!st) return (
                         <button type="button" onClick={() => void runProbe(r.siteId, r.domain)}
-                          className="text-[11px] text-indigo-300 hover:text-indigo-200 border border-indigo-400/30 rounded px-2 py-0.5">Sonder</button>
+                          className="text-[11px] text-indigo-300 hover:text-indigo-200 border border-indigo-400/30 rounded px-2 py-0.5">{t('pw.audit.probeAction')}</button>
                       )
                       if (st.loading || !st.result) return <Loader2 className="w-3.5 h-3.5 animate-spin inline text-white/50" />
                       const v = VERDICT[st.result.verdict]
                       const Icon = v.Icon
                       return (
                         <span className={`inline-flex items-center gap-1 ${v.cls}`}
-                          title={`Échantillon témoin : ${st.result.audit.indexed} fiche(s) · prix ${st.result.audit.pctPrice}% · ${st.result.categoriesFound} catégorie(s) trouvée(s)`}>
-                          <Icon className="w-3.5 h-3.5" />{v.label}
+                          title={t('pw.audit.sample', { indexed: st.result.audit.indexed, pct: st.result.audit.pctPrice, cats: st.result.categoriesFound })}>
+                          <Icon className="w-3.5 h-3.5" />{t(v.labelKey)}
                         </span>
                       )
                     })()}
@@ -159,7 +161,7 @@ export function CompetitorAuditModal({ stats, onClose }: { stats: CompetitorStat
           </table>
           <p className="text-[11px] text-white/40 mt-4">
             <span className="text-rose-300">0 %</span> sur le prix alors que des fiches sont collectées = prix non publié (site pro/B2B)
-            ou chargé en JavaScript. <span className="text-emerald-300">Vert</span> = champ bien parsé. « Fiches » = nombre de pages produit indexées pour ce concurrent.
+            ou chargé en JavaScript. <span className="text-emerald-300">{t('pw.audit.legend.green')}</span> = champ bien parsé. « Fiches » = nombre de pages produit indexées pour ce concurrent.
           </p>
         </div>
       </div>

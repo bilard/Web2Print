@@ -15,6 +15,7 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
   AlertDialogTitle, AlertDialogDescription, AlertDialogCancel,
 } from '@/components/ui/alert-dialog'
+import { useTranslation } from '@/lib/i18n'
 
 export function WatchManager({ open, onOpenChange, watches, activeId }: {
   open: boolean
@@ -22,6 +23,7 @@ export function WatchManager({ open, onOpenChange, watches, activeId }: {
   watches: WatchSummary[]
   activeId: string
 }) {
+  const { t } = useTranslation()
   const uid = useAuthStore((s) => s.user?.uid)
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -34,10 +36,10 @@ export function WatchManager({ open, onOpenChange, watches, activeId }: {
     const label = editValue.trim()
     try {
       await setDoc(doc(db, 'users', uid, 'priceWatch', w.watchId), { customLabel: label || null }, { merge: true })
-      toast.success(label ? `Suivi renommé « ${label} ».` : 'Nom personnalisé retiré (nom du workflow).')
+      toast.success(label ? t('pw.watch.renamed', { label }) : t('pw.watch.nameCleared'))
       setEditId(null)
     } catch (e) {
-      toast.error(`Renommage impossible : ${e instanceof Error ? e.message : e}`)
+      toast.error(t('pw.watch.renameFailed', { message: String(e instanceof Error ? e.message : e) }))
     }
   }
 
@@ -46,10 +48,10 @@ export function WatchManager({ open, onOpenChange, watches, activeId }: {
     setBusyId(w.watchId)
     try {
       await deleteWatch(uid, w.watchId)
-      toast.success(`Suivi « ${w.label || w.watchId} » supprimé.`)
+      toast.success(t('pw.watch.deleted', { label: w.label || w.watchId }))
       setConfirmId(null)
     } catch (e) {
-      toast.error(`Suppression impossible : ${e instanceof Error ? e.message : e}`)
+      toast.error(t('pw.watch.deleteFailed', { message: String(e instanceof Error ? e.message : e) }))
     } finally {
       setBusyId(null)
     }
@@ -59,7 +61,7 @@ export function WatchManager({ open, onOpenChange, watches, activeId }: {
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-lg">
         <AlertDialogHeader>
-          <AlertDialogTitle>Gérer les suivis ({watches.length})</AlertDialogTitle>
+          <AlertDialogTitle>{t('pw.watch.manage', { count: watches.length })}</AlertDialogTitle>
           <AlertDialogDescription>
             Supprime les suivis inutiles (résidus de test, doublons). Chaque suppression retire
             le tableau de bord et son historique — la config reste dans le workflow.
@@ -76,7 +78,7 @@ export function WatchManager({ open, onOpenChange, watches, activeId }: {
                       value={editValue} autoFocus
                       onChange={(e) => setEditValue(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') void rename(w); if (e.key === 'Escape') setEditId(null) }}
-                      placeholder="Nom du suivi (vide = nom du workflow)"
+                      placeholder={t('pw.watch.namePlaceholder')}
                       className="flex-1 min-w-0 bg-well border border-white/10 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-indigo-500/50"
                     />
                     <button onClick={() => void rename(w)} className="text-xs bg-indigo-500 hover:bg-indigo-600 text-[#fff] rounded px-2 py-1">OK</button>

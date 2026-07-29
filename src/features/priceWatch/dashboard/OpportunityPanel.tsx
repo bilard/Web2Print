@@ -1,34 +1,36 @@
-// Top opportunités : produits où je suis le plus cher, triés par écart UNITAIRE € (mon
+// {t('pw.opp.title')} : produits où je suis le plus cher, triés par écart UNITAIRE € (mon
 // prix HT − meilleur prix concurrent HT — PAS un revenu : ni volume ni marge en données).
 // Où baisser en priorité. Lit la vue filtrée (participe au cross-filter du cockpit).
 import type { Cockpit } from './analytics'
 import { eur, pct } from './format'
+import { useTranslation } from '@/lib/i18n'
 
 const TOP = 12
 
 export function OpportunityPanel({ ck }: { ck: Cockpit }) {
+  const { t } = useTranslation()
   const rows = ck.opportunities.filter((o) => o.gapEur != null && o.gapEur > 0).slice(0, TOP)
   const maxEur = Math.max(1, ...rows.map((o) => o.gapEur ?? 0))
 
   return (
     <div className="bg-surface rounded-lg p-4">
       <div className="flex items-baseline justify-between mb-3">
-        <div className="text-sm font-semibold text-white">Top opportunités <span className="text-white/40 font-normal">— où baisser</span></div>
+        <div className="text-sm font-semibold text-white">{t('pw.opp.title')} <span className="text-white/40 font-normal">— où baisser</span></div>
         <div className="text-[11px] text-white/35">écart unitaire €{ck.truncated ? ' · top 1000' : ''}</div>
       </div>
       {rows.length === 0 ? (
-        <div className="text-white/40 text-sm py-8 text-center">Aucun produit où un concurrent est moins cher. Bon positionnement.</div>
+        <div className="text-white/40 text-sm py-8 text-center">{t('pw.opp.empty')}</div>
       ) : (
         <table className="w-full text-xs tabular-nums">
           <thead>
             <tr className="text-white/40 text-[10px] uppercase tracking-wide text-right">
-              <th className="text-left font-medium pb-2">Produit</th>
-              <th className="font-medium pb-2">Mon prix</th>
-              <th className="font-medium pb-2">Moins cher</th>
-              <th className="font-medium pb-2">Écart</th>
+              <th className="text-left font-medium pb-2">{t('pw.col.product')}</th>
+              <th className="font-medium pb-2">{t('pw.opp.myPrice')}</th>
+              <th className="font-medium pb-2">{t('pw.opp.cheaper')}</th>
+              <th className="font-medium pb-2">{t('pw.opp.gap')}</th>
               {/* « Impact » laissait croire à un montant de CA — c'est un écart À L'UNITÉ,
                   sans volume de ventes derrière. Le titre le dit maintenant. */}
-              <th className="font-medium pb-2 w-[26%]" title="Écart à l’unité entre votre prix et le meilleur prix concurrent. Pas un montant de chiffre d’affaires : le volume de ventes n’est pas connu.">Écart à l’unité</th>
+              <th className="font-medium pb-2 w-[26%]" title="{t('pw.opp.unitGap')} entre votre prix et le meilleur prix concurrent. Pas un montant de chiffre d’affaires : le volume de ventes n’est pas connu.">{t('pw.opp.unitGap')}</th>
             </tr>
           </thead>
           <tbody>

@@ -6,6 +6,7 @@ import { Search } from 'lucide-react'
 import type { ProductRow } from '../catalog/report'
 import { matchesQuery } from './analytics'
 import { foldText } from '../catalog/categories'
+import { useTranslation } from '@/lib/i18n'
 
 interface Suggestion {
   kind: 'famille' | 'produit'
@@ -24,6 +25,7 @@ export function SearchAutocomplete({ value, onChange, onPickFamily, products }: 
   onPickFamily: (famille: string) => void
   products: ProductRow[]
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [hover, setHover] = useState(0)
   const boxRef = useRef<HTMLDivElement>(null)
@@ -73,7 +75,7 @@ export function SearchAutocomplete({ value, onChange, onPickFamily, products }: 
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)} // laisser passer le clic sur une suggestion
           onKeyDown={onKeyDown}
-          placeholder="Rechercher — réf, EAN, nom, famille…"
+          placeholder={t('pw.search.placeholder')}
           className="bg-transparent text-white/85 text-sm w-full focus:outline-none placeholder:text-white/30"
         />
       </div>

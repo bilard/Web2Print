@@ -6,12 +6,14 @@ import { useThemeStore } from '@/stores/theme.store'
 import type { ReportKpis } from '../catalog/report'
 import type { CockpitFilter } from './analytics'
 import { POSITION_HEX, POSITION_LABEL } from './format'
+import { useTranslation } from '@/lib/i18n'
 
 Chart.register(ArcElement, Tooltip, Legend)
 
 const TONES = ['cheaper', 'aligned', 'dearer'] as const
 
 export function PositionDonut({ kpis, onSelect, height }: { kpis: ReportKpis; onSelect?: (patch: Partial<CockpitFilter>) => void; height?: number }) {
+  const { t } = useTranslation()
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.7)'
   const total = kpis.cheaperThanMe + kpis.aligned + kpis.dearerThanMe
@@ -27,7 +29,7 @@ export function PositionDonut({ kpis, onSelect, height }: { kpis: ReportKpis; on
 
   return (
     <div className="bg-surface rounded-lg p-4">
-      <div className="text-sm font-semibold text-white mb-3">Positionnement prix</div>
+      <div className="text-sm font-semibold text-white mb-3">{t('pw.chart.positioning')}</div>
       {total === 0 ? (
         <div className="text-white/40 text-sm py-8 text-center">Aucune comparaison chiffrée.</div>
       ) : (

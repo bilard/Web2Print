@@ -7,6 +7,7 @@ import { useThemeStore } from '@/stores/theme.store'
 import type { KpiHistoryPoint } from '../types'
 import { competitorSeries } from './analytics'
 import { pct, positionOf, POSITION_LABEL, when } from './format'
+import { useTranslation } from '@/lib/i18n'
 
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend)
 
@@ -16,6 +17,7 @@ const CAT = ['#818cf8', '#38bdf8', '#fbbf24', '#34d399', '#fb7185', '#c084fc', '
 export function CompetitorTrend({ history, sites, height = 220 }: {
   history: KpiHistoryPoint[]; sites: { siteId: string; domain: string }[]; height?: number
 }) {
+  const { t } = useTranslation()
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.55)'
@@ -43,11 +45,11 @@ export function CompetitorTrend({ history, sites, height = 220 }: {
           ET dans chaque ligne de l'infobulle, là où on lit la valeur. */}
       <div className="mb-3">
         <div className="flex items-baseline justify-between">
-          <div className="text-sm font-semibold text-white">Flux des écarts par concurrent</div>
-          <div className="text-[11px] text-white/35">écart moyen %</div>
+          <div className="text-sm font-semibold text-white">{t('pw.trend.title')}</div>
+          <div className="text-[11px] text-white/35">{t('pw.chart.avgGap')}</div>
         </div>
         <div className="text-[11px] text-white/40 mt-0.5">
-          Prix du concurrent comparé aux vôtres, moyenné sur les produits appariés.
+          {t('pw.trend.help')}
           <span className="text-emerald-400/70"> + = il vend plus cher que vous</span> ·
           <span className="text-rose-400/70"> − = il casse les prix</span>.
         </div>
@@ -72,10 +74,10 @@ export function CompetitorTrend({ history, sites, height = 220 }: {
                   // celui qui casse les prix — la seule chose qu'on cherche ici.
                   itemSort: (a, b) => (a.parsed.y ?? 0) - (b.parsed.y ?? 0),
                   callbacks: {
-                    title: (items) => `${items[0]?.label ?? ''} — écart moyen vs vos prix`,
+                    title: (items) => t('pw.trend.tooltip', { label: items[0]?.label ?? '' }),
                     label: (item) => {
                       const v = item.parsed.y
-                      if (v == null) return `${item.dataset.label} : non relevé`
+                      if (v == null) return t('pw.trend.notMeasured', { label: item.dataset.label ?? '' })
                       const position = positionOf(v)
                       return `${item.dataset.label} : ${pct(v)}${position ? ` — ${POSITION_LABEL[position].toLowerCase()}` : ''}`
                     },

@@ -6,10 +6,12 @@ import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, type TooltipIte
 import { useThemeStore } from '@/stores/theme.store'
 import type { Cockpit, CockpitFilter } from './analytics'
 import { POSITION_HEX } from './format'
+import { useTranslation } from '@/lib/i18n'
 
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip)
 
 export function GapDistribution({ ck, onSelect, height = 190 }: { ck: Cockpit; onSelect?: (patch: Partial<CockpitFilter>) => void; height?: number }) {
+  const { t } = useTranslation()
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const grid = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'
   const tick = isLight ? '#475569' : 'rgba(255,255,255,0.55)'
@@ -29,13 +31,13 @@ export function GapDistribution({ ck, onSelect, height = 190 }: { ck: Cockpit; o
   return (
     <div className="bg-surface rounded-lg p-4">
       <div className="flex items-baseline justify-between mb-3">
-        <div className="text-sm font-semibold text-white">Distribution des écarts</div>
+        <div className="text-sm font-semibold text-white">{t('pw.chart.distribution')}</div>
         <div className="text-[11px] text-white/35">
-          {total} paires{ck.truncated ? ' · sur top 1000' : ''}
+          {t('pw.chart.pairs', { total })}{ck.truncated ? t('pw.chart.onTop1000') : ''}
         </div>
       </div>
       {total === 0 ? (
-        <div className="text-white/40 text-sm py-10 text-center">Pas encore de paires chiffrées.</div>
+        <div className="text-white/40 text-sm py-10 text-center">{t('pw.chart.noPairs')}</div>
       ) : (
         <div style={{ height }}>
           <Bar
