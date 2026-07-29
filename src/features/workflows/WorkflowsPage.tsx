@@ -18,6 +18,7 @@ import { workflowFromTemplate, type WorkflowTemplate } from './templates'
 import { UserTemplatesSection } from './UserTemplatesSection'
 import { SaveAsTemplateDialog } from './editor/SaveAsTemplateDialog'
 import type { Workflow, WorkflowFolder } from './types'
+import { useTranslation } from '@/lib/i18n'
 
 interface WorkflowsPageProps {
   embedded?: boolean
@@ -28,6 +29,7 @@ const VIEW_MODE_KEY = 'workflows.viewMode'
 const COLLAPSED_KEY = 'workflows.collapsedFolders'
 
 export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
+  const { t } = useTranslation()
   const uid = useAuthStore((s) => s.user?.uid)
   const nav = useNavigate()
   const canCreate = useCan('workflows.create')
@@ -148,10 +150,10 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
           void moveWorkflow(wf, e.target.value || null)
         }}
         className="text-[11px] bg-well border border-neutral-700 rounded px-1.5 py-1 text-neutral-300 max-w-[150px] cursor-pointer"
-        aria-label="Dossier du workflow"
-        title="Déplacer dans un dossier"
+        aria-label={t('wf.folder')}
+        title={t('wf.moveToFolder')}
       >
-        <option value="">Sans dossier</option>
+        <option value="">{t('wf.noFolder')}</option>
         {folders.map((f) => (
           <option key={f.id} value={f.id}>{f.name}</option>
         ))}
@@ -164,7 +166,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
     if (!cron) return null
     return (
       <span
-        title={`Planification active — s'exécute ${describeCron(cron)}`}
+        title={t('wf.scheduled', { cron: describeCron(cron) })}
         className="inline-flex items-center gap-1 shrink-0 text-[10px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded px-1.5 py-0.5 whitespace-nowrap"
       >
         <Clock className="w-3 h-3" /> CRON · {describeCron(cron)}
@@ -195,7 +197,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
               {cronBadge(wf)}
             </div>
             <p className="text-sm text-neutral-500 mt-1">
-              {wf.nodes.length} nodes · {wf.edges.length} liens
+              {t('wf.counts', { nodes: wf.nodes.length, edges: wf.edges.length })}
             </p>
             <div className="mt-2">{folderSelect(wf)}</div>
           </div>
@@ -204,8 +206,8 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
               <button
                 onClick={(e) => { e.stopPropagation(); setTemplateFor(wf) }}
                 className="text-neutral-500 hover:text-amber-400 p-1"
-                aria-label="Enregistrer comme modèle"
-                title="Enregistrer ce workflow comme modèle"
+                aria-label={t('wf.saveAsTemplate')}
+                title={t('wf.saveAsTemplate.help')}
               >
                 <Star className="w-4 h-4" />
               </button>
@@ -214,7 +216,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
               <button
                 onClick={(e) => { e.stopPropagation(); remove(wf.id) }}
                 className="text-neutral-500 hover:text-red-400 p-1"
-                aria-label="Supprimer"
+                aria-label={t('wf.delete')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -231,14 +233,14 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
           <div className="flex items-center gap-3 shrink-0">
             {folderSelect(wf)}
             <span className="text-xs text-neutral-500 tabular-nums">
-              {wf.nodes.length} nodes · {wf.edges.length} liens
+              {t('wf.counts', { nodes: wf.nodes.length, edges: wf.edges.length })}
             </span>
             {canCreate && (
               <button
                 onClick={(e) => { e.stopPropagation(); setTemplateFor(wf) }}
                 className="text-neutral-500 hover:text-amber-400 p-1"
-                aria-label="Enregistrer comme modèle"
-                title="Enregistrer ce workflow comme modèle"
+                aria-label={t('wf.saveAsTemplate')}
+                title={t('wf.saveAsTemplate.help')}
               >
                 <Star className="w-4 h-4" />
               </button>
@@ -247,7 +249,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
               <button
                 onClick={(e) => { e.stopPropagation(); remove(wf.id) }}
                 className="text-neutral-500 hover:text-red-400 p-1"
-                aria-label="Supprimer"
+                aria-label={t('wf.delete')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -282,10 +284,10 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             }}
             className="bg-well border border-neutral-700 rounded px-2 py-1 text-sm text-white outline-none focus:border-indigo-500"
           />
-          <button onClick={() => void saveRename()} className="p-1 text-emerald-400 hover:text-emerald-300" aria-label="Valider">
+          <button onClick={() => void saveRename()} className="p-1 text-emerald-400 hover:text-emerald-300" aria-label={t('wf.validate')}>
             <Check className="w-4 h-4" />
           </button>
-          <button onClick={() => setRenamingId(null)} className="p-1 text-neutral-500 hover:text-white" aria-label="Annuler">
+          <button onClick={() => setRenamingId(null)} className="p-1 text-neutral-500 hover:text-white" aria-label={t('wf.cancel')}>
             <X className="w-4 h-4" />
           </button>
         </>
@@ -295,7 +297,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             onClick={() => toggleFolder(folder.id)}
             className="flex items-center gap-2 min-w-0 text-left hover:opacity-80 transition-opacity"
             aria-expanded={!collapsed.has(folder.id)}
-            title={collapsed.has(folder.id) ? 'Déplier le dossier' : 'Replier le dossier'}
+            title={t(collapsed.has(folder.id) ? 'wf.expandFolder' : 'wf.collapseFolder')}
           >
             {collapsed.has(folder.id) ? (
               <ChevronRight className="w-4 h-4 text-neutral-500 shrink-0" />
@@ -310,8 +312,8 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             <button
               onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
               className="p-1 text-neutral-600 hover:text-white"
-              aria-label="Renommer le dossier"
-              title="Renommer"
+              aria-label={t('wf.renameFolder')}
+              title={t('wf.rename')}
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
@@ -320,8 +322,8 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             <button
               onClick={() => void removeFolder(folder.id)}
               className="p-1 text-neutral-600 hover:text-red-400"
-              aria-label="Supprimer le dossier"
-              title="Supprimer le dossier (les workflows sont conservés, sans dossier)"
+              aria-label={t('wf.deleteFolder')}
+              title={t('wf.deleteFolder.help')}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -339,16 +341,16 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             <button
               onClick={() => nav('/dashboard')}
               className="p-2 rounded-md hover:bg-white/[0.05] text-neutral-400 hover:text-white transition-colors"
-              aria-label="Retour au dashboard"
-              title="Retour au dashboard"
+              aria-label={t('wf.backToDashboard')}
+              title={t('wf.backToDashboard')}
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
           )}
           <h1 data-tour="opt-wf-title" className="text-2xl font-semibold flex items-center gap-3">
             <WorkflowIcon className="w-6 h-6 text-indigo-400" />
-            Workflows
-            <OptionHelp text="Automatisez l'enchaînement des modules (scraping → décomposition → export → Drive/Gmail/Telegram), façon Zapier. Un workflow peut être généré par IA depuis un prompt." />
+            {t('wf.title')}
+            <OptionHelp text={t('wf.help')} />
           </h1>
         </div>
         <div className="flex items-center gap-2">
@@ -356,18 +358,18 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             <button
               onClick={() => setViewMode('grid')}
               className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-white/[0.08] text-white' : 'text-neutral-500 hover:text-white'}`}
-              aria-label="Vue vignettes"
+              aria-label={t('wf.gridView')}
               aria-pressed={viewMode === 'grid'}
-              title="Vignettes"
+              title={t('wf.thumbnails')}
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
               className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'bg-white/[0.08] text-white' : 'text-neutral-500 hover:text-white'}`}
-              aria-label="Vue liste"
+              aria-label={t('wf.listView')}
               aria-pressed={viewMode === 'list'}
-              title="Liste"
+              title={t('wf.list')}
             >
               <List className="w-4 h-4" />
             </button>
@@ -376,9 +378,9 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             <button
               onClick={() => setNewFolderName('')}
               className="px-3 py-2 rounded-md bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2"
-              title="Créer un dossier pour regrouper des workflows"
+              title={t('wf.newFolder')}
             >
-              <FolderPlus className="w-4 h-4" /> Nouveau dossier
+              <FolderPlus className="w-4 h-4" /> {t('wf.newFolder.label')}
             </button>
           )}
           {canCreate && (
@@ -387,8 +389,8 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
               data-tour="opt-wf-new"
               className="px-4 py-2 rounded-md bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2"
             >
-              <Plus className="w-4 h-4" /> Nouveau workflow
-              <OptionHelp text="Crée un workflow vierge et ouvre l'éditeur de graphe. Vous pourrez y ajouter des nodes ou le générer par IA." />
+              <Plus className="w-4 h-4" /> {t('wf.new')}
+              <OptionHelp text={t('wf.new.help')} />
             </button>
           )}
         </div>
@@ -406,11 +408,11 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
               if (e.key === 'Enter') void addFolder()
               if (e.key === 'Escape') setNewFolderName(null)
             }}
-            placeholder="Nom du dossier…"
+            placeholder={t('wf.folderName')}
             className="bg-well border border-neutral-700 rounded px-2.5 py-1.5 text-sm text-white outline-none focus:border-indigo-500 w-64"
           />
-          <button onClick={() => void addFolder()} className="px-2.5 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm">Créer</button>
-          <button onClick={() => setNewFolderName(null)} className="px-2.5 py-1.5 rounded text-neutral-400 hover:text-white text-sm">Annuler</button>
+          <button onClick={() => void addFolder()} className="px-2.5 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm">{t('wf.create')}</button>
+          <button onClick={() => setNewFolderName(null)} className="px-2.5 py-1.5 rounded text-neutral-400 hover:text-white text-sm">{t('wf.cancel')}</button>
         </div>
       )}
 
@@ -429,12 +431,12 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
       )}
 
       {loading ? (
-        <p className="text-neutral-400">Chargement…</p>
+        <p className="text-neutral-400">{t('wf.loading')}</p>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-white/40">
           <WorkflowIcon className="w-16 h-16 opacity-20" aria-hidden="true" />
-          <p className="text-lg font-medium text-white/30">Aucun workflow</p>
-          <p className="text-sm text-white/20">Créez-en un pour commencer</p>
+          <p className="text-lg font-medium text-white/30">{t('wf.empty')}</p>
+          <p className="text-sm text-white/20">{t('wf.empty.hint')}</p>
           {canCreate && (
             <button
               onClick={create}
@@ -458,7 +460,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
                   (gItems.length > 0 ? (
                     cardList(gItems)
                   ) : (
-                    <p className="text-xs text-neutral-600 italic pl-6">Dossier vide — affectez des workflows via leur menu « Dossier ».</p>
+                    <p className="text-xs text-neutral-600 italic pl-6">{t('wf.emptyFolder')}</p>
                   ))}
               </section>
             )
@@ -466,7 +468,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
           {ungrouped.length > 0 && (
             <section>
               <h3 className="text-sm font-semibold text-white/50 mb-3 flex items-center gap-2">
-                Sans dossier <span className="text-xs text-neutral-500 tabular-nums">{ungrouped.length}</span>
+                {t('wf.noFolder')} <span className="text-xs text-neutral-500 tabular-nums">{ungrouped.length}</span>
               </h3>
               {cardList(ungrouped)}
             </section>
@@ -487,7 +489,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
 
   if (embedded) {
     return (
-      <main className="flex-1 p-8 overflow-auto" role="main" aria-label="Workflows">
+      <main className="flex-1 p-8 overflow-auto" role="main" aria-label={t('wf.title')}>
         <div className="max-w-6xl mx-auto">{content}</div>
       </main>
     )
