@@ -36,7 +36,9 @@ async function toDataUrl(url?: string): Promise<string | undefined> {
 
 const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(functions, 'imageProxy')
 // Cache module : une URL résolue une seule fois (data-URI ou null si échec).
-const imgCache = new Map<string, string | null>()
+// ⚠ AUCUN CACHE : un visuel régénéré garde la même URL — le cache servait
+// l'ancienne image. Seuls les ÉCHECS sont mémorisés (pas de martèlement).
+const failedOnce = new Set<string>()
 
 /** Essaie chaque candidat de la chaîne (« détourée | originale ») — repli naturel. */
 async function resolveImg(value?: string): Promise<string | undefined> {
@@ -50,7 +52,7 @@ async function resolveImg(value?: string): Promise<string | undefined> {
 
 async function resolveOneImg(url: string): Promise<string | undefined> {
   if (url.startsWith('data:') || url.startsWith('blob:')) return url
-  if (imgCache.has(url)) return imgCache.get(url) ?? undefined
+  if (failedOnce.has(url)) return undefined
   try {
     let resolved: string
     if (isDriveImageRef(url)) {
@@ -63,10 +65,9 @@ async function resolveOneImg(url: string): Promise<string | undefined> {
       const { data } = await imageProxyFn({ url })
       resolved = `data:${data.mimeType};base64,${data.data}`
     }
-    imgCache.set(url, resolved)
     return resolved
   } catch {
-    imgCache.set(url, null)
+    failedOnce.add(url)
     return undefined
   }
 }

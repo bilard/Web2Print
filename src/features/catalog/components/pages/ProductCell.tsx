@@ -96,6 +96,9 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
     ro.observe(card)
     return () => ro.disconnect()
   })
+  // Lignes de détails RÉELLEMENT remplies : une entrée vide laissait un bloc au
+  // fond teinté mais sans contenu — la « bande grise » sous le visuel.
+  const shownDetails = (details ?? []).filter((d) => d.trim() !== '')
   const hasWas = f.oldPrice != null && f.newPrice != null && f.oldPrice > f.newPrice
   const show = (key: 'showDesc' | 'showRef' | 'showUnit' | 'showSticker' | 'showKicker' | 'showPromo' | 'showVedette' | 'showDetails' | 'showImage' | 'showBrand' | 'showName' | 'showPrice' | 'showWas') => cardStyle?.[key] ?? true
   // Sticker rond = écart entre les 2 prix (remise calculée), en haut à droite de l'image.
@@ -182,12 +185,12 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
       {f.ref && show('showRef') && obj('ref', <span className="cat-cell-refcode">Réf. {f.ref}</span>)}
       {f.unit && show('showUnit') && obj('unit', <span className="cat-cell-unit">Unité : {f.unit}</span>)}
       {show('showPrice') && obj('price', <span className="cat-cell-pricebox"><span className="cat-cell-tag">{hasWas && show('showWas') && <span className="cat-cell-was">{formatPrice(f.oldPrice)}</span>}<span className="cat-cell-price">{formatPrice(f.newPrice)}</span></span></span>)}
-      {details && details.length > 0 && show('showDetails') && obj('details',
+      {shownDetails.length > 0 && show('showDetails') && obj('details',
         cardStyle?.detailsColumns === 2
           ? (() => {
               // Split ÉQUILIBRÉ à la LIGNE physique (les entrées multi-lignes \n
               // se répartissent aussi) — flex, pas de CSS columns (html2canvas).
-              const lines = details.flatMap((d) => d.split('\n'))
+              const lines = shownDetails.flatMap((d) => d.split('\n'))
               const total = lines.reduce((n, l) => n + l.length + 1, 0)
               let acc = 0, idx = lines.length
               for (let i = 0; i < lines.length - 1; i++) { acc += lines[i].length + 1; if (acc >= total / 2) { idx = i + 1; break } }
@@ -199,7 +202,7 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
               )
             })()
           : <div className="cat-cell-details">
-              {details.map((d, i) => <span key={i}>{d}</span>)}
+              {shownDetails.map((d, i) => <span key={i}>{d}</span>)}
             </div>)}
       {/* Bloc À PART dans la chaîne de flux : si le prix ne rétrécit que les puces,
           le tableau garde TOUTE la largeur en dessous (jamais de colonne vide). */}

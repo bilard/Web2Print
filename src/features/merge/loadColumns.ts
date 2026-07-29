@@ -12,20 +12,10 @@ import type { ExcelSheet } from '@/features/excel/types'
 import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
 import { isPimSource, pimProjectIdFromSource, loadPimMergeData } from './pimSource'
 
-const cache = new Map<string, MergeColumn[]>()
-
-function cacheKey(s: DataSourceRef): string {
-  return isPimSource(s)
-    ? `pim:${pimProjectIdFromSource(s)}`
-    : `xls:${s.excelDocId}:${s.sheetIndex}`
-}
-
-/** Colonnes (schéma) d'une source, sans charger les lignes. Mémoïsé par source. */
+/** Colonnes (schéma) d'une source, sans charger les lignes.
+ *  ⚠ AUCUNE mémoïsation : une colonne ajoutée côté Données doit apparaître
+ *  immédiatement — un schéma en cache donnait des mappages fantômes. */
 export async function loadColumnsOnly(source: DataSourceRef): Promise<MergeColumn[]> {
-  const key = cacheKey(source)
-  const hit = cache.get(key)
-  if (hit) return hit
-
   let cols: MergeColumn[]
   if (isPimSource(source)) {
     // Le PIM n'expose pas de chargement « colonnes seules » : on réutilise le
@@ -53,6 +43,5 @@ export async function loadColumnsOnly(source: DataSourceRef): Promise<MergeColum
     }))
   }
 
-  cache.set(key, cols)
   return cols
 }

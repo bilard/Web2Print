@@ -80,11 +80,14 @@ async function getDriveAccessToken(): Promise<string> {
   throw new Error('Google Drive non connecté — connecte ton compte (Réglages → Connecteurs).')
 }
 
-// Mémoïsation par fileId : une grille PIM peut afficher des centaines d'images,
-// chacune résolue UNE fois par session (promesse partagée → un seul téléchargement,
-// objectURL réutilisé). On préfère createObjectURL aux data: URLs (pas de base64
-// gardé en mémoire pour chaque cellule visible).
-const blobUrlCache = new Map<string, Promise<string>>()
+// ⚠ AUCUNE mémoïsation par fileId. Un visuel régénéré REMPLACE le contenu du
+// même fichier Drive : l'id ne change pas, donc tout cache servait éternellement
+// l'ancienne image — et le diagnostic coûtait des heures (« le PIM est à jour,
+// pas le catalogue »). L'app est dynamique : la fraîcheur prime sur l'économie
+// d'appels. Seules les requêtes EN VOL sont partagées, pour qu'une même image
+// affichée dans dix cellules ne soit téléchargée qu'une fois — la promesse est
+// retirée dès qu'elle est résolue.
+const inFlight = new Map<string, Promise<string>>()
 
 async function fetchDriveBlobUrl(fileId: string): Promise<string> {
   const token = await getDriveAccessToken()
@@ -98,15 +101,12 @@ async function fetchDriveBlobUrl(fileId: string): Promise<string> {
   return URL.createObjectURL(blob)
 }
 
-/** URL affichable (`blob:`) pour un asset Drive, mémoïsée par fileId (session). */
+/** URL affichable (`blob:`) pour un asset Drive — TOUJOURS retéléchargée.
+ *  Les appels simultanés sur le même fichier partagent la requête en vol. */
 export function resolveDriveImageUrl(fileId: string): Promise<string> {
-  let p = blobUrlCache.get(fileId)
-  if (!p) {
-    p = fetchDriveBlobUrl(fileId).catch((err) => {
-      blobUrlCache.delete(fileId) // un échec n'est pas mis en cache (retry possible)
-      throw err
-    })
-    blobUrlCache.set(fileId, p)
-  }
+  const running = inFlight.get(fileId)
+  if (running) return running
+  const p = fetchDriveBlobUrl(fileId).finally(() => { inFlight.delete(fileId) })
+  inFlight.set(fileId, p)
   return p
 }

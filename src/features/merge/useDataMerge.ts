@@ -49,24 +49,19 @@ export function syncOriginTextOnEdit(
   }
 }
 
-/** Cache des URLs d'assets du projet */
-const assetUrlCache = new Map<string, string>()
-
-/** Cache des images téléchargées (URL → dataURL) */
-const imageCache = new Map<string, string>()
+// ⚠ AUCUN CACHE d'assets ni d'images : un visuel remplacé garde son nom/son URL,
+// donc tout cache servait l'ancienne version — l'app est dynamique, la fraîcheur
+// prime sur l'économie d'appels.
 
 /** Résout l'URL Firebase Storage d'un asset par son nom de fichier. */
 async function getAssetUrlForProject(projectId: string | null | undefined, fileName: string): Promise<string | null> {
   if (!projectId) return null
-  if (assetUrlCache.has(fileName)) return assetUrlCache.get(fileName)!
-
   try {
     const folderRef = ref(storage, `projects/${projectId}/links`)
     const list = await listAll(folderRef)
     for (const item of list.items) {
       if (item.name === fileName || item.name.startsWith(fileName.split('.')[0])) {
         const url = await getDownloadURL(item)
-        assetUrlCache.set(fileName, url)
         return url
       }
     }
@@ -76,8 +71,6 @@ async function getAssetUrlForProject(projectId: string | null | undefined, fileN
 
 /** Charge une image (Drive, URL directe ou nom d'asset) → dataURL. */
 async function loadImageForProject(urlOrName: string, projectId: string | null | undefined): Promise<string | null> {
-  if (imageCache.has(urlOrName)) return imageCache.get(urlOrName)!
-
   let url = urlOrName
   if (isDriveImageRef(urlOrName)) {
     const fileId = extractDriveFileId(urlOrName)
@@ -99,9 +92,7 @@ async function loadImageForProject(urlOrName: string, projectId: string | null |
     return new Promise((resolve) => {
       const reader = new FileReader()
       reader.onload = () => {
-        const dataUrl = reader.result as string
-        imageCache.set(urlOrName, dataUrl)
-        resolve(dataUrl)
+        resolve(reader.result as string)
       }
       reader.onerror = () => resolve(null)
       reader.readAsDataURL(blob)

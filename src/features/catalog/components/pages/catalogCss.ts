@@ -407,6 +407,9 @@ export const CATALOG_CSS = `
   background:var(--cat-details-bg,rgba(127,127,127,.06)); border-radius:4px; padding:3px 7px;
   font-family:var(--cat-font-details,var(--cat-font-b)); font-size:calc(9px * var(--cat-s-details,1) * ${F});
   color:var(--cat-details-ink,inherit); opacity:var(--cat-details-op,.75); line-height:1.3; }
+/* Filet de sécurité : un bloc de détails sans contenu ne doit jamais laisser
+   son fond teinté seul (bande grise sous le visuel). */
+.cat-cell-details:empty { display:none; }
 .cat-cell-details span { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 /* Spécifications VERSION PROMO (document de communication, pas fiche technique) :
    titre en pastille accent, paires en CHIPS arrondies teintées accent avec liseré,
