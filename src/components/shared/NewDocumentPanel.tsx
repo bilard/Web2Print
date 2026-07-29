@@ -4,6 +4,7 @@ import { BackgroundPicker, backgroundCss, type BackgroundValue } from './Backgro
 import { DEFAULT_GRADIENT } from './GradientPicker'
 import { useCan } from '@/features/access/useAccess'
 import { OptionHelp } from '@/components/shared/OptionHelp'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 import type { CanvasBgType } from '@/stores/ui.store'
 import type { GradientConfig } from '@/stores/editor.store'
 
@@ -24,7 +25,9 @@ interface NewDocumentPanelProps {
 }
 
 interface FormatPreset {
-  label: string
+  /** Clé React stable : le libellé traduit changerait à chaque bascule de langue. */
+  id: string
+  labelKey: TranslationKey
   width: number
   height: number
   icon: React.ReactNode
@@ -32,33 +35,36 @@ interface FormatPreset {
 }
 
 const FORMAT_PRESETS: FormatPreset[] = [
-  { label: 'A4 Portrait', width: 794, height: 1123, icon: <FileText className="w-5 h-5" />, category: 'print' },
-  { label: 'A4 Paysage', width: 1123, height: 794, icon: <FileText className="w-5 h-5" />, category: 'print' },
-  { label: 'A3 Portrait', width: 1123, height: 1587, icon: <FileText className="w-5 h-5" />, category: 'print' },
-  { label: 'A3 Paysage', width: 1587, height: 1123, icon: <FileText className="w-5 h-5" />, category: 'print' },
-  { label: 'A5 Portrait', width: 559, height: 794, icon: <FileText className="w-5 h-5" />, category: 'print' },
-  { label: 'Letter', width: 816, height: 1056, icon: <FileText className="w-5 h-5" />, category: 'print' },
-  { label: 'Full HD (1920x1080)', width: 1920, height: 1080, icon: <Monitor className="w-5 h-5" />, category: 'screen' },
-  { label: '4K (3840x2160)', width: 3840, height: 2160, icon: <Monitor className="w-5 h-5" />, category: 'screen' },
-  { label: 'Présentation 16:9', width: 1280, height: 720, icon: <Monitor className="w-5 h-5" />, category: 'screen' },
-  { label: 'Instagram Post', width: 1080, height: 1080, icon: <Image className="w-5 h-5" />, category: 'social' },
-  { label: 'Instagram Story', width: 1080, height: 1920, icon: <Smartphone className="w-5 h-5" />, category: 'social' },
-  { label: 'Facebook Cover', width: 820, height: 312, icon: <Image className="w-5 h-5" />, category: 'social' },
-  { label: 'Twitter Post', width: 1200, height: 675, icon: <Image className="w-5 h-5" />, category: 'social' },
-  { label: 'LinkedIn Banner', width: 1584, height: 396, icon: <Image className="w-5 h-5" />, category: 'social' },
+  { id: 'a4-portrait', labelKey: 'newdoc.preset.a4Portrait', width: 794, height: 1123, icon: <FileText className="w-5 h-5" />, category: 'print' },
+  { id: 'a4-landscape', labelKey: 'newdoc.preset.a4Landscape', width: 1123, height: 794, icon: <FileText className="w-5 h-5" />, category: 'print' },
+  { id: 'a3-portrait', labelKey: 'newdoc.preset.a3Portrait', width: 1123, height: 1587, icon: <FileText className="w-5 h-5" />, category: 'print' },
+  { id: 'a3-landscape', labelKey: 'newdoc.preset.a3Landscape', width: 1587, height: 1123, icon: <FileText className="w-5 h-5" />, category: 'print' },
+  { id: 'a5-portrait', labelKey: 'newdoc.preset.a5Portrait', width: 559, height: 794, icon: <FileText className="w-5 h-5" />, category: 'print' },
+  { id: 'letter', labelKey: 'newdoc.preset.letter', width: 816, height: 1056, icon: <FileText className="w-5 h-5" />, category: 'print' },
+  { id: 'full-hd', labelKey: 'newdoc.preset.fullHd', width: 1920, height: 1080, icon: <Monitor className="w-5 h-5" />, category: 'screen' },
+  { id: '4k', labelKey: 'newdoc.preset.4k', width: 3840, height: 2160, icon: <Monitor className="w-5 h-5" />, category: 'screen' },
+  { id: 'slide-16-9', labelKey: 'newdoc.preset.slide169', width: 1280, height: 720, icon: <Monitor className="w-5 h-5" />, category: 'screen' },
+  { id: 'ig-post', labelKey: 'newdoc.preset.igPost', width: 1080, height: 1080, icon: <Image className="w-5 h-5" />, category: 'social' },
+  { id: 'ig-story', labelKey: 'newdoc.preset.igStory', width: 1080, height: 1920, icon: <Smartphone className="w-5 h-5" />, category: 'social' },
+  { id: 'fb-cover', labelKey: 'newdoc.preset.fbCover', width: 820, height: 312, icon: <Image className="w-5 h-5" />, category: 'social' },
+  { id: 'twitter-post', labelKey: 'newdoc.preset.twitterPost', width: 1200, height: 675, icon: <Image className="w-5 h-5" />, category: 'social' },
+  { id: 'linkedin-banner', labelKey: 'newdoc.preset.linkedinBanner', width: 1584, height: 396, icon: <Image className="w-5 h-5" />, category: 'social' },
 ]
 
-const CATEGORIES = [
-  { key: 'all', label: 'Tous' },
-  { key: 'print', label: 'Impression' },
-  { key: 'screen', label: 'Écran' },
-  { key: 'social', label: 'Réseaux sociaux' },
-  { key: 'custom', label: 'Personnalisé' },
+// ⚠️ `key` reste la clé de FILTRAGE (comparée à `p.category`) : seul le libellé
+// est traduit. Traduire `key` casserait le filtre sans lever d'erreur.
+const CATEGORIES: { key: string; labelKey: TranslationKey }[] = [
+  { key: 'all',    labelKey: 'newdoc.cat.all' },
+  { key: 'print',  labelKey: 'newdoc.cat.print' },
+  { key: 'screen', labelKey: 'newdoc.cat.screen' },
+  { key: 'social', labelKey: 'newdoc.cat.social' },
+  { key: 'custom', labelKey: 'newdoc.cat.custom' },
 ]
 
 export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) {
   const canCreate = useCan('library.create')
-  const [title, setTitle] = useState('Sans titre')
+  const { t } = useTranslation()
+  const [title, setTitle] = useState('')
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null)
   const [customWidth, setCustomWidth] = useState(1200)
   const [customHeight, setCustomHeight] = useState(900)
@@ -89,9 +95,10 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
   }
 
   const handleSubmit = () => {
-    if (!title.trim()) return
     onConfirm({
-      title: title.trim(),
+      // Titre vide ⇒ « Sans titre » DANS LA LANGUE ACTIVE (avant, la valeur
+      // française était écrite en dur dans l'état initial du champ).
+      title: title.trim() || t('newdoc.untitled'),
       canvasWidth: currentWidth,
       canvasHeight: currentHeight,
       canvasBg: bg.color,
@@ -115,8 +122,8 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
           {/* Title */}
           <div data-tour="opt-newdoc-name">
             <label className="text-xs text-white/50 mb-1.5 flex items-center gap-1 font-medium uppercase tracking-wider">
-              Nom du document
-              <OptionHelp text="Le nom de votre projet, affiché dans la Bibliothèque. Modifiable à tout moment depuis l'éditeur." />
+              {t('newdoc.name')}
+              <OptionHelp text={t('newdoc.name.help')} />
             </label>
             <input
               autoFocus
@@ -124,15 +131,15 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
               className="w-full max-w-md bg-surface-2 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-indigo-500 transition-colors"
-              placeholder="Sans titre"
+              placeholder={t('newdoc.untitled')}
             />
           </div>
 
           {/* Category tabs */}
           <div data-tour="opt-newdoc-format">
             <label className="text-xs text-white/50 mb-3 flex items-center gap-1 font-medium uppercase tracking-wider">
-              Format
-              <OptionHelp text="Dimensions du document. Choisissez un preset par catégorie (Impression, Écran, Réseaux sociaux) ou « Personnalisé » pour saisir une taille en pixels." />
+              {t('newdoc.format')}
+              <OptionHelp text={t('newdoc.format.help')} />
             </label>
             <div className="flex gap-1 mb-4">
               {CATEGORIES.map((cat) => (
@@ -145,7 +152,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
                       : 'text-white/50 hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  {cat.label}
+                  {t(cat.labelKey)}
                 </button>
               ))}
             </div>
@@ -157,7 +164,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
                   const realIndex = FORMAT_PRESETS.indexOf(preset)
                   return (
                     <button
-                      key={preset.label}
+                      key={preset.id}
                       onClick={() => handleSelectPreset(i)}
                       className={`flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
                         selectedPreset === realIndex
@@ -169,7 +176,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
                         {preset.icon}
                       </div>
                       <div>
-                        <p className="text-sm text-white font-medium">{preset.label}</p>
+                        <p className="text-sm text-white font-medium">{t(preset.labelKey)}</p>
                         <p className="text-xs text-white/30">{preset.width} x {preset.height} px</p>
                       </div>
                     </button>
@@ -182,7 +189,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
             {activeCategory === 'custom' && (
               <div className="flex items-center gap-4">
                 <div>
-                  <label className="text-xs text-white/40 mb-1 block">Largeur (px)</label>
+                  <label className="text-xs text-white/40 mb-1 block">{t('newdoc.width')}</label>
                   <input
                     type="number"
                     value={customWidth}
@@ -192,7 +199,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
                 </div>
                 <span className="text-white/20 mt-5">x</span>
                 <div>
-                  <label className="text-xs text-white/40 mb-1 block">Hauteur (px)</label>
+                  <label className="text-xs text-white/40 mb-1 block">{t('newdoc.height')}</label>
                   <input
                     type="number"
                     value={customHeight}
@@ -207,8 +214,8 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
           {/* Background — solid / gradient / image */}
           <div data-tour="opt-newdoc-bg">
             <label className="text-xs text-white/50 mb-3 flex items-center gap-1 font-medium uppercase tracking-wider">
-              Arrière-plan
-              <OptionHelp text="Fond initial du document : couleur unie, dégradé, ou image. Modifiable ensuite depuis le panneau Page de l'éditeur." />
+              {t('newdoc.background')}
+              <OptionHelp text={t('newdoc.background.help')} />
             </label>
             <BackgroundPicker value={bg} onChange={setBg} />
           </div>
@@ -217,7 +224,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
         {/* Right: Preview + Create */}
         <div className="space-y-6">
           <div className="bg-surface border border-white/10 rounded-xl p-6 flex flex-col items-center gap-5">
-            <p className="text-xs text-white/50 font-medium uppercase tracking-wider self-start">Aperçu</p>
+            <p className="text-xs text-white/50 font-medium uppercase tracking-wider self-start">{t('newdoc.preview')}</p>
 
             {/* Preview canvas */}
             <div className="flex items-center justify-center" style={{ width: maxPreviewSize, height: maxPreviewSize }}>
@@ -245,18 +252,18 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
             {canCreate && (
               <button
                 onClick={handleSubmit}
-                disabled={loading || !title.trim()}
+                disabled={loading}
                 className="w-full flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-[#fff] font-medium px-6 py-3 rounded-lg transition-colors text-sm"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Création...
+                    {t('newdoc.creating')}
                   </>
                 ) : (
                   <>
                     <LayoutGrid className="w-4 h-4" />
-                    Créer le document
+                    {t('newdoc.create')}
                   </>
                 )}
               </button>

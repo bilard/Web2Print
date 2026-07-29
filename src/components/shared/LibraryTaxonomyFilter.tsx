@@ -4,6 +4,7 @@ import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useProjects } from '@/features/projects/useProjects'
 import { buildTree } from '@/features/taxonomy/taxonomyUtils'
 import type { Taxonomy, TaxonomyNodeWithChildren } from '@/features/taxonomy/types'
+import { useTranslation } from '@/lib/i18n'
 
 interface LibraryTaxonomyFilterProps {
   selectedNodeId: string | null
@@ -150,6 +151,7 @@ function FilterNode({
 }
 
 export function LibraryTaxonomyFilter({ selectedNodeId, onSelectNode }: LibraryTaxonomyFilterProps) {
+  const { t } = useTranslation()
   const { data: taxonomies } = useTaxonomies()
   const { data: projects } = useProjects()
   const existingProjectIds = useMemo(
@@ -207,13 +209,13 @@ export function LibraryTaxonomyFilter({ selectedNodeId, onSelectNode }: LibraryT
       <div className="px-3 py-3 border-b border-white/[0.06] flex items-center justify-between">
         <div className="flex items-center gap-2 text-white/50">
           <FolderTree className="w-3.5 h-3.5" />
-          <span className="text-[11px] font-medium uppercase tracking-wider">Filtrer</span>
+          <span className="text-[11px] font-medium uppercase tracking-wider">{t('libraryFilter.title')}</span>
         </div>
         {selectedNodeId && (
           <button
             onClick={() => onSelectNode(null, [])}
             className="text-white/30 hover:text-white/60 transition-colors"
-            title="Effacer le filtre"
+            title={t('libraryFilter.clear')}
           >
             <X className="w-3.5 h-3.5" />
           </button>

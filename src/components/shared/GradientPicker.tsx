@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { Gradient } from 'fabric'
 import type { GradientConfig, GradientStop } from '@/stores/editor.store'
 import { usePaletteStore, savePaletteToFirestore } from '@/stores/palette.store'
+import { useTranslation } from '@/lib/i18n'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -60,16 +61,17 @@ const PRESETS: GradientConfig[] = [
 // ── Project Gradient Swatches ────────────────────────────────────────────
 
 function ProjectGradientSwatches({ currentGradient, onChange }: { currentGradient: GradientConfig; onChange: (g: GradientConfig) => void }) {
+  const { t } = useTranslation()
   const { gradients, addGradient } = usePaletteStore()
 
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <p className="text-[9px] text-white/30 uppercase">Dégradés du projet</p>
+        <p className="text-[9px] text-white/30 uppercase">{t('gradient.projectGradients')}</p>
         <button onClick={() => { addGradient(currentGradient); savePaletteToFirestore() }}
-          title="Sauvegarder ce dégradé dans le projet"
+          title={t('gradient.save')}
           className="flex items-center gap-0.5 text-[9px] text-indigo-400/60 hover:text-indigo-400 transition-colors">
-          <Plus className="w-2.5 h-2.5" /> Sauver
+          <Plus className="w-2.5 h-2.5" /> {t('gradient.saveShort')}
         </button>
       </div>
       {gradients.length > 0 ? (
@@ -82,7 +84,7 @@ function ProjectGradientSwatches({ currentGradient, onChange }: { currentGradien
           ))}
         </div>
       ) : (
-        <p className="text-[9px] text-white/15 italic">Aucun dégradé sauvegardé</p>
+        <p className="text-[9px] text-white/15 italic">{t('gradient.none')}</p>
       )}
     </div>
   )
@@ -96,12 +98,13 @@ interface GradientPickerProps {
 }
 
 function AngleControl({ angle, onChange }: { angle: number; onChange: (a: number) => void }) {
+  const { t } = useTranslation()
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] text-white/30 w-10">Angle</span>
+      <span className="text-[10px] text-white/30 w-10">{t('gradient.angle')}</span>
       <input type="range" min={0} max={360} value={angle}
         onChange={(e) => onChangeRef.current(Number(e.target.value))}
         className="flex-1 accent-indigo-500" />
@@ -114,6 +117,7 @@ function AngleControl({ angle, onChange }: { angle: number; onChange: (a: number
 }
 
 export function GradientPicker({ value, onChange }: GradientPickerProps) {
+  const { t } = useTranslation()
   const [selectedStop, setSelectedStop] = useState(0)
   const [showPresets, setShowPresets] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
@@ -181,10 +185,10 @@ export function GradientPicker({ value, onChange }: GradientPickerProps) {
     <div className="flex flex-col gap-2">
       {/* Type toggle */}
       <div className="flex gap-1">
-        {(['linear', 'radial'] as const).map(t => (
-          <button key={t} onClick={() => onChange({ ...value, type: t })}
-            className={`flex-1 py-1 text-[10px] rounded border transition-colors ${value.type === t ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-white/5 border-white/10 text-white/40'}`}>
-            {t === 'linear' ? 'Linéaire' : 'Radial'}
+        {(['linear', 'radial'] as const).map(tt => (
+          <button key={tt} onClick={() => onChange({ ...value, type: tt })}
+            className={`flex-1 py-1 text-[10px] rounded border transition-colors ${value.type === tt ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-white/5 border-white/10 text-white/40'}`}>
+            {tt === 'linear' ? t('gradient.type.linear') : t('gradient.type.radial')}
           </button>
         ))}
       </div>
@@ -212,7 +216,7 @@ export function GradientPicker({ value, onChange }: GradientPickerProps) {
         <div className="flex flex-col gap-1.5">
           <div className="flex gap-2 items-end">
             <div className="flex-1 flex flex-col gap-0.5">
-              <span className="text-[9px] text-white/30">Couleur</span>
+              <span className="text-[9px] text-white/30">{t('gradient.colour')}</span>
               <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded px-1.5 py-0.5">
                 <input type="color" value={currentStop.color}
                   onChange={(e) => updateStop(selectedStop, { color: e.target.value })}
@@ -223,7 +227,7 @@ export function GradientPicker({ value, onChange }: GradientPickerProps) {
               </div>
             </div>
             <div className="w-16 flex flex-col gap-0.5">
-              <span className="text-[9px] text-white/30">Position</span>
+              <span className="text-[9px] text-white/30">{t('gradient.position')}</span>
               <input type="number" min={0} max={100}
                 value={Math.round(currentStop.offset * 100)}
                 onChange={(e) => updateStop(selectedStop, { offset: Number(e.target.value) / 100 })}
@@ -232,12 +236,12 @@ export function GradientPicker({ value, onChange }: GradientPickerProps) {
             {value.stops.length > 2 && (
               <button onClick={() => removeStop(selectedStop)}
                 className="mb-0.5 px-2 py-1 text-[10px] bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded text-red-400 transition-colors"
-                title="Supprimer ce point">
+                title={t('gradient.removeStop')}>
                 ✕
               </button>
             )}
           </div>
-          <p className="text-[9px] text-white/20 italic">Clic sur la barre = ajouter un point</p>
+          <p className="text-[9px] text-white/20 italic">{t('gradient.hint')}</p>
         </div>
       )}
 
@@ -249,7 +253,7 @@ export function GradientPicker({ value, onChange }: GradientPickerProps) {
         <button onClick={() => setShowPresets(v => !v)}
           className="flex items-center gap-1 text-[9px] text-white/30 uppercase hover:text-white/50 transition-colors">
           <span className={`transition-transform ${showPresets ? 'rotate-90' : ''}`}>▶</span>
-          Présélections
+          {t('gradient.presets')}
         </button>
         {showPresets && (
           <div className="grid grid-cols-4 gap-1 mt-1">

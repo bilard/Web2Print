@@ -4,6 +4,7 @@ import { Trash2, FileImage, MoreVertical, Copy, Check } from 'lucide-react'
 import type { ProjectData } from '@/types/project'
 import { EditorTaxonomyPicker } from '@/components/panels/EditorTaxonomyPicker'
 import { useCan } from '@/features/access/useAccess'
+import { useTranslation, intlLocale, type Locale } from '@/lib/i18n'
 
 export type ProjectViewMode = 'grid' | 'list'
 
@@ -19,8 +20,9 @@ interface ProjectCardProps {
   onToggleSelect?: (id: string) => void
 }
 
-function formatDate(ts: number): string {
-  return new Intl.DateTimeFormat('fr-FR', {
+/** La locale était figée à `fr-FR` : les dates restaient françaises en anglais. */
+function formatDate(ts: number, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -36,12 +38,13 @@ function SelectCheckbox({
   onClick: (e: React.MouseEvent) => void
   className?: string
 }) {
+  const { t } = useTranslation()
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={selected}
-      aria-label={selected ? 'Désélectionner le projet' : 'Sélectionner le projet'}
+      aria-label={t(selected ? 'project.deselect' : 'project.select')}
       onClick={onClick}
       className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
         selected
@@ -64,6 +67,7 @@ export function ProjectCard({
   onToggleSelect,
 }: ProjectCardProps) {
   const navigate = useNavigate()
+  const { t, locale } = useTranslation()
   const canDuplicate = useCan('library.duplicate')
   const canDelete = useCan('library.delete')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -75,8 +79,8 @@ export function ProjectCard({
       setPickerOpen(true)
     },
     title: taxonomyLabel
-      ? `${taxonomyLabel} — Cliquez pour modifier`
-      : 'Lier à une taxonomie',
+      ? t('project.taxonomy.edit', { label: taxonomyLabel })
+      : t('project.linkTaxonomy'),
   }
 
   const open = () =>
@@ -127,7 +131,7 @@ export function ProjectCard({
             {project.title}
           </p>
           <p className="text-[10px] text-white/30 mt-0.5">
-            {formatDate(project.updatedAt)}
+            {formatDate(project.updatedAt, locale)}
           </p>
         </div>
 
@@ -141,7 +145,7 @@ export function ProjectCard({
               : 'text-white/40 border border-dashed border-white/10 hover:border-indigo-500/40 hover:text-indigo-300 hover:bg-indigo-500/10'
           }`}
         >
-          {taxonomyLabel ?? '+ Lier à une taxonomie'}
+          {taxonomyLabel ?? t('project.linkTaxonomy.badge')}
         </button>
 
         {/* Actions inline */}
@@ -153,8 +157,8 @@ export function ProjectCard({
                 onDuplicate(project.id)
               }}
               className="p-1.5 rounded-md text-white/40 hover:text-indigo-300 hover:bg-indigo-500/10 transition-colors"
-              title="Dupliquer"
-              aria-label="Dupliquer"
+              title={t('project.duplicate')}
+              aria-label={t('project.duplicate')}
             >
               <Copy className="w-4 h-4" />
             </button>
@@ -163,13 +167,13 @@ export function ProjectCard({
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                if (window.confirm(`Supprimer "${project.title}" ?`)) {
+                if (window.confirm(t('project.delete.confirm', { title: project.title }))) {
                   onDelete(project.id)
                 }
               }}
               className="p-1.5 rounded-md text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-              title="Supprimer"
-              aria-label="Supprimer"
+              title={t('project.delete')}
+              aria-label={t('project.delete')}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -217,9 +221,9 @@ export function ProjectCard({
                 : 'text-white/40 border border-dashed border-white/10 hover:border-indigo-500/40 hover:text-indigo-300'
             }`}
           >
-            {taxonomyLabel ?? '+ Lier à une taxonomie'}
+            {taxonomyLabel ?? t('project.linkTaxonomy.badge')}
           </button>
-          <p className="text-[10px] text-white/30 mt-0.5">{formatDate(project.updatedAt)}</p>
+          <p className="text-[10px] text-white/30 mt-0.5">{formatDate(project.updatedAt, locale)}</p>
         </div>
 
         {/* Menu */}
@@ -241,7 +245,7 @@ export function ProjectCard({
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors"
                   >
                     <Copy className="w-4 h-4" />
-                    Dupliquer
+                    {t('project.duplicate')}
                   </button>
                 )}
                 {canDelete && (
@@ -250,7 +254,7 @@ export function ProjectCard({
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Supprimer
+                    {t('project.delete')}
                   </button>
                 )}
               </div>

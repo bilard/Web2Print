@@ -4,6 +4,7 @@ import { ColorPicker } from './ColorPicker'
 import { GradientPicker, gradientToCss } from './GradientPicker'
 import type { GradientConfig } from '@/stores/editor.store'
 import type { CanvasBgType } from '@/stores/ui.store'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 export interface BackgroundValue {
   type: CanvasBgType
@@ -37,13 +38,14 @@ const GRADIENT_PRESETS: GradientConfig[] = [
   { type: 'linear', angle: 90,  stops: [{ offset: 0, color: '#1e3a8a' }, { offset: 1, color: '#06b6d4' }] },
 ]
 
-const TABS: { value: CanvasBgType; label: string; icon: React.ElementType }[] = [
-  { value: 'solid',    label: 'Couleur unie', icon: Palette },
-  { value: 'gradient', label: 'Dégradé',      icon: Layers },
-  { value: 'image',    label: 'Image',        icon: ImageIcon },
+const TABS: { value: CanvasBgType; labelKey: TranslationKey; icon: React.ElementType }[] = [
+  { value: 'solid',    labelKey: 'bg.tab.solid',    icon: Palette },
+  { value: 'gradient', labelKey: 'bg.tab.gradient', icon: Layers },
+  { value: 'image',    labelKey: 'bg.tab.image',    icon: ImageIcon },
 ]
 
 export function BackgroundPicker({ value, onChange }: BackgroundPickerProps) {
+  const { t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const setType = (type: CanvasBgType) => onChange({ ...value, type })
@@ -64,7 +66,7 @@ export function BackgroundPicker({ value, onChange }: BackgroundPickerProps) {
     <div className="space-y-3">
       {/* Type tabs */}
       <div className="flex gap-1 bg-well border border-white/5 rounded-lg p-1">
-        {TABS.map(({ value: tabValue, label, icon: Icon }) => {
+        {TABS.map(({ value: tabValue, labelKey, icon: Icon }) => {
           const active = value.type === tabValue
           return (
             <button
@@ -75,7 +77,7 @@ export function BackgroundPicker({ value, onChange }: BackgroundPickerProps) {
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
-              {label}
+              {t(labelKey)}
             </button>
           )
         })}
@@ -100,7 +102,7 @@ export function BackgroundPicker({ value, onChange }: BackgroundPickerProps) {
           <ColorPicker
             value={value.color}
             onChange={(c) => onChange({ ...value, type: 'solid', color: c })}
-            label="Couleur personnalisée"
+            label={t('bg.customColour')}
           />
         </div>
       )}
@@ -109,7 +111,7 @@ export function BackgroundPicker({ value, onChange }: BackgroundPickerProps) {
       {value.type === 'gradient' && (
         <div className="space-y-3">
           <div>
-            <p className="text-[10px] text-white/40 uppercase tracking-wider font-medium mb-1.5">Présélections</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-wider font-medium mb-1.5">{t('bg.presets')}</p>
             <div className="grid grid-cols-6 gap-1.5">
               {GRADIENT_PRESETS.map((g, i) => {
                 const css = gradientToCss(g)
@@ -156,7 +158,7 @@ export function BackgroundPicker({ value, onChange }: BackgroundPickerProps) {
                 <button
                   onClick={() => onChange({ ...value, image: null })}
                   className="p-1.5 text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-md transition-colors"
-                  title="Supprimer"
+                  title={t('bg.removeImage')}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -168,7 +170,7 @@ export function BackgroundPicker({ value, onChange }: BackgroundPickerProps) {
               className="w-full flex items-center justify-center gap-2 py-8 border-2 border-dashed border-white/10 hover:border-indigo-500/30 rounded-lg text-white/30 hover:text-indigo-400 transition-colors"
             >
               <ImagePlus className="w-5 h-5" />
-              <span className="text-xs">Choisir une image</span>
+              <span className="text-xs">{t('bg.chooseImage')}</span>
             </button>
           )}
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />

@@ -11,6 +11,7 @@ import { convertPdfToEditableSvg, type PdfFontAsset } from '@/features/svg/pdfTo
 import { withProgress } from '@/stores/progress.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { ImportFolderToDriveModal } from '@/features/dam/ImportFolderToDriveModal'
+import { useTranslation } from '@/lib/i18n'
 
 export interface ImportSelection {
   type: 'idml' | 'pptx' | 'image' | 'svg' | 'xlsx' | 'image-to-svg' | 'pdf-to-svg'
@@ -27,6 +28,7 @@ interface ImportPanelProps {
 }
 
 export function ImportPanel({ onImport, loading }: ImportPanelProps) {
+  const { t } = useTranslation()
   const [dragOver, setDragOver] = useState<string | null>(null)
   const [idmlProcessing, setIdmlProcessing] = useState(false)
   const [idmlError, setIdmlError] = useState<string | null>(null)
@@ -96,7 +98,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
 
   const handlePptxFile = useCallback((file: File) => {
     if (!file.name.toLowerCase().match(/\.pptx?$/)) {
-      toast.error('Type non supporté : attendu .pptx', { description: file.name })
+      toast.error(t('import.error.pptx'), { description: file.name })
       return
     }
     onImport({ type: 'pptx', files: [file] })
@@ -104,7 +106,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
 
   const handleSvgFile = useCallback((file: File) => {
     if (!file.name.toLowerCase().endsWith('.svg')) {
-      toast.error('Type non supporté : attendu .svg', { description: file.name })
+      toast.error(t('import.error.svg'), { description: file.name })
       return
     }
     onImport({ type: 'svg', files: [file] })
@@ -112,7 +114,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
 
   const handleXlsxFile = useCallback((file: File) => {
     if (!file.name.toLowerCase().match(/\.(xlsx|xls|csv)$/)) {
-      toast.error('Type non supporté : attendu .xlsx, .xls ou .csv', { description: file.name })
+      toast.error(t('import.error.xlsx'), { description: file.name })
       return
     }
     onImport({ type: 'xlsx', files: [file] })
@@ -120,7 +122,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
 
   const handleImageToSvgFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
-      toast.error('Type non supporté : attendu une image raster (.png, .jpg, .webp, .gif)', { description: file.name })
+      toast.error(t('import.error.image'), { description: file.name })
       return
     }
     setConvertingImage(true)
@@ -129,14 +131,14 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
       onImport({ type: 'image-to-svg', files: [svgFile], canvas: { width, height } })
     } catch (err) {
       console.error('Image → SVG conversion error', err)
-      toast.error('Échec de la conversion image → SVG', { description: err instanceof Error ? err.message : String(err) })
+      toast.error(t('import.error.imageToSvg'), { description: err instanceof Error ? err.message : String(err) })
       setConvertingImage(false)
     }
   }, [onImport])
 
   const handlePdfToSvgFile = useCallback(async (file: File) => {
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      toast.error('Type non supporté : attendu un PDF', { description: file.name })
+      toast.error(t('import.error.pdf'), { description: file.name })
       return
     }
     setConvertingPdf(true)
@@ -145,7 +147,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
       onImport({ type: 'pdf-to-svg', files: [svgFile], canvas: { width, height }, fonts })
     } catch (err) {
       console.error('PDF → SVG conversion error', err)
-      toast.error('Échec de la conversion PDF → SVG', { description: err instanceof Error ? err.message : String(err) })
+      toast.error(t('import.error.pdfToSvg'), { description: err instanceof Error ? err.message : String(err) })
       setConvertingPdf(false)
     }
   }, [onImport])
@@ -172,7 +174,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
       <div className="flex flex-col items-center justify-center py-24 gap-3">
         <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
         <p className="text-sm text-white/40">
-          {convertingImage ? 'Conversion image → SVG…' : convertingPdf ? 'Rasterisation PDF → SVG…' : 'Création du projet et import...'}
+          {convertingImage ? t('import.converting.image') : convertingPdf ? t('import.converting.pdf') : t('import.creating')}
         </p>
       </div>
     )
@@ -200,10 +202,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           </div>
           <div data-tour="opt-import-idml" className="text-center">
             <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
-              Import IDML
-              <OptionHelp text="Importe un projet Adobe InDesign (dossier IDML + PDF + polices). Conserve la mise en page, les styles et le texte éditable." />
+              {t('import.idml.title')}
+              <OptionHelp text={t('import.idml.help')} />
             </p>
-            <p className="text-xs text-white/30 mt-1">IDML + PDF + Fonts</p>
+            <p className="text-xs text-white/30 mt-1">{t('import.idml.sub')}</p>
           </div>
           <input
             ref={idmlInputRef}
@@ -234,10 +236,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           </div>
           <div data-tour="opt-import-pptx" className="text-center">
             <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
-              Importer PPTX
-              <OptionHelp text="Importe une présentation PowerPoint. Chaque diapositive devient une page éditable (textes, formes, images)." />
+              {t('import.pptx.title')}
+              <OptionHelp text={t('import.pptx.help')} />
             </p>
-            <p className="text-xs text-white/30 mt-1">PowerPoint, slides éditables</p>
+            <p className="text-xs text-white/30 mt-1">{t('import.pptx.sub')}</p>
           </div>
           <input
             ref={pptxInputRef}
@@ -268,10 +270,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           </div>
           <div data-tour="opt-import-svg" className="text-center">
             <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
-              Importer SVG
-              <OptionHelp text="Importe un fichier vectoriel SVG. Chaque forme et texte reste éditable individuellement sur le canvas." />
+              {t('import.svg.title')}
+              <OptionHelp text={t('import.svg.help')} />
             </p>
-            <p className="text-xs text-white/30 mt-1">Vectoriel éditable</p>
+            <p className="text-xs text-white/30 mt-1">{t('import.svg.sub')}</p>
           </div>
           <input
             ref={svgInputRef}
@@ -302,10 +304,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           </div>
           <div data-tour="opt-import-excel" className="text-center">
             <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
-              Importer Excel
-              <OptionHelp text="Importe un tableau (Excel/CSV) dans le PIM. Ces données alimentent le publipostage : une variante du visuel par ligne." />
+              {t('import.xlsx.title')}
+              <OptionHelp text={t('import.xlsx.help')} />
             </p>
-            <p className="text-xs text-white/30 mt-1">Données & fusion variable</p>
+            <p className="text-xs text-white/30 mt-1">{t('import.xlsx.sub')}</p>
           </div>
           <input
             ref={xlsxInputRef}
@@ -336,10 +338,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           </div>
           <div data-tour="opt-import-image-to-svg" className="text-center">
             <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
-              Image → SVG éditable
-              <OptionHelp text="Convertit une image : le visuel est verrouillé en fond et les textes détectés (Vision) deviennent des calques éditables par-dessus." />
+              {t('import.imageToSvg.title')}
+              <OptionHelp text={t('import.imageToSvg.help')} />
             </p>
-            <p className="text-xs text-white/30 mt-1">Raster verrouillé + overlays</p>
+            <p className="text-xs text-white/30 mt-1">{t('import.imageToSvg.sub')}</p>
           </div>
           <input
             ref={imageToSvgInputRef}
@@ -370,10 +372,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           </div>
           <div data-tour="opt-import-pdf-to-svg" className="text-center">
             <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
-              PDF → SVG éditable
-              <OptionHelp text="Rasterise la page 1 d'un PDF en fond verrouillé, puis détecte les textes pour les rendre éditables en surimpression." />
+              {t('import.pdfToSvg.title')}
+              <OptionHelp text={t('import.pdfToSvg.help')} />
             </p>
-            <p className="text-xs text-white/30 mt-1">Page 1 rasterisée + overlays</p>
+            <p className="text-xs text-white/30 mt-1">{t('import.pdfToSvg.sub')}</p>
           </div>
           <input
             ref={pdfToSvgInputRef}
@@ -397,17 +399,17 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           </div>
           <div data-tour="opt-import-folder-to-drive" className="text-center">
             <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
-              Dossier → Drive
-              <OptionHelp text="Envoie N images d'un dossier local vers le dossier Google Drive de votre choix (DAM). Idéal pour téléverser un lot de visuels d'un coup." />
+              {t('import.folderToDrive.title')}
+              <OptionHelp text={t('import.folderToDrive.help')} />
             </p>
-            <p className="text-xs text-white/30 mt-1">N images vers Google Drive</p>
+            <p className="text-xs text-white/30 mt-1">{t('import.folderToDrive.sub')}</p>
           </div>
         </div>
         )}
       </div>
 
       <p className="text-xs text-white/15 mt-6 text-center">
-        Le fichier sera importé dans un nouveau projet et ouvert dans l'éditeur.
+        {t('import.footer')}
       </p>
 
       {/* Modal résumé IDML */}
