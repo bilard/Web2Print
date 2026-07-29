@@ -79,6 +79,47 @@ describe('intégrité des caractères', () => {
   })
 })
 
+describe('pluriel', () => {
+  // Vécu à l'écran : `PreflightBanner` écrivait `${t('wfc.inconsistency')}s` et
+  // affichait « 2 inconsistencys ». Recoller un « s » au mot TRADUIT suppose la
+  // règle de pluriel du français ; elle ne survit pas à la traduction.
+  it('ne recolle jamais un « s » à une traduction', () => {
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const full = join(dir, e.name)
+        if (e.isDirectory()) return walk(full)
+        return /\.tsx?$/.test(e.name) ? [full] : []
+      })
+    // `${t(…)}s` ou `${tr(…)}s` collé — le motif exact du défaut.
+    const NAIVE_PLURAL = /\$\{\s*t r?\(|\$\{\s*tr?\([^}]*\)\s*\}s\b/
+    const offences: string[] = []
+    for (const file of walk('src')) {
+      if (file.endsWith('i18n.test.ts')) continue // contient le motif lui-même
+      readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+        // Saute les COMMENTAIRES : ceux qui documentent ce défaut citent forcément
+        // le motif fautif, et un garde-fou qui crie sur sa propre explication finit
+        // désactivé.
+        const code = line.trim()
+        if (code.startsWith('//') || code.startsWith('*') || code.startsWith('/*')) return
+        if (/\$\{\s*tr?\([^}]*\)\s*\}s\b/.test(line)) offences.push(`${file}:${i + 1}`)
+      })
+    }
+    expect(offences, `pluriel naïf sur une traduction :\n${offences.join('\n')}`).toEqual([])
+    // Éprouvé : le motif DOIT matcher la forme fautive.
+    expect(NAIVE_PLURAL.test("`${n} ${t('wfc.inconsistency')}s`")).toBe(true)
+  })
+
+  it('emploie des clés dédiées pour chaque forme', () => {
+    for (const base of ['wfc.inconsistencies', 'wfc.warnings', 'wfc.pointsToCheck']) {
+      for (const form of ['one', 'many'] as const) {
+        expect(fr, `${base}.${form} manquante`).toHaveProperty(`${base}.${form}`)
+      }
+    }
+    // La forme anglaise irrégulière est celle que le « +s » cassait.
+    expect(en['wfc.inconsistencies.many']).toBe('{count} inconsistencies')
+  })
+})
+
 describe('orthographe britannique (en-GB)', () => {
   // Graphies américaines à bannir.
   //
