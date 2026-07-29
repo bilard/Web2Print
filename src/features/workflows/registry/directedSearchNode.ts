@@ -15,6 +15,8 @@ import { resolveSitesInput, sitesForRole } from '@/features/priceWatch/sourceSit
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
 import { directedPass, type DirectedSourceProduct, type DirectedSite } from '@/features/priceWatch/catalog/searchDirected'
 import { extractOriginRefs } from '@/features/priceWatch/catalog/match'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface DirectedConfig {
   sites: string
@@ -95,7 +97,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
       sitesText: config.sites, watchIdRaw: config.watchId, workflowId: ctx.workflowId,
     })
     const watchId = resolved.watchId
-    if (resolved.fromPort) ctx.log('info', `Liste reçue du node « Sites sources » : ${resolved.sites.length} site(s) actif(s).`)
+    if (resolved.fromPort) ctx.log('info', t('run.sourceSites.listReceivedActive', { count: resolved.sites.length }))
     const sheet = inputs.products
     if (!sheet?.rows?.length) throw new Error('Recherche dirigée : aucune donnée produit en entrée.')
     const bare = (d: string) => d.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/^www\./i, '')
@@ -105,7 +107,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     // Un site marqué « moisson » ne passe PAS par la recherche dirigée (payante à la réf).
     const sites: DirectedSite[] = sitesForRole(resolved.sites, 'directed')
       .map((s) => ({ siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)) }))
-    if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { results: resultsSheet([]) } }
+    if (sites.length === 0) { ctx.log('warn', t('run.noCompetitor')); return { results: resultsSheet([]) } }
 
     const refCol = config.refColumn.trim()
     const eanCol = config.eanColumn.trim()
@@ -151,7 +153,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
         fails.set(host, n)
         if (n >= FAILS_MAX) {
           skipped.add(host)
-          ctx.log('warn', `${host} : ${FAILS_MAX} échecs consécutifs — site ignoré pour le reste de la passe.`)
+          ctx.log('warn', t('run.directed.siteBreaker', { host, fails: FAILS_MAX }))
         }
       }
       return html
@@ -164,7 +166,9 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
       // sans ça la passe semble « tourner dans le vide » entre deux trouvailles.
       onProduct: (processed, total, hits) => {
         ctx.reportCount?.(hits)
-        ctx.log('info', `— produit ${processed}/${total} · ${hits} prix trouvé(s)${skipped.size ? ` · ${skipped.size} site(s) ignoré(s)` : ''}`)
+        ctx.log('info', skipped.size
+          ? t('run.directed.productProgressSkipped', { processed, total, hits, skipped: skipped.size })
+          : t('run.directed.productProgress', { processed, total, hits }))
       },
     })
 
@@ -197,12 +201,12 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
       }
     })
     ctx.reportCount?.(rows.length)
-    ctx.log('info', `${rows.length} prix trouvé(s) sur ${pass.processed} produit(s) [curseur ${startCursor} → ${pass.nextCursor} / ${products.length}] × ${sites.length} site(s).`)
+    ctx.log('info', t('run.directed.pricesFound', {
+      count: rows.length, processed: pass.processed, from: startCursor,
+      to: pass.nextCursor, products: products.length, sites: sites.length,
+    }))
     if (rows.length === 0) {
-      ctx.log('warn',
-        'Aucun prix trouvé sur cette passe. Vérifie que les clés interrogées existent CHEZ LES CONCURRENTS : ' +
-        'une référence article et un EAN propres au distributeur sont introuvables ailleurs. ' +
-        'Sur un catalogue de pièces adaptables, renseigne « Colonne Description (réf. d’origine) ».')
+      ctx.log('warn', t('run.directed.noPriceFound'))
     }
     return { results: resultsSheet(rows) }
   },

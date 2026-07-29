@@ -19,6 +19,8 @@ import { harvestPass, type CompetitorConfig, type HarvestDeps } from '@/features
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '@/features/priceWatch/catalog/store'
 import { harvestProgress } from '@/features/priceWatch/catalog/harvest'
 import { mapWithConcurrency, HARVEST_CONCURRENCY } from '@/features/priceWatch/concurrency'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 /** Fenêtre d'un run lancé depuis le NAVIGATEUR. Un run planifié est borné par le serveur
  *  (`ctx.deadlineAt` = RUN_TIMEOUT − RESERVE) ; côté client, RIEN ne bornait la passe. */
@@ -129,9 +131,13 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     // dont le catalogue est sans rapport avec la source : coût énorme, rendement nul).
     const sites = sitesForRole(allSites, 'harvest')
     const skipped = allSites.length - sites.length
-    if (fromPort) ctx.log('info', `Liste reçue du node « Sites sources » : ${sites.length} site(s) à moissonner${skipped > 0 ? ` (${skipped} en recherche dirigée seule)` : ''}.`)
+    if (fromPort) {
+      ctx.log('info', skipped > 0
+        ? t('run.harvest.listReceivedSkipped', { count: sites.length, skipped })
+        : t('run.harvest.listReceived', { count: sites.length }))
+    }
     if (sites.length === 0) {
-      ctx.log('warn', 'Aucun site concurrent configuré.')
+      ctx.log('warn', t('run.noCompetitor'))
       return { status: statusSheet([]) }
     }
     // Familles ciblées : le champ texte est un OVERRIDE explicite ; sinon elles sont
@@ -141,7 +147,11 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     const families = typed.length
       ? typed
       : familiesFromRows(inputs.products?.rows ?? [], config.familyColumn?.trim() ?? '')
-    if (!typed.length && families.length) ctx.log('info', `${families.length} famille(s) lues dans la colonne « ${config.familyColumn?.trim()} ».`)
+    if (!typed.length && families.length) {
+      ctx.log('info', t('run.harvest.familiesRead', {
+        count: families.length, column: config.familyColumn?.trim() ?? '',
+      }))
+    }
     // Budget : un site peut RÉSERVER ses pages (concurrent coûteux à brider) ; le reste
     // est partagé équitablement entre les autres.
     const budgets = splitPageBudget(sites, config.pageBudget)
@@ -165,7 +175,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       metas.set(siteId, await loadCompetitorMeta(uid, watchId, siteId))
     }
     const allDoneBefore = sites.every((s) => metas.get(stableId(s.domain))?.cursor?.done === true)
-    if (cycleMode && allDoneBefore) ctx.log('info', 'Nouveau cycle : réouverture des balayages de tous les sites.')
+    if (cycleMode && allDoneBefore) ctx.log('info', t('run.harvest.newCycle'))
 
     // Sites moissonnés EN PARALLÈLE BORNÉ (parité serveur). Ils sont indépendants —
     // chacun son fetcher, son curseur, son document `competitors/{siteId}` — et les
@@ -182,15 +192,15 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
         // Marqueur d'ATTENTE : sans lui la carte reste « OK » avec un scrape vieux de
         // plusieurs jours, et rien n'explique pourquoi le site ne part pas.
         await saveCompetitorMeta(uid, watchId, cfg.siteId, { domain: site.domain, cycleWaitingAt: Date.now() })
-        ctx.log('info', `${site.domain} : balayage terminé — en attente de la fin du cycle.`)
+        ctx.log('info', t('run.harvest.siteSweepDone', { domain: site.domain }))
         return { site: site.domain, pagesFetched: 0, productsIndexed: 0, pagesTotal, progress: 'complet' }
       }
       // Moteur par site : site authentifié (login cookie) sinon moteur forcé
       // (jina | firecrawl | brightdata) sinon cascade auto.
       const fetcher = buildSiteFetcher(site.engine, { auth: site.auth, host: site.domain })
       ctx.reportConnector?.(fetcher.connectorId)
-      if (site.auth) ctx.log('info', `${site.domain} : accès authentifié (login cookie).`)
-      else if (site.engine) ctx.log('info', `${site.domain} : moteur forcé « ${site.engine} ».`)
+      if (site.auth) ctx.log('info', t('run.harvest.siteAuth', { domain: site.domain }))
+      else if (site.engine) ctx.log('info', t('run.harvest.siteEngine', { domain: site.domain, engine: site.engine }))
       const t0 = Date.now()
       // % de prix de la passe : accumulé au fil des pages sauvées (aucune lecture en plus).
       let passProducts = 0
@@ -263,7 +273,9 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       // de remplissage donnerait une valeur différente selon l'ordre d'arrivée.
       indexedSoFar += res.productsIndexed
       ctx.reportCount?.(indexedSoFar)
-      ctx.log('info', `${site.domain} : +${res.productsIndexed} produit(s) sur ${res.pagesFetched} page(s) (index : ${pagesTotal} pages).`)
+      ctx.log('info', t('run.harvest.siteIndexed', {
+        domain: site.domain, indexed: res.productsIndexed, pages: res.pagesFetched, total: pagesTotal,
+      }))
       return {
         site: site.domain,
         pagesFetched: res.pagesFetched,

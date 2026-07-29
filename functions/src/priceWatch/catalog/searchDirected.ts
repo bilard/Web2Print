@@ -13,6 +13,7 @@
 import { parseListingPage, type CompetitorListing } from './prestashop'
 import { candidateKeys, proveMatch, type SourceProductKeys, type MatchProof } from './keys'
 import { mapWithConcurrency } from '../concurrency'
+import { t, DEFAULT_LOCALE, type Locale } from '../../i18nMessages'
 
 export interface SearchDeps {
   /** Récupère le HTML rendu d'une URL (même dépendance que la moisson : CF côté client,
@@ -29,6 +30,8 @@ export interface SearchDeps {
    *  pas dépasser le budget de run et faire tuer la Function. */
   signal?: { aborted: boolean }
   log?: (msg: string) => void
+  /** Langue des messages de run (cf. `HarvestDeps.locale`). Repli FR. */
+  locale?: Locale
   /** Progression après CHAQUE produit traité (parité client). Sous parallélisme, le
    *  premier argument est le NOMBRE de produits terminés, pas un rang : les tâches ne
    *  finissent pas dans l'ordre. */
@@ -88,7 +91,7 @@ async function searchProductGeneric(
       if (!listing) continue
       const proof = proveMatch(keys, toIdentity(listing))
       if (proof) {
-        deps.log?.(`${domain} (générique) : « ${query} » → ${listing.name} (preuve ${proof.evidence})`)
+        deps.log?.(t(deps.locale ?? DEFAULT_LOCALE, 'run.directed.genericHit', { domain, query, name: listing.name, evidence: proof.evidence }))
         return { listing, evidence: proof.evidence, query }
       }
     }
@@ -141,7 +144,7 @@ export async function searchProductOnSite(
     for (const listing of parseListingPage(html)) {
       const proof = proveMatch(keys, toIdentity(listing))
       if (proof) {
-        deps.log?.(`${domain} : « ${query} » → ${listing.name} (preuve ${proof.evidence})`)
+        deps.log?.(t(deps.locale ?? DEFAULT_LOCALE, 'run.directed.hit', { domain, query, name: listing.name, evidence: proof.evidence }))
         return { listing, evidence: proof.evidence, query }
       }
     }

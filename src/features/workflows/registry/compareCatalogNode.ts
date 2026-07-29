@@ -17,6 +17,8 @@ import { buildReport } from '@/features/priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '@/features/priceWatch/reportStore'
 import { resolveCompareColumns, hasNoJoinKey } from '@/features/priceWatch/catalog/compareColumns'
 import type { CompetitorListing } from '@/features/priceWatch/catalog/prestashop'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface CompareConfig {
   watchId: string
@@ -118,7 +120,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     const { watchId, sites, fromPort } = resolveSitesInput(inputs.sites, {
       sitesText: config.sites, watchIdRaw: config.watchId, workflowId: ctx.workflowId,
     })
-    if (fromPort) ctx.log('info', `Liste reçue du node « Sites sources » : ${sites.length} site(s) actif(s).`)
+    if (fromPort) ctx.log('info', t('run.sourceSites.listReceivedActive', { count: sites.length }))
     const rawRows = (inputs.products?.rows ?? []) as Record<string, unknown>[]
 
     // Colonnes RÉSOLUES contre la feuille réellement branchée. Les valeurs par défaut du
@@ -138,20 +140,24 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
       description: resolved.columns.description, url: resolved.columns.url,
     }
     if (resolved.guessed.length > 0) {
-      ctx.log('warn', `Colonnes introuvables dans la feuille, retrouvées automatiquement : ${
-        resolved.guessed.map((f) => `${f} → « ${col[f]} »`).join(', ')}. Corrige la config du node pour figer le mapping.`)
+      ctx.log('warn', t('run.compareCatalog.columnsGuessed', {
+        list: resolved.guessed.map((f) => `${f} → « ${col[f]} »`).join(', '),
+      }))
     }
     if (resolved.missing.length > 0) {
-      ctx.log('warn', `Colonnes configurées absentes de la feuille et introuvables : ${resolved.missing.join(', ')}. En-têtes disponibles : ${sheetColumns.map((c) => c.key).join(', ').slice(0, 300)}`)
+      ctx.log('warn', t('run.compareCatalog.columnsMissing', {
+        list: resolved.missing.join(', '),
+        headers: sheetColumns.map((c) => c.key).join(', ').slice(0, 300),
+      }))
     }
     if (sheetColumns.length > 0 && hasNoJoinKey(resolved)) {
-      throw new Error(
-        'Aucune clé de jointure dans la feuille source (ni référence, ni référence 2, ni EAN) : ' +
-        `la comparaison ne peut rien apparier. En-têtes reçus : ${sheetColumns.map((c) => c.key).join(', ').slice(0, 300)}`)
+      throw new Error(t('run.compareCatalog.noJoinKey', {
+        headers: sheetColumns.map((c) => c.key).join(', ').slice(0, 300),
+      }))
     }
 
-    if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { matrix: toSheet([], []) } }
-    if (rawRows.length === 0) { ctx.log('warn', 'Feuille de produits vide en entrée.'); return { matrix: toSheet([], []) } }
+    if (sites.length === 0) { ctx.log('warn', t('run.noCompetitor')); return { matrix: toSheet([], []) } }
+    if (rawRows.length === 0) { ctx.log('warn', t('run.emptySheet')); return { matrix: toSheet([], []) } }
 
     // Produits source : identité + clés (dont réf d'origine extraites de la description).
     const products: SourceProduct[] = []
@@ -177,11 +183,11 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // Le dédoublonnage ci-dessus se fait sur `ref ?? ean ?? name` : une colonne de
     // référence mal mappée fait retomber l'identité sur le NOM, et des milliers de
     // lignes distinctes s'effondrent alors en une poignée. Rendre l'écart visible.
-    ctx.log('info', `${products.length} produit(s) source retenus sur ${rawRows.length} ligne(s).`)
+    ctx.log('info', t('run.compareCatalog.sourceKept', { count: products.length, rows: rawRows.length }))
     if (products.length < rawRows.length * 0.9) {
-      ctx.log('warn',
-        `${rawRows.length - products.length} ligne(s) source écartées comme doublons — ` +
-        `vérifie la « Colonne Référence » (identité repliée sur le nom si elle est absente).`)
+      ctx.log('warn', t('run.compareCatalog.duplicatesDropped', {
+        count: rawRows.length - products.length,
+      }))
     }
 
     // Relecture de l'index concurrent depuis Firestore (pas via un edge).
@@ -194,7 +200,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
       if (meta?.cumulHarvestMs != null) harvestBySite.set(s.siteId, { lastMs: meta.lastHarvestMs ?? 0, cumulMs: meta.cumulHarvestMs, progress: meta.harvestProgress ?? 0, sweeps: meta.harvestSweeps ?? 0 })
       const listings = await loadAllListings(uid, watchId, s.siteId)
       indexBySite.set(s.siteId, listings)
-      ctx.log('info', `${s.domain} : ${listings.length} produit(s) dans l'index.`)
+      ctx.log('info', t('run.compareCatalog.siteIndexCount', { domain: s.domain, count: listings.length }))
     }
 
     // Garde-fou : index vide sur TOUS les sites = la moisson n'a rien écrit sous CE
@@ -205,11 +211,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // 0 produit reste légitime — c'est un recouvrement partiel, pas une erreur.)
     const totalListings = [...indexBySite.values()].reduce((n, l) => n + l.length, 0)
     if (totalListings === 0) {
-      throw new Error(
-        `Index concurrent vide pour les ${sites.length} site(s) sous le suivi « ${watchId} ». ` +
-        `Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi ` +
-        `(« ${watchId} ») et qu'il a bien été lancé avant.`,
-      )
+      throw new Error(t('run.compareCatalog.emptyIndex', { sites: sites.length, watchId }))
     }
 
     const vatRate = Math.max(0, (config.vatRate || 20)) / 100
@@ -220,10 +222,10 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     }
     const m = buildMatrix(products, siteRefs, indexBySite, { vatRate, labels })
     ctx.reportCount?.(m.matched)
-    ctx.log('info',
-      `${m.matched} produit(s) apparié(s) : ${m.matchedExact} même produit, ` +
-      `${m.matchedOriginOnly} pièce d'origine (adaptable ↔ OEM). ` +
-      `${m.unmatched} sans correspondance, ${m.noKey} sans clé.`)
+    ctx.log('info', t('run.compareCatalog.matchedBreakdown', {
+      matched: m.matched, exact: m.matchedExact, originOnly: m.matchedOriginOnly,
+      unmatched: m.unmatched, noKey: m.noKey,
+    }))
 
     // Persiste le RAPPORT dashboard (KPIs + stats/concurrent + liste rangée bornée +
     // point de tendance). Non bloquant : un échec de persistance ne doit pas casser
@@ -233,13 +235,13 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
       await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '', workflowId: ctx.workflowId })
       // Persiste le catalogue source → le recalcul mono-site (après un ▶ dans « Sites
       // sources ») pourra reconstruire le benchmark sans relancer tout le workflow.
-      await saveSourceCatalog(uid, watchId, products, vatRate).catch((e) => ctx.log('warn', `Catalogue source non persisté : ${e instanceof Error ? e.message : String(e)}`))
+      await saveSourceCatalog(uid, watchId, products, vatRate).catch((e) => ctx.log('warn', t('run.sourceCatalogNotPersisted', { message: e instanceof Error ? e.message : String(e) })))
       // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact.
       await Promise.all(report.byCompetitor.map((c) =>
         saveCompetitorMeta(uid, watchId, c.siteId, { productCount: c.audit.indexed })))
-      ctx.log('info', `Rapport enregistré (suivi « ${watchId} ») — visible dans le tableau de bord Veille tarifaire.`)
+      ctx.log('info', t('run.dashboardSaved', { watchId }))
     } catch (err) {
-      ctx.log('warn', `Rapport dashboard non enregistré : ${err instanceof Error ? err.message : String(err)}`)
+      ctx.log('warn', t('run.dashboardNotSaved', { message: err instanceof Error ? err.message : String(err) }))
     }
     return { matrix: toSheet(m.columns, m.rows) }
   },

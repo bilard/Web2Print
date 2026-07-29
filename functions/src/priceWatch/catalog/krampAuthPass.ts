@@ -8,12 +8,15 @@ import type { DirectedSourceProduct } from './searchDirected'
 import type { CompetitorListing } from './prestashop'
 import { candidateKeys, proveMatch } from './keys'
 import { parseKrampSearchCards } from './krampParse'
+import { t, DEFAULT_LOCALE, type Locale } from '../../i18nMessages'
 
 export interface KrampScrapeDep {
   /** login + navigation + scrape → map(url cible → markdown connecté). Injecté. */
   scrape: (urls: string[]) => Promise<Map<string, string>>
   signal?: { aborted: boolean }
   log?: (m: string) => void
+  /** Langue des messages de run (cf. `HarvestDeps.locale`). Repli FR. */
+  locale?: Locale
 }
 export interface KrampHit {
   productId: string
@@ -62,7 +65,11 @@ export async function krampAuthPass(products: DirectedSourceProduct[], deps: Kra
     }
     if (hit) {
       hits.push(hit)
-      deps.log?.(`kramp : ${hit.listing.name} ${hit.listing.price}€ (preuve ${hit.evidence})`)
+      deps.log?.(t(deps.locale ?? DEFAULT_LOCALE, 'run.directed.krampHit', {
+        // `price` est optionnel : String() conserve le rendu d'origine (« undefined »)
+        // plutôt que d'inventer une valeur.
+        name: hit.listing.name, price: String(hit.listing.price), evidence: hit.evidence,
+      }))
     }
   }
   return hits

@@ -64,7 +64,7 @@ registerServerNode({
     // dont le catalogue est sans rapport avec la source : coût énorme, rendement nul).
     const sites = sitesForRole(resolved.sites, 'harvest')
     const skipped = resolved.sites.length - sites.length
-    if (skipped > 0) ctx.log('info', `${skipped} site(s) en recherche dirigée seule — non moissonné(s).`)
+    if (skipped > 0) ctx.log('info', t(ctx.locale, 'run.harvest.directedOnly', { skipped }))
     if (sites.length === 0) {
       ctx.log('warn', t(ctx.locale, 'run.noCompetitor'))
       return { status: statusSheet([]) }
@@ -75,7 +75,7 @@ registerServerNode({
     const sourceRows = ((inputs.products ?? {}) as { rows?: Record<string, unknown>[] }).rows ?? []
     const familyColumn = String(config.familyColumn ?? '').trim()
     const families = typedFamilies.length ? typedFamilies : familiesFromRows(sourceRows, familyColumn)
-    if (!typedFamilies.length && families.length) ctx.log('info', `${families.length} famille(s) lues dans la colonne « ${familyColumn} ».`)
+    if (!typedFamilies.length && families.length) ctx.log('info', t(ctx.locale, 'run.harvest.familiesRead', { count: families.length, column: familyColumn }))
     const pageBudget = Math.max(1, Number(config.pageBudget) || 160)
     // Budget réparti équitablement entre les sites (au moins 1 page chacun).
     // Budget : un site peut RÉSERVER ses pages (concurrent coûteux à brider) ; le reste
@@ -95,7 +95,7 @@ registerServerNode({
       metas.set(siteId, await loadCompetitorMeta(ctx.uid, watchId, siteId))
     }
     const allDoneBefore = sites.every((s) => metas.get(stableId(s.domain))?.cursor?.done === true)
-    if (cycleMode && allDoneBefore) ctx.log('info', 'Nouveau cycle : réouverture des balayages de tous les sites.')
+    if (cycleMode && allDoneBefore) ctx.log('info', t(ctx.locale, 'run.harvest.newCycle'))
 
     let doneCount = 0
     let skippedByDeadline = 0
@@ -123,7 +123,7 @@ registerServerNode({
         // Marqueur d'ATTENTE (parité client) : la carte doit dire « attend le cycle »
         // plutôt que d'afficher « OK » avec un horodatage de plusieurs jours.
         await saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, { domain: site.domain, cycleWaitingAt: Date.now() })
-        ctx.log('info', `${site.domain} : balayage terminé — en attente de la fin du cycle.`)
+        ctx.log('info', t(ctx.locale, 'run.harvest.siteSweepDone', { domain: site.domain }))
         return { site: site.domain, pagesFetched: 0, productsIndexed: 0, pagesTotal, progress: 'complet' }
       }
       const t0 = Date.now()
@@ -159,6 +159,8 @@ registerServerNode({
           cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + (Date.now() - t0),
         }),
         log: (m) => ctx.log('info', m),
+        // Le moteur logue dans le MÊME panneau : il doit parler la langue du run.
+        locale: ctx.locale,
         signal: ctx.signal,
         // Le TEMPS gouverne la passe ; `pageBudget` n'est plus qu'un plafond de sécurité.
         deadlineAt: ctx.deadlineAt,
@@ -190,7 +192,9 @@ registerServerNode({
         lastPassProducts: res.productsIndexed,
         lastPassAt: Date.now(),
       })
-      ctx.log('info', `${site.domain} : +${res.productsIndexed} produit(s) sur ${res.pagesFetched} page(s) (index : ${pagesTotal} pages).`)
+      ctx.log('info', t(ctx.locale, 'run.harvest.siteIndexed', {
+        domain: site.domain, indexed: res.productsIndexed, pages: res.pagesFetched, total: pagesTotal,
+      }))
       return {
         site: site.domain,
         pagesFetched: res.pagesFetched,
@@ -203,13 +207,13 @@ registerServerNode({
     // d'un run à l'autre malgré des fins dans le désordre.
     const rows: Record<string, unknown>[] = results.filter((r): r is NonNullable<typeof r> => r != null)
     if (skippedByDeadline > 0) {
-      ctx.log('info', `Budget réservé au comparatif — ${skippedByDeadline} site(s) non démarré(s) ce run, la suite au prochain tick.`)
+      ctx.log('info', t(ctx.locale, 'run.harvest.budgetReserved', { skipped: skippedByDeadline }))
     }
     // Cycle complet : TOUS les sites à 100 % ce run → le scheduler bascule sur
     // l'échéance calendaire de relance au lieu d'enchaîner à la cadence rapide.
     if (cycleMode && !ctx.signal.aborted && doneCount === sites.length) {
       ctx.reportCycleComplete?.()
-      ctx.log('info', `Cycle complet : ${sites.length} site(s) à 100 % — prochaine relance à l'échéance calendaire.`)
+      ctx.log('info', t(ctx.locale, 'run.harvest.cycleComplete', { count: sites.length }))
     }
     return { status: statusSheet(rows) }
   },

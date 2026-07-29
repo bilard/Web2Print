@@ -1927,6 +1927,66 @@ export const fr = {
   'run.analytics.ownerOnly': 'Rapport de fréquentation réservé au propriétaire du site (trafic global).',
   'run.analytics.notAuthenticated': 'Utilisateur non authentifié — impossible de lire les statistiques.',
   'run.analytics.permissionDenied': 'Accès refusé : seules les statistiques du propriétaire du site sont lisibles.',
+  // Moisson des concurrents (`harvest-competitor`)
+  // Les deux premières sont propres au CLIENT : le jumeau serveur annonce
+  // seulement les sites écartés (`run.harvest.directedOnly`).
+  'run.harvest.listReceived': 'Liste reçue du node « Sites sources » : {count} site(s) à moissonner.',
+  'run.harvest.listReceivedSkipped': 'Liste reçue du node « Sites sources » : {count} site(s) à moissonner ({skipped} en recherche dirigée seule).',
+  'run.harvest.directedOnly': '{skipped} site(s) en recherche dirigée seule — non moissonné(s).',
+  'run.harvest.familiesRead': '{count} famille(s) lues dans la colonne « {column} ».',
+  'run.harvest.newCycle': 'Nouveau cycle : réouverture des balayages de tous les sites.',
+  'run.harvest.siteSweepDone': '{domain} : balayage terminé — en attente de la fin du cycle.',
+  'run.harvest.siteAuth': '{domain} : accès authentifié (login cookie).',
+  'run.harvest.siteEngine': '{domain} : moteur forcé « {engine} ».',
+  'run.harvest.siteIndexed': '{domain} : +{indexed} produit(s) sur {pages} page(s) (index : {total} pages).',
+  'run.harvest.budgetReserved': 'Budget réservé au comparatif — {skipped} site(s) non démarré(s) ce run, la suite au prochain tick.',
+  'run.harvest.cycleComplete': "Cycle complet : {count} site(s) à 100 % — prochaine relance à l'échéance calendaire.",
+
+  // Moteur de moisson et sondes (`priceWatch/catalog/`) — émis via `deps.log`,
+  // branché sur `ctx.log` par le node : même panneau, même exigence.
+  'run.harvest.unknownUrlPattern': "{domain} : motif d'URL inconnu — sondage de {count} lien(s) candidat(s).",
+  'run.harvest.listPagesConfirmed': '{domain} : {confirmed} page(s) liste confirmée(s) → plan de {plan} (+{children} sous-rayon(s), +{mates} de même gabarit).',
+  'run.harvest.aiTargeting': '{domain} : ciblage IA — {kept}/{total} catégorie(s) retenue(s).',
+  'run.harvest.aiTargetingUnavailable': '{domain} : ciblage IA indisponible ({message}) — catalogue complet.',
+  'run.harvest.discoveryCoolingDown': '{domain} : découverte en veille (aucune catégorie trouvée il y a moins de {minutes} min) — relance manuelle ▶ pour re-sonder.',
+  'run.harvest.noCategory': '{domain} : aucune catégorie cible trouvée (accueil injoignable ou familles absentes).',
+  'run.harvest.sweepingCategories': '{domain} : balayage de {count} catégorie(s).',
+  'run.harvest.runWindowReached': '{domain} : fenêtre de run atteinte après {pages} page(s) — reprise au prochain passage.',
+  'run.probe.listingFound': 'sonde : {url} → {count} produit(s), retenue comme page liste.',
+  'run.probe.noListing': 'sonde : {probes} page(s) ouverte(s), aucune ne contient de liste produit.',
+  'run.directed.genericHit': '{domain} (générique) : « {query} » → {name} (preuve {evidence})',
+  'run.directed.hit': '{domain} : « {query} » → {name} (preuve {evidence})',
+
+  // Comparatif de catalogue (`compare-catalog`)
+  // Les quatre premières sont propres au CLIENT : la résolution de colonnes et la
+  // garde de clé de jointure n'existent pas dans le jumeau serveur.
+  'run.sourceSites.listReceivedActive': 'Liste reçue du node « Sites sources » : {count} site(s) actif(s).',
+  'run.compareCatalog.columnsGuessed': 'Colonnes introuvables dans la feuille, retrouvées automatiquement : {list}. Corrige la config du node pour figer le mapping.',
+  'run.compareCatalog.columnsMissing': 'Colonnes configurées absentes de la feuille et introuvables : {list}. En-têtes disponibles : {headers}',
+  'run.compareCatalog.noJoinKey': 'Aucune clé de jointure dans la feuille source (ni référence, ni référence 2, ni EAN) : la comparaison ne peut rien apparier. En-têtes reçus : {headers}',
+  'run.compareCatalog.sourceKept': '{count} produit(s) source retenus sur {rows} ligne(s).',
+  'run.compareCatalog.duplicatesDropped': '{count} ligne(s) source écartées comme doublons — vérifie la « Colonne Référence » (identité repliée sur le nom si elle est absente).',
+  'run.compareCatalog.siteIndexCount': "{domain} : {count} produit(s) dans l'index.",
+  'run.compareCatalog.emptyIndex': 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
+  'run.compareCatalog.matchedBreakdown': "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
+
+  // Recherche dirigée (`directed-search`)
+  'run.directed.siteBreaker': '{host} : {fails} échecs consécutifs — site ignoré pour le reste de la passe.',
+  'run.directed.productProgress': '— produit {processed}/{total} · {hits} prix trouvé(s)',
+  'run.directed.productProgressSkipped': '— produit {processed}/{total} · {hits} prix trouvé(s) · {skipped} site(s) ignoré(s)',
+  'run.directed.budgetReserved': 'Budget réservé au comparatif — recherche dirigée repoussée au prochain tick.',
+  'run.directed.genericNoFirecrawlKey': 'Sites génériques sans clé Firecrawl — extraction via les replis Bright Data puis Jina.',
+  'run.directed.authNoFirecrawlKey': 'Site authentifié {host} mais aucune clé Firecrawl — ignoré.',
+  'run.directed.authMatched': 'Auth {host} : {hits}/{total} prix apparié(s) [curseur auth {from} → {to} / {products}].',
+  'run.directed.pricesFound': '{count} prix trouvé(s) sur {processed} produit(s) [curseur {from} → {to} / {products}] × {sites} site(s).',
+  'run.directed.noPriceFound': "Aucun prix trouvé sur cette passe. Vérifie que les clés interrogées existent CHEZ LES CONCURRENTS : une référence article et un EAN propres au distributeur sont introuvables ailleurs. Sur un catalogue de pièces adaptables, renseigne « Colonne Description (réf. d’origine) ».",
+  'run.directed.genericSummary': 'Générique ({sites} site(s)) : {queries} recherche(s) web · {noUrls} sans résultat (réf non vendue / 422) · {extracted} fiche(s) extraite(s){fallback} · {matched} appariée(s) par preuve exacte.',
+  'run.directed.genericViaFallback': ' (dont {bd} Bright Data · {jina} Jina)',
+  // Passe authentifiée : moteur SERVEUR uniquement (pas de jumeau client).
+  'run.directed.krampHit': 'kramp : {name} {price}€ (preuve {evidence})',
+  'run.directed.creditsFirecrawl': 'Crédits Firecrawl ÉPUISÉS — extraction générique suspendue (appels sautés). Recharger sur firecrawl.dev.',
+  'run.directed.creditsJina': 'Crédits Jina ÉPUISÉS — recherches web suspendues (appels sautés). Recharger sur jina.ai.',
+
   'run.period.7d': '7 derniers jours',
   'run.period.30d': '30 derniers jours',
   'run.period.90d': '90 derniers jours',

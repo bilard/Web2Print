@@ -101,11 +101,11 @@ registerServerNode({
     // Le dédoublonnage ci-dessus se fait sur `ref ?? ean ?? name` : une colonne de
     // référence mal mappée fait retomber l'identité sur le NOM, et des milliers de
     // lignes distinctes s'effondrent alors en une poignée. Rendre l'écart visible.
-    ctx.log('info', `${sourceProducts.length} produit(s) source retenus sur ${rawRows.length} ligne(s).`)
+    ctx.log('info', t(ctx.locale, 'run.compareCatalog.sourceKept', { count: sourceProducts.length, rows: rawRows.length }))
     if (sourceProducts.length < rawRows.length * 0.9) {
-      ctx.log('warn',
-        `${rawRows.length - sourceProducts.length} ligne(s) source écartées comme doublons — ` +
-        `vérifie la « Colonne Référence » (identité repliée sur le nom si elle est absente).`)
+      ctx.log('warn', t(ctx.locale, 'run.compareCatalog.duplicatesDropped', {
+        count: rawRows.length - sourceProducts.length,
+      }))
     }
 
     // Relecture de l'index concurrent depuis Firestore (pas via un edge).
@@ -118,7 +118,7 @@ registerServerNode({
       if (meta?.cumulHarvestMs != null) harvestBySite.set(s.siteId, { lastMs: meta.lastHarvestMs ?? 0, cumulMs: meta.cumulHarvestMs, progress: meta.harvestProgress ?? 0, sweeps: meta.harvestSweeps ?? 0 })
       const listings = await loadAllListings(ctx.uid, watchId, s.siteId)
       indexBySite.set(s.siteId, listings)
-      ctx.log('info', `${s.domain} : ${listings.length} produit(s) dans l'index.`)
+      ctx.log('info', t(ctx.locale, 'run.compareCatalog.siteIndexCount', { domain: s.domain, count: listings.length }))
     }
 
     // Garde-fou (jumeau du client) : index vide sur TOUS les sites = la moisson n'a rien
@@ -126,21 +126,17 @@ registerServerNode({
     // lancée). Échec explicite plutôt qu'une matrice vide qui ferait planter l'export.
     const totalListings = [...indexBySite.values()].reduce((n, l) => n + l.length, 0)
     if (totalListings === 0) {
-      throw new Error(
-        `Index concurrent vide pour les ${sites.length} site(s) sous le suivi « ${watchId} ». ` +
-        `Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi ` +
-        `(« ${watchId} ») et qu'il a bien été lancé avant.`,
-      )
+      throw new Error(t(ctx.locale, 'run.compareCatalog.emptyIndex', { sites: sites.length, watchId }))
     }
 
     const vatRate = Math.max(0, Number(config.vatRate) || 20) / 100
     // En-têtes de sortie = noms de colonnes de la source (suffixés du concurrent).
     const labels = { ref: refColumn, ean: eanColumn, name: nameColumn, family: familyColumn, price: priceColumn }
     const m = buildMatrix(sourceProducts, siteRefs, indexBySite, { vatRate, labels })
-    ctx.log('info',
-      `${m.matched} produit(s) apparié(s) : ${m.matchedExact} même produit, ` +
-      `${m.matchedOriginOnly} pièce d'origine (adaptable ↔ OEM). ` +
-      `${m.unmatched} sans correspondance, ${m.noKey} sans clé.`)
+    ctx.log('info', t(ctx.locale, 'run.compareCatalog.matchedBreakdown', {
+      matched: m.matched, exact: m.matchedExact, originOnly: m.matchedOriginOnly,
+      unmatched: m.unmatched, noKey: m.noKey,
+    }))
 
     // Persiste le RAPPORT dashboard (comme le node client) → le CRON alimente le tableau
     // de bord Veille tarifaire sans ouvrir l'app. Non bloquant : un échec ne casse pas l'export.

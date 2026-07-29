@@ -33,25 +33,63 @@ const DONE: readonly { type: string; files: readonly string[] }[] = [
       'functions/src/workflow/nodes/comparePrices.ts',
     ],
   },
+  {
+    // Le MOTEUR de moisson est dans le même lot que le node : ses messages
+    // remontent par `deps.log` dans le même panneau. Un node traduit dont le
+    // moteur logue en dur reste à moitié français.
+    type: 'harvest-competitor',
+    files: [
+      'src/features/workflows/registry/harvestCompetitorNode.ts',
+      'functions/src/workflow/nodes/harvestCompetitor.ts',
+      'src/features/priceWatch/catalog/runHarvest.ts',
+      'functions/src/priceWatch/catalog/runHarvest.ts',
+      'src/features/priceWatch/catalog/probeListings.ts',
+      'functions/src/priceWatch/catalog/probeListings.ts',
+    ],
+  },
+  {
+    type: 'compare-catalog',
+    files: [
+      'src/features/workflows/registry/compareCatalogNode.ts',
+      'functions/src/workflow/nodes/compareCatalog.ts',
+    ],
+  },
+  {
+    // Même logique que la moisson : le moteur de recherche dirigée et la passe
+    // authentifiée loguent dans le panneau du node.
+    type: 'directed-search',
+    files: [
+      'src/features/workflows/registry/directedSearchNode.ts',
+      'functions/src/workflow/nodes/directedSearch.ts',
+      'src/features/priceWatch/catalog/searchDirected.ts',
+      'functions/src/priceWatch/catalog/searchDirected.ts',
+      'functions/src/priceWatch/catalog/krampAuthPass.ts',
+    ],
+  },
 ]
 
 /** Niveaux de log — premier argument de `ctx.log`. */
 const LEVELS = new Set(['debug', 'info', 'warn', 'error'])
 
 /**
- * Extrait le source de chaque appel `ctx.log(` — parenthèses ÉQUILIBRÉES, donc
- * les appels multi-lignes (fréquents : messages concaténés sur 3 lignes) sont
+ * Ouvertures d'un appel de log. `ctx.log` est celui des nodes ; `deps.log?.` et
+ * `opts.log?.` sont les rappels des MOTEURS (`priceWatch/catalog/`), que le node
+ * branche sur `ctx.log` — leurs messages atterrissent dans le même panneau et
+ * sont donc soumis à la même règle.
+ */
+const LOG_OPENER = /(?:ctx|deps|opts)\.log\??\.?\(/g
+
+/**
+ * Extrait le source de chaque appel de log — parenthèses ÉQUILIBRÉES, donc les
+ * appels multi-lignes (fréquents : messages concaténés sur 3 lignes) sont
  * capturés en entier. Une regex ligne à ligne les manquerait.
  */
 function extractLogCalls(source: string): string[] {
   const calls: string[] = []
-  const NEEDLE = 'ctx.log('
-  let from = 0
-  for (;;) {
-    const start = source.indexOf(NEEDLE, from)
-    if (start === -1) break
+  for (const m of source.matchAll(LOG_OPENER)) {
+    const open = m.index + m[0].length - 1
     let depth = 0
-    let i = start + NEEDLE.length - 1
+    let i = open
     for (; i < source.length; i++) {
       if (source[i] === '(') depth++
       else if (source[i] === ')') {
@@ -59,26 +97,76 @@ function extractLogCalls(source: string): string[] {
         if (depth === 0) break
       }
     }
-    calls.push(source.slice(start, i + 1))
-    from = i + 1
+    calls.push(source.slice(m.index, i + 1))
   }
   return calls
 }
 
 /**
- * Littéraux d'un fragment de code : simples quotes, doubles quotes, et
- * gabarits. Pour un gabarit on ne garde que les portions LITTÉRALES (hors
- * `${…}`) : c'est là que se cache le texte en dur, alors que l'intérieur des
- * interpolations est du code (`String(e)`, `sites.join(', ')`).
+ * Littéraux d'un fragment de code : simples quotes, doubles quotes, gabarits.
+ * Pour un gabarit on ne garde que les portions LITTÉRALES ; l'intérieur des
+ * `${…}` est du code, rescanné à son tour (`sites.join(', ')` y est un
+ * littéral légitime).
+ *
+ * ⚠️ C'est un BALAYAGE, pas une regex, pour une raison vécue : les
+ * COMMENTAIRES doivent être sautés. Un `// … d'origine …` à l'intérieur d'un
+ * appel de log ouvrait une fausse chaîne sur l'apostrophe et faisait crier le
+ * garde-fou sur du commentaire français parfaitement légitime.
  */
 function literals(code: string): string[] {
   const out: string[] = []
-  for (const m of code.matchAll(/'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"/g)) {
-    out.push(m[1] ?? m[2] ?? '')
-  }
-  for (const m of code.matchAll(/`((?:[^`\\]|\\.)*)`/g)) {
-    // Retire les interpolations, puis découpe : chaque morceau restant est du texte.
-    out.push(...m[1].split(/\$\{[^}]*\}/g))
+  let i = 0
+  const n = code.length
+  while (i < n) {
+    const c = code[i]
+    if (c === '/' && code[i + 1] === '/') {
+      while (i < n && code[i] !== '\n') i++
+      continue
+    }
+    if (c === '/' && code[i + 1] === '*') {
+      i += 2
+      while (i < n && !(code[i] === '*' && code[i + 1] === '/')) i++
+      i += 2
+      continue
+    }
+    if (c === "'" || c === '"') {
+      const quote = c
+      let buf = ''
+      i++
+      while (i < n && code[i] !== quote) {
+        if (code[i] === '\\') { buf += code[i + 1] ?? ''; i += 2 } else buf += code[i++]
+      }
+      i++
+      out.push(buf)
+      continue
+    }
+    if (c === '`') {
+      let buf = ''
+      i++
+      while (i < n && code[i] !== '`') {
+        if (code[i] === '\\') { buf += code[i + 1] ?? ''; i += 2; continue }
+        if (code[i] === '$' && code[i + 1] === '{') {
+          out.push(buf)
+          buf = ''
+          let depth = 1
+          i += 2
+          const start = i
+          while (i < n && depth > 0) {
+            if (code[i] === '{') depth++
+            else if (code[i] === '}') depth--
+            if (depth > 0) i++
+          }
+          out.push(...literals(code.slice(start, i)))
+          i++
+          continue
+        }
+        buf += code[i++]
+      }
+      i++
+      out.push(buf)
+      continue
+    }
+    i++
   }
   return out
 }
@@ -149,5 +237,8 @@ describe('câblage des messages de run', () => {
     // Valeurs de CODE légitimes dans un appel de log : ne doivent pas alerter.
     expect(offendingLiterals(`ctx.log('info', t('run.x', { p: c.period ?? '30d' }))`)).toEqual([])
     expect(offendingLiterals(`ctx.log('info', t('run.x', { m: 'text/html;charset=utf-8' }))`)).toEqual([])
+    // Un COMMENTAIRE français dans l'appel : légitime, et son apostrophe ne doit
+    // pas ouvrir une fausse chaîne qui avalerait le reste de la ligne.
+    expect(offendingLiterals("ctx.log('info', t('run.x', {\n  // conserve le rendu d'origine\n  p: String(v),\n}))")).toEqual([])
   })
 })

@@ -72,14 +72,14 @@ registerServerNode({
     // fenêtre CE run. Une passe démarrée avant l'échéance va au bout (bornée par
     // productBudget), la réserve absorbe ce débordement.
     if (ctx.deadlineAt && Date.now() > ctx.deadlineAt) {
-      ctx.log('info', 'Budget réservé au comparatif — recherche dirigée repoussée au prochain tick.')
+      ctx.log('info', t(ctx.locale, 'run.directed.budgetReserved'))
       return { results: resultsSheet([]) }
     }
 
     // Dépendances du mode générique (chargées seulement si ≥ 1 site générique → pas de coût sinon).
     const hasGeneric = sites.some((s) => s.generic)
     const firecrawlKey = hasGeneric ? (await getUserApiKey(ctx.uid, 'firecrawl')) : ''
-    if (hasGeneric && !firecrawlKey) ctx.log('warn', 'Sites génériques sans clé Firecrawl — extraction via les replis Bright Data puis Jina.')
+    if (hasGeneric && !firecrawlKey) ctx.log('warn', t(ctx.locale, 'run.directed.genericNoFirecrawlKey'))
     // Compteurs de diagnostic du mode générique : sans eux, une couverture marketplace
     // faible (les réfs OEM ne sont pas vendues sur amazon/cdiscount…) est indistinguable
     // d'une panne. On les journalise en fin de passe pour rendre la réalité VISIBLE.
@@ -173,6 +173,7 @@ registerServerNode({
       ...(hasGeneric ? { searchWeb, extractProduct } : {}),
       signal: ctx.signal,
       log: (m) => ctx.log('info', m),
+      locale: ctx.locale,
     })
 
     // Passe AUTHENTIFIÉE (kramp…) : budget PETIT dédié (chaque login Firecrawl coûte des
@@ -187,14 +188,18 @@ registerServerNode({
       const key = firecrawlKey || (await getUserApiKey(ctx.uid, 'firecrawl'))
       for (const [siteId, cred] of authByDomain) {
         if (ctx.signal?.aborted) break
-        if (!key) { ctx.log('warn', `Site authentifié ${cred!.host} mais aucune clé Firecrawl — ignoré.`); break }
+        if (!key) { ctx.log('warn', t(ctx.locale, 'run.directed.authNoFirecrawlKey', { host: cred!.host })); break }
         const authHits = await krampAuthPass(authSlice, {
           scrape: (urls) => krampBatchScrape(urls, cred!, key, 90_000, ctx.signal),
           signal: ctx.signal,
           log: (m) => ctx.log('info', m),
+          locale: ctx.locale,
         })
         for (const h of authHits) pass.results.push({ productId: h.productId, siteId, hit: { listing: h.listing, evidence: h.evidence as DirectedHit['evidence'], query: h.listing.ref ?? '' } })
-        ctx.log('info', `Auth ${cred!.host} : ${authHits.length}/${authSlice.length} prix apparié(s) [curseur auth ${authStart} → ${authStart + authBudget} / ${products.length}].`)
+        ctx.log('info', t(ctx.locale, 'run.directed.authMatched', {
+          host: cred!.host, hits: authHits.length, total: authSlice.length,
+          from: authStart, to: authStart + authBudget, products: products.length,
+        }))
       }
       const authNext = authStart + authBudget >= products.length ? 0 : authStart + authBudget
       await saveCompetitorMeta(ctx.uid, watchId, AUTH_CURSOR_META, { domain: 'directed-auth-cursor', productCount: authNext })
@@ -230,22 +235,27 @@ registerServerNode({
         lien: l.url ?? '',
       }
     })
-    ctx.log('info', `${rows.length} prix trouvé(s) sur ${pass.processed} produit(s) [curseur ${startCursor} → ${pass.nextCursor} / ${products.length}] × ${sites.length} site(s).`)
+    ctx.log('info', t(ctx.locale, 'run.directed.pricesFound', {
+      count: rows.length, processed: pass.processed, from: startCursor,
+      to: pass.nextCursor, products: products.length, sites: sites.length,
+    }))
     if (rows.length === 0) {
-      ctx.log('warn',
-        'Aucun prix trouvé sur cette passe. Vérifie que les clés interrogées existent CHEZ LES CONCURRENTS : ' +
-        'une référence article et un EAN propres au distributeur sont introuvables ailleurs. ' +
-        'Sur un catalogue de pièces adaptables, renseigne « Colonne Description (réf. d’origine) ».')
+      ctx.log('warn', t(ctx.locale, 'run.directed.noPriceFound'))
     }
     if (hasGeneric) {
       const genericSiteIds = new Set(sites.filter((s) => s.generic).map((s) => s.siteId))
       const genMatched = pass.results.filter((r) => genericSiteIds.has(r.siteId)).length
-      const viaRepli = genViaBd + genViaJina > 0 ? ` (dont ${genViaBd} Bright Data · ${genViaJina} Jina)` : ''
-      ctx.log('info', `Générique (${[...genericSiteIds].length} site(s)) : ${genQueries} recherche(s) web · ${genNoUrls} sans résultat (réf non vendue / 422) · ${genExtracted} fiche(s) extraite(s)${viaRepli} · ${genMatched} appariée(s) par preuve exacte.`)
+      const viaRepli = genViaBd + genViaJina > 0
+        ? t(ctx.locale, 'run.directed.genericViaFallback', { bd: genViaBd, jina: genViaJina })
+        : ''
+      ctx.log('info', t(ctx.locale, 'run.directed.genericSummary', {
+        sites: [...genericSiteIds].length, queries: genQueries, noUrls: genNoUrls,
+        extracted: genExtracted, fallback: viaRepli, matched: genMatched,
+      }))
       // Alerte VISIBLE dans le rail de logs : sans elle, « 0 fiche extraite » à cause d'un
       // compte à sec est indistinguable d'une couverture marketplace réellement éparse.
-      if (creditsExhausted('firecrawl')) ctx.log('warn', 'Crédits Firecrawl ÉPUISÉS — extraction générique suspendue (appels sautés). Recharger sur firecrawl.dev.')
-      if (creditsExhausted('jina')) ctx.log('warn', 'Crédits Jina ÉPUISÉS — recherches web suspendues (appels sautés). Recharger sur jina.ai.')
+      if (creditsExhausted('firecrawl')) ctx.log('warn', t(ctx.locale, 'run.directed.creditsFirecrawl'))
+      if (creditsExhausted('jina')) ctx.log('warn', t(ctx.locale, 'run.directed.creditsJina'))
     }
     return { results: resultsSheet(rows) }
   },

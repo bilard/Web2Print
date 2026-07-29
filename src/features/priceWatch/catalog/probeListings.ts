@@ -6,6 +6,10 @@
 // n'importe quelle future enseigne, sans une ligne de code par site.
 // PUR + server-safe (regex, pas de DOMParser) : partagé client / Cloud Function.
 
+// Messages de run : ces logs remontent dans le panneau d'exécution du workflow via
+// le rappel `log`. Helper `t()` de module — ce fichier est un moteur, pas un composant.
+import { t } from '@/lib/i18n'
+
 /** Extensions d'assets : jamais une page liste. */
 const ASSET_RE = /\.(?:js|mjs|css|png|jpe?g|gif|svg|webp|avif|ico|woff2?|ttf|otf|eot|pdf|zip|xml|json|txt|mp4|webm)(?:$|\?)/i
 /** Chemins qui ne sont jamais des listes produit (compte, tunnel, éditorial, légal). */
@@ -234,9 +238,9 @@ export async function probeListingUrls(
     if (n >= minProducts) {
       found.push(url)
       opts.onListing?.(url, html)
-      opts.log?.(`sonde : ${url} → ${n} produit(s), retenue comme page liste.`)
+      opts.log?.(t('run.probe.listingFound', { url, count: n }))
     }
   }
-  if (found.length === 0) opts.log?.(`sonde : ${probes} page(s) ouverte(s), aucune ne contient de liste produit.`)
+  if (found.length === 0) opts.log?.(t('run.probe.noListing', { probes }))
   return found
 }

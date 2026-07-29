@@ -7,6 +7,8 @@
 // n'importe quelle future enseigne, sans une ligne de code par site.
 // PUR + server-safe (regex, pas de DOMParser) : partagé client / Cloud Function.
 
+import { t, DEFAULT_LOCALE, type Locale } from '../../i18nMessages'
+
 /** Extensions d'assets : jamais une page liste. */
 const ASSET_RE = /\.(?:js|mjs|css|png|jpe?g|gif|svg|webp|avif|ico|woff2?|ttf|otf|eot|pdf|zip|xml|json|txt|mp4|webm)(?:$|\?)/i
 /** Chemins qui ne sont jamais des listes produit (compte, tunnel, éditorial, légal). */
@@ -202,6 +204,8 @@ export interface ProbeOptions {
    *  d'en extraire les sous-rayons (`childListings`) sans une seule requête de plus. */
   onListing?: (url: string, html: string) => void
   log?: (m: string) => void
+  /** Langue des messages de run (cf. `HarvestDeps.locale`). Repli FR. */
+  locale?: Locale
 }
 
 /**
@@ -235,9 +239,9 @@ export async function probeListingUrls(
     if (n >= minProducts) {
       found.push(url)
       opts.onListing?.(url, html)
-      opts.log?.(`sonde : ${url} → ${n} produit(s), retenue comme page liste.`)
+      opts.log?.(t(opts.locale ?? DEFAULT_LOCALE, 'run.probe.listingFound', { url, count: n }))
     }
   }
-  if (found.length === 0) opts.log?.(`sonde : ${probes} page(s) ouverte(s), aucune ne contient de liste produit.`)
+  if (found.length === 0) opts.log?.(t(opts.locale ?? DEFAULT_LOCALE, 'run.probe.noListing', { probes }))
   return found
 }

@@ -10,6 +10,7 @@
 // client/serveur, comme le reste de features/priceWatch/catalog.
 
 import { parseListingPage, type CompetitorListing } from './prestashop'
+import { t } from '@/lib/i18n'
 import { candidateKeys, proveMatch, type SourceProductKeys, type MatchProof } from './keys'
 import { mapWithConcurrency } from '../concurrency'
 
@@ -87,7 +88,7 @@ async function searchProductGeneric(
       if (!listing) continue
       const proof = proveMatch(keys, toIdentity(listing))
       if (proof) {
-        deps.log?.(`${domain} (générique) : « ${query} » → ${listing.name} (preuve ${proof.evidence})`)
+        deps.log?.(t('run.directed.genericHit', { domain, query, name: listing.name, evidence: proof.evidence }))
         return { listing, evidence: proof.evidence, query }
       }
     }
@@ -140,7 +141,7 @@ export async function searchProductOnSite(
     for (const listing of parseListingPage(html)) {
       const proof = proveMatch(keys, toIdentity(listing))
       if (proof) {
-        deps.log?.(`${domain} : « ${query} » → ${listing.name} (preuve ${proof.evidence})`)
+        deps.log?.(t('run.directed.hit', { domain, query, name: listing.name, evidence: proof.evidence }))
         return { listing, evidence: proof.evidence, query }
       }
     }

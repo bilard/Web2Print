@@ -16,6 +16,9 @@ import {
   PLAN_RETRY_COOLDOWN_MS, type HarvestCursor,
 } from './harvest'
 import type { CompetitorListing } from './prestashop'
+// Messages de run : ces logs remontent dans le panneau d'exécution du workflow via
+// `deps.log`. Helper `t()` de module — ce fichier est un moteur pur, pas un composant.
+import { t } from '@/lib/i18n'
 
 export interface CompetitorConfig {
   siteId: string
@@ -102,7 +105,7 @@ export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): 
   if (!home) return []
   const candidates = candidateListingUrls(home, cfg.domain, { keywords })
   if (candidates.length === 0) return []
-  deps.log?.(`${cfg.domain} : motif d'URL inconnu — sondage de ${candidates.length} lien(s) candidat(s).`)
+  deps.log?.(t('run.harvest.unknownUrlPattern', { domain: cfg.domain, count: candidates.length }))
 
   // Les sous-rayons se lisent dans le HTML que la sonde a DÉJÀ récupéré : la descente
   // hiérarchique ne coûte pas une requête de plus.
@@ -117,9 +120,10 @@ export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): 
   // regroupement par forme, et le plan n'en retenait que le représentant sondé.
   const mates = shapeMates(home, cfg.domain, confirmed)
   const plan = dedupeUrls([...confirmed, ...children, ...mates]).slice(0, MAX_PLAN)
-  deps.log?.(
-    `${cfg.domain} : ${confirmed.length} page(s) liste confirmée(s) → plan de ${plan.length} ` +
-    `(+${children.length} sous-rayon(s), +${mates.length} de même gabarit).`)
+  deps.log?.(t('run.harvest.listPagesConfirmed', {
+    domain: cfg.domain, confirmed: confirmed.length, plan: plan.length,
+    children: children.length, mates: mates.length,
+  }))
   return targetPlan(cfg, deps, plan)
 }
 
@@ -156,10 +160,12 @@ async function targetPlan(cfg: CompetitorConfig, deps: HarvestDeps, urls: string
   try {
     const kept = await deps.selectCategories(cfg.families, urls)
     if (!kept || kept.length === 0) return urls
-    deps.log?.(`${cfg.domain} : ciblage IA — ${kept.length}/${urls.length} catégorie(s) retenue(s).`)
+    deps.log?.(t('run.harvest.aiTargeting', { domain: cfg.domain, kept: kept.length, total: urls.length }))
     return kept
   } catch (e) {
-    deps.log?.(`${cfg.domain} : ciblage IA indisponible (${e instanceof Error ? e.message.slice(0, 120) : e}) — catalogue complet.`)
+    deps.log?.(t('run.harvest.aiTargetingUnavailable', {
+      domain: cfg.domain, message: e instanceof Error ? e.message.slice(0, 120) : String(e),
+    }))
     return urls
   }
 }
@@ -207,19 +213,21 @@ export async function harvestPass(
     // Planification en veille après un échec récent : ne PAS repayer le sondage (jusqu'à
     // 24 requêtes) à chaque tick sur un site que la découverte ne sait pas lire.
     if (!deps.force && cursor?.planFailedAt != null && now - cursor.planFailedAt < PLAN_RETRY_COOLDOWN_MS) {
-      deps.log?.(`${cfg.domain} : découverte en veille (aucune catégorie trouvée il y a moins de ${Math.round(PLAN_RETRY_COOLDOWN_MS / 60000)} min) — relance manuelle ▶ pour re-sonder.`)
+      deps.log?.(t('run.harvest.discoveryCoolingDown', {
+        domain: cfg.domain, minutes: Math.round(PLAN_RETRY_COOLDOWN_MS / 60000),
+      }))
       return { siteId: cfg.siteId, pagesFetched: 0, productsIndexed: 0, sweepComplete: true, cursor }
     }
     const categories = await planCategories(cfg, deps)
     if (categories.length === 0) {
-      deps.log?.(`${cfg.domain} : aucune catégorie cible trouvée (accueil injoignable ou familles absentes).`)
+      deps.log?.(t('run.harvest.noCategory', { domain: cfg.domain }))
       const empty = { ...(cursor ?? initCursor([])), planFailedAt: now }
       await deps.saveCursor(cfg.siteId, empty)
       return { siteId: cfg.siteId, pagesFetched: 0, productsIndexed: 0, sweepComplete: true, cursor: empty }
     }
     // Plan retrouvé : la veille n'a plus lieu d'être.
     cursor = cursor ? { ...openSweep(cursor, categories), planFailedAt: undefined } : initCursor(categories)
-    deps.log?.(`${cfg.domain} : balayage de ${categories.length} catégorie(s).`)
+    deps.log?.(t('run.harvest.sweepingCategories', { domain: cfg.domain, count: categories.length }))
   }
 
   let pagesFetched = 0
@@ -230,7 +238,7 @@ export async function harvestPass(
     // Restitution sur ÉCHÉANCE : le curseur est déjà persisté page par page, la reprise
     // au tick suivant est exacte.
     if (deps.deadlineAt != null && (deps.now ?? Date.now)() > deps.deadlineAt) {
-      deps.log?.(`${cfg.domain} : fenêtre de run atteinte après ${pagesFetched} page(s) — reprise au prochain passage.`)
+      deps.log?.(t('run.harvest.runWindowReached', { domain: cfg.domain, pages: pagesFetched }))
       break
     }
     const target = currentTarget(cursor)
