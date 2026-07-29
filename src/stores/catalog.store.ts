@@ -89,6 +89,8 @@ interface CatalogState {
   setLogoUrl: (url: string | null) => void
   /** Mémorise des détourages (source → détouré) et, optionnellement, arme le détourage automatique. */
   rememberCutouts: (entries: Record<string, string>, auto?: boolean) => void
+  /** Oublie TOUS les détourages mémorisés — un nouveau lot repart d'un traitement neuf. */
+  clearCutouts: () => void
   setPageOrder: (order: string[]) => void
   setPreviewIndex: (index: number | null) => void
   /** Pose/retire les corrections publication d'une ligne ('' ou null = champ rendu à la source). */
@@ -226,6 +228,7 @@ export const useCatalogStore = create<CatalogState>()(persist((set, get) => ({
   setBackCoverImageUrl: (backCoverImageUrl) => set({ backCoverImageUrl }),
   setLogoUrl: (logoUrl) => set({ logoUrl }),
   rememberCutouts: (entries, auto) => set((s) => ({ cutoutBySource: { ...s.cutoutBySource, ...entries }, autoCutout: auto ?? s.autoCutout })),
+  clearCutouts: () => set({ cutoutBySource: {}, autoCutout: false }),
   setPageOrder: (pageOrder) => set({ pageOrder }),
   setPreviewIndex: (previewIndex) => set({ previewIndex }),
   setRowOverride: (rowId, patch) => set((s) => {

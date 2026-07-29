@@ -106,18 +106,21 @@ export function useCatalogCutout() {
     else toast.warning(`${ok} visuel(s) détouré(s), ${failed} échec(s)`, { description: 'Les visuels en échec gardent leur image d’origine.' })
   }
 
-  /** Rend les visuels d'ORIGINE (retire la surcharge d'image de chaque produit). */
+  /** Rend les visuels d'ORIGINE et OUBLIE les détourages mémorisés — sans cela,
+   *  un nouveau lot se contenterait de reposer les mêmes fichiers (réutilisation
+   *  du cache) au lieu de produire un détourage neuf. */
   const resetAll = () => {
     const s = useCatalogStore.getState()
     const column = s.fieldMap.image
     if (!column) return
+    s.clearCutouts()
     let n = 0
     for (const rowId of Object.keys(s.rowOverrides)) {
       if (s.rowOverrides[rowId]?.[column] == null) continue
       s.setRowOverride(rowId, { [column]: null })
       n++
     }
-    toast.success(n > 0 ? `${n} visuel(s) rendus à leur version d’origine` : 'Aucun visuel détouré à restaurer')
+    toast.success(n > 0 ? `${n} visuel(s) rendus à leur version d’origine` : 'Aucun visuel détouré à restaurer', { description: 'Un nouveau « Détourer toutes les images » repartira d’un traitement neuf.' })
   }
 
   return { progress, cutoutAll, cancel, resetAll }
