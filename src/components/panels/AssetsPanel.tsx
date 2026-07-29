@@ -3,8 +3,10 @@ import { useEditorStore } from '@/stores/editor.store'
 import { ImageIcon, Type, Loader2, RefreshCw } from 'lucide-react'
 import { useProjectAssets, parseFontName, type AssetItem } from '@/features/assets/useProjectAssets'
 import { CloseButton } from '@/components/shared/CloseButton'
+import { useTranslation } from '@/lib/i18n'
 
 export function AssetsPanel() {
+  const { t } = useTranslation()
   const projectId = useEditorStore((s) => s.projectId)
   const assetsVersion = useEditorStore((s) => s.assetsVersion)
   const { images, fonts, loading, reload } = useProjectAssets(projectId, { version: assetsVersion })
@@ -42,7 +44,7 @@ export function AssetsPanel() {
           onClick={reload}
           disabled={loading}
           className="p-1.5 text-white/30 hover:text-white/70 rounded-md hover:bg-white/5 transition-colors"
-          title="Rafraichir"
+          title={t('assets.refresh')}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
         </button>
@@ -58,7 +60,7 @@ export function AssetsPanel() {
 
         {!loading && tab === 'images' && (
           images.length === 0 ? (
-            <p className="text-xs text-white/20 text-center py-6">Aucune image</p>
+            <p className="text-xs text-white/20 text-center py-6">{t('assets.noImage')}</p>
           ) : (
             <div className="grid grid-cols-2 gap-2 pt-1">
               {images.map((img) => (
@@ -96,7 +98,7 @@ export function AssetsPanel() {
 
         {!loading && tab === 'fonts' && (
           fonts.length === 0 ? (
-            <p className="text-xs text-white/20 text-center py-6">Aucune font</p>
+            <p className="text-xs text-white/20 text-center py-6">{t('assets.noFont')}</p>
           ) : (
             <div className="flex flex-col gap-1.5 pt-1">
               {fonts.map((f) => {

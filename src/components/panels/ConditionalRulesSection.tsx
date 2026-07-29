@@ -12,6 +12,7 @@ import { applyConditionalRulesForRow } from '@/features/merge/applyConditionalRu
 import { loadColumnsOnly } from '@/features/merge/loadColumns'
 import { actionWithDefaults, type ConditionalRule } from '@/features/merge/conditionalRules'
 import { ConditionalRuleRow } from './ConditionalRuleRow'
+import { useTranslation } from '@/lib/i18n'
 
 function newRuleId(): string {
   return `r_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
@@ -30,6 +31,7 @@ function normalizeRules(rules: ConditionalRule[]): { rules: ConditionalRule[]; c
 }
 
 export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId: string | null }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [rules, setRules] = useState<ConditionalRule[]>([])
   const { columns, rows, currentRowIndex, fieldMap, isConnected } = useMergeStore()
@@ -107,8 +109,8 @@ export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId
   // la couleur câblée de la ligne PRÉCÉDENTE. On avertit au lieu de le cacher.
   const bindings = (obj.data?.bindings as Record<string, string> | undefined) ?? {}
   const conflictProp =
-    rules.some((r) => r.action.type === 'setColor') && bindings.fill ? 'couleur'
-    : rules.some((r) => r.action.type === 'setOpacity') && bindings.opacity ? 'opacité'
+    rules.some((r) => r.action.type === 'setColor') && bindings.fill ? t('rule.conflict.colour')
+    : rules.some((r) => r.action.type === 'setOpacity') && bindings.opacity ? t('rule.conflict.opacity')
     : null
 
   return (
@@ -117,7 +119,7 @@ export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId
         <button onClick={() => setOpen(!open)}
           className="flex items-center gap-1.5 text-[10px] font-semibold text-white/40 uppercase tracking-wider hover:text-white/70 transition-colors">
           <ChevronRight className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`} />
-          <GitBranch className="w-3 h-3" /> Règles conditionnelles
+          <GitBranch className="w-3 h-3" /> {t('rules.title')}
           {rules.length > 0 && (
             <span className="text-indigo-400 normal-case">({rules.length})</span>
           )}
@@ -128,19 +130,17 @@ export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId
         <div className="flex flex-col gap-2">
           {!isConnected && availableColumns.length > 0 && (
             <p className="text-[10px] text-white/40 leading-snug">
-              Les champs proviennent de « {savedDataSource?.fileName} ». Les règles s'évaluent
-              à la fusion (reconnectez la source pour l'aperçu live).
+              {t('rules.source', { file: savedDataSource?.fileName ?? '' })}
             </p>
           )}
           {!isConnected && availableColumns.length === 0 && (
             <p className="text-[10px] text-white/40 leading-snug">
-              Connectez une source de données pour choisir un champ et que les règles s'évaluent.
+              {t('rules.noSource')}
             </p>
           )}
           {conflictProp && (
             <p className="text-[10px] text-amber-400/80 leading-snug">
-              ⚠ La {conflictProp} est aussi câblée à une colonne ; une règle qui la modifie
-              peut entrer en conflit avec la liaison de données.
+              {t('rules.conflict', { prop: conflictProp })}
             </p>
           )}
           {rules.map((rule) => (
@@ -154,7 +154,7 @@ export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId
           ))}
           <button onClick={addRule}
             className="flex items-center justify-center gap-1.5 text-[11px] text-indigo-400 hover:text-indigo-300 bg-well rounded py-1.5 transition-colors">
-            <Plus className="w-3.5 h-3.5" /> Ajouter une règle
+            <Plus className="w-3.5 h-3.5" /> {t('rules.add')}
           </button>
         </div>
       )}

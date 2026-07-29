@@ -8,6 +8,7 @@ import {
 import { findPath } from '@/features/taxonomy/taxonomyUtils'
 import { CloseButton } from '@/components/shared/CloseButton'
 import type { Taxonomy, TaxonomyNode } from '@/features/taxonomy/types'
+import { useTranslation } from '@/lib/i18n'
 
 interface EditorTaxonomyPickerProps {
   open: boolean
@@ -27,6 +28,7 @@ export function EditorTaxonomyPicker({
   projectId,
   onClose,
 }: EditorTaxonomyPickerProps) {
+  const { t } = useTranslation()
   const { data: taxonomies } = useTaxonomies()
   const link = useLinkProject()
   const unlink = useUnlinkProject()
@@ -159,7 +161,7 @@ export function EditorTaxonomyPicker({
               className="text-[14px] font-semibold text-white/90 flex items-center gap-2"
             >
               <Layers className="w-4 h-4 text-indigo-400" />
-              Lier à une taxonomie
+              {t('taxonomy.link')}
             </h2>
             <p className="text-[11px] text-white/35 mt-0.5">
               Sélectionnez le nœud où classer ce projet
@@ -174,7 +176,7 @@ export function EditorTaxonomyPicker({
             <Search className="w-3.5 h-3.5 text-white/25 shrink-0" />
             <input
               type="text"
-              placeholder="Rechercher un nœud (Catalogue › Promo › …)"
+              placeholder={t('taxonomy.search')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -184,7 +186,7 @@ export function EditorTaxonomyPicker({
               <button
                 onClick={() => setSearch('')}
                 className="text-white/30 hover:text-white/70"
-                aria-label="Effacer"
+                aria-label={t('taxonomy.clear')}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -239,7 +241,7 @@ export function EditorTaxonomyPicker({
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Layers className="w-8 h-8 text-white/10 mb-2" />
               <p className="text-[12px] text-white/35">
-                {search ? 'Aucun nœud trouvé' : 'Aucune taxonomie disponible'}
+                {search ? t('taxonomy.noNode') : 'Aucune taxonomie disponible'}
               </p>
             </div>
           ) : (
@@ -309,7 +311,7 @@ export function EditorTaxonomyPicker({
         <div className="px-5 py-3 border-t border-white/[0.06] flex justify-between items-center">
           <span className="text-[11px] text-white/40 flex items-center gap-1.5">
             {isPending && <Loader2 className="w-3 h-3 animate-spin" />}
-            {currentLink ? 'Cliquez à nouveau pour délier' : 'Aucun nœud lié actuellement'}
+            {currentLink ? t('taxonomy.clickToUnlink') : t('taxonomy.noneLinked')}
           </span>
           <button
             onClick={onClose}

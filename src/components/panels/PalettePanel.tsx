@@ -7,8 +7,10 @@ import { gradientToCss } from '@/components/shared/GradientPicker'
 import { PropertySection } from '@/components/shared/panel'
 import { BrandKitSection } from './BrandKitSection'
 import { ObjectStylesSection } from './ObjectStylesSection'
+import { useTranslation } from '@/lib/i18n'
 
 function ColorSwatch({ item, onApply }: { item: PaletteColor; onApply?: (color: string) => void }) {
+  const { t } = useTranslation()
   const { removeColor, updateColor } = usePaletteStore()
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(item.name)
@@ -36,7 +38,7 @@ function ColorSwatch({ item, onApply }: { item: PaletteColor; onApply?: (color: 
 
   return (
     <div className="group flex items-center gap-2 hover:bg-white/5 rounded-md px-1.5 py-1 transition-colors">
-      <button onClick={() => onApply?.(item.color)} title="Appliquer"
+      <button onClick={() => onApply?.(item.color)} title={t('palette.apply')}
         className="w-7 h-7 rounded border border-white/20 shrink-0 hover:scale-110 transition-transform"
         style={{ backgroundColor: item.color }} />
       <div className="flex-1 min-w-0">
@@ -54,6 +56,7 @@ function ColorSwatch({ item, onApply }: { item: PaletteColor; onApply?: (color: 
 }
 
 function GradientSwatch({ item, onApply }: { item: PaletteGradient; onApply?: (g: GradientConfig) => void }) {
+  const { t } = useTranslation()
   const { removeGradient, updateGradient } = usePaletteStore()
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(item.name)
@@ -66,7 +69,7 @@ function GradientSwatch({ item, onApply }: { item: PaletteGradient; onApply?: (g
 
   return (
     <div className="group flex items-center gap-2 hover:bg-white/5 rounded-md px-1.5 py-1 transition-colors">
-      <button onClick={() => onApply?.(item.gradient)} title="Appliquer"
+      <button onClick={() => onApply?.(item.gradient)} title={t('palette.apply')}
         className="w-7 h-7 rounded border border-white/20 shrink-0 hover:scale-110 transition-transform"
         style={{ background: gradientToCss(item.gradient) }} />
       <div className="flex-1 min-w-0">
@@ -82,7 +85,7 @@ function GradientSwatch({ item, onApply }: { item: PaletteGradient; onApply?: (g
           <p className="text-[11px] text-white/70 truncate">{item.name}</p>
         )}
         <p className="text-[9px] text-white/30">
-          {item.gradient.type === 'linear' ? 'Linéaire' : 'Radial'} &bull; {item.gradient.stops.length} stops
+          {t(item.gradient.type === 'linear' ? 'gradient.type.linear' : 'gradient.type.radial')} &bull; {item.gradient.stops.length} stops
         </p>
       </div>
       {!editing && (
@@ -98,6 +101,7 @@ function GradientSwatch({ item, onApply }: { item: PaletteGradient; onApply?: (g
 }
 
 function AddColorForm({ onAdd }: { onAdd: (color: string, name: string) => void }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [color, setColor] = useState('#6366f1')
   const [name, setName] = useState('')
@@ -123,7 +127,7 @@ function AddColorForm({ onAdd }: { onAdd: (color: string, name: string) => void 
       <input type="color" value={color} onChange={(e) => setColor(e.target.value)}
         className="w-7 h-7 rounded cursor-pointer bg-transparent border border-white/20 p-0 shrink-0" />
       <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-        placeholder="Nom (optionnel)" onKeyDown={(e) => e.key === 'Enter' && submit()}
+        placeholder={t('palette.name')} onKeyDown={(e) => e.key === 'Enter' && submit()}
         className="flex-1 bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white placeholder:text-white/20 min-w-0" />
       <button onClick={submit} className="text-green-400 hover:text-green-300 p-0.5"><Check className="w-3.5 h-3.5" /></button>
       <button onClick={() => setOpen(false)} className="text-white/30 hover:text-white/50 p-0.5"><X className="w-3.5 h-3.5" /></button>
@@ -132,6 +136,7 @@ function AddColorForm({ onAdd }: { onAdd: (color: string, name: string) => void 
 }
 
 function AddGradientForm({ onAdd }: { onAdd: (g: GradientConfig, name: string) => void }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [color1, setColor1] = useState('#6366f1')
@@ -181,7 +186,7 @@ function AddGradientForm({ onAdd }: { onAdd: (g: GradientConfig, name: string) =
       </div>
       <div className="flex items-center gap-1.5">
         <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-          placeholder="Nom (optionnel)" onKeyDown={(e) => e.key === 'Enter' && submit()}
+          placeholder={t('palette.name')} onKeyDown={(e) => e.key === 'Enter' && submit()}
           className="flex-1 bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white placeholder:text-white/20 min-w-0" />
         <button onClick={submit} className="text-green-400 hover:text-green-300 p-0.5"><Check className="w-3.5 h-3.5" /></button>
         <button onClick={() => setOpen(false)} className="text-white/30 hover:text-white/50 p-0.5"><X className="w-3.5 h-3.5" /></button>
@@ -191,6 +196,7 @@ function AddGradientForm({ onAdd }: { onAdd: (g: GradientConfig, name: string) =
 }
 
 export function PalettePanel() {
+  const { t } = useTranslation()
   const { colors, gradients, addColor, addGradient } = usePaletteStore()
 
   return (
@@ -203,13 +209,13 @@ export function PalettePanel() {
 
       {/* Couleurs du projet */}
       <PropertySection
-        title="Couleurs du projet"
+        title={t('palette.projectColours')}
         tourId="palette-colors"
         help="Vos couleurs de marque enregistrées, réutilisables en un clic sur les objets. Ajoutez-en via le champ ci-dessous ; elles sont sauvegardées avec le projet."
       >
         <div className="flex flex-col gap-1">
           {colors.length === 0 && (
-            <p className="text-[10px] text-white/20 italic py-2">Aucune couleur enregistrée</p>
+            <p className="text-[10px] text-white/20 italic py-2">{t('palette.noColour')}</p>
           )}
           {colors.map((c) => (
             <ColorSwatch key={c.id} item={c} />
@@ -222,13 +228,13 @@ export function PalettePanel() {
 
       {/* Dégradés du projet */}
       <PropertySection
-        title="Dégradés du projet"
+        title={t('palette.projectGradients')}
         tourId="palette-gradients"
         help="Vos dégradés enregistrés (linéaires/radiaux), applicables aux objets et aux fonds. Créez-en de nouveaux via le bouton ci-dessous."
       >
         <div className="flex flex-col gap-1">
           {gradients.length === 0 && (
-            <p className="text-[10px] text-white/20 italic py-2">Aucun dégradé enregistré</p>
+            <p className="text-[10px] text-white/20 italic py-2">{t('palette.noGradient')}</p>
           )}
           {gradients.map((g) => (
             <GradientSwatch key={g.id} item={g} />

@@ -35,14 +35,15 @@ import { MergeConnectorSection } from './MergeConnectorSection'
 import { ConditionalRulesSection } from './ConditionalRulesSection'
 import { TextFrameSection, ParagraphIndentsSection } from './TextFrameSection'
 import { applyTextFrame, isTextFrame } from '@/features/editor/textFrame'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
-const FILL_IMAGE_SOURCES: { tab: DamTab; label: string; icon: typeof ImageIcon }[] = [
-  { tab: 'stock', label: 'Stock', icon: ImageIcon },
-  { tab: 'my-images', label: 'Mes images', icon: FolderOpen },
-  { tab: 'favorites', label: 'Favoris', icon: Heart },
-  { tab: 'collections', label: 'Collections', icon: FolderHeart },
-  { tab: 'recent', label: 'Récents', icon: Clock },
-  { tab: 'generate', label: 'Image IA', icon: Sparkles },
+const FILL_IMAGE_SOURCES: { tab: DamTab; labelKey: TranslationKey; icon: typeof ImageIcon }[] = [
+  { tab: 'stock', labelKey: 'props.tab.stock', icon: ImageIcon },
+  { tab: 'my-images', labelKey: 'props.tab.myImages', icon: FolderOpen },
+  { tab: 'favorites', labelKey: 'props.tab.favorites', icon: Heart },
+  { tab: 'collections', labelKey: 'props.tab.collections', icon: FolderHeart },
+  { tab: 'recent', labelKey: 'props.tab.recent', icon: Clock },
+  { tab: 'generate', labelKey: 'props.tab.generate', icon: Sparkles },
 ]
 
 // ── Image fill picker (galerie + upload) ────────────────────────────────────
@@ -52,6 +53,7 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
   objId: string
   applyImageFill: (fObj: any, canvas: Canvas, url: string) => void
 }) {
+  const { t } = useTranslation()
   const galleryImages = useNanoBanaStore((s) => s.images)
   const { uploadToGallery } = useImageGallery()
   const openDamPickerForFill = useUIStore((s) => s.openDamPickerForFill)
@@ -112,7 +114,7 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
     <div className="flex flex-col gap-2">
       {fillImage && (
         <div className="relative group">
-          <img src={fillImage} alt="Remplissage" className="w-full h-20 object-cover rounded border border-white/10" />
+          <img src={fillImage} alt={t('props.fill')} className="w-full h-20 object-cover rounded border border-white/10" />
           <button
             onClick={() => {
               const canvas = globalFabricCanvas
@@ -156,7 +158,7 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
                   className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-white/80 hover:bg-surface-2 hover:text-white transition-colors text-left"
                 >
                   <Icon className="w-3.5 h-3.5 opacity-70" />
-                  <span>{source.label}</span>
+                  <span>{t(source.labelKey)}</span>
                 </button>
               )
             })}
@@ -170,7 +172,7 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
               className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-white/80 hover:bg-surface-2 hover:text-white transition-colors text-left"
             >
               <Upload className="w-3.5 h-3.5 opacity-70" />
-              <span>Depuis l'ordinateur</span>
+              <span>{t('props.fromComputer')}</span>
             </button>
           </div>
         )}
@@ -189,7 +191,7 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
       </div>
       {galleryImages.filter((img) => img.url && !brokenIds.has(img.id)).length > 0 && (
         <>
-          <p className="text-[10px] text-white/30 uppercase tracking-wider">Galerie</p>
+          <p className="text-[10px] text-white/30 uppercase tracking-wider">{t('props.gallery')}</p>
           <div className="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto">
             {galleryImages.filter((img) => img.url && !brokenIds.has(img.id)).map((img) => (
               <button key={img.id} onClick={() => applyUrl(img.url, img.name)}
@@ -278,38 +280,40 @@ function SliderInput({ label, value, onChange, min = 0, max = 100, step = 1, uni
 
 // ── Stroke dash presets ─────────────────────────────────────────────────────
 
-const DASH_PRESETS = [
-  { label: 'Continu', value: [] as number[] },
-  { label: 'Tirets', value: [12, 6] },
-  { label: 'Points', value: [2, 4] },
-  { label: 'Tiret-Point', value: [12, 4, 2, 4] },
-  { label: 'Long tiret', value: [20, 6] },
+const DASH_PRESETS: { labelKey: TranslationKey; value: number[] }[] = [
+  { labelKey: 'dash.solid', value: [] },
+  { labelKey: 'dash.dashed', value: [12, 6] },
+  { labelKey: 'dash.dotted', value: [2, 4] },
+  { labelKey: 'dash.dashDot', value: [12, 4, 2, 4] },
+  { labelKey: 'dash.longDash', value: [20, 6] },
 ]
 
 // ── Blend modes ─────────────────────────────────────────────────────────────
 
-const BLEND_MODES = [
-  { value: 'source-over', label: 'Normal' },
-  { value: 'multiply', label: 'Multiplier' },
-  { value: 'screen', label: 'Écran' },
-  { value: 'overlay', label: 'Superposition' },
-  { value: 'darken', label: 'Obscurcir' },
-  { value: 'lighten', label: 'Éclaircir' },
-  { value: 'color-dodge', label: 'Densité -' },
-  { value: 'color-burn', label: 'Densité +' },
-  { value: 'hard-light', label: 'Lumière crue' },
-  { value: 'soft-light', label: 'Lumière douce' },
-  { value: 'difference', label: 'Différence' },
-  { value: 'exclusion', label: 'Exclusion' },
-  { value: 'hue', label: 'Teinte' },
-  { value: 'saturation', label: 'Saturation' },
-  { value: 'color', label: 'Couleur' },
-  { value: 'luminosity', label: 'Luminosité' },
+// ⚠️ `value` est la clé Fabric (globalCompositeOperation) — JAMAIS traduite.
+const BLEND_MODES: { value: string; labelKey: TranslationKey }[] = [
+  { value: 'source-over', labelKey: 'blend.normal' },
+  { value: 'multiply', labelKey: 'blend.multiply' },
+  { value: 'screen', labelKey: 'blend.screen' },
+  { value: 'overlay', labelKey: 'blend.overlay' },
+  { value: 'darken', labelKey: 'blend.darken' },
+  { value: 'lighten', labelKey: 'blend.lighten' },
+  { value: 'color-dodge', labelKey: 'blend.colorDodge' },
+  { value: 'color-burn', labelKey: 'blend.colorBurn' },
+  { value: 'hard-light', labelKey: 'blend.hardLight' },
+  { value: 'soft-light', labelKey: 'blend.softLight' },
+  { value: 'difference', labelKey: 'blend.difference' },
+  { value: 'exclusion', labelKey: 'blend.exclusion' },
+  { value: 'hue', labelKey: 'blend.hue' },
+  { value: 'saturation', labelKey: 'blend.saturation' },
+  { value: 'color', labelKey: 'blend.color' },
+  { value: 'luminosity', labelKey: 'blend.luminosity' },
 ]
 
 // ── Main component ──────────────────────────────────────────────────────────
 
 export function PropertiesPanel() {
+  const { t } = useTranslation()
   const { selectedObjectId, canvasObjects } = useEditorStore(
     useShallow((s) => ({ selectedObjectId: s.selectedObjectId, canvasObjects: s.canvasObjects })),
   )
@@ -489,9 +493,9 @@ export function PropertiesPanel() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between shrink-0">
-        <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">Propriétés</h3>
+        <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">{t('props.title')}</h3>
         {obj && (
-          <button onClick={() => ops.deleteSelected()} className="text-white/20 hover:text-red-400 transition-colors" title="Supprimer">
+          <button onClick={() => ops.deleteSelected()} className="text-white/20 hover:text-red-400 transition-colors" title={t('props.delete')}>
             <X className="w-3.5 h-3.5" />
           </button>
         )}
@@ -502,7 +506,7 @@ export function PropertiesPanel() {
           <svg viewBox="0 0 24 24" className="w-10 h-10 opacity-20" fill="none" stroke="currentColor" strokeWidth="1">
             <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
           </svg>
-          <p className="text-sm text-center">Sélectionnez un objet</p>
+          <p className="text-sm text-center">{t('props.selectObject')}</p>
         </div>
       ) : (
         <>
@@ -511,11 +515,11 @@ export function PropertiesPanel() {
             <div className="flex border-b border-white/10 shrink-0">
               <button onClick={() => setActiveTab('shape')}
                 className={`flex-1 py-2 text-[10px] uppercase tracking-wider transition-colors ${activeTab === 'shape' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-white/30 hover:text-white/50'}`}>
-                Options de forme
+                {t('props.tab.shape')}
               </button>
               <button onClick={() => setActiveTab('text')}
                 className={`flex-1 py-2 text-[10px] uppercase tracking-wider transition-colors ${activeTab === 'text' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-white/30 hover:text-white/50'}`}>
-                Options de texte
+                {t('props.tab.text')}
               </button>
             </div>
           )}
@@ -526,7 +530,7 @@ export function PropertiesPanel() {
             {(obj.type !== 'text' || activeTab === 'shape') && (
               <>
                 {/* ── Remplissage ── */}
-                <Section title="Remplissage" tourId="prop-fill" help="Couleur intérieure de l'objet. Choisissez : aplat (couleur unie), dégradé, image, ou aucun remplissage (transparent).">
+                <Section title={t('props.fill')} tourId="prop-fill" help={t('props.help.fill')}>
 
                   <div className="flex gap-1 mb-1">
                     {(['solid', 'gradient', 'image', 'none'] as const).map(ft => (
@@ -577,13 +581,13 @@ export function PropertiesPanel() {
                         syncToStore(canvas)
                       }}
                         className={`flex-1 py-1 text-[10px] rounded border transition-colors ${(obj.fillType ?? 'solid') === ft ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60'}`}>
-                        {ft === 'solid' ? 'Uni' : ft === 'gradient' ? 'Dégradé' : ft === 'image' ? 'Image' : 'Aucun'}
+                        {t(ft === 'solid' ? 'props.fill.solid' : ft === 'gradient' ? 'props.fill.gradient' : ft === 'image' ? 'props.fill.image' : 'props.fill.none')}
                       </button>
                     ))}
                   </div>
 
                   {(obj.fillType ?? 'solid') === 'solid' && (
-                    <ColorPicker label="Couleur" value={obj.fill}
+                    <ColorPicker label={t('props.colour')} value={obj.fill}
                       onChange={(v) => obj.type === 'text' ? applyStyle({ fill: v }) : applyToFabric({ fill: v })} />
                   )}
 
@@ -606,46 +610,46 @@ export function PropertiesPanel() {
                 {obj.type === 'text' && <TextFrameSection selectedObjectId={selectedObjectId} />}
 
                 {/* ── Contour ── */}
-                <Section title="Contour" tourId="prop-stroke" help="Bordure de l'objet : couleur, épaisseur, style de trait (continu, tirets, points), et forme des extrémités/angles.">
+                <Section title={t('props.stroke')} tourId="prop-stroke" help={t('props.help.stroke')}>
 
-                  <ColorPicker label="Couleur" value={obj.stroke}
+                  <ColorPicker label={t('props.colour')} value={obj.stroke}
                     onChange={(v) => applyToFabric({ stroke: v })} />
                   <Row>
-                    <NumInput label="Épaisseur" value={obj.strokeWidth} onChange={(v) => applyToFabric({ strokeWidth: v })} />
-                    <SelectInput label="Type de tiret" value={JSON.stringify(obj.strokeDashArray ?? [])}
+                    <NumInput label={t('props.stroke.width')} value={obj.strokeWidth} onChange={(v) => applyToFabric({ strokeWidth: v })} />
+                    <SelectInput label={t('props.stroke.dash')} value={JSON.stringify(obj.strokeDashArray ?? [])}
                       onChange={(v) => applyToFabric({ strokeDashArray: JSON.parse(v) })}
-                      options={DASH_PRESETS.map(p => ({ value: JSON.stringify(p.value), label: p.label }))} />
+                      options={DASH_PRESETS.map(p => ({ value: JSON.stringify(p.value), label: t(p.labelKey) }))} />
                   </Row>
                   <Row>
-                    <SelectInput label="Extrémité" value={obj.strokeLineCap ?? 'butt'}
+                    <SelectInput label={t('props.stroke.cap')} value={obj.strokeLineCap ?? 'butt'}
                       onChange={(v) => applyToFabric({ strokeLineCap: v as any })}
                       options={[
-                        { value: 'butt', label: 'Plate' },
-                        { value: 'round', label: 'Ronde' },
-                        { value: 'square', label: 'Carrée' },
+                        { value: 'butt', label: t('props.cap.butt') },
+                        { value: 'round', label: t('props.cap.round') },
+                        { value: 'square', label: t('props.cap.square') },
                       ]} />
-                    <SelectInput label="Joint" value={obj.strokeLineJoin ?? 'miter'}
+                    <SelectInput label={t('props.stroke.join')} value={obj.strokeLineJoin ?? 'miter'}
                       onChange={(v) => applyToFabric({ strokeLineJoin: v as any })}
                       options={[
-                        { value: 'miter', label: "D'angle" },
-                        { value: 'round', label: 'Rond' },
-                        { value: 'bevel', label: 'Biseauté' },
+                        { value: 'miter', label: t('props.join.miter') },
+                        { value: 'round', label: t('props.join.round') },
+                        { value: 'bevel', label: t('props.join.bevel') },
                       ]} />
                   </Row>
                 </Section>
 
                 {/* ── Opacité & Mode de fusion ── */}
-                <Section title="Opacité & Fusion" tourId="prop-opacity" help="Transparence de l'objet (0 = invisible) et mode de fusion (multiplier, écran, superposition…) qui définit comment ses couleurs se mélangent avec celles du dessous.">
+                <Section title={t('props.opacityBlend')} tourId="prop-opacity" help={t('props.help.opacity')}>
 
-                  <SliderInput label="Opacité" value={obj.opacity} onChange={(v) => applyToFabric({ opacity: v })}
+                  <SliderInput label={t('props.opacity')} value={obj.opacity} onChange={(v) => applyToFabric({ opacity: v })}
                     min={0} max={1} step={0.01} unit="%" />
-                  <SelectInput label="Mode de fusion" value={obj.blendMode ?? 'source-over'}
+                  <SelectInput label={t('props.blend')} value={obj.blendMode ?? 'source-over'}
                     onChange={(v) => applyToFabric({ blendMode: v })}
-                    options={BLEND_MODES} />
+                    options={BLEND_MODES.map(m => ({ value: m.value, label: t(m.labelKey) }))} />
                 </Section>
 
                 {/* ── Ombre ── */}
-                <Section title="Ombre" tourId="prop-shadow" help="Ombre portée de l'objet : activez-la puis réglez couleur, flou et décalage horizontal/vertical.">
+                <Section title={t('props.shadow')} tourId="prop-shadow" help={t('props.help.shadow')}>
 
                   <label className="flex items-center gap-2 cursor-pointer">
                     <div
@@ -653,30 +657,30 @@ export function PropertiesPanel() {
                       className={`w-9 h-5 rounded-full transition-colors relative ${obj.shadow ? 'bg-indigo-500' : 'bg-white/10'}`}>
                       <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-[#fff] shadow transition-transform ${obj.shadow ? 'left-4' : 'left-0.5'}`} />
                     </div>
-                    <span className="text-xs text-white/50">{obj.shadow ? 'Activée' : 'Désactivée'}</span>
+                    <span className="text-xs text-white/50">{obj.shadow ? t('props.shadow.on') : t('props.shadow.off')}</span>
                   </label>
                   {obj.shadow && (
                     <div className="flex flex-col gap-2 pl-2 border-l-2 border-indigo-500/30">
-                      <ColorPicker label="Couleur" value={obj.shadow.color}
+                      <ColorPicker label={t('props.colour')} value={obj.shadow.color}
                         onChange={(v) => applyToFabric({ shadow: { ...obj.shadow!, color: v } })} />
                       <Row>
-                        <NumInput label="Flou" value={obj.shadow.blur} onChange={(v) => applyToFabric({ shadow: { ...obj.shadow!, blur: v } })} />
-                        <NumInput label="Déport X" value={obj.shadow.offsetX} onChange={(v) => applyToFabric({ shadow: { ...obj.shadow!, offsetX: v } })} />
+                        <NumInput label={t('props.shadow.blur')} value={obj.shadow.blur} onChange={(v) => applyToFabric({ shadow: { ...obj.shadow!, blur: v } })} />
+                        <NumInput label={t('props.shadow.offsetX')} value={obj.shadow.offsetX} onChange={(v) => applyToFabric({ shadow: { ...obj.shadow!, offsetX: v } })} />
                       </Row>
-                      <NumInput label="Déport Y" value={obj.shadow.offsetY} onChange={(v) => applyToFabric({ shadow: { ...obj.shadow!, offsetY: v } })} />
+                      <NumInput label={t('props.shadow.offsetY')} value={obj.shadow.offsetY} onChange={(v) => applyToFabric({ shadow: { ...obj.shadow!, offsetY: v } })} />
                     </div>
                   )}
                 </Section>
 
                 {/* ── Taille & Position ── */}
-                <Section title="Taille & Position" tourId="prop-transform" help="Coordonnées X/Y, largeur/hauteur, rotation et arrondi. Verrouillez le ratio pour redimensionner proportionnellement ; miroir H/V et verrou de position disponibles.">
+                <Section title={t('props.sizePosition')} tourId="prop-transform" help={t('props.help.size')}>
 
                   <Row>
                     <NumInput label="X" value={obj.x} onChange={(v) => applyToFabric({ x: v })} unit="pt" />
                     <NumInput label="Y" value={obj.y} onChange={(v) => applyToFabric({ y: v })} unit="pt" />
                   </Row>
                   <Row>
-                    <NumInput label="Largeur" value={obj.width} onChange={(v) => {
+                    <NumInput label={t('props.width')} value={obj.width} onChange={(v) => {
                       if (obj.lockAspectRatio && obj.width > 0) {
                         const ratio = obj.height / obj.width
                         applyToFabric({ width: v, height: Math.round(v * ratio) })
@@ -684,7 +688,7 @@ export function PropertiesPanel() {
                         applyToFabric({ width: v })
                       }
                     }} unit="pt" />
-                    <NumInput label="Hauteur" value={obj.height} onChange={(v) => {
+                    <NumInput label={t('props.height')} value={obj.height} onChange={(v) => {
                       if (obj.lockAspectRatio && obj.height > 0) {
                         const ratio = obj.width / obj.height
                         applyToFabric({ height: v, width: Math.round(v * ratio) })
@@ -698,13 +702,13 @@ export function PropertiesPanel() {
                     <button onClick={() => applyToFabric({ lockAspectRatio: !obj.lockAspectRatio })}
                       className={`flex items-center gap-1.5 px-2 py-1 text-[10px] rounded border transition-colors ${obj.lockAspectRatio ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}>
                       {obj.lockAspectRatio ? <Link className="w-3 h-3" /> : <Unlink className="w-3 h-3" />}
-                      {obj.lockAspectRatio ? 'Proportions liées' : 'Proportions libres'}
+                      {obj.lockAspectRatio ? t('props.linkedRatio') : 'Proportions libres'}
                     </button>
                   </div>
                   <Row>
-                    <NumInput label="Rotation" value={obj.angle} onChange={(v) => applyToFabric({ angle: v })} unit="°" />
+                    <NumInput label={t('props.rotation')} value={obj.angle} onChange={(v) => applyToFabric({ angle: v })} unit="°" />
                     {(obj.type === 'rect' || obj.type === 'text') && (
-                      <NumInput label="Arrondi" value={obj.cornerRadius ?? 0} onChange={(v) => applyToFabric({ cornerRadius: v })} />
+                      <NumInput label={t('props.radius')} value={obj.cornerRadius ?? 0} onChange={(v) => applyToFabric({ cornerRadius: v })} />
                     )}
                   </Row>
                   {/* Flip & Lock */}
@@ -756,7 +760,7 @@ export function PropertiesPanel() {
                   const isPatternFilled = (fObj as any).fill?.type === 'pattern'
                   if (!isImage && !isPatternFilled) return null
                   return (
-                    <Section title="Cadrage" tourId="prop-crop" help="Recadrez l'image dans son cadre (masque) sans la déformer : ajustez la zone visible et le zoom de l'image à l'intérieur.">
+                    <Section title={t('props.crop')} tourId="prop-crop" help={t('props.help.crop')}>
 
                       <ImageMaskSection image={fObj} />
                     </Section>
@@ -769,10 +773,10 @@ export function PropertiesPanel() {
             {obj.type === 'text' && activeTab === 'text' && (
               <>
                 {/* ── Police ── */}
-                <Section title="Police" tourId="prop-font" help="Mise en forme du texte : famille de police, taille, style (gras/italique), souligné/barré et couleur.">
+                <Section title={t('props.font')} tourId="prop-font" help={t('props.help.font')}>
 
                   <div className="flex flex-col gap-1">
-                    <Label>Famille</Label>
+                    <Label>{t('props.font.family')}</Label>
                     <select value={obj.fontFamily ?? 'Inter'} onChange={(e) => applyStyle({ fontFamily: e.target.value })}
                       className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                       style={{ fontFamily: obj.fontFamily ?? 'Inter' }}>
@@ -784,9 +788,9 @@ export function PropertiesPanel() {
                   <UserFontsPanel />
 
                   <Row>
-                    <NumInput label="Taille" value={obj.fontSize ?? 24} onChange={(v) => applyStyle({ fontSize: v })} unit="pt" />
+                    <NumInput label={t('props.font.size')} value={obj.fontSize ?? 24} onChange={(v) => applyStyle({ fontSize: v })} unit="pt" />
                     <div className="flex flex-col gap-1">
-                      <Label>Style</Label>
+                      <Label>{t('props.font.style')}</Label>
                       {(() => {
                         const family = obj.fontFamily ?? 'Inter'
                         const variants = getDynamicFontVariants(family)
@@ -816,10 +820,10 @@ export function PropertiesPanel() {
                             }}
                             className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                           >
-                            <option value="normal|normal">Regular</option>
-                            <option value="normal|italic">Italic</option>
-                            <option value="bold|normal">Bold</option>
-                            <option value="bold|italic">Bold Italic</option>
+                            <option value="normal|normal">{t('props.fontStyle.regular')}</option>
+                            <option value="normal|italic">{t('props.fontStyle.italic')}</option>
+                            <option value="bold|normal">{t('props.fontStyle.bold')}</option>
+                            <option value="bold|italic">{t('props.fontStyle.boldItalic')}</option>
                           </select>
                         )
                       })()}
@@ -827,23 +831,23 @@ export function PropertiesPanel() {
                   </Row>
                   <Row>
                     <div className="flex gap-1">
-                      <Toggle active={!!obj.underline} onClick={() => applyToFabric({ underline: !obj.underline })} title="Souligné">
+                      <Toggle active={!!obj.underline} onClick={() => applyToFabric({ underline: !obj.underline })} title={t('props.underline')}>
                         <span className="underline text-xs">S</span>
                       </Toggle>
-                      <Toggle active={!!obj.linethrough} onClick={() => applyToFabric({ linethrough: !obj.linethrough })} title="Barré">
+                      <Toggle active={!!obj.linethrough} onClick={() => applyToFabric({ linethrough: !obj.linethrough })} title={t('props.strikethrough')}>
                         <span className="line-through text-xs">R</span>
                       </Toggle>
                     </div>
                   </Row>
 
-                  <ColorPicker label="Couleur texte" value={obj.fill} onChange={(v) => applyStyle({ fill: v })} />
+                  <ColorPicker label={t('props.textColour')} value={obj.fill} onChange={(v) => applyStyle({ fill: v })} />
                 </Section>
 
                 {/* ── Paragraphe ── */}
-                <Section title="Paragraphe" tourId="prop-paragraph" help="Alignement du texte (gauche, centré, droite, justifié), espacement des lettres et interligne.">
+                <Section title={t('props.paragraph')} tourId="prop-paragraph" help={t('props.help.paragraph')}>
 
                   <div className="flex flex-col gap-1">
-                    <Label>Alignement</Label>
+                    <Label>{t('props.align')}</Label>
                     <div className="flex gap-1">
                       {(['left', 'center', 'right', 'justify'] as const).map((align) => (
                         <button key={align} onClick={() => applyStyle({ textAlign: align })}
@@ -855,8 +859,8 @@ export function PropertiesPanel() {
                   </div>
 
                   <Row>
-                    <NumInput label="Espacement" value={obj.charSpacing ?? 0} onChange={(v) => applyToFabric({ charSpacing: v })} unit="%" step={10} />
-                    <NumInput label="Interligne" value={obj.lineHeight ?? 1.16} onChange={(v) => applyToFabric({ lineHeight: v })} unit="×" step={0.1} />
+                    <NumInput label={t('props.spacing')} value={obj.charSpacing ?? 0} onChange={(v) => applyToFabric({ charSpacing: v })} unit="%" step={10} />
+                    <NumInput label={t('props.lineHeight')} value={obj.lineHeight ?? 1.16} onChange={(v) => applyToFabric({ lineHeight: v })} unit="×" step={0.1} />
                   </Row>
                 </Section>
 
@@ -864,7 +868,7 @@ export function PropertiesPanel() {
                 <ParagraphIndentsSection selectedObjectId={selectedObjectId} />
 
                 {/* ── Transformation texte ── */}
-                <Section title="Transformation" tourId="prop-texttransform" help="Casse du texte : majuscules, minuscules, ou capitales en début de mot — sans réécrire le contenu.">
+                <Section title={t('props.transform')} tourId="prop-texttransform" help={t('props.help.transform')}>
 
                   <div className="flex gap-1">
                     {([
@@ -889,7 +893,7 @@ export function PropertiesPanel() {
             <ConditionalRulesSection selectedObjectId={selectedObjectId} />
 
             {/* ── Arranger (always visible) ── */}
-            <Section title="Arranger" tourId="prop-arrange" help="Ordre de superposition (premier/arrière-plan), alignement et répartition par rapport à la page, et duplication/suppression de l'objet.">
+            <Section title={t('props.arrange')} tourId="prop-arrange" help={t('props.help.arrange')}>
 
               {/* Z-order */}
               <div className="flex gap-1">
@@ -897,7 +901,7 @@ export function PropertiesPanel() {
                   { icon: ChevronsUp, label: 'Premier plan', action: ops.bringToFront },
                   { icon: ArrowUp, label: 'Avancer', action: ops.bringForward },
                   { icon: ArrowDown, label: 'Reculer', action: ops.sendBackward },
-                  { icon: ChevronsDown, label: 'Arrière-plan', action: ops.sendToBack },
+                  { icon: ChevronsDown, label: t('props.background'), action: ops.sendToBack },
                 ].map(({ icon: Icon, label, action }) => (
                   <button key={label} onClick={action} title={label}
                     className="flex-1 py-2 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 rounded-md transition-colors text-white/40 hover:text-white">
@@ -923,11 +927,11 @@ export function PropertiesPanel() {
               </div>
               {/* Distribute */}
               <div className="flex gap-1">
-                <button onClick={ops.distributeHorizontally} title="Distribuer horizontalement"
+                <button onClick={ops.distributeHorizontally} title={t('props.distributeH')}
                   className="flex-1 py-1.5 flex items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-white/40 hover:text-white text-[10px] transition-colors">
                   <GalleryHorizontalEnd className="w-3.5 h-3.5" /> Distribuer H
                 </button>
-                <button onClick={ops.distributeVertically} title="Distribuer verticalement"
+                <button onClick={ops.distributeVertically} title={t('props.distributeV')}
                   className="flex-1 py-1.5 flex items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-white/40 hover:text-white text-[10px] transition-colors">
                   <GalleryVerticalEnd className="w-3.5 h-3.5" /> Distribuer V
                 </button>

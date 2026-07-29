@@ -10,6 +10,7 @@ import { applyPrintDefaults } from '@/features/print/printDefaults'
 import { OptionHelp } from '@/components/shared/OptionHelp'
 import { PropertySection } from '@/components/shared/panel'
 import { PreflightSection } from './PreflightSection'
+import { useTranslation } from '@/lib/i18n'
 
 /**
  * Panneau "Repères et fonds perdus" — vocabulaire InDesign.
@@ -23,6 +24,7 @@ import { PreflightSection } from './PreflightSection'
  * Pour chaque type de repère : taille (quand applicable), épaisseur, couleur.
  */
 export function PrintPanel() {
+  const { t } = useTranslation()
   const [saving, setSaving] = useState(false)
   const [selectedPresetId, setSelectedPresetId] = useState<string>('')
   const { presets, savePreset, updatePreset, deletePreset } = usePrintPresets()
@@ -51,10 +53,10 @@ export function PrintPanel() {
         regRadiusMm, regStroke, regColor, regOffsetMm,
         safeStroke, safeColor, safeDash, safeGap,
       }, { merge: true })
-      toast.success('Paramètres d\'impression enregistrés ✓')
+      toast.success(t('print.saved'))
     } catch (err) {
       console.error('[PrintPanel] Save failed:', err)
-      toast.error('Erreur lors de l\'enregistrement')
+      toast.error(t('print.saveError'))
     } finally {
       setSaving(false)
     }
@@ -94,34 +96,34 @@ export function PrintPanel() {
   }
 
   const handleSaveAsNew = async () => {
-    const name = window.prompt('Nom de la famille de paramètres :', 'Mon preset')
+    const name = window.prompt(t('print.presetName.prompt'), t('print.presetName.default'))
     if (!name || !name.trim()) return
     const id = await savePreset(name.trim(), collectCurrentParams())
     if (id) {
       setSelectedPresetId(id)
-      toast.success(`Famille « ${name.trim()} » créée ✓`)
+      toast.success(t('print.preset.created', { name: name.trim() }))
     } else {
-      toast.error('Erreur lors de la création')
+      toast.error(t('print.preset.createError'))
     }
   }
 
   const handleUpdatePreset = async () => {
     if (!selectedPresetId) return
     const ok = await updatePreset(selectedPresetId, collectCurrentParams())
-    if (ok) toast.success('Famille mise à jour ✓')
-    else toast.error('Erreur lors de la mise à jour')
+    if (ok) toast.success(t('print.preset.updated'))
+    else toast.error(t('print.preset.updateError'))
   }
 
   const handleDeletePreset = async () => {
     if (!selectedPresetId) return
     const preset = presets.find((p) => p.id === selectedPresetId)
-    if (!window.confirm(`Supprimer la famille « ${preset?.name ?? ''} » ?`)) return
+    if (!window.confirm(t('print.preset.deleteConfirm', { name: preset?.name ?? '' }))) return
     const ok = await deletePreset(selectedPresetId)
     if (ok) {
       setSelectedPresetId('')
-      toast.success('Famille supprimée ✓')
+      toast.success(t('print.preset.deleted'))
     } else {
-      toast.error('Erreur lors de la suppression')
+      toast.error(t('print.preset.deleteError'))
     }
   }
 
@@ -133,16 +135,16 @@ export function PrintPanel() {
     <div className="p-3 flex flex-col gap-4">
       {/* ── Famille de paramètres (presets réutilisables entre projets) ── */}
       <PropertySection
-        title="Famille de paramètres"
+        title={t('print.presets')}
         tourId="print-presets"
-        help="Enregistrez vos réglages d'impression comme preset réutilisable d'un projet à l'autre. Les icônes à droite : créer, mettre à jour, supprimer une famille."
+        help={t('print.presets.help')}
       >
         <div className="flex gap-1">
           <select
             value={selectedPresetId}
             onChange={(e) => handleSelectPreset(e.target.value)}
             className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50"
-            title="Sélectionner une famille de paramètres"
+            title={t('print.preset.select')}
           >
             <option value="">— Personnalisé —</option>
             {presets.map((p) => (
@@ -152,7 +154,7 @@ export function PrintPanel() {
           <button
             onClick={handleSaveAsNew}
             className="flex items-center justify-center bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/50 rounded-md w-7 h-7 text-indigo-300 transition-colors"
-            title="Créer une nouvelle famille de paramètres"
+            title={t('print.preset.new')}
           >
             <FolderPlus className="w-3.5 h-3.5" />
           </button>
@@ -160,7 +162,7 @@ export function PrintPanel() {
             onClick={handleUpdatePreset}
             disabled={!selectedPresetId}
             className="flex items-center justify-center bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 rounded-md w-7 h-7 text-white/70 transition-colors"
-            title="Mettre à jour la famille sélectionnée avec les valeurs actuelles"
+            title={t('print.preset.update')}
           >
             <Save className="w-3.5 h-3.5" />
           </button>
@@ -168,7 +170,7 @@ export function PrintPanel() {
             onClick={handleDeletePreset}
             disabled={!selectedPresetId}
             className="flex items-center justify-center bg-white/5 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5 disabled:hover:text-white/70 border border-white/10 rounded-md w-7 h-7 text-white/70 transition-colors"
-            title="Supprimer la famille sélectionnée"
+            title={t('print.preset.delete')}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -181,44 +183,44 @@ export function PrintPanel() {
           onClick={handleSaveSettings}
           disabled={saving}
           className="flex-1 flex items-center justify-center gap-2 bg-indigo-500/20 hover:bg-indigo-500/30 disabled:opacity-50 border border-indigo-500/50 rounded-md px-2 py-1.5 text-xs text-indigo-300 transition-colors"
-          title="Sauvegarder les paramètres"
+          title={t('print.save')}
         >
           <Download className="w-3 h-3" />
-          <span>Enregistrer</span>
+          <span>{t('print.save.short')}</span>
         </button>
         <button
           onClick={handleResetDefaults}
           className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white/70 transition-colors"
-          title="Restaurer les paramètres par défaut"
+          title={t('print.defaults')}
         >
           <RotateCcw className="w-3 h-3" />
-          <span>Défauts</span>
+          <span>{t('print.defaults.short')}</span>
         </button>
       </div>
 
       {/* ── Résolution ── */}
       <PropertySection
-        title="Résolution (DPI)"
+        title={t('print.dpi')}
         tourId="print-dpi"
-        help="Densité de l'export en points par pouce. 300 DPI = standard offset/impression. 72 DPI = web. Plus le DPI est élevé, plus le fichier est lourd et net."
+        help={t('print.dpi.help')}
       >
         <select
           value={dpi}
           onChange={(e) => setDpi(Number(e.target.value))}
           className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50"
         >
-          <option value={72}>72 DPI — web</option>
-          <option value={150}>150 DPI — numérique léger</option>
-          <option value={300}>300 DPI — offset (recommandé)</option>
-          <option value={600}>600 DPI — très haute définition</option>
+          <option value={72}>{t('print.dpi.72')}</option>
+          <option value={150}>{t('print.dpi.150')}</option>
+          <option value={300}>{t('print.dpi.300')}</option>
+          <option value={600}>{t('print.dpi.600')}</option>
         </select>
       </PropertySection>
 
       {/* ── Fond perdu ── */}
       <PropertySection
-        title="Fond perdu (bleed)"
+        title={t('print.bleed')}
         tourId="print-bleed"
-        help="Marge de débord autour de la page, imprimée puis rognée. Évite les liserés blancs si la coupe est légèrement décalée. 3 mm = standard offset, 5 mm = numérique."
+        help={t('print.bleed.help')}
         badge={<span className="text-[11px] text-white/80 font-mono tabular-nums">{bleedMm} mm</span>}
       >
         <input
@@ -232,132 +234,132 @@ export function PrintPanel() {
         />
         <div className="flex justify-between text-[9px] text-white/30">
           <span>0</span>
-          <span>3 offset</span>
-          <span>5 num.</span>
+          <span>{t('print.bleed.offset')}</span>
+          <span>{t('print.bleed.digital')}</span>
           <span>10</span>
         </div>
       </PropertySection>
 
       {/* ═══ REPÈRES D'IMPRESSION ═══ */}
       <PropertySection
-        title="Repères d'impression"
+        title={t('print.marks')}
         tourId="print-marks"
-        help="Marques ajoutées hors page pour guider l'imprimeur : traits de coupe (où rogner), repères de fond perdu, et hirondelles (calage des couleurs)."
+        help={t('print.marks.help')}
       >
         {/* Traits de coupe */}
         <MarkGroup
           icon={<Scissors className="w-3 h-3" />}
-          label="Traits de coupe"
+          label={t('print.crop')}
           enabled={showPrintMarks}
           onToggle={setShowPrintMarks}
-          help="Petits traits aux quatre coins indiquant la ligne de coupe finale du document."
+          help={t('print.crop.help')}
         >
           <SliderControl
-            label="Longueur du trait"
+            label={t('print.crop.length')}
             value={cropMarkLengthMm}
             min={2} max={10} step={0.5} unit="mm"
             onChange={setCropMarkLengthMm}
           />
           <SliderControl
-            label="Décalage depuis le bleed"
+            label={t('print.crop.offset')}
             value={cropMarkOffsetMm}
             min={0} max={3} step={0.5} unit="mm"
             onChange={setCropMarkOffsetMm}
           />
           <SliderControl
-            label="Épaisseur"
+            label={t('print.stroke')}
             value={cropStroke}
             min={0.25} max={3} step={0.25} unit="px"
             onChange={setCropStroke}
           />
-          <ColorControl label="Couleur" value={cropColor} onChange={setCropColor} />
+          <ColorControl label={t('print.colour')} value={cropColor} onChange={setCropColor} />
         </MarkGroup>
 
         {/* Repères de fond perdu (= rect bleed, lié au toggle traits de coupe) */}
         <MarkGroup
           icon={<Square className="w-3 h-3" />}
-          label="Repères de fond perdu"
+          label={t('print.bleedMarks')}
           enabled={showPrintMarks}
           onToggle={setShowPrintMarks}
           subLabel="(rectangle de fond perdu)"
         >
           <SliderControl
-            label="Épaisseur"
+            label={t('print.stroke')}
             value={bleedStroke}
             min={0.25} max={3} step={0.25} unit="px"
             onChange={setBleedStroke}
           />
-          <ColorControl label="Couleur" value={bleedColor} onChange={setBleedColor} />
+          <ColorControl label={t('print.colour')} value={bleedColor} onChange={setBleedColor} />
         </MarkGroup>
 
         {/* Repères de montage (hirondelles) */}
         <MarkGroup
           icon={<Target className="w-3 h-3" />}
-          label="Repères de montage"
+          label={t('print.regMarks')}
           enabled={showRegistrationMarks}
           onToggle={setShowRegistrationMarks}
           subLabel="(hirondelles)"
-          help="Cibles en croix servant à aligner précisément les plaques de couleur (CMJN) à l'impression."
+          help={t('print.regMarks.help')}
         >
           <SliderControl
-            label="Taille (rayon)"
+            label={t('print.reg.radius')}
             value={regRadiusMm}
             min={1} max={8} step={0.5} unit="mm"
             onChange={setRegRadiusMm}
           />
           <SliderControl
-            label="Décalage (position)"
+            label={t('print.reg.offset')}
             value={regOffsetMm}
             min={-10} max={30} step={0.5} unit="mm"
             onChange={setRegOffsetMm}
           />
           <SliderControl
-            label="Épaisseur"
+            label={t('print.stroke')}
             value={regStroke}
             min={0.25} max={3} step={0.25} unit="px"
             onChange={setRegStroke}
           />
-          <ColorControl label="Couleur" value={regColor} onChange={setRegColor} />
+          <ColorControl label={t('print.colour')} value={regColor} onChange={setRegColor} />
         </MarkGroup>
       </PropertySection>
 
       {/* ═══ ZONE DE SÉCURITÉ ═══ */}
       <PropertySection
-        title="Zone de sécurité"
+        title={t('print.safeZone')}
         tourId="print-safe"
-        help="Marge intérieure de sécurité : gardez-y le texte et les éléments importants pour qu'ils ne soient pas coupés au rognage."
+        help={t('print.safeZone.help')}
       >
         <MarkGroup
           icon={<Shield className="w-3 h-3" />}
-          label="Afficher la zone de sécurité"
+          label={t('print.safeZone.show')}
           enabled={showSafeArea}
           onToggle={setShowSafeArea}
         >
           <SliderControl
-            label="Marge intérieure"
+            label={t('print.safe.margin')}
             value={safeAreaMm}
             min={0} max={20} step={0.5} unit="mm"
             onChange={setSafeAreaMm}
           />
           <SliderControl
-            label="Épaisseur"
+            label={t('print.stroke')}
             value={safeStroke}
             min={0.25} max={3} step={0.25} unit="px"
             onChange={setSafeStroke}
           />
           <SliderControl
-            label="Longueur tiret"
+            label={t('print.safe.dash')}
             value={safeDash}
             min={1} max={20} step={0.5} unit="px"
             onChange={setSafeDash}
           />
           <SliderControl
-            label="Espacement tirets"
+            label={t('print.safe.gap')}
             value={safeGap}
             min={1} max={20} step={0.5} unit="px"
             onChange={setSafeGap}
           />
-          <ColorControl label="Couleur" value={safeColor} onChange={setSafeColor} />
+          <ColorControl label={t('print.colour')} value={safeColor} onChange={setSafeColor} />
         </MarkGroup>
       </PropertySection>
 

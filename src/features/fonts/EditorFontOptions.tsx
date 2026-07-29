@@ -4,8 +4,10 @@
 // s'affiche dans sa propre police.
 import { AVAILABLE_FONTS, getAllFonts } from '@/features/assets/useFonts'
 import { useUserFonts } from './useUserFonts'
+import { useTranslation } from '@/lib/i18n'
 
 export function EditorFontOptions() {
+  const { t } = useTranslation()
   const { fonts: userFonts } = useUserFonts()
   const docFonts = getAllFonts()
     .filter((f) => !AVAILABLE_FONTS.some((af) => af.family === f.family))
@@ -13,16 +15,16 @@ export function EditorFontOptions() {
   return (
     <>
       {userFonts.length > 0 && (
-        <optgroup label="Mes polices">
+        <optgroup label={t('fonts.myFonts')}>
           {userFonts.map((f) => <option key={f.id} value={f.family} style={{ fontFamily: f.family }}>{f.family}</option>)}
         </optgroup>
       )}
       {docFonts.length > 0 && (
-        <optgroup label="Fonts du document">
+        <optgroup label={t('fonts.documentFonts')}>
           {docFonts.map((f) => <option key={f.family} value={f.family} style={{ fontFamily: f.family }}>{f.label}</option>)}
         </optgroup>
       )}
-      <optgroup label="Google Fonts">
+      <optgroup label={t('fonts.google')}>
         {AVAILABLE_FONTS.map((f) => <option key={f.family} value={f.family} style={{ fontFamily: f.family }}>{f.label}</option>)}
       </optgroup>
     </>

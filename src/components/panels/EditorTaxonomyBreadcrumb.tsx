@@ -5,6 +5,7 @@ import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { findPath } from '@/features/taxonomy/taxonomyUtils'
 import type { TaxonomyNode } from '@/features/taxonomy/types'
 import { EditorTaxonomyPicker } from './EditorTaxonomyPicker'
+import { useTranslation } from '@/lib/i18n'
 
 const levelColors = [
   { text: 'text-blue-400', bg: 'bg-blue-500/15' },
@@ -15,6 +16,7 @@ const levelColors = [
 ]
 
 export function EditorTaxonomyBreadcrumb() {
+  const { t } = useTranslation()
   const projectId = useEditorStore((s) => s.projectId)
   const { data: taxonomies } = useTaxonomies()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -40,10 +42,10 @@ export function EditorTaxonomyBreadcrumb() {
         <button
           onClick={() => setPickerOpen(true)}
           className="ml-2 flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium text-white/40 hover:text-indigo-300 hover:bg-indigo-500/10 border border-dashed border-white/10 hover:border-indigo-500/30 transition-colors"
-          title="Lier ce projet à une taxonomie"
+          title={t('taxonomy.link')}
         >
           <Plus className="w-3 h-3" />
-          Lier à une taxonomie
+          {t('taxonomy.link')}
         </button>
         <EditorTaxonomyPicker
           open={pickerOpen}

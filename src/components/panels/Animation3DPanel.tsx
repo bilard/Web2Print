@@ -11,6 +11,7 @@ import type { Animation3DConfig, Animation3DPreset } from '@/features/animation3
 import { PRESETS, DEFAULT_ANIMATION_CONFIG } from '@/features/animation3d/types'
 
 import type { CanvasObjectProps } from '@/stores/editor.store'
+import { useTranslation } from '@/lib/i18n'
 
 interface Controller {
   stop: () => void
@@ -28,6 +29,7 @@ function findObjectById(objs: CanvasObjectProps[], id: string): CanvasObjectProp
 }
 
 export function Animation3DPanel() {
+  const { t } = useTranslation()
   const selectedId = useEditorStore((s) => s.selectedObjectId)
   const canvasObjects = useEditorStore((s) => s.canvasObjects)
   const updateObject = useEditorStore((s) => s.updateObject)
@@ -141,12 +143,12 @@ export function Animation3DPanel() {
     return (
       <div className="px-3 py-4 text-xs text-white/45 space-y-3">
         <p>
-          Anime <b className="text-white/70">un seul objet</b> sélectionné, en direct sur le canvas
+          Anime <b className="text-white/70">{t('anim.singleObject')}</b> sélectionné, en direct sur le canvas
           (effets de mouvement, persistés sur l'objet). Pour une vidéo de la
-          <b className="text-white/70"> page entière</b> pilotée par IA, utilise le bouton
+          <b className="text-white/70"> {t('anim.wholePage')}</b> pilotée par IA, utilise le bouton
           <b className="text-white/70"> « Vidéo IA »</b> en haut.
         </p>
-        <p>Sélectionne un objet du canvas pour appliquer un effet.</p>
+        <p>{t('anim.selectObject')}</p>
         <button
           onClick={() => setConfig({ ...config, preset: 'particles' })}
           className="text-[11px] text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
@@ -161,7 +163,7 @@ export function Animation3DPanel() {
     <div className="px-3 py-3 space-y-3">
       {/* Auto-play toggle */}
       <label className="flex items-center justify-between gap-2 text-[11px] text-white/70 cursor-pointer rounded-md border border-white/10 bg-white/5 px-2 py-1.5">
-        <span>Auto-play animations persistées</span>
+        <span>{t('anim.autoplay')}</span>
         <input
           type="checkbox"
           checked={autoPlayAnimations}
@@ -196,8 +198,8 @@ export function Animation3DPanel() {
       <div data-tour="opt-anim-duration" className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px] text-white/60">
           <span className="flex items-center gap-1">
-            Durée par cycle
-            <OptionHelp text="Temps d'une boucle complète de l'animation, en secondes. Plus court = mouvement plus rapide." />
+            {t('anim.duration')}
+            <OptionHelp text={t('anim.duration.help')} />
           </span>
           <span className="tabular-nums text-white/80">{config.duration.toFixed(1)}s</span>
         </div>
@@ -216,8 +218,8 @@ export function Animation3DPanel() {
       <div data-tour="opt-anim-intensity" className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px] text-white/60">
           <span className="flex items-center gap-1">
-            Intensité
-            <OptionHelp text="Amplitude de l'effet (× le mouvement de base). Plus élevé = animation plus marquée." />
+            {t('anim.intensity')}
+            <OptionHelp text={t('anim.intensity.help')} />
           </span>
           <span className="tabular-nums text-white/80">{config.intensity.toFixed(1)}×</span>
         </div>
@@ -270,33 +272,33 @@ export function Animation3DPanel() {
         <div className="rounded-md border border-indigo-500/30 bg-indigo-500/5 p-2.5 space-y-3">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-300">
             <Box className="w-3.5 h-3.5" />
-            <span>Géométrie 3D</span>
-            <OptionHelp text="Donne du volume au texte/objet : profondeur d'extrusion, biseau des arêtes et rotation sur les axes X/Y. Rotation auto pour une animation continue." />
+            <span>{t('anim.geometry')}</span>
+            <OptionHelp text={t('anim.geometry.help')} />
           </div>
 
           <SliderField
-            label="Profondeur"
+            label={t('anim.depth')}
             value={reliefConfig.depth}
             min={5} max={120} step={1}
             unit="px"
             onChange={(depth) => updateReliefConfig({ depth })}
           />
           <SliderField
-            label="Biseau"
+            label={t('anim.bevel')}
             value={reliefConfig.bevel}
             min={0} max={20} step={0.5}
             unit="px"
             onChange={(bevel) => updateReliefConfig({ bevel })}
           />
           <SliderField
-            label="Rotation X"
+            label={t('anim.rotX')}
             value={reliefConfig.rotX}
             min={-45} max={45} step={1}
             unit="°"
             onChange={(rotX) => updateReliefConfig({ rotX })}
           />
           <SliderField
-            label="Rotation Y"
+            label={t('anim.rotY')}
             value={reliefConfig.rotY}
             min={-90} max={90} step={1}
             unit="°"
@@ -315,39 +317,39 @@ export function Animation3DPanel() {
           <div className="border-t border-white/10 pt-2 space-y-2.5">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-300">
               <Sun className="w-3.5 h-3.5" />
-              <span>Éclairage manuel</span>
-              <OptionHelp text="Contrôle l'éclairage de la scène 3D : lumière directionnelle (intensité, couleur, position) qui crée les ombres, et lumière ambiante (éclairage global uniforme)." />
+              <span>{t('anim.lighting')}</span>
+              <OptionHelp text={t('anim.lighting.help')} />
             </div>
 
             {/* Directional light */}
             <div className="space-y-2 rounded bg-white/5 p-2">
-              <div className="text-[10px] uppercase tracking-wider text-white/50">Lumière directionnelle</div>
+              <div className="text-[10px] uppercase tracking-wider text-white/50">{t('anim.dirLight')}</div>
               <SliderField
-                label="Intensité"
+                label={t('anim.intensity')}
                 value={reliefConfig.lighting.directionalIntensity}
                 min={0} max={3} step={0.05}
                 unit="×"
                 onChange={(directionalIntensity) => updateReliefLighting({ directionalIntensity })}
               />
               <ColorRow
-                label="Couleur"
+                label={t('anim.colour')}
                 value={reliefConfig.lighting.directionalColor}
                 onChange={(directionalColor) => updateReliefLighting({ directionalColor })}
               />
               <SliderField
-                label="Position X"
+                label={t('anim.posX')}
                 value={reliefConfig.lighting.dirPosX}
                 min={-5} max={5} step={0.1}
                 onChange={(dirPosX) => updateReliefLighting({ dirPosX })}
               />
               <SliderField
-                label="Position Y"
+                label={t('anim.posY')}
                 value={reliefConfig.lighting.dirPosY}
                 min={-5} max={5} step={0.1}
                 onChange={(dirPosY) => updateReliefLighting({ dirPosY })}
               />
               <SliderField
-                label="Position Z"
+                label={t('anim.posZ')}
                 value={reliefConfig.lighting.dirPosZ}
                 min={1} max={10} step={0.1}
                 onChange={(dirPosZ) => updateReliefLighting({ dirPosZ })}
@@ -356,16 +358,16 @@ export function Animation3DPanel() {
 
             {/* Ambient light */}
             <div className="space-y-2 rounded bg-white/5 p-2">
-              <div className="text-[10px] uppercase tracking-wider text-white/50">Lumière ambiante</div>
+              <div className="text-[10px] uppercase tracking-wider text-white/50">{t('anim.ambLight')}</div>
               <SliderField
-                label="Intensité"
+                label={t('anim.intensity')}
                 value={reliefConfig.lighting.ambientIntensity}
                 min={0} max={2} step={0.05}
                 unit="×"
                 onChange={(ambientIntensity) => updateReliefLighting({ ambientIntensity })}
               />
               <ColorRow
-                label="Couleur"
+                label={t('anim.colour')}
                 value={reliefConfig.lighting.ambientColor}
                 onChange={(ambientColor) => updateReliefLighting({ ambientColor })}
               />
@@ -405,7 +407,7 @@ export function Animation3DPanel() {
           <button
             onClick={handlePersist}
             className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-200 text-[11px] font-semibold py-1.5 transition"
-            title="Sauvegarder l'animation sur l'objet — sera réappliquée à l'ouverture du projet"
+            title={t('anim.persist')}
           >
             <Save className="w-3 h-3" />
             Appliquer
@@ -414,7 +416,7 @@ export function Animation3DPanel() {
             <button
               onClick={handleClearPersist}
               className="inline-flex items-center justify-center gap-1.5 rounded-md border border-white/10 bg-white/5 hover:bg-white/10 text-white/70 text-[11px] font-semibold py-1.5 px-3 transition"
-              title="Retirer l'animation persistante"
+              title={t('anim.unpersist')}
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -434,7 +436,7 @@ export function Animation3DPanel() {
           onClick={handleExportWebM}
           disabled={recorder.recording}
           className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-[11px] font-semibold py-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Enregistre un cycle complet de l'animation en WebM via MediaRecorder"
+          title={t('anim.record')}
         >
           {recorder.recording ? (
             <>
@@ -456,8 +458,8 @@ export function Animation3DPanel() {
       {config.preset === 'particles' && (
         <div className="text-[10.5px] text-white/45 leading-tight border-t border-white/10 pt-2">
           {particlesActive
-            ? 'Particules Three.js actives en overlay du canvas. Cliquez Arrêter pour stopper.'
-            : 'Particules rendues en overlay Three.js au-dessus du canvas. Cliquez Lancer pour démarrer.'}
+            ? t('anim.particles.on')
+            : t('anim.particles.off')}
         </div>
       )}
     </div>

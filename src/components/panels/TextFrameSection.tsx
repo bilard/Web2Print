@@ -10,33 +10,36 @@ import {
 } from '@/features/editor/textFrame'
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import { SelectField, SegButtons, PropertySection } from '@/components/shared/panel'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
-const AUTO_SIZING_OPTIONS: { v: AutoSizing; label: string }[] = [
-  { v: 'off', label: 'Cadre fixe' },
-  { v: 'height', label: 'Hauteur seulement' },
-  { v: 'width', label: 'Largeur seulement' },
-  { v: 'both', label: 'Hauteur et largeur' },
+// ⚠️ Constantes de MODULE : `t()` n'y est pas disponible (pas de contexte
+// React). On stocke la clé, on traduit au rendu.
+const AUTO_SIZING_OPTIONS: { v: AutoSizing; labelKey: TranslationKey }[] = [
+  { v: 'off', labelKey: 'textFrame.autoSize.off' },
+  { v: 'height', labelKey: 'textFrame.autoSize.height' },
+  { v: 'width', labelKey: 'textFrame.autoSize.width' },
+  { v: 'both', labelKey: 'textFrame.autoSize.both' },
 ]
 
-const STROKE_ALIGN_OPTIONS: { v: NonNullable<TextFrameProps['strokeAlign']>; label: string }[] = [
-  { v: 'center', label: 'Centré' },
-  { v: 'inside', label: 'Intérieur' },
-  { v: 'outside', label: 'Extérieur' },
+const STROKE_ALIGN_OPTIONS: { v: NonNullable<TextFrameProps['strokeAlign']>; labelKey: TranslationKey }[] = [
+  { v: 'center', labelKey: 'textFrame.align.center' },
+  { v: 'inside', labelKey: 'textFrame.align.inside' },
+  { v: 'outside', labelKey: 'textFrame.align.outside' },
 ]
 
 const V_ALIGN_OPTIONS = [
-  { v: 'top' as const, node: <AlignVerticalJustifyStart className="h-3.5 w-3.5" />, title: 'Aligner en haut' },
-  { v: 'center' as const, node: <AlignVerticalJustifyCenter className="h-3.5 w-3.5" />, title: 'Centrer' },
-  { v: 'bottom' as const, node: <AlignVerticalJustifyEnd className="h-3.5 w-3.5" />, title: 'Aligner en bas' },
+  { v: 'top' as const, node: <AlignVerticalJustifyStart className="h-3.5 w-3.5" />, titleKey: 'textFrame.vAlign.top' as TranslationKey },
+  { v: 'center' as const, node: <AlignVerticalJustifyCenter className="h-3.5 w-3.5" />, titleKey: 'textFrame.vAlign.center' as TranslationKey },
+  { v: 'bottom' as const, node: <AlignVerticalJustifyEnd className="h-3.5 w-3.5" />, titleKey: 'textFrame.vAlign.bottom' as TranslationKey },
 ]
 
-const INDENT_FIELDS: { key: keyof ParagraphIndents; label: string; title: string }[] = [
-  { key: 'left', label: 'Gauche', title: 'Retrait à gauche' },
-  { key: 'right', label: 'Droite', title: 'Retrait à droite' },
-  { key: 'firstLine', label: '1re ligne', title: 'Retrait de première ligne' },
-  { key: 'lastLine', label: 'Dern. ligne', title: 'Retrait de dernière ligne' },
-  { key: 'spaceBefore', label: 'Esp. avant', title: 'Espace avant le paragraphe' },
-  { key: 'spaceAfter', label: 'Esp. après', title: 'Espace après le paragraphe' },
+const INDENT_FIELDS: { key: keyof ParagraphIndents; labelKey: TranslationKey; titleKey: TranslationKey }[] = [
+  { key: 'left', labelKey: 'textFrame.left', titleKey: 'textFrame.indentLeft' },
+  { key: 'right', labelKey: 'textFrame.right', titleKey: 'textFrame.indentRight' },
+  { key: 'firstLine', labelKey: 'textFrame.indent.firstLine.short', titleKey: 'textFrame.indentFirst' },
+  { key: 'lastLine', labelKey: 'textFrame.indent.lastLine.short', titleKey: 'textFrame.indentLast' },
+  { key: 'spaceBefore', labelKey: 'textFrame.spaceBefore.short', titleKey: 'textFrame.spaceBefore' },
+  { key: 'spaceAfter', labelKey: 'textFrame.spaceAfter.short', titleKey: 'textFrame.spaceAfter' },
 ]
 
 /** Retraits « non encore réglés dans la palette » — sert à afficher les valeurs importées. */
@@ -96,6 +99,7 @@ function useSelectedTextFrame(selectedObjectId: string | null) {
 
 /** Fond, contour, arrondi, marges, alignement vertical et redimensionnement du cadre. */
 export function TextFrameSection({ selectedObjectId }: { selectedObjectId: string | null }) {
+  const { t } = useTranslation()
   const sel = useSelectedTextFrame(selectedObjectId)
   if (!sel) return null
   const { frame, patch } = sel
@@ -103,50 +107,50 @@ export function TextFrameSection({ selectedObjectId }: { selectedObjectId: strin
   return (
     <PropertySection
       defaultOpen={false}
-      title="Bloc de texte"
+      title={t('textFrame.title')}
       tourId="prop-textframe"
-      help="Le cadre qui contient le texte, comme dans InDesign : fond, contour, arrondi des angles, marges internes (en points), position verticale du texte et redimensionnement automatique."
+      help={t('textFrame.help')}
     >
-      <ColorPicker label="Fond du bloc" value={frame.fill ?? 'transparent'}
+      <ColorPicker label={t('textFrame.fill')} value={frame.fill ?? 'transparent'}
         onChange={(v) => patch({ fill: v })} />
-      <ColorPicker label="Contour" value={frame.stroke ?? 'transparent'}
+      <ColorPicker label={t('textFrame.stroke')} value={frame.stroke ?? 'transparent'}
         onChange={(v) => patch({ stroke: v })} />
 
       <div className="grid grid-cols-3 gap-1.5">
-        <PtField label="Épaisseur" title="Épaisseur du contour (pt)" step={0.25} min={0}
+        <PtField label={t('textFrame.strokeWidth')} title={t('textFrame.strokeWidth.title')} step={0.25} min={0}
           value={frame.strokeWidth} onChange={(v) => patch({ strokeWidth: v ?? 0 })} />
-        <PtField label="Arrondi" title="Arrondi des angles (pt)" min={0}
+        <PtField label={t('textFrame.radius')} title={t('textFrame.radius.title')} min={0}
           value={frame.cornerRadius} onChange={(v) => patch({ cornerRadius: v ?? 0 })} />
-        <label title="Alignement du contour" className="flex flex-col gap-0.5 min-w-0">
-          <span className="truncate text-[10px] uppercase tracking-wide text-white/35">Aligné</span>
+        <label title={t('textFrame.strokeAlign')} className="flex flex-col gap-0.5 min-w-0">
+          <span className="truncate text-[10px] uppercase tracking-wide text-white/35">{t('textFrame.aligned')}</span>
           <select value={frame.strokeAlign ?? 'center'}
             onChange={(e) => patch({ strokeAlign: e.target.value as TextFrameProps['strokeAlign'] })}
             className="w-full rounded border border-white/10 bg-well px-1 py-0.5 text-[11px] text-white outline-none focus:border-[#6366f1] [&>option]:bg-neutral-900">
-            {STROKE_ALIGN_OPTIONS.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
+            {STROKE_ALIGN_OPTIONS.map((o) => <option key={o.v} value={o.v}>{t(o.labelKey)}</option>)}
           </select>
         </label>
       </div>
 
       <div className="flex flex-col gap-1">
-        <GroupLabel>Marges internes (pt)</GroupLabel>
+        <GroupLabel>{t('textFrame.padding')}</GroupLabel>
         <div className="grid grid-cols-4 gap-1.5">
-          <PtField label="Haut" min={0} value={frame.insetTop} onChange={(v) => patch({ insetTop: v ?? 0 })} />
-          <PtField label="Bas" min={0} value={frame.insetBottom} onChange={(v) => patch({ insetBottom: v ?? 0 })} />
-          <PtField label="Gauche" min={0} value={frame.insetLeft} onChange={(v) => patch({ insetLeft: v ?? 0 })} />
-          <PtField label="Droite" min={0} value={frame.insetRight} onChange={(v) => patch({ insetRight: v ?? 0 })} />
+          <PtField label={t('textFrame.top')} min={0} value={frame.insetTop} onChange={(v) => patch({ insetTop: v ?? 0 })} />
+          <PtField label={t('textFrame.bottom')} min={0} value={frame.insetBottom} onChange={(v) => patch({ insetBottom: v ?? 0 })} />
+          <PtField label={t('textFrame.left')} min={0} value={frame.insetLeft} onChange={(v) => patch({ insetLeft: v ?? 0 })} />
+          <PtField label={t('textFrame.right')} min={0} value={frame.insetRight} onChange={(v) => patch({ insetRight: v ?? 0 })} />
         </div>
       </div>
 
       <div className="flex items-end gap-2">
         <div className="flex flex-1 flex-col gap-0.5 min-w-0">
-          <GroupLabel>Alignement vertical</GroupLabel>
-          <SegButtons<VerticalAlign> value={frame.verticalAlign ?? 'top'} options={V_ALIGN_OPTIONS}
+          <GroupLabel>{t('textFrame.vAlign')}</GroupLabel>
+          <SegButtons<VerticalAlign> value={frame.verticalAlign ?? 'top'} options={V_ALIGN_OPTIONS.map((o) => ({ ...o, title: t(o.titleKey) }))}
             onChange={(v) => patch({ verticalAlign: v })} />
         </div>
       </div>
 
-      <SelectField<AutoSizing> label="Redimensionnement auto"
-        value={frame.autoSizing ?? 'off'} options={AUTO_SIZING_OPTIONS}
+      <SelectField<AutoSizing> label={t('textFrame.autoResize')}
+        value={frame.autoSizing ?? 'off'} options={AUTO_SIZING_OPTIONS.map((o) => ({ v: o.v, label: t(o.labelKey) }))}
         onChange={(v) => patch({ autoSizing: v })} />
     </PropertySection>
   )
@@ -154,6 +158,7 @@ export function TextFrameSection({ selectedObjectId }: { selectedObjectId: strin
 
 /** Retraits et espaces de paragraphe — onglet « Retrait et espacement » d'InDesign. */
 export function ParagraphIndentsSection({ selectedObjectId }: { selectedObjectId: string | null }) {
+  const { t } = useTranslation()
   const sel = useSelectedTextFrame(selectedObjectId)
   if (!sel) return null
   const { frame, patch } = sel
@@ -168,13 +173,13 @@ export function ParagraphIndentsSection({ selectedObjectId }: { selectedObjectId
   return (
     <PropertySection
       defaultOpen={false}
-      title="Retrait et espacement"
+      title={t('textFrame.indents')}
       tourId="prop-indents"
-      help="Retraits du texte par rapport aux bords du bloc (gauche, droite, première et dernière ligne) et espaces insérés avant/après chaque paragraphe, en points — l'onglet « Retrait et espacement » du style de paragraphe InDesign."
+      help={t('textFrame.indents.help')}
     >
       <div className="grid grid-cols-3 gap-1.5">
-        {INDENT_FIELDS.map(({ key, label, title }) => (
-          <PtField key={key} label={label} title={`${title} (pt)`}
+        {INDENT_FIELDS.map(({ key, labelKey, titleKey }) => (
+          <PtField key={key} label={t(labelKey)} title={`${t(titleKey)} (pt)`}
             value={shownIndents[key]} onChange={(v) => patchIndent(key, v)} />
         ))}
       </div>

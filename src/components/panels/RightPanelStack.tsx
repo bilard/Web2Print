@@ -19,20 +19,22 @@ import { PrintPanel } from '@/components/panels/PrintPanel'
 import { DataMergePanel } from '@/features/merge/DataMergePanel'
 import { Animation3DPanel } from '@/components/panels/Animation3DPanel'
 import { VersionsPanel } from '@/components/panels/VersionsPanel'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
-const panelConfig: Record<string, { title: string; icon: ComponentType<{ className?: string }>; content: ReactNode; onHeaderClick?: () => void }> = {
-  page:        { title: 'Page',         icon: FileText,   content: <PagePanel /> },
-  print:       { title: 'Impression',   icon: Printer,    content: <PrintPanel /> },
-  data:        { title: 'Données',      icon: Database,   content: <DataMergePanel /> },
-  layers:      { title: 'Calques',      icon: Layers,     content: <LayersPanel /> },
-  images:      { title: 'Images',       icon: ImagePlus,  content: <NanoBanaPanel /> },
-  palette:     { title: 'Palette',      icon: Palette,    content: <PalettePanel /> },
-  assets:      { title: 'Assets',       icon: FolderOpen, content: <AssetsPanel /> },
-  animation3d: { title: "Animer l'objet", icon: Aperture,   content: <Animation3DPanel /> },
-  versions:    { title: 'Versions',     icon: History,    content: <VersionsPanel /> },
+const panelConfig: Record<string, { titleKey: TranslationKey; icon: ComponentType<{ className?: string }>; content: ReactNode; onHeaderClick?: () => void }> = {
+  page:        { titleKey: 'rightPanel.page',         icon: FileText,   content: <PagePanel /> },
+  print:       { titleKey: 'rightPanel.print',   icon: Printer,    content: <PrintPanel /> },
+  data:        { titleKey: 'rightPanel.data',      icon: Database,   content: <DataMergePanel /> },
+  layers:      { titleKey: 'rightPanel.layers',      icon: Layers,     content: <LayersPanel /> },
+  images:      { titleKey: 'rightPanel.images',       icon: ImagePlus,  content: <NanoBanaPanel /> },
+  palette:     { titleKey: 'rightPanel.palette',      icon: Palette,    content: <PalettePanel /> },
+  assets:      { titleKey: 'rightPanel.assets',       icon: FolderOpen, content: <AssetsPanel /> },
+  animation3d: { titleKey: 'rightPanel.animation3d', icon: Aperture,   content: <Animation3DPanel /> },
+  versions:    { titleKey: 'rightPanel.versions',     icon: History,    content: <VersionsPanel /> },
 }
 
 export function RightPanelStack() {
+  const { t } = useTranslation()
   const { rightPanelOpen, rightPanels, setRightPanels, toggleRightPanel } = useUIStore()
 
   const sensors = useSensors(
@@ -71,7 +73,7 @@ export function RightPanelStack() {
                   <CollapsiblePanel
                     key={panel.id}
                     id={panel.id}
-                    title={config.title}
+                    title={t(config.titleKey)}
                     icon={config.icon}
                     collapsed={panel.collapsed}
                     onToggle={() => toggleRightPanel(panel.id)}

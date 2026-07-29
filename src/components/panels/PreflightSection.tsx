@@ -5,6 +5,7 @@ import { collectPreflightInfo, runPreflight, type PreflightIssue } from '@/featu
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { PropertySection } from '@/components/shared/panel'
+import { useTranslation } from '@/lib/i18n'
 
 /**
  * Section « Preflight » du panneau Impression : analyse le canvas (résolution
@@ -12,6 +13,7 @@ import { PropertySection } from '@/components/shared/panel'
  * bord) et liste les problèmes ; clic sur un problème = sélectionne l'objet.
  */
 export function PreflightSection() {
+  const { t } = useTranslation()
   const [issues, setIssues] = useState<PreflightIssue[] | null>(null)
 
   const analyze = () => {
@@ -44,7 +46,7 @@ export function PreflightSection() {
 
   return (
     <PropertySection
-      title="Preflight"
+      title={t('preflight.title')}
       help="Contrôle pré-impression : images sous 150/225 DPI effectifs, objets hors page (au-delà du fond perdu), textes < 5 pt ou à moins de 3 mm du bord de coupe."
       badge={
         <button
@@ -72,7 +74,7 @@ export function PreflightSection() {
               key={i}
               onClick={() => selectObject(issue.objectId)}
               className="flex items-start gap-2 px-2 py-1.5 rounded-md bg-white/[0.03] hover:bg-white/[0.07] text-left transition-colors"
-              title={issue.objectId ? 'Cliquer pour sélectionner l’objet' : undefined}
+              title={issue.objectId ? t('preflight.clickSelect') : undefined}
             >
               {issue.severity === 'error' ? (
                 <OctagonAlert className="w-3.5 h-3.5 text-red-400 shrink-0 mt-px" />

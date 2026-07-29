@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Search, X } from 'lucide-react'
+import { useTranslation } from '@/lib/i18n'
 
 interface Props {
   value: string
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function LayerSearchBar({ value, onChange }: Props) {
+  const { t } = useTranslation()
   const [local, setLocal] = useState(value)
 
   useEffect(() => {
@@ -24,14 +26,14 @@ export function LayerSearchBar({ value, onChange }: Props) {
       <input
         value={local}
         onChange={(e) => setLocal(e.target.value)}
-        placeholder="Rechercher dans les calques"
+        placeholder={t('layer.search')}
         className="w-full text-xs bg-black/30 border border-white/10 rounded px-6 py-1 text-white/80 outline-none focus:border-indigo-500/60 placeholder:text-white/25"
       />
       {local && (
         <button
           onClick={() => { setLocal(''); onChange('') }}
           className="absolute right-4 top-1/2 -translate-y-1/2 p-0.5 text-white/30 hover:text-white/60"
-          title="Effacer"
+          title={t('layer.clearSearch')}
         >
           <X className="w-3 h-3" />
         </button>

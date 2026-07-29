@@ -1,8 +1,10 @@
 import { Plus, X } from 'lucide-react'
 import { usePagesStore } from '@/stores/pages.store'
 import { usePageNavigation } from '@/features/editor/usePageNavigation'
+import { useTranslation } from '@/lib/i18n'
 
 export function PagesBar() {
+  const { t } = useTranslation()
   const { pages, currentPageIndex, addPage, deletePage } = usePagesStore()
   const { navigateToPage, saveCurrentPage } = usePageNavigation()
 
@@ -75,7 +77,7 @@ export function PagesBar() {
       {/* Ajouter une page */}
       <button
         onClick={handleAddPage}
-        title="Ajouter une page (⌘↵)"
+        title={t('pagesBar.add')}
         className="shrink-0 w-7 h-9 border border-dashed border-white/15 hover:border-indigo-500/60 rounded flex items-center justify-center transition-colors text-white/25 hover:text-indigo-400"
       >
         <Plus className="w-3.5 h-3.5" />

@@ -12,6 +12,7 @@ import type { TextSegment } from '@/features/editor/useTextSegments'
 import { LayerSwatch } from './LayerSwatch'
 import { LayerRowControls } from './LayerRowControls'
 import { LayerNameInput } from './LayerNameInput'
+import { useTranslation } from '@/lib/i18n'
 
 interface Props {
   obj: CanvasObjectProps
@@ -29,6 +30,7 @@ export function LayerRow({
   obj, displayName, isSelected, segments, expanded, onToggleExpand,
   depth = 0, isDraggable = true, searchQuery = '',
 }: Props) {
+  const { t } = useTranslation()
   const { selectLayer, renameLayer } = useLayers()
   const [isEditing, setIsEditing] = useState(false)
   const sortable = useSortable({ id: obj.id, disabled: !isDraggable || obj.locked })
@@ -82,7 +84,7 @@ export function LayerRow({
         <button
           onClick={(e) => { e.stopPropagation(); onToggleExpand() }}
           className="p-0.5 text-white/30 hover:text-white/70 transition-colors shrink-0"
-          title={expanded ? 'Réduire' : 'Développer'}
+          title={expanded ? t('layer.collapse') : t('layer.expand')}
         >
           {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         </button>
@@ -116,7 +118,7 @@ export function LayerRow({
       )}
 
       {obj.hasConditionalRules && (
-        <GitBranch className="w-3 h-3 text-indigo-400/70 shrink-0" aria-label="Règles conditionnelles" />
+        <GitBranch className="w-3 h-3 text-indigo-400/70 shrink-0" aria-label={t('rules.title')} />
       )}
 
       <LayerRowControls obj={obj} isSelected={isSelected} />

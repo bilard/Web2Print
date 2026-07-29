@@ -4,12 +4,14 @@ import { toast } from 'sonner'
 import { useVersions } from '@/features/versions/useVersions'
 import { useEditorStore } from '@/stores/editor.store'
 import { OptionHelp } from '@/components/shared/OptionHelp'
+import { useTranslation, intlLocale } from '@/lib/i18n'
 
 /**
  * Historique de versions du document : snapshots manuels avec miniature,
  * restauration en 1 clic (recharge l'éditeur), 20 versions max.
  */
 export function VersionsPanel() {
+  const { t, locale } = useTranslation()
   const projectId = useEditorStore((s) => s.projectId)
   const { versions, createVersion, restoreVersion, deleteVersion } = useVersions(projectId)
   const [busy, setBusy] = useState(false)
@@ -19,9 +21,9 @@ export function VersionsPanel() {
     setBusy(true)
     try {
       await createVersion('')
-      toast.success('Version créée.')
+      toast.success(t('versions.created'))
     } catch (e) {
-      toast.error(`Création échouée : ${e instanceof Error ? e.message : e}`)
+      toast.error(t('versions.createError', { message: String(e instanceof Error ? e.message : e) }))
     } finally {
       setBusy(false)
     }
@@ -32,7 +34,7 @@ export function VersionsPanel() {
     try {
       await restoreVersion(id) // recharge la page en cas de succès
     } catch (e) {
-      toast.error(`Restauration échouée : ${e instanceof Error ? e.message : e}`)
+      toast.error(t('versions.restoreError', { message: String(e instanceof Error ? e.message : e) }))
       setBusy(false)
     }
   }
@@ -42,7 +44,7 @@ export function VersionsPanel() {
       <div className="flex items-center justify-between">
         <h4 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider">
           <History className="w-3 h-3" /> Versions
-          <OptionHelp text="Snapshots du document : créez une version avant un gros changement, restaurez-la en un clic (l'éditeur se recharge). 20 versions manuelles max + 10 snapshots automatiques (badge « auto », pris à la sauvegarde, au plus toutes les 10 min)." />
+          <OptionHelp text={t('versions.help')} />
         </h4>
         <button
           onClick={() => void onCreate()}
@@ -57,7 +59,7 @@ export function VersionsPanel() {
       {versions === null ? (
         <div className="flex justify-center py-3"><Loader2 className="w-4 h-4 text-white/20 animate-spin" /></div>
       ) : versions.length === 0 ? (
-        <p className="text-[10px] text-white/20 italic py-1">Aucune version — créez-en une avant un gros changement.</p>
+        <p className="text-[10px] text-white/20 italic py-1">{t('versions.empty')}</p>
       ) : (
         <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
           {versions.map((v) => (
@@ -76,7 +78,7 @@ export function VersionsPanel() {
                     </span>
                   )}
                 </div>
-                <div className="text-[9px] text-white/30">{new Date(v.createdAt).toLocaleString('fr-FR')}</div>
+                <div className="text-[9px] text-white/30">{new Date(v.createdAt).toLocaleString(intlLocale(locale))}</div>
               </div>
               {confirmId === v.id ? (
                 <div className="flex items-center gap-1 shrink-0">
@@ -95,14 +97,14 @@ export function VersionsPanel() {
                 <div className="flex items-center gap-0.5 shrink-0">
                   <button
                     onClick={() => setConfirmId(v.id)}
-                    title="Restaurer cette version (l'éditeur se recharge)"
+                    title={t('versions.restore')}
                     className="p-1 rounded text-white/30 hover:text-indigo-400 hover:bg-white/[0.06]"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => void deleteVersion(v.id).then(() => toast.success('Version supprimée.'))}
-                    title="Supprimer cette version"
+                    onClick={() => void deleteVersion(v.id).then(() => toast.success(t('versions.deleted')))}
+                    title={t('versions.delete')}
                     className="hidden group-hover:block p-1 rounded text-white/30 hover:text-red-400 hover:bg-white/[0.06]"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

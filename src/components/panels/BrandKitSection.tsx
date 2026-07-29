@@ -3,6 +3,7 @@ import { useBrandKit } from '@/features/brandkit/useBrandKit'
 import { usePaletteStore } from '@/stores/palette.store'
 import { PropertySection } from '@/components/shared/panel'
 import { toast } from 'sonner'
+import { useTranslation } from '@/lib/i18n'
 
 interface BrandKitSectionProps {
   /** Persiste la palette projet après import (savePaletteToFirestore du panneau). */
@@ -14,6 +15,7 @@ interface BrandKitSectionProps {
  * pastilles de couleurs partagées + import bidirectionnel projet ↔ kit.
  */
 export function BrandKitSection({ onProjectPaletteChange }: BrandKitSectionProps) {
+  const { t } = useTranslation()
   const { colors, addColors, removeColor } = useBrandKit()
   const projectColors = usePaletteStore((s) => s.colors)
   const addColor = usePaletteStore((s) => s.addColor)
@@ -24,23 +26,23 @@ export function BrandKitSection({ onProjectPaletteChange }: BrandKitSectionProps
     const fresh = colors.filter((c) => !known.has(c.color.toLowerCase()))
     fresh.forEach((c) => addColor(c.color, c.name))
     if (fresh.length > 0) onProjectPaletteChange()
-    toast.success(fresh.length > 0 ? `${fresh.length} couleur(s) ajoutée(s) au projet.` : 'Tout est déjà dans le projet.')
+    toast.success(fresh.length > 0 ? `${fresh.length} couleur(s) ajoutée(s) au projet.` : t('brandKit.allPresent'))
   }
 
   const captureFromProject = () => {
     if (projectColors.length === 0) {
-      toast.warning('Aucune couleur dans la palette du projet.')
+      toast.warning(t('brandKit.noColour'))
       return
     }
     addColors(projectColors.map((c) => ({ color: c.color, name: c.name })))
-    toast.success('Palette du projet ajoutée au kit de marque.')
+    toast.success(t('brandKit.captured'))
   }
 
   return (
     <PropertySection
-      title="Kit de marque (global)"
+      title={t('brandKit.title')}
       tourId="palette-brandkit"
-      help="Couleurs de marque partagées entre TOUS vos projets (synchronisées avec votre compte). Importez-les dans la palette du projet en un clic, ou capturez la palette courante dans le kit."
+      help={t('brandKit.help')}
     >
       {colors === null ? (
         <div className="flex justify-center py-2">
@@ -75,14 +77,14 @@ export function BrandKitSection({ onProjectPaletteChange }: BrandKitSectionProps
           onClick={importIntoProject}
           disabled={!colors?.length}
           className="flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded bg-white/5 hover:bg-white/10 disabled:opacity-40 text-[10px] text-white/60 transition-colors"
-          title="Ajoute les couleurs du kit à la palette de CE projet"
+          title={t('brandKit.import')}
         >
           <ArrowDownToLine className="w-3 h-3" /> Vers le projet
         </button>
         <button
           onClick={captureFromProject}
           className="flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-[10px] text-white/60 transition-colors"
-          title="Capture la palette du projet dans le kit global"
+          title={t('brandKit.capture')}
         >
           <ArrowUpFromLine className="w-3 h-3" /> Depuis le projet
         </button>

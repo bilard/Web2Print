@@ -11,8 +11,10 @@ import { EditorTaxonomyBreadcrumb } from './EditorTaxonomyBreadcrumb'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
 import { useImageToSvgDecompose } from '@/features/svg/useImageToSvgDecompose'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
+import { useTranslation } from '@/lib/i18n'
 
 export function EditorHeader() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { projectTitle, setProjectTitle, canUndo, canRedo, saveStatus } = useEditorStore()
   const user = useAuthStore((s) => s.user)
@@ -35,7 +37,7 @@ export function EditorHeader() {
       <button
         onClick={() => navigate('/dashboard')}
         className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-        title="Dashboard"
+        title={t('editor.dashboard')}
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
@@ -75,7 +77,7 @@ export function EditorHeader() {
       {saveStatus === 'saving' && (
         <div className="flex items-center gap-1 text-xs ml-1">
           <Loader2 className="w-3 h-3 animate-spin text-white/40" />
-          <span className="text-white/40 hidden sm:block">Sauvegarde...</span>
+          <span className="text-white/40 hidden sm:block">{t('editor.saving')}</span>
         </div>
       )}
 
@@ -87,7 +89,7 @@ export function EditorHeader() {
         onClick={() => globalUndo?.()}
         disabled={!canUndo}
         className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-        title="Annuler (⌘Z)"
+        title={t('editor.undo')}
       >
         <Undo2 className="w-4 h-4" />
       </button>
@@ -96,7 +98,7 @@ export function EditorHeader() {
         onClick={() => globalRedo?.()}
         disabled={!canRedo}
         className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-        title="Rétablir (⌘Y)"
+        title={t('editor.redo')}
       >
         <Redo2 className="w-4 h-4" />
       </button>
@@ -119,43 +121,43 @@ export function EditorHeader() {
               ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/20'
               : 'bg-white/10 hover:bg-white/15 text-white/70 hover:text-white border border-transparent'
         } ${saveHighlight.className}`}
-        title="Sauvegarder (⌘S)"
+        title={t('editor.save')}
       >
         {saveStatus === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-        <span className="hidden sm:block">Sauvegarder</span>
+        <span className="hidden sm:block">{t('editor.save.short')}</span>
       </button>
 
       {canDecompose && !hasDecomposition && (
         <button
           onClick={() => { void runDecompose() }}
           disabled={decomposing}
-          title="Détecter automatiquement les textes éditoriaux via Google Vision (skip zone produit centrale)."
+          title={t('editor.decompose.help')}
           className="flex items-center gap-1.5 bg-pink-500/15 hover:bg-pink-500/25 border border-pink-500/30 text-pink-300 hover:text-pink-200 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-wait"
         >
           {decomposing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-          <span className="hidden sm:block">{decomposing ? 'Décompose…' : 'Décomposer'}</span>
+          <span className="hidden sm:block">{decomposing ? t('editor.decomposing') : t('editor.decompose')}</span>
         </button>
       )}
 
       {canDecompose && hasDecomposition && !decomposing && (
         <button
           onClick={() => undoDecompose()}
-          title="Supprimer tous les Textbox de décomposition et restaurer l'image."
+          title={t('editor.decompose.undo.help')}
           className="flex items-center gap-1.5 bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/30 text-orange-300 hover:text-orange-200 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          <span className="hidden sm:block">Annuler décomposition</span>
+          <span className="hidden sm:block">{t('editor.decompose.undo')}</span>
         </button>
       )}
 
       <button
         data-tour="video-ai"
         onClick={() => setModal('video')}
-        title="Générer une vidéo IA de la PAGE ENTIÈRE (brief → animation). Pour animer un seul objet en direct, utilise le panneau « Animer l'objet »."
+        title={t('editor.aiVideo.help')}
         className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
       >
         <Film className="w-3.5 h-3.5" />
-        <span className="hidden sm:block">Vidéo IA</span>
+        <span className="hidden sm:block">{t('editor.aiVideo')}</span>
       </button>
 
       {/* Export */}
@@ -166,7 +168,7 @@ export function EditorHeader() {
         className={`flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${exportHighlight.className}`}
       >
         <Download className="w-3.5 h-3.5" />
-        <span className="hidden sm:block">Exporter</span>
+        <span className="hidden sm:block">{t('editor.export')}</span>
       </button>
 
       {/* Avatar */}

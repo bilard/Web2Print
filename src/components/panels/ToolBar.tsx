@@ -17,6 +17,7 @@ import {
   FolderOpen,
   type LucideIcon,
 } from 'lucide-react'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 /** Map tools to the shape type they create (null = no auto-create) */
 const TOOL_SHAPE_MAP: Partial<Record<ActiveTool, string>> = {
@@ -26,11 +27,11 @@ const TOOL_SHAPE_MAP: Partial<Record<ActiveTool, string>> = {
   line: 'line',
 }
 
-const IMAGE_MENU_ITEMS: { id: DamTab; icon: typeof Search; label: string }[] = [
-  { id: 'stock', icon: Search, label: 'Stock images' },
-  { id: 'my-images', icon: FolderOpen, label: 'Mes images' },
-  { id: 'recent', icon: Upload, label: 'Uploader' },
-  { id: 'generate', icon: Sparkles, label: 'Générer (IA)' },
+const IMAGE_MENU_ITEMS: { id: DamTab; icon: typeof Search; labelKey: TranslationKey }[] = [
+  { id: 'stock', icon: Search, labelKey: 'tool.stockImages' },
+  { id: 'my-images', icon: FolderOpen, labelKey: 'tool.myImages' },
+  { id: 'recent', icon: Upload, labelKey: 'tool.upload' },
+  { id: 'generate', icon: Sparkles, labelKey: 'tool.generate' },
 ]
 
 interface ToolButtonProps {
@@ -88,6 +89,7 @@ function ToolButton({ tool, icon: Icon, tooltip, highlightId }: ToolButtonProps)
 }
 
 function ImageMenuButton() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const setDamPickerOpen = useUIStore((s) => s.setDamPickerOpen)
@@ -115,7 +117,7 @@ function ImageMenuButton() {
         ref={highlight.ref}
         data-tour="tool-image"
         onClick={() => setOpen((prev) => !prev)}
-        title="Image (I)"
+        title={t('tool.image')}
         className={`w-8 h-8 flex items-center justify-center rounded transition ${
           open ? 'bg-indigo-500/20 text-indigo-400' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
         } ${highlight.className}`}
@@ -132,7 +134,7 @@ function ImageMenuButton() {
               className="flex items-center gap-2.5 w-full px-3 py-2 text-[11px] text-white/70 hover:bg-white/5 hover:text-white transition text-left"
             >
               <item.icon className="w-4 h-4 text-white/40" />
-              {item.label}
+              {t(item.labelKey)}
             </button>
           ))}
         </div>
@@ -142,19 +144,20 @@ function ImageMenuButton() {
 }
 
 export function ToolBar() {
+  const { t } = useTranslation()
   return (
     <div data-tour="toolbar" className="w-11 bg-surface border-r border-white/10 flex flex-col items-center py-2 gap-0.5 shrink-0">
       {/* Group 1: Selection */}
-      <ToolButton tool="select" icon={MousePointer2} tooltip="Sélection (V)" />
+      <ToolButton tool="select" icon={MousePointer2} tooltip={t('tool.select')} />
 
       {/* Separator */}
       <div className="w-6 h-px bg-white/10 my-1" />
 
       {/* Group 2: Creation */}
-      <ToolButton tool="text" icon={Type} tooltip="Texte (T)" highlightId="toolbar.text" />
-      <ToolButton tool="rect" icon={Square} tooltip="Rectangle (R)" />
-      <ToolButton tool="ellipse" icon={Circle} tooltip="Ellipse (E)" />
-      <ToolButton tool="line" icon={Minus} tooltip="Ligne (L)" />
+      <ToolButton tool="text" icon={Type} tooltip={t('tool.text')} highlightId="toolbar.text" />
+      <ToolButton tool="rect" icon={Square} tooltip={t('tool.rect')} />
+      <ToolButton tool="ellipse" icon={Circle} tooltip={t('tool.ellipse')} />
+      <ToolButton tool="line" icon={Minus} tooltip={t('tool.line')} />
 
       {/* Separator */}
       <div className="w-6 h-px bg-white/10 my-1" />

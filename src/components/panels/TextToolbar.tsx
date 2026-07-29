@@ -8,6 +8,7 @@ import { EditorFontOptions } from '@/features/fonts/EditorFontOptions'
 import type { TextStyle } from '@/features/editor/useTextEditor'
 import type { Canvas } from 'fabric'
 import { flattenStoreObjects } from '@/features/editor/deepObjects'
+import { useTranslation } from '@/lib/i18n'
 
 const FONT_SIZES = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64, 72, 96]
 
@@ -35,6 +36,7 @@ function ToolBtn({
 }
 
 export function TextToolbar() {
+  const { t } = useTranslation()
   const { selectedObjectId, selectedObjectIds, canvasObjects } = useEditorStore()
   const fabricRef = { current: globalFabricCanvas as Canvas | null }
   const { applyStyle } = useTextEditor(fabricRef)
@@ -148,21 +150,21 @@ export function TextToolbar() {
       <ToolBtn
         active={style.fontWeight === 'bold'}
         onClick={() => applyStyle({ fontWeight: style.fontWeight === 'bold' ? 'normal' : 'bold' })}
-        title="Gras (⌘B)"
+        title={t('toolbar.bold')}
       >
         <Bold className="w-3.5 h-3.5" />
       </ToolBtn>
       <ToolBtn
         active={style.fontStyle === 'italic'}
         onClick={() => applyStyle({ fontStyle: style.fontStyle === 'italic' ? 'normal' : 'italic' })}
-        title="Italique (⌘I)"
+        title={t('toolbar.italic')}
       >
         <Italic className="w-3.5 h-3.5" />
       </ToolBtn>
       <ToolBtn
         active={style.underline}
         onClick={() => applyStyle({ underline: !style.underline })}
-        title="Souligné (⌘U)"
+        title={t('toolbar.underline')}
       >
         <Underline className="w-3.5 h-3.5" />
       </ToolBtn>
@@ -175,7 +177,7 @@ export function TextToolbar() {
           { align: 'left' as const, Icon: AlignLeft, title: 'Gauche' },
           { align: 'center' as const, Icon: AlignCenter, title: 'Centre' },
           { align: 'right' as const, Icon: AlignRight, title: 'Droite' },
-          { align: 'justify' as const, Icon: AlignJustify, title: 'Justifié' },
+          { align: 'justify' as const, Icon: AlignJustify, title: t('toolbar.justified') },
         ] as const
       ).map(({ align, Icon, title }) => (
         <ToolBtn
@@ -192,13 +194,13 @@ export function TextToolbar() {
 
       {/* Color */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-white/40">Couleur</span>
+        <span className="text-xs text-white/40">{t('toolbar.colour')}</span>
         <input
           type="color"
           value={style.fill}
           onChange={(e) => applyStyle({ fill: e.target.value })}
           className="w-6 h-6 rounded cursor-pointer bg-transparent border border-white/20 p-0"
-          title="Couleur du texte"
+          title={t('toolbar.textColour')}
         />
       </div>
 

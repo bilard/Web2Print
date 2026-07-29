@@ -16,6 +16,7 @@ import { LayerTree } from './layers/LayerTree'
 import { LayerSearchBar } from './layers/LayerSearchBar'
 import { LayerDragPreview } from './layers/LayerDragPreview'
 import { useLayerFilter } from '@/features/editor/useLayerFilter'
+import { useTranslation } from '@/lib/i18n'
 
 function collectAllIds(objects: CanvasObjectProps[]): string[] {
   const ids: string[] = []
@@ -38,6 +39,7 @@ function findObjById(objects: CanvasObjectProps[], id: string): CanvasObjectProp
 }
 
 export function LayersPanel() {
+  const { t } = useTranslation()
   // useShallow : re-render uniquement si ces 3 slices changent (pas sur saveStatus,
   // projectTitle, canUndo… qui changent aussi mais ne concernent pas les calques).
   const { canvasObjects, selectedObjectId, setCanvasObjects } = useEditorStore(
@@ -110,8 +112,8 @@ export function LayersPanel() {
         ref={layersHighlight.ref}
         className={`p-4 flex flex-col items-center justify-center gap-2 text-white/20 py-12 ${layersHighlight.className}`}
       >
-        <p className="text-sm">Aucun calque</p>
-        <p className="text-xs text-center">Ajoutez des éléments depuis le panel Éléments</p>
+        <p className="text-sm">{t('layers.empty')}</p>
+        <p className="text-xs text-center">{t('layers.hint')}</p>
       </div>
     )
   }

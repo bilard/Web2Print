@@ -7,6 +7,7 @@ import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { ensurePageBgRect } from '@/features/editor/useCanvas'
 import { canvasPxToMm, mmToCanvasPx } from '@/features/print/dimensions'
 import { PropertySection } from '@/components/shared/panel'
+import { useTranslation } from '@/lib/i18n'
 
 // Le canvas Fabric stocke des points (1 px canvas = 1 pt = 1/72 inch).
 // Les formats print sont exprimés en pt pour rester cohérents avec l'import
@@ -33,6 +34,7 @@ function roundMm(mm: number): number {
 }
 
 export function PagePanel() {
+  const { t } = useTranslation()
   const {
     canvasWidth, canvasHeight, canvasBg,
     originWidth, originHeight, setOrigin,
@@ -125,13 +127,13 @@ export function PagePanel() {
     <div className="p-3 flex flex-col gap-4">
       {/* ── Dimensions ── */}
       <PropertySection
-        title="Dimensions"
+        title={t('page.dimensions')}
         tourId="page-dims"
         help="Taille de la page en millimètres. Saisissez largeur/hauteur, ou choisissez un format prédéfini ci-dessous (A4, Instagram…). Modifiable à tout moment."
       >
         <div className="flex items-center gap-2">
           <div className="flex-1 flex flex-col gap-1">
-            <span className="text-[10px] text-white/30">Largeur</span>
+            <span className="text-[10px] text-white/30">{t('page.width')}</span>
             <input type="number" value={widthMm} min={10} step={0.1}
               onChange={(e) => setWidthMm(e.target.value === '' ? '' : Number(e.target.value))}
               onBlur={() => applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
@@ -140,7 +142,7 @@ export function PagePanel() {
           </div>
           <span className="text-white/20 mt-4">x</span>
           <div className="flex-1 flex flex-col gap-1">
-            <span className="text-[10px] text-white/30">Hauteur</span>
+            <span className="text-[10px] text-white/30">{t('page.height')}</span>
             <input type="number" value={heightMm} min={10} step={0.1}
               onChange={(e) => setHeightMm(e.target.value === '' ? '' : Number(e.target.value))}
               onBlur={() => applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
@@ -176,27 +178,27 @@ export function PagePanel() {
 
       {/* ── Arrière-plan ── */}
       <PropertySection
-        title="Arrière-plan"
+        title={t('page.background')}
         tourId="page-bg"
         help="Fond de la page : couleur unie, dégradé, ou image. L'image de fond est verrouillée derrière les objets ; le dégradé est paramétrable (angle, étapes)."
       >
         <div className="flex gap-1">
           {([
-            { value: 'solid' as const, label: 'Uni' },
-            { value: 'gradient' as const, label: 'Dégradé' },
-            { value: 'image' as const, label: 'Image' },
-          ]).map(({ value, label }) => (
+            { value: 'solid' as const, labelKey: 'props.fill.solid' as const },
+            { value: 'gradient' as const, labelKey: 'props.fill.gradient' as const },
+            { value: 'image' as const, labelKey: 'props.fill.image' as const },
+          ]).map(({ value, labelKey }) => (
             <button key={value} onClick={() => handleBgTypeChange(value)}
               className={`flex-1 py-1.5 text-[10px] rounded border transition-colors ${canvasBgType === value
                 ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
                 : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60'}`}>
-              {label}
+              {t(labelKey)}
             </button>
           ))}
         </div>
 
         {canvasBgType === 'solid' && (
-          <ColorPicker label="Couleur de fond" value={canvasBg} onChange={handleBgColorChange} />
+          <ColorPicker label={t('page.bgColour')} value={canvasBg} onChange={handleBgColorChange} />
         )}
 
         {canvasBgType === 'gradient' && (
@@ -207,7 +209,7 @@ export function PagePanel() {
           <div className="flex flex-col gap-2">
             {canvasBgImage ? (
               <div className="relative group">
-                <img src={canvasBgImage} alt="Fond"
+                <img src={canvasBgImage} alt={t('page.fill')}
                   className="w-full h-24 object-cover rounded-lg border border-white/10" />
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
                   <button onClick={() => fileInputRef.current?.click()}
@@ -224,7 +226,7 @@ export function PagePanel() {
               <button onClick={() => fileInputRef.current?.click()}
                 className="flex items-center justify-center gap-2 py-6 border-2 border-dashed border-white/10 hover:border-indigo-500/30 rounded-lg text-white/30 hover:text-indigo-400 transition-colors">
                 <ImagePlus className="w-5 h-5" />
-                <span className="text-xs">Choisir une image</span>
+                <span className="text-xs">{t('page.chooseImage')}</span>
               </button>
             )}
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />

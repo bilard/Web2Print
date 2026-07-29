@@ -3,6 +3,7 @@ import { Link2, X, Type, Hash, FunctionSquare } from 'lucide-react'
 import { useMergeStore } from '@/stores/merge.store'
 import { useSegmentBinding } from '@/features/editor/useSegmentBinding'
 import type { TextSegment } from '@/features/editor/useTextSegments'
+import { useTranslation } from '@/lib/i18n'
 
 interface Props {
   segment: TextSegment
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function TextSegmentRow({ segment, objectId }: Props) {
+  const { t } = useTranslation()
   const [pickerOpen, setPickerOpen] = useState(false)
   const columns = useMergeStore((s) => s.columns)
   const isConnected = useMergeStore((s) => s.isConnected)
@@ -43,7 +45,7 @@ export function TextSegmentRow({ segment, objectId }: Props) {
         <button
           onClick={() => unbind(objectId, segment)}
           className="p-0.5 text-white/15 hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
-          title={`Délier « ${label} »`}
+          title={t('segment.unlink', { label: label ?? '' })}
         >
           <X className="w-3 h-3" />
         </button>
@@ -79,7 +81,7 @@ export function TextSegmentRow({ segment, objectId }: Props) {
             className={`p-0.5 transition-colors shrink-0 ${
               pickerOpen ? 'text-indigo-400' : 'text-white/15 hover:text-indigo-400 opacity-0 group-hover:opacity-100'
             }`}
-            title="Lier à un champ de données"
+            title={t('segment.linkField')}
           >
             <Link2 className="w-3 h-3" />
           </button>
@@ -90,7 +92,7 @@ export function TextSegmentRow({ segment, objectId }: Props) {
       {pickerOpen && (
         <div className="ml-9 mr-1 bg-surface-2 border border-white/10 rounded-md shadow-xl overflow-hidden max-h-44 overflow-y-auto">
           {columns.length === 0 ? (
-            <p className="text-[11px] text-white/30 px-3 py-2">Aucun champ disponible</p>
+            <p className="text-[11px] text-white/30 px-3 py-2">{t('segment.noField')}</p>
           ) : (
             columns.map((col) => {
               const Icon = col.fieldType === 'number' ? Hash : Type

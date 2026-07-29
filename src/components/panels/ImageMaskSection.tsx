@@ -6,12 +6,14 @@ import {
   fillFrameProportionally,
   useCroppingImage,
 } from '@/features/editor/useImageMask'
+import { useTranslation } from '@/lib/i18n'
 
 interface Props {
   image: FabricObject
 }
 
 export function ImageMaskSection({ image }: Props) {
+  const { t } = useTranslation()
   const cropping = useCroppingImage()
   const isThisCropping = cropping === image
   const isFabricImage = (image as any).type === 'image'
@@ -54,9 +56,9 @@ export function ImageMaskSection({ image }: Props) {
       )}
 
       <p className="text-[10px] text-white/30 leading-relaxed">
-        Cliquez sur <span className="text-white/60">Recadrer</span> pour ajuster le cadre et
-        repositionner l'image. Validez avec <span className="text-white/60">Entrée</span> ou{' '}
-        <span className="text-white/60">Échap</span> pour annuler.
+        Cliquez sur <span className="text-white/60">{t('mask.crop')}</span> pour ajuster le cadre et
+        repositionner l'image. Validez avec <span className="text-white/60">{t('mask.enter')}</span> ou{' '}
+        <span className="text-white/60">{t('mask.escape')}</span> pour annuler.
       </p>
     </div>
   )
