@@ -16,7 +16,7 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
 import { makeServerFile } from './serverFile'
 import { getOwnerUid } from '../../email/ownerMailer'
-import { t } from '../../i18n'
+import { t, type MessageKey } from '../../i18n'
 
 // ───────────────────────────── Métriques (copie de src/features/analytics/metrics.ts) ──
 type Area = 'promo' | 'docs' | 'app' | 'other'
@@ -152,6 +152,11 @@ const DAY = 86_400_000
 const SPAN: Record<AnalyticsPeriod, number> = { '7d': 7 * DAY, '30d': 30 * DAY, '90d': 90 * DAY, '12m': 365 * DAY }
 const PERIOD_LABEL: Record<AnalyticsPeriod, string> = {
   '7d': '7 derniers jours', '30d': '30 derniers jours', '90d': '90 derniers jours', '12m': '12 derniers mois',
+}
+
+/** Clé de traduction de la période, pour le MESSAGE DE RUN (cf. `PERIOD_LABEL`). */
+const PERIOD_KEY: Record<AnalyticsPeriod, MessageKey> = {
+  '7d': 'run.period.7d', '30d': 'run.period.30d', '90d': 'run.period.90d', '12m': 'run.period.12m',
 }
 
 const esc = (s: string): string =>
@@ -601,12 +606,15 @@ registerServerNode({
     // Garde owner : la collection est globale, l'Admin SDK bypasse les règles.
     const ownerUid = await getOwnerUid()
     if (ctx.uid !== ownerUid) {
-      throw new Error('Rapport de fréquentation réservé au propriétaire du site (trafic global).')
+      throw new Error(t(ctx.locale, 'run.analytics.ownerOnly'))
     }
 
     const period: AnalyticsPeriod = isPeriod(config.period) ? config.period : '30d'
     const title = String(config.title ?? '')
-    ctx.log('info', t(ctx.locale, 'run.aggregatingTraffic', { period: PERIOD_LABEL[period] }))
+    // La période est interpolée DANS le message : elle se traduit avec lui.
+    // `PERIOD_LABEL` reste la version française du RAPPORT HTML produit, qui
+    // n'est pas de l'UI mais un document livrable (hors périmètre de ce lot).
+    ctx.log('info', t(ctx.locale, 'run.aggregatingTraffic', { period: t(ctx.locale, PERIOD_KEY[period]) }))
     const report = await collectAnalyticsReportServer(period, title)
 
     const day = new Date().toISOString().slice(0, 10)
@@ -618,10 +626,11 @@ registerServerNode({
       ? Object.keys(report.summaryRows[0]).map((k) => ({ key: k, label: k }))
       : []
 
-    ctx.log(
-      'info',
-      `Rapport généré : ${report.kpis.pageViews} pages vues · ${report.kpis.visitors} visiteurs · ${report.kpis.sessions} sessions.`,
-    )
+    ctx.log('info', t(ctx.locale, 'run.analytics.reportGenerated', {
+      pageViews: report.kpis.pageViews,
+      visitors: report.kpis.visitors,
+      sessions: report.kpis.sessions,
+    }))
     return { html: report.emailHtml, file, summary: { columns, rows: report.summaryRows } }
   },
 })

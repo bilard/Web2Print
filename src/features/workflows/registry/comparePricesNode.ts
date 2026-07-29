@@ -12,6 +12,9 @@ import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelColumn, ExcelRow, ExcelSheet, SheetColorRule } from '@/features/excel/types'
 import { parsePrice } from '@/features/priceWatch/core'
+// `run()` n'est pas un composant React : helper `t()` de module, qui lit la
+// locale courante. Un log est une trace figée, pas de l'UI à retraduire.
+import { t } from '@/lib/i18n'
 
 interface ComparePricesConfig {
   nameColumn: string
@@ -424,23 +427,27 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
     if (config.noSource) {
       const all = [...sourceRows, ...competitorRows]
       if (all.length === 0) {
-        ctx.log('warn', 'Aucun produit en entrée (branche les enseignes sur « concurrents »).')
+        ctx.log('warn', t('run.noProduct'))
         return { sheet: { name: 'Comparaison entre enseignes', columns: [], rows: [], taxonomy: [] } }
       }
       const { columns, rows, sites, matched } = comparePeers(all, config)
-      ctx.log('info', `${rows.length} produit(s) distinct(s) sur ${sites.length} enseigne(s) (${matched} présent(s) chez ≥2) : ${sites.join(', ') || '—'}.`)
+      ctx.log('info', t('run.comparePrices.peers', {
+        count: rows.length, sites: sites.length, matched, list: sites.join(', ') || '—',
+      }))
       return { sheet: { name: 'Comparaison entre enseignes', columns, rows, taxonomy: [] } }
     }
 
     if (sourceRows.length === 0) {
-      ctx.log('warn', 'Aucun produit source en entrée (port « source »).')
+      ctx.log('warn', t('run.comparePrices.noSourceRows'))
       return { sheet: { name: 'Comparaison de prix', columns: [], rows: [], taxonomy: [] } }
     }
     if (competitorRows.length === 0) {
-      ctx.log('warn', 'Aucun produit concurrent en entrée (port « concurrents »).')
+      ctx.log('warn', t('run.comparePrices.noCompetitorRows'))
     }
     const { columns, rows, sites, matched, colorRules } = compareSourceToCompetitors(sourceRows, competitorRows, config)
-    ctx.log('info', `${rows.length} produit(s) source — ${matched} apparié(s) chez ${sites.length} concurrent(s) : ${sites.join(', ') || '—'}.`)
+    ctx.log('info', `${t('run.matched', {
+      count: rows.length, matched, sites: sites.length,
+    })} : ${sites.join(', ') || '—'}.`)
     return { sheet: { name: 'Comparaison de prix', columns, rows, taxonomy: [], colorRules } }
   },
 }

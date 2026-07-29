@@ -6,6 +6,7 @@ import { BarChart3 } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { useAuthStore } from '@/stores/auth.store'
+import { t, type TranslationKey } from '@/lib/i18n'
 import { collectAnalyticsReport, PERIOD_LABEL, type AnalyticsPeriod } from './analyticsReport'
 
 interface AnalyticsReportConfig {
@@ -18,6 +19,18 @@ interface SheetOut { columns: { key: string; label: string }[]; rows: Record<str
 interface AnalyticsReportOutputs { html: string; file: File; summary: SheetOut }
 
 const PERIODS: AnalyticsPeriod[] = ['7d', '30d', '90d', '12m']
+
+/**
+ * Clé de traduction de la période, pour les MESSAGES DE RUN. La période est
+ * interpolée dans le message : sans ça un log anglais afficherait
+ * « Aggregating the traffic (30 derniers jours)… ».
+ *
+ * `PERIOD_LABEL` reste utilisé par la configuration du node (liste déroulante,
+ * résumé de carte) — l'UI des nodes est un autre lot.
+ */
+const PERIOD_KEY: Record<AnalyticsPeriod, TranslationKey> = {
+  '7d': 'run.period.7d', '30d': 'run.period.30d', '90d': 'run.period.90d', '12m': 'run.period.12m',
+}
 
 function AnalyticsReportConfigUi({
   config,
@@ -95,16 +108,16 @@ const analyticsReportNode: NodeSpec<AnalyticsReportConfig, Record<string, never>
   cardSummary: (c) => `${c.title?.trim() || 'Trafic'} · ${PERIOD_LABEL[c.period ?? '30d']}`,
   run: async (ctx, config) => {
     const user = useAuthStore.getState().user
-    if (!user?.uid) throw new Error('Utilisateur non authentifié — impossible de lire les statistiques.')
+    if (!user?.uid) throw new Error(t('run.analytics.notAuthenticated'))
 
-    ctx.log('info', `Agrégation du trafic (${PERIOD_LABEL[config.period ?? '30d']})…`)
+    ctx.log('info', t('run.analytics.aggregating', { period: t(PERIOD_KEY[config.period ?? '30d']) }))
     let report
     try {
       report = await collectAnalyticsReport({ period: config.period, title: config.title })
     } catch (e) {
       const code = (e as { code?: string })?.code
       if (code === 'permission-denied') {
-        throw new Error('Accès refusé : seules les statistiques du propriétaire du site sont lisibles.', { cause: e })
+        throw new Error(t('run.analytics.permissionDenied'), { cause: e })
       }
       throw e
     }
@@ -118,10 +131,11 @@ const analyticsReportNode: NodeSpec<AnalyticsReportConfig, Record<string, never>
       ? Object.keys(report.summaryRows[0]).map((k) => ({ key: k, label: k }))
       : []
 
-    ctx.log(
-      'info',
-      `Rapport généré : ${report.kpis.pageViews} pages vues · ${report.kpis.visitors} visiteurs · ${report.kpis.sessions} sessions.`,
-    )
+    ctx.log('info', t('run.analytics.reportGenerated', {
+      pageViews: report.kpis.pageViews,
+      visitors: report.kpis.visitors,
+      sessions: report.kpis.sessions,
+    }))
     return { html: report.emailHtml, file, summary: { columns, rows: report.summaryRows } }
   },
 }

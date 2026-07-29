@@ -61,11 +61,14 @@ describe('intégrité des caractères', () => {
     const walk = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
         const full = join(dir, e.name)
-        if (e.isDirectory()) return walk(full)
+        if (e.isDirectory()) return e.name === 'node_modules' || e.name === 'lib' ? [] : walk(full)
         return /\.tsx?$/.test(e.name) ? [full] : []
       })
     const offences: string[] = []
-    for (const file of walk('src')) {
+    // `functions/src` est inclus : les messages de run du cron y sont écrits en
+    // français accentué, et le catalogue serveur n'était couvert par AUCUN
+    // contrôle d'encodage — alors que le mojibake est déjà parti en prod une fois.
+    for (const file of [...walk('src'), ...walk('functions/src')]) {
       if (file.endsWith('i18n.test.ts')) continue // contient le motif lui-même
       readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
         const hit = line.match(MOJIBAKE)

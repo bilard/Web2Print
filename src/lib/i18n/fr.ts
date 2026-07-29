@@ -1882,6 +1882,55 @@ export const fr = {
   'help.search': "Rechercher dans l'aide…",
   'help.clearSearch': 'Effacer la recherche',
   'help.fullDocs': 'Documentation complète',
+
+  // — Messages de RUN des workflows ——————————————————————————————————
+  //
+  // ⚠️ Ces messages EXISTENT EN DOUBLE : le cron exécute des jumeaux serveur
+  // (`functions/src/workflow/nodes/`) qui écrivent dans la MÊME collection
+  // `users/{uid}/workflowRunsLive/{workflowId}`, affichée par `RunPanel`.
+  // Toute clé de `functions/src/i18nMessages.ts` doit donc exister ICI avec le
+  // MÊME texte FR et le MÊME texte EN — `runMessages.test.ts` le vérifie au
+  // byte près. Sans ça, le même workflow logue en anglais lancé par le cron et
+  // en français lancé à la main.
+  //
+  // Règle de lot : on traduit TOUS les messages d'un `type` de node des DEUX
+  // côtés, ou aucun. Un panneau anglais avec trois lignes françaises est pire
+  // que tout-français.
+  //
+  // Un log est PERSISTÉ : il se fige dans la langue du run. C'est une trace
+  // horodatée, pas de l'UI — ne pas mémoriser les clés pour le retraduire.
+
+  // Entrées vides / configuration manquante (plusieurs nodes)
+  'run.noCompetitor': 'Aucun site concurrent configuré.',
+  'run.emptySheet': 'Feuille de produits vide en entrée.',
+  'run.noProduct': 'Aucun produit en entrée (branche les enseignes sur « concurrents »).',
+
+  // Rapport dashboard de la Veille tarifaire (`compare-catalog`)
+  'run.sourceCatalogNotPersisted': 'Catalogue source non persisté : {message}',
+  'run.dashboardSaved': 'Rapport dashboard enregistré (suivi « {watchId} ») — visible dans Veille tarifaire.',
+  'run.dashboardNotSaved': 'Rapport dashboard non enregistré : {message}',
+
+  // Comparaison de prix (`compare-prices`)
+  'run.matched': '{count} produit(s) source — {matched} apparié(s) chez {sites} concurrent(s)',
+  'run.comparePrices.peers': '{count} produit(s) distinct(s) sur {sites} enseigne(s) ({matched} présent(s) chez ≥2) : {list}.',
+  'run.comparePrices.noSourceRows': 'Aucun produit source en entrée (port « source »).',
+  // Côté CLIENT seul : le jumeau serveur n'émet pas cet avertissement.
+  'run.comparePrices.noCompetitorRows': 'Aucun produit concurrent en entrée (port « concurrents »).',
+
+  // Rapport de fréquentation (`analytics-report`)
+  // `run.aggregatingTraffic` = variante SERVEUR (« headless ») ; le client a la
+  // sienne. Elle vit ici quand même : le test de parité exige que toute clé
+  // serveur soit traduite au même endroit que les autres.
+  'run.aggregatingTraffic': 'Agrégation du trafic ({period}, headless)…',
+  'run.analytics.aggregating': 'Agrégation du trafic ({period})…',
+  'run.analytics.reportGenerated': 'Rapport généré : {pageViews} pages vues · {visitors} visiteurs · {sessions} sessions.',
+  'run.analytics.ownerOnly': 'Rapport de fréquentation réservé au propriétaire du site (trafic global).',
+  'run.analytics.notAuthenticated': 'Utilisateur non authentifié — impossible de lire les statistiques.',
+  'run.analytics.permissionDenied': 'Accès refusé : seules les statistiques du propriétaire du site sont lisibles.',
+  'run.period.7d': '7 derniers jours',
+  'run.period.30d': '30 derniers jours',
+  'run.period.90d': '90 derniers jours',
+  'run.period.12m': '12 derniers mois',
 } as const
 
 /** Clé de traduction valide — dérivée du catalogue FR. */

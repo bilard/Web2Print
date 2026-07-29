@@ -1886,4 +1886,32 @@ export const en: Record<TranslationKey, string> = {
   'help.search': 'Search the help…',
   'help.clearSearch': 'Clear the search',
   'help.fullDocs': 'Full documentation',
+
+  // — Workflow RUN messages ——————————————————————————————————————————
+  // Kept byte-identical to `functions/src/i18nMessages.ts` (server twins write
+  // to the same run log). See the French catalogue for the full rationale.
+
+  'run.noCompetitor': 'No competitor site configured.',
+  'run.emptySheet': 'Empty product sheet on the input.',
+  'run.noProduct': 'No product on the input (connect the retailers to the "competitors" port).',
+
+  'run.sourceCatalogNotPersisted': 'Source catalogue not persisted: {message}',
+  'run.dashboardSaved': 'Dashboard report saved (monitoring "{watchId}") — visible in Price monitoring.',
+  'run.dashboardNotSaved': 'Dashboard report not saved: {message}',
+
+  'run.matched': '{count} source product(s) — {matched} matched at {sites} competitor(s)',
+  'run.comparePrices.peers': '{count} distinct product(s) across {sites} retailer(s) ({matched} present at ≥2): {list}.',
+  'run.comparePrices.noSourceRows': 'No source product on the input ("source" port).',
+  'run.comparePrices.noCompetitorRows': 'No competitor product on the input ("competitors" port).',
+
+  'run.aggregatingTraffic': 'Aggregating the traffic ({period}, headless)…',
+  'run.analytics.aggregating': 'Aggregating the traffic ({period})…',
+  'run.analytics.reportGenerated': 'Report generated: {pageViews} page views · {visitors} visitors · {sessions} sessions.',
+  'run.analytics.ownerOnly': 'Traffic report restricted to the site owner (global traffic).',
+  'run.analytics.notAuthenticated': 'User not authenticated — unable to read the statistics.',
+  'run.analytics.permissionDenied': 'Access denied: only the site owner’s statistics are readable.',
+  'run.period.7d': 'last 7 days',
+  'run.period.30d': 'last 30 days',
+  'run.period.90d': 'last 90 days',
+  'run.period.12m': 'last 12 months',
 }

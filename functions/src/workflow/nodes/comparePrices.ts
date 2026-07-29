@@ -191,12 +191,14 @@ registerServerNode({
       const all = [...sourceRows, ...competitorRows]
       if (all.length === 0) { ctx.log('warn', t(ctx.locale, 'run.noProduct')); return { sheet: { columns: [], rows: [] } } }
       const { columns, rows, sites, matched } = comparePeers(all, cfg)
-      ctx.log('info', `${rows.length} produit(s) distinct(s) sur ${sites.length} enseigne(s) (${matched} chez ≥2).`)
+      ctx.log('info', t(ctx.locale, 'run.comparePrices.peers', {
+        count: rows.length, sites: sites.length, matched, list: sites.join(', ') || '—',
+      }))
       return { sheet: { columns, rows } }
     }
 
     if (sourceRows.length === 0) {
-      ctx.log('warn', 'Aucun produit source (port « source »).')
+      ctx.log('warn', t(ctx.locale, 'run.comparePrices.noSourceRows'))
       return { sheet: { columns: [], rows: [] } }
     }
 
