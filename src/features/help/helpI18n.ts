@@ -20,10 +20,22 @@ type HelpMap = Record<string, string>
 let MAP: HelpMap | null = null
 let loading: Promise<void> | null = null
 
-/** Charge le mapping une seule fois (159 Ko) — jamais en français. */
+/**
+ * Charge le mapping une seule fois (159 Ko) — jamais en français.
+ *
+ * DEUX sources fusionnées, dans cet ordre :
+ *  1. `strings.en.json` — titres, catégories, intros, libellés (750/753).
+ *  2. `helpBodies.en.ts` — les CORPS markdown, absents du premier parce que
+ *     la doc publique les transforme avant publication. L'overlay gagne.
+ */
 function loadMap(): Promise<void> {
-  loading ??= import('../../../scripts/docs-i18n/strings.en.json')
-    .then((m) => { MAP = m.default as HelpMap })
+  loading ??= Promise.all([
+    import('../../../scripts/docs-i18n/strings.en.json'),
+    import('./helpBodies.en'),
+  ])
+    .then(([docs, bodies]) => {
+      MAP = { ...(docs.default as HelpMap), ...bodies.HELP_BODIES_EN }
+    })
     .catch(() => { MAP = {} })
   return loading
 }
