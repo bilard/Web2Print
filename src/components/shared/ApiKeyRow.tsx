@@ -5,15 +5,24 @@ import {
   testApiKey, type ApiTestResult, type ApiTestAction,
 } from '@/lib/apiKeys'
 import { API_KEYS_HYDRATED_EVENT } from '@/features/settings/useApiKeysSync'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 /**
  * Ligne d'édition d'une clé API : input masqué, test de connexion, liens console,
  * réinitialisation vers le `.env`. Partagée entre le SettingsPanel et le wizard
  * d'onboarding des clés IA.
  */
-export function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer la clé API...' }: {
-  id: string; label: string; description: string; logo?: ReactNode; placeholder?: string
+export function ApiKeyRow({ id, labelKey, descriptionKey, logo, placeholder, placeholderKey }: {
+  id: string
+  labelKey: TranslationKey
+  descriptionKey: TranslationKey
+  logo?: ReactNode
+  /** Exemple de format de clé (ex. « AIza… ») — jamais traduit, c'est un motif. */
+  placeholder?: string
+  /** Invite traduite, quand il n'y a pas de motif à montrer. */
+  placeholderKey?: TranslationKey
 }) {
+  const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [visible, setVisible] = useState(false)
   const [value, setValue] = useState(() => getApiKey(id))
@@ -76,13 +85,13 @@ export function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer 
           {logo}
           <div className={logo ? undefined : 'flex-1 min-w-0'}>
             <div className="flex items-center gap-2">
-              <p className="text-xs font-medium text-white/70">{label}</p>
+              <p className="text-xs font-medium text-white/70">{t(labelKey)}</p>
               {testStatus === 'testing' && <Loader2 className="w-3 h-3 text-white/30 animate-spin" />}
               {testStatus === 'ok' && <CheckCircle2 className="w-3 h-3 text-green-400" />}
               {testStatus === 'error' && <XCircle className="w-3 h-3 text-red-400" />}
               {testStatus === 'empty' && <XCircle className="w-3 h-3 text-white/20" />}
             </div>
-            <p className="text-[10px] text-white/30">{description}</p>
+            <p className="text-[10px] text-white/30">{t(descriptionKey)}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -91,7 +100,7 @@ export function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer 
               href={links.manage}
               target="_blank"
               rel="noopener noreferrer"
-              title="Gérer la clé API (console provider)"
+              title={t('apikey.manage')}
               className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5"
             >
               <KeyRound className="w-3 h-3" />
@@ -102,18 +111,18 @@ export function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer 
               href={links.billing}
               target="_blank"
               rel="noopener noreferrer"
-              title="Facturation & solde (nouvel onglet)"
+              title={t('apikey.billing')}
               className="flex items-center gap-1 text-[10px] text-amber-400/70 hover:text-amber-300 transition-colors"
             >
-              <span>Billing</span>
+              <span>{t('apikey.billing.short')}</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           )}
-          <button onClick={handleTest} title="Tester la connexion" className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5">
+          <button onClick={handleTest} title={t('apikey.test')} className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5">
             <Wifi className="w-3 h-3" />
           </button>
           {overridden && (
-            <button onClick={handleReset} title="Réinitialiser (utiliser .env)" className="text-white/20 hover:text-amber-400 transition-colors p-1 rounded hover:bg-white/5">
+            <button onClick={handleReset} title={t('apikey.reset')} className="text-white/20 hover:text-amber-400 transition-colors p-1 rounded hover:bg-white/5">
               <RotateCcw className="w-3 h-3" />
             </button>
           )}
@@ -136,7 +145,7 @@ export function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer 
                   : 'text-amber-300 border-amber-500/40 hover:bg-amber-500/10 hover:border-amber-500/60'
               }`}
             >
-              {testAction.label}
+              {t(testAction.labelKey)}
               <ExternalLink className="w-2.5 h-2.5" />
             </a>
           )}
@@ -150,7 +159,7 @@ export function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer 
             value={value}
             onChange={(e) => setValue(e.target.value)}
             className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-indigo-500/50"
-            placeholder={placeholder}
+            placeholder={placeholder ?? t(placeholderKey ?? 'apikey.placeholder')}
             autoFocus
           />
           <button onClick={() => setVisible(!visible)} className="text-white/30 hover:text-white/60 px-1">
@@ -166,7 +175,7 @@ export function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer 
           className="text-left text-xs font-mono text-white/30 bg-white/5 rounded-lg px-2.5 py-1.5 hover:bg-white/10 transition-colors truncate"
         >
           {overridden ? '••••••••' + value.slice(-4) : getEnvDefault(id)}
-          {overridden && <span className="ml-2 text-[9px] text-indigo-400">(personnalisée)</span>}
+          {overridden && <span className="ml-2 text-[9px] text-indigo-400">{t('apikey.overridden')}</span>}
         </button>
       )}
     </div>

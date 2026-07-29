@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useIsOwner } from '@/features/auth/useAuth'
 import { useUsageStats } from '@/features/stats/useUsageStats'
 import { API_KEYS } from '@/lib/apiKeys'
+import { useTranslation, intlLocale, type TranslationKey } from '@/lib/i18n'
 import { isRemoveBgApiEnabled, setRemoveBgApiEnabled } from '@/features/imaging/removeBackground'
 import { UserFontsPanel } from '@/features/fonts/UserFontsPanel'
 import { GDriveConnectorRow } from '@/features/gdrive/GDriveConnectorRow'
@@ -69,20 +70,20 @@ type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'cookies' | 's
 
 interface TabConfig {
   id: SettingsTab
-  label: string
+  labelKey: TranslationKey
   icon: React.ElementType
   accent: string
 }
 
 const TABS: TabConfig[] = [
-  { id: 'profile',    label: 'Profil',        icon: User,      accent: 'text-indigo-400' },
-  { id: 'ai',         label: 'IA',            icon: Sparkles,  accent: 'text-violet-400' },
-  { id: 'firebase',   label: 'Firebase',      icon: Flame,     accent: 'text-amber-400' },
-  { id: 'connectors', label: 'Connecteurs',   icon: Plug,      accent: 'text-emerald-400' },
-  { id: 'cookies',    label: 'Cookies',       icon: Cookie,    accent: 'text-amber-300' },
-  { id: 'data',       label: 'Données',       icon: Network,   accent: 'text-cyan-400' },
-  { id: 'stats',      label: 'Statistiques',  icon: BarChart2, accent: 'text-sky-400' },
-  { id: 'activity',   label: 'Mon activité',  icon: ScrollText, accent: 'text-rose-400' },
+  { id: 'profile',    labelKey: 'settings.tab.profile',    icon: User,       accent: 'text-indigo-400' },
+  { id: 'ai',         labelKey: 'settings.tab.ai',         icon: Sparkles,   accent: 'text-violet-400' },
+  { id: 'firebase',   labelKey: 'settings.tab.firebase',   icon: Flame,      accent: 'text-amber-400' },
+  { id: 'connectors', labelKey: 'settings.tab.connectors', icon: Plug,       accent: 'text-emerald-400' },
+  { id: 'cookies',    labelKey: 'settings.tab.cookies',    icon: Cookie,     accent: 'text-amber-300' },
+  { id: 'data',       labelKey: 'settings.tab.data',       icon: Network,    accent: 'text-cyan-400' },
+  { id: 'stats',      labelKey: 'settings.tab.stats',      icon: BarChart2,  accent: 'text-sky-400' },
+  { id: 'activity',   labelKey: 'settings.tab.activity',   icon: ScrollText, accent: 'text-rose-400' },
 ]
 
 const TAB_PERMISSION: Partial<Record<SettingsTab, string>> = {
@@ -90,23 +91,25 @@ const TAB_PERMISSION: Partial<Record<SettingsTab, string>> = {
   cookies: 'settings.cookies.edit',
 }
 
-function StatRow({ label, value }: { label: string; value: string }) {
+function StatRow({ labelKey, value }: { labelKey: TranslationKey; value: string }) {
+  const { t } = useTranslation()
   return (
     <div className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-      <span className="text-xs text-white/40">{label}</span>
+      <span className="text-xs text-white/40">{t(labelKey)}</span>
       <span className="text-xs font-mono text-white/70">{value}</span>
     </div>
   )
 }
 
 function StorageBar({ used, quota }: { used: number; quota: number }) {
+  const { t } = useTranslation()
   const pct = Math.min(100, (used / quota) * 100)
   const color = pct > 80 ? 'bg-red-500' : pct > 60 ? 'bg-amber-500' : 'bg-indigo-500'
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between text-[10px] text-white/30">
-        <span>{used.toFixed(2)} Mo utilisés</span>
-        <span>{quota} Mo</span>
+        <span>{t('stats.storage.used', { used: used.toFixed(2) })}</span>
+        <span>{t('stats.storage.quota', { quota })}</span>
       </div>
       <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
         <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
@@ -144,8 +147,8 @@ function AiTab() {
       <AiProviderCard
         provider="gemini"
         apiKeyId="gemini"
-        label="Image IA (Gemini)"
-        description="Génération d'images IA et raisonnement via Google Gemini"
+        labelKey="aiCard.gemini.label"
+        descriptionKey="aiCard.gemini.desc"
         logo={<GeminiLogo />}
         apiKeyUrl="https://aistudio.google.com/app/apikey"
         noteForGemini
@@ -153,8 +156,8 @@ function AiTab() {
       <AiProviderCard
         provider="claude"
         apiKeyId="anthropic"
-        label="Claude (Anthropic)"
-        description="Raisonnement briefs, panier, deck, design"
+        labelKey="aiCard.claude.label"
+        descriptionKey="aiCard.claude.desc"
         logo={<ClaudeLogo />}
         apiKeyUrl="https://console.anthropic.com/settings/keys"
         billingUrl="https://platform.claude.com/settings/billing"
@@ -162,48 +165,48 @@ function AiTab() {
       <AiProviderCard
         provider="openai"
         apiKeyId="openai"
-        label="OpenAI"
-        description="GPT — fallback ou tâches spécifiques (optionnel)"
+        labelKey="aiCard.openai.label"
+        descriptionKey="aiCard.openai.desc"
         logo={<OpenAILogo />}
         apiKeyUrl="https://platform.openai.com/api-keys"
       />
       <AiProviderCard
         provider="deepseek"
         apiKeyId="deepseek"
-        label="DeepSeek"
-        description="DeepSeek V4 — raisonnement à faible coût (optionnel)"
+        labelKey="aiCard.deepseek.label"
+        descriptionKey="aiCard.deepseek.desc"
         logo={<DeepSeekLogo />}
         apiKeyUrl="https://platform.deepseek.com/api_keys"
       />
       <AiProviderCard
         provider="qwen"
         apiKeyId="qwen"
-        label="Qwen (Alibaba)"
-        description="Qwen Max / Plus / Turbo via DashScope (optionnel)"
+        labelKey="aiCard.qwen.label"
+        descriptionKey="aiCard.qwen.desc"
         logo={<QwenLogo />}
         apiKeyUrl="https://dashscope.console.aliyun.com/apiKey"
       />
       <AiProviderCard
         provider="kimi"
         apiKeyId="kimi"
-        label="Kimi (Moonshot)"
-        description="Kimi Code — endpoint OpenAI-compatible (optionnel)"
+        labelKey="aiCard.kimi.label"
+        descriptionKey="aiCard.kimi.desc"
         logo={<KimiLogo />}
         apiKeyUrl="https://www.kimi.com/code/console"
       />
       <AiProviderCard
         provider="glm"
         apiKeyId="glm"
-        label="GLM (Z.ai)"
-        description="GLM — endpoint OpenAI-compatible (optionnel)"
+        labelKey="aiCard.glm.label"
+        descriptionKey="aiCard.glm.desc"
         logo={<GLMLogo />}
         apiKeyUrl="https://z.ai/manage-apikey/apikey-list"
       />
       <AiProviderCard
         provider="openrouter"
         apiKeyId="openrouter"
-        label="OpenRouter"
-        description="Accès unifié à tous les LLM (Claude, GPT, Gemini, Llama, Mistral, Qwen, DeepSeek…)"
+        labelKey="aiCard.openrouter.label"
+        descriptionKey="aiCard.openrouter.desc"
         logo={<OpenRouterLogo />}
         apiKeyUrl="https://openrouter.ai/settings/keys"
       />
@@ -212,18 +215,19 @@ function AiTab() {
 }
 
 function FirebaseTab() {
+  const { t } = useTranslation()
   const firebaseKeys = API_KEYS.filter((k) => k.id.startsWith('firebase_'))
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-start gap-2 px-1 pb-1 text-[11px] text-white/40">
         <FirebaseLogo />
-        <span>Configuration du backend (authentification, base de données, stockage)</span>
+        <span>{t('settings.firebase.intro')}</span>
       </div>
       <div className="bg-white/[0.03] rounded-xl px-4 py-1">
-        <StatRow label="Projet" value="web2print-6fe5a" />
+        <StatRow labelKey="settings.firebase.project" value="web2print-6fe5a" />
       </div>
       {firebaseKeys.map((k) => (
-        <ApiKeyRow key={k.id} id={k.id} label={k.label} description={k.description} />
+        <ApiKeyRow key={k.id} id={k.id} labelKey={k.labelKey} descriptionKey={k.descriptionKey} />
       ))}
     </div>
   )
@@ -264,6 +268,7 @@ function parseDevToolsCookieTable(raw: string, targetHostname: string): string {
  *  Utilisé pour scraper les sites B2B qui cachent les prix derrière un login.
  *  Les cookies sont injectés dans les requêtes Bright Data côté Cloud Function. */
 function SiteCookiesSection() {
+  const { t } = useTranslation()
   const [entries, setEntries] = useState<SiteCookieEntry[]>(() => listSiteCookies())
   const [adding, setAdding] = useState(false)
   const [newHostname, setNewHostname] = useState('')
@@ -326,13 +331,13 @@ function SiteCookiesSection() {
         <div className="flex items-center gap-2">
           <Cookie className="w-3.5 h-3.5 text-amber-400/70 shrink-0" />
           <div>
-            <p className="text-xs font-medium text-white/70">Cookies de session</p>
-            <p className="text-[10px] text-white/30">Sites B2B login-gated — injectés automatiquement dans Bright Data</p>
+            <p className="text-xs font-medium text-white/70">{t('cookies.title')}</p>
+            <p className="text-[10px] text-white/30">{t('cookies.subtitle')}</p>
           </div>
         </div>
         <button
           onClick={() => setAdding((v) => !v)}
-          title="Ajouter un cookie de session"
+          title={t('cookies.add')}
           className="text-white/20 hover:text-amber-400 transition-colors p-1 rounded hover:bg-white/5"
         >
           <Plus className="w-3 h-3" />
@@ -349,13 +354,13 @@ function SiteCookiesSection() {
                   <span className="text-[11px] text-white/60 font-mono truncate">{e.hostname}</span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => setRevealedHost(revealedHost === e.hostname ? null : e.hostname)} title="Afficher/masquer" className="text-white/20 hover:text-white/60 p-0.5">
+                  <button onClick={() => setRevealedHost(revealedHost === e.hostname ? null : e.hostname)} title={t('cookies.toggle')} className="text-white/20 hover:text-white/60 p-0.5">
                     {revealedHost === e.hostname ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                   </button>
-                  <button onClick={() => { setEditingHost(e.hostname); setEditValue(getSiteCookie(e.hostname)) }} title="Modifier" className="text-white/20 hover:text-amber-400 p-0.5">
+                  <button onClick={() => { setEditingHost(e.hostname); setEditValue(getSiteCookie(e.hostname)) }} title={t('cookies.edit')} className="text-white/20 hover:text-amber-400 p-0.5">
                     <RotateCcw className="w-3 h-3" />
                   </button>
-                  <button onClick={() => handleDelete(e.hostname)} title="Supprimer" className="text-white/20 hover:text-red-400 p-0.5">
+                  <button onClick={() => handleDelete(e.hostname)} title={t('cookies.delete')} className="text-white/20 hover:text-red-400 p-0.5">
                     <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
@@ -368,10 +373,10 @@ function SiteCookiesSection() {
                     rows={3}
                     className="w-full bg-black/40 text-[10px] text-white/70 font-mono rounded px-2 py-1 border border-white/10 focus:outline-none focus:border-amber-500/50 resize-none"
                   />
-                  <p className="text-[9px] text-white/20">Coller le tableau DevTools ou un cookie string — parsing automatique</p>
+                  <p className="text-[9px] text-white/20">{t('cookies.pasteHint')}</p>
                   <div className="flex gap-1 justify-end">
-                    <button onClick={() => setEditingHost(null)} className="text-[10px] text-white/30 hover:text-white/60 px-2 py-0.5">Annuler</button>
-                    <button onClick={() => handleSaveEdit(e.hostname)} className="text-[10px] text-amber-400 hover:text-amber-300 px-2 py-0.5">Sauvegarder</button>
+                    <button onClick={() => setEditingHost(null)} className="text-[10px] text-white/30 hover:text-white/60 px-2 py-0.5">{t('cookies.cancel')}</button>
+                    <button onClick={() => handleSaveEdit(e.hostname)} className="text-[10px] text-amber-400 hover:text-amber-300 px-2 py-0.5">{t('cookies.save')}</button>
                   </div>
                 </div>
               ) : (
@@ -394,7 +399,7 @@ function SiteCookiesSection() {
             className="w-full bg-black/40 text-[11px] text-white/70 font-mono rounded px-2 py-1 border border-white/10 focus:outline-none focus:border-amber-500/50"
           />
           <textarea
-            placeholder={'Coller le tableau DevTools (copier-tout) ou écrire directement :\nPHPSESSID=abc123; user_locale=fr'}
+            placeholder={t('cookies.textareaPlaceholder')}
             value={newCookie}
             onChange={(e) => setNewCookie(e.target.value)}
             rows={3}
@@ -402,7 +407,7 @@ function SiteCookiesSection() {
           />
           {parsedPreview && (
             <div className="bg-amber-500/5 border border-amber-500/20 rounded px-2 py-1">
-              <p className="text-[9px] text-amber-400/70 mb-0.5">Tableau détecté → converti en cookie string :</p>
+              <p className="text-[9px] text-amber-400/70 mb-0.5">{t('cookies.detected')}</p>
               <p className="text-[10px] text-white/50 font-mono break-all">{parsedPreview}</p>
             </div>
           )}
@@ -410,14 +415,14 @@ function SiteCookiesSection() {
             DevTools → Application → Cookies → sélectionner tout → copier · Tableau auto-parsé (colonnes analytiques ignorées)
           </p>
           <div className="flex gap-1 justify-end">
-            <button onClick={() => { setAdding(false); setNewCookie(''); setNewHostname('') }} className="text-[10px] text-white/30 hover:text-white/60 px-2 py-0.5">Annuler</button>
-            <button onClick={handleAdd} disabled={!newHostname.trim() || (!newCookie.trim() && !parsedPreview)} className="text-[10px] text-amber-400 hover:text-amber-300 px-2 py-0.5 disabled:opacity-30">Ajouter</button>
+            <button onClick={() => { setAdding(false); setNewCookie(''); setNewHostname('') }} className="text-[10px] text-white/30 hover:text-white/60 px-2 py-0.5">{t('cookies.cancel')}</button>
+            <button onClick={handleAdd} disabled={!newHostname.trim() || (!newCookie.trim() && !parsedPreview)} className="text-[10px] text-amber-400 hover:text-amber-300 px-2 py-0.5 disabled:opacity-30">{t('cookies.addAction')}</button>
           </div>
         </div>
       )}
 
       {entries.length === 0 && !adding && (
-        <p className="text-[10px] text-white/20 text-center py-1">Aucun cookie — cliquer + pour ajouter</p>
+        <p className="text-[10px] text-white/20 text-center py-1">{t('cookies.empty')}</p>
       )}
     </div>
   )
@@ -429,19 +434,20 @@ function SiteCookiesSection() {
  * présente — état dans features/imaging/removeBackground.
  */
 function RemoveBgEngineToggle() {
+  const { t } = useTranslation()
   const [enabled, setEnabled] = useState(isRemoveBgApiEnabled())
   const toggle = (v: boolean) => { setRemoveBgApiEnabled(v); setEnabled(v) }
   return (
     <div className="bg-white/[0.03] rounded-xl px-3 py-2.5 flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <p className="text-xs text-white/70">Utiliser l'API Remove.bg (payante) quand la clé est présente</p>
+        <p className="text-xs text-white/70">{t('removebg.toggle')}</p>
         <p className="text-[10px] text-white/30">
           {enabled
-            ? 'Actif — repli automatique sur le détourage inclus (rembg) en cas d\'échec ou de crédits épuisés'
-            : 'Désactivé — tout le détourage passe par le moteur inclus (rembg, gratuit et illimité)'}
+            ? t('removebg.on')
+            : t('removebg.off')}
         </p>
       </div>
-      <button type="button" onClick={() => toggle(!enabled)} title={enabled ? 'Désactiver Remove.bg' : 'Activer Remove.bg'}
+      <button type="button" onClick={() => toggle(!enabled)} title={t(enabled ? 'removebg.disable' : 'removebg.enable')}
         className={`shrink-0 w-9 h-5 rounded-full transition-colors relative ${enabled ? 'bg-indigo-600' : 'bg-white/10'}`}>
         <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${enabled ? 'left-[18px]' : 'left-0.5'}`} />
       </button>
@@ -452,18 +458,18 @@ function RemoveBgEngineToggle() {
 function ConnectorsTab() {
   return (
     <div className="flex flex-col gap-2">
-      <ApiKeyRow id="google_vision" label="Google Cloud Vision" description="OCR pour Image/PDF → SVG éditable (décomposition des textes)" logo={<GoogleVisionLogo />} placeholder="AIza..." />
-      <ApiKeyRow id="removebg" label="Remove.bg" description="Suppression de fond d'images" logo={<RemoveBgLogo />} />
+      <ApiKeyRow id="google_vision" labelKey="apikeys.googleVision.label" descriptionKey="connectors.googleVision.desc" logo={<GoogleVisionLogo />} placeholder="AIza..." />
+      <ApiKeyRow id="removebg" labelKey="apikeys.removebg.label" descriptionKey="connectors.removebg.desc" logo={<RemoveBgLogo />} />
       <RemoveBgEngineToggle />
-      <ApiKeyRow id="jina" label="Jina AI" description="Scraping et recherche web" logo={<JinaLogo />} placeholder="jina_..." />
-      <ApiKeyRow id="firecrawl" label="Firecrawl" description="Scraping anti-bot fallback (Akamai, Cloudflare)" logo={<FirecrawlLogo />} placeholder="fc-..." />
+      <ApiKeyRow id="jina" labelKey="apikeys.jina.label" descriptionKey="connectors.jina.desc" logo={<JinaLogo />} placeholder="jina_..." />
+      <ApiKeyRow id="firecrawl" labelKey="apikeys.firecrawl.label" descriptionKey="connectors.firecrawl.desc" logo={<FirecrawlLogo />} placeholder="fc-..." />
       <BrightDataConnectorRow />
       {/* BrowserAct n'est PAS un lecteur d'URL comme les trois précédents : il exécute des
           « bots » construits dans son tableau de bord. Il n'est donc PAS un moteur de
           scraping — l'exécuter page par page polluait la moisson. Usage : le node
           « BrowserAct (bot) » d'un workflow, explicite et ponctuel. */}
-      <ApiKeyRow id="browseract" label="BrowserAct" description="Exécute vos « bots » (Amazon, LinkedIn, anti-bot durs). Uniquement via le node « BrowserAct (bot) » d'un workflow — ce n'est pas un moteur de scraping." logo={<Bot className="w-5 h-5 text-teal-300" />} />
-      <ApiKeyRow id="scrapfly" label="ScrapFly" description="Réservée — pas de CORS browser-side, en attente d'une Cloud Function proxy" logo={<ScrapflyLogo />} placeholder="scp-live-..." />
+      <ApiKeyRow id="browseract" labelKey="apikeys.browseract.label" descriptionKey="connectors.browseract.desc" logo={<Bot className="w-5 h-5 text-teal-300" />} />
+      <ApiKeyRow id="scrapfly" labelKey="apikeys.scrapfly.label" descriptionKey="connectors.scrapfly.desc" logo={<ScrapflyLogo />} placeholder="scp-live-..." />
       <HiggsfieldConnectorRow />
       <GDriveConnectorRow />
 
@@ -496,15 +502,12 @@ function ConnectorsTab() {
 }
 
 function CookiesTab() {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-start gap-2 px-1 pb-1 text-[11px] text-white/40 leading-relaxed">
         <Cookie className="w-3.5 h-3.5 text-amber-400/70 shrink-0 mt-0.5" />
-        <span>
-          Cookies de session B2B injectés automatiquement dans Bright Data au moment du scrape — permet
-          de récupérer prix et stocks cachés derrière un login. Connecte-toi manuellement dans Chrome,
-          copie les cookies depuis DevTools et colle-les ici. Validité typique : 24-72 h selon le site.
-        </span>
+        <span>{t('cookies.intro')}</span>
       </div>
       <SiteCookiesSection />
     </div>
@@ -512,6 +515,7 @@ function CookiesTab() {
 }
 
 function StatsTab() {
+  const { t, locale } = useTranslation()
   const { data: stats, isLoading, isFetching, refetch, dataUpdatedAt } = useUsageStats()
 
   if (isLoading) {
@@ -524,41 +528,41 @@ function StatsTab() {
     )
   }
   if (!stats) {
-    return <p className="text-xs text-white/30">Impossible de charger les statistiques</p>
+    return <p className="text-xs text-white/30">{t('stats.error')}</p>
   }
 
   const providers: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'openrouter']
   const totalTokensIn = providers.reduce((s, p) => s + stats.aiCost.byProvider[p].tokensIn, 0)
   const totalTokensOut = providers.reduce((s, p) => s + stats.aiCost.byProvider[p].tokensOut, 0)
   const updatedLabel = dataUpdatedAt
-    ? new Date(dataUpdatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    ? new Date(dataUpdatedAt).toLocaleTimeString(intlLocale(locale), { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     : null
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between px-1">
         <span className="text-[10px] text-white/25">
-          {updatedLabel ? `Mis à jour à ${updatedLabel}` : '—'}
+          {updatedLabel ? t('stats.updatedAt', { time: updatedLabel }) : '—'}
         </span>
         <button
           type="button"
           onClick={() => refetch()}
           disabled={isFetching}
-          title="Rafraîchir les données"
+          title={t('stats.refresh.title')}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-white/60 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 hover:border-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCw className={`w-3 h-3 ${isFetching ? 'animate-spin' : ''}`} />
-          Rafraîchir
+          {t('stats.refresh')}
         </button>
       </div>
 
       <div className="bg-white/[0.03] rounded-xl p-4">
-        <StatRow label="Projets" value={String(stats.projectCount)} />
+        <StatRow labelKey="stats.projects" value={String(stats.projectCount)} />
       </div>
 
       <div className="bg-white/[0.03] rounded-xl p-4 flex flex-col gap-2">
         <div className="flex items-center gap-1.5 text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-1">
-          <HardDrive className="w-3 h-3" /> Stockage Firestore
+          <HardDrive className="w-3 h-3" /> {t('stats.storage')}
         </div>
         <StorageBar used={stats.storageUsedMb} quota={stats.storageQuotaMb} />
       </div>
@@ -566,9 +570,9 @@ function StatsTab() {
       <div className="bg-white/[0.03] rounded-xl p-4 flex flex-col gap-2">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-1.5 text-[10px] font-semibold text-white/30 uppercase tracking-wider">
-            <Sparkles className="w-3 h-3" /> Coût IA estimé ce mois
+            <Sparkles className="w-3 h-3" /> {t('stats.aiCost')}
           </div>
-          <span className="text-[9px] text-white/20 uppercase">estimation · 1 USD ≈ {USD_TO_EUR.toFixed(2)} €</span>
+          <span className="text-[9px] text-white/20 uppercase">{t('stats.estimate', { rate: USD_TO_EUR.toFixed(2) })}</span>
         </div>
         <div className="flex items-baseline gap-2">
           <p className="text-2xl font-mono text-white/90">{formatEur(stats.aiCost.total)}</p>
@@ -579,7 +583,7 @@ function StatsTab() {
           )}
         </div>
         <div className="flex items-center justify-between text-[10px] font-mono text-white/30 pt-1 pb-1 border-b border-white/5">
-          <span>Total tokens</span>
+          <span>{t('stats.totalTokens')}</span>
           <span>{formatTokens(totalTokensIn)} in · {formatTokens(totalTokensOut)} out</span>
         </div>
         <div className="flex flex-col gap-1 mt-1">
@@ -616,6 +620,7 @@ export function SettingsPanel({
    *  Absent (ex. SettingsSheet) : en-tête statique, contenu qui flue (le sheet scrolle). */
   fillHeight?: boolean
 } = {}) {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<SettingsTab>('connectors')
   // Les clés Firebase (config du backend partagé) ne sont montrées qu'au propriétaire.
   const isOwner = useIsOwner()
@@ -625,7 +630,8 @@ export function SettingsPanel({
     const perm = TAB_PERMISSION[id]
     return isOwner || !perm || permissions.has(perm)
   }
-  const visibleTabs = TABS.filter((t) => canTab(t.id))
+  // `(tab)` et non `(t)` : la lambda masquerait la fonction de traduction.
+  const visibleTabs = TABS.filter((tab) => canTab(tab.id))
 
   useModuleIntent('settings', (action) => {
     if (action.startsWith('tab:')) {
@@ -639,10 +645,10 @@ export function SettingsPanel({
       {header}
       <ResumeSetupButton variant="banner" />
       <nav
-        aria-label="Sections des paramètres"
+        aria-label={t('settings.nav')}
         className="flex flex-wrap gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1"
       >
-        {visibleTabs.map(({ id, label, icon: Icon, accent }) => {
+        {visibleTabs.map(({ id, labelKey, icon: Icon, accent }) => {
           const isActive = activeTab === id
           return (
             <button
@@ -657,7 +663,7 @@ export function SettingsPanel({
               }`}
             >
               <Icon className={`w-3.5 h-3.5 ${isActive ? accent : 'opacity-60'}`} />
-              {label}
+              {t(labelKey)}
             </button>
           )
         })}

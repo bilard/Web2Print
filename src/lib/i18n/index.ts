@@ -30,6 +30,18 @@ export function translate(locale: Locale, key: TranslationKey, params?: TransPar
 }
 
 /**
+ * Traduction HORS composant React (services, stores, helpers).
+ *
+ * ⚠️ Rend le texte de la langue COURANTE au moment de l'appel : la chaîne
+ * produite ne se retraduit pas si l'utilisateur change de langue ensuite.
+ * Réservé aux messages transitoires (résultat d'un test, toast). Pour tout ce
+ * qui reste affiché, mémoriser la CLÉ et traduire au rendu — cf. LoginPage.
+ */
+export function t(key: TranslationKey, params?: TransParams): string {
+  return translate(useLocaleStore.getState().locale, key, params)
+}
+
+/**
  * Traduction DANS un composant React : re-rend au changement de langue.
  *
  * ⚠️ `t` est recréé à chaque changement de langue — ne pas l'omettre des

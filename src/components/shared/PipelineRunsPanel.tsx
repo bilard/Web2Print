@@ -4,13 +4,15 @@
 import { useState } from 'react'
 import { Activity, CheckCircle2, ChevronDown, ChevronRight, XCircle } from 'lucide-react'
 import { usePipelineRuns, formatRunDuration, type PipelineRun } from '@/features/stats/usePipelineRuns'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
-const MODULE_LABEL: Record<PipelineRun['module'], string> = {
-  enrichment: 'Enrichissement',
-  decompose: 'Décomposition',
+const MODULE_LABEL: Record<PipelineRun['module'], TranslationKey> = {
+  enrichment: 'pipeline.module.enrichment',
+  decompose: 'pipeline.module.decompose',
 }
 
 function RunRow({ run }: { run: PipelineRun }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const hasDetail = run.steps.length > 0 || !!run.error
   return (
@@ -24,7 +26,7 @@ function RunRow({ run }: { run: PipelineRun }) {
           ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           : <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />}
         <span className="px-1.5 py-px rounded bg-white/[0.06] text-[9px] uppercase tracking-wide text-white/40 shrink-0">
-          {MODULE_LABEL[run.module]}
+          {t(MODULE_LABEL[run.module])}
         </span>
         <span className="text-[11px] text-white/70 truncate flex-1">{run.label}</span>
         <span className="text-[10px] font-mono text-white/30 shrink-0">{formatRunDuration(run.durationMs)}</span>
@@ -54,6 +56,7 @@ function RunRow({ run }: { run: PipelineRun }) {
 }
 
 export function PipelineRunsPanel() {
+  const { t } = useTranslation()
   const { data: runs, isLoading } = usePipelineRuns()
   const [showAll, setShowAll] = useState(false)
 
@@ -87,7 +90,7 @@ export function PipelineRunsPanel() {
               onClick={() => setShowAll((v) => !v)}
               className="self-center text-[10px] text-white/40 hover:text-white/70 px-2 py-1"
             >
-              {showAll ? 'Réduire' : `Afficher les ${runs.length} runs`}
+              {showAll ? t('pipelineRuns.collapse') : `Afficher les ${runs.length} runs`}
             </button>
           )}
         </>

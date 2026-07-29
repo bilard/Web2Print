@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { Plug, Copy, Trash2, RefreshCw, X, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePluginTokens, type PluginToken } from '@/features/plugin-token/usePluginTokens'
+import { useTranslation, intlLocale } from '@/lib/i18n'
 
 export function PluginTokenSection() {
+  const { t, locale } = useTranslation()
   const { createToken, listTokens, deleteToken } = usePluginTokens()
   const [tokens, setTokens] = useState<PluginToken[]>([])
   const [tokenKey, setTokenKey] = useState('')
@@ -25,7 +27,7 @@ export function PluginTokenSection() {
 
   const onCopy = async (value: string) => {
     await navigator.clipboard.writeText(value)
-    toast.success('Token copié')
+    toast.success(t('pluginToken.copied'))
   }
 
   const onDelete = async (id: string) => {
@@ -53,7 +55,7 @@ export function PluginTokenSection() {
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="KEY (ex : poste-fabrication)"
+          placeholder={t('pluginToken.namePlaceholder')}
           value={tokenKey}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTokenKey(e.target.value)}
           className="flex-1 bg-well border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50"
@@ -70,7 +72,7 @@ export function PluginTokenSection() {
 
       {freshToken && (
         <div className="rounded-md bg-well p-3 space-y-2">
-          <p className="text-xs text-amber-400">Copie ce token maintenant — il ne sera plus affiché.</p>
+          <p className="text-xs text-amber-400">{t('pluginToken.warning')}</p>
           <div className="flex items-center gap-2">
             <code className="flex-1 truncate text-xs text-white">
               {showToken ? freshToken : '•'.repeat(Math.min(freshToken.length, 40))}
@@ -87,7 +89,7 @@ export function PluginTokenSection() {
               type="button"
               onClick={() => onCopy(freshToken)}
               className="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-              title="Copier"
+              title={t('pluginToken.copy')}
             >
               <Copy className="h-4 w-4" />
             </button>
@@ -95,7 +97,7 @@ export function PluginTokenSection() {
               type="button"
               onClick={() => setFreshToken(null)}
               className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-white transition-colors"
-              title="Fermer"
+              title={t('pluginToken.close')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -104,49 +106,49 @@ export function PluginTokenSection() {
       )}
 
       <div className="space-y-1">
-        {tokens.length === 0 && <p className="text-xs text-white/40">Aucun token.</p>}
-        {tokens.map((t) => (
-          <div key={t.id} className="rounded bg-surface-2 px-3 py-2 text-xs">
+        {tokens.length === 0 && <p className="text-xs text-white/40">{t('pluginToken.empty')}</p>}
+        {tokens.map((tok) => (
+          <div key={tok.id} className="rounded bg-surface-2 px-3 py-2 text-xs">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex items-center gap-2">
-                <span className="text-white truncate">{t.label}</span>
+                <span className="text-white truncate">{tok.label}</span>
                 <button
                   type="button"
-                  onClick={() => toggleKey(t.id)}
+                  onClick={() => toggleKey(tok.id)}
                   className="p-0.5 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors shrink-0"
-                  title={revealedKeys.has(t.id) ? 'Masquer la KEY' : 'Voir la KEY'}
+                  title={t(revealedKeys.has(tok.id) ? 'pluginToken.hideKey' : 'pluginToken.showKey')}
                 >
-                  {revealedKeys.has(t.id) ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  {revealedKeys.has(tok.id) ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                 </button>
                 <span className="text-white/40 shrink-0">
-                  {t.lastUsedAt ? `utilisé ${t.lastUsedAt.toLocaleDateString()}` : 'jamais utilisé'}
+                  {tok.lastUsedAt ? t('pluginToken.usedOn', { date: tok.lastUsedAt.toLocaleDateString(intlLocale(locale)) }) : t('pluginToken.neverUsed')}
                 </span>
               </div>
               <button
                 type="button"
-                onClick={() => onDelete(t.id)}
+                onClick={() => onDelete(tok.id)}
                 className="p-1 rounded hover:bg-white/10 text-red-400/70 hover:text-red-400 transition-colors shrink-0"
-                title="Supprimer"
+                title={t('pluginToken.delete')}
               >
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
-            {revealedKeys.has(t.id) && (
+            {revealedKeys.has(tok.id) && (
               <div className="mt-1.5 flex items-center gap-2">
-                {t.token ? (
+                {tok.token ? (
                   <>
-                    <code className="flex-1 truncate text-white/80 bg-well rounded px-2 py-1">{t.token}</code>
+                    <code className="flex-1 truncate text-white/80 bg-well rounded px-2 py-1">{tok.token}</code>
                     <button
                       type="button"
-                      onClick={() => onCopy(t.token as string)}
+                      onClick={() => onCopy(tok.token as string)}
                       className="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors shrink-0"
-                      title="Copier"
+                      title={t('pluginToken.copy')}
                     >
                       <Copy className="h-4 w-4" />
                     </button>
                   </>
                 ) : (
-                  <span className="text-white/40 italic">Valeur indisponible — régénère ce token pour pouvoir l'afficher.</span>
+                  <span className="text-white/40 italic">{t('pluginToken.unavailable')}</span>
                 )}
               </div>
             )}

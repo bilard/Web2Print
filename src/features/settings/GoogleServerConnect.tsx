@@ -5,8 +5,10 @@
 import { useState } from 'react'
 import { CloudCog, Link2, Unlink, Loader2, Eye, EyeOff, CheckCircle2, XCircle, Wifi } from 'lucide-react'
 import { OAUTH_REDIRECT_URI, useGoogleServerConnect } from './useGoogleServerConnect'
+import { useTranslation, intlLocale } from '@/lib/i18n'
 
 export function GoogleServerConnect() {
+  const { t, locale } = useTranslation()
   const {
     isAdmin, connectedAt, busy, testStatus, testMessage,
     clientId, setClientId, clientSecret, setClientSecret,
@@ -20,7 +22,7 @@ export function GoogleServerConnect() {
         <CloudCog className="w-4 h-4 text-emerald-400/80 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-[12px] text-white/80">Google — accès serveur (Drive + Gmail)</span>
+            <span className="text-[12px] text-white/80">{t('google.server.title')}</span>
             {testStatus === 'testing' && <Loader2 className="w-3 h-3 text-white/30 animate-spin" />}
             {testStatus === 'ok' && <CheckCircle2 className="w-3 h-3 text-green-400" />}
             {testStatus === 'error' && <XCircle className="w-3 h-3 text-red-400" />}
@@ -28,7 +30,7 @@ export function GoogleServerConnect() {
             {isAdmin && connectedAt != null && (
               <button
                 onClick={() => void test()}
-                title="Tester la connexion serveur"
+                title={t('google.server.test')}
                 className="text-white/20 hover:text-emerald-400 transition-colors p-1 rounded hover:bg-white/5"
               >
                 <Wifi className="w-3 h-3" />
@@ -36,9 +38,9 @@ export function GoogleServerConnect() {
             )}
           </div>
           <p className="text-[10px] text-neutral-500 leading-snug mt-0.5">
-            Autorise une fois ; les workflows <strong className="text-neutral-400">cron, webhook et Telegram</strong>{' '}
-            pourront créer des Google Sheets et envoyer des Gmail sans navigateur. Aucun secret ne
-            transite par Telegram.
+            {t('google.server.explain.before')}
+            <strong className="text-neutral-400">{t('google.server.usage')}</strong>
+            {t('google.server.explain.after')}
           </p>
         </div>
         {connectedAt === undefined ? (
@@ -64,7 +66,7 @@ export function GoogleServerConnect() {
         <p className={`text-[10px] px-6 ${testStatus === 'ok' ? 'text-emerald-300/70' : 'text-red-400/70'}`}>
           {testStatus === 'ok' ? '✅ ' : ''}{testMessage}
           {testStatus === 'ok' && connectedAt != null && connectedAt > 0
-            ? ` Connecté depuis le ${new Date(connectedAt).toLocaleDateString('fr-FR')}.`
+            ? ' ' + t('google.server.connectedSince', { date: new Date(connectedAt).toLocaleDateString(intlLocale(locale)) })
             : ''}
         </p>
       )}

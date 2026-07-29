@@ -1,17 +1,19 @@
 import { useThemeStore, type ThemePref } from '@/stores/theme.store'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 const OPTIONS = [
-  ['light', 'Clair'],
-  ['dark', 'Sombre'],
-  ['system', 'Système'],
-] as const satisfies ReadonlyArray<readonly [ThemePref, string]>
+  ['light', 'theme.pref.light'],
+  ['dark', 'theme.pref.dark'],
+  ['system', 'theme.pref.system'],
+] as const satisfies ReadonlyArray<readonly [ThemePref, TranslationKey]>
 
 export function ThemeSettingsSection() {
+  const { t } = useTranslation()
   const themePref = useThemeStore((s) => s.themePref)
   const setThemePref = useThemeStore((s) => s.setThemePref)
   return (
     <div className="bg-white/[0.03] rounded-xl p-4 space-y-2">
-      <h3 className="text-sm font-medium text-white/80">Apparence</h3>
+      <h3 className="text-sm font-medium text-white/80">{t('settings.appearance')}</h3>
       <div className="flex gap-2">
         {OPTIONS.map(([value, label]) => (
           <button
@@ -24,7 +26,7 @@ export function ThemeSettingsSection() {
                 : 'border-white/10 text-white/50 hover:text-white/80 hover:bg-white/5'
             }`}
           >
-            {label}
+            {t(label)}
           </button>
         ))}
       </div>

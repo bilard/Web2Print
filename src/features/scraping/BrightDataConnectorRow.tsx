@@ -5,8 +5,10 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { useTranslation } from '@/lib/i18n'
 
 export function BrightDataConnectorRow() {
+  const { t } = useTranslation()
   // État du test de connectivité. Bright Data est server-side via Cloud Function,
   // donc pas d'input de clé ; on test la chaîne complète Browser → CF → BD via
   // une URL bénigne (httpbin.org/html, ~500 bytes, ~1s, coûte ~$0.003).
@@ -55,7 +57,7 @@ export function BrightDataConnectorRow() {
     } catch {
       // `config/*` est verrouillé côté client (secret d'infra partagé) → la Function
       // lit le token via Secret Manager / Admin SDK. Plus modifiable depuis l'app.
-      toast.error('Token Bright Data géré côté serveur (Secret Manager) — non modifiable depuis l\'app.')
+      toast.error(t('brightdata.serverManaged.token'))
       setTokenEditing(false)
     } finally {
       setTokenSaving(false)
@@ -70,7 +72,7 @@ export function BrightDataConnectorRow() {
       await setDoc(doc(db, 'config/brightdata'), { browserWs: wsValue.trim() }, { merge: true })
       setWsEditing(false)
     } catch {
-      toast.error('Endpoint Scraping Browser géré côté serveur — non modifiable depuis l\'app.')
+      toast.error(t('brightdata.serverManaged.ws'))
       setWsEditing(false)
     } finally {
       setWsSaving(false)
@@ -90,10 +92,10 @@ export function BrightDataConnectorRow() {
       const err = getLastBrightDataError()
       if (err) {
         setTestStatus('error')
-        if (err.code === 'unauthenticated') setTestMessage('Auth Firebase requise — connecte-toi à l\'app')
-        else if (err.code === 'balance_exhausted') setTestMessage('Balance Bright Data épuisée — recharger sur le dashboard')
-        else if (err.code === 'not_configured') setTestMessage('Cloud Function non déployée ou secret BRIGHTDATA_API_TOKEN absent')
-        else if (err.code === 'rate_limited') setTestMessage('Rate limit Bright Data atteint — réessayer dans 1 min')
+        if (err.code === 'unauthenticated') setTestMessage(t('brightdata.err.auth'))
+        else if (err.code === 'balance_exhausted') setTestMessage(t('brightdata.err.balance'))
+        else if (err.code === 'not_configured') setTestMessage(t('brightdata.err.notDeployed'))
+        else if (err.code === 'rate_limited') setTestMessage(t('brightdata.err.rateLimit'))
         else if (err.code === 'timeout') setTestMessage('Timeout 90s — Bright Data a mis trop de temps')
         else setTestMessage(err.message.slice(0, 120))
       } else if (html) {
@@ -102,11 +104,11 @@ export function BrightDataConnectorRow() {
         if (success) {
           setTestMessage(`OK · ${success.country} · ${(success.lengthBytes / 1024).toFixed(0)} KB · ${(success.durationMs / 1000).toFixed(1)}s`)
         } else {
-          setTestMessage('Connecté')
+          setTestMessage(t('brightdata.connected'))
         }
       } else {
         setTestStatus('error')
-        setTestMessage('Pas de contenu retourné')
+        setTestMessage(t('brightdata.err.empty'))
       }
     } catch (e) {
       setTestStatus('error')
@@ -127,7 +129,7 @@ export function BrightDataConnectorRow() {
               {testStatus === 'error' && <XCircle className="w-3 h-3 text-red-400" />}
               {testStatus === 'idle' && <span className="text-[8px] text-violet-300/60 px-1.5 py-0.5 rounded bg-violet-500/10 border border-violet-500/30 uppercase tracking-wider">Server-side</span>}
             </div>
-            <p className="text-[10px] text-white/30">Bypass CAPTCHA premium (DataDome/Akamai/PerimeterX) — token éditable ci-dessous</p>
+            <p className="text-[10px] text-white/30">{t('brightdata.desc')}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -135,7 +137,7 @@ export function BrightDataConnectorRow() {
             href="https://brightdata.com/cp/zones"
             target="_blank"
             rel="noopener noreferrer"
-            title="Gérer les zones (Bright Data dashboard)"
+            title={t('brightdata.zones')}
             className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5"
           >
             <KeyRound className="w-3 h-3" />
@@ -144,16 +146,16 @@ export function BrightDataConnectorRow() {
             href="https://brightdata.fr/cp/billing/invoices"
             target="_blank"
             rel="noopener noreferrer"
-            title="Facturation & solde (nouvel onglet)"
+            title={t('apikey.billing')}
             className="flex items-center gap-1 text-[10px] text-amber-400/70 hover:text-amber-300 transition-colors"
           >
-            <span>Billing</span>
+            <span>{t('apikey.billing.short')}</span>
             <ExternalLink className="w-3 h-3" />
           </a>
           <button
             onClick={handleTest}
             disabled={testStatus === 'testing'}
-            title="Tester la Cloud Function (coûte ~$0.003)"
+            title={t('brightdata.testCf')}
             className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5 disabled:opacity-30"
           >
             <Wifi className="w-3 h-3" />
@@ -180,7 +182,7 @@ export function BrightDataConnectorRow() {
               type={tokenVisible ? 'text' : 'password'}
               value={tokenValue}
               onChange={(e) => setTokenValue(e.target.value)}
-              placeholder="Coller le token Bright Data API…"
+              placeholder={t('brightdata.tokenPlaceholder')}
               className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-violet-500/50"
               autoFocus
             />
@@ -206,7 +208,7 @@ export function BrightDataConnectorRow() {
           onClick={() => setTokenEditing(true)}
           className="text-left text-xs font-mono text-white/40 bg-white/5 rounded-lg px-2.5 py-1.5 hover:bg-white/10 transition-colors truncate flex items-center justify-between"
         >
-          <span>{tokenValue ? tokenMasked : '— aucun token configuré (clique pour saisir)'}</span>
+          <span>{tokenValue ? tokenMasked : t('brightdata.noToken')}</span>
           {tokenValue && <span className="text-[9px] text-violet-300/60 ml-2">Firestore</span>}
         </button>
       )}
@@ -216,7 +218,7 @@ export function BrightDataConnectorRow() {
           config/brightdata.browserWs, lu par la Cloud Function scrapeWithScrapingBrowser. */}
       {tokenLoaded && (
         <div className="flex flex-col gap-1.5 pt-1.5 border-t border-white/[0.06]">
-          <p className="text-[10px] text-white/40 font-medium">Scraping Browser (tier 2 — DataDome durs)</p>
+          <p className="text-[10px] text-white/40 font-medium">{t('brightdata.browser')}</p>
           {wsEditing ? (
             <>
               <div className="flex gap-1.5">
@@ -258,8 +260,8 @@ export function BrightDataConnectorRow() {
       )}
 
       <div className="text-[10px] text-white/30 bg-white/5 rounded-lg px-2.5 py-1.5 leading-relaxed">
-        <span className="text-white/50 font-medium">Note :</span> le token saisi ici prend le pas sur le Secret Manager.
-        Pour le scope BD requis : <span className="text-white/60">Account read</span> (solde) + <span className="text-white/60">Zone read/write</span> (scraping).
+        <span className="text-white/50 font-medium">{t('brightdata.note')}</span>{t('brightdata.note.body')}
+        <span className="text-white/60">Account read</span>{t('brightdata.note.balance')}<span className="text-white/60">Zone read/write</span>{t('brightdata.note.scraping')}
       </div>
     </div>
   )

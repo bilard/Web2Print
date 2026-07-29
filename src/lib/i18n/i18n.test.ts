@@ -30,6 +30,25 @@ describe('catalogues i18n', () => {
   })
 })
 
+describe('intégrité des caractères', () => {
+  // Un script Python qui applique `.decode('unicode_escape')` à de l'UTF-8
+  // produit du mojibake (« Aperçu » → « AperÃ§u »). Ça passe tsc, le lint ET
+  // les tests de parité : seul un contrôle sur les octets l'attrape. Vécu le
+  // 29/07/2026 — 47 valeurs FR corrompues sont parties en production.
+  const MOJIBAKE = /Ã.|Â[«»·]|â€|â\u0080/
+
+  it("ne contient aucune séquence d'encodage cassée", () => {
+    const offences: string[] = []
+    for (const [catalogue, entries] of [['fr', fr], ['en', en]] as const) {
+      for (const [key, value] of Object.entries(entries)) {
+        const hit = value.match(MOJIBAKE)
+        if (hit) offences.push(`${catalogue}.${key} → « ${hit[0]} »`)
+      }
+    }
+    expect(offences, `mojibake détecté :\n${offences.join('\n')}`).toEqual([])
+  })
+})
+
 describe('orthographe britannique (en-GB)', () => {
   // Graphies américaines à bannir.
   //

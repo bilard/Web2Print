@@ -7,13 +7,17 @@ import { listBrowserActWorkflows } from '@/features/scraping/core/browserAct'
  * without needing to rebuild the app.
  */
 
+import { t, type TranslationKey } from '@/lib/i18n'
+
 const STORAGE_PREFIX = 'designstudio_apikey_'
 
 interface ApiKeyConfig {
   id: string
-  label: string
+  /** ⚠️ CLÉS de traduction, pas du texte : ce registre alimente Réglages ET
+   *  l'assistant d'onboarding, tous deux traduits. */
+  labelKey: TranslationKey
   envVar: string
-  description: string
+  descriptionKey: TranslationKey
   /** Liens externes vers la console du provider — affichés sous chaque ligne dans Settings.
    *  - `manage` : page où l'utilisateur trouve/régénère sa clé API
    *  - `billing` : page d'achat de crédits / gestion d'abonnement */
@@ -23,9 +27,9 @@ interface ApiKeyConfig {
 export const API_KEYS: ApiKeyConfig[] = [
   {
     id: 'gemini',
-    label: 'Image IA (Gemini)',
+    labelKey: 'apikeys.gemini.label',
     envVar: 'VITE_GEMINI_API_KEY',
-    description: 'Clé API Google Gemini pour la génération d\'images IA et tâches rapides',
+    descriptionKey: 'apikeys.gemini.desc',
     links: {
       manage: 'https://aistudio.google.com/app/apikey',
       billing: 'https://console.cloud.google.com/billing',
@@ -33,9 +37,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'anthropic',
-    label: 'Claude (Anthropic)',
+    labelKey: 'apikeys.anthropic.label',
     envVar: 'VITE_ANTHROPIC_API_KEY',
-    description: 'Clé API Anthropic — Claude Opus 4.7 pour le raisonnement (briefs, panier, deck)',
+    descriptionKey: 'apikeys.anthropic.desc',
     links: {
       manage: 'https://console.anthropic.com/settings/keys',
       billing: 'https://console.anthropic.com/settings/billing',
@@ -43,9 +47,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'openai',
-    label: 'OpenAI',
+    labelKey: 'apikeys.openai.label',
     envVar: 'VITE_OPENAI_API_KEY',
-    description: 'Clé API OpenAI (optionnel — fallback ou tâches spécifiques)',
+    descriptionKey: 'apikeys.openai.desc',
     links: {
       manage: 'https://platform.openai.com/api-keys',
       billing: 'https://platform.openai.com/settings/organization/billing/overview',
@@ -53,9 +57,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'deepseek',
-    label: 'DeepSeek',
+    labelKey: 'apikeys.deepseek.label',
     envVar: 'VITE_DEEPSEEK_API_KEY',
-    description: 'Clé API DeepSeek — DeepSeek Chat (V4) et Reasoner',
+    descriptionKey: 'apikeys.deepseek.desc',
     links: {
       manage: 'https://platform.deepseek.com/api_keys',
       billing: 'https://platform.deepseek.com/top_up',
@@ -63,9 +67,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'qwen',
-    label: 'Qwen (Alibaba DashScope)',
+    labelKey: 'apikeys.qwen.label',
     envVar: 'VITE_QWEN_API_KEY',
-    description: 'Clé API DashScope — Qwen Max / Plus / Turbo',
+    descriptionKey: 'apikeys.qwen.desc',
     links: {
       manage: 'https://dashscope.console.aliyun.com/apiKey',
       billing: 'https://billing-cost.console.aliyun.com/finance/expense-report',
@@ -73,9 +77,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'kimi',
-    label: 'Kimi (Moonshot)',
+    labelKey: 'apikeys.kimi.label',
     envVar: 'VITE_KIMI_API_KEY',
-    description: 'Clé Kimi Code — endpoint OpenAI-compatible (kimi-for-coding)',
+    descriptionKey: 'apikeys.kimi.desc',
     links: {
       manage: 'https://platform.moonshot.cn/console/api-keys',
       billing: 'https://platform.moonshot.cn/console/account',
@@ -83,9 +87,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'glm',
-    label: 'GLM (Z.ai)',
+    labelKey: 'apikeys.glm.label',
     envVar: 'VITE_GLM_API_KEY',
-    description: 'Clé Z.ai — GLM (endpoint OpenAI-compatible)',
+    descriptionKey: 'apikeys.glm.desc',
     links: {
       manage: 'https://z.ai/manage-apikey/apikey-list',
       billing: 'https://z.ai/manage-apikey/apikey-list',
@@ -93,9 +97,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'openrouter',
-    label: 'OpenRouter',
+    labelKey: 'apikeys.openrouter.label',
     envVar: 'VITE_OPENROUTER_API_KEY',
-    description: 'Clé OpenRouter — accès unifié à Claude, GPT, Gemini, Llama, Mistral, Qwen, DeepSeek… via une seule API',
+    descriptionKey: 'apikeys.openrouter.desc',
     links: {
       manage: 'https://openrouter.ai/settings/keys',
       billing: 'https://openrouter.ai/credits',
@@ -103,27 +107,27 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'firebase_api',
-    label: 'Firebase API Key',
+    labelKey: 'apikeys.firebaseApi.label',
     envVar: 'VITE_FIREBASE_API_KEY',
-    description: 'Clé API Firebase (authentification & services)',
+    descriptionKey: 'apikeys.firebaseApi.desc',
   },
   {
     id: 'firebase_project',
-    label: 'Firebase Project ID',
+    labelKey: 'apikeys.firebaseProject.label',
     envVar: 'VITE_FIREBASE_PROJECT_ID',
-    description: 'Identifiant du projet Firebase',
+    descriptionKey: 'apikeys.firebaseProject.desc',
   },
   {
     id: 'firebase_storage',
-    label: 'Firebase Storage Bucket',
+    labelKey: 'apikeys.firebaseStorage.label',
     envVar: 'VITE_FIREBASE_STORAGE_BUCKET',
-    description: 'Bucket de stockage Firebase',
+    descriptionKey: 'apikeys.firebaseStorage.desc',
   },
   {
     id: 'google_vision',
-    label: 'Google Cloud Vision',
+    labelKey: 'apikeys.googleVision.label',
     envVar: 'VITE_GOOGLE_VISION_API_KEY',
-    description: 'Clé API Google Cloud Vision — détection de texte (OCR) pour Image/PDF → SVG éditable',
+    descriptionKey: 'apikeys.googleVision.desc',
     links: {
       manage: 'https://console.cloud.google.com/apis/credentials',
       billing: 'https://console.cloud.google.com/billing',
@@ -131,9 +135,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'removebg',
-    label: 'Remove.bg',
+    labelKey: 'apikeys.removebg.label',
     envVar: 'VITE_REMOVEBG_KEY',
-    description: 'Clé API Remove.bg pour la suppression de fond',
+    descriptionKey: 'apikeys.removebg.desc',
     links: {
       manage: 'https://www.remove.bg/dashboard',
       billing: 'https://www.remove.bg/pricing',
@@ -141,9 +145,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'jina',
-    label: 'Jina AI',
+    labelKey: 'apikeys.jina.label',
     envVar: 'VITE_JINA_API_KEY',
-    description: 'Clé API Jina — scraping et recherche produit',
+    descriptionKey: 'apikeys.jina.desc',
     links: {
       manage: 'https://jina.ai/api-dashboard/key-manager',
       billing: 'https://jina.ai/api-dashboard',
@@ -151,9 +155,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'firecrawl',
-    label: 'Firecrawl',
+    labelKey: 'apikeys.firecrawl.label',
     envVar: 'VITE_FIRECRAWL_API_KEY',
-    description: 'Clé API Firecrawl — scraping anti-bot fallback',
+    descriptionKey: 'apikeys.firecrawl.desc',
     links: {
       manage: 'https://www.firecrawl.dev/app/api-keys',
       billing: 'https://www.firecrawl.dev/app/t/LsorYp6HkrX/usage',
@@ -161,9 +165,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'browseract',
-    label: 'BrowserAct',
+    labelKey: 'apikeys.browseract.label',
     envVar: 'VITE_BROWSERACT_API_KEY',
-    description: 'Clé API BrowserAct — exécute des « bots » construits dans leur tableau de bord (Amazon, LinkedIn, sites à anti-bot dur). ⚠ Ce n’est pas un moteur de scraping : uniquement le node « BrowserAct (bot) » d’un workflow.',
+    descriptionKey: 'apikeys.browseract.desc',
     links: {
       manage: 'https://www.browseract.com/dashboard',
       billing: 'https://www.browseract.com/pricing',
@@ -171,9 +175,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'scrapfly',
-    label: 'ScrapFly',
+    labelKey: 'apikeys.scrapfly.label',
     envVar: 'VITE_SCRAPFLY_API_KEY',
-    description: 'Clé API ScrapFly — réservée pour intégration future via Cloud Function (pas de CORS browser-side)',
+    descriptionKey: 'apikeys.scrapfly.desc',
     links: {
       manage: 'https://scrapfly.io/dashboard/api',
       billing: 'https://scrapfly.io/dashboard/billing',
@@ -181,9 +185,9 @@ export const API_KEYS: ApiKeyConfig[] = [
   },
   {
     id: 'higgsfield',
-    label: 'Higgsfield',
+    labelKey: 'apikeys.higgsfield.label',
     envVar: 'VITE_HIGGSFIELD_API_KEY',
-    description: 'Génération image/vidéo IA (Soul, Kling, Veo, DoP…). Format de clé « KEY_ID:KEY_SECRET ».',
+    descriptionKey: 'apikeys.higgsfield.desc',
     links: {
       manage: 'https://cloud.higgsfield.ai/api-keys',
       billing: 'https://cloud.higgsfield.ai/credits',
@@ -238,7 +242,7 @@ export function getEnvDefault(id: string): string {
   const config = API_KEYS.find((k) => k.id === id)
   if (!config) return ''
   const val = (import.meta.env[config.envVar] as string) ?? ''
-  return val ? maskKey(val) : '(non définie)'
+  return val ? maskKey(val) : t('apitest.notSet')
 }
 
 /** Mask a key: show first 8 + last 4 chars */
@@ -252,14 +256,14 @@ export type ApiTestResult = 'ok' | 'error' | 'empty'
 /** URL d'action proposée à l'utilisateur (ex: page de recharge en cas de
  *  crédits épuisés). Le SettingsPanel affiche un bouton externe quand fourni. */
 export interface ApiTestAction {
-  label: string
+  labelKey: TranslationKey
   url: string
 }
 
 /** Test connectivity for an API key */
 export async function testApiKey(id: string): Promise<{ status: ApiTestResult; message: string; action?: ApiTestAction }> {
   const key = getApiKey(id)
-  if (!key) return { status: 'empty', message: 'Clé non définie' }
+  if (!key) return { status: 'empty', message: t('apitest.undefined') }
 
   try {
     if (id === 'gemini') {
@@ -268,7 +272,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
       )
       if (res.ok) {
-        return { status: 'ok', message: 'Connecté à Image IA' }
+        return { status: 'ok', message: t('apitest.connected.gemini') }
       }
       if (res.status === 401 || res.status === 403) {
         return { status: 'error', message: 'Clé invalide ou non autorisée' }
@@ -284,7 +288,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
       )
       // 400 = "MISSING_ID_TOKEN" is expected (means the key works)
       if (res.ok || res.status === 400) {
-        return { status: 'ok', message: 'Connecté à Firebase Auth' }
+        return { status: 'ok', message: t('apitest.connected.firebase') }
       }
       return { status: 'error', message: 'Clé invalide' }
     }
@@ -310,7 +314,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         headers: { Authorization: `Bearer ${key}` },
       })
       if (res.ok) {
-        return { status: 'ok', message: 'Connecté à DeepSeek' }
+        return { status: 'ok', message: t('apitest.connected.deepseek') }
       }
       if (res.status === 401 || res.status === 403) {
         return { status: 'error', message: 'Clé invalide ou non autorisée' }
@@ -325,7 +329,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         { headers: { Authorization: `Bearer ${key}` } },
       )
       if (res.ok) {
-        return { status: 'ok', message: 'Connecté à DashScope (Qwen)' }
+        return { status: 'ok', message: t('apitest.connected.qwen') }
       }
       if (res.status === 401 || res.status === 403) {
         return { status: 'error', message: 'Clé invalide ou non autorisée' }
@@ -344,15 +348,15 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         const remaining = json.data?.limit_remaining
         const limit = json.data?.limit
         const usage = json.data?.usage
-        const buyAction: ApiTestAction = { label: 'Acheter des crédits', url: 'https://openrouter.ai/credits' }
+        const buyAction: ApiTestAction = { labelKey: 'apikeys.buyCredits', url: 'https://openrouter.ai/credits' }
         if (typeof remaining === 'number') {
           const totalSuffix = typeof limit === 'number' ? ` / $${limit}` : ''
-          if (remaining <= 0) return { status: 'error', message: `Crédits épuisés${totalSuffix}`, action: buyAction }
+          if (remaining <= 0) return { status: 'error', message: t('apitest.credits.exhausted', { suffix: totalSuffix }), action: buyAction }
           if (remaining < 0.5) return { status: 'ok', message: `⚠ $${remaining.toFixed(2)}${totalSuffix} restants`, action: buyAction }
-          return { status: 'ok', message: `Connecté — $${remaining.toFixed(2)}${totalSuffix} restants` }
+          return { status: 'ok', message: t('apitest.credits.remaining', { remaining: remaining.toFixed(2), suffix: totalSuffix }) }
         }
-        if (typeof usage === 'number') return { status: 'ok', message: `Connecté — usage $${usage.toFixed(4)}` }
-        return { status: 'ok', message: 'Connecté à OpenRouter' }
+        if (typeof usage === 'number') return { status: 'ok', message: t('apitest.usage', { usage: usage.toFixed(4) }) }
+        return { status: 'ok', message: t('apitest.connected.openrouter') }
       }
       if (res.status === 401 || res.status === 403) {
         return { status: 'error', message: 'Clé invalide ou non autorisée' }
@@ -367,7 +371,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         headers: { Authorization: `Bearer ${key}` },
       })
       if (res.ok) {
-        return { status: 'ok', message: 'Connecté à Kimi Code' }
+        return { status: 'ok', message: t('apitest.connected.kimi') }
       }
       if (res.status === 401 || res.status === 403) {
         return { status: 'error', message: 'Clé invalide ou non autorisée' }
@@ -386,7 +390,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         headers: { Authorization: `Bearer ${key}` },
       })
       if (res.ok) {
-        return { status: 'ok', message: 'Connecté à GLM (Z.ai)' }
+        return { status: 'ok', message: t('apitest.connected.glm') }
       }
       if (res.status === 401 || res.status === 403) {
         return { status: 'error', message: 'Clé invalide ou non autorisée' }
@@ -406,7 +410,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         body: JSON.stringify({ requests: [] }),
       })
       if (res.ok || res.status === 400) {
-        return { status: 'ok', message: 'Connecté à Cloud Vision' }
+        return { status: 'ok', message: t('apitest.connected.vision') }
       }
       if (res.status === 401 || res.status === 403) {
         return { status: 'error', message: 'Clé invalide ou API Vision non activée sur le projet GCP' }
@@ -422,7 +426,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
       if (res.ok) {
         const data = await res.json()
         const credits = data?.data?.attributes?.credits?.total ?? '?'
-        return { status: 'ok', message: `Connecté — ${credits} crédits` }
+        return { status: 'ok', message: t('apitest.credits.count', { credits }) }
       }
       if (res.status === 403) return { status: 'error', message: 'Clé invalide' }
       return { status: 'error', message: `Erreur ${res.status}` }
@@ -468,17 +472,17 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         }
 
         const { remaining, total } = findCredits(json)
-        const buyAction: ApiTestAction = { label: 'Acheter des crédits', url: 'https://www.firecrawl.dev/pricing' }
+        const buyAction: ApiTestAction = { labelKey: 'apikeys.buyCredits', url: 'https://www.firecrawl.dev/pricing' }
         if (typeof remaining === 'number') {
           const totalSuffix = typeof total === 'number' ? ` / ${total}` : ''
-          if (remaining === 0) return { status: 'error', message: `0 crédit${totalSuffix} — recharge nécessaire`, action: buyAction }
-          if (remaining < 50) return { status: 'ok', message: `⚠ ${remaining}${totalSuffix} crédits restants`, action: buyAction }
-          return { status: 'ok', message: `Connecté — ${remaining}${totalSuffix} crédits` }
+          if (remaining === 0) return { status: 'error', message: t('apitest.credits.zero', { suffix: totalSuffix }), action: buyAction }
+          if (remaining < 50) return { status: 'ok', message: `⚠ ${t('apitest.credits.left', { remaining, suffix: totalSuffix })}`, action: buyAction }
+          return { status: 'ok', message: t('apitest.credits.left', { remaining, suffix: totalSuffix }) }
         }
-        return { status: 'ok', message: 'Connecté (solde non renvoyé par l\'API — voir console)' }
+        return { status: 'ok', message: t('apitest.credits.noBalance') }
       }
       if (res.status === 401 || res.status === 403) return { status: 'error', message: 'Clé invalide' }
-      if (res.status === 402) return { status: 'error', message: 'Crédits épuisés (HTTP 402)', action: { label: 'Acheter des crédits', url: 'https://www.firecrawl.dev/pricing' } }
+      if (res.status === 402) return { status: 'error', message: t('apitest.credits.http402'), action: { labelKey: 'apikeys.buyCredits', url: 'https://www.firecrawl.dev/pricing' } }
       return { status: 'error', message: `Erreur ${res.status}` }
     }
 
@@ -490,13 +494,13 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
       if (workflows.length === 0) {
         return {
           status: 'error',
-          message: 'Clé valide, mais aucun bot dans le compte — un bot est obligatoire pour scraper',
-          action: { label: 'Créer un bot', url: 'https://www.browseract.com/dashboard' },
+          message: t('apitest.noBot'),
+          action: { labelKey: 'apitest.createBot', url: 'https://www.browseract.com/dashboard' },
         }
       }
       // Le NOM ne suffit pas : c'est l'ID que réclament la carte de site et le node.
       const named = workflows.slice(0, 3).map((w) => `${w.name} (${w.id})`).join(' · ')
-      return { status: 'ok', message: `Connecté — ${workflows.length} bot(s) : ${named}${workflows.length > 3 ? ' …' : ''}` }
+      return { status: 'ok', message: t('apitest.bots', { count: workflows.length, names: named, more: workflows.length > 3 ? ' …' : '' }) }
     }
 
     if (id === 'scrapfly') {
@@ -504,7 +508,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
       // Format-only validation : la clé doit commencer par scp-live- ou scp-test-.
       // Note : la clé est inactive tant qu'on ne wire pas la Cloud Function proxy.
       if (/^scp-(live|test)-[a-f0-9]{32,}$/i.test(key)) {
-        return { status: 'ok', message: 'Format valide (en attente câblage Cloud Function)' }
+        return { status: 'ok', message: t('apitest.formatValid.cf') }
       }
       return { status: 'error', message: 'Format attendu : scp-live-... ou scp-test-...' }
     }
@@ -513,13 +517,13 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
       // Higgsfield : SDK server-side only (clé refusée côté navigateur). Pas de test
       // live possible ici → validation de format « KEY_ID:KEY_SECRET ».
       if (/^[^\s:]+:[^\s:]+$/.test(key.trim())) {
-        return { status: 'ok', message: 'Format valide (utilisée par le node Higgsfield, côté serveur)' }
+        return { status: 'ok', message: t('apitest.formatValid.higgsfield') }
       }
       return { status: 'error', message: 'Format attendu : KEY_ID:KEY_SECRET' }
     }
 
     return { status: 'ok', message: 'OK' }
   } catch {
-    return { status: 'error', message: 'Erreur réseau' }
+    return { status: 'error', message: t('apitest.networkError') }
   }
 }

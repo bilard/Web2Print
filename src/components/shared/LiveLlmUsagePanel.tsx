@@ -8,6 +8,7 @@ import { useIsOwner } from '@/features/auth/useAuth'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
 import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
 import { recordAudit } from '@/lib/auditLog'
+import { useTranslation } from '@/lib/i18n'
 
 const USD_TO_EUR = 0.92
 
@@ -113,6 +114,7 @@ function BudgetEditor({
   value: number | null
   onChange: (v: number | null) => void
 }) {
+  const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value !== null ? String(value) : '')
 
@@ -135,11 +137,11 @@ function BudgetEditor({
     return (
       <button
         onClick={() => setEditing(true)}
-        title={`Définir un seuil d'alerte mensuel pour ${label} — local, ne recharge pas le compte`}
+        title={t('live.setAlert.title', { label })}
         className="group inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-indigo-300 transition-colors"
       >
         <Pencil className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100" />
-        {typeof value === 'number' ? `Alerte : ${value.toFixed(2)} $/mois` : 'Définir alerte'}
+        {typeof value === 'number' ? t('live.alertValue', { value: value.toFixed(2) }) : t('live.setAlert')}
       </button>
     )
   }
@@ -181,6 +183,7 @@ function ProgressBar({ pct, kind }: { pct: number; kind: BadgeKind }) {
 }
 
 export function LiveLlmUsagePanel() {
+  const { t } = useTranslation()
   const { data: stats, isLoading, isFetching, refetch, dataUpdatedAt } = useUsageStats()
   const { data: bdAccount, isFetching: isFetchingBd, refetch: refetchBd, error: bdError } = useBrightDataAccount()
   // Le compte Bright Data est partagé (un seul abonnement) → ses infos financières
@@ -358,23 +361,23 @@ export function LiveLlmUsagePanel() {
 
   return (
     <aside
-      aria-label="Consommation IA en temps réel"
+      aria-label={t('live.aria')}
       className="bg-white/[0.02] border border-white/10 rounded-2xl p-5 flex flex-col gap-4 h-full max-h-full min-h-0"
     >
       <header className="flex items-start justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <Activity className="w-4 h-4 text-emerald-400" />
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-white">Consommation IA & Scraping — live</h3>
+            <h3 className="text-sm font-semibold text-white">{t('live.title')}</h3>
             <p className="text-[10px] text-white/30">
-              Vue globale des coûts ce mois · {updatedLabel ? `MAJ ${updatedLabel}` : '—'}
+              {t('live.subtitle', { updated: updatedLabel ? t('live.updated', { time: updatedLabel }) : '—' })}
             </p>
           </div>
         </div>
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          title="Rafraîchir maintenant"
+          title={t('live.refresh')}
           className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-white/50 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3 h-3 ${isFetching ? 'animate-spin' : ''}`} />
@@ -384,26 +387,26 @@ export function LiveLlmUsagePanel() {
       {/* Bandeau global */}
       <div className="grid grid-cols-3 gap-2 text-[10px] shrink-0">
         <div className="bg-white/[0.03] rounded-lg px-3 py-2 border border-white/5">
-          <p className="text-white/30 uppercase tracking-wider">Total ce mois</p>
+          <p className="text-white/30 uppercase tracking-wider">{t('live.totalMonth')}</p>
           <p className="text-base font-mono text-white mt-0.5">{formatEur(grandTotalUsd)}</p>
           <p className="text-[9px] text-white/30 mt-0.5">≈ ${grandTotalUsd.toFixed(4)} USD</p>
         </div>
         <div className="bg-white/[0.03] rounded-lg px-3 py-2 border border-white/5">
-          <p className="text-white/30 uppercase tracking-wider">Tokens in / out</p>
+          <p className="text-white/30 uppercase tracking-wider">{t('live.tokens')}</p>
           <p className="text-base font-mono text-white mt-0.5">
             {formatTokens(grandTokensIn)}
             <span className="text-white/30"> / </span>
             {formatTokens(grandTokensOut)}
           </p>
-          <p className="text-[9px] text-white/30 mt-0.5">tous providers cumulés</p>
+          <p className="text-[9px] text-white/30 mt-0.5">{t('live.allProviders')}</p>
         </div>
         <div className="bg-white/[0.03] rounded-lg px-3 py-2 border border-white/5">
-          <p className="text-white/30 uppercase tracking-wider">Alertes</p>
+          <p className="text-white/30 uppercase tracking-wider">{t('live.alerts')}</p>
           {overCount === 0 && warnCount === 0 ? (
-            <p className="text-base font-mono text-emerald-400 mt-0.5">OK</p>
+            <p className="text-base font-mono text-emerald-400 mt-0.5">{t('live.ok')}</p>
           ) : (
             <p className="text-base font-mono mt-0.5">
-              {overCount > 0 && <span className="text-red-400">{overCount} dépassé{overCount > 1 ? 's' : ''}</span>}
+              {overCount > 0 && <span className="text-red-400">{t(overCount === 1 ? 'live.overCount.one' : 'live.overCount.other', { count: overCount })}</span>}
               {overCount > 0 && warnCount > 0 && <span className="text-white/30"> · </span>}
               {warnCount > 0 && <span className="text-amber-400">{warnCount} proche{warnCount > 1 ? 's' : ''}</span>}
             </p>
@@ -417,11 +420,11 @@ export function LiveLlmUsagePanel() {
         {/* Tableau par provider */}
         <div className="flex flex-col">
         <div className="grid grid-cols-12 gap-2 px-2 py-1.5 text-[9px] text-white/30 uppercase tracking-wider border-b border-white/5">
-          <div className="col-span-3">Provider</div>
-          <div className="col-span-3 text-right">Tokens (in / out)</div>
-          <div className="col-span-2 text-right">Coût</div>
-          <div className="col-span-2 text-right">Budget dispo</div>
-          <div className="col-span-2 text-right">Statut</div>
+          <div className="col-span-3">{t('live.col.provider')}</div>
+          <div className="col-span-3 text-right">{t('live.col.tokens')}</div>
+          <div className="col-span-2 text-right">{t('live.col.cost')}</div>
+          <div className="col-span-2 text-right">{t('live.col.budget')}</div>
+          <div className="col-span-2 text-right">{t('live.col.status')}</div>
         </div>
 
         {isLoading && (
@@ -450,7 +453,7 @@ export function LiveLlmUsagePanel() {
                     href={meta.topup}
                     target="_blank"
                     rel="noopener noreferrer"
-                    title={`Ouvrir la console ${meta.label} — recharger les crédits chez le provider`}
+                    title={t('live.providerConsole', { label: meta.label })}
                     className="inline-flex items-center gap-1 text-xs font-medium text-white/80 hover:text-indigo-300 transition-colors truncate"
                   >
                     <span className="truncate">{row.title}</span>
@@ -483,21 +486,21 @@ export function LiveLlmUsagePanel() {
                 ) : balances?.[row.provider] != null ? (
                   <>
                     <p className="text-[11px] font-mono text-emerald-300/90">${(balances[row.provider] as number).toFixed(2)}</p>
-                    <p className="text-[8px] text-white/30">solde API</p>
+                    <p className="text-[8px] text-white/30">{t('live.apiBalance')}</p>
                   </>
                 ) : row.budget != null ? (
                   <>
                     <p className="text-[11px] font-mono text-white/70">${Math.max(0, row.budget - row.costUsd).toFixed(2)}</p>
-                    <p className="text-[8px] text-white/30">restant</p>
+                    <p className="text-[8px] text-white/30">{t('live.remaining')}</p>
                   </>
                 ) : (
-                  <span className="text-[10px] text-white/20" title="Aucune API de solde ; saisis un budget via « Définir alerte »">—</span>
+                  <span className="text-[10px] text-white/20" title={t('live.noBalanceApi')}>—</span>
                 )}
               </div>
               <div className="col-span-2 flex flex-col items-end gap-1">
                 {row.isSubRow ? (
                   // Sous-ligne : pas de budget/alerte propre (partagé avec le provider).
-                  <span className="text-[9px] text-white/30 italic">budget partagé</span>
+                  <span className="text-[9px] text-white/30 italic">{t('live.sharedBudget')}</span>
                 ) : (
                   <>
                     <StatusBadge kind={row.kind} pct={row.pct} />
@@ -525,12 +528,12 @@ export function LiveLlmUsagePanel() {
             données financières personnelles du compte partagé → propriétaire uniquement. */}
         {isOwner && (<>
         <div className="grid grid-cols-12 gap-2 px-2 pt-3 pb-1.5 text-[9px] text-white/30 uppercase tracking-wider border-t border-white/10 mt-2">
-          <div className="col-span-9">Scraping (server-side)</div>
+          <div className="col-span-9">{t('live.scraping')}</div>
           <div className="col-span-3 flex justify-end items-center gap-1.5">
             <button
               onClick={() => refetchBd()}
               disabled={isFetchingBd}
-              title="Rafraîchir le statut Bright Data"
+              title={t('live.bd.refresh')}
               className="text-white/30 hover:text-orange-300 transition-colors disabled:opacity-40"
             >
               <RefreshCw className={`w-2.5 h-2.5 ${isFetchingBd ? 'animate-spin' : ''}`} />
@@ -539,7 +542,7 @@ export function LiveLlmUsagePanel() {
               href="https://brightdata.com/cp/dashboard"
               target="_blank"
               rel="noopener noreferrer"
-              title="Ouvrir le dashboard Bright Data"
+              title={t('live.bd.dashboard')}
               className="text-white/30 hover:text-orange-300 transition-colors inline-flex items-center gap-0.5"
             >
               dashboard <ExternalLink className="w-2.5 h-2.5" />
@@ -563,7 +566,7 @@ export function LiveLlmUsagePanel() {
                     href="https://brightdata.com/cp/setting/billing"
                     target="_blank"
                     rel="noopener noreferrer"
-                    title="Ouvrir la facturation Bright Data — recharger le solde"
+                    title={t('live.bd.billing')}
                     className="inline-flex items-center gap-1 text-xs font-medium text-white/80 hover:text-orange-300 transition-colors truncate"
                   >
                     <span className="truncate">Bright Data</span>
@@ -595,12 +598,12 @@ export function LiveLlmUsagePanel() {
               {/* Solde */}
               <div className="bg-white/[0.03] rounded-md px-2 py-1.5 border border-white/5">
                 <div className="flex items-center justify-between gap-1">
-                  <p className="text-[9px] text-white/30 uppercase tracking-wider">Solde</p>
+                  <p className="text-[9px] text-white/30 uppercase tracking-wider">{t('live.balance')}</p>
                   <a
                     href="https://brightdata.com/cp/setting/billing"
                     target="_blank"
                     rel="noopener noreferrer"
-                    title="Recharger le solde Bright Data"
+                    title={t('live.bd.topUp')}
                     className="text-[9px] text-white/30 hover:text-orange-300 inline-flex items-center gap-0.5 transition-colors"
                   >
                     recharger <ExternalLink className="w-2 h-2" />
@@ -626,7 +629,7 @@ export function LiveLlmUsagePanel() {
 
               {/* Consommé */}
               <div className="bg-white/[0.03] rounded-md px-2 py-1.5 border border-white/5">
-                <p className="text-[9px] text-white/30 uppercase tracking-wider">Consommé</p>
+                <p className="text-[9px] text-white/30 uppercase tracking-wider">{t('live.consumed')}</p>
                 <p className={`text-sm font-mono leading-tight ${brightDataRow.consumedUsd > 0 ? 'text-white/90' : 'text-white/30'}`}>
                   ${brightDataRow.consumedUsd.toFixed(2)}
                 </p>
@@ -642,7 +645,7 @@ export function LiveLlmUsagePanel() {
 
               {/* Prochaine facture */}
               <div className="bg-white/[0.03] rounded-md px-2 py-1.5 border border-white/5">
-                <p className="text-[9px] text-white/30 uppercase tracking-wider">Prochaine facture</p>
+                <p className="text-[9px] text-white/30 uppercase tracking-wider">{t('live.nextInvoice')}</p>
                 <p className="text-sm font-mono text-white/90 leading-tight">
                   {formatBillingDate(brightDataRow.nextBillingDate)}
                 </p>
@@ -650,14 +653,14 @@ export function LiveLlmUsagePanel() {
                   {brightDataRow.nextBillingDate
                     ? brightDataRow.nextBillingDateFromApi
                       ? <span className="text-emerald-400/70">live</span>
-                      : 'estimé (1er du mois)'
+                      : t('live.estimated')
                     : '—'}
                 </p>
               </div>
 
               {/* Statut compte */}
               <div className="bg-white/[0.03] rounded-md px-2 py-1.5 border border-white/5">
-                <p className="text-[9px] text-white/30 uppercase tracking-wider">Statut compte</p>
+                <p className="text-[9px] text-white/30 uppercase tracking-wider">{t('live.accountStatus')}</p>
                 {brightDataRow.accountStatus ? (
                   <>
                     <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider mt-0.5 ${
@@ -674,7 +677,7 @@ export function LiveLlmUsagePanel() {
                 ) : (
                   <>
                     <p className="text-sm font-mono text-white/20 leading-tight">—</p>
-                    <p className="text-[9px] font-mono text-white/30">token sans scope Account</p>
+                    <p className="text-[9px] font-mono text-white/30">{t('live.noAccountScope')}</p>
                   </>
                 )}
               </div>
@@ -698,14 +701,14 @@ export function LiveLlmUsagePanel() {
                   ) : null)}
                   {bdAccount?.rawBalanceResponse !== undefined && (
                     <div className="mt-1 pt-1 border-t border-white/5">
-                      <p className="text-amber-300/80 mb-0.5">Réponse brute /customer/balance :</p>
+                      <p className="text-amber-300/80 mb-0.5">{t('live.rawResponse')}</p>
                       <pre className="text-white/60 whitespace-pre-wrap break-all max-h-32 overflow-auto">
                         {JSON.stringify(bdAccount.rawBalanceResponse, null, 2)}
                       </pre>
                     </div>
                   )}
                   <div className="mt-1 pt-1 border-t border-white/5 text-white/40">
-                    Côté serveur : <code className="text-white/60">firebase functions:log --only getBrightDataAccount</code>
+                    {t('live.serverSide')}<code className="text-white/60">firebase functions:log --only getBrightDataAccount</code>
                   </div>
                 </div>
               </details>
@@ -716,8 +719,8 @@ export function LiveLlmUsagePanel() {
         {/* Hint quand la CF n'est pas déployée — guide vers le déploiement */}
         {!isLoading && bdError && (
           <div className="px-2 py-1.5 text-[9px] text-amber-300/60 leading-relaxed">
-            Données live BD indisponibles ({(bdError as Error).message?.slice(0, 80) || 'CF non déployée'}).
-            Déployer : <code className="text-amber-300/80">firebase deploy --only functions:getBrightDataAccount</code>
+            {t('live.bdUnavailable', { message: (bdError as Error).message?.slice(0, 80) || t('live.cfNotDeployed') })}
+            {t('live.deploy')}<code className="text-amber-300/80">firebase deploy --only functions:getBrightDataAccount</code>
           </div>
         )}
         </>)}
@@ -725,7 +728,7 @@ export function LiveLlmUsagePanel() {
         {/* Section Traitement d'images — Remove.bg : conso PER-USER (clé propre à
             chaque utilisateur) → visible par tous, pas owner-gated comme Bright Data. */}
         <div className="grid grid-cols-12 gap-2 px-2 pt-3 pb-1.5 text-[9px] text-white/30 uppercase tracking-wider border-t border-white/10 mt-2">
-          <div className="col-span-9">Traitement d'images</div>
+          <div className="col-span-9">{t('live.imaging')}</div>
         </div>
 
         {!isLoading && (
@@ -739,20 +742,20 @@ export function LiveLlmUsagePanel() {
                     href="https://www.remove.bg/pricing"
                     target="_blank"
                     rel="noopener noreferrer"
-                    title="Ouvrir la facturation Remove.bg — recharger les crédits"
+                    title={t('live.removebg.billing')}
                     className="inline-flex items-center gap-1 text-xs font-medium text-white/80 hover:text-sky-300 transition-colors truncate"
                   >
                     <span className="truncate">Remove.bg</span>
                     <ExternalLink className="w-2.5 h-2.5 text-white/40 hover:text-sky-300 shrink-0" />
                   </a>
-                  <p className="text-[9.5px] text-white/30 font-mono truncate">Suppression de fond d'images</p>
+                  <p className="text-[9.5px] text-white/30 font-mono truncate">{t('live.removebg.desc')}</p>
                 </div>
               </div>
               <a
                 href="https://www.remove.bg/pricing"
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Recharger les crédits Remove.bg"
+                title={t('live.removebg.topUp')}
                 className="text-[9px] text-white/30 hover:text-sky-300 inline-flex items-center gap-0.5 transition-colors"
               >
                 recharger <ExternalLink className="w-2 h-2" />
@@ -763,7 +766,7 @@ export function LiveLlmUsagePanel() {
             <div className="grid grid-cols-2 gap-1.5">
               {/* Consommé */}
               <div className="bg-white/[0.03] rounded-md px-2 py-1.5 border border-white/5">
-                <p className="text-[9px] text-white/30 uppercase tracking-wider">Consommé (estimé)</p>
+                <p className="text-[9px] text-white/30 uppercase tracking-wider">{t('live.consumedEstimated')}</p>
                 <p className={`text-sm font-mono leading-tight ${removeBgRow.consumedUsd > 0 ? 'text-white/90' : 'text-white/30'}`}>
                   ${removeBgRow.consumedUsd.toFixed(2)}
                 </p>
@@ -772,12 +775,12 @@ export function LiveLlmUsagePanel() {
 
               {/* Images / crédits */}
               <div className="bg-white/[0.03] rounded-md px-2 py-1.5 border border-white/5">
-                <p className="text-[9px] text-white/30 uppercase tracking-wider">Images traitées</p>
+                <p className="text-[9px] text-white/30 uppercase tracking-wider">{t('live.imagesProcessed')}</p>
                 <p className={`text-sm font-mono leading-tight ${removeBgRow.images > 0 ? 'text-white/90' : 'text-white/30'}`}>
                   {removeBgRow.images}
                 </p>
                 <p className="text-[9px] font-mono text-white/30">
-                  {removeBgRow.credits > 0 ? `${removeBgRow.credits.toFixed(2).replace(/\.00$/, '')} crédit${removeBgRow.credits >= 2 ? 's' : ''}` : 'ce mois'}
+                  {removeBgRow.credits > 0 ? t(removeBgRow.credits < 2 ? 'live.credits.one' : 'live.credits.other', { count: removeBgRow.credits.toFixed(2).replace(/\.00$/, '') }) : t('live.thisMonth')}
                 </p>
               </div>
             </div>
@@ -787,7 +790,7 @@ export function LiveLlmUsagePanel() {
         {/* Section Génération IA — Higgsfield : solde géré par le dashboard
             (Clerk Commerce), non accessible par clé API → lien direct. */}
         <div className="grid grid-cols-12 gap-2 px-2 pt-3 pb-1.5 text-[9px] text-white/30 uppercase tracking-wider border-t border-white/10 mt-2">
-          <div className="col-span-9">Génération IA</div>
+          <div className="col-span-9">{t('live.aiGeneration')}</div>
         </div>
 
         <div className="flex items-center justify-between gap-2 flex-wrap px-2 py-3 border-b border-white/5 last:border-0">
@@ -795,14 +798,14 @@ export function LiveLlmUsagePanel() {
             <Clapperboard className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
             <div className="min-w-0">
               <p className="text-xs font-medium text-white/80">Higgsfield</p>
-              <p className="text-[9.5px] text-white/30 font-mono truncate">Image (Soul) / vidéo (DoP) — solde sur le dashboard</p>
+              <p className="text-[9.5px] text-white/30 font-mono truncate">{t('live.higgsfield.desc')}</p>
             </div>
           </div>
           <a
             href="https://cloud.higgsfield.ai/credits"
             target="_blank"
             rel="noopener noreferrer"
-            title="Solde & conso réels (dashboard Higgsfield)"
+            title={t('live.higgsfield.dashboard')}
             className="text-[10px] text-indigo-300/90 hover:text-indigo-200 inline-flex items-center gap-1 border border-indigo-500/30 bg-indigo-500/10 rounded-md px-2 py-1 transition-colors shrink-0"
           >
             Voir le solde <ExternalLink className="w-2.5 h-2.5" />
@@ -811,13 +814,13 @@ export function LiveLlmUsagePanel() {
       </div>
 
       <p className="text-[9px] text-white/25 leading-relaxed">
-        Données agrégées depuis Firestore — collections{' '}
+        {t('live.footer.aggregated')}
         <code className="text-white/40">aiUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>,{' '}
-        <code className="text-white/40">brightDataUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code> et{' '}
+        <code className="text-white/40">brightDataUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>,{' '}
         <code className="text-white/40">removebgUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>.
-        Auto-refresh toutes les 15 s. Les <strong className="text-white/60">alertes</strong> sont des seuils mensuels{' '}
-        <em>locaux</em> : elles déclenchent un warning à ≥ 80 % et un état "limite atteinte" à ≥ 100 %, mais ne rechargent pas le compte chez le provider.
-        Pour recharger réellement les crédits, cliquer sur le nom du provider <ExternalLink className="inline w-2 h-2 -translate-y-px" />.
+        {t('live.footer.autoRefresh')}<strong className="text-white/60">{t('live.alertsSuffix')}</strong>
+        {t('live.footer.thresholds')}<em>{t('live.localSuffix')}</em>
+        {t('live.footer.explain')}<ExternalLink className="inline w-2 h-2 -translate-y-px" />.
       </p>
       </div>
     </aside>

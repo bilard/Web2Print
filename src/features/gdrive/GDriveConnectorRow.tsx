@@ -4,8 +4,10 @@ import { GDriveLogo } from '@/features/ai/providerLogos'
 import { useGoogleDrive } from '@/features/gdrive/useGoogleDrive'
 import { useGDriveStore } from '@/stores/gdrive.store'
 import { useGDriveSettings } from '@/features/gdrive/useGDriveSettings'
+import { useTranslation } from '@/lib/i18n'
 
 export function GDriveConnectorRow() {
+  const { t } = useTranslation()
   const { connected, accountEmail } = useGDriveStore()
   const { connectDrive, disconnect: runtimeDisconnect } = useGoogleDrive()
   const { savedEmail, loading, saveSettings, clearSettings } = useGDriveSettings()
@@ -46,11 +48,11 @@ export function GDriveConnectorRow() {
                     ? <XCircle className="w-3 h-3 text-amber-400" />
                     : <XCircle className="w-3 h-3 text-white/20" />}
             </div>
-            <p className="text-[10px] text-white/30">Accès aux fichiers Google Sheets</p>
+            <p className="text-[10px] text-white/30">{t('gdrive.desc')}</p>
           </div>
         </div>
         {(isConnected || savedEmail) && (
-          <button onClick={handleDisconnect} title="Déconnecter" className="text-white/20 hover:text-red-400 transition-colors p-1 rounded hover:bg-white/5">
+          <button onClick={handleDisconnect} title={t('gdrive.disconnect')} className="text-white/20 hover:text-red-400 transition-colors p-1 rounded hover:bg-white/5">
             <LogOut className="w-3 h-3" />
           </button>
         )}

@@ -3,6 +3,7 @@ import { Eye, EyeOff, CheckCircle2, KeyRound, CreditCard } from 'lucide-react'
 import { HiggsfieldLogo } from '@/features/ai/providerLogos'
 import { getApiKey, setApiKey, resetApiKey, getApiKeyLinks } from '@/lib/apiKeys'
 import { API_KEYS_HYDRATED_EVENT } from '@/features/settings/useApiKeysSync'
+import { useTranslation } from '@/lib/i18n'
 
 /**
  * Connecteur Higgsfield — DEUX champs séparés (ID + Secret) pour la clarté, mais
@@ -15,6 +16,7 @@ function splitCreds(v: string): { id: string; secret: string } {
 }
 
 export function HiggsfieldConnectorRow() {
+  const { t } = useTranslation()
   const [id, setId] = useState('')
   const [secret, setSecret] = useState('')
   const [secretVisible, setSecretVisible] = useState(false)
@@ -56,18 +58,18 @@ export function HiggsfieldConnectorRow() {
               <p className="text-xs font-medium text-white/70">Higgsfield</p>
               {complete && <CheckCircle2 className="w-3 h-3 text-green-400" />}
             </div>
-            <p className="text-[10px] text-white/30">Génération image (Soul) / vidéo (DoP) — node workflow</p>
+            <p className="text-[10px] text-white/30">{t('higgsfield.desc')}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {links?.manage && (
-            <a href={links.manage} target="_blank" rel="noopener noreferrer" title="Créer / gérer la clé API"
+            <a href={links.manage} target="_blank" rel="noopener noreferrer" title={t('higgsfield.manage')}
               className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5">
               <KeyRound className="w-3 h-3" />
             </a>
           )}
           {links?.billing && (
-            <a href={links.billing} target="_blank" rel="noopener noreferrer" title="Crédits / facturation"
+            <a href={links.billing} target="_blank" rel="noopener noreferrer" title={t('higgsfield.credits')}
               className="text-white/20 hover:text-emerald-400 transition-colors p-1 rounded hover:bg-white/5">
               <CreditCard className="w-3 h-3" />
             </a>
@@ -102,7 +104,7 @@ export function HiggsfieldConnectorRow() {
             onClick={handleSave}
             className="text-xs bg-indigo-500 hover:bg-indigo-600 text-[#fff] px-3 py-1.5 rounded-lg transition-colors"
           >
-            {saved ? 'Enregistré ✓' : 'Sauvegarder'}
+            {saved ? t('apikey.saved') : 'Sauvegarder'}
           </button>
         </div>
       </div>
