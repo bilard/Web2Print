@@ -26,7 +26,13 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
     const nameCol = cols.find((c) => c.isPrimary) ?? cols.find((c) => /nom|d[ée]signation|libell[ée]|name|titre/i.test(c.label))
     const descCol = cols.find((c) => /desc/i.test(c.label))
     const refs = `[${nameCol?.label ?? 'Nom'}]${descCol ? ` [${descCol.label}]` : ''}`
-    return `Photo packshot professionnelle du produit sur fond blanc, éclairage studio, avec une ombre légère en perspective, style catalogue e-commerce : ${refs}\nNe pas mettre de texte du champ : nom ou de la description dans l'image, je veux le produit seul`
+    // ⚠ Distinguer le texte AJOUTÉ (légendes, listes de caractéristiques —
+    // toujours mal orthographiées) du lettrage porté PAR le produit (étiquette,
+    // marque), qui doit rester. Une simple négation en fin de phrase ne suffisait
+    // pas : les visuels sortaient avec un titre et des puces fautives incrustés.
+    return `Photo packshot professionnelle du produit SEUL, sur fond blanc uni, éclairage studio, ombre portée douce, cadrage centré, style catalogue e-commerce : ${refs}\n\n`
+      + `IMPORTANT : n'ajoute AUCUN texte par-dessus l'image — aucun titre, aucune légende, aucune liste de caractéristiques, aucune puce, aucun prix, aucun filigrane. `
+      + `Le seul lettrage visible est celui imprimé sur le produit lui-même (étiquette, marque), qui doit rester net et crédible. Rien d'autre que le produit dans le cadre.`
   })
   const [destKey, setDestKey] = useState<string>(imageCols[0]?.key ?? '__new__')
   const [onlyEmpty, setOnlyEmpty] = useState(true)
