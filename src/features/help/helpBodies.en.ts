@@ -2456,4 +2456,677 @@ Under **Settings → Connectors → Telegram**, switch the **daily digest** on: 
     `### See also
 
 \`/flow\` and \`/run\` rely on the **Workflows** module: the AI generation and the execution are the same as in the workflow editor.`,
+
+  [`IBS-Studio embarque sa **propre mesure d'audience** : un petit script (beacon) enregistre chaque page vue du **site public** (accueil, promo, docs) et de l'**application**, l'envoie à une Cloud Function, et tout est stocké dans **votre** Firestore. Pas de Google Analytics, pas de cookie tiers, pas de données qui sortent de chez vous.
+
+Le tableau de bord vit dans l'onglet **Analytics** du module **Utilisateurs & rôles** (réservé aux administrateurs et au propriétaire). Une version mobile installable, la PWA **« Pulse »**, affiche les mêmes données sur votre téléphone.`]:
+    `IBS-Studio carries **its own audience measurement**: a small script (a beacon) records every page view of the **public site** (home page, promo, docs) and of the **application**, sends it to a Cloud Function, and everything is stored in **your** Firestore. No Google Analytics, no third-party cookie, no data leaving your premises.
+
+The dashboard lives in the **Analytics** tab of the **Users & roles** module (reserved for administrators and the owner). An installable mobile version, the **"Pulse"** PWA, shows the same data on your phone.`,
+
+  [`### Périodes, filtres et indicateurs — le bandeau épinglé
+
+En haut du tableau de bord, un bandeau regroupe la période, les filtres et les indicateurs clés. Il reste **épinglé en haut pendant le défilement** : vous gardez le contexte sous les yeux en parcourant le graphe, le journal ou la carte.
+
+- **Période** : **Aujourd'hui** (depuis minuit, heure locale), **7 j**, **30 j**, **90 j** (par défaut), **12 mois**, ou **Perso** (dates « Du / Au » libres).
+- **Filtres** : **Zone** (Site web / Application), **Appareil** (Ordinateur, Mobile, Tablette), **Pays**, **Page**, **Source** et **Utilisateur** (comptes connectés, résolus en nom/e-mail).
+- **Indicateurs** : **Pages vues**, **Visiteurs uniques**, **Sessions** et **Durée moy. session**, chacun avec sa **variation en %** par rapport à la période précédente de même durée (vert = hausse, rouge = baisse). Pour « Aujourd'hui », la comparaison est équitable : hier, sur la même tranche horaire déjà écoulée.
+
+Tous les panneaux du tableau de bord (graphe, journal, carte, pays…) réagissent instantanément à la période et aux filtres choisis.`]:
+    `### Periods, filters and indicators — the pinned bar
+
+At the top of the dashboard, a bar gathers the period, the filters and the key indicators. It stays **pinned at the top while you scroll**: the context remains in view as you go through the chart, the log or the map.
+
+- **Period**: **Today** (since midnight, local time), **7 d**, **30 d**, **90 d** (the default), **12 months**, or **Custom** (free "From / To" dates).
+- **Filters**: **Area** (Website / Application), **Device** (Desktop, Mobile, Tablet), **Country**, **Page**, **Source** and **User** (signed-in accounts, resolved to a name/e-mail).
+- **Indicators**: **Page views**, **Unique visitors**, **Sessions** and **Avg. session length**, each with its **percentage change** against the preceding period of the same length (green = up, red = down). For "Today", the comparison is fair: yesterday, over the same slice of hours already elapsed.
+
+Every panel of the dashboard (chart, log, map, countries…) reacts instantly to the period and filters you choose.`,
+
+  [`### Le graphe de trafic
+
+La courbe du haut trace l'activité sur la période :
+
+- **Pages vues** (aplat indigo) et **Visiteurs** (cyan), point par point.
+- **Connexions (cumul)** (pointillés orange, axe de droite) : la courbe grimpe jusqu'au **total de connexions de la période**, affiché directement dans la légende.
+
+Le regroupement se fait par **jour local** (pas UTC) : un événement compte le même jour dans le graphe et dans le journal. Sur la période **Aujourd'hui**, la granularité passe automatiquement **à l'heure** — vous voyez l'activité heure par heure depuis minuit.`]:
+    `### The traffic chart
+
+The curve at the top plots the activity over the period:
+
+- **Page views** (indigo area) and **Visitors** (cyan), point by point.
+- **Sign-ins (cumulative)** (orange dashes, right-hand axis): the curve climbs to the **period's total number of sign-ins**, shown directly in the legend.
+
+Grouping is done by **local day** (not UTC): an event counts on the same day in the chart and in the log. Over the **Today** period, the granularity automatically drops **to the hour** — you see the activity hour by hour since midnight.`,
+
+  [`### Le journal de consultation
+
+Le panneau **« Journal de consultation »** répond à la question *qui · quand · quelle page*, avec les colonnes **Utilisateur · Page · Appareil · Lieu · Date & heure** (l'appareil précise le système et le navigateur ; le lieu affiche « Ville, Pays » en clair).
+
+- **Groupé par utilisateur** (mode par défaut) : un bloc repliable par personne (cliquez l'en-tête pour le replier), avec le nombre de consultations, la date de la dernière, et une **pagination propre à chaque groupe** (8 lignes par page).
+- Les **visiteurs anonymes** forment un bloc « Anonyme » **sous-groupé par pays**, triés par nombre de consultations — avec un lien « +N autres » pour déplier chaque pays.
+- Le bouton **« Liste »** bascule en chronologie simple paginée ; **« Grouper »** revient au mode groupé.
+- Chaque colonne a son **filtre déroulant** (utilisateur, page, appareil, pays, jour), cumulable avec les filtres du bandeau.`]:
+    `### The browsing log
+
+The **"Browsing log"** panel answers the *who · when · which page* question, with the columns **User · Page · Device · Location · Date & time** (the device gives the operating system and the browser; the location shows "City, Country" in plain words).
+
+- **Grouped by user** (the default mode): one collapsible block per person (click the header to fold it), with the number of views, the date of the latest one, and **pagination of its own for each group** (8 rows per page).
+- **Anonymous visitors** form an "Anonymous" block **sub-grouped by country**, sorted by number of views — with a "+N more" link to unfold each country.
+- The **"List"** button switches to a simple paginated chronology; **"Group"** returns to the grouped mode.
+- Each column has its own **drop-down filter** (user, page, device, country, day), which stacks with the filters in the bar.`,
+
+  [`### Pays, villes et carte du monde
+
+- La **carte du monde** situe les connexions ville par ville.
+- Le panneau **« Pays »** liste les villes **groupées par pays**, pays **triés par visites décroissantes**, avec pour chacun le total, une barre de proportion, la **date de dernière visite** et le détail des villes (repliable au chevron).
+- Cliquez un pays dans le panneau : il est **mis en évidence sur la carte** (et inversement) ; recliquez pour désélectionner.
+
+La géolocalisation se fait par adresse IP via la base **DB-IP** (licence CC BY 4.0, attribution affichée sous le tableau de bord) — là encore sans appel à un service tiers au moment de la visite.`]:
+    `### Countries, cities and the world map
+
+- The **world map** places the connections city by city.
+- The **"Countries"** panel lists the cities **grouped by country**, countries **sorted by descending visits**, each with its total, a proportion bar, the **date of the last visit** and the detail of the cities (collapsible from the chevron).
+- Click a country in the panel: it is **highlighted on the map** (and the other way round); click again to deselect.
+
+Geolocation is done by IP address using the **DB-IP** database (CC BY 4.0 licence, attribution shown under the dashboard) — again with no call to a third-party service at the moment of the visit.`,
+
+  [`### « Trafic en direct » et alertes Telegram
+
+Le panneau **« Trafic en direct »** affiche le flux **temps réel** des visites, au même format que Telegram : 🟢 une ligne par page vue d'un **utilisateur connecté** (nom résolu), 🔵 l'arrivée d'un **visiteur anonyme** — avec la zone, la page, le drapeau et le lieu, la date et l'heure. Vos propres visites n'y figurent jamais.
+
+Le bouton **« Alertes Telegram »** (cloche, en haut à droite) active ou coupe le **log live sur Telegram** : le propriétaire reçoit une notification à chaque nouvelle session anonyme et une ligne par page consultée par un utilisateur connecté. L'interrupteur agit **côté serveur avec effet immédiat** (sans redéploiement), et vos propres visites ne sont jamais notifiées — vous ne vous suivez pas vous-même.`]:
+    `### "Live traffic" and Telegram alerts
+
+The **"Live traffic"** panel shows the **real-time** stream of visits, in the same format as Telegram: 🟢 one line per page viewed by a **signed-in user** (with the name resolved), 🔵 the arrival of an **anonymous visitor** — with the area, the page, the flag and the location, the date and the time. Your own visits never appear there.
+
+The **"Telegram alerts"** button (the bell, top right) switches the **live log on Telegram** on or off: the owner gets a notification for every new anonymous session and one line per page viewed by a signed-in user. The switch takes effect **server-side immediately** (with no redeployment), and your own visits are never notified — you do not follow yourself.`,
+
+  [`### Export CSV, « Supprimer le résultat » et « Vider »
+
+- **CSV** : télécharge les consultations de la période et des filtres affichés, pour analyse dans un tableur.
+- **« Supprimer le résultat »** : supprime **définitivement** les consultations correspondant à la période **et aux filtres affichés** (zone, appareil, pays, page, source, utilisateur) — le reste de l'historique n'est pas touché. Une confirmation indique le nombre exact de lignes concernées. Idéal pour nettoyer des visites de test.
+- **« Vider »** : supprime **tout** l'historique de consultation, toutes périodes confondues (avec confirmation). Irréversible.`]:
+    `### CSV export, "Delete the result" and "Clear"
+
+- **CSV**: downloads the views for the period and filters on display, for analysis in a spreadsheet.
+- **"Delete the result"**: **permanently** deletes the views matching the period **and the filters on display** (area, device, country, page, source, user) — the rest of the history is untouched. A confirmation tells you the exact number of rows concerned. Ideal for cleaning up test visits.
+- **"Clear"**: deletes the **whole** browsing history, across every period (with a confirmation). Irreversible.`,
+
+  [`### « Pulse » — la PWA mobile
+
+**Pulse** est la version mobile du tableau de bord, à l'adresse **/pulse** : connexion Google puis contrôle du rôle administrateur, et vous retrouvez **les mêmes données** — indicateurs, tendance, filtres et périodes, journal groupé par utilisateur, pays en clair et trafic en direct — dans une interface **responsive** pensée pour le téléphone (le mode paysage et la tablette réorganisent les sections).
+
+Installez-la sur l'écran d'accueil comme une application : elle se **met à jour automatiquement** au réveil dès qu'une nouvelle version du site est déployée, sans réinstallation.`]:
+    `### "Pulse" — the mobile PWA
+
+**Pulse** is the mobile version of the dashboard, at **/pulse**: sign in with Google, the administrator role is checked, and you find **the same data** — indicators, trend, filters and periods, log grouped by user, countries in plain words and live traffic — in a **responsive** interface designed for the phone (landscape mode and tablets reorganise the sections).
+
+Install it on your home screen like an application: it **updates itself automatically** on waking as soon as a new version of the site is deployed, with no reinstallation.`,
+
+  [`### Bon à savoir
+
+- Le tableau de bord est **réservé aux administrateurs et au propriétaire** (onglet Analytics du module Utilisateurs & rôles, et PWA Pulse).
+- Le **propriétaire est exclu du tracking** : ses visites ne polluent ni les statistiques, ni le trafic en direct, ni les alertes Telegram.
+- Les données sont **hébergées chez vous** (votre Firestore) et collectées par votre propre Cloud Function : **rien n'est transmis à un service d'analytics tiers**.
+- La géolocalisation par IP s'appuie sur la base **DB-IP** (CC BY 4.0), consultée côté serveur.`]:
+    `### Worth knowing
+
+- The dashboard is **reserved for administrators and the owner** (the Analytics tab of the Users & roles module, and the Pulse PWA).
+- The **owner is excluded from tracking**: their visits pollute neither the statistics, nor the live traffic, nor the Telegram alerts.
+- The data is **hosted on your side** (your Firestore) and collected by your own Cloud Function: **nothing is passed to a third-party analytics service**.
+- IP geolocation relies on the **DB-IP** database (CC BY 4.0), consulted server-side.`,
+
+  [`Les **Paramètres** regroupent toute la configuration de ton compte, en **six onglets** : Profil, IA, Connecteurs, Cookies, Statistiques et Firebase. On les ouvre via l'**engrenage** en bas de la barre latérale, près de ton nom (pas dans le menu principal).`]:
+    `**Settings** gathers your account's whole configuration into **six tabs**: Profile, AI, Connectors, Cookies, Statistics and Firebase. You open them from the **cog** at the bottom of the sidebar, next to your name (not from the main menu).`,
+
+  [`### Onglet Profil — identité et apparence
+
+- Ton **profil** (nom, e-mail du compte Google).
+- La section **Apparence** bascule le thème : **Clair**, **Sombre** (défaut) ou **Système**. Le choix est mémorisé sur ton compte et te suit d'un poste à l'autre. Le thème se bascule aussi depuis la palette **⌘K**.`]:
+    `### Profile tab — identity and appearance
+
+- Your **profile** (name, Google account e-mail).
+- The **Appearance** section switches the theme: **Light**, **Dark** (the default) or **System**. The choice is remembered on your account and follows you from machine to machine. The theme can also be switched from the **⌘K** palette.`,
+
+  [`### Onglet IA — clés et modèles
+
+- Renseigne les **clés API** de chaque fournisseur (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter) et **teste-les** d'un clic.
+- Choisis le **modèle** de chaque fournisseur.
+- Définis la **cascade de raisonnement** : l'ordre dans lequel les fournisseurs sont essayés (le premier qui répond gagne, les suivants servent de secours).
+- Le bouton **« Mettre à jour tous les LLM »** réaligne toute la sélection sur les dernières versions du catalogue.
+
+> 🔒 **Tes clés API sont isolées par compte** : elles sont synchronisées sur ton profil (Firestore) et purgées localement à la déconnexion — pas de fuite entre comptes sur une même machine.`]:
+    `### AI tab — keys and models
+
+- Enter the **API keys** for each provider (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter) and **test them** in one click.
+- Choose each provider's **model**.
+- Set the **reasoning cascade**: the order in which the providers are tried (the first to answer wins, the rest act as fallbacks).
+- The **"Update all LLMs"** button realigns the whole selection with the catalogue's latest versions.
+
+> 🔒 **Your API keys are isolated per account**: they are synchronised onto your profile (Firestore) and purged locally when you sign out — no leaking between accounts on the same machine.`,
+
+  [`### Budgets IA et proxy serveur
+
+Les appels LLM passent par un **proxy serveur** : la requête part **sans ta clé API**, le serveur ajoute la clé (lue sur ton profil) et **applique ton budget mensuel**.
+
+- **Budget mensuel bloquant** : une fois le plafond du fournisseur atteint, l'appel est **refusé** côté serveur — il n'y a *pas* de repli en direct. C'est la garde-fou contre les dérives de coût.
+- Un **seuil d'alerte mensuel** se règle par fournisseur dans le **panneau « Conso LLM en direct »** (colonne de droite sur la page Paramètres). Ce seuil est local et sert d'alerte (pastilles de couleur selon le pourcentage atteint) — il ne recharge jamais ton compte fournisseur.
+- Le même panneau suit aussi un **budget Bright Data** (scraping).
+- Les requêtes multimodales trop lourdes (> ~9 Mo) basculent automatiquement en appel direct depuis le navigateur.`]:
+    `### AI budgets and the server proxy
+
+LLM calls go through a **server proxy**: the request leaves **without your API key**, the server adds the key (read from your profile) and **applies your monthly budget**.
+
+- **A blocking monthly budget**: once the provider's ceiling is reached, the call is **refused** server-side — there is *no* direct fallback. This is the guard against runaway costs.
+- A **monthly alert threshold** can be set per provider in the **"Live LLM usage"** panel (the right-hand column of the Settings page). That threshold is local and acts as a warning (coloured dots according to the percentage reached) — it never tops your provider account up.
+- The same panel also tracks a **Bright Data budget** (scraping).
+- Multimodal requests that are too heavy (over about 9 MB) automatically switch to a direct call from the browser.`,
+
+  [`### Onglet Connecteurs`]:
+    `### Connectors tab`,
+
+  [`### Onglet Cookies
+
+Gère les **cookies de session** pour scraper des sites **B2B derrière login**. Colle les cookies copiés depuis ton navigateur ; ils sont injectés dans les requêtes de scraping. Leur validité est limitée dans le temps (à re-coller régulièrement).`]:
+    `### Cookies tab
+
+Manages the **session cookies** used to scrape **B2B sites behind a login**. Paste the cookies copied from your browser; they are injected into the scraping requests. Their validity is time-limited (you will need to paste them again regularly).`,
+
+  [`### Onglet Données — schéma Firestore (réservé au propriétaire)
+
+Un **diagramme entité-relation (ERD)** de la base : chaque **collection** Firestore est une table affichant tous ses **champs**, ses clés **PK/FK** et ses **relations** (avec cardinalités). Le diagramme est interactif — zoom, recadrage, et **glisser les tables** : leur position est **mémorisée sur ton compte**.
+
+**Double-clic** sur une table interrogeable ouvre un panneau de **données live** (lecture en temps réel via \`onSnapshot\`). Pratique pour inspecter l'état réel de la base sans ouvrir la console Firebase.`]:
+    `### Data tab — Firestore schema (owner only)
+
+An **entity-relationship diagram (ERD)** of the database: each Firestore **collection** is a table showing all its **fields**, its **PK/FK** keys and its **relationships** (with cardinalities). The diagram is interactive — zoom, reframe, and **drag the tables**: their positions are **remembered on your account**.
+
+**Double-clicking** a queryable table opens a **live data** panel (read in real time through \`onSnapshot\`). Handy for inspecting the database's real state without opening the Firebase console.`,
+
+  [`### Onglets Statistiques & Firebase
+
+- **Statistiques** : nombre de projets, exports du mois, **stockage Firestore** (barre de progression), **coût IA estimé en EUR par fournisseur** avec les tokens entrants/sortants consommés, et le suivi des requêtes **Bright Data** (quota scraping). Bouton **Rafraîchir** pour recalculer. En bas, le **journal des runs de pipelines** (enrichissement PIM, décomposition Image/PDF → SVG) liste chaque exécution avec son statut, sa durée et le détail des étapes ou de l'erreur — l'« étage logs prod » sans ouvrir la console Firestore.
+- **Firebase** : configuration du backend partagé (clés du projet Firebase) — **réservé au propriétaire**.`]:
+    `### Statistics & Firebase tabs
+
+- **Statistics**: number of projects, exports this month, **Firestore storage** (a progress bar), **estimated AI cost in EUR per provider** with the input/output tokens consumed, and the tracking of **Bright Data** requests (the scraping quota). A **Refresh** button recalculates. At the bottom, the **pipeline run log** (PIM enrichment, Image/PDF → SVG break-apart) lists each execution with its status, its duration and the detail of the steps or of the error — the "production logs tier", without opening the Firestore console.
+- **Firebase**: configuration of the shared back end (the Firebase project keys) — **owner only**.`,
+
+  [`### Qui voit quoi
+
+L'onglet **Firebase** est réservé au **propriétaire**. Les onglets **Connecteurs** et **Cookies** dépendent des permissions accordées dans *Utilisateurs & rôles*. **Profil**, **IA** et **Statistiques** restent accessibles à tous.`]:
+    `### Who sees what
+
+The **Firebase** tab is reserved for the **owner**. The **Connectors** and **Cookies** tabs depend on the permissions granted in *Users & roles*. **Profile**, **AI** and **Statistics** remain available to everyone.`,
+
+  [`Cet écran permet au **propriétaire** de contrôler **qui accède à quoi**. Les droits sont organisés par **rôles** (jeux de permissions réutilisables) et peuvent être ajustés **utilisateur par utilisateur**.
+
+> ⚠️ Le module **« Utilisateurs & rôles »** n'est visible que par le **propriétaire** (compte admin).`]:
+    `This screen lets the **owner** control **who has access to what**. Rights are organised into **roles** (reusable sets of permissions) and can be adjusted **user by user**.
+
+> ⚠️ The **"Users & roles"** module is visible only to the **owner** (the admin account).`,
+
+  [`### Onboarding d'un nouvel utilisateur
+
+1. La personne se connecte via Google : son compte est d'abord **« en attente »** (aucun accès).
+2. Dans l'onglet **Utilisateurs**, tu lui **attribues un rôle**.
+3. À sa prochaine ouverture, l'app n'affiche que les modules autorisés par son rôle.`]:
+    `### Onboarding a new user
+
+1. The person signs in with Google: their account starts out **"pending"** (no access at all).
+2. In the **Users** tab, you **assign them a role**.
+3. Next time they open the app, only the modules their role allows are shown.`,
+
+  [`### Onglet « Utilisateurs »`]:
+    `### "Users" tab`,
+
+  [`### Onglet « Rôles »
+
+Crée et édite les rôles de l'équipe via une **matrice de permissions** par module. Trois vues : **Cartes** (par module), **Arbre** (hiérarchie) et **Carte mentale** (graphe).
+
+Les permissions sont **hiérarchiques** : la visibilité d'un module (*« voir »*) commande ses actions. Décocher *« voir »* désactive toutes les actions du module ; cocher une action réactive automatiquement *« voir »*.`]:
+    `### "Roles" tab
+
+Create and edit the team's roles through a **permission matrix** per module. Three views: **Cards** (by module), **Tree** (hierarchy) and **Mind map** (graph).
+
+Permissions are **hierarchical**: a module's visibility (*"view"*) governs its actions. Unticking *"view"* disables every action of the module; ticking an action automatically re-enables *"view"*.`,
+
+  [`### Onglets « Journal » et « Analytics »
+
+Deux onglets d'observation complètent la gestion des droits :
+- **Journal** — l'historique de qui a fait quoi (détails : section **Journal d'audit & Mon activité**).
+- **Analytics** — la fréquentation du site et de l'app : visites, pays, journal de consultation, trafic en direct (détails : section **Fréquentation & trafic**).`]:
+    `### "Log" and "Analytics" tabs
+
+Two observation tabs round out the management of rights:
+- **Log** — the history of who did what (details: the **Audit log & My activity** section).
+- **Analytics** — the traffic on the site and the app: visits, countries, browsing log, live traffic (details: the **Visits & traffic** section).`,
+
+  [`### Les rôles sont entièrement personnalisés
+
+Aucun rôle n'est livré par défaut : tu **crées toi-même** les rôles dont l'équipe a besoin (un nom + une sélection de permissions), tu les **renommes** et les **supprimes** librement.
+
+> ⚠️ Si tu **supprimes un rôle** encore attribué à quelqu'un, cette personne **repasse automatiquement « en attente »** (plus aucun accès) jusqu'à ce que tu lui en donnes un nouveau. Pense à réaffecter avant de supprimer.`]:
+    `### Roles are entirely your own
+
+No role ships by default: you **create** the roles your team needs yourself (a name + a selection of permissions), and you **rename** and **delete** them freely.
+
+> ⚠️ If you **delete a role** that is still assigned to someone, that person **automatically returns to "pending"** (no access at all) until you give them a new one. Remember to reassign before deleting.`,
+
+  [`### Modules couverts par les permissions
+
+Bibliothèque, Import (par format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, Chat IA, Telegram et Paramètres — chacun avec ses actions (créer, éditer, supprimer, exporter, exécuter…).
+
+Exemple de droit d'action fin : **« Envoyer des messages Telegram »** (\`telegram.send\`) gouverne l'envoi — sans lui, un utilisateur peut voir Telegram mais **ni envoyer un message, ni exécuter le node « Envoyer via Telegram »** d'un workflow.`]:
+    `### Modules covered by the permissions
+
+Library, Import (by format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, AI Chat, Telegram and Settings — each with its actions (create, edit, delete, export, run…).
+
+An example of a fine-grained action right: **"Send Telegram messages"** (\`telegram.send\`) governs sending — without it, a user can see Telegram but **can neither send a message nor run a workflow's "Send by Telegram" node**.`,
+
+  [`### Règles de sécurité
+
+- Les permissions effectives = **rôle** + permissions **accordées** − permissions **retirées**.
+- Le **propriétaire** a un accès total **non modifiable**.
+- Un utilisateur **ne peut pas modifier ses propres droits** (protection côté serveur Firestore) : aucune escalade de privilèges possible.`]:
+    `### Security rules
+
+- Effective permissions = **role** + permissions **granted** − permissions **withdrawn**.
+- The **owner** has total access, and it **cannot be changed**.
+- A user **cannot change their own rights** (protected server-side by Firestore): no privilege escalation is possible.`,
+
+  [`**EasyCatalog** (65bit Software) est le plug-in InDesign de référence pour les catalogues et listes de prix pilotés par les données. IBS-Studio sert de **front web** à ce workflow : on importe un gabarit produit sous EasyCatalog, on l'édite et on le fusionne avec ses données, puis on réexporte un IDML qu'EasyCatalog **reconnaît nativement**.
+
+Bonne nouvelle : EasyCatalog inscrit ses champs directement dans l'IDML (marqueurs invisibles). IBS-Studio les relit donc **automatiquement** — pas de re-balisage manuel à l'import.`]:
+    `**EasyCatalog** (65bit Software) is the reference InDesign plug-in for data-driven catalogues and price lists. IBS-Studio acts as a **web front end** to that workflow: you import a product template built under EasyCatalog, edit it and merge it with your data, then re-export an IDML that EasyCatalog **recognises natively**.
+
+The good news: EasyCatalog writes its fields directly into the IDML (invisible markers). IBS-Studio therefore reads them back **automatically** — no manual re-tagging on import.`,
+
+  [`### Sous le capot : comment les champs survivent à l'IDML
+
+EasyCatalog ne stocke pas ses champs sous forme de texte : il pose des **marqueurs invisibles** sur le balisage InDesign que IBS-Studio sait relire.
+
+- **Champ texte** : deux marqueurs encadrent la valeur sur le run de caractères — \`$ID/4 <nom>\` **ouvre** le champ, \`$ID/5 <nom>\` le **ferme** (attribut \`ECTagData\`). Le contenu du marqueur lui-même n'est qu'un caractère invisible (U+FEFF). IBS-Studio détecte cette paire et remplace tout ce qui est entre les deux par un seul \`{{nom}}\`, même si la valeur s'étalait sur plusieurs runs.
+- **Champ image** : le cadre est un rectangle portant \`ECPageItemData="2 2 <nom>"\`. IBS-Studio le convertit en cadre image transparent **lié au champ** — le publipostage y chargera le visuel de la ligne.
+- Les **noms de champs** sont URL-encodés dans l'IDML ; ils sont décodés à la lecture, ce qui explique pourquoi des libellés avec accents ou espaces (ex. \`{{Prix Malin}}\`) ressortent proprement.`]:
+    `### Under the bonnet: how the fields survive the IDML
+
+EasyCatalog does not store its fields as text: it places **invisible markers** on the InDesign markup, which IBS-Studio knows how to read back.
+
+- **Text field**: two markers bracket the value on the character run — \`$ID/4 <name>\` **opens** the field, \`$ID/5 <name>\` **closes** it (the \`ECTagData\` attribute). The marker's own content is nothing but an invisible character (U+FEFF). IBS-Studio spots that pair and replaces everything between the two with a single \`{{name}}\`, even when the value spanned several runs.
+- **Image field**: the frame is a rectangle carrying \`ECPageItemData="2 2 <name>"\`. IBS-Studio converts it into a transparent image frame **bound to the field** — the mail merge will load the row's visual into it.
+- The **field names** are URL-encoded in the IDML; they are decoded on reading, which is why labels with accents or spaces (e.g. \`{{Prix Malin}}\`) come back cleanly.`,
+
+  [`### 1. Importer un gabarit EasyCatalog
+
+1. Depuis InDesign (avec ton document EasyCatalog ouvert) : **Fichier → Exporter… → InDesign Markup (IDML)**
+2. Dans IBS-Studio : Tableau de bord → **Importer** → sélectionne le \`.idml\`
+3. Le gabarit s'ouvre dans l'éditeur. Les **champs EasyCatalog deviennent des placeholders éditables** :
+   - **Champs texte** → \`{{Nom du champ}}\` (ex. \`{{Price}}\`, \`{{Description}}\`, \`{{Prix Malin}}\`)
+   - **Champs image** → cadres image liés, prêts à recevoir un visuel par ligne`]:
+    `### 1. Import an EasyCatalog template
+
+1. From InDesign (with your EasyCatalog document open): **File → Export… → InDesign Markup (IDML)**
+2. In IBS-Studio: Dashboard → **Import** → select the \`.idml\`
+3. The template opens in the editor. The **EasyCatalog fields become editable placeholders**:
+   - **Text fields** → \`{{Field name}}\` (e.g. \`{{Price}}\`, \`{{Description}}\`, \`{{Prix Malin}}\`)
+   - **Image fields** → linked image frames, ready to take one visual per row`,
+
+  [`### 2. Brancher tes données et fusionner
+
+Dans l'éditeur, panneau **Publipostage** : connecte une source (Excel, Google Sheets, PIM…). IBS-Studio remplace les \`{{champs}}\` par les valeurs de la ligne courante, et charge les images dans les cadres liés.
+
+> Pour que la correspondance se fasse, les **noms de colonnes** de ta source doivent matcher les noms de champs du gabarit (ex. colonne « Price » ↔ \`{{Price}}\`). La casse et les accents sont tolérés.
+
+Tu peux alors **exporter par lot** : un PDF / PNG / PPTX par ligne, directement depuis le panneau Publipostage — sans repasser par InDesign.`]:
+    `### 2. Plug your data in and merge
+
+In the editor, **Mail merge** panel: connect a source (Excel, Google Sheets, PIM…). IBS-Studio replaces the \`{{fields}}\` with the current row's values, and loads the images into the linked frames.
+
+> For the matching to work, your source's **column names** must match the template's field names (e.g. a "Price" column ↔ \`{{Price}}\`). Case and accents are tolerated.
+
+You can then **export in bulk**: one PDF / PNG / PPTX per row, straight from the Mail merge panel — without going back through InDesign.`,
+
+  [`### 3. Exporter une source de données POUR EasyCatalog
+
+Depuis l'**espace Données**, bouton **EasyCatalog** : génère un zip prêt à brancher comme *flat-file data source* dans EasyCatalog.
+
+Le zip contient :
+- \`data.csv\` (tab ou virgule) ou \`data.xlsx\` — en-têtes = noms de champs stables
+- un **champ-clé** garanti (pour la re-synchronisation EasyCatalog)
+- \`fields.json\` — type de chaque champ (alphanumérique / numérique / image)
+- \`images.csv\` — table URL → nom de fichier (si colonnes image)
+- \`README.txt\` — mode d'emploi`]:
+    `### 3. Export a data source FOR EasyCatalog
+
+From the **Data** area, the **EasyCatalog** button generates a zip ready to plug in as a *flat-file data source* in EasyCatalog.
+
+The zip holds:
+- \`data.csv\` (tab- or comma-separated) or \`data.xlsx\` — headers = stable field names
+- a guaranteed **key field** (for EasyCatalog's re-synchronisation)
+- \`fields.json\` — the type of each field (alphanumeric / numeric / image)
+- \`images.csv\` — a URL → file name table (if there are image columns)
+- \`README.txt\` — instructions`,
+
+  [`### 4. Réexporter un IDML (aller-retour complet)
+
+Depuis l'éditeur, **Exporter → IDML (multi-pages)** : IBS-Studio produit un IDML qui **conserve les marqueurs EasyCatalog** et résout les valeurs par ligne.
+
+À la réouverture dans InDesign + EasyCatalog, le document **retrouve ses champs** : tu peux re-synchroniser, re-paginer ou finaliser côté print. Pas de lock-in.
+
+> **Comment l'aller-retour reste « propre » (preserve-and-patch)** : à l'export, IBS-Studio ne touche **jamais** aux marqueurs \`$ID/4\`/\`$ID/5\` — ils sont laissés tels quels. Seule la **valeur** entre les marqueurs est remplacée par \`{{champ}}\` puis résolue ligne par ligne. C'est pour ça qu'EasyCatalog reconnaît encore ses champs nativement après le passage par le web. Côté EasyCatalog, relie le document à ta data source via **Adopt Fields**.`]:
+    `### 4. Re-export an IDML (the complete round trip)
+
+From the editor, **Export → IDML (multi-page)**: IBS-Studio produces an IDML that **keeps the EasyCatalog markers** and resolves the values row by row.
+
+When you reopen it in InDesign + EasyCatalog, the document **finds its fields again**: you can re-synchronise, re-paginate or finish on the print side. No lock-in.
+
+> **How the round trip stays "clean" (preserve-and-patch)**: on export, IBS-Studio **never** touches the \`$ID/4\`/\`$ID/5\` markers — they are left as they stand. Only the **value** between the markers is replaced by \`{{field}}\` and then resolved row by row. That is why EasyCatalog still recognises its fields natively after the trip through the web. On the EasyCatalog side, link the document to your data source through **Adopt Fields**.`,
+
+  [`Carte **« Image → SVG éditable »** (sous-titre *Raster verrouillé + overlays*). Transforme un **raster** (\`.png\`, \`.jpg\`, \`.webp\`, \`.gif\`) en projet éditable.`]:
+    `The **"Image → editable SVG"** card (subtitle *Locked raster + overlays*). Turns a **raster** file (\`.png\`, \`.jpg\`, \`.webp\`, \`.gif\`) into an editable project.`,
+
+  [`### Comment ça marche
+
+1. L'image est **verrouillée en fond** (fidélité visuelle préservée). Le calque source devient non sélectionnable : les clics passent aux textes posés par-dessus.
+2. Tu cliques **« Décomposer »** dans la barre de l'éditeur : **Google Vision** (mode *DOCUMENT_TEXT*) lit tous les textes de l'image.
+3. Chaque texte est recréé en **calque éditable** (police, graisse, couleur estimées d'après l'image) par-dessus le fond.
+4. Tu modifies les textes, prix, titres… sans toucher au visuel d'origine. Le bouton **« Annuler décomposition »** retire tous les calques et restaure l'image.
+
+La taille du canvas épouse les **pixels natifs** de la source. Idéal pour reprendre une **affiche / un visuel existant** dont tu n'as pas le fichier source.`]:
+    `### How it works
+
+1. The image is **locked as the background** (visual fidelity is preserved). The source layer becomes unselectable: clicks pass through to the text laid on top.
+2. You click **"Break apart"** in the editor's bar: **Google Vision** (*DOCUMENT_TEXT* mode) reads all the text in the image.
+3. Each piece of text is recreated as an **editable layer** (font, weight and colour estimated from the image) over the background.
+4. You change the text, prices, titles… without touching the original artwork. The **"Undo break-apart"** button removes every layer and restores the image.
+
+The canvas size follows the source's **native pixels**. Ideal for picking up an **existing poster or visual** whose source file you do not have.`,
+
+  [`### Ce qui devient éditable
+
+La décomposition ne se limite pas à du texte brut : elle reconstruit la **mise en forme** de chaque bloc.
+
+- **Textes éditoriaux** (titres, sous-titres, descriptions, mentions) → un calque texte par bloc, avec **couleur** échantillonnée et **graisse** déduite (Regular / Bold / Black selon la densité de pixels).
+- **Prix composés** type \`9€59\` → reconstruits en pile : gros entier + **« € » et décimales** réduits, alignés comme sur la créa, et liés (ils se déplacent ensemble).
+- **Exposants** \`%\` et **ordinaux** (\`2ÈME\`, \`1er\`…) → recréés en caractères réduits et surélevés dans le même calque.
+- **Multi-lignes** : Vision fusionne parfois plusieurs lignes ; elles sont re-séparées avec l'**alignement** (gauche / centré / droite) reconstitué.
+- **Champs de fusion** \`{{Champ}}\` repérés dans l'image → normalisés et regroupés en bloc pour le publipostage.`]:
+    `### What becomes editable
+
+Breaking apart does not stop at plain text: it rebuilds each block's **formatting**.
+
+- **Editorial text** (titles, subtitles, descriptions, small print) → one text layer per block, with the **colour** sampled and the **weight** inferred (Regular / Bold / Black, according to pixel density).
+- **Composite prices** such as \`9€59\` → rebuilt as a stack: the large whole number + a reduced **"€" and decimals**, aligned as on the artwork, and bound together (they move as one).
+- **Superscript** \`%\` and **ordinals** (\`2ÈME\`, \`1er\`…) → recreated as reduced, raised characters within the same layer.
+- **Multiple lines**: Vision sometimes merges several lines; they are split again with the **alignment** (left / centred / right) restored.
+- **Merge fields** \`{{Field}}\` spotted in the image → normalised and grouped into a block ready for the mail merge.`,
+
+  [`### Clé Google Vision requise
+
+La détection des textes appelle l'API **Google Cloud Vision** : il faut renseigner ta clé **une seule fois** dans **Paramètres → Connecteurs** (champ *Google Vision*), synchronisée ensuite via ton compte.
+
+- Sans clé, le bouton « Décomposer » renvoie une erreur explicite.
+- Coût indicatif : **~0,0015 $ par image analysée** (la relecture fine des prix par IA ajoute ~0,001 $ par prix).
+- L'API *Cloud Vision* doit être activée sur ton projet Google Cloud.`]:
+    `### A Google Vision key is required
+
+Text detection calls the **Google Cloud Vision** API: you need to enter your key **once** under **Settings → Connectors** (the *Google Vision* field), after which it is synchronised through your account.
+
+- Without a key, the "Break apart" button returns an explicit error.
+- Indicative cost: **about $0.0015 per image analysed** (the AI's close reading of the prices adds roughly $0.001 per price).
+- The *Cloud Vision* API must be enabled on your Google Cloud project.`,
+
+  [`### Filtres intelligents
+
+Pour ne garder que le contenu **éditorial** et éviter le bruit, plusieurs filtres s'appliquent automatiquement.
+
+- **Zone produit centrale ignorée** : les textes au centre de l'image (typiquement imprimés sur un packaging photographié) sont écartés ; le contenu promo est sur les bords et en bas.
+- **Texte sur fond coloré (packaging)** : les libellés lus sur un fond vert saturé d'emballage sont filtrés.
+- **Texte vertical** (mentions sur tranche, code-barres) ignoré.
+- **Logos / pictos / certifications** : un classement sémantique par IA distingue le texte éditorial du texte de logo, qui n'est pas recréé.
+- **Filets de séparation** détectés dans l'image et conservés en fines barres (Vision ne les voit pas, ils disparaîtraient sinon).`]:
+    `### Smart filters
+
+To keep only the **editorial** content and avoid the noise, several filters apply automatically.
+
+- **The central product area is ignored**: text in the middle of the image (typically printed on a photographed pack) is set aside; the promotional content sits along the edges and at the bottom.
+- **Text on a coloured background (packaging)**: labels read against a saturated green packaging background are filtered out.
+- **Vertical text** (notices along an edge, barcodes) is ignored.
+- **Logos / pictograms / certifications**: a semantic classification by AI distinguishes editorial text from logo text, which is not recreated.
+- **Separator rules** detected in the image are kept as thin bars (Vision does not see them, so they would otherwise disappear).`,
+
+  [`### Quand l'utiliser & limites
+
+**À utiliser quand** tu as un visuel raster fini (affiche, flyer, publicité retail) sans le fichier source et que tu veux **réécrire les textes ou décliner** sans tout refaire.
+
+Limites connues :
+- La détection cible le **texte** : photos, logos et illustrations restent dans le fond verrouillé (non décomposés en calques).
+- Le découpage des **prix complexes** et la séparation des lignes reposent sur des heuristiques + une relecture IA — vérifie le rendu après décomposition.
+- Les **polices** ne sont pas reconnues à l'identique : le rendu utilise Arial / Arial Black selon la graisse estimée.
+- Le fichier doit être un **raster** (\`.png\`, \`.jpg\`, \`.webp\`, \`.gif\`) ; un SVG passe par l'import SVG direct.`]:
+    `### When to use it & limits
+
+**Use it when** you have a finished raster visual (a poster, a flyer, a retail advert) without the source file, and you want to **rewrite the text or derive variations** without starting over.
+
+Known limits:
+- Detection targets **text**: photos, logos and illustrations stay in the locked background (they are not broken out into layers).
+- Splitting **complex prices** and separating lines rely on heuristics plus an AI review — check the result after breaking apart.
+- **Fonts** are not recognised exactly: the rendering uses Arial / Arial Black according to the weight estimated.
+- The file must be a **raster** (\`.png\`, \`.jpg\`, \`.webp\`, \`.gif\`); an SVG goes through the direct SVG import.`,
+
+  [`À la **première connexion**, un assistant s'ouvre automatiquement pour configurer l'essentiel. Il ne réapparaît qu'**une seule fois** : dès qu'au moins une clé IA est renseignée (ou que tu marques la configuration comme terminée), il ne se relance plus tout seul. Tu peux toujours le rouvrir manuellement (voir plus bas).
+
+> 💡 Tu peux fermer l'assistant à tout moment (bouton **Plus tard** en haut à droite) et tout reconfigurer ensuite dans les **Réglages**.`]:
+    `On your **first sign-in**, an assistant opens automatically to set the essentials up. It appears **only once**: as soon as at least one AI key is filled in (or you mark the configuration as finished), it stops starting by itself. You can always reopen it by hand (see below).
+
+> 💡 You can close the assistant at any time (the **Later** button, top right) and configure everything afterwards under **Settings**.`,
+
+  [`### Les étapes`]:
+    `### The steps`,
+
+  [`### Reprendre la configuration plus tard
+
+L'assistant reste accessible à tout moment, par deux entrées :
+
+- **Bandeau « Assistant de configuration »** en haut des **Réglages** — sous-titre _« Reprendre la mise en place guidée (clés, modèles, connecteurs) »_.
+- **Entrée « Configurer l'application »** (icône ✨) en bas du **menu des modules** (le bouton ☰ flottant en bas à gauche).
+
+Les deux rouvrent l'assistant à la première étape.`]:
+    `### Picking the configuration up later
+
+The assistant stays available at any time, through two entry points:
+
+- The **"Setup assistant"** banner at the top of **Settings** — subtitle _"Resume the guided setup (keys, models, connectors)"_.
+- The **"Set up the application"** entry (✨ icon) at the bottom of the **modules menu** (the floating ☰ button at the bottom left).
+
+Both reopen the assistant at the first step.`,
+
+  [`### Bouton « Mettre à jour tous les LLM »
+
+Présent dans l'assistant **et** dans l'onglet **IA** des Réglages, il sélectionne le **dernier modèle phare** de chaque fournisseur (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter). Pratique pour rester à jour sans choisir chaque modèle à la main après une évolution du catalogue.`]:
+    `### The "Update all LLMs" button
+
+Present in the assistant **and** in the **AI** tab of Settings, it selects each provider's **latest flagship model** (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter). Handy for staying current without picking each model by hand after the catalogue moves on.`,
+
+  [`> ℹ️ L'assistant n'est soumis à **aucune restriction de rôle** : tout utilisateur peut configurer ses propres clés et préférences IA. Seul l'onglet **Firebase** des Réglages reste réservé au propriétaire.`]:
+    `> ℹ️ The assistant is subject to **no role restriction**: any user can configure their own keys and AI preferences. Only the **Firebase** tab of Settings stays reserved for the owner.`,
+
+  [`Tu n'as pas EasyCatalog ? InDesign sait **baliser nativement** un document avec des **balises XML** (panneau *Balises*). IBS-Studio relit ces balises à l'import de l'IDML et les convertit **automatiquement** en champs de publipostage \`{{nom}}\` — la même logique qu'**EasyCatalog** (voir la section dédiée), mais **sans plug-in payant**.
+
+Le principe : tu poses une balise dont **le nom = le nom exact d'une colonne** de ta base. Au publipostage, IBS-Studio remplit chaque balise avec la valeur de la ligne courante.
+
+> Avantage technique : une balise XML native encadre **tout le bloc**, même si InDesign découpe le texte en plusieurs morceaux (run-splitting). La détection est donc plus robuste qu'un simple repérage de \`{{texte}}\` tapé à la main.`]:
+    `No EasyCatalog? InDesign can **tag a document natively** with **XML tags** (the *Tags* panel). IBS-Studio reads those tags back when importing the IDML and converts them **automatically** into \`{{name}}\` mail-merge fields — the same logic as **EasyCatalog** (see the dedicated section), but **without a paid plug-in**.
+
+The principle: you place a tag whose **name = the exact name of a column** in your database. At merge time, IBS-Studio fills each tag with the current row's value.
+
+> A technical advantage: a native XML tag brackets **the whole block**, even when InDesign splits the text into several pieces (run splitting). Detection is therefore more robust than simply spotting a \`{{text}}\` typed by hand.`,
+
+  [`### 1. Baliser le document dans InDesign
+
+1. Ouvre le panneau des balises : **Fenêtre → Utilitaires → Balises** (*Window → Utilities → Tags*).
+2. Crée une balise par champ, avec le **nom exact de ta colonne** (ex. \`Libelle_Article\`, \`Prix_normal\`, \`Marques\`).
+3. **Champ texte** : sélectionne **le texte** du bloc (pas seulement le cadre), puis clique la balise → des **crochets \`[ ]\`** apparaissent autour du texte. C'est ce qui garantit que la valeur sera remplacée à la fusion.
+4. **Champ image** : sélectionne le **cadre image** puis applique la balise → le cadre devient une zone liée qui recevra le visuel de la ligne.
+5. Répète pour chaque champ à connecter.
+
+> Astuce : active **Affichage → Structure** et *Afficher les balises* pour visualiser ce qui est balisé. Si tu ne vois pas les crochets, c'est que tu as balisé le **cadre** et non le **texte** — re-balise en sélectionnant le texte.`]:
+    `### 1. Tag the document in InDesign
+
+1. Open the tags panel: **Window → Utilities → Tags**.
+2. Create one tag per field, using the **exact name of your column** (e.g. \`Libelle_Article\`, \`Prix_normal\`, \`Marques\`).
+3. **Text field**: select **the text** of the block (not just the frame), then click the tag → **square brackets \`[ ]\`** appear around the text. That is what guarantees the value will be replaced at merge time.
+4. **Image field**: select the **image frame**, then apply the tag → the frame becomes a linked area that will receive the row's visual.
+5. Repeat for every field you want to connect.
+
+> Tip: turn **View → Structure** and *Show tags* on to see what has been tagged. If you cannot see the brackets, you have tagged the **frame** and not the **text** — tag again, selecting the text.`,
+
+  [`### 2. (Option) Le plug-in IBS-Studio : baliser connecté à ta base
+
+Pour baliser **en étant connecté à ta base en direct**, IBS-Studio fournit un **plug-in InDesign (UXP)**. Une fois chargé, il :
+
+- se **connecte à un dataSet** via un *token* personnel ;
+- affiche la **liste des champs** de la base (avec leur type) ;
+- pose une balise sur le bloc sélectionné en **un clic** (et empêche de poser deux fois le même champ) ;
+- permet de **prévisualiser** les valeurs d'une ligne dans un tableau.
+
+Le **token** se génère dans **Réglages → « Token du plugin InDesign »** : copie-le et colle-le dans le plug-in pour ouvrir la connexion.
+
+> Le plug-in est un **assistant optionnel** (en cours de mise au point). Le balisage XML natif de l'étape 1 fonctionne déjà sans lui : c'est la voie la plus fiable aujourd'hui.`]:
+    `### 2. (Optional) The IBS-Studio plug-in: tagging while connected to your database
+
+To tag **while connected live to your database**, IBS-Studio provides an **InDesign plug-in (UXP)**. Once loaded, it:
+
+- **connects to a dataSet** through a personal *token*;
+- shows the database's **list of fields** (with their type);
+- places a tag on the selected block in **one click** (and stops you placing the same field twice);
+- lets you **preview** a row's values in a table.
+
+The **token** is generated under **Settings → "InDesign plug-in token"**: copy it and paste it into the plug-in to open the connection.
+
+> The plug-in is an **optional helper** (still being finalised). The native XML tagging of step 1 already works without it: it is the most dependable route today.`,
+
+  [`### 3. Exporter l'IDML
+
+Dans InDesign : **Fichier → Exporter… → InDesign Markup (IDML)**. Les balises XML sont conservées dans le fichier.`]:
+    `### 3. Export the IDML
+
+In InDesign: **File → Export… → InDesign Markup (IDML)**. The XML tags are kept in the file.`,
+
+  [`### 4. Importer dans IBS-Studio → champs auto-connectés
+
+Tableau de bord → **Importer** → sélectionne le \`.idml\`. À l'ouverture :
+
+- chaque **balise texte** devient un placeholder \`{{nom}}\` éditable ;
+- chaque **balise image** devient un cadre image lié.
+
+Dans l'éditeur, panneau **Publipostage** : connecte ta source (Excel, Google Sheets, PIM…). Les noms de colonnes matchent les noms de balises (**casse et accents tolérés**), et IBS-Studio remplit tout, ligne par ligne. Tu peux ensuite **exporter par lot** (un PDF/PNG/PPTX par ligne).`]:
+    `### 4. Import into IBS-Studio → fields connected automatically
+
+Dashboard → **Import** → select the \`.idml\`. On opening:
+
+- every **text tag** becomes an editable \`{{name}}\` placeholder;
+- every **image tag** becomes a linked image frame.
+
+In the editor, **Mail merge** panel: connect your source (Excel, Google Sheets, PIM…). The column names match the tag names (**case and accents are tolerated**), and IBS-Studio fills everything in, row by row. You can then **export in bulk** (one PDF/PNG/PPTX per row).`,
+
+  [`Le **Scraping Hub** centralise la gouvernance du scraping en trois onglets.`]:
+    `The **Scraping Hub** brings the governance of scraping together into three tabs.`,
+
+  [`### Règles : éditeur markdown avec aperçu live
+
+L'onglet **Règles** est un éditeur **côte à côte** : tu écris du markdown à gauche, le rendu s'affiche en direct à droite (titres, listes, tableaux GFM). Le champ est **pré-rempli d'un canevas** quand il est vide — quatre sections types *Conventions de nommage*, *Prix*, *Descriptions* et *Pièges connus* — pour donner le bon point de départ. Le bouton **Enregistrer** reste grisé tant que rien n'a changé et l'app mémorise l'auteur de la dernière modification (ton e-mail). La lecture est ouverte à tous ; **seule la permission \`scrapingHub.edit\`** fait apparaître le bouton d'enregistrement.`]:
+    `### Rules: a markdown editor with a live preview
+
+The **Rules** tab is a **side-by-side** editor: you write markdown on the left, the rendering appears live on the right (headings, lists, GFM tables). The field is **pre-filled with an outline** when it is empty — four standard sections, *Naming conventions*, *Prices*, *Descriptions* and *Known traps* — to give you the right starting point. The **Save** button stays greyed out until something changes, and the app remembers who made the last edit (your e-mail). Reading is open to everyone; **only the \`scrapingHub.edit\` permission** makes the save button appear.`,
+
+  [`### Fournisseurs : prompt par domaine, champs et taux de réussite
+
+Sous chaque domaine fournisseur, tu retrouves le **prompt fournisseur** s'il en existe un (encadré bleu, badge « prompt fournisseur défini ») : ces consignes propres au site s'appliquent à tous ses templates. Chaque template affiche son **nombre de champs** et, dès qu'il a tourné, son **taux de réussite** (\`succès / applications ok\`) — pratique pour repérer un template qui décroche. Les fournisseurs sont triés par ordre alphabétique ; les templates sans domaine sont regroupés sous « (sans domaine) ». Un clic ouvre le template dans son éditeur.`]:
+    `### Suppliers: prompt per domain, fields and success rate
+
+Under each supplier domain you find the **supplier prompt** if there is one (blue box, "supplier prompt set" badge): those site-specific instructions apply to all of its templates. Each template shows its **number of fields** and, once it has run, its **success rate** (\`successes / successful applications\`) — handy for spotting a template that is slipping. Suppliers are sorted alphabetically; templates without a domain are gathered under "(no domain)". A click opens the template in its editor.`,
+
+  [`### Debug : un journal LOCAL à ce navigateur
+
+Le journal de debug est stocké **en local sur ce poste** (localStorage), pas dans Firestore : il n'est donc **pas partagé** avec l'équipe et ne reflète que tes propres enrichissements récents. Chaque entrée est typée **Jina** (URL appelée, en-têtes, réponse markdown — tronquée à 50 Ko) ou **LLM** (fournisseur, modèle, tâche, température, messages par rôle, éventuel outil appelé). Déplie une entrée pour voir le détail, avec son horodatage. Au-delà du rafraîchissement automatique toutes les 2 s, un bouton **Rafraîchir** force une relecture immédiate.`]:
+    `### Debug: a log LOCAL to this browser
+
+The debug log is stored **locally on this machine** (localStorage), not in Firestore: it is therefore **not shared** with the team and reflects only your own recent enrichments. Each entry is typed **Jina** (URL called, headers, markdown response — truncated at 50 KB) or **LLM** (provider, model, task, temperature, messages by role, any tool called). Unfold an entry to see the detail, with its timestamp. Beyond the automatic refresh every 2 s, a **Refresh** button forces an immediate re-read.`,
+
+  [`### Voir aussi
+
+La création des templates se fait dans **Templates scraping** ; le mode d'emploi général (Scrape, Map + Extract, Crawl, limites anti-bot) est dans **Scraping produits**.`]:
+    `### See also
+
+Templates are created under **Scraping templates**; the general instructions (Scrape, Map + Extract, Crawl, anti-bot limits) are in **Product scraping**.`,
+
+  [`Le **Chat IA** est un assistant texte intégré à l'app. Pose une question, demande un brouillon, un bout de code ou une explication : la réponse arrive en **markdown** (titres, listes, blocs de code). Il répond en **français** par défaut, ou dans la langue de ta question.`]:
+    `The **AI Chat** is a text assistant built into the app. Ask a question, ask for a draft, a snippet of code or an explanation: the answer comes back in **markdown** (headings, lists, code blocks). It replies in the language of your question.`,
+
+  [`### Ce qu'il sait faire`]:
+    `### What it can do`,
+
+  [`### Choix du modèle
+
+Le Chat utilise une **cascade de modèles** : si le modèle principal échoue, le suivant prend le relais automatiquement. Chaque réponse affiche **par quel modèle** elle a été produite — et si des fournisseurs ont échoué avant, un badge ambre **« Échec du provider »** se déplie pour voir le détail des tentatives. L'ordre de la cascade et le modèle de chaque fournisseur se règlent dans les **Paramètres → IA**.`]:
+    `### Choosing the model
+
+The Chat uses a **cascade of models**: if the main model fails, the next one automatically takes over. Each answer shows **which model** produced it — and if providers failed before it, an amber **"Provider failure"** badge unfolds to show the detail of the attempts. The order of the cascade and each provider's model are set under **Settings → AI**.`,
+
+  [`### Changer de modèle à la volée
+
+Le **badge du modèle**, à côté du bouton d'envoi, est **cliquable** : il déplie la liste de tous les modèles de la cascade (regroupés par fournisseur, avec leur tarif indicatif *entrée / sortie*). Choisir un modèle le sélectionne **et le place en tête de cascade** pour les messages suivants — pas besoin de passer par les Réglages. Le fournisseur en tête porte l'étiquette **« primaire »**, et un lien **« Cascade & clés API → Réglages »** mène au réglage complet.`]:
+    `### Switching model on the fly
+
+The **model badge**, next to the send button, is **clickable**: it unfolds the list of every model in the cascade (grouped by provider, with their indicative *input / output* rates). Choosing a model selects it **and puts it at the head of the cascade** for the following messages — no need to go through Settings. The provider at the head carries the **"primary"** label, and a **"Cascade & API keys → Settings"** link leads to the full configuration.`,
+
+  [`### À ne pas confondre
+
+- Le Chat IA est **conversationnel** : il **n'accède pas au web** et **n'agit pas sur l'app** (il ne crée pas de projets, ne scrape pas, ne lance pas de workflows).
+- Pour un assistant **avec accès web** et capable d'**exécuter des workflows**, c'est le **bot Telegram** qu'il faut utiliser.
+- Une **clé LLM** doit être configurée dans les Paramètres pour que le Chat réponde.`]:
+    `### Not to be confused
+
+- The AI Chat is **conversational**: it **has no web access** and **does not act on the app** (it creates no projects, scrapes nothing, launches no workflows).
+- For an assistant **with web access** that can **run workflows**, use the **Telegram bot**.
+- An **LLM key** must be configured in Settings for the Chat to answer.`,
+
+  [`Toute votre base, **d'un seul regard**. L'**Explorateur** dessine un **diagramme relationnel (ERD)** de vos collections Firestore — **clés primaires (PK)**, **clés étrangères (FK)** et **cardinalités** (1:1, 1:N) — et trace les liens qui relient projets, produits, taxonomies et bases Excel. **Double-cliquez une table** pour afficher ses enregistrements **en direct** (mise à jour temps réel), avec sélecteur de base et recherche instantanée. Les positions des tables sont **mémorisées** : composez la carte qui vous parle.
+
+> 🔒 Réservé au **propriétaire**. On l'ouvre dans **Paramètres → Données** (l'engrenage en bas de la barre latérale).`]:
+    `Your whole database, **at a glance**. The **Explorer** draws an **entity-relationship diagram (ERD)** of your Firestore collections — **primary keys (PK)**, **foreign keys (FK)** and **cardinalities** (1:1, 1:N) — and traces the links joining projects, products, taxonomies and Excel databases. **Double-click a table** to show its records **live** (updated in real time), with a database selector and an instant search. The tables' positions are **remembered**: compose the map that speaks to you.
+
+> 🔒 Reserved for the **owner**. You open it under **Settings → Data** (the cog at the bottom of the sidebar).`,
+
+  [`### Le problème
+
+Une base qui grandit devient **opaque** : on ne sait plus quelles collections existent, comment elles se relient, ni ce qu'elles contiennent réellement — sans ouvrir la console Firebase.`]:
+    `### The problem
+
+A database that grows becomes **opaque**: you no longer know which collections exist, how they join up, or what they actually hold — not without opening the Firebase console.`,
+
+  [`### Modèle de données (ERD)
+
+Chaque collection est une **table** avec ses **champs**, sa **clé primaire (PK)** et ses **clés étrangères (FK)** ; les relations métier sont tracées avec leur **cardinalité** (1:1, 1:N). Le diagramme est rendu avec **ReactFlow** : on visualise d'un coup la structure complète de la plateforme.`]:
+    `### Data model (ERD)
+
+Each collection is a **table** with its **fields**, its **primary key (PK)** and its **foreign keys (FK)**; the business relationships are traced with their **cardinality** (1:1, 1:N). The diagram is rendered with **ReactFlow**: you take in the platform's complete structure in one go.`,
+
+  [`### Données live
+
+Un **double-clic** sur une table ouvre le **contenu réel** de la collection, mis à jour en **temps réel** (*onSnapshot*). Pour les **bases Excel**, un **sélecteur** liste chaque base et n'affiche que ses colonnes utiles. **Filtre instantané** et **pagination** (50 lignes par page) pour parcourir de gros volumes sans peine.`]:
+    `### Live data
+
+A **double-click** on a table opens the collection's **real content**, updated in **real time** (*onSnapshot*). For the **Excel databases**, a **selector** lists each one and shows only its useful columns. An **instant filter** and **pagination** (50 rows per page) let you work through large volumes with ease.`,
+
+  [`### Disposition persistée
+
+**Déplacez les tables** par glisser : leur **position est enregistrée** sur votre profil (Firestore) et **restaurée** à la prochaine ouverture. Composez la cartographie qui correspond à votre lecture de la donnée.`]:
+    `### Layout that persists
+
+**Move the tables** by dragging: their **position is saved** onto your profile (Firestore) and **restored** next time you open it. Compose the map that matches the way you read your data.`,
 }
