@@ -1872,6 +1872,16 @@ export const fr = {
   'pw.chart.pairs': '{total} paires',
   'pw.ops.analysedAgo': 'analyse {ago}',
   'pw.ops.cycleRunning.done': 'cycle en cours · ×{done} complet(s)',
+
+  // — Panneau d'aide (cadre ; le CONTENU passe par helpI18n) ——————————
+  'help.manual': "Manuel d'utilisation",
+  'help.title': 'Aide',
+  'help.close': 'Fermer (Échap)',
+  'help.open': "Ouvrir l'aide",
+  'help.shortcut': 'Aide (⇧?)',
+  'help.search': "Rechercher dans l'aide…",
+  'help.clearSearch': 'Effacer la recherche',
+  'help.fullDocs': 'Documentation complète',
 } as const
 
 /** Clé de traduction valide — dérivée du catalogue FR. */

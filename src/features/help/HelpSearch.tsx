@@ -3,11 +3,13 @@ import { Search, X } from 'lucide-react'
 import { useHelpStore } from './help.store'
 import { suggestWords, searchSections, type SearchHit } from './searchIndex'
 import { useIsHelpSectionVisible } from './useVisibleHelpSections'
+import { useTranslation } from '@/lib/i18n'
 
 const MAX_SUGGESTIONS = 6
 const MAX_HITS = 8
 
 export function HelpSearch() {
+  const { t } = useTranslation()
   const goToSection = useHelpStore((s) => s.goToSection)
   const setSearchQuery = useHelpStore((s) => s.setSearchQuery)
   const isVisible = useIsHelpSectionVisible()
@@ -111,7 +113,7 @@ export function HelpSearch() {
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
-        placeholder="Rechercher dans l'aide…"
+        placeholder={t('help.search')}
         className="help-search-input w-full bg-white/5 border border-white/10 focus:border-indigo-500
           rounded-md pl-7 pr-7 py-1.5 text-xs text-white placeholder:text-white/30
           focus:outline-none transition-colors"
@@ -124,7 +126,7 @@ export function HelpSearch() {
             inputRef.current?.focus()
           }}
           className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-white/30 hover:text-white/70 hover:bg-white/10"
-          aria-label="Effacer la recherche"
+          aria-label={t('help.clearSearch')}
         >
           <X className="w-3 h-3" />
         </button>

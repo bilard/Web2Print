@@ -1876,4 +1876,14 @@ export const en: Record<TranslationKey, string> = {
   'pw.chart.pairs': '{total} pairs',
   'pw.ops.analysedAgo': 'analysed {ago}',
   'pw.ops.cycleRunning.done': 'cycle under way · ×{done} complete',
+
+  // — Help panel (frame; the CONTENT goes through helpI18n) ——————————
+  'help.manual': 'User manual',
+  'help.title': 'Help',
+  'help.close': 'Close (Esc)',
+  'help.open': 'Open the help',
+  'help.shortcut': 'Help (⇧?)',
+  'help.search': 'Search the help…',
+  'help.clearSearch': 'Clear the search',
+  'help.fullDocs': 'Full documentation',
 }

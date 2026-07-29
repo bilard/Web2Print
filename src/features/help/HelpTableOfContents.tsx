@@ -3,6 +3,8 @@ import { Rocket, Pencil, FileUp, Database, Download, Workflow, Bot, ShieldCheck,
 import { HELP_CATEGORIES, type HelpCategory, type HelpSection } from './content/types'
 import { useHelpStore } from './help.store'
 import { useVisibleHelpSections } from './useVisibleHelpSections'
+import { useHelpText } from './helpI18n'
+import { useTranslation } from '@/lib/i18n'
 
 interface CategoryStyle {
   Icon: LucideIcon
@@ -99,6 +101,8 @@ const CATEGORY_STYLES: Record<HelpCategory, CategoryStyle> = {
 }
 
 export function HelpTableOfContents() {
+  const { t } = useTranslation()
+  const h = useHelpText()
   const currentSectionId = useHelpStore((s) => s.currentSectionId)
   const goToSection = useHelpStore((s) => s.goToSection)
 
@@ -120,7 +124,7 @@ export function HelpTableOfContents() {
               className={`flex items-center gap-1.5 px-2 py-1 text-[10px] uppercase tracking-wider font-semibold ${style.label}`}
             >
               <style.Icon className={`w-3 h-3 ${style.accent}`} />
-              {cat}
+              {h(cat)}
             </div>
             <div className="flex flex-col gap-0.5 px-1 pb-1">
               {sections.map((s) => {
@@ -141,7 +145,7 @@ export function HelpTableOfContents() {
                         active ? style.bullet : 'bg-white/20'
                       }`}
                     />
-                    {s.title}
+                    {h(s.title)}
                   </button>
                 )
               })}
@@ -157,7 +161,7 @@ export function HelpTableOfContents() {
         className="flex items-center gap-2 mt-1 px-2.5 py-2 rounded-md border border-indigo-500/30 bg-indigo-500/[0.08] text-xs text-indigo-200 hover:bg-indigo-500/15 transition-colors"
       >
         <BookOpen className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-        <span className="flex-1 font-medium">Documentation complète</span>
+        <span className="flex-1 font-medium">{t('help.fullDocs')}</span>
         <ExternalLink className="w-3 h-3 text-indigo-400/70 shrink-0" />
       </a>
     </nav>

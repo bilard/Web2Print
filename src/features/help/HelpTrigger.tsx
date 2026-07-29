@@ -4,8 +4,10 @@ import { useHelpStore } from './help.store'
 import { HelpDrawer } from './HelpDrawer'
 import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useDataAttrHighlight } from './hooks/useDataAttrHighlight'
+import { useTranslation } from '@/lib/i18n'
 
 export function HelpTrigger() {
+  const { t } = useTranslation()
   const toggleDrawer = useHelpStore((s) => s.toggleDrawer)
   useDataAttrHighlight()
 
@@ -25,8 +27,8 @@ export function HelpTrigger() {
       <button
         type="button"
         onClick={toggleDrawer}
-        title="Aide (⇧?)"
-        aria-label="Ouvrir l'aide"
+        title={t('help.shortcut')}
+        aria-label={t('help.open')}
         className="fixed bottom-4 right-4 z-30
           w-10 h-10 rounded-full
           bg-surface border border-white/10 hover:border-indigo-500/50
