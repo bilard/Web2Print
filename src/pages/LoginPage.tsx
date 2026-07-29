@@ -4,78 +4,61 @@ import { FileText, Shapes, Database, Table, Download, Workflow, Sparkles } from 
 import { FirebaseError } from 'firebase/app'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignInWithGoogle } from '@/features/auth/useAuth'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
+import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher'
 
+/** Les libellés ne sont plus du texte mais des CLÉS : le rendu les traduit. */
 const FEATURES = [
-  {
-    icon: FileText,
-    label: 'Import print pro',
-    desc: 'PDF, IDML (InDesign) & SVG (Illustrator) éditables directement dans le navigateur',
-  },
-  {
-    icon: Shapes,
-    label: 'SVG éditable par blocs',
-    desc: 'Textes, formes et images détourés automatiquement, chacun modifiable séparément',
-  },
-  {
-    icon: Database,
-    label: 'PIM & DAM intégrés',
-    desc: 'Données produit et médias centralisés, réutilisables dans tous vos visuels',
-  },
-  {
-    icon: Table,
-    label: 'Publipostage données',
-    desc: 'Des centaines de déclinaisons générées depuis un tableau ou une base produit',
-  },
-  {
-    icon: Download,
-    label: 'Export multi-format',
-    desc: 'PDF print (fond perdu, traits de coupe), PPTX et images haute définition',
-  },
-  {
-    icon: Workflow,
-    label: 'Workflows IA no-code',
-    desc: 'Scraping, design et envoi (Telegram, Drive, Gmail) enchaînés automatiquement',
-  },
+  { icon: FileText, key: 'import' },
+  { icon: Shapes, key: 'svg' },
+  { icon: Database, key: 'pim' },
+  { icon: Table, key: 'merge' },
+  { icon: Download, key: 'export' },
+  { icon: Workflow, key: 'workflows' },
 ] as const
 
-function errorMessage(err: unknown): string {
+/** Code d'erreur Firebase → clé de traduction (jamais du texte en dur). */
+function errorKey(err: unknown): TranslationKey {
   if (err instanceof FirebaseError) {
     switch (err.code) {
       case 'auth/popup-closed-by-user':
       case 'auth/cancelled-popup-request':
-        return 'Connexion annulée.'
+        return 'login.error.cancelled'
       case 'auth/popup-blocked':
-        return 'La fenêtre de connexion a été bloquée par le navigateur. Autorisez les pop-ups puis réessayez.'
+        return 'login.error.popupBlocked'
       case 'auth/network-request-failed':
-        return 'Problème de réseau. Vérifiez votre connexion et réessayez.'
+        return 'login.error.network'
       case 'auth/unauthorized-domain':
-        return "Ce domaine n'est pas autorisé pour la connexion. Contactez l'administrateur."
+        return 'login.error.unauthorizedDomain'
       default:
-        return 'La connexion a échoué. Réessayez dans un instant.'
+        return 'login.error.generic'
     }
   }
-  return 'Une erreur inattendue est survenue.'
+  return 'login.error.unexpected'
 }
 
 export default function LoginPage() {
   const user = useAuthStore((s) => s.user)
   const navigate = useNavigate()
   const signIn = useSignInWithGoogle()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // On mémorise la CLÉ, pas le message : un changement de langue re-traduit
+  // l'erreur déjà affichée au lieu de la figer dans la langue d'origine.
+  const [errorK, setErrorK] = useState<TranslationKey | null>(null)
 
   useEffect(() => {
     if (user) navigate('/dashboard', { replace: true })
   }, [user, navigate])
 
   const handleSignIn = async () => {
-    setError(null)
+    setErrorK(null)
     setLoading(true)
     try {
       await signIn()
     } catch (err) {
       console.error('Erreur connexion Google', err)
-      setError(errorMessage(err))
+      setErrorK(errorKey(err))
     } finally {
       setLoading(false)
     }
@@ -104,27 +87,24 @@ export default function LoginPage() {
         <div className="relative max-w-md">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#fff]/15 bg-[#fff]/5 px-3 py-1 text-xs font-medium text-[#fff]/70">
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-            18 modules · 1 plateforme · 0 logiciel à installer
+            {t('login.badge')}
           </div>
           <h2 className="mt-5 text-4xl font-bold leading-tight">
-            Créez, importez,
+            {t('login.headline.line1')}
             <br />
-            exportez en un flux.
+            {t('login.headline.line2')}
           </h2>
-          <p className="mt-4 text-[#fff]/60">
-            L'éditeur graphique professionnel qui transforme vos fichiers print et vos données
-            produit en créations prêtes à diffuser — du brief à l'imprimeur, sans rien installer.
-          </p>
+          <p className="mt-4 text-[#fff]/60">{t('login.tagline')}</p>
 
           <ul className="mt-7 space-y-3.5">
-            {FEATURES.map(({ icon: Icon, label, desc }) => (
-              <li key={label} className="flex items-start gap-3.5">
+            {FEATURES.map(({ icon: Icon, key }) => (
+              <li key={key} className="flex items-start gap-3.5">
                 <div className="mt-0.5 w-9 h-9 shrink-0 rounded-lg bg-[#fff]/10 backdrop-blur flex items-center justify-center">
                   <Icon className="w-4 h-4 text-[#c7d2fe]" />
                 </div>
                 <div>
-                  <p className="font-medium text-[#fff]">{label}</p>
-                  <p className="text-sm text-[#fff]/50">{desc}</p>
+                  <p className="font-medium text-[#fff]">{t(`login.feature.${key}.label`)}</p>
+                  <p className="text-sm text-[#fff]/50">{t(`login.feature.${key}.desc`)}</p>
                 </div>
               </li>
             ))}
@@ -143,10 +123,11 @@ export default function LoginPage() {
           <div className="bg-surface border border-white/10 rounded-2xl p-8 shadow-2xl">
             <div className="flex items-center gap-2 text-indigo-400">
               <Sparkles className="w-4 h-4" />
-              <span className="text-xs font-medium uppercase tracking-wider">Espace de travail</span>
+              <span className="text-xs font-medium uppercase tracking-wider">{t('login.workspace')}</span>
+              <LocaleSwitcher className="ml-auto" />
             </div>
-            <h1 className="mt-3 text-2xl font-bold text-white">Bienvenue</h1>
-            <p className="mt-1.5 text-sm text-white/50">Connectez-vous pour accéder à vos projets.</p>
+            <h1 className="mt-3 text-2xl font-bold text-white">{t('login.welcome')}</h1>
+            <p className="mt-1.5 text-sm text-white/50">{t('login.subtitle')}</p>
 
             <button
               onClick={handleSignIn}
@@ -175,24 +156,23 @@ export default function LoginPage() {
                   />
                 </svg>
               )}
-              {loading ? 'Connexion…' : 'Se connecter avec Google'}
+              {loading ? t('login.cta.loading') : t('login.cta')}
             </button>
 
-            {error && (
+            {errorK && (
               <p className="mt-3 text-sm text-red-400" role="alert">
-                {error}
+                {t(errorK)}
               </p>
             )}
 
             <div className="mt-6 flex items-center gap-3 text-white/20">
               <span className="h-px flex-1 bg-white/10" />
-              <span className="text-xs">connexion sécurisée</span>
+              <span className="text-xs">{t('login.secure')}</span>
               <span className="h-px flex-1 bg-white/10" />
             </div>
 
             <p className="mt-6 text-xs text-white/30 text-center leading-relaxed">
-              En vous connectant, vous acceptez nos conditions d'utilisation et notre politique de
-              confidentialité.
+              {t('login.legal')}
             </p>
           </div>
         </div>
