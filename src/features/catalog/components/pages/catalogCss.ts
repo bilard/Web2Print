@@ -572,16 +572,41 @@ export const CATALOG_CSS = `
 /* Panneau ancré par le BAS, hauteur suivant le CONTENU (aucun top fixe) :
    avec une zone figée à 44 %→86 %, un titre court laissait un immense aplat
    d'accent qui masquait la photo. Plafonné pour rester une bande, jamais un mur. */
-.cat-coverp-panel { position:absolute; left:34%; right:10%; bottom:14%; max-height:46%; background:var(--cat-accent);
-  color:var(--cat-ink); padding:5% 5%; display:flex; flex-direction:column; justify-content:flex-start; overflow:hidden; box-shadow:0 18px 60px rgba(0,0,0,.18); }
-.cat-coverp-title { font-family:var(--cat-font-h); font-weight:900; font-size:calc(56px * var(--cat-p-cover,1)); line-height:1.02; }
-.cat-coverp-sub { font-family:var(--cat-font-b); font-size:calc(17px * var(--cat-p-cover,1)); margin-top:18px; opacity:.85; max-width:34ch; }
+/* Panneau éditorial : ANCRÉ À GAUCHE sur la bande latérale (il s'y appuie au lieu
+   de flotter), largeur généreuse, marges régulières. Le logo respire au-dessus du
+   titre grâce à un filet de séparation — hiérarchie MARQUE › TITRE › PROMESSE. */
+.cat-coverp-panel { position:absolute; left:13%; right:14%; bottom:12%; max-height:52%; background:var(--cat-accent);
+  color:var(--cat-ink); padding:44px 46px; display:flex; flex-direction:column; justify-content:flex-start; overflow:hidden;
+  box-shadow:0 24px 70px rgba(0,0,0,.28); }
+.cat-coverp-panel .cat-logo--cover { margin-bottom:22px; padding-bottom:20px; border-bottom:2px solid currentColor;
+  align-self:stretch; opacity:.92; }
+.cat-coverp-title { font-family:var(--cat-font-h); font-weight:900; font-size:calc(54px * var(--cat-p-cover,1));
+  line-height:.98; letter-spacing:-.015em; text-wrap:balance; }
+.cat-coverp-sub { font-family:var(--cat-font-b); font-size:calc(18px * var(--cat-p-cover,1)); margin-top:16px;
+  opacity:.85; max-width:38ch; line-height:1.45; }
 /* Aucun pied sur la couverture « panel » : ni bandeau, ni nom, ni millésime —
    la photo occupe toute la page, l'identité vit dans le panneau d'accent. */
-/* ── Couverture ARCHÉTYPE « poster » : titre géant centré sur la photo. ── */
-.cat-coverz { justify-content:center; }
-.cat-coverz-in { padding:8%; display:flex; flex-direction:column; align-items:center; text-align:center; gap:18px; }
-.cat-coverz-title { font-family:var(--cat-font-h); font-weight:900; font-size:calc(92px * var(--cat-p-cover,1)); line-height:.96; text-transform:uppercase; }
+/* ── Couverture ARCHÉTYPE « poster » — codes de la communication RETAIL.
+   Le titre CENTRÉ à cheval sur la photo ne tenait pas : il touchait les bords,
+   se coupait n'importe où, et logo/baseline/sous-titre flottaient sans lien.
+   Composition retenue : bloc de titre CALÉ EN BAS À GAUCHE sur une grille, voile
+   dégradé qui garantit la lisibilité, marque en tête, filet accent pour lier
+   titre et sous-titre. Marges généreuses et régulières. ── */
+.cat-coverz { justify-content:space-between; position:relative; }
+/* Voile DIRECTIONNEL (et non un assombrissement uniforme) : la photo reste
+   lisible en haut, le texte est garanti contrasté en bas. */
+.cat-coverz::after { content:''; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.66) 26%, rgba(0,0,0,.18) 55%, rgba(0,0,0,0) 78%); }
+.cat-coverz-head { position:relative; z-index:1; padding:7% 8% 0; }
+.cat-coverz-in { position:relative; z-index:1; padding:0 8% 8%; display:flex; flex-direction:column;
+  align-items:flex-start; text-align:left; gap:0; max-width:92%; }
+.cat-coverz .cat-cover-band { margin-bottom:16px; }
+.cat-coverz-title { font-family:var(--cat-font-h); font-weight:900;
+  font-size:calc(74px * var(--cat-p-cover,1)); line-height:.92; letter-spacing:-.015em;
+  text-transform:uppercase; text-wrap:balance; overflow-wrap:break-word; }
+/* Filet accent : lie le titre au sous-titre, signe graphique du catalogue. */
+.cat-coverz .cat-cover-sub { margin-top:22px; padding-top:18px; border-top:5px solid var(--cat-accent);
+  display:inline-block; font-size:calc(20px * var(--cat-p-cover,1)); letter-spacing:.06em; }
 
 /* ── Sommaire ───────────────────────────────────────────────────────── */
 .cat-toc { flex:1; padding:40px 48px; }
