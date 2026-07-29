@@ -48,7 +48,12 @@ export default function CatalogBuilderPage() {
         s.hydrate(doc, id)
       }
       const st = useCatalogStore.getState()
-      if (st.sourceRef && st.rawRows.length === 0) {
+      // ⚠ RELECTURE SYSTÉMATIQUE de la source. La condition `rawRows.length === 0`
+      // sautait le chargement dès qu'une session existait : un visuel régénéré ou
+      // une donnée corrigée côté Données n'atteignait JAMAIS un catalogue déjà
+      // ouvert dans l'onglet — alors que l'app annonce « à jour automatiquement ».
+      // Les lignes en cache restent affichées le temps du fetch (pas d'écran vide).
+      if (st.sourceRef) {
         try {
           const { columns, rows } = isPimSource(st.sourceRef)
             ? await loadPimMergeData(pimProjectIdFromSource(st.sourceRef))
