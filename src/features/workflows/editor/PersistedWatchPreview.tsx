@@ -9,6 +9,7 @@ import { buildOpsCockpit } from '@/features/priceWatch/dashboard/opsMetrics'
 import { duration, ago } from '@/features/priceWatch/dashboard/format'
 import { Database } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useTranslation } from '@/lib/i18n'
 
 /** Reproduit la dérivation du watchId côté node (config.watchId sinon id du workflow). */
 function watchIdOf(configWatchId: unknown, workflowId: string | undefined): string {
@@ -21,6 +22,7 @@ export function PersistedWatchPreview({ configWatchId, workflowId, fallback }: {
   /** Rendu quand aucune donnée persistée n'existe (message vide standard). */
   fallback: ReactNode
 }) {
+  const { t } = useTranslation()
   const report = useCatalogReport(watchIdOf(configWatchId, workflowId))
   if (!report) return <>{fallback}</>
   const ck = buildOpsCockpit(report)
@@ -31,23 +33,23 @@ export function PersistedWatchPreview({ configWatchId, workflowId, fallback }: {
     <div className="flex-1 min-h-0 overflow-auto flex flex-col gap-2">
       <div className="flex items-center gap-2 text-[11px] text-neutral-400 shrink-0">
         <Database className="w-3.5 h-3.5 text-emerald-400" />
-        <span className="text-emerald-300">Données déjà collectées</span>
+        <span className="text-emerald-300">{t('wfd.alreadyCollected')}</span>
         <span className="text-neutral-600">·</span>
         <span>{ck.totalIndexed.toLocaleString('fr-FR')} fiches · {ck.sitesActive} concurrent{ck.sitesActive > 1 ? 's' : ''}</span>
         <span className="text-neutral-600">·</span>
         <span>analyse {ago(ck.runAt)}</span>
-        <span className="ml-auto text-neutral-600">non exécuté dans cette session — état persisté du suivi</span>
+        <span className="ml-auto text-neutral-600">{t('wfd.notRunThisSession')}</span>
       </div>
       <div className="rounded border border-neutral-800 overflow-auto">
         <table className="text-xs w-full tabular-nums">
           <thead className="bg-well sticky top-0">
             <tr className="text-neutral-400 text-[10px] uppercase tracking-wide text-right">
-              <th className="text-left px-2 py-1.5 font-medium">Concurrent</th>
-              <th className="px-2 py-1.5 font-medium">Fiches</th>
-              <th className="px-2 py-1.5 font-medium">Prix %</th>
-              <th className="px-2 py-1.5 font-medium">Familles</th>
-              <th className="px-2 py-1.5 font-medium">Cycles</th>
-              <th className="px-2 py-1.5 font-medium">Temps cumulé</th>
+              <th className="text-left px-2 py-1.5 font-medium">{t('wfd.competitor')}</th>
+              <th className="px-2 py-1.5 font-medium">{t('wfd.records')}</th>
+              <th className="px-2 py-1.5 font-medium">{t('wfd.pricePct')}</th>
+              <th className="px-2 py-1.5 font-medium">{t('wfd.families')}</th>
+              <th className="px-2 py-1.5 font-medium">{t('wfd.cycles')}</th>
+              <th className="px-2 py-1.5 font-medium">{t('wfd.cumulativeTime')}</th>
             </tr>
           </thead>
           <tbody>

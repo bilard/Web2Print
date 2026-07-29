@@ -9,6 +9,7 @@ import { deleteRun, deleteAllRuns } from '../persistence/runHistoryClient'
 import { useRunResult, type RunHistoryItem } from './useRunResult'
 import { ResultPanelView } from './ResultPanelView'
 import { exportElementToPng, exportElementToPdf } from '@/lib/domExport'
+import { useTranslation } from '@/lib/i18n'
 
 function fmtDate(ts?: number): string {
   if (!ts) return ''
@@ -28,6 +29,7 @@ function HistorySidebar({
   onDelete: (id: string) => void
   onClearAll: () => void
 }) {
+  const { t } = useTranslation()
   const [confirmClear, setConfirmClear] = useState(false)
   if (runs.length === 0) return null
   const effective = selectedRunId ?? runs[0]?.id ?? null
@@ -37,8 +39,8 @@ function HistorySidebar({
         <History className="w-3 h-3" /> Historique ({runs.length})
         {confirmClear ? (
           <span className="ml-auto flex items-center gap-1">
-            <button onClick={() => { onClearAll(); setConfirmClear(false) }} className="text-[10px] text-red-300 hover:text-red-200">Confirmer</button>
-            <button onClick={() => setConfirmClear(false)} className="text-[10px] text-neutral-500 hover:text-neutral-300">Annuler</button>
+            <button onClick={() => { onClearAll(); setConfirmClear(false) }} className="text-[10px] text-red-300 hover:text-red-200">{t('wfres.confirm')}</button>
+            <button onClick={() => setConfirmClear(false)} className="text-[10px] text-neutral-500 hover:text-neutral-300">{t('wfres.cancel')}</button>
           </span>
         ) : (
           <button
@@ -70,8 +72,8 @@ function HistorySidebar({
               <button
                 onClick={() => onDelete(r.id)}
                 className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded text-neutral-600 hover:text-red-300 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Supprimer ce run"
-                aria-label="Supprimer ce run"
+                title={t('wfres.deleteRun')}
+                aria-label={t('wfres.deleteRun')}
               >
                 <Trash2 className="w-3 h-3" />
               </button>
@@ -84,6 +86,7 @@ function HistorySidebar({
 }
 
 export function WorkflowResultsScreen({ workflowId }: { workflowId: string }) {
+  const { t } = useTranslation()
   const nav = useNavigate()
   useEffect(() => { initWorkflowsRegistry() }, [])
   const { loading, wf, source, status, endedAt, panels, error, runs, selectedRunId, selectRun } = useRunResult(workflowId)
@@ -110,16 +113,16 @@ export function WorkflowResultsScreen({ workflowId }: { workflowId: string }) {
         <button
           onClick={() => nav(`/workflows/${workflowId}`)}
           className="p-1.5 hover:bg-white/[0.06] text-white/40 hover:text-white/80 rounded-md"
-          aria-label="Retour à l'éditeur"
-          title="Retour à l'éditeur"
+          aria-label={t('wfres.back')}
+          title={t('wfres.back')}
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <Eye className="w-4 h-4 text-indigo-400" />
         <div className="min-w-0">
-          <div className="text-sm font-medium truncate">{wf?.name ?? 'Résultats'}</div>
+          <div className="text-sm font-medium truncate">{wf?.name ?? t('wfres.title')}</div>
           <div className="text-[11px] text-neutral-500">
-            {source === 'history' ? 'Run sauvegardé' : source === 'server' ? 'Dernier run serveur' : source === 'client' ? 'Run de la session' : 'Aucun run'}
+            {source === 'history' ? t('wfres.savedRun') : source === 'server' ? 'Dernier run serveur' : source === 'client' ? 'Run de la session' : 'Aucun run'}
             {status ? ` · ${status}` : ''}{endedAt ? ` · ${fmtDate(endedAt)}` : ''}
           </div>
         </div>
@@ -159,7 +162,7 @@ export function WorkflowResultsScreen({ workflowId }: { workflowId: string }) {
           ) : !source || panels.length === 0 ? (
             <div className="max-w-md mx-auto text-center text-sm text-neutral-500 p-12 space-y-2">
               <Eye className="w-8 h-8 mx-auto text-neutral-700" />
-              <p>Aucun résultat à afficher pour l'instant.</p>
+              <p>{t('wfres.empty')}</p>
               <p className="text-[12px] text-neutral-600">
                 Lance le workflow (« Run » dans l'éditeur, ou « Lancer serveur » / cron) puis reviens ici.
               </p>

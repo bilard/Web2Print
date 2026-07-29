@@ -12,6 +12,7 @@ import { numericColumnKeys, categoricalKey } from './columnTypes'
 import { regenerateDashboard, type AiDashboard, type ChartAggregation } from './regenerateViz'
 import { aggregateChartData, type ChartSpec, type ChartType } from '../registry/chartSpec'
 import type { ResultKind, ResultPanel } from './types'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 const ChartPreview = lazy(() => import('../editor/ChartPreview'))
 
@@ -24,16 +25,17 @@ const KIND_META: Record<ResultKind, { label: string; Icon: typeof BarChart3 }> =
   json: { label: 'Données', Icon: Braces },
 }
 
-const TYPE_OPTIONS: { value: ChartType; label: string }[] = [
-  { value: 'bar', label: 'Barres' },
-  { value: 'line', label: 'Lignes' },
-  { value: 'area', label: 'Aire' },
-  { value: 'pie', label: 'Camembert' },
-  { value: 'doughnut', label: 'Anneau' },
+const TYPE_OPTIONS: { value: ChartType; labelKey: TranslationKey }[] = [
+  { value: 'bar', labelKey: 'wfres.chart.bar' },
+  { value: 'line', labelKey: 'wfres.chart.line' },
+  { value: 'area', labelKey: 'wfres.chart.area' },
+  { value: 'pie', labelKey: 'wfres.chart.pie' },
+  { value: 'doughnut', labelKey: 'wfres.chart.doughnut' },
 ]
 
 /** Graphe avec choix du type + des champs (séries) affichés. Réinit si la spec change. */
 function ChartBox({ spec }: { spec: ChartSpec }) {
+  const { t } = useTranslation()
   const [type, setType] = useState<ChartType>(spec.chartType)
   const [hidden, setHidden] = useState<Set<string>>(new Set())
   useEffect(() => { setType(spec.chartType); setHidden(new Set()) }, [spec])
@@ -64,7 +66,7 @@ function ChartBox({ spec }: { spec: ChartSpec }) {
                   ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-100'
                   : 'border-neutral-800 bg-well text-neutral-500 line-through'
               }`}
-              title={on ? 'Masquer cette série' : 'Afficher cette série'}
+              title={on ? t('wfres.hideSeries') : t('wfres.showSeries')}
             >
               {l}
             </button>
@@ -74,13 +76,13 @@ function ChartBox({ spec }: { spec: ChartSpec }) {
           value={type}
           onChange={(e) => setType(e.target.value as ChartType)}
           className="ml-auto text-[11px] bg-well border border-neutral-800 rounded px-1.5 py-0.5 text-neutral-300 outline-none focus:border-indigo-500"
-          title="Type de graphique"
+          title={t('wfres.chartType')}
         >
-          {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
         </select>
       </div>
       <div className="h-[460px] flex flex-col min-h-0">
-        <Suspense fallback={<div className="text-xs text-neutral-500">Chargement du graphe…</div>}>
+        <Suspense fallback={<div className="text-xs text-neutral-500">{t('wfres.loadingChart')}</div>}>
           <ChartPreview spec={shown} />
         </Suspense>
       </div>
@@ -103,16 +105,18 @@ function KpiGrid({ kpis }: { kpis: { label: string; value: string; sub?: string 
   )
 }
 
-const AGG_OPTIONS: { value: ChartAggregation; label: string }[] = [
-  { value: 'none', label: 'Aucune' },
-  { value: 'sum', label: 'Somme / catégorie' },
-  { value: 'avg', label: 'Moyenne / catégorie' },
-  { value: 'count', label: 'Nombre / catégorie' },
+// Constante de MODULE : la clé est stockée, la traduction se fait au rendu.
+const AGG_OPTIONS: { value: ChartAggregation; labelKey: TranslationKey }[] = [
+  { value: 'none', labelKey: 'wfres.aggNone' },
+  { value: 'sum', labelKey: 'wfres.sumPerCategory' },
+  { value: 'avg', labelKey: 'wfres.avgPerCategory' },
+  { value: 'count', labelKey: 'wfres.countPerCategory' },
 ]
 
 /** Constructeur de graphe (axe X + agrégation + choix des champs/séries + type) — même
  *  jeu de réglages que la carte « Graphique » du node, appliqué au résultat. */
 function DashboardBody({ sheet, hint }: { sheet: SheetLike; hint: string }) {
+  const { t } = useTranslation()
   const cols = useMemo(() => sheet.columns ?? [], [sheet])
   const rows = useMemo(() => sheet.rows ?? [], [sheet])
   const numericKeys = useMemo(() => numericColumnKeys(cols, rows), [cols, rows])
@@ -202,16 +206,16 @@ function DashboardBody({ sheet, hint }: { sheet: SheetLike; hint: string }) {
           <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
             Agrégation
             <select value={agg} onChange={(e) => setAgg(e.target.value as ChartAggregation)} className={selectCls}>
-              {AGG_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {AGG_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
             </select>
           </label>
-          <select value={type} onChange={(e) => setType(e.target.value as ChartType)} className={`ml-auto ${selectCls}`} title="Type de graphique">
-            {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          <select value={type} onChange={(e) => setType(e.target.value as ChartType)} className={`ml-auto ${selectCls}`} title={t('wfres.chartType')}>
+            {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
           </select>
         </div>
 
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">Champs (séries)</div>
+          <div className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">{t('wfres.fields')}</div>
           <div className="flex flex-wrap gap-1.5">
             {cols.map((c) => {
               const on = series.has(c.key)
@@ -222,7 +226,7 @@ function DashboardBody({ sheet, hint }: { sheet: SheetLike; hint: string }) {
                   className={`px-2 py-0.5 rounded-full text-[11px] border transition-colors ${
                     on ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-100' : 'border-neutral-800 bg-well text-neutral-500'
                   }`}
-                  title={on ? 'Retirer cette série' : 'Ajouter cette série'}
+                  title={on ? t('wfres.removeSeries') : t('wfres.addSeries')}
                 >
                   {c.label ?? c.key}
                 </button>
@@ -232,7 +236,7 @@ function DashboardBody({ sheet, hint }: { sheet: SheetLike; hint: string }) {
         </div>
 
         <div className="h-[460px] flex flex-col min-h-0">
-          <Suspense fallback={<div className="text-xs text-neutral-500">Chargement du graphe…</div>}>
+          <Suspense fallback={<div className="text-xs text-neutral-500">{t('wfres.loadingChart')}</div>}>
             <ChartPreview spec={spec} />
           </Suspense>
         </div>

@@ -5,13 +5,14 @@ import { useWorkflowStore } from '../persistence/workflow.store'
 import { nodeRegistry } from '../registry'
 import type { NodeSpec } from '../types'
 import { WORKFLOW_DRAG_TYPE } from './WorkflowEditor'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 /** Étapes du wizard — l'ordre détermine l'affichage et la numérotation. */
 interface PaletteStep {
   category: NodeSpec['category']
   step: number
-  label: string
-  hint: string
+  labelKey: TranslationKey
+  hintKey: TranslationKey
   required: boolean
   /** Classes Tailwind appliquées aux boutons et au badge. */
   accent: {
@@ -27,8 +28,8 @@ const STEPS: PaletteStep[] = [
   {
     category: 'import',
     step: 1,
-    label: 'Import',
-    hint: "Charger les données ou les fichiers d'entrée.",
+    labelKey: 'wfp.step.import',
+    hintKey: 'wfp.import',
     required: true,
     accent: {
       text: 'text-amber-300',
@@ -41,8 +42,8 @@ const STEPS: PaletteStep[] = [
   {
     category: 'enrichment',
     step: 2,
-    label: 'Enrichissement',
-    hint: 'Compléter / transformer les données (optionnel).',
+    labelKey: 'wfp.step.enrichment',
+    hintKey: 'wfp.enrich' as TranslationKey,
     required: false,
     accent: {
       text: 'text-violet-300',
@@ -55,8 +56,8 @@ const STEPS: PaletteStep[] = [
   {
     category: 'transformation',
     step: 3,
-    label: 'Transformation',
-    hint: 'Nettoyer / réécrire / filtrer / trier les données (optionnel).',
+    labelKey: 'wfp.step.transformation',
+    hintKey: 'wfp.clean' as TranslationKey,
     required: false,
     accent: {
       text: 'text-fuchsia-300',
@@ -69,8 +70,8 @@ const STEPS: PaletteStep[] = [
   {
     category: 'persistence',
     step: 4,
-    label: 'Sauvegarde',
-    hint: 'Persister dans le PIM, le DAM ou la taxonomie (optionnel).',
+    labelKey: 'wfp.step.save',
+    hintKey: 'wfp.save',
     required: false,
     accent: {
       text: 'text-emerald-300',
@@ -83,8 +84,8 @@ const STEPS: PaletteStep[] = [
   {
     category: 'export',
     step: 5,
-    label: 'Export',
-    hint: 'Générer un fichier final (Excel, PPTX…).',
+    labelKey: 'wfp.step.export',
+    hintKey: 'wfp.output' as TranslationKey,
     required: false,
     accent: {
       text: 'text-sky-300',
@@ -97,8 +98,8 @@ const STEPS: PaletteStep[] = [
   {
     category: 'utility',
     step: 6,
-    label: 'Utilitaires',
-    hint: 'Helpers techniques.',
+    labelKey: 'wfp.step.utils',
+    hintKey: 'wfp.utils',
     required: false,
     accent: {
       text: 'text-neutral-300',
@@ -111,8 +112,8 @@ const STEPS: PaletteStep[] = [
   {
     category: 'logic',
     step: 7,
-    label: 'Logique',
-    hint: 'Branchement conditionnel et chaînage de fonctions.',
+    labelKey: 'wfp.step.logic',
+    hintKey: 'wfp.branch' as TranslationKey,
     required: false,
     accent: {
       text: 'text-pink-300',
@@ -125,8 +126,8 @@ const STEPS: PaletteStep[] = [
   {
     category: 'communication',
     step: 8,
-    label: 'Communication',
-    hint: 'Envoyer des notifications externes (email, etc.).',
+    labelKey: 'wfp.step.communication',
+    hintKey: 'wfp.communication',
     required: false,
     accent: {
       text: 'text-cyan-300',
@@ -139,6 +140,7 @@ const STEPS: PaletteStep[] = [
 ]
 
 export function NodePalette() {
+  const { t } = useTranslation()
   const upsertNode = useWorkflowStore((s) => s.upsertNode)
   const placedNodes = useWorkflowStore((s) => s.current?.nodes ?? [])
   const rf = useReactFlow()
@@ -190,10 +192,10 @@ export function NodePalette() {
   return (
     <aside data-tour="wf-palette" className="w-60 border-r border-neutral-800 bg-surface-2 overflow-y-auto p-3">
       <h3 className="text-[10px] uppercase text-neutral-500 font-semibold mb-1 tracking-wider">
-        Blocs
+        {t('wfp.blocks')}
       </h3>
       <p className="text-[10px] text-neutral-600 mb-4 leading-tight">
-        Construisez votre workflow étape par étape — glissez sur le canvas ou cliquez pour spawn au centre.
+        {t('wfp.intro')}
       </p>
 
       <ol className="relative">
@@ -203,7 +205,7 @@ export function NodePalette() {
           const unlocked = stepIsUnlocked(step, idx)
           // L'étape précédente affichée (pour le message d'unlock) — peut ne
           // pas exister si on est sur Utilitaires/Export sans antérieur visible.
-          const prevLabel = idx > 0 ? visibleSteps[idx - 1].label : null
+          const prevLabel = idx > 0 ? t(visibleSteps[idx - 1].labelKey) : null
           return (
             <li key={step.category} data-tour={`wf-step-${step.category}`} className="relative pl-7 pb-4">
               {/* Connecteur vertical entre étapes */}
@@ -235,7 +237,7 @@ export function NodePalette() {
                       unlocked ? step.accent.text : 'text-neutral-500'
                     }`}
                   >
-                    {step.label}
+                    {t(step.labelKey)}
                   </h4>
                   {!step.required && unlocked ? (
                     <span className="text-[9px] text-neutral-600 uppercase tracking-wider">
@@ -245,10 +247,10 @@ export function NodePalette() {
                 </div>
                 <p className="text-[10px] text-neutral-600 leading-tight mt-0.5">
                   {unlocked
-                    ? step.hint
+                    ? t(step.hintKey)
                     : prevLabel
-                      ? `Disponible après ${prevLabel}.`
-                      : 'Verrouillé.'}
+                      ? t('wfp.availableAfter', { label: prevLabel })
+                      : t('wfp.locked')}
                 </p>
               </div>
 
@@ -281,7 +283,7 @@ export function NodePalette() {
                       <li key={spec.type}>
                         <div
                           className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] text-left bg-background border border-neutral-900 text-neutral-700 cursor-not-allowed select-none"
-                          title={prevLabel ? `Disponible après ${prevLabel}.` : 'Verrouillé.'}
+                          title={prevLabel ? t('wfp.availableAfter', { label: prevLabel }) : t('wfp.locked')}
                         >
                           <Icon className="w-3.5 h-3.5 shrink-0 text-neutral-700" />
                           <span className="truncate">{spec.label}</span>

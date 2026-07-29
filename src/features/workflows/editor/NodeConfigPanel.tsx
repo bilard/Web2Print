@@ -6,6 +6,7 @@ import { useRunContext } from '../runtime/runContext'
 import { nodeRegistry } from '../registry'
 import { ConfigFieldRenderer } from './configFields'
 import type { Workflow, WorkflowNode, WorkflowEdge, NodeStatus } from '../types'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 /**
  * Remonte récursivement les edges entrants pour collecter les colonnes
@@ -42,13 +43,14 @@ interface ConnectionsPanelProps {
 }
 
 function ConnectionsPanel({ node, wf, onRemoveEdge }: ConnectionsPanelProps) {
+  const { t } = useTranslation()
   const incoming = wf.edges.filter((e) => e.target === node.id)
   const outgoing = wf.edges.filter((e) => e.source === node.id)
 
   if (incoming.length === 0 && outgoing.length === 0) {
     return (
       <div className="pt-3 mt-3 border-t border-white/10">
-        <h4 className="text-xs uppercase text-white/40 font-semibold mb-2">Connexions</h4>
+        <h4 className="text-xs uppercase text-white/40 font-semibold mb-2">{t('wfn.connections')}</h4>
         <p className="text-[11px] text-white/30 italic">
           Aucune connexion. Tire un câble depuis un port d'un autre node.
         </p>
@@ -99,8 +101,8 @@ function ConnectionsPanel({ node, wf, onRemoveEdge }: ConnectionsPanelProps) {
           type="button"
           onClick={() => onRemoveEdge(e.id)}
           className="shrink-0 p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Supprimer la connexion"
-          aria-label="Supprimer la connexion"
+          title={t('wfn.deleteConnection')}
+          aria-label={t('wfn.deleteConnection')}
         >
           <X className="w-3 h-3" />
         </button>
@@ -110,7 +112,7 @@ function ConnectionsPanel({ node, wf, onRemoveEdge }: ConnectionsPanelProps) {
 
   return (
     <div className="pt-3 mt-3 border-t border-white/10 space-y-3">
-      <h4 className="text-xs uppercase text-white/40 font-semibold">Connexions</h4>
+      <h4 className="text-xs uppercase text-white/40 font-semibold">{t('wfn.connections')}</h4>
       {incoming.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-[10px] uppercase text-white/30 tracking-wider">
@@ -138,6 +140,7 @@ interface EdgeDetailPanelProps {
 }
 
 function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
+  const { t } = useTranslation()
   const sourceNode = wf.nodes.find((n) => n.id === edge.source)
   const targetNode = wf.nodes.find((n) => n.id === edge.target)
   const sourceLabel = sourceNode
@@ -155,12 +158,12 @@ function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Link2 className="w-4 h-4 text-violet-400" />
-        <div className="text-sm font-medium text-white">Connexion</div>
+        <div className="text-sm font-medium text-white">{t('wfn.connection')}</div>
       </div>
 
       {/* Source */}
       <div className="space-y-1.5">
-        <p className="text-[10px] uppercase text-white/30 tracking-wider">Source</p>
+        <p className="text-[10px] uppercase text-white/30 tracking-wider">{t('wfn.source')}</p>
         <div className="px-2 py-2 rounded-md bg-well border border-white/10">
           <div className="text-[12px] text-white truncate" title={sourceLabel}>
             {sourceLabel}
@@ -183,7 +186,7 @@ function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
 
       {/* Target */}
       <div className="space-y-1.5">
-        <p className="text-[10px] uppercase text-white/30 tracking-wider">Cible</p>
+        <p className="text-[10px] uppercase text-white/30 tracking-wider">{t('wfn.target')}</p>
         <div className="px-2 py-2 rounded-md bg-well border border-white/10">
           <div className="text-[12px] text-white truncate" title={targetLabel}>
             {targetLabel}
@@ -219,12 +222,13 @@ function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
   )
 }
 
-const RUN_STATUS_META: Record<NodeStatus, { label: string; color: string; dot: string }> = {
-  pending: { label: 'En attente', color: 'text-white/60', dot: 'bg-neutral-500' },
-  running: { label: 'En cours…', color: 'text-indigo-300', dot: 'bg-indigo-400' },
-  success: { label: 'Terminé', color: 'text-emerald-300', dot: 'bg-emerald-400' },
-  error: { label: 'Erreur', color: 'text-red-300', dot: 'bg-red-400' },
-  skipped: { label: 'Ignoré', color: 'text-white/60', dot: 'bg-neutral-600' },
+// Constante de MODULE : la clé est stockée, la traduction se fait au rendu.
+const RUN_STATUS_META: Record<NodeStatus, { labelKey: TranslationKey; color: string; dot: string }> = {
+  pending: { labelKey: 'wfn.pending', color: 'text-white/60', dot: 'bg-neutral-500' },
+  running: { labelKey: 'wfn.running', color: 'text-indigo-300', dot: 'bg-indigo-400' },
+  success: { labelKey: 'wfn.done', color: 'text-emerald-300', dot: 'bg-emerald-400' },
+  error: { labelKey: 'wfn.error', color: 'text-red-300', dot: 'bg-red-400' },
+  skipped: { labelKey: 'wfn.skipped', color: 'text-white/60', dot: 'bg-neutral-600' },
 }
 
 /**
@@ -233,6 +237,7 @@ const RUN_STATUS_META: Record<NodeStatus, { label: string; color: string; dot: s
  * Réactif : se met à jour en direct pendant un run.
  */
 function NodeLogsTab({ nodeId }: { nodeId: string }) {
+  const { t } = useTranslation()
   const state = useRunContext((s) => s.nodeStates[nodeId])
   const status: NodeStatus = state?.status ?? 'pending'
   const meta = RUN_STATUS_META[status]
@@ -245,7 +250,7 @@ function NodeLogsTab({ nodeId }: { nodeId: string }) {
       {/* Statut d'exécution */}
       <div className="flex items-center gap-2 shrink-0">
         <span className={`w-2 h-2 rounded-full ${meta.dot} ${status === 'running' ? 'animate-pulse' : ''}`} />
-        <span className={`text-xs font-medium ${meta.color}`}>{meta.label}</span>
+        <span className={`text-xs font-medium ${meta.color}`}>{t(meta.labelKey)}</span>
         {typeof state?.durationMs === 'number' && (
           <span className="text-[10px] text-white/40 tabular-nums">
             {(state.durationMs / 1000).toFixed(1)}s
@@ -259,7 +264,7 @@ function NodeLogsTab({ nodeId }: { nodeId: string }) {
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
           <span>
             {status === 'error'
-              ? 'Ce node a échoué — voir le détail ci-dessous.'
+              ? t('wfn.failed')
               : `${problemCount} avertissement${problemCount > 1 ? 's' : ''} pendant le traitement.`}
           </span>
         </div>
@@ -290,7 +295,7 @@ function NodeLogsTab({ nodeId }: { nodeId: string }) {
       ) : (
         <p className="text-[11px] text-white/30 italic">
           {status === 'pending'
-            ? 'Aucun traitement pour l’instant. Lancez le node (▶ au survol de la carte) pour suivre les logs ici.'
+            ? t('wfn.noLog')
             : 'Aucun log.'}
         </p>
       )}
@@ -299,6 +304,7 @@ function NodeLogsTab({ nodeId }: { nodeId: string }) {
 }
 
 export function NodeConfigPanel() {
+  const { t } = useTranslation()
   const selectedId = useStore((s) => {
     for (const n of s.nodeLookup.values()) {
       if ((n as any).selected) return (n as { id: string }).id
@@ -374,7 +380,7 @@ export function NodeConfigPanel() {
         />
       ) : !node || !spec ? (
         <p className="text-sm text-white/40">
-          Sélectionnez un node ou une connexion pour voir ses détails.
+          {t('wfn.selectNode')}
         </p>
       ) : (
         <div className="flex flex-col min-h-0 flex-1 space-y-3">
@@ -406,8 +412,8 @@ export function NodeConfigPanel() {
               {logsHaveProblem && (
                 <span
                   className="w-1.5 h-1.5 rounded-full bg-amber-400"
-                  title="Avertissement ou erreur"
-                  aria-label="Avertissement ou erreur"
+                  title={t('wfn.warning')}
+                  aria-label={t('wfn.warning')}
                 />
               )}
             </button>

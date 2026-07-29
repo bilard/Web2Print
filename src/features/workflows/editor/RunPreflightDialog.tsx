@@ -4,6 +4,7 @@
 import { AlertTriangle, ArrowRight } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import type { WorkflowIssue } from '../runtime/validateWorkflow'
+import { useTranslation } from '@/lib/i18n'
 
 interface Props {
   issues: WorkflowIssue[]
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus }: Props) {
+  const { t } = useTranslation()
   // Regroupe par carte pour un affichage lisible.
   const byNode = new Map<string, { label: string; messages: string[] }>()
   for (const i of issues) {
@@ -35,13 +37,13 @@ export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus }: Pro
               <AlertTriangle className="w-4 h-4 text-amber-400" />
             </div>
             <div>
-              <h2 className="text-base font-semibold">Cohérence du flux</h2>
+              <h2 className="text-base font-semibold">{t('wfc.title')}</h2>
               <p className="text-xs text-white/45">
                 {issues.length} point{issues.length > 1 ? 's' : ''} à vérifier avant de lancer.
               </p>
             </div>
           </div>
-          <CloseButton onClick={onCancel} title="Fermer" />
+          <CloseButton onClick={onCancel} title={t('wfc.close')} />
         </div>
 
         <ul className="space-y-2.5 max-h-[50vh] overflow-y-auto">
@@ -51,7 +53,7 @@ export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus }: Pro
                 type="button"
                 onClick={() => onFocus(nodeId)}
                 className="group flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-indigo-300 mb-1.5 transition-colors"
-                title="Aller à cette carte dans le flux"
+                title={t('wfc.goToCard')}
               >
                 {entry.label}
                 <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -71,7 +73,7 @@ export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus }: Pro
         <p className="text-[11px] text-white/35 leading-snug">
           {onProceed
             ? "Ces manques feront échouer ou tronquer le run. Corrige-les, ou lance quand même si c'est volontaire (test partiel)."
-            : 'Consultation — clique une carte pour aller la corriger. Ce contrôle tourne aussi avant chaque lancement.'}
+            : t('wfc.hint')}
         </p>
 
         <div className="flex justify-end gap-2 pt-1">

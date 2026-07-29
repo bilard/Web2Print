@@ -1,4 +1,4 @@
-// Webhook entrant du workflow : bouton dans le header de l'éditeur ouvrant un
+// {t('wfw.title')} du workflow : bouton dans le header de l'éditeur ouvrant un
 // popover pour activer/désactiver l'URL de déclenchement externe (Zapier, ERP,
 // curl). Config dans workflowWebhooks/{workflowId} ; la Function workflowWebhook
 // valide le secret et exécute le workflow côté serveur (mêmes nodes que le cron).
@@ -8,6 +8,7 @@ import { Webhook, Copy, RefreshCcw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
+import { useTranslation } from '@/lib/i18n'
 
 // URL stable de la Function v2 (Cloud Run), même forme que telegramWebhook.
 const WEBHOOK_BASE = 'https://workflowwebhook-4cs64afhba-ew.a.run.app'
@@ -26,6 +27,7 @@ function newSecret(): string {
 }
 
 export function WebhookPanel({ workflowId }: { workflowId: string }) {
+  const { t } = useTranslation()
   const uid = useAuthStore((s) => s.user?.uid)
   const [cfg, setCfg] = useState<WebhookDoc | null>(null)
   const [open, setOpen] = useState(false)
@@ -54,19 +56,19 @@ export function WebhookPanel({ workflowId }: { workflowId: string }) {
     await setDoc(ref, { uid, secret, enabled: true, createdAt: serverTimestamp() }, { merge: true })
     // Bascule optimiste : ne pas dépendre du listener pour afficher l'URL + secret.
     setCfg((prev) => ({ ...(prev ?? { uid, secret }), secret, enabled: true }))
-    toast.success('Webhook activé.')
+    toast.success(t('wfw.enabled'))
   }
   const disable = () => updateDoc(ref, { enabled: false })
   const regenerate = async () => {
     await updateDoc(ref, { secret: newSecret() })
-    toast.success('Secret régénéré — mets à jour tes intégrations.')
+    toast.success(t('wfw.secretRegenerated'))
   }
   const remove = async () => {
     await deleteDoc(ref)
     setOpen(false)
   }
   const copy = (text: string, label: string) => {
-    void navigator.clipboard.writeText(text).then(() => toast.success(`${label} copié.`))
+    void navigator.clipboard.writeText(text).then(() => toast.success(t('wfw.copied', { label })))
   }
 
   return (
@@ -78,14 +80,14 @@ export function WebhookPanel({ workflowId }: { workflowId: string }) {
             ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-200'
             : 'bg-white/[0.06] hover:bg-white/[0.1] text-white/80'
         }`}
-        title="Déclencher ce workflow depuis l'extérieur (URL + secret)"
+        title={t('wfw.trigger')}
       >
         <Webhook className="w-4 h-4" /> Webhook
       </button>
 
       {open && (
         <div className="absolute right-0 top-full mt-2 w-96 z-50 bg-surface-2 border border-white/10 rounded-xl shadow-2xl p-4 space-y-3">
-          <div className="text-[12px] font-medium text-white/70">Webhook entrant</div>
+          <div className="text-[12px] font-medium text-white/70">{t('wfw.title')}</div>
           {!cfg?.enabled ? (
             <>
               <p className="text-[11px] text-white/40 leading-snug">
@@ -102,29 +104,29 @@ export function WebhookPanel({ workflowId }: { workflowId: string }) {
           ) : (
             <>
               <div>
-                <div className="text-[10px] text-white/35 mb-1">URL (POST)</div>
+                <div className="text-[10px] text-white/35 mb-1">{t('wfw.url')}</div>
                 <div className="flex items-center gap-1.5">
                   <code className="flex-1 text-[10px] text-white/70 bg-well rounded px-2 py-1.5 truncate">{url}</code>
-                  <button onClick={() => copy(url, 'URL')} className="p-1.5 rounded text-white/40 hover:text-white/80 hover:bg-white/[0.06]" title="Copier l'URL">
+                  <button onClick={() => copy(url, 'URL')} className="p-1.5 rounded text-white/40 hover:text-white/80 hover:bg-white/[0.06]" title={t('wfw.copyUrl')}>
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-white/35 mb-1">Header <code>X-Webhook-Secret</code></div>
+                <div className="text-[10px] text-white/35 mb-1">{t('wfw.header')} <code>X-Webhook-Secret</code></div>
                 <div className="flex items-center gap-1.5">
                   <code className="flex-1 text-[10px] text-white/70 bg-well rounded px-2 py-1.5 truncate">{cfg.secret}</code>
-                  <button onClick={() => copy(cfg.secret, 'Secret')} className="p-1.5 rounded text-white/40 hover:text-white/80 hover:bg-white/[0.06]" title="Copier le secret">
+                  <button onClick={() => copy(cfg.secret, 'Secret')} className="p-1.5 rounded text-white/40 hover:text-white/80 hover:bg-white/[0.06]" title={t('wfw.copySecret')}>
                     <Copy className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={regenerate} className="p-1.5 rounded text-white/40 hover:text-amber-300 hover:bg-white/[0.06]" title="Régénérer le secret">
+                  <button onClick={regenerate} className="p-1.5 rounded text-white/40 hover:text-amber-300 hover:bg-white/[0.06]" title={t('wfw.regenerate')}>
                     <RefreshCcw className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
               <p className="text-[10px] text-white/30 leading-snug">
                 Exemple : <code>curl -X POST -H "X-Webhook-Secret: …" "{`${WEBHOOK_BASE}?id=…`}"</code>
-                {cfg.lastStatus ? ` · Dernier déclenchement : ${cfg.lastStatus}` : ''}
+                {cfg.lastStatus ? t('wfw.lastTrigger', { status: cfg.lastStatus }) : ''}
               </p>
               <div className="flex items-center justify-between pt-1">
                 <button onClick={disable} className="text-[11px] text-white/40 hover:text-white/70">

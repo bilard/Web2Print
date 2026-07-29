@@ -2,6 +2,7 @@
 // courant + popover de grille. Liste curée orientée automatisation / data /
 // e-commerce. Saisie libre conservée en repli (champ texte du popover).
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from '@/lib/i18n'
 
 const EMOJIS = [
   '⭐', '🚀', '⚡', '🔧', '⚙️', '🤖', '🧠', '✨',
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function EmojiPicker({ value, onChange }: Props) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -36,8 +38,8 @@ export function EmojiPicker({ value, onChange }: Props) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="mt-1 w-full bg-well border border-neutral-700 rounded px-2 py-2 text-center text-lg outline-none hover:border-indigo-500 focus:border-indigo-500"
-        aria-label="Choisir un émoji"
-        title="Choisir un émoji"
+        aria-label={t('wfe.pickEmoji')}
+        title={t('wfe.pickEmoji')}
       >
         {value || '⭐'}
       </button>
@@ -59,7 +61,7 @@ export function EmojiPicker({ value, onChange }: Props) {
             value={value}
             onChange={(ev) => onChange(ev.target.value)}
             maxLength={4}
-            placeholder="ou collez un émoji…"
+            placeholder={t('wfe.pasteEmoji')}
             className="mt-2 w-full bg-well border border-neutral-700 rounded px-2 py-1 text-center text-sm outline-none focus:border-indigo-500"
           />
         </div>

@@ -10,6 +10,7 @@ import {
 } from '../templates'
 import { listUserTemplates, saveUserTemplate } from '../persistence/workflowsApi'
 import { EmojiPicker } from './EmojiPicker'
+import { useTranslation } from '@/lib/i18n'
 
 interface Props {
   workflow: Workflow
@@ -19,9 +20,10 @@ interface Props {
 }
 
 export function SaveAsTemplateDialog({ workflow, uid, onClose, onSaved }: Props) {
+  const { t } = useTranslation()
   const [existing, setExisting] = useState<UserWorkflowTemplate[]>([])
   const [targetId, setTargetId] = useState('') // '' = nouveau modèle
-  const [name, setName] = useState(workflow.name || 'Mon modèle')
+  const [name, setName] = useState(workflow.name || t('wft.defaultName'))
   const [description, setDescription] = useState(workflow.description || '')
   const [emoji, setEmoji] = useState('⭐')
   const [saving, setSaving] = useState(false)
@@ -52,7 +54,7 @@ export function SaveAsTemplateDialog({ workflow, uid, onClose, onSaved }: Props)
         uid,
       )
       await saveUserTemplate(uid, tpl)
-      notify.success(targetId ? 'Modèle mis à jour' : 'Modèle créé', `« ${tpl.name} » est dans « Mes modèles ».`)
+      notify.success(targetId ? t('wft.updated') : t('wft.created'), `« ${tpl.name} » est dans « Mes modèles ».`)
       onSaved?.()
       onClose()
     } catch (e) {
@@ -69,14 +71,14 @@ export function SaveAsTemplateDialog({ workflow, uid, onClose, onSaved }: Props)
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Enregistrer comme modèle</h2>
-          <CloseButton onClick={onClose} title="Fermer" />
+          <h2 className="text-lg font-semibold">{t('wft.title')}</h2>
+          <CloseButton onClick={onClose} title={t('wft.close')} />
         </div>
 
         {/* « Cible » : visible seulement s'il existe déjà des modèles à écraser. */}
         {existing.length > 0 && (
           <label className="block text-sm">
-            <span className="text-white/60">Cible</span>
+            <span className="text-white/60">{t('wft.target')}</span>
             <select
               value={targetId}
               onChange={(e) => pickTarget(e.target.value)}
@@ -92,11 +94,11 @@ export function SaveAsTemplateDialog({ workflow, uid, onClose, onSaved }: Props)
 
         <div className="flex gap-2">
           <label className="block text-sm w-16 shrink-0">
-            <span className="text-white/60">Émoji</span>
+            <span className="text-white/60">{t('wft.emoji')}</span>
             <EmojiPicker value={emoji} onChange={setEmoji} />
           </label>
           <label className="block text-sm flex-1">
-            <span className="text-white/60">Nom</span>
+            <span className="text-white/60">{t('wft.name')}</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -107,7 +109,7 @@ export function SaveAsTemplateDialog({ workflow, uid, onClose, onSaved }: Props)
         </div>
 
         <label className="block text-sm">
-          <span className="text-white/60">Description</span>
+          <span className="text-white/60">{t('wft.description')}</span>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -130,7 +132,7 @@ export function SaveAsTemplateDialog({ workflow, uid, onClose, onSaved }: Props)
             disabled={saving || !name.trim()}
             className="px-4 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm disabled:opacity-50"
           >
-            {saving ? 'Enregistrement…' : targetId ? 'Mettre à jour' : 'Créer le modèle'}
+            {saving ? 'Enregistrement…' : targetId ? t('wft.update') : t('wft.create')}
           </button>
         </div>
       </div>

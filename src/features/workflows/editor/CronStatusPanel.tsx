@@ -8,6 +8,7 @@ import { formatCountdown } from '../runtime/cronSchedule'
 import { useRunContext } from '../runtime/runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { saveWorkflow } from '../persistence/workflowsApi'
+import { useTranslation } from '@/lib/i18n'
 
 interface ScheduleDoc {
   enabled: boolean; every: number; unit: string
@@ -26,6 +27,7 @@ const runNow = httpsCallable<{ workflowId: string }, { status: string; nodeCount
 )
 
 export function CronStatusPanel({ workflowId, children }: { workflowId: string; children?: ReactNode }) {
+  const { t } = useTranslation()
   const [sched, setSched] = useState<ScheduleDoc | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [running, setRunning] = useState(false)
@@ -52,10 +54,10 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
     useRunContext.getState().resetRun()
     try {
       const { data } = await runNow({ workflowId })
-      if (data.errorCount > 0) toast.warning(`Run serveur : ${data.nodeCount} node(s), ${data.errorCount} erreur(s).`)
-      else toast.success(`Run serveur OK — ${data.nodeCount} node(s).`)
+      if (data.errorCount > 0) toast.warning(t('wfx.serverRun', { nodes: data.nodeCount, errors: data.errorCount }))
+      else toast.success(t('wfx.serverRunOk', { nodes: data.nodeCount }))
     } catch (e) {
-      toast.error(`Run serveur échoué : ${e instanceof Error ? e.message : e}`)
+      toast.error(t('wfx.serverRunFailed', { message: String(e instanceof Error ? e.message : e) }))
     } finally { setRunning(false) }
   }
 
@@ -65,9 +67,9 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
     if (!uid) return
     try {
       await setDoc(doc(db, 'users', uid, 'workflowAbort', workflowId), { requested: true, ts: Date.now() })
-      toast.info('Arrêt demandé — le run s’interrompra dans quelques secondes.')
+      toast.info(t('wfx.stopRequested'))
     } catch (e) {
-      toast.error(`Impossible de demander l’arrêt : ${e instanceof Error ? e.message : e}`)
+      toast.error(t('wfx.stopFailed', { message: String(e instanceof Error ? e.message : e) }))
     }
   }
 
@@ -81,7 +83,7 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
     const wf = useWorkflowStore.getState().current
     if (!uid || !wf) return
     const cronNode = wf.nodes.find((n) => n.type === 'cron' && (n.config as { enabled?: boolean })?.enabled)
-    if (!cronNode) { toast.info('Aucun cron actif à suspendre.'); return }
+    if (!cronNode) { toast.info(t('wfx.noCron')); return }
     try {
       const nextNodes = wf.nodes.map((n) =>
         n.id === cronNode.id ? { ...n, config: { ...(n.config as object), enabled: false } } : n)
@@ -89,9 +91,9 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
       useWorkflowStore.getState().setNodes(nextNodes)
       await setDoc(doc(db, 'users', uid, 'workflowAbort', workflowId), { requested: true, ts: Date.now() }) // arrête un run en cours
       await saveWorkflow(uid, next) // supprime le planning → plus de relance
-      toast.success('Flux suspendu — le cron ne relancera plus. Réactive « Planification active » dans le node Cron pour reprendre.')
+      toast.success(t('wfx.suspended'))
     } catch (e) {
-      toast.error(`Impossible de suspendre : ${e instanceof Error ? e.message : e}`)
+      toast.error(t('wfx.suspendFailed', { message: String(e instanceof Error ? e.message : e) }))
     }
   }
 
@@ -111,10 +113,10 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
       {isRunning ? (
         // Texte sur 2 lignes pour réduire la largeur : ligne 1 = statut + démarré,
         // ligne 2 = reprise auto (le segment le plus long).
-        <span className="flex flex-col gap-0.5 leading-tight" title="Un run serveur est en cours d’exécution. Un workflow long avance par tranches : interrompu au budget, il REPREND automatiquement au tick suivant (checkpoint).">
+        <span className="flex flex-col gap-0.5 leading-tight" title={t('wfx.running.help')}>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <b className="text-emerald-300">En cours</b>
+            <b className="text-emerald-300">{t('wfx.running')}</b>
             {sched.lastRunAt && <span className="text-indigo-200/80">· démarré {hhmm(sched.lastRunAt)} (il y a {formatCountdown(now - sched.lastRunAt)})</span>}
           </span>
           {/* Pendant un run, nextRunAt = échéance du VERROU : l'heure à laquelle le
@@ -127,8 +129,8 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
         </span>
       ) : sched.cycleWaiting ? (
         // 2 lignes pour réduire la largeur : ligne 1 = état, ligne 2 = prochaine relance.
-        <span className="flex flex-col gap-0.5 leading-tight" title="Cycle de moisson terminé à 100 % — relance à l'échéance calendaire">
-          <b className="text-emerald-300">Cycle terminé ✓</b>
+        <span className="flex flex-col gap-0.5 leading-tight" title={t('wfx.cycleDone.help')}>
+          <b className="text-emerald-300">{t('wfx.cycleDone')}</b>
           <span className="text-indigo-200/70">
             Relance <b className="capitalize text-indigo-200">{dayTime(sched.nextRunAt)}</b>{' '}
             ({overdue ? 'imminente' : `dans ${formatCountdown(sched.nextRunAt - now)}`})
@@ -136,21 +138,21 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
         </span>
       ) : (
         // 2 lignes pour réduire la largeur : ligne 1 = dernier run, ligne 2 = prochain run.
-        <span className="flex flex-col gap-0.5 leading-tight" title="Planification serveur active">
+        <span className="flex flex-col gap-0.5 leading-tight" title={t('wfx.scheduleActive')}>
           <span>
             {sched.lastRunAt
-              ? <>Dernier <b>{hhmm(sched.lastRunAt)}</b> <span className="text-indigo-200/70">(il y a {formatCountdown(now - sched.lastRunAt)})</span> {
+              ? <>{t('wfx.last')} <b>{hhmm(sched.lastRunAt)}</b> <span className="text-indigo-200/70">(il y a {formatCountdown(now - sched.lastRunAt)})</span> {
                   // 'stopped' = STOP volontaire, à ne pas confondre avec un échec (⚠) ni
                   // avec une fin normale (✓) — sinon l'arrêt demandé reste invisible.
                   sched.lastStatus === 'stopped'
-                    ? <span className="text-rose-300 cursor-help" title="Run interrompu par le bouton STOP. ⚠ Le cron relancera au prochain tick — « Suspendre » pour arrêter durablement.">■ arrêté</span>
+                    ? <span className="text-rose-300 cursor-help" title={t('wfx.stopped.help')}>■ arrêté</span>
                     : sched.lastStatus === 'error'
-                      ? <span className="text-rose-300 cursor-help" title={sched.lastError ?? 'Dernier run en erreur'}>⚠</span>
+                      ? <span className="text-rose-300 cursor-help" title={sched.lastError ?? t('wfx.lastFailed')}>⚠</span>
                       : <span className="text-emerald-300">✓</span>
                 }</>
-              : <span className="text-indigo-200/70">Jamais exécuté</span>}
+              : <span className="text-indigo-200/70">{t('wfx.neverRun')}</span>}
           </span>
-          <span>Prochain <b>{hhmm(sched.nextRunAt)}</b> <span className="text-indigo-200/70">({overdue ? 'imminent' : `dans ${formatCountdown(sched.nextRunAt - now)}`})</span></span>
+          <span>{t('wfx.next')} <b>{hhmm(sched.nextRunAt)}</b> <span className="text-indigo-200/70">({overdue ? 'imminent' : `dans ${formatCountdown(sched.nextRunAt - now)}`})</span></span>
         </span>
       )}
       {isRunning ? (
@@ -159,7 +161,7 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
         <button
           onClick={onStop}
           className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-500/25 hover:bg-red-500/40 text-red-200"
-          title="Arrêter le run serveur EN COURS. ⚠ Le cron le relancera au prochain tick — utilise « Suspendre » pour arrêter le flux durablement."
+          title={t('wfx.stop.help')}
         >
           <Square className="w-3 h-3" />
           STOP
@@ -169,7 +171,7 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
         <button
           onClick={onRun}
           className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/25 hover:bg-indigo-500/40"
-          title="Exécuter maintenant côté serveur"
+          title={t('wfx.runNow')}
         >
           <Play className="w-3 h-3" />
           Lancer (serveur)
@@ -180,7 +182,7 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
       <button
         onClick={onSuspend}
         className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/35 text-amber-200"
-        title="Suspendre le flux : désactive le cron (plus aucune relance) et arrête le run en cours. Réactivable dans le node Cron."
+        title={t('wfx.suspend.help')}
       >
         <PauseCircle className="w-3 h-3" />
         Suspendre

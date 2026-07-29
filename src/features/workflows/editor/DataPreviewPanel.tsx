@@ -38,6 +38,7 @@ import { PanelResizeHandle, usePanelResize } from './usePanelResize'
 import { isChartSpec } from '../registry/chartSpec'
 import { PersistedWatchPreview } from './PersistedWatchPreview'
 import type { NodeRunState, NodeStatus, Workflow } from '../types'
+import { useTranslation, t as tr } from '@/lib/i18n'
 
 // Nodes de veille tarifaire dont la donnée est PERSISTÉE (rapport Firestore du suivi) :
 // pour ceux-là, une carte sans run en session montre l'état déjà collecté, pas un vide.
@@ -367,6 +368,7 @@ function formatCell(v: unknown): string {
 }
 
 export function SheetPreview({ sheet }: { sheet: SheetLike }) {
+  const { t } = useTranslation()
   const cols = sheet.columns ?? []
   const allRows = sheet.rows ?? []
 
@@ -526,7 +528,7 @@ export function SheetPreview({ sheet }: { sheet: SheetLike }) {
   }
 
   if (cols.length === 0 || totalRows === 0) {
-    return <EmptyState label="Sheet vide" />
+    return <EmptyState label={t('wfd.emptySheet')} />
   }
 
   return (
@@ -571,7 +573,7 @@ export function SheetPreview({ sheet }: { sheet: SheetLike }) {
                   setShowSuggestions(false)
                 }
               }}
-              placeholder="Rechercher dans les données…"
+              placeholder={t('wfd.search')}
               spellCheck={false}
               autoComplete="off"
               role="combobox"
@@ -589,7 +591,7 @@ export function SheetPreview({ sheet }: { sheet: SheetLike }) {
                   inputRef.current?.focus()
                 }}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-200"
-                aria-label="Effacer la recherche"
+                aria-label={t('wfd.clearSearch')}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -644,7 +646,7 @@ export function SheetPreview({ sheet }: { sheet: SheetLike }) {
           </div>
 
           <label className="flex items-center gap-1 text-neutral-500">
-            <span className="text-[10px] uppercase tracking-wider">Lignes</span>
+            <span className="text-[10px] uppercase tracking-wider">{t('wfd.rows')}</span>
             <select
               value={pageSize}
               onChange={(e) => setPageSize(Number(e.target.value))}
@@ -766,12 +768,13 @@ export function SheetPreview({ sheet }: { sheet: SheetLike }) {
 }
 
 export function AssetGridPreview({ assets }: { assets: AssetLike[] }) {
+  const { t } = useTranslation()
   const items = assets.slice(0, MAX_ASSETS)
   return (
     <div className="space-y-2">
       <div className="text-[11px] text-neutral-500">
         {assets.length} asset{assets.length > 1 ? 's' : ''}
-        {assets.length > MAX_ASSETS ? ` · aperçu ${MAX_ASSETS} premiers` : ''}
+        {assets.length > MAX_ASSETS ? t('wfd.assetPreview', { n: MAX_ASSETS }) : ''}
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2">
         {items.map((a, i) => {
@@ -842,12 +845,13 @@ function FilePreview({ file }: { file: File | Blob }) {
 }
 
 function ProductsPreview({ value }: { value: unknown }) {
+  const { t } = useTranslation()
   const arr = Array.isArray(value)
     ? (value as Record<string, unknown>[])
     : Array.isArray((value as { products?: unknown[] })?.products)
       ? ((value as { products: Record<string, unknown>[] }).products)
       : null
-  if (!arr || arr.length === 0) return <EmptyState label="Aucun produit" />
+  if (!arr || arr.length === 0) return <EmptyState label={t('wfd.noProduct')} />
   // Reuse table renderer by synthesizing a sheet-like shape
   const keys = Array.from(
     arr.slice(0, 5).reduce<Set<string>>((acc, row) => {
@@ -891,7 +895,7 @@ function redactSecrets(v: unknown): unknown {
     const out: Record<string, unknown> = {}
     for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
       out[k] =
-        SECRET_KEY_RE.test(k) && typeof val === 'string' && val ? '••• (masqué)' : redactSecrets(val)
+        SECRET_KEY_RE.test(k) && typeof val === 'string' && val ? tr('wfd.hidden') : redactSecrets(val)
     }
     return out
   }
@@ -944,8 +948,9 @@ function buildAllNodesData(
 }
 
 function AllNodesJsonPreview({ data }: { data: Record<string, unknown> }) {
+  const { t } = useTranslation()
   if (Object.keys(data).length === 0) {
-    return <EmptyState label="Aucun composant dans le workflow." />
+    return <EmptyState label={t('wfd.noComponent')} />
   }
   return (
     <div className="flex-1 min-h-0 overflow-auto">
@@ -968,7 +973,7 @@ function renderPreview(value: unknown) {
   // dans un conteneur flex-scroll pour respecter le parent overflow-hidden.
   if (isChartSpec(value)) {
     return (
-      <Suspense fallback={<EmptyState label="Chargement du graphe…" />}>
+      <Suspense fallback={<EmptyState label={tr('wfd.loadingGraph')} />}>
         <ChartPreview spec={value} />
       </Suspense>
     )
@@ -996,6 +1001,7 @@ function renderPreview(value: unknown) {
 }
 
 export function DataPreviewPanel() {
+  const { t } = useTranslation()
   const states = useRunContext((s) => s.nodeStates)
   const isRunning = useRunContext((s) => s.isRunning)
   const wf = useWorkflowStore((s) => s.current)
@@ -1090,7 +1096,7 @@ export function DataPreviewPanel() {
           onClick={toggleCollapsed}
           className="px-4 py-1.5 text-xs uppercase text-neutral-500 flex items-center gap-2 flex-1 min-w-0 text-left hover:bg-white/[0.02] transition-colors"
           aria-expanded={!collapsed}
-          title={collapsed ? 'Déplier l’aperçu' : 'Replier l’aperçu'}
+          title={collapsed ? t('wfd.expandPreview') : t('wfd.collapsePreview')}
         >
           {collapsed ? (
             <ChevronUp className="w-3 h-3 text-neutral-600" />
@@ -1102,7 +1108,7 @@ export function DataPreviewPanel() {
           ) : (
             <Eye className="w-3 h-3" />
           )}
-          <span>Aperçu données</span>
+          <span>{t('wfd.preview')}</span>
           {allMode ? (
             <span className="text-neutral-600 normal-case truncate">
               · tous les composants (JSON)
@@ -1112,7 +1118,7 @@ export function DataPreviewPanel() {
               · {target.nodeLabel}
               <span className="text-neutral-700"> → {target.portName}</span>
               {target.status === 'running' ? (
-                <span className="ml-2 text-indigo-400">live</span>
+                <span className="ml-2 text-indigo-400">{t('wfd.live')}</span>
               ) : null}
             </span>
           ) : null}
@@ -1122,7 +1128,7 @@ export function DataPreviewPanel() {
             type="button"
             onClick={() => setAllMode((v) => !v)}
             aria-pressed={allMode}
-            title="Afficher le JSON (config + sorties) de tous les composants"
+            title={t('wfd.showJson')}
             className={`mr-2 px-2 py-1 text-[10px] uppercase tracking-wider flex items-center gap-1 rounded border transition-colors ${
               allMode
                 ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-200'
@@ -1156,8 +1162,8 @@ export function DataPreviewPanel() {
               <div className="flex items-center gap-2 text-xs text-neutral-500 italic py-3">
                 <Table2 className="w-3.5 h-3.5" />
                 {selectedId
-                  ? 'Cette carte n’a pas encore de données — lance le workflow (ou la carte) pour voir sa sortie ici.'
-                  : 'Sélectionne une carte, ou lance le workflow pour voir l’aperçu ici.'}
+                  ? t('wfd.noDataYet')
+                  : t('wfd.selectCard')}
               </div>
             )
             const selNode = selectedId ? wf?.nodes.find((n) => n.id === selectedId) : undefined

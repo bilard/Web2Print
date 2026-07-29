@@ -27,6 +27,7 @@ import { useConnectionDrag } from '../runtime/connectionDragStore'
 import { useRunContext } from '../runtime/runContext'
 import { useFocusNode } from './focusNodeStore'
 import type { WorkflowEdge, WorkflowNode } from '../types'
+import { t } from '@/lib/i18n'
 
 const nodeTypes = { base: BaseNode }
 const edgeTypes = { flow: FlowEdge }
@@ -264,7 +265,7 @@ export function WorkflowEditor() {
         `Types incompatibles : ${sourceLabel} → ${targetLabel}`,
         {
           description:
-            'Insérez un node de transformation entre les deux (ex. Import CSV/Excel pour passer d\'un fichier à une Sheet).',
+            t('wfl.insertTransform'),
         },
       )
     },

@@ -12,6 +12,7 @@ import { nodeRegistry } from '../registry'
 import { PanelResizeHandle, usePanelResize } from './usePanelResize'
 import { findExportResult, type ExportPayload } from '../runtime/exportResult'
 import { useWorkflowRunLive, type RunLiveLog } from './useWorkflowRunLive'
+import { useTranslation } from '@/lib/i18n'
 
 function downloadExport(payload: ExportPayload) {
   const a = document.createElement('a')
@@ -32,6 +33,7 @@ type Level = 'all' | 'warn' | 'error'
 
 /** Onglet CONSOLE : flux live chronologique, coloré, filtrable, autoscroll. */
 function ConsoleTab({ workflowId, nodeName }: { workflowId: string | undefined; nodeName: (id: string) => string }) {
+  const { t } = useTranslation()
   const live = useWorkflowRunLive(workflowId)
   const [level, setLevel] = useState<Level>('all')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -54,12 +56,12 @@ function ConsoleTab({ workflowId, nodeName }: { workflowId: string | undefined; 
     <div className="flex-1 min-h-0 flex flex-col px-3 pb-2">
       <div className="flex items-center gap-1.5 py-1.5 shrink-0">
         {live.status === 'running'
-          ? <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />en cours</span>
+          ? <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />{t('wfr.running')}</span>
           : live.status === 'error'
-            ? <span className="text-[11px] font-semibold text-rose-300">dernier run en erreur</span>
+            ? <span className="text-[11px] font-semibold text-rose-300">{t('wfr.lastFailed')}</span>
             : live.status
               ? <span className="text-[11px] text-emerald-300/70">dernier run {live.status === 'partial' ? 'partiel' : 'OK'}</span>
-              : <span className="text-[11px] text-neutral-500">aucun run serveur</span>}
+              : <span className="text-[11px] text-neutral-500">{t('wfr.noServerRun')}</span>}
         {live.startedAt && <span className="text-[10px] text-neutral-600">· {live.trigger === 'cron' ? 'cron' : 'manuel'} {hhmmss(live.startedAt)}{live.endedAt ? `→${hhmmss(live.endedAt)}` : ''}</span>}
         <div className="ml-auto flex items-center gap-1">
           {(['all', 'warn', 'error'] as const).map((lv) => (
@@ -79,7 +81,7 @@ function ConsoleTab({ workflowId, nodeName }: { workflowId: string | undefined; 
         onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40 }}
         className="flex-1 min-h-0 overflow-y-auto bg-black/30 rounded border border-white/5 font-mono text-[11px] leading-relaxed px-2 py-1.5">
         {logs.length === 0 ? (
-          <div className="text-neutral-600 py-4 text-center">Aucun log{level !== 'all' ? ' à ce niveau' : ''} — le flux arrive en direct pendant un run serveur.</div>
+          <div className="text-neutral-600 py-4 text-center">Aucun log{level !== 'all' ? t('wfr.atThisLevel') : ''} — le flux arrive en direct pendant un run serveur.</div>
         ) : logs.map((l, i) => (
           <div key={`${l.ts}_${i}`} className="whitespace-pre-wrap break-words">
             <span className="text-neutral-600">{hhmmss(l.ts)}</span>
@@ -94,6 +96,7 @@ function ConsoleTab({ workflowId, nodeName }: { workflowId: string | undefined; 
 
 /** Onglet NODES : détail par node (statut, durée, sorties, export) — vue existante. */
 function NodesTab() {
+  const { t } = useTranslation()
   const states = useRunContext((s) => s.nodeStates)
   const wf = useWorkflowStore((s) => s.current)
   const liveIds = new Set((wf?.nodes ?? []).map((n) => n.id))
@@ -101,7 +104,7 @@ function NodesTab() {
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-3 space-y-2">
       {entries.length === 0 ? (
-        <div className="text-neutral-600 text-xs py-4 text-center">Aucun node exécuté pour l’instant.</div>
+        <div className="text-neutral-600 text-xs py-4 text-center">{t('wfr.noNodeRun')}</div>
       ) : entries.map(([id, st]) => {
         const node = wf?.nodes.find((n) => n.id === id)
         const spec = node ? nodeRegistry.get(node.type) : undefined
@@ -116,7 +119,7 @@ function NodesTab() {
                 {exportResult ? (
                   <button type="button" onClick={() => downloadExport(exportResult)}
                     className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-200"
-                    title={`Télécharger ${exportResult.filename}`}>
+                    title={t('wfr.download', { filename: exportResult.filename })}>
                     <Download className="w-3 h-3" />
                     {exportResult.filename}
                   </button>
@@ -132,7 +135,7 @@ function NodesTab() {
             ))}
             {st.outputs ? (
               <details className="mt-1">
-                <summary className="text-neutral-500 cursor-pointer">Outputs</summary>
+                <summary className="text-neutral-500 cursor-pointer">{t('wfr.outputs')}</summary>
                 <pre className="text-[10px] text-neutral-400 overflow-x-auto">{JSON.stringify(st.outputs, null, 2).slice(0, 2000)}</pre>
               </details>
             ) : null}
@@ -144,6 +147,7 @@ function NodesTab() {
 }
 
 export function RunPanel() {
+  const { t } = useTranslation()
   const wf = useWorkflowStore((s) => s.current)
   const states = useRunContext((s) => s.nodeStates)
   const [tab, setTab] = useState<Tab>('console')
@@ -169,7 +173,7 @@ export function RunPanel() {
     >
       {!collapsed ? <PanelResizeHandle height={height} onChange={setHeight} minHeight={minHeight} maxHeightVh={maxHeightVh} /> : null}
       <div className="flex items-center gap-1 px-2 h-[34px] shrink-0">
-        <button type="button" onClick={toggleCollapsed} title={collapsed ? 'Déplier' : 'Replier'}
+        <button type="button" onClick={toggleCollapsed} title={collapsed ? t('wfr.expand') : 'Replier'}
           className="p-1 text-neutral-500 hover:text-neutral-300">
           {collapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
@@ -179,7 +183,7 @@ export function RunPanel() {
         </button>
         <button type="button" onClick={() => { setTab('nodes'); if (collapsed) toggleCollapsed() }}
           className={`flex items-center gap-1.5 text-[11px] px-2 py-1 rounded ${tab === 'nodes' ? 'bg-white/[0.06] text-white' : 'text-neutral-500 hover:text-neutral-300'}`}>
-          <ListTree className="w-3.5 h-3.5" /> Nodes <span className="text-neutral-600">{nodeCount}</span>
+          <ListTree className="w-3.5 h-3.5" /> {t('wfr.nodes')} <span className="text-neutral-600">{nodeCount}</span>
         </button>
       </div>
       {!collapsed ? (tab === 'console' ? <ConsoleTab workflowId={wf?.id} nodeName={nodeName} /> : <NodesTab />) : null}

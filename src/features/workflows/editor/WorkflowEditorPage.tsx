@@ -29,8 +29,10 @@ import { PromptToFlowModal } from '../promptToFlow/PromptToFlowModal'
 import { SaveAsTemplateDialog } from './SaveAsTemplateDialog'
 import { useCan } from '@/features/access/useAccess'
 import { TourLauncher } from '@/features/tour/TourLauncher'
+import { useTranslation, intlLocale } from '@/lib/i18n'
 
 export function WorkflowEditorPage() {
+  const { t, locale } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
   const uid = useAuthStore((s) => s.user?.uid)
@@ -106,7 +108,7 @@ export function WorkflowEditorPage() {
   // seulement s'il y en avait — un workflow mal câblé se signalait donc au pire moment,
   // ou jamais (run planifié, lancement depuis une carte). Recalculé à chaque édition.
   //
-  // ⚠ DÉCLARÉ AVANT les retours anticipés (« Chargement… », « introuvable ») : un hook
+  // ⚠ DÉCLARÉ AVANT les retours anticipés (« {t('wfe.loading')} », « introuvable ») : un hook
   // posé après eux change le nombre de hooks entre deux rendus — React error #310.
   // D'où le `wf` optionnel géré ici plutôt qu'un appel plus bas.
   const liveIssues = useMemo(
@@ -115,8 +117,8 @@ export function WorkflowEditorPage() {
   )
   const liveErrors = liveIssues.filter((i) => i.severity === 'error').length
 
-  if (loading) return <div className="min-h-screen bg-background text-white p-8">Chargement…</div>
-  if (!wf) return <div className="min-h-screen bg-background text-white p-8">Workflow introuvable</div>
+  if (loading) return <div className="min-h-screen bg-background text-white p-8">{t('wfe.loading')}</div>
+  if (!wf) return <div className="min-h-screen bg-background text-white p-8">{t('wfe.notFound')}</div>
 
   // Exécution effective (après contrôle de cohérence). Confirme le résultat.
   const executeNow = async (stepByStep: boolean) => {
@@ -142,7 +144,7 @@ export function WorkflowEditorPage() {
     if (!uid) return
     try {
       await saveWorkflow(uid, wf)
-      notify.success('Workflow enregistré', `« ${wf.name} » a bien été sauvegardé.`)
+      notify.success(t('wfe.saved'), `« ${wf.name} » a bien été sauvegardé.`)
     } catch (e) {
       notify.error("Échec de l'enregistrement", e instanceof Error ? e.message : String(e))
     }
@@ -160,16 +162,16 @@ export function WorkflowEditorPage() {
           <button
             onClick={goToList}
             className="p-1.5 hover:bg-white/[0.06] text-white/40 hover:text-white/80 rounded-md transition-colors"
-            aria-label="Retour aux workflows"
-            title="Retour aux workflows (Esc)"
+            aria-label={t('wfe.back')}
+            title={t('wfe.back.esc')}
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <nav className="flex items-center gap-1.5 text-sm min-w-0 flex-1" aria-label="Fil d'Ariane">
+          <nav className="flex items-center gap-1.5 text-sm min-w-0 flex-1" aria-label={t('wfe.breadcrumb')}>
             <button
               onClick={goToList}
               className="flex items-center gap-1.5 text-white/45 hover:text-white/80 hover:bg-white/[0.06] px-2 py-1 rounded-md transition-colors shrink-0"
-              title="Retour aux workflows"
+              title={t('wfe.back')}
             >
               <WorkflowIcon className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
               <span>Workflows</span>
@@ -180,50 +182,50 @@ export function WorkflowEditorPage() {
               value={wf.name}
               onChange={(e) => useWorkflowStore.getState().patch({ name: e.target.value })}
               className="bg-transparent border-none outline-none text-sm flex-1 min-w-0 px-2 py-1 rounded-md hover:bg-white/[0.04] focus:bg-white/[0.04] transition-colors"
-              aria-label="Nom du workflow"
+              aria-label={t('wfe.name')}
             />
           </nav>
           {/* État de sauvegarde CLAIR : en cours / non enregistré (ambre) / enregistré (vert). */}
           {saving ? (
-            <span className="text-xs text-white/50 shrink-0 flex items-center gap-1.5" title="Enregistrement en cours">
+            <span className="text-xs text-white/50 shrink-0 flex items-center gap-1.5" title={t('wfe.saving')}>
               <Loader2 className="w-3.5 h-3.5 animate-spin" /> Enregistrement…
             </span>
           ) : dirty ? (
-            <span className="text-xs text-amber-400 shrink-0 flex items-center gap-1.5" title="Modifications non enregistrées">
+            <span className="text-xs text-amber-400 shrink-0 flex items-center gap-1.5" title={t('wfe.unsaved')}>
               <CircleDot className="w-3.5 h-3.5" /> Non enregistré
             </span>
           ) : (
             <span
               className="text-xs text-emerald-400 shrink-0 flex items-center gap-1.5"
-              title={lastSavedAt ? `Enregistré à ${new Date(lastSavedAt).toLocaleTimeString('fr-FR')}` : 'À jour'}
+              title={lastSavedAt ? t('wfe.savedAt', { time: new Date(lastSavedAt).toLocaleTimeString(intlLocale(locale)) }) : t('wfe.upToDate')}
             >
-              <Check className="w-3.5 h-3.5" /> Enregistré
+              <Check className="w-3.5 h-3.5" /> {t('wfe.savedShort')}
             </span>
           )}
           <button
             data-tour="wf-generate-ai"
             onClick={() => setShowGenerate(true)}
             className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2 text-sm"
-            title="Générer un workflow depuis un prompt (IA)"
+            title={t('wfe.generateAi')}
           >
-            <Sparkles className="w-4 h-4 text-indigo-400" /> Générer (IA)
+            <Sparkles className="w-4 h-4 text-indigo-400" /> {t('wfe.generateAi.label')}
           </button>
           <button
             data-tour="wf-results"
             onClick={() => nav(`/workflows/${wf.id}/result`)}
             className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2 text-sm"
-            title="Visualiser le résultat du dernier run"
+            title={t('wfe.viewResult')}
           >
-            <BarChart3 className="w-4 h-4 text-indigo-400" /> Résultat
+            <BarChart3 className="w-4 h-4 text-indigo-400" /> {t('wfe.result')}
           </button>
           {canEdit && (
             <button
               data-tour="wf-save-template"
               onClick={() => setShowSaveTemplate(true)}
               className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2 text-sm"
-              title="Enregistrer ce montage comme modèle réutilisable"
+              title={t('wfe.saveTemplate')}
             >
-              <BookmarkPlus className="w-4 h-4 text-indigo-400" /> Modèle
+              <BookmarkPlus className="w-4 h-4 text-indigo-400" /> {t('wfe.template')}
             </button>
           )}
           <WebhookPanel workflowId={wf.id} />
@@ -256,9 +258,9 @@ export function WorkflowEditorPage() {
                   <button
                     onClick={() => void run(true)}
                     className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2 text-sm"
-                    title="Exécuter node par node : pause avant chaque étape pour inspecter les sorties"
+                    title={t('wfe.stepByStep')}
                   >
-                    <StepForward className="w-4 h-4 text-amber-400" /> Pas à pas
+                    <StepForward className="w-4 h-4 text-amber-400" /> {t('wfe.stepByStep.label')}
                   </button>
                   <button data-tour="wf-run" onClick={() => void run()} className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2 text-sm">
                     <Play className="w-4 h-4" /> Run
@@ -272,7 +274,7 @@ export function WorkflowEditorPage() {
               onClick={() => void saveNow()}
               className="p-2 hover:bg-neutral-800 rounded"
               aria-label="Save"
-              title="Enregistrer le workflow"
+              title={t('wfe.save')}
             >
               <Save className="w-4 h-4" />
             </button>
