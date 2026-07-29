@@ -111,9 +111,12 @@ export function WorkflowEditorPage() {
   // ⚠ DÉCLARÉ AVANT les retours anticipés (« {t('wfe.loading')} », « introuvable ») : un hook
   // posé après eux change le nombre de hooks entre deux rendus — React error #310.
   // D'où le `wf` optionnel géré ici plutôt qu'un appel plus bas.
+  // ⚠ `validateWorkflow` FORGE ses messages : ils sont figés dans la langue du
+  // calcul. Sans `locale` en dépendance, changer de langue laisse le bandeau et le
+  // dialogue de pré-vol dans l'ancienne.
   const liveIssues = useMemo(
-    () => (wf ? validateWorkflow(wf, (t) => nodeRegistry.get(t)) : []),
-    [wf],
+    () => (wf ? validateWorkflow(wf, (ty) => nodeRegistry.get(ty)) : []),
+    [wf, locale],
   )
   const liveErrors = liveIssues.filter((i) => i.severity === 'error').length
 
@@ -243,9 +246,9 @@ export function WorkflowEditorPage() {
                     <button
                       onClick={() => useRunContext.getState().continueStep()}
                       className="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-600 text-[#000] flex items-center gap-2 text-sm font-medium"
-                      title={`En pause avant « ${label} » — cliquer pour exécuter ce node`}
+                      title={t('wfr.stepTitle', { node: label })}
                     >
-                      <StepForward className="w-4 h-4" /> Étape : {label}
+                      <StepForward className="w-4 h-4" /> {t('wfr.stepLabel', { node: label })}
                     </button>
                   )
                 })()}

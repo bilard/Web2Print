@@ -1355,7 +1355,6 @@ export const fr = {
 
   // — Workflows : contrôle de cohérence ————————————————————————————————
   'wfc.detail': 'Voir le détail et sauter à la carte concernée',
-  'wfc.inconsistency': 'incohérence',
   'wfc.see': 'Voir',
   'wfc.title': 'Cohérence du flux',
   'wfc.close': 'Fermer',
@@ -1421,6 +1420,15 @@ export const fr = {
   'wfx.suspend.help': 'Suspendre le flux : désactive le cron (plus aucune relance) et arrête le run en cours. Réactivable dans le node Cron.',
 
   // — Workflows : aperçu des données ————————————————————————————————————
+  'wfd.pageAll': 'Tout',
+  'wfd.noRowMatches': 'Aucune ligne ne correspond à la recherche.',
+  'wfd.noRow': 'Aucune ligne',
+  'wfd.range': '{from}–{to} sur {total}',
+  'wfd.page': 'Page {n} / {total}',
+  'wfd.prev': 'Préc.',
+  'wfd.next': 'Suiv.',
+  'wfd.download': 'Télécharger',
+  'wfd.loadingPreview': 'Chargement de l’aperçu…',
   'wfd.emptySheet': 'Sheet vide',
   'wfd.search': 'Rechercher dans les données…',
   'wfd.clearSearch': 'Effacer la recherche',
@@ -1882,6 +1890,42 @@ export const fr = {
   'help.search': "Rechercher dans l'aide…",
   'help.clearSearch': 'Effacer la recherche',
   'help.fullDocs': 'Documentation complète',
+
+  // Console de run — compléments du lot 15 (repérés à l'écran)
+  'wfr.lastRunOk': 'dernier run OK',
+  'wfr.lastRunPartial': 'dernier run partiel',
+  'wfr.triggerManual': 'manuel',
+  'wfr.filterAll': 'Tout {count}',
+  // `{level}` reçoit `wfr.atThisLevel` ou une chaîne vide : la phrase reste une seule
+  // unité traduisible au lieu d'un fragment recollé à un autre.
+  'wfr.noLogs': 'Aucun log{level} — le flux arrive en direct pendant un run serveur.',
+  'wfr.collapse': 'Replier',
+  'wfr.stepLabel': 'Étape : {node}',
+  'wfr.stepTitle': 'En pause avant « {node} » — cliquer pour exécuter ce node',
+
+  // Pré-vol : bandeau et dialogue
+  // ⚠️ Pluriel par clés DÉDIÉES, pas par un « s » recollé au mot traduit : le code
+  // faisait `${t('wfc.inconsistency')}s`, ce qui affichait « 2 inconsistencys » en
+  // anglais. Une règle de pluriel ne survit pas à la traduction.
+  'wfc.inconsistencies.one': '{count} incohérence',
+  'wfc.inconsistencies.many': '{count} incohérences',
+  'wfc.warnings.one': '{count} avertissement',
+  'wfc.warnings.many': '{count} avertissements',
+  'wfc.pointsToCheck.one': '{count} point à vérifier avant de lancer.',
+  'wfc.pointsToCheck.many': '{count} points à vérifier avant de lancer.',
+  'wfc.forceHint': "Ces manques feront échouer ou tronquer le run. Corrige-les, ou lance quand même si c'est volontaire (test partiel).",
+  'wfc.runAnyway': 'Lancer quand même',
+  'wfc.fix': 'Corriger',
+
+  // Messages du contrôle de cohérence (`validateWorkflow`)
+  'wfv.noFileSelected': 'Aucun fichier sélectionné — ouvre la config du node.',
+  'wfv.noSite': 'Aucun site : renseigne « Sites concurrents » ou branche un node « Sites sources ».',
+  'wfv.noActiveSite': 'Aucun site actif dans le gestionnaire — ajoute ou active au moins un site.',
+  'wfv.unknownType': 'Type de node inconnu (« {type} »).',
+  'wfv.inputNotWired': 'Entrée « {port} » non connectée (source manquante).',
+  'wfv.configRequired': 'Paramètre « {field} » requis, non renseigné.',
+  'wfv.watchIdMismatch': "Ce node adresse le suivi « {watchId} » alors que d'autres nodes du workflow en adressent {others} autre(s) ({list}). La moisson écrirait dans un suivi et le comparatif relirait dans un autre — 0 apparié, sans erreur visible. Aligne le champ « Identifiant du suivi », ou branche tous ces nodes au MÊME node « Sites sources ».",
+  'wfv.noFeederUpstream': "Aucun node de collecte ({feeders}) n'est branché EN AMONT : le comparatif relira l'index du run précédent, pas celui que ce run va produire. Relie « {first} » à ce node si tu veux comparer des données fraîches.",
 
   // — Messages de RUN des workflows ——————————————————————————————————
   //

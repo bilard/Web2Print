@@ -1,6 +1,14 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { useLocaleStore } from '@/stores/locale.store'
 import { validateWorkflow } from './validateWorkflow'
 import type { Workflow, NodeSpec } from '../types'
+
+// Ces tests assertent sur le TEXTE des messages, qui est désormais traduit. La
+// langue est un état GLOBAL (dérivée de `navigator.language` sous jsdom, donc
+// « en ») : sans l'épingler, les assertions françaises échouent pour une raison
+// qui n'a rien à voir avec la validation. Cf. la règle du chantier i18n : un test
+// ne doit jamais dépendre de la locale ambiante.
+beforeEach(() => useLocaleStore.setState({ locale: 'fr' }))
 
 const spec = (over: Partial<NodeSpec>): NodeSpec => ({
   type: 't', category: 'import', labelKey: 'node.upload.label', icon: (() => null) as unknown as NodeSpec['icon'],

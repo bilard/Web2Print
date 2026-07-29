@@ -1359,7 +1359,6 @@ export const en: Record<TranslationKey, string> = {
 
   // — Workflows: consistency check ————————————————————————————————————————
   'wfc.detail': 'See the detail and jump to the card concerned',
-  'wfc.inconsistency': 'inconsistency',
   'wfc.see': 'See',
   'wfc.title': 'Flow consistency',
   'wfc.close': 'Close',
@@ -1425,6 +1424,15 @@ export const en: Record<TranslationKey, string> = {
   'wfx.suspend.help': 'Suspend the flow: disables the cron (no further runs) and stops the current run. Can be re-enabled in the Cron node.',
 
   // — Workflows: data preview ————————————————————————————————————————————
+  'wfd.pageAll': 'All',
+  'wfd.noRowMatches': 'No row matches the search.',
+  'wfd.noRow': 'No row',
+  'wfd.range': '{from}–{to} of {total}',
+  'wfd.page': 'Page {n} / {total}',
+  'wfd.prev': 'Prev.',
+  'wfd.next': 'Next',
+  'wfd.download': 'Download',
+  'wfd.loadingPreview': 'Loading the preview…',
   'wfd.emptySheet': 'Empty sheet',
   'wfd.search': 'Search the data…',
   'wfd.clearSearch': 'Clear the search',
@@ -1886,6 +1894,34 @@ export const en: Record<TranslationKey, string> = {
   'help.search': 'Search the help…',
   'help.clearSearch': 'Clear the search',
   'help.fullDocs': 'Full documentation',
+
+  'wfr.lastRunOk': 'last run OK',
+  'wfr.lastRunPartial': 'last run partial',
+  'wfr.triggerManual': 'manual',
+  'wfr.filterAll': 'All {count}',
+  'wfr.noLogs': 'No log{level} — the stream arrives live during a server run.',
+  'wfr.collapse': 'Collapse',
+  'wfr.stepLabel': 'Step: {node}',
+  'wfr.stepTitle': 'Paused before "{node}" — click to run this node',
+
+  'wfc.inconsistencies.one': '{count} inconsistency',
+  'wfc.inconsistencies.many': '{count} inconsistencies',
+  'wfc.warnings.one': '{count} warning',
+  'wfc.warnings.many': '{count} warnings',
+  'wfc.pointsToCheck.one': '{count} point to check before launching.',
+  'wfc.pointsToCheck.many': '{count} points to check before launching.',
+  'wfc.forceHint': 'These gaps will make the run fail or come out truncated. Fix them, or run anyway if that is deliberate (partial test).',
+  'wfc.runAnyway': 'Run anyway',
+  'wfc.fix': 'Fix',
+
+  'wfv.noFileSelected': 'No file selected — open the node configuration.',
+  'wfv.noSite': 'No site: fill in "Competitor sites" or wire a "Source sites" node.',
+  'wfv.noActiveSite': 'No active site in the manager — add or enable at least one site.',
+  'wfv.unknownType': 'Unknown node type ("{type}").',
+  'wfv.inputNotWired': 'Input "{port}" not wired (missing source).',
+  'wfv.configRequired': 'Parameter "{field}" is required and not filled in.',
+  'wfv.watchIdMismatch': 'This node addresses monitoring "{watchId}" while other nodes of the workflow address {others} other(s) ({list}). The harvest would write into one monitoring and the comparison would read another — 0 matched, with no visible error. Align the "Monitoring identifier" field, or wire all these nodes to the SAME "Source sites" node.',
+  'wfv.noFeederUpstream': 'No collection node ({feeders}) is wired UPSTREAM: the comparison will read the index of the previous run, not the one this run is about to produce. Wire "{first}" to this node if you want to compare fresh data.',
 
   // — Workflow RUN messages ——————————————————————————————————————————
   // Kept byte-identical to `functions/src/i18nMessages.ts` (server twins write

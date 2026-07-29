@@ -18,7 +18,11 @@ export function PreflightBanner({ issues, errors, onOpen }: {
   if (issues.length === 0) return null
   const warnings = issues.length - errors
   const blocking = errors > 0
-  const plural = (n: number, s: string) => `${n} ${s}${n > 1 ? 's' : ''}`
+  // ⚠️ Pluriel par CLÉS dédiées. L'ancienne version recollait un « s » au mot
+  // traduit (`${t('wfc.inconsistency')}s`) et affichait « 2 inconsistencys » en
+  // anglais : une règle de pluriel française ne survit pas à la traduction.
+  const inconsistencies = (n: number) => t(n > 1 ? 'wfc.inconsistencies.many' : 'wfc.inconsistencies.one', { count: n })
+  const warns = (n: number) => t(n > 1 ? 'wfc.warnings.many' : 'wfc.warnings.one', { count: n })
   return (
     <button
       onClick={onOpen}
@@ -31,10 +35,10 @@ export function PreflightBanner({ issues, errors, onOpen }: {
     >
       {blocking ? <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> : <TriangleAlert className="w-3.5 h-3.5 shrink-0" />}
       <span className="font-medium">
-        {blocking ? plural(errors, t('wfc.inconsistency')) : plural(warnings, 'avertissement')}
+        {blocking ? inconsistencies(errors) : warns(warnings)}
       </span>
       <span className="text-white/50 truncate">
-        {blocking && warnings > 0 ? `+ ${plural(warnings, 'avertissement')} · ` : ''}
+        {blocking && warnings > 0 ? `+ ${warns(warnings)} · ` : ''}
         {issues[0].nodeLabel} — {issues[0].message}
       </span>
       <span className="ml-auto shrink-0 underline underline-offset-2 opacity-80">{t('wfc.see')}</span>

@@ -38,7 +38,7 @@ import { PanelResizeHandle, usePanelResize } from './usePanelResize'
 import { isChartSpec } from '../registry/chartSpec'
 import { PersistedWatchPreview } from './PersistedWatchPreview'
 import type { NodeRunState, NodeStatus, Workflow } from '../types'
-import { useTranslation, t as tr } from '@/lib/i18n'
+import { intlLocale, useTranslation, t as tr } from '@/lib/i18n'
 
 // Nodes de veille tarifaire dont la donnée est PERSISTÉE (rapport Firestore du suivi) :
 // pour ceux-là, une carte sans run en session montre l'état déjà collecté, pas un vide.
@@ -95,12 +95,14 @@ export interface ExportLike {
 // sheet (ex. « Rapport de coûts IA ») doit prévisualiser la sheet, pas le File (→ `{}`).
 const PREVIEW_PORT_PRIORITY = ['chart', 'sheet', 'summary', 'products', 'result', 'assets', 'file']
 const MAX_ASSETS = 16
-const PAGE_SIZE_OPTIONS: Array<{ value: number; label: string }> = [
+// `label` absent = libellé TRADUIT au rendu (`wfd.pageAll`). Une constante de
+// module ne peut pas appeler `t()` : elle porte la clé, jamais le texte.
+const PAGE_SIZE_OPTIONS: Array<{ value: number; label?: string }> = [
   { value: 10, label: '10' },
   { value: 25, label: '25' },
   { value: 50, label: '50' },
   { value: 100, label: '100' },
-  { value: -1, label: 'Tout' },
+  { value: -1 },
 ]
 const DEFAULT_PAGE_SIZE = 10
 const AUTOCOMPLETE_MAX_OPTIONS = 500
@@ -368,7 +370,7 @@ function formatCell(v: unknown): string {
 }
 
 export function SheetPreview({ sheet }: { sheet: SheetLike }) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const cols = sheet.columns ?? []
   const allRows = sheet.rows ?? []
 
@@ -654,7 +656,7 @@ export function SheetPreview({ sheet }: { sheet: SheetLike }) {
             >
               {PAGE_SIZE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {opt.label ?? t('wfd.pageAll')}
                 </option>
               ))}
             </select>
@@ -697,7 +699,7 @@ export function SheetPreview({ sheet }: { sheet: SheetLike }) {
                   colSpan={cols.length}
                   className="px-3 py-6 text-center text-neutral-500 italic"
                 >
-                  Aucune ligne ne correspond à la recherche.
+                  {t('wfd.noRowMatches')}
                 </td>
               </tr>
             ) : (
@@ -735,8 +737,12 @@ export function SheetPreview({ sheet }: { sheet: SheetLike }) {
         <div className="flex items-center justify-between text-[11px] text-neutral-500 shrink-0">
           <span>
             {filteredCount === 0
-              ? 'Aucune ligne'
-              : `${(start + 1).toLocaleString('fr-FR')}–${end.toLocaleString('fr-FR')} sur ${filteredCount.toLocaleString('fr-FR')}`}
+              ? t('wfd.noRow')
+              : t('wfd.range', {
+                from: (start + 1).toLocaleString(intlLocale(locale)),
+                to: end.toLocaleString(intlLocale(locale)),
+                total: filteredCount.toLocaleString(intlLocale(locale)),
+              })}
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -746,18 +752,16 @@ export function SheetPreview({ sheet }: { sheet: SheetLike }) {
               className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-neutral-800 bg-well hover:bg-background disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-3 h-3" />
-              Préc.
+              {t('wfd.prev')}
             </button>
-            <span className="px-1.5">
-              Page <span className="text-neutral-300">{safePage + 1}</span> / {pageCount}
-            </span>
+            <span className="px-1.5">{t('wfd.page', { n: safePage + 1, total: pageCount })}</span>
             <button
               type="button"
               onClick={() => goToPage(safePage + 1)}
               disabled={safePage >= pageCount - 1}
               className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-neutral-800 bg-well hover:bg-background disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Suiv.
+              {t('wfd.next')}
               <ChevronRight className="w-3 h-3" />
             </button>
           </div>
@@ -805,6 +809,7 @@ export function AssetGridPreview({ assets }: { assets: AssetLike[] }) {
 }
 
 export function ExportPreview({ payload }: { payload: ExportLike }) {
+  const { t } = useTranslation()
   return (
     <div className="flex items-center gap-3 p-3 rounded border border-neutral-800 bg-well">
       <div className="w-10 h-10 rounded bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-300">
@@ -820,7 +825,7 @@ export function ExportPreview({ payload }: { payload: ExportLike }) {
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-200 text-xs"
       >
         <Download className="w-3.5 h-3.5" />
-        Télécharger
+        {t('wfd.download')}
       </a>
     </div>
   )
@@ -1152,7 +1157,7 @@ export function DataPreviewPanel() {
             ) : target.value === null ? (
               <div className="flex items-center gap-2 text-xs text-neutral-500 py-3">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-                Chargement de l’aperçu…
+                {t('wfd.loadingPreview')}
               </div>
             ) : (
               renderPreview(target.value)

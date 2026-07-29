@@ -12,7 +12,7 @@ import { nodeRegistry } from '../registry'
 import { PanelResizeHandle, usePanelResize } from './usePanelResize'
 import { findExportResult, type ExportPayload } from '../runtime/exportResult'
 import { useWorkflowRunLive, type RunLiveLog } from './useWorkflowRunLive'
-import { useTranslation } from '@/lib/i18n'
+import { intlLocale, useTranslation, type Locale } from '@/lib/i18n'
 
 function downloadExport(payload: ExportPayload) {
   const a = document.createElement('a')
@@ -23,7 +23,8 @@ function downloadExport(payload: ExportPayload) {
   a.remove()
 }
 
-const hhmmss = (ms: number) => new Date(ms).toLocaleTimeString('fr-FR')
+// L'heure d'un log suit la langue : `fr-FR` était figé ici.
+const hhmmss = (ms: number, locale: Locale) => new Date(ms).toLocaleTimeString(intlLocale(locale))
 const LEVEL_CLS: Record<RunLiveLog['level'], string> = {
   info: 'text-neutral-400', warn: 'text-amber-300', error: 'text-rose-400',
 }
@@ -33,7 +34,7 @@ type Level = 'all' | 'warn' | 'error'
 
 /** Onglet CONSOLE : flux live chronologique, coloré, filtrable, autoscroll. */
 function ConsoleTab({ workflowId, nodeName }: { workflowId: string | undefined; nodeName: (id: string) => string }) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const live = useWorkflowRunLive(workflowId)
   const [level, setLevel] = useState<Level>('all')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -60,31 +61,31 @@ function ConsoleTab({ workflowId, nodeName }: { workflowId: string | undefined; 
           : live.status === 'error'
             ? <span className="text-[11px] font-semibold text-rose-300">{t('wfr.lastFailed')}</span>
             : live.status
-              ? <span className="text-[11px] text-emerald-300/70">dernier run {live.status === 'partial' ? 'partiel' : 'OK'}</span>
+              ? <span className="text-[11px] text-emerald-300/70">{t(live.status === 'partial' ? 'wfr.lastRunPartial' : 'wfr.lastRunOk')}</span>
               : <span className="text-[11px] text-neutral-500">{t('wfr.noServerRun')}</span>}
-        {live.startedAt && <span className="text-[10px] text-neutral-600">· {live.trigger === 'cron' ? 'cron' : 'manuel'} {hhmmss(live.startedAt)}{live.endedAt ? `→${hhmmss(live.endedAt)}` : ''}</span>}
+        {live.startedAt && <span className="text-[10px] text-neutral-600">· {live.trigger === 'cron' ? 'cron' : t('wfr.triggerManual')} {hhmmss(live.startedAt, locale)}{live.endedAt ? `→${hhmmss(live.endedAt, locale)}` : ''}</span>}
         <div className="ml-auto flex items-center gap-1">
           {(['all', 'warn', 'error'] as const).map((lv) => (
             <button key={lv} onClick={() => setLevel(lv)}
               className={`text-[10px] rounded px-1.5 py-0.5 border ${level === lv ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-200' : 'bg-white/[0.03] border-white/10 text-neutral-500 hover:text-neutral-300'}`}>
-              {lv === 'all' ? `Tout ${live.logs.length}` : lv === 'warn' ? 'Warn+' : `Err ${errorCount}`}
+              {lv === 'all' ? t('wfr.filterAll', { count: live.logs.length }) : lv === 'warn' ? 'Warn+' : `Err ${errorCount}`}
             </button>
           ))}
         </div>
       </div>
       {live.lastError && (
         <div className="mb-1 rounded border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[11px] text-rose-200 font-mono break-words shrink-0">
-          ⚠ {live.lastErrorAt ? `${hhmmss(live.lastErrorAt)} · ` : ''}{live.lastError}
+          ⚠ {live.lastErrorAt ? `${hhmmss(live.lastErrorAt, locale)} · ` : ''}{live.lastError}
         </div>
       )}
       <div ref={scrollRef}
         onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40 }}
         className="flex-1 min-h-0 overflow-y-auto bg-black/30 rounded border border-white/5 font-mono text-[11px] leading-relaxed px-2 py-1.5">
         {logs.length === 0 ? (
-          <div className="text-neutral-600 py-4 text-center">Aucun log{level !== 'all' ? t('wfr.atThisLevel') : ''} — le flux arrive en direct pendant un run serveur.</div>
+          <div className="text-neutral-600 py-4 text-center">{t('wfr.noLogs', { level: level !== 'all' ? t('wfr.atThisLevel') : '' })}</div>
         ) : logs.map((l, i) => (
           <div key={`${l.ts}_${i}`} className="whitespace-pre-wrap break-words">
-            <span className="text-neutral-600">{hhmmss(l.ts)}</span>
+            <span className="text-neutral-600">{hhmmss(l.ts, locale)}</span>
             {l.node && <span className="text-indigo-300/60"> [{nodeName(l.node)}]</span>}
             <span className={` ${LEVEL_CLS[l.level]}`}> {l.msg}</span>
           </div>
@@ -174,7 +175,7 @@ export function RunPanel() {
     >
       {!collapsed ? <PanelResizeHandle height={height} onChange={setHeight} minHeight={minHeight} maxHeightVh={maxHeightVh} /> : null}
       <div className="flex items-center gap-1 px-2 h-[34px] shrink-0">
-        <button type="button" onClick={toggleCollapsed} title={collapsed ? t('wfr.expand') : 'Replier'}
+        <button type="button" onClick={toggleCollapsed} title={collapsed ? t('wfr.expand') : t('wfr.collapse')}
           className="p-1 text-neutral-500 hover:text-neutral-300">
           {collapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>

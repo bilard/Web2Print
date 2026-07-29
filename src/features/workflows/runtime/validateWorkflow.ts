@@ -25,18 +25,18 @@ export interface WorkflowIssue {
 /** Complétude non exprimable via `required` (valeur portée par la ConfigComponent,
  *  ou satisfiable par un PORT branché — 2ᵉ argument = « ce port est-il câblé ? »). */
 const SEMANTIC_CHECKS: Record<string, (config: Record<string, unknown>, wired: (port: string) => boolean) => string | null> = {
-  upload: (c) => (c.fileKey ? null : 'Aucun fichier sélectionné — ouvre la config du node.'),
+  upload: (c) => (c.fileKey ? null : t('wfv.noFileSelected')),
   // La liste des sites peut venir du port `sites` (node « Sites sources ») OU de la
   // textarea locale — requis « l'un ou l'autre », inexprimable en configSchema.required.
   'harvest-competitor': (c, wired) =>
-    wired('sites') || !isEmpty(c.sites) ? null : 'Aucun site : renseigne « Sites concurrents » ou branche un node « Sites sources ».',
+    wired('sites') || !isEmpty(c.sites) ? null : t('wfv.noSite'),
   'compare-catalog': (c, wired) =>
-    wired('sites') || !isEmpty(c.sites) ? null : 'Aucun site : renseigne « Sites concurrents » ou branche un node « Sites sources ».',
+    wired('sites') || !isEmpty(c.sites) ? null : t('wfv.noSite'),
   'directed-search': (c, wired) =>
-    wired('sites') || !isEmpty(c.sites) ? null : 'Aucun site : renseigne « Sites concurrents » ou branche un node « Sites sources ».',
+    wired('sites') || !isEmpty(c.sites) ? null : t('wfv.noSite'),
   'source-sites': (c) =>
     Array.isArray(c.sites) && (c.sites as { enabled?: boolean }[]).some((r) => r?.enabled)
-      ? null : 'Aucun site actif dans le gestionnaire — ajoute ou active au moins un site.',
+      ? null : t('wfv.noActiveSite'),
 }
 
 function isEmpty(v: unknown): boolean {
@@ -105,11 +105,11 @@ function crossNodeIssues(
         nodeId: w.n.id,
         nodeLabel: labelOf(w.n.type),
         severity: 'error',
-        message:
-          `Ce node adresse le suivi « ${w.watchId} » alors que d'autres nodes du workflow en adressent ` +
-          `${distinct.length - 1} autre(s) (${distinct.filter((d) => d !== w.watchId).join(', ')}). ` +
-          `La moisson écrirait dans un suivi et le comparatif relirait dans un autre — 0 apparié, sans erreur visible. ` +
-          `Aligne le champ « Identifiant du suivi », ou branche tous ces nodes au MÊME node « Sites sources ».`,
+        message: t('wfv.watchIdMismatch', {
+          watchId: w.watchId,
+          others: distinct.length - 1,
+          list: distinct.filter((d) => d !== w.watchId).join(', '),
+        }),
       })
     }
   }
@@ -124,10 +124,10 @@ function crossNodeIssues(
       nodeId: cmp.id,
       nodeLabel: labelOf(cmp.type),
       severity: 'warning',
-      message:
-        `Aucun node de collecte (${feeders.map((f) => labelOf(f.type)).join(', ')}) n'est branché EN AMONT : ` +
-        `le comparatif relira l'index du run précédent, pas celui que ce run va produire. ` +
-        `Relie « ${labelOf(feeders[0].type)} » à ce node si tu veux comparer des données fraîches.`,
+      message: t('wfv.noFeederUpstream', {
+        feeders: feeders.map((f) => labelOf(f.type)).join(', '),
+        first: labelOf(feeders[0].type),
+      }),
     })
   }
 
@@ -152,7 +152,7 @@ export function validateWorkflow(
     const spec = getSpec(node.type)
     const label = spec ? t(spec.labelKey) : node.type
     if (!spec) {
-      issues.push({ nodeId: node.id, nodeLabel: label, severity: 'error', message: `Type de node inconnu (« ${node.type} »).` })
+      issues.push({ nodeId: node.id, nodeLabel: label, severity: 'error', message: t('wfv.unknownType', { type: node.type }) })
       continue
     }
     const config = (node.config ?? {}) as Record<string, unknown>
@@ -162,14 +162,14 @@ export function validateWorkflow(
       if (!port.required) continue
       const wired = wf.edges.some((e) => e.target === node.id && e.targetHandle === port.name)
       if (!wired) {
-        issues.push({ nodeId: node.id, nodeLabel: label, severity: 'error', message: `Entrée « ${port.name} » non connectée (source manquante).` })
+        issues.push({ nodeId: node.id, nodeLabel: label, severity: 'error', message: t('wfv.inputNotWired', { port: port.name }) })
       }
     }
     // 1b. Config requise manquante (inclut les paramètres d'export requis).
     for (const field of spec.configSchema) {
       if (!field.required) continue
       if (isEmpty(config[field.name])) {
-        issues.push({ nodeId: node.id, nodeLabel: label, severity: 'error', message: `Paramètre « ${field.label} » requis, non renseigné.` })
+        issues.push({ nodeId: node.id, nodeLabel: label, severity: 'error', message: t('wfv.configRequired', { field: String(field.label ?? field.name) }) })
       }
     }
     // 2. Contrôles sémantiques.

@@ -39,7 +39,7 @@ export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus }: Pro
             <div>
               <h2 className="text-base font-semibold">{t('wfc.title')}</h2>
               <p className="text-xs text-white/45">
-                {issues.length} point{issues.length > 1 ? 's' : ''} à vérifier avant de lancer.
+                {t(issues.length > 1 ? 'wfc.pointsToCheck.many' : 'wfc.pointsToCheck.one', { count: issues.length })}
               </p>
             </div>
           </div>
@@ -72,7 +72,7 @@ export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus }: Pro
 
         <p className="text-[11px] text-white/35 leading-snug">
           {onProceed
-            ? "Ces manques feront échouer ou tronquer le run. Corrige-les, ou lance quand même si c'est volontaire (test partiel)."
+            ? t('wfc.forceHint')
             : t('wfc.hint')}
         </p>
 
@@ -82,7 +82,7 @@ export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus }: Pro
               onClick={onProceed}
               className="px-3 py-1.5 rounded text-white/50 hover:text-white/80 text-sm transition-colors"
             >
-              Lancer quand même
+              {t('wfc.runAnyway')}
             </button>
           )}
           <button
@@ -90,7 +90,7 @@ export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus }: Pro
             className="px-4 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm font-medium"
             autoFocus
           >
-            {onProceed ? 'Corriger' : 'Fermer'}
+            {t(onProceed ? 'wfc.fix' : 'wfc.close')}
           </button>
         </div>
       </div>
