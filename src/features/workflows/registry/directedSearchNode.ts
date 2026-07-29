@@ -89,7 +89,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
   runtime: 'client',
   run: async (ctx, config, inputs) => {
     const uid = useAuthStore.getState().user?.uid
-    if (!uid) throw new Error('Utilisateur non connecté.')
+    if (!uid) throw new Error(t('run.notSignedIn'))
     // Sites + identité de suivi : le port `sites` (node « Sites sources ») GAGNE ; sinon
     // repli config locale. Même suivi que « Comparer catalogue » du workflow → les prix
     // trouvés alimentent le même index et remontent dans le dashboard « Comparatif ».
@@ -99,7 +99,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     const watchId = resolved.watchId
     if (resolved.fromPort) ctx.log('info', t('run.sourceSites.listReceivedActive', { count: resolved.sites.length }))
     const sheet = inputs.products
-    if (!sheet?.rows?.length) throw new Error('Recherche dirigée : aucune donnée produit en entrée.')
+    if (!sheet?.rows?.length) throw new Error(t('run.directed.noInputData'))
     const bare = (d: string) => d.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/^www\./i, '')
     // La textarea « Sites GÉNÉRIQUES » reste le MARQUEUR marketplace : les domaines
     // listés ici (qu'ils viennent du port ou de la textarea sites) passent par Firecrawl.
@@ -113,7 +113,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     const eanCol = config.eanColumn.trim()
     const nameCol = config.nameColumn.trim()
     const descCol = config.descriptionColumn.trim()
-    if (!refCol && !eanCol) throw new Error('Recherche dirigée : renseigne au moins une colonne Référence ou EAN.')
+    if (!refCol && !eanCol) throw new Error(t('run.directed.noKeyColumn'))
 
     // Réf d'ORIGINE : sur un catalogue de pièces adaptables, la référence article et
     // l'EAN sont propres au distributeur — aucun concurrent ne les porte, et chercher

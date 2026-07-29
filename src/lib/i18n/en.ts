@@ -1935,6 +1935,7 @@ export const en: Record<TranslationKey, string> = {
   'run.directed.genericHit': '{domain} (generic): "{query}" → {name} (evidence {evidence})',
   'run.directed.hit': '{domain}: "{query}" → {name} (evidence {evidence})',
 
+  'run.notSignedIn': 'User not signed in.',
   'run.sourceSites.listReceivedActive': 'List received from the "Source sites" node: {count} active site(s).',
   'run.compareCatalog.columnsGuessed': 'Columns not found in the sheet, recovered automatically: {list}. Fix the node configuration to pin the mapping.',
   'run.compareCatalog.columnsMissing': 'Configured columns absent from the sheet and not found: {list}. Available headers: {headers}',
@@ -1945,6 +1946,8 @@ export const en: Record<TranslationKey, string> = {
   'run.compareCatalog.emptyIndex': 'Competitor index empty for the {sites} site(s) under the "{watchId}" monitoring. Check that the "Harvest competitors" node uses the SAME monitoring identifier ("{watchId}") and that it ran first.',
   'run.compareCatalog.matchedBreakdown': '{matched} product(s) matched: {exact} same product, {originOnly} original part (aftermarket ↔ OEM). {unmatched} without a match, {noKey} without a key.',
 
+  'run.directed.noInputData': 'Directed search: no product data on the input.',
+  'run.directed.noKeyColumn': 'Directed search: fill in at least a Reference or an EAN column.',
   'run.directed.siteBreaker': '{host}: {fails} consecutive failures — site skipped for the rest of the pass.',
   'run.directed.productProgress': '— product {processed}/{total} · {hits} price(s) found',
   'run.directed.productProgressSkipped': '— product {processed}/{total} · {hits} price(s) found · {skipped} site(s) skipped',

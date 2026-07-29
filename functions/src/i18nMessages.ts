@@ -201,6 +201,14 @@ const MESSAGES = {
   },
 
   // — Recherche dirigée (`directed-search`) —
+  'run.directed.noInputData': {
+    fr: 'Recherche dirigée : aucune donnée produit en entrée.',
+    en: 'Directed search: no product data on the input.',
+  },
+  'run.directed.noKeyColumn': {
+    fr: 'Recherche dirigée : renseigne au moins une colonne Référence ou EAN.',
+    en: 'Directed search: fill in at least a Reference or an EAN column.',
+  },
   'run.directed.budgetReserved': {
     fr: 'Budget réservé au comparatif — recherche dirigée repoussée au prochain tick.',
     en: 'Budget reserved for the comparison — directed search postponed to the next tick.',

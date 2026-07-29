@@ -1957,6 +1957,10 @@ export const fr = {
   'run.directed.genericHit': '{domain} (générique) : « {query} » → {name} (preuve {evidence})',
   'run.directed.hit': '{domain} : « {query} » → {name} (preuve {evidence})',
 
+  // Levée par plusieurs nodes AVANT toute écriture : côté CLIENT seulement,
+  // le serveur reçoit son `uid` dans le contexte du run.
+  'run.notSignedIn': 'Utilisateur non connecté.',
+
   // Comparatif de catalogue (`compare-catalog`)
   // Les quatre premières sont propres au CLIENT : la résolution de colonnes et la
   // garde de clé de jointure n'existent pas dans le jumeau serveur.
@@ -1971,6 +1975,8 @@ export const fr = {
   'run.compareCatalog.matchedBreakdown': "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
 
   // Recherche dirigée (`directed-search`)
+  'run.directed.noInputData': 'Recherche dirigée : aucune donnée produit en entrée.',
+  'run.directed.noKeyColumn': 'Recherche dirigée : renseigne au moins une colonne Référence ou EAN.',
   'run.directed.siteBreaker': '{host} : {fails} échecs consécutifs — site ignoré pour le reste de la passe.',
   'run.directed.productProgress': '— produit {processed}/{total} · {hits} prix trouvé(s)',
   'run.directed.productProgressSkipped': '— produit {processed}/{total} · {hits} prix trouvé(s) · {skipped} site(s) ignoré(s)',

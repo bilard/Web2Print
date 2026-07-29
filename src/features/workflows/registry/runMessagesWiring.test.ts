@@ -72,12 +72,18 @@ const DONE: readonly { type: string; files: readonly string[] }[] = [
 const LEVELS = new Set(['debug', 'info', 'warn', 'error'])
 
 /**
- * Ouvertures d'un appel de log. `ctx.log` est celui des nodes ; `deps.log?.` et
+ * Ouvertures d'un message de run. `ctx.log` est celui des nodes ; `deps.log?.` et
  * `opts.log?.` sont les rappels des MOTEURS (`priceWatch/catalog/`), que le node
  * branche sur `ctx.log` — leurs messages atterrissent dans le même panneau et
  * sont donc soumis à la même règle.
+ *
+ * ⚠️ `throw new Error` en fait partie, et c'est une leçon payée à l'écran : le
+ * garde-fou ne surveillait que les logs, il est passé au vert sur
+ * `directed-search`, et le panneau affichait quand même « Recherche dirigée :
+ * aucune donnée produit en entrée. » en rouge au milieu d'une UI anglaise. Un
+ * node échoue AUSSI dans le journal de run.
  */
-const LOG_OPENER = /(?:ctx|deps|opts)\.log\??\.?\(/g
+const LOG_OPENER = /(?:(?:ctx|deps|opts)\.log\??\.?|throw new Error)\(/g
 
 /**
  * Extrait le source de chaque appel de log — parenthèses ÉQUILIBRÉES, donc les
@@ -240,5 +246,10 @@ describe('câblage des messages de run', () => {
     // Un COMMENTAIRE français dans l'appel : légitime, et son apostrophe ne doit
     // pas ouvrir une fausse chaîne qui avalerait le reste de la ligne.
     expect(offendingLiterals("ctx.log('info', t('run.x', {\n  // conserve le rendu d'origine\n  p: String(v),\n}))")).toEqual([])
+    // Une EXCEPTION est un message de run comme un autre.
+    expect(offendingLiterals("throw new Error('Utilisateur non connecté.')")).toEqual([
+      'Utilisateur non connecté.',
+    ])
+    expect(offendingLiterals("throw new Error(t('run.notSignedIn'))")).toEqual([])
   })
 })

@@ -57,7 +57,7 @@ registerServerNode({
     const watchId = resolved.watchId
     const sheet = (inputs.products ?? {}) as SheetLike
     if (!sheet.rows || sheet.rows.length === 0) {
-      throw new Error('Recherche dirigée : aucune donnée produit en entrée.')
+      throw new Error(t(ctx.locale, 'run.directed.noInputData'))
     }
     // Sites « génériques » (marketplaces non-PrestaShop) : recherche web + Firecrawl.
     const genericDomains = new Set(String(config.genericSites ?? '').split(/[\n,]/).map((d) => bare(d.trim())).filter(Boolean))
@@ -138,7 +138,7 @@ registerServerNode({
     const eanCol = String(config.eanColumn ?? '').trim()
     const nameCol = String(config.nameColumn ?? '').trim()
     const descCol = String(config.descriptionColumn ?? '').trim()
-    if (!refCol && !eanCol) throw new Error('Recherche dirigée : renseigne au moins une colonne Référence ou EAN.')
+    if (!refCol && !eanCol) throw new Error(t(ctx.locale, 'run.directed.noKeyColumn'))
 
     // Réf d'ORIGINE (jumeau du client) : sur un catalogue de pièces adaptables, la réf
     // article et l'EAN sont propres au distributeur — aucun concurrent ne les porte.

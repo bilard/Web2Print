@@ -120,7 +120,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
   runtime: 'client',
   run: async (ctx, config, inputs) => {
     const uid = useAuthStore.getState().user?.uid
-    if (!uid) throw new Error('Utilisateur non connecté.')
+    if (!uid) throw new Error(t('run.notSignedIn'))
     // Sites + identité du suivi : le port `sites` (node « Sites sources ») GAGNE ;
     // sinon repli sur la config locale historique (textarea + watchId, dérivé de
     // l'id du workflow par défaut → Moisson & Comparer partagent le même suivi).

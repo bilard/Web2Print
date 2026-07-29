@@ -113,7 +113,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
   runtime: 'client',
   run: async (ctx, config, inputs) => {
     const uid = useAuthStore.getState().user?.uid
-    if (!uid) throw new Error('Utilisateur non connecté.')
+    if (!uid) throw new Error(t('run.notSignedIn'))
     // Sites + identité du suivi : le port `sites` (node « Sites sources ») GAGNE ;
     // sinon repli config locale (textarea + watchId dérivé de l'id du workflow →
     // même suivi que « Moisson concurrents » du même workflow, sans rien saisir).
