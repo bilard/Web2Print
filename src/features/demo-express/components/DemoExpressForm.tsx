@@ -74,11 +74,11 @@ export function DemoExpressForm({ onLaunch }: Props) {
                   : 'bg-well border-white/10 text-white/60 hover:text-white hover:border-white/25'
               }`}
             >
-              {v} produits
+              {t('de.volume.items', { count: v })}
             </button>
           ))}
           <label className="flex items-center gap-1.5 text-sm text-white/60">
-            ou exactement
+            {t('de.volume.exactly')}
             <input
               type="number" min={1} max={48}
               value={volumeDraft ?? String(volume)}

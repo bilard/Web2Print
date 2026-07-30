@@ -83,9 +83,9 @@ export function StepPreview() {
               className="p-1.5 rounded-md hover:bg-surface-2 disabled:opacity-40 disabled:hover:bg-transparent" title={t('cat.page.prev')}>
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs text-muted-foreground tabular-nums">page {clampedIndex + 1} / {pages.length}</span>
+            <span className="text-xs text-muted-foreground tabular-nums">{t('cat.preview.pageOf', { current: clampedIndex + 1, total: pages.length })}</span>
             <button onClick={() => setIndex((i) => Math.min(pages.length - 1, i + 1))} disabled={clampedIndex === pages.length - 1}
-              className="p-1.5 rounded-md hover:bg-surface-2 disabled:opacity-40 disabled:hover:bg-transparent" title="Page suivante">
+              className="p-1.5 rounded-md hover:bg-surface-2 disabled:opacity-40 disabled:hover:bg-transparent" title={t('cat.preview.nextPage')}>
               <ChevronRight className="w-4 h-4" />
             </button>
             {/* Zoom */}
@@ -105,13 +105,13 @@ export function StepPreview() {
             {/* Options du fond de page (panneau droit contextuel) */}
             <button onClick={() => setShowOptions((v) => !v)}
               className={`flex items-center gap-1.5 ml-3 pl-3 border-l border-border px-2.5 py-1.5 rounded-md text-xs ${showOptions ? 'text-indigo-300 bg-indigo-600/15' : 'text-muted-foreground hover:bg-surface-2 hover:text-white'}`}
-              title="Afficher/masquer les options du fond de page">
-              <SlidersHorizontal className="w-3.5 h-3.5" /> Fond de page
+              title={t('cat.preview.toggleOptions')}>
+              <SlidersHorizontal className="w-3.5 h-3.5" /> {t('cat.page.background')}
             </button>
           </div>
           <button onClick={() => setStep('export')}
             className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 text-[#fff] text-sm font-medium">
-            Continuer → Export <ArrowRight className="w-4 h-4" />
+            {t('cat.preview.continue')} <ArrowRight className="w-4 h-4" />
           </button>
         </div>
         <div ref={containerRef} {...panHandlers} className={`flex-1 min-h-0 overflow-auto flex bg-well ${cursorClass}`}>

@@ -10,10 +10,14 @@ import { ConnectorTable } from './ConnectorTable'
 import { BillingLinks } from './BillingLinks'
 import { ExpandableChart } from '@/components/shared/ExpandableChart'
 import { Loader2 } from 'lucide-react'
+import { useTranslation, intlLocale, type Locale } from '@/lib/i18n'
 
-const fmtTokens = (n: number) =>
-  n >= 1_000_000 ? `${(n / 1_000_000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} M` :
-  n >= 1_000 ? `${(n / 1_000).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} k` : String(n)
+// ⚠️ Le séparateur de milliers et le nom du mois suivent la LANGUE, pas le pays
+// des factures : « 1,2 M » en français, « 1.2 M » en anglais. Un `fr-FR` en dur
+// affichait « juillet 2026 » au milieu d'un écran espagnol.
+const fmtTokens = (n: number, locale: Locale) =>
+  n >= 1_000_000 ? `${(n / 1_000_000).toLocaleString(intlLocale(locale), { maximumFractionDigits: 1 })} M` :
+  n >= 1_000 ? `${(n / 1_000).toLocaleString(intlLocale(locale), { maximumFractionDigits: 0 })} k` : String(n)
 
 function Tile({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: string }) {
   return (
@@ -26,6 +30,7 @@ function Tile({ label, value, sub, accent }: { label: string; value: string; sub
 }
 
 export function FinancePanel() {
+  const { t, locale } = useTranslation()
   const { data: stats, isLoading } = useUsageStats()
   const { data: history } = useUsageHistory(6)
   const monthlyBudgetUsd = useAiSettingsStore((s) => s.monthlyBudgetUsd)
@@ -39,25 +44,22 @@ export function FinancePanel() {
   const totals = costTotals(stats)
   const budgeted = rows.filter((r) => r.budgetUsd != null)
   const remaining = budgeted.reduce((n, r) => n + (r.remainingUsd ?? 0), 0)
-  const monthLabel = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(new Date())
+  const monthLabel = new Intl.DateTimeFormat(intlLocale(locale), { month: 'long', year: 'numeric' }).format(new Date())
 
   return (
     <div className="space-y-3">
       <div>
-        <h1 className="text-xl font-semibold text-white">Finances</h1>
-        <p className="text-sm text-white/50">
-          Suivi réel des coûts et tokens par connecteur — {monthLabel}. Les coûts sont agrégés
-          par connecteur et par mois à l’échelle de l’app (non rattachables à un module précis).
-        </p>
+        <h1 className="text-xl font-semibold text-white">{t('fin.title')}</h1>
+        <p className="text-sm text-white/50">{t('fin.lead', { month: monthLabel })}</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <Tile label={`Coût total · ${monthLabel}`} value={eur(totals.totalUsd)} accent="text-white"
-          sub={`LLM ${eur(totals.byGroup.LLM)} · Scraping ${eur(totals.byGroup.Scraping)}`} />
-        <Tile label="Tokens LLM" value={fmtTokens(totals.tokensLlm)} sub="entrée + sortie ce mois" />
-        <Tile label="Scraping" value={eur(totals.byGroup.Scraping)} accent="text-amber-400" sub="Jina · Firecrawl · Bright Data" />
-        <Tile label="Budget restant" value={budgeted.length ? eur(remaining) : '—'} accent="text-emerald-400"
-          sub={budgeted.length ? `sur ${budgeted.length} connecteur(s) plafonné(s)` : 'aucun plafond défini'} />
+        <Tile label={t('fin.tile.total', { month: monthLabel })} value={eur(totals.totalUsd)} accent="text-white"
+          sub={t('fin.tile.totalSub', { llm: eur(totals.byGroup.LLM), scraping: eur(totals.byGroup.Scraping) })} />
+        <Tile label={t('fin.tile.tokens')} value={fmtTokens(totals.tokensLlm, locale)} sub={t('fin.tile.tokensSub')} />
+        <Tile label={t('fin.tile.scraping')} value={eur(totals.byGroup.Scraping)} accent="text-amber-400" sub="Jina · Firecrawl · Bright Data" />
+        <Tile label={t('fin.tile.remaining')} value={budgeted.length ? eur(remaining) : '—'} accent="text-emerald-400"
+          sub={budgeted.length ? t('fin.tile.remainingSub', { count: budgeted.length }) : t('fin.tile.noCap')} />
       </div>
 
       <BillingLinks />

@@ -25,7 +25,7 @@ import { ExpandableChart } from '@/components/shared/ExpandableChart'
 import { ChevronDown, RotateCcw } from 'lucide-react'
 import { useLiveReportRefresh } from './useLiveReportRefresh'
 import { SearchAutocomplete } from './SearchAutocomplete'
-import { useTranslation } from '@/lib/i18n'
+import { useTranslation, intlLocale } from '@/lib/i18n'
 
 /** Rapport « vide » : permet d'afficher le Cockpit opérationnel (jauges de moisson LIVE,
  *  alimentées par les métas concurrents) AVANT le premier « Comparer catalogue ».
@@ -55,7 +55,7 @@ function EmptyState({ hasWatch }: { hasWatch: boolean }) {
 const selCls = 'bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-white/10 focus:outline-none focus:border-white/25'
 
 export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const report = useCatalogReport(watchId)
   const history = useReportHistory(watchId)
   const priceMoves = usePriceEvents(watchId)
@@ -109,8 +109,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       <div className="flex-1 min-w-0 space-y-3">
       {report.truncated && (
         <div className="bg-amber-500/10 border border-amber-500/25 rounded-md px-3 py-2 text-xs text-amber-300">
-          {report.totalMatched.toLocaleString('fr-FR')} produits appariés — le détail est borné aux 1000 les moins bien
-          positionnés. Distributions/heatmap/scatter portent sur cet échantillon (l’exhaustif est dans l’export Excel).
+          {t('pw.truncated', { count: report.totalMatched.toLocaleString(intlLocale(locale)) })}
         </div>
       )}
 

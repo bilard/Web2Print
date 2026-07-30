@@ -7,6 +7,7 @@
 import { Loader2, Wand2 } from 'lucide-react'
 import { useCoverImage } from '../../useCoverImage'
 import { optFieldClass } from './PageOptionControls'
+import { t } from '@/lib/i18n'
 
 interface Props {
   /** Cible du visuel généré : couverture ou 4e de couverture. */
@@ -26,14 +27,14 @@ export function CoverVisualField({ target, prompt, onPrompt, imageUrl, rows = 3 
     <>
       {onPrompt && (
         <textarea value={prompt} onChange={(e) => onPrompt(e.target.value)} rows={rows}
-          placeholder="Prompt du visuel" className={`${optFieldClass} resize-none`} />
+          placeholder={t('cat.page.visualPrompt')} className={`${optFieldClass} resize-none`} />
       )}
       <div className="flex items-center gap-2">
         <button type="button" disabled={generating || !prompt.trim()} onClick={() => void generateCover(prompt, target)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[#fff] text-xs font-medium">
-          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />} Générer le visuel
+          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />} {t('cat.page.generateVisual')}
         </button>
-        {imageUrl && <img src={imageUrl} alt="Visuel" className="w-10 h-10 object-cover rounded-md border border-border" />}
+        {imageUrl && <img src={imageUrl} alt={t('cat.page.visualAlt')} className="w-10 h-10 object-cover rounded-md border border-border" />}
       </div>
     </>
   )

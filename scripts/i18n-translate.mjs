@@ -37,6 +37,21 @@ const FRESH = argv.includes('--fresh')
 
 /** Consignes propres à chaque langue cible — registre, orthographe, faux amis. */
 const TARGETS = {
+  en: {
+    name: 'anglais BRITANNIQUE (en-GB)',
+    rules: [
+      "Orthographe BRITANNIQUE, sans exception : -ise / -isation (organise, centralise,",
+      'customise), colour, behaviour, centre, catalogue, dialogue, programme,',
+      'licence (nom) / license (verbe), analyse. JAMAIS de graphie américaine.',
+      "⚠️ Mais -ize reste correct dans size, resize, prize, seize, capsize : ce sont",
+      "d'autres mots, ne les touche pas.",
+      'Registre : anglais professionnel, adresse directe (« you »), boutons à',
+      "l'impératif (« Save », « Export ») comme dans les logiciels Adobe anglais.",
+      'Vocabulaire de la PAO : bleed (fond perdu), crop marks, layer, template,',
+      'text frame, data merge (publipostage), spread, artboard.',
+      'Guillemets courbes “ ” — jamais « » (typographie française).',
+    ],
+  },
   es: {
     name: 'espagnol (Espagne, es-ES)',
     rules: [
@@ -106,8 +121,21 @@ const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODE
 
 // — Catalogues source ————————————————————————————————————————————————
 const { fr } = await import(pathToFileURL(join(ROOT, 'src/lib/i18n/fr.ts')).href)
-const { en } = await import(pathToFileURL(join(ROOT, 'src/lib/i18n/en.ts')).href)
 const KEYS = Object.keys(fr)
+
+/**
+ * Catalogue d'APPUI — une seconde formulation lève les ambiguïtés d'un libellé
+ * de deux mots. C'est l'anglais, sauf quand c'est l'anglais qu'on produit :
+ * l'espagnol prend alors le relais. Une clé encore absente de l'appui
+ * (fraîchement ajoutée au FR) part sans lui — c'est le cas normal, pas une
+ * erreur : le prompt omet simplement la ligne.
+ */
+const supportLocale = locale === 'en' ? 'es' : 'en'
+let support = {}
+try {
+  const mod = await import(pathToFileURL(join(ROOT, `src/lib/i18n/${supportLocale}.ts`)).href)
+  support = mod[supportLocale] ?? {}
+} catch { /* pas de catalogue d'appui : le FR se suffit */ }
 
 /** Jetons `{param}` d'un gabarit, triés — doivent survivre à la traduction. */
 const placeholders = (s) => (s.match(/\{(\w+)\}/g) ?? []).sort().join(',')
@@ -146,16 +174,19 @@ const target = TARGETS[locale]
 
 function buildPrompt(keys) {
   const entries = keys
-    .map((k) => `${k}\n  FR: ${fr[k]}\n  EN: ${en[k]}`)
+    .map((k) => {
+      const hint = support[k] === undefined ? '' : `\n  ${supportLocale.toUpperCase()}: ${support[k]}`
+      return `${k}\n  FR: ${fr[k]}${hint}`
+    })
     .join('\n')
   return [
     `Tu traduis les libellés d'INTERFACE d'un logiciel professionnel de production graphique (éditeur type Canva/InDesign en ligne, base produit, imports/exports print, workflows IA).`,
     '',
     `Langue cible : ${target.name}.`,
     '',
-    'Chaque entrée donne son IDENTIFIANT technique, puis la version française (source)',
-    "et la version anglaise (appui pour lever les ambiguïtés). L'identifiant indique",
-    "l'écran : `pim.column.volume` parle d'une colonne de base produit, pas de volume sonore.",
+    'Chaque entrée donne son IDENTIFIANT technique, puis la version française (source),',
+    "et parfois une seconde langue en appui pour lever les ambiguïtés. L'identifiant",
+    "indique l'écran : `pim.column.volume` parle d'une colonne de base produit, pas de volume sonore.",
     '',
     'Règles impératives :',
     ...target.rules.map((r, i) => (i === 0 ? `1. ${r}` : `   ${r}`)),
@@ -322,14 +353,23 @@ function tsString(value) {
 const comments = sectionComments()
 const missing = KEYS.filter((k) => done[k] === undefined)
 
+// Règles d'écriture de la langue, telles que données au modèle — elles valent
+// aussi pour toute clé ajoutée À LA MAIN plus tard, d'où leur place en tête du
+// fichier plutôt que dans le seul script.
+const rulesBlock = target.rules.map((r) => ` *   ${r}`).join('\n')
+
 const header = `import type { TranslationKey } from './fr'
 
 /**
  * Catalogue ${target.name.toUpperCase()}.
  *
  * Généré par \`node scripts/i18n-translate.mjs ${locale}\` depuis le catalogue FR
- * (l'EN sert d'appui au modèle), puis relu à l'écran. Les corrections se font
- * DIRECTEMENT ici : le script ne réécrit que les clés absentes de son cache.
+ * (une seconde langue sert d'appui au modèle), puis relu à l'écran. Les
+ * corrections se font DIRECTEMENT ici : le script ne réécrit que les clés
+ * absentes de son cache, et ne touche donc jamais une traduction déjà relue.
+ *
+ * Règles d'écriture appliquées ici, à tenir pour toute clé ajoutée :
+${rulesBlock}
  *
  * Le type \`Record<TranslationKey, string>\` garantit qu'aucune clé FR ne peut
  * rester sans traduction : un oubli casse \`tsc -b\` au lieu de vider l'écran.

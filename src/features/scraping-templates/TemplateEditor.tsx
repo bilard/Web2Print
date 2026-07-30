@@ -151,7 +151,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
                 : 'text-white/50 hover:text-white/80'
             }`}
           >
-            <MousePointer className="w-3.5 h-3.5" /> Pointer & cliquer
+            <MousePointer className="w-3.5 h-3.5" /> {t('st.tab.visual')}
           </button>
           <button
             onClick={() => setTab('advanced')}
@@ -161,12 +161,12 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
                 : 'text-white/50 hover:text-white/80'
             }`}
           >
-            <Code2 className="w-3.5 h-3.5" /> Avancé (JSON)
+            <Code2 className="w-3.5 h-3.5" /> {t('st.tab.advanced')}
           </button>
         </div>
         <div className="flex gap-2">
           <label className="px-3 py-1.5 rounded bg-white/5 text-white/60 hover:bg-white/10 border border-white/10 text-xs inline-flex items-center gap-1.5 cursor-pointer">
-            <Upload className="w-3.5 h-3.5" /> Importer
+            <Upload className="w-3.5 h-3.5" /> {t('st.import')}
             <input
               type="file"
               accept="application/json"
@@ -178,7 +178,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
             onClick={exportJson}
             className="px-3 py-1.5 rounded bg-white/5 text-white/60 hover:bg-white/10 border border-white/10 text-xs inline-flex items-center gap-1.5"
           >
-            <Download className="w-3.5 h-3.5" /> Exporter JSON
+            <Download className="w-3.5 h-3.5" /> {t('st.exportJson')}
           </button>
           {canEdit && (
             <button
@@ -187,7 +187,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
               className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-400/30 text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              Enregistrer
+              {t('st.save')}
             </button>
           )}
         </div>
@@ -196,7 +196,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
       {/* Meta */}
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1 text-xs">
-          <span className="text-white/50">Nom du template</span>
+          <span className="text-white/50">{t('st.field.name')}</span>
           <input
             className="px-2 py-1.5 bg-black/40 border border-white/10 rounded text-white/90 text-sm"
             value={template.name}
@@ -204,7 +204,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
           />
         </label>
         <label className="flex flex-col gap-1 text-xs">
-          <span className="text-white/50">Domaine fournisseur (ex: fr.milwaukeetool.eu)</span>
+          <span className="text-white/50">{t('st.field.domain')}</span>
           <input
             className="px-2 py-1.5 bg-black/40 border border-white/10 rounded text-white/90 text-sm"
             value={template.vendorDomain}
@@ -212,7 +212,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
           />
         </label>
         <label className="col-span-2 flex flex-col gap-1 text-xs">
-          <span className="text-white/50">Pattern d'URL (regex, ex: /fr-fr/.*perceuse.*$)</span>
+          <span className="text-white/50">{t('st.field.urlPattern')}</span>
           <input
             className="px-2 py-1.5 bg-black/40 border border-white/10 rounded text-white/90 text-sm font-mono"
             value={template.urlPattern}
@@ -243,7 +243,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
       {/* Champs simples */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">Champs</h3>
+          <h3 className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">{t('st.fields')}</h3>
           <div className="flex gap-2">
             {STANDARD_FIELDS.slice(0, 6).map((s) => (
               <button
@@ -258,12 +258,12 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
               onClick={() => addField('')}
               className="text-[10px] px-2 py-0.5 rounded bg-white/5 text-white/60 hover:bg-white/10 border border-white/10 inline-flex items-center gap-1"
             >
-              <Plus className="w-3 h-3" /> Autre
+              <Plus className="w-3 h-3" /> {t('st.other')}
             </button>
           </div>
         </div>
         {template.fields.length === 0 && (
-          <div className="text-[11px] text-white/30 italic">Aucun champ — ajoute-en un avec les boutons ci-dessus.</div>
+          <div className="text-[11px] text-white/30 italic">{t('st.noField')}</div>
         )}
         {template.fields.map((f, i) => (
           <FieldRow
@@ -283,7 +283,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
             onClick={addGroup}
             className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-400/20 inline-flex items-center gap-1"
           >
-            <Plus className="w-3 h-3" /> Ajouter un groupe
+            <Plus className="w-3 h-3" /> {t('st.addGroup')}
           </button>
         </div>
         {template.specGroups.map((g, i) => (
@@ -313,7 +313,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
           </button>
         </div>
         <details className="text-[10px]">
-          <summary className="text-white/40 cursor-pointer">Ou coller du HTML directement</summary>
+          <summary className="text-white/40 cursor-pointer">{t('st.pasteHtml')}</summary>
           <textarea
             className="mt-2 w-full h-24 px-2 py-1.5 bg-black/40 border border-white/10 rounded text-white/80 font-mono text-[10px]"
             placeholder="<html>…"
@@ -430,7 +430,7 @@ function GlobalPromptSection({ value, onChange }: { value: string; onChange: (v:
       >
         <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${value ? 'text-amber-400/70' : 'text-white/30'}`} />
         <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider flex-1">
-          Instructions globales de scraping
+          {t('st.globalInstructions')}
         </span>
         {value && <span className="text-[9px] text-amber-400/50 mr-1">actif</span>}
         <ChevronDown className={`w-3 h-3 text-white/30 transition-transform ${open ? '' : '-rotate-90'}`} />
@@ -453,7 +453,7 @@ function GlobalPromptSection({ value, onChange }: { value: string; onChange: (v:
               <button
                 onClick={() => { setDraft(''); onChange('') }}
                 className="text-[9px] text-red-400/60 hover:text-red-400 ml-2"
-              >Effacer</button>
+              >{t('st.clear')}</button>
             )}
           </div>
         </div>
@@ -475,7 +475,7 @@ function VendorPromptSection({ value, vendorDomain, onChange }: { value: string;
       >
         <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${value ? 'text-sky-400/70' : 'text-white/30'}`} />
         <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider flex-1">
-          Prompt fournisseur — propagé à tous les templates de <code className="text-white/50 normal-case">{vendorDomain || '(aucun domaine)'}</code>
+          {t('st.vendorPromptFor')} <code className="text-white/50 normal-case">{vendorDomain || t('st.noDomain')}</code>
         </span>
         {value && <span className="text-[9px] text-sky-400/50 mr-1">actif</span>}
         <ChevronDown className={`w-3 h-3 text-white/30 transition-transform ${open ? '' : '-rotate-90'}`} />
@@ -498,7 +498,7 @@ function VendorPromptSection({ value, vendorDomain, onChange }: { value: string;
               <button
                 onClick={() => { setDraft(''); onChange('') }}
                 className="text-[9px] text-red-400/60 hover:text-red-400 ml-2"
-              >Effacer</button>
+              >{t('st.clear')}</button>
             )}
           </div>
         </div>

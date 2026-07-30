@@ -61,7 +61,7 @@ export function PromptEditDialog({ open, initial, onClose, onSave }: PromptEditD
         <div className="pointer-events-auto w-full max-w-3xl max-h-[90vh] bg-surface border border-white/10 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
             <h2 className="text-[14px] font-semibold text-white">
-              {initial ? 'Modifier le prompt' : 'Nouveau prompt'}
+              {initial ? t('ch.prompt.edit') : t('ch.prompt.new')}
             </h2>
             <CloseButton onClick={() => !saving && onClose()} title="Fermer" />
           </div>

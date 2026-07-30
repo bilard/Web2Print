@@ -127,7 +127,7 @@ export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPane
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un prompt…"
+              placeholder={t('ch.prompt.search')}
               className="w-full bg-background border border-white/10 focus:border-violet-500/50 rounded-lg pl-9 pr-3 py-2 text-[13px] text-white placeholder:text-white/30 outline-none transition-colors"
             />
           </div>
@@ -198,7 +198,7 @@ export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPane
             className="w-full flex items-center justify-center gap-2 text-[13px] text-[#fff] bg-violet-500 hover:bg-violet-400 disabled:bg-white/[0.06] disabled:text-white/40 rounded-lg py-2 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Nouveau prompt
+            {t('ch.prompt.new')}
           </button>
         </div>
       </aside>

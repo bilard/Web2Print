@@ -26,17 +26,17 @@ export function LogoBrandOptions({ plan, setPlan, style, patchStyle }: Props) {
   const name = plan.brandName ?? ''
 
   return (
-    <OptSection title="Logo de marque">
+    <OptSection title={t('cat.logo.title')}>
       <input value={name} onChange={(e) => setPlan({ ...plan, brandName: e.target.value })}
-        placeholder="Nom de la marque (ex. Distriland)" className={optFieldClass} />
+        placeholder={t('cat.logo.namePh')} className={optFieldClass} />
       <p className="text-[10px] text-white/40 leading-snug">
         {t('cat.logo.nameHint')}
       </p>
       <div className="flex items-center gap-2 flex-wrap">
         <button type="button" onClick={() => fileRef.current?.click()} disabled={generating}
-          title="Charger votre logo (PNG/SVG)"
+          title={t('cat.logo.upload')}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border bg-well text-xs text-white hover:border-indigo-500 disabled:opacity-50">
-          <Paperclip className="w-3.5 h-3.5" /> Charger
+          <Paperclip className="w-3.5 h-3.5" /> {t('cat.logo.load')}
         </button>
         <input ref={fileRef} type="file" accept="image/*" className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadImage(f, 'logo'); e.target.value = '' }} />
@@ -44,7 +44,7 @@ export function LogoBrandOptions({ plan, setPlan, style, patchStyle }: Props) {
           onClick={() => void generateCover(emblemPrompt(name.trim(), plan.theme.accent), 'logo')}
           title={t(name.trim() ? 'cat.logo.generateTitle' : 'cat.logo.nameFirst')}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-[#fff] text-xs font-medium">
-          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Emblème IA
+          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} {t('cat.logo.aiEmblem')}
         </button>
         {logoUrl && (
           <>
@@ -56,9 +56,9 @@ export function LogoBrandOptions({ plan, setPlan, style, patchStyle }: Props) {
           </>
         )}
       </div>
-      <OptToggle label="Sur la couverture" checked={style.showCoverLogo !== false} onChange={(v) => patchStyle({ showCoverLogo: v })} />
-      <OptToggle label="Dans le bandeau des pages" checked={style.showHeaderLogo !== false} onChange={(v) => patchStyle({ showHeaderLogo: v })} />
-      <OptSlider label="Taille" value={style.logoScale ?? 1} min={0.4} max={2} step={0.05} onChange={(v) => patchStyle({ logoScale: v })} />
+      <OptToggle label={t('cat.logo.onCover')} checked={style.showCoverLogo !== false} onChange={(v) => patchStyle({ showCoverLogo: v })} />
+      <OptToggle label={t('cat.logo.onHeader')} checked={style.showHeaderLogo !== false} onChange={(v) => patchStyle({ showHeaderLogo: v })} />
+      <OptSlider label={t('cat.logo.size')} value={style.logoScale ?? 1} min={0.4} max={2} step={0.05} onChange={(v) => patchStyle({ logoScale: v })} />
     </OptSection>
   )
 }

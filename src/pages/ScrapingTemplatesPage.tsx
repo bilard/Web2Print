@@ -72,20 +72,20 @@ export default function ScrapingTemplatesPage() {
           <button
             onClick={() => navigate('/dashboard')}
             className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/[0.06] rounded-md transition-colors"
-            aria-label="Retour au tableau de bord"
+            aria-label={t('st.backToDashboard')}
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <Database className="w-4 h-4 text-indigo-300" />
-          <h1 className="text-sm font-semibold">Templates de scraping</h1>
-          <span className="text-[10px] text-white/40">{templates.length} template(s)</span>
+          <h1 className="text-sm font-semibold">{t('st.title')}</h1>
+          <span className="text-[10px] text-white/40">{t('st.count', { count: templates.length })}</span>
         </div>
         {canEdit && (
           <button
             onClick={createNew}
             className="px-3 py-1.5 rounded bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30 border border-indigo-400/30 text-xs inline-flex items-center gap-1.5"
           >
-            <Plus className="w-3.5 h-3.5" /> Nouveau
+            <Plus className="w-3.5 h-3.5" /> {t('st.new')}
           </button>
         )}
       </div>
@@ -99,33 +99,37 @@ export default function ScrapingTemplatesPage() {
               {t('scrapingTemplatesPage.noTemplateCreate')}
             </div>
           )}
-          {templates.map((t) => {
-            const isActive = selected?.id === t.id
+          {templates.map((tpl) => {
+            const isActive = selected?.id === tpl.id
             return (
               <div
-                key={t.id}
-                onClick={() => setSelected(t)}
+                key={tpl.id}
+                onClick={() => setSelected(tpl)}
                 className={`cursor-pointer px-3 py-2 border-b border-white/[0.04] transition-colors ${isActive ? 'bg-indigo-500/10' : 'hover:bg-white/[0.03]'}`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="text-[12px] font-medium text-white/90 truncate">{t.name}</div>
-                    <div className="text-[10px] text-white/40 truncate font-mono">{t.vendorDomain}</div>
+                    <div className="text-[12px] font-medium text-white/90 truncate">{tpl.name}</div>
+                    <div className="text-[10px] text-white/40 truncate font-mono">{tpl.vendorDomain}</div>
                     <div className="text-[9px] text-white/30 mt-0.5">
-                      {t.fields.length} champ{t.fields.length > 1 ? 's' : ''} · {t.specGroups.length} groupe{t.specGroups.length > 1 ? 's' : ''}
+                      {/* ⚠️ Clés dédiées par forme, jamais un « s » recollé : la règle de
+                          pluriel du français ne survit pas à la traduction (cf. i18n.test.ts). */}
+                      {tpl.fields.length > 1 ? t('st.card.fields.many', { count: tpl.fields.length }) : t('st.card.fields.one', { count: tpl.fields.length })}
+                      {' · '}
+                      {tpl.specGroups.length > 1 ? t('st.card.groups.many', { count: tpl.specGroups.length }) : t('st.card.groups.one', { count: tpl.specGroups.length })}
                     </div>
                   </div>
                   {canEdit && (
                     <div className="flex flex-col gap-1 shrink-0">
                       <button
-                        onClick={(e) => { e.stopPropagation(); clone(t) }}
+                        onClick={(e) => { e.stopPropagation(); clone(tpl) }}
                         className="text-white/40 hover:text-white/80"
-                        title="Cloner"
+                        title={t('st.clone')}
                       ><Copy className="w-3 h-3" /></button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); onDelete(t) }}
+                        onClick={(e) => { e.stopPropagation(); onDelete(tpl) }}
                         className="text-red-400/60 hover:text-red-400"
-                        title="Supprimer"
+                        title={t('st.delete')}
                       ><Trash2 className="w-3 h-3" /></button>
                     </div>
                   )}

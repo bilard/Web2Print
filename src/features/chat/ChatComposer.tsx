@@ -174,7 +174,7 @@ export function ChatComposer({
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            title="Joindre un fichier"
+            title={t('ch.attachFile')}
             className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
               menuOpen
                 ? 'bg-white/[0.08] text-white'

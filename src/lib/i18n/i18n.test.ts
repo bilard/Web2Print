@@ -297,6 +297,7 @@ describe('espagnol (es-ES)', () => {
     'run.tg.rowSentNoDot',
     'run.gm.rowSent', // « email » s'emploie tel quel en espagnol
     'ob.connectors.desc', // « Google Drive, Telegram, Bright Data » — noms propres
+    'fin.tile.totalSub', // « LLM {llm} · Scraping {scraping} » — deux variables, zéro prose
   ]
 
   it('ne laisse aucune PHRASE en français', () => {

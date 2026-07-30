@@ -1,44 +1,47 @@
 import type { TranslationKey } from './fr'
 
 /**
- * Catalogue ANGLAIS — orthographe BRITANNIQUE (en-GB).
+ * Catalogue ANGLAIS BRITANNIQUE (EN-GB).
+ *
+ * Généré par `node scripts/i18n-translate.mjs en` depuis le catalogue FR
+ * (une seconde langue sert d'appui au modèle), puis relu à l'écran. Les
+ * corrections se font DIRECTEMENT ici : le script ne réécrit que les clés
+ * absentes de son cache, et ne touche donc jamais une traduction déjà relue.
  *
  * Règles d'écriture appliquées ici, à tenir pour toute clé ajoutée :
- *   -ise / -isation  → organise, centralise, customise (jamais -ize)
- *   colour, behaviour, centre, licence (nom) / license (verbe)
- *   catalogue, dialogue, programme (sauf « computer program »)
- *   dates JJ/MM/AAAA — cf. `formatDate()` dans `lib/i18n/index.ts`
+ *   Orthographe BRITANNIQUE, sans exception : -ise / -isation (organise, centralise,
+ *   customise), colour, behaviour, centre, catalogue, dialogue, programme,
+ *   licence (nom) / license (verbe), analyse. JAMAIS de graphie américaine.
+ *   ⚠️ Mais -ize reste correct dans size, resize, prize, seize, capsize : ce sont
+ *   d'autres mots, ne les touche pas.
+ *   Registre : anglais professionnel, adresse directe (« you »), boutons à
+ *   l'impératif (« Save », « Export ») comme dans les logiciels Adobe anglais.
+ *   Vocabulaire de la PAO : bleed (fond perdu), crop marks, layer, template,
+ *   text frame, data merge (publipostage), spread, artboard.
+ *   Guillemets courbes “ ” — jamais « » (typographie française).
  *
- * Le type `Record<TranslationKey, string>` garantit qu'AUCUNE clé FR ne peut
+ * Le type `Record<TranslationKey, string>` garantit qu'aucune clé FR ne peut
  * rester sans traduction : un oubli casse `tsc -b` au lieu de vider l'écran.
+ * Les commentaires de section sont ceux de `fr.ts` — ils repèrent les écrans.
  */
 export const en: Record<TranslationKey, string> = {
-  // — Sign-in screen —————————————————————————————————————————————————
+  // — Écran de connexion —————————————————————————————————————————————
   'login.badge': '18 modules · 1 platform · 0 software to install',
   'login.headline.line1': 'Create, import,',
   'login.headline.line2': 'export in one flow.',
-  'login.tagline':
-    'The professional design editor that turns your print files and product data into ready-to-publish creative — from brief to printer, with nothing to install.',
-
+  'login.tagline': 'The professional design editor that turns your print files and product data into ready-to-publish creative — from brief to printer, with nothing to install.',
   'login.feature.import.label': 'Professional print import',
-  'login.feature.import.desc':
-    'PDF, IDML (InDesign) & SVG (Illustrator), editable straight in your browser',
+  'login.feature.import.desc': 'PDF, IDML (InDesign) & SVG (Illustrator), editable straight in your browser',
   'login.feature.svg.label': 'Block-editable SVG',
-  'login.feature.svg.desc':
-    'Text, shapes and images cut out automatically, each one editable separately',
+  'login.feature.svg.desc': 'Text, shapes and images cut out automatically, each one editable separately',
   'login.feature.pim.label': 'Built-in PIM & DAM',
-  'login.feature.pim.desc':
-    'Centralised product data and media, reusable across all your artwork',
+  'login.feature.pim.desc': 'Centralised product data and media, reusable across all your artwork',
   'login.feature.merge.label': 'Data mail merge',
-  'login.feature.merge.desc':
-    'Hundreds of variants generated from a spreadsheet or a product database',
+  'login.feature.merge.desc': 'Hundreds of variants generated from a spreadsheet or a product database',
   'login.feature.export.label': 'Multi-format export',
-  'login.feature.export.desc':
-    'Print-ready PDF (bleed, crop marks), PPTX and high-resolution images',
+  'login.feature.export.desc': 'Print-ready PDF (bleed, crop marks), PPTX and high-resolution images',
   'login.feature.workflows.label': 'No-code AI workflows',
-  'login.feature.workflows.desc':
-    'Scraping, design and delivery (Telegram, Drive, Gmail) chained automatically',
-
+  'login.feature.workflows.desc': 'Scraping, design and delivery (Telegram, Drive, Gmail) chained automatically',
   'login.workspace': 'Workspace',
   'login.welcome': 'Welcome',
   'login.subtitle': 'Sign in to access your projects.',
@@ -46,32 +49,24 @@ export const en: Record<TranslationKey, string> = {
   'login.cta.loading': 'Signing in…',
   'login.secure': 'secure sign-in',
   'login.legal': 'By signing in, you agree to our terms of use and our privacy policy.',
-
   'login.error.cancelled': 'Sign-in cancelled.',
-  'login.error.popupBlocked':
-    'The sign-in window was blocked by your browser. Please allow pop-ups and try again.',
+  'login.error.popupBlocked': 'The sign-in window was blocked by your browser. Please allow pop-ups and try again.',
   'login.error.network': 'Network problem. Please check your connection and try again.',
-  'login.error.unauthorizedDomain':
-    'This domain is not authorised for sign-in. Please contact your administrator.',
+  'login.error.unauthorizedDomain': 'This domain is not authorised for sign-in. Please contact your administrator.',
   'login.error.generic': 'Sign-in failed. Please try again in a moment.',
   'login.error.unexpected': 'An unexpected error occurred.',
-
-  // — Language switcher ——————————————————————————————————————————————
+  // — Sélecteur de langue ————————————————————————————————————————————
   'locale.label': 'Language',
   'locale.fr': 'Français',
   'locale.en': 'English',
-
-  // — Navigation: menu groups ————————————————————————————————————————
+  // — Navigation : thèmes du menu ————————————————————————————————————
   'nav.group.create': 'Create',
   'nav.group.product-data': 'Product data',
   'nav.group.web': 'Web & monitoring',
   'nav.group.publish': 'Publishing',
   'nav.group.automation': 'Automation & AI',
   'nav.group.admin': 'Administration',
-
-  // — Navigation: modules ————————————————————————————————————————————
-  // Les noms de modules reprennent ceux de la documentation publiée
-  // (/docs/en/) : « Studio catalogue », « Price monitoring »…
+  // — Navigation : modules ———————————————————————————————————————————
   'nav.blank': 'New document',
   'nav.import': 'Import',
   'nav.import.excel': 'Import an Excel file',
@@ -149,16 +144,16 @@ export const en: Record<TranslationKey, string> = {
   'nav.access.roles': 'Roles',
   'nav.access.audit': 'Audit log',
   'nav.access.analytics': 'Analytics',
-
-  // — Navigation: tree & drawer ——————————————————————————————————————
+  // — Navigation : arbre & tiroir ————————————————————————————————————
+  // Phrase entière paramétrée : recoller « Déplier » + le nom du module
+  // produirait un ordre de mots faux dans d'autres langues.
   'nav.tree.expand': 'Expand {module}',
   'nav.tree.collapse': 'Collapse {module}',
   'nav.drawer.title': 'Modules',
   'nav.drawer.menu': 'Modules (menu)',
   'nav.drawer.open': 'Open the modules menu',
   'nav.drawer.close': 'Close the menu',
-
-  // — Command palette (⌘K) ———————————————————————————————————————————
+  // — Palette de commandes (⌘K) ——————————————————————————————————————
   'palette.title': 'Command palette',
   'palette.placeholder': 'Search for a module or an action…',
   'palette.group.recent': 'Recent projects',
@@ -173,8 +168,7 @@ export const en: Record<TranslationKey, string> = {
   'palette.hint.navigate': 'navigate',
   'palette.hint.open': 'open',
   'palette.hint.close': 'close',
-
-  // — Theme switcher —————————————————————————————————————————————————
+  // — Sélecteur de thème —————————————————————————————————————————————
   'theme.aria': 'Change theme',
   'theme.hint': '{current} on — {action}',
   'theme.dark': 'Dark mode',
@@ -183,15 +177,13 @@ export const en: Record<TranslationKey, string> = {
   'theme.action.toLight': 'switch to light mode',
   'theme.action.toSystem': 'follow the system',
   'theme.action.toDark': 'switch to dark mode',
-
   // — Notifications ——————————————————————————————————————————————————
   'notif.title': 'Notifications',
   'notif.open': 'Open notifications',
   'notif.markAllRead': 'Mark all as read',
   'notif.clear': 'Clear the history',
   'notif.empty': 'No notifications',
-
-  // — Dashboard: shell ———————————————————————————————————————————————
+  // — Dashboard : ossature ———————————————————————————————————————————
   'dashboard.mainMenu': 'Main menu',
   'dashboard.moduleNav': 'Module navigation',
   'dashboard.sidebar.open': 'Open the menu',
@@ -203,8 +195,7 @@ export const en: Record<TranslationKey, string> = {
   'dashboard.officialApp': "Open the official app — check you're on the right version",
   'dashboard.createDocument': 'Create a document',
   'dashboard.import': 'Import',
-
-  // — Dashboard: library —————————————————————————————————————————————
+  // — Dashboard : bibliothèque ———————————————————————————————————————
   'library.title': 'My projects',
   'library.results.one': '({count} result)',
   'library.results.other': '({count} results)',
@@ -226,8 +217,7 @@ export const en: Record<TranslationKey, string> = {
   'library.empty.subtitle': 'Create your first document to get started',
   'library.empty.filtered': 'No projects in this category',
   'library.list': 'Project list',
-
-  // — New document ———————————————————————————————————————————————————
+  // — Nouveau document ———————————————————————————————————————————————
   'newdoc.name': 'Document name',
   'newdoc.name.help': 'The name of your project, shown in the Library. You can change it at any time from the editor.',
   'newdoc.untitled': 'Untitled',
@@ -259,8 +249,7 @@ export const en: Record<TranslationKey, string> = {
   'newdoc.preview': 'Preview',
   'newdoc.creating': 'Creating…',
   'newdoc.create': 'Create the document',
-
-  // — Project card (library) ——————————————————————————————————————————
+  // — Carte projet (bibliothèque) —————————————————————————————————————
   'project.select': 'Select the project',
   'project.deselect': 'Deselect the project',
   'project.linkTaxonomy': 'Link to a taxonomy',
@@ -269,11 +258,9 @@ export const en: Record<TranslationKey, string> = {
   'project.duplicate': 'Duplicate',
   'project.delete': 'Delete',
   'project.delete.confirm': 'Delete “{title}”?',
-
-  // — Library taxonomy filter —————————————————————————————————————————
+  // — Filtre taxonomie de la bibliothèque ————————————————————————————
   'libraryFilter.title': 'Filter',
   'libraryFilter.clear': 'Clear the filter',
-
   // — Import ——————————————————————————————————————————————————————————
   'import.creating': 'Creating the project and importing…',
   'import.converting.image': 'Converting image → SVG…',
@@ -307,8 +294,7 @@ export const en: Record<TranslationKey, string> = {
   'import.error.pdf': 'Unsupported type: expected a PDF',
   'import.error.imageToSvg': 'Image → SVG conversion failed',
   'import.error.pdfToSvg': 'PDF → SVG conversion failed',
-
-  // — Background & gradients —————————————————————————————————————————
+  // — Arrière-plan & dégradés ————————————————————————————————————————
   'bg.tab.solid': 'Solid colour',
   'bg.tab.gradient': 'Gradient',
   'bg.tab.image': 'Image',
@@ -328,8 +314,7 @@ export const en: Record<TranslationKey, string> = {
   'gradient.hint': 'Click the bar to add a stop',
   'gradient.saveShort': 'Save',
   'gradient.presets': 'Presets',
-
-  // — Settings: tabs —————————————————————————————————————————————————
+  // — Réglages : onglets ————————————————————————————————————————————
   'settings.nav': 'Settings sections',
   'settings.tab.profile': 'Profile',
   'settings.tab.ai': 'AI',
@@ -341,12 +326,10 @@ export const en: Record<TranslationKey, string> = {
   'settings.tab.activity': 'My activity',
   'settings.appearance': 'Appearance',
   'settings.theme.system': 'System',
-
-  // — Settings: Firebase —————————————————————————————————————————————
+  // — Réglages : Firebase ————————————————————————————————————————————
   'settings.firebase.intro': 'Backend configuration (authentication, database, storage)',
   'settings.firebase.project': 'Project',
-
-  // — Settings: API keys —————————————————————————————————————————————
+  // — Réglages : clés API ————————————————————————————————————————————
   'apikey.placeholder': 'Enter the API key…',
   'apikey.manage': 'Manage the API key (provider console)',
   'apikey.billing': 'Billing & balance (new tab)',
@@ -357,8 +340,7 @@ export const en: Record<TranslationKey, string> = {
   'apikey.saved': 'Saved ✓',
   'apikey.recommended': 'recommended',
   'apikey.pastePlaceholder': 'Paste your API key…',
-
-  // — Settings: AI provider cards —————————————————————————————————————
+  // — Réglages : cartes provider IA ——————————————————————————————————
   'aiProvider.promote': 'Move up the reasoning cascade',
   'aiProvider.promoted': '{label} added to the reasoning cascade',
   'aiProvider.model': 'Text/JSON model',
@@ -371,23 +353,20 @@ export const en: Record<TranslationKey, string> = {
   'aiProvider.imageNote': 'Image generation always uses AI Image (',
   'aiProvider.resetModels': 'Selects the latest flagship model from every provider (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, GLM, OpenRouter)',
   'aiProvider.resetModels.done': 'Every LLM updated to its latest version',
-
-  // — Settings: Higgsfield ———————————————————————————————————————————
+  // — Réglages : Higgsfield ——————————————————————————————————————————
   'higgsfield.desc': 'Image (Soul) / video (DoP) generation — workflow node',
   'higgsfield.manage': 'Create / manage the API key',
   'higgsfield.credits': 'Credits / billing',
   'higgsfield.keyId': 'Key ID',
   'higgsfield.secret': 'Secret',
-
-  // — Settings: Google & Drive ————————————————————————————————————————
+  // — Réglages : Google & Drive ——————————————————————————————————————
   'google.server.title': 'Google — server access (Drive + Gmail)',
   'google.server.test': 'Test the server connection',
   'google.server.usage': 'cron, webhook and Telegram',
   'google.server.connectedSince': 'Connected since {date}.',
   'gdrive.desc': 'Access to Google Sheets files',
   'gdrive.disconnect': 'Disconnect',
-
-  // — Settings: Bright Data ——————————————————————————————————————————
+  // — Réglages : Bright Data —————————————————————————————————————————
   'brightdata.desc': 'Premium CAPTCHA bypass (DataDome/Akamai/PerimeterX) — token editable below',
   'brightdata.serverSide': 'Server-side',
   'brightdata.zones': 'Manage the zones (Bright Data dashboard)',
@@ -404,8 +383,7 @@ export const en: Record<TranslationKey, string> = {
   'brightdata.err.notDeployed': 'Cloud Function not deployed, or the BRIGHTDATA_API_TOKEN secret is missing',
   'brightdata.err.rateLimit': 'Bright Data rate limit reached — try again in 1 min',
   'brightdata.err.empty': 'No content returned',
-
-  // — Settings: session cookies ———————————————————————————————————————
+  // — Réglages : cookies de session ——————————————————————————————————
   'cookies.intro': 'B2B session cookies injected automatically into Bright Data at scrape time — this is what gets prices and stock hidden behind a login. Sign in manually in Chrome, copy the cookies from DevTools and paste them here. Typical validity: 24-72 h depending on the site.',
   'cookies.title': 'Session cookies',
   'cookies.subtitle': 'Login-gated B2B sites — injected automatically into Bright Data',
@@ -420,15 +398,13 @@ export const en: Record<TranslationKey, string> = {
   'cookies.detected': 'Table detected → converted to a cookie string:',
   'cookies.empty': 'No cookie — click + to add one',
   'cookies.textareaPlaceholder': 'Paste the DevTools table (select all) or type it directly:\nPHPSESSID=abc123; user_locale=fr',
-
-  // — Settings: background removal ————————————————————————————————————
+  // — Réglages : détourage —————————————————————————————————————————————
   'removebg.toggle': 'Use the Remove.bg API (paid) when the key is present',
   'removebg.on': 'On — falls back automatically to the built-in engine (rembg) on failure or when credits run out',
   'removebg.off': 'Off — all background removal goes through the built-in engine (rembg, free and unlimited)',
   'removebg.disable': 'Disable Remove.bg',
   'removebg.enable': 'Enable Remove.bg',
-
-  // — Settings: statistics ————————————————————————————————————————————
+  // — Réglages : statistiques ————————————————————————————————————————
   'stats.error': 'Could not load the statistics',
   'stats.updatedAt': 'Updated at {time}',
   'stats.refresh': 'Refresh',
@@ -440,8 +416,7 @@ export const en: Record<TranslationKey, string> = {
   'stats.aiCost': 'Estimated AI cost this month',
   'stats.estimate': 'estimate · 1 USD ≈ {rate} €',
   'stats.totalTokens': 'Total tokens',
-
-  // — Settings: plugin tokens —————————————————————————————————————————
+  // — Réglages : jetons du plugin ————————————————————————————————————
   'pluginToken.copied': 'Token copied',
   'pluginToken.showKey': 'Show the KEY',
   'pluginToken.hideKey': 'Hide the KEY',
@@ -454,14 +429,12 @@ export const en: Record<TranslationKey, string> = {
   'pluginToken.usedOn': 'used {date}',
   'pluginToken.delete': 'Delete',
   'pluginToken.unavailable': 'Value unavailable — regenerate this token to be able to display it.',
-
-  // — Settings: resume setup ——————————————————————————————————————————
+  // — Réglages : reprise d'installation ——————————————————————————————
   'setup.configure': 'Set up the application',
   'setup.wizard': 'Setup assistant',
   'setup.resume': 'Resume the guided setup (keys, models, connectors)',
   'pipelineRuns.collapse': 'Collapse',
-
-  // — API keys: labels & descriptions ——————————————————————————————————
+  // — Clés API : libellés & descriptions ——————————————————————————————
   'apikeys.gemini.label': 'AI Image (Gemini)',
   'apikeys.gemini.desc': 'Google Gemini API key for AI image generation and quick tasks',
   'apikeys.anthropic.label': 'Claude (Anthropic)',
@@ -499,16 +472,14 @@ export const en: Record<TranslationKey, string> = {
   'apikeys.higgsfield.label': 'Higgsfield',
   'apikeys.higgsfield.desc': 'AI image/video generation (Soul, Kling, Veo, DoP…). Key format "KEY_ID:KEY_SECRET".',
   'apikeys.buyCredits': 'Buy credits',
-
-  // — Connectors: descriptions shown in Settings ———————————————————————
+  // — Connecteurs : descriptions affichées dans Réglages ——————————————
   'connectors.googleVision.desc': 'OCR for Image/PDF → editable SVG (text decomposition)',
   'connectors.removebg.desc': 'Image background removal',
   'connectors.jina.desc': 'Scraping and web search',
   'connectors.firecrawl.desc': 'Anti-bot scraping fallback (Akamai, Cloudflare)',
   'connectors.browseract.desc': 'Runs your "bots" (Amazon, LinkedIn, hard anti-bot). Only through the "BrowserAct (bot)" workflow node — this is not a scraping engine.',
   'connectors.scrapfly.desc': 'Reserved — no browser-side CORS, waiting on a proxy Cloud Function',
-
-  // — API key connection test —————————————————————————————————————————
+  // — Test de connexion des clés API ————————————————————————————————
   'apitest.undefined': 'Key not set',
   'apitest.notSet': '(not set)',
   'apitest.connected': 'Connected',
@@ -533,8 +504,7 @@ export const en: Record<TranslationKey, string> = {
   'apitest.formatValid.cf': 'Valid format (waiting on Cloud Function wiring)',
   'apitest.formatValid.higgsfield': 'Valid format (used by the Higgsfield node, server-side)',
   'apitest.networkError': 'Network error',
-
-  // — AI provider cards: labels & descriptions —————————————————————————
+  // — Cartes provider IA : libellés & descriptions ————————————————————
   'aiCard.gemini.label': 'AI Image (Gemini)',
   'aiCard.gemini.desc': 'AI image generation and reasoning through Google Gemini',
   'aiCard.claude.label': 'Claude (Anthropic)',
@@ -551,7 +521,6 @@ export const en: Record<TranslationKey, string> = {
   'aiCard.glm.desc': 'GLM — OpenAI-compatible endpoint (optional)',
   'aiCard.openrouter.label': 'OpenRouter',
   'aiCard.openrouter.desc': 'Unified access to every LLM (Claude, GPT, Gemini, Llama, Mistral, Qwen, DeepSeek…)',
-
   'theme.pref.light': 'Light',
   'theme.pref.dark': 'Dark',
   'theme.pref.system': 'System',
@@ -563,14 +532,12 @@ export const en: Record<TranslationKey, string> = {
   'keysStep.intro.before': 'IBS-Studio runs on your own LLM key. Fill in ',
   'keysStep.intro.emphasis': 'at least one',
   'keysStep.intro.after': ' to continue.',
-
   'apikey.overridden': '(custom)',
   'brightdata.note.body': ' the token entered here takes precedence over Secret Manager. Required BD scope: ',
   'brightdata.note.balance': ' (balance) + ',
   'brightdata.note.scraping': ' (scraping).',
   'apitest.noBot': 'Valid key, but no bot in the account — a bot is required in order to scrape',
-
-  // — Live "AI & scraping usage" panel ————————————————————————————————
+  // — Panneau live « Consommation IA & Scraping » ————————————————————
   'live.aria': 'Real-time AI usage',
   'live.title': 'AI & scraping usage — live',
   'live.refresh': 'Refresh now',
@@ -614,7 +581,6 @@ export const en: Record<TranslationKey, string> = {
   'live.higgsfield.dashboard': 'Real balance & usage (Higgsfield dashboard)',
   'live.alertsSuffix': 'alerts',
   'live.localSuffix': 'local',
-
   'live.subtitle': 'Overall view of this month’s costs · {updated}',
   'live.updated': 'Updated {time}',
   'live.overCount.one': '{count} over',
@@ -631,8 +597,7 @@ export const en: Record<TranslationKey, string> = {
   'live.footer.autoRefresh': 'Auto-refreshes every 15 s. The ',
   'live.footer.thresholds': ' are monthly ',
   'live.footer.explain': ' thresholds: they raise a warning at â¥ 80 % and a "limit reached" state at â¥ 100 %, but they do not top up the account with the provider. To actually top up the credits, click the provider name ',
-
-  // — Editor: Properties panel ————————————————————————————————————————
+  // — Éditeur : panneau Propriétés ————————————————————————————————————
   'props.title': 'Properties',
   'props.delete': 'Delete',
   'props.selectObject': 'Select an object',
@@ -698,8 +663,7 @@ export const en: Record<TranslationKey, string> = {
   'props.background': 'Background',
   'props.distributeH': 'Distribute horizontally',
   'props.distributeV': 'Distribute vertically',
-
-  // — Blend modes (the VALUE stays the Fabric key) —————————————————————
+  // — Modes de fusion (la VALEUR reste la clé Fabric) ————————————————
   'blend.normal': 'Normal',
   'blend.multiply': 'Multiply',
   'blend.screen': 'Screen',
@@ -716,8 +680,7 @@ export const en: Record<TranslationKey, string> = {
   'blend.saturation': 'Saturation',
   'blend.color': 'Colour',
   'blend.luminosity': 'Luminosity',
-
-  // — Properties panel contextual help ————————————————————————————————
+  // — Aides contextuelles du panneau Propriétés ——————————————————————
   'props.help.fill': 'The inside colour of the object. Choose: flat (solid colour), gradient, image, or no fill at all (transparent).',
   'props.help.stroke': 'The object border: colour, thickness, line style (solid, dashed, dotted), and the shape of the caps/corners.',
   'props.help.opacity': 'Object transparency (0 = invisible) and blend mode (multiply, screen, overlay…), which defines how its colours mix with those underneath.',
@@ -732,8 +695,7 @@ export const en: Record<TranslationKey, string> = {
   'props.fontStyle.italic': 'Italic',
   'props.fontStyle.bold': 'Bold',
   'props.fontStyle.boldItalic': 'Bold Italic',
-
-  // — Editor: Print panel —————————————————————————————————————————————
+  // — Éditeur : panneau Impression ————————————————————————————————————
   'print.saved': 'Print settings saved ✓',
   'print.saveError': 'Saving failed',
   'print.presetName.prompt': 'Name of the settings family:',
@@ -784,8 +746,7 @@ export const en: Record<TranslationKey, string> = {
   'print.safe.margin': 'Inner margin',
   'print.safe.dash': 'Dash length',
   'print.safe.gap': 'Dash spacing',
-
-  // — Editor: header ——————————————————————————————————————————————————
+  // — Éditeur : en-tête ————————————————————————————————————————————————
   'editor.dashboard': 'Dashboard',
   'editor.saving': 'Saving…',
   'editor.undo': 'Undo (⌘Z)',
@@ -800,8 +761,7 @@ export const en: Record<TranslationKey, string> = {
   'editor.aiVideo': 'AI video',
   'editor.aiVideo.help': 'Generate an AI video of the WHOLE PAGE (brief → animation). To animate a single object live, use the "Animate the object" panel.',
   'editor.export': 'Export',
-
-  // — Editor: footer ——————————————————————————————————————————————————
+  // — Éditeur : pied de page ——————————————————————————————————————————
   'editor.zoomOut': 'Zoom out',
   'editor.zoomReset': 'Reset the zoom (100%)',
   'editor.zoomIn': 'Zoom in',
@@ -809,8 +769,7 @@ export const en: Record<TranslationKey, string> = {
   'editor.grid': 'Grid',
   'editor.snap': 'Snapping',
   'editor.idmlConnectors': 'Show the IDML field connectors',
-
-  // — Editor: 3D animation ————————————————————————————————————————————
+  // — Éditeur : animation 3D ——————————————————————————————————————————
   'anim.singleObject': 'a single object',
   'anim.wholePage': 'the whole page',
   'anim.selectObject': 'Select an object on the canvas to apply an effect.',
@@ -833,8 +792,7 @@ export const en: Record<TranslationKey, string> = {
   'anim.record': 'Records one full cycle of the animation as WebM through MediaRecorder',
   'anim.particles.on': 'Three.js particles running as a canvas overlay. Click Stop to end them.',
   'anim.particles.off': 'Particles rendered as a Three.js overlay above the canvas. Click Start to begin.',
-
-  // — Editor: text frame ———————————————————————————————————————————————
+  // — Éditeur : bloc de texte —————————————————————————————————————————
   'textFrame.title': 'Text frame',
   'textFrame.help': 'The frame that holds the text, as in InDesign: fill, stroke, corner radius, inner margins (in points), vertical text position and automatic resizing.',
   'textFrame.fill': 'Frame fill',
@@ -863,8 +821,7 @@ export const en: Record<TranslationKey, string> = {
   'textFrame.indentLast': 'Last-line indent',
   'textFrame.spaceAfter.short': 'Space after',
   'textFrame.spaceAfter': 'Space after the paragraph',
-
-  // — Editor: other panels ————————————————————————————————————————————
+  // — Éditeur : autres panneaux ————————————————————————————————————————
   'assets.refresh': 'Refresh',
   'assets.noImage': 'No image',
   'assets.noFont': 'No font',
@@ -945,7 +902,6 @@ export const en: Record<TranslationKey, string> = {
   'versions.restore': 'Restore this version (the editor reloads)',
   'versions.deleted': 'Version deleted.',
   'versions.delete': 'Delete this version',
-
   'rightPanel.palette': 'Palette',
   'rightPanel.assets': 'Assets',
   'rightPanel.animation3d': 'Animate the object',
@@ -961,17 +917,14 @@ export const en: Record<TranslationKey, string> = {
   'textFrame.indent.lastLine.short': 'Last line',
   'textFrame.spaceBefore.short': 'Space before',
   'textFrame.spaceBefore': 'Space before the paragraph',
-
   'tool.stockImages': 'Stock images',
   'tool.myImages': 'My images',
   'tool.upload': 'Upload',
-
   'anim.duration': 'Duration per cycle',
   'anim.duration.help': 'Time for one full loop of the animation, in seconds. Shorter = faster motion.',
   'anim.intensity.help': 'Amplitude of the effect (× the base movement). Higher = more pronounced animation.',
   'anim.geometry.help': 'Gives volume to the text/object: extrusion depth, edge bevel and rotation on the X/Y axes. Auto rotation for continuous animation.',
   'anim.lighting.help': 'Controls the lighting of the 3D scene: directional light (intensity, colour, position), which creates the shadows, and ambient light (uniform global lighting).',
-
   'props.tab.shape': 'Shape options',
   'props.tab.text': 'Text options',
   'rules.title': 'Conditional rules',
@@ -986,7 +939,6 @@ export const en: Record<TranslationKey, string> = {
   'layer.delete': 'Delete',
   'layer.search': 'Search the layers',
   'layer.clearSearch': 'Clear',
-
   'fonts.myFonts': 'My fonts',
   'fonts.upload': 'Upload (.woff2, .ttf…)',
   'fonts.googleUrl': 'Google Fonts URL (fonts.google.com/specimen/…) or name',
@@ -997,8 +949,7 @@ export const en: Record<TranslationKey, string> = {
   'fonts.delete': 'Delete',
   'fonts.documentFonts': 'Document fonts',
   'fonts.google': 'Google Fonts',
-
-  // — PIM: Data page ———————————————————————————————————————————————————
+  // — PIM : page Données ———————————————————————————————————————————————
   'pim.display': 'Display',
   'pim.panels': 'Panels',
   'pim.nav': 'Navigation',
@@ -1050,9 +1001,6 @@ export const en: Record<TranslationKey, string> = {
   'pim.moveTo': 'Move to…',
   'pim.firebase': 'Firebase',
   'pim.delete': 'Delete',
-
-  // — DAM ——————————————————————————————————————————————————————————————
-
   'pim.refresh': 'Refresh',
   'pim.aiFill': 'AI fill',
   'pim.empty.noData': 'No data',
@@ -1062,12 +1010,10 @@ export const en: Record<TranslationKey, string> = {
   'pim.products.one': '{count} product',
   'pim.products.other': '{count} products',
   'pim.mfrChallenge': '{count} product(s) with a manufacturer challenge',
-
   'pim.ungroupTaxonomy': 'Ungroup the taxonomy',
   'pim.groupByTaxonomy': 'Group by taxonomy',
   'pim.noResult': 'No results for "{query}"',
-
-  // — DAM: navigation & tabs ——————————————————————————————————————————
+  // — DAM : navigation & onglets ——————————————————————————————————————
   'dam.nav': 'DAM navigation',
   'dam.title': 'DAM',
   'dam.desc.stock': 'Search royalty-free images (Pexels, Unsplash) to drop straight onto the canvas.',
@@ -1099,8 +1045,7 @@ export const en: Record<TranslationKey, string> = {
   'dam.noImage': 'No image',
   'dam.noFont': 'No font',
   'dam.dragFont': 'Drag onto a text on the canvas to apply the font',
-
-  // — DAM: image card ——————————————————————————————————————————————————
+  // — DAM : carte image ————————————————————————————————————————————————
   'dam.card.insert': 'Click: insert — Double-click: replace the active frame',
   'dam.card.addToCollection': 'Add to a collection',
   'dam.card.download': 'Download',
@@ -1114,8 +1059,7 @@ export const en: Record<TranslationKey, string> = {
   'dam.noCanvas': 'No active canvas',
   'dam.selectBlockFirst': 'Select the frame to fill first',
   'dam.imageEmbedded': 'Image embedded in the frame',
-
-  // — DAM: zoom & lightbox —————————————————————————————————————————————
+  // — DAM : zoom & visionneuse —————————————————————————————————————————
   'dam.zoomOut': 'Zoom out (-)',
   'dam.zoomIn': 'Zoom in (+)',
   'dam.zoomReset': 'Reset (0)',
@@ -1147,8 +1091,7 @@ export const en: Record<TranslationKey, string> = {
   'dam.vision.objects': 'Detected objects',
   'dam.vision.searchTags': 'Search tags',
   'dam.vision.palette': 'Palette',
-
-  // — DAM: versions ————————————————————————————————————————————————————
+  // — DAM : versions ————————————————————————————————————————————————————
   'dam.versions': 'Versions',
   'dam.recoverOrphans': 'Recover the orphaned files from Storage',
   'dam.noOrphan': 'No orphan found',
@@ -1161,8 +1104,7 @@ export const en: Record<TranslationKey, string> = {
   'dam.delete': 'Delete',
   'dam.variantName': 'Variant name:',
   'dam.variantDefault': 'Version {n}',
-
-  // — DAM: image toolbar ————————————————————————————————————————————————
+  // — DAM : barre d'outils image ————————————————————————————————————————
   'dam.tool.zoomOut': 'Zoom out',
   'dam.tool.zoomIn': 'Zoom in',
   'dam.tool.fit': 'Fit',
@@ -1184,8 +1126,7 @@ export const en: Record<TranslationKey, string> = {
   'dam.tool.scale': 'Scale',
   'dam.tool.maskOn': 'Enable the mask',
   'dam.tool.maskOff': 'Disable the mask',
-
-  // — DAM: AI generation ————————————————————————————————————————————————
+  // — DAM : génération IA ————————————————————————————————————————————————
   'dam.gen.title': 'Image creation',
   'dam.gen.prompt': 'Prompt',
   'dam.gen.describe': 'Describe the image to generate… (paste an image or some text)',
@@ -1220,14 +1161,12 @@ export const en: Record<TranslationKey, string> = {
   'dam.gen.pasted': 'Pasted image added to the references',
   'dam.gen.addFiles': 'Add files',
   'dam.gen.addMoreFiles': 'Add more files',
-
-  // — DAM: "Improve with questions" dialogue ——————————————————————————
+  // — DAM : dialogue « Améliorer avec questions » ————————————————————————
   'dam.improve.title': 'Improve with questions',
   'dam.improve.analysing': 'Analysing the brief and the references…',
   'dam.improve.answer': 'Your answer…',
   'dam.improve.noQuestion': 'No relevant question detected. Run "Improve" directly.',
   'dam.modified': 'Modified {date}',
-
   'dam.gen.pasted.other': '{count} pasted images added to the references',
   'dam.gen.improved': 'Prompt improved ({count} image(s) analysed)',
   'dam.gen.improved.plain': 'Prompt improved',
@@ -1239,11 +1178,9 @@ export const en: Record<TranslationKey, string> = {
   'dam.gen.save': 'Save',
   'dam.gen.insertCanvas': 'Open the project in the editor and insert the image there',
   'dam.gen.insertCanvas.off': 'Open a project in the editor first to be able to insert this image',
-
   'dam.filter.contrast': 'Contrast',
   'dam.filter.saturation': 'Saturation',
   'dam.filter.hue': 'Hue',
-
   'dam.readError.console': 'Reading the file failed:',
   'dam.tool.maskActive': 'Mask on',
   'dam.tool.maskHidden': 'Mask hidden',
@@ -1257,7 +1194,6 @@ export const en: Record<TranslationKey, string> = {
   'dam.replace': 'Replace',
   'dam.fillFrame': 'Fill the frame',
   'dam.canvas': 'Canvas',
-
   'dam.searchByImage': 'Search by image',
   'dam.orientation.all': 'All',
   'dam.source.all': 'All',
@@ -1266,8 +1202,7 @@ export const en: Record<TranslationKey, string> = {
   'dam.searchToStart': 'Search for images to get started',
   'dam.orientation.landscape': 'Landscape',
   'dam.orientation.portrait': 'Portrait',
-
-  // — Workflows: list ——————————————————————————————————————————————————
+  // — Workflows : liste ————————————————————————————————————————————————
   'wf.title': 'Workflows',
   'wf.help': 'Automate the chaining of the modules (scraping → decomposition → export → Drive/Gmail/Telegram), Zapier style. A workflow can be generated by AI from a prompt.',
   'wf.backToDashboard': 'Back to the dashboard',
@@ -1275,6 +1210,11 @@ export const en: Record<TranslationKey, string> = {
   'wf.thumbnails': 'Thumbnails',
   'wf.listView': 'List view',
   'wf.list': 'List',
+  'st.new': 'New',
+  'ch.attachFile': 'Attach a file',
+  'ch.prompt.new': 'New prompt',
+  'ch.prompt.edit': 'Edit the prompt',
+  'ch.prompt.search': 'Search a prompt…',
   'wf.newFolder': 'Create a folder to group workflows',
   'wf.newFolder.label': 'New folder',
   'wf.counts': '{nodes} nodes · {edges} links',
@@ -1304,8 +1244,7 @@ export const en: Record<TranslationKey, string> = {
   'wf.rename': 'Rename',
   'wf.deleteFolder': 'Delete the folder',
   'wf.deleteFolder.help': 'Delete the folder (the workflows are kept, without a folder)',
-
-  // — Workflows: my templates ——————————————————————————————————————————
+  // — Workflows : mes modèles ——————————————————————————————————————————
   'wf.tpl.updated': 'Template updated',
   'wf.tpl.section': 'My workflow templates',
   'wf.tpl.title': 'My templates',
@@ -1318,8 +1257,7 @@ export const en: Record<TranslationKey, string> = {
   'wf.tpl.emoji': 'Emoji',
   'wf.tpl.name': 'Name',
   'wf.tpl.description': 'Description',
-
-  // — Workflows: graph editor ——————————————————————————————————————————
+  // — Workflows : éditeur de graphe ————————————————————————————————————
   'wfe.loading': 'Loading…',
   'wfe.notFound': 'Workflow not found',
   'wfe.saved': 'Workflow saved',
@@ -1336,8 +1274,7 @@ export const en: Record<TranslationKey, string> = {
   'wfe.stepByStep': 'Run node by node: pauses before each step so you can inspect the outputs',
   'wfe.save': 'Save the workflow',
   'wfe.emptyChart': 'Empty chart',
-
-  // — Workflows: node configuration panel ————————————————————————————————
+  // — Workflows : panneau de configuration d'un node ————————————————————
   'wfn.connections': 'Connections',
   'wfn.connection': 'Connection',
   'wfn.deleteConnection': 'Delete the connection',
@@ -1351,24 +1288,21 @@ export const en: Record<TranslationKey, string> = {
   'wfn.failed': 'This node failed — see the detail below.',
   'wfn.noLog': 'Nothing processed yet. Run the node (▶ when hovering the card) to follow the logs here.',
   'wfn.warning': 'Warning or error',
-
-  // — Workflows: node palette ————————————————————————————————————————————
+  // — Workflows : palette de nodes ——————————————————————————————————————
   'wfp.enrich': 'Complete / transform the data (optional).',
   'wfp.clean': 'Clean / rewrite / filter / sort the data (optional).',
   'wfp.output': 'Generate a final file (Excel, PPTX…).',
   'wfp.branch': 'Conditional branching and function chaining.',
   'wfp.availableAfter': 'Available after {label}.',
   'wfp.locked': 'Locked.',
-
-  // — Workflows: consistency check ————————————————————————————————————————
+  // — Workflows : contrôle de cohérence ————————————————————————————————
   'wfc.detail': 'See the detail and jump to the card concerned',
   'wfc.see': 'See',
   'wfc.title': 'Flow consistency',
   'wfc.close': 'Close',
   'wfc.goToCard': 'Go to this card in the flow',
   'wfc.hint': 'Read-only — click a card to go and fix it. This check also runs before every launch.',
-
-  // — Workflows: run panel ————————————————————————————————————————————————
+  // — Workflows : panneau de run ————————————————————————————————————————
   'wfr.running': 'running',
   'wfr.lastFailed': 'last run failed',
   'wfr.noServerRun': 'no server run',
@@ -1378,8 +1312,7 @@ export const en: Record<TranslationKey, string> = {
   'wfr.outputs': 'Outputs',
   'wfr.expand': 'Expand',
   'wfr.nodes': 'Nodes',
-
-  // — Workflows: save as template ————————————————————————————————————————
+  // — Workflows : enregistrer comme modèle ——————————————————————————————
   'wft.defaultName': 'My template',
   'wft.updated': 'Template updated',
   'wft.created': 'Template created',
@@ -1391,8 +1324,7 @@ export const en: Record<TranslationKey, string> = {
   'wft.description': 'Description',
   'wft.update': 'Update',
   'wft.create': 'Create the template',
-
-  // — Workflows: webhook ——————————————————————————————————————————————————
+  // — Workflows : webhook ————————————————————————————————————————————————
   'wfw.enabled': 'Webhook enabled.',
   'wfw.secretRegenerated': 'Secret regenerated — update your integrations.',
   'wfw.copied': '{label} copied.',
@@ -1404,8 +1336,7 @@ export const en: Record<TranslationKey, string> = {
   'wfw.copySecret': 'Copy the secret',
   'wfw.regenerate': 'Regenerate the secret',
   'wfw.lastTrigger': ' · Last trigger: {status}',
-
-  // — Workflows: server cron ——————————————————————————————————————————————
+  // — Workflows : cron serveur ————————————————————————————————————————————
   'wfx.serverRun': 'Server run: {nodes} node(s), {errors} error(s).',
   'wfx.serverRunOk': 'Server run OK — {nodes} node(s).',
   'wfx.serverRunFailed': 'Server run failed: {message}',
@@ -1425,8 +1356,7 @@ export const en: Record<TranslationKey, string> = {
   'wfx.stop.help': 'Stop the server run IN PROGRESS. ⚠ The cron will run it again on the next tick — use "Suspend" to stop the flow for good.',
   'wfx.runNow': 'Run now on the server',
   'wfx.suspend.help': 'Suspend the flow: disables the cron (no further runs) and stops the current run. Can be re-enabled in the Cron node.',
-
-  // — Workflows: data preview ————————————————————————————————————————————
+  // — Workflows : aperçu des données ————————————————————————————————————
   'wfd.pageAll': 'All',
   'wfd.noRowMatches': 'No row matches the search.',
   'wfd.noRow': 'No row',
@@ -1454,12 +1384,10 @@ export const en: Record<TranslationKey, string> = {
   'wfd.alreadyCollected': 'Data already collected',
   'wfd.notRunThisSession': 'not run in this session — persisted monitoring state',
   'wfd.competitor': 'Competitor',
-
-  // — Workflows: emoji ————————————————————————————————————————————————————
+  // — Workflows : émoji ————————————————————————————————————————————————
   'wfe.pickEmoji': 'Pick an emoji',
   'wfe.pasteEmoji': 'or paste an emoji…',
-
-  // — Workflows: results screen ——————————————————————————————————————————
+  // — Workflows : écran de résultats ——————————————————————————————————————
   'wfres.confirm': 'Confirm',
   'wfres.cancel': 'Cancel',
   'wfres.deleteAll': 'Delete the whole run history',
@@ -1480,7 +1408,6 @@ export const en: Record<TranslationKey, string> = {
   'wfres.removeSeries': 'Remove this series',
   'wfres.addSeries': 'Add this series',
   'wfres.insufficientData': 'Not enough data to regenerate.',
-
   'wfp.step.import': 'Import',
   'wfp.step.enrichment': 'Enrichment',
   'wfp.step.transformation': 'Transformation',
@@ -1493,13 +1420,11 @@ export const en: Record<TranslationKey, string> = {
   'wfp.save': 'Persist into the PIM, the DAM or the taxonomy (optional).',
   'wfp.utils': 'Technical helpers.',
   'wfp.communication': 'Send external notifications (email, etc.).',
-
   'wfres.chart.bar': 'Bars',
   'wfres.chart.line': 'Lines',
   'wfres.chart.area': 'Area',
   'wfres.chart.pie': 'Pie',
   'wfres.chart.doughnut': 'Doughnut',
-
   'wfx.cycleDone.help': 'Harvest cycle 100 % complete — next run at the calendar due date',
   'wfd.assetPreview': ' · preview of the first {n}',
   'wfd.records': 'Records',
@@ -1511,7 +1436,6 @@ export const en: Record<TranslationKey, string> = {
   'wfe.savedShort': 'Saved',
   'wfl.insertTransform': 'Insert a transformation node between the two (e.g. Import CSV/Excel to go from a file to a Sheet).',
   'wfx.lastFailed': 'Last run failed',
-
   'wfe.generateAi.label': 'Generate (AI)',
   'wfe.result': 'Result',
   'wfe.template': 'Template',
@@ -1520,14 +1444,17 @@ export const en: Record<TranslationKey, string> = {
   'wfp.blocks': 'Blocks',
   'wfp.optional': 'optional',
   'wfp.intro': 'Build your workflow step by step — drag onto the canvas, or click to spawn it in the centre.',
-
-  // — Workflow node registry ——————————————————————————————————————————
+  // — Registre des nodes de workflow ————————————————————————————————
   'node.generate-image.label': 'AI image generation',
   'node.analytics-report.label': 'Traffic report',
   'node.telegram-approval.label': 'Telegram approval',
   'node.browseract.label': 'BrowserAct (bot)',
   'node.chart.label': 'Chart',
   'node.send-gmail.label': 'Send through Gmail',
+  // Configuration des nodes — libellés de champs et aides (lot 21)
+  // ⚠️ Schéma de clé DESCRIPTIF (`node.<type>.<champ>.label|help`). Les anciennes
+  // clés `node.<type>.fN` restent en place — renuméroter aurait été risqué pour
+  // zéro gain. Toute clé AJOUTÉE suit le schéma descriptif : opaque = collisions.
   'node.compare-catalog.urlColumn.help': 'Link to the product page on YOUR site — makes the name clickable in the table to check the price. Optional.',
   'node.compare-catalog.watchId.help': 'Leave EMPTY: the monitoring is automatically the workflow\'s own (the same as the workflow\'s "Competitor harvest"). Fill it in only to share one monitoring across several workflows.',
   'node.compare-prices.noSource.help': '"Family" mode: wire every retailer to "competitors". 1 row per product, 1 price column per retailer, best price + gap.',
@@ -1565,6 +1492,7 @@ export const en: Record<TranslationKey, string> = {
   'node.web.maxResults.help': '1 to 20.',
   'node.web.readPages.label': 'Pages read in full',
   'node.web.readPages.help': '0 to 5 — reads the real content (live data).',
+  // Options de listes déroulantes
   'opt.aspect.square': 'Square (1:1)',
   'opt.sort.desc': 'Descending',
   'opt.sortType.string': 'Text (alphabetical)',
@@ -1577,6 +1505,13 @@ export const en: Record<TranslationKey, string> = {
   'opt.scrapeMode.crawl': 'Crawl — page discovery (client)',
   'opt.numFormat.accounting': 'Accounting',
   'opt.numFormat.duration': 'Duration',
+  // Panneaux de configuration en JSX (lot 24)
+  // ⚠️ Les notes explicatives emphasaient des NOMS DE PORTS (`file`, `attachment`,
+  // `data`) et des jetons (`{{html}}`) avec du balisage inline. Un identifiant ne se
+  // traduit jamais : ils sont désormais cités entre guillemets DANS la phrase, qui
+  // reste une seule unité traduisible. Le style monospace est perdu, la phrase
+  // gagne de ne plus être un puzzle de fragments recollés.
+  // Panneaux de configuration (lot 25) — Higgsfield, approbation, Telegram, Drive, import
   'node.telegram-approval.chatId.placeholder': 'Empty = default Chat ID (Settings)',
   'node.telegram-approval.allowlist.note': '⚠️ The chat must be in the webhook allowlist (Settings → Telegram), otherwise the clicks are ignored.',
   'node.telegram-approval.text.label': 'Question / message',
@@ -1609,6 +1544,13 @@ export const en: Record<TranslationKey, string> = {
   'node.import-idml.fonts.label': 'Fonts loaded',
   'node.import-idml.summary': 'Summary',
   'node.upload.targetColumn.title': 'Target the column in the preview — variable {{{column}}}',
+  // ⚠️⚠️ RÈGLE : ne JAMAIS écrire un exemple de la syntaxe de gabarit de l'app
+  // (`{colonne}`, `{{NomColonne}}`) avec un mot différent selon la langue. Le moteur
+  // d'interpolation i18n lit `{mot}` comme une VARIABLE : deux langues = deux
+  // variables, et le test de parité refuse — à juste titre, car le jeton pourrait
+  // s'afficher brut. Écrire le jeton NEUTRE (`{…}`, `{{…}}`). Vu 3 fois : lot 8a
+  // (`{{colonne}}`), lot 25 (`{{NomColonne}}`), lot 26 (`{nom}`).
+  // Panneau Gmail + formules Sheets + sites sources (lot 26)
   'node.send-gmail.checkingGoogle': 'Checking the Google connection…',
   'node.send-gmail.connected': 'Connected through your global Google account. The cron AND manual sends reuse this connection — nothing to reconnect here.',
   'node.send-gmail.notConnected': 'Google account not connected. Open Settings (cog) → Connectors → Google (server access) and connect your account ONCE: Gmail sending (manual and cron) will then use it automatically.',
@@ -1635,6 +1577,7 @@ export const en: Record<TranslationKey, string> = {
   'gsf.insertFunction': 'Insert {name}( into the formula field',
   'gsf.filter.placeholder': 'Filter / insert a function…',
   'gsf.liveNote': 'LIVE formulas: reference a column with {…}, type an opening bracket for a function (e.g. IF, ROUND) or a brace for a column — autocompletion guides you.',
+  // Formats de colonne Sheets, modes de scraping, notes finales (lot 27)
   'fmt.auto': 'Auto',
   'fmt.text': 'Text',
   'fmt.number': 'Number',
@@ -1809,7 +1752,6 @@ export const en: Record<TranslationKey, string> = {
   'node.web-scraping.label': 'Web scraping',
   'node.web-search.label': 'Web search',
   'node.webhook-post.label': 'Webhook / Make',
-
   'node.generate-image.desc': 'Generates one or more images through Gemini AI Image from a prompt (optionally with a reference image as input).',
   'node.analytics-report.desc': 'Generates an HTML report of the site traffic (page views, visitors, sessions, duration, top pages/sources/countries) over a period — to store on Drive or send by email.',
   'node.telegram-approval.desc': 'Pauses the run and asks for human approval on Telegram (✅/❌ buttons). Resumes on the “approved” or “rejected” port depending on the answer.',
@@ -1818,11 +1760,11 @@ export const en: Record<TranslationKey, string> = {
   'node.send-gmail.desc': 'Sends an email through the Gmail API, reusing the global Google connection (Settings → Connectors). One connection, shared with the cron — nothing to reconnect.',
   'node.compare-catalog.desc': 'Cross-references your product sheet (reference / EAN / price) with the competitor index.',
   'node.compare-prices.desc': 'Compares the products of a SOURCE with the same products at COMPETITORS (two inputs).',
-  'node.cost-report.desc': 'Generates an HTML/CSS report of the month\'s AI & scraping usage (tokens, costs €/$, balances, Bright Data) — to store on Drive or send by email.',
+  'node.cost-report.desc': "Generates an HTML/CSS report of the month's AI & scraping usage (tokens, costs €/$, balances, Bright Data) — to store on Drive or send by email.",
   'node.crawl.desc': 'Category page URL → discovers the product sheet links (cards in the grid).',
   'node.cron.desc': 'Scheduled trigger: runs the workflow server-side at a regular cadence (minute / hour / day / week / month). “Time” = at HH:MM (day/week/month); “Day” = the targeted weekday.',
-  'node.decompose.desc': 'Analyses the SVG through Google Vision and overlays editable Fabric text blocks (banners, prices, small print). Uses the same engine as the editor\'s “Decompose” button.',
-  'node.directed-search.desc': 'Searches for each product (reference then EAN) on the competitors\' search engines.',
+  'node.decompose.desc': "Analyses the SVG through Google Vision and overlays editable Fabric text blocks (banners, prices, small print). Uses the same engine as the editor's “Decompose” button.",
+  'node.directed-search.desc': "Searches for each product (reference then EAN) on the competitors' search engines.",
   'node.enrichment.desc': 'Scrapes the URLs in a column and fills in the target fields through an LLM.',
   'node.export-pdf.desc': 'Renders an HTML template per row (placeholders {{…}}) and generates a multi-page PDF.',
   'node.export-design.desc': 'Exports an SVG design (from Image→SVG / PDF→SVG) in the chosen format: PNG, PDF, PPTX, HTML or SVG. Outputs the produced file (port "file", to connect to Drive or the Gmail attachment).',
@@ -1833,17 +1775,17 @@ export const en: Record<TranslationKey, string> = {
   'node.harvest-competitor.desc': 'Walks through the competitor catalogues (listing pages) and builds a persistent index.',
   'node.higgsfield.desc': 'Generates an image (Soul) or a video (DoP image→video) through Higgsfield — styles & camera moves from the catalogue. Outputs assets you can chain into Save to DAM.',
   'node.import-csv.desc': 'Transformer: takes a .csv/.xlsx file as input and produces a Sheet (first tab).',
-  'node.import-idml.desc': 'Loads a lone .idml (port \'file\') or a full Assembly folder with PDF + fonts + Links (port \'files\').',
+  'node.import-idml.desc': "Loads a lone .idml (port 'file') or a full Assembly folder with PDF + fonts + Links (port 'files').",
   'node.image-to-svg.desc': 'Transformer: takes a raster image (.png/.jpg/.webp/.gif) and produces an editable SVG (locked raster background + decomposable vector overlays).',
   'node.pdf-to-svg.desc': 'Transformer: rasterises page 1 of a .pdf and produces an editable SVG (locked raster background + decomposable vector overlays).',
   'node.import-pptx.desc': 'Loads a .pptx (PowerPoint) and passes it downstream. Slide editing happens in the editor after import.',
   'node.import-image.desc': 'Loads a raster image (.png/.jpg/.webp/.gif) and passes it downstream — typically into “Image → editable SVG”.',
   'node.upload.desc': 'Pick a local file or folder. CSV/Excel files are parsed automatically: their columns become {{...}} variables and the rows come out on the `rows` port.',
   'node.list-products.desc': 'Reads an e-commerce CATEGORY / search results page (not a product sheet) through Jina (listing mode, anti-bot).',
-  'node.if-else.desc': 'Conditional branch. Evaluates a JS expression on the input value and forwards it on the \'then\' or \'else\' port.',
+  'node.if-else.desc': "Conditional branch. Evaluates a JS expression on the input value and forwards it on the 'then' or 'else' port.",
   'node.pipe.desc': 'Applies N JS expressions to the input value in sequence (pipe / compose style).',
-  'node.loop-each.desc': 'Iterates over an array. For each element, runs the sub-graph up to the \'Loop Collect\' node connected downstream. The configs of the body nodes can reference {{item}} or {{item.X}}.',
-  'node.loop-collect.desc': 'Marks the end of a foreach loop. Aggregates every value received on \'item\' into an array emitted on \'results\'.',
+  'node.loop-each.desc': "Iterates over an array. For each element, runs the sub-graph up to the 'Loop Collect' node connected downstream. The configs of the body nodes can reference {{item}} or {{item.X}}.",
+  'node.loop-collect.desc': "Marks the end of a foreach loop. Aggregates every value received on 'item' into an array emitted on 'results'.",
   'node.price-watch.desc': 'Compares the prices in the sheet with those of the previous run (remembered state) and only emits “changes” when prices moved beyond the threshold — ideal before a Telegram node.',
   'node.price-watch-track.desc': 'Compares the prices of your products (input sheet) at competitors (sites in the config).',
   'node.scrape-url.desc': 'Scrapes one or more URLs through Jina + LLM (full product scrape cascade).',
@@ -1858,8 +1800,7 @@ export const en: Record<TranslationKey, string> = {
   'node.web-scraping.desc': 'Retrieves data from the web (Jina / Bright Data / LLM) according to a Mode: Scrape (URL → fields).',
   'node.web-search.desc': 'Queries the web (Jina) with a search term and reads the first result pages.',
   'node.webhook-post.desc': 'Sends an HTTP request (POST/PUT/PATCH) to an external webhook URL. A gateway to Make and its 2000+ apps: pushes the workflow data and optionally reads the response back.',
-
-  // — Node configuration fields ——————————————————————————————————————
+  // — Champs de configuration des nodes ————————————————————————————
   'node.generate-image.f1': 'Prompt',
   'node.generate-image.f2': 'Text description of the image to generate.',
   'node.generate-image.f3': 'Number of images',
@@ -1890,7 +1831,7 @@ export const en: Record<TranslationKey, string> = {
   'node.harvest-competitor.f2': 'supplied by “Source sites”',
   'node.harvest-competitor.f3': 'Leave EMPTY if you wire your source sheet to the “products” port: the families are then read from it.',
   'node.harvest-competitor.f4': 'E.g. Family. Used when the source sheet is wired: the distinct families are extracted from it.',
-  'node.harvest-competitor.f5': 'Leave EMPTY: the monitoring is automatically the workflow\'s own (shared with “Compare catalogue” in the same flow).',
+  'node.harvest-competitor.f5': "Leave EMPTY: the monitoring is automatically the workflow's own (shared with “Compare catalogue” in the same flow).",
   'node.harvest-competitor.f6': 'supplied by “Source sites”',
   'node.list-products.f1': 'Listing page URLs (or DOMAINS if “Family” is filled in)',
   'node.list-products.f2': 'One per line. Either listing page URLs, or — if you fill in “Product family” — just domains.',
@@ -1906,7 +1847,7 @@ export const en: Record<TranslationKey, string> = {
   'node.list-products.f12': 'Brand (filter)',
   'node.list-products.f13': 'If filled in (e.g. “Ryobi”), keeps only the products whose brand or name contains that term.',
   'node.if-else.f1': 'Condition',
-  'node.if-else.f2': 'JS expression returning a boolean. Use `value` for the input value. E.g. value > 10, value === \'ok\'.',
+  'node.if-else.f2': "JS expression returning a boolean. Use `value` for the input value. E.g. value > 10, value === 'ok'.",
   'node.pipe.f1': 'Expressions (1 per line)',
   'node.pipe.f2': 'Each line = a JS expression applied in sequence. Use `value` for the current value.',
   'node.save-pim.f1': 'PIM project ID',
@@ -1923,7 +1864,7 @@ export const en: Record<TranslationKey, string> = {
   'node.transform-set-fields.f1': 'Assignments (one per line)',
   'node.transform-set-fields.f2': '“=” text template, “:=” computed expression.\\nE.g.\\nlabel = {{brand}} — {{name}}\\ngap := row.price',
   'node.transform-filter.f1': 'Condition (on `row`)',
-  'node.transform-filter.f2': 'E.g. row.price > 0 — row.status === \'active\' — !!row.url',
+  'node.transform-filter.f2': "E.g. row.price > 0 — row.status === 'active' — !!row.url",
   'node.transform-sort.f1': 'Direction',
   'node.transform-sort.f2': 'Comparison',
   'node.transform-rename.f1': 'Mapping (one per line)',
@@ -1931,14 +1872,12 @@ export const en: Record<TranslationKey, string> = {
   'node.transform-text.f1': 'Target column (empty = same as source)',
   'node.transform-text.f2': 'Operation',
   'node.transform-text.f3': 'Pattern (replace / regex)',
-  'node.transform-text.f4': 'For \'Replace\': a literal substring. For \'Extract\': a regex without delimiters (e.g. \\\\d+).',
+  'node.transform-text.f4': "For 'Replace': a literal substring. For 'Extract': a regex without delimiters (e.g. \\\\d+).",
   'wfn.noEffectHere': 'no effect here',
   'node.list-products.familyHelp': 'E.g. “barbecue”. If filled in, the lines above are DOMAINS and the node FINDS the listing page for that family on each site through search (you do not have to paste a URL).',
-
-  // — Price monitoring: cockpit ————————————————————————————————————————
+  // — Veille tarifaire : cockpit ————————————————————————————————————————
   'pw.title': 'Price monitoring',
   'pw.noPending': 'Nothing to confirm yet. Uncertain matches (by name, when there is neither a shared EAN nor a shared reference) will appear here for validation.',
-
   'pw.kpi.priceHold': 'Price hold',
   'pw.kpi.exposed': 'Exposed',
   'pw.kpi.index': 'Price index',
@@ -1950,12 +1889,11 @@ export const en: Record<TranslationKey, string> = {
   'pw.kpi.gap.title': 'Sum, over the under-priced products, of the PER-UNIT gap between your price and the best competitor price.\n\n⚠ This is NOT a revenue figure: without sales volumes, €3 on an item sold 4 times a year weighs as much as €3 on one sold 8,000 times. Read it as a measure of magnitude, not of impact.\n\nSubtitle: median gap over the product × competitor pairs',
   'pw.kpi.gap.truncated': ' (capped sample).',
   'pw.kpi.matched': 'Matched products',
-  'pw.kpi.matched.title': 'Your products found at AT LEAST ONE competitor — counted once, even when several sell them. Each site\'s own “matched here” counter counts once per site, so their sum is always larger than this total.',
+  'pw.kpi.matched.title': "Your products found at AT LEAST ONE competitor — counted once, even when several sell them. Each site's own “matched here” counter counts once per site, so their sum is always larger than this total.",
   'pw.kpi.competitors': 'Competitors',
   'pw.kpi.outOfStock': 'Out of stock',
   'pw.kpi.analysis': 'Analysis',
   'pw.kpi.autoRefresh': 'The dashboard updates itself on every analysis — no need to reload',
-
   'pw.ops.title': 'Operations cockpit',
   'pw.ops.active': 'A server run is active, or a harvest pass wrote recently',
   'pw.ops.cronPaused': 'Cron active — scheduled pause between two harvests (scraping is not continuous)',
@@ -1980,7 +1918,6 @@ export const en: Record<TranslationKey, string> = {
   'pw.ops.cronOff.short': 'cron not enabled',
   'pw.ops.startedAt': 'started {time}',
   'pw.ops.blocked': ' · blocked',
-
   'pw.moves.title': 'Price movements',
   'pw.moves.down': 'a drop = pressure on you',
   'pw.moves.up': 'a rise = you gain ground',
@@ -1997,7 +1934,6 @@ export const en: Record<TranslationKey, string> = {
   'pw.col.change': 'Change',
   'pw.col.myGap': 'My gap',
   'pw.col.when': 'When',
-
   'pw.audit.title': 'Collection audit by competitor',
   'pw.audit.help': 'Tests each competitor on a few sample pages, without running the full harvest',
   'pw.audit.close': 'Close (Esc)',
@@ -2015,7 +1951,6 @@ export const en: Record<TranslationKey, string> = {
   'pw.audit.blocked': 'Blocked',
   'pw.audit.strikePrice': 'Strikethrough price',
   'pw.audit.ref': 'Ref',
-
   'pw.opp.title': 'Top opportunities',
   'pw.opp.empty': 'No product where a competitor is cheaper. Good positioning.',
   'pw.opp.myPrice': 'My price',
@@ -2023,16 +1958,14 @@ export const en: Record<TranslationKey, string> = {
   'pw.opp.gap': 'Gap',
   'pw.opp.unitGap': 'Per-unit gap',
   'pw.opp.unitGap.title': 'Per-unit gap between your price and the best competitor price. Not a revenue figure: the sales volume is unknown.',
-
   'pw.rank.title': 'Competitor benchmark',
   'pw.rank.sort': 'sorted by aggressiveness',
   'pw.rank.empty': 'No competitor with figures.',
   'pw.rank.matched.title': 'Matched: your products found at this competitor',
   'pw.rank.beats.title': '“Beats me”: % of products where this competitor is CHEAPER than you',
   'pw.rank.avg.title': 'MEAN price gap — indicative only: a few aberrant matches (pack vs unit) pull it upwards',
-  'pw.rank.median.title': 'MEDIAN price gap — the competitor\'s real position (ignores the extreme values). This is the column the table is sorted by.',
+  'pw.rank.median.title': "MEDIAN price gap — the competitor's real position (ignores the extreme values). This is the column the table is sorted by.",
   'pw.rank.stock.title': 'Out-of-stock items at this competitor (opportunities for you)',
-
   'pw.watch.manage': 'Manage the monitorings ({count})',
   'pw.watch.namePlaceholder': 'Monitoring name (empty = workflow name)',
   'pw.watch.renamed': 'Monitoring renamed “{label}”.',
@@ -2040,14 +1973,12 @@ export const en: Record<TranslationKey, string> = {
   'pw.watch.renameFailed': 'Rename failed: {message}',
   'pw.watch.deleted': 'Monitoring “{label}” deleted.',
   'pw.watch.deleteFailed': 'Deletion failed: {message}',
-
   'pw.table.title': 'Product detail',
   'pw.table.bestGap': 'Best gap',
   'pw.table.position': 'Position',
   'pw.table.empty': 'No product matches the search.',
   'pw.table.openSource': 'Open the source page',
   'pw.table.googleSearch': 'Search for this product on Google',
-
   'pw.audit.eligible': 'Eligible',
   'pw.audit.noPrice': 'No price',
   'pw.audit.price': 'Price',
@@ -2055,7 +1986,6 @@ export const en: Record<TranslationKey, string> = {
   'pw.audit.name': 'Name',
   'pw.audit.image': 'Image',
   'pw.ops.cronInactive': 'cron inactive (manual)',
-
   'pw.intro.before': 'How your prices sit against the competition. The configuration (input products, sites, families) is done in a workflow, through the nodes',
   'pw.intro.and': ' and',
   'pw.kpi.priceHold.sub': 'aligned or lower',
@@ -2104,19 +2034,16 @@ export const en: Record<TranslationKey, string> = {
   'pw.audit.legend.green': 'Green',
   'pw.audit.legend.after': ' = the field parses correctly. “Records” = number of product pages collected.',
   'pw.truncatedNote': '{matched} matched products — the detail is capped at the 1000 worst-positioned. Distributions/heatmap/scatter cover that sample (the exhaustive list is in the Excel export).',
-
   'pw.ago.seconds': '{n} s ago',
   'pw.ago.minutes': '{n} min ago',
   'pw.ago.hours': '{n} h ago',
   'pw.ago.days': '{n} d ago',
   'pw.source': 'Source',
   'pw.workflow': 'Workflow',
-
   'pw.chart.pairs': '{total} pairs',
   'pw.ops.analysedAgo': 'analysed {ago}',
   'pw.ops.cycleRunning.done': 'cycle under way · ×{done} complete',
-
-  // — Help panel (frame; the CONTENT goes through helpI18n) ——————————
+  // — Panneau d'aide (cadre ; le CONTENU passe par helpI18n) ——————————
   'help.manual': 'User manual',
   'help.title': 'Help',
   'help.close': 'Close (Esc)',
@@ -2125,16 +2052,21 @@ export const en: Record<TranslationKey, string> = {
   'help.search': 'Search the help…',
   'help.clearSearch': 'Clear the search',
   'help.fullDocs': 'Full documentation',
-
+  // Console de run — compléments du lot 15 (repérés à l'écran)
   'wfr.lastRunOk': 'last run OK',
   'wfr.lastRunPartial': 'last run partial',
   'wfr.triggerManual': 'manual',
   'wfr.filterAll': 'All {count}',
+  // `{level}` reçoit `wfr.atThisLevel` ou une chaîne vide : la phrase reste une seule
+  // unité traduisible au lieu d'un fragment recollé à un autre.
   'wfr.noLogs': 'No log{level} — the stream arrives live during a server run.',
   'wfr.collapse': 'Collapse',
   'wfr.stepLabel': 'Step: {node}',
   'wfr.stepTitle': 'Paused before "{node}" — click to run this node',
-
+  // Pré-vol : bandeau et dialogue
+  // ⚠️ Pluriel par clés DÉDIÉES, pas par un « s » recollé au mot traduit : le code
+  // faisait `${t('wfc.inconsistency')}s`, ce qui affichait « 2 inconsistencys » en
+  // anglais. Une règle de pluriel ne survit pas à la traduction.
   'wfc.inconsistencies.one': '{count} inconsistency',
   'wfc.inconsistencies.many': '{count} inconsistencies',
   'wfc.warnings.one': '{count} warning',
@@ -2144,7 +2076,7 @@ export const en: Record<TranslationKey, string> = {
   'wfc.forceHint': 'These gaps will make the run fail or come out truncated. Fix them, or run anyway if that is deliberate (partial test).',
   'wfc.runAnyway': 'Run anyway',
   'wfc.fix': 'Fix',
-
+  // Messages du contrôle de cohérence (`validateWorkflow`)
   'wfv.noFileSelected': 'No file selected — open the node configuration.',
   'wfv.noSite': 'No site: fill in "Competitor sites" or wire a "Source sites" node.',
   'wfv.noActiveSite': 'No active site in the manager — add or enable at least one site.',
@@ -2153,30 +2085,33 @@ export const en: Record<TranslationKey, string> = {
   'wfv.configRequired': 'Parameter "{field}" is required and not filled in.',
   'wfv.watchIdMismatch': 'This node addresses monitoring "{watchId}" while other nodes of the workflow address {others} other(s) ({list}). The harvest would write into one monitoring and the comparison would read another — 0 matched, with no visible error. Align the "Monitoring identifier" field, or wire all these nodes to the SAME "Source sites" node.',
   'wfv.noFeederUpstream': 'No collection node ({feeders}) is wired UPSTREAM: the comparison will read the index of the previous run, not the one this run is about to produce. Wire "{first}" to this node if you want to compare fresh data.',
-
-  // — Workflow RUN messages ——————————————————————————————————————————
-  // Kept byte-identical to `functions/src/i18nMessages.ts` (server twins write
-  // to the same run log). See the French catalogue for the full rationale.
-
+  // Entrées vides / configuration manquante (plusieurs nodes)
   'run.noCompetitor': 'No competitor site configured.',
   'run.emptySheet': 'Empty product sheet on the input.',
   'run.noProduct': 'No product on the input (connect the retailers to the "competitors" port).',
-
+  // Rapport dashboard de la Veille tarifaire (`compare-catalog`)
   'run.sourceCatalogNotPersisted': 'Source catalogue not persisted: {message}',
   'run.dashboardSaved': 'Dashboard report saved (monitoring "{watchId}") — visible in Price monitoring.',
   'run.dashboardNotSaved': 'Dashboard report not saved: {message}',
-
+  // Comparaison de prix (`compare-prices`)
   'run.matched': '{count} source product(s) — {matched} matched at {sites} competitor(s)',
   'run.comparePrices.peers': '{count} distinct product(s) across {sites} retailer(s) ({matched} present at ≥2): {list}.',
   'run.comparePrices.noSourceRows': 'No source product on the input ("source" port).',
+  // Côté CLIENT seul : le jumeau serveur n'émet pas cet avertissement.
   'run.comparePrices.noCompetitorRows': 'No competitor product on the input ("competitors" port).',
-
+  // Rapport de fréquentation (`analytics-report`)
+  // `run.aggregatingTraffic` = variante SERVEUR (« headless ») ; le client a la
+  // sienne. Elle vit ici quand même : le test de parité exige que toute clé
+  // serveur soit traduite au même endroit que les autres.
   'run.aggregatingTraffic': 'Aggregating the traffic ({period}, headless)…',
   'run.analytics.aggregating': 'Aggregating the traffic ({period})…',
   'run.analytics.reportGenerated': 'Report generated: {pageViews} page views · {visitors} visitors · {sessions} sessions.',
   'run.analytics.ownerOnly': 'Traffic report restricted to the site owner (global traffic).',
   'run.analytics.notAuthenticated': 'User not authenticated — unable to read the statistics.',
   'run.analytics.permissionDenied': 'Access denied: only the site owner’s statistics are readable.',
+  // Moisson des concurrents (`harvest-competitor`)
+  // Les deux premières sont propres au CLIENT : le jumeau serveur annonce
+  // seulement les sites écartés (`run.harvest.directedOnly`).
   'run.harvest.listReceived': 'List received from the "Source sites" node: {count} site(s) to harvest.',
   'run.harvest.listReceivedSkipped': 'List received from the "Source sites" node: {count} site(s) to harvest ({skipped} on directed search only).',
   'run.harvest.directedOnly': '{skipped} site(s) on directed search only — not harvested.',
@@ -2188,7 +2123,8 @@ export const en: Record<TranslationKey, string> = {
   'run.harvest.siteIndexed': '{domain}: +{indexed} product(s) over {pages} page(s) (index: {total} pages).',
   'run.harvest.budgetReserved': 'Budget reserved for the comparison — {skipped} site(s) not started on this run, the rest on the next tick.',
   'run.harvest.cycleComplete': 'Cycle complete: {count} site(s) at 100% — next start on the calendar due date.',
-
+  // Moteur de moisson et sondes (`priceWatch/catalog/`) — émis via `deps.log`,
+  // branché sur `ctx.log` par le node : même panneau, même exigence.
   'run.harvest.unknownUrlPattern': '{domain}: unknown URL pattern — probing {count} candidate link(s).',
   'run.harvest.listPagesConfirmed': '{domain}: {confirmed} listing page(s) confirmed → plan of {plan} (+{children} sub-aisle(s), +{mates} of the same shape).',
   'run.harvest.aiTargeting': '{domain}: AI targeting — {kept}/{total} category/categories kept.',
@@ -2201,8 +2137,12 @@ export const en: Record<TranslationKey, string> = {
   'run.probe.noListing': 'probe: {probes} page(s) opened, none holds a product listing.',
   'run.directed.genericHit': '{domain} (generic): "{query}" → {name} (evidence {evidence})',
   'run.directed.hit': '{domain}: "{query}" → {name} (evidence {evidence})',
-
+  // Levée par plusieurs nodes AVANT toute écriture : côté CLIENT seulement,
+  // le serveur reçoit son `uid` dans le contexte du run.
   'run.notSignedIn': 'User not signed in.',
+  // Comparatif de catalogue (`compare-catalog`)
+  // Les quatre premières sont propres au CLIENT : la résolution de colonnes et la
+  // garde de clé de jointure n'existent pas dans le jumeau serveur.
   'run.sourceSites.listReceivedActive': 'List received from the "Source sites" node: {count} active site(s).',
   'run.compareCatalog.columnsGuessed': 'Columns not found in the sheet, recovered automatically: {list}. Fix the node configuration to pin the mapping.',
   'run.compareCatalog.columnsMissing': 'Configured columns absent from the sheet and not found: {list}. Available headers: {headers}',
@@ -2212,7 +2152,7 @@ export const en: Record<TranslationKey, string> = {
   'run.compareCatalog.siteIndexCount': '{domain}: {count} product(s) in the index.',
   'run.compareCatalog.emptyIndex': 'Competitor index empty for the {sites} site(s) under the "{watchId}" monitoring. Check that the "Harvest competitors" node uses the SAME monitoring identifier ("{watchId}") and that it ran first.',
   'run.compareCatalog.matchedBreakdown': '{matched} product(s) matched: {exact} same product, {originOnly} original part (aftermarket ↔ OEM). {unmatched} without a match, {noKey} without a key.',
-
+  // Recherche dirigée (`directed-search`)
   'run.directed.noInputData': 'Directed search: no product data on the input.',
   'run.directed.noKeyColumn': 'Directed search: fill in at least a Reference or an EAN column.',
   'run.directed.siteBreaker': '{host}: {fails} consecutive failures — site skipped for the rest of the pass.',
@@ -2226,10 +2166,11 @@ export const en: Record<TranslationKey, string> = {
   'run.directed.noPriceFound': 'No price found on this pass. Check that the keys queried exist AT THE COMPETITORS: an item reference and an EAN specific to the distributor cannot be found anywhere else. On an aftermarket parts catalogue, fill in "Description column (original ref.)".',
   'run.directed.genericSummary': 'Generic ({sites} site(s)): {queries} web search(es) · {noUrls} with no result (ref not sold / 422) · {extracted} page(s) extracted{fallback} · {matched} matched by exact evidence.',
   'run.directed.genericViaFallback': ' (of which {bd} Bright Data · {jina} Jina)',
+  // Passe authentifiée : moteur SERVEUR uniquement (pas de jumeau client).
   'run.directed.krampHit': 'kramp: {name} {price}€ (evidence {evidence})',
   'run.directed.creditsFirecrawl': 'Firecrawl credits EXHAUSTED — generic extraction suspended (calls skipped). Top up at firecrawl.dev.',
   'run.directed.creditsJina': 'Jina credits EXHAUSTED — web searches suspended (calls skipped). Top up at jina.ai.',
-
+  // Veille / suivi de prix, coûts, webhook, sites sources (lot 16)
   'run.pw.notSignedIn': 'User not signed in — monitoring state unavailable.',
   'run.pw.emptySheet': 'Empty sheet — no price to monitor.',
   'run.pw.firstReading': 'First reading: {count} price(s) recorded (no alert).',
@@ -2264,7 +2205,7 @@ export const en: Record<TranslationKey, string> = {
   'run.ss.noActiveSite': 'No active site — the wired nodes will scrape nothing.',
   'run.ss.emitted': '{count} active site(s) emitted (monitoring "{watchId}"){suffix}',
   'run.ss.forcedEngine': ' — {count} with a forced engine.',
-
+  // Produits d'une page liste (`list-products`) — lot 17
   'run.lp.noDomain': 'No domain supplied — fill in at least one domain (e.g. castorama.fr).',
   'run.lp.searching': 'Searching "{family}" on {domain}…',
   'run.lp.noListingFound': 'No listing page found for "{family}" on {domain}.',
@@ -2286,6 +2227,7 @@ export const en: Record<TranslationKey, string> = {
   'run.lp.noProductExtractedHint': '⚠️ No product extracted — check the URLs (listing pages) and Jina availability.',
   'run.lp.total': 'Total: {count} product(s) over {pages} page(s){model}.',
   'run.lp.viaModels': ' — extraction through {models}',
+  // Ci-dessous : émis par le JUMEAU SERVEUR seul (escalade détaillée, pagination).
   'run.lp.jinaFailed': 'Jina read failed {url}: {message}',
   'run.lp.jinaNoContent': 'Jina returned no content for {url} → escalating to Bright Data.',
   'run.lp.jinaThin': 'Jina thin ({markers} prices) for {url} → escalating to Bright Data.',
@@ -2303,7 +2245,7 @@ export const en: Record<TranslationKey, string> = {
   'run.lp.totalDeduped': 'Total: {count} deduplicated product(s){cap}{model}.',
   'run.lp.cap': ' (cap {max})',
   'run.lp.noProductExtracted': 'No product extracted.',
-
+  // PIM / Telegram / Higgsfield — lot 19
   'run.pim.missingProject': 'save-pim: projectId missing.',
   'run.pim.missingProjectConfig': 'PIM project ID missing from the configuration',
   'run.pim.projectNotFound': 'save-pim: PIM project not found or not allowed.',
@@ -2340,7 +2282,9 @@ export const en: Record<TranslationKey, string> = {
   'run.hf.generatedShort': '{count} asset(s) generated.',
   'run.hf.notDownloadable': 'File not downloadable (too large?) — use "Save DAM" through the assets port.',
   'run.hf.notDownloadableServer': 'File not downloadable on the server — use "Save DAM" through the assets port.',
-
+  // Famille Google (Sheets / Drive / Gmail) — lot 20
+  // ⚠️ `run.api.error` = clé de STRUCTURE pour les diagnostics d'API HTTP ; le nom
+  // d'opération (« Sheets get », « addChart ») reste littéral, c'est un identifiant.
   'run.ws.modeNotServer': 'Web Scraping: mode "{mode}" cannot run on the server.',
   'run.ws.unknownMode': 'Unknown scraping mode: {mode}',
   'run.api.error': '{api} {status}: {body}',
@@ -2377,6 +2321,7 @@ export const en: Record<TranslationKey, string> = {
   'run.gm.rowSent': '[{i}/{total}] email → {to}',
   'run.gm.noRecipient': 'send-gmail: recipient ("to") missing.',
   'run.gm.sent': 'Email sent to {to} (id {id}).',
+  // Côté CLIENT seul (import/export Drive interactifs, save-dam, corps de mail)
   'run.gs.needSheetOrText': 'Google Sheets export expects a Sheet or text on the input — wire a node that produces a Sheet (or a Text input).',
   'run.gs.noFilePicked': 'No Google Sheets selected — open the node configuration to pick one.',
   'run.gs.importingClient': 'Importing GSheet {name} ({id})…',
@@ -2435,7 +2380,7 @@ export const en: Record<TranslationKey, string> = {
   'run.gm.manyRowsHint': '{count} rows on the input. Tick HTML for a table, or use {{table}} in the body. For 1 email per row, tick "Send 1 email per row".',
   'run.gm.sending': 'Sending Gmail → {to}',
   'run.gm.sentId': 'Sent (Gmail id: {id}).',
-
+  // Toast de fin de run (tous les chemins : Run, Pas à pas, RUN par carte)
   'run.outcome.aborted': '⏹ "{label}" stopped',
   'run.outcome.abortedBody': 'Execution interrupted.',
   'run.outcome.error': '❌ "{label}" — {count} node(s) in error',
@@ -2446,6 +2391,7 @@ export const en: Record<TranslationKey, string> = {
   'run.stopped': 'Run stopped',
   'run.unknownType': 'Unknown type: {type}',
   'run.unknownTypeInLoop': 'Unknown type in the loop body: {type}',
+  // Logique / transformations / réseau — lot 18
   'run.pure.emptyText': 'The text entered is empty.',
   'run.pure.textLength': 'Text entered: {count} character(s).',
   'run.pure.evalError': 'Evaluation error "{expr}": {message}',
@@ -2493,11 +2439,12 @@ export const en: Record<TranslationKey, string> = {
   'run.net.nothingExtracted': '⚠️ No data extracted ({urls} URL(s)) — anti-bot site not unblocked (session cookies?) or page without structured content.',
   'run.net.partialData': '⚠️ PARTIAL data — {fields} field(s), {assets} asset(s): anti-bot not solved on at least one URL (same data as the PIM alert banner).',
   'run.net.scrapeDone': 'Finished — {rows} row(s), {fields} field(s) filled, {assets} asset(s)',
-
   'run.period.7d': 'last 7 days',
   'run.period.30d': 'last 30 days',
   'run.period.90d': 'last 90 days',
-  'run.period.12m': 'last 12 months',  'cat.home.title': 'Catalogue studio',
+  'run.period.12m': 'last 12 months',
+  // ═══ Catalogue studio (lot 28) ═══
+  'cat.home.title': 'Catalogue studio',
   'cat.home.new': 'New catalogue',
   'cat.home.loading': 'Loading…',
   'cat.home.defaultName': 'New catalogue',
@@ -2614,6 +2561,7 @@ export const en: Record<TranslationKey, string> = {
   'cat.tpl.namePlaceholder': 'Template name',
   'cat.vis.selectBlock': 'Select this block (settings, position, colours)',
   'cat.page.coverElements': 'Elements shown',
+  // ═══ PIM / grille de données (lot 29) ═══
   'xl.noResult': 'No result',
   'xl.defaultDbName': 'New database',
   'xl.move': 'Move',
@@ -2667,6 +2615,7 @@ export const en: Record<TranslationKey, string> = {
   'xl.enr.clickToEdit': 'Click to edit',
   'xl.scraped.itemCount': '{count} scraped item(s)',
   'xl.log.network': 'Network',
+  // ═══ Google Drive (lot 30) ═══
   'gd.deleteForever': 'Permanent deletion (irreversible)',
   'gd.deleteForeverShort': 'Delete permanently',
   'gd.trashSelection': 'Move the selection to the Drive bin',
@@ -2678,6 +2627,7 @@ export const en: Record<TranslationKey, string> = {
   'gd.tab.recent': 'Recent',
   'gd.newFolderHere': 'Create a folder here',
   'gsf.suggestion.column': 'column',
+  // ═══ Promo retail (lot 31) ═══
   'rp.conditionalRules': 'Conditional rules',
   'rp.needSource': 'Wire a data source to use rules.',
   'rp.layer.header': 'Header band',
@@ -2741,6 +2691,7 @@ export const en: Record<TranslationKey, string> = {
   'rp.source.pim.desc': 'pim_projects collection (advanced)',
   'rp.source.noDb': 'No database imported.',
   'rp.source.oldPricePlaceholder': 'Was price (e.g. 19.99)',
+  // ═══ Vérifier chez le Fabricant (lot 32) ═══
   'mv.batch.title': 'Verify with the Manufacturer — batch',
   'mv.batch.noScraped': 'No scraped product in this sheet.',
   'mv.stat.confirmed': 'Confirmed (identical)',
@@ -2772,6 +2723,7 @@ export const en: Record<TranslationKey, string> = {
   'mv.insights.subtitle': 'Source ⇄ Manufacturer data differences',
   'mv.insights.noVerified': 'No product verified for this database',
   'mv.insights.globalDistribution': 'Global field distribution',
+  // ═══ Scraping Hub (lot 33) ═══
   'sc.bd.storedIn': 'Stored in Firestore',
   'sc.crawl.intro': 'Crawl → Extracts the links of the page (Jina), then the AI identifies the product names/URLs.',
   'sc.crawl.multiUrl': 'Multi-URL mode: pick List/File/Sheet to crawl several pages.',
@@ -2801,6 +2753,7 @@ export const en: Record<TranslationKey, string> = {
   'sc.res.priceSnippet': 'Price spotted in the search snippet (indicative)',
   'sc.url.freeText': 'Paste free text — every http(s) URL is detected automatically.',
   'sc.url.autoColumn': 'Automatic detection of the URL column ("url"/"lien"/"link" header, or http content).',
+  // ═══ Templates de scraping ═══
   'st.specGroups': 'Specification groups',
   'st.textHierarchy': 'Hierarchical text (Markdown)',
   'st.selectorPlaceholder': 'Selector (e.g. h1.product-title)',
@@ -2820,6 +2773,7 @@ export const en: Record<TranslationKey, string> = {
   'st.customFieldName': 'Or a custom field name',
   'st.field.reference': 'Reference / SKU',
   'st.field.variants': 'Variants (list)',
+  // ═══ PWA radarPrice ═══
   'rd.tab.overview': 'Overview',
   'rd.tab.costs': 'Costs',
   'rd.gapFlow': 'Gap flow',
@@ -2863,6 +2817,7 @@ export const en: Record<TranslationKey, string> = {
   'st.degradedRenderFull': 'Degraded rendering expected — custom fonts and webfont icons do not load (CORS on @font-face). Double-click to capture an element, single-click to navigate (accordions, tabs).',
   'rd.restart.at': 'restart at {time} (in {countdown})',
   'rd.restart.now': 'restart imminent',
+  // ═══ Vidéo / Chat / Fusion / Accès (lot 34) ═══
   'vd.dropzone': 'Drop files here or click to browse',
   'vd.fitWindow': 'Fit to the window (takes all the available space)',
   'vd.realSize': 'Real size (pixel-perfect)',
@@ -2924,6 +2879,7 @@ export const en: Record<TranslationKey, string> = {
   'mg.openLinkedTemplate': 'Open the linked template',
   'mg.linkTemplate': 'Link to an existing template',
   'mg.createTemplate': 'Create a template',
+  // ═══ Analytics / Export / Veille tarifaire — tail (lot 35) ═══
   'an.citiesGrouped': 'cities grouped · visits · last visit',
   'an.noData': 'No data',
   'an.sameFeedAsTelegram': 'the same feed as the Telegram alerts',
@@ -3037,6 +2993,7 @@ export const en: Record<TranslationKey, string> = {
   'perm.module.12': 'Telegram',
   'perm.module.13': 'Settings',
   'perm.module.14': 'Demo',
+  // ═══ Tail final — briefs, canvas, pulse, shared, taxonomie, data-graph, démo express, IDML, onboarding, Telegram (lot 37) ═══
   'br.purgeGhosts': '{count} empty draft(s) to purge',
   'br.regenerate': 'Regenerate',
   'br.totalEstimated': 'Estimated total',
@@ -3148,6 +3105,7 @@ export const en: Record<TranslationKey, string> = {
   'tr.guidedTour': 'Guided tour',
   'tr.startTour': 'Start the guided tour',
   'vd.libIntro': 'Your generated prompts are saved here. You can then replay or delete them.',
+  // ═══ Ultimes phrases entrelacées de balisage (lot 38) ═══
   'hf.keysNote': 'Both values come from Higgsfield (Settings → API keys). They are stored together in the KEY_ID:KEY_SECRET format and read on the server.',
   'ac.deleteWarn': 'Deletes the profile and its access. The person reappears as "pending" if they sign in again (role and block lost). To bar them for good, use Block.',
   'an.telegramAlerts': 'Telegram alerts',
@@ -3190,8 +3148,6 @@ export const en: Record<TranslationKey, string> = {
   'vd.standaloneInfo': 'Multi-scene composition (hook → visual → cta) generated by Gemini from your brief. Delivery ≈ 5 s: HTML/CSS/JS + live preview, downloadable ZIP that can be saved to the DAM.',
   'vd.pageInfo': 'Editable SVG export of the current page, then GSAP animation per element. The visual stays YOUR design; the AI tunes its motion personality (calm, dynamic, understated, playful), the pace and the accent colour (frame + bar) according to the audience, the goal and the tone. Delivery ≈ 5 s: HTML/CSS/JS + live preview.',
   'vd.libEmpty': 'Your generated prompts are saved here. You can then replay or edit them.',
-
-
   // ═══ Cron : cadence, calendrier, compte à rebours ═══
   'cron.unit.minute': 'minute(s)',
   'cron.unit.hour': 'hour(s)',
@@ -3229,7 +3185,6 @@ export const en: Record<TranslationKey, string> = {
   'cron.hm': '{h} h {m} min',
   'cron.ms': '{m} min {s} s',
   'cron.s': '{s} s',
-
   // ═══ Messages de run — nodes CLIENT SEUL (lot 39a) ═══
   'run.ai.promptMissing': 'Prompt missing — enter a description in the node config.',
   'run.ai.refAttached': 'Reference {kb} KB attached',
@@ -3254,7 +3209,6 @@ export const en: Record<TranslationKey, string> = {
   'run.ask.searching': '🔎 Web search: “{question}”…',
   'run.ask.noResult': '⚠️ No web result — answering from the model’s own knowledge (no source).',
   'run.ask.readSources': '{results} result(s), {sources} source(s) read — AI synthesis…',
-
   // ═══ Messages de run — approbation, BrowserAct, taxonomie (lot 39b) ═══
   'run.appr.noBotToken': 'Telegram bot token missing (neither in the node nor in the Settings).',
   'run.appr.noChatId': 'Telegram chat ID missing (neither in the node nor in the Settings).',
@@ -3287,7 +3241,6 @@ export const en: Record<TranslationKey, string> = {
   'run.tax.building': 'Building the taxonomy from {count} level column(s)',
   'run.tax.noNode': 'No taxonomy node produced — check that the columns actually contain values.',
   'run.tax.saved': 'Saved to Firestore — {count} node(s) under id {id}',
-
   // ═══ Messages de run — décomposition SVG et exports (lot 39c) ═══
   'run.dec.imageUnreachable': 'Image unreachable ({status})',
   'run.dec.noSvg': 'No SVG file provided — connect an image-to-svg or pdf-to-svg node.',
@@ -3311,7 +3264,6 @@ export const en: Record<TranslationKey, string> = {
   'run.exp.exported': 'Export {format} {dpi} dpi → {file}',
   'run.exp.inlining': 'Inlining external images…',
   'run.exp.nativeRender': 'Native SVG rendering {w}×{h} ({dpi} dpi)…',
-
   // ═══ Messages de run — imports & upload (lot 39d) ═══
   'run.imp.noFile': 'No file provided — connect an Upload node or another node that produces a file.',
   'run.imp.parsing': 'Parsing {name}…',
@@ -3345,7 +3297,6 @@ export const en: Record<TranslationKey, string> = {
   'run.imp.fileReady': 'File ready: {name} ({kb} KB)',
   'run.imp.csvParsed': 'CSV/Excel parsed: {rows} rows, {cols} columns ({labels}).',
   'run.imp.csvFailed': 'CSV/Excel parsing failed: {message}',
-
   // ═══ Erreurs LLM remontées à l’écran (lot 40a) ═══
   'err.llm.noProvider': '[llmRouter] {task}: no LLM provider available in your cascade. Configure at least one supported provider (gemini, claude, deepseek) in the Settings.',
   'err.llm.noMultimodal': 'Provider “{provider}” does not support multimodal input — an image input is required.',
@@ -3369,7 +3320,6 @@ export const en: Record<TranslationKey, string> = {
   'err.nb.safetyFilter': 'Image blocked by the safety filter — rephrase your prompt',
   'err.nb.protectedContent': 'Generation refused (protected content) — try a different prompt',
   'err.nb.noImage': 'The API returned no image — try a more descriptive prompt',
-
   // ═══ Erreurs LLM (suite) — Gemini, chat, Nano Banana (lot 40b) ═══
   'err.llm.geminiRetrySchema': 'Gemini response does not match the schema after retry: {issues}',
   'err.llm.geminiEmptyDetail': 'Gemini: empty response (finishReason={reason}, thoughtsTokens={thoughts}, outputTokens={output})',
@@ -3381,7 +3331,6 @@ export const en: Record<TranslationKey, string> = {
   'err.nb.safety': 'Content blocked by the safety filter — rephrase your prompt',
   'err.nb.modelUnavailable': 'Gemini model unavailable — the API may be under maintenance',
   'err.nb.network': 'Network error — check your internet connection',
-
   // ═══ Erreurs « connexion requise » / « introuvable » (lot 40c) ═══
   'err.auth.required': 'You need to sign in.',
   'err.auth.notSignedIn': 'Not signed in',
@@ -3400,7 +3349,6 @@ export const en: Record<TranslationKey, string> = {
   'err.dam.driveImageHttp': 'Drive image {fileId}: HTTP {status}',
   'err.cat.noMainVisual': 'no main visual detected on the page',
   'err.de.saveRefused': 'save refused',
-
   // ═══ Erreurs fusion, enrichissement, IDML, imagerie, promo (lot 40d) ═══
   'err.mg.noProduct': 'This PIM project contains no product.',
   'err.mg.sourceDataset': 'Source dataset not found',
@@ -3428,7 +3376,6 @@ export const en: Record<TranslationKey, string> = {
   'err.rp.notFound': 'Record not found',
   'err.rp.dataTooBig': 'Data too large (> 900 kB)',
   'err.rp.emptyCapture': 'Empty capture',
-
   // ═══ Erreurs scraping, SVG, vidéo, chat, Telegram (lot 40e) ═══
   'err.st.invalidTemplate': 'Invalid template: {issues}',
   'err.unsupportedType': 'Unsupported type: {type}',
@@ -3469,7 +3416,6 @@ export const en: Record<TranslationKey, string> = {
   'err.tg.callFailed': 'Telegram {method} {code}: {description}',
   'err.tg.failed': 'failed',
   'err.gm.apiHttp': 'Gmail API HTTP {status}: {body}',
-
   // ═══ Toasts — catalogue studio (lot 41a) ═══
   'tst.cat.pagesFailed': 'Failed pages (left blank): {pages}',
   'tst.cat.pdfExported': 'PDF exported ({count} pages)',
@@ -3516,7 +3462,6 @@ export const en: Record<TranslationKey, string> = {
   'tst.saveError': 'Save failed',
   'tst.cat.tplDeleted': 'Template deleted',
   'tst.cat.tplDeleteFailed': 'Delete failed',
-
   // ═══ Toasts — briefs (lot 41b) ═══
   'tst.br.draftsPurged.one': '{count} draft purged',
   'tst.br.draftsPurged.many': '{count} drafts purged',
@@ -3547,7 +3492,6 @@ export const en: Record<TranslationKey, string> = {
   'tst.br.skusDropped': '{count} SKU(s) ignored because unknown',
   'tst.br.pptxGenerated': 'PPTX generated: {file}',
   'tst.br.exportFailed': 'Export failed',
-
   // ═══ Toasts — scraping et vidéo (lot 41c) ═══
   'tst.sc.urlsImported': '{count} URL(s) imported over {rows} rows ({cols})',
   'tst.sc.driveExpired': 'Google Drive session expired — reconnect in Settings → Connectors',
@@ -3585,7 +3529,6 @@ export const en: Record<TranslationKey, string> = {
   'tst.vd.openFailed': 'Opening failed: {message}',
   'tst.vd.deleted': 'Animation deleted',
   'tst.vd.deleteFailed': 'Delete failed',
-
   // ═══ Toasts — promo, templates de scraping, PIM, workflows, DAM (lot 41d) ═══
   'tst.rp.imageReplaced': 'Image replaced',
   'tst.rp.loadFailed': 'Loading failed',
@@ -3672,7 +3615,6 @@ export const en: Record<TranslationKey, string> = {
   'tst.dam.linked': '{count} image(s) linked across {rows} row(s)',
   'tst.dam.improveFailed': 'Prompt improvement failed',
   'tst.dam.saveFailed': 'Save failed',
-
   // ═══ Toasts — queue du chantier (lot 41e) ═══
   'tst.svg.textsAdded': '{count} editable texts added',
   'tst.svg.decomposeFailed': 'Decomposition failed',
@@ -3745,7 +3687,6 @@ export const en: Record<TranslationKey, string> = {
   'tst.rd.pagesCleared': '{host}: {count} page(s) cleared.',
   'tst.rd.siteRemoved': '{host} removed from the list.',
   'tst.tg.noBotToken': 'Set the bot token (Settings → Connectors → Telegram).',
-
   // ═══ Toasts SANS accent + dialogues natifs confirm/prompt (lot 42) ═══
   'tst.sc.importError': 'Import error: {message}',
   'tst.st.pageLoadFailed': 'Cannot load the page (CORS, SPA site?)',
@@ -3782,7 +3723,6 @@ export const en: Record<TranslationKey, string> = {
   'cfm.st.deleteTemplate': 'Delete the “{name}” template?',
   'cfm.pj.bulkDelete.one': 'Delete {count} project? This cannot be undone.',
   'cfm.pj.bulkDelete.many': 'Delete {count} projects? This cannot be undone.',
-
   // ═══ Toasts — reliquat attrapé par le garde-fou (lot 42b) ═══
   'tst.br.missingFields': 'Required fields missing: {fields}',
   'tst.br.emptyCart': 'The basket is empty',
@@ -3817,7 +3757,6 @@ export const en: Record<TranslationKey, string> = {
   'tst.dam.error': 'DAM: {message}',
   'tst.dam.googleRequired': 'Google connection required',
   'tst.de.signInRequired': 'You need to sign in',
-
   // ═══ Toasts — reliquat, seconde moitié (lot 42c) ═══
   'tst.xl.fileTooBigPim': 'File too large for the PIM: {rows} rows. The PIM keeps the sheet in a single document (max ~1 MB) — beyond a few thousand rows the tab freezes and saving fails. For a large catalogue, wire “Google Sheets import” into a workflow, or import a subset (by family).',
   'tst.st.orderSavedSynced': 'Order saved — propagated to {count} other template(s) for this vendor',
@@ -3864,7 +3803,6 @@ export const en: Record<TranslationKey, string> = {
   'tst.cat.notFound': 'Catalogue not found',
   'tst.cat.sourceUnavailable': 'Source unavailable: {message}',
   'tst.st.loadFailed': 'Loading failed',
-
   // ═══  ═══
   'tst.ss.credsRequired': 'Email and password required.',
   'tst.mv.specsComparedDesc': '{count} manufacturer spec(s) compared',
@@ -3873,7 +3811,6 @@ export const en: Record<TranslationKey, string> = {
   'tst.svg.semanticAnalysis': 'Semantic analysis (Gemini 3.5)…',
   'tst.svg.decomposing': 'Decomposing…',
   'tst.svg.visionRunning': 'The Google Vision API is analysing the image',
-
   // ═══ Visites guidées (driver.js) — lot 43 ═══
   'tour.ed.0.title': 'Welcome to the editor 👋',
   'tour.ed.0.desc': 'A detailed tour: toolbar, artboard and every panel. “Next” to move on, “Esc” to leave at any time.',
@@ -4086,7 +4023,6 @@ export const en: Record<TranslationKey, string> = {
   'tour.next': 'Next',
   'tour.prev': 'Previous',
   'tour.done': 'Finish',
-
   // ═══ UI restante — enrichissement, démo express, vidéo, promo, Drive (lot 43b) ═══
   'xl.enr.scrapedByAi': 'Scraped by AI',
   'xl.enr.model': 'Model',
@@ -4165,7 +4101,6 @@ export const en: Record<TranslationKey, string> = {
   'cat.style.nameColor': 'Name',
   'cat.style.brandColor': 'Brand',
   'cat.style.descColor': 'Description',
-
   // ═══ UI — DAM, fusion, analytics, formules, catalogue (lot 44a) ═══
   'dam.lb.download': 'Download',
   'dam.lb.improvedPrompt': 'Improved prompt (sent to AI Image)',
@@ -4183,7 +4118,6 @@ export const en: Record<TranslationKey, string> = {
   'xl.fe.decimals': 'Decimals',
   'xl.fe.autocompleteHint': 'Type a function or column name for autocompletion. Tab or Enter to confirm.',
   'xl.fe.availableFields': 'Available fields — click to insert',
-
   // ═══ UI — catalogue, PIM, DAM, veille (lot 44b) ═══
   'cat.vis.orderHint': 'Order = position on the card. Drag ⠿ to move a block, click its name to adjust it.',
   'xl.sf.saveOrder': 'Save the new order',
@@ -4211,7 +4145,6 @@ export const en: Record<TranslationKey, string> = {
   'xl.cc.overwriteConfirm': 'I will overwrite the existing values in this column',
   'xl.cc.preview5': 'Preview (5 rows)',
   'xl.cc.applyAll': 'Apply to all',
-
   // ═══ Correspondance des champs — catalogue (lot 44c) ═══
   'cat.map.name': 'Name',
   'cat.map.image': 'Image',
@@ -4234,7 +4167,6 @@ export const en: Record<TranslationKey, string> = {
   'cat.obj.showUnit': 'Unit',
   'cat.obj.showPrice': 'Price',
   'cat.obj.bandRule': 'Section banner rule',
-
   // ═══ UI — export, insights fabricant, scraping, cron, sites sources (lot 44d) ═══
   'ex.cropMarks.hint': 'Extends the canvas to the bleed set in Print and adds L-shaped crop marks at the 4 corners. Tick it for offset/digital printing.',
   'ex.pdf.hint': 'PDF with a high-quality image + selectable text on an invisible layer.',
@@ -4268,7 +4200,6 @@ export const en: Record<TranslationKey, string> = {
   'ss.enableSite': 'Enable this site',
   'ss.authConfigured': 'Signed-in access configured — change the credentials',
   'ss.authConfigure': 'Set up signed-in access (prices only visible when authenticated)',
-
   // ═══ Queue de textes JSX simples (lot 45) ═══
   'cardStyleCard.snapTheText': 'Snap the text blocks (default)',
   'cardStyleCard.dragTheObjects': 'Drag the objects in the preview — the result is identical in the catalogue and on export.',
@@ -4371,7 +4302,6 @@ export const en: Record<TranslationKey, string> = {
   'sourceSitesCreds.removeAccess': 'Remove access',
   'workflowResultsScreen.runTheWorkflow': 'Run the workflow (“Run” in the editor, or “Run on server” / cron), then come back here.',
   'dataPage.createADatabase': 'Create a database',
-
   // ═══ Paragraphes multi-lignes et libellés collés à une icône (lot 46) ═══
   'cat.style.magnetHint': 'Adjustable BLOCK BY BLOCK: select a text block in the preview, then click its 🧲 chip (Snapped = stuck to the block above depending on its content · Free = stays exactly where you put it).',
   'br.nextStep': 'Next step',
@@ -4401,7 +4331,6 @@ export const en: Record<TranslationKey, string> = {
   'wfc.cycleHint': 'When the harvest reaches 100 % on EVERY site, the cadence stops; the full cycle restarts at the time chosen here (e.g. every Friday at 07:00).',
   'gd.folderScopeHint': 'The app creates/reuses a folder with this name in your Drive. You cannot pick an existing folder: the minimal scope (drive.file) only allows writing into folders the app created.',
   'wfr.aggregation': 'Aggregation',
-
   // ═══ Attributs title / aria-label / placeholder restants (lot 47) ═══
   'ui.expand': 'Expand',
   'ui.collapse': 'Collapse',
@@ -4445,7 +4374,6 @@ export const en: Record<TranslationKey, string> = {
   'gs.header': 'Header',
   'ss.disableAll': 'Disable every site in the harvest',
   'ss.enableAll': 'Enable every site in the harvest',
-
   // ═══ Derniers attributs composés (lot 48) ═══
   'cat.overlay.linkedTo': '{obj} — linked to “{parent}” (parent)',
   'pw.cmp.reading': 'Reading: {name}{ean}',
@@ -4465,7 +4393,6 @@ export const en: Record<TranslationKey, string> = {
   'xl.fn.cat.text': 'Text',
   'xl.fn.cat.math': 'Maths',
   'xl.fn.cat.date': 'Date',
-
   // ═══ Trouvés par la PASSE VISUELLE (lot 50) — invisibles au balayage statique ═══
   'help.pickSection': 'Pick a section in the contents.',
   'tx.none': 'No taxonomy',
@@ -4489,7 +4416,6 @@ export const en: Record<TranslationKey, string> = {
   'mv.insights.pickDb': 'Pick a database on the left (those with a 🏭 badge hold manufacturer data), or run “Check with the manufacturer” on PIM records.',
   'mv.insights.openPim': 'Open the PIM',
   'mv.insights.searchDb': 'Search for a database…',
-
   // ═══ Derniers relevés de la passe visuelle (lot 50b) ═══
   'sh.rulesEmpty': '_Empty area — write some markdown on the left_',
   'pw.toConfirmTab': 'To confirm{count}',
@@ -4507,7 +4433,6 @@ export const en: Record<TranslationKey, string> = {
   'mv.insights.noResult': 'No result for {query}',
   'tx.deleteWarn': 'This will delete {node} and all its descendants. It cannot be undone.',
   'vd.instructionsHint': 'The AI turns these instructions into per-element animations (target by name: “the price block”, “the logo”, “every element”).',
-
   // ═══ Constantes de MODULE : clés au lieu de t() (lot 51) ═══
   'br.ft.text': 'Short text',
   'br.ft.textarea': 'Long text',
@@ -4674,42 +4599,29 @@ export const en: Record<TranslationKey, string> = {
   'rp.layer.priceNow': 'Promo price',
   'rp.layer.footer': 'Footer',
   'anim.persisted': '✓ {name} animation persisted on the object.',
-
-  // — Languages & wording ————————————————————————————————————————————
+  // — Langues & vocabulaire du compte ————————————————————————————————
   'settings.tab.vocabulary': 'Languages & wording',
   'perm.settings.i18n.edit': 'Edit the account wording',
-  'perm.settings.i18n.edit.desc':
-    'Rewrite interface labels and enable languages, for every member of the account.',
-
+  'perm.settings.i18n.edit.desc': 'Rewrite interface labels and enable languages, for every member of the account.',
   'i18n.mode.title': 'On-screen label editing',
-  'i18n.mode.desc':
-    'Once the mode is on, Alt+click any text in the application to open its editor. The wording changes for every member of the account.',
+  'i18n.mode.desc': 'Once the mode is on, Alt+click any text in the application to open its editor. The wording changes for every member of the account.',
   'i18n.mode.on': 'Editing mode on',
   'i18n.mode.off': 'Turn on editing mode',
-
   'i18n.locales.title': 'Languages served',
-  'i18n.locales.desc':
-    'French, English and Spanish ship fully translated. Other languages show the wording you enter, and fall back to French for the rest.',
+  'i18n.locales.desc': 'French, English and Spanish ship fully translated. Other languages show the wording you enter, and fall back to French for the rest.',
   'i18n.locales.translated': 'Full translation shipped',
   'i18n.locales.partial': '{count} of {total} labels defined',
   'i18n.locales.locked': 'Fallback language, always on',
-
   'i18n.context.title': 'Trade wording',
-  'i18n.context.desc':
-    'Describe your sector in a few words. Automatic translation uses it to pick the term your trade actually uses rather than the common synonym.',
+  'i18n.context.desc': 'Describe your sector in a few words. Automatic translation uses it to pick the term your trade actually uses rather than the common synonym.',
   'i18n.context.placeholder': 'DIY equipment distribution',
-
   'i18n.overrides.title': 'Rewritten labels',
   'i18n.overrides.titleCount': 'Rewritten labels — {count} in {locale}',
-  'i18n.overrides.desc':
-    'Correct a text, or push it to the other active languages.',
-  'i18n.overrides.empty':
-    'No label rewritten yet. Turn on editing mode, then Alt+click the word you want to change.',
+  'i18n.overrides.desc': 'Correct a text, or push it to the other active languages.',
+  'i18n.overrides.empty': 'No label rewritten yet. Turn on editing mode, then Alt+click the word you want to change.',
   'i18n.overrides.was': 'originally: {text}',
-
   'i18n.bulk.translateAll': 'Translate all',
   'i18n.bulk.done': '{count} of {total} labels translated',
-
   'i18n.edit.title': 'Rewrite this label',
   'i18n.edit.whichKey': 'This text is used in several places — which one do you want to change?',
   'i18n.edit.translate': 'Translate',
@@ -4718,12 +4630,10 @@ export const en: Record<TranslationKey, string> = {
   'i18n.edit.reset': 'Restore the original label',
   'i18n.edit.save': 'Save',
   'i18n.edit.close': 'Close',
-  'i18n.edit.noPermission':
-    'You are not allowed to change the wording of this account.',
+  'i18n.edit.noPermission': 'You are not allowed to change the wording of this account.',
   'i18n.edit.fromAttribute': 'Text taken from the {attr} attribute',
   'i18n.edit.saveFailed': 'The label could not be saved.',
-  'i18n.edit.tooLarge':
-    'Too many labels rewritten for this language — the wording can no longer be saved.',
+  'i18n.edit.tooLarge': 'Too many labels rewritten for this language — the wording can no longer be saved.',
   'i18n.edit.translateFailed': 'Automatic translation failed.',
   'i18n.edit.noOtherLocale': 'No other active language to translate into.',
   'i18n.edit.modeHint': 'Alt+click a text to rewrite it',
@@ -4735,8 +4645,7 @@ export const en: Record<TranslationKey, string> = {
   'ac.account.hint': 'Members of the same account share the interface wording. Takes effect the next time their session loads.',
   'ac.account.saved': 'Account membership updated.',
   'ac.account.failed': 'The membership could not be saved.',
-
-  // — Users & roles: on-screen labels ————————————————————————————————
+  // — Utilisateurs & rôles : libellés d'écran ————————————————————————
   'ac.searchPlaceholder': 'Search (email or name)…',
   'ac.userCount': '{count} user(s)',
   'ac.pendingCount': '{count} pending',
@@ -4755,12 +4664,10 @@ export const en: Record<TranslationKey, string> = {
   'ac.revokeShort': 'remove',
   'ac.noUsers': 'No user.',
   'ac.noUsersForSearch': 'No user for this search.',
-
-  // — Scraping rules —————————————————————————————————————————————————
+  // — Règles de scraping —————————————————————————————————————————————
   'sh.save': 'Save',
   'sh.rulesPlaceholder': '## Naming conventions\n- Product name = Brand + Model + Reference (e.g. Makita DDA351RTJ)\n- No accented capitals in titles\n\n## Prices\n- Always inclusive of VAT, EUR currency, format 6.50 € (decimal point)\n- If a price is struck through: keep the current price, not the struck one\n\n## Descriptions\n- Language: English\n- Specs in KEY / VALUE format\n\n## Known pitfalls\n- Never a per-brand parser (always the generic Jina + LLM route)\n- Milwaukee: specs sit behind the SKU dropdown\n',
-
-  // — Audit log: filters and columns —————————————————————————————————
+  // — Journal d'audit : filtres et colonnes ——————————————————————————
   'au.who': 'Who',
   'au.whoAll': 'Who: everyone',
   'au.module': 'Module',
@@ -4777,8 +4684,7 @@ export const en: Record<TranslationKey, string> = {
   'au.noAction': 'No action.',
   'au.before': 'Before:',
   'au.after': 'After:',
-
-  // — Audit log: action labels —
+  // — Journal d'audit : libellés d'actions —
   'aud.auth.login': 'Sign-in',
   'aud.access.role.assign': 'Role assigned',
   'aud.access.role.remove': 'Role removed',
@@ -4826,6 +4732,117 @@ export const en: Record<TranslationKey, string> = {
   'aud.i18n.label.reset': 'Label restored',
   'aud.i18n.label.translate': 'Label translated',
   'aud.i18n.locale.toggle': 'Language turned on / off',
+  // — Templates de scraping ————————————————————————————————————————
+  'st.card.fields.one': '{count} field',
+  'st.card.fields.many': '{count} fields',
+  'st.card.groups.one': '{count} group',
+  'st.card.groups.many': '{count} groups',
+  'st.clone': 'Clone',
+  'st.delete': 'Delete',
+  'st.addGroup': 'Add a group',
+  'st.loadingVendorFields': 'Loading vendor fields…',
+  'st.title': 'Scraping templates',
+  'st.count': '{count} template(s)',
+  'st.backToDashboard': 'Back to dashboard',
+  'st.tab.visual': 'Point & click',
+  'st.tab.advanced': 'Advanced (JSON)',
+  'st.import': 'Import',
+  'st.exportJson': 'Export JSON',
+  'st.save': 'Save',
+  'st.field.name': 'Template name',
+  'st.field.domain': 'Vendor domain (e.g. fr.milwaukeetool.eu)',
+  'st.field.urlPattern': 'URL pattern (regex, e.g. /fr-fr/.*perceuse.*$)',
+  'st.fields': 'Fields',
+  'st.other': 'Other',
+  'st.noField': 'No field — add one using the buttons above.',
+  'st.pasteHtml': 'Or paste HTML directly',
+  'st.globalInstructions': 'Global scraping instructions',
+  'st.vendorPromptFor': 'Vendor prompt — propagated to all templates of',
+  'st.noDomain': '(no domain)',
+  'st.clear': 'Clear',
+  'st.clearAll': 'Clear all',
+  'st.capturedFields': 'Captured fields ({count})',
+  'st.load': 'Load',
+  'st.captureOn': 'Enable capture (double-click)',
+  'st.captureOff': 'Stop capture',
+  'st.hideHighlights': 'Hide highlights',
+  'st.showHighlights': 'Show highlights',
+  'st.hideTags': 'Hide tags',
+  'st.showTags': 'Show tags',
+  'st.enterUrlHint': 'Enter a URL and click Load to display the source page',
+  'st.fieldPrompt.edit': 'Scraping instructions (edit)',
+  'st.fieldPrompt.add': 'Add scraping instructions',
+  'st.removeField': 'Remove this field',
+  'st.openInChrome': 'Open URL in a Chrome tab and enable capture',
+  // — Finances ————————————————————————————————————————————————————
+  'fin.title': 'Finances',
+  'fin.lead': 'Actual tracking of costs and tokens by connector — {month}. Costs are aggregated by connector and by month across the app (cannot be linked to a specific module).',
+  'fin.tile.total': 'Total cost · {month}',
+  'fin.tile.totalSub': 'LLM {llm} · Scraping {scraping}',
+  'fin.tile.tokens': 'LLM tokens',
+  'fin.tile.tokensSub': 'input + output this month',
+  'fin.tile.scraping': 'Scraping',
+  'fin.tile.remaining': 'Remaining budget',
+  'fin.tile.remainingSub': 'on {count} capped connector(s)',
+  'fin.tile.noCap': 'no cap defined',
+  'fin.billing.title': 'Provider billing',
+  'fin.billing.open': 'Open {provider} billing (new tab)',
+  // — Catalogue : panneau « Fond de page » ————————————————————————
+  'cat.logo.load': 'Load',
+  'cat.logo.aiEmblem': 'AI Emblem',
+  'cat.logo.title': 'Brand logo',
+  'cat.logo.namePh': 'Brand name (e.g. Distriland)',
+  'cat.logo.upload': 'Upload your logo (PNG/SVG)',
+  'cat.logo.onCover': 'On the cover',
+  'cat.logo.onHeader': 'In the page header',
+  'cat.logo.size': 'Size',
+  'cat.saving': 'Saving…',
+  'cat.saved': 'Saved',
+  'cat.rail.opener': 'Opening {label}',
+  'cat.rail.products': 'Products',
+  'cat.rail.pages': '{label} · {count} p.',
+  'cat.rail.cards.one': '{label} · {count} card',
+  'cat.rail.cards.many': '{label} · {count} cards',
+  'cat.preview.pageOf': 'page {current} / {total}',
+  'cat.preview.continue': 'Continue → Export',
+  'cat.preview.toggleOptions': 'Show/hide page background options',
+  'cat.preview.nextPage': 'Next page',
+  'cat.page.background': 'Page background',
+  'cat.page.kind.cover': 'Cover',
+  'cat.page.kind.toc': 'Table of contents',
+  'cat.page.kind.opener': 'Category opener',
+  'cat.page.kind.products': 'Products page',
+  'cat.page.kind.backCover': 'Back cover',
+  'cat.page.texts': 'Texts',
+  'cat.page.titlePh': 'Title',
+  'cat.page.subtitlePh': 'Subtitle',
+  'cat.page.baselinePh': 'Banner (baseline)',
+  'cat.page.backTextPh': 'Text (contact, legal…)',
+  'cat.page.baselineBand': 'Baseline banner',
+  'cat.page.subtitle': 'Subtitle',
+  'cat.page.accentRule': 'Accent rule',
+  'cat.page.sizesVisual': 'Sizes & visual',
+  'cat.page.sizes': 'Sizes',
+  'cat.page.titles': 'Titles',
+  'cat.page.darkening': 'Visual darkening',
+  'cat.page.aiVisual': 'AI visual',
+  'cat.page.visualPrompt': 'Visual prompt',
+  'cat.page.generateVisual': 'Generate visual',
+  'cat.page.visualAlt': 'Visual',
+  'cat.page.footer': 'Footer',
+  'cat.page.show': 'Show',
+  'cat.page.catalogName': 'Catalogue name',
+  'cat.page.folio': 'Folio',
+  'cat.page.xxlNumber': 'XXL number',
+  'cat.page.chapterChip': 'Chapter chip',
+  'cat.page.productCounter': 'Product counter',
+  'cat.page.familiesPanel': 'Families panel',
+  'cat.page.titleAndNumber': 'Title & number',
+  'cat.page.tocTitle': 'Table of contents title',
+  // — Veille tarifaire · Démo express ————————————————————————————
+  'pw.truncated': '{count} matched products — details are limited to the 1000 lowest ranked. Distributions/heatmap/scatter apply to this sample (the exhaustive list is in the Excel export).',
+  'de.volume.items': '{count} products',
+  'de.volume.exactly': 'or exactly',
   'au.refresh': 'Refresh',
   'ac.seenPrefix': 'seen',
 }

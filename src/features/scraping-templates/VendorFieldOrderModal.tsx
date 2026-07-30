@@ -121,7 +121,7 @@ export function VendorFieldOrderModal({ matchedTemplate, enriched, onClose, onSa
           {loading ? (
             <div className="flex items-center justify-center py-10 gap-2 text-white/50 text-[11px]">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Chargement des champs du fournisseur…
+              {t('st.loadingVendorFields')}
             </div>
           ) : rows.length === 0 ? (
             <p className="text-[11px] text-white/40 italic py-6 text-center">

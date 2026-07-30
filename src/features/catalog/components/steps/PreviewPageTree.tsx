@@ -31,11 +31,11 @@ function buildEntries(pages: CatalogPageDescriptor[]): Entry[] {
 
 function rootLabel(p: CatalogPageDescriptor): string {
   switch (p.kind) {
-    case 'cover': return 'Couverture'
-    case 'toc': return 'Sommaire'
-    case 'back-cover': return '4e de couverture'
-    case 'opener': return `Ouverture ${p.label}`
-    case 'products': return 'Produits'
+    case 'cover': return t('cat.page.kind.cover')
+    case 'toc': return t('cat.page.kind.toc')
+    case 'back-cover': return t('cat.page.kind.backCover')
+    case 'opener': return t('cat.rail.opener', { label: p.label })
+    case 'products': return t('cat.rail.products')
   }
 }
 
@@ -81,7 +81,7 @@ export function PreviewPageTree({ pages, current, onSelect }: Props) {
                 {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
               <div className="flex-1 min-w-0">
-                {pageBtn(e.openerIdx, `${opener.label} · ${e.children.length} p.`, { strong: true })}
+                {pageBtn(e.openerIdx, t('cat.rail.pages', { label: opener.label, count: e.children.length }), { strong: true })}
               </div>
             </div>
             {!isCollapsed && (
@@ -90,7 +90,11 @@ export function PreviewPageTree({ pages, current, onSelect }: Props) {
                   const p = pages[idx]
                   if (p.kind !== 'products') return null
                   const famille = p.breadcrumb[p.breadcrumb.length - 1] ?? opener.label
-                  return pageBtn(idx, `${famille} · ${p.slots.length} fiche${p.slots.length > 1 ? 's' : ''}`,
+                  // ⚠️ Deux clés, jamais un « s » recollé : la règle de pluriel du
+                  // français ne survit pas à la traduction (cf. i18n.test.ts).
+                  return pageBtn(idx, p.slots.length > 1
+                    ? t('cat.rail.cards.many', { label: famille, count: p.slots.length })
+                    : t('cat.rail.cards.one', { label: famille, count: p.slots.length }),
                     { star: p.slots.some((s) => s.featured) })
                 })}
               </div>

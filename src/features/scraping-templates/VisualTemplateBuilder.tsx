@@ -232,14 +232,14 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
       <div className="p-3 bg-black/40 border border-white/10 rounded-lg">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">
-            Champs capturés ({template.fields.length})
+            {t('st.capturedFields', { count: template.fields.length })}
             {template.specGroups.length > 0 && ` · ${template.specGroups.length} groupe(s) de specs`}
           </span>
           {template.fields.length > 0 && (
             <button
               onClick={() => onChange({ ...template, fields: [], specGroups: [], updatedAt: Date.now() })}
               className="text-[10px] text-red-400/70 hover:text-red-400"
-            >Tout effacer</button>
+            >{t('st.clearAll')}</button>
           )}
         </div>
         {template.fields.length === 0 ? (
@@ -292,7 +292,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
               setCaptureMode('single')
             }}
             className="px-3 py-2 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-400/40 text-xs inline-flex items-center gap-2"
-            title="Ouvrir l'URL dans un onglet Chrome et activer la capture"
+            title={t('st.openInChrome')}
           >
             <Chrome className="w-3.5 h-3.5" />
             Ouvrir dans Chrome & tagger
@@ -304,7 +304,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
           className="px-3 py-2 rounded bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30 border border-indigo-400/30 text-xs inline-flex items-center gap-2"
         >
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
-          Charger
+          {t('st.load')}
         </button>
         {rewrittenHtml && (
           <>
@@ -318,12 +318,12 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
               }`}
             >
               <MousePointer className="w-3.5 h-3.5" />
-              {captureMode === 'off' ? 'Activer capture (double-clic)' : 'Arrêter capture'}
+              {captureMode === 'off' ? t('st.captureOn') : t('st.captureOff')}
             </button>
             <div className="h-6 w-px bg-white/10" />
             <button
               onClick={() => setShowAllTags((s) => !s)}
-              title={showAllTags ? 'Masquer les surbrillances' : 'Afficher les surbrillances'}
+              title={showAllTags ? t('st.hideHighlights') : t('st.showHighlights')}
               className={`px-3 py-2 rounded text-xs inline-flex items-center gap-2 border ${
                 showAllTags
                   ? 'bg-white/5 text-white/80 border-white/10 hover:bg-white/10'
@@ -331,7 +331,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
-              {showAllTags ? 'Masquer tags' : 'Afficher tags'}
+              {showAllTags ? t('st.hideTags') : t('st.showTags')}
             </button>
           </>
         )}
@@ -372,7 +372,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
           />
         ) : (
           <div className="h-[500px] flex items-center justify-center text-white/40 text-sm">
-            Saisis une URL et clique sur Charger pour afficher la page source
+            {t('st.enterUrlHint')}
           </div>
         )}
       </div>
@@ -450,7 +450,7 @@ function SortableFieldRow({
         <button
           onClick={togglePrompt}
           className={`shrink-0 transition-colors ${hasPrompt ? 'text-amber-400/70 hover:text-amber-300' : 'text-white/20 hover:text-white/50'}`}
-          title={hasPrompt ? 'Instructions de scraping (modifier)' : 'Ajouter des instructions de scraping'}
+          title={hasPrompt ? t('st.fieldPrompt.edit') : t('st.fieldPrompt.add')}
         >
           <MessageSquare className="w-3 h-3" />
         </button>
@@ -458,7 +458,7 @@ function SortableFieldRow({
         <button
           onClick={(e) => { e.stopPropagation(); onRemove() }}
           className="text-red-400/60 hover:text-red-400 shrink-0"
-          title="Supprimer ce champ"
+          title={t('st.removeField')}
         ><X className="w-3 h-3" /></button>
       </div>
       {promptOpen && (
@@ -483,7 +483,7 @@ function SortableFieldRow({
                 <button
                   onClick={() => { setDraft(''); onUpdatePrompt(undefined) }}
                   className="text-[9px] text-red-400/60 hover:text-red-400"
-                >Effacer</button>
+                >{t('st.clear')}</button>
               )}
             </div>
           </div>

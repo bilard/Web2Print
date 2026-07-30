@@ -99,7 +99,7 @@ export default function CatalogBuilderPage() {
         </button>
         <input value={s.name} onChange={(e) => s.setName(e.target.value)}
           className="bg-transparent text-base font-semibold outline-none focus:bg-surface-2 rounded px-2 py-1 flex-1 max-w-md" />
-        <span className="text-xs text-muted-foreground">{saving ? 'Enregistrement…' : 'Enregistré'}</span>
+        <span className="text-xs text-muted-foreground">{saving ? t('cat.saving') : t('cat.saved')}</span>
       </header>
       <CatalogStepsNav step={s.step} onStep={s.setStep} canLeave={s.rawRows.length > 0} />
       <main className="flex-1 min-h-0 overflow-hidden">

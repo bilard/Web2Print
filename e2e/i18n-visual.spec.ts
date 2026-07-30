@@ -133,19 +133,40 @@ async function visibleTexts(page: Page): Promise<string[]> {
 const FRENCH_WORDS =
   'le|la|les|des|une|aucun|aucune|dans|pour|avec|vous|votre|sur|est|sont|par|selon|puis|tous|toutes|origine|paysage|corbeille|suivis|fournisseurs|utilisateurs|journal|galerie|enregistrer|supprimer|ajouter|modifier|nouveau|nouvelle|rechercher|parcourir|fermer|ouvrir|annuler|valider|suivant|precedent|terminer|champs|colonne|fichier|dossier|taille|largeur|hauteur|couleur|police|ombre|calques|remise|apercu|reglages|analyser|importer|exporter|creer|charger|essayer|revenir'
 
+/**
+ * Frontière de mot qui tient compte des ACCENTS.
+ *
+ * ⚠️ `\b` de JavaScript s'arrête à `[A-Za-z0-9_]` : « á » n'y est pas, donc
+ * `\best\b` matche l'espagnol « está ». Vécu sur le premier rapport ES. On
+ * encadre donc par des assertions sur `\p{L}` (flag `u` obligatoire).
+ */
+const word = (alternation: string) => new RegExp(`(?<!\\p{L})(${alternation})(?!\\p{L})`, 'iu')
+
 /** Signature de français : accent OU mot-outil français fréquent. */
-const FRENCH = new RegExp(`[àâäéèêëîïôöùûüÿçÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇ]|\\b(${FRENCH_WORDS})\\b`, 'i')
+const FRENCH = new RegExp(
+  `[àâäéèêëîïôöùûüÿçÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇ]|${word(FRENCH_WORDS).source}`,
+  'iu',
+)
 
 /**
- * Même relevé pour l'ESPAGNOL, mais SANS les accents partagés.
+ * Même relevé pour l'ESPAGNOL, mais SANS les accents ni les mots partagés.
  *
- * ⚠️ `é`, `ó`, `í`, `ü` sont parfaitement espagnols (« También », « Diseño ») :
- * les garder ferait crier le rapport sur chaque écran correctement traduit, et
- * un rapport qui crie partout ne se lit plus. On ne retient donc que les signes
- * SANS existence en espagnol — plus les mots-outils, qui suffisent à repérer un
- * bloc resté en français.
+ * ⚠️ Deux corrections apprises sur le premier rapport, qui comptait ~90 % de
+ * bruit :
+ *  - `é`, `ó`, `í`, `ü` sont parfaitement espagnols (« También », « Diseño ») ;
+ *  - `le` et `la` aussi (« la demo », « le entrega ») — à eux seuls, ils
+ *    faisaient remonter presque toutes les phrases correctement traduites.
+ * `par` (« un par de… ») et `sur` (le sud) tombent pour la même raison. Un
+ * rapport qui crie partout ne se lit plus : c'est ce qui a failli masquer les
+ * six vrais résidus français que cette passe a trouvés.
  */
-const FRENCH_IN_ES = new RegExp(`[àâäèêëîïôùûÿçÀÂÄÈÊËÎÏÔÙÛŸÇœŒ]|\\b(${FRENCH_WORDS})\\b`, 'i')
+const FRENCH_WORDS_ES = FRENCH_WORDS.split('|')
+  .filter((w) => !['le', 'la', 'par', 'sur'].includes(w))
+  .join('|')
+const FRENCH_IN_ES = new RegExp(
+  `[àâäèêëîïôùûÿçÀÂÄÈÊËÎÏÔÙÛŸÇœŒ]|${word(FRENCH_WORDS_ES).source}`,
+  'iu',
+)
 /** Mojibake : UTF-8 relu en latin-1. */
 const MOJIBAKE = /Ã[-¿]|Â[«»·°]|â€[-¿]/
 
