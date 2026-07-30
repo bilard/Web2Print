@@ -100,7 +100,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     },
     {
       name: 'pageBudget', kind: 'number', label: 'Pages par run',
-      help: 'Pages liste moissonnées à chaque exécution, partagées entre les sites. Un site peut RÉSERVER son propre budget (champ « pages » de sa carte dans « Sites sources ») — utile pour brider un concurrent payant sans rationner les gratuits. ⚠ C\'est LE plafond du débit. Sur un run PLANIFIÉ (cron), la fenêtre de temps borne désormais la passe d\'elle-même : ce champ n\'est plus qu\'un plafond de sécurité, voyez large. Sur un run lancé depuis le navigateur, il n\'y a pas d\'échéance — c\'est lui qui décide de la durée.',
+      helpKey: 'node.harvest-competitor.pageBudget.help',
     },
     {
       name: 'watchId', kind: 'text', labelKey: 'node.harvest-competitor.watchId.label',

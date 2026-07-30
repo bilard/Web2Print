@@ -1528,6 +1528,19 @@ export const fr = {
   // ⚠️ Schéma de clé DESCRIPTIF (`node.<type>.<champ>.label|help`). Les anciennes
   // clés `node.<type>.fN` restent en place — renuméroter aurait été risqué pour
   // zéro gain. Toute clé AJOUTÉE suit le schéma descriptif : opaque = collisions.
+  'node.compare-catalog.urlColumn.help': 'Lien de la fiche produit sur VOTRE site — rend le nom cliquable dans le tableau pour vérifier le prix. Optionnel.',
+  'node.compare-catalog.watchId.help': 'Laisse VIDE : le suivi est automatiquement celui du workflow (le même que « Moisson concurrents » du workflow). Ne remplis que pour partager un suivi entre plusieurs workflows.',
+  'node.compare-prices.noSource.help': 'Mode « famille » : branche toutes les enseignes sur « concurrents ». 1 ligne par produit, 1 colonne prix par enseigne, meilleur prix + écart.',
+  'node.cron.afterEnd.help': "Idéal pour un scraping qui avance par tranches : le prochain run part « Tous les X » APRÈS la fin du précédent, sans cadence fixe — ni chevauchement, ni temps mort. L'heure et le jour ci-dessous sont ignorés dans ce mode.",
+  'node.directed-search.genericSites.help': 'Amazon, Cdiscount, Kramp… : recherche web par réf + Firecrawl (rendu JS + anti-bot). Nécessite une clé Firecrawl. Coût par réf — commence par 1 site pour valider.',
+  'node.directed-search.descriptionColumn.help': 'Ex : TEXT_VENTE_FR. DÉCISIF sur un catalogue de pièces adaptables : si ta référence article est un code INTERNE, aucun concurrent ne la porte — seules les réf. d’origine citées ici (« Origine: … ») permettent de trouver le produit.',
+  'node.directed-search.productBudget.help': 'Nombre de produits testés par exécution. Chacun est cherché sur tous les sites. Les produits sont désormais traités 3 de front : ce budget tient dans le même temps qu’un tiers de sa valeur auparavant. ⚠ C’est LE plafond du débit — à 20/run, un catalogue de 75 000 réf. demande ~29 jours pour un seul tour.',
+  'node.directed-search.watchId.help': 'Laisse VIDE : le suivi est celui du workflow (partagé avec « Comparer catalogue » du même workflow — les prix trouvés remontent alors dans le dashboard).',
+  'node.harvest-competitor.pageBudget.help': "Pages liste moissonnées à chaque exécution, partagées entre les sites. Un site peut RÉSERVER son propre budget (champ « pages » de sa carte dans « Sites sources ») — utile pour brider un concurrent payant sans rationner les gratuits. ⚠ C'est LE plafond du débit. Sur un run PLANIFIÉ (cron), la fenêtre de temps borne désormais la passe d'elle-même : ce champ n'est plus qu'un plafond de sécurité, voyez large. Sur un run lancé depuis le navigateur, il n'y a pas d'échéance — c'est lui qui décide de la durée.",
+  'node.save-pim.sourceId.help': "ID de la source. Si elle n'existe pas dans le projet, les produits seront créés mais invisibles dans la liste des sources (à corriger en phase 2).",
+  'node.price-watch.thresholdPct.label': 'Seuil de variation (%)',
+  'node.price-watch.thresholdPct.help': '0 = signaler tout changement.',
+  'node.price-watch.watchId.help': "L'état (derniers prix vus) est mémorisé par identifiant — un suivi par liste surveillée.",
   'node.price-watch.watchId.label': 'Identifiant du suivi',
   'node.price-watch.keyColumn.label': 'Colonne clé',
   'node.price-watch.keyColumn.help': 'Identifie chaque produit entre deux runs (url, sku, ean…).',

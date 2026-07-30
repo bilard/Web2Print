@@ -96,10 +96,10 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     { name: 'familyColumn', kind: 'columnRef', label: 'Colonne Famille' },
     { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Mon prix (HT)' },
     { name: 'descriptionColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.descriptionColumn.label', helpKey: 'node.compare-catalog.descriptionColumn.help' },
-    { name: 'urlColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.urlColumn.label', help: 'Lien de la fiche produit sur VOTRE site — rend le nom cliquable dans le tableau pour vérifier le prix. Optionnel.' },
+    { name: 'urlColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.urlColumn.label', helpKey: 'node.compare-catalog.urlColumn.help' },
     { name: 'vatRate', kind: 'number', labelKey: 'node.compare-catalog.vatRate.label', helpKey: 'node.compare-catalog.vatRate.help' },
     {
-      name: 'watchId', kind: 'text', labelKey: 'node.compare-catalog.watchId.label', help: 'Laisse VIDE : le suivi est automatiquement celui du workflow (le même que « Moisson concurrents » du workflow). Ne remplis que pour partager un suivi entre plusieurs workflows.',
+      name: 'watchId', kind: 'text', labelKey: 'node.compare-catalog.watchId.label', helpKey: 'node.compare-catalog.watchId.help',
       disabledWhen: (_c, wired) => wired('sites'),
       disabledNoteKey: 'node.compare-catalog.f3',
     },

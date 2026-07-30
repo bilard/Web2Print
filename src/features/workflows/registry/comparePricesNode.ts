@@ -410,7 +410,7 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
     { name: 'siteColumn', kind: 'columnRef', label: 'Colonne Site', default: 'site', help: 'Identifie source et concurrents.' },
     { name: 'brandColumn', kind: 'columnRef', labelKey: 'node.compare-prices.brandColumn.label', default: 'brand', helpKey: 'node.compare-prices.brandColumn.help' },
     { name: 'originalColumn', kind: 'columnRef', labelKey: 'node.compare-prices.originalColumn.label', default: 'originalPrice', helpKey: 'node.compare-prices.originalColumn.help' },
-    { name: 'noSource', kind: 'checkbox', labelKey: 'node.compare-prices.noSource.label', default: false, help: 'Mode « famille » : branche toutes les enseignes sur « concurrents ». 1 ligne par produit, 1 colonne prix par enseigne, meilleur prix + écart.' },
+    { name: 'noSource', kind: 'checkbox', labelKey: 'node.compare-prices.noSource.label', default: false, helpKey: 'node.compare-prices.noSource.help' },
     { name: 'onlyMatched', kind: 'checkbox', labelKey: 'node.compare-prices.onlyMatched.label', default: false },
   ],
   defaultConfig: {

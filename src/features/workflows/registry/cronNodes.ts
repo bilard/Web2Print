@@ -40,7 +40,7 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
       name: 'afterCompletion',
       kind: 'checkbox',
       labelKey: 'node.cron.f1',
-      help: 'Idéal pour un scraping qui avance par tranches : le prochain run part « Tous les X » APRÈS la fin du précédent, sans cadence fixe — ni chevauchement, ni temps mort. L\'heure et le jour ci-dessous sont ignorés dans ce mode.',
+      helpKey: 'node.cron.afterEnd.help',
     },
     {
       name: 'atTime',

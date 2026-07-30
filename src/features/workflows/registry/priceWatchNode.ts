@@ -93,10 +93,10 @@ const priceWatchNode: NodeSpec<
     { name: 'all', type: 'sheet' },
   ],
   configSchema: [
-    { name: 'watchId', kind: 'text', labelKey: 'node.price-watch.watchId.label', help: "L'état (derniers prix vus) est mémorisé par identifiant — un suivi par liste surveillée." },
+    { name: 'watchId', kind: 'text', labelKey: 'node.price-watch.watchId.label', helpKey: 'node.price-watch.watchId.help' },
     { name: 'keyColumn', kind: 'columnRef', labelKey: 'node.price-watch.keyColumn.label', helpKey: 'node.price-watch.keyColumn.help' },
     { name: 'valueColumn', kind: 'columnRef', labelKey: 'node.price-watch.valueColumn.label', helpKey: 'node.price-watch.valueColumn.help' },
-    { name: 'thresholdPct', kind: 'number', label: 'Seuil de variation (%)', help: '0 = signaler tout changement.' },
+    { name: 'thresholdPct', kind: 'number', labelKey: 'node.price-watch.thresholdPct.label', helpKey: 'node.price-watch.thresholdPct.help' },
   ],
   defaultConfig: { watchId: 'veille-1', keyColumn: 'url', valueColumn: 'price', thresholdPct: 0 },
   runtime: 'client',

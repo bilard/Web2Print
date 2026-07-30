@@ -42,7 +42,7 @@ const savePimNode: NodeSpec<
       labelKey: 'node.save-pim.f3',
       required: true,
       default: 'workflow-import',
-      help: 'ID de la source. Si elle n\'existe pas dans le projet, les produits seront créés mais invisibles dans la liste des sources (à corriger en phase 2).',
+      helpKey: 'node.save-pim.sourceId.help',
     },
   ],
   defaultConfig: { projectId: '', sourceId: 'workflow-import' },
