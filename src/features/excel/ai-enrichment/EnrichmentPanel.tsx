@@ -157,7 +157,7 @@ export function EnrichmentPanel({ input }: Props) {
               <Sparkles className="w-3 h-3 text-indigo-300" />
             </div>
             <span className="text-[11px] font-semibold text-white/80 uppercase tracking-wider shrink-0">
-              Scrapé par IA
+              {t('xl.enr.scrapedByAi')}
             </span>
           </div>
           {isDone && (
@@ -165,7 +165,7 @@ export function EnrichmentPanel({ input }: Props) {
               {llmMeta && (
                 <div className="flex items-center gap-1.5">
                   <span className="text-[9px] font-semibold text-white/35 uppercase tracking-wider shrink-0">
-                    Modèle
+                    {t('xl.enr.model')}
                   </span>
                   <span
                     className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium tracking-normal border ${
@@ -194,7 +194,7 @@ export function EnrichmentPanel({ input }: Props) {
                 {saved ? (
                   <>
                     <Check className="w-3 h-3" />
-                    Sauvegardé
+                    {t('xl.enr.saved')}
                   </>
                 ) : saving ? (
                   <>
@@ -376,7 +376,7 @@ function RegenerateMenu({ onRedo, onForceUrl, matchedTemplate }: { onRedo: (mode
         className="inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-white/80 transition-colors px-2 py-1 rounded-md hover:bg-white/5"
       >
         <RefreshCw className="w-3 h-3" />
-        Re-générer
+        {t('xl.enr.regenerate')}
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
@@ -445,7 +445,7 @@ function IdleState({ onLaunch, canSearch, input, matchedTemplate }: { onLaunch: 
       </div>
       <h3 className="text-[13px] font-semibold text-white/80 mb-2">Enrichissement en live</h3>
       <p className="text-[11px] text-white/40 leading-relaxed max-w-[280px] mb-5">
-        Génère une fiche produit complète depuis les données source.
+        {t('xl.enr.intro')}
         {matchedTemplate ? (
           <span className="block mt-2 text-emerald-300/80">
             📐 Template <b>{matchedTemplate.name}</b> disponible pour ce fournisseur.
@@ -486,7 +486,7 @@ function IdleState({ onLaunch, canSearch, input, matchedTemplate }: { onLaunch: 
       </div>
       {!canSearch && (
         <p className="text-[10px] text-amber-400/80 mt-3">
-          Il faut au moins un titre, une référence/SKU ou une marque pour lancer la recherche.
+          {t('xl.enr.needIdentity')}
         </p>
       )}
     </div>
@@ -646,7 +646,7 @@ function ErrorState({ error, onRetry, onRetryWithUrl }: {
         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/[0.06] border border-white/[0.12] text-white/80 text-[11px] font-medium hover:bg-white/[0.1] transition-colors"
       >
         <RefreshCw className="w-3 h-3" />
-        Réessayer
+        {t('xl.enr.retry')}
       </button>
     </div>
   )
@@ -785,7 +785,7 @@ function DoneState({
                   <p className="text-red-300/70 leading-relaxed">
                     {sourceHost && <strong className="text-red-300">{sourceHost}</strong>}{sourceHost && ' '}
                     utilise une protection anti-bot que ni Jina ni Firecrawl basic n'arrivent à passer (toutes les sources renvoient une page CAPTCHA).
-                    Aucune donnée fiable n'est extraite — pas d'hallucination IA.
+                    {t('xl.enr.noHallucination')}
                   </p>
                   {brandSuggestion ? (
                     <div className="flex items-center gap-2 pt-1">
@@ -804,7 +804,7 @@ function DoneState({
                     </div>
                   ) : (
                     <p className="text-[10.5px] text-red-300/60 italic">
-                      Solution : retrouve la fiche sur le site officiel de la marque (pas d'anti-bot, données complètes).
+                      {t('xl.enr.antibotFix')}
                     </p>
                   )}
                 </div>
@@ -921,7 +921,7 @@ function DoneState({
             <div key="specifications" id={sectionAnchor('specifications')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">
-                  Spécifications clés
+                  {t('xl.enr.keySpecs')}
                 </p>
                 <button
                   onClick={() => onUpdate({ specifications: [...data.specifications, { name: '', value: '' }] })}
@@ -1139,7 +1139,7 @@ function LlmRequestPanel({ request }: { request: LlmRequestInfo }) {
       >
         <Code2 className="w-3 h-3 text-violet-400/70 shrink-0" />
         <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider flex-1 text-left">
-          Requête LLM — prompt & paramètres
+          {t('xl.enr.llmRequest')}
         </p>
         <span className="text-[9px] font-mono text-white/35 px-1.5 py-0.5 rounded bg-white/[0.03] border border-white/[0.06]">
           {request.model}
@@ -1179,7 +1179,7 @@ function LlmRequestPanel({ request }: { request: LlmRequestInfo }) {
               {copied === copyKey ? (
                 <>
                   <Check className="w-3 h-3 text-emerald-400" />
-                  Copié
+                  {t('xl.enr.copied')}
                 </>
               ) : (
                 <>
@@ -1541,10 +1541,10 @@ function VariantTable({ variants }: { variants: EnrichedProduct['variants'] }) {
               <th className="w-6 px-1 py-2" />
             )}
             <th className="px-2.5 py-2 text-left text-[9px] font-bold text-white/40 uppercase tracking-wider whitespace-nowrap">
-              Réf.
+              {t('xl.enr.ref')}
             </th>
             <th className="px-2.5 py-2 text-left text-[9px] font-bold text-white/40 uppercase tracking-wider">
-              Libellé
+              {t('xl.enr.label')}
             </th>
             {displayTableKeys.map(k => (
               <th key={k} className="px-2.5 py-2 text-left text-[9px] font-bold text-white/40 uppercase tracking-wider whitespace-nowrap">

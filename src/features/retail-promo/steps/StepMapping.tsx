@@ -1,25 +1,25 @@
 import { useRetailPromoStore } from '../retailPromo.store'
 import type { PromoFieldKey } from '../promoTypes'
 import { CustomFieldsEditor } from '../components/CustomFieldsEditor'
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
-const FIELD_LABELS: Array<{ key: PromoFieldKey; label: string }> = [
-  { key: 'name', label: 'Nom produit' },
-  { key: 'image', label: 'Image' },
-  { key: 'brand', label: 'Marque' },
-  { key: 'ref', label: 'Référence / SKU' },
-  { key: 'ean', label: 'EAN / Code-barres' },
-  { key: 'newPrice', label: 'Prix promo' },
-  { key: 'oldPrice', label: 'Prix barré' },
-  { key: 'unitPrice', label: 'Prix unitaire' },
-  { key: 'unit', label: 'Unité (ex: /kg)' },
-  { key: 'description', label: 'Description' },
-  { key: 'category', label: 'Catégorie' },
-  { key: 'promoLabel', label: 'Mécanique promo' },
-  { key: 'validFrom', label: 'Date début' },
-  { key: 'validTo', label: 'Date fin' },
-  { key: 'mentions', label: 'Mentions légales' },
-  { key: 'enseigne', label: 'Enseigne / Magasin' },
+const FIELD_LABELS: Array<{ key: PromoFieldKey; labelKey: TranslationKey }> = [
+  { key: 'name', labelKey: 'rp.map.name' },
+  { key: 'image', labelKey: 'rp.map.image' },
+  { key: 'brand', labelKey: 'rp.map.brand' },
+  { key: 'ref', labelKey: 'rp.map.ref' },
+  { key: 'ean', labelKey: 'rp.map.ean' },
+  { key: 'newPrice', labelKey: 'rp.map.newPrice' },
+  { key: 'oldPrice', labelKey: 'rp.map.oldPrice' },
+  { key: 'unitPrice', labelKey: 'rp.map.unitPrice' },
+  { key: 'unit', labelKey: 'rp.map.unit' },
+  { key: 'description', labelKey: 'rp.map.description' },
+  { key: 'category', labelKey: 'rp.map.category' },
+  { key: 'promoLabel', labelKey: 'rp.map.promoLabel' },
+  { key: 'validFrom', labelKey: 'rp.map.validFrom' },
+  { key: 'validTo', labelKey: 'rp.map.validTo' },
+  { key: 'mentions', labelKey: 'rp.map.mentions' },
+  { key: 'enseigne', labelKey: 'rp.map.enseigne' },
 ]
 
 export function StepMapping() {
@@ -38,9 +38,9 @@ export function StepMapping() {
       </p>
 
       <div className="flex flex-col gap-2">
-        {FIELD_LABELS.map(({ key, label }) => (
+        {FIELD_LABELS.map(({ key, labelKey }) => (
           <div key={key} className="flex items-center gap-3">
-            <span className="w-36 text-sm text-white/70 shrink-0">{label}</span>
+            <span className="w-36 text-sm text-white/70 shrink-0">{t(labelKey)}</span>
             <select
               value={fieldMap[key] ?? ''}
               onChange={(e) => handleChange(key, e.target.value)}

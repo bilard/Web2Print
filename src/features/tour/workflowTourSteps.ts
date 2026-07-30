@@ -17,18 +17,16 @@ import type { TourStep } from './types'
 export const workflowTourSteps: TourStep[] = [
   {
     popover: {
-      title: 'Éditeur de workflow 👋',
-      description:
-        'Automatisez l’enchaînement des modules de l’app, façon Zapier : une source de données → des transformations → un export ou un envoi. « Suivant » pour avancer, « Échap » pour quitter.',
+      titleKey: 'tour.wf.0.title',
+      descriptionKey: 'tour.wf.0.desc',
     },
   },
   {
     element: '[data-tour="wf-name"]',
     requireSelector: '[data-tour="wf-name"]',
     popover: {
-      title: 'Nom & enregistrement',
-      description:
-        'Renommez le workflow ici. L’enregistrement est automatique — l’état « Enregistré / Modifications… » s’affiche juste à droite.',
+      titleKey: 'tour.wf.1.title',
+      descriptionKey: 'tour.wf.1.desc',
       side: 'bottom',
       align: 'start',
     },
@@ -37,9 +35,8 @@ export const workflowTourSteps: TourStep[] = [
     element: '[data-tour="wf-palette"]',
     requireSelector: '[data-tour="wf-palette"]',
     popover: {
-      title: 'Palette de blocs',
-      description:
-        'Tous les blocs disponibles, organisés en étapes (Import → Enrichissement → Transformation → … → Export). Cliquez un bloc pour l’ajouter au centre, ou glissez-le sur le plan.',
+      titleKey: 'tour.wf.2.title',
+      descriptionKey: 'tour.wf.2.desc',
       side: 'right',
       align: 'start',
     },
@@ -48,9 +45,8 @@ export const workflowTourSteps: TourStep[] = [
     element: '[data-tour="wf-step-import"]',
     requireSelector: '[data-tour="wf-step-import"]',
     popover: {
-      title: 'Étape 1 · Import',
-      description:
-        'Le point de départ : d’où viennent les données (PIM, scraping web, fichier, base existante). Le bloc « Planification » déclenche le workflow à intervalle régulier, côté serveur — même app fermée. Les étapes suivantes ne se déverrouillent qu’une fois un bloc d’import posé.',
+      titleKey: 'tour.wf.3.title',
+      descriptionKey: 'tour.wf.3.desc',
       side: 'right',
       align: 'start',
     },
@@ -59,9 +55,8 @@ export const workflowTourSteps: TourStep[] = [
     element: '[data-tour="wf-step-transformation"]',
     requireSelector: '[data-tour="wf-step-transformation"]',
     popover: {
-      title: 'Étape · Transformation',
-      description:
-        'Remodelez les données : filtres, colonnes calculées, et le bloc « Graphique » qui produit un graphe (barres, lignes, camembert) inséré dans vos exports ou Google Sheets.',
+      titleKey: 'tour.wf.4.title',
+      descriptionKey: 'tour.wf.4.desc',
       side: 'right',
       align: 'start',
     },
@@ -70,9 +65,8 @@ export const workflowTourSteps: TourStep[] = [
     element: '[data-tour="wf-step-export"]',
     requireSelector: '[data-tour="wf-step-export"]',
     popover: {
-      title: 'Étape · Export',
-      description:
-        'Produisez le livrable : Excel, PPTX, Google Sheets… et les rapports HTML prêts à envoyer — « Rapport de coûts IA » (consommation par service) et « Fréquentation du site » (visites, pages vues).',
+      titleKey: 'tour.wf.5.title',
+      descriptionKey: 'tour.wf.5.desc',
       side: 'right',
       align: 'start',
     },
@@ -81,9 +75,8 @@ export const workflowTourSteps: TourStep[] = [
     element: '[data-tour="wf-step-communication"]',
     requireSelector: '[data-tour="wf-step-communication"]',
     popover: {
-      title: 'Étape · Communication',
-      description:
-        'Diffusez le résultat : email Gmail (les fichiers produits en amont partent automatiquement en pièces jointes), message Telegram, ou « Webhook / Make » qui POSTe les données vers Make, Zapier, n8n…',
+      titleKey: 'tour.wf.6.title',
+      descriptionKey: 'tour.wf.6.desc',
       side: 'right',
       align: 'start',
     },
@@ -92,9 +85,8 @@ export const workflowTourSteps: TourStep[] = [
     element: '[data-tour="wf-canvas"]',
     requireSelector: '[data-tour="wf-canvas"]',
     popover: {
-      title: 'Plan de montage',
-      description:
-        'Le graphe de votre workflow. Reliez la sortie d’un bloc à l’entrée du suivant en tirant un trait entre les ports ; déplacez et zoomez librement.',
+      titleKey: 'tour.wf.7.title',
+      descriptionKey: 'tour.wf.7.desc',
       side: 'top',
       align: 'center',
     },
@@ -103,9 +95,8 @@ export const workflowTourSteps: TourStep[] = [
     element: '[data-tour="wf-inspector"]',
     requireSelector: '[data-tour="wf-inspector"]',
     popover: {
-      title: 'Configuration du bloc',
-      description:
-        'Sélectionnez un bloc sur le plan pour régler ses paramètres ici. L’onglet « Logs » montre ses sorties après exécution, et la section « Connexions » récapitule ses liens.',
+      titleKey: 'tour.wf.8.title',
+      descriptionKey: 'tour.wf.8.desc',
       side: 'left',
       align: 'start',
     },
@@ -113,9 +104,8 @@ export const workflowTourSteps: TourStep[] = [
   {
     element: '[data-tour="wf-generate-ai"]',
     popover: {
-      title: 'Générer (IA)',
-      description:
-        'Pas envie de tout assembler à la main ? Décrivez l’objectif en langage naturel : l’IA construit le graphe complet (blocs + liens + config) que vous n’avez plus qu’à ajuster.',
+      titleKey: 'tour.wf.9.title',
+      descriptionKey: 'tour.wf.9.desc',
       side: 'bottom',
       align: 'end',
     },
@@ -123,9 +113,8 @@ export const workflowTourSteps: TourStep[] = [
   {
     element: '[data-tour="wf-save-template"]',
     popover: {
-      title: 'Modèle réutilisable',
-      description:
-        'Enregistrez ce montage comme modèle : il apparaîtra dans « Mes modèles » sur la page Workflows pour être réutilisé en un clic sur de nouveaux projets.',
+      titleKey: 'tour.wf.10.title',
+      descriptionKey: 'tour.wf.10.desc',
       side: 'bottom',
       align: 'end',
     },
@@ -133,9 +122,8 @@ export const workflowTourSteps: TourStep[] = [
   {
     element: '[data-tour="wf-run"]',
     popover: {
-      title: 'Exécuter',
-      description:
-        '« Run » lance le workflow de bout en bout (les blocs indépendants tournent en parallèle). « Pas à pas » s’arrête avant chaque bloc pour inspecter ses sorties — idéal pour déboguer. Avec une planification active, un badge « Prochaine · … » propose aussi « Lancer (serveur) » : le run tourne dans le cloud, même app fermée.',
+      titleKey: 'tour.wf.11.title',
+      descriptionKey: 'tour.wf.11.desc',
       side: 'bottom',
       align: 'end',
     },
@@ -144,9 +132,8 @@ export const workflowTourSteps: TourStep[] = [
     element: '[data-tour="wf-run-logs"]',
     requireSelector: '[data-tour="wf-run-logs"]',
     popover: {
-      title: 'Journal d’exécution',
-      description:
-        'Le déroulé de chaque run, bloc par bloc : statut, durée et messages. Cliquez l’en-tête pour replier ou déplier ce panneau.',
+      titleKey: 'tour.wf.12.title',
+      descriptionKey: 'tour.wf.12.desc',
       side: 'top',
       align: 'start',
     },
@@ -154,18 +141,16 @@ export const workflowTourSteps: TourStep[] = [
   {
     element: '[data-tour="wf-results"]',
     popover: {
-      title: 'Écran Résultat',
-      description:
-        'Ouvre une vue dédiée du dernier run : tableau, galerie, graphique ou document, avec export PNG/PDF. Le rendu s’adapte au type de sortie du workflow.',
+      titleKey: 'tour.wf.13.title',
+      descriptionKey: 'tour.wf.13.desc',
       side: 'bottom',
       align: 'end',
     },
   },
   {
     popover: {
-      title: 'C’est tout 🎉',
-      description:
-        'Vous savez monter, configurer et lancer un workflow. Astuce : ⌘K (Ctrl+K) ouvre partout la palette de commandes. Relancez cette visite via le bouton 🧭 en bas à droite.',
+      titleKey: 'tour.wf.14.title',
+      descriptionKey: 'tour.wf.14.desc',
     },
   },
 ]

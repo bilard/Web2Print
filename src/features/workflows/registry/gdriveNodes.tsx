@@ -183,8 +183,8 @@ function DrivePickerUi({ value, onChange, mode, mimeFilter = 'all', emptyLabel }
               type="button"
               onClick={() => onChange({ id: '', name: '', mimeType: '' })}
               className="shrink-0 p-1 rounded text-neutral-500 hover:text-red-400 hover:bg-white/5"
-              aria-label={isFolder ? 'Réinitialiser à la racine' : 'Retirer la sélection'}
-              title={isFolder ? 'Racine "My Drive"' : 'Retirer la sélection'}
+              aria-label={t(isFolder ? 'gd.resetRoot' : 'gd.clearSelection')}
+              title={t(isFolder ? 'gd.rootMyDrive' : 'gd.clearSelection')}
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -408,7 +408,7 @@ function GSheetsExportConfigUi({
     <div className="space-y-3">
       <div>
         <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
-          À chaque exécution
+          {t('gd.everyRun')}
         </label>
         <select
           value={mode}
@@ -425,7 +425,7 @@ function GSheetsExportConfigUi({
       {/* URL/ID toujours visible : c'est lui qui débloque le mode « Mettre à jour ». */}
       <div>
         <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
-          URL ou ID du Google Sheet à réutiliser (optionnel)
+          {t('gd.sheetIdLabel')}
         </label>
         <input
           type="text"
@@ -435,8 +435,7 @@ function GSheetsExportConfigUi({
           placeholder="https://docs.google.com/spreadsheets/d/…"
         />
         <p className="text-[10px] text-neutral-600 leading-snug mt-1">
-          Collez le lien d'un Google Sheets créé par l'app pour réécrire son contenu à chaque
-          exécution. Laissez vide pour créer un nouveau fichier.
+          {t('gd.sheetIdHint')}
         </p>
       </div>
 
@@ -466,8 +465,7 @@ function GSheetsExportConfigUi({
           placeholder={t('node.gsheets-export.folderName.placeholder')}
         />
         <p className="text-[10px] text-neutral-600 leading-snug mt-1">
-          Prioritaire sur le dossier choisi ci-dessus : l'app crée/réutilise un dossier de ce nom.
-          Laisse vide pour utiliser le dossier sélectionné (ou la racine).
+          {t('gd.folderNameHint')}
         </p>
       </div>
       {mode === 'update' && (
@@ -506,7 +504,7 @@ function GSheetsExportConfigUi({
             className="accent-indigo-500"
           />
           <BarChart3 className="w-4 h-4 text-indigo-300" />
-          Insérer un graphique
+          {t('gd.insertChart')}
         </label>
         {config.chartEnabled && (
           <div className="mt-2 space-y-2 pl-1">
@@ -868,7 +866,7 @@ function SaveDamConfigUi({
   return (
     <div className="space-y-1.5">
       <label className="text-[10px] uppercase tracking-wider text-neutral-500 block">
-        Dossier Drive (créé s'il n'existe pas)
+        {t('gd.driveFolderLabel')}
       </label>
       <input
         type="text"

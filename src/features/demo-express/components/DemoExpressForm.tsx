@@ -34,7 +34,7 @@ export function DemoExpressForm({ onLaunch }: Props) {
     <div className="rounded-2xl border border-white/[0.08] bg-surface p-6 space-y-5">
       <div>
         <label htmlFor="demo-company" className="block text-sm font-medium text-white/80 mb-1.5">
-          Société du prospect
+          {t('de.company')}
         </label>
         <input
           id="demo-company"
@@ -57,8 +57,7 @@ export function DemoExpressForm({ onLaunch }: Props) {
           className="w-full rounded-lg bg-well border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-indigo-500"
         />
         <p className="mt-1.5 text-xs text-white/40">
-          L’adresse d’accueil suffit : la démo descend toute seule dans les rayons du site et
-          échantillonne les produits répartis sur ses univers.
+          {t('de.urlHint')}
         </p>
       </div>
       <div>
@@ -94,8 +93,7 @@ export function DemoExpressForm({ onLaunch }: Props) {
           </label>
         </div>
         <p className="mt-1.5 text-xs text-white/40">
-          Plus de produits = démo plus riche mais plus longue (~30 s à 1 min par fiche).
-          Sur un compte démo, les quotas s’appliquent (50 produits, 20 images DAM).
+          {t('de.countHint')}
         </p>
       </div>
       <div>
@@ -111,8 +109,7 @@ export function DemoExpressForm({ onLaunch }: Props) {
           className="w-full rounded-lg bg-well border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-indigo-500 resize-y"
         />
         <p className="mt-1.5 text-xs text-white/40">
-          Pilote le plan créatif du catalogue (mise en page, densité, ambiance, couverture) —
-          la charte du site reste prioritaire pour les couleurs.
+          {t('de.briefHint')}
         </p>
       </div>
       <label className="flex items-start gap-2.5 cursor-pointer">
@@ -125,8 +122,7 @@ export function DemoExpressForm({ onLaunch }: Props) {
         <span className="text-sm text-white/80">
           Une animation HTML par produit
           <span className="block text-xs text-white/40 font-normal mt-0.5">
-            Fiche animée (nom, prix, image, couleurs du site) sauvegardée dans le DAM, onglet
-            « Animations HTML » — sans appel IA, quelques secondes par produit.
+            {t('de.animHint')}
           </span>
         </span>
       </label>
@@ -136,7 +132,7 @@ export function DemoExpressForm({ onLaunch }: Props) {
         className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed px-4 py-2.5 text-sm font-medium text-[#fff] transition-colors"
       >
         <Rocket className="w-4 h-4" aria-hidden="true" />
-        Lancer la démo
+        {t('de.launch')}
       </button>
       <p className="text-xs text-white/40">
         Le pipeline enchaîne : charte du site → découverte produits → enrichissement → images

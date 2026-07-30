@@ -5,7 +5,7 @@
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import { SliderField } from '@/components/shared/panel'
 import type { CardObjectId, CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 interface CardStyleColorsProps {
   style: CatalogCardStyle
@@ -19,7 +19,7 @@ export type ColorKey = 'promoBg' | 'stickerBg' | 'priceBg' | 'wasBg' | 'kickerBg
   | 'promoInk' | 'stickerInk' | 'kickerInk' | 'wasInk' | 'vedetteTxtInk' | 'brandColor' | 'descColor' | 'refColor' | 'unitColor' | 'detailsColor' | 'detailsBg' | 'cardBg'
 type GradKey = 'promoBg2' | 'stickerBg2' | 'priceBg2' | 'wasBg2' | 'kickerBg2' | 'vedetteBg2' | 'vedettePriceBg2'
 
-export interface ColorDef { key: ColorKey; grad?: GradKey; label: string; fallback: string }
+export interface ColorDef { key: ColorKey; grad?: GradKey; labelKey: TranslationKey; fallback: string }
 
 /** Cases couleur de chaque objet de la fiche (fond + texte) — pour le panneau « Bloc sélectionné ». */
 export const OBJ_COLOR_KEYS: Partial<Record<CardObjectId, ColorKey[]>> = {
@@ -37,7 +37,8 @@ export function ColorObjectField({ def, style, patch, highlighted, innerRef }: {
   def: ColorDef; style: CatalogCardStyle; patch: CardStyleColorsProps['patch']
   highlighted?: boolean; innerRef?: (el: HTMLDivElement | null) => void
 }) {
-  const { key, grad, label, fallback } = def
+  const { key, grad, labelKey, fallback } = def
+  const label = t(labelKey)
   const base = style[key]
   const gradValue = grad ? style[grad] : ''
 
@@ -68,31 +69,31 @@ export function ColorObjectField({ def, style, patch, highlighted, innerRef }: {
  *  unique de la grille complète ET du panneau « Bloc sélectionné ». */
 export function colorDefs(theme: CatalogTheme): ColorDef[] {
   return [
-    { key: 'promoBg', grad: 'promoBg2', label: 'Cartouche', fallback: theme.accent },
-    { key: 'stickerBg', grad: 'stickerBg2', label: 'Sticker', fallback: theme.accent },
-    { key: 'priceBg', grad: 'priceBg2', label: 'Prix', fallback: theme.accent },
-    { key: 'wasBg', grad: 'wasBg2', label: 'Prix barré', fallback: theme.headerBg },
-    { key: 'cardBg', label: 'Fond de fiche', fallback: '#ffffff' },
-    { key: 'kickerBg', grad: 'kickerBg2', label: 'Sous-famille', fallback: theme.headerBg },
-    { key: 'bandRuleColor', label: 'Filet section', fallback: theme.accent },
-    { key: 'vedetteBg', grad: 'vedetteBg2', label: 'Vedette', fallback: theme.accent },
-    { key: 'vedettePriceBg', grad: 'vedettePriceBg2', label: 'Prix vedette', fallback: theme.accent },
-    { key: 'priceInk', label: 'Texte prix', fallback: '#ffffff' },
-    { key: 'vedettePriceInk', label: 'Txt prix vedette', fallback: '#ffffff' },
+    { key: 'promoBg', grad: 'promoBg2', labelKey: 'cat.style.promoBg', fallback: theme.accent },
+    { key: 'stickerBg', grad: 'stickerBg2', labelKey: 'cat.style.stickerBg', fallback: theme.accent },
+    { key: 'priceBg', grad: 'priceBg2', labelKey: 'cat.style.priceBg', fallback: theme.accent },
+    { key: 'wasBg', grad: 'wasBg2', labelKey: 'cat.style.wasBg', fallback: theme.headerBg },
+    { key: 'cardBg', labelKey: 'cat.style.cardBg', fallback: '#ffffff' },
+    { key: 'kickerBg', grad: 'kickerBg2', labelKey: 'cat.style.kickerBg', fallback: theme.headerBg },
+    { key: 'bandRuleColor', labelKey: 'cat.style.bandRuleColor', fallback: theme.accent },
+    { key: 'vedetteBg', grad: 'vedetteBg2', labelKey: 'cat.style.vedetteBg', fallback: theme.accent },
+    { key: 'vedettePriceBg', grad: 'vedettePriceBg2', labelKey: 'cat.style.vedettePriceBg', fallback: theme.accent },
+    { key: 'priceInk', labelKey: 'cat.style.priceInk', fallback: '#ffffff' },
+    { key: 'vedettePriceInk', labelKey: 'cat.style.vedettePriceInk', fallback: '#ffffff' },
     // Textes des badges (fond ↑ · texte ↓).
-    { key: 'promoInk', label: 'Texte cartouche', fallback: '#ffffff' },
-    { key: 'stickerInk', label: 'Texte sticker', fallback: '#ffffff' },
-    { key: 'kickerInk', label: 'Txt sous-famille', fallback: theme.headerInk },
-    { key: 'wasInk', label: 'Txt prix barré', fallback: theme.headerInk },
-    { key: 'vedetteTxtInk', label: 'Texte ruban', fallback: '#ffffff' },
+    { key: 'promoInk', labelKey: 'cat.style.promoInk', fallback: '#ffffff' },
+    { key: 'stickerInk', labelKey: 'cat.style.stickerInk', fallback: '#ffffff' },
+    { key: 'kickerInk', labelKey: 'cat.style.kickerInk', fallback: theme.headerInk },
+    { key: 'wasInk', labelKey: 'cat.style.wasInk', fallback: theme.headerInk },
+    { key: 'vedetteTxtInk', labelKey: 'cat.style.vedetteTxtInk', fallback: '#ffffff' },
     // Textes de contenu.
-    { key: 'nameColor', label: 'Nom', fallback: theme.ink },
-    { key: 'brandColor', label: 'Marque', fallback: theme.accent },
-    { key: 'descColor', label: 'Description', fallback: theme.ink },
-    { key: 'refColor', label: 'Référence', fallback: theme.ink },
-    { key: 'unitColor', label: 'Unité', fallback: theme.ink },
-    { key: 'detailsColor', label: 'Détails (texte)', fallback: theme.ink },
-    { key: 'detailsBg', label: 'Détails (fond)', fallback: '#efefef' },
+    { key: 'nameColor', labelKey: 'cat.style.nameColor', fallback: theme.ink },
+    { key: 'brandColor', labelKey: 'cat.style.brandColor', fallback: theme.accent },
+    { key: 'descColor', labelKey: 'cat.style.descColor', fallback: theme.ink },
+    { key: 'refColor', labelKey: 'cat.style.refColor', fallback: theme.ink },
+    { key: 'unitColor', labelKey: 'cat.style.unitColor', fallback: theme.ink },
+    { key: 'detailsColor', labelKey: 'cat.style.detailsColor', fallback: theme.ink },
+    { key: 'detailsBg', labelKey: 'cat.style.detailsBg', fallback: '#efefef' },
   ]
 }
 

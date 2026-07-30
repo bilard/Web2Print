@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
-import { driver, type Driver } from 'driver.js'
+import { driver, type Driver, type DriveStep } from 'driver.js'
 import 'driver.js/dist/driver.css'
 import './tour.css'
 import { useTourStore, type TourId } from './tour.store'
+import { useTranslation } from '@/lib/i18n'
 import type { TourStep } from './types'
+import type { TranslationKey } from '@/lib/i18n'
 import { editorTourSteps } from './editorTourSteps'
 import { dashboardTourSteps } from './dashboardTourSteps'
 import { workflowTourSteps } from './workflowTourSteps'
@@ -13,6 +15,25 @@ const TOUR_STEPS: Record<TourId, TourStep[]> = {
   editor: editorTourSteps,
   dashboard: dashboardTourSteps,
   workflow: workflowTourSteps,
+}
+
+/**
+ * Traduit les clés d'une étape juste avant de la donner à driver.js.
+ *
+ * ⚠️ La résolution se fait ICI, à l'ouverture du tour, et pas dans les tableaux
+ * d'étapes : ce sont des constantes de module, évaluées une fois au chargement
+ * du bundle — un texte traduit à cet endroit resterait dans la langue initiale
+ * après un changement de langue.
+ */
+function resolveSteps(steps: TourStep[], tr: (k: TranslationKey) => string): DriveStep[] {
+  return steps.map((s) => ({
+    ...s,
+    popover: s.popover && {
+      ...s.popover,
+      ...(s.popover.titleKey ? { title: tr(s.popover.titleKey) } : {}),
+      ...(s.popover.descriptionKey ? { description: tr(s.popover.descriptionKey) } : {}),
+    },
+  }))
 }
 
 /** Exécute l'effet de bord d'une étape puis attend son élément cible. */
@@ -33,6 +54,7 @@ async function prepareStep(step: TourStep | undefined): Promise<void> {
 export function useGuidedTour() {
   const activeTour = useTourStore((s) => s.activeTour)
   const stopTour = useTourStore((s) => s.stopTour)
+  const { t } = useTranslation()
   const driverRef = useRef<Driver | null>(null)
 
   useEffect(() => {
@@ -70,11 +92,11 @@ export function useGuidedTour() {
       stagePadding: 6,
       stageRadius: 8,
       popoverClass: 'w2p-tour',
-      nextBtnText: 'Suivant',
-      prevBtnText: 'Précédent',
-      doneBtnText: 'Terminer',
+      nextBtnText: t('tour.next'),
+      prevBtnText: t('tour.prev'),
+      doneBtnText: t('tour.done'),
       progressText: '{{current}} / {{total}}',
-      steps,
+      steps: resolveSteps(steps, t),
       onNextClick: () => {
         if (transitioning || !popoverVisible()) return
         const idx = instance?.getActiveIndex() ?? 0
@@ -96,5 +118,5 @@ export function useGuidedTour() {
       instance?.destroy()
       driverRef.current = null
     }
-  }, [activeTour, stopTour])
+  }, [activeTour, stopTour, t])
 }

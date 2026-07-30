@@ -598,7 +598,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         <div className="flex flex-col gap-2 flex-1 min-h-0">
           <div className="flex items-center gap-2 text-[10px] text-indigo-300/80 uppercase tracking-wider font-semibold shrink-0">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-            Aperçu animation
+            {t('vd.previewAnim')}
           </div>
           <HyperframesPlayer
             aspect={preview.aspect}
@@ -779,7 +779,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                         : "Oriente la personnalité du mouvement, le rythme et la palette appliqués à ton design."
                     }
                   >
-                    Que doit présenter cette vidéo ?
+                    {t('vd.whatToShow')}
                   </FieldLabel>
                   <textarea
                     id="topic"
@@ -805,7 +805,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                         : "Influe sur la personnalité du mouvement (ex. public magasin → dynamique, B2B → sobre)."
                     }
                   >
-                    À qui s'adresse cette vidéo ?
+                    {t('vd.whoFor')}
                   </FieldLabel>
                   <textarea
                     id="audience"
@@ -880,7 +880,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                         <input
                           value={promptName}
                           onChange={(e) => setPromptName(e.target.value)}
-                          placeholder={editingPromptId ? 'Nom du modèle chargé' : 'Nom du modèle (optionnel)'}
+                          placeholder={t(editingPromptId ? 'vd.tplNameLoaded' : 'vd.tplNameOptional')}
                           className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none"
                         />
                       </div>
@@ -888,7 +888,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                         onClick={() => void handleSaveOrUpdate()}
                         disabled={!topic.trim() && !freeform.trim()}
                         className="flex items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed border border-white/10 text-white/80 hover:text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                        title={editingPromptId ? 'Mettre à jour le modèle chargé dans la bibliothèque' : 'Enregistrer comme nouveau modèle'}
+                        title={t(editingPromptId ? 'vd.tplUpdateTitle' : 'vd.tplSaveTitle')}
                       >
                         <Save className="w-3.5 h-3.5" />
                         {editingPromptId ? 'Mettre à jour' : 'Enregistrer'}
@@ -906,7 +906,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     ) : (
                       <Sparkles className="w-3.5 h-3.5" />
                     )}
-                    Générer l'animation
+                    {t('vd.generateAnim')}
                   </button>
                   {!generating && (
                     <button

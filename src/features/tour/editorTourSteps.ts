@@ -45,17 +45,15 @@ const openPanel = (target: string) => () => {
 export const editorTourSteps: TourStep[] = [
   {
     popover: {
-      title: 'Bienvenue dans l’éditeur 👋',
-      description:
-        'Visite détaillée : barre d’outils, plan de travail et tous les panneaux. « Suivant » pour avancer, « Échap » pour quitter à tout moment.',
+      titleKey: 'tour.ed.0.title',
+      descriptionKey: 'tour.ed.0.desc',
     },
   },
   {
     element: '[data-tour="header"]',
     popover: {
-      title: 'Barre supérieure',
-      description:
-        'Renommez le projet, suivez son rattachement taxonomique, annulez/rétablissez (⌘Z / ⌘Y) et accédez à l’export.',
+      titleKey: 'tour.ed.1.title',
+      descriptionKey: 'tour.ed.1.desc',
       side: 'bottom',
       align: 'start',
     },
@@ -63,9 +61,8 @@ export const editorTourSteps: TourStep[] = [
   {
     element: '[data-tour="save"]',
     popover: {
-      title: 'Sauvegarde',
-      description:
-        'Enregistrement automatique, ou forcé ici (⌘S). La couleur indique l’état : à jour, en cours, ou modifications non sauvegardées.',
+      titleKey: 'tour.ed.2.title',
+      descriptionKey: 'tour.ed.2.desc',
       side: 'bottom',
       align: 'end',
     },
@@ -73,9 +70,8 @@ export const editorTourSteps: TourStep[] = [
   {
     element: '[data-tour="export"]',
     popover: {
-      title: 'Export multi-format',
-      description:
-        'Exportez en PDF, image, PowerPoint… avec les paramètres d’impression (fond perdu, repères de coupe) définis dans le panneau Impression.',
+      titleKey: 'tour.ed.3.title',
+      descriptionKey: 'tour.ed.3.desc',
       side: 'bottom',
       align: 'end',
     },
@@ -83,9 +79,8 @@ export const editorTourSteps: TourStep[] = [
   {
     element: '[data-tour="video-ai"]',
     popover: {
-      title: 'Vidéo IA',
-      description:
-        'Transformez la PAGE ENTIÈRE en vidéo animée : décrivez l’ambiance dans un brief, l’IA construit le plan de motion (elle rejoue aussi vos animations par-objet) et rend un MP4. Vos briefs s’enregistrent en modèles réutilisables. Pour animer un seul objet, utilisez plutôt le panneau « Animer l’objet ».',
+      titleKey: 'tour.ed.4.title',
+      descriptionKey: 'tour.ed.4.desc',
       side: 'bottom',
       align: 'end',
     },
@@ -93,8 +88,8 @@ export const editorTourSteps: TourStep[] = [
   {
     element: '[data-tour="toolbar"]',
     popover: {
-      title: 'Barre d’outils',
-      description: 'Les outils de création, du haut vers le bas. Détaillons-les un par un.',
+      titleKey: 'tour.ed.5.title',
+      descriptionKey: 'tour.ed.5.desc',
       side: 'right',
       align: 'start',
     },
@@ -102,8 +97,8 @@ export const editorTourSteps: TourStep[] = [
   {
     element: '[data-help-id="toolbar.select"]',
     popover: {
-      title: 'Sélection (V)',
-      description: 'Déplacez, redimensionnez et faites pivoter les objets. L’outil par défaut.',
+      titleKey: 'tour.ed.6.title',
+      descriptionKey: 'tour.ed.6.desc',
       side: 'right',
       align: 'start',
     },
@@ -111,9 +106,8 @@ export const editorTourSteps: TourStep[] = [
   {
     element: '[data-help-id="toolbar.text"]',
     popover: {
-      title: 'Texte (T)',
-      description:
-        'Ajoute un bloc de texte éditable. Mise en forme via la barre de texte qui apparaît en haut quand un texte est sélectionné.',
+      titleKey: 'tour.ed.7.title',
+      descriptionKey: 'tour.ed.7.desc',
       side: 'right',
       align: 'start',
     },
@@ -121,8 +115,8 @@ export const editorTourSteps: TourStep[] = [
   {
     element: '[data-help-id="toolbar.rect"]',
     popover: {
-      title: 'Formes (R / E / L)',
-      description: 'Rectangle, ellipse et ligne. Couleur, contour et coins se règlent dans le panneau Propriétés.',
+      titleKey: 'tour.ed.8.title',
+      descriptionKey: 'tour.ed.8.desc',
       side: 'right',
       align: 'start',
     },
@@ -130,8 +124,8 @@ export const editorTourSteps: TourStep[] = [
   {
     element: '[data-tour="tool-image"]',
     popover: {
-      title: 'Image (I)',
-      description: 'Insérez depuis le stock, vos images (DAM), un upload, ou une génération IA.',
+      titleKey: 'tour.ed.9.title',
+      descriptionKey: 'tour.ed.9.desc',
       side: 'right',
       align: 'start',
     },
@@ -139,9 +133,8 @@ export const editorTourSteps: TourStep[] = [
   {
     element: '[data-tour="canvas"]',
     popover: {
-      title: 'Plan de travail',
-      description:
-        'Votre zone d’édition. Déplacez/redimensionnez les objets, double-cliquez un texte pour l’éditer ; les imports s’affichent ici.',
+      titleKey: 'tour.ed.10.title',
+      descriptionKey: 'tour.ed.10.desc',
       side: 'left',
       align: 'center',
     },
@@ -151,9 +144,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: prepareProps,
     requireSelector: '[data-tour="properties"]',
     popover: {
-      title: 'Propriétés',
-      description:
-        'Toujours en haut à droite : tous les réglages de l’objet sélectionné (un objet est sélectionné pour la démo). S’adapte au type d’objet. Détaillons chaque section — survolez les « ? » pour l’aide en continu.',
+      titleKey: 'tour.ed.11.title',
+      descriptionKey: 'tour.ed.11.desc',
       side: 'left',
       align: 'start',
     },
@@ -163,8 +155,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: prepareProps,
     requireSelector: '[data-tour="opt-prop-fill"]',
     popover: {
-      title: 'Remplissage',
-      description: 'Couleur intérieure : aplat, dégradé, image ou transparent. Cliquez la section pour la déplier.',
+      titleKey: 'tour.ed.12.title',
+      descriptionKey: 'tour.ed.12.desc',
       side: 'left',
       align: 'start',
     },
@@ -173,8 +165,8 @@ export const editorTourSteps: TourStep[] = [
     element: '[data-tour="opt-prop-stroke"]',
     requireSelector: '[data-tour="opt-prop-stroke"]',
     popover: {
-      title: 'Contour',
-      description: 'Bordure de l’objet : couleur, épaisseur, style de trait (continu, tirets, points) et angles.',
+      titleKey: 'tour.ed.13.title',
+      descriptionKey: 'tour.ed.13.desc',
       side: 'left',
       align: 'start',
     },
@@ -183,8 +175,8 @@ export const editorTourSteps: TourStep[] = [
     element: '[data-tour="opt-prop-opacity"]',
     requireSelector: '[data-tour="opt-prop-opacity"]',
     popover: {
-      title: 'Opacité & Fusion',
-      description: 'Transparence et mode de fusion (multiplier, écran…) qui définit le mélange avec le dessous.',
+      titleKey: 'tour.ed.14.title',
+      descriptionKey: 'tour.ed.14.desc',
       side: 'left',
       align: 'start',
     },
@@ -193,8 +185,8 @@ export const editorTourSteps: TourStep[] = [
     element: '[data-tour="opt-prop-shadow"]',
     requireSelector: '[data-tour="opt-prop-shadow"]',
     popover: {
-      title: 'Ombre',
-      description: 'Ombre portée : couleur, flou et décalage horizontal/vertical.',
+      titleKey: 'tour.ed.15.title',
+      descriptionKey: 'tour.ed.15.desc',
       side: 'left',
       align: 'start',
     },
@@ -203,8 +195,8 @@ export const editorTourSteps: TourStep[] = [
     element: '[data-tour="opt-prop-transform"]',
     requireSelector: '[data-tour="opt-prop-transform"]',
     popover: {
-      title: 'Taille & Position',
-      description: 'X/Y, largeur/hauteur, rotation, arrondi, verrou de ratio, miroir H/V et verrou de position.',
+      titleKey: 'tour.ed.16.title',
+      descriptionKey: 'tour.ed.16.desc',
       side: 'left',
       align: 'start',
     },
@@ -214,9 +206,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: prepareProps,
     requireSelector: '[data-tour="opt-prop-conditional"]',
     popover: {
-      title: 'Règles conditionnelles',
-      description:
-        'Faites réagir l’objet à la donnée de chaque ligne en publipostage : le cacher, le recolorer, le redimensionner selon une condition (« si promo est vide → cacher le bandeau »). Évalué ligne par ligne à la fusion. Voir l’aide « Règles conditionnelles ».',
+      titleKey: 'tour.ed.17.title',
+      descriptionKey: 'tour.ed.17.desc',
       side: 'left',
       align: 'start',
     },
@@ -225,8 +216,8 @@ export const editorTourSteps: TourStep[] = [
     element: '[data-tour="opt-prop-arrange"]',
     requireSelector: '[data-tour="opt-prop-arrange"]',
     popover: {
-      title: 'Arranger',
-      description: 'Ordre de superposition, alignement et répartition sur la page, duplication et suppression.',
+      titleKey: 'tour.ed.18.title',
+      descriptionKey: 'tour.ed.18.desc',
       side: 'left',
       align: 'start',
     },
@@ -236,8 +227,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('page'),
     requireSelector: '[data-tour="panel-page"]',
     popover: {
-      title: 'Panneau Page',
-      description: 'Gérez les pages / plans de travail. Détaillons ses options — survolez les « ? » pour l’aide en continu.',
+      titleKey: 'tour.ed.19.title',
+      descriptionKey: 'tour.ed.19.desc',
       side: 'left',
       align: 'start',
     },
@@ -247,8 +238,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('page'),
     requireSelector: '[data-tour="opt-page-dims"]',
     popover: {
-      title: 'Dimensions',
-      description: 'Taille de la page en mm : saisie largeur/hauteur ou format prédéfini (A4, Instagram…).',
+      titleKey: 'tour.ed.20.title',
+      descriptionKey: 'tour.ed.20.desc',
       side: 'left',
       align: 'start',
     },
@@ -258,8 +249,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('page'),
     requireSelector: '[data-tour="opt-page-bg"]',
     popover: {
-      title: 'Arrière-plan',
-      description: 'Fond de la page : couleur unie, dégradé paramétrable, ou image verrouillée derrière les objets.',
+      titleKey: 'tour.ed.21.title',
+      descriptionKey: 'tour.ed.21.desc',
       side: 'left',
       align: 'start',
     },
@@ -269,8 +260,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('print'),
     requireSelector: '[data-tour="panel-print"]',
     popover: {
-      title: 'Panneau Impression',
-      description: 'Paramètres pour un export prêt à imprimer. Détaillons chaque réglage.',
+      titleKey: 'tour.ed.22.title',
+      descriptionKey: 'tour.ed.22.desc',
       side: 'left',
       align: 'start',
     },
@@ -280,8 +271,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('print'),
     requireSelector: '[data-tour="opt-print-presets"]',
     popover: {
-      title: 'Famille de paramètres',
-      description: 'Enregistrez vos réglages d’impression comme preset réutilisable d’un projet à l’autre.',
+      titleKey: 'tour.ed.23.title',
+      descriptionKey: 'tour.ed.23.desc',
       side: 'left',
       align: 'start',
     },
@@ -291,8 +282,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('print'),
     requireSelector: '[data-tour="opt-print-dpi"]',
     popover: {
-      title: 'Résolution (DPI)',
-      description: 'Densité de l’export. 300 DPI = standard offset/impression ; 72 DPI = web.',
+      titleKey: 'tour.ed.24.title',
+      descriptionKey: 'tour.ed.24.desc',
       side: 'left',
       align: 'start',
     },
@@ -302,8 +293,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('print'),
     requireSelector: '[data-tour="opt-print-bleed"]',
     popover: {
-      title: 'Fond perdu (bleed)',
-      description: 'Marge de débord rognée après impression : évite les liserés blancs. 3 mm offset, 5 mm numérique.',
+      titleKey: 'tour.ed.25.title',
+      descriptionKey: 'tour.ed.25.desc',
       side: 'left',
       align: 'start',
     },
@@ -313,8 +304,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('print'),
     requireSelector: '[data-tour="opt-print-marks"]',
     popover: {
-      title: 'Repères d’impression',
-      description: 'Traits de coupe, repères de fond perdu et hirondelles (calage des couleurs) pour l’imprimeur.',
+      titleKey: 'tour.ed.26.title',
+      descriptionKey: 'tour.ed.26.desc',
       side: 'left',
       align: 'start',
     },
@@ -324,8 +315,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('print'),
     requireSelector: '[data-tour="opt-print-safe"]',
     popover: {
-      title: 'Zone de sécurité',
-      description: 'Marge intérieure où garder le texte et les éléments importants pour ne pas qu’ils soient coupés.',
+      titleKey: 'tour.ed.27.title',
+      descriptionKey: 'tour.ed.27.desc',
       side: 'left',
       align: 'start',
     },
@@ -335,9 +326,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('data'),
     requireSelector: '[data-tour="panel-data"]',
     popover: {
-      title: 'Panneau Données (publipostage)',
-      description:
-        'Liez une source PIM/Excel et associez les champs aux éléments pour générer en masse une variante par ligne. Les blocs balisés d’un import IDML gardent leur connecteur : mappez chaque balise vers une colonne, et des badges sur le canvas montrent quels blocs sont reliés.',
+      titleKey: 'tour.ed.28.title',
+      descriptionKey: 'tour.ed.28.desc',
       side: 'left',
       align: 'start',
     },
@@ -347,8 +337,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('layers'),
     requireSelector: '[data-tour="panel-layers"]',
     popover: {
-      title: 'Panneau Calques',
-      description: 'Arborescence des objets : réorganisez l’ordre (glisser-déposer), masquez ou verrouillez chaque calque.',
+      titleKey: 'tour.ed.29.title',
+      descriptionKey: 'tour.ed.29.desc',
       side: 'left',
       align: 'start',
     },
@@ -358,9 +348,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('images'),
     requireSelector: '[data-tour="panel-images"]',
     popover: {
-      title: 'Panneau Images',
-      description:
-        'Surface persistante pour parcourir, générer et insérer des images : banque libre de droits, vos uploads, génération IA, favoris, collections et récents. (L’outil Image de la barre n’est qu’un menu rapide ; ce panneau est l’atelier complet.)',
+      titleKey: 'tour.ed.30.title',
+      descriptionKey: 'tour.ed.30.desc',
       side: 'left',
       align: 'start',
     },
@@ -370,8 +359,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('palette'),
     requireSelector: '[data-tour="panel-palette"]',
     popover: {
-      title: 'Panneau Palette',
-      description: 'Vos couleurs et dégradés de marque. Détaillons ses deux sections.',
+      titleKey: 'tour.ed.31.title',
+      descriptionKey: 'tour.ed.31.desc',
       side: 'left',
       align: 'start',
     },
@@ -381,8 +370,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('palette'),
     requireSelector: '[data-tour="opt-palette-colors"]',
     popover: {
-      title: 'Couleurs du projet',
-      description: 'Vos couleurs de marque enregistrées, réutilisables en un clic. Sauvegardées avec le projet.',
+      titleKey: 'tour.ed.32.title',
+      descriptionKey: 'tour.ed.32.desc',
       side: 'left',
       align: 'start',
     },
@@ -392,8 +381,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('palette'),
     requireSelector: '[data-tour="opt-palette-gradients"]',
     popover: {
-      title: 'Dégradés du projet',
-      description: 'Vos dégradés enregistrés (linéaires/radiaux), applicables aux objets et aux fonds.',
+      titleKey: 'tour.ed.33.title',
+      descriptionKey: 'tour.ed.33.desc',
       side: 'left',
       align: 'start',
     },
@@ -403,9 +392,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('assets'),
     requireSelector: '[data-tour="panel-assets"]',
     popover: {
-      title: 'Panneau Assets',
-      description:
-        'Polices et ressources disponibles pour la composition — dont « Mes polices » : vos fichiers uploadés (ex. polices d’un projet InDesign) et des Google Fonts ajoutées par URL, proposés dans tous les sélecteurs de police.',
+      titleKey: 'tour.ed.34.title',
+      descriptionKey: 'tour.ed.34.desc',
       side: 'left',
       align: 'start',
     },
@@ -415,9 +403,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: prepareAnimPanel,
     requireSelector: '[data-tour="panel-animation3d"]',
     popover: {
-      title: 'Panneau Animer l’objet',
-      description:
-        'Anime l’objet SÉLECTIONNÉ en direct : choisissez un preset d’effet 3D puis réglez les paramètres (un objet est sélectionné pour la démo). Pour une vidéo de toute la page, utilisez « Vidéo IA » dans la barre supérieure.',
+      titleKey: 'tour.ed.35.title',
+      descriptionKey: 'tour.ed.35.desc',
       side: 'left',
       align: 'start',
     },
@@ -427,8 +414,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: prepareAnimPanel,
     requireSelector: '[data-tour="opt-anim-duration"]',
     popover: {
-      title: 'Durée par cycle',
-      description: 'Temps d’une boucle complète de l’animation, en secondes. Plus court = mouvement plus rapide.',
+      titleKey: 'tour.ed.36.title',
+      descriptionKey: 'tour.ed.36.desc',
       side: 'left',
       align: 'start',
     },
@@ -438,8 +425,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: prepareAnimPanel,
     requireSelector: '[data-tour="opt-anim-intensity"]',
     popover: {
-      title: 'Intensité',
-      description: 'Amplitude de l’effet (× le mouvement de base). Plus élevé = animation plus marquée.',
+      titleKey: 'tour.ed.37.title',
+      descriptionKey: 'tour.ed.37.desc',
       side: 'left',
       align: 'start',
     },
@@ -449,9 +436,8 @@ export const editorTourSteps: TourStep[] = [
     prepare: openPanel('versions'),
     requireSelector: '[data-tour="panel-versions"]',
     popover: {
-      title: 'Panneau Versions',
-      description:
-        'Historique du document : créez une version avant un gros changement et restaurez-la en un clic (l’éditeur se recharge). 20 versions manuelles + 10 snapshots automatiques (badge « auto », pris à la sauvegarde, au plus toutes les 10 min).',
+      titleKey: 'tour.ed.38.title',
+      descriptionKey: 'tour.ed.38.desc',
       side: 'left',
       align: 'start',
     },
@@ -459,8 +445,8 @@ export const editorTourSteps: TourStep[] = [
   {
     element: '[data-tour="footer"]',
     popover: {
-      title: 'Zoom, pages & repères',
-      description: 'Réglez le zoom, naviguez entre les pages, ouvrez les paramètres de page et activez la grille ou le magnétisme (snap).',
+      titleKey: 'tour.ed.39.title',
+      descriptionKey: 'tour.ed.39.desc',
       side: 'top',
       align: 'start',
     },
@@ -469,18 +455,16 @@ export const editorTourSteps: TourStep[] = [
     element: '[data-tour="editor-nav"]',
     requireSelector: '[data-tour="editor-nav"]',
     popover: {
-      title: 'Modules & notifications',
-      description:
-        'À gauche du pied de page : le menu « Modules » saute vers n’importe quel espace de l’app sans quitter l’éditeur, et la cloche regroupe vos notifications (badge de non-lus, historique, tout marquer comme lu).',
+      titleKey: 'tour.ed.40.title',
+      descriptionKey: 'tour.ed.40.desc',
       side: 'top',
       align: 'start',
     },
   },
   {
     popover: {
-      title: 'C’est tout 🎉',
-      description:
-        'Vous maîtrisez l’éditeur. Astuce : ⌘K (Ctrl+K) ouvre partout la palette pour sauter vers un module ou lancer une action. Relancez cette visite via le bouton 🧭, ou ouvrez l’aide « ? » en bas à droite à tout moment.',
+      titleKey: 'tour.ed.41.title',
+      descriptionKey: 'tour.ed.41.desc',
     },
   },
 ]
