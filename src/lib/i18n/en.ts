@@ -4451,4 +4451,8 @@ export const en: Record<TranslationKey, string> = {
   'wfn.connector': 'Connector: {name}',
   'hf.imageHint': 'Higgsfield animates this image. Failing that, the first http(s) URL on the “image” port. No blob:/local URL.',
   'tg.globalTokenHint': 'Telegram) — recommended: the token is then not stored in the workflow.',
+  'xl.fn.cat.logic': 'Logic',
+  'xl.fn.cat.text': 'Text',
+  'xl.fn.cat.math': 'Maths',
+  'xl.fn.cat.date': 'Date',
 }

@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
-import { FORMULA_FUNCTIONS, type FormulaCategory } from './formulaEngine'
-import { t } from '@/lib/i18n'
+import { FORMULA_FUNCTIONS, type FormulaCategory, fnDescription } from './formulaEngine'
+import { t, type TranslationKey } from '@/lib/i18n'
 
-const CATEGORY_LABELS: Record<FormulaCategory, string> = {
-  logique: 'Logique',
-  texte: 'Texte',
-  math: 'Mathématiques',
-  date: 'Date',
+const CATEGORY_LABELS: Record<FormulaCategory, TranslationKey> = {
+  logique: 'xl.fn.cat.logic',
+  texte: 'xl.fn.cat.text',
+  math: 'xl.fn.cat.math',
+  date: 'xl.fn.cat.date',
 }
 
 const CATEGORY_ORDER: FormulaCategory[] = ['math', 'texte', 'logique', 'date']
@@ -33,10 +33,11 @@ export function FormulaFunctionList({ onInsert }: FormulaFunctionListProps) {
   const grouped = useMemo(() =>
     CATEGORY_ORDER.map((cat) => ({
       cat,
-      label: CATEGORY_LABELS[cat],
+      label: t(CATEGORY_LABELS[cat]),
       funcs: FORMULA_FUNCTIONS.filter((f) =>
         f.category === cat &&
-        (!q || f.name.toLowerCase().includes(q) || f.description.toLowerCase().includes(q) || f.syntax.toLowerCase().includes(q))
+        (!q || f.name.toLowerCase().includes(q) || f.description.toLowerCase().includes(q)
+          || f.descriptionEn.toLowerCase().includes(q) || f.syntax.toLowerCase().includes(q))
       ),
     })).filter((g) => g.funcs.length > 0),
   [q])
@@ -119,7 +120,7 @@ function FunctionCard({ fn, query, onInsert }: {
       >
         {highlightName(fn.name)}
       </button>
-      <p className="text-[11px] text-white/50 mt-1">{fn.description}</p>
+      <p className="text-[11px] text-white/50 mt-1">{fnDescription(fn)}</p>
       <p className="text-[10px] text-white/30 font-mono mt-0.5">{fn.syntax}</p>
       <div className="mt-1 space-y-0.5">
         {fn.examples.map((ex, i) => (

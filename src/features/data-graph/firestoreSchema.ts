@@ -3,6 +3,7 @@ import {
   FileText, Workflow as WorkflowIcon, Play, Images, Activity, FileCode, Rows3,
   type LucideIcon,
 } from 'lucide-react'
+import { useLocaleStore } from '@/stores/locale.store'
 
 type FieldType = 'string' | 'number' | 'boolean' | 'timestamp' | 'object' | 'array'
 export type SchemaDomain = 'core' | 'design' | 'pim' | 'data' | 'flow' | 'brief'
@@ -26,6 +27,9 @@ export interface FieldSchema {
   fk?: string
   /** Note humaine optionnelle, affichée dans la fiche d'inspection du champ. */
   note?: string
+  /** Note EN — référentiel BILINGUE EN PLACE : c'est la documentation du schéma
+   *  de données, pas du vocabulaire d'UI (même choix que `googleSheetsFunctions`). */
+  noteEn?: string
 }
 
 /** Décrit comment charger les données live d'une table (scope owner courant).
@@ -48,6 +52,8 @@ export interface TableSchema {
   icon: LucideIcon
   domain: SchemaDomain
   description: string
+  /** Description EN (cf. `noteEn`). */
+  descriptionEn: string
   fields: FieldSchema[]
   x: number
   y: number
@@ -59,20 +65,20 @@ export interface TableSchema {
 export const TABLES: TableSchema[] = [
   {
     id: 'users', label: 'users', icon: User, domain: 'core', x: 560, y: 0,
-    description: "Profils utilisateurs, secrets & réglages.",
+    description: "Profils utilisateurs, secrets & réglages.", descriptionEn: "User profiles, secrets & settings.",
     query: { path: 'users' },
     fields: [
-      { name: 'uid', type: 'string', pk: true, note: 'Identifiant Firebase Auth (doc id).' },
+      { name: 'uid', type: 'string', pk: true, note: 'Identifiant Firebase Auth (doc id).', noteEn: 'Firebase Auth identifier (doc id).' },
       { name: 'email', type: 'string' },
       { name: 'displayName', type: 'string' },
-      { name: 'accessRoleId', type: 'string', fk: 'roles', note: 'Rôle RBAC appliqué à l’utilisateur.' },
-      { name: 'uiSettings', type: 'object', note: 'Préférences UI (thème, etc.).' },
-      { name: 'aiSettings', type: 'object', note: 'Clés LLM, cascade et budgets.' },
+      { name: 'accessRoleId', type: 'string', fk: 'roles', note: 'Rôle RBAC appliqué à l’utilisateur.', noteEn: 'RBAC role applied to the user.' },
+      { name: 'uiSettings', type: 'object', note: 'Préférences UI (thème, etc.).', noteEn: 'UI preferences (theme, etc.).' },
+      { name: 'aiSettings', type: 'object', note: 'Clés LLM, cascade et budgets.', noteEn: 'LLM keys, cascade and budgets.' },
     ],
   },
   {
     id: 'roles', label: 'roles', icon: Shield, domain: 'core', x: 960, y: -40,
-    description: 'Rôles & permissions (RBAC).',
+    description: 'Rôles & permissions (RBAC).', descriptionEn: 'Roles & permissions (RBAC).',
     query: { path: 'roles' },
     fields: [
       { name: 'roleId', type: 'string', pk: true },
@@ -83,7 +89,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'projects', label: 'projects', icon: LayoutTemplate, domain: 'design', x: 120, y: 270,
-    description: 'Documents design de l’éditeur.',
+    description: 'Documents design de l’éditeur.', descriptionEn: 'Design documents from the editor.',
     query: { path: 'projects', ownerField: 'ownerId' },
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -97,7 +103,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'pim_projects', label: 'pim_projects', icon: Boxes, domain: 'pim', x: 540, y: 320,
-    description: 'Projets PIM (catalogue produits).',
+    description: 'Projets PIM (catalogue produits).', descriptionEn: 'PIM projects (product catalogue).',
     query: { path: 'pim_projects', ownerField: 'userId' },
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -110,7 +116,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'products', label: 'products', icon: Package, domain: 'pim', x: 540, y: 640,
-    description: 'Fiches produit (sous-collection de pim_projects).',
+    description: 'Fiches produit (sous-collection de pim_projects).', descriptionEn: 'Product records (a sub-collection of pim_projects).',
     query: { path: 'products', subOf: { parentPath: 'pim_projects', parentOwnerField: 'userId' } },
     fields: [
       { name: '_id', type: 'string', pk: true },
@@ -123,7 +129,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'taxonomies', label: 'taxonomies', icon: Tags, domain: 'pim', x: 980, y: 300,
-    description: 'Arbres de classement & formulaires.',
+    description: 'Arbres de classement & formulaires.', descriptionEn: 'Classification trees & forms.',
     query: { path: 'taxonomies', ownerField: 'ownerId' },
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -135,7 +141,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'briefs', label: 'briefs', icon: FileText, domain: 'brief', x: 980, y: 600,
-    description: 'Briefs commerciaux (devis → deck).',
+    description: 'Briefs commerciaux (devis → deck).', descriptionEn: 'Sales briefs (quote → deck).',
     query: { path: 'briefs', ownerField: 'ownerId' },
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -148,7 +154,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'excel_data', label: 'excel_data', icon: Database, domain: 'data', x: 120, y: 600,
-    description: 'Bases de données (métadonnées des feuilles BDD).',
+    description: 'Bases de données (métadonnées des feuilles BDD).', descriptionEn: 'Databases (metadata of the DB sheets).',
     query: { path: 'excel_data', ownerField: 'userId' },
     fields: [
       { name: 'docId', type: 'string', pk: true },
@@ -161,7 +167,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'excel_data_payload', label: 'excel_data_payload', icon: Rows3, domain: 'data', x: -200, y: 620,
-    description: 'Contenu des BDD — choisissez une base pour voir ses produits.',
+    description: 'Contenu des BDD — choisissez une base pour voir ses produits.', descriptionEn: 'Database contents — pick a database to see its products.',
     query: { path: 'excel_data_payload', ownerField: 'userId', flattenSheets: 'json' },
     fields: [
       { name: 'docId', type: 'string', pk: true },
@@ -171,7 +177,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'workflows', label: 'workflows', icon: WorkflowIcon, domain: 'flow', x: 1340, y: 120,
-    description: 'Pipelines (users/{uid}/workflows).',
+    description: 'Pipelines (users/{uid}/workflows).', descriptionEn: 'Pipelines (users/{uid}/workflows).',
     query: { path: 'users/{uid}/workflows' },
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -183,7 +189,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'workflowRuns', label: 'workflowRuns', icon: Play, domain: 'flow', x: 1340, y: 420,
-    description: 'Historique d’exécution des workflows.',
+    description: 'Historique d’exécution des workflows.', descriptionEn: 'Workflow run history.',
     query: { path: 'users/{uid}/workflowRuns' },
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -196,7 +202,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'dam_assets', label: 'dam_assets', icon: Images, domain: 'data', x: 1340, y: 720,
-    description: 'Bibliothèque média partagée (DAM).',
+    description: 'Bibliothèque média partagée (DAM).', descriptionEn: 'Shared media library (DAM).',
     query: { path: 'dam_assets' },
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -209,7 +215,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'scrapingTemplates', label: 'scrapingTemplates', icon: FileCode, domain: 'data', x: 120, y: 920,
-    description: 'Modèles de scraping (partagés).',
+    description: 'Modèles de scraping (partagés).', descriptionEn: 'Scraping templates (shared).',
     query: { path: 'scrapingTemplates' },
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -221,7 +227,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'pipelineRuns', label: 'pipelineRuns', icon: Activity, domain: 'flow', x: 560, y: 940,
-    description: 'Journal des pipelines d’enrichissement.',
+    description: 'Journal des pipelines d’enrichissement.', descriptionEn: 'Enrichment pipeline log.',
     query: { path: 'pipelineRuns', ownerField: 'ownerId' },
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -261,3 +267,13 @@ export const RELATIONS: RelationSpec[] = [
   { from: 'users', to: 'workflows',    card: '1:N', fromSide: 'right',  toSide: 'left',  ownership: true },
   { from: 'users', to: 'dam_assets',   card: '1:N', fromSide: 'right',  toSide: 'left',  ownership: true },
 ]
+
+/** Description d'une table dans la langue courante (référentiel bilingue). */
+export function tableDescription(table: TableSchema): string {
+  return useLocaleStore.getState().locale === 'en' ? table.descriptionEn : table.description
+}
+
+/** Note d'un champ dans la langue courante. */
+export function fieldNote(f: FieldSchema): string | undefined {
+  return useLocaleStore.getState().locale === 'en' ? (f.noteEn ?? f.note) : f.note
+}

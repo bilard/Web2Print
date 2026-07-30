@@ -4532,6 +4532,10 @@ export const fr = {
   'wfn.connector': 'Connecteur : {name}',
   'hf.imageHint': 'Higgsfield anime cette image. À défaut, la 1re URL http(s) du port « image ». Pas d’URL blob:/locale.',
   'tg.globalTokenHint': 'Telegram) — recommandé : le token n’est alors pas stocké dans le workflow.',
+  'xl.fn.cat.logic': 'Logique',
+  'xl.fn.cat.text': 'Texte',
+  'xl.fn.cat.math': 'Mathématiques',
+  'xl.fn.cat.date': 'Date',
 } as const
 
 /** Clé de traduction valide — dérivée du catalogue FR. */

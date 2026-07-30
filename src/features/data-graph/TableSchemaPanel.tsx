@@ -3,6 +3,7 @@ import { KeyRound, Link2, ArrowRight, Table2, Eye } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { DOMAIN_HEX, TABLES, type FieldSchema, type TableSchema } from './firestoreSchema'
 import { t } from '@/lib/i18n'
+import { tableDescription, fieldNote } from './firestoreSchema'
 
 /** Ouvre le panneau de schéma (droite) pour une table ; `field` met un champ en surbrillance. */
 type OpenSchema = (tableId: string, field?: string) => void
@@ -59,7 +60,7 @@ function FieldCard({ f, hex, active, onFocusTable }: {
         )}
       </div>
 
-      {f.note && <p className="mt-1.5 text-[11px] leading-snug text-white/45">{f.note}</p>}
+      {fieldNote(f) && <p className="mt-1.5 text-[11px] leading-snug text-white/45">{fieldNote(f)}</p>}
     </div>
   )
 }
@@ -86,7 +87,7 @@ export function TableSchemaPanel({ table, highlightField, onClose, onFocusTable,
 
       {/* Description + compteur */}
       <div className="shrink-0 border-b border-white/10 px-4 py-2.5">
-        <p className="text-[11px] italic leading-snug text-white/45">{table.description}</p>
+        <p className="text-[11px] italic leading-snug text-white/45">{tableDescription(table)}</p>
         <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/35">
           <Table2 className="h-3 w-3" /> {table.fields.length} champ{table.fields.length > 1 ? 's' : ''}
         </div>

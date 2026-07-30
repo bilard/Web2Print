@@ -1,4 +1,5 @@
 import type { ExcelColumn, CellValue } from './types'
+import { useLocaleStore } from '@/stores/locale.store'
 
 // --- Types ---
 
@@ -6,7 +7,13 @@ export type FormulaCategory = 'logique' | 'texte' | 'math' | 'date'
 
 interface FormulaFunction {
   name: string
+  /** Description FR. ⚠️ Référentiel BILINGUE EN PLACE, comme `googleSheetsFunctions` :
+   *  ce sont ~20 descriptions d'un langage de formules, pas du vocabulaire d'UI —
+   *  les mettre dans `lib/i18n` diluerait le catalogue et éloignerait chaque texte
+   *  de la fonction qu'il décrit. La RECHERCHE doit interroger les DEUX langues. */
   description: string
+  /** Description EN (en-GB). */
+  descriptionEn: string
   syntax: string
   examples: { formula: string; result: string }[]
   category: FormulaCategory
@@ -19,6 +26,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'SI',
     description: 'Retourne une valeur si la condition est vraie, une autre sinon',
+    descriptionEn: 'Returns one value if the condition is true, another if not',
     syntax: 'SI(condition, valeur_vrai, valeur_faux)',
     examples: [
       { formula: 'SI([Prix] > 100, "Cher", "Abordable")', result: '"Cher" ou "Abordable"' },
@@ -31,6 +39,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'CONCAT',
     description: 'Concatène plusieurs textes en un seul',
+    descriptionEn: 'Joins several texts into one',
     syntax: 'CONCAT(val1, val2, ...)',
     examples: [
       { formula: 'CONCAT([Prénom], " ", [Nom])', result: '"Jean Dupont"' },
@@ -42,6 +51,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'ADDITION',
     description: 'Additionne deux nombres',
+    descriptionEn: 'Adds two numbers',
     syntax: 'ADDITION(a, b)',
     examples: [
       { formula: 'ADDITION([Prix], [Taxe])', result: 'Somme des deux colonnes' },
@@ -53,6 +63,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'SOUSTRACTION',
     description: 'Soustrait le deuxième nombre du premier',
+    descriptionEn: 'Subtracts the second number from the first',
     syntax: 'SOUSTRACTION(a, b)',
     examples: [
       { formula: 'SOUSTRACTION([Prix], [Remise])', result: 'Prix moins remise' },
@@ -64,6 +75,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'MULTIPLICATION',
     description: 'Multiplie deux nombres',
+    descriptionEn: 'Multiplies two numbers',
     syntax: 'MULTIPLICATION(a, b)',
     examples: [
       { formula: 'MULTIPLICATION([Quantité], [PrixUnit])', result: 'Quantité x prix unitaire' },
@@ -75,6 +87,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'DIVISION',
     description: 'Divise le premier nombre par le deuxième',
+    descriptionEn: 'Divides the first number by the second',
     syntax: 'DIVISION(a, b)',
     examples: [
       { formula: 'DIVISION([Total], [Quantité])', result: 'Prix moyen par unité' },
@@ -89,6 +102,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'REMISE',
     description: 'Pourcentage de remise entre un prix barré et un prix vendu (ratio 0–1 — choisir Type résultat « Pourcentage » pour afficher 17%)',
+    descriptionEn: 'Discount percentage between a struck-through price and a selling price (a 0–1 ratio — pick Result type “Percentage” to show 17%)',
     syntax: 'REMISE(prix_barré, prix)',
     examples: [
       { formula: 'REMISE([Prix barré (€)], [Prix (€)])', result: '0.17 → 17% en type Pourcentage' },
@@ -103,6 +117,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'VARIATION',
     description: 'Variation relative entre deux valeurs : (nouvelle − ancienne) / ancienne (ratio — choisir Type résultat « Pourcentage »)',
+    descriptionEn: 'Relative change between two values: (new − old) / old (a ratio — pick Result type “Percentage”)',
     syntax: 'VARIATION(ancienne, nouvelle)',
     examples: [
       { formula: 'VARIATION([Prix 2026], [Prix 2027])', result: 'Hausse/baisse en ratio (0.05 = +5%)' },
@@ -117,6 +132,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'REMPLACE',
     description: 'Remplace une portion de texte par un autre',
+    descriptionEn: 'Replaces part of a text with another',
     syntax: 'REMPLACE(texte, ancien, nouveau)',
     examples: [
       { formula: 'REMPLACE([Nom], "Sr", "Jr")', result: 'Texte avec remplacement' },
@@ -128,6 +144,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'MAJUSCULE',
     description: 'Convertit le texte en majuscules',
+    descriptionEn: 'Converts the text to upper case',
     syntax: 'MAJUSCULE(texte)',
     examples: [
       { formula: 'MAJUSCULE([Nom])', result: '"DUPONT"' },
@@ -139,6 +156,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'MINUSCULE',
     description: 'Convertit le texte en minuscules',
+    descriptionEn: 'Converts the text to lower case',
     syntax: 'MINUSCULE(texte)',
     examples: [
       { formula: 'MINUSCULE([Nom])', result: '"dupont"' },
@@ -150,6 +168,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'ARRONDI',
     description: 'Arrondit un nombre au nombre de décimales spécifié',
+    descriptionEn: 'Rounds a number to the given number of decimals',
     syntax: 'ARRONDI(nombre, décimales)',
     examples: [
       { formula: 'ARRONDI([Prix], 2)', result: 'Prix arrondi à 2 décimales' },
@@ -164,6 +183,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'GAUCHE',
     description: 'Extrait les N premiers caractères d\'un texte',
+    descriptionEn: 'Extracts the first N characters of a text',
     syntax: 'GAUCHE(texte, n)',
     examples: [
       { formula: 'GAUCHE([Code], 3)', result: 'Les 3 premiers caractères' },
@@ -175,6 +195,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'DROITE',
     description: 'Extrait les N derniers caractères d\'un texte',
+    descriptionEn: 'Extracts the last N characters of a text',
     syntax: 'DROITE(texte, n)',
     examples: [
       { formula: 'DROITE([Code], 4)', result: 'Les 4 derniers caractères' },
@@ -190,6 +211,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'LONGUEUR',
     description: 'Retourne la longueur d\'un texte',
+    descriptionEn: 'Returns the length of a text',
     syntax: 'LONGUEUR(texte)',
     examples: [
       { formula: 'LONGUEUR([Nom])', result: 'Nombre de caractères' },
@@ -201,6 +223,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'ABS',
     description: 'Retourne la valeur absolue d\'un nombre',
+    descriptionEn: 'Returns the absolute value of a number',
     syntax: 'ABS(nombre)',
     examples: [
       { formula: 'ABS([Solde])', result: 'Valeur positive du solde' },
@@ -212,6 +235,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'MAX',
     description: 'Retourne le plus grand des deux nombres',
+    descriptionEn: 'Returns the larger of the two numbers',
     syntax: 'MAX(a, b)',
     examples: [
       { formula: 'MAX([Prix1], [Prix2])', result: 'Le prix le plus élevé' },
@@ -223,6 +247,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'MIN',
     description: 'Retourne le plus petit des deux nombres',
+    descriptionEn: 'Returns the smaller of the two numbers',
     syntax: 'MIN(a, b)',
     examples: [
       { formula: 'MIN([Prix1], [Prix2])', result: 'Le prix le plus bas' },
@@ -234,6 +259,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'MOYENNE',
     description: 'Calcule la moyenne de deux nombres',
+    descriptionEn: 'Computes the average of two numbers',
     syntax: 'MOYENNE(a, b)',
     examples: [
       { formula: 'MOYENNE([Note1], [Note2])', result: 'Moyenne des deux notes' },
@@ -245,6 +271,7 @@ export const FORMULA_FUNCTIONS: FormulaFunction[] = [
   {
     name: 'MAINTENANT',
     description: 'Retourne la date et l\'heure actuelles',
+    descriptionEn: 'Returns the current date and time',
     syntax: 'MAINTENANT()',
     examples: [
       { formula: 'MAINTENANT()', result: '"15/03/2026 14:30"' },
@@ -523,4 +550,9 @@ export function evaluateFormula(
   } catch {
     return '#ERREUR'
   }
+}
+
+/** Description d'une fonction dans la langue courante (référentiel bilingue). */
+export function fnDescription(f: { description: string; descriptionEn: string }): string {
+  return useLocaleStore.getState().locale === 'en' ? f.descriptionEn : f.description
 }

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { FORMULA_FUNCTIONS } from './formulaEngine'
+import { FORMULA_FUNCTIONS, fnDescription } from './formulaEngine'
 import type { ExcelColumn } from './types'
 import { t } from '@/lib/i18n'
 
@@ -63,7 +63,7 @@ export function FormulaInput({ value, onChange, columns, textareaRef }: FormulaI
       label: f.name,
       insert: `${f.name}(`,
       type: 'function' as const,
-      description: f.description,
+      description: fnDescription(f),
     })),
     ...columns.map((c) => ({
       label: c.label,
@@ -192,7 +192,7 @@ export function FormulaInput({ value, onChange, columns, textareaRef }: FormulaI
           ))}
           <span className="text-[10px] font-bold text-indigo-400 font-mono">)</span>
           <span className="text-[10px] text-white/25 ml-2 truncate">
-            {syntaxHint.fn.description}
+            {fnDescription(syntaxHint.fn)}
           </span>
         </div>
       )}

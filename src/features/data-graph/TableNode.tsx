@@ -3,6 +3,7 @@ import { useThemeStore } from '@/stores/theme.store'
 import { DOMAIN_HEX, type FieldSchema, type TableSchema } from './firestoreSchema'
 import { useOpenSchema } from './TableSchemaPanel'
 import type { TableNodeData } from './buildDiagram'
+import { tableDescription } from './firestoreSchema'
 
 const SIDES = [
   { side: 'top', pos: Position.Top },
@@ -72,7 +73,7 @@ export function TableNode({ data, selected }: NodeProps) {
       </div>
 
       {/* Description */}
-      <div className="border-t border-white/[0.06] px-3 py-2 text-[10px] italic text-white/35">{table.description}</div>
+      <div className="border-t border-white/[0.06] px-3 py-2 text-[10px] italic text-white/35">{tableDescription(table)}</div>
     </div>
   )
 }
