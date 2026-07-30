@@ -279,7 +279,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
             onClick={onClose}
             className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm"
           >
-            Terminé
+            {t('gSheetsFormulaModal.done')}
           </button>
         </footer>
       </div>

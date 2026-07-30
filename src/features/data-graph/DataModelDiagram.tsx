@@ -101,7 +101,7 @@ function DataModelDiagramInner() {
         <Database className="h-5 w-5 text-indigo-400" />
         <span className="text-[15px] font-bold text-white">{t('dg.dataModel')}</span>
         <span className="ml-auto hidden items-center rounded-lg border border-white/10 bg-surface px-3 py-1.5 text-[12px] text-white/40 md:flex">
-          Double-cliquez sur une table pour voir les données
+          {t('dataModelDiagram.doubleClickA')}
         </span>
         <span className="flex items-center gap-1.5 text-[12px] text-white/45">
           <Zap className="h-3.5 w-3.5 text-amber-400" /> Source : Firestore

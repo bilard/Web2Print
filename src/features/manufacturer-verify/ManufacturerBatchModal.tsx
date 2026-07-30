@@ -114,7 +114,7 @@ export function ManufacturerBatchModal({ onClose }: Props) {
           </span>
           {running ? (
             <button onClick={() => { abortRef.current = true }} className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-[12px] text-white/70 border border-white/10">
-              Arrêter
+              {t('manufacturerBatchModal.stop')}
             </button>
           ) : (
             <button onClick={() => void run()} disabled={selected.size === 0}

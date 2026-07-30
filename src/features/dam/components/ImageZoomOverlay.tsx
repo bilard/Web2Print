@@ -158,7 +158,7 @@ export function ImageZoomOverlay({ open, src, alt, onClose }: Props) {
 
       {/* Bottom hint */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-white/5 rounded-lg text-[10px] text-white/40 pointer-events-none">
-        Clic = zoom · molette = précis · glisser = déplacer · Esc = fermer
+        {t('imageZoomOverlay.clickZoomWheel')}
       </div>
     </div>
   )

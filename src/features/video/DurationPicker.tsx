@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { t } from '@/lib/i18n'
 
 export type DurationChoice = 5 | 10 | 15 | 30 | 'custom'
 
@@ -35,7 +36,7 @@ export function DurationPicker({ value, onChange, customSec, onCustomSecChange, 
   return (
     <div>
       <label className="block text-[10px] font-semibold text-white/40 uppercase tracking-[0.15em] mb-2.5">
-        Durée
+        {t('durationPicker.duration')}
       </label>
       <div className="flex gap-1.5">
         {OPTIONS.map(({ id, label }) => {

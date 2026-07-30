@@ -104,7 +104,7 @@ export function SourceSwitcher() {
         <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-white/10 rounded-lg shadow-xl z-40 overflow-hidden">
           <div className="px-3 py-1.5 border-b border-white/[0.06]">
             <span className="text-[9px] font-semibold text-white/40 uppercase tracking-wider">
-              Sources de données
+              {t('sourceSwitcher.dataSources')}
             </span>
           </div>
           <div className="max-h-64 overflow-y-auto">
@@ -115,7 +115,7 @@ export function SourceSwitcher() {
               </div>
             ) : datasets.length === 0 ? (
               <p className="text-[11px] text-white/30 italic py-4 text-center px-3">
-                Aucun dataset Firebase trouvé.
+                {t('sourceSwitcher.noFirebaseDataset')}
               </p>
             ) : (
               datasets.map((ds) => {

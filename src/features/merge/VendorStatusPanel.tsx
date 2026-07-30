@@ -31,7 +31,7 @@ export function VendorStatusPanel() {
           Fournisseurs
         </div>
         <p className="text-[11px] text-white/30 italic mt-1.5">
-          Aucune colonne « Marque » détectée dans la source.
+          {t('vendorStatusPanel.noBrandColumn')}
         </p>
       </div>
     )

@@ -1221,6 +1221,7 @@ function AddMenu({ onImport, onScrape }: { onImport: () => void; onScrape: () =>
 }
 
 function CreateMenu({ onCreateDb }: { onCreateDb: () => void }) {
+  const { t } = useTranslation()
   return (
     <div
       className="absolute right-0 top-full mt-1 z-50 w-44 bg-surface-2 border border-white/10 rounded-lg shadow-xl overflow-hidden"
@@ -1231,7 +1232,7 @@ function CreateMenu({ onCreateDb }: { onCreateDb: () => void }) {
         className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-white/60 hover:bg-white/[0.06] hover:text-white/90 transition-colors"
       >
         <Database className="w-3.5 h-3.5 text-indigo-400" />
-        Créer une BDD
+        {t('dataPage.createADatabase')}
       </button>
     </div>
   )

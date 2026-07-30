@@ -44,7 +44,7 @@ export function SettingsSheet() {
             className="w-full flex items-center justify-center gap-2 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            Se déconnecter
+            {t('settingsSheet.signOut')}
           </button>
         </div>
       </div>

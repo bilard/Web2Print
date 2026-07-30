@@ -193,7 +193,7 @@ export function UrlSourceSelector({ singleUrl, onChange, showPreview = true }: P
           <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1.5">URL ou ID du Google Sheet</label>
           {!gdriveConnected && (
             <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-300/80">
-              Connecte Google Drive dans Paramètres → Connectors avant d'importer un Sheet.
+              {t('urlSourceSelector.connectGoogleDrive')}
             </div>
           )}
           <div className="flex gap-2">

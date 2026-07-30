@@ -95,7 +95,7 @@ export function IdmlSummaryModal({ processing, state, error, onConfirm, onClose 
                 className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-[#fff] font-medium text-sm py-2.5 rounded-xl transition-colors"
               >
                 <CheckCircle className="w-4 h-4" />
-                Créer le projet et importer
+                {t('idmlSummaryModal.createTheProject')}
               </button>
               <p className="text-[10px] text-white/20 text-center">{t('id.pressEnter')}</p>
             </div>

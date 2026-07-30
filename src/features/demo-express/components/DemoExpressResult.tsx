@@ -85,7 +85,7 @@ export function DemoExpressResult() {
         className="mt-5 inline-flex items-center gap-2 rounded-lg border border-white/10 hover:bg-white/[0.04] px-3 py-2 text-xs text-white/70 transition-colors"
       >
         <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
-        Nouvelle démo
+        {t('demoExpressResult.newDemo')}
       </button>
     </div>
   )

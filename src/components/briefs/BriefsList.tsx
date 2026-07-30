@@ -146,7 +146,7 @@ export function BriefsList({ taxonomy }: Props) {
             <FileText className="w-5 h-5 text-white/30" />
           </div>
           <p className="text-[12px] text-white/40 max-w-sm">
-            Aucun brief pour cette taxonomie. Cliquez sur « Nouveau brief » pour démarrer.
+            {t('briefsList.noBriefFor')}
           </p>
         </div>
       )}

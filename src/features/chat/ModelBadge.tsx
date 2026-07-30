@@ -44,7 +44,7 @@ export function ModelBadge({ pulsing }: ModelBadgeProps) {
     return (
       <div className="flex items-center gap-1.5 text-[12px] text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-full px-2.5 py-1.5">
         <Sparkles className="w-3 h-3" />
-        Aucun provider — Réglages → IA
+        {t('modelBadge.noProviderSettings')}
       </div>
     )
   }

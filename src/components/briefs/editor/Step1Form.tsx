@@ -115,7 +115,7 @@ export function Step1Form({ brief, onAdvance }: Props) {
             Informations client
           </h2>
           <p className="text-[12px] text-white/40 mb-6">
-            Remplissez les champs ci-dessous. Les champs marqués d'un astérisque sont obligatoires.
+            {t('step1Form.fillInThe')}
           </p>
           <DynamicFormRenderer
             fields={ensureClientWebsiteUrlField(ensureBrandKitField(brief.client.formTemplateSnapshot))}

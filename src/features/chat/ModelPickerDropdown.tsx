@@ -3,6 +3,7 @@ import { Check, Settings, ExternalLink } from 'lucide-react'
 import { useAiSettingsStore, getEffectiveModelList } from '@/stores/aiSettings.store'
 import type { AiProvider, AiModelInfo } from '@/lib/aiModels'
 import type { ReasoningProvider } from '@/stores/aiSettings.store'
+import { t } from '@/lib/i18n'
 
 const PROVIDER_LABEL: Record<AiProvider, string> = {
   claude: 'Claude (Anthropic)',
@@ -128,7 +129,7 @@ export function ModelPickerDropdown({
       >
         <span className="flex items-center gap-1.5">
           <Settings className="w-3 h-3" />
-          Cascade & clés API → Réglages
+          {t('modelPickerDropdown.cascadeApiKeys')}
         </span>
         <ExternalLink className="w-3 h-3 opacity-50" />
       </a>

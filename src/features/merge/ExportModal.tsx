@@ -5,6 +5,7 @@ import { useMergeStore } from '@/stores/merge.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { useBatchExport, type ExportFormat, type ExportMode, type BatchExportConfig } from './useBatchExport'
 import { useIdmlBatchExport, type IdmlExportConfig } from './useIdmlBatchExport'
+import { t } from '@/lib/i18n'
 
 interface ExportModalProps {
   open: boolean
@@ -163,7 +164,7 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
           {/* IDML info */}
           {format === 'idml' && (
             <div className="text-xs text-emerald-400/70 bg-emerald-500/10 rounded-md px-3 py-2">
-              Export IDML multi-pages : un spread par ligne, fidélité InDesign.
+              {t('exportModal.multiPageIdml')}
             </div>
           )}
 

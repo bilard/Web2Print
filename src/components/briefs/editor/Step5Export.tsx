@@ -30,7 +30,7 @@ export function Step5Export({ brief }: Props) {
         <div className="max-w-2xl mx-auto">
           <h2 className="text-[14px] font-semibold text-white/80 mb-1">Export PowerPoint</h2>
           <p className="text-[12px] text-white/40 mb-6">
-            Le fichier sera téléchargé directement dans votre navigateur.
+            {t('step5Export.theFileWill')}
           </p>
 
           <div className="bg-surface-2 border border-white/[0.06] rounded-md p-5 flex flex-col gap-4">
@@ -56,7 +56,7 @@ export function Step5Export({ brief }: Props) {
 
             {completed && (
               <p className="text-[11px] text-emerald-400/80 text-center">
-                Brief marqué comme terminé. Vous pouvez régénérer le PPTX à tout moment.
+                {t('step5Export.briefMarkedAs')}
               </p>
             )}
           </div>

@@ -155,7 +155,7 @@ export function Step4Deck({ brief, onAdvance }: Props) {
               </ul>
             ) : !generateDeck.isPending ? (
               <p className="text-[11px] text-white/40">
-                Aucune slide. Le deck sera généré automatiquement.
+                {t('step4Deck.noSlideThe')}
               </p>
             ) : null}
           </section>

@@ -73,7 +73,7 @@ export function ManufacturerVerifyPanel({ rowId, source, sourceLabel, onClose }:
               <p className="text-[13px] text-white/60 max-w-md">{error}</p>
               <button onClick={() => void resolve(source)}
                 className="mt-1 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-[12px] text-white/70 border border-white/10">
-                Réessayer
+                {t('manufacturerVerifyPanel.tryAgain')}
               </button>
             </div>
           )}

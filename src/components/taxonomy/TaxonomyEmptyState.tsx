@@ -1,4 +1,5 @@
 import { FolderTree, Upload } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 interface TaxonomyEmptyStateProps {
   onImport: () => void
@@ -14,7 +15,7 @@ export function TaxonomyEmptyState({ onImport }: TaxonomyEmptyStateProps) {
         <div>
           <h3 className="text-[15px] font-semibold text-white/60 mb-1.5">Aucune taxonomie</h3>
           <p className="text-[12px] text-white/35 leading-relaxed">
-            Importez un fichier Markdown, CSV ou Excel pour créer votre première arborescence.
+            {t('taxonomyEmptyState.importAMarkdown')}
           </p>
         </div>
         <button

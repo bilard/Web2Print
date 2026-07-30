@@ -43,7 +43,7 @@ export function VendorsTab() {
   if (entries.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-white/40 text-sm">
-        Aucun template. Crée-en un dans « Templates scraping ».
+        {t('vendorsTab.noTemplateCreate')}
       </div>
     )
   }

@@ -49,7 +49,7 @@ export function PluginTokenSection() {
         <Plug className="h-4 w-4" /> Token du plugin InDesign
       </div>
       <p className="text-xs text-white/50">
-        Génère un token, colle-le une fois dans le panneau Web2Print d'InDesign. Lecture seule de tes dataSets.
+        {t('pluginTokenSection.generatesAToken')}
       </p>
 
       <div className="flex gap-2">
@@ -66,7 +66,7 @@ export function PluginTokenSection() {
           disabled={busy}
           className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-xs text-white font-medium transition-colors"
         >
-          Générer
+          {t('pluginTokenSection.generate')}
         </button>
       </div>
 

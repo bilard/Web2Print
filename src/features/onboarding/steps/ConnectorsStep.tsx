@@ -2,6 +2,7 @@ import { Plug } from 'lucide-react'
 import { GDriveConnectorRow } from '@/features/gdrive/GDriveConnectorRow'
 import { BrightDataConnectorRow } from '@/features/scraping/BrightDataConnectorRow'
 import { TelegramSettings } from '@/features/telegram/TelegramSettings'
+import { t } from '@/lib/i18n'
 
 export function ConnectorsStep() {
   return (
@@ -9,7 +10,7 @@ export function ConnectorsStep() {
       <div>
         <h3 className="text-base font-semibold text-white">Connecteurs</h3>
         <p className="text-xs text-white/50 mt-0.5">
-          Branchez vos services externes. Tout est optionnel et reconfigurable dans les Réglages.
+          {t('connectorsStep.connectYourExternal')}
         </p>
       </div>
       <GDriveConnectorRow />

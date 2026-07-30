@@ -117,7 +117,7 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
 
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={onlyEmpty} onChange={(e) => setOnlyEmpty(e.target.checked)} />
-            Ne générer que les cellules vides (recommandé)
+            {t('columnImageGenModal.onlyGenerateThe')}
           </label>
 
           <div className="flex items-center gap-4">

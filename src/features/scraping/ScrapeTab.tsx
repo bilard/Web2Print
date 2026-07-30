@@ -339,7 +339,7 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
                 <div className="space-y-2">
                   {!gdriveConnected && (
                     <p className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-300/80">
-                      Connecte Google Drive dans Paramètres → Connectors.
+                      {t('scrapeTab.connectGoogleDrive')}
                     </p>
                   )}
                   {gdriveConnected && importing && (

@@ -34,7 +34,7 @@ export function SchemaEditor({ fields, onChange }: Props) {
 
       {fields.length === 0 && (
         <p className="text-[11px] text-white/20 text-center py-3">
-          Aucun champ — le mode auto sera utilisé
+          {t('schemaEditor.noFieldAuto')}
         </p>
       )}
 

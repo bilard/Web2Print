@@ -130,7 +130,7 @@ export function WebhookPanel({ workflowId }: { workflowId: string }) {
               </p>
               <div className="flex items-center justify-between pt-1">
                 <button onClick={disable} className="text-[11px] text-white/40 hover:text-white/70">
-                  Désactiver
+                  {t('webhookPanel.disable')}
                 </button>
                 <button onClick={remove} className="flex items-center gap-1 text-[11px] text-white/30 hover:text-red-400">
                   <Trash2 className="w-3 h-3" /> Supprimer

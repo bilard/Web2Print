@@ -52,7 +52,7 @@ function ConnectionsPanel({ node, wf, onRemoveEdge }: ConnectionsPanelProps) {
       <div className="pt-3 mt-3 border-t border-white/10">
         <h4 className="text-xs uppercase text-white/40 font-semibold mb-2">{t('wfn.connections')}</h4>
         <p className="text-[11px] text-white/30 italic">
-          Aucune connexion. Tire un câble depuis un port d'un autre node.
+          {t('nodeConfigPanel.noConnectionDrag')}
         </p>
       </div>
     )

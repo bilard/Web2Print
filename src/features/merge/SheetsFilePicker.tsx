@@ -37,7 +37,7 @@ export function SheetsFilePicker() {
           G
         </div>
         <p className="text-xs text-white/50 text-center">
-          Connectez-vous pour accéder à vos Google Sheets
+          {t('sheetsFilePicker.signInTo')}
         </p>
         <button
           onClick={connect}

@@ -337,7 +337,7 @@ function CropPanel({
         onClick={resetMask}
         className="px-2 py-1 rounded text-[10px] bg-white/5 text-white/50 hover:bg-white/10 transition"
       >
-        Réinitialiser
+        {t('damImageToolbar.reset')}
       </button>
 
       <div className="ml-auto text-[9px] text-white/30 font-mono">

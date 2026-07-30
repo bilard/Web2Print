@@ -12,6 +12,7 @@ import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
 import { FieldTypeIcon } from './FieldTypeIcon'
 import type { ExcelColumn } from './types'
+import { t } from '@/lib/i18n'
 
 function FieldStats({ col }: { col: ExcelColumn }) {
   if (!col.stats) return null
@@ -93,7 +94,7 @@ function SortableField({ col, isHidden, isExpanded, onToggleExpand, onToggleVisi
               : 'bg-white/[0.02] text-white/25 border-white/10 hover:bg-amber-500/10 hover:text-amber-400/80 hover:border-amber-500/25'
           }`}
         >
-          Clé
+          {t('fieldsPanel.key')}
         </button>
         <button
           onClick={onToggleVisibility}
@@ -131,7 +132,7 @@ export function FieldsPanel() {
       <div className="flex flex-col items-center justify-center py-10 px-4 gap-3 text-center">
         <Inbox className="w-8 h-8 text-white/15" />
         <p className="text-xs text-white/40 leading-relaxed">
-          Sélectionnez une source dans la colonne de gauche pour voir ses champs
+          {t('fieldsPanel.selectASource')}
         </p>
       </div>
     )

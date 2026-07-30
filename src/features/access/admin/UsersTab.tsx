@@ -150,7 +150,7 @@ export function UsersTab() {
 
             {isExpanded && owner && (
               <div className="px-3 pb-3 pt-1 border-t border-white/5 text-[11px] text-white/35">
-                Compte propriétaire — accès total, non modifiable.
+                {t('usersTab.ownerAccountFull')}
               </div>
             )}
 

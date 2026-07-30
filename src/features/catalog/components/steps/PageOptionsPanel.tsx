@@ -101,7 +101,7 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
         <PageOptionsTheme plan={plan} setPlan={setPlan} />
 
         <p className="text-[11px] text-white/40 leading-relaxed">
-          Réglages appliqués à toutes les pages du même type — la mise en page fluide et l'export restent préservés.
+          {t('pageOptionsPanel.settingsAppliedTo')}
         </p>
       </div>
     </aside>

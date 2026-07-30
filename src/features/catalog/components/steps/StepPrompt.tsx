@@ -245,7 +245,7 @@ export function StepPrompt() {
                 className="w-full px-3 py-2 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600 resize-none" />
               {!plan && (
                 <p className="text-xs text-muted-foreground">
-                  Sans IA, un plan par défaut (grille homogène, thème neutre) reste disponible dès le premier clic.
+                  {t('stepPrompt.withoutAiA')}
                 </p>
               )}
               {/* DÉBOUCHÉ VISUEL du brief : « Générer le plan (IA) » traduit la

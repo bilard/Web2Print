@@ -94,7 +94,7 @@ export default function ScrapingTemplatesPage() {
           {loading && <div className="p-4 text-[11px] text-white/40">Chargement…</div>}
           {!loading && templates.length === 0 && (
             <div className="p-4 text-[11px] text-white/40">
-              Aucun template. Crée-en un avec "Nouveau" pour commencer à mapper un fournisseur.
+              {t('scrapingTemplatesPage.noTemplateCreate')}
             </div>
           )}
           {templates.map((t) => {
@@ -144,7 +144,7 @@ export default function ScrapingTemplatesPage() {
             />
           ) : (
             <div className="h-full flex items-center justify-center text-white/40 text-sm">
-              Sélectionne un template ou crée-en un nouveau
+              {t('scrapingTemplatesPage.selectATemplate')}
             </div>
           )}
         </div>

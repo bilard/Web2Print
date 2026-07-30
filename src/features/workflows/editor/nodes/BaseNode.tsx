@@ -293,7 +293,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
               title={t('wfn.download', { filename: exportResult.filename })}
             >
               <Download className="w-3 h-3" />
-              Télécharger
+              {t('baseNode.download')}
             </button>
           ) : null}
         </div>

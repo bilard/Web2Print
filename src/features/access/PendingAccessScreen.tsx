@@ -1,6 +1,7 @@
 import { ShieldAlert } from 'lucide-react'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useAuthStore } from '@/stores/auth.store'
+import { t } from '@/lib/i18n'
 
 export function PendingAccessScreen({ blocked = false }: { blocked?: boolean }) {
   const signOut = useSignOut()
@@ -24,7 +25,7 @@ export function PendingAccessScreen({ blocked = false }: { blocked?: boolean }) 
           onClick={() => signOut()}
           className="mt-2 text-xs text-white/40 hover:text-white/70 transition-colors"
         >
-          Se déconnecter
+          {t('pendingAccessScreen.signOut')}
         </button>
       </div>
     </div>

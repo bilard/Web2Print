@@ -91,7 +91,7 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
             <div>
               <h2 className="text-[14px] font-semibold text-white/80">{t('br.extraQuestions')}</h2>
               <p className="text-[12px] text-white/40">
-                Générées par l'IA à partir du brief client et de la taxonomie.
+                {t('step2Questions.generatedByThe')}
               </p>
             </div>
             <button

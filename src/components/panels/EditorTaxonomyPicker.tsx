@@ -164,7 +164,7 @@ export function EditorTaxonomyPicker({
               {t('taxonomy.link')}
             </h2>
             <p className="text-[11px] text-white/35 mt-0.5">
-              Sélectionnez le nœud où classer ce projet
+              {t('editorTaxonomyPicker.selectTheNode')}
             </p>
           </div>
           <CloseButton onClick={onClose} className="shrink-0" />
@@ -296,7 +296,7 @@ export function EditorTaxonomyPicker({
                       </div>
                       {current && (
                         <span className="text-[10px] text-indigo-300 font-medium px-1.5 py-0.5 rounded bg-indigo-500/15 shrink-0">
-                          Lié
+                          {t('editorTaxonomyPicker.linked')}
                         </span>
                       )}
                     </button>

@@ -145,7 +145,7 @@ export function DamStockTab() {
                   onClick={() => search()}
                   className="mt-2 px-2 py-1 rounded bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30"
                 >
-                  Réessayer
+                  {t('damStockTab.tryAgain')}
                 </button>
               </div>
             ) : (

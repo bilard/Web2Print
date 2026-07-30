@@ -65,7 +65,7 @@ export function PageOptionsCover({ variant, plan, setPlan, style, patchStyle, im
           onPrompt={(v) => (isCover ? setCover({ imagePrompt: v }) : setBackPrompt(v))} />
         {isCover && !prompt.trim() && globalPrompt.trim() && (
           <p className="text-[10px] text-white/40 leading-snug">
-            Champ vide : c'est le Prompt global de l'étape « Prompt &amp; style » qui part.
+            {t('pageOptionsCover.emptyFieldThe')}
           </p>
         )}
       </OptSection>

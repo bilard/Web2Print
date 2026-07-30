@@ -1,5 +1,6 @@
 import { Trash2 } from 'lucide-react'
 import type { ClientFormField } from '@/features/taxonomy/types'
+import { t } from '@/lib/i18n'
 
 interface Props {
   field: ClientFormField | null
@@ -11,7 +12,7 @@ export function FieldEditor({ field, onChange, onDelete }: Props) {
   if (!field) {
     return (
       <div className="h-full flex items-center justify-center text-[12px] text-white/30">
-        Sélectionnez un champ pour l'éditer
+        {t('fieldEditor.selectAField')}
       </div>
     )
   }
@@ -22,7 +23,7 @@ export function FieldEditor({ field, onChange, onDelete }: Props) {
     <div className="flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-[11px] uppercase tracking-wide text-white/40 font-semibold">
-          Édition du champ
+          {t('fieldEditor.editingTheField')}
         </h3>
         {field.builtin && (
           <span className="text-[10px] uppercase tracking-wide text-indigo-400/80 bg-indigo-500/10 px-2 py-0.5 rounded">

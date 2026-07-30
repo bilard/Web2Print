@@ -105,7 +105,7 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
         </datalist>
         <button type="button" onClick={handleSave} disabled={!newName.trim()}
           className="shrink-0 px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[#fff] text-xs font-medium">
-          Enregistrer comme modèle
+          {t('templatesBar.saveAsA')}
         </button>
       </div>
     </section>

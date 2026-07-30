@@ -87,7 +87,7 @@ export function VideoPromptLibrary({
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 shrink-0">
         <Library className="w-4 h-4 text-indigo-300" />
         <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wider">
-          Bibliothèque
+          {t('videoPromptLibrary.library')}
         </h3>
         <span className="ml-auto text-[10px] text-white/30 tabular-nums">
           {loading ? '…' : prompts.length}

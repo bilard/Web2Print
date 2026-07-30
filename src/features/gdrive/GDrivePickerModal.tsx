@@ -278,7 +278,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                 onClick={disconnect}
                 className="text-[10px] text-white/40 hover:text-red-400 self-start"
               >
-                Déconnecter
+                {t('gDrivePickerModal.disconnect')}
               </button>
             </>
           ) : null}

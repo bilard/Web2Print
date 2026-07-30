@@ -3,13 +3,14 @@ import type { OpsCockpit } from '@/features/priceWatch/dashboard/opsMetrics'
 import { fmtInt, fmtPct } from '@/features/priceWatch/radar/radarFormat'
 import { isCursorDomain } from '@/features/priceWatch/radar/scrapeState'
 import { RadarCollectStats } from './RadarCollectStats'
+import { t } from '@/lib/i18n'
 
 /** Onglet Volumétrie : combien de fiches collectées, chez qui, à quel rythme (buildOpsCockpit). */
 export function RadarVolume({ ops }: { ops: OpsCockpit | null }) {
   if (!ops || !ops.hasData) {
     return (
       <div className="radar-card px-5 py-8 text-center text-[13px]" style={{ color: 'var(--radar-text-2)' }}>
-        En attente de la première collecte.
+        {t('radarVolume.waitingForThe')}
       </div>
     )
   }

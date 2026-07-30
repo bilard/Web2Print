@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Loader2, AlertCircle } from 'lucide-react'
 import { useGoogleDrive } from './useGoogleDrive'
+import { t } from '@/lib/i18n'
 
 export function GDriveConnect() {
   const [loading, setLoading] = useState(false)
@@ -39,7 +40,7 @@ export function GDriveConnect() {
       <div>
         <h2 className="text-lg font-semibold text-white/80">Google Drive</h2>
         <p className="text-sm text-white/30 mt-1 max-w-xs leading-relaxed">
-          Connectez votre Drive pour accéder à vos documents Docs, Sheets, Slides et plus.
+          {t('gDriveConnect.connectYourDrive')}
         </p>
       </div>
 

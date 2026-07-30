@@ -40,7 +40,7 @@ export function BriefImagesGallery({ brief, batchPending }: Props) {
       {items.length > 0 && (
         <div>
           <h3 className="text-[12px] font-semibold text-white/80 mb-2">
-            Mise en situation 3D — stand personnalisé
+            {t('briefImagesGallery.dStagingCustom')}
           </h3>
           <BriefImageCard
             label="Stand complet avec tous les produits personnalisés"

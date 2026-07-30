@@ -247,7 +247,7 @@ export function PalettePanel() {
 
       {/* Info */}
       <p className="text-[9px] text-white/15 leading-relaxed">
-        Les couleurs et dégradés sont sauvegardés automatiquement avec le projet.
+        {t('palettePanel.coloursAndGradients')}
       </p>
     </div>
   )

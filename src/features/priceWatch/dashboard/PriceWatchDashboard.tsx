@@ -177,7 +177,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <button type="button" onClick={() => setDetailOpen((o) => !o)}
           className="w-full flex items-center gap-2 px-4 py-3 text-sm font-semibold text-white/70 hover:text-white">
           <ChevronDown className={`w-4 h-4 transition-transform ${detailOpen ? 'rotate-180' : ''}`} />
-          Fiches détaillées par produit (prix, stock, liens concurrents)
+          {t('priceWatchDashboard.detailedRecordsPer')}
         </button>
         {detailOpen && <div className="px-4 pb-4"><ProductList report={report} /></div>}
       </section>

@@ -747,7 +747,7 @@ export function PropertiesPanel() {
                       className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-500/50 rounded-md text-white/40 hover:text-indigo-300 transition-colors"
                     >
                       <Minimize2 className="w-3.5 h-3.5" />
-                      Ajuster à la taille du contenu
+                      {t('propertiesPanel.fitToThe')}
                     </button>
                   )}
                 </Section>

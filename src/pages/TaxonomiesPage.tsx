@@ -136,7 +136,7 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
                   title={t('tx.onlyLinked')}
                 >
                   <Filter className="w-3.5 h-3.5" />
-                  Liés uniquement
+                  {t('taxonomiesPage.linkedOnly')}
                 </button>
                 {canEdit && (
                   <button

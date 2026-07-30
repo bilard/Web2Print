@@ -57,7 +57,7 @@ export function UserTemplatesSection({ uid, canEdit, canDelete, onUse }: Props) 
               <div className="text-[13px] font-medium text-white/80 group-hover:text-white pr-12">{tpl.name}</div>
               <p className="text-[11px] text-white/35 mt-1 leading-snug line-clamp-3">{tpl.description}</p>
               <span className="inline-block mt-2 text-[10px] uppercase tracking-wide text-indigo-300/70 bg-indigo-500/10 rounded px-1.5 py-0.5">
-                Mon modèle
+                {t('userTemplatesSection.myTemplate')}
               </span>
             </button>
             <div className="absolute top-2 right-2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">

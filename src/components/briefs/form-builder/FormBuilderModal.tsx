@@ -122,7 +122,7 @@ export function FormBuilderModal({ open, taxonomy, onClose }: Props) {
           {/* Col 3 — aperçu live */}
           <div className="overflow-y-auto p-6 bg-background">
             <h3 className="text-[11px] uppercase tracking-wide text-white/40 font-semibold mb-4">
-              Aperçu
+              {t('formBuilderModal.preview')}
             </h3>
             <div className="max-w-lg">
               <DynamicFormRenderer

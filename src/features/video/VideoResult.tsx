@@ -184,7 +184,7 @@ export function VideoResult(props: Props) {
         <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-lg p-2.5 text-[11px] text-white/70 leading-relaxed">
           <div className="flex items-center gap-1.5 mb-1.5 text-indigo-300 font-medium">
             <Palette className="w-3 h-3" />
-            Style appliqué par Gemini
+            {t('videoResult.styleAppliedBy')}
           </div>
           <div className="font-mono tabular-nums flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span>pace=<span className="text-white">{styleConfig.pace}</span></span>

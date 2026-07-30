@@ -32,7 +32,7 @@ export function RadarDistribution({ cockpit }: { cockpit: Cockpit }) {
       </ul>
       {truncated && (
         <p className="mt-2 text-[10.5px]" style={{ color: 'var(--radar-text-3)' }}>
-          Échantillon plafonné (1000 produits les plus exposés) — les headline restent exacts.
+          {t('radarDistribution.cappedSampleThe')}
         </p>
       )}
     </section>

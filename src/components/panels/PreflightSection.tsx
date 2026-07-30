@@ -60,7 +60,7 @@ export function PreflightSection() {
       {issues !== null && issues.length === 0 && (
         <div className="flex items-center gap-1.5 text-[11px] text-emerald-300/80 px-1">
           <CheckCircle2 className="w-3.5 h-3.5" />
-          Aucun problème détecté — prêt pour l'impression.
+          {t('preflightSection.noIssueFound')}
         </div>
       )}
 

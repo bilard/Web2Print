@@ -21,7 +21,7 @@ export function ResetLlmModelsButton() {
       className="flex items-center justify-center gap-1.5 text-xs font-medium text-violet-200 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 rounded-lg px-3 py-2 transition-colors"
     >
       <RefreshCw className="w-3.5 h-3.5" />
-      Mettre à jour tous les LLM (dernières versions)
+      {t('resetLlmModelsButton.updateEveryLlm')}
     </button>
   )
 }

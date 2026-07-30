@@ -97,7 +97,7 @@ export function SiteCredentialsForm({ host, hasCreds, onSaved, onCleared, onClos
       <div className="flex items-center justify-between gap-2 mt-0.5">
         {hasCreds ? (
           <button onClick={clear} disabled={busy} className="text-[10px] text-red-400/80 hover:text-red-300 disabled:opacity-40">
-            Retirer l'accès
+            {t('sourceSitesCreds.removeAccess')}
           </button>
         ) : <span />}
         <div className="flex items-center gap-1.5">

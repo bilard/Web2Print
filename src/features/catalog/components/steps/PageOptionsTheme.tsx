@@ -39,7 +39,7 @@ export function PageOptionsTheme({ plan, setPlan }: Props) {
           ))}
         </div>
         <p className="text-[10px] text-white/35 leading-snug">
-          Le bandeau Univers › Famille (fond, textes, tailles, polices) se règle dans la section « Bandeau taxonomie ».
+          {t('pageOptionsTheme.theUniverseFamily')}
         </p>
       </OptSection>
       <OptSection title="Polices">

@@ -77,7 +77,7 @@ export function PipelineRunsPanel() {
         <div className="h-12 bg-white/5 rounded-lg animate-pulse" />
       ) : !runs || runs.length === 0 ? (
         <p className="text-[10px] text-white/25 italic">
-          Aucun run enregistré — les enrichissements PIM et décompositions apparaîtront ici.
+          {t('pipelineRunsPanel.noRunRecorded')}
         </p>
       ) : (
         <>

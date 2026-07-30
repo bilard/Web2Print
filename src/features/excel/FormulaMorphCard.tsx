@@ -77,7 +77,7 @@ export function FormulaMorphCard({ conv }: { conv: FormulaConversion }) {
       {/* Transition */}
       <div className="fx-rise flex items-center gap-1.5 text-[10px] text-indigo-300/70" style={{ animationDelay: '0.15s' }}>
         <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
-        Conversion en champ calculé
+        {t('formulaMorphCard.convertingToA')}
       </div>
 
       {/* Carte IBS Studio */}

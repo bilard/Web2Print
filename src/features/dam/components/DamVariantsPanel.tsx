@@ -149,7 +149,7 @@ export function DamVariantsPanel({
           <div className="flex flex-col items-center justify-center text-white/20 gap-2 p-4 text-center">
             <Layers className="w-6 h-6" />
             <div className="text-[10px] text-white/15">
-              Modifiez l'image et cliquez sur "Enregistrer variante" pour créer une nouvelle version
+              {t('damVariantsPanel.editTheImage')}
             </div>
           </div>
         )}

@@ -2,13 +2,14 @@
 // filtrable QUI / QUOI / QUAND.
 import { useAuditLogAll } from '../useAuditLog'
 import { AuditLogView } from './AuditLogView'
+import { t } from '@/lib/i18n'
 
 export function AuditTab() {
   const { data, isLoading, refetch } = useAuditLogAll(true)
   return (
     <div className="pb-6">
       <p className="text-xs text-white/45 mb-3">
-        Qui a fait quoi, quand. 500 dernières actions — filtre par utilisateur, action et date.
+        {t('auditTab.whoDidWhat')}
       </p>
       <AuditLogView
         entries={data ?? []}

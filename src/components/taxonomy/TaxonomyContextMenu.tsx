@@ -1,4 +1,5 @@
 import { Pencil, Copy, Trash2, Settings } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 interface TaxonomyContextMenuProps {
   onClose: () => void
@@ -38,7 +39,7 @@ export function TaxonomyContextMenu({
           className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-white/60 hover:bg-white/[0.06] transition-colors"
         >
           <Settings className="w-3.5 h-3.5" />
-          Paramètres
+          {t('taxonomyContextMenu.settings')}
         </button>
         <div className="h-px bg-white/[0.06] mx-2" />
         <button

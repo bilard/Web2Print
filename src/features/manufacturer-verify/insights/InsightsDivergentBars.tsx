@@ -46,7 +46,7 @@ export function InsightsDivergentBars({ fields }: Props) {
       <h3 className="text-sm font-semibold text-white/80 mb-3">{t('mv.insights.topDivergent')}</h3>
       {top.length === 0 ? (
         <div className="h-64 flex items-center justify-center text-sm text-white/40">
-          Aucun écart détecté sur les produits vérifiés.
+          {t('insightsDivergentBars.noGapFound')}
         </div>
       ) : (
         <div style={{ height: `${Math.max(256, top.length * 30)}px` }}>

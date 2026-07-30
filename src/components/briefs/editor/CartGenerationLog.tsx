@@ -12,6 +12,7 @@ import {
   Save,
 } from 'lucide-react'
 import type { CartProgressEvent } from '@/features/briefs/ai/useGenerateCart'
+import { t } from '@/lib/i18n'
 
 interface Props {
   events: CartProgressEvent[]
@@ -55,7 +56,7 @@ export function CartGenerationLog({ events, isRunning }: Props) {
       <div className="flex items-center gap-2 border-b border-white/[0.06] bg-gradient-to-r from-surface-2 to-background px-3 py-2">
         <Globe className="w-3.5 h-3.5 text-indigo-400" />
         <span className="text-[11px] font-medium text-white/80 tracking-wide">
-          Journal de génération
+          {t('cartGenerationLog.generationLog')}
         </span>
         <span className="text-[10px] text-white/30 ml-1">
           {events.length} événement{events.length > 1 ? 's' : ''}

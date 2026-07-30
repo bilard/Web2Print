@@ -3,6 +3,7 @@ import { ExternalLink } from 'lucide-react'
 import { useUpdateTaxonomySettings } from '@/features/taxonomy/useTaxonomyMutations'
 import { CloseButton } from '@/components/shared/CloseButton'
 import type { Taxonomy } from '@/features/taxonomy/types'
+import { t } from '@/lib/i18n'
 
 interface TaxonomySettingsModalProps {
   taxonomy: Taxonomy
@@ -60,7 +61,7 @@ export function TaxonomySettingsModal({ taxonomy, onClose }: TaxonomySettingsMod
               </a>
             )}
             <p className="text-[10px] text-white/30 mt-1.5">
-              Site web de référence de cette nomenclature.
+              {t('taxonomySettingsModal.referenceWebsiteFor')}
             </p>
           </div>
         </div>

@@ -35,7 +35,7 @@ export function ScrapingPreview({ result }: Props) {
   if (result.rows.length === 0) {
     return (
       <div className="text-center py-6 text-sm text-white/30">
-        Aucune donnée extraite
+        {t('scrapingPreview.noDataExtracted')}
       </div>
     )
   }

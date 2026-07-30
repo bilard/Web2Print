@@ -59,7 +59,7 @@ export function PulseApp() {
               Impossible de charger le trafic. Tirez pour actualiser.
             </p>
             <button onClick={p.refresh} className="pulse-tap mt-4 rounded-full px-5 py-2 text-[14px] font-semibold" style={{ background: 'var(--pulse-accent)', color: '#fff' }}>
-              Réessayer
+              {t('pulseApp.tryAgain')}
             </button>
           </div>
         ) : p.loading ? (
@@ -80,7 +80,7 @@ export function PulseApp() {
             </div>
             <PulseInstallHint />
             <p className="pb-2 text-center text-[11px]" style={{ color: 'var(--pulse-text-3)' }}>
-              Sans cookie · sans donnée personnelle · vos propres visites sont exclues
+              {t('pulseApp.noCookieNo')}
             </p>
           </>
         )}

@@ -412,7 +412,7 @@ function SiteCookiesSection() {
             </div>
           )}
           <p className="text-[9px] text-white/20 leading-relaxed">
-            DevTools → Application → Cookies → sélectionner tout → copier · Tableau auto-parsé (colonnes analytiques ignorées)
+            {t('settingsPanel.devtoolsApplicationCookies')}
           </p>
           <div className="flex gap-1 justify-end">
             <button onClick={() => { setAdding(false); setNewCookie(''); setNewHostname('') }} className="text-[10px] text-white/30 hover:text-white/60 px-2 py-0.5">{t('cookies.cancel')}</button>

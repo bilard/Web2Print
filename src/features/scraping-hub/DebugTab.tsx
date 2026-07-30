@@ -41,7 +41,7 @@ export function DebugTab() {
       <div className="flex-1 overflow-auto p-4 space-y-2">
         {entries.length === 0 && (
           <div className="text-center text-white/40 text-sm mt-8">
-            Aucune requête encore. Lance un enrichissement pour voir ce qui est envoyé à Jina et au LLM.
+            {t('debugTab.noRequestYet')}
           </div>
         )}
         {entries.map((e) => {

@@ -77,7 +77,7 @@ export function PulseGate({ children }: { children: ReactNode }) {
         <div>
           <h1 className="pulse-rounded text-[22px] font-bold">{t('pu.restricted')}</h1>
           <p className="mt-1 max-w-[260px] text-[14px]" style={{ color: 'var(--pulse-text-2)' }}>
-            Ce tableau de bord est réservé aux administrateurs.
+            {t('pulseGate.thisDashboardIs')}
           </p>
         </div>
         <button onClick={() => void signOut()} className="pulse-tap text-[14px] font-semibold" style={{ color: 'var(--pulse-accent-2)' }}>

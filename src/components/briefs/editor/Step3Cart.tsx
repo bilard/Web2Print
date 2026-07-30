@@ -127,7 +127,7 @@ export function Step3Cart({ brief, onAdvance }: Props) {
             <div>
               <h2 className="text-[14px] font-semibold text-white/80">Panier produits</h2>
               <p className="text-[12px] text-white/40">
-                Généré par l'IA à partir du brief et des réponses. Modifiable ligne par ligne.
+                {t('step3Cart.generatedByThe')}
               </p>
             </div>
             <div className="flex items-center gap-2">

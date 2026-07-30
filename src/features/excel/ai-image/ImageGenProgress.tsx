@@ -8,7 +8,7 @@ export function ImageGenTestPreview({ src }: { src: string }) {
     <div className="border border-white/10 rounded p-2 flex items-center gap-3">
       <img src={src} alt={t('xl.imageGen.alt')} className="w-24 h-24 object-contain rounded bg-white/5" />
       <div className="text-white/60 text-[12px]">
-        Aperçu (non enregistré). Ajustez la consigne si besoin, puis lancez la génération.
+        {t('imageGenProgress.previewNotSaved')}
       </div>
     </div>
   )

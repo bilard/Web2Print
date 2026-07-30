@@ -164,7 +164,7 @@ export function WorkflowResultsScreen({ workflowId }: { workflowId: string }) {
               <Eye className="w-8 h-8 mx-auto text-neutral-700" />
               <p>{t('wfres.empty')}</p>
               <p className="text-[12px] text-neutral-600">
-                Lance le workflow (« Run » dans l'éditeur, ou « Lancer serveur » / cron) puis reviens ici.
+                {t('workflowResultsScreen.runTheWorkflow')}
               </p>
             </div>
           ) : (

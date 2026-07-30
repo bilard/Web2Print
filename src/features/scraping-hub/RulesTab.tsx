@@ -56,7 +56,7 @@ export function RulesTab() {
     <div className="flex-1 flex flex-col">
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
         <span className="text-xs text-white/50">
-          Règles rédactionnelles — stockées dans Firestore, partagées par l'équipe
+          {t('rulesTab.editorialRulesStored')}
         </span>
         {canEdit && (
           <button

@@ -115,7 +115,7 @@ function ChartConfigUi({
       {!isCount && (
         <div>
           <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
-            Colonnes de valeurs (séries)
+            {t('chartNode.valueColumnsSeries')}
           </label>
           {availableColumns.length === 0 ? (
             <p className="text-[10px] text-neutral-600 italic">Lance le node amont pour voir les colonnes disponibles.</p>

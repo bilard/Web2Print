@@ -8,6 +8,7 @@ import {
 import type { Taxonomy } from '@/features/taxonomy/types'
 import type { ProjectData } from '@/types/project'
 import { CloseButton } from '@/components/shared/CloseButton'
+import { t } from '@/lib/i18n'
 
 interface LinkProjectsModalProps {
   open: boolean
@@ -319,7 +320,7 @@ export function LinkProjectsModal({
 
                       {linked && (
                         <span className="text-[10px] text-teal-400/80 font-medium px-1.5 py-0.5 rounded bg-teal-500/10 shrink-0">
-                          Lié
+                          {t('linkProjectsModal.linked')}
                         </span>
                       )}
                     </button>

@@ -66,14 +66,14 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
         </button>
       </div>
       <p className="text-[11px] text-white/40 leading-relaxed -mt-2">
-        Glissez les objets dans l'aperçu — le résultat est identique dans le catalogue et à l'export.
+        {t('cardStyleCard.dragTheObjects')}
       </p>
 
       {/* Disposition des objets (drag & drop, aimant, liaisons) — LE mode de rendu. */}
       <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-2.5 space-y-1.5">
         <label className="flex items-center gap-2 text-[11px] text-white/70 cursor-pointer select-none">
           <input type="checkbox" checked={style.magnetFlow ?? true} onChange={(e) => patch({ magnetFlow: e.target.checked })} className="accent-indigo-600" />
-          Aimanter les blocs texte (défaut)
+          {t('cardStyleCard.snapTheText')}
         </label>
         <p className="text-[10px] text-white/40 leading-snug">
           Réglable BLOC PAR BLOC : sélectionnez un bloc texte dans l'aperçu puis

@@ -375,7 +375,7 @@ export function Animation3DPanel() {
           </div>
 
           <p className="text-[10px] text-white/40 leading-tight pt-1">
-            Astuce : cliquer-glisser sur l'overlay 3D pour orienter le mesh à la souris.
+            {t('animation3DPanel.tipClickAnd')}
           </p>
         </div>
       )}
@@ -396,7 +396,7 @@ export function Animation3DPanel() {
             className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-red-500/90 hover:bg-red-500 text-[#fff] text-[12px] font-semibold py-2 transition"
           >
             <Square className="w-3.5 h-3.5" />
-            Arrêter
+            {t('animation3DPanel.stop')}
           </button>
         )}
       </div>

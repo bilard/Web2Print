@@ -223,7 +223,7 @@ function GeneratedImageActions({ imageUrl, mimeType, prompt }: GeneratedImageAct
         title={t('ch.downloadPng')}
       >
         <Download className="w-3 h-3" />
-        Télécharger
+        {t('chatMessage.download')}
       </button>
       <button
         type="button"

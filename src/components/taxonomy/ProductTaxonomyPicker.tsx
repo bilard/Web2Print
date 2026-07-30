@@ -336,7 +336,7 @@ export function ProductTaxonomyPicker({
               Classer ce produit dans une taxonomie
             </h2>
             <p className="text-[11px] text-white/35 mt-0.5">
-              Sélectionnez le nœud où classer ce produit
+              {t('productTaxonomyPicker.selectTheNode')}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -527,7 +527,7 @@ export function ProductTaxonomyPicker({
                 onClick={handleClear}
                 className="text-[12px] font-medium text-red-300 hover:text-red-200 bg-red-500/[0.08] hover:bg-red-500/[0.15] border border-red-500/20 px-3 py-2 rounded-lg transition-colors"
               >
-                Désassigner
+                {t('productTaxonomyPicker.unassign')}
               </button>
             )}
             <button

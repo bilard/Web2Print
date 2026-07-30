@@ -3,6 +3,7 @@
 // « à confirmer » + la matrice comparative produit × site.
 import { usePriceMatches, usePriceWatchMutations } from '../usePriceWatch'
 import type { PriceMatch } from '../types'
+import { t } from '@/lib/i18n'
 
 const btnSecondaryCls = 'text-xs bg-white/10 hover:bg-white/15 text-white px-2 py-1 rounded transition-colors'
 const btnGhostCls = 'text-xs text-white/40 hover:text-white/70 px-2 py-1 rounded transition-colors'
@@ -96,7 +97,7 @@ export function ComparisonTab() {
               {products.length === 0 && (
                 <tr>
                   <td colSpan={2 + sites.length} className="py-6 text-center text-white/50">
-                    Aucune donnée — lance un workflow « Veille tarifaire » pour peupler le comparatif.
+                    {t('comparisonTab.noDataRun')}
                   </td>
                 </tr>
               )}

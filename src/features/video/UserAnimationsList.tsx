@@ -282,7 +282,7 @@ export function UserAnimationsList() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-white/30 text-sm gap-2">
         <FileCode2 className="w-8 h-8 text-white/15" />
-        Aucune animation sauvegardée
+        {t('userAnimationsList.noAnimationSaved')}
       </div>
     )
   }

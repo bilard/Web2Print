@@ -31,7 +31,7 @@ export function RadarCompetitorFlow({ history, sites }: {
   if (rows.length === 0) {
     return (
       <section className="radar-card radar-in px-5 py-8 text-center text-[13px]" style={{ color: 'var(--radar-text-2)' }}>
-        Pas encore assez d'historique pour tracer le flux des écarts. Reviens après quelques analyses.
+        {t('radarCompetitorFlow.notEnoughHistory')}
       </section>
     )
   }
