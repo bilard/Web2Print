@@ -74,9 +74,9 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
     try {
       let html = testHtml
       if (!html && testUrl) {
-        toast.info('Téléchargement de la page…')
+        toast.info(t('tst.st.fetching'))
         const fetched = await fetchSourceHtml(testUrl)
-        if (!fetched) { toast.error('Impossible de récupérer le HTML (CORS ?)'); return }
+        if (!fetched) { toast.error(t('tst.st.fetchFailed')); return }
         html = fetched
         setTestHtml(html)
       }
@@ -84,7 +84,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
       const res = applyTemplate(template, html, testUrl || undefined)
       setTestResult(res)
       const score = scoreApplyResult(res)
-      if (score >= 20) toast.success(`Extraction réussie — score ${score}`)
+      if (score >= 20) toast.success(t('tst.st.extractOk', { score }))
       else if (score >= 10) toast.warning(`Extraction partielle — score ${score}`)
       else toast.error(`Extraction faible — score ${score}`)
     } finally {
@@ -98,18 +98,18 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
       debugLog('[TemplateEditor] saving template', template)
       const { syncedCount } = await saveTemplateWithVendorSync(template)
       if (syncedCount > 0) {
-        toast.success(`Template enregistré — prompt fournisseur propagé à ${syncedCount} autre(s) template(s)`)
+        toast.success(t('tst.st.savedPropagated', { count: syncedCount }))
       } else {
-        toast.success('Template enregistré')
+        toast.success(t('tst.st.saved'))
       }
       onSaved?.()
     } catch (err) {
       console.error('[TemplateEditor] save failed', err)
       const msg = err instanceof Error ? err.message : String(err)
       if (/permission/i.test(msg) || /insufficient/i.test(msg)) {
-        toast.error('Sauvegarde refusée par Firestore — règles manquantes sur la collection "scrapingTemplates". Voir README.')
+        toast.error(t('tst.st.rulesMissing'))
       } else {
-        toast.error('Échec sauvegarde : ' + msg)
+        toast.error(t('tst.st.saveFailed', { message: msg }))
       }
     } finally {
       setSaving(false)
@@ -131,7 +131,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
     try {
       const parsed = JSON.parse(txt)
       onChange({ ...template, ...parsed, id: template.id, updatedAt: Date.now() })
-      toast.success('Template importé')
+      toast.success(t('tst.st.imported'))
     } catch {
       toast.error('JSON invalide')
     }

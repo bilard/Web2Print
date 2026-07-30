@@ -63,7 +63,7 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
   const onStop = () => guard('stop', async () => {
     await stopServerRun(uid!, workflowId!)
     setStopAsked(true)
-    toast.info('Arrêt demandé — le run s’interrompra dans quelques secondes.')
+    toast.info(t('wfx.stopRequested'))
   })
 
   // Action la MOINS réversible depuis un mobile (un doigt qui glisse couperait le flux) :
@@ -73,7 +73,7 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
     void guard('suspend', async () => {
       const done = await suspendWorkflow(uid!, workflowId!)
       if (done) toast.success('Flux suspendu — plus aucune relance automatique.')
-      else toast.info('Aucun cron actif à suspendre.')
+      else toast.info(t('wfx.noCron'))
     })
   }
 

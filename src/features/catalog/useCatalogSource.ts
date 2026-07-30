@@ -9,6 +9,7 @@ import { defaultPromoFieldMap, defaultCustomFields } from '@/features/retail-pro
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import { guessLevelKeys } from './catalogTree'
 import { useCatalogStore } from '@/stores/catalog.store'
+import { t } from '@/lib/i18n'
 
 /** Post-connect commun : source + sélection totale + auto-mapping + toast. */
 function applyConnectedSource(sourceRef: DataSourceRef, columns: MergeColumn[], rows: MergeRow[]) {
@@ -20,7 +21,7 @@ function applyConnectedSource(sourceRef: DataSourceRef, columns: MergeColumn[], 
   useCatalogStore.setState({ fieldMapOverrides: {} })
   s.setCustomFields(defaultCustomFields(columns, fieldMap))
   s.setLevelKeys(guessLevelKeys(columns))
-  toast.success(`${rows.length} produits chargés`)
+  toast.success(t('tst.cat.productsLoaded', { count: rows.length }))
 }
 
 export function useCatalogSource() {

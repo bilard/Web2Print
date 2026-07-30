@@ -12,6 +12,7 @@ import { generateImageBase64, NANO_BANANA_PRO_MODELS } from '@/features/nanobana
 import { removeBackground } from '@/features/imaging/removeBackground'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { pagePx } from './components/pages/catalogCss'
+import { t } from '@/lib/i18n'
 
 function base64ToBlob(base64: string, mimeType: string): Blob {
   const binary = atob(base64)
@@ -89,9 +90,7 @@ async function cutout(blob: Blob, mimeType: string): Promise<{ blob: Blob; mimeT
     // Repli VISIBLE : un carré blanc autour du logo doit s'expliquer, sinon il
     // se confond avec « la fonctionnalité n'est pas déployée ».
     console.warn('[catalogue] détourage de l’emblème indisponible, fond conservé :', e)
-    toast.warning('Emblème généré, mais le détourage a échoué — le fond blanc est conservé', {
-      description: 'Service de détourage indisponible. Relancez « Emblème IA » ou chargez un PNG transparent.',
-    })
+    toast.warning(t('tst.cat.logoCutoutFailed'), { description: t('tst.cat.logoCutoutFailedDesc') })
     return { blob, mimeType }
   } finally {
     URL.revokeObjectURL(src)
@@ -117,9 +116,9 @@ export function useCoverImage() {
   }
 
   const generateCover = async (prompt: string, target: CoverTarget) => {
-    if (!prompt.trim()) { toast.error('Écrivez d’abord votre prompt (Prompt global ou champ « Visuel de couverture »)'); return }
+    if (!prompt.trim()) { toast.error(t('tst.cat.promptRequired')); return }
     const uid = auth.currentUser?.uid
-    if (!uid) { toast.error('Connexion requise pour générer un visuel'); return }
+    if (!uid) { toast.error(t('tst.cat.visualSignIn')); return }
     setGenerating(true)
     try {
       const s = useCatalogStore.getState()
@@ -139,9 +138,12 @@ export function useCoverImage() {
         ? await cutout(base64ToBlob(base64, mimeType), mimeType)
         : { blob: base64ToBlob(base64, mimeType), mimeType }
       apply(target, await uploadToCovers(uid, shaped.blob, shaped.mimeType, target))
-      toast.success(target === 'logo' ? 'Emblème généré' : 'Visuel de couverture généré')
+      toast.success(t(target === 'logo' ? 'tst.cat.logoGenerated' : 'tst.cat.coverGenerated'))
     } catch (e) {
-      toast.error(`Génération du visuel échouée — ${target === 'logo' ? 'logo typographique conservé' : 'couverture typographique conservée'} (${e instanceof Error ? e.message : 'erreur'})`)
+      toast.error(t('tst.cat.visualFailed', {
+        fallback: t(target === 'logo' ? 'tst.cat.visualFailedLogo' : 'tst.cat.visualFailedCover'),
+        message: e instanceof Error ? e.message : t('tst.cat.genericError'),
+      }))
     } finally {
       setGenerating(false)
     }
@@ -155,7 +157,7 @@ export function useCoverImage() {
     setGenerating(true)
     try {
       apply(target, await uploadToCovers(uid, file, file.type || 'image/png', target))
-      toast.success('Visuel chargé')
+      toast.success(t('tst.cat.visualLoaded'))
     } catch (e) {
       toast.error(`Chargement impossible (${e instanceof Error ? e.message : 'erreur'})`)
     } finally {

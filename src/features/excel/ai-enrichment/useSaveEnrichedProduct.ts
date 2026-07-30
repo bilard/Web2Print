@@ -295,15 +295,15 @@ export function useSaveEnrichedProduct() {
           next.add(rowId)
           return next
         })
-        toast.success('Données enrichies sauvegardées', {
-          description: `${Object.keys(values).length} champs mis à jour`,
+        toast.success(t('tst.xl.enrichedSaved'), {
+          description: t('tst.xl.enrichedSavedDesc', { count: Object.keys(values).length }),
         })
         return true
       } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Erreur lors de la sauvegarde'
+        const msg = e instanceof Error ? e.message : t('tst.xl.saveError')
         console.error('[save-enriched] FAILED', e)
         setError(msg)
-        toast.error('Échec sauvegarde', { description: msg })
+        toast.error(t('tst.xl.saveFailedShort'), { description: msg })
         return false
       } finally {
         setSaving(false)

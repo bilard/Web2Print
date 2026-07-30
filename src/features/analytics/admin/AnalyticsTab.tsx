@@ -20,7 +20,8 @@ const AnalyticsWorldMap = lazy(() =>
 )
 import { AnalyticsUsers } from './AnalyticsUsers'
 import { AnalyticsFilters } from './AnalyticsFilters'
-import { t } from '@/lib/i18n'
+import { t, intlLocale } from '@/lib/i18n'
+import { useLocaleStore } from '@/stores/locale.store'
 
 const PERIODS: { key: PeriodKey; label: string }[] = [
   { key: 'today', label: "Aujourd'hui" },
@@ -47,9 +48,9 @@ export function AnalyticsTab() {
     clear.mutate(undefined, {
       onSuccess: (deleted) => {
         setConfirmClear(false)
-        toast.success(`Historique vidé — ${deleted.toLocaleString('fr-FR')} consultation(s) supprimée(s).`)
+        toast.success(t('tst.an.historyCleared', { count: deleted.toLocaleString(intlLocale(useLocaleStore.getState().locale)) }))
       },
-      onError: (e) => toast.error(`Échec : ${e instanceof Error ? e.message : 'erreur inconnue'}`),
+      onError: (e) => toast.error(t('tst.an.failure', { message: e instanceof Error ? e.message : t('tst.unknownError') })),
     })
   }
   // Preset : borne haute ouverte (jusqu'à maintenant) pour inclure le direct.
@@ -63,9 +64,9 @@ export function AnalyticsTab() {
     deleteFiltered.mutate(ids, {
       onSuccess: (deleted) => {
         setConfirmDelete(false)
-        toast.success(`Résultat supprimé — ${deleted.toLocaleString('fr-FR')} consultation(s).`)
+        toast.success(t('tst.an.resultDeleted', { count: deleted.toLocaleString(intlLocale(useLocaleStore.getState().locale)) }))
       },
-      onError: (e) => toast.error(`Échec : ${e instanceof Error ? e.message : 'erreur inconnue'}`),
+      onError: (e) => toast.error(t('tst.an.failure', { message: e instanceof Error ? e.message : t('tst.unknownError') })),
     })
   }
   const kpis = useMemo(() => computeKpis(events), [events])
@@ -114,7 +115,7 @@ export function AnalyticsTab() {
             onClick={async () => {
               const next = await sessionAlerts.toggle()
               if (next === null) return
-              toast.success(next ? 'Alertes Telegram de visite activées' : 'Alertes Telegram de visite coupées')
+              toast.success(t(next ? 'tst.an.alertsOn' : 'tst.an.alertsOff'))
             }}
             disabled={sessionAlerts.enabled === null}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-surface-2 transition-colors ${

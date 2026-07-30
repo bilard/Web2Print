@@ -26,7 +26,7 @@ export function BrandKitSection({ onProjectPaletteChange }: BrandKitSectionProps
     const fresh = colors.filter((c) => !known.has(c.color.toLowerCase()))
     fresh.forEach((c) => addColor(c.color, c.name))
     if (fresh.length > 0) onProjectPaletteChange()
-    toast.success(fresh.length > 0 ? `${fresh.length} couleur(s) ajoutée(s) au projet.` : t('brandKit.allPresent'))
+    toast.success(fresh.length > 0 ? t('tst.bk.colorsAdded', { count: fresh.length }) : t('brandKit.allPresent'))
   }
 
   const captureFromProject = () => {

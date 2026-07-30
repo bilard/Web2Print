@@ -34,7 +34,7 @@ export function ImportFolderToDriveModal({ open, onClose }: Props) {
 
   const onFiles = (list: FileList | null) => {
     const imgs = Array.from(list ?? []).filter(isImageFile)
-    if (!imgs.length) { toast.error('Aucune image dans la sélection (PNG, JPG, WebP, GIF, SVG)'); return }
+    if (!imgs.length) { toast.error(t('tst.dam.noImage')); return }
     setFiles(imgs); setResult(null)
   }
 
@@ -44,10 +44,10 @@ export function ImportFolderToDriveModal({ open, onClose }: Props) {
     try {
       const res = await uploadFolder(files, dest.id, { removeBg })
       setResult(res)
-      if (res.failed === 0) toast.success(`${res.ok} image(s) importée(s) dans « ${dest.name} »`)
-      else toast.warning(`${res.ok} importée(s), ${res.failed} échec(s) — voir le détail`)
+      if (res.failed === 0) toast.success(t('tst.dam.imported', { count: res.ok, folder: dest.name }))
+      else toast.warning(t('tst.dam.importedPartial', { ok: res.ok, failed: res.failed }))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Échec de l\'import')
+      toast.error(err instanceof Error ? err.message : t('tst.dam.importFailed'))
     } finally {
       setRunning(false)
     }

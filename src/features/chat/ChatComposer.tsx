@@ -125,7 +125,7 @@ export function ChatComposer({
 
   const toggleVoice = () => {
     if (!speech.supported) {
-      toast.error('Reconnaissance vocale non supportée par ce navigateur.')
+      toast.error(t('tst.ch.noSpeech'))
       return
     }
     if (speech.listening) {

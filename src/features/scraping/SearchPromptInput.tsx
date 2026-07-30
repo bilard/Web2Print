@@ -23,7 +23,7 @@ export function SearchPromptInput({ prompt, onPromptChange, onSubmit, disabled }
     try {
       const improved = await improveSearchPrompt(prompt.trim())
       onPromptChange(improved)
-      toast.success('Prompt amélioré — relis et ajuste si besoin')
+      toast.success(t('tst.sc.promptImproved'))
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Amélioration impossible (LLM indisponible)")
     } finally {

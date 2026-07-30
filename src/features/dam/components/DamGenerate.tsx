@@ -283,7 +283,7 @@ export function DamGenerate() {
       )
     } catch (err) {
       console.error('Improve prompt failed:', err)
-      toast.error(err instanceof Error ? err.message : "Échec de l'amélioration du prompt")
+      toast.error(err instanceof Error ? err.message : t('tst.dam.improveFailed'))
     } finally {
       setImproving(false)
     }
@@ -414,7 +414,7 @@ export function DamGenerate() {
         setImages((prev) =>
           prev.map((p, i) => (i === index ? { ...p, saving: false } : p)),
         )
-        toast.error(err instanceof Error ? err.message : 'Échec de la sauvegarde')
+        toast.error(err instanceof Error ? err.message : t('tst.dam.saveFailed'))
       }
     },
     [userId, prompt],

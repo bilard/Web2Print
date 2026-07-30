@@ -24,9 +24,9 @@ export function DetourImageButton({ value, baseName, onDone }: Props) {
     setBusy(true)
     try {
       onDone(await detourImageValue(value, baseName))
-      toast.success('Image détourée (PNG ajouté au DAM « Détourés »)')
+      toast.success(t('tst.xl.cutoutDone'))
     } catch (err) {
-      toast.error(`Détourage : ${String((err as Error).message)}`)
+      toast.error(t('tst.xl.cutoutFailed', { message: String((err as Error).message) }))
     } finally {
       setBusy(false)
     }

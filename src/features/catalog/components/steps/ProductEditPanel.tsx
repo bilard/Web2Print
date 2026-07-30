@@ -74,7 +74,7 @@ export function ProductEditPanel({ rowId, onClose }: Props) {
       if (next !== cur) patch[c.key] = next === '' ? null : next
     }
     setRowOverride(rowId, patch)
-    toast.success('Corrections enregistrées pour CE catalogue (le master est intact)')
+    toast.success(t('tst.cat.fixesSaved'))
     onClose()
   }
   const saveMaster = async () => {
@@ -86,10 +86,10 @@ export function ProductEditPanel({ rowId, onClose }: Props) {
       await saveRowToMaster(sourceRef, rowId, patch)
       applyMasterPatch(rowId, patch) // reflet immédiat sans re-fetch
       setRowOverride(rowId, Object.fromEntries(Object.keys(patch).map((k) => [k, null]))) // l'override ne masque plus le master
-      toast.success('Master mis à jour — tous les canaux verront ces valeurs')
+      toast.success(t('tst.cat.masterUpdated'))
       onClose()
     } catch (e) {
-      toast.error(`Écriture master impossible : ${String((e as Error).message).slice(0, 120)}`)
+      toast.error(t('tst.cat.masterFailed', { message: String((e as Error).message).slice(0, 120) }))
     } finally { setBusy(false) }
   }
 

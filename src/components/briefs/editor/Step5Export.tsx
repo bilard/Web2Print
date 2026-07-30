@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { useExportBriefPptx } from '@/features/briefs/pptx/useExportBriefPptx'
 import { useBriefImages } from '@/features/briefs/useBriefImages'
 import type { Brief } from '@/features/briefs/types'
+import { t } from '@/lib/i18n'
 
 interface Props {
   brief: Brief
@@ -17,9 +18,9 @@ export function Step5Export({ brief }: Props) {
   const handleExport = async () => {
     try {
       const r = await exportPptx.mutateAsync({ brief })
-      toast.success(`PPTX généré : ${r.filename}`)
+      toast.success(t('tst.br.pptxGenerated', { file: r.filename }))
     } catch (err) {
-      toast.error((err as Error).message || 'Échec de l\'export')
+      toast.error((err as Error).message || t('tst.br.exportFailed'))
     }
   }
 

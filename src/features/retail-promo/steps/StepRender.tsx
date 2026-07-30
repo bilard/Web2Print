@@ -191,8 +191,8 @@ export function StepRender() {
       const existing = (await listPromos()).find((p) => p.name === name)
       await savePromo({ name, sourceRef, fieldMap, customFields, config, columns: rawColumns, rows: rawRows, imgOverride, textOverride, thumbnail }, existing?.id)
       setFicheName(name)
-      toast.success(existing ? `Fiche « ${name} » mise à jour` : `Fiche « ${name} » enregistrée`)
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec de l\'enregistrement') } finally { setSavingFiche(false) }
+      toast.success(t(existing ? 'tst.rp.ficheUpdated' : 'tst.rp.ficheSaved', { name }))
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('tst.saveError')) } finally { setSavingFiche(false) }
   }
 
   const downloadOne = async () => {
@@ -205,8 +205,8 @@ export function StepRender() {
       const a = document.createElement('a')
       a.href = url; a.download = `promo_${slug(cards[safe].name)}.png`
       document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
-      toast.success('Visuel téléchargé')
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec export') } finally { setBusy(null) }
+      toast.success(t('tst.rp.visualDownloaded'))
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('tst.rp.exportFailed')) } finally { setBusy(null) }
   }
 
   const downloadAll = async () => {
@@ -229,8 +229,8 @@ export function StepRender() {
       const a = document.createElement('a')
       a.href = url; a.download = `promos_retail_${cards.length}.zip`
       document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
-      toast.success(`${cards.length} visuels exportés`)
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec export') } finally { setBusy(null); setCapturing(false) }
+      toast.success(t('tst.rp.visualsExported', { count: cards.length }))
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('tst.rp.exportFailed')) } finally { setBusy(null); setCapturing(false) }
   }
 
   const downloadHtml = async () => {
@@ -247,8 +247,8 @@ export function StepRender() {
       const a = document.createElement('a')
       a.href = url; a.download = `promo_${slug(cards[safe].name)}.html`
       document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
-      toast.success('HTML téléchargé (éditable)')
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec export HTML') } finally { setBusy(null) }
+      toast.success(t('tst.rp.htmlDownloaded'))
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('tst.rp.htmlExportFailed')) } finally { setBusy(null) }
   }
 
   return (

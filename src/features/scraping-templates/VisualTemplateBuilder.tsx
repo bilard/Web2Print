@@ -220,7 +220,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
       : [...template.fields, newField]
     onChange({ ...template, fields, updatedAt: Date.now() })
     setPendingCapture(null)
-    toast.success(`Mappé à "${name}" (${multiple ? 'liste' : 'unique'})`)
+    toast.success(t('tst.st.mapped', { name, kind: t(multiple ? 'tst.st.mappedList' : 'tst.st.mappedSingle') }))
   }
 
   return (

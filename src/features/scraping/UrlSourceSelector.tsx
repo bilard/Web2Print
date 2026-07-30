@@ -63,10 +63,10 @@ export function UrlSourceSelector({ singleUrl, onChange, showPreview = true }: P
     try {
       const urls = await extractUrlsFromFile(file)
       setImportedUrls(urls)
-      if (urls.length === 0) toast.warning(`Aucune URL trouvée dans ${file.name}`)
-      else toast.success(`${urls.length} URL(s) détectée(s) dans ${file.name}`)
+      if (urls.length === 0) toast.warning(t('tst.sc.noUrlInFile', { name: file.name }))
+      else toast.success(t('tst.sc.urlsDetectedIn', { count: urls.length, name: file.name }))
     } catch (e) {
-      toast.error(`Échec import : ${e instanceof Error ? e.message : 'inconnu'}`)
+      toast.error(t('tst.sc.importFailed', { message: e instanceof Error ? e.message : t('tst.sc.unknown') }))
     } finally {
       setImporting(false)
     }
@@ -74,7 +74,7 @@ export function UrlSourceSelector({ singleUrl, onChange, showPreview = true }: P
 
   const handleSheetImport = async () => {
     if (!gdriveAccessToken) {
-      toast.error('Connecte Google Drive dans Paramètres → Connectors')
+      toast.error(t('tst.sc.connectDrive'))
       return
     }
     const idMatch = sheetIdOrUrl.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/) ?? sheetIdOrUrl.match(/^([a-zA-Z0-9-_]{20,})$/)
@@ -93,15 +93,15 @@ export function UrlSourceSelector({ singleUrl, onChange, showPreview = true }: P
         )
       } else {
         const colInfo = result.detectedColumn ? `colonne "${result.detectedColumn}"` : 'fallback texte'
-        toast.success(`${result.urls.length} URL(s) importée(s) sur ${result.rowCount} lignes (${colInfo})`)
+        toast.success(t('tst.sc.urlsImported', { count: result.urls.length, rows: result.rowCount, cols: colInfo }))
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'inconnu'
       if (msg === 'TOKEN_EXPIRED') {
         gdriveDisconnect()
-        toast.error('Session Google Drive expirée — reconnecte-toi dans Paramètres → Connectors')
+        toast.error(t('tst.sc.driveExpired'))
       } else {
-        toast.error(`Échec import Sheet : ${msg}`)
+        toast.error(t('tst.sc.sheetImportFailed', { message: msg }))
       }
     } finally {
       setImporting(false)

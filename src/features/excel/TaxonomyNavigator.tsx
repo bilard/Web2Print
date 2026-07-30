@@ -20,6 +20,7 @@ import { findPath } from '@/features/taxonomy/taxonomyUtils'
 import type { Taxonomy, TaxonomyNode } from '@/features/taxonomy/types'
 import { getTaxoColumns, getLevelColor } from './taxonomyBuilder'
 import type { ExcelRow } from './types'
+import { t } from '@/lib/i18n'
 
 interface NodePath {
   colKey: string
@@ -130,7 +131,7 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
       updateCell(activeSheetIndex, rowId, tc.col.key, null)
     }
     const pathLabel = node.path.map((p) => p.value).join(' > ')
-    toast.success(`Produit classé sous ${pathLabel}`)
+    toast.success(t('tst.xl.classified', { path: pathLabel }))
   }, [sheet, activeSheetIndex, updateCell, taxoCols])
 
   // Multi-sélection : clic = toggle du chemin (cumul entre branches ; un chemin
@@ -206,7 +207,7 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
     if (!sheet) return
     updateCell(activeSheetIndex, rowId, PRODUCT_TAXONOMY_ID_KEY, taxonomyId)
     updateCell(activeSheetIndex, rowId, PRODUCT_TAXONOMY_NODE_ID_KEY, nodeId)
-    toast.success(`Produit classé sous « ${label} »`)
+    toast.success(t('tst.xl.classifiedQuoted', { label }))
   }, [sheet, activeSheetIndex, updateCell])
 
   const hasFilters = hasTaxoNav(taxonomyNavFilter)

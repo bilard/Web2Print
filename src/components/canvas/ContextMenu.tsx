@@ -8,6 +8,7 @@ import { useObjectOperations } from '@/features/editor/useObjectOperations'
 import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { repeatSelectedOnAllPages, removeSelectedFromOtherPages } from '@/features/editor/masterElements'
 import { usePagesStore } from '@/stores/pages.store'
+import { t } from '@/lib/i18n'
 
 interface ContextMenuProps {
   x: number
@@ -96,9 +97,9 @@ export function ContextMenu({ x, y, onClose }: ContextMenuProps) {
             label="Répéter sur toutes les pages"
             onClick={action(() => {
               const r = repeatSelectedOnAllPages()
-              if (!r) toast.warning('Sélectionne un seul objet à répéter.')
-              else if (r.applied === 0 && r.skipped > 0) toast.warning('Aucune autre page initialisée — visite-les d\'abord.')
-              else toast.success(`Élément répété sur ${r.applied} page(s)${r.skipped ? ` (${r.skipped} page(s) vide(s) ignorée(s))` : ''}.`)
+              if (!r) toast.warning(t('tst.cv.pickOneObject'))
+              else if (r.applied === 0 && r.skipped > 0) toast.warning(t('tst.cv.noPageReady'))
+              else toast.success(t('tst.cv.repeated', { count: r.applied, skipped: r.skipped ? t('tst.cv.repeatedSkipped', { count: r.skipped }) : '' }))
             })}
           />
           {isMaster && (
@@ -107,7 +108,7 @@ export function ContextMenu({ x, y, onClose }: ContextMenuProps) {
               label="Retirer des autres pages"
               onClick={action(() => {
                 const n = removeSelectedFromOtherPages()
-                toast.success(n > 0 ? `Copies retirées de ${n} page(s).` : 'Aucune copie sur les autres pages.')
+                toast.success(n > 0 ? t('tst.cv.copiesRemoved', { count: n }) : t('tst.cv.noCopy'))
               })}
             />
           )}

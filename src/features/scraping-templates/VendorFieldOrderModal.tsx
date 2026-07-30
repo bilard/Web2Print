@@ -87,7 +87,7 @@ export function VendorFieldOrderModal({ matchedTemplate, enriched, onClose, onSa
       onSaved()
       onClose()
     } catch (err) {
-      toast.error(`Sauvegarde échouée : ${err instanceof Error ? err.message : String(err)}`)
+      toast.error(t('tst.saveFailed', { message: err instanceof Error ? err.message : String(err) }))
     } finally {
       setSaving(false)
     }

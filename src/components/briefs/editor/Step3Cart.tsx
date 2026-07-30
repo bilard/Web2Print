@@ -9,6 +9,7 @@ import { CartTable } from './CartTable'
 import { CartSummary } from './CartSummary'
 import { CartGenerationLog } from './CartGenerationLog'
 import type { Brief, CartItem, CartDiscount } from '@/features/briefs/types'
+import { t } from '@/lib/i18n'
 
 interface Props {
   brief: Brief
@@ -55,16 +56,16 @@ export function Step3Cart({ brief, onAdvance }: Props) {
         brief,
         onProgress: (e) => setLogEvents((prev) => [...prev, e]),
       })
-      toast.success(`${r.items.length} produits générés`)
+      toast.success(t('tst.br.productsGenerated', { count: r.items.length }))
       if (r.droppedSkus.length > 0) {
-        toast.warning(`${r.droppedSkus.length} SKU(s) ignoré(s) car inconnus`)
+        toast.warning(t('tst.br.skusDropped', { count: r.droppedSkus.length }))
       }
     } catch (err) {
       setLogEvents((prev) => [
         ...prev,
         { step: 'error', message: (err as Error).message || 'Erreur inconnue' },
       ])
-      toast.error((err as Error).message || 'Échec de la génération')
+      toast.error((err as Error).message || t('tst.br.generationFailed'))
     }
   }
 

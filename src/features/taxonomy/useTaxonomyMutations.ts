@@ -55,7 +55,7 @@ export function useCreateTaxonomy() {
     },
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
-    onError: () => toast.error('Erreur lors de la création'),
+    onError: () => toast.error(t('tst.createFailed')),
   })
 }
 
@@ -112,7 +112,7 @@ export function useUpdateTaxonomySettings() {
     },
     onError: (_e, _v, ctx) => {
       qc.setQueryData(taxListKey(user!.uid), ctx?.previous)
-      toast.error('Erreur lors de la mise à jour')
+      toast.error(t('tst.updateFailed'))
     },
     onSettled: () =>
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
@@ -477,7 +477,7 @@ export function useMoveNode() {
     },
     onError: (_e, _v, ctx) => {
       if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
-      toast.error('Erreur lors du déplacement du nœud')
+      toast.error(t('tst.tx.moveFailed'))
     },
     onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
@@ -587,7 +587,7 @@ export function useUnlinkProject() {
     },
     onError: (_e, _v, ctx) => {
       if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
-      toast.error('Erreur lors de la déliaison')
+      toast.error(t('tst.tx.unlinkFailed'))
     },
     onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })

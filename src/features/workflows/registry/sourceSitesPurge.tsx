@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Trash2, Loader2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { purgeScrapingData, type PurgeProgress, type ScrapeDataType } from '@/features/priceWatch/catalog/purgeScraping'
+import { t } from '@/lib/i18n'
 
 const TYPE_META: { key: ScrapeDataType; label: string; hint: string }[] = [
   { key: 'listings', label: 'Fiches collectées', hint: 'index produits/prix moissonné (le gros volume)' },
@@ -30,7 +31,7 @@ export function PurgeScrapingPanel({ uid, watchId, sites, onClose }: {
   const needsSites = types.has('listings') || types.has('counters') || types.has('cursors')
 
   const run = async () => {
-    if (types.size === 0) { toast.error('Choisis au moins un type de donnée.'); return }
+    if (types.size === 0) { toast.error(t('tst.ss.pickType')); return }
     if (needsSites && selSites.size === 0) { toast.error('Choisis au moins un site.'); return }
     const typeLabels = TYPE_META.filter((t) => types.has(t.key)).map((t) => t.label.toLowerCase()).join(', ')
     const scope = needsSites ? `${selSites.size}/${sites.length} site(s)` : 'suivi'
@@ -39,10 +40,10 @@ export function PurgeScrapingPanel({ uid, watchId, sites, onClose }: {
     setProgress(null)
     try {
       const res = await purgeScrapingData(uid, watchId, [...selSites], types, setProgress)
-      toast.success(`Données vidées : ${res.pagesDeleted} fiche(s)${needsSites ? ` sur ${res.sites} site(s)` : ''}.`)
+      toast.success(t('tst.ss.purged', { count: res.pagesDeleted, sites: needsSites ? t('tst.ss.purgedSites', { count: res.sites }) : '' }))
       onClose()
     } catch (e) {
-      toast.error(`Échec de la purge : ${e instanceof Error ? e.message : 'inconnu'}`)
+      toast.error(t('tst.ss.purgeFailed', { message: e instanceof Error ? e.message : t('tst.ss.unknown') }))
     } finally {
       setBusy(false)
       setProgress(null)

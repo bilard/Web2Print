@@ -55,7 +55,7 @@ export function SourceSyncModal({ ident, open, onClose }: Props) {
     setRunning(true)
     try {
       await refreshPromos(ident, [...checked])
-      toast.success(`${checked.size} fiche(s) mise(s) à jour depuis la source`)
+      toast.success(t('tst.pi.syncedFromSource', { count: checked.size }))
       onClose()
     } catch (e) {
       toast.error(String((e as Error).message))

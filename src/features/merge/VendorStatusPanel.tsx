@@ -207,7 +207,7 @@ function LinkVendorModal({
     let cancelled = false
     listTemplates()
       .then((list) => { if (!cancelled) setAllTemplates(list) })
-      .catch((err) => toast.error(`Chargement templates échoué : ${err instanceof Error ? err.message : String(err)}`))
+      .catch((err) => toast.error(t('tst.mg.tplLoadFailed', { message: err instanceof Error ? err.message : String(err) })))
     return () => { cancelled = true }
   }, [])
 
@@ -223,20 +223,21 @@ function LinkVendorModal({
     )
   }, [allTemplates, query])
 
-  const handleLink = async (t: ScrapingTemplate) => {
-    setSaving(t.id)
+  // ⚠️ Le paramètre s'appelait `t` et masquait la fonction de traduction.
+  const handleLink = async (tpl: ScrapingTemplate) => {
+    setSaving(tpl.id)
     try {
-      const nextAliases = Array.from(new Set([...(t.brandAliases ?? []), vendor.brand]))
+      const nextAliases = Array.from(new Set([...(tpl.brandAliases ?? []), vendor.brand]))
       const updated: ScrapingTemplate = {
-        ...t,
+        ...tpl,
         brandAliases: nextAliases,
         updatedAt: Date.now(),
       }
       await saveTemplate(updated)
-      toast.success(`"${vendor.brand}" lié à ${t.vendorDomain}`)
+      toast.success(t('tst.mg.vendorLinked', { brand: vendor.brand, domain: tpl.vendorDomain }))
       onSaved()
     } catch (err) {
-      toast.error(`Sauvegarde échouée : ${err instanceof Error ? err.message : String(err)}`)
+      toast.error(t('tst.saveFailed', { message: err instanceof Error ? err.message : String(err) }))
     } finally {
       setSaving(null)
     }
@@ -329,10 +330,10 @@ function LinkVendorModal({
                 next.brandAliases = [vendor.brand]
                 next.name = `${vendor.brand} — template`
                 await saveTemplate(next)
-                toast.success(`Template créé pour "${vendor.brand}"`)
+                toast.success(t('tst.mg.tplCreated', { brand: vendor.brand }))
                 onSaved()
               } catch (err) {
-                toast.error(`Création échouée : ${err instanceof Error ? err.message : String(err)}`)
+                toast.error(t('tst.creationFailed', { message: err instanceof Error ? err.message : String(err) }))
               }
             }}
             className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded text-[11px] bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 border border-amber-400/25 transition-colors"

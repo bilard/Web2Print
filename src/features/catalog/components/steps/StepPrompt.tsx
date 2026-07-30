@@ -116,7 +116,7 @@ export function StepPrompt() {
       // qu'elle renvoie explicitement.
       const next = await generateCatalogPlan(prompt, { catalogName: name, tree, sampleNames, charte }, plan)
       setPlan(next)
-      toast.success('Plan généré — ajustez-le librement ci-dessous')
+      toast.success(t('tst.cat.planGenerated'))
       // « Créer un logo "X" » demande une CRÉATION, pas un bouton à trouver : dès
       // que le plan désigne une marque et qu'aucun visuel n'existe, l'emblème est
       // produit dans la foulée. Jamais d'écrasement d'un logo déjà chargé.
@@ -129,10 +129,10 @@ export function StepPrompt() {
       // vedettes, couvertures — des heures de réglages) n'est JAMAIS remplacé par
       // le plan neutre. Sans plan, le défaut débloque la première génération.
       if (plan) {
-        toast.error(`IA indisponible (${String((e as Error).message).slice(0, 120)}) — plan actuel CONSERVÉ`)
+        toast.error(t('tst.cat.aiUnavailableKept', { message: String((e as Error).message).slice(0, 120) }))
       } else {
         setPlan(defaultCatalogPlan(tree, name))
-        toast.error(`IA indisponible (${String((e as Error).message).slice(0, 120)}) — plan par défaut appliqué`)
+        toast.error(t('tst.cat.aiUnavailableDefault', { message: String((e as Error).message).slice(0, 120) }))
       }
     } finally {
       setBusy(false)

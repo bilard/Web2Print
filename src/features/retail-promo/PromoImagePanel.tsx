@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useRemoveBg } from '@/features/nanobana/useRemoveBg'
 import { useDamStore } from '@/stores/dam.store'
 import { useDamSearch } from '@/features/dam/hooks/useDamSearch'
+import { t } from '@/lib/i18n'
 
 interface Props {
   /** Image produit actuellement affichée (résolue). */
@@ -33,7 +34,7 @@ export function PromoImagePanel({ currentImage, onReplace, canApplyToSource, onA
 
   const onFile = async (f?: File | null) => {
     if (!f) return
-    try { onReplace(await fileToDataUrl(f)); toast.success('Image remplacée') } catch { toast.error('Échec du chargement') }
+    try { onReplace(await fileToDataUrl(f)); toast.success(t('tst.rp.imageReplaced')) } catch { toast.error(t('tst.rp.loadFailed')) }
   }
   const onRemoveBg = async () => {
     if (!currentImage) return
@@ -41,8 +42,8 @@ export function PromoImagePanel({ currentImage, onReplace, canApplyToSource, onA
       const src = await toDataUrl(currentImage) // blob:/http → data-URL (sinon « Invalid image_url »)
       const out = await removeBg(src)
       // Le vrai motif (ex. « Insufficient credits ») est exposé via rbError, affiché sous le bouton.
-      if (out) { onReplace(out); toast.success('Fond supprimé') }
-    } catch { toast.error('Image illisible pour le détourage') }
+      if (out) { onReplace(out); toast.success(t('tst.rp.bgRemoved')) }
+    } catch { toast.error(t('tst.rp.unreadableImage')) }
   }
 
   return (
@@ -100,7 +101,7 @@ export function PromoImagePanel({ currentImage, onReplace, canApplyToSource, onA
             {stockLoading && <div className="flex justify-center py-3"><Loader2 className="h-4 w-4 animate-spin text-white/40" /></div>}
             <div className="grid grid-cols-2 gap-1.5">
               {results.map((im) => (
-                <button key={im.id} onClick={() => { onReplace(im.previewUrl); toast.success('Image appliquée') }}
+                <button key={im.id} onClick={() => { onReplace(im.previewUrl); toast.success(t('tst.rp.imageApplied')) }}
                   className="overflow-hidden rounded border border-white/10 hover:border-[#6366f1]">
                   <img src={im.thumbnailUrl} alt="" className="h-16 w-full object-cover" loading="lazy" />
                 </button>

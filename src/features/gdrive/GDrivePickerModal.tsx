@@ -150,13 +150,13 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
     try {
       // parent = dossier courant ; à la racine d'une section → racine « Mon Drive ».
       const created = await createFolder(name, currentFolder?.id)
-      if (!created) { toast.error('Création du dossier impossible'); return }
+      if (!created) { toast.error(t('tst.gd.folderCreateFailed')); return }
       setNewFolderName('')
       setCreatingFolder(false)
       // Entre dans le nouveau dossier : « Choisir ce dossier » devient actif.
       setFolderStack((s) => [...s, { id: created.id, name: created.name }])
       setSearch('')
-      toast.success(`Dossier « ${created.name} » créé`)
+      toast.success(t('tst.gd.folderCreated', { name: created.name }))
     } finally {
       setFolderBusy(false)
     }
@@ -220,9 +220,9 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
       const n = await trashDriveFiles(ids)
       setSelected((m) => { const next = new Map(m); for (const id of ids) next.delete(id); return next })
       setReloadKey((k) => k + 1)
-      toast.success(`${n} ${label}${n > 1 ? 's' : ''} déplacé${n > 1 ? 's' : ''} dans la corbeille Drive`)
+      toast.success(t(n > 1 ? 'tst.gd.trashed.many' : 'tst.gd.trashed.one', { count: n, label }))
     } catch (e) {
-      toast.error(`Suppression : ${e instanceof Error ? e.message : 'échec'}`)
+      toast.error(t('tst.gd.deleteFailed', { message: e instanceof Error ? e.message : t('tst.gd.failure') }))
     }
   }
 

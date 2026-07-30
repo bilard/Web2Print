@@ -113,16 +113,16 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
           )
         } else {
           const colInfo = result.detectedColumn ? `colonne "${result.detectedColumn}"` : 'fallback texte'
-          toast.success(`${result.urls.length} URL(s) importée(s) sur ${result.rowCount} lignes (${colInfo})`)
+          toast.success(t('tst.sc.urlsImported', { count: result.urls.length, rows: result.rowCount, cols: colInfo }))
         }
       } catch (e) {
         if (cancelled) return
         const msg = e instanceof Error ? e.message : 'inconnu'
         if (msg === 'TOKEN_EXPIRED') {
           gdriveDisconnect()
-          toast.error('Session Google Drive expirée — reconnecte-toi dans Paramètres → Connectors')
+          toast.error(t('tst.sc.driveExpired'))
         } else {
-          toast.error(`Échec import Sheet : ${msg}`)
+          toast.error(t('tst.sc.sheetImportFailed', { message: msg }))
         }
         autoImportedUrlRef.current = null
       } finally {
@@ -176,10 +176,10 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
     try {
       const urls = await extractUrlsFromFile(file)
       setImportedUrls(urls)
-      if (urls.length === 0) toast.warning(`Aucune URL trouvée dans ${file.name}`)
-      else toast.success(`${urls.length} URL(s) détectée(s)`)
+      if (urls.length === 0) toast.warning(t('tst.sc.noUrlInFile', { name: file.name }))
+      else toast.success(t('tst.sc.urlsDetected', { count: urls.length }))
     } catch (e) {
-      toast.error(`Échec import : ${e instanceof Error ? e.message : 'inconnu'}`)
+      toast.error(t('tst.sc.importFailed', { message: e instanceof Error ? e.message : t('tst.sc.unknown') }))
     } finally {
       setImporting(false)
     }

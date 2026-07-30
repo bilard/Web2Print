@@ -281,20 +281,20 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     try {
       if (id) {
         await promptLib.updatePrompt(id, input)
-        toast.success('Modèle mis à jour')
+        toast.success(t('tst.vd.tplUpdated'))
       } else {
         const newId = await promptLib.savePrompt(input)
         setEditingPromptId(newId)
-        toast.success('Modèle enregistré dans la bibliothèque')
+        toast.success(t('tst.vd.tplSaved'))
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Échec de l\'enregistrement')
+      toast.error(err instanceof Error ? err.message : t('tst.saveError'))
     }
   }
 
   const handleGenerate = () => {
     if (!topic.trim() && !freeform.trim()) {
-      toast.error('Écris au moins des instructions d\'animation (ou un sujet)')
+      toast.error(t('tst.vd.instructionsRequired'))
       return
     }
     setResult(null)
@@ -349,7 +349,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
             objectAnimations: res.objectAnimations,
             motionPlan: res.motionPlan,
           })
-          toast.success('Animation prête — preview + ZIP HTML disponibles')
+          toast.success(t('tst.vd.ready'))
         },
         onError: (err) => {
           if (err instanceof DOMException && err.name === 'AbortError') return
@@ -394,7 +394,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     setErrorMsg(null)
     setPreview(null)
     progress.reset()
-    toast.info('Formulaire effacé')
+    toast.info(t('tst.vd.formCleared'))
   }
 
   /** Annule la génération en cours.
@@ -409,7 +409,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     progress.reset()
     setPreview(null)
     setErrorMsg(null)
-    toast.info('Génération annulée')
+    toast.info(t('tst.vd.cancelled'))
   }
 
   /** Lance Image IA sur les scènes de la composition courante pour ajouter
@@ -418,7 +418,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
    *  composition est self-contained et la preview consomme `imageUrl`). */
   const handleEnrich = () => {
     if (!preview?.composition) {
-      toast.error('Aucune composition à enrichir')
+      toast.error(t('tst.vd.noComposition'))
       return
     }
     const resolved = resolveAspect() ?? preview.aspect
@@ -437,7 +437,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           // Run — l'animation HTML consomme `imageUrl` directement.
           setResult((prev) => (prev ? { ...prev, composition: enriched } : prev))
           const ok = enriched.scenes.filter((s) => s.imageUrl).length
-          toast.success(`${ok}/${enriched.scenes.length} images générées — preview mise à jour`)
+          toast.success(t('tst.vd.imagesGenerated', { ok, total: enriched.scenes.length }))
         },
         onError: (err) => {
           toast.error(err.message)
@@ -539,7 +539,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   freeform: p.freeform ?? undefined,
                 }) || undefined,
             })
-            toast.success('Animation rejouée — preview + ZIP HTML disponibles')
+            toast.success(t('tst.vd.replayed'))
           },
           onError: (err) => {
             if (err instanceof DOMException && err.name === 'AbortError') return
@@ -549,7 +549,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         },
       )
     } else {
-      toast.info('Prompt chargé — édite puis clique Générer')
+      toast.info(t('tst.vd.promptLoaded'))
     }
   }
 

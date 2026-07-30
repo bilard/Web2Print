@@ -8,6 +8,7 @@ import { FieldList } from './FieldList'
 import { FieldEditor } from './FieldEditor'
 import { DynamicFormRenderer } from '../form-renderer/DynamicFormRenderer'
 import { CloseButton } from '@/components/shared/CloseButton'
+import { t } from '@/lib/i18n'
 
 interface Props {
   open: boolean
@@ -61,7 +62,7 @@ export function FormBuilderModal({ open, taxonomy, onClose }: Props) {
   const handleSave = async () => {
     try {
       await save.mutateAsync({ taxonomyId: taxonomy.id, fields: draft })
-      toast.success('Formulaire enregistré')
+      toast.success(t('tst.br.formSaved'))
       onClose()
     } catch (err) {
       toast.error('Erreur lors de la sauvegarde')

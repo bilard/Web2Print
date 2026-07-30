@@ -7,6 +7,7 @@ import { buildEcFieldNames } from './ecFieldName'
 import { buildFieldDescriptors, resolveKeyInfo } from './ecExport'
 import { useEasyCatalogExport } from './useEasyCatalogExport'
 import type { EcFormat } from './ecZip'
+import { t } from '@/lib/i18n'
 
 interface Props {
   open: boolean
@@ -43,7 +44,7 @@ export function EasyCatalogExportModal({ open, onClose, sheet, sourceName }: Pro
       onClose()
     } catch (err) {
       console.error('EasyCatalog export failed', err)
-      toast.error('Export échoué : ' + (err instanceof Error ? err.message : 'erreur inconnue'))
+      toast.error(t('tst.ec.exportFailed', { message: err instanceof Error ? err.message : t('tst.unknownError') }))
     } finally {
       setBusy(false)
     }

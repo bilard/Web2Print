@@ -37,14 +37,16 @@ export function PromoTemplateEditor() {
       await savePromoTemplate(name, config)
       setTemplates(await listPromoTemplates())
       setTplName('')
-      toast.success('Modèle enregistré')
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec enregistrement') } finally { setSavingTpl(false) }
+      toast.success(t('tst.rp.tplSaved'))
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('tst.saveError')) } finally { setSavingTpl(false) }
   }
 
   const applyTemplate = (id: string) => {
-    const t = templates.find((x) => x.id === id)
+    // ⚠️ PAS `t` : une variable de boucle nommée `t` masque la fonction de
+    // traduction importée — piège rencontré plusieurs fois dans ce chantier.
+    const tpl = templates.find((x) => x.id === id)
     // Normalise les dictionnaires : un ancien modèle sans ces clés ne doit pas conserver l'état de la session.
-    if (t) { setConfig({ ...t.config, layout: t.config.layout ?? 'classique', styles: t.config.styles ?? {}, colors: t.config.colors ?? {}, scales: t.config.scales ?? {}, blockFills: t.config.blockFills ?? {} }); toast.success(`Modèle « ${t.name} » appliqué`) }
+    if (tpl) { setConfig({ ...tpl.config, layout: tpl.config.layout ?? 'classique', styles: tpl.config.styles ?? {}, colors: tpl.config.colors ?? {}, scales: tpl.config.scales ?? {}, blockFills: tpl.config.blockFills ?? {} }); toast.success(t('tst.rp.tplApplied', { name: tpl.name })) }
   }
 
   const removeTemplate = async (id: string) => {
@@ -78,8 +80,8 @@ export function PromoTemplateEditor() {
       if (rules) patch.rules = { ...config.rules, ...rules }
       setConfig(patch)
       const done = [layout && 'mise en page', style && 'habillage', rules && 'règle(s)'].filter(Boolean).join(' + ')
-      toast.success(done ? `Généré : ${done}` : 'Aucune modification suggérée')
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec génération IA') } finally { setBusy(false) }
+      toast.success(done ? t('tst.rp.aiGenerated', { fields: done }) : t('tst.rp.aiNoChange'))
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('tst.rp.aiFailed')) } finally { setBusy(false) }
   }
 
   return (

@@ -66,7 +66,7 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
   const onToggle = () => guard('toggle', async () => {
     await patchSourceSite(uid!, workflowId!, host, { enabled: !enabled })
     onChanged()
-    toast.success(`${host} ${enabled ? 'désactivé' : 'activé'} pour la moisson.`)
+    toast.success(t('tst.rd.siteToggled', { host, state: t(enabled ? 'tst.rd.disabled' : 'tst.rd.enabled') }))
   })
 
   const onEngine = (engine: string) => guard('engine', async () => {
@@ -81,7 +81,7 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
     if (raw.trim() && !Number.isFinite(pages)) return
     await patchSourceSite(uid!, workflowId!, host, { pageBudget: pages })
     onChanged()
-    toast.success(pages ? `${host} : ${pages} page(s) par run.` : `${host} : budget partagé.`)
+    toast.success(pages ? t('tst.rd.pagesPerRun', { host, pages }) : t('tst.rd.sharedBudget', { host }))
   })
 
   const onReset = () => {
@@ -89,7 +89,7 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
     void guard('reset', async () => {
       if (!watchId) return
       const n = await resetCompetitorData(uid!, watchId, stableId(host))
-      toast.success(`${host} : ${n} page(s) effacée(s).`)
+      toast.success(t('tst.rd.pagesCleared', { host, count: n }))
     })
   }
 
@@ -98,7 +98,7 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
     void guard('remove', async () => {
       await removeSourceSite(uid!, workflowId!, host)
       onChanged()
-      toast.success(`${host} retiré de la liste.`)
+      toast.success(t('tst.rd.siteRemoved', { host }))
     })
   }
 

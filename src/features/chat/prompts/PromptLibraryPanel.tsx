@@ -71,13 +71,13 @@ export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPane
     try {
       if (editing.prompt) {
         await update(editing.prompt.id, draft)
-        toast.success('Prompt mis à jour')
+        toast.success(t('tst.ch.promptUpdated'))
       } else {
         await create(draft)
-        toast.success('Prompt créé')
+        toast.success(t('tst.ch.promptCreated'))
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Échec de la sauvegarde')
+      toast.error(err instanceof Error ? err.message : t('tst.dam.saveFailed'))
     }
   }
 
@@ -87,18 +87,18 @@ export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPane
     if (!window.confirm(`Supprimer le prompt « ${p.title} » ?`)) return
     try {
       await remove(id)
-      toast.success('Prompt supprimé')
+      toast.success(t('tst.ch.promptDeleted'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Échec de la suppression')
+      toast.error(err instanceof Error ? err.message : t('tst.deleteFailed'))
     }
   }
 
   const handleDuplicate = async (id: string) => {
     try {
       await duplicate(id)
-      toast.success('Prompt dupliqué')
+      toast.success(t('tst.ch.promptDuplicated'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Échec de la duplication')
+      toast.error(err instanceof Error ? err.message : t('tst.duplicateFailed'))
     }
   }
 

@@ -40,7 +40,7 @@ export function BriefsList({ taxonomy }: Props) {
       })
       openBriefEditor(id)
     } catch (err) {
-      toast.error('Erreur lors de la création')
+      toast.error(t('tst.createFailed'))
       console.error(err)
     }
   }
@@ -72,7 +72,7 @@ export function BriefsList({ taxonomy }: Props) {
         console.error('[purge] échec', g.id, err)
       }
     }
-    toast.success(`${ok} brouillon${ok > 1 ? 's' : ''} purgé${ok > 1 ? 's' : ''}`)
+    toast.success(t(ok > 1 ? 'tst.br.draftsPurged.many' : 'tst.br.draftsPurged.one', { count: ok }))
   }
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -80,7 +80,7 @@ export function BriefsList({ taxonomy }: Props) {
     if (!confirm('Supprimer ce brief ?')) return
     try {
       await remove.mutateAsync(id)
-      toast.success('Brief supprimé')
+      toast.success(t('tst.br.deleted'))
     } catch {
       toast.error('Erreur lors de la suppression')
     }

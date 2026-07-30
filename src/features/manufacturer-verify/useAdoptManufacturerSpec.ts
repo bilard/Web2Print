@@ -23,6 +23,7 @@ import { writeSheetsToFirestore } from '@/features/excel/ai-enrichment/useSaveEn
 import { deserializeEnrichedFromRow } from '@/features/excel/ai-enrichment/deserializeEnriched'
 import { useEnrichmentStore } from '@/features/excel/ai-enrichment/enrichmentStore'
 import { canonicalizeSpecName, normalizeSpecLabel } from './specSynonyms'
+import { t } from '@/lib/i18n'
 
 const ADOPTED_COL = 'ai_mfr_adopted'
 
@@ -79,7 +80,7 @@ export function useAdoptManufacturerSpec() {
     const sheet = sheets[activeSheetIndex]
     const row = sheet?.rows.find((r) => r._id === rowId)
     if (!sheet || !row) { toast.error('Ligne introuvable'); return false }
-    if (!auth.currentUser) { toast.error('Vous devez être connecté.'); return false }
+    if (!auth.currentUser) { toast.error(t('tst.mv.signInRequired')); return false }
 
     setBusy(true)
     try {
@@ -145,12 +146,12 @@ export function useAdoptManufacturerSpec() {
       )
       if (savedDocId && savedDocId !== currentDocId) setCurrentDocId(savedDocId)
 
-      toast.success(adopt ? 'Valeur fabricant adoptée dans la fiche' : 'Adoption annulée')
+      toast.success(t(adopt ? 'tst.mv.adopted' : 'tst.mv.adoptCancelled'))
       return true
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Erreur'
       console.error('[adopt-mfr-spec] FAILED', e)
-      toast.error('Échec', { description: msg })
+      toast.error(t('tst.mv.failure'), { description: msg })
       return false
     } finally {
       setBusy(false)

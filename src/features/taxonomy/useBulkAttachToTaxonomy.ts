@@ -9,6 +9,7 @@ import {
   getProductTaxonomyLink,
 } from './productTaxonomy'
 import type { Taxonomy } from './types'
+import { t } from '@/lib/i18n'
 
 export interface BulkAttachProgress {
   /** Nombre de rows déjà traitées (classées + ignorées + échouées). */
@@ -75,7 +76,7 @@ export function useBulkAttachToTaxonomy() {
         : sheet.rows
 
       if (targetRows.length === 0) {
-        toast.info('Aucun produit à classer')
+        toast.info(t('tst.tx.nothingToClassify'))
         return
       }
 
@@ -138,7 +139,7 @@ export function useBulkAttachToTaxonomy() {
         }
 
         if (ac.signal.aborted) {
-          toast.info(`Attachement interrompu — ${classified} produit(s) classé(s)`)
+          toast.info(t('tst.tx.attachAborted', { count: classified }))
         } else if (errors > 0) {
           toast.warning(
             `${classified} produit(s) classé(s), ${skipped} ignoré(s), ${errors} erreur(s)`,

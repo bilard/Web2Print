@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
 import { completeRadarRedirect, signInForRadar } from '@/features/priceWatch/radar/radarAuth'
+import { t } from '@/lib/i18n'
 
 /** Glyphe radar : arcs concentriques + balayage. */
 function RadarGlyph({ className }: { className?: string }) {
@@ -42,7 +43,7 @@ export function RadarGate({ children }: { children: ReactNode }) {
     try {
       await signInForRadar()
     } catch {
-      toast.error('Connexion impossible. Réessayez.')
+      toast.error(t('tst.signInFailed'))
     } finally {
       setBusy(false)
     }

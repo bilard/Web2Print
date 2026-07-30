@@ -19,6 +19,7 @@ import { isDriveImageRef, extractDriveFileId } from './driveAssets'
 import { isJunkImageUrl } from '@/features/excel/ai-enrichment/imageFilter'
 import { scrapeFolderName } from './scrapeFolder'
 import type { ExcelRow } from '@/features/excel/types'
+import { t } from '@/lib/i18n'
 
 const DAM_FOLDER_NAME = 'Web2Print — Assets DAM'
 
@@ -225,15 +226,15 @@ export function useDamMigration() {
     setRunning(false)
     setProgress(null)
     const ok = jobs.length - failed
-    const movedSuffix = moved > 0 ? ` · ${moved} rangée(s) dans « ${subFolder} »` : ''
+    const movedSuffix = moved > 0 ? t('tst.dam.movedSuffix', { count: moved, folder: subFolder ?? '' }) : ''
     const shortUrl = firstFailUrl ? firstFailUrl.replace(/^https?:\/\//, '').slice(0, 70) : ''
     if (failed === 0) {
-      const head = ok > 0 ? `${ok} image(s) centralisée(s)` : 'Images déjà dans le DAM'
-      toast.success(`${head}${movedSuffix}.${ok > 0 ? ' Pense à sauvegarder.' : ''}`)
+      const head = ok > 0 ? t('tst.dam.centralised', { count: ok }) : t('tst.dam.alreadyInDam')
+      toast.success(t('tst.dam.centraliseHead', { head, moved: movedSuffix, save: ok > 0 ? t('tst.dam.rememberSave') : '' }))
     } else if (ok === 0) {
-      toast.error(`Échec centralisation${firstError ? ` : ${firstError}` : ''}${shortUrl ? `\nURL : …${shortUrl}` : ''}`)
+      toast.error(t('tst.dam.centraliseFailed', { detail: firstError ? ` : ${firstError}` : '', url: shortUrl ? t('tst.dam.centraliseUrl', { url: shortUrl }) : '' }))
     } else {
-      toast.warning(`${ok} centralisée(s), ${failed} échec(s)${movedSuffix}${firstError ? ` — ${firstError}` : ''}. Pense à sauvegarder.`)
+      toast.warning(t('tst.dam.centralisePartial', { ok, failed, moved: movedSuffix, detail: firstError ? ` — ${firstError}` : '' }))
     }
   }, [])
 

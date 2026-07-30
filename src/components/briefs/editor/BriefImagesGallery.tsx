@@ -4,6 +4,7 @@ import { useBriefImages } from '@/features/briefs/useBriefImages'
 import { useGenerateBriefImage } from '@/features/briefs/ai/useGenerateBriefImage'
 import { BriefImageCard } from './BriefImageCard'
 import type { Brief, CartItem } from '@/features/briefs/types'
+import { t } from '@/lib/i18n'
 
 interface Props {
   brief: Brief
@@ -22,9 +23,9 @@ export function BriefImagesGallery({ brief, batchPending }: Props) {
     setPending(id)
     try {
       await generate.mutateAsync({ brief, target })
-      toast.success('Image générée')
+      toast.success(t('tst.br.imageGenerated'))
     } catch (err) {
-      toast.error((err as Error).message || 'Échec de la génération')
+      toast.error((err as Error).message || t('tst.br.generationFailed'))
     } finally {
       setPending(null)
     }

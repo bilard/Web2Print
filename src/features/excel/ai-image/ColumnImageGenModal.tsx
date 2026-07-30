@@ -59,7 +59,7 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
   const handleTest = async () => {
     try {
       setTestSrc(await runTest({ engine, prompt, rows: scopedRows, columns: sheet.columns, targetColKey: destKey, onlyEmpty }))
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec du test') }
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('tst.xl.testFailed')) }
   }
   const handleRun = async () => {
     const targetColKey = destKey === '__new__'

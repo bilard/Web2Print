@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { clearServerGoogleTokenCache } from '@/features/gdrive/serverGoogleToken'
 import { resetDriveTokenSource } from '@/features/dam/driveAssets'
+import { t } from '@/lib/i18n'
 
 // Doit rester aligné avec OAUTH_REDIRECT_URI de functions/src/google/serverAuth.ts.
 export const OAUTH_REDIRECT_URI = 'https://googleoauthcallback-4cs64afhba-ew.a.run.app'
@@ -137,7 +138,7 @@ export function useGoogleServerConnect() {
     // Copie PUBLIQUE du seul Client ID : lisible par les non-admins (cf. rules)
     // pour que leur bouton « Connecter » puisse construire l'URL de consentement.
     await setDoc(doc(db, 'config', 'googleOAuthPublic'), { clientId: clientId.trim() }, { merge: true })
-    toast.success('Client OAuth enregistré.')
+    toast.success(t('tst.set.oauthSaved'))
     void test()
   }
 
@@ -175,7 +176,7 @@ export function useGoogleServerConnect() {
     setConnectedAt(null)
     setTestStatus('empty')
     setTestMessage('')
-    toast.success('Accès serveur Google déconnecté.')
+    toast.success(t('tst.set.googleDisconnected'))
   }
 
   return {

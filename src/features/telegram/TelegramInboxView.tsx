@@ -40,26 +40,27 @@ export function TelegramInboxView() {
   // Envoie réellement un message vers le chat Telegram (App → Telegram).
   const onSend = async () => {
     if (!canSend) return
-    const t = draft.trim()
-    if (!t) return
+    // ⚠️ PAS `t` : la variable masquait la fonction de traduction.
+    const text = draft.trim()
+    if (!text) return
     if (!botToken) {
-      toast.error('Configure le bot token (Settings → Connecteurs → Telegram).')
+      toast.error(t('tst.tg.noBotToken'))
       return
     }
     if (!effectiveChatId) {
-      toast.error('Aucun Chat ID : écris d’abord au bot, ou renseigne le Chat ID par défaut dans Settings.')
+      toast.error(t('tst.tg.noChatId'))
       return
     }
     setSending(true)
     try {
-      const { messageId } = await sendTelegramMessage(botToken, { chatId: effectiveChatId, text: t })
+      const { messageId } = await sendTelegramMessage(botToken, { chatId: effectiveChatId, text })
       // Journalise le message sortant (avec son message_id → suppressible côté Telegram ensuite).
-      void addOutboxMessage(Number(effectiveChatId), t, messageId)
-      toast.success('Message envoyé sur Telegram.')
+      void addOutboxMessage(Number(effectiveChatId), text, messageId)
+      toast.success(t('tst.tg.sent'))
       setDraft('')
       setComposing(false)
     } catch (err) {
-      toast.error(`Échec de l'envoi : ${err instanceof Error ? err.message : String(err)}`)
+      toast.error(t('tst.tg.sendFailed', { message: err instanceof Error ? err.message : String(err) }))
     } finally {
       setSending(false)
     }

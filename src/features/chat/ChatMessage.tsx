@@ -205,10 +205,10 @@ function GeneratedImageActions({ imageUrl, mimeType, prompt }: GeneratedImageAct
       // Tagging IA en arrière-plan (best-effort).
       void autoTagAsset(id, url)
       setSavedId(id)
-      toast.success('Image sauvegardée dans Mes images')
+      toast.success(t('dam.gen.savedToDam'))
     } catch (err) {
       console.error('Save to DAM failed:', err)
-      toast.error(err instanceof Error ? err.message : 'Échec de la sauvegarde')
+      toast.error(err instanceof Error ? err.message : t('tst.dam.saveFailed'))
     } finally {
       setSaving(false)
     }

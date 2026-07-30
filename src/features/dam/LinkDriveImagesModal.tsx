@@ -11,6 +11,7 @@ import { useGoogleDrive } from '@/features/gdrive/useGoogleDrive'
 import { useExcelStore } from '@/stores/excel.store'
 import type { ExcelColumn } from '@/features/excel/types'
 import { buildDriveIndex, matchCell, type DriveImageFile, type DriveIndex } from './driveImageMatch'
+import { t } from '@/lib/i18n'
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder'
 
@@ -78,7 +79,7 @@ export function LinkDriveImagesModal({ open, onClose }: Props) {
       setSourceCol(best)
       if (!files.length) toast.warning('Aucune image dans ce dossier Drive')
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Lecture du dossier échouée')
+      toast.error(e instanceof Error ? e.message : t('tst.dam.readFolderFailed'))
     } finally {
       setLoading(false)
     }
@@ -110,7 +111,7 @@ export function LinkDriveImagesModal({ open, onClose }: Props) {
       })
       st.setSheets(cur.map((s, i) => (i === activeSheetIndex ? { ...curSheet, columns: nextColumns, rows: nextRows } : s)))
       setDone({ matched: m, total: curSheet.rows.length, unused: driveFiles.length - used.size })
-      toast.success(`${m} image(s) liée(s) sur ${curSheet.rows.length} ligne(s)`)
+      toast.success(t('tst.dam.linked', { count: m, rows: curSheet.rows.length }))
     } finally {
       setWriting(false)
     }

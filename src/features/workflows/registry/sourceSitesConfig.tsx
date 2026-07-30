@@ -78,10 +78,10 @@ export function SourceSitesConfig({ config, onChange }: {
       // du catalogue source persisté — le dashboard se met à jour sans relancer le run.
       const siteRefs = rowsToCompetitorSites(rows).map((s) => ({ siteId: s.id, domain: s.domain }))
       const rec = await recomputeReport(uid, watchId, siteRefs)
-      if (rec) toast.success(`Benchmark recalculé — ${rec.matched} produit(s) apparié(s)`)
+      if (rec) toast.success(t('tst.ss.benchmarkDone', { count: rec.matched }))
       else toast.info('Lance « Comparer catalogue » une fois pour activer le recalcul du benchmark.')
     } catch (e) {
-      toast.error(`${domain} : ${e instanceof Error ? e.message : 'échec de la moisson'}`)
+      toast.error(t('tst.ss.harvestFailed', { domain, message: e instanceof Error ? e.message : t('tst.ss.harvestFailedDefault') }))
     } finally {
       setScrapingId(null)
     }
@@ -94,9 +94,9 @@ export function SourceSitesConfig({ config, onChange }: {
     if (!window.confirm(`Effacer toutes les données collectées de ${domain} ?\n\nLe prochain scrape repartira de zéro (utile après un passage en accès connecté pour purger les fiches sans prix).`)) return
     try {
       const n = await resetCompetitorData(uid, watchId, stableId(domain))
-      toast.success(`${domain} : ${n} page(s) effacée(s). Relance ▶ pour re-scraper proprement.`)
+      toast.success(t('tst.ss.reset', { domain, count: n }))
     } catch (e) {
-      toast.error(`${domain} : ${e instanceof Error ? e.message : 'échec de la réinitialisation'}`)
+      toast.error(t('tst.ss.harvestFailed', { domain, message: e instanceof Error ? e.message : t('tst.ss.resetFailedDefault') }))
     }
   }
 

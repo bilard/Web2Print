@@ -10,6 +10,7 @@ import type { CatalogPageDescriptor } from './catalogTypes'
 import { CatalogPageView } from './components/pages/CatalogPageView'
 import { ensureCatalogFonts, type CatalogRenderCtx } from './components/pages/catalogCss'
 import { drawCropMarks } from './cropMarks'
+import { t } from '@/lib/i18n'
 
 export interface CatalogExportOptions { mode: 'screen' | 'print'; dpi: 150 | 300; bleedMm: number; fileName: string }
 
@@ -75,8 +76,8 @@ export function useCatalogExport() {
         setProgress(Math.round(((i + 1) / pages.length) * 100))
       }
       pdf.save(opts.fileName)
-      if (failed.length) toast.error(`Pages en échec (laissées blanches) : ${failed.join(', ')}`)
-      else toast.success(`PDF exporté (${pages.length} pages)`)
+      if (failed.length) toast.error(t('tst.cat.pagesFailed', { pages: failed.join(', ') }))
+      else toast.success(t('tst.cat.pdfExported', { count: pages.length }))
     } finally {
       root.unmount()
       host.remove()

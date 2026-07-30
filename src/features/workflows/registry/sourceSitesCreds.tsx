@@ -8,6 +8,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
+import { t } from '@/lib/i18n'
 
 export function SiteCredentialsForm({ host, hasCreds, onSaved, onCleared, onClose }: {
   /** Clé Firestore = domaine normalisé du site (doit matcher celui envoyé par la moisson). */
@@ -41,11 +42,11 @@ export function SiteCredentialsForm({ host, hasCreds, onSaved, onCleared, onClos
       await setDoc(doc(db, 'users', uid), {
         siteCredentials: { [host]: { login: email.trim(), password, loginUrl: loginUrl.trim() || `https://${host}/connexion` } },
       }, { merge: true })
-      toast.success(`Accès connecté enregistré pour ${host}`)
+      toast.success(t('tst.ss.credsSaved', { host }))
       onSaved()
       onClose()
     } catch (e) {
-      toast.error(`Échec de l'enregistrement : ${e instanceof Error ? e.message : 'inconnu'}`)
+      toast.error(t('tst.ss.credsSaveFailed', { message: e instanceof Error ? e.message : t('tst.ss.unknown') }))
     } finally {
       setBusy(false)
     }
@@ -56,11 +57,11 @@ export function SiteCredentialsForm({ host, hasCreds, onSaved, onCleared, onClos
     setBusy(true)
     try {
       await setDoc(doc(db, 'users', uid), { siteCredentials: { [host]: deleteField() } }, { merge: true })
-      toast.success(`Accès connecté retiré pour ${host}`)
+      toast.success(t('tst.ss.credsRemoved', { host }))
       onCleared()
       onClose()
     } catch (e) {
-      toast.error(`Échec : ${e instanceof Error ? e.message : 'inconnu'}`)
+      toast.error(t('tst.ss.failed', { message: e instanceof Error ? e.message : t('tst.ss.unknown') }))
     } finally {
       setBusy(false)
     }

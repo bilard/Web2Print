@@ -53,7 +53,7 @@ export function CharteCard() {
       const next = await analyzeInspirationUrl(inspUrl, charte ?? EMPTY_CHARTE)
       setCharte(next)
       setInspUrl('')
-      toast.success('Inspiration analysée — « Générer le plan (IA) » reproduira ce look')
+      toast.success(t('tst.cat.inspirationDone'))
     } catch (e) {
       toast.error(`Analyse impossible (${String((e as Error).message).slice(0, 90)})`)
     } finally {
@@ -81,7 +81,7 @@ export function CharteCard() {
     if (!plan || !charte) return
     const patch = charteToThemePatch(charte)
     setPlan({ ...plan, theme: { ...plan.theme, ...patch } })
-    toast.success('Palette de la charte appliquée au thème')
+    toast.success(t('tst.cat.paletteApplied'))
   }
 
   return (

@@ -38,7 +38,7 @@ export function PulseGate({ children }: { children: ReactNode }) {
     try {
       await signInForPulse()
     } catch {
-      toast.error('Connexion impossible. Réessayez.')
+      toast.error(t('tst.signInFailed'))
     } finally {
       setBusy(false)
     }

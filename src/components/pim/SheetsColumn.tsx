@@ -5,6 +5,7 @@ import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
 import { trashScrapeFolder } from '@/features/dam/damCleanup'
 import { scrapeFolderName } from '@/features/dam/scrapeFolder'
+import { t } from '@/lib/i18n'
 
 /** Colonne latérale qui liste les sheets (= sources scrapées/importées) du fichier
  *  courant. Click → setActiveSheet (filtre la table). Recherche pour scaler à des
@@ -28,7 +29,7 @@ export function SheetsColumn() {
     if (deleted) {
       // Corbeille le sous-dossier DAM entier de ce scraping (robuste, par emplacement).
       void trashScrapeFolder(scrapeFolderName(deleted.name, deleted.sourceUrl))
-        .then((n) => { if (n > 0) toast.success('Dossier d’assets du scraping déplacé dans la corbeille Drive') })
+        .then((n) => { if (n > 0) toast.success(t('tst.pim.scrapeAssetsTrashed')) })
         .catch(() => { /* non bloquant */ })
     }
     deleteSheet(index)

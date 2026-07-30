@@ -102,7 +102,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
       setReloadKey((k) => k + 1)
       toast.success(done(n))
     } catch (e) {
-      toast.error(`Opération : ${e instanceof Error ? e.message : 'échec'}`)
+      toast.error(t('tst.gd.operationFailed', { message: e instanceof Error ? e.message : t('tst.gd.failure') }))
     }
   }
   const trash = (ids: string[], label: string) =>

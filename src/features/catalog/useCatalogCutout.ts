@@ -74,9 +74,9 @@ export function useCatalogCutout() {
   const cutoutAll = async () => {
     const s = useCatalogStore.getState()
     const uid = auth.currentUser?.uid
-    if (!uid) { toast.error('Connexion requise pour détourer les visuels'); return }
+    if (!uid) { toast.error(t('tst.cat.cutoutSignIn')); return }
     const column = s.fieldMap.image
-    if (!column) { toast.error('Aucune colonne « Image » associée — réglez la correspondance à l’étape Source'); return }
+    if (!column) { toast.error(t('tst.cat.noImageColumn')); return }
 
     const selected = new Set(s.selectedRowIds)
     const targets = s.rawRows
@@ -96,11 +96,11 @@ export function useCatalogCutout() {
     const todo = targets.filter((t) => !known[t.src])
     if (todo.length === 0) {
       useCatalogStore.getState().rememberCutouts({}, true)
-      toast.success(reused.length > 0 ? `${reused.length} visuel(s) repris du détourage déjà fait` : 'Tous les visuels sont déjà détourés')
+      toast.success(reused.length > 0 ? t('tst.cat.cutoutReused', { count: reused.length }) : t('tst.cat.cutoutAllDone'))
       return
     }
 
-    if (runState.running) { toast.info('Un détourage est déjà en cours'); return }
+    if (runState.running) { toast.info(t('tst.cat.cutoutRunning')); return }
     runState.abort = false
     runState.running = true
     let sinceSave = 0
@@ -153,9 +153,9 @@ export function useCatalogCutout() {
     }
 
     const ok = done - failed
-    if (runState.abort) toast.info(`Détourage interrompu — ${ok} visuel(s) traité(s)`)
-    else if (failed === 0) toast.success(`${ok} visuel(s) détouré(s)`)
-    else toast.warning(`${ok} visuel(s) détouré(s), ${failed} échec(s)`, { description: 'Les visuels en échec gardent leur image d’origine.' })
+    if (runState.abort) toast.info(t('tst.cat.cutoutAborted', { count: ok }))
+    else if (failed === 0) toast.success(t('tst.cat.cutoutDone', { count: ok }))
+    else toast.warning(t('tst.cat.cutoutPartial', { ok, failed }), { description: t('tst.cat.cutoutPartialDesc') })
   }
 
   /** Rend les visuels d'ORIGINE et OUBLIE les détourages mémorisés — sans cela,
@@ -172,7 +172,7 @@ export function useCatalogCutout() {
       s.setRowOverride(rowId, { [column]: null })
       n++
     }
-    toast.success(n > 0 ? `${n} visuel(s) rendus à leur version d’origine` : 'Aucun visuel détouré à restaurer', { description: 'Un nouveau « Détourer toutes les images » repartira d’un traitement neuf.' })
+    toast.success(n > 0 ? t('tst.cat.cutoutRestored', { count: n }) : t('tst.cat.cutoutNothingToRestore'), { description: t('tst.cat.cutoutRestoreDesc') })
   }
 
   return { progress, cutoutAll, cancel, resetAll }

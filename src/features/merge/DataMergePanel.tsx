@@ -126,7 +126,7 @@ export function DataMergePanel() {
             if (!canvas || !dataSource) return
             const assignments = applyAutoMatch(canvas, columns)
             if (assignments.length === 0) {
-              toast.warning('Rien à lier automatiquement (prix/titre/description non reconnus ou déjà liés).')
+              toast.warning(t('tst.mg.nothingToLink'))
               return
             }
             // Re-capture les templates puis ré-applique la ligne courante.

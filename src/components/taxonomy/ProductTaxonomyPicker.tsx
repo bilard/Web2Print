@@ -270,7 +270,7 @@ export function ProductTaxonomyPicker({
     try {
       const result = await classifyProductInTaxonomy(targetTaxonomy, productInfo)
       if (!result.nodeId || !targetTaxonomy.nodes[result.nodeId]) {
-        toast.info(result.reasoning || "L'IA n'a trouvé aucun chemin pertinent.")
+        toast.info(result.reasoning || t('tst.tx.noPath'))
         return
       }
       const pathIds = findPath(targetTaxonomy.nodes, result.nodeId)

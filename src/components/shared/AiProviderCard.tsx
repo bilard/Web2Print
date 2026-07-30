@@ -129,7 +129,7 @@ export function AiProviderCard({ provider, apiKeyId, labelKey, descriptionKey, l
       setFetchedModels(provider, fetched)
       const known = new Set(models.map((m) => m.id))
       const newCount = fetched.filter((m) => !known.has(m.id)).length
-      toast.success(newCount > 0 ? `${newCount} nouveau(x) modèle(s) trouvé(s)` : t('aiProvider.noNewModel'))
+      toast.success(newCount > 0 ? t('tst.ai.modelsFound', { count: newCount }) : t('aiProvider.noNewModel'))
     } catch (e) {
       toast.error(t('aiProvider.fetchError', { message: e instanceof Error ? e.message : t('aiProvider.fetchError.unknown') }))
     } finally {

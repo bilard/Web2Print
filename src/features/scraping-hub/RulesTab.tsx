@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
 import { useCan } from '@/features/access/useAccess'
 import { loadRules, saveRules } from './rulesStore'
+import { t } from '@/lib/i18n'
 
 export function RulesTab() {
   const user = useAuthStore((s) => s.user)
@@ -23,7 +24,7 @@ export function RulesTab() {
         setContent(doc.content)
         setSaved(doc.content)
       })
-      .catch((err) => toast.error('Échec du chargement : ' + (err as Error).message))
+      .catch((err) => toast.error(t('tst.sh.loadFailed', { message: (err as Error).message })))
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [])
@@ -35,9 +36,9 @@ export function RulesTab() {
     try {
       await saveRules(content, user?.email ?? undefined)
       setSaved(content)
-      toast.success('Règles enregistrées')
+      toast.success(t('tst.sh.rulesSaved'))
     } catch (err) {
-      toast.error('Échec sauvegarde : ' + (err as Error).message)
+      toast.error(t('tst.st.saveFailed', { message: (err as Error).message }))
     } finally {
       setSaving(false)
     }

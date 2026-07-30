@@ -31,7 +31,7 @@ export function PromoSavedList({ onOpened, onNew }: Props) {
       setCurrentIndex(0)
       setStep('template')
       onOpened()
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec de l\'ouverture') } finally { setOpening(null) }
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('tst.rp.openFailed')) } finally { setOpening(null) }
   }
   const remove = async (id: string) => {
     await deletePromo(id)

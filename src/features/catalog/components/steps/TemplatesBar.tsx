@@ -33,7 +33,7 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
   const [newName, setNewName] = useState('')
 
   const reload = () => {
-    listCatalogTemplates().then(setTemplates).catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Échec du chargement des modèles'))
+    listCatalogTemplates().then(setTemplates).catch((e: unknown) => toast.error(e instanceof Error ? e.message : t('tst.cat.tplLoadFailed')))
   }
 
   useEffect(() => { reload() }, [])
@@ -67,19 +67,19 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
     if (!newName.trim()) return
     saveCatalogTemplate(newName.trim(), plan.theme, majorityGrid(plan), plan.cardStyle, plan.pageStyle)
       .then(() => {
-        toast.success('Modèle enregistré')
+        toast.success(t('tst.cat.tplSaved'))
         setPlan({ ...plan, appliedTemplate: newName.trim() })
         setNewName('')
         reload()
       })
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Échec de l\'enregistrement'))
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : t('tst.saveError')))
   }
 
   const handleDelete = () => {
     if (!selectedValue || selectedValue === CHAPTER_DEFAULT_ID) return
     deleteCatalogTemplate(selectedValue)
-      .then(() => { toast.success('Modèle supprimé'); setPlan({ ...plan, appliedTemplate: '' }); reload() })
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Échec de la suppression'))
+      .then(() => { toast.success(t('tst.cat.tplDeleted')); setPlan({ ...plan, appliedTemplate: '' }); reload() })
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : t('tst.cat.tplDeleteFailed')))
   }
 
   return (

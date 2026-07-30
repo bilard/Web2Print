@@ -2044,7 +2044,7 @@ export function useImageToSvgDecompose() {
         hideBg: false,
       })
       setState({ canDecompose: true, isRunning: false, hasDecomposition: kept > 0 })
-      toast.success(`${kept} textes éditables ajoutés`, { id: toastId })
+      toast.success(t('tst.svg.textsAdded', { count: kept }), { id: toastId })
       recordPipelineRun({
         module: 'decompose', label: 'Décomposition éditeur', status: 'success',
         durationMs: Date.now() - t0, steps, meta: { kept },
@@ -2052,7 +2052,7 @@ export function useImageToSvgDecompose() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       setState((s) => ({ ...s, isRunning: false }))
-      toast.error('Échec de la décomposition', { id: toastId, description: msg })
+      toast.error(t('tst.svg.decomposeFailed'), { id: toastId, description: msg })
       recordPipelineRun({
         module: 'decompose', label: 'Décomposition éditeur', status: 'error',
         durationMs: Date.now() - t0, steps, error: msg,
@@ -2088,7 +2088,7 @@ export function useImageToSvgDecompose() {
     canvas.requestRenderAll()
     syncToStore(canvas)
     setState((s) => ({ ...s, hasDecomposition: false }))
-    toast.success(`${toRemove.length} overlays supprimés — image restaurée`)
+    toast.success(t('tst.svg.overlaysRemoved', { count: toRemove.length }))
   }, [])
 
   return { ...state, run, undoDecompose }

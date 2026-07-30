@@ -30,7 +30,7 @@ export function DedupDriveModal({ open, onClose, initialFolder = null }: Props) 
       const files = await listAllForDedup(f.id)
       setPlan(planDedup(files))
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Analyse du dossier échouée')
+      toast.error(e instanceof Error ? e.message : t('tst.dam.analyseFailed'))
     } finally {
       setScanning(false)
     }
@@ -51,10 +51,10 @@ export function DedupDriveModal({ open, onClose, initialFolder = null }: Props) 
     try {
       const n = await trashDriveFiles(plan.removeIds)
       setDoneCount(n)
-      toast.success(`${n} doublon(s) déplacé(s) dans la corbeille Drive`)
+      toast.success(t('tst.dam.dupTrashed', { count: n }))
       if (folder) void scan(folder) // re-scan → l'aperçu reflète l'état nettoyé
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Mise en corbeille échouée')
+      toast.error(e instanceof Error ? e.message : t('tst.dam.trashFailed'))
     } finally {
       setTrashing(false)
     }

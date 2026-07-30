@@ -11,7 +11,7 @@ import { idmlToFabricObjects } from './idmlToFabric'
 import { getTextFrame } from '@/features/editor/textFrame'
 import type { IdmlDocument, IdmlObject } from './idmlTypes'
 
-const REAL_FILE = 'IMPORTS/Monoprix/XML/Snipet_PROMO_converted.idml'
+const REAL_FILE = 'IMPORTS/Indesign/XML/Snipet_PROMO_converted.idml'
 
 /** Dézippe l'IDML et regroupe ses parties comme le fait `unzipIdml` côté navigateur. */
 async function loadRealDocument(): Promise<IdmlDocument> {

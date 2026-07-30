@@ -65,15 +65,15 @@ export function TaxonomyManager() {
   const handleSaveToTaxonomies = async () => {
     const taxNodes = buildTaxNodesFromLevels(sheet, levels)
     if (Object.keys(taxNodes).length === 0) {
-      toast.error('Aucun niveau assigné')
+      toast.error(t('tst.xl.noLevel'))
       return
     }
     const name = currentFileName ?? sheet.name ?? 'Nouvelle taxonomie'
     try {
       await createTaxonomy.mutateAsync({ name, nodes: taxNodes })
-      toast.success(`Taxonomie « ${name} » créée (${Object.keys(taxNodes).length} nœuds)`)
+      toast.success(t('tst.xl.taxCreated', { name, count: Object.keys(taxNodes).length }))
     } catch {
-      toast.error('Erreur lors de la création de la taxonomie')
+      toast.error(t('tst.xl.taxCreateFailed'))
     }
   }
 
@@ -81,11 +81,11 @@ export function TaxonomyManager() {
     if (!taxonomies || bulkAttach.running) return
     const target = taxonomies.find((t) => t.id === effectiveTaxoId)
     if (!target) {
-      toast.error('Sélectionnez une taxonomie cible')
+      toast.error(t('tst.xl.pickTaxonomy'))
       return
     }
     if (sheet.rows.length === 0) {
-      toast.info('Aucun produit à classer dans la feuille active')
+      toast.info(t('tst.xl.noProductToClassify'))
       return
     }
     await bulkAttach.run(target, { minConfidence: 0.5, overwriteLinked })

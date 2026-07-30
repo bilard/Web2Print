@@ -6,21 +6,22 @@ import { statusMeta, deleteInboxMessageEverywhere, updateInboxText, type DeleteO
 import type { InboxMessage } from './inboxTypes'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { InboxItemLogs } from './InboxItemLogs'
+import { t } from '@/lib/i18n'
 
 // Feedback après suppression : ce qui a réellement eu lieu côté Telegram.
 function notifyDeleteOutcome(outcome: DeleteOutcome): void {
   switch (outcome) {
     case 'telegram+local':
-      toast.success('Supprimé ici et sur Telegram.')
+      toast.success(t('tst.tg.deletedBoth'))
       break
     case 'local-only-old':
-      toast('Supprimé ici. Trop ancien (> 48 h) pour être supprimé sur Telegram.')
+      toast(t('tst.tg.deletedTooOld'))
       break
     case 'local-only-no-id':
-      toast('Supprimé ici seulement (message non supprimable côté Telegram).')
+      toast(t('tst.tg.deletedLocalOnly'))
       break
     case 'local-only-error':
-      toast('Supprimé ici. Échec de la suppression côté Telegram.')
+      toast(t('tst.tg.deletedRemoteFailed'))
       break
   }
 }

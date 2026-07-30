@@ -21,6 +21,7 @@ import { usePimStore } from '@/stores/pim.store'
 import { MatchPreviewModal } from '@/components/pim/MatchPreviewModal'
 import { useQuota } from '@/features/access/useAccess'
 import { toast } from 'sonner'
+import { t } from '@/lib/i18n'
 
 interface Props {
   open: boolean
@@ -72,7 +73,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
     const ingestResult = applyPreview(preview, products, pendingSource.id, { now: Date.now() })
     await upsertSource.mutateAsync(pendingSource)
     await upsertProducts.mutateAsync(ingestResult.products)
-    toast.success(`${ingestResult.stats.created} ajoutés · ${ingestResult.stats.merged} mergés`)
+    toast.success(t('tst.merged', { created: ingestResult.stats.created, merged: ingestResult.stats.merged }))
     setPreviewOpen(false)
     resetConfig()
     onClose()
@@ -165,7 +166,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
     // (Complète le bouton désactivé, qui ne couvre que le cas « déjà au plafond ».)
     const importedRows = finalSheets.reduce((acc, s) => acc + s.rows.length, 0)
     if (quota.isDemo && importedRows > quota.pimRows.limit) {
-      toast.error(`Limite démo : ${quota.pimRows.limit} lignes maximum par base (fichier : ${importedRows}).`)
+      toast.error(t('tst.xl.demoRowLimit', { limit: quota.pimRows.limit, rows: importedRows }))
       return
     }
 

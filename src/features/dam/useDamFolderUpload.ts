@@ -68,11 +68,11 @@ export function useDamFolderUpload() {
         const limit = acc.limits.damAssets
         const remaining = Math.max(0, limit - acc.usage.damAssets)
         if (remaining <= 0) {
-          toast.error(`Limite démo atteinte : ${limit} assets DAM maximum.`)
+          toast.error(t('tst.dam.demoLimitReached', { limit }))
           return result
         }
         if (images.length > remaining) {
-          toast.warning(`Limite démo : seuls ${remaining}/${images.length} fichiers importés (${limit} assets max).`)
+          toast.warning(t('tst.dam.demoLimitPartial', { imported: remaining, total: images.length, limit }))
           toUpload = images.slice(0, remaining)
         }
       }

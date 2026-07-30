@@ -82,9 +82,7 @@ export function DetailsFieldsPanel({ style, patch }: Props) {
             onClick={() => {
               patch({ maxBulletLines: UNCAPPED, maxSpecLines: UNCAPPED })
               setAllSectionsGrid(2)
-              toast.success('Mode EXHAUSTIF : toute la donnée source + grandes cartes (2 produits/page) sur toutes les sections', {
-                description: 'Densité ajustable section par section dans le panneau Sections.',
-              })
+              toast.success(t('tst.cat.modeFull'), { description: t('tst.cat.modeFullDesc') })
             }}
             title={t('cat.details.full')}
             className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${exhaustive ? on : off}`}>
@@ -94,9 +92,7 @@ export function DetailsFieldsPanel({ style, patch }: Props) {
             onClick={() => {
               patch({ maxBulletLines: 5, maxSpecLines: 6 })
               setAllSectionsGrid(4)
-              toast.success('Mode CONDENSÉ : 5 puces · 6 specs + grille 4 produits/page', {
-                description: 'Quotas ajustables dans les champs, densité dans le panneau Sections.',
-              })
+              toast.success(t('tst.cat.modeCompact'), { description: t('tst.cat.modeCompactDesc') })
             }}
             title={t('cat.details.condensed')}
             className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${!exhaustive ? on : off}`}>

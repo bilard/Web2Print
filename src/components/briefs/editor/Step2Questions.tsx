@@ -27,9 +27,9 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
   const handleGenerate = async () => {
     try {
       await generate.mutateAsync({ brief, taxonomy })
-      toast.success('Questions générées')
+      toast.success(t('tst.br.questionsGenerated'))
     } catch (err) {
-      toast.error((err as Error).message || 'Échec de la génération')
+      toast.error((err as Error).message || t('tst.br.generationFailed'))
     }
   }
 
@@ -50,7 +50,7 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
       return answers[q.id] === undefined || answers[q.id] === ''
     })
     if (missing.length > 0) {
-      toast.error(`Réponses obligatoires manquantes : ${missing.map((q) => q.label).join(', ')}`)
+      toast.error(t('tst.br.missingAnswers', { fields: missing.map((q) => q.label).join(', ') }))
       return
     }
     try {

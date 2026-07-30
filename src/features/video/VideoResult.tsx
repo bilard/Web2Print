@@ -10,6 +10,7 @@ import type { StyleConfig } from './promptToStyleConfig'
 import type { Composition } from './promptToComposition'
 import type { CapturedObjectAnim } from './utils/captureSvg'
 import type { MotionPlan } from './promptToMotionPlan'
+import { t } from '@/lib/i18n'
 
 interface Props {
   animationId: string
@@ -108,12 +109,12 @@ export function VideoResult(props: Props) {
         filename: `hyperframes-${animationId}`,
       })
       setZipState('done')
-      toast.success('ZIP HTML téléchargé')
+      toast.success(t('tst.vd.zipDownloaded'))
     } catch (e) {
       setZipState('error')
       const msg = e instanceof Error ? e.message : String(e)
       console.error('downloadHtmlZip failed:', e)
-      toast.error(`Export HTML échoué : ${msg}`)
+      toast.error(t('tst.vd.exportFailed', { message: msg }))
     }
   }
 
@@ -140,12 +141,12 @@ export function VideoResult(props: Props) {
         ownerId: user.uid,
       })
       setSaveState('saved')
-      toast.success('Animation ajoutée au DAM')
+      toast.success(t('tst.vd.addedToDam'))
     } catch (e) {
       setSaveState('error')
       const msg = e instanceof Error ? e.message : String(e)
       console.error('saveHtmlZip failed:', e)
-      toast.error(`Sauvegarde échouée : ${msg}`)
+      toast.error(t('tst.saveFailed', { message: msg }))
     }
   }
 

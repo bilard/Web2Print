@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { saveCatalog } from './catalogsApi'
+import { t } from '@/lib/i18n'
 
 export function useCatalogAutosave(): { saving: boolean } {
   const [saving, setSaving] = useState(false)
@@ -22,7 +23,7 @@ export function useCatalogAutosave(): { saving: boolean } {
       timer.current = setTimeout(async () => {
         setSaving(true)
         try { await saveCatalog(useCatalogStore.getState().toDoc()) }
-        catch (e) { toast.error(`Sauvegarde échouée : ${String((e as Error).message)}`) }
+        catch (e) { toast.error(t('tst.saveFailed', { message: String((e as Error).message) })) }
         finally { setSaving(false); timer.current = null }
       }, 2000)
     })

@@ -18,16 +18,16 @@ export function TextareaField({ field, value, onChange, disabled }: Props) {
   const handleImprove = async () => {
     const current = (value ?? '').trim()
     if (!current) {
-      toast.error('Saisissez d’abord un brief à améliorer.')
+      toast.error(t('tst.br.briefRequired'))
       return
     }
     try {
       const improved = await improve.mutateAsync(current)
       onChange(improved)
-      toast.success('Brief amélioré par Claude')
+      toast.success(t('tst.br.briefImproved'))
     } catch (err) {
       console.error(err)
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de l’amélioration')
+      toast.error(err instanceof Error ? err.message : t('tst.br.improveFailed'))
     }
   }
 

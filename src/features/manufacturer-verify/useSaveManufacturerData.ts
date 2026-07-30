@@ -15,6 +15,7 @@ import type { ExcelColumn, FieldTypeId } from '@/features/excel/types'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { writeSheetsToFirestore } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
 import type { LlmSpecPairs, ManufacturerCandidate } from './types'
+import { t } from '@/lib/i18n'
 
 interface ColDef { key: string; label: string; fieldType: FieldTypeId; width: number }
 
@@ -89,7 +90,7 @@ export function useSaveManufacturerData() {
       const { sheets, activeSheetIndex, currentFileName, currentDocId, currentPath } = useExcelStore.getState()
       const sheet = sheets[activeSheetIndex]
       if (!sheet) { toast.error('Aucune feuille active'); return false }
-      if (!auth.currentUser) { toast.error('Vous devez être connecté pour sauvegarder.'); return false }
+      if (!auth.currentUser) { toast.error(t('tst.mv.signInToSave')); return false }
 
       setSaving(true)
       try {
@@ -112,14 +113,14 @@ export function useSaveManufacturerData() {
         )
         if (savedDocId && savedDocId !== currentDocId) setCurrentDocId(savedDocId)
 
-        toast.success('Données fabricant enregistrées', {
+        toast.success(t('tst.mv.saved'), {
           description: `${data.specifications.length} spec(s) fabricant comparées`,
         })
         return true
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Erreur lors de la sauvegarde'
         console.error('[save-manufacturer] FAILED', e)
-        toast.error('Échec sauvegarde fabricant', { description: msg })
+        toast.error(t('tst.mv.saveFailed'), { description: msg })
         return false
       } finally {
         setSaving(false)

@@ -193,7 +193,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       const result = applyPreview(frozenPreview, products, pendingSource.id, { now: Date.now() })
       await upsertSource.mutateAsync(pendingSource)
       await upsertProducts.mutateAsync(result.products)
-      toast.success(`${result.stats.created} ajoutés · ${result.stats.merged} mergés`)
+      toast.success(t('tst.merged', { created: result.stats.created, merged: result.stats.merged }))
       setPreviewOpen(false)
       setFrozenPreview(null)
       onClose()
@@ -318,14 +318,14 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     const SRC_LABEL: Record<string, string> = { cards: 'grille produit', content: 'liens hors navigation', cloud: 'escalade scroll (Puppeteer)', firecrawl: 'cascade anti-bot (fetchPageHtml → Firecrawl → Bright Data)', jina: 'moteur Jina', none: 'aucune' }
     pushDiscoveryLog(`${pages.length} lien(s) découvert(s) · source : ${SRC_LABEL[source] ?? source}`)
     if (source === 'cards') {
-      toast.success(`${pages.length} fiche(s) détectée(s) dans la grille produit (liens de navigation exclus).`)
+      toast.success(t('tst.sc.gridDetected', { count: pages.length }))
     } else if (source === 'content') {
-      toast.info(`${pages.length} lien(s) hors navigation retenus — grille non identifiée, vérifie la liste avant d'enrichir.`)
+      toast.info(t('tst.sc.gridUnknown', { count: pages.length }))
     } else if (source === 'cloud') {
-      toast.info(`${pages.length} produit(s) — l'escalade scroll a complété la grille lazy-load.`)
+      toast.info(t('tst.sc.scrollEscalation', { count: pages.length }))
     } else if (source === 'firecrawl') {
       pushDiscoveryLog('⚠ Liens BRUTS (cascade anti-bot, non classifiés) — décoche les liens hors produit avant d\'enrichir, ou affine « Inclure (regex) » (ex. /p-).')
-      toast.info(`${pages.length} lien(s) via la cascade anti-bot — liens bruts, vérifie/filtre avant d'enrichir.`)
+      toast.info(t('tst.sc.antibotCascade', { count: pages.length }))
     }
     // Log précis : liste des titres découverts (tronquée) + repère du terme cherché.
     const titles = pages.map((p) => p.title).filter(Boolean)
@@ -354,13 +354,13 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       kept = outcome.kept
       if (outcome.applied && kept.length === 0) {
         pushDiscoveryLog(`✗ Aucun lien ne correspond à « ${label} » parmi les ${pages.length} découverts. La grille n'a peut-être rendu qu'une partie des produits (anti-bot sans défilement) — essaie une sous-catégorie plus ciblée ou augmente la limite.`)
-        toast.info(`Aucun « ${label} » parmi les ${pages.length} liens découverts (grille possiblement partielle).`)
+        toast.info(t('tst.sc.filterNoMatch', { label, count: pages.length }))
       } else if (outcome.applied) {
         pushDiscoveryLog(`✓ ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s) : ${kept.map((p) => p.title).slice(0, 20).join(' · ')}`)
         toast.success(`Filtre « ${label} » : ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s).`)
       } else {
         pushDiscoveryLog(`⚠ Filtre non concluant (IA indisponible ou 0 correspondance) — ${pages.length} lien(s) conservé(s)`)
-        toast.info(`Filtre non concluant — ${pages.length} lien(s) conservé(s).`)
+        toast.info(t('tst.sc.filterInconclusive', { count: pages.length }))
       }
     }
 

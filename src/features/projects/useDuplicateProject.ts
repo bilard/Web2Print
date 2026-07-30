@@ -49,7 +49,7 @@ export function useDuplicateProject() {
     onSuccess: (data) => {
       recordAudit({ action: 'library.project.duplicate', module: 'library', targetId: data.id, targetLabel: data.title })
       qc.invalidateQueries({ queryKey: ['projects', user?.uid] })
-      toast.success('Projet dupliqué')
+      toast.success(t('tst.pj.duplicated'))
     },
     onError: (e) => {
       console.error('[duplicateProject]', e)

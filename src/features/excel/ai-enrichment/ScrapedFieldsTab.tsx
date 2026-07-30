@@ -117,7 +117,7 @@ export function ScrapedFieldsTab({ sheetName, rowId, url, brand, title }: Props)
       )
       setInitialOrder(nextOrder)
     } catch (err) {
-      toast.error(`Sauvegarde échouée : ${err instanceof Error ? err.message : String(err)}`)
+      toast.error(t('tst.saveFailed', { message: err instanceof Error ? err.message : String(err) }))
     } finally {
       setSaving(false)
     }
@@ -245,7 +245,7 @@ export function ScrapedFieldsTab({ sheetName, rowId, url, brand, title }: Props)
                       if (!section || !enrichmentData) return
                       const next = deleteGroup(section, enrichmentData, groupName)
                       setData(sheetName, rowId, next)
-                      toast.success(`Groupe "${groupName || 'sans nom'}" supprimé`)
+                      toast.success(t('tst.xl.groupDeleted', { name: groupName || t('tst.xl.unnamed') }))
                     }}
                     onJumpToGroup={(groupName) => {
                       if (!section) return

@@ -23,7 +23,7 @@ export function VersionsPanel() {
       await createVersion('')
       toast.success(t('versions.created'))
     } catch (e) {
-      toast.error(t('versions.createError', { message: String(e instanceof Error ? e.message : e) }))
+      toast.error(t('tst.creationFailed', { message: String(e instanceof Error ? e.message : e) }))
     } finally {
       setBusy(false)
     }

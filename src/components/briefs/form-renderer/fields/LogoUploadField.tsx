@@ -4,6 +4,7 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import { storage } from '@/lib/firebase/config'
 import { toast } from 'sonner'
 import type { ClientFormField } from '@/features/taxonomy/types'
+import { t } from '@/lib/i18n'
 
 interface Props {
   field: ClientFormField
@@ -21,7 +22,7 @@ export function LogoUploadField({ field, value, onChange, disabled, briefId }: P
 
   const handleFile = async (file: File) => {
     if (!briefId) {
-      toast.error('Brief non sauvegardé')
+      toast.error(t('tst.br.notSaved'))
       return
     }
     if (file.size > MAX_BYTES) {
@@ -29,7 +30,7 @@ export function LogoUploadField({ field, value, onChange, disabled, briefId }: P
       return
     }
     if (!file.type.startsWith('image/')) {
-      toast.error('Veuillez sélectionner une image')
+      toast.error(t('tst.br.pickImage'))
       return
     }
     setUploading(true)
@@ -40,7 +41,7 @@ export function LogoUploadField({ field, value, onChange, disabled, briefId }: P
       await uploadBytes(ref, file, { contentType: file.type })
       const url = await getDownloadURL(ref)
       onChange(url)
-      toast.success('Logo importé')
+      toast.success(t('tst.br.logoUploaded'))
     } catch (err) {
       toast.error((err as Error).message || "Échec de l'upload")
     } finally {

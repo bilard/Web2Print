@@ -88,10 +88,10 @@ function AnimationTitle({ animation, onRename }: AnimationTitleProps) {
     setSaving(true)
     try {
       await onRename(trimmed)
-      toast.success('Animation renommée')
+      toast.success(t('tst.vd.renamed'))
       setEditing(false)
     } catch {
-      toast.error('Renommage échoué')
+      toast.error(t('tst.vd.renameFailed'))
     } finally {
       setSaving(false)
     }
@@ -182,7 +182,7 @@ function AnimationCard({ animation, onDelete, onRename }: {
       a.remove()
       URL.revokeObjectURL(blobUrl)
     } catch {
-      toast.error('Téléchargement échoué')
+      toast.error(t('tst.vd.downloadFailed'))
     } finally {
       setDownloading(false)
     }
@@ -209,7 +209,7 @@ function AnimationCard({ animation, onDelete, onRename }: {
       // son cycle de vie.
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      toast.error(`Ouverture échouée : ${msg}`)
+      toast.error(t('tst.vd.openFailed', { message: msg }))
     }
   }
 
@@ -268,9 +268,9 @@ export function UserAnimationsList() {
   const handleDelete = async (a: SavedAnimation) => {
     try {
       await deleteAnimation(a)
-      toast.success('Animation supprimée')
+      toast.success(t('tst.vd.deleted'))
     } catch {
-      toast.error('Suppression échouée')
+      toast.error(t('tst.vd.deleteFailed'))
     }
   }
 

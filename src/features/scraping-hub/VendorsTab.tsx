@@ -15,7 +15,7 @@ export function VendorsTab() {
     listTemplates()
       .then(setTemplates)
       .catch((err) => {
-        toast.error('Échec du chargement : ' + (err as Error).message)
+        toast.error(t('tst.sh.loadFailed', { message: (err as Error).message }))
         setTemplates([])
       })
   }, [])

@@ -103,7 +103,7 @@ export function PrintPanel() {
       setSelectedPresetId(id)
       toast.success(t('print.preset.created', { name: name.trim() }))
     } else {
-      toast.error(t('print.preset.createError'))
+      toast.error(t('tst.createFailed'))
     }
   }
 
@@ -111,7 +111,7 @@ export function PrintPanel() {
     if (!selectedPresetId) return
     const ok = await updatePreset(selectedPresetId, collectCurrentParams())
     if (ok) toast.success(t('print.preset.updated'))
-    else toast.error(t('print.preset.updateError'))
+    else toast.error(t('tst.updateFailed'))
   }
 
   const handleDeletePreset = async () => {

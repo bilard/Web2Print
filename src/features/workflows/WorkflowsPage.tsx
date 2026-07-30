@@ -96,7 +96,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
       await saveWorkflow(uid, wf)
       nav(`/workflows/${wf.id}`)
     } catch (e) {
-      toast.error(t('wf.createFailed', { message: e instanceof Error ? e.message : String(e) }))
+      toast.error(t('tst.createFailedWith', { message: e instanceof Error ? e.message : String(e) }))
     }
   }
 
@@ -114,7 +114,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
       await saveWorkflow(uid, wf)
       nav(`/workflows/${wf.id}`)
     } catch (e) {
-      toast.error(t('wf.createFailed', { message: e instanceof Error ? e.message : String(e) }))
+      toast.error(t('tst.createFailedWith', { message: e instanceof Error ? e.message : String(e) }))
     }
   }
   const remove = async (id: string) => {

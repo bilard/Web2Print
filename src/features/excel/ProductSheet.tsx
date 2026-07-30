@@ -345,7 +345,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
     if (!ref || detourBusy) return
     const col = imageCols.find(c => parseImageList(getValue(c)).includes(ref))
     if (!col) {
-      toast.error('Image issue du scraping — enregistrez d’abord les images dans la fiche avant de détourer')
+      toast.error(t('tst.xl.scrapedImage'))
       return
     }
     setDetourBusy(true)
@@ -354,9 +354,9 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
       const segs = String(getValue(col) ?? '').split(/[\n|]/).map(s => s.trim()).filter(Boolean)
       const next = segs.map(s => (s === ref ? `${link} | ${s}` : s)).join(' | ')
       updateCell(activeSheetIndex, rowId, col.key, next)
-      toast.success('Image détourée (PNG ajouté au DAM « Détourés »)')
+      toast.success(t('tst.xl.cutoutDone'))
     } catch (err) {
-      toast.error(`Détourage : ${String((err as Error).message)}`)
+      toast.error(t('tst.xl.cutoutFailed', { message: String((err as Error).message) }))
     } finally {
       setDetourBusy(false)
     }

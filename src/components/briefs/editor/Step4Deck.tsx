@@ -31,14 +31,14 @@ export function Step4Deck({ brief, onAdvance }: Props) {
         brief,
         onProgress: (info) => setProgress({ done: info.done, total: info.total, label: info.currentLabel }),
       })
-      if (r.failed.length === 0) toast.success(`${r.generated.length} images générées`)
+      if (r.failed.length === 0) toast.success(t('tst.br.imagesGenerated', { count: r.generated.length }))
       else {
         const detail = r.failed.map((f) => `${f.id}: ${f.error}`).join('\n')
         console.error('[Step4Deck] échecs:', detail)
-        toast.warning(`${r.generated.length} générées, ${r.failed.length} échec(s) — voir console`)
+        toast.warning(t('tst.br.imagesPartial', { ok: r.generated.length, failed: r.failed.length }))
       }
     } catch (err) {
-      toast.error((err as Error).message || 'Échec du batch')
+      toast.error((err as Error).message || t('tst.br.batchFailed'))
     } finally {
       setProgress(null)
     }
@@ -46,7 +46,7 @@ export function Step4Deck({ brief, onAdvance }: Props) {
 
   const handleNext = async () => {
     if (slideCount === 0) {
-      toast.error('Le deck est vide. Génère la structure avant de continuer.')
+      toast.error(t('tst.br.emptyDeck'))
       return
     }
     try {
@@ -64,10 +64,10 @@ export function Step4Deck({ brief, onAdvance }: Props) {
   const handleGenerateDeck = async () => {
     try {
       const r = await generateDeck.mutateAsync({ brief })
-      toast.success(`Deck généré : ${r.slides.length} slide${r.slides.length > 1 ? 's' : ''}`)
+      toast.success(t(r.slides.length > 1 ? 'tst.br.deckGenerated.many' : 'tst.br.deckGenerated.one', { count: r.slides.length }))
     } catch (err) {
       console.error('[Step4Deck] generateDeck FAILED', err)
-      toast.error('Échec génération deck : ' + ((err as Error).message || 'inconnue'))
+      toast.error(t('tst.br.deckFailed', { message: (err as Error).message || t('tst.br.unknownError') }))
     }
   }
 

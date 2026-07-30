@@ -5,6 +5,7 @@ import { storage } from '@/lib/firebase/config'
 import { toast } from 'sonner'
 import { extractBrandColorsFromFile } from '@/features/briefs/ai/extractBrandColors'
 import type { ClientFormField } from '@/features/taxonomy/types'
+import { t } from '@/lib/i18n'
 
 interface BrandKitFile {
   url: string
@@ -56,7 +57,7 @@ export function BrandKitUploadField({ field, value, onChange, disabled, briefId,
 
   const handleFiles = async (fileList: FileList) => {
     if (!briefId) {
-      toast.error('Brief non sauvegardé')
+      toast.error(t('tst.br.notSaved'))
       return
     }
     const files = Array.from(fileList).slice(0, MAX_FILES)
@@ -71,7 +72,7 @@ export function BrandKitUploadField({ field, value, onChange, disabled, briefId,
       for (let i = 0; i < files.length; i++) {
         const f = files[i]
         if (f.size > MAX_BYTES_PER_FILE) {
-          toast.warning(`${f.name} ignoré (>25 Mo)`)
+          toast.warning(t('tst.br.fileIgnored', { name: f.name }))
           setProgress({ done: i + 1, total: files.length })
           continue
         }
@@ -95,7 +96,7 @@ export function BrandKitUploadField({ field, value, onChange, disabled, briefId,
       }
 
       onChange({ files: uploaded })
-      toast.success(`${uploaded.length - existingFiles.length} fichier(s) importé(s)`)
+      toast.success(t('tst.br.filesUploaded', { count: uploaded.length - existingFiles.length }))
 
       if (onSiblingChange && colorSourceFile) {
         toast.message('Analyse des couleurs en cours…')
@@ -109,7 +110,7 @@ export function BrandKitUploadField({ field, value, onChange, disabled, briefId,
         }
       }
     } catch (err) {
-      toast.error((err as Error).message || 'Échec de l\'upload')
+      toast.error((err as Error).message || t('tst.br.uploadFailed'))
     } finally {
       setUploading(false)
       setProgress(null)

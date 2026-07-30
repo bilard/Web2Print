@@ -286,7 +286,7 @@ export function DataTable() {
       if (tc.level > group.level) updateCell(activeSheetIndex, rowId, tc.col.key, null)
     }
     const pathLabel = group.path.map((p) => p.value).join(' > ')
-    toast.success(`Produit classé sous ${pathLabel}`)
+    toast.success(t('tst.xl.classified', { path: pathLabel }))
   }, [activeSheetIndex, updateCell, taxoCols])
 
   // Build grouped rows structure
@@ -1125,12 +1125,12 @@ function DataRow({
                 if (label) {
                   void trashProductDamAssets(scrapeFolderName(sh.name, sh.sourceUrl), label)
                     .then((n) => {
-                      if (n > 0) toast.success(`${n} image(s) du DAM déplacée(s) dans la corbeille Drive`)
-                      else toast.info('Aucun asset DAM trouvé pour ce produit dans Drive.')
+                      if (n > 0) toast.success(t('tst.xl.damTrashed', { count: n }))
+                      else toast.info(t('tst.xl.damNoAsset'))
                     })
                     .catch((e) => {
                       console.error('[DAM] suppression produit échouée', e)
-                      toast.error(`DAM : suppression Drive échouée — ${e instanceof Error ? e.message : 'erreur'}`)
+                      toast.error(t('tst.xl.damDeleteFailed', { message: e instanceof Error ? e.message : t('tst.xl.error') }))
                     })
                 }
               }
