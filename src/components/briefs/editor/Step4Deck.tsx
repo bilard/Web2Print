@@ -7,6 +7,7 @@ import { useBriefImages } from '@/features/briefs/useBriefImages'
 import { useUpdateBrief } from '@/features/briefs/useBriefMutations'
 import { BriefImagesGallery } from './BriefImagesGallery'
 import type { Brief } from '@/features/briefs/types'
+import { t } from '@/lib/i18n'
 
 interface Props {
   brief: Brief
@@ -198,7 +199,7 @@ export function Step4Deck({ brief, onAdvance }: Props) {
             {generateAllImages.isPending && existingImages.length === 0 && !progress && (
               <div className="mb-4 flex flex-col items-center justify-center gap-3 py-8 border border-dashed border-white/[0.08] rounded-md">
                 <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
-                <p className="text-[12px] text-white/50">Génération des visuels en cours…</p>
+                <p className="text-[12px] text-white/50">{t('br.generatingVisuals')}</p>
               </div>
             )}
             <BriefImagesGallery brief={brief} batchPending={generateAllImages.isPending} />

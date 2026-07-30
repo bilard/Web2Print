@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { useObjectOperations } from '@/features/editor/useObjectOperations'
 import { useCroppingImage } from '@/features/editor/useImageMask'
+import { t } from '@/lib/i18n'
 
 interface Props {
   canvas: Canvas | null
@@ -103,7 +104,7 @@ export function SelectionToolbar({ canvas }: Props) {
     >
       <div className="flex items-stretch rounded-md border border-white/10 bg-surface shadow-xl overflow-hidden">
         {isLocked ? (
-          <Btn icon={LockOpen} title="Déverrouiller" onClick={ops.lockSelected} />
+          <Btn icon={LockOpen} title={t('cv.unlock')} onClick={ops.lockSelected} />
         ) : (
           <>
             <Btn icon={Copy} title="Dupliquer (⌘D)" onClick={() => void ops.duplicateSelected()} />
@@ -119,7 +120,7 @@ export function SelectionToolbar({ canvas }: Props) {
             {isGroup && (
               <>
                 <Sep />
-                <Btn icon={Ungroup} title="Dégrouper (⌘⇧G)" onClick={ops.ungroupSelected} />
+                <Btn icon={Ungroup} title={t('cv.ungroup')} onClick={ops.ungroupSelected} />
               </>
             )}
             <Sep />

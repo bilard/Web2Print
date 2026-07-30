@@ -4,6 +4,7 @@ import { useSignOut } from '@/features/auth/useAuth'
 import { useNavigate } from 'react-router-dom'
 import { CloseButton } from './CloseButton'
 import { SettingsPanel } from './SettingsPanel'
+import { t } from '@/lib/i18n'
 
 export function SettingsSheet() {
   const { settingsOpen, setSettingsOpen } = useUIStore()
@@ -26,7 +27,7 @@ export function SettingsSheet() {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10 shrink-0">
           <div className="flex items-baseline gap-2">
-            <h2 className="font-semibold text-white text-sm">Paramètres</h2>
+            <h2 className="font-semibold text-white text-sm">{t('sh.settings')}</h2>
             <span className="text-[10px] font-mono text-white/30">v0.1.0</span>
           </div>
           <CloseButton onClick={() => setSettingsOpen(false)} />

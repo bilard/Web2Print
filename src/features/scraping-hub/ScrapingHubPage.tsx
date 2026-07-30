@@ -4,11 +4,12 @@ import { RulesTab } from './RulesTab'
 import { VendorsTab } from './VendorsTab'
 import { DebugTab } from './DebugTab'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
+import { t } from '@/lib/i18n'
 
 type Tab = 'rules' | 'vendors' | 'debug'
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'rules',   label: 'Règles',                   icon: BookOpen },
+  { id: 'rules',   label: t('sh2.rules'),                   icon: BookOpen },
   { id: 'vendors', label: 'Fournisseurs & Templates', icon: FolderTree },
   { id: 'debug',   label: 'Debug Jina/LLM',           icon: Bug },
 ]

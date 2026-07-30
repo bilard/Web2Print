@@ -1,10 +1,11 @@
 import { Sparkles, KeyRound, Cpu, Plug, Compass } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 const ITEMS = [
-  { icon: KeyRound, label: 'Clés IA', desc: 'Au moins une clé LLM pour faire fonctionner l\'app' },
-  { icon: Cpu, label: 'Modèles & cascade', desc: 'Ordre des providers de raisonnement' },
+  { icon: KeyRound, label: t('ob.aiKeys'), desc: t('ob.aiKeys.desc') },
+  { icon: Cpu, label: t('ob.cascade'), desc: t('ob.cascade.desc') },
   { icon: Plug, label: 'Connecteurs', desc: 'Google Drive, Telegram, Bright Data' },
-  { icon: Compass, label: 'Visite guidée', desc: 'Découvrir l\'interface pas à pas' },
+  { icon: Compass, label: t('ob.tour'), desc: t('ob.tour.desc') },
 ]
 
 export function WelcomeStep() {

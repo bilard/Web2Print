@@ -1,5 +1,6 @@
 import type { CartDiscount } from '@/features/briefs/types'
 import { formatPrice } from '@/features/briefs/cart/formatPrice'
+import { t } from '@/lib/i18n'
 
 interface Props {
   subtotal: number
@@ -44,7 +45,7 @@ export function CartSummary({ subtotal, total, discount, onDiscountChange }: Pro
       </div>
 
       <div className="border-t border-white/[0.06] pt-3 flex justify-between text-white font-semibold text-[13px]">
-        <span>Total estimé</span>
+        <span>{t('br.totalEstimated')}</span>
         <span>{formatPrice(total)}</span>
       </div>
     </div>

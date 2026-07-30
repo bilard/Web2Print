@@ -1,6 +1,7 @@
 import { RefreshCw, ImageIcon, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { CloseButton } from '@/components/shared/CloseButton'
+import { t } from '@/lib/i18n'
 
 interface Props {
   label: string
@@ -37,7 +38,7 @@ export function BriefImageCard({ label, imageUrl, loading, onRegenerate }: Props
             onClick={onRegenerate}
             disabled={loading}
             className="text-white/40 hover:text-white disabled:opacity-30"
-            aria-label="Régénérer"
+            aria-label={t('br.regenerate')}
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>

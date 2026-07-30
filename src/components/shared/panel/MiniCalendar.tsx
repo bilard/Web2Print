@@ -3,6 +3,7 @@
 // vers l'avant). Thémable par tokens — parité clair/sombre automatique.
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 const MONTHS = [
   'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
@@ -39,7 +40,7 @@ export function MiniCalendar({ selected, onToggle }: {
   return (
     <div className="rounded border border-white/10 bg-well p-2 select-none">
       <div className="flex items-center justify-between mb-1.5">
-        <button type="button" onClick={() => move(-1)} title="Mois précédent"
+        <button type="button" onClick={() => move(-1)} title={t('sh.prevMonth')}
           className="p-1 rounded text-white/50 hover:text-white hover:bg-white/10">
           <ChevronLeft className="w-3.5 h-3.5" />
         </button>

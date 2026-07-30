@@ -3,6 +3,7 @@ import { CheckCircle2, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { getTelegramBotInfo } from '@/lib/telegramApi'
 import { DigestToggle } from './DigestToggle'
+import { t } from '@/lib/i18n'
 
 const inputCls =
   'w-full bg-background border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none'
@@ -88,7 +89,7 @@ export function TelegramSettings() {
       </div>
 
       <div>
-        <label className="text-xs text-neutral-400 mb-1 block">Chat ID par défaut</label>
+        <label className="text-xs text-neutral-400 mb-1 block">{t('tg.defaultChatId')}</label>
         <input
           type="text"
           value={chatId}

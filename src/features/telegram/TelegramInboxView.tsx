@@ -10,6 +10,7 @@ import { sendTelegramMessage } from '@/lib/telegramApi'
 import { InboxItem } from './InboxItem'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { useCan } from '@/features/access/useAccess'
+import { t } from '@/lib/i18n'
 
 export function TelegramInboxView() {
   // Le worker tourne tant que cette page est ouverte (onglet dédié) — store de run isolé.
@@ -73,7 +74,7 @@ export function TelegramInboxView() {
     <div className="h-full bg-background text-white flex flex-col overflow-hidden">
       <header className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2 shrink-0">
         <Inbox className="w-4 h-4 text-blue-400" />
-        <h1 className="text-[13px] font-semibold text-white/80">Boîte de réception Telegram</h1>
+        <h1 className="text-[13px] font-semibold text-white/80">{t('tg.inbox')}</h1>
         <span className="text-[11px] text-neutral-500">{messages.length} message(s)</span>
         <span
           className={`text-[10px] px-1.5 py-0.5 rounded border ${

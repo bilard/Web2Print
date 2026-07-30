@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { X } from 'lucide-react'
 import { pageLabel, topBy, topSourceCategories, NO_FILTER, type AnalyticsEvent, type EventFilter } from '@/features/analytics/metrics'
 import { useUsersMap } from '@/features/analytics/useUsersMap'
+import { t } from '@/lib/i18n'
 
 const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
 const ZONE_OPTS = [
@@ -77,7 +78,7 @@ export function PulseFilters({ events, filter, onChange }: PulseFiltersProps) {
           onClick={() => onChange(NO_FILTER)}
           className="pulse-tap flex shrink-0 items-center gap-1 rounded-full py-1.5 pl-2.5 pr-3 text-[13px] font-semibold"
           style={{ background: 'var(--pulse-surface-2)', color: 'var(--pulse-text)' }}
-          aria-label="Réinitialiser les filtres"
+          aria-label={t('pu.resetFilters')}
         >
           <X size={14} /> Réinitialiser
         </button>

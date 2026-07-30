@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { GDrivePickerModal } from '@/features/gdrive/GDrivePickerModal'
 import { useDamFolderUpload, type FolderUploadResult } from './useDamFolderUpload'
+import { t } from '@/lib/i18n'
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder'
 
@@ -140,7 +141,7 @@ export function ImportFolderToDriveModal({ open, onClose }: Props) {
             <input type="checkbox" checked={removeBg} onChange={(e) => setRemoveBg(e.target.checked)}
               disabled={running} className="accent-indigo-600 w-4 h-4" />
             <Eraser className="w-4 h-4 text-indigo-300 shrink-0" />
-            <span>Détourer les images à l'import <span className="text-white/35">(fond supprimé → PNG)</span></span>
+            <span>{t('dm.cutoutOnImport')} <span className="text-white/35">{t('dm.cutoutOnImport.note')}</span></span>
           </label>
 
           {/* Progression */}

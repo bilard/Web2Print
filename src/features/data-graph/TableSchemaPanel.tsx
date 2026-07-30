@@ -2,6 +2,7 @@ import { createContext, useContext, type ReactNode } from 'react'
 import { KeyRound, Link2, ArrowRight, Table2, Eye } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { DOMAIN_HEX, TABLES, type FieldSchema, type TableSchema } from './firestoreSchema'
+import { t } from '@/lib/i18n'
 
 /** Ouvre le panneau de schéma (droite) pour une table ; `field` met un champ en surbrillance. */
 type OpenSchema = (tableId: string, field?: string) => void
@@ -50,7 +51,7 @@ function FieldCard({ f, hex, active, onFocusTable }: {
         {fkTable && (
           <button
             onClick={() => onFocusTable(fkTable.id)}
-            title={`Aller à la table ${fkTable.label}`}
+            title={t('dg.goToTable', { table: fkTable.label })}
             className="inline-flex items-center gap-1 text-indigo-300/90 transition-colors hover:text-indigo-200"
           >
             <Link2 className="h-3 w-3" /> {fkTable.label} <ArrowRight className="h-3 w-3" />

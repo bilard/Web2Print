@@ -98,7 +98,7 @@ export function DamNavSidebar() {
                     className={`text-[11px] tabular-nums px-1.5 py-px rounded ${
                       isActive ? 'bg-indigo-500/20 text-indigo-300' : 'text-white/35'
                     }`}
-                    aria-label={`${count} éléments`}
+                    aria-label={t('dm.itemCount', { count })}
                   >
                     {count}
                   </span>

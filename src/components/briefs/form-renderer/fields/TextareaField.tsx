@@ -2,6 +2,7 @@ import { Sparkles, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ClientFormField } from '@/features/taxonomy/types'
 import { useImproveBriefPrompt } from '@/features/briefs/ai/useImproveBriefPrompt'
+import { t } from '@/lib/i18n'
 
 interface Props {
   field: ClientFormField
@@ -42,7 +43,7 @@ export function TextareaField({ field, value, onChange, disabled }: Props) {
             type="button"
             onClick={handleImprove}
             disabled={disabled || improve.isPending}
-            title="Améliorer le brief avec Claude"
+            title={t('br.improveWithClaude')}
             className="flex items-center gap-1 text-[11px] text-indigo-300 hover:text-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {improve.isPending ? (

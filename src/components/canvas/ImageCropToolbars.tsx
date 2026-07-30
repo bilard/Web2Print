@@ -29,13 +29,14 @@ import { FabricImage } from 'fabric'
 import { useUIStore } from '@/stores/ui.store'
 import { useDamStore } from '@/stores/dam.store'
 import type { DamTab } from '@/features/dam/types'
+import { t } from '@/lib/i18n'
 
 const REPLACE_SOURCES: { tab: DamTab; label: string; icon: typeof ImageIcon }[] = [
   { tab: 'stock', label: 'Stock', icon: ImageIcon },
   { tab: 'my-images', label: 'Mes images', icon: FolderOpen },
   { tab: 'favorites', label: 'Favoris', icon: Heart },
   { tab: 'collections', label: 'Collections', icon: FolderHeart },
-  { tab: 'recent', label: 'Récents', icon: Clock },
+  { tab: 'recent', label: t('cv.recent'), icon: Clock },
   { tab: 'generate', label: 'Image IA', icon: Sparkles },
 ]
 
@@ -153,7 +154,7 @@ export function ImageCropToolbars({ canvas }: Props) {
             type="button"
             onClick={cancelCrop}
             className="flex items-center gap-1.5 px-3 py-2 text-xs text-white/70 hover:bg-white/10 transition-colors"
-            title="Annuler (Échap)"
+            title={t('cv.cancelEsc')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -162,7 +163,7 @@ export function ImageCropToolbars({ canvas }: Props) {
             type="button"
             onClick={applyCrop}
             className="flex items-center gap-1.5 px-3 py-2 text-xs text-[#fff] bg-indigo-600 hover:bg-indigo-500 transition-colors"
-            title="Appliquer le recadrage (Entrée)"
+            title={t('cv.applyCrop')}
           >
             <Check className="w-4 h-4" />
           </button>
@@ -183,7 +184,7 @@ export function ImageCropToolbars({ canvas }: Props) {
               type="button"
               onClick={() => setReplaceMenuOpen((v) => !v)}
               className="flex items-center gap-1.5 px-3 py-2 text-xs text-white/80 hover:bg-surface-2 hover:text-white transition-colors"
-              title="Remplacer par une image de la bibliothèque"
+              title={t('cv.replaceFromLibrary')}
             >
               <Replace className="w-4 h-4" />
               <span>Remplacer</span>

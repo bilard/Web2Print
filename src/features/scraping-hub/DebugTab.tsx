@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Trash2, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react'
 import { readDebugLog, clearDebugLog, type DebugEntry } from './debugLog'
+import { t } from '@/lib/i18n'
 
 export function DebugTab() {
   const [entries, setEntries] = useState<DebugEntry[]>([])
@@ -79,7 +80,7 @@ export function DebugTab() {
                     </>
                   ) : (
                     <>
-                      <Section title="Provider / modèle / tâche">{`${e.provider} · ${e.model} · ${e.task} (T=${e.temperature})`}</Section>
+                      <Section title={t('sh2.providerModelTask')}>{`${e.provider} · ${e.model} · ${e.task} (T=${e.temperature})`}</Section>
                       {e.tool_name && <Section title="Tool">{e.tool_name}</Section>}
                       <Section title="Messages">
                         {e.messages.map((m, i) => (

@@ -1,5 +1,6 @@
 import { Plus, Pencil, Trash2, Link } from 'lucide-react'
 import { useCan } from '@/features/access/useAccess'
+import { t } from '@/lib/i18n'
 
 interface TaxonomyNodeActionsProps {
   nodeLabel: string
@@ -25,7 +26,7 @@ export function TaxonomyNodeActions({
         <button
           onClick={onAddChild}
           className="p-0.5 rounded text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors"
-          aria-label={`Ajouter un enfant à ${nodeLabel}`}
+          aria-label={t('tx.addChild', { node: nodeLabel })}
         >
           <Plus className="w-3 h-3" />
         </button>
@@ -43,7 +44,7 @@ export function TaxonomyNodeActions({
         <button
           onClick={onLinkProjects}
           className="p-0.5 rounded text-white/30 hover:text-teal-400 hover:bg-teal-500/10 transition-colors"
-          aria-label={`Lier des projets à ${nodeLabel}`}
+          aria-label={t('tx.linkProjects', { node: nodeLabel })}
         >
           <Link className="w-3 h-3" />
         </button>

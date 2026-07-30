@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Eraser, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { detourImageValue } from './detourImage'
+import { t } from '@/lib/i18n'
 
 interface Props {
   /** Valeur courante de la cellule (webViewLink Drive ou URL, multi-images acceptées). */
@@ -33,7 +34,7 @@ export function DetourImageButton({ value, baseName, onDone }: Props) {
   return (
     <button type="button" onClick={(e) => void run(e)} disabled={busy}
       className="shrink-0 p-1 rounded text-white/40 hover:text-indigo-300 hover:bg-indigo-500/10 transition-colors disabled:opacity-60"
-      title="Détourer l'image (fond supprimé → PNG dans le DAM)">
+      title={t('im.cutout')}>
       {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eraser className="h-3.5 w-3.5" />}
     </button>
   )

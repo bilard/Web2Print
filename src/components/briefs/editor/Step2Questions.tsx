@@ -6,6 +6,7 @@ import { useUpdateBrief } from '@/features/briefs/useBriefMutations'
 import { QuestionRenderer } from './QuestionRenderer'
 import type { Brief } from '@/features/briefs/types'
 import type { Taxonomy } from '@/features/taxonomy/types'
+import { t } from '@/lib/i18n'
 
 interface Props {
   brief: Brief
@@ -88,7 +89,7 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-[14px] font-semibold text-white/80">Questions complémentaires</h2>
+              <h2 className="text-[14px] font-semibold text-white/80">{t('br.extraQuestions')}</h2>
               <p className="text-[12px] text-white/40">
                 Générées par l'IA à partir du brief client et de la taxonomie.
               </p>
@@ -106,7 +107,7 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
           {generate.isPending && (
             <div className="flex flex-col items-center justify-center gap-3 py-12 border border-dashed border-white/[0.08] rounded-md">
               <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
-              <p className="text-[12px] text-white/50">Génération des questions en cours…</p>
+              <p className="text-[12px] text-white/50">{t('br.generatingQuestions')}</p>
             </div>
           )}
 

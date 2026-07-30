@@ -7,6 +7,7 @@ import { useDemoExpress } from './useDemoExpress'
 import { DemoExpressForm } from './components/DemoExpressForm'
 import { DemoExpressProgress } from './components/DemoExpressProgress'
 import { DemoExpressResult } from './components/DemoExpressResult'
+import { t } from '@/lib/i18n'
 
 export function DemoExpressPage() {
   const phase = useDemoExpressStore((s) => s.phase)
@@ -34,7 +35,7 @@ export function DemoExpressPage() {
               <Sparkles className="w-5 h-5 text-lime-400" aria-hidden="true" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-white">Démo express</h1>
+              <h1 className="text-xl font-semibold text-white">{t('de.title')}</h1>
               <p className="text-sm text-white/50">
                 {phase === 'form'
                   ? 'Le studio se remplit tout seul avec les produits et la charte du site d’un prospect.'

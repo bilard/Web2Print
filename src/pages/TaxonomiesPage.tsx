@@ -15,6 +15,7 @@ import { TaxonomyMainTabs } from '@/components/taxonomy/TaxonomyMainTabs'
 import { BriefsPanel } from '@/components/briefs/BriefsPanel'
 import { useBriefUIStore } from '@/stores/brief.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
+import { t } from '@/lib/i18n'
 
 interface TaxonomiesPageProps {
   embedded?: boolean
@@ -103,7 +104,7 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
             <TaxonomyEmptyState onImport={() => setImportOpen(true)} />
           ) : !selectedTaxonomy ? (
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-[12px] text-white/30">Sélectionnez une taxonomie dans la liste</p>
+              <p className="text-[12px] text-white/30">{t('tx.pickTaxonomy')}</p>
             </div>
           ) : (
             <>
@@ -132,7 +133,7 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
                       : 'text-white/50 hover:text-white/80 hover:bg-white/[0.06]'
                   }`}
                   aria-pressed={showLinkedOnly}
-                  title="Afficher uniquement les nœuds liés à un projet"
+                  title={t('tx.onlyLinked')}
                 >
                   <Filter className="w-3.5 h-3.5" />
                   Liés uniquement

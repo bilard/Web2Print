@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Pipette, Plus } from 'lucide-react'
 import { usePaletteStore, savePaletteToFirestore } from '@/stores/palette.store'
+import { t } from '@/lib/i18n'
 
 // ── Theme & Standard Colors ─────────────────────────────────────────────────
 
@@ -316,7 +317,7 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
             <>
               {/* Theme colors */}
               <div>
-                <p className="text-[9px] text-white/30 uppercase mb-1.5">Couleurs du thème</p>
+                <p className="text-[9px] text-white/30 uppercase mb-1.5">{t('sh.themeColors')}</p>
                 <div className="flex gap-1 mb-1">
                   {THEME_BASE.map((c, i) => <Swatch key={i} color={c} />)}
                 </div>
@@ -343,7 +344,7 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
               {/* Recent colors */}
               {recentColors.length > 0 && (
                 <div>
-                  <p className="text-[9px] text-white/30 uppercase mb-1.5">Couleurs récentes</p>
+                  <p className="text-[9px] text-white/30 uppercase mb-1.5">{t('sh.recentColors')}</p>
                   <div className="flex gap-1 flex-wrap">
                     {recentColors.map((c, i) => <Swatch key={i} color={c} size="xs" />)}
                   </div>

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { listTemplates } from '@/features/scraping-templates/templatesStore'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
+import { t } from '@/lib/i18n'
 
 export function VendorsTab() {
   const navigate = useNavigate()
@@ -62,7 +63,7 @@ export function VendorsTab() {
                 {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-white/40" /> : <ChevronRight className="w-3.5 h-3.5 text-white/40" />}
                 <span className="text-[13px] font-semibold text-white/80">{vendor}</span>
                 <span className="text-[11px] text-white/40">{items.length} template{items.length > 1 ? 's' : ''}</span>
-                {vendorPrompt && <span className="ml-auto text-[10px] text-sky-400/60">prompt fournisseur défini</span>}
+                {vendorPrompt && <span className="ml-auto text-[10px] text-sky-400/60">{t('sh2.vendorPromptSet')}</span>}
               </button>
               {isOpen && (
                 <div className="px-3 pb-3">

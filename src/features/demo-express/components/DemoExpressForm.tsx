@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Rocket } from 'lucide-react'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import { DEMO_VOLUMES } from '../useDemoExpress'
+import { t } from '@/lib/i18n'
 
 interface Props {
   onLaunch: (company: string, url: string, opts: { maxProducts: number; prompt?: string; animations?: boolean }) => void
@@ -61,7 +62,7 @@ export function DemoExpressForm({ onLaunch }: Props) {
         </p>
       </div>
       <div>
-        <span className="block text-sm font-medium text-white/80 mb-1.5">Nombre de produits à scraper</span>
+        <span className="block text-sm font-medium text-white/80 mb-1.5">{t('de.productCount')}</span>
         <div className="flex items-center gap-2 flex-wrap">
           {DEMO_VOLUMES.map((v) => (
             <button

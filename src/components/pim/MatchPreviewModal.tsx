@@ -1,6 +1,7 @@
 import { Loader2, Plus, Link2, AlertTriangle } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import type { MergePreview } from '@/features/pim/types'
+import { t } from '@/lib/i18n'
 
 interface Props {
   open: boolean
@@ -54,7 +55,7 @@ export function MatchPreviewModal({ open, preview, loading, sourceName, onConfir
               <Section
                 icon={<Link2 className="w-3.5 h-3.5 text-indigo-400" />}
                 color="indigo"
-                title={`${stats.merged} mergé${stats.merged > 1 ? 's' : ''} sur existant`}
+                title={t('pm.mergedOnExisting', { count: stats.merged })}
                 items={preview.mergedOnExisting.slice(0, 8).map((m) => ({
                   primary: stringField(m.snapshot, 'name') ?? `Ligne ${m.rowIndex + 1}`,
                   secondary: `→ ${m.targetMasterSku ?? m.targetProductId}`,
@@ -64,7 +65,7 @@ export function MatchPreviewModal({ open, preview, loading, sourceName, onConfir
               <Section
                 icon={<AlertTriangle className="w-3.5 h-3.5 text-amber-400" />}
                 color="amber"
-                title={`${stats.dedup} sans SKU · à dédupliquer`}
+                title={t('pm.noSkuDedup', { count: stats.dedup })}
                 items={preview.needsDedup.slice(0, 8).map((r) => ({
                   primary: stringField(r.snapshot, 'name') ?? `Ligne ${r.rowIndex + 1}`,
                   secondary: 'sera créé comme master synthétique',

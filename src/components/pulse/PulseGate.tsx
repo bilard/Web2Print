@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useIsAdmin, useAccessLoading } from '@/features/access/useAccess'
 import { useSignOut } from '@/features/auth/useAuth'
 import { completePulseRedirect, signInForPulse } from '@/features/analytics/pulseAuth'
+import { t } from '@/lib/i18n'
 
 function Splash({ children }: { children: ReactNode }) {
   return (
@@ -74,7 +75,7 @@ export function PulseGate({ children }: { children: ReactNode }) {
     return (
       <Splash>
         <div>
-          <h1 className="pulse-rounded text-[22px] font-bold">Accès réservé</h1>
+          <h1 className="pulse-rounded text-[22px] font-bold">{t('pu.restricted')}</h1>
           <p className="mt-1 max-w-[260px] text-[14px]" style={{ color: 'var(--pulse-text-2)' }}>
             Ce tableau de bord est réservé aux administrateurs.
           </p>

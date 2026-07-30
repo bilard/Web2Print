@@ -21,6 +21,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { deleteTelegramMessage, deleteTelegramMessages } from '@/lib/telegramApi'
 import { classifyDeletable, withinDeleteWindow, type DeleteOutcome } from './inboxDelete'
 import type { InboxStatus, InboxMessage } from './inboxTypes'
+import { t } from '@/lib/i18n'
 
 export type { DeleteOutcome } from './inboxDelete'
 
@@ -197,7 +198,7 @@ export function useInboxAutoCleanup(retentionDays = INBOX_RETENTION_DAYS): void 
 export function statusMeta(status: InboxStatus): { label: string; cls: string } {
   switch (status) {
     case 'done':
-      return { label: 'traité', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' }
+      return { label: t('tg.processed'), cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' }
     case 'processing':
       return { label: 'en cours', cls: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' }
     case 'error':

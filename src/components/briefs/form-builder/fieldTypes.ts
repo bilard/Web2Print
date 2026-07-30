@@ -3,6 +3,7 @@ import type {
   ClientFormFieldType,
 } from '@/features/taxonomy/types'
 import type { LucideIcon } from 'lucide-react'
+import { t } from '@/lib/i18n'
 import {
   Type,
   AlignLeft,
@@ -26,7 +27,7 @@ export const FIELD_TYPE_REGISTRY: Record<ClientFormFieldType, FieldTypeMeta> = {
   textarea:     { label: 'Texte long',       icon: AlignLeft },
   number:       { label: 'Nombre',           icon: Hash },
   email:        { label: 'Email',            icon: Mail },
-  select:       { label: 'Liste déroulante', icon: List },
+  select:       { label: t('br.fieldType.select'), icon: List },
   color:        { label: 'Couleur',          icon: Palette },
   logo_upload:      { label: 'Logo',              icon: ImageUp },
   brand_kit_upload: { label: 'Brand kit',          icon: Package },

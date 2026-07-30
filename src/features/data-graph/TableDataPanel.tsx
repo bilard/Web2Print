@@ -5,6 +5,7 @@ import type { TableSchema } from './firestoreSchema'
 import { useTableData, type TableRow } from './useTableData'
 import { formatCell, prettyValue } from './formatValue'
 import { ValueViewer } from './ValueViewer'
+import { t } from '@/lib/i18n'
 
 /** Panneau bas : données LIVE de la table. Pour les BDD (flattenSheets), un sélecteur
  *  permet de choisir la base ; ses colonnes & lignes propres s'affichent. */
@@ -78,14 +79,14 @@ export function TableDataPanel({ table, onClose, rightInset = 0 }: { table: Tabl
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> LIVE
           </span>
         ) : (
-          <span className="text-[10px] font-semibold text-white/35">INSTANTANÉ</span>
+          <span className="text-[10px] font-semibold text-white/35">{t('dg.snapshot')}</span>
         ))}
         <div className="relative ml-auto w-72 max-w-[40%]">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
           <input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filtrer les résultats…"
+            placeholder={t('dg.filterResults')}
             className="w-full rounded-lg border border-white/10 bg-surface py-1.5 pl-8 pr-3 text-[12px] text-white placeholder:text-white/30 focus:border-indigo-400/50 focus:outline-none"
           />
         </div>
@@ -124,7 +125,7 @@ export function TableDataPanel({ table, onClose, rightInset = 0 }: { table: Tabl
                     <td
                       key={c}
                       onDoubleClick={() => setDetail({ col: labelByCol[c] || c, value: cellValue(r, c) })}
-                      title="Double-clic pour voir la valeur complète"
+                      title={t('dg.dblClickFullValue')}
                       className="max-w-[260px] cursor-zoom-in truncate border-b border-white/5 px-4 py-2 font-mono text-white/70 hover:text-white"
                     >
                       {formatCell(c, cellValue(r, c))}

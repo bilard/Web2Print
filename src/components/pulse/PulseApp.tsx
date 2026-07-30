@@ -11,6 +11,7 @@ import { PulseTopLists } from './PulseTopLists'
 import { PulseCountries } from './PulseCountries'
 import { PulseInstallHint } from './PulseInstallHint'
 import type { PeriodValue } from './PulsePeriodControl'
+import { t } from '@/lib/i18n'
 
 /** Coquille de la PWA « Pulse » : orchestre période, filtres, données live et sections. */
 export function PulseApp() {
@@ -53,7 +54,7 @@ export function PulseApp() {
       <main className="pulse-safe-x pulse-safe-bottom mx-auto flex max-w-lg flex-col gap-5 pt-3 landscape:max-w-5xl">
         {p.error ? (
           <div className="pulse-card px-4 py-8 text-center">
-            <p className="text-[15px] font-semibold">Données indisponibles</p>
+            <p className="text-[15px] font-semibold">{t('pu.dataUnavailable')}</p>
             <p className="mt-1 text-[13px]" style={{ color: 'var(--pulse-text-2)' }}>
               Impossible de charger le trafic. Tirez pour actualiser.
             </p>

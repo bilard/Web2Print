@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n'
 export type Animation3DPreset =
   | 'rotate3D'
   | 'pulseScale'
@@ -79,15 +80,15 @@ export interface PresetMeta {
 export const PRESETS: PresetMeta[] = [
   { id: 'rotate3D',      label: 'Rotation 3D',      description: 'Tourne sur axe Z + skew perspective',    emoji: '🔄' },
   { id: 'flip3D',        label: 'Vraie 3D RotateY', description: 'Capture PNG + CSS3D transform rotateY',  emoji: '🎴' },
-  { id: 'relief3D',      label: 'Relief 3D + Light', description: 'Extrusion Three.js + éclairage manuel',  emoji: '🧊' },
+  { id: 'relief3D',      label: 'Relief 3D + Light', description: t('a3.relief3D'),  emoji: '🧊' },
   { id: 'pulseScale',    label: 'Pulse Scale',      description: 'Respiration du bloc en zoom in/out',     emoji: '💓' },
   { id: 'hueCycle',      label: 'Couleurs cycle',   description: 'Traverse rouge→or→cyan→magenta',         emoji: '🌈' },
-  { id: 'slideEntrance', label: 'Slide L/R',        description: 'Entrée depuis la gauche ou la droite',    emoji: '➡️' },
-  { id: 'slideVertical', label: 'Slide H/B',        description: 'Entrée depuis le haut ou le bas',         emoji: '⬇️' },
-  { id: 'motionPath',    label: 'Motion path',      description: 'Déplacement en cercle ou figure-8',       emoji: '➰' },
-  { id: 'vibrate',       label: 'Vibration',        description: 'Tremblement court haute fréquence',       emoji: '📳' },
-  { id: 'bounce',        label: 'Bounce',           description: 'Rebondit verticalement avec gravité',     emoji: '🏀' },
-  { id: 'wave',          label: 'Wave',             description: 'Ondulation skew sinusoïdale fluide',      emoji: '🌊' },
+  { id: 'slideEntrance', label: 'Slide L/R',        description: t('a3.slideEntrance'),    emoji: '➡️' },
+  { id: 'slideVertical', label: 'Slide H/B',        description: t('a3.slideVertical'),         emoji: '⬇️' },
+  { id: 'motionPath',    label: 'Motion path',      description: t('a3.motionPath'),       emoji: '➰' },
+  { id: 'vibrate',       label: 'Vibration',        description: t('a3.vibrate'),       emoji: '📳' },
+  { id: 'bounce',        label: 'Bounce',           description: t('a3.bounce'),     emoji: '🏀' },
+  { id: 'wave',          label: 'Wave',             description: t('a3.wave'),      emoji: '🌊' },
   { id: 'glowAccent',    label: 'Glow accent',      description: 'Halo lumineux pulsant retail',            emoji: '✨' },
-  { id: 'particles',     label: 'Particules dorées', description: 'Three.js — particules en orbite',         emoji: '⭐' },
+  { id: 'particles',     label: t('a3.particles.label'), description: t('a3.particles'),         emoji: '⭐' },
 ]

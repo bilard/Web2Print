@@ -17,6 +17,7 @@ import {
 import { CloseButton } from '@/components/shared/CloseButton'
 import { ProductTaxonomyPickerTree } from './ProductTaxonomyPickerTree'
 import type { Taxonomy } from '@/features/taxonomy/types'
+import { t } from '@/lib/i18n'
 
 interface ProductTaxonomyPickerProps {
   open: boolean
@@ -407,7 +408,7 @@ export function ProductTaxonomyPicker({
             <Search className="w-3.5 h-3.5 text-white/25 shrink-0" />
             <input
               type="text"
-              placeholder="Rechercher un nœud (Électronique › Audio › …)"
+              placeholder={t('tx.searchNode')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -461,7 +462,7 @@ export function ProductTaxonomyPicker({
             <button
               onClick={handleExpandAll}
               className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-md text-white/55 hover:text-white/85 hover:bg-white/[0.06] transition-colors"
-              title="Développer tous les nœuds"
+              title={t('tx.expandAll')}
             >
               <ChevronsUpDown className="w-3 h-3" />
               Tout ouvrir
@@ -469,7 +470,7 @@ export function ProductTaxonomyPicker({
             <button
               onClick={handleCollapseAll}
               className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-md text-white/55 hover:text-white/85 hover:bg-white/[0.06] transition-colors"
-              title="Réduire tous les nœuds"
+              title={t('tx.collapseAll')}
             >
               <ChevronsDownUp className="w-3 h-3" />
               Tout fermer

@@ -12,6 +12,7 @@ import { TableNode } from './TableNode'
 import { TableDataPanel } from './TableDataPanel'
 import { SchemaPanelProvider, TableSchemaPanel } from './TableSchemaPanel'
 import { useDiagramLayout } from './useDiagramLayout'
+import { t } from '@/lib/i18n'
 
 const nodeTypes = { table: TableNode }
 
@@ -22,7 +23,7 @@ function DiagramControls() {
   return (
     <Panel position="bottom-left" className="!m-3 flex flex-col overflow-hidden rounded-lg border border-white/10 bg-well/95 backdrop-blur">
       <button onClick={() => zoomIn({ duration: 150 })} title="Zoom avant" className={`${btn} border-b border-white/10`}><Plus className="h-3.5 w-3.5" /></button>
-      <button onClick={() => zoomOut({ duration: 150 })} title="Zoom arrière" className={`${btn} border-b border-white/10`}><Minus className="h-3.5 w-3.5" /></button>
+      <button onClick={() => zoomOut({ duration: 150 })} title={t('dg.zoomOut')} className={`${btn} border-b border-white/10`}><Minus className="h-3.5 w-3.5" /></button>
       <button onClick={() => fitView({ padding: 0.15, duration: 250 })} title="Recadrer" className={btn}><Maximize className="h-3.5 w-3.5" /></button>
     </Panel>
   )
@@ -98,7 +99,7 @@ function DataModelDiagramInner() {
       {/* En-tête */}
       <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-3">
         <Database className="h-5 w-5 text-indigo-400" />
-        <span className="text-[15px] font-bold text-white">Modèle de Données</span>
+        <span className="text-[15px] font-bold text-white">{t('dg.dataModel')}</span>
         <span className="ml-auto hidden items-center rounded-lg border border-white/10 bg-surface px-3 py-1.5 text-[12px] text-white/40 md:flex">
           Double-cliquez sur une table pour voir les données
         </span>

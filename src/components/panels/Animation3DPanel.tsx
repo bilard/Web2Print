@@ -146,7 +146,7 @@ export function Animation3DPanel() {
           Anime <b className="text-white/70">{t('anim.singleObject')}</b> sélectionné, en direct sur le canvas
           (effets de mouvement, persistés sur l'objet). Pour une vidéo de la
           <b className="text-white/70"> {t('anim.wholePage')}</b> pilotée par IA, utilise le bouton
-          <b className="text-white/70"> « Vidéo IA »</b> en haut.
+          <b className="text-white/70">{t('cv.aiVideoTop')}</b> en haut.
         </p>
         <p>{t('anim.selectObject')}</p>
         <button

@@ -17,6 +17,7 @@ import { GripVertical, Plus, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import type { ClientFormField, ClientFormFieldType } from '@/features/taxonomy/types'
 import { FIELD_TYPE_REGISTRY, ALL_FIELD_TYPES, createEmptyField } from './fieldTypes'
+import { t } from '@/lib/i18n'
 
 interface Props {
   fields: ClientFormField[]
@@ -143,7 +144,7 @@ function SortableRow({
         {...listeners}
         onClick={(e) => e.stopPropagation()}
         className="text-white/30 hover:text-white/60 cursor-grab active:cursor-grabbing"
-        aria-label="Déplacer"
+        aria-label={t('br.move')}
       >
         <GripVertical className="w-3.5 h-3.5" />
       </button>

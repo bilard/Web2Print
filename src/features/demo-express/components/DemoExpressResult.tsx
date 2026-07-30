@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { FileSpreadsheet, Image as ImageIcon, BookText, Tag, Clapperboard, Workflow, RotateCcw } from 'lucide-react'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import type { Section } from '@/features/navigation/modules'
+import { t } from '@/lib/i18n'
 
 interface Card {
   icon: React.ComponentType<{ className?: string }>
@@ -64,7 +65,7 @@ export function DemoExpressResult() {
 
   return (
     <div className="mt-6">
-      <h2 className="text-sm font-semibold text-white/80 mb-3">Découvrez vos données</h2>
+      <h2 className="text-sm font-semibold text-white/80 mb-3">{t('de.discoverData')}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {cards.map((c) => (
           <button

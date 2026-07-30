@@ -146,7 +146,7 @@ export function PrintPanel() {
             className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50"
             title={t('print.preset.select')}
           >
-            <option value="">— Personnalisé —</option>
+            <option value="">{t('cv.custom')}</option>
             {presets.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}

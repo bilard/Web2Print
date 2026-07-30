@@ -1,6 +1,7 @@
 import { Compass, CheckCircle2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useTourStore } from '@/features/tour/tour.store'
+import { t } from '@/lib/i18n'
 
 /** props.onLaunchTour : ferme le wizard ET démarre le tour Dashboard. */
 export function FinishStep({ onLaunchTour }: { onLaunchTour: () => void }) {
@@ -10,7 +11,7 @@ export function FinishStep({ onLaunchTour }: { onLaunchTour: () => void }) {
       <div className="flex items-center gap-3">
         <CheckCircle2 className="w-6 h-6 text-green-400 shrink-0" />
         <div>
-          <h3 className="text-base font-semibold text-white">Tout est prêt</h3>
+          <h3 className="text-base font-semibold text-white">{t('ob.allSet')}</h3>
           <p className="text-xs text-white/50">Votre espace est configuré. Bienvenue, {user?.displayName ?? user?.email ?? ''}.</p>
         </div>
       </div>

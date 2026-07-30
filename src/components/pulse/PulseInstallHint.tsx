@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Share, X } from 'lucide-react'
 import { isIos, isStandalone } from '@/features/analytics/pulseFormat'
+import { t } from '@/lib/i18n'
 
 const DISMISS_KEY = 'pulse_install_dismissed'
 
@@ -34,7 +35,7 @@ export function PulseInstallHint() {
         <p className="text-[14px] font-semibold">Installer Pulse</p>
         <p className="mt-0.5 text-[12px]" style={{ color: 'var(--pulse-text-2)' }}>
           Touchez <span className="font-medium" style={{ color: 'var(--pulse-text)' }}>Partager</span>, puis
-          <span className="font-medium" style={{ color: 'var(--pulse-text)' }}> « Sur l'écran d'accueil »</span>.
+          <span className="font-medium" style={{ color: 'var(--pulse-text)' }}>{t('pu.installHint')}</span>.
         </p>
       </div>
       <button onClick={dismiss} aria-label="Fermer" className="pulse-tap -mr-1 -mt-1 p-1" style={{ color: 'var(--pulse-text-3)' }}>

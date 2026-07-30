@@ -9,6 +9,7 @@ import type { TaxonomyNodeWithChildren } from '@/features/taxonomy/types'
 import type { TaxonomyProductCounts } from '@/features/taxonomy/useTaxonomyProductCounts'
 import { TaxonomyNodeActions } from './TaxonomyNodeActions'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { t } from '@/lib/i18n'
 
 function highlightLabel(label: string, query: string) {
   if (!query) return <span>{label}</span>
@@ -139,7 +140,7 @@ export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery, sh
       >
         <button {...attributes} {...listeners}
           className="text-white/20 hover:text-white/50 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 flex-shrink-0"
-          aria-label={`Déplacer ${node.label}`}
+          aria-label={t('tx.moveNode', { node: node.label })}
         >
           <GripVertical className="w-3 h-3" />
         </button>

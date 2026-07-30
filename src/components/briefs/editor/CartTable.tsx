@@ -1,6 +1,7 @@
 import { Trash2, Plus, ExternalLink } from 'lucide-react'
 import type { CartItem } from '@/features/briefs/types'
 import { formatPrice } from '@/features/briefs/cart/formatPrice'
+import { t } from '@/lib/i18n'
 
 interface Props {
   items: CartItem[]
@@ -40,7 +41,7 @@ export function CartTable({ items, onChange }: Props) {
           <tr>
             <th className="text-left px-3 py-2">SKU</th>
             <th className="text-left px-3 py-2">Nom</th>
-            <th className="text-right px-3 py-2">Qté</th>
+            <th className="text-right px-3 py-2">{t('br.qty')}</th>
             <th className="text-right px-3 py-2">Prix</th>
             <th className="text-right px-3 py-2">Total</th>
             <th />

@@ -1,6 +1,7 @@
 import { FolderOpen, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import type { IdmlUploadState } from './useIdmlUpload'
+import { t } from '@/lib/i18n'
 
 interface Props {
   processing: boolean
@@ -55,12 +56,12 @@ export function IdmlSummaryModal({ processing, state, error, onConfirm, onClose 
           {!processing && !error && state && (
             <div className="flex flex-col gap-4">
               <div className="border border-white/10 rounded-xl p-4 flex flex-col gap-3">
-                <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Résumé</p>
+                <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">{t('id.summary')}</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: 'Fichier IDML', value: state.assembly.idmlFile?.name ?? '—' },
-                    { label: 'PDF référence', value: state.assembly.pdfFile?.name ?? '—' },
-                    { label: 'Fonts chargées', value: `${state.loadedFonts.length} / ${state.assembly.fontFiles.length}` },
+                    { label: t('id.pdfRef'), value: state.assembly.pdfFile?.name ?? '—' },
+                    { label: t('id.fontsLoaded'), value: `${state.loadedFonts.length} / ${state.assembly.fontFiles.length}` },
                     { label: 'Images', value: String(state.assembly.imageFiles.length) },
                     { label: 'Spreads', value: String(state.spreadCount) },
                     { label: 'Fichiers XML', value: state.idmlContents ? String(Object.keys(state.idmlContents.spreads).length + 2) : '—' },
@@ -96,7 +97,7 @@ export function IdmlSummaryModal({ processing, state, error, onConfirm, onClose 
                 <CheckCircle className="w-4 h-4" />
                 Créer le projet et importer
               </button>
-              <p className="text-[10px] text-white/20 text-center">Appuyez sur Entrée pour importer</p>
+              <p className="text-[10px] text-white/20 text-center">{t('id.pressEnter')}</p>
             </div>
           )}
         </div>

@@ -3,6 +3,7 @@ import { ChevronDown, Monitor, Smartphone, Tablet, Users } from 'lucide-react'
 import { pageLabel, type AnalyticsEvent } from '@/features/analytics/metrics'
 import { countryName, flagEmoji, timeAgo } from '@/features/analytics/pulseFormat'
 import { useUsersMap } from '@/features/analytics/useUsersMap'
+import { t } from '@/lib/i18n'
 
 const DEVICE_ICON = { mobile: Smartphone, tablet: Tablet, desktop: Monitor }
 const ANON = '__anon__'
@@ -175,7 +176,7 @@ export function PulseLiveFeed({ events }: { events: AnalyticsEvent[] }) {
       </div>
       <div className="pulse-card px-4 py-1">
         {events.length === 0 ? (
-          <p className="py-6 text-center text-[13px]" style={{ color: 'var(--pulse-text-3)' }}>Aucune visite sur cette période.</p>
+          <p className="py-6 text-center text-[13px]" style={{ color: 'var(--pulse-text-3)' }}>{t('pu.noVisit')}</p>
         ) : (
           <>
             <div className="divide-y divide-[color:var(--pulse-hair)]">

@@ -4,6 +4,7 @@ import { useAiActivityStore, type AiActivityRecord } from '@/stores/aiActivity.s
 import { getModel, type AiProvider } from '@/lib/aiModels'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { router } from '@/app/router'
+import { t } from '@/lib/i18n'
 
 /** Pathname réactif hors arbre du router (l'indicateur est monté à côté du RouterProvider). */
 function usePathname(): string {
@@ -162,7 +163,7 @@ function SessionTotalsBadge({ open, onToggle }: { open: boolean; onToggle: () =>
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        title="Voir le détail de la consommation (par LLM + connecteurs)"
+        title={t('sh.spendDetail')}
         className="flex items-center gap-2 group"
       >
         <Coins className="w-3 h-3 text-emerald-300" />
@@ -185,7 +186,7 @@ function SessionTotalsBadge({ open, onToggle }: { open: boolean; onToggle: () =>
       <button
         type="button"
         onClick={reset}
-        title="Réinitialiser le compteur de session"
+        title={t('sh.resetSession')}
         className="p-0.5 rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
       >
         <RotateCcw className="w-2.5 h-2.5" />
@@ -250,7 +251,7 @@ export function AiLiveIndicator() {
             type="button"
             onClick={() => setExpanded((v) => !v)}
             className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 ring-1 ring-white/20 hover:bg-white/15 backdrop-blur-md transition-colors"
-            title={`${extraCount} autre${extraCount > 1 ? 's' : ''} requête${extraCount > 1 ? 's' : ''} en cours`}
+            title={t('sh.extraRequests', { count: extraCount })}
           >
             <span className="text-[10px] font-semibold text-white/80">+{extraCount}</span>
             <ChevronDown className={`w-3 h-3 text-white/60 transition-transform ${expanded ? 'rotate-180' : ''}`} />
@@ -274,11 +275,11 @@ export function AiLiveIndicator() {
               {/* hauteur quasi-pleine fenêtre (le panneau démarre à ~4rem du haut) :
                   évite que la section Scraping/Bright Data soit coupée en bas. */}
               <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 shrink-0">
-                <span className="text-xs font-semibold text-white/80">Consommation — détail par LLM & connecteurs</span>
+                <span className="text-xs font-semibold text-white/80">{t('sh.spendTitle')}</span>
                 <CloseButton onClick={() => setPanelOpen(false)} title="Fermer" />
               </div>
               <div className="flex-1 min-h-0 overflow-auto p-3">
-                <Suspense fallback={<div className="text-xs text-white/40 p-4">Chargement du détail…</div>}>
+                <Suspense fallback={<div className="text-xs text-white/40 p-4">{t('sh.loadingDetail')}</div>}>
                   <LiveLlmUsagePanel />
                 </Suspense>
               </div>

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { PulseSegmented } from './PulseSegmented'
 import { PulseDeviceSplit } from './PulseDeviceSplit'
 import { pageLabel, topBy, topSourceCategories, type AnalyticsEvent } from '@/features/analytics/metrics'
+import { t } from '@/lib/i18n'
 
 type Tab = 'pages' | 'sources'
 const TABS: readonly { value: Tab; label: string }[] = [
@@ -51,7 +52,7 @@ export function PulseTopLists({ events }: { events: AnalyticsEvent[] }) {
       <div className="pulse-card px-4 py-4">
         <PulseSegmented options={TABS} value={tab} onChange={setTab} ariaLabel="Classement par" />
         {rows.length === 0 ? (
-          <p className="py-6 text-center text-[13px]" style={{ color: 'var(--pulse-text-3)' }}>Pas de données.</p>
+          <p className="py-6 text-center text-[13px]" style={{ color: 'var(--pulse-text-3)' }}>{t('pu.noData')}</p>
         ) : (
           <ul className="mt-2">
             {rows.map((r, i) => (

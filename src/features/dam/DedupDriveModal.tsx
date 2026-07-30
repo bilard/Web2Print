@@ -9,6 +9,7 @@ import { GDrivePickerModal } from '@/features/gdrive/GDrivePickerModal'
 import { useGoogleDrive } from '@/features/gdrive/useGoogleDrive'
 import { trashDriveFiles } from './damCleanup'
 import { planDedup, type DedupPlan } from './driveDedup'
+import { t } from '@/lib/i18n'
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder'
 
@@ -68,8 +69,8 @@ export function DedupDriveModal({ open, onClose, initialFolder = null }: Props) 
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center"><Copy className="w-5 h-5 text-rose-400" /></div>
             <div>
-              <p className="text-sm font-medium text-white">Dédupliquer un dossier Drive</p>
-              <p className="text-[11px] text-white/40">Par contenu (md5) · garde le plus ancien · corbeille récupérable</p>
+              <p className="text-sm font-medium text-white">{t('dm.dedupTitle')}</p>
+              <p className="text-[11px] text-white/40">{t('dm.dedupSub')}</p>
             </div>
           </div>
           <CloseButton onClick={handleClose} title="Fermer" />
@@ -136,7 +137,7 @@ export function DedupDriveModal({ open, onClose, initialFolder = null }: Props) 
         onClose={() => setPickerOpen(false)}
         onPick={(p) => { if (p.mimeType === FOLDER_MIME) { const f = { id: p.id, name: p.name }; setFolder(f); void scan(f) } }}
         foldersOnly
-        title="Dossier à dédupliquer"
+        title={t('dm.folderToDedup')}
       />
     </div>,
     document.body,

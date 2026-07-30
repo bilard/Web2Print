@@ -8,6 +8,7 @@ import { useBriefUIStore } from '@/stores/brief.store'
 import { createDefaultFormTemplate } from '@/features/briefs/defaults'
 import type { Brief } from '@/features/briefs/types'
 import type { Taxonomy } from '@/features/taxonomy/types'
+import { t } from '@/lib/i18n'
 
 type ViewMode = 'list' | 'thumbnail'
 const VIEW_MODE_KEY = 'briefsList.viewMode'
@@ -112,7 +113,7 @@ export function BriefsList({ taxonomy }: Props) {
             <button
               onClick={handlePurgeGhosts}
               disabled={remove.isPending}
-              title={`${ghosts.length} brouillon(s) vide(s) à purger`}
+              title={t('br.purgeGhosts', { count: ghosts.length })}
               className="flex items-center gap-1.5 text-[12px] text-white/60 hover:text-white border border-white/[0.08] hover:border-white/[0.16] px-3 py-1.5 rounded-md disabled:opacity-50"
             >
               <Sparkles className="w-3.5 h-3.5" />

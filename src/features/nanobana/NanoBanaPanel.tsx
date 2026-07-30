@@ -24,6 +24,7 @@ import { GalleryGrid } from './GalleryGrid'
 import { UploadZone } from './UploadZone'
 import { GenerateTab } from './GenerateTab'
 import type { GalleryImage, NanoBanaTab } from './types'
+import { t } from '@/lib/i18n'
 
 const TABS: { id: NanoBanaTab; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
   { id: 'gallery', icon: ImagePlus, label: 'Galerie' },
@@ -33,7 +34,7 @@ const TABS: { id: NanoBanaTab; icon: React.ComponentType<{ className?: string }>
   { id: 'my-images', icon: FolderOpen, label: 'Mes images' },
   { id: 'favorites', icon: Heart, label: 'Favoris' },
   { id: 'collections', icon: FolderHeart, label: 'Collections' },
-  { id: 'recent', icon: Clock, label: 'Récents' },
+  { id: 'recent', icon: Clock, label: t('nb.recent') },
 ]
 
 /** Refresh the current page thumbnail after canvas changes */

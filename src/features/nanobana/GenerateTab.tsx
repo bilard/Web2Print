@@ -4,6 +4,7 @@ import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useNanoBanaStore } from '@/stores/nanobana.store'
 import { useImageGeneration } from './useImageGeneration'
 import type { GalleryImage, GenerationRequest } from './types'
+import { t } from '@/lib/i18n'
 
 const ASPECT_RATIOS: { value: GenerationRequest['aspectRatio']; label: string }[] = [
   { value: '1:1', label: '1:1' },
@@ -273,7 +274,7 @@ export function GenerateTab({ onAddToCanvas, onReplaceSelected }: Props) {
           </div>
           <div className="flex items-center gap-1.5 justify-center">
             <Check className="w-3 h-3 text-green-400" />
-            <p className="text-[10px] text-green-400/70">Sauvée dans la galerie</p>
+            <p className="text-[10px] text-green-400/70">{t('nb.savedToGallery')}</p>
           </div>
         </div>
       )}

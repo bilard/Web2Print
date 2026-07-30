@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Loader2, Check, AlertTriangle, X, Minus, CircleDashed, Square, Terminal } from 'lucide-react'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import type { DemoLogKind, DemoStepStatus } from '../types'
+import { t } from '@/lib/i18n'
 
 const STATUS_ICON: Record<DemoStepStatus, React.ReactNode> = {
   pending: <CircleDashed className="w-4 h-4 text-white/25" aria-hidden="true" />,
@@ -40,7 +41,7 @@ function StepDetail({ status, detail }: { status: DemoStepStatus; detail: string
 }
 
 const LOG_TAG: Record<DemoLogKind, { label: string; tag: string; text: string }> = {
-  step: { label: 'étape', tag: 'text-white/45', text: 'text-white/75' },
+  step: { label: t('de.step'), tag: 'text-white/45', text: 'text-white/75' },
   ia: { label: 'IA', tag: 'text-indigo-400', text: 'text-indigo-300' },
   connector: { label: 'connecteur', tag: 'text-teal-400', text: 'text-teal-300' },
   error: { label: 'erreur', tag: 'text-rose-400', text: 'text-rose-300' },

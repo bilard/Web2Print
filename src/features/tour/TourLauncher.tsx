@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Compass } from 'lucide-react'
 import { useTourStore, hasSeenTour, markTourSeen, type TourId } from './tour.store'
 import { useGuidedTour } from './useGuidedTour'
+import { t } from '@/lib/i18n'
 
 interface TourLauncherProps {
   /** Tour à lancer au clic (par défaut : éditeur). */
@@ -35,8 +36,8 @@ export function TourLauncher({ tourId = 'editor' }: TourLauncherProps) {
     <button
       type="button"
       onClick={() => startTour(tourId)}
-      title="Visite guidée"
-      aria-label="Démarrer la visite guidée"
+      title={t('tr.guidedTour')}
+      aria-label={t('tr.startTour')}
       className="fixed bottom-4 right-16 z-30
         w-10 h-10 rounded-full
         bg-surface border border-white/10 hover:border-indigo-500/50

@@ -1,4 +1,5 @@
 import { PULSE_PRESETS } from '@/features/analytics/useLivePulse'
+import { t } from '@/lib/i18n'
 
 export interface PeriodValue {
   /** Clé de preset (`24h`…`12m`) ou `custom`. */
@@ -49,7 +50,7 @@ export function PulsePeriodControl({ value, onChange }: { value: PeriodValue; on
   const today = new Date().toISOString().slice(0, 10)
   return (
     <div>
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Période">
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label={t('pu.period')}>
         {CHIPS.map((c) => (
           <Chip key={c.key} active={value.key === c.key} label={c.label} onClick={() => onChange({ ...value, key: c.key })} />
         ))}

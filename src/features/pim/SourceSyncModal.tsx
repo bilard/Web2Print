@@ -9,6 +9,7 @@ import { BookOpen, CheckCircle2, DatabaseZap, Loader2, Tag } from 'lucide-react'
 import { toast } from 'sonner'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { listLinkedPublications, refreshPromos, type LinkedPublications, type SourceIdent } from './linkedPublications'
+import { t } from '@/lib/i18n'
 
 interface Props {
   ident: SourceIdent
@@ -68,8 +69,8 @@ export function SourceSyncModal({ ident, open, onClose }: Props) {
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center"><DatabaseZap className="w-5 h-5 text-indigo-400" /></div>
             <div>
-              <p className="text-sm font-medium text-white">Source modifiée — publications reliées</p>
-              <p className="text-[11px] text-white/40">Choisissez les canaux à mettre à jour avec les nouvelles données</p>
+              <p className="text-sm font-medium text-white">{t('pi.sourceChanged')}</p>
+              <p className="text-[11px] text-white/40">{t('pi.pickChannels')}</p>
             </div>
           </div>
           <CloseButton onClick={onClose} title="Plus tard" />
@@ -93,7 +94,7 @@ export function SourceSyncModal({ ident, open, onClose }: Props) {
 
           {pubs.promos.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">Fiches promo (instantanés)</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">{t('pi.promoCards')}</p>
               {pubs.promos.map((p) => (
                 <label key={p.id} className="flex items-center gap-2.5 rounded-lg bg-white/[0.03] px-3 py-2 cursor-pointer hover:bg-white/[0.06]">
                   <input type="checkbox" checked={checked.has(p.id)} onChange={() => toggle(p.id)} className="accent-indigo-600 w-4 h-4" />

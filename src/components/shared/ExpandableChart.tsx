@@ -4,6 +4,7 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Maximize2, X } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 export function ExpandableChart({ render, largeHeight = 560, className = '' }: {
   render: (height?: number) => ReactNode
@@ -36,7 +37,7 @@ export function ExpandableChart({ render, largeHeight = 560, className = '' }: {
           onClick={() => setOpen(false)}>
           <div className="w-full max-w-5xl relative" onClick={(e) => e.stopPropagation()}>
             {render(largeHeight)}
-            <button type="button" onClick={() => setOpen(false)} title="Fermer (Échap)"
+            <button type="button" onClick={() => setOpen(false)} title={t('sh.closeEsc')}
               className="absolute top-3 right-3 z-10 p-1.5 rounded bg-well border border-white/10 text-white/60 hover:text-white">
               <X className="w-4 h-4" />
             </button>
