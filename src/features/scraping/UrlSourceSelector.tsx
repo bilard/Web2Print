@@ -80,7 +80,7 @@ export function UrlSourceSelector({ singleUrl, onChange, showPreview = true }: P
     const idMatch = sheetIdOrUrl.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/) ?? sheetIdOrUrl.match(/^([a-zA-Z0-9-_]{20,})$/)
     const fileId = idMatch?.[1]
     if (!fileId) {
-      toast.error('ID ou URL de Sheet invalide')
+      toast.error(t('tst.sc.invalidSheetId'))
       return
     }
     setImporting(true)
@@ -88,11 +88,13 @@ export function UrlSourceSelector({ singleUrl, onChange, showPreview = true }: P
       const result = await extractUrlsFromGoogleSheet(fileId, gdriveAccessToken)
       setImportedUrls(result.urls)
       if (result.urls.length === 0) {
-        toast.warning(
-          `Aucune URL trouvée dans le Sheet (${result.rowCount} lignes, colonne : "${result.detectedColumn ?? 'non détectée'}", méthode : ${result.method})`
-        )
+        toast.warning(t('tst.sc.noUrlFoundSheet', {
+          rows: result.rowCount,
+          column: result.detectedColumn ?? t('tst.sc.columnUndetected'),
+          method: result.method,
+        }))
       } else {
-        const colInfo = result.detectedColumn ? `colonne "${result.detectedColumn}"` : 'fallback texte'
+        const colInfo = result.detectedColumn ? t('tst.sc.columnInfo', { column: result.detectedColumn }) : t('tst.sc.textFallback')
         toast.success(t('tst.sc.urlsImported', { count: result.urls.length, rows: result.rowCount, cols: colInfo }))
       }
     } catch (e) {

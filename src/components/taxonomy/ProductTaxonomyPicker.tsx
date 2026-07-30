@@ -297,9 +297,9 @@ export function ProductTaxonomyPicker({
         })
       })
     } catch (err) {
-      toast.error(
-        `Classification IA impossible : ${err instanceof Error ? err.message.slice(0, 120) : String(err)}`,
-      )
+      toast.error(t('tst.tx.aiFailed', {
+        message: err instanceof Error ? err.message.slice(0, 120) : String(err),
+      }))
     } finally {
       setAiLoading(false)
     }

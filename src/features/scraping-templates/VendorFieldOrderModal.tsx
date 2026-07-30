@@ -49,7 +49,7 @@ export function VendorFieldOrderModal({ matchedTemplate, enriched, onClose, onSa
         const vendorTemplates = all.filter((t) => t.vendorDomain === vendorDomain)
         setRows(getVendorFieldRows(vendorTemplates, enriched ?? null, matchedTemplate.vendorFieldOrder ?? []))
       } catch (err) {
-        if (!cancelled) toast.error(`Impossible de charger les templates : ${err instanceof Error ? err.message : String(err)}`)
+        if (!cancelled) toast.error(t('tst.st.tplLoadFailed', { message: err instanceof Error ? err.message : String(err) }))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -79,11 +79,9 @@ export function VendorFieldOrderModal({ matchedTemplate, enriched, onClose, onSa
         updatedAt: Date.now(),
       }
       const { syncedCount } = await saveTemplateWithVendorSync(updated)
-      toast.success(
-        syncedCount > 0
-          ? `Ordre enregistré — propagé à ${syncedCount} autre(s) template(s) du fournisseur`
-          : `Ordre enregistré`,
-      )
+      toast.success(syncedCount > 0
+        ? t('tst.st.orderSavedSynced', { count: syncedCount })
+        : t('tst.st.orderSaved'))
       onSaved()
       onClose()
     } catch (err) {

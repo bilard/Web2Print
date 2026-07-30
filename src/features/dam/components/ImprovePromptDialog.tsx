@@ -94,11 +94,9 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
       })
       const improved = await improveImagePrompt(brief, refs, answers)
       onImproved(improved, answers)
-      toast.success(
-        refs.length > 0
-          ? `Prompt amélioré (${refs.length} image${refs.length > 1 ? 's' : ''} + ${answers.length} précision${answers.length > 1 ? 's' : ''})`
-          : `Prompt amélioré (${answers.length} précision${answers.length > 1 ? 's' : ''})`,
-      )
+      toast.success(refs.length > 0
+        ? t('tst.dam.promptImprovedRefs', { images: refs.length, answers: answers.length })
+        : t('tst.dam.promptImproved', { answers: answers.length }))
       onClose()
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : String(err))

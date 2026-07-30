@@ -328,7 +328,7 @@ export function useDemoExpress() {
 
   const run = useCallback(async (company: string, url: string, opts?: { maxProducts?: number; prompt?: string; animations?: boolean }) => {
     const uid = auth.currentUser?.uid
-    if (!uid) { toast.error('Connexion requise'); return }
+    if (!uid) { toast.error(t('tst.de.signInRequired')); return }
     const vol = volumePlan(opts?.maxProducts ?? DEFAULT_MAX_PRODUCTS)
     const s = useDemoExpressStore.getState()
     s.begin(company, url)

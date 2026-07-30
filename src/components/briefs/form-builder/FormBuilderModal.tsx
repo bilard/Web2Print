@@ -65,7 +65,7 @@ export function FormBuilderModal({ open, taxonomy, onClose }: Props) {
       toast.success(t('tst.br.formSaved'))
       onClose()
     } catch (err) {
-      toast.error('Erreur lors de la sauvegarde')
+      toast.error(t('tst.saveErrorGeneric'))
       console.error(err)
     }
   }

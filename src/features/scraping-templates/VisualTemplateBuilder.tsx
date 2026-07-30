@@ -139,11 +139,11 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
   }, [ext.lastCapture])
 
   const load = async () => {
-    if (!sourceUrl) { toast.error('Entre une URL'); return }
+    if (!sourceUrl) { toast.error(t('tst.st.enterUrl')); return }
     setLoading(true)
     try {
       const html = await fetchSourceHtml(sourceUrl)
-      if (!html) { toast.error('Impossible de charger la page (CORS, site SPA ?)'); return }
+      if (!html) { toast.error(t('tst.st.pageLoadFailed')); return }
       // Rewriter les paths relatifs en absolus (css/js/img) et injecter le script overlay
       const rewritten = rewriteHtmlForIframe(html, sourceUrl)
       setRewrittenHtml(rewritten)
@@ -282,7 +282,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
         {ext.isAvailable && (
           <button
             onClick={() => {
-              if (!sourceUrl) { toast.error('Entre une URL'); return }
+              if (!sourceUrl) { toast.error(t('tst.st.enterUrl')); return }
               ext.openAndCapture(sourceUrl, template.fields
                 .map((f) => ({ selector: f.strategies[0]?.expression ?? '', label: f.field }))
                 .filter((t) => t.selector))

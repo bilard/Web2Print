@@ -73,7 +73,7 @@ export function ScrapedFieldsTab({ sheetName, rowId, url, brand, title }: Props)
         setInitialOrder(saved)
         setRows(getVendorFieldRows(vt, enrichmentData, saved))
       } catch (err) {
-        toast.error(`Impossible de charger les templates : ${err instanceof Error ? err.message : String(err)}`)
+        toast.error(t('tst.st.tplLoadFailed', { message: err instanceof Error ? err.message : String(err) }))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -110,11 +110,9 @@ export function ScrapedFieldsTab({ sheetName, rowId, url, brand, title }: Props)
         updatedAt: Date.now(),
       }
       const { syncedCount } = await saveTemplateWithVendorSync(updated)
-      toast.success(
-        syncedCount > 0
-          ? `Ordre enregistré — propagé à ${syncedCount} autre(s) template(s) du fournisseur`
-          : `Ordre enregistré`,
-      )
+      toast.success(syncedCount > 0
+        ? t('tst.st.orderSavedSynced', { count: syncedCount })
+        : t('tst.st.orderSaved'))
       setInitialOrder(nextOrder)
     } catch (err) {
       toast.error(t('tst.saveFailed', { message: err instanceof Error ? err.message : String(err) }))

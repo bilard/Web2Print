@@ -366,7 +366,7 @@ function RegenerateMenu({ onRedo, onForceUrl, matchedTemplate }: { onRedo: (mode
   }, [open])
   const promptForUrl = () => {
     setOpen(false)
-    const url = window.prompt('URL source à utiliser (vide le cache et re-scrape) :')?.trim()
+    const url = window.prompt(t('cfm.xl.sourceUrl'))?.trim()
     if (url && /^https?:\/\//i.test(url)) onForceUrl(url)
   }
   return (

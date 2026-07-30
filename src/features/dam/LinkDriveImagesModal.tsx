@@ -77,7 +77,7 @@ export function LinkDriveImagesModal({ open, onClose }: Props) {
         if (n > bestN) { bestN = n; best = c.key }
       }
       setSourceCol(best)
-      if (!files.length) toast.warning('Aucune image dans ce dossier Drive')
+      if (!files.length) toast.warning(t('tst.dam.noImageInFolder'))
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t('tst.dam.readFolderFailed'))
     } finally {

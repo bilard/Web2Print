@@ -80,13 +80,13 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
         html = fetched
         setTestHtml(html)
       }
-      if (!html) { toast.error('Colle du HTML ou saisis une URL'); return }
+      if (!html) { toast.error(t('tst.st.pasteHtml')); return }
       const res = applyTemplate(template, html, testUrl || undefined)
       setTestResult(res)
       const score = scoreApplyResult(res)
       if (score >= 20) toast.success(t('tst.st.extractOk', { score }))
-      else if (score >= 10) toast.warning(`Extraction partielle — score ${score}`)
-      else toast.error(`Extraction faible — score ${score}`)
+      else if (score >= 10) toast.warning(t('tst.st.extractPartial', { score }))
+      else toast.error(t('tst.st.extractWeak', { score }))
     } finally {
       setTesting(false)
     }
@@ -133,7 +133,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
       onChange({ ...template, ...parsed, id: template.id, updatedAt: Date.now() })
       toast.success(t('tst.st.imported'))
     } catch {
-      toast.error('JSON invalide')
+      toast.error(t('tst.st.invalidJson'))
     }
   }
 

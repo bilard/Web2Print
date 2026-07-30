@@ -101,7 +101,7 @@ export function ChatComposer({
     } catch (err) {
       // L'utilisateur peut annuler le partage d'écran (NotAllowedError)
       const msg = err instanceof Error ? err.message : String(err)
-      if (!/NotAllowed|cancel/i.test(msg)) toast.error(`Capture impossible : ${msg}`)
+      if (!/NotAllowed|cancel/i.test(msg)) toast.error(t('tst.ch.captureFailed', { message: msg }))
     }
   }
 

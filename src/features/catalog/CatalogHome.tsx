@@ -34,7 +34,7 @@ export function CatalogHome() {
       await deleteCatalog(id)
       setItems((xs) => xs.filter((x) => x.id !== id))
       toast.success(t('tst.cat.deleted'))
-    } catch (e) { toast.error(`Suppression impossible : ${e instanceof Error ? e.message : String(e)}`) }
+    } catch (e) { toast.error(t('wf.deleteFailed', { message: e instanceof Error ? e.message : String(e) })) }
   }
 
   return (

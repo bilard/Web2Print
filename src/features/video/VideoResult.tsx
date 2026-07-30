@@ -120,7 +120,7 @@ export function VideoResult(props: Props) {
 
   const handleSave = async () => {
     if (!user?.uid) {
-      toast.error('Connecte-toi pour sauvegarder dans le DAM')
+      toast.error(t('tst.vd.signInForDam'))
       return
     }
     setSaveState('saving')

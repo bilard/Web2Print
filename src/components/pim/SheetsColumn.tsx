@@ -24,7 +24,7 @@ export function SheetsColumn() {
 
   /** Supprime une feuille (scraping) ET corbeille ses images DAM non utilisées ailleurs. */
   const handleDeleteSheet = useCallback((index: number, name: string) => {
-    if (!confirm(`Supprimer « ${name} » ?`)) return
+    if (!confirm(t('cfm.pim.deleteSheet', { name }))) return
     const deleted = useExcelStore.getState().sheets[index]
     if (deleted) {
       // Corbeille le sous-dossier DAM entier de ce scraping (robuste, par emplacement).

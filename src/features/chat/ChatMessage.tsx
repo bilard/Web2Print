@@ -158,7 +158,7 @@ function GeneratedImageActions({ imageUrl, mimeType, prompt }: GeneratedImageAct
 
   const handleSave = async () => {
     if (!userId) {
-      toast.error('Connectez-vous pour sauvegarder dans le DAM.')
+      toast.error(t('dam.gen.signInToSave'))
       return
     }
     if (savedId || saving) return

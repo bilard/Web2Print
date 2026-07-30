@@ -36,7 +36,7 @@ export function SiteCredentialsForm({ host, hasCreds, onSaved, onCleared, onClos
 
   const save = async () => {
     if (!uid) return
-    if (!email.trim() || !password) { toast.error('Email et mot de passe requis.'); return }
+    if (!email.trim() || !password) { toast.error(t('tst.ss.credsRequired')); return }
     setBusy(true)
     try {
       await setDoc(doc(db, 'users', uid), {

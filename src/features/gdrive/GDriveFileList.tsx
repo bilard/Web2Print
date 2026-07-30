@@ -111,7 +111,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
     runOp(restoreDriveFiles, ids, (n) => `${n} fichier${n > 1 ? 's' : ''} restauré${n > 1 ? 's' : ''}`)
   const deleteForever = (ids: string[]) => {
     if (ids.length === 0) return
-    if (!window.confirm(`Supprimer DÉFINITIVEMENT ${ids.length} fichier(s) ? Cette action est irréversible.`)) return
+    if (!window.confirm(t('cfm.gd.deleteFiles', { count: ids.length }))) return
     void runOp(deleteDriveFilesForever, ids, (n) => `${n} fichier${n > 1 ? 's' : ''} supprimé${n > 1 ? 's' : ''} définitivement`)
   }
   const rowActions = isTrash

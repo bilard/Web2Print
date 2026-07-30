@@ -84,7 +84,7 @@ export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPane
   const handleDelete = async (id: string) => {
     const p = prompts.find((x) => x.id === id)
     if (!p) return
-    if (!window.confirm(`Supprimer le prompt « ${p.title} » ?`)) return
+    if (!window.confirm(t('cfm.ch.deletePrompt', { title: p.title }))) return
     try {
       await remove(id)
       toast.success(t('tst.ch.promptDeleted'))

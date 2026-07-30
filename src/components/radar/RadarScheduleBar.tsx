@@ -55,9 +55,9 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
   useEffect(() => { if (!running) setStopAsked(false) }, [running, sched?.lastRunAt])
 
   const guard = async (kind: 'stop' | 'suspend' | 'run', fn: () => Promise<void>) => {
-    if (!uid || !workflowId) { toast.error('Workflow inconnu pour ce suivi.'); return }
+    if (!uid || !workflowId) { toast.error(t('tst.rd.unknownWorkflow')); return }
     setBusy(kind)
-    try { await fn() } catch (e) { toast.error(e instanceof Error ? e.message : 'Action impossible.') } finally { setBusy(null) }
+    try { await fn() } catch (e) { toast.error(e instanceof Error ? e.message : t('tst.rd.actionFailed')) } finally { setBusy(null) }
   }
 
   const onStop = () => guard('stop', async () => {
@@ -69,18 +69,18 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
   // Action la MOINS réversible depuis un mobile (un doigt qui glisse couperait le flux) :
   // confirmation explicite avant de désactiver le cron.
   const onSuspend = () => {
-    if (!window.confirm('Suspendre le flux ?\n\nLe cron est désactivé : plus aucune relance automatique (réactivable dans le node Cron de l’app).')) return
+    if (!window.confirm(t('cfm.rd.suspend'))) return
     void guard('suspend', async () => {
       const done = await suspendWorkflow(uid!, workflowId!)
-      if (done) toast.success('Flux suspendu — plus aucune relance automatique.')
+      if (done) toast.success(t('tst.rd.suspended'))
       else toast.info(t('wfx.noCron'))
     })
   }
 
   const onRun = () => guard('run', async () => {
     const r = await runWorkflowNow(workflowId!)
-    if (r.errorCount > 0) toast.warning(`Run serveur : ${r.nodeCount} node(s), ${r.errorCount} erreur(s).`)
-    else toast.success(`Run serveur OK — ${r.nodeCount} node(s).`)
+    if (r.errorCount > 0) toast.warning(t('wfx.serverRun', { nodes: r.nodeCount, errors: r.errorCount }))
+    else toast.success(t('wfx.serverRunOk', { nodes: r.nodeCount }))
   })
 
   const relance = sched?.enabled

@@ -82,7 +82,7 @@ export function Step3Cart({ brief, onAdvance }: Props) {
 
   const handleNext = async () => {
     if (!hasItems) {
-      toast.error('Le panier est vide')
+      toast.error(t('tst.br.emptyCart'))
       return
     }
     try {
@@ -99,7 +99,7 @@ export function Step3Cart({ brief, onAdvance }: Props) {
       })
       onAdvance()
     } catch (err) {
-      toast.error('Erreur lors de la sauvegarde')
+      toast.error(t('tst.saveErrorGeneric'))
       console.error(err)
     }
   }

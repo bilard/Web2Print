@@ -268,7 +268,7 @@ export function StepRender() {
         {sourceRef?.fileName && <span className="truncate text-xs text-white/40" title={sourceRef.fileName}>📄 {sourceRef.fileName}</span>}
         {hasRealSource && (
           <button
-            onClick={() => toast.promise(refreshFromSource(), { loading: 'Actualisation depuis la source…', success: 'Contenus actualisés (textes, prix, images)', error: (e) => (e instanceof Error ? e.message : 'Échec de l\'actualisation') })}
+            onClick={() => toast.promise(refreshFromSource(), { loading: t('tst.rp.refreshing'), success: t('tst.rp.refreshed'), error: (e) => (e instanceof Error ? e.message : t('tst.rp.refreshFailed')) })}
             className="shrink-0 p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10" title="Actualiser depuis la source (textes, prix, images)">
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -296,10 +296,10 @@ export function StepRender() {
           <PromoImagePanel currentImage={shownImage} onReplace={(url) => {
             // Upload vers le DAM (Drive) → on ne stocke qu'une réf légère dans la fiche.
             const p = uploadPromoImageToDam(url, cards[safe]?.name || 'image').then((ref) => setImgOverrideAt(safe, ref))
-            toast.promise(p, { loading: 'Enregistrement de l\'image dans le DAM…', success: 'Image enregistrée (DAM)', error: (e) => (e instanceof Error ? e.message : 'Échec upload DAM') })
+            toast.promise(p, { loading: t('tst.rp.savingImage'), success: t('tst.rp.imageSaved'), error: (e) => (e instanceof Error ? e.message : t('tst.rp.imageUploadFailed')) })
           }}
             canApplyToSource={hasRealSource && !!imgOverride[safe] && !!fieldMap.image}
-            onApplyToSource={() => toast.promise(applyImageToSource(), { loading: 'Écriture dans la source…', success: 'Image propagée à la source (tous les canaux)', error: (e) => (e instanceof Error ? e.message : 'Échec de l\'écriture') })} />
+            onApplyToSource={() => toast.promise(applyImageToSource(), { loading: t('tst.rp.writingSource'), success: t('tst.rp.imagePropagated'), error: (e) => (e instanceof Error ? e.message : t('tst.rp.writeFailed')) })} />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">

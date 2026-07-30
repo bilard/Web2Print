@@ -262,7 +262,7 @@ export function WorkflowEditor() {
         '?'
       void targetHandleType
       toast.error(
-        `Types incompatibles : ${sourceLabel} → ${targetLabel}`,
+        t('tst.wf.incompatibleTypes', { source: sourceLabel, target: targetLabel }),
         {
           description:
             t('wfl.insertTransform'),

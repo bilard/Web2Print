@@ -25,7 +25,7 @@ export function SearchPromptInput({ prompt, onPromptChange, onSubmit, disabled }
       onPromptChange(improved)
       toast.success(t('tst.sc.promptImproved'))
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Amélioration impossible (LLM indisponible)")
+      toast.error(e instanceof Error ? e.message : t('tst.sc.improveFailed'))
     } finally {
       setImproving(false)
     }

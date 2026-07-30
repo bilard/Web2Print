@@ -63,11 +63,11 @@ export function useBulkAttachToTaxonomy() {
       const updateCell = store.updateCell
       const sheetIdx = store.activeSheetIndex
       if (!sheet) {
-        toast.error('Aucune feuille active')
+        toast.error(t('tst.noActiveSheet'))
         return
       }
       if (Object.keys(taxonomy.nodes).length === 0) {
-        toast.error(`La taxonomie « ${taxonomy.name} » est vide`)
+        toast.error(t('tst.tx.emptyTaxonomy', { name: taxonomy.name }))
         return
       }
 
@@ -141,14 +141,13 @@ export function useBulkAttachToTaxonomy() {
         if (ac.signal.aborted) {
           toast.info(t('tst.tx.attachAborted', { count: classified }))
         } else if (errors > 0) {
-          toast.warning(
-            `${classified} produit(s) classé(s), ${skipped} ignoré(s), ${errors} erreur(s)`,
-          )
+          toast.warning(t('tst.tx.attachPartial', { classified, skipped, errors }))
         } else {
-          toast.success(
-            `${classified} produit(s) attaché(s) à « ${taxonomy.name} »` +
-              (skipped > 0 ? ` (${skipped} ignoré(s))` : ''),
-          )
+          toast.success(t('tst.tx.attachDone', {
+            count: classified,
+            name: taxonomy.name,
+            skipped: skipped > 0 ? t('tst.tx.attachSkipped', { count: skipped }) : '',
+          }))
         }
       } finally {
         setRunning(false)

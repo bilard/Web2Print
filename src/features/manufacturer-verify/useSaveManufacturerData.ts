@@ -89,7 +89,7 @@ export function useSaveManufacturerData() {
     ): Promise<boolean> => {
       const { sheets, activeSheetIndex, currentFileName, currentDocId, currentPath } = useExcelStore.getState()
       const sheet = sheets[activeSheetIndex]
-      if (!sheet) { toast.error('Aucune feuille active'); return false }
+      if (!sheet) { toast.error(t('tst.noActiveSheet')); return false }
       if (!auth.currentUser) { toast.error(t('tst.mv.signInToSave')); return false }
 
       setSaving(true)
@@ -114,11 +114,11 @@ export function useSaveManufacturerData() {
         if (savedDocId && savedDocId !== currentDocId) setCurrentDocId(savedDocId)
 
         toast.success(t('tst.mv.saved'), {
-          description: `${data.specifications.length} spec(s) fabricant comparées`,
+          description: t('tst.mv.specsComparedDesc', { count: data.specifications.length }),
         })
         return true
       } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Erreur lors de la sauvegarde'
+        const msg = e instanceof Error ? e.message : t('tst.saveErrorGeneric')
         console.error('[save-manufacturer] FAILED', e)
         toast.error(t('tst.mv.saveFailed'), { description: msg })
         return false

@@ -130,7 +130,7 @@ export function useGoogleServerConnect() {
   }, [uid, isAdmin])
 
   const saveOAuthClient = async () => {
-    if (!clientId.trim()) { toast.warning('Client ID requis.'); return }
+    if (!clientId.trim()) { toast.warning(t('tst.set.clientIdRequired')); return }
     await setDoc(doc(db, 'config', 'googleOAuth'), {
       clientId: clientId.trim(),
       ...(clientSecret.trim() ? { clientSecret: clientSecret.trim() } : {}),
@@ -145,7 +145,7 @@ export function useGoogleServerConnect() {
   const connect = async () => {
     if (!uid) return
     if (!clientId.trim()) {
-      toast.warning('Renseigne d’abord le client OAuth (Client ID / Secret) ci-dessous.')
+      toast.warning(t('tst.set.oauthFirst'))
       return
     }
     setBusy(true)
@@ -161,7 +161,7 @@ export function useGoogleServerConnect() {
       url.searchParams.set('scope', SCOPES)
       url.searchParams.set('state', nonce)
       window.open(url.toString(), '_blank', 'noopener')
-      toast.info('Valide le consentement Google dans le nouvel onglet, puis reviens ici.')
+      toast.info(t('tst.set.consentTab'))
     } finally {
       setBusy(false)
     }

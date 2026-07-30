@@ -97,7 +97,7 @@ export function useDamMigration() {
 
     const candidateCols = sheet.columns.filter((c) => c.fieldType === 'image' || c.fieldType === 'url')
     if (candidateCols.length === 0) {
-      if (!silent) toast.info('Aucune colonne image ou URL dans cette feuille.')
+      if (!silent) toast.info(t('tst.dam.noImageColumn'))
       return
     }
     const subFolder = scrapeFolderName(sheet.name, sheet.sourceUrl)
@@ -138,11 +138,7 @@ export function useDamMigration() {
     // Rien à uploader NI à ranger → on s'arrête (sauf relatifs non résolus).
     if (jobs.length === 0 && !(existingDriveIds.size > 0 && subFolder)) {
       if (!silent) {
-        toast.info(
-          skippedRelative > 0
-            ? 'Images en chemin relatif sans URL source connue — re-scrape pour obtenir des liens absolus.'
-            : 'Toutes les images sont déjà dans le DAM.',
-        )
+        toast.info(t(skippedRelative > 0 ? 'tst.dam.relativeImages' : 'tst.dam.allInDam'))
       }
       return
     }
@@ -158,7 +154,7 @@ export function useDamMigration() {
       ;({ rootId, targetId } = (await damEnsureFolder({ folderName: DAM_FOLDER_NAME, subFolder })).data)
     } catch (e) {
       // En mode auto (silent), on ne spamme pas d'erreur à chaque scrape sans Google.
-      if (!silent) toast.error(`DAM : ${e instanceof Error ? e.message : 'connexion Google requise'}`)
+      if (!silent) toast.error(t('tst.dam.error', { message: e instanceof Error ? e.message : t('tst.dam.googleRequired') }))
       setRunning(false)
       setProgress(null)
       return

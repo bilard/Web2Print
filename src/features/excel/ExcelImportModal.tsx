@@ -21,7 +21,8 @@ import { usePimStore } from '@/stores/pim.store'
 import { MatchPreviewModal } from '@/components/pim/MatchPreviewModal'
 import { useQuota } from '@/features/access/useAccess'
 import { toast } from 'sonner'
-import { t } from '@/lib/i18n'
+import { t, intlLocale } from '@/lib/i18n'
+import { useLocaleStore } from '@/stores/locale.store'
 
 interface Props {
   open: boolean
@@ -176,13 +177,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
     // sauvegarde échoue (données perdues). On refuse AVANT le freeze, en orientant vers
     // la bonne source à cette échelle (Google Sheets, lue par le workflow côté serveur).
     if (!quota.isDemo && importedRows > MAX_PIM_IMPORT_ROWS) {
-      toast.error(
-        `Fichier trop volumineux pour le PIM : ${importedRows.toLocaleString('fr-FR')} lignes. ` +
-        `Le PIM garde la feuille dans un seul document (max ~1 Mo) — au-delà de quelques milliers de lignes ` +
-        `l'onglet fige et l'enregistrement échoue. Pour un gros catalogue, branche « Import Google Sheets » ` +
-        `dans un workflow, ou importe un sous-ensemble (par famille).`,
-        { duration: 12_000 },
-      )
+      toast.error(t('tst.xl.fileTooBigPim', { rows: importedRows.toLocaleString(intlLocale(useLocaleStore.getState().locale)) }), { duration: 12_000 })
       return
     }
 

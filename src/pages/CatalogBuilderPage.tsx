@@ -13,6 +13,7 @@ import { ensureUserFontsLoaded } from '@/features/fonts/useUserFonts'
 import { useCatalogAutosave } from '@/features/catalog/useCatalogAutosave'
 import { CatalogStepsNav } from '@/features/catalog/components/CatalogStepsNav'
 import { useApplyKnownCutouts } from '@/features/catalog/useCatalogCutout'
+import { t } from '@/lib/i18n'
 
 const StepSource = lazy(() => import('@/features/catalog/components/steps/StepSource').then((m) => ({ default: m.StepSource })))
 const StepStructure = lazy(() => import('@/features/catalog/components/steps/StepStructure').then((m) => ({ default: m.StepStructure })))
@@ -44,7 +45,7 @@ export default function CatalogBuilderPage() {
       if (s.catalogId !== id) {
         const doc = await loadCatalog(id)
         if (cancelled) return
-        if (!doc) { toast.error('Catalogue introuvable'); navigate('/dashboard'); return }
+        if (!doc) { toast.error(t('tst.cat.notFound')); navigate('/dashboard'); return }
         s.hydrate(doc, id)
       }
       const st = useCatalogStore.getState()
@@ -62,7 +63,7 @@ export default function CatalogBuilderPage() {
           // Ne PAS retoucher selectedRowIds/fieldMap/levelKeys : déjà restaurés par
           // hydrate() depuis le catalogue enregistré (contrairement au 1er connect).
           st.setSource(st.sourceRef, columns, rows)
-        } catch (e) { toast.error(`Source indisponible : ${String((e as Error).message)}`) }
+        } catch (e) { toast.error(t('tst.cat.sourceUnavailable', { message: String((e as Error).message) })) }
       }
       if (cancelled) return
       // Le devinage s'améliore au fil des versions ; on RE-DÉRIVE, mais les

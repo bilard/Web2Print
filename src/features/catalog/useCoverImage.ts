@@ -153,13 +153,13 @@ export function useCoverImage() {
    *  garantie CORS à l'export que les visuels générés. */
   const uploadImage = async (file: File, target: CoverTarget) => {
     const uid = auth.currentUser?.uid
-    if (!uid) { toast.error('Connexion requise pour charger un visuel'); return }
+    if (!uid) { toast.error(t('tst.cat.signInToLoad')); return }
     setGenerating(true)
     try {
       apply(target, await uploadToCovers(uid, file, file.type || 'image/png', target))
       toast.success(t('tst.cat.visualLoaded'))
     } catch (e) {
-      toast.error(`Chargement impossible (${e instanceof Error ? e.message : 'erreur'})`)
+      toast.error(t('tst.cat.loadFailed', { message: e instanceof Error ? e.message : t('tst.cat.genericError') }))
     } finally {
       setGenerating(false)
     }

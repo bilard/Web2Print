@@ -300,7 +300,7 @@ export function useSaveEnrichedProduct() {
         })
         return true
       } catch (e) {
-        const msg = e instanceof Error ? e.message : t('tst.xl.saveError')
+        const msg = e instanceof Error ? e.message : t('tst.saveErrorGeneric')
         console.error('[save-enriched] FAILED', e)
         setError(msg)
         toast.error(t('tst.xl.saveFailedShort'), { description: msg })

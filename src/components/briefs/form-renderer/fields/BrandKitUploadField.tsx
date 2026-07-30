@@ -99,14 +99,14 @@ export function BrandKitUploadField({ field, value, onChange, disabled, briefId,
       toast.success(t('tst.br.filesUploaded', { count: uploaded.length - existingFiles.length }))
 
       if (onSiblingChange && colorSourceFile) {
-        toast.message('Analyse des couleurs en cours…')
+        toast.message(t('tst.br.analysingColors'))
         const colors = await extractBrandColorsFromFile(colorSourceFile, colorSourceFile.type)
         if (colors.primary) onSiblingChange('primaryColor', colors.primary)
         if (colors.secondary) onSiblingChange('secondaryColor', colors.secondary)
         if (colors.primary || colors.secondary) {
-          toast.success(
-            `Couleurs détectées : ${[colors.primary, colors.secondary].filter(Boolean).join(' / ')}`,
-          )
+          toast.success(t('tst.br.colorsDetected', {
+            list: [colors.primary, colors.secondary].filter(Boolean).join(' / '),
+          }))
         }
       }
     } catch (err) {

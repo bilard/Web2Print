@@ -63,7 +63,7 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
       })
       onAdvance()
     } catch (err) {
-      toast.error('Erreur lors de la sauvegarde')
+      toast.error(t('tst.saveErrorGeneric'))
       console.error(err)
     }
   }

@@ -7,6 +7,7 @@ import type { ScrapingTemplate } from '@/features/scraping-templates/types'
 import { useCan } from '@/features/access/useAccess'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { toast } from 'sonner'
+import { t } from '@/lib/i18n'
 
 export default function ScrapingTemplatesPage() {
   const navigate = useNavigate()
@@ -24,7 +25,7 @@ export default function ScrapingTemplatesPage() {
         setSelected(list.find((t) => t.id === selected.id) ?? null)
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Chargement impossible')
+      toast.error(err instanceof Error ? err.message : t('tst.st.loadFailed'))
     } finally {
       setLoading(false)
     }
@@ -54,10 +55,11 @@ export default function ScrapingTemplatesPage() {
     setSelected(t)
   }
 
-  const onDelete = async (t: ScrapingTemplate) => {
-    if (!confirm(`Supprimer le template "${t.name}" ?`)) return
-    await deleteTemplate(t.id)
-    if (selected?.id === t.id) setSelected(null)
+  // ⚠️ PAS `t` : le paramètre masquerait la fonction de traduction.
+  const onDelete = async (tpl: ScrapingTemplate) => {
+    if (!confirm(t('cfm.st.deleteTemplate', { name: tpl.name }))) return
+    await deleteTemplate(tpl.id)
+    if (selected?.id === tpl.id) setSelected(null)
     refresh()
   }
 

@@ -61,7 +61,7 @@ export function BriefsList({ taxonomy }: Props) {
 
   const handlePurgeGhosts = async () => {
     if (ghosts.length === 0) return
-    if (!confirm(`Supprimer ${ghosts.length} brouillon${ghosts.length > 1 ? 's' : ''} vide${ghosts.length > 1 ? 's' : ''} ?`))
+    if (!confirm(t(ghosts.length > 1 ? 'cfm.br.deleteDrafts.many' : 'cfm.br.deleteDrafts.one', { count: ghosts.length })))
       return
     let ok = 0
     for (const g of ghosts) {
@@ -77,12 +77,12 @@ export function BriefsList({ taxonomy }: Props) {
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('Supprimer ce brief ?')) return
+    if (!confirm(t('cfm.br.deleteBrief'))) return
     try {
       await remove.mutateAsync(id)
       toast.success(t('tst.br.deleted'))
     } catch {
-      toast.error('Erreur lors de la suppression')
+      toast.error(t('tst.deleteFailed'))
     }
   }
 

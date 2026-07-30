@@ -82,7 +82,7 @@ export function useRenameTaxonomy() {
     },
     onError: (_e, _v, ctx) => {
       qc.setQueryData(taxListKey(user!.uid), ctx?.previous)
-      toast.error('Erreur lors du renommage')
+      toast.error(t('tst.tx.renameFailed'))
     },
     onSettled: () =>
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
@@ -139,7 +139,7 @@ export function useDeleteTaxonomy() {
     },
     onError: (_e, _v, ctx) => {
       qc.setQueryData(taxListKey(user!.uid), ctx?.previous)
-      toast.error('Erreur lors de la suppression')
+      toast.error(t('tst.deleteFailed'))
     },
     onSettled: () =>
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
@@ -189,7 +189,7 @@ export function useDuplicateTaxonomy() {
     },
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
-    onError: () => toast.error('Erreur lors de la duplication'),
+    onError: () => toast.error(t('tst.duplicateFailed')),
   })
 }
 
@@ -274,7 +274,7 @@ export function useAddNode() {
     },
     onError: (_e, _v, ctx) => {
       if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
-      toast.error("Erreur lors de l'ajout du nœud")
+      toast.error(t('tst.tx.addNodeFailed'))
     },
     onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
@@ -321,7 +321,7 @@ export function useRenameNode() {
     },
     onError: (_e, _v, ctx) => {
       if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
-      toast.error('Erreur lors du renommage du nœud')
+      toast.error(t('tst.tx.nodeRenameFailed'))
     },
     onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
@@ -380,7 +380,7 @@ export function useDeleteNode() {
     },
     onError: (_e, _v, ctx) => {
       if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
-      toast.error('Erreur lors de la suppression du nœud')
+      toast.error(t('tst.tx.nodeDeleteFailed'))
     },
     onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
@@ -532,7 +532,7 @@ export function useLinkProject() {
     },
     onError: (_e, _v, ctx) => {
       if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
-      toast.error('Erreur lors de la liaison')
+      toast.error(t('tst.tx.linkFailed'))
     },
     onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })

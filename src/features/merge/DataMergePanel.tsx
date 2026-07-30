@@ -134,7 +134,7 @@ export function DataMergePanel() {
             const labels = assignments
               .map((a) => `${a.role === 'price' ? 'prix' : a.role === 'title' ? 'titre' : 'description'} → {{${a.columnKey}}}`)
               .join(', ')
-            toast.success(`Liaison automatique : ${labels}.`)
+            toast.success(t('tst.mg.autoLinked', { fields: labels }))
           }}
           className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-[11px] text-indigo-300 transition-colors"
           title={t('mg.autoDetectFull')}

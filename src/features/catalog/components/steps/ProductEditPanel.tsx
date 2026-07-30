@@ -42,9 +42,7 @@ export function ProductEditPanel({ rowId, onClose }: Props) {
         : [...new Set([...(sec.featuredIds ?? []), rowId])],
     }))
     setPlan({ ...plan, sections })
-    toast.success(isVedette
-      ? 'Ruban vedette retiré — enregistré dans la publication'
-      : 'Produit mis en VEDETTE (grande carte + ruban) — enregistré dans la publication')
+    toast.success(t(isVedette ? 'tst.cat.featuredOff' : 'tst.cat.featuredOn'))
   }
   const row = useMemo(() => rawRows.find((r) => r._id === rowId), [rawRows, rowId])
   // Colonnes MAPPÉES sur la fiche d'abord (nom, marque, prix…), puis le reste.
@@ -78,9 +76,9 @@ export function ProductEditPanel({ rowId, onClose }: Props) {
     onClose()
   }
   const saveMaster = async () => {
-    if (!sourceRef) { toast.error('Source du catalogue introuvable'); return }
+    if (!sourceRef) { toast.error(t('tst.cat.noSource')); return }
     const patch = diffVsSource()
-    if (Object.keys(patch).length === 0) { toast.info('Aucun changement par rapport au master'); return }
+    if (Object.keys(patch).length === 0) { toast.info(t('tst.cat.noMasterChange')); return }
     setBusy(true)
     try {
       await saveRowToMaster(sourceRef, rowId, patch)

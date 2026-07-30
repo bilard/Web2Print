@@ -53,7 +53,7 @@ export function useDuplicateProject() {
     },
     onError: (e) => {
       console.error('[duplicateProject]', e)
-      toast.error('Erreur lors de la duplication')
+      toast.error(t('tst.duplicateFailed'))
     },
   })
 }

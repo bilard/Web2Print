@@ -57,7 +57,7 @@ export function Step4Deck({ brief, onAdvance }: Props) {
       onAdvance()
     } catch (err) {
       console.error('[Step4Deck] update FAILED', err)
-      toast.error('Erreur sauvegarde : ' + ((err as Error).message || 'inconnue'))
+      toast.error(t('tst.br.saveFailedWith', { message: (err as Error).message || t('tst.br.unknownError') }))
     }
   }
 

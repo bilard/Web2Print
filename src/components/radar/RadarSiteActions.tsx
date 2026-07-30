@@ -48,19 +48,22 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
   const enabled = row?.enabled !== false
 
   const guard = async (kind: NonNullable<typeof busy>, fn: () => Promise<void>) => {
-    if (!uid || !workflowId) { toast.error('Workflow inconnu pour ce suivi.'); return }
+    if (!uid || !workflowId) { toast.error(t('tst.rd.unknownWorkflow')); return }
     setBusy(kind)
-    try { await fn() } catch (e) { toast.error(e instanceof Error ? e.message : 'Action impossible.') } finally { setBusy(null) }
+    try { await fn() } catch (e) { toast.error(e instanceof Error ? e.message : t('tst.rd.actionFailed')) } finally { setBusy(null) }
   }
 
   // Moisson de CE site seul : même moteur que le node, budget court (test depuis le mobile).
   const onScrape = () => guard('scrape', async () => {
-    if (!watchId) { toast.error('Suivi inconnu.'); return }
+    if (!watchId) { toast.error(t('tst.rd.unknownWatch')); return }
     // Conversion canonique (fields/engine/auth) — la même qu'à l'émission du node.
     const site = rowsToCompetitorSites([{ ...(row ?? { domain: host }), domain: host, enabled: true }])[0]
-    if (!site) { toast.error('Site illisible.'); return }
+    if (!site) { toast.error(t('tst.rd.unreadableSite')); return }
     const res = await harvestOneSite(uid!, watchId, site, { pageBudget: 12 })
-    toast.success(`${host} : +${res.productsIndexed} produit(s) · ${res.pctPrice} % avec prix${res.engine ? ` (via ${res.engine})` : ''}`)
+    toast.success(t('tst.rd.harvestResult', {
+      host, products: res.productsIndexed, pct: res.pctPrice,
+      engine: res.engine ? t('tst.rd.harvestEngine', { engine: res.engine }) : '',
+    }))
   })
 
   const onToggle = () => guard('toggle', async () => {
@@ -85,7 +88,7 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
   })
 
   const onReset = () => {
-    if (!window.confirm(`Effacer toutes les données collectées de ${host} ?\n\nLe prochain scrape repartira de zéro.`)) return
+    if (!window.confirm(t('cfm.rd.resetSite', { host }))) return
     void guard('reset', async () => {
       if (!watchId) return
       const n = await resetCompetitorData(uid!, watchId, stableId(host))
@@ -94,7 +97,7 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
   }
 
   const onRemove = () => {
-    if (!window.confirm(`Retirer ${host} de la moisson ?\n\nLes données déjà collectées sont conservées.`)) return
+    if (!window.confirm(t('cfm.rd.removeSite', { host }))) return
     void guard('remove', async () => {
       await removeSourceSite(uid!, workflowId!, host)
       onChanged()

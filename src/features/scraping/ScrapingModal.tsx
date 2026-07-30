@@ -199,7 +199,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       onClose()
     } catch (err) {
       console.error('[ScrapingModal] confirmIngest error', err)
-      toast.error(`Erreur d'import: ${err instanceof Error ? err.message : 'erreur inconnue'}`)
+      toast.error(t('tst.sc.importError', { message: err instanceof Error ? err.message : t('tst.unknownError') }))
     }
   }
   // ─────────────────────────────────────────────────────────────────────────
@@ -270,7 +270,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       const outcome = await filterByInstruction(links, instruction)
       if (outcome.applied) {
         pushDiscoveryLog(`✓ ${outcome.kept.length} retenu(s), ${outcome.excludedCount} exclu(s) par le filtre`)
-        toast.success(`Filtre « ${instruction.trim()} » : ${outcome.kept.length} lien(s) retenu(s), ${outcome.excludedCount} exclu(s).`)
+        toast.success(t('tst.sc.filterKept', { label: instruction.trim(), kept: outcome.kept.length, excluded: outcome.excludedCount }))
       } else {
         pushDiscoveryLog(`⚠ Filtre non concluant — ${links.length} lien(s) conservé(s)`)
       }
@@ -307,11 +307,9 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
 
     if (pages.length === 0) {
       pushDiscoveryLog(`✗ Aucun lien produit détecté${error ? ` — ${error}` : ''}`)
-      toast.error(
-        error
-          ? `Découverte impossible sur cette page : ${error}. Essaie une sous-catégorie, ajuste le filtre « Inclure », ou colle les URLs en mode « Plusieurs URLs ».`
-          : 'Aucun produit détecté (grille lazy-load non rendue ou aucun lien « produit »). Ajuste le filtre « Inclure » ou colle les URLs en mode « Plusieurs URLs ».',
-      )
+      toast.error(error
+        ? t('tst.sc.discoveryFailed', { message: error })
+        : t('tst.sc.noProductFound'))
       if (!rootUrl) setCrawlPages([])
       return
     }
@@ -357,7 +355,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         toast.info(t('tst.sc.filterNoMatch', { label, count: pages.length }))
       } else if (outcome.applied) {
         pushDiscoveryLog(`✓ ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s) : ${kept.map((p) => p.title).slice(0, 20).join(' · ')}`)
-        toast.success(`Filtre « ${label} » : ${kept.length} retenu(s), ${outcome.excludedCount} exclu(s).`)
+        toast.success(t('tst.sc.filterKeptShort', { label, kept: kept.length, excluded: outcome.excludedCount }))
       } else {
         pushDiscoveryLog(`⚠ Filtre non concluant (IA indisponible ou 0 correspondance) — ${pages.length} lien(s) conservé(s)`)
         toast.info(t('tst.sc.filterInconclusive', { count: pages.length }))
@@ -468,9 +466,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     // catégorie (menu/hub), pas des fiches produit — prévenir AVANT l'import.
     const dupCount = doneNames.length - new Set(doneNames).size
     if (dupCount > 0) {
-      toast.warning(
-        `${dupCount + 1} fiches partagent le même nom — les URLs ressemblent à des pages catégorie. Relance la découverte sur une sous-catégorie ou affine le filtre « Inclure ».`,
-      )
+      toast.warning(t('tst.sc.duplicateNames', { count: dupCount + 1 }))
     }
   }
 

@@ -55,7 +55,7 @@ export function CharteCard() {
       setInspUrl('')
       toast.success(t('tst.cat.inspirationDone'))
     } catch (e) {
-      toast.error(`Analyse impossible (${String((e as Error).message).slice(0, 90)})`)
+      toast.error(t('tst.cat.analyseFailed', { message: String((e as Error).message).slice(0, 90) }))
     } finally {
       setInspBusy(false)
     }
@@ -68,9 +68,12 @@ export function CharteCard() {
       let next = charte ?? EMPTY_CHARTE
       for (const f of Array.from(files)) next = await extractCharteFromFile(f, next)
       setCharte(next)
-      toast.success(`Charte extraite : ${next.colors.length} couleurs${next.fonts.length ? `, ${next.fonts.length} typos` : ''}`)
+      toast.success(t('tst.cat.charteExtracted', {
+        count: next.colors.length,
+        fonts: next.fonts.length ? t('tst.cat.charteFonts', { count: next.fonts.length }) : '',
+      }))
     } catch (e) {
-      toast.error(`Extraction impossible (${String((e as Error).message).slice(0, 80)})`)
+      toast.error(t('tst.cat.extractFailed', { message: String((e as Error).message).slice(0, 80) }))
     } finally {
       setBusy(false)
       if (inputRef.current) inputRef.current.value = ''

@@ -36,6 +36,15 @@ async function loadRealDocument(): Promise<IdmlDocument> {
   return parseIdml(spreads, stories, resources, designMap, masterSpreads)
 }
 
+// ⚠️ Le fichier de référence est un IDML LOCAL, hors dépôt : la suite se saute
+// toute seule s'il manque. Le 30/07/2026 le dossier a été renommé
+// (IMPORTS/Monoprix → IMPORTS/Indesign) et ces 8 tests sont passés SILENCIEUSEMENT
+// en « skipped » — détecté à un écart de compteur, pas par un échec. Le saut est
+// donc BRUYANT désormais : un renommage se voit dans la sortie de test.
+if (!existsSync(REAL_FILE)) {
+  console.warn(`[idml] fichier de référence absent — 8 tests sautés : ${REAL_FILE}`)
+}
+
 describe.skipIf(!existsSync(REAL_FILE))('IDML réel — blocs de texte', () => {
   it('absorbe la pastille circulaire dans son bloc de texte', async () => {
     // « +55g GRATUIT » est un bloc de texte OVALE dans InDesign : sa forme ne doit

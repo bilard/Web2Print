@@ -273,7 +273,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
    *  par le bouton dédié du formulaire ou de la carte bibliothèque. */
   const handleSaveOrUpdate = async (targetId?: string) => {
     if (!topic.trim() && !freeform.trim()) {
-      toast.error('Renseigne au moins un sujet ou des instructions avant d\'enregistrer')
+      toast.error(t('tst.vd.topicOrInstructions'))
       return
     }
     const input = buildPromptInput(resolveAspect(), resolveDurationSec(duration, customDurationSec))

@@ -73,13 +73,16 @@ export function SourceSitesConfig({ config, onChange }: {
     setScrapingId(domain)
     try {
       const res = await harvestOneSite(uid, watchId, site, { pageBudget: 12 })
-      toast.success(`${domain} : +${res.productsIndexed} produit(s) · ${res.pctPrice}% avec prix${res.engine ? ` (via ${res.engine})` : ''}`)
+      toast.success(t('tst.rd.harvestResult', {
+        host: domain, products: res.productsIndexed, pct: res.pctPrice,
+        engine: res.engine ? t('tst.rd.harvestEngine', { engine: res.engine }) : '',
+      }))
       // Recalcule le benchmark (appariés, écarts) pour TOUS les sites actifs, à partir
       // du catalogue source persisté — le dashboard se met à jour sans relancer le run.
       const siteRefs = rowsToCompetitorSites(rows).map((s) => ({ siteId: s.id, domain: s.domain }))
       const rec = await recomputeReport(uid, watchId, siteRefs)
       if (rec) toast.success(t('tst.ss.benchmarkDone', { count: rec.matched }))
-      else toast.info('Lance « Comparer catalogue » une fois pour activer le recalcul du benchmark.')
+      else toast.info(t('tst.ss.runCompareFirst'))
     } catch (e) {
       toast.error(t('tst.ss.harvestFailed', { domain, message: e instanceof Error ? e.message : t('tst.ss.harvestFailedDefault') }))
     } finally {
@@ -91,7 +94,7 @@ export function SourceSitesConfig({ config, onChange }: {
   const resetSite = async (r: SourceSiteRow) => {
     const domain = normalizeDomain(r.domain)
     if (!uid || !domain) return
-    if (!window.confirm(`Effacer toutes les données collectées de ${domain} ?\n\nLe prochain scrape repartira de zéro (utile après un passage en accès connecté pour purger les fiches sans prix).`)) return
+    if (!window.confirm(t('cfm.ss.resetSite', { domain }))) return
     try {
       const n = await resetCompetitorData(uid, watchId, stableId(domain))
       toast.success(t('tst.ss.reset', { domain, count: n }))

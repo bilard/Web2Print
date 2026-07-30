@@ -32,10 +32,10 @@ export function PurgeScrapingPanel({ uid, watchId, sites, onClose }: {
 
   const run = async () => {
     if (types.size === 0) { toast.error(t('tst.ss.pickType')); return }
-    if (needsSites && selSites.size === 0) { toast.error('Choisis au moins un site.'); return }
+    if (needsSites && selSites.size === 0) { toast.error(t('tst.ss.pickSite')); return }
     const typeLabels = TYPE_META.filter((t) => types.has(t.key)).map((t) => t.label.toLowerCase()).join(', ')
-    const scope = needsSites ? `${selSites.size}/${sites.length} site(s)` : 'suivi'
-    if (!window.confirm(`Vider : ${typeLabels}\nPortée : ${scope}\n\nCette action est DÉFINITIVE et irréversible.`)) return
+    const scope = needsSites ? t('cfm.ss.sitesScope', { count: selSites.size, total: sites.length }) : t('cfm.ss.watchScope')
+    if (!window.confirm(t('cfm.ss.purge', { types: typeLabels, scope }))) return
     setBusy(true)
     setProgress(null)
     try {

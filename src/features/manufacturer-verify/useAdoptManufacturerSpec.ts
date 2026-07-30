@@ -79,7 +79,7 @@ export function useAdoptManufacturerSpec() {
     const { sheets, activeSheetIndex, currentFileName, currentDocId, currentPath } = useExcelStore.getState()
     const sheet = sheets[activeSheetIndex]
     const row = sheet?.rows.find((r) => r._id === rowId)
-    if (!sheet || !row) { toast.error('Ligne introuvable'); return false }
+    if (!sheet || !row) { toast.error(t('tst.mv.rowNotFound')); return false }
     if (!auth.currentUser) { toast.error(t('tst.mv.signInRequired')); return false }
 
     setBusy(true)

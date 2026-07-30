@@ -5,6 +5,7 @@ import { DynamicFormRenderer } from '@/components/briefs/form-renderer/DynamicFo
 import { useUpdateBrief } from '@/features/briefs/useBriefMutations'
 import type { Brief } from '@/features/briefs/types'
 import type { ClientFormField } from '@/features/taxonomy/types'
+import { t } from '@/lib/i18n'
 
 function ensureBrandKitField(fields: ClientFormField[]): ClientFormField[] {
   if (fields.some((f) => f.key === 'brandKit')) return fields
@@ -66,7 +67,7 @@ export function Step1Form({ brief, onAdvance }: Props) {
       (f) => f.required && !f.hidden && !values[f.key],
     )
     if (missing.length > 0) {
-      toast.error(`Champs obligatoires manquants : ${missing.map((f) => f.label).join(', ')}`)
+      toast.error(t('tst.br.missingFields', { fields: missing.map((f) => f.label).join(', ') }))
       return
     }
     const clientName = String(values.companyName ?? brief.clientName ?? 'Sans nom')
@@ -86,7 +87,7 @@ export function Step1Form({ brief, onAdvance }: Props) {
       })
       onAdvance()
     } catch (err) {
-      toast.error('Erreur lors de la sauvegarde')
+      toast.error(t('tst.saveErrorGeneric'))
       console.error(err)
     }
   }

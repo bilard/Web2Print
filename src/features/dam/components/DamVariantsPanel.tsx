@@ -198,7 +198,7 @@ export function DamVariantsPanel({
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (confirm(`Supprimer la variante "${v.name}" ?`)) onDelete(v)
+                        if (confirm(t('cfm.dam.deleteVariant', { name: v.name }))) onDelete(v)
                       }}
                       className="p-1 rounded bg-black/60 text-[#fff]/70 hover:text-red-400"
                       title={t('dam.delete')}

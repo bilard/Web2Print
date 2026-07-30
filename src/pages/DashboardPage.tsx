@@ -220,7 +220,7 @@ export default function DashboardPage() {
   const handleBulkDelete = useCallback(async () => {
     const ids = Array.from(selectedIds)
     if (ids.length === 0) return
-    const msg = `Supprimer ${ids.length} projet${ids.length > 1 ? 's' : ''} ? Cette action est irréversible.`
+    const msg = t(ids.length > 1 ? 'cfm.pj.bulkDelete.many' : 'cfm.pj.bulkDelete.one', { count: ids.length })
     if (!window.confirm(msg)) return
     await Promise.allSettled(ids.map((id) => deleteProject.mutateAsync(id)))
     clearSelection()

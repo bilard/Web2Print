@@ -26,7 +26,7 @@ export function LogoUploadField({ field, value, onChange, disabled, briefId }: P
       return
     }
     if (file.size > MAX_BYTES) {
-      toast.error('Fichier trop volumineux (>10 Mo)')
+      toast.error(t('tst.br.fileTooBig'))
       return
     }
     if (!file.type.startsWith('image/')) {
@@ -43,7 +43,7 @@ export function LogoUploadField({ field, value, onChange, disabled, briefId }: P
       onChange(url)
       toast.success(t('tst.br.logoUploaded'))
     } catch (err) {
-      toast.error((err as Error).message || "Échec de l'upload")
+      toast.error((err as Error).message || t('tst.br.uploadFailed'))
     } finally {
       setUploading(false)
     }

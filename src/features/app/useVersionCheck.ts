@@ -4,6 +4,7 @@
 // est en ligne. Toast unique, persistant, jamais de reload forcé.
 import { useEffect } from 'react'
 import { toast } from 'sonner'
+import { t } from '@/lib/i18n'
 
 const CHECK_EVERY_MS = 5 * 60_000
 const FIRST_CHECK_MS = 30_000
@@ -20,10 +21,10 @@ export function useVersionCheck() {
         const { buildId } = (await r.json()) as { buildId?: string }
         if (!buildId || buildId === __BUILD_ID__) return
         notified = true
-        toast.info('Nouvelle version disponible', {
-          description: 'Une mise à jour vient d’être déployée — rechargez pour en profiter.',
+        toast.info(t('tst.app.newVersion'), {
+          description: t('tst.app.newVersionDesc'),
           duration: Infinity,
-          action: { label: 'Recharger', onClick: () => window.location.reload() },
+          action: { label: t('tst.app.reload'), onClick: () => window.location.reload() },
         })
       } catch {
         // Hors ligne / réseau : on retentera au prochain tick.

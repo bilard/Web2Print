@@ -1200,7 +1200,7 @@ async function decomposeHeuristic(
   // (pas de dico par-vendeur). Échec → on garde tout (comportement d'avant).
   let editorialItems = items
   if (items.length > 0 && !selective) {
-    toast.loading('Classification logos / éditorial…', { id: toastId })
+    toast.loading(t('tst.svg.classifying'), { id: toastId })
     const logoIdx = await classifyLogoTexts(items.map((it) => ({
       text: it.para.text,
       x: ((it.para.bbox.left + it.para.bbox.width / 2) / width) * 100,
@@ -1252,7 +1252,7 @@ async function decomposeHeuristic(
   // Async, ne bloque pas le rendu canvas — UI loading via toast.
   const priceClusters = selective ? [] : detectPriceClusters(addedTextboxes)
   if (priceClusters.length > 0) {
-    toast.loading(`Relecture de ${priceClusters.length} prix…`, { id: toastId })
+    toast.loading(t('tst.svg.rereadingPrices', { count: priceClusters.length }), { id: toastId })
     for (const cluster of priceClusters) {
       const cropUri = cropToDataUri(ctx, cluster.unifiedBbox, width, height)
       if (!cropUri) continue
@@ -1451,7 +1451,7 @@ async function decomposeSemantic(
     xPct: ((p.bbox.left + p.bbox.width / 2) / width) * 100,
     yPct: ((p.bbox.top + p.bbox.height / 2) / height) * 100,
   }))
-  toast.loading('Analyse sémantique (Gemini 3.5)…', { id: toastId })
+  toast.loading(t('tst.svg.semanticAnalysis'), { id: toastId })
   const blocks = await semanticLayout(dataUri, texts)
   if (blocks.length === 0) return null // → fallback
 
@@ -2023,10 +2023,10 @@ export function useImageToSvgDecompose() {
 
   const run = useCallback(async () => {
     const canvas = globalFabricCanvas
-    if (!canvas) { toast.error('Canvas non disponible'); return }
+    if (!canvas) { toast.error(t('tst.svg.noCanvas')); return }
 
     setState((s) => ({ ...s, isRunning: true }))
-    const toastId = toast.loading('Décomposition…', { description: 'Google Vision API analyse l\'image' })
+    const toastId = toast.loading(t('tst.svg.decomposing'), { description: t('tst.svg.visionRunning') })
     const t0 = Date.now()
     const steps: string[] = []
 

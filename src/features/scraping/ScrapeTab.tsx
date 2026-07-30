@@ -108,11 +108,13 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
         if (cancelled) return
         setImportedUrls(result.urls)
         if (result.urls.length === 0) {
-          toast.warning(
-            `Aucune URL trouvée (${result.rowCount} lignes, colonne : "${result.detectedColumn ?? 'non détectée'}", méthode : ${result.method})`
-          )
+          toast.warning(t('tst.sc.noUrlFound', {
+            rows: result.rowCount,
+            column: result.detectedColumn ?? t('tst.sc.columnUndetected'),
+            method: result.method,
+          }))
         } else {
-          const colInfo = result.detectedColumn ? `colonne "${result.detectedColumn}"` : 'fallback texte'
+          const colInfo = result.detectedColumn ? t('tst.sc.columnInfo', { column: result.detectedColumn }) : t('tst.sc.textFallback')
           toast.success(t('tst.sc.urlsImported', { count: result.urls.length, rows: result.rowCount, cols: colInfo }))
         }
       } catch (e) {

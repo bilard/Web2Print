@@ -7,6 +7,7 @@ import { recordAudit } from '@/lib/auditLog'
 import { validateGraph } from './validateGraph'
 import { layoutGraph } from './layoutGraph'
 import type { ValidatedGraph } from './types'
+import { t } from '@/lib/i18n'
 
 type Phase = 'idle' | 'generating' | 'preview' | 'error'
 
@@ -65,7 +66,7 @@ export function usePromptToFlow(): UsePromptToFlow {
     const store = useWorkflowStore.getState()
     const cur = store.current
     if (cur && cur.nodes.length > 0) {
-      const ok = window.confirm('Le workflow courant sera remplacé par le graphe généré. Continuer ?')
+      const ok = window.confirm(t('cfm.wf.replaceGraph'))
       if (!ok) return false
     }
     store.setNodes(preview.nodes)
