@@ -89,8 +89,8 @@ export function StepSource() {
 
   if (mode === 'pim') return (
     <div className="flex flex-col gap-3">
-      <button onClick={() => setMode('choose')} className="text-sm text-white/50 hover:text-white text-left">← Retour</button>
-      <h2 className="text-lg font-semibold text-white">Catalogue PIM</h2>
+      <button onClick={() => setMode('choose')} className="text-sm text-white/50 hover:text-white text-left">{t('rp.retour2')}</button>
+      <h2 className="text-lg font-semibold text-white">{t('rp.cataloguePim')}</h2>
       {error && <p className="text-red-400 text-sm">{error}</p>}
       {(isLoading || loadingItems) && <Loader2 className="w-5 h-5 animate-spin text-white/50" />}
       {pimProjects.map((p) => (
@@ -101,10 +101,10 @@ export function StepSource() {
       ))}
       {!loadingItems && pimProjects.length === 0 && (
         <div className="text-sm text-white/50 space-y-2">
-          <p>Aucun projet PIM dans votre compte.</p>
-          <button onClick={() => setMode('manual')} className="text-[#6366f1] hover:underline">→ Utiliser la saisie manuelle</button>
+          <p>{t('rp.aucunProjetPimDans')}</p>
+          <button onClick={() => setMode('manual')} className="text-[#6366f1] hover:underline">{t('rp.utiliserLaSaisieManuelle')}</button>
           <span className="text-white/30"> · </span>
-          <button onClick={() => setMode('excel')} className="text-[#6366f1] hover:underline">→ Importer un Excel</button>
+          <button onClick={() => setMode('excel')} className="text-[#6366f1] hover:underline">{t('rp.importerUnExcel')}</button>
         </div>
       )}
     </div>
@@ -112,7 +112,7 @@ export function StepSource() {
 
   if (mode === 'excel') return (
     <div className="flex flex-col gap-3">
-      <button onClick={() => setMode('choose')} className="text-sm text-white/50 hover:text-white text-left">← Retour</button>
+      <button onClick={() => setMode('choose')} className="text-sm text-white/50 hover:text-white text-left">{t('rp.retour2')}</button>
       <h2 className="text-lg font-semibold text-white">{t('rp.source.excel')}</h2>
       {error && <p className="text-red-400 text-sm">{error}</p>}
       {(isLoading || loadingItems) && <Loader2 className="w-5 h-5 animate-spin text-white/50" />}
@@ -120,7 +120,7 @@ export function StepSource() {
         <button key={ds.docId} onClick={() => void handleSelectExcel(ds)}
           className="p-3 rounded-lg border border-white/10 bg-surface hover:bg-surface-2 text-left transition-colors">
           <p className="text-white text-sm font-medium">{ds.fileName}</p>
-          <p className="text-white/40 text-xs">{ds.totalRows} lignes</p>
+          <p className="text-white/40 text-xs">{ds.totalRows} {t('rp.lignes')}</p>
         </button>
       ))}
       {!loadingItems && datasets.length === 0 && <p className="text-white/40 text-sm">{t('rp.source.noDb')}</p>}
@@ -129,12 +129,12 @@ export function StepSource() {
 
   return (
     <div className="flex flex-col gap-4">
-      <button onClick={() => setMode('choose')} className="text-sm text-white/50 hover:text-white text-left">← Retour</button>
-      <h2 className="text-lg font-semibold text-white">Saisie manuelle</h2>
-      <input placeholder="Nom du produit *" value={manualProduct.name}
+      <button onClick={() => setMode('choose')} className="text-sm text-white/50 hover:text-white text-left">{t('rp.retour2')}</button>
+      <h2 className="text-lg font-semibold text-white">{t('rp.saisieManuelle')}</h2>
+      <input placeholder={t('rp.nomDuProduit')} value={manualProduct.name}
         onChange={(e) => setManualProduct((p) => ({ ...p, name: e.target.value }))}
         className="px-3 py-2 rounded-lg bg-well border border-white/10 text-white text-sm outline-none focus:border-[#6366f1]" />
-      <input placeholder="Prix promo (ex: 12,99)" value={manualProduct.newPrice}
+      <input placeholder={t('rp.prixPromoEx12')} value={manualProduct.newPrice}
         onChange={(e) => setManualProduct((p) => ({ ...p, newPrice: e.target.value }))}
         className="px-3 py-2 rounded-lg bg-well border border-white/10 text-white text-sm outline-none focus:border-[#6366f1]" />
       <input placeholder={t('rp.source.oldPricePlaceholder')} value={manualProduct.oldPrice}
@@ -142,7 +142,7 @@ export function StepSource() {
         className="px-3 py-2 rounded-lg bg-well border border-white/10 text-white text-sm outline-none focus:border-[#6366f1]" />
       <button onClick={handleManualConfirm} disabled={!manualProduct.name.trim()}
         className="mt-2 px-4 py-2 rounded-lg bg-[#6366f1] text-[#fff] font-medium text-sm disabled:opacity-40 transition-opacity">
-        Continuer
+        {t('rp.continuer')}
       </button>
     </div>
   )

@@ -33,14 +33,14 @@ export function PromoPropertiesPanel() {
       {!selectedKey ? (
         <div className="flex flex-col gap-3 px-4 py-3">
           <p className="text-xs leading-relaxed text-white/40">{t('rp.propertiesHint')}</p>
-          <Section title="Habillage global">
+          <Section title={t('rp.habillageGlobal')}>
             <div className="flex flex-col gap-3">
-              <ColorPicker label="Accent (badge / prix)" value={config.accent} onChange={(accent) => setConfig({ accent })} />
-              <ColorPicker label="Fond en-tête / pied" value={config.headerBg} onChange={(headerBg) => setConfig({ headerBg })} />
-              <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40">Police titres
+              <ColorPicker label={t('rp.accentBadgePrix')} value={config.accent} onChange={(accent) => setConfig({ accent })} />
+              <ColorPicker label={t('rp.fondEnTetePied')} value={config.headerBg} onChange={(headerBg) => setConfig({ headerBg })} />
+              <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40">{t('rp.policeTitres')}
                 <select value={config.fontHeading} onChange={(e) => setConfig({ fontHeading: e.target.value })} className={inputCls}><FontSelectOptions /></select>
               </label>
-              <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40">Police prix
+              <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40">{t('rp.policePrix')}
                 <select value={config.fontPrice} onChange={(e) => setConfig({ fontPrice: e.target.value })} className={inputCls}><FontSelectOptions /></select>
               </label>
               <UserFontsPanel />
@@ -52,10 +52,12 @@ export function PromoPropertiesPanel() {
           <div className="px-4 py-2.5 text-xs text-white/50">{t('rp.element')} <span className="font-semibold text-[#818cf8]">{KEY_LABELS[selectedKey] ?? selectedKey}</span></div>
           {isText && (
             <div className="flex border-b border-white/10 px-2 text-xs font-semibold uppercase tracking-wide">
-              {(['shape', 'text'] as const).map((t) => (
-                <button key={t} onClick={() => setTab(t)}
-                  className={`flex-1 border-b-2 px-2 py-2 ${tab === t ? 'border-[#6366f1] text-[#818cf8]' : 'border-transparent text-white/40 hover:text-white/70'}`}>
-                  {t === 'shape' ? 'Options de forme' : 'Options de texte'}
+              {/* ⚠️ `key` et non `t` : la variable de map MASQUERAIT la fonction de
+                  traduction du module, et `t('…')` deviendrait un appel sur une chaîne. */}
+              {(['shape', 'text'] as const).map((key) => (
+                <button key={key} onClick={() => setTab(key)}
+                  className={`flex-1 border-b-2 px-2 py-2 ${tab === key ? 'border-[#6366f1] text-[#818cf8]' : 'border-transparent text-white/40 hover:text-white/70'}`}>
+                  {key === 'shape' ? t('rp.optionsDeForme') : t('rp.optionsDeTexte')}
                 </button>
               ))}
             </div>

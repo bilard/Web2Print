@@ -9,6 +9,7 @@ import {
   PROMO_CSS, splitPrice, layoutTune, idealText,
   resolveElementStyle, resolveBlockBg, blockBoxCss,
 } from './promoStyles'
+import { t } from '@/lib/i18n'
 
 /** Blocs déco sélectionnables (fond uni/dégradé + resize par échelle). */
 const DECO_BLOCKS: PromoBlockId[] = ['header', 'image', 'badge', 'price', 'details']
@@ -82,7 +83,7 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
     const startEdit = (key: PromoColorKey, x?: number, y?: number) => { clickPos.current = (x != null && y != null) ? { x, y } : null; onSelect?.(key); setEditingKey(key) }
     const editProps = (key: PromoColorKey): React.HTMLAttributes<HTMLElement> => {
       if (!canEdit(key)) return {}
-      if (editingKey !== key) return { onDoubleClick: (e) => { e.stopPropagation(); startEdit(key, e.clientX, e.clientY) }, title: 'Double-cliquez pour éditer' }
+      if (editingKey !== key) return { onDoubleClick: (e) => { e.stopPropagation(); startEdit(key, e.clientX, e.clientY) }, title: t('rp.doubleCliquezPourEditer') }
       return {
         contentEditable: true, suppressContentEditableWarning: true,
         onDoubleClick: (e) => e.stopPropagation(),
@@ -151,7 +152,7 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
         <div className="rp-product" style={bg('image')}>
           {data.imageUrl
             ? <img ref={setEl('image')} src={data.imageUrl} crossOrigin="anonymous" alt={data.name} style={blk('image')} {...drag('image')} />
-            : <div className="rp-ph">PHOTO PRODUIT</div>}
+            : <div className="rp-ph">{t('rp.photoProduit')}</div>}
           {config.showBadge && data.remiseLabel && (
             <div ref={setEl('badge')} className="rp-badge" style={blk('badge', { color: aText, ...bg('badge') })} {...drag('badge')}>
               <span className="rp-pct">{data.remiseLabel}</span>

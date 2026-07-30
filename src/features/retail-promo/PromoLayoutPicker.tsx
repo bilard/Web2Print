@@ -8,7 +8,7 @@ export function PromoLayoutPicker() {
   const current = config.layout ?? 'classique'
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-white/5 pt-3">
-      <span className="text-xs font-semibold uppercase tracking-wide text-white/40">Mise en page</span>
+      <span className="text-xs font-semibold uppercase tracking-wide text-white/40">{t('rp.miseEnPage')}</span>
       <div className="flex flex-wrap gap-1.5">
         {PROMO_LAYOUTS.map((l) => (
           <button

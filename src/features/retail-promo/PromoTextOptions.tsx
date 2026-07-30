@@ -31,14 +31,14 @@ export function PromoTextOptions({ id }: { id: PromoColorKey }) {
   return (
     <>
       {PRICE_KEYS.includes(id) && (
-        <Section title="Format du prix">
+        <Section title={t('rp.formatDuPrix')}>
           <label className="flex items-center gap-2 text-sm text-white/70">
             <input type="checkbox" checked={!!st.euroSep} onChange={(e) => set({ euroSep: e.target.checked })} className="accent-[#6366f1]" />
-            € comme séparateur <span className="text-white/40">(327€78)</span>
+            {t('rp.commeSeparateur')} <span className="text-white/40">(327€78)</span>
           </label>
         </Section>
       )}
-      <Section title="Police">
+      <Section title={t('rp.police')}>
         <div className="grid grid-cols-2 gap-2.5">
           <label className="col-span-2 flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40">Famille
             <select value={st.fontFamily ?? ''} onChange={(e) => set({ fontFamily: e.target.value || undefined })} className={inputCls}>
@@ -46,7 +46,7 @@ export function PromoTextOptions({ id }: { id: PromoColorKey }) {
               <FontSelectOptions />
             </select>
           </label>
-          <NumField label="Taille" unit="px" value={st.fontSize} min={6} max={400} onChange={(v) => set({ fontSize: v })} />
+          <NumField label={t('rp.taille')} unit="px" value={st.fontSize} min={6} max={400} onChange={(v) => set({ fontSize: v })} />
           <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40">Graisse
             <select value={st.fontWeight ?? ''} onChange={(e) => set({ fontWeight: e.target.value ? Number(e.target.value) : undefined })} className={inputCls}>
               <option value="">Auto</option>
@@ -58,7 +58,7 @@ export function PromoTextOptions({ id }: { id: PromoColorKey }) {
               className={`flex items-center justify-center gap-1.5 rounded border border-white/10 px-3 py-1 text-sm ${st.fontStyle === 'italic' ? 'bg-[#6366f1] text-[#fff]' : 'bg-well text-white/70 hover:bg-white/10'}`}>
               <Italic className="h-3.5 w-3.5" /> Italique
             </button>
-            <div className="flex-1"><ColorPicker label="Couleur texte" value={st.fill ?? config.colors[id] ?? '#ffffff'} onChange={(c) => set({ fillType: 'solid', fill: c })} /></div>
+            <div className="flex-1"><ColorPicker label={t('rp.couleurTexte')} value={st.fill ?? config.colors[id] ?? '#ffffff'} onChange={(c) => set({ fillType: 'solid', fill: c })} /></div>
           </div>
         </div>
       </Section>

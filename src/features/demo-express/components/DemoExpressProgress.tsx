@@ -129,7 +129,7 @@ export function DemoExpressProgress() {
           className="mt-5 inline-flex items-center gap-2 rounded-lg border border-white/10 hover:bg-white/[0.04] disabled:opacity-40 px-3 py-2 text-xs text-white/70 transition-colors"
         >
           <Square className="w-3.5 h-3.5" aria-hidden="true" />
-          {abortRequested ? 'Arrêt en cours (fin de l’item)…' : 'Arrêter'}
+          {abortRequested ? t('de2.arretEnCoursFin') : t('de2.arreter')}
         </button>
       )}
     </div>

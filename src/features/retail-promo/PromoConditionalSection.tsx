@@ -52,7 +52,7 @@ export function PromoConditionalSection({ id }: { id: PromoBlockId }) {
               </div>
               {r.action.type === 'setColor' && <>
                 <ColorPicker value={r.action.color ?? '#e11d48'} onChange={(c) => patch(r.id, { action: { type: 'setColor', color: c } })} />
-                <p className="text-[10px] text-white/30">{isDeco ? 'Colore le fond de ce bloc.' : 'Colore le texte.'}</p>
+                <p className="text-[10px] text-white/30">{isDeco ? t('rp.coloreLeFondDe') : t('rp.coloreLeTexte')}</p>
               </>}
               {r.action.type === 'setOpacity' && (
                 <input type="number" min={0} max={100} value={Math.round((r.action.opacity ?? DEFAULT_RULE_OPACITY) * 100)}
@@ -67,7 +67,7 @@ export function PromoConditionalSection({ id }: { id: PromoBlockId }) {
         })}
         <button onClick={add} disabled={rawColumns.length === 0}
           className="flex items-center justify-center gap-1.5 rounded border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/70 hover:bg-white/10 disabled:opacity-40">
-          <Plus className="h-3.5 w-3.5" /> Ajouter une règle
+          <Plus className="h-3.5 w-3.5" /> {t('rp.ajouterUneRegle')}
         </button>
       </div>
     </Section>

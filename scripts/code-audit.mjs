@@ -171,6 +171,17 @@ metric('console.log hors debugLog', consoleLeaks, 'doit rester à 0 — passer p
 const todos = sh(`grep -rnE "(TODO|FIXME|HACK|XXX)[: ]" src functions/src --include="*.ts" --include="*.tsx"`).out
 metric('TODO / FIXME / HACK', todos.trim() ? todos.trim().split('\n').length : 0, '')
 
+// Textes français encore EN DUR dans le JSX : ils s'affichent tels quels dans
+// toutes les langues. C'est un indicateur et non une barrière — le remettre à
+// zéro suppose de recomposer des phrases coupées par du JSX, ce qui se fait
+// module par module. Le test `i18n.literals.test.ts` empêche en revanche le
+// chiffre d'AUGMENTER : toute nouvelle fonctionnalité doit être traduite.
+const litOut = sh('node scripts/i18n-scan-literals.mjs').out
+const litCount = Number(/^(\d+) littéraux/m.exec(litOut)?.[1] ?? -1)
+const litTop = litOut.split('\n').filter((l) => /^src\/.+\(\d+\)$/.test(l)).slice(0, 5).join('\n')
+metric('Littéraux FR en dur (JSX)', litCount < 0 ? 'illisible' : litCount,
+  litCount > 0 ? `${litTop}\n      détail : node scripts/i18n-scan-literals.mjs` : '')
+
 // Doublons COURTS, invisibles pour jscpd (seuil 30 lignes) : c'est là que
 // vivent les helpers recopiés, ceux qui divergent en silence.
 const dupSym = sh('node scripts/dup-symbols.mjs')

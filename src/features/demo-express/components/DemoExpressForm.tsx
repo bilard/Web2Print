@@ -46,14 +46,14 @@ export function DemoExpressForm({ onLaunch }: Props) {
       </div>
       <div>
         <label htmlFor="demo-url" className="block text-sm font-medium text-white/80 mb-1.5">
-          Site du prospect
+          {t('de2.siteDuProspect')}
         </label>
         <input
           id="demo-url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && launch()}
-          placeholder="https://www.site-du-prospect.fr"
+          placeholder={t('de2.httpsWwwSiteDu')}
           className="w-full rounded-lg bg-well border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-indigo-500"
         />
         <p className="mt-1.5 text-xs text-white/40">

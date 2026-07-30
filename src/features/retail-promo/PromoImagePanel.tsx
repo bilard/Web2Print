@@ -63,22 +63,22 @@ export function PromoImagePanel({ currentImage, onReplace, canApplyToSource, onA
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
         {tab === 'gallery' && (
           <>
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-white/40">Image produit</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-white/40">{t('rp.imageProduit')}</span>
             <div className="overflow-hidden rounded-lg border border-white/10 bg-well">
               {currentImage
-                ? <img src={currentImage} alt="produit" className="h-32 w-full object-contain" />
-                : <div className="flex h-32 items-center justify-center text-xs text-white/30">Aucune image</div>}
+                ? <img src={currentImage} alt={t('rp.produit')} className="h-32 w-full object-contain" />
+                : <div className="flex h-32 items-center justify-center text-xs text-white/30">{t('rp.aucuneImage')}</div>}
             </div>
             <button onClick={() => void onRemoveBg()} disabled={!currentImage || rbLoading}
               className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-sm font-medium text-white hover:bg-white/10 disabled:opacity-40">
-              {rbLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eraser className="h-4 w-4" />} Supprimer le fond
+              {rbLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eraser className="h-4 w-4" />} {t('rp.img.removeBg')}
             </button>
-            {rbError && <p className="text-[11px] leading-snug text-red-400">{rbError === 'Insufficient credits' ? 'Crédits Remove.bg épuisés (0 crédit). Rechargez votre compte Remove.bg.' : rbError}</p>}
+            {rbError && <p className="text-[11px] leading-snug text-red-400">{rbError === 'Insufficient credits' ? t('rp.creditsRemoveBgEpuises') : rbError}</p>}
             {canApplyToSource && onApplyToSource && (
               <button onClick={onApplyToSource}
                 className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-300 hover:bg-emerald-500/20"
-                title="Remplace l'image dans la cellule de la source : Catalogue studio et tous les canaux la verront">
-                <DatabaseZap className="h-4 w-4" /> Appliquer à la source
+                title={t('rp.remplaceLImageDans')}>
+                <DatabaseZap className="h-4 w-4" /> {t('rp.appliquerALaSource')}
               </button>
             )}
           </>
@@ -87,8 +87,8 @@ export function PromoImagePanel({ currentImage, onReplace, canApplyToSource, onA
         {tab === 'upload' && (
           <button onClick={() => fileRef.current?.click()}
             className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 bg-well px-3 py-6 text-sm text-white/60 hover:border-[#6366f1] hover:text-white">
-            <Upload className="h-5 w-5" /> Choisir un fichier
-            <span className="text-[11px] text-white/30">Remplace l'image de cette carte</span>
+            <Upload className="h-5 w-5" /> {t('rp.choisirUnFichier')}
+            <span className="text-[11px] text-white/30">{t('rp.remplaceLImageDe')}</span>
           </button>
         )}
 

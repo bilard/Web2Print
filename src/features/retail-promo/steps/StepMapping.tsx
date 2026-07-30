@@ -31,10 +31,11 @@ export function StepMapping() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-white">Correspondance des champs</h2>
+      <h2 className="text-lg font-semibold text-white">{t('rp.correspondanceDesChamps')}</h2>
       <p className="text-sm text-white/60">
-        Associez chaque champ promo à la colonne de votre source. Les champs{' '}
-        <span className="text-[#6366f1]">promo_*</span> {t('rp.map.autoComputed')}
+        {/* Phrase RECOMPOSÉE en une seule clé : coupée en trois fragments, elle
+            devenait agrammaticale dès que l'ordre des mots changeait. */}
+        {t('rp.map.lead')}
       </p>
 
       <div className="flex flex-col gap-2">
@@ -61,7 +62,7 @@ export function StepMapping() {
       </div>
 
       {rawColumns.length === 0 && (
-        <p className="text-amber-400/80 text-sm">Aucune colonne source disponible.</p>
+        <p className="text-amber-400/80 text-sm">{t('rp.aucuneColonneSourceDisponible')}</p>
       )}
 
       <div className="flex gap-3 mt-2">
@@ -69,14 +70,14 @@ export function StepMapping() {
           onClick={() => setStep('source')}
           className="px-4 py-2 rounded-lg border border-white/10 text-white/70 text-sm hover:text-white hover:border-white/30 transition-colors"
         >
-          Retour
+          {t('rp.retour')}
         </button>
         <button
           onClick={() => setStep('template')}
           disabled={rawColumns.length === 0}
           className="flex-1 px-4 py-2 rounded-lg bg-[#6366f1] text-[#fff] font-medium text-sm disabled:opacity-40 transition-opacity"
         >
-          Choisir le gabarit →
+          {t('rp.choisirLeGabarit')}
         </button>
       </div>
     </div>

@@ -146,7 +146,7 @@ export function StepRender() {
   }, [safe, srcRef])
 
   if (cards.length === 0) {
-    return <p className="text-white/60 text-sm">Aucun produit. <button className="text-[#6366f1]" onClick={() => setStep('mapping')}>← Retour</button></p>
+    return <p className="text-white/60 text-sm">{t('rp.aucunProduit')} <button className="text-[#6366f1]" onClick={() => setStep('mapping')}>{t('rp.retour2')}</button></p>
   }
 
   const shownImage = resolvedImg
@@ -263,24 +263,24 @@ export function StepRender() {
           className="w-56 rounded-lg border border-white/10 bg-well px-2.5 py-1.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#6366f1]" />
         <button onClick={() => void saveFiche()} disabled={savingFiche}
           className="flex shrink-0 items-center gap-2 rounded-lg bg-[#6366f1] px-3 py-1.5 text-sm font-medium text-[#fff] hover:bg-[#5457e5] disabled:opacity-40">
-          {savingFiche ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer la fiche
+          {savingFiche ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('rp.render.saveCard')}
         </button>
         {sourceRef?.fileName && <span className="truncate text-xs text-white/40" title={sourceRef.fileName}>📄 {sourceRef.fileName}</span>}
         {hasRealSource && (
           <button
             onClick={() => toast.promise(refreshFromSource(), { loading: t('tst.rp.refreshing'), success: t('tst.rp.refreshed'), error: (e) => (e instanceof Error ? e.message : t('tst.rp.refreshFailed')) })}
-            className="shrink-0 p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10" title="Actualiser depuis la source (textes, prix, images)">
+            className="shrink-0 p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10" title={t('rp.actualiserDepuisLaSource')}>
             <RefreshCw className="h-4 w-4" />
           </button>
         )}
-        <span className="shrink-0 text-xs text-white/30">{cards.length} produit{cards.length > 1 ? 's' : ''}</span>
+        <span className="shrink-0 text-xs text-white/30">{cards.length} {t('rp.produit')}{cards.length > 1 ? 's' : ''}</span>
         <button onClick={() => setStep('mapping')} className="ml-auto shrink-0 text-sm text-white/50 hover:text-white">← Mappage</button>
       </div>
 
       {/* Gabarit, IA & modèles — replié par défaut pour laisser la place à la carte */}
       <details className="group rounded-xl border border-white/10 bg-surface">
         <summary className="flex cursor-pointer select-none items-center gap-2 px-4 py-2 text-sm text-white/70 hover:text-white [&::-webkit-details-marker]:hidden">
-          <Sparkles className="h-4 w-4 text-[#6366f1]" /> Gabarit, IA & modèles
+          <Sparkles className="h-4 w-4 text-[#6366f1]" /> {t('rp.gabaritIaModeles')}
           <span className="text-xs text-white/30">{t('rp.render.styleHint')}</span>
           <ChevronDown className="ml-auto h-4 w-4 transition-transform group-open:rotate-180" />
         </summary>
@@ -344,12 +344,12 @@ export function StepRender() {
         </button>
         <button onClick={() => void downloadHtml()} disabled={!!busy}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white/[0.06] hover:bg-white/10 border border-white/10 text-white text-sm font-medium disabled:opacity-40">
-          {busy === 'html' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCode className="w-4 h-4" />} HTML éditable
+          {busy === 'html' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCode className="w-4 h-4" />} {t('rp.render.editableHtml')}
         </button>
         {cards.length > 1 && (
           <button onClick={() => void downloadAll()} disabled={!!busy}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#6366f1] hover:bg-[#5457e5] text-[#fff] text-sm font-medium disabled:opacity-40">
-            {busy === 'all' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />} Tout exporter ({cards.length} PNG)
+            {busy === 'all' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />} {t('rp.render.exportAll', { count: cards.length })}
           </button>
         )}
       </div>

@@ -27,7 +27,7 @@ export function DemoExpressResult() {
   const cards: Card[] = [
     {
       icon: FileSpreadsheet, accent: 'text-emerald-400',
-      title: 'PIM — données produits',
+      title: t('de2.pimDonneesProduits'),
       desc: `${links.productCount ?? 0} produits enrichis avec taxonomie, dans « ${links.sheetName ?? '—'} ».`,
       action: () => openSection('data'), enabled: !!links.sheetDocId,
     },
@@ -39,26 +39,26 @@ export function DemoExpressResult() {
     },
     {
       icon: BookText, accent: 'text-cyan-400',
-      title: 'Catalogue studio',
-      desc: 'Catalogue monté avec la charte du site et une couverture générée.',
+      title: t('de2.catalogueStudio'),
+      desc: t('de2.catalogueMonteAvecLa'),
       action: () => links.catalogId && navigate(`/catalog/${links.catalogId}`), enabled: !!links.catalogId,
     },
     {
       icon: Tag, accent: 'text-rose-400',
-      title: 'Fiche promo',
-      desc: 'Carte promo data-driven aux couleurs du prospect.',
+      title: t('de2.fichePromo'),
+      desc: t('de2.cartePromoDataDriven'),
       action: () => openSection('retail-promo', 'retail-promo:action:list'), enabled: !!links.promoId,
     },
     {
       icon: Clapperboard, accent: 'text-violet-400',
-      title: 'Animations HTML',
+      title: t('de2.animationsHtml'),
       desc: `${links.animCount ?? 0} fiche(s) produit animée(s) dans le DAM, prêtes à télécharger.`,
       action: () => openSection('images', 'images:tab:videos'), enabled: (links.animCount ?? 0) > 0,
     },
     {
       icon: Workflow, accent: 'text-indigo-400',
       title: `Workflow « Démo ${company} »`,
-      desc: 'Un workflow prêt à rejouer le scraping et l’export Excel.',
+      desc: t('de2.unWorkflowPretA'),
       action: () => links.workflowId && navigate(`/workflows/${links.workflowId}`), enabled: !!links.workflowId,
     },
   ]

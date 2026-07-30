@@ -63,8 +63,8 @@ export function PromoShapeOptions({ id }: { id: PromoBlockId }) {
             options={[{ v: 'off', node: 'Aucun' }, { v: 'on', node: 'Contour' }]} />
           {sh.stroke && (
             <>
-              <NumField label="Épaisseur" unit="px" value={sh.stroke.width} min={0} max={40} onChange={(w) => setShape(id, { stroke: { ...sh.stroke!, width: w ?? 0 } })} />
-              <ColorPicker label="Couleur" value={sh.stroke.color} onChange={(c) => setShape(id, { stroke: { ...sh.stroke!, color: c } })} />
+              <NumField label={t('rp.epaisseur')} unit="px" value={sh.stroke.width} min={0} max={40} onChange={(w) => setShape(id, { stroke: { ...sh.stroke!, width: w ?? 0 } })} />
+              <ColorPicker label={t('rp.couleur')} value={sh.stroke.color} onChange={(c) => setShape(id, { stroke: { ...sh.stroke!, color: c } })} />
             </>
           )}
         </div>
@@ -72,7 +72,7 @@ export function PromoShapeOptions({ id }: { id: PromoBlockId }) {
 
       <Section title={t('rp.opacityBlend')} defaultOpen={false}>
         <div className="flex flex-col gap-2.5">
-          <SliderField label="Opacité" value={sh.opacity ?? 1} onChange={(o) => setShape(id, { opacity: o })} />
+          <SliderField label={t('rp.opacite')} value={sh.opacity ?? 1} onChange={(o) => setShape(id, { opacity: o })} />
           <SelectField label={t('rp.blendMode')} value={sh.blendMode ?? 'normal'} options={BLEND_MODES.map((b) => ({ v: b.v, label: t(b.labelKey) }))} onChange={(m) => setShape(id, { blendMode: m })} />
           {sh.blendMode && sh.blendMode !== 'normal' && (
             <p className="text-[11px] leading-snug text-amber-400/80">{t('rp.blendModeWarn')}</p>
@@ -91,13 +91,13 @@ export function PromoShapeOptions({ id }: { id: PromoBlockId }) {
                 <NumField label="Y" value={sh.shadow.y} onChange={(y) => setShape(id, { shadow: { ...sh.shadow!, y: y ?? 0 } })} />
                 <NumField label="Flou" value={sh.shadow.blur} min={0} onChange={(b) => setShape(id, { shadow: { ...sh.shadow!, blur: b ?? 0 } })} />
               </div>
-              <ColorPicker label="Couleur" value={sh.shadow.color} onChange={(c) => setShape(id, { shadow: { ...sh.shadow!, color: c } })} />
+              <ColorPicker label={t('rp.couleur')} value={sh.shadow.color} onChange={(c) => setShape(id, { shadow: { ...sh.shadow!, color: c } })} />
             </>
           )}
         </div>
       </Section>
 
-      <Section title="Taille & Position" defaultOpen={false}>
+      <Section title={t('rp.taillePosition')} defaultOpen={false}>
         <div className="flex flex-col gap-2.5">
           <div className="grid grid-cols-2 gap-2">
             <NumField label="X" unit="px" value={config.offsets[id]?.dx} placeholder="0" onChange={(v) => useRetailPromoStore.getState().setConfig({ offsets: { ...config.offsets, [id]: { dx: v ?? 0, dy: config.offsets[id]?.dy ?? 0 } } })} />
@@ -118,10 +118,10 @@ export function PromoShapeOptions({ id }: { id: PromoBlockId }) {
       <Section title="Arranger" defaultOpen={false}>
         <SegButtons value={undefined} onChange={arrange}
           options={[
-            { v: 'front', node: <ChevronsUp className="h-4 w-4" />, title: 'Premier plan' },
+            { v: 'front', node: <ChevronsUp className="h-4 w-4" />, title: t('rp.premierPlan') },
             { v: 'fwd', node: <ArrowUp className="h-4 w-4" />, title: 'Avancer' },
             { v: 'bwd', node: <ArrowDown className="h-4 w-4" />, title: 'Reculer' },
-            { v: 'back', node: <ChevronsDown className="h-4 w-4" />, title: 'Arrière-plan' },
+            { v: 'back', node: <ChevronsDown className="h-4 w-4" />, title: t('rp.arrierePlan') },
           ]} />
       </Section>
     </>

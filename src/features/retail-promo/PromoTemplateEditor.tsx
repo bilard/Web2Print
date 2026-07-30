@@ -97,7 +97,7 @@ export function PromoTemplateEditor() {
         />
         <button onClick={() => void generate()} disabled={busy || !brief.trim()}
           className="flex shrink-0 items-center gap-2 rounded-lg bg-[#6366f1] px-3 py-2 text-sm font-medium text-[#fff] hover:bg-[#5457e5] disabled:opacity-40">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Générer (IA)
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {t('rp.tpl.generateAi')}
         </button>
       </div>
 
@@ -126,7 +126,7 @@ export function PromoTemplateEditor() {
         />
         <button onClick={() => void saveTemplate()} disabled={savingTpl || !tplName.trim()}
           className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 disabled:opacity-40">
-          {savingTpl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer
+          {savingTpl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('rp.enregistrer')}
         </button>
         {templates.length > 0 && (
           <>

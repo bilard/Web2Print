@@ -41,9 +41,9 @@ export function PromoSavedList({ onOpened, onNew }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Mes promos</h2>
+        <h2 className="text-lg font-semibold text-white">{t('rp.mesPromos')}</h2>
         <button onClick={onNew} className="flex items-center gap-2 rounded-lg bg-[#6366f1] px-3 py-2 text-sm font-medium text-[#fff] hover:bg-[#5457e5]">
-          <Plus className="h-4 w-4" /> Nouvelle fiche
+          <Plus className="h-4 w-4" /> {t('rp.nouvelleFiche')}
         </button>
       </div>
 
@@ -65,13 +65,13 @@ export function PromoSavedList({ onOpened, onNew }: Props) {
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium text-white">{p.name}</div>
                     <div className="truncate text-[11px] text-white/30" title={p.sourceRef?.fileName}>{p.sourceRef?.fileName ?? 'Saisie manuelle'}</div>
-                    <div className="text-xs text-white/40">{p.rowCount} produit{p.rowCount > 1 ? 's' : ''}{p.updatedAt ? ` · ${fmtDate(p.updatedAt)}` : ''}</div>
+                    <div className="text-xs text-white/40">{p.rowCount} {t('rp.produit')}{p.rowCount > 1 ? 's' : ''}{p.updatedAt ? ` · ${fmtDate(p.updatedAt)}` : ''}</div>
                   </div>
-                  <button onClick={() => void remove(p.id)} title="Supprimer" className="text-white/30 hover:text-red-400"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => void remove(p.id)} title={t('rp.supprimer')} className="text-white/30 hover:text-red-400"><Trash2 className="h-4 w-4" /></button>
                 </div>
                 <button onClick={() => void open(p)} disabled={opening === p.id}
                   className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-1.5 text-sm text-white hover:bg-white/10 disabled:opacity-40">
-                  {opening === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Ouvrir
+                  {opening === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {t('rp.ouvrir')}
                 </button>
               </div>
             </div>
