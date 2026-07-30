@@ -1,6 +1,7 @@
 import type { FieldStat } from './insightsAggregate'
 import type { CompareStatus } from '../types'
 import { STATUS_ORDER, STATUS_UI } from './insightsStatus'
+import { t } from '@/lib/i18n'
 
 interface Props {
   fields: FieldStat[]
@@ -38,11 +39,11 @@ export function InsightsFieldTable({ fields }: Props) {
             <tr className="text-left text-xs text-white/45 border-b border-white/10">
               <th className="px-4 py-2.5 font-medium">Champ</th>
               <th className="px-3 py-2.5 font-medium">Groupe</th>
-              <th className="px-3 py-2.5 font-medium">Répartition</th>
+              <th className="px-3 py-2.5 font-medium">{t('mv.insights.distribution')}</th>
               <th className="px-3 py-2.5 font-medium text-center">Diverg.</th>
               <th className="px-3 py-2.5 font-medium text-center">Apport</th>
-              <th className="px-3 py-2.5 font-medium text-center">Taux d'écart</th>
-              <th className="px-3 py-2.5 font-medium text-center">Adoptés</th>
+              <th className="px-3 py-2.5 font-medium text-center">{t('mv.insights.divergenceRate')}</th>
+              <th className="px-3 py-2.5 font-medium text-center">{t('mv.insights.adopted')}</th>
             </tr>
           </thead>
           <tbody>

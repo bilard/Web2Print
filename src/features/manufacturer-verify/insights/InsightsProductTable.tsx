@@ -1,5 +1,6 @@
 import { BadgeCheck, ShieldAlert, Minus, ExternalLink } from 'lucide-react'
 import type { ProductStat } from './insightsAggregate'
+import { t } from '@/lib/i18n'
 
 interface Props {
   products: ProductStat[]
@@ -12,8 +13,8 @@ const CONF_CLS: Record<'high' | 'medium' | 'low', string> = {
 }
 
 function EanBadge({ match }: { match: boolean | null }) {
-  if (match === true) return <span className="inline-flex items-center gap-1 text-emerald-400"><BadgeCheck className="w-3.5 h-3.5" />certifié</span>
-  if (match === false) return <span className="inline-flex items-center gap-1 text-amber-400"><ShieldAlert className="w-3.5 h-3.5" />différent</span>
+  if (match === true) return <span className="inline-flex items-center gap-1 text-emerald-400"><BadgeCheck className="w-3.5 h-3.5" />{t('mv.ean.certified')}</span>
+  if (match === false) return <span className="inline-flex items-center gap-1 text-amber-400"><ShieldAlert className="w-3.5 h-3.5" />{t('mv.ean.different')}</span>
   return <span className="inline-flex items-center gap-1 text-white/35"><Minus className="w-3.5 h-3.5" />n/a</span>
 }
 
@@ -34,8 +35,8 @@ export function InsightsProductTable({ products, onOpenProduct }: Props) {
               <th className="px-3 py-2.5 font-medium text-center">Concord.</th>
               <th className="px-3 py-2.5 font-medium text-center">Diverg.</th>
               <th className="px-3 py-2.5 font-medium text-center">Apport</th>
-              <th className="px-3 py-2.5 font-medium text-center">Identité ≠</th>
-              <th className="px-3 py-2.5 font-medium text-center">Adoptés</th>
+              <th className="px-3 py-2.5 font-medium text-center">{t('mv.insights.identityDiff')}</th>
+              <th className="px-3 py-2.5 font-medium text-center">{t('mv.insights.adopted')}</th>
               <th className="px-3 py-2.5 font-medium">Confiance</th>
               <th className="px-2 py-2.5" />
             </tr>

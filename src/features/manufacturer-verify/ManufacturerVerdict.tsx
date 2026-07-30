@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect } from 'react'
 import { Globe, Factory, Check, AlertTriangle, Plus, BadgeCheck, ShieldAlert, ExternalLink } from 'lucide-react'
 import type { CompareStatus, FieldComparison, VerdictSummary } from './types'
+import { t } from '@/lib/i18n'
 
 interface Props {
   sourceUrl: string | null
@@ -23,7 +24,7 @@ const hostOf = (url: string | null): string => {
 
 const STATUS_META: Record<CompareStatus, { sym: string; label: string; cls: string }> = {
   match:         { sym: '=', label: 'identique',  cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-  diff:          { sym: '≠', label: 'diffère',    cls: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+  diff:          { sym: '≠', label: t('mv.verdict.diff'),    cls: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
   'mfr-only':    { sym: '+', label: 'fabricant',  cls: 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' },
   'source-only': { sym: '·', label: 'source',     cls: 'text-white/40 bg-white/[0.04] border-white/10' },
 }
@@ -138,12 +139,12 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
       {/* Badge de certitude EAN/GTIN */}
       {eanMatch === true && (
         <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 px-3.5 py-2 text-[12px] text-emerald-300">
-          <BadgeCheck className="w-4 h-4 shrink-0" /> <strong>Même produit certifié</strong> — l'EAN/GTIN de la source correspond à celui du fabricant.
+          <BadgeCheck className="w-4 h-4 shrink-0" /> <strong>{t('mv.sameProduct')}</strong> — l'EAN/GTIN de la source correspond à celui du fabricant.
         </div>
       )}
       {eanMatch === false && (
         <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/25 px-3.5 py-2 text-[12px] text-rose-300">
-          <ShieldAlert className="w-4 h-4 shrink-0" /> <strong>EAN différents</strong> — la page fabricant ne correspond peut-être pas exactement au produit source.
+          <ShieldAlert className="w-4 h-4 shrink-0" /> <strong>{t('mv.eanDiffer')}</strong> — la page fabricant ne correspond peut-être pas exactement au produit source.
         </div>
       )}
 
@@ -225,7 +226,7 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
       {/* Tableau comparatif groupé — entête de colonnes ÉPINGLÉE sous les compteurs */}
       <div className="rounded-xl border border-white/[0.06] overflow-visible">
         <div style={{ top: countersH - 1 }} className="sticky z-10 grid grid-cols-[1fr_1fr_1fr_auto] gap-2 px-4 py-2.5 bg-black border-b border-white/[0.1] text-[10px] font-semibold uppercase tracking-wider text-white/55">
-          <span>Champ</span><span>Source</span><span>Fabricant</span><span className="text-right">État</span>
+          <span>{t('mv.col.field')}</span><span>{t('mv.col.source')}</span><span>{t('mv.col.manufacturer')}</span><span className="text-right">{t('mv.col.state')}</span>
         </div>
         {groups.map((g) => {
           // Un filtre actif ne montre QUE les specs de ce statut (ce que comptent

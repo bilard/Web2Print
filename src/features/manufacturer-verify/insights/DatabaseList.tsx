@@ -4,6 +4,7 @@ import { useExcelStore } from '@/stores/excel.store'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { aggregateInsights } from './insightsAggregate'
 import { fetchSheetsQuiet } from './fetchSheetsQuiet'
+import { t } from '@/lib/i18n'
 
 interface DbFile { fileName: string; docId: string; totalRows: number; path: string[]; updatedAt: Date | null }
 
@@ -80,7 +81,7 @@ export function DatabaseList() {
     <div className="w-60 shrink-0 bg-surface-2 border-r border-white/[0.06] flex flex-col overflow-hidden">
       <div className="px-3 py-3 flex items-center gap-2 border-b border-white/[0.06] shrink-0">
         <Database className="w-4 h-4 text-indigo-300" />
-        <span className="text-sm font-semibold">Bases de données</span>
+        <span className="text-sm font-semibold">{t('mv.databases')}</span>
       </div>
       <div className="p-2 border-b border-white/[0.06] shrink-0">
         <div className="relative">
@@ -104,7 +105,7 @@ export function DatabaseList() {
       </div>
       <div className="flex-1 p-1.5 overflow-y-auto flex flex-col gap-1">
         {files.length === 0 ? (
-          <div className="px-3 py-4 text-sm text-white/40">Aucune base enregistrée</div>
+          <div className="px-3 py-4 text-sm text-white/40">{t('mv.noDatabase')}</div>
         ) : visible.length === 0 ? (
           <div className="px-3 py-4 text-sm text-white/40">Aucun résultat pour « {query} »</div>
         ) : (

@@ -3,6 +3,7 @@ import { Chart, ArcElement, Tooltip, Legend } from 'chart.js'
 import { useThemeStore } from '@/stores/theme.store'
 import type { StatusCounts } from './insightsAggregate'
 import { STATUS_ORDER, STATUS_UI } from './insightsStatus'
+import { t } from '@/lib/i18n'
 
 Chart.register(ArcElement, Tooltip, Legend)
 
@@ -50,7 +51,7 @@ export function InsightsStatusDonut({ title, counts }: Props) {
         <Doughnut data={data} options={options} />
         <div className="absolute inset-0 top-[-2rem] flex flex-col items-center justify-center pointer-events-none">
           <div className="text-3xl font-bold tabular-nums">{total}</div>
-          <div className="text-xs text-white/45">champs comparés</div>
+          <div className="text-xs text-white/45">{t('mv.insights.fieldsCompared')}</div>
         </div>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { useManufacturerVerify } from './useManufacturerVerify'
 import { VerdictDonePane } from './VerdictDonePane'
 import { VerifyActivityLog } from './VerifyActivityLog'
 import type { ManufacturerCandidate } from './types'
+import { t } from '@/lib/i18n'
 
 interface Props {
   rowId: string
@@ -16,7 +17,7 @@ interface Props {
 
 const CONF_META: Record<ManufacturerCandidate['confidence'], { label: string; cls: string }> = {
   high:   { label: 'Correspondance forte', cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-  medium: { label: 'À vérifier',           cls: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+  medium: { label: t('mv.risk.medium'),           cls: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
   low:    { label: 'Incertain',            cls: 'text-white/40 bg-white/[0.04] border-white/10' },
 }
 
@@ -49,7 +50,7 @@ export function ManufacturerVerifyPanel({ rowId, source, sourceLabel, onClose }:
             <Factory className="w-4 h-4 text-indigo-300" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-semibold text-white">Vérifier la data chez le Fabricant</div>
+            <div className="text-[13px] font-semibold text-white">{t('mv.panel.title')}</div>
             <div className="text-[11px] text-white/40 truncate">{sourceLabel}</div>
           </div>
           <CloseButton onClick={onClose} size="sm" />
@@ -82,7 +83,7 @@ export function ManufacturerVerifyPanel({ rowId, source, sourceLabel, onClose }:
               <div className="flex items-start gap-2 rounded-lg bg-indigo-500/[0.06] border border-indigo-500/20 px-3.5 py-2.5">
                 <ShieldCheck className="w-4 h-4 text-indigo-300 shrink-0 mt-0.5" />
                 <p className="text-[12px] text-indigo-200/80">
-                  Confirmez la <strong>bonne page produit</strong> du fabricant avant la comparaison. La référence recherchée est indiquée pour vérification.
+                  {t('mv.panel.confirmPage')}
                 </p>
               </div>
               {candidates.map((c) => {

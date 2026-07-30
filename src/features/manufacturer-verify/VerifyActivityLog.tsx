@@ -4,6 +4,7 @@ import {
   CheckCircle2, AlertTriangle, Save, ChevronRight,
 } from 'lucide-react'
 import type { VerifyLogEntry, VerifyLogKind } from './types'
+import { t } from '@/lib/i18n'
 
 /** Icône + couleur de texte par nature de log (le journal devient lisible d'un
  *  coup d'œil : recherche, extraction, chiffres, verdict, succès, alerte). */
@@ -44,7 +45,7 @@ export function VerifyActivityLog({ logs }: { logs: VerifyLogEntry[] }) {
   if (logs.length === 0) return null
   return (
     <div className="shrink-0 border-t border-white/[0.06] bg-black/50">
-      <div className="px-4 pt-1.5 text-[9px] font-semibold uppercase tracking-wider text-white/30">Activité</div>
+      <div className="px-4 pt-1.5 text-[9px] font-semibold uppercase tracking-wider text-white/30">{t('mv.activity')}</div>
       <div ref={ref} className="max-h-28 overflow-y-auto px-4 pb-2 pt-1 flex flex-col gap-0.5 font-mono text-[10.5px] leading-relaxed">
         {logs.map((l, i) => {
           const { icon: Icon, cls } = KIND_UI[l.kind]

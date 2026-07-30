@@ -1,5 +1,6 @@
 import { Package, AlertTriangle, PlusCircle, BadgeCheck, CheckCircle2 } from 'lucide-react'
 import type { InsightsData } from './insightsAggregate'
+import { t } from '@/lib/i18n'
 
 interface Props {
   data: InsightsData
@@ -13,7 +14,7 @@ export function InsightsKpiCards({ data }: Props) {
   const totalFields = data.matchFields + data.divergentFields + data.completedFields
   const cards = [
     { icon: Package, tint: 'text-sky-400', bg: 'bg-sky-500/10',
-      value: String(data.verifiedCount), label: 'Produits vérifiés',
+      value: String(data.verifiedCount), label: t('mv.insights.verifiedProducts'),
       sub: `${data.eanMatched} au même EAN certifié` },
     { icon: AlertTriangle, tint: 'text-amber-400', bg: 'bg-amber-500/10',
       value: String(data.divergentFields), label: 'Champs divergents',
@@ -25,7 +26,7 @@ export function InsightsKpiCards({ data }: Props) {
       value: pct(data.matchFields, totalFields), label: 'Taux de concordance',
       sub: `${data.matchFields} champs identiques` },
     { icon: BadgeCheck, tint: 'text-teal-400', bg: 'bg-teal-500/10',
-      value: String(data.adoptedTotal), label: 'Écarts résolus (adoptés)',
+      value: String(data.adoptedTotal), label: t('mv.insights.resolvedGaps'),
       sub: `valeurs fabricant promues` },
   ]
   return (

@@ -1,5 +1,6 @@
 import { Factory, Maximize2, BadgeCheck, ShieldAlert } from 'lucide-react'
 import type { VerdictSummary } from './types'
+import { t } from '@/lib/i18n'
 
 interface Props {
   summary: VerdictSummary
@@ -43,9 +44,9 @@ export function ManufacturerComparisonInline({ summary, mfrHost, eanMatch, onOpe
 
       {/* Compteurs (compacts pour la colonne étroite) */}
       <div className="flex gap-1.5 mb-3">
-        <Stat n={summary.confirmed} sym="=" title="Confirmés (identiques)" cls="border-emerald-500/25 bg-emerald-500/10 text-emerald-300" />
+        <Stat n={summary.confirmed} sym="=" title={t('mv.stat.confirmed')} cls="border-emerald-500/25 bg-emerald-500/10 text-emerald-300" />
         <Stat n={summary.divergent} sym="≠" title="Divergents" cls="border-amber-500/25 bg-amber-500/10 text-amber-300" />
-        <Stat n={summary.completed} sym="+" title="Complétés par le fabricant" cls="border-indigo-500/25 bg-indigo-500/10 text-indigo-300" />
+        <Stat n={summary.completed} sym="+" title={t('mv.stat.completed')} cls="border-indigo-500/25 bg-indigo-500/10 text-indigo-300" />
       </div>
 
       {/* CTA principal */}

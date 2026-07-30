@@ -6,6 +6,7 @@ import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { sheetRowToEnrichedProduct } from './compareProducts'
 import { verifyRowAuto } from './runVerify'
 import { useSaveManufacturerData } from './useSaveManufacturerData'
+import { t } from '@/lib/i18n'
 
 interface Props { onClose: () => void }
 
@@ -79,7 +80,7 @@ export function ManufacturerBatchModal({ onClose }: Props) {
             <Factory className="w-4 h-4 text-indigo-300" />
           </div>
           <div className="flex-1">
-            <div className="text-[13px] font-semibold text-white">Vérifier chez le Fabricant — lot</div>
+            <div className="text-[13px] font-semibold text-white">{t('mv.batch.title')}</div>
             <div className="text-[11px] text-white/40">{eligible.length} produit(s) scrapé(s) · {selected.size} sélectionné(s)</div>
           </div>
           <CloseButton onClick={onClose} size="sm" />
@@ -87,7 +88,7 @@ export function ManufacturerBatchModal({ onClose }: Props) {
 
         <div className="flex-1 overflow-y-auto p-4">
           {eligible.length === 0 ? (
-            <p className="text-[13px] text-white/50 text-center py-12">Aucun produit scrapé dans cette feuille.</p>
+            <p className="text-[13px] text-white/50 text-center py-12">{t('mv.batch.noScraped')}</p>
           ) : (
             <div className="flex flex-col gap-1">
               {eligible.map((e) => {

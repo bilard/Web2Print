@@ -10,6 +10,7 @@ import { InsightsStatusDonut } from './InsightsStatusDonut'
 import { InsightsDivergentBars } from './InsightsDivergentBars'
 import { InsightsFieldTable } from './InsightsFieldTable'
 import { InsightsProductTable } from './InsightsProductTable'
+import { t } from '@/lib/i18n'
 
 type Tab = 'overview' | 'fields' | 'products'
 
@@ -53,8 +54,8 @@ export function ManufacturerInsightsScreen() {
             <Factory className="w-5 h-5 text-indigo-300" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl font-bold">Écarts fabricant</h1>
-            <p className="text-sm text-white/50">Différences de données Source&nbsp;⇄&nbsp;Fabricant</p>
+            <h1 className="text-xl font-bold">{t('mv.insights.title')}</h1>
+            <p className="text-sm text-white/50">{t('mv.insights.subtitle')}</p>
           </div>
         </header>
 
@@ -63,7 +64,7 @@ export function ManufacturerInsightsScreen() {
             <div className="w-14 h-14 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">
               <ScanSearch className="w-7 h-7 text-white/40" />
             </div>
-            <h2 className="text-lg font-semibold mb-1">Aucun produit vérifié pour cette base</h2>
+            <h2 className="text-lg font-semibold mb-1">{t('mv.insights.noVerified')}</h2>
             <p className="text-sm text-white/50 max-w-md mb-5">
               Choisissez une base à gauche (celles avec un badge&nbsp;<span className="text-indigo-300">🏭</span>&nbsp;
               contiennent de la data fabricant), ou lancez « Vérifier chez le Fabricant » sur des fiches du PIM.
@@ -98,7 +99,7 @@ export function ManufacturerInsightsScreen() {
               <div className="space-y-4">
                 <InsightsKpiCards data={data} />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                  <InsightsStatusDonut title="Répartition globale des champs" counts={data.statusTotals} />
+                  <InsightsStatusDonut title={t('mv.insights.globalDistribution')} counts={data.statusTotals} />
                   <InsightsDivergentBars fields={data.fields} />
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from '
 import { useThemeStore } from '@/stores/theme.store'
 import type { FieldStat } from './insightsAggregate'
 import { STATUS_UI } from './insightsStatus'
+import { t } from '@/lib/i18n'
 
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 
@@ -42,7 +43,7 @@ export function InsightsDivergentBars({ fields }: Props) {
   }
   return (
     <div className="bg-surface border border-white/10 rounded-xl p-4">
-      <h3 className="text-sm font-semibold text-white/80 mb-3">Champs les plus en écart</h3>
+      <h3 className="text-sm font-semibold text-white/80 mb-3">{t('mv.insights.topDivergent')}</h3>
       {top.length === 0 ? (
         <div className="h-64 flex items-center justify-center text-sm text-white/40">
           Aucun écart détecté sur les produits vérifiés.
