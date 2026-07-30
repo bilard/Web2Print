@@ -64,7 +64,23 @@ const walk = (d) =>
     e.isDirectory() ? walk(join(d, e.name)) : /\.tsx$/.test(e.name) ? [join(d, e.name)] : [])
 
 const keys = new Map() // clé → texte FR
+
+/**
+ * Clés DÉJÀ présentes dans `fr.ts`, indexées par leur texte : un libellé qui
+ * existe se réutilise au lieu d'être dupliqué. Sans ça, l'extraction crée des
+ * jumeaux (`tax.classerCeProduitDans` à côté de `xl.classifyProduct`) — que le
+ * garde-fou `i18n.test.ts` refuse, à raison : deux clés au même texte finissent
+ * par diverger et l'écran devient incohérent.
+ */
+const existingByText = new Map()
+for (const m of readFileSync(join(ROOT, 'src/lib/i18n/fr.ts'), 'utf8')
+  .matchAll(/^  '([^']+)':\s*(?:'((?:\\.|[^'])*)'|"((?:\\.|[^"])*)")/gm)) {
+  const text = (m[2] ?? m[3] ?? '').replace(/\\'/g, "'").replace(/\\"/g, '"')
+  if (text && !existingByText.has(text)) existingByText.set(text, m[1])
+}
+
 const fragments = []
+let reused = 0
 let rewritten = 0
 
 for (const file of walk(join(ROOT, target))) {
@@ -74,12 +90,23 @@ for (const file of walk(join(ROOT, target))) {
   /** @type {{start:number,end:number,replacement:string}[]} */
   const edits = []
 
+  // Clés du fichier COURANT : publiées dans `keys` seulement si le fichier est
+  // effectivement réécrit. Sinon un fichier ignoré (t local, aucun littéral)
+  // laisserait des clés orphelines dans `fr.ts`.
+  const localKeys = new Map()
   const keyFor = (text) => {
+    const already = existingByText.get(text)
+    if (already) {
+      reused += 1
+      return already
+    }
     const base = `${prefix}.${slug(text)}`
     let key = base
     let n = 2
-    while (keys.has(key) && keys.get(key) !== text) key = `${base}${n++}`
-    keys.set(key, text)
+    while ((keys.has(key) && keys.get(key) !== text) || (localKeys.has(key) && localKeys.get(key) !== text)) {
+      key = `${base}${n++}`
+    }
+    localKeys.set(key, text)
     return key
   }
 
@@ -175,6 +202,7 @@ for (const file of walk(join(ROOT, target))) {
     out = `${out.slice(0, pos)}\nimport { t } from '@/lib/i18n'${out.slice(pos)}`
   }
   if (!DRY) writeFileSync(file, out)
+  for (const [k, v] of localKeys) keys.set(k, v)
   rewritten += edits.length
   console.info(`  ${relative(ROOT, file)} → ${edits.length} littéraux`)
 }
@@ -190,7 +218,7 @@ if (!DRY && keys.size > 0) {
   writeFileSync(frPath, `${fr.slice(0, i)}  // — Extraits de ${target} ————————————————————————————\n${block}\n\n${fr.slice(i)}`)
 }
 
-console.info(`\n${rewritten} littéraux remplacés · ${keys.size} clés créées`)
+console.info(`\n${rewritten} littéraux remplacés · ${keys.size} clés créées · ${reused} clés existantes réutilisées`)
 if (fragments.length > 0) {
   console.warn(`\n⚠ ${fragments.length} FRAGMENTS laissés en place (phrase coupée par du JSX — à recomposer à la main) :`)
   for (const f of fragments) console.warn(`   ${f}`)

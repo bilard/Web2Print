@@ -59,7 +59,7 @@ function coerceToExcelSheet(input: unknown, name: string): ExcelSheet {
   if (typeof input === 'string') {
     const column: ExcelColumn = {
       key: 'texte',
-      label: 'Texte',
+      label: t('gdn.texte'),
       fieldType: 'text',
       detectedType: 'text',
       isPrimary: true,
@@ -169,11 +169,11 @@ function DrivePickerUi({ value, onChange, mode, mimeFilter = 'all', emptyLabel }
               <div className="text-[10px] flex items-center gap-1.5 mt-0.5">
                 {accessToken ? (
                   <span className="flex items-center gap-0.5 text-emerald-400">
-                    <CheckCircle2 className="w-2.5 h-2.5" /> prêt
+                    <CheckCircle2 className="w-2.5 h-2.5" /> {t('gdn.pret')}
                   </span>
                 ) : (
                   <span className="flex items-center gap-0.5 text-amber-400">
-                    <AlertTriangle className="w-2.5 h-2.5" /> non connecté
+                    <AlertTriangle className="w-2.5 h-2.5" /> {t('gdn.nonConnecte')}
                   </span>
                 )}
                 <span className="text-neutral-500 truncate">ID: {value.id.slice(0, 16)}…</span>
@@ -197,7 +197,7 @@ function DrivePickerUi({ value, onChange, mode, mimeFilter = 'all', emptyLabel }
             onClick={() => setOpen(true)}
             className="w-full text-[11px] text-neutral-400 hover:text-white py-1 rounded hover:bg-white/5 transition-colors"
           >
-            {isFolder ? 'Changer de dossier' : 'Changer de fichier'}
+            {isFolder ? t('gdn.changerDeDossier') : t('gdn.changerDeFichier')}
           </button>
         ) : null}
       </div>
@@ -211,7 +211,7 @@ function DrivePickerUi({ value, onChange, mode, mimeFilter = 'all', emptyLabel }
         }}
         mimeFilter={mimeFilter}
         foldersOnly={isFolder}
-        title={isFolder ? 'Choisir un dossier' : undefined}
+        title={isFolder ? t('gdn.choisirUnDossier') : undefined}
       />
     </>
   )
@@ -266,7 +266,7 @@ function GSheetsImportConfigUi({
       />
       <div>
         <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
-          Index de l'onglet
+          {t('gdn.indexDeLOnglet')}
         </label>
         <input
           type="number"
@@ -275,7 +275,7 @@ function GSheetsImportConfigUi({
           onChange={(e) => onChange({ ...config, sheetIndex: Number(e.target.value) })}
           className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
         />
-        <p className="text-[10px] text-neutral-600 mt-1">0 = premier onglet</p>
+        <p className="text-[10px] text-neutral-600 mt-1">{t('gdn.0PremierOnglet')}</p>
       </div>
     </div>
   )
@@ -373,7 +373,7 @@ function FolderPickerForExport<C extends FolderTargetFields>({
   return (
     <div className="space-y-1.5">
       <label className="text-[10px] uppercase tracking-wider text-neutral-500 block">
-        Dossier Drive cible
+        {t('gdn.dossierDriveCible')}
       </label>
       <DrivePickerUi
         mode="folder"
@@ -417,7 +417,7 @@ function GSheetsExportConfigUi({
         >
           <option value="create">{t('opt.gsheets.create')}</option>
           <option value="update" disabled={!hasId}>
-            Mettre à jour le même fichier{!hasId ? ' — renseignez l’URL ci-dessous' : ''}
+            {t('gdn.updateSameFile')}{!hasId ? t('gdn.renseignezLUrlCi') : ''}
           </option>
         </select>
       </div>
@@ -442,20 +442,20 @@ function GSheetsExportConfigUi({
       {/* Nouveau fichier : nom + dossier de destination Drive (bouton « Choisir un dossier »). */}
       <div>
         <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
-          Nom du Google Sheets
+          {t('gdn.nomDuGoogleSheets')}
         </label>
         <input
           type="text"
           value={config.name}
           onChange={(e) => onChange({ ...config, name: e.target.value })}
           className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
-          placeholder="Workflow Export"
+          placeholder={t('gdn.workflowExport')}
         />
       </div>
       <FolderPickerForExport config={config} onChange={onChange} />
       <div>
         <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
-          Ou dossier par nom
+          {t('gdn.ouDossierParNom')}
         </label>
         <input
           type="text"
@@ -471,13 +471,13 @@ function GSheetsExportConfigUi({
       {mode === 'update' && (
         <p className="text-[10px] text-amber-400/70 leading-snug">
           {t('node.gsheets-export.nameNote')}
-          (videz l'URL ci-dessus). Une mise à jour réécrit le fichier existant sans le déplacer.
+          {t('gdn.videzLUrlCi')}
         </p>
       )}
 
       <div className="pt-2 border-t border-neutral-800">
         <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-2 block">
-          Colonnes formule (Google Sheets)
+          {t('gdn.colonnesFormuleGoogleSheets')}
         </label>
         <button
           type="button"
@@ -514,7 +514,7 @@ function GSheetsExportConfigUi({
               className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
             >
               <option value="bar">Barres</option>
-              <option value="line">Lignes</option>
+              <option value="line">{t('gdn.lignes')}</option>
               <option value="area">Aire</option>
               <option value="pie">Camembert</option>
               <option value="doughnut">Anneau</option>
@@ -530,9 +530,9 @@ function GSheetsExportConfigUi({
               ))}
             </select>
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">Colonnes de valeurs</p>
+              <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">{t('gdn.colonnesDeValeurs')}</p>
               {availableColumns.length === 0 ? (
-                <p className="text-[10px] text-neutral-600 italic">Lance le node amont pour voir les colonnes.</p>
+                <p className="text-[10px] text-neutral-600 italic">{t('gdn.lanceLeNodeAmont')}</p>
               ) : (
                 <div className="max-h-32 overflow-auto rounded border border-neutral-800 bg-background divide-y divide-neutral-900">
                   {availableColumns.map((c) => {
@@ -715,14 +715,14 @@ function GDriveExportConfigUi({
     <div className="space-y-3">
       <div>
         <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
-          Nom du fichier
+          {t('gdn.nomDuFichier')}
         </label>
         <input
           type="text"
           value={config.name}
           onChange={(e) => onChange({ ...config, name: e.target.value })}
           className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
-          placeholder="(vide = nom d'origine)"
+          placeholder={t('gdn.videNomDOrigine')}
         />
       </div>
       <FolderPickerForExport config={config} onChange={onChange} />
@@ -872,7 +872,7 @@ function SaveDamConfigUi({
         type="text"
         value={config.folderName}
         onChange={(e) => onChange({ ...config, folderName: e.target.value })}
-        placeholder="Web2Print DAM"
+        placeholder={t('gdn.web2printDam')}
         className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
       />
       <p className="text-[10px] text-neutral-600 leading-snug">

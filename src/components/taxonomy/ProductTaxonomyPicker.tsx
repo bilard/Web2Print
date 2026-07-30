@@ -81,7 +81,7 @@ function TaxonomyTreeSection({
             {counts.grandTotal > 0 && (
               <span className="inline-flex items-center gap-1 text-white/45">
                 <Package className="w-2.5 h-2.5" />
-                {counts.grandTotal} classé{counts.grandTotal !== 1 ? 's' : ''}
+                {counts.grandTotal} {t('tax.classe')}{counts.grandTotal !== 1 ? 's' : ''}
               </span>
             )}
           </span>
@@ -121,7 +121,7 @@ function FixedTaxonomyHeader({
         {counts.grandTotal > 0 && (
           <span className="inline-flex items-center gap-1 text-white/45">
             <Package className="w-2.5 h-2.5" />
-            {counts.grandTotal} classé{counts.grandTotal !== 1 ? 's' : ''}
+            {counts.grandTotal} {t('tax.classe')}{counts.grandTotal !== 1 ? 's' : ''}
           </span>
         )}
       </span>
@@ -169,7 +169,7 @@ export function ProductTaxonomyPicker({
   const visibleTaxonomies: Taxonomy[] = useMemo(() => {
     if (!taxonomies) return []
     if (taxonomyFilter === 'all') return taxonomies
-    return taxonomies.filter((t) => t.id === taxonomyFilter)
+    return taxonomies.filter((tx) => tx.id === taxonomyFilter)
   }, [taxonomies, taxonomyFilter])
 
   const allCounts = useAllTaxonomyProductCounts(visibleTaxonomies)
@@ -250,7 +250,7 @@ export function ProductTaxonomyPicker({
 
   const targetTaxonomy: Taxonomy | null = (() => {
     if (!taxonomies || taxonomies.length === 0) return null
-    if (taxonomyFilter !== 'all') return taxonomies.find((t) => t.id === taxonomyFilter) ?? null
+    if (taxonomyFilter !== 'all') return taxonomies.find((tx) => tx.id === taxonomyFilter) ?? null
     if (taxonomies.length === 1) return taxonomies[0]
     return null
   })()
@@ -333,7 +333,7 @@ export function ProductTaxonomyPicker({
           <div className="min-w-0">
             <h2 id="product-taxo-picker-title" className="text-[14px] font-semibold text-white/90 flex items-center gap-2">
               <Layers className="w-4 h-4 text-indigo-400" />
-              Classer ce produit dans une taxonomie
+              {t('xl.classifyProduct')}
             </h2>
             <p className="text-[11px] text-white/35 mt-0.5">
               {t('productTaxonomyPicker.selectTheNode')}
@@ -345,16 +345,16 @@ export function ProductTaxonomyPicker({
               disabled={aiLoading || !targetTaxonomy || !hasProductSignal}
               title={aiTooltip}
               className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-md bg-indigo-500/[0.12] hover:bg-indigo-500/[0.22] disabled:opacity-40 disabled:cursor-not-allowed border border-indigo-500/30 text-indigo-200 transition-colors"
-              aria-label="Classer automatiquement via IA"
+              aria-label={t('tax.classerAutomatiquementViaIa')}
             >
               {aiLoading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
                 <Sparkles className="w-3.5 h-3.5" />
               )}
-              <span>{aiLoading ? 'Analyse…' : 'Classer auto'}</span>
+              <span>{aiLoading ? 'Analyse…' : t('tax.classerAuto')}</span>
             </button>
-            <CloseButton onClick={onClose} title="Fermer" />
+            <CloseButton onClick={onClose} title={t('tax.fermer')} />
           </div>
         </div>
 
@@ -365,7 +365,7 @@ export function ProductTaxonomyPicker({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] uppercase tracking-wider text-indigo-200/70 font-medium">
-                    Suggestion IA
+                    {t('tax.suggestionIa')}
                   </span>
                   <span
                     className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
@@ -394,7 +394,7 @@ export function ProductTaxonomyPicker({
                 <button
                   onClick={() => setSuggestion(null)}
                   className="text-white/30 hover:text-white/70 transition-colors"
-                  aria-label="Ignorer la suggestion"
+                  aria-label={t('tax.ignorerLaSuggestion')}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -415,7 +415,7 @@ export function ProductTaxonomyPicker({
               className="flex-1 bg-transparent text-[12px] text-white/80 placeholder:text-white/25 outline-none"
             />
             {search && (
-              <button onClick={() => setSearch('')} className="text-white/30 hover:text-white/70" aria-label="Effacer">
+              <button onClick={() => setSearch('')} className="text-white/30 hover:text-white/70" aria-label={t('tax.effacer')}>
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -430,20 +430,21 @@ export function ProductTaxonomyPicker({
                 taxonomyFilter === 'all' ? 'bg-indigo-500/15 text-indigo-300' : 'text-white/50 hover:text-white/80 hover:bg-white/[0.04]'
               }`}
             >
-              Toutes
+              {t('tax.toutes')}
             </button>
-            {taxonomies.map((t) => {
-              const active = taxonomyFilter === t.id
+            {/* ⚠️ `tx` et non `t` : la variable de map masquerait la fonction de traduction. */}
+            {taxonomies.map((tx) => {
+              const active = taxonomyFilter === tx.id
               return (
                 <button
-                  key={t.id}
-                  onClick={() => setTaxonomyFilter(t.id)}
+                  key={tx.id}
+                  onClick={() => setTaxonomyFilter(tx.id)}
                   className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors truncate max-w-[180px] ${
                     active ? 'bg-indigo-500/15 text-indigo-300' : 'text-white/50 hover:text-white/80 hover:bg-white/[0.04]'
                   }`}
-                  title={t.name}
+                  title={tx.name}
                 >
-                  {t.name}
+                  {tx.name}
                 </button>
               )
             })}
@@ -465,7 +466,7 @@ export function ProductTaxonomyPicker({
               title={t('tx.expandAll')}
             >
               <ChevronsUpDown className="w-3 h-3" />
-              Tout ouvrir
+              {t('tax.toutOuvrir')}
             </button>
             <button
               onClick={handleCollapseAll}
@@ -473,7 +474,7 @@ export function ProductTaxonomyPicker({
               title={t('tx.collapseAll')}
             >
               <ChevronsDownUp className="w-3 h-3" />
-              Tout fermer
+              {t('tax.toutFermer')}
             </button>
             <button
               onClick={() => setWithProductsOnly((v) => !v)}
@@ -483,10 +484,10 @@ export function ProductTaxonomyPicker({
                   : 'text-white/55 hover:text-white/85 hover:bg-white/[0.06]'
               }`}
               aria-pressed={withProductsOnly}
-              title="Afficher uniquement les nœuds qui contiennent au moins un produit"
+              title={t('tax.afficherUniquementLesN')}
             >
               <Filter className="w-3 h-3" />
-              Avec produits
+              {t('tax.avecProduits')}
             </button>
           </div>
         )}
@@ -495,7 +496,7 @@ export function ProductTaxonomyPicker({
           {visibleTaxonomies.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Layers className="w-8 h-8 text-white/10 mb-2" />
-              <p className="text-[12px] text-white/35">Aucune taxonomie disponible</p>
+              <p className="text-[12px] text-white/35">{t('tax.aucuneTaxonomieDisponible')}</p>
             </div>
           ) : (
             visibleTaxonomies.map((tax) => (
@@ -519,7 +520,7 @@ export function ProductTaxonomyPicker({
 
         <div className="px-5 py-3 border-t border-white/[0.06] flex justify-between items-center gap-3">
           <span className="text-[11px] text-white/40">
-            {currentTaxonomyId && currentNodeId ? 'Re-cliquer sur le nœud courant le resynchronise' : 'Produit non classé actuellement'}
+            {currentTaxonomyId && currentNodeId ? t('tax.reCliquerSurLe') : t('tax.produitNonClasseActuellement')}
           </span>
           <div className="flex items-center gap-2">
             {currentTaxonomyId && currentNodeId && (
@@ -534,7 +535,7 @@ export function ProductTaxonomyPicker({
               onClick={onClose}
               className="text-[12px] font-medium text-white/70 hover:text-white bg-white/[0.06] hover:bg-white/10 px-4 py-2 rounded-lg transition-colors"
             >
-              Fermer
+              {t('tax.fermer')}
             </button>
           </div>
         </div>

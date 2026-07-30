@@ -141,8 +141,8 @@ export function EnrichmentPanel({ input }: Props) {
       return { label: t('xl.enr.noAiMarkdown'), title: t('xl.enr.noAiMarkdown.title', { provider, hint: fallbackHint }) }
     }
     return {
-      label: 'LLM inconnu',
-      title: 'Provider non enregistré pour cette entrée. Probablement une donnée legacy persistée avant le tracking — re-générer pour obtenir l\'info précise.',
+      label: t('enr.llmInconnu'),
+      title: t('enr.providerNonEnregistrePour'),
     }
   })()
 
@@ -255,7 +255,7 @@ export function EnrichmentPanel({ input }: Props) {
               <div className="flex items-center gap-2 min-w-0">
                 <div className="flex items-center gap-1">
                   <Globe className="w-4 h-4 text-amber-400" />
-                  <span className="text-[10px] font-bold text-amber-300 uppercase tracking-widest">Sources</span>
+                  <span className="text-[10px] font-bold text-amber-300 uppercase tracking-widest">{t('enr.sources')}</span>
                 </div>
                 {primaryHost ? (
                   <a
@@ -273,7 +273,7 @@ export function EnrichmentPanel({ input }: Props) {
                     className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold text-white/40 bg-white/[0.04] border-2 border-white/15"
                     title={t('xl.enr.noSourceUrl')}
                   >
-                    source inconnue
+                    {t('enr.sourceInconnue')}
                   </span>
                 )}
                 {uniqueExtra.map((host, i) => {
@@ -298,7 +298,7 @@ export function EnrichmentPanel({ input }: Props) {
                     title={t('xl.enr.reorderFields', { domain: matchedTemplate.vendorDomain })}
                   >
                     <ListOrdered className="w-2.5 h-2.5" />
-                    Ordre des champs
+                    {t('enr.ordreDesChamps')}
                   </button>
                 )}
               </div>
@@ -387,7 +387,7 @@ function RegenerateMenu({ onRedo, onForceUrl, matchedTemplate }: { onRedo: (mode
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-300 mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] font-semibold text-white/90">Mode AUTO</div>
+              <div className="text-[11px] font-semibold text-white/90">{t('enr.modeAuto')}</div>
               <div className="text-[10px] text-white/40 leading-snug">{t('xl.enr.reuseCache')}</div>
             </div>
           </button>
@@ -400,7 +400,7 @@ function RegenerateMenu({ onRedo, onForceUrl, matchedTemplate }: { onRedo: (mode
               >
                 <svg className="w-3.5 h-3.5 text-emerald-300 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 8v13H3V8" /><path d="M1 3h22v5H1z" /><path d="M10 12h4" /></svg>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-semibold text-white/90">Mode TEMPLATE</div>
+                  <div className="text-[11px] font-semibold text-white/90">{t('enr.modeTemplate')}</div>
                   <div className="text-[10px] text-emerald-300/80 leading-snug truncate">📐 {matchedTemplate.name}</div>
                   <div className="text-[9px] text-white/30 leading-snug">{t('xl.enr.deterministic')}</div>
                 </div>
@@ -415,7 +415,7 @@ function RegenerateMenu({ onRedo, onForceUrl, matchedTemplate }: { onRedo: (mode
             <RefreshCw className="w-3.5 h-3.5 text-amber-300 mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="text-[11px] font-semibold text-white/90">{t('xl.enr.forceUrl')}</div>
-              <div className="text-[10px] text-amber-300/70 leading-snug">Vide le cache et re-scrape l'URL fournie</div>
+              <div className="text-[10px] text-amber-300/70 leading-snug">{t('enr.videLeCacheEt')}</div>
             </div>
           </button>
         </div>
@@ -443,23 +443,24 @@ function IdleState({ onLaunch, canSearch, input, matchedTemplate }: { onLaunch: 
       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/15 to-fuchsia-500/10 border border-indigo-500/20 flex items-center justify-center mb-4">
         <Sparkles className="w-6 h-6 text-indigo-400" />
       </div>
-      <h3 className="text-[13px] font-semibold text-white/80 mb-2">Enrichissement en live</h3>
+      <h3 className="text-[13px] font-semibold text-white/80 mb-2">{t('enr.enrichissementEnLive')}</h3>
       <p className="text-[11px] text-white/40 leading-relaxed max-w-[280px] mb-5">
         {t('xl.enr.intro')}
         {matchedTemplate ? (
           <span className="block mt-2 text-emerald-300/80">
-            📐 Template <b>{matchedTemplate.name}</b> disponible pour ce fournisseur.
+            📐 Template <b>{matchedTemplate.name}</b> {t('enr.disponiblePourCeFournisseur')}
           </span>
         ) : input.brand ? (
           <span className="block mt-2 text-white/30 text-[10px]">
-            Aucun template pour <b>{input.brand}</b> — crée-en un depuis{' '}
-            <b>{t('xl.enr.templatesHint')}</b>{t('xl.enr.templatesHint.rest')}
+            {/* Phrase RECOMPOSÉE : coupée en trois, elle devenait agrammaticale
+                dès que l'ordre des mots changeait à la traduction. */}
+            {t('enr.noTemplateFor', { brand: input.brand })}
           </span>
         ) : null}
       </p>
       {signals.length > 0 && (
         <p className="text-[10px] text-white/40 mb-3">
-          Signaux utilisés : <span className="text-white/60">{signals.join(' · ')}</span>
+          {t('enr.signauxUtilises')} <span className="text-white/60">{signals.join(' · ')}</span>
         </p>
       )}
       <div className="flex flex-col gap-2 w-full max-w-[280px]">
@@ -470,7 +471,7 @@ function IdleState({ onLaunch, canSearch, input, matchedTemplate }: { onLaunch: 
           className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-[#fff] text-[12px] font-semibold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           <Sparkles className="w-3.5 h-3.5" />
-          Mode AUTO (recherche + IA)
+          {t('enr.modeAutoRechercheIa')}
         </button>
         {matchedTemplate && (
           <button
@@ -480,7 +481,7 @@ function IdleState({ onLaunch, canSearch, input, matchedTemplate }: { onLaunch: 
             className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-[#fff] text-[12px] font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 8v13H3V8" /><path d="M1 3h22v5H1z" /><path d="M10 12h4" /></svg>
-            Mode TEMPLATE ({matchedTemplate.name})
+            {t('enr.modeTemplateNamed', { name: matchedTemplate.name })}
           </button>
         )}
       </div>
@@ -530,7 +531,7 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
           </span>
-          <span className="text-[12px] font-semibold text-white/85">Enrichissement en cours</span>
+          <span className="text-[12px] font-semibold text-white/85">{t('enr.enrichissementEnCours')}</span>
         </div>
         <span className="text-[11px] font-mono tabular-nums text-indigo-200/80">{globalPct}%</span>
       </div>
@@ -618,14 +619,14 @@ function ErrorState({ error, onRetry, onRetryWithUrl }: {
       {isSearchError && (
         <div className="w-full max-w-[320px] mb-4">
           <p className="text-[10px] text-white/40 mb-2">
-            Collez l'URL de la page produit pour enrichir sans recherche :
+            {t('enr.collezLUrlDe')}
           </p>
           <div className="flex gap-1.5">
             <input
               type="url"
               value={manualUrl}
               onChange={(e) => setManualUrl(e.target.value)}
-              placeholder="https://www.marque.fr/produit..."
+              placeholder={t('enr.httpsWwwMarqueFr')}
               className="flex-1 px-2.5 py-1.5 rounded-md bg-white/[0.06] border border-white/[0.12] text-[11px] text-white/80 placeholder:text-white/25 focus:outline-none focus:border-indigo-500/50"
             />
             <button
@@ -775,7 +776,7 @@ function DoneState({
           return (
           <div key="description" id={sectionAnchor('description')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
             <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
-              Description enrichie
+              {t('enr.descriptionEnrichie')}
             </p>
             {showAntiBotWarning && (
               <div className="flex items-start gap-2.5 px-3 py-2.5 mb-2 rounded-lg border border-red-500/30 bg-red-500/[0.06]">
@@ -784,13 +785,13 @@ function DoneState({
                   <p className="font-semibold">{t('xl.enr.antibot')}</p>
                   <p className="text-red-300/70 leading-relaxed">
                     {sourceHost && <strong className="text-red-300">{sourceHost}</strong>}{sourceHost && ' '}
-                    utilise une protection anti-bot que ni Jina ni Firecrawl basic n'arrivent à passer (toutes les sources renvoient une page CAPTCHA).
+                    {t('enr.utiliseUneProtectionAnti')}
                     {t('xl.enr.noHallucination')}
                   </p>
                   {brandSuggestion ? (
                     <div className="flex items-center gap-2 pt-1">
                       <span className="text-[11px] text-red-300/80">
-                        <strong className="text-red-200">{brandSuggestion.officialSite.label}</strong> détecté →
+                        <strong className="text-red-200">{brandSuggestion.officialSite.label}</strong> {t('enr.detecte')}
                       </span>
                       <a
                         href={brandSuggestion.officialSite.baseUrl}
@@ -798,7 +799,7 @@ function DoneState({
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 transition-colors"
                       >
-                        Aller sur le site fabricant
+                        {t('enr.allerSurLeSite')}
                         <ExternalLink className="w-2.5 h-2.5" />
                       </a>
                     </div>
@@ -814,7 +815,7 @@ function DoneState({
               value={decodeHTMLEntities(data.description)}
               onChange={(v) => onUpdate({ description: v })}
               multiline
-              placeholder="Ajouter une description…"
+              placeholder={t('enr.ajouterUneDescription')}
               className="text-[12.5px] text-white/75 leading-relaxed"
             />
           </div>
@@ -827,13 +828,13 @@ function DoneState({
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider flex items-center gap-1.5">
                   <Zap className="w-3 h-3 text-amber-400/60" />
-                  Points forts
+                  {t('enr.pointsForts')}
                 </p>
                 <button
                   onClick={() => onUpdate({ advantages: [...data.advantages, { text: '' }] })}
                   className="text-[10px] text-white/40 hover:text-white/80 transition-colors inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-white/5"
                 >
-                  <Plus className="w-3 h-3" /> Ajouter
+                  <Plus className="w-3 h-3" /> {t('enr.ajouter')}
                 </button>
               </div>
               {visibleAdvantagesCount === 0 ? (
@@ -857,7 +858,7 @@ function DoneState({
           const hasBadge = isPromo || !!(p.discount && (p.discount.amount != null || p.discount.percent != null))
           return (
             <div key="pricing" id={sectionAnchor('pricing')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-              <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">Prix</p>
+              <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">{t('enr.prix')}</p>
               <div className={`rounded-xl border px-4 py-3 bg-gradient-to-br ${
                 isPromo
                   ? 'border-rose-500/25 from-rose-500/[0.08] to-emerald-500/[0.03]'
@@ -907,8 +908,8 @@ function DoneState({
                 </div>
                 {(p.ecoParticipation != null || p.validUntil) && (
                   <div className="mt-2.5 pt-2 border-t border-white/[0.07] flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-white/40">
-                    {p.ecoParticipation != null && <span>Éco-participation : {fmt(p.ecoParticipation)}</span>}
-                    {p.validUntil && <span>Valable jusqu'au {p.validUntil}</span>}
+                    {p.ecoParticipation != null && <span>{t('enr.ecoFee', { value: fmt(p.ecoParticipation) })}</span>}
+                    {p.validUntil && <span>{t('enr.validUntil', { date: p.validUntil })}</span>}
                   </div>
                 )}
               </div>
@@ -927,7 +928,7 @@ function DoneState({
                   onClick={() => onUpdate({ specifications: [...data.specifications, { name: '', value: '' }] })}
                   className="text-[10px] text-white/40 hover:text-white/80 transition-colors inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-white/5"
                 >
-                  <Plus className="w-3 h-3" /> Ajouter
+                  <Plus className="w-3 h-3" /> {t('enr.ajouter')}
                 </button>
               </div>
               {visibleSpecsCount === 0 ? (
@@ -997,7 +998,7 @@ function DoneState({
       {data.sourceUrl && (
         <div className="px-4 pt-3 pb-4">
           <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
-            Source
+            {t('enr.source')}
           </p>
           <a
             href={data.sourceUrl}
@@ -1014,7 +1015,7 @@ function DoneState({
           {data.additionalSources.length > 0 && (
             <details className="mt-2">
               <summary className="text-[10px] text-white/30 cursor-pointer hover:text-white/50">
-                + {data.additionalSources.length} autres résultats
+                {t('enr.moreResults', { count: data.additionalSources.length })}
               </summary>
               <div className="mt-1.5 space-y-1">
                 {data.additionalSources.map((url, i) => (
@@ -1039,7 +1040,7 @@ function DoneState({
                     <Globe className="w-5 h-5 text-amber-400" />
                     <div>
                       <p className="text-[11px] font-bold text-amber-300 uppercase tracking-widest">{t('xl.enr.scrapedSources')}</p>
-                      <p className="text-[9px] text-amber-200/60">{scrapeCache.sourcesScrapped.length} URLs détectées</p>
+                      <p className="text-[9px] text-amber-200/60">{t('enr.urlsDetected', { count: scrapeCache.sourcesScrapped.length })}</p>
                     </div>
                   </div>
                 </div>
@@ -1156,24 +1157,26 @@ function LlmRequestPanel({ request }: { request: LlmRequestInfo }) {
         <div className="px-4 pb-3">
           {/* Onglets */}
           <div className="flex items-center gap-0.5 mb-2 p-0.5 rounded-md bg-white/[0.03] border border-white/[0.06] w-fit">
-            {tabs.map((t) => (
+            {/* ⚠️ `item` et non `t` : la variable de map masquerait la fonction de
+                traduction du module (et `tab` est déjà l'onglet actif). */}
+            {tabs.map((item) => (
               <button
-                key={t.id}
+                key={item.id}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => setTab(item.id)}
                 className={`text-[10px] font-medium px-2 py-1 rounded transition-colors ${
-                  tab === t.id
+                  tab === item.id
                     ? 'bg-violet-500/15 text-violet-200 border border-violet-400/25'
                     : 'text-white/50 hover:text-white/80 border border-transparent'
                 }`}
               >
-                {t.label}
+                {item.label}
               </button>
             ))}
             <button
               type="button"
               onClick={() => copy(copyKey, content)}
-              title="Copier le contenu"
+              title={t('enr.copierLeContenu')}
               className="ml-1 inline-flex items-center gap-1 text-[10px] text-white/50 hover:text-white/85 px-1.5 py-1 rounded hover:bg-white/[0.05] transition-colors"
             >
               {copied === copyKey ? (
@@ -1184,7 +1187,7 @@ function LlmRequestPanel({ request }: { request: LlmRequestInfo }) {
               ) : (
                 <>
                   <Copy className="w-3 h-3" />
-                  Copier
+                  {t('enr.copier')}
                 </>
               )}
             </button>
@@ -1254,13 +1257,13 @@ function AdvantageGroupList({
                 onUpdate({ advantages: next })
               }}
               multiline
-              placeholder="Point fort…"
+              placeholder={t('enr.pointFort')}
               className="flex-1 text-[12px] text-white/70 leading-relaxed"
             />
             <button
               onClick={() => onUpdate({ advantages: data.advantages.filter((_, idx) => idx !== i) })}
               className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-red-400 transition-all shrink-0"
-              title="Supprimer"
+              title={t('enr.supprimer')}
             >
               <X className="w-3 h-3" />
             </button>
@@ -1300,13 +1303,13 @@ function AdvantageGroupList({
                       onUpdate({ advantages: next })
                     }}
                     multiline
-                    placeholder="Point fort…"
+                    placeholder={t('enr.pointFort')}
                     className="flex-1 text-[12px] text-white/70 leading-relaxed"
                   />
                   <button
                     onClick={() => onUpdate({ advantages: data.advantages.filter((_, idx) => idx !== globalIdx) })}
                     className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-red-400 transition-all shrink-0"
-                    title="Supprimer"
+                    title={t('enr.supprimer')}
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -1442,7 +1445,7 @@ function SpecGroupAccordions({
                           next[i] = { ...next[i], name: v }
                           onUpdate({ specifications: next })
                         }}
-                        placeholder="Nom"
+                        placeholder={t('enr.nom')}
                         className="w-full text-[11px] text-white/45 leading-snug"
                       />
                     </div>
@@ -1463,7 +1466,7 @@ function SpecGroupAccordions({
                           onUpdate({ specifications: next })
                         }}
                         className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-red-400 transition-all shrink-0"
-                        title="Supprimer"
+                        title={t('enr.supprimer')}
                       >
                         <X className="w-3 h-3" />
                       </button>

@@ -590,7 +590,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           )}
           {enrich.enriching && enrich.progress
             ? `Enrichissement Image IA — ${enrich.progress.done}/${enrich.progress.total}`
-            : 'Enrichir avec images IA (Image IA)'}
+            : t('vid.enrichirAvecImagesIa')}
         </button>
       )}
 
@@ -627,10 +627,10 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         <div className="flex items-center gap-2">
           <Film className="w-4 h-4 text-indigo-400" />
           <h2 className="font-semibold text-white text-sm">
-            {inResultMode ? 'Animation prête' : 'Générer une animation'}
+            {inResultMode ? t('vid.animationPrete') : t('vid.genererUneAnimation')}
           </h2>
         </div>
-        <CloseButton onClick={onClose} title="Fermer" />
+        <CloseButton onClick={onClose} title={t('vid.fermer')} />
       </div>
 
       {/* Body grid : formulaire | (preview pendant génération OU bibliothèque sinon).
@@ -683,11 +683,13 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                 {!isStandalone && objectPresets.length > 0 && (
                   <div className="bg-indigo-500/10 border border-indigo-400/30 rounded-xl p-3">
                     <p className="text-xs text-indigo-200/90 leading-relaxed">
-                      <span className="font-semibold">{objectPresets.length} objet{objectPresets.length > 1 ? 's' : ''} animé{objectPresets.length > 1 ? 's' : ''}</span>{' '}
-                      (panneau « Animer l'objet ») détecté{objectPresets.length > 1 ? 's' : ''} :
-                      la vidéo s'en inspire — personnalité{' '}
+                      {/* Une clé par forme : « objet{s} animé{s} … détecté{s} » accorde TROIS
+                          mots à la fois — impossible à recoller après traduction. */}
+                      <span className="font-semibold">{objectPresets.length > 1
+                        ? t('vid.objectsAnimated.many', { count: objectPresets.length })
+                        : t('vid.objectsAnimated.one', { count: objectPresets.length })}</span>{' '}
                       <span className="font-semibold text-white/90">{derivedMotion ? MOTION_LABEL[derivedMotion] ?? derivedMotion : '—'}</span>
-                      {' '}(sauf si ton brief impose un autre ton).
+                      {' '}{t('vid.saufSiTonBrief')}
                     </p>
                   </div>
                 )}
@@ -717,7 +719,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     htmlFor="freeform"
                     hint={t('vd.instructionsHint')}
                   >
-                    {isStandalone ? 'Instructions libres' : 'Instructions d\'animation'}
+                    {isStandalone ? t('vid.instructionsLibres') : t('vid.instructionsDAnimation')}
                   </FieldLabel>
                   <textarea
                     id="freeform"
@@ -737,7 +739,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                         disabled={generating || hasInstructions}
                         className="accent-indigo-500"
                       />
-                      Partir de zéro (ne jouer que mes instructions){hasInstructions ? ' — activé automatiquement' : ''}
+                      {t('vid.fromScratch')}{hasInstructions ? t('vid.activeAutomatiquement') : ''}
                     </label>
                   )}
                 </div>
@@ -766,7 +768,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     l'accent et la personnalité quand tu ne donnes pas d'instructions). */}
                 <details open={isStandalone} className="rounded-xl border border-white/10 bg-white/3">
                   <summary className="cursor-pointer list-none px-3 py-2.5 text-xs font-semibold text-white/55 uppercase tracking-wider select-none hover:text-white/75">
-                    {isStandalone ? 'Brief de la vidéo' : '▸ Brief de style (optionnel)'}
+                    {isStandalone ? t('vid.briefDeLaVideo') : t('vid.briefDeStyleOptionnel')}
                   </summary>
                   <div className="flex flex-col gap-4 p-3 pt-1">
 
@@ -775,8 +777,8 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     htmlFor="topic"
                     hint={
                       isStandalone
-                        ? "Pilote le contenu des scènes (titres, KPIs, CTA) générées par l'IA."
-                        : "Oriente la personnalité du mouvement, le rythme et la palette appliqués à ton design."
+                        ? t('vid.piloteLeContenuDes')
+                        : t('vid.orienteLaPersonnaliteDu')
                     }
                   >
                     {t('vd.whatToShow')}
@@ -801,8 +803,8 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     optional
                     hint={
                       isStandalone
-                        ? "Adapte le registre, le vocabulaire et le choix des KPIs des scènes."
-                        : "Influe sur la personnalité du mouvement (ex. public magasin → dynamique, B2B → sobre)."
+                        ? t('vid.adapteLeRegistreLe')
+                        : t('vid.influeSurLaPersonnalite')
                     }
                   >
                     {t('vd.whoFor')}
@@ -824,11 +826,11 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     optional
                     hint={
                       isStandalone
-                        ? "Oriente l'angle des scènes et le CTA final (vendre, former, notoriété…)."
-                        : "Pèse sur la personnalité du mouvement et l'intensité (promo → punchy, premium → posé)."
+                        ? t('vid.orienteLAngleDes')
+                        : t('vid.peseSurLaPersonnalite')
                     }
                   >
-                    Quel est l'objectif ?
+                    {t('vid.quelEstLObjectif')}
                   </FieldLabel>
                   <textarea
                     id="goal"
@@ -847,7 +849,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     optional
                     hint="Cinématique, énergique, sobre, ludique, premium…"
                   >
-                    Y a-t-il un ton particulier ?
+                    {t('vid.yATIl')}
                   </FieldLabel>
                   <textarea
                     id="tone"
@@ -891,7 +893,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                         title={t(editingPromptId ? 'vd.tplUpdateTitle' : 'vd.tplSaveTitle')}
                       >
                         <Save className="w-3.5 h-3.5" />
-                        {editingPromptId ? 'Mettre à jour' : 'Enregistrer'}
+                        {editingPromptId ? t('vid.mettreAJour') : t('vid.enregistrer')}
                       </button>
                     </div>
                   )}
@@ -913,10 +915,10 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                       onClick={handleClear}
                       disabled={!hasContentToClear}
                       className="flex items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed border border-white/10 text-white/70 hover:text-white text-sm font-medium px-3 py-2.5 rounded-lg transition-colors"
-                      title="Effacer tous les champs du formulaire"
+                      title={t('vid.effacerTousLesChamps')}
                     >
                       <Eraser className="w-3.5 h-3.5" />
-                      Effacer
+                      {t('vid.effacer')}
                     </button>
                   )}
                   {generating && (

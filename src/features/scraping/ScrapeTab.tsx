@@ -11,7 +11,7 @@ import { extractUrlsFromFile, extractUrlsFromGoogleSheet, extractUrlsFromText } 
 import { TypedLogConsole } from '@/features/excel/ai-enrichment/TypedLogConsole'
 import { useGDriveStore } from '@/stores/gdrive.store'
 import { toast } from 'sonner'
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 function parseManualBreadcrumb(raw: string): string[] {
   if (!raw.trim()) return []
@@ -31,14 +31,16 @@ interface Props {
   logs?: string[]
 }
 
+/** ⚠️ Des CLÉS, pas des `t()` : dans une constante de module, l'appel serait
+ *  évalué à l'import et figerait la langue du premier chargement. */
 const TEMPLATES = [
-  { key: 'product',      Icon: Package,      desc: 'Nom, prix, specs, image'              },
-  { key: 'product_tech', Icon: Cpu,          desc: 'Specs techniques complètes'            },
-  { key: 'product_full', Icon: PackageCheck, desc: 'Maximum : USPs, PDFs, toutes images'  },
-  { key: 'listing',      Icon: LayoutList,   desc: "Liste de produits d'un catalogue"      },
-  { key: 'article',      Icon: FileText,     desc: 'Blog, actualités, presse'             },
-  { key: 'contact',      Icon: Users,        desc: 'Annuaire, fiches contacts'            },
-] as const
+  { key: 'product',      Icon: Package,      descKey: 'scr.tpl.product'     },
+  { key: 'product_tech', Icon: Cpu,          descKey: 'scr.tpl.productTech' },
+  { key: 'product_full', Icon: PackageCheck, descKey: 'scr.tpl.productFull' },
+  { key: 'listing',      Icon: LayoutList,   descKey: 'scr.tpl.listing'     },
+  { key: 'article',      Icon: FileText,     descKey: 'scr.tpl.article'     },
+  { key: 'contact',      Icon: Users,        descKey: 'scr.tpl.contact'     },
+] as const satisfies readonly { key: string; Icon: unknown; descKey: TranslationKey }[]
 
 type MultiMode = 'list' | 'file' | 'sheet'
 
@@ -142,7 +144,7 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
   const hasBreadcrumbField = fields.some(f => f.key === 'breadcrumb')
   const parsedBreadcrumb = parseManualBreadcrumb(manualBreadcrumb)
 
-  const tpl = TEMPLATES.find(t => t.key === templateKey) ?? TEMPLATES[2]
+  const tpl = TEMPLATES.find((x) => x.key === templateKey) ?? TEMPLATES[2]
   const TplIcon = tpl.Icon
 
   // Hostnames uniques des URLs importées (ex: "nicoll.fr, makita.fr")
@@ -233,9 +235,9 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
       {/* Étape 1 — Template */}
       {step === 1 && (
         <div>
-          <p className="text-[10px] text-white/30 uppercase tracking-wider mb-3">Quel type de contenu ?</p>
+          <p className="text-[10px] text-white/30 uppercase tracking-wider mb-3">{t('scr.quelTypeDeContenu')}</p>
           <div className="grid grid-cols-2 gap-2">
-            {TEMPLATES.map(({ key, Icon, desc }) => (
+            {TEMPLATES.map(({ key, Icon, descKey }) => (
               <button
                 key={key}
                 onClick={() => selectTemplate(key)}
@@ -245,7 +247,7 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
                   <Icon className="w-4 h-4 text-white/40 group-hover:text-indigo-400 transition-colors shrink-0" />
                   <span className="text-[12px] font-medium text-white/70 group-hover:text-white/90">{FIELD_TEMPLATES[key].label}</span>
                 </div>
-                <span className="text-[10px] text-white/30 leading-relaxed">{desc}</span>
+                <span className="text-[10px] text-white/30 leading-relaxed">{t(descKey)}</span>
               </button>
             ))}
           </div>
@@ -256,7 +258,7 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
       {step === 2 && (
         <div className="space-y-3">
           <BrandSuggestion url={url} onAccept={u => onUrlSuggestion?.(u)} />
-          <p className="text-[10px] text-white/30 uppercase tracking-wider">Combien d'URLs ?</p>
+          <p className="text-[10px] text-white/30 uppercase tracking-wider">{t('scr.combienDUrls')}</p>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => { setShowMulti(false); setStep(3) }}
@@ -269,8 +271,8 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
               onClick={() => setShowMulti(true)}
               className={`flex flex-col gap-1 p-3 rounded-lg border text-left transition-colors ${showMulti ? 'border-indigo-500/40 bg-indigo-500/10' : 'border-white/[0.08] bg-white/[0.02] hover:bg-indigo-500/10 hover:border-indigo-500/30'} group`}
             >
-              <span className={`text-[12px] font-medium ${showMulti ? 'text-indigo-300' : 'text-white/70 group-hover:text-white/90'}`}>Plusieurs URLs</span>
-              <span className="text-[10px] text-white/30">Liste, fichier ou Sheet</span>
+              <span className={`text-[12px] font-medium ${showMulti ? 'text-indigo-300' : 'text-white/70 group-hover:text-white/90'}`}>{t('scr.plusieursUrls')}</span>
+              <span className="text-[10px] text-white/30">{t('scr.listeFichierOuSheet')}</span>
             </button>
           </div>
 
@@ -295,7 +297,7 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
               {multiMode === 'list' && (
                 <div>
                   {listUrls.length > 0 && (
-                    <p className="text-[10px] text-emerald-400/80 mb-1">{listUrls.length} URL{listUrls.length > 1 ? 's' : ''} détectée{listUrls.length > 1 ? 's' : ''}</p>
+                    <p className="text-[10px] text-emerald-400/80 mb-1">{listUrls.length} URL{listUrls.length > 1 ? 's' : ''} {t('scr.detectee')}{listUrls.length > 1 ? 's' : ''}</p>
                   )}
                   <textarea
                     value={listText}
@@ -345,12 +347,12 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
                   {gdriveConnected && importing && (
                     <div className="flex items-center gap-2 p-2 rounded bg-indigo-500/5 border border-indigo-500/20">
                       <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />
-                      <span className="text-[11px] text-indigo-300/80">Import en cours…</span>
+                      <span className="text-[11px] text-indigo-300/80">{t('scr.importEnCours')}</span>
                     </div>
                   )}
                   {gdriveConnected && !importing && importedUrls.length === 0 && (
                     <p className="p-2 rounded bg-white/[0.02] border border-white/[0.06] text-[10px] text-white/40">
-                      Colle une URL Google Sheets dans la barre du haut — l'import est automatique.
+                      {t('scr.colleUneUrlGoogle')}
                     </p>
                   )}
                   {importedUrls.length > 0 && (
@@ -374,7 +376,9 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
                   onClick={() => setStep(3)}
                   className="w-full py-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-[12px] font-medium border border-indigo-500/30 transition-colors"
                 >
-                  Continuer avec {multiUrls.length} URL{multiUrls.length > 1 ? 's' : ''} →
+                  {multiUrls.length > 1
+                    ? t('scr.continueWith.many', { count: multiUrls.length })
+                    : t('scr.continueWith.one', { count: multiUrls.length })}
                 </button>
               )}
             </div>
@@ -418,11 +422,11 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
             {showAdvanced && (
               <div className="mt-2 space-y-3 p-3 bg-black/20 rounded-lg border border-white/[0.06]">
                 <div>
-                  <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1.5">Prompt IA</label>
+                  <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1.5">{t('scr.promptIa')}</label>
                   <textarea
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
-                    placeholder="Ex : Extrais uniquement le produit principal, ignore les accessoires..."
+                    placeholder={t('scr.exExtraisUniquementLe')}
                     rows={2}
                     className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 placeholder:text-white/20 focus:border-indigo-500/50 focus:outline-none resize-none transition-colors font-mono"
                   />
@@ -430,12 +434,12 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
                 <SchemaEditor fields={fields} onChange={setFields} />
                 {hasBreadcrumbField && (
                   <div>
-                    <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1.5">Fil d'Ariane (override)</label>
+                    <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1.5">{t('scr.filDArianeOverride')}</label>
                     <input
                       type="text"
                       value={manualBreadcrumb}
                       onChange={e => setManualBreadcrumb(e.target.value)}
-                      placeholder="Ex : Outillage > Perceuses > Sans fil"
+                      placeholder={t('scr.exOutillagePerceusesSans')}
                       className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 placeholder:text-white/20 focus:border-indigo-500/50 focus:outline-none transition-colors font-mono"
                     />
                   </div>
@@ -445,13 +449,13 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
                     <input type="checkbox" checked={noCache} onChange={e => setNoCache(e.target.checked)}
                       className="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500/30" />
                     <RefreshCw className="w-3 h-3 text-white/30" />
-                    <span className="text-[11px] text-white/50">Pas de cache</span>
+                    <span className="text-[11px] text-white/50">{t('scr.pasDeCache')}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer" title={t('sc.pdfs.title')}>
                     <input type="checkbox" checked={includePdfs} onChange={e => updateIncludePdfs(e.target.checked)}
                       className="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500/30" />
                     <FilePdfIcon className={`w-3 h-3 ${includePdfs ? 'text-amber-400/70' : 'text-white/30'}`} />
-                    <span className={`text-[11px] ${includePdfs ? 'text-amber-300' : 'text-white/50'}`}>Scraper les PDFs</span>
+                    <span className={`text-[11px] ${includePdfs ? 'text-amber-300' : 'text-white/50'}`}>{t('scr.scraperLesPdfs')}</span>
                   </label>
                   <div className="flex items-center gap-2">
                     <Timer className={`w-3 h-3 ${waitFor > 0 ? 'text-amber-400/70' : 'text-white/30'}`} />
