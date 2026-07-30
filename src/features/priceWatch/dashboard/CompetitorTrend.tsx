@@ -50,8 +50,8 @@ export function CompetitorTrend({ history, sites, height = 220 }: {
         </div>
         <div className="text-[11px] text-white/40 mt-0.5">
           {t('pw.trend.help')}
-          <span className="text-emerald-400/70"> + = il vend plus cher que vous</span> ·
-          <span className="text-rose-400/70"> − = il casse les prix</span>.
+          <span className="text-emerald-400/70"> {t('pw.trend.above')}</span> ·
+          <span className="text-rose-400/70"> {t('pw.trend.below')}</span>.
         </div>
       </div>
       {!enough ? (

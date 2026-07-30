@@ -75,8 +75,8 @@ export function PriceIndexTrend({ history, height = 220 }: { history: KpiHistory
         </div>
         <div className="text-[11px] text-white/40 mt-0.5">
           {t('pw.idx.lead')}
-          <span className="text-rose-400/70"> au-dessus de 100 = vous vendez plus cher</span> ·
-          <span className="text-emerald-400/70"> en dessous = vous vendez moins cher</span>.
+          <span className="text-rose-400/70"> {t('pw.idx.above')}</span> ·
+          <span className="text-emerald-400/70"> {t('pw.idx.below')}</span>.
           {t('pw.idx.undiscounted')}
         </div>
       </div>

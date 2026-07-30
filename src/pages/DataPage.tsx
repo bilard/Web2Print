@@ -324,7 +324,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const handleCreateAtPath = (path: string[]) => {
     setSheets([])
     setCurrentDocId(null)
-    setCurrentFileName('Nouvelle BDD')
+    setCurrentFileName(t('xl.defaultDbName'))
     setCurrentPath(path)
     setSheetRowId(null)
     createEmpty()

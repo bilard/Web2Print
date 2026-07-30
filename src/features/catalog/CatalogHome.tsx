@@ -21,7 +21,7 @@ export function CatalogHome() {
 
   const createCatalog = async () => {
     try {
-      const doc = newCatalogDoc('Nouveau catalogue')
+      const doc = newCatalogDoc(t('cat.home.defaultName'))
       const id = await saveCatalog(doc)
       reset()
       hydrate(doc, id)
@@ -40,12 +40,12 @@ export function CatalogHome() {
   return (
     <div className="p-8 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-white flex items-center gap-2"><BookText className="w-5 h-5 text-cyan-400" /> Catalogue studio</h1>
+        <h1 className="text-xl font-semibold text-white flex items-center gap-2"><BookText className="w-5 h-5 text-cyan-400" /> {t('cat.home.title')}</h1>
         <button onClick={createCatalog} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-[#fff] text-sm font-medium">
-          <Plus className="w-4 h-4" /> Nouveau catalogue
+          <Plus className="w-4 h-4" /> {t('cat.home.new')}
         </button>
       </div>
-      {loading ? <p className="text-sm text-muted-foreground">Chargement…</p> : items.length === 0 ? (
+      {loading ? <p className="text-sm text-muted-foreground">{t('cat.home.loading')}</p> : items.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('cat.home.empty')}</p>
       ) : (
         <ul className="space-y-2">
