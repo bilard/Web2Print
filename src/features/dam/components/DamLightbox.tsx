@@ -349,7 +349,7 @@ export function DamLightbox() {
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs bg-white/10 text-white/60 hover:bg-white/15 transition"
             >
               <Download className="w-3.5 h-3.5" />
-              Télécharger
+              {t('dam.lb.download')}
             </a>
           </div>
           <CloseButton onClick={closeLightbox} title={t('dam.closeShort')} />
@@ -607,7 +607,7 @@ export function DamLightbox() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-[9px] text-indigo-300 uppercase tracking-wider">
                     <Sparkles className="w-3 h-3" />
-                    Prompt amélioré (envoyé à Image IA)
+                    {t('dam.lb.improvedPrompt')}
                   </div>
                   <button
                     onClick={() => {
@@ -663,7 +663,7 @@ export function DamLightbox() {
 
             {!image.originalPrompt && image.improvedPrompt && (
               <div className="text-[10px] text-white/30 italic px-1">
-                Cette image a été générée sans étape d'amélioration IA — seul le prompt final est disponible.
+                {t('dam.lb.noImproveStep')}
               </div>
             )}
           </div>
@@ -712,7 +712,7 @@ export function DamLightbox() {
                   <div className="py-1">
                     <div className="flex items-center gap-1 text-[9px] text-amber-400/80 uppercase tracking-wider mb-1">
                       <Award className="w-3 h-3" />
-                      Marques identifiées
+                      {t('dam.lb.brands')}
                     </div>
                     <div className="flex flex-wrap gap-1">
                       {analysis.brands.map((b) => (
@@ -732,7 +732,7 @@ export function DamLightbox() {
                   <div className="py-1">
                     <div className="flex items-center gap-1 text-[9px] text-emerald-400/80 uppercase tracking-wider mb-1">
                       <Type className="w-3 h-3" />
-                      Texte détecté (OCR)
+                      {t('dam.lb.ocr')}
                     </div>
                     <div className="flex flex-wrap gap-1">
                       {analysis.text.map((t, i) => (

@@ -4,6 +4,7 @@
 import { NumField, SelectField, inputCls } from '@/components/shared/panel/fields'
 import type { CronConfig, CronUnit } from '../runtime/cronSchedule'
 import { CronCycleUi } from './cronCycleUi'
+import { t } from '@/lib/i18n'
 
 const UNIT_OPTIONS: Array<{ v: CronUnit; label: string }> = [
   { v: 'minute', label: 'minute(s)' },
@@ -47,10 +48,9 @@ export function CronConfigUi({ config, onChange }: {
         <input type="checkbox" checked={off} className="accent-[#6366f1] mt-0.5"
           onChange={(e) => set({ afterCompletion: e.target.checked })} />
         <span>
-          Relancer après la FIN du run (scraping continu)
+          {t('node.cron.f1')}
           <span className="block text-[11px] text-white/30 normal-case">
-            Le prochain run part « Tous les X » APRÈS la fin du précédent — ni chevauchement,
-            ni temps mort. L'heure et le jour ci-dessous sont ignorés dans ce mode.
+            {t('wfc.afterCompletionHint')}
           </span>
         </span>
       </label>
@@ -67,8 +67,7 @@ export function CronConfigUi({ config, onChange }: {
           onChange={(v) => set({ weekday: Number(v) })} />
       </div>
       <p className="text-[11px] text-white/30 -mt-1.5">
-        Heure de déclenchement pour jour / semaine / mois (Europe/Paris). Sans effet en
-        cadence « heure(s) » / « minute(s) ».
+        {t('wfc.atTimeHint')}
       </p>
 
       <CronCycleUi value={config.cycle} onChange={(cycle) => set({ cycle })} />

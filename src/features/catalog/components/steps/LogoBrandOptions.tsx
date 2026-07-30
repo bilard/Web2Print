@@ -30,8 +30,7 @@ export function LogoBrandOptions({ plan, setPlan, style, patchStyle }: Props) {
       <input value={name} onChange={(e) => setPlan({ ...plan, brandName: e.target.value })}
         placeholder="Nom de la marque (ex. Distriland)" className={optFieldClass} />
       <p className="text-[10px] text-white/40 leading-snug">
-        Le nom est composé avec la police de titre du thème — net à l'impression.
-        L'emblème ci-dessous s'ajoute à sa gauche ; videz le nom si votre visuel contient déjà le lettrage.
+        {t('cat.logo.nameHint')}
       </p>
       <div className="flex items-center gap-2 flex-wrap">
         <button type="button" onClick={() => fileRef.current?.click()} disabled={generating}
@@ -43,7 +42,7 @@ export function LogoBrandOptions({ plan, setPlan, style, patchStyle }: Props) {
           onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadImage(f, 'logo'); e.target.value = '' }} />
         <button type="button" disabled={generating || !name.trim()}
           onClick={() => void generateCover(emblemPrompt(name.trim(), plan.theme.accent), 'logo')}
-          title={name.trim() ? 'Génère un emblème (symbole sans lettrage) accordé à votre accent' : 'Renseignez d’abord le nom de la marque'}
+          title={t(name.trim() ? 'cat.logo.generateTitle' : 'cat.logo.nameFirst')}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-[#fff] text-xs font-medium">
           {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Emblème IA
         </button>

@@ -184,13 +184,13 @@ export function ExportModal({ onClose }: ExportModalProps) {
                 <div className="flex-1">
                   <p className="text-xs font-medium text-white/80">Export print (traits de coupe + bleed)</p>
                   <p className="text-[11px] text-white/40 leading-relaxed mt-0.5">
-                    Étend le canvas au fond perdu défini dans Impression et ajoute des traits de coupe en L aux 4 coins. À cocher pour l'impression offset/numérique.
+                    {t('ex.cropMarks.hint')}
                   </p>
                 </div>
               </label>
               <div className="bg-white/3 border border-white/5 rounded-xl p-3">
                 <p className="text-xs text-white/40">
-                  PDF avec image haute qualité + textes sélectionnables en couche invisible.
+                  {t('ex.pdf.hint')}
                 </p>
               </div>
             </div>
@@ -200,7 +200,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
           {format === 'pptx' && (
             <div className="bg-white/3 border border-white/5 rounded-xl p-3">
               <p className="text-xs text-white/40">
-                Slide aux dimensions exactes du canvas. Image en fond + textes éditables dans PowerPoint.
+                {t('ex.pptx.hint')}
               </p>
             </div>
           )}

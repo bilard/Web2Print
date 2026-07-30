@@ -158,7 +158,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           checked={enabled}
           onChange={(e) => onToggle(e.target.checked)}
           className="shrink-0 accent-indigo-500"
-          title={enabled ? 'Désactiver ce site' : 'Activer ce site'}
+          title={t(enabled ? 'ss.disableSite' : 'ss.enableSite')}
         />
         <span
           className={`shrink-0 whitespace-nowrap font-semibold text-white ${
@@ -193,7 +193,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           </button>
           <button
             onClick={onAuth}
-            title={auth ? 'Accès connecté configuré — modifier les identifiants' : 'Configurer un accès connecté (prix visibles uniquement authentifié)'}
+            title={t(auth ? 'ss.authConfigured' : 'ss.authConfigure')}
             className={`transition-colors p-1 rounded hover:bg-white/5 ${auth ? 'text-emerald-400 hover:text-emerald-300' : 'text-white/35 hover:text-indigo-400'}`}
           >
             {auth ? <Lock className="w-3.5 h-3.5" /> : <LockOpen className="w-3.5 h-3.5" />}

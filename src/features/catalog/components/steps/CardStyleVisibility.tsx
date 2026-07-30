@@ -11,7 +11,7 @@ import { cardObjectOrder, reorderCardObjects } from '../pages/freeLayout'
 import type { CardObjectId, CatalogCardStyle } from '../../catalogTypes'
 import { DetailsFieldsPanel } from './DetailsFieldsPanel'
 import { SortableVisibilityRow, VisibilityRow } from './VisibilityRow'
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 type ShowKey = keyof Pick<CatalogCardStyle,
   'showPromo' | 'showImage' | 'showSticker' | 'showKicker' | 'showBandRule' | 'showVedette' | 'showBrand' | 'showName'
@@ -20,19 +20,19 @@ type ShowKey = keyof Pick<CatalogCardStyle,
 /** Objets de fiche déplaçables : une ligne triable chacun (l'ordre affiché vient
  *  de leur position réelle). `showWas` et `showBandRule` n'en sont pas : le prix
  *  barré vit DANS le bloc prix, le filet est un élément de PAGE. */
-const OBJECTS: { key: ShowKey; obj: CardObjectId; label: string }[] = [
-  { key: 'showPromo', obj: 'promo', label: 'Cartouche promo' },
-  { key: 'showVedette', obj: 'vedette', label: 'Ruban vedette' },
-  { key: 'showImage', obj: 'image', label: 'Image' },
-  { key: 'showKicker', obj: 'kicker', label: 'Sous-famille' },
-  { key: 'showSticker', obj: 'sticker', label: 'Sticker remise' },
-  { key: 'showBrand', obj: 'brand', label: 'Marque' },
-  { key: 'showName', obj: 'name', label: 'Nom' },
-  { key: 'showDesc', obj: 'description', label: 'Description' },
-  { key: 'showDetails', obj: 'details', label: 'Détails' },
-  { key: 'showRef', obj: 'ref', label: 'Référence' },
-  { key: 'showUnit', obj: 'unit', label: 'Unité' },
-  { key: 'showPrice', obj: 'price', label: 'Prix' },
+const OBJECTS: { key: ShowKey; obj: CardObjectId; labelKey: TranslationKey }[] = [
+  { key: 'showPromo', obj: 'promo', labelKey: 'cat.obj.showPromo' },
+  { key: 'showVedette', obj: 'vedette', labelKey: 'cat.obj.showVedette' },
+  { key: 'showImage', obj: 'image', labelKey: 'cat.obj.showImage' },
+  { key: 'showKicker', obj: 'kicker', labelKey: 'cat.obj.showKicker' },
+  { key: 'showSticker', obj: 'sticker', labelKey: 'cat.obj.showSticker' },
+  { key: 'showBrand', obj: 'brand', labelKey: 'cat.obj.showBrand' },
+  { key: 'showName', obj: 'name', labelKey: 'cat.obj.showName' },
+  { key: 'showDesc', obj: 'description', labelKey: 'cat.obj.showDesc' },
+  { key: 'showDetails', obj: 'details', labelKey: 'cat.obj.showDetails' },
+  { key: 'showRef', obj: 'ref', labelKey: 'cat.obj.showRef' },
+  { key: 'showUnit', obj: 'unit', labelKey: 'cat.obj.showUnit' },
+  { key: 'showPrice', obj: 'price', labelKey: 'cat.obj.showPrice' },
 ]
 
 interface Props {
@@ -71,14 +71,14 @@ export function CardStyleVisibility({ style, patch, selected, onSelect, wide = f
   return (
     <div className="flex flex-col gap-0.5">
       <p className="text-[10px] text-white/35 leading-snug mb-1">
-        Ordre = position dans la fiche. Glissez ⠿ pour déplacer un bloc, cliquez son nom pour le régler.
+        {t('cat.vis.orderHint')}
       </p>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={order} strategy={verticalListSortingStrategy}>
           {order.map((obj) => {
             const item = byObj.get(obj)!
             return (
-              <SortableVisibilityRow key={obj} id={obj} label={item.label} selected={selected === obj} onSelect={onSelect}
+              <SortableVisibilityRow key={obj} id={obj} label={t(item.labelKey)} selected={selected === obj} onSelect={onSelect}
                 checked={style[item.key] !== false}
                 onCheck={(v) => patch({ [item.key]: v } as Partial<CatalogCardStyle>)} />
             )
@@ -86,7 +86,7 @@ export function CardStyleVisibility({ style, patch, selected, onSelect, wide = f
         </SortableContext>
       </DndContext>
       {/* Élément de PAGE (pas un bloc de fiche) : hors du jeu déplaçable. */}
-      <VisibilityRow id={null} label="Filet du bandeau de section" checked={style.showBandRule !== false}
+      <VisibilityRow id={null} label={t('cat.obj.bandRule')} checked={style.showBandRule !== false}
         onCheck={(v) => patch({ showBandRule: v })} />
       {/* Sous-réglages HORS de la liste triable : imbriqués dans une ligne, leur
           hauteur (200 px pour les Détails) fausserait la géométrie du

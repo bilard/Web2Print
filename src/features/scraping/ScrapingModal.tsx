@@ -851,7 +851,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             </div>
             {(tab === 'crawl' || tab === 'map') && instruction.trim() && (
               <p className="mt-1.5 text-[10px] text-white/35">
-                Les produits découverts seront filtrés selon cette instruction (rien n'est jeté en silence : le compte exclu est affiché).
+                {t('sc.filterHint')}
               </p>
             )}
           </div>
@@ -1082,7 +1082,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-white/30">
                       <Sparkles className="w-3 h-3 text-violet-400/70" />
-                      Aperçu
+                      {t('sc.preview')}
                       <span className="font-mono text-white/40 normal-case">
                         {batchPreviewIdx + 1} / {successfulBatchCount}
                       </span>

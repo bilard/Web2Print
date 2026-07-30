@@ -428,7 +428,7 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
 
           {/* Champs disponibles */}
           <div className="text-[10px] text-white/30 uppercase tracking-wider mt-3 mb-1.5">
-            Champs — cliquer pour insérer
+            {t('mg.fieldsClickInsert')}
           </div>
           <div className="max-h-32 overflow-y-auto space-y-0.5">
             {columns.map((col) => {
@@ -537,7 +537,7 @@ function VariableTags({ columns }: { columns: { key: string; label: string }[] }
   return (
     <div className="px-3 py-2 border-b border-white/5">
       <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1.5">
-        Champs — cliquer pour insérer
+        {t('mg.fieldsClickInsert')}
       </div>
       <div className="space-y-0.5">
         {columns.map((col) => (
@@ -583,7 +583,7 @@ function BindingEditor({ selectedObjectId, columns, setFitToZone, setFitZone }: 
   bindableProps.push(
     { key: 'fill', label: 'Couleur de fond', icon: Palette },
     { key: 'stroke', label: 'Contour', icon: Palette },
-    { key: 'opacity', label: 'Opacité', icon: Eye },
+    { key: 'opacity', label: t('mg.opacity'), icon: Eye },
   )
 
   const currentBindings = (obj.data?.bindings ?? {}) as Record<string, string>
@@ -632,10 +632,10 @@ function BindingEditor({ selectedObjectId, columns, setFitToZone, setFitZone }: 
           <span className="flex-1">
             <span className="flex items-center gap-1.5 text-xs text-white/70 group-hover:text-white">
               <Shrink className="w-3.5 h-3.5 text-white/30" />
-              Réduire pour tenir dans la zone
+              {t('mg.shrinkToFit')}
             </span>
             <span className="block text-[10px] text-white/30 leading-tight mt-0.5">
-              Réduit le texte de chaque produit pour tenir dans la zone cible ci-dessous — indépendamment du produit affiché.
+              {t('mg.shrinkToFitHint')}
             </span>
           </span>
         </label>

@@ -108,7 +108,7 @@ export function ColumnCompletionModal({ open, onClose, visibleRowIds }: Props) {
             {destMode === 'existing' && existingKey && (
               <label className="flex items-center gap-2 text-amber-400/90">
                 <input type="checkbox" checked={confirmOverwrite} onChange={(e) => setConfirmOverwrite(e.target.checked)} />
-                J'écrase les valeurs existantes de cette colonne
+                {t('xl.cc.overwriteConfirm')}
               </label>
             )}
           </div>
@@ -153,11 +153,11 @@ export function ColumnCompletionModal({ open, onClose, visibleRowIds }: Props) {
               <>
                 <button onClick={handlePreview} disabled={!prompt.trim() || running}
                   className="px-3 py-1.5 rounded bg-white/5 hover:bg-white/10 text-white/80 disabled:opacity-40">
-                  Aperçu (5 lignes)
+                  {t('xl.cc.preview5')}
                 </button>
                 <button onClick={handleApply} disabled={!canApply}
                   className="px-3 py-1.5 rounded bg-accent text-[#fff] disabled:opacity-40">
-                  Appliquer à tout
+                  {t('xl.cc.applyAll')}
                 </button>
               </>
             )}

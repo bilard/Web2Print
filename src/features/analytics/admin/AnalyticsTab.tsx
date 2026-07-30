@@ -173,8 +173,7 @@ export function AnalyticsTab() {
         title={t('an.purgeConfirm')}
         description={<>
           Supprime <strong>définitivement les {events.length.toLocaleString('fr-FR')} consultation(s)</strong> correspondant
-          à la période et aux filtres affichés (zone, appareil, pays, page, source, utilisateur).
-          Le reste de l'historique n'est pas touché. Action irréversible.
+          {t('an.purgeFiltered.desc')}
         </>}
         actionLabel="Supprimer le résultat"
         pending={deleteFiltered.isPending}
@@ -184,11 +183,11 @@ export function AnalyticsTab() {
         <div className="text-white/40 text-sm py-12 text-center">Chargement…</div>
       ) : noData ? (
         <div className="text-white/40 text-sm py-12 text-center">
-          Aucune donnée de trafic sur cette période.
+          {t('an.noTraffic')}
         </div>
       ) : noFiltered ? (
         <div className="text-white/40 text-sm py-12 text-center">
-          Aucune donnée pour ces filtres.
+          {t('an.noFiltered')}
         </div>
       ) : (
         <>

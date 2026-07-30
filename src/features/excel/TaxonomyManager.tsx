@@ -186,7 +186,7 @@ export function TaxonomyManager() {
               title={t('xl.createTaxonomy')}
             >
               <FolderTree className="w-3 h-3" />
-              Créer dans Taxonomies
+              {t('xl.tx.createInTaxonomies')}
             </button>
           </div>
         )}
@@ -207,7 +207,7 @@ export function TaxonomyManager() {
 
         {!taxonomies || taxonomies.length === 0 ? (
           <p className="text-[11px] text-white/30 italic py-2">
-            Aucune taxonomie disponible. Créez-en une ci-dessus ou depuis la page Taxonomies.
+            {t('xl.tx.noTaxonomy')}
           </p>
         ) : (
           <>
@@ -235,7 +235,7 @@ export function TaxonomyManager() {
                 disabled={bulkAttach.running}
                 className="accent-indigo-500"
               />
-              Réécrire les produits déjà classés
+              {t('xl.tx.rewriteClassified')}
             </label>
 
             {!bulkAttach.running ? (

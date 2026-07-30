@@ -198,7 +198,7 @@ export function ScrapedFieldsTab({ sheetName, rowId, url, brand, title }: Props)
                 ? 'bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30 border border-indigo-400/30'
                 : 'bg-white/[0.03] text-white/30 border border-white/[0.06] cursor-default'
             }`}
-            title={dirty ? 'Enregistrer le nouvel ordre' : 'Aucun changement à enregistrer'}
+            title={t(dirty ? 'xl.sf.saveOrder' : 'xl.sf.noChange')}
           >
             {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : dirty ? <Save className="w-3 h-3" /> : <Check className="w-3 h-3" />}
             {saving ? 'Sauvegarde…' : dirty ? 'Enregistrer' : 'À jour'}
@@ -213,7 +213,7 @@ export function ScrapedFieldsTab({ sheetName, rowId, url, brand, title }: Props)
         </div>
       ) : rows.length === 0 ? (
         <p className="text-[11px] text-white/30 italic py-6 text-center">
-          Aucun champ à afficher.
+          {t('xl.sf.noField')}
         </p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -369,7 +369,7 @@ function SortableRow({
                   ? 'bg-emerald-500/10 text-emerald-300/80 border-emerald-500/20'
                   : 'bg-amber-500/10 text-amber-300/80 border-amber-500/20'
               }`}
-              title={row.shared ? 'Présent dans tous les templates du fournisseur' : 'Présent dans une partie des templates uniquement'}
+              title={t(row.shared ? 'xl.sf.sharedAll' : 'xl.sf.sharedSome')}
             >
               {row.used}/{row.total}
             </span>
@@ -379,7 +379,7 @@ function SortableRow({
           <button
             onClick={() => setExpanded((v) => !v)}
             className="shrink-0 text-white/30 hover:text-white/70 transition-colors"
-            aria-label={expanded ? 'Réduire les groupes' : 'Afficher les groupes'}
+            aria-label={t(expanded ? 'xl.sf.collapseGroups' : 'xl.sf.expandGroups')}
             title={`${subGroups.length} groupe${subGroups.length > 1 ? 's' : ''}`}
           >
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? '' : '-rotate-90'}`} />

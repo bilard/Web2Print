@@ -244,7 +244,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
         </div>
         {template.fields.length === 0 ? (
           <div className="text-[11px] text-white/40 italic">
-            Aucun champ — charge une URL ci-dessous, active la capture, et clique sur les éléments de la page.
+            {t('st.builderEmpty')}
           </div>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -425,7 +425,7 @@ function SortableFieldRow({
     <div ref={setNodeRef} style={style} className="flex flex-col">
       <div
         onClick={onTogglePreview}
-        title={isSelected ? 'Clique pour désélectionner' : 'Clique pour surligner le bloc dans la page'}
+        title={t(isSelected ? 'st.clickDeselect' : 'st.clickHighlight')}
         className={`group flex items-center gap-2 p-1.5 border rounded text-[11px] cursor-pointer transition-colors ${
           isSelected
             ? 'bg-emerald-500/15 border-emerald-400/50'
@@ -542,7 +542,7 @@ function AssignmentModal({
 
         <label className="text-[11px] text-white/50 flex items-center gap-2 mb-3">
           <input type="checkbox" checked={multiple} onChange={(e) => setMultiple(e.target.checked)} />
-          Capturer plusieurs éléments (liste — pour images, specs, variantes)
+          {t('st.captureMultiple')}
         </label>
 
         <label className="text-[11px] text-white/50 block mb-1">{t('st.assignField')}</label>

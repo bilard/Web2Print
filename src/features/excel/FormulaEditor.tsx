@@ -85,7 +85,7 @@ export function FormulaEditor({
               </div>
               <div className="w-40">
                 <label className="text-[11px] text-white/40 uppercase tracking-wider mb-1.5 block">
-                  Type résultat
+                  {t('xl.fe.resultType')}
                 </label>
                 <select
                   value={resultType}
@@ -101,7 +101,7 @@ export function FormulaEditor({
               {(resultType === 'number' || resultType === 'percent') && (
                 <div className="w-28">
                   <label className="text-[11px] text-white/40 uppercase tracking-wider mb-1.5 block">
-                    Décimales
+                    {t('xl.fe.decimals')}
                   </label>
                   <select
                     value={decimals}
@@ -128,14 +128,14 @@ export function FormulaEditor({
                 textareaRef={textareaRef}
               />
               <p className="text-[10px] text-white/25 mt-1">
-                Tapez le nom d'une fonction ou colonne pour l'autocomplétion. Tab ou Entrée pour valider.
+                {t('xl.fe.autocompleteHint')}
               </p>
             </div>
 
             {/* Available fields list */}
             <div>
               <p className="text-[11px] text-white/40 uppercase tracking-wider mb-2">
-                Champs disponibles — cliquer pour insérer
+                {t('xl.fe.availableFields')}
               </p>
               <div className="bg-surface-2 border border-white/[0.06] rounded-lg divide-y divide-white/[0.04] max-h-[180px] overflow-y-auto">
                 {availableColumns.map((col) => {

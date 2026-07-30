@@ -110,7 +110,7 @@ export function VendorFieldOrderModal({ matchedTemplate, enriched, onClose, onSa
             <div>
               <h3 className="text-[13px] font-semibold text-white/90">Ordre d'affichage — {vendorDomain}</h3>
               <p className="text-[10px] text-white/40 mt-0.5">
-                S'applique à tous les produits de ce fournisseur. Drag & drop pour réordonner.
+                {t('st.vendorOrderHint')}
               </p>
             </div>
           </div>
@@ -125,7 +125,7 @@ export function VendorFieldOrderModal({ matchedTemplate, enriched, onClose, onSa
             </div>
           ) : rows.length === 0 ? (
             <p className="text-[11px] text-white/40 italic py-6 text-center">
-              Aucun champ à afficher.
+              {t('xl.sf.noField')}
             </p>
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -204,7 +204,7 @@ function SortableRow({ id, row, position }: { id: string; row: FieldRow; positio
               ? 'bg-emerald-500/10 text-emerald-300/80 border-emerald-500/20'
               : 'bg-amber-500/10 text-amber-300/80 border-amber-500/20'
           }`}
-          title={row.shared ? 'Présent dans tous les templates du fournisseur' : 'Présent dans une partie des templates uniquement'}
+          title={t(row.shared ? 'xl.sf.sharedAll' : 'xl.sf.sharedSome')}
         >
           {row.used}/{row.total}
         </span>

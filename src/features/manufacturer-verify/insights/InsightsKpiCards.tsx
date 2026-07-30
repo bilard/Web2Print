@@ -15,19 +15,19 @@ export function InsightsKpiCards({ data }: Props) {
   const cards = [
     { icon: Package, tint: 'text-sky-400', bg: 'bg-sky-500/10',
       value: String(data.verifiedCount), label: t('mv.insights.verifiedProducts'),
-      sub: `${data.eanMatched} au même EAN certifié` },
+      sub: t('mv.kpi.sameEan', { count: data.eanMatched }) },
     { icon: AlertTriangle, tint: 'text-amber-400', bg: 'bg-amber-500/10',
-      value: String(data.divergentFields), label: 'Champs divergents',
-      sub: `${data.identityDivergentProducts} produit(s) à identité divergente` },
+      value: String(data.divergentFields), label: t('mv.kpi.divergentFields'),
+      sub: t('mv.kpi.divergentIdentity', { count: data.identityDivergentProducts }) },
     { icon: PlusCircle, tint: 'text-indigo-300', bg: 'bg-indigo-500/10',
-      value: String(data.completedFields), label: 'Apports fabricant',
-      sub: `données absentes de la source` },
+      value: String(data.completedFields), label: t('mv.kpi.contributions'),
+      sub: t('mv.kpi.absentFromSource') },
     { icon: CheckCircle2, tint: 'text-emerald-400', bg: 'bg-emerald-500/10',
-      value: pct(data.matchFields, totalFields), label: 'Taux de concordance',
-      sub: `${data.matchFields} champs identiques` },
+      value: pct(data.matchFields, totalFields), label: t('mv.kpi.matchRate'),
+      sub: t('mv.kpi.identicalFields', { count: data.matchFields }) },
     { icon: BadgeCheck, tint: 'text-teal-400', bg: 'bg-teal-500/10',
       value: String(data.adoptedTotal), label: t('mv.insights.resolvedGaps'),
-      sub: `valeurs fabricant promues` },
+      sub: t('mv.kpi.promoted') },
   ]
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">

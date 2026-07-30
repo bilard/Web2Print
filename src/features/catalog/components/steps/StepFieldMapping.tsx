@@ -5,17 +5,19 @@ import { Link2 } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import type { PromoFieldKey } from '@/features/retail-promo/promoTypes'
 import { CustomFieldsEditor } from '@/features/retail-promo/components/CustomFieldsEditor'
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
-const FIELDS: { key: PromoFieldKey; label: string }[] = [
-  { key: 'name', label: 'Nom' },
-  { key: 'image', label: 'Image' },
-  { key: 'newPrice', label: 'Prix' },
-  { key: 'oldPrice', label: 'Prix barré' },
-  { key: 'brand', label: 'Marque' },
-  { key: 'ref', label: 'Référence' },
-  { key: 'unit', label: 'Unité' },
-  { key: 'description', label: 'Description' },
+// ⚠️ Tableau converti EN ENTIER : à moitié keyé, l'union rendrait `labelKey`
+// optionnel et `t()` refuse `undefined`.
+const FIELDS: { key: PromoFieldKey; labelKey: TranslationKey }[] = [
+  { key: 'name', labelKey: 'cat.map.name' },
+  { key: 'image', labelKey: 'cat.map.image' },
+  { key: 'newPrice', labelKey: 'cat.map.newPrice' },
+  { key: 'oldPrice', labelKey: 'cat.map.oldPrice' },
+  { key: 'brand', labelKey: 'cat.map.brand' },
+  { key: 'ref', labelKey: 'cat.map.ref' },
+  { key: 'unit', labelKey: 'cat.map.unit' },
+  { key: 'description', labelKey: 'cat.map.description' },
 ]
 
 const selectClass = 'w-full px-3 py-1.5 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600'
@@ -35,10 +37,10 @@ export function StepFieldMapping() {
       </h2>
       <p className="text-xs text-muted-foreground">{t('cat.map.hint')}</p>
       <div className="grid grid-cols-2 gap-3">
-        {FIELDS.map(({ key, label }) => (
+        {FIELDS.map(({ key, labelKey }) => (
           <div key={key} className="space-y-1">
             <label className="flex items-center justify-between text-xs text-muted-foreground">
-              {label}
+              {t(labelKey)}
               {overrides[key] && (
                 <button type="button" onClick={() => setFieldMapOverride(key, null)} className="text-[10px] text-indigo-400 hover:text-indigo-300">Auto</button>
               )}

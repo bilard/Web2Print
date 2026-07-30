@@ -168,7 +168,7 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
                           >
                             {i === 0 && (
                               <span className="text-[9px] text-indigo-300 uppercase mr-1.5">
-                                Suggéré
+                                {t('dam.ip.suggested')}
                               </span>
                             )}
                             {opt}
@@ -227,12 +227,12 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
               {stage === 'generating' ? (
                 <>
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  Génération…
+                  {t('dam.gen.generating')}
                 </>
               ) : (
                 <>
                   <Wand2 className="w-3 h-3" />
-                  Générer le prompt
+                  {t('dam.ip.generatePrompt')}
                 </>
               )}
             </button>

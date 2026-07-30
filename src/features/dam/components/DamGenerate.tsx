@@ -726,7 +726,7 @@ export function DamGenerate() {
           {generating ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Génération...
+              {t('dam.gen.generating')}
             </>
           ) : (
             <>
@@ -805,7 +805,7 @@ export function DamGenerate() {
                       title={t('dam.gen.downloadPng')}
                     >
                       <Download className="w-3.5 h-3.5" />
-                      Télécharger
+                      {t('dam.gen.download')}
                     </button>
                     <button
                       onClick={() => handleSave(img, i)}
@@ -845,7 +845,7 @@ export function DamGenerate() {
                       }
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      Insérer dans l'éditeur
+                      {t('dam.gen.insertEditor')}
                     </button>
                   </div>
                 </div>

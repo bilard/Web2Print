@@ -4,13 +4,13 @@ import { useState } from 'react'
 import { Trash2, Loader2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { purgeScrapingData, type PurgeProgress, type ScrapeDataType } from '@/features/priceWatch/catalog/purgeScraping'
-import { t } from '@/lib/i18n'
+import { type TranslationKey, t } from '@/lib/i18n'
 
-const TYPE_META: { key: ScrapeDataType; label: string; hint: string }[] = [
-  { key: 'listings', label: 'Fiches collectées', hint: 'index produits/prix moissonné (le gros volume)' },
-  { key: 'counters', label: 'Compteurs & stats', hint: 'nb produits, durées, % prix, balayages' },
-  { key: 'cursors', label: 'Curseurs de balayage', hint: 'repart du début du catalogue au prochain scrape' },
-  { key: 'report', label: 'Rapport du dashboard', hint: 'KPIs + courbe de tendance' },
+const TYPE_META: { key: ScrapeDataType; labelKey: TranslationKey; hintKey: TranslationKey }[] = [
+  { key: 'listings', labelKey: 'ss.purge.listings', hintKey: 'ss.purge.listingsHint' },
+  { key: 'counters', labelKey: 'ss.purge.counters', hintKey: 'ss.purge.countersHint' },
+  { key: 'cursors', labelKey: 'ss.purge.cursors', hintKey: 'ss.purge.cursorsHint' },
+  { key: 'report', labelKey: 'ss.purge.report', hintKey: 'ss.purge.reportHint' },
 ]
 
 export function PurgeScrapingPanel({ uid, watchId, sites, onClose }: {
@@ -33,7 +33,8 @@ export function PurgeScrapingPanel({ uid, watchId, sites, onClose }: {
   const run = async () => {
     if (types.size === 0) { toast.error(t('tst.ss.pickType')); return }
     if (needsSites && selSites.size === 0) { toast.error(t('tst.ss.pickSite')); return }
-    const typeLabels = TYPE_META.filter((t) => types.has(t.key)).map((t) => t.label.toLowerCase()).join(', ')
+    // ⚠️ PAS `t` en variable de boucle : elle masquerait la traduction.
+    const typeLabels = TYPE_META.filter((m) => types.has(m.key)).map((m) => t(m.labelKey).toLowerCase()).join(', ')
     const scope = needsSites ? t('cfm.ss.sitesScope', { count: selSites.size, total: sites.length }) : t('cfm.ss.watchScope')
     if (!window.confirm(t('cfm.ss.purge', { types: typeLabels, scope }))) return
     setBusy(true)
@@ -60,16 +61,16 @@ export function PurgeScrapingPanel({ uid, watchId, sites, onClose }: {
 
       {/* Types de données */}
       <div className="flex flex-col gap-1">
-        {TYPE_META.map((t) => (
-          <label key={t.key} className="flex items-start gap-2 cursor-pointer group">
+        {TYPE_META.map((meta) => (
+          <label key={meta.key} className="flex items-start gap-2 cursor-pointer group">
             <input
-              type="checkbox" checked={types.has(t.key)}
-              onChange={() => setTypes((s) => toggle(s, t.key))}
+              type="checkbox" checked={types.has(meta.key)}
+              onChange={() => setTypes((s) => toggle(s, meta.key))}
               className="mt-0.5 accent-rose-500"
             />
             <span className="min-w-0">
-              <span className="text-xs text-white/85 group-hover:text-white">{t.label}</span>
-              <span className="block text-[10px] text-white/35 leading-tight">{t.hint}</span>
+              <span className="text-xs text-white/85 group-hover:text-white">{t(meta.labelKey)}</span>
+              <span className="block text-[10px] text-white/35 leading-tight">{t(meta.hintKey)}</span>
             </span>
           </label>
         ))}

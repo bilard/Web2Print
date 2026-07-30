@@ -74,16 +74,15 @@ export function PriceIndexTrend({ history, height = 220 }: { history: KpiHistory
           </div>
         </div>
         <div className="text-[11px] text-white/40 mt-0.5">
-          Vos tarifs rapportés au prix médian des concurrents.
+          {t('pw.idx.lead')}
           <span className="text-rose-400/70"> au-dessus de 100 = vous vendez plus cher</span> ·
           <span className="text-emerald-400/70"> en dessous = vous vendez moins cher</span>.
-          Tarifs non remisés : positionnement catalogue, pas prix net client.
+          {t('pw.idx.undiscounted')}
         </div>
       </div>
       {!enough ? (
         <div className="text-white/40 text-sm py-12 text-center px-4">
-          La courbe se construit à chaque analyse complète (« Comparer catalogue »).
-          Planifie-la pour suivre ta dérive tarifaire dans le temps.
+          {t('pw.idx.empty')}
         </div>
       ) : (
         <div style={{ height }}>
