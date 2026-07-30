@@ -119,12 +119,12 @@ function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
       </div>
 
       <div>
-        <label className="text-xs text-neutral-400 mb-1 block">Message</label>
+        <label className="text-xs text-neutral-400 mb-1 block">{t('node.send-telegram.message.label')}</label>
         <textarea
           value={config.text}
           onChange={(e) => onChange({ ...config, text: e.target.value })}
           rows={5}
-          placeholder={'Texte du message. Utilise {{NomColonne}} pour insérer une valeur.'}
+          placeholder={t('node.send-telegram.message.placeholder')}
           className={`${inputCls} resize-y font-mono`}
         />
         <p className="text-[10px] text-neutral-600 mt-1.5 leading-snug">
@@ -136,7 +136,7 @@ function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
       </div>
 
       <div>
-        <label className="text-xs text-neutral-400 mb-1 block">Format (parse_mode)</label>
+        <label className="text-xs text-neutral-400 mb-1 block">{t('node.send-telegram.parseMode.label')}</label>
         <select
           value={config.parseMode}
           onChange={(e) =>
@@ -158,11 +158,9 @@ function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
           className="accent-cyan-500 mt-0.5"
         />
         <div className="flex-1">
-          <div className="text-[12px] text-cyan-200">Envoyer 1 message par ligne</div>
+          <div className="text-[12px] text-cyan-200">{t('node.send-telegram.iterate.label')}</div>
           <div className="text-[10px] text-neutral-500 leading-snug mt-0.5">
-            Si l'entrée <code className="text-emerald-300/80">data</code> est un tableau de
-            lignes, envoie un message par ligne (le <code>{'{{...}}'}</code> est réévalué pour
-            chaque ligne). Sinon, un message unique.
+            {t('node.send-telegram.iterate.note')}
           </div>
         </div>
       </label>

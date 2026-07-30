@@ -17,6 +17,7 @@ import {
 import { useTelegramStore } from '@/stores/telegram.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { addOutboxMessage } from '@/features/telegram/useTelegramInbox'
+import { t } from '@/lib/i18n'
 
 // Doit rester aligné avec APPROVAL_CALLBACK_PREFIX de functions/src/telegram/evaluateUpdate.ts.
 const CALLBACK_PREFIX = 'wfappr:'
@@ -115,33 +116,31 @@ function ApprovalConfigUi({ config, onChange }: ApprovalConfigUiProps) {
           type="text"
           value={config.chatId}
           onChange={(e) => onChange({ ...config, chatId: e.target.value })}
-          placeholder="Vide = Chat ID par défaut (Settings)"
+          placeholder={t('node.telegram-approval.chatId.placeholder')}
           className={inputCls}
         />
         <p className="text-[10px] text-neutral-600 mt-1.5 leading-snug">
-          ⚠️ Le chat doit être dans l'<strong className="text-neutral-400">allowlist du webhook</strong>{' '}
-          (Settings → Telegram), sinon les clics sont ignorés.
+          {t('node.telegram-approval.allowlist.note')}
         </p>
       </div>
 
       <div>
-        <label className="text-xs text-neutral-400 mb-1 block">Question / message</label>
+        <label className="text-xs text-neutral-400 mb-1 block">{t('node.telegram-approval.text.label')}</label>
         <textarea
           value={config.text}
           onChange={(e) => onChange({ ...config, text: e.target.value })}
           rows={4}
-          placeholder={'Ex : Valider l’envoi du catalogue ? ({{NomColonne}} supporté)'}
+          placeholder={t('node.telegram-approval.text.placeholder')}
           className={`${inputCls} resize-y font-mono`}
         />
         <p className="text-[10px] text-neutral-600 mt-1.5 leading-snug">
-          Si le port <code className="text-emerald-300/80">attachment</code> est connecté, le fichier
-          est joint (ex : le PDF à valider) et ce texte sert de légende.
+          {t('node.telegram-approval.attachment.note')}
         </p>
       </div>
 
       <div className="flex gap-2">
         <div className="flex-1">
-          <label className="text-xs text-neutral-400 mb-1 block">Délai max (minutes)</label>
+          <label className="text-xs text-neutral-400 mb-1 block">{t('node.telegram-approval.timeout.label')}</label>
           <input
             type="number"
             min={1}
@@ -151,14 +150,14 @@ function ApprovalConfigUi({ config, onChange }: ApprovalConfigUiProps) {
           />
         </div>
         <div className="flex-1">
-          <label className="text-xs text-neutral-400 mb-1 block">À expiration</label>
+          <label className="text-xs text-neutral-400 mb-1 block">{t('node.telegram-approval.onTimeout.label')}</label>
           <select
             value={config.onTimeout}
             onChange={(e) => onChange({ ...config, onTimeout: e.target.value as ApprovalConfig['onTimeout'] })}
             className={inputCls}
           >
-            <option value="fail">Échouer (stoppe le run)</option>
-            <option value="reject">Refuser (port « rejected »)</option>
+            <option value="fail">{t('opt.onTimeout.fail')}</option>
+            <option value="reject">{t('opt.onTimeout.reject')}</option>
           </select>
         </div>
       </div>

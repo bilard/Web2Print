@@ -24,6 +24,7 @@ import { traverseDataTransfer, dataTransferHasDirectory } from '@/lib/dragdrop'
 import { detectAssemblyFiles, summarizeAssembly } from '@/features/idml/assemblyLoader'
 import type { IdmlSummary } from '@/features/idml/assemblyLoader'
 import { usePreviewFocus } from '../editor/previewFocus.store'
+import { t } from '@/lib/i18n'
 
 interface CsvConfig {
   headerRow: boolean
@@ -414,7 +415,7 @@ function UploadConfigUi({ config, onChange }: UploadConfigUiProps) {
             }`}
           >
             <Upload className="w-5 h-5" />
-            <span className="text-[11px]">Déposer ici un fichier ou un dossier</span>
+            <span className="text-[11px]">{t('node.upload.drop')}</span>
           </div>
           <div className="flex gap-1.5">
             <label
@@ -469,7 +470,7 @@ function UploadConfigUi({ config, onChange }: UploadConfigUiProps) {
                   <AlertTriangle className="w-2.5 h-2.5" /> introuvable
                 </span>
               ) : (
-                <span className="text-neutral-600">vérification…</span>
+                <span className="text-neutral-600">{t('node.upload.checking')}</span>
               )}
             </div>
           </div>
@@ -530,8 +531,8 @@ function UploadConfigUi({ config, onChange }: UploadConfigUiProps) {
 function IdmlSummaryPanel({ summary }: { summary: IdmlSummary }) {
   const rows: { label: string; value: string }[] = [
     { label: 'Fichier IDML', value: summary.idmlFileName },
-    { label: 'PDF référence', value: summary.pdfFileName ?? '—' },
-    { label: 'Fonts chargées', value: `${summary.fontLoaded} / ${summary.fontTotal}` },
+    { label: t('node.import-idml.pdfRef.label'), value: summary.pdfFileName ?? '—' },
+    { label: t('node.import-idml.fonts.label'), value: `${summary.fontLoaded} / ${summary.fontTotal}` },
     { label: 'Images', value: String(summary.imageCount) },
     { label: 'Spreads', value: String(summary.spreadCount) },
     { label: 'Fichiers XML', value: String(summary.xmlFileCount) },
@@ -540,7 +541,7 @@ function IdmlSummaryPanel({ summary }: { summary: IdmlSummary }) {
 
   return (
     <div className="border border-neutral-800 rounded-md bg-background p-3 flex flex-col gap-2.5">
-      <p className="text-[9px] font-semibold text-neutral-500 uppercase tracking-wider">Résumé</p>
+      <p className="text-[9px] font-semibold text-neutral-500 uppercase tracking-wider">{t('node.import-idml.summary')}</p>
       <div className="grid grid-cols-2 gap-2.5">
         {rows.map(({ label, value }) => (
           <div key={label} className="flex flex-col gap-0.5 min-w-0">
@@ -600,7 +601,7 @@ function CsvSummaryPanel({ summary }: { summary: CsvSummary }) {
                       ? 'bg-emerald-400/25 border border-emerald-400/60 text-emerald-100 shadow-[0_0_0_1px_rgba(74,222,128,0.35)]'
                       : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/20 hover:border-emerald-400/50'
                   }`}
-                  title={`Cibler la colonne dans l’aperçu — variable {{${col}}}`}
+                  title={t('node.upload.targetColumn.title', { column: col })}
                 >
                   {col}
                 </button>

@@ -319,7 +319,7 @@ function HiggsfieldConfigUi({
           className={inputCls}
         >
           <option value="image">Image (Soul text→image)</option>
-          <option value="video">Vidéo (DoP image→vidéo)</option>
+          <option value="video">{t('node.higgsfield.mode.video')}</option>
         </select>
       </div>
 
@@ -329,7 +329,7 @@ function HiggsfieldConfigUi({
           value={config.prompt}
           onChange={(e) => onChange({ ...config, prompt: e.target.value })}
           rows={3}
-          placeholder="Décris le rendu souhaité…"
+          placeholder={t('node.higgsfield.prompt.placeholder')}
           className={inputCls + ' resize-y'}
         />
       </div>
@@ -367,7 +367,7 @@ function HiggsfieldConfigUi({
               </select>
             </div>
             <div>
-              <label className={labelCls}>Qualité</label>
+              <label className={labelCls}>{t('node.higgsfield.quality.label')}</label>
               <select
                 value={config.quality}
                 onChange={(e) => onChange({ ...config, quality: e.target.value as HiggsfieldConfig['quality'] })}
@@ -393,7 +393,7 @@ function HiggsfieldConfigUi({
       ) : (
         <>
           <div>
-            <label className={labelCls}>Modèle vidéo</label>
+            <label className={labelCls}>{t('node.higgsfield.videoModel.label')}</label>
             <select
               value={config.videoModel}
               onChange={(e) => onChange({ ...config, videoModel: e.target.value as HiggsfieldConfig['videoModel'] })}
@@ -438,12 +438,12 @@ function HiggsfieldConfigUi({
       {/* Communs */}
       <div className="grid grid-cols-2 gap-2 items-end">
         <div>
-          <label className={labelCls}>Seed (vide = aléatoire)</label>
+          <label className={labelCls}>{t('node.higgsfield.seed.label')}</label>
           <input
             type="number"
             value={config.seed}
             onChange={(e) => onChange({ ...config, seed: e.target.value })}
-            placeholder="aléatoire"
+            placeholder={t('node.higgsfield.seed.placeholder')}
             className={inputCls}
           />
         </div>
@@ -454,7 +454,7 @@ function HiggsfieldConfigUi({
             onChange={(e) => onChange({ ...config, enhancePrompt: e.target.checked })}
             className="accent-indigo-500"
           />
-          <span className="text-[11px] text-neutral-300">Améliorer le prompt</span>
+          <span className="text-[11px] text-neutral-300">{t('node.higgsfield.enhance.label')}</span>
         </label>
       </div>
     </div>

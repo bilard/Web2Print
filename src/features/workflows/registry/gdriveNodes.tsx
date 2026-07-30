@@ -415,7 +415,7 @@ function GSheetsExportConfigUi({
           onChange={(e) => onChange({ ...config, mode: e.target.value as 'create' | 'update' })}
           className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
         >
-          <option value="create">Créer un nouveau fichier</option>
+          <option value="create">{t('opt.gsheets.create')}</option>
           <option value="update" disabled={!hasId}>
             Mettre à jour le même fichier{!hasId ? ' — renseignez l’URL ci-dessous' : ''}
           </option>
@@ -463,7 +463,7 @@ function GSheetsExportConfigUi({
           value={config.folderName ?? ''}
           onChange={(e) => onChange({ ...config, folderName: e.target.value })}
           className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
-          placeholder="Ex : Web2Print (l'app le crée/réutilise)"
+          placeholder={t('node.gsheets-export.folderName.placeholder')}
         />
         <p className="text-[10px] text-neutral-600 leading-snug mt-1">
           Prioritaire sur le dossier choisi ci-dessus : l'app crée/réutilise un dossier de ce nom.
@@ -472,7 +472,7 @@ function GSheetsExportConfigUi({
       </div>
       {mode === 'update' && (
         <p className="text-[10px] text-amber-400/70 leading-snug">
-          ↳ Nom et dossier ne servent qu'à la <strong>création</strong> d'un nouveau fichier
+          {t('node.gsheets-export.nameNote')}
           (videz l'URL ci-dessus). Une mise à jour réécrit le fichier existant sans le déplacer.
         </p>
       )}
@@ -493,7 +493,7 @@ function GSheetsExportConfigUi({
           )}
         </button>
         <p className="text-[10px] text-neutral-600 mt-1 leading-snug">
-          Colonnes calculées écrites comme formules <strong>vivantes</strong> dans le Google Sheets.
+          {t('node.gsheets-export.formulas.note')}
         </p>
       </div>
 
@@ -526,7 +526,7 @@ function GSheetsExportConfigUi({
               onChange={(e) => onChange({ ...config, chartXColumn: e.target.value })}
               className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
             >
-              <option value="">— axe X (catégories) —</option>
+              <option value="">{t('opt.chart.pickAxis')}</option>
               {availableColumns.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
