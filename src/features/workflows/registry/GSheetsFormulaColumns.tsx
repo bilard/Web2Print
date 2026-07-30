@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { GSHEETS_FUNCTIONS } from '@/features/gdrive/googleSheetsFunctions'
 import { formulaInsert } from './formulaInsert'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 interface Row {
   header: string
@@ -13,19 +14,19 @@ interface Row {
 }
 
 /** Options de format de colonne (alignées sur FORMULA_FORMATS côté serveur). */
-const FORMAT_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: 'Auto' },
-  { value: 'text', label: 'Texte' },
-  { value: 'number', label: 'Nombre' },
-  { value: 'percent', label: 'Pourcentage' },
-  { value: 'currency', label: 'Devise €' },
-  { value: 'currency_round', label: 'Devise arrondi' },
-  { value: 'accounting', label: 'Comptabilité' },
-  { value: 'scientific', label: 'Scientifique' },
-  { value: 'date', label: 'Date' },
-  { value: 'time', label: 'Heure' },
-  { value: 'datetime', label: 'Date+heure' },
-  { value: 'duration', label: 'Durée' },
+const FORMAT_OPTIONS: { value: string; labelKey: TranslationKey }[] = [
+  { value: '', labelKey: 'fmt.auto' },
+  { value: 'text', labelKey: 'fmt.text' },
+  { value: 'number', labelKey: 'fmt.number' },
+  { value: 'percent', labelKey: 'fmt.percent' },
+  { value: 'currency', labelKey: 'fmt.currency' },
+  { value: 'currency_round', labelKey: 'fmt.currencyRound' },
+  { value: 'accounting', labelKey: 'fmt.accounting' },
+  { value: 'scientific', labelKey: 'fmt.scientific' },
+  { value: 'date', labelKey: 'fmt.date' },
+  { value: 'time', labelKey: 'fmt.time' },
+  { value: 'datetime', labelKey: 'fmt.datetime' },
+  { value: 'duration', labelKey: 'fmt.duration' },
 ]
 
 /** Ferme les parenthèses (et accolades) non fermées d'une formule, dans le bon
@@ -292,7 +293,7 @@ export function GSheetsFormulaColumns({
               className="w-24 shrink-0 bg-background border border-neutral-700 rounded px-1 py-1.5 text-[10px] text-white/70 outline-none focus:border-indigo-500"
             >
               {FORMAT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+                <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
               ))}
             </select>
             {!ghost && (
@@ -310,8 +311,7 @@ export function GSheetsFormulaColumns({
         )
       })}
       <p className="text-[10px] text-neutral-600 leading-snug">
-        Formules <strong>vivantes</strong> (se recalculent dans Google Sheets). Tape une fonction
-        (ex. <code>IF</code>, <code>ROUND</code>) ou <code>{'{'}</code> pour une colonne — l'autocomplétion guide.
+        {t('gsf.liveNoteColumns')}
       </p>
     </div>
   )

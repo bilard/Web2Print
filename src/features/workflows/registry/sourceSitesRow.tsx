@@ -6,6 +6,7 @@
 import { Trash2, Lock, LockOpen, Play, Loader2, RotateCcw } from 'lucide-react'
 import { agoShort, pct } from '@/features/priceWatch/dashboard/format'
 import { siteStatus, SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
+import { t } from '@/lib/i18n'
 
 export interface SiteRowStats {
   products?: number
@@ -179,7 +180,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
             >
               {badge.icon} {badge.label}{badge.detail ? ` · ${badge.detail}` : ''}
             </span>
-          ) : <span className="text-[10px] text-white/20 italic whitespace-nowrap">jamais scrapé</span>}
+          ) : <span className="text-[10px] text-white/20 italic whitespace-nowrap">{t('ss.neverScraped')}</span>}
         </div>
         <div className="shrink-0 flex items-center gap-0.5 -mr-1">
           <button
@@ -199,7 +200,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           </button>
           <button
             onClick={onReset}
-            title="Réinitialiser les données collectées de ce site (efface tout, re-scrape propre)"
+            title={t('ss.reset.title')}
             className="text-white/35 hover:text-amber-400 transition-colors p-1 rounded hover:bg-white/5"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -221,7 +222,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
         <select
           value={mode ?? ''}
           onChange={(e) => onMode(e.target.value)}
-          title="Canal de relevé — « Moisson » balaie ses catégories, « Recherche » interroge son moteur par référence, « Les deux » fait les deux. Un généraliste (marketplace, grande surface de bricolage) n'a d'intérêt qu'en Recherche : balayer ses rayons coûte des heures pour presque aucun produit apparié."
+          title={t('ss.channel.title')}
           className="shrink-0 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
         >
           {MODE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -244,7 +245,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           value={pageBudget ?? ''}
           onChange={(e) => onBudget(e.target.value.trim() ? Math.max(1, Number(e.target.value)) : undefined)}
           placeholder="pages"
-          title="Pages par run réservées à ce site. Vide = part du budget commun."
+          title={t('ss.pages.title')}
           className="shrink-0 w-14 bg-well border border-white/10 rounded text-[10px] text-white/60 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
         />
         {/* BrowserAct n'a pas de primitive « lis cette URL » : sans bot, il n'y a rien à

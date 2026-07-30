@@ -358,24 +358,20 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
       {connectedAt === undefined ? (
         <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-neutral-500/10 border border-neutral-500/30">
           <Loader2 className="w-3 h-3 text-neutral-400 shrink-0 animate-spin" />
-          <span className="text-[11px] text-neutral-400">Vérification de la connexion Google…</span>
+          <span className="text-[11px] text-neutral-400">{t('node.send-gmail.checkingGoogle')}</span>
         </div>
       ) : connectedAt !== null ? (
         <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30">
           <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" />
           <span className="text-[11px] text-emerald-300 leading-snug">
-            Connecté via ton compte Google global. Le cron <strong>et</strong> les envois manuels
-            réutilisent cette connexion — rien à reconnecter ici.
+            {t('node.send-gmail.connected')}
           </span>
         </div>
       ) : (
         <div className="flex items-start gap-1.5 px-2 py-2 rounded-md bg-amber-500/10 border border-amber-500/30">
           <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
           <span className="text-[11px] text-amber-200 leading-snug">
-            Compte Google non connecté. Ouvre les <strong>Paramètres</strong> (roue dentée) →{' '}
-            <strong>Connecteurs → Google (accès serveur)</strong> et connecte ton compte{' '}
-            <strong>une seule fois</strong> : l'envoi Gmail (manuel et cron) l'utilisera ensuite
-            automatiquement.
+            {t('node.send-gmail.notConnected')}
           </span>
         </div>
       )}
@@ -428,14 +424,14 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
             onClick={(e) => updateAutocomplete(e.currentTarget)}
             onBlur={() => setTimeout(() => setAutocomplete(null), 150)}
             rows={6}
-            placeholder={`Tape {{ pour voir les variables disponibles.\n\n  {{Nom colonne}}      → valeurs de cette colonne\n  {{table}}             → tableau de toutes les lignes\n  {{table: col1, col2}} → tableau avec colonnes ciblées\n  {{html}}              → contenu HTML reçu sur le port data (coche « HTML »)`}
+            placeholder={t('node.send-gmail.body.placeholder')}
             className={`${inputCls} resize-y font-mono`}
           />
           {autocomplete?.open && suggestions.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-surface border border-cyan-500/40 rounded-md shadow-xl z-20">
               {availableColumns.length === 0 && (
                 <div className="px-2 py-1.5 text-[10px] text-neutral-500 italic border-b border-neutral-800">
-                  Aucune colonne détectée upstream — connecte un Upload CSV.
+                  {t('node.send-gmail.noColumn')}
                 </div>
               )}
               {suggestions.map((col, i) => (
@@ -456,9 +452,9 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
                   }`}
                 >
                   {col === 'table' ? (
-                    <span className="text-emerald-300">{`{{table}}`} <span className="text-neutral-500 text-[10px]">— tableau de toutes les lignes</span></span>
+                    <span className="text-emerald-300">{`{{table}}`} <span className="text-neutral-500 text-[10px]">{t('node.send-gmail.hint.table')}</span></span>
                   ) : col === 'html' ? (
-                    <span className="text-emerald-300">{`{{html}}`} <span className="text-neutral-500 text-[10px]">— contenu HTML reçu (port data)</span></span>
+                    <span className="text-emerald-300">{`{{html}}`} <span className="text-neutral-500 text-[10px]">{t('node.send-gmail.hint.html')}</span></span>
                   ) : (
                     <span>{`{{${col}}}`}</span>
                   )}
@@ -478,22 +474,21 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
           className="accent-cyan-500 mt-0.5"
         />
         <div className="flex-1">
-          <div className="text-[12px] text-cyan-200">Envoyer 1 mail par ligne</div>
+          <div className="text-[12px] text-cyan-200">{t('node.send-gmail.iterate.label')}</div>
           <div className="text-[10px] text-neutral-500 leading-snug mt-0.5">
-            Si l'entrée est un tableau de lignes (ex : port <code className="text-emerald-300/80">rows</code> du Upload),
-            envoie un mail pour chaque ligne. Sinon, 1 mail unique avec la 1ère ligne.
+            {t('node.send-gmail.iterate.note')}
           </div>
         </div>
       </label>
 
       {/* Pièce jointe : mode sélecteur */}
       <div className="space-y-1.5 px-2 py-2 rounded-md border border-cyan-500/20 bg-cyan-500/5">
-        <div className="text-[12px] text-cyan-200">Pièce jointe</div>
+        <div className="text-[12px] text-cyan-200">{t('node.send-gmail.attachment.label')}</div>
         <div className="space-y-1">
           {([
-            { v: 'none', label: 'Aucune', hint: 'Mail sans pièce jointe.' },
-            { v: 'source', label: 'Fichier source', hint: 'Joint ce qui arrive sur le port `attachment` : un fichier (sortie « file ») OU une chaîne HTML (sortie « html ») emballée en .html.' },
-            { v: 'filtered', label: 'Sélection (CSV filtré)', hint: 'Génère un CSV avec uniquement les colonnes utilisées dans le corps du mail.' },
+            { v: 'none', label: t('opt.attachment.none'), hint: t('opt.attachment.none.hint') },
+            { v: 'source', label: t('opt.attachment.source'), hint: t('opt.attachment.source.hint') },
+            { v: 'filtered', label: t('opt.attachment.filtered'), hint: t('opt.attachment.filtered.hint') },
           ] as { v: AttachmentMode; label: string; hint: string }[]).map((opt) => (
             <label key={opt.v} className="flex items-start gap-2 cursor-pointer hover:bg-cyan-500/10 rounded px-1.5 py-1 transition-colors">
               <input
@@ -512,7 +507,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
         </div>
         {config.attachmentMode === 'filtered' && (
           <div className="pt-1">
-            <label className="text-[10px] text-neutral-500 mb-0.5 block">Nom du fichier généré</label>
+            <label className="text-[10px] text-neutral-500 mb-0.5 block">{t('node.send-gmail.filename.label')}</label>
             <input
               type="text"
               value={config.attachmentFilename}
@@ -533,10 +528,9 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
             className="accent-cyan-500 mt-0.5"
           />
           <div className="flex-1">
-            <div className="text-[11px] text-neutral-200">Joindre aussi le Google Sheet (.xlsx)</div>
+            <div className="text-[11px] text-neutral-200">{t('node.send-gmail.attachGSheet.label')}</div>
             <div className="text-[10px] text-neutral-500 leading-snug">
-              Exporte en <code className="text-emerald-300/80">.xlsx</code> le Sheet reçu du node « Export Google Sheets »
-              (sortie <code className="text-emerald-300/80">result</code> → port <code className="text-emerald-300/80">gsheet</code>). Laisse le port <code className="text-emerald-300/80">data</code> libre pour le <code className="text-emerald-300/80">{'{{html}}'}</code> du corps.
+              {t('node.send-gmail.attachGSheet.note')}
             </div>
           </div>
         </label>
@@ -551,9 +545,9 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
             className="accent-cyan-500 mt-0.5"
           />
           <div className="flex-1">
-            <div className="text-[11px] text-neutral-200">Joindre aussi le corps en .html</div>
+            <div className="text-[11px] text-neutral-200">{t('node.send-gmail.attachBody.label')}</div>
             <div className="text-[10px] text-neutral-500 leading-snug">
-              Joint le HTML reçu sur <code className="text-emerald-300/80">data</code> (sortie <code className="text-emerald-300/80">html</code> de « Rapport de coûts IA ») en fichier <code className="text-emerald-300/80">.html</code>. Aucune arête vers <code className="text-emerald-300/80">attachment</code> requise.
+              {t('node.send-gmail.attachBody.note')}
             </div>
           </div>
         </label>

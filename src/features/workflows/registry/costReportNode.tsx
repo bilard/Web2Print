@@ -52,11 +52,7 @@ function CostReportConfigUi({
         {t('node.cost-report.archive.note')}
       </p>
       <p className="text-[10px] text-neutral-500 leading-relaxed">
-        Pour l’afficher dans le <strong className="text-neutral-300">corps</strong> du mail (pas en pièce jointe),
-        relie la sortie <strong className="text-neutral-300">html</strong> vers « Envoyer via Gmail »
-        (port <strong className="text-neutral-300">data</strong>), coche <strong className="text-neutral-300">HTML</strong>
-        et place <code className="text-neutral-400">{'{{html}}'}</code> dans le corps. Ou
-        <strong className="text-neutral-300"> summary</strong> → <code className="text-neutral-400">{'{{table}}'}</code> pour un tableau simple.
+        {t('node.cost-report.body.note')}
       </p>
     </div>
   )

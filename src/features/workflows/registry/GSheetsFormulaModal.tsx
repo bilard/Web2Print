@@ -7,6 +7,8 @@ import { FunctionSquare, Plus, Search } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { GSheetsFormulaColumns } from './GSheetsFormulaColumns'
 import { formulaInsert } from './formulaInsert'
+// ⚠️ Ne JAMAIS nommer `t` une variable de boucle ici : elle masquerait la traduction.
+import { t, type TranslationKey } from '@/lib/i18n'
 import { GSHEETS_FUNCTIONS, GSHEETS_FUNCTION_GROUPS } from '@/features/gdrive/googleSheetsFunctions'
 
 interface Props {
@@ -18,13 +20,13 @@ interface Props {
 
 /** Modèles de formules complexes prêts à insérer (les {col1}/{col2}/… sont à
  *  remplacer par tes colonnes via l'autocomplétion). */
-const FORMULA_TEMPLATES: { label: string; header: string; template: string; hint: string }[] = [
-  { label: 'Écart %', header: 'Écart %', template: '=ROUND(({col1}/{col2}-1)*100; 1)', hint: 'Variation en % entre deux prix' },
-  { label: 'Moins cher ?', header: 'Moins cher', template: '=IF({col1}<{col2}; "oui"; "non")', hint: 'Condition oui/non' },
-  { label: 'Prix le plus bas', header: 'Min', template: '=MIN({col1}; {col2})', hint: 'Minimum de plusieurs colonnes' },
-  { label: 'Recherche (VLOOKUP)', header: 'Recherche', template: '=IFERROR(VLOOKUP({cle}; Feuille2!A:B; 2; FAUX); "—")', hint: 'Va chercher une valeur dans une autre feuille' },
-  { label: 'Libellé concaténé', header: 'Libellé', template: '=CONCATENATE({col1}; " — "; {col2})', hint: 'Assemble plusieurs colonnes en texte' },
-  { label: 'Si vide → tiret', header: 'Sûr', template: '=IFERROR({col1}; "—")', hint: 'Évite les erreurs / cases vides' },
+const FORMULA_TEMPLATES: { labelKey: TranslationKey; header: string; template: string; hintKey: TranslationKey }[] = [
+  { labelKey: 'gsf.tpl.gap', header: 'Écart %', template: '=ROUND(({col1}/{col2}-1)*100; 1)', hintKey: 'gsf.tpl.gap.hint' },
+  { labelKey: 'gsf.tpl.cheaper', header: 'Moins cher', template: '=IF({col1}<{col2}; "oui"; "non")', hintKey: 'gsf.tpl.cheaper.hint' },
+  { labelKey: 'gsf.tpl.min', header: 'Min', template: '=MIN({col1}; {col2})', hintKey: 'gsf.tpl.min.hint' },
+  { labelKey: 'gsf.tpl.vlookup', header: 'Recherche', template: '=IFERROR(VLOOKUP({cle}; Feuille2!A:B; 2; FAUX); "—")', hintKey: 'gsf.tpl.vlookup.hint' },
+  { labelKey: 'gsf.tpl.concat', header: 'Libellé', template: '=CONCATENATE({col1}; " — "; {col2})', hintKey: 'gsf.tpl.concat.hint' },
+  { labelKey: 'gsf.tpl.ifEmpty', header: 'Sûr', template: '=IFERROR({col1}; "—")', hintKey: 'gsf.tpl.ifEmpty.hint' },
 ]
 
 export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props) {
@@ -115,19 +117,19 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
 
             <aside className="space-y-4 text-[11px]">
               <div>
-                <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">Formules complexes</h4>
+                <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">{t('gsf.complexFormulas')}</h4>
                 <div className="space-y-1">
-                  {FORMULA_TEMPLATES.map((t) => (
+                  {FORMULA_TEMPLATES.map((tpl) => (
                     <button
-                      key={t.label}
+                      key={tpl.labelKey}
                       type="button"
-                      onClick={() => insertTemplate(t)}
-                      title={`${t.hint} — ${t.template}`}
+                      onClick={() => insertTemplate(tpl)}
+                      title={`${t(tpl.hintKey)} — ${tpl.template}`}
                       className="w-full flex items-center gap-1.5 px-2 py-1 rounded border border-neutral-700 bg-well hover:border-indigo-500/50 hover:bg-indigo-500/10 text-left transition-colors group"
                     >
                       <Plus className="w-3 h-3 text-indigo-400 shrink-0" />
-                      <span className="text-neutral-200 truncate">{t.label}</span>
-                      <span className="ml-auto text-[9px] text-neutral-600 group-hover:text-neutral-400 truncate max-w-[110px]">{t.hint}</span>
+                      <span className="text-neutral-200 truncate">{t(tpl.labelKey)}</span>
+                      <span className="ml-auto text-[9px] text-neutral-600 group-hover:text-neutral-400 truncate max-w-[110px]">{t(tpl.hintKey)}</span>
                     </button>
                   ))}
                 </div>
@@ -146,7 +148,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                           formulaInsert.insert(`{${c}}`)
                         }}
                         className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-mono text-[10px] hover:bg-emerald-500/20 transition-colors"
-                        title={`Insérer {${c}} dans le champ formule`}
+                        title={t('gsf.insertColumn', { column: c })}
                       >
                         {'{'}{c}{'}'}
                       </button>
@@ -206,7 +208,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                       setAcOpen(false)
                     }
                   }}
-                  placeholder="Filtrer / insérer une fonction…"
+                  placeholder={t('gsf.filter.placeholder')}
                   className="w-56 pl-6 pr-2 py-1 text-[10px] bg-well border border-neutral-700 rounded text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-indigo-500/60"
                 />
                 {acOpen && flatMatches.length > 0 && (
@@ -250,7 +252,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                               e.preventDefault()
                               insertFn(f.name)
                             }}
-                            title={`Insérer ${f.name}( dans le champ formule`}
+                            title={t('gsf.insertFunction', { name: f.name })}
                             className="w-full flex items-baseline gap-1.5 text-left rounded px-1 -mx-1 hover:bg-white/[0.05] transition-colors"
                           >
                             <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
@@ -269,8 +271,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
 
         <footer className="px-4 py-3 border-t border-neutral-800 flex items-center justify-between shrink-0">
           <p className="text-[10px] text-neutral-600">
-            Formules <strong>vivantes</strong> : référence une colonne par <code>{'{nom}'}</code>, tape une
-            fonction pour l'autocomplétion.
+            {t('gsf.liveNoteShort')}
           </p>
           <button
             type="button"

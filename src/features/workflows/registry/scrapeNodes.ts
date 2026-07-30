@@ -6,7 +6,7 @@ import type { NodeSpec } from '../types'
 import { FIELD_TEMPLATES } from '@/features/scraping/useJina'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 interface ScrapeUrlConfig {
   /** URL à scraper, ou plusieurs URLs séparées par retours à la ligne / virgules. */
@@ -27,9 +27,11 @@ interface ScrapeUrlOutputs {
   assets: ScrapeUrlAsset[]
 }
 
-const TEMPLATE_OPTIONS: Array<{ value: string; label: string }> = [
+// Tableau MIXTE assumé : les libellés de templates viennent du registre de
+// templates (donnée), « Personnalisé » est de l'UI et porte donc une clé.
+const TEMPLATE_OPTIONS: Array<{ value: string; label?: string; labelKey?: TranslationKey }> = [
   ...Object.entries(FIELD_TEMPLATES).map(([key, t]) => ({ value: key, label: t.label })),
-  { value: 'custom', label: 'Personnalisé' },
+  { value: 'custom', labelKey: 'opt.template.custom' },
 ]
 
 function parseUrls(raw: string): string[] {

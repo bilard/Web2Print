@@ -104,17 +104,7 @@ function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
           className={inputCls}
         />
         <p className="text-[10px] text-neutral-600 mt-1.5 leading-snug">
-          Laisse vide pour utiliser le <strong className="text-neutral-400">Chat ID par défaut</strong>{' '}
-          (Settings). Sinon récupère ton chat_id via{' '}
-          <a
-            href="https://t.me/userinfobot"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2"
-          >
-            @userinfobot
-          </a>
-          , ou mets <code className="text-amber-300/80">@nomducanal</code> pour un canal public.
+          {t('node.send-telegram.chatId.note')}
         </p>
       </div>
 
@@ -128,10 +118,7 @@ function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
           className={`${inputCls} resize-y font-mono`}
         />
         <p className="text-[10px] text-neutral-600 mt-1.5 leading-snug">
-          Laisse vide pour envoyer tel quel le texte reçu sur le port{' '}
-          <code className="text-emerald-300/80">data</code> (ex : node « Saisie texte »). Si le
-          port <code className="text-emerald-300/80">attachment</code> est connecté, le fichier est
-          envoyé en pièce jointe et ce texte sert de légende (max {CAPTION_MAX} caractères).
+          {t('node.send-telegram.text.note', { max: CAPTION_MAX })}
         </p>
       </div>
 

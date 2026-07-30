@@ -20,6 +20,7 @@ import { SourceSitesRowItem, type SiteRowStats } from './sourceSitesRow'
 import { SiteCredentialsForm } from './sourceSitesCreds'
 import { PurgeScrapingPanel } from './sourceSitesPurge'
 import type { SourceSitesNodeConfig } from './sourceSitesTypes'
+import { t } from '@/lib/i18n'
 
 /** Fenêtre du battement de moisson : constante PARTAGÉE avec la PWA radarPrice — deux
  *  valeurs différentes affichaient des comptes contradictoires d'un écran à l'autre. */
@@ -224,7 +225,7 @@ export function SourceSitesConfig({ config, onChange }: {
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortMode)}
-                title="Trier l'affichage (n'affecte pas l'ordre d'exécution)"
+                title={t('ss.sort.title')}
                 className="bg-well border border-white/10 rounded text-[10px] text-white/50 px-1 py-0.5 focus:outline-none focus:border-indigo-500/50"
               >
                 {(Object.keys(SORT_LABELS) as SortMode[]).map((m) => (
@@ -242,7 +243,7 @@ export function SourceSitesConfig({ config, onChange }: {
             {rows.length > 0 && (
               <button
                 onClick={() => setPurging((v) => !v)}
-                title="Vider les données de scraping (par site, par type)"
+                title={t('ss.purge.title')}
                 className="flex items-center gap-1 text-[10px] whitespace-nowrap text-white/40 hover:text-rose-400 transition-colors"
               >
                 <Trash2 className="w-3 h-3" /> Vider
@@ -400,7 +401,7 @@ export function SourceSitesConfig({ config, onChange }: {
 
       {/* Identifiant du suivi (avancé) */}
       <label className="block mt-1">
-        <span className="text-xs text-white/60 mb-1 block">Identifiant du suivi (avancé)</span>
+        <span className="text-xs text-white/60 mb-1 block">{t('ss.watchId.label')}</span>
         <input
           value={config.watchId ?? ''}
           onChange={(e) => onChange({ ...config, watchId: e.target.value })}

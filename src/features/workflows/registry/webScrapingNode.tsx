@@ -7,7 +7,7 @@ import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { ConfigFieldRenderer } from '../editor/configFields'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 /** Mode du node unifié → type de l'ancien node qui porte la logique. */
 const MODE_TO_TYPE: Record<string, string> = {
@@ -18,16 +18,16 @@ const MODE_TO_TYPE: Record<string, string> = {
   ask: 'web-ask',
 }
 
-const MODE_OPTIONS = [
-  { value: 'scrape', label: 'Scrape — URL(s) → champs' },
-  { value: 'list', label: 'Liste — pages catégorie → produits' },
-  { value: 'crawl', label: 'Crawl — découverte de fiches (client)' },
-  { value: 'search', label: 'Recherche web' },
-  { value: 'ask', label: 'Question web (IA)' },
+const MODE_OPTIONS: { value: string; labelKey: TranslationKey }[] = [
+  { value: 'scrape', labelKey: 'opt.scrapeMode.scrape' },
+  { value: 'list', labelKey: 'opt.scrapeMode.list' },
+  { value: 'crawl', labelKey: 'opt.scrapeMode.crawl' },
+  { value: 'search', labelKey: 'opt.scrapeMode.search' },
+  { value: 'ask', labelKey: 'opt.scrapeMode.ask' },
 ]
 
-const MODE_LABEL: Record<string, string> = {
-  scrape: 'Scrape', list: 'Liste produits', crawl: 'Crawl', search: 'Recherche', ask: 'Question',
+const MODE_LABEL: Record<string, TranslationKey> = {
+  scrape: 'mode.scrape', list: 'mode.list', crawl: 'mode.crawl', search: 'mode.search', ask: 'mode.ask',
 }
 
 type Cfg = Record<string, unknown>
@@ -47,7 +47,7 @@ function WebScrapingConfig({ config, onChange }: { config: Cfg; onChange: (c: Cf
           className="w-full text-[13px] bg-well border border-neutral-800 rounded px-2 py-1.5 text-neutral-200 focus:outline-none focus:border-indigo-500/60"
         >
           {MODE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
           ))}
         </select>
       </label>
@@ -87,7 +87,7 @@ const webScrapingNode: NodeSpec<Cfg, Record<string, unknown>, Record<string, unk
   defaultConfig: { mode: 'scrape' },
   runtime: 'any',
   connectors: ['jina', 'llm'],
-  cardSummary: (config) => MODE_LABEL[(config.mode as string) ?? 'scrape'] ?? '',
+  cardSummary: (config) => { const k = MODE_LABEL[(config.mode as string) ?? 'scrape']; return k ? t(k) : '' },
   ConfigComponent: WebScrapingConfig,
   run: async (ctx, config, inputs) => {
     const mode = (config.mode as string) ?? 'scrape'
