@@ -47,7 +47,7 @@ function FieldCard({ f, hex, active, onFocusTable }: {
 
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/45">
         <span>{TYPE_LABEL[f.type]}</span>
-        {f.pk && <span className="inline-flex items-center gap-1 text-amber-300/80"><KeyRound className="h-3 w-3" /> Clé primaire</span>}
+        {f.pk && <span className="inline-flex items-center gap-1 text-amber-300/80"><KeyRound className="h-3 w-3" /> {t('dg.pk')}</span>}
         {fkTable && (
           <button
             onClick={() => onFocusTable(fkTable.id)}

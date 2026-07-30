@@ -102,7 +102,7 @@ export function SourceSyncModal({ ident, open, onClose }: Props) {
                   <span className="text-sm text-white truncate">{p.name}</span>
                 </label>
               ))}
-              <p className="text-[10px] text-white/30 leading-relaxed">Les personnalisations par produit (images remplacées, textes édités) sont conservées.</p>
+              <p className="text-[10px] text-white/30 leading-relaxed">{t('pi.customKept')}</p>
             </div>
           )}
         </div>

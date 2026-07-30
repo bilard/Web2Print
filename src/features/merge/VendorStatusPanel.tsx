@@ -62,7 +62,7 @@ export function VendorStatusPanel() {
           <span className="text-[10px] text-white/30">({vendors.length})</span>
           <div className="ml-auto flex items-center gap-1.5">
             {stats.matched > 0 && (
-              <span className="text-[9px] text-emerald-400/70 tabular-nums" title={`${stats.matched} matché${stats.matched > 1 ? 's' : ''}`}>
+              <span className="text-[9px] text-emerald-400/70 tabular-nums" title={t('mg.matchedShort', { count: stats.matched })}>
                 ✓{stats.matched}
               </span>
             )}

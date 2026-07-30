@@ -16,8 +16,8 @@ export function WelcomeStep() {
           <Sparkles className="w-6 h-6 text-indigo-300" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-white">Bienvenue sur IBS-Studio</h3>
-          <p className="text-xs text-white/50">Configurons votre espace en quelques étapes. Vous pourrez tout modifier plus tard dans les Réglages.</p>
+          <h3 className="text-lg font-semibold text-white">{t('ob.welcome')}</h3>
+          <p className="text-xs text-white/50">{t('ob.introFull')}</p>
         </div>
       </div>
       <div className="flex flex-col gap-2">

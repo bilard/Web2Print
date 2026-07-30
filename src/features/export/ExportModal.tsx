@@ -209,7 +209,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
           {format === 'html' && (
             <div className="bg-white/3 border border-white/5 rounded-xl p-3 flex flex-col gap-1.5">
               <p className="text-xs text-white/40">
-                Archive ZIP contenant <span className="text-white/60">index.html</span>, <span className="text-white/60">style.css</span> et un dossier <span className="text-white/60">assets/</span> avec les images. Textes sélectionnables, formes en CSS.
+                {t('ex.html.desc')}
               </p>
             </div>
           )}
@@ -218,10 +218,10 @@ export function ExportModal({ onClose }: ExportModalProps) {
           {format === 'svg' && (
             <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 flex flex-col gap-1.5">
               <p className="text-xs text-white/50">
-                Fichier <span className="text-purple-300 font-medium">.svg</span> vectoriel réimportable et éditable dans Illustrator, Figma ou ce même éditeur.
+                {t('ex.svg.info')}
               </p>
               <p className="text-[10px] text-white/30">
-                Textes, formes et chemins sont conservés sans perte de qualité.
+                {t('ex.svg.info2')}
               </p>
             </div>
           )}
@@ -230,14 +230,14 @@ export function ExportModal({ onClose }: ExportModalProps) {
           {format === 'idml' && (
             <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-3 flex flex-col gap-1.5">
               <p className="text-xs text-white/50">
-                Fichier <span className="text-violet-300 font-medium">.idml</span> modifié exportable dans <span className="text-white/70">Adobe InDesign</span>.
+                {t('ex.idml.info')}
               </p>
               <p className="text-xs text-white/30">
-                Positions, tailles, rotations, couleurs et contenus textes sont mis à jour.
+                {t('ex.idml.info2')}
               </p>
               {globalIdmlSource && (
                 <p className="text-[10px] text-violet-400/60 mt-0.5">
-                  Source : {globalIdmlSource.fileName}
+                  {t('ex.idml.source', { file: globalIdmlSource.fileName })}
                 </p>
               )}
             </div>
@@ -246,7 +246,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
           {/* Options Pages déclinées */}
           {format === 'decline' && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Formats</p>
+              <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">{t('ex.formats')}</p>
               <div className="grid grid-cols-2 gap-2">
                 {DECLINE_TARGETS.map((t) => {
                   const on = declineTargets.includes(t.id)
@@ -276,7 +276,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
                 })}
               </div>
               <p className="text-[11px] text-white/40 leading-relaxed">
-                Crée une <span className="text-white/60">page éditable</span> par format : la mise en page est <span className="text-white/60">réadaptée automatiquement au ratio (IA)</span>, puis ajustable à la main avant export. Repli sur mise à l'échelle simple si l'IA est indisponible.
+                {t('ex.decline.info')}
               </p>
             </div>
           )}

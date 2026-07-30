@@ -179,8 +179,7 @@ export function UsersTab() {
                     <p className="text-[11px] text-red-200/90 flex items-start gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>
-                        Supprime le profil et ses accès. La personne <strong>réapparaîtra « en attente »</strong> si
-                        elle se reconnecte (rôle et blocage perdus). Pour la barrer durablement, utilisez <strong>Bloquer</strong>.
+                        {t('ac.deleteWarn')}
                       </span>
                     </p>
                     <div className="flex items-center gap-2">

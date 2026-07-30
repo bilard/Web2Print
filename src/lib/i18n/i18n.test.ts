@@ -120,6 +120,33 @@ describe('pluriel', () => {
   })
 })
 
+describe('appels rendus dans une chaîne', () => {
+  // Vécu : `title="{t('pw.opp.unitGap')} entre votre prix et…"`. Une valeur
+  // d'attribut ENTRE GUILLEMETS est une chaîne littérale en JSX — les accolades
+  // ne sont PAS évaluées : l'utilisateur lisait « {t('pw.opp.unitGap')} … » au
+  // survol. tsc et le lint acceptent ; seul ce contrôle l'attrape. La forme
+  // correcte est `title={t('…')}` (accolades AUTOUR de l'attribut).
+  it("n'enferme jamais un t() dans une valeur d'attribut littérale", () => {
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const full = join(dir, e.name)
+        if (e.isDirectory()) return walk(full)
+        return /\.tsx$/.test(e.name) ? [full] : []
+      })
+    const IN_ATTRIBUTE = /\w+="[^"]*\{\s*tr?\(/
+    const offences: string[] = []
+    for (const file of walk('src')) {
+      readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+        if (IN_ATTRIBUTE.test(line)) offences.push(`${file}:${i + 1}`)
+      })
+    }
+    expect(offences, `t() inerte dans un attribut :\n${offences.join('\n')}`).toEqual([])
+    // Éprouvé : le motif DOIT matcher la forme fautive et ÉPARGNER la bonne.
+    expect(IN_ATTRIBUTE.test(`title="{t('a.b')} suite"`)).toBe(true)
+    expect(IN_ATTRIBUTE.test(`title={t('a.b')}`)).toBe(false)
+  })
+})
+
 describe('orthographe britannique (en-GB)', () => {
   // Graphies américaines à bannir.
   //

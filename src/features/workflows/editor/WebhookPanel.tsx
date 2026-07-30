@@ -1,4 +1,4 @@
-// {t('wfw.title')} du workflow : bouton dans le header de l'éditeur ouvrant un
+// Webhook entrant du workflow : bouton dans le header de l'éditeur ouvrant un
 // popover pour activer/désactiver l'URL de déclenchement externe (Zapier, ERP,
 // curl). Config dans workflowWebhooks/{workflowId} ; la Function workflowWebhook
 // valide le secret et exécute le workflow côté serveur (mêmes nodes que le cron).

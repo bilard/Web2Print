@@ -92,30 +92,30 @@ export function TelegramInboxView() {
         </span>
         <span
           className="text-[10px] text-neutral-600"
-          title={`Les messages de plus de ${INBOX_RETENTION_DAYS} jours sont purgés automatiquement de cette boîte (côté app uniquement, sans toucher Telegram).`}
+          title={t('tg.retentionFull', { days: INBOX_RETENTION_DAYS })}
         >
-          · purge auto {INBOX_RETENTION_DAYS} j
+          {t('tg.autoPurge', { days: INBOX_RETENTION_DAYS })}
         </span>
         <div className="ml-auto flex items-center gap-1.5">
           {messages.length > 0 &&
             (confirmClear ? (
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] text-neutral-400">
-                  Supprimer {messages.length} message(s) ?
+                  {t('tg.deleteN', { count: messages.length })}
                 </span>
                 <button
                   type="button"
                   onClick={onClearAll}
                   className="text-[11px] px-2 py-1 rounded-md bg-red-500/20 text-red-200 hover:bg-red-500/30 border border-red-500/30"
                 >
-                  Confirmer
+                  {t('tg.confirm')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmClear(false)}
                   className="text-[11px] px-2 py-1 rounded-md text-neutral-400 hover:text-white hover:bg-white/[0.06]"
                 >
-                  Annuler
+                  {t('tg.cancel')}
                 </button>
               </div>
             ) : (
@@ -124,7 +124,7 @@ export function TelegramInboxView() {
                 onClick={() => setConfirmClear(true)}
                 className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-red-500/10 text-red-300 hover:bg-red-500/20 border border-red-500/30"
               >
-                <Trash2 className="w-3 h-3" /> Tout supprimer
+                <Trash2 className="w-3 h-3" /> {t('tg.deleteAll')}
               </button>
             ))}
           {canSend && (
@@ -133,7 +133,7 @@ export function TelegramInboxView() {
               onClick={() => setComposing((c) => !c)}
               className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-blue-500/15 text-blue-200 hover:bg-blue-500/25 border border-blue-500/30"
             >
-              <Send className="w-3 h-3" /> Nouveau message
+              <Send className="w-3 h-3" /> {t('tg.newMessage')}
             </button>
           )}
         </div>
@@ -147,7 +147,7 @@ export function TelegramInboxView() {
               onChange={(e) => setDraft(e.target.value)}
               rows={2}
               autoFocus
-              placeholder={`Message à envoyer sur Telegram (chat ${effectiveChatId || '— écris d’abord au bot'})…`}
+              placeholder={t('tg.sendPlaceholder', { chat: effectiveChatId || t('tg.noChatYet') })}
               className="w-full bg-background border border-neutral-700 rounded-md px-2 py-1 text-[13px] text-white placeholder:text-neutral-600 outline-none resize-y"
             />
             <div className="flex gap-1.5">

@@ -108,7 +108,7 @@ export function WorkflowEditorPage() {
   // seulement s'il y en avait — un workflow mal câblé se signalait donc au pire moment,
   // ou jamais (run planifié, lancement depuis une carte). Recalculé à chaque édition.
   //
-  // ⚠ DÉCLARÉ AVANT les retours anticipés (« {t('wfe.loading')} », « introuvable ») : un hook
+  // ⚠ DÉCLARÉ AVANT les retours anticipés (« Chargement… », « introuvable ») : un hook
   // posé après eux change le nombre de hooks entre deux rendus — React error #310.
   // D'où le `wf` optionnel géré ici plutôt qu'un appel plus bas.
   // ⚠ `validateWorkflow` FORGE ses messages : ils sont figés dans la langue du

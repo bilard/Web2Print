@@ -670,19 +670,11 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   <p className="text-xs text-white/50 leading-relaxed">
                     {isStandalone ? (
                       <>
-                        Composition multi-scènes (<span className="text-white/80">hook → visual → cta</span>) générée par
-                        Gemini selon ton brief. Livraison ≈ 5 s : <span className="text-white/80">HTML/CSS/JS</span> +
-                        aperçu live, ZIP téléchargeable et sauvegardable dans le DAM.
+                        {t('vd.standaloneInfo')}
                       </>
                     ) : (
                       <>
-                        Export <span className="text-white/80">SVG éditable</span> de la page courante,
-                        puis animation GSAP par élément. Le visuel reste TON design ;
-                        l'IA en règle la <span className="text-white/80">personnalité de mouvement</span>{' '}
-                        (posé, dynamique, sobre, ludique), le <span className="text-white/80">rythme</span> et
-                        la <span className="text-white/80">couleur d'accent</span> (cadre + barre) selon
-                        l'audience, l'objectif et le ton. Livraison ≈ 5 s :
-                        <span className="text-white/80"> HTML/CSS/JS</span> + aperçu live.
+                        {t('vd.pageInfo')}
                       </>
                     )}
                   </p>

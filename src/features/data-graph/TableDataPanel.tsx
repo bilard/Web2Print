@@ -169,7 +169,7 @@ export function TableDataPanel({ table, onClose, rightInset = 0 }: { table: Tabl
             <Braces className="h-4 w-4 text-indigo-400" />
             <span className="font-mono text-[13px] font-semibold text-white">{detail.col}</span>
             <button onClick={copyDetail} className="ml-auto flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-[12px] text-white/60 transition-colors hover:text-white">
-              {copied ? <><Check className="h-3.5 w-3.5 text-emerald-400" /> Copié</> : <><Copy className="h-3.5 w-3.5" /> Copier</>}
+              {copied ? <><Check className="h-3.5 w-3.5 text-emerald-400" /> {t('dg.copiedShort')}</> : <><Copy className="h-3.5 w-3.5" /> {t('dg.copyShort')}</>}
             </button>
             <CloseButton onClick={() => setDetail(null)} size="sm" />
           </div>

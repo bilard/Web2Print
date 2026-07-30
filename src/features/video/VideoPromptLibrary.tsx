@@ -101,7 +101,7 @@ export function VideoPromptLibrary({
       ) : prompts.length === 0 ? (
         <div className="flex-1 flex items-center justify-center px-6 text-center">
           <p className="text-xs text-white/40 leading-relaxed">
-            Tes prompts générés s'enregistrent ici. Tu peux ensuite les <strong className="text-white/70">rejouer</strong> ou les <strong className="text-white/70">modifier</strong>.
+            {t('vd.libEmpty')}
           </p>
         </div>
       ) : (

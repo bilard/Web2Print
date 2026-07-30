@@ -110,8 +110,7 @@ export function HiggsfieldConnectorRow() {
       </div>
 
       <p className="text-[10px] text-white/30 bg-white/5 rounded-lg px-2.5 py-1.5 leading-relaxed">
-        Les deux valeurs sont fournies par Higgsfield (Settings → API keys). Elles sont stockées
-        ensemble au format <code className="text-indigo-300/70">KEY_ID:KEY_SECRET</code> et lues côté serveur.
+        {t('hf.keysNote')}
       </p>
     </div>
   )

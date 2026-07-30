@@ -100,14 +100,14 @@ export function DemoExpressForm({ onLaunch }: Props) {
       </div>
       <div>
         <label htmlFor="demo-prompt" className="block text-sm font-medium text-white/80 mb-1.5">
-          Consignes créatives <span className="text-white/40 font-normal">(optionnel)</span>
+          {t('de.creativeBrief')} <span className="text-white/40 font-normal">{t('de.optional')}</span>
         </label>
         <textarea
           id="demo-prompt"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={3}
-          placeholder="Ex. catalogue premium épuré, fiches en liste pleine largeur, couverture ambiance jardin d'été, ton chaleureux…"
+          placeholder={t('de.briefPlaceholder')}
           className="w-full rounded-lg bg-well border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-indigo-500 resize-y"
         />
         <p className="mt-1.5 text-xs text-white/40">

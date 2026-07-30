@@ -120,10 +120,10 @@ export function AnalyticsTab() {
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-surface-2 transition-colors ${
               sessionAlerts.enabled ? 'text-emerald-400 hover:text-emerald-300' : 'text-white/50 hover:text-white/80'
             }`}
-            title="Log live sur Telegram : 🟢 une ligne par page d'un utilisateur connecté, 🔵 un ping par session anonyme (vos propres visites ne sont jamais notifiées)"
+            title={t('an.telegramLogFull')}
           >
             {sessionAlerts.enabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-            Alertes Telegram
+            {t('an.telegramAlerts')}
           </button>
           <button
             onClick={() => downloadEventsCsv(events, `analytics-${period}.csv`)}
@@ -137,14 +137,14 @@ export function AnalyticsTab() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-red-400/80 hover:text-red-300 bg-surface-2 hover:bg-red-500/10 disabled:opacity-40 disabled:pointer-events-none"
             title={t('an.purgeFiltered')}
           >
-            <FilterX className="w-4 h-4" /> Supprimer le résultat
+            <FilterX className="w-4 h-4" /> {t('an.deleteResult')}
           </button>
           <button
             onClick={() => setConfirmClear(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-red-400/80 hover:text-red-300 bg-surface-2 hover:bg-red-500/10"
-            title="Vider tout l'historique de consultation"
+            title={t('an.clearAll.title')}
           >
-            <Trash2 className="w-4 h-4" /> Vider
+            <Trash2 className="w-4 h-4" /> {t('an.clearAll')}
           </button>
         </div>
       </div>
@@ -159,12 +159,9 @@ export function AnalyticsTab() {
       <ConfirmDeleteDialog
         open={confirmClear}
         onOpenChange={setConfirmClear}
-        title="Vider tout l'historique ?"
-        description={<>
-          Cette action supprime <strong>définitivement toutes les consultations</strong> enregistrées
-          (toutes périodes confondues), pas seulement celles affichées. Elle est irréversible.
-        </>}
-        actionLabel="Vider définitivement"
+        title={t('an.clearAll.confirm')}
+        description={t('an.clearAll.desc')}
+        actionLabel={t('an.clearAll.action')}
         pending={clear.isPending}
         onConfirm={handleClear}
       />

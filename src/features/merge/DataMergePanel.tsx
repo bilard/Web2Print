@@ -137,9 +137,9 @@ export function DataMergePanel() {
             toast.success(`Liaison automatique : ${labels}.`)
           }}
           className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-[11px] text-indigo-300 transition-colors"
-          title="Détecte le prix (motif monétaire), le titre (plus grande taille) et la description (texte long) puis pose les {{champs}} correspondants"
+          title={t('mg.autoDetectFull')}
         >
-          <Wand2 className="w-3.5 h-3.5" /> Lier automatiquement (prix · titre · description)
+          <Wand2 className="w-3.5 h-3.5" /> {t('mg.autoLink')}
         </button>
       </div>
 

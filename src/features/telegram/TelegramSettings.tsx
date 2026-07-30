@@ -102,10 +102,7 @@ export function TelegramSettings() {
       <DigestToggle />
 
       <p className="text-[10px] text-neutral-600 leading-snug">
-        Config Telegram globale : sert au <strong className="text-neutral-400">worker</strong> qui
-        répond aux messages reçus, et de <strong className="text-neutral-400">valeur par défaut</strong>{' '}
-        au node « Envoyer via Telegram » (laisse ses champs vides pour utiliser ces valeurs).
-        Synchronisée avec ton compte (Firestore) et ce navigateur.
+        {t('tg.globalConfig')}
       </p>
     </div>
   )

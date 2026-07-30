@@ -99,7 +99,7 @@ export function DedupDriveModal({ open, onClose, initialFolder = null }: Props) 
                 <div className="flex items-center gap-2 text-[12px] rounded-lg bg-well px-3 py-2.5">
                   <Copy className="w-4 h-4 text-rose-400 shrink-0" />
                   <span className="text-white/70">
-                    <b className="text-rose-300">{plan.duplicates}</b> doublon(s) dans <b>{plan.groups.length}</b> groupe(s) · <b>{plan.groups.length}</b> conservé(s)
+                    {t('dm.dedupCount', { dup: plan.duplicates, groups: plan.groups.length, kept: plan.groups.length })}
                   </span>
                 </div>
                 <div className="max-h-40 overflow-y-auto flex flex-col gap-1 pr-1">
