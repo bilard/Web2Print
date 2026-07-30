@@ -3,6 +3,8 @@ import { Search, Ban, RotateCcw, CheckCircle2, Plus, Minus, Clock, ShieldCheck, 
 import { PERMISSIONS, permissionsByModule, permissionLabel } from '@/features/access/permissions'
 import { moduleMeta, orderedModuleEntries } from '@/features/access/moduleMeta'
 import { ModuleCard } from './ModuleCard'
+import { AccountAssignment } from './AccountAssignment'
+import { DEFAULT_ACCOUNT_ID } from '@/features/i18n/accountI18nApi'
 import { listUsers, updateUserAccess, deleteUser, type ManagedUser } from '@/features/access/usersApi'
 import { recordAudit } from '@/lib/auditLog'
 import { listRoles, type Role } from '@/features/access/rolesApi'
@@ -35,6 +37,13 @@ export function UsersTab() {
 
   const refresh = () => { void listUsers().then(setUsers) }
   useEffect(() => { refresh(); void listRoles().then(setRoles) }, [])
+
+  // Comptes déjà employés — proposés en autocomplétion pour éviter qu'un même
+  // client finisse avec deux identifiants et donc deux vocabulaires.
+  const knownAccounts = useMemo(
+    () => [...new Set([DEFAULT_ACCOUNT_ID, ...users.map((u) => u.accountId).filter(Boolean)])].sort(),
+    [users],
+  )
 
   const removeUser = async (u: ManagedUser) => {
     await deleteUser(u.uid)
@@ -151,8 +160,14 @@ export function UsersTab() {
             </div>
 
             {isExpanded && owner && (
-              <div className="px-3 pb-3 pt-1 border-t border-white/5 text-[11px] text-white/35">
-                {t('usersTab.ownerAccountFull')}
+              <div className="px-3 pb-3 pt-2 border-t border-white/5 flex flex-col gap-3">
+                <p className="text-[11px] text-white/35">{t('usersTab.ownerAccountFull')}</p>
+                {/* ⚠️ Seul réglage ouvert sur l'owner, et il est nécessaire : le
+                    rattachement ne donne aucun droit (l'owner les a déjà), il
+                    choisit le compte dont l'interface s'affiche. Sans lui,
+                    l'administrateur resterait bloqué sur « default » et ne
+                    pourrait pas régler le vocabulaire d'un client. */}
+                <AccountAssignment user={u} knownAccounts={knownAccounts} onSaved={refresh} />
               </div>
             )}
 
@@ -196,6 +211,9 @@ export function UsersTab() {
                     </div>
                   </div>
                 )}
+
+                {/* Compte de rattachement (vocabulaire d'interface partagé) */}
+                <AccountAssignment user={u} knownAccounts={knownAccounts} onSaved={refresh} />
 
                 {/* Permissions effectives */}
                 <div>

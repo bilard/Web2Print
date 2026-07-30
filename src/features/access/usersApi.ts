@@ -12,6 +12,16 @@ export interface ManagedUser {
   accessRevokes: string[]
   /** Compte suspendu par un admin → aucun accès, quel que soit le rôle. */
   accessBlocked: boolean
+  /**
+   * Compte (entreprise) de rattachement — porte le VOCABULAIRE d'interface
+   * partagé par ses membres. Vide ⇒ compte `default`, ce qui convient à un
+   * déploiement mono-entreprise.
+   *
+   * ⚠️ Champ RÉSERVÉ à l'admin dans `firestore.rules` : c'est lui qui décide de
+   * quel compte on lit et écrit les libellés. Laissé au user, se rattacher au
+   * compte d'un tiers suffirait à en réécrire l'interface.
+   */
+  accountId: string
 }
 
 /** Liste tous les users (admin only — la règle Firestore l'autorise). On NE lit QUE les
@@ -31,9 +41,22 @@ export async function listUsers(): Promise<ManagedUser[]> {
         accessGrants: (x.accessGrants as string[]) ?? [],
         accessRevokes: (x.accessRevokes as string[]) ?? [],
         accessBlocked: (x.accessBlocked as boolean) ?? false,
+        accountId: (x.accountId as string) ?? '',
       }
     })
     .sort((a, b) => b.lastSeenAt - a.lastSeenAt)
+}
+
+/**
+ * Rattache un utilisateur à un compte (vocabulaire d'interface partagé).
+ *
+ * ⚠️ Le changement ne prend effet chez l'intéressé qu'au prochain chargement :
+ * `useAccountI18nSync` pose ses écouteurs une fois par `uid`, pas par compte.
+ * C'est assumé — un rattachement est un acte d'administration rare, et
+ * rebrancher les écouteurs à chaud ferait clignoter tous les libellés.
+ */
+export async function updateUserAccount(uid: string, accountId: string): Promise<void> {
+  await setDoc(doc(db, 'users', uid), { accountId: accountId.trim() }, { merge: true })
 }
 
 export async function updateUserAccess(

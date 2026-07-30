@@ -92,6 +92,30 @@ test('un membre ne peut pas se rattacher au compte de son choix', async () => {
   expect(res.status).toBe(403)
 })
 
+test("l'admin, lui, PEUT rattacher un membre à un compte", async () => {
+  // Contrepartie du test précédent : le rattachement doit rester possible, sinon
+  // l'écran « Utilisateurs & rôles » aurait un bouton qui échoue toujours. Le
+  // jeton porte l'email owner, comme en réel (`isAdmin()` compare l'email).
+  const admin = await createUser(`ibs.studio@gmail.com`).catch(async () => {
+    // Le compte owner survit d'une suite à l'autre dans l'émulateur.
+    const res = await fetch(`${AUTH}/accounts:signInWithPassword?key=fake-emulator-key`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'ibs.studio@gmail.com', password: 'e2e-password', returnSecureToken: true }),
+    })
+    const json = (await res.json()) as { localId: string; idToken: string }
+    return { uid: json.localId, idToken: json.idToken }
+  })
+
+  const member = await makeMember(`acct-before-${Date.now()}`, false)
+  const res = await fetch(`${FS}/users/${member.uid}?updateMask.fieldPaths=accountId`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', Authorization: `Bearer ${admin.idToken}` },
+    body: JSON.stringify({ fields: { accountId: { stringValue: 'acct-after' } } }),
+  })
+  expect(res.status).toBe(200)
+})
+
 test('un membre actif peut LIRE le vocabulaire de son compte', async () => {
   // La lecture est ouverte à tout compte actif : sans elle, l'interface
   // s'afficherait d'abord en vocabulaire générique puis basculerait sous les

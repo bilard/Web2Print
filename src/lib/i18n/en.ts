@@ -4719,4 +4719,10 @@ export const en: Record<TranslationKey, string> = {
   'i18n.edit.modeHint': 'Alt+click a text to rewrite it',
   'i18n.edit.exitMode': 'Leave editing mode',
   'i18n.bulk.progress': 'Translating {done}/{total} — stop',
+  'wfe.panel.resize': 'Resize the panel',
+  'ac.account.title': 'Account membership',
+  'ac.account.apply': 'Attach',
+  'ac.account.hint': 'Members of the same account share the interface wording. Takes effect the next time their session loads.',
+  'ac.account.saved': 'Account membership updated.',
+  'ac.account.failed': 'The membership could not be saved.',
 }

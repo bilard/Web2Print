@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from '@/lib/i18n'
 
 interface PanelState {
   height: number
@@ -80,6 +81,7 @@ interface ResizeHandleProps {
  * Drag vers le haut = agrandit, vers le bas = rétrécit. Clamp [min, maxVh%].
  */
 export function PanelResizeHandle({ height, onChange, minHeight, maxHeightVh }: ResizeHandleProps) {
+  const { t } = useTranslation()
   const draggingRef = useRef(false)
 
   const onMouseDown = useCallback(
@@ -117,7 +119,7 @@ export function PanelResizeHandle({ height, onChange, minHeight, maxHeightVh }: 
       onMouseDown={onMouseDown}
       role="separator"
       aria-orientation="horizontal"
-      aria-label="Redimensionner le panneau"
+      aria-label={t('wfe.panel.resize')}
       className="h-1.5 -mt-1 absolute inset-x-0 top-0 cursor-ns-resize hover:bg-indigo-500/30 active:bg-indigo-500/50 transition-colors z-20"
     />
   )

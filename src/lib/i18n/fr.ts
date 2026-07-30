@@ -4800,6 +4800,12 @@ export const fr = {
   'i18n.edit.modeHint': 'Alt+clic sur un texte pour le réécrire',
   'i18n.edit.exitMode': 'Quitter le mode édition',
   'i18n.bulk.progress': 'Traduction {done}/{total} — arrêter',
+  'wfe.panel.resize': 'Redimensionner le panneau',
+  'ac.account.title': 'Compte de rattachement',
+  'ac.account.apply': 'Rattacher',
+  'ac.account.hint': "Les membres d'un même compte partagent le vocabulaire d'interface. Prend effet au prochain chargement de leur session.",
+  'ac.account.saved': 'Compte de rattachement mis à jour.',
+  'ac.account.failed': "Le rattachement n'a pas pu être enregistré.",
 } as const
 
 /** Clé de traduction valide — dérivée du catalogue FR. */
