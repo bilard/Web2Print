@@ -7,6 +7,7 @@ import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import { SliderField, inputCls } from '@/components/shared/panel'
 import { CARD_OBJECT_IDS, type CardObjectId, type CatalogCardStyle } from '../../catalogTypes'
 import { freeLayoutBox, visualPos } from '../pages/freeLayout'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 interface CardStyleTypoProps {
   style: CatalogCardStyle
@@ -20,19 +21,19 @@ interface CardStyleTypoProps {
 export type ScaleKey = 'nameScale' | 'descScale' | 'priceScale' | 'brandScale' | 'refScale' | 'unitScale' | 'promoScale' | 'stickerScale' | 'vedetteScale' | 'detailsScale' | 'kickerScale' | 'specsScale'
 export type FontKey = 'nameFont' | 'descFont' | 'priceFont' | 'brandFont' | 'refFont' | 'unitFont' | 'promoFont' | 'stickerFont' | 'vedetteFont' | 'detailsFont' | 'kickerFont' | 'specsFont'
 
-export const CARD_TYPO_FIELDS: { scale: ScaleKey; font: FontKey; label: string; obj: CardObjectId }[] = [
-  { scale: 'nameScale', font: 'nameFont', label: 'Nom', obj: 'name' },
-  { scale: 'descScale', font: 'descFont', label: 'Description', obj: 'description' },
-  { scale: 'priceScale', font: 'priceFont', label: 'Prix', obj: 'price' },
-  { scale: 'brandScale', font: 'brandFont', label: 'Marque', obj: 'brand' },
-  { scale: 'refScale', font: 'refFont', label: 'Référence', obj: 'ref' },
-  { scale: 'unitScale', font: 'unitFont', label: 'Unité', obj: 'unit' },
-  { scale: 'promoScale', font: 'promoFont', label: 'Cartouche promo', obj: 'promo' },
-  { scale: 'stickerScale', font: 'stickerFont', label: 'Sticker remise', obj: 'sticker' },
-  { scale: 'vedetteScale', font: 'vedetteFont', label: 'Ruban vedette', obj: 'vedette' },
-  { scale: 'detailsScale', font: 'detailsFont', label: 'Détails', obj: 'details' },
-  { scale: 'kickerScale', font: 'kickerFont', label: 'Sous-famille', obj: 'kicker' },
-  { scale: 'specsScale', font: 'specsFont', label: 'Caractéristiques', obj: 'specs' },
+export const CARD_TYPO_FIELDS: { scale: ScaleKey; font: FontKey; labelKey: TranslationKey; obj: CardObjectId }[] = [
+  { scale: 'nameScale', font: 'nameFont', labelKey: 'cat.typo.name', obj: 'name' },
+  { scale: 'descScale', font: 'descFont', labelKey: 'cat.typo.desc', obj: 'description' },
+  { scale: 'priceScale', font: 'priceFont', labelKey: 'cat.typo.price', obj: 'price' },
+  { scale: 'brandScale', font: 'brandFont', labelKey: 'cat.typo.brand', obj: 'brand' },
+  { scale: 'refScale', font: 'refFont', labelKey: 'cat.typo.ref', obj: 'ref' },
+  { scale: 'unitScale', font: 'unitFont', labelKey: 'cat.typo.unit', obj: 'unit' },
+  { scale: 'promoScale', font: 'promoFont', labelKey: 'cat.typo.promo', obj: 'promo' },
+  { scale: 'stickerScale', font: 'stickerFont', labelKey: 'cat.typo.sticker', obj: 'sticker' },
+  { scale: 'vedetteScale', font: 'vedetteFont', labelKey: 'cat.typo.vedette', obj: 'vedette' },
+  { scale: 'detailsScale', font: 'detailsFont', labelKey: 'cat.typo.details', obj: 'details' },
+  { scale: 'kickerScale', font: 'kickerFont', labelKey: 'cat.typo.kicker', obj: 'kicker' },
+  { scale: 'specsScale', font: 'specsFont', labelKey: 'cat.typo.specs', obj: 'specs' },
 ]
 
 /** Nom d'affichage de chaque bloc (options du sélecteur de liaison). */
@@ -173,28 +174,28 @@ export function CardStyleTypo({ style, patch, selected, wide = false }: CardStyl
         {groupedFields.map((group) => (
         <div key={group.title} className="space-y-3">
           <p className="text-[10px] font-semibold text-white/25 uppercase tracking-widest border-b border-white/[0.06] pb-1">{group.title}</p>
-        {group.fields.map(({ scale, font, label, obj }) => {
+        {group.fields.map(({ scale, font, labelKey, obj }) => {
           const link = boxOf(obj).link
           const color = rowColor(obj)
           return (
             <div key={scale} ref={(el) => { rowRefs.current[obj] = el }}
               className={`space-y-1 ${scale === activeScale ? 'ring-2 ring-indigo-500 rounded-md' : ''}`}
               style={color ? { boxShadow: `inset 3px 0 0 ${color}`, borderRadius: 6, paddingLeft: 6 } : undefined}>
-              <SliderField label={label} value={style[scale] ?? 1} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
+              <SliderField label={t(labelKey)} value={style[scale] ?? 1} onChange={(v) => patch({ [scale]: v } as Partial<CatalogCardStyle>)}
                 min={0.2} max={10} step={0.05} unit="×" center={1} />
               <select value={style[font] ?? ''} onChange={(e) => patch({ [font]: e.target.value } as Partial<CatalogCardStyle>)}
                 className={inputCls}>
-                <option value="">Police du thème</option>
+                <option value="">{t('cat.font.theme')}</option>
                 <FontSelectOptions />
               </select>
               <label className="flex items-center gap-1.5 text-[10px]"
                 style={{ color: link && color ? color : 'rgba(255,255,255,.3)' }}
-                title="Liaison : ce bloc est soudé à DROITE du bloc choisi et le suit partout">
+                title={t('cat.obj.linkRight')}>
                 🔗
                 <select value={link ?? ''} onChange={(e) => setLink(obj, e.target.value)}
                   className={`${inputCls} !py-0.5 !text-[10px]`}
                   style={link && color ? { color, borderColor: color } : undefined}>
-                  <option value="">Non lié</option>
+                  <option value="">{t('cat.obj.notLinked')}</option>
                   {CARD_OBJECT_IDS.filter((t) => t !== obj).map((t) => (
                     <option key={t} value={t}>Lié à : {OBJ_LABEL[t]}</option>
                   ))}

@@ -10,6 +10,7 @@ import { ChevronRight } from 'lucide-react'
 import { CATALOG_GRIDS, type CatalogDensity, type CatalogSectionPlan, type CatalogTreeNode } from '../../catalogTypes'
 import { subtreeProductCount } from '../../catalogTree'
 import { LEVEL_STYLES } from './levelStyles'
+import { t } from '@/lib/i18n'
 
 const RANDOM_ID = 'random'
 /** Alphas hex du fond de ligne par niveau (couleur du chapitre, dégressive). */
@@ -72,7 +73,7 @@ export function PlanSectionRow({ node, section, products, chapterColor, onDensit
             onChange={(e) => onDensity(e.target.value === RANDOM_ID ? 'random' : Number(e.target.value) as CatalogDensity)}
             className="w-28 px-2 py-1.5 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600 shrink-0">
             {CATALOG_GRIDS.map((g) => <option key={g} value={g}>{g}/page</option>)}
-            <option value={RANDOM_ID}>Aléatoire</option>
+            <option value={RANDOM_ID}>{t('cat.random')}</option>
           </select>
         )}
       </div>
@@ -93,7 +94,7 @@ export function PlanSectionRow({ node, section, products, chapterColor, onDensit
                   <span className="truncate text-[11px]">{f.name}</span>
                 </button>
                 {onPreview && (
-                  <button type="button" onClick={() => onPreview(f.id)} title="Afficher ce produit dans l'aperçu de la fiche"
+                  <button type="button" onClick={() => onPreview(f.id)} title={t('cat.plan.previewProduct')}
                     className={`shrink-0 px-1.5 text-xs hover:text-white ${previewed ? 'text-indigo-400' : ''}`}>
                     👁
                   </button>

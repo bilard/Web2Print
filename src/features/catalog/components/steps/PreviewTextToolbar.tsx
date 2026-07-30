@@ -3,6 +3,7 @@
 // Écrit cardStyle.textStyle[obj] — rendu identique aperçu / catalogue / export.
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Italic, Underline } from 'lucide-react'
 import type { CardObjectId, CardTextStyle, CatalogCardStyle } from '../../catalogTypes'
+import { t } from '@/lib/i18n'
 
 interface Props {
   /** Bloc sélectionné dans l'aperçu — la barre n'apparaît que pour un bloc texte. */
@@ -30,19 +31,19 @@ export function PreviewTextToolbar({ obj, style, patch }: Props) {
   return (
     <div className="flex items-center gap-2">
       <div className="flex rounded-md overflow-hidden border border-border">
-        <button type="button" title="Gras (forcé)" onClick={() => set({ bold: ts.bold ? undefined : true })} className={btnCls(!!ts.bold)}>
+        <button type="button" title={t('cat.text.bold')} onClick={() => set({ bold: ts.bold ? undefined : true })} className={btnCls(!!ts.bold)}>
           <Bold className="w-3.5 h-3.5" />
         </button>
-        <button type="button" title="Italique (forcé)" onClick={() => set({ italic: ts.italic ? undefined : true })} className={btnCls(!!ts.italic)}>
+        <button type="button" title={t('cat.text.italic')} onClick={() => set({ italic: ts.italic ? undefined : true })} className={btnCls(!!ts.italic)}>
           <Italic className="w-3.5 h-3.5" />
         </button>
-        <button type="button" title="Souligné" onClick={() => set({ underline: ts.underline ? undefined : true })} className={btnCls(!!ts.underline)}>
+        <button type="button" title={t('cat.text.underline')} onClick={() => set({ underline: ts.underline ? undefined : true })} className={btnCls(!!ts.underline)}>
           <Underline className="w-3.5 h-3.5" />
         </button>
       </div>
       <div className="flex rounded-md overflow-hidden border border-border">
         {ALIGNS.map(({ key, icon: Icon, title }) => (
-          <button key={key} type="button" title={`${title} (re-cliquer : défaut du template)`}
+          <button key={key} type="button" title={t('cat.text.reclickDefault', { title })}
             onClick={() => set({ align: ts.align === key ? undefined : key })} className={btnCls(ts.align === key)}>
             <Icon className="w-3.5 h-3.5" />
           </button>

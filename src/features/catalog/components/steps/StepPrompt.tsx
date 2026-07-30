@@ -24,6 +24,7 @@ import { usePreviewPan } from '../../usePreviewPan'
 import { emblemPrompt, useCoverImage } from '../../useCoverImage'
 import { SectionsCard } from './SectionsCard'
 import { StepActionsPortal } from './StepActionsPortal'
+import { t } from '@/lib/i18n'
 
 export function StepPrompt() {
   const name = useCatalogStore((s) => s.name)
@@ -240,7 +241,7 @@ export function StepPrompt() {
                 <Sparkles className="w-4 h-4 text-indigo-400" /> Prompt global
               </h2>
               <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={2}
-                placeholder="Décrivez le catalogue voulu : univers, ton, couleurs, densité des pages…"
+                placeholder={t('cat.prompt.placeholder')}
                 className="w-full px-3 py-2 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600 resize-none" />
               {!plan && (
                 <p className="text-xs text-muted-foreground">
@@ -285,23 +286,23 @@ export function StepPrompt() {
                 setSelectedObject(null)
               }}>
               <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Aperçu de la fiche</span>
+                <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">{t('cat.prompt.cardPreview')}</span>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
                   {/* Gestion de PARAGRAPHE du bloc sélectionné (gras/italique/souligné + alignement). */}
                   <PreviewTextToolbar obj={selectedObject} style={cardStyle}
                     patch={(p) => setPlan({ ...plan, cardStyle: { ...cardStyle, ...p } })} />
                   {/* Zoom de l'aperçu : relatif à l'ajustement auto — clic sur le % = 100. */}
-                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground" title="Zoom de l'aperçu (100 % = ajusté à la colonne · ⌘/Ctrl + molette ou pincement trackpad)">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground" title={t('cat.prompt.zoomTitle')}>
                     <span aria-hidden>🔍</span>
                     <input type="range" min={50} max={200} step={5} value={previewZoom}
                       onChange={(e) => setPreviewZoom(Number(e.target.value))} className="w-24 accent-indigo-600" />
-                    <button type="button" onClick={() => setPreviewZoom(100)} title="Revenir à 100 %"
+                    <button type="button" onClick={() => setPreviewZoom(100)} title={t('cat.prompt.zoom100')}
                       className="w-10 text-right tabular-nums hover:text-white">{previewZoom}%</button>
                   </div>
                   {/* Simulation de PAGE : la page réelle avec N fiches échantillon —
                       régler les tailles par bloc dans le vrai contexte d'impression. */}
                   <select value={pageSim} onChange={(e) => setPageSim(Number(e.target.value) as typeof pageSim)}
-                    title="Affiche la page complète simulée avec N produits (tailles réelles d'impression)"
+                    title={t('cat.prompt.simulatePage')}
                     className="rounded-md border border-border bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:text-white">
                     <option value={0}>Fiche seule</option>
                     {[1, 2, 3, 4, 6, 8].map((n) => <option key={n} value={n}>Page · {n}/page</option>)}
@@ -309,7 +310,7 @@ export function StepPrompt() {
                   {/* Disposition éditée : chaque variante a SES positions (layout / layoutWide). */}
                   {pageSim === 0 && (
                     <div className="flex rounded-md overflow-hidden border border-border text-[11px]"
-                      title="Chaque disposition s'affine séparément : verticale (cartes standard) · pleine largeur (2 colonnes). En simulation de page, la variante est celle du rendu réel.">
+                      title={t('cat.prompt.layoutNote')}>
                       <button type="button" onClick={() => { setPreviewVariant('vertical'); setSelectedObject(null) }}
                         className={`px-2.5 py-1 ${!previewWide ? 'bg-indigo-600 text-[#fff]' : 'bg-surface-2 text-muted-foreground hover:text-white'}`}>
                         Verticale

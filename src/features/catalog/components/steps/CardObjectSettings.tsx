@@ -9,6 +9,7 @@ import { freeLayoutBox } from '../pages/freeLayout'
 import { ColorObjectField, OBJ_COLOR_KEYS, colorDefs } from './CardStyleColors'
 import { CARD_TYPO_FIELDS, OBJ_LABEL, objectLinkPatch } from './CardStyleTypo'
 import { CutoutAllImagesButton } from './CutoutAllImagesButton'
+import { t } from '@/lib/i18n'
 
 interface Props {
   obj: CardObjectId
@@ -50,7 +51,7 @@ export function CardObjectSettings({ obj, style, theme, patch, wide }: Props) {
             min={0.2} max={10} step={0.05} unit="×" center={1} />
           <select value={style[typo.font] ?? ''} onChange={(e) => patch({ [typo.font]: e.target.value } as Partial<CatalogCardStyle>)}
             className={inputCls}>
-            <option value="">Police du thème</option>
+            <option value="">{t('cat.font.theme')}</option>
             <FontSelectOptions />
           </select>
         </>
@@ -59,7 +60,7 @@ export function CardObjectSettings({ obj, style, theme, patch, wide }: Props) {
         onChange={setRotation} min={-45} max={45} step={1} unit="°" />
       {obj === 'details' && (
         <label className="flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none"
-          title="Répartit les lignes de données en deux colonnes équilibrées — identique à l'export">
+          title={t('cat.obj.twoColsData')}>
           <input type="checkbox" checked={style.detailsColumns === 2}
             onChange={(e) => patch({ detailsColumns: e.target.checked ? 2 : 1 })} className="accent-indigo-600" />
           Texte sur 2 colonnes
@@ -67,7 +68,7 @@ export function CardObjectSettings({ obj, style, theme, patch, wide }: Props) {
       )}
       {obj === 'description' && (
         <label className="flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none"
-          title="Répartit le texte en deux moitiés équilibrées côte à côte — identique à l'export">
+          title={t('cat.obj.twoColsText')}>
           <input type="checkbox" checked={style.descColumns === 2}
             onChange={(e) => patch({ descColumns: e.target.checked ? 2 : 1 })} className="accent-indigo-600" />
           Texte sur 2 colonnes
@@ -82,11 +83,11 @@ export function CardObjectSettings({ obj, style, theme, patch, wide }: Props) {
       {obj === 'image' && <CutoutAllImagesButton />}
       {obj !== 'image' && (
         <label className="flex items-center gap-1.5 text-[10px] text-white/40"
-          title="Liaison : ce bloc est soudé à DROITE du bloc choisi et le suit partout">
+          title={t('cat.obj.linkRight')}>
           🔗
           <select value={box.link ?? ''} onChange={(e) => patch(objectLinkPatch(style, wide, obj, e.target.value))}
             className={`${inputCls} !py-0.5 !text-[10px]`}>
-            <option value="">Non lié</option>
+            <option value="">{t('cat.obj.notLinked')}</option>
             {CARD_OBJECT_IDS.filter((t) => t !== obj).map((t) => (
               <option key={t} value={t}>Lié à : {OBJ_LABEL[t]}</option>
             ))}

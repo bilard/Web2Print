@@ -5,6 +5,7 @@ import { Download, Loader2 } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { useCatalogPages } from '../../useCatalogPages'
 import { useCatalogExport } from '../../useCatalogExport'
+import { t } from '@/lib/i18n'
 
 function slug(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'catalogue'
@@ -37,7 +38,7 @@ export function StepExport() {
         </div>
 
         <div className={cardClass}>
-          <h3 className="text-sm font-semibold text-white">PDF écran</h3>
+          <h3 className="text-sm font-semibold text-white">{t('cat.export.screenPdf')}</h3>
           <p className="text-xs text-muted-foreground">Fichier léger (150 dpi), sans fond perdu ni traits de coupe — pour partage ou aperçu web.</p>
           <button
             onClick={() => void exportPdf(pages, ctx!, { mode: 'screen', dpi: 150, bleedMm: 0, fileName })}
@@ -53,7 +54,7 @@ export function StepExport() {
           <h3 className="text-sm font-semibold text-white">PDF print pro</h3>
           <div className="flex items-center gap-6">
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-muted-foreground">Résolution</label>
+              <label className="block text-xs font-medium text-muted-foreground">{t('cat.export.resolution')}</label>
               <select value={dpi} onChange={(e) => setDpi(Number(e.target.value) as 150 | 300)} className={inputClass}>
                 <option value={150}>150 dpi</option>
                 <option value={300}>300 dpi</option>

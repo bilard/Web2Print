@@ -2,6 +2,7 @@
 // il ne dépend que de ces types + MergeRow/MergeColumn.
 import type { DataSourceRef } from '@/stores/merge.store'
 import type { PromoFieldKey, CustomFieldMap } from '@/features/retail-promo/promoTypes'
+import type { TranslationKey } from '@/lib/i18n'
 
 /** Densités de grille autorisées (produits par page). */
 export const CATALOG_GRIDS = [1, 2, 3, 4, 6, 8] as const
@@ -22,11 +23,11 @@ type CatalogCoverLayout = 'classic' | 'panel' | 'poster'
 
 export interface CatalogFormat { widthMm: number; heightMm: number }
 
-export const CATALOG_FORMAT_PRESETS: { id: string; label: string; format: CatalogFormat }[] = [
-  { id: 'a4-portrait', label: 'A4 portrait', format: { widthMm: 210, heightMm: 297 } },
-  { id: 'a4-paysage', label: 'A4 paysage', format: { widthMm: 297, heightMm: 210 } },
-  { id: 'a5-portrait', label: 'A5 portrait', format: { widthMm: 148, heightMm: 210 } },
-  { id: 'carre', label: 'Carré 21 cm', format: { widthMm: 210, heightMm: 210 } },
+export const CATALOG_FORMAT_PRESETS: { id: string; labelKey: TranslationKey; format: CatalogFormat }[] = [
+  { id: 'a4-portrait', labelKey: 'cat.fmt.a4Portrait', format: { widthMm: 210, heightMm: 297 } },
+  { id: 'a4-paysage', labelKey: 'cat.fmt.a4Landscape', format: { widthMm: 297, heightMm: 210 } },
+  { id: 'a5-portrait', labelKey: 'cat.fmt.a5Portrait', format: { widthMm: 148, heightMm: 210 } },
+  { id: 'carre', labelKey: 'cat.fmt.square21', format: { widthMm: 210, heightMm: 210 } },
 ]
 
 export interface CatalogTreeNode {

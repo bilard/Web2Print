@@ -7,6 +7,7 @@ import type { CatalogTreeNode } from '../../catalogTypes'
 import { subtreeProductCount } from '../../catalogTree'
 import type { NodePageRange } from '../../catalogFlatplan'
 import { LEVEL_STYLES } from './levelStyles'
+import { t } from '@/lib/i18n'
 
 interface Props {
   tree: CatalogTreeNode[]
@@ -79,7 +80,7 @@ export function FlatplanTaxonomy({ tree, ranges, colors, selectedNode, onSelect 
         <NodeRow key={u.id} node={u} tree={tree} ranges={ranges} colors={colors} selectedNode={selectedNode} onSelect={onSelect}
           chapterColor={colors.get(u.id) ?? '#64748b'} />
       ))}
-      {universes.length === 0 && <p className="px-2 py-4 text-xs text-muted-foreground">Aucun univers — vérifiez la structure.</p>}
+      {universes.length === 0 && <p className="px-2 py-4 text-xs text-muted-foreground">{t('cat.taxonomy.empty')}</p>}
     </div>
   )
 }

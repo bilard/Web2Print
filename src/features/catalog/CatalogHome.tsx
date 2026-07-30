@@ -6,6 +6,7 @@ import { BookText, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteCatalog, listCatalogs, newCatalogDoc, saveCatalog, type CatalogSummary } from './catalogsApi'
 import { useCatalogStore } from '@/stores/catalog.store'
+import { t } from '@/lib/i18n'
 
 export function CatalogHome() {
   const navigate = useNavigate()
@@ -45,7 +46,7 @@ export function CatalogHome() {
         </button>
       </div>
       {loading ? <p className="text-sm text-muted-foreground">Chargement…</p> : items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucun catalogue. Créez le premier : sélection PIM → prompt → PDF.</p>
+        <p className="text-sm text-muted-foreground">{t('cat.home.empty')}</p>
       ) : (
         <ul className="space-y-2">
           {items.map((c) => (

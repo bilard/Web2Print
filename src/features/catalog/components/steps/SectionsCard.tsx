@@ -12,6 +12,7 @@ import { CATALOG_GRIDS, type CatalogGrid, type CatalogPlan, type CatalogSectionP
 import { subtreeProductCount } from '../../catalogTree'
 import { defaultUniverseColor } from '../../catalogFlatplan'
 import { PlanSectionRow } from './PlanSectionRow'
+import { t } from '@/lib/i18n'
 
 interface SectionsCardProps {
   plan: CatalogPlan
@@ -80,7 +81,7 @@ export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap, pre
               className="w-24 px-2 py-1.5 rounded-md bg-surface-2 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-600">
               <option value="" disabled>mixte</option>
               {CATALOG_GRIDS.map((g) => <option key={g} value={g}>{g}/page</option>)}
-              <option value="random">Aléatoire</option>
+              <option value="random">{t('cat.random')}</option>
             </select>
           </label>
           <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">

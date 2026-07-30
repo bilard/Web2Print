@@ -2,6 +2,7 @@
 // l'ordre manuel.
 import { BookOpen, Grid3X3, Layers, Package, RotateCcw, Star } from 'lucide-react'
 import type { FlatplanStats } from '../../catalogFlatplan'
+import { t } from '@/lib/i18n'
 
 interface Props {
   stats: FlatplanStats
@@ -34,7 +35,7 @@ export function FlatplanStatsBar({ stats, thumbWidth, onThumbWidth, hasManualOrd
       {hasManualOrder && (
         <button onClick={onResetOrder}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:text-white hover:bg-surface-2"
-          title="Revenir à l'ordre calculé par le moteur">
+          title={t('cat.flatplan.resetOrder')}>
           <RotateCcw className="w-3.5 h-3.5" /> Ordre auto
         </button>
       )}

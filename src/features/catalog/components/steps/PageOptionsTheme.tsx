@@ -8,6 +8,7 @@ import { inputCls } from '@/components/shared/panel'
 import type { CatalogPlan, CatalogTheme } from '../../catalogTypes'
 import { TemplatesBar } from './TemplatesBar'
 import { OptSection, optFieldClass } from './PageOptionControls'
+import { t } from '@/lib/i18n'
 
 interface Props {
   plan: CatalogPlan
@@ -31,7 +32,7 @@ export function PageOptionsTheme({ plan, setPlan }: Props) {
 
   return (
     <>
-      <OptSection title="Thème graphique — couleurs">
+      <OptSection title={t('cat.page.themeColors')}>
         <div className="flex flex-wrap gap-2">
           {THEME_COLORS.map(({ key, label }) => (
             <ColorPicker key={key} value={theme[key]} onChange={(v) => setColor(key, v)} label={label} />
@@ -54,7 +55,7 @@ export function PageOptionsTheme({ plan, setPlan }: Props) {
         </div>
         <UserFontsPanel />
       </OptSection>
-      <OptSection title="Modèles — réutilisables dans vos autres catalogues">
+      <OptSection title={t('cat.page.templates')}>
         <TemplatesBar plan={plan} setPlan={setPlan} fieldClass={optFieldClass} />
       </OptSection>
     </>

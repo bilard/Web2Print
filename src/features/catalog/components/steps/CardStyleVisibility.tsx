@@ -11,6 +11,7 @@ import { cardObjectOrder, reorderCardObjects } from '../pages/freeLayout'
 import type { CardObjectId, CatalogCardStyle } from '../../catalogTypes'
 import { DetailsFieldsPanel } from './DetailsFieldsPanel'
 import { SortableVisibilityRow, VisibilityRow } from './VisibilityRow'
+import { t } from '@/lib/i18n'
 
 type ShowKey = keyof Pick<CatalogCardStyle,
   'showPromo' | 'showImage' | 'showSticker' | 'showKicker' | 'showBandRule' | 'showVedette' | 'showBrand' | 'showName'
@@ -94,12 +95,12 @@ export function CardStyleVisibility({ style, patch, selected, onSelect, wide = f
         <label className="flex items-center gap-1.5 mt-2 text-[11px] text-white/40 cursor-pointer select-none">
           <input type="checkbox" checked={style.showWas !== false} onChange={(e) => patch({ showWas: e.target.checked })}
             className="accent-indigo-600" />
-          Prix barré <span className="text-white/25">(dans le bloc Prix)</span>
+          {t('cat.vis.strikePrice')} <span className="text-white/25">{t('cat.vis.strikePrice.note')}</span>
         </label>
       )}
       {style.showDetails !== false && (
         <div className="mt-2 pt-2 border-t border-white/10">
-          <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider">Contenu des Détails</p>
+          <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider">{t('cat.vis.detailsContent')}</p>
           <DetailsFieldsPanel style={style} patch={patch} />
         </div>
       )}

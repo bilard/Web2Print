@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { UNCAPPED, isSpecsDetailField, extractPromoFields, countDetailData } from '@/features/retail-promo/promoMapping'
 import type { CatalogCardStyle } from '../../catalogTypes'
+import { t } from '@/lib/i18n'
 
 interface Props {
   style: CatalogCardStyle
@@ -85,7 +86,7 @@ export function DetailsFieldsPanel({ style, patch }: Props) {
                 description: 'Densité ajustable section par section dans le panneau Sections.',
               })
             }}
-            title="Toute la donnée source (puces intégrales + toutes les specs) ET grandes cartes : toutes les sections passent en 2 produits/page"
+            title={t('cat.details.full')}
             className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${exhaustive ? on : off}`}>
             {exhaustive ? '✓ Exhaustif' : 'Exhaustif'}
           </button>
@@ -97,7 +98,7 @@ export function DetailsFieldsPanel({ style, patch }: Props) {
                 description: 'Quotas ajustables dans les champs, densité dans le panneau Sections.',
               })
             }}
-            title="Version condensée : 5 puces et 6 spécifications par fiche, grille 4 produits/page — ajustez ensuite les quotas dans les champs ci-dessus"
+            title={t('cat.details.condensed')}
             className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${!exhaustive ? on : off}`}>
             {!exhaustive ? '✓ Condensé' : 'Condensé'}
           </button>

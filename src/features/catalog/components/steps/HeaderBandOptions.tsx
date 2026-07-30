@@ -7,6 +7,7 @@ import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import type { CatalogPageStyle, CatalogSectionPlan, CatalogTheme } from '../../catalogTypes'
 import { defaultUniverseColor } from '../../catalogFlatplan'
 import { OptSection, OptSlider, OptToggle, optFieldClass } from './PageOptionControls'
+import { t } from '@/lib/i18n'
 
 interface Props {
   style: CatalogPageStyle
@@ -53,7 +54,7 @@ export function HeaderBandOptions({ style, patch, theme, onHeaderBg, sections, o
           <label key={key} className="flex flex-col gap-1 text-[10px] uppercase tracking-wide text-white/40">
             {label}
             <select value={style[key] ?? ''} onChange={(e) => patch({ [key]: e.target.value } as Partial<CatalogPageStyle>)} className={optFieldClass}>
-              <option value="">Police du thème</option>
+              <option value="">{t('cat.font.theme')}</option>
               <FontSelectOptions />
             </select>
           </label>

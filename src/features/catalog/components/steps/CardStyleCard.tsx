@@ -15,6 +15,7 @@ import { CardObjectSettings } from './CardObjectSettings'
 import { CardStyleTypo, OBJ_LABEL } from './CardStyleTypo'
 import { CardStyleColors } from './CardStyleColors'
 import { CardStyleVisibility } from './CardStyleVisibility'
+import { t } from '@/lib/i18n'
 
 interface CardStyleCardProps {
   plan: CatalogPlan
@@ -60,7 +61,7 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
         </h3>
         <button type="button" onClick={() => setPlan({ ...plan, cardStyle: { ...DEFAULT_CARD_STYLE } })}
           className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-well"
-          title="Revenir au style par défaut">
+          title={t('cat.style.resetDefault')}>
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -80,7 +81,7 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
           contenu · Libre = reste exactement où vous le posez).
         </p>
         <button type="button" onClick={() => patch({ layout: {}, layoutWide: {} })}
-          className="text-[11px] text-indigo-300 hover:text-white underline text-left">Réinitialiser les positions</button>
+          className="text-[11px] text-indigo-300 hover:text-white underline text-left">{t('cat.style.resetPositions')}</button>
       </div>
 
       {/* BLOC SÉLECTIONNÉ : tous ses réglages regroupés (taille, police, rotation,
@@ -92,7 +93,7 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
               Bloc sélectionné : {OBJ_LABEL[selectedObject]}
             </span>
             {onClearSelection && (
-              <button type="button" onClick={onClearSelection} title="Désélectionner"
+              <button type="button" onClick={onClearSelection} title={t('cat.style.deselect')}
                 className="p-1 rounded-md text-white/40 hover:text-white hover:bg-well">
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -104,7 +105,7 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
 
       {/* Couleurs GLOBALES du thème — mêmes pastilles que le panneau « Fond de
           page » de l'Aperçu, éditables dès cette étape sans changer d'onglet. */}
-      <PropertySection title="Couleurs du thème" help="Globales (accent, fond, bandeau…) — synchronisées avec le panneau « Fond de page » de l'Aperçu.">
+      <PropertySection title={t('cat.style.themeColors')} help={t('cat.style.themeColors.help')}>
         <div className="flex flex-wrap gap-2">
           {THEME_COLORS.map(({ key, label }) => (
             <ColorPicker key={key} value={plan.theme[key]} label={label}
@@ -113,34 +114,34 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
         </div>
       </PropertySection>
 
-      <PropertySection title="Texte : taille & police" help="Un réglage par champ texte (nom, prix, description...).">
+      <PropertySection title={t('cat.style.typo')} help={t('cat.style.typo.help')}>
         <label className="flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none"
-          title="Neutralise la hiérarchie automatique (fiches vedette / mise en avant prix magnifiées, ajustement par page) : tous les produits du catalogue partagent la même taille de texte">
+          title={t('cat.style.uniformText.title')}>
           <input type="checkbox" checked={style.uniformTextScale ?? false}
             onChange={(e) => patch({ uniformTextScale: e.target.checked })} className="accent-indigo-600" />
-          Taille identique sur toutes les fiches
+          {t('cat.style.uniformText')}
         </label>
         <CardStyleTypo style={style} patch={patch} selected={selectedObject} wide={wide} />
       </PropertySection>
 
-      <PropertySection title="Couleurs des objets" help="2e case = dégradé (✕ pour revenir à l'uni).">
+      <PropertySection title={t('cat.style.objColors')} help={t('cat.style.objColors.help')}>
         <CardStyleColors style={style} theme={plan.theme} patch={patch} selected={selectedObject} />
       </PropertySection>
 
-      <PropertySection title="Image">
+      <PropertySection title={t('cat.style.image')}>
         <label className="text-xs text-white/40 space-y-1 block">
-          <span className="flex justify-between">Largeur (cartes horizontales)<b className="text-white tabular-nums">{style.imageShare}%</b></span>
+          <span className="flex justify-between">{t('cat.style.imageShare')}<b className="text-white tabular-nums">{style.imageShare}%</b></span>
           <input type="range" min={25} max={55} step={1} value={style.imageShare}
             onChange={(e) => patch({ imageShare: Number(e.target.value) })} className="w-full accent-indigo-600" />
         </label>
         <label className="text-xs text-white/40 space-y-1 block">
-          <span className="flex justify-between">Marge du visuel<b className="text-white tabular-nums">{style.imagePad}px</b></span>
+          <span className="flex justify-between">{t('cat.style.imagePad')}<b className="text-white tabular-nums">{style.imagePad}px</b></span>
           <input type="range" min={0} max={30} step={1} value={style.imagePad}
             onChange={(e) => patch({ imagePad: Number(e.target.value) })} className="w-full accent-indigo-600" />
         </label>
       </PropertySection>
 
-      <PropertySection title="Éléments affichés" help="Ordre = position dans la fiche (glisser-déposer). Champs libres (TVA, entretien...) masquables un par un sous « Détails ».">
+      <PropertySection title={t('cat.style.shown')} help={t('cat.style.shown.help')}>
         <CardStyleVisibility style={style} patch={patch} selected={selectedObject}
           onSelect={onSelectObject ? selectFromPanel : undefined} wide={wide} />
       </PropertySection>

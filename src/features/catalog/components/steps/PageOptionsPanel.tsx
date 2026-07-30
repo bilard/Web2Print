@@ -12,6 +12,7 @@ import { HeaderBandOptions } from './HeaderBandOptions'
 import { LogoBrandOptions } from './LogoBrandOptions'
 import { PageOptionsCover } from './PageOptionsCover'
 import { PageOptionsTheme } from './PageOptionsTheme'
+import { t } from '@/lib/i18n'
 
 interface Props {
   page: CatalogPageDescriptor
@@ -45,7 +46,7 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-white">Fond de page <span className="text-xs font-normal text-white/40">— {KIND_TITLES[page.kind]}</span></h3>
           <button type="button" onClick={() => setPlan({ ...plan, pageStyle: { ...DEFAULT_PAGE_STYLE } })}
-            className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-well" title="Revenir aux éléments par défaut">
+            className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-well" title={t('cat.page.resetElements')}>
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -61,7 +62,7 @@ export function PageOptionsPanel({ page, plan, setPlan, coverImageUrl, backCover
               onHeaderBg={(v) => setPlan({ ...plan, theme: { ...plan.theme, headerBg: v } })}
               sections={plan.sections}
               onSectionColor={(nodeId, color) => setPlan({ ...plan, sections: plan.sections.map((s) => s.nodeId === nodeId ? { ...s, color } : s) })} />
-            <OptSection title="Éléments de l'affiche">
+            <OptSection title={t('cat.page.posterElements')}>
               <OptToggle label="Numéro XXL" checked={style.showOpenerNum} onChange={(v) => patch({ showOpenerNum: v })} />
               <OptToggle label="Chip chapitre" checked={style.showOpenerChip} onChange={(v) => patch({ showOpenerChip: v })} />
               <OptToggle label="Compteur produits" checked={style.showOpenerCount} onChange={(v) => patch({ showOpenerCount: v })} />

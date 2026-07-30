@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { EMPTY_CHARTE, charteToThemePatch, extractCharteFromFile } from '../../charte/extractCharte'
 import { analyzeInspirationUrl } from '../../charte/inspiration'
+import { t } from '@/lib/i18n'
 
 export function CharteCard() {
   const charte = useCatalogStore((s) => s.charte)
@@ -122,7 +123,7 @@ export function CharteCard() {
             className="w-full py-1.5 bg-transparent text-xs text-white outline-none placeholder:text-white/25" />
         </div>
         <button type="button" onClick={() => void analyzeInspiration()} disabled={inspBusy || !inspUrl.trim()}
-          title="Récupère le visuel de la page et fait analyser sa mise en page par la Vision IA"
+          title={t('cat.charte.analyse')}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-indigo-500 text-indigo-300 hover:bg-indigo-600 hover:text-[#fff] disabled:opacity-40">
           {inspBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Analyser
         </button>
@@ -160,7 +161,7 @@ export function CharteCard() {
           redimensionnable verticalement à la poignée. */}
       <textarea value={charte?.notes ?? ''} rows={9}
         onChange={(e) => setCharte({ ...(charte ?? EMPTY_CHARTE), notes: e.target.value })}
-        placeholder="Consignes créa (graphique & structure) : ton, interdits, hiérarchie des pages, densité…"
+        placeholder={t('cat.charte.placeholder')}
         className="w-full px-3 py-2 rounded-md bg-surface-2 text-xs leading-relaxed text-white outline-none focus:ring-1 focus:ring-indigo-600 resize-y overflow-y-auto min-h-[120px] max-h-[50vh]" />
     </section>
   )

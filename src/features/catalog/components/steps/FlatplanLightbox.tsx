@@ -6,6 +6,7 @@ import type { CatalogPageDescriptor } from '../../catalogTypes'
 import type { CatalogRenderCtx } from '../pages/catalogCss'
 import { pagePx } from '../pages/catalogCss'
 import { CatalogPageView } from '../pages/CatalogPageView'
+import { t } from '@/lib/i18n'
 
 interface Props {
   pages: CatalogPageDescriptor[]
@@ -65,13 +66,13 @@ export function FlatplanLightbox({ pages, index, ctx, onIndex, onClose, onOpenPr
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-[#fff] text-xs font-medium">
           <ExternalLink className="w-3.5 h-3.5" /> Ouvrir dans l'aperçu
         </button>
-        <button onClick={onClose} className="p-1.5 rounded-md text-[#fff]/80 hover:bg-[#fff]/10" title="Fermer (Échap)">
+        <button onClick={onClose} className="p-1.5 rounded-md text-[#fff]/80 hover:bg-[#fff]/10" title={t('cat.close.esc')}>
           <X className="w-5 h-5" />
         </button>
       </div>
       <div ref={containerRef} className="flex-1 min-h-0 flex items-center justify-center relative">
         <button onClick={(e) => { e.stopPropagation(); onIndex(Math.max(0, index - 1)) }} disabled={index === 0}
-          className="absolute left-3 p-2 rounded-full bg-[#fff]/10 text-[#fff] hover:bg-[#fff]/20 disabled:opacity-30" title="Page précédente">
+          className="absolute left-3 p-2 rounded-full bg-[#fff]/10 text-[#fff] hover:bg-[#fff]/20 disabled:opacity-30" title={t('cat.page.prev')}>
           <ChevronLeft className="w-6 h-6" />
         </button>
         <div style={{ width: w * k, height: h * k, overflow: 'hidden' }} onClick={(e) => e.stopPropagation()} className="shadow-2xl">

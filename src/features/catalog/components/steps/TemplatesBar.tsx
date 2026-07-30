@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { listCatalogTemplates, saveCatalogTemplate, deleteCatalogTemplate, type CatalogTemplate } from '../../catalogTemplatesApi'
 import type { CatalogGrid, CatalogPlan } from '../../catalogTypes'
 import { mergedPageStyle } from '../pages/catalogCss'
+import { t } from '@/lib/i18n'
 
 /** Entrée fixe de la liste : active les couleurs PAR CHAPITRE (palette du chemin de fer). */
 const CHAPTER_DEFAULT_ID = '__chapter-colors__'
@@ -84,20 +85,20 @@ export function TemplatesBar({ plan, setPlan, fieldClass }: TemplatesBarProps) {
   return (
     <section className="space-y-2">
       <div className="flex items-center gap-2">
-        <select value={selectedValue} onChange={(e) => applyTemplate(e.target.value)} aria-label="Mes modèles" className={fieldClass}>
-          <option value="">Appliquer un modèle…</option>
-          <option value={CHAPTER_DEFAULT_ID}>Défaut — couleurs par chapitre</option>
+        <select value={selectedValue} onChange={(e) => applyTemplate(e.target.value)} aria-label={t('cat.tpl.mine')} className={fieldClass}>
+          <option value="">{t('cat.tpl.apply')}</option>
+          <option value={CHAPTER_DEFAULT_ID}>{t('cat.tpl.chapterDefault')}</option>
           {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
         <button type="button" onClick={handleDelete} disabled={!selectedValue || selectedValue === CHAPTER_DEFAULT_ID}
-          className="p-2 rounded-md text-muted-foreground hover:text-red-400 disabled:opacity-40" title="Supprimer le modèle">
+          className="p-2 rounded-md text-muted-foreground hover:text-red-400 disabled:opacity-40" title={t('cat.tpl.delete')}>
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
       <div className="flex items-center gap-2">
         {/* Autocomplétion sur les noms existants : l'enregistrement est un upsert
             par nom — retrouver un modèle à mettre à jour sans le retaper. */}
-        <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nom du modèle"
+        <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t('cat.tpl.namePlaceholder')}
           list="catalog-template-names" className={fieldClass} />
         <datalist id="catalog-template-names">
           {templates.map((t) => <option key={t.id} value={t.name} />)}

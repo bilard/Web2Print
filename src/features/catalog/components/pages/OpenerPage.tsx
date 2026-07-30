@@ -3,6 +3,7 @@
 // listant les familles + chips de sous-familles — ou un extrait de la gamme
 // (noms produits) quand l'univers n'a pas de familles.
 import type { CatalogPageStyle, OpenerFamily } from '../../catalogTypes'
+import { t } from '@/lib/i18n'
 
 interface Props {
   label: string
@@ -47,7 +48,7 @@ export function OpenerPage({ label, catalogName, index, productCount, families, 
         </div>
       ) : ps.showOpenerPanel && highlights.length > 0 ? (
         <div className="cat-opener-panel">
-          <div className="cat-opener-panel-title">Aperçu de la gamme</div>
+          <div className="cat-opener-panel-title">{t('cat.opener.rangePreview')}</div>
           <div className="cat-opener-hls">
             {highlights.map((name) => <span key={name} className="cat-opener-hl">{name}</span>)}
           </div>

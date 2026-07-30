@@ -5,6 +5,7 @@ import { Link2 } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import type { PromoFieldKey } from '@/features/retail-promo/promoTypes'
 import { CustomFieldsEditor } from '@/features/retail-promo/components/CustomFieldsEditor'
+import { t } from '@/lib/i18n'
 
 const FIELDS: { key: PromoFieldKey; label: string }[] = [
   { key: 'name', label: 'Nom' },
@@ -43,14 +44,14 @@ export function StepFieldMapping() {
               )}
             </label>
             <select value={fieldMap[key] ?? ''} onChange={(e) => setFieldMapOverride(key, e.target.value || null)} className={selectClass}>
-              <option value="">(non mappé)</option>
+              <option value="">{t('cat.map.unmapped')}</option>
               {rawColumns.map((c) => <option key={c.key} value={c.key}>{c.label || c.key}</option>)}
             </select>
           </div>
         ))}
       </div>
       <div className="pt-1">
-        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Champs supplémentaires</div>
+        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('cat.map.extraFields')}</div>
         <CustomFieldsEditor customFields={customFields} columns={rawColumns} onChange={setCustomFields} />
       </div>
     </section>

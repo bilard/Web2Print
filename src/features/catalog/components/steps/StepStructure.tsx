@@ -11,6 +11,7 @@ import { MmInput } from './MmInput'
 import { LEVEL_STYLES } from './levelStyles'
 import { StepActionsPortal } from './StepActionsPortal'
 import { StepFieldMapping } from './StepFieldMapping'
+import { t } from '@/lib/i18n'
 
 const LEVEL_FIELDS: { key: keyof LevelKeys; label: string }[] = [
   { key: 'univers', label: 'Univers' },
@@ -103,8 +104,8 @@ export function StepStructure() {
             </h2>
             <div className="flex items-center gap-3 flex-wrap">
               <select value={formatSelectValue} onChange={(e) => handleFormatSelect(e.target.value)} className="w-56 px-3 py-1.5 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600">
-                {CATALOG_FORMAT_PRESETS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-                <option value={CUSTOM_ID}>Personnalisé</option>
+                {CATALOG_FORMAT_PRESETS.map((p) => <option key={p.id} value={p.id}>{t(p.labelKey)}</option>)}
+                <option value={CUSTOM_ID}>{t('cat.custom')}</option>
               </select>
               {showCustom && (
                 <div className="flex items-center gap-2">
@@ -125,11 +126,11 @@ export function StepStructure() {
             <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
               <ListTree className="w-4 h-4 text-indigo-400" /> Arborescence
             </h2>
-            <span className="text-xs text-muted-foreground">Double-clic : renommer · flèches : réordonner</span>
+            <span className="text-xs text-muted-foreground">{t('cat.structure.hint')}</span>
           </div>
           <div className="border border-border rounded-md bg-background/40 p-2">
             {tree.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">Aucun produit sélectionné.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">{t('cat.structure.empty')}</p>
             ) : (
               tree.map((node, i) => (
                 <StructureTreeNode key={node.id} node={node} siblingIds={rootIds} index={i} parentId="" depth={0} />

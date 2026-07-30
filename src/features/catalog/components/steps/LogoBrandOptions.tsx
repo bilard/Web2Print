@@ -9,6 +9,7 @@ import { useCatalogStore } from '@/stores/catalog.store'
 import type { CatalogPageStyle, CatalogPlan } from '../../catalogTypes'
 import { emblemPrompt, useCoverImage } from '../../useCoverImage'
 import { OptSection, OptSlider, OptToggle, optFieldClass } from './PageOptionControls'
+import { t } from '@/lib/i18n'
 
 interface Props {
   plan: CatalogPlan
@@ -49,7 +50,7 @@ export function LogoBrandOptions({ plan, setPlan, style, patchStyle }: Props) {
         {logoUrl && (
           <>
             <img src={logoUrl} alt="Logo" className="w-9 h-9 object-contain rounded-md border border-border bg-[#fff]" />
-            <button type="button" onClick={() => setLogoUrl(null)} title="Retirer l'emblème (le nom reste)"
+            <button type="button" onClick={() => setLogoUrl(null)} title={t('cat.logo.remove')}
               className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-well">
               <X className="w-3.5 h-3.5" />
             </button>

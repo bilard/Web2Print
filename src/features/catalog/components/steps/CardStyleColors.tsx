@@ -5,6 +5,7 @@
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import { SliderField } from '@/components/shared/panel'
 import type { CardObjectId, CatalogCardStyle, CatalogTheme } from '../../catalogTypes'
+import { t } from '@/lib/i18n'
 
 interface CardStyleColorsProps {
   style: CatalogCardStyle
@@ -46,7 +47,7 @@ export function ColorObjectField({ def, style, patch, highlighted, innerRef }: {
         <span className="text-[10px] text-white/30 uppercase tracking-wider truncate" title={label}>{label}</span>
         {grad && !gradValue && (
           <button type="button" onClick={() => patch({ [grad]: base || fallback } as Partial<CatalogCardStyle>)}
-            className="text-[10px] text-white/25 hover:text-white leading-none shrink-0" title="Ajouter un dégradé">◐+</button>
+            className="text-[10px] text-white/25 hover:text-white leading-none shrink-0" title={t('cat.style.addGradient')}>◐+</button>
         )}
       </div>
       <ColorPicker value={base || fallback} onChange={(v) => patch({ [key]: v } as Partial<CatalogCardStyle>)} />

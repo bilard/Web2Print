@@ -8,6 +8,7 @@ import { getRowValue } from '@/features/merge/mergeEngine'
 import type { SavedDataset } from '@/features/merge/excelSource'
 import { useCatalogSource } from '../../useCatalogSource'
 import { SourceGroupList } from './SourceGroupList'
+import { t } from '@/lib/i18n'
 
 const MAX_VISIBLE_ROWS = 200
 
@@ -102,8 +103,8 @@ export function StepSource() {
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un produit…"
                 className="w-full pl-9 pr-3 py-1.5 rounded-md bg-surface-2 text-sm text-white outline-none focus:ring-1 focus:ring-indigo-600" />
             </div>
-            <button onClick={selectAllFiltered} className="px-3 py-1.5 rounded-md bg-surface-2 hover:bg-surface text-sm text-white">Tout sélectionner</button>
-            <button onClick={deselectAllFiltered} className="px-3 py-1.5 rounded-md bg-surface-2 hover:bg-surface text-sm text-white">Tout désélectionner</button>
+            <button onClick={selectAllFiltered} className="px-3 py-1.5 rounded-md bg-surface-2 hover:bg-surface text-sm text-white">{t('cat.source.selectAll')}</button>
+            <button onClick={deselectAllFiltered} className="px-3 py-1.5 rounded-md bg-surface-2 hover:bg-surface text-sm text-white">{t('cat.source.deselectAll')}</button>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto border border-border rounded-md bg-surface">

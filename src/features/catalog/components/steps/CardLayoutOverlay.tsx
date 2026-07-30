@@ -5,6 +5,7 @@ import type { CardBox, CardObjectId, CatalogCardStyle } from '../../catalogTypes
 import { CARD_OBJECT_IDS } from '../../catalogTypes'
 import { FLOW_CHAIN, freeLayoutBox, isMagnetized } from '../pages/freeLayout'
 import { OBJ_LABEL } from './CardStyleTypo'
+import { t } from '@/lib/i18n'
 
 type Handle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
@@ -288,7 +289,7 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
             return b.link && ((b.lx ?? 0) !== 0 || (b.ly ?? 0) !== 0) ? (
               <button type="button" onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }}
                 onClick={() => onChange(sel, { ...b, lx: 0, ly: 0 })}
-                title="Recoller au point de soudure (annule le décalage du glisser)"
+                title={t('cat.card.reweld')}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999,
                   fontSize: 10, fontWeight: 700, cursor: 'pointer', border: '1px solid #6366f1', background: '#fff', color: '#6366f1' }}>
                 ⟲ Recoller

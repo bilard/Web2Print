@@ -5,6 +5,7 @@ import { useCatalogStore } from '@/stores/catalog.store'
 import type { CatalogPageStyle, CatalogPlan } from '../../catalogTypes'
 import { CoverVisualField } from './CoverVisualField'
 import { OptSection, OptSlider, OptToggle, optFieldClass } from './PageOptionControls'
+import { t } from '@/lib/i18n'
 
 interface Props {
   variant: 'cover' | 'back'
@@ -40,7 +41,7 @@ export function PageOptionsCover({ variant, plan, setPlan, style, patchStyle, im
           </>
         )}
       </OptSection>
-      <OptSection title="Éléments affichés">
+      <OptSection title={t('cat.page.coverElements')}>
         {isCover ? (
           <>
             <OptToggle label="Bandeau baseline" checked={style.showCoverBaseline} onChange={(v) => patchStyle({ showCoverBaseline: v })} />

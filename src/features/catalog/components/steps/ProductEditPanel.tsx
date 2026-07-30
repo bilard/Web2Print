@@ -8,6 +8,7 @@ import { Database, FileOutput, Loader2, RotateCcw, Star, X } from 'lucide-react'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { saveRowToMaster } from '../../masterWrite'
 import { isImageValue, ProductImageField } from './ProductImageField'
+import { t } from '@/lib/i18n'
 
 interface Props {
   rowId: string
@@ -98,14 +99,14 @@ export function ProductEditPanel({ rowId, onClose }: Props) {
         <header className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-white truncate">{str(row[fieldMap.name ?? '']) || 'Produit'}</h2>
-            <p className="text-[11px] text-muted-foreground">Double-clic fiche — modifiez puis choisissez la portée de sauvegarde</p>
+            <p className="text-[11px] text-muted-foreground">{t('cat.product.editHint')}</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-md hover:bg-surface-2 text-muted-foreground hover:text-white"><X className="w-4 h-4" /></button>
         </header>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {plan && (
             <label className="flex items-center gap-2 px-3 py-2 rounded-md bg-surface-2 border border-white/[0.06] text-xs text-white/85 cursor-pointer select-none"
-              title="Grande carte 2×2 mise en avant avec le ruban vedette — réglage propre à CE catalogue (publication)">
+              title={t('cat.product.featured')}>
               <input type="checkbox" checked={isVedette} onChange={toggleVedette} className="accent-indigo-600" />
               <Star className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
               Ruban vedette (mise en avant dans ce catalogue)
@@ -151,7 +152,7 @@ export function ProductEditPanel({ rowId, onClose }: Props) {
           </button>
           <button onClick={() => void saveMaster()} disabled={busy}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-indigo-500 text-indigo-300 hover:bg-indigo-600 hover:text-[#fff] disabled:opacity-50 text-sm font-medium"
-            title="Écrit la source (PIM / dataset Excel) — tous les canaux verront ces valeurs">
+            title={t('cat.product.writeSource')}>
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />} Enregistrer dans le Master
           </button>
         </footer>

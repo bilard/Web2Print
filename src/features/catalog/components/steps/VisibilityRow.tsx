@@ -8,6 +8,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical } from 'lucide-react'
 import type { CardObjectId } from '../../catalogTypes'
+import { t } from '@/lib/i18n'
 
 interface RowProps {
   /** Objet de fiche sélectionnable, ou null (élément de PAGE : filet du bandeau). */
@@ -44,7 +45,7 @@ export function VisibilityRow({ id, label, checked, onCheck, selected, onSelect,
         <input type="checkbox" checked={checked} onChange={(e) => onCheck(e.target.checked)}
           title={`Afficher « ${label} »`} className="accent-indigo-600 cursor-pointer" />
         {id && onSelect ? (
-          <button type="button" onClick={() => onSelect(id)} title="Sélectionner ce bloc (réglages, position, couleurs)"
+          <button type="button" onClick={() => onSelect(id)} title={t('cat.vis.selectBlock')}
             className={`flex-1 text-left text-xs truncate py-0.5 ${selected ? 'text-white' : 'text-white/40 hover:text-white/80'}`}>
             {label}
           </button>
