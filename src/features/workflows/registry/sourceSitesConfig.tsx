@@ -258,7 +258,7 @@ export function SourceSitesConfig({ config, onChange }: {
         {rows.length > 1 && (
           <button
             onClick={toggleAll}
-            title={allEnabled ? 'Désactiver tous les sites de la moisson' : 'Activer tous les sites de la moisson'}
+            title={t(allEnabled ? 'ss.disableAll' : 'ss.enableAll')}
             className="self-start inline-flex items-center gap-1.5 text-[11px] font-medium border border-indigo-500/40 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 rounded-md px-2 py-1 transition-colors"
           >
             {allEnabled ? <Square className="w-3.5 h-3.5" /> : <CheckSquare className="w-3.5 h-3.5" />}

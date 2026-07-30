@@ -148,7 +148,7 @@ export function CharteCard() {
             )
           })}
           <button type="button" onClick={applyToTheme} disabled={!plan}
-            title={plan ? 'Répartit la palette dans le thème (accent, bandeau, fond, encre)' : 'Générez d’abord un plan'}
+            title={t(plan ? 'cat.charte.applyTitle' : 'cat.charte.planFirst')}
             className="ml-1 px-2.5 py-1 rounded-md text-[11px] border border-indigo-500 text-indigo-300 hover:bg-indigo-600 hover:text-[#fff] disabled:opacity-40">
             {t('charteCard.applyToThe')}
           </button>

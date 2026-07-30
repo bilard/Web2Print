@@ -1,4 +1,5 @@
 import { type Kpis, deltaPct } from '../metrics'
+import { t } from '@/lib/i18n'
 
 function Delta({ cur, prev }: { cur: number; prev: number }) {
   const d = deltaPct(cur, prev)
@@ -11,7 +12,7 @@ const CARDS: { key: keyof Kpis; label: string; fmt?: (n: number) => string }[] =
   { key: 'pageViews', label: 'Pages vues' },
   { key: 'visitors', label: 'Visiteurs uniques' },
   { key: 'sessions', label: 'Sessions' },
-  { key: 'avgSessionMs', label: 'Durée moy. session', fmt: (n) => `${Math.round(n / 1000)} s` },
+  { key: 'avgSessionMs', label: t('an.avgSession'), fmt: (n) => `${Math.round(n / 1000)} s` },
 ]
 
 export function AnalyticsKpiCards({ cur, prev }: { cur: Kpis; prev: Kpis }) {

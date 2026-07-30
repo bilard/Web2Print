@@ -54,7 +54,7 @@ export function PlanSectionRow({ node, section, products, chapterColor, onDensit
         )}
         <div className={`flex-1 min-w-0 flex items-baseline gap-2 ${foldable ? 'cursor-pointer select-none' : ''}`}
           onClick={foldable ? onToggle : undefined}
-          title={foldable ? (open ? 'Replier cette section' : 'Déplier cette section') : undefined}>
+          title={foldable ? t(open ? 'cat.section.collapse' : 'cat.section.expand') : undefined}>
           <span className={`truncate ${st.text}`} style={{ color: chapterColor }}>{node.label}</span>
           <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold tabular-nums text-[#fff]"
             style={{ background: chapterColor }}>

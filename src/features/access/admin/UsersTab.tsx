@@ -229,7 +229,7 @@ export function UsersTab() {
                               const inRole = rolePerms.has(d.key)
                               return (
                                 <span key={d.key} className={`inline-flex items-stretch rounded-lg border overflow-hidden text-[10px] ${granted ? 'border-emerald-500/40' : revoked ? 'border-red-500/40' : 'border-white/10'}`}>
-                                  <span className={`flex items-center px-2 py-1 ${revoked ? 'text-white/30 line-through' : inRole ? 'text-white/75' : 'text-white/40'}`} title={inRole ? 'Inclus dans le rôle' : 'Absent du rôle'}>
+                                  <span className={`flex items-center px-2 py-1 ${revoked ? 'text-white/30 line-through' : inRole ? 'text-white/75' : 'text-white/40'}`} title={t(inRole ? 'ac.inRole' : 'ac.notInRole')}>
                                     {inRole && <span className="w-1 h-1 rounded-full bg-white/45 mr-1" />}{t(d.labelKey)}
                                   </span>
                                   <button onClick={() => toggleOverride(u, d.key, 'grant')} title={t('ac.grantExtra')}

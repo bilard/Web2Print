@@ -64,7 +64,7 @@ export function MiniCalendar({ selected, onToggle }: {
             <button
               key={isoDate} type="button" disabled={isPast}
               onClick={() => onToggle(isoDate)}
-              title={isPast ? 'Date passée' : isoDate}
+              title={isPast ? t('cal.pastDate') : isoDate}
               className={`h-6 rounded text-[11px] tabular-nums transition-colors ${
                 isSelected ? 'bg-[#6366f1] text-[#fff] font-semibold'
                   : isPast ? 'text-white/20 cursor-default'

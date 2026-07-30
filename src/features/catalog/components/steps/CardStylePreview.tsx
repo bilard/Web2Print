@@ -12,6 +12,7 @@ import { freeLayoutBox, isWideCard } from '../pages/freeLayout'
 import { CatalogHeader } from '../pages/CatalogHeader'
 import { ProductCell } from '../pages/ProductCell'
 import { CardLayoutOverlay } from './CardLayoutOverlay'
+import { t } from '@/lib/i18n'
 
 const SAMPLE_FIELDS: PromoFields = {
   name: 'Table de jardin ALTO 792', image: null, brand: 'Jardipro', ref: '246674928', ean: '',
@@ -81,7 +82,7 @@ function AnchorPalette({ selected, style, wide, onLayoutChange }: {
     { icon: AlignEndHorizontal, title: 'Aimanter en BAS de la fiche', active: box?.ay === 'b', go: () => apply((b) => ({ ...b, ay: 'b', y: 2 })) },
   ]
   return (
-    <div className="flex flex-col gap-1 shrink-0 self-start sticky top-2" title={selected ? undefined : 'Sélectionnez un bloc dans l\'aperçu'}>
+    <div className="flex flex-col gap-1 shrink-0 self-start sticky top-2" title={selected ? undefined : t('cat.preview.selectBlock')}>
       {BTNS.map(({ icon: Icon, title, active, go }, i) => (
         <button key={title} type="button" onClick={go} disabled={!selected} title={title}
           className={`p-1.5 rounded-md border ${i === 3 ? 'mt-2' : ''} ${

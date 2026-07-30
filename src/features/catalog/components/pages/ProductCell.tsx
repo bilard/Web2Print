@@ -13,6 +13,7 @@ import { formatPrice } from './catalogCss'
 import { applyMagneticFlow, freeLayoutBox } from './freeLayout'
 import { useResolvedImage } from '../../useResolvedImage'
 import { descriptionMarkdownToHtml } from '@/lib/richText'
+import { t } from '@/lib/i18n'
 
 interface Props {
   fields: PromoFields
@@ -150,7 +151,7 @@ export function ProductCell({ fields: f, featured, kicker, details, specs, cardS
       data-sh-corner={sh.corner} data-sh-chip={sh.chip} data-sh-price={sh.price}
       data-sh-sticker={sh.sticker} data-sh-image={sh.image} data-sh-shadow={sh.shadow ? '' : undefined}
       onDoubleClick={onEdit ? (e) => { e.stopPropagation(); onEdit() } : undefined}
-      title={onEdit ? 'Double-clic : modifier les données du produit' : undefined}>
+      title={onEdit ? t('cat.cell.dblClickEdit') : undefined}>
       {/* Lien de CONTRÔLE vers la fiche source (colonne url) : visible au survol
           uniquement — invisible à l'export/impression (opacity 0 hors hover). */}
       {f.url && (

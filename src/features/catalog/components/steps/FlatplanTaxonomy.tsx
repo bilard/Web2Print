@@ -43,7 +43,7 @@ function NodeRow({ node, ranges, colors, selectedNode, onSelect, chapterColor }:
       <div className={`flex items-center gap-1 rounded-md ${active ? 'ring-1 ring-indigo-500' : ''}`}
         style={{ background: active ? undefined : `${chapterColor}${ROW_ALPHA[node.level]}` }}>
         {node.level === 1 && children.length > 0 ? (
-          <button onClick={() => setCollapsed((v) => !v)} className="p-0.5 shrink-0 text-muted-foreground hover:text-white" title={collapsed ? 'Déplier' : 'Replier'}>
+          <button onClick={() => setCollapsed((v) => !v)} className="p-0.5 shrink-0 text-muted-foreground hover:text-white" title={t(collapsed ? 'ui.expand' : 'ui.collapse')}>
             {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
         ) : <span className="w-4 shrink-0" />}

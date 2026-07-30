@@ -810,7 +810,7 @@ export function DataTable() {
       <button
         onClick={handleAddRow}
         disabled={pimReached}
-        title={pimReached ? 'Plafond démo atteint — supprimez des lignes pour en ajouter' : undefined}
+        title={pimReached ? t('xl.demoCapReached') : undefined}
         className="w-full flex items-center gap-2 px-4 py-2 text-xs text-white/30 hover:text-white/60 hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors border-b border-white/5"
       >
         <Plus className="w-3.5 h-3.5" />

@@ -69,7 +69,7 @@ export function AnalyticsCountriesTable({ events, selected, onSelect, className 
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); toggle(ckey) }}
-                        aria-label={isCollapsed ? 'Déplier les villes' : 'Replier les villes'}
+                        aria-label={t(isCollapsed ? 'an.expandCities' : 'an.collapseCities')}
                         className="p-0.5 -ml-1 rounded text-white/40 hover:text-white hover:bg-white/10 transition-colors"
                       >
                         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />

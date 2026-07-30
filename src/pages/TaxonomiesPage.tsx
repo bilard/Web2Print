@@ -118,7 +118,7 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
                 <button
                   onClick={handleToggleExpandAll}
                   className="flex items-center gap-1.5 text-[12px] text-white/50 hover:text-white/80 hover:bg-white/[0.06] px-3 py-1.5 rounded-md transition-colors"
-                  title={hasExpanded ? 'Tout réduire' : 'Tout développer'}
+                  title={t(hasExpanded ? 'ui.collapseAll' : 'ui.expandAll')}
                 >
                   {hasExpanded
                     ? <ChevronsDownUp className="w-3.5 h-3.5" />

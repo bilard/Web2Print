@@ -101,7 +101,7 @@ export function PromoLayersPanel() {
       <div key={n.id} onClick={() => { setSelectedKey(n.id); if (hasChildren) toggle(n.id) }} style={{ paddingLeft: 8 + depth * 16 }}
         className={`flex cursor-pointer items-center gap-1.5 rounded py-1.5 pr-2 text-sm ${active ? 'bg-[#6366f1]/20 text-white' : 'text-white/70 hover:bg-white/5'}`}>
         {hasChildren
-          ? <button onClick={(e) => { e.stopPropagation(); toggle(n.id) }} className="shrink-0 text-white/40 hover:text-white" title={open ? 'Replier' : 'Déplier'}>
+          ? <button onClick={(e) => { e.stopPropagation(); toggle(n.id) }} className="shrink-0 text-white/40 hover:text-white" title={t(open ? 'ui.collapse' : 'ui.expand')}>
               {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
             </button>
           : <span className="w-3.5 shrink-0" />}

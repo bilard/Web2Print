@@ -177,7 +177,7 @@ export function GenerateTab({ onAddToCanvas, onReplaceSelected }: Props) {
           </div>
           <button
             onClick={() => setUseSelected(!useSelected)}
-            title={useSelected ? 'Désactiver' : 'Activer comme cible'}
+            title={t(useSelected ? 'nb.disable' : 'nb.enableTarget')}
             className={`w-6 h-6 rounded flex items-center justify-center transition-all ${
               useSelected
                 ? 'bg-indigo-500/20 text-indigo-400 hover:bg-red-500/20 hover:text-red-400'
@@ -195,7 +195,7 @@ export function GenerateTab({ onAddToCanvas, onReplaceSelected }: Props) {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate() } }}
-          placeholder={hasBlock ? (isImageSelected ? 'Décrivez la modification...' : 'Décrivez l\'image à générer...') : 'Décrivez l\'image à générer...'}
+          placeholder={t(hasBlock && isImageSelected ? 'nb.describeEdit' : 'nb.describeImage')}
           rows={3}
           className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/50 resize-none"
         />

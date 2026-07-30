@@ -11,7 +11,7 @@ import type { PromoTemplateConfig } from './promoCardTypes'
 import { t } from '@/lib/i18n'
 
 const TOGGLES: Array<{ key: keyof PromoTemplateConfig; label: string }> = [
-  { key: 'showCategory', label: 'Catégorie' },
+  { key: 'showCategory', label: t('rp.category') },
   { key: 'showDescription', label: 'Description' },
   { key: 'showUnitPrice', label: 'Prix unitaire' },
   { key: 'showBadge', label: 'Badge remise' },

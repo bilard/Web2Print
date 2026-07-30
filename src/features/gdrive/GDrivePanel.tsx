@@ -102,7 +102,7 @@ export function GDrivePanel() {
           <button
             onClick={() => setDedupOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white/70 text-[12px] transition-colors"
-            title={currentFolder ? `Dédupliquer « ${currentFolder.name} » (par contenu, vers la corbeille)` : 'Choisir un dossier à dédupliquer'}
+            title={currentFolder ? t('gd.dedupFolder', { name: currentFolder.name }) : t('gd.pickFolderDedup')}
           >
             <Copy className="w-3.5 h-3.5" />
             Dédupliquer{currentFolder ? ` « ${currentFolder.name} »` : '…'}

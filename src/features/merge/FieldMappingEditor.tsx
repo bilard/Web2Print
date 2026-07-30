@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { collectObjectsDeep } from '@/features/editor/deepObjects'
 import { variableMatchesColumn } from './mergeEngine'
+import { t } from '@/lib/i18n'
 
 /** Toutes les balises utilisées dans le design (mergeFields IDML + {{var}} manuels), dédupliquées. */
 function collectDesignFields(): string[] {
@@ -47,7 +48,7 @@ export function FieldMappingEditor() {
           <div key={field} className="flex items-center gap-2 px-1">
             <span
               className={`text-[11px] w-2 shrink-0 ${resolved ? 'text-emerald-400' : 'text-amber-400'}`}
-              title={resolved ? 'Champ résolu' : 'Aucune colonne — choisis-en une'}
+              title={t(resolved ? 'mg.fieldResolved' : 'mg.noColumn')}
             >
               {resolved ? '✓' : '⚠'}
             </span>

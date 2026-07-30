@@ -573,7 +573,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
               type="button"
               onClick={() => setTaxoPickerOpen(true)}
               className="mb-2 inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded-md bg-indigo-500/[0.08] hover:bg-indigo-500/[0.15] border border-indigo-500/20 hover:border-indigo-500/40 text-indigo-300 transition-colors max-w-full"
-              title={resolved ? `Classé dans « ${resolved.taxonomy.name} » — cliquer pour modifier` : 'Classer ce produit dans une taxonomie'}
+              title={resolved ? t('xl.classifiedIn', { name: resolved.taxonomy.name }) : t('xl.classifyProduct')}
             >
               <Layers className="w-3 h-3 shrink-0" />
               {resolved ? (

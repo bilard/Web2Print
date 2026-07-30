@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { CatalogPageDescriptor } from '../../catalogTypes'
+import { t } from '@/lib/i18n'
 
 interface Props {
   pages: CatalogPageDescriptor[]
@@ -75,7 +76,7 @@ export function PreviewPageTree({ pages, current, onSelect }: Props) {
                   else next.add(opener.nodeId)
                   return next
                 })}
-                title={isCollapsed ? 'Déplier' : 'Replier'}
+                title={t(isCollapsed ? 'ui.expand' : 'ui.collapse')}
                 className="p-0.5 rounded text-muted-foreground hover:text-white shrink-0">
                 {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>

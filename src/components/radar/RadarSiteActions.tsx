@@ -110,7 +110,7 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
       <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t pt-2" style={{ borderColor: 'var(--radar-hair)' }}>
         {row && (
           <IconBtn onClick={onToggle} busy={busy === 'toggle'} tint={enabled ? 'var(--radar-live)' : undefined}
-            title={enabled ? 'Désactiver ce site' : 'Activer ce site'}>
+            title={t(enabled ? 'ss.disableSite' : 'ss.enableSite')}>
             {enabled ? <CheckSquare size={15} /> : <Square size={15} />}
           </IconBtn>
         )}
@@ -118,7 +118,7 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
           <Play size={15} />
         </IconBtn>
         <IconBtn onClick={() => setCreds((c) => !c)} tint={row?.auth ? 'var(--radar-live)' : undefined}
-          title={row?.auth ? 'Accès connecté configuré — modifier' : 'Configurer un accès connecté'}>
+          title={t(row?.auth ? 'ss.authConfigured' : 'ss.authConfigure')}>
           {row?.auth ? <Lock size={15} /> : <LockOpen size={15} />}
         </IconBtn>
         <IconBtn onClick={onReset} busy={busy === 'reset'} title={t('rd.resetCollected')} tint="#fbbf24">

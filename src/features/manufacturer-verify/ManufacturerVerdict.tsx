@@ -84,7 +84,7 @@ function AdoptToggle({ on, disabled, onChange }: { on: boolean; disabled?: boole
     <button
       type="button" role="switch" aria-checked={on} disabled={disabled}
       onClick={() => onChange(!on)}
-      title={on ? 'Master = Fabricant — cliquer pour revenir à la Source' : 'Master = Source — cliquer pour adopter la valeur Fabricant'}
+      title={t(on ? 'mv.masterIsMfr' : 'mv.masterIsSource')}
       className="inline-flex items-center gap-1.5 disabled:opacity-40"
     >
       <span className={`text-[9px] font-bold uppercase ${on ? 'text-white/25' : 'text-white/60'}`}>Src</span>
@@ -213,7 +213,7 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
               <div className="grid grid-cols-2 gap-4">
                 {/* Source (master). Adoptée → montre le texte FABRICANT appliqué (teal). */}
                 <ContentSide
-                  title={c.adopted ? 'Source · fabricant appliqué' : 'Source (revendeur)'}
+                  title={t(c.adopted ? 'mv.sourceAdopted' : 'mv.sourceReseller')}
                   tone={c.adopted ? 'text-teal-300/80' : 'text-white/40'}
                   value={c.adopted ? c.mfrValue : c.sourceValue} field={c.key} highlight={c.adopted} />
                 <ContentSide title="Fabricant" tone="text-indigo-300/70" value={c.mfrValue} field={c.key} highlight={!c.adopted} />

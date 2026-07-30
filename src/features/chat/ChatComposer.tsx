@@ -165,7 +165,7 @@ export function ChatComposer({
           autoresizeRef()
         }}
         onKeyDown={handleKey}
-        placeholder={speech.listening ? 'Dictée en cours…' : placeholder}
+        placeholder={speech.listening ? t('ch.dictating') : placeholder}
         rows={1}
         className="w-full bg-transparent text-white placeholder:text-white/30 resize-none outline-none text-[14.5px] leading-[1.55] min-h-[28px] max-h-[240px]"
       />
@@ -214,7 +214,7 @@ export function ChatComposer({
             <button
               type="button"
               onClick={toggleVoice}
-              title={speech.listening ? 'Arrêter la dictée' : 'Saisie vocale'}
+              title={t(speech.listening ? 'ch.stopDictation' : 'ch.voiceInput')}
               className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${
                 speech.listening
                   ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30'

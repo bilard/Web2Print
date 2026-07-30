@@ -281,7 +281,7 @@ export function GSheetsFormulaColumns({
             <input
               value={row.header}
               onChange={(e) => setRow(i, { header: e.target.value })}
-              placeholder={ghost ? '+ Nom de colonne' : 'En-tête'}
+              placeholder={t(ghost ? 'gs.columnName' : 'gs.header')}
               className="w-28 shrink-0 bg-background border border-neutral-700 rounded px-2 py-1.5 text-[12px] text-white outline-none focus:border-indigo-500"
             />
             <span className="text-neutral-600 text-xs">=</span>

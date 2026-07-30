@@ -147,7 +147,7 @@ export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery, sh
         <button
           onClick={() => !node.isLeaf && toggleNode(node.id)}
           className="flex-shrink-0 text-white/30 hover:text-white/60 w-4 h-4 flex items-center justify-center"
-          aria-label={isExpanded ? `Réduire ${node.label}` : `Développer ${node.label}`}
+          aria-label={t(isExpanded ? 'tx.collapseNode' : 'tx.expandNode', { node: node.label })}
         >
           {!node.isLeaf
             ? (isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />)

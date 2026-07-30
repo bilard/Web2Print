@@ -3,6 +3,7 @@ import { ChevronRight, ChevronDown, Check, Sparkles, Package } from 'lucide-reac
 import { buildTree, nodeMatchesSearch } from '@/features/taxonomy/taxonomyUtils'
 import type { Taxonomy, TaxonomyNodeWithChildren } from '@/features/taxonomy/types'
 import type { TaxonomyProductCounts } from '@/features/taxonomy/useTaxonomyProductCounts'
+import { t } from '@/lib/i18n'
 
 interface ProductTaxonomyPickerTreeProps {
   taxonomy: Taxonomy
@@ -115,7 +116,7 @@ export function ProductTaxonomyPickerTree({
             className={`flex-shrink-0 w-4 h-4 flex items-center justify-center ${
               node.isLeaf ? 'cursor-default' : 'text-white/35 hover:text-white/70'
             }`}
-            aria-label={isExpanded ? `Réduire ${node.label}` : `Développer ${node.label}`}
+            aria-label={t(isExpanded ? 'tx.collapseNode' : 'tx.expandNode', { node: node.label })}
           >
             {!node.isLeaf ? (
               isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />
