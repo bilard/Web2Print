@@ -8,8 +8,8 @@ import { CloseButton } from '@/components/shared/CloseButton'
 import { GSheetsFormulaColumns } from './GSheetsFormulaColumns'
 import { formulaInsert } from './formulaInsert'
 // ⚠️ Ne JAMAIS nommer `t` une variable de boucle ici : elle masquerait la traduction.
-import { t, type TranslationKey } from '@/lib/i18n'
-import { GSHEETS_FUNCTIONS, GSHEETS_FUNCTION_GROUPS } from '@/features/gdrive/googleSheetsFunctions'
+import { t, useTranslation, type TranslationKey } from '@/lib/i18n'
+import { GSHEETS_FUNCTIONS, GSHEETS_FUNCTION_GROUPS, fnCat, fnHint } from '@/features/gdrive/googleSheetsFunctions'
 
 interface Props {
   value: string
@@ -30,6 +30,7 @@ const FORMULA_TEMPLATES: { labelKey: TranslationKey; header: string; template: s
 ]
 
 export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props) {
+  const { locale } = useTranslation()
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -71,7 +72,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
       let score = -1
       if (name.startsWith(q)) score = 0
       else if (name.includes(q)) score = 1
-      else if (hintRe?.test(f.hint.toLowerCase())) score = 2
+      else if (hintRe?.test(f.hint.toLowerCase()) || hintRe?.test(f.hintEn.toLowerCase())) score = 2
       if (score >= 0) scored.push({ f, score })
     }
     scored.sort((a, b) => a.score - b.score || a.f.name.localeCompare(b.f.name))
@@ -84,7 +85,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
       .map((g) => ({
         cat: g.cat,
         fns: q
-          ? g.fns.filter((f) => f.name.toLowerCase().includes(q) || hintRe?.test(f.hint.toLowerCase()))
+          ? g.fns.filter((f) => f.name.toLowerCase().includes(q) || hintRe?.test(f.hint.toLowerCase()) || hintRe?.test(f.hintEn.toLowerCase()))
           : g.fns,
       }))
       .filter((g) => g.fns.length > 0)
@@ -167,18 +168,18 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
           <div className="flex-1 min-h-0 flex flex-col border-t border-neutral-800 pt-3">
             <div className="shrink-0 flex items-center gap-2 mb-2 flex-wrap">
               <h4 className="uppercase tracking-wider text-neutral-500 text-[11px]">
-                Fonctions Google Sheets ({GSHEETS_FUNCTIONS.length})
+                {t('gsf.fnCount', { count: GSHEETS_FUNCTIONS.length })}
               </h4>
               <select
                 value={activeCat}
                 onChange={(e) => setActiveCat(e.target.value)}
                 className="px-1.5 py-1 text-[10px] bg-well border border-neutral-700 rounded text-neutral-200 outline-none focus:border-indigo-500/60"
-                title="Filtrer par groupe de fonctions"
+                title={t('gsf.filterGroup')}
               >
-                <option value="">Tous les groupes</option>
+                <option value="">{t('gsf.allGroups')}</option>
                 {GSHEETS_FUNCTION_GROUPS.map((g) => (
                   <option key={g.cat} value={g.cat}>
-                    {g.cat} ({g.fns.length})
+                    {fnCat(g, locale)} ({g.fns.length})
                   </option>
                 ))}
               </select>
@@ -226,7 +227,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                           }`}
                         >
                           <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
-                          <span className="text-neutral-500 text-[10px] truncate">{f.hint}</span>
+                          <span className="text-neutral-500 text-[10px] truncate">{fnHint(f, locale)}</span>
                           <span className="ml-auto text-[8px] text-neutral-600 shrink-0">{f.cat}</span>
                         </button>
                       </li>
@@ -256,7 +257,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                             className="w-full flex items-baseline gap-1.5 text-left rounded px-1 -mx-1 hover:bg-white/[0.05] transition-colors"
                           >
                             <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
-                            <span className="text-neutral-600 text-[10px] truncate">{f.hint}</span>
+                            <span className="text-neutral-600 text-[10px] truncate">{fnHint(f, locale)}</span>
                           </button>
                         </li>
                       ))}

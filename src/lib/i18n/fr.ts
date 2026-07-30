@@ -1676,6 +1676,9 @@ export const fr = {
   'ss.channel.title': 'Canal de relevé — « Moisson » balaie ses catégories, « Recherche » interroge son moteur par référence, « Les deux » fait les deux. Un généraliste (marketplace, grande surface de bricolage) n’a d’intérêt qu’en Recherche : balayer ses rayons coûte des heures pour presque aucun produit apparié.',
   'node.send-telegram.chatId.note': 'Laisse vide pour utiliser le Chat ID par défaut (Settings). Sinon récupère ton chat_id via @userinfobot, ou mets @nomducanal pour un canal public.',
   'node.send-telegram.text.note': 'Laisse vide pour envoyer tel quel le texte reçu sur le port « data » (ex : node « Saisie texte »). Si le port « attachment » est connecté, le fichier est envoyé en pièce jointe et ce texte sert de légende (max {max} caractères).',
+  'gsf.fnCount': 'Fonctions Google Sheets ({count})',
+  'gsf.filterGroup': 'Filtrer par groupe de fonctions',
+  'gsf.allGroups': 'Tous les groupes',
   'gsf.tpl.cheaper': 'Moins cher ?',
   'gsf.tpl.cheaper.hint': 'Condition oui/non',
   'gsf.tpl.min': 'Prix le plus bas',
@@ -2727,6 +2730,18 @@ export const fr = {
   'xl.enr.clickToEdit': 'Cliquer pour éditer',
   'xl.scraped.itemCount': '{count} item(s) scrapé(s)',
   'xl.log.network': 'Réseau',
+  // ═══ Google Drive (lot 30) ═══
+  'gd.deleteForever': 'Suppression définitive (irréversible)',
+  'gd.deleteForeverShort': 'Supprimer définitivement',
+  'gd.trashSelection': 'Déplacer la sélection dans la corbeille Drive',
+  'gd.trash': 'Déplacer dans la corbeille Drive',
+  'gd.sharedBy': 'Partagé par',
+  'gd.select': 'Sélectionner',
+  'gd.tab.shared': 'Partagés avec moi',
+  'gd.tab.sharedShort': 'Partagés',
+  'gd.tab.recent': 'Récents',
+  'gd.newFolderHere': 'Créer un dossier ici',
+  'gsf.suggestion.column': 'colonne',
 } as const
 
 /** Clé de traduction valide — dérivée du catalogue FR. */

@@ -121,7 +121,7 @@ function FormulaInput({
 
   const suggestions: Suggestion[] = useMemo(() => {
     if (!ac) return []
-    const cols: Suggestion[] = columns.map((c) => ({ name: c, hint: 'colonne', kind: 'col' }))
+    const cols: Suggestion[] = columns.map((c) => ({ name: c, hint: t('gsf.suggestion.column'), kind: 'col' }))
     const fns: Suggestion[] = GSHEETS_FUNCTIONS.map((f) => ({ ...f, kind: 'fn' }))
     if (ac.mode === 'col') {
       const q = ac.query.toLowerCase()

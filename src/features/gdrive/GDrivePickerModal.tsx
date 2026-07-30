@@ -23,6 +23,7 @@ import { useGDriveStore } from '@/stores/gdrive.store'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { useGoogleDrive } from './useGoogleDrive'
 import type { DriveSection, GDriveFile } from './types'
+import { t } from '@/lib/i18n'
 
 interface PickedFile {
   id: string
@@ -49,8 +50,8 @@ interface Props {
 
 const SECTIONS: { id: DriveSection; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'my-drive', label: 'Mon Drive', icon: Home },
-  { id: 'shared', label: 'Partagés', icon: Users },
-  { id: 'recent', label: 'Récents', icon: Clock },
+  { id: 'shared', label: t('gd.tab.sharedShort'), icon: Users },
+  { id: 'recent', label: t('gd.tab.recent'), icon: Clock },
   { id: 'starred', label: 'Suivis', icon: Star },
 ]
 
@@ -310,7 +311,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                     onClick={() => void trashFiles([...selected.keys()], 'fichier')}
                     disabled={selected.size === 0}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-500/10 hover:bg-red-500/20 disabled:bg-white/[0.04] disabled:text-white/30 disabled:cursor-not-allowed border border-red-500/25 disabled:border-white/[0.06] text-red-300 text-[12px] transition-colors"
-                    title="Déplacer la sélection dans la corbeille Drive"
+                    title={t('gd.trashSelection')}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Corbeille ({selected.size})
@@ -332,7 +333,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                   type="button"
                   onClick={() => setCreatingFolder((v) => !v)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white/70 text-[12px] transition-colors"
-                  title="Créer un dossier ici"
+                  title={t('gd.newFolderHere')}
                 >
                   <FolderPlus className="w-3.5 h-3.5" />
                   Nouveau dossier
@@ -548,7 +549,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                               type="button"
                               onClick={(e) => { e.stopPropagation(); void trashFiles([f.id], isFolder ? 'dossier' : 'fichier') }}
                               className="shrink-0 mr-2 p-1.5 rounded text-white/25 opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                              title="Déplacer dans la corbeille Drive"
+                              title={t('gd.trash')}
                               aria-label="Supprimer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />

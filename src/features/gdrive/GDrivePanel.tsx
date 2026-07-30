@@ -3,11 +3,12 @@ import { Home, Users, Clock, Star, Search, ChevronRight, Trash2, Copy } from 'lu
 import { GDriveFileList } from './GDriveFileList'
 import { DedupDriveModal } from '@/features/dam/DedupDriveModal'
 import type { DriveSection, GDriveFile } from './types'
+import { t } from '@/lib/i18n'
 
 const NAV: { id: DriveSection; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'my-drive', label: 'Mon Drive',         icon: Home },
-  { id: 'shared',   label: 'Partagés avec moi', icon: Users },
-  { id: 'recent',   label: 'Récents',            icon: Clock },
+  { id: 'shared',   label: t('gd.tab.shared'), icon: Users },
+  { id: 'recent',   label: t('gd.tab.recent'),            icon: Clock },
   { id: 'starred',  label: 'Suivis',             icon: Star },
   { id: 'trash',    label: 'Corbeille',          icon: Trash2 },
 ]

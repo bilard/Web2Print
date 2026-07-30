@@ -5,6 +5,7 @@ import { useGoogleDrive } from './useGoogleDrive'
 import { GDriveFileRow } from './GDriveFileRow'
 import { trashDriveFiles, restoreDriveFiles, deleteDriveFilesForever } from '@/features/dam/damCleanup'
 import type { GDriveFile, DriveSection } from './types'
+import { t } from '@/lib/i18n'
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder'
 
@@ -149,7 +150,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
                 type="button"
                 onClick={() => deleteForever([...selected])}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 text-[12px] transition-colors"
-                title="Suppression définitive (irréversible)"
+                title={t('gd.deleteForever')}
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Supprimer définitivement ({selected.size})
@@ -160,7 +161,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
               type="button"
               onClick={() => void trash([...selected], 'fichier')}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-300 text-[12px] transition-colors"
-              title="Déplacer la sélection dans la corbeille Drive"
+              title={t('gd.trashSelection')}
             >
               <Trash2 className="w-3.5 h-3.5" />
               Corbeille ({selected.size})
@@ -173,7 +174,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
       <div className="flex items-center gap-3 px-3 pb-2 border-b border-white/[0.08] text-xs font-medium text-white/30">
         <div className="w-5 shrink-0" />
         <span className="flex-1">Nom</span>
-        {section === 'shared' && !parentId && <span className="w-52 shrink-0">Partagé par</span>}
+        {section === 'shared' && !parentId && <span className="w-52 shrink-0">{t('gd.sharedBy')}</span>}
         <span className="w-28 shrink-0 text-right">{dateLabel}</span>
         <div className="w-6 shrink-0" />
       </div>

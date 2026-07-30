@@ -2,6 +2,7 @@ import { Folder, Trash2, Check, RotateCcw } from 'lucide-react'
 import { DamImage } from '@/features/dam/DamImage'
 import { driveWebViewLink } from '@/features/dam/driveAssets'
 import type { GDriveFile, DriveSection } from './types'
+import { t } from '@/lib/i18n'
 
 function getMimeStyle(mimeType: string): { abbrev: string; color: string; bg: string; isFolder: boolean } {
   if (mimeType === 'application/vnd.google-apps.folder')       return { abbrev: '', color: 'text-amber-300', bg: '', isFolder: true }
@@ -60,7 +61,7 @@ export function GDriveFileRow({ file, section, onFolderOpen, selected, onToggleS
           className={`w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors ${
             selected ? 'bg-blue-500 border-blue-500' : 'border-white/25 hover:border-white/50'
           }`}
-          aria-label="Sélectionner"
+          aria-label={t('gd.select')}
         >
           {selected && <Check className="w-3 h-3 text-[#fff]" />}
         </button>
@@ -122,7 +123,7 @@ export function GDriveFileRow({ file, section, onFolderOpen, selected, onToggleS
             type="button"
             onClick={() => onTrash(file)}
             className="w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all rounded text-white/30 hover:text-red-400 hover:bg-red-500/10"
-            title="Déplacer dans la corbeille Drive"
+            title={t('gd.trash')}
             aria-label="Supprimer"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -133,8 +134,8 @@ export function GDriveFileRow({ file, section, onFolderOpen, selected, onToggleS
             type="button"
             onClick={() => onDeleteForever(file)}
             className="w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all rounded text-red-400/60 hover:text-red-300 hover:bg-red-500/20"
-            title="Supprimer définitivement (irréversible)"
-            aria-label="Supprimer définitivement"
+            title={t('gd.deleteForever')}
+            aria-label={t('gd.deleteForeverShort')}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
