@@ -190,8 +190,7 @@ export function TelegramInboxView() {
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center text-neutral-600 text-[12px] py-16 max-w-md mx-auto leading-relaxed">
-            Aucun message reçu. Écris à ton bot Telegram — les messages apparaîtront ici en
-            temps réel.
+            {t('tg.inboxEmpty')}
           </div>
         ) : (
           <ul className="space-y-2 max-w-2xl">

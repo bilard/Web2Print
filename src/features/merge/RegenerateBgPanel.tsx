@@ -112,8 +112,7 @@ export function RegenerateBgPanel() {
         {busy ? 'Génération…' : 'Régénérer le fond'}
       </button>
       <p className="text-[10px] text-white/30 leading-snug">
-        Remplace uniquement le calque de fond verrouillé — vos textes et images liés restent
-        éditables au-dessus. Nécessite une clé Gemini (Réglages → Connecteurs).
+        {t('mg.regenBgHint')}
       </p>
     </div>
   )

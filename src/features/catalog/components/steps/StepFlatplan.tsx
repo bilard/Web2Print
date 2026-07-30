@@ -66,7 +66,7 @@ export function StepFlatplan() {
         </aside>
         <div ref={boardRef} className="flex-1 min-w-0 overflow-auto bg-well">
           <p className="px-4 pt-3 text-xs text-muted-foreground">
-            Glissez-déposez les pages pour les réordonner (couverture, sommaire et 4e restent en place) — le sommaire et les numéros sont recalculés automatiquement.
+            {t('cat.flatplan.hint')}
           </p>
           <FlatplanBoard pages={pages} keys={keys} ctx={ctx} colors={colors} thumbWidth={thumbWidth}
             selectedNode={selectedNode} onReorder={setPageOrder} onOpen={setLightbox} />

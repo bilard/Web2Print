@@ -116,7 +116,7 @@ export function CrawlTab({ url, loading, pages, onCrawl, onAbort, onEnrichMany, 
           <div className="flex items-center gap-2 text-xs text-amber-300/80">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             <span>
-              Détection des produits par l'IA (≈ 10-15 s)…
+              {t('sc.detectingProducts')}
               {batchProgress && ` · URL ${batchProgress.done + 1}/${batchProgress.total}`}
             </span>
           </div>

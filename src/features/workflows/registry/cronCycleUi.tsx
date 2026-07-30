@@ -6,6 +6,7 @@ import { X } from 'lucide-react'
 import { MiniCalendar } from '@/components/shared/panel/MiniCalendar'
 import { NumField, SegButtons, inputCls } from '@/components/shared/panel/fields'
 import { computeNextCycleRun, type CycleCalendar, type CycleKind } from '../runtime/cronSchedule'
+import { t } from '@/lib/i18n'
 
 export const DEFAULT_CYCLE: CycleCalendar = {
   enabled: false, kind: 'week', atTime: '07:00', every: 1, weekdays: [5], monthday: 1, dates: [],
@@ -52,8 +53,7 @@ export function CronCycleUi({ value, onChange }: {
         Relance du cycle (calendrier)
       </label>
       <p className="text-[11px] text-white/30 -mt-1">
-        Quand la moisson atteint 100 % sur TOUS les sites, la cadence s'arrête ; le cycle
-        complet repart à l'échéance choisie ici (ex : tous les vendredis à 07:00).
+        {t('wfc.cycleHint')}
       </p>
       {cal.enabled && (
         <>

@@ -131,7 +131,7 @@ export function Step1Form({ brief, onAdvance }: Props) {
           disabled={update.isPending}
           className="flex items-center gap-1.5 text-[12px] text-[#fff] bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-md disabled:opacity-50"
         >
-          Étape suivante
+          {t('br.nextStep')}
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>

@@ -69,7 +69,7 @@ export function DetailsFieldsPanel({ style, patch }: Props) {
       </label>
       {hasSpecsField && (
         <label className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
-          Spécifications max (vide = toutes)
+          {t('cat.details.maxSpecs')}
           <input type="number" min={0} max={UNCAPPED} placeholder="toutes"
             value={style.maxSpecLines != null && style.maxSpecLines < UNCAPPED ? style.maxSpecLines : ''}
             onChange={(e) => patch({ maxSpecLines: e.target.value === '' ? UNCAPPED : Math.max(0, Math.min(UNCAPPED, Number(e.target.value) || 0)) })}

@@ -876,9 +876,7 @@ function SaveDamConfigUi({
         className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
       />
       <p className="text-[10px] text-neutral-600 leading-snug">
-        L'app crée/réutilise un dossier de ce nom dans ton Drive. Pas de sélection d'un dossier
-        existant : le scope minimal (drive.file) n'autorise l'écriture que dans les dossiers créés
-        par l'app.
+        {t('gd.folderScopeHint')}
       </p>
     </div>
   )

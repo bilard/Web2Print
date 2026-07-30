@@ -76,9 +76,7 @@ export function CardStyleCard({ plan, setPlan, selectedObject, onClearSelection,
           {t('cardStyleCard.snapTheText')}
         </label>
         <p className="text-[10px] text-white/40 leading-snug">
-          Réglable BLOC PAR BLOC : sélectionnez un bloc texte dans l'aperçu puis
-          cliquez sur sa pastille 🧲 (Aimanté = collé au bloc du dessus selon son
-          contenu · Libre = reste exactement où vous le posez).
+          {t('cat.style.magnetHint')}
         </p>
         <button type="button" onClick={() => patch({ layout: {}, layoutWide: {} })}
           className="text-[11px] text-indigo-300 hover:text-white underline text-left">{t('cat.style.resetPositions')}</button>

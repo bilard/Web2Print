@@ -46,8 +46,7 @@ export function ProductEnrichedView({ product }: Props) {
           <div className="flex-1 text-[12px] text-red-300/90 space-y-1">
             <p className="font-semibold">{t('sc.antibot')}</p>
             <p className="text-red-300/70">
-              Le proxy et l'IA n'ont pas pu accéder à la fiche produit — toutes les sources renvoient une page CAPTCHA.
-              Pour scraper ce produit, deux options :
+              {t('sc.antibotDetail')}
             </p>
             <ul className="text-[11px] text-red-300/60 list-disc list-inside space-y-0.5">
               <li>{t('sc.antibot.fixFirecrawl')}</li>

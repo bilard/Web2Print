@@ -403,7 +403,7 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
               className="flex items-center gap-1.5 text-[10px] text-white/25 hover:text-white/50 transition-colors"
             >
               {showAdvanced ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              Options avancées
+              {t('sc.advancedOptions')}
               {waitFor > 0 && !showAdvanced && (
                 <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   <Timer className="w-2.5 h-2.5" />{waitFor / 1000}s

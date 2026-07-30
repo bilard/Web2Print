@@ -52,7 +52,7 @@ export function VersionsPanel() {
           className="flex items-center gap-1 px-2 py-1 rounded bg-indigo-500/20 hover:bg-indigo-500/30 disabled:opacity-50 text-[10px] text-indigo-300 transition-colors"
         >
           {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-          Créer une version
+          {t('vp.createVersion')}
         </button>
       </div>
 
@@ -116,8 +116,7 @@ export function VersionsPanel() {
         </div>
       )}
       <p className="text-[9px] text-white/15 leading-relaxed">
-        La restauration ré-écrit le contenu du document puis recharge l'éditeur. Créez une version
-        avant de restaurer si vous voulez pouvoir revenir à l'état actuel.
+        {t('vp.restoreHint')}
       </p>
     </div>
   )

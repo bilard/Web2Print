@@ -272,7 +272,7 @@ export function AiProviderCard({ provider, apiKeyId, labelKey, descriptionKey, l
             className="flex items-center gap-1 text-[10px] text-white/40 hover:text-indigo-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             {refreshing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-            Rafraîchir
+            {t('ai.refresh')}
           </button>
         </div>
 

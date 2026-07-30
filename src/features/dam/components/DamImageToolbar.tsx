@@ -160,7 +160,7 @@ export function DamImageToolbar(props: Props) {
               title={t('dam.tool.updateVariant')}
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              Mettre à jour
+              {t('dam.tb.update')}
             </button>
           )}
           {canEdit && (

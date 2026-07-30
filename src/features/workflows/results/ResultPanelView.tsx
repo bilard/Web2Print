@@ -204,7 +204,7 @@ function DashboardBody({ sheet, hint }: { sheet: SheetLike; hint: string }) {
             </select>
           </label>
           <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
-            Agrégation
+            {t('wfr.aggregation')}
             <select value={agg} onChange={(e) => setAgg(e.target.value as ChartAggregation)} className={selectCls}>
               {AGG_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
             </select>

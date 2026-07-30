@@ -96,7 +96,7 @@ export function DamVariantsPanel({
           title={t('dam.recoverOrphans')}
         >
           {recovering ? <Loader2 className="w-3 h-3 animate-spin" /> : <LifeBuoy className="w-3 h-3" />}
-          Récupérer
+          {t('dam.var.recover')}
         </button>
         <span className="text-[10px] text-white/30">{variants.length + 1}</span>
       </div>

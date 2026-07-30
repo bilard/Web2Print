@@ -135,9 +135,7 @@ export function DemoExpressForm({ onLaunch }: Props) {
         {t('de.launch')}
       </button>
       <p className="text-xs text-white/40">
-        Le pipeline enchaîne : charte du site → découverte produits → enrichissement → images
-        DAM → feuille PIM → catalogue → fiche promo → animations HTML → workflow. Comptez
-        quelques minutes.
+        {t('de.pipelineHint')}
       </p>
     </div>
   )

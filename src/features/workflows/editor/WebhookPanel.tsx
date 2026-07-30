@@ -91,8 +91,7 @@ export function WebhookPanel({ workflowId }: { workflowId: string }) {
           {!cfg?.enabled ? (
             <>
               <p className="text-[11px] text-white/40 leading-snug">
-                Génère une URL secrète pour déclencher ce workflow depuis l'extérieur
-                (Zapier, ERP, curl…). Exécution côté serveur, visible dans l'historique des runs.
+                {t('wfw.hint')}
               </p>
               <button
                 onClick={enable}

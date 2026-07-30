@@ -63,8 +63,7 @@ export function WatchManager({ open, onOpenChange, watches, activeId }: {
         <AlertDialogHeader>
           <AlertDialogTitle>{t('pw.watch.manage', { count: watches.length })}</AlertDialogTitle>
           <AlertDialogDescription>
-            Supprime les suivis inutiles (résidus de test, doublons). Chaque suppression retire
-            le tableau de bord et son historique — la config reste dans le workflow.
+            {t('pw.watch.manageHint')}
           </AlertDialogDescription>
         </AlertDialogHeader>
 

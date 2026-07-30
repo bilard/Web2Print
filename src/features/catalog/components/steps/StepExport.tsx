@@ -46,7 +46,7 @@ export function StepExport() {
             className={buttonClass}
           >
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Exporter en PDF écran
+            {t('cat.export.screenPdfBtn')}
           </button>
         </div>
 

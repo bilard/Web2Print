@@ -56,8 +56,7 @@ export function CompetitorTrend({ history, sites, height = 220 }: {
       </div>
       {!enough ? (
         <div className="text-white/40 text-sm py-12 text-center px-4">
-          La courbe se construit à chaque analyse. Relance le comparatif régulièrement
-          (ou planifie-le) pour suivre l’évolution des prix concurrents dans le temps.
+          {t('pw.trend.hint')}
         </div>
       ) : (
         <div style={{ height }}>

@@ -72,7 +72,7 @@ export function SectionsCard({ plan, flatNodes, rowsById, columns, fieldMap, pre
         </h3>
         <div className="flex items-center gap-4 flex-wrap">
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            Produits/page (défaut)
+            {t('cat.sections.perPage')}
             <select value={globalDensity}
               onChange={(e) => e.target.value && setAllSectionsDensity(
                 e.target.value === 'random' ? 'random' : Number(e.target.value) as CatalogGrid,

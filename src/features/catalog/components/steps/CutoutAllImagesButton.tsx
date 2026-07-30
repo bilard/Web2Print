@@ -38,8 +38,7 @@ export function CutoutAllImagesButton() {
         </div>
       )}
       <p className="text-[10px] text-white/35 leading-snug">
-        Le fond de chaque visuel est retiré ; vos images d'origine ne sont pas modifiées.
-        Un visuel déjà détouré est réutilisé tel quel — « Repartir de zéro » pour un traitement neuf.
+        {t('cat.cutout.hint')}
       </p>
     </div>
   )

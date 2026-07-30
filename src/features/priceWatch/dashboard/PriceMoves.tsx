@@ -61,7 +61,7 @@ export function PriceMoves({ events, filter = EMPTY_FILTER }: { events: PriceEve
         <div>
           <div className="text-sm font-semibold text-white">{t('pw.moves.title')} <span className="text-white/40 font-normal">— ce qui vient de bouger</span></div>
           <div className="text-[11px] text-white/40 mt-0.5">
-            Chaque changement de prix relevé chez un concurrent, comparé au relevé précédent.
+            {t('pw.moves.lead')}
             <span className="text-rose-400/70"> {t('pw.moves.down')}</span> ·
             <span className="text-emerald-400/70"> {t('pw.moves.up')}</span>.
           </div>
@@ -78,8 +78,7 @@ export function PriceMoves({ events, filter = EMPTY_FILTER }: { events: PriceEve
 
       {events.length === 0 ? (
         <div className="text-white/40 text-sm py-10 text-center px-4">
-          Le journal se remplit à partir de la deuxième analyse complète : le premier relevé
-          sert de référence, les suivants en mesurent les écarts.
+          {t('pw.moves.empty')}
         </div>
       ) : (
         <>
@@ -102,7 +101,7 @@ export function PriceMoves({ events, filter = EMPTY_FILTER }: { events: PriceEve
           </label>
 
           {rows.length === 0 ? (
-            <div className="text-white/40 text-sm py-8 text-center">{t('pw.moves.empty')}</div>
+            <div className="text-white/40 text-sm py-8 text-center">{t('pw.moves.logEmpty')}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs tabular-nums min-w-[640px]">

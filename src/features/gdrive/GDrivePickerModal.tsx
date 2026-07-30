@@ -436,7 +436,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/15 hover:bg-amber-500/25 disabled:bg-white/[0.04] disabled:text-white/30 border border-amber-500/30 disabled:border-white/[0.06] text-amber-200 text-[12px] transition-colors"
                     >
                       {folderBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                      Créer
+                      {t('gd.create')}
                     </button>
                   </div>
                 )}

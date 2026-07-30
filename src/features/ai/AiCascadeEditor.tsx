@@ -42,7 +42,7 @@ export function AiCascadeEditor() {
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-white tracking-tight">Cascade de raisonnement (texte/JSON)</p>
           <p className="text-[10px] text-white/40">
-            Pour le scraping produit, la composition Art Director et l'amélioration de prompt. Premier provider essayé en priorité, suivants en fallback automatique.
+            {t('ai.cascadeHint')}
           </p>
         </div>
       </div>

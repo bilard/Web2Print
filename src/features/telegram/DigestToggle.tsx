@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
+import { t } from '@/lib/i18n'
 
 export function DigestToggle() {
   const uid = useAuthStore((s) => s.user?.uid)
@@ -44,8 +45,7 @@ export function DigestToggle() {
       <span className="flex-1">
         <span className="block text-[12px] text-white/80">Digest quotidien (08:00)</span>
         <span className="block text-[10px] text-neutral-500 leading-snug mt-0.5">
-          Chaque matin, un résumé des dernières 24 h sur ce chat : workflows réussis/en échec et
-          messages Telegram en attente. Rien n'est envoyé s'il ne s'est rien passé.
+          {t('tg.digestHint')}
         </span>
       </span>
     </label>
