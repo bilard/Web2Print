@@ -84,7 +84,7 @@ export function SaveAsTemplateDialog({ workflow, uid, onClose, onSaved }: Props)
               onChange={(e) => pickTarget(e.target.value)}
               className="mt-1 w-full bg-well border border-neutral-700 rounded px-2.5 py-2 text-sm text-white outline-none focus:border-indigo-500"
             >
-              <option value="">➕ Nouveau modèle</option>
+              <option value="">{t('wft.newTemplate')}</option>
               {existing.map((t) => (
                 <option key={t.id} value={t.id}>Mettre à jour : {t.emoji} {t.name}</option>
               ))}

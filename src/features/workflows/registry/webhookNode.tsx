@@ -109,7 +109,7 @@ function WebhookConfigUi({
       </div>
 
       <div>
-        <label className="text-xs text-neutral-400 mb-1 block">Méthode</label>
+        <label className="text-xs text-neutral-400 mb-1 block">{t('node.webhook.method.label')}</label>
         <select
           value={config.method}
           onChange={(e) => onChange({ ...config, method: e.target.value as WebhookMethod })}
@@ -138,7 +138,7 @@ function WebhookConfigUi({
       </div>
 
       <div>
-        <label className="text-xs text-neutral-400 mb-1 block">En-têtes (optionnel)</label>
+        <label className="text-xs text-neutral-400 mb-1 block">{t('node.webhook.headers.label')}</label>
         <textarea
           value={config.headers}
           onChange={(e) => onChange({ ...config, headers: e.target.value })}
@@ -147,7 +147,7 @@ function WebhookConfigUi({
           className={`${inputCls} resize-y font-mono`}
         />
         <p className="text-[10px] text-neutral-600 mt-1.5 leading-snug">
-          Une paire <code className="text-neutral-400">Clé: Valeur</code> par ligne.
+          {t('node.webhook.headers.note')}
         </p>
       </div>
 
@@ -159,10 +159,9 @@ function WebhookConfigUi({
           className="accent-cyan-500 mt-0.5"
         />
         <div className="flex-1">
-          <div className="text-[12px] text-cyan-200">1 requête par ligne</div>
+          <div className="text-[12px] text-cyan-200">{t('node.webhook.iterate.label')}</div>
           <div className="text-[10px] text-neutral-500 leading-snug mt-0.5">
-            Si l'entrée <code className="text-emerald-300/80">data</code> est un tableau, envoie une
-            requête par ligne ({'{{...}}'} réévalué par ligne). Sinon, une requête unique.
+            {t('node.webhook.iterate.note')}
           </div>
         </div>
       </label>
@@ -175,7 +174,7 @@ function WebhookConfigUi({
           className="accent-cyan-500 mt-0.5"
         />
         <div className="flex-1">
-          <div className="text-[12px] text-cyan-200">Attendre la réponse</div>
+          <div className="text-[12px] text-cyan-200">{t('node.webhook.wait.label')}</div>
           <div className="text-[10px] text-neutral-500 leading-snug mt-0.5">
             Expose le corps de réponse sur le port{' '}
             <code className="text-emerald-300/80">response</code> (module « Webhook Response » de

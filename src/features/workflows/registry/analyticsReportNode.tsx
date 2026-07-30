@@ -48,11 +48,11 @@ function AnalyticsReportConfigUi({
           value={config.title}
           onChange={(e) => onChange({ ...config, title: e.target.value })}
           className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
-          placeholder="Statistiques de fréquentation"
+          placeholder={t('node.analytics-report.title.placeholder')}
         />
       </div>
       <div>
-        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">Période</label>
+        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">{t('node.analytics-report.period.label')}</label>
         <select
           value={config.period}
           onChange={(e) => onChange({ ...config, period: e.target.value as AnalyticsPeriod })}
@@ -81,7 +81,7 @@ function AnalyticsReportConfigUi({
         (port <strong className="text-neutral-300">attachment</strong>) pour archiver le rapport riche en <code className="text-neutral-400">.html</code>.
       </p>
       <p className="text-[10px] text-neutral-500 leading-relaxed">
-        Lecture réservée au propriétaire du site (collection <code className="text-neutral-400">analyticsEvents</code>).
+        {t('node.analytics-report.ownerOnly.note')}
       </p>
     </div>
   )

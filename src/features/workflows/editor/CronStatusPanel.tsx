@@ -145,7 +145,7 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
                   // 'stopped' = STOP volontaire, à ne pas confondre avec un échec (⚠) ni
                   // avec une fin normale (✓) — sinon l'arrêt demandé reste invisible.
                   sched.lastStatus === 'stopped'
-                    ? <span className="text-rose-300 cursor-help" title={t('wfx.stopped.help')}>■ arrêté</span>
+                    ? <span className="text-rose-300 cursor-help" title={t('wfx.stopped.help')}>{t('wfx.stoppedBadge')}</span>
                     : sched.lastStatus === 'error'
                       ? <span className="text-rose-300 cursor-help" title={sched.lastError ?? t('wfx.lastFailed')}>⚠</span>
                       : <span className="text-emerald-300">✓</span>

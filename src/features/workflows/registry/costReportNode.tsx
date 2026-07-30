@@ -49,10 +49,7 @@ function CostReportConfigUi({
         />
       </div>
       <p className="text-[10px] text-neutral-500 leading-relaxed">
-        Relie la sortie <strong className="text-neutral-300">file</strong> (en tête) vers « Export Google Drive »
-        (port <strong className="text-neutral-300">file</strong>, Drive connecté requis) pour archiver,
-        ou vers « Envoyer via Gmail » (port <strong className="text-neutral-300">attachment</strong>, mode
-        « Fichier source ») pour l’envoyer en pièce jointe <code className="text-neutral-400">.html</code>.
+        {t('node.cost-report.archive.note')}
       </p>
       <p className="text-[10px] text-neutral-500 leading-relaxed">
         Pour l’afficher dans le <strong className="text-neutral-300">corps</strong> du mail (pas en pièce jointe),

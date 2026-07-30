@@ -16,13 +16,13 @@ import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 const ChartPreview = lazy(() => import('../editor/ChartPreview'))
 
-const KIND_META: Record<ResultKind, { label: string; Icon: typeof BarChart3 }> = {
-  dashboard: { label: 'Tableau de bord', Icon: BarChart3 },
-  table: { label: 'Tableau', Icon: Table2 },
-  chart: { label: 'Graphique', Icon: BarChart3 },
-  gallery: { label: 'Galerie', Icon: ImageIcon },
-  document: { label: 'Document', Icon: FileText },
-  json: { label: 'Données', Icon: Braces },
+const KIND_META: Record<ResultKind, { labelKey: TranslationKey; Icon: typeof BarChart3 }> = {
+  dashboard: { labelKey: 'wfr.kind.dashboard', Icon: BarChart3 },
+  table: { labelKey: 'wfr.kind.table', Icon: Table2 },
+  chart: { labelKey: 'wfr.kind.chart', Icon: BarChart3 },
+  gallery: { labelKey: 'wfr.kind.gallery', Icon: ImageIcon },
+  document: { labelKey: 'wfr.kind.document', Icon: FileText },
+  json: { labelKey: 'wfr.tab.data', Icon: Braces },
 }
 
 const TYPE_OPTIONS: { value: ChartType; labelKey: TranslationKey }[] = [
@@ -279,6 +279,7 @@ function safeJson(v: unknown): string {
 }
 
 export function ResultPanelView({ panel, contextHint }: { panel: ResultPanel; contextHint?: string }) {
+  const { t } = useTranslation()
   const meta = KIND_META[panel.kind]
   const { Icon } = meta
   const hint = [contextHint, panel.nodeLabel].filter(Boolean).join(' — ')
@@ -289,7 +290,7 @@ export function ResultPanelView({ panel, contextHint }: { panel: ResultPanel; co
         <span className="text-sm font-medium text-white">{panel.nodeLabel}</span>
         <span className="text-[11px] text-neutral-600">→ {panel.portName}</span>
         <span className="ml-auto text-[10px] uppercase tracking-wider text-neutral-500 px-2 py-0.5 rounded-full border border-neutral-800">
-          {meta.label}
+          {t(meta.labelKey)}
         </span>
       </header>
       <div className="p-4">

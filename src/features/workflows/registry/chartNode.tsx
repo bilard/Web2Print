@@ -12,6 +12,7 @@ import {
   type ChartSpec,
   type ChartType,
 } from './chartSpec'
+import { t } from '@/lib/i18n'
 
 interface ColumnLike { key: string; label?: string }
 interface SheetIn { columns?: ColumnLike[]; rows?: Record<string, unknown>[] }
@@ -84,7 +85,7 @@ function ChartConfigUi({
       </div>
 
       <div>
-        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">Axe X (catégories)</label>
+        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">{t('node.chart.xAxis.label')}</label>
         <select
           value={config.xColumn}
           onChange={(e) => onChange({ ...config, xColumn: e.target.value })}
@@ -98,16 +99,16 @@ function ChartConfigUi({
       </div>
 
       <div>
-        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">Agrégation</label>
+        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">{t('node.chart.agg.label')}</label>
         <select
           value={config.aggregation}
           onChange={(e) => onChange({ ...config, aggregation: e.target.value as ChartNodeConfig['aggregation'] })}
           className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
         >
           <option value="none">Aucune (une barre par ligne)</option>
-          <option value="sum">Somme par catégorie</option>
-          <option value="avg">Moyenne par catégorie</option>
-          <option value="count">Nombre par catégorie</option>
+          <option value="sum">{t('opt.agg.sum')}</option>
+          <option value="avg">{t('opt.agg.avg')}</option>
+          <option value="count">{t('opt.agg.count')}</option>
         </select>
       </div>
 

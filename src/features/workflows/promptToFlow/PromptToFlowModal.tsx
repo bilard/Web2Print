@@ -4,6 +4,7 @@ import { CloseButton } from '@/components/shared/CloseButton'
 import type { LLMProviderId } from '@/features/ai/llmRouter'
 import { usePromptToFlow } from './usePromptToFlow'
 import { PromptToFlowPreview } from './PromptToFlowPreview'
+import { t } from '@/lib/i18n'
 
 const EXAMPLES = [
   "Importe un CSV, enrichis chaque produit via son URL, puis exporte en PPTX.",
@@ -45,7 +46,7 @@ export function PromptToFlowModal({ onClose }: { onClose: () => void }) {
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Décris ce que le workflow doit faire…"
+              placeholder={t('wfp.describe')}
               rows={4}
               className="w-full rounded-md border border-neutral-700 bg-background p-2.5 text-sm text-white outline-none focus:border-indigo-500 resize-none"
             />
@@ -66,9 +67,9 @@ export function PromptToFlowModal({ onClose }: { onClose: () => void }) {
                 value={provider}
                 onChange={(e) => setProvider(e.target.value as '' | LLMProviderId)}
                 className="rounded-md border border-neutral-700 bg-background px-2 py-1.5 text-xs text-white/70 outline-none"
-                aria-label="Modèle"
+                aria-label={t('wfp.model')}
               >
-                <option value="">Modèle auto</option>
+                <option value="">{t('wfp.modelAuto')}</option>
                 <option value="gemini">Gemini</option>
                 <option value="claude">Claude</option>
               </select>

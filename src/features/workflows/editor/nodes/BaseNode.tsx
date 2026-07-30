@@ -290,7 +290,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
                 triggerDownload(exportResult)
               }}
               className="mt-2 flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[10px] text-emerald-200 transition-colors"
-              title={`Télécharger ${exportResult.filename}`}
+              title={t('wfn.download', { filename: exportResult.filename })}
             >
               <Download className="w-3 h-3" />
               Télécharger
@@ -312,8 +312,8 @@ export function BaseNode({ id, data, selected }: NodeProps) {
                 useRunContext.getState().abortController?.abort()
               }}
               className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-500 border border-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-              title="Arrêter le flux en cours"
-              aria-label="Arrêter le flux"
+              title={t('wfn.stopFlow')}
+              aria-label={t('wfn.stopFlowShort')}
             >
               <Square className="w-2.5 h-2.5 text-[#fff] fill-[#fff]" />
             </button>
@@ -326,8 +326,8 @@ export function BaseNode({ id, data, selected }: NodeProps) {
                 if (wf) void executeWorkflow(wf, { fromNodeId: id }).then((o) => notifyRunOutcome(o, t(spec.labelKey)))
               }}
               className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-              title="Exécuter depuis ce node (lui + tout l'aval)"
-              aria-label="Exécuter depuis ce node"
+              title={t('wfn.runFromHere')}
+              aria-label={t('wfn.runFromHereShort')}
             >
               <Play className="w-2.5 h-2.5 text-[#fff] fill-[#fff]" />
             </button>
