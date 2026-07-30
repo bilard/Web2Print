@@ -3,7 +3,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Users, List } from 'lucide-reac
 import type { AnalyticsEvent } from '../metrics'
 import { recentEvents, pageLabel, countryName } from '../metrics'
 import { useUsersMap } from '../useUsersMap'
-import { t } from '@/lib/i18n'
+import { t, currentIntlLocale } from '@/lib/i18n'
 
 const PAGE_SIZE = 15
 const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
@@ -42,7 +42,7 @@ function groupByUser(events: AnalyticsEvent[], userName: (uid: string | null) =>
     if (arr) arr.push(e); else map.set(key, [e])
   }
   return [...map.entries()]
-    .map(([key, evs]): Group => ({ key, label: key === ANON ? 'Anonyme' : userName(key), isNamed: key !== ANON, events: evs, lastTs: evs[0]?.ts ?? 0 }))
+    .map(([key, evs]): Group => ({ key, label: key === ANON ? t('an.anonymous') : userName(key), isNamed: key !== ANON, events: evs, lastTs: evs[0]?.ts ?? 0 }))
     .sort((a, b) => Number(b.isNamed) - Number(a.isNamed) || b.lastTs - a.lastTs)
 }
 
@@ -50,7 +50,7 @@ function EventRow({ e, showUser, userName }: { e: AnalyticsEvent; showUser: bool
   const detail = deviceDetail(e)
   return (
     <tr className="hover:bg-white/[0.03]">
-      <td className={`${TD} truncate max-w-[180px] ${e.uid ? 'text-white/80' : 'text-white/35 italic'}`} title={e.uid ?? 'Visiteur anonyme'}>{showUser ? userName(e.uid) : ''}</td>
+      <td className={`${TD} truncate max-w-[180px] ${e.uid ? 'text-white/80' : 'text-white/35 italic'}`} title={e.uid ?? t('an.anonVisitor')}>{showUser ? userName(e.uid) : ''}</td>
       <td className={`${TD} text-white/70 truncate max-w-[240px]`} title={e.path}>{pageLabel(e.path)}</td>
       <td className={`${TD} text-white/55`} title={detail || undefined}>
         <span>{DEVICE_FR[e.device] ?? e.device}</span>
@@ -93,7 +93,11 @@ function AnonGroupSection({ g, userName }: { g: Group; userName: (uid: string | 
           <div className="flex items-center gap-1.5">
             <ChevronDown className={`w-3.5 h-3.5 text-white/40 shrink-0 transition-transform ${collapsed ? '-rotate-90' : ''}`} />
             <span className="text-white/45 italic">{g.label}</span>
-            <span className="text-white/35">{g.events.length} consultation{g.events.length > 1 ? 's' : ''} · {byCountry.length} pays · dernière {relDay(g.lastTs)}</span>
+            {/* Une seule clé par forme de pluriel : « consultation{s} » recollé ne
+                survit pas à la traduction, et la phrase se réordonne d'une langue à l'autre. */}
+            <span className="text-white/35">{g.events.length > 1
+              ? t('an.group.summary.many', { count: g.events.length, countries: byCountry.length, last: relDay(g.lastTs) })
+              : t('an.group.summary.one', { count: g.events.length, countries: byCountry.length, last: relDay(g.lastTs) })}</span>
           </div>
         </td>
       </tr>
@@ -106,7 +110,7 @@ function AnonGroupSection({ g, userName }: { g: Group; userName: (uid: string | 
             <tr className="bg-white/[0.015]">
               <td colSpan={5} className="pl-6 pr-2 py-1 border-b border-white/5">
                 <span className="text-white/60 text-[11px] font-medium">{c.label}</span>
-                <span className="text-white/30 text-[11px] ml-2">{c.events.length} · dernière {relDay(c.lastTs)}</span>
+                <span className="text-white/30 text-[11px] ml-2">{t('an.country.last', { count: c.events.length, last: relDay(c.lastTs) })}</span>
               </td>
             </tr>
             {slice.map((e, i) => <EventRow key={`${g.key}-${c.code}-${e.vid}-${e.ts}-${i}`} e={e} showUser={false} userName={userName} />)}
@@ -114,7 +118,10 @@ function AnonGroupSection({ g, userName }: { g: Group; userName: (uid: string | 
               <tr>
                 <td colSpan={5} className="pl-6 pr-2 py-1 border-b border-white/5">
                   <button type="button" onClick={() => toggle(c.code)} className="text-white/40 hover:text-white/70 text-[11px] transition-colors">
-                    {isOpen ? 'Réduire' : `+${c.events.length - ANON_COUNTRY_CAP} autre${c.events.length - ANON_COUNTRY_CAP > 1 ? 's' : ''} à ${c.label}`}
+                    {/* Deux clés : « autre{s} » recollé ne survit pas à la traduction. */}
+                    {isOpen ? t('an.reduire') : (c.events.length - ANON_COUNTRY_CAP > 1
+                      ? t('an.country.more.many', { count: c.events.length - ANON_COUNTRY_CAP, country: c.label })
+                      : t('an.country.more.one', { count: c.events.length - ANON_COUNTRY_CAP, country: c.label }))}
                   </button>
                 </td>
               </tr>
@@ -141,13 +148,15 @@ function GroupSection({ g, userName }: { g: Group; userName: (uid: string | null
             <div className="flex items-center gap-1.5">
               <ChevronDown className={`w-3.5 h-3.5 text-white/40 shrink-0 transition-transform ${collapsed ? '-rotate-90' : ''}`} />
               <span className={g.isNamed ? 'text-white/85 font-medium' : 'text-white/45 italic'}>{g.label}</span>
-              <span className="text-white/35">{g.events.length} consultation{g.events.length > 1 ? 's' : ''} · dernière {relDay(g.lastTs)}</span>
+              <span className="text-white/35">{g.events.length > 1
+                ? t('an.group.viewsLast.many', { count: g.events.length, last: relDay(g.lastTs) })
+                : t('an.group.viewsLast.one', { count: g.events.length, last: relDay(g.lastTs) })}</span>
             </div>
             {!collapsed && pages > 1 && (
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 <button type="button" onClick={() => setGp(Math.max(0, cur - 1))} disabled={cur === 0} aria-label={t('an.prevPage')} className="p-0.5 rounded text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronLeft className="w-3.5 h-3.5" /></button>
                 <span className="text-white/40 text-[11px] tabular-nums">{cur + 1}/{pages}</span>
-                <button type="button" onClick={() => setGp(Math.min(pages - 1, cur + 1))} disabled={cur >= pages - 1} aria-label="Page suivante" className="p-0.5 rounded text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronRight className="w-3.5 h-3.5" /></button>
+                <button type="button" onClick={() => setGp(Math.min(pages - 1, cur + 1))} disabled={cur >= pages - 1} aria-label={t('an.pageSuivante')} className="p-0.5 rounded text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronRight className="w-3.5 h-3.5" /></button>
               </div>
             )}
           </div>
@@ -161,7 +170,7 @@ function GroupSection({ g, userName }: { g: Group; userName: (uid: string | null
 /** Journal de consultation : qui a vu quelle page et quand — filtres par colonne + regroupement par utilisateur. */
 export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
   const usersMap = useUsersMap()
-  const userName = (uid: string | null): string => (uid ? usersMap.get(uid) ?? uid : 'Anonyme')
+  const userName = (uid: string | null): string => (uid ? usersMap.get(uid) ?? uid : t('an.anonymous'))
   const [f, setF] = useState<Filters>(NONE)
   const [page, setPage] = useState(0)
   const [grouped, setGrouped] = useState(true)
@@ -178,7 +187,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
       days.set(dayOf(e.ts), true)
     }
     return {
-      users: [...[...users.keys()].map((uid) => ({ value: uid, label: userName(uid) })).sort((a, b) => a.label.localeCompare(b.label)), ...(anon ? [{ value: ANON, label: 'Anonyme' }] : [])],
+      users: [...[...users.keys()].map((uid) => ({ value: uid, label: userName(uid) })).sort((a, b) => a.label.localeCompare(b.label)), ...(anon ? [{ value: ANON, label: t('an.anonymous') }] : [])],
       pages: [...pages].sort((a, b) => a.localeCompare(b)).map((p) => ({ value: p, label: p })),
       devices: [...new Set(sorted.map((e) => e.device))].map((d) => ({ value: d, label: DEVICE_FR[d] ?? d })),
       countries: [...[...countries].sort().map((c) => ({ value: c, label: countryName(c) ?? c })), ...(noCountry ? [{ value: '__none__', label: '—' }] : [])],
@@ -203,18 +212,18 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
     <div className="bg-surface rounded-lg p-4">
       <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <div className="text-white/70 text-sm font-medium">
-          Journal de consultation
-          <span className="text-white/35 font-normal ml-2">qui · quand · quelle page — {filtered.length.toLocaleString('fr-FR')} consultations</span>
+          {t('an.journalDeConsultation')}
+          <span className="text-white/35 font-normal ml-2">{t('an.journal.lead', { count: filtered.length.toLocaleString(currentIntlLocale()) })}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <button type="button" onClick={() => setGrouped((v) => !v)} className="flex items-center gap-1.5 px-2 py-1 rounded text-xs text-white/60 hover:text-white bg-surface-2" title={grouped ? 'Afficher en liste chronologique' : 'Grouper par utilisateur'}>
+          <button type="button" onClick={() => setGrouped((v) => !v)} className="flex items-center gap-1.5 px-2 py-1 rounded text-xs text-white/60 hover:text-white bg-surface-2" title={grouped ? t('an.afficherEnListeChronologique') : t('an.grouperParUtilisateur')}>
             {grouped ? <><List className="w-3.5 h-3.5" /> Liste</> : <><Users className="w-3.5 h-3.5" /> Grouper</>}
           </button>
           {!grouped && pageCount > 1 && (
             <>
               <button type="button" onClick={() => setPage(Math.max(0, current - 1))} disabled={current === 0} aria-label={t('an.prevPage')} className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
               <span className="text-white/40 text-xs tabular-nums">{current + 1} / {pageCount}</span>
-              <button type="button" onClick={() => setPage(Math.min(pageCount - 1, current + 1))} disabled={current >= pageCount - 1} aria-label="Page suivante" className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronRight className="w-4 h-4" /></button>
+              <button type="button" onClick={() => setPage(Math.min(pageCount - 1, current + 1))} disabled={current >= pageCount - 1} aria-label={t('an.pageSuivante')} className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronRight className="w-4 h-4" /></button>
             </>
           )}
         </div>
@@ -224,7 +233,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
         <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="text-white/40">
-              <th className={TH}>Utilisateur</th><th className={TH}>Page</th><th className={TH}>Appareil</th><th className={TH}>Lieu</th><th className={`${TH} text-right whitespace-nowrap`}>Date &amp; heure</th>
+              <th className={TH}>{t('an.utilisateur')}</th><th className={TH}>{t('an.page')}</th><th className={TH}>{t('an.appareil')}</th><th className={TH}>{t('an.place')}</th><th className={`${TH} text-right whitespace-nowrap`}>{t('an.dateTime')}</th>
             </tr>
             <tr>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.user} onChange={(v) => set('user', v)} options={opts.users} allLabel="Tous" /></th>
@@ -242,7 +251,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
               : slice.map((e, i) => <EventRow key={`${e.vid}-${e.ts}-${i}`} e={e} showUser userName={userName} />)}
           </tbody>
         </table>
-        {filtered.length === 0 && <div className="text-white/30 text-xs py-3">Aucune consultation pour ces filtres.</div>}
+        {filtered.length === 0 && <div className="text-white/30 text-xs py-3">{t('an.aucuneConsultationPourCes')}</div>}
       </div>
     </div>
   )

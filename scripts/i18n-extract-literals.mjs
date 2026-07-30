@@ -27,13 +27,24 @@ const TEXT_ATTRS = new Set(['title', 'placeholder', 'aria-label', 'alt', 'label'
 const TEXT_PROPS = new Set(['label', 'title', 'hint', 'placeholder', 'desc', 'description'])
 const ACCENTED = /[àâäéèêëîïôöùûüÿçÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇ]/
 const FRENCH_WORD = /(?<!\p{L})(le|la|les|des|une|un|du|au|aux|ou|et|dans|pour|avec|sans|sur|sous|vous|votre|vos|aucun|aucune|tous|toutes|nouveau|nouvelle|autre|champ|champs|groupe|page|pages|fiche|fiches|nom|taille|couleur|police|fond|titre|titres|texte|ligne|lignes|colonne|colonnes|produit|produits|prix|mois|retour|suivant|charger|masquer|afficher|effacer|ajouter|supprimer|modifier|choisir|enregistrer|importer|exporter|continuer|annuler|fermer|ouvrir|activer|copier|coller|glisser|cliquer|rechercher|gabarit|calques?|opacité|épaisseur)(?!\p{L})/iu
+/**
+ * Mots français ISOLÉS, sans accent — l'angle mort des deux règles ci-dessus :
+ * « Connecteur », « Appareil », « Restant » ne portent pas d'accent et tiennent
+ * en un mot, donc ni `ACCENTED` ni `SENTENCE` ne les voient. Ils passaient pour
+ * des identifiants alors qu'ils titrent des colonnes à l'écran. Un mot identique
+ * en anglais (« Volume », « Budget », « Source ») compte AUSSI : il lui faut une
+ * clé pour exister en espagnol.
+ */
+const FRENCH_LONE = /^(connecteur|connecteurs|appareil|appareils|utilisateur|utilisateurs|visiteur|visiteurs|pays|zone|perso|restant|restants|volume|budget|source|sources|jour|jours|semaine|mois|annee|heure|heures|minute|minutes|seconde|secondes|taille|marque|modele|reference|fournisseur|fournisseurs|client|clients|commande|remise|quantite|unite|stock|image|images|fichier|fichiers|dossier|dossiers|vue|vues|total|actif|actifs|inactif|tous|toutes|oui|non|nom|prix|poids|hauteur|largeur|couleur|police|calque|calques|gabarit|modele|libelle|etat|statut|type|types|niveau|ordre|position|debut|fin|duree|moyenne|somme|nombre|aucune|aucun)$/i
+
 const SENTENCE = /[A-Za-zÀ-ÿ]{3,}[^\S\n]+[A-Za-zÀ-ÿ]/
-const IGNORE = /^(ok|json|pdf|idml|svg|pptx|xlsx|csv|html|api|url|ean|sku|dpi|llm|ia|pim|dam|mm|px|%|€|·|—|→|←|×|\d+)$/i
+// Noms propres et jargon qui ne se traduisent dans aucune des langues servies.
+const IGNORE = /^(ok|json|pdf|idml|svg|pptx|xlsx|csv|html|api|url|ean|sku|dpi|llm|ia|pim|dam|mm|px|%|€|·|—|→|←|×|\d+|bright data|google drive|remove\.bg|claude|firecrawl|jina|telegram|gmail|make|excel|indesign|illustrator)$/i
 
 const isFrench = (raw) => {
   const t = raw.trim()
   if (t.length < 3 || IGNORE.test(t) || !/[A-Za-zÀ-ÿ]/.test(t)) return false
-  return ACCENTED.test(t) || FRENCH_WORD.test(t) || SENTENCE.test(t)
+  return ACCENTED.test(t) || FRENCH_WORD.test(t) || SENTENCE.test(t) || FRENCH_LONE.test(t.replace(/[^A-Za-zÀ-ÿ]/g, ''))
 }
 
 /** Clé lisible dérivée du texte : `rp.addRule` plutôt qu'un hash. */
@@ -103,7 +114,19 @@ for (const file of walk(join(ROOT, target))) {
     }
     if (ts.isPropertyAssignment(node) && ts.isStringLiteral(node.initializer)) {
       const name = node.name.getText(sf).replace(/['"]/g, '')
-      if (TEXT_PROPS.has(name) && isFrench(node.initializer.text)) {
+      // ⚠️ Une propriété d'une CONSTANTE DE MODULE ne doit PAS devenir `t()` :
+      // hors composant, `t` n'est même pas dans la portée quand le fichier passe
+      // par `useTranslation`, et surtout l'appel serait évalué à l'import — la
+      // langue resterait figée à celle du premier chargement (piège connu du
+      // projet). Ces cas se traitent à la main, en stockant une CLÉ.
+      let inFunction = false
+      for (let p = node.parent; p; p = p.parent) {
+        if (ts.isFunctionDeclaration(p) || ts.isArrowFunction(p) || ts.isFunctionExpression(p) || ts.isMethodDeclaration(p)) {
+          inFunction = true
+          break
+        }
+      }
+      if (inFunction && TEXT_PROPS.has(name) && isFrench(node.initializer.text)) {
         const key = keyFor(node.initializer.text)
         edits.push({ start: node.initializer.getStart(sf), end: node.initializer.getEnd(), replacement: `t('${key}')` })
       }

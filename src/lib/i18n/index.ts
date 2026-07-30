@@ -139,6 +139,19 @@ export function intlLocale(locale: Locale): string {
   return BCP47[locale]
 }
 
+/**
+ * Étiquette BCP 47 de la langue COURANTE — pendant de `t()` pour `Intl.*`.
+ *
+ * ⚠️ Même réserve que `t()` : le résultat est figé à l'instant de l'appel. À
+ * utiliser DANS le rendu (`{n.toLocaleString(currentIntlLocale())}`), jamais
+ * dans une constante de module. Sans elle, les composants qui n'emploient que
+ * le `t` de module recopiaient `'fr-FR'` en dur — et l'espagnol affichait des
+ * milliers séparés à la française.
+ */
+export function currentIntlLocale(): string {
+  return BCP47[useLocaleStore.getState().locale]
+}
+
 /** Date localisée. En-GB comme en FR : JJ/MM/AAAA (contrairement à en-US). */
 export function formatDate(value: Date | number, locale: Locale, options?: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat(intlLocale(locale), options).format(value)

@@ -47,6 +47,16 @@ const TEXT_PROPS = new Set(['label', 'title', 'hint', 'placeholder', 'desc', 'de
 const ACCENTED = /[àâäéèêëîïôöùûüÿçÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇ]/
 /** Mots français fréquents SANS accent — la moitié des libellés n'en portent pas. */
 const FRENCH_WORD = /(?<!\p{L})(le|la|les|des|une|un|du|au|aux|ou|et|dans|pour|avec|sans|sur|sous|vous|votre|vos|aucun|aucune|tous|toutes|nouveau|nouvelle|autre|champ|champs|groupe|groupes|page|pages|fiche|fiches|nom|taille|couleur|police|fond|titre|titres|texte|textes|ligne|lignes|colonne|colonnes|produit|produits|prix|coût|coûts|mois|date|retour|suivant|precedent|charger|masquer|afficher|effacer|ajouter|supprimer|modifier|choisir|enregistrer|importer|exporter|continuer|annuler|valider|fermer|ouvrir|activer|copier|coller|glisser|cliquer|rechercher|selectionner|gabarit|calque|calques|apercu|reglages|parametres)(?!\p{L})/iu
+/**
+ * Mots français ISOLÉS, sans accent — l'angle mort des deux règles ci-dessus :
+ * « Connecteur », « Appareil », « Restant » ne portent pas d'accent et tiennent
+ * en un mot, donc ni `ACCENTED` ni `SENTENCE` ne les voient. Ils passaient pour
+ * des identifiants alors qu'ils titrent des colonnes à l'écran. Un mot identique
+ * en anglais (« Volume », « Budget », « Source ») compte AUSSI : il lui faut une
+ * clé pour exister en espagnol.
+ */
+const FRENCH_LONE = /^(connecteur|connecteurs|appareil|appareils|utilisateur|utilisateurs|visiteur|visiteurs|pays|zone|perso|restant|restants|volume|budget|source|sources|jour|jours|semaine|mois|annee|heure|heures|minute|minutes|seconde|secondes|taille|marque|modele|reference|fournisseur|fournisseurs|client|clients|commande|remise|quantite|unite|stock|image|images|fichier|fichiers|dossier|dossiers|vue|vues|total|actif|actifs|inactif|tous|toutes|oui|non|nom|prix|poids|hauteur|largeur|couleur|police|calque|calques|gabarit|modele|libelle|etat|statut|type|types|niveau|ordre|position|debut|fin|duree|moyenne|somme|nombre|aucune|aucun)$/i
+
 /** Deux mots dont un de trois lettres et plus : de la prose, pas un identifiant. */
 const SENTENCE = /[A-Za-zÀ-ÿ]{3,}[^\S\n]+[A-Za-zÀ-ÿ]/
 
@@ -60,7 +70,7 @@ function isFrench(text) {
   const t = text.trim()
   if (t.length < 3 || IGNORE.test(t)) return false
   if (!/[A-Za-zÀ-ÿ]/.test(t)) return false
-  return ACCENTED.test(t) || FRENCH_WORD.test(t) || SENTENCE.test(t)
+  return ACCENTED.test(t) || FRENCH_WORD.test(t) || SENTENCE.test(t) || FRENCH_LONE.test(t.replace(/[^A-Za-zÀ-ÿ]/g, ''))
 }
 
 const walk = (d) =>

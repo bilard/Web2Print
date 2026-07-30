@@ -28,7 +28,7 @@ export function AnalyticsLiveFeed() {
     <div className="rounded-xl border border-white/[0.06] bg-surface p-4">
       <div className="flex items-center gap-2 mb-3">
         <Radio className="w-4 h-4 text-emerald-400" aria-hidden="true" />
-        <h3 className="text-sm font-semibold text-white/85">Trafic en direct</h3>
+        <h3 className="text-sm font-semibold text-white/85">{t('an.traficEnDirect')}</h3>
         <span className="relative flex w-2 h-2 ml-1">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
           <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-400" />
@@ -40,7 +40,7 @@ export function AnalyticsLiveFeed() {
       ) : (
         <ul className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
           {feed.map((e, i) => {
-            const name = e.uid ? (usersMap.get(e.uid) ?? 'Utilisateur connecté') : 'Visiteur anonyme'
+            const name = e.uid ? (usersMap.get(e.uid) ?? t('an.signedInUser')) : t('an.anonVisitor')
             const place = [e.city, e.country].filter(Boolean).join(', ')
             return (
               <li key={`${e.sid}_${e.ts}_${i}`} className="flex items-baseline gap-2 text-xs">

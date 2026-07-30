@@ -27,7 +27,7 @@ export function AnalyticsUsers({ events }: { events: AnalyticsEvent[] }) {
               <span className="text-white/80 truncate" title={r.uid}>
                 {usersMap.get(r.uid) ?? r.uid}
               </span>
-              <span className="text-white/50 shrink-0 ml-2">{r.count} vues</span>
+              <span className="text-white/50 shrink-0 ml-2">{r.count} {t('an.vues')}</span>
             </div>
           ))}
         </div>

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
+import ts from 'typescript'
 import { join } from 'node:path'
 import { extractCalls, frenchLiterals } from './frenchLiterals'
 
@@ -51,6 +52,13 @@ describe('constantes de module', () => {
    * au rendu. Le type l'impose alors.
    */
   it("n'évalue aucun t() au chargement d'un module", () => {
+    // ⚠️ Analyse par AST, et non par accolades comptées : la version regex
+    // sautait tout bloc contenant une flèche, au motif qu'un registre de
+    // comportements diffère ses `t()`. Or un objet peut porter À LA FOIS un
+    // `fmt: (n) => …` (différé) et un `label: t('…')` (évalué à l'import) — c'est
+    // exactement ce qui a laissé passer les cartes KPI d'Analytics. On regarde
+    // donc chaque appel `t()` individuellement : est-il, oui ou non, à
+    // l'intérieur d'une fonction ?
     const walk = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
         const full = join(dir, e.name)
@@ -61,24 +69,31 @@ describe('constantes de module', () => {
     for (const file of walk('src')) {
       if (file.includes(join('lib', 'i18n'))) continue // le catalogue lui-même
       const src = readFileSync(file, 'utf8')
-      for (const m of src.matchAll(/^(?:export )?const [A-Za-z_]\w*[^=\n]*=\s*[{[]/gm)) {
-        const open = m[0].trim().slice(-1)
-        const close = open === '{' ? '}' : ']'
-        let depth = 1
-        let i = m.index + m[0].length
-        for (; i < src.length && depth > 0; i++) {
-          if (src[i] === open) depth++
-          else if (src[i] === close) depth--
+      const sf = ts.createSourceFile(file, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+      const visit = (node: ts.Node): void => {
+        if (
+          ts.isCallExpression(node) &&
+          ts.isIdentifier(node.expression) &&
+          node.expression.text === 't' &&
+          node.arguments.length > 0 &&
+          ts.isStringLiteral(node.arguments[0])
+        ) {
+          let deferred = false
+          for (let p: ts.Node | undefined = node.parent; p; p = p.parent) {
+            if (
+              ts.isArrowFunction(p) || ts.isFunctionDeclaration(p) ||
+              ts.isFunctionExpression(p) || ts.isMethodDeclaration(p) ||
+              ts.isGetAccessor(p)
+            ) { deferred = true; break }
+          }
+          if (!deferred) {
+            const line = sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1
+            offences.push(`${file}:${line} → ${(node.arguments[0] as ts.StringLiteral).text}`)
+          }
         }
-        const block = src.slice(m.index + m[0].length, i)
-        // Un objet qui contient du code DIFFÉRÉ (fonction, flèche) est un
-        // registre de comportements : son `t()` s'exécute au rendu, pas ici.
-        if (block.includes('=>') || block.includes('function')) continue
-        const hit = block.match(/\bt\('([^']+)'/)
-        if (hit) {
-          offences.push(`${file}:${src.slice(0, m.index).split('\n').length} → ${hit[1]}`)
-        }
+        ts.forEachChild(node, visit)
       }
+      visit(sf)
     }
     expect(offences, `t() figé au chargement du module :\n${offences.join('\n')}`).toEqual([])
   })

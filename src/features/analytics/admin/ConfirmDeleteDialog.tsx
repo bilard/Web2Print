@@ -6,6 +6,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { t } from '@/lib/i18n'
 
 export function ConfirmDeleteDialog({
   open,
@@ -32,7 +33,7 @@ export function ConfirmDeleteDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Annuler</AlertDialogCancel>
+          <AlertDialogCancel disabled={pending}>{t('an.annuler')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => { e.preventDefault(); onConfirm() }}
             disabled={pending}

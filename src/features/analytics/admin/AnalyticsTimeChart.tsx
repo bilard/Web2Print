@@ -12,6 +12,7 @@ import {
 } from 'chart.js'
 import { useThemeStore } from '@/stores/theme.store'
 import { parseDayKey } from '../metrics'
+import { t } from '@/lib/i18n'
 
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler)
 
@@ -39,7 +40,7 @@ export function AnalyticsTimeChart({ series }: Props) {
     labels: series.map((p) => (hourly ? hourFmt : axisFmt).format(parseDayKey(p.day))),
     datasets: [
       {
-        label: 'Pages vues',
+        label: t('an.pagesVues'),
         data: series.map((p) => p.pageViews),
         borderColor: '#6366f1',
         backgroundColor: '#6366f155',
@@ -48,7 +49,7 @@ export function AnalyticsTimeChart({ series }: Props) {
         yAxisID: 'y',
       },
       {
-        label: 'Visiteurs',
+        label: t('an.visiteurs'),
         data: series.map((p) => p.visitors),
         borderColor: '#22d3ee',
         backgroundColor: 'transparent',
@@ -57,7 +58,7 @@ export function AnalyticsTimeChart({ series }: Props) {
       },
       {
         // Cumul des connexions (axe droit) : la courbe grimpe jusqu'au total de la période.
-        label: `Connexions (cumul · ${total})`,
+        label: t('an.chart.connectionsCumul', { total }),
         data: series.map((p) => p.connections),
         borderColor: '#f59e0b',
         backgroundColor: 'transparent',

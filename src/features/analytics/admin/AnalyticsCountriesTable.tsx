@@ -32,7 +32,7 @@ export function AnalyticsCountriesTable({ events, selected, onSelect, className 
   return (
     <div className={`bg-surface rounded-lg p-4${className ? ` ${className}` : ''}`}>
       <div className="text-white/70 text-sm font-medium mb-3">
-        Pays
+        {t('an.pays')}
         <span className="text-white/35 font-normal ml-2">{t('an.citiesGrouped')}</span>
       </div>
       {groups.length === 0 ? (
@@ -42,7 +42,7 @@ export function AnalyticsCountriesTable({ events, selected, onSelect, className 
         <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="text-white/40">
-              <th className={TH}>Pays</th>
+              <th className={TH}>{t('an.pays')}</th>
               <th className={TH}>Ville</th>
               <th className={`${TH} text-right`}>Visites</th>
             </tr>
@@ -60,7 +60,7 @@ export function AnalyticsCountriesTable({ events, selected, onSelect, className 
                   onClick={click}
                   onKeyDown={click ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); click() } } : undefined}
                   tabIndex={click ? 0 : undefined}
-                  title={click ? 'Voir sur la carte' : undefined}
+                  title={click ? t('an.voirSurLaCarte') : undefined}
                   className={`transition-colors ${click ? 'cursor-pointer hover:bg-white/[0.04]' : ''} ${active ? 'bg-indigo-500/15' : ''}`}
                 >
                   {/* En-tête pays : chevron repli + nom en gras + total + barre relative aux autres pays */}

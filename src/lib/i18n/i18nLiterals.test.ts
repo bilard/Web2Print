@@ -20,8 +20,13 @@ import { execFileSync } from 'node:child_process'
  * <dossier> <prefixe>` extrait les libellés entiers d'un module, puis
  * `node scripts/i18n-translate.mjs en|es` traduit les clés nouvelles. Baissez
  * ensuite le chiffre ci-dessous — il ne doit jamais remonter.
+ *
+ * ⚠️ Le chiffre peut aussi monter parce que le SCANNER voit mieux : il a gagné
+ * les mots français isolés sans accent (« Connecteur », « Appareil »), invisibles
+ * jusque-là. Une hausse de ce genre se constate en relançant le scan sur un
+ * arbre inchangé — ce n'est pas une régression, et la baseline se met à jour.
  */
-const BASELINE = 1266
+const BASELINE = 1280
 
 describe('littéraux français en dur', () => {
   it('ne dépasse pas la baseline', () => {

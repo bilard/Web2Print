@@ -25,7 +25,7 @@ export function CostTrend({ history, height = 220 }: { history: MonthUsage[]; he
     datasets: [
       { label: 'LLM', data: history.map((h) => e(h.llmUsd)), backgroundColor: '#818cf8', stack: 's', borderRadius: 3, maxBarThickness: 40 },
       { label: 'Scraping', data: history.map((h) => e(h.scrapeUsd + h.brightDataUsd)), backgroundColor: '#fbbf24', stack: 's', borderRadius: 3, maxBarThickness: 40 },
-      { label: 'Image', data: history.map((h) => e(h.removebgUsd)), backgroundColor: '#34d399', stack: 's', borderRadius: 3, maxBarThickness: 40 },
+      { label: t('fin2.image'), data: history.map((h) => e(h.removebgUsd)), backgroundColor: '#34d399', stack: 's', borderRadius: 3, maxBarThickness: 40 },
     ],
   }
 

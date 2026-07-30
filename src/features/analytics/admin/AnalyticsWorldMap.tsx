@@ -5,7 +5,7 @@ import { useCityCoords } from '../useCityCoords'
 import { useMapViewport } from '../useMapViewport'
 import { BOUNDS, GRATICULE, buildDots, countryBox, type Dot } from './worldDots'
 import world from './worldPath.json'
-import { t } from '@/lib/i18n'
+import { t, currentIntlLocale } from '@/lib/i18n'
 
 const ACCENT = '#6366f1'
 const BTN = 'p-1 rounded bg-surface-2 border border-white/10 text-white/60 hover:text-white transition-colors'
@@ -49,11 +49,11 @@ export function AnalyticsWorldMap({ events, selectedCountry = null, onSelectCoun
   return (
     <div ref={containerRef} className="bg-surface rounded-lg p-4">
       <div className="text-white/70 text-sm font-medium mb-3">
-        Connexions dans le monde
+        {t('an.connexionsDansLeMonde')}
         <span className="text-white/35 font-normal ml-2">
-          {locatedCount.toLocaleString('fr-FR')} connexions localisées
-          {unlocated > 0 && ` · ${unlocated.toLocaleString('fr-FR')} non localisées`}
-          {countryEmpty && ` · aucune ville localisée pour ${selectedCountry}`}
+          {t('an.map.located', { count: locatedCount.toLocaleString(currentIntlLocale()) })}
+          {unlocated > 0 && ` · ${t('an.map.unlocated', { count: unlocated.toLocaleString(currentIntlLocale()) })}`}
+          {countryEmpty && ` · ${t('an.map.noCity', { country: selectedCountry })}`}
         </span>
       </div>
 
@@ -63,7 +63,7 @@ export function AnalyticsWorldMap({ events, selectedCountry = null, onSelectCoun
           viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
           className={`w-full touch-none ${zoomed ? 'cursor-grab active:cursor-grabbing' : ''}`}
           role="img"
-          aria-label="Carte du monde des connexions par ville"
+          aria-label={t('an.carteDuMondeDes')}
           onClick={() => {
             // Clic sur le fond (pas un pan, pas un point) → tout désélectionner.
             if (didPan()) return
@@ -101,7 +101,7 @@ export function AnalyticsWorldMap({ events, selectedCountry = null, onSelectCoun
           ))}
         </svg>
         <div className="absolute top-2 right-2 flex flex-col gap-1">
-          <button type="button" onClick={zoomIn} aria-label="Zoomer" title="Zoomer (Ctrl/Cmd + molette, ou double-clic)" className={BTN}><Plus className="w-3.5 h-3.5" /></button>
+          <button type="button" onClick={zoomIn} aria-label="Zoomer" title={t('an.zoomerCtrlCmdMolette')} className={BTN}><Plus className="w-3.5 h-3.5" /></button>
           <button type="button" onClick={zoomOut} aria-label={t('an.zoomOut')} title={t('an.zoomOut')} className={BTN}><Minus className="w-3.5 h-3.5" /></button>
           {zoomed && (
             <button
@@ -128,7 +128,7 @@ export function AnalyticsWorldMap({ events, selectedCountry = null, onSelectCoun
               key={d.label}
               type="button"
               onClick={() => { onSelectCountry?.(null); setSelected(d.label); focus(d.x, d.y) }}
-              title="Voir sur la carte"
+              title={t('an.voirSurLaCarte')}
               className={`text-xs rounded px-1.5 py-0.5 transition-colors hover:bg-white/10 ${selected === d.label ? 'bg-white/10' : ''}`}
             >
               <span className="inline-block w-2 h-2 rounded-full mr-1.5 align-baseline" style={{ background: ACCENT }} />
@@ -141,8 +141,8 @@ export function AnalyticsWorldMap({ events, selectedCountry = null, onSelectCoun
       {dots.length === 0 && (
         <div className="text-white/35 text-xs">
           {cities.length > 0 && pending
-            ? 'Localisation des villes en cours…'
-            : 'Aucune connexion localisée sur cette période.'}
+            ? t('an.localisationDesVillesEn')
+            : t('an.aucuneConnexionLocaliseeSur')}
         </div>
       )}
     </div>

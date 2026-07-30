@@ -1,11 +1,16 @@
 import { topBy, topSourceCategories, pageLabel, type AnalyticsEvent, type EventFilter } from '../metrics'
 import { useUsersMap } from '../useUsersMap'
+import { t, type TranslationKey } from '@/lib/i18n'
 
-const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
+/** ⚠️ Une CLÉ, pas un `t()` : dans une constante de module, l'appel serait
+ *  évalué à l'import et figerait la langue du premier chargement. */
+const DEVICE_KEYS: Record<string, TranslationKey> = {
+  desktop: 'an.device.desktop', mobile: 'an.device.mobile', tablet: 'an.device.tablet',
+}
 // Zone : sépare le trafic du site web public (promo, docs, accueil) de celui de l'application.
-const ZONE_OPTS: Opt[] = [
-  { value: 'site', label: 'Site web' },
-  { value: 'app', label: 'Application' },
+const ZONE_OPTS: { value: string; labelKey: TranslationKey }[] = [
+  { value: 'site', labelKey: 'an.zone.site' },
+  { value: 'app', labelKey: 'an.zone.app' },
 ]
 
 interface Opt {
@@ -32,7 +37,7 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         className="bg-surface-2 text-white/80 rounded px-2 py-1 border border-white/10 max-w-[180px]"
       >
-        <option value="all">Tous</option>
+        <option value="all">{t('an.tous')}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
@@ -55,7 +60,7 @@ export function AnalyticsFilters({
 }) {
   const devices: Opt[] = topBy(events, 'device', 99).map((r) => ({
     value: r.label,
-    label: DEVICE_FR[r.label] ?? r.label,
+    label: DEVICE_KEYS[r.label] ? t(DEVICE_KEYS[r.label]) : r.label,
   }))
   const countries: Opt[] = topBy(events, 'country', 99).map((r) => ({ value: r.label, label: r.label }))
   const pages: Opt[] = topBy(events, 'path', 99).map((r) => ({ value: r.label, label: pageLabel(r.label) }))
@@ -73,13 +78,13 @@ export function AnalyticsFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <Field label="Zone" value={filter.zone} options={ZONE_OPTS} onChange={(v) => onChange({ ...filter, zone: v })} />
-      <Field label="Appareil" value={filter.device} options={devices} onChange={(v) => onChange({ ...filter, device: v })} />
-      <Field label="Pays" value={filter.country} options={countries} onChange={(v) => onChange({ ...filter, country: v })} />
-      <Field label="Page" value={filter.page} options={pages} onChange={(v) => onChange({ ...filter, page: v })} />
-      <Field label="Source" value={filter.source} options={sources} onChange={(v) => onChange({ ...filter, source: v })} />
+      <Field label={t('an.zone')} value={filter.zone} options={ZONE_OPTS.map((o) => ({ value: o.value, label: t(o.labelKey) }))} onChange={(v) => onChange({ ...filter, zone: v })} />
+      <Field label={t('an.appareil')} value={filter.device} options={devices} onChange={(v) => onChange({ ...filter, device: v })} />
+      <Field label={t('an.pays')} value={filter.country} options={countries} onChange={(v) => onChange({ ...filter, country: v })} />
+      <Field label={t('an.page')} value={filter.page} options={pages} onChange={(v) => onChange({ ...filter, page: v })} />
+      <Field label={t('an.source')} value={filter.source} options={sources} onChange={(v) => onChange({ ...filter, source: v })} />
       {users.length > 0 && (
-        <Field label="Utilisateur" value={filter.user} options={users} onChange={(v) => onChange({ ...filter, user: v })} />
+        <Field label={t('an.utilisateur')} value={filter.user} options={users} onChange={(v) => onChange({ ...filter, user: v })} />
       )}
     </div>
   )

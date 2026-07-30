@@ -20,16 +20,17 @@ const AnalyticsWorldMap = lazy(() =>
 )
 import { AnalyticsUsers } from './AnalyticsUsers'
 import { AnalyticsFilters } from './AnalyticsFilters'
-import { t, intlLocale } from '@/lib/i18n'
+import { t, intlLocale, currentIntlLocale, type TranslationKey } from '@/lib/i18n'
 import { useLocaleStore } from '@/stores/locale.store'
 
-const PERIODS: { key: PeriodKey; label: string }[] = [
-  { key: 'today', label: "Aujourd'hui" },
-  { key: '7d', label: '7 j' },
-  { key: '30d', label: '30 j' },
-  { key: '90d', label: '90 j' },
-  { key: '12m', label: '12 mois' },
-  { key: 'custom', label: 'Perso' },
+/** ⚠️ Des CLÉS, pas des `t()` : évalués ici, ils figeraient la langue à l'import. */
+const PERIODS: { key: PeriodKey; labelKey: TranslationKey }[] = [
+  { key: 'today', labelKey: 'an.period.today' },
+  { key: '7d', labelKey: 'an.period.7d' },
+  { key: '30d', labelKey: 'an.period.30d' },
+  { key: '90d', labelKey: 'an.period.90d' },
+  { key: '12m', labelKey: 'an.period.12m' },
+  { key: 'custom', labelKey: 'an.period.custom' },
 ]
 
 export function AnalyticsTab() {
@@ -95,7 +96,7 @@ export function AnalyticsTab() {
                   period === p.key ? 'bg-white/[0.08] text-white' : 'text-white/45 hover:text-white/70'
                 }`}
               >
-                {p.label}
+                {t(p.labelKey)}
               </button>
             ))}
           </div>
@@ -172,8 +173,7 @@ export function AnalyticsTab() {
         onOpenChange={setConfirmDelete}
         title={t('an.purgeConfirm')}
         description={<>
-          Supprime <strong>définitivement les {events.length.toLocaleString('fr-FR')} consultation(s)</strong> correspondant
-          {t('an.purgeFiltered.desc')}
+          {t('an.purge.desc', { count: events.length.toLocaleString(currentIntlLocale()) })}
         </>}
         actionLabel="Supprimer le résultat"
         pending={deleteFiltered.isPending}
@@ -207,7 +207,7 @@ export function AnalyticsTab() {
           </div>
           {/* Attribution requise par la licence CC BY 4.0 de la base de géolocalisation. */}
           <div className="text-white/25 text-[10px] pt-1">
-            Géolocalisation IP par{' '}
+            {t('an.geoipBy')}{' '}
             <a href="https://db-ip.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/40">
               DB-IP
             </a>

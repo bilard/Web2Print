@@ -15,11 +15,11 @@ export function ConnectorTable({ rows }: { rows: CostRow[] }) {
         <table className="w-full text-xs tabular-nums">
           <thead>
             <tr className="text-white/40 text-[10px] uppercase tracking-wide text-right">
-              <th className="text-left font-medium pb-2">Connecteur</th>
-              <th className="font-medium pb-2">Volume</th>
+              <th className="text-left font-medium pb-2">{t('fin2.connecteur')}</th>
+              <th className="font-medium pb-2">{t('fin2.volume')}</th>
               <th className="font-medium pb-2">{t('fi.cost')}</th>
-              <th className="font-medium pb-2">Budget</th>
-              <th className="font-medium pb-2 w-[26%]">Restant</th>
+              <th className="font-medium pb-2">{t('fin2.budget')}</th>
+              <th className="font-medium pb-2 w-[26%]">{t('fin2.restant')}</th>
             </tr>
           </thead>
           <tbody>
