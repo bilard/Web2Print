@@ -4516,6 +4516,22 @@ export const fr = {
   'gs.header': 'En-tête',
   'ss.disableAll': 'Désactiver tous les sites de la moisson',
   'ss.enableAll': 'Activer tous les sites de la moisson',
+
+  // ═══ Derniers attributs composés (lot 48) ═══
+  'cat.overlay.linkedTo': '{obj} — lié à « {parent} » (parent)',
+  'pw.cmp.reading': 'Relevé : {name}{ean}',
+  'pw.cmp.readingEan': ' — EAN {ean}',
+  'pw.cmp.unknown': '?',
+  'pw.tbl.cellTitle': '{domain} · {price} HT{ttc}{gap}{click}',
+  'pw.tbl.cellTtc': ' ({price} TTC affiché sur le site)',
+  'pw.tbl.cellGap': ' · écart {pct}',
+  'pw.tbl.cellClick': ' · clic : ouvrir la fiche',
+  'pw.heat.cellTitle': '{domain} · {field} : {sign}{pct}% ({count})',
+  'pw.heat.noMatch': 'aucun apparié',
+  'wfn.connectorUsed': 'Connecteur utilisé : {name}',
+  'wfn.connector': 'Connecteur : {name}',
+  'hf.imageHint': 'Higgsfield anime cette image. À défaut, la 1re URL http(s) du port « image ». Pas d’URL blob:/locale.',
+  'tg.globalTokenHint': 'Telegram) — recommandé : le token n’est alors pas stocké dans le workflow.',
 } as const
 
 /** Clé de traduction valide — dérivée du catalogue FR. */

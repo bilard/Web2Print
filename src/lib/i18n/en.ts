@@ -4435,4 +4435,20 @@ export const en: Record<TranslationKey, string> = {
   'gs.header': 'Header',
   'ss.disableAll': 'Disable every site in the harvest',
   'ss.enableAll': 'Enable every site in the harvest',
+
+  // ═══ Derniers attributs composés (lot 48) ═══
+  'cat.overlay.linkedTo': '{obj} — linked to “{parent}” (parent)',
+  'pw.cmp.reading': 'Reading: {name}{ean}',
+  'pw.cmp.readingEan': ' — EAN {ean}',
+  'pw.cmp.unknown': '?',
+  'pw.tbl.cellTitle': '{domain} · {price} excl. VAT{ttc}{gap}{click}',
+  'pw.tbl.cellTtc': ' ({price} incl. VAT shown on the site)',
+  'pw.tbl.cellGap': ' · gap {pct}',
+  'pw.tbl.cellClick': ' · click: open the record',
+  'pw.heat.cellTitle': '{domain} · {field}: {sign}{pct}% ({count})',
+  'pw.heat.noMatch': 'no match',
+  'wfn.connectorUsed': 'Connector in use: {name}',
+  'wfn.connector': 'Connector: {name}',
+  'hf.imageHint': 'Higgsfield animates this image. Failing that, the first http(s) URL on the “image” port. No blob:/local URL.',
+  'tg.globalTokenHint': 'Telegram) — recommended: the token is then not stored in the workflow.',
 }

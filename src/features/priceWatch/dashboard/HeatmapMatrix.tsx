@@ -52,7 +52,10 @@ export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch
                     <td
                       key={f}
                       onClick={() => cell?.n && onSelect?.({ famille: f, competitor: r.siteId })}
-                      title={cell && cell.n ? `${r.domain} · ${f} : ${g! > 0 ? '+' : ''}${Math.round(g! * 10) / 10}% (${cell.n})` : 'aucun apparié'}
+                      title={cell && cell.n ? t('pw.heat.cellTitle', {
+                domain: r.domain, field: f, sign: g! > 0 ? '+' : '',
+                pct: Math.round(g! * 10) / 10, count: cell.n,
+              }) : t('pw.heat.noMatch')}
                       className={`h-8 min-w-[52px] text-center rounded-sm border border-white/5 text-white/85 ${cell?.n ? 'cursor-pointer' : ''}`}
                       style={{ backgroundColor: g == null ? 'transparent' : heatColor(g) }}
                     >

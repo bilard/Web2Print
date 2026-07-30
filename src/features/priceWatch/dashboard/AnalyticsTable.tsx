@@ -149,7 +149,12 @@ export function AnalyticsTable({ ck, searchQ, onSearch, onPickFamily, products }
                   return (
                     <td key={c.siteId} className="px-1 text-center border-l border-white/[0.04] whitespace-nowrap"
                       style={{ backgroundColor: g == null ? undefined : heatColor(g) }}
-                      title={price == null ? '' : `${c.domain} · ${eur(price)} HT${ttc != null ? ` (${eur(ttc)} TTC affiché sur le site)` : ''}${g == null ? '' : ` · écart ${pct(g)}`}${url ? ' · clic : ouvrir la fiche' : ''}`}>
+                      title={price == null ? '' : t('pw.tbl.cellTitle', {
+                        domain: c.domain, price: eur(price),
+                        ttc: ttc != null ? t('pw.tbl.cellTtc', { price: eur(ttc) }) : '',
+                        gap: g == null ? '' : t('pw.tbl.cellGap', { pct: pct(g) }),
+                        click: url ? t('pw.tbl.cellClick') : '',
+                      })}>
                       {price == null
                         ? <span className="text-white/15">·</span>
                         : url

@@ -429,7 +429,7 @@ function HiggsfieldConfigUi({
               className={inputCls}
             />
             <p className="text-[10px] text-neutral-600 leading-snug mt-1">
-              Higgsfield anime cette image. À défaut, la 1re URL http(s) du port « image ». Pas d'URL blob:/locale.
+              {t('hf.imageHint')}
             </p>
           </div>
         </>

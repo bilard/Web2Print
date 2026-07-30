@@ -80,7 +80,10 @@ export function ComparisonTab() {
                     // Identité relevée chez le concurrent : visible au survol pour
                     // repérer un mauvais appariement (mauvaise fiche, EAN différent).
                     const relevé = m && (m.competitorName || m.competitorEan)
-                      ? `Relevé : ${m.competitorName ?? '?'}${m.competitorEan ? ` — EAN ${m.competitorEan}` : ''}`
+                      ? t('pw.cmp.reading', {
+                          name: m.competitorName ?? t('pw.cmp.unknown'),
+                          ean: m.competitorEan ? t('pw.cmp.readingEan', { ean: m.competitorEan }) : '',
+                        })
                       : undefined
                     return (
                       <td key={s.id} className={`pr-4 ${cheaper ? 'text-red-400' : 'text-white/70'}`} title={relevé}>

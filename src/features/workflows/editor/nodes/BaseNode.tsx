@@ -258,7 +258,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
                     className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/20 ring-1 text-[8.5px] font-medium leading-none ${c.color} ${
                       active ? 'ring-white/40' : 'ring-white/10'
                     }`}
-                    title={live ? `Connecteur utilisé : ${c.label}` : `Connecteur : ${c.label}`}
+                    title={t(live ? 'wfn.connectorUsed' : 'wfn.connector', { name: c.label })}
                   >
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${c.dot} ${active ? 'animate-pulse' : ''}`}

@@ -77,7 +77,7 @@ function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
         <div className="text-[10px] text-neutral-600 mt-1.5 leading-snug space-y-1.5">
           <div className="px-2 py-1.5 rounded-md bg-emerald-500/5 border border-emerald-500/20 text-emerald-200/90">
             Laisse vide pour utiliser le <strong>bot token global</strong> (Settings → Connecteurs →
-            Telegram) — recommandé : le token n'est alors pas stocké dans le workflow.
+            {t('tg.globalTokenHint')}
           </div>
           <p>
             Sinon, colle ici un token créé via{' '}

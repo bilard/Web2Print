@@ -232,7 +232,7 @@ export function CardLayoutOverlay({ cardRef, style, wide = false, onChange, onSe
         const relColor = link ? parentColor.get(link) : parentColor.get(id)
         return (
           <div key={id} onPointerDown={(e) => startDrag(e, id)}
-            title={link ? `${OBJ_LABEL[id]} — lié à « ${OBJ_LABEL[link]} » (parent)` : OBJ_LABEL[id]}
+            title={link ? t('cat.overlay.linkedTo', { obj: OBJ_LABEL[id], parent: OBJ_LABEL[link] }) : OBJ_LABEL[id]}
             style={{ position: 'absolute', left: `${r.left}%`, top: `${r.top}%`, width: `${r.width}%`, height: `${r.height}%`, cursor: 'move',
               outline: sel === id ? '2px solid #6366f1'
                 : id === magnetParent ? '2px solid rgba(99,102,241,.75)'
