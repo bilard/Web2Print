@@ -2208,6 +2208,13 @@ export const en: Record<TranslationKey, string> = {
   'run.gm.sending': 'Sending Gmail → {to}',
   'run.gm.sentId': 'Sent (Gmail id: {id}).',
 
+  'run.outcome.aborted': '⏹ "{label}" stopped',
+  'run.outcome.abortedBody': 'Execution interrupted.',
+  'run.outcome.error': '❌ "{label}" — {count} node(s) in error',
+  'run.outcome.seeLogs': 'see the logs',
+  'run.outcome.warning': '⚠️ "{label}" finished with a warning',
+  'run.outcome.success': '✅ "{label}" finished',
+  'run.outcome.successBody': '{count} node(s) ran successfully.',
   'run.stopped': 'Run stopped',
   'run.unknownType': 'Unknown type: {type}',
   'run.unknownTypeInLoop': 'Unknown type in the loop body: {type}',

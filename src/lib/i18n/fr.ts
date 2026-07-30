@@ -2254,6 +2254,14 @@ export const fr = {
   'run.gm.sending': 'Envoi Gmail → {to}',
   'run.gm.sentId': 'Envoyé (id Gmail : {id}).',
 
+  // Toast de fin de run (tous les chemins : Run, Pas à pas, RUN par carte)
+  'run.outcome.aborted': '⏹ « {label} » arrêté',
+  'run.outcome.abortedBody': 'Exécution interrompue.',
+  'run.outcome.error': '❌ « {label} » — {count} node(s) en erreur',
+  'run.outcome.seeLogs': 'voir les logs',
+  'run.outcome.warning': '⚠️ « {label} » terminé avec avertissement',
+  'run.outcome.success': '✅ « {label} » terminé',
+  'run.outcome.successBody': '{count} node(s) exécuté(s) avec succès.',
   'run.stopped': 'Run arrêté',
   'run.unknownType': 'Type inconnu : {type}',
   'run.unknownTypeInLoop': 'Type inconnu dans le body de loop : {type}',
