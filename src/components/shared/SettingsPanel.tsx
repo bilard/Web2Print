@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, type ReactNode } from 'react'
-import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, Sparkles, Flame, Plus, RefreshCw, Cookie, Trash2, Network, ScrollText, Bot } from 'lucide-react'
+import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, Sparkles, Flame, Plus, RefreshCw, Cookie, Trash2, Network, ScrollText, Bot, Languages } from 'lucide-react'
 import { DataModelDiagram } from '@/features/data-graph/DataModelDiagram'
 import { MyActivityTab } from '@/features/access/MyActivityTab'
+import { VocabularyTab } from './vocabulary/VocabularyTab'
 import {
   FirebaseLogo, GeminiLogo, ClaudeLogo, OpenAILogo, DeepSeekLogo, KimiLogo, GLMLogo,
   OpenRouterLogo, QwenLogo, JinaLogo, RemoveBgLogo, FirecrawlLogo, ScrapflyLogo, GoogleVisionLogo,
@@ -66,7 +67,7 @@ function formatTokens(n: number): string {
   return n.toLocaleString('fr-FR')
 }
 
-type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'cookies' | 'stats' | 'data' | 'activity'
+type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'cookies' | 'stats' | 'data' | 'activity' | 'vocabulary'
 
 interface TabConfig {
   id: SettingsTab
@@ -81,6 +82,7 @@ const TABS: TabConfig[] = [
   { id: 'firebase',   labelKey: 'settings.tab.firebase',   icon: Flame,      accent: 'text-amber-400' },
   { id: 'connectors', labelKey: 'settings.tab.connectors', icon: Plug,       accent: 'text-emerald-400' },
   { id: 'cookies',    labelKey: 'settings.tab.cookies',    icon: Cookie,     accent: 'text-amber-300' },
+  { id: 'vocabulary', labelKey: 'settings.tab.vocabulary', icon: Languages,  accent: 'text-teal-400' },
   { id: 'data',       labelKey: 'settings.tab.data',       icon: Network,    accent: 'text-cyan-400' },
   { id: 'stats',      labelKey: 'settings.tab.stats',      icon: BarChart2,  accent: 'text-sky-400' },
   { id: 'activity',   labelKey: 'settings.tab.activity',   icon: ScrollText, accent: 'text-rose-400' },
@@ -88,6 +90,7 @@ const TABS: TabConfig[] = [
 
 const TAB_PERMISSION: Partial<Record<SettingsTab, string>> = {
   connectors: 'settings.connectors.edit',
+  vocabulary: 'settings.i18n.edit',
   cookies: 'settings.cookies.edit',
 }
 
@@ -679,6 +682,7 @@ export function SettingsPanel({
       {activeTab === 'connectors' && canTab('connectors') && <ConnectorsTab />}
       {activeTab === 'cookies' && canTab('cookies') && <CookiesTab />}
       {activeTab === 'stats' && <StatsTab />}
+      {activeTab === 'vocabulary' && canTab('vocabulary') && <VocabularyTab />}
       {activeTab === 'activity' && <MyActivityTab />}
       {activeTab === 'data' && isOwner && <DataModelDiagram />}
     </>

@@ -101,6 +101,10 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: 'settings.firebase.view', module: 'Paramètres', labelKey: 'perm.settings.firebase.view' },
   { key: 'settings.connectors.edit', module: 'Paramètres', labelKey: 'perm.settings.connectors.edit' },
   { key: 'settings.cookies.edit', module: 'Paramètres', labelKey: 'perm.settings.cookies.edit' },
+  // Réécriture du vocabulaire d'interface du COMPTE : engage tous ses membres,
+  // pas seulement celui qui édite. D'où une permission dédiée.
+  { key: 'settings.i18n.edit', module: 'Paramètres', labelKey: 'perm.settings.i18n.edit',
+    descriptionKey: 'perm.settings.i18n.edit.desc' },
   // Marqueur de compte « démo » : ne débloque rien mais IMPOSE les quotas DEMO_LIMITS
   // (lignes PIM + assets DAM). Un rôle qui porte cette clé est plafonné, côté client
   // ET serveur (firestore.rules + Cloud Function damUpload). L'owner n'est jamais limité.

@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fr } from './fr'
 import { en } from './en'
-import { translate, intlLocale, formatDate } from './index'
+import { translate, intlLocale, formatDate, COMPILED_LOCALES } from './index'
+import { useI18nOverridesStore } from '@/stores/i18nOverrides.store'
 
 /** Extrait les jetons `{param}` d'un gabarit de traduction. */
 function placeholders(s: string): string[] {
@@ -268,5 +269,67 @@ describe('formats régionaux', () => {
     // 3 février 2026 — en-US afficherait 2/3/2026.
     const d = new Date(Date.UTC(2026, 1, 3, 12))
     expect(formatDate(d, 'en')).toBe('03/02/2026')
+  })
+})
+
+describe('langues activables sans catalogue (es, de, it)', () => {
+  // Ces langues n'ont PAS de catalogue compilé : c'est le compte qui les
+  // remplit depuis l'écran « Langues & vocabulaire ». Le garde-fou de
+  // complétude (`tsc -b` + parité des clés) ne vaut donc que pour fr/en — ces
+  // tests-ci sont ce qui le remplace pour les autres.
+  beforeEach(() => useI18nOverridesStore.getState().reset())
+
+  it('ne garantit la couverture totale que pour fr et en', () => {
+    expect([...COMPILED_LOCALES]).toEqual(['fr', 'en'])
+    for (const locale of COMPILED_LOCALES) {
+      const catalogue = locale === 'fr' ? fr : en
+      expect(Object.keys(catalogue).length, `catalogue ${locale} incomplet`).toBe(
+        Object.keys(fr).length,
+      )
+    }
+  })
+
+  it('retombe sur le FRANÇAIS pour une langue sans catalogue', () => {
+    expect(translate('es', 'login.welcome')).toBe(fr['login.welcome'])
+    expect(translate('de', 'login.welcome')).toBe(fr['login.welcome'])
+  })
+})
+
+describe('surcharges de vocabulaire par compte', () => {
+  beforeEach(() => useI18nOverridesStore.getState().reset())
+
+  it('passe DEVANT le catalogue compilé', () => {
+    useI18nOverridesStore.getState().setOverride('en', 'login.welcome', 'Howdy')
+    expect(translate('en', 'login.welcome')).toBe('Howdy')
+    // …sans contaminer les autres langues.
+    expect(translate('fr', 'login.welcome')).toBe(fr['login.welcome'])
+  })
+
+  it('remplit une langue qui n’a pas de catalogue', () => {
+    useI18nOverridesStore.getState().setOverride('es', 'login.welcome', 'Bienvenido')
+    expect(translate('es', 'login.welcome')).toBe('Bienvenido')
+    // Une clé non surchargée reste en français, elle ne disparaît pas.
+    expect(translate('es', 'login.workspace')).toBe(fr['login.workspace'])
+  })
+
+  it('interpole les paramètres DANS la surcharge', () => {
+    // Piège : une surcharge saisie à la main peut oublier le `{name}` du
+    // gabarit d'origine — mais si elle le garde, il doit être interpolé comme
+    // dans le catalogue, sinon le client voit « {name} » à l'écran.
+    useI18nOverridesStore.getState().setOverride('fr', 'login.welcome', 'Salut {name}')
+    expect(translate('fr', 'login.welcome', { name: 'Léa' })).toBe('Salut Léa')
+  })
+
+  it('rend la clé au catalogue quand la surcharge est retirée', () => {
+    const store = useI18nOverridesStore.getState()
+    store.setOverride('fr', 'login.welcome', 'Coucou')
+    store.setOverride('fr', 'login.welcome', null)
+    expect(translate('fr', 'login.welcome')).toBe(fr['login.welcome'])
+  })
+
+  it('incrémente `version` à chaque mutation — c’est ce qui re-rend l’écran', () => {
+    const before = useI18nOverridesStore.getState().version
+    useI18nOverridesStore.getState().setOverride('fr', 'login.welcome', 'Coucou')
+    expect(useI18nOverridesStore.getState().version).toBeGreaterThan(before)
   })
 })

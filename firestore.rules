@@ -97,6 +97,32 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── Comptes : vocabulaire d'interface ─────────────────────────────────────
+    // Un compte porte les libellés qu'une ENTREPRISE réécrit à son métier (un
+    // distributeur GSA dit « volume » là où un GSB dit « contenance »). Ce sont
+    // des libellés d'interface, jamais des données client : la lecture est
+    // ouverte à tout utilisateur actif, sans quoi l'écran s'afficherait d'abord
+    // dans le vocabulaire générique avant de basculer sous les yeux du client.
+    // L'écriture, elle, engage tous les membres du compte : elle exige la
+    // permission `settings.i18n.edit` ET de viser SON PROPRE compte.
+    function ownAccount(accountId) {
+      return isAuthenticated() && accessData().get('accountId', 'default') == accountId;
+    }
+    function canEditVocabulary(accountId) {
+      return isAdmin() || (hasPermission('settings.i18n.edit') && ownAccount(accountId));
+    }
+
+    match /accounts/{accountId} {
+      allow read:  if isActiveUser();
+      allow write: if canEditVocabulary(accountId);
+
+      // Un document par langue : `entries` = { TranslationKey: texte réécrit }.
+      match /i18nOverrides/{locale} {
+        allow read:  if isActiveUser();
+        allow write: if canEditVocabulary(accountId);
+      }
+    }
+
     match /users/{uid} {
       // Lecture : soi-même ou l'admin.
       allow read: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
@@ -104,14 +130,18 @@ service cloud.firestore {
       // (profil, secrets perso) SAUF les champs d'accès RBAC — sinon il pourrait s'auto-
       // attribuer des permissions (escalade de privilèges). Create/update séparés car
       // `resource` est null à la création du doc.
+      // ⚠️ `accountId` est dans cette liste pour la MÊME raison : c'est lui qui décide
+      // de quel compte on lit et écrit le vocabulaire (cf. `ownAccount`). Laissé au
+      // user, il suffirait de se rattacher au compte d'un tiers pour en réécrire les
+      // libellés. Le rattachement est une décision d'administration.
       allow create: if isAdmin()
                     || (isAuthenticated() && request.auth.uid == uid
-                        && !request.resource.data.keys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked']));
+                        && !request.resource.data.keys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked', 'accountId']));
       // Le user peut écrire son propre `usage` (compteurs de quota) mais jamais le
       // DÉCROÎTRE (usageMonotonic) : seul l'admin peut réinitialiser un quota démo.
       allow update: if isAdmin()
                     || (isAuthenticated() && request.auth.uid == uid
-                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked'])
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked', 'accountId'])
                         && usageMonotonic());
       // Suppression du profil : admin uniquement (écran « Utilisateurs & rôles »).
       allow delete: if isAdmin();

@@ -1,8 +1,40 @@
 import { create } from 'zustand'
 import { recordAudit } from '@/lib/auditLog'
 
-/** Langues servies par l'application. `en` = anglais BRITANNIQUE (en-GB). */
-export type Locale = 'fr' | 'en'
+/**
+ * Langues servies par l'application. `en` = anglais BRITANNIQUE (en-GB).
+ *
+ * ⚠️ Seules `fr` et `en` possèdent un CATALOGUE COMPILÉ (`lib/i18n/fr.ts`,
+ * `en.ts`). Les autres sont des langues *activables* par un compte : elles
+ * s'affichent à partir des surcharges saisies dans l'écran « Langues &
+ * vocabulaire », et retombent clé par clé sur le français pour tout ce qui
+ * n'a pas encore été traduit. Cf. `COMPILED_LOCALES` dans `lib/i18n`.
+ */
+export type Locale = 'fr' | 'en' | 'es' | 'de' | 'it'
+
+/** Toutes les langues connues, dans l'ordre d'affichage des sélecteurs. */
+export const ALL_LOCALES: readonly Locale[] = ['fr', 'en', 'es', 'de', 'it'] as const
+
+/**
+ * Étiquette BCP 47 par langue — pilote `Intl.*`, la césure et le correcteur.
+ * `en-GB` et non `en` : orthographe et format de date britanniques.
+ */
+export const BCP47: Record<Locale, string> = {
+  fr: 'fr-FR',
+  en: 'en-GB',
+  es: 'es-ES',
+  de: 'de-DE',
+  it: 'it-IT',
+}
+
+/** Nom NATIF de la langue (endonyme) — ne se traduit jamais, cf. LocaleSwitcher. */
+export const LOCALE_ENDONYM: Record<Locale, string> = {
+  fr: 'Français',
+  en: 'English',
+  es: 'Español',
+  de: 'Deutsch',
+  it: 'Italiano',
+}
 
 const STORAGE_KEY = 'localePref'
 
@@ -12,7 +44,7 @@ const STORAGE_KEY = 'localePref'
  * store ↔ catalogue relevé par `npm run cycles`.
  */
 function isLocale(v: unknown): v is Locale {
-  return v === 'fr' || v === 'en'
+  return typeof v === 'string' && (ALL_LOCALES as readonly string[]).includes(v)
 }
 
 /** Langue initiale : préférence stockée, sinon langue du navigateur, sinon FR. */
@@ -21,7 +53,9 @@ function initialLocale(): Locale {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (isLocale(stored)) return stored
   } catch { /* localStorage indisponible (Safari privé) : on retombe sur le navigateur */ }
-  return navigator.language?.toLowerCase().startsWith('en') ? 'en' : 'fr'
+  // `navigator.language` vaut « en-GB », « es-419 »… : on ne garde que le préfixe.
+  const nav = navigator.language?.toLowerCase().split('-')[0]
+  return isLocale(nav) ? nav : 'fr'
 }
 
 interface LocaleState {
@@ -32,8 +66,7 @@ interface LocaleState {
 const initial = initialLocale()
 
 function applyToDom(locale: Locale) {
-  // `en-GB` et non `en` : pilote les césures, guillemets et l'orthographe du correcteur.
-  document.documentElement.lang = locale === 'en' ? 'en-GB' : 'fr'
+  document.documentElement.lang = BCP47[locale]
 }
 
 export const useLocaleStore = create<LocaleState>((set, get) => ({

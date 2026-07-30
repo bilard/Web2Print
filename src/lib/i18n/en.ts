@@ -4664,4 +4664,58 @@ export const en: Record<TranslationKey, string> = {
   'rp.layer.priceNow': 'Promo price',
   'rp.layer.footer': 'Footer',
   'anim.persisted': '✓ {name} animation persisted on the object.',
+
+  // — Languages & wording ————————————————————————————————————————————
+  'settings.tab.vocabulary': 'Languages & wording',
+  'perm.settings.i18n.edit': 'Edit the account wording',
+  'perm.settings.i18n.edit.desc':
+    'Rewrite interface labels and enable languages, for every member of the account.',
+
+  'i18n.mode.title': 'On-screen label editing',
+  'i18n.mode.desc':
+    'Once the mode is on, Alt+click any text in the application to open its editor. The wording changes for every member of the account.',
+  'i18n.mode.on': 'Editing mode on',
+  'i18n.mode.off': 'Turn on editing mode',
+
+  'i18n.locales.title': 'Languages served',
+  'i18n.locales.desc':
+    'French and English ship fully translated. Other languages show the wording you enter, and fall back to French for the rest.',
+  'i18n.locales.translated': 'Full translation shipped',
+  'i18n.locales.partial': '{count} of {total} labels defined',
+  'i18n.locales.locked': 'Fallback language, always on',
+
+  'i18n.context.title': 'Trade wording',
+  'i18n.context.desc':
+    'Describe your sector in a few words. Automatic translation uses it to pick the term your trade actually uses rather than the common synonym.',
+  'i18n.context.placeholder': 'DIY equipment distribution',
+
+  'i18n.overrides.title': 'Rewritten labels',
+  'i18n.overrides.titleCount': 'Rewritten labels — {count} in {locale}',
+  'i18n.overrides.desc':
+    'Correct a text, or push it to the other active languages.',
+  'i18n.overrides.empty':
+    'No label rewritten yet. Turn on editing mode, then Alt+click the word you want to change.',
+  'i18n.overrides.was': 'originally: {text}',
+
+  'i18n.bulk.translateAll': 'Translate all',
+  'i18n.bulk.done': '{count} of {total} labels translated',
+
+  'i18n.edit.title': 'Rewrite this label',
+  'i18n.edit.whichKey': 'This text is used in several places — which one do you want to change?',
+  'i18n.edit.translate': 'Translate',
+  'i18n.edit.translating': 'Translating…',
+  'i18n.edit.translateHint': 'Translate into: {langs}',
+  'i18n.edit.reset': 'Restore the original label',
+  'i18n.edit.save': 'Save',
+  'i18n.edit.close': 'Close',
+  'i18n.edit.noPermission':
+    'You are not allowed to change the wording of this account.',
+  'i18n.edit.fromAttribute': 'Text taken from the {attr} attribute',
+  'i18n.edit.saveFailed': 'The label could not be saved.',
+  'i18n.edit.tooLarge':
+    'Too many labels rewritten for this language — the wording can no longer be saved.',
+  'i18n.edit.translateFailed': 'Automatic translation failed.',
+  'i18n.edit.noOtherLocale': 'No other active language to translate into.',
+  'i18n.edit.modeHint': 'Alt+click a text to rewrite it',
+  'i18n.edit.exitMode': 'Leave editing mode',
 }

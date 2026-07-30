@@ -70,6 +70,7 @@ type LLMTask =
   | 'design.promoPlan'
   | 'catalog.plan'
   | 'catalog.inspiration'
+  | 'i18n.labelTranslation'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -165,6 +166,10 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // Inspiration : Vision multimodale sur un visuel de référence (Dribbble, moodboard…)
   // → palette + brief de mise en page. Gemini Pro Vision primary (comme imageDecompose).
   'catalog.inspiration': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
+  // Traduction de LIBELLÉS d'interface : phrases courtes, terminologie métier à
+  // respecter au mot près. Claude en primaire — un contresens sur « contenance »
+  // se retrouve tel quel dans l'interface de tous les membres du compte.
+  'i18n.labelTranslation': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -201,6 +206,8 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   // Plan de catalogue : composition créative (thème, densités) mais bornée par le schéma.
   'catalog.plan': 0.5,
   'catalog.inspiration': 0.3,
+  // Traduction : aucune place à l'invention, on veut le mot juste et stable.
+  'i18n.labelTranslation': 0,
 }
 
 interface GenerateJsonOptions<T> {

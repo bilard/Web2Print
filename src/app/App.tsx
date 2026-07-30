@@ -5,6 +5,7 @@ import { AuthProvider } from '@/features/auth/AuthProvider'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { AiLiveIndicator } from '@/components/shared/AiLiveIndicator'
 import { TopProgressBar } from '@/components/shared/TopProgressBar'
+import { LabelEditorOverlay } from '@/components/shared/LabelEditorOverlay'
 import { useThemeStore } from '@/stores/theme.store'
 import { useVersionCheck } from '@/features/app/useVersionCheck'
 import { router } from './router'
@@ -33,6 +34,7 @@ export default function App() {
           <RouterProvider router={router} />
           <TopProgressBar />
           <AiLiveIndicator />
+          <LabelEditorOverlay />
           <ThemedToaster />
         </AuthProvider>
       </QueryClientProvider>

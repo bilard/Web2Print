@@ -4745,6 +4745,60 @@ export const fr = {
   'rp.layer.priceNow': 'Prix promo',
   'rp.layer.footer': 'Pied de page',
   'anim.persisted': '✓ Animation {name} persistée sur l’objet.',
+
+  // — Langues & vocabulaire du compte ————————————————————————————————
+  'settings.tab.vocabulary': 'Langues & vocabulaire',
+  'perm.settings.i18n.edit': 'Modifier le vocabulaire du compte',
+  'perm.settings.i18n.edit.desc':
+    "Réécrire les libellés de l'interface et activer des langues, pour tous les membres du compte.",
+
+  'i18n.mode.title': 'Édition des libellés à l’écran',
+  'i18n.mode.desc':
+    "Une fois le mode actif, Alt+clic sur n'importe quel texte de l'application ouvre son éditeur. Le mot change pour tous les membres du compte.",
+  'i18n.mode.on': 'Mode édition actif',
+  'i18n.mode.off': 'Activer le mode édition',
+
+  'i18n.locales.title': 'Langues servies',
+  'i18n.locales.desc':
+    "Le français et l'anglais sont livrés entièrement traduits. Les autres langues affichent le vocabulaire que vous saisissez, et retombent sur le français pour le reste.",
+  'i18n.locales.translated': 'Traduction complète livrée',
+  'i18n.locales.partial': '{count} libellés définis sur {total}',
+  'i18n.locales.locked': 'Langue de repli, toujours active',
+
+  'i18n.context.title': 'Vocabulaire métier',
+  'i18n.context.desc':
+    "Décrivez votre secteur en quelques mots. La traduction automatique s'en sert pour choisir le terme réellement employé par votre métier plutôt que le synonyme courant.",
+  'i18n.context.placeholder': 'Distribution de matériel de bricolage (GSB)',
+
+  'i18n.overrides.title': 'Libellés réécrits',
+  'i18n.overrides.titleCount': 'Libellés réécrits — {count} en {locale}',
+  'i18n.overrides.desc':
+    'Corrigez un texte, ou propagez-le aux autres langues actives.',
+  'i18n.overrides.empty':
+    "Aucun libellé réécrit pour l'instant. Activez le mode édition, puis Alt+clic sur le mot à changer.",
+  'i18n.overrides.was': "à l'origine : {text}",
+
+  'i18n.bulk.translateAll': 'Tout traduire',
+  'i18n.bulk.done': '{count} libellés traduits sur {total}',
+
+  'i18n.edit.title': 'Réécrire ce libellé',
+  'i18n.edit.whichKey': 'Ce texte sert à plusieurs endroits — lequel modifier ?',
+  'i18n.edit.translate': 'Traduire',
+  'i18n.edit.translating': 'Traduction…',
+  'i18n.edit.translateHint': 'Traduire vers : {langs}',
+  'i18n.edit.reset': "Rétablir le libellé d'origine",
+  'i18n.edit.save': 'Enregistrer',
+  'i18n.edit.close': 'Fermer',
+  'i18n.edit.noPermission':
+    "Vous n'avez pas le droit de modifier le vocabulaire de ce compte.",
+  'i18n.edit.fromAttribute': "Texte issu de l'attribut {attr}",
+  'i18n.edit.saveFailed': "Le libellé n'a pas pu être enregistré.",
+  'i18n.edit.tooLarge':
+    'Trop de libellés réécrits pour cette langue — le vocabulaire ne peut plus être enregistré.',
+  'i18n.edit.translateFailed': 'La traduction automatique a échoué.',
+  'i18n.edit.noOtherLocale': 'Aucune autre langue active à traduire.',
+  'i18n.edit.modeHint': 'Alt+clic sur un texte pour le réécrire',
+  'i18n.edit.exitMode': 'Quitter le mode édition',
 } as const
 
 /** Clé de traduction valide — dérivée du catalogue FR. */

@@ -7,6 +7,7 @@ import { useApiKeysSync } from '@/features/settings/useApiKeysSync'
 import { useTelegramSettingsSync } from '@/features/settings/useTelegramSettingsSync'
 import { useSiteCookiesSync } from '@/features/settings/useSiteCookiesSync'
 import { useAccessInit } from '@/features/access/useAccess'
+import { useAccountI18nSync } from '@/features/i18n/useAccountI18nSync'
 
 interface AuthProviderProps {
   children: React.ReactNode
@@ -17,6 +18,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useAiSettingsSync()
   useThemeSync()
   useLocaleSync()
+  useAccountI18nSync()
   useApiKeysSync()
   useTelegramSettingsSync()
   useSiteCookiesSync()
