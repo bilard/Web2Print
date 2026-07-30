@@ -6,6 +6,7 @@ import { Radio } from 'lucide-react'
 import { auth } from '@/lib/firebase/config'
 import { useLiveTraffic } from '../useLiveTraffic'
 import { useUsersMap } from '../useUsersMap'
+import { t } from '@/lib/i18n'
 
 /** Drapeau emoji depuis un code pays ISO alpha-2 (même rendu que Telegram). */
 function flagEmoji(cc: string | null): string {
@@ -32,10 +33,10 @@ export function AnalyticsLiveFeed() {
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
           <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-400" />
         </span>
-        <span className="ml-auto text-[10px] text-white/35">le même flux que les alertes Telegram</span>
+        <span className="ml-auto text-[10px] text-white/35">{t('an.sameFeedAsTelegram')}</span>
       </div>
       {feed.length === 0 ? (
-        <p className="text-xs text-white/40">Aucune activité récente — les visites apparaîtront ici en temps réel.</p>
+        <p className="text-xs text-white/40">{t('an.noRecentActivity')}</p>
       ) : (
         <ul className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
           {feed.map((e, i) => {

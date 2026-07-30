@@ -14,6 +14,7 @@ import { globalIdmlSource } from '@/features/idml/idmlSource'
 import { withProgress } from '@/stores/progress.store'
 import { notify } from '@/lib/notify'
 import type { PngDpi } from './useExportPng'
+import { t } from '@/lib/i18n'
 
 type Format = 'png' | 'pdf' | 'pptx' | 'html' | 'svg' | 'idml' | 'pack' | 'decline'
 type ExportStatus = 'idle' | 'exporting' | 'done' | 'error'
@@ -23,14 +24,14 @@ interface ExportModalProps {
 }
 
 const ALL_FORMATS: { id: Format; label: string; icon: React.ComponentType<{ className?: string }>; desc: string; color: string; idmlOnly?: boolean }[] = [
-  { id: 'png',  label: 'PNG',       icon: ImageIcon,    desc: 'Image haute résolution',  color: 'text-emerald-400' },
+  { id: 'png',  label: 'PNG',       icon: ImageIcon,    desc: t('ex.png.desc'),  color: 'text-emerald-400' },
   { id: 'pdf',  label: 'PDF',       icon: FileText,     desc: 'Document imprimable',     color: 'text-red-400'     },
-  { id: 'pptx', label: 'PowerPoint',icon: Presentation, desc: 'Présentation éditable',  color: 'text-orange-400'  },
+  { id: 'pptx', label: 'PowerPoint',icon: Presentation, desc: t('ex.pptx.desc'),  color: 'text-orange-400'  },
   { id: 'html', label: 'HTML',      icon: Code2,        desc: 'Dossier web complet',     color: 'text-sky-400'     },
-  { id: 'svg',  label: 'SVG',       icon: Shapes,       desc: 'Vectoriel éditable',      color: 'text-purple-400'  },
-  { id: 'idml', label: 'IDML',      icon: Package,      desc: 'InDesign modifié',        color: 'text-violet-400', idmlOnly: true },
-  { id: 'pack', label: 'Pack social', icon: Share2,      desc: 'Carré, story, paysage, bannière (zip)', color: 'text-pink-400' },
-  { id: 'decline', label: 'Pages déclinées', icon: LayoutGrid, desc: 'Une page éditable par format', color: 'text-cyan-400' },
+  { id: 'svg',  label: 'SVG',       icon: Shapes,       desc: t('ex.svg.desc'),      color: 'text-purple-400'  },
+  { id: 'idml', label: 'IDML',      icon: Package,      desc: t('ex.idml.desc'),        color: 'text-violet-400', idmlOnly: true },
+  { id: 'pack', label: 'Pack social', icon: Share2,      desc: t('ex.pack.desc'), color: 'text-pink-400' },
+  { id: 'decline', label: t('ex.decline.label'), icon: LayoutGrid, desc: t('ex.decline.desc'), color: 'text-cyan-400' },
 ]
 
 export function ExportModal({ onClose }: ExportModalProps) {
@@ -148,7 +149,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
           {/* Options PNG */}
           {format === 'png' && (
             <div>
-              <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Résolution</p>
+              <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">{t('ex.resolution')}</p>
               <div className="flex gap-2">
                 {([72, 150, 300] as PngDpi[]).map((d) => (
                   <button

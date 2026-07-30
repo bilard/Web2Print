@@ -5,6 +5,7 @@
 import type { CompetitorSite, SiteEngine, SiteMode } from './types'
 import { parseSitesConfig, stableId } from './core'
 import { DEFAULT_WATCH_ID } from './paths'
+import { t } from '@/lib/i18n'
 
 /** Ligne de config du node « Sites sources » (JSON-sérialisable dans le workflow). */
 export interface SourceSiteRow {
@@ -133,7 +134,7 @@ export const SITE_STATUS_META: Record<SiteStatus, { label: string; short: string
   waiting:  { label: 'Attend le cycle', short: 'en attente', icon: '⏸', tone: 'mute' },
   error:    { label: 'Sans catalogue', short: 'sans catalogue', icon: '✗', tone: 'err' },
   never:    { label: 'Jamais',       short: 'jamais',       icon: '○', tone: 'mute' },
-  disabled: { label: 'Désactivé',    short: 'désactivés',   icon: '—', tone: 'mute' },
+  disabled: { label: t('pw.tail.disabled'),    short: t('pw.tail.disabledShort'),   icon: '—', tone: 'mute' },
 }
 
 export interface ResolvedSites {

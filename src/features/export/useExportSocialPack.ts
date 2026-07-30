@@ -8,12 +8,13 @@ import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useEditorStore } from '@/stores/editor.store'
 import { recordAudit } from '@/lib/auditLog'
 import { useUIStore } from '@/stores/ui.store'
+import { t } from '@/lib/i18n'
 
 const PACK_TARGETS = [
-  { id: 'post-carre', label: 'Post carré', w: 1080, h: 1080 },
+  { id: 'post-carre', label: t('ex.fmt.squarePost'), w: 1080, h: 1080 },
   { id: 'story', label: 'Story / Reel', w: 1080, h: 1920 },
   { id: 'post-paysage', label: 'Post paysage', w: 1920, h: 1080 },
-  { id: 'banniere', label: 'Bannière', w: 1500, h: 500 },
+  { id: 'banniere', label: t('ex.fmt.banner'), w: 1500, h: 500 },
 ] as const
 
 /** Rend la page (sans grille ni marques) en PNG haute résolution. */

@@ -5,6 +5,7 @@ import { Chart, PointElement, LinearScale, Tooltip, Legend, type TooltipItem } f
 import { useThemeStore } from '@/stores/theme.store'
 import type { Cockpit, CockpitFilter } from './analytics'
 import { POSITION_HEX, POSITION_LABEL } from './format'
+import { t } from '@/lib/i18n'
 
 Chart.register(PointElement, LinearScale, Tooltip, Legend)
 
@@ -34,11 +35,11 @@ export function PriceScatter({ ck, onSelect, height }: { ck: Cockpit; onSelect?:
     // de la carte (alignée sur la heatmap voisine) ; en modale, `height` explicite prime.
     <div className="bg-surface rounded-lg p-4 h-full flex flex-col">
       <div className="flex items-baseline justify-between mb-3">
-        <div className="text-sm font-semibold text-white">Prix × écart concurrent</div>
+        <div className="text-sm font-semibold text-white">{t('pw.tail.priceVsGap')}</div>
         <div className="text-[11px] text-white/35">{pts.length} produits{ck.truncated ? ' · top 1000' : ''}</div>
       </div>
       {pts.length === 0 ? (
-        <div className="text-white/40 text-sm py-10 text-center">Aucun produit chiffré dans la vue.</div>
+        <div className="text-white/40 text-sm py-10 text-center">{t('pw.tail.noQuantifiedProduct')}</div>
       ) : (
         // ⚠ Chart.js (maintainAspectRatio:false) dans un conteneur SANS hauteur propre
         // entre en boucle de croissance (canvas ↑ → div ↑ → canvas ↑ : page qui enfle à

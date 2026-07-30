@@ -1,22 +1,23 @@
 // Tableau dense des coûts par connecteur (mois courant) : volume, coût €, budget, restant.
 import type { CostRow } from './costModel'
 import { eur } from './costModel'
+import { t } from '@/lib/i18n'
 
 const GROUP_HEX: Record<string, string> = { LLM: '#818cf8', Scraping: '#fbbf24', Image: '#34d399' }
 
 export function ConnectorTable({ rows }: { rows: CostRow[] }) {
   return (
     <div className="bg-surface rounded-lg p-4">
-      <div className="text-sm font-semibold text-white mb-3">Coûts par connecteur — ce mois</div>
+      <div className="text-sm font-semibold text-white mb-3">{t('fi.connectorCosts')}</div>
       {rows.length === 0 ? (
-        <div className="text-white/40 text-sm py-8 text-center">Aucune consommation enregistrée ce mois-ci.</div>
+        <div className="text-white/40 text-sm py-8 text-center">{t('fi.noSpendThisMonth')}</div>
       ) : (
         <table className="w-full text-xs tabular-nums">
           <thead>
             <tr className="text-white/40 text-[10px] uppercase tracking-wide text-right">
               <th className="text-left font-medium pb-2">Connecteur</th>
               <th className="font-medium pb-2">Volume</th>
-              <th className="font-medium pb-2">Coût</th>
+              <th className="font-medium pb-2">{t('fi.cost')}</th>
               <th className="font-medium pb-2">Budget</th>
               <th className="font-medium pb-2 w-[26%]">Restant</th>
             </tr>

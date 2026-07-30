@@ -1,6 +1,7 @@
 // Compteur de consommation scraping EN LIVE dans le dashboard veille (surtout Jina, la
 // couche de fetch de la moisson/recherche dirigée). Évite d'ouvrir Paramètres/Finances.
 import { useScrapeSpend } from './useScrapeSpend'
+import { t } from '@/lib/i18n'
 
 const fmtTokens = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} M`
@@ -27,7 +28,7 @@ export function ScrapeSpendWidget() {
         <div className="text-[11px] text-white/40">ce mois · live</div>
       </div>
       {rows.length === 0 ? (
-        <p className="text-[11px] text-white/40">Aucune consommation ce mois. Le compteur monte dès que la moisson tourne.</p>
+        <p className="text-[11px] text-white/40">{t('pw.tail.noSpendThisMonth')}</p>
       ) : (
         <div className="space-y-2">
           {rows.map((r) => (

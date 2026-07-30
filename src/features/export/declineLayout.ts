@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n'
 // Déclinaisons multi-format v2 — re-projection géométrique du design vers des
 // pages éditables aux ratios cibles. Contrairement au « Pack social » (v1) qui
 // letterboxe un PNG figé, on transforme les objets Fabric eux-mêmes (scale
@@ -16,10 +17,10 @@ export interface DeclineTarget {
 
 /** Formats cibles par défaut (alignés sur le Pack social). */
 export const DECLINE_TARGETS: readonly DeclineTarget[] = [
-  { id: 'post-carre', label: 'Post carré', w: 1080, h: 1080 },
+  { id: 'post-carre', label: t('ex.fmt.squarePost'), w: 1080, h: 1080 },
   { id: 'story', label: 'Story / Reel', w: 1080, h: 1920 },
   { id: 'post-paysage', label: 'Post paysage', w: 1920, h: 1080 },
-  { id: 'banniere', label: 'Bannière', w: 1500, h: 500 },
+  { id: 'banniere', label: t('ex.fmt.banner'), w: 1500, h: 500 },
 ] as const
 
 /** Sous-ensemble des champs d'objet Fabric sérialisé que l'on transforme. */

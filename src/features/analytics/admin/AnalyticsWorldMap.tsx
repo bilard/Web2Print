@@ -5,6 +5,7 @@ import { useCityCoords } from '../useCityCoords'
 import { useMapViewport } from '../useMapViewport'
 import { BOUNDS, GRATICULE, buildDots, countryBox, type Dot } from './worldDots'
 import world from './worldPath.json'
+import { t } from '@/lib/i18n'
 
 const ACCENT = '#6366f1'
 const BTN = 'p-1 rounded bg-surface-2 border border-white/10 text-white/60 hover:text-white transition-colors'
@@ -101,11 +102,11 @@ export function AnalyticsWorldMap({ events, selectedCountry = null, onSelectCoun
         </svg>
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           <button type="button" onClick={zoomIn} aria-label="Zoomer" title="Zoomer (Ctrl/Cmd + molette, ou double-clic)" className={BTN}><Plus className="w-3.5 h-3.5" /></button>
-          <button type="button" onClick={zoomOut} aria-label="Dézoomer" title="Dézoomer" className={BTN}><Minus className="w-3.5 h-3.5" /></button>
+          <button type="button" onClick={zoomOut} aria-label={t('an.zoomOut')} title={t('an.zoomOut')} className={BTN}><Minus className="w-3.5 h-3.5" /></button>
           {zoomed && (
             <button
               type="button" onClick={() => { reset(); setSelected(null); onSelectCountry?.(null) }}
-              aria-label="Réinitialiser le zoom" title="Vue monde" className={BTN}
+              aria-label={t('an.resetZoom')} title={t('an.worldView')} className={BTN}
             ><RotateCcw className="w-3.5 h-3.5" /></button>
           )}
         </div>

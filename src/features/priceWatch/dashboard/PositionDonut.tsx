@@ -31,7 +31,7 @@ export function PositionDonut({ kpis, onSelect, height }: { kpis: ReportKpis; on
     <div className="bg-surface rounded-lg p-4">
       <div className="text-sm font-semibold text-white mb-3">{t('pw.chart.positioning')}</div>
       {total === 0 ? (
-        <div className="text-white/40 text-sm py-8 text-center">Aucune comparaison chiffrée.</div>
+        <div className="text-white/40 text-sm py-8 text-center">{t('pw.tail.noQuantified')}</div>
       ) : (
         <div className="mx-auto" style={{ maxWidth: height ? Math.min(height, 420) : 260 }}>
           <Doughnut

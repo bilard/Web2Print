@@ -20,6 +20,7 @@ const AnalyticsWorldMap = lazy(() =>
 )
 import { AnalyticsUsers } from './AnalyticsUsers'
 import { AnalyticsFilters } from './AnalyticsFilters'
+import { t } from '@/lib/i18n'
 
 const PERIODS: { key: PeriodKey; label: string }[] = [
   { key: 'today', label: "Aujourd'hui" },
@@ -134,7 +135,7 @@ export function AnalyticsTab() {
             onClick={() => setConfirmDelete(true)}
             disabled={events.length === 0}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-red-400/80 hover:text-red-300 bg-surface-2 hover:bg-red-500/10 disabled:opacity-40 disabled:pointer-events-none"
-            title="Supprimer définitivement les consultations correspondant aux filtres et à la période affichés"
+            title={t('an.purgeFiltered')}
           >
             <FilterX className="w-4 h-4" /> Supprimer le résultat
           </button>
@@ -171,7 +172,7 @@ export function AnalyticsTab() {
       <ConfirmDeleteDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
-        title="Supprimer le résultat filtré ?"
+        title={t('an.purgeConfirm')}
         description={<>
           Supprime <strong>définitivement les {events.length.toLocaleString('fr-FR')} consultation(s)</strong> correspondant
           à la période et aux filtres affichés (zone, appareil, pays, page, source, utilisateur).

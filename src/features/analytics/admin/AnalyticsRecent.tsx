@@ -3,6 +3,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Users, List } from 'lucide-reac
 import type { AnalyticsEvent } from '../metrics'
 import { recentEvents, pageLabel, countryName } from '../metrics'
 import { useUsersMap } from '../useUsersMap'
+import { t } from '@/lib/i18n'
 
 const PAGE_SIZE = 15
 const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
@@ -144,7 +145,7 @@ function GroupSection({ g, userName }: { g: Group; userName: (uid: string | null
             </div>
             {!collapsed && pages > 1 && (
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                <button type="button" onClick={() => setGp(Math.max(0, cur - 1))} disabled={cur === 0} aria-label="Page précédente" className="p-0.5 rounded text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronLeft className="w-3.5 h-3.5" /></button>
+                <button type="button" onClick={() => setGp(Math.max(0, cur - 1))} disabled={cur === 0} aria-label={t('an.prevPage')} className="p-0.5 rounded text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronLeft className="w-3.5 h-3.5" /></button>
                 <span className="text-white/40 text-[11px] tabular-nums">{cur + 1}/{pages}</span>
                 <button type="button" onClick={() => setGp(Math.min(pages - 1, cur + 1))} disabled={cur >= pages - 1} aria-label="Page suivante" className="p-0.5 rounded text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronRight className="w-3.5 h-3.5" /></button>
               </div>
@@ -211,7 +212,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
           </button>
           {!grouped && pageCount > 1 && (
             <>
-              <button type="button" onClick={() => setPage(Math.max(0, current - 1))} disabled={current === 0} aria-label="Page précédente" className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+              <button type="button" onClick={() => setPage(Math.max(0, current - 1))} disabled={current === 0} aria-label={t('an.prevPage')} className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
               <span className="text-white/40 text-xs tabular-nums">{current + 1} / {pageCount}</span>
               <button type="button" onClick={() => setPage(Math.min(pageCount - 1, current + 1))} disabled={current >= pageCount - 1} aria-label="Page suivante" className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"><ChevronRight className="w-4 h-4" /></button>
             </>

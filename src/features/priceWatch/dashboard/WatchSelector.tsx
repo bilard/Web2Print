@@ -7,6 +7,7 @@ import { Settings2, Workflow } from 'lucide-react'
 import type { WatchSummary } from '../useCatalogReport'
 import { when } from './format'
 import { WatchManager } from './WatchManager'
+import { t } from '@/lib/i18n'
 
 export function WatchSelector({ watches, value, onChange }: {
   watches: WatchSummary[]
@@ -31,7 +32,7 @@ export function WatchSelector({ watches, value, onChange }: {
           </option>
         ))}
       </select>
-      <button type="button" onClick={() => setManage(true)} title="Gérer les suivis"
+      <button type="button" onClick={() => setManage(true)} title={t('pw.tail.manageWatches')}
         className="p-1.5 rounded border border-white/10 text-white/40 hover:text-white/80 hover:border-white/25">
         <Settings2 className="w-3.5 h-3.5" />
       </button>

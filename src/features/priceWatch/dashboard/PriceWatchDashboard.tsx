@@ -127,7 +127,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <select value={filter.position} onChange={(e) => set({ position: e.target.value as CockpitFilter['position'] })} className={selCls}>
           <option value="all">{t('pw.filter.allPositions')}</option>
           <option value="cheaper">Concurrent moins cher</option>
-          <option value="aligned">Aligné</option>
+          <option value="aligned">{t('pw.tail.aligned')}</option>
           <option value="dearer">Je suis moins cher</option>
         </select>
         <select value={filter.famille} onChange={(e) => set({ famille: e.target.value })} className={selCls}>

@@ -37,7 +37,7 @@ export function CatalogTree({ ck, active, onSelect }: {
               className={`w-full flex items-center justify-between text-left rounded pl-4 pr-2 py-1.5 text-xs select-none focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-400/50 ${on ? 'bg-indigo-500/15 text-white' : 'text-white/70 hover:bg-white/[0.04]'}`}>
               <span className="truncate" title={f.famille}>{f.famille}</span>
               <span className="flex items-center gap-1.5 shrink-0">
-                {f.undercut > 0 && <span className="w-1.5 h-1.5 rounded-full bg-rose-400/80" title={`${f.undercut} produit(s) sous-coté(s)`} />}
+                {f.undercut > 0 && <span className="w-1.5 h-1.5 rounded-full bg-rose-400/80" title={t('pw.tail.familyUndercut', { count: f.undercut })} />}
                 <span className="text-white/35 tabular-nums">{f.count}</span>
               </span>
             </button>

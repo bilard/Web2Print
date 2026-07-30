@@ -14,7 +14,7 @@ export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch
   if (cols.length === 0 || rows.length === 0) {
     return (
       <div className="bg-surface rounded-lg p-4">
-        <div className="text-sm font-semibold text-white mb-3">Écart par concurrent × famille</div>
+        <div className="text-sm font-semibold text-white mb-3">{t('pw.tail.gapByCompetitorFamily')}</div>
         <div className="text-white/40 text-sm py-8 text-center">{t('pw.chart.notEnough')}</div>
       </div>
     )
@@ -23,7 +23,7 @@ export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch
   return (
     <div className="bg-surface rounded-lg p-4">
       <div className="flex items-baseline justify-between mb-3">
-        <div className="text-sm font-semibold text-white">Écart par concurrent × famille</div>
+        <div className="text-sm font-semibold text-white">{t('pw.tail.gapByCompetitorFamily')}</div>
         <div className="text-[11px] text-white/35">{t('pw.chart.avgGap')}{ck.truncated ? t('pw.chart.onTop1000') : ''}</div>
       </div>
       <div className="overflow-x-auto">

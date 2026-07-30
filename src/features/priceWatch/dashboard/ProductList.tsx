@@ -49,7 +49,7 @@ export function ProductList({ report }: { report: StoredReport }) {
           <select value={pos} onChange={(e) => { setPos(e.target.value as PosFilter); setShown(PAGE) }} className={selectCls}>
             <option value="all">{t('pw.filter.allPositions')}</option>
             <option value="undercut">Concurrent moins cher</option>
-            <option value="well-placed">Je suis bien placé</option>
+            <option value="well-placed">{t('pw.tail.wellPlaced')}</option>
           </select>
           <select value={site} onChange={(e) => { setSite(e.target.value); setShown(PAGE) }} className={selectCls}>
             <option value="">Tous concurrents</option>

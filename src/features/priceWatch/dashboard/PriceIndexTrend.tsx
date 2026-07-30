@@ -11,6 +11,7 @@ import { useThemeStore } from '@/stores/theme.store'
 import type { KpiHistoryPoint } from '../types'
 import { priceIndexSeries } from './analytics'
 import { when } from './format'
+import { t } from '@/lib/i18n'
 
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip)
 
@@ -62,7 +63,7 @@ export function PriceIndexTrend({ history, height = 220 }: { history: KpiHistory
     <div className="bg-surface rounded-lg p-4">
       <div className="mb-3">
         <div className="flex items-baseline justify-between gap-2">
-          <div className="text-sm font-semibold text-white">Évolution de votre indice tarif</div>
+          <div className="text-sm font-semibold text-white">{t('pw.tail.priceIndexTrend')}</div>
           <div className="text-[11px] text-white/35 tabular-nums">
             {last == null ? 'base 100 = marché' : `${Math.round(last)} aujourd’hui`}
             {drift != null && drift !== 0 && (

@@ -5,6 +5,7 @@ import type { StoredReport } from '../reportStore'
 import type { HarvestMeta, OpsCockpit } from '../dashboard/opsMetrics'
 import { siteStatus, HARVEST_LIVE_WINDOW_MS, type SiteStatus } from '../sourceSites'
 import { hhmm, timeAgo } from './radarFormat'
+import { t } from '@/lib/i18n'
 
 /** Fenêtre du battement de moisson — RÉEXPORT de la constante partagée avec l'app
  *  (`sourceSites.ts`) : deux valeurs différentes = deux comptes contradictoires à l'écran. */
@@ -101,7 +102,7 @@ export function scrapeStatus(ops: OpsCockpit | null, sched: RadarSchedule | null
     return { state: 'waiting', label: `En attente du prochain run · ${overdue ? 'imminent' : hhmm(sched.nextRunAt)}` }
   }
   const last = ops?.lastCollectAt != null ? ` · dernière ${timeAgo(ops.lastCollectAt, now)}` : ''
-  return { state: 'idle', label: `Scraping à l’arrêt (cron off)${last}` }
+  return { state: 'idle', label: t('pw.tail.scrapeIdle', { last }) }
 }
 
 /** Une ligne du tableau live : l'état d'un concurrent, méta LIVE prioritaire sur le

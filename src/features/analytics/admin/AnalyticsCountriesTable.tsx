@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { countryGroupStats, countryName, type AnalyticsEvent } from '../metrics'
+import { t } from '@/lib/i18n'
 
 const TH = 'font-medium text-left py-1.5 px-2 border-b border-white/10'
 const TD = 'py-1.5 px-2 border-b border-white/5'
@@ -32,10 +33,10 @@ export function AnalyticsCountriesTable({ events, selected, onSelect, className 
     <div className={`bg-surface rounded-lg p-4${className ? ` ${className}` : ''}`}>
       <div className="text-white/70 text-sm font-medium mb-3">
         Pays
-        <span className="text-white/35 font-normal ml-2">villes groupées · visites · dernière visite</span>
+        <span className="text-white/35 font-normal ml-2">{t('an.citiesGrouped')}</span>
       </div>
       {groups.length === 0 ? (
-        <div className="text-white/35 text-xs">Aucune donnée</div>
+        <div className="text-white/35 text-xs">{t('an.noData')}</div>
       ) : (
         <div className="overflow-x-auto">
         <table className="w-full text-xs border-collapse">

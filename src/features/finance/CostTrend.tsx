@@ -6,6 +6,7 @@ import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, type To
 import { useThemeStore } from '@/stores/theme.store'
 import type { MonthUsage } from '@/features/stats/useUsageHistory'
 import { USD_TO_EUR } from './costModel'
+import { t } from '@/lib/i18n'
 
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 
@@ -30,9 +31,9 @@ export function CostTrend({ history, height = 220 }: { history: MonthUsage[]; he
 
   return (
     <div className="bg-surface rounded-lg p-4">
-      <div className="text-sm font-semibold text-white mb-3">Évolution mensuelle des coûts</div>
+      <div className="text-sm font-semibold text-white mb-3">{t('fi.monthlyTrend')}</div>
       {!hasData ? (
-        <div className="text-white/40 text-sm py-12 text-center">Pas encore d’historique de coûts.</div>
+        <div className="text-white/40 text-sm py-12 text-center">{t('fi.noHistory')}</div>
       ) : (
         <div style={{ height }}>
           <Bar
