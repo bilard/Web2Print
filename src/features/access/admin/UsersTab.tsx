@@ -53,6 +53,19 @@ export function UsersTab() {
     refresh()
   }
 
+  /**
+   * ⚠️ Les valeurs françaises qui suivent (`aucun rôle`, `bloqué`, `accordé`…)
+   * ne passent PAS par le catalogue, et c'est volontaire : elles ne s'affichent
+   * pas, elles sont ÉCRITES dans `meta.before/after` du journal d'audit, donc
+   * persistées. Les traduire à l'écriture les figerait dans la langue de qui a
+   * agi — un même événement serait consigné « blocked » ou « bloqué » selon
+   * l'auteur, et le journal deviendrait illisible à la relecture.
+   *
+   * Les traduire correctement suppose de stocker une CLÉ et de traduire à
+   * l'affichage (`AuditLogView`), avec un repli sur les entrées déjà en base
+   * qui, elles, portent du texte libre. C'est un chantier du journal, pas de
+   * cet écran — les libellés affichés ici, eux, sont bien traduits.
+   */
   const roleName = (roleId: string | null) =>
     roleId ? (roles.find((r) => r.id === roleId)?.name ?? roleId) : 'aucun rôle'
 
@@ -117,12 +130,12 @@ export function UsersTab() {
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1.5 flex-1 min-w-[180px] bg-white/[0.04] border border-white/10 rounded-lg px-2.5 py-1.5 focus-within:border-indigo-500/50 transition-colors">
           <Search className="w-3.5 h-3.5 text-white/30" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher (email ou nom)…"
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('ac.searchPlaceholder')}
             className="flex-1 bg-transparent text-xs text-white placeholder:text-white/30 outline-none" />
         </div>
-        <span className="text-[11px] px-2 py-1 rounded-md bg-white/[0.04] text-white/50">{users.length} utilisateur(s)</span>
-        {pendingCount > 0 && <span className="text-[11px] px-2 py-1 rounded-md bg-amber-500/15 text-amber-300">{pendingCount} en attente</span>}
-        {blockedCount > 0 && <span className="text-[11px] px-2 py-1 rounded-md bg-red-500/15 text-red-300">{blockedCount} bloqué(s)</span>}
+        <span className="text-[11px] px-2 py-1 rounded-md bg-white/[0.04] text-white/50">{t('ac.userCount', { count: users.length })}</span>
+        {pendingCount > 0 && <span className="text-[11px] px-2 py-1 rounded-md bg-amber-500/15 text-amber-300">{t('ac.pendingCount', { count: pendingCount })}</span>}
+        {blockedCount > 0 && <span className="text-[11px] px-2 py-1 rounded-md bg-red-500/15 text-red-300">{t('ac.blockedCount', { count: blockedCount })}</span>}
       </div>
 
       {filtered.map((u) => {
@@ -141,15 +154,15 @@ export function UsersTab() {
                   <p className="text-sm text-white/90 truncate">{u.displayName || u.email}</p>
                   {owner && <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300"><ShieldCheck className="w-2.5 h-2.5" /> admin</span>}
                   {u.accessBlocked && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">{t('ac.blocked')}</span>}
-                  {!u.accessBlocked && !u.accessRoleId && !owner && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">en attente</span>}
+                  {!u.accessBlocked && !u.accessRoleId && !owner && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">{t('ac.pending')}</span>}
                   {!owner && u.accessRoleId && !u.accessBlocked && roleOf(u) && <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-200">{roleOf(u)!.name}</span>}
                 </div>
-                <p className="text-[10px] text-white/30 truncate flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> {u.email} · vu {formatLastSeen(u.lastSeenAt)}</p>
+                <p className="text-[10px] text-white/30 truncate flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> {u.email} · {t('ac.seenPrefix')} {formatLastSeen(u.lastSeenAt)}</p>
               </div>
               {!owner && (
                 <select value={u.accessRoleId ?? ''} onChange={(e) => setRole(u, e.target.value)} disabled={u.accessBlocked}
                   className="bg-white/[0.05] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/80 disabled:opacity-40 hover:border-white/20 transition-colors">
-                  <option value="">— en attente —</option>
+                  <option value="">{t('ac.noRoleOption')}</option>
                   {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               )}
@@ -181,11 +194,11 @@ export function UsersTab() {
                   </button>
                   <button onClick={() => setConfirmDelete(confirmDelete === u.uid ? null : u.uid)}
                     className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/40 hover:text-red-300 hover:border-red-500/40 transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                    <Trash2 className="w-3.5 h-3.5" /> {t('ac.delete')}
                   </button>
                   {(u.accessGrants.length > 0 || u.accessRevokes.length > 0) && (
                     <button onClick={() => resetOverrides(u)} className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 transition-colors">
-                      <RotateCcw className="w-3.5 h-3.5" /> Réinitialiser les surcharges
+                      <RotateCcw className="w-3.5 h-3.5" /> {t('ac.resetOverrides')}
                     </button>
                   )}
                 </div>
@@ -202,11 +215,11 @@ export function UsersTab() {
                     <div className="flex items-center gap-2">
                       <button onClick={() => removeUser(u)}
                         className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-[#fff] transition-colors">
-                        <Trash2 className="w-3.5 h-3.5" /> Confirmer la suppression
+                        <Trash2 className="w-3.5 h-3.5" /> {t('ac.confirmDelete')}
                       </button>
                       <button onClick={() => setConfirmDelete(null)}
                         className="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white/80 transition-colors">
-                        Annuler
+                        {t('ac.cancel')}
                       </button>
                     </div>
                   </div>
@@ -217,9 +230,9 @@ export function UsersTab() {
 
                 {/* Permissions effectives */}
                 <div>
-                  <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1.5">Peut faire ({eff.length})</p>
+                  <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1.5">{t('ac.canDo', { count: eff.length })}</p>
                   {eff.length === 0
-                    ? <p className="text-[11px] text-white/30">{u.accessBlocked ? 'Compte bloqué — aucun accès.' : 'Aucune permission (en attente d\'un rôle).'}</p>
+                    ? <p className="text-[11px] text-white/30">{u.accessBlocked ? t('ac.blockedNoAccess') : t('ac.noPermission')}</p>
                     : <div className="flex flex-wrap gap-1">
                         {eff.map((k) => {
                           const mm = moduleMeta(MODULE_OF[k] ?? '')
@@ -231,10 +244,10 @@ export function UsersTab() {
                 {/* Surcharges */}
                 <div>
                   <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1.5 flex items-center gap-2">
-                    Ajuster
+                    {t('ac.adjust')}
                     <span className="inline-flex items-center gap-1 text-[9px] font-normal normal-case tracking-normal text-white/30">
-                      <Plus className="w-2.5 h-2.5 text-emerald-400" />accorder
-                      <Minus className="w-2.5 h-2.5 text-red-400 ml-1" />retirer
+                      <Plus className="w-2.5 h-2.5 text-emerald-400" />{t('ac.grantShort')}
+                      <Minus className="w-2.5 h-2.5 text-red-400 ml-1" />{t('ac.revokeShort')}
                     </span>
                   </p>
                   <div className="flex flex-col gap-2">
@@ -274,7 +287,7 @@ export function UsersTab() {
           </div>
         )
       })}
-      {filtered.length === 0 && <p className="text-[11px] text-white/20 text-center py-3">Aucun utilisateur{query ? ' pour cette recherche' : ''}.</p>}
+      {filtered.length === 0 && <p className="text-[11px] text-white/20 text-center py-3">{query ? t('ac.noUsersForSearch') : t('ac.noUsers')}</p>}
     </div>
   )
 }

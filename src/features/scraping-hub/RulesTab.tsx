@@ -65,7 +65,7 @@ export function RulesTab() {
             className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-400/30 text-xs inline-flex items-center gap-1.5 disabled:opacity-40"
           >
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            Enregistrer
+            {t('sh.save')}
           </button>
         )}
       </div>
@@ -73,7 +73,7 @@ export function RulesTab() {
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder={"## Conventions de nommage\n- Nom produit = Marque + Modèle + Référence (ex. « Makita DDA351RTJ »)\n- Pas de majuscules accentuées dans les titres\n\n## Prix\n- Toujours TTC, devise EUR, format « 6,50 € » (virgule décimale)\n- Si prix barré : garder le prix actuel, pas le barré\n\n## Descriptions\n- Langue : français\n- Specs au format CLÉ / VALEUR\n\n## Pièges connus\n- Jamais de parser par marque (toujours généraliste Jina + LLM)\n- Milwaukee : specs derrière le dropdown SKU\n"}
+          placeholder={t('sh.rulesPlaceholder')}
           className="p-4 bg-black/40 text-white/80 font-mono text-[12px] leading-relaxed resize-none outline-none border-r border-white/10"
         />
         <div className="p-4 overflow-auto bg-background prose prose-invert prose-sm max-w-none prose-headings:text-white/90 prose-a:text-indigo-300 prose-code:text-amber-300 prose-code:bg-white/5 prose-code:px-1 prose-code:rounded">

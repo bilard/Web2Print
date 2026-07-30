@@ -30,53 +30,69 @@ export function auditModuleOf(action: string): string {
   return head === 'workflow' ? 'workflows' : head
 }
 
-/** Libellés FR des actions (pour le filtre QUOI et l'affichage). Étendre au besoin. */
+/** Action → CLÉ de traduction de son libellé (filtre « Quoi » et colonne Action).
+ *  ⚠️ Ce sont des clés, pas du texte : le libellé se traduit à l'AFFICHAGE, alors
+ *  que la clé d'action, elle, est persistée telle quelle dans le journal. */
 export const AUDIT_ACTIONS: Record<string, string> = {
-  'auth.login': 'Connexion',
-  'access.role.assign': 'Rôle attribué',
-  'access.role.remove': 'Rôle retiré',
-  'access.block': 'Compte bloqué',
-  'access.unblock': 'Compte débloqué',
-  'access.grant': 'Permission accordée',
-  'access.revoke': 'Permission révoquée',
-  'access.user.delete': 'Utilisateur supprimé',
-  'access.role.save': 'Rôle enregistré',
-  'access.role.delete': 'Rôle supprimé',
-  'library.project.create': 'Projet créé',
-  'library.project.save': 'Projet modifié',
-  'library.project.rename': 'Projet renommé',
-  'library.project.delete': 'Projet supprimé',
-  'library.project.duplicate': 'Projet dupliqué',
-  'library.version.restore': 'Version restaurée',
-  'library.version.create': 'Version créée',
-  'library.version.snapshot': 'Snapshot auto',
-  'data.dataset.save': 'DataSet enregistré',
-  'data.dataset.delete': 'DataSet supprimé',
-  'data.dataset.import': 'DataSet importé',
-  'data.dataset.rename': 'DataSet renommé',
-  'data.dataset.move': 'DataSet déplacé',
-  'data.cell.edit': 'Cellule modifiée',
-  'export.pdf': 'Export PDF',
-  'export.png': 'Export PNG',
-  'export.pptx': 'Export PPTX',
-  'export.svg': 'Export SVG',
-  'export.html': 'Export HTML',
-  'export.idml': 'Export IDML',
-  'export.social': 'Export pack social',
-  'export.declines': 'Pages déclinées',
-  'export.batch': 'Export par lot (fusion)',
-  'export.xlsx': 'Export Excel (XLSX)',
-  'workflow.run': 'Workflow exécuté',
-  'ai.completion': 'IA — complétion de colonne',
-  'ai.workflow.generate': 'IA — génération de workflow',
-  'settings.theme': 'Thème changé',
-  'settings.ai.model': 'Modèle IA par défaut',
-  'settings.ai.budget': 'Budget IA mensuel',
+  'auth.login': 'aud.auth.login',
+  'access.role.assign': 'aud.access.role.assign',
+  'access.role.remove': 'aud.access.role.remove',
+  'access.block': 'aud.access.block',
+  'access.unblock': 'aud.access.unblock',
+  'access.grant': 'aud.access.grant',
+  'access.revoke': 'aud.access.revoke',
+  'access.user.delete': 'aud.access.user.delete',
+  'access.role.save': 'aud.access.role.save',
+  'access.role.delete': 'aud.access.role.delete',
+  'access.account.assign': 'aud.access.account.assign',
+  'library.project.create': 'aud.library.project.create',
+  'library.project.save': 'aud.library.project.save',
+  'library.project.rename': 'aud.library.project.rename',
+  'library.project.delete': 'aud.library.project.delete',
+  'library.project.duplicate': 'aud.library.project.duplicate',
+  'library.version.restore': 'aud.library.version.restore',
+  'library.version.create': 'aud.library.version.create',
+  'library.version.snapshot': 'aud.library.version.snapshot',
+  'data.dataset.save': 'aud.data.dataset.save',
+  'data.dataset.delete': 'aud.data.dataset.delete',
+  'data.dataset.import': 'aud.data.dataset.import',
+  'data.dataset.rename': 'aud.data.dataset.rename',
+  'data.dataset.move': 'aud.data.dataset.move',
+  'data.cell.edit': 'aud.data.cell.edit',
+  'export.pdf': 'aud.export.pdf',
+  'export.png': 'aud.export.png',
+  'export.pptx': 'aud.export.pptx',
+  'export.svg': 'aud.export.svg',
+  'export.html': 'aud.export.html',
+  'export.idml': 'aud.export.idml',
+  'export.social': 'aud.export.social',
+  'export.declines': 'aud.export.declines',
+  'export.batch': 'aud.export.batch',
+  'export.xlsx': 'aud.export.xlsx',
+  'workflow.run': 'aud.workflow.run',
+  'ai.completion': 'aud.ai.completion',
+  'ai.workflow.generate': 'aud.ai.workflow.generate',
+  'ai.imageGen': 'aud.ai.imageGen',
+  'settings.theme': 'aud.settings.theme',
+  'settings.locale': 'aud.settings.locale',
+  'settings.ai.model': 'aud.settings.ai.model',
+  'settings.ai.budget': 'aud.settings.ai.budget',
+  'i18n.label.edit': 'aud.i18n.label.edit',
+  'i18n.label.reset': 'aud.i18n.label.reset',
+  'i18n.label.translate': 'aud.i18n.label.translate',
+  'i18n.locale.toggle': 'aud.i18n.locale.toggle',
 }
 
-/** Libellé lisible d'une action (clé inconnue → la clé brute). */
-export function auditActionLabel(action: string): string {
-  return AUDIT_ACTIONS[action] ?? action
+/**
+ * Clé de traduction du libellé d'une action, ou `null` si l'action est inconnue.
+ *
+ * ⚠️ Ce module NE PEUT PAS traduire lui-même : `locale.store` importe
+ * `recordAudit`, donc importer `lib/i18n` ici créerait un cycle
+ * (auditLog → i18n → locale.store → auditLog), que `npm run cycles` refuse.
+ * L'appelant traduit — il a de toute façon besoin d'un rendu réactif.
+ */
+export function auditActionKey(action: string): string | null {
+  return AUDIT_ACTIONS[action] ?? null
 }
 
 // Mémoire en RAM du dernier log par clé, pour throttler les actions fréquentes (autosave).

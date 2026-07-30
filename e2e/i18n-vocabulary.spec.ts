@@ -47,6 +47,53 @@ async function makeMember(accountId: string, withPermission: boolean): Promise<T
   return user
 }
 
+const OWNER_EMAIL = 'ibs.studio@gmail.com'
+
+/**
+ * Jeton portant l'email OWNER — celui que `isAdmin()` reconnaît.
+ *
+ * ⚠️ Trois chemins, et les trois sont nécessaires : l'émulateur GARDE son état
+ * entre les suites, et le compte owner peut déjà exister — créé par
+ * `smoke.spec.ts` via le widget Google, donc SANS mot de passe. Un simple
+ * `signUp` échoue alors (email pris) et `signInWithPassword` aussi (aucun mot de
+ * passe). Ce test passait seul et échouait derrière le smoke ; on force donc le
+ * mot de passe par l'API d'administration de l'émulateur avant de se connecter.
+ */
+async function ownerToken(): Promise<TestUser> {
+  const signIn = async () => {
+    const res = await fetch(`${AUTH}/accounts:signInWithPassword?key=fake-emulator-key`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: OWNER_EMAIL, password: 'e2e-password', returnSecureToken: true }),
+    })
+    const json = (await res.json()) as { localId?: string; idToken?: string }
+    return json.localId && json.idToken ? { uid: json.localId, idToken: json.idToken } : null
+  }
+
+  const created = await createUser(OWNER_EMAIL).catch(() => null)
+  if (created) return created
+
+  const existing = await signIn()
+  if (existing) return existing
+
+  // Compte créé par un fournisseur externe : on lui pose un mot de passe.
+  const lookup = await fetch(`${AUTH}/accounts:lookup?key=fake-emulator-key`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', Authorization: 'Bearer owner' },
+    body: JSON.stringify({ email: [OWNER_EMAIL] }),
+  })
+  const { users } = (await lookup.json()) as { users?: Array<{ localId: string }> }
+  if (!users?.[0]) throw new Error('compte owner introuvable dans l’émulateur')
+  await fetch(`${AUTH}/accounts:update?key=fake-emulator-key`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', Authorization: 'Bearer owner' },
+    body: JSON.stringify({ localId: users[0].localId, password: 'e2e-password' }),
+  })
+  const after = await signIn()
+  if (!after) throw new Error('connexion owner impossible après pose du mot de passe')
+  return after
+}
+
 /** Tente d'écrire les surcharges FR d'un compte, avec le jeton du user. */
 async function tryWriteOverrides(user: TestUser, accountId: string): Promise<number> {
   const res = await fetch(`${FS}/accounts/${accountId}/i18nOverrides/fr`, {
@@ -96,16 +143,7 @@ test("l'admin, lui, PEUT rattacher un membre à un compte", async () => {
   // Contrepartie du test précédent : le rattachement doit rester possible, sinon
   // l'écran « Utilisateurs & rôles » aurait un bouton qui échoue toujours. Le
   // jeton porte l'email owner, comme en réel (`isAdmin()` compare l'email).
-  const admin = await createUser(`ibs.studio@gmail.com`).catch(async () => {
-    // Le compte owner survit d'une suite à l'autre dans l'émulateur.
-    const res = await fetch(`${AUTH}/accounts:signInWithPassword?key=fake-emulator-key`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: 'ibs.studio@gmail.com', password: 'e2e-password', returnSecureToken: true }),
-    })
-    const json = (await res.json()) as { localId: string; idToken: string }
-    return { uid: json.localId, idToken: json.idToken }
-  })
+  const admin = await ownerToken()
 
   const member = await makeMember(`acct-before-${Date.now()}`, false)
   const res = await fetch(`${FS}/users/${member.uid}?updateMask.fieldPaths=accountId`, {
