@@ -21,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 async function loginAsOwner(page: Page): Promise<void> {
   await page.goto('/login')
   const popupPromise = page.context().waitForEvent('page')
-  await page.getByRole('button', { name: /se connecter avec google/i }).click()
+  await page.getByRole('button', { name: /se connecter avec google|sign in with google/i }).click()
   const popup = await popupPromise
   await popup.waitForLoadState('domcontentloaded')
 
@@ -35,6 +35,21 @@ async function loginAsOwner(page: Page): Promise<void> {
     await popup.getByRole('button', { name: /sign in/i }).click()
   }
   await page.waitForURL(/dashboard/, { timeout: 30_000 })
+
+  // ⚠️ Force le FRANÇAIS : tous les sélecteurs de ce fichier sont français
+  // (« Bibliothèque », « Nouveau document », « sauvegarder »), or la langue est
+  // persistée dans `users/{uid}.uiSettings.locale` et l'émulateur GARDE l'état
+  // entre les suites — les passes visuelles i18n le laissent en anglais, et le
+  // smoke échouait alors sur le premier clic sans que rien ne soit cassé dans
+  // l'application. Passer par le store et non par localStorage : `useLocaleSync`
+  // réhydrate depuis Firestore au login et écraserait la préférence locale.
+  await page.evaluate(() => {
+    const w = window as unknown as {
+      __localeStore?: { getState: () => { setLocale: (l: string) => void } }
+    }
+    w.__localeStore?.getState().setLocale('fr')
+  })
+  await page.waitForTimeout(300)
 }
 
 test('connexion → dashboard avec la sidebar des modules', async ({ page }) => {

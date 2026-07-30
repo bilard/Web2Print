@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Languages, RotateCcw } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Languages, RotateCcw, StopCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation, catalogText, type TranslationKey } from '@/lib/i18n'
 import { useI18nOverridesStore } from '@/stores/i18nOverrides.store'
@@ -70,15 +70,25 @@ export function OverrideList({ businessContext }: { businessContext: string }) {
   const { canEdit, translating, translateToActiveLocales } = useVocabularyEditor()
   const overrides = useI18nOverridesStore((s) => s.overrides[locale])
   const entries = Object.entries(overrides ?? {}) as [TranslationKey, string][]
+  const [progress, setProgress] = useState<number | null>(null)
+  const abortRef = useRef(false)
 
   async function translateAll() {
     let done = 0
+    abortRef.current = false
+    setProgress(0)
     // En série et non en parallèle : chaque libellé est un appel LLM, et les
     // écritures Firestore visent le MÊME document par langue — les paralléliser
     // ferait s'écraser les unes les autres (dernier arrivé, seul survivant).
+    // ⚠️ Un appel LLM par libellé : sur plusieurs dizaines de mots, c'est long
+    // ET facturé. D'où la progression visible et le bouton d'arrêt — sans eux,
+    // on lance 50 appels Opus sans savoir où on en est ni pouvoir revenir.
     for (const [key, value] of entries) {
+      if (abortRef.current) break
       if (await translateToActiveLocales(key, value, businessContext)) done++
+      setProgress((p) => (p ?? 0) + 1)
     }
+    setProgress(null)
     toast.success(t('i18n.bulk.done', { count: done, total: entries.length }))
   }
 
@@ -97,15 +107,26 @@ export function OverrideList({ businessContext }: { businessContext: string }) {
         <h3 className="text-[12px] font-semibold text-white/70">
           {t('i18n.overrides.titleCount', { count: entries.length, locale: locale.toUpperCase() })}
         </h3>
-        <button
-          type="button"
-          disabled={!canEdit || translating}
-          onClick={() => void translateAll()}
-          className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/[0.06] text-white/70 text-[11px] disabled:opacity-40"
-        >
-          <Languages className="w-3 h-3" />
-          {translating ? t('i18n.edit.translating') : t('i18n.bulk.translateAll')}
-        </button>
+        {progress === null ? (
+          <button
+            type="button"
+            disabled={!canEdit || translating}
+            onClick={() => void translateAll()}
+            className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/[0.06] text-white/70 text-[11px] disabled:opacity-40"
+          >
+            <Languages className="w-3 h-3" />
+            {translating ? t('i18n.edit.translating') : t('i18n.bulk.translateAll')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => { abortRef.current = true }}
+            className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/[0.06] text-white/70 text-[11px]"
+          >
+            <StopCircle className="w-3 h-3" />
+            {t('i18n.bulk.progress', { done: progress, total: entries.length })}
+          </button>
+        )}
       </div>
       <p className="text-[11px] text-white/35 mb-1">{t('i18n.overrides.desc')}</p>
       <div className="bg-white/[0.02] border border-white/5 rounded-lg px-3 max-h-[320px] overflow-y-auto">

@@ -84,3 +84,6 @@ export const useLocaleStore = create<LocaleState>((set, get) => ({
 }))
 
 applyToDom(initial)
+
+/** Exposé pour l'E2E `i18n-live-rerender.spec.ts` — cf. `i18nOverrides.store`. */
+;(window as unknown as { __localeStore?: typeof useLocaleStore }).__localeStore = useLocaleStore

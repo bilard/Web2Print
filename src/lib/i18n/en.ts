@@ -4718,4 +4718,5 @@ export const en: Record<TranslationKey, string> = {
   'i18n.edit.noOtherLocale': 'No other active language to translate into.',
   'i18n.edit.modeHint': 'Alt+click a text to rewrite it',
   'i18n.edit.exitMode': 'Leave editing mode',
+  'i18n.bulk.progress': 'Translating {done}/{total} — stop',
 }

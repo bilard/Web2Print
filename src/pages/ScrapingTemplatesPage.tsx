@@ -7,9 +7,11 @@ import type { ScrapingTemplate } from '@/features/scraping-templates/types'
 import { useCan } from '@/features/access/useAccess'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { toast } from 'sonner'
-import { t } from '@/lib/i18n'
+import { t, useI18nVersion } from '@/lib/i18n'
 
 export default function ScrapingTemplatesPage() {
+  // Vocabulaire du compte : abonne tout le sous-arbre (cf. useI18nVersion).
+  useI18nVersion()
   const navigate = useNavigate()
   const canEdit = useCan('scrapingTemplates.edit')
   const [templates, setTemplates] = useState<ScrapingTemplate[]>([])

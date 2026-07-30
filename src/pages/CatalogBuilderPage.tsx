@@ -13,7 +13,7 @@ import { ensureUserFontsLoaded } from '@/features/fonts/useUserFonts'
 import { useCatalogAutosave } from '@/features/catalog/useCatalogAutosave'
 import { CatalogStepsNav } from '@/features/catalog/components/CatalogStepsNav'
 import { useApplyKnownCutouts } from '@/features/catalog/useCatalogCutout'
-import { t } from '@/lib/i18n'
+import { t, useI18nVersion } from '@/lib/i18n'
 
 const StepSource = lazy(() => import('@/features/catalog/components/steps/StepSource').then((m) => ({ default: m.StepSource })))
 const StepStructure = lazy(() => import('@/features/catalog/components/steps/StepStructure').then((m) => ({ default: m.StepStructure })))
@@ -23,6 +23,8 @@ const StepPreview = lazy(() => import('@/features/catalog/components/steps/StepP
 const StepExport = lazy(() => import('@/features/catalog/components/steps/StepExport').then((m) => ({ default: m.StepExport })))
 
 export default function CatalogBuilderPage() {
+  // Vocabulaire du compte : abonne tout le sous-arbre (cf. useI18nVersion).
+  useI18nVersion()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const s = useCatalogStore()

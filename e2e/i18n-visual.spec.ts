@@ -111,7 +111,7 @@ async function visibleTexts(page: Page): Promise<string[]> {
 }
 
 /** Signature de français : accent OU mot-outil français fréquent. */
-const FRENCH = /[àâäéèêëîïôöùûüÿçÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇ]|\b(le|la|les|des|une|aucun|aucune|dans|pour|avec|vous|votre|sur|est|sont|par|selon|puis|tous|toutes)\b/i
+const FRENCH = /[àâäéèêëîïôöùûüÿçÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇ]|\b(le|la|les|des|une|aucun|aucune|dans|pour|avec|vous|votre|sur|est|sont|par|selon|puis|tous|toutes|origine|paysage|corbeille|suivis|fournisseurs|utilisateurs|journal|galerie|enregistrer|supprimer|ajouter|modifier|nouveau|nouvelle|rechercher|parcourir|fermer|ouvrir|annuler|valider|suivant|precedent|terminer|champs|colonne|fichier|dossier|taille|largeur|hauteur|couleur|police|ombre|calques|remise|apercu|reglages|analyser|importer|exporter|creer|charger|essayer|revenir)\b/i
 /** Mojibake : UTF-8 relu en latin-1. */
 const MOJIBAKE = /Ã[-¿]|Â[«»·°]|â€[-¿]/
 

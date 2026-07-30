@@ -1,10 +1,13 @@
 import { useEffect } from 'react'
+import { useI18nVersion } from '@/lib/i18n'
 import { PulseGate } from '@/components/pulse/PulseGate'
 import { PulseApp } from '@/components/pulse/PulseApp'
 import '@/components/pulse/pulse.css'
 
 /** Route `/pulse` : la PWA mobile de suivi du trafic ibs-studio.com. */
 export default function PulsePage() {
+  // Vocabulaire du compte : abonne tout le sous-arbre (cf. useI18nVersion).
+  useI18nVersion()
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
     // En dev, le SW (cache-first) interfère avec le HMR de Vite → on ne l'enregistre

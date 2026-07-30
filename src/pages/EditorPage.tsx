@@ -1,4 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from 'react'
+import { useI18nVersion } from '@/lib/i18n'
 import { useParams, useLocation } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { EditorHeader } from '@/components/panels/EditorHeader'
@@ -32,6 +33,8 @@ import { ref as fbStorageRef, uploadBytes } from 'firebase/storage'
 import { storage } from '@/lib/firebase/config'
 
 export default function EditorPage() {
+  // Vocabulaire du compte : abonne tout le sous-arbre (cf. useI18nVersion).
+  useI18nVersion()
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
   const setProjectId = useEditorStore((s) => s.setProjectId)

@@ -15,13 +15,15 @@ import { TaxonomyMainTabs } from '@/components/taxonomy/TaxonomyMainTabs'
 import { BriefsPanel } from '@/components/briefs/BriefsPanel'
 import { useBriefUIStore } from '@/stores/brief.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
-import { t } from '@/lib/i18n'
+import { t, useI18nVersion } from '@/lib/i18n'
 
 interface TaxonomiesPageProps {
   embedded?: boolean
 }
 
 export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps) {
+  // Vocabulaire du compte : abonne tout le sous-arbre (cf. useI18nVersion).
+  useI18nVersion()
   const navigate = useNavigate()
   const canEdit = useCan('taxonomies.edit')
   const canBriefs = useCan('taxonomies.briefs')

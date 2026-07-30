@@ -1,10 +1,13 @@
 import { useEffect } from 'react'
+import { useI18nVersion } from '@/lib/i18n'
 import { RadarGate } from '@/components/radar/RadarGate'
 import { RadarApp } from '@/components/radar/RadarApp'
 import '@/components/radar/radar.css'
 
 /** Route `/radarprice` : la PWA mobile de veille tarifaire (jumelle mobile du dashboard). */
 export default function RadarPage() {
+  // Vocabulaire du compte : abonne tout le sous-arbre (cf. useI18nVersion).
+  useI18nVersion()
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
     // En dev, le SW (cache-first) interfère avec le HMR de Vite → uniquement en production.

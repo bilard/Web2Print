@@ -4799,6 +4799,7 @@ export const fr = {
   'i18n.edit.noOtherLocale': 'Aucune autre langue active à traduire.',
   'i18n.edit.modeHint': 'Alt+clic sur un texte pour le réécrire',
   'i18n.edit.exitMode': 'Quitter le mode édition',
+  'i18n.bulk.progress': 'Traduction {done}/{total} — arrêter',
 } as const
 
 /** Clé de traduction valide — dérivée du catalogue FR. */

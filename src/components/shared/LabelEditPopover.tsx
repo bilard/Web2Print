@@ -36,8 +36,18 @@ export function LabelEditPopover({ target, onClose }: LabelEditPopoverProps) {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    // Clic hors du popover = abandon. `mousedown` et non `click` : le Alt+clic
+    // qui désigne un AUTRE libellé doit fermer celui-ci avant que le nouveau ne
+    // s'ouvre, sinon les deux se disputent la même position à l'écran.
+    function onDown(e: MouseEvent) {
+      if (!boxRef.current?.contains(e.target as Node)) onClose()
+    }
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDown)
+    }
   }, [onClose])
 
   const isOverridden = useI18nOverridesStore(

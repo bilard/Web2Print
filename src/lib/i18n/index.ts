@@ -100,6 +100,21 @@ export function useTranslation() {
   return { t: translateFn, locale }
 }
 
+/**
+ * Abonne un composant au VOCABULAIRE du compte, sans lire de clé.
+ *
+ * ⚠️ À appeler dans toute PAGE routée qui n'utilise pas déjà `useTranslation`.
+ * Raison : ~380 fichiers appellent le `t()` de module, qui n'est abonné à rien
+ * et ne recalcule son texte que si un ancêtre se re-rend. Les éléments de route
+ * étant construits une fois pour toutes dans `router.tsx`, ni App ni
+ * ProtectedRoute ne peuvent déclencher ce re-rendu à leur place — vérifié en
+ * mesurant les deux. La page est le premier point où l'abonnement porte sur
+ * tout le sous-arbre. `i18n.pages.test.ts` empêche l'oubli.
+ */
+export function useI18nVersion(): void {
+  useI18nOverridesStore((s) => s.version)
+}
+
 /** Étiquette BCP 47 de la langue — pour `Intl.*`. `en` ⇒ `en-GB`. */
 export function intlLocale(locale: Locale): string {
   return BCP47[locale]

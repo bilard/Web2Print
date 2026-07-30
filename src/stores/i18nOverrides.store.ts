@@ -101,3 +101,13 @@ export const useI18nOverridesStore = create<I18nOverridesState>((set) => ({
 
   reset: () => set((s) => ({ ...EMPTY, version: s.version + 1 })),
 }))
+
+/**
+ * Exposé pour le test E2E `i18n-live-rerender.spec.ts`, qui vérifie qu'un mot
+ * réécrit apparaît SANS rechargement jusque dans les écrans dont la page racine
+ * ne s'abonne pas à la traduction. Ce test doit poser une surcharge dans l'état
+ * exact où l'écouteur temps réel place l'application — le faire par l'interface
+ * passerait par Firestore et mesurerait la persistance, pas le rendu.
+ */
+;(window as unknown as { __i18nOverridesStore?: typeof useI18nOverridesStore })
+  .__i18nOverridesStore = useI18nOverridesStore
