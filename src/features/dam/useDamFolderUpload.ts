@@ -14,6 +14,7 @@ import { auth, storage, functions } from '@/lib/firebase/config'
 import { removeBackground } from '@/features/imaging/removeBackground'
 import { useAccessStore } from '@/stores/access.store'
 import { DEMO_PERMISSION } from '@/features/access/permissions'
+import { t } from '@/lib/i18n'
 
 const damUpload = httpsCallable<
   { url: string; fileName: string; folderId: string },
@@ -51,7 +52,7 @@ export function useDamFolderUpload() {
   const uploadFolder = useCallback(
     async (files: File[], folderId: string, opts?: { removeBg?: boolean }): Promise<FolderUploadResult> => {
       const uid = auth.currentUser?.uid
-      if (!uid) throw new Error('Connexion requise.')
+      if (!uid) throw new Error(t('err.auth.required'))
 
       const images = files.filter(isImageFile)
       abortRef.current = false

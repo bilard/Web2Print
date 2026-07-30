@@ -9,6 +9,7 @@ import {
 import { db } from '@/lib/firebase/config'
 import { globalSave } from '@/features/editor/useAutoSave'
 import { recordAudit } from '@/lib/auditLog'
+import { t } from '@/lib/i18n'
 
 const MAX_VERSIONS = 20
 
@@ -68,7 +69,7 @@ export function useVersions(projectId: string | null): UseVersions {
       // Commit l'état courant du canvas avant le snapshot.
       await globalSave?.()
       const projectSnap = await getDoc(doc(db, 'projects', projectId))
-      if (!projectSnap.exists()) throw new Error('Projet introuvable.')
+      if (!projectSnap.exists()) throw new Error(t('err.notFound.project'))
       const data = projectSnap.data()
       const snapshot: Record<string, unknown> = {}
       for (const k of CONTENT_KEYS) {
@@ -100,7 +101,7 @@ export function useVersions(projectId: string | null): UseVersions {
       if (!projectId) return
       const vSnap = await getDoc(doc(db, 'projects', projectId, 'versions', versionId))
       const snapshot = vSnap.data()?.snapshot as Record<string, unknown> | undefined
-      if (!snapshot) throw new Error('Version introuvable ou vide.')
+      if (!snapshot) throw new Error(t('err.notFound.version'))
       await setDoc(doc(db, 'projects', projectId), { ...snapshot, updatedAt: Date.now() }, { merge: true })
       // await : la page va se recharger, on s'assure que le log est parti avant.
       await recordAudit({ action: 'library.version.restore', module: 'library', targetId: projectId, targetLabel: versionId })

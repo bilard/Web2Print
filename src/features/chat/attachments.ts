@@ -3,6 +3,8 @@
  * capture d'écran via getDisplayMedia.
  */
 
+import { t } from '@/lib/i18n'
+
 export interface ChatAttachment {
   id: string
   /** Nom à afficher (filename ou "Capture-N"). */
@@ -59,7 +61,7 @@ function readAsText(file: File): Promise<string> {
 export async function fileToAttachment(file: File): Promise<ChatAttachment> {
   if (ACCEPTED_IMAGE_TYPES.includes(file.type)) {
     if (file.size > MAX_IMAGE_SIZE) {
-      throw new Error(`Image trop lourde (max ${MAX_IMAGE_SIZE / 1024 / 1024} MB) : ${file.name}`)
+      throw new Error(t('err.ch.imageTooBig', { max: MAX_IMAGE_SIZE / 1024 / 1024, name: file.name }))
     }
     const dataUri = await readAsDataUri(file)
     return {
@@ -77,7 +79,7 @@ export async function fileToAttachment(file: File): Promise<ChatAttachment> {
     /\.(txt|md|csv|json|xml|html?|tsx?|jsx?|css|yaml|yml|log)$/i.test(file.name)
   if (isTextish) {
     if (file.size > MAX_TEXT_SIZE) {
-      throw new Error(`Fichier texte trop lourd (max ${MAX_TEXT_SIZE / 1024} KB) : ${file.name}`)
+      throw new Error(t('err.ch.textTooBig', { max: MAX_TEXT_SIZE / 1024, name: file.name }))
     }
     let text = await readAsText(file)
     if (text.length > MAX_TEXT_CHARS) text = text.slice(0, MAX_TEXT_CHARS) + '\n…[tronqué]'
@@ -90,13 +92,13 @@ export async function fileToAttachment(file: File): Promise<ChatAttachment> {
       mimeType: file.type || 'text/plain',
     }
   }
-  throw new Error(`Type non supporté : ${file.type || file.name}`)
+  throw new Error(t('err.unsupportedType', { type: file.type || file.name }))
 }
 
 /** Capture d'un écran/fenêtre via getDisplayMedia → frame canvas → PNG data URI. */
 export async function captureScreenshot(): Promise<ChatAttachment> {
   if (!navigator.mediaDevices?.getDisplayMedia) {
-    throw new Error('getDisplayMedia non supporté par ce navigateur.')
+    throw new Error(t('err.ch.noDisplayMedia'))
   }
   const stream = await navigator.mediaDevices.getDisplayMedia({
     video: { displaySurface: 'browser' } as MediaTrackConstraints,
@@ -114,7 +116,7 @@ export async function captureScreenshot(): Promise<ChatAttachment> {
     canvas.width = video.videoWidth || 1280
     canvas.height = video.videoHeight || 720
     const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('Canvas 2D context indisponible.')
+    if (!ctx) throw new Error(t('err.noCanvas'))
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
     const dataUri = canvas.toDataURL('image/png')
     const sizeApprox = Math.round((dataUri.length * 3) / 4)

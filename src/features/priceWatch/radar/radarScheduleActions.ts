@@ -5,6 +5,7 @@ import { doc, setDoc } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/lib/firebase/config'
 import { getWorkflow, saveWorkflow } from '@/features/workflows/persistence/workflowsApi'
+import { t } from '@/lib/i18n'
 
 // Timeout aligné sur la Function (540 s côté serveur, marge large côté client) : une
 // moisson avec escalade dépasse le défaut httpsCallable de 70 s.
@@ -24,7 +25,7 @@ export async function stopServerRun(uid: string, workflowId: string): Promise<vo
 export async function suspendWorkflow(uid: string, workflowId: string): Promise<boolean> {
   const wf = await getWorkflow(uid, workflowId)
   // Jamais d'écriture à partir d'un workflow non chargé : on écraserait le graphe.
-  if (!wf) throw new Error('Workflow introuvable — suspension annulée.')
+  if (!wf) throw new Error(t('err.pw.noWorkflowSuspend'))
   const cronNode = wf.nodes.find((n) => n.type === 'cron' && (n.config as { enabled?: boolean })?.enabled)
   if (!cronNode) return false
   const nodes = wf.nodes.map((n) =>

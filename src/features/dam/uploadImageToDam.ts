@@ -5,6 +5,7 @@
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { httpsCallable } from 'firebase/functions'
 import { auth, storage, functions } from '@/lib/firebase/config'
+import { t } from '@/lib/i18n'
 
 const DAM_FOLDER_NAME = 'Web2Print — Assets DAM'
 
@@ -50,7 +51,7 @@ export async function uploadUrlToDam(
   opts?: { reuseByName?: boolean },
 ): Promise<string> {
   const uid = auth.currentUser?.uid
-  if (!uid) throw new Error('Connexion requise.')
+  if (!uid) throw new Error(t('err.auth.required'))
   // Entités HTML résiduelles (URLs sorties de JSON-LD : `?a=1&amp;b=2`) —
   // laissées telles quelles, le CDN reçoit un paramètre `amp;b` erroné.
   const cleanUrl = url.replace(/&amp;/g, '&')
@@ -67,7 +68,7 @@ export async function uploadUrlToDam(
       // savoir si le pont navigateur a seulement tourné.
       const msg = e instanceof Error ? e.message : String(e)
       const msg2 = e2 instanceof Error ? e2.message : String(e2)
-      throw new Error(`${msg} · pont navigateur : ${msg2}`, { cause: e2 })
+      throw new Error(t('err.dam.uploadBridge', { message: msg, bridge: msg2 }), { cause: e2 })
     }
   }
 }
@@ -78,7 +79,7 @@ export async function uploadUrlToDam(
  */
 export async function uploadImageToDam(src: string, fileName: string, subFolder: string): Promise<string> {
   const uid = auth.currentUser?.uid
-  if (!uid) throw new Error('Connexion requise.')
+  if (!uid) throw new Error(t('err.auth.required'))
   const blob = await (await fetch(src)).blob()
   const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg').replace(/[^a-z0-9]/gi, '') || 'png'
   const tempPath = `users/${uid}/dam-temp/${crypto.randomUUID()}.${ext}`

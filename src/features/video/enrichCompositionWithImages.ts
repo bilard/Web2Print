@@ -3,6 +3,7 @@ import { storage, auth } from '@/lib/firebase/config'
 import { generateImage } from '@/features/briefs/ai/geminiImageClient'
 import type { Composition, Scene, VisualTheme } from './promptToComposition'
 import type { AspectFormat } from './types'
+import { t } from '@/lib/i18n'
 
 /** Mots-clés visuels par theme pour piloter Image IA. */
 const THEME_KEYWORDS: Record<VisualTheme, string> = {
@@ -86,7 +87,7 @@ export interface EnrichOptions {
 export async function enrichCompositionWithImages(opts: EnrichOptions): Promise<Composition> {
   const { composition, aspect, topic, brand, onProgress, concurrency = 2 } = opts
   const user = auth.currentUser
-  if (!user) throw new Error('Utilisateur non connecté')
+  if (!user) throw new Error(t('err.auth.notSignedIn'))
 
   const scenes = composition.scenes
   const enriched = scenes.slice()

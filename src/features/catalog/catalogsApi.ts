@@ -6,6 +6,7 @@ import { stripUndefined } from '@/lib/stripUndefined'
 import { EMPTY_TREE_EDITS } from './catalogTree'
 import { CATALOG_FORMAT_PRESETS, type CatalogDoc } from './catalogTypes'
 import type { DataSourceRef } from '@/stores/merge.store'
+import { t } from '@/lib/i18n'
 
 export interface CatalogSummary { id: string; name: string; updatedAt: Date | null; sourceRef: DataSourceRef | null }
 
@@ -40,7 +41,7 @@ export async function loadCatalog(id: string): Promise<CatalogDoc | null> {
 /** Upsert : `doc.id` vide → création (retourne le nouvel id). */
 export async function saveCatalog(docData: CatalogDoc): Promise<string> {
   const uid = auth.currentUser?.uid
-  if (!uid) throw new Error('Non connecté')
+  if (!uid) throw new Error(t('err.auth.required'))
   const ref = docData.id ? doc(db, 'users', uid, 'catalogs', docData.id) : doc(colPath(uid))
   const { id: _omit, ...payload } = docData
   await setDoc(ref, { ...stripUndefined(payload), updatedAt: serverTimestamp() })

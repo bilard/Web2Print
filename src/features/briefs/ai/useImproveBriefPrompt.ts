@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { llmPostWithFallback } from '@/lib/llmProxyClient'
+import { t } from '@/lib/i18n'
 
 const MODEL = 'claude-opus-4-8'
 
@@ -28,12 +29,12 @@ async function improvePrompt(current: string): Promise<string> {
 
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`Anthropic API ${res.status} : ${body.slice(0, 300)}`)
+    throw new Error(t('err.llm.httpStatus', { provider: 'Anthropic', status: res.status, body: body.slice(0, 300) }))
   }
 
   const data = (await res.json()) as AnthropicTextResponse
   const text = data.content?.find((b) => b.type === 'text')?.text?.trim()
-  if (!text) throw new Error('Claude : réponse vide')
+  if (!text) throw new Error(t('err.llm.emptyAnswer', { provider: 'Claude' }))
   return text
 }
 

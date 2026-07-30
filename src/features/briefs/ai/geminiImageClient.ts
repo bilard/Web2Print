@@ -2,6 +2,7 @@ import { base64ToBlob } from './base64ToBlob'
 import { llmPostWithFallback } from '@/lib/llmProxyClient'
 import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
 import { recordAiUsage } from '@/features/stats/aiUsageTracking'
+import { t } from '@/lib/i18n'
 
 const MODEL = 'gemini-3.1-flash-image-preview'
 
@@ -186,9 +187,9 @@ async function generateImageInner(
         return await generateImageInner(prompt, referenceImages, options, true)
       }
       console.error('[geminiImageClient] Réponse sans image', JSON.stringify(data).slice(0, 1500))
-      throw new Error(
-        `Gemini Image : aucune image dans la réponse${textPart ? ` — "${textPart.slice(0, 200)}"` : ''}`,
-      )
+      throw new Error(t('err.llm.geminiNoImageDetail', {
+        detail: textPart ? ` — « ${textPart.slice(0, 200)} »` : '',
+      }))
     }
 
     const blob = base64ToBlob(inline.data, inline.mimeType)

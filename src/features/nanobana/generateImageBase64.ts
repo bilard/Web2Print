@@ -5,6 +5,7 @@
 import { llmPostWithFallback } from '@/lib/llmProxyClient'
 import { recordAiUsage } from '@/features/stats/aiUsageTracking'
 import type { GenerationRequest } from './types'
+import { t } from '@/lib/i18n'
 
 // Image IA, fallback to other live image models if not available.
 // ⚠ Cascade par DÉFAUT : le rapide d'abord (volume, itérations d'éditeur).
@@ -142,26 +143,26 @@ export async function generateImageBase64(request: GenerationRequest): Promise<G
 
   if (!response) {
     // Parse detailed error from the last API response
-    let detail = 'Tous les modèles ont échoué'
+    let detail = t('err.nb.allModelsFailed')
     try {
       const errJson = JSON.parse(lastError)
       const errMsg = errJson?.error?.message ?? ''
       if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('API key not valid')) {
-        detail = 'Clé API Gemini invalide — vérifiez-la dans Paramètres > Clés API'
+        detail = t('err.nb.invalidKey')
       } else if (errMsg.includes('PERMISSION_DENIED')) {
-        detail = 'Accès refusé par l\'API Gemini — vérifiez les permissions de votre clé'
+        detail = t('err.nb.permissionDenied')
       } else if (errMsg.includes('QUOTA') || errMsg.includes('quota')) {
-        detail = 'Quota Gemini dépassé — réessayez plus tard ou changez de clé'
+        detail = t('err.nb.quota')
       } else if (errMsg.includes('SAFETY') || errMsg.includes('safety')) {
-        detail = 'Contenu bloqué par le filtre de sécurité — reformulez votre prompt'
+        detail = t('err.nb.safety')
       } else if (errMsg.includes('not found') || errMsg.includes('NOT_FOUND')) {
-        detail = 'Modèle Gemini non disponible — l\'API peut être en maintenance'
+        detail = t('err.nb.modelUnavailable')
       } else if (errMsg) {
         detail = errMsg.length > 150 ? errMsg.slice(0, 150) + '…' : errMsg
       }
     } catch {
       if (lastError.includes('Failed to fetch') || lastError.includes('NetworkError')) {
-        detail = 'Erreur réseau — vérifiez votre connexion internet'
+        detail = t('err.nb.network')
       }
     }
     throw new Error(detail)
@@ -172,10 +173,10 @@ export async function generateImageBase64(request: GenerationRequest): Promise<G
   // Check for blocked content
   const blockReason = data.candidates?.[0]?.finishReason
   if (blockReason === 'SAFETY') {
-    throw new Error('Image bloquée par le filtre de sécurité — reformulez votre prompt')
+    throw new Error(t('err.nb.safetyFilter'))
   }
   if (blockReason === 'RECITATION') {
-    throw new Error('Génération refusée (contenu protégé) — essayez un prompt différent')
+    throw new Error(t('err.nb.protectedContent'))
   }
 
   // Extract image from response — handle both camelCase and snake_case keys
@@ -190,7 +191,7 @@ export async function generateImageBase64(request: GenerationRequest): Promise<G
   const inlineData = imagePart?.inline_data ?? imagePart?.inlineData
   if (!inlineData) {
     console.error('[NanoBana] No image in response parts:', resParts.map((p: any) => Object.keys(p)))
-    throw new Error('L\'API n\'a retourné aucune image — essayez un prompt plus descriptif')
+    throw new Error(t('err.nb.noImage'))
   }
 
   const mimeType: string = inlineData.mime_type ?? inlineData.mimeType

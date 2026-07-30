@@ -3,6 +3,7 @@ import { collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc } from 'fi
 import { auth, db } from '@/lib/firebase/config'
 import { stripUndefined } from '@/lib/stripUndefined'
 import type { CatalogCardStyle, CatalogGrid, CatalogPageStyle, CatalogTheme } from './catalogTypes'
+import { t } from '@/lib/i18n'
 
 export interface CatalogTemplate {
   id: string
@@ -35,7 +36,7 @@ export async function listCatalogTemplates(): Promise<CatalogTemplate[]> {
 /** Upsert par nom (pas de doublon). */
 export async function saveCatalogTemplate(name: string, theme: CatalogTheme, defaultGrid: CatalogGrid, cardStyle?: CatalogCardStyle, pageStyle?: CatalogPageStyle): Promise<void> {
   const uid = auth.currentUser?.uid
-  if (!uid) throw new Error('Non connecté')
+  if (!uid) throw new Error(t('err.auth.required'))
   const existing = (await listCatalogTemplates()).find((t) => t.name === name)
   const ref = existing ? doc(db, 'users', uid, 'catalogTemplates', existing.id) : doc(colPath(uid))
   await setDoc(ref, { ...stripUndefined({ name, theme, defaultGrid, cardStyle, pageStyle }), createdAt: serverTimestamp() })

@@ -9,6 +9,7 @@ import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import { pimProductsToSheet } from '@/features/pim/productToSheet'
 import type { Product, Source } from '@/features/pim/types'
 import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
+import { t } from '@/lib/i18n'
 
 /** Les refs PIM réutilisent DataSourceRef avec un excelDocId préfixé `pim:`. */
 const PIM_SOURCE_PREFIX = 'pim:'
@@ -52,7 +53,7 @@ export async function loadPimMergeData(
   const snap = await getDocs(collection(db, 'pim_projects', projectId, 'products'))
   const products = snap.docs.map((d) => ({ ...(d.data() as Product), _id: d.id }))
   if (products.length === 0) {
-    throw new Error('Ce projet PIM ne contient aucun produit.')
+    throw new Error(t('err.mg.noProduct'))
   }
   const sheet = pimProductsToSheet(products, [] as Source[])
   const columns: MergeColumn[] = sheet.columns.map((c) => ({

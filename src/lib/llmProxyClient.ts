@@ -15,6 +15,7 @@
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { getApiKey } from '@/lib/apiKeys'
+import { t } from '@/lib/i18n'
 
 export type LlmProxyProvider = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'openrouter'
 
@@ -99,7 +100,7 @@ export async function llmPostWithFallback(
   return llmFetchViaProxy(provider, model, body, async () => {
     const keyId = DIRECT_KEY_IDS[provider]
     const apiKey = getApiKey(keyId)
-    if (!apiKey) throw new Error(`Clé ${keyId} absente. Configurez-la dans Réglages.`)
+    if (!apiKey) throw new Error(t('err.llm.keyMissing', { provider: keyId }))
     const { url, headers } = buildDirectRequest(provider, model, apiKey)
     const ctrl = new AbortController()
     const timeoutId = setTimeout(() => ctrl.abort(), timeoutMs)

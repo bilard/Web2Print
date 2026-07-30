@@ -4,6 +4,8 @@
  *
  * Nécessite que le bucket Firebase Storage autorise CORS sur l'origin de l'app.
  */
+import { t } from '@/lib/i18n'
+
 export interface FetchedImage {
   data: string
   /** Dimensions naturelles en pixels (pour calculer un fit ratio-safe). */
@@ -13,7 +15,7 @@ export interface FetchedImage {
 
 async function fetchImageAsBase64(url: string): Promise<string> {
   const res = await fetch(url)
-  if (!res.ok) throw new Error(`Téléchargement image ${res.status}`)
+  if (!res.ok) throw new Error(t('err.br.imageDownload', { status: res.status }))
   const blob = await res.blob()
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

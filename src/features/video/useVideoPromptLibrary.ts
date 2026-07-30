@@ -13,6 +13,7 @@ import {
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import type { AspectFormat } from './types'
+import { t } from '@/lib/i18n'
 
 /** Un prompt mémorisé pour la bibliothèque vidéo.
  *
@@ -123,9 +124,9 @@ export function useVideoPromptLibrary() {
   }, [collectionPath])
 
   const savePrompt = async (input: VideoPromptInput): Promise<string> => {
-    if (!collectionPath) throw new Error('Utilisateur non connecté')
+    if (!collectionPath) throw new Error(t('err.auth.notSignedIn'))
     const trimmedTopic = input.topic.trim()
-    if (!trimmedTopic) throw new Error('Le sujet est requis')
+    if (!trimmedTopic) throw new Error(t('err.vd.topicRequired'))
 
     const id = makeId()
     const ref = doc(db, collectionPath, id)
@@ -140,9 +141,9 @@ export function useVideoPromptLibrary() {
   /** Réécrit une entrée existante depuis le formulaire courant (préserve
    *  `createdAt`, bump `lastUsedAt`). « Modifier l'existant » de la biblio. */
   const updatePrompt = async (id: string, input: VideoPromptInput): Promise<void> => {
-    if (!collectionPath) throw new Error('Utilisateur non connecté')
+    if (!collectionPath) throw new Error(t('err.auth.notSignedIn'))
     const trimmedTopic = input.topic.trim()
-    if (!trimmedTopic) throw new Error('Le sujet est requis')
+    if (!trimmedTopic) throw new Error(t('err.vd.topicRequired'))
     await updateDoc(doc(db, collectionPath, id), {
       ...buildPromptDoc({ ...input, topic: trimmedTopic }),
       lastUsedAt: serverTimestamp(),
@@ -159,7 +160,7 @@ export function useVideoPromptLibrary() {
   }
 
   const deletePrompt = async (id: string): Promise<void> => {
-    if (!collectionPath) throw new Error('Utilisateur non connecté')
+    if (!collectionPath) throw new Error(t('err.auth.notSignedIn'))
     await deleteDoc(doc(db, collectionPath, id))
   }
 

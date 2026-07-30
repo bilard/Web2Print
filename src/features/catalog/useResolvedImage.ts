@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { imageChainCandidates, isDriveImageRef, extractDriveFileId, resolveDriveImageUrl } from '@/features/dam/driveAssets'
+import { t } from '@/lib/i18n'
 
 const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(functions, 'imageProxy')
 // ⚠ AUCUN CACHE de résolution. Un visuel régénéré côté Données réutilise le même
@@ -37,7 +38,7 @@ async function resolveOne(url: string): Promise<string | undefined> {
     if (isDriveImageRef(url)) {
       // Asset DAM (Google Drive privé) → blob: same-origin, capturable par html2canvas.
       const fileId = extractDriveFileId(url)
-      if (!fileId) throw new Error('fileId Drive introuvable')
+      if (!fileId) throw new Error(t('err.notFound.driveFileId'))
       resolved = await resolveDriveImageUrl(fileId)
     } else {
       // URL externe http(s) → proxy serveur (contourne CORS) → data-URI.

@@ -21,7 +21,7 @@ export function PromoSavedList({ onOpened, onNew }: Props) {
     setOpening(p.id)
     try {
       const payload = await loadPromoPayload(p.id)
-      if (!payload) throw new Error('Données de la fiche introuvables')
+      if (!payload) throw new Error(t('err.rp.noPayload'))
       setConfig(p.config)
       setFieldMap(p.fieldMap)
       setCustomFields(p.customFields ?? [])

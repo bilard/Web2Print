@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase/config'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
 import type { ExcelSheet } from '@/features/excel/types'
+import { t } from '@/lib/i18n'
 
 export interface SavedDataset { docId: string; fileName: string; totalRows: number }
 
@@ -31,14 +32,14 @@ export async function loadExcelMergeData(
   sheetIndex: number,
 ): Promise<{ columns: MergeColumn[]; rows: MergeRow[] }> {
   const metaSnap = await getDoc(doc(db, 'excel_data', excelDocId))
-  if (!metaSnap.exists()) throw new Error('Dataset introuvable')
+  if (!metaSnap.exists()) throw new Error(t('err.notFound.dataset'))
   const meta = metaSnap.data()
   let sheets: ExcelSheet[]
   if (typeof meta.sheets === 'string') {
     sheets = JSON.parse(meta.sheets) as ExcelSheet[]
   } else {
     const payloadSnap = await getDoc(doc(db, 'excel_data_payload', excelDocId))
-    if (!payloadSnap.exists()) throw new Error('Dataset vide ou corrompu')
+    if (!payloadSnap.exists()) throw new Error(t('err.notFound.datasetEmpty'))
     sheets = JSON.parse((payloadSnap.data() as { json: string }).json) as ExcelSheet[]
   }
   const sheet = sheets[sheetIndex] ?? sheets[0]

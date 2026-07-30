@@ -32,6 +32,56 @@ describe('catalogues i18n', () => {
   })
 })
 
+describe('jumeaux de catalogue', () => {
+  // Vécu : un script d'ajout a recréé `ac.deleteWarn.1` avec le texte EXACT de
+  // `ac.deleteWarn`, déjà présent 300 lignes plus haut. Rien ne l'a signalé —
+  // ni tsc, ni la parité, ni knip (qui ne voit pas les clés d'un objet). La clé
+  // en trop est restée morte jusqu'à une relecture à l'œil. Un catalogue qui
+  // accrète des jumeaux à chaque lot finit par diverger : deux clés au même
+  // texte se traduisent un jour différemment, et l'écran devient incohérent.
+  /**
+   * Jumeaux ASSUMÉS : même phrase, contextes distincts qui doivent pouvoir
+   * diverger (un champ homonyme sur quatre nodes, deux modules qui affichent le
+   * même vide). Les fusionner créerait un couplage entre modules sans rapport.
+   * Ajouter une ligne ici est une DÉCISION, pas une formalité — c'est tout
+   * l'intérêt de la liste : elle force à trancher au moment où le doublon naît.
+   */
+  const TWINS_ASSUMED: readonly (readonly string[])[] = [
+    ['palette.noResults', 'pim.noResult'],
+    ['connectors.removebg.desc', 'live.removebg.desc'],
+    ['dam.gen.downloadPng', 'ch.downloadPng'],
+    ['wf.deleteFailed', 'pw.watch.deleteFailed'],
+    ['node.harvest-competitor.watchId.label', 'ss.watchId.label',
+      'node.compare-catalog.watchId.label', 'node.directed-search.watchId.label'],
+    ['ss.pages.title', 'rd.pagesPerRun.title'],
+    ['node.compare-catalog.f2', 'node.compare-catalog.f3', 'node.directed-search.f2',
+      'node.directed-search.f3', 'node.harvest-competitor.f2', 'node.harvest-competitor.f6'],
+    ['run.wh.rowFailed', 'run.tg.rowFailed'],
+    ['cat.style.resetPositions', 'rp.render.resetPositions'],
+    ['xl.enr.antibot', 'sc.antibot'],
+    ['xl.scraped.itemCount', 'st.itemCount'],
+    ['sc.compareManufacturer', 'sc.compareManufacturerFull'],
+    ['rd.install.hint', 'pu.installHint'],
+  ]
+
+  it('ne contient pas deux clés au texte français identique', () => {
+    const allowed = new Set(TWINS_ASSUMED.map((g) => [...g].sort().join(' = ')))
+    const byValue = new Map<string, string[]>()
+    for (const [key, value] of Object.entries(fr)) {
+      // Les fragments courts (unités, ponctuation, « OK ») se répètent
+      // légitimement — on ne vise que la PROSE, où la collision est fortuite.
+      if (value.length < 25) continue
+      byValue.set(value, [...(byValue.get(value) ?? []), key])
+    }
+    const twins = [...byValue.entries()]
+      .filter(([, keys]) => keys.length > 1)
+      .map(([value, keys]) => ({ id: [...keys].sort().join(' = '), value }))
+      .filter(({ id }) => !allowed.has(id))
+      .map(({ id, value }) => `${id} → « ${value.slice(0, 60)}… »`)
+    expect(twins, `clés jumelles non déclarées :\n${twins.join('\n')}`).toEqual([])
+  })
+})
+
 describe('intégrité des caractères', () => {
   // Un script Python qui applique `.decode('unicode_escape')` à de l'UTF-8
   // produit du mojibake (« Aperçu » → « AperÃ§u »). Ça passe tsc, le lint ET

@@ -13,6 +13,7 @@ import { db, storage } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import type { Brief } from './types'
 import type { ClientFormField } from '@/features/taxonomy/types'
+import { t } from '@/lib/i18n'
 
 interface CreateBriefInput {
   taxonomyId: string
@@ -31,7 +32,7 @@ export function useCreateBrief() {
 
   return useMutation({
     mutationFn: async (input: CreateBriefInput): Promise<string> => {
-      if (!user) throw new Error('not authenticated')
+      if (!user) throw new Error(t('err.auth.notSignedIn'))
       const ref = await addDoc(collection(db, 'briefs'), {
         taxonomyId: input.taxonomyId,
         ownerId: user.uid,

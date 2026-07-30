@@ -6,6 +6,7 @@
 import { getWorkflow, saveWorkflow } from '@/features/workflows/persistence/workflowsApi'
 import { normalizeDomain, type SourceSiteRow } from '../sourceSites'
 import { stableId } from '../core'
+import { t } from '@/lib/i18n'
 
 /** Type du node porteur de la liste des concurrents. */
 const SOURCE_SITES = 'source-sites'
@@ -35,9 +36,9 @@ async function writeRows(
 ): Promise<void> {
   const wf = await getWorkflow(uid, workflowId)
   // Jamais d'écriture à partir d'un workflow non chargé : on écraserait le graphe.
-  if (!wf) throw new Error('Workflow introuvable.')
+  if (!wf) throw new Error(t('err.pw.noWorkflow'))
   const node = wf.nodes.find((n) => n.type === SOURCE_SITES)
-  if (!node) throw new Error('Ce suivi n’a pas de node « Sites sources ».')
+  if (!node) throw new Error(t('err.pw.noSourceSitesNode'))
   const cfg = node.config as { sites?: SourceSiteRow[] }
   const nodes = wf.nodes.map((n) =>
     n.id === node.id ? { ...n, config: { ...cfg, sites: transform(cfg.sites ?? []) } } : n)

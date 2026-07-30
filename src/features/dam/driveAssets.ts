@@ -9,6 +9,7 @@
 
 import { useGDriveStore } from '@/stores/gdrive.store'
 import { getServerGoogleToken } from '@/features/gdrive/serverGoogleToken'
+import { t } from '@/lib/i18n'
 
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 
@@ -77,7 +78,7 @@ async function getDriveAccessToken(): Promise<string> {
   // Ni serveur ni navigateur : on relâche le latch pour retenter le serveur au prochain appel
   // (ex. l'utilisateur vient de connecter le compte).
   serverTokenUnavailable = false
-  throw new Error('Google Drive non connecté — connecte ton compte (Réglages → Connecteurs).')
+  throw new Error(t('err.dam.driveNotConnected'))
 }
 
 // ⚠ AUCUNE mémoïsation par fileId. Un visuel régénéré REMPLACE le contenu du
@@ -95,7 +96,7 @@ async function fetchDriveBlobUrl(fileId: string): Promise<string> {
     headers: { Authorization: `Bearer ${token}` },
   })
   if (!res.ok) {
-    throw new Error(`Drive image ${fileId} : HTTP ${res.status}`)
+    throw new Error(t('err.dam.driveImageHttp', { fileId, status: res.status }))
   }
   const blob = await res.blob()
   return URL.createObjectURL(blob)

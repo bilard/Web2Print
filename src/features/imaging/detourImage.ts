@@ -3,6 +3,7 @@
 import { extractDriveFileId, isDriveImageRef, resolveDriveImageUrl } from '@/features/dam/driveAssets'
 import { damSlug, uploadImageToDam } from '@/features/dam/uploadImageToDam'
 import { removeBackground } from './removeBackground'
+import { t } from '@/lib/i18n'
 
 const SUB_FOLDER = 'Détourés'
 
@@ -25,7 +26,7 @@ export async function detourImageRef(ref: string, baseName: string): Promise<str
 export async function detourImageValue(value: string, baseName: string): Promise<string> {
   const segments = value.split(/[\n|]/).map((s) => s.trim()).filter(Boolean)
   const ref = segments[0]
-  if (!ref) throw new Error('Aucune image dans cette cellule')
+  if (!ref) throw new Error(t('err.img.noImageInCell'))
   const webViewLink = await detourImageRef(ref, baseName)
   // Chaîne « détourée | originale » : l'ORIGINALE (dernier segment, jamais un
   // détourage précédent) reste en secours — supprimer le PNG du Drive fait

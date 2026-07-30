@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { CityCount } from './metrics'
+import { t } from '@/lib/i18n'
 
 export interface CityCoords {
   lat: number
@@ -37,7 +38,7 @@ async function geocode(city: string, country: string | null): Promise<CacheEntry
   const name = city.replace(/\s*\(.+\)\s*$/, '')
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=5&language=en&format=json`
   const res = await fetch(url)
-  if (!res.ok) throw new Error(`Géocodage « ${city} » : HTTP ${res.status}`)
+  if (!res.ok) throw new Error(t('err.an.geocoding', { city, status: res.status }))
   const data = (await res.json()) as {
     results?: { latitude: number; longitude: number; country_code?: string }[]
   }

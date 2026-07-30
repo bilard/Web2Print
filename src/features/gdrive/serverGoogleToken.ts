@@ -3,6 +3,7 @@
 // écran « appli non validée »). Cache client ~50 min ; le serveur re-mint au-delà.
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
+import { t } from '@/lib/i18n'
 
 const mintGoogleToken = httpsCallable<unknown, { accessToken: string }>(functions, 'mintGoogleToken')
 
@@ -13,7 +14,7 @@ export async function getServerGoogleToken(): Promise<string> {
   if (cache && cache.exp > Date.now() + 60_000) return cache.token
   const res = await mintGoogleToken({})
   const token = res.data?.accessToken
-  if (!token) throw new Error('mintGoogleToken: réponse sans accessToken')
+  if (!token) throw new Error(t('err.gd.noAccessToken'))
   cache = { token, exp: Date.now() + 50 * 60_000 }
   return token
 }

@@ -11,6 +11,7 @@ import { removeBackground } from '@/features/imaging/removeBackground'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { saveCatalog } from './catalogsApi'
 import { resolveCatalogImage } from './useResolvedImage'
+import { t } from '@/lib/i18n'
 
 /** Détourages simultanés : au-delà, le service de détourage sature et renvoie des erreurs. */
 const CONCURRENCY = 3
@@ -117,7 +118,7 @@ export function useCatalogCutout() {
           // externe) : on la résout d'abord en blob/data-URI, exactement comme le
           // rendu des fiches, puis on détoure cette image-là.
           const resolved = await resolveCatalogImage(item.src)
-          if (!resolved) throw new Error('visuel introuvable ou non résoluble')
+          if (!resolved) throw new Error(t('err.notFound.visual'))
           const { url } = await removeBackground(resolved)
           const png = await (await fetch(url)).blob()
           URL.revokeObjectURL(url)

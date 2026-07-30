@@ -17,6 +17,7 @@
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage, auth } from '@/lib/firebase/config'
 import { escapeXml, slugifyFileName } from './xmlUtils'
+import { t } from '@/lib/i18n'
 
 export interface ImageToSvgResult {
   /** Blob SVG prêt à être passé à parseSvg / loadSVGFromString */
@@ -52,14 +53,14 @@ const loadImageDimensions = (dataUrl: string): Promise<{ width: number; height: 
  */
 export async function convertImageToEditableSvg(imageFile: File): Promise<ImageToSvgResult> {
   if (!imageFile.type.startsWith('image/')) {
-    throw new Error(`Type non supporté : ${imageFile.type || 'inconnu'}`)
+    throw new Error(t('err.unsupportedType', { type: imageFile.type || t('err.svg.unknownType') }))
   }
   if (imageFile.type === 'image/svg+xml') {
-    throw new Error('Le fichier est déjà un SVG — utilisez l\'import SVG direct.')
+    throw new Error(t('err.svg.alreadySvg'))
   }
 
   const user = auth.currentUser
-  if (!user) throw new Error('Utilisateur non connecté — connexion Firebase requise pour uploader l\'image.')
+  if (!user) throw new Error(t('err.svg.signInImage'))
 
   // Lire les dimensions avant l'upload pour valider rapidement le fichier.
   const dataUrl = await readAsDataURL(imageFile)

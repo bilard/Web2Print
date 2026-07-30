@@ -1,6 +1,8 @@
 // Couche d'accès à l'API Bot Telegram. Appels fetch directs depuis le navigateur :
 // api.telegram.org renvoie Access-Control-Allow-Origin: *, donc pas de proxy.
 
+import { t } from '@/lib/i18n'
+
 const API_BASE = 'https://api.telegram.org'
 
 export type TelegramParseMode = 'none' | 'HTML' | 'MarkdownV2'
@@ -40,10 +42,10 @@ async function parseTelegramResponse(res: Response): Promise<{ messageId: number
   try {
     json = (await res.json()) as TelegramOk | TelegramErr
   } catch {
-    throw new Error(`Telegram API HTTP ${res.status} ${res.statusText} : réponse illisible.`)
+    throw new Error(t('err.tg.httpUnreadable', { status: res.status, statusText: res.statusText }))
   }
   if (!json.ok) {
-    throw new Error(`Telegram API ${json.error_code} : ${json.description}`)
+    throw new Error(t('err.tg.apiError', { code: json.error_code, description: json.description }))
   }
   return { messageId: json.result.message_id }
 }
@@ -81,10 +83,10 @@ export async function getTelegramBotInfo(botToken: string): Promise<TelegramBotI
   try {
     json = await res.json()
   } catch {
-    throw new Error(`Telegram API HTTP ${res.status} : réponse illisible.`)
+    throw new Error(t('err.tg.httpUnreadableShort', { status: res.status }))
   }
   if (!json.ok || !json.result) {
-    throw new Error(`Telegram API ${json.error_code ?? res.status} : ${json.description ?? 'token invalide'}`)
+    throw new Error(t('err.tg.apiError', { code: json.error_code ?? res.status, description: json.description ?? t('err.tg.invalidToken') }))
   }
   return { username: json.result.username ?? '', firstName: json.result.first_name ?? '' }
 }
@@ -110,7 +112,7 @@ export async function deleteTelegramMessage(
   })
   const json = (await res.json().catch(() => null)) as TelegramDeleteResponse | null
   if (!json?.ok) {
-    throw new Error(`Telegram deleteMessage ${json?.error_code ?? res.status} : ${json?.description ?? 'échec'}`)
+    throw new Error(t('err.tg.callFailed', { method: 'deleteMessage', code: json?.error_code ?? res.status, description: json?.description ?? t('err.tg.failed') }))
   }
 }
 
@@ -130,7 +132,7 @@ export async function deleteTelegramMessages(
   })
   const json = (await res.json().catch(() => null)) as TelegramDeleteResponse | null
   if (!json?.ok) {
-    throw new Error(`Telegram deleteMessages ${json?.error_code ?? res.status} : ${json?.description ?? 'échec'}`)
+    throw new Error(t('err.tg.callFailed', { method: 'deleteMessages', code: json?.error_code ?? res.status, description: json?.description ?? t('err.tg.failed') }))
   }
 }
 
@@ -152,7 +154,7 @@ export async function answerTelegramCallbackQuery(
   })
   const json = (await res.json().catch(() => null)) as { ok?: boolean; error_code?: number; description?: string } | null
   if (!json?.ok) {
-    throw new Error(`Telegram answerCallbackQuery ${json?.error_code ?? res.status} : ${json?.description ?? 'échec'}`)
+    throw new Error(t('err.tg.callFailed', { method: 'answerCallbackQuery', code: json?.error_code ?? res.status, description: json?.description ?? t('err.tg.failed') }))
   }
 }
 
@@ -173,7 +175,7 @@ export async function editTelegramMessageReplyMarkup(
   })
   const json = (await res.json().catch(() => null)) as { ok?: boolean; error_code?: number; description?: string } | null
   if (!json?.ok) {
-    throw new Error(`Telegram editMessageReplyMarkup ${json?.error_code ?? res.status} : ${json?.description ?? 'échec'}`)
+    throw new Error(t('err.tg.callFailed', { method: 'editMessageReplyMarkup', code: json?.error_code ?? res.status, description: json?.description ?? t('err.tg.failed') }))
   }
 }
 

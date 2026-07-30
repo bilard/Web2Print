@@ -2,6 +2,7 @@ import { collection, doc, getDocs, setDoc, deleteDoc, query, orderBy, where, wri
 import { db } from '@/lib/firebase/config'
 import { scrapingTemplateSchema, type ScrapingTemplate } from './types'
 import { invalidateTemplatesCache } from './templatesCache'
+import { t } from '@/lib/i18n'
 
 const COLLECTION = 'scrapingTemplates'
 
@@ -36,7 +37,7 @@ function stripUndefined<T>(value: T): T {
 export async function saveTemplate(template: ScrapingTemplate): Promise<void> {
   const parsed = scrapingTemplateSchema.safeParse(template)
   if (!parsed.success) {
-    throw new Error(`Template invalide : ${parsed.error.issues.map((i) => i.message).join(', ')}`)
+    throw new Error(t('err.st.invalidTemplate', { issues: parsed.error.issues.map((i) => i.message).join(', ') }))
   }
   const data = stripUndefined({ ...parsed.data, updatedAt: Date.now() })
   await setDoc(doc(db, COLLECTION, template.id), data)
@@ -53,7 +54,7 @@ export async function saveTemplate(template: ScrapingTemplate): Promise<void> {
 export async function saveTemplateWithVendorSync(template: ScrapingTemplate): Promise<{ syncedCount: number }> {
   const parsed = scrapingTemplateSchema.safeParse(template)
   if (!parsed.success) {
-    throw new Error(`Template invalide : ${parsed.error.issues.map((i) => i.message).join(', ')}`)
+    throw new Error(t('err.st.invalidTemplate', { issues: parsed.error.issues.map((i) => i.message).join(', ') }))
   }
 
   // Sécurité : sans domaine identifiable, refuser la propagation. Un

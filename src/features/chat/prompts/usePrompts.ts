@@ -8,6 +8,7 @@ import {
   updatePrompt,
 } from './promptsApi'
 import type { Prompt, PromptDraft } from './types'
+import { t } from '@/lib/i18n'
 
 const KEY = ['chat', 'prompts'] as const
 
@@ -44,7 +45,7 @@ export function usePrompts(): UsePromptsResult {
 
   const createMut = useMutation({
     mutationFn: async (draft: PromptDraft) => {
-      if (!uid) throw new Error('Utilisateur non connecté')
+      if (!uid) throw new Error(t('err.auth.notSignedIn'))
       return createPrompt(uid, draft)
     },
     onSuccess: (p) => {
@@ -57,7 +58,7 @@ export function usePrompts(): UsePromptsResult {
       id: string
       patch: Partial<PromptDraft> & { favorite?: boolean }
     }) => {
-      if (!uid) throw new Error('Utilisateur non connecté')
+      if (!uid) throw new Error(t('err.auth.notSignedIn'))
       await updatePrompt(uid, args.id, args.patch)
       return args
     },
@@ -72,7 +73,7 @@ export function usePrompts(): UsePromptsResult {
 
   const removeMut = useMutation({
     mutationFn: async (id: string) => {
-      if (!uid) throw new Error('Utilisateur non connecté')
+      if (!uid) throw new Error(t('err.auth.notSignedIn'))
       await deletePrompt(uid, id)
       return id
     },

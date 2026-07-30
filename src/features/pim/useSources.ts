@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { saveSources } from './usePimFirebase'
 import { usePimStore } from '@/stores/pim.store'
 import type { Source } from './types'
+import { t } from '@/lib/i18n'
 
 export function useUpsertSource(projectId: string) {
   const qc = useQueryClient()
@@ -9,7 +10,7 @@ export function useUpsertSource(projectId: string) {
   return useMutation({
     mutationFn: async (source: Source) => {
       const project = usePimStore.getState().projects.find((p) => p.id === projectId)
-      if (!project) throw new Error('Projet introuvable')
+      if (!project) throw new Error(t('err.notFound.project'))
       const idx = project.sources.findIndex((s) => s.id === source.id)
       const sources = idx >= 0
         ? project.sources.map((s, i) => (i === idx ? source : s))

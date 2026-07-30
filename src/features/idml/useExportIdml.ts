@@ -5,6 +5,7 @@ import { exportIdmlModified } from './idmlExporter'
 import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useEditorStore } from '@/stores/editor.store'
 import { recordAudit } from '@/lib/auditLog'
+import { t } from '@/lib/i18n'
 
 export function useExportIdml() {
   const projectTitle = useEditorStore((s) => s.projectTitle)
@@ -15,12 +16,12 @@ export function useExportIdml() {
   const exportIdml = useCallback(async (): Promise<void> => {
     const buffer = await getIdmlBuffer(projectId)
     if (!buffer) {
-      throw new Error('Aucune source IDML disponible. Importez un fichier IDML d\'abord.')
+      throw new Error(t('err.idml.noSource'))
     }
 
     const canvas = globalFabricCanvas
     if (!canvas) {
-      throw new Error('Canvas non disponible.')
+      throw new Error(t('err.idml.noCanvas'))
     }
 
     const objects = canvas.getObjects().filter(

@@ -11,6 +11,7 @@
 import { recordAiUsage, pushAiUsageListener } from '@/features/stats/aiUsageTracking'
 import { llmPostWithFallback } from '@/lib/llmProxyClient'
 import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
+import { t } from '@/lib/i18n'
 import {
   type LLMProviderId,
   getProviderCascade,
@@ -61,10 +62,7 @@ export async function generateText(opts: GenerateTextOptions): Promise<GenerateT
     : cascadeFromStore
 
   if (cascade.length === 0) {
-    throw new Error(
-      '[chatRouter] aucun provider LLM disponible. ' +
-        'Configure gemini, claude, openai, deepseek ou openrouter dans Réglages → IA.',
-    )
+    throw new Error(t('err.llm.chatNoProvider'))
   }
 
   let lastError: unknown = null
@@ -116,7 +114,7 @@ async function dispatch(
   if (provider === 'openai') return await chatOpenAI(opts, model)
   if (provider === 'deepseek') return await chatDeepSeek(opts, model)
   if (provider === 'openrouter') return await chatOpenRouter(opts, model)
-  throw new Error(`Provider chat inconnu : ${provider}`)
+  throw new Error(t('err.llm.chatUnknownProvider', { provider }))
 }
 
 const TIMEOUT_MS = 180_000
@@ -152,7 +150,7 @@ async function chatClaude(opts: GenerateTextOptions, model: string): Promise<str
   }
   const res = await llmPostWithFallback('claude', model, requestBody, TIMEOUT_MS)
 
-  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${(await res.text()).slice(0, 2000)}`)
+  if (!res.ok) throw new Error(t('err.llm.httpStatus', { provider: 'Anthropic', status: res.status, body: (await res.text()).slice(0, 2000) }))
 
   const data = (await res.json()) as {
     content?: Array<{ type: string; text?: string }>
@@ -167,7 +165,7 @@ async function chatClaude(opts: GenerateTextOptions, model: string): Promise<str
     })
   }
   const text = data.content?.find((b) => b.type === 'text')?.text
-  if (!text) throw new Error('Claude : réponse vide')
+  if (!text) throw new Error(t('err.llm.emptyAnswer', { provider: 'Claude' }))
   return text
 }
 
@@ -209,7 +207,7 @@ async function chatGemini(opts: GenerateTextOptions, model: string): Promise<str
   }
   const res = await llmPostWithFallback('gemini', model, requestBody, TIMEOUT_MS)
 
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 2000)}`)
+  if (!res.ok) throw new Error(t('err.llm.httpStatus', { provider: 'Gemini', status: res.status, body: (await res.text()).slice(0, 2000) }))
 
   const data = (await res.json()) as {
     candidates?: Array<{
@@ -239,10 +237,11 @@ async function chatGemini(opts: GenerateTextOptions, model: string): Promise<str
   if (!text) {
     const finishReason = candidate?.finishReason ?? 'unknown'
     const thoughtsTokens = data.usageMetadata?.thoughtsTokenCount ?? 0
-    throw new Error(
-      `Gemini : réponse vide (finishReason=${finishReason}, thoughtsTokens=${thoughtsTokens}, ` +
-        `outputTokens=${data.usageMetadata?.candidatesTokenCount ?? 0})`,
-    )
+    throw new Error(t('err.llm.geminiEmptyDetail', {
+      reason: finishReason,
+      thoughts: thoughtsTokens,
+      output: data.usageMetadata?.candidatesTokenCount ?? 0,
+    }))
   }
   return text
 }
@@ -285,7 +284,7 @@ async function chatOpenAICompatible(
   }
   const res = await llmPostWithFallback(cfg.providerKey, model, requestBody, TIMEOUT_MS)
 
-  if (!res.ok) throw new Error(`${cfg.providerKey} ${res.status}: ${(await res.text()).slice(0, 2000)}`)
+  if (!res.ok) throw new Error(t('err.llm.httpStatus', { provider: cfg.providerKey, status: res.status, body: (await res.text()).slice(0, 2000) }))
 
   const data = (await res.json()) as {
     choices?: Array<{ message?: { content?: string } }>
@@ -300,7 +299,7 @@ async function chatOpenAICompatible(
     })
   }
   const text = data.choices?.[0]?.message?.content
-  if (!text) throw new Error(`${cfg.providerKey} : réponse vide`)
+  if (!text) throw new Error(t('err.llm.emptyAnswer', { provider: cfg.providerKey }))
   return text
 }
 

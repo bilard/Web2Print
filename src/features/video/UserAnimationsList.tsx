@@ -198,10 +198,10 @@ function AnimationCard({ animation, onDelete, onRename }: {
     try {
       const JSZip = (await import('jszip')).default
       const res = await fetch(animation.url)
-      if (!res.ok) throw new Error(`HTTP ${res.status} en récupérant le ZIP`)
+      if (!res.ok) throw new Error(t('err.vd.zipHttp', { status: res.status }))
       const zip = await JSZip.loadAsync(await res.blob())
       const html = await zip.file('index.html')?.async('string')
-      if (!html) throw new Error('index.html introuvable dans le ZIP')
+      if (!html) throw new Error(t('err.vd.noIndexHtml'))
       const blob = new Blob([html], { type: 'text/html' })
       const url = URL.createObjectURL(blob)
       window.open(url, '_blank', 'noopener')

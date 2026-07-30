@@ -5,13 +5,14 @@ import { useAuthStore } from '@/stores/auth.store'
 import { toast } from 'sonner'
 import { recordAudit } from '@/lib/auditLog'
 import type { ProjectData } from '@/types/project'
+import { t } from '@/lib/i18n'
 
 async function duplicateProject(
   userId: string,
   projectId: string
 ): Promise<ProjectData> {
   const snap = await getDoc(doc(db, 'projects', projectId))
-  if (!snap.exists()) throw new Error('Projet introuvable')
+  if (!snap.exists()) throw new Error(t('err.notFound.project'))
   const source = snap.data() as Record<string, unknown>
   // Strip un éventuel `id` résiduel pour qu'il ne pollue pas le nouveau doc
   const { id: _ignored, ...sourceClean } = source

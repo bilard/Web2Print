@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
 import { llmFetchViaProxy } from '@/lib/llmProxyClient'
+import { t } from '@/lib/i18n'
 
 const DEFAULT_MODEL = 'gemini-3.1-pro-preview'
 const ENDPOINT = (model: string) => {
@@ -101,7 +102,7 @@ async function callGemini(
   // ou que le payload multimodal dépasse la limite des callables.
   const directFetch = async (): Promise<Response> => {
     const apiKey = getApiKey('gemini')
-    if (!apiKey) throw new Error('Clé Gemini absente. Configurez-la dans Réglages.')
+    if (!apiKey) throw new Error(t('err.llm.keyMissing', { provider: 'Gemini' }))
     const ctrl = new AbortController()
     const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
     try {
@@ -120,12 +121,12 @@ async function callGemini(
 
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`Gemini API ${res.status} : ${body.slice(0, 200)}`)
+    throw new Error(t('err.llm.httpStatus', { provider: 'Gemini', status: res.status, body: body.slice(0, 200) }))
   }
 
   const data = (await res.json()) as GeminiResponse
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!text) throw new Error('Gemini : réponse vide')
+  if (!text) throw new Error(t('err.llm.emptyAnswer', { provider: 'Gemini' }))
   return {
     text,
     usage: {
@@ -163,11 +164,9 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
   const secondValidation = opts.schema.safeParse(secondParsed)
   if (secondValidation.success) return secondValidation.data
 
-  throw new Error(
-    `Réponse Gemini non conforme au schéma après retry : ${secondValidation.error.issues
-      .map((i) => i.message)
-      .join(' ; ')}`,
-  )
+  throw new Error(t('err.llm.geminiRetrySchema', {
+    issues: secondValidation.error.issues.map((i) => i.message).join(' ; '),
+  }))
 }
 
 function safeJsonParse(text: string): unknown {
@@ -186,5 +185,5 @@ function safeJsonParse(text: string): unknown {
   if (start >= 0 && end > start) {
     try { return JSON.parse(text.slice(start, end + 1)) } catch { /* échec final */ }
   }
-  throw new Error('Réponse Gemini non parsable en JSON')
+  throw new Error(t('err.llm.geminiUnparsable'))
 }

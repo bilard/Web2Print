@@ -1,5 +1,6 @@
 import { debugLog } from '@/lib/debugLog'
 import { generateText } from '@/features/chat/ai/chatRouter'
+import { t } from '@/lib/i18n'
 
 export interface ImproveImageRef {
   /** Data brute base64 SANS préfixe data:. */
@@ -120,7 +121,7 @@ function extractJson(raw: string): unknown {
   const end = cleaned.lastIndexOf('}')
   if (start === -1 || end === -1) {
     console.error('[improvementQuestions] Réponse brute non-JSON:', raw)
-    throw new Error('Aucun JSON détecté dans la réponse.')
+    throw new Error(t('err.llm.noJsonFound'))
   }
   return JSON.parse(cleaned.slice(start, end + 1))
 }
@@ -168,7 +169,7 @@ export async function generateImprovementQuestions(
 
   const parsed = extractJson(text) as { questions?: unknown }
   if (!parsed || !Array.isArray(parsed.questions)) {
-    throw new Error('Réponse Gemini sans tableau "questions".')
+    throw new Error(t('err.llm.noQuestions'))
   }
   const questions = parsed.questions.filter(isImprovementQuestion)
   debugLog(

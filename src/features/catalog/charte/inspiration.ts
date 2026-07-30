@@ -10,6 +10,7 @@ import { functions } from '@/lib/firebase/config'
 import { generateJson } from '@/features/ai/llmRouter'
 import type { CatalogCharte } from '../catalogTypes'
 import { paletteFromCanvas } from './extractCharte'
+import { t } from '@/lib/i18n'
 
 const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(functions, 'imageProxy')
 
@@ -39,7 +40,7 @@ async function resolveMainImageUrl(url: string): Promise<string> {
   if (good) return good
   const md = data.content?.match(/!\[[^\]]*\]\((https?:[^)\s]+)\)/)
   if (md) return md[1]
-  throw new Error('aucun visuel principal détecté sur la page')
+  throw new Error(t('err.cat.noMainVisual'))
 }
 
 const AnalysisSchema = z.object({

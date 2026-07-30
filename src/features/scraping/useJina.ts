@@ -15,6 +15,7 @@ import { firecrawlScrapeHtml } from './core/firecrawlFallback'
 import { brightDataScrapeHtml } from './core/brightDataFallback'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
 import { recordScrapeUsage } from '@/features/stats/aiUsageTracking'
+import { t } from '@/lib/i18n'
 
 /** Cloud Function Puppeteer : extrait le breadcrumb visible d'une page
  *  e-commerce (contourne les protections anti-bot qui servent aux crawlers
@@ -996,7 +997,7 @@ async function llmExtract(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
-    throw new Error(`Gemini: ${err.error?.message ?? `HTTP ${res.status}`}`)
+    throw new Error(t('err.sc.geminiHttp', { message: err.error?.message ?? `HTTP ${res.status}` }))
   }
 
   const json = await res.json() as {
@@ -1014,7 +1015,7 @@ async function llmExtract(
     })
   }
   const text = json.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!text) throw new Error('Gemini n\'a retourné aucun contenu')
+  if (!text) throw new Error(t('err.sc.geminiEmpty'))
   return JSON.parse(text)
 }
 
@@ -1169,11 +1170,11 @@ export function useJina() {
       const fakeEan = /^(1234567890123|0000000000000|9999999999999)$/
       const hasHallucination = allValues.some(v => hallucinationPatterns.test(v.trim()) || fakeEan.test(v.trim()))
       if (hasHallucination) {
-        throw new Error('Les données extraites semblent fictives. Essayez avec un prompt plus précis ou vérifiez que la page est accessible.')
+        throw new Error(t('err.sc.fakeData'))
       }
 
       const { rows, columns } = normalizeToRows(extracted, fields, target)
-      if (rows.length === 0) throw new Error('Aucune ligne extraite — affine le schéma ou le prompt')
+      if (rows.length === 0) throw new Error(t('err.sc.noRow'))
       return { rows, columns }
     } catch (e) { setError(e instanceof Error ? e.message : 'Erreur'); return null }
     finally { setLoading(false) }
@@ -1413,7 +1414,7 @@ export function useJina() {
       const page = await jinaRead(url)
 
       if (!page.links || Object.keys(page.links).length === 0) {
-        throw new Error('Aucun lien trouvé sur cette page')
+        throw new Error(t('err.sc.noLink'))
       }
 
       const baseHost = new URL(url).hostname
@@ -1473,7 +1474,7 @@ export function useJina() {
       }
 
       setProgress({ done: urls.length, total: urls.length })
-      if (allRows.length === 0) throw new Error('Aucun résultat extrait')
+      if (allRows.length === 0) throw new Error(t('err.sc.noResult'))
       return { rows: allRows, columns: cols }
     } catch (e) { setError(e instanceof Error ? e.message : 'Erreur'); return null }
     finally { setLoading(false) }

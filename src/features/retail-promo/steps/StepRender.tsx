@@ -59,7 +59,7 @@ async function resolveOneImg(url: string): Promise<string | undefined> {
     if (isDriveImageRef(url)) {
       // Asset DAM (Google Drive privé) → blob: same-origin, capturable par html2canvas.
       const fileId = extractDriveFileId(url)
-      if (!fileId) throw new Error('fileId Drive introuvable')
+      if (!fileId) throw new Error(t('err.notFound.driveFileId'))
       resolved = await resolveDriveImageUrl(fileId)
     } else {
       // URL externe http(s) → proxy serveur (contourne CORS) → data-URI.
@@ -200,7 +200,7 @@ export function StepRender() {
     setBusy('one')
     try {
       const blob = await captureSafe(previewRef.current)
-      if (!blob) throw new Error('Capture vide')
+      if (!blob) throw new Error(t('err.rp.emptyCapture'))
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url; a.download = `promo_${slug(cards[safe].name)}.png`

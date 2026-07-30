@@ -7,6 +7,7 @@ import { isPimSource, pimProjectIdFromSource } from '@/features/merge/pimSource'
 import type { DataSourceRef } from '@/stores/merge.store'
 import type { ExcelSheet } from '@/features/excel/types'
 import type { Product, ProductField } from '@/features/pim/types'
+import { t } from '@/lib/i18n'
 
 /**
  * Applique `patch` (colonne → valeur) à la ligne `rowId` de la source.
@@ -18,7 +19,7 @@ export async function saveRowToMaster(sourceRef: DataSourceRef, rowId: string, p
   if (isPimSource(sourceRef)) {
     const ref = doc(db, 'pim_projects', pimProjectIdFromSource(sourceRef), 'products', rowId)
     const snap = await getDoc(ref)
-    if (!snap.exists()) throw new Error('Produit introuvable dans le projet PIM')
+    if (!snap.exists()) throw new Error(t('err.notFound.product'))
     // Objet `fields` réécrit ENTIER (pas de fieldPath pointé : une clé de colonne
     // contenant « . » ou des caractères spéciaux casserait le chemin Firestore).
     const fields = { ...(snap.data() as Product).fields }
@@ -32,7 +33,7 @@ export async function saveRowToMaster(sourceRef: DataSourceRef, rowId: string, p
   }
   const metaRef = doc(db, 'excel_data', sourceRef.excelDocId)
   const metaSnap = await getDoc(metaRef)
-  if (!metaSnap.exists()) throw new Error('Dataset introuvable')
+  if (!metaSnap.exists()) throw new Error(t('err.notFound.dataset'))
   const meta = metaSnap.data() as { sheets?: unknown }
   const inline = typeof meta.sheets === 'string'
   let sheets: ExcelSheet[]
@@ -40,12 +41,12 @@ export async function saveRowToMaster(sourceRef: DataSourceRef, rowId: string, p
     sheets = JSON.parse(meta.sheets as string) as ExcelSheet[]
   } else {
     const payloadSnap = await getDoc(doc(db, 'excel_data_payload', sourceRef.excelDocId))
-    if (!payloadSnap.exists()) throw new Error('Dataset vide ou corrompu')
+    if (!payloadSnap.exists()) throw new Error(t('err.notFound.datasetEmpty'))
     sheets = JSON.parse((payloadSnap.data() as { json: string }).json) as ExcelSheet[]
   }
   const sheet = sheets[sourceRef.sheetIndex] ?? sheets[0]
   const row = sheet?.rows.find((r) => r._id === rowId)
-  if (!row) throw new Error('Ligne introuvable dans le dataset')
+  if (!row) throw new Error(t('err.notFound.row'))
   Object.assign(row, patch)
   const json = JSON.stringify(sheets)
   if (inline) await updateDoc(metaRef, { sheets: json })

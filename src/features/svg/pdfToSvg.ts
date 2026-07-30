@@ -19,6 +19,7 @@ import { storage, auth } from '@/lib/firebase/config'
 import { registerDynamicFontVariant } from '@/features/assets/useFonts'
 import { registerFontBuffer } from '@/features/assets/fontBufferRegistry'
 import { escapeXml, slugifyFileName } from './xmlUtils'
+import { t } from '@/lib/i18n'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
 
@@ -824,7 +825,7 @@ async function rasterizeFirstPage(pdfFile: File): Promise<{ blob: Blob; width: n
     canvas.width = Math.round(viewport.width)
     canvas.height = Math.round(viewport.height)
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) throw new Error('Canvas 2D context indisponible')
+    if (!ctx) throw new Error(t('err.noCanvas'))
     // Fond blanc : certains PDF ont un fond transparent, on veut un visuel imprimé opaque.
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -889,7 +890,7 @@ async function rasterizeFirstPage(pdfFile: File): Promise<{ blob: Blob; width: n
  */
 export async function convertPdfToEditableSvg(pdfFile: File): Promise<PdfToSvgResult> {
   if (pdfFile.type !== 'application/pdf' && !pdfFile.name.toLowerCase().endsWith('.pdf')) {
-    throw new Error(`Type non supporté : ${pdfFile.type || 'inconnu'} — attendu un PDF.`)
+    throw new Error(t('err.svg.notPdf', { type: pdfFile.type || t('err.svg.unknownType') }))
   }
 
   const baseNameForFile = pdfFile.name.replace(/\.[^.]+$/, '') || 'pdf'
@@ -919,7 +920,7 @@ export async function convertPdfToEditableSvg(pdfFile: File): Promise<PdfToSvgRe
 
   // 2) Fallback : rasterisation + calque texte pdf.js (ou OCR si aplati).
   const user = auth.currentUser
-  if (!user) throw new Error('Utilisateur non connecté — connexion Firebase requise pour uploader le rendu PDF.')
+  if (!user) throw new Error(t('err.svg.signInPdf'))
 
   const { blob, width, height, textRuns } = await rasterizeFirstPage(pdfFile)
 

@@ -30,7 +30,7 @@ export function OpportunityPanel({ ck }: { ck: Cockpit }) {
               <th className="font-medium pb-2">{t('pw.opp.gap')}</th>
               {/* « Impact » laissait croire à un montant de CA — c'est un écart À L'UNITÉ,
                   sans volume de ventes derrière. Le titre le dit maintenant. */}
-              <th className="font-medium pb-2 w-[26%]" title={t('pw.opp.unitGapHelp')}>{t('pw.opp.unitGap')}</th>
+              <th className="font-medium pb-2 w-[26%]" title={t('pw.opp.unitGap.title')}>{t('pw.opp.unitGap')}</th>
             </tr>
           </thead>
           <tbody>

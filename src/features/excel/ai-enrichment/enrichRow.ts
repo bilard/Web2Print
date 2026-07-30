@@ -11,6 +11,7 @@ import { enrichProductCore } from './useProductEnrichment'
 import type { EnrichedProduct } from './types'
 import { isJunkImageUrl, classifyImage, getProductRefs } from './imageFilter'
 import { isSaneSpecPair } from '@/features/scraping/core/parsers/parseSpecifications'
+import { t } from '@/lib/i18n'
 
 export interface EnrichRowInput {
   url: string
@@ -211,8 +212,8 @@ export function isEmptyProduct(p: EnrichedProduct | null): boolean {
 
 export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult> {
   const { url, targetFields, log } = input
-  if (!url) throw new Error('enrichRow: url manquante')
-  if (!targetFields || targetFields.length === 0) throw new Error('enrichRow: targetFields vide')
+  if (!url) throw new Error(t('err.enr.noUrl'))
+  if (!targetFields || targetFields.length === 0) throw new Error(t('err.enr.noFields'))
 
   const title = deriveTitleFromUrl(url)
   log?.(`[enrichRow] enrichissement (moteur PIM) ${url}${title ? ` — titre « ${title} »` : ''}`)

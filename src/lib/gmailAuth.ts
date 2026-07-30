@@ -6,6 +6,8 @@
 // par-node (access_token ~1 h dans sessionStorage, Client ID à saisir) est supprimé :
 // il obligeait à se reconnecter chaque heure / à chaque onglet.
 
+import { t } from '@/lib/i18n'
+
 export interface SendGmailAttachment {
   filename: string
   mimeType: string
@@ -96,7 +98,7 @@ export async function sendGmail(
 
   if (!res.ok) {
     const text = await res.text().catch(() => '')
-    throw new Error(`Gmail API HTTP ${res.status} : ${text || res.statusText}`)
+    throw new Error(t('err.gm.apiHttp', { status: res.status, body: text || res.statusText }))
   }
 
   const json = (await res.json()) as { id: string }

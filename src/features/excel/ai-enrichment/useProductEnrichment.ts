@@ -43,6 +43,7 @@ import { brightDataScrapeWithDocs, getLastBrightDataError, getLastBrightDataSucc
 import { getSiteCookieForUrl } from '@/lib/siteCookies'
 import { extractProductReference, buildManufacturerSearchUrl } from '@/features/scraping/core/manufacturerFallback'
 import { detectBrandFromUrl } from '@/features/scraping/useJina'
+import { t } from '@/lib/i18n'
 
 /**
  * Hook d'enrichissement IA en live d'un produit individuel.
@@ -830,7 +831,7 @@ export async function jinaSearch(query: string, limit = 10): Promise<SearchResul
   if (!res.ok) {
     const body = await res.text()
     console.error('[jina-search] HTTP error', res.status, body.slice(0, 300))
-    throw new Error(`Recherche web échouée (${res.status}) : ${body.slice(0, 200)}`)
+    throw new Error(t('err.enr.webSearchFailed', { status: res.status, body: body.slice(0, 200) }))
   }
   const md = await res.text()
 

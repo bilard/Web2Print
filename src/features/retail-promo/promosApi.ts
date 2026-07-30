@@ -4,6 +4,7 @@ import { stripUndefined } from '@/lib/stripUndefined'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey, CustomFieldMap } from './promoTypes'
 import type { PromoTemplateConfig, PromoColorKey } from './promoCardTypes'
+import { t } from '@/lib/i18n'
 
 /** Fiche promo enregistrée (métadonnées + habillage ; les lignes vivent dans un doc payload séparé). */
 export interface SavedPromoMeta {
@@ -43,10 +44,10 @@ const MAX_PAYLOAD = 900_000 // garde-fou limite Firestore ~1 Mo/doc
 /** Enregistre la fiche courante (méta + lignes). Renvoie l'id. Throw si trop volumineux. */
 export async function savePromo(input: SavePromoInput, existingId?: string): Promise<string> {
   const uid = auth.currentUser?.uid
-  if (!uid) throw new Error('Non connecté')
+  if (!uid) throw new Error(t('err.auth.required'))
   const payload: PromoPayload = { columns: input.columns, rows: input.rows, imgOverride: input.imgOverride, textOverride: input.textOverride }
   const payloadJson = JSON.stringify(payload)
-  if (payloadJson.length > MAX_PAYLOAD) throw new Error('Catalogue trop volumineux pour être sauvegardé (> 900 Ko)')
+  if (payloadJson.length > MAX_PAYLOAD) throw new Error(t('err.rp.catalogTooBig'))
 
   const ref = existingId ? doc(metaCol(uid), existingId) : doc(metaCol(uid))
   // stripUndefined : Firestore rejette tout le doc si fieldMap/config contient un undefined
@@ -100,12 +101,12 @@ export async function loadPromoPayload(id: string): Promise<PromoPayload | null>
  */
 export async function refreshPromoData(id: string, columns: MergeColumn[], rows: MergeRow[]): Promise<void> {
   const uid = auth.currentUser?.uid
-  if (!uid) throw new Error('Non connecté')
+  if (!uid) throw new Error(t('err.auth.required'))
   const existing = await loadPromoPayload(id)
-  if (!existing) throw new Error('Fiche introuvable')
+  if (!existing) throw new Error(t('err.rp.notFound'))
   const payload: PromoPayload = { columns, rows, imgOverride: existing.imgOverride, textOverride: existing.textOverride }
   const payloadJson = JSON.stringify(payload)
-  if (payloadJson.length > MAX_PAYLOAD) throw new Error('Données trop volumineuses (> 900 Ko)')
+  if (payloadJson.length > MAX_PAYLOAD) throw new Error(t('err.rp.dataTooBig'))
   await setDoc(payloadDoc(uid, id), { payload: payloadJson, updatedAt: serverTimestamp() })
   await setDoc(doc(metaCol(uid), id), { rowCount: rows.length, updatedAt: serverTimestamp() }, { merge: true })
 }

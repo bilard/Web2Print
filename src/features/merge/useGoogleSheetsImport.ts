@@ -7,6 +7,7 @@ import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { parseExcelFile } from '@/features/excel/useExcelImport'
 import { useDataMerge } from './useDataMerge'
 import type { DataSourceRef } from '@/stores/merge.store'
+import { t } from '@/lib/i18n'
 
 const DRIVE_SCOPES = [
   'https://www.googleapis.com/auth/drive.readonly',
@@ -44,7 +45,7 @@ export function useGoogleSheetsImport() {
       const result = await signInWithPopup(auth, provider)
       const credential = GoogleAuthProvider.credentialFromResult(result)
       const token = credential?.accessToken
-      if (!token) throw new Error('Impossible de récupérer le token Google')
+      if (!token) throw new Error(t('err.gs.noToken'))
       storeConnect(token, result.user.email ?? '')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur de connexion')
@@ -87,8 +88,8 @@ export function useGoogleSheetsImport() {
         { headers: { Authorization: `Bearer ${accessToken}` } },
       )
       if (!res.ok) {
-        if (res.status === 403) throw new Error('Accès refusé au document')
-        throw new Error(`Erreur export : ${res.status}`)
+        if (res.status === 403) throw new Error(t('err.gs.forbidden'))
+        throw new Error(t('err.gs.exportFailed', { status: res.status }))
       }
 
       const blob = await res.blob()
@@ -96,10 +97,10 @@ export function useGoogleSheetsImport() {
       const fakeFile = new File([blob], fileName, { type: XLSX_MIME })
 
       const sheets = await parseExcelFile(fakeFile)
-      if (sheets.length === 0) throw new Error('Aucune donnée trouvée dans le document')
+      if (sheets.length === 0) throw new Error(t('err.gs.noData'))
 
       const docId = await saveToFirebase(fileName, sheets)
-      if (!docId) throw new Error('Échec de la sauvegarde Firebase')
+      if (!docId) throw new Error(t('err.gs.saveFailed'))
 
       const source: DataSourceRef = {
         excelDocId: docId,

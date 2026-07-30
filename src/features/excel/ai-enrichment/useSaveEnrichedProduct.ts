@@ -8,6 +8,7 @@ import type { EnrichedProduct } from './types'
 import { useEnrichmentStore } from './enrichmentStore'
 import { enrichmentKey } from './types'
 import { stripBoldMarkers, hasBoldMarkers } from '@/lib/richText'
+import { t } from '@/lib/i18n'
 
 const FIRESTORE_COLLECTION = 'excel_data'
 const FIRESTORE_PAYLOAD_COLLECTION = 'excel_data_payload'
@@ -26,15 +27,12 @@ export async function writeSheetsToFirestore(
 ): Promise<string> {
   const user = auth.currentUser
   if (!user) {
-    throw new Error('Non authentifié — impossible de sauvegarder dans Firestore.')
+    throw new Error(t('err.enr.notAuthenticated'))
   }
   const serialized = JSON.stringify(sheets)
   const byteSize = new Blob([serialized]).size
   if (byteSize > FIRESTORE_MAX_BYTES) {
-    throw new Error(
-      `Document trop gros pour Firestore (${(byteSize / 1024).toFixed(0)} Ko > 1024 Ko). ` +
-      `Supprime des colonnes/lignes inutiles ou réduis la taille des images.`,
-    )
+    throw new Error(t('err.enr.tooBig', { kb: (byteSize / 1024).toFixed(0) }))
   }
   const ref = existingDocId
     ? doc(db, FIRESTORE_COLLECTION, existingDocId)

@@ -1,4 +1,5 @@
 import { llmPostWithFallback } from '@/lib/llmProxyClient'
+import { t } from '@/lib/i18n'
 
 const MULTIMODAL_MODEL = 'gemini-3.1-pro-preview'
 
@@ -108,7 +109,7 @@ export async function extractBriefContextFromFiles(
 
     if (!res.ok) {
       const body = await res.text()
-      throw new Error(`Gemini multimodal ${res.status} : ${body.slice(0, 200)}`)
+      throw new Error(t('err.vd.geminiMultimodal', { status: res.status, body: body.slice(0, 200) }))
     }
     const data = (await res.json()) as {
       candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>

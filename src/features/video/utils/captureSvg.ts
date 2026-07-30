@@ -4,6 +4,7 @@ import { generateCurrentPageSvg } from '@/features/export/useExportSvg'
 import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useEditorStore, type CanvasObjectProps } from '@/stores/editor.store'
 import type { Animation3DConfig } from '@/features/animation3d/types'
+import { t } from '@/lib/i18n'
 
 /** Animation posée par objet (« Animer l'objet ») rejouée dans la vidéo
  *  (Couche B-fidèle). `id` = id injecté sur le `<g>` SVG correspondant. */
@@ -72,7 +73,7 @@ async function uploadSvgToStorage(
   height: number,
 ): Promise<Omit<SvgCaptureResult, 'objectAnimations'>> {
   const user = auth.currentUser
-  if (!user) throw new Error('Utilisateur non connecté')
+  if (!user) throw new Error(t('err.auth.notSignedIn'))
 
   const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.svg`
@@ -125,7 +126,7 @@ export async function captureCurrentPageSvg(
 
   try {
     const result = await generateCurrentPageSvg({ cropToContent: false, embedFonts: true })
-    if (!result) throw new Error('Canvas non disponible')
+    if (!result) throw new Error(t('err.vd.noCanvas'))
     const uploaded = await uploadSvgToStorage(result.svg, result.width, result.height)
     return { ...uploaded, objectAnimations }
   } finally {

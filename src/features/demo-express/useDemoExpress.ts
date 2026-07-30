@@ -35,6 +35,7 @@ import { buildDemoSheet, sheetToMerge, isProductLike, DEMO_TARGET_FIELDS, type D
 import { buildDemoWorkflow } from './demoWorkflow'
 import { seedAnimations } from './seedAnimations'
 import { discoverCategories, categoriesFromHtml, productLinksFromListingHtml, isObviousNonProductUrl } from './discoverFromHome'
+import { t } from '@/lib/i18n'
 
 /** Volumétries proposées par le wizard (48 max : sous le quota démo PIM de 50). */
 export const DEMO_VOLUMES = [6, 12, 24, 48] as const
@@ -271,7 +272,7 @@ async function seedCatalog(input: {
     try {
       onDetail('couverture IA en cours…')
       const uid = auth.currentUser?.uid
-      if (!uid) throw new Error('non connecté')
+      if (!uid) throw new Error(t('err.auth.notSignedIn'))
       const { w, h } = pagePx(doc.format)
       const { mimeType, base64 } = await generateImageBase64({ prompt: coverPrompt, targetWidth: w, targetHeight: h })
       const binary = atob(base64)
@@ -558,7 +559,7 @@ export function useDemoExpress() {
       // Idempotent : un re-run met à jour la base « Démo {Société} » existante.
       const existingSheet = (await listSavedFiles().catch(() => [])).find((f) => f.fileName === fileName)
       docId = await saveToFirebase(fileName, [sheet], [], existingSheet?.docId ?? null)
-      if (!docId) throw new Error('sauvegarde refusée')
+      if (!docId) throw new Error(t('err.de.saveRefused'))
       const ex = useExcelStore.getState()
       if (ex.sheets.length === 0) {
         // Studio vierge (cas nominal du compte démo) : on charge la base à l'écran.

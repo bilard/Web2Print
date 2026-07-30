@@ -113,7 +113,7 @@ const crawlNode: NodeSpec<CrawlConfig, Record<string, never>, CrawlOutputs> = {
           for (const a of r.assets) assets.push(a)
           ctx.reportCount?.(rows.length)
         } catch (e) {
-          ctx.log('warn', t('run.crawl.enrichFailed', { url: link, message: e instanceof Error ? e.message : String(e) }))
+          ctx.log('warn', t('run.net.enrichFailed', { url: link, message: e instanceof Error ? e.message : String(e) }))
         }
       }
     }

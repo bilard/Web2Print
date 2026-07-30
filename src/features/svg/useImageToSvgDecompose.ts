@@ -36,6 +36,7 @@ import { decomposeWithGoogleVision } from './googleVisionDecompose'
 import type { VisionParagraph, VisionWord, VisionDecomposeResult } from './googleVisionDecompose'
 import { detectPriceClusters, cropToDataUri, readPriceFromImage, parsePriceParts, classifyLogoTexts } from './refinePrices'
 import { semanticLayout, type LayoutBlock } from './semanticLayout'
+import { t } from '@/lib/i18n'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Bypass de la synchronisation Zustand pour les usages hors-éditeur (workflow).
@@ -116,7 +117,7 @@ const getImageSrc = (img: FabricImage): string | null => {
 
 async function fetchUrlAsDataUri(url: string): Promise<string> {
   const r = await fetch(url, { mode: 'cors' })
-  if (!r.ok) throw new Error(`Téléchargement image source échoué (${r.status})`)
+  if (!r.ok) throw new Error(t('err.svg.downloadFailed', { status: r.status }))
   const blob = await r.blob()
   return await new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -1837,14 +1838,14 @@ export async function decomposeOnCanvas(
   const { log, syncStore = true, hideBg = true } = opts
 
   const bg = findBgImageIn(canvas)
-  if (!bg) throw new Error('Aucun calque image-bg-locked trouvé dans le canvas')
+  if (!bg) throw new Error(t('err.svg.noBgLayer'))
 
   const src = getImageSrc(bg)
-  if (!src) throw new Error('Impossible de lire l\'image source (image-bg-locked)')
+  if (!src) throw new Error(t('err.svg.unreadableSource'))
 
   const width = (bg as unknown as { width?: number }).width ?? 0
   const height = (bg as unknown as { height?: number }).height ?? 0
-  if (!width || !height) throw new Error('Dimensions image source invalides (0×0)')
+  if (!width || !height) throw new Error(t('err.svg.badDimensions'))
 
   log?.('info', 'Appel Google Vision API…')
   const dataUri = src.startsWith('data:image/') ? src : await fetchUrlAsDataUri(src)
@@ -1858,7 +1859,7 @@ export async function decomposeOnCanvas(
   off2d.width = width
   off2d.height = height
   const ctx2d = off2d.getContext('2d', { willReadFrequently: true })
-  if (!ctx2d) throw new Error('Canvas 2D context indisponible (sampling)')
+  if (!ctx2d) throw new Error(t('err.svg.noCanvasSampling'))
   ctx2d.drawImage(htmlImg, 0, 0, width, height)
 
   // Désactive la synchro Zustand si nécessaire (canvas offscreen → ne pas clobber

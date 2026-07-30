@@ -6,6 +6,7 @@ import { httpsCallable } from 'firebase/functions'
 import { auth, functions } from '@/lib/firebase/config'
 import { getApiKey } from '@/lib/apiKeys'
 import { recordRemoveBgUsage } from '@/features/stats/removeBgUsageTracking'
+import { t } from '@/lib/i18n'
 
 /** Service rembg (projet web2print-render, comme hf-render) — URL canonique Cloud Run. */
 const REMBG_URL = 'https://rembg-tggty5kqja-ew.a.run.app'
@@ -48,14 +49,14 @@ async function postRembg(blob: Blob, token: string, matting: boolean): Promise<s
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { error?: string }
-    throw new Error(err.error ?? `Détourage rembg : erreur ${res.status}`)
+    throw new Error(err.error ?? t('err.img.rembg', { status: res.status }))
   }
   return URL.createObjectURL(await res.blob())
 }
 
 async function removeViaRembg(imageUrl: string): Promise<string> {
   const user = auth.currentUser
-  if (!user) throw new Error('Non connecté')
+  if (!user) throw new Error(t('err.auth.required'))
   const [token, blob] = await Promise.all([user.getIdToken(), imageBlob(imageUrl)])
   // Masque net (rapide, 2-4 s) : l'alpha matting reste disponible côté serveur
   // (?matting=1) mais coûte 30 s+ par image et ne préserve presque jamais les
@@ -118,7 +119,7 @@ async function removeViaRemoveBgApi(imageUrl: string, apiKey: string): Promise<s
   })
   if (!response.ok) {
     const errData = await response.json().catch(() => ({})) as { errors?: { title?: string }[] }
-    throw new Error(errData.errors?.[0]?.title ?? `Remove.bg : erreur ${response.status}`)
+    throw new Error(errData.errors?.[0]?.title ?? t('err.img.removebg', { status: response.status }))
   }
   // Conso réelle dans X-Credits-Charged (1 en pleine résolution, ~0.25 en preview).
   const credits = Number(response.headers.get('X-Credits-Charged'))

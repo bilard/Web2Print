@@ -24,7 +24,7 @@ import {
 import { ImprovePromptDialog } from './ImprovePromptDialog'
 import { ImageZoomOverlay } from './ImageZoomOverlay'
 import { autoTagAsset } from '../autoTag'
-import { useTranslation } from '@/lib/i18n'
+import { t, useTranslation } from '@/lib/i18n'
 
 type AspectRatio = ImageAspectRatio
 type Resolution = ImageSize
@@ -141,7 +141,7 @@ async function rasterizeSvgToPng(file: File): Promise<{ blob: Blob; base64: stri
     canvas.width = targetW
     canvas.height = targetH
     const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('Canvas 2d context unavailable')
+    if (!ctx) throw new Error(t('err.noCanvas'))
     ctx.drawImage(img, 0, 0, targetW, targetH)
     const blob = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('canvas.toBlob failed'))), 'image/png')

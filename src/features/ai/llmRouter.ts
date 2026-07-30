@@ -17,6 +17,7 @@ import { getSelectedModel, useAiSettingsStore } from '@/stores/aiSettings.store'
 import { recordAiUsage, pushAiUsageListener } from '@/features/stats/aiUsageTracking'
 import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
 import type { AiProvider } from '@/lib/aiModels'
+import { t } from '@/lib/i18n'
 
 export type LLMProviderId = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'glm' | 'openrouter'
 
@@ -346,10 +347,7 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
   }
 
   if (cascade.length === 0) {
-    throw new Error(
-      `[llmRouter] ${opts.task} : aucun provider LLM disponible dans ta cascade. ` +
-      `Configure au moins un provider supporté (gemini, claude, deepseek) dans Réglages.`,
-    )
+    throw new Error(t('err.llm.noProvider', { task: opts.task }))
   }
 
   const modelOverride = route.model
@@ -446,7 +444,7 @@ async function callProvider<T>(
   // au provider multimodal suivant au lieu de produire du JSON inventé.
   const isMultimodal = (opts.imageDataUris?.length ?? 0) > 0
   if (isMultimodal && provider !== 'gemini' && provider !== 'claude') {
-    throw new Error(`Provider "${provider}" ne supporte pas le multimodal — image input requis.`)
+    throw new Error(t('err.llm.noMultimodal', { provider }))
   }
 
   if (provider === 'claude') {
@@ -475,7 +473,7 @@ async function callProvider<T>(
   if (provider === 'openrouter') {
     return await callOpenRouter(opts, model)
   }
-  throw new Error(`Provider inconnu : ${provider}`)
+  throw new Error(t('err.llm.unknownProvider', { provider }))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -560,7 +558,7 @@ async function callOpenAICompatible<T>(
 
   const directFetch = async (): Promise<Response> => {
     const apiKey = getApiKey(config.apiKeyId)
-    if (!apiKey) throw new Error(`Clé ${config.displayName} absente. Configurez-la dans Réglages.`)
+    if (!apiKey) throw new Error(t('err.llm.keyMissing', { provider: config.displayName }))
     const ctrl = new AbortController()
     const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
     try {
@@ -590,7 +588,7 @@ async function callOpenAICompatible<T>(
 
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`${config.displayName} API ${res.status} : ${body.slice(0, 300)}`)
+    throw new Error(t('err.llm.httpStatus', { provider: config.displayName, status: res.status, body: body.slice(0, 300) }))
   }
 
   const data = (await res.json()) as {
@@ -606,24 +604,28 @@ async function callOpenAICompatible<T>(
     })
   }
   const text = data.choices?.[0]?.message?.content
-  if (!text) throw new Error(`${config.displayName} : réponse vide`)
+  if (!text) throw new Error(t('err.llm.emptyAnswer', { provider: config.displayName }))
 
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
   } catch (err) {
     throw new Error(
-      `${config.displayName} : JSON invalide (${err instanceof Error ? err.message : String(err)}). ` +
-      `Sortie : ${text.slice(0, 200)}`,
+      t('err.llm.badJson', {
+        provider: config.displayName,
+        message: err instanceof Error ? err.message : String(err),
+        output: text.slice(0, 200),
+      }),
       { cause: err },
     )
   }
 
   const validation = opts.schema.safeParse(parsed)
   if (validation.success) return validation.data
-  throw new Error(
-    `Réponse ${config.displayName} non conforme au schéma : ${validation.error.issues.map((i) => i.message).join(' ; ')}`,
-  )
+  throw new Error(t('err.llm.schemaMismatch', {
+    provider: config.displayName,
+    issues: validation.error.issues.map((i) => i.message).join(' ; '),
+  }))
 }
 
 const callDeepSeek = <T>(opts: GenerateJsonOptions<T>, model: string) =>
@@ -677,7 +679,7 @@ function deepClean(obj: unknown): unknown {
  *  limite des callables. C'est ici (et seulement ici) que la clé locale sert. */
 async function directClaudeFetch(payload: unknown): Promise<Response> {
   const apiKey = getApiKey('anthropic')
-  if (!apiKey) throw new Error('Clé Anthropic absente. Configurez-la dans Réglages.')
+  if (!apiKey) throw new Error(t('err.llm.keyMissing', { provider: 'Anthropic' }))
   const ctrl = new AbortController()
   const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
   try {
@@ -780,7 +782,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
 
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`Anthropic API ${res.status} : ${body.slice(0, 300)}`)
+    throw new Error(t('err.llm.httpStatus', { provider: 'Anthropic', status: res.status, body: body.slice(0, 300) }))
   }
 
   const data = (await res.json()) as AnthropicResponse
@@ -794,7 +796,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
   }
   const toolUse = data.content?.find((b) => b.type === 'tool_use')
   if (!toolUse?.input) {
-    throw new Error('Claude : pas de tool_use dans la réponse')
+    throw new Error(t('err.llm.noToolUse'))
   }
 
   const validation = opts.schema.safeParse(toolUse.input)
@@ -841,7 +843,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
   )
   if (!retryRes.ok) {
     const body = await retryRes.text()
-    throw new Error(`Anthropic API retry ${retryRes.status} : ${body.slice(0, 300)}`)
+    throw new Error(t('err.llm.retryHttp', { status: retryRes.status, body: body.slice(0, 300) }))
   }
   const retryData = (await retryRes.json()) as AnthropicResponse
   if (retryData.usage) {
@@ -853,14 +855,12 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     })
   }
   const retryTool = retryData.content?.find((b) => b.type === 'tool_use')
-  if (!retryTool?.input) throw new Error('Claude retry : pas de tool_use')
+  if (!retryTool?.input) throw new Error(t('err.llm.retryNoToolUse'))
   const retryValidation = opts.schema.safeParse(retryTool.input)
   if (retryValidation.success) return retryValidation.data
-  throw new Error(
-    `Réponse Claude non conforme après retry : ${retryValidation.error.issues
-      .map((i) => i.message)
-      .join(' ; ')}`,
-  )
+  throw new Error(t('err.llm.retrySchemaMismatch', {
+    issues: retryValidation.error.issues.map((i) => i.message).join(' ; '),
+  }))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -884,7 +884,7 @@ async function callOpenAI<T>(opts: GenerateJsonOptions<T>, model: string): Promi
 
   const directFetch = async (): Promise<Response> => {
     const apiKey = getApiKey('openai')
-    if (!apiKey) throw new Error('Clé OpenAI absente. Configurez-la dans Réglages.')
+    if (!apiKey) throw new Error(t('err.llm.keyMissing', { provider: 'OpenAI' }))
     return fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -898,7 +898,7 @@ async function callOpenAI<T>(opts: GenerateJsonOptions<T>, model: string): Promi
   const res = await llmFetchViaProxy('openai', model, requestBody as unknown as Record<string, unknown>, directFetch)
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`OpenAI API ${res.status} : ${body.slice(0, 300)}`)
+    throw new Error(t('err.llm.httpStatus', { provider: 'OpenAI', status: res.status, body: body.slice(0, 300) }))
   }
   const data = (await res.json()) as {
     choices?: Array<{ message?: { content?: string } }>
@@ -913,11 +913,12 @@ async function callOpenAI<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     })
   }
   const text = data.choices?.[0]?.message?.content
-  if (!text) throw new Error('OpenAI : réponse vide')
+  if (!text) throw new Error(t('err.llm.emptyAnswer', { provider: 'OpenAI' }))
   const parsed = JSON.parse(text)
   const validation = opts.schema.safeParse(parsed)
   if (validation.success) return validation.data
-  throw new Error(
-    `Réponse OpenAI non conforme : ${validation.error.issues.map((i) => i.message).join(' ; ')}`,
-  )
+  throw new Error(t('err.llm.schemaMismatch', {
+    provider: 'OpenAI',
+    issues: validation.error.issues.map((i) => i.message).join(' ; '),
+  }))
 }

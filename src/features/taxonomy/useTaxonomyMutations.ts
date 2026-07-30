@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { getAllDescendantIds, getNextOrder } from './taxonomyUtils'
 import { createDefaultFormTemplate } from '@/features/briefs/defaults'
 import type { Taxonomy, TaxonomyNode } from './types'
+import { t } from '@/lib/i18n'
 
 // ─── Clés React Query ─────────────────────────────────────────────────────────
 
@@ -154,7 +155,7 @@ export function useDuplicateTaxonomy() {
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
       const source = getCachedList(qc, user!.uid).find((t) => t.id === id)
-      if (!source) throw new Error('Taxonomie introuvable')
+      if (!source) throw new Error(t('err.notFound.taxonomy'))
 
       // Remap les IDs pour éviter les collisions
       const idMap = new Map<string, string>()
@@ -232,7 +233,7 @@ export function useAddNode() {
       const taxonomy = getCachedList(qc, user!.uid).find(
         (t) => t.id === taxonomyId
       )
-      if (!taxonomy) throw new Error('Taxonomie introuvable')
+      if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
 
       const parentNode = parentId ? taxonomy.nodes[parentId] : null
       const id = crypto.randomUUID()
@@ -301,7 +302,7 @@ export function useRenameNode() {
       const taxonomy = getCachedList(qc, user!.uid).find(
         (t) => t.id === taxonomyId
       )
-      if (!taxonomy) throw new Error('Taxonomie introuvable')
+      if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
       const updatedNodes = {
         ...taxonomy.nodes,
         [nodeId]: { ...taxonomy.nodes[nodeId], label },
@@ -346,7 +347,7 @@ export function useDeleteNode() {
       const taxonomy = getCachedList(qc, user!.uid).find(
         (t) => t.id === taxonomyId
       )
-      if (!taxonomy) throw new Error('Taxonomie introuvable')
+      if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
       const toDelete = new Set([
         nodeId,
         ...getAllDescendantIds(taxonomy.nodes, nodeId),
@@ -418,7 +419,7 @@ export function useMoveNode() {
       const taxonomy = getCachedList(qc, user!.uid).find(
         (t) => t.id === taxonomyId
       )
-      if (!taxonomy) throw new Error('Taxonomie introuvable')
+      if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
 
       const siblings = Object.values(taxonomy.nodes)
         .filter((n) => n.parentId === newParentId && n.id !== nodeId)
@@ -504,9 +505,9 @@ export function useLinkProject() {
       const taxonomy = getCachedList(qc, user!.uid).find(
         (t) => t.id === taxonomyId
       )
-      if (!taxonomy) throw new Error('Taxonomie introuvable')
+      if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
       const node = taxonomy.nodes[nodeId]
-      if (!node) throw new Error('Nœud introuvable')
+      if (!node) throw new Error(t('err.notFound.node'))
       const linkedProjectIds = [...new Set([...node.linkedProjectIds, projectId])]
       const updatedNodes = {
         ...taxonomy.nodes,
@@ -557,9 +558,9 @@ export function useUnlinkProject() {
       const taxonomy = getCachedList(qc, user!.uid).find(
         (t) => t.id === taxonomyId
       )
-      if (!taxonomy) throw new Error('Taxonomie introuvable')
+      if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
       const node = taxonomy.nodes[nodeId]
-      if (!node) throw new Error('Nœud introuvable')
+      if (!node) throw new Error(t('err.notFound.node'))
       const linkedProjectIds = node.linkedProjectIds.filter(
         (id) => id !== projectId
       )
