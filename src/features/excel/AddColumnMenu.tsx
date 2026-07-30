@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Plus, Search } from 'lucide-react'
 import { FIELD_TYPES, type FieldTypeId } from './types'
 import { FieldTypeIcon } from './FieldTypeIcon'
+import { t } from '@/lib/i18n'
 
 interface Props {
   onAdd: (type: FieldTypeId, label: string) => void
@@ -125,7 +126,7 @@ export function AddColumnMenu({ onAdd }: Props) {
                 })
             }
             {filtered.length === 0 && (
-              <p className="text-xs text-white/30 text-center py-4">Aucun résultat</p>
+              <p className="text-xs text-white/30 text-center py-4">{t('xl.noResult')}</p>
             )}
           </div>
         </div>,

@@ -1,11 +1,12 @@
 // Aperçu du test (1 image), compteurs de progression et journal du traitement.
 import { useEffect, useRef } from 'react'
 import type { ImageGenItem } from './useColumnImageGen'
+import { t } from '@/lib/i18n'
 
 export function ImageGenTestPreview({ src }: { src: string }) {
   return (
     <div className="border border-white/10 rounded p-2 flex items-center gap-3">
-      <img src={src} alt="Aperçu du visuel généré" className="w-24 h-24 object-contain rounded bg-white/5" />
+      <img src={src} alt={t('xl.imageGen.alt')} className="w-24 h-24 object-contain rounded bg-white/5" />
       <div className="text-white/60 text-[12px]">
         Aperçu (non enregistré). Ajustez la consigne si besoin, puis lancez la génération.
       </div>

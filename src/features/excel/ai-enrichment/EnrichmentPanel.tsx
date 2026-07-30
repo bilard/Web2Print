@@ -22,6 +22,7 @@ import { displayDocumentName } from './documentUtils'
 import type { EnrichedProduct } from './types'
 import type { LlmRequestInfo } from '@/features/ai/llmRouter'
 import { ANCHOR_EVENT, sectionAnchor, groupAnchor, type AnchorJumpDetail } from './anchors'
+import { t } from '@/lib/i18n'
 
 interface Props {
   input: EnrichmentInput
@@ -131,13 +132,13 @@ export function EnrichmentPanel({ input }: Props) {
     }
     const provider = data.scrapingProvider ?? ''
     if (provider.includes('Fabricant')) {
-      return { label: 'Sans IA · Fabricant', title: `Extraction directe du site fabricant (${provider}) — aucun LLM appelé.${fallbackHint}` }
+      return { label: t('xl.enr.noAiVendor'), title: t('xl.enr.noAiVendor.title', { provider, hint: fallbackHint }) }
     }
     if (provider.startsWith('Template')) {
-      return { label: 'Sans IA · Template', title: `Extraction déterministe via template (${provider}) — aucun LLM appelé.${fallbackHint}` }
+      return { label: t('xl.enr.noAiTemplate'), title: t('xl.enr.noAiTemplate.title', { provider, hint: fallbackHint }) }
     }
     if (provider.includes('direct')) {
-      return { label: 'Sans IA · Markdown', title: `Parsing markdown direct (${provider}) — aucun LLM appelé.${fallbackHint}` }
+      return { label: t('xl.enr.noAiMarkdown'), title: t('xl.enr.noAiMarkdown.title', { provider, hint: fallbackHint }) }
     }
     return {
       label: 'LLM inconnu',
@@ -270,7 +271,7 @@ export function EnrichmentPanel({ input }: Props) {
                 ) : (
                   <span
                     className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold text-white/40 bg-white/[0.04] border-2 border-white/15"
-                    title="Aucune URL source n'est enregistrée pour cette ligne. Relance l'enrichissement pour la capturer."
+                    title={t('xl.enr.noSourceUrl')}
                   >
                     source inconnue
                   </span>
@@ -294,7 +295,7 @@ export function EnrichmentPanel({ input }: Props) {
                   <button
                     onClick={() => setOrderModalOpen(true)}
                     className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-white/55 bg-white/[0.03] border border-white/[0.08] hover:bg-indigo-500/10 hover:text-indigo-200 hover:border-indigo-400/30 transition-colors"
-                    title={`Réordonner les champs affichés pour ${matchedTemplate.vendorDomain}`}
+                    title={t('xl.enr.reorderFields', { domain: matchedTemplate.vendorDomain })}
                   >
                     <ListOrdered className="w-2.5 h-2.5" />
                     Ordre des champs
@@ -387,7 +388,7 @@ function RegenerateMenu({ onRedo, onForceUrl, matchedTemplate }: { onRedo: (mode
             <Sparkles className="w-3.5 h-3.5 text-indigo-300 mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="text-[11px] font-semibold text-white/90">Mode AUTO</div>
-              <div className="text-[10px] text-white/40 leading-snug">Réutilise le cache, ré-extrait via IA</div>
+              <div className="text-[10px] text-white/40 leading-snug">{t('xl.enr.reuseCache')}</div>
             </div>
           </button>
           {matchedTemplate && (
@@ -401,7 +402,7 @@ function RegenerateMenu({ onRedo, onForceUrl, matchedTemplate }: { onRedo: (mode
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] font-semibold text-white/90">Mode TEMPLATE</div>
                   <div className="text-[10px] text-emerald-300/80 leading-snug truncate">📐 {matchedTemplate.name}</div>
-                  <div className="text-[9px] text-white/30 leading-snug">Extraction déterministe, sans IA</div>
+                  <div className="text-[9px] text-white/30 leading-snug">{t('xl.enr.deterministic')}</div>
                 </div>
               </button>
             </>
@@ -413,7 +414,7 @@ function RegenerateMenu({ onRedo, onForceUrl, matchedTemplate }: { onRedo: (mode
           >
             <RefreshCw className="w-3.5 h-3.5 text-amber-300 mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] font-semibold text-white/90">Forcer URL spécifique</div>
+              <div className="text-[11px] font-semibold text-white/90">{t('xl.enr.forceUrl')}</div>
               <div className="text-[10px] text-amber-300/70 leading-snug">Vide le cache et re-scrape l'URL fournie</div>
             </div>
           </button>
@@ -452,7 +453,7 @@ function IdleState({ onLaunch, canSearch, input, matchedTemplate }: { onLaunch: 
         ) : input.brand ? (
           <span className="block mt-2 text-white/30 text-[10px]">
             Aucun template pour <b>{input.brand}</b> — crée-en un depuis{' '}
-            <b>Dashboard → Templates scraping</b> pour éviter les hallucinations IA sur ce fournisseur.
+            <b>{t('xl.enr.templatesHint')}</b>{t('xl.enr.templatesHint.rest')}
           </span>
         ) : null}
       </p>
@@ -498,7 +499,7 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
   const steps: { id: 'searching' | 'scraping' | 'reasoning'; label: string; icon: React.ElementType }[] = [
     { id: 'searching', label: 'Recherche', icon: Globe },
     { id: 'scraping', label: 'Extraction', icon: Zap },
-    { id: 'reasoning', label: 'Synthèse IA', icon: Sparkles },
+    { id: 'reasoning', label: t('xl.enr.tab.reasoning'), icon: Sparkles },
   ]
   const currentIdx = steps.findIndex((s) => s.id === status)
 
@@ -611,7 +612,7 @@ function ErrorState({ error, onRetry, onRetryWithUrl }: {
       <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/25 flex items-center justify-center mb-4">
         <AlertCircle className="w-5 h-5 text-red-400" />
       </div>
-      <h3 className="text-[13px] font-semibold text-white/80 mb-2">Échec de l'enrichissement</h3>
+      <h3 className="text-[13px] font-semibold text-white/80 mb-2">{t('xl.enr.failed')}</h3>
       <p className="text-[11px] text-white/50 leading-relaxed max-w-[280px] mb-4">{error}</p>
 
       {isSearchError && (
@@ -780,7 +781,7 @@ function DoneState({
               <div className="flex items-start gap-2.5 px-3 py-2.5 mb-2 rounded-lg border border-red-500/30 bg-red-500/[0.06]">
                 <ShieldAlert className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                 <div className="flex-1 text-[11.5px] text-red-300/90 space-y-2">
-                  <p className="font-semibold">Site bloqué par anti-bot (DataDome / Akamai / Cloudflare)</p>
+                  <p className="font-semibold">{t('xl.enr.antibot')}</p>
                   <p className="text-red-300/70 leading-relaxed">
                     {sourceHost && <strong className="text-red-300">{sourceHost}</strong>}{sourceHost && ' '}
                     utilise une protection anti-bot que ni Jina ni Firecrawl basic n'arrivent à passer (toutes les sources renvoient une page CAPTCHA).
@@ -836,7 +837,7 @@ function DoneState({
                 </button>
               </div>
               {visibleAdvantagesCount === 0 ? (
-                <p className="text-[11px] text-white/30 italic">Tous les groupes sont cachés</p>
+                <p className="text-[11px] text-white/30 italic">{t('xl.enr.allGroupsHidden')}</p>
               ) : (
                 <AdvantageGroupList advantages={data.advantages} hiddenGroups={hiddenAdv} onUpdate={onUpdate} data={data} />
               )}
@@ -930,7 +931,7 @@ function DoneState({
                 </button>
               </div>
               {visibleSpecsCount === 0 ? (
-                <p className="text-[11px] text-white/30 italic">Tous les groupes sont cachés</p>
+                <p className="text-[11px] text-white/30 italic">{t('xl.enr.allGroupsHidden')}</p>
               ) : (
                 <SpecGroupAccordions specifications={data.specifications} hiddenGroups={hiddenSpecs} onUpdate={onUpdate} data={data} />
               )}
@@ -1037,7 +1038,7 @@ function DoneState({
                   <div className="flex items-center gap-2">
                     <Globe className="w-5 h-5 text-amber-400" />
                     <div>
-                      <p className="text-[11px] font-bold text-amber-300 uppercase tracking-widest">Sources scrapées</p>
+                      <p className="text-[11px] font-bold text-amber-300 uppercase tracking-widest">{t('xl.enr.scrapedSources')}</p>
                       <p className="text-[9px] text-amber-200/60">{scrapeCache.sourcesScrapped.length} URLs détectées</p>
                     </div>
                   </div>
@@ -1121,8 +1122,8 @@ function LlmRequestPanel({ request }: { request: LlmRequestInfo }) {
 
   const tabs: { id: 'prompt' | 'params' | 'schema'; label: string }[] = [
     { id: 'prompt', label: 'Prompt' },
-    { id: 'params', label: 'Paramètres' },
-    { id: 'schema', label: 'Schéma tool' },
+    { id: 'params', label: t('xl.enr.tab.params') },
+    { id: 'schema', label: t('xl.enr.tab.schema') },
   ]
 
   const content =
@@ -1712,7 +1713,7 @@ function EditableText({
       className={`cursor-text hover:bg-white/[0.03] rounded px-1 -mx-1 transition-colors ${
         multiline ? 'block whitespace-pre-line' : 'inline-block'
       } ${className} ${isEmpty ? 'text-white/25 italic' : ''}`}
-      title="Cliquer pour éditer"
+      title={t('xl.enr.clickToEdit')}
     >
       {isEmpty ? placeholder || 'Cliquer pour éditer…' : value}
     </span>

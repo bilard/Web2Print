@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Search } from 'lucide-react'
 import { FIELD_TYPES, type FieldTypeId } from './types'
 import { FieldTypeIcon } from './FieldTypeIcon'
+import { t } from '@/lib/i18n'
 
 const NUMERIC_TYPES: FieldTypeId[] = ['number', 'currency', 'percent', 'rating']
 
@@ -59,7 +60,7 @@ export function FieldTypeSelector({ value, onChange, onSetPrimary, showPrimary, 
           value={decimals ?? 2}
           onChange={(e) => onDecimalsChange(parseInt(e.target.value))}
           className="bg-transparent border border-white/[0.06] rounded px-1 py-0.5 text-[10px] text-white/40 outline-none hover:border-white/15 hover:text-white/60 cursor-pointer"
-          title="Nombre de décimales"
+          title={t('xl.decimals')}
         >
           {[0, 1, 2, 3, 4, 5].map((d) => (
             <option key={d} value={d}>{d === 0 ? '0 déc.' : `${d} déc.`}</option>

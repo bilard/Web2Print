@@ -1,5 +1,6 @@
 import type { ColumnStats, FieldTypeId } from './types'
 import { ArrowDown, ArrowUp, TrendingUp } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 interface Props {
   stats: ColumnStats
@@ -52,7 +53,7 @@ export function StatsBadges({ stats, fieldType, onSortAsc, onSortDesc, onSortByC
       <button
         onClick={(e) => { e.stopPropagation(); onSortDesc?.() }}
         className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors cursor-pointer"
-        title="Trier décroissant (Max → Min)"
+        title={t('xl.sortDesc')}
       >
         <ArrowUp className="w-2.5 h-2.5" />
         {formatValue(stats.max)}

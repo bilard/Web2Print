@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { ImageOff } from 'lucide-react'
 import type { ExcelColumn, ExcelRow, CellValue } from './types'
 import { rowCompleteness, completenessTone } from './completeness'
+import { t } from '@/lib/i18n'
 
 interface GalleryViewProps {
   rows: ExcelRow[]
@@ -89,7 +90,7 @@ export function GalleryView({ rows, columns, onOpen }: GalleryViewProps) {
                 <span className="text-[11px] text-white/40 truncate">{sub}</span>
                 <span
                   className={`w-1.5 h-1.5 rounded-full shrink-0 ml-2 ${toneCls}`}
-                  title={`Complétude ${completeness.pct} %`}
+                  title={t('xl.completeness', { pct: completeness.pct })}
                 />
               </div>
             </div>
@@ -97,7 +98,7 @@ export function GalleryView({ rows, columns, onOpen }: GalleryViewProps) {
         )
       })}
       {rows.length === 0 && (
-        <p className="col-span-full text-center text-sm text-white/30 py-12">Aucun produit à afficher</p>
+        <p className="col-span-full text-center text-sm text-white/30 py-12">{t('xl.noProduct')}</p>
       )}
     </div>
   )

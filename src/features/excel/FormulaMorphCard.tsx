@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { FileSpreadsheet, Calculator, ArrowDown } from 'lucide-react'
 import type { FormulaConversion } from './excelFormulas'
+import { t } from '@/lib/i18n'
 
 /** Palette assignée aux références de colonne pour des chips distinctes et lisibles. */
 const REF_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#0ea5e9', '#f43f5e', '#a855f7']
@@ -109,7 +110,7 @@ export function FormulaMorphCard({ conv }: { conv: FormulaConversion }) {
         </div>
         {/* Résultat réel */}
         <div className="fx-result mt-2.5 flex items-center gap-2 text-[11px]" style={{ animationDelay: '0.7s' }}>
-          <span className="text-white/30">Résultat</span>
+          <span className="text-white/30">{t('xl.result')}</span>
           <ArrowDown className="w-3 h-3 text-white/20 -rotate-90" />
           <span className="font-mono font-semibold text-emerald-400">{formatResult(conv.sampleResult)}</span>
         </div>

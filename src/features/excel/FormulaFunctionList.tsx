@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { FORMULA_FUNCTIONS, type FormulaCategory } from './formulaEngine'
+import { t } from '@/lib/i18n'
 
 const CATEGORY_LABELS: Record<FormulaCategory, string> = {
   logique: 'Logique',
@@ -62,7 +63,7 @@ export function FormulaFunctionList({ onInsert }: FormulaFunctionListProps) {
       </p>
 
       {grouped.length === 0 && (
-        <p className="text-[11px] text-white/25 italic px-2 py-3">Aucune fonction trouvée</p>
+        <p className="text-[11px] text-white/25 italic px-2 py-3">{t('xl.noFunction')}</p>
       )}
 
       {grouped.map(({ cat, label, funcs }) => {

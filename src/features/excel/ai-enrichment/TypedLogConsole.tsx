@@ -9,6 +9,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Code2, Globe, Sparkles, Filter, AlertTriangle, Info } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 export type LogType = 'scrape' | 'llm' | 'parse' | 'network' | 'warning' | 'info'
 
@@ -45,7 +46,7 @@ const TYPE_META: Record<LogType, TypeMeta> = {
     chipClassName: 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300',
   },
   network: {
-    label: 'Réseau',
+    label: t('xl.log.network'),
     Icon: Globe,
     className: 'text-sky-400/80',
     chipClassName: 'bg-sky-500/15 border-sky-500/40 text-sky-300',

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { t } from '@/lib/i18n'
 import {
   MoreVertical, ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
   ChevronsLeft, ChevronsRight, Trash2, ArrowUpDown, Pencil,
@@ -102,7 +103,7 @@ export function ColumnMenu({
           <div className="h-px bg-white/10 mx-2 my-1.5" />
 
           {/* Reorder section */}
-          <div className="px-3 py-1.5 text-[10px] text-white/30 uppercase tracking-wider font-semibold">Déplacer</div>
+          <div className="px-3 py-1.5 text-[10px] text-white/30 uppercase tracking-wider font-semibold">{t('xl.move')}</div>
           <MenuItem
             icon={<ChevronsLeft className="w-3.5 h-3.5" />}
             label="En première position"

@@ -18,6 +18,7 @@ import { listTemplates, saveTemplateWithVendorSync } from '@/features/scraping-t
 import { getVendorFieldRows, type FieldRow } from '@/features/scraping-templates/getVendorFieldRows'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
 import { dispatchAnchorJump } from './anchors'
+import { t } from '@/lib/i18n'
 
 interface Props {
   sheetName: string
@@ -338,7 +339,7 @@ function SortableRow({
           {...attributes}
           {...listeners}
           className="text-white/25 hover:text-white/60 cursor-grab active:cursor-grabbing shrink-0"
-          aria-label="Déplacer"
+          aria-label={t('xl.move')}
         >
           <GripVertical className="w-3 h-3" />
         </button>
@@ -358,7 +359,7 @@ function SortableRow({
                   ? 'bg-indigo-500/10 text-indigo-300/90 border-indigo-400/20'
                   : 'bg-white/[0.03] text-white/30 border-white/[0.06]'
               }`}
-              title={`${row.count} item${row.count > 1 ? 's' : ''} scrapé${row.count > 1 ? 's' : ''}`}
+              title={t('xl.scraped.itemCount', { count: row.count })}
             >
               {row.count}
             </span>

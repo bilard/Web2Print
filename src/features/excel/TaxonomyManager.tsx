@@ -8,6 +8,7 @@ import { useCreateTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useBulkAttachToTaxonomy } from '@/features/taxonomy/useBulkAttachToTaxonomy'
 import type { TaxonomyCategory, TaxonomyTag, TaxonomyLevelMap } from './types'
+import { t } from '@/lib/i18n'
 
 const TAG_COLORS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4',
@@ -182,7 +183,7 @@ export function TaxonomyManager() {
               onClick={handleSaveToTaxonomies}
               disabled={createTaxonomy.isPending}
               className="flex items-center justify-center gap-1.5 text-[10px] px-2 py-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed border border-teal-500/20 text-teal-400 transition-colors"
-              title="Créer une taxonomie dans la liste des Taxonomies"
+              title={t('xl.createTaxonomy')}
             >
               <FolderTree className="w-3 h-3" />
               Créer dans Taxonomies

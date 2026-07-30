@@ -32,6 +32,7 @@ import { ManufacturerComparisonInline } from '@/features/manufacturer-verify/Man
 import { ManufacturerVerdictModal } from '@/features/manufacturer-verify/ManufacturerVerdictModal'
 import { sheetRowToEnrichedProduct, buildRowComparison, summarize } from '@/features/manufacturer-verify/compareProducts'
 import { useAdoptManufacturerSpec } from '@/features/manufacturer-verify/useAdoptManufacturerSpec'
+import { t } from '@/lib/i18n'
 
 const BREADCRUMB_SPLIT_RE = /\s*[›>/»·]\s*/
 
@@ -471,7 +472,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
             <button
               onClick={() => setVerifyOpen(true)}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/12 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/25 text-[11px] font-medium transition-colors"
-              title="Comparer la fiche à la donnée officielle du fabricant"
+              title={t('xl.compareSheet')}
             >
               <Factory className="w-3.5 h-3.5" /> Vérifier chez le Fabricant
             </button>
@@ -489,7 +490,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
               onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
             <button onClick={() => void detourActive()} disabled={detourBusy}
               className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-black/50 text-[#fff]/70 hover:text-[#fff] hover:bg-black/70 text-[10px] font-medium transition-colors disabled:opacity-60"
-              title="Détourer l'image affichée (fond supprimé → PNG dans le DAM « Détourés »)">
+              title={t('xl.cutout')}>
               {detourBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eraser className="w-3.5 h-3.5" />}
               {detourBusy ? 'Détourage…' : 'Détourer'}
             </button>
@@ -549,7 +550,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
         {scrapedBreadcrumb && scrapedBreadcrumb.length > 0 && (
           <div
             className="mb-2 inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded-md bg-white/[0.04] border border-white/[0.08] text-white/60 max-w-full"
-            title={`Fil d'Ariane scrapé : ${scrapedBreadcrumb.join(' › ')}`}
+            title={t('xl.breadcrumbScraped', { path: scrapedBreadcrumb.join(' › ') })}
           >
             <Globe className="w-3 h-3 shrink-0 text-white/40" />
             <span className="text-white/30 uppercase tracking-wider text-[9px]">Source</span>
@@ -582,7 +583,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
                   <span className="truncate">{resolved.pathString}</span>
                 </>
               ) : (
-                <span>Non classé dans une taxonomie globale — cliquer pour classer</span>
+                <span>{t('xl.notClassified')}</span>
               )}
             </button>
           )
@@ -684,7 +685,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
       {(hasSpecs || hasDocs) && (
         <div className="flex border-b border-white/[0.06] shrink-0 bg-well">
           {([
-            ...(hasSpecs ? [{ id: 'specs' as Tab, label: 'Spécifications' }] : []),
+            ...(hasSpecs ? [{ id: 'specs' as Tab, label: t('xl.tab.specs') }] : []),
             ...(hasDocs  ? [{ id: 'documents' as Tab, label: 'Documents' }] : []),
           ]).map(t => (
             <button
@@ -861,7 +862,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
           return (
             <div className="py-4 px-4">
               {allSpecs.length === 0 ? (
-                <p className="text-[12px] text-white/30 text-center py-8">Aucune spécification</p>
+                <p className="text-[12px] text-white/30 text-center py-8">{t('xl.noSpec')}</p>
               ) : (
                 <div className="rounded-xl border border-white/[0.08] overflow-hidden">
                   {allSpecs.map((s, i) => (
@@ -958,7 +959,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
             }) && (
               <div className="flex flex-col items-center justify-center py-10 gap-3 text-white/20">
                 <FileText className="w-8 h-8 opacity-30" />
-                <p className="text-[12px]">Aucun lien de document trouvé</p>
+                <p className="text-[12px]">{t('xl.noDocLink')}</p>
                 <p className="text-[10px] text-white/15 text-center leading-relaxed max-w-[200px]">
                   Re-scrapez avec le template&nbsp;<strong className="text-white/25">Produit complet</strong> et activez<br/>
                   <em>waitFor 3s</em> pour les contenus dynamiques
@@ -983,7 +984,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
           try { window.localStorage.setItem('productSheet.splitRatio', '0.5') } catch { /* noop */ }
         }}
         className="group relative w-1 shrink-0 cursor-col-resize bg-white/[0.06] hover:bg-indigo-400/40 active:bg-indigo-400/60 transition-colors"
-        title="Glisser pour redimensionner — double-clic pour réinitialiser"
+        title={t('xl.resizeHint')}
       >
         {/* Zone de capture élargie pour faciliter le grab */}
         <div className="absolute inset-y-0 -left-1.5 -right-1.5" />

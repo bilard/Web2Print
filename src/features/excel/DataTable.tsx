@@ -28,6 +28,7 @@ import { trashProductDamAssets } from '@/features/dam/damCleanup'
 import { scrapeFolderName } from '@/features/dam/scrapeFolder'
 import { LayoutGrid, Table as TableIcon, MoveHorizontal, Factory } from 'lucide-react'
 import { ManufacturerBatchModal } from '@/features/manufacturer-verify/ManufacturerBatchModal'
+import { t } from '@/lib/i18n'
 
 type SortDir = 'asc' | 'desc' | 'color' | null
 
@@ -541,7 +542,7 @@ export function DataTable() {
           <button
             onClick={() => setBatchVerifyOpen(true)}
             className="flex items-center gap-1.5 p-1 px-2 rounded-md bg-indigo-500/12 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/20 transition-colors text-[11px] font-medium"
-            title="Comparer les produits scrapés à la data officielle du fabricant (lot)"
+            title={t('xl.compareBatch')}
           >
             <Factory className="w-3.5 h-3.5" /> Vérifier chez le Fabricant
           </button>
@@ -1005,7 +1006,7 @@ function DataRow({
           <span
             className={`w-1.5 h-1.5 rounded-full shrink-0 ${toneCls}`}
             title={completenessTitle}
-            aria-label={`Complétude ${completeness.pct} %`}
+            aria-label={t('xl.completeness', { pct: completeness.pct })}
           />
           <span className="text-[10px] text-white/15 tabular-nums">{rowIdx + 1}</span>
         </div>
@@ -1020,7 +1021,7 @@ function DataRow({
         const fresh = cellFreshness(row, col.key, nowMs)
         const freshDot = fresh && !isEditing ? (
           <span
-            title={`Champ mis à jour il y a ${fresh.ageDays} j`}
+            title={t('xl.fieldUpdated', { days: fresh.ageDays })}
             className={`shrink-0 w-1.5 h-1.5 rounded-full ${fresh.tone === 'red' ? 'bg-red-400/80' : 'bg-amber-400/80'}`}
           />
         ) : null

@@ -8,6 +8,7 @@ import { useExcelStore } from '@/stores/excel.store'
 import { useColumnImageGen, type ImageGenEngine } from './useColumnImageGen'
 import { ImageGenTestPreview, ImageGenCounters, ImageGenLog, ImageGenUsage } from './ImageGenProgress'
 import type { ExcelRow } from '@/features/excel/types'
+import { t } from '@/lib/i18n'
 
 interface Props { open: boolean; onClose: () => void; visibleRowIds: string[] }
 
@@ -90,7 +91,7 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
           </div>
 
           <div>
-            <label className="block mb-1 text-white/60">Consigne (référencez vos colonnes avec [Nom])</label>
+            <label className="block mb-1 text-white/60">{t('xl.ai.instruction')}</label>
             <textarea
               value={prompt} onChange={(e) => { setPrompt(e.target.value); setTestSrc(null) }} rows={4}
               className="w-full bg-well border border-white/10 rounded p-2 text-white/90"
@@ -120,7 +121,7 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
           </label>
 
           <div className="flex items-center gap-4">
-            <span className="text-white/60">Portée</span>
+            <span className="text-white/60">{t('xl.ai.scope')}</span>
             <label className="flex items-center gap-2">
               <input type="radio" checked={scopeAll} onChange={() => setScopeAll(true)} /> Toutes ({sheet.rows.length})
             </label>
@@ -141,7 +142,7 @@ export function ColumnImageGenModal({ open, onClose, visibleRowIds }: Props) {
           </div>
           <div className="flex items-center gap-2">
             {running ? (
-              <button onClick={abort} className="px-3 py-1.5 rounded bg-white/5 hover:bg-white/10 text-white/80">Arrêter</button>
+              <button onClick={abort} className="px-3 py-1.5 rounded bg-white/5 hover:bg-white/10 text-white/80">{t('xl.ai.stop')}</button>
             ) : (
               <>
                 <button onClick={handleTest} disabled={!prompt.trim()}

@@ -1,5 +1,6 @@
 import { evaluateFormula } from './formulaEngine'
 import type { ExcelColumn, ExcelRow } from './types'
+import { t } from '@/lib/i18n'
 
 interface FormulaPreviewProps {
   formula: string
@@ -73,7 +74,7 @@ export function FormulaPreview({ formula, columns, rows, decimals, percent }: Fo
           )
         })}
         {previewRows.length === 0 && (
-          <p className="text-[11px] text-white/25 italic px-3 py-3">Aucune ligne de données</p>
+          <p className="text-[11px] text-white/25 italic px-3 py-3">{t('xl.noDataRow')}</p>
         )}
       </div>
     </div>

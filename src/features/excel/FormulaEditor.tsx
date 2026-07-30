@@ -7,6 +7,7 @@ import { FieldTypeIcon } from './FieldTypeIcon'
 import { FormulaFunctionList } from './FormulaFunctionList'
 import { FormulaPreview } from './FormulaPreview'
 import { FormulaInput } from './FormulaInput'
+import { t } from '@/lib/i18n'
 
 type ResultType = 'auto' | 'number' | 'text' | 'percent'
 
@@ -60,7 +61,7 @@ export function FormulaEditor({
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/[0.06]">
           <FunctionSquare className="w-5 h-5 text-indigo-400" />
-          <h2 className="text-sm font-semibold text-white/90 flex-1">Champ calculé</h2>
+          <h2 className="text-sm font-semibold text-white/90 flex-1">{t('xl.computedField')}</h2>
           <CloseButton onClick={onClose} />
         </div>
 
@@ -79,7 +80,7 @@ export function FormulaEditor({
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   className="w-full bg-surface-2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 outline-none focus:border-indigo-500/50"
-                  placeholder="Nom du champ calculé"
+                  placeholder={t('xl.computedField.placeholder')}
                 />
               </div>
               <div className="w-40">

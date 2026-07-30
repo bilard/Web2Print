@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { FORMULA_FUNCTIONS } from './formulaEngine'
 import type { ExcelColumn } from './types'
+import { t } from '@/lib/i18n'
 
 interface FormulaInputProps {
   value: string
@@ -166,7 +167,7 @@ export function FormulaInput({ value, onChange, columns, textareaRef }: FormulaI
         onSelect={handleSelect}
         onClick={handleSelect}
         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-        placeholder='Ex: [Prix] * 1.20 ou CONCAT([Prénom], " ", [Nom])'
+        placeholder={t('xl.formula.placeholder')}
         rows={3}
         className="w-full bg-surface-2 border border-white/10 rounded-lg px-3 py-2.5 text-sm font-mono text-white/80 placeholder-white/20 outline-none focus:border-indigo-500/50 resize-none"
       />

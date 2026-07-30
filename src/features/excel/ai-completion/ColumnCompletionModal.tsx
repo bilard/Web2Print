@@ -3,6 +3,7 @@ import { Wand2, X } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { useColumnCompletion } from './useColumnCompletion'
 import type { ExcelRow } from '@/features/excel/types'
+import { t } from '@/lib/i18n'
 
 interface Props { open: boolean; onClose: () => void; visibleRowIds: string[] }
 
@@ -67,10 +68,10 @@ export function ColumnCompletionModal({ open, onClose, visibleRowIds }: Props) {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4 text-[13px] text-white/80">
           <div>
-            <label className="block mb-1 text-white/60">Consigne (référencez vos colonnes avec [Nom])</label>
+            <label className="block mb-1 text-white/60">{t('xl.ai.instruction')}</label>
             <textarea
               value={prompt} onChange={(e) => { setPrompt(e.target.value); setPreviewed(false) }}
-              rows={3} placeholder="Ex : Génère un nom de produit court à partir de [Description]"
+              rows={3} placeholder={t('xl.ai.instruction.placeholder')}
               className="w-full bg-well border border-white/10 rounded p-2 text-white/90"
             />
             <div className="mt-1 flex flex-wrap gap-1">
@@ -113,7 +114,7 @@ export function ColumnCompletionModal({ open, onClose, visibleRowIds }: Props) {
           </div>
 
           <div className="space-y-1">
-            <div className="text-white/60">Portée</div>
+            <div className="text-white/60">{t('xl.ai.scope')}</div>
             <label className="flex items-center gap-2">
               <input type="radio" checked={scopeAll} onChange={() => setScopeAll(true)} />
               Toutes les lignes ({sheet.rows.length})
@@ -126,7 +127,7 @@ export function ColumnCompletionModal({ open, onClose, visibleRowIds }: Props) {
 
           {previewed && (
             <div className="border border-white/10 rounded">
-              <div className="px-2 py-1 text-white/60 border-b border-white/10">Aperçu</div>
+              <div className="px-2 py-1 text-white/60 border-b border-white/10">{t('xl.ai.preview')}</div>
               <table className="w-full text-[12px]">
                 <tbody>
                   {previewRows.map((it) => (
