@@ -2,6 +2,7 @@ import { ChevronRight, Check, Lock } from 'lucide-react'
 import { permissionParent, permissionLabel, type PermissionDef } from '@/features/access/permissions'
 import { moduleMeta, type ModuleMeta } from '@/features/access/moduleMeta'
 import { useThemeStore } from '@/stores/theme.store'
+import { t } from '@/lib/i18n'
 
 /** Mode « Arbre » de la matrice de rôle : liste indentée navigable (modules → actions),
  *  dans l'ordre de la navigation de l'app. Sélection binaire (coché / décoché). */
@@ -83,7 +84,7 @@ function TreeLeaf({
       }`}>
         {on ? <Check className="w-2.5 h-2.5" /> : locked ? <Lock className="w-2 h-2 text-white/25" /> : null}
       </span>
-      {def.label}
+      {t(def.labelKey)}
       {locked && <span className="ml-auto text-[9px] text-white/25">+ {lockHint}</span>}
     </button>
   )

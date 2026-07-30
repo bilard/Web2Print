@@ -1,12 +1,35 @@
+import { t, type TranslationKey } from '@/lib/i18n'
 /** Catalogue central de toutes les permissions de l'app. Source de vérité : l'écran admin
  *  génère sa matrice à partir d'ici et `useCan` valide contre ces clés.
  *  Convention : `<module>.view` gate la visibilité du module ; les clés plus fines gatent
  *  onglets/boutons/champs (ajoutées au fil de l'eau). */
 export interface PermissionDef {
   key: string
+  /** ⚠️ Identifiant de REGROUPEMENT, pas un libellé : `moduleMeta` indexe par cette
+   *  chaîne (icône, couleur, ordre). La traduire casserait le style — l'affichage
+   *  passe par `MODULE_LABEL` ci-dessous. */
   module: string
-  label: string
-  description?: string
+  labelKey: TranslationKey
+  descriptionKey?: TranslationKey
+}
+
+/** Libellé AFFICHÉ d'un groupe de permissions (cf. `PermissionDef.module`). */
+export const MODULE_LABEL: Record<string, TranslationKey> = {
+  'Bibliothèque': 'perm.module.0',
+  'Import': 'perm.module.1',
+  'DAM': 'perm.module.2',
+  'PIM': 'perm.module.3',
+  'Taxonomies': 'perm.module.4',
+  'Scraping': 'perm.module.5',
+  'Workflows': 'perm.module.6',
+  'Veille tarifaire': 'perm.module.7',
+  'Création studio': 'perm.module.8',
+  'Catalogue studio': 'perm.module.9',
+  'Animation': 'perm.module.10',
+  'Chat IA': 'perm.module.11',
+  'Telegram': 'perm.module.12',
+  'Paramètres': 'perm.module.13',
+  'Démo': 'perm.module.14',
 }
 
 /** Permission spéciale : accès total + gestion des rôles/utilisateurs. */
@@ -26,62 +49,62 @@ export interface UsageCounters {
 export const DEMO_LIMITS: UsageCounters = { pimRows: 50, damAssets: 20 }
 
 export const PERMISSIONS: PermissionDef[] = [
-  { key: 'library.view', module: 'Bibliothèque', label: 'Voir la bibliothèque' },
-  { key: 'library.create', module: 'Bibliothèque', label: 'Créer un document/projet' },
-  { key: 'library.duplicate', module: 'Bibliothèque', label: 'Dupliquer un projet' },
-  { key: 'library.delete', module: 'Bibliothèque', label: 'Supprimer un projet' },
-  { key: 'import.view', module: 'Import', label: 'Ouvrir l\'écran Importer' },
-  { key: 'import.idml', module: 'Import', label: 'Importer IDML' },
-  { key: 'import.pptx', module: 'Import', label: 'Importer PPTX' },
-  { key: 'import.image', module: 'Import', label: 'Importer une image' },
-  { key: 'import.svg', module: 'Import', label: 'Importer SVG' },
-  { key: 'import.excel', module: 'Import', label: 'Importer Excel' },
-  { key: 'import.imageToSvg', module: 'Import', label: 'Image → SVG éditable' },
-  { key: 'import.pdfToSvg', module: 'Import', label: 'PDF → SVG éditable' },
-  { key: 'dam.view', module: 'DAM', label: 'Voir le DAM' },
-  { key: 'dam.upload', module: 'DAM', label: 'Uploader des assets' },
-  { key: 'dam.edit', module: 'DAM', label: 'Éditer / variantes d\'image' },
-  { key: 'dam.collection', module: 'DAM', label: 'Gérer les collections' },
-  { key: 'dam.delete', module: 'DAM', label: 'Supprimer des assets' },
-  { key: 'dam.generate', module: 'DAM', label: 'Création d\'image (IA)' },
-  { key: 'dam.animations', module: 'DAM', label: 'Animations HTML' },
-  { key: 'dam.gdrive', module: 'DAM', label: 'Google Drive' },
-  { key: 'pim.view', module: 'PIM', label: 'Voir le PIM' },
-  { key: 'pim.create', module: 'PIM', label: 'Créer une base' },
-  { key: 'pim.import', module: 'PIM', label: 'Importer un Excel' },
-  { key: 'pim.scrape', module: 'PIM', label: 'Scraper le web' },
-  { key: 'pim.edit', module: 'PIM', label: 'Éditer les produits' },
-  { key: 'pim.delete', module: 'PIM', label: 'Supprimer des produits' },
-  { key: 'pim.export', module: 'PIM', label: 'Exporter les produits' },
-  { key: 'taxonomies.view', module: 'Taxonomies', label: 'Voir les taxonomies' },
-  { key: 'taxonomies.edit', module: 'Taxonomies', label: 'Gérer les nœuds (créer/renommer/supprimer)' },
-  { key: 'taxonomies.briefs', module: 'Taxonomies', label: 'Briefs clients' },
-  { key: 'scrapingTemplates.view', module: 'Scraping', label: 'Voir les templates de scraping' },
-  { key: 'scrapingTemplates.edit', module: 'Scraping', label: 'Gérer les templates de scraping' },
-  { key: 'scrapingHub.view', module: 'Scraping', label: 'Voir le Scraping Hub' },
-  { key: 'scrapingHub.edit', module: 'Scraping', label: 'Éditer les règles de scraping' },
-  { key: 'workflows.view', module: 'Workflows', label: 'Voir les workflows' },
-  { key: 'workflows.create', module: 'Workflows', label: 'Créer un workflow' },
-  { key: 'workflows.edit', module: 'Workflows', label: 'Éditer / enregistrer un workflow' },
-  { key: 'workflows.delete', module: 'Workflows', label: 'Supprimer un workflow' },
-  { key: 'workflows.run', module: 'Workflows', label: 'Exécuter les workflows' },
-  { key: 'priceWatch.view', module: 'Veille tarifaire', label: 'Voir la veille tarifaire' },
-  { key: 'retailPromo.view', module: 'Création studio', label: 'Voir le module Création studio' },
-  { key: 'retailPromo.edit', module: 'Création studio', label: 'Créer/éditer dans Création studio' },
-  { key: 'catalog.view', module: 'Catalogue studio', label: 'Voir le module Catalogue studio' },
-  { key: 'catalog.edit', module: 'Catalogue studio', label: 'Créer/éditer des catalogues' },
-  { key: 'hyperframes.view', module: 'Animation', label: 'Voir le module Animation' },
-  { key: 'chat.view', module: 'Chat IA', label: 'Voir le Chat IA' },
-  { key: 'telegram.view', module: 'Telegram', label: 'Voir Telegram' },
-  { key: 'telegram.send', module: 'Telegram', label: 'Envoyer des messages Telegram' },
-  { key: 'settings.view', module: 'Paramètres', label: 'Ouvrir les Paramètres' },
-  { key: 'settings.firebase.view', module: 'Paramètres', label: 'Voir l\'onglet Firebase' },
-  { key: 'settings.connectors.edit', module: 'Paramètres', label: 'Éditer les connecteurs' },
-  { key: 'settings.cookies.edit', module: 'Paramètres', label: 'Éditer les cookies' },
+  { key: 'library.view', module: 'Bibliothèque', labelKey: 'perm.library.view' },
+  { key: 'library.create', module: 'Bibliothèque', labelKey: 'perm.library.create' },
+  { key: 'library.duplicate', module: 'Bibliothèque', labelKey: 'perm.library.duplicate' },
+  { key: 'library.delete', module: 'Bibliothèque', labelKey: 'perm.library.delete' },
+  { key: 'import.view', module: 'Import', labelKey: 'perm.import.view' },
+  { key: 'import.idml', module: 'Import', labelKey: 'perm.import.idml' },
+  { key: 'import.pptx', module: 'Import', labelKey: 'perm.import.pptx' },
+  { key: 'import.image', module: 'Import', labelKey: 'perm.import.image' },
+  { key: 'import.svg', module: 'Import', labelKey: 'perm.import.svg' },
+  { key: 'import.excel', module: 'Import', labelKey: 'perm.import.excel' },
+  { key: 'import.imageToSvg', module: 'Import', labelKey: 'perm.import.imageToSvg' },
+  { key: 'import.pdfToSvg', module: 'Import', labelKey: 'perm.import.pdfToSvg' },
+  { key: 'dam.view', module: 'DAM', labelKey: 'perm.dam.view' },
+  { key: 'dam.upload', module: 'DAM', labelKey: 'perm.dam.upload' },
+  { key: 'dam.edit', module: 'DAM', labelKey: 'perm.dam.edit' },
+  { key: 'dam.collection', module: 'DAM', labelKey: 'perm.dam.collection' },
+  { key: 'dam.delete', module: 'DAM', labelKey: 'perm.dam.delete' },
+  { key: 'dam.generate', module: 'DAM', labelKey: 'perm.dam.generate' },
+  { key: 'dam.animations', module: 'DAM', labelKey: 'perm.dam.animations' },
+  { key: 'dam.gdrive', module: 'DAM', labelKey: 'perm.dam.gdrive' },
+  { key: 'pim.view', module: 'PIM', labelKey: 'perm.pim.view' },
+  { key: 'pim.create', module: 'PIM', labelKey: 'perm.pim.create' },
+  { key: 'pim.import', module: 'PIM', labelKey: 'perm.pim.import' },
+  { key: 'pim.scrape', module: 'PIM', labelKey: 'perm.pim.scrape' },
+  { key: 'pim.edit', module: 'PIM', labelKey: 'perm.pim.edit' },
+  { key: 'pim.delete', module: 'PIM', labelKey: 'perm.pim.delete' },
+  { key: 'pim.export', module: 'PIM', labelKey: 'perm.pim.export' },
+  { key: 'taxonomies.view', module: 'Taxonomies', labelKey: 'perm.taxonomies.view' },
+  { key: 'taxonomies.edit', module: 'Taxonomies', labelKey: 'perm.taxonomies.edit' },
+  { key: 'taxonomies.briefs', module: 'Taxonomies', labelKey: 'perm.taxonomies.briefs' },
+  { key: 'scrapingTemplates.view', module: 'Scraping', labelKey: 'perm.scrapingTemplates.view' },
+  { key: 'scrapingTemplates.edit', module: 'Scraping', labelKey: 'perm.scrapingTemplates.edit' },
+  { key: 'scrapingHub.view', module: 'Scraping', labelKey: 'perm.scrapingHub.view' },
+  { key: 'scrapingHub.edit', module: 'Scraping', labelKey: 'perm.scrapingHub.edit' },
+  { key: 'workflows.view', module: 'Workflows', labelKey: 'perm.workflows.view' },
+  { key: 'workflows.create', module: 'Workflows', labelKey: 'perm.workflows.create' },
+  { key: 'workflows.edit', module: 'Workflows', labelKey: 'perm.workflows.edit' },
+  { key: 'workflows.delete', module: 'Workflows', labelKey: 'perm.workflows.delete' },
+  { key: 'workflows.run', module: 'Workflows', labelKey: 'perm.workflows.run' },
+  { key: 'priceWatch.view', module: 'Veille tarifaire', labelKey: 'perm.priceWatch.view' },
+  { key: 'retailPromo.view', module: 'Création studio', labelKey: 'perm.retailPromo.view' },
+  { key: 'retailPromo.edit', module: 'Création studio', labelKey: 'perm.retailPromo.edit' },
+  { key: 'catalog.view', module: 'Catalogue studio', labelKey: 'perm.catalog.view' },
+  { key: 'catalog.edit', module: 'Catalogue studio', labelKey: 'perm.catalog.edit' },
+  { key: 'hyperframes.view', module: 'Animation', labelKey: 'perm.hyperframes.view' },
+  { key: 'chat.view', module: 'Chat IA', labelKey: 'perm.chat.view' },
+  { key: 'telegram.view', module: 'Telegram', labelKey: 'perm.telegram.view' },
+  { key: 'telegram.send', module: 'Telegram', labelKey: 'perm.telegram.send' },
+  { key: 'settings.view', module: 'Paramètres', labelKey: 'perm.settings.view' },
+  { key: 'settings.firebase.view', module: 'Paramètres', labelKey: 'perm.settings.firebase.view' },
+  { key: 'settings.connectors.edit', module: 'Paramètres', labelKey: 'perm.settings.connectors.edit' },
+  { key: 'settings.cookies.edit', module: 'Paramètres', labelKey: 'perm.settings.cookies.edit' },
   // Marqueur de compte « démo » : ne débloque rien mais IMPOSE les quotas DEMO_LIMITS
   // (lignes PIM + assets DAM). Un rôle qui porte cette clé est plafonné, côté client
   // ET serveur (firestore.rules + Cloud Function damUpload). L'owner n'est jamais limité.
-  { key: DEMO_PERMISSION, module: 'Démo', label: 'Compte démo — quotas de données', description: 'Plafonne les données importées (limites éditables ci-dessus) : à réserver aux comptes de démonstration/prospects.' },
+  { key: DEMO_PERMISSION, module: 'Démo', labelKey: 'perm.demo.view', descriptionKey: 'perm.demo.view.desc' },
 ]
 
 export const ALL_PERMISSION_KEYS: string[] = PERMISSIONS.map((p) => p.key)
@@ -111,5 +134,6 @@ export function permissionsByModule(): Record<string, PermissionDef[]> {
 
 /** Libellé lisible d'une clé (fallback = la clé brute si inconnue). */
 export function permissionLabel(key: string): string {
-  return PERMISSIONS.find((p) => p.key === key)?.label ?? key
+  const k = PERMISSIONS.find((p) => p.key === key)?.labelKey
+  return k ? t(k) : key
 }

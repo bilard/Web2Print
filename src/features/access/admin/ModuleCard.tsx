@@ -1,6 +1,10 @@
 import { useState, type ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { moduleMeta } from '@/features/access/moduleMeta'
+// ⚠️ `module` est un ID de regroupement (indexé par `moduleMeta`) : l'affichage passe
+// par `MODULE_LABEL`, jamais par la chaîne elle-même.
+import { MODULE_LABEL } from '@/features/access/permissions'
+import { t } from '@/lib/i18n'
 
 /** Carte repliable d'un module dans les écrans RBAC : pastille d'icône colorée, titre,
  *  compteur « sélectionnées / total » et liseré d'accent. En-tête cliquable (chevron) ;
@@ -42,7 +46,7 @@ export function ModuleCard({
           <Icon className="w-3.5 h-3.5" />
         </span>
         <span className={`text-[11px] font-semibold uppercase tracking-wider ${active ? m.text : 'text-white/40'}`}>
-          {module}
+          {MODULE_LABEL[module] ? t(MODULE_LABEL[module]) : module}
         </span>
         <span className={`ml-auto text-[10px] tabular-nums px-1.5 py-0.5 rounded-md ${active ? 'bg-white/[0.06] text-white/55' : 'text-white/25'}`}>
           {selected}/{total}

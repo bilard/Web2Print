@@ -231,7 +231,7 @@ export function UsersTab() {
                               return (
                                 <span key={d.key} className={`inline-flex items-stretch rounded-lg border overflow-hidden text-[10px] ${granted ? 'border-emerald-500/40' : revoked ? 'border-red-500/40' : 'border-white/10'}`}>
                                   <span className={`flex items-center px-2 py-1 ${revoked ? 'text-white/30 line-through' : inRole ? 'text-white/75' : 'text-white/40'}`} title={inRole ? 'Inclus dans le rôle' : 'Absent du rôle'}>
-                                    {inRole && <span className="w-1 h-1 rounded-full bg-white/45 mr-1" />}{d.label}
+                                    {inRole && <span className="w-1 h-1 rounded-full bg-white/45 mr-1" />}{t(d.labelKey)}
                                   </span>
                                   <button onClick={() => toggleOverride(u, d.key, 'grant')} title={t('ac.grantExtra')}
                                     className={`px-1.5 flex items-center border-l transition-colors ${granted ? 'bg-emerald-500/25 border-emerald-500/40 text-emerald-200' : 'border-white/10 text-white/25 hover:bg-emerald-500/10 hover:text-emerald-300'}`}>
