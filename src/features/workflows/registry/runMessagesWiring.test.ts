@@ -66,6 +66,44 @@ const DONE: readonly { type: string; files: readonly string[] }[] = [
       'functions/src/priceWatch/catalog/krampAuthPass.ts',
     ],
   },
+  {
+    type: 'price-watch',
+    files: [
+      'src/features/workflows/registry/priceWatchNode.ts',
+      'functions/src/workflow/nodes/priceWatch.ts',
+    ],
+  },
+  {
+    // Le client délègue à `runPriceWatch` ; le serveur inline la même boucle.
+    // Structures différentes, messages communs — d'où les mêmes clés.
+    type: 'price-watch-track',
+    files: [
+      'src/features/workflows/registry/priceWatchTrackNode.ts',
+      'functions/src/workflow/nodes/priceWatchTrack.ts',
+      'src/features/priceWatch/runPriceWatch.ts',
+    ],
+  },
+  {
+    type: 'cost-report',
+    files: [
+      'src/features/workflows/registry/costReportNode.tsx',
+      'functions/src/workflow/nodes/costReport.ts',
+    ],
+  },
+  {
+    type: 'webhook-post',
+    files: [
+      'src/features/workflows/registry/webhookNode.tsx',
+      'functions/src/workflow/nodes/webhookPost.ts',
+    ],
+  },
+  {
+    type: 'source-sites',
+    files: [
+      'src/features/workflows/registry/sourceSitesNode.tsx',
+      'functions/src/workflow/nodes/sourceSites.ts',
+    ],
+  },
 ]
 
 /** Niveaux de log — premier argument de `ctx.log`. */

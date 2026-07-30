@@ -5,6 +5,7 @@
 // au template « Veille prix → alerte Telegram » de tourner en cron sans navigateur.
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
+import { t } from '../../i18n'
 
 interface StoredValue {
   key: string
@@ -66,7 +67,7 @@ registerServerNode({
     const sheet = (inputs.sheet ?? {}) as SheetLike
     const rows = sheet.rows ?? []
     if (rows.length === 0) {
-      ctx.log('warn', 'Sheet vide — aucun prix à surveiller.')
+      ctx.log('warn', t(ctx.locale, 'run.pw.emptySheet'))
       return { all: sheet }
     }
 
@@ -79,14 +80,14 @@ registerServerNode({
     await stateRef.set({ values: nextValues, updatedAt: FieldValue.serverTimestamp() })
 
     if (firstRun) {
-      ctx.log('info', `Premier relevé : ${nextValues.length} prix mémorisés (aucune alerte).`)
+      ctx.log('info', t(ctx.locale, 'run.pw.firstReading', { count: nextValues.length }))
       return { all: sheet }
     }
     if (changes.length === 0) {
-      ctx.log('info', `Aucune variation (${nextValues.length} prix comparés, seuil ${thresholdPct} %).`)
+      ctx.log('info', t(ctx.locale, 'run.pw.noChange', { count: nextValues.length, threshold: thresholdPct }))
       return { all: sheet }
     }
-    ctx.log('info', `${changes.length} variation(s) détectée(s) — port « changes » émis.`)
+    ctx.log('info', t(ctx.locale, 'run.pw.changes', { count: changes.length }))
     return {
       changes: { name: 'Variations de prix', columns: sheet.columns, rows: changes },
       all: sheet,

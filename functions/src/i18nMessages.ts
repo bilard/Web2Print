@@ -254,6 +254,87 @@ const MESSAGES = {
     en: 'Jina credits EXHAUSTED — web searches suspended (calls skipped). Top up at jina.ai.',
   },
 
+  // — Veille de prix simple (`price-watch`) —
+  'run.pw.emptySheet': { fr: 'Sheet vide — aucun prix à surveiller.', en: 'Empty sheet — no price to monitor.' },
+  'run.pw.firstReading': {
+    fr: 'Premier relevé : {count} prix mémorisés (aucune alerte).',
+    en: 'First reading: {count} price(s) recorded (no alert).',
+  },
+  'run.pw.noChange': {
+    fr: 'Aucune variation ({count} prix comparés, seuil {threshold} %).',
+    en: 'No change ({count} price(s) compared, threshold {threshold}%).',
+  },
+  'run.pw.changes': {
+    fr: '{count} variation(s) détectée(s) — port « changes » émis.',
+    en: '{count} change(s) detected — "changes" port emitted.',
+  },
+
+  // — Suivi de prix concurrents (`price-watch-track`) —
+  'run.pwt.noProduct': {
+    fr: 'Aucun produit exploitable en entrée — vérifie le branchement et le mapping des colonnes.',
+    en: 'No usable product on the input — check the wiring and the column mapping.',
+  },
+  'run.pwt.noAlert': { fr: 'Aucune alerte.', en: 'No alert.' },
+  'run.pwt.alerts': {
+    fr: '{count} alerte(s) — port « changes » émis.',
+    en: '{count} alert(s) — "changes" port emitted.',
+  },
+  'run.pwt.noPage': { fr: 'Aucune page trouvée : {name} @ {domain}', en: 'No page found: {name} @ {domain}' },
+  'run.pwt.blocked': {
+    fr: 'Page bloquée/vide (anti-bot), aucun relevé : {url}',
+    en: 'Page blocked/empty (anti-bot), nothing read: {url}',
+  },
+  'run.pwt.unreadablePrice': { fr: 'Prix illisible : {url}', en: 'Unreadable price: {url}' },
+  'run.pwt.toConfirm': {
+    fr: 'À confirmer ({verdict}) : {name} @ {domain}',
+    en: 'To confirm ({verdict}): {name} @ {domain}',
+  },
+
+  // — Rapport de coûts IA (`cost-report`) —
+  // Comme le rapport de fréquentation : le serveur agrège SANS navigateur et le dit.
+  'run.cost.aggregatingHeadless': {
+    fr: 'Agrégation des coûts IA & scraping du mois (headless)…',
+    en: 'Aggregating the AI & scraping costs of the month (headless)…',
+  },
+  'run.cost.reportGenerated': {
+    fr: 'Rapport généré : total {total} € · {tokensIn} in / {tokensOut} out{size}.',
+    en: 'Report generated: total €{total} · {tokensIn} in / {tokensOut} out{size}.',
+  },
+
+  // — Webhook sortant (`webhook-post`) —
+  'run.wh.urlMissing': { fr: 'webhook-post : URL du webhook manquante.', en: 'webhook-post: webhook URL missing.' },
+  'run.wh.noRowToSend': {
+    fr: 'Mode « 1 requête par ligne » : aucune ligne reçue — rien à envoyer.',
+    en: 'Mode "1 request per row": no row received — nothing to send.',
+  },
+  'run.wh.rowFailed': { fr: 'Ligne {i} échouée : {message}', en: 'Row {i} failed: {message}' },
+  'run.wh.httpError': { fr: 'Webhook : HTTP {status}{body}', en: 'Webhook: HTTP {status}{body}' },
+  'run.wh.sent': { fr: 'Webhook envoyé → {url} (HTTP {status}).', en: 'Webhook sent → {url} (HTTP {status}).' },
+  'run.wh.invalidUrl': { fr: 'webhook-post : URL invalide « {url} ».', en: 'webhook-post: invalid URL "{url}".' },
+  'run.wh.badScheme': {
+    fr: 'webhook-post : schéma non autorisé ({scheme}).',
+    en: 'webhook-post: scheme not allowed ({scheme}).',
+  },
+  'run.wh.internalTarget': { fr: 'webhook-post : cible interne refusée.', en: 'webhook-post: internal target refused.' },
+  'run.wh.internalIp': {
+    fr: 'webhook-post : cible interne refusée (IP privée/link-local).',
+    en: 'webhook-post: internal target refused (private/link-local IP).',
+  },
+
+  // — Sites sources (`source-sites`) —
+  'run.ss.noActiveSite': {
+    fr: 'Aucun site actif — les nodes branchés ne scraperont rien.',
+    en: 'No active site — the wired nodes will scrape nothing.',
+  },
+  'run.ss.emitted': {
+    fr: '{count} site(s) actif(s) émis (suivi « {watchId} »){suffix}',
+    en: '{count} active site(s) emitted (monitoring "{watchId}"){suffix}',
+  },
+  'run.ss.forcedEngine': {
+    fr: ' — {count} avec moteur forcé.',
+    en: ' — {count} with a forced engine.',
+  },
+
   // — Périodes du rapport de fréquentation : interpolées DANS un message, donc
   // traduites comme lui — sinon un log anglais afficherait « (30 derniers jours) ».
   'run.period.7d': { fr: '7 derniers jours', en: 'last 7 days' },

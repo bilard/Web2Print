@@ -5,6 +5,7 @@
 import { lookup } from 'node:dns/promises'
 import { registerServerNode } from '../registry'
 import { interpolate, extractRows } from '../interpolate'
+import { t, type Locale } from '../../i18n'
 
 /**
  * Garde-fou SSRF : le node tourne côté serveur (Cloud Functions, contexte admin) et
@@ -35,26 +36,28 @@ function isPrivateIp(ip: string): boolean {
   )
 }
 
-async function assertSafeUrl(raw: string): Promise<void> {
+// La langue est passée EXPLICITEMENT : cette garde est une fonction pure, sans
+// contexte de run, et ses messages remontent dans le journal comme les autres.
+async function assertSafeUrl(raw: string, locale: Locale): Promise<void> {
   let parsed: URL
   try {
     parsed = new URL(raw)
   } catch {
-    throw new Error(`webhook-post : URL invalide « ${raw} ».`)
+    throw new Error(t(locale, 'run.wh.invalidUrl', { url: raw }))
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    throw new Error(`webhook-post : schéma non autorisé (${parsed.protocol}).`)
+    throw new Error(t(locale, 'run.wh.badScheme', { scheme: parsed.protocol }))
   }
   const host = parsed.hostname.replace(/^\[|\]$/g, '')
   if (host === 'localhost' || host.endsWith('.localhost') || host === 'metadata.google.internal') {
-    throw new Error('webhook-post : cible interne refusée.')
+    throw new Error(t(locale, 'run.wh.internalTarget'))
   }
   // Si l'hôte est déjà une IP littérale, on la teste directement ; sinon on résout.
   const literal = /^[\d.]+$/.test(host) || host.includes(':')
   const addrs = literal ? [{ address: host }] : await lookup(host, { all: true }).catch(() => [])
   for (const { address } of addrs) {
     if (isPrivateIp(address)) {
-      throw new Error('webhook-post : cible interne refusée (IP privée/link-local).')
+      throw new Error(t(locale, 'run.wh.internalIp'))
     }
   }
 }
@@ -94,8 +97,9 @@ async function sendWebhook(
   body: string,
   readBody: boolean,
   signal: AbortSignal,
+  locale: Locale,
 ): Promise<WebhookCall> {
-  await assertSafeUrl(url)
+  await assertSafeUrl(url, locale)
   const headers: Record<string, string> = { ...userHeaders }
   if (!Object.keys(headers).some((k) => k.toLowerCase() === 'content-type')) {
     headers['Content-Type'] = 'application/json'
@@ -114,7 +118,7 @@ registerServerNode({
   type: 'webhook-post',
   run: async (ctx, config, inputs) => {
     const url = String(config.url ?? '').trim()
-    if (!url) throw new Error('webhook-post : URL du webhook manquante.')
+    if (!url) throw new Error(t(ctx.locale, 'run.wh.urlMissing'))
     const method = String(config.method ?? 'POST')
     const waitResponse = Boolean(config.waitResponse)
 
@@ -122,7 +126,7 @@ registerServerNode({
     if (config.iterate) {
       const rows = extractRows(inputs.data)
       if (!rows || rows.length === 0) {
-        ctx.log('info', 'Mode « 1 requête par ligne » : aucune ligne reçue — rien à envoyer.')
+        ctx.log('info', t(ctx.locale, 'run.wh.noRowToSend'))
         return { result: { sent: false, count: 0, statuses: [] }, response: null }
       }
       const raw = (ctx.rawConfig ?? {}) as Record<string, unknown>
@@ -136,12 +140,12 @@ registerServerNode({
         const headers = parseHeaders(String(r.headers ?? ''))
         const body = String(r.body ?? '').trim() ? String(r.body) : JSON.stringify(row)
         try {
-          const out = await sendWebhook(reqUrl, String(r.method ?? method), headers, body, waitResponse, ctx.signal)
+          const out = await sendWebhook(reqUrl, String(r.method ?? method), headers, body, waitResponse, ctx.signal, ctx.locale)
           statuses.push(out.status)
           if (waitResponse) responses.push(out.body)
           ctx.log(out.ok ? 'info' : 'warn', `[${i + 1}/${rows.length}] HTTP ${out.status}`)
         } catch (err) {
-          ctx.log('warn', `Ligne ${i + 1} échouée : ${err instanceof Error ? err.message : String(err)}`)
+          ctx.log('warn', t(ctx.locale, 'run.wh.rowFailed', { i: i + 1, message: err instanceof Error ? err.message : String(err) }))
         }
       }
       return {
@@ -153,11 +157,14 @@ registerServerNode({
     // Mode requête unique.
     const headers = parseHeaders(String(config.headers ?? ''))
     const body = String(config.body ?? '').trim() ? String(config.body) : JSON.stringify(inputs.data ?? {})
-    const out = await sendWebhook(url, method, headers, body, waitResponse, ctx.signal)
+    const out = await sendWebhook(url, method, headers, body, waitResponse, ctx.signal, ctx.locale)
     if (!out.ok) {
-      throw new Error(`webhook-post : HTTP ${out.status}${out.bodyText ? ` — ${out.bodyText.slice(0, 200)}` : ''}`)
+      throw new Error(t(ctx.locale, 'run.wh.httpError', {
+        status: out.status,
+        body: out.bodyText ? ` — ${out.bodyText.slice(0, 200)}` : '',
+      }))
     }
-    ctx.log('info', `Webhook envoyé → ${url} (HTTP ${out.status}).`)
+    ctx.log('info', t(ctx.locale, 'run.wh.sent', { url, status: out.status }))
     return {
       result: { sent: true, count: 1, statuses: [out.status] },
       response: waitResponse ? out.body : null,

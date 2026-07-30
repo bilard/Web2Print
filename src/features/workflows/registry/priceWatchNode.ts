@@ -8,6 +8,8 @@ import { db } from '@/lib/firebase/config'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { useAuthStore } from '@/stores/auth.store'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface PriceWatchConfig {
   watchId: string
@@ -100,11 +102,11 @@ const priceWatchNode: NodeSpec<
   runtime: 'client',
   run: async (ctx, config, inputs) => {
     const uid = useAuthStore.getState().user?.uid
-    if (!uid) throw new Error('Utilisateur non connecté — état de veille indisponible.')
+    if (!uid) throw new Error(t('run.pw.notSignedIn'))
     const watchId = (config.watchId || 'veille-1').trim().replace(/[/#?[\]]/g, '_')
     const rows = inputs.sheet?.rows ?? []
     if (rows.length === 0) {
-      ctx.log('warn', 'Sheet vide — aucun prix à surveiller.')
+      ctx.log('warn', t('run.pw.emptySheet'))
       return { all: inputs.sheet }
     }
 
@@ -119,14 +121,14 @@ const priceWatchNode: NodeSpec<
     await setDoc(stateRef, { values: nextValues, updatedAt: serverTimestamp() })
 
     if (firstRun) {
-      ctx.log('info', `Premier relevé : ${nextValues.length} prix mémorisés (aucune alerte).`)
+      ctx.log('info', t('run.pw.firstReading', { count: nextValues.length }))
       return { all: inputs.sheet }
     }
     if (changes.length === 0) {
-      ctx.log('info', `Aucune variation (${nextValues.length} prix comparés, seuil ${config.thresholdPct} %).`)
+      ctx.log('info', t('run.pw.noChange', { count: nextValues.length, threshold: config.thresholdPct }))
       return { all: inputs.sheet }
     }
-    ctx.log('info', `${changes.length} variation(s) détectée(s) — port « changes » émis.`)
+    ctx.log('info', t('run.pw.changes', { count: changes.length }))
     return {
       changes: { name: 'Variations de prix', columns: inputs.sheet.columns, rows: changes },
       all: inputs.sheet,

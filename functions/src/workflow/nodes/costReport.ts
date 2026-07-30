@@ -16,6 +16,7 @@ import { getFirestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
 import { makeServerFile } from './serverFile'
 import { fetchBrightDataAccountStats } from '../../scraper/brightDataAccount'
+import { t } from '../../i18n'
 
 // ───────────────────────────── Catalogue modèles (copie de src/lib/aiModels.ts) ──
 type AiProvider = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'qwen' | 'kimi' | 'glm' | 'openrouter'
@@ -730,7 +731,7 @@ async function collectCostReportServer(uid: string, title?: string): Promise<{
 registerServerNode({
   type: 'cost-report',
   run: async (ctx, config) => {
-    ctx.log('info', 'Agrégation des coûts IA & scraping du mois (headless)…')
+    ctx.log('info', t(ctx.locale, 'run.cost.aggregatingHeadless'))
     const title = String(config.title ?? '')
     const report = await collectCostReportServer(ctx.uid, title)
 
@@ -743,10 +744,9 @@ registerServerNode({
       ? Object.keys(report.summaryRows[0]).map((k) => ({ key: k, label: k }))
       : []
 
-    ctx.log(
-      'info',
-      `Rapport généré : total ${report.totalEur.toFixed(2)} € · ${report.tokensIn} in / ${report.tokensOut} out.`,
-    )
+    ctx.log('info', t(ctx.locale, 'run.cost.reportGenerated', {
+      total: report.totalEur.toFixed(2), tokensIn: report.tokensIn, tokensOut: report.tokensOut, size: '',
+    }))
     // `file` = dashboard riche (archive Drive) ; `html` = variante email-safe (corps de mail).
     return { html: report.emailHtml, file, summary: { columns, rows: report.summaryRows } }
   },

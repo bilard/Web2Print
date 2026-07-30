@@ -18,6 +18,7 @@ import { workflowFromTemplate, type WorkflowTemplate } from './templates'
 import { UserTemplatesSection } from './UserTemplatesSection'
 import { SaveAsTemplateDialog } from './editor/SaveAsTemplateDialog'
 import type { Workflow, WorkflowFolder } from './types'
+import { toast } from 'sonner'
 import { useTranslation } from '@/lib/i18n'
 
 interface WorkflowsPageProps {
@@ -84,11 +85,19 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
     })
   }, [uid])
 
+  // ⚠️ Ces trois actions étaient MUETTES en échec : `if (!uid) return` sans retour,
+  // et `onClick={create}` avale le rejet de l'écriture Firestore. Résultat vécu :
+  // cliquer « Nouveau workflow » ne faisait RIEN — ni navigation, ni message, ni
+  // rejet non capté. Un échec doit toujours se voir.
   const create = async () => {
-    if (!uid) return
-    const wf = newWorkflow(uid)
-    await saveWorkflow(uid, wf)
-    nav(`/workflows/${wf.id}`)
+    if (!uid) { toast.error(t('wf.notSignedIn')); return }
+    try {
+      const wf = newWorkflow(uid)
+      await saveWorkflow(uid, wf)
+      nav(`/workflows/${wf.id}`)
+    } catch (e) {
+      toast.error(t('wf.createFailed', { message: e instanceof Error ? e.message : String(e) }))
+    }
   }
 
   useModuleIntent('workflows', (action) => {
@@ -99,15 +108,23 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
   })
 
   const createFromTemplate = async (template: WorkflowTemplate) => {
-    if (!uid) return
-    const wf = workflowFromTemplate(template, uid)
-    await saveWorkflow(uid, wf)
-    nav(`/workflows/${wf.id}`)
+    if (!uid) { toast.error(t('wf.notSignedIn')); return }
+    try {
+      const wf = workflowFromTemplate(template, uid)
+      await saveWorkflow(uid, wf)
+      nav(`/workflows/${wf.id}`)
+    } catch (e) {
+      toast.error(t('wf.createFailed', { message: e instanceof Error ? e.message : String(e) }))
+    }
   }
   const remove = async (id: string) => {
-    if (!uid) return
-    await deleteWorkflow(uid, id)
-    setItems((prev) => prev.filter((w) => w.id !== id))
+    if (!uid) { toast.error(t('wf.notSignedIn')); return }
+    try {
+      await deleteWorkflow(uid, id)
+      setItems((prev) => prev.filter((w) => w.id !== id))
+    } catch (e) {
+      toast.error(t('wf.deleteFailed', { message: e instanceof Error ? e.message : String(e) }))
+    }
   }
   const sortFolders = (fls: WorkflowFolder[]) => [...fls].sort((a, b) => a.name.localeCompare(b.name))
 

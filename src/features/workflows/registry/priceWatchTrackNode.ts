@@ -13,6 +13,8 @@ import { runPriceWatch } from '@/features/priceWatch/runPriceWatch'
 import { parseProductsFromSheet, parseSitesConfig } from '@/features/priceWatch/core'
 import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
 import type { PriceWatchAlert } from '@/features/priceWatch/types'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface TrackConfig {
   watchId: string
@@ -81,7 +83,7 @@ const priceWatchTrackNode: NodeSpec<TrackConfig, TrackInputs, { changes?: ExcelS
   runtime: 'client',
   run: async (ctx, config, inputs) => {
     const uid = useAuthStore.getState().user?.uid
-    if (!uid) throw new Error('Utilisateur non connecté.')
+    if (!uid) throw new Error(t('run.notSignedIn'))
     const rows = (inputs.products?.rows ?? []) as Record<string, unknown>[]
     const products = parseProductsFromSheet(rows, {
       sku: config.skuColumn, ean: config.eanColumn, name: config.nameColumn,
@@ -89,24 +91,24 @@ const priceWatchTrackNode: NodeSpec<TrackConfig, TrackInputs, { changes?: ExcelS
     })
     const sites = parseSitesConfig(config.sites)
     if (products.length === 0) {
-      ctx.log('warn', 'Aucun produit exploitable en entrée — vérifie le branchement et le mapping des colonnes.')
+      ctx.log('warn', t('run.pwt.noProduct'))
       return { all: alertsToSheet([]) }
     }
     if (sites.length === 0) {
-      ctx.log('warn', 'Aucun site concurrent configuré.')
+      ctx.log('warn', t('run.noCompetitor'))
       return { all: alertsToSheet([]) }
     }
-    ctx.log('info', `${products.length} produit(s) × ${sites.length} site(s)…`)
+    ctx.log('info', t('run.pwt.scanning', { products: products.length, sites: sites.length }))
     const alerts = await runPriceWatch({
       uid, watchId: (config.watchId || DEFAULT_WATCH_ID).trim(), thresholdPct: Math.max(0, config.thresholdPct),
       products, sites, log: (m) => ctx.log('info', m), signal: ctx.signal,
     })
     const all = alertsToSheet(alerts)
     if (alerts.length === 0) {
-      ctx.log('info', 'Aucune alerte.')
+      ctx.log('info', t('run.pwt.noAlert'))
       return { all }
     }
-    ctx.log('info', `${alerts.length} alerte(s) — port « changes » émis.`)
+    ctx.log('info', t('run.pwt.alerts', { count: alerts.length }))
     return { changes: all, all }
   },
 }

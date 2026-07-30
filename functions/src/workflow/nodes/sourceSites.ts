@@ -5,6 +5,7 @@
 // dirigée via `resolveSitesInput`. Aucune UI ni Firestore — logique pure.
 import { registerServerNode } from '../registry'
 import { deriveWatchId, rowsToCompetitorSites, type SourceSiteRow } from '../../priceWatch/sourceSites'
+import { t } from '../../i18n'
 
 registerServerNode({
   type: 'source-sites',
@@ -12,8 +13,8 @@ registerServerNode({
     const watchId = deriveWatchId(String(config.watchId ?? ''), ctx.workflowId)
     const rows = (Array.isArray(config.sites) ? config.sites : []) as SourceSiteRow[]
     const sites = rowsToCompetitorSites(rows)
-    if (sites.length === 0) ctx.log('warn', 'Aucun site actif — les nodes branchés ne scraperont rien.')
-    else ctx.log('info', `${sites.length} site(s) actif(s) émis (suivi « ${watchId} »).`)
+    if (sites.length === 0) ctx.log('warn', t(ctx.locale, 'run.ss.noActiveSite'))
+    else ctx.log('info', t(ctx.locale, 'run.ss.emitted', { count: sites.length, watchId, suffix: '.' }))
     return { sites: { watchId, sites } }
   },
 })

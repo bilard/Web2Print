@@ -7,6 +7,8 @@ import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { interpolate } from '../runtime/interpolate'
 import { extractRows } from '../runtime/executor'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 type WebhookMethod = 'POST' | 'PUT' | 'PATCH'
 
@@ -214,7 +216,7 @@ const webhookNode: NodeSpec<
   run: async (ctx, config, inputs) => {
     const url = config.url.trim()
     if (!url) {
-      throw new Error("URL du webhook manquante (colle l'URL du module « Custom Webhook » de Make).")
+      throw new Error(t('run.wh.urlMissingHint'))
     }
 
     // Mode « 1 requête par ligne » : ré-interpolation du config brut par ligne.
@@ -222,16 +224,16 @@ const webhookNode: NodeSpec<
     if (config.iterate) {
       const rows = extractRows(inputs.data)
       if (!rows || rows.length === 0) {
-        ctx.log('info', 'Mode « 1 requête par ligne » : aucune ligne reçue — rien à envoyer.')
+        ctx.log('info', t('run.wh.noRowToSend'))
         return { result: { sent: false, count: 0, statuses: [] }, response: null }
       }
       const rawConfig = ctx.rawConfig as WebhookConfig | undefined
-      ctx.log('info', `Mode iterate : ${rows.length} requête(s) vers le webhook…`)
+      ctx.log('info', t('run.wh.iterating', { count: rows.length }))
       const statuses: number[] = []
       const responses: unknown[] = []
       for (let i = 0; i < rows.length; i++) {
         if (ctx.signal.aborted) {
-          ctx.log('warn', `Run interrompu après ${statuses.length} requêtes.`)
+          ctx.log('warn', t('run.wh.interrupted', { count: statuses.length }))
           break
         }
         const row = rows[i]
@@ -251,7 +253,7 @@ const webhookNode: NodeSpec<
           if (config.waitResponse) responses.push(out.body)
           ctx.log(out.ok ? 'info' : 'warn', `[${i + 1}/${rows.length}] HTTP ${out.status}`)
         } catch (err) {
-          ctx.log('warn', `Ligne ${i + 1} échouée : ${err instanceof Error ? err.message : String(err)}`)
+          ctx.log('warn', t('run.wh.rowFailed', { i: i + 1, message: err instanceof Error ? err.message : String(err) }))
         }
       }
       return {
@@ -271,11 +273,12 @@ const webhookNode: NodeSpec<
       ctx.signal,
     )
     if (!out.ok) {
-      throw new Error(
-        `Webhook : HTTP ${out.status}${out.bodyText ? ` — ${out.bodyText.slice(0, 200)}` : ''}`,
-      )
+      throw new Error(t('run.wh.httpError', {
+        status: out.status,
+        body: out.bodyText ? ` — ${out.bodyText.slice(0, 200)}` : '',
+      }))
     }
-    ctx.log('info', `Webhook envoyé → ${url} (HTTP ${out.status}).`)
+    ctx.log('info', t('run.wh.sent', { url, status: out.status }))
     return {
       result: { sent: true, count: 1, statuses: [out.status] },
       response: config.waitResponse ? out.body : null,

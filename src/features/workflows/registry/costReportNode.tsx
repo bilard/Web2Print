@@ -8,6 +8,8 @@ import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { useAuthStore } from '@/stores/auth.store'
 import { collectCostReport } from './costReport'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface CostReportConfig {
   title: string
@@ -84,9 +86,9 @@ const costReportNode: NodeSpec<CostReportConfig, Record<string, never>, CostRepo
   cardSummary: (c) => c.title?.trim() || 'Coûts du mois',
   run: async (ctx, config) => {
     const user = useAuthStore.getState().user
-    if (!user?.uid) throw new Error('Utilisateur non authentifié — impossible de lire les coûts.')
+    if (!user?.uid) throw new Error(t('run.cost.notAuthenticated'))
 
-    ctx.log('info', 'Agrégation des coûts IA & scraping du mois…')
+    ctx.log('info', t('run.cost.aggregating'))
     const report = await collectCostReport({ uid: user.uid, email: user.email, title: config.title })
 
     const month = new Date().toISOString().slice(0, 7)
@@ -98,10 +100,10 @@ const costReportNode: NodeSpec<CostReportConfig, Record<string, never>, CostRepo
       ? Object.keys(report.summaryRows[0]).map((k) => ({ key: k, label: k }))
       : []
 
-    ctx.log(
-      'info',
-      `Rapport généré : total ${report.totalEur.toFixed(2)} € · ${report.tokensIn} in / ${report.tokensOut} out · ${(file.size / 1024).toFixed(1)} KB.`,
-    )
+    ctx.log('info', t('run.cost.reportGenerated', {
+      total: report.totalEur.toFixed(2), tokensIn: report.tokensIn, tokensOut: report.tokensOut,
+      size: t('run.cost.fileSize', { size: (file.size / 1024).toFixed(1) }),
+    }))
     // `file` = dashboard riche (archive Drive) ; `html` = variante email-safe (corps de mail).
     return { html: report.emailHtml, file, summary: { columns, rows: report.summaryRows } }
   },

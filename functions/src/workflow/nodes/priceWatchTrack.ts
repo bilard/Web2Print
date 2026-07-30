@@ -10,6 +10,7 @@ import { callLlm, parseLlmJson } from '../llm'
 import { brightDataRead, htmlToText } from '../brightData'
 import { fetchHtml } from '../../scraper/fetchHtml'
 import { extractProductIdentity } from '../../scraper/extractProducts'
+import { t } from '../../i18n'
 
 interface Product { id: string; sku?: string; ean?: string; name: string; brand?: string; myPrice?: number }
 interface Site { id: string; domain: string; urlPattern?: string; fields?: string[] }
@@ -241,8 +242,8 @@ registerServerNode({
       price: String(config.priceColumn || 'price'),
     })
     const sites = parseSitesConfig(String(config.sites || ''))
-    if (products.length === 0) { ctx.log('warn', 'Aucun produit exploitable en entrée.'); return { all: alertsToSheet([]) } }
-    if (sites.length === 0) { ctx.log('warn', 'Aucun site concurrent configuré.'); return { all: alertsToSheet([]) } }
+    if (products.length === 0) { ctx.log('warn', t(ctx.locale, 'run.pwt.noProduct')); return { all: alertsToSheet([]) } }
+    if (sites.length === 0) { ctx.log('warn', t(ctx.locale, 'run.noCompetitor')); return { all: alertsToSheet([]) } }
 
     const fs = getFirestore()
     const base = `users/${ctx.uid}/priceWatch/${watchId}`
@@ -264,11 +265,11 @@ registerServerNode({
             if (found) { url = found; break }
           }
         }
-        if (!url) { ctx.log('info', `Aucune page : ${product.name} @ ${site.domain}`); continue }
+        if (!url) { ctx.log('info', t(ctx.locale, 'run.pwt.noPage', { name: product.name, domain: site.domain })); continue }
 
         // Lecture STRUCTURÉE d'abord (JSON-LD : prix canonique + EAN, jamais inventés).
         const read = await readCompetitorPage(ctx.uid, url)
-        if (read.blocked) { ctx.log('warn', `Page bloquée/vide (anti-bot), aucun relevé : ${url}`); continue }
+        if (read.blocked) { ctx.log('warn', t(ctx.locale, 'run.pwt.blocked', { url })); continue }
         let price = read.price ?? NaN
         // Repli LLM UNIQUEMENT si pas de prix structuré (page sans JSON-LD).
         if (Number.isNaN(price) && read.content) {
@@ -277,7 +278,7 @@ registerServerNode({
             `Réponds UNIQUEMENT {"price": "..."}.\n\n${read.content}`
           price = parsePrice(parseLlmJson<{ price?: unknown }>((await callLlm(ctx.uid, extractPrompt)).text)?.price)
         }
-        if (Number.isNaN(price)) { ctx.log('info', `Prix illisible : ${url}`); continue }
+        if (Number.isNaN(price)) { ctx.log('info', t(ctx.locale, 'run.pwt.unreadablePrice', { url })); continue }
 
         const display = { productName: product.name, domain: site.domain, myPrice: product.myPrice ?? null }
         const competitor = { competitorEan: read.ean || null, competitorName: read.name || null }
@@ -297,7 +298,7 @@ registerServerNode({
           const status = verdict >= MATCH_THRESHOLD ? 'auto' : 'pending'
           await matchRef.set({ productId: product.id, siteId: site.id, url, confidence: verdict, status,
             lastPrice: price, lastDiscoveredAt: Date.now(), updatedAt: FieldValue.serverTimestamp(), ...display, ...competitor }, { merge: true })
-          if (status === 'pending') { ctx.log('info', `À confirmer (${verdict}) : ${product.name} @ ${site.domain}`); continue }
+          if (status === 'pending') { ctx.log('info', t(ctx.locale, 'run.pwt.toConfirm', { verdict, name: product.name, domain: site.domain })); continue }
         }
 
         const histRef = fs.doc(`${base}/history/${key}`)
@@ -311,8 +312,8 @@ registerServerNode({
     }
 
     const all = alertsToSheet(alerts)
-    if (alerts.length === 0) { ctx.log('info', 'Aucune alerte.'); return { all } }
-    ctx.log('info', `${alerts.length} alerte(s) — port « changes » émis.`)
+    if (alerts.length === 0) { ctx.log('info', t(ctx.locale, 'run.pwt.noAlert')); return { all } }
+    ctx.log('info', t(ctx.locale, 'run.pwt.alerts', { count: alerts.length }))
     return { changes: all, all }
   },
 })

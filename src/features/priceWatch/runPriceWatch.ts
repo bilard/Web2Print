@@ -11,6 +11,8 @@ import {
 } from './core'
 import { matchesCol, historyCol, matchKey, HISTORY_MAX, MATCH_THRESHOLD } from './paths'
 import type { TrackedProduct, CompetitorSite, PriceMatch, HistoryPoint, PriceWatchAlert } from './types'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 export interface RunDeps {
   uid: string
@@ -95,7 +97,7 @@ export async function runPriceWatch(deps: RunDeps): Promise<PriceWatchAlert[]> {
       let confidence = prev?.confidence ?? 0
       if (!url) {
         const found = await discover(product, site)
-        if (!found) { log(`Aucune page trouvée : ${product.name} @ ${site.domain}`); continue }
+        if (!found) { log(t('run.pwt.noPage', { name: product.name, domain: site.domain })); continue }
         url = found
       }
 
@@ -105,8 +107,8 @@ export async function runPriceWatch(deps: RunDeps): Promise<PriceWatchAlert[]> {
       // 2. Scrape
       let scraped: { price: number; ean: string; name: string; content: string }
       try { scraped = await scrape(url, site.fields ?? ['price'], deps.signal) }
-      catch (e) { log(`Scrape échoué ${url} : ${String(e)}`); continue }
-      if (Number.isNaN(scraped.price)) { log(`Prix illisible : ${url}`); continue }
+      catch (e) { log(t('run.pwt.scrapeFailed', { url, message: String(e) })); continue }
+      if (Number.isNaN(scraped.price)) { log(t('run.pwt.unreadablePrice', { url })); continue }
       const competitor = { competitorEan: scraped.ean || null, competitorName: scraped.name || null }
 
       // 3. Validation si pas encore épinglé/confirmé. EAN identique = appariement
@@ -120,7 +122,7 @@ export async function runPriceWatch(deps: RunDeps): Promise<PriceWatchAlert[]> {
           productId: product.id, siteId: site.id, url, confidence: verdict, status,
           lastPrice: scraped.price, lastDiscoveredAt: Date.now(), updatedAt: Date.now(), ...display, ...competitor,
         } satisfies PriceMatch, { merge: true })
-        if (status === 'pending') { log(`À confirmer (${verdict}) : ${product.name} @ ${site.domain}`); continue }
+        if (status === 'pending') { log(t('run.pwt.toConfirm', { verdict, name: product.name, domain: site.domain })); continue }
       }
 
       // 4. Historique + alertes

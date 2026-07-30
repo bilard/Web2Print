@@ -10,6 +10,8 @@ import {
 } from '@/features/priceWatch/sourceSites'
 import { SourceSitesConfig } from './sourceSitesConfig'
 import type { SourceSitesNodeConfig } from './sourceSitesTypes'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 type SourceSitesOutputs = { sites: SourceSitesPayload }
 
@@ -35,12 +37,14 @@ const sourceSitesNode: NodeSpec<SourceSitesNodeConfig, Record<string, never>, So
     const watchId = deriveWatchId(config.watchId, ctx.workflowId)
     const sites = rowsToCompetitorSites(config.sites ?? [])
     if (sites.length === 0) {
-      ctx.log('warn', 'Aucun site actif — les nodes branchés ne scraperont rien.')
+      ctx.log('warn', t('run.ss.noActiveSite'))
     } else {
       const forced = sites.filter((s) => s.engine).length
-      ctx.log('info',
-        `${sites.length} site(s) actif(s) émis (suivi « ${watchId} »)` +
-        (forced ? ` — ${forced} avec moteur forcé.` : '.'))
+      ctx.log('info', t('run.ss.emitted', {
+        count: sites.length,
+        watchId,
+        suffix: forced ? t('run.ss.forcedEngine', { count: forced }) : '.',
+      }))
     }
     ctx.reportCount?.(sites.length)
     return { sites: { watchId, sites } }
