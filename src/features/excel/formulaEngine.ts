@@ -1,5 +1,6 @@
 import type { ExcelColumn, CellValue } from './types'
 import { useLocaleStore } from '@/stores/locale.store'
+import { refText } from '@/lib/i18n/refStrings'
 
 // --- Types ---
 
@@ -554,5 +555,5 @@ export function evaluateFormula(
 
 /** Description d'une fonction dans la langue courante (référentiel bilingue). */
 export function fnDescription(f: { description: string; descriptionEn: string }): string {
-  return useLocaleStore.getState().locale === 'en' ? f.descriptionEn : f.description
+  return refText(f.description, f.descriptionEn, useLocaleStore.getState().locale)
 }

@@ -30,18 +30,14 @@ type HelpMap = Record<string, string>
  */
 const SOURCES: Partial<Record<Locale, () => Promise<HelpMap>>> = {
   en: async () => {
-    const [docs, bodies] = await Promise.all([
-      import('../../../scripts/docs-i18n/strings.en.json'),
-      import('./helpBodies.en'),
-    ])
-    return { ...(docs.default as HelpMap), ...bodies.HELP_BODIES_EN }
+    const { HELP_BODIES_EN } = await import('./helpBodies.en')
+    const docs = await import('../../../scripts/docs-i18n/strings.en.json')
+    return { ...(docs.default as HelpMap), ...HELP_BODIES_EN }
   },
   es: async () => {
-    const [docs, bodies] = await Promise.all([
-      import('../../../scripts/docs-i18n/strings.es.json'),
-      import('./helpBodies.es'),
-    ])
-    return { ...(docs.default as HelpMap), ...bodies.HELP_BODIES_ES }
+    const { HELP_BODIES_ES } = await import('./helpBodies.es')
+    const docs = await import('../../../scripts/docs-i18n/strings.es.json')
+    return { ...(docs.default as HelpMap), ...HELP_BODIES_ES }
   },
 }
 

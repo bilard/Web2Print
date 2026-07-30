@@ -1,4 +1,5 @@
 import type { Locale } from '@/lib/i18n'
+import { refText } from '@/lib/i18n/refStrings'
 // Catalogue des fonctions Google Sheets pour l'autocomplétion + la référence des
 // colonnes-formule. Organisé en GROUPES (par catégorie) ; une liste plate est
 // dérivée pour l'autocomplétion.
@@ -28,12 +29,12 @@ interface FunctionGroup {
  * de messages de run côté serveur.
  */
 export function fnHint(f: { hint: string; hintEn: string }, locale: Locale): string {
-  return locale === 'en' ? f.hintEn : f.hint
+  return refText(f.hint, f.hintEn, locale)
 }
 
 /** Nom de catégorie dans la langue courante. */
 export function fnCat(g: { cat: string; catEn: string }, locale: Locale): string {
-  return locale === 'en' ? g.catEn : g.cat
+  return refText(g.cat, g.catEn, locale)
 }
 
 export const GSHEETS_FUNCTION_GROUPS: FunctionGroup[] = [

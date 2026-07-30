@@ -4,6 +4,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useLocaleStore } from '@/stores/locale.store'
+import { refText } from '@/lib/i18n/refStrings'
 
 type FieldType = 'string' | 'number' | 'boolean' | 'timestamp' | 'object' | 'array'
 export type SchemaDomain = 'core' | 'design' | 'pim' | 'data' | 'flow' | 'brief'
@@ -270,10 +271,11 @@ export const RELATIONS: RelationSpec[] = [
 
 /** Description d'une table dans la langue courante (référentiel bilingue). */
 export function tableDescription(table: TableSchema): string {
-  return useLocaleStore.getState().locale === 'en' ? table.descriptionEn : table.description
+  return refText(table.description, table.descriptionEn, useLocaleStore.getState().locale)
 }
 
 /** Note d'un champ dans la langue courante. */
 export function fieldNote(f: FieldSchema): string | undefined {
-  return useLocaleStore.getState().locale === 'en' ? (f.noteEn ?? f.note) : f.note
+  if (f.note === undefined) return undefined
+  return refText(f.note, f.noteEn ?? f.note, useLocaleStore.getState().locale)
 }
