@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MoreHorizontal, Star, Pencil, Copy, Trash2 } from 'lucide-react'
 import { CATEGORY_META, type Prompt } from './types'
+import { t } from '@/lib/i18n'
 
 interface PromptListItemProps {
   prompt: Prompt
@@ -103,7 +104,7 @@ export function PromptListItem({
               className="w-full flex items-center gap-3 px-3 py-2 text-[13px] text-white/85 hover:bg-white/[0.04] hover:text-white transition-colors"
             >
               <Pencil className="w-4 h-4 text-white/60 shrink-0" />
-              <span>Renommer / éditer</span>
+              <span>{t('ch.renameEdit')}</span>
             </button>
             <button
               type="button"

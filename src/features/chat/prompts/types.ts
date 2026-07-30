@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
+import { t } from '@/lib/i18n'
 import {
   Pencil,
   GraduationCap,
@@ -28,13 +29,13 @@ export interface PromptCategoryMeta {
 }
 
 export const CATEGORY_META: Record<PromptCategory, PromptCategoryMeta> = {
-  writing:  { id: 'writing',  label: 'Écrire',          icon: Pencil },
+  writing:  { id: 'writing',  label: t('ch.cat.writing'),          icon: Pencil },
   learning: { id: 'learning', label: 'Apprendre',       icon: GraduationCap },
   code:     { id: 'code',     label: 'Code',            icon: Code2 },
   daily:    { id: 'daily',    label: 'Vie quotidienne', icon: Coffee },
-  ideas:    { id: 'ideas',    label: 'Idées',           icon: Lightbulb },
+  ideas:    { id: 'ideas',    label: t('ch.cat.ideas'),           icon: Lightbulb },
   image:    { id: 'image',    label: 'Image',           icon: ImagePlus },
-  custom:   { id: 'custom',   label: 'Personnalisé',    icon: Sparkles },
+  custom:   { id: 'custom',   label: t('ch.cat.custom'),    icon: Sparkles },
 }
 
 export interface Prompt {

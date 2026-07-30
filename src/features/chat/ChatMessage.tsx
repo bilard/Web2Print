@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { ResponseProviderBadge } from './ModelBadge'
 import type { ChatAttachment } from './attachments'
 import { autoTagAsset } from '@/features/dam/autoTag'
+import { t } from '@/lib/i18n'
 
 const PROVIDER_DISPLAY: Record<string, string> = {
   claude: 'Claude (Anthropic)',
@@ -68,7 +69,7 @@ function FallbackBadge({ provider, error }: FallbackBadgeProps) {
         <span className="font-medium shrink-0">
           {PROVIDER_DISPLAY[provider] ?? provider}
         </span>
-        <span className="text-amber-200/60 shrink-0">a échoué&nbsp;:</span>
+        <span className="text-amber-200/60 shrink-0">{t('ch.failed')}</span>
         <span className={`text-amber-200/60 flex-1 min-w-0 ${expanded || !isLong ? 'whitespace-pre-wrap break-all' : 'truncate'}`}>
           {expanded ? '' : error}
         </span>
@@ -219,7 +220,7 @@ function GeneratedImageActions({ imageUrl, mimeType, prompt }: GeneratedImageAct
         type="button"
         onClick={handleDownload}
         className="flex items-center gap-1.5 text-[11px] text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 rounded-md px-2 py-1 transition-colors"
-        title="Télécharger en .png sur ton ordinateur"
+        title={t('ch.downloadPng')}
       >
         <Download className="w-3 h-3" />
         Télécharger
@@ -311,7 +312,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
           <div className="flex items-start gap-2 text-rose-300 bg-rose-500/[0.08] border border-rose-500/25 rounded-xl px-3 py-2.5 text-[13px]">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="font-medium mb-0.5">Échec du provider</p>
+              <p className="font-medium mb-0.5">{t('ch.providerFailed')}</p>
               <p className="text-rose-200/80 break-words">{message.error}</p>
             </div>
           </div>
@@ -328,7 +329,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 >
                   <img
                     src={message.imageDataUri}
-                    alt="Image générée par Image IA"
+                    alt={t('ch.generatedImageAlt')}
                     className="w-full h-auto block"
                   />
                 </a>

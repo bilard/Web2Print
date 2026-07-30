@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { useDataMerge } from './useDataMerge'
 import type { DataSourceRef } from '@/stores/merge.store'
+import { t } from '@/lib/i18n'
 
 interface SavedDataset {
   docId: string
@@ -91,7 +92,7 @@ export function SourceSwitcher() {
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-1.5 text-left truncate hover:bg-white/[0.04] rounded px-1 -mx-1 py-0.5 transition-colors"
-        title="Changer de source de données"
+        title={t('mg.switchSource')}
       >
         <span className="text-indigo-400 font-medium truncate">
           {dataSource?.fileName ?? 'Source'}

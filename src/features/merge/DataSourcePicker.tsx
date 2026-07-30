@@ -11,6 +11,7 @@ import { CloseButton } from '@/components/shared/CloseButton'
 import { useMergeStore } from '@/stores/merge.store'
 import type { DataSourceRef } from '@/stores/merge.store'
 import { listPimProjects, makePimSourceRef, type PimProjectSummary } from './pimSource'
+import { t } from '@/lib/i18n'
 
 interface SavedDataset {
   docId: string
@@ -116,7 +117,7 @@ export function DataSourcePicker() {
   if (savedDataSource) {
     return (
       <div className="p-3 space-y-2">
-        <p className="text-xs text-white/40 text-center mb-2">Source précédente disponible</p>
+        <p className="text-xs text-white/40 text-center mb-2">{t('mg.prevSource')}</p>
         <button
           onClick={() => connectSource(savedDataSource)}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-indigo-500/20 hover:bg-indigo-500/30 text-sm text-indigo-400 transition-colors"
@@ -149,7 +150,7 @@ export function DataSourcePicker() {
   if (mode === 'choose') {
     return (
       <div className="p-3 space-y-2">
-        <p className="text-xs text-white/40 text-center mb-3">Aucune source de données</p>
+        <p className="text-xs text-white/40 text-center mb-3">{t('mg.noSource')}</p>
         <button
           onClick={() => setMode('list')}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 text-sm text-white/70 transition-colors"
@@ -246,7 +247,7 @@ export function DataSourcePicker() {
           <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
         </div>
       ) : datasets.length === 0 ? (
-        <p className="text-xs text-white/30 text-center py-4">Aucun dataset trouvé</p>
+        <p className="text-xs text-white/30 text-center py-4">{t('mg.noDataset')}</p>
       ) : (
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {datasets.map((ds) => (

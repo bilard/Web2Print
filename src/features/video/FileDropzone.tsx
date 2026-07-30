@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { FilePlus2, X, AlertTriangle } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 const MAX_FILES = 3
 const MAX_FILE_SIZE = 5 * 1024 * 1024
@@ -89,7 +90,7 @@ export function FileDropzone({ files, onChange, disabled }: Props) {
           }}
         />
         <FilePlus2 className="w-5 h-5 mx-auto text-white/50 mb-1.5" />
-        <p className="text-xs text-white/70">Dépose des fichiers ici ou clique pour parcourir</p>
+        <p className="text-xs text-white/70">{t('vd.dropzone')}</p>
         <p className="text-[10px] text-white/40 mt-0.5">
           Max {MAX_FILES} fichiers · 5 MB par fichier
         </p>

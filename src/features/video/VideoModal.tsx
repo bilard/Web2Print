@@ -21,6 +21,7 @@ import type { Composition } from './promptToComposition'
 import type { CapturedObjectAnim } from './utils/captureSvg'
 import type { MotionPlan } from './promptToMotionPlan'
 import { useEditorStore, type CanvasObjectProps } from '@/stores/editor.store'
+import { t } from '@/lib/i18n'
 
 /** Collecte récursivement les presets d'animation posés par objet (panneau
  *  « Animer l'objet ») pour que la Vidéo IA s'en inspire (Couche B-robuste). */
@@ -580,7 +581,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           onClick={handleEnrich}
           disabled={enrich.enriching}
           className="shrink-0 flex items-center justify-center gap-2 bg-fuchsia-500/15 hover:bg-fuchsia-500/25 disabled:opacity-50 disabled:cursor-not-allowed border border-fuchsia-500/40 text-fuchsia-200 text-xs font-semibold px-3 py-2.5 rounded-lg transition-colors"
-          title="Génère 1 image photo IA par scène et les affiche en Ken Burns en background"
+          title={t('vd.kenBurns')}
         >
           {enrich.enriching ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -732,7 +733,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     onChange={(e) => setFreeform(e.target.value)}
                     disabled={generating}
                     rows={4}
-                    placeholder="ex. tous les éléments entrent depuis la gauche en cascade, sortent à droite ; effet de carte qui se retourne sur le prix ; le logo balance doucement"
+                    placeholder={t('vd.motionPlaceholder')}
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50 resize-y"
                   />
                   {!isStandalone && (
@@ -797,7 +798,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     }}
                     disabled={generating}
                     rows={4}
-                    placeholder="Décris ce que tu présentes, pourquoi c'est important, et les éléments clés. Plus c'est précis, mieux ça sera."
+                    placeholder={t('vd.subjectPlaceholder')}
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50 resize-y"
                   />
                 </div>
@@ -820,7 +821,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     onChange={(e) => setAudience(e.target.value)}
                     disabled={generating}
                     rows={2}
-                    placeholder="Leur rôle, leur niveau d'expérience, ce qui compte pour eux."
+                    placeholder={t('vd.audiencePlaceholder')}
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50 resize-y"
                   />
                 </div>
@@ -843,7 +844,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     onChange={(e) => setGoal(e.target.value)}
                     disabled={generating}
                     rows={2}
-                    placeholder="Vends-tu un service, formes-tu une équipe ou autre ?"
+                    placeholder={t('vd.goalPlaceholder')}
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50 resize-y"
                   />
                 </div>
@@ -862,7 +863,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     onChange={(e) => setTone(e.target.value)}
                     disabled={generating}
                     rows={2}
-                    placeholder="Utilise ce champ si tu veux un ton de voix précis."
+                    placeholder={t('vd.tonePlaceholder')}
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50 resize-y"
                   />
                 </div>
@@ -930,7 +931,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     <button
                       onClick={handleStop}
                       className="flex items-center justify-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 hover:text-red-200 text-sm font-medium px-3 py-2.5 rounded-lg transition-colors"
-                      title="Annuler la génération en cours"
+                      title={t('vd.cancelGeneration')}
                     >
                       <Square className="w-3.5 h-3.5 fill-current" />
                       Stop

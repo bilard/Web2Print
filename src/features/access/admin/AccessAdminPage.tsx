@@ -5,6 +5,7 @@ import { RolesTab } from './RolesTab'
 import { AuditTab } from './AuditTab'
 import { AnalyticsTab } from '@/features/analytics/admin/AnalyticsTab'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
+import { t } from '@/lib/i18n'
 
 export function AccessAdminPage() {
   const [tab, setTab] = useState<'users' | 'roles' | 'audit' | 'analytics'>('users')
@@ -17,7 +18,7 @@ export function AccessAdminPage() {
   return (
     <div className="h-full overflow-hidden bg-background p-6 flex flex-col">
       <div className="max-w-[1800px] w-full mx-auto flex flex-col gap-4 flex-1 min-h-0">
-        <h1 className="text-xl font-bold text-white">Utilisateurs & rôles</h1>
+        <h1 className="text-xl font-bold text-white">{t('ac.usersRoles')}</h1>
         <nav className="flex gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1 self-start">
           {([['users', 'Utilisateurs', Users], ['roles', 'Rôles', Shield], ['audit', 'Journal', ScrollText], ['analytics', 'Analytics', BarChart3]] as const).map(([id, label, Icon]) => (
             <button key={id} onClick={() => setTab(id)}

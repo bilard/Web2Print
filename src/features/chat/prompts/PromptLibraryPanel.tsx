@@ -11,6 +11,7 @@ import {
 import { usePrompts } from './usePrompts'
 import { PromptListItem } from './PromptListItem'
 import { PromptEditDialog } from './PromptEditDialog'
+import { t } from '@/lib/i18n'
 
 interface PromptLibraryPanelProps {
   onPick: (prompt: Prompt) => void
@@ -116,7 +117,7 @@ export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPane
       <aside className="h-full w-full bg-surface border-l border-white/10 flex flex-col">
         <div className="flex items-center gap-2 px-5 py-4 border-b border-white/10 shrink-0">
           <Sparkles className="w-4 h-4 text-violet-300" />
-          <h2 className="text-[14px] font-semibold text-white">Bibliothèque de prompts</h2>
+          <h2 className="text-[14px] font-semibold text-white">{t('ch.promptLibrary')}</h2>
         </div>
 
         <div className="px-4 pt-3 pb-2 space-y-2 shrink-0">

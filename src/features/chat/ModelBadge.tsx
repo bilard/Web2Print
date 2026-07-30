@@ -3,6 +3,7 @@ import { ChevronDown, Sparkles } from 'lucide-react'
 import { useAiSettingsStore, type ReasoningProvider } from '@/stores/aiSettings.store'
 import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
 import { ModelPickerDropdown } from './ModelPickerDropdown'
+import { t } from '@/lib/i18n'
 
 const PROVIDER_LABEL: Record<AiProvider, string> = {
   claude: 'Claude',
@@ -70,7 +71,7 @@ export function ModelBadge({ pulsing }: ModelBadgeProps) {
             ? 'bg-violet-500/[0.1] border-violet-500/30 text-white'
             : 'bg-white/[0.04] hover:bg-white/[0.06] border-white/10 text-white/90'
         }`}
-        title={`Provider primaire — modèle ${modelId}. Cliquer pour changer.`}
+        title={t('ch.primaryProvider', { model: modelId })}
       >
         {pulsing && <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />}
         <span className="font-semibold">{getModelLabel(primary as AiProvider, modelId)}</span>

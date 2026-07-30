@@ -10,6 +10,7 @@ import {
   type ChatAttachment,
 } from './attachments'
 import { useSpeechRecognition } from './useSpeechRecognition'
+import { t } from '@/lib/i18n'
 
 export interface ComposerSubmitPayload {
   text: string
@@ -195,7 +196,7 @@ export function ChatComposer({
             <button
               type="button"
               onClick={onStop}
-              title="Arrêter"
+              title={t('ch.stop')}
               className="w-9 h-9 flex items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white/80 transition-colors"
             >
               <StopCircle className="w-4 h-4" />
@@ -204,7 +205,7 @@ export function ChatComposer({
             <button
               type="button"
               onClick={submit}
-              title="Envoyer (Entrée)"
+              title={t('ch.send')}
               className="w-9 h-9 flex items-center justify-center rounded-full bg-violet-500 hover:bg-violet-400 text-[#fff] transition-colors"
             >
               <ArrowUp className="w-4 h-4" />

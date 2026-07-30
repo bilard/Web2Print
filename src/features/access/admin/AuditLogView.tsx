@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { auditActionLabel, AUDIT_ACTIONS, AUDIT_MODULES, auditModuleOf, type AuditEntry } from '@/lib/auditLog'
+import { t } from '@/lib/i18n'
 
 interface Props {
   entries: AuditEntry[]
@@ -78,7 +79,7 @@ export function AuditLogView({ entries, loading, showWho = false, onRefresh }: P
         <label className="text-xs text-white/40">au</label>
         <input type="date" className={sel} value={to} onChange={(e) => setTo(e.target.value)} />
         {(who || mod || what || from || to) && (
-          <button onClick={reset} className="text-xs text-white/50 hover:text-white px-2 py-1">Réinitialiser</button>
+          <button onClick={reset} className="text-xs text-white/50 hover:text-white px-2 py-1">{t('ac.reset')}</button>
         )}
         <span className="text-xs text-white/40 ml-auto">{filtered.length} action(s)</span>
         {onRefresh && (

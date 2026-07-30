@@ -5,6 +5,7 @@ import type { Composition } from './promptToComposition'
 import type { StyleConfig } from './promptToStyleConfig'
 import type { CapturedObjectAnim } from './utils/captureSvg'
 import type { MotionPlan } from './promptToMotionPlan'
+import { t } from '@/lib/i18n'
 
 interface Props {
   aspect: AspectFormat
@@ -510,7 +511,7 @@ export function HyperframesPlayer({
                   ? 'bg-indigo-500/30 text-white border border-indigo-400/50'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
-              title="Adapter à la fenêtre (occupe tout l'espace disponible)"
+              title={t('vd.fitWindow')}
             >
               <Maximize2 className="w-3 h-3" />
               <span>Fit</span>
@@ -523,7 +524,7 @@ export function HyperframesPlayer({
                   ? 'bg-indigo-500/30 text-white border border-indigo-400/50'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
-              title="Taille réelle (pixel-perfect)"
+              title={t('vd.realSize')}
             >
               100 %
             </button>
@@ -533,8 +534,8 @@ export function HyperframesPlayer({
               onClick={handleZoomOut}
               disabled={userZoom <= ZOOM_MIN + 0.001}
               className="flex items-center justify-center w-6 h-6 rounded text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-30"
-              aria-label="Zoom arrière"
-              title="Zoom arrière"
+              aria-label={t('vd.zoomOut')}
+              title={t('vd.zoomOut')}
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>

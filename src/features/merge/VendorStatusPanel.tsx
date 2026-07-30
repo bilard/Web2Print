@@ -6,6 +6,7 @@ import { CloseButton } from '@/components/shared/CloseButton'
 import { useSourceVendors, type VendorSummary } from './useSourceVendors'
 import { saveTemplate, emptyTemplate, listTemplates } from '@/features/scraping-templates/templatesStore'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
+import { t } from '@/lib/i18n'
 
 /**
  * Panneau "Fournisseurs" — affiche les marques uniques de la source Excel
@@ -163,7 +164,7 @@ function VendorRow({ vendor, onLink }: { vendor: VendorSummary; onLink: () => vo
         <button
           onClick={() => navigate(`/scraping-templates?id=${vendor.template!.id}`)}
           className="shrink-0 p-1 text-sky-400/50 hover:text-sky-400 transition-colors"
-          title="Ouvrir le template lié"
+          title={t('mg.openLinkedTemplate')}
         >
           <ExternalLink className="w-3 h-3" />
         </button>
@@ -172,14 +173,14 @@ function VendorRow({ vendor, onLink }: { vendor: VendorSummary; onLink: () => vo
           <button
             onClick={onLink}
             className="px-1.5 py-0.5 rounded text-[9px] bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 border border-sky-400/20 transition-colors"
-            title="Lier à un template existant"
+            title={t('mg.linkTemplate')}
           >
             Lier
           </button>
           <button
             onClick={() => navigate('/scraping-templates?new=1')}
             className="p-1 rounded text-[9px] bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-400/20 transition-colors"
-            title="Créer un template"
+            title={t('mg.createTemplate')}
           >
             <Plus className="w-3 h-3" />
           </button>

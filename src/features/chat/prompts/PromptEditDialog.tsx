@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { CloseButton } from '@/components/shared/CloseButton'
+import { t } from '@/lib/i18n'
 import {
   CATEGORY_META,
   PROMPT_CATEGORIES,
@@ -72,14 +73,14 @@ export function PromptEditDialog({ open, initial, onClose, onSave }: PromptEditD
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="ex. Rédiger un email professionnel"
+                placeholder={t('ch.promptTitlePlaceholder')}
                 className="w-full bg-background border border-white/10 focus:border-violet-500/50 rounded-lg px-3 py-2 text-[13.5px] text-white placeholder:text-white/30 outline-none transition-colors"
                 autoFocus
               />
             </div>
 
             <div>
-              <label className="block text-[12px] text-white/60 mb-1.5">Catégorie</label>
+              <label className="block text-[12px] text-white/60 mb-1.5">{t('ch.category')}</label>
               <div className="flex flex-wrap gap-1.5">
                 {PROMPT_CATEGORIES.map((c) => {
                   const meta = CATEGORY_META[c]
@@ -111,7 +112,7 @@ export function PromptEditDialog({ open, initial, onClose, onSave }: PromptEditD
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Décris la requête. Tu peux utiliser des [placeholders] pour les variables."
+                placeholder={t('ch.promptBodyPlaceholder')}
                 rows={12}
                 className="block w-full bg-background border border-white/10 focus:border-violet-500/50 rounded-lg px-3 py-2 text-[13px] text-white placeholder:text-white/30 outline-none resize-y font-mono transition-colors min-h-[180px]"
               />

@@ -5,6 +5,7 @@ import { Trash2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useMyAuditLog, clearAuditLogForUser } from './useAuditLog'
 import { AuditLogView } from './admin/AuditLogView'
+import { t } from '@/lib/i18n'
 
 export function MyActivityTab() {
   const uid = useAuthStore((s) => s.user?.uid)
@@ -28,8 +29,8 @@ export function MyActivityTab() {
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-medium text-white">Mon activité</h3>
-          <p className="text-xs text-white/45">Tes dernières actions, filtrables par type et par date.</p>
+          <h3 className="text-sm font-medium text-white">{t('ac.myActivity')}</h3>
+          <p className="text-xs text-white/45">{t('ac.myActivity.sub')}</p>
         </div>
         {confirm ? (
           <div className="flex items-center gap-2 shrink-0">

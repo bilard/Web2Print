@@ -8,6 +8,7 @@ import { recordAudit } from '@/lib/auditLog'
 import { listRoles, type Role } from '@/features/access/rolesApi'
 import { computeEffectivePermissions } from '@/features/access/computePermissions'
 import { isOwnerEmail } from '@/features/auth/useAuth'
+import { t } from '@/lib/i18n'
 
 const DAY = 86_400_000
 const MODULE_OF: Record<string, string> = Object.fromEntries(PERMISSIONS.map((p) => [p.key, p.module]))
@@ -128,7 +129,7 @@ export function UsersTab() {
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="text-sm text-white/90 truncate">{u.displayName || u.email}</p>
                   {owner && <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300"><ShieldCheck className="w-2.5 h-2.5" /> admin</span>}
-                  {u.accessBlocked && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">bloqué</span>}
+                  {u.accessBlocked && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">{t('ac.blocked')}</span>}
                   {!u.accessBlocked && !u.accessRoleId && !owner && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">en attente</span>}
                   {!owner && u.accessRoleId && !u.accessBlocked && roleOf(u) && <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-200">{roleOf(u)!.name}</span>}
                 </div>
@@ -159,7 +160,7 @@ export function UsersTab() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <button onClick={() => toggleBlocked(u)}
                     className={`flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border transition-colors ${u.accessBlocked ? 'border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10' : 'border-red-500/40 text-red-300 hover:bg-red-500/10'}`}>
-                    {u.accessBlocked ? <><CheckCircle2 className="w-3.5 h-3.5" /> Réactiver</> : <><Ban className="w-3.5 h-3.5" /> Bloquer</>}
+                    {u.accessBlocked ? <><CheckCircle2 className="w-3.5 h-3.5" /> {t('ac.reactivate')}</> : <><Ban className="w-3.5 h-3.5" /> {t('ac.block')}</>}
                   </button>
                   <button onClick={() => setConfirmDelete(confirmDelete === u.uid ? null : u.uid)}
                     className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/40 hover:text-red-300 hover:border-red-500/40 transition-colors">
@@ -232,11 +233,11 @@ export function UsersTab() {
                                   <span className={`flex items-center px-2 py-1 ${revoked ? 'text-white/30 line-through' : inRole ? 'text-white/75' : 'text-white/40'}`} title={inRole ? 'Inclus dans le rôle' : 'Absent du rôle'}>
                                     {inRole && <span className="w-1 h-1 rounded-full bg-white/45 mr-1" />}{d.label}
                                   </span>
-                                  <button onClick={() => toggleOverride(u, d.key, 'grant')} title="Accorder en plus du rôle"
+                                  <button onClick={() => toggleOverride(u, d.key, 'grant')} title={t('ac.grantExtra')}
                                     className={`px-1.5 flex items-center border-l transition-colors ${granted ? 'bg-emerald-500/25 border-emerald-500/40 text-emerald-200' : 'border-white/10 text-white/25 hover:bg-emerald-500/10 hover:text-emerald-300'}`}>
                                     <Plus className="w-3 h-3" />
                                   </button>
-                                  <button onClick={() => toggleOverride(u, d.key, 'revoke')} title="Retirer même si le rôle l'inclut"
+                                  <button onClick={() => toggleOverride(u, d.key, 'revoke')} title={t('ac.revokeEvenIfRole')}
                                     className={`px-1.5 flex items-center border-l transition-colors ${revoked ? 'bg-red-500/25 border-red-500/40 text-red-200' : 'border-white/10 text-white/25 hover:bg-red-500/10 hover:text-red-300'}`}>
                                     <Minus className="w-3 h-3" />
                                   </button>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Play, Pencil, Trash2, Library, Loader2, Check, X, Save } from 'lucide-react'
 import type { VideoPrompt } from './useVideoPromptLibrary'
+import { t } from '@/lib/i18n'
 
 interface Props {
   prompts: VideoPrompt[]
@@ -196,7 +197,7 @@ export function VideoPromptLibrary({
                           onClick={() => void handleUpdate(p.id)}
                           disabled={updatingId === p.id}
                           className="flex items-center justify-center text-[11px] bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded px-2 py-1 disabled:opacity-40"
-                          title="Mettre à jour ce modèle avec le formulaire actuel"
+                          title={t('vd.lib.updateTemplate')}
                         >
                           {updatingId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                         </button>

@@ -18,6 +18,7 @@ import { VendorStatusPanel } from './VendorStatusPanel'
 import { ExportModal } from './ExportModal'
 import { TaggedBlocksList } from './TaggedBlocksList'
 import { FieldMappingEditor } from './FieldMappingEditor'
+import { t } from '@/lib/i18n'
 
 /** Convertit les clés [col_key] → [col_label] pour l'affichage */
 function normalizeForDisplay(formula: string, columns: { key: string; label: string }[]): string {
@@ -171,7 +172,7 @@ export function DataMergePanel() {
         <button
           onClick={disconnectSource}
           className="p-2 rounded-md bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors"
-          title="Déconnecter"
+          title={t('mg.disconnect')}
         >
           <Unlink className="w-3.5 h-3.5" />
         </button>
@@ -375,7 +376,7 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
               </div>
             </div>
             <div className="w-28 shrink-0">
-              <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Type résultat</div>
+              <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">{t('mg.resultType')}</div>
               <select
                 value={configDraft.resultType}
                 onChange={(e) => setConfigDraft((d) => ({ ...d, resultType: e.target.value as FormulaResultType, decimals: d.decimals ?? 0 }))}
@@ -388,7 +389,7 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
             </div>
             {configDraft.resultType === 'number' && (
               <div className="w-24 shrink-0">
-                <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Décimales</div>
+                <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">{t('mg.decimals')}</div>
                 <select
                   value={configDraft.decimals ?? 0}
                   onChange={(e) => setConfigDraft((d) => ({ ...d, decimals: parseInt(e.target.value) }))}
@@ -547,7 +548,7 @@ function VariableTags({ columns }: { columns: { key: string; label: string }[] }
               insertTag(col.key)
             }}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-indigo-500/10 transition-colors cursor-pointer group text-left"
-            title={`Insérer {{${col.key}}}`}
+            title={t('mg.insertToken', { column: col.key })}
           >
             <span className="text-xs text-white/70 group-hover:text-white flex-1 truncate">{col.label}</span>
             <span className="text-[10px] text-indigo-400/40 group-hover:text-indigo-400/70 font-mono shrink-0">{`{{${col.key}}}`}</span>

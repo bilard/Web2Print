@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Paperclip, Camera } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 interface AttachmentMenuProps {
   open: boolean
@@ -54,7 +55,7 @@ export function AttachmentMenu({ open, onClose, onPickFiles, onScreenshot }: Att
         className="w-full flex items-center gap-3 px-3 py-2 text-[13px] text-white/85 hover:bg-white/[0.04] hover:text-white transition-colors"
       >
         <Camera className="w-4 h-4 text-white/60 shrink-0" />
-        <span>Prendre une capture d&apos;écran</span>
+        <span>{t('ch.screenshot')}</span>
       </button>
     </div>
   )

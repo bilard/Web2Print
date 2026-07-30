@@ -11,6 +11,7 @@ import { useEditorStore } from '@/stores/editor.store'
 import { generateImage } from '@/features/briefs/ai/geminiImageClient'
 import { notify } from '@/lib/notify'
 import { isBgLockedMarker } from '@/features/svg/bgLockMarker'
+import { t } from '@/lib/i18n'
 
 /** Première FabricImage du sous-arbre (le calque bg est une image, parfois groupée). */
 function findImage(root: FabricObject): FabricImage | null {
@@ -99,7 +100,7 @@ export function RegenerateBgPanel() {
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         rows={2}
-        placeholder="Ex : ambiance été, fond plage ensoleillée, garder le rouge de la marque…"
+        placeholder={t('mg.bgPlaceholder')}
         className="w-full bg-background border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-fuchsia-500 outline-none resize-y"
       />
       <button

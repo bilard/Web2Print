@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Search, Loader2, FileSpreadsheet, LogOut } from 'lucide-react'
 import { useGoogleSheetsImport } from './useGoogleSheetsImport'
 import type { SheetsFile } from './useGoogleSheetsImport'
+import { t } from '@/lib/i18n'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -68,7 +69,7 @@ export function SheetsFilePicker() {
         </div>
         <button
           onClick={disconnect}
-          title="Déconnecter Google"
+          title={t('mg.disconnectGoogle')}
           className="p-1.5 rounded-md text-white/30 hover:text-red-400 hover:bg-white/5 transition-colors"
         >
           <LogOut className="w-3.5 h-3.5" />
@@ -82,7 +83,7 @@ export function SheetsFilePicker() {
             <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
           </div>
         ) : files.length === 0 ? (
-          <p className="text-xs text-white/30 text-center py-6">Aucun fichier Google Sheets trouvé</p>
+          <p className="text-xs text-white/30 text-center py-6">{t('mg.noSheetsFile')}</p>
         ) : (
           files.map((file) => (
             <button

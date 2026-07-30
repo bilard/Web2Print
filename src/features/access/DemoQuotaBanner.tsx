@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 /** Champ de quota concerné par le module hôte. */
 type QuotaField = 'pimRows' | 'damAssets'
@@ -10,7 +11,7 @@ type QuotaField = 'pimRows' | 'damAssets'
 // le décrémente pas, seul l'admin relève le plafond.
 const LABELS: Record<QuotaField, { unit: string; scope: string; hint: string }> = {
   pimRows: { unit: 'lignes', scope: 'par base', hint: 'Supprimez des lignes de cette base pour continuer, ou contactez-nous pour lever le plafond.' },
-  damAssets: { unit: 'visuels', scope: '', hint: 'Contactez-nous pour lever le plafond de votre compte de démonstration.' },
+  damAssets: { unit: t('ac.quota.visuals'), scope: '', hint: t('ac.quota.hint') },
 }
 
 interface DemoQuotaBannerProps {

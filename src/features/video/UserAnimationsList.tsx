@@ -3,6 +3,7 @@ import { Download, Trash2, FileCode2, Maximize2, Pencil, Check, X, ExternalLink 
 import { toast } from 'sonner'
 import { useUserAnimations, type SavedAnimation } from './useUserAnimations'
 import type { AspectFormat } from './types'
+import { t } from '@/lib/i18n'
 
 const ASPECT_LABEL: Record<AspectFormat, string> = {
   portrait: '9:16',
@@ -243,7 +244,7 @@ function AnimationCard({ animation, onDelete, onRename }: {
             onClick={() => void handleDownload()}
             disabled={downloading}
             className="flex-1 flex items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 text-white text-[11px] font-medium px-2 py-1.5 rounded-md transition-colors"
-            title={`Télécharger ${downloadFilename(animation)}`}
+            title={t('vd.download', { filename: downloadFilename(animation) })}
           >
             <Download className="w-3 h-3" />
             {downloading ? 'Téléchargement…' : 'Télécharger ZIP'}

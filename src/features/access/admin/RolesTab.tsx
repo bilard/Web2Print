@@ -6,6 +6,7 @@ import { listRoles, saveRole, deleteRole, type Role } from '@/features/access/ro
 import { recordAudit } from '@/lib/auditLog'
 import { orderedModuleEntries } from '@/features/access/moduleMeta'
 import { PermissionTree } from './PermissionTree'
+import { t } from '@/lib/i18n'
 
 export function RolesTab() {
   const [roles, setRoles] = useState<Role[]>([])
@@ -78,7 +79,7 @@ export function RolesTab() {
           <input
             autoFocus value={editing.name}
             onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-            placeholder="Nom du rôle (ex. Éditeur PIM)"
+            placeholder={t('ac.rolePlaceholder')}
             className="flex-1 bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30"
           />
           <button onClick={save} disabled={!editing.name.trim()} className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-[#fff] text-sm px-3 py-2 rounded-lg">
@@ -91,14 +92,14 @@ export function RolesTab() {
           <p className="text-[11px] text-white/35 mr-auto">
             <span className="text-white/70 font-medium">{editing.permissions.size}</span> permission(s) · active d'abord l'accès au module.
           </p>
-          <button onClick={expandAll} title="Tout déplier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsUpDown className="w-3.5 h-3.5" /></button>
+          <button onClick={expandAll} title={t('ac.expandAll')} className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsUpDown className="w-3.5 h-3.5" /></button>
           <button onClick={collapseAll} title="Tout replier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsDownUp className="w-3.5 h-3.5" /></button>
         </div>
         {/* Quotas du compte démo : épinglés dans l'en-tête → visibles quel que soit le
             défilement (la case « Compte démo » est le dernier module, tout en bas). */}
         {editing.permissions.has(DEMO_PERMISSION) && (
           <div className="rounded-xl border border-indigo-400/30 bg-indigo-500/[0.07] px-3 py-2.5 flex flex-col gap-2">
-            <p className="text-[11px] font-medium text-white/75">Quotas du compte démo</p>
+            <p className="text-[11px] font-medium text-white/75">{t('ac.demoQuotas')}</p>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               {([
                 { key: 'pimRows' as const, label: 'Lignes PIM' },
@@ -114,7 +115,7 @@ export function RolesTab() {
                 </label>
               ))}
             </div>
-            <p className="text-[10px] text-white/40">Plafonds cumulés par compte, imposés côté serveur. 0 = import bloqué.</p>
+            <p className="text-[10px] text-white/40">{t('ac.demoQuotas.note')}</p>
           </div>
         )}
         </div>
@@ -146,7 +147,7 @@ export function RolesTab() {
           <button onClick={(e) => { e.stopPropagation(); remove(r.id) }} className="p-1.5 text-white/30 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
         </div>
       ))}
-      {roles.length === 0 && <p className="text-[11px] text-white/20 text-center py-3">Aucun rôle — clique « Nouveau rôle ».</p>}
+      {roles.length === 0 && <p className="text-[11px] text-white/20 text-center py-3">{t('ac.noRole')}</p>}
     </div>
   )
 }
