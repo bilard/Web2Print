@@ -2,6 +2,7 @@ import { ImagePlus } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { generateImage, type ReferenceImage } from '@/features/briefs/ai/geminiImageClient'
+import { t } from '@/lib/i18n'
 
 interface GenerateImageConfig {
   prompt: string
@@ -89,7 +90,7 @@ const generateImageNode: NodeSpec<
   run: async (ctx, config, inputs) => {
     const prompt = config.prompt?.trim()
     if (!prompt) {
-      throw new Error('Prompt manquant — saisissez une description dans la config du node.')
+      throw new Error(t('run.ai.promptMissing'))
     }
 
     const refs: ReferenceImage[] = []
@@ -99,15 +100,15 @@ const generateImageNode: NodeSpec<
       if (mimeType.startsWith('image/')) {
         const data = await blobToBase64(ref)
         refs.push({ mimeType, data, label: 'Référence' })
-        ctx.log('info', `Référence ${(ref.size / 1024).toFixed(1)} KB jointe`)
+        ctx.log('info', t('run.ai.refAttached', { kb: (ref.size / 1024).toFixed(1) }))
       } else {
-        ctx.log('warn', `Référence ignorée — type ${mimeType} non supporté`)
+        ctx.log('warn', t('run.ai.refIgnored', { type: mimeType }))
       }
     }
 
     const finalPrompt = `${prompt}\n\n[Aspect ratio cible : ${config.aspectRatio}]`
     const total = Math.max(1, Math.min(4, Math.floor(Number(config.count) || 1)))
-    ctx.log('info', `Génération ${total} image(s) Image IA…`)
+    ctx.log('info', t('run.ai.generating', { total }))
 
     const assets: GeneratedAsset[] = []
     for (let i = 0; i < total; i++) {
@@ -126,16 +127,16 @@ const generateImageNode: NodeSpec<
           size: blob.size,
           blob,
         })
-        ctx.log('info', `${i + 1}/${total} OK (${(blob.size / 1024).toFixed(1)} KB)`)
+        ctx.log('info', t('run.ai.imageOk', { i: i + 1, total, kb: (blob.size / 1024).toFixed(1) }))
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        ctx.log('error', `${i + 1}/${total} échec : ${msg}`)
+        ctx.log('error', t('run.ai.imageFailed', { i: i + 1, total, message: msg }))
       }
     }
 
     ctx.setProgress?.(100)
     if (assets.length === 0) {
-      throw new Error('Aucune image générée — voir les logs.')
+      throw new Error(t('run.ai.noImage'))
     }
 
     const first = assets[0]

@@ -153,6 +153,21 @@ const DONE: readonly { type: string; files: readonly string[] }[] = [
     ],
   },
   {
+    // Nodes SANS jumeau serveur (`SERVER_UNSUPPORTED`) : rien à coordonner, les
+    // clés vivent dans le seul catalogue client. `cronLabels` est listé avec le
+    // node cron parce que son libellé de cadence est INTERPOLÉ dans le message
+    // de tick — un `describeCron` français rendrait le message anglais bâtard.
+    type: 'image-ia / cron / chart / crawl / web-ask (client seul)',
+    files: [
+      'src/features/workflows/registry/aiNodes.ts',
+      'src/features/workflows/registry/cronNodes.ts',
+      'src/features/workflows/runtime/cronLabels.ts',
+      'src/features/workflows/registry/chartNode.tsx',
+      'src/features/workflows/registry/crawlNode.ts',
+      'src/features/workflows/registry/webAskNode.ts',
+    ],
+  },
+  {
     type: 'web-scraping',
     files: [
       'src/features/workflows/registry/webScrapingNode.tsx',

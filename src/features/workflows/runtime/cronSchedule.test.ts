@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
-  computeNextRun, computeNextCycleRun, describeCron, describeCycle, normalizeEvery, sanitizeCycle,
+  computeNextRun, computeNextCycleRun, normalizeEvery, sanitizeCycle,
 } from './cronSchedule'
+import { describeCron, describeCycle } from './cronLabels'
 
 const parisHM = (ts: number) =>
   new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ts))

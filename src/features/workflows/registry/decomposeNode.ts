@@ -14,6 +14,7 @@ import type { NodeSpec } from '../types'
 // est chargé dynamiquement DANS `run`, pour ne pas peser sur le chunk du registre
 // (`builtin`) tiré dès l'ouverture de la page Workflows.
 import type * as SvgToFabric from '@/features/svg/svgToFabric'
+import { t } from '@/lib/i18n'
 
 interface DecomposeConfig {}
 
@@ -34,7 +35,7 @@ async function inlineExternalSvgImages(svgText: string): Promise<string> {
     // 403), mais remplacer la forme échappée telle qu'elle apparaît dans le SVG.
     const fetchUrl = rawUrl.replace(/&amp;/g, '&')
     const resp = await fetch(fetchUrl)
-    if (!resp.ok) throw new Error(`Image inaccessible (${resp.status})`)
+    if (!resp.ok) throw new Error(t('run.dec.imageUnreachable', { status: resp.status }))
     const blob = await resp.blob()
     const dataUri = await new Promise<string>((resolve, reject) => {
       const fr = new FileReader()
@@ -65,10 +66,10 @@ const decomposeNode: NodeSpec<
 
   run: async (ctx, _config, inputs) => {
     if (!inputs.svg) {
-      throw new Error('Aucun fichier SVG fourni — connectez un node image-to-svg ou pdf-to-svg.')
+      throw new Error(t('run.dec.noSvg'))
     }
 
-    ctx.log('info', `Décomposition : ${inputs.svg.name}…`)
+    ctx.log('info', t('run.dec.start', { name: inputs.svg.name }))
 
     // Chargement à la demande du moteur lourd (fabric + parsing SVG + décompo Vision).
     const { Canvas, FabricImage, Group } = await import('fabric')
@@ -90,7 +91,7 @@ const decomposeNode: NodeSpec<
       svgText = await inputs.svg.text()
     } catch (err) {
       throw new Error(
-        `Impossible de lire le fichier SVG : ${err instanceof Error ? err.message : String(err)}`,
+        t('run.dec.readFailed', { message: err instanceof Error ? err.message : String(err) }),
         { cause: err },
       )
     }
@@ -100,10 +101,7 @@ const decomposeNode: NodeSpec<
     try {
       svgText = await inlineExternalSvgImages(svgText)
     } catch (err) {
-      ctx.log(
-        'warn',
-        `Pré-inline de l'image échoué (la décompo échouera si CORS bloque) : ${err instanceof Error ? err.message : String(err)}`,
-      )
+      ctx.log('warn', t('run.dec.inlineFailed', { message: err instanceof Error ? err.message : String(err) }))
     }
 
     // Parse le SVG en objets Fabric (dimensions + objets, sans canvas global).
@@ -112,18 +110,18 @@ const decomposeNode: NodeSpec<
       parsed = await parseSvgToFabric(svgText)
     } catch (err) {
       throw new Error(
-        `Parsing SVG échoué : ${err instanceof Error ? err.message : String(err)}`,
+        t('run.dec.parseFailed', { message: err instanceof Error ? err.message : String(err) }),
         { cause: err },
       )
     }
 
     const { objects, width, height } = parsed
     if (objects.length === 0) {
-      ctx.log('warn', 'SVG vide (aucun objet Fabric parsé) — SVG d\'entrée renvoyé inchangé.')
+      ctx.log('warn', t('run.dec.emptySvg'))
       return { svg: inputs.svg }
     }
 
-    ctx.log('info', `SVG parsé : ${objects.length} objet(s), ${width}×${height}px`)
+    ctx.log('info', t('run.dec.parsed', { count: objects.length, w: width, h: height }))
 
     // Canvas Fabric hors-écran aux dimensions du document SVG.
     const htmlCanvas = document.createElement('canvas')
@@ -159,13 +157,13 @@ const decomposeNode: NodeSpec<
         // Contrat du node : template publipostage sur fond blanc (bg caché).
         hideBg: true,
       })
-      ctx.log('info', `Décomposition terminée — ${count} texte(s)/forme(s) éditables ajouté(s).`)
+      ctx.log('info', t('run.dec.done', { count }))
     } catch (err) {
       // Si la décomposition échoue (clé Vision absente, image inaccessible CORS,
       // quota Gemini, etc.), on renvoie le SVG d'entrée inchangé plutôt que de
       // bloquer le flux.
       const msg = err instanceof Error ? err.message : String(err)
-      ctx.log('warn', `Décomposition échouée (SVG d'entrée renvoyé inchangé) : ${msg}`)
+      ctx.log('warn', t('run.dec.failed', { message: msg }))
       fabricCanvas.dispose()
       return { svg: inputs.svg }
     }
@@ -175,7 +173,7 @@ const decomposeNode: NodeSpec<
     fabricCanvas.dispose()
 
     const outFile = new File([svgString], 'decompose.svg', { type: 'image/svg+xml' })
-    ctx.log('info', `SVG décomposé prêt (${Math.round(svgString.length / 1024)} Ko).`)
+    ctx.log('info', t('run.dec.ready', { kb: Math.round(svgString.length / 1024) }))
     return { svg: outFile }
   },
 }

@@ -1,9 +1,11 @@
 import { CalendarClock } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
-import { describeCron, describeCycle, type CronConfig } from '../runtime/cronSchedule'
+import type { CronConfig } from '../runtime/cronSchedule'
+import { describeCron, describeCycle } from '../runtime/cronLabels'
 import { CronConfigUi } from './cronConfigUi'
 import { DEFAULT_CYCLE } from './cronCycleUi'
+import { t } from '@/lib/i18n'
 
 const SERVER_UNITS = [
   { value: 'minute', label: 'minute(s)' },
@@ -71,7 +73,7 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
   runtime: 'server',
   run: async (ctx, config) => {
     const at = new Date().toISOString()
-    ctx.log('info', `Tick cron (tous les ${describeCron(config)}).`)
+    ctx.log('info', t('run.cron.tick', { cron: describeCron(config) }))
     return { tick: { at } }
   },
 }

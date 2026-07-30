@@ -10,6 +10,7 @@ import { functions } from '@/lib/firebase/config'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
+import { t } from '@/lib/i18n'
 
 interface CrawlConfig {
   urls: string
@@ -62,7 +63,7 @@ const crawlNode: NodeSpec<CrawlConfig, Record<string, never>, CrawlOutputs> = {
   connectors: ['jina', 'llm'],
   run: async (ctx, config) => {
     const urls = parseUrls(config.urls)
-    if (urls.length === 0) throw new Error('Aucune URL de page catégorie fournie.')
+    if (urls.length === 0) throw new Error(t('run.crawl.noUrl'))
     const limit = Math.max(1, Number(config.limit) || 30)
     const fields = String(config.fields ?? '').split(',').map((s) => s.trim()).filter(Boolean)
     const inc = config.includePaths?.trim() ? new RegExp(config.includePaths.trim()) : null
@@ -78,14 +79,14 @@ const crawlNode: NodeSpec<CrawlConfig, Record<string, never>, CrawlOutputs> = {
       if (ctx.signal.aborted) break
       const host = hostOf(root)
       ctx.reportConnector?.('jina')
-      ctx.log('info', `Découverte des fiches sur ${host}…`)
+      ctx.log('info', t('run.crawl.discovering', { host }))
       let links: string[] = []
       try {
         const { data } = await extractBreadcrumbFn({ url: root })
         links = data.cardLinks?.map((c) => c.url) ?? []
         if (links.length === 0) links = data.links ?? []
       } catch (e) {
-        ctx.log('warn', `Découverte échouée pour ${host} : ${e instanceof Error ? e.message : e}`)
+        ctx.log('warn', t('run.crawl.discoveryFailed', { host, message: e instanceof Error ? e.message : String(e) }))
         continue
       }
       // Garde : même host, regex include/exclude, dédup, ≠ URL racine, plafond limit.
@@ -102,7 +103,7 @@ const crawlNode: NodeSpec<CrawlConfig, Record<string, never>, CrawlOutputs> = {
         picked.push(abs)
         if (picked.length >= limit) break
       }
-      ctx.log('info', `${picked.length} fiche(s) à enrichir sur ${host}.`)
+      ctx.log('info', t('run.crawl.toEnrich', { count: picked.length, host }))
       ctx.reportConnector?.('llm')
       for (const link of picked) {
         if (ctx.signal.aborted) break
@@ -112,12 +113,12 @@ const crawlNode: NodeSpec<CrawlConfig, Record<string, never>, CrawlOutputs> = {
           for (const a of r.assets) assets.push(a)
           ctx.reportCount?.(rows.length)
         } catch (e) {
-          ctx.log('warn', `Enrichissement échoué ${link} : ${e instanceof Error ? e.message : e}`)
+          ctx.log('warn', t('run.crawl.enrichFailed', { url: link, message: e instanceof Error ? e.message : String(e) }))
         }
       }
     }
 
-    if (rows.length === 0) ctx.log('warn', 'Aucune fiche enrichie — vérifie les URLs (pages catégorie) et les filtres.')
+    if (rows.length === 0) ctx.log('warn', t('run.crawl.none'))
     const columns: ExcelColumn[] = fields.map((k) => ({
       key: k, label: k, fieldType: 'text', detectedType: 'text', isPrimary: k === 'name', width: 180,
     }))

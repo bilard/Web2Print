@@ -45,15 +45,15 @@ const importCsvNode: NodeSpec<CsvConfig, { file: File }, { sheet: unknown }> = {
   runtime: 'client',
   run: async (ctx, _config, inputs) => {
     if (!inputs.file) {
-      throw new Error('Aucun fichier fourni — connectez un Upload ou un autre node produisant un fichier.')
+      throw new Error(t('run.imp.noFile'))
     }
-    ctx.log('info', `Parsing ${inputs.file.name}…`)
+    ctx.log('info', t('run.imp.parsing', { name: inputs.file.name }))
     const { parseExcelFile } = await import('@/features/excel/useExcelImport')
     const sheets = await parseExcelFile(inputs.file)
     if (sheets.length === 0) {
-      throw new Error('Le fichier ne contient aucun onglet exploitable.')
+      throw new Error(t('run.imp.noSheet'))
     }
-    ctx.log('info', `${sheets.length} onglet(s) parsé(s) — utilisation du premier`)
+    ctx.log('info', t('run.imp.sheetsParsed', { count: sheets.length }))
     return { sheet: sheets[0] }
   },
 }
@@ -78,19 +78,20 @@ const importIdmlNode: NodeSpec<IdmlConfig, { file?: File; files?: File[] }, { sh
     if (inputs.files && inputs.files.length > 0) {
       const assembly = detectAssemblyFiles(inputs.files)
       if (!assembly.idmlFile) {
-        throw new Error('Aucun fichier .idml détecté dans le dossier fourni.')
+        throw new Error(t('run.imp.noIdml'))
       }
-      ctx.log(
-        'info',
-        `Assembly détecté : 1 .idml, ${assembly.pdfFile ? '1 PDF' : 'pas de PDF'}, ${assembly.fontFiles.length} fonts, ${assembly.imageFiles.length} images.`,
-      )
-      ctx.log('warn', 'Import IDML : stub — produit une Sheet vide. À wirer en phase 2.')
+      ctx.log('info', t('run.imp.assembly', {
+        pdf: t(assembly.pdfFile ? 'run.imp.onePdf' : 'run.imp.noPdf'),
+        fonts: assembly.fontFiles.length,
+        images: assembly.imageFiles.length,
+      }))
+      ctx.log('warn', t('run.imp.idmlStub'))
       return { sheet: { name: assembly.idmlFile.name, columns: [], rows: [] } }
     }
     if (!inputs.file) {
-      throw new Error("Aucun fichier fourni — connectez un node Upload (mode Fichier ou Dossier).")
+      throw new Error(t('run.imp.noFileUpload'))
     }
-    ctx.log('warn', 'Import IDML : stub — produit une Sheet vide. À wirer en phase 2.')
+    ctx.log('warn', t('run.imp.idmlStub'))
     return { sheet: { name: inputs.file.name, columns: [], rows: [] } }
   },
 }
@@ -110,9 +111,9 @@ const importSvgNode: NodeSpec<SvgConfig, { file: File }, { sheet: unknown }> = {
   runtime: 'client',
   run: async (ctx, _config, inputs) => {
     if (!inputs.file) {
-      throw new Error('Aucun fichier fourni — connectez un Upload.')
+      throw new Error(t('run.imp.noFileShort'))
     }
-    ctx.log('warn', 'Import SVG : stub — produit une Sheet vide. À wirer en phase 2.')
+    ctx.log('warn', t('run.imp.svgStub'))
     return { sheet: { name: inputs.file.name, columns: [], rows: [] } }
   },
 }
@@ -132,12 +133,12 @@ const imageToSvgNode: NodeSpec<ImageToSvgConfig, { file: File }, { svg: File }> 
   runtime: 'client',
   run: async (ctx, _config, inputs) => {
     if (!inputs.file) {
-      throw new Error('Aucun fichier fourni — connectez un Upload produisant une image raster.')
+      throw new Error(t('run.imp.noRaster'))
     }
-    ctx.log('info', `Conversion image → SVG éditable : ${inputs.file.name}…`)
+    ctx.log('info', t('run.imp.imgToSvg', { name: inputs.file.name }))
     const { convertImageToEditableSvg } = await import('@/features/svg/imageToSvg')
     const { file, width, height } = await convertImageToEditableSvg(inputs.file)
-    ctx.log('info', `SVG généré : ${width}×${height}px (raster verrouillé + overlays).`)
+    ctx.log('info', t('run.imp.svgFromRaster', { w: width, h: height }))
     return { svg: file }
   },
 }
@@ -157,12 +158,12 @@ const pdfToSvgNode: NodeSpec<PdfToSvgConfig, { file: File }, { svg: File }> = {
   runtime: 'client',
   run: async (ctx, _config, inputs) => {
     if (!inputs.file) {
-      throw new Error('Aucun fichier fourni — connectez un Upload produisant un PDF.')
+      throw new Error(t('run.imp.noPdfFile'))
     }
-    ctx.log('info', `Rasterisation PDF → SVG éditable : ${inputs.file.name}…`)
+    ctx.log('info', t('run.imp.pdfToSvg', { name: inputs.file.name }))
     const { convertPdfToEditableSvg } = await import('@/features/svg/pdfToSvg')
     const { file, width, height } = await convertPdfToEditableSvg(inputs.file)
-    ctx.log('info', `SVG généré : ${width}×${height}px (page 1 rasterisée + overlays).`)
+    ctx.log('info', t('run.imp.svgFromPdf', { w: width, h: height }))
     return { svg: file }
   },
 }
@@ -181,12 +182,12 @@ const importPptxNode: NodeSpec<ImportPptxConfig, { file: File }, { file: File }>
   defaultConfig: {},
   runtime: 'client',
   run: async (ctx, _config, inputs) => {
-    if (!inputs.file) throw new Error('Aucun fichier fourni — connectez un Upload (.pptx).')
+    if (!inputs.file) throw new Error(t('run.imp.noPptx'))
     const name = inputs.file.name.toLowerCase()
     if (!name.endsWith('.pptx') && !name.endsWith('.ppt')) {
-      throw new Error(`Type inattendu : ${inputs.file.name} — attendu un .pptx.`)
+      throw new Error(t('run.imp.notPptx', { name: inputs.file.name }))
     }
-    ctx.log('info', `PPTX prêt : ${inputs.file.name}`)
+    ctx.log('info', t('run.imp.pptxReady', { name: inputs.file.name }))
     return { file: inputs.file }
   },
 }
@@ -205,11 +206,11 @@ const importImageNode: NodeSpec<ImportImageConfig, { file: File }, { file: File 
   defaultConfig: {},
   runtime: 'client',
   run: async (ctx, _config, inputs) => {
-    if (!inputs.file) throw new Error('Aucun fichier fourni — connectez un Upload (image).')
+    if (!inputs.file) throw new Error(t('run.imp.noImage'))
     if (!inputs.file.type.startsWith('image/')) {
-      ctx.log('warn', `Type MIME inattendu : ${inputs.file.type || 'inconnu'} — attendu une image.`)
+      ctx.log('warn', t('run.imp.notImage', { mime: inputs.file.type || t('run.imp.unknownMime') }))
     }
-    ctx.log('info', `Image prête : ${inputs.file.name}`)
+    ctx.log('info', t('run.imp.imageReady', { name: inputs.file.name }))
     return { file: inputs.file }
   },
 }
@@ -637,27 +638,23 @@ const uploadNode: NodeSpec<
   ConfigComponent: UploadConfigUi,
   run: async (ctx, config) => {
     if (!config.fileKey) {
-      throw new Error('Aucun fichier sélectionné — ouvrez la config du node Upload pour en choisir un.')
+      throw new Error(t('run.imp.noSelection'))
     }
     const isFolder = config.mode === 'folder'
     if (isFolder) {
       const files = await getFiles(config.fileKey)
       if (!files || files.length === 0) {
-        throw new Error(
-          `Dossier "${config.fileName}" introuvable en stockage local — il a été supprimé ou cet ordinateur ne le contient pas. Re-sélectionnez-le.`,
-        )
+        throw new Error(t('run.imp.folderMissing', { name: config.fileName }))
       }
       const totalKb = files.reduce((s, f) => s + f.size, 0) / 1024
-      ctx.log('info', `Dossier prêt : ${config.fileName} (${files.length} fichiers, ${totalKb.toFixed(1)} KB)`)
+      ctx.log('info', t('run.imp.folderReady', { name: config.fileName, count: files.length, kb: totalKb.toFixed(1) }))
       return { files }
     }
     const f = await getFile(config.fileKey)
     if (!f) {
-      throw new Error(
-        `Fichier "${config.fileName}" introuvable en stockage local — il a été supprimé ou cet ordinateur ne le contient pas. Re-sélectionnez-le.`,
-      )
+      throw new Error(t('run.imp.fileMissing', { name: config.fileName }))
     }
-    ctx.log('info', `Fichier prêt : ${f.name} (${(f.size / 1024).toFixed(1)} KB)`)
+    ctx.log('info', t('run.imp.fileReady', { name: f.name, kb: (f.size / 1024).toFixed(1) }))
 
     // Auto-parse CSV/Excel : émettre rows + sheet en plus du file pour permettre
     // un câblage direct Upload → Loop each (sans Parser intermédiaire).
@@ -667,14 +664,15 @@ const uploadNode: NodeSpec<
         const sheets = await parseExcelFile(f)
         if (sheets.length > 0) {
           const first = sheets[0]
-          ctx.log(
-            'info',
-            `CSV/Excel parsé : ${first.rows.length} lignes, ${first.columns.length} colonnes (${first.columns.map((c) => c.label).join(', ')}).`,
-          )
+          ctx.log('info', t('run.imp.csvParsed', {
+            rows: first.rows.length,
+            cols: first.columns.length,
+            labels: first.columns.map((c) => c.label).join(', '),
+          }))
           return { file: f, rows: first.rows, sheet: first }
         }
       } catch (err) {
-        ctx.log('warn', `Parse CSV/Excel échoué : ${err instanceof Error ? err.message : err}`)
+        ctx.log('warn', t('run.imp.csvFailed', { message: err instanceof Error ? err.message : String(err) }))
       }
     }
     return { file: f }

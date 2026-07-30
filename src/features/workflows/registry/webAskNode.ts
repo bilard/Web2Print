@@ -9,6 +9,7 @@ import type { NodeSpec } from '../types'
 import type { ExcelSheet } from '@/features/excel/types'
 import { generateJson } from '@/features/ai/llmRouter'
 import { webResultsToSheet } from './webResultsSheet'
+import { t } from '@/lib/i18n'
 
 interface WebAskConfig {
   /** Question. Surchargée par une entrée `question` en amont. */
@@ -66,10 +67,10 @@ export const webAskNode: NodeSpec<WebAskConfig, WebAskInputs, WebAskOutputs> = {
     const upstream = typeof inputs.question === 'string' ? inputs.question.trim() : ''
     const question = upstream || (config.question ?? '').trim()
     if (!question) {
-      throw new Error('Question manquante — renseignez « Question » ou branchez une entrée question.')
+      throw new Error(t('run.ask.questionMissing'))
     }
 
-    ctx.log('info', `🔎 Recherche web : « ${question} »…`)
+    ctx.log('info', t('run.ask.searching', { question }))
     const { gatherWebContext } = await import('@/features/scraping/webContext')
     const web = await gatherWebContext({
       searchQuery: question,
@@ -78,9 +79,9 @@ export const webAskNode: NodeSpec<WebAskConfig, WebAskInputs, WebAskOutputs> = {
     })
 
     if (web.results.length === 0) {
-      ctx.log('warn', '⚠️ Aucun résultat web — réponse depuis les connaissances du modèle (sans source).')
+      ctx.log('warn', t('run.ask.noResult'))
     } else {
-      ctx.log('info', `${web.results.length} résultat(s), ${web.sources.length} source(s) lue(s) — synthèse IA…`)
+      ctx.log('info', t('run.ask.readSources', { results: web.results.length, sources: web.sources.length }))
     }
 
     const contextBlock = web.text || '(aucun contenu web récupéré)'

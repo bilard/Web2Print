@@ -197,13 +197,13 @@ const telegramApprovalNode: NodeSpec<
     const global = useTelegramStore.getState()
     const botToken = config.botToken.trim() || global.botToken.trim()
     const chatId = config.chatId.trim() || global.chatId.trim()
-    if (!botToken) throw new Error('Bot token Telegram manquant (ni dans le node, ni dans les Settings).')
-    if (!chatId) throw new Error('Chat ID Telegram manquant (ni dans le node, ni dans les Settings).')
+    if (!botToken) throw new Error(t('run.appr.noBotToken'))
+    if (!chatId) throw new Error(t('run.appr.noChatId'))
 
     const uid = useAuthStore.getState().user?.uid
-    if (!uid) throw new Error('Utilisateur non connecté — impossible de créer la demande d’approbation.')
+    if (!uid) throw new Error(t('run.appr.notSignedIn'))
 
-    const text = config.text.trim() || 'Approbation requise — valider la suite du workflow ?'
+    const text = config.text.trim() || t('run.appr.defaultQuestion')
     const file = inputs.attachment instanceof Blob ? inputs.attachment : null
     const timeoutMs = Math.max(1, config.timeoutMin) * 60_000
     const approvalId = crypto.randomUUID()
@@ -223,8 +223,8 @@ const telegramApprovalNode: NodeSpec<
     const replyMarkup: TelegramInlineKeyboard = {
       inline_keyboard: [
         [
-          { text: '✅ Approuver', callback_data: `${CALLBACK_PREFIX}${approvalId}:approve` },
-          { text: '❌ Refuser', callback_data: `${CALLBACK_PREFIX}${approvalId}:reject` },
+          { text: t('run.appr.btnApprove'), callback_data: `${CALLBACK_PREFIX}${approvalId}:approve` },
+          { text: t('run.appr.btnReject'), callback_data: `${CALLBACK_PREFIX}${approvalId}:reject` },
         ],
       ],
     }
@@ -233,7 +233,7 @@ const telegramApprovalNode: NodeSpec<
       : await sendTelegramMessage(botToken, { chatId, text, parseMode: 'none', replyMarkup })
     // Trace dans la boîte Telegram de l'app (best-effort, comme send-telegram).
     void addOutboxMessage(chatId, `🔔 ${text}`, sent.messageId).catch(() => {})
-    ctx.log('info', `Demande d'approbation envoyée → ${chatId} (msg ${sent.messageId}). En attente du clic…`)
+    ctx.log('info', t('run.appr.sent', { chat: chatId, msg: sent.messageId }))
 
     // 3) Pause jusqu'à décision / expiration / abort.
     const outcome = await waitForDecision(approvalId, timeoutMs, ctx.signal)
@@ -245,35 +245,35 @@ const telegramApprovalNode: NodeSpec<
     if (outcome === 'aborted') {
       await updateDoc(doc(db, 'workflowApprovals', approvalId), { status: 'expired' }).catch(() => {})
       await removeButtons()
-      throw new Error('Run interrompu pendant l’attente d’approbation.')
+      throw new Error(t('run.appr.aborted'))
     }
 
     if (outcome === 'timeout') {
       await updateDoc(doc(db, 'workflowApprovals', approvalId), { status: 'expired' }).catch(() => {})
       await removeButtons()
       if (config.onTimeout === 'reject') {
-        ctx.log('warn', `Aucune réponse en ${config.timeoutMin} min — traité comme un refus.`)
+        ctx.log('warn', t('run.appr.timeoutRejected', { min: config.timeoutMin }))
         return { rejected: inputs.data !== undefined ? inputs.data : { decision: 'timeout' } }
       }
-      throw new Error(`Aucune réponse d'approbation en ${config.timeoutMin} min — run stoppé.`)
+      throw new Error(t('run.appr.timeoutFailed', { min: config.timeoutMin }))
     }
 
     // Décision reçue : fermer le spinner du bouton (toast Telegram) + retirer les boutons.
     if (outcome.callbackQueryId) {
       void answerTelegramCallbackQuery(botToken, {
         callbackQueryId: outcome.callbackQueryId,
-        text: outcome.status === 'approved' ? '✅ Approuvé' : '❌ Refusé',
+        text: t(outcome.status === 'approved' ? 'run.appr.approvedToast' : 'run.appr.rejectedToast'),
       }).catch(() => {})
     }
     await removeButtons()
 
-    const by = outcome.decidedBy ? ` par @${outcome.decidedBy}` : ''
+    const by = outcome.decidedBy ? t('run.appr.by', { user: outcome.decidedBy }) : ''
     const payload = inputs.data !== undefined ? inputs.data : { decision: outcome.status, decidedBy: outcome.decidedBy }
     if (outcome.status === 'approved') {
-      ctx.log('info', `✅ Approuvé${by} — reprise du workflow (port « approved »).`)
+      ctx.log('info', t('run.appr.approved', { by }))
       return { approved: payload }
     }
-    ctx.log('warn', `❌ Refusé${by} — reprise du workflow (port « rejected »).`)
+    ctx.log('warn', t('run.appr.rejected', { by }))
     return { rejected: payload }
   },
 }

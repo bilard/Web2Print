@@ -17,6 +17,7 @@ import { getApiKey } from '@/lib/apiKeys'
 import { runBrowserActWorkflow, listBrowserActWorkflows } from '@/features/scraping/core/browserAct'
 import { parseBotRows } from '@/features/priceWatch/catalog/botListing'
 import { parseParamLines, rowsToSheet } from './browserActRows'
+import { t } from '@/lib/i18n'
 
 interface BrowserActConfig {
   /** Identifiant du bot (tableau de bord BrowserAct → le bot → son ID). */
@@ -82,16 +83,16 @@ const browserActNode: NodeSpec<BrowserActConfig, BrowserActInputs, BrowserActOut
   run: async (ctx, config, inputs) => {
     const apiKey = getApiKey('browseract').trim()
     if (!apiKey) {
-      throw new Error('Clé API BrowserAct manquante — Réglages › Clés API.')
+      throw new Error(t('run.ba.noApiKey'))
     }
     const workflowId = (config.workflowId ?? '').trim()
     if (!workflowId) {
       // Panne la plus probable : l'utilisateur ne sait pas où trouver l'ID. On le lui donne.
       const bots = await listBrowserActWorkflows(apiKey, 20)
       const hint = bots?.length
-        ? ` Bots disponibles : ${bots.map((b) => `${b.name} (${b.id})`).join(', ')}`
+        ? t('run.ba.botsAvailable', { bots: bots.map((b) => `${b.name} (${b.id})`).join(', ') })
         : ''
-      throw new Error(`ID du bot BrowserAct manquant.${hint}`)
+      throw new Error(t('run.ba.noBotId', { hint }))
     }
 
     const params = parseParamLines(config.parameters ?? '')
@@ -102,30 +103,37 @@ const browserActNode: NodeSpec<BrowserActConfig, BrowserActInputs, BrowserActOut
     if (injected && inputParam) params[inputParam] = injected
 
     const timeoutMs = Math.max(30, Number(config.timeoutSec) || 300) * 1000
-    ctx.log('info', `🤖 BrowserAct : lancement du bot ${workflowId}${Object.keys(params).length ? ` (${Object.entries(params).map(([k, v]) => `${k}=${v}`).join(', ')})` : ''}…`)
+    ctx.log('info', t('run.ba.launching', {
+      bot: workflowId,
+      params: Object.keys(params).length ? ` (${Object.entries(params).map(([k, v]) => `${k}=${v}`).join(', ')})` : '',
+    }))
 
     const result = await runBrowserActWorkflow(apiKey, workflowId, params, {
       timeoutMs,
       log: (m) => ctx.log('info', m),
     })
     if (!result) {
-      throw new Error(`BrowserAct n’a pas pu lancer le bot ${workflowId} (clé refusée ou ID inconnu ?).`)
+      throw new Error(t('run.ba.launchFailed', { bot: workflowId }))
     }
     if (result.status !== 'finished') {
-      throw new Error(
-        `Bot BrowserAct « ${result.status} »${result.error ? ` : ${result.error}` : ''}` +
-        (result.status === 'running' ? ` — augmentez l’attente max (actuellement ${config.timeoutSec} s).` : ''),
-      )
+      throw new Error(t('run.ba.badStatus', {
+        status: result.status,
+        detail: result.error ? ` : ${result.error}` : '',
+        hint: result.status === 'running' ? t('run.ba.stillRunning', { sec: config.timeoutSec }) : '',
+      }))
     }
 
     const rows = parseBotRows(result.output)
     if (rows.length === 0) {
       // La sortie n'est pas exploitable en tableau : on ne fabrique PAS de demi-feuille,
       // on rend le texte brut pour que l'utilisateur voie ce que son bot a produit.
-      ctx.log('warn', '⚠️ Sortie du bot non tabulaire — renvoyée telle quelle dans « text ».')
+      ctx.log('warn', t('run.ba.notTabular'))
       return { sheet: rowsToSheet([], 'BrowserAct'), text: result.output ?? '' }
     }
-    ctx.log('info', `✓ ${rows.length} ligne(s) récupérée(s)${result.credit != null ? ` — ${result.credit} crédit(s)` : ''}.`)
+    ctx.log('info', t('run.ba.done', {
+      count: rows.length,
+      credit: result.credit != null ? t('run.ba.credit', { credit: result.credit }) : '',
+    }))
     return { sheet: rowsToSheet(rows, 'BrowserAct'), text: result.output ?? '' }
   },
 }

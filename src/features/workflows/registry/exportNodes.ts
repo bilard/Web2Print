@@ -4,6 +4,7 @@ import { FileDown, Presentation, FileType2, Download } from 'lucide-react'
 // de la page Workflows (le registre `builtin` les tirait en statique).
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
+import { t } from '@/lib/i18n'
 
 interface SheetColumnMeta {
   key: string
@@ -91,9 +92,7 @@ const exportExcelNode: NodeSpec<
   run: async (ctx, config, inputs) => {
     const rows = (inputs.sheet?.rows ?? []) as Array<Record<string, unknown>>
     if (rows.length === 0) {
-      throw new Error(
-        "La Sheet d'entrée n'a aucune ligne — vérifiez que le node amont a bien produit des données.",
-      )
+      throw new Error(t('run.exp.emptySheet'))
     }
 
     const filterCols = config.columns
@@ -153,7 +152,7 @@ const exportExcelNode: NodeSpec<
     const url = URL.createObjectURL(blob)
     const filename = `export-${Date.now()}.xlsx`
 
-    ctx.log('info', `${rows.length} rows → ${filename}`)
+    ctx.log('info', t('run.exp.rows', { count: rows.length, file: filename }))
     return { result: { url, mime: blob.type, filename } }
   },
 }
@@ -191,9 +190,7 @@ const exportPptxNode: NodeSpec<
   run: async (ctx, config, inputs) => {
     const rows = (inputs.sheet?.rows ?? []) as Array<Record<string, unknown>>
     if (rows.length === 0) {
-      throw new Error(
-        "La Sheet d'entrée n'a aucune ligne — vérifiez que le node amont a bien produit des données.",
-      )
+      throw new Error(t('run.exp.emptySheet'))
     }
 
     const { default: PptxGenJS } = await import('pptxgenjs')
@@ -236,7 +233,7 @@ const exportPptxNode: NodeSpec<
     const url = URL.createObjectURL(blob)
     const filename = `export-${Date.now()}.pptx`
 
-    ctx.log('info', `${rows.length} slides → ${filename}`)
+    ctx.log('info', t('run.exp.slides', { count: rows.length, file: filename }))
     return {
       result: {
         url,
@@ -323,9 +320,7 @@ const exportPdfNode: NodeSpec<
   run: async (ctx, config, inputs) => {
     const rows = (inputs.sheet?.rows ?? []) as Array<Record<string, unknown>>
     if (rows.length === 0) {
-      throw new Error(
-        "La Sheet d'entrée n'a aucune ligne — vérifiez que le node amont a bien produit des données.",
-      )
+      throw new Error(t('run.exp.emptySheet'))
     }
 
     const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
@@ -345,7 +340,7 @@ const exportPdfNode: NodeSpec<
 
     try {
       const doc = iframe.contentDocument
-      if (!doc) throw new Error('Impossible de créer le contexte de rendu PDF.')
+      if (!doc) throw new Error(t('run.exp.noPdfContext'))
 
       const sheetsHtml = rows
         .map((row, idx) => {
@@ -385,7 +380,7 @@ const exportPdfNode: NodeSpec<
 
       for (let i = 0; i < sections.length; i++) {
         const el = sections[i]
-        ctx.log('info', `Rendu page ${i + 1}/${sections.length}…`)
+        ctx.log('info', t('run.exp.renderPage', { i: i + 1, total: sections.length }))
         const canvas = await html2canvas(el, {
           backgroundColor: '#ffffff',
           scale: 2,
@@ -407,7 +402,7 @@ const exportPdfNode: NodeSpec<
       const blob = pdf.output('blob')
       const url = URL.createObjectURL(blob)
       const filename = `export-${Date.now()}.pdf`
-      ctx.log('info', `${sections.length} page(s) → ${filename}`)
+      ctx.log('info', t('run.exp.pages', { count: sections.length, file: filename }))
       return { result: { url, mime: 'application/pdf', filename } }
     } finally {
       iframe.remove()
@@ -506,7 +501,7 @@ async function rasterizeInlinedSvg(
     canvas.width = width
     canvas.height = height
     const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('Canvas 2D indisponible.')
+    if (!ctx) throw new Error(t('run.exp.noCanvas'))
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, width, height)
     ctx.drawImage(img, 0, 0, width, height)
@@ -558,7 +553,7 @@ const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; re
   run: async (ctx, config, inputs) => {
     const file = inputs.file
     if (!(file instanceof Blob)) {
-      throw new Error('Aucun design en entrée — connectez la sortie SVG de « Image → SVG » ou « PDF → SVG ».')
+      throw new Error(t('run.exp.noDesign'))
     }
     const svgText = await file.text()
     const baseName = ((file as File).name || 'design').replace(/\.[^.]+$/, '') || 'design'
@@ -570,7 +565,7 @@ const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; re
       const filename = `${baseName}-${stamp}.${ext}`
       const outFile = out instanceof File ? out : new File([out], filename, { type: out.type })
       const url = URL.createObjectURL(out)
-      ctx.log('info', `Export ${config.format.toUpperCase()} ${dpi} dpi → ${filename}`)
+      ctx.log('info', t('run.exp.exported', { format: config.format.toUpperCase(), dpi, file: filename }))
       return { file: outFile, result: { url, mime: out.type, filename } }
     }
 
@@ -580,7 +575,7 @@ const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; re
     }
 
     // Inliner les images externes (URL Firebase → data URI) → SVG auto-suffisant.
-    ctx.log('info', 'Inlinage des images externes…')
+    ctx.log('info', t('run.exp.inlining'))
     const inlinedSvg = await inlineExternalImages(svgText)
 
     // HTML : page autonome embarquant le SVG tel quel.
@@ -595,7 +590,7 @@ const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; re
     // PNG / PDF / PPTX : rendu NATIF du SVG (le navigateur peint les <text> aux
     // positions exactes — aucune re-mesure Fabric qui décalerait le texte décomposé).
     const base = parseSvgSize(inlinedSvg)
-    ctx.log('info', `Rendu natif du SVG ${base.width}×${base.height} (${dpi} dpi)…`)
+    ctx.log('info', t('run.exp.nativeRender', { w: base.width, h: base.height, dpi }))
     const canvas = await rasterizeInlinedSvg(inlinedSvg, multiplier)
 
     if (config.format === 'png') {

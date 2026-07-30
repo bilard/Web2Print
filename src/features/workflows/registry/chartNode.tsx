@@ -28,7 +28,7 @@ async function renderChartPng(spec: ChartSpec): Promise<Blob> {
   canvas.width = CHART_W
   canvas.height = CHART_H
   const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Canvas 2D indisponible pour le rendu du graphe.')
+  if (!ctx) throw new Error(t('run.chart.noCanvas'))
   const { Chart } = await import('chart.js/auto')
   const { type, data, options } = toChartJsConfig(spec, { responsive: false })
   // Fond blanc (PNG opaque, lisible dans Telegram / Sheets).
@@ -175,20 +175,20 @@ const chartNode: NodeSpec<ChartNodeConfig, { sheet: SheetIn }, ChartOutputs> = {
     const sheet = inputs.sheet
     const rows = sheet?.rows ?? []
     const columns = sheet?.columns ?? []
-    if (rows.length === 0) throw new Error('Sheet vide en entrée — branche un node qui produit des données.')
-    if (!config.xColumn) throw new Error("Choisis une colonne d'axe X dans la config du node.")
+    if (rows.length === 0) throw new Error(t('run.chart.emptySheet'))
+    if (!config.xColumn) throw new Error(t('run.chart.noXColumn'))
 
     const spec = aggregateChartData(rows, columns, config)
     if (spec.datasets.length === 0 || spec.datasets.every((d) => d.data.length === 0)) {
-      throw new Error('Aucune série à tracer — sélectionne au moins une colonne de valeurs (ou l’agrégation « Nombre »).')
+      throw new Error(t('run.chart.noSeries'))
     }
-    ctx.log('info', `Graphe ${config.chartType} : ${spec.labels.length} catégorie(s), ${spec.datasets.length} série(s).`)
+    ctx.log('info', t('run.chart.built', { type: config.chartType, cats: spec.labels.length, series: spec.datasets.length }))
 
     const blob = await renderChartPng(spec)
     const name = `graphique_${config.chartType}_${spec.labels.length}cat.png`
     const url = URL.createObjectURL(blob)
     const asset: ChartAsset = { url, type: 'image', name, mimeType: 'image/png', size: blob.size, blob }
-    ctx.log('info', `PNG généré (${(blob.size / 1024).toFixed(1)} KB).`)
+    ctx.log('info', t('run.chart.png', { kb: (blob.size / 1024).toFixed(1) }))
     return { chart: spec, assets: [asset], file: new File([blob], name, { type: 'image/png' }) }
   },
 }

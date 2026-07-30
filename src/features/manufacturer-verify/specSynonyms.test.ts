@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { canonicalizeSpecName, normalizeValueForCompare } from './specSynonyms'
+import { canonicalizeSpecName, canonicalLabel, normalizeValueForCompare } from './specSynonyms'
 
 describe('canonicalizeSpecName', () => {
   it('aligne des libellés synonymes vers la même clé canonique', () => {
@@ -52,5 +52,23 @@ describe('normalizeValueForCompare', () => {
 
   it('normalise le texte (casse/accents)', () => {
     expect(normalizeValueForCompare('Métal')).toBe(normalizeValueForCompare('metal'))
+  })
+})
+
+describe('référentiel bilingue', () => {
+  // Le dictionnaire est bilingue EN PLACE (pas de clés i18n) : le libellé EN est
+  // une DONNÉE métier, et il sert aussi d'alias d'appariement.
+  it("rend le libellé dans la langue demandée", () => {
+    expect(canonicalLabel('couple', 'fr')).toBe('Couple')
+    expect(canonicalLabel('couple', 'en')).toBe('Torque')
+  })
+
+  it("retombe sur la clé quand elle est inconnue", () => {
+    expect(canonicalLabel('clef_inexistante', 'en')).toBe('clef_inexistante')
+  })
+
+  it("aligne un libellé fabricant ANGLAIS sans passer par le LLM", () => {
+    expect(canonicalizeSpecName('Sound power level')).toBe('niveau_puissance_acoustique')
+    expect(canonicalizeSpecName('Colour')).toBe('couleur')
   })
 })

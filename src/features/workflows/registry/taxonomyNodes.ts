@@ -8,6 +8,7 @@ import { buildTaxNodesFromLevels } from '@/features/excel/taxonomyBuilder'
 import { createDefaultFormTemplate } from '@/features/briefs/defaults'
 import type { ExcelSheet, TaxonomyLevelMap } from '@/features/excel/types'
 import type { Taxonomy } from '@/features/taxonomy/types'
+import { t } from '@/lib/i18n'
 
 interface ImportTaxonomyConfig {
   name: string
@@ -66,12 +67,12 @@ const importTaxonomyNode: NodeSpec<
   run: async (ctx, config, inputs) => {
     const sheet = inputs.sheet
     if (!sheet) {
-      throw new Error('Sheet manquante en entrée — branchez un node qui produit une Sheet.')
+      throw new Error(t('run.tax.noSheet'))
     }
 
     const user = useAuthStore.getState().user
     if (!user) {
-      throw new Error('Utilisateur non authentifié — connectez-vous avant de lancer ce node.')
+      throw new Error(t('run.tax.notSignedIn'))
     }
 
     const levels = config.levelMap.trim()
@@ -79,19 +80,14 @@ const importTaxonomyNode: NodeSpec<
       : (sheet.taxonomyLevels ?? {})
 
     if (Object.keys(levels).length === 0) {
-      throw new Error(
-        "Aucun niveau de taxonomie défini — la Sheet doit avoir `taxonomyLevels` ou la config doit lister les colonnes (ex: `categorie:1,sous_categorie:2`).",
-      )
+      throw new Error(t('run.tax.noLevels'))
     }
 
-    ctx.log(
-      'info',
-      `Construction de la taxonomie depuis ${Object.keys(levels).length} colonne(s) niveau`,
-    )
+    ctx.log('info', t('run.tax.building', { count: Object.keys(levels).length }))
     const nodes = buildTaxNodesFromLevels(sheet, levels)
     const nodeCount = Object.keys(nodes).length
     if (nodeCount === 0) {
-      throw new Error('Aucun nœud de taxonomie produit — vérifiez que les colonnes contiennent bien des valeurs.')
+      throw new Error(t('run.tax.noNode'))
     }
 
     const id = crypto.randomUUID()
@@ -106,7 +102,7 @@ const importTaxonomyNode: NodeSpec<
       formTemplate: createDefaultFormTemplate(),
     }
 
-    ctx.log('info', `Persistance Firestore — ${nodeCount} nœud(s) sous l'id ${id}`)
+    ctx.log('info', t('run.tax.saved', { count: nodeCount, id }))
     await setDoc(doc(db, 'taxonomies', id), taxonomy)
 
     return { result: { taxonomyId: id, nodeCount, name: taxonomy.name } }

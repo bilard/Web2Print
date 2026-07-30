@@ -45,16 +45,6 @@ export interface CycleCalendar {
 /** Fuseau d'ancrage de l'horloge murale (« 14:30 » = 14:30 à Paris). */
 const TZ = 'Europe/Paris'
 
-const CRON_UNIT_OPTIONS: { value: CronUnit; label: string }[] = [
-  { value: 'minute', label: 'minute(s)' },
-  { value: 'hour', label: 'heure(s)' },
-  { value: 'day', label: 'jour(s)' },
-  { value: 'week', label: 'semaine(s)' },
-  { value: 'month', label: 'mois' },
-]
-
-const WEEKDAY_LABELS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
-
 /** Garantit un entier >= 1 (un cron « toutes les 0 unité » n'a pas de sens). */
 export function normalizeEvery(every: number): number {
   return Number.isFinite(every) && every >= 1 ? Math.floor(every) : 1
@@ -150,22 +140,6 @@ export function computeNextRun(cfg: CronConfig, from: number): number {
   return d.getTime()
 }
 
-/** Libellé court de la cadence — ex : « 2 jour(s) à 14:30 », « lundi à 09:00 ». */
-export function describeCron(cfg: CronConfig): string {
-  const every = normalizeEvery(cfg.every)
-  const unit = CRON_UNIT_OPTIONS.find((u) => u.value === cfg.unit)?.label ?? cfg.unit
-  // Mode « après la fin » : cadence relative, l'heure/jour ne s'appliquent pas.
-  if (cfg.afterCompletion) return `${every} ${unit} après la fin`
-  const at = cfg.atTime && /^\d{1,2}:\d{2}$/.test(cfg.atTime) ? ` à ${cfg.atTime}` : ''
-  if (cfg.unit === 'week' && cfg.weekday != null) {
-    if (Number(cfg.weekday) < 0) return `tous les jours${at}`
-    const wd = WEEKDAY_LABELS[((Math.trunc(Number(cfg.weekday)) % 7) + 7) % 7]
-    return every === 1 ? `${wd}${at}` : `${every} sem. (${wd})${at}`
-  }
-  if (cfg.unit === 'day' || cfg.unit === 'month') return `${every} ${unit}${at}`
-  return `${every} ${unit}`
-}
-
 /** Valide/normalise une config calendrier brute (Firestore ou config de node) en
  *  `CycleCalendar` sûr, TOUS champs définis (Firestore refuse `undefined`).
  *  Renvoie null si absent ou désactivé. ⚠️ Jumeau serveur identique. */
@@ -243,44 +217,4 @@ export function computeNextCycleRun(cal: CycleCalendar, from: number): number | 
     if (cand > from) return cand
   }
   return from + 86_400_000 * every
-}
-
-const WEEKDAY_SHORT = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.']
-
-/** Libellé court de la relance calendaire — ex : « cycle ven. à 07:00 »,
- *  « cycle le 14/10/2026 à 07:00 (+2) ». */
-export function describeCycle(cal: CycleCalendar): string {
-  const at = ` à ${cal.atTime}`
-  const every = normalizeEvery(cal.every ?? 1)
-  if (cal.kind === 'dates') {
-    const dates = [...(cal.dates ?? [])].sort()
-    if (dates.length === 0) return `cycle : aucune date${at}`
-    const [y, mo, d] = dates[0].split('-')
-    return `cycle le ${d}/${mo}/${y}${at}${dates.length > 1 ? ` (+${dates.length - 1})` : ''}`
-  }
-  if (cal.kind === 'week') {
-    const days = cal.weekdays ?? []
-    const names = days.length ? days.map((d) => WEEKDAY_SHORT[d] ?? '?').join(' ') : 'tous les jours'
-    return `cycle ${names}${at}`
-  }
-  if (cal.kind === 'month') {
-    return every === 1
-      ? `cycle le ${cal.monthday ?? 1} du mois${at}`
-      : `cycle le ${cal.monthday ?? 1}, ts les ${every} mois${at}`
-  }
-  return every === 1 ? `cycle quotidien${at}` : `cycle ts les ${every} j${at}`
-}
-
-/** Compte à rebours lisible — ex : « 2 j 3 h », « 5 min 12 s », « maintenant ». */
-export function formatCountdown(ms: number): string {
-  if (ms <= 0) return 'maintenant'
-  const total = Math.floor(ms / 1000)
-  const d = Math.floor(total / 86400)
-  const h = Math.floor((total % 86400) / 3600)
-  const m = Math.floor((total % 3600) / 60)
-  const s = total % 60
-  if (d > 0) return `${d} j ${h} h`
-  if (h > 0) return `${h} h ${m} min`
-  if (m > 0) return `${m} min ${s} s`
-  return `${s} s`
 }

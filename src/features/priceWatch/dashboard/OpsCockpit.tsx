@@ -13,7 +13,7 @@ import { buildOpsCockpit } from './opsMetrics'
 import { useCompetitorMeta } from '../useCatalogReport'
 import { useScrapeSpend } from './useScrapeSpend'
 import { duration, ago, compactNum } from './format'
-import { formatCountdown } from '@/features/workflows/runtime/cronSchedule'
+import { formatCountdown } from '@/features/workflows/runtime/cronLabels'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 
 interface ScheduleDoc {

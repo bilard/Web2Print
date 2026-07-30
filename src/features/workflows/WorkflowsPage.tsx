@@ -6,7 +6,7 @@ import {
   Folder, FolderPlus, Pencil, Check, X, ChevronDown, ChevronRight, Star, Clock,
 } from 'lucide-react'
 import { findActiveCron } from './persistence/scheduleSync'
-import { describeCron } from './runtime/cronSchedule'
+import { describeCron } from './runtime/cronLabels'
 import { useAuthStore } from '@/stores/auth.store'
 import {
   listWorkflows, newWorkflow, saveWorkflow, deleteWorkflow, setWorkflowFolder,
