@@ -11,6 +11,7 @@ import { brightDataRead, htmlToText, scrapingBrowserRead } from '../brightData'
 import { callLlm, parseLlmJson, recoverJsonObjects } from '../llm'
 import { fetchHtml } from '../../scraper/fetchHtml'
 import { extractProductIdentity } from '../../scraper/extractProducts'
+import { t, type Locale } from '../../i18n'
 
 interface ExtractedProduct {
   name?: unknown
@@ -344,6 +345,8 @@ type Ctx = {
   signal: AbortSignal
   log: (level: 'info' | 'warn' | 'error', msg: string) => void
   reportConnector?: (id: string) => void
+  /** Langue du run — ces helpers loguent dans le panneau comme le node lui-même. */
+  locale: Locale
 }
 
 /** Exécute fn sur chaque item, au plus `limit` en parallèle (borne le coût/temps + les
@@ -384,21 +387,21 @@ async function fetchListingContent(ctx: Ctx, url: string): Promise<{ text: strin
   try {
     content = (await jinaRead(ctx.uid, url, { listing: true })).content
   } catch (err) {
-    ctx.log('warn', `Lecture Jina échouée ${url} : ${err instanceof Error ? err.message : err}`)
+    ctx.log('warn', t(ctx.locale, 'run.lp.jinaFailed', { url, message: err instanceof Error ? err.message : String(err) }))
   }
   if (content.trim()) ctx.reportConnector?.('jina')
   let html = '' // HTML brut Bright Data (porte le JSON-LD ItemList déterministe)
   const jinaMarkers = priceMarkerCount(content)
   if (!content.trim() || jinaMarkers < THIN_LISTING_MARKERS) {
     try {
-      if (!content.trim()) ctx.log('info', `Jina sans contenu pour ${url} → escalade Bright Data.`)
-      else ctx.log('info', `Jina maigre (${jinaMarkers} prix) pour ${url} → escalade Bright Data.`)
+      if (!content.trim()) ctx.log('info', t(ctx.locale, 'run.lp.jinaNoContent', { url }))
+      else ctx.log('info', t(ctx.locale, 'run.lp.jinaThin', { markers: jinaMarkers, url }))
       html = (await brightDataRead(url)).html
       const bd = htmlToText(html)
       const bdMarkers = priceMarkerCount(bd)
       if (bd.trim() && bdMarkers > jinaMarkers) { content = bd; ctx.reportConnector?.('brightdata') }
     } catch (err) {
-      ctx.log('warn', `Bright Data échoué ${url} : ${err instanceof Error ? err.message : err}`)
+      ctx.log('warn', t(ctx.locale, 'run.lp.brightDataFailed', { url, message: err instanceof Error ? err.message : String(err) }))
     }
   }
   return { text: content, html }
@@ -469,21 +472,21 @@ async function extractProducts(ctx: Ctx, content: string, label: string, allowRe
     const parsed = parseLlmJson<{ products?: ExtractedProduct[] }>(text)
     const direct = Array.isArray(parsed?.products) ? parsed!.products! : []
     if (direct.length > 0) {
-      ctx.log('info', `${label} : ${direct.length} produit(s), parse direct [${model}, stop=${stopReason ?? '?'}, markdown ${content.length} chars].`)
+      ctx.log('info', t(ctx.locale, 'run.lp.directParse', { label, count: direct.length, model, stop: stopReason ?? '?', chars: content.length }))
       return direct
     }
     const recovered = recoverJsonObjects(text) as ExtractedProduct[]
     if (recovered.length > 0) {
       // Pas une erreur : réponse LLM tronquée (limite de sortie), produits récupérés intacts.
-      ctx.log('info', `${label} : ${recovered.length} produit(s) extrait(s) [${model}] — réponse tronquée (${text.length} chars), récupération OK.`)
+      ctx.log('info', t(ctx.locale, 'run.lp.recovered', { label, count: recovered.length, model, chars: text.length }))
       return recovered
     }
-    ctx.log('warn', `${label} : 0 produit [${model}, stop=${stopReason ?? '?'}, ${text.length} chars, markdown ${content.length}].`)
+    ctx.log('warn', t(ctx.locale, 'run.lp.zeroProduct', { label, model, stop: stopReason ?? '?', chars: text.length, mdChars: content.length }))
     return []
   }
   let products = await runOnce()
   for (let tries = 1; shouldRetryExtraction(products.length, content.length, allowRetry, tries); tries++) {
-    ctx.log('info', `${label} : 0 produit sur ${content.length} chars → nouvelle tentative d’extraction (${tries + 1}/${MAX_EXTRACT_TRIES}) — le LLM rend parfois une liste vide à tort.`)
+    ctx.log('info', t(ctx.locale, 'run.lp.retryExtract', { label, chars: content.length, try: tries + 1, max: MAX_EXTRACT_TRIES }))
     products = await runOnce()
   }
   return products
@@ -504,16 +507,16 @@ registerServerNode({
           const results = await jinaSearch(ctx.uid, `${family} site:${domain}`)
           const found = pickListingUrl(results, domain, family)
           if (found) { urls.push(found); ctx.log('info', `${domain} → ${found}`) }
-          else ctx.log('warn', `Aucune page liste « ${family} » sur ${domain}.`)
+          else ctx.log('warn', t(ctx.locale, 'run.lp.noListingOnDomain', { family, domain }))
         } catch (e) {
-          ctx.log('warn', `Recherche échouée sur ${domain} : ${e instanceof Error ? e.message : e}`)
+          ctx.log('warn', t(ctx.locale, 'run.lp.searchFailed', { domain, message: e instanceof Error ? e.message : String(e) }))
         }
       }
-      if (urls.length === 0) { ctx.log('warn', `Découverte « ${family} » : aucune page liste trouvée.`); return { sheet: { columns: COLUMNS, rows: [] } } }
+      if (urls.length === 0) { ctx.log('warn', t(ctx.locale, 'run.lp.discoveryEmpty', { family })); return { sheet: { columns: COLUMNS, rows: [] } } }
     } else {
       urls = parseUrls(config.urls)
       if (urls.length === 0) {
-        ctx.log('warn', 'Aucune URL de page liste valide.')
+        ctx.log('warn', t(ctx.locale, 'run.lp.noValidUrl'))
         return { sheet: { columns: COLUMNS, rows: [] } }
       }
     }
@@ -567,11 +570,11 @@ registerServerNode({
     // propres) depuis le HTML brut, 2) LLM sur le texte (prix barré + sites sans ItemList).
     const extractFrom = async (html: string, text: string, label: string, allowRetry: boolean, baseUrl: string): Promise<ExtractedProduct[]> => {
       const ld = dedupListing([...parseListingItemList(html), ...parseListingDataLayer(html, baseUrl)])
-      if (ld.length) ctx.log('info', `${label} : ${ld.length} produit(s) déterministes (JSON-LD ItemList + datalayer).`)
+      if (ld.length) ctx.log('info', t(ctx.locale, 'run.lp.deterministic', { site: label, count: ld.length }))
       let llm: ExtractedProduct[] = []
       if (text.trim()) {
         try { llm = await extractProducts(ctx, text, label, allowRetry, (m) => modelsSeen.add(m)) }
-        catch (err) { ctx.log('warn', `Extraction LLM échouée pour ${label} : ${err instanceof Error ? err.message : err}`) }
+        catch (err) { ctx.log('warn', t(ctx.locale, 'run.lp.llmFailed', { site: label, message: err instanceof Error ? err.message : String(err) })) }
       }
       return mergeListing(ld, llm)
     }
@@ -589,17 +592,17 @@ registerServerNode({
       // on ré-extrait. Ciblé page principale + résultat maigre (cf. shouldEscalateToBrowser) ;
       // on ne REMPLACE que si le rendu JS ramène STRICTEMENT PLUS → zéro régression.
       if (shouldEscalateToBrowser(usefulCount(products), isMainPage)) {
-        ctx.log('info', `${site} : ${usefulCount(products)} produit(s) de marque (maigre) via Jina/Web Unlocker → escalade Scraping Browser (rendu JS).`)
+        ctx.log('info', t(ctx.locale, 'run.lp.thinViaJina', { site, count: usefulCount(products) }))
         const rendered = (await scrapingBrowserRead(url)).html
         if (rendered.trim()) {
           const products2 = await extractFrom(rendered, htmlToText(rendered), `${site} (rendu JS)`, true, url)
           if (usefulCount(products2) > usefulCount(products)) {
-            ctx.log('info', `${site} : ${usefulCount(products2)} produit(s) de marque via Scraping Browser — grille rendue en JS (Web Unlocker insuffisant : ${usefulCount(products)}).`)
+            ctx.log('info', t(ctx.locale, 'run.lp.viaScrapingBrowser', { site, count: usefulCount(products2), before: usefulCount(products) }))
             products = products2
           }
         }
       }
-      if (products.length === 0 && !text.trim()) { ctx.log('warn', `Aucun contenu pour ${url}.`); return [] }
+      if (products.length === 0 && !text.trim()) { ctx.log('warn', t(ctx.locale, 'run.lp.noContent', { url })); return [] }
       return products
     }
 
@@ -620,8 +623,8 @@ registerServerNode({
         for (const products of results) waveNew += pushProducts(products, site)
         if (waveNew === 0) {
           stop = true
-          if (k === 2) ctx.log('info', `${site} : pas de page suivante exploitable (param « ${pageParam} » ?) — 1 page lue.`)
-          else ctx.log('info', `${site} : fin de pagination à la page ~${k}.`)
+          if (k === 2) ctx.log('info', t(ctx.locale, 'run.lp.noNextPage', { site, param: pageParam }))
+          else ctx.log('info', t(ctx.locale, 'run.lp.paginationEnd', { site, page: k }))
         }
         if (max > 0 && rows.length >= max) break
       }
@@ -640,7 +643,7 @@ registerServerNode({
         try { return (await brightDataRead(url)).html } catch { return '' }
       }
       const targets = capped.filter((r) => /^https?:\/\//.test(String(r.url ?? '')))
-      ctx.log('info', `Enrichissement de ${targets.length} fiche(s) (EAN/marque/prix)…`)
+      ctx.log('info', t(ctx.locale, 'run.lp.enriching', { count: targets.length }))
       let enriched = 0
       await mapLimit(targets, 5, async (row) => {
         if (ctx.signal.aborted) return
@@ -655,7 +658,7 @@ registerServerNode({
         if (id.price != null && id.price > 0 && !String(row.price ?? '').trim()) row.price = String(id.price)
         if (id.ean || id.brand || id.price != null) enriched++
       })
-      ctx.log('info', `Fiches enrichies : ${enriched}/${targets.length}.`)
+      ctx.log('info', t(ctx.locale, 'run.lp.enriched', { count: enriched, total: targets.length }))
     }
 
     // Garde-fou : prix barré > prix de vente, sinon ce n'est pas une promo → vidé.
@@ -665,10 +668,14 @@ registerServerNode({
       if (!(Number.isFinite(ob) && Number.isFinite(pr) && ob > pr)) row.originalPrice = ''
     }
 
-    if (brandTerm && brandFiltered > 0) ctx.log('info', `Filtre marque « ${brandTerm} » : ${brandFiltered} produit(s) hors-marque écarté(s).`)
-    const modelLabel = modelsSeen.size > 0 ? ` — extraction via ${[...modelsSeen].join(', ')}` : ''
-    ctx.log('info', `Total : ${capped.length} produit(s) dédupliqué(s)${rows.length !== capped.length ? ` (cap ${max})` : ''}${modelLabel}.`)
-    if (capped.length === 0) ctx.log('warn', 'Aucun produit extrait.')
+    if (brandTerm && brandFiltered > 0) ctx.log('info', t(ctx.locale, 'run.lp.brandFilter', { brand: brandTerm, count: brandFiltered }))
+    const modelLabel = modelsSeen.size > 0 ? t(ctx.locale, 'run.lp.viaModels', { models: [...modelsSeen].join(', ') }) : ''
+    ctx.log('info', t(ctx.locale, 'run.lp.totalDeduped', {
+      count: capped.length,
+      cap: rows.length !== capped.length ? t(ctx.locale, 'run.lp.cap', { max }) : '',
+      model: modelLabel,
+    }))
+    if (capped.length === 0) ctx.log('warn', t(ctx.locale, 'run.lp.noProductExtracted'))
     return { sheet: { columns: COLUMNS, rows: capped } }
   },
 })

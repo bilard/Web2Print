@@ -98,6 +98,13 @@ const DONE: readonly { type: string; files: readonly string[] }[] = [
     ],
   },
   {
+    type: 'list-products',
+    files: [
+      'src/features/workflows/registry/listProductsNode.ts',
+      'functions/src/workflow/nodes/listProducts.ts',
+    ],
+  },
+  {
     type: 'source-sites',
     files: [
       'src/features/workflows/registry/sourceSitesNode.tsx',

@@ -12,6 +12,8 @@ import type { NodeSpec } from '../types'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
 import { generateJson } from '@/features/ai/llmRouter'
 import { parsePrice } from '@/features/priceWatch/core'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface ListProductsConfig {
   /** URLs de pages liste (une par ligne ou séparées par virgule). */
@@ -489,23 +491,23 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
     if (family) {
       // Découverte auto : chaque ligne = un domaine, on cherche la page liste de la famille.
       const domains = parseDomains(config.urls)
-      if (domains.length === 0) throw new Error('Aucun domaine fourni — renseignez au moins un domaine (ex : castorama.fr).')
+      if (domains.length === 0) throw new Error(t('run.lp.noDomain'))
       const { gatherWebContext } = await import('@/features/scraping/webContext')
       urls = []
       for (const domain of domains) {
         if (ctx.signal.aborted) break
-        ctx.log('info', `Recherche « ${family} » sur ${domain}…`)
+        ctx.log('info', t('run.lp.searching', { family, domain }))
         const found = await gatherWebContext({ searchQuery: `${family} site:${domain}`, maxResults: 8, readPages: 0 })
           .then((c) => pickListingUrl(c.results, domain, family))
           .catch(() => null)
         if (found) { urls.push(found); ctx.log('info', `${domain} → ${found}`) }
-        else ctx.log('warn', `Aucune page liste trouvée pour « ${family} » sur ${domain}.`)
+        else ctx.log('warn', t('run.lp.noListingFound', { family, domain }))
       }
-      if (urls.length === 0) throw new Error(`Découverte échouée : aucune page liste « ${family} » trouvée sur les domaines fournis.`)
+      if (urls.length === 0) throw new Error(t('run.lp.discoveryFailed', { family }))
     } else {
       urls = parseUrls(config.urls)
       if (urls.length === 0) {
-        throw new Error('Aucune URL fournie — renseignez au moins une page liste (ou une « Famille produit » + des domaines).')
+        throw new Error(t('run.lp.noUrl'))
       }
     }
     const max = Math.max(0, Number(config.maxProducts) || 0)
@@ -568,7 +570,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
           products = []
         }
         if (!shouldRetryExtraction(products.length, context.length, allowRetry, tries + 1)) break
-        ctx.log('info', `${label} : 0 produit sur ${context.length} chars → nouvelle tentative d’extraction (${tries + 2}/${MAX_EXTRACT_TRIES}) — le LLM rend parfois une liste vide à tort.`)
+        ctx.log('info', t('run.lp.retryExtract', { label, chars: context.length, try: tries + 2, max: MAX_EXTRACT_TRIES }))
       }
       return { products, error }
     }
@@ -582,7 +584,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
     for (let i = 0; i < pages.length; i++) {
       if (ctx.signal.aborted) break
       const { url, site, isMain } = pages[i]
-      ctx.log('info', `(${i + 1}/${pages.length}) Lecture de la page liste ${site}…`)
+      ctx.log('info', t('run.lp.readingPage', { i: i + 1, total: pages.length, site }))
       ctx.setProgress?.(Math.round((i / pages.length) * 100))
 
       const escalated = await readPageWithEscalation(url, {
@@ -592,11 +594,11 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       })
       const { markdown, source } = escalated
       if (!markdown.trim()) {
-        ctx.log('warn', `Aucun contenu pour ${site} — bloqué malgré l'escalade (Jina + Bright Data).`)
+        ctx.log('warn', t('run.lp.noContentBlocked', { site }))
         continue
       }
       if (source === 'brightdata') {
-        ctx.log('info', `Contenu récupéré via Bright Data pour ${site}.`)
+        ctx.log('info', t('run.lp.viaBrightData', { site }))
       }
 
       // Extraction DÉTERMINISTE depuis le HTML brut Bright Data : JSON-LD ItemList (EAN propres)
@@ -618,7 +620,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       }
       if (listingHtml) {
         ld = dedupListing([...parseListingItemList(listingHtml), ...parseListingDataLayer(listingHtml, url)])
-        if (ld.length) ctx.log('info', `${site} : ${ld.length} produit(s) déterministes (JSON-LD ItemList + datalayer).`)
+        if (ld.length) ctx.log('info', t('run.lp.deterministic', { site, count: ld.length }))
       }
 
       // Bornage du contexte LLM (les pages liste peuvent être volumineuses).
@@ -630,8 +632,8 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       const { products: llmProducts, error: llmError } = await runExtraction(context, site, isMain)
       if (llmError && llmProducts.length === 0) {
         // L'ItemList déterministe sauve la page même si le LLM échoue.
-        if (ld.length === 0) { ctx.log('error', `Extraction LLM échouée pour ${site} : ${llmError instanceof Error ? llmError.message : String(llmError)}`); continue }
-        ctx.log('warn', `Extraction LLM échouée pour ${site} (${llmError instanceof Error ? llmError.message : String(llmError)}) — repli sur l'ItemList JSON-LD.`)
+        if (ld.length === 0) { ctx.log('error', t('run.lp.llmFailed', { site, message: llmError instanceof Error ? llmError.message : String(llmError) })); continue }
+        ctx.log('warn', t('run.lp.llmFailedFallback', { site, message: llmError instanceof Error ? llmError.message : String(llmError) }))
       }
 
       let products = mergeListing(ld, llmProducts)
@@ -640,7 +642,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       // Le Scraping Browser (navigateur réel) rend la grille complète. On ne REMPLACE que s'il
       // ramène STRICTEMENT PLUS → aucune régression, coût payé uniquement sur un listing maigre.
       if (shouldEscalateToBrowser(usefulCount(products), isMain)) {
-        ctx.log('info', `${site} : ${usefulCount(products)} produit(s) de marque (maigre) via Jina/Web Unlocker → escalade Scraping Browser (rendu JS).`)
+        ctx.log('info', t('run.lp.thinViaJina', { site, count: usefulCount(products) }))
         const renderedHtml = await forceScrapingBrowserHtml(url)
         if (renderedHtml) {
           const renderedText = htmlToText(renderedHtml).slice(0, 28000)
@@ -648,7 +650,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
           const { products: llm2 } = await runExtraction(renderedText, `${site} (rendu JS)`, true)
           const products2 = mergeListing(ld2, llm2)
           if (usefulCount(products2) > usefulCount(products)) {
-            ctx.log('info', `${site} : ${usefulCount(products2)} produit(s) de marque via Scraping Browser — grille rendue en JS (Web Unlocker insuffisant : ${usefulCount(products)}).`)
+            ctx.log('info', t('run.lp.viaScrapingBrowser', { site, count: usefulCount(products2), before: usefulCount(products) }))
             products = products2
           }
         }
@@ -678,7 +680,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
         added++
         ctx.reportCount?.(allRows.length) // compteur live au fil de l'eau (sur l'edge)
       }
-      ctx.log('info', `${added} produit(s) extrait(s) de ${site}.`)
+      ctx.log('info', t('run.lp.extracted', { count: added, site }))
     }
 
     ctx.setProgress?.(100)
@@ -693,7 +695,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       const targets = capped.filter((r) => String(r.url ?? '').startsWith('http'))
       let done = 0
       let enriched = 0
-      ctx.log('info', `Enrichissement de ${targets.length} fiche(s) (EAN/marque/prix)…`)
+      ctx.log('info', t('run.lp.enriching', { count: targets.length }))
       // Pool de concurrence borné (coût/temps + rate-limit) ; respecte l'abort.
       const POOL = 5
       let cursor = 0
@@ -718,7 +720,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
         }
       }
       await Promise.all(Array.from({ length: Math.min(POOL, targets.length) }, () => worker()))
-      ctx.log('info', `Fiches enrichies : ${enriched}/${targets.length}.`)
+      ctx.log('info', t('run.lp.enriched', { count: enriched, total: targets.length }))
     }
 
     // Garde-fou : un prix barré DOIT être strictement supérieur au prix de vente
@@ -729,12 +731,12 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       if (!(Number.isFinite(ob) && Number.isFinite(pr) && ob > pr)) row.originalPrice = ''
     }
 
-    if (brandTerm && brandFiltered > 0) ctx.log('info', `Filtre marque « ${brandTerm} » : ${brandFiltered} produit(s) hors-marque écarté(s).`)
+    if (brandTerm && brandFiltered > 0) ctx.log('info', t('run.lp.brandFilter', { brand: brandTerm, count: brandFiltered }))
     if (capped.length === 0) {
-      ctx.log('warn', '⚠️ Aucun produit extrait — vérifie les URLs (pages liste) et la disponibilité Jina.')
+      ctx.log('warn', t('run.lp.noProductExtractedHint'))
     } else {
-      const modelLabel = modelsSeen.size > 0 ? ` — extraction via ${[...modelsSeen].join(', ')}` : ''
-      ctx.log('info', `Total : ${capped.length} produit(s) sur ${pages.length} page(s)${modelLabel}.`)
+      const modelLabel = modelsSeen.size > 0 ? t('run.lp.viaModels', { models: [...modelsSeen].join(', ') }) : ''
+      ctx.log('info', t('run.lp.total', { count: capped.length, pages: pages.length, model: modelLabel }))
     }
     return { sheet: { name: 'Produits (liste)', columns: COLUMNS, rows: capped, taxonomy: [] } }
   },

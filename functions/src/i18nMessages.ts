@@ -335,6 +335,89 @@ const MESSAGES = {
     en: ' — {count} with a forced engine.',
   },
 
+  // — Produits d'une page liste (`list-products`) —
+  //
+  // La paire diverge beaucoup : le serveur détaille l'escalade Jina → Bright Data,
+  // le client la résume. Les clés communes sont celles dont le TEXTE est identique
+  // au byte ; les autres restent propres à un côté.
+  'run.lp.retryExtract': {
+    fr: '{label} : 0 produit sur {chars} chars → nouvelle tentative d’extraction ({try}/{max}) — le LLM rend parfois une liste vide à tort.',
+    en: '{label}: 0 product over {chars} chars → new extraction attempt ({try}/{max}) — the LLM sometimes returns an empty list wrongly.',
+  },
+  'run.lp.deterministic': {
+    fr: '{site} : {count} produit(s) déterministes (JSON-LD ItemList + datalayer).',
+    en: '{site}: {count} deterministic product(s) (JSON-LD ItemList + datalayer).',
+  },
+  'run.lp.llmFailed': {
+    fr: 'Extraction LLM échouée pour {site} : {message}',
+    en: 'LLM extraction failed for {site}: {message}',
+  },
+  'run.lp.thinViaJina': {
+    fr: '{site} : {count} produit(s) de marque (maigre) via Jina/Web Unlocker → escalade Scraping Browser (rendu JS).',
+    en: '{site}: {count} brand product(s) (thin) through Jina/Web Unlocker → escalating to Scraping Browser (JS rendering).',
+  },
+  'run.lp.viaScrapingBrowser': {
+    fr: '{site} : {count} produit(s) de marque via Scraping Browser — grille rendue en JS (Web Unlocker insuffisant : {before}).',
+    en: '{site}: {count} brand product(s) through Scraping Browser — grid rendered in JS (Web Unlocker insufficient: {before}).',
+  },
+  'run.lp.enriching': {
+    fr: 'Enrichissement de {count} fiche(s) (EAN/marque/prix)…',
+    en: 'Enriching {count} record(s) (EAN/brand/price)…',
+  },
+  'run.lp.enriched': { fr: 'Fiches enrichies : {count}/{total}.', en: 'Records enriched: {count}/{total}.' },
+  'run.lp.brandFilter': {
+    fr: 'Filtre marque « {brand} » : {count} produit(s) hors-marque écarté(s).',
+    en: 'Brand filter "{brand}": {count} off-brand product(s) dropped.',
+  },
+  'run.lp.viaModels': { fr: ' — extraction via {models}', en: ' — extraction through {models}' },
+  'run.lp.jinaFailed': { fr: 'Lecture Jina échouée {url} : {message}', en: 'Jina read failed {url}: {message}' },
+  'run.lp.jinaNoContent': {
+    fr: 'Jina sans contenu pour {url} → escalade Bright Data.',
+    en: 'Jina returned no content for {url} → escalating to Bright Data.',
+  },
+  'run.lp.jinaThin': {
+    fr: 'Jina maigre ({markers} prix) pour {url} → escalade Bright Data.',
+    en: 'Jina thin ({markers} prices) for {url} → escalating to Bright Data.',
+  },
+  'run.lp.brightDataFailed': { fr: 'Bright Data échoué {url} : {message}', en: 'Bright Data failed {url}: {message}' },
+  'run.lp.directParse': {
+    fr: '{label} : {count} produit(s), parse direct [{model}, stop={stop}, markdown {chars} chars].',
+    en: '{label}: {count} product(s), direct parse [{model}, stop={stop}, markdown {chars} chars].',
+  },
+  'run.lp.recovered': {
+    fr: '{label} : {count} produit(s) extrait(s) [{model}] — réponse tronquée ({chars} chars), récupération OK.',
+    en: '{label}: {count} product(s) extracted [{model}] — response truncated ({chars} chars), recovery OK.',
+  },
+  'run.lp.zeroProduct': {
+    fr: '{label} : 0 produit [{model}, stop={stop}, {chars} chars, markdown {mdChars}].',
+    en: '{label}: 0 product [{model}, stop={stop}, {chars} chars, markdown {mdChars}].',
+  },
+  'run.lp.noListingOnDomain': {
+    fr: 'Aucune page liste « {family} » sur {domain}.',
+    en: 'No listing page "{family}" on {domain}.',
+  },
+  'run.lp.searchFailed': { fr: 'Recherche échouée sur {domain} : {message}', en: 'Search failed on {domain}: {message}' },
+  'run.lp.discoveryEmpty': {
+    fr: 'Découverte « {family} » : aucune page liste trouvée.',
+    en: 'Discovery "{family}": no listing page found.',
+  },
+  'run.lp.noValidUrl': { fr: 'Aucune URL de page liste valide.', en: 'No valid listing page URL.' },
+  'run.lp.noContent': { fr: 'Aucun contenu pour {url}.', en: 'No content for {url}.' },
+  'run.lp.noNextPage': {
+    fr: '{site} : pas de page suivante exploitable (param « {param} » ?) — 1 page lue.',
+    en: '{site}: no usable next page (parameter "{param}"?) — 1 page read.',
+  },
+  'run.lp.paginationEnd': {
+    fr: '{site} : fin de pagination à la page ~{page}.',
+    en: '{site}: end of pagination at page ~{page}.',
+  },
+  'run.lp.totalDeduped': {
+    fr: 'Total : {count} produit(s) dédupliqué(s){cap}{model}.',
+    en: 'Total: {count} deduplicated product(s){cap}{model}.',
+  },
+  'run.lp.cap': { fr: ' (cap {max})', en: ' (cap {max})' },
+  'run.lp.noProductExtracted': { fr: 'Aucun produit extrait.', en: 'No product extracted.' },
+
   // — Périodes du rapport de fréquentation : interpolées DANS un message, donc
   // traduites comme lui — sinon un log anglais afficherait « (30 derniers jours) ».
   'run.period.7d': { fr: '7 derniers jours', en: 'last 7 days' },
