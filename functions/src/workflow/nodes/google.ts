@@ -5,6 +5,15 @@
 // session navigateur requise. Contrainte drive.file conservée : on n'écrit que
 // dans des fichiers/dossiers créés par l'app.
 import { registerServerNode } from '../registry'
+import { t, DEFAULT_LOCALE, type Locale } from '../../i18n'
+// Helpers d'API PURS (hors contexte de run) : ils n'ont pas `ctx.locale`. Ce n'est
+// PAS un compromis observable — `run.api.error` a le MÊME texte dans les deux langues
+// (un diagnostic `Sheets get 403: …` n'a pas de prose à traduire), donc le repli ne
+// peut pas produire un message dans la mauvaise langue. Si un message de ces helpers
+// portait un jour de la prose, il faudrait y passer la locale.
+const tLocal = (key: Parameters<typeof t>[1], params?: Record<string, string | number>) => t(DEFAULT_LOCALE, key, params)
+/** Étiquette BCP 47 pour les nombres localisés (`fr-FR` était figé). */
+const intlTag = (locale: Locale): string => (locale === 'en' ? 'en-GB' : 'fr-FR')
 import { interpolate, extractRows } from '../interpolate'
 import { getGoogleAccessToken } from '../../google/serverAuth'
 import { asServerFile } from './serverFile'
@@ -74,7 +83,7 @@ async function applyColorRules(
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ requests }),
   })
-  if (!res.ok) throw new Error(`format conditionnel ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  if (!res.ok) throw new Error(tLocal('run.api.error', { api: 'conditionalFormat', status: res.status, body: (await res.text().catch(() => '')).slice(0, 200) }))
 }
 
 /** Clés de colonnes dans l'ordre d'export (colonnes déclarées, sinon union des clés). */
@@ -136,7 +145,7 @@ async function getFirstTab(
     `https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties(title,sheetId,gridProperties)`,
     { headers: { Authorization: `Bearer ${token}` } },
   )
-  if (!res.ok) throw new Error(`Sheets get ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  if (!res.ok) throw new Error(tLocal('run.api.error', { api: 'sheets.get', status: res.status, body: (await res.text().catch(() => '')).slice(0, 200) }))
   const json = (await res.json()) as {
     sheets?: { properties?: {
       title?: string; sheetId?: number; gridProperties?: { rowCount?: number; columnCount?: number }
@@ -181,7 +190,7 @@ async function trimGrid(
       }],
     }),
   })
-  if (!res.ok) throw new Error(`Sheets trim ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  if (!res.ok) throw new Error(tLocal('run.api.error', { api: 'sheets.trim', status: res.status, body: (await res.text().catch(() => '')).slice(0, 200) }))
 }
 
 /** Écrit la matrice de valeurs (RAW, types préservés) dans l'onglet, après l'avoir vidé. */
@@ -203,14 +212,9 @@ async function writeValues(token: string, id: string, title: string, matrix: (st
     // Quota de CLASSEUR (10 M de cellules, tous onglets) : le message brut de Google ne
     // dit pas quoi faire, et les cellules vides d'anciens exports en sont la cause n°1.
     if (/10000000|10 000 000/.test(body)) {
-      throw new Error(
-        'Classeur Google plein (10 millions de cellules, tous onglets confondus). '
-        + 'Les onglets gardent les cellules des exports précédents même vidées : supprimez '
-        + 'les onglets obsolètes, ou les lignes/colonnes vides (« Supprimer », pas « Effacer »), '
-        + 'ou exportez vers un classeur dédié.',
-      )
+      throw new Error(tLocal('run.gs.workbookFull'))
     }
-    throw new Error(`Sheets values ${res.status}: ${body.slice(0, 200)}`)
+    throw new Error(tLocal('run.api.error', { api: 'sheets.values', status: res.status, body: body.slice(0, 200) }))
   }
 }
 
@@ -233,7 +237,7 @@ async function applyNumberFormats(token: string, id: string, gid: number, format
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ requests }),
   })
-  if (!res.ok) throw new Error(`batchUpdate ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  if (!res.ok) throw new Error(tLocal('run.api.error', { api: 'batchUpdate', status: res.status, body: (await res.text().catch(() => '')).slice(0, 200) }))
 }
 
 /** Pose le fuseau horaire du document (formules/dates internes au Sheet) sur
@@ -245,7 +249,7 @@ async function setSpreadsheetTimeZone(token: string, id: string, timeZone = 'Eur
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ requests: [{ updateSpreadsheetProperties: { properties: { timeZone }, fields: 'timeZone' } }] }),
   })
-  if (!res.ok) throw new Error(`timeZone ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  if (!res.ok) throw new Error(tLocal('run.api.error', { api: 'timeZone', status: res.status, body: (await res.text().catch(() => '')).slice(0, 200) }))
 }
 
 // --- Colonnes formule (parité avec src/features/gdrive/gdriveCore.ts) ---------
@@ -325,7 +329,7 @@ async function writeFormulas(
       body: JSON.stringify({ values }),
     },
   )
-  if (!res.ok) throw new Error(`Sheets formules ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  if (!res.ok) throw new Error(tLocal('run.api.error', { api: 'sheets.formulas', status: res.status, body: (await res.text().catch(() => '')).slice(0, 200) }))
 }
 
 /** CSV RFC4180 minimal depuis une sheet (colonnes déclarées, sinon union des clés). */
@@ -431,7 +435,7 @@ async function addSheetChartServer(
   },
 ): Promise<void> {
   const resolved = resolveChartIndices(o.keys, o.cols, o.formulas, o.xName, o.valueNames)
-  if (!resolved) throw new Error('axe X ou colonnes de valeurs introuvables')
+  if (!resolved) throw new Error(tLocal('run.gs.chartAxisMissing'))
   const { xColIndex, valueColIndices, totalCols } = resolved
 
   const requests: Record<string, unknown>[] = []
@@ -455,7 +459,7 @@ async function addSheetChartServer(
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ requests }),
   })
-  if (!res.ok) throw new Error(`addChart ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  if (!res.ok) throw new Error(tLocal('run.api.error', { api: 'addChart', status: res.status, body: (await res.text().catch(() => '')).slice(0, 200) }))
 }
 
 registerServerNode({
@@ -463,7 +467,7 @@ registerServerNode({
   run: async (ctx, config, inputs) => {
     const sheet = (inputs.sheet ?? {}) as SheetLike
     if (!sheet.rows || sheet.rows.length === 0) {
-      throw new Error('gsheets-export : sheet vide en entrée.')
+      throw new Error(t(ctx.locale, 'run.gs.emptySheetInput'))
     }
     const name = String(config.name ?? '').trim() || 'Workflow Export'
     const token = await getGoogleAccessToken(ctx.uid)
@@ -497,11 +501,11 @@ registerServerNode({
     let id: string
     let displayName = name
     let webViewLink: string | undefined
-    let verb: string
+    let outcome: 'created' | 'updated'
 
     if (mode === 'update' && targetId) {
       id = targetId
-      verb = 'mis à jour'
+      outcome = 'updated'
     } else {
       const metadata: Record<string, unknown> = { name, mimeType: 'application/vnd.google-apps.spreadsheet' }
       const parent = String(config.parentFolderId ?? '').trim()
@@ -512,36 +516,36 @@ registerServerNode({
         body: JSON.stringify(metadata),
       })
       const json = (await res.json().catch(() => null)) as { id?: string; name?: string; webViewLink?: string; error?: { message?: string } } | null
-      if (!res.ok || !json?.id) throw new Error(`gsheets-export : création Drive ${res.status} — ${json?.error?.message ?? 'échec'}`)
+      if (!res.ok || !json?.id) throw new Error(t(ctx.locale, 'run.gs.driveCreateFailed', { status: res.status, message: json?.error?.message ?? t(ctx.locale, 'run.api.noDetail') }))
       id = json.id
       displayName = json.name ?? name
       webViewLink = json.webViewLink
-      verb = 'créé'
+      outcome = 'created'
     }
 
     const { title, gid, rowCount: gridRows, columnCount: gridCols } = await getFirstTab(token, id)
-    if (verb === 'créé') {
+    if (outcome === 'created') {
       await setSpreadsheetTimeZone(token, id).catch((e) =>
-        ctx.log('warn', `Fuseau horaire ignoré : ${e instanceof Error ? e.message : e}`),
+        ctx.log('warn', t(ctx.locale, 'run.gs.tzIgnored', { message: e instanceof Error ? e.message : String(e) })),
       )
     }
     await writeValues(token, id, title, matrix)
     if (formulas.length > 0 && sheet.rows.length > 0) {
       await writeFormulas(token, id, title, keys, formulas, sheet.rows.length).catch((e) =>
-        ctx.log('warn', `Colonnes formule ignorées : ${e instanceof Error ? e.message : e}`),
+        ctx.log('warn', t(ctx.locale, 'run.gs.formulasIgnored', { message: e instanceof Error ? e.message : String(e) })),
       )
-      ctx.log('info', `${formulas.length} colonne(s) formule ajoutée(s).`)
+      ctx.log('info', t(ctx.locale, 'run.gs.formulasAdded', { count: formulas.length }))
     }
     // Formats = colonnes données (détectés) + colonnes formule (format choisi par l'utilisateur).
     const allFormats = [...formats, ...formulas.map((f) => (f.format ? FORMULA_FORMATS[f.format] ?? null : null))]
     await applyNumberFormats(token, id, gid, allFormats).catch((e) =>
-      ctx.log('warn', `Formatage colonnes ignoré : ${e instanceof Error ? e.message : e}`),
+      ctx.log('warn', t(ctx.locale, 'run.gs.formatIgnored', { message: e instanceof Error ? e.message : String(e) })),
     )
     // Couleurs conditionnelles (ex: colonne « position » → vert/rouge), si la feuille en porte.
     const colorRules = Array.isArray(sheet.colorRules) ? sheet.colorRules : []
     if (colorRules.length > 0) {
       await applyColorRules(token, id, gid, keys, colorRules, sheet.rows.length).catch((e) =>
-        ctx.log('warn', `Couleurs conditionnelles ignorées : ${e instanceof Error ? e.message : e}`),
+        ctx.log('warn', t(ctx.locale, 'run.gs.condColorsIgnored', { message: e instanceof Error ? e.message : String(e) })),
       )
     }
 
@@ -554,9 +558,9 @@ registerServerNode({
       .then(() => {
         const before = gridRows * gridCols
         const after = matrix.length * ((matrix[0]?.length ?? 1) + formulas.length)
-        if (before > after) ctx.log('info', `Grille ajustée : ${(before - after).toLocaleString('fr-FR')} cellule(s) rendue(s) au classeur.`)
+        if (before > after) ctx.log('info', t(ctx.locale, 'run.gs.gridTrimmed', { count: (before - after).toLocaleString(intlTag(ctx.locale)) }))
       })
-      .catch((e) => ctx.log('warn', `Ajustement de la grille ignoré : ${e instanceof Error ? e.message : e}`))
+      .catch((e) => ctx.log('warn', t(ctx.locale, 'run.gs.gridTrimIgnored', { message: e instanceof Error ? e.message : String(e) })))
 
     // Graphe natif optionnel (cron compris) : inséré via l'API après écriture des valeurs.
     const chartX = String(config.chartXColumn ?? '').trim()
@@ -567,13 +571,15 @@ registerServerNode({
         xName: chartX, valueNames: chartVals,
         keys, cols, formulas, rowCount: sheet.rows.length, title: displayName,
       })
-        .then(() => ctx.log('info', 'Graphique inséré.'))
-        .catch((e) => ctx.log('warn', `Graphique ignoré : ${e instanceof Error ? e.message : e}`))
+        .then(() => ctx.log('info', t(ctx.locale, 'run.gs.chartInserted')))
+        .catch((e) => ctx.log('warn', t(ctx.locale, 'run.gs.chartIgnored', { message: e instanceof Error ? e.message : String(e) })))
     } else if (config.chartEnabled) {
-      ctx.log('warn', 'Graphique ignoré : axe X / colonnes de valeurs manquants (ou aucune donnée).')
+      ctx.log('warn', t(ctx.locale, 'run.gs.chartSkipped'))
     }
 
-    ctx.log('info', `Google Sheet « ${displayName} » ${verb} (${sheet.rows.length} lignes) — ${webViewLink ?? id}`)
+    ctx.log('info', t(ctx.locale, outcome === 'created' ? 'run.gs.sheetCreated' : 'run.gs.sheetUpdated', {
+      name: displayName, rows: sheet.rows.length, link: webViewLink ?? id,
+    }))
     return { result: { id, name: displayName, webViewLink } }
   },
 })
@@ -656,7 +662,9 @@ function buildMime(to: string, subject: string, body: string, isHtml: boolean, a
   ].join('\r\n')
 }
 
-async function gmailSend(token: string, mime: string): Promise<string> {
+// La langue est passée explicitement : cette erreur porte de la PROSE et remonte
+// dans le journal du run.
+async function gmailSend(token: string, mime: string, locale: Locale): Promise<string> {
   const raw = Buffer.from(mime, 'utf8').toString('base64url')
   const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
     method: 'POST',
@@ -665,7 +673,7 @@ async function gmailSend(token: string, mime: string): Promise<string> {
   })
   const json = (await res.json().catch(() => null)) as { id?: string; error?: { message?: string } } | null
   if (!res.ok || !json?.id) {
-    throw new Error(`send-gmail : Gmail ${res.status} — ${json?.error?.message ?? 'échec envoi'}`)
+    throw new Error(t(locale, 'run.gm.apiError', { status: res.status, message: json?.error?.message ?? t(locale, 'run.api.noDetail') }))
   }
   return json.id
 }
@@ -687,7 +695,7 @@ registerServerNode({
     const buildAttachment = (forRows: Record<string, unknown>[] | null): GmailAttachment | undefined => {
       if (config.attachmentMode === 'source') {
         if (!srcFile) {
-          ctx.log('warn', "Mode « Fichier source » actif mais aucun fichier en entrée (relie une sortie « file » au port « attachment » ou « data »). Envoi sans pièce jointe.")
+          ctx.log('warn', t(ctx.locale, 'run.gm.noSourceFile'))
           return undefined
         }
         return { filename: srcFile.name, mimeType: srcFile.mimeType, base64: srcFile.base64 }
@@ -704,7 +712,7 @@ registerServerNode({
     // Mode « 1 email par ligne » : ré-interpolation par row, aucune ligne = aucun envoi.
     if (config.iterate) {
       if (!rows || rows.length === 0) {
-        ctx.log('info', 'Mode « 1 email par ligne » : aucune ligne reçue — rien à envoyer.')
+        ctx.log('info', t(ctx.locale, 'run.gm.noRowToSend'))
         return { result: { sent: false, count: 0 } }
       }
       const raw = (ctx.rawConfig ?? {}) as Record<string, unknown>
@@ -713,22 +721,22 @@ registerServerNode({
         if (ctx.signal.aborted) break
         const r = interpolate(raw, { ...rows[i], row: rows[i], index: i }) as Record<string, unknown>
         const to = String(r.to ?? '').trim()
-        if (!to) { ctx.log('warn', `Ligne ${i + 1} ignorée : destinataire vide.`); continue }
+        if (!to) { ctx.log('warn', t(ctx.locale, 'run.gm.rowNoRecipient', { i: i + 1 })); continue }
         const mime = buildMime(to, String(r.subject ?? ''), String(r.body ?? ''), isHtml, buildAttachment([rows[i]]))
-        await gmailSend(token, mime)
+        await gmailSend(token, mime, ctx.locale)
         count++
-        ctx.log('info', `[${i + 1}/${rows.length}] email → ${to}`)
+        ctx.log('info', t(ctx.locale, 'run.gm.rowSent', { i: i + 1, total: rows.length, to }))
       }
       return { result: { sent: count > 0, count } }
     }
 
     const to = String(config.to ?? '').trim()
-    if (!to) throw new Error('send-gmail : destinataire (« to ») manquant.')
+    if (!to) throw new Error(t(ctx.locale, 'run.gm.noRecipient'))
     let body = injectHtmlToken(String(config.body ?? ''), inputs.data, isHtml)
     if (rows && hasTableToken(body)) body = injectTable(body, rows, isHtml)
     const mime = buildMime(to, String(config.subject ?? ''), body, isHtml, buildAttachment(rows))
-    const id = await gmailSend(token, mime)
-    ctx.log('info', `Email envoyé à ${to} (id ${id}).`)
+    const id = await gmailSend(token, mime, ctx.locale)
+    ctx.log('info', t(ctx.locale, 'run.gm.sent', { to, id }))
     return { result: { sent: true, count: 1 } }
   },
 })
@@ -773,7 +781,7 @@ async function listSheetTabs(token: string, id: string): Promise<{ title: string
     `https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties(title,index)`,
     { headers: { Authorization: `Bearer ${token}` } },
   )
-  if (!res.ok) throw new Error(`Sheets get ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  if (!res.ok) throw new Error(tLocal('run.api.error', { api: 'sheets.get', status: res.status, body: (await res.text().catch(() => '')).slice(0, 200) }))
   const json = (await res.json()) as { sheets?: { properties?: { title?: string; index?: number } }[] }
   return (json.sheets ?? [])
     .map((s) => ({ title: s.properties?.title ?? 'Sheet1', index: s.properties?.index ?? 0 }))
@@ -784,24 +792,24 @@ registerServerNode({
   type: 'gsheets-import',
   run: async (ctx, config) => {
     const fileId = String(config.fileId ?? '').trim()
-    if (!fileId) throw new Error('gsheets-import : aucun Google Sheets sélectionné (config.fileId vide).')
+    if (!fileId) throw new Error(t(ctx.locale, 'run.gs.noFileSelected'))
     const token = await getGoogleAccessToken(ctx.uid)
 
     const tabs = await listSheetTabs(token, fileId)
-    if (tabs.length === 0) throw new Error('gsheets-import : le classeur ne contient aucun onglet.')
+    if (tabs.length === 0) throw new Error(t(ctx.locale, 'run.gs.noTab'))
     const idx = Math.max(0, Math.min(Number(config.sheetIndex ?? 0), tabs.length - 1))
     const title = tabs[idx].title
-    ctx.log('info', `Import GSheet ${String(config.fileName ?? fileId)} — onglet #${idx} « ${title} »…`)
+    ctx.log('info', t(ctx.locale, 'run.gs.importing', { name: String(config.fileName ?? fileId), index: idx, title }))
 
     const enc = encodeURIComponent(title)
     const res = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${fileId}/values/${enc}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`,
       { headers: { Authorization: `Bearer ${token}` } },
     )
-    if (!res.ok) throw new Error(`Sheets values ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+    if (!res.ok) throw new Error(tLocal('run.api.error', { api: 'sheets.values', status: res.status, body: (await res.text().catch(() => '')).slice(0, 200) }))
     const json = (await res.json()) as { values?: unknown[][] }
     const matrix = json.values ?? []
-    if (matrix.length === 0) throw new Error(`gsheets-import : l'onglet « ${title} » est vide.`)
+    if (matrix.length === 0) throw new Error(t(ctx.locale, 'run.gs.tabEmpty', { title }))
 
     const keys = sheetKeysFromHeader(matrix[0])
     const columns = keys.map((key, i) => ({ key, label: key, isPrimary: i === 0 }))
@@ -814,7 +822,7 @@ registerServerNode({
       for (let c = 0; c < keys.length; c++) row[keys[c]] = cells[c] ?? null
       rows.push(row)
     }
-    ctx.log('info', `${rows.length} ligne(s) × ${keys.length} colonne(s) chargée(s) depuis « ${title} ».`)
+    ctx.log('info', t(ctx.locale, 'run.gs.imported', { rows: rows.length, columns: keys.length, title }))
     return { sheet: { name: title, columns, rows, taxonomy: [] } }
   },
 })

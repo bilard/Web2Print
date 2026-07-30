@@ -8,6 +8,8 @@ import { getServerGoogleToken } from '@/features/gdrive/serverGoogleToken'
 import { useGoogleServerConnect } from '@/features/settings/useGoogleServerConnect'
 import { interpolate } from '../runtime/interpolate'
 import { extractRows, buildInterpolationContext } from '../runtime/executor'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 const TABLE_TOKEN_RE = /\{\{\s*table(?:\s*:\s*([^}]+?))?\s*\}\}/g
 const HTML_TOKEN_RE = /\{\{\s*html\s*\}\}/g
@@ -603,10 +605,7 @@ const sendGmailNode: NodeSpec<
       // Remonter la cause réelle (réseau, invalid_grant…) sans la masquer derrière un
       // message générique : distingue « jamais connecté » d'« autorisation révoquée/réseau ».
       const detail = err instanceof Error ? err.message : String(err)
-      throw new Error(
-        `Compte Google indisponible (${detail}). Connecte ton compte une seule fois dans Paramètres → Connecteurs → Google (accès serveur) — l’envoi Gmail (manuel et cron) l’utilisera ensuite automatiquement.`,
-        { cause: err },
-      )
+      throw new Error(t('run.gm.accountUnavailable', { detail }), { cause: err })
     }
 
     // Récupérer rows + rawConfig en amont (utilisés par le mode pièce jointe filtrée).
@@ -627,7 +626,7 @@ const sendGmailNode: NodeSpec<
         const mimeType = srcFile.type || 'application/octet-stream'
         const base64 = await fileToBase64(srcFile)
         attachments = [{ filename, mimeType, base64 }]
-        ctx.log('info', `Pièce jointe (source) : ${filename} (${(srcFile.size / 1024).toFixed(1)} KB).`)
+        ctx.log('info', t('run.gm.attachmentSource', { name: filename, size: (srcFile.size / 1024).toFixed(1) }))
       } else if (typeof (inputs.attachment as unknown) === 'string' && (inputs.attachment as unknown as string).trim()) {
         // Câblage fréquent : on relie la sortie « html » (CHAÎNE, pas un File) du node
         // « Rapport de coûts IA » au port `attachment`. On l'emballe en fichier .html.
@@ -638,21 +637,15 @@ const sendGmailNode: NodeSpec<
         const mimeType = looksHtml ? 'text/html; charset=UTF-8' : 'text/plain; charset=UTF-8'
         const base64 = utf8ToBase64(raw)
         attachments = [{ filename, mimeType, base64 }]
-        ctx.log('info', `Pièce jointe (source, chaîne → ${looksHtml ? '.html' : '.txt'}) : ${filename} (${(raw.length / 1024).toFixed(1)} KB).`)
+        ctx.log('info', t('run.gm.attachmentString', { ext: looksHtml ? '.html' : '.txt', name: filename, size: (raw.length / 1024).toFixed(1) }))
       } else {
-        ctx.log(
-          'info',
-          "Mode 'Fichier source' : rien sur le port 'attachment'. Les pièces jointes auto (Google Sheet / corps HTML) ci-dessous restent actives.",
-        )
+        ctx.log('info', t('run.gm.sourceModeNoPort'))
       }
     } else if (config.attachmentMode === 'filtered') {
       if (!inputRows || inputRows.length === 0) {
-        ctx.log(
-          'warn',
-          "Mode 'Sélection' actif mais aucune ligne en entrée (port 'data'). Le mail partira sans pièce jointe.",
-        )
+        ctx.log('warn', t('run.gm.filteredNoRow'))
       } else if (!rawConfig) {
-        ctx.log('warn', 'Mode filtré : config brut indisponible.')
+        ctx.log('warn', t('run.gm.filteredNoConfig'))
       } else {
         const colSet = new Set<string>()
         for (const r of inputRows) for (const k of Object.keys(r)) if (k !== '_id') colSet.add(k)
@@ -660,9 +653,9 @@ const sendGmailNode: NodeSpec<
         if (cols.length === 0) {
           // Aucune {{Col}} dans le body → toutes les colonnes
           cols = Array.from(colSet)
-          ctx.log('info', `Aucune colonne référencée dans le corps : toutes (${cols.length}) sont incluses dans la pièce jointe.`)
+          ctx.log('info', t('run.gm.allColumns', { count: cols.length }))
         } else {
-          ctx.log('info', `Pièce jointe filtrée : ${cols.length} colonne(s) (${cols.join(', ')}).`)
+          ctx.log('info', t('run.gm.filteredAttachment', { count: cols.length, columns: cols.join(', ') }))
         }
         const csv = generateCsv(inputRows, cols)
         const base64 = utf8ToBase64(csv)
@@ -681,7 +674,7 @@ const sendGmailNode: NodeSpec<
         ?? extractDriveFileId(inputs.data)
         ?? extractDriveFileId(inputs.attachment)
       if (meta) {
-        ctx.log('info', `Export du Google Sheet ${meta.name ?? meta.id} en .xlsx…`)
+        ctx.log('info', t('run.gm.exportingSheet', { name: meta.name ?? meta.id }))
         const file = await downloadDriveFile(meta.id, accessToken)
         const base64 = await fileToBase64(file)
         const gsheetAttachment: SendGmailAttachment = {
@@ -690,7 +683,7 @@ const sendGmailNode: NodeSpec<
           base64,
         }
         attachments = attachments ? [...attachments, gsheetAttachment] : [gsheetAttachment]
-        ctx.log('info', `Pièce jointe (Google Sheet) : ${file.name} (${(file.size / 1024).toFixed(1)} KB).`)
+        ctx.log('info', t('run.gm.attachmentSheet', { name: file.name, size: (file.size / 1024).toFixed(1) }))
       }
     }
 
@@ -710,21 +703,21 @@ const sendGmailNode: NodeSpec<
           base64,
         }
         attachments = attachments ? [...attachments, bodyHtmlAttachment] : [bodyHtmlAttachment]
-        ctx.log('info', `Pièce jointe (corps HTML) : rapport.html (${(html.length / 1024).toFixed(1)} KB).`)
+        ctx.log('info', t('run.gm.attachmentHtml', { size: (html.length / 1024).toFixed(1) }))
       }
     }
 
     if (config.iterate && inputRows && rawConfig) {
       const rows = inputRows
       if (rows.length === 0) {
-        ctx.log('warn', 'Mode "1 mail par ligne" activé mais le tableau d\'entrée est vide.')
+        ctx.log('warn', t('run.gm.iterateEmptyArray'))
         return { result: { sent: true, count: 0, ids: [] } }
       }
-      ctx.log('info', `Mode iterate : envoi de ${rows.length} mails…`)
+      ctx.log('info', t('run.gm.iterating', { count: rows.length }))
       const ids: string[] = []
       for (let i = 0; i < rows.length; i++) {
         if (ctx.signal.aborted) {
-          ctx.log('warn', `Run interrompu après ${ids.length} mails.`)
+          ctx.log('warn', t('run.gm.interrupted', { count: ids.length }))
           break
         }
         const row = rows[i]
@@ -734,7 +727,7 @@ const sendGmailNode: NodeSpec<
           index: i,
         })
         if (!interpolatedRow.to) {
-          ctx.log('warn', `Ligne ${i + 1} ignorée : destinataire vide après interpolation.`)
+          ctx.log('warn', t('run.gm.rowNoRecipientInterp', { i: i + 1 }))
           continue
         }
         const result = await sendGmail(accessToken, {
@@ -745,13 +738,13 @@ const sendGmailNode: NodeSpec<
           attachments,
         })
         ids.push(result.id)
-        ctx.log('info', `[${i + 1}/${rows.length}] → ${interpolatedRow.to} (id : ${result.id})`)
+        ctx.log('info', t('run.gm.rowSentId', { i: i + 1, total: rows.length, to: String(interpolatedRow.to), id: result.id }))
       }
       return { result: { sent: true, count: ids.length, ids } }
     }
 
     // Mode mail unique
-    if (!config.to) throw new Error('Destinataire manquant.')
+    if (!config.to) throw new Error(t('run.gm.noRecipientConfig'))
 
     let finalBody = config.body
 
@@ -762,26 +755,17 @@ const sendGmailNode: NodeSpec<
     const hasHtmlToken = /\{\{\s*html\s*\}\}/.test(finalBody)
     if (rawString !== null && hasHtmlToken) {
       if (!config.isHtml) {
-        ctx.log(
-          'warn',
-          "{{html}} détecté mais la case « HTML » est décochée : le balisage partira en texte brut. Coche « HTML » pour un rendu visuel.",
-        )
+        ctx.log('warn', t('run.gm.htmlUnchecked'))
       }
       const injected = config.isHtml ? prepareHtmlForEmail(rawString) : rawString
       finalBody = finalBody.replace(HTML_TOKEN_RE, () => injected)
-      ctx.log('info', `Contenu {{html}} injecté dans le corps (${injected.length} car.).`)
+      ctx.log('info', t('run.gm.htmlInjected', { count: injected.length }))
     } else if (hasHtmlToken && rawString === null) {
       // {{html}} demandé mais le port `data` ne porte pas de chaîne. Cause fréquente :
       // plusieurs edges sur `data` (le fan-in écrase la string), ou c'est une sheet/rows.
-      ctx.log(
-        'warn',
-        "{{html}} présent dans le corps mais le port « data » ne contient pas de HTML (chaîne). Relie UNIQUEMENT la sortie « html » du node source au port « data » (une seule arête).",
-      )
+      ctx.log('warn', t('run.gm.htmlTokenNoData'))
     } else if (rawString !== null && !hasHtmlToken) {
-      ctx.log(
-        'warn',
-        "Contenu HTML/texte reçu sur le port « data » mais non inséré : ajoute {{html}} dans le corps pour l'afficher.",
-      )
+      ctx.log('warn', t('run.gm.dataNotInserted'))
     }
 
     // Si HTML coché + input contient un tableau de rows : transformer les
@@ -817,17 +801,16 @@ const sendGmailNode: NodeSpec<
           }
           return ''
         })
-        ctx.log(
-          'info',
-          `Tableau combiné : ${referencedCols.length} colonnes (${referencedCols.join(', ')}) × ${inputRows.length} lignes.`,
-        )
+        ctx.log('info', t('run.gm.combinedTable', {
+          count: referencedCols.length, columns: referencedCols.join(', '), rows: inputRows.length,
+        }))
       } else {
         // 0 ou 1 colonne référencée → mini-tableau par colonne via renderer custom
         const customCtx = buildInterpolationContext(inputs, {}, {
           arrayRenderer: (col, values) => htmlSingleColumnTable(col, values),
         })
         finalBody = interpolate(rawConfig.body, customCtx)
-        ctx.log('info', `Mode HTML : colonnes rendues en tableau (${inputRows.length} lignes).`)
+        ctx.log('info', t('run.gm.htmlTable', { rows: inputRows.length }))
       }
     }
 
@@ -835,15 +818,12 @@ const sendGmailNode: NodeSpec<
     const hasTableToken = /\{\{\s*table\b/.test(finalBody)
     if (inputRows && hasTableToken) {
       finalBody = injectTable(finalBody, inputRows, config.isHtml)
-      ctx.log('info', `Tableau {{table}} injecté : ${inputRows.length} lignes.`)
+      ctx.log('info', t('run.gm.tableInjected', { rows: inputRows.length }))
     } else if (inputRows && inputRows.length > 1 && !config.isHtml) {
-      ctx.log(
-        'warn',
-        `${inputRows.length} lignes en entrée. Coche HTML pour un tableau, ou utilise {{table}} dans le corps. Pour 1 mail par ligne, coche "Envoyer 1 mail par ligne".`,
-      )
+      ctx.log('warn', t('run.gm.manyRowsHint', { count: inputRows.length }))
     }
 
-    ctx.log('info', `Envoi Gmail → ${config.to}`)
+    ctx.log('info', t('run.gm.sending', { to: config.to }))
     const result = await sendGmail(accessToken, {
       to: config.to,
       subject: config.subject,
@@ -851,7 +831,7 @@ const sendGmailNode: NodeSpec<
       isHtml: config.isHtml,
       attachments,
     })
-    ctx.log('info', `Envoyé (id Gmail : ${result.id}).`)
+    ctx.log('info', t('run.gm.sentId', { id: result.id }))
     return { result: { sent: true, count: 1, ids: [result.id] } }
   },
 }

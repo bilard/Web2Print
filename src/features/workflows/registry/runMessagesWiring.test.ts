@@ -140,6 +140,26 @@ const DONE: readonly { type: string; files: readonly string[] }[] = [
     ],
   },
   {
+    // Famille Google. Les diagnostics d'API HTTP passent par UNE clé de structure
+    // (`run.api.error`) : le nom d'opération (« Sheets get », « addChart ») est un
+    // identifiant technique et reste littéral — le garde-fou l'accepte car il ne
+    // contient ni accent, ni phrase, ni mot français.
+    type: 'gsheets-* / gdrive-* / save-dam / send-gmail',
+    files: [
+      'src/features/workflows/registry/gdriveNodes.tsx',
+      'src/features/workflows/registry/communicationNodes.tsx',
+      'functions/src/workflow/nodes/google.ts',
+      'functions/src/workflow/nodes/gdriveExport.ts',
+    ],
+  },
+  {
+    type: 'web-scraping',
+    files: [
+      'src/features/workflows/registry/webScrapingNode.tsx',
+      'functions/src/workflow/nodes/webScraping.ts',
+    ],
+  },
+  {
     type: 'source-sites',
     files: [
       'src/features/workflows/registry/sourceSitesNode.tsx',

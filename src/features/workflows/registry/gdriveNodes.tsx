@@ -37,6 +37,8 @@ import {
 import { GDrivePickerModal } from '@/features/gdrive/GDrivePickerModal'
 import { GSheetsFormulaModal } from './GSheetsFormulaModal'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 /**
  * Normalise l'entrée du node Export Google Sheets en une `ExcelSheet`.
@@ -66,9 +68,7 @@ function coerceToExcelSheet(input: unknown, name: string): ExcelSheet {
     const row: ExcelRow = { _id: 'r0', texte: input }
     return { name, columns: [column], rows: [row], taxonomy: [] }
   }
-  throw new Error(
-    'Export Google Sheets attend une Sheet ou du texte en entrée — branchez un node qui produit une Sheet (ou une Saisie texte).',
-  )
+  throw new Error(t('run.gs.needSheetOrText'))
 }
 
 function requireToken(): string {
@@ -300,12 +300,12 @@ const gsheetsImportNode: NodeSpec<
   run: async (ctx, config) => {
     const token = await getNodeGoogleToken()
     if (!config.fileId) {
-      throw new Error('Aucun Google Sheets sélectionné — ouvrez la config du node pour en choisir un.')
+      throw new Error(t('run.gs.noFilePicked'))
     }
-    ctx.log('info', `Import GSheet ${config.fileName} (${config.fileId})…`)
+    ctx.log('info', t('run.gs.importingClient', { name: config.fileName, id: config.fileId }))
     const sheets = await importGoogleSheetById(config.fileId, token)
     const idx = Math.max(0, Math.min(config.sheetIndex ?? 0, sheets.length - 1))
-    ctx.log('info', `${sheets.length} onglet(s) lu(s) — sélection #${idx} (${sheets[idx].name})`)
+    ctx.log('info', t('run.gs.tabsRead', { count: sheets.length, index: idx, name: sheets[idx].name }))
     return { sheet: sheets[idx] }
   },
 }
@@ -593,58 +593,53 @@ const gsheetsExportNode: NodeSpec<
   run: async (ctx, config, inputs) => {
     const token = await getNodeGoogleToken()
     if (inputs.sheet == null) {
-      throw new Error('Sheet manquante en entrée — branchez un node qui produit une Sheet (ou une Saisie texte).')
+      throw new Error(t('run.gs.needSheetInput'))
     }
     const name = config.name?.trim() || 'Workflow Export'
     const sheet = coerceToExcelSheet(inputs.sheet, name)
     const formulas = parseFormulaColumns(config.formulaColumns)
     if (sheet.rows.length === 0) {
       if (formulas.length > 0) {
-        ctx.log('info', "Aucune donnée amont — 1 ligne d'essai ajoutée pour tester les formules (saisis des valeurs dans le Sheet, elles se recalculent).")
+        ctx.log('info', t('run.gs.testRowAdded'))
       } else {
-        ctx.log('warn', 'Aucune ligne à exporter — le fichier sera vide. Vérifie le node amont (« Comparer les prix »).')
+        ctx.log('warn', t('run.gs.noRowToExport'))
       }
     }
-    if (formulas.length > 0) ctx.log('info', `${formulas.length} colonne(s) formule ajoutée(s).`)
+    if (formulas.length > 0) ctx.log('info', t('run.gs.formulasAdded', { count: formulas.length }))
     // Graphe natif optionnel (inséré via l'API Sheets après écriture).
     const chart: SheetChartOptions | undefined =
       config.chartEnabled && config.chartXColumn?.trim() && config.chartValueColumns?.trim()
         ? { type: config.chartType || 'bar', xColumn: config.chartXColumn, valueColumns: config.chartValueColumns }
         : undefined
-    if (config.chartEnabled && !chart) ctx.log('warn', 'Graphique ignoré : choisis l’axe X et au moins une colonne de valeurs.')
+    if (config.chartEnabled && !chart) ctx.log('warn', t('run.gs.chartNeedsAxis'))
     if (config.mode === 'update' && config.spreadsheetId?.trim()) {
       const fileId = config.spreadsheetId.trim()
       const status = await getDriveFileStatus(token, fileId)
       if (status === 'ok') {
-        ctx.log('info', `Mise à jour du Google Sheet existant (${sheet.rows.length} lignes)…`)
+        ctx.log('info', t('run.gs.updatingExisting', { rows: sheet.rows.length }))
         const meta = await updateGoogleSheetById(token, fileId, sheet, formulas, chart)
         ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
         return { result: meta }
       }
       // Fichier dans la corbeille / supprimé → on ne le réécrit pas, on crée un nouveau fichier.
-      ctx.log(
-        'warn',
-        status === 'trashed'
-          ? 'Le fichier cible est dans la corbeille → création d’un nouveau fichier à la place.'
-          : 'Le fichier cible est introuvable → création d’un nouveau fichier à la place.',
-      )
+      ctx.log('warn', t(status === 'trashed' ? 'run.gs.targetTrashed' : 'run.gs.targetMissing'))
     }
     // Dossier de destination : par NOM (créé/réutilisé par l'app, garanti sous drive.file),
     // sinon dossier pické legacy, sinon racine.
     let parentFolderId = config.parentFolderId?.trim() || undefined
     const folderName = config.folderName?.trim()
     if (folderName) {
-      ctx.log('info', `Dossier « ${folderName} » (créé/réutilisé par l'app)…`)
+      ctx.log('info', t('run.gs.folderReused', { name: folderName }))
       parentFolderId = await ensureDriveFolder(token, folderName)
     }
-    ctx.log('info', `Création GSheet "${name}" (${sheet.rows.length} lignes)…`)
+    ctx.log('info', t('run.gs.creating', { name, rows: sheet.rows.length }))
     const meta = await exportSheetToGoogleSheets(token, sheet, { name, parentFolderId, formulas, chart })
     ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
     // Mode « même fichier » : mémoriser l'ID créé → les prochains runs mettront à jour CE fichier
     // (1 seule création, puis des mises à jour ; recrée seulement s'il est supprimé).
     if (config.mode === 'update') {
       ctx.patchConfig?.({ spreadsheetId: meta.id })
-      ctx.log('info', 'Fichier mémorisé — les prochains runs mettront à jour ce même fichier.')
+      ctx.log('info', t('run.gs.fileRemembered'))
     }
     return { result: meta }
   },
@@ -692,11 +687,11 @@ const gdriveImportNode: NodeSpec<
   run: async (ctx, config) => {
     const token = await getNodeGoogleToken()
     if (!config.fileId) {
-      throw new Error('Aucun fichier Drive sélectionné — ouvrez la config du node pour en choisir un.')
+      throw new Error(t('run.gd.noFilePicked'))
     }
-    ctx.log('info', `Download Drive ${config.fileName} (${config.fileId})…`)
+    ctx.log('info', t('run.gd.downloading', { name: config.fileName, id: config.fileId }))
     const file = await downloadDriveFile(config.fileId, token)
-    ctx.log('info', `OK — ${file.name} (${(file.size / 1024).toFixed(1)} KB)`)
+    ctx.log('info', t('run.gd.downloaded', { name: file.name, size: (file.size / 1024).toFixed(1) }))
     return { file }
   },
 }
@@ -756,12 +751,12 @@ const gdriveExportNode: NodeSpec<
   run: async (ctx, config, inputs) => {
     const token = await getNodeGoogleToken()
     if (!inputs.file) {
-      throw new Error('Fichier manquant en entrée — branchez un node qui produit un fichier.')
+      throw new Error(t('run.gd.missingFileClient'))
     }
     const file = inputs.file
     const fallbackName = file instanceof File && file.name ? file.name : `upload_${Date.now()}`
     const name = config.name?.trim() || fallbackName
-    ctx.log('info', `Upload Drive "${name}"…`)
+    ctx.log('info', t('run.gd.uploadingClient', { name }))
     const meta = await uploadFileToDrive(token, file, {
       name,
       parentFolderId: config.parentFolderId?.trim() || undefined,
@@ -826,7 +821,7 @@ function base64ToBlob(b64: string, mime: string): Blob {
  * CORS-friendly, ou si la function rejette : > 4 Mo, type non géré).
  */
 async function fetchAssetBlob(url: string, signal: AbortSignal): Promise<Blob> {
-  if (signal.aborted) throw new Error('annulé')
+  if (signal.aborted) throw new Error(t('run.dam.cancelled'))
   try {
     const { data } = await imageProxyFn({ url })
     return base64ToBlob(data.data, data.mimeType)
@@ -834,10 +829,10 @@ async function fetchAssetBlob(url: string, signal: AbortSignal): Promise<Blob> {
     try {
       const res = await fetch(url, { signal })
       // eslint-disable-next-line preserve-caught-error -- échec propre du fetch de repli, capté localement (directErr)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) throw new Error(t('run.api.error', { api: 'HTTP', status: res.status, body: '' }))
       const blob = await res.blob()
       // eslint-disable-next-line preserve-caught-error -- échec propre du fetch de repli, capté localement (directErr)
-      if (blob.size === 0) throw new Error('réponse vide')
+      if (blob.size === 0) throw new Error(t('run.dam.emptyResponse'))
       return blob
     } catch (directErr) {
       if (signal.aborted) throw directErr
@@ -906,7 +901,7 @@ const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { assets: Dam
   run: async (ctx, config, inputs) => {
     const assets = inputs.assets ?? []
     if (assets.length === 0) {
-      ctx.log('warn', 'Aucun asset en entrée — rien à uploader.')
+      ctx.log('warn', t('run.dam.noAsset'))
       return { assets }
     }
     // Quota compte démo : plafonne le nombre d'assets uploadés via le workflow (compteur
@@ -919,35 +914,35 @@ const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { assets: Dam
     const damLimit = acc.limits.damAssets
     const maxUploads = isDemo ? Math.max(0, damLimit - acc.usage.damAssets) : Infinity
     if (isDemo && maxUploads <= 0) {
-      ctx.log('warn', `Limite démo atteinte (${damLimit} assets DAM) — aucun upload.`)
+      ctx.log('warn', t('run.dam.demoLimit', { limit: damLimit }))
       return { assets }
     }
 
     const token = await getNodeGoogleToken()
     const folderName = config.folderName?.trim() || 'Web2Print DAM'
-    ctx.log('info', `Dossier Drive cible : « ${folderName} » (créé si absent)…`)
+    ctx.log('info', t('run.dam.targetFolder', { name: folderName }))
     const parentFolderId = await ensureDriveFolder(token, folderName)
-    ctx.log('info', `Upload de ${assets.length} asset(s)…`)
+    ctx.log('info', t('run.dam.uploadingAssets', { count: assets.length }))
 
     const out: DamAsset[] = []
     let ok = 0
     let failed = 0
     for (let i = 0; i < assets.length; i++) {
       if (ctx.signal.aborted) {
-        ctx.log('warn', `Interrompu après ${ok} upload(s).`)
+        ctx.log('warn', t('run.dam.interrupted', { count: ok }))
         out.push(...assets.slice(i)) // garde les restants tels quels
         break
       }
       const asset = assets[i]
       // Quota démo atteint pour ce run → on laisse passer les assets restants sans uploader.
       if (isDemo && ok >= maxUploads) {
-        if (out.length === i) ctx.log('warn', `Limite démo (${damLimit} assets DAM) — ${assets.length - i} asset(s) non uploadé(s).`)
+        if (out.length === i) ctx.log('warn', t('run.dam.demoLimitPartial', { limit: damLimit, remaining: assets.length - i }))
         out.push(asset)
         continue
       }
       const url = asset.url ?? asset.src
       if (!url) {
-        ctx.log('warn', `Asset ${i + 1} sans URL — ignoré.`)
+        ctx.log('warn', t('run.dam.assetNoUrl', { i: i + 1 }))
         out.push(asset)
         failed++
         continue
@@ -970,17 +965,14 @@ const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { assets: Dam
         const m = err instanceof Error ? err.message : String(err)
         // Erreur d'auth Drive → inutile de réessayer pour chaque asset : on échoue net.
         if (/permission refusée|HTTP 40[13]/i.test(m)) {
-          throw new Error(
-            `Drive : ${m} — reconnecte-toi au panneau Google Drive (scope d'écriture drive.file requis).`,
-            { cause: err },
-          )
+          throw new Error(t('run.dam.authError', { message: m }), { cause: err })
         }
         failed++
-        ctx.log('warn', `Asset ${i + 1} « ${name} » échoué : ${m} (proxy serveur + fetch direct épuisés).`)
+        ctx.log('warn', t('run.dam.assetFailed', { i: i + 1, name, message: m }))
         out.push(asset)
       }
     }
-    ctx.log(failed > 0 ? 'warn' : 'info', `Terminé : ${ok} uploadé(s), ${failed} échoué(s).`)
+    ctx.log(failed > 0 ? 'warn' : 'info', t('run.dam.done', { ok, failed }))
     return { assets: out }
   },
 }

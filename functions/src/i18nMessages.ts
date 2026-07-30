@@ -465,6 +465,119 @@ const MESSAGES = {
     en: 'File not downloadable on the server — use "Save DAM" through the assets port.',
   },
 
+  // — Famille Google (Sheets / Drive / Gmail) —
+  //
+  // ⚠️ UNE clé de STRUCTURE pour tous les diagnostics d'API HTTP. Leur donner une
+  // clé chacun (`Sheets get`, `batchUpdate`, `addChart`…) serait du bruit : ce qui
+  // se traduit ici c'est la PONCTUATION autour, pas le nom de l'opération, qui est
+  // un identifiant technique et reste littéral.
+  'run.ws.modeNotServer': {
+    fr: 'Web Scraping : mode « {mode} » non exécutable côté serveur.',
+    en: 'Web Scraping: mode "{mode}" cannot run on the server.',
+  },
+  'run.api.error': { fr: '{api} {status}: {body}', en: '{api} {status}: {body}' },
+  // Repli quand l'API ne renvoie AUCUN détail. Le message englobant dit déjà ce qui
+  // a échoué (« gdrive-export : Drive 403 — … »), d'où un seul mot générique.
+  'run.api.noDetail': { fr: 'échec', en: 'failure' },
+
+  'run.gs.workbookFull': {
+    fr: 'Classeur Google plein (10 millions de cellules, tous onglets confondus). Les onglets gardent les cellules des exports précédents même vidées : supprimez les onglets obsolètes, ou les lignes/colonnes vides (« Supprimer », pas « Effacer »), ou exportez vers un classeur dédié.',
+    en: 'Google workbook full (10 million cells across all tabs). Tabs keep the cells of previous exports even once emptied: delete the obsolete tabs, or the empty rows/columns ("Delete", not "Clear"), or export to a dedicated workbook.',
+  },
+  'run.gs.chartAxisMissing': {
+    fr: 'axe X ou colonnes de valeurs introuvables',
+    en: 'X axis or value columns not found',
+  },
+  'run.gs.emptySheetInput': {
+    fr: 'gsheets-export : sheet vide en entrée.',
+    en: 'gsheets-export: empty sheet on the input.',
+  },
+  'run.gs.driveCreateFailed': {
+    fr: 'gsheets-export : création Drive {status} — {message}',
+    en: 'gsheets-export: Drive creation {status} — {message}',
+  },
+  'run.gs.tzIgnored': { fr: 'Fuseau horaire ignoré : {message}', en: 'Time zone skipped: {message}' },
+  'run.gs.formulasIgnored': { fr: 'Colonnes formule ignorées : {message}', en: 'Formula columns skipped: {message}' },
+  'run.gs.formulasAdded': { fr: '{count} colonne(s) formule ajoutée(s).', en: '{count} formula column(s) added.' },
+  'run.gs.formatIgnored': { fr: 'Formatage colonnes ignoré : {message}', en: 'Column formatting skipped: {message}' },
+  'run.gs.condColorsIgnored': {
+    fr: 'Couleurs conditionnelles ignorées : {message}',
+    en: 'Conditional colours skipped: {message}',
+  },
+  'run.gs.gridTrimmed': {
+    fr: 'Grille ajustée : {count} cellule(s) rendue(s) au classeur.',
+    en: 'Grid trimmed: {count} cell(s) returned to the workbook.',
+  },
+  'run.gs.gridTrimIgnored': {
+    fr: 'Ajustement de la grille ignoré : {message}',
+    en: 'Grid trimming skipped: {message}',
+  },
+  'run.gs.chartInserted': { fr: 'Graphique inséré.', en: 'Chart inserted.' },
+  'run.gs.chartIgnored': { fr: 'Graphique ignoré : {message}', en: 'Chart skipped: {message}' },
+  'run.gs.chartSkipped': {
+    fr: 'Graphique ignoré : axe X / colonnes de valeurs manquants (ou aucune donnée).',
+    en: 'Chart skipped: X axis / value columns missing (or no data).',
+  },
+  // ⚠️ Deux clés au lieu d'un verbe interpolé : « créé » servait AUSSI de valeur de
+  // contrôle (`if (verb === 'créé')`). Un littéral affiché qui pilote une branche est
+  // toujours à sortir du texte — cf. le piège du lot 2.
+  'run.gs.sheetCreated': {
+    fr: 'Google Sheet « {name} » créé ({rows} lignes) — {link}',
+    en: 'Google Sheet "{name}" created ({rows} rows) — {link}',
+  },
+  'run.gs.sheetUpdated': {
+    fr: 'Google Sheet « {name} » mis à jour ({rows} lignes) — {link}',
+    en: 'Google Sheet "{name}" updated ({rows} rows) — {link}',
+  },
+  'run.gs.noFileSelected': {
+    fr: 'gsheets-import : aucun Google Sheets sélectionné (config.fileId vide).',
+    en: 'gsheets-import: no Google Sheets selected (config.fileId empty).',
+  },
+  'run.gs.noTab': {
+    fr: 'gsheets-import : le classeur ne contient aucun onglet.',
+    en: 'gsheets-import: the workbook contains no tab.',
+  },
+  'run.gs.importing': {
+    fr: 'Import GSheet {name} — onglet #{index} « {title} »…',
+    en: 'Importing GSheet {name} — tab #{index} "{title}"…',
+  },
+  'run.gs.tabEmpty': {
+    fr: "gsheets-import : l'onglet « {title} » est vide.",
+    en: 'gsheets-import: the tab "{title}" is empty.',
+  },
+  'run.gs.imported': {
+    fr: '{rows} ligne(s) × {columns} colonne(s) chargée(s) depuis « {title} ».',
+    en: '{rows} row(s) × {columns} column(s) loaded from "{title}".',
+  },
+
+  'run.gd.missingFile': {
+    fr: 'gdrive-export : fichier manquant en entrée — branche un node qui produit un fichier (port « file »).',
+    en: 'gdrive-export: file missing on the input — wire a node that produces a file ("file" port).',
+  },
+  'run.gd.uploading': { fr: 'Upload Drive « {name} » ({size} KB)…', en: 'Drive upload "{name}" ({size} KB)…' },
+  'run.gd.uploadFailed': {
+    fr: 'gdrive-export : Drive {status} — {message}',
+    en: 'gdrive-export: Drive {status} — {message}',
+  },
+  'run.gd.ok': { fr: 'OK — {link}', en: 'OK — {link}' },
+
+  'run.gm.apiError': { fr: 'send-gmail : Gmail {status} — {message}', en: 'send-gmail: Gmail {status} — {message}' },
+  'run.gm.noSourceFile': {
+    fr: 'Mode « Fichier source » actif mais aucun fichier en entrée (relie une sortie « file » au port « attachment » ou « data »). Envoi sans pièce jointe.',
+    en: 'Mode "Source file" active but no file on the input (wire a "file" output to the "attachment" or "data" port). Sending without an attachment.',
+  },
+  'run.gm.noRowToSend': {
+    fr: 'Mode « 1 email par ligne » : aucune ligne reçue — rien à envoyer.',
+    en: 'Mode "1 email per row": no row received — nothing to send.',
+  },
+  'run.gm.rowNoRecipient': { fr: 'Ligne {i} ignorée : destinataire vide.', en: 'Row {i} skipped: empty recipient.' },
+  'run.gm.rowSent': { fr: '[{i}/{total}] email → {to}', en: '[{i}/{total}] email → {to}' },
+  'run.gm.noRecipient': {
+    fr: 'send-gmail : destinataire (« to ») manquant.',
+    en: 'send-gmail: recipient ("to") missing.',
+  },
+  'run.gm.sent': { fr: 'Email envoyé à {to} (id {id}).', en: 'Email sent to {to} (id {id}).' },
+
   // — Exécuteur : arrêt et type inconnu (client ET serveur) —
   'run.stopped': { fr: 'Run arrêté', en: 'Run stopped' },
   'run.unknownType': { fr: 'Type inconnu : {type}', en: 'Unknown type: {type}' },

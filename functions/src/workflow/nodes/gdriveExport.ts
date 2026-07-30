@@ -10,6 +10,7 @@
 import { registerServerNode } from '../registry'
 import { getGoogleAccessToken } from '../../google/serverAuth'
 import { asServerFile } from './serverFile'
+import { t } from '../../i18n'
 
 interface DriveFileMeta {
   id: string
@@ -22,7 +23,7 @@ registerServerNode({
   run: async (ctx, config, inputs) => {
     const file = asServerFile(inputs.file)
     if (!file) {
-      throw new Error('gdrive-export : fichier manquant en entrée — branche un node qui produit un fichier (port « file »).')
+      throw new Error(t(ctx.locale, 'run.gd.missingFile'))
     }
     const token = await getGoogleAccessToken(ctx.uid)
     ctx.reportConnector?.('gdrive')
@@ -45,7 +46,7 @@ registerServerNode({
     const tail = `\r\n--${boundary}--`
     const body = Buffer.concat([Buffer.from(head, 'utf8'), media, Buffer.from(tail, 'utf8')])
 
-    ctx.log('info', `Upload Drive « ${name} » (${(media.length / 1024).toFixed(1)} KB)…`)
+    ctx.log('info', t(ctx.locale, 'run.gd.uploading', { name, size: (media.length / 1024).toFixed(1) }))
     const res = await fetch(
       'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
       {
@@ -59,10 +60,10 @@ registerServerNode({
     )
     const meta = (await res.json().catch(() => null)) as (DriveFileMeta & { error?: { message?: string } }) | null
     if (!res.ok || !meta?.id) {
-      throw new Error(`gdrive-export : Drive ${res.status} — ${meta?.error?.message ?? 'échec upload'}`)
+      throw new Error(t(ctx.locale, 'run.gd.uploadFailed', { status: res.status, message: meta?.error?.message ?? t(ctx.locale, 'run.api.noDetail') }))
     }
 
-    ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
+    ctx.log('info', t(ctx.locale, 'run.gd.ok', { link: meta.webViewLink ?? meta.id }))
     return { result: { id: meta.id, name: meta.name, webViewLink: meta.webViewLink } }
   },
 })

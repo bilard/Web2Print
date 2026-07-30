@@ -6,6 +6,8 @@ import { Globe } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { ConfigFieldRenderer } from '../editor/configFields'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 /** Mode du node unifié → type de l'ancien node qui porte la logique. */
 const MODE_TO_TYPE: Record<string, string> = {
@@ -90,7 +92,7 @@ const webScrapingNode: NodeSpec<Cfg, Record<string, unknown>, Record<string, unk
   run: async (ctx, config, inputs) => {
     const mode = (config.mode as string) ?? 'scrape'
     const target = nodeRegistry.get(MODE_TO_TYPE[mode])
-    if (!target) throw new Error(`Mode de scraping inconnu : ${mode}`)
+    if (!target) throw new Error(t('run.ws.unknownMode', { mode }))
     return target.run(ctx, config as never, inputs as never) as Promise<Record<string, unknown>>
   },
 }
