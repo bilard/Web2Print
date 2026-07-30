@@ -153,8 +153,8 @@ export function CharteCard() {
       )}
       {charte && charte.fonts.length > 0 && (
         <p className="text-[11px] text-white/50">
-          Typos détectées : <b className="text-white/80">{charte.fonts.join(' · ')}</b>
-          <span className="text-white/35"> — chargez les fichiers via « Mes polices » (Aperçu → Fond de page) pour les utiliser telles quelles.</span>
+          {t('cat.charte.fontsDetected')} <b className="text-white/80">{charte.fonts.join(' · ')}</b>
+          <span className="text-white/35">{t('cat.charte.fontsNote')}</span>
         </p>
       )}
       {/* Consignes AGRANDIES + scrollables (le brief d'inspiration est long) —

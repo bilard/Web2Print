@@ -33,7 +33,7 @@ export function StepFieldMapping() {
       <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
         <Link2 className="w-4 h-4 text-indigo-400" /> Correspondance des champs
       </h2>
-      <p className="text-xs text-muted-foreground">Les champs sont devinés automatiquement ; corrigez une colonne au besoin (votre choix est conservé).</p>
+      <p className="text-xs text-muted-foreground">{t('cat.map.hint')}</p>
       <div className="grid grid-cols-2 gap-3">
         {FIELDS.map(({ key, label }) => (
           <div key={key} className="space-y-1">

@@ -11,6 +11,7 @@ import { FlatplanStatsBar } from './FlatplanStatsBar'
 import { FlatplanTaxonomy } from './FlatplanTaxonomy'
 import { FlatplanBoard } from './FlatplanBoard'
 import { FlatplanLightbox } from './FlatplanLightbox'
+import { t } from '@/lib/i18n'
 
 export function StepFlatplan() {
   const setStep = useCatalogStore((s) => s.setStep)
@@ -30,7 +31,7 @@ export function StepFlatplan() {
   const colors = ctx?.universeColors ?? new Map<string, string>()
 
   if (pages.length === 0 || !ctx) {
-    return <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Aucune page — vérifiez la sélection et la structure.</div>
+    return <div className="h-full flex items-center justify-center text-sm text-muted-foreground">{t('cat.flatplan.empty')}</div>
   }
 
   // Sélection d'un nœud du rail : surligne ses pages et fait défiler jusqu'à la première.

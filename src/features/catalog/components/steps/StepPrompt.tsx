@@ -254,8 +254,7 @@ export function StepPrompt() {
               {plan && (
                 <div className="pt-1 space-y-2 border-t border-border/60">
                   <p className="text-[11px] text-white/50">
-                    Visuel de couverture — <b className="text-white/70">le prompt ci-dessus part tel quel</b> à Nano Banana 2,
-                    sans reformulation.
+                    {t('cat.prompt.coverNoteFull')}
                   </p>
                   {/* AUCUN second champ : le Prompt global est juste au-dessus,
                       le recopier ici créait deux zones jumelles. Un prompt image
@@ -271,7 +270,7 @@ export function StepPrompt() {
               <SectionsCard plan={plan} flatNodes={flatNodes} rowsById={rowsById} columns={rawColumns} fieldMap={fieldMap}
                 previewId={previewRowId} onPreview={setPreviewRowId} />
             ) : (
-              <p className="text-sm text-muted-foreground">Générez un plan pour éditer le style des fiches et les sections — thème et couvertures s'éditent dans l'Aperçu (panneau « Fond de page »).</p>
+              <p className="text-sm text-muted-foreground">{t('cat.prompt.planFirstFull')}</p>
             )}
           </div>
 

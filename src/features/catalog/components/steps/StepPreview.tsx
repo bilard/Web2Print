@@ -61,7 +61,7 @@ export function StepPreview() {
   }, [pages.length])
 
   if (pages.length === 0 || !ctx) {
-    return <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Aucune page à prévisualiser — vérifiez la sélection et la structure.</div>
+    return <div className="h-full flex items-center justify-center text-sm text-muted-foreground">{t('cat.preview.empty')}</div>
   }
 
   const currentPage = pages[clampedIndex]

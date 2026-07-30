@@ -39,7 +39,7 @@ export function StepExport() {
 
         <div className={cardClass}>
           <h3 className="text-sm font-semibold text-white">{t('cat.export.screenPdf')}</h3>
-          <p className="text-xs text-muted-foreground">Fichier léger (150 dpi), sans fond perdu ni traits de coupe — pour partage ou aperçu web.</p>
+          <p className="text-xs text-muted-foreground">{t('cat.export.screenPdf.desc')}</p>
           <button
             onClick={() => void exportPdf(pages, ctx!, { mode: 'screen', dpi: 150, bleedMm: 0, fileName })}
             disabled={disabled}
@@ -72,7 +72,7 @@ export function StepExport() {
               />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Des traits de coupe sont ajoutés aux 4 coins de chaque page dès que le fond perdu dépasse 1 mm.</p>
+          <p className="text-xs text-muted-foreground">{t('cat.export.cropMarks')}</p>
           <button
             onClick={() => void exportPdf(pages, ctx!, { mode: 'print', dpi, bleedMm, fileName })}
             disabled={disabled}
