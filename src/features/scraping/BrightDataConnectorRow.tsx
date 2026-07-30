@@ -199,8 +199,7 @@ export function BrightDataConnectorRow() {
             </button>
           </div>
           <p className="text-[10px] text-white/30">
-            Stocké dans Firestore <code className="text-violet-300/70">config/brightdata.apiToken</code>.
-            Lu par les Cloud Functions sans redéploiement.
+            {t('sc.bd.storedInFull')}
           </p>
         </div>
       ) : (

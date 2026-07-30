@@ -1,6 +1,7 @@
 import { Layers } from 'lucide-react'
 import type { Cockpit } from '@/features/priceWatch/dashboard/analytics'
 import { fmtGapPct, fmtInt } from '@/features/priceWatch/radar/radarFormat'
+import { t } from '@/lib/i18n'
 
 /** Familles du catalogue : produits, part sous-cotée (un concurrent me bat), écart moyen. */
 export function RadarFamilies({ cockpit }: { cockpit: Cockpit }) {
@@ -12,7 +13,7 @@ export function RadarFamilies({ cockpit }: { cockpit: Cockpit }) {
       <div className="mb-2 flex items-center gap-2">
         <Layers size={16} color="var(--radar-accent-2)" />
         <h2 className="text-[15px] font-semibold">Familles</h2>
-        <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>sous-cotés · écart moy</span>
+        <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>{t('rd.underpricedAvgGap')}</span>
       </div>
       <ul className="space-y-3">
         {items.map((f) => {

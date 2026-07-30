@@ -8,6 +8,7 @@ import { harvestOneSite } from '@/features/priceWatch/catalog/runSingleSite'
 import { resetCompetitorData } from '@/features/priceWatch/catalog/store'
 import { stableId } from '@/features/priceWatch/core'
 import { SiteCredentialsForm } from '@/features/workflows/registry/sourceSitesCreds'
+import { t } from '@/lib/i18n'
 
 const ENGINES = [
   { value: 'auto', label: 'Auto' },
@@ -117,7 +118,7 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
           title={row?.auth ? 'Accès connecté configuré — modifier' : 'Configurer un accès connecté'}>
           {row?.auth ? <Lock size={15} /> : <LockOpen size={15} />}
         </IconBtn>
-        <IconBtn onClick={onReset} busy={busy === 'reset'} title="Réinitialiser les données collectées" tint="#fbbf24">
+        <IconBtn onClick={onReset} busy={busy === 'reset'} title={t('rd.resetCollected')} tint="#fbbf24">
           <RotateCcw size={15} />
         </IconBtn>
         {row && (
@@ -129,8 +130,8 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
           <input
             type="number" min={1} defaultValue={row.pageBudget ?? ''}
             onBlur={(e) => { if (String(row.pageBudget ?? '') !== e.target.value.trim()) onBudget(e.target.value) }}
-            placeholder="pages" aria-label="Pages par run réservées à ce site"
-            title="Pages par run réservées à ce site. Vide = part du budget commun."
+            placeholder="pages" aria-label={t('rd.pagesPerRun')}
+            title={t('rd.pagesPerRun.title')}
             className="radar-inset ml-auto h-[34px] w-[72px] px-2 text-[12px]"
             style={{ color: 'var(--radar-text-2)', border: '0.5px solid var(--radar-hair)' }}
           />

@@ -140,7 +140,11 @@ describe('orthographe britannique (en-GB)', () => {
     new RegExp(`\\b(${US_VERBS})(e|es|ed|ing|ation|ations)?\\b`, 'i'),
     /\bcolor(s|ed|ing)?\b/i,
     /\bcenter(s|ed|ing)?\b/i,
-    /\bcatalog(s)?\b/i,
+    // ⚠️ `catalog` PRÉCÉDÉ D'UN SLASH est un chemin (`/media/catalog/`, convention
+    // Magento) : c'est de la DONNÉE dans un exemple, pas de la prose à angliciser.
+    // Le remplacer par « catalogue » produirait un chemin FAUX. Même précaution que
+    // pour `EasyCatalog` et l'identifiant de module `catalog` côté /docs/.
+    /(?<!\/)\bcatalog(s)?\b/i,
     /\bbehavior(s|al)?\b/i,
     /\banalyz(e|es|ed|ing)\b/i,
     /\blicense\b/i, // nom : « licence » en en-GB

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { ScrapeResult } from './useJina'
+import { t } from '@/lib/i18n'
 
 interface Props {
   result: ScrapeResult
@@ -121,7 +122,7 @@ export function ScrapingPreview({ result }: Props) {
       {/* Specs groupées (quand 1 seule ligne) */}
       {result.rows.length === 1 && pureSpecsColumns.length > 0 && (
         <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 space-y-3">
-          <span className="text-[10px] text-emerald-400/60 uppercase tracking-wider">Spécifications extraites</span>
+          <span className="text-[10px] text-emerald-400/60 uppercase tracking-wider">{t('sc.specsExtracted')}</span>
           {pureSpecsColumns.map((col) => {
             const specs = specsRow?.[col]
             if (!isSpecsArray(specs)) return null
@@ -152,7 +153,7 @@ export function ScrapingPreview({ result }: Props) {
       {/* Documents (quand 1 seule ligne) */}
       {result.rows.length === 1 && docsColumns.length > 0 && (
         <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 space-y-1.5">
-          <span className="text-[10px] text-blue-400/60 uppercase tracking-wider">Documents téléchargeables</span>
+          <span className="text-[10px] text-blue-400/60 uppercase tracking-wider">{t('sc.docsDownloadable')}</span>
           {docsColumns.map((col) => {
             const docs = specsRow?.[col]
             if (!isSpecsArray(docs)) return null

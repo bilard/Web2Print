@@ -1,4 +1,5 @@
 import type { ScrapeStatus } from '@/features/priceWatch/radar/scrapeState'
+import { t } from '@/lib/i18n'
 
 const TONE: Record<ScrapeStatus['state'], { fg: string; bg: string; border: string; dot: string }> = {
   running: { fg: 'var(--radar-live)', bg: 'rgba(48, 209, 88, 0.12)', border: 'rgba(48, 209, 88, 0.3)', dot: 'var(--radar-live)' },
@@ -22,6 +23,6 @@ export function RadarScrapeBadge({ status, onClick }: { status: ScrapeStatus; on
   const cls = 'radar-tap flex w-full items-center gap-2 rounded-full px-3.5 py-2 text-[12.5px] font-semibold'
   const style = { background: tone.bg, border: `0.5px solid ${tone.border}`, color: tone.fg }
   return onClick
-    ? <button onClick={onClick} className={cls} style={style} aria-label={`${status.label} — ouvrir le détail du scraping`}>{content}</button>
+    ? <button onClick={onClick} className={cls} style={style} aria-label={t('rd.scrapeDetail', { status: status.label })}>{content}</button>
     : <div className={cls} style={style}>{content}</div>
 }

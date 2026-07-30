@@ -1,13 +1,14 @@
 import { PieChart } from 'lucide-react'
 import type { Cockpit } from '@/features/priceWatch/dashboard/analytics'
 import { fmtInt, fmtPct } from '@/features/priceWatch/radar/radarFormat'
+import { t } from '@/lib/i18n'
 
 /** Donut de positionnement prix (comparaisons chiffrées) : je gagne / aligné / je perds. */
 export function RadarPositionDonut({ cockpit }: { cockpit: Cockpit }) {
   const { kpis } = cockpit
   const segs = [
     { label: 'Je gagne', value: kpis.dearerThanMe, color: 'var(--radar-good)' },
-    { label: 'Aligné', value: kpis.aligned, color: 'var(--radar-warn)' },
+    { label: t('rd.alignedOne'), value: kpis.aligned, color: 'var(--radar-warn)' },
     { label: 'Je perds', value: kpis.cheaperThanMe, color: 'var(--radar-bad)' },
   ]
   const total = segs.reduce((n, s) => n + s.value, 0) || 1

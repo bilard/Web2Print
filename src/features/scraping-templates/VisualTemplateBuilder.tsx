@@ -16,6 +16,7 @@ import { STANDARD_FIELDS } from './types'
 import { fetchSourceHtml } from './fetchSourceHtml'
 import { OVERLAY_SCRIPT } from './overlayScript'
 import { toast } from 'sonner'
+import { t } from '@/lib/i18n'
 
 interface Props {
   template: ScrapingTemplate
@@ -353,9 +354,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
       {/* Limitations notice */}
       {rewrittenHtml && (
         <div className="px-3 py-2 bg-amber-500/[0.08] border border-amber-400/20 rounded text-[10px] text-amber-200/80">
-          <b>Rendu dégradé attendu</b> — les polices custom et icônes webfont ne chargent pas
-          (CORS sur <code className="text-amber-100">@font-face</code>). <b>Double-clic</b> pour capturer un élément,
-          <b> simple-clic</b> pour naviguer (accordéons, onglets).
+          {t('st.degradedRenderFull')}
         </div>
       )}
       </div>
@@ -438,7 +437,7 @@ function SortableFieldRow({
           {...listeners}
           onClick={(e) => e.stopPropagation()}
           className="text-white/20 hover:text-white/50 cursor-grab active:cursor-grabbing shrink-0"
-          aria-label="Déplacer"
+          aria-label={t('st.move')}
         >
           <GripVertical className="w-3 h-3" />
         </button>
@@ -470,15 +469,15 @@ function SortableFieldRow({
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commitPrompt}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commitPrompt(); setPromptOpen(false) } }}
-            placeholder="Instructions de scraping pour ce champ (ex: « Retirer le heading, ne garder que les paragraphes. », « Ignorer les prix. », « Traduire en français. »)"
+            placeholder={t('st.fieldPrompt.placeholder')}
             rows={2}
             className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white/80 placeholder:text-white/25 resize-y outline-none focus:border-amber-400/40"
           />
           <div className="flex items-center justify-between mt-1">
-            <span className="text-[9px] text-white/25">⌘+Entrée pour valider</span>
+            <span className="text-[9px] text-white/25">{t('st.cmdEnterShort')}</span>
             <div className="flex items-center gap-2">
               {draft.trim() !== (field.prompt ?? '') && (
-                <span className="text-[9px] text-amber-400/60">non sauvé</span>
+                <span className="text-[9px] text-amber-400/60">{t('st.notSaved')}</span>
               )}
               {draft.trim() && (
                 <button
@@ -515,16 +514,16 @@ function AssignmentModal({
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="bg-surface border border-white/10 rounded-lg p-4 max-w-xl w-full">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-white/90">Élément capturé</h3>
+          <h3 className="text-sm font-semibold text-white/90">{t('st.capturedElement')}</h3>
           <CloseButton onClick={onClose} />
         </div>
         <div className="mb-3 p-2 bg-black/40 rounded text-[11px]">
           <div className="text-white/50">Tag : <span className="text-white/90 font-mono">{capture.tag}</span></div>
           {capture.text && <div className="text-white/50 mt-1">Texte : <span className="text-white/80">"{capture.text}"</span></div>}
-          {capture.attr && <div className="text-white/50 mt-1">Attribut capturé : <span className="text-white/90 font-mono">{capture.attr}</span></div>}
+          {capture.attr && <div className="text-white/50 mt-1">{t('st.capturedAttr')} <span className="text-white/90 font-mono">{capture.attr}</span></div>}
         </div>
 
-        <label className="text-[11px] text-white/50 block mb-1">Sélecteur (choisis le plus simple/stable) :</label>
+        <label className="text-[11px] text-white/50 block mb-1">{t('st.pickSelector')}</label>
         <div className="flex flex-col gap-1 mb-3">
           {capture.selectors.map((s, i) => (
             <button
@@ -546,7 +545,7 @@ function AssignmentModal({
           Capturer plusieurs éléments (liste — pour images, specs, variantes)
         </label>
 
-        <label className="text-[11px] text-white/50 block mb-1">Assigner à un champ :</label>
+        <label className="text-[11px] text-white/50 block mb-1">{t('st.assignField')}</label>
         <div className="grid grid-cols-3 gap-1.5 mb-2">
           {STANDARD_FIELDS.map((f) => (
             <button
@@ -561,7 +560,7 @@ function AssignmentModal({
         <div className="flex gap-1.5">
           <input
             className="flex-1 px-2 py-1.5 bg-black/40 border border-white/10 rounded text-white/90 text-[11px]"
-            placeholder="Ou nom de champ personnalisé"
+            placeholder={t('st.customFieldName')}
             value={customField}
             onChange={(e) => setCustomField(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitCustom() } }}

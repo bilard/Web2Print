@@ -1,6 +1,7 @@
 import { Swords } from 'lucide-react'
 import type { Cockpit } from '@/features/priceWatch/dashboard/analytics'
 import { fmtGapPct, fmtInt, fmtPct } from '@/features/priceWatch/radar/radarFormat'
+import { t } from '@/lib/i18n'
 
 /** Benchmark concurrents : triés du plus agressif (écart moyen le plus négatif) au moins. */
 export function RadarCompetitors({ cockpit, landscape = false }: { cockpit: Cockpit; landscape?: boolean }) {
@@ -12,7 +13,7 @@ export function RadarCompetitors({ cockpit, landscape = false }: { cockpit: Cock
       <div className="mb-2 flex items-center gap-2">
         <Swords size={16} color="var(--radar-accent-2)" />
         <h2 className="text-[15px] font-semibold">Concurrents</h2>
-        <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>écart moyen</span>
+        <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>{t('rd.avgGap')}</span>
       </div>
       <ul className="divide-y" style={{ borderColor: 'var(--radar-hair)' }}>
         {items.map((c) => {

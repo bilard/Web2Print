@@ -3,6 +3,7 @@ import { Globe, Loader2, Square, CheckSquare, Sparkles, ExternalLink } from 'luc
 import type { CrawlPage } from './useJina'
 import { BrandSuggestion } from './BrandSuggestion'
 import { UrlSourceSelector } from './UrlSourceSelector'
+import { t } from '@/lib/i18n'
 
 interface Props {
   url: string
@@ -72,9 +73,9 @@ export function CrawlTab({ url, loading, pages, onCrawl, onAbort, onEnrichMany, 
     <div className="space-y-4">
       <BrandSuggestion url={url} onAccept={(u) => onUrlSuggestion?.(u)} />
       <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg text-xs text-amber-300/70">
-        <strong className="text-amber-300">Crawl →</strong> Extrait les liens de la page (Jina) puis l'IA identifie les noms produits depuis les cartes visibles. Tu coches les vrais produits, chacun est scrapé avec le moteur <strong className="text-amber-300">Scrape / Produit complet</strong>.
+        {t('sc.crawl.introFull')}
         <br />
-        <span className="text-[11px] text-amber-300/50">Mode multi-URL : choisis Liste/Fichier/Sheet pour crawler plusieurs pages racines en séquence (résultats agrégés).</span>
+        <span className="text-[11px] text-amber-300/50">{t('sc.crawl.multiUrlFull')}</span>
       </div>
 
       {/* Sélecteur multi-source : 1 URL / Liste / Fichier / Google Sheet */}
@@ -206,7 +207,7 @@ export function CrawlTab({ url, loading, pages, onCrawl, onAbort, onEnrichMany, 
             onClick={launchCrawl}
             disabled={rootUrls.length === 0 || batchRunning}
             className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/20 text-amber-300 text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Re-détecter"
+            title={t('sc.redetect')}
           >
             <Globe className="w-4 h-4" />
           </button>

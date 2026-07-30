@@ -15,6 +15,7 @@ import type { ScrapingTemplate } from './types'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { listTemplates, saveTemplateWithVendorSync } from './templatesStore'
 import { getVendorFieldRows, type FieldRow } from './getVendorFieldRows'
+import { t } from '@/lib/i18n'
 
 interface Props {
   matchedTemplate: ScrapingTemplate
@@ -180,7 +181,7 @@ function SortableRow({ id, row, position }: { id: string; row: FieldRow; positio
         {...attributes}
         {...listeners}
         className="text-white/25 hover:text-white/60 cursor-grab active:cursor-grabbing shrink-0"
-        aria-label="Déplacer"
+        aria-label={t('st.move')}
       >
         <GripVertical className="w-3 h-3" />
       </button>
@@ -194,7 +195,7 @@ function SortableRow({ id, row, position }: { id: string; row: FieldRow; positio
                 ? 'bg-indigo-500/10 text-indigo-300/90 border-indigo-400/20'
                 : 'bg-white/[0.03] text-white/30 border-white/[0.06]'
             }`}
-            title={`${row.count} item${row.count > 1 ? 's' : ''} scrapé${row.count > 1 ? 's' : ''}`}
+            title={t('st.itemCount', { count: row.count })}
           >
             {row.count}
           </span>

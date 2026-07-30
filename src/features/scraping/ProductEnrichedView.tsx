@@ -2,6 +2,7 @@ import { Check, FileDown, Zap, ShieldAlert } from 'lucide-react'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { displayDocumentName } from '@/features/excel/ai-enrichment/documentUtils'
 import { descriptionMarkdownToHtml } from '@/lib/richText'
+import { t } from '@/lib/i18n'
 
 interface Props {
   product: EnrichedProduct
@@ -43,14 +44,14 @@ export function ProductEnrichedView({ product }: Props) {
         <section className="flex items-start gap-3 px-4 py-3 rounded-lg border border-red-500/30 bg-red-500/[0.06]">
           <ShieldAlert className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
           <div className="flex-1 text-[12px] text-red-300/90 space-y-1">
-            <p className="font-semibold">Site bloqué par anti-bot (DataDome / Akamai / Cloudflare)</p>
+            <p className="font-semibold">{t('sc.antibot')}</p>
             <p className="text-red-300/70">
               Le proxy et l'IA n'ont pas pu accéder à la fiche produit — toutes les sources renvoient une page CAPTCHA.
               Pour scraper ce produit, deux options :
             </p>
             <ul className="text-[11px] text-red-300/60 list-disc list-inside space-y-0.5">
-              <li>Recharger les crédits <strong className="text-red-300">Firecrawl</strong> (Paramètres → Connecteurs) — son anti-bot stealth passe la majorité des sites protégés</li>
-              <li>Utiliser le <strong className="text-red-300">site fabricant</strong> de la marque détectée (banner ambre dans Scrape) — pas d'anti-bot, données complètes</li>
+              <li>{t('sc.antibot.fixFirecrawl')}</li>
+              <li>{t('sc.antibot.fixVendor')}</li>
             </ul>
           </div>
         </section>
@@ -104,7 +105,7 @@ export function ProductEnrichedView({ product }: Props) {
 
       {product.specifications.length > 0 && (
         <section className="space-y-2">
-          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">Spécifications</p>
+          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">{t('sc.specs')}</p>
           {specGroups.map((g, gi) => {
             const c = g.group ? SPEC_COLORS[gi % SPEC_COLORS.length] : null
             return (

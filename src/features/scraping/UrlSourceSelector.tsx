@@ -16,6 +16,7 @@ import { Link2, ListPlus, FileSpreadsheet, Cloud, Loader2, X as XIcon } from 'lu
 import { extractUrlsFromFile, extractUrlsFromGoogleSheet, extractUrlsFromText } from './urlSourceParsers'
 import { useGDriveStore } from '@/stores/gdrive.store'
 import { toast } from 'sonner'
+import { t } from '@/lib/i18n'
 
 export type UrlSource = 'single' | 'list' | 'file' | 'sheet'
 
@@ -154,7 +155,7 @@ export function UrlSourceSelector({ singleUrl, onChange, showPreview = true }: P
             rows={6}
             className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 placeholder:text-white/20 focus:border-indigo-500/50 focus:outline-none resize-y transition-colors font-mono"
           />
-          <p className="text-[10px] text-white/25 mt-1">Colle un texte libre — toutes les URLs http(s) sont détectées automatiquement.</p>
+          <p className="text-[10px] text-white/25 mt-1">{t('sc.url.freeText')}</p>
         </div>
       )}
 
@@ -172,7 +173,7 @@ export function UrlSourceSelector({ singleUrl, onChange, showPreview = true }: P
             />
             {importing && <Loader2 className="w-4 h-4 text-indigo-400 animate-spin self-center" />}
           </div>
-          <p className="text-[10px] text-white/25">Auto-détection de la colonne URL (header "url"/"lien"/"link" ou contenu http).</p>
+          <p className="text-[10px] text-white/25">{t('sc.url.autoColumn')}</p>
           {importedUrls.length > 0 && (
             <div className="flex items-center justify-between p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
               <span className="text-[11px] text-emerald-300">{importedUrls.length} URL{importedUrls.length > 1 ? 's' : ''} importée{importedUrls.length > 1 ? 's' : ''}</span>

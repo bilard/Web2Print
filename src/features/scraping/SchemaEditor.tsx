@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react'
 import type { ScrapingField } from './useJina'
+import { t } from '@/lib/i18n'
 
 interface Props {
   fields: ScrapingField[]
@@ -21,7 +22,7 @@ export function SchemaEditor({ fields, onChange }: Props) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-white/30 uppercase tracking-wider">Champs à extraire</span>
+        <span className="text-[10px] text-white/30 uppercase tracking-wider">{t('sc.schema.fields')}</span>
         <button
           onClick={add}
           className="flex items-center gap-1 text-[11px] px-2 py-1 rounded bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors"
@@ -66,7 +67,7 @@ export function SchemaEditor({ fields, onChange }: Props) {
             <input
               value={f.description}
               onChange={(e) => update(i, { description: e.target.value })}
-              placeholder="Description (aide l'IA à extraire)"
+              placeholder={t('sc.schema.descPlaceholder')}
               className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-[11px] text-white/60 placeholder:text-white/20 focus:border-indigo-500/50 focus:outline-none"
             />
           </div>

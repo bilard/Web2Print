@@ -27,17 +27,18 @@ import { RadarScheduleBar } from './RadarScheduleBar'
 import { RadarInstallHint } from './RadarInstallHint'
 import { useRadarSchedule, useRadarRunLive, useNowTick } from './useRadarSchedule'
 import { useOrientation } from './useOrientation'
+import { t } from '@/lib/i18n'
 
 type Tab = 'apercu' | 'position' | 'concurrents' | 'familles' | 'produits' | 'volume' | 'scraping' | 'couts'
 const MENU: readonly RadarMenuItem<Tab>[] = [
-  { value: 'apercu', label: 'Aperçu', icon: Gauge },
+  { value: 'apercu', label: t('rd.tab.overview'), icon: Gauge },
   { value: 'position', label: 'Positionnement', icon: Target },
   { value: 'concurrents', label: 'Concurrents', icon: Users },
   { value: 'familles', label: 'Familles', icon: FolderTree },
   { value: 'produits', label: 'Produits', icon: Package },
   { value: 'volume', label: 'Collecte', icon: Database },
   { value: 'scraping', label: 'Scraping', icon: Radio },
-  { value: 'couts', label: 'Coûts', icon: Wallet },
+  { value: 'couts', label: t('rd.tab.costs'), icon: Wallet },
 ]
 
 /** Masonry 2 colonnes en paysage (les cartes se répartissent sur la largeur). */

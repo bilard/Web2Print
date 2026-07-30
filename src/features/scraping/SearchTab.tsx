@@ -8,6 +8,7 @@ import { SearchPromptInput } from './SearchPromptInput'
 import { SearchPlanChips } from './SearchPlanChips'
 import { useResultPrices } from './useResultPrices'
 import { SearchFieldsTable } from './SearchFieldsTable'
+import { t } from '@/lib/i18n'
 
 interface Props {
   /** Lance le pipeline d'enrichissement complet (Produit complet) sur les URLs cochées. */
@@ -74,7 +75,7 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
   return (
     <div className="space-y-4">
       <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg text-xs text-emerald-300/70">
-        <strong className="text-emerald-300">Recherche →</strong> Décris ce que tu cherches et où (« tondeuses Honda chez LeroyMerlin et Castorama »). L'IA interprète ta demande, interroge chaque site demandé, tu coches, chaque page est scrapée avec le moteur <strong className="text-emerald-300">Scrape / Produit complet</strong>.
+        {t('sc.search.introFull')}
       </div>
 
       <SearchPromptInput
@@ -86,7 +87,7 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
 
       <div className="flex items-end gap-3">
         <div>
-          <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1">Nombre de résultats</label>
+          <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1">{t('sc.search.resultCount')}</label>
           <input
             type="number" min={1} max={30}
             value={limit}

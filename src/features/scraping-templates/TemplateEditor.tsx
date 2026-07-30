@@ -9,6 +9,7 @@ import { saveTemplateWithVendorSync } from './templatesStore'
 import { VisualTemplateBuilder } from './VisualTemplateBuilder'
 import { useCan } from '@/features/access/useAccess'
 import { toast } from 'sonner'
+import { t } from '@/lib/i18n'
 
 interface Props {
   template: ScrapingTemplate
@@ -277,7 +278,7 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
       {/* Groupes de specs */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">Groupes de spécifications</h3>
+          <h3 className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">{t('st.specGroups')}</h3>
           <button
             onClick={addGroup}
             className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-400/20 inline-flex items-center gap-1"
@@ -355,11 +356,11 @@ function FieldRow({ field, onChange, onRemove }: { field: FieldSelector; onChang
           <option value="xpath">XPath</option>
           <option value="attr">Attribut</option>
           <option value="text">Texte (regex)</option>
-          <option value="text-with-hierarchy">Texte hiérarchique (Markdown)</option>
+          <option value="text-with-hierarchy">{t('st.textHierarchy')}</option>
         </select>
         <input
           className="flex-1 px-2 py-1 bg-black/40 border border-white/10 rounded text-white/90 text-xs font-mono"
-          placeholder="Sélecteur (ex: h1.product-title)"
+          placeholder={t('st.selectorPlaceholder')}
           value={field.strategies[0]?.expression ?? ''}
           onChange={(e) => onChange({ strategies: [{ ...field.strategies[0], expression: e.target.value }] })}
         />
@@ -441,13 +442,13 @@ function GlobalPromptSection({ value, onChange }: { value: string; onChange: (v:
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit() } }}
-            placeholder={"Prompt global appliqué à tous les produits de ce fournisseur.\nExemples :\n• « Toujours retirer le heading H1 de la description. »\n• « Les specs sont dans les accordéons, pas dans le tableau principal. »\n• « Ignorer les lignes 'CARTON A/B/C' dans les variantes. »"}
+            placeholder={t('st.vendorPrompt.placeholder')}
             rows={4}
             className="w-full bg-black/40 border border-white/10 rounded px-2.5 py-2 text-[11px] text-white/80 placeholder:text-white/20 resize-y outline-none focus:border-amber-400/40 leading-relaxed"
           />
           <div className="flex items-center justify-between mt-1.5">
-            <span className="text-[9px] text-white/25">⌘+Entrée pour valider · sauvé automatiquement au blur</span>
-            {isDirty && <span className="text-[9px] text-amber-400/60">non sauvé</span>}
+            <span className="text-[9px] text-white/25">{t('st.cmdEnter')}</span>
+            {isDirty && <span className="text-[9px] text-amber-400/60">{t('st.notSaved')}</span>}
             {value && (
               <button
                 onClick={() => { setDraft(''); onChange('') }}
@@ -486,13 +487,13 @@ function VendorPromptSection({ value, vendorDomain, onChange }: { value: string;
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit() } }}
-            placeholder={"Prompt appliqué à TOUS les templates de ce fournisseur (partagé).\nExemples :\n• « Les prix sont TTC chez ce fournisseur, ne pas convertir. »\n• « Les images produit sont dans /media/catalog/, ignorer les autres. »\n• « La marque est toujours la même : écrire 'Milwaukee'. »"}
+            placeholder={t('st.sharedPrompt.placeholder')}
             rows={4}
             className="w-full bg-black/40 border border-white/10 rounded px-2.5 py-2 text-[11px] text-white/80 placeholder:text-white/20 resize-y outline-none focus:border-sky-400/40 leading-relaxed"
           />
           <div className="flex items-center justify-between mt-1.5">
-            <span className="text-[9px] text-white/25">Propagé aux autres templates au save · ⌘+Entrée pour valider</span>
-            {isDirty && <span className="text-[9px] text-sky-400/60">non sauvé</span>}
+            <span className="text-[9px] text-white/25">{t('st.propagated')}</span>
+            {isDirty && <span className="text-[9px] text-sky-400/60">{t('st.notSaved')}</span>}
             {value && (
               <button
                 onClick={() => { setDraft(''); onChange('') }}

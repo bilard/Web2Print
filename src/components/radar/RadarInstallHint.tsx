@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Share, X } from 'lucide-react'
 import { isIos, isStandalone } from '@/features/priceWatch/radar/radarFormat'
+import { t } from '@/lib/i18n'
 
 const DISMISS_KEY = 'radar_install_dismissed'
 
@@ -34,7 +35,7 @@ export function RadarInstallHint() {
         <p className="text-[14px] font-semibold">Installer radarPrice</p>
         <p className="mt-0.5 text-[12px]" style={{ color: 'var(--radar-text-2)' }}>
           Touchez <span className="font-medium" style={{ color: 'var(--radar-text)' }}>Partager</span>, puis
-          <span className="font-medium" style={{ color: 'var(--radar-text)' }}> « Sur l'écran d'accueil »</span>.
+          <span className="font-medium" style={{ color: 'var(--radar-text)' }}>{t('rd.install.hint')}</span>.
         </p>
       </div>
       <button onClick={dismiss} aria-label="Fermer" className="radar-tap -mr-1 -mt-1 p-1" style={{ color: 'var(--radar-text-3)' }}>

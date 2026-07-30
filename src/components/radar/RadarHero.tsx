@@ -3,6 +3,7 @@ import type { Cockpit } from '@/features/priceWatch/dashboard/analytics'
 import type { OpsCockpit } from '@/features/priceWatch/dashboard/opsMetrics'
 import { RadarSparkline } from './RadarSparkline'
 import { fmtInt, fmtPct, timeAgo } from '@/features/priceWatch/radar/radarFormat'
+import { t } from '@/lib/i18n'
 
 /** Héros : le chiffre de tête « Tenue prix » (% où je suis aligné ou moins cher) avec sa
  *  tendance, une barre de position (moins cher / aligné / je perds) et l'état de collecte. */
@@ -49,7 +50,7 @@ export function RadarHero({ cockpit, holdSeries, ops, collectActive }: {
       </div>
       <div className="mt-2 flex items-center justify-between text-[11px]" style={{ color: 'var(--radar-text-2)' }}>
         <span><b style={{ color: 'var(--radar-good)' }}>{fmtInt(win)}</b> je gagne</span>
-        <span><b style={{ color: 'var(--radar-warn)' }}>{fmtInt(align)}</b> alignés</span>
+        <span><b style={{ color: 'var(--radar-warn)' }}>{fmtInt(align)}</b> {t('rd.aligned')}</span>
         <span><b style={{ color: 'var(--radar-bad)' }}>{fmtInt(lose)}</b> je perds</span>
       </div>
 

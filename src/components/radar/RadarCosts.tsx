@@ -8,6 +8,7 @@ import { useAiSettingsStore } from '@/stores/aiSettings.store'
 import type { UsageStatsLike } from '@/features/finance/types'
 import { buildRadarCostRows } from './radarCostRows'
 import { RadarCostCard } from './RadarCostCard'
+import { t } from '@/lib/i18n'
 
 const USD_TO_EUR = 0.92
 const fmtTok = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)} M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)} k` : `${n}`)
@@ -63,7 +64,7 @@ export function RadarCosts() {
           <Activity size={16} color="var(--radar-good)" />
           <div className="min-w-0">
             <h2 className="text-[15px] font-semibold leading-none">Consommation IA & Scraping</h2>
-            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--radar-text-3)' }}>coûts ce mois · live</p>
+            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--radar-text-3)' }}>{t('rd.costsThisMonth')}</p>
           </div>
           <button onClick={() => void refetch()} aria-label="Actualiser" className="radar-tap ml-auto grid h-8 w-8 place-items-center rounded-full" style={{ background: 'var(--radar-surface-2)', color: 'var(--radar-text-2)' }}>
             <RefreshCw size={14} />

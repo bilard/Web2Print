@@ -1,6 +1,7 @@
 import { BarChart3 } from 'lucide-react'
 import type { Cockpit } from '@/features/priceWatch/dashboard/analytics'
 import { fmtGapPct, fmtInt } from '@/features/priceWatch/radar/radarFormat'
+import { t } from '@/lib/i18n'
 
 const toneColor = (tone: 'cheaper' | 'aligned' | 'dearer'): string =>
   tone === 'cheaper' ? 'var(--radar-bad)' : tone === 'dearer' ? 'var(--radar-good)' : 'var(--radar-warn)'
@@ -13,7 +14,7 @@ export function RadarDistribution({ cockpit }: { cockpit: Cockpit }) {
     <section className="radar-card radar-in px-4 py-4">
       <div className="mb-3 flex items-center gap-2">
         <BarChart3 size={16} color="var(--radar-accent-2)" />
-        <h2 className="text-[15px] font-semibold">Distribution des écarts</h2>
+        <h2 className="text-[15px] font-semibold">{t('rd.gapDistribution')}</h2>
         <span className="ml-auto radar-tnum text-[12px]" style={{ color: 'var(--radar-text-3)' }}>
           méd {fmtGapPct(medianGapPct)} · moy {fmtGapPct(meanGapPct)}
         </span>

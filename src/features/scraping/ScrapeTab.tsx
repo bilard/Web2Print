@@ -11,6 +11,7 @@ import { extractUrlsFromFile, extractUrlsFromGoogleSheet, extractUrlsFromText } 
 import { TypedLogConsole } from '@/features/excel/ai-enrichment/TypedLogConsole'
 import { useGDriveStore } from '@/stores/gdrive.store'
 import { toast } from 'sonner'
+import { t } from '@/lib/i18n'
 
 function parseManualBreadcrumb(raw: string): string[] {
   if (!raw.trim()) return []
@@ -444,7 +445,7 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
                     <RefreshCw className="w-3 h-3 text-white/30" />
                     <span className="text-[11px] text-white/50">Pas de cache</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer" title="Inclure le contenu textuel des PDFs liés (notices/fiches techniques) dans l'extraction. Désactivé par défaut car les notices multilingues polluent les specs.">
+                  <label className="flex items-center gap-2 cursor-pointer" title={t('sc.pdfs.title')}>
                     <input type="checkbox" checked={includePdfs} onChange={e => updateIncludePdfs(e.target.checked)}
                       className="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500/30" />
                     <FilePdfIcon className={`w-3 h-3 ${includePdfs ? 'text-amber-400/70' : 'text-white/30'}`} />
@@ -457,7 +458,7 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
                       onChange={e => updateWaitFor(Number(e.target.value))}
                       className={`bg-white/5 border rounded px-2 py-0.5 text-[11px] focus:outline-none ${waitFor > 0 ? 'border-amber-500/30 text-amber-300 focus:border-amber-500/50' : 'border-white/10 text-white/60 focus:border-indigo-500/50'}`}
                     >
-                      <option value={0}>Timeout : défaut</option>
+                      <option value={0}>{t('sc.timeout.default')}</option>
                       <option value={10000}>10s</option>
                       <option value={15000}>15s</option>
                       <option value={20000}>20s</option>

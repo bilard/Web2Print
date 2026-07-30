@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { fmtCountdown, hhmm } from '@/features/priceWatch/radar/radarFormat'
 import type { RadarSchedule, RunPulse } from '@/features/priceWatch/radar/scrapeState'
 import { runWorkflowNow, stopServerRun, suspendWorkflow } from '@/features/priceWatch/radar/radarScheduleActions'
+import { t } from '@/lib/i18n'
 
 /** Échéance calendaire (souvent à plusieurs jours) : jour + heure, pas seulement HH:MM. */
 const dayTime = (ms: number) => new Date(ms).toLocaleString('fr-FR', {
@@ -83,7 +84,7 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
   })
 
   const relance = sched?.enabled
-    ? <>relance {overdue ? <b>imminente</b> : <>à <b>{hhmm(sched.nextRunAt)}</b> (dans <b className="radar-tnum">{fmtCountdown(sched.nextRunAt - now)}</b>)</>}</>
+    ? <>{overdue ? t('rd.restart.now') : t('rd.restart.at', { time: hhmm(sched.nextRunAt), countdown: fmtCountdown(sched.nextRunAt - now) })}</>
     : null
 
   return (
@@ -105,7 +106,7 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
             {stopAsked ? (
               <p className="mt-0.5 flex items-center gap-1.5" style={{ color: '#ff8a80' }}>
                 <Loader2 size={11} className="radar-spin shrink-0" />
-                <b>Arrêt demandé</b> — interruption dans quelques secondes…
+                <b>{t('rd.stopRequested')}</b>{t('rd.stopRequested.rest')}
               </p>
             ) : (
               // Pendant un run, nextRunAt = échéance du VERROU anti-chevauchement (budget
@@ -117,7 +118,7 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
                 </p>
               ) : (
                 // Run lancé à la main sans planification : aucun verrou, aucune relance.
-                <p className="mt-0.5" style={{ color: 'var(--radar-text-2)' }}>run manuel · aucune relance programmée</p>
+                <p className="mt-0.5" style={{ color: 'var(--radar-text-2)' }}>{t('rd.manualRun')}</p>
               )
             )}
           </>
@@ -125,14 +126,14 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
           // Preuve VISIBLE que le STOP a agi : sans elle, le cron relance dans la minute et
           // l'utilisateur conclut que le bouton est mort (c'est arrivé).
           <>
-            <p><b style={{ color: '#ff8a80' }}>■ Run arrêté</b>{sched?.lastRunAt != null && <span style={{ color: 'var(--radar-text-2)' }}> · démarré {hhmm(sched.lastRunAt)}</span>}</p>
+            <p><b style={{ color: '#ff8a80' }}>{t('rd.runStopped')}</b>{sched?.lastRunAt != null && <span style={{ color: 'var(--radar-text-2)' }}> · démarré {hhmm(sched.lastRunAt)}</span>}</p>
             <p className="mt-0.5" style={{ color: 'var(--radar-text-2)' }}>
               ⚠ le cron {relance ?? 'ne relancera pas'} — <b>Suspendre</b> pour ne plus relancer.
             </p>
           </>
         ) : sched?.cycleWaiting ? (
           <>
-            <p><b style={{ color: 'var(--radar-live)' }}>Cycle terminé ✓</b></p>
+            <p><b style={{ color: 'var(--radar-live)' }}>{t('rd.cycleDone')}</b></p>
             <p className="mt-0.5 truncate" style={{ color: 'var(--radar-text-2)' }}>
               Relance <b className="capitalize">{dayTime(sched.nextRunAt)}</b> ({overdue ? 'imminente' : `dans ${fmtCountdown(sched.nextRunAt - now)}`})
             </p>

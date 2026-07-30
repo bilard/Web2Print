@@ -4,6 +4,7 @@ import { competitorSeries } from '@/features/priceWatch/dashboard/analytics'
 import type { KpiHistoryPoint } from '@/features/priceWatch/types'
 import { RadarSparkline } from './RadarSparkline'
 import { fmtGapPct } from '@/features/priceWatch/radar/radarFormat'
+import { t } from '@/lib/i18n'
 
 /** Remplace les trous (null) par la dernière valeur connue ; retire les null de tête. */
 function forwardFill(points: (number | null)[]): number[] {
@@ -39,8 +40,8 @@ export function RadarCompetitorFlow({ history, sites }: {
     <section className="radar-card radar-in px-4 py-4">
       <div className="mb-3 flex items-center gap-2">
         <Activity size={16} color="var(--radar-accent-2)" />
-        <h2 className="text-[15px] font-semibold">Flux des écarts</h2>
-        <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>écart moyen dans le temps</span>
+        <h2 className="text-[15px] font-semibold">{t('rd.gapFlow')}</h2>
+        <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>{t('rd.avgGapOverTime')}</span>
       </div>
       <ul className="space-y-3">
         {rows.map((s) => {

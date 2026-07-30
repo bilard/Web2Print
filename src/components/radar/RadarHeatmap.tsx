@@ -1,5 +1,6 @@
 import { Grid3x3 } from 'lucide-react'
 import type { Cockpit } from '@/features/priceWatch/dashboard/analytics'
+import { t } from '@/lib/i18n'
 
 /** Couleur de cellule : rouge = concurrent moins cher (gap<0), vert = je suis moins cher. */
 function cellBg(gap: number | null): string {
@@ -18,7 +19,7 @@ export function RadarHeatmap({ cockpit }: { cockpit: Cockpit }) {
       <div className="mb-3 flex items-center gap-2">
         <Grid3x3 size={16} color="var(--radar-accent-2)" />
         <h2 className="text-[15px] font-semibold">Heatmap familles</h2>
-        <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>écart moyen</span>
+        <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>{t('rd.avgGap')}</span>
       </div>
       <div className="radar-noscroll overflow-x-auto">
         <table className="border-separate" style={{ borderSpacing: '3px' }}>

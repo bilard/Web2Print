@@ -1,5 +1,6 @@
 import { ExternalLink } from 'lucide-react'
 import type { RadarCostRow } from './radarCostRows'
+import { t } from '@/lib/i18n'
 
 const USD_TO_EUR = 0.92
 function eur(usd: number): string {
@@ -46,7 +47,7 @@ export function RadarCostCard({ r }: { r: RadarCostRow }) {
         {/* Budget dispo / solde */}
         <div className="text-center">
           {r.avail.kind === 'partagé' ? (
-            <p className="italic" style={{ color: 'var(--radar-text-3)' }}>budget partagé</p>
+            <p className="italic" style={{ color: 'var(--radar-text-3)' }}>{t('rd.sharedBudget')}</p>
           ) : r.avail.usd != null ? (
             <>
               <p className="radar-tnum text-[15px] font-semibold" style={{ color: r.avail.kind === 'solde API' ? 'var(--radar-good)' : 'var(--radar-text)' }}>{usd(r.avail.usd)}</p>

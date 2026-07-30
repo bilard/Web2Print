@@ -3,6 +3,7 @@ import { Map as MapIcon, Sparkles, Loader2, CheckSquare, Square, Globe, Search }
 import type { MapLink } from './useJina'
 import { BrandSuggestion } from './BrandSuggestion'
 import { UrlSourceSelector } from './UrlSourceSelector'
+import { t } from '@/lib/i18n'
 
 interface Props {
   url: string
@@ -70,9 +71,9 @@ export function MapExtractTab({ url, loading, onMap, onEnrichMany, batchRunning,
       <div className="space-y-4">
         <BrandSuggestion url={url} onAccept={(u) => onUrlSuggestion?.(u)} />
         <div className="p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg text-xs text-blue-300/70">
-          <strong className="text-blue-300">Map →</strong> Découvre toutes les URLs d'un site, sélectionne les pages produits à scraper, puis lance l'enrichissement complet (Produit complet) sur chacune.
+          {t('sc.map.introFull')}
           <br />
-          <span className="text-[11px] text-blue-300/50">Mode multi-URL : choisis Liste/Fichier/Sheet pour mapper plusieurs sites en séquence (résultats agrégés et dédoublonnés).</span>
+          <span className="text-[11px] text-blue-300/50">{t('sc.map.multiUrlFull')}</span>
         </div>
 
         {/* Sélecteur multi-source : 1 URL / Liste / Fichier / Google Sheet */}
@@ -108,7 +109,7 @@ export function MapExtractTab({ url, loading, onMap, onEnrichMany, batchRunning,
   return (
     <div className="space-y-4">
       <div className="p-2.5 bg-indigo-500/5 border border-indigo-500/20 rounded-lg text-[11px] text-indigo-300/70">
-        Sélectionne les URLs produits — chacune sera scrapée avec le pipeline <strong className="text-indigo-300">Produit complet</strong> (Jina + IA, multi-sources).
+        {t('sc.map.selectUrlsFull')}
       </div>
 
       {/* URL list */}

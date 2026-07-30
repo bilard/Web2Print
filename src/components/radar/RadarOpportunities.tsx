@@ -1,6 +1,7 @@
 import { TrendingDown } from 'lucide-react'
 import type { Cockpit } from '@/features/priceWatch/dashboard/analytics'
 import { fmtEur, fmtEurCompact, fmtGapPct } from '@/features/priceWatch/radar/radarFormat'
+import { t } from '@/lib/i18n'
 
 /** Top opportunités « où baisser » : produits où je suis le plus cher, triés par impact € unitaire. */
 export function RadarOpportunities({ cockpit, landscape = false }: { cockpit: Cockpit; landscape?: boolean }) {
@@ -11,7 +12,7 @@ export function RadarOpportunities({ cockpit, landscape = false }: { cockpit: Co
     <section className="radar-card radar-in px-4 py-4">
       <div className="mb-2 flex items-center gap-2">
         <TrendingDown size={16} color="var(--radar-warn)" />
-        <h2 className="text-[15px] font-semibold">Où baisser</h2>
+        <h2 className="text-[15px] font-semibold">{t('rd.whereToLower')}</h2>
         <span className="ml-auto text-[12px]" style={{ color: 'var(--radar-text-3)' }}>impact unitaire</span>
       </div>
       <ul className="divide-y" style={{ borderColor: 'var(--radar-hair)' }}>

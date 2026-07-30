@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { t } from '@/lib/i18n'
 
 /**
  * Schéma d'un template de scraping par fournisseur.
@@ -142,11 +143,11 @@ export const STANDARD_FIELDS = [
   { field: 'title', label: 'Titre du produit', multiple: false },
   { field: 'description', label: 'Description', multiple: false },
   { field: 'brand', label: 'Marque', multiple: false },
-  { field: 'reference', label: 'Référence / SKU', multiple: false },
+  { field: 'reference', label: t('st.field.reference'), multiple: false },
   { field: 'price', label: 'Prix', multiple: false },
   { field: 'ean', label: 'Code EAN / GTIN', multiple: false },
   { field: 'images', label: 'Images produit', multiple: true },
   { field: 'documents', label: 'Documents PDF / manuels', multiple: true },
   { field: 'advantages', label: 'Points forts / avantages (liste)', multiple: true },
-  { field: 'variants', label: 'Variantes / déclinaisons (liste)', multiple: true },
+  { field: 'variants', label: t('st.field.variants'), multiple: true },
 ] as const

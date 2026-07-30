@@ -32,6 +32,7 @@ import { filterByInstruction } from './instructionFilter'
 import { toast } from 'sonner'
 import { useEffect } from 'react'
 import { addUsageObserver } from '@/features/stats/aiUsageTracking'
+import { t } from '@/lib/i18n'
 
 /** Clé synthétique : la modal de scraping n'a pas de feuille — on isole dans
  *  un namespace dédié pour ne pas polluer les enrichissements de feuilles
@@ -776,7 +777,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             {targetLabel && (
               <span
                 className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 shrink-0 max-w-[160px]"
-                title={`Les produits seront importés dans : ${targetLabel}`}
+                title={t('sc.import.target', { target: targetLabel })}
               >
                 <Folder className="w-3 h-3 shrink-0" />
                 <span className="truncate">{targetLabel}</span>
@@ -784,7 +785,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             )}
             <span
               className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shrink-0"
-              title={`Coût — dernier traitement : $${runCostUsd.toFixed(4)} · session : $${sessionCostUsd.toFixed(4)}${costBreakdown ? `\n${costBreakdown}` : ''}\n(LLM aux tarifs réels par modèle ; Jina/Firecrawl/Bright Data estimés aux tarifs publics)`}
+              title={t('sc.cost.title', { run: runCostUsd.toFixed(4), session: sessionCostUsd.toFixed(4), breakdown: costBreakdown ? `\n${costBreakdown}` : '' })}
             >
               <Coins className="w-3 h-3 shrink-0" />
               ${runCostUsd.toFixed(runCostUsd < 0.01 ? 4 : 2)}
@@ -872,7 +873,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             className="accent-indigo-500 shrink-0"
           />
           <FolderUp className="w-3.5 h-3.5 text-white/30 shrink-0" />
-          <span className="text-[11px] text-white/45">Centraliser les images dans le DAM (Google Drive) après l'import</span>
+          <span className="text-[11px] text-white/45">{t('sc.dam.centralise')}</span>
         </label>
 
         {/* Auto-classement IA — taxonomie cible (optionnelle).
@@ -886,7 +887,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
               value={importTaxoId}
               onChange={(e) => setImportTaxoId(e.target.value)}
               className="flex-1 bg-black/30 border border-white/10 rounded-md px-2 py-1 text-[11px] text-white/75 outline-none focus:border-indigo-500/50 transition-colors cursor-pointer"
-              title="Classer automatiquement les produits importés dans cette taxonomie"
+              title={t('sc.taxonomy.auto')}
             >
               <option value="" className="bg-surface">— Pas d'auto-classement</option>
               {taxonomies.map((t) => {
@@ -1158,7 +1159,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
                   className="accent-indigo-500 w-3.5 h-3.5"
                 />
                 <span className="text-[12px] text-white/60">
-                  Comparer avec la data du <strong className="text-indigo-300">fabricant</strong> après l'import
+                  {t('sc.compareManufacturerFull')}
                 </span>
               </label>
             )}

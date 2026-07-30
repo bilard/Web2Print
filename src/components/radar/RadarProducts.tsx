@@ -3,6 +3,7 @@ import { Search, ExternalLink } from 'lucide-react'
 import type { ProductRow } from '@/features/priceWatch/catalog/report'
 import { matchesQuery } from '@/features/priceWatch/dashboard/analytics'
 import { fmtEur, fmtGapPct } from '@/features/priceWatch/radar/radarFormat'
+import { t } from '@/lib/i18n'
 
 const CAP = 40
 
@@ -63,7 +64,7 @@ export function RadarProducts({ products }: { products: ProductRow[] }) {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Rechercher un produit, une référence…"
+          placeholder={t('rd.searchProduct')}
           className="w-full bg-transparent text-[14px] outline-none placeholder:text-[var(--radar-text-3)]"
           style={{ color: 'var(--radar-text)' }}
         />

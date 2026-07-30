@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Loader2, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { improveSearchPrompt } from './searchPlanner'
+import { t } from '@/lib/i18n'
 
 interface Props {
   prompt: string
@@ -38,7 +39,7 @@ export function SearchPromptInput({ prompt, onPromptChange, onSubmit, disabled }
           onClick={handleImprove}
           disabled={!prompt.trim() || improving || disabled}
           className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-violet-500/25 bg-violet-500/10 text-violet-300/80 hover:text-violet-200 hover:bg-violet-500/15 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          title="Réécrire le prompt avec le LLM actif : sujet précis, sites explicites, champs attendus"
+          title={t('sc.prompt.rewrite')}
         >
           {improving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
           {improving ? 'Amélioration…' : 'Améliorer le prompt'}
@@ -48,7 +49,7 @@ export function SearchPromptInput({ prompt, onPromptChange, onSubmit, disabled }
         value={prompt}
         onChange={(e) => onPromptChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) onSubmit() }}
-        placeholder={'Ex : « tondeuses Honda électriques — prix et promos chez LeroyMerlin, Castorama et Jardiland »,\n« perceuses à percussion 18V Makita site officiel »…'}
+        placeholder={t('sc.search.promptPlaceholder')}
         rows={3}
         disabled={improving}
         className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:border-emerald-500/50 focus:outline-none resize-none disabled:opacity-60"
