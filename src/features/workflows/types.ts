@@ -27,7 +27,9 @@ export interface ConfigField {
   /** Libellé traduit — préféré à `label` quand présent. */
   labelKey?: TranslationKey
   required?: boolean
-  options?: { value: string; label: string }[]
+  /** `labelKey` est préféré à `label` — même règle que le champ lui-même. `label`
+   *  reste utile quand l'option porte une valeur issue des DONNÉES (nom de colonne). */
+  options?: { value: string; label?: string; labelKey?: TranslationKey }[]
   default?: unknown
   help?: string
   helpKey?: TranslationKey

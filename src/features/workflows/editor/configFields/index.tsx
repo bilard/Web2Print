@@ -37,7 +37,7 @@ export function ConfigFieldRenderer({ field, value, onChange }: FieldProps) {
         <select className={inputCls} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)}>
           {(field.options ?? []).map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {o.labelKey ? t(o.labelKey) : o.label}
             </option>
           ))}
         </select>
