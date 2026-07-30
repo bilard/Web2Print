@@ -4,6 +4,7 @@
 // (cover/contain déterministe). Voir relayoutToFormats.ts pour l'orchestration.
 import { z } from 'zod'
 import { projectObjectsToFormat, type DeclineTarget } from './declineLayout'
+import { translate } from '@/lib/i18n'
 
 /** Objet Fabric sérialisé, sous-ensemble des champs qu'on lit/transforme. */
 export interface DesignObject {
@@ -193,12 +194,14 @@ export function buildRelayoutPrompt(
   srcW: number,
   srcH: number,
 ): string {
-  const fmts = targets.map((t) => ({
-    id: t.id,
-    label: t.label,
-    w: t.w,
-    h: t.h,
-    ratio: round2(t.w / t.h),
+  // ⚠️ Le libellé part dans un PROMPT : il reste FRANÇAIS quelle que soit la
+  // langue de l'UI (même règle que `buildRegistryContext`).
+  const fmts = targets.map((fmt) => ({
+    id: fmt.id,
+    label: translate('fr', fmt.labelKey),
+    w: fmt.w,
+    h: fmt.h,
+    ratio: round2(fmt.w / fmt.h),
   }))
   return `${DA_PROMPT}
 

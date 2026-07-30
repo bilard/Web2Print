@@ -156,11 +156,11 @@ export function DataSourcePicker() {
           className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 text-sm text-white/70 transition-colors"
         >
           <Database className="w-4 h-4 text-indigo-400" />
-          Choisir un dataset existant
+          {t('mg.pickDataset')}
         </button>
         <label className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 text-sm text-white/70 transition-colors cursor-pointer">
           <Upload className="w-4 h-4 text-indigo-400" />
-          {importing ? 'Import en cours...' : 'Importer un fichier Excel/CSV'}
+          {t(importing ? 'mg.importing' : 'mg.importFile')}
           <input
             type="file"
             accept=".xlsx,.xls,.csv"
@@ -174,14 +174,14 @@ export function DataSourcePicker() {
           className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 text-sm text-white/70 transition-colors"
         >
           <Table2 className="w-4 h-4 text-green-400" />
-          Importer depuis Google Sheets
+          {t('mg.importSheets')}
         </button>
         <button
           onClick={() => setMode('pim')}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 text-sm text-white/70 transition-colors"
         >
           <Package className="w-4 h-4 text-emerald-400" />
-          Produits PIM (re-skin)
+          {t('mg.pimProducts')}
         </button>
       </div>
     )

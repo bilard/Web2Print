@@ -23,7 +23,7 @@ import { useGDriveStore } from '@/stores/gdrive.store'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { useGoogleDrive } from './useGoogleDrive'
 import type { DriveSection, GDriveFile } from './types'
-import { t } from '@/lib/i18n'
+import { type TranslationKey, t } from '@/lib/i18n'
 
 interface PickedFile {
   id: string
@@ -48,11 +48,12 @@ interface Props {
   title?: string
 }
 
-const SECTIONS: { id: DriveSection; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'my-drive', label: 'Mon Drive', icon: Home },
-  { id: 'shared', label: t('gd.tab.sharedShort'), icon: Users },
-  { id: 'recent', label: t('gd.tab.recent'), icon: Clock },
-  { id: 'starred', label: 'Suivis', icon: Star },
+// ⚠️ CLÉS, pas `t()` : ce tableau est évalué au CHARGEMENT du module.
+const SECTIONS: { id: DriveSection; labelKey: TranslationKey; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'my-drive', labelKey: 'gd.tab.myDrive', icon: Home },
+  { id: 'shared', labelKey: 'gd.tab.sharedShort', icon: Users },
+  { id: 'recent', labelKey: 'gd.tab.recent', icon: Clock },
+  { id: 'starred', labelKey: 'gd.tab.starred', icon: Star },
 ]
 
 const SHEETS_MIME = 'application/vnd.google-apps.spreadsheet'
@@ -226,7 +227,8 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
     }
   }
 
-  const sectionLabel = SECTIONS.find((s) => s.id === section)?.label ?? ''
+  const sec = SECTIONS.find((s) => s.id === section)
+  const sectionLabel = sec ? t(sec.labelKey) : ''
 
   return createPortal(
     <div
@@ -253,7 +255,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
           {accessToken ? (
             <>
               <nav className="flex flex-col gap-0.5">
-                {SECTIONS.map(({ id, label, icon: Icon }) => {
+                {SECTIONS.map(({ id, labelKey, icon: Icon }) => {
                   const isActive = section === id && folderStack.length === 0
                   return (
                     <button
@@ -266,7 +268,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{label}</span>
+                      <span className="truncate">{t(labelKey)}</span>
                     </button>
                   )
                 })}

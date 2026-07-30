@@ -7,15 +7,18 @@ import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { ensurePageBgRect } from '@/features/editor/useCanvas'
 import { canvasPxToMm, mmToCanvasPx } from '@/features/print/dimensions'
 import { PropertySection } from '@/components/shared/panel'
-import { useTranslation } from '@/lib/i18n'
+import { type TranslationKey, useTranslation } from '@/lib/i18n'
 
 // Le canvas Fabric stocke des points (1 px canvas = 1 pt = 1/72 inch).
 // Les formats print sont exprimés en pt pour rester cohérents avec l'import
 // IDML, l'export PNG (multiplier = dpi/72) et la conversion mm via CANVAS_DPI.
-const FORMAT_PRESETS = [
+// ⚠️ `label` est aussi la CLÉ d'égalité du preset actif : `labelKey` porte le
+// texte, `label` reste l'identifiant. Les noms de formats (A4, 16:9, Instagram
+// Post) sont des NOMS PROPRES — seul « Paysage » se traduit.
+const FORMAT_PRESETS: { label: string; labelKey?: TranslationKey; w: number; h: number }[] = [
   // Print (pt)
   { label: 'A4 Portrait', w: 595, h: 842 },
-  { label: 'A4 Paysage', w: 842, h: 595 },
+  { label: 'A4 Paysage', labelKey: 'page.format.a4Landscape', w: 842, h: 595 },
   { label: 'A3 Portrait', w: 842, h: 1191 },
   { label: 'A5 Portrait', w: 420, h: 595 },
   // Numérique (px = pt)
@@ -129,7 +132,7 @@ export function PagePanel() {
       <PropertySection
         title={t('page.dimensions')}
         tourId="page-dims"
-        help="Taille de la page en millimètres. Saisissez largeur/hauteur, ou choisissez un format prédéfini ci-dessous (A4, Instagram…). Modifiable à tout moment."
+        help={t('page.dimensions.help')}
       >
         <div className="flex items-center gap-2">
           <div className="flex-1 flex flex-col gap-1">
@@ -159,7 +162,7 @@ export function PagePanel() {
               className={`px-2 py-1 text-[10px] rounded border transition-colors ${originActive
                 ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
                 : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20'}`}>
-              Origine
+              {t('page.format.origin')}
             </button>
           )}
           {FORMAT_PRESETS.map((p) => {
@@ -169,7 +172,7 @@ export function PagePanel() {
                 className={`px-2 py-1 text-[10px] rounded border transition-colors ${active
                   ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
                   : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20'}`}>
-                {p.label}
+                {p.labelKey ? t(p.labelKey) : p.label}
               </button>
             )
           })}
@@ -180,7 +183,7 @@ export function PagePanel() {
       <PropertySection
         title={t('page.background')}
         tourId="page-bg"
-        help="Fond de la page : couleur unie, dégradé, ou image. L'image de fond est verrouillée derrière les objets ; le dégradé est paramétrable (angle, étapes)."
+        help={t('page.background.help')}
       >
         <div className="flex gap-1">
           {([

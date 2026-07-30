@@ -61,12 +61,14 @@ describe('constantes de module', () => {
     for (const file of walk('src')) {
       if (file.includes(join('lib', 'i18n'))) continue // le catalogue lui-même
       const src = readFileSync(file, 'utf8')
-      for (const m of src.matchAll(/^(?:export )?const [A-Za-z_]\w*[^=\n]*=\s*\{/gm)) {
+      for (const m of src.matchAll(/^(?:export )?const [A-Za-z_]\w*[^=\n]*=\s*[{[]/gm)) {
+        const open = m[0].trim().slice(-1)
+        const close = open === '{' ? '}' : ']'
         let depth = 1
         let i = m.index + m[0].length
         for (; i < src.length && depth > 0; i++) {
-          if (src[i] === '{') depth++
-          else if (src[i] === '}') depth--
+          if (src[i] === open) depth++
+          else if (src[i] === close) depth--
         }
         const block = src.slice(m.index + m[0].length, i)
         // Un objet qui contient du code DIFFÉRÉ (fonction, flèche) est un

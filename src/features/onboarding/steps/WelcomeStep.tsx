@@ -1,11 +1,12 @@
 import { Sparkles, KeyRound, Cpu, Plug, Compass } from 'lucide-react'
-import { t } from '@/lib/i18n'
+import { type TranslationKey, t } from '@/lib/i18n'
 
-const ITEMS = [
-  { icon: KeyRound, label: t('ob.aiKeys'), desc: t('ob.aiKeys.desc') },
-  { icon: Cpu, label: t('ob.cascade'), desc: t('ob.cascade.desc') },
-  { icon: Plug, label: 'Connecteurs', desc: 'Google Drive, Telegram, Bright Data' },
-  { icon: Compass, label: t('ob.tour'), desc: t('ob.tour.desc') },
+// ⚠️ CLÉS, pas `t()` : ce tableau est évalué au CHARGEMENT du module.
+const ITEMS: { icon: typeof KeyRound; labelKey: TranslationKey; descKey: TranslationKey }[] = [
+  { icon: KeyRound, labelKey: 'ob.aiKeys', descKey: 'ob.aiKeys.desc' },
+  { icon: Cpu, labelKey: 'ob.cascade', descKey: 'ob.cascade.desc' },
+  { icon: Plug, labelKey: 'ob.connectors', descKey: 'ob.connectors.desc' },
+  { icon: Compass, labelKey: 'ob.tour', descKey: 'ob.tour.desc' },
 ]
 
 export function WelcomeStep() {
@@ -21,12 +22,12 @@ export function WelcomeStep() {
         </div>
       </div>
       <div className="flex flex-col gap-2">
-        {ITEMS.map(({ icon: Icon, label, desc }) => (
-          <div key={label} className="flex items-center gap-3 bg-white/[0.03] rounded-xl p-3">
+        {ITEMS.map(({ icon: Icon, labelKey, descKey }) => (
+          <div key={labelKey} className="flex items-center gap-3 bg-white/[0.03] rounded-xl p-3">
             <Icon className="w-4 h-4 text-indigo-300 shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs font-medium text-white/80">{label}</p>
-              <p className="text-[11px] text-white/40">{desc}</p>
+              <p className="text-xs font-medium text-white/80">{t(labelKey)}</p>
+              <p className="text-[11px] text-white/40">{t(descKey)}</p>
             </div>
           </div>
         ))}

@@ -24,17 +24,18 @@ import { GalleryGrid } from './GalleryGrid'
 import { UploadZone } from './UploadZone'
 import { GenerateTab } from './GenerateTab'
 import type { GalleryImage, NanoBanaTab } from './types'
-import { t } from '@/lib/i18n'
+import { type TranslationKey, t } from '@/lib/i18n'
 
-const TABS: { id: NanoBanaTab; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
-  { id: 'gallery', icon: ImagePlus, label: 'Galerie' },
-  { id: 'upload', icon: Upload, label: 'Upload' },
-  { id: 'generate', icon: Sparkles, label: 'IA' },
-  { id: 'stock', icon: ImageIcon, label: 'Stock' },
-  { id: 'my-images', icon: FolderOpen, label: 'Mes images' },
-  { id: 'favorites', icon: Heart, label: 'Favoris' },
-  { id: 'collections', icon: FolderHeart, label: 'Collections' },
-  { id: 'recent', icon: Clock, label: t('nb.recent') },
+// ⚠️ CLÉS, pas `t()` : ce tableau est évalué au CHARGEMENT du module.
+const TABS: { id: NanoBanaTab; icon: React.ComponentType<{ className?: string }>; labelKey: TranslationKey }[] = [
+  { id: 'gallery', icon: ImagePlus, labelKey: 'nb.tab.gallery' },
+  { id: 'upload', icon: Upload, labelKey: 'nb.tab.upload' },
+  { id: 'generate', icon: Sparkles, labelKey: 'nb.tab.ai' },
+  { id: 'stock', icon: ImageIcon, labelKey: 'nb.tab.stock' },
+  { id: 'my-images', icon: FolderOpen, labelKey: 'nb.tab.myImages' },
+  { id: 'favorites', icon: Heart, labelKey: 'nb.tab.favorites' },
+  { id: 'collections', icon: FolderHeart, labelKey: 'nb.tab.collections' },
+  { id: 'recent', icon: Clock, labelKey: 'nb.recent' },
 ]
 
 /** Refresh the current page thumbnail after canvas changes */
@@ -181,11 +182,11 @@ export function NanoBanaPanel() {
     <div className="p-3 flex flex-col gap-3">
       {/* Tab bar — scroll horizontal car 8 onglets */}
       <div className="flex gap-0.5 bg-white/5 rounded-lg p-0.5 overflow-x-auto scrollbar-none">
-        {TABS.map(({ id, icon: Icon, label }) => (
+        {TABS.map(({ id, icon: Icon, labelKey }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            title={label}
+            title={t(labelKey)}
             className={`shrink-0 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-medium transition-all ${
               tab === id
                 ? 'bg-indigo-500/20 text-indigo-400'
@@ -193,7 +194,7 @@ export function NanoBanaPanel() {
             }`}
           >
             <Icon className="w-3.5 h-3.5" />
-            <span className="whitespace-nowrap">{label}</span>
+            <span className="whitespace-nowrap">{t(labelKey)}</span>
           </button>
         ))}
       </div>

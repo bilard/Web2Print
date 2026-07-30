@@ -553,7 +553,7 @@ function AssignmentModal({
               onClick={() => onAssign(f.field, multiple || f.multiple, selectorIdx)}
               className="px-2 py-1.5 rounded bg-indigo-500/10 text-indigo-200 hover:bg-indigo-500/20 border border-indigo-400/20 text-[11px]"
             >
-              {f.label}
+              {t(f.labelKey)}
             </button>
           ))}
         </div>

@@ -281,7 +281,7 @@ export function PrintPanel() {
           label={t('print.bleedMarks')}
           enabled={showPrintMarks}
           onToggle={setShowPrintMarks}
-          subLabel="(rectangle de fond perdu)"
+          subLabel={t('print.bleedBox')}
         >
           <SliderControl
             label={t('print.stroke')}
@@ -298,7 +298,7 @@ export function PrintPanel() {
           label={t('print.regMarks')}
           enabled={showRegistrationMarks}
           onToggle={setShowRegistrationMarks}
-          subLabel="(hirondelles)"
+          subLabel={t('print.regMarksSub')}
           help={t('print.regMarks.help')}
         >
           <SliderControl

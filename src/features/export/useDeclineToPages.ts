@@ -11,6 +11,7 @@ import { relayoutToFormats } from './relayoutToFormats'
 import { projectObjectsToFormat, type DeclineTarget } from './declineLayout'
 import { recordAudit } from '@/lib/auditLog'
 import type { DesignObject } from './relayoutMultiFormat'
+import { t } from '@/lib/i18n'
 
 interface SerializedCanvas {
   objects?: Array<DesignObject & { data?: { isGrid?: boolean; isPrintMark?: boolean; role?: string } }>
@@ -95,7 +96,7 @@ export function useDeclineToPages() {
         const next = usePagesStore.getState().pages
         const newPage = next[next.length - 1]
         if (newPage) {
-          updatePage(newPage.id, { canvasJSON: json, label: target.label })
+          updatePage(newPage.id, { canvasJSON: json, label: t(target.labelKey) })
           created++
         }
       })

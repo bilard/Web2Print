@@ -142,18 +142,16 @@ export function Animation3DPanel() {
   if (!selectedId && config.preset !== 'particles') {
     return (
       <div className="px-3 py-4 text-xs text-white/45 space-y-3">
-        <p>
-          Anime <b className="text-white/70">{t('anim.singleObject')}</b> sélectionné, en direct sur le canvas
-          (effets de mouvement, persistés sur l'objet). Pour une vidéo de la
-          <b className="text-white/70"> {t('anim.wholePage')}</b> pilotée par IA, utilise le bouton
-          <b className="text-white/70">{t('cv.aiVideoTop')}</b> en haut.
-        </p>
+        {/* ⚠️ La phrase était MI-FRANÇAISE MI-ANGLAISE : seuls les fragments en
+            gras passaient par le catalogue, la syntaxe autour restait française.
+            Une phrase se traduit ENTIÈRE ; l'emphase est perdue, c'est le prix. */}
+        <p>{t('anim.intro')}</p>
         <p>{t('anim.selectObject')}</p>
         <button
           onClick={() => setConfig({ ...config, preset: 'particles' })}
           className="text-[11px] text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
         >
-          Ou : tester les particules Three.js sans objet →
+          {t('anim.particlesLink')}
         </button>
       </div>
     )
@@ -187,8 +185,8 @@ export function Animation3DPanel() {
               }`}
             >
               <div className="text-base leading-none">{p.emoji}</div>
-              <div className="mt-1 text-[11px] font-semibold leading-tight">{p.label}</div>
-              <div className="mt-0.5 text-[10px] text-white/45 leading-tight">{p.description}</div>
+              <div className="mt-1 text-[11px] font-semibold leading-tight">{t(p.labelKey)}</div>
+              <div className="mt-0.5 text-[10px] text-white/45 leading-tight">{t(p.descriptionKey)}</div>
             </button>
           )
         })}
@@ -426,7 +424,12 @@ export function Animation3DPanel() {
 
       {persistedAnimation && (
         <div className="text-[10.5px] text-emerald-300/80 leading-tight border-t border-emerald-500/15 pt-2">
-          ✓ Animation <b>{PRESETS.find((p) => p.id === persistedAnimation.preset)?.label}</b> persistée sur l'objet.
+          {t('anim.persisted', {
+            name: (() => {
+              const meta = PRESETS.find((p) => p.id === persistedAnimation.preset)
+              return meta ? t(meta.labelKey) : persistedAnimation.preset
+            })(),
+          })}
         </div>
       )}
 

@@ -14,7 +14,7 @@ import { globalIdmlSource } from '@/features/idml/idmlSource'
 import { withProgress } from '@/stores/progress.store'
 import { notify } from '@/lib/notify'
 import type { PngDpi } from './useExportPng'
-import { t } from '@/lib/i18n'
+import { type TranslationKey, t } from '@/lib/i18n'
 
 type Format = 'png' | 'pdf' | 'pptx' | 'html' | 'svg' | 'idml' | 'pack' | 'decline'
 type ExportStatus = 'idle' | 'exporting' | 'done' | 'error'
@@ -23,15 +23,16 @@ interface ExportModalProps {
   onClose: () => void
 }
 
-const ALL_FORMATS: { id: Format; label: string; icon: React.ComponentType<{ className?: string }>; desc: string; color: string; idmlOnly?: boolean }[] = [
-  { id: 'png',  label: 'PNG',       icon: ImageIcon,    desc: t('ex.png.desc'),  color: 'text-emerald-400' },
-  { id: 'pdf',  label: 'PDF',       icon: FileText,     desc: 'Document imprimable',     color: 'text-red-400'     },
-  { id: 'pptx', label: 'PowerPoint',icon: Presentation, desc: t('ex.pptx.desc'),  color: 'text-orange-400'  },
-  { id: 'html', label: 'HTML',      icon: Code2,        desc: 'Dossier web complet',     color: 'text-sky-400'     },
-  { id: 'svg',  label: 'SVG',       icon: Shapes,       desc: t('ex.svg.desc'),      color: 'text-purple-400'  },
-  { id: 'idml', label: 'IDML',      icon: Package,      desc: t('ex.idml.desc'),        color: 'text-violet-400', idmlOnly: true },
-  { id: 'pack', label: 'Pack social', icon: Share2,      desc: t('ex.pack.desc'), color: 'text-pink-400' },
-  { id: 'decline', label: t('ex.decline.label'), icon: LayoutGrid, desc: t('ex.decline.desc'), color: 'text-cyan-400' },
+// ⚠️ CLÉS, pas `t()` : ce tableau est évalué au CHARGEMENT du module.
+const ALL_FORMATS: { id: Format; label: string; labelKey?: TranslationKey; icon: React.ComponentType<{ className?: string }>; descKey: TranslationKey; color: string; idmlOnly?: boolean }[] = [
+  { id: 'png',  label: 'PNG',        icon: ImageIcon,    descKey: 'ex.png.desc',       color: 'text-emerald-400' },
+  { id: 'pdf',  label: 'PDF',        icon: FileText,     descKey: 'ex.pdf.descShort',  color: 'text-red-400'     },
+  { id: 'pptx', label: 'PowerPoint', icon: Presentation, descKey: 'ex.pptx.desc',      color: 'text-orange-400'  },
+  { id: 'html', label: 'HTML',       icon: Code2,        descKey: 'ex.html.descShort', color: 'text-sky-400'     },
+  { id: 'svg',  label: 'SVG',        icon: Shapes,       descKey: 'ex.svg.desc',       color: 'text-purple-400'  },
+  { id: 'idml', label: 'IDML',       icon: Package,      descKey: 'ex.idml.desc',      color: 'text-violet-400', idmlOnly: true },
+  { id: 'pack', label: 'Pack social', icon: Share2,      descKey: 'ex.pack.desc',      color: 'text-pink-400' },
+  { id: 'decline', label: '', labelKey: 'ex.decline.label', icon: LayoutGrid, descKey: 'ex.decline.desc', color: 'text-cyan-400' },
 ]
 
 export function ExportModal({ onClose }: ExportModalProps) {
@@ -41,7 +42,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
   const [format, setFormat] = useState<Format>('png')
   const [dpi, setDpi] = useState<PngDpi>(150)
   const [pdfWithMarks, setPdfWithMarks] = useState(false)
-  const [declineTargets, setDeclineTargets] = useState<string[]>(DECLINE_TARGETS.map((t) => t.id))
+  const [declineTargets, setDeclineTargets] = useState<string[]>(DECLINE_TARGETS.map((tgt) => tgt.id))
   const [status, setStatus] = useState<ExportStatus>('idle')
   const [error, setError] = useState<string | null>(null)
 
@@ -118,7 +119,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <div className="flex items-center gap-2">
             <Download className="w-4 h-4 text-indigo-400" />
-            <h2 className="font-semibold text-white text-sm">Exporter</h2>
+            <h2 className="font-semibold text-white text-sm">{t('ex.export')}</h2>
           </div>
           <CloseButton onClick={onClose} />
         </div>
@@ -126,9 +127,9 @@ export function ExportModal({ onClose }: ExportModalProps) {
         <div className="p-5 flex flex-col gap-5">
           {/* Format selector */}
           <div>
-            <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Format</p>
+            <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">{t('ex.formatTitle')}</p>
             <div className={`grid ${formats.length >= 6 ? 'grid-cols-3' : 'grid-cols-5'} gap-2`}>
-              {formats.map(({ id, label, icon: Icon, desc, color }) => (
+              {formats.map(({ id, label, labelKey, icon: Icon, descKey, color }) => (
                 <button
                   key={id}
                   onClick={() => setFormat(id)}
@@ -139,8 +140,8 @@ export function ExportModal({ onClose }: ExportModalProps) {
                   }`}
                 >
                   <Icon className={`w-5 h-5 ${format === id ? 'text-indigo-400' : color}`} />
-                  <span className={`text-xs font-medium ${format === id ? 'text-white' : 'text-white/60'}`}>{label}</span>
-                  <span className="text-[10px] text-white/30 text-center leading-tight">{desc}</span>
+                  <span className={`text-xs font-medium ${format === id ? 'text-white' : 'text-white/60'}`}>{labelKey ? t(labelKey) : label}</span>
+                  <span className="text-[10px] text-white/30 text-center leading-tight">{t(descKey)}</span>
                 </button>
               ))}
             </div>
@@ -162,9 +163,9 @@ export function ExportModal({ onClose }: ExportModalProps) {
                     }`}
                   >
                     {d} dpi
-                    {d === 72 && <span className="block text-[10px] text-white/30">Web</span>}
-                    {d === 150 && <span className="block text-[10px] text-white/30">Standard</span>}
-                    {d === 300 && <span className="block text-[10px] text-white/30">Impression</span>}
+                    {d === 72 && <span className="block text-[10px] text-white/30">{t('ex.dpi.web')}</span>}
+                    {d === 150 && <span className="block text-[10px] text-white/30">{t('ex.dpi.standard')}</span>}
+                    {d === 300 && <span className="block text-[10px] text-white/30">{t('ex.dpi.print')}</span>}
                   </button>
                 ))}
               </div>
@@ -248,11 +249,11 @@ export function ExportModal({ onClose }: ExportModalProps) {
             <div className="space-y-2">
               <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">{t('ex.formats')}</p>
               <div className="grid grid-cols-2 gap-2">
-                {DECLINE_TARGETS.map((t) => {
-                  const on = declineTargets.includes(t.id)
+                {DECLINE_TARGETS.map((tgt) => {
+                  const on = declineTargets.includes(tgt.id)
                   return (
                     <label
-                      key={t.id}
+                      key={tgt.id}
                       className={`flex items-center gap-2 rounded-xl border p-3 cursor-pointer transition-colors ${
                         on ? 'border-cyan-500/50 bg-cyan-500/10' : 'border-white/10 bg-white/3 hover:border-white/20'
                       }`}
@@ -262,14 +263,14 @@ export function ExportModal({ onClose }: ExportModalProps) {
                         checked={on}
                         onChange={(e) =>
                           setDeclineTargets((prev) =>
-                            e.target.checked ? [...prev, t.id] : prev.filter((id) => id !== t.id),
+                            e.target.checked ? [...prev, tgt.id] : prev.filter((id) => id !== tgt.id),
                           )
                         }
                         className="accent-cyan-500"
                       />
                       <div className="flex-1">
-                        <p className="text-xs font-medium text-white/80">{t.label}</p>
-                        <p className="text-[10px] text-white/30">{t.w}×{t.h}</p>
+                        <p className="text-xs font-medium text-white/80">{t(tgt.labelKey)}</p>
+                        <p className="text-[10px] text-white/30">{tgt.w}×{tgt.h}</p>
                       </div>
                     </label>
                   )
@@ -292,7 +293,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
               onClick={onClose}
               className="flex-1 py-2.5 text-sm text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
             >
-              Annuler
+              {t('ex.cancel')}
             </button>
             <button
               onClick={handleExport}
@@ -303,8 +304,8 @@ export function ExportModal({ onClose }: ExportModalProps) {
               {status === 'done' && <CheckCircle className="w-4 h-4" />}
               {status === 'idle' || status === 'error' ? (format === 'decline' ? <LayoutGrid className="w-4 h-4" /> : <Download className="w-4 h-4" />) : null}
               {format === 'decline'
-                ? (status === 'exporting' ? 'Création...' : status === 'done' ? 'Créé !' : 'Créer les pages')
-                : (status === 'exporting' ? 'Export...' : status === 'done' ? 'Téléchargé !' : 'Exporter')}
+                ? t(status === 'exporting' ? 'ex.creating' : status === 'done' ? 'ex.created' : 'ex.createPages')
+                : t(status === 'exporting' ? 'ex.exporting' : status === 'done' ? 'ex.downloaded' : 'ex.export')}
             </button>
           </div>
         </div>

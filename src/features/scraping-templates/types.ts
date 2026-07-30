@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { t } from '@/lib/i18n'
 
 /**
  * Schéma d'un template de scraping par fournisseur.
@@ -140,14 +139,14 @@ export interface TemplateApplyResult {
 
 /** Champs cibles standards suggérés lors de la création d'un template. */
 export const STANDARD_FIELDS = [
-  { field: 'title', label: 'Titre du produit', multiple: false },
-  { field: 'description', label: 'Description', multiple: false },
-  { field: 'brand', label: 'Marque', multiple: false },
-  { field: 'reference', label: t('st.field.reference'), multiple: false },
-  { field: 'price', label: 'Prix', multiple: false },
-  { field: 'ean', label: 'Code EAN / GTIN', multiple: false },
-  { field: 'images', label: 'Images produit', multiple: true },
-  { field: 'documents', label: 'Documents PDF / manuels', multiple: true },
-  { field: 'advantages', label: 'Points forts / avantages (liste)', multiple: true },
-  { field: 'variants', label: t('st.field.variants'), multiple: true },
+  { field: 'title', labelKey: 'st.field.title', multiple: false },
+  { field: 'description', labelKey: 'st.field.description', multiple: false },
+  { field: 'brand', labelKey: 'st.field.brand', multiple: false },
+  { field: 'reference', labelKey: 'st.field.reference', multiple: false },
+  { field: 'price', labelKey: 'st.field.price', multiple: false },
+  { field: 'ean', labelKey: 'st.field.ean', multiple: false },
+  { field: 'images', labelKey: 'st.field.images', multiple: true },
+  { field: 'documents', labelKey: 'st.field.documents', multiple: true },
+  { field: 'advantages', labelKey: 'st.field.advantages', multiple: true },
+  { field: 'variants', labelKey: 'st.field.variants', multiple: true },
 ] as const

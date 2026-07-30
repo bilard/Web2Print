@@ -1,4 +1,4 @@
-import { t } from '@/lib/i18n'
+import type { TranslationKey } from '@/lib/i18n'
 export type Animation3DPreset =
   | 'rotate3D'
   | 'pulseScale'
@@ -72,23 +72,24 @@ export const DEFAULT_ANIMATION_CONFIG: Animation3DConfig = {
 
 export interface PresetMeta {
   id: Animation3DPreset
-  label: string
-  description: string
+  labelKey: TranslationKey
+  descriptionKey: TranslationKey
   emoji: string
 }
 
+// ⚠️ CLÉS, pas `t()` : tableau évalué au CHARGEMENT du module.
 export const PRESETS: PresetMeta[] = [
-  { id: 'rotate3D',      label: 'Rotation 3D',      description: 'Tourne sur axe Z + skew perspective',    emoji: '🔄' },
-  { id: 'flip3D',        label: 'Vraie 3D RotateY', description: 'Capture PNG + CSS3D transform rotateY',  emoji: '🎴' },
-  { id: 'relief3D',      label: 'Relief 3D + Light', description: t('a3.relief3D'),  emoji: '🧊' },
-  { id: 'pulseScale',    label: 'Pulse Scale',      description: 'Respiration du bloc en zoom in/out',     emoji: '💓' },
-  { id: 'hueCycle',      label: 'Couleurs cycle',   description: 'Traverse rouge→or→cyan→magenta',         emoji: '🌈' },
-  { id: 'slideEntrance', label: 'Slide L/R',        description: t('a3.slideEntrance'),    emoji: '➡️' },
-  { id: 'slideVertical', label: 'Slide H/B',        description: t('a3.slideVertical'),         emoji: '⬇️' },
-  { id: 'motionPath',    label: 'Motion path',      description: t('a3.motionPath'),       emoji: '➰' },
-  { id: 'vibrate',       label: 'Vibration',        description: t('a3.vibrate'),       emoji: '📳' },
-  { id: 'bounce',        label: 'Bounce',           description: t('a3.bounce'),     emoji: '🏀' },
-  { id: 'wave',          label: 'Wave',             description: t('a3.wave'),      emoji: '🌊' },
-  { id: 'glowAccent',    label: 'Glow accent',      description: 'Halo lumineux pulsant retail',            emoji: '✨' },
-  { id: 'particles',     label: t('a3.particles.label'), description: t('a3.particles'),         emoji: '⭐' },
+  { id: 'rotate3D',      labelKey: 'a3.rotate3D.label',      descriptionKey: 'a3.rotate3D',      emoji: '🔄' },
+  { id: 'flip3D',        labelKey: 'a3.flip3D.label',        descriptionKey: 'a3.flip3D',        emoji: '🎴' },
+  { id: 'relief3D',      labelKey: 'a3.relief3D.label',      descriptionKey: 'a3.relief3D',      emoji: '🧊' },
+  { id: 'pulseScale',    labelKey: 'a3.pulseScale.label',    descriptionKey: 'a3.pulseScale',    emoji: '💓' },
+  { id: 'hueCycle',      labelKey: 'a3.hueCycle.label',      descriptionKey: 'a3.hueCycle',      emoji: '🌈' },
+  { id: 'slideEntrance', labelKey: 'a3.slideEntrance.label', descriptionKey: 'a3.slideEntrance', emoji: '➡️' },
+  { id: 'slideVertical', labelKey: 'a3.slideVertical.label', descriptionKey: 'a3.slideVertical', emoji: '⬇️' },
+  { id: 'motionPath',    labelKey: 'a3.motionPath.label',    descriptionKey: 'a3.motionPath',    emoji: '➰' },
+  { id: 'vibrate',       labelKey: 'a3.vibrate.label',       descriptionKey: 'a3.vibrate',       emoji: '📳' },
+  { id: 'bounce',        labelKey: 'a3.bounce.label',        descriptionKey: 'a3.bounce',        emoji: '🏀' },
+  { id: 'wave',          labelKey: 'a3.wave.label',          descriptionKey: 'a3.wave',          emoji: '🌊' },
+  { id: 'glowAccent',    labelKey: 'a3.glowAccent.label',    descriptionKey: 'a3.glowAccent',    emoji: '✨' },
+  { id: 'particles',     labelKey: 'a3.particles.label',     descriptionKey: 'a3.particles',     emoji: '⭐' },
 ]

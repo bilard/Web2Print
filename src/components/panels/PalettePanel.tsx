@@ -110,7 +110,7 @@ function AddColorForm({ onAdd }: { onAdd: (color: string, name: string) => void 
     return (
       <button onClick={() => setOpen(true)}
         className="flex items-center gap-1.5 w-full py-1.5 px-2 text-[10px] text-white/40 hover:text-white/60 bg-white/5 hover:bg-white/10 border border-dashed border-white/10 rounded transition-colors">
-        <Plus className="w-3 h-3" /> Ajouter une couleur
+        <Plus className="w-3 h-3" /> {t('pal.addColor')}
       </button>
     )
   }
@@ -147,7 +147,7 @@ function AddGradientForm({ onAdd }: { onAdd: (g: GradientConfig, name: string) =
     return (
       <button onClick={() => setOpen(true)}
         className="flex items-center gap-1.5 w-full py-1.5 px-2 text-[10px] text-white/40 hover:text-white/60 bg-white/5 hover:bg-white/10 border border-dashed border-white/10 rounded transition-colors">
-        <Plus className="w-3 h-3" /> Ajouter un dégradé
+        <Plus className="w-3 h-3" /> {t('pal.addGradient')}
       </button>
     )
   }
@@ -211,7 +211,7 @@ export function PalettePanel() {
       <PropertySection
         title={t('palette.projectColours')}
         tourId="palette-colors"
-        help="Vos couleurs de marque enregistrées, réutilisables en un clic sur les objets. Ajoutez-en via le champ ci-dessous ; elles sont sauvegardées avec le projet."
+        help={t('pal.colors.help')}
       >
         <div className="flex flex-col gap-1">
           {colors.length === 0 && (
@@ -230,7 +230,7 @@ export function PalettePanel() {
       <PropertySection
         title={t('palette.projectGradients')}
         tourId="palette-gradients"
-        help="Vos dégradés enregistrés (linéaires/radiaux), applicables aux objets et aux fonds. Créez-en de nouveaux via le bouton ci-dessous."
+        help={t('pal.gradients.help')}
       >
         <div className="flex flex-col gap-1">
           {gradients.length === 0 && (

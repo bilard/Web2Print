@@ -8,14 +8,15 @@ import { generatePromoTemplate } from './useGeneratePromoTemplate'
 import { listPromoTemplates, savePromoTemplate, deletePromoTemplate, type UserPromoTemplate } from './promoTemplatesApi'
 import { PromoLayoutPicker } from './PromoLayoutPicker'
 import type { PromoTemplateConfig } from './promoCardTypes'
-import { t } from '@/lib/i18n'
+import { type TranslationKey, t } from '@/lib/i18n'
 
-const TOGGLES: Array<{ key: keyof PromoTemplateConfig; label: string }> = [
-  { key: 'showCategory', label: t('rp.category') },
-  { key: 'showDescription', label: 'Description' },
-  { key: 'showUnitPrice', label: 'Prix unitaire' },
-  { key: 'showBadge', label: 'Badge remise' },
-  { key: 'showFooter', label: 'Pied de page' },
+// ⚠️ CLÉS, pas `t()` : ce tableau est évalué au CHARGEMENT du module.
+const TOGGLES: Array<{ key: keyof PromoTemplateConfig; labelKey: TranslationKey }> = [
+  { key: 'showCategory', labelKey: 'rp.category' },
+  { key: 'showDescription', labelKey: 'rp.tgl.description' },
+  { key: 'showUnitPrice', labelKey: 'rp.tgl.unitPrice' },
+  { key: 'showBadge', labelKey: 'rp.tgl.badge' },
+  { key: 'showFooter', labelKey: 'rp.tgl.footer' },
 ]
 
 /** Barre d'édition du template : prompt IA + champs affichés + modèles enregistrés (couleurs/typo → panneau droit). */
@@ -102,11 +103,11 @@ export function PromoTemplateEditor() {
 
       {/* Champs affichés */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-white/40">Champs</span>
-        {TOGGLES.map(({ key, label }) => (
+        <span className="text-xs font-semibold uppercase tracking-wide text-white/40">{t('rp.fields')}</span>
+        {TOGGLES.map(({ key, labelKey }) => (
           <label key={key} className="flex items-center gap-1.5 text-sm text-white/70">
             <input type="checkbox" checked={config[key] as boolean} onChange={(e) => setConfig({ [key]: e.target.checked })} className="accent-[#6366f1]" />
-            {label}
+            {t(labelKey)}
           </label>
         ))}
       </div>

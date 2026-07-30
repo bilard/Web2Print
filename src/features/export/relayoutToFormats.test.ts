@@ -12,8 +12,8 @@ const objects: DesignObject[] = [
   { type: 'image', left: 0, top: 0, width: 1000, height: 1000, scaleX: 1, scaleY: 1, data: { role: 'background' } },
 ]
 const targets = [
-  { id: 'story', label: 'Story / Reel', w: 1080, h: 1920 },
-  { id: 'banniere', label: 'Bannière', w: 1500, h: 500 },
+  { id: 'story', labelKey: 'ex.fmt.story', w: 1080, h: 1920 },
+  { id: 'banniere', labelKey: 'ex.fmt.banner', w: 1500, h: 500 },
 ] as const
 
 beforeEach(() => generateJsonMock.mockReset())

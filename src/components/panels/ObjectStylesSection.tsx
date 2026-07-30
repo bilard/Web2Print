@@ -104,7 +104,7 @@ export function ObjectStylesSection() {
             onClick={() => setNaming(true)}
             className="w-full flex items-center justify-center gap-1 px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-[10px] text-white/60 transition-colors"
           >
-            <Plus className="w-3 h-3" /> <Brush className="w-3 h-3" /> Capturer le style de la sélection
+            <Plus className="w-3 h-3" /> <Brush className="w-3 h-3" /> {t('pal.captureStyle')}
           </button>
         )}
       </div>

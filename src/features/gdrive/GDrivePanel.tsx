@@ -3,14 +3,15 @@ import { Home, Users, Clock, Star, Search, ChevronRight, Trash2, Copy } from 'lu
 import { GDriveFileList } from './GDriveFileList'
 import { DedupDriveModal } from '@/features/dam/DedupDriveModal'
 import type { DriveSection, GDriveFile } from './types'
-import { t } from '@/lib/i18n'
+import { type TranslationKey, t } from '@/lib/i18n'
 
-const NAV: { id: DriveSection; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'my-drive', label: 'Mon Drive',         icon: Home },
-  { id: 'shared',   label: t('gd.tab.shared'), icon: Users },
-  { id: 'recent',   label: t('gd.tab.recent'),            icon: Clock },
-  { id: 'starred',  label: 'Suivis',             icon: Star },
-  { id: 'trash',    label: 'Corbeille',          icon: Trash2 },
+// ⚠️ CLÉS, pas `t()` : ce tableau est évalué au CHARGEMENT du module.
+const NAV: { id: DriveSection; labelKey: TranslationKey; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'my-drive', labelKey: 'gd.tab.myDrive', icon: Home },
+  { id: 'shared',   labelKey: 'gd.tab.shared',  icon: Users },
+  { id: 'recent',   labelKey: 'gd.tab.recent',  icon: Clock },
+  { id: 'starred',  labelKey: 'gd.tab.starred', icon: Star },
+  { id: 'trash',    labelKey: 'gd.tab.trash',   icon: Trash2 },
 ]
 
 interface FolderCrumb {
@@ -25,7 +26,8 @@ export function GDrivePanel() {
   const [dedupOpen, setDedupOpen] = useState(false)
 
   const currentFolder = folderStack[folderStack.length - 1] ?? null
-  const sectionLabel = NAV.find((n) => n.id === section)?.label ?? ''
+  const navItem = NAV.find((n) => n.id === section)
+  const sectionLabel = navItem ? t(navItem.labelKey) : ''
 
   const handleSectionChange = useCallback((id: DriveSection) => {
     setSection(id)
@@ -63,7 +65,7 @@ export function GDrivePanel() {
 
         {/* Nav */}
         <nav className="flex flex-col gap-0.5">
-          {NAV.map(({ id, label, icon: Icon }) => {
+          {NAV.map(({ id, labelKey, icon: Icon }) => {
             const isActive = section === id && folderStack.length === 0
             return (
               <button
@@ -76,7 +78,7 @@ export function GDrivePanel() {
                 }`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
-                <span className="truncate">{label}</span>
+                <span className="truncate">{t(labelKey)}</span>
               </button>
             )
           })}

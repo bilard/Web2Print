@@ -29,15 +29,16 @@ import { FabricImage } from 'fabric'
 import { useUIStore } from '@/stores/ui.store'
 import { useDamStore } from '@/stores/dam.store'
 import type { DamTab } from '@/features/dam/types'
-import { t } from '@/lib/i18n'
+import { type TranslationKey, t } from '@/lib/i18n'
 
-const REPLACE_SOURCES: { tab: DamTab; label: string; icon: typeof ImageIcon }[] = [
-  { tab: 'stock', label: 'Stock', icon: ImageIcon },
-  { tab: 'my-images', label: 'Mes images', icon: FolderOpen },
-  { tab: 'favorites', label: 'Favoris', icon: Heart },
-  { tab: 'collections', label: 'Collections', icon: FolderHeart },
-  { tab: 'recent', label: t('cv.recent'), icon: Clock },
-  { tab: 'generate', label: 'Image IA', icon: Sparkles },
+// ⚠️ CLÉS, pas `t()` : ce tableau est évalué au CHARGEMENT du module.
+const REPLACE_SOURCES: { tab: DamTab; labelKey: TranslationKey; icon: typeof ImageIcon }[] = [
+  { tab: 'stock', labelKey: 'cv.src.stock', icon: ImageIcon },
+  { tab: 'my-images', labelKey: 'cv.src.myImages', icon: FolderOpen },
+  { tab: 'favorites', labelKey: 'cv.src.favorites', icon: Heart },
+  { tab: 'collections', labelKey: 'cv.src.collections', icon: FolderHeart },
+  { tab: 'recent', labelKey: 'cv.recent', icon: Clock },
+  { tab: 'generate', labelKey: 'cv.src.generate', icon: Sparkles },
 ]
 
 interface Props {
@@ -221,7 +222,7 @@ export function ImageCropToolbars({ canvas }: Props) {
                     className="flex items-center gap-2 w-full px-3 py-2 text-xs text-white/80 hover:bg-surface-2 hover:text-white transition-colors text-left"
                   >
                     <Icon className="w-3.5 h-3.5 opacity-70" />
-                    <span>{source.label}</span>
+                    <span>{t(source.labelKey)}</span>
                   </button>
                 )
               })}

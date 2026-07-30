@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 export interface RadarMenuItem<T extends string> {
   value: T
-  label: string
+  labelKey: TranslationKey
   icon: LucideIcon
   /** Complément affiché à droite (ex. état du scraping, nombre de sites). */
   hint?: string
@@ -14,7 +15,7 @@ export interface RadarMenuItem<T extends string> {
  *  c'est le seul repère de « où suis-je »). */
 export function RadarMenuButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} aria-label="Ouvrir le menu des vues" aria-haspopup="dialog"
+    <button onClick={onClick} aria-label={t('rd.openMenu')} aria-haspopup="dialog"
       className="radar-tap flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-semibold"
       style={{ background: 'var(--radar-surface-2)', color: 'var(--radar-text)' }}>
       <Menu size={16} />
@@ -54,7 +55,7 @@ export function RadarMenu<T extends string>({ open, items, value, onSelect, onCl
             <X size={16} />
           </button>
         </div>
-        {items.map(({ value: v, label, icon: Icon, hint }) => {
+        {items.map(({ value: v, labelKey, icon: Icon, hint }) => {
           const active = v === value
           return (
             <button key={v} aria-current={active ? 'page' : undefined} onClick={() => { onSelect(v); onClose() }}
@@ -64,7 +65,7 @@ export function RadarMenu<T extends string>({ open, items, value, onSelect, onCl
                 color: active ? '#fff' : 'var(--radar-text)',
               }}>
               <Icon size={18} style={{ color: active ? '#fff' : 'var(--radar-accent-2)' }} />
-              <span className="flex-1 truncate">{label}</span>
+              <span className="flex-1 truncate">{t(labelKey)}</span>
               {hint && (
                 <span className="shrink-0 text-[11px] font-medium"
                   style={{ color: active ? 'rgba(255,255,255,0.75)' : 'var(--radar-text-3)' }}>{hint}</span>

@@ -30,15 +30,16 @@ import { useOrientation } from './useOrientation'
 import { t } from '@/lib/i18n'
 
 type Tab = 'apercu' | 'position' | 'concurrents' | 'familles' | 'produits' | 'volume' | 'scraping' | 'couts'
+// ⚠️ CLÉS, pas `t()` : ce tableau est évalué au CHARGEMENT du module.
 const MENU: readonly RadarMenuItem<Tab>[] = [
-  { value: 'apercu', label: t('rd.tab.overview'), icon: Gauge },
-  { value: 'position', label: 'Positionnement', icon: Target },
-  { value: 'concurrents', label: 'Concurrents', icon: Users },
-  { value: 'familles', label: 'Familles', icon: FolderTree },
-  { value: 'produits', label: 'Produits', icon: Package },
-  { value: 'volume', label: 'Collecte', icon: Database },
-  { value: 'scraping', label: 'Scraping', icon: Radio },
-  { value: 'couts', label: t('rd.tab.costs'), icon: Wallet },
+  { value: 'apercu', labelKey: 'rd.tab.overview', icon: Gauge },
+  { value: 'position', labelKey: 'rd.tab.position', icon: Target },
+  { value: 'concurrents', labelKey: 'rd.tab.competitors', icon: Users },
+  { value: 'familles', labelKey: 'rd.tab.families', icon: FolderTree },
+  { value: 'produits', labelKey: 'rd.tab.products', icon: Package },
+  { value: 'volume', labelKey: 'rd.tab.collect', icon: Database },
+  { value: 'scraping', labelKey: 'rd.tab.scraping', icon: Radio },
+  { value: 'couts', labelKey: 'rd.tab.costs', icon: Wallet },
 ]
 
 /** Masonry 2 colonnes en paysage (les cartes se répartissent sur la largeur). */
@@ -101,7 +102,8 @@ export function RadarApp() {
   }
 
   const items = MENU.map((m) => (m.value === 'scraping' ? { ...m, hint: status.state === 'running' ? 'en cours' : undefined } : m))
-  const viewLabel = MENU.find((m) => m.value === tab)?.label ?? 'Aperçu'
+  const menuItem = MENU.find((m) => m.value === tab)
+  const viewLabel = menuItem ? t(menuItem.labelKey) : t('rd.tab.overview')
 
   return (
     // h-[100dvh] (et non min-h) : avec min-height la racine GRANDIT avec son contenu, ne

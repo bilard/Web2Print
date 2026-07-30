@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { HelpCircle } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 interface OptionHelpProps {
   /** Texte d'aide affiché au survol / focus de l'icône. */
@@ -33,7 +34,7 @@ export function OptionHelp({ text }: OptionHelpProps) {
         onFocus={show}
         onBlur={hide}
         onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
-        aria-label={`Aide : ${text}`}
+        aria-label={t('help.aria', { text })}
         className="inline-flex items-center justify-center text-white/25 hover:text-indigo-400 focus:text-indigo-400 transition-colors focus:outline-none shrink-0"
       >
         <HelpCircle className="w-3 h-3" />

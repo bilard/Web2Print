@@ -8,6 +8,7 @@ import { useEditorStore } from '@/stores/editor.store'
 import { useNanoBanaStore } from '@/stores/nanobana.store'
 import { useRemoveBg } from './useRemoveBg'
 import type { GalleryImage } from './types'
+import { t } from '@/lib/i18n'
 
 interface CanvasImageEntry {
   id: string
@@ -249,7 +250,7 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
     return (
       <div className="flex flex-col items-center gap-2 py-8">
         <p className="text-xs text-white/40">
-          {images.length === 0 ? 'Aucune image' : 'Aucun résultat'}
+          {t(images.length === 0 ? 'nb.noImage' : 'nb.noResult')}
         </p>
       </div>
     )

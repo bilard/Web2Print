@@ -50,7 +50,7 @@ export function BrandKitSection({ onProjectPaletteChange }: BrandKitSectionProps
         </div>
       ) : colors.length === 0 ? (
         <p className="text-[10px] text-white/20 italic py-1">
-          Kit vide — capturez la palette d'un projet pour le constituer.
+          {t('pal.kitEmpty')}
         </p>
       ) : (
         <div className="flex flex-wrap gap-1.5 py-1">
@@ -79,14 +79,14 @@ export function BrandKitSection({ onProjectPaletteChange }: BrandKitSectionProps
           className="flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded bg-white/5 hover:bg-white/10 disabled:opacity-40 text-[10px] text-white/60 transition-colors"
           title={t('brandKit.import')}
         >
-          <ArrowDownToLine className="w-3 h-3" /> Vers le projet
+          <ArrowDownToLine className="w-3 h-3" /> {t('pal.toProject')}
         </button>
         <button
           onClick={captureFromProject}
           className="flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-[10px] text-white/60 transition-colors"
           title={t('brandKit.capture')}
         >
-          <ArrowUpFromLine className="w-3 h-3" /> Depuis le projet
+          <ArrowUpFromLine className="w-3 h-3" /> {t('pal.fromProject')}
         </button>
       </div>
     </PropertySection>

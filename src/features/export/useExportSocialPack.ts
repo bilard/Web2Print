@@ -8,13 +8,12 @@ import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useEditorStore } from '@/stores/editor.store'
 import { recordAudit } from '@/lib/auditLog'
 import { useUIStore } from '@/stores/ui.store'
-import { t } from '@/lib/i18n'
 
 const PACK_TARGETS = [
-  { id: 'post-carre', label: t('ex.fmt.squarePost'), w: 1080, h: 1080 },
-  { id: 'story', label: 'Story / Reel', w: 1080, h: 1920 },
-  { id: 'post-paysage', label: 'Post paysage', w: 1920, h: 1080 },
-  { id: 'banniere', label: t('ex.fmt.banner'), w: 1500, h: 500 },
+  { id: 'post-carre', labelKey: 'ex.fmt.squarePost', w: 1080, h: 1080 },
+  { id: 'story', labelKey: 'ex.fmt.story', w: 1080, h: 1920 },
+  { id: 'post-paysage', labelKey: 'ex.fmt.landscapePost', w: 1920, h: 1080 },
+  { id: 'banniere', labelKey: 'ex.fmt.banner', w: 1500, h: 500 },
 ] as const
 
 /** Rend la page (sans grille ni marques) en PNG haute résolution. */
@@ -78,9 +77,9 @@ export function useExportSocialPack() {
   const exportSocialPack = useCallback(async (): Promise<void> => {
     const { img, bg } = await snapshotPage()
     const zip = new JSZip()
-    for (const t of PACK_TARGETS) {
-      const blob = await composeTarget(img, bg, t.w, t.h)
-      zip.file(`${t.id}_${t.w}x${t.h}.png`, blob)
+    for (const tgt of PACK_TARGETS) {
+      const blob = await composeTarget(img, bg, tgt.w, tgt.h)
+      zip.file(`${tgt.id}_${tgt.w}x${tgt.h}.png`, blob)
     }
     const blob = await zip.generateAsync({ type: 'blob' })
     const url = URL.createObjectURL(blob)

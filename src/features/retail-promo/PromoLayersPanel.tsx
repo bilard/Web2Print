@@ -4,31 +4,31 @@ import { useRetailPromoStore } from './retailPromo.store'
 import { extractPromoFields } from './promoMapping'
 import { toCardData } from './promoCardData'
 import type { PromoBlockId, RetailCardData } from './promoCardTypes'
-import { t } from '@/lib/i18n'
+import { type TranslationKey, t } from '@/lib/i18n'
 
 type IconKind = 'block' | 'text' | 'image' | 'badge'
-interface LayerNode { id: PromoBlockId; label: string; isText: boolean; icon: IconKind; children?: LayerNode[] }
+interface LayerNode { id: PromoBlockId; labelKey: TranslationKey; isText: boolean; icon: IconKind; children?: LayerNode[] }
 
 // Arbre des calques par GROUPE (conteneur déco → ses sous-éléments), reflétant
 // la structure de la carte. Ordre haut → bas.
 const TREE: LayerNode[] = [
-  { id: 'header', label: t('rp.layer.header'), isText: false, icon: 'block', children: [
-    { id: 'category', label: t('rp.layer.category'), isText: true, icon: 'text' },
-    { id: 'name', label: 'Nom', isText: true, icon: 'text' },
-    { id: 'brand', label: 'Marque', isText: true, icon: 'text' },
-    { id: 'description', label: 'Description', isText: true, icon: 'text' },
+  { id: 'header', labelKey: 'rp.layer.header', isText: false, icon: 'block', children: [
+    { id: 'category', labelKey: 'rp.layer.category', isText: true, icon: 'text' },
+    { id: 'name', labelKey: 'rp.layer.name', isText: true, icon: 'text' },
+    { id: 'brand', labelKey: 'rp.layer.brand', isText: true, icon: 'text' },
+    { id: 'description', labelKey: 'rp.layer.description', isText: true, icon: 'text' },
   ] },
-  { id: 'image', label: 'Cadre photo', isText: false, icon: 'image', children: [
-    { id: 'badge', label: 'Badge remise', isText: false, icon: 'badge' },
+  { id: 'image', labelKey: 'rp.layer.image', isText: false, icon: 'image', children: [
+    { id: 'badge', labelKey: 'rp.layer.badge', isText: false, icon: 'badge' },
   ] },
-  { id: 'price', label: 'Bandeau prix', isText: false, icon: 'block', children: [
-    { id: 'priceLabel', label: t('rp.layer.priceLabel'), isText: true, icon: 'text' },
-    { id: 'priceWas', label: t('rp.layer.priceWas'), isText: true, icon: 'text' },
-    { id: 'unitPrice', label: 'Prix unitaire', isText: true, icon: 'text' },
-    { id: 'priceNow', label: 'Prix promo', isText: true, icon: 'text' },
+  { id: 'price', labelKey: 'rp.layer.price', isText: false, icon: 'block', children: [
+    { id: 'priceLabel', labelKey: 'rp.layer.priceLabel', isText: true, icon: 'text' },
+    { id: 'priceWas', labelKey: 'rp.layer.priceWas', isText: true, icon: 'text' },
+    { id: 'unitPrice', labelKey: 'rp.layer.unitPrice', isText: true, icon: 'text' },
+    { id: 'priceNow', labelKey: 'rp.layer.priceNow', isText: true, icon: 'text' },
   ] },
-  { id: 'footer', label: 'Pied de page', isText: true, icon: 'text' },
-  { id: 'details', label: t('rp.layer.details'), isText: false, icon: 'block' },
+  { id: 'footer', labelKey: 'rp.layer.footer', isText: true, icon: 'text' },
+  { id: 'details', labelKey: 'rp.layer.details', isText: false, icon: 'block' },
 ]
 
 const flatten = (nodes: LayerNode[]): LayerNode[] => nodes.flatMap((n) => [n, ...(n.children ? flatten(n.children) : [])])
@@ -86,7 +86,7 @@ export function PromoLayersPanel() {
   }
 
   const needle = q.toLowerCase().trim()
-  const matches = (n: LayerNode) => n.label.toLowerCase().includes(needle) || blockValue(n.id).toLowerCase().includes(needle)
+  const matches = (n: LayerNode) => t(n.labelKey).toLowerCase().includes(needle) || blockValue(n.id).toLowerCase().includes(needle)
 
   // Accordéon : un seul groupe ouvert à la fois. `collapsed` = groupes fermés.
   // Ouvrir id → fermer tous les autres ; recliquer le groupe ouvert → tout fermé.
@@ -108,7 +108,7 @@ export function PromoLayersPanel() {
         <span className="text-white/40"><Icon k={n.icon} /></span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="truncate">{n.label}</span>
+            <span className="truncate">{t(n.labelKey)}</span>
             {n.isText && <span className="text-[10px] font-bold text-[#818cf8]">Aa</span>}
           </div>
           {value && <div className="truncate text-[11px] leading-tight text-white/40" title={value}>{value}</div>}

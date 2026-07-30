@@ -47,13 +47,13 @@ export function PreflightSection() {
   return (
     <PropertySection
       title={t('preflight.title')}
-      help="Contrôle pré-impression : images sous 150/225 DPI effectifs, objets hors page (au-delà du fond perdu), textes < 5 pt ou à moins de 3 mm du bord de coupe."
+      help={t('print.preflight.help')}
       badge={
         <button
           onClick={analyze}
           className="px-2.5 py-1 rounded-md bg-white/[0.06] hover:bg-white/[0.1] text-[11px] text-white/70 transition-colors"
         >
-          Analyser
+          {t('print.analyse')}
         </button>
       }
     >
