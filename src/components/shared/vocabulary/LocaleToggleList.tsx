@@ -62,8 +62,9 @@ function LocaleRow({ locale, total }: { locale: Locale; total: number }) {
 /**
  * Langues servies par le compte.
  *
- * ⚠️ Deux natures de langue coexistent, et l'écran doit le dire : `fr` et `en`
- * ont un catalogue COMPLET livré avec l'application ; les autres ne sont
+ * ⚠️ Deux natures de langue coexistent, et l'écran doit le dire : les langues de
+ * `COMPILED_LOCALES` (fr, en, es) ont un catalogue COMPLET livré avec
+ * l'application ; les autres ne sont
  * peuplées que par le vocabulaire du compte et retombent sur le français pour
  * tout le reste. Activer l'italien ne rend donc pas l'application italienne —
  * il ouvre le chantier. Sans ce repère, on active une langue et on croit à un

@@ -18,6 +18,14 @@
 import { test, expect, type Page } from '@playwright/test'
 import { mkdirSync, writeFileSync } from 'node:fs'
 
+/**
+ * Langues du sélecteur — recopiées de `stores/locale.store`, PAS importées :
+ * aucun autre scénario ne charge de code applicatif, et le faire ferait dépendre
+ * le harnais de la résolution des alias `@/` côté Playwright.
+ */
+const ALL_LOCALES = ['fr', 'en', 'es', 'de', 'it'] as const
+type Locale = (typeof ALL_LOCALES)[number]
+
 const OWNER_EMAIL = 'ibs.studio@gmail.com'
 const OUT = 'e2e-i18n-report'
 
@@ -56,7 +64,7 @@ async function loginAsOwner(page: Page): Promise<void> {
  * pastille COMPACTE de la sidebar repliée, qui affiche la langue ACTIVE et
  * bascule au clic — d'où la vérification après coup plutôt qu'un clic aveugle.
  */
-async function setLocale(page: Page, locale: 'fr' | 'en'): Promise<void> {
+async function setLocale(page: Page, locale: Locale): Promise<void> {
   const current = async () =>
     page.evaluate(() => localStorage.getItem('localePref') ?? 'fr')
   // Déjà dans la bonne langue : rien à cliquer. Ce court-circuit vient AVANT
@@ -69,12 +77,23 @@ async function setLocale(page: Page, locale: 'fr' | 'en'): Promise<void> {
     .waitFor({ state: 'visible', timeout: 30_000 })
     .catch(() => {})
 
-  const want = locale.toUpperCase()
-  const other = locale === 'en' ? 'FR' : 'EN'
-  for (const label of [want, other]) {
-    const btn = page.locator(`button:text-is("${label}")`).first()
-    if (!(await btn.isVisible({ timeout: 1_500 }).catch(() => false))) continue
-    await btn.click({ timeout: 5_000 }).catch(() => {})
+  // Groupe complet : le bouton de la langue voulue est là, un clic suffit.
+  const direct = page.locator(`button:text-is("${locale.toUpperCase()}")`).first()
+  if (await direct.isVisible({ timeout: 1_500 }).catch(() => false)) {
+    await direct.click({ timeout: 5_000 }).catch(() => {})
+    await page.waitForTimeout(500)
+    if ((await current()) === locale) return
+  }
+
+  // Sidebar repliée : une seule pastille, qui fait DÉFILER les langues activées.
+  // ⚠️ Depuis l'ajout de l'espagnol, elles sont trois : cliquer une fois ne
+  // garantit plus d'arriver sur la bonne — il faut boucler jusqu'à retomber
+  // dessus, sans dépasser un tour complet.
+  for (let i = 0; i < ALL_LOCALES.length; i += 1) {
+    const active = (await current()).toUpperCase()
+    const pill = page.locator(`button:text-is("${active}")`).first()
+    if (!(await pill.isVisible({ timeout: 1_500 }).catch(() => false))) break
+    await pill.click({ timeout: 5_000 }).catch(() => {})
     await page.waitForTimeout(500)
     if ((await current()) === locale) return
   }
@@ -110,8 +129,23 @@ async function visibleTexts(page: Page): Promise<string[]> {
   })
 }
 
+/** Mots français fréquents dans l'interface — communs aux deux relevés. */
+const FRENCH_WORDS =
+  'le|la|les|des|une|aucun|aucune|dans|pour|avec|vous|votre|sur|est|sont|par|selon|puis|tous|toutes|origine|paysage|corbeille|suivis|fournisseurs|utilisateurs|journal|galerie|enregistrer|supprimer|ajouter|modifier|nouveau|nouvelle|rechercher|parcourir|fermer|ouvrir|annuler|valider|suivant|precedent|terminer|champs|colonne|fichier|dossier|taille|largeur|hauteur|couleur|police|ombre|calques|remise|apercu|reglages|analyser|importer|exporter|creer|charger|essayer|revenir'
+
 /** Signature de français : accent OU mot-outil français fréquent. */
-const FRENCH = /[àâäéèêëîïôöùûüÿçÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇ]|\b(le|la|les|des|une|aucun|aucune|dans|pour|avec|vous|votre|sur|est|sont|par|selon|puis|tous|toutes|origine|paysage|corbeille|suivis|fournisseurs|utilisateurs|journal|galerie|enregistrer|supprimer|ajouter|modifier|nouveau|nouvelle|rechercher|parcourir|fermer|ouvrir|annuler|valider|suivant|precedent|terminer|champs|colonne|fichier|dossier|taille|largeur|hauteur|couleur|police|ombre|calques|remise|apercu|reglages|analyser|importer|exporter|creer|charger|essayer|revenir)\b/i
+const FRENCH = new RegExp(`[àâäéèêëîïôöùûüÿçÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇ]|\\b(${FRENCH_WORDS})\\b`, 'i')
+
+/**
+ * Même relevé pour l'ESPAGNOL, mais SANS les accents partagés.
+ *
+ * ⚠️ `é`, `ó`, `í`, `ü` sont parfaitement espagnols (« También », « Diseño ») :
+ * les garder ferait crier le rapport sur chaque écran correctement traduit, et
+ * un rapport qui crie partout ne se lit plus. On ne retient donc que les signes
+ * SANS existence en espagnol — plus les mots-outils, qui suffisent à repérer un
+ * bloc resté en français.
+ */
+const FRENCH_IN_ES = new RegExp(`[àâäèêëîïôùûÿçÀÂÄÈÊËÎÏÔÙÛŸÇœŒ]|\\b(${FRENCH_WORDS})\\b`, 'i')
 /** Mojibake : UTF-8 relu en latin-1. */
 const MOJIBAKE = /Ã[-¿]|Â[«»·°]|â€[-¿]/
 
@@ -138,15 +172,15 @@ const SCREENS: { name: string; go: (p: Page) => Promise<void> }[] = [
   { name: 'route-data', go: async (p) => { await p.goto('/data'); await p.waitForTimeout(1500) } },
 ]
 
-test('parcours i18n : anglais sans français résiduel, français sans mojibake', async ({ page }) => {
-  // 2 langues × 22 écrans : le timeout de 90 s du harnais ne suffit pas.
-  test.setTimeout(15 * 60_000)
+test('parcours i18n : langues traduites sans français résiduel, français sans mojibake', async ({ page }) => {
+  // 3 langues × 22 écrans : le timeout de 90 s du harnais ne suffit pas.
+  test.setTimeout(25 * 60_000)
   mkdirSync(OUT, { recursive: true })
   await loginAsOwner(page)
 
   const report: string[] = []
 
-  for (const locale of ['en', 'fr'] as const) {
+  for (const locale of ['en', 'es', 'fr'] as const) {
     // On revient au dashboard AVANT de basculer : la pastille de langue n'existe
     // que dans sa sidebar, et le parcours précédent s'est terminé ailleurs.
     await page.goto('/dashboard')
@@ -157,7 +191,9 @@ test('parcours i18n : anglais sans français résiduel, français sans mojibake'
       await page.waitForTimeout(600)
       await page.screenshot({ path: `${OUT}/${locale}-${s.name}.png`, fullPage: false })
       const texts = await visibleTexts(page)
-      const rx = locale === 'en' ? FRENCH : MOJIBAKE
+      // En français, on ne cherche pas du français : on cherche le mojibake, que
+      // seule cette langue peut montrer (il ne touche que les accents).
+      const rx = locale === 'fr' ? MOJIBAKE : locale === 'es' ? FRENCH_IN_ES : FRENCH
       const hits = [...new Set(texts.filter((t) => rx.test(t)))]
       if (hits.length) {
         report.push(`\n### ${locale.toUpperCase()} · ${s.name} (${hits.length})`)

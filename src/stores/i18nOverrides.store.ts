@@ -21,8 +21,15 @@ import type { Locale } from '@/stores/locale.store'
 /** Surcharges d'une langue : `TranslationKey` → texte réécrit par le compte. */
 export type LocaleOverrides = Record<string, string>
 
-/** Langues actives par défaut : les deux seules à disposer d'un catalogue compilé. */
-export const DEFAULT_ACTIVE_LOCALES: readonly Locale[] = ['fr', 'en'] as const
+/**
+ * Langues actives par défaut : celles qui disposent d'un catalogue compilé.
+ *
+ * ⚠️ À tenir synchronisé avec `COMPILED_LOCALES` (`lib/i18n`) — la liste est
+ * répétée ici parce que ce store ne peut pas importer `lib/i18n`, qui l'importe
+ * lui-même (cycle relevé par `npm run cycles`). Une langue livrée traduite mais
+ * absente d'ici n'apparaîtrait dans aucun sélecteur : traduite et invisible.
+ */
+export const DEFAULT_ACTIVE_LOCALES: readonly Locale[] = ['fr', 'en', 'es'] as const
 
 interface I18nOverridesState {
   /** Compte porteur des surcharges (`accounts/{accountId}`). `null` avant hydratation. */

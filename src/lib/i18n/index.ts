@@ -2,6 +2,7 @@ import { useLocaleStore, BCP47, type Locale } from '@/stores/locale.store'
 import { useI18nOverridesStore } from '@/stores/i18nOverrides.store'
 import { fr, type TranslationKey } from './fr'
 import { en } from './en'
+import { es } from './es'
 
 export type { TranslationKey } from './fr'
 export type { Locale } from '@/stores/locale.store'
@@ -11,15 +12,21 @@ export type { Locale } from '@/stores/locale.store'
  * `tsc -b` (`en` est typé `Record<TranslationKey, string>`) et par le test de
  * parité de `i18n.test.ts`.
  *
- * ⚠️ Les autres langues de `Locale` (es, de, it) sont *activables* par un compte
+ * ⚠️ Les autres langues de `Locale` (de, it) sont *activables* par un compte
  * mais n'ont pas de catalogue : elles s'affichent depuis les surcharges du
  * compte et retombent clé par clé sur le FRANÇAIS. C'est volontaire — mieux
  * vaut un écran partiellement français qu'un écran vide. Le garde-fou de
- * complétude ne vaut donc QUE pour fr/en, et c'est le test qui le tient.
+ * complétude ne vaut donc QUE pour les langues listées ici, et c'est le test
+ * qui le tient.
+ *
+ * Ajouter une langue = générer son catalogue (`node scripts/i18n-translate.mjs
+ * <locale>`), l'inscrire dans `CATALOGS` **et** ici. Les tests de parité, de
+ * variables et d'encodage de `i18n.test.ts` itèrent sur cette liste : une langue
+ * ajoutée à `CATALOGS` sans l'être ici ne serait vérifiée par rien.
  */
-export const COMPILED_LOCALES: readonly Locale[] = ['fr', 'en'] as const
+export const COMPILED_LOCALES: readonly Locale[] = ['fr', 'en', 'es'] as const
 
-const CATALOGS: Partial<Record<Locale, Record<TranslationKey, string>>> = { fr, en }
+const CATALOGS: Partial<Record<Locale, Record<TranslationKey, string>>> = { fr, en, es }
 
 /** Nombre de libellés du catalogue — dénominateur de l'avancement d'une langue. */
 export const CATALOG_SIZE = Object.keys(fr).length
@@ -56,7 +63,19 @@ function resolve(locale: Locale, key: TranslationKey): string {
  * de gauche n'apprendrait rien.
  */
 export function catalogText(locale: Locale, key: TranslationKey): string {
-  return CATALOGS[locale]?.[key] ?? fr[key]
+  return compiledCatalog(locale)[key]
+}
+
+/**
+ * Catalogue compilé d'une langue — le FRANÇAIS pour celles qui n'en ont pas.
+ *
+ * ⚠️ Ne pas dupliquer `CATALOGS` ailleurs : l'index inverse (Alt+clic → clé) a
+ * besoin du catalogue ENTIER, et une seconde liste finirait par oublier la
+ * langue ajoutée le jour d'après — l'écran de vocabulaire chercherait alors des
+ * libellés français dans une interface espagnole, sans rien trouver.
+ */
+export function compiledCatalog(locale: Locale): Record<TranslationKey, string> {
+  return CATALOGS[locale] ?? fr
 }
 
 /** Traduit une clé dans une langue donnée, surcharges de compte appliquées. */

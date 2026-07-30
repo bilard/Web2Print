@@ -4760,7 +4760,7 @@ export const fr = {
 
   'i18n.locales.title': 'Langues servies',
   'i18n.locales.desc':
-    "Le français et l'anglais sont livrés entièrement traduits. Les autres langues affichent le vocabulaire que vous saisissez, et retombent sur le français pour le reste.",
+    "Le français, l'anglais et l'espagnol sont livrés entièrement traduits. Les autres langues affichent le vocabulaire que vous saisissez, et retombent sur le français pour le reste.",
   'i18n.locales.translated': 'Traduction complète livrée',
   'i18n.locales.partial': '{count} libellés définis sur {total}',
   'i18n.locales.locked': 'Langue de repli, toujours active',

@@ -3,30 +3,53 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fr } from './fr'
 import { en } from './en'
-import { translate, intlLocale, formatDate, COMPILED_LOCALES } from './index'
-import { useI18nOverridesStore } from '@/stores/i18nOverrides.store'
+import { es } from './es'
+import { translate, intlLocale, formatDate, COMPILED_LOCALES, compiledCatalog } from './index'
+import { useI18nOverridesStore, DEFAULT_ACTIVE_LOCALES } from '@/stores/i18nOverrides.store'
 
 /** Extrait les jetons `{param}` d'un gabarit de traduction. */
 function placeholders(s: string): string[] {
   return (s.match(/\{(\w+)\}/g) ?? []).sort()
 }
 
-describe('catalogues i18n', () => {
-  it('couvre exactement les mêmes clés en FR et en EN', () => {
-    expect(Object.keys(en).sort()).toEqual(Object.keys(fr).sort())
-  })
+/**
+ * Catalogues à VÉRIFIER : toutes les langues compilées sauf la source.
+ *
+ * ⚠️ Dérivé de `COMPILED_LOCALES`, jamais écrit en dur. Une liste figée sur
+ * `['en']` laisserait un catalogue ajouté plus tard passer au vert sans avoir
+ * été regardé une seule fois — le mode d'échec exact que ces tests existent
+ * pour empêcher.
+ */
+const TRANSLATED = COMPILED_LOCALES.filter((l) => l !== 'fr').map(
+  (locale) => [locale, compiledCatalog(locale)] as const,
+)
 
-  it('ne laisse aucune traduction vide', () => {
-    for (const [key, value] of Object.entries(en)) {
-      expect(value.trim(), `clé vide : ${key}`).not.toBe('')
+describe('catalogues i18n', () => {
+  it('vérifie bien toutes les langues compilées', () => {
+    // Le garde-fou du garde-fou : si `COMPILED_LOCALES` grandit sans que le
+    // catalogue correspondant soit câblé, `compiledCatalog` rend le FRANÇAIS et
+    // toute la suite passerait au vert en comparant le FR à lui-même.
+    expect(TRANSLATED.length).toBeGreaterThan(0)
+    for (const [locale, catalogue] of TRANSLATED) {
+      expect(catalogue, `catalogue ${locale} non câblé dans CATALOGS`).not.toBe(fr)
     }
   })
 
-  it('conserve les mêmes variables interpolées entre FR et EN', () => {
+  it.each(TRANSLATED)('couvre exactement les mêmes clés que le FR (%s)', (_locale, catalogue) => {
+    expect(Object.keys(catalogue).sort()).toEqual(Object.keys(fr).sort())
+  })
+
+  it.each(TRANSLATED)('ne laisse aucune traduction vide (%s)', (locale, catalogue) => {
+    for (const [key, value] of Object.entries(catalogue)) {
+      expect(value.trim(), `clé vide : ${locale}.${key}`).not.toBe('')
+    }
+  })
+
+  it.each(TRANSLATED)('conserve les mêmes variables interpolées (%s)', (locale, catalogue) => {
     // Un `{count}` perdu à la traduction n'est PAS une erreur de type : il
     // s'affiche tel quel à l'écran. Seul ce test l'attrape.
     for (const key of Object.keys(fr) as (keyof typeof fr)[]) {
-      expect(placeholders(en[key]), `variables divergentes sur ${key}`).toEqual(
+      expect(placeholders(catalogue[key]), `variables divergentes sur ${locale}.${key}`).toEqual(
         placeholders(fr[key]),
       )
     }
@@ -96,7 +119,7 @@ describe('intégrité des caractères', () => {
 
   it("ne contient aucune séquence d'encodage cassée", () => {
     const offences: string[] = []
-    for (const [catalogue, entries] of [['fr', fr], ['en', en]] as const) {
+    for (const [catalogue, entries] of [['fr', fr] as const, ...TRANSLATED]) {
       for (const [key, value] of Object.entries(entries)) {
         const hit = value.match(MOJIBAKE)
         if (hit) offences.push(`${catalogue}.${key} → « ${hit[0]} »`)
@@ -246,6 +269,62 @@ describe('orthographe britannique (en-GB)', () => {
   })
 })
 
+describe('langues proposées par défaut', () => {
+  it('active exactement les langues à catalogue compilé', () => {
+    // `DEFAULT_ACTIVE_LOCALES` duplique `COMPILED_LOCALES` (le store ne peut pas
+    // importer `lib/i18n` sans créer un cycle). Une langue livrée traduite mais
+    // absente de la liste du store n'apparaîtrait dans AUCUN sélecteur : traduite
+    // et invisible. Ce test est le seul lien entre les deux.
+    expect([...DEFAULT_ACTIVE_LOCALES]).toEqual([...COMPILED_LOCALES])
+  })
+})
+
+describe('espagnol (es-ES)', () => {
+  // Pendant du garde-fou en-GB ci-dessus. Le catalogue ES est GÉNÉRÉ par lots
+  // (`scripts/i18n-translate.mjs`) : un lot en échec, un `--limit` oublié ou une
+  // reprise partielle laissent du FRANÇAIS dans le fichier. Ni `tsc -b` ni la
+  // parité des clés ne le voient — le type est satisfait, la clé est là, le
+  // texte est simplement resté dans la mauvaise langue.
+
+  /**
+   * Libellés IDENTIQUES en FR et en ES à bon droit : ceux qui ne contiennent
+   * pas de prose — que des variables, des noms propres ou des mots empruntés
+   * tels quels par l'espagnol. Comme `TWINS_ASSUMED`, y ajouter une ligne est
+   * une DÉCISION : il faut avoir vérifié qu'aucun mot n'était traduisible.
+   */
+  const IDENTICAL_ASSUMED: readonly string[] = [
+    'run.tg.rowSent', // « [{i}/{total}] → {chat} (msg {id}). » — aucune prose
+    'run.tg.rowSentNoDot',
+    'run.gm.rowSent', // « email » s'emploie tel quel en espagnol
+    'ob.connectors.desc', // « Google Drive, Telegram, Bright Data » — noms propres
+  ]
+
+  it('ne laisse aucune PHRASE en français', () => {
+    // Seuil de 25 caractères, comme le test des jumeaux : les libellés courts
+    // coïncident légitimement d'une langue à l'autre (« PDF », « Total »,
+    // « No », « Format »), une phrase entière jamais.
+    const offences = (Object.keys(fr) as (keyof typeof fr)[])
+      .filter((key) => !IDENTICAL_ASSUMED.includes(key))
+      .filter((key) => fr[key].length >= 25 && es[key] === fr[key])
+      .map((key) => `${key} → « ${fr[key].slice(0, 60)}… »`)
+    expect(offences, `phrases restées en français :\n${offences.join('\n')}`).toEqual([])
+  })
+
+  it("n'emploie aucun mot-outil français", () => {
+    // Mots sans aucune existence en espagnol : leur présence signe un fragment
+    // non traduit, y compris au milieu d'une phrase par ailleurs espagnole
+    // (le modèle laisse parfois passer une incise).
+    const FRENCH_ONLY =
+      /\b(vous|votre|vos|avec|aucun|aucune|cette|celui|ceux|toutes|tous|leurs|selon|sont|était|être|depuis|jusqu|lorsque|ainsi|chaque|plusieurs|également|d'un|d'une|qu'il)\b/i
+    const offences: string[] = []
+    for (const [key, value] of Object.entries(es)) {
+      const hit = value.match(FRENCH_ONLY)
+      if (hit) offences.push(`${key} → « ${hit[0]} » dans « ${value.slice(0, 60)} »`)
+    }
+    expect(offences, `français résiduel en ES :\n${offences.join('\n')}`).toEqual([])
+  })
+})
+
 describe('translate()', () => {
   it('rend le catalogue de la langue demandée', () => {
     expect(translate('en', 'login.welcome')).toBe('Welcome')
@@ -272,26 +351,25 @@ describe('formats régionaux', () => {
   })
 })
 
-describe('langues activables sans catalogue (es, de, it)', () => {
+describe('langues activables sans catalogue (de, it)', () => {
   // Ces langues n'ont PAS de catalogue compilé : c'est le compte qui les
   // remplit depuis l'écran « Langues & vocabulaire ». Le garde-fou de
   // complétude (`tsc -b` + parité des clés) ne vaut donc que pour fr/en — ces
   // tests-ci sont ce qui le remplace pour les autres.
   beforeEach(() => useI18nOverridesStore.getState().reset())
 
-  it('ne garantit la couverture totale que pour fr et en', () => {
-    expect([...COMPILED_LOCALES]).toEqual(['fr', 'en'])
+  it('ne garantit la couverture totale que pour les langues compilées', () => {
+    expect([...COMPILED_LOCALES]).toEqual(['fr', 'en', 'es'])
     for (const locale of COMPILED_LOCALES) {
-      const catalogue = locale === 'fr' ? fr : en
-      expect(Object.keys(catalogue).length, `catalogue ${locale} incomplet`).toBe(
+      expect(Object.keys(compiledCatalog(locale)).length, `catalogue ${locale} incomplet`).toBe(
         Object.keys(fr).length,
       )
     }
   })
 
   it('retombe sur le FRANÇAIS pour une langue sans catalogue', () => {
-    expect(translate('es', 'login.welcome')).toBe(fr['login.welcome'])
     expect(translate('de', 'login.welcome')).toBe(fr['login.welcome'])
+    expect(translate('it', 'login.welcome')).toBe(fr['login.welcome'])
   })
 })
 
@@ -306,10 +384,20 @@ describe('surcharges de vocabulaire par compte', () => {
   })
 
   it('remplit une langue qui n’a pas de catalogue', () => {
-    useI18nOverridesStore.getState().setOverride('es', 'login.welcome', 'Bienvenido')
-    expect(translate('es', 'login.welcome')).toBe('Bienvenido')
+    useI18nOverridesStore.getState().setOverride('de', 'login.welcome', 'Willkommen')
+    expect(translate('de', 'login.welcome')).toBe('Willkommen')
     // Une clé non surchargée reste en français, elle ne disparaît pas.
-    expect(translate('es', 'login.workspace')).toBe(fr['login.workspace'])
+    expect(translate('de', 'login.workspace')).toBe(fr['login.workspace'])
+  })
+
+  it('passe DEVANT un catalogue compilé récent (es)', () => {
+    // ⚠️ Vécu comme une inquiétude légitime au moment d'ajouter le catalogue ES :
+    // les comptes qui avaient DÉJÀ saisi du vocabulaire espagnol ne devaient pas
+    // le voir écrasé par la traduction générée. L'ordre de `resolve()` les
+    // protège — ce test le fige.
+    useI18nOverridesStore.getState().setOverride('es', 'login.welcome', 'Hola')
+    expect(translate('es', 'login.welcome')).toBe('Hola')
+    expect(translate('es', 'login.workspace')).toBe(es['login.workspace'])
   })
 
   it('interpole les paramètres DANS la surcharge', () => {

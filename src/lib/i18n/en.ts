@@ -4679,7 +4679,7 @@ export const en: Record<TranslationKey, string> = {
 
   'i18n.locales.title': 'Languages served',
   'i18n.locales.desc':
-    'French and English ship fully translated. Other languages show the wording you enter, and fall back to French for the rest.',
+    'French, English and Spanish ship fully translated. Other languages show the wording you enter, and fall back to French for the rest.',
   'i18n.locales.translated': 'Full translation shipped',
   'i18n.locales.partial': '{count} of {total} labels defined',
   'i18n.locales.locked': 'Fallback language, always on',

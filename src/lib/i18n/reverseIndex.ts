@@ -1,6 +1,5 @@
 import type { Locale } from '@/stores/locale.store'
-import { fr } from './fr'
-import { en } from './en'
+import { compiledCatalog } from './index'
 import type { TranslationKey } from './fr'
 
 /**
@@ -101,7 +100,7 @@ export function findKeysByText(
   if (!index) {
     // Les langues sans catalogue compilé s'affichent en français : c'est donc le
     // catalogue FR qu'on indexe pour elles, sinon rien ne serait cliquable.
-    const catalogue = locale === 'en' ? en : fr
+    const catalogue = compiledCatalog(locale)
     index = buildIndex(catalogue, overrides)
     CACHE.clear() // une seule version vivante à la fois — l'index pèse ~4 000 entrées
     CACHE.set(cacheKey, index)
