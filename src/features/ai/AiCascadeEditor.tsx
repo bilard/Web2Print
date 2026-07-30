@@ -2,16 +2,17 @@ import { Sparkles, ChevronUp, ChevronDown, X } from 'lucide-react'
 import { useAiSettingsStore, getSelectedModel, type ReasoningProvider } from '@/stores/aiSettings.store'
 import type { AiProvider } from '@/lib/aiModels'
 import { GeminiLogo, ClaudeLogo, OpenAILogo, DeepSeekLogo, QwenLogo, GLMLogo, OpenRouterLogo } from './providerLogos'
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
-const CASCADE_PROVIDER_INFO: Record<ReasoningProvider, { label: string; sub: string; logo: React.ReactNode }> = {
-  gemini:     { label: 'Gemini',      sub: t('ai.gemini.sub'),          logo: <GeminiLogo /> },
-  claude:     { label: 'Claude Opus', sub: t('ai.claude.sub'),     logo: <ClaudeLogo /> },
-  openai:     { label: 'OpenAI',      sub: 'GPT · json_schema strict',        logo: <OpenAILogo /> },
-  deepseek:   { label: 'DeepSeek',    sub: 'low cost · JSON natif',           logo: <DeepSeekLogo /> },
-  qwen:       { label: 'Qwen',        sub: 'multilingue · alternatif',        logo: <QwenLogo /> },
-  glm:        { label: 'GLM (Z.ai)',  sub: 'GLM 5.2 · JSON · bon rapport',    logo: <GLMLogo /> },
-  openrouter: { label: 'OpenRouter',  sub: t('ai.openrouter.sub'),  logo: <OpenRouterLogo /> },
+// ⚠️ CLÉS, pas `t()` : objet évalué au chargement du module.
+const CASCADE_PROVIDER_INFO: Record<ReasoningProvider, { label: string; subKey: TranslationKey; logo: React.ReactNode }> = {
+  gemini:     { label: 'Gemini',      subKey: 'ai.gemini.sub',     logo: <GeminiLogo /> },
+  claude:     { label: 'Claude Opus', subKey: 'ai.claude.sub',     logo: <ClaudeLogo /> },
+  openai:     { label: 'OpenAI',      subKey: 'ai.openai.sub',     logo: <OpenAILogo /> },
+  deepseek:   { label: 'DeepSeek',    subKey: 'ai.deepseek.sub',   logo: <DeepSeekLogo /> },
+  qwen:       { label: 'Qwen',        subKey: 'ai.qwen.sub',       logo: <QwenLogo /> },
+  glm:        { label: 'GLM (Z.ai)',  subKey: 'ai.glm.sub',        logo: <GLMLogo /> },
+  openrouter: { label: 'OpenRouter',  subKey: 'ai.openrouter.sub', logo: <OpenRouterLogo /> },
 }
 
 export function AiCascadeEditor() {
@@ -62,7 +63,7 @@ export function AiCascadeEditor() {
               {info.logo}
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-white">{info.label}</p>
-                <p className="text-[10px] text-white/40">{info.sub}</p>
+                <p className="text-[10px] text-white/40">{t(info.subKey)}</p>
                 <p className="text-[9.5px] font-mono text-violet-300/70 mt-0.5 truncate">{getSelectedModel(p as AiProvider)}</p>
               </div>
               <div className="flex items-center gap-0.5 shrink-0">

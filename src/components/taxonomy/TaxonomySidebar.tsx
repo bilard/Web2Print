@@ -9,6 +9,7 @@ import { useTaxonomyStore } from '@/stores/taxonomy.store'
 import { TaxonomyContextMenu } from './TaxonomyContextMenu'
 import { TaxonomySettingsModal } from './TaxonomySettingsModal'
 import type { Taxonomy } from '@/features/taxonomy/types'
+import { t } from '@/lib/i18n'
 
 interface TaxonomySidebarProps {
   taxonomies: Taxonomy[]
@@ -53,7 +54,7 @@ export function TaxonomySidebar({
         <button
           onClick={onImport}
           className="p-1 rounded text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors"
-          aria-label="Importer une taxonomie"
+          aria-label={t('tx.import')}
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -63,7 +64,7 @@ export function TaxonomySidebar({
       <div className="flex-1 overflow-y-auto py-1">
         {taxonomies.length === 0 ? (
           <p className="text-[11px] text-white/25 text-center py-6">
-            Aucune taxonomie
+            {t('tx.none')}
           </p>
         ) : (
           taxonomies.map((tax) => (

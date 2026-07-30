@@ -62,3 +62,17 @@ export function intlLocale(locale: Locale): string {
 export function formatDate(value: Date | number, locale: Locale, options?: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat(intlLocale(locale), options).format(value)
 }
+
+/**
+ * Encadre un texte des guillemets de la langue COURANTE.
+ *
+ * ⚠️ Trouvé par la passe visuelle : `« {t('node.x.label')} »` écrit en dur dans
+ * le JSX affichait des guillemets FRANÇAIS au milieu d'une phrase anglaise. Les
+ * chevrons sont de la typographie, pas de la ponctuation neutre — ils se
+ * traduisent comme le reste.
+ */
+export function quote(text: string | number): string {
+  // Espaces INSÉCABLES échappées : le français en met une avant » et après «,
+  // mais `no-irregular-whitespace` refuse le caractère littéral dans du code.
+  return useLocaleStore.getState().locale === 'en' ? `“${text}”` : `«\u00a0${text}\u00a0»`
+}

@@ -1,7 +1,7 @@
 import { useState, useRef, useLayoutEffect } from 'react'
 import { Globe, Factory, Check, AlertTriangle, Plus, BadgeCheck, ShieldAlert, ExternalLink } from 'lucide-react'
 import type { CompareStatus, FieldComparison, VerdictSummary } from './types'
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 interface Props {
   sourceUrl: string | null
@@ -22,11 +22,12 @@ const hostOf = (url: string | null): string => {
   try { return new URL(url).hostname.replace(/^www\./, '') } catch { return url }
 }
 
-const STATUS_META: Record<CompareStatus, { sym: string; label: string; cls: string }> = {
-  match:         { sym: '=', label: 'identique',  cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-  diff:          { sym: '≠', label: t('mv.verdict.diff'),    cls: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-  'mfr-only':    { sym: '+', label: 'fabricant',  cls: 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' },
-  'source-only': { sym: '·', label: 'source',     cls: 'text-white/40 bg-white/[0.04] border-white/10' },
+// ⚠️ CLÉS, pas `t()` : objet évalué au chargement du module.
+const STATUS_META: Record<CompareStatus, { sym: string; labelKey: TranslationKey; cls: string }> = {
+  match:         { sym: '=', labelKey: 'mv.status.match',      cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  diff:          { sym: '≠', labelKey: 'mv.verdict.diff',      cls: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+  'mfr-only':    { sym: '+', labelKey: 'mv.status.mfrOnly',    cls: 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' },
+  'source-only': { sym: '·', labelKey: 'mv.status.sourceOnly', cls: 'text-white/40 bg-white/[0.04] border-white/10' },
 }
 
 const NEUTRAL = 'text-white/45 bg-white/[0.04] border-white/10'
@@ -34,18 +35,20 @@ const NEUTRAL = 'text-white/45 bg-white/[0.04] border-white/10'
 /** Badge d'un champ : verdict =/≠ pour identité/specs ; NEUTRE (informatif) pour
  *  prix et contenu — un prix RRP ≠ revendeur ou « 4 vs 1 points » n'est ni
  *  « identique » ni une « erreur ». */
-function badgeFor(c: FieldComparison): { sym: string; label: string; cls: string } {
-  if (c.group === 'price') return { sym: '≈', label: 'indicatif', cls: NEUTRAL }
+function badgeFor(c: FieldComparison): { sym: string; labelKey: TranslationKey; cls: string } {
+  if (c.group === 'price') return { sym: '≈', labelKey: 'mv.status.indicative', cls: NEUTRAL }
   if (c.group === 'content') {
-    if (c.sourceValue && c.mfrValue) return { sym: '·', label: 'des deux', cls: NEUTRAL }
-    if (c.mfrValue) return { sym: '+', label: 'fabricant', cls: 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' }
-    return { sym: '·', label: 'source', cls: NEUTRAL }
+    if (c.sourceValue && c.mfrValue) return { sym: '·', labelKey: 'mv.status.both' as TranslationKey, cls: NEUTRAL }
+    if (c.mfrValue) return { sym: '+', labelKey: 'mv.status.mfrOnly' as TranslationKey, cls: 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' }
+    return { sym: '·', labelKey: 'mv.status.sourceOnly' as TranslationKey, cls: NEUTRAL }
   }
   return STATUS_META[c.status]
 }
 
-const GROUP_LABEL: Record<FieldComparison['group'], string> = {
-  identity: 'Identité', price: 'Prix (indicatif)', spec: 'Spécifications techniques', content: 'Contenu marketing',
+// ⚠️ CLÉS, pas `t()` : objet évalué au chargement du module.
+const GROUP_LABEL: Record<FieldComparison['group'], TranslationKey> = {
+  identity: 'mv.group.identity', price: 'mv.group.price',
+  spec: 'mv.group.spec', content: 'mv.group.content',
 }
 
 /** Un côté (source ou fabricant) d'un champ de contenu marketing : texte complet,
@@ -268,7 +271,7 @@ export function ManufacturerVerdict({ sourceUrl, sourceLabel, mfrUrl, mfrLabel, 
                       <span className="justify-self-end"><AdoptToggle on={!!c.adopted} disabled={busy} onChange={(v) => onToggleAdopt!(c, v)} /></span>
                     ) : (
                       <span className={`justify-self-end text-[10px] font-semibold px-2 py-[2px] rounded-full border whitespace-nowrap ${meta.cls}`}>
-                        {meta.sym} {meta.label}
+                        {meta.sym} {t(meta.labelKey)}
                       </span>
                     )}
                   </div>

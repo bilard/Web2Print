@@ -103,11 +103,11 @@ export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPane
   }
 
   const tabs: { id: FilterTab; label: string; icon?: React.ComponentType<{ className?: string }> }[] = [
-    { id: 'all', label: 'Tous', icon: Library },
+    { id: 'all', label: t('ch.filterAll'), icon: Library },
     { id: 'favorites', label: 'Favoris', icon: Star },
     ...PROMPT_CATEGORIES.map((c) => ({
       id: c as FilterTab,
-      label: CATEGORY_META[c].label,
+      label: t(CATEGORY_META[c].labelKey),
       icon: CATEGORY_META[c].icon,
     })),
   ]
@@ -166,7 +166,7 @@ export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPane
           ) : prompts.length === 0 ? (
             <div className="px-3 py-8 text-center">
               <p className="text-[13px] text-white/55">
-                Ta bibliothèque est vide. Crée ton premier prompt avec le bouton ci-dessous.
+                {t('ch.libraryEmpty')}
               </p>
             </div>
           ) : filtered.length === 0 ? (

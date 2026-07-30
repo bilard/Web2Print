@@ -85,8 +85,8 @@ export function TelegramInboxView() {
           }`}
           title={
             botToken
-              ? 'Cet onglet écoute et traite les messages Telegram.'
-              : 'Configure le bot token dans Settings → Connecteurs → Telegram.'
+              ? t('tg.listening')
+              : t('tg.configureToken')
           }
         >
           {botToken ? '● worker actif' : '○ token manquant'}

@@ -59,7 +59,7 @@ export function HelpDrawer() {
             <HelpSectionView section={section} />
           ) : (
             <p className="text-sm text-white/50">
-              Sélectionne une section dans le sommaire.
+              {t('help.pickSection')}
             </p>
           )}
         </div>

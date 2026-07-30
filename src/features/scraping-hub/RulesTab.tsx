@@ -78,7 +78,7 @@ export function RulesTab() {
         />
         <div className="p-4 overflow-auto bg-background prose prose-invert prose-sm max-w-none prose-headings:text-white/90 prose-a:text-indigo-300 prose-code:text-amber-300 prose-code:bg-white/5 prose-code:px-1 prose-code:rounded">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {content || '_Zone vide — écris du markdown à gauche_'}
+            {content || t('sh.rulesEmpty')}
           </ReactMarkdown>
         </div>
       </div>

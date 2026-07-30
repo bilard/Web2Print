@@ -4,7 +4,7 @@ import { useExcelStore } from '@/stores/excel.store'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { aggregateInsights } from './insightsAggregate'
 import { fetchSheetsQuiet } from './fetchSheetsQuiet'
-import { t } from '@/lib/i18n'
+import { quote, t } from '@/lib/i18n'
 
 interface DbFile { fileName: string; docId: string; totalRows: number; path: string[]; updatedAt: Date | null }
 
@@ -89,7 +89,7 @@ export function DatabaseList() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher une base…"
+            placeholder={t('mv.insights.searchDb')}
             className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-well border border-white/10 text-sm placeholder:text-white/30 focus:outline-none focus:border-indigo-500/40"
           />
           {query && (
@@ -107,7 +107,7 @@ export function DatabaseList() {
         {files.length === 0 ? (
           <div className="px-3 py-4 text-sm text-white/40">{t('mv.noDatabase')}</div>
         ) : visible.length === 0 ? (
-          <div className="px-3 py-4 text-sm text-white/40">Aucun résultat pour « {query} »</div>
+          <div className="px-3 py-4 text-sm text-white/40">{t('mv.insights.noResult', { query: quote(query) })}</div>
         ) : (
           visible.map((f) => {
             const active = f.docId === currentDocId

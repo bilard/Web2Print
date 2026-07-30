@@ -9,7 +9,7 @@ import type { TaxonomyNodeWithChildren } from '@/features/taxonomy/types'
 import type { TaxonomyProductCounts } from '@/features/taxonomy/useTaxonomyProductCounts'
 import { TaxonomyNodeActions } from './TaxonomyNodeActions'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { t } from '@/lib/i18n'
+import { quote, t } from '@/lib/i18n'
 
 function highlightLabel(label: string, query: string) {
   if (!query) return <span>{label}</span>
@@ -217,7 +217,7 @@ export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery, sh
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer ce nœud ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action supprimera « {node.label} » et tous ses descendants. Elle est irréversible.
+              {t('tx.deleteWarn', { node: quote(node.label) })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

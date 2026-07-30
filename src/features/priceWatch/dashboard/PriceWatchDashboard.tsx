@@ -40,12 +40,13 @@ const EMPTY_REPORT: StoredReport = {
 }
 
 function EmptyState({ hasWatch }: { hasWatch: boolean }) {
+  const { t } = useTranslation()
   return (
     <div className="bg-surface rounded-lg p-8 text-center">
       <p className="text-sm text-white/60">
         {hasWatch
-          ? 'Ce suivi n’a pas encore de comparatif. Lance le node « Comparer catalogue » du workflow pour peupler ce cockpit.'
-          : 'Aucune veille tarifaire pour l’instant. Crée un workflow (moisson des concurrents puis « Comparer catalogue ») pour alimenter ce cockpit.'}
+          ? t('pw.dash.emptyWatch')
+          : t('pw.dash.empty')}
       </p>
     </div>
   )

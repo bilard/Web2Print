@@ -38,8 +38,8 @@ export function DemoExpressPage() {
               <h1 className="text-xl font-semibold text-white">{t('de.title')}</h1>
               <p className="text-sm text-white/50">
                 {phase === 'form'
-                  ? 'Le studio se remplit tout seul avec les produits et la charte du site d’un prospect.'
-                  : `Démonstration pour ${company}`}
+                  ? t('de.pageLead')
+                  : t('de.pageFor', { company })}
               </p>
             </div>
           </div>

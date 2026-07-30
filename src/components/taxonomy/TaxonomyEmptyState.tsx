@@ -13,7 +13,7 @@ export function TaxonomyEmptyState({ onImport }: TaxonomyEmptyStateProps) {
           <FolderTree className="w-8 h-8 text-white/15" />
         </div>
         <div>
-          <h3 className="text-[15px] font-semibold text-white/60 mb-1.5">Aucune taxonomie</h3>
+          <h3 className="text-[15px] font-semibold text-white/60 mb-1.5">{t('tx.none')}</h3>
           <p className="text-[12px] text-white/35 leading-relaxed">
             {t('taxonomyEmptyState.importAMarkdown')}
           </p>
@@ -23,7 +23,7 @@ export function TaxonomyEmptyState({ onImport }: TaxonomyEmptyStateProps) {
           className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-[#fff] text-[13px] font-medium px-5 py-2.5 rounded-xl transition-colors"
         >
           <Upload className="w-4 h-4" />
-          Importer une taxonomie
+          {t('tx.import')}
         </button>
       </div>
     </div>

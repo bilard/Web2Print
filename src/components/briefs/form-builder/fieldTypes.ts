@@ -3,7 +3,7 @@ import type {
   ClientFormFieldType,
 } from '@/features/taxonomy/types'
 import type { LucideIcon } from 'lucide-react'
-import { t } from '@/lib/i18n'
+import type { TranslationKey } from '@/lib/i18n'
 import {
   Type,
   AlignLeft,
@@ -18,21 +18,23 @@ import {
 } from 'lucide-react'
 
 interface FieldTypeMeta {
-  label: string
+  labelKey: TranslationKey
   icon: LucideIcon
 }
 
+// ⚠️ CLÉS, pas `t()` : cet objet est évalué au CHARGEMENT du module. Un texte
+// traduit ici resterait dans la langue de départ après un changement de langue.
 export const FIELD_TYPE_REGISTRY: Record<ClientFormFieldType, FieldTypeMeta> = {
-  text:         { label: 'Texte court',      icon: Type },
-  textarea:     { label: 'Texte long',       icon: AlignLeft },
-  number:       { label: 'Nombre',           icon: Hash },
-  email:        { label: 'Email',            icon: Mail },
-  select:       { label: t('br.fieldType.select'), icon: List },
-  color:        { label: 'Couleur',          icon: Palette },
-  logo_upload:      { label: 'Logo',              icon: ImageUp },
-  brand_kit_upload: { label: 'Brand kit',          icon: Package },
-  budget_range:     { label: 'Fourchette budget',  icon: Wallet },
-  address:          { label: 'Adresse',            icon: MapPin },
+  text:             { labelKey: 'br.ft.text',     icon: Type },
+  textarea:         { labelKey: 'br.ft.textarea', icon: AlignLeft },
+  number:           { labelKey: 'br.ft.number',   icon: Hash },
+  email:            { labelKey: 'br.ft.email',    icon: Mail },
+  select:           { labelKey: 'br.ft.select',   icon: List },
+  color:            { labelKey: 'br.ft.color',    icon: Palette },
+  logo_upload:      { labelKey: 'br.ft.logo',     icon: ImageUp },
+  brand_kit_upload: { labelKey: 'br.ft.brandKit', icon: Package },
+  budget_range:     { labelKey: 'br.ft.budget',   icon: Wallet },
+  address:          { labelKey: 'br.ft.address',  icon: MapPin },
 }
 
 export const ALL_FIELD_TYPES = Object.keys(

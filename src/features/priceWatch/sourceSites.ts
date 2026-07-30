@@ -5,7 +5,7 @@
 import type { CompetitorSite, SiteEngine, SiteMode } from './types'
 import { parseSitesConfig, stableId } from './core'
 import { DEFAULT_WATCH_ID } from './paths'
-import { t } from '@/lib/i18n'
+import type { TranslationKey } from '@/lib/i18n'
 
 /** Ligne de config du node « Sites sources » (JSON-sérialisable dans le workflow). */
 export interface SourceSiteRow {
@@ -127,14 +127,15 @@ export function siteStatusRank(status: SiteStatus): number {
 
 /** Libellé + tonalité + pastille de chaque statut, pour un affichage LISIBLE sans
  *  survol (badge de ligne + bilan d'en-tête partagent cette source unique). */
-export const SITE_STATUS_META: Record<SiteStatus, { label: string; short: string; icon: string; tone: 'ok' | 'warn' | 'err' | 'mute' }> = {
-  live:     { label: 'En cours',     short: 'en cours',     icon: '●', tone: 'ok' },
-  ok:       { label: 'OK',           short: 'OK',           icon: '✓', tone: 'ok' },
-  empty:    { label: 'Sans produit', short: 'sans produit', icon: '⚠', tone: 'warn' },
-  waiting:  { label: 'Attend le cycle', short: 'en attente', icon: '⏸', tone: 'mute' },
-  error:    { label: 'Sans catalogue', short: 'sans catalogue', icon: '✗', tone: 'err' },
-  never:    { label: 'Jamais',       short: 'jamais',       icon: '○', tone: 'mute' },
-  disabled: { label: t('pw.tail.disabled'),    short: t('pw.tail.disabledShort'),   icon: '—', tone: 'mute' },
+// ⚠️ CLÉS, pas `t()` : objet évalué au chargement du module.
+export const SITE_STATUS_META: Record<SiteStatus, { labelKey: TranslationKey; shortKey: TranslationKey; icon: string; tone: 'ok' | 'warn' | 'err' | 'mute' }> = {
+  live:     { labelKey: 'pw.site.live',    shortKey: 'pw.site.liveShort',    icon: '●', tone: 'ok' },
+  ok:       { labelKey: 'pw.site.ok',      shortKey: 'pw.site.ok',           icon: '✓', tone: 'ok' },
+  empty:    { labelKey: 'pw.site.empty',   shortKey: 'pw.site.emptyShort',   icon: '⚠', tone: 'warn' },
+  waiting:  { labelKey: 'pw.site.waiting', shortKey: 'pw.site.waitingShort', icon: '⏸', tone: 'mute' },
+  error:    { labelKey: 'pw.site.error',   shortKey: 'pw.site.errorShort',   icon: '✗', tone: 'err' },
+  never:    { labelKey: 'pw.site.never',   shortKey: 'pw.site.neverShort',   icon: '○', tone: 'mute' },
+  disabled: { labelKey: 'pw.tail.disabled', shortKey: 'pw.tail.disabledShort', icon: '—', tone: 'mute' },
 }
 
 export interface ResolvedSites {

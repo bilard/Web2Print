@@ -6,7 +6,7 @@ import { useManufacturerVerify } from './useManufacturerVerify'
 import { VerdictDonePane } from './VerdictDonePane'
 import { VerifyActivityLog } from './VerifyActivityLog'
 import type { ManufacturerCandidate } from './types'
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 interface Props {
   rowId: string
@@ -15,10 +15,11 @@ interface Props {
   onClose: () => void
 }
 
-const CONF_META: Record<ManufacturerCandidate['confidence'], { label: string; cls: string }> = {
-  high:   { label: 'Correspondance forte', cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-  medium: { label: t('mv.risk.medium'),           cls: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-  low:    { label: 'Incertain',            cls: 'text-white/40 bg-white/[0.04] border-white/10' },
+// ⚠️ CLÉS, pas `t()` : objet évalué au chargement du module.
+const CONF_META: Record<ManufacturerCandidate['confidence'], { labelKey: TranslationKey; cls: string }> = {
+  high:   { labelKey: 'mv.conf.high',  cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  medium: { labelKey: 'mv.risk.medium', cls: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+  low:    { labelKey: 'mv.conf.low',   cls: 'text-white/40 bg-white/[0.04] border-white/10' },
 }
 
 /** Modal du module « Vérification Fabricant » : confirmation candidat → verdict. */
@@ -93,7 +94,7 @@ export function ManufacturerVerifyPanel({ rowId, source, sourceLabel, onClose }:
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-[13px] font-medium text-white truncate">{c.brand}</span>
-                        <span className={`text-[10px] font-semibold px-1.5 py-[1px] rounded-full border ${meta.cls}`}>{meta.label}</span>
+                        <span className={`text-[10px] font-semibold px-1.5 py-[1px] rounded-full border ${meta.cls}`}>{t(meta.labelKey)}</span>
                       </div>
                       <div className="text-[11px] text-white/45 truncate">{c.title}</div>
                       <div className="flex items-center gap-2 mt-0.5 text-[10px] text-white/35">

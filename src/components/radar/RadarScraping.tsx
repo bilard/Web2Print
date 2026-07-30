@@ -9,6 +9,7 @@ import { RadarScrapingRow } from './RadarScrapingRow'
 import { useRadarSourceSites } from './useRadarSourceSites'
 import { normalizeDomain } from '@/features/priceWatch/sourceSites'
 import { stableId } from '@/features/priceWatch/core'
+import { t } from '@/lib/i18n'
 
 /** Ordre d'attention des pastilles de filtre (le plus urgent d'abord). */
 const FILTERS: SiteStatus[] = ['live', 'error', 'empty', 'ok', 'never']
@@ -69,7 +70,7 @@ export function RadarScraping({ report, meta, now, pulse, watchId, workflowId }:
                   border: `0.5px solid ${active ? tone.fg : tone.border}`,
                   boxShadow: active ? `inset 0 0 0 1px ${tone.fg}` : undefined,
                 }}>
-                {counts[k]} {m.short}
+                {counts[k]} {t(m.shortKey)}
               </button>
             )
           })}

@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { t } from '@/lib/i18n'
+import type { TranslationKey } from '@/lib/i18n'
 import {
   Pencil,
   GraduationCap,
@@ -24,18 +24,19 @@ export type PromptCategory = (typeof PROMPT_CATEGORIES)[number]
 
 export interface PromptCategoryMeta {
   id: PromptCategory
-  label: string
+  labelKey: TranslationKey
   icon: LucideIcon
 }
 
+// ⚠️ CLÉS, pas `t()` : objet évalué au chargement du module.
 export const CATEGORY_META: Record<PromptCategory, PromptCategoryMeta> = {
-  writing:  { id: 'writing',  label: t('ch.cat.writing'),          icon: Pencil },
-  learning: { id: 'learning', label: 'Apprendre',       icon: GraduationCap },
-  code:     { id: 'code',     label: 'Code',            icon: Code2 },
-  daily:    { id: 'daily',    label: 'Vie quotidienne', icon: Coffee },
-  ideas:    { id: 'ideas',    label: t('ch.cat.ideas'),           icon: Lightbulb },
-  image:    { id: 'image',    label: 'Image',           icon: ImagePlus },
-  custom:   { id: 'custom',   label: t('ch.cat.custom'),    icon: Sparkles },
+  writing:  { id: 'writing',  labelKey: 'ch.cat.writing',  icon: Pencil },
+  learning: { id: 'learning', labelKey: 'ch.cat.learning', icon: GraduationCap },
+  code:     { id: 'code',     labelKey: 'ch.cat.code',     icon: Code2 },
+  daily:    { id: 'daily',    labelKey: 'ch.cat.daily',    icon: Coffee },
+  ideas:    { id: 'ideas',    labelKey: 'ch.cat.ideas',    icon: Lightbulb },
+  image:    { id: 'image',    labelKey: 'ch.cat.image',    icon: ImagePlus },
+  custom:   { id: 'custom',   labelKey: 'ch.cat.custom',   icon: Sparkles },
 }
 
 export interface Prompt {

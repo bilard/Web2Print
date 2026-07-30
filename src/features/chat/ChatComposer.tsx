@@ -32,7 +32,7 @@ export function ChatComposer({
   onSubmit,
   onStop,
   isLoading = false,
-  placeholder = 'Comment puis-je vous aider ?',
+  placeholder = t('ch.howCanIHelp'),
   prefill,
   prefillNonce,
 }: ChatComposerProps) {

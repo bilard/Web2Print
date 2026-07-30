@@ -120,7 +120,7 @@ export function DemoExpressForm({ onLaunch }: Props) {
           className="mt-0.5 h-4 w-4 rounded border-white/20 bg-well accent-indigo-600"
         />
         <span className="text-sm text-white/80">
-          Une animation HTML par produit
+          {t('de.animPerProduct')}
           <span className="block text-xs text-white/40 font-normal mt-0.5">
             {t('de.animHint')}
           </span>

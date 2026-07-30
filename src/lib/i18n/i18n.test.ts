@@ -225,6 +225,12 @@ describe('orthographe britannique (en-GB)', () => {
     /\bbehavior(s|al)?\b/i,
     /\banalyz(e|es|ed|ing)\b/i,
     /\blicense\b/i, // nom : « licence » en en-GB
+    // ⚠️ Typographie : les GUILLEMETS FRANÇAIS dans une phrase anglaise. Trouvés
+    // par la passe visuelle (`« Compare catalogue »` au milieu d'un paragraphe
+    // en-GB) — aucune règle sur les accents ne peut les voir. L'anglais prend
+    // des guillemets courbes ; le helper `quote()` s'en charge quand le texte
+    // encadré est dynamique.
+    /[«»]/,
   ]
 
   it("n'emploie aucune graphie américaine", () => {

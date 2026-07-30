@@ -5,12 +5,15 @@ import { StepSource } from './steps/StepSource'
 import { StepMapping } from './steps/StepMapping'
 import { StepRender } from './steps/StepRender'
 import { PromoSavedList } from './PromoSavedList'
+import { t, type TranslationKey } from '@/lib/i18n'
 
-const STEP_LABELS = {
-  source: 'Source',
-  mapping: 'Correspondance',
-  template: 'Aperçu & export',
-} as const
+// ⚠️ CLÉS, pas `t()` : objet évalué au chargement du module — la langue y
+// restait figée à celle du premier rendu du bundle.
+const STEP_LABELS: Record<'source' | 'mapping' | 'template', TranslationKey> = {
+  source: 'rp.step.source',
+  mapping: 'rp.step.mapping',
+  template: 'rp.step.template',
+}
 
 const STEPS = ['source', 'mapping', 'template'] as const
 
@@ -54,7 +57,7 @@ export function RetailPromoPage() {
               <span className={[
                 'text-sm',
                 i === currentStepIndex ? 'text-white font-medium' : 'text-white/40',
-              ].join(' ')}>{STEP_LABELS[s]}</span>
+              ].join(' ')}>{t(STEP_LABELS[s])}</span>
             </div>
             {i < STEPS.length - 1 && (
               <div className="w-6 h-px bg-white/10 mx-2" />

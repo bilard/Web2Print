@@ -3,6 +3,7 @@ import type { ScrapeRow } from '@/features/priceWatch/radar/scrapeState'
 import { fmtInt, fmtPct, timeAgo } from '@/features/priceWatch/radar/radarFormat'
 import type { SourceSiteRow } from '@/features/priceWatch/sourceSites'
 import { RadarSiteActions } from './RadarSiteActions'
+import { t } from '@/lib/i18n'
 
 /** Libellés du moteur réellement utilisé (parité tableau « Sites sources » de l'app). */
 const ENGINE_LABELS: Record<string, string> = {
@@ -62,7 +63,7 @@ export function RadarScrapingRow({ row, now, watchId, workflowId, cfg, onChanged
           style={row.live
             ? { color: '#04270f', background: 'var(--radar-live)' }
             : { color: tone.fg, background: tone.bg, fontWeight: 600 }}>
-          {meta.icon} {meta.label}{detail}
+          {meta.icon} {t(meta.labelKey)}{detail}
         </span>
       </div>
       <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">

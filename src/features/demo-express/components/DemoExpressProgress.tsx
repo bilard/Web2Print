@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Loader2, Check, AlertTriangle, X, Minus, CircleDashed, Square, Terminal } from 'lucide-react'
 import { useDemoExpressStore } from '@/stores/demoExpress.store'
 import type { DemoLogKind, DemoStepStatus } from '../types'
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 const STATUS_ICON: Record<DemoStepStatus, React.ReactNode> = {
   pending: <CircleDashed className="w-4 h-4 text-white/25" aria-hidden="true" />,
@@ -40,11 +40,12 @@ function StepDetail({ status, detail }: { status: DemoStepStatus; detail: string
   )
 }
 
-const LOG_TAG: Record<DemoLogKind, { label: string; tag: string; text: string }> = {
-  step: { label: t('de.step'), tag: 'text-white/45', text: 'text-white/75' },
-  ia: { label: 'IA', tag: 'text-indigo-400', text: 'text-indigo-300' },
-  connector: { label: 'connecteur', tag: 'text-teal-400', text: 'text-teal-300' },
-  error: { label: 'erreur', tag: 'text-rose-400', text: 'text-rose-300' },
+// ⚠️ CLÉS, pas `t()` : objet évalué au chargement du module.
+const LOG_TAG: Record<DemoLogKind, { labelKey: TranslationKey; tag: string; text: string }> = {
+  step: { labelKey: 'de.step', tag: 'text-white/45', text: 'text-white/75' },
+  ia: { labelKey: 'de.log.ia', tag: 'text-indigo-400', text: 'text-indigo-300' },
+  connector: { labelKey: 'de.log.connector', tag: 'text-teal-400', text: 'text-teal-300' },
+  error: { labelKey: 'de.log.error', tag: 'text-rose-400', text: 'text-rose-300' },
 }
 
 /** Couleur de la LIGNE entière : type + sémantique (✓ bilan = vert, compteur = accent). */
@@ -89,7 +90,7 @@ function DemoLogConsole() {
               <span className="shrink-0 text-white/25 tabular-nums">
                 {new Date(l.ts).toLocaleTimeString('fr-FR')}
               </span>
-              <span className={`shrink-0 w-[74px] ${LOG_TAG[l.kind].tag}`}>{LOG_TAG[l.kind].label}</span>
+              <span className={`shrink-0 w-[74px] ${LOG_TAG[l.kind].tag}`}>{t(LOG_TAG[l.kind].labelKey)}</span>
               <span className={lineTextCls(l.kind, l.text)}>{l.text}</span>
             </div>
           ))}

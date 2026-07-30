@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react'
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 /** Champ de quota concerné par le module hôte. */
 type QuotaField = 'pimRows' | 'damAssets'
@@ -9,9 +9,10 @@ type QuotaField = 'pimRows' | 'damAssets'
 // garde-fou lit le nombre de lignes réel → auto-cicatrisant). DAM NON : le compteur
 // `usage.damAssets` est serveur-autoritaire et anti-reset → la suppression client ne
 // le décrémente pas, seul l'admin relève le plafond.
-const LABELS: Record<QuotaField, { unit: string; scope: string; hint: string }> = {
-  pimRows: { unit: 'lignes', scope: 'par base', hint: 'Supprimez des lignes de cette base pour continuer, ou contactez-nous pour lever le plafond.' },
-  damAssets: { unit: t('ac.quota.visuals'), scope: '', hint: t('ac.quota.hint') },
+// ⚠️ CLÉS, pas `t()` : objet évalué au chargement du module.
+const LABELS: Record<QuotaField, { unit: TranslationKey; scope?: TranslationKey; hint: TranslationKey }> = {
+  pimRows: { unit: 'ac.quota.rows', scope: 'ac.quota.perDb', hint: 'ac.quota.rowsHint' },
+  damAssets: { unit: 'ac.quota.visuals', hint: 'ac.quota.hint' },
 }
 
 interface DemoQuotaBannerProps {
@@ -38,6 +39,7 @@ export function DemoQuotaBanner({ reached, limit, field, className }: DemoQuotaB
   if (!reached) return null
 
   const { unit, scope, hint } = LABELS[field]
+  const scopeTxt = scope ? t('ac.quota.scopeSuffix', { scope: t(scope) }) : ''
   return (
     <div
       role="alert"
@@ -46,9 +48,9 @@ export function DemoQuotaBanner({ reached, limit, field, className }: DemoQuotaB
       <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />
       <div className="min-w-0 text-[12px] leading-snug">
         <p className="font-medium text-amber-200">
-          Plafond démo atteint — {limit} {unit} maximum{scope ? ` ${scope}` : ''}
+          {t('ac.quota.reached', { limit, unit: t(unit), scope: scopeTxt })}
         </p>
-        <p className="text-amber-200/70">{hint}</p>
+        <p className="text-amber-200/70">{t(hint)}</p>
       </div>
     </div>
   )

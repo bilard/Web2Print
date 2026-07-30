@@ -98,7 +98,7 @@ export function PromptEditDialog({ open, initial, onClose, onSave }: PromptEditD
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5 opacity-80" />
-                      {meta.label}
+                      {t(meta.labelKey)}
                     </button>
                   )
                 })}

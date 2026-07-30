@@ -88,7 +88,7 @@ function statusBadge(status: 'ok' | 'empty' | 'error' | 'waiting' | 'never' | 'd
           ? `Page bien récupérée (via ${engineLabel}) mais AUCUN catalogue PrestaShop trouvé — marketplace ou structure non reconnue. Utilise la « Recherche dirigée » pour ce site.`
           : 'Aucune page récupérée — site bloqué / inaccessible (essaie un autre moteur ou un accès connecté).')
       : 'Jamais moissonné'
-  return { cls: TONE_BADGE[meta.tone], icon: meta.icon, label: meta.label, detail, title }
+  return { cls: TONE_BADGE[meta.tone], icon: meta.icon, label: t(meta.labelKey), detail, title }
 }
 
 function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute', title?: string): JSX.Element {

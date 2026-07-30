@@ -85,17 +85,17 @@ export function FieldList({
         </button>
         {addMenuOpen && (
           <div className="absolute bottom-full left-2 right-2 mb-1 bg-surface border border-white/[0.08] rounded-md shadow-lg p-1 z-10">
-            {ALL_FIELD_TYPES.map((t) => {
-              const meta = FIELD_TYPE_REGISTRY[t]
+            {ALL_FIELD_TYPES.map((ft) => {
+              const meta = FIELD_TYPE_REGISTRY[ft]
               const Icon = meta.icon
               return (
                 <button
-                  key={t}
-                  onClick={() => handleAdd(t)}
+                  key={ft}
+                  onClick={() => handleAdd(ft)}
                   className="w-full flex items-center gap-2 text-[12px] text-white/70 hover:text-white hover:bg-white/[0.06] px-2 py-1.5 rounded transition-colors"
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  {meta.label}
+                  {t(meta.labelKey)}
                 </button>
               )
             })}

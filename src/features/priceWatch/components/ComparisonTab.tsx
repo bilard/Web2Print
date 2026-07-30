@@ -36,7 +36,7 @@ export function ComparisonTab() {
     <div className="space-y-6">
       {pending.length > 0 && (
         <section data-pw-section="pending">
-          <h3 className="mb-2 text-sm font-semibold text-white">À confirmer ({pending.length})</h3>
+          <h3 className="mb-2 text-sm font-semibold text-white">{t('pw.cmp.toConfirm', { count: pending.length })}</h3>
           <ul className="divide-y divide-white/10 rounded-md bg-surface">
             {pending.map((m) => (
               <li key={`${m.productId}__${m.siteId}`} className="flex items-center justify-between px-3 py-2 text-sm gap-3">

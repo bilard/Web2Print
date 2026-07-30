@@ -9,12 +9,12 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Code2, Globe, Sparkles, Filter, AlertTriangle, Info } from 'lucide-react'
-import { t } from '@/lib/i18n'
+import { t, type TranslationKey } from '@/lib/i18n'
 
 export type LogType = 'scrape' | 'llm' | 'parse' | 'network' | 'warning' | 'info'
 
 interface TypeMeta {
-  label: string
+  labelKey: TranslationKey
   Icon: typeof Code2
   className: string
   chipClassName: string
@@ -22,37 +22,37 @@ interface TypeMeta {
 
 const TYPE_META: Record<LogType, TypeMeta> = {
   warning: {
-    label: 'Alerte',
+    labelKey: 'xl.log.warning',
     Icon: AlertTriangle,
     className: 'text-amber-400/80',
     chipClassName: 'bg-amber-500/15 border-amber-500/40 text-amber-300',
   },
   scrape: {
-    label: 'Scrape',
+    labelKey: 'xl.log.scrape',
     Icon: Code2,
     className: 'text-cyan-400/80',
     chipClassName: 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300',
   },
   llm: {
-    label: 'LLM',
+    labelKey: 'xl.log.llm',
     Icon: Sparkles,
     className: 'text-fuchsia-400/80',
     chipClassName: 'bg-fuchsia-500/15 border-fuchsia-500/40 text-fuchsia-300',
   },
   parse: {
-    label: 'Parse',
+    labelKey: 'xl.log.parse',
     Icon: Filter,
     className: 'text-indigo-400/80',
     chipClassName: 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300',
   },
   network: {
-    label: t('xl.log.network'),
+    labelKey: 'xl.log.network',
     Icon: Globe,
     className: 'text-sky-400/80',
     chipClassName: 'bg-sky-500/15 border-sky-500/40 text-sky-300',
   },
   info: {
-    label: 'Info',
+    labelKey: 'xl.log.info',
     Icon: Info,
     className: 'text-white/45',
     chipClassName: 'bg-white/[0.05] border-white/10 text-white/60',
@@ -124,11 +124,12 @@ export function TypedLogConsole({ logs, maxHeight = '24rem', showHeader = true }
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [filtered.length])
 
-  const toggleType = (t: LogType) => {
+  // ⚠️ PAS `t` en paramètre : masquerait la fonction de traduction.
+  const toggleType = (lt: LogType) => {
     setEnabled((prev) => {
       const next = new Set(prev)
-      if (next.has(t)) next.delete(t)
-      else next.add(t)
+      if (next.has(lt)) next.delete(lt)
+      else next.add(lt)
       return next
     })
   }
@@ -152,24 +153,24 @@ export function TypedLogConsole({ logs, maxHeight = '24rem', showHeader = true }
 
       {/* Filtre-chips par type — affichés seulement si le type a au moins 1 entrée */}
       <div className="flex flex-wrap gap-1 mb-2">
-        {TYPE_ORDER.map((t) => {
-          if (counts[t] === 0) return null
-          const meta = TYPE_META[t]
-          const isOn = enabled.has(t)
+        {TYPE_ORDER.map((lt) => {
+          if (counts[lt] === 0) return null
+          const meta = TYPE_META[lt]
+          const isOn = enabled.has(lt)
           const Icon = meta.Icon
           return (
             <button
-              key={t}
+              key={lt}
               type="button"
-              onClick={() => toggleType(t)}
+              onClick={() => toggleType(lt)}
               className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[9px] font-medium transition-colors ${
                 isOn ? meta.chipClassName : 'bg-white/[0.02] border-white/[0.05] text-white/25 hover:text-white/40'
               }`}
-              title={`${isOn ? 'Masquer' : 'Afficher'} les logs de type "${meta.label}"`}
+              title={t('xl.log.toggle', { action: t(isOn ? 'xl.log.hide' : 'xl.log.show'), type: t(meta.labelKey) })}
             >
               <Icon className="w-2.5 h-2.5" />
-              <span>{meta.label}</span>
-              <span className="tabular-nums opacity-70">{counts[t]}</span>
+              <span>{t(meta.labelKey)}</span>
+              <span className="tabular-nums opacity-70">{counts[lt]}</span>
             </button>
           )
         })}
@@ -188,7 +189,7 @@ export function TypedLogConsole({ logs, maxHeight = '24rem', showHeader = true }
                 {String(entry.index + 1).padStart(2, '0')}
               </span>
               <span className="text-white/30 select-none uppercase tracking-wider text-[8px] shrink-0 w-12">
-                {meta.label}
+                {t(meta.labelKey)}
               </span>
               <span className="break-words flex-1">{entry.message}</span>
             </div>

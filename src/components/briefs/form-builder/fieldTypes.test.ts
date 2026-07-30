@@ -14,7 +14,7 @@ describe('FIELD_TYPE_REGISTRY', () => {
 
   it('provides a label for every type', () => {
     for (const t of ALL_FIELD_TYPES) {
-      expect(FIELD_TYPE_REGISTRY[t].label).toBeTruthy()
+      expect(FIELD_TYPE_REGISTRY[t].labelKey).toBeTruthy()
     }
   })
 })

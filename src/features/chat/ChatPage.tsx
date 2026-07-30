@@ -8,6 +8,7 @@ import { usePrompts } from './prompts/usePrompts'
 import { CATEGORY_META, PROMPT_CATEGORIES, type Prompt, type PromptCategory } from './prompts/types'
 import type { ComposerSubmitPayload } from './ChatComposer'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
+import { t } from '@/lib/i18n'
 
 export function ChatPage() {
   const { messages, isLoading, send, reset, stop } = useChat()
@@ -66,8 +67,8 @@ export function ChatPage() {
   }
 
   const composerPlaceholder = isImageMode
-    ? "Décris l'image à générer (Image IA)…"
-    : 'Comment puis-je vous aider ?'
+    ? t('ch.describeImage')
+    : t('ch.howCanIHelp')
 
   return (
     <div className="flex-1 h-full flex bg-background overflow-hidden">
@@ -92,7 +93,7 @@ export function ChatPage() {
           <div className="flex-1 flex flex-col items-center justify-center px-8 lg:px-12">
             <div className="w-full max-w-3xl">
               <h1 className="text-[28px] font-semibold text-white/90 text-center mb-8 tracking-tight">
-                Comment puis-je vous aider&nbsp;?
+                {t('ch.howCanIHelp')}
               </h1>
               <ChatComposer
                 onSubmit={handleSubmit}
@@ -120,7 +121,7 @@ export function ChatPage() {
                       }`}
                     >
                       <Icon className={`w-3.5 h-3.5 ${active ? 'opacity-90' : 'opacity-70'}`} />
-                      {meta.label}
+                      {t(meta.labelKey)}
                     </button>
                   )
                 })}

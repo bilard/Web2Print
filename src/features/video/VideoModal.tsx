@@ -715,7 +715,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                 <div>
                   <FieldLabel
                     htmlFor="freeform"
-                    hint="L'IA traduit ces instructions en animations par élément (cible par nom : « le bloc prix », « le logo », « tous les éléments »)."
+                    hint={t('vd.instructionsHint')}
                   >
                     {isStandalone ? 'Instructions libres' : 'Instructions d\'animation'}
                   </FieldLabel>

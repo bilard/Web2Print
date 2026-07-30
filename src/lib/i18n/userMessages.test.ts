@@ -36,6 +36,52 @@ function walk(dir: string): string[] {
   })
 }
 
+describe('constantes de module', () => {
+  /**
+   * `t()` dans un objet littéral déclaré en COLONNE 0 est évalué au chargement
+   * du bundle : le texte est figé dans la langue de ce moment-là et ne bouge
+   * plus quand l'utilisateur change de langue.
+   *
+   * ⚠️ Défaut INVISIBLE aux tests de navigation : un `goto()` recharge la page,
+   * donc la constante est ré-évaluée dans la bonne langue. Seul un utilisateur
+   * qui bascule SANS recharger le voit. Trouvé en relisant `RetailPromoPage`
+   * après la passe visuelle — 16 sites étaient concernés.
+   *
+   * La forme correcte : stocker la CLÉ (`labelKey: TranslationKey`) et traduire
+   * au rendu. Le type l'impose alors.
+   */
+  it("n'évalue aucun t() au chargement d'un module", () => {
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const full = join(dir, e.name)
+        if (e.isDirectory()) return e.name === 'ui' ? [] : walk(full)
+        return /\.tsx?$/.test(e.name) && !/\.test\./.test(e.name) ? [full] : []
+      })
+    const offences: string[] = []
+    for (const file of walk('src')) {
+      if (file.includes(join('lib', 'i18n'))) continue // le catalogue lui-même
+      const src = readFileSync(file, 'utf8')
+      for (const m of src.matchAll(/^(?:export )?const [A-Za-z_]\w*[^=\n]*=\s*\{/gm)) {
+        let depth = 1
+        let i = m.index + m[0].length
+        for (; i < src.length && depth > 0; i++) {
+          if (src[i] === '{') depth++
+          else if (src[i] === '}') depth--
+        }
+        const block = src.slice(m.index + m[0].length, i)
+        // Un objet qui contient du code DIFFÉRÉ (fonction, flèche) est un
+        // registre de comportements : son `t()` s'exécute au rendu, pas ici.
+        if (block.includes('=>') || block.includes('function')) continue
+        const hit = block.match(/\bt\('([^']+)'/)
+        if (hit) {
+          offences.push(`${file}:${src.slice(0, m.index).split('\n').length} → ${hit[1]}`)
+        }
+      }
+    }
+    expect(offences, `t() figé au chargement du module :\n${offences.join('\n')}`).toEqual([])
+  })
+})
+
 describe('messages utilisateur hors JSX', () => {
   it("n'affiche aucun toast ni dialogue natif en français littéral", () => {
     const offences: string[] = []

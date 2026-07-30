@@ -8,19 +8,21 @@ import { recordAudit } from '@/lib/auditLog'
 import { listRoles, type Role } from '@/features/access/rolesApi'
 import { computeEffectivePermissions } from '@/features/access/computePermissions'
 import { isOwnerEmail } from '@/features/auth/useAuth'
-import { t } from '@/lib/i18n'
+import { intlLocale, t } from '@/lib/i18n'
+import { useLocaleStore } from '@/stores/locale.store'
 
 const DAY = 86_400_000
 const MODULE_OF: Record<string, string> = Object.fromEntries(PERMISSIONS.map((p) => [p.key, p.module]))
 
 function formatLastSeen(ts: number): string {
-  if (!ts) return 'jamais vu'
+  if (!ts) return t('ac.neverSeen')
   const diff = Date.now() - ts
-  if (diff < 60_000) return "à l'instant"
-  if (diff < 3_600_000) return `il y a ${Math.floor(diff / 60_000)} min`
-  if (diff < DAY) return `il y a ${Math.floor(diff / 3_600_000)} h`
-  if (diff < 7 * DAY) return `il y a ${Math.floor(diff / DAY)} j`
-  return new Date(ts).toLocaleDateString('fr-FR')
+  if (diff < 60_000) return t('ac.justNow')
+  if (diff < 3_600_000) return t('ac.minsAgo', { n: Math.floor(diff / 60_000) })
+  if (diff < DAY) return t('ac.hoursAgo', { n: Math.floor(diff / 3_600_000) })
+  if (diff < 7 * DAY) return t('ac.daysAgo', { n: Math.floor(diff / DAY) })
+  // ⚠️ La date figée en 'fr-FR' affichait 30/07/2026 dans une UI anglaise.
+  return new Date(ts).toLocaleDateString(intlLocale(useLocaleStore.getState().locale))
 }
 
 export function UsersTab() {
@@ -144,7 +146,7 @@ export function UsersTab() {
               )}
               <button onClick={() => setExpanded(isExpanded ? null : u.uid)}
                 className={`text-[11px] px-2 py-1 rounded-md transition-colors ${isExpanded ? 'bg-white/10 text-white/80' : 'text-white/40 hover:text-white/70'}`}>
-                détails
+                {t('ac.details')}
               </button>
             </div>
 

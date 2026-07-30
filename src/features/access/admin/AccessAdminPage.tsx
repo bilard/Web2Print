@@ -20,7 +20,7 @@ export function AccessAdminPage() {
       <div className="max-w-[1800px] w-full mx-auto flex flex-col gap-4 flex-1 min-h-0">
         <h1 className="text-xl font-bold text-white">{t('ac.usersRoles')}</h1>
         <nav className="flex gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1 self-start">
-          {([['users', 'Utilisateurs', Users], ['roles', 'Rôles', Shield], ['audit', 'Journal', ScrollText], ['analytics', 'Analytics', BarChart3]] as const).map(([id, label, Icon]) => (
+          {([['users', t('ac.tab.users'), Users], ['roles', t('ac.tab.roles'), Shield], ['audit', t('ac.tab.audit'), ScrollText], ['analytics', t('ac.tab.analytics'), BarChart3]] as const).map(([id, label, Icon]) => (
             <button key={id} onClick={() => setTab(id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium ${tab === id ? 'bg-white/[0.06] text-white' : 'text-white/45 hover:text-white/80'}`}>
               <Icon className="w-3.5 h-3.5" /> {label}

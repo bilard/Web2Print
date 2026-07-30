@@ -66,14 +66,13 @@ export function ManufacturerInsightsScreen() {
             </div>
             <h2 className="text-lg font-semibold mb-1">{t('mv.insights.noVerified')}</h2>
             <p className="text-sm text-white/50 max-w-md mb-5">
-              Choisissez une base à gauche (celles avec un badge&nbsp;<span className="text-indigo-300">🏭</span>&nbsp;
-              contiennent de la data fabricant), ou lancez « Vérifier chez le Fabricant » sur des fiches du PIM.
+              {t('mv.insights.pickDb')}
             </p>
             <button
               onClick={() => navigate('/dashboard', { state: { section: 'data' } })}
               className="px-4 py-2 rounded-lg bg-indigo-500/90 hover:bg-indigo-500 text-[#fff] text-sm font-medium"
             >
-              Ouvrir le PIM
+              {t('mv.insights.openPim')}
             </button>
           </div>
         ) : (

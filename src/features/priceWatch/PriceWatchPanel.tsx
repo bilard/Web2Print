@@ -10,7 +10,7 @@ import { useWatchList } from './useCatalogReport'
 import { usePriceMatches } from './usePriceWatch'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { ChevronDown } from 'lucide-react'
-import { useTranslation } from '@/lib/i18n'
+import { quote, useTranslation } from '@/lib/i18n'
 
 export function PriceWatchPanel() {
   const { t } = useTranslation()
@@ -42,8 +42,8 @@ export function PriceWatchPanel() {
           <h1 className="text-xl font-semibold text-white">{t('pw.title')}</h1>
           <p className="text-sm text-white/50">
             {t('pw.intro.before')}
-            <span className="text-white/80"> « {t('node.harvest-competitor.label')} »</span>{t('pw.intro.and')}
-            <span className="text-white/80"> « {t('node.compare-catalog.label')} »</span>.
+            <span className="text-white/80"> {quote(t('node.harvest-competitor.label'))}</span>{t('pw.intro.and')}
+            <span className="text-white/80"> {quote(t('node.compare-catalog.label'))}</span>.
           </p>
         </div>
         <WatchSelector watches={watches} value={watchId ?? ''} onChange={setWatchId} />
@@ -58,7 +58,7 @@ export function PriceWatchPanel() {
         <button type="button" onClick={() => setLegacyOpen((o) => !o)}
           className="flex items-center gap-2 text-sm font-semibold text-white/70 hover:text-white">
           <ChevronDown className={`w-4 h-4 transition-transform ${legacyOpen ? 'rotate-180' : ''}`} />
-          À confirmer{legacyMatches.length > 0 ? ` (${legacyMatches.length})` : ''}
+          {t('pw.toConfirmTab', { count: legacyMatches.length > 0 ? ` (${legacyMatches.length})` : '' })}
         </button>
         {legacyOpen && (legacyMatches.length > 0
           ? <div className="mt-3"><ComparisonTab /></div>

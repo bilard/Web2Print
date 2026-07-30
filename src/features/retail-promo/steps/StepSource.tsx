@@ -66,12 +66,12 @@ export function StepSource() {
 
   if (mode === 'choose') return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-white">Source des produits</h2>
+      <h2 className="text-lg font-semibold text-white">{t('rp.source.title')}</h2>
       <p className="text-sm text-white/60">{t('rp.source.pick')}</p>
       <p className="text-xs text-white/40 -mt-2">{t('rp.source.datasetHint')}</p>
       {[
-        { id: 'excel', icon: Database, label: t('rp.source.excel'), desc: 'Vos catalogues du PIM (ex. Catalogue_GSB_2026, Scraping…)' },
-        { id: 'manual', icon: PenLine, label: 'Saisie manuelle', desc: '1 produit pour tester rapidement' },
+        { id: 'excel', icon: Database, label: t('rp.source.excel'), desc: t('rp.source.excelDesc') },
+        { id: 'manual', icon: PenLine, label: t('rp.source.manual'), desc: t('rp.source.manualDesc') },
         { id: 'pim', icon: FileSpreadsheet, label: t('rp.source.pim'), desc: t('rp.source.pim.desc') },
       ].map(({ id, icon: Icon, label, desc }) => (
         <button key={id} onClick={() => setMode(id as Mode)}
