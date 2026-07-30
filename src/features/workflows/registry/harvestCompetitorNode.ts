@@ -91,7 +91,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       disabledNoteKey: 'node.harvest-competitor.f2',
     },
     {
-      name: 'families', kind: 'text', label: 'Familles ciblées (séparées par des virgules)',
+      name: 'families', kind: 'text', labelKey: 'node.harvest-competitor.families.label',
       helpKey: 'node.harvest-competitor.f3',
     },
     {
@@ -103,7 +103,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       help: 'Pages liste moissonnées à chaque exécution, partagées entre les sites. Un site peut RÉSERVER son propre budget (champ « pages » de sa carte dans « Sites sources ») — utile pour brider un concurrent payant sans rationner les gratuits. ⚠ C\'est LE plafond du débit. Sur un run PLANIFIÉ (cron), la fenêtre de temps borne désormais la passe d\'elle-même : ce champ n\'est plus qu\'un plafond de sécurité, voyez large. Sur un run lancé depuis le navigateur, il n\'y a pas d\'échéance — c\'est lui qui décide de la durée.',
     },
     {
-      name: 'watchId', kind: 'text', label: 'Identifiant du suivi (avancé)',
+      name: 'watchId', kind: 'text', labelKey: 'node.harvest-competitor.watchId.label',
       helpKey: 'node.harvest-competitor.f5',
       disabledWhen: (_c, wired) => wired('sites'),
       disabledNoteKey: 'node.harvest-competitor.f6',

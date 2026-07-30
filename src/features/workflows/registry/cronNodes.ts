@@ -35,7 +35,7 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
   configSchema: [
     { name: 'enabled', kind: 'checkbox', label: 'Planification active' },
     { name: 'every', kind: 'number', label: 'Tous les', default: 1 },
-    { name: 'unit', kind: 'select', label: 'Unité', options: SERVER_UNITS, default: 'day' },
+    { name: 'unit', kind: 'select', labelKey: 'node.cron.unit.label', options: SERVER_UNITS, default: 'day' },
     {
       name: 'afterCompletion',
       kind: 'checkbox',

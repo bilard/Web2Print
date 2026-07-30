@@ -533,11 +533,11 @@ const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; re
       kind: 'select',
       labelKey: 'node.export-design.f1',
       options: [
-        { value: 'png', label: 'PNG (image haute résolution)' },
+        { value: 'png', labelKey: 'opt.export.png' },
         { value: 'pdf', label: 'PDF (document imprimable)' },
         { value: 'pptx', label: 'PowerPoint (.pptx)' },
         { value: 'html', label: 'HTML (page autonome)' },
-        { value: 'svg', label: 'SVG (vectoriel éditable)' },
+        { value: 'svg', labelKey: 'opt.export.svg' },
       ],
       default: 'png',
     },
@@ -546,7 +546,7 @@ const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; re
       kind: 'select',
       labelKey: 'node.export-design.f2',
       options: [
-        { value: '72', label: '72 dpi (écran)' },
+        { value: '72', labelKey: 'opt.dpi.72' },
         { value: '150', label: '150 dpi (standard)' },
         { value: '300', label: '300 dpi (impression)' },
       ],

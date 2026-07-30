@@ -76,7 +76,7 @@ const generateImageNode: NodeSpec<
       labelKey: 'node.generate-image.f5',
       default: '1:1',
       options: [
-        { value: '1:1', label: 'Carré (1:1)' },
+        { value: '1:1', labelKey: 'opt.aspect.square' },
         { value: '4:3', label: 'Standard (4:3)' },
         { value: '3:4', label: 'Portrait (3:4)' },
         { value: '16:9', label: 'Paysage (16:9)' },

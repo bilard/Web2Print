@@ -59,11 +59,11 @@ const browserActNode: NodeSpec<BrowserActConfig, BrowserActInputs, BrowserActOut
       helpKey: 'node.browseract.f1',
     },
     {
-      name: 'parameters', kind: 'textarea', label: 'Paramètres',
+      name: 'parameters', kind: 'textarea', labelKey: 'node.browseract.parameters.label',
       helpKey: 'node.browseract.f2',
     },
     {
-      name: 'inputParam', kind: 'text', label: 'Paramètre alimenté par l’entrée', default: 'url',
+      name: 'inputParam', kind: 'text', labelKey: 'node.browseract.inputParam.label', default: 'url',
       helpKey: 'node.browseract.f3',
     },
     {

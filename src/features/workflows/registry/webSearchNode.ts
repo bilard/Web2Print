@@ -44,9 +44,9 @@ export const webSearchNode: NodeSpec<WebSearchConfig, WebSearchInputs, WebSearch
     { name: 'text', type: 'any' },
   ],
   configSchema: [
-    { name: 'query', kind: 'text', label: 'Requête', required: true, help: 'Surchargée par une entrée « query » si branchée.' },
-    { name: 'maxResults', kind: 'number', label: 'Nb de résultats', default: 5, help: '1 à 20.' },
-    { name: 'readPages', kind: 'number', label: 'Pages lues en entier', default: 2, help: '0 à 5 — lit le contenu réel (données live).' },
+    { name: 'query', kind: 'text', labelKey: 'node.web-search.query.label', required: true, helpKey: 'node.web-search.query.help' },
+    { name: 'maxResults', kind: 'number', labelKey: 'node.web.maxResults.label', default: 5, helpKey: 'node.web.maxResults.help' },
+    { name: 'readPages', kind: 'number', labelKey: 'node.web.readPages.label', default: 2, helpKey: 'node.web.readPages.help' },
   ],
   defaultConfig: { query: '', maxResults: 5, readPages: 2 },
   runtime: 'client',

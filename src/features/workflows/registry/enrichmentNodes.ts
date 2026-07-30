@@ -32,7 +32,7 @@ const enrichmentNode: NodeSpec<
   ],
   configSchema: [
     { name: 'urlColumn', kind: 'text', label: 'Colonne URL', default: 'url', required: true },
-    { name: 'fields', kind: 'text', label: 'Colonnes à enrichir (séparées par virgule)', default: 'title,description,price', required: true },
+    { name: 'fields', kind: 'text', labelKey: 'node.enrichment.fields.label', default: 'title,description,price', required: true },
   ],
   defaultConfig: { urlColumn: 'url', fields: 'title,description,price' },
   runtime: 'client',

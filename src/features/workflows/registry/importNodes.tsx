@@ -38,7 +38,7 @@ const importCsvNode: NodeSpec<CsvConfig, { file: File }, { sheet: unknown }> = {
   inputs: [{ name: 'file', type: 'file', required: true }],
   outputs: [{ name: 'sheet', type: 'sheet' }],
   configSchema: [
-    { name: 'headerRow', kind: 'checkbox', label: 'Première ligne = en-têtes', default: true },
+    { name: 'headerRow', kind: 'checkbox', labelKey: 'node.import-csv.headerRow.label', default: true },
   ],
   defaultConfig: { headerRow: true },
   runtime: 'client',

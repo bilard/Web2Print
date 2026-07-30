@@ -219,7 +219,7 @@ const sortNode: NodeSpec<
       default: 'asc',
       options: [
         { value: 'asc', label: 'Croissant' },
-        { value: 'desc', label: 'Décroissant' },
+        { value: 'desc', labelKey: 'opt.sort.desc' },
       ],
     },
     {
@@ -228,8 +228,8 @@ const sortNode: NodeSpec<
       labelKey: 'node.transform-sort.f2',
       default: 'string',
       options: [
-        { value: 'string', label: 'Texte (alphabétique)' },
-        { value: 'number', label: 'Numérique' },
+        { value: 'string', labelKey: 'opt.sortType.string' },
+        { value: 'number', labelKey: 'opt.sortType.number' },
       ],
     },
   ],

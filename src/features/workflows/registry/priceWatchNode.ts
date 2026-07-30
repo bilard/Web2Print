@@ -93,9 +93,9 @@ const priceWatchNode: NodeSpec<
     { name: 'all', type: 'sheet' },
   ],
   configSchema: [
-    { name: 'watchId', kind: 'text', label: 'Identifiant du suivi', help: "L'état (derniers prix vus) est mémorisé par identifiant — un suivi par liste surveillée." },
-    { name: 'keyColumn', kind: 'columnRef', label: 'Colonne clé', help: 'Identifie chaque produit entre deux runs (url, sku, ean…).' },
-    { name: 'valueColumn', kind: 'columnRef', label: 'Colonne prix', help: 'Valeur surveillée (parse « 1 299,90 € »).' },
+    { name: 'watchId', kind: 'text', labelKey: 'node.price-watch.watchId.label', help: "L'état (derniers prix vus) est mémorisé par identifiant — un suivi par liste surveillée." },
+    { name: 'keyColumn', kind: 'columnRef', labelKey: 'node.price-watch.keyColumn.label', helpKey: 'node.price-watch.keyColumn.help' },
+    { name: 'valueColumn', kind: 'columnRef', labelKey: 'node.price-watch.valueColumn.label', helpKey: 'node.price-watch.valueColumn.help' },
     { name: 'thresholdPct', kind: 'number', label: 'Seuil de variation (%)', help: '0 = signaler tout changement.' },
   ],
   defaultConfig: { watchId: 'veille-1', keyColumn: 'url', valueColumn: 'price', thresholdPct: 0 },
