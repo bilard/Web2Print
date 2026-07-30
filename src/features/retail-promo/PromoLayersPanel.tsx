@@ -4,6 +4,7 @@ import { useRetailPromoStore } from './retailPromo.store'
 import { extractPromoFields } from './promoMapping'
 import { toCardData } from './promoCardData'
 import type { PromoBlockId, RetailCardData } from './promoCardTypes'
+import { t } from '@/lib/i18n'
 
 type IconKind = 'block' | 'text' | 'image' | 'badge'
 interface LayerNode { id: PromoBlockId; label: string; isText: boolean; icon: IconKind; children?: LayerNode[] }
@@ -11,8 +12,8 @@ interface LayerNode { id: PromoBlockId; label: string; isText: boolean; icon: Ic
 // Arbre des calques par GROUPE (conteneur déco → ses sous-éléments), reflétant
 // la structure de la carte. Ordre haut → bas.
 const TREE: LayerNode[] = [
-  { id: 'header', label: 'Bandeau en-tête', isText: false, icon: 'block', children: [
-    { id: 'category', label: 'Catégorie', isText: true, icon: 'text' },
+  { id: 'header', label: t('rp.layer.header'), isText: false, icon: 'block', children: [
+    { id: 'category', label: t('rp.layer.category'), isText: true, icon: 'text' },
     { id: 'name', label: 'Nom', isText: true, icon: 'text' },
     { id: 'brand', label: 'Marque', isText: true, icon: 'text' },
     { id: 'description', label: 'Description', isText: true, icon: 'text' },
@@ -21,13 +22,13 @@ const TREE: LayerNode[] = [
     { id: 'badge', label: 'Badge remise', isText: false, icon: 'badge' },
   ] },
   { id: 'price', label: 'Bandeau prix', isText: false, icon: 'block', children: [
-    { id: 'priceLabel', label: 'Libellé prix', isText: true, icon: 'text' },
-    { id: 'priceWas', label: 'Prix barré', isText: true, icon: 'text' },
+    { id: 'priceLabel', label: t('rp.layer.priceLabel'), isText: true, icon: 'text' },
+    { id: 'priceWas', label: t('rp.layer.priceWas'), isText: true, icon: 'text' },
     { id: 'unitPrice', label: 'Prix unitaire', isText: true, icon: 'text' },
     { id: 'priceNow', label: 'Prix promo', isText: true, icon: 'text' },
   ] },
   { id: 'footer', label: 'Pied de page', isText: true, icon: 'text' },
-  { id: 'details', label: 'Détails (champs libres)', isText: false, icon: 'block' },
+  { id: 'details', label: t('rp.layer.details'), isText: false, icon: 'block' },
 ]
 
 const flatten = (nodes: LayerNode[]): LayerNode[] => nodes.flatMap((n) => [n, ...(n.children ? flatten(n.children) : [])])

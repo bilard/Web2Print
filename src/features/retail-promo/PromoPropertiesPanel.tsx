@@ -8,6 +8,7 @@ import { PromoTextOptions } from './PromoTextOptions'
 import { STYLE_KEYS, type PromoColorKey } from './promoCardTypes'
 import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import { UserFontsPanel } from '@/features/fonts/UserFontsPanel'
+import { t } from '@/lib/i18n'
 
 const KEY_LABELS: Record<string, string> = {
   category: 'Catégorie', name: 'Nom', brand: 'Marque', description: 'Description',
@@ -25,13 +26,13 @@ export function PromoPropertiesPanel() {
   return (
     <aside className="sticky top-2 flex max-h-[calc(100vh-96px)] w-96 shrink-0 flex-col self-start rounded-xl border border-white/10 bg-surface">
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-white">Propriétés</h3>
-        {selectedKey && <button onClick={() => setSelectedKey(null)} className="text-white/40 hover:text-white" title="Désélectionner"><X className="h-4 w-4" /></button>}
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-white">{t('rp.properties')}</h3>
+        {selectedKey && <button onClick={() => setSelectedKey(null)} className="text-white/40 hover:text-white" title={t('rp.deselect')}><X className="h-4 w-4" /></button>}
       </div>
 
       {!selectedKey ? (
         <div className="flex flex-col gap-3 px-4 py-3">
-          <p className="text-xs leading-relaxed text-white/40">Cliquez un élément de la carte (texte ou bloc) pour régler ses caractéristiques ; glissez les poignées pour redimensionner.</p>
+          <p className="text-xs leading-relaxed text-white/40">{t('rp.propertiesHint')}</p>
           <Section title="Habillage global">
             <div className="flex flex-col gap-3">
               <ColorPicker label="Accent (badge / prix)" value={config.accent} onChange={(accent) => setConfig({ accent })} />
@@ -48,7 +49,7 @@ export function PromoPropertiesPanel() {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="px-4 py-2.5 text-xs text-white/50">Élément : <span className="font-semibold text-[#818cf8]">{KEY_LABELS[selectedKey] ?? selectedKey}</span></div>
+          <div className="px-4 py-2.5 text-xs text-white/50">{t('rp.element')} <span className="font-semibold text-[#818cf8]">{KEY_LABELS[selectedKey] ?? selectedKey}</span></div>
           {isText && (
             <div className="flex border-b border-white/10 px-2 text-xs font-semibold uppercase tracking-wide">
               {(['shape', 'text'] as const).map((t) => (

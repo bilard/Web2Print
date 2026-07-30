@@ -6,6 +6,7 @@ import { PromoConditionalSection } from './PromoConditionalSection'
 import type { PromoColorKey, ElementStyle } from './promoCardTypes'
 import { FontSelectOptions } from '@/features/fonts/FontSelectOptions'
 import type { PromoFieldKey } from './promoTypes'
+import { t } from '@/lib/i18n'
 
 type Align = NonNullable<ElementStyle['textAlign']>
 type Casse = NonNullable<ElementStyle['textTransform']>
@@ -41,7 +42,7 @@ export function PromoTextOptions({ id }: { id: PromoColorKey }) {
         <div className="grid grid-cols-2 gap-2.5">
           <label className="col-span-2 flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40">Famille
             <select value={st.fontFamily ?? ''} onChange={(e) => set({ fontFamily: e.target.value || undefined })} className={inputCls}>
-              <option value="">Hériter</option>
+              <option value="">{t('rp.text.inherit')}</option>
               <FontSelectOptions />
             </select>
           </label>
@@ -86,7 +87,7 @@ export function PromoTextOptions({ id }: { id: PromoColorKey }) {
           <Link2 className="h-4 w-4 text-[#818cf8]" />
           {colLabel
             ? <span className="text-white/80"><span className="text-[#818cf8]">▸</span> {colLabel}</span>
-            : <span className="text-white/40">Texte fixe (non lié à une colonne)</span>}
+            : <span className="text-white/40">{t('rp.text.fixed')}</span>}
         </div>
       </Section>
 

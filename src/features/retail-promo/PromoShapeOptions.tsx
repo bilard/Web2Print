@@ -5,13 +5,14 @@ import { useRetailPromoStore } from './retailPromo.store'
 import { PropertySection as Section, NumField, SelectField, SliderField, SegButtons } from '@/components/shared/panel'
 import { PromoConditionalSection } from './PromoConditionalSection'
 import { STYLE_KEYS, type PromoBlockId, type PromoColorKey, type BlockFill } from './promoCardTypes'
+import { t, type TranslationKey } from '@/lib/i18n'
 
-const BLEND_MODES: Array<{ v: string; label: string }> = [
-  { v: 'normal', label: 'Normal' }, { v: 'multiply', label: 'Multiplier' }, { v: 'screen', label: 'Écran' },
-  { v: 'overlay', label: 'Superposition' }, { v: 'darken', label: 'Obscurcir' }, { v: 'lighten', label: 'Éclaircir' },
-  { v: 'color-dodge', label: 'Densité -' }, { v: 'color-burn', label: 'Densité +' }, { v: 'hard-light', label: 'Lumière crue' },
-  { v: 'soft-light', label: 'Lumière douce' }, { v: 'difference', label: 'Différence' }, { v: 'exclusion', label: 'Exclusion' },
-  { v: 'hue', label: 'Teinte' }, { v: 'saturation', label: 'Saturation' }, { v: 'color', label: 'Couleur' }, { v: 'luminosity', label: 'Luminosité' },
+const BLEND_MODES: Array<{ v: string; labelKey: TranslationKey }> = [
+  { v: 'normal', labelKey: 'rp.blend.normal' }, { v: 'multiply', labelKey: 'rp.blend.multiply' }, { v: 'screen', labelKey: 'rp.blend.screen' },
+  { v: 'overlay', labelKey: 'rp.blend.overlay' }, { v: 'darken', labelKey: 'rp.blend.darken' }, { v: 'lighten', labelKey: 'rp.blend.lighten' },
+  { v: 'color-dodge', labelKey: 'rp.blend.colorDodge' }, { v: 'color-burn', labelKey: 'rp.blend.colorBurn' }, { v: 'hard-light', labelKey: 'rp.blend.hardLight' },
+  { v: 'soft-light', labelKey: 'rp.blend.softLight' }, { v: 'difference', labelKey: 'rp.blend.difference' }, { v: 'exclusion', labelKey: 'rp.blend.exclusion' },
+  { v: 'hue', labelKey: 'rp.blend.hue' }, { v: 'saturation', labelKey: 'rp.blend.saturation' }, { v: 'color', labelKey: 'rp.blend.color' }, { v: 'luminosity', labelKey: 'rp.blend.luminosity' },
 ]
 const decoFallback = (id: PromoBlockId, accent: string, headerBg: string) => id === 'image' ? '#f1f5f9' : id === 'header' ? headerBg : accent
 const ALL_BLOCKS: PromoBlockId[] = ['header', 'image', 'badge', 'price', 'footer', 'category', 'name', 'brand', 'description', 'priceLabel', 'priceWas', 'unitPrice', 'priceNow']
@@ -51,7 +52,7 @@ export function PromoShapeOptions({ id }: { id: PromoBlockId }) {
             ? <GradientPicker value={gradValue} onChange={setGrad} />
             : <ColorPicker value={solidValue} onChange={setSolid} />}
           {fillType === 'gradient' && isText && (
-            <p className="text-[11px] leading-snug text-amber-400/80">⚠ Dégradé sur texte : aplati en couleur unie à l'export PNG.</p>
+            <p className="text-[11px] leading-snug text-amber-400/80">{t('rp.gradientOnTextWarn')}</p>
           )}
         </div>
       </Section>
@@ -69,12 +70,12 @@ export function PromoShapeOptions({ id }: { id: PromoBlockId }) {
         </div>
       </Section>
 
-      <Section title="Opacité & Fusion" defaultOpen={false}>
+      <Section title={t('rp.opacityBlend')} defaultOpen={false}>
         <div className="flex flex-col gap-2.5">
           <SliderField label="Opacité" value={sh.opacity ?? 1} onChange={(o) => setShape(id, { opacity: o })} />
-          <SelectField label="Mode de fusion" value={sh.blendMode ?? 'normal'} options={BLEND_MODES} onChange={(m) => setShape(id, { blendMode: m })} />
+          <SelectField label={t('rp.blendMode')} value={sh.blendMode ?? 'normal'} options={BLEND_MODES.map((b) => ({ v: b.v, label: t(b.labelKey) }))} onChange={(m) => setShape(id, { blendMode: m })} />
           {sh.blendMode && sh.blendMode !== 'normal' && (
-            <p className="text-[11px] leading-snug text-amber-400/80">⚠ Le mode de fusion s'affiche à l'écran/HTML mais n'est pas rendu à l'export PNG.</p>
+            <p className="text-[11px] leading-snug text-amber-400/80">{t('rp.blendModeWarn')}</p>
           )}
         </div>
       </Section>
@@ -105,8 +106,8 @@ export function PromoShapeOptions({ id }: { id: PromoBlockId }) {
           {isText
             ? <NumField label="Largeur" unit="px" value={st.width} onChange={(w) => setElementStyle(id as PromoColorKey, { width: w })} />
             : <div className="grid grid-cols-2 gap-2">
-                <NumField label="Échelle X" step={0.05} value={config.scales?.[id]?.sx} placeholder="1" onChange={(v) => useRetailPromoStore.getState().setConfig({ scales: { ...config.scales, [id]: { sx: v ?? 1, sy: config.scales?.[id]?.sy ?? 1 } } })} />
-                <NumField label="Échelle Y" step={0.05} value={config.scales?.[id]?.sy} placeholder="1" onChange={(v) => useRetailPromoStore.getState().setConfig({ scales: { ...config.scales, [id]: { sx: config.scales?.[id]?.sx ?? 1, sy: v ?? 1 } } })} />
+                <NumField label={t('rp.scaleX')} step={0.05} value={config.scales?.[id]?.sx} placeholder="1" onChange={(v) => useRetailPromoStore.getState().setConfig({ scales: { ...config.scales, [id]: { sx: v ?? 1, sy: config.scales?.[id]?.sy ?? 1 } } })} />
+                <NumField label={t('rp.scaleY')} step={0.05} value={config.scales?.[id]?.sy} placeholder="1" onChange={(v) => useRetailPromoStore.getState().setConfig({ scales: { ...config.scales, [id]: { sx: config.scales?.[id]?.sx ?? 1, sy: v ?? 1 } } })} />
               </div>}
           <NumField label="Rotation" unit="°" value={sh.rotation} placeholder="0" onChange={(r) => setShape(id, { rotation: r })} />
         </div>

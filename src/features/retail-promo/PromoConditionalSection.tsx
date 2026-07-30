@@ -9,6 +9,7 @@ import {
 } from '@/features/merge/conditionalRules'
 import { STYLE_KEYS, type PromoBlockId } from './promoCardTypes'
 import { RULE_SYNTHETIC_COLUMNS } from './promoRuleFields'
+import { t } from '@/lib/i18n'
 
 const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `r${Math.round(performance.now() * 1000)}`)
 
@@ -23,9 +24,9 @@ export function PromoConditionalSection({ id }: { id: PromoBlockId }) {
   const add = () => update([...rules, { id: uid(), field: fieldCols[0]?.key ?? '', operator: 'contains', value: '', action: { type: 'hide' } }])
 
   return (
-    <Section title="Règles conditionnelles" defaultOpen={false} badge={rules.length ? `(${rules.length})` : undefined}>
+    <Section title={t('rp.conditionalRules')} defaultOpen={false} badge={rules.length ? `(${rules.length})` : undefined}>
       <div className="flex flex-col gap-3">
-        {rawColumns.length === 0 && <p className="text-[11px] text-white/40">Connectez une source de données pour utiliser des règles.</p>}
+        {rawColumns.length === 0 && <p className="text-[11px] text-white/40">{t('rp.needSource')}</p>}
         {rules.map((r) => {
           const noValue = VALUELESS_OPERATORS.has(r.operator)
           return (

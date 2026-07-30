@@ -24,6 +24,7 @@ import { PromoPropertiesPanel } from '../PromoPropertiesPanel'
 import { PromoLayersPanel } from '../PromoLayersPanel'
 import { PromoImagePanel } from '../PromoImagePanel'
 import { buildPromoHtml } from '../buildPromoHtml'
+import { t } from '@/lib/i18n'
 
 /** Convertit une URL blob:/http en data-URI (HTML autonome) ; data: renvoyé tel quel. */
 async function toDataUrl(url?: string): Promise<string | undefined> {
@@ -254,11 +255,11 @@ export function StepRender() {
     <div className="flex flex-col gap-3">
       {/* Titre + enregistrement de la fiche sur une seule ligne */}
       <div className="flex items-center gap-2">
-        <h2 className="shrink-0 text-lg font-semibold text-white">Aperçu & export</h2>
+        <h2 className="shrink-0 text-lg font-semibold text-white">{t('rp.render.title')}</h2>
         <span className="mx-1 h-5 w-px shrink-0 bg-white/10" />
         <input value={ficheName} onChange={(e) => setFicheName(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void saveFiche() }}
-          placeholder={`Nom de la fiche… (déf. ${cards[safe]?.name?.slice(0, 24) || 'produit'})`}
+          placeholder={t('rp.render.namePlaceholder', { name: cards[safe]?.name?.slice(0, 24) || 'produit' })}
           className="w-56 rounded-lg border border-white/10 bg-well px-2.5 py-1.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#6366f1]" />
         <button onClick={() => void saveFiche()} disabled={savingFiche}
           className="flex shrink-0 items-center gap-2 rounded-lg bg-[#6366f1] px-3 py-1.5 text-sm font-medium text-[#fff] hover:bg-[#5457e5] disabled:opacity-40">
@@ -280,7 +281,7 @@ export function StepRender() {
       <details className="group rounded-xl border border-white/10 bg-surface">
         <summary className="flex cursor-pointer select-none items-center gap-2 px-4 py-2 text-sm text-white/70 hover:text-white [&::-webkit-details-marker]:hidden">
           <Sparkles className="h-4 w-4 text-[#6366f1]" /> Gabarit, IA & modèles
-          <span className="text-xs text-white/30">— style, mise en page, champs affichés</span>
+          <span className="text-xs text-white/30">{t('rp.render.styleHint')}</span>
           <ChevronDown className="ml-auto h-4 w-4 transition-transform group-open:rotate-180" />
         </summary>
         <div className="border-t border-white/5">
@@ -303,9 +304,9 @@ export function StepRender() {
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <div className="flex items-center justify-center gap-3 text-xs text-white/40">
-            <span>Cliquez pour styler · double-cliquez un texte pour l'éditer · glissez pour repositionner</span>
+            <span>{t('rp.render.canvasHint')}</span>
             {Object.keys(config.offsets).length > 0 && (
-              <button onClick={() => setConfig({ offsets: {} })} className="text-[#6366f1] hover:underline">Réinitialiser les positions</button>
+              <button onClick={() => setConfig({ offsets: {} })} className="text-[#6366f1] hover:underline">{t('rp.render.resetPositions')}</button>
             )}
           </div>
           {/* Pointerdown sur le FOND (cible exacte, pas les éléments ni leurs poignées :

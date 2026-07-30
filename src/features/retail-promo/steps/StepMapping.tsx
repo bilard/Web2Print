@@ -1,6 +1,7 @@
 import { useRetailPromoStore } from '../retailPromo.store'
 import type { PromoFieldKey } from '../promoTypes'
 import { CustomFieldsEditor } from '../components/CustomFieldsEditor'
+import { t } from '@/lib/i18n'
 
 const FIELD_LABELS: Array<{ key: PromoFieldKey; label: string }> = [
   { key: 'name', label: 'Nom produit' },
@@ -33,7 +34,7 @@ export function StepMapping() {
       <h2 className="text-lg font-semibold text-white">Correspondance des champs</h2>
       <p className="text-sm text-white/60">
         Associez chaque champ promo à la colonne de votre source. Les champs{' '}
-        <span className="text-[#6366f1]">promo_*</span> sont calculés automatiquement.
+        <span className="text-[#6366f1]">promo_*</span> {t('rp.map.autoComputed')}
       </p>
 
       <div className="flex flex-col gap-2">
@@ -45,7 +46,7 @@ export function StepMapping() {
               onChange={(e) => handleChange(key, e.target.value)}
               className="flex-1 px-2 py-1.5 rounded-lg bg-well border border-white/10 text-white text-sm outline-none focus:border-[#6366f1] [&>option]:bg-neutral-900"
             >
-              <option value="">(non mappé)</option>
+              <option value="">{t('rp.map.unmapped')}</option>
               {rawColumns.map((c) => (
                 <option key={c.key} value={c.key}>{c.label || c.key}</option>
               ))}
@@ -55,7 +56,7 @@ export function StepMapping() {
       </div>
 
       <div>
-        <div className="text-xs font-semibold text-white/70 uppercase tracking-wide mb-2">Champs supplémentaires</div>
+        <div className="text-xs font-semibold text-white/70 uppercase tracking-wide mb-2">{t('rp.map.extraFields')}</div>
         <CustomFieldsEditor customFields={customFields} columns={rawColumns} onChange={setCustomFields} />
       </div>
 

@@ -1,3 +1,4 @@
+import type { TranslationKey } from '@/lib/i18n'
 // GABARIT de la carte promo : identifiants des blocs et des sous-éléments texte,
 // configuration du template (couleurs, polices, positions, visibilité).
 //
@@ -44,11 +45,11 @@ export type PromoBlockId =
 /** Variantes de mise en page curées (structure graphique, pas seulement les couleurs). */
 export const PROMO_LAYOUT_IDS = ['classique', 'photo-cover', 'prix-fort', 'minimal'] as const
 export type PromoLayoutId = typeof PROMO_LAYOUT_IDS[number]
-export const PROMO_LAYOUTS: { id: PromoLayoutId; label: string; hint: string }[] = [
-  { id: 'classique', label: 'Classique', hint: 'En-tête / photo / bandeau prix empilés' },
-  { id: 'photo-cover', label: 'Photo plein cadre', hint: 'Photo en fond, bandeaux en surimpression' },
-  { id: 'prix-fort', label: 'Prix dominant', hint: 'Grand bloc prix en bas, gros chiffre' },
-  { id: 'minimal', label: 'Minimal', hint: 'Fond blanc, filets accent, étiquette rayon' },
+export const PROMO_LAYOUTS: { id: PromoLayoutId; labelKey: TranslationKey; hintKey: TranslationKey }[] = [
+  { id: 'classique', labelKey: 'rp.layout.classic', hintKey: 'rp.layout.classic.hint' },
+  { id: 'photo-cover', labelKey: 'rp.layout.photoCover', hintKey: 'rp.layout.photoCover.hint' },
+  { id: 'prix-fort', labelKey: 'rp.layout.bigPrice', hintKey: 'rp.layout.bigPrice.hint' },
+  { id: 'minimal', labelKey: 'rp.layout.minimal', hintKey: 'rp.layout.minimal.hint' },
 ]
 
 /** Réglages que le CSS ne peut pas surcharger (styles inline) : couleurs de texte + échelle du prix selon la variante. */

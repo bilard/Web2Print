@@ -8,6 +8,7 @@ import { generatePromoTemplate } from './useGeneratePromoTemplate'
 import { listPromoTemplates, savePromoTemplate, deletePromoTemplate, type UserPromoTemplate } from './promoTemplatesApi'
 import { PromoLayoutPicker } from './PromoLayoutPicker'
 import type { PromoTemplateConfig } from './promoCardTypes'
+import { t } from '@/lib/i18n'
 
 const TOGGLES: Array<{ key: keyof PromoTemplateConfig; label: string }> = [
   { key: 'showCategory', label: 'Catégorie' },
@@ -88,7 +89,7 @@ export function PromoTemplateEditor() {
         <input
           value={brief} onChange={(e) => setBrief(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void generate() }}
-          placeholder="Décris le style voulu (ex : soldes flashy rouge & jaune, gros prix, police condensée)…"
+          placeholder={t('rp.tpl.stylePlaceholder')}
           className="flex-1 rounded-lg border border-white/10 bg-well px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#6366f1]"
         />
         <button onClick={() => void generate()} disabled={busy || !brief.trim()}
@@ -113,11 +114,11 @@ export function PromoTemplateEditor() {
 
       {/* Modèles enregistrés */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-white/5 pt-3">
-        <span className="text-xs font-semibold uppercase tracking-wide text-white/40">Modèles</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-white/40">{t('rp.tpl.templates')}</span>
         <input
           value={tplName} onChange={(e) => setTplName(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void saveTemplate() }}
-          placeholder="Nom du modèle…"
+          placeholder={t('rp.tpl.namePlaceholder')}
           className="w-44 rounded-lg border border-white/10 bg-well px-2.5 py-1.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#6366f1]"
         />
         <button onClick={() => void saveTemplate()} disabled={savingTpl || !tplName.trim()}
@@ -129,7 +130,7 @@ export function PromoTemplateEditor() {
             <span className="h-4 w-px bg-white/10" />
             <select defaultValue="" onChange={(e) => { if (e.target.value) { applyTemplate(e.target.value); e.target.value = '' } }}
               className="rounded-lg border border-white/10 bg-well px-2 py-1.5 text-sm text-white [&>option]:bg-neutral-900">
-              <option value="">Appliquer un modèle…</option>
+              <option value="">{t('rp.tpl.apply')}</option>
               {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
             {templates.map((t) => (

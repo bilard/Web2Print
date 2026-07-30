@@ -3,6 +3,7 @@ import { Loader2, Trash2, Plus, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRetailPromoStore } from './retailPromo.store'
 import { listPromos, loadPromoPayload, deletePromo, type SavedPromoMeta } from './promosApi'
+import { t } from '@/lib/i18n'
 
 interface Props { onOpened: () => void; onNew: () => void }
 
@@ -49,7 +50,7 @@ export function PromoSavedList({ onOpened, onNew }: Props) {
       {promos === null ? (
         <div className="flex justify-center py-12"><Loader2 className="h-5 w-5 animate-spin text-white/40" /></div>
       ) : promos.length === 0 ? (
-        <p className="py-12 text-center text-sm text-white/40">Aucune fiche enregistrée. Créez-en une, puis cliquez « Enregistrer la fiche » à l'étape Aperçu.</p>
+        <p className="py-12 text-center text-sm text-white/40">{t('rp.noSavedCard')}</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {promos.map((p) => (

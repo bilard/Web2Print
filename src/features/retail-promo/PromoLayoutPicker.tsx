@@ -1,5 +1,6 @@
 import { useRetailPromoStore } from './retailPromo.store'
 import { PROMO_LAYOUTS } from './promoCardTypes'
+import { t } from '@/lib/i18n'
 
 /** Sélecteur de variante de mise en page (structure graphique). */
 export function PromoLayoutPicker() {
@@ -13,12 +14,12 @@ export function PromoLayoutPicker() {
           <button
             key={l.id}
             onClick={() => setConfig({ layout: l.id })}
-            title={l.hint}
+            title={t(l.hintKey)}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
               current === l.id ? 'bg-[#6366f1] text-[#fff]' : 'bg-white/[0.06] text-white/70 hover:bg-white/10'
             }`}
           >
-            {l.label}
+            {t(l.labelKey)}
           </button>
         ))}
       </div>
