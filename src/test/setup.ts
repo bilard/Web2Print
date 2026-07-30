@@ -1,6 +1,22 @@
 // Setup global pour les tests Vitest.
 // Ajouter ici les mocks ou polyfills globaux si besoin.
 
+// ⚠️ LANGUE ÉPINGLÉE EN FRANÇAIS.
+//
+// `locale.store` déduit la langue initiale de `navigator.language`, qui vaut
+// « en-US » sous jsdom : les tests tournaient donc en ANGLAIS, et tout test
+// assertant sur un message français cassait dès que ce message passait par le
+// catalogue — sans le moindre rapport avec ce qu'il vérifiait. C'est arrivé
+// trois fois pendant le chantier i18n (validateWorkflow, text-input,
+// web-search). Ici la langue devient DÉTERMINISTE et vaut le français, la
+// langue par défaut du produit.
+//
+// Un test qui vérifie l'anglais doit poser la langue lui-même
+// (`useLocaleStore.setState({ locale: 'en' })`) ou appeler `translate('en', …)`.
+import { useLocaleStore } from '@/stores/locale.store'
+
+useLocaleStore.setState({ locale: 'fr' })
+
 // Polyfill DOMMatrix — requis par pdfjs-dist (canvas.js) dans l'env jsdom/Node.
 if (typeof globalThis.DOMMatrix === 'undefined') {
   ;(globalThis as unknown as Record<string, unknown>).DOMMatrix = class DOMMatrix {

@@ -1,6 +1,8 @@
 import { Sparkles } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 // enrichRow tire le moteur PIM (useProductEnrichment ~156 Ko + Jina + LLM) : chargé
 // dynamiquement dans run pour ne pas cascader à l'ouverture de la page Workflows.
 
@@ -48,7 +50,7 @@ const enrichmentNode: NodeSpec<
         enrichedRows.push(row)
         continue
       }
-      ctx.log('info', `Enriching ${url}`)
+      ctx.log('info', t('run.net.enriching', { url }))
       try {
         const result = await enrichRow({
           url,
@@ -59,7 +61,7 @@ const enrichmentNode: NodeSpec<
         enrichedRows.push({ ...row, ...result.fields })
         collectedAssets.push(...(result.assets ?? []))
       } catch (err) {
-        ctx.log('error', `Failed for ${url}: ${err instanceof Error ? err.message : err}`)
+        ctx.log('error', t('run.net.scrapeFailed', { url, message: err instanceof Error ? err.message : String(err) }))
         enrichedRows.push(row)
       }
     }

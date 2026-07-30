@@ -5,7 +5,7 @@ import { interpolate, buildInterpolationContext } from './interpolate'
 import { getServerNode } from './registry'
 import { SERVER_UNSUPPORTED, SERVER_SKIP_VISUAL } from './nodes/index'
 import { mergeInputValue } from './mergeInputs'
-import { getUserLocale } from '../i18n'
+import { getUserLocale, t } from '../i18n'
 
 export interface HeadlessResult {
   status: 'success' | 'error' | 'partial'
@@ -142,9 +142,9 @@ export async function executeWorkflowHeadless(
     const orderedBody = topoSort(bodyNodes, innerEdges)
     const sub = new Map<string, Record<string, unknown>>([[pair.eachId, { item }]])
     for (const bn of orderedBody) {
-      if (opts.signal.aborted) throw new Error('Run aborted')
+      if (opts.signal.aborted) throw new Error(t(locale, 'run.stopped'))
       const spec = getServerNode(bn.type)
-      if (!spec) throw new Error(`Type inconnu dans le body de loop : ${bn.type}`)
+      if (!spec) throw new Error(t(locale, 'run.unknownTypeInLoop', { type: bn.type }))
       const subInputs: Record<string, unknown> = {}
       for (const e of wf.edges) {
         if (e.target !== bn.id) continue
@@ -214,7 +214,7 @@ export async function executeWorkflowHeadless(
       errored.add(node.id); log('error', `Node « ${node.type} » non exécutable côté serveur.`, node.id); return
     }
     const spec = getServerNode(node.type)
-    if (!spec) { errored.add(node.id); log('error', `Type inconnu : ${node.type}`, node.id); return }
+    if (!spec) { errored.add(node.id); log('error', t(locale, 'run.unknownType', { type: node.type }), node.id); return }
 
     const inputs: Record<string, unknown> = {}
     for (const e of upstream) {

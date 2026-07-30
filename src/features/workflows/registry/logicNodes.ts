@@ -1,6 +1,8 @@
 import { GitBranch, Repeat, Pipette, Sigma } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface IfElseConfig {
   expression: string
@@ -38,9 +40,9 @@ const ifElseNode: NodeSpec<
     try {
       result = Boolean(new Function('value', `return (${expr})`)(value))
     } catch (err) {
-      throw new Error(`Erreur d'évaluation "${expr}" : ${err instanceof Error ? err.message : err}`, { cause: err })
+      throw new Error(t('run.pure.evalError', { expr, message: err instanceof Error ? err.message : String(err) }), { cause: err })
     }
-    ctx.log('info', `Condition "${expr}" = ${result}`)
+    ctx.log('info', t('run.pure.condition', { expr, result: String(result) }))
     return result ? { then: value } : { else: value }
   },
 }
@@ -77,20 +79,17 @@ const pipeNode: NodeSpec<
       .map((s) => s.trim())
       .filter(Boolean)
     if (lines.length === 0) {
-      ctx.log('warn', 'Aucune expression — la valeur est forwardée telle quelle.')
+      ctx.log('warn', t('run.pure.noExpression'))
       return { result: inputs.value }
     }
     let value = inputs.value
-    ctx.log('info', `Pipe : ${lines.length} expression(s) à appliquer.`)
+    ctx.log('info', t('run.pure.pipeSteps', { count: lines.length }))
     for (let i = 0; i < lines.length; i++) {
       const expr = lines[i]
       try {
         value = new Function('value', `return (${expr})`)(value)
       } catch (err) {
-        throw new Error(
-          `Étape ${i + 1} "${expr}" : ${err instanceof Error ? err.message : err}`,
-          { cause: err },
-        )
+        throw new Error(t('run.pure.stepError', { step: i + 1, expr, message: err instanceof Error ? err.message : String(err) }), { cause: err })
       }
     }
     return { result: value }
@@ -122,12 +121,9 @@ const loopEachNode: NodeSpec<
   run: async (ctx, _config, inputs) => {
     const items = inputs.items
     if (!Array.isArray(items)) {
-      throw new Error("Loop each : l'entrée 'items' doit être un tableau.")
+      throw new Error(t('run.pure.itemsNotArray'))
     }
-    ctx.log(
-      'warn',
-      'Loop each isolé (sans Loop Collect en aval) — forwarde le premier élément seulement.',
-    )
+    ctx.log('warn', t('run.pure.loopIsolated'))
     return { item: items[0] }
   },
 }

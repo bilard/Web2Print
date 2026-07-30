@@ -105,6 +105,26 @@ const DONE: readonly { type: string; files: readonly string[] }[] = [
     ],
   },
   {
+    // `pure.ts` héberge huit types côté serveur ; le client les répartit en trois
+    // fichiers. Le garde-fou travaillant par FICHIER, les trois sont couverts.
+    type: 'if-else / pipe / loop-* / text-input / transform-*',
+    files: [
+      'src/features/workflows/registry/logicNodes.ts',
+      'src/features/workflows/registry/transformationNodes.ts',
+      'src/features/workflows/registry/textInputNode.tsx',
+      'functions/src/workflow/nodes/pure.ts',
+    ],
+  },
+  {
+    type: 'web-search / scrape-url / enrichment',
+    files: [
+      'src/features/workflows/registry/webSearchNode.ts',
+      'src/features/workflows/registry/scrapeNodes.ts',
+      'src/features/workflows/registry/enrichmentNodes.ts',
+      'functions/src/workflow/nodes/network.ts',
+    ],
+  },
+  {
     type: 'source-sites',
     files: [
       'src/features/workflows/registry/sourceSitesNode.tsx',

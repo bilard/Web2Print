@@ -8,6 +8,8 @@ import { interpolate } from './interpolate'
 import { mergeInputValue } from './mergeInputs'
 import { persistClientRun, type RunStatus } from '../persistence/runHistoryClient'
 import { auth } from '@/lib/firebase/config'
+// Messages d'exécution hors composant : helper `t()` de module.
+import { t } from '@/lib/i18n'
 
 type Middleware = (
   node: WorkflowNode,
@@ -247,11 +249,11 @@ async function executeLoopBody(
   for (const subNode of ordered) {
     if (signal.aborted) {
       ctxLog('warn', `Loop body itération ${itemIdx} abortée.`)
-      throw new Error('Run aborted')
+      throw new Error(t('run.stopped'))
     }
     const spec = nodeRegistry.get(subNode.type)
     if (!spec) {
-      throw new Error(`Type inconnu dans le body de loop : ${subNode.type}`)
+      throw new Error(t('run.unknownTypeInLoop', { type: subNode.type }))
     }
 
     // Collecte des inputs depuis les edges (incluant ceux qui partent du loop-each)
@@ -376,13 +378,13 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
       }
 
       if (ac.signal.aborted) {
-        useRunContext.getState().endNode(node.id, 'error', 'Run arrêté')
+        useRunContext.getState().endNode(node.id, 'error', t('run.stopped'))
         return
       }
 
       const spec = nodeRegistry.get(node.type)
       if (!spec) {
-        useRunContext.getState().endNode(node.id, 'error', `Unknown node type: ${node.type}`)
+        useRunContext.getState().endNode(node.id, 'error', t('run.unknownType', { type: node.type }))
         return
       }
 
@@ -505,7 +507,7 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
       if (ac.signal.aborted) {
         const st = useRunContext.getState().nodeStates[node.id]
         if (!st || st.status === 'running' || st.status === 'pending') {
-          useRunContext.getState().endNode(node.id, 'error', 'Run arrêté')
+          useRunContext.getState().endNode(node.id, 'error', t('run.stopped'))
         }
       }
     }

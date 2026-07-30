@@ -9,6 +9,8 @@ import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet } from '@/features/excel/types'
 import { webResultsToSheet } from './webResultsSheet'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface WebSearchConfig {
   /** Requête de recherche. Peut être surchargée par une entrée `query` en amont. */
@@ -52,10 +54,10 @@ export const webSearchNode: NodeSpec<WebSearchConfig, WebSearchInputs, WebSearch
     const upstream = typeof inputs.query === 'string' ? inputs.query.trim() : ''
     const query = upstream || (config.query ?? '').trim()
     if (!query) {
-      throw new Error('Requête manquante — renseignez « Requête » ou branchez une entrée query.')
+      throw new Error(t('run.net.queryMissing'))
     }
 
-    ctx.log('info', `🔎 Recherche web : « ${query} »…`)
+    ctx.log('info', t('run.net.searchingIcon', { query }))
     const { gatherWebContext } = await import('@/features/scraping/webContext')
     const ctxWeb = await gatherWebContext({
       searchQuery: query,
@@ -64,9 +66,9 @@ export const webSearchNode: NodeSpec<WebSearchConfig, WebSearchInputs, WebSearch
     })
 
     if (ctxWeb.results.length === 0) {
-      ctx.log('warn', '⚠️ Aucun résultat (clé Jina absente, quota, ou recherche vide).')
+      ctx.log('warn', t('run.net.noResult'))
     } else {
-      ctx.log('info', `${ctxWeb.results.length} résultat(s), ${ctxWeb.sources.length} source(s) lue(s).`)
+      ctx.log('info', t('run.net.resultsSources', { count: ctxWeb.results.length, sources: ctxWeb.sources.length }))
     }
 
     return { sheet: webResultsToSheet(ctxWeb.results), text: ctxWeb.text }

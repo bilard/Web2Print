@@ -7,6 +7,7 @@
 import { registerServerNode } from '../registry'
 import { jinaRead, jinaSearch } from '../jina'
 import { callLlm, parseLlmJson } from '../llm'
+import { t } from '../../i18n'
 
 // Jeu de champs serveur par défaut pour scrape-url quand un template (≠ custom) est
 // choisi. Le client résout `template` via FIELD_TEMPLATES (lourd, côté client) ; ici on
@@ -46,12 +47,12 @@ registerServerNode({
   run: async (ctx, config) => {
     const query = String(config.query ?? '').trim()
     if (!query) {
-      ctx.log('warn', 'Requête vide.')
+      ctx.log('warn', t(ctx.locale, 'run.net.emptyQuery'))
       return { sheet: { rows: [] }, text: '' }
     }
-    ctx.log('info', `Recherche web : « ${query} »`)
+    ctx.log('info', t(ctx.locale, 'run.net.searching', { query }))
     const results = await jinaSearch(ctx.uid, query)
-    ctx.log('info', `${results.length} résultat(s).`)
+    ctx.log('info', t(ctx.locale, 'run.net.results', { count: results.length }))
     const rows = results.map((r) => ({ title: r.title, url: r.url, description: r.snippet }))
     const text = results.map((r) => `# ${r.title}\n${r.url}\n${r.snippet}`).join('\n\n')
     return { sheet: { rows }, text }
@@ -70,19 +71,19 @@ registerServerNode({
         ? splitList(config.customFields)
         : DEFAULT_TEMPLATE_FIELDS
     if (urls.length === 0) {
-      ctx.log('warn', 'Aucune URL valide.')
+      ctx.log('warn', t(ctx.locale, 'run.net.noValidUrl'))
       return { sheet: { rows: [] }, assets: [] }
     }
     const rows: Record<string, unknown>[] = []
     for (const url of urls) {
-      if (ctx.signal.aborted) throw new Error('Run aborted')
-      ctx.log('info', `Scrape ${url}`)
+      if (ctx.signal.aborted) throw new Error(t(ctx.locale, 'run.stopped'))
+      ctx.log('info', t(ctx.locale, 'run.net.scraping', { url }))
       try {
         const { title, content } = await jinaRead(ctx.uid, url)
         const extracted = await extractFields(ctx.uid, content, fields)
         rows.push({ _url: url, title, ...extracted })
       } catch (err) {
-        ctx.log('warn', `Échec ${url} : ${err instanceof Error ? err.message : err}`)
+        ctx.log('warn', t(ctx.locale, 'run.net.scrapeFailed', { url, message: err instanceof Error ? err.message : String(err) }))
         rows.push({ _url: url, _error: String(err) })
       }
     }
@@ -102,22 +103,22 @@ registerServerNode({
     const rows = Array.isArray(sheet.rows) ? sheet.rows : []
     const out: Record<string, unknown>[] = []
     for (const row of rows) {
-      if (ctx.signal.aborted) throw new Error('Run aborted')
+      if (ctx.signal.aborted) throw new Error(t(ctx.locale, 'run.stopped'))
       const url = String(row[urlCol] ?? '')
       if (!/^https?:\/\//.test(url)) {
         out.push(row)
         continue
       }
-      ctx.log('info', `Enrichissement ${url}`)
+      ctx.log('info', t(ctx.locale, 'run.net.enriching', { url }))
       try {
         const { content } = await jinaRead(ctx.uid, url)
         out.push({ ...row, ...(await extractFields(ctx.uid, content, fields)) })
       } catch (err) {
-        ctx.log('warn', `Enrichissement échoué ${url} : ${err instanceof Error ? err.message : err}`)
+        ctx.log('warn', t(ctx.locale, 'run.net.enrichFailed', { url, message: err instanceof Error ? err.message : String(err) }))
         out.push(row)
       }
     }
-    ctx.log('info', `Enrichi ${out.length} ligne(s).`)
+    ctx.log('info', t(ctx.locale, 'run.net.enriched', { count: out.length }))
     return { sheet: { ...sheet, rows: out }, assets: [] }
   },
 })

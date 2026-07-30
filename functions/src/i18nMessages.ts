@@ -418,6 +418,53 @@ const MESSAGES = {
   'run.lp.cap': { fr: ' (cap {max})', en: ' (cap {max})' },
   'run.lp.noProductExtracted': { fr: 'Aucun produit extrait.', en: 'No product extracted.' },
 
+  // — Exécuteur : arrêt et type inconnu (client ET serveur) —
+  'run.stopped': { fr: 'Run arrêté', en: 'Run stopped' },
+  'run.unknownType': { fr: 'Type inconnu : {type}', en: 'Unknown type: {type}' },
+  'run.unknownTypeInLoop': {
+    fr: 'Type inconnu dans le body de loop : {type}',
+    en: 'Unknown type in the loop body: {type}',
+  },
+
+  // — Logique et transformations (`pure.ts` : if-else, pipe, loop-*, text-input, transform-*) —
+  'run.pure.emptyText': { fr: 'Le texte saisi est vide.', en: 'The text entered is empty.' },
+  'run.pure.evalError': { fr: 'Erreur d’évaluation "{expr}" : {message}', en: 'Evaluation error "{expr}": {message}' },
+  'run.pure.condition': { fr: 'Condition "{expr}" = {result}', en: 'Condition "{expr}" = {result}' },
+  'run.pure.stepError': { fr: 'Étape {step} "{expr}" : {message}', en: 'Step {step} "{expr}": {message}' },
+  'run.pure.itemsNotArray': {
+    fr: "Loop each : l'entrée 'items' doit être un tableau.",
+    en: "Loop each: the 'items' input must be an array.",
+  },
+  // Texte unifié sur la version CLIENT, plus explicite (« sans Loop Collect en aval »).
+  'run.pure.loopIsolated': {
+    fr: 'Loop each isolé (sans Loop Collect en aval) — forwarde le premier élément seulement.',
+    en: 'Loop each on its own (no Loop Collect downstream) — forwards the first item only.',
+  },
+  'run.pure.setColumns': {
+    fr: 'Définit {columns} colonne(s) sur {rows} ligne(s).',
+    en: 'Sets {columns} column(s) on {rows} row(s).',
+  },
+  'run.pure.filterInvalid': {
+    fr: 'Filtre : expression invalide "{expr}" — {message}',
+    en: 'Filter: invalid expression "{expr}" — {message}',
+  },
+  'run.pure.filterKept': { fr: 'Filtre : {kept}/{total} ligne(s).', en: 'Filter: {kept}/{total} row(s).' },
+  'run.pure.sorted': { fr: 'Tri {direction} sur "{column}".', en: 'Sort {direction} on "{column}".' },
+  'run.pure.renamed': { fr: 'Renommage de {count} colonne(s).', en: 'Renamed {count} column(s).' },
+  'run.pure.badRegex': { fr: 'Regex invalide — {message}', en: 'Invalid regex — {message}' },
+  'run.pure.textOp': { fr: '{op} sur "{source}" → "{target}".', en: '{op} on "{source}" → "{target}".' },
+
+  // — Réseau (`network.ts` : web-search, scrape-url, enrichment) —
+  'run.net.emptyQuery': { fr: 'Requête vide.', en: 'Empty query.' },
+  'run.net.searching': { fr: 'Recherche web : « {query} »', en: 'Web search: "{query}"' },
+  'run.net.results': { fr: '{count} résultat(s).', en: '{count} result(s).' },
+  'run.net.noValidUrl': { fr: 'Aucune URL valide.', en: 'No valid URL.' },
+  'run.net.scraping': { fr: 'Scrape {url}', en: 'Scrape {url}' },
+  'run.net.scrapeFailed': { fr: 'Échec {url} : {message}', en: 'Failed {url}: {message}' },
+  'run.net.enriching': { fr: 'Enrichissement {url}', en: 'Enriching {url}' },
+  'run.net.enrichFailed': { fr: 'Enrichissement échoué {url} : {message}', en: 'Enrichment failed {url}: {message}' },
+  'run.net.enriched': { fr: 'Enrichi {count} ligne(s).', en: 'Enriched {count} row(s).' },
+
   // — Périodes du rapport de fréquentation : interpolées DANS un message, donc
   // traduites comme lui — sinon un log anglais afficherait « (30 derniers jours) ».
   'run.period.7d': { fr: '7 derniers jours', en: 'last 7 days' },

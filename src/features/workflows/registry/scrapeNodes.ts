@@ -5,6 +5,8 @@ import type { NodeSpec } from '../types'
 // dans run. FIELD_TEMPLATES reste statique (constante légère utilisée par le spec).
 import { FIELD_TEMPLATES } from '@/features/scraping/useJina'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface ScrapeUrlConfig {
   /** URL à scraper, ou plusieurs URLs séparées par retours à la ligne / virgules. */
@@ -130,12 +132,12 @@ const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, ScrapeUrlO
   run: async (ctx, config) => {
     const urls = parseUrls(config.urls)
     if (urls.length === 0) {
-      throw new Error('Aucune URL fournie — renseignez au moins une URL dans la config.')
+      throw new Error(t('run.net.noUrlGiven'))
     }
 
     const { keys, labels } = resolveTargetFields(config)
     if (keys.length === 0) {
-      throw new Error('Aucun champ à extraire — choisissez un template ou listez des champs personnalisés.')
+      throw new Error(t('run.net.noFieldGiven'))
     }
 
     const allRows: Array<Record<string, unknown>> = []
@@ -146,7 +148,7 @@ const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, ScrapeUrlO
     for (let i = 0; i < urls.length; i++) {
       if (ctx.signal.aborted) break
       const url = urls[i]
-      ctx.log('info', `(${i + 1}/${urls.length}) Scraping ${url}`)
+      ctx.log('info', t('run.net.scrapingProgress', { i: i + 1, total: urls.length, url }))
       ctx.setProgress?.(Math.round((i / urls.length) * 100))
       try {
         const result = await enrichRow({
@@ -160,7 +162,7 @@ const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, ScrapeUrlO
         if (result.blockedByAntiBot) anyBlocked = true
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        ctx.log('error', `Échec ${url} : ${msg}`)
+        ctx.log('error', t('run.net.scrapeFailed', { url, message: msg }))
         allRows.push({ _url: url, ...Object.fromEntries(keys.map((k) => [k, null])) })
       }
     }
@@ -174,17 +176,11 @@ const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, ScrapeUrlO
       0,
     )
     if (filled === 0 && allAssets.length === 0) {
-      ctx.log(
-        'warn',
-        `⚠️ Aucune donnée extraite (${allRows.length} URL(s)) — site anti-bot non débloqué (cookies de session ?) ou page sans contenu structuré.`,
-      )
+      ctx.log('warn', t('run.net.nothingExtracted', { urls: allRows.length }))
     } else if (anyBlocked) {
-      ctx.log(
-        'warn',
-        `⚠️ Données PARTIELLES — ${filled} champ(s), ${allAssets.length} asset(s) : anti-bot non résolu sur au moins une URL (mêmes données que le bandeau d'alerte du PIM).`,
-      )
+      ctx.log('warn', t('run.net.partialData', { fields: filled, assets: allAssets.length }))
     } else {
-      ctx.log('info', `Terminé — ${allRows.length} ligne(s), ${filled} champ(s) rempli(s), ${allAssets.length} asset(s)`)
+      ctx.log('info', t('run.net.scrapeDone', { rows: allRows.length, fields: filled, assets: allAssets.length }))
     }
     return { sheet, assets: allAssets }
   },

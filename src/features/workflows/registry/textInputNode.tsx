@@ -3,6 +3,8 @@
 import { Type } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface TextInputConfig {
   text: string
@@ -46,8 +48,8 @@ export const textInputNode: NodeSpec<TextInputConfig, Record<string, never>, { t
   ConfigComponent: TextInputConfigUi,
   run: async (ctx, config) => {
     const text = config.text ?? ''
-    if (!text.trim()) ctx.log('warn', 'Le texte saisi est vide.')
-    else ctx.log('info', `Texte saisi : ${text.length} caractère(s).`)
+    if (!text.trim()) ctx.log('warn', t('run.pure.emptyText'))
+    else ctx.log('info', t('run.pure.textLength', { count: text.length }))
     return { text }
   },
 }

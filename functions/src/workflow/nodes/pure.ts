@@ -1,6 +1,7 @@
 // functions/src/workflow/nodes/pure.ts
 import { registerServerNode } from '../registry'
 import { interpolate } from '../interpolate'
+import { t } from '../../i18n'
 
 interface SheetLike { rows?: Array<Record<string, unknown>>; [key: string]: unknown }
 const asSheet = (input: unknown): SheetLike =>
@@ -12,7 +13,7 @@ registerServerNode({
   type: 'text-input',
   run: async (ctx, config) => {
     const text = (config.text as string) ?? ''
-    if (!String(text).trim()) ctx.log('warn', 'Le texte saisi est vide.')
+    if (!String(text).trim()) ctx.log('warn', t(ctx.locale, 'run.pure.emptyText'))
     return { text }
   },
 })
@@ -26,9 +27,9 @@ registerServerNode({
     try {
       result = Boolean(new Function('value', `return (${expr})`)(inputs.value))
     } catch (err) {
-      throw new Error(`Erreur d'évaluation "${expr}" : ${err instanceof Error ? err.message : err}`, { cause: err })
+      throw new Error(t(ctx.locale, 'run.pure.evalError', { expr, message: err instanceof Error ? err.message : String(err) }), { cause: err })
     }
-    ctx.log('info', `Condition "${expr}" = ${result}`)
+    ctx.log('info', t(ctx.locale, 'run.pure.condition', { expr, result: String(result) }))
     return result ? { then: inputs.value } : { else: inputs.value }
   },
 })
@@ -44,7 +45,7 @@ registerServerNode({
       try {
         value = new Function('value', `return (${lines[i]})`)(value)
       } catch (err) {
-        throw new Error(`Étape ${i + 1} "${lines[i]}" : ${err instanceof Error ? err.message : err}`, { cause: err })
+        throw new Error(t(ctx.locale, 'run.pure.stepError', { step: i + 1, expr: lines[i], message: err instanceof Error ? err.message : String(err) }), { cause: err })
       }
     }
     return { result: value }
@@ -56,8 +57,8 @@ registerServerNode({
   type: 'loop-each',
   run: async (ctx, _config, inputs) => {
     const items = inputs.items
-    if (!Array.isArray(items)) throw new Error("Loop each : l'entrée 'items' doit être un tableau.")
-    ctx.log('warn', 'Loop each isolé — forwarde le premier élément.')
+    if (!Array.isArray(items)) throw new Error(t(ctx.locale, 'run.pure.itemsNotArray'))
+    ctx.log('warn', t(ctx.locale, 'run.pure.loopIsolated'))
     return { item: items[0] }
   },
 })
@@ -81,7 +82,7 @@ registerServerNode({
       const tpl = line.slice(eq + 1).trim()
       return key ? { key, tpl } : null
     }).filter((p): p is { key: string; tpl: string } => p !== null)
-    ctx.log('info', `Définit ${pairs.length} colonne(s) sur ${rows.length} ligne(s).`)
+    ctx.log('info', t(ctx.locale, 'run.pure.setColumns', { columns: pairs.length, rows: rows.length }))
     const next = rows.map((row) => {
       const out: Record<string, unknown> = { ...row }
       for (const { key, tpl } of pairs) out[key] = interpolate(tpl, row)
@@ -102,12 +103,12 @@ registerServerNode({
     try {
       fn = new Function('row', `return (${expr})`) as (row: Record<string, unknown>) => unknown
     } catch (err) {
-      throw new Error(`Filtre : expression invalide "${expr}" — ${err instanceof Error ? err.message : err}`, { cause: err })
+      throw new Error(t(ctx.locale, 'run.pure.filterInvalid', { expr, message: err instanceof Error ? err.message : String(err) }), { cause: err })
     }
     const kept = rows.filter((row) => {
       try { return Boolean(fn(row)) } catch { return false }
     })
-    ctx.log('info', `Filtre : ${kept.length}/${rows.length} ligne(s).`)
+    ctx.log('info', t(ctx.locale, 'run.pure.filterKept', { kept: kept.length, total: rows.length }))
     return { sheet: { ...sheet, rows: kept } }
   },
 })
@@ -132,7 +133,7 @@ registerServerNode({
       const sb = b[col] == null ? '' : String(b[col])
       return sa.localeCompare(sb) * sign
     })
-    ctx.log('info', `Tri ${config.direction} sur "${col}".`)
+    ctx.log('info', t(ctx.locale, 'run.pure.sorted', { direction: String(config.direction), column: col }))
     return { sheet: { ...sheet, rows: sorted } }
   },
 })
@@ -157,7 +158,7 @@ registerServerNode({
       for (const [k, v] of Object.entries(row)) out[map.get(k) ?? k] = v
       return out
     })
-    ctx.log('info', `Renommage de ${map.size} colonne(s).`)
+    ctx.log('info', t(ctx.locale, 'run.pure.renamed', { count: map.size }))
     return { sheet: { ...sheet, rows: next } }
   },
 })
@@ -175,7 +176,7 @@ registerServerNode({
     let regex: RegExp | null = null
     if (op === 'regex-extract') {
       try { regex = new RegExp(String(config.pattern ?? '')) }
-      catch (err) { throw new Error(`Regex invalide — ${err instanceof Error ? err.message : err}`, { cause: err }) }
+      catch (err) { throw new Error(t(ctx.locale, 'run.pure.badRegex', { message: err instanceof Error ? err.message : String(err) }), { cause: err }) }
     }
     const apply = (raw: unknown): string => {
       const s = raw == null ? '' : String(raw)
@@ -189,7 +190,7 @@ registerServerNode({
       }
     }
     const next = rows.map((row) => ({ ...row, [tgt]: apply(row[src]) }))
-    ctx.log('info', `${op} sur "${src}" → "${tgt}".`)
+    ctx.log('info', t(ctx.locale, 'run.pure.textOp', { op, source: src, target: tgt }))
     return { sheet: { ...sheet, rows: next } }
   },
 })

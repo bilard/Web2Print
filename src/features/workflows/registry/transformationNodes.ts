@@ -8,6 +8,8 @@ import {
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { interpolate } from '../runtime/interpolate'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface SheetLike {
   rows?: Array<Record<string, unknown>>
@@ -64,7 +66,7 @@ const setFieldsNode: NodeSpec<
       .map((s) => s.trim())
       .filter(Boolean)
     if (lines.length === 0) {
-      ctx.log('warn', 'Aucune affectation — sheet forwardée telle quelle.')
+      ctx.log('warn', t('run.pure.noAssign'))
       return { sheet }
     }
     // « := » (expression JS) prioritaire sur « = » (template texte).
@@ -82,10 +84,7 @@ const setFieldsNode: NodeSpec<
           const fn = new Function('row', `return (${expr})`) as (row: Record<string, unknown>) => unknown
           assigns.push({ key, mode: 'expr', fn })
         } catch (err) {
-          throw new Error(
-            `Colonne calculée « ${key} » : expression invalide "${expr}" — ${err instanceof Error ? err.message : err}`,
-            { cause: err },
-          )
+          throw new Error(t('run.pure.computedInvalid', { key, expr, message: err instanceof Error ? err.message : String(err) }), { cause: err })
         }
         continue
       }
@@ -96,11 +95,11 @@ const setFieldsNode: NodeSpec<
       if (key) assigns.push({ key, mode: 'tpl', tpl })
     }
     if (assigns.length === 0) {
-      ctx.log('warn', 'Aucune affectation valide — sheet forwardée telle quelle.')
+      ctx.log('warn', t('run.pure.noValidAssign'))
       return { sheet }
     }
 
-    ctx.log('info', `Définit ${assigns.length} colonne(s) sur ${rows.length} ligne(s).`)
+    ctx.log('info', t('run.pure.setColumns', { columns: assigns.length, rows: rows.length }))
     const next = rows.map((row) => {
       const out: Record<string, unknown> = { ...row }
       for (const a of assigns) {
@@ -108,7 +107,7 @@ const setFieldsNode: NodeSpec<
           try {
             out[a.key] = a.fn(row)
           } catch (err) {
-            ctx.log('warn', `« ${a.key} » sur une ligne : ${err instanceof Error ? err.message : err}`)
+            ctx.log('warn', t('run.pure.rowError', { key: a.key, message: err instanceof Error ? err.message : String(err) }))
             out[a.key] = ''
           }
         } else {
@@ -175,20 +174,17 @@ const filterNode: NodeSpec<
       ) => unknown
       predicate = (row) => Boolean(fn(row))
     } catch (err) {
-      throw new Error(
-        `Filtre : expression invalide "${expr}" — ${err instanceof Error ? err.message : err}`,
-        { cause: err },
-      )
+      throw new Error(t('run.pure.filterInvalid', { expr, message: err instanceof Error ? err.message : String(err) }), { cause: err })
     }
     const kept = rows.filter((row) => {
       try {
         return predicate(row)
       } catch (err) {
-        ctx.log('warn', `Erreur sur la ligne, écartée — ${err instanceof Error ? err.message : err}`)
+        ctx.log('warn', t('run.pure.rowDropped', { message: err instanceof Error ? err.message : String(err) }))
         return false
       }
     })
-    ctx.log('info', `Filtre : ${kept.length}/${rows.length} ligne(s) conservée(s).`)
+    ctx.log('info', t('run.pure.filterKeptRows', { kept: kept.length, total: rows.length }))
     return { sheet: { ...sheet, rows: kept } }
   },
 }
@@ -244,7 +240,7 @@ const sortNode: NodeSpec<
     const rows = asRows(sheet)
     const col = config.column?.trim()
     if (!col) {
-      ctx.log('warn', 'Aucune colonne — sheet forwardée telle quelle.')
+      ctx.log('warn', t('run.pure.noColumn'))
       return { sheet }
     }
     const sign = config.direction === 'desc' ? -1 : 1
@@ -262,7 +258,7 @@ const sortNode: NodeSpec<
       const sb = vb == null ? '' : String(vb)
       return sa.localeCompare(sb) * sign
     })
-    ctx.log('info', `Tri ${config.direction} sur "${col}" (${config.type}).`)
+    ctx.log('info', t('run.pure.sortedTyped', { direction: config.direction, column: col, type: config.type }))
     return { sheet: { ...sheet, rows: sorted } }
   },
 }
@@ -309,7 +305,7 @@ const renameColumnsNode: NodeSpec<
       if (from && to && from !== to) map.set(from, to)
     }
     if (map.size === 0) {
-      ctx.log('warn', 'Aucun renommage valide — sheet forwardée telle quelle.')
+      ctx.log('warn', t('run.pure.noValidRename'))
       return { sheet }
     }
     const next = rows.map((row) => {
@@ -317,7 +313,7 @@ const renameColumnsNode: NodeSpec<
       for (const [k, v] of Object.entries(row)) out[map.get(k) ?? k] = v
       return out
     })
-    ctx.log('info', `Renommage de ${map.size} colonne(s).`)
+    ctx.log('info', t('run.pure.renamed', { count: map.size }))
     return { sheet: { ...sheet, rows: next } }
   },
 }
@@ -387,7 +383,7 @@ const textOpNode: NodeSpec<
     const rows = asRows(sheet)
     const src = config.source?.trim()
     if (!src) {
-      ctx.log('warn', 'Aucune colonne source — sheet forwardée telle quelle.')
+      ctx.log('warn', t('run.pure.noSourceColumn'))
       return { sheet }
     }
     const tgt = config.target?.trim() || src
@@ -397,10 +393,7 @@ const textOpNode: NodeSpec<
       try {
         regex = new RegExp(config.pattern || '')
       } catch (err) {
-        throw new Error(
-          `Regex invalide "${config.pattern}" — ${err instanceof Error ? err.message : err}`,
-          { cause: err },
-        )
+        throw new Error(t('run.pure.badRegexPattern', { pattern: config.pattern, message: err instanceof Error ? err.message : String(err) }), { cause: err })
       }
     }
     const apply = (raw: unknown): string => {
@@ -425,7 +418,7 @@ const textOpNode: NodeSpec<
       }
     }
     const next = rows.map((row) => ({ ...row, [tgt]: apply(row[src]) }))
-    ctx.log('info', `${op} sur "${src}" → "${tgt}" (${rows.length} ligne(s)).`)
+    ctx.log('info', t('run.pure.textOpRows', { op, source: src, target: tgt, rows: rows.length }))
     return { sheet: { ...sheet, rows: next } }
   },
 }
