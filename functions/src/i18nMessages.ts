@@ -418,6 +418,53 @@ const MESSAGES = {
   'run.lp.cap': { fr: ' (cap {max})', en: ' (cap {max})' },
   'run.lp.noProductExtracted': { fr: 'Aucun produit extrait.', en: 'No product extracted.' },
 
+  // — PIM, Telegram, Higgsfield —
+  'run.pim.missingProject': { fr: 'save-pim : projectId manquant.', en: 'save-pim: projectId missing.' },
+  'run.pim.projectNotFound': {
+    fr: 'save-pim : projet PIM introuvable ou non autorisé.',
+    en: 'save-pim: PIM project not found or not allowed.',
+  },
+  'run.pim.written': {
+    fr: 'save-pim : {count} produit(s) écrit(s) dans {project} (source {source}).',
+    en: 'save-pim: {count} product(s) written to {project} (source {source}).',
+  },
+  'run.tg.noRowToSend': {
+    fr: 'Mode « 1 message par ligne » : aucune ligne reçue — rien à envoyer.',
+    en: 'Mode "1 message per row": no row received — nothing to send.',
+  },
+  'run.tg.rowSkipped': {
+    fr: 'Ligne {i} ignorée : token, chat ou message manquant.',
+    en: 'Row {i} skipped: token, chat or message missing.',
+  },
+  'run.tg.rowSent': { fr: '[{i}/{total}] → {chat} (msg {id}).', en: '[{i}/{total}] → {chat} (msg {id}).' },
+  'run.tg.noBotToken': {
+    fr: 'send-telegram : bot token introuvable (config ou users/{uid}.telegram.botToken).',
+    en: 'send-telegram: bot token not found (config or users/{uid}.telegram.botToken).',
+  },
+  'run.tg.noChatId': {
+    fr: 'send-telegram : chatId introuvable (config ou users/{uid}.telegram.chatId).',
+    en: 'send-telegram: chatId not found (config or users/{uid}.telegram.chatId).',
+  },
+  'run.tg.emptyMessage': {
+    fr: 'send-telegram : message vide (champ Message ou port data).',
+    en: 'send-telegram: empty message (Message field or data port).',
+  },
+  'run.tg.sent': { fr: 'Telegram envoyé à {chat} (msg {id}).', en: 'Telegram sent to {chat} (msg {id}).' },
+  'run.tg.apiError': { fr: 'send-telegram : Telegram {detail}', en: 'send-telegram: Telegram {detail}' },
+  'run.hf.noKey': {
+    fr: 'Clé Higgsfield absente du profil (Paramètres → Connecteurs).',
+    en: 'Higgsfield key missing from the profile (Settings → Connectors).',
+  },
+  'run.hf.generating': { fr: 'Higgsfield {mode} — génération en cours…', en: 'Higgsfield {mode} — generating…' },
+  'run.hf.generated': {
+    fr: 'Higgsfield : {count} asset(s) généré(s).',
+    en: 'Higgsfield: {count} asset(s) generated.',
+  },
+  'run.hf.notDownloadableServer': {
+    fr: 'Fichier non téléchargeable côté serveur — utilise « Save DAM » via le port assets.',
+    en: 'File not downloadable on the server — use "Save DAM" through the assets port.',
+  },
+
   // — Exécuteur : arrêt et type inconnu (client ET serveur) —
   'run.stopped': { fr: 'Run arrêté', en: 'Run stopped' },
   'run.unknownType': { fr: 'Type inconnu : {type}', en: 'Unknown type: {type}' },

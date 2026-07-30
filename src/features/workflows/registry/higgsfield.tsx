@@ -9,6 +9,8 @@ import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface HiggsfieldConfig {
   mode: 'image' | 'video'
@@ -499,9 +501,7 @@ const higgsfieldNode: NodeSpec<HiggsfieldConfig, HiggsfieldInputs, { assets: Hig
     const fromPort = typeof inputs.prompt === 'string' ? inputs.prompt.trim() : ''
     const prompt = config.prompt?.trim() || fromPort
     if (!prompt) {
-      throw new Error(
-        'Prompt manquant — saisis une description dans la config OU relie une « Saisie texte » au port « prompt ».',
-      )
+      throw new Error(t('run.hf.noPrompt'))
     }
     const mode = config.mode === 'video' ? 'video' : 'image'
 
@@ -510,16 +510,14 @@ const higgsfieldNode: NodeSpec<HiggsfieldConfig, HiggsfieldInputs, { assets: Hig
       imageUrl = (config.imageUrl || '').trim()
       if (!/^https?:\/\//.test(imageUrl)) imageUrl = firstHttpUrl(inputs.image)
       if (!imageUrl || !/^https?:\/\//.test(imageUrl)) {
-        throw new Error(
-          'Mode vidéo : fournis une URL d\'image publique (champ « URL image source » ou port « image »).',
-        )
+        throw new Error(t('run.hf.videoNeedsImage'))
       }
     }
 
     const seedNum = config.seed.trim() ? Number(config.seed) : undefined
 
     ctx.reportConnector?.('higgsfield')
-    ctx.log('info', `Higgsfield ${mode} — génération en cours (peut prendre quelques minutes)…`)
+    ctx.log('info', t('run.hf.generatingLong', { mode }))
     ctx.setProgress?.(10)
     const { data } = await higgsfieldFn({
       mode,
@@ -538,13 +536,13 @@ const higgsfieldNode: NodeSpec<HiggsfieldConfig, HiggsfieldInputs, { assets: Hig
     })
     ctx.setProgress?.(100)
     const assets = data?.assets ?? []
-    if (assets.length === 0) throw new Error('Higgsfield : aucun asset généré (voir logs serveur).')
-    ctx.log('info', `${assets.length} asset(s) généré(s).`)
+    if (assets.length === 0) throw new Error(t('run.hf.noAsset'))
+    ctx.log('info', t('run.hf.generatedShort', { count: assets.length }))
     // `file` = 1er asset téléchargé en fichier réel → pour « Export Google Drive »
     // (port `file`). Best-effort ; les gros fichiers (>4 Mo, ex. vidéo) → null,
     // utiliser « Save DAM » (port `assets`) dans ce cas.
     const file = await fetchAssetFile(assets[0])
-    if (!file) ctx.log('warn', 'Fichier non téléchargeable (trop lourd ?) — utilise « Save DAM » via le port assets.')
+    if (!file) ctx.log('warn', t('run.hf.notDownloadable'))
     return { assets, file }
   },
 }

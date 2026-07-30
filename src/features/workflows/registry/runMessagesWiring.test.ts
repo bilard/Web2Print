@@ -125,6 +125,21 @@ const DONE: readonly { type: string; files: readonly string[] }[] = [
     ],
   },
   {
+    type: 'save-pim / send-telegram',
+    files: [
+      'src/features/workflows/registry/persistenceNodes.ts',
+      'src/features/workflows/registry/telegramNodes.tsx',
+      'functions/src/workflow/nodes/sinks.ts',
+    ],
+  },
+  {
+    type: 'higgsfield',
+    files: [
+      'src/features/workflows/registry/higgsfield.tsx',
+      'functions/src/workflow/nodes/higgsfield.ts',
+    ],
+  },
+  {
     type: 'source-sites',
     files: [
       'src/features/workflows/registry/sourceSitesNode.tsx',

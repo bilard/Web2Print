@@ -11,6 +11,8 @@ import { extractRows } from '../runtime/executor'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { useAccessStore } from '@/stores/access.store'
 import { addOutboxMessage } from '@/features/telegram/useTelegramInbox'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 // Limite Telegram pour une légende de document.
 const CAPTION_MAX = 1024
@@ -200,7 +202,7 @@ export const sendTelegramNode: NodeSpec<
     // sous le compte du propriétaire du workflow et n'est pas concerné.
     const acc = useAccessStore.getState()
     if (!acc.isOwner && !acc.permissions.has('telegram.send')) {
-      throw new Error('Envoi Telegram refusé : le droit « Envoyer des messages Telegram » n’est pas accordé à ce compte (Utilisateurs & rôles → module Telegram).')
+      throw new Error(t('run.tg.denied'))
     }
     // Fallback sur la config Telegram globale (Settings) quand un champ du node est vide.
     const global = useTelegramStore.getState()
@@ -215,20 +217,20 @@ export const sendTelegramNode: NodeSpec<
     // AUCUNE ligne reçue (port non alimenté — ex : veille prix sans variation, branche
     // non prise) → rien n'est envoyé, par design : pas de retombée en message unique.
     if (config.iterate && !inputRows) {
-      ctx.log('info', 'Mode « 1 message par ligne » : aucune ligne reçue — rien à envoyer.')
+      ctx.log('info', t('run.tg.noRowToSend'))
       return { result: { sent: false, count: 0, messageIds: [] } }
     }
 
     if (config.iterate && inputRows && rawConfig) {
       if (inputRows.length === 0) {
-        ctx.log('info', 'Mode « 1 message par ligne » : tableau vide — rien à envoyer.')
+        ctx.log('info', t('run.tg.emptyArray'))
         return { result: { sent: false, count: 0, messageIds: [] } }
       }
-      ctx.log('info', `Mode iterate : envoi de ${inputRows.length} messages…`)
+      ctx.log('info', t('run.tg.iterating', { count: inputRows.length }))
       const messageIds: number[] = []
       for (let i = 0; i < inputRows.length; i++) {
         if (ctx.signal.aborted) {
-          ctx.log('warn', `Run interrompu après ${messageIds.length} messages.`)
+          ctx.log('warn', t('run.tg.interrupted', { count: messageIds.length }))
           break
         }
         const row = inputRows[i]
@@ -236,11 +238,11 @@ export const sendTelegramNode: NodeSpec<
         const botToken = effToken(r.botToken)
         const chatId = effChat(r.chatId)
         if (!botToken) {
-          ctx.log('warn', `Ligne ${i + 1} ignorée : bot token manquant (node + config globale vides).`)
+          ctx.log('warn', t('run.tg.rowNoToken', { i: i + 1 }))
           continue
         }
         if (!chatId) {
-          ctx.log('warn', `Ligne ${i + 1} ignorée : chat_id vide après interpolation.`)
+          ctx.log('warn', t('run.tg.rowNoChat', { i: i + 1 }))
           continue
         }
         try {
@@ -258,12 +260,9 @@ export const sendTelegramNode: NodeSpec<
               })
           messageIds.push(out.messageId)
           logOutbox(chatId, file ? r.text.slice(0, CAPTION_MAX) : r.text, file, out.messageId)
-          ctx.log('info', `[${i + 1}/${inputRows.length}] → ${chatId} (msg ${out.messageId})`)
+          ctx.log('info', t('run.tg.rowSentNoDot', { i: i + 1, total: inputRows.length, chat: chatId, id: out.messageId }))
         } catch (err) {
-          ctx.log(
-            'warn',
-            `Ligne ${i + 1} échouée : ${err instanceof Error ? err.message : String(err)}`,
-          )
+          ctx.log('warn', t('run.tg.rowFailed', { i: i + 1, message: err instanceof Error ? err.message : String(err) }))
         }
       }
       return { result: { sent: true, count: messageIds.length, messageIds } }
@@ -272,22 +271,16 @@ export const sendTelegramNode: NodeSpec<
     // Mode message unique.
     const botToken = effToken(config.botToken)
     if (!botToken) {
-      throw new Error(
-        'Bot token Telegram manquant (ni dans le node, ni dans la config globale Telegram des Settings).',
-      )
+      throw new Error(t('run.tg.noBotTokenNode'))
     }
     const chatId = effChat(config.chatId)
     if (!chatId) {
-      throw new Error(
-        'Chat ID Telegram manquant (ni dans le node, ni dans la config globale Telegram des Settings).',
-      )
+      throw new Error(t('run.tg.noChatIdNode'))
     }
     // Texte effectif : le champ Message, ou à défaut le texte reçu sur le port `data`.
     const text = config.text.trim() ? config.text : coerceDataText(inputs.data)
     if (!file && !text.trim()) {
-      throw new Error(
-        'Message Telegram vide : renseigne le champ Message, ou connecte un texte sur le port « data ».',
-      )
+      throw new Error(t('run.tg.emptyMessageNode'))
     }
     const out = file
       ? await sendTelegramDocument(botToken, {
@@ -302,7 +295,7 @@ export const sendTelegramNode: NodeSpec<
           parseMode: config.parseMode,
         })
     logOutbox(chatId, file ? text.slice(0, CAPTION_MAX) : text, file, out.messageId)
-    ctx.log('info', `Message Telegram envoyé → ${chatId} (msg ${out.messageId}).`)
+    ctx.log('info', t('run.tg.sentArrow', { chat: chatId, id: out.messageId }))
     return { result: { sent: true, count: 1, messageIds: [out.messageId] } }
   },
 }

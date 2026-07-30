@@ -6,6 +6,7 @@
 import { getFirestore, type Firestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
 import { interpolate, extractRows } from '../interpolate'
+import { t, type Locale } from '../../i18n'
 
 // --- save-pim ---------------------------------------------------------------
 // Config client (persistenceNodes.ts:9-12) : { projectId, sourceId }.
@@ -67,7 +68,7 @@ registerServerNode({
   type: 'save-pim',
   run: async (ctx, config, inputs) => {
     const projectId = String(config.projectId ?? '').trim()
-    if (!projectId) throw new Error('save-pim : projectId manquant.')
+    if (!projectId) throw new Error(t(ctx.locale, 'run.pim.missingProject'))
     const sourceId = String(config.sourceId ?? '').trim() || 'workflow-import'
 
     const db: Firestore = getFirestore()
@@ -77,7 +78,7 @@ registerServerNode({
     // == uid), sinon un workflow pourrait écrire dans le PIM d'un autre utilisateur.
     const projectSnap = await db.collection(PIM_COLLECTION).doc(projectId).get()
     if (!projectSnap.exists || projectSnap.data()?.userId !== ctx.uid) {
-      throw new Error('save-pim : projet PIM introuvable ou non autorisé.')
+      throw new Error(t(ctx.locale, 'run.pim.projectNotFound'))
     }
 
     const sheet = (inputs.sheet ?? { rows: [] }) as { rows?: Record<string, unknown>[] }
@@ -104,7 +105,7 @@ registerServerNode({
     }
     if (pending > 0) await batch.commit()
 
-    ctx.log('info', `save-pim : ${count} produit(s) écrit(s) dans ${projectId} (source ${sourceId}).`)
+    ctx.log('info', t(ctx.locale, 'run.pim.written', { count, project: projectId, source: sourceId }))
     return { result: { count, projectId } }
   },
 })
@@ -147,7 +148,7 @@ registerServerNode({
     if (config.iterate) {
       const rows = extractRows(inputs.data)
       if (!rows || rows.length === 0) {
-        ctx.log('info', 'Mode « 1 message par ligne » : aucune ligne reçue — rien à envoyer.')
+        ctx.log('info', t(ctx.locale, 'run.tg.noRowToSend'))
         return { result: { sent: false, count: 0, messageIds: [] } }
       }
       const raw = (ctx.rawConfig ?? {}) as Record<string, unknown>
@@ -160,32 +161,32 @@ registerServerNode({
         const chatId = effChat(r.chatId)
         const text = String(r.text ?? '').trim()
         if (!token || !chatId || !text) {
-          ctx.log('warn', `Ligne ${i + 1} ignorée : token, chat ou message manquant.`)
+          ctx.log('warn', t(ctx.locale, 'run.tg.rowSkipped', { i: i + 1 }))
           continue
         }
-        const id = await sendTelegramMessage(token, chatId, text, r.parseMode as TelegramParseMode | undefined)
+        const id = await sendTelegramMessage(token, chatId, text, ctx.locale, r.parseMode as TelegramParseMode | undefined)
         messageIds.push(id)
-        ctx.log('info', `[${i + 1}/${rows.length}] → ${chatId} (msg ${id}).`)
+        ctx.log('info', t(ctx.locale, 'run.tg.rowSent', { i: i + 1, total: rows.length, chat: chatId, id }))
       }
       return { result: { sent: messageIds.length > 0, count: messageIds.length, messageIds } }
     }
 
     const token = effToken(config.botToken)
     if (!token) {
-      throw new Error('send-telegram : bot token introuvable (config ou users/{uid}.telegram.botToken).')
+      throw new Error(t(ctx.locale, 'run.tg.noBotToken'))
     }
     const chatId = effChat(config.chatId)
     if (!chatId) {
-      throw new Error('send-telegram : chatId introuvable (config ou users/{uid}.telegram.chatId).')
+      throw new Error(t(ctx.locale, 'run.tg.noChatId'))
     }
 
     const text = String(config.text ?? '').trim() ? String(config.text) : coerceDataText(inputs.data)
     if (!text.trim()) {
-      throw new Error('send-telegram : message vide (champ Message ou port data).')
+      throw new Error(t(ctx.locale, 'run.tg.emptyMessage'))
     }
 
-    const messageId = await sendTelegramMessage(token, chatId, text, config.parseMode as TelegramParseMode | undefined)
-    ctx.log('info', `Telegram envoyé à ${chatId} (msg ${messageId}).`)
+    const messageId = await sendTelegramMessage(token, chatId, text, ctx.locale, config.parseMode as TelegramParseMode | undefined)
+    ctx.log('info', t(ctx.locale, 'run.tg.sent', { chat: chatId, id: messageId }))
     return { result: { sent: true, count: 1, messageIds: [messageId] } }
   },
 })
@@ -195,6 +196,9 @@ async function sendTelegramMessage(
   token: string,
   chatId: string,
   text: string,
+  // La langue est passée explicitement : ce helper est hors contexte de run et
+  // son erreur remonte dans le journal comme les autres.
+  locale: Locale,
   parseMode?: TelegramParseMode,
 ): Promise<number> {
   const body: Record<string, unknown> = { chat_id: chatId, text }
@@ -210,7 +214,7 @@ async function sendTelegramMessage(
     | null
   if (!res.ok || !json || !json.ok) {
     const detail = json && !json.ok ? `${json.error_code} : ${json.description}` : `HTTP ${res.status}`
-    throw new Error(`send-telegram : Telegram ${detail}`)
+    throw new Error(t(locale, 'run.tg.apiError', { detail }))
   }
   return json.result.message_id
 }

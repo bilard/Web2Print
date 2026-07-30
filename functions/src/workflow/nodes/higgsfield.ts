@@ -7,6 +7,7 @@ import { registerServerNode } from '../registry'
 import { getUserApiKey } from '../apiKeys'
 import { runHiggsfield, type HiggsfieldParams } from '../../higgsfield/higgsfieldCore'
 import { makeServerFile, type ServerFile } from './serverFile'
+import { t } from '../../i18n'
 
 function pickImageUrl(config: Record<string, unknown>, inputs: Record<string, unknown>): string {
   const fromConfig = String(config.imageUrl ?? '').trim()
@@ -52,10 +53,10 @@ registerServerNode({
       batchSize: config.batchSize === 4 ? 4 : 1,
     }
     const credentials = await getUserApiKey(ctx.uid, 'higgsfield')
-    if (!credentials) throw new Error('Clé Higgsfield absente du profil (Paramètres → Connecteurs).')
-    ctx.log('info', `Higgsfield ${mode} — génération en cours…`)
+    if (!credentials) throw new Error(t(ctx.locale, 'run.hf.noKey'))
+    ctx.log('info', t(ctx.locale, 'run.hf.generating', { mode }))
     const assets = await runHiggsfield(credentials, params)
-    ctx.log('info', `Higgsfield : ${assets.length} asset(s) généré(s).`)
+    ctx.log('info', t(ctx.locale, 'run.hf.generated', { count: assets.length }))
     // `file` = 1er asset téléchargé en ServerFile → pour « Export Google Drive »
     // (port `file`) en cron headless. Best-effort.
     let file: ServerFile | undefined
@@ -64,7 +65,7 @@ registerServerNode({
       const res = await fetch(a.url)
       if (res.ok) file = makeServerFile(a.name, a.mimeType, Buffer.from(await res.arrayBuffer()))
     } catch {
-      ctx.log('warn', 'Fichier non téléchargeable côté serveur — utilise « Save DAM » via le port assets.')
+      ctx.log('warn', t(ctx.locale, 'run.hf.notDownloadableServer'))
     }
     return { assets, file }
   },

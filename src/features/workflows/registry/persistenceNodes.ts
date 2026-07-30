@@ -4,6 +4,8 @@ import type { NodeSpec } from '../types'
 import { saveProducts } from '@/features/pim/usePimFirebase'
 import type { Product, ProductField } from '@/features/pim/types'
 import type { CellValue } from '@/features/excel/types'
+// `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
+import { t } from '@/lib/i18n'
 
 interface SavePimConfig {
   projectId: string
@@ -47,14 +49,11 @@ const savePimNode: NodeSpec<
   runtime: 'client',
   run: async (ctx, config, inputs) => {
     if (!config.projectId) {
-      ctx.log('error', 'Project ID PIM manquant dans la config')
+      ctx.log('error', t('run.pim.missingProjectConfig'))
       return { result: { count: 0, projectId: '' } }
     }
 
-    ctx.log(
-      'warn',
-      `Source "${config.sourceId}" non auto-enregistrée — si elle n'existe pas dans le projet, les produits seront créés mais invisibles dans la liste des sources (à corriger en phase 2)`,
-    )
+    ctx.log('warn', t('run.pim.sourceNotRegistered', { source: config.sourceId }))
 
     const rows = (inputs.sheet?.rows ?? []) as Array<Record<string, unknown>>
     const now = Date.now()
@@ -97,10 +96,7 @@ const savePimNode: NodeSpec<
       } satisfies Product
     })
 
-    ctx.log(
-      'info',
-      `Saving ${products.length} products to PIM project ${config.projectId}`,
-    )
+    ctx.log('info', t('run.pim.saving', { count: products.length, project: config.projectId }))
     await saveProducts(config.projectId, products)
     return { result: { count: products.length, projectId: config.projectId } }
   },
