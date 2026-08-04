@@ -3111,6 +3111,8 @@ export const fr = {
   'team.tab.roles': 'Rôles',
   'co.looseRoles': "{n} rôle(s) sans société : introuvables depuis l'écran d'un administrateur d'entreprise.",
   'co.rolesAttached': '{n} rôle(s) rattaché(s)',
+  'co.deleteBlocked': "Détacher d'abord ses {n} membre(s) : sans quoi ils resteraient rattachés à une société inexistante.",
+  'co.defaultNotDeletable': 'société par défaut',
   'co.delete': 'Supprimer',
   'co.deleted': 'Société « {name} » supprimée',
   'co.deleteFailed': 'Suppression refusée',

@@ -2982,6 +2982,8 @@ export const es: Record<TranslationKey, string> = {
   'team.tab.roles': 'Roles',
   'co.looseRoles': '{n} rol(es) sin empresa: no se encuentran desde la pantalla de un administrador de empresa.',
   'co.rolesAttached': '{n} rol(es) vinculado(s)',
+  'co.deleteBlocked': 'Desvincule primero sus {n} miembro(s): de lo contrario quedarían vinculados a una empresa inexistente.',
+  'co.defaultNotDeletable': 'empresa por defecto',
   'co.delete': 'Eliminar',
   'co.deleted': 'Empresa «{name}» eliminada',
   'co.deleteFailed': 'Eliminación rechazada',

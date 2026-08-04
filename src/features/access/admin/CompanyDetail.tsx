@@ -4,6 +4,7 @@ import { UsersTab } from './UsersTab'
 import { RolesTab } from './RolesTab'
 import { toast } from 'sonner'
 import { deleteCompany } from '@/features/access/companiesApi'
+import { DEFAULT_ACCOUNT_ID } from '@/features/i18n/accountI18nApi'
 import { recordAudit } from '@/lib/auditLog'
 import { t } from '@/lib/i18n'
 
@@ -17,9 +18,10 @@ import { t } from '@/lib/i18n'
  */
 export function CompanyDetail({ id, name, members, onBack }: { id: string; name: string; members: number; onBack: () => void }) {
   const [tab, setTab] = useState<'members' | 'roles'>('members')
+  const isDefault = id === DEFAULT_ACCOUNT_ID
 
   /** Supprimer une société encore peuplée laisserait ses membres rattachés à un
-   *  fantôme : le bouton n'apparaît que lorsqu'elle est vide. */
+   *  fantôme : le bouton reste visible mais désactivé tant qu'elle en a. */
   const remove = async () => {
     try {
       await deleteCompany(id)
@@ -42,12 +44,17 @@ export function CompanyDetail({ id, name, members, onBack }: { id: string; name:
           <Building2 className="w-3.5 h-3.5 text-violet-300" /> {name}
         </span>
         <span className="text-[11px] text-white/30 font-mono">{id}</span>
-        {members === 0 && (
-          <button onClick={() => void remove()} title={t('co.delete')}
-            className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-white/10 text-white/40 hover:text-red-300 hover:border-red-500/40 transition-colors">
+        {/* ⚠️ Bouton TOUJOURS visible, désactivé quand il ne peut pas s'appliquer :
+            masqué, il laissait croire que la suppression n'existait pas. L'infobulle
+            dit ce qui manque (détacher les membres, ou société par défaut). */}
+        {!isDefault && (
+          <button onClick={() => void remove()} disabled={members > 0}
+            title={members > 0 ? t('co.deleteBlocked', { n: members }) : t('co.delete')}
+            className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-white/10 text-white/40 enabled:hover:text-red-300 enabled:hover:border-red-500/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             <Trash2 className="w-3.5 h-3.5" /> {t('co.delete')}
           </button>
         )}
+        {isDefault && <span className="text-[10px] text-white/25">{t('co.defaultNotDeletable')}</span>}
         <nav className="ml-auto flex gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1">
           {([['members', t('team.tab.members'), Users], ['roles', t('team.tab.roles'), Shield]] as const).map(([key, label, Icon]) => (
             <button key={key} onClick={() => setTab(key)}
