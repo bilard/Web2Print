@@ -4870,6 +4870,7 @@ export const fr = {
   'ac.pendingCount': '{count} en attente',
   'ac.blockedCount': '{count} bloqué(s)',
   'ac.pending': 'en attente',
+  'ac.noRoleInCompany': "Aucun rôle dans cette société — en créer un dans l'onglet Rôles",
   'ac.noRoleOption': '— en attente —',
   'ac.delete': 'Supprimer',
   'ac.resetOverrides': 'Réinitialiser les surcharges',

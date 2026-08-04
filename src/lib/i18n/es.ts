@@ -4692,6 +4692,7 @@ export const es: Record<TranslationKey, string> = {
   'ac.pendingCount': '{count} en espera',
   'ac.blockedCount': '{count} bloqueado(s)',
   'ac.pending': 'en espera',
+  'ac.noRoleInCompany': 'Ningún rol en esta empresa — cree uno en la pestaña Roles',
   'ac.noRoleOption': '— en espera —',
   'ac.delete': 'Eliminar',
   'ac.resetOverrides': 'Restablecer las anulaciones',

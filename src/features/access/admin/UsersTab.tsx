@@ -201,7 +201,12 @@ export function UsersTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
                 <select value={u.accessRoleId ?? ''} onChange={(e) => setRole(u, e.target.value)} disabled={u.accessBlocked}
                   className="bg-white/[0.05] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/80 disabled:opacity-40 hover:border-white/20 transition-colors">
                   <option value="">{t('ac.noRoleOption')}</option>
-                  {rolesFor(u).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  {/* ⚠️ La liste est filtrée sur la société du membre : si elle n'a
+                      encore aucun rôle, le sélecteur serait VIDE et muet. On le dit,
+                      plutôt que de laisser croire à une panne. */}
+                  {rolesFor(u).length === 0
+                    ? <option value="" disabled>{t('ac.noRoleInCompany')}</option>
+                    : rolesFor(u).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               )}
               <button onClick={() => setExpanded(isExpanded ? null : u.uid)}

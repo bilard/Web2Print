@@ -4693,6 +4693,7 @@ export const en: Record<TranslationKey, string> = {
   'ac.pendingCount': '{count} pending',
   'ac.blockedCount': '{count} blocked',
   'ac.pending': 'pending',
+  'ac.noRoleInCompany': 'No role in this company — create one in the Roles tab',
   'ac.noRoleOption': '— pending —',
   'ac.delete': 'Delete',
   'ac.resetOverrides': 'Reset the overrides',
