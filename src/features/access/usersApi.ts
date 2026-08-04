@@ -22,6 +22,15 @@ export interface ManagedUser {
    * compte d'un tiers suffirait à en réécrire l'interface.
    */
   accountId: string
+  /**
+   * Workflows auxquels ce membre a accès, par identifiant.
+   *
+   * ⚠️ Liste VIDE ⇒ tous les workflows de l'espace commun (comportement par
+   * défaut, et celui de tous les comptes existants). Restreindre est un choix
+   * explicite : une liste vide ne doit jamais signifier « aucun », sinon activer
+   * la fonctionnalité couperait l'accès à tout le monde d'un coup.
+   */
+  allowedWorkflows: string[]
 }
 
 /**
@@ -52,6 +61,7 @@ export async function listUsers(accountId?: string): Promise<ManagedUser[]> {
         accessRevokes: (x.accessRevokes as string[]) ?? [],
         accessBlocked: (x.accessBlocked as boolean) ?? false,
         accountId: (x.accountId as string) ?? '',
+        allowedWorkflows: (x.allowedWorkflows as string[]) ?? [],
       }
     })
     .sort((a, b) => b.lastSeenAt - a.lastSeenAt)
@@ -71,7 +81,7 @@ export async function updateUserAccount(uid: string, accountId: string): Promise
 
 export async function updateUserAccess(
   uid: string,
-  access: { accessRoleId?: string | null; accessGrants?: string[]; accessRevokes?: string[]; accessBlocked?: boolean },
+  access: { accessRoleId?: string | null; accessGrants?: string[]; accessRevokes?: string[]; accessBlocked?: boolean; allowedWorkflows?: string[] },
 ): Promise<void> {
   await setDoc(doc(db, 'users', uid), access, { merge: true })
 }

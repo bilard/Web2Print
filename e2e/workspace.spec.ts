@@ -140,3 +140,42 @@ test('sans la permission, un membre de l’espace ne peut pas écrire', async ()
   expect(await tryRead(member, wfPath)).toBe(200)
   expect(await tryWrite(member, wfPath, { name: str('interdit') })).toBe(403)
 })
+
+test('la liste blanche limite l’accès à CERTAINS workflows', async () => {
+  const { member, carrier, workflowId, t } = await sharedWorkspace('wf-scope')
+  const autre = `wf-autre-${t}`
+  await seedDoc(`users/${carrier.uid}/workflows/${autre}`, { name: str('Démo Trafic') })
+
+  // Sans restriction : les deux sont lisibles.
+  expect(await tryRead(member, `users/${carrier.uid}/workflows/${workflowId}`)).toBe(200)
+  expect(await tryRead(member, `users/${carrier.uid}/workflows/${autre}`)).toBe(200)
+
+  // Restreint au premier : le second devient inaccessible.
+  // ⚠️ `seedDoc` REMPLACE le document : sans re-poser société et rôle, le membre
+  // perdrait ses permissions et le 403 ne prouverait plus rien.
+  await seedDoc(`users/${member.uid}`, {
+    accountId: str(`auchan-${t}`), accessRoleId: str(`role-membre-${t}`),
+    allowedWorkflows: strList([workflowId]),
+  })
+  expect(await tryRead(member, `users/${carrier.uid}/workflows/${workflowId}`)).toBe(200)
+  expect(await tryRead(member, `users/${carrier.uid}/workflows/${autre}`)).toBe(403)
+  // …et il ne peut pas non plus l'écrire.
+  expect(await tryWrite(member, `users/${carrier.uid}/workflows/${autre}`, { name: str('non') })).toBe(403)
+})
+
+test('une liste blanche VIDE n’enferme personne', async () => {
+  // Le piège du chantier : tous les comptes existants sont dépourvus du champ.
+  // Si « vide » avait voulu dire « aucun », le déploiement aurait coupé l'accès
+  // aux workflows à tout le monde d'un coup.
+  const { member, carrier, workflowId, t } = await sharedWorkspace('wf-empty')
+  await seedDoc(`users/${member.uid}`, {
+    accountId: str(`auchan-${t}`), accessRoleId: str(`role-membre-${t}`),
+    allowedWorkflows: strList([]),
+  })
+  expect(await tryRead(member, `users/${carrier.uid}/workflows/${workflowId}`)).toBe(200)
+})
+
+test('un membre ne peut PAS s’ouvrir des workflows lui-même', async () => {
+  const { member } = await sharedWorkspace('wf-self')
+  expect(await tryWrite(member, `users/${member.uid}`, { allowedWorkflows: strList(['n-importe-quoi']) })).toBe(403)
+})

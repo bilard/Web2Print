@@ -204,7 +204,7 @@ service cloud.firestore {
     // le gérer.
     function teamManagedFields() {
       return request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked']);
+        .hasOnly(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked', 'allowedWorkflows']);
     }
     // Un droit ponctuel ne doit pas rouvrir ce que `noAdminEscalation` ferme sur
     // les rôles : `admin` donnerait l'écran d'administration globale, `demo.view`
@@ -239,12 +239,12 @@ service cloud.firestore {
       // libellés. Le rattachement est une décision d'administration.
       allow create: if isAdmin()
                     || (isAuthenticated() && request.auth.uid == uid
-                        && !request.resource.data.keys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked', 'accountId']));
+                        && !request.resource.data.keys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked', 'accountId', 'allowedWorkflows']));
       // Le user peut écrire son propre `usage` (compteurs de quota) mais jamais le
       // DÉCROÎTRE (usageMonotonic) : seul l'admin peut réinitialiser un quota démo.
       allow update: if isAdmin()
                     || (isAuthenticated() && request.auth.uid == uid
-                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked', 'accountId'])
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked', 'accountId', 'allowedWorkflows'])
                         && usageMonotonic())
                     // Administrateur de société : rôle, droits ponctuels et blocage
                     // d'un collègue de SA société, et rien d'autre.
@@ -350,11 +350,22 @@ service cloud.firestore {
     // Workflows d'orchestration (à la Make/n8n) sous users/{uid}/workflows/{id}.
     // Privés à chaque user — pas de partage au MVP (phase 2 : champ sharedWith).
 
+    // Restriction PAR WORKFLOW : `users/{uid}.allowedWorkflows` limite un membre à
+    // certains workflows de l'espace commun.
+    // ⚠️ Liste VIDE ⇒ AUCUNE restriction. Une liste vide ne peut pas signifier
+    // « aucun accès » : tous les comptes existants en sont dépourvus, et l'inverse
+    // aurait coupé l'accès à tout le monde à la seconde du déploiement.
+    function workflowAllowed(workflowId) {
+      return isAdmin()
+        || accessData().get('allowedWorkflows', []).size() == 0
+        || workflowId in accessData().get('allowedWorkflows', []);
+    }
+
     match /users/{uid}/workflows/{workflowId} {
-      allow read:   if isAuthenticated() && inMyWorkspace(uid);
+      allow read:   if isAuthenticated() && inMyWorkspace(uid) && workflowAllowed(workflowId);
       allow create: if hasPermission('workflows.create') && inMyWorkspace(uid);
-      allow update: if hasPermission('workflows.edit') && inMyWorkspace(uid);
-      allow delete: if hasPermission('workflows.delete') && inMyWorkspace(uid);
+      allow update: if hasPermission('workflows.edit') && inMyWorkspace(uid) && workflowAllowed(workflowId);
+      allow delete: if hasPermission('workflows.delete') && inMyWorkspace(uid) && workflowAllowed(workflowId);
     }
 
     // Dossiers de regroupement des workflows (organisation de la liste).

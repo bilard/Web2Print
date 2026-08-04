@@ -4,6 +4,8 @@ import { PERMISSIONS, permissionsByModule, permissionLabel } from '@/features/ac
 import { moduleMeta, orderedModuleEntries } from '@/features/access/moduleMeta'
 import { ModuleCard } from './ModuleCard'
 import { AccountAssignment } from './AccountAssignment'
+import { UserWorkflowScope } from './UserWorkflowScope'
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { DEFAULT_ACCOUNT_ID } from '@/features/i18n/accountI18nApi'
 import { listUsers, updateUserAccess, deleteUser, type ManagedUser } from '@/features/access/usersApi'
 import { recordAudit } from '@/lib/auditLog'
@@ -42,6 +44,8 @@ export function UsersTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
   // qu'un administrateur d'entreprise ne les a jamais — les confondre retirerait
   // à l'admin global des actions qu'il possède.
   const { isGlobalAdmin } = useManagedScope()
+  // Espace où lire les workflows proposés au membre (celui de la société).
+  const workspaceUid = useWorkspaceUid()
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [roles, setRoles] = useState<Role[]>([])
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -277,6 +281,12 @@ export function UsersTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
                     des champs délégués, un administrateur d'entreprise ne peut pas
                     aspirer le compte d'un tiers. */}
                 {isGlobalAdmin && <AccountAssignment user={u} knownAccounts={knownAccounts} onSaved={refresh} />}
+
+                {/* Workflows accessibles — la permission ouvre le module, cette
+                    liste dit LESQUELS. N'a de sens que si le module est ouvert. */}
+                {effectivePerms(u).includes('workflows.view') && (
+                  <UserWorkflowScope user={u} workspaceUid={workspaceUid ?? ''} onSaved={refresh} />
+                )}
 
                 {/* Permissions effectives */}
                 <div>
