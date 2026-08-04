@@ -1,8 +1,11 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
-import { Download, Trash2, Bell, BellOff, FilterX } from 'lucide-react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { Download, Trash2, Bell, BellOff, FilterX, UserX } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAnalyticsEvents } from '../useAnalyticsEvents'
 import { usePeriod, type PeriodKey } from '../usePeriod'
+import { collection, getDocs, query, where } from 'firebase/firestore'
+import { db } from '@/lib/firebase/config'
+import { EXCLUDED_ANALYTICS_EMAILS } from '../excludedAccounts'
 import { computeKpis, timeSeries, filterEvents, NO_FILTER, type EventFilter } from '../metrics'
 import { downloadEventsCsv } from '../exportCsv'
 import { useClearAnalytics, useDeleteFilteredAnalytics } from '../useClearAnalytics'
@@ -42,6 +45,14 @@ export function AnalyticsTab() {
   const [country, setCountry] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // Uid des comptes de l'exploitant : les events ne portent que l'uid, la liste
+  // d'exclusion que des e-mails. Résolus une fois à l'ouverture de l'écran.
+  const [excludedUids, setExcludedUids] = useState<Set<string>>(() => new Set())
+  useEffect(() => {
+    void getDocs(query(collection(db, 'users'), where('email', 'in', EXCLUDED_ANALYTICS_EMAILS)))
+      .then((snap) => setExcludedUids(new Set(snap.docs.map((d) => d.id))))
+      .catch(() => setExcludedUids(new Set()))
+  }, [])
   const clear = useClearAnalytics()
   const sessionAlerts = useSessionAlerts()
   const deleteFiltered = useDeleteFilteredAnalytics()
@@ -70,6 +81,20 @@ export function AnalyticsTab() {
       onError: (e) => toast.error(t('tst.an.failure', { message: e instanceof Error ? e.message : t('tst.unknownError') })),
     })
   }
+  /** Events laissés par les comptes de l'exploitant, toutes périodes chargées. */
+  const ownEvents = useMemo(
+    () => allEvents.filter((e) => e.uid && excludedUids.has(e.uid)),
+    [allEvents, excludedUids],
+  )
+  const purgeOwn = () => {
+    const ids = ownEvents.map((e) => e.id).filter((id): id is string => !!id)
+    if (ids.length === 0) return
+    deleteFiltered.mutate(ids, {
+      onSuccess: (deleted) => toast.success(t('an.purgeOwn.done', { count: deleted })),
+      onError: (e) => toast.error(t('tst.an.failure', { message: e instanceof Error ? e.message : t('tst.unknownError') })),
+    })
+  }
+
   const kpis = useMemo(() => computeKpis(events), [events])
   const prevKpis = useMemo(() => computeKpis(filterEvents(prev.data ?? [], filter)), [prev.data, filter])
   // « Aujourd'hui » : courbe par heure (une seule journée ⇒ un point unique en granularité jour).
@@ -141,6 +166,19 @@ export function AnalyticsTab() {
           >
             <FilterX className="w-4 h-4" /> {t('an.deleteResult')}
           </button>
+          {/* Purge des visites de l'exploitant DÉJÀ collectées : l'exclusion
+              serveur ne vaut que pour les suivantes. Masqué quand il n'y en a
+              aucune sur la période — un bouton qui ne fait rien inquiète. */}
+          {ownEvents.length > 0 && (
+            <button
+              onClick={purgeOwn}
+              disabled={deleteFiltered.isPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-amber-300/90 hover:text-amber-200 bg-surface-2 hover:bg-amber-500/10 disabled:opacity-40"
+              title={t('an.purgeOwn.title')}
+            >
+              <UserX className="w-4 h-4" /> {t('an.purgeOwn', { count: ownEvents.length })}
+            </button>
+          )}
           <button
             onClick={() => setConfirmClear(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-red-400/80 hover:text-red-300 bg-surface-2 hover:bg-red-500/10"

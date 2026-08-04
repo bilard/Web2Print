@@ -1,8 +1,10 @@
 // functions/src/analytics/owner.ts
-// Compte OWNER uniquement : ses visites (il teste l'app en continu) ne doivent
-// JAMAIS polluer les stats (décision re-confirmée 2026-07-07). ⚠ Ne PAS y ajouter
-// f.bilard@pimalion.com : c'est son compte de test « utilisateur normal », il doit
-// apparaître dans le journal (retiré le 2026-07-07 après l'avoir exclu à tort).
+// Compte OWNER uniquement. Deux rôles DISTINCTS, à ne pas confondre :
+//  - exclusion des stats → `EXCLUDED_EMAILS` (collectAnalytics.ts), qui couvre
+//    les TROIS adresses de l'exploitant depuis le 2026-08-04 ;
+//  - destinataire des notifications Telegram → cette constante-ci.
+// ⚠ Ne pas élargir OWNER_EMAILS pour exclure des comptes des stats : les alertes
+// de nouvelle session partiraient vers le mauvais compte.
 //
 // Cette même adresse sert de DESTINATAIRE des notifications Telegram de nouvelle
 // session (cf. notifySession.ts) : la config d'envoi est lue dans

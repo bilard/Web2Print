@@ -10,11 +10,18 @@ import { maybeNotifyNewSession } from './notifySession'
 if (!getApps().length) initializeApp()
 const db = getFirestore()
 
-// Comptes exclus des stats : OWNER + son second compte personnel (mêmes
-// machines lilloises, il teste l'app avec les deux). ⚠ Ne PAS y ajouter
-// f.bilard@pimalion.com : compte de test « utilisateur normal », il doit
-// rester visible dans le journal (décision 2026-07-07, cf. owner.ts).
-const EXCLUDED_EMAILS = [...OWNER_EMAILS, 'fbilard59@gmail.com']
+// Comptes exclus des stats : les trois adresses de l'exploitant, qui teste l'app
+// en continu depuis les mêmes machines.
+//
+// ⚠ `f.bilard@pimalion.com` A ÉTÉ RÉINTÉGRÉ à cette liste le 2026-08-04, sur
+// demande explicite. Il en avait été RETIRÉ le 2026-07-07 pour servir de compte
+// de test « utilisateur normal » visible dans le journal — décision inversée
+// depuis. Ne pas la restaurer sans le redemander.
+//
+// ⚠ Liste distincte d'`OWNER_EMAILS` : cette dernière désigne le DESTINATAIRE
+// des notifications Telegram (cf. notifySession.ts). L'élargir enverrait les
+// alertes au mauvais compte.
+const EXCLUDED_EMAILS = [...OWNER_EMAILS, 'fbilard59@gmail.com', 'f.bilard@pimalion.com']
 
 // Uids exclus mis en cache par instance : résolus une fois (requête `users`), puis
 // mémoïsés tant qu'introuvables (retry), pour ne pas peser sur cet endpoint à haute
