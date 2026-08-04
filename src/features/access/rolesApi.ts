@@ -8,14 +8,17 @@ export interface Role {
   name: string
   permissions: string[]
   /**
-   * Société propriétaire du rôle (`users/{uid}.accountId`). Absent ⇒ `default`.
+   * Sociétés où ce rôle est proposable. Vide ⇒ `['default']`.
    *
-   * ⚠️ Un rôle appartient à UNE société : « ACHAT » chez Auchan et « ACHAT »
-   * chez un autre client sont deux rôles distincts, aux permissions
-   * indépendantes. `firestore.rules` interdit de déplacer un rôle d'une société
-   * à une autre — ce serait la porte de sortie du cloisonnement.
+   * ⚠️ Un rôle peut servir à PLUSIEURS sociétés (un « ACHAT » commun), d'où un
+   * tableau et non une chaîne. Le champ legacy `accountId` (une seule société)
+   * est encore lu et normalisé ici — les rôles créés avant ne se perdent pas.
+   *
+   * `firestore.rules` interdit à un administrateur d'entreprise de toucher aux
+   * sociétés d'un rôle : il ne peut écrire que `[sa propre société]`, sinon il
+   * rendrait ses rôles attribuables chez un tiers.
    */
-  accountId: string
+  accountIds: string[]
   /** Quotas du compte démo (n'a d'effet que si la permission `demo.view` est cochée).
    *  Absent → repli sur DEMO_LIMITS (50/20). */
   limits?: UsageCounters
@@ -33,37 +36,56 @@ export interface Role {
  */
 export async function listRoles(accountId?: string): Promise<Role[]> {
   const snap = await getDocs(
-    accountId ? query(collection(db, 'roles'), where('accountId', '==', accountId)) : collection(db, 'roles'),
+    accountId
+      ? query(collection(db, 'roles'), where('accountIds', 'array-contains', accountId))
+      : collection(db, 'roles'),
   )
   return snap.docs
-    .map((d) => {
-      const x = d.data() as Omit<Role, 'id'>
-      return { id: d.id, ...x, accountId: x.accountId || DEFAULT_ACCOUNT_ID }
-    })
+    .map((d) => ({ id: d.id, ...(d.data() as Omit<Role, 'id'>), accountIds: roleAccounts(d.data()) }))
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
+/** Sociétés d'un doc rôle, champ legacy `accountId` compris. Jamais vide. */
+export function roleAccounts(data: Record<string, unknown> | undefined): string[] {
+  const list = data?.accountIds
+  if (Array.isArray(list) && list.length > 0) return list as string[]
+  const single = data?.accountId
+  return typeof single === 'string' && single !== '' ? [single] : [DEFAULT_ACCOUNT_ID]
+}
+
 /** Crée ou met à jour un rôle. id absent → nouvel id auto.
- *  `accountId` est écrit à la CRÉATION seulement : le déplacer d'une société à
- *  l'autre est refusé côté serveur. */
-export async function saveRole(role: { id?: string; name: string; permissions: string[]; limits?: UsageCounters; accountId?: string }): Promise<string> {
+ *  Les sociétés ne sont écrites qu'à la CRÉATION : les changer ensuite passe par
+ *  `setRoleCompanies`, refusé côté serveur à un administrateur d'entreprise. */
+export async function saveRole(role: { id?: string; name: string; permissions: string[]; limits?: UsageCounters; accountIds?: string[] }): Promise<string> {
   const id = role.id ?? doc(collection(db, 'roles')).id
   const now = Date.now()
+  const accounts = role.accountIds?.length ? role.accountIds : [DEFAULT_ACCOUNT_ID]
   await setDoc(
     doc(db, 'roles', id),
     {
       name: role.name.trim(), permissions: role.permissions, updatedAt: now,
       ...(role.limits ? { limits: role.limits } : {}),
-      ...(role.id ? {} : { createdAt: now, accountId: role.accountId || DEFAULT_ACCOUNT_ID }),
+      ...(role.id ? {} : { createdAt: now, accountIds: accounts }),
     },
     { merge: true },
   )
   return id
 }
 
-/** Rattache un rôle « orphelin » (antérieur aux sociétés) — admin global. */
-export async function moveRoleToCompany(id: string, accountId: string): Promise<void> {
-  await setDoc(doc(db, 'roles', id), { accountId, updatedAt: Date.now() }, { merge: true })
+/**
+ * Redéfinit les sociétés d'un rôle — admin global.
+ *
+ * ⚠️ Écrit aussi `accountId` pour rester lisible par une version antérieure du
+ * client restée ouverte dans un onglet : sans ça, un rôle multi-sociétés lui
+ * apparaîtrait dans « default » le temps qu'elle recharge.
+ */
+export async function setRoleCompanies(id: string, accountIds: string[]): Promise<void> {
+  const list = accountIds.length ? accountIds : [DEFAULT_ACCOUNT_ID]
+  await setDoc(
+    doc(db, 'roles', id),
+    { accountIds: list, accountId: list[0], updatedAt: Date.now() },
+    { merge: true },
+  )
 }
 
 export async function deleteRole(id: string): Promise<void> {

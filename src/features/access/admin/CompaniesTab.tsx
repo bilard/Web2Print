@@ -5,7 +5,7 @@ import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { listCompanies, saveCompany, backfillAccountIds, companyId, type Company } from '@/features/access/companiesApi'
 import { listUsers, type ManagedUser } from '@/features/access/usersApi'
-import { listRoles, moveRoleToCompany, type Role } from '@/features/access/rolesApi'
+import { listRoles, setRoleCompanies, roleAccounts, type Role } from '@/features/access/rolesApi'
 import { DEFAULT_ACCOUNT_ID } from '@/features/i18n/accountI18nApi'
 import { recordAudit } from '@/lib/auditLog'
 import { CompanyDetail } from './CompanyDetail'
@@ -42,7 +42,7 @@ export function CompaniesTab() {
       name: declared.get(id) ?? id,
       declared: declared.has(id),
       members: users.filter((u) => (u.accountId || DEFAULT_ACCOUNT_ID) === id).length,
-      roles: roles.filter((r) => r.accountId === id).length,
+      roles: roles.filter((r) => r.accountIds.includes(id)).length,
     }))
   }, [companies, users, roles])
 
@@ -58,13 +58,14 @@ export function CompaniesTab() {
   useEffect(() => {
     void getDocs(collection(db, 'roles')).then((snap) =>
       setLooseRoles(snap.docs
+        .filter((d) => !Array.isArray(d.data().accountIds) || d.data().accountIds.length === 0)
         .filter((d) => typeof d.data().accountId !== 'string' || d.data().accountId === '')
-        .map((d) => ({ id: d.id, ...(d.data() as Omit<Role, 'id'>), accountId: DEFAULT_ACCOUNT_ID }))),
+        .map((d) => ({ id: d.id, ...(d.data() as Omit<Role, 'id'>), accountIds: roleAccounts(d.data()) }))),
     )
   }, [roles])
 
   const attachLooseRoles = async () => {
-    await Promise.all(looseRoles.map((r) => moveRoleToCompany(r.id, DEFAULT_ACCOUNT_ID)))
+    await Promise.all(looseRoles.map((r) => setRoleCompanies(r.id, [DEFAULT_ACCOUNT_ID])))
     toast.success(t('co.rolesAttached', { n: looseRoles.length }))
     refresh()
   }

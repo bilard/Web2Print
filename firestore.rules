@@ -103,6 +103,17 @@ service cloud.firestore {
     function sameCompany(accountId) {
       return isAuthenticated() && accountId == myAccount();
     }
+    // Sociétés d'un rôle : `accountIds` (liste), champ legacy `accountId` compris.
+    // ⚠️ Un rôle peut servir à PLUSIEURS sociétés, mais un administrateur
+    // d'entreprise ne peut écrire QUE `[sa société]` — sinon il rendrait ses rôles
+    // attribuables chez un tiers, ou s'inviterait dans le rôle d'un autre.
+    function roleAccounts(data) {
+      return data.get('accountIds', data.get('accountId', 'default') is string
+        ? [data.get('accountId', 'default')] : ['default']);
+    }
+    function onlyMyCompany(data) {
+      return roleAccounts(data) == [myAccount()];
+    }
     // Administrateur de SA société : jamais l'admin global.
     function isTeamAdmin() {
       return isAuthenticated() && !isAdmin() && hasPermission('team.view');
@@ -120,19 +131,19 @@ service cloud.firestore {
       allow read:  if isAuthenticated();   // listes de permissions, non secrètes
       allow create: if isAdmin()
                     || (isTeamAdmin() && hasPermission('team.roles')
-                        && sameCompany(request.resource.data.get('accountId', 'default'))
+                        && onlyMyCompany(request.resource.data)
                         && noAdminEscalation());
       // ⚠️ `accountId` est vérifié AVANT et APRÈS : sans la condition sur
       // `resource`, un administrateur pourrait réécrire le rôle d'une AUTRE
       // société en y posant son propre `accountId` au passage.
       allow update: if isAdmin()
                     || (isTeamAdmin() && hasPermission('team.roles')
-                        && sameCompany(resource.data.get('accountId', 'default'))
-                        && sameCompany(request.resource.data.get('accountId', 'default'))
+                        && onlyMyCompany(resource.data)
+                        && onlyMyCompany(request.resource.data)
                         && noAdminEscalation());
       allow delete: if isAdmin()
                     || (isTeamAdmin() && hasPermission('team.roles')
-                        && sameCompany(resource.data.get('accountId', 'default')));
+                        && onlyMyCompany(resource.data));
     }
 
     // ── Comptes : vocabulaire d'interface ─────────────────────────────────────
@@ -179,8 +190,8 @@ service cloud.firestore {
     // suffirait de désigner le rôle le plus permissif d'une AUTRE société.
     function assignedRoleInMyCompany() {
       return request.resource.data.get('accessRoleId', '') == ''
-        || get(/databases/$(database)/documents/roles/$(request.resource.data.accessRoleId))
-             .data.get('accountId', 'default') == myAccount();
+        || myAccount() in roleAccounts(
+             get(/databases/$(database)/documents/roles/$(request.resource.data.accessRoleId)).data);
     }
 
     match /users/{uid} {

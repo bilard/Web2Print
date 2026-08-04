@@ -35,9 +35,12 @@ async function seedDoc(path: string, fields: Record<string, unknown>): Promise<v
 const str = (stringValue: string) => ({ stringValue })
 const strList = (v: string[]) => ({ arrayValue: { values: v.map(str) } })
 
-/** Rôle d'une société. */
-async function seedRole(id: string, accountId: string, permissions: string[]): Promise<void> {
-  await seedDoc(`roles/${id}`, { accountId: str(accountId), permissions: strList(permissions) })
+/** Rôle proposable dans une ou plusieurs sociétés. */
+async function seedRole(id: string, accounts: string | string[], permissions: string[]): Promise<void> {
+  await seedDoc(`roles/${id}`, {
+    accountIds: strList(Array.isArray(accounts) ? accounts : [accounts]),
+    permissions: strList(permissions),
+  })
 }
 
 /** Membre rattaché à une société, porteur d'un rôle. */
@@ -145,7 +148,43 @@ test('il crée un rôle dans SA société mais pas dans une autre', async () => 
 
 test('il ne peut PAS déplacer un rôle vers une autre société', async () => {
   const { admin, achatRole } = await twoCompanies('move-role')
-  expect(await tryPatch(admin, `roles/${achatRole}`, { accountId: str('leclerc') })).toBe(403)
+  expect(await tryPatch(admin, `roles/${achatRole}`, { accountIds: strList(['leclerc']) })).toBe(403)
+})
+
+test('il ne peut PAS AJOUTER une autre société à son propre rôle', async () => {
+  // Multi-sociétés est réservé à l'admin global : sinon un administrateur rendrait
+  // ses rôles attribuables chez un tiers.
+  const { admin, achatRole } = await twoCompanies('add-company')
+  expect(await tryPatch(admin, `roles/${achatRole}`, { accountIds: strList(['auchan', 'leclerc']) })).toBe(403)
+})
+
+test('un rôle PARTAGÉ entre deux sociétés est attribuable dans chacune', async () => {
+  const t = `shared-${Date.now()}`
+  const shared = `role-shared-${t}`
+  await seedRole(shared, ['auchan', 'leclerc'], ['pim.view'])
+  const adminRole = `role-admin-${t}`
+  await seedRole(adminRole, 'auchan', ['team.view', 'team.assign', 'team.roles'])
+  const admin = await createUser(`admin-${t}@example.com`)
+  const mate = await createUser(`mate-${t}@example.com`)
+  await seedMember(admin.uid, 'auchan', adminRole)
+  await seedMember(mate.uid, 'auchan', `peu-importe-${t}`)
+  expect(await tryPatch(admin, `users/${mate.uid}`, { accessRoleId: str(shared) })).toBe(200)
+})
+
+test('un rôle legacy (accountId seul) reste attribuable', async () => {
+  // Les rôles créés avant le multi-sociétés n'ont que `accountId` : la règle doit
+  // continuer à les accepter, sinon ils deviendraient inattribuables du jour au
+  // lendemain.
+  const t = `legacy-${Date.now()}`
+  const legacy = `role-legacy-${t}`
+  await seedDoc(`roles/${legacy}`, { accountId: str('auchan'), permissions: strList(['pim.view']) })
+  const adminRole = `role-admin-${t}`
+  await seedRole(adminRole, 'auchan', ['team.view', 'team.assign', 'team.roles'])
+  const admin = await createUser(`admin-${t}@example.com`)
+  const mate = await createUser(`mate-${t}@example.com`)
+  await seedMember(admin.uid, 'auchan', adminRole)
+  await seedMember(mate.uid, 'auchan', `peu-importe-${t}`)
+  expect(await tryPatch(admin, `users/${mate.uid}`, { accessRoleId: str(legacy) })).toBe(200)
 })
 
 test('un membre SANS `team.view` ne lit pas ses collègues', async () => {

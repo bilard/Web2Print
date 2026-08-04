@@ -128,13 +128,13 @@ export function UsersTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
    */
   const rolesFor = (u: ManagedUser) => {
     const account = u.accountId || DEFAULT_ACCOUNT_ID
-    const mine = roles.filter((r) => (r.accountId || DEFAULT_ACCOUNT_ID) === account)
+    const mine = roles.filter((r) => r.accountIds.includes(account))
     // Un rôle attribué AVANT ce filtre peut appartenir à une autre société : le
     // retirer de la liste afficherait un sélecteur vide alors que le membre en
     // porte bien un. On le garde, signalé, pour qu'il soit vu et corrigé.
     const current = roles.find((r) => r.id === u.accessRoleId)
     return current && !mine.includes(current)
-      ? [{ ...current, name: `⚠ ${current.name} (${current.accountId})` }, ...mine]
+      ? [{ ...current, name: `⚠ ${current.name} (${current.accountIds.join(' · ')})` }, ...mine]
       : mine
   }
   const rolePermsOf = (u: ManagedUser) => new Set(roleOf(u)?.permissions ?? [])
