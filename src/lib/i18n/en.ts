@@ -2783,6 +2783,11 @@ export const en: Record<TranslationKey, string> = {
   'st.field.reference': 'Reference / SKU',
   'st.field.variants': 'Variants (list)',
   // ═══ PWA radarPrice ═══
+  'rd.wf.title': 'Workflow',
+  'rd.wf.count': '{nodes} steps · {links} links',
+  'rd.wf.none': 'No workflow linked to this watch.',
+  'rd.wf.unavailable': 'Workflow unreadable — insufficient rights or deleted workflow.',
+  'rd.tab.workflow': 'Workflow',
   'rd.tab.overview': 'Overview',
   'rd.tab.costs': 'Costs',
   'rd.gapFlow': 'Gap flow',

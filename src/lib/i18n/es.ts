@@ -2782,6 +2782,11 @@ export const es: Record<TranslationKey, string> = {
   'st.field.reference': 'Referencia / SKU',
   'st.field.variants': 'Variantes (lista)',
   // ═══ PWA radarPrice ═══
+  'rd.wf.title': 'Workflow',
+  'rd.wf.count': '{nodes} etapas · {links} enlaces',
+  'rd.wf.none': 'Ningún workflow asociado a esta monitorización.',
+  'rd.wf.unavailable': 'Workflow ilegible: derechos insuficientes o workflow eliminado.',
+  'rd.tab.workflow': 'Workflow',
   'rd.tab.overview': 'Vista general',
   'rd.tab.costs': 'Costes',
   'rd.gapFlow': 'Flujo de diferencias',

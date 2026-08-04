@@ -2911,6 +2911,11 @@ export const fr = {
   'st.field.reference': 'Référence / SKU',
   'st.field.variants': 'Variantes / déclinaisons (liste)',
   // ═══ PWA radarPrice ═══
+  'rd.wf.title': 'Workflow',
+  'rd.wf.count': '{nodes} étapes · {links} liens',
+  'rd.wf.none': 'Aucun workflow associé à cette veille.',
+  'rd.wf.unavailable': 'Workflow illisible — droits insuffisants ou workflow supprimé.',
+  'rd.tab.workflow': 'Workflow',
   'rd.tab.overview': 'Aperçu',
   'rd.tab.costs': 'Coûts',
   'rd.gapFlow': 'Flux des écarts',

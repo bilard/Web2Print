@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Radar, Gauge, Target, Users, FolderTree, Package, Database, Radio, Wallet } from 'lucide-react'
+import { Radar, Gauge, Target, Users, FolderTree, Package, Database, Radio, Wallet, Workflow as WorkflowIcon } from 'lucide-react'
 import { useWatchList, useCatalogReport, useReportHistory, useCompetitorMeta } from '@/features/priceWatch/useCatalogReport'
 import { buildCockpit, sparkSeries } from '@/features/priceWatch/dashboard/analytics'
 import { buildOpsCockpit } from '@/features/priceWatch/dashboard/opsMetrics'
@@ -21,6 +21,7 @@ import { RadarFamilies } from './RadarFamilies'
 import { RadarHeatmap } from './RadarHeatmap'
 import { RadarProducts } from './RadarProducts'
 import { RadarCosts } from './RadarCosts'
+import { RadarWorkflowGraph } from './RadarWorkflowGraph'
 import { RadarScraping } from './RadarScraping'
 import { RadarScrapeBadge } from './RadarScrapeBadge'
 import { RadarScheduleBar } from './RadarScheduleBar'
@@ -29,7 +30,7 @@ import { useRadarSchedule, useRadarRunLive, useNowTick } from './useRadarSchedul
 import { useOrientation } from './useOrientation'
 import { t } from '@/lib/i18n'
 
-type Tab = 'apercu' | 'position' | 'concurrents' | 'familles' | 'produits' | 'volume' | 'scraping' | 'couts'
+type Tab = 'apercu' | 'position' | 'concurrents' | 'familles' | 'produits' | 'volume' | 'scraping' | 'workflow' | 'couts'
 // ⚠️ CLÉS, pas `t()` : ce tableau est évalué au CHARGEMENT du module.
 const MENU: readonly RadarMenuItem<Tab>[] = [
   { value: 'apercu', labelKey: 'rd.tab.overview', icon: Gauge },
@@ -39,6 +40,7 @@ const MENU: readonly RadarMenuItem<Tab>[] = [
   { value: 'produits', labelKey: 'rd.tab.products', icon: Package },
   { value: 'volume', labelKey: 'rd.tab.collect', icon: Database },
   { value: 'scraping', labelKey: 'rd.tab.scraping', icon: Radio },
+  { value: 'workflow', labelKey: 'rd.tab.workflow', icon: WorkflowIcon },
   { value: 'couts', labelKey: 'rd.tab.costs', icon: Wallet },
 ]
 
@@ -130,6 +132,10 @@ export function RadarApp() {
             <RadarScraping report={report} meta={liveMeta} now={now} pulse={pulse} watchId={watchId} workflowId={workflowId} />
             <RadarInstallHint />
           </>
+        ) : tab === 'workflow' ? (
+          // Comme le scraping : consultable AVANT le premier rapport — c'est là
+          // qu'on veut vérifier que la chaîne est bien branchée.
+          <RadarWorkflowGraph workflowId={workflowId} />
         ) : cockpit ? (
           <>
             {tab === 'apercu' && (
