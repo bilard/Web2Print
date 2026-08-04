@@ -2976,6 +2976,8 @@ export const es: Record<TranslationKey, string> = {
   'perm.settings.firebase.view': 'Ver la pestaña Firebase',
   'perm.settings.connectors.edit': 'Editar los conectores',
   'perm.settings.cookies.edit': 'Editar las cookies',
+  'perm.finances.view': 'Ver las finanzas',
+  'perm.finances.view.desc': 'Muestra los costes de uso (IA, scraping, almacenamiento) del miembro conectado — nunca los de otras cuentas.',
   'perm.demo.view': 'Cuenta demo — cuotas de datos',
   'perm.demo.view.desc': 'Limita los datos importados (límites editables arriba): reservar para cuentas de demostración/prospectos.',
   'perm.module.0': 'Biblioteca',
@@ -2993,6 +2995,7 @@ export const es: Record<TranslationKey, string> = {
   'perm.module.12': 'Telegram',
   'perm.module.13': 'Ajustes',
   'perm.module.14': 'Demo',
+  'perm.module.17': 'Finanzas',
   'perm.module.15': 'Insights de fabricante',
   'perm.module.16': 'Demo exprés',
   // ═══ Tail final — briefs, canvas, pulse, shared, taxonomie, data-graph, démo express, IDML, onboarding, Telegram (lot 37) ═══

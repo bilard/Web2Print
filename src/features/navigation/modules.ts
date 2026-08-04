@@ -218,10 +218,18 @@ export const MODULE_ITEMS: ModuleItem[] = [
   },
 ]
 
-/** Modules réservés à l'admin : jamais gouvernés par une permission de rôle.
- *  ⚠️ Tout module hors de cette liste DOIT avoir une entrée `SECTION_PERMISSION`
- *  (invariant testé) : sans clé, la règle `!perm ⇒ visible` le montre à TOUS. */
-export const ADMIN_ONLY_SECTIONS: readonly Section[] = ['access', 'finances']
+/**
+ * Modules réservés à l'admin : jamais gouvernés par une permission de rôle.
+ *
+ * `access` en fait partie DÉFINITIVEMENT — y donner accès, c'est donner le droit
+ * de modifier les rôles, donc de s'auto-attribuer n'importe quel droit.
+ * `finances` en est sorti : les compteurs sont clefés par `{uid}`, un membre n'y
+ * voit que SA propre consommation.
+ *
+ * ⚠️ Toute section hors de cette liste DOIT avoir une entrée `SECTION_PERMISSION`
+ * (invariant testé) : sans clé, la règle `!perm ⇒ visible` la montre à TOUS.
+ */
+export const ADMIN_ONLY_SECTIONS: readonly Section[] = ['access']
 
 /** Permission `.view` qui gate la visibilité de chaque module (absent ⇒ toujours visible). */
 export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
@@ -247,6 +255,7 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
   // Hors sidebar : l'engrenage du pied de sidebar. Sans clé ici, il s'affichait
   // pour TOUS les rôles alors que `settings.view` existait pour le gouverner.
   settings: 'settings.view',
+  finances: 'finances.view',
 }
 
 /**

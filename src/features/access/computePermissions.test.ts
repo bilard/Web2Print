@@ -78,6 +78,14 @@ describe('gouvernance des modules', () => {
     expect(visible).toEqual(['price-watch'])
   })
 
+  it('« Accès » reste hors de portée, même avec TOUTES les permissions', () => {
+    // Escalade de privilèges : qui ouvre l'admin des rôles peut s'attribuer
+    // n'importe quel droit. Aucune clé ne doit pouvoir déverrouiller cet écran.
+    const tout = new Set(ALL_PERMISSION_KEYS)
+    expect(canSeeModule('access', false, tout)).toBe(false)
+    expect(ADMIN_ONLY_SECTIONS).toContain('access')
+  })
+
   it('l\'admin voit tout, y compris les modules d\'administration', () => {
     const visible = MODULE_ITEMS.filter((m) => canSeeModule(m.id, true, new Set())).map((m) => m.id)
     expect(visible).toEqual(MODULE_ITEMS.map((m) => m.id))

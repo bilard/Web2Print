@@ -31,6 +31,7 @@ export const MODULE_LABEL: Record<string, TranslationKey> = {
   'Chat IA': 'perm.module.11',
   'Telegram': 'perm.module.12',
   'Paramètres': 'perm.module.13',
+  'Finances': 'perm.module.17',
   'Démo': 'perm.module.14',
 }
 
@@ -110,6 +111,10 @@ export const PERMISSIONS: PermissionDef[] = [
   // pas seulement celui qui édite. D'où une permission dédiée.
   { key: 'settings.i18n.edit', module: 'Paramètres', labelKey: 'perm.settings.i18n.edit',
     descriptionKey: 'perm.settings.i18n.edit.desc' },
+  // Coûts d'usage du MEMBRE CONNECTÉ : `aiUsage`/`brightDataUsage`/`scrapeUsage` sont
+  // clefés par `{uid}_{mois}` — accorder cette clé ne montre jamais les coûts d'autrui.
+  { key: 'finances.view', module: 'Finances', labelKey: 'perm.finances.view',
+    descriptionKey: 'perm.finances.view.desc' },
   // Marqueur de compte « démo » : ne débloque rien mais IMPOSE les quotas DEMO_LIMITS
   // (lignes PIM + assets DAM). Un rôle qui porte cette clé est plafonné, côté client
   // ET serveur (firestore.rules + Cloud Function damUpload). L'owner n'est jamais limité.

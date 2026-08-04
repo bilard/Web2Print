@@ -620,7 +620,7 @@ export default function DashboardPage() {
             <PriceWatchPanel />
           </Suspense>
         </div>
-      ) : activeSection === 'finances' && isAdmin ? (
+      ) : activeSection === 'finances' && canSee('finances') ? (
         <div data-tour="section-finances" className="flex-1 overflow-auto p-8 bg-background">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-background">
