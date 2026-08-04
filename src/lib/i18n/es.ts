@@ -2782,6 +2782,10 @@ export const es: Record<TranslationKey, string> = {
   'st.field.reference': 'Referencia / SKU',
   'st.field.variants': 'Variantes (lista)',
   // ═══ PWA radarPrice ═══
+  'rd.wf.zoomIn': 'Ampliar',
+  'rd.wf.zoomOut': 'Reducir',
+  'rd.wf.fit': 'Vista general',
+  'rd.wf.hint': '{nodes} etapas · {links} enlaces — toque una etapa para ver el detalle',
   'rd.wf.title': 'Workflow',
   'rd.wf.count': '{nodes} etapas · {links} enlaces',
   'rd.wf.missing': 'Workflow no encontrado: puede que se haya eliminado.',

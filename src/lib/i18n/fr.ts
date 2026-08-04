@@ -2911,6 +2911,10 @@ export const fr = {
   'st.field.reference': 'Référence / SKU',
   'st.field.variants': 'Variantes / déclinaisons (liste)',
   // ═══ PWA radarPrice ═══
+  'rd.wf.zoomIn': 'Agrandir',
+  'rd.wf.zoomOut': 'Réduire',
+  'rd.wf.fit': "Vue d'ensemble",
+  'rd.wf.hint': '{nodes} étapes · {links} liens — touchez une étape pour son détail',
   'rd.wf.title': 'Workflow',
   'rd.wf.count': '{nodes} étapes · {links} liens',
   'rd.wf.missing': 'Workflow introuvable — il a peut-être été supprimé.',
