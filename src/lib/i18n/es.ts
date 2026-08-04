@@ -1358,6 +1358,8 @@ export const es: Record<TranslationKey, string> = {
   'wfx.neverRun': 'Nunca ejecutado',
   'wfx.next': 'Próximo',
   'wfx.stop.help': 'Detener la ejecución de servidor EN CURSO. ⚠ El cron volverá a ejecutarla en el próximo tick — utilice «Suspender» para detener el flujo permanentemente.',
+  'wfx.runServer': 'Ejecutar (servidor)',
+  'wfx.suspendLabel': 'Suspender',
   'wfx.runNow': 'Ejecutar ahora en el servidor',
   'wfx.suspend.help': 'Suspender el flujo: desactiva el cron (sin más ejecuciones) y detiene la ejecución en curso. Reactivable en el nodo Cron.',
   // — Workflows : aperçu des données ————————————————————————————————————

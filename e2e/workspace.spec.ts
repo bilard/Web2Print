@@ -179,3 +179,26 @@ test('un membre ne peut PAS s’ouvrir des workflows lui-même', async () => {
   const { member } = await sharedWorkspace('wf-self')
   expect(await tryWrite(member, `users/${member.uid}`, { allowedWorkflows: strList(['n-importe-quoi']) })).toBe(403)
 })
+
+test('le planning d’un workflow est LISIBLE par les membres de l’espace', async () => {
+  // ⚠️ Même piège que le webhook : le champ s'appelle `uid` et non `ownerId`, il
+  // avait donc échappé à la bascule vers l'espace de travail. Résultat : le
+  // panneau de statut cron disparaissait pour tout membre non porteur, SANS
+  // erreur visible — l'onSnapshot se contente d'un avertissement en console.
+  const { member, carrier, workflowId, t } = await sharedWorkspace('cron')
+  await seedDoc(`workflowSchedules/${workflowId}`, {
+    uid: str(carrier.uid), enabled: { booleanValue: true },
+  })
+  expect(await tryRead(member, `workflowSchedules/${workflowId}`), 'lecture du planning').toBe(200)
+
+  // Planifier reste une modification du workflow : refusée sans `workflows.edit`.
+  const roleId = `role-run-only-${t}`
+  await seedDoc(`roles/${roleId}`, {
+    accountIds: strList([`auchan-${t}`]),
+    permissions: strList(['workflows.view', 'workflows.run']),
+  })
+  await seedDoc(`users/${member.uid}`, { accountId: str(`auchan-${t}`), accessRoleId: str(roleId) })
+  expect(await tryRead(member, `workflowSchedules/${workflowId}`), 'toujours lisible').toBe(200)
+  expect(await tryWrite(member, `workflowSchedules/${workflowId}`, { enabled: { booleanValue: false } }),
+    'modification refusée sans workflows.edit').toBe(403)
+})

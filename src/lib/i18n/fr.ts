@@ -1429,6 +1429,8 @@ export const fr = {
   'wfx.neverRun': 'Jamais exécuté',
   'wfx.next': 'Prochain',
   'wfx.stop.help': 'Arrêter le run serveur EN COURS. ⚠ Le cron le relancera au prochain tick — utilise « Suspendre » pour arrêter le flux durablement.',
+  'wfx.runServer': 'Lancer (serveur)',
+  'wfx.suspendLabel': 'Suspendre',
   'wfx.runNow': 'Exécuter maintenant côté serveur',
   'wfx.suspend.help': 'Suspendre le flux : désactive le cron (plus aucune relance) et arrête le run en cours. Réactivable dans le node Cron.',
 

@@ -1359,6 +1359,8 @@ export const en: Record<TranslationKey, string> = {
   'wfx.neverRun': 'Never run',
   'wfx.next': 'Next',
   'wfx.stop.help': 'Stop the server run IN PROGRESS. ⚠ The cron will run it again on the next tick — use "Suspend" to stop the flow for good.',
+  'wfx.runServer': 'Run (server)',
+  'wfx.suspendLabel': 'Suspend',
   'wfx.runNow': 'Run now on the server',
   'wfx.suspend.help': 'Suspend the flow: disables the cron (no further runs) and stops the current run. Can be re-enabled in the Cron node.',
   // — Workflows : aperçu des données ————————————————————————————————————

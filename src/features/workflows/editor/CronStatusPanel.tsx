@@ -10,6 +10,7 @@ import { useRunContext } from '../runtime/runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { saveWorkflow } from '../persistence/workflowsApi'
 import { useTranslation } from '@/lib/i18n'
+import { useCan } from '@/features/access/useAccess'
 
 interface ScheduleDoc {
   enabled: boolean; every: number; unit: string
@@ -32,6 +33,10 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
   const [sched, setSched] = useState<ScheduleDoc | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [running, setRunning] = useState(false)
+  // Lancer et arrêter relèvent de l'EXÉCUTION ; suspendre désactive le node Cron,
+  // donc modifie le workflow. Deux droits distincts, deux boutons distincts.
+  const canRun = useCan('workflows.run')
+  const canEdit = useCan('workflows.edit')
 
   useEffect(() => onSnapshot(doc(db, 'workflowSchedules', workflowId),
     (s) => setSched(s.exists() ? (s.data() as ScheduleDoc) : null),
@@ -156,7 +161,7 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
           <span>{t('wfx.next')} <b>{hhmm(sched.nextRunAt)}</b> <span className="text-indigo-200/70">({overdue ? 'imminent' : `dans ${formatCountdown(sched.nextRunAt - now)}`})</span></span>
         </span>
       )}
-      {isRunning ? (
+      {isRunning && canRun ? (
         // STOP disponible pour TOUT run serveur en cours — lancé d'ici, par le cron, ou
         // depuis un autre poste (le flag d'abandon Firestore est lu par l'executor).
         <button
@@ -168,26 +173,28 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
           STOP
           {running && <Loader2 className="w-3 h-3 animate-spin" />}
         </button>
-      ) : (
+      ) : canRun ? (
         <button
           onClick={onRun}
           className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/25 hover:bg-indigo-500/40"
           title={t('wfx.runNow')}
         >
           <Play className="w-3 h-3" />
-          Lancer (serveur)
+          {t('wfx.runServer')}
         </button>
-      )}
+      ) : null}
       {/* SUSPENDRE : arrête le flux DURABLEMENT (désactive le cron) — toujours dispo tant
           que la planification est active, que le run soit en cours ou entre deux runs. */}
+      {canEdit && (
       <button
         onClick={onSuspend}
         className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/35 text-amber-200"
         title={t('wfx.suspend.help')}
       >
         <PauseCircle className="w-3 h-3" />
-        Suspendre
+        {t('wfx.suspendLabel')}
       </button>
+      )}
       {/* Contrôles de run (Pas à pas / Run / Stop / Étape) intégrés DANS le bloc,
           séparés des actions serveur par un filet vertical. */}
       {children && <div className="flex items-center gap-2 pl-2 ml-1 border-l border-white/15">{children}</div>}

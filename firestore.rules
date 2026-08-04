@@ -707,9 +707,15 @@ service cloud.firestore {
     match /workflowSchedules/{workflowId} {
       // resource == null : un doc absent doit rester lisible, sinon l'onSnapshot
       // de l'éditeur meurt en permission-denied avant la création du planning.
-      allow read: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid);
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      // ⚠️ `uid` désigne l'ESPACE DE TRAVAIL, pas l'identité — même piège que
+      // `workflowWebhooks` : comparé à `request.auth.uid`, le planning devenait
+      // illisible pour tous les membres d'une société à données communes, et le
+      // panneau de statut disparaissait SANS erreur visible (l'onSnapshot se
+      // contente d'un avertissement en console).
+      allow read: if isAuthenticated() && (resource == null || inMyWorkspace(resource.data.uid));
+      // Planifier ou dé-planifier, c'est modifier le workflow.
+      allow create: if hasPermission('workflows.edit') && inMyWorkspace(request.resource.data.uid);
+      allow update, delete: if hasPermission('workflows.edit') && inMyWorkspace(resource.data.uid);
     }
 
     // ── États OAuth Google (accès serveur) ────────────────────────────────────
