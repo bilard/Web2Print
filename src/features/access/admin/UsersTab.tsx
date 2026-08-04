@@ -115,6 +115,28 @@ export function UsersTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
   }
 
   const roleOf = (u: ManagedUser) => roles.find((r) => r.id === u.accessRoleId)
+
+  /**
+   * Rôles proposables pour CE membre : ceux de SA société, jamais ceux d'une autre.
+   *
+   * ⚠️ En vue globale la liste contient les rôles de TOUTES les sociétés. Sans ce
+   * filtre, un administrateur global pouvait attribuer à un membre d'Auchan un
+   * rôle appartenant à un autre client — et les règles l'auraient accepté :
+   * `hasPermission()` résout `roles/{accessRoleId}` sans regarder sa société.
+   * `assignedRoleInMyCompany()` ferme ce chemin pour les administrateurs
+   * d'entreprise ; ce filtre le ferme pour l'écran global.
+   */
+  const rolesFor = (u: ManagedUser) => {
+    const account = u.accountId || DEFAULT_ACCOUNT_ID
+    const mine = roles.filter((r) => (r.accountId || DEFAULT_ACCOUNT_ID) === account)
+    // Un rôle attribué AVANT ce filtre peut appartenir à une autre société : le
+    // retirer de la liste afficherait un sélecteur vide alors que le membre en
+    // porte bien un. On le garde, signalé, pour qu'il soit vu et corrigé.
+    const current = roles.find((r) => r.id === u.accessRoleId)
+    return current && !mine.includes(current)
+      ? [{ ...current, name: `⚠ ${current.name} (${current.accountId})` }, ...mine]
+      : mine
+  }
   const rolePermsOf = (u: ManagedUser) => new Set(roleOf(u)?.permissions ?? [])
   const effectivePerms = (u: ManagedUser): string[] => {
     if (u.accessBlocked) return []
@@ -179,7 +201,7 @@ export function UsersTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
                 <select value={u.accessRoleId ?? ''} onChange={(e) => setRole(u, e.target.value)} disabled={u.accessBlocked}
                   className="bg-white/[0.05] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/80 disabled:opacity-40 hover:border-white/20 transition-colors">
                   <option value="">{t('ac.noRoleOption')}</option>
-                  {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  {rolesFor(u).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               )}
               <button onClick={() => setExpanded(isExpanded ? null : u.uid)}

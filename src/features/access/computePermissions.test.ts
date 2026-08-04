@@ -119,3 +119,46 @@ describe('gouvernance des modules', () => {
     expect(groups.map((g) => g.root?.key)).toEqual(['scrapingTemplates.view', 'scrapingHub.view'])
   })
 })
+
+/**
+ * Le scénario tel qu'il a été demandé, en clair : une société, deux
+ * collaborateurs, deux rôles, et exactement les modules attendus à l'écran.
+ */
+describe('société → utilisateur → rôle', () => {
+  const ACHAT = ['pim.view', 'dam.view']
+  const MARKETING = ['pim.view', 'dam.view', 'workflows.view']
+
+  /** Modules réellement affichés dans la sidebar pour ces permissions. */
+  const visibleFor = (perms: string[]) =>
+    MODULE_ITEMS.filter((m) => canSeeModule(m.id, false, new Set(perms))).map((m) => m.id)
+
+  it('Francis (ACHAT) ne voit que PIM et DAM', () => {
+    // `images` = DAM, `data` = PIM. Rien d'autre : « Insights fabricant » roulait
+    // autrefois sur `pim.view` et se serait invité ici — il a sa propre clé.
+    expect(visibleFor(ACHAT)).toEqual(['images', 'data'])
+  })
+
+  it('Robert (MARKETING) voit en plus les workflows', () => {
+    expect(visibleFor(MARKETING)).toEqual(['images', 'data', 'workflows'])
+  })
+
+  it('aucun des deux n’atteint l’administration', () => {
+    for (const perms of [ACHAT, MARKETING]) {
+      expect(canSeeModule('access', false, new Set(perms))).toBe(false)
+      expect(canSeeModule('team', false, new Set(perms))).toBe(false)
+      expect(canSeeModule('finances', false, new Set(perms))).toBe(false)
+    }
+  })
+
+  it('un administrateur d’entreprise atteint « Mon équipe », jamais « Accès »', () => {
+    const admin = new Set([...ACHAT, 'team.view', 'team.assign', 'team.roles'])
+    expect(canSeeModule('team', false, admin)).toBe(true)
+    expect(canSeeModule('access', false, admin)).toBe(false)
+  })
+
+  it('`admin` n’est pas cochable : la permission n’est pas au catalogue', () => {
+    // Un rôle ne peut donc pas être fabriqué depuis l'écran ; côté serveur,
+    // `noAdminEscalation` refuse l'écriture (cf. e2e/companies.spec.ts).
+    expect(ALL_PERMISSION_KEYS).not.toContain(ADMIN_PERMISSION)
+  })
+})
