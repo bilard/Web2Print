@@ -1,6 +1,6 @@
 ---
-name: nettoyage
-description: Nettoyage en profondeur du code — mesure la dette avec `npm run audit`, puis traite un chantier ciblé (bruit, code mort, cycles, fichiers obèses, `any`) par lots vérifiés et commités. À lancer avec `/nettoyage` (sans argument = choisir le chantier le plus rentable) ou `/nettoyage <cible>`.
+name: clean
+description: Nettoyage en profondeur du code — mesure la dette avec `npm run audit`, puis traite un chantier ciblé (bruit, code mort, cycles, fichiers obèses, `any`) par lots vérifiés et commités. À lancer avec `/clean` (sans argument = choisir le chantier le plus rentable) ou `/clean <cible>`.
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash
 ---
 

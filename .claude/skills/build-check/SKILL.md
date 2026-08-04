@@ -36,4 +36,4 @@ racine). Toujours `tsc -b`.
 - Warnings Vite : évaluer au cas par cas
 
 Pour *traiter* la dette révélée par les indicateurs (fichiers obèses, `any`,
-duplication), utiliser le skill `/nettoyage`.
+duplication), utiliser le skill `/clean`.
