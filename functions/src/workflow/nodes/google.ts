@@ -321,9 +321,9 @@ function contiguousGroupsServer(groups: (string | undefined)[]): { start: number
 /**
  * GROUPES DE COLONNES pliables — un par concurrent.
  *
- * ⚠️ Non repliés à la création : masquer les prix concurrents reviendrait à
- * cacher l'objet du rapport. ⚠️ Les groupes existants sont supprimés d'abord,
- * sinon Google les empile à chaque ré-export.
+ * ⚠️ REPLIÉS à la création : déplié, un groupe n'est qu'un crochet discret et la
+ * fonctionnalité passe pour absente. ⚠️ Les groupes existants sont supprimés
+ * d'abord, sinon Google les empile à chaque ré-export.
  */
 async function applyColumnGroupsServer(
   token: string, id: string, gid: number, groups: (string | undefined)[],
@@ -344,6 +344,18 @@ async function applyColumnGroupsServer(
   }
   for (const { start, end } of ranges) {
     requests.push({ addDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end } } })
+    // REPLIÉ d'emblée : déplié, un groupe n'est qu'un crochet discret au-dessus des
+    // en-têtes. Replié, chaque concurrent devient un bouton « + » explicite.
+    requests.push({
+      updateDimensionGroup: {
+        dimensionGroup: {
+          range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end },
+          depth: 1,
+          collapsed: true,
+        },
+        fields: 'collapsed',
+      },
+    })
   }
   if (requests.length === 0) return
   const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {

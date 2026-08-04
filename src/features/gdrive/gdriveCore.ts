@@ -566,9 +566,10 @@ async function applyMetricColorScales(token: string, spreadsheetId: string, shee
  * Chaque groupe se replie d'un clic sur le « − » au-dessus de l'en-tête : on
  * compare deux concurrents sans faire défiler quarante colonnes.
  *
- * ⚠️ Les groupes NE SONT PAS repliés à la création. Replier par défaut
- * masquerait les prix concurrents, c'est-à-dire l'objet même du rapport : c'est
- * au lecteur de choisir ce qu'il cache.
+ * ⚠️ Les groupes sont REPLIÉS à la création (2026-08-04, sur demande). Dépliés,
+ * ils ne se signalent que par un mince crochet au-dessus des en-têtes, qu'on ne
+ * remarque pas : la fonctionnalité passait pour absente. Repliés, chaque
+ * concurrent est un bouton « + » et la feuille s'ouvre sur les colonnes communes.
  *
  * ⚠️ Un groupe Google Sheets est une PLAGE : seules des colonnes contiguës
  * peuvent en former un. Les colonnes d'un même concurrent le sont par
@@ -594,9 +595,22 @@ async function applyColumnGroups(token: string, spreadsheetId: string, sheet: Ex
       deletes.push({ deleteDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: g.range?.startIndex ?? 0, endIndex: g.range?.endIndex ?? 0 } } })
     }
   }
-  const adds = ranges.map(({ start, end }) => ({
-    addDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end } },
-  }))
+  const adds = ranges.flatMap(({ start, end }) => [
+    { addDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end } } },
+    // REPLIÉ d'emblée : un groupe déplié n'est qu'un discret crochet au-dessus des
+    // en-têtes — on ne le remarque pas. Replié, chaque concurrent devient un bouton
+    // « + » explicite, et la feuille s'ouvre sur les seules colonnes communes.
+    {
+      updateDimensionGroup: {
+        dimensionGroup: {
+          range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end },
+          depth: 1,
+          collapsed: true,
+        },
+        fields: 'collapsed',
+      },
+    },
+  ])
   const requests = [...deletes, ...adds]
   if (requests.length === 0) return
   const res = await fetch(`${SHEETS_API}/${spreadsheetId}:batchUpdate`, {
