@@ -4829,6 +4829,9 @@ export const fr = {
   'perm.settings.i18n.edit.desc':
     "Réécrire les libellés de l'interface et activer des langues, pour tous les membres du compte.",
 
+  'i18n.altClick.off': 'Mode vocabulaire désactivé',
+  'i18n.altClick.howTo': 'Pour réécrire ce libellé : Paramètres › Vocabulaire › activer le mode, puis Alt+clic.',
+  'i18n.altClick.noRight': 'Votre rôle ne permet pas de réécrire le vocabulaire de la société.',
   'i18n.mode.title': 'Édition des libellés à l’écran',
   'i18n.mode.desc':
     "Une fois le mode actif, Alt+clic sur n'importe quel texte de l'application ouvre son éditeur. Le mot change pour tous les membres du compte.",

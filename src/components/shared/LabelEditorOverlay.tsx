@@ -7,10 +7,16 @@ import { LabelEditPopover } from './LabelEditPopover'
 /**
  * Couche d'édition des libellés — montée UNE FOIS au-dessus de l'application.
  *
- * Ne rend rien tant que le mode n'est pas armé depuis les réglages : ni écouteur
- * de clic, ni bandeau. C'est délibéré — un Alt+clic est un geste courant
- * (sélection, raccourcis système) et il ne doit pas ouvrir un éditeur de
- * vocabulaire au milieu d'une session de travail normale.
+ * N'affiche RIEN et n'ouvre JAMAIS l'éditeur tant que le mode n'est pas armé
+ * depuis les réglages : un Alt+clic est un geste courant (sélection, raccourcis
+ * système) et il ne doit pas ouvrir un éditeur de vocabulaire au milieu d'une
+ * session de travail normale.
+ *
+ * ⚠️ Le hook, lui, reste monté en permanence : mode désarmé, il se contente de
+ * RÉPONDRE à un Alt+clic visant un vrai libellé, par un message expliquant
+ * comment activer le mode. Sans cette réponse, le raccourci passait pour cassé
+ * alors qu'il n'était simplement pas activé. Pas de `preventDefault` dans ce
+ * cas : le clic normal suit son cours.
  */
 export function LabelEditorOverlay() {
   const { t } = useTranslation()
