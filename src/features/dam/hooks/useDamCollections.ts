@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCallback, useEffect, useState } from 'react'
 import {
   collection,
@@ -13,21 +14,20 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../../../lib/firebase/config'
-import { useAuthStore } from '../../../stores/auth.store'
 import type { DamCollection } from '../types'
 
 export function useDamCollections() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const [collections, setCollections] = useState<DamCollection[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!user?.uid) return
+    if (!uid) return
     setLoading(true)
 
     const q = query(
       collection(db, 'dam_collections'),
-      where('ownerId', '==', user.uid)
+      where('ownerId', '==', uid)
     )
 
     const unsub = onSnapshot(
@@ -44,17 +44,17 @@ export function useDamCollections() {
     )
 
     return unsub
-  }, [user?.uid])
+  }, [uid])
 
   const createCollection = useCallback(
     async (name: string, description = '') => {
-      if (!user?.uid) return null
+      if (!uid) return null
 
       const ref = await addDoc(collection(db, 'dam_collections'), {
         name,
         description,
         coverAssetId: null,
-        ownerId: user.uid,
+        ownerId: uid,
         sharedWith: [],
         visibility: 'private',
         assetIds: [],
@@ -64,7 +64,7 @@ export function useDamCollections() {
 
       return ref.id
     },
-    [user?.uid]
+    [uid]
   )
 
   const addToCollection = useCallback(

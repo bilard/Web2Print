@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Panneau de config du node « Sites sources » : tableau de gestion des sites
 // concurrents avec stats persistées LIVE (useCompetitorMeta + useCatalogReport,
 // onSnapshot — indépendant de tout run). Clé de lecture = watchId dérivé comme au
@@ -5,7 +6,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, ClipboardPaste, Search, X, Trash2, CheckSquare, Square } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth.store'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { useCompetitorMeta, useCatalogReport } from '@/features/priceWatch/useCatalogReport'
 import { stableId } from '@/features/priceWatch/core'
@@ -37,7 +37,7 @@ export function SourceSitesConfig({ config, onChange }: {
   availableColumns?: string[]
 }) {
   const workflowId = useWorkflowStore((s) => s.current?.id)
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const rows = useMemo(() => config.sites ?? [], [config.sites])
   const watchId = deriveWatchId(config.watchId ?? '', workflowId)
   const metaMap = useCompetitorMeta(watchId)

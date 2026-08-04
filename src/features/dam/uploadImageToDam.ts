@@ -1,10 +1,11 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Pont GÉNÉRIQUE d'upload d'une image vers le DAM (Google Drive) : damUpload
 // (serveur) récupère une URL, pas un blob → dépôt des octets en Storage temp,
 // downloadURL re-téléchargé par la CF (validation magic-bytes) puis nettoyage.
 // Sous-dossier au choix (« Promo Retail », « Détourés »…), id de dossier caché.
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { httpsCallable } from 'firebase/functions'
-import { auth, storage, functions } from '@/lib/firebase/config'
+import { storage, functions } from '@/lib/firebase/config'
 import { t } from '@/lib/i18n'
 
 const DAM_FOLDER_NAME = 'Web2Print — Assets DAM'
@@ -50,7 +51,7 @@ export async function uploadUrlToDam(
   subFolder: string,
   opts?: { reuseByName?: boolean },
 ): Promise<string> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) throw new Error(t('err.auth.required'))
   // Entités HTML résiduelles (URLs sorties de JSON-LD : `?a=1&amp;b=2`) —
   // laissées telles quelles, le CDN reçoit un paramètre `amp;b` erroné.
@@ -78,7 +79,7 @@ export async function uploadUrlToDam(
  * son webViewLink Drive (reconnu par isDriveImageRef → résoluble à l'affichage).
  */
 export async function uploadImageToDam(src: string, fileName: string, subFolder: string): Promise<string> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) throw new Error(t('err.auth.required'))
   const blob = await (await fetch(src)).blob()
   const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg').replace(/[^a-z0-9]/gi, '') || 'png'

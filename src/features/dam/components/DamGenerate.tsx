@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Sparkles, Loader2, Download, Plus, RotateCcw, Save, Check, Paperclip, X, File as FileIcon, Wand2, MessageCircleQuestion, ZoomIn } from 'lucide-react'
@@ -5,7 +6,6 @@ import { toast } from 'sonner'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db, storage } from '../../../lib/firebase/config'
-import { useAuthStore } from '../../../stores/auth.store'
 import { useQuota } from '../../access/useAccess'
 import { useEditorStore } from '../../../stores/editor.store'
 import { useProjectStore } from '../../../stores/project.store'
@@ -177,7 +177,7 @@ export function DamGenerate() {
   const [improveDialogOpen, setImproveDialogOpen] = useState(false)
   const [zoomSrc, setZoomSrc] = useState<string | null>(null)
   const refInputRef = useRef<HTMLInputElement>(null)
-  const userId = useAuthStore((s) => s.user?.uid)
+  const userId = useWorkspaceUid()
   // L'insertion canvas n'a de sens que si un projet d'édition est ouvert.
   const projectId = useEditorStore((s) => s.projectId)
   const canInsertCanvas = !!projectId

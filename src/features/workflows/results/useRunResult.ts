@@ -1,9 +1,10 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Source de données de l'écran Résultats : historique DURABLE des runs (users/{uid}/
 // workflowRuns, écrit par le serveur ET le client) + repli sur le dernier run live
 // (workflowRunsLive serveur / runContext client même session) si aucun snapshot.
 import { useEffect, useMemo, useState } from 'react'
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase/config'
+import { db } from '@/lib/firebase/config'
 import { getWorkflow } from '../persistence/workflowsApi'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { useRunContext } from '../runtime/runContext'
@@ -52,7 +53,7 @@ export function useRunResult(workflowId: string | undefined): RunResult {
   useEffect(() => {
     if (!workflowId) return
     if (storeCurrent?.id === workflowId) { setWf(storeCurrent); setLoading(false); return }
-    const uid = auth.currentUser?.uid
+    const uid = getWorkspaceUid()
     if (!uid) { setError('Non connecté.'); setLoading(false); return }
     let cancelled = false
     setLoading(true)
@@ -67,7 +68,7 @@ export function useRunResult(workflowId: string | undefined): RunResult {
   // RÉELLEMENT consultables (snapshot avec sorties) — les vieux docs métadonnées seuls
   // (runs cron d'avant la persistance) sont écartés.
   useEffect(() => {
-    const uid = auth.currentUser?.uid
+    const uid = getWorkspaceUid()
     if (!uid || !workflowId) return
     const q = query(collection(db, 'users', uid, 'workflowRuns'), where('workflowId', '==', workflowId))
     return onSnapshot(q, (snap) => {
@@ -81,7 +82,7 @@ export function useRunResult(workflowId: string | undefined): RunResult {
 
   // Dernier run live (repli si pas d'historique).
   useEffect(() => {
-    const uid = auth.currentUser?.uid
+    const uid = getWorkspaceUid()
     if (!uid || !workflowId) return
     return onSnapshot(
       doc(db, 'users', uid, 'workflowRunsLive', workflowId),

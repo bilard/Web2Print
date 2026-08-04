@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Actualisation LIVE du rapport « Comparer » pendant la moisson : entre deux runs serveur
 // (~30 min), les tuiles d'analyse (appariés, tenue prix, écart, impact) restaient figées
 // alors que l'index concurrent grossit en continu. Quand la collecte est ACTIVE et que le
@@ -10,7 +11,6 @@
 //   - seulement si une passe de moisson a écrit APRÈS le dernier rapport ;
 //   - jamais deux recalculs en parallèle.
 import { useEffect, useRef } from 'react'
-import { useAuthStore } from '@/stores/auth.store'
 import { useCompetitorMeta } from '../useCatalogReport'
 import { recomputeReport } from '../catalog/recomputeReport'
 import type { StoredReport } from '../reportStore'
@@ -44,7 +44,7 @@ function lastCollectOf(meta: Map<string, HarvestMeta>): number | null {
 }
 
 export function useLiveReportRefresh(watchId: string | null, report: StoredReport | null): void {
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const liveMeta = useCompetitorMeta(watchId)
   const busy = useRef(false)
   // Refs : l'interval lit les valeurs fraîches sans se ré-armer à chaque snapshot.

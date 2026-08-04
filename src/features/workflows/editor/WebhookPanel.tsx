@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Webhook entrant du workflow : bouton dans le header de l'éditeur ouvrant un
 // popover pour activer/désactiver l'URL de déclenchement externe (Zapier, ERP,
 // curl). Config dans workflowWebhooks/{workflowId} ; la Function workflowWebhook
@@ -7,7 +8,6 @@ import { deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, updateDoc } from '
 import { Webhook, Copy, RefreshCcw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import { useTranslation } from '@/lib/i18n'
 
 // URL stable de la Function v2 (Cloud Run), même forme que telegramWebhook.
@@ -28,7 +28,7 @@ function newSecret(): string {
 
 export function WebhookPanel({ workflowId }: { workflowId: string }) {
   const { t } = useTranslation()
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const [cfg, setCfg] = useState<WebhookDoc | null>(null)
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)

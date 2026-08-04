@@ -1,10 +1,11 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Abonnement au run SERVEUR live d'un workflow pour la console de suivi (éditeur) :
 // le doc `users/{uid}/workflowRunsLive/{workflowId}` porte le flux de logs chronologique
 // (200 derniers, streamé ~2 s pendant le run) et `workflowSchedules/{workflowId}` porte
 // le POURQUOI d'un « dernier run en erreur » (lastError persisté par le scheduler).
 import { useEffect, useState } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase/config'
+import { db } from '@/lib/firebase/config'
 
 export interface RunLiveLog { ts: number; level: 'info' | 'warn' | 'error'; node?: string; msg: string }
 export interface RunLiveState {
@@ -24,7 +25,7 @@ export function useWorkflowRunLive(workflowId: string | undefined): RunLiveState
   const [sched, setSched] = useState<{ lastStatus?: string; lastError?: string; lastErrorAt?: number }>({})
 
   useEffect(() => {
-    const uid = auth.currentUser?.uid
+    const uid = getWorkspaceUid()
     if (!uid || !workflowId) { setLive({ logs: [] }); setSched({}); return }
     const un1 = onSnapshot(doc(db, 'users', uid, 'workflowRunsLive', workflowId),
       (s) => {

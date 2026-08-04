@@ -1,3 +1,4 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Node « Veille tarifaire » : prend une FEUILLE DE PRODUITS en entrée (depuis
 // n'importe quelle source du flux — Upload, PIM, Scrape) + une liste de sites
 // concurrents en config (domaine | champs), retrouve chaque produit chez les
@@ -8,7 +9,6 @@ import { TrendingUpDown } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet } from '@/features/excel/types'
-import { useAuthStore } from '@/stores/auth.store'
 import { runPriceWatch } from '@/features/priceWatch/runPriceWatch'
 import { parseProductsFromSheet, parseSitesConfig } from '@/features/priceWatch/core'
 import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
@@ -82,7 +82,7 @@ const priceWatchTrackNode: NodeSpec<TrackConfig, TrackInputs, { changes?: ExcelS
   },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
-    const uid = useAuthStore.getState().user?.uid
+    const uid = getWorkspaceUid()
     if (!uid) throw new Error(t('run.notSignedIn'))
     const rows = (inputs.products?.rows ?? []) as Record<string, unknown>[]
     const products = parseProductsFromSheet(rows, {

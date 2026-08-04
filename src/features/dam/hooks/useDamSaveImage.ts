@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCallback, useEffect, useState } from 'react'
 import {
   collection,
@@ -14,22 +15,21 @@ import {
 } from 'firebase/firestore'
 import { ref as storageRef, deleteObject } from 'firebase/storage'
 import { db, storage } from '../../../lib/firebase/config'
-import { useAuthStore } from '../../../stores/auth.store'
 import type { DamImage } from '../types'
 
 export function useDamSaveImage() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    if (!user?.uid) {
+    if (!uid) {
       setSavedIds(new Set())
       return
     }
 
     const q = query(
       collection(db, 'dam_assets'),
-      where('addedBy', '==', user.uid)
+      where('addedBy', '==', uid)
     )
 
     const unsub = onSnapshot(
@@ -45,11 +45,11 @@ export function useDamSaveImage() {
     )
 
     return unsub
-  }, [user?.uid])
+  }, [uid])
 
   const toggleSave = useCallback(
     async (image: DamImage) => {
-      if (!user?.uid) return
+      if (!uid) return
 
       const ref = doc(db, 'dam_assets', image.id)
 
@@ -77,13 +77,13 @@ export function useDamSaveImage() {
           tags: image.tags,
           color: image.color,
           orientation: image.orientation,
-          addedBy: user.uid,
+          addedBy: uid,
           addedAt: serverTimestamp(),
           usageCount: 0,
         })
       }
     },
-    [user?.uid, savedIds]
+    [uid, savedIds]
   )
 
   const isSaved = useCallback(
@@ -92,16 +92,16 @@ export function useDamSaveImage() {
   )
 
   // Hard-delete an asset: cascades through variants (Firestore + Storage),
-  // removes the asset from every user collection, deletes the favorite record,
+  // removes the asset from every uid collection, deletes the favorite record,
   // then finally deletes the dam_assets doc itself.
   const deleteAsset = useCallback(
     async (imageId: string) => {
-      if (!user?.uid) return
+      if (!uid) return
 
-      // 1. Delete all variants owned by the user for this asset
+      // 1. Delete all variants owned by the uid for this asset
       const variantsQ = query(
         collection(db, 'dam_variants'),
-        where('ownerId', '==', user.uid),
+        where('ownerId', '==', uid),
         where('parentAssetId', '==', imageId)
       )
       const variantsSnap = await getDocs(variantsQ)
@@ -127,10 +127,10 @@ export function useDamSaveImage() {
         })
       )
 
-      // 2. Remove the asset ID from every user collection that references it
+      // 2. Remove the asset ID from every uid collection that references it
       const collectionsQ = query(
         collection(db, 'dam_collections'),
-        where('ownerId', '==', user.uid)
+        where('ownerId', '==', uid)
       )
       const collectionsSnap = await getDocs(collectionsQ)
       await Promise.all(
@@ -147,7 +147,7 @@ export function useDamSaveImage() {
       )
 
       // 3. Delete the favorite record (if any)
-      await deleteDoc(doc(db, 'dam_favorites', `${user.uid}_${imageId}`)).catch(() => {})
+      await deleteDoc(doc(db, 'dam_favorites', `${uid}_${imageId}`)).catch(() => {})
 
       // 4. Delete the dam_assets doc itself
       await deleteDoc(doc(db, 'dam_assets', imageId))
@@ -159,7 +159,7 @@ export function useDamSaveImage() {
         return next
       })
     },
-    [user?.uid]
+    [uid]
   )
 
   return { toggleSave, isSaved, deleteAsset, savedIds }

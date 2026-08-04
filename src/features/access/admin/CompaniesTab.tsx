@@ -40,6 +40,7 @@ export function CompaniesTab() {
     return [...ids].sort().map((id) => ({
       id,
       name: declared.get(id) ?? id,
+      workspaceUid: companies.find((c) => c.id === id)?.workspaceUid ?? '',
       declared: declared.has(id),
       members: users.filter((u) => (u.accountId || DEFAULT_ACCOUNT_ID) === id).length,
       roles: roles.filter((r) => r.accountIds.includes(id)).length,
@@ -93,7 +94,7 @@ export function CompaniesTab() {
 
   if (selected) {
     const row = rows.find((r) => r.id === selected)
-    return <CompanyDetail id={selected} name={row?.name ?? selected} members={row?.members ?? 0} onBack={() => { setSelected(null); refresh() }} />
+    return <CompanyDetail id={selected} name={row?.name ?? selected} members={row?.members ?? 0} workspaceUid={row?.workspaceUid ?? ''} onBack={() => { setSelected(null); refresh() }} />
   }
 
   return (

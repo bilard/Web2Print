@@ -1,15 +1,15 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Consommation scraping du MOIS COURANT, EN LIVE (onSnapshot sur scrapeUsage/{uid}_{mois}).
 // Alimente le compteur Jina du dashboard veille, sans passer par le module Finances.
 import { useEffect, useState } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 
 interface PlatformSpend { tokens: number; requests: number; costUsd: number }
 export interface ScrapeSpend { total: number; byPlatform: Record<string, PlatformSpend> }
 
 export function useScrapeSpend(): ScrapeSpend | null {
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const [spend, setSpend] = useState<ScrapeSpend | null>(null)
   useEffect(() => {
     if (!uid) return

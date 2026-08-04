@@ -1,5 +1,6 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase/config'
+import { db } from '@/lib/firebase/config'
 import { stripUndefined } from '@/lib/stripUndefined'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey, CustomFieldMap } from './promoTypes'
@@ -43,7 +44,7 @@ const MAX_PAYLOAD = 900_000 // garde-fou limite Firestore ~1 Mo/doc
 
 /** Enregistre la fiche courante (méta + lignes). Renvoie l'id. Throw si trop volumineux. */
 export async function savePromo(input: SavePromoInput, existingId?: string): Promise<string> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) throw new Error(t('err.auth.required'))
   const payload: PromoPayload = { columns: input.columns, rows: input.rows, imgOverride: input.imgOverride, textOverride: input.textOverride }
   const payloadJson = JSON.stringify(payload)
@@ -66,7 +67,7 @@ export async function savePromo(input: SavePromoInput, existingId?: string): Pro
 
 /** Liste les fiches enregistrées (méta seules, triées du plus récent au plus ancien). */
 export async function listPromos(): Promise<SavedPromoMeta[]> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) return []
   const snap = await getDocs(metaCol(uid))
   return snap.docs
@@ -87,7 +88,7 @@ export async function listPromos(): Promise<SavedPromoMeta[]> {
 
 /** Charge les lignes d'une fiche enregistrée. */
 export async function loadPromoPayload(id: string): Promise<PromoPayload | null> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) return null
   const snap = await getDoc(payloadDoc(uid, id))
   if (!snap.exists()) return null
@@ -100,7 +101,7 @@ export async function loadPromoPayload(id: string): Promise<PromoPayload | null>
  * (⚠ imgOverride/textOverride sont indexés par POSITION de ligne).
  */
 export async function refreshPromoData(id: string, columns: MergeColumn[], rows: MergeRow[]): Promise<void> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) throw new Error(t('err.auth.required'))
   const existing = await loadPromoPayload(id)
   if (!existing) throw new Error(t('err.rp.notFound'))
@@ -113,7 +114,7 @@ export async function refreshPromoData(id: string, columns: MergeColumn[], rows:
 
 /** Supprime une fiche (méta + payload). */
 export async function deletePromo(id: string): Promise<void> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) return
   await deleteDoc(doc(metaCol(uid), id)).catch(() => {})
   await deleteDoc(payloadDoc(uid, id)).catch(() => {})

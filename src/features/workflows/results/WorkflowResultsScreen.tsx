@@ -1,9 +1,9 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Écran dédié « Résultats » d'un workflow (Phase 1) : visualisation contextuelle du
 // dernier run (dashboard / table / graphe / galerie / document) + export PNG/PDF.
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Download, FileImage, Loader2, Eye, History, Trash2 } from 'lucide-react'
-import { auth } from '@/lib/firebase/config'
 import { initWorkflowsRegistry } from '../registry/builtin'
 import { deleteRun, deleteAllRuns } from '../persistence/runHistoryClient'
 import { useRunResult, type RunHistoryItem } from './useRunResult'
@@ -149,8 +149,8 @@ export function WorkflowResultsScreen({ workflowId }: { workflowId: string }) {
           runs={runs}
           selectedRunId={selectedRunId}
           onSelect={selectRun}
-          onDelete={(id) => { const uid = auth.currentUser?.uid; if (uid) void deleteRun(uid, id) }}
-          onClearAll={() => { const uid = auth.currentUser?.uid; if (uid) void deleteAllRuns(uid, workflowId) }}
+          onDelete={(id) => { const uid = getWorkspaceUid(); if (uid) void deleteRun(uid, id) }}
+          onClearAll={() => { const uid = getWorkspaceUid(); if (uid) void deleteAllRuns(uid, workflowId) }}
         />
         <div className="flex-1 overflow-auto">
           {loading ? (

@@ -1,3 +1,4 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 import { collection, doc, serverTimestamp, writeBatch, deleteField } from 'firebase/firestore'
@@ -25,8 +26,10 @@ export async function writeSheetsToFirestore(
   existingDocId: string | null,
   path: string[],
 ): Promise<string> {
-  const user = auth.currentUser
-  if (!user) {
+  // ⚠️ L'espace de travail, pas l'identité : un dataset enrichi doit rejoindre
+  // les données communes de la société, sinon il reste invisible des collègues.
+  const workspaceUid = getWorkspaceUid()
+  if (!workspaceUid) {
     throw new Error(t('err.enr.notAuthenticated'))
   }
   const serialized = JSON.stringify(sheets)
@@ -41,7 +44,7 @@ export async function writeSheetsToFirestore(
 
   const batch = writeBatch(db)
   batch.set(ref, {
-    userId: user.uid,
+    userId: workspaceUid,
     fileName,
     path,
     sheets: deleteField(),
@@ -52,7 +55,7 @@ export async function writeSheetsToFirestore(
     createdAt: serverTimestamp(),
   }, { merge: true })
   batch.set(payloadRef, {
-    userId: user.uid,
+    userId: workspaceUid,
     json: serialized,
     updatedAt: serverTimestamp(),
   }, { merge: true })

@@ -57,12 +57,20 @@ export function useAccessInit() {
             resolvedRoleId = null
           }
         }
+        // Espace de travail de la société. Lu à chaque notification : désigner un
+        // porteur doit rediriger les écrans des membres sans qu'ils rechargent.
+        let workspaceUid = ''
+        if (accountId) {
+          const accountSnap = await getDoc(doc(db, 'accounts', accountId))
+          workspaceUid = (accountSnap.data()?.workspaceUid as string | undefined) ?? ''
+        }
         if (cancelled) return
         setAccess({
           // Bloqué → aucune permission, quel que soit le rôle.
           permissions: blocked ? new Set() : computeEffectivePermissions({ isOwner, rolePermissions, grants, revokes }),
           roleId: resolvedRoleId,
           accountId,
+          workspaceUid,
           isOwner,
           blocked,
           usage: readUsage(data.usage),
@@ -72,7 +80,7 @@ export function useAccessInit() {
       } catch (e) {
         if (cancelled) return
         console.warn('[useAccessInit] load failed:', e)
-        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, accountId: '', isOwner, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, onboardingComplete: false })
+        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, accountId: '', workspaceUid: '', isOwner, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, onboardingComplete: false })
       }
     }
 

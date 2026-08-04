@@ -1,10 +1,10 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCallback, useEffect, useState } from 'react'
 import {
   addDoc, collection, deleteDoc, doc, onSnapshot,
   orderBy, query, updateDoc, where,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 
 /**
  * Ensemble complet des paramètres "Repères et fonds perdus" sauvegardables
@@ -46,19 +46,19 @@ export interface PrintPreset extends PrintPresetParams {
  * Collection : `printPresets/{id}`, scopée à `ownerId` (cf firestore.rules).
  */
 export function usePrintPresets() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const [presets, setPresets] = useState<PrintPreset[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) {
+    if (!uid) {
       setPresets([])
       setLoading(false)
       return
     }
     const q = query(
       collection(db, 'printPresets'),
-      where('ownerId', '==', user.uid),
+      where('ownerId', '==', uid),
       orderBy('createdAt', 'desc'),
     )
     const unsub = onSnapshot(
@@ -73,17 +73,17 @@ export function usePrintPresets() {
       },
     )
     return () => unsub()
-  }, [user])
+  }, [uid])
 
   const savePreset = useCallback(
     async (name: string, params: PrintPresetParams): Promise<string | null> => {
-      if (!user) return null
+      if (!uid) return null
       try {
         const now = Date.now()
         const ref = await addDoc(collection(db, 'printPresets'), {
           ...params,
           name: name.trim(),
-          ownerId: user.uid,
+          ownerId: uid,
           createdAt: now,
           updatedAt: now,
         })
@@ -93,7 +93,7 @@ export function usePrintPresets() {
         return null
       }
     },
-    [user],
+    [uid],
   )
 
   const updatePreset = useCallback(

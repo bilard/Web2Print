@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Hooks lecture-seule (temps réel) du tableau de bord Veille tarifaire catalogue :
 // liste des suivis (pour le sélecteur), rapport `latest`, tendance `history`. Toute
 // la donnée est pré-agrégée à l'écriture (cf. reportStore) → le dashboard ne charge
@@ -5,7 +6,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { collection, doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import { priceWatchCol, reportLatestDoc, reportHistoryDoc, competitorsCol, priceEventsDoc } from './paths'
 import type { StoredReport } from './reportStore'
 import type { KpiHistoryPoint } from './types'
@@ -25,7 +25,7 @@ export interface WatchSummary {
 
 /** Liste des suivis de l'utilisateur, du plus récemment mis à jour au plus ancien. */
 export function useWatchList(): WatchSummary[] {
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const [items, setItems] = useState<WatchSummary[]>([])
   // Index `stableId(workflowId) → workflowId` : retrouve le workflow d'origine des suivis
   // créés AVANT la persistance de `workflowId` (leur watchId par défaut = stableId(wfId),
@@ -81,7 +81,7 @@ export function useWatchList(): WatchSummary[] {
  * dirigée) sont ignorés.
  */
 export function useCompetitorMeta(watchId: string | null): Map<string, HarvestMeta> {
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const [meta, setMeta] = useState<Map<string, HarvestMeta>>(() => new Map())
   useEffect(() => {
     if (!uid || !watchId) { setMeta(new Map()); return }
@@ -120,7 +120,7 @@ export function useCompetitorMeta(watchId: string | null): Map<string, HarvestMe
 
 /** Rapport `latest` d'un suivi (KPIs + stats/concurrent + liste produit bornée). */
 export function useCatalogReport(watchId: string | null): StoredReport | null {
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const [report, setReport] = useState<StoredReport | null>(null)
   useEffect(() => {
     if (!uid || !watchId) { setReport(null); return }
@@ -135,7 +135,7 @@ export function useCatalogReport(watchId: string | null): StoredReport | null {
 
 /** Journal des changements de prix (plus récents d'abord, borné à l'écriture). */
 export function usePriceEvents(watchId: string | null): PriceEvent[] {
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const [events, setEvents] = useState<PriceEvent[]>([])
   useEffect(() => {
     if (!uid || !watchId) { setEvents([]); return }
@@ -150,7 +150,7 @@ export function usePriceEvents(watchId: string | null): PriceEvent[] {
 
 /** Points de tendance KPI d'un suivi (ring-buffer). */
 export function useReportHistory(watchId: string | null): KpiHistoryPoint[] {
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const [points, setPoints] = useState<KpiHistoryPoint[]>([])
   useEffect(() => {
     if (!uid || !watchId) { setPoints([]); return }

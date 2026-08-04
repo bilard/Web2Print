@@ -1,9 +1,9 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { notify } from '@/lib/notify'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon, BarChart3, BookmarkPlus, Check, Loader2, CircleDot } from 'lucide-react'
 import { ReactFlowProvider } from '@xyflow/react'
-import { useAuthStore } from '@/stores/auth.store'
 import { getWorkflow, saveWorkflow } from '../persistence/workflowsApi'
 import { useWorkflowStore, startAutosave } from '../persistence/workflow.store'
 import { loadLatestRunStates } from '../persistence/runHistoryClient'
@@ -35,7 +35,7 @@ export function WorkflowEditorPage() {
   const { t, locale } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const wf = useWorkflowStore((s) => s.current)
   const setCurrent = useWorkflowStore((s) => s.setCurrent)
   const dirty = useWorkflowStore((s) => s.dirty)

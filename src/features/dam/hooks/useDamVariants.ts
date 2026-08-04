@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCallback, useEffect, useState } from 'react'
 import {
   collection,
@@ -14,18 +15,17 @@ import {
 } from 'firebase/firestore'
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage'
 import { db, storage } from '../../../lib/firebase/config'
-import { useAuthStore } from '../../../stores/auth.store'
 import type { DamImage, DamImageVariant, DamVariantEdits } from '../types'
 import { renderEditedImage } from '../utils/renderEditedImage'
 
 export function useDamVariants(parentAssetId: string | null) {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const [variants, setVariants] = useState<DamImageVariant[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!user?.uid || !parentAssetId) {
+    if (!uid || !parentAssetId) {
       setVariants([])
       return
     }
@@ -33,7 +33,7 @@ export function useDamVariants(parentAssetId: string | null) {
 
     const q = query(
       collection(db, 'dam_variants'),
-      where('ownerId', '==', user.uid),
+      where('ownerId', '==', uid),
       where('parentAssetId', '==', parentAssetId),
       orderBy('createdAt', 'desc')
     )
@@ -50,7 +50,7 @@ export function useDamVariants(parentAssetId: string | null) {
         // Fallback without orderBy in case index is missing
         const qFallback = query(
           collection(db, 'dam_variants'),
-          where('ownerId', '==', user.uid),
+          where('ownerId', '==', uid),
           where('parentAssetId', '==', parentAssetId)
         )
         onSnapshot(qFallback, (snap2) => {
@@ -64,11 +64,11 @@ export function useDamVariants(parentAssetId: string | null) {
     )
 
     return unsub
-  }, [user?.uid, parentAssetId])
+  }, [uid, parentAssetId])
 
   const saveVariant = useCallback(
     async (image: DamImage, edits: DamVariantEdits, name: string) => {
-      if (!user?.uid) throw new Error('Non authentifié')
+      if (!uid) throw new Error('Non authentifié')
       setSaving(true)
       try {
         // 1. Pre-generate a Firestore doc ref so the Storage filename can use the
@@ -76,7 +76,7 @@ export function useDamVariants(parentAssetId: string | null) {
         //    same Storage path and prevents orphan files on update.
         const docRef = doc(collection(db, 'dam_variants'))
         const variantId = docRef.id
-        const basePath = `dam-variants/${user.uid}/${variantId}`
+        const basePath = `dam-variants/${uid}/${variantId}`
 
         // 2. Render full-size image + thumbnail in parallel
         const [
@@ -118,7 +118,7 @@ export function useDamVariants(parentAssetId: string | null) {
             photographerUrl: image.photographerUrl,
             sourceUrl: image.sourceUrl,
           },
-          ownerId: user.uid,
+          ownerId: uid,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           name,
@@ -132,12 +132,12 @@ export function useDamVariants(parentAssetId: string | null) {
         setSaving(false)
       }
     },
-    [user?.uid]
+    [uid]
   )
 
   const updateVariant = useCallback(
     async (variant: DamImageVariant, image: DamImage, edits: DamVariantEdits) => {
-      if (!user?.uid) throw new Error('Non authentifié')
+      if (!uid) throw new Error('Non authentifié')
       setSaving(true)
       try {
         // 1. Re-render full + thumbnail with the new edits
@@ -154,7 +154,7 @@ export function useDamVariants(parentAssetId: string | null) {
 
         // 2. Overwrite the existing Storage files — same paths as the original save
         //    so the download URLs stay valid.
-        const basePath = `dam-variants/${user.uid}/${variant.id}`
+        const basePath = `dam-variants/${uid}/${variant.id}`
         const fullRef = storageRef(storage, `${basePath}.jpg`)
         const thumbRef = storageRef(storage, `${basePath}-thumb.jpg`)
         await Promise.all([
@@ -180,7 +180,7 @@ export function useDamVariants(parentAssetId: string | null) {
         setSaving(false)
       }
     },
-    [user?.uid]
+    [uid]
   )
 
   const deleteVariant = useCallback(
@@ -206,18 +206,18 @@ export function useDamVariants(parentAssetId: string | null) {
 
   const recoverOrphans = useCallback(
     async (image: DamImage): Promise<number> => {
-      if (!user?.uid) throw new Error('Non authentifié')
+      if (!uid) throw new Error('Non authentifié')
       setSaving(true)
       try {
-        // 1. List all Storage files in the user's dam-variants folder
-        const folderRef = storageRef(storage, `dam-variants/${user.uid}`)
+        // 1. List all Storage files in the uid's dam-variants folder
+        const folderRef = storageRef(storage, `dam-variants/${uid}`)
         const listResult = await listAll(folderRef)
 
         // 2. Build the set of filenames already referenced by *any* existing variant
-        //    doc belonging to this user (across every parent asset).
+        //    doc belonging to this uid (across every parent asset).
         const allVariantsQ = query(
           collection(db, 'dam_variants'),
-          where('ownerId', '==', user.uid)
+          where('ownerId', '==', uid)
         )
         const snap = await getDocs(allVariantsQ)
         const referencedFilenames = new Set<string>()
@@ -276,7 +276,7 @@ export function useDamVariants(parentAssetId: string | null) {
 
             // Upload the thumb alongside the original file
             const thumbName = orphan.name.replace(/\.jpg$/i, '-thumb.jpg')
-            const thumbRef = storageRef(storage, `dam-variants/${user.uid}/${thumbName}`)
+            const thumbRef = storageRef(storage, `dam-variants/${uid}/${thumbName}`)
             await uploadBytes(thumbRef, thumbBlob, { contentType: 'image/jpeg' })
             const renderedThumbUrl = await getDownloadURL(thumbRef)
 
@@ -300,7 +300,7 @@ export function useDamVariants(parentAssetId: string | null) {
                 photographerUrl: image.photographerUrl,
                 sourceUrl: image.sourceUrl,
               },
-              ownerId: user.uid,
+              ownerId: uid,
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
               name: `Récupéré — ${orphan.name.replace(/\.jpg$/i, '').slice(0, 12)}`,
@@ -327,7 +327,7 @@ export function useDamVariants(parentAssetId: string | null) {
         setSaving(false)
       }
     },
-    [user?.uid]
+    [uid]
   )
 
   const renameVariant = useCallback(async (variantId: string, name: string) => {

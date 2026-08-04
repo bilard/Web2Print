@@ -1,3 +1,4 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Node « Veille prix » : compare les valeurs (prix) de la sheet d'entrée avec
 // celles mémorisées au run précédent (users/{uid}/priceWatch/{watchId}) et
 // n'émet le port `changes` QUE s'il y a des variations au-delà du seuil —
@@ -7,7 +8,6 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
-import { useAuthStore } from '@/stores/auth.store'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
 import { t } from '@/lib/i18n'
 
@@ -101,7 +101,7 @@ const priceWatchNode: NodeSpec<
   defaultConfig: { watchId: 'veille-1', keyColumn: 'url', valueColumn: 'price', thresholdPct: 0 },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
-    const uid = useAuthStore.getState().user?.uid
+    const uid = getWorkspaceUid()
     if (!uid) throw new Error(t('run.pw.notSignedIn'))
     const watchId = (config.watchId || 'veille-1').trim().replace(/[/#?[\]]/g, '_')
     const rows = inputs.sheet?.rows ?? []

@@ -1,3 +1,4 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Détourage EN LOT des visuels produits du catalogue : chaque image est passée
 // au moteur de détourage (rembg / Remove.bg, cf. features/imaging), le PNG alpha
 // est rangé dans Firebase Storage, et l'URL écrite en SURCHARGE de ligne
@@ -6,7 +7,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { auth, storage } from '@/lib/firebase/config'
+import { storage } from '@/lib/firebase/config'
 import { removeBackground } from '@/features/imaging/removeBackground'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { saveCatalog } from './catalogsApi'
@@ -73,7 +74,7 @@ export function useCatalogCutout() {
   /** Détoure les visuels des produits SÉLECTIONNÉS ; ceux déjà détourés sont ignorés. */
   const cutoutAll = async () => {
     const s = useCatalogStore.getState()
-    const uid = auth.currentUser?.uid
+    const uid = getWorkspaceUid()
     if (!uid) { toast.error(t('tst.cat.cutoutSignIn')); return }
     const column = s.fieldMap.image
     if (!column) { toast.error(t('tst.cat.noImageColumn')); return }

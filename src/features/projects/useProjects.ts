@@ -1,7 +1,7 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useQuery } from '@tanstack/react-query'
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import type { ProjectData } from '@/types/project'
 
 async function fetchProjects(userId: string): Promise<ProjectData[]> {
@@ -17,11 +17,11 @@ async function fetchProjects(userId: string): Promise<ProjectData[]> {
 }
 
 export function useProjects() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
 
   return useQuery({
-    queryKey: ['projects', user?.uid],
-    queryFn: () => fetchProjects(user!.uid),
-    enabled: !!user,
+    queryKey: ['projects', uid],
+    queryFn: () => fetchProjects(uid!),
+    enabled: !!uid,
   })
 }

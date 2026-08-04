@@ -1,9 +1,10 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useEffect, useState, type ReactNode } from 'react'
 import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { CalendarClock, Play, Loader2, Square, PauseCircle } from 'lucide-react'
 import { toast } from 'sonner'
-import { auth, db, functions } from '@/lib/firebase/config'
+import { db, functions } from '@/lib/firebase/config'
 import { formatCountdown } from '../runtime/cronLabels'
 import { useRunContext } from '../runtime/runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
@@ -63,7 +64,7 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
 
   // STOP : pose un flag d'abandon que l'executor serveur poll (abort sous ~3 s).
   const onStop = async () => {
-    const uid = auth.currentUser?.uid
+    const uid = getWorkspaceUid()
     if (!uid) return
     try {
       await setDoc(doc(db, 'users', uid, 'workflowAbort', workflowId), { requested: true, ts: Date.now() })
@@ -79,7 +80,7 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
   // est SUPPRIMÉ → le scanner ne reprend plus ce workflow. On abandonne aussi le run en
   // cours au passage (pour un arrêt immédiat et complet).
   const onSuspend = async () => {
-    const uid = auth.currentUser?.uid
+    const uid = getWorkspaceUid()
     const wf = useWorkflowStore.getState().current
     if (!uid || !wf) return
     const cronNode = wf.nodes.find((n) => n.type === 'cron' && (n.config as { enabled?: boolean })?.enabled)

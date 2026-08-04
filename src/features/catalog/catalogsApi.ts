@@ -1,7 +1,8 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // CRUD users/{uid}/catalogs — même pattern que promoTemplatesApi (stripUndefined
 // à la frontière : un seul undefined ferait rejeter tout le setDoc).
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase/config'
+import { db } from '@/lib/firebase/config'
 import { stripUndefined } from '@/lib/stripUndefined'
 import { EMPTY_TREE_EDITS } from './catalogTree'
 import { CATALOG_FORMAT_PRESETS, type CatalogDoc } from './catalogTypes'
@@ -21,7 +22,7 @@ export function newCatalogDoc(name: string): CatalogDoc {
 }
 
 export async function listCatalogs(): Promise<CatalogSummary[]> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) return []
   const snap = await getDocs(colPath(uid))
   return snap.docs
@@ -30,7 +31,7 @@ export async function listCatalogs(): Promise<CatalogSummary[]> {
 }
 
 export async function loadCatalog(id: string): Promise<CatalogDoc | null> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) return null
   const snap = await getDoc(doc(db, 'users', uid, 'catalogs', id))
   if (!snap.exists()) return null
@@ -40,7 +41,7 @@ export async function loadCatalog(id: string): Promise<CatalogDoc | null> {
 
 /** Upsert : `doc.id` vide → création (retourne le nouvel id). */
 export async function saveCatalog(docData: CatalogDoc): Promise<string> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) throw new Error(t('err.auth.required'))
   const ref = docData.id ? doc(db, 'users', uid, 'catalogs', docData.id) : doc(colPath(uid))
   const { id: _omit, ...payload } = docData
@@ -49,7 +50,7 @@ export async function saveCatalog(docData: CatalogDoc): Promise<string> {
 }
 
 export async function deleteCatalog(id: string): Promise<void> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) return
   await deleteDoc(doc(db, 'users', uid, 'catalogs', id))
 }

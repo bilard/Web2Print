@@ -1,8 +1,8 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, Timestamp } from 'firebase/firestore'
 import { ref as storageRef, deleteObject, updateMetadata } from 'firebase/storage'
 import { db, storage } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import type { AspectFormat } from './types'
 import type { StyleConfig } from './promptToStyleConfig'
 import type { Composition } from './promptToComposition'
@@ -27,12 +27,12 @@ export interface SavedAnimation {
 }
 
 export function useUserAnimations() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const [animations, setAnimations] = useState<SavedAnimation[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user?.uid) {
+    if (!uid) {
       setAnimations([])
       setLoading(false)
       return
@@ -41,7 +41,7 @@ export function useUserAnimations() {
     setLoading(true)
     const q = query(
       collection(db, 'animations'),
-      where('ownerId', '==', user.uid),
+      where('ownerId', '==', uid),
     )
     const unsub = onSnapshot(
       q,
@@ -61,7 +61,7 @@ export function useUserAnimations() {
       },
     )
     return unsub
-  }, [user?.uid])
+  }, [uid])
 
   const deleteAnimation = async (anim: SavedAnimation) => {
     await deleteDoc(doc(db, 'animations', anim.animationId))

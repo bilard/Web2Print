@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Modale « Gérer les suivis » : liste TOUS les suivis, chacun renommable (customLabel,
 // prioritaire sur le nom du workflow que « Comparer catalogue » réécrit à chaque rapport)
 // et supprimable directement. Confirmation INLINE par ligne (pas de 2e modale imbriquée,
@@ -9,7 +10,6 @@ import { toast } from 'sonner'
 import { db } from '@/lib/firebase/config'
 import type { WatchSummary } from '../useCatalogReport'
 import { deleteWatch } from '../reportStore'
-import { useAuthStore } from '@/stores/auth.store'
 import { when } from './format'
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
@@ -24,7 +24,7 @@ export function WatchManager({ open, onOpenChange, watches, activeId }: {
   activeId: string
 }) {
   const { t } = useTranslation()
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [editId, setEditId] = useState<string | null>(null)

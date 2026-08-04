@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   doc,
@@ -7,7 +8,6 @@ import {
   Timestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import { toast } from 'sonner'
 import { getAllDescendantIds, getNextOrder } from './taxonomyUtils'
 import { createDefaultFormTemplate } from '@/features/briefs/defaults'
@@ -28,7 +28,7 @@ function getCachedList(qc: ReturnType<typeof useQueryClient>, uid: string) {
 // ─── createTaxonomy ───────────────────────────────────────────────────────────
 
 export function useCreateTaxonomy() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
@@ -44,7 +44,7 @@ export function useCreateTaxonomy() {
       const taxonomy: Taxonomy = {
         id,
         name,
-        ownerId: user!.uid,
+        ownerId: uid!,
         createdAt: now,
         updatedAt: now,
         nodes,
@@ -54,7 +54,7 @@ export function useCreateTaxonomy() {
       return taxonomy
     },
     onSuccess: () =>
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
+      qc.invalidateQueries({ queryKey: taxListKey(uid!) }),
     onError: () => toast.error(t('tst.createFailed')),
   })
 }
@@ -62,7 +62,7 @@ export function useCreateTaxonomy() {
 // ─── renameTaxonomy ───────────────────────────────────────────────────────────
 
 export function useRenameTaxonomy() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
@@ -73,26 +73,26 @@ export function useRenameTaxonomy() {
       })
     },
     onMutate: async ({ id, name }) => {
-      await qc.cancelQueries({ queryKey: taxListKey(user!.uid) })
-      const previous = getCachedList(qc, user!.uid)
-      qc.setQueryData<Taxonomy[]>(taxListKey(user!.uid), (old) =>
+      await qc.cancelQueries({ queryKey: taxListKey(uid!) })
+      const previous = getCachedList(qc, uid!)
+      qc.setQueryData<Taxonomy[]>(taxListKey(uid!), (old) =>
         (old ?? []).map((t) => (t.id === id ? { ...t, name } : t))
       )
       return { previous }
     },
     onError: (_e, _v, ctx) => {
-      qc.setQueryData(taxListKey(user!.uid), ctx?.previous)
+      qc.setQueryData(taxListKey(uid!), ctx?.previous)
       toast.error(t('tst.tx.renameFailed'))
     },
     onSettled: () =>
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
+      qc.invalidateQueries({ queryKey: taxListKey(uid!) }),
   })
 }
 
 // ─── updateTaxonomySettings ───────────────────────────────────────────────────
 
 export function useUpdateTaxonomySettings() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
@@ -103,26 +103,26 @@ export function useUpdateTaxonomySettings() {
       })
     },
     onMutate: async ({ id, sourceUrl }) => {
-      await qc.cancelQueries({ queryKey: taxListKey(user!.uid) })
-      const previous = getCachedList(qc, user!.uid)
-      qc.setQueryData<Taxonomy[]>(taxListKey(user!.uid), (old) =>
+      await qc.cancelQueries({ queryKey: taxListKey(uid!) })
+      const previous = getCachedList(qc, uid!)
+      qc.setQueryData<Taxonomy[]>(taxListKey(uid!), (old) =>
         (old ?? []).map((t) => (t.id === id ? { ...t, sourceUrl } : t))
       )
       return { previous }
     },
     onError: (_e, _v, ctx) => {
-      qc.setQueryData(taxListKey(user!.uid), ctx?.previous)
+      qc.setQueryData(taxListKey(uid!), ctx?.previous)
       toast.error(t('tst.updateFailed'))
     },
     onSettled: () =>
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
+      qc.invalidateQueries({ queryKey: taxListKey(uid!) }),
   })
 }
 
 // ─── deleteTaxonomy ───────────────────────────────────────────────────────────
 
 export function useDeleteTaxonomy() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
@@ -130,31 +130,31 @@ export function useDeleteTaxonomy() {
       await deleteDoc(doc(db, 'taxonomies', id))
     },
     onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: taxListKey(user!.uid) })
-      const previous = getCachedList(qc, user!.uid)
-      qc.setQueryData<Taxonomy[]>(taxListKey(user!.uid), (old) =>
+      await qc.cancelQueries({ queryKey: taxListKey(uid!) })
+      const previous = getCachedList(qc, uid!)
+      qc.setQueryData<Taxonomy[]>(taxListKey(uid!), (old) =>
         (old ?? []).filter((t) => t.id !== id)
       )
       return { previous }
     },
     onError: (_e, _v, ctx) => {
-      qc.setQueryData(taxListKey(user!.uid), ctx?.previous)
+      qc.setQueryData(taxListKey(uid!), ctx?.previous)
       toast.error(t('tst.deleteFailed'))
     },
     onSettled: () =>
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
+      qc.invalidateQueries({ queryKey: taxListKey(uid!) }),
   })
 }
 
 // ─── duplicateTaxonomy ────────────────────────────────────────────────────────
 
 export function useDuplicateTaxonomy() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
-      const source = getCachedList(qc, user!.uid).find((t) => t.id === id)
+      const source = getCachedList(qc, uid!).find((t) => t.id === id)
       if (!source) throw new Error(t('err.notFound.taxonomy'))
 
       // Remap les IDs pour éviter les collisions
@@ -179,7 +179,7 @@ export function useDuplicateTaxonomy() {
       const newTaxonomy: Taxonomy = {
         id: newId,
         name: `${source.name} (copie)`,
-        ownerId: user!.uid,
+        ownerId: uid!,
         createdAt: now,
         updatedAt: now,
         nodes: newNodes,
@@ -188,7 +188,7 @@ export function useDuplicateTaxonomy() {
       return newTaxonomy
     },
     onSuccess: () =>
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
+      qc.invalidateQueries({ queryKey: taxListKey(uid!) }),
     onError: () => toast.error(t('tst.duplicateFailed')),
   })
 }
@@ -217,7 +217,7 @@ function makeOptimisticUpdater(
 // ─── addNode ──────────────────────────────────────────────────────────────────
 
 export function useAddNode() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
@@ -230,7 +230,7 @@ export function useAddNode() {
       parentId: string | null
       label: string
     }) => {
-      const taxonomy = getCachedList(qc, user!.uid).find(
+      const taxonomy = getCachedList(qc, uid!).find(
         (t) => t.id === taxonomyId
       )
       if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
@@ -253,8 +253,8 @@ export function useAddNode() {
       return node
     },
     onMutate: async ({ taxonomyId, parentId, label }) => {
-      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
-      const cached = getCachedList(qc, user!.uid)
+      const applyOptimistic = makeOptimisticUpdater(qc, uid!)
+      const cached = getCachedList(qc, uid!)
       const taxonomy = cached.find((t) => t.id === taxonomyId)
       if (!taxonomy) return { previous: cached }
       const parentNode = parentId ? taxonomy.nodes[parentId] : null
@@ -273,11 +273,11 @@ export function useAddNode() {
       }))
     },
     onError: (_e, _v, ctx) => {
-      if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
+      if (ctx) qc.setQueryData(taxListKey(uid!), (ctx as { previous: Taxonomy[] }).previous)
       toast.error(t('tst.tx.addNodeFailed'))
     },
     onSettled: (_d, _e, vars) => {
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
+      qc.invalidateQueries({ queryKey: taxListKey(uid!) })
       qc.invalidateQueries({ queryKey: taxKey(vars.taxonomyId) })
     },
   })
@@ -286,7 +286,7 @@ export function useAddNode() {
 // ─── renameNode ───────────────────────────────────────────────────────────────
 
 export function useRenameNode() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
@@ -299,7 +299,7 @@ export function useRenameNode() {
       nodeId: string
       label: string
     }) => {
-      const taxonomy = getCachedList(qc, user!.uid).find(
+      const taxonomy = getCachedList(qc, uid!).find(
         (t) => t.id === taxonomyId
       )
       if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
@@ -313,18 +313,18 @@ export function useRenameNode() {
       })
     },
     onMutate: ({ taxonomyId, nodeId, label }) => {
-      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
+      const applyOptimistic = makeOptimisticUpdater(qc, uid!)
       return applyOptimistic(taxonomyId, (nodes) => ({
         ...nodes,
         [nodeId]: { ...nodes[nodeId], label },
       }))
     },
     onError: (_e, _v, ctx) => {
-      if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
+      if (ctx) qc.setQueryData(taxListKey(uid!), (ctx as { previous: Taxonomy[] }).previous)
       toast.error(t('tst.tx.nodeRenameFailed'))
     },
     onSettled: (_d, _e, vars) => {
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
+      qc.invalidateQueries({ queryKey: taxListKey(uid!) })
       qc.invalidateQueries({ queryKey: taxKey(vars.taxonomyId) })
     },
   })
@@ -333,7 +333,7 @@ export function useRenameNode() {
 // ─── deleteNode ───────────────────────────────────────────────────────────────
 
 export function useDeleteNode() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
@@ -344,7 +344,7 @@ export function useDeleteNode() {
       taxonomyId: string
       nodeId: string
     }) => {
-      const taxonomy = getCachedList(qc, user!.uid).find(
+      const taxonomy = getCachedList(qc, uid!).find(
         (t) => t.id === taxonomyId
       )
       if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
@@ -362,8 +362,8 @@ export function useDeleteNode() {
       })
     },
     onMutate: ({ taxonomyId, nodeId }) => {
-      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
-      const cached = getCachedList(qc, user!.uid)
+      const applyOptimistic = makeOptimisticUpdater(qc, uid!)
+      const cached = getCachedList(qc, uid!)
       const taxonomy = cached.find((t) => t.id === taxonomyId)
       if (!taxonomy) return { previous: cached }
       const toDelete = new Set([
@@ -379,11 +379,11 @@ export function useDeleteNode() {
       })
     },
     onError: (_e, _v, ctx) => {
-      if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
+      if (ctx) qc.setQueryData(taxListKey(uid!), (ctx as { previous: Taxonomy[] }).previous)
       toast.error(t('tst.tx.nodeDeleteFailed'))
     },
     onSettled: (_d, _e, vars) => {
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
+      qc.invalidateQueries({ queryKey: taxListKey(uid!) })
       qc.invalidateQueries({ queryKey: taxKey(vars.taxonomyId) })
     },
   })
@@ -401,7 +401,7 @@ function cascadeLevels(parentId: string, parentLevel: number, nodesMap: Record<s
 }
 
 export function useMoveNode() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
@@ -416,7 +416,7 @@ export function useMoveNode() {
       newParentId: string | null
       newOrder: number
     }) => {
-      const taxonomy = getCachedList(qc, user!.uid).find(
+      const taxonomy = getCachedList(qc, uid!).find(
         (t) => t.id === taxonomyId
       )
       if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
@@ -449,8 +449,8 @@ export function useMoveNode() {
       })
     },
     onMutate: ({ taxonomyId, nodeId, newParentId, newOrder }) => {
-      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
-      const cached = getCachedList(qc, user!.uid)
+      const applyOptimistic = makeOptimisticUpdater(qc, uid!)
+      const cached = getCachedList(qc, uid!)
       const taxonomy = cached.find((t) => t.id === taxonomyId)
       if (!taxonomy) return { previous: cached }
       return applyOptimistic(taxonomyId, (nodes) => {
@@ -476,11 +476,11 @@ export function useMoveNode() {
       })
     },
     onError: (_e, _v, ctx) => {
-      if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
+      if (ctx) qc.setQueryData(taxListKey(uid!), (ctx as { previous: Taxonomy[] }).previous)
       toast.error(t('tst.tx.moveFailed'))
     },
     onSettled: (_d, _e, vars) => {
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
+      qc.invalidateQueries({ queryKey: taxListKey(uid!) })
       qc.invalidateQueries({ queryKey: taxKey(vars.taxonomyId) })
     },
   })
@@ -489,7 +489,7 @@ export function useMoveNode() {
 // ─── linkProject / unlinkProject ─────────────────────────────────────────────
 
 export function useLinkProject() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
@@ -502,7 +502,7 @@ export function useLinkProject() {
       nodeId: string
       projectId: string
     }) => {
-      const taxonomy = getCachedList(qc, user!.uid).find(
+      const taxonomy = getCachedList(qc, uid!).find(
         (t) => t.id === taxonomyId
       )
       if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
@@ -519,7 +519,7 @@ export function useLinkProject() {
       })
     },
     onMutate: ({ taxonomyId, nodeId, projectId }) => {
-      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
+      const applyOptimistic = makeOptimisticUpdater(qc, uid!)
       return applyOptimistic(taxonomyId, (nodes) => ({
         ...nodes,
         [nodeId]: {
@@ -531,18 +531,18 @@ export function useLinkProject() {
       }))
     },
     onError: (_e, _v, ctx) => {
-      if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
+      if (ctx) qc.setQueryData(taxListKey(uid!), (ctx as { previous: Taxonomy[] }).previous)
       toast.error(t('tst.tx.linkFailed'))
     },
     onSettled: (_d, _e, vars) => {
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
+      qc.invalidateQueries({ queryKey: taxListKey(uid!) })
       qc.invalidateQueries({ queryKey: taxKey(vars.taxonomyId) })
     },
   })
 }
 
 export function useUnlinkProject() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
@@ -555,7 +555,7 @@ export function useUnlinkProject() {
       nodeId: string
       projectId: string
     }) => {
-      const taxonomy = getCachedList(qc, user!.uid).find(
+      const taxonomy = getCachedList(qc, uid!).find(
         (t) => t.id === taxonomyId
       )
       if (!taxonomy) throw new Error(t('err.notFound.taxonomy'))
@@ -574,7 +574,7 @@ export function useUnlinkProject() {
       })
     },
     onMutate: ({ taxonomyId, nodeId, projectId }) => {
-      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
+      const applyOptimistic = makeOptimisticUpdater(qc, uid!)
       return applyOptimistic(taxonomyId, (nodes) => ({
         ...nodes,
         [nodeId]: {
@@ -586,11 +586,11 @@ export function useUnlinkProject() {
       }))
     },
     onError: (_e, _v, ctx) => {
-      if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
+      if (ctx) qc.setQueryData(taxListKey(uid!), (ctx as { previous: Taxonomy[] }).previous)
       toast.error(t('tst.tx.unlinkFailed'))
     },
     onSettled: (_d, _e, vars) => {
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
+      qc.invalidateQueries({ queryKey: taxListKey(uid!) })
       qc.invalidateQueries({ queryKey: taxKey(vars.taxonomyId) })
     },
   })

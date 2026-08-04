@@ -1,3 +1,4 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Node « Comparer catalogue » : croise ta feuille de produits (réf/EAN/prix) avec
 // l'index concurrent persistant (alimenté par « Moisson concurrents »), et produit la
 // matrice produit × concurrent (prix TTC verbatim + barré + HT recalculé + écart +
@@ -7,7 +8,6 @@ import { Scale } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet, ExcelColumn, ExcelRow } from '@/features/excel/types'
-import { useAuthStore } from '@/stores/auth.store'
 import { parsePrice, stableId } from '@/features/priceWatch/core'
 import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
@@ -112,7 +112,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
   },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
-    const uid = useAuthStore.getState().user?.uid
+    const uid = getWorkspaceUid()
     if (!uid) throw new Error(t('run.notSignedIn'))
     // Sites + identité du suivi : le port `sites` (node « Sites sources ») GAGNE ;
     // sinon repli config locale (textarea + watchId dérivé de l'id du workflow →

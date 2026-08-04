@@ -1,7 +1,7 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { addDoc, collection, doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import { toast } from 'sonner'
 import { recordAudit } from '@/lib/auditLog'
 import type { ProjectData } from '@/types/project'
@@ -41,14 +41,14 @@ async function duplicateProject(
 }
 
 export function useDuplicateProject() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: (projectId: string) => duplicateProject(user!.uid, projectId),
+    mutationFn: (projectId: string) => duplicateProject(uid!, projectId),
     onSuccess: (data) => {
       recordAudit({ action: 'library.project.duplicate', module: 'library', targetId: data.id, targetLabel: data.title })
-      qc.invalidateQueries({ queryKey: ['projects', user?.uid] })
+      qc.invalidateQueries({ queryKey: ['projects', uid] })
       toast.success(t('tst.pj.duplicated'))
     },
     onError: (e) => {

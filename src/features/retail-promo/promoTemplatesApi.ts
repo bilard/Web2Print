@@ -1,5 +1,6 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase/config'
+import { db } from '@/lib/firebase/config'
 import type { PromoTemplateConfig } from './promoCardTypes'
 import { stripUndefined } from '@/lib/stripUndefined'
 
@@ -13,7 +14,7 @@ const colPath = (uid: string) => collection(db, 'users', uid, 'promoTemplates')
 
 /** Liste les modèles d'habillage de l'utilisateur (triés par nom). */
 export async function listPromoTemplates(): Promise<UserPromoTemplate[]> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) return []
   const snap = await getDocs(colPath(uid))
   return snap.docs
@@ -24,7 +25,7 @@ export async function listPromoTemplates(): Promise<UserPromoTemplate[]> {
 
 /** Enregistre l'habillage courant comme modèle réutilisable (upsert par nom → pas de doublon). */
 export async function savePromoTemplate(name: string, config: PromoTemplateConfig): Promise<void> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) throw new Error('Non connecté')
   const existing = (await listPromoTemplates()).find((t) => t.name === name)
   const ref = existing ? doc(db, 'users', uid, 'promoTemplates', existing.id) : doc(colPath(uid))
@@ -34,7 +35,7 @@ export async function savePromoTemplate(name: string, config: PromoTemplateConfi
 }
 
 export async function deletePromoTemplate(id: string): Promise<void> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) return
   await deleteDoc(doc(db, 'users', uid, 'promoTemplates', id))
 }

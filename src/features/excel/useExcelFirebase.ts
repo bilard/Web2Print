@@ -1,8 +1,16 @@
 import { doc, getDoc, collection, getDocs, serverTimestamp, query, where, updateDoc, writeBatch, deleteField } from 'firebase/firestore'
-import { db, auth } from '@/lib/firebase/config'
+import { db } from '@/lib/firebase/config'
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useExcelStore } from '@/stores/excel.store'
 import { recordAudit } from '@/lib/auditLog'
 import type { ExcelSheet } from './types'
+
+/** Compte sous lequel vivent les datasets : le porteur de l'espace commun si la
+ *  société en désigne un, sinon soi-même. */
+function workspaceUser(): { uid: string } | null {
+  const uid = getWorkspaceUid()
+  return uid ? { uid } : null
+}
 
 const COLLECTION = 'excel_data'
 const PAYLOAD_COLLECTION = 'excel_data_payload'
@@ -26,7 +34,7 @@ export function useExcelFirebase() {
     path: string[] = [],
     existingDocId?: string | null,
   ): Promise<string | null> => {
-    const user = auth.currentUser
+    const user = workspaceUser()
     if (!user) return null
 
     const ref = existingDocId
@@ -80,7 +88,7 @@ export function useExcelFirebase() {
    *  (resource null), donc tenter un getDoc spéculatif sur un docId non
    *  encore migré jette permission-denied avant même tout fallback. */
   const loadFromFirebase = async (docId: string): Promise<ExcelSheet[] | null> => {
-    const user = auth.currentUser
+    const user = workspaceUser()
     if (!user) return null
 
     setDetecting(true)
@@ -107,7 +115,7 @@ export function useExcelFirebase() {
 
   /** Liste toutes les bases de l'utilisateur courant. */
   const listSavedFiles = async (): Promise<{ fileName: string; docId: string; totalRows: number; updatedAt: Date | null; path: string[]; sortIndex?: number }[]> => {
-    const user = auth.currentUser
+    const user = workspaceUser()
     if (!user) return []
 
     const q = query(collection(db, COLLECTION), where('userId', '==', user.uid))
@@ -135,7 +143,7 @@ export function useExcelFirebase() {
 
   /** Supprime une base par son `docId` Firestore complet (méta + payload). */
   const deleteFromFirebase = async (docId: string) => {
-    const user = auth.currentUser
+    const user = workspaceUser()
     if (!user) return
     const batch = writeBatch(db)
     batch.delete(doc(db, COLLECTION, docId))
@@ -146,7 +154,7 @@ export function useExcelFirebase() {
 
   /** Renomme une base (met à jour uniquement le libellé `fileName`). */
   const renameFile = async (docId: string, newFileName: string) => {
-    const user = auth.currentUser
+    const user = workspaceUser()
     if (!user) return
     const trimmed = newFileName.trim()
     if (!trimmed) return
@@ -160,7 +168,7 @@ export function useExcelFirebase() {
 
   /** Déplace une base vers un autre chemin dans l'arbre (path vide = racine). */
   const moveFile = async (docId: string, nextPath: string[]) => {
-    const user = auth.currentUser
+    const user = workspaceUser()
     if (!user) return
     const cleaned = nextPath.map((s) => s.trim()).filter(Boolean)
     const ref = doc(db, COLLECTION, docId)
@@ -176,7 +184,7 @@ export function useExcelFirebase() {
   /** Persiste l'ordre manuel d'un groupe de bases (siblings d'un même path).
    *  N updates → 1 commit atomique, pour éviter un état mi-réordonné. */
   const reorderFiles = async (updates: { docId: string; sortIndex: number }[]) => {
-    const user = auth.currentUser
+    const user = workspaceUser()
     if (!user || updates.length === 0) return
     const batch = writeBatch(db)
     for (const { docId, sortIndex } of updates) {

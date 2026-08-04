@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useQuery } from '@tanstack/react-query'
 import {
   collection,
@@ -8,7 +9,6 @@ import {
   type QueryConstraint,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import type { Brief } from './types'
 
 interface UseBriefsOptions {
@@ -63,10 +63,10 @@ function toMillis(v: unknown): number {
  * Liste les briefs de l'utilisateur courant.
  */
 export function useBriefs(opts: UseBriefsOptions = {}) {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   return useQuery({
-    queryKey: ['briefs', user?.uid, opts.taxonomyId ?? null, opts.limit ?? null],
-    queryFn: () => fetchBriefs(user!.uid, opts),
-    enabled: !!user,
+    queryKey: ['briefs', uid, opts.taxonomyId ?? null, opts.limit ?? null],
+    queryFn: () => fetchBriefs(uid!, opts),
+    enabled: !!uid,
   })
 }

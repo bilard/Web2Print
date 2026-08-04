@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import { ArrowLeft, Users, Shield, Building2, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowLeft, Users, Shield, Building2, Trash2, Database } from 'lucide-react'
 import { UsersTab } from './UsersTab'
 import { RolesTab } from './RolesTab'
 import { CompanyMemberPicker } from './CompanyMemberPicker'
 import { useManagedScope } from '@/features/access/useManagedScope'
 import { toast } from 'sonner'
-import { deleteCompany } from '@/features/access/companiesApi'
+import { deleteCompany, setWorkspaceUid } from '@/features/access/companiesApi'
+import { listUsers, type ManagedUser } from '@/features/access/usersApi'
 import { DEFAULT_ACCOUNT_ID } from '@/features/i18n/accountI18nApi'
 import { recordAudit } from '@/lib/auditLog'
 import { t } from '@/lib/i18n'
@@ -18,13 +19,25 @@ import { t } from '@/lib/i18n'
  * implémentation des tableaux, donc aucune divergence possible entre la vue
  * globale et la vue déléguée.
  */
-export function CompanyDetail({ id, name, members, onBack }: { id: string; name: string; members: number; onBack: () => void }) {
+export function CompanyDetail({ id, name, members, workspaceUid, onBack }: { id: string; name: string; members: number; workspaceUid: string; onBack: () => void }) {
   const [tab, setTab] = useState<'members' | 'roles'>('members')
   const { isGlobalAdmin } = useManagedScope()
   // `UsersTab` tient sa propre liste : après un rattachement, la remonter est le
   // moyen le plus sûr de la relire (pas d'état partagé à synchroniser).
   const [listVersion, setListVersion] = useState(0)
   const isDefault = id === DEFAULT_ACCOUNT_ID
+  // Membres proposables comme porteur des données communes.
+  const [staff, setStaff] = useState<ManagedUser[]>([])
+  const [carrier, setCarrier] = useState(workspaceUid)
+  useEffect(() => { void listUsers(id).then(setStaff) }, [id, listVersion])
+
+  const chooseCarrier = async (uid: string) => {
+    await setWorkspaceUid(id, uid)
+    setCarrier(uid)
+    recordAudit({ action: 'access.company.workspace', module: 'access', targetId: id, targetLabel: name,
+      meta: { before: workspaceUid || '—', after: uid || '—' } })
+    toast.success(uid ? t('co.workspaceSet') : t('co.workspaceCleared'))
+  }
 
   /** Supprimer une société encore peuplée laisserait ses membres rattachés à un
    *  fantôme : le bouton reste visible mais désactivé tant qu'elle en a. */
@@ -70,6 +83,22 @@ export function CompanyDetail({ id, name, members, onBack }: { id: string; name:
           ))}
         </nav>
       </div>
+      {/* ESPACE DE TRAVAIL COMMUN : le compte dont les projets, produits, assets et
+          workflows servent de référence à toute la société. Sans porteur désigné,
+          chacun reste sur ses propres données — la bascule est réversible. */}
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] px-3 py-2.5 flex items-center gap-2.5 flex-wrap">
+        <Database className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+        <span className="text-[11px] text-white/60">{t('co.workspace')}</span>
+        <select value={carrier} onChange={(e) => void chooseCarrier(e.target.value)}
+          className="bg-white/[0.05] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/80 hover:border-white/20 transition-colors">
+          <option value="">{t('co.workspaceNone')}</option>
+          {staff.map((u) => <option key={u.uid} value={u.uid}>{u.displayName || u.email}</option>)}
+        </select>
+        <span className="text-[10px] text-white/35">
+          {carrier ? t('co.workspaceHint') : t('co.workspaceNoneHint')}
+        </span>
+      </div>
+
       {tab === 'members' ? (
         <div className="flex flex-col gap-3">
           {isGlobalAdmin && (

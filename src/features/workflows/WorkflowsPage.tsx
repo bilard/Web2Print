@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
@@ -7,7 +8,6 @@ import {
 } from 'lucide-react'
 import { findActiveCron } from './persistence/scheduleSync'
 import { describeCron } from './runtime/cronLabels'
-import { useAuthStore } from '@/stores/auth.store'
 import {
   listWorkflows, newWorkflow, saveWorkflow, deleteWorkflow, setWorkflowFolder,
   listFolders, createFolder, renameFolder, deleteFolder,
@@ -31,7 +31,7 @@ const COLLAPSED_KEY = 'workflows.collapsedFolders'
 
 export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
   const { t } = useTranslation()
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const nav = useNavigate()
   const canCreate = useCan('workflows.create')
   const canEdit = useCan('workflows.edit')

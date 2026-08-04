@@ -1,3 +1,4 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Visuel de couverture via Image IA (Gemini). Ne passe PAS par useImageGeneration
 // (dont l'upload final vers la galerie exige useEditorStore.projectId — toujours
 // null sur /catalog/:id, aucun projet éditeur n'y est ouvert → échec systématique).
@@ -7,7 +8,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { auth, storage } from '@/lib/firebase/config'
+import { storage } from '@/lib/firebase/config'
 import { generateImageBase64, NANO_BANANA_PRO_MODELS } from '@/features/nanobana/generateImageBase64'
 import { removeBackground } from '@/features/imaging/removeBackground'
 import { useCatalogStore } from '@/stores/catalog.store'
@@ -117,7 +118,7 @@ export function useCoverImage() {
 
   const generateCover = async (prompt: string, target: CoverTarget) => {
     if (!prompt.trim()) { toast.error(t('tst.cat.promptRequired')); return }
-    const uid = auth.currentUser?.uid
+    const uid = getWorkspaceUid()
     if (!uid) { toast.error(t('tst.cat.visualSignIn')); return }
     setGenerating(true)
     try {
@@ -152,7 +153,7 @@ export function useCoverImage() {
   /** Visuel FOURNI par l'utilisateur (son vrai logo) — même bucket, donc même
    *  garantie CORS à l'export que les visuels générés. */
   const uploadImage = async (file: File, target: CoverTarget) => {
-    const uid = auth.currentUser?.uid
+    const uid = getWorkspaceUid()
     if (!uid) { toast.error(t('tst.cat.signInToLoad')); return }
     setGenerating(true)
     try {

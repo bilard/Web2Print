@@ -13,8 +13,10 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email == 'ibs.studio@gmail.com';
     }
 
+    // ⚠️ « Propriétaire » au sens de l'ESPACE DE TRAVAIL, pas du compte : dans une
+    // société à espace commun, les documents portent l'uid du compte porteur.
     function isOwner(resource) {
-      return resource.data.ownerId == request.auth.uid;
+      return inMyWorkspace(resource.data.ownerId);
     }
 
     function isCollaborator(projectId) {
@@ -100,6 +102,30 @@ service cloud.firestore {
     function myAccount() {
       return accessData().get('accountId', 'default');
     }
+    /**
+     * ESPACE DE TRAVAIL PARTAGÉ (option A).
+     *
+     * Une société peut désigner un compte porteur : ses données deviennent celles
+     * de tous ses membres. `inMyWorkspace(uid)` est donc vrai pour son PROPRE uid
+     * (chacun garde son espace privé quand aucun porteur n'est désigné) comme
+     * pour l'uid du porteur de sa société.
+     *
+     * ⚠️ `exists()` avant `get()` : sur un compte non déclaré, `get(...).data`
+     * lèverait et REFUSERAIT tout — un membre rattaché à une société sans document
+     * `accounts/{id}` perdrait l'accès à ses propres données.
+     *
+     * ⚠️ Ceci ne concerne QUE les données de travail. L'identité (secrets, clés
+     * d'API, préférences, compteurs de quota) reste comparée à `request.auth.uid`.
+     */
+    function myWorkspaceUid() {
+      return exists(/databases/$(database)/documents/accounts/$(myAccount()))
+        ? get(/databases/$(database)/documents/accounts/$(myAccount())).data.get('workspaceUid', '')
+        : '';
+    }
+    function inMyWorkspace(uid) {
+      return isAuthenticated() && (request.auth.uid == uid || myWorkspaceUid() == uid);
+    }
+
     function sameCompany(accountId) {
       return isAuthenticated() && accountId == myAccount();
     }
@@ -251,7 +277,7 @@ service cloud.firestore {
       // Création : permission library.create (ou import.view — les imports
       // IDML/PPTX/SVG créent aussi des projets), devient propriétaire.
       allow create: if (hasPermission('library.create') || hasPermission('import.view')) &&
-                       request.resource.data.ownerId == request.auth.uid;
+                       inMyWorkspace(request.resource.data.ownerId);
 
       // Mise à jour : propriétaire ou collaborateur editor, compte actif.
       allow update: if isActiveUser() &&
@@ -292,19 +318,19 @@ service cloud.firestore {
       match /collaborators/{collaboratorUid} {
         // Lecture : propriétaire ou le collaborateur lui-même
         allow read: if isAuthenticated() &&
-                       (get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid ||
-                        request.auth.uid == collaboratorUid);
+                       (inMyWorkspace(get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId)
+                        || request.auth.uid == collaboratorUid);
 
         // Ajout/suppression : propriétaire du projet uniquement
         allow write: if isAuthenticated() &&
-                        get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+                        inMyWorkspace(get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId);
       }
     }
 
     // ── Gallery (NanoBana) ─────────────────────────────────────────────────────
 
     match /users/{uid}/gallery/{imageId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+      allow read, write: if isAuthenticated() && inMyWorkspace(uid);
     }
 
     // ── Chat Prompts ──────────────────────────────────────────────────────────
@@ -325,86 +351,86 @@ service cloud.firestore {
     // Privés à chaque user — pas de partage au MVP (phase 2 : champ sharedWith).
 
     match /users/{uid}/workflows/{workflowId} {
-      allow read:   if isAuthenticated() && request.auth.uid == uid;
-      allow create: if hasPermission('workflows.create') && request.auth.uid == uid;
-      allow update: if hasPermission('workflows.edit') && request.auth.uid == uid;
-      allow delete: if hasPermission('workflows.delete') && request.auth.uid == uid;
+      allow read:   if isAuthenticated() && inMyWorkspace(uid);
+      allow create: if hasPermission('workflows.create') && inMyWorkspace(uid);
+      allow update: if hasPermission('workflows.edit') && inMyWorkspace(uid);
+      allow delete: if hasPermission('workflows.delete') && inMyWorkspace(uid);
     }
 
     // Dossiers de regroupement des workflows (organisation de la liste).
     match /users/{uid}/workflowFolders/{folderId} {
-      allow read:   if isAuthenticated() && request.auth.uid == uid;
-      allow create: if hasPermission('workflows.create') && request.auth.uid == uid;
-      allow update: if hasPermission('workflows.edit') && request.auth.uid == uid;
-      allow delete: if hasPermission('workflows.delete') && request.auth.uid == uid;
+      allow read:   if isAuthenticated() && inMyWorkspace(uid);
+      allow create: if hasPermission('workflows.create') && inMyWorkspace(uid);
+      allow update: if hasPermission('workflows.edit') && inMyWorkspace(uid);
+      allow delete: if hasPermission('workflows.delete') && inMyWorkspace(uid);
     }
 
     // Modèles de workflow créés par l'utilisateur (privés, réutilisables).
     match /users/{uid}/workflowTemplates/{templateId} {
-      allow read:   if isAuthenticated() && request.auth.uid == uid;
-      allow create: if hasPermission('workflows.create') && request.auth.uid == uid;
-      allow update: if hasPermission('workflows.edit') && request.auth.uid == uid;
-      allow delete: if hasPermission('workflows.delete') && request.auth.uid == uid;
+      allow read:   if isAuthenticated() && inMyWorkspace(uid);
+      allow create: if hasPermission('workflows.create') && inMyWorkspace(uid);
+      allow update: if hasPermission('workflows.edit') && inMyWorkspace(uid);
+      allow delete: if hasPermission('workflows.delete') && inMyWorkspace(uid);
     }
 
     // Modèles promo personnalisés (module Promo Retail).
     match /users/{uid}/promoTemplates/{templateId} {
-      allow read:   if isAuthenticated() && request.auth.uid == uid;
-      allow write:  if hasPermission('retailPromo.edit') && request.auth.uid == uid;
+      allow read:   if isAuthenticated() && inMyWorkspace(uid);
+      allow write:  if hasPermission('retailPromo.edit') && inMyWorkspace(uid);
     }
 
     // Catalogues multi-pages (module Catalogue studio).
     match /users/{uid}/catalogs/{catalogId} {
-      allow read:   if isAuthenticated() && request.auth.uid == uid;
-      allow write:  if hasPermission('catalog.edit') && request.auth.uid == uid;
+      allow read:   if isAuthenticated() && inMyWorkspace(uid);
+      allow write:  if hasPermission('catalog.edit') && inMyWorkspace(uid);
     }
     match /users/{uid}/catalogTemplates/{templateId} {
-      allow read:   if isAuthenticated() && request.auth.uid == uid;
-      allow write:  if hasPermission('catalog.edit') && request.auth.uid == uid;
+      allow read:   if isAuthenticated() && inMyWorkspace(uid);
+      allow write:  if hasPermission('catalog.edit') && inMyWorkspace(uid);
     }
 
     // Polices utilisateur (« Mes polices ») — méta des fichiers uploadés dans
     // Storage users/{uid}/fonts/ ; privées à chaque user (cf. features/fonts).
     match /users/{uid}/userFonts/{fontId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+      allow read, write: if isAuthenticated() && inMyWorkspace(uid);
     }
 
     // Fiches promo enregistrées (méta + lignes payload), module Promo Retail.
     match /users/{uid}/promos/{promoId} {
-      allow read:   if isAuthenticated() && request.auth.uid == uid;
-      allow write:  if hasPermission('retailPromo.edit') && request.auth.uid == uid;
+      allow read:   if isAuthenticated() && inMyWorkspace(uid);
+      allow write:  if hasPermission('retailPromo.edit') && inMyWorkspace(uid);
     }
     match /users/{uid}/promoPayloads/{promoId} {
-      allow read:   if isAuthenticated() && request.auth.uid == uid;
-      allow write:  if hasPermission('retailPromo.edit') && request.auth.uid == uid;
+      allow read:   if isAuthenticated() && inMyWorkspace(uid);
+      allow write:  if hasPermission('retailPromo.edit') && inMyWorkspace(uid);
     }
 
     // État du node « Veille prix » + module « Veille tarifaire » : le doc de suivi
     // {watchId} ET ses sous-collections (products / sites / matches / history).
     // Wildcard récursif car les règles ne cascadent pas aux sous-collections.
     match /users/{uid}/priceWatch/{document=**} {
-      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+      allow read, write: if isAuthenticated() && inMyWorkspace(uid);
     }
 
     // Historique des runs serveur (écrit par les Functions, lu par le propriétaire).
     match /users/{uid}/workflowRuns/{runId} {
-      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow read: if isAuthenticated() && inMyWorkspace(uid);
       // Le serveur (admin) écrit l'historique des runs cron/serveur ; le propriétaire
       // persiste en plus ses runs client (snapshot de résultat) et purge les anciens.
-      allow create, delete: if isAuthenticated() && request.auth.uid == uid;
+      allow create, delete: if isAuthenticated() && inMyWorkspace(uid);
     }
 
     // État LIVE du dernier run serveur par workflow (progression affichée sur les
     // cartes de l'éditeur). Écrit par les Functions, lu par le propriétaire.
     match /users/{uid}/workflowRunsLive/{workflowId} {
-      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow read: if isAuthenticated() && inMyWorkspace(uid);
       allow write: if false; // écrit uniquement par les Functions (admin)
     }
 
     // Flag d'abandon d'un run serveur en cours : le propriétaire l'écrit (bouton STOP),
     // l'executor headless le poll et déclenche l'AbortController.
     match /users/{uid}/workflowAbort/{workflowId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+      allow read, write: if isAuthenticated() && inMyWorkspace(uid);
     }
 
     // ── Excel Data ────────────────────────────────────────────────────────────
@@ -423,22 +449,22 @@ service cloud.firestore {
       // resource == null : un getDoc sur un dataset SUPPRIMÉ doit renvoyer
       // « n'existe pas » (le client affiche « Dataset introuvable »), pas
       // permission-denied (un catalogue peut garder un sourceRef pendouillant).
-      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid
+      allow read: if isAuthenticated() && (resource == null || inMyWorkspace(resource.data.userId));
+      allow create: if isAuthenticated() && inMyWorkspace(request.resource.data.userId)
                     && (!isDemo() || request.resource.data.get('totalRows', 0) <= demoLimit('pimRows', 50));
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid
+      allow update: if isAuthenticated() && inMyWorkspace(resource.data.userId)
                     && (!isDemo() || request.resource.data.get('totalRows', 0) <= demoLimit('pimRows', 50));
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && inMyWorkspace(resource.data.userId);
     }
 
     match /excel_data_payload/{docId} {
       // resource == null : idem excel_data (getDoc d'un payload supprimé).
-      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid
+      allow read: if isAuthenticated() && (resource == null || inMyWorkspace(resource.data.userId));
+      allow create: if isAuthenticated() && inMyWorkspace(request.resource.data.userId)
                     && (!isDemo() || request.resource.data.get('json', '').size() <= 500000);
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid
+      allow update: if isAuthenticated() && inMyWorkspace(resource.data.userId)
                     && (!isDemo() || request.resource.data.get('json', '').size() <= 500000);
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && inMyWorkspace(resource.data.userId);
     }
 
     // ── PIM Projects ─────────────────────────────────────────────────────────
@@ -448,10 +474,10 @@ service cloud.firestore {
 
     match /pim_projects/{projectId} {
       // resource == null : getDoc d'un projet supprimé → « n'existe pas », pas permission-denied.
-      allow read:   if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
-      allow create: if hasPermission('pim.create') && request.resource.data.userId == request.auth.uid;
-      allow update: if hasPermission('pim.edit') && resource.data.userId == request.auth.uid;
-      allow delete: if hasPermission('pim.delete') && resource.data.userId == request.auth.uid;
+      allow read:   if isAuthenticated() && (resource == null || inMyWorkspace(resource.data.userId));
+      allow create: if hasPermission('pim.create') && inMyWorkspace(request.resource.data.userId);
+      allow update: if hasPermission('pim.edit') && inMyWorkspace(resource.data.userId);
+      allow delete: if hasPermission('pim.delete') && inMyWorkspace(resource.data.userId);
 
       // Sous-collection products : autorisé si l'utilisateur possède le projet parent.
       // Note: lors de la création (avant que le parent existe), on autorise si le parent
@@ -459,7 +485,7 @@ service cloud.firestore {
       match /products/{productId} {
         allow read: if isAuthenticated() && (
           (exists(/databases/$(database)/documents/pim_projects/$(projectId)) &&
-           get(/databases/$(database)/documents/pim_projects/$(projectId)).data.userId == request.auth.uid)
+           inMyWorkspace(get(/databases/$(database)/documents/pim_projects/$(projectId)).data.userId))
           ||
           !exists(/databases/$(database)/documents/pim_projects/$(projectId))
         );
@@ -468,7 +494,7 @@ service cloud.firestore {
         // Édition/suppression de produits existants : pas de quota (ne fait pas croître le volume).
         allow update, delete: if (hasPermission('pim.edit') || hasPermission('pim.import') || hasPermission('pim.scrape')) && (
           (exists(/databases/$(database)/documents/pim_projects/$(projectId)) &&
-           get(/databases/$(database)/documents/pim_projects/$(projectId)).data.userId == request.auth.uid)
+           inMyWorkspace(get(/databases/$(database)/documents/pim_projects/$(projectId)).data.userId))
           ||
           // Pendant la création du projet (parent pas encore committé) : autoriser si le user
           // matchera userId du parent en cours d'écriture. On ne peut pas vérifier le parent
@@ -483,7 +509,7 @@ service cloud.firestore {
         // impose le quota users/{uid}.usage.pimRows → plafond serveur infalsifiable.
         allow create: if (hasPermission('pim.edit') || hasPermission('pim.import') || hasPermission('pim.scrape')) && !isDemo() && (
           (exists(/databases/$(database)/documents/pim_projects/$(projectId)) &&
-           get(/databases/$(database)/documents/pim_projects/$(projectId)).data.userId == request.auth.uid)
+           inMyWorkspace(get(/databases/$(database)/documents/pim_projects/$(projectId)).data.userId))
           ||
           !exists(/databases/$(database)/documents/pim_projects/$(projectId))
         );
@@ -493,23 +519,23 @@ service cloud.firestore {
     // ── Briefs ────────────────────────────────────────────────────────────────
 
     match /briefs/{briefId} {
-      allow read:   if isAuthenticated() && resource.data.ownerId == request.auth.uid;
-      allow create: if hasPermission('taxonomies.briefs') && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if isActiveUser() && resource.data.ownerId == request.auth.uid;
+      allow read:   if isAuthenticated() && inMyWorkspace(resource.data.ownerId);
+      allow create: if hasPermission('taxonomies.briefs') && inMyWorkspace(request.resource.data.ownerId);
+      allow update, delete: if isActiveUser() && inMyWorkspace(resource.data.ownerId);
 
       // Sous-collection : images générées
       match /images/{imageId} {
         allow read, write: if isAuthenticated() &&
-                              get(/databases/$(database)/documents/briefs/$(briefId)).data.ownerId == request.auth.uid;
+                              inMyWorkspace(get(/databases/$(database)/documents/briefs/$(briefId)).data.ownerId);
       }
     }
 
     // ── Taxonomies ────────────────────────────────────────────────────────────
 
     match /taxonomies/{taxonomyId} {
-      allow read:   if isAuthenticated() && resource.data.ownerId == request.auth.uid;
-      allow create: if hasPermission('taxonomies.edit') && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if hasPermission('taxonomies.edit') && resource.data.ownerId == request.auth.uid;
+      allow read:   if isAuthenticated() && inMyWorkspace(resource.data.ownerId);
+      allow create: if hasPermission('taxonomies.edit') && inMyWorkspace(request.resource.data.ownerId);
+      allow update, delete: if hasPermission('taxonomies.edit') && inMyWorkspace(resource.data.ownerId);
     }
 
     // ── DAM Assets ────────────────────────────────────────────────────────────
@@ -529,22 +555,22 @@ service cloud.firestore {
     match /dam_collections/{collectionId} {
       allow read: if isActiveUser();
       allow create: if hasPermission('dam.collection');
-      allow update, delete: if hasPermission('dam.collection') && resource.data.ownerId == request.auth.uid;
+      allow update, delete: if hasPermission('dam.collection') && inMyWorkspace(resource.data.ownerId);
     }
 
     // DAM Favorites — chaque user gère ses propres favoris
     match /dam_favorites/{favId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && inMyWorkspace(resource.data.userId);
+      allow create: if request.auth != null && inMyWorkspace(request.resource.data.userId);
+      allow delete: if request.auth != null && inMyWorkspace(resource.data.userId);
     }
 
     // DAM Variants — versions éditées d'images, privées à chaque user
     match /dam_variants/{variantId} {
-      allow read: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow read: if request.auth != null && inMyWorkspace(resource.data.ownerId);
       allow list: if isActiveUser();
-      allow create: if hasPermission('dam.edit') && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if hasPermission('dam.edit') && resource.data.ownerId == request.auth.uid;
+      allow create: if hasPermission('dam.edit') && inMyWorkspace(request.resource.data.ownerId);
+      allow update, delete: if hasPermission('dam.edit') && inMyWorkspace(resource.data.ownerId);
     }
 
     // DAM Popular Searches — lecture seule pour les comptes actifs
@@ -578,9 +604,9 @@ service cloud.firestore {
     // via setDoc merge depuis recordAiUsage) requiert ownerId === auth.uid.
     match /aiUsage/{docId} {
       allow read:   if request.auth != null && docId.matches('^' + request.auth.uid + '_\\d{4}-\\d{2}$');
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
-                                            && request.resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && inMyWorkspace(request.resource.data.ownerId);
+      allow update: if request.auth != null && inMyWorkspace(resource.data.ownerId)
+                                            && inMyWorkspace(request.resource.data.ownerId);
     }
 
     // ── Bright Data Usage tracking — compteur de requêtes mensuel ──────────
@@ -589,9 +615,9 @@ service cloud.firestore {
     // que aiUsage : lecture/écriture par le owner uniquement.
     match /brightDataUsage/{docId} {
       allow read:   if request.auth != null && docId.matches('^' + request.auth.uid + '_\\d{4}-\\d{2}$');
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
-                                            && request.resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && inMyWorkspace(request.resource.data.ownerId);
+      allow update: if request.auth != null && inMyWorkspace(resource.data.ownerId)
+                                            && inMyWorkspace(request.resource.data.ownerId);
     }
 
     // ── Remove.bg Usage tracking — compteur d'images mensuel ───────────────
@@ -600,9 +626,9 @@ service cloud.firestore {
     // → conso per-user. Même schéma de protection que aiUsage/brightDataUsage.
     match /removebgUsage/{docId} {
       allow read:   if request.auth != null && docId.matches('^' + request.auth.uid + '_\\d{4}-\\d{2}$');
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
-                                            && request.resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && inMyWorkspace(request.resource.data.ownerId);
+      allow update: if request.auth != null && inMyWorkspace(resource.data.ownerId)
+                                            && inMyWorkspace(request.resource.data.ownerId);
     }
 
     // ── Scraping Usage tracking (Jina / Firecrawl) — coût mensuel ───────────
@@ -610,9 +636,9 @@ service cloud.firestore {
     // Même schéma de protection que aiUsage/brightDataUsage/removebgUsage.
     match /scrapeUsage/{docId} {
       allow read:   if request.auth != null && docId.matches('^' + request.auth.uid + '_\\d{4}-\\d{2}$');
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
-                                            && request.resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && inMyWorkspace(request.resource.data.ownerId);
+      allow update: if request.auth != null && inMyWorkspace(resource.data.ownerId)
+                                            && inMyWorkspace(request.resource.data.ownerId);
     }
 
     // ── Animations HTML ────────────────────────────────────────────────────
@@ -621,9 +647,9 @@ service cloud.firestore {
     // composition / styleConfig / aspect pour permettre une preview live sans
     // re-télécharger le ZIP.
     match /animations/{animationId} {
-      allow read:   if request.auth != null && resource.data.ownerId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow read:   if request.auth != null && inMyWorkspace(resource.data.ownerId);
+      allow create: if request.auth != null && inMyWorkspace(request.resource.data.ownerId);
+      allow update, delete: if request.auth != null && inMyWorkspace(resource.data.ownerId);
     }
 
     // ── Videos (legacy, lecture seule) ─────────────────────────────────────
@@ -631,17 +657,17 @@ service cloud.firestore {
     // au flow ZIP-only. Plus de création possible côté client ; lecture/suppression
     // restent pour permettre de nettoyer les enregistrements historiques.
     match /videos/{renderId} {
-      allow read:   if request.auth != null && resource.data.ownerId == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow read:   if request.auth != null && inMyWorkspace(resource.data.ownerId);
+      allow delete: if request.auth != null && inMyWorkspace(resource.data.ownerId);
     }
 
     // ── Print Presets (familles de paramètres d'impression) ────────────────
     // Presets réutilisables entre projets, scopés au user via ownerId.
     match /printPresets/{presetId} {
-      allow read:   if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow read:   if request.auth != null && inMyWorkspace(resource.data.ownerId);
       allow list:   if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && inMyWorkspace(request.resource.data.ownerId);
+      allow update, delete: if request.auth != null && inMyWorkspace(resource.data.ownerId);
     }
 
     // ── App config ──────────────────────────────────────────────────────────
@@ -704,12 +730,12 @@ service cloud.firestore {
     // peut que créer ses propres docs, les lire (onSnapshot) et les clôturer
     // (timeout → status 'expired') — jamais s'auto-approuver via 'approved'.
     match /workflowApprovals/{approvalId} {
-      allow read:   if isAuthenticated() && resource.data.ownerId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid
+      allow read:   if isAuthenticated() && inMyWorkspace(resource.data.ownerId);
+      allow create: if isAuthenticated() && inMyWorkspace(request.resource.data.ownerId)
                                          && request.resource.data.status == 'pending';
-      allow update: if isAuthenticated() && resource.data.ownerId == request.auth.uid
+      allow update: if isAuthenticated() && inMyWorkspace(resource.data.ownerId)
                                          && request.resource.data.status == 'expired';
-      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+      allow delete: if isAuthenticated() && inMyWorkspace(resource.data.ownerId);
     }
 
     // ── Logs de pipelines (observabilité) ────────────────────────────────────
@@ -717,8 +743,8 @@ service cloud.firestore {
     // Image/PDF→SVG) écrits par recordPipelineRun (src/lib/pipelineLog.ts).
     // Create-only par le propriétaire ; lecture de ses propres runs.
     match /pipelineRuns/{runId} {
-      allow read:   if request.auth != null && resource.data.ownerId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow read:   if request.auth != null && inMyWorkspace(resource.data.ownerId);
+      allow create: if request.auth != null && inMyWorkspace(request.resource.data.ownerId);
       allow update, delete: if false;
     }
 
@@ -726,11 +752,11 @@ service cloud.firestore {
     // Immuable : créé par l'utilisateur (pour ses propres actions), lu par l'admin
     // (tout) ou par chacun pour ses propres entrées. Jamais modifiable/supprimable.
     match /auditLog/{logId} {
-      allow read:   if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read:   if isAdmin() || (request.auth != null && inMyWorkspace(resource.data.userId));
+      allow create: if request.auth != null && inMyWorkspace(request.resource.data.userId);
       allow update: if false; // immuable : une entrée n'est jamais modifiée
       // Purge autorisée : chacun peut effacer SES propres entrées, l'admin toutes.
-      allow delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || (request.auth != null && inMyWorkspace(resource.data.userId));
     }
 
     // ── Analytics de trafic (pages vues) ───────────────────────

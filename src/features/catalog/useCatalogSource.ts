@@ -1,8 +1,8 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Connexion de la source (projet PIM ou dataset Excel legacy) : charge lignes+colonnes,
 // auto-mappe champs fiche et niveaux taxonomiques, sélectionne tout par défaut.
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { auth } from '@/lib/firebase/config'
 import { listPimProjects, loadPimMergeData, makePimSourceRef, type PimProjectSummary } from '@/features/merge/pimSource'
 import { listExcelDatasets, loadExcelMergeData, makeExcelSourceRef, type SavedDataset } from '@/features/merge/excelSource'
 import { defaultPromoFieldMap, defaultCustomFields } from '@/features/retail-promo/promoMapping'
@@ -31,7 +31,7 @@ export function useCatalogSource() {
   const [connecting, setConnecting] = useState(false)
 
   useEffect(() => {
-    const uid = auth.currentUser?.uid
+    const uid = getWorkspaceUid()
     if (!uid) { setLoadingProjects(false); return }
     // allSettled : une panne isolée sur les datasets Excel (ou l'inverse) ne doit
     // pas vider la liste des projets PIM qui, elle, a réussi.

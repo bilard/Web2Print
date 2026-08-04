@@ -1,8 +1,9 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Polices utilisateur (« Mes polices ») : fichier dans Storage users/{uid}/fonts/,
 // méta dans Firestore users/{uid}/userFonts — upsert par famille (slug).
 import { collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
-import { auth, db, storage } from '@/lib/firebase/config'
+import { db, storage } from '@/lib/firebase/config'
 
 export interface UserFont {
   id: string
@@ -30,7 +31,7 @@ function slugify(s: string): string {
 const colPath = (uid: string) => collection(db, 'users', uid, 'userFonts')
 
 export async function listUserFonts(): Promise<UserFont[]> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) return []
   const snap = await getDocs(colPath(uid))
   return snap.docs
@@ -61,7 +62,7 @@ export function parseGoogleFontFamily(input: string): string {
 
 /** Ajoute une famille Google Fonts (upsert par famille). */
 export async function addGoogleFont(input: string): Promise<UserFont> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) throw new Error('Non connecté')
   const family = parseGoogleFontFamily(input)
   const id = slugify(family)
@@ -71,7 +72,7 @@ export async function addGoogleFont(input: string): Promise<UserFont> {
 
 /** Upload + méta (upsert par famille). Rejette les extensions inconnues et les fichiers > 4 Mo. */
 export async function uploadUserFont(file: File): Promise<UserFont> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) throw new Error('Non connecté')
   const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
   if (!FONT_EXTS.includes(ext)) throw new Error(`Format non géré (.${ext}) — utilisez ${FONT_EXTS.map((e) => `.${e}`).join(', ')}`)
@@ -86,7 +87,7 @@ export async function uploadUserFont(file: File): Promise<UserFont> {
 }
 
 export async function deleteUserFont(font: UserFont): Promise<void> {
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (!uid) return
   // L'objet Storage peut manquer (police Google, nettoyage manuel) : la méta part quand même.
   if (font.storagePath) {

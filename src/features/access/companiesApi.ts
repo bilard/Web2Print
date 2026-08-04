@@ -21,6 +21,17 @@ import { DEFAULT_ACCOUNT_ID } from '@/features/i18n/accountI18nApi'
 export interface Company {
   id: string
   name: string
+  /**
+   * Compte PORTEUR des données de la société (option A) : ses projets, PIM, DAM,
+   * workflows et veille tarifaire constituent l'espace de travail commun. Les
+   * membres y lisent — et y écrivent selon leurs permissions — au lieu de
+   * travailler chacun dans son coin.
+   *
+   * Vide ⇒ pas d'espace commun : chaque membre reste sur ses propres données,
+   * exactement comme avant. C'est ce qui rend la bascule progressive et
+   * réversible, société par société.
+   */
+  workspaceUid: string
   createdAt: number
   updatedAt: number
 }
@@ -44,6 +55,7 @@ export async function listCompanies(): Promise<Company[]> {
         // Une société créée avant cet écran n'a pas de `name` : son identifiant
         // fait office de libellé plutôt que d'afficher une ligne vide.
         name: (x.name as string) || d.id,
+        workspaceUid: (x.workspaceUid as string) ?? '',
         createdAt: (x.createdAt as number) ?? 0,
         updatedAt: (x.updatedAt as number) ?? 0,
       }
@@ -64,6 +76,17 @@ export async function saveCompany(input: { id?: string; name: string }): Promise
     { merge: true },
   )
   return id
+}
+
+/**
+ * Désigne le compte dont les données forment l'espace de travail commun.
+ *
+ * ⚠️ Le changer redirige TOUS les membres vers un autre jeu de données : leurs
+ * projets, produits et workflows précédents ne disparaissent pas, ils cessent
+ * simplement d'être affichés. Vider le champ ramène chacun sur son espace privé.
+ */
+export async function setWorkspaceUid(accountId: string, workspaceUid: string): Promise<void> {
+  await setDoc(doc(db, 'accounts', accountId), { workspaceUid, updatedAt: Date.now() }, { merge: true })
 }
 
 /**

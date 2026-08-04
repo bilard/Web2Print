@@ -1,9 +1,10 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Affiche sur les cartes de l'éditeur l'état du dernier run SERVEUR (cron / « Lancer
 // serveur ») : sans ça, un run headless est invisible côté navigateur. S'abonne au doc
 // users/{uid}/workflowRunsLive/{workflowId} écrit par les Functions et hydrate le runContext.
 import { useEffect, useRef } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase/config'
+import { db } from '@/lib/firebase/config'
 import { useRunContext } from './runContext'
 import type { NodeStatus } from '../types'
 
@@ -20,7 +21,7 @@ export function useServerRunLive(workflowId: string | undefined): void {
   const lastRunId = useRef<string | undefined>(undefined)
   const isInitial = useRef(true)
   useEffect(() => {
-    const uid = auth.currentUser?.uid
+    const uid = getWorkspaceUid()
     if (!uid || !workflowId) return
     lastRunId.current = undefined
     isInitial.current = true

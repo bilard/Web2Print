@@ -1,3 +1,4 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Importe N images locales (un dossier) vers un dossier Google Drive choisi.
 //
 // Pont : `damUpload` (serveur) récupère une URL, pas un blob local. On dépose
@@ -10,7 +11,7 @@ import { useState, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { httpsCallable } from 'firebase/functions'
-import { auth, storage, functions } from '@/lib/firebase/config'
+import { storage, functions } from '@/lib/firebase/config'
 import { removeBackground } from '@/features/imaging/removeBackground'
 import { useAccessStore } from '@/stores/access.store'
 import { DEMO_PERMISSION } from '@/features/access/permissions'
@@ -51,7 +52,7 @@ export function useDamFolderUpload() {
 
   const uploadFolder = useCallback(
     async (files: File[], folderId: string, opts?: { removeBg?: boolean }): Promise<FolderUploadResult> => {
-      const uid = auth.currentUser?.uid
+      const uid = getWorkspaceUid()
       if (!uid) throw new Error(t('err.auth.required'))
 
       const images = files.filter(isImageFile)

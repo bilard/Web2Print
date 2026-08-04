@@ -1,16 +1,16 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Hooks lecture/validation du module Veille tarifaire. Les produits + sites sont
 // désormais configurés DANS LE FLUX (node price-watch-track) ; ce module n'est
 // plus qu'un tableau de bord lecture-seule des matchs (+ file « à confirmer »).
 import { useEffect, useState, useCallback } from 'react'
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import { matchesCol, matchKey, DEFAULT_WATCH_ID } from './paths'
 import type { PriceMatch, MatchStatus } from './types'
 
 /** S'abonne aux matchs du suivi courant (temps réel). */
 export function usePriceMatches(): PriceMatch[] {
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const [items, setItems] = useState<PriceMatch[]>([])
   useEffect(() => {
     if (!uid) { setItems([]); return }
@@ -26,7 +26,7 @@ export function usePriceMatches(): PriceMatch[] {
 
 /** Confirmer / rejeter un rapprochement (file « à confirmer »). */
 export function usePriceWatchMutations() {
-  const uid = useAuthStore((s) => s.user?.uid)
+  const uid = useWorkspaceUid()
   const setMatchStatus = useCallback(async (productId: string, siteId: string, status: MatchStatus) => {
     if (!uid) return
     await setDoc(

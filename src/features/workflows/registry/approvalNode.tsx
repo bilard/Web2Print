@@ -1,3 +1,4 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Node « Approbation Telegram » : met le run en PAUSE, envoie la question sur Telegram
 // avec des boutons inline ✅/❌, et reprend sur le port `approved` ou `rejected` selon
 // le clic. La décision transite par Firestore : le webhook (Function) écrit le verdict
@@ -15,7 +16,6 @@ import {
   type TelegramInlineKeyboard,
 } from '@/lib/telegramApi'
 import { useTelegramStore } from '@/stores/telegram.store'
-import { useAuthStore } from '@/stores/auth.store'
 import { addOutboxMessage } from '@/features/telegram/useTelegramInbox'
 import { t } from '@/lib/i18n'
 
@@ -200,7 +200,7 @@ const telegramApprovalNode: NodeSpec<
     if (!botToken) throw new Error(t('run.appr.noBotToken'))
     if (!chatId) throw new Error(t('run.appr.noChatId'))
 
-    const uid = useAuthStore.getState().user?.uid
+    const uid = getWorkspaceUid()
     if (!uid) throw new Error(t('run.appr.notSignedIn'))
 
     const text = config.text.trim() || t('run.appr.defaultQuestion')

@@ -1,3 +1,4 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Node « Moisson concurrents » : parcourt les catalogues concurrents (pages liste) et
 // alimente un index Firestore persistant, un lot borné de pages par run. Sur cron, les
 // ticks successifs accumulent puis rafraîchissent l'index. Aucune donnée volumineuse ne
@@ -9,7 +10,6 @@ import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet } from '@/features/excel/types'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import { buildSiteFetcher } from '@/features/priceWatch/catalog/siteFetch'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
 import { resolveSitesInput, sitesForRole, splitPageBudget } from '@/features/priceWatch/sourceSites'
@@ -119,7 +119,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
   },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
-    const uid = useAuthStore.getState().user?.uid
+    const uid = getWorkspaceUid()
     if (!uid) throw new Error(t('run.notSignedIn'))
     // Sites + identité du suivi : le port `sites` (node « Sites sources ») GAGNE ;
     // sinon repli sur la config locale historique (textarea + watchId, dérivé de

@@ -1,3 +1,4 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Node « Recherche dirigée » (PILOTE). Complément de la moisson par liste : pour chaque
 // produit source, interroge le moteur de recherche de chaque concurrent (réf puis EAN) et
 // récupère le prix du résultat APPARIÉ PAR PREUVE EXACTE (zéro faux positif). Trouve ce
@@ -8,7 +9,6 @@ import { ScanSearch } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet, ExcelRow } from '@/features/excel/types'
-import { useAuthStore } from '@/stores/auth.store'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
 import { resolveSitesInput, sitesForRole } from '@/features/priceWatch/sourceSites'
@@ -88,7 +88,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
   },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
-    const uid = useAuthStore.getState().user?.uid
+    const uid = getWorkspaceUid()
     if (!uid) throw new Error(t('run.notSignedIn'))
     // Sites + identité de suivi : le port `sites` (node « Sites sources ») GAGNE ; sinon
     // repli config locale. Même suivi que « Comparer catalogue » du workflow → les prix

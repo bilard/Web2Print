@@ -1,3 +1,4 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useQuery } from '@tanstack/react-query'
 import {
   collection,
@@ -6,7 +7,6 @@ import {
   getDocs,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import type { Taxonomy } from './types'
 
 async function fetchTaxonomies(userId: string): Promise<Taxonomy[]> {
@@ -26,10 +26,10 @@ async function fetchTaxonomies(userId: string): Promise<Taxonomy[]> {
 }
 
 export function useTaxonomies() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   return useQuery({
-    queryKey: ['taxonomies', user?.uid],
-    queryFn: () => fetchTaxonomies(user!.uid),
-    enabled: !!user,
+    queryKey: ['taxonomies', uid],
+    queryFn: () => fetchTaxonomies(uid!),
+    enabled: !!uid,
   })
 }

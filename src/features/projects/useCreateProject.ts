@@ -1,7 +1,7 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import { recordAudit } from '@/lib/auditLog'
 import { cleanupOrphanLinksInTaxonomies } from './useDeleteProject'
 import type { ProjectData } from '@/types/project'
@@ -76,15 +76,15 @@ async function createProject(userId: string, params: CreateProjectParams): Promi
 }
 
 export function useCreateProject() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (params: CreateProjectParams) => createProject(user!.uid, params),
+    mutationFn: (params: CreateProjectParams) => createProject(uid!, params),
     onSuccess: (data) => {
       recordAudit({ action: 'library.project.create', module: 'library', targetId: data.id, targetLabel: data.title })
-      queryClient.invalidateQueries({ queryKey: ['projects', user?.uid] })
-      queryClient.invalidateQueries({ queryKey: ['taxonomies', user?.uid] })
+      queryClient.invalidateQueries({ queryKey: ['projects', uid] })
+      queryClient.invalidateQueries({ queryKey: ['taxonomies', uid] })
     },
   })
 }

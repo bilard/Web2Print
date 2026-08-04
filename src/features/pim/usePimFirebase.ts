@@ -1,6 +1,7 @@
 import { doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
-import { db, auth, functions } from '@/lib/firebase/config'
+import { db, functions } from '@/lib/firebase/config'
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useAccessStore } from '@/stores/access.store'
 import { DEMO_PERMISSION } from '@/features/access/permissions'
 import type { Product, Source } from './types'
@@ -11,10 +12,17 @@ const PRODUCTS_SUB = 'products'
 /** Écriture serveur des produits (comptes démo) — quota infalsifiable, cf. CF pimSaveProducts. */
 const pimSaveProductsCF = httpsCallable<{ projectId: string; products: Product[] }, { count: number }>(functions, 'pimSaveProducts')
 
+/**
+ * UID sous lequel LIRE et ÉCRIRE les données PIM.
+ *
+ * ⚠️ Ce n'est pas forcément celui de la personne connectée : dans une société à
+ * espace commun, c'est le compte porteur. Utiliser `auth.currentUser.uid` ici
+ * ferait travailler chaque membre dans son coin, invisible des autres.
+ */
 function requireUser() {
-  const u = auth.currentUser
-  if (!u) throw new Error('Utilisateur non authentifié')
-  return u
+  const uid = getWorkspaceUid()
+  if (!uid) throw new Error('Utilisateur non authentifié')
+  return { uid }
 }
 
 /** Récursivement retire les clés à valeur `undefined` (Firestore les rejette).

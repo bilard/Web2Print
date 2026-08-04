@@ -4,6 +4,7 @@ import { Plus, LogOut, Loader2, Library, Settings, LayoutGrid, List, Trash2, X, 
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useIsPending, useIsBlocked, useAccessLoading, useCan } from '@/features/access/useAccess'
+import { useIsSharedWorkspace } from '@/features/access/useWorkspaceUid'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { AccessAdminPage } from '@/features/access/admin/AccessAdminPage'
 import { PendingAccessScreen } from '@/features/access/PendingAccessScreen'
@@ -60,6 +61,9 @@ export default function DashboardPage() {
   const signOut = useSignOut()
   const isAdmin = useIsAdmin()
   const canDeleteProject = useCan('library.delete')
+  // Travailler dans les données d'un autre compte doit se VOIR : sans repère, on
+  // croit ses propres données disparues.
+  const sharedWorkspace = useIsSharedWorkspace()
   const permissions = useAccessStore((s) => s.permissions)
   const navigate = useNavigate()
   const location = useLocation()
@@ -462,6 +466,12 @@ export default function DashboardPage() {
                   (« Fr… »). Ici le nom en récupère ~67 — plus qu'avant l'ajout de la
                   langue. Variante `compact` : le groupe FR|EN complet ne tient pas. */}
               <div className="flex items-center gap-0.5 flex-shrink-0">
+                {sharedWorkspace && (
+                  <span title={t('ws.sharedHint')}
+                    className="mr-1 px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[9px] font-medium">
+                    {t('ws.shared')}
+                  </span>
+                )}
                 <LocaleSwitcher compact />
                 <ThemeToggle
                   className="p-1 rounded text-white/20 hover:text-white/50 hover:bg-white/[0.04]"

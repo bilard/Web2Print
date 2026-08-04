@@ -1,8 +1,8 @@
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { doc, deleteDoc, collection, query, where, getDocs, writeBatch, serverTimestamp } from 'firebase/firestore'
 import { ref, listAll, deleteObject } from 'firebase/storage'
 import { db, storage } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
 import { recordAudit } from '@/lib/auditLog'
 
 /** Known subfolders where project assets are stored */
@@ -99,18 +99,18 @@ async function deleteProjectWithAssets(projectId: string): Promise<void> {
 }
 
 export function useDeleteProject() {
-  const user = useAuthStore((s) => s.user)
+  const uid = useWorkspaceUid()
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (projectId: string) => {
       await deleteProjectWithAssets(projectId)
-      if (user?.uid) await cleanupOrphanLinksInTaxonomies(user.uid, projectId)
+      if (uid) await cleanupOrphanLinksInTaxonomies(uid, projectId)
       recordAudit({ action: 'library.project.delete', module: 'library', targetId: projectId })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects', user?.uid] })
-      queryClient.invalidateQueries({ queryKey: ['taxonomies', user?.uid] })
+      queryClient.invalidateQueries({ queryKey: ['projects', uid] })
+      queryClient.invalidateQueries({ queryKey: ['taxonomies', uid] })
     },
   })
 }

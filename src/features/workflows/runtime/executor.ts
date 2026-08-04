@@ -1,3 +1,4 @@
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import type { Workflow, WorkflowNode, WorkflowEdge, RunContextApi, NodeRunState } from '../types'
 import { nodeRegistry } from '../registry'
 import { topoSort } from './topo'
@@ -7,7 +8,6 @@ import { useProgressStore } from '@/stores/progress.store'
 import { interpolate } from './interpolate'
 import { mergeInputValue } from './mergeInputs'
 import { persistClientRun, type RunStatus } from '../persistence/runHistoryClient'
-import { auth } from '@/lib/firebase/config'
 // Messages d'exécution hors composant : helper `t()` de module.
 import { t } from '@/lib/i18n'
 
@@ -556,7 +556,7 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
   const okCount = ran.filter((s) => s.status === 'success').length
 
   // Persiste un snapshot durable du run (historique de l'écran Résultats). Non bloquant.
-  const uid = auth.currentUser?.uid
+  const uid = getWorkspaceUid()
   if (uid && !ac.signal.aborted) {
     const status: RunStatus = errors.length === 0 ? 'success' : okCount > 0 ? 'partial' : 'error'
     void persistClientRun(uid, wf, { startedAt, status, nodeStates: states })
