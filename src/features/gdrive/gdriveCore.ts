@@ -595,22 +595,9 @@ async function applyColumnGroups(token: string, spreadsheetId: string, sheet: Ex
       deletes.push({ deleteDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: g.range?.startIndex ?? 0, endIndex: g.range?.endIndex ?? 0 } } })
     }
   }
-  const adds = ranges.flatMap(({ start, end }) => [
-    { addDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end } } },
-    // REPLIÉ d'emblée : un groupe déplié n'est qu'un discret crochet au-dessus des
-    // en-têtes — on ne le remarque pas. Replié, chaque concurrent devient un bouton
-    // « + » explicite, et la feuille s'ouvre sur les seules colonnes communes.
-    {
-      updateDimensionGroup: {
-        dimensionGroup: {
-          range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end },
-          depth: 1,
-          collapsed: true,
-        },
-        fields: 'collapsed',
-      },
-    },
-  ])
+  const adds = ranges.map(({ start, end }) => ({
+    addDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end } },
+  }))
   const requests = [...deletes, ...adds]
   if (requests.length === 0) return
   const res = await fetch(`${SHEETS_API}/${spreadsheetId}:batchUpdate`, {
@@ -619,6 +606,37 @@ async function applyColumnGroups(token: string, spreadsheetId: string, sheet: Ex
     body: JSON.stringify({ requests }),
   })
   if (!res.ok) throw new Error(`groupes de colonnes ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  await collapseGroups(token, spreadsheetId, gid, ranges)
+}
+
+/**
+ * Replie les groupes fraîchement créés.
+ *
+ * ⚠️ Appel SÉPARÉ de la création, délibérément : un `batchUpdate` est atomique.
+ * Si Google refuse le repli (profondeur inattendue, groupe déjà replié), le lot
+ * entier est annulé — on perdrait les groupes eux-mêmes en voulant seulement les
+ * fermer. Ici, un échec ne coûte que des groupes ouverts.
+ */
+async function collapseGroups(
+  token: string, spreadsheetId: string, gid: number, ranges: { start: number; end: number }[],
+): Promise<void> {
+  if (ranges.length === 0) return
+  const requests = ranges.map(({ start, end }) => ({
+    updateDimensionGroup: {
+      dimensionGroup: {
+        range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end },
+        depth: 1,
+        collapsed: true,
+      },
+      fields: 'collapsed',
+    },
+  }))
+  const res = await fetch(`${SHEETS_API}/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) console.warn('[sheets] repli des groupes refusé:', res.status, (await res.text().catch(() => '')).slice(0, 200))
 }
 
 async function capWideColumns(token: string, spreadsheetId: string, gid: number, colCount: number): Promise<void> {

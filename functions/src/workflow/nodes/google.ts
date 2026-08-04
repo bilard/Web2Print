@@ -344,18 +344,6 @@ async function applyColumnGroupsServer(
   }
   for (const { start, end } of ranges) {
     requests.push({ addDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end } } })
-    // REPLIÉ d'emblée : déplié, un groupe n'est qu'un crochet discret au-dessus des
-    // en-têtes. Replié, chaque concurrent devient un bouton « + » explicite.
-    requests.push({
-      updateDimensionGroup: {
-        dimensionGroup: {
-          range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end },
-          depth: 1,
-          collapsed: true,
-        },
-        fields: 'collapsed',
-      },
-    })
   }
   if (requests.length === 0) return
   const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
@@ -364,6 +352,26 @@ async function applyColumnGroupsServer(
     body: JSON.stringify({ requests }),
   })
   if (!res.ok) throw new Error(`groupes ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+
+  // ⚠️ Repli dans un appel SÉPARÉ : un `batchUpdate` est atomique. Si Google
+  // refuse le repli, le lot entier serait annulé — on perdrait les groupes en
+  // voulant seulement les fermer. Ici, un échec ne laisse que des groupes ouverts.
+  if (ranges.length === 0) return
+  const collapse = ranges.map(({ start, end }) => ({
+    updateDimensionGroup: {
+      dimensionGroup: {
+        range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end },
+        depth: 1,
+        collapsed: true,
+      },
+      fields: 'collapsed',
+    },
+  }))
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests: collapse }),
+  }).catch(() => { /* groupes ouverts : dégradation acceptable */ })
 }
 
 async function capWideColumnsServer(token: string, id: string, gid: number, colCount: number): Promise<void> {
