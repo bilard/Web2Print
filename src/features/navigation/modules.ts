@@ -183,13 +183,10 @@ export const MODULE_ITEMS: ModuleItem[] = [
     ],
   },
   // ── Automatisation & IA ──
-  { id: 'workflows', group: 'automation', icon: Workflow, labelKey: 'nav.workflows', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300',
-    children: [
-      { id: 'action:new',               labelKey: 'nav.workflows.new',              intent: 'workflows:action:new' },
-      { id: 'action:my-templates',      labelKey: 'nav.workflows.myTemplates',      intent: 'workflows:action:my-templates' },
-      { id: 'action:builtin-templates', labelKey: 'nav.workflows.builtinTemplates', intent: 'workflows:action:builtin-templates' },
-    ],
-  },
+  // Pas de sous-entrées : créer un workflow et parcourir les modèles se font
+  // depuis l'écran lui-même. Les dupliquer dans le menu les proposait à des rôles
+  // qui n'ont que la lecture.
+  { id: 'workflows', group: 'automation', icon: Workflow, labelKey: 'nav.workflows', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300' },
   { id: 'chat', group: 'automation', icon: MessageSquare, labelKey: 'nav.chat', accent: 'text-violet-400', activeBg: 'bg-violet-500/[0.1]', activeText: 'text-violet-300',
     children: [
       { id: 'action:new',       labelKey: 'nav.chat.new',      intent: 'chat:action:new' },

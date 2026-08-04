@@ -36,6 +36,8 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
   const canCreate = useCan('workflows.create')
   const canEdit = useCan('workflows.edit')
   const canDelete = useCan('workflows.delete')
+  // Peut créer un dossier ou y classer un workflow → les dossiers vides lui restent utiles.
+  const canOrganise = canCreate || canEdit
   const [items, setItems] = useState<Workflow[]>([])
   const [folders, setFolders] = useState<WorkflowFolder[]>([])
   const [loading, setLoading] = useState(true)
@@ -470,6 +472,12 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
         <div className="space-y-7">
           {folders.map((folder) => {
             const gItems = items.filter((w) => w.folderId === folder.id)
+            // Dossier vide : masqué pour qui ne peut pas le remplir. Un lecteur y
+            // voyait une ligne inerte — voire un dossier dont TOUS les workflows
+            // lui sont simplement inaccessibles. Celui qui peut créer ou classer
+            // le garde : sans ça, un dossier qu'on vient de créer disparaîtrait
+            // avant d'avoir pu y ranger quoi que ce soit.
+            if (gItems.length === 0 && !canOrganise) return null
             return (
               <section key={folder.id}>
                 {folderHeader(folder, gItems.length)}
