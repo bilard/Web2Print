@@ -52,6 +52,7 @@ const FinancePanel = lazy(() => import('@/features/finance/FinancePanel').then((
 const RetailPromoPage = lazy(() => import('@/features/retail-promo/RetailPromoPage').then((m) => ({ default: m.RetailPromoPage })))
 const CatalogHome = lazy(() => import('@/features/catalog/CatalogHome').then((m) => ({ default: m.CatalogHome })))
 const DemoExpressPage = lazy(() => import('@/features/demo-express/DemoExpressPage').then((m) => ({ default: m.DemoExpressPage })))
+const TeamAdminPage = lazy(() => import('@/features/access/admin/TeamAdminPage').then((m) => ({ default: m.TeamAdminPage })))
 const ManufacturerInsightsScreen = lazy(() => import('@/features/manufacturer-verify/insights/ManufacturerInsightsScreen').then((m) => ({ default: m.ManufacturerInsightsScreen })))
 
 export default function DashboardPage() {
@@ -628,6 +629,12 @@ export default function DashboardPage() {
             </div>
           }>
             <FinancePanel />
+          </Suspense>
+        </div>
+      ) : activeSection === 'team' && canSee('team') ? (
+        <div className="flex-1 overflow-hidden">
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center h-full bg-background"><Loader2 className="w-8 h-8 text-violet-500 animate-spin" /></div>}>
+            <TeamAdminPage />
           </Suspense>
         </div>
       ) : activeSection === 'access' && isAdmin ? (

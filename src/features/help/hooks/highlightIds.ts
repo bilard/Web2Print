@@ -19,6 +19,7 @@ export const HIGHLIGHT_IDS = [
   'dashboard.sidebar.telegram',
   'dashboard.sidebar.hyperframes',
   'dashboard.sidebar.access',
+  'dashboard.sidebar.team',
   'dashboard.sidebar.finances',
   'dashboard.sidebar.settings',
 

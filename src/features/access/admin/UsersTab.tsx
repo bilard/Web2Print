@@ -10,6 +10,7 @@ import { recordAudit } from '@/lib/auditLog'
 import { listRoles, type Role } from '@/features/access/rolesApi'
 import { computeEffectivePermissions } from '@/features/access/computePermissions'
 import { isOwnerEmail } from '@/features/auth/useAuth'
+import { useManagedScope } from '@/features/access/useManagedScope'
 import { intlLocale, t } from '@/lib/i18n'
 import { useLocaleStore } from '@/stores/locale.store'
 
@@ -27,7 +28,20 @@ function formatLastSeen(ts: number): string {
   return new Date(ts).toLocaleDateString(intlLocale(useLocaleStore.getState().locale))
 }
 
-export function UsersTab() {
+/**
+ * ⚠️ `scopeAccountId` n'est pas un simple filtre d'affichage : sans lui, un
+ * administrateur d'entreprise interrogerait toute la collection `users` et
+ * Firestore refuserait la requête EN BLOC (liste vide, aucune erreur). Il borne
+ * aussi ce que l'écran propose — le rattachement à une société et la suppression
+ * d'un profil restent des actes d'administration globale.
+ */
+export function UsersTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
+  // ⚠️ Deux notions distinctes : `scopeAccountId` borne ce qu'on LIT (la requête
+  // Firestore), `isGlobalAdmin` ce qu'on a le DROIT de faire. L'admin global qui
+  // consulte une société garde donc le rattachement et la suppression, alors
+  // qu'un administrateur d'entreprise ne les a jamais — les confondre retirerait
+  // à l'admin global des actions qu'il possède.
+  const { isGlobalAdmin } = useManagedScope()
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [roles, setRoles] = useState<Role[]>([])
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -35,8 +49,10 @@ export function UsersTab() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const byModule = permissionsByModule()
 
-  const refresh = () => { void listUsers().then(setUsers) }
-  useEffect(() => { refresh(); void listRoles().then(setRoles) }, [])
+  const refresh = () => { void listUsers(scopeAccountId).then(setUsers) }
+  // Relire quand la PORTÉE change (passage d'une société à l'autre dans l'écran
+  // Sociétés) : `refresh` est recréé à chaque rendu et ne peut pas être dépendance.
+  useEffect(() => { refresh(); void listRoles(scopeAccountId).then(setRoles) }, [scopeAccountId])
 
   // Comptes déjà employés — proposés en autocomplétion pour éviter qu'un même
   // client finisse avec deux identifiants et donc deux vocabulaires.
@@ -180,7 +196,7 @@ export function UsersTab() {
                     choisit le compte dont l'interface s'affiche. Sans lui,
                     l'administrateur resterait bloqué sur « default » et ne
                     pourrait pas régler le vocabulaire d'un client. */}
-                <AccountAssignment user={u} knownAccounts={knownAccounts} onSaved={refresh} />
+                {isGlobalAdmin && <AccountAssignment user={u} knownAccounts={knownAccounts} onSaved={refresh} />}
               </div>
             )}
 
@@ -192,10 +208,14 @@ export function UsersTab() {
                     className={`flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border transition-colors ${u.accessBlocked ? 'border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10' : 'border-red-500/40 text-red-300 hover:bg-red-500/10'}`}>
                     {u.accessBlocked ? <><CheckCircle2 className="w-3.5 h-3.5" /> {t('ac.reactivate')}</> : <><Ban className="w-3.5 h-3.5" /> {t('ac.block')}</>}
                   </button>
+                  {/* Supprimer un profil efface son rattachement et son rôle :
+                      acte d'administration GLOBALE, hors du périmètre d'une société. */}
+                  {isGlobalAdmin && (
                   <button onClick={() => setConfirmDelete(confirmDelete === u.uid ? null : u.uid)}
                     className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/40 hover:text-red-300 hover:border-red-500/40 transition-colors">
                     <Trash2 className="w-3.5 h-3.5" /> {t('ac.delete')}
                   </button>
+                  )}
                   {(u.accessGrants.length > 0 || u.accessRevokes.length > 0) && (
                     <button onClick={() => resetOverrides(u)} className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 transition-colors">
                       <RotateCcw className="w-3.5 h-3.5" /> {t('ac.resetOverrides')}
@@ -225,8 +245,11 @@ export function UsersTab() {
                   </div>
                 )}
 
-                {/* Compte de rattachement (vocabulaire d'interface partagé) */}
-                <AccountAssignment user={u} knownAccounts={knownAccounts} onSaved={refresh} />
+                {/* Compte de rattachement (vocabulaire d'interface partagé).
+                    ⚠️ Réservé à l'admin global : `firestore.rules` exclut `accountId`
+                    des champs délégués, un administrateur d'entreprise ne peut pas
+                    aspirer le compte d'un tiers. */}
+                {isGlobalAdmin && <AccountAssignment user={u} knownAccounts={knownAccounts} onSaved={refresh} />}
 
                 {/* Permissions effectives */}
                 <div>

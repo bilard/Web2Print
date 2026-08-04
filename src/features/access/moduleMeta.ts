@@ -3,7 +3,7 @@
 import {
   Library, Upload, Image as ImageIcon, FileSpreadsheet, FolderTree,
   Globe, Workflow, Film, MessageSquare, Send, Settings, Shield, TrendingUpDown,
-  BarChart3, Sparkles, Tag, BookText, Gauge, Wallet,
+  BarChart3, Sparkles, Tag, BookText, Gauge, Wallet, Building2,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -41,6 +41,8 @@ const MODULE_META: Record<string, ModuleMeta> = {
   'Chat IA':      { icon: MessageSquare,   dot: 'bg-cyan-500/15 text-cyan-300',   chipOn: 'bg-cyan-500/20 border-cyan-500/50 text-cyan-100',      bar: 'bg-cyan-500',    text: 'text-cyan-300' },
   'Telegram':     { icon: Send,            dot: 'bg-blue-500/15 text-blue-300',   chipOn: 'bg-blue-500/20 border-blue-500/50 text-blue-100',      bar: 'bg-blue-500',    text: 'text-blue-300' },
   'Paramètres':   { icon: Settings,        dot: 'bg-slate-500/20 text-slate-300', chipOn: 'bg-slate-500/25 border-slate-400/50 text-slate-100',   bar: 'bg-slate-400',   text: 'text-slate-300' },
+  // Administration DÉLÉGUÉE à une société (jamais l'admin global).
+  'Équipe':       { icon: Building2,       dot: 'bg-violet-500/15 text-violet-300', chipOn: 'bg-violet-500/20 border-violet-500/50 text-violet-100', bar: 'bg-violet-500', text: 'text-violet-300' },
   'Finances':     { icon: Wallet,          dot: 'bg-emerald-500/15 text-emerald-300', chipOn: 'bg-emerald-500/20 border-emerald-500/50 text-emerald-100', bar: 'bg-emerald-500', text: 'text-emerald-300' },
   // Marqueur de compte plafonné (quotas), pas un module de navigation.
   'Démo':         { icon: Gauge,           dot: 'bg-amber-500/15 text-amber-300', chipOn: 'bg-amber-500/20 border-amber-500/50 text-amber-100',   bar: 'bg-amber-500',   text: 'text-amber-300' },
@@ -56,7 +58,7 @@ export function moduleMeta(module: string): ModuleMeta {
 const MODULE_ORDER = [
   'Import', 'Bibliothèque', 'DAM', 'PIM', 'Insights fabricant', 'Taxonomies', 'Scraping',
   'Veille tarifaire', 'Démo express', 'Création studio', 'Catalogue studio', 'Animation',
-  'Workflows', 'Chat IA', 'Telegram', 'Paramètres', 'Finances', 'Démo',
+  'Workflows', 'Chat IA', 'Telegram', 'Paramètres', 'Équipe', 'Finances', 'Démo',
 ]
 
 /** Entrées d'un Record groupé par module, triées selon l'ordre de navigation. */

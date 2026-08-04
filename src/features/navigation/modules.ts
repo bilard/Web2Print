@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, BookText, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag, Sparkles, BarChart3, Wallet } from 'lucide-react'
+import { Building2, Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, BookText, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag, Sparkles, BarChart3, Wallet } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { useAccessStore } from '@/stores/access.store'
 import type { TranslationKey } from '@/lib/i18n'
@@ -20,7 +20,7 @@ export type Section =
   | 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings'
   | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
   | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'retail-promo' | 'catalog'
-  | 'demo-express' | 'mfr-insights' | 'finances'
+  | 'demo-express' | 'mfr-insights' | 'finances' | 'team'
 
 /**
  * Toutes les sections existantes — Y COMPRIS celles absentes de `MODULE_ITEMS`
@@ -36,7 +36,7 @@ const SECTION_SET: Record<Section, true> = {
   settings: true, taxonomies: true, 'scraping-templates': true, 'scraping-hub': true,
   workflows: true, hyperframes: true, telegram: true, access: true, 'price-watch': true,
   'retail-promo': true, catalog: true, 'demo-express': true, 'mfr-insights': true,
-  finances: true,
+  finances: true, team: true,
 }
 export const ALL_SECTIONS = Object.keys(SECTION_SET) as Section[]
 
@@ -207,6 +207,12 @@ export const MODULE_ITEMS: ModuleItem[] = [
     ],
   },
   // ── Administration ──
+  { id: 'team', group: 'admin', icon: Building2, labelKey: 'nav.team', accent: 'text-violet-400', activeBg: 'bg-violet-500/[0.1]', activeText: 'text-violet-300',
+    children: [
+      { id: 'tab:members', labelKey: 'nav.team.members', intent: 'team:tab:members' },
+      { id: 'tab:roles',   labelKey: 'nav.team.roles',   intent: 'team:tab:roles', permission: 'team.roles' },
+    ],
+  },
   { id: 'finances', group: 'admin', icon: Wallet, labelKey: 'nav.finances', accent: 'text-emerald-400', activeBg: 'bg-emerald-500/[0.1]', activeText: 'text-emerald-300' },
   { id: 'access', group: 'admin', icon: ShieldCheck, labelKey: 'nav.access', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300',
     children: [
@@ -256,6 +262,7 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
   // pour TOUS les rôles alors que `settings.view` existait pour le gouverner.
   settings: 'settings.view',
   finances: 'finances.view',
+  team: 'team.view',
 }
 
 /**

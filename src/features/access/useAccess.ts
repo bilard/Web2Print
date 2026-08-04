@@ -24,6 +24,7 @@ export function useAccessInit() {
         const userSnap = await getDoc(doc(db, 'users', user.uid))
         const data = userSnap.data() ?? {}
         const roleId = (data.accessRoleId as string | undefined) ?? null
+        const accountId = (data.accountId as string | undefined) ?? ''
         const grants = (data.accessGrants as string[] | undefined) ?? []
         const revokes = (data.accessRevokes as string[] | undefined) ?? []
         const onboardingComplete = (data.onboardingComplete as boolean | undefined) ?? false
@@ -52,6 +53,7 @@ export function useAccessInit() {
           // Bloqué → aucune permission, quel que soit le rôle.
           permissions: blocked ? new Set() : computeEffectivePermissions({ isOwner, rolePermissions, grants, revokes }),
           roleId: resolvedRoleId,
+          accountId,
           isOwner,
           blocked,
           usage: readUsage(data.usage),
@@ -61,7 +63,7 @@ export function useAccessInit() {
       } catch (e) {
         if (cancelled) return
         console.warn('[useAccessInit] load failed:', e)
-        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, isOwner, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, onboardingComplete: false })
+        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, accountId: '', isOwner, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, onboardingComplete: false })
       }
     })()
 

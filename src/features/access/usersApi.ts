@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 
 export interface ManagedUser {
@@ -24,10 +24,20 @@ export interface ManagedUser {
   accountId: string
 }
 
-/** Liste tous les users (admin only — la règle Firestore l'autorise). On NE lit QUE les
- *  champs d'identité/access, jamais les secrets (apiKeys/telegram/siteCookies). */
-export async function listUsers(): Promise<ManagedUser[]> {
-  const snap = await getDocs(collection(db, 'users'))
+/**
+ * Membres d'une société — ou tous les comptes si `accountId` est omis (admin global).
+ * On NE lit QUE les champs d'identité/access, jamais les secrets
+ * (apiKeys/telegram/siteCookies).
+ *
+ * ⚠️ Un administrateur de société DOIT passer `accountId` : la règle serveur
+ * autorise la lecture doc par doc (même société), mais une requête non filtrée
+ * sur toute la collection est refusée EN BLOC par Firestore — l'écran
+ * remonterait vide sans le moindre message. Cf. `useManagedScope`.
+ */
+export async function listUsers(accountId?: string): Promise<ManagedUser[]> {
+  const snap = await getDocs(
+    accountId ? query(collection(db, 'users'), where('accountId', '==', accountId)) : collection(db, 'users'),
+  )
   return snap.docs
     .map((d) => {
       const x = d.data()

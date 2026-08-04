@@ -89,12 +89,50 @@ service cloud.firestore {
          && request.resource.data.get('usage', {}).get('damAssets', 0) >= resource.data.get('usage', {}).get('damAssets', 0));
     }
 
-    // ── Users ─────────────────────────────────────────────────────────────────
+    // ── Sociétés (administration déléguée) ────────────────────────────────────
+    // Une SOCIÉTÉ regroupe N collaborateurs aux rôles distincts (achat, marketing,
+    // direction…). Son administrateur porte `team.*` et n'agit QUE sur sa propre
+    // société — le cloisonnement est appliqué ici, pas seulement dans l'écran.
+    //
+    // ⚠️ `accountId` absent ⇒ `default` des DEUX côtés de la comparaison, sinon un
+    // compte historique (sans le champ) tomberait dans la société de personne et
+    // deviendrait ingérable.
+    function myAccount() {
+      return accessData().get('accountId', 'default');
+    }
+    function sameCompany(accountId) {
+      return isAuthenticated() && accountId == myAccount();
+    }
+    // Administrateur de SA société : jamais l'admin global.
+    function isTeamAdmin() {
+      return isAuthenticated() && !isAdmin() && hasPermission('team.view');
+    }
+    // ⛔️ Barrière anti-escalade : un rôle écrit par un administrateur de société
+    // ne peut porter NI `admin` (accès total, toutes sociétés) NI `demo.view`
+    // (qui redéfinit ses propres quotas). Sans ça, il lui suffirait de se
+    // fabriquer un rôle « admin » et de se l'attribuer pour sortir de sa société.
+    function noAdminEscalation() {
+      return !request.resource.data.get('permissions', []).hasAny(['admin', 'demo.view']);
+    }
 
     // ── Roles (RBAC) ──────────────────────────────────────────────────────────
     match /roles/{roleId} {
       allow read:  if isAuthenticated();   // listes de permissions, non secrètes
-      allow write: if isAdmin();
+      allow create: if isAdmin()
+                    || (isTeamAdmin() && hasPermission('team.roles')
+                        && sameCompany(request.resource.data.get('accountId', 'default'))
+                        && noAdminEscalation());
+      // ⚠️ `accountId` est vérifié AVANT et APRÈS : sans la condition sur
+      // `resource`, un administrateur pourrait réécrire le rôle d'une AUTRE
+      // société en y posant son propre `accountId` au passage.
+      allow update: if isAdmin()
+                    || (isTeamAdmin() && hasPermission('team.roles')
+                        && sameCompany(resource.data.get('accountId', 'default'))
+                        && sameCompany(request.resource.data.get('accountId', 'default'))
+                        && noAdminEscalation());
+      allow delete: if isAdmin()
+                    || (isTeamAdmin() && hasPermission('team.roles')
+                        && sameCompany(resource.data.get('accountId', 'default')));
     }
 
     // ── Comptes : vocabulaire d'interface ─────────────────────────────────────
@@ -123,9 +161,37 @@ service cloud.firestore {
       }
     }
 
+    // Champs qu'un administrateur de société peut toucher chez un collègue.
+    // `hasOnly` est la garantie qui compte : `accountId` en est ABSENT, donc il ne
+    // peut pas rattacher quelqu'un d'une autre société à la sienne pour ensuite
+    // le gérer.
+    function teamManagedFields() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked']);
+    }
+    // Un droit ponctuel ne doit pas rouvrir ce que `noAdminEscalation` ferme sur
+    // les rôles : `admin` donnerait l'écran d'administration globale, `demo.view`
+    // laisserait redéfinir ses propres quotas.
+    function grantsWithoutAdmin() {
+      return !request.resource.data.get('accessGrants', []).hasAny(['admin', 'demo.view']);
+    }
+    // Le rôle attribué doit appartenir à la société de l'administrateur — sinon il
+    // suffirait de désigner le rôle le plus permissif d'une AUTRE société.
+    function assignedRoleInMyCompany() {
+      return request.resource.data.get('accessRoleId', '') == ''
+        || get(/databases/$(database)/documents/roles/$(request.resource.data.accessRoleId))
+             .data.get('accountId', 'default') == myAccount();
+    }
+
     match /users/{uid} {
-      // Lecture : soi-même ou l'admin.
-      allow read: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
+      // Lecture : soi-même, l'admin global, ou l'administrateur de SA société.
+      // ⚠️ Cette clause ne suffit pas côté client : Firestore refuse EN BLOC une
+      // requête non filtrée sur `users`. L'écran doit interroger
+      // `where('accountId','==',…)` — cf. `listUsers(accountId)`.
+      allow read: if isAuthenticated() && (
+                       request.auth.uid == uid
+                    || isAdmin()
+                    || (isTeamAdmin() && sameCompany(resource.data.get('accountId', 'default'))));
       // L'admin écrit tout (assignation rôle + surcharges). Le user écrit son propre doc
       // (profil, secrets perso) SAUF les champs d'accès RBAC — sinon il pourrait s'auto-
       // attribuer des permissions (escalade de privilèges). Create/update séparés car
@@ -142,7 +208,14 @@ service cloud.firestore {
       allow update: if isAdmin()
                     || (isAuthenticated() && request.auth.uid == uid
                         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked', 'accountId'])
-                        && usageMonotonic());
+                        && usageMonotonic())
+                    // Administrateur de société : rôle, droits ponctuels et blocage
+                    // d'un collègue de SA société, et rien d'autre.
+                    || (isTeamAdmin() && hasPermission('team.assign')
+                        && sameCompany(resource.data.get('accountId', 'default'))
+                        && teamManagedFields()
+                        && grantsWithoutAdmin()
+                        && assignedRoleInMyCompany());
       // Suppression du profil : admin uniquement (écran « Utilisateurs & rôles »).
       allow delete: if isAdmin();
     }

@@ -7,6 +7,11 @@ interface AccessState {
   permissions: Set<string>
   /** Rôle assigné (null = en attente, sauf owner). */
   roleId: string | null
+  /** Société de rattachement (`users/{uid}.accountId`). Vide ⇒ compte `default`.
+   *  C'est le PÉRIMÈTRE d'un administrateur d'entreprise : les écrans d'équipe
+   *  n'interrogent jamais Firestore sans ce filtre (une requête non filtrée sur
+   *  `users` est refusée en bloc par les règles). */
+  accountId: string
   isOwner: boolean
   /** Compte suspendu par un admin (aucun accès, même avec un rôle). */
   blocked: boolean
@@ -19,7 +24,7 @@ interface AccessState {
   loading: boolean
   /** Flag Firestore users/{uid}.onboardingComplete — lu en piggyback à l'hydratation de l'accès. */
   onboardingComplete: boolean
-  setAccess: (a: { permissions: Set<string>; roleId: string | null; isOwner: boolean; blocked: boolean; usage: UsageCounters; limits: UsageCounters; onboardingComplete: boolean }) => void
+  setAccess: (a: { permissions: Set<string>; roleId: string | null; accountId: string; isOwner: boolean; blocked: boolean; usage: UsageCounters; limits: UsageCounters; onboardingComplete: boolean }) => void
   setLoading: (loading: boolean) => void
   /** Incrément optimiste des compteurs d'usage (après un import réussi). */
   bumpUsage: (patch: Partial<UsageCounters>) => void
@@ -31,6 +36,7 @@ interface AccessState {
 export const useAccessStore = create<AccessState>((set) => ({
   permissions: new Set(),
   roleId: null,
+  accountId: '',
   isOwner: false,
   blocked: false,
   usage: emptyUsage(),
@@ -46,5 +52,5 @@ export const useAccessStore = create<AccessState>((set) => ({
     damAssets: Math.max(0, s.usage.damAssets + (patch.damAssets ?? 0)),
   } })),
   setOnboardingComplete: (v) => set({ onboardingComplete: v }),
-  reset: () => set({ permissions: new Set(), roleId: null, isOwner: false, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, loading: true, onboardingComplete: false }),
+  reset: () => set({ permissions: new Set(), roleId: null, accountId: '', isOwner: false, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, loading: true, onboardingComplete: false }),
 }))

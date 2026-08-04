@@ -32,11 +32,21 @@ export const MODULE_LABEL: Record<string, TranslationKey> = {
   'Telegram': 'perm.module.12',
   'Paramètres': 'perm.module.13',
   'Finances': 'perm.module.17',
+  'Équipe': 'perm.module.18',
   'Démo': 'perm.module.14',
 }
 
-/** Permission spéciale : accès total + gestion des rôles/utilisateurs. */
+/**
+ * Permission spéciale : accès total, TOUTES sociétés confondues.
+ *
+ * ⚠️ Ne jamais l'accorder par un rôle : `firestore.rules` refuse qu'un rôle la
+ * porte (`noAdminEscalation`), sinon un administrateur d'entreprise se
+ * fabriquerait un rôle « admin » et sortirait de sa société.
+ */
 export const ADMIN_PERMISSION = 'admin'
+
+/** Administration de SA société : membres + rôles, jamais au-delà. */
+export const TEAM_VIEW_PERMISSION = 'team.view'
 
 /** Permission-marqueur d'un compte « démo » : plafonne les données importées. */
 export const DEMO_PERMISSION = 'demo.view'
@@ -111,6 +121,15 @@ export const PERMISSIONS: PermissionDef[] = [
   // pas seulement celui qui édite. D'où une permission dédiée.
   { key: 'settings.i18n.edit', module: 'Paramètres', labelKey: 'perm.settings.i18n.edit',
     descriptionKey: 'perm.settings.i18n.edit.desc' },
+  // Administration DÉLÉGUÉE à une société : son porteur gère les collègues de sa
+  // propre société (`users/{uid}.accountId` identique), jamais ceux d'une autre —
+  // le cloisonnement est appliqué par `firestore.rules`, pas seulement par l'UI.
+  { key: TEAM_VIEW_PERMISSION, module: 'Équipe', labelKey: 'perm.team.view',
+    descriptionKey: 'perm.team.view.desc' },
+  { key: 'team.assign', module: 'Équipe', labelKey: 'perm.team.assign',
+    descriptionKey: 'perm.team.assign.desc' },
+  { key: 'team.roles', module: 'Équipe', labelKey: 'perm.team.roles',
+    descriptionKey: 'perm.team.roles.desc' },
   // Coûts d'usage du MEMBRE CONNECTÉ : `aiUsage`/`brightDataUsage`/`scrapeUsage` sont
   // clefés par `{uid}_{mois}` — accorder cette clé ne montre jamais les coûts d'autrui.
   { key: 'finances.view', module: 'Finances', labelKey: 'perm.finances.view',

@@ -25,6 +25,9 @@ const CONTEXT_TO_ARTICLE: Record<HelpContext, string> = {
   hyperframes: 'hyperframes',
   telegram: 'telegram',
   access: 'access',
+  // L'écran d'équipe partage l'article « Accès » : mêmes notions de rôle et de
+  // permission, vues depuis une seule société.
+  team: 'access',
   'price-watch': 'price-watch',
   'retail-promo': 'retail-promo',
   catalog: 'getting-started',

@@ -8,15 +8,21 @@ import { orderedModuleEntries } from '@/features/access/moduleMeta'
 import { PermissionTree } from './PermissionTree'
 import { t } from '@/lib/i18n'
 
-export function RolesTab() {
+/**
+ * ⚠️ `scopeAccountId` = la société propriétaire des rôles édités. Un rôle créé
+ * ici lui appartient définitivement : `firestore.rules` refuse de le déplacer
+ * (ce serait la sortie de secours du cloisonnement).
+ */
+export function RolesTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
   const [roles, setRoles] = useState<Role[]>([])
   const [editing, setEditing] = useState<{ id?: string; name: string; permissions: Set<string>; limits: UsageCounters } | null>(null)
   const [openSet, setOpenSet] = useState<Set<string>>(new Set())
   const byModule = permissionsByModule()
   const entries = orderedModuleEntries(byModule)
 
-  const refresh = () => { void listRoles().then(setRoles) }
-  useEffect(() => { refresh() }, [])
+  const refresh = () => { void listRoles(scopeAccountId).then(setRoles) }
+  // Relire quand la portée change (société sélectionnée).
+  useEffect(() => { refresh() }, [scopeAccountId])
 
   /** Modules à ouvrir par défaut = ceux qui ont au moins une permission sélectionnée. */
   const defaultOpen = (perms: Set<string>) => {
@@ -57,7 +63,7 @@ export function RolesTab() {
     const prev = roles.find((r) => r.id === editing.id)
     const beforeCount = prev?.permissions.length ?? 0
     const afterCount = [...editing.permissions].length
-    await saveRole({ id: editing.id, name: editing.name, permissions: [...editing.permissions], limits: editing.limits })
+    await saveRole({ id: editing.id, name: editing.name, permissions: [...editing.permissions], limits: editing.limits, accountId: scopeAccountId })
     const renamed = prev && prev.name !== editing.name ? { nom: `${prev.name} → ${editing.name}` } : {}
     recordAudit({ action: 'access.role.save', module: 'access', targetId: editing.id, targetLabel: editing.name, meta: { before: `${beforeCount} perms`, after: `${afterCount} perms`, ...renamed } })
     setEditing(null); refresh()
