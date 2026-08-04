@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { StoredReport } from '../reportStore'
 import type { KpiHistoryPoint } from '../types'
-import { buildCockpit, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries, priceIndexSeries, EMPTY_FILTER, matchesQuery, groupRowsByFamily, type TableRow } from './analytics'
+import { buildCockpit, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries, priceIndexSeries, comparableTail, trendDelta, EMPTY_FILTER, matchesQuery, groupRowsByFamily, type TableRow } from './analytics'
 
 const cell = (siteId: string, domain: string, priceHt: number, gapPct: number, stock: 'in-stock' | 'out-of-stock' = 'in-stock') => ({
   siteId, domain, name: 'x', url: '', image: null,
@@ -186,5 +186,43 @@ describe('groupRowsByFamily — groupes triés alphabétiquement', () => {
     const groups = groupRowsByFamily([mk('p1', 'Moteur'), mk('p2', 'Courroies'), mk('p3', 'Moteur'), mk('p4', null)])
     expect(groups.map((g) => g.famille)).toEqual(['Autres', 'Courroies', 'Moteur'])
     expect(groups[2].rows.map((r) => r.id)).toEqual(['p1', 'p3'])
+  })
+})
+
+describe('comparabilité des analyses (périmètre)', () => {
+  const pt = (at: number, products: number, undercut = 0): KpiHistoryPoint => ({
+    at, products, cheaperThanMe: 0, dearerThanMe: 0, aligned: 0, productsUndercut: undercut,
+  })
+
+  it('coupe la série quand le catalogue change d’ordre de grandeur', () => {
+    // Cas réel : 20 856 produits analysés, puis 72. La variation affichée était
+    // « ▼20 784 » — exacte, et parfaitement trompeuse : elle mesurait le
+    // changement de périmètre, pas les prix.
+    const history = [pt(1, 20856, 7891), pt(2, 72, 5)]
+    expect(comparableTail(history)).toEqual([pt(2, 72, 5)])
+    expect(trendDelta(history)).toBeNull()
+  })
+
+  it('garde la comparaison quand le catalogue évolue normalement', () => {
+    const history = [pt(1, 70, 4), pt(2, 72, 5)]
+    expect(trendDelta(history)).toEqual({ prev: pt(1, 70, 4), last: pt(2, 72, 5) })
+  })
+
+  it('tolère une croissance jusqu’à un facteur 2', () => {
+    expect(comparableTail([pt(1, 50), pt(2, 100)])).toHaveLength(2)
+    expect(comparableTail([pt(1, 49), pt(2, 100)])).toHaveLength(1)
+  })
+
+  it('ne remonte pas AU-DELÀ d’une rupture, même si des points anciens sont proches', () => {
+    // 72 → 20000 → 72 : le point le plus ancien redevient comparable en valeur,
+    // mais la série est rompue entre-temps. La reprendre lisserait le trou.
+    const history = [pt(1, 72), pt(2, 20000), pt(3, 72)]
+    expect(comparableTail(history)).toEqual([pt(3, 72)])
+  })
+
+  it('les sparklines suivent le même périmètre que les variations', () => {
+    const s = sparkSeries([pt(1, 20856, 7891), pt(2, 72, 5)])
+    expect(s.products).toEqual([72])
+    expect(s.undercut).toEqual([5])
   })
 })

@@ -372,9 +372,42 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
 
 // --- Séries temporelles ---
 
+/**
+ * Rupture de PÉRIMÈTRE : au-delà de ce facteur, deux analyses ne portent pas sur
+ * le même catalogue et ne se comparent pas.
+ *
+ * ⚠️ Sans ce garde-fou, un catalogue source réduit de 20 856 à 72 produits
+ * affichait « ▼20 784 » sur les tuiles : un chiffre exact, une information
+ * fausse — la variation mesurait le changement de périmètre, pas les prix. Les
+ * KPI, eux, étaient justes ; c'est le rapprochement qui ne l'était pas.
+ */
+const SCOPE_RATIO = 2
+
+/**
+ * Queue d'historique COMPARABLE au dernier point : on remonte tant que le nombre
+ * de produits reste dans un facteur 2. Une analyse sur un autre catalogue coupe
+ * la série au lieu de la fausser.
+ */
+export function comparableTail(history: KpiHistoryPoint[]): KpiHistoryPoint[] {
+  if (history.length === 0) return []
+  const ref = history[history.length - 1].products
+  if (ref <= 0) return history.slice(-1)
+  const out: KpiHistoryPoint[] = []
+  for (let i = history.length - 1; i >= 0; i--) {
+    const p = history[i].products
+    const ratio = p > 0 ? Math.max(p / ref, ref / p) : Infinity
+    if (ratio > SCOPE_RATIO) break
+    out.unshift(history[i])
+  }
+  return out
+}
+
+/** Deux derniers points COMPARABLES. `null` si le périmètre vient de changer :
+ *  mieux vaut pas de variation qu'une variation trompeuse. */
 export function trendDelta(history: KpiHistoryPoint[]): { prev: KpiHistoryPoint; last: KpiHistoryPoint } | null {
-  if (history.length < 2) return null
-  return { prev: history[history.length - 2], last: history[history.length - 1] }
+  const tail = comparableTail(history)
+  if (tail.length < 2) return null
+  return { prev: tail[tail.length - 2], last: tail[tail.length - 1] }
 }
 
 /** Série de l'INDICE TARIF dans le temps. Ne remonte que les points portant `pi`
@@ -386,6 +419,9 @@ export function priceIndexSeries(history: KpiHistoryPoint[]): { at: number[]; va
 
 /** Séries scalaires pour les sparklines des KPIs (dérivées des points d'historique). */
 export function sparkSeries(history: KpiHistoryPoint[]): { undercut: number[]; hold: number[]; products: number[]; index: number[] } {
+  // Même périmètre que les variations : une courbe qui plonge de 20 000 à 72 ne
+  // raconte pas une baisse, mais un changement de catalogue.
+  history = comparableTail(history)
   return {
     undercut: history.map((h) => h.productsUndercut),
     products: history.map((h) => h.products),
