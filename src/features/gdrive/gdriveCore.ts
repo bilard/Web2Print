@@ -419,6 +419,158 @@ async function applySheetColorRules(token: string, spreadsheetId: string, sheet:
   if (!res.ok) throw new Error(`format conditionnel ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
 }
 
+/**
+ * MISE EN FORME du Google Sheet exporté : en-tête habillé et figé, colonnes
+ * ajustées au contenu, valeurs numériques mises en couleur.
+ *
+ * Tout part en UN SEUL `batchUpdate` : chaque aller-retour supplémentaire est une
+ * occasion de plus d'échouer à moitié, et laisse l'utilisateur devant une feuille
+ * à demi formatée.
+ *
+ * ⚠️ `autoResizeDimensions` seul produit des colonnes démesurées dès qu'une
+ * cellule contient une description : on l'accompagne de `WRAP` et on plafonne
+ * ensuite les largeurs excessives — le texte passe alors sur plusieurs lignes au
+ * lieu d'étirer la feuille sur trois écrans.
+ *
+ * ⚠️ Ne concerne QUE le tableau. Le graphe optionnel est un objet flottant ancré
+ * APRÈS les données : toutes les plages ci-dessous s'arrêtent au nombre de
+ * colonnes, il n'est donc ni reformaté ni supprimé. Il peut seulement se décaler
+ * à l'écran si les largeurs changent, ce qui est sans conséquence.
+ */
+const HEADER_BG = { red: 0.16, green: 0.20, blue: 0.36 }
+const MAX_COL_WIDTH_PX = 320
+
+async function applySheetPresentation(token: string, spreadsheetId: string, sheet: ExcelSheet): Promise<void> {
+  const gid = await getFirstSheetGid(token, spreadsheetId)
+  const colCount = sheet.columns.length
+  if (colCount === 0) return
+  const rowCount = sheet.rows.length
+
+  const requests: unknown[] = [
+    // En-tête : fond soutenu, texte blanc en gras, légèrement plus grand, centré
+    // verticalement — et le texte qui passe à la ligne plutôt que d'être tronqué.
+    {
+      repeatCell: {
+        range: { sheetId: gid, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: colCount },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: HEADER_BG,
+            horizontalAlignment: 'LEFT',
+            verticalAlignment: 'MIDDLE',
+            wrapStrategy: 'WRAP',
+            textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 1, green: 1, blue: 1 } },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,wrapStrategy,textFormat)',
+      },
+    },
+    // Corps : passage à la ligne, pour que l'ajustement de largeur ait un sens.
+    ...(rowCount > 0 ? [{
+      repeatCell: {
+        range: { sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: 0, endColumnIndex: colCount },
+        cell: { userEnteredFormat: { wrapStrategy: 'WRAP', verticalAlignment: 'TOP' } },
+        fields: 'userEnteredFormat(wrapStrategy,verticalAlignment)',
+      },
+    }] : []),
+    // En-tête FIGÉ : il reste visible au défilement, et le filtre porte dessus.
+    {
+      updateSheetProperties: {
+        properties: { sheetId: gid, gridProperties: { frozenRowCount: 1 } },
+        fields: 'gridProperties.frozenRowCount',
+      },
+    },
+    { setBasicFilter: { filter: { range: { sheetId: gid, startRowIndex: 0, startColumnIndex: 0, endColumnIndex: colCount } } } },
+    {
+      autoResizeDimensions: {
+        dimensions: { sheetId: gid, dimension: 'COLUMNS', startIndex: 0, endIndex: colCount },
+      },
+    },
+  ]
+
+  const res = await fetch(`${SHEETS_API}/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) throw new Error(`mise en forme ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+
+  await capWideColumns(token, spreadsheetId, gid, colCount)
+}
+
+/** Plafonne les colonnes qu'`autoResizeDimensions` a rendues démesurées.
+ *  Combiné au WRAP posé juste avant, le contenu passe sur plusieurs lignes. */
+/** Colonnes traitées comme des MÉTRIQUES : une échelle de couleur y est lisible.
+ *  `rating` et `checkbox` en sont exclus — leur échelle n'a que deux ou cinq
+ *  valeurs, un dégradé n'y apporte rien. */
+const METRIC_TYPES = new Set(['number', 'currency', 'percent', 'duration'])
+
+/**
+ * Échelle de couleur sur les colonnes chiffrées : rouge (bas) → jaune → vert
+ * (haut), bornes calculées par Google sur les valeurs réelles (MIN/MAX).
+ *
+ * ⚠️ Posée APRÈS `applySheetColorRules`, et sans purge : cette dernière supprime
+ * toutes les règles existantes avant d'ajouter les siennes. Dans l'ordre inverse,
+ * les échelles disparaîtraient sans laisser de trace.
+ */
+async function applyMetricColorScales(token: string, spreadsheetId: string, sheet: ExcelSheet): Promise<void> {
+  const rowCount = sheet.rows.length
+  if (rowCount === 0) return
+  const metricCols = sheet.columns
+    .map((c, i) => ({ c, i }))
+    .filter(({ c }) => METRIC_TYPES.has(c.fieldType) || METRIC_TYPES.has(c.detectedType))
+  if (metricCols.length === 0) return
+
+  const gid = await getFirstSheetGid(token, spreadsheetId)
+  const requests = metricCols.map(({ i }) => ({
+    addConditionalFormatRule: {
+      index: 0,
+      rule: {
+        ranges: [{ sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: i, endColumnIndex: i + 1 }],
+        gradientRule: {
+          minpoint: { color: { red: 0.96, green: 0.80, blue: 0.80 }, type: 'MIN' },
+          midpoint: { color: { red: 1, green: 0.95, blue: 0.75 }, type: 'PERCENTILE', value: '50' },
+          maxpoint: { color: { red: 0.85, green: 0.94, blue: 0.83 }, type: 'MAX' },
+        },
+      },
+    },
+  }))
+  const res = await fetch(`${SHEETS_API}/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) throw new Error(`échelles de couleur ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+}
+
+async function capWideColumns(token: string, spreadsheetId: string, gid: number, colCount: number): Promise<void> {
+  const res = await fetch(
+    `${SHEETS_API}/${spreadsheetId}?fields=sheets(properties(sheetId),data(columnMetadata(pixelSize)))`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+  if (!res.ok) return
+  const json = (await res.json()) as {
+    sheets?: Array<{ properties?: { sheetId?: number }; data?: Array<{ columnMetadata?: Array<{ pixelSize?: number }> }> }>
+  }
+  const widths = json.sheets?.find((s) => s.properties?.sheetId === gid)?.data?.[0]?.columnMetadata ?? []
+  const requests = widths
+    .slice(0, colCount)
+    .map((w, i) => ({ w: w.pixelSize ?? 0, i }))
+    .filter(({ w }) => w > MAX_COL_WIDTH_PX)
+    .map(({ i }) => ({
+      updateDimensionProperties: {
+        range: { sheetId: gid, dimension: 'COLUMNS', startIndex: i, endIndex: i + 1 },
+        properties: { pixelSize: MAX_COL_WIDTH_PX },
+        fields: 'pixelSize',
+      },
+    }))
+  if (requests.length === 0) return
+  await fetch(`${SHEETS_API}/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  }).catch(() => {})
+}
+
 /** Construit un blob XLSX depuis une ExcelSheet (single-sheet workbook).
  *  `formulas` : colonnes ajoutées en fin de tableau comme FORMULES vivantes. */
 async function sheetToXlsxBlob(
@@ -569,7 +721,11 @@ export async function exportSheetToGoogleSheets(
   if (options.chart && sheet.rows.length > 0) {
     await addSheetChart(token, meta.id, sheet, options.formulas, options.chart, options.name)
   }
+  // Ordre imposé : `applySheetColorRules` PURGE les règles existantes avant
+  // d'ajouter les siennes — les échelles doivent donc venir après elle.
+  await applySheetPresentation(token, meta.id, sheet).catch((e) => console.warn('[sheets] mise en forme:', e))
   await applySheetColorRules(token, meta.id, sheet).catch(() => {})
+  await applyMetricColorScales(token, meta.id, sheet).catch((e) => console.warn('[sheets] échelles:', e))
   return meta
 }
 
@@ -633,7 +789,12 @@ export async function updateGoogleSheetById(
   if (chart && sheet.rows.length > 0) {
     await addSheetChart(token, id, sheet, formulas, chart, sheet.name || '')
   }
+  // ⚠️ La mise à jour REMPLACE le contenu du fichier par un XLSX converti : toute
+  // la mise en forme précédente est perdue. On la réapplique, sans quoi la
+  // feuille se dépouillerait à chaque rafraîchissement du node.
+  await applySheetPresentation(token, id, sheet).catch((e) => console.warn('[sheets] mise en forme:', e))
   await applySheetColorRules(token, id, sheet).catch(() => {})
+  await applyMetricColorScales(token, id, sheet).catch((e) => console.warn('[sheets] échelles:', e))
   return meta
 }
 
