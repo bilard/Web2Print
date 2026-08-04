@@ -16,6 +16,9 @@ interface AccessState {
    *  Vide ⇒ chacun sur son espace privé. Ne remplace JAMAIS l'identité : les
    *  secrets et préférences restent sous `users/{user.uid}`. */
   workspaceUid: string
+  /** Workflows auxquels ce compte est limité. VIDE ⇒ aucune restriction.
+   *  ⚠️ Conditionne la FAÇON de lire : voir `listWorkflows`. */
+  allowedWorkflows: string[]
   isOwner: boolean
   /** Compte suspendu par un admin (aucun accès, même avec un rôle). */
   blocked: boolean
@@ -28,7 +31,7 @@ interface AccessState {
   loading: boolean
   /** Flag Firestore users/{uid}.onboardingComplete — lu en piggyback à l'hydratation de l'accès. */
   onboardingComplete: boolean
-  setAccess: (a: { permissions: Set<string>; roleId: string | null; accountId: string; workspaceUid: string; isOwner: boolean; blocked: boolean; usage: UsageCounters; limits: UsageCounters; onboardingComplete: boolean }) => void
+  setAccess: (a: { permissions: Set<string>; roleId: string | null; accountId: string; workspaceUid: string; allowedWorkflows: string[]; isOwner: boolean; blocked: boolean; usage: UsageCounters; limits: UsageCounters; onboardingComplete: boolean }) => void
   setLoading: (loading: boolean) => void
   /** Incrément optimiste des compteurs d'usage (après un import réussi). */
   bumpUsage: (patch: Partial<UsageCounters>) => void
@@ -42,6 +45,7 @@ export const useAccessStore = create<AccessState>((set) => ({
   roleId: null,
   accountId: '',
   workspaceUid: '',
+  allowedWorkflows: [],
   isOwner: false,
   blocked: false,
   usage: emptyUsage(),
@@ -57,5 +61,5 @@ export const useAccessStore = create<AccessState>((set) => ({
     damAssets: Math.max(0, s.usage.damAssets + (patch.damAssets ?? 0)),
   } })),
   setOnboardingComplete: (v) => set({ onboardingComplete: v }),
-  reset: () => set({ permissions: new Set(), roleId: null, accountId: '', workspaceUid: '', isOwner: false, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, loading: true, onboardingComplete: false }),
+  reset: () => set({ permissions: new Set(), roleId: null, accountId: '', workspaceUid: '', allowedWorkflows: [], isOwner: false, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, loading: true, onboardingComplete: false }),
 }))

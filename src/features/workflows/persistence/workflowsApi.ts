@@ -1,3 +1,4 @@
+import { useAccessStore } from '@/stores/access.store'
 import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, updateDoc, query, orderBy, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import type { Workflow, WorkflowFolder } from '../types'
@@ -10,7 +11,25 @@ const col = (uid: string) => collection(db, 'users', uid, 'workflows')
 const folderCol = (uid: string) => collection(db, 'users', uid, 'workflowFolders')
 const templateCol = (uid: string) => collection(db, 'users', uid, 'workflowTemplates')
 
+/**
+ * Workflows visibles par l'utilisateur courant.
+ *
+ * ⚠️ Deux modes, et le second n'est pas une optimisation mais une NÉCESSITÉ :
+ * quand le compte est limité à certains workflows (`users/{uid}.allowedWorkflows`),
+ * une requête de liste est refusée EN BLOC par Firestore — il suffit qu'un seul
+ * document candidat ne satisfasse pas la règle pour que toute la requête tombe
+ * en « Missing or insufficient permissions ». On lit alors les documents
+ * autorisés un par un.
+ */
 export async function listWorkflows(uid: string): Promise<Workflow[]> {
+  const allowed = useAccessStore.getState().allowedWorkflows
+  if (allowed.length > 0) {
+    const docs = await Promise.all(allowed.map((id) => getDoc(doc(col(uid), id))))
+    return docs
+      .filter((d) => d.exists())
+      .map((d) => migrate(d.data() as Workflow))
+      .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+  }
   const snap = await getDocs(query(col(uid), orderBy('updatedAt', 'desc')))
   return snap.docs.map((d) => migrate(d.data() as Workflow))
 }
