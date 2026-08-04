@@ -2,7 +2,7 @@ import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { notify } from '@/lib/notify'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon, BarChart3, BookmarkPlus, Check, Loader2, CircleDot } from 'lucide-react'
+import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon, BarChart3, BookmarkPlus, Check, Loader2, CircleDot, AlertTriangle } from 'lucide-react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { getWorkflow, saveWorkflow } from '../persistence/workflowsApi'
 import { useWorkflowStore, startAutosave } from '../persistence/workflow.store'
@@ -45,6 +45,11 @@ export function WorkflowEditorPage() {
   const pausedNodeId = useRunContext((s) => s.pausedNodeId)
   const canRun = useCan('workflows.run')
   const canEdit = useCan('workflows.edit')
+  // ⚠️ `workflows.edit` seul, pas `create` : l'éditeur travaille TOUJOURS sur un
+  // workflow déjà enregistré (la création se fait depuis la liste). C'est aussi
+  // le droit qui conditionne le bouton « Enregistrer » — les deux doivent
+  // s'accorder, sinon on annonce une sauvegarde possible sans bouton pour la faire.
+  const canSave = canEdit
   const ac = useRunContext((s) => s.abortController)
   const [loading, setLoading] = useState(true)
   const [showGenerate, setShowGenerate] = useState(false)
@@ -145,6 +150,13 @@ export function WorkflowEditorPage() {
   // Sauvegarde manuelle avec confirmation visuelle (succès / erreur).
   const saveNow = async () => {
     if (!uid) return
+    // Sans le droit d'écrire, l'appel partirait quand même et reviendrait en
+    // « Missing or insufficient permissions » : message illisible, et l'utilisateur
+    // croit à une panne. On refuse ici, en expliquant.
+    if (!canSave) {
+      notify.error(t('wfe.readOnly.title'), t('wfe.readOnly.body'))
+      return
+    }
     try {
       await saveWorkflow(uid, wf)
       notify.success(t('wfe.saved'), `« ${wf.name} » a bien été sauvegardé.`)
@@ -193,9 +205,16 @@ export function WorkflowEditorPage() {
             <span className="text-xs text-white/50 shrink-0 flex items-center gap-1.5" title={t('wfe.saving')}>
               <Loader2 className="w-3.5 h-3.5 animate-spin" /> Enregistrement…
             </span>
+          ) : !canSave ? (
+            // ⚠️ Prime sur « non enregistré » : annoncer des modifications en attente
+            // à quelqu'un qui ne pourra jamais les enregistrer est trompeur.
+            <span className="text-xs text-amber-300 shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-md border border-amber-400/30 bg-amber-500/[0.08]"
+              title={t('wfe.readOnly.body')}>
+              <AlertTriangle className="w-3.5 h-3.5" /> {t('wfe.readOnly.badge')}
+            </span>
           ) : dirty ? (
             <span className="text-xs text-amber-400 shrink-0 flex items-center gap-1.5" title={t('wfe.unsaved')}>
-              <CircleDot className="w-3.5 h-3.5" /> Non enregistré
+              <CircleDot className="w-3.5 h-3.5" /> {t('wfe.unsaved.label')}
             </span>
           ) : (
             <span
