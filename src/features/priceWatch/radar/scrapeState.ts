@@ -33,8 +33,10 @@ export interface RadarRunLive {
 }
 
 /** Au-delà du budget de run + marge, un `status: 'running'` est un zombie (process mort
- *  sans écrire sa fin) : on cesse de le croire, sinon « en cours » à vie. */
-const STALE_RUN_MS = 31 * 60_000
+ *  sans écrire sa fin) : on cesse de le croire, sinon « en cours » à vie.
+ *  ⚠️ Partagé avec l'ÉDITEUR (`useServerRunLive`) : deux seuils divergents
+ *  afficheraient deux vérités différentes du même run. */
+export const STALE_RUN_MS = 31 * 60_000
 
 /** Ce qui tourne VRAIMENT côté serveur, et depuis quand plus rien ne tourne. */
 export interface RunPulse {

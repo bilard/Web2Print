@@ -5,12 +5,15 @@ import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useEffect, useRef } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
+import { STALE_RUN_MS } from '@/features/priceWatch/radar/scrapeState'
 import { useRunContext } from './runContext'
 import type { NodeStatus } from '../types'
 
 interface RunLiveDoc {
   runId?: string
   status?: string
+  /** Début du run — sert à repérer un run interrompu resté « en cours ». */
+  startedAt?: number
   nodeStates?: Record<string, NodeStatus>
   logs?: { ts: number; level: 'info' | 'warn' | 'error'; node?: string; msg: string }[]
   nodeOutputs?: Record<string, Record<string, unknown>>
@@ -34,6 +37,18 @@ export function useServerRunLive(workflowId: string | undefined): void {
         // PAS. L'aperçu durable (workflowRuns, toutes sources) montre déjà le dernier run ;
         // ré-hydrater ici écraserait un run CLIENT plus récent par ce run serveur plus ancien.
         // On ne prend la main que pour un run qui DÉMARRE / PROGRESSE pendant la session.
+        // ⚠️ Run ZOMBIE : une Cloud Function interrompue (délai dépassé, mémoire
+        // saturée) laisse `status: 'running'` et des nodes figés en « en cours » —
+        // affichés à l'infini, ce qui fait croire qu'une étape n'aboutit jamais
+        // alors que le run est mort depuis longtemps. La PWA applique déjà ce
+        // seuil ; l'éditeur l'ignorait.
+        const stale = d.status === 'running' && !!d.startedAt && Date.now() - d.startedAt > STALE_RUN_MS
+        if (stale) {
+          isInitial.current = false
+          lastRunId.current = d.runId
+          console.warn('[runLive] run serveur périmé (démarré il y a > 31 min, jamais terminé) — état ignoré')
+          return
+        }
         const terminal = !!d.status && d.status !== 'running' && d.status !== 'pending'
         if (isInitial.current && terminal) {
           isInitial.current = false
