@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ArrowLeft, Users, Shield, Building2, Trash2 } from 'lucide-react'
 import { UsersTab } from './UsersTab'
 import { RolesTab } from './RolesTab'
+import { CompanyMemberPicker } from './CompanyMemberPicker'
+import { useManagedScope } from '@/features/access/useManagedScope'
 import { toast } from 'sonner'
 import { deleteCompany } from '@/features/access/companiesApi'
 import { DEFAULT_ACCOUNT_ID } from '@/features/i18n/accountI18nApi'
@@ -18,6 +20,10 @@ import { t } from '@/lib/i18n'
  */
 export function CompanyDetail({ id, name, members, onBack }: { id: string; name: string; members: number; onBack: () => void }) {
   const [tab, setTab] = useState<'members' | 'roles'>('members')
+  const { isGlobalAdmin } = useManagedScope()
+  // `UsersTab` tient sa propre liste : après un rattachement, la remonter est le
+  // moyen le plus sûr de la relire (pas d'état partagé à synchroniser).
+  const [listVersion, setListVersion] = useState(0)
   const isDefault = id === DEFAULT_ACCOUNT_ID
 
   /** Supprimer une société encore peuplée laisserait ses membres rattachés à un
@@ -64,7 +70,14 @@ export function CompanyDetail({ id, name, members, onBack }: { id: string; name:
           ))}
         </nav>
       </div>
-      {tab === 'members' ? <UsersTab scopeAccountId={id} /> : <RolesTab scopeAccountId={id} />}
+      {tab === 'members' ? (
+        <div className="flex flex-col gap-3">
+          {isGlobalAdmin && (
+            <CompanyMemberPicker accountId={id} onAdded={() => setListVersion((v) => v + 1)} />
+          )}
+          <UsersTab key={listVersion} scopeAccountId={id} />
+        </div>
+      ) : <RolesTab scopeAccountId={id} />}
     </div>
   )
 }
