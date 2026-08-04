@@ -1397,6 +1397,8 @@ export const fr = {
   'wft.create': 'Créer le modèle',
 
   // — Workflows : webhook ————————————————————————————————————————————————
+  'wfw.enableCta': 'Activer le webhook',
+  'wfw.enableFailed': "Le webhook n'a pas pu être activé",
   'wfw.enabled': 'Webhook activé.',
   'wfw.secretRegenerated': 'Secret régénéré — mets à jour tes intégrations.',
   'wfw.copied': '{label} copié.',

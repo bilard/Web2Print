@@ -1,3 +1,4 @@
+import { useIsAdmin } from '@/features/access/useAccess'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Webhook entrant du workflow : bouton dans le header de l'éditeur ouvrant un
 // popover pour activer/désactiver l'URL de déclenchement externe (Zapier, ERP,
@@ -29,6 +30,10 @@ function newSecret(): string {
 export function WebhookPanel({ workflowId }: { workflowId: string }) {
   const { t } = useTranslation()
   const uid = useWorkspaceUid()
+  // Un webhook expose une URL secrète qui déclenche l'exécution SERVEUR du
+  // workflow : réservé à l'administration. Hors admin, la fonctionnalité n'est
+  // pas grisée — elle n'existe pas.
+  const isAdmin = useIsAdmin()
   const [cfg, setCfg] = useState<WebhookDoc | null>(null)
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -46,14 +51,22 @@ export function WebhookPanel({ workflowId }: { workflowId: string }) {
     return () => document.removeEventListener('mousedown', onDown)
   }, [open])
 
-  if (!uid) return null
+  if (!uid || !isAdmin) return null
 
   const url = `${WEBHOOK_BASE}?id=${workflowId}`
   const ref = doc(db, 'workflowWebhooks', workflowId)
 
   const enable = async () => {
     const secret = cfg?.secret ?? newSecret()
-    await setDoc(ref, { uid, secret, enabled: true, createdAt: serverTimestamp() }, { merge: true })
+    try {
+      await setDoc(ref, { uid, secret, enabled: true, createdAt: serverTimestamp() }, { merge: true })
+    } catch (e) {
+      // Sans ce garde-fou, un refus serveur partait en promesse rejetée non
+      // gérée : rien à l'écran, une erreur illisible dans la console.
+      console.warn('[WebhookPanel] activation refusée:', e)
+      toast.error(t('wfw.enableFailed'), { description: e instanceof Error ? e.message : String(e) })
+      return
+    }
     // Bascule optimiste : ne pas dépendre du listener pour afficher l'URL + secret.
     setCfg((prev) => ({ ...(prev ?? { uid, secret }), secret, enabled: true }))
     toast.success(t('wfw.enabled'))
@@ -97,7 +110,7 @@ export function WebhookPanel({ workflowId }: { workflowId: string }) {
                 onClick={enable}
                 className="w-full px-3 py-2 rounded-md bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm"
               >
-                Activer le webhook
+                {t('wfw.enableCta')}
               </button>
             </>
           ) : (

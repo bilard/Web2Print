@@ -1328,6 +1328,8 @@ export const en: Record<TranslationKey, string> = {
   'wft.update': 'Update',
   'wft.create': 'Create the template',
   // — Workflows : webhook ————————————————————————————————————————————————
+  'wfw.enableCta': 'Enable the webhook',
+  'wfw.enableFailed': 'The webhook could not be enabled',
   'wfw.enabled': 'Webhook enabled.',
   'wfw.secretRegenerated': 'Secret regenerated — update your integrations.',
   'wfw.copied': '{label} copied.',

@@ -1327,6 +1327,8 @@ export const es: Record<TranslationKey, string> = {
   'wft.update': 'Actualizar',
   'wft.create': 'Crear la plantilla',
   // — Workflows : webhook ————————————————————————————————————————————————
+  'wfw.enableCta': 'Activar el webhook',
+  'wfw.enableFailed': 'No se ha podido activar el webhook',
   'wfw.enabled': 'Webhook activado.',
   'wfw.secretRegenerated': 'Secreto regenerado — actualice sus integraciones.',
   'wfw.copied': '{label} copiado.',
