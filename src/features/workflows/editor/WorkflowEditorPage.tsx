@@ -218,7 +218,7 @@ export function WorkflowEditorPage() {
           {/* État de sauvegarde CLAIR : en cours / non enregistré (ambre) / enregistré (vert). */}
           {saving ? (
             <span className="text-xs text-white/50 shrink-0 flex items-center gap-1.5" title={t('wfe.saving')}>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Enregistrement…
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('wfe.savingLabel')}
             </span>
           ) : !canSave ? (
             // ⚠️ Prime sur « non enregistré » : annoncer des modifications en attente

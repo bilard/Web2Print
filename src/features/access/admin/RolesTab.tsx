@@ -123,7 +123,7 @@ export function RolesTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
               est refusé par `firestore.rules` à un administrateur d'entreprise. */}
 
           <button onClick={save} disabled={!editing.name.trim()} className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-[#fff] text-sm px-3 py-2 rounded-lg">
-            <Save className="w-4 h-4" /> Enregistrer
+            <Save className="w-4 h-4" /> {t('ac.save')}
           </button>
           <CloseButton onClick={() => setEditing(null)} />
         </div>
@@ -160,7 +160,7 @@ export function RolesTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
         {/* Barre d'outils : compteur + mode d'affichage + tout déplier/replier */}
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-[11px] text-white/35 mr-auto">
-            <span className="text-white/70 font-medium">{editing.permissions.size}</span> permission(s) · active d'abord l'accès au module.
+            <span className="text-white/70 font-medium">{editing.permissions.size}</span> {t('ac.permCountHint')}
           </p>
           <button onClick={expandAll} title={t('ac.expandAll')} className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsUpDown className="w-3.5 h-3.5" /></button>
           <button onClick={collapseAll} title="Tout replier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsDownUp className="w-3.5 h-3.5" /></button>
@@ -204,7 +204,7 @@ export function RolesTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
   return (
     <div className="flex flex-col gap-2">
       <button onClick={startNew} className="self-start flex items-center gap-1.5 text-sm text-indigo-300 hover:text-indigo-200">
-        <Plus className="w-4 h-4" /> Nouveau rôle
+        <Plus className="w-4 h-4" /> {t('ac.newRole')}
       </button>
       {roles.map((r) => (
         <div key={r.id} onClick={() => startEdit(r)} role="button" tabIndex={0}
@@ -213,7 +213,7 @@ export function RolesTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
           <div className="flex flex-col items-start text-left min-w-0">
             <span className="text-sm text-white/90">{r.name}</span>
             <span className="text-[10px] text-white/30 flex items-center gap-1.5">
-              {r.permissions.length} permission(s)
+              {t('ac.permCount', { n: r.permissions.length })}
               {isGlobalAdmin && <span className="flex items-center gap-1 text-violet-300/70"><Building2 className="w-2.5 h-2.5" />{r.accountIds.join(' · ')}</span>}
             </span>
           </div>
