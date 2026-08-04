@@ -85,6 +85,13 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => {
       try {
         await saveWorkflow(uid, cur)
         set({ dirty: false, lastSavedAt: Date.now() })
+      } catch (e) {
+        // ⚠️ Le rejet DOIT être absorbé ici : `flush` est appelée par un timer
+        // d'enregistrement automatique, sans personne pour l'attendre — une
+        // promesse rejetée y devient un « Unhandled Promise Rejection » opaque.
+        // `dirty` reste vrai : les modifications ne sont pas perdues à l'écran et
+        // une tentative manuelle reste possible.
+        console.warn('[workflow.store] enregistrement refusé:', e)
       } finally {
         set({ saving: false })
       }

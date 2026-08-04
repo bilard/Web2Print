@@ -98,8 +98,12 @@ export function WorkflowEditorPage() {
 
   useEffect(() => {
     if (!uid) return
+    // ⚠️ Sans le droit d'enregistrer, l'enregistrement automatique repartait toutes
+    // les 1,5 s : autant d'écritures refusées par le serveur, en boucle et sans
+    // rien afficher. On ne le démarre pas — l'alerte s'en charge une seule fois.
+    if (!canSave) return
     return startAutosave(uid)
-  }, [uid])
+  }, [uid, canSave])
 
   const goToList = useCallback(() => {
     nav('/dashboard', { state: { section: 'workflows' } })
