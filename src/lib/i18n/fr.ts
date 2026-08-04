@@ -1327,6 +1327,8 @@ export const fr = {
   'wfe.name': 'Nom du workflow',
   'wfe.saving': 'Enregistrement en cours',
   'wfe.unsaved.label': 'Non enregistré',
+  'wfe.readOnly.keepBrowsing': 'Vous pouvez continuer à consulter et à exécuter le workflow ; seules les modifications ne seront pas conservées.',
+  'wfe.readOnly.understood': "J'ai compris",
   'wfe.readOnly.badge': 'Lecture seule',
   'wfe.readOnly.title': 'Enregistrement impossible',
   'wfe.readOnly.body': "Votre rôle ne permet pas de modifier les workflows. Vos changements resteront à l'écran mais ne seront pas conservés — demandez le droit « Éditer / enregistrer un workflow ».",

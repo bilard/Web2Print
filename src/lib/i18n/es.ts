@@ -1263,6 +1263,8 @@ export const es: Record<TranslationKey, string> = {
   'wfe.name': 'Nombre del workflow',
   'wfe.saving': 'Guardando',
   'wfe.unsaved.label': 'Sin guardar',
+  'wfe.readOnly.keepBrowsing': 'Puede seguir consultando y ejecutando el workflow; solo los cambios no se conservarán.',
+  'wfe.readOnly.understood': 'Entendido',
   'wfe.readOnly.badge': 'Solo lectura',
   'wfe.readOnly.title': 'No se puede guardar',
   'wfe.readOnly.body': 'Su rol no permite modificar los workflows. Sus cambios permanecen en pantalla pero no se conservarán: solicite el derecho «Editar / guardar un workflow».',

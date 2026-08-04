@@ -25,6 +25,7 @@ import { DataPreviewPanel } from './DataPreviewPanel'
 import { CronStatusPanel } from './CronStatusPanel'
 import { useServerRunLive } from '../runtime/useServerRunLive'
 import { WebhookPanel } from './WebhookPanel'
+import { ReadOnlyWorkflowDialog } from './ReadOnlyWorkflowDialog'
 import { PromptToFlowModal } from '../promptToFlow/PromptToFlowModal'
 import { SaveAsTemplateDialog } from './SaveAsTemplateDialog'
 import { useCan } from '@/features/access/useAccess'
@@ -50,6 +51,16 @@ export function WorkflowEditorPage() {
   // le droit qui conditionne le bouton « Enregistrer » — les deux doivent
   // s'accorder, sinon on annonce une sauvegarde possible sans bouton pour la faire.
   const canSave = canEdit
+  // Alerte UNE fois par ouverture, au moment où l'utilisateur modifie quelque
+  // chose : l'ouvrir dès l'arrivée interromprait une simple consultation.
+  const [readOnlyWarned, setReadOnlyWarned] = useState(false)
+  const [showReadOnly, setShowReadOnly] = useState(false)
+  useEffect(() => {
+    if (dirty && !canSave && !readOnlyWarned) {
+      setShowReadOnly(true)
+      setReadOnlyWarned(true)
+    }
+  }, [dirty, canSave, readOnlyWarned])
   const ac = useRunContext((s) => s.abortController)
   const [loading, setLoading] = useState(true)
   const [showGenerate, setShowGenerate] = useState(false)
@@ -317,6 +328,7 @@ export function WorkflowEditorPage() {
         </div>
       </div>
         <TourLauncher tourId="workflow" />
+        {showReadOnly && <ReadOnlyWorkflowDialog onClose={() => setShowReadOnly(false)} />}
         {showGenerate && <PromptToFlowModal onClose={() => setShowGenerate(false)} />}
         {showSaveTemplate && uid && (
           <SaveAsTemplateDialog workflow={wf} uid={uid} onClose={() => setShowSaveTemplate(false)} />

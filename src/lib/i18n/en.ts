@@ -1264,6 +1264,8 @@ export const en: Record<TranslationKey, string> = {
   'wfe.name': 'Workflow name',
   'wfe.saving': 'Saving',
   'wfe.unsaved.label': 'Unsaved',
+  'wfe.readOnly.keepBrowsing': 'You can keep viewing and running the workflow; only changes will not be kept.',
+  'wfe.readOnly.understood': 'Got it',
   'wfe.readOnly.badge': 'Read-only',
   'wfe.readOnly.title': 'Cannot save',
   'wfe.readOnly.body': 'Your role does not allow editing workflows. Your changes stay on screen but will not be kept — ask for the “Edit / save a workflow” right.',
