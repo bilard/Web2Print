@@ -2430,6 +2430,8 @@ export const fr = {
   'run.gs.formulasIgnored': 'Colonnes formule ignorées : {message}',
   'run.gs.formulasAdded': '{count} colonne(s) formule ajoutée(s).',
   'run.gs.formatIgnored': 'Formatage colonnes ignoré : {message}',
+  'run.gs.styled': 'Tableau mis en forme (en-tête figé, colonnes ajustées).',
+  'run.gs.styleIgnored': 'Mise en forme ignorée : {message}',
   'run.gs.condColorsIgnored': 'Couleurs conditionnelles ignorées : {message}',
   'run.gs.gridTrimmed': 'Grille ajustée : {count} cellule(s) rendue(s) au classeur.',
   'run.gs.gridTrimIgnored': 'Ajustement de la grille ignoré : {message}',

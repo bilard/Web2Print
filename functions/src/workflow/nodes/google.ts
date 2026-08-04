@@ -219,6 +219,117 @@ async function writeValues(token: string, id: string, title: string, matrix: (st
 }
 
 /** Applique un numberFormat par colonne (ligne d'en-tête exclue). Non bloquant. */
+/** Colonnes traitées comme des MÉTRIQUES (échelle de couleur lisible). */
+const METRIC_TYPES = new Set(['number', 'currency', 'percent', 'duration'])
+const HEADER_BG = { red: 0.16, green: 0.20, blue: 0.36 }
+const MAX_COL_WIDTH_PX = 320
+
+/**
+ * MISE EN FORME du tableau : en-tête habillé et FIGÉ, colonnes ajustées au
+ * contenu avec passage à la ligne, échelle de couleur sur les colonnes chiffrées.
+ *
+ * ⚠️ JUMEAU de `applySheetPresentation` / `applyMetricColorScales`
+ * (`src/features/gdrive/gdriveCore.ts`) : un workflow lancé depuis le navigateur
+ * passe par le client, le même workflow lancé par le cron ou « Lancer (serveur) »
+ * passe ICI. Toute évolution de l'un doit être reportée sur l'autre, sinon le
+ * rendu dépend de qui a déclenché l'export — exactement le symptôme qui a fait
+ * croire que la mise en forme n'était pas déployée.
+ *
+ * Ne concerne QUE le tableau : le graphe est un objet flottant ancré après les
+ * données, et toutes les plages s'arrêtent au nombre de colonnes.
+ */
+async function applyPresentation(
+  token: string, id: string, gid: number, colCount: number, rowCount: number,
+  metricColumnIndexes: number[],
+): Promise<void> {
+  if (colCount === 0) return
+  const requests: unknown[] = [
+    {
+      repeatCell: {
+        range: { sheetId: gid, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: colCount },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: HEADER_BG,
+            horizontalAlignment: 'LEFT',
+            verticalAlignment: 'MIDDLE',
+            wrapStrategy: 'WRAP',
+            textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 1, green: 1, blue: 1 } },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,wrapStrategy,textFormat)',
+      },
+    },
+    ...(rowCount > 0 ? [{
+      repeatCell: {
+        range: { sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: 0, endColumnIndex: colCount },
+        cell: { userEnteredFormat: { wrapStrategy: 'WRAP', verticalAlignment: 'TOP' } },
+        fields: 'userEnteredFormat(wrapStrategy,verticalAlignment)',
+      },
+    }] : []),
+    {
+      updateSheetProperties: {
+        properties: { sheetId: gid, gridProperties: { frozenRowCount: 1 } },
+        fields: 'gridProperties.frozenRowCount',
+      },
+    },
+    { setBasicFilter: { filter: { range: { sheetId: gid, startRowIndex: 0, startColumnIndex: 0, endColumnIndex: colCount } } } },
+    { autoResizeDimensions: { dimensions: { sheetId: gid, dimension: 'COLUMNS', startIndex: 0, endIndex: colCount } } },
+    // Échelles de couleur : posées APRÈS `applyColorRules`, qui purge les règles
+    // existantes — dans l'ordre inverse elles disparaîtraient sans trace.
+    ...(rowCount > 0 ? metricColumnIndexes.map((i) => ({
+      addConditionalFormatRule: {
+        index: 0,
+        rule: {
+          ranges: [{ sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: i, endColumnIndex: i + 1 }],
+          gradientRule: {
+            minpoint: { color: { red: 0.96, green: 0.80, blue: 0.80 }, type: 'MIN' },
+            midpoint: { color: { red: 1, green: 0.95, blue: 0.75 }, type: 'PERCENTILE', value: '50' },
+            maxpoint: { color: { red: 0.85, green: 0.94, blue: 0.83 }, type: 'MAX' },
+          },
+        },
+      },
+    })) : []),
+  ]
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) throw new Error(`batchUpdate ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  await capWideColumnsServer(token, id, gid, colCount)
+}
+
+/** Ramène à 320 px les colonnes qu'`autoResizeDimensions` a rendues démesurées.
+ *  Avec le WRAP posé juste avant, le contenu passe sur plusieurs lignes. */
+async function capWideColumnsServer(token: string, id: string, gid: number, colCount: number): Promise<void> {
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets(properties(sheetId),data(columnMetadata(pixelSize)))`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+  if (!res.ok) return
+  const json = (await res.json()) as {
+    sheets?: Array<{ properties?: { sheetId?: number }; data?: Array<{ columnMetadata?: Array<{ pixelSize?: number }> }> }>
+  }
+  const widths = json.sheets?.find((x) => x.properties?.sheetId === gid)?.data?.[0]?.columnMetadata ?? []
+  const requests = widths
+    .slice(0, colCount)
+    .map((w, i) => ({ w: w.pixelSize ?? 0, i }))
+    .filter(({ w }) => w > MAX_COL_WIDTH_PX)
+    .map(({ i }) => ({
+      updateDimensionProperties: {
+        range: { sheetId: gid, dimension: 'COLUMNS', startIndex: i, endIndex: i + 1 },
+        properties: { pixelSize: MAX_COL_WIDTH_PX },
+        fields: 'pixelSize',
+      },
+    }))
+  if (requests.length === 0) return
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  }).catch(() => {})
+}
+
 async function applyNumberFormats(token: string, id: string, gid: number, formats: (GFormat | null)[]): Promise<void> {
   const requests = formats.flatMap((f, i) =>
     f
@@ -548,6 +659,16 @@ registerServerNode({
         ctx.log('warn', t(ctx.locale, 'run.gs.condColorsIgnored', { message: e instanceof Error ? e.message : String(e) })),
       )
     }
+
+    // Mise en forme du TABLEAU : après les couleurs conditionnelles, qui purgent
+    // les règles existantes. Non bloquante — l'export a déjà réussi.
+    const metricIdx = (sheet.columns ?? [])
+      .map((c, i) => ({ c: c as { fieldType?: string; detectedType?: string }, i }))
+      .filter(({ c }) => METRIC_TYPES.has(String(c.fieldType)) || METRIC_TYPES.has(String(c.detectedType)))
+      .map(({ i }) => i)
+    await applyPresentation(token, id, gid, keys.length + formulas.length, sheet.rows.length, metricIdx)
+      .then(() => ctx.log('info', t(ctx.locale, 'run.gs.styled')))
+      .catch((e) => ctx.log('warn', t(ctx.locale, 'run.gs.styleIgnored', { message: e instanceof Error ? e.message : String(e) })))
 
     // Rend au classeur les cellules des exports PRÉCÉDENTS (grille conservée par Google
     // même après `values:clear`) — sans quoi le quota de 10 M finit par bloquer l'export.

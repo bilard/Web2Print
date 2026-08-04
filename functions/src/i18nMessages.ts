@@ -512,6 +512,8 @@ const MESSAGES = {
     fr: 'Ajustement de la grille ignoré : {message}',
     en: 'Grid trimming skipped: {message}',
   },
+  'run.gs.styled': { fr: 'Tableau mis en forme (en-tête figé, colonnes ajustées).', en: 'Table styled (frozen header, fitted columns).' },
+  'run.gs.styleIgnored': { fr: 'Mise en forme ignorée : {message}', en: 'Styling skipped: {message}' },
   'run.gs.chartInserted': { fr: 'Graphique inséré.', en: 'Chart inserted.' },
   'run.gs.chartIgnored': { fr: 'Graphique ignoré : {message}', en: 'Chart skipped: {message}' },
   'run.gs.chartSkipped': {
