@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAccessStore } from '@/stores/access.store'
@@ -8,7 +8,18 @@ import { computeEffectivePermissions } from './computePermissions'
 import { DEMO_PERMISSION, DEMO_LIMITS, type UsageCounters } from './permissions'
 import { readUsage, emptyUsage } from './usage'
 
-/** Hydrate les permissions effectives au login (lit users/{uid} + le doc rôle). */
+/**
+ * Hydrate les permissions effectives (lit `users/{uid}` + le doc rôle).
+ *
+ * ⚠️ ÉCOUTEUR temps réel, pas une lecture unique : un changement de rôle décidé
+ * par un administrateur doit atteindre l'intéressé SANS qu'il recharge. En
+ * lecture unique, il gardait ses anciens droits toute la session — on croyait le
+ * rôle mal appliqué alors qu'il n'avait simplement pas été relu.
+ *
+ * Le doc rôle, lui, reste lu ponctuellement à chaque notification : modifier les
+ * permissions d'un rôle est rare, et un second écouteur par rôle doublerait les
+ * abonnements sans bénéfice.
+ */
 export function useAccessInit() {
   const user = useAuthStore((s) => s.user)
   const setAccess = useAccessStore((s) => s.setAccess)
@@ -19,10 +30,8 @@ export function useAccessInit() {
     let cancelled = false
     const isOwner = isOwnerEmail(user.email)
 
-    ;(async () => {
+    const apply = async (data: Record<string, unknown>) => {
       try {
-        const userSnap = await getDoc(doc(db, 'users', user.uid))
-        const data = userSnap.data() ?? {}
         const roleId = (data.accessRoleId as string | undefined) ?? null
         const accountId = (data.accountId as string | undefined) ?? ''
         const grants = (data.accessGrants as string[] | undefined) ?? []
@@ -65,9 +74,20 @@ export function useAccessInit() {
         console.warn('[useAccessInit] load failed:', e)
         setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, accountId: '', isOwner, blocked: false, usage: emptyUsage(), limits: { ...DEMO_LIMITS }, onboardingComplete: false })
       }
-    })()
+    }
 
-    return () => { cancelled = true }
+    const unsub = onSnapshot(
+      doc(db, 'users', user.uid),
+      (snap) => { void apply(snap.data() ?? {}) },
+      (e) => {
+        // L'écouteur tombe (droits, réseau) → repli sur une lecture unique plutôt
+        // que de laisser l'utilisateur sans aucune permission.
+        console.warn('[useAccessInit] écouteur interrompu, repli en lecture unique:', e)
+        void getDoc(doc(db, 'users', user.uid)).then((snap) => { void apply(snap.data() ?? {}) })
+      },
+    )
+
+    return () => { cancelled = true; unsub() }
   }, [user, setAccess, reset])
 }
 
