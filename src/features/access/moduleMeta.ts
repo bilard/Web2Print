@@ -3,6 +3,7 @@
 import {
   Library, Upload, Image as ImageIcon, FileSpreadsheet, FolderTree,
   Globe, Workflow, Film, MessageSquare, Send, Settings, Shield, TrendingUpDown,
+  BarChart3, Sparkles, Tag, BookText, Gauge,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -32,20 +33,29 @@ const MODULE_META: Record<string, ModuleMeta> = {
   'Scraping':     { icon: Globe,           dot: 'bg-indigo-500/15 text-indigo-300', chipOn: 'bg-indigo-500/20 border-indigo-500/50 text-indigo-100', bar: 'bg-indigo-500', text: 'text-indigo-300' },
   'Workflows':    { icon: Workflow,        dot: 'bg-violet-500/15 text-violet-300', chipOn: 'bg-violet-500/20 border-violet-500/50 text-violet-100', bar: 'bg-violet-500', text: 'text-violet-300' },
   'Veille tarifaire': { icon: TrendingUpDown, dot: 'bg-orange-500/15 text-orange-300', chipOn: 'bg-orange-500/20 border-orange-500/50 text-orange-100', bar: 'bg-orange-500', text: 'text-orange-300' },
+  'Insights fabricant': { icon: BarChart3,   dot: 'bg-indigo-500/15 text-indigo-300', chipOn: 'bg-indigo-500/20 border-indigo-500/50 text-indigo-100', bar: 'bg-indigo-500', text: 'text-indigo-300' },
+  'Démo express': { icon: Sparkles,        dot: 'bg-lime-500/15 text-lime-300',   chipOn: 'bg-lime-500/20 border-lime-500/50 text-lime-100',      bar: 'bg-lime-500',    text: 'text-lime-300' },
+  'Création studio': { icon: Tag,          dot: 'bg-rose-500/15 text-rose-300',   chipOn: 'bg-rose-500/20 border-rose-500/50 text-rose-100',      bar: 'bg-rose-500',    text: 'text-rose-300' },
+  'Catalogue studio': { icon: BookText,    dot: 'bg-cyan-500/15 text-cyan-300',   chipOn: 'bg-cyan-500/20 border-cyan-500/50 text-cyan-100',      bar: 'bg-cyan-500',    text: 'text-cyan-300' },
   'Animation':    { icon: Film,            dot: 'bg-fuchsia-500/15 text-fuchsia-300', chipOn: 'bg-fuchsia-500/20 border-fuchsia-500/50 text-fuchsia-100', bar: 'bg-fuchsia-500', text: 'text-fuchsia-300' },
   'Chat IA':      { icon: MessageSquare,   dot: 'bg-cyan-500/15 text-cyan-300',   chipOn: 'bg-cyan-500/20 border-cyan-500/50 text-cyan-100',      bar: 'bg-cyan-500',    text: 'text-cyan-300' },
   'Telegram':     { icon: Send,            dot: 'bg-blue-500/15 text-blue-300',   chipOn: 'bg-blue-500/20 border-blue-500/50 text-blue-100',      bar: 'bg-blue-500',    text: 'text-blue-300' },
   'Paramètres':   { icon: Settings,        dot: 'bg-slate-500/20 text-slate-300', chipOn: 'bg-slate-500/25 border-slate-400/50 text-slate-100',   bar: 'bg-slate-400',   text: 'text-slate-300' },
+  // Marqueur de compte plafonné (quotas), pas un module de navigation.
+  'Démo':         { icon: Gauge,           dot: 'bg-amber-500/15 text-amber-300', chipOn: 'bg-amber-500/20 border-amber-500/50 text-amber-100',   bar: 'bg-amber-500',   text: 'text-amber-300' },
 }
 
 export function moduleMeta(module: string): ModuleMeta {
   return MODULE_META[module] ?? FALLBACK
 }
 
-/** Ordre d'affichage = ordre de navigation de l'app (barre latérale). */
+/** Ordre d'affichage = ordre de navigation de l'app (barre latérale).
+ *  ⚠️ Un module ABSENT d'ici tombe en fin de liste (999) : le compléter à chaque
+ *  nouveau groupe de permissions, sinon il s'échoue en bas de la matrice. */
 const MODULE_ORDER = [
-  'Import', 'Bibliothèque', 'DAM', 'PIM', 'Taxonomies', 'Scraping',
-  'Workflows', 'Veille tarifaire', 'Telegram', 'Animation', 'Chat IA', 'Paramètres',
+  'Import', 'Bibliothèque', 'DAM', 'PIM', 'Insights fabricant', 'Taxonomies', 'Scraping',
+  'Veille tarifaire', 'Démo express', 'Création studio', 'Catalogue studio', 'Animation',
+  'Workflows', 'Chat IA', 'Telegram', 'Paramètres', 'Démo',
 ]
 
 /** Entrées d'un Record groupé par module, triées selon l'ordre de navigation. */

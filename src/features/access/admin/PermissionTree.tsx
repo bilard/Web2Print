@@ -1,5 +1,6 @@
+import { Fragment } from 'react'
 import { ChevronRight, Check, Lock } from 'lucide-react'
-import { permissionParent, permissionLabel, type PermissionDef } from '@/features/access/permissions'
+import { groupModulePermissions, permissionLabel, type PermissionDef } from '@/features/access/permissions'
 import { moduleMeta, type ModuleMeta } from '@/features/access/moduleMeta'
 import { useThemeStore } from '@/stores/theme.store'
 import { t } from '@/lib/i18n'
@@ -26,11 +27,11 @@ export function PermissionTree({
       {entries.map(([module, defs]) => {
         const m = moduleMeta(module)
         const Icon = m.icon
-        const viewDef = defs.find((d) => permissionParent(d.key) === null)
-        const childDefs = defs.filter((d) => permissionParent(d.key) !== null)
+        // ⚠️ Un module peut porter PLUSIEURS racines (« Scraping » = modèles + hub) :
+        // le découpage vit dans `permissions.ts` et est couvert par un test.
+        const groups = groupModulePermissions(defs)
         const sel = defs.filter((d) => isSelected(d.key)).length
         const open = openSet.has(module)
-        const viewOn = viewDef ? isSelected(viewDef.key) : true
         return (
           <div key={module} className="border-b border-white/[0.05] last:border-0">
             <button onClick={() => onToggleModule(module)}
@@ -43,12 +44,19 @@ export function PermissionTree({
             </button>
             {open && (
               <div className="ml-[1.45rem] pl-3 border-l border-white/[0.08] pb-2 flex flex-col gap-0.5">
-                {viewDef && <TreeLeaf def={viewDef} on={viewOn} locked={false} accent={m} onClick={() => onToggle(viewDef.key)} />}
-                {childDefs.map((d) => (
-                  <TreeLeaf key={d.key} def={d} on={isSelected(d.key)} locked={!viewOn} accent={m}
-                    lockHint={viewDef ? permissionLabel(viewDef.key) : undefined}
-                    onClick={() => onToggle(d.key)} />
-                ))}
+                {groups.map(({ root, children }) => {
+                  const rootOn = root ? isSelected(root.key) : true
+                  return (
+                    <Fragment key={root?.key ?? '__orphans__'}>
+                      {root && <TreeLeaf def={root} on={rootOn} locked={false} accent={m} onClick={() => onToggle(root.key)} />}
+                      {children.map((d) => (
+                        <TreeLeaf key={d.key} def={d} on={isSelected(d.key)} locked={!rootOn} accent={m}
+                          lockHint={root ? permissionLabel(root.key) : undefined}
+                          onClick={() => onToggle(d.key)} />
+                      ))}
+                    </Fragment>
+                  )
+                })}
               </div>
             )}
           </div>

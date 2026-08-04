@@ -31,7 +31,7 @@ import { useHelpStore } from '@/features/help/help.store'
 import { useAccessStore } from '@/stores/access.store'
 import { TourLauncher } from '@/features/tour/TourLauncher'
 import { registerTourSectionNavigator } from '@/features/tour/tour.store'
-import { MODULE_ITEMS as menuItems, SECTION_PERMISSION, groupModules, type Section } from '@/features/navigation/modules'
+import { MODULE_ITEMS as menuItems, canSeeModule, groupModules, type Section } from '@/features/navigation/modules'
 import { useTranslation } from '@/lib/i18n'
 import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher'
 import { ModuleTree } from '@/features/navigation/ModuleTree'
@@ -68,7 +68,17 @@ export default function DashboardPage() {
   const querySection = new URLSearchParams(location.search).get('section') as Section | null
   const initialSection =
     (location.state as { section?: Section } | null)?.section ?? querySection ?? 'library'
-  const [activeSection, setActiveSection] = useState<Section>(initialSection)
+  const [requestedSection, setActiveSection] = useState<Section>(initialSection)
+  // ⚠️ Le filtrage vit dans `modules.ts` (source unique) : une copie locale avait
+  // déjà laissé fuiter « Finances » vers tous les rôles.
+  const canSee = (id: Section) => canSeeModule(id, isAdmin, permissions)
+  const visibleMenuItems = menuItems.filter((m) => canSee(m.id))
+  // La section par défaut ('library') et les deep-links peuvent viser un module
+  // interdit : sans repli, l'écran s'ouvrirait VIDE (aucune branche de rendu ne
+  // matche). On retombe sur le premier module réellement accessible au rôle.
+  const activeSection: Section = canSee(requestedSection)
+    ? requestedSection
+    : (visibleMenuItems[0]?.id ?? requestedSection)
   // Deep-link par URL (bookmarkable) : `?section=access&intent=access:tab:analytics`
   // ouvre directement le module et son onglet. Appliqué une fois au montage.
   useEffect(() => {
@@ -333,12 +343,6 @@ export default function DashboardPage() {
   if (blocked) return <PendingAccessScreen blocked />
   if (pending) return <PendingAccessScreen />
 
-  const canSee = (id: Section) => {
-    if (id === 'access') return isAdmin
-    const perm = SECTION_PERMISSION[id]
-    return isAdmin || !perm || permissions.has(perm)
-  }
-  const visibleMenuItems = menuItems.filter((m) => canSee(m.id))
   // Libellé du module ouvert, pour l'`aria-label` de la zone de contenu.
   const activeModule = menuItems.find((m) => m.id === activeSection)
   const activeLabel = activeModule ? t(activeModule.labelKey) : undefined
@@ -769,6 +773,7 @@ export default function DashboardPage() {
                   <Library className="w-16 h-16 opacity-20" aria-hidden="true" />
                   <p className="text-lg font-medium text-white/30">{t('library.empty.title')}</p>
                   <p className="text-sm text-white/20">{t('library.empty.subtitle')}</p>
+                  {canSee('blank') && (
                   <button
                     onClick={() => setActiveSection('blank')}
                     className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-[#fff] font-medium px-6 py-2.5 rounded-lg transition-colors text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -776,6 +781,7 @@ export default function DashboardPage() {
                     <Plus className="w-4 h-4" aria-hidden="true" />
                     {t('dashboard.createDocument')}
                   </button>
+                  )}
                 </div>
               )}
 
@@ -876,7 +882,7 @@ export default function DashboardPage() {
           ) : (
             <div className="max-w-6xl mx-auto">
               {/* ─── NOUVEAU DOCUMENT VIERGE ─── */}
-              {activeSection === 'blank' && (
+              {activeSection === 'blank' && canSee('blank') && (
                 <div data-tour="section-blank">
                   <h1 className="text-xl font-bold mb-6">{t('dashboard.createDocument')}</h1>
                   <NewDocumentPanel

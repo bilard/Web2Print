@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { computeEffectivePermissions, isPending } from './computePermissions'
-import { ADMIN_PERMISSION, ALL_PERMISSION_KEYS } from './permissions'
+import {
+  ADMIN_PERMISSION, ALL_PERMISSION_KEYS, MODULE_LABEL, PERMISSIONS,
+  groupModulePermissions, permissionsByModule,
+} from './permissions'
+import {
+  ADMIN_ONLY_SECTIONS, MODULE_ITEMS, SECTION_PERMISSION, canSeeModule,
+} from '@/features/navigation/modules'
+import { moduleMeta } from './moduleMeta'
+import { fr } from '@/lib/i18n/fr'
 
 describe('computeEffectivePermissions', () => {
   it('owner → toutes les permissions + admin', () => {
@@ -34,5 +42,64 @@ describe('isPending', () => {
   })
   it('owner → jamais pending', () => {
     expect(isPending({ isOwner: true, accessRoleId: null })).toBe(false)
+  })
+})
+
+/**
+ * CLIQUET — un module de navigation sans permission `.view` est INVISIBLEMENT
+ * ouvert à tous : `canSeeModule` applique « pas de clé ⇒ visible ». C'est ce qui
+ * a laissé « Nouveau document » et « Démo express » apparaître pour un rôle qui
+ * ne portait que `priceWatch.view`. Ces tests ferment la porte.
+ */
+describe('gouvernance des modules', () => {
+  it('chaque module est gaté par une permission OU réservé à l\'admin', () => {
+    const ungoverned = MODULE_ITEMS
+      .filter((m) => !ADMIN_ONLY_SECTIONS.includes(m.id) && !SECTION_PERMISSION[m.id])
+      .map((m) => m.id)
+    expect(ungoverned, 'ajouter une entrée dans SECTION_PERMISSION (ou ADMIN_ONLY_SECTIONS)').toEqual([])
+  })
+
+  it('les clés de SECTION_PERMISSION existent dans le catalogue', () => {
+    const unknown = Object.values(SECTION_PERMISSION).filter((k) => !ALL_PERMISSION_KEYS.includes(k!))
+    expect(unknown, 'clé absente de PERMISSIONS').toEqual([])
+  })
+
+  it('un rôle mono-permission ne voit QUE son module', () => {
+    const perms = new Set(['priceWatch.view'])
+    const visible = MODULE_ITEMS.filter((m) => canSeeModule(m.id, false, perms)).map((m) => m.id)
+    expect(visible).toEqual(['price-watch'])
+  })
+
+  it('l\'admin voit tout, y compris les modules d\'administration', () => {
+    const visible = MODULE_ITEMS.filter((m) => canSeeModule(m.id, true, new Set())).map((m) => m.id)
+    expect(visible).toEqual(MODULE_ITEMS.map((m) => m.id))
+  })
+
+  it('chaque groupe de permissions a un libellé traduit et une identité visuelle', () => {
+    const modules = [...new Set(PERMISSIONS.map((p) => p.module))]
+    for (const m of modules) {
+      expect(MODULE_LABEL[m], `libellé manquant pour « ${m} »`).toBeTruthy()
+      expect(fr[MODULE_LABEL[m]], `traduction FR manquante pour « ${m} »`).toBeTruthy()
+      // moduleMeta retombe sur un FALLBACK gris + icône bouclier : le détecter ici
+      // évite qu'un module arrive sans identité visuelle dans la matrice.
+      expect(moduleMeta(m).icon, `identité visuelle manquante pour « ${m} »`).not.toBe(moduleMeta('__inconnu__').icon)
+    }
+  })
+
+  it('l\'arbre des rôles rend TOUTES les permissions du module', () => {
+    // « Scraping » porte 2 racines (modèles + hub) : l'arbre n'en rendait qu'une,
+    // `scrapingHub.view` était donc introuvable à l'écran. Aucune permission ne
+    // doit sortir du découpage, et aucune n'y apparaître deux fois.
+    for (const [module, defs] of Object.entries(permissionsByModule())) {
+      const rendered = groupModulePermissions(defs)
+        .flatMap(({ root, children }) => [...(root ? [root.key] : []), ...children.map((c) => c.key)])
+      expect(rendered.sort(), `permissions perdues ou dupliquées dans « ${module} »`)
+        .toEqual(defs.map((d) => d.key).sort())
+    }
+  })
+
+  it('« Scraping » expose bien ses DEUX racines', () => {
+    const groups = groupModulePermissions(permissionsByModule()['Scraping'])
+    expect(groups.map((g) => g.root?.key)).toEqual(['scrapingTemplates.view', 'scrapingHub.view'])
   })
 })

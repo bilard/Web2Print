@@ -3090,6 +3090,9 @@ export const fr = {
   'perm.workflows.delete': 'Supprimer un workflow',
   'perm.workflows.run': 'Exécuter les workflows',
   'perm.priceWatch.view': 'Voir la veille tarifaire',
+  'perm.mfrInsights.view': 'Voir les insights fabricant',
+  'perm.demoExpress.view': 'Voir la démo express',
+  'perm.demoExpress.view.desc': "Génère une démonstration complète à partir d'une société et de son URL (tous les modules sont alimentés).",
   'perm.retailPromo.view': 'Voir le module Création studio',
   'perm.retailPromo.edit': 'Créer/éditer dans Création studio',
   'perm.catalog.view': 'Voir le module Catalogue studio',
@@ -3119,6 +3122,8 @@ export const fr = {
   'perm.module.12': 'Telegram',
   'perm.module.13': 'Paramètres',
   'perm.module.14': 'Démo',
+  'perm.module.15': 'Insights fabricant',
+  'perm.module.16': 'Démo express',
   // ═══ Tail final — briefs, canvas, pulse, shared, taxonomie, data-graph, démo express, IDML, onboarding, Telegram (lot 37) ═══
   'br.purgeGhosts': '{count} brouillon(s) vide(s) à purger',
   'br.regenerate': 'Régénérer',

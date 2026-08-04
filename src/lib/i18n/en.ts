@@ -2962,6 +2962,9 @@ export const en: Record<TranslationKey, string> = {
   'perm.workflows.delete': 'Delete a workflow',
   'perm.workflows.run': 'Run the workflows',
   'perm.priceWatch.view': 'View price monitoring',
+  'perm.mfrInsights.view': 'View manufacturer insights',
+  'perm.demoExpress.view': 'View the express demo',
+  'perm.demoExpress.view.desc': 'Generates a full demonstration from a company and its URL (every module is populated).',
   'perm.retailPromo.view': 'View the Studio creation module',
   'perm.retailPromo.edit': 'Create/edit in Studio creation',
   'perm.catalog.view': 'View the Studio catalogue module',
@@ -2991,6 +2994,8 @@ export const en: Record<TranslationKey, string> = {
   'perm.module.12': 'Telegram',
   'perm.module.13': 'Settings',
   'perm.module.14': 'Demo',
+  'perm.module.15': 'Manufacturer insights',
+  'perm.module.16': 'Express demo',
   // ═══ Tail final — briefs, canvas, pulse, shared, taxonomie, data-graph, démo express, IDML, onboarding, Telegram (lot 37) ═══
   'br.purgeGhosts': '{count} empty draft(s) to purge',
   'br.regenerate': 'Regenerate',

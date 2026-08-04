@@ -2961,6 +2961,9 @@ export const es: Record<TranslationKey, string> = {
   'perm.workflows.delete': 'Eliminar un workflow',
   'perm.workflows.run': 'Ejecutar los workflows',
   'perm.priceWatch.view': 'Ver la monitorización de precios',
+  'perm.mfrInsights.view': 'Ver los insights de fabricante',
+  'perm.demoExpress.view': 'Ver la demo exprés',
+  'perm.demoExpress.view.desc': 'Genera una demostración completa a partir de una empresa y su URL (se alimentan todos los módulos).',
   'perm.retailPromo.view': 'Ver el módulo Creación studio',
   'perm.retailPromo.edit': 'Crear/editar en Creación studio',
   'perm.catalog.view': 'Ver el módulo Catálogo studio',
@@ -2990,6 +2993,8 @@ export const es: Record<TranslationKey, string> = {
   'perm.module.12': 'Telegram',
   'perm.module.13': 'Ajustes',
   'perm.module.14': 'Demo',
+  'perm.module.15': 'Insights de fabricante',
+  'perm.module.16': 'Demo exprés',
   // ═══ Tail final — briefs, canvas, pulse, shared, taxonomie, data-graph, démo express, IDML, onboarding, Telegram (lot 37) ═══
   'br.purgeGhosts': '{count} borrador(es) vacío(s) a purgar',
   'br.regenerate': 'Regenerar',

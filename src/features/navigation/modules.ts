@@ -200,14 +200,23 @@ export const MODULE_ITEMS: ModuleItem[] = [
   },
 ]
 
+/** Modules réservés à l'admin : jamais gouvernés par une permission de rôle.
+ *  ⚠️ Tout module hors de cette liste DOIT avoir une entrée `SECTION_PERMISSION`
+ *  (invariant testé) : sans clé, la règle `!perm ⇒ visible` le montre à TOUS. */
+export const ADMIN_ONLY_SECTIONS: readonly Section[] = ['access', 'finances']
+
 /** Permission `.view` qui gate la visibilité de chaque module (absent ⇒ toujours visible). */
 export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
+  // « Nouveau document » crée un projet qui atterrit dans la Bibliothèque :
+  // même droit que le bouton « Créer » de la bibliothèque.
+  blank: 'library.create',
   import: 'import.view',
   library: 'library.view',
   images: 'dam.view',
   data: 'pim.view',
   taxonomies: 'taxonomies.view',
-  'mfr-insights': 'pim.view',
+  'mfr-insights': 'mfrInsights.view',
+  'demo-express': 'demoExpress.view',
   'scraping-templates': 'scrapingTemplates.view',
   'scraping-hub': 'scrapingHub.view',
   workflows: 'workflows.view',
@@ -219,9 +228,17 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
   telegram: 'telegram.view',
 }
 
-/** `access` = admin uniquement ; sinon owner OU permission `.view` présente. */
-function canSeeModule(id: Section, isAdmin: boolean, permissions: Set<string>): boolean {
-  if (id === 'access' || id === 'finances') return isAdmin
+/**
+ * Modules admin (`ADMIN_ONLY_SECTIONS`) = admin uniquement ; sinon admin OU
+ * permission `.view` présente.
+ *
+ * ⚠️ SEULE implémentation du filtrage : la sidebar du Dashboard en avait une
+ * copie qui avait oublié `finances` — le module fuitait donc vers tous les rôles
+ * alors que le menu global (`useVisibleModules`) le cachait bien. Tout nouvel
+ * écran qui filtre des modules appelle CETTE fonction.
+ */
+export function canSeeModule(id: Section, isAdmin: boolean, permissions: ReadonlySet<string>): boolean {
+  if (ADMIN_ONLY_SECTIONS.includes(id)) return isAdmin
   const perm = SECTION_PERMISSION[id]
   return isAdmin || !perm || permissions.has(perm)
 }

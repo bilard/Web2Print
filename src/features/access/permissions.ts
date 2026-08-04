@@ -23,6 +23,8 @@ export const MODULE_LABEL: Record<string, TranslationKey> = {
   'Scraping': 'perm.module.5',
   'Workflows': 'perm.module.6',
   'Veille tarifaire': 'perm.module.7',
+  'Insights fabricant': 'perm.module.15',
+  'Démo express': 'perm.module.16',
   'Création studio': 'perm.module.8',
   'Catalogue studio': 'perm.module.9',
   'Animation': 'perm.module.10',
@@ -89,6 +91,9 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: 'workflows.delete', module: 'Workflows', labelKey: 'perm.workflows.delete' },
   { key: 'workflows.run', module: 'Workflows', labelKey: 'perm.workflows.run' },
   { key: 'priceWatch.view', module: 'Veille tarifaire', labelKey: 'perm.priceWatch.view' },
+  { key: 'mfrInsights.view', module: 'Insights fabricant', labelKey: 'perm.mfrInsights.view' },
+  { key: 'demoExpress.view', module: 'Démo express', labelKey: 'perm.demoExpress.view',
+    descriptionKey: 'perm.demoExpress.view.desc' },
   { key: 'retailPromo.view', module: 'Création studio', labelKey: 'perm.retailPromo.view' },
   { key: 'retailPromo.edit', module: 'Création studio', labelKey: 'perm.retailPromo.edit' },
   { key: 'catalog.view', module: 'Catalogue studio', labelKey: 'perm.catalog.view' },
@@ -125,6 +130,37 @@ export function permissionParent(key: string): string | null {
 /** Enfants directs d'une permission (celles dont elle est le parent). */
 export function permissionChildren(key: string): string[] {
   return PERMISSIONS.filter((p) => permissionParent(p.key) === key).map((p) => p.key)
+}
+
+/** Une racine `.view` et les actions qui en dépendent (`root: null` = orphelins). */
+export interface PermissionGroup {
+  root: PermissionDef | null
+  children: PermissionDef[]
+}
+
+/**
+ * Découpe les permissions d'UN module en racines + enfants, pour l'arbre des rôles.
+ *
+ * ⚠️ Un module peut porter PLUSIEURS racines — « Scraping » réunit
+ * `scrapingTemplates.view` et `scrapingHub.view`. N'en rendre qu'une faisait
+ * disparaître la seconde (et ses actions) de l'écran des rôles, sans erreur.
+ * Le test de gouvernance vérifie qu'aucune permission ne sort du découpage.
+ */
+export function groupModulePermissions(defs: PermissionDef[]): PermissionGroup[] {
+  const roots = defs.filter((d) => permissionParent(d.key) === null)
+  const rootKeys = new Set(roots.map((d) => d.key))
+  const groups: PermissionGroup[] = roots.map((root) => ({
+    root,
+    children: defs.filter((d) => permissionParent(d.key) === root.key),
+  }))
+  // Filet : enfant dont la racine n'est pas déclarée dans ce module — rendu à plat
+  // plutôt que perdu.
+  const orphans = defs.filter((d) => {
+    const parent = permissionParent(d.key)
+    return parent !== null && !rootKeys.has(parent)
+  })
+  if (orphans.length > 0) groups.push({ root: null, children: orphans })
+  return groups
 }
 
 /** Regroupe les permissions par module pour la matrice de l'écran admin. */
