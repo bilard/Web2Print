@@ -20,6 +20,10 @@ export interface MatrixColumn {
    *  (ean = entier sans décimale, price = 2 décimales, percent = 1 décimale + %). */
   kind: 'text' | 'ean' | 'price' | 'percent'
   primary?: boolean
+  /** Concurrent auquel la colonne appartient. Les colonnes d'un même groupe sont
+   *  CONTIGUËS (cf. `siteColumns`) : l'export Google Sheets peut donc les replier
+   *  d'un seul bloc. Absent sur les colonnes communes (EAN, nom, mon prix). */
+  group?: string
 }
 
 export interface MatrixResult {
@@ -75,16 +79,19 @@ function baseColumns(labels: SourceLabels): MatrixColumn[] {
 function siteColumns(domain: string, labels: SourceLabels): MatrixColumn[] {
   const s = domain.replace(/[^a-z0-9]+/gi, '_')
   const l = { ...DEFAULT_LABELS, ...Object.fromEntries(Object.entries(labels).filter(([, v]) => v)) }
+  // ⚠️ Ces 9 colonnes DOIVENT rester contiguës : l'export les replie comme un
+  // groupe unique, et un groupe Google Sheets est une plage, pas une sélection.
+  const g = domain
   return [
-    { key: `nom_${s}`, label: `${l.name} — ${domain}`, kind: 'text' },
-    { key: `prix_ttc_${s}`, label: `Prix TTC — ${domain}`, kind: 'price' },
-    { key: `prix_ht_${s}`, label: `${l.price} — ${domain}`, kind: 'price' },
-    { key: `prix_barre_${s}`, label: `Prix barré TTC — ${domain}`, kind: 'price' },
-    { key: `ecart_${s}`, label: `Écart % — ${domain}`, kind: 'percent' },
-    { key: `stock_${s}`, label: `Stock — ${domain}`, kind: 'text' },
-    { key: `match_${s}`, label: `Correspondance — ${domain}`, kind: 'text' },
-    { key: `image_${s}`, label: `Image — ${domain}`, kind: 'text' },
-    { key: `url_${s}`, label: `Lien — ${domain}`, kind: 'text' },
+    { key: `nom_${s}`, label: `${l.name} — ${domain}`, kind: 'text', group: g },
+    { key: `prix_ttc_${s}`, label: `Prix TTC — ${domain}`, kind: 'price', group: g },
+    { key: `prix_ht_${s}`, label: `${l.price} — ${domain}`, kind: 'price', group: g },
+    { key: `prix_barre_${s}`, label: `Prix barré TTC — ${domain}`, kind: 'price', group: g },
+    { key: `ecart_${s}`, label: `Écart % — ${domain}`, kind: 'percent', group: g },
+    { key: `stock_${s}`, label: `Stock — ${domain}`, kind: 'text', group: g },
+    { key: `match_${s}`, label: `Correspondance — ${domain}`, kind: 'text', group: g },
+    { key: `image_${s}`, label: `Image — ${domain}`, kind: 'text', group: g },
+    { key: `url_${s}`, label: `Lien — ${domain}`, kind: 'text', group: g },
   ]
 }
 

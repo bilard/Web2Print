@@ -2304,6 +2304,8 @@ export const en: Record<TranslationKey, string> = {
   'run.gs.formulasIgnored': 'Formula columns skipped: {message}',
   'run.gs.formulasAdded': '{count} formula column(s) added.',
   'run.gs.formatIgnored': 'Column formatting skipped: {message}',
+  'run.gs.grouped': 'Columns grouped per competitor (collapsible).',
+  'run.gs.groupIgnored': 'Column groups skipped: {message}',
   'run.gs.styled': 'Table styled (frozen header, fitted columns).',
   'run.gs.styleIgnored': 'Styling skipped: {message}',
   'run.gs.condColorsIgnored': 'Conditional colours skipped: {message}',

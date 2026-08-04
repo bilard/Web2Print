@@ -2303,6 +2303,8 @@ export const es: Record<TranslationKey, string> = {
   'run.gs.formulasIgnored': 'Columnas de fórmula ignoradas: {message}',
   'run.gs.formulasAdded': '{count} columna(s) de fórmula añadida(s).',
   'run.gs.formatIgnored': 'Formato de columnas ignorado: {message}',
+  'run.gs.grouped': 'Columnas agrupadas por competidor (plegables).',
+  'run.gs.groupIgnored': 'Grupos de columnas omitidos: {message}',
   'run.gs.styled': 'Tabla formateada (encabezado fijo, columnas ajustadas).',
   'run.gs.styleIgnored': 'Formato omitido: {message}',
   'run.gs.condColorsIgnored': 'Colores condicionales ignorados: {message}',

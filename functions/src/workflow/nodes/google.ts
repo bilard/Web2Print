@@ -301,6 +301,59 @@ async function applyPresentation(
 
 /** Ramène à 320 px les colonnes qu'`autoResizeDimensions` a rendues démesurées.
  *  Avec le WRAP posé juste avant, le contenu passe sur plusieurs lignes. */
+/** Plages CONTIGUËS de colonnes portant le même groupe.
+ *  ⚠️ JUMEAU de `contiguousGroups` (`src/features/gdrive/gdriveCore.ts`), couvert
+ *  côté client par `contiguousGroups.test.ts`. */
+function contiguousGroupsServer(groups: (string | undefined)[]): { start: number; end: number }[] {
+  const out: { start: number; end: number }[] = []
+  let i = 0
+  while (i < groups.length) {
+    const g = groups[i]
+    if (!g) { i++; continue }
+    let j = i + 1
+    while (j < groups.length && groups[j] === g) j++
+    if (j - i > 1) out.push({ start: i, end: j })
+    i = j
+  }
+  return out
+}
+
+/**
+ * GROUPES DE COLONNES pliables — un par concurrent.
+ *
+ * ⚠️ Non repliés à la création : masquer les prix concurrents reviendrait à
+ * cacher l'objet du rapport. ⚠️ Les groupes existants sont supprimés d'abord,
+ * sinon Google les empile à chaque ré-export.
+ */
+async function applyColumnGroupsServer(
+  token: string, id: string, gid: number, groups: (string | undefined)[],
+): Promise<void> {
+  const ranges = contiguousGroupsServer(groups)
+  const existing = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets(properties(sheetId),columnGroups(range(startIndex,endIndex)))`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+  const requests: unknown[] = []
+  if (existing.ok) {
+    const j = (await existing.json()) as {
+      sheets?: Array<{ properties?: { sheetId?: number }; columnGroups?: Array<{ range?: { startIndex?: number; endIndex?: number } }> }>
+    }
+    for (const g of j.sheets?.find((x) => x.properties?.sheetId === gid)?.columnGroups ?? []) {
+      requests.push({ deleteDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: g.range?.startIndex ?? 0, endIndex: g.range?.endIndex ?? 0 } } })
+    }
+  }
+  for (const { start, end } of ranges) {
+    requests.push({ addDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end } } })
+  }
+  if (requests.length === 0) return
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) throw new Error(`groupes ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+}
+
 async function capWideColumnsServer(token: string, id: string, gid: number, colCount: number): Promise<void> {
   const res = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets(properties(sheetId),data(columnMetadata(pixelSize)))`,
@@ -669,6 +722,14 @@ registerServerNode({
     await applyPresentation(token, id, gid, keys.length + formulas.length, sheet.rows.length, metricIdx)
       .then(() => ctx.log('info', t(ctx.locale, 'run.gs.styled')))
       .catch((e) => ctx.log('warn', t(ctx.locale, 'run.gs.styleIgnored', { message: e instanceof Error ? e.message : String(e) })))
+
+    // Groupes pliables par concurrent (colonnes marquées par la matrice de veille).
+    const groupOf = (sheet.columns ?? []).map((c) => (c as { group?: string }).group)
+    if (groupOf.some(Boolean)) {
+      await applyColumnGroupsServer(token, id, gid, groupOf)
+        .then(() => ctx.log('info', t(ctx.locale, 'run.gs.grouped')))
+        .catch((e) => ctx.log('warn', t(ctx.locale, 'run.gs.groupIgnored', { message: e instanceof Error ? e.message : String(e) })))
+    }
 
     // Rend au classeur les cellules des exports PRÉCÉDENTS (grille conservée par Google
     // même après `values:clear`) — sans quoi le quota de 10 M finit par bloquer l'export.

@@ -64,6 +64,9 @@ export interface ExcelColumn {
   stats?: ColumnStats
   taxonomy?: TaxonomyTag[]
   decimals?: number
+  /** Regroupement de colonnes CONTIGUËS (ex. un concurrent de la veille tarifaire).
+   *  L'export Google Sheets en fait un groupe pliable ; les autres rendus l'ignorent. */
+  group?: string
   formula?: string
   formulaResultType?: 'auto' | 'number' | 'text' | 'percent'
   formulaDecimals?: number | null

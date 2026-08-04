@@ -437,6 +437,24 @@ async function applySheetColorRules(token: string, spreadsheetId: string, sheet:
  * colonnes, il n'est donc ni reformaté ni supprimé. Il peut seulement se décaler
  * à l'écran si les largeurs changent, ce qui est sans conséquence.
  */
+/** Plages CONTIGUËS de colonnes portant le même groupe. Un groupe interrompu
+ *  puis repris (colonnes non adjacentes) donne deux plages — jamais une plage
+ *  qui engloberait les colonnes intercalées. */
+export function contiguousGroups(groups: (string | undefined)[]): { start: number; end: number }[] {
+  const out: { start: number; end: number }[] = []
+  let i = 0
+  while (i < groups.length) {
+    const g = groups[i]
+    if (!g) { i++; continue }
+    let j = i + 1
+    while (j < groups.length && groups[j] === g) j++
+    // Une colonne seule ne mérite pas un groupe (rien à replier).
+    if (j - i > 1) out.push({ start: i, end: j })
+    i = j
+  }
+  return out
+}
+
 const HEADER_BG = { red: 0.16, green: 0.20, blue: 0.36 }
 const MAX_COL_WIDTH_PX = 320
 
@@ -540,6 +558,53 @@ async function applyMetricColorScales(token: string, spreadsheetId: string, shee
     body: JSON.stringify({ requests }),
   })
   if (!res.ok) throw new Error(`échelles de couleur ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+}
+
+/**
+ * GROUPES DE COLONNES pliables — un par concurrent dans la veille tarifaire.
+ *
+ * Chaque groupe se replie d'un clic sur le « − » au-dessus de l'en-tête : on
+ * compare deux concurrents sans faire défiler quarante colonnes.
+ *
+ * ⚠️ Les groupes NE SONT PAS repliés à la création. Replier par défaut
+ * masquerait les prix concurrents, c'est-à-dire l'objet même du rapport : c'est
+ * au lecteur de choisir ce qu'il cache.
+ *
+ * ⚠️ Un groupe Google Sheets est une PLAGE : seules des colonnes contiguës
+ * peuvent en former un. Les colonnes d'un même concurrent le sont par
+ * construction (`siteColumns`) — un groupe discontinu est ignoré plutôt que de
+ * replier des colonnes voisines qui ne lui appartiennent pas.
+ *
+ * ⚠️ Les groupes existants sont SUPPRIMÉS d'abord : Google les empile à chaque
+ * ré-export, et trois exports produisaient trois niveaux d'imbrication.
+ */
+async function applyColumnGroups(token: string, spreadsheetId: string, sheet: ExcelSheet): Promise<void> {
+  const ranges = contiguousGroups(sheet.columns.map((c) => c.group))
+  const gid = await getFirstSheetGid(token, spreadsheetId)
+
+  const existing = await fetch(`${SHEETS_API}/${spreadsheetId}?fields=sheets(properties(sheetId),columnGroups(range(startIndex,endIndex)))`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const deletes: unknown[] = []
+  if (existing.ok) {
+    const j = (await existing.json()) as {
+      sheets?: Array<{ properties?: { sheetId?: number }; columnGroups?: Array<{ range?: { startIndex?: number; endIndex?: number } }> }>
+    }
+    for (const g of j.sheets?.find((x) => x.properties?.sheetId === gid)?.columnGroups ?? []) {
+      deletes.push({ deleteDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: g.range?.startIndex ?? 0, endIndex: g.range?.endIndex ?? 0 } } })
+    }
+  }
+  const adds = ranges.map(({ start, end }) => ({
+    addDimensionGroup: { range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end } },
+  }))
+  const requests = [...deletes, ...adds]
+  if (requests.length === 0) return
+  const res = await fetch(`${SHEETS_API}/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) throw new Error(`groupes de colonnes ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
 }
 
 async function capWideColumns(token: string, spreadsheetId: string, gid: number, colCount: number): Promise<void> {
@@ -726,6 +791,7 @@ export async function exportSheetToGoogleSheets(
   await applySheetPresentation(token, meta.id, sheet).catch((e) => console.warn('[sheets] mise en forme:', e))
   await applySheetColorRules(token, meta.id, sheet).catch(() => {})
   await applyMetricColorScales(token, meta.id, sheet).catch((e) => console.warn('[sheets] échelles:', e))
+  await applyColumnGroups(token, meta.id, sheet).catch((e) => console.warn('[sheets] groupes:', e))
   return meta
 }
 
@@ -795,6 +861,7 @@ export async function updateGoogleSheetById(
   await applySheetPresentation(token, id, sheet).catch((e) => console.warn('[sheets] mise en forme:', e))
   await applySheetColorRules(token, id, sheet).catch(() => {})
   await applyMetricColorScales(token, id, sheet).catch((e) => console.warn('[sheets] échelles:', e))
+  await applyColumnGroups(token, id, sheet).catch((e) => console.warn('[sheets] groupes:', e))
   return meta
 }
 

@@ -60,6 +60,7 @@ function toSheet(cols: MatrixColumn[], rows: Record<string, unknown>[]): ExcelSh
       key: c.key, label: c.label, fieldType: f.fieldType, detectedType: f.fieldType,
       isPrimary: !!c.primary, width: c.kind === 'text' ? 180 : 120,
       ...(f.decimals != null ? { decimals: f.decimals } : {}),
+      ...(c.group ? { group: c.group } : {}),
     }
   })
   return { name: 'Veille tarifaire', columns, rows: rows as ExcelRow[], taxonomy: [] }
