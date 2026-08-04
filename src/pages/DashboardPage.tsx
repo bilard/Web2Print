@@ -466,6 +466,7 @@ export default function DashboardPage() {
                   className="p-1 rounded text-white/20 hover:text-white/50 hover:bg-white/[0.04]"
                   iconClassName="w-3.5 h-3.5"
                 />
+                {canSee('settings') && (
                 <button
                   data-help-id="dashboard.sidebar.settings"
                   onClick={() => setActiveSection('settings')}
@@ -479,6 +480,7 @@ export default function DashboardPage() {
                 >
                   <Settings className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="text-white/20 hover:text-white/50 transition-colors p-1 rounded hover:bg-white/[0.04]"
@@ -509,6 +511,7 @@ export default function DashboardPage() {
                 className="p-1 rounded text-white/20 hover:text-white/50 hover:bg-white/[0.04]"
                 iconClassName="w-3.5 h-3.5"
               />
+              {canSee('settings') && (
               <button
                 data-help-id="dashboard.sidebar.settings"
                 onClick={() => setActiveSection('settings')}
@@ -522,6 +525,7 @@ export default function DashboardPage() {
               >
                 <Settings className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
+              )}
               <button
                 onClick={handleSignOut}
                 className="text-white/20 hover:text-white/50 transition-colors p-1 rounded hover:bg-white/[0.04]"

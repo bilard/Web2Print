@@ -5,7 +5,7 @@ import {
   groupModulePermissions, permissionsByModule,
 } from './permissions'
 import {
-  ADMIN_ONLY_SECTIONS, MODULE_ITEMS, SECTION_PERMISSION, canSeeModule,
+  ADMIN_ONLY_SECTIONS, ALL_SECTIONS, MODULE_ITEMS, SECTION_PERMISSION, canSeeModule,
 } from '@/features/navigation/modules'
 import { moduleMeta } from './moduleMeta'
 import { fr } from '@/lib/i18n/fr'
@@ -52,11 +52,19 @@ describe('isPending', () => {
  * ne portait que `priceWatch.view`. Ces tests ferment la porte.
  */
 describe('gouvernance des modules', () => {
-  it('chaque module est gaté par une permission OU réservé à l\'admin', () => {
-    const ungoverned = MODULE_ITEMS
-      .filter((m) => !ADMIN_ONLY_SECTIONS.includes(m.id) && !SECTION_PERMISSION[m.id])
-      .map((m) => m.id)
+  it('chaque section est gatée par une permission OU réservée à l\'admin', () => {
+    // ⚠️ Sur ALL_SECTIONS, pas sur MODULE_ITEMS : `settings` s'ouvre par l'engrenage
+    // du pied de sidebar et échappait donc au contrôle — il était visible par tous.
+    const ungoverned = ALL_SECTIONS
+      .filter((id) => !ADMIN_ONLY_SECTIONS.includes(id) && !SECTION_PERMISSION[id])
     expect(ungoverned, 'ajouter une entrée dans SECTION_PERMISSION (ou ADMIN_ONLY_SECTIONS)').toEqual([])
+  })
+
+  it('ALL_SECTIONS couvre bien tous les modules de la sidebar', () => {
+    // Le Record<Section, true> garantit l'exhaustivité au type-check ; ce test
+    // protège contre une liste qui aurait divergé de MODULE_ITEMS.
+    const missing = MODULE_ITEMS.map((m) => m.id).filter((id) => !ALL_SECTIONS.includes(id))
+    expect(missing).toEqual([])
   })
 
   it('les clés de SECTION_PERMISSION existent dans le catalogue', () => {

@@ -22,6 +22,24 @@ export type Section =
   | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'retail-promo' | 'catalog'
   | 'demo-express' | 'mfr-insights' | 'finances'
 
+/**
+ * Toutes les sections existantes — Y COMPRIS celles absentes de `MODULE_ITEMS`
+ * (`settings` s'ouvre par l'engrenage du pied de sidebar, pas par un module).
+ *
+ * ⚠️ Le `Record<Section, true>` est le cliquet : ajouter une valeur au type
+ * `Section` sans l'inscrire ici casse la compilation. Sans ça, une section hors
+ * sidebar échappait au test de gouvernance — c'est exactement ce qui a laissé
+ * l'engrenage Paramètres ouvert à tous les rôles.
+ */
+const SECTION_SET: Record<Section, true> = {
+  blank: true, import: true, library: true, images: true, data: true, chat: true,
+  settings: true, taxonomies: true, 'scraping-templates': true, 'scraping-hub': true,
+  workflows: true, hyperframes: true, telegram: true, access: true, 'price-watch': true,
+  'retail-promo': true, catalog: true, 'demo-express': true, 'mfr-insights': true,
+  finances: true,
+}
+export const ALL_SECTIONS = Object.keys(SECTION_SET) as Section[]
+
 export type ModuleGroupId = 'create' | 'product-data' | 'web' | 'publish' | 'automation' | 'admin'
 
 /**
@@ -226,6 +244,9 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
   hyperframes: 'hyperframes.view',
   chat: 'chat.view',
   telegram: 'telegram.view',
+  // Hors sidebar : l'engrenage du pied de sidebar. Sans clé ici, il s'affichait
+  // pour TOUS les rôles alors que `settings.view` existait pour le gouverner.
+  settings: 'settings.view',
 }
 
 /**

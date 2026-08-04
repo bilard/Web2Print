@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { ChevronRight, Check, Lock } from 'lucide-react'
-import { groupModulePermissions, permissionLabel, type PermissionDef } from '@/features/access/permissions'
+import { MODULE_LABEL, groupModulePermissions, permissionLabel, type PermissionDef } from '@/features/access/permissions'
 import { moduleMeta, type ModuleMeta } from '@/features/access/moduleMeta'
 import { useThemeStore } from '@/stores/theme.store'
 import { t } from '@/lib/i18n'
@@ -38,7 +38,11 @@ export function PermissionTree({
               className="w-full flex items-center gap-2 py-2 px-2.5 text-left hover:bg-white/[0.025] transition-colors">
               <ChevronRight className={`w-3.5 h-3.5 shrink-0 text-white/35 transition-transform ${open ? 'rotate-90' : ''}`} />
               <span className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${m.dot}`}><Icon className="w-3 h-3" /></span>
-              <span className={`text-[12px] font-medium ${sel > 0 ? m.text : (isLight ? 'text-white/85' : 'text-white/55')}`}>{module}</span>
+              {/* `module` est un ID de REGROUPEMENT : l'afficher tel quel laissait
+                  l'arbre des rôles en français dur, même en EN/ES. */}
+              <span className={`text-[12px] font-medium ${sel > 0 ? m.text : (isLight ? 'text-white/85' : 'text-white/55')}`}>
+                {MODULE_LABEL[module] ? t(MODULE_LABEL[module]) : module}
+              </span>
               {sel > 0 && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'currentColor' }} />}
               <span className="ml-auto text-[10px] tabular-nums text-white/30">{sel}/{defs.length}</span>
             </button>
