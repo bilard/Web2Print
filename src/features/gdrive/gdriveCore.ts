@@ -437,9 +437,21 @@ async function applySheetColorRules(token: string, spreadsheetId: string, sheet:
  * colonnes, il n'est donc ni reformaté ni supprimé. Il peut seulement se décaler
  * à l'écran si les largeurs changent, ce qui est sans conséquence.
  */
-/** Plages CONTIGUËS de colonnes portant le même groupe. Un groupe interrompu
- *  puis repris (colonnes non adjacentes) donne deux plages — jamais une plage
- *  qui engloberait les colonnes intercalées. */
+/**
+ * Plages à replier, une par concurrent.
+ *
+ * ⚠️ Le groupe démarre à la DEUXIÈME colonne du bloc, jamais la première. Deux
+ * raisons, la seconde étant décisive :
+ *  1. replié, on garde une colonne visible qui NOMME le concurrent — sinon il
+ *     disparaît complètement et on ne sait plus ce qu'on a fermé ;
+ *  2. surtout, Google Sheets FUSIONNE les groupes adjacents de même niveau.
+ *     Neuf colonnes par concurrent, posées bout à bout, donnaient UN SEUL
+ *     groupe couvrant tous les concurrents — un crochet géant qui ne regroupe
+ *     rien. La colonne laissée hors du groupe sert de séparateur.
+ *
+ * ⚠️ Conséquence : un concurrent de moins de 3 colonnes n'est pas groupé (il ne
+ * resterait qu'une colonne à replier, sans intérêt).
+ */
 export function contiguousGroups(groups: (string | undefined)[]): { start: number; end: number }[] {
   const out: { start: number; end: number }[] = []
   let i = 0
@@ -448,8 +460,8 @@ export function contiguousGroups(groups: (string | undefined)[]): { start: numbe
     if (!g) { i++; continue }
     let j = i + 1
     while (j < groups.length && groups[j] === g) j++
-    // Une colonne seule ne mérite pas un groupe (rien à replier).
-    if (j - i > 1) out.push({ start: i, end: j })
+    // `i + 1` : la première colonne reste visible et sépare ce groupe du suivant.
+    if (j - (i + 1) > 1) out.push({ start: i + 1, end: j })
     i = j
   }
   return out

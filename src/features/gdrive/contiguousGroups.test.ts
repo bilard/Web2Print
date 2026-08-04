@@ -2,24 +2,35 @@ import { describe, it, expect } from 'vitest'
 import { contiguousGroups } from './gdriveCore'
 
 /**
- * Un groupe Google Sheets est une PLAGE : une erreur ici ne casse rien
- * visiblement, elle replie simplement les mauvaises colonnes.
+ * Un groupe Google Sheets est une PLAGE, et Sheets FUSIONNE les plages
+ * adjacentes de même niveau. Une erreur ici ne casse rien de visible : elle
+ * replie les mauvaises colonnes, ou fond tous les concurrents en un seul bloc.
  */
 describe('contiguousGroups', () => {
-  it('regroupe les colonnes consécutives d’un même concurrent', () => {
+  it('laisse la PREMIÈRE colonne de chaque concurrent hors du groupe', () => {
     // 3 colonnes communes, puis 2 concurrents de 3 colonnes.
-    const cols = [undefined, undefined, undefined, 'kramp.com', 'kramp.com', 'kramp.com', 'rubix.fr', 'rubix.fr', 'rubix.fr']
-    expect(contiguousGroups(cols)).toEqual([{ start: 3, end: 6 }, { start: 6, end: 9 }])
+    const cols = [undefined, undefined, undefined, 'kramp', 'kramp', 'kramp', 'rubix', 'rubix', 'rubix']
+    // kramp = 4..5 (la 3 reste visible), rubix = 7..8 (la 6 reste visible).
+    expect(contiguousGroups(cols)).toEqual([{ start: 4, end: 6 }, { start: 7, end: 9 }])
+  })
+
+  it('produit des groupes NON ADJACENTS — sinon Sheets les fusionne', () => {
+    const cols = Array.from({ length: 18 }, (_, i) => `site${Math.floor(i / 9)}`)
+    const g = contiguousGroups(cols)
+    expect(g).toHaveLength(2)
+    // Au moins une colonne libre entre la fin du premier et le début du second.
+    expect(g[1].start).toBeGreaterThan(g[0].end)
   })
 
   it('n’englobe JAMAIS une colonne intercalée', () => {
-    // Un groupe interrompu donne deux plages, pas une plage qui avalerait « x ».
-    const cols = ['a', 'a', undefined, 'a', 'a']
-    expect(contiguousGroups(cols)).toEqual([{ start: 0, end: 2 }, { start: 3, end: 5 }])
+    const cols = ['a', 'a', 'a', undefined, 'a', 'a', 'a']
+    expect(contiguousGroups(cols)).toEqual([{ start: 1, end: 3 }, { start: 5, end: 7 }])
   })
 
-  it('ignore une colonne seule — il n’y a rien à replier', () => {
-    expect(contiguousGroups(['a', undefined, 'b'])).toEqual([])
+  it('ignore un concurrent trop étroit — il ne resterait rien à replier', () => {
+    // 2 colonnes : une visible + une seule à replier → sans intérêt.
+    expect(contiguousGroups(['a', 'a'])).toEqual([])
+    expect(contiguousGroups(['a'])).toEqual([])
   })
 
   it('ne groupe rien sans marquage', () => {

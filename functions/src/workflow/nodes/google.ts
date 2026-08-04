@@ -312,7 +312,10 @@ function contiguousGroupsServer(groups: (string | undefined)[]): { start: number
     if (!g) { i++; continue }
     let j = i + 1
     while (j < groups.length && groups[j] === g) j++
-    if (j - i > 1) out.push({ start: i, end: j })
+    // `i + 1` : la première colonne reste VISIBLE et sépare ce groupe du suivant.
+    // Sans ce séparateur, Google fusionne les groupes adjacents de même niveau et
+    // tous les concurrents n'en forment plus qu'un.
+    if (j - (i + 1) > 1) out.push({ start: i + 1, end: j })
     i = j
   }
   return out
