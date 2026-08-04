@@ -4871,6 +4871,7 @@ export const fr = {
   'ac.blockedCount': '{count} bloqué(s)',
   'ac.pending': 'en attente',
   'ac.noRoleInCompany': "Aucun rôle dans cette société — en créer un dans l'onglet Rôles",
+  'ac.roleMoveWarn': '⚠ Ce rôle passe de « {from} » à « {to} » : ses porteurs actuels garderont un rôle hors de leur société.',
   'ac.noRoleOption': '— en attente —',
   'ac.delete': 'Supprimer',
   'ac.resetOverrides': 'Réinitialiser les surcharges',

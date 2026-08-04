@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, Save, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
+import { Plus, Trash2, Save, ChevronsDownUp, ChevronsUpDown, Building2 } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { permissionsByModule, permissionParent, permissionChildren, DEMO_PERMISSION, DEMO_LIMITS, type UsageCounters } from '@/features/access/permissions'
-import { listRoles, saveRole, deleteRole, type Role } from '@/features/access/rolesApi'
+import { listRoles, saveRole, deleteRole, moveRoleToCompany, type Role } from '@/features/access/rolesApi'
+import { listCompanies } from '@/features/access/companiesApi'
+import { DEFAULT_ACCOUNT_ID } from '@/features/i18n/accountI18nApi'
+import { useManagedScope } from '@/features/access/useManagedScope'
 import { recordAudit } from '@/lib/auditLog'
 import { orderedModuleEntries } from '@/features/access/moduleMeta'
 import { PermissionTree } from './PermissionTree'
@@ -15,8 +18,17 @@ import { t } from '@/lib/i18n'
  */
 export function RolesTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
   const [roles, setRoles] = useState<Role[]>([])
-  const [editing, setEditing] = useState<{ id?: string; name: string; permissions: Set<string>; limits: UsageCounters } | null>(null)
+  const [editing, setEditing] = useState<{ id?: string; name: string; permissions: Set<string>; limits: UsageCounters; accountId: string } | null>(null)
   const [openSet, setOpenSet] = useState<Set<string>>(new Set())
+  const { isGlobalAdmin } = useManagedScope()
+  // Sociétés proposables. En vue scopée la question ne se pose pas : le rôle
+  // appartient à la société affichée et `firestore.rules` refuse de le déplacer.
+  const [companyIds, setCompanyIds] = useState<string[]>([DEFAULT_ACCOUNT_ID])
+  useEffect(() => {
+    if (!isGlobalAdmin) return
+    void listCompanies().then((cs) =>
+      setCompanyIds([...new Set([DEFAULT_ACCOUNT_ID, ...cs.map((c) => c.id)])].sort()))
+  }, [isGlobalAdmin])
   const byModule = permissionsByModule()
   const entries = orderedModuleEntries(byModule)
 
@@ -30,10 +42,10 @@ export function RolesTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
     for (const [module, defs] of entries) if (defs.some((d) => perms.has(d.key))) open.add(module)
     return open
   }
-  const startNew = () => { setEditing({ name: '', permissions: new Set(), limits: { ...DEMO_LIMITS } }); setOpenSet(new Set()) }
+  const startNew = () => { setEditing({ name: '', permissions: new Set(), limits: { ...DEMO_LIMITS }, accountId: scopeAccountId ?? DEFAULT_ACCOUNT_ID }); setOpenSet(new Set()) }
   const startEdit = (r: Role) => {
     const perms = new Set(r.permissions)
-    setEditing({ id: r.id, name: r.name, permissions: perms, limits: { ...DEMO_LIMITS, ...(r.limits ?? {}) } }); setOpenSet(defaultOpen(perms))
+    setEditing({ id: r.id, name: r.name, permissions: perms, limits: { ...DEMO_LIMITS, ...(r.limits ?? {}) }, accountId: r.accountId || DEFAULT_ACCOUNT_ID }); setOpenSet(defaultOpen(perms))
   }
   const toggleModule = (module: string) => setOpenSet((prev) => {
     const next = new Set(prev); next.has(module) ? next.delete(module) : next.add(module); return next
@@ -63,7 +75,13 @@ export function RolesTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
     const prev = roles.find((r) => r.id === editing.id)
     const beforeCount = prev?.permissions.length ?? 0
     const afterCount = [...editing.permissions].length
-    await saveRole({ id: editing.id, name: editing.name, permissions: [...editing.permissions], limits: editing.limits, accountId: scopeAccountId })
+    await saveRole({ id: editing.id, name: editing.name, permissions: [...editing.permissions], limits: editing.limits, accountId: editing.accountId })
+    // `saveRole` n'écrit `accountId` qu'à la CRÉATION (le déplacement est refusé
+    // aux administrateurs d'entreprise) : un changement de société sur un rôle
+    // existant passe par l'appel dédié, réservé à l'admin global.
+    if (editing.id && prev && (prev.accountId || DEFAULT_ACCOUNT_ID) !== editing.accountId) {
+      await moveRoleToCompany(editing.id, editing.accountId)
+    }
     const renamed = prev && prev.name !== editing.name ? { nom: `${prev.name} → ${editing.name}` } : {}
     recordAudit({ action: 'access.role.save', module: 'access', targetId: editing.id, targetLabel: editing.name, meta: { before: `${beforeCount} perms`, after: `${afterCount} perms`, ...renamed } })
     setEditing(null); refresh()
@@ -77,6 +95,10 @@ export function RolesTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
   }
 
   if (editing) {
+    // Société d'origine si l'utilisateur vient d'en changer : ses porteurs actuels
+    // se retrouveraient avec un rôle hors de leur société (affiché ⚠ côté membres).
+    const before = roles.find((r) => r.id === editing.id)?.accountId
+    const movedFrom = editing.id && before && before !== editing.accountId ? before : null
     return (
       <div className="flex flex-col gap-3">
         {/* Bandeau épinglé : reste visible pendant le défilement de la liste. */}
@@ -88,11 +110,29 @@ export function RolesTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
             placeholder={t('ac.rolePlaceholder')}
             className="flex-1 bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30"
           />
+          {/* Société propriétaire. Un rôle n'est proposé qu'aux membres de SA société :
+              sans ce choix, tout rôle créé ici atterrissait dans « default » et
+              restait invisible ailleurs. Réservé à l'admin global — déplacer un rôle
+              est refusé par `firestore.rules` à un administrateur d'entreprise. */}
+          {isGlobalAdmin && (
+            <label className="flex items-center gap-1.5 text-[11px] text-white/45 shrink-0">
+              <Building2 className="w-3.5 h-3.5 text-violet-300" />
+              <select value={editing.accountId} onChange={(e) => setEditing({ ...editing, accountId: e.target.value })}
+                className="bg-white/[0.05] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/80 hover:border-white/20 transition-colors">
+                {companyIds.map((id) => <option key={id} value={id}>{id}</option>)}
+              </select>
+            </label>
+          )}
           <button onClick={save} disabled={!editing.name.trim()} className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-[#fff] text-sm px-3 py-2 rounded-lg">
             <Save className="w-4 h-4" /> Enregistrer
           </button>
           <CloseButton onClick={() => setEditing(null)} />
         </div>
+        {movedFrom && (
+          <p className="text-[11px] text-amber-200/90 rounded-lg border border-amber-400/30 bg-amber-500/[0.07] px-2.5 py-1.5">
+            {t('ac.roleMoveWarn', { from: movedFrom, to: editing.accountId })}
+          </p>
+        )}
         {/* Barre d'outils : compteur + mode d'affichage + tout déplier/replier */}
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-[11px] text-white/35 mr-auto">
@@ -148,7 +188,10 @@ export function RolesTab({ scopeAccountId }: { scopeAccountId?: string } = {}) {
           className="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] rounded-xl px-3 py-2.5 cursor-pointer transition-colors">
           <div className="flex flex-col items-start text-left min-w-0">
             <span className="text-sm text-white/90">{r.name}</span>
-            <span className="text-[10px] text-white/30">{r.permissions.length} permission(s)</span>
+            <span className="text-[10px] text-white/30 flex items-center gap-1.5">
+              {r.permissions.length} permission(s)
+              {isGlobalAdmin && <span className="flex items-center gap-1 text-violet-300/70"><Building2 className="w-2.5 h-2.5" />{r.accountId || DEFAULT_ACCOUNT_ID}</span>}
+            </span>
           </div>
           <button onClick={(e) => { e.stopPropagation(); remove(r.id) }} className="p-1.5 text-white/30 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
         </div>
