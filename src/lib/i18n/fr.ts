@@ -2913,6 +2913,8 @@ export const fr = {
   // ═══ PWA radarPrice ═══
   'rd.wf.title': 'Workflow',
   'rd.wf.count': '{nodes} étapes · {links} liens',
+  'rd.wf.missing': 'Workflow introuvable — il a peut-être été supprimé.',
+  'rd.wf.loading': 'Chargement…',
   'rd.wf.none': 'Aucun workflow associé à cette veille.',
   'rd.wf.unavailable': 'Workflow illisible — droits insuffisants ou workflow supprimé.',
   'rd.tab.workflow': 'Workflow',

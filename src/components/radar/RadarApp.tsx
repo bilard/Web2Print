@@ -87,7 +87,11 @@ export function RadarApp() {
   // ⚠ Le planning et l'abandon de run sont clefés par l'id du WORKFLOW, pas par le
   // watchId (qui en est dérivé via stableId) — lire au mauvais chemin donnerait un
   // bandeau muet et un STOP sans effet, en silence.
-  const workflowId = watches.find((w) => w.watchId === watchId)?.workflowId ?? watchId
+  // ⚠️ Le repli sur `watchId` sert au planning et au STOP (chemins historiques).
+  // Le GRAPHE, lui, doit recevoir le vrai id : `users/{uid}/workflows/{watchId}`
+  // n'existe pas, et le composant afficherait « workflow supprimé » à tort.
+  const linkedWorkflowId = watches.find((w) => w.watchId === watchId)?.workflowId ?? null
+  const workflowId = linkedWorkflowId ?? watchId
   const sched = useRadarSchedule(workflowId)
   const runLive = useRadarRunLive(workflowId)
   // Décompte à la seconde seulement là où il se voit (bandeau du planificateur) : ailleurs
@@ -135,7 +139,7 @@ export function RadarApp() {
         ) : tab === 'workflow' ? (
           // Comme le scraping : consultable AVANT le premier rapport — c'est là
           // qu'on veut vérifier que la chaîne est bien branchée.
-          <RadarWorkflowGraph workflowId={workflowId} />
+          <RadarWorkflowGraph workflowId={linkedWorkflowId} />
         ) : cockpit ? (
           <>
             {tab === 'apercu' && (

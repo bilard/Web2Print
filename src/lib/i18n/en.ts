@@ -2785,6 +2785,8 @@ export const en: Record<TranslationKey, string> = {
   // ═══ PWA radarPrice ═══
   'rd.wf.title': 'Workflow',
   'rd.wf.count': '{nodes} steps · {links} links',
+  'rd.wf.missing': 'Workflow not found — it may have been deleted.',
+  'rd.wf.loading': 'Loading…',
   'rd.wf.none': 'No workflow linked to this watch.',
   'rd.wf.unavailable': 'Workflow unreadable — insufficient rights or deleted workflow.',
   'rd.tab.workflow': 'Workflow',

@@ -2784,6 +2784,8 @@ export const es: Record<TranslationKey, string> = {
   // ═══ PWA radarPrice ═══
   'rd.wf.title': 'Workflow',
   'rd.wf.count': '{nodes} etapas · {links} enlaces',
+  'rd.wf.missing': 'Workflow no encontrado: puede que se haya eliminado.',
+  'rd.wf.loading': 'Cargando…',
   'rd.wf.none': 'Ningún workflow asociado a esta monitorización.',
   'rd.wf.unavailable': 'Workflow ilegible: derechos insuficientes o workflow eliminado.',
   'rd.tab.workflow': 'Workflow',

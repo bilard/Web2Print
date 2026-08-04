@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Workflow as WorkflowIcon, AlertTriangle } from 'lucide-react'
 import { getWorkflow } from '@/features/workflows/persistence/workflowsApi'
-import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import type { Workflow } from '@/features/workflows/types'
 import { graphLayout, NODE_W, NODE_H } from './radarWorkflowLayout'
 import { t } from '@/lib/i18n'
@@ -39,16 +39,19 @@ export function RadarWorkflowGraph({ workflowId, runningNodes }: {
 }) {
   const [wf, setWf] = useState<Workflow | null>(null)
   const [error, setError] = useState(false)
+  // ⚠️ Hook et non lecture ponctuelle : la PWA monte souvent AVANT que l'accès
+  // soit hydraté. Lu une seule fois, l'uid était null et le graphe ne se
+  // chargeait jamais — l'écran restait vide sans erreur.
+  const uid = useWorkspaceUid()
 
   useEffect(() => {
-    const uid = getWorkspaceUid()
     if (!workflowId || !uid) { setWf(null); return }
     let cancelled = false
     void getWorkflow(uid, workflowId)
       .then((w) => { if (!cancelled) { setWf(w); setError(false) } })
       .catch(() => { if (!cancelled) setError(true) })
     return () => { cancelled = true }
-  }, [workflowId])
+  }, [workflowId, uid])
 
   const layout = useMemo(() => (wf ? graphLayout(wf.nodes) : null), [wf])
 
@@ -61,9 +64,12 @@ export function RadarWorkflowGraph({ workflowId, runningNodes }: {
     )
   }
   if (!wf || !layout) {
+    // `workflowId` absent = ce suivi n'a jamais été relié à un workflow (suivi
+    // créé à la main). Présent mais introuvable = le workflow a été supprimé.
+    const msg = workflowId ? t('rd.wf.missing') : t('rd.wf.none')
     return (
       <section className="radar-card radar-in px-5 py-8 text-center text-[13px]" style={{ color: 'var(--radar-text-2)' }}>
-        {t('rd.wf.none')}
+        {uid ? msg : t('rd.wf.loading')}
       </section>
     )
   }
