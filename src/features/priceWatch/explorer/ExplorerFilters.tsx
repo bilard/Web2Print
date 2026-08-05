@@ -1,91 +1,110 @@
-// Filtres de l'explorateur : financiers (écart, prix, promo, stock) et sémantiques
-// (mots-clés de titre). Les mots-clés retenus s'affichent en jetons retirables — un
-// filtre qu'on ne voit pas est un filtre qu'on oublie, et il fausse la lecture des stats.
-import { X, FilterX } from 'lucide-react'
-import { EMPTY_EXPLORER_FILTER, isExplorerFilterActive, type ExplorerFilter, type GapBand, type PairFilter, type StockFilter } from './filters'
+// Contrôles de filtrage, sur une ligne. L'écart de prix n'est PAS ici : il se pilote au
+// clic dans le ruban de position, qui montre déjà la répartition — deux commandes pour
+// le même filtre, à deux endroits, c'est ce qui rendait l'en-tête confus.
+import type { SelectHTMLAttributes } from 'react'
+import { Package, Boxes, Tag, EuroIcon, FilterX } from 'lucide-react'
+import { EMPTY_EXPLORER_FILTER, isExplorerFilterActive, type ExplorerFilter, type PairFilter, type StockFilter } from './filters'
 import { useTranslation } from '@/lib/i18n'
 
-const sel = 'bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-white/10 focus:outline-none focus:border-white/25'
-const numCls = 'bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-white/10 w-24 focus:outline-none focus:border-white/25'
+const sel = 'bg-well text-white/70 text-[11px] rounded pl-6 pr-1.5 py-1.5 border border-white/10 focus:outline-none focus:border-white/25 appearance-none'
+const num = 'bg-well text-white/70 text-[11px] rounded px-1.5 py-1.5 border border-white/10 w-[68px] focus:outline-none focus:border-white/25'
 
 const chip = (on: boolean) =>
-  `text-[11px] rounded px-2 py-1.5 border transition-colors ${
-    on ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200' : 'bg-well border-white/10 text-white/50 hover:text-white/80'
+  `text-[11px] rounded px-2 py-1.5 border transition-colors whitespace-nowrap ${
+    on ? 'bg-amber-400/15 border-amber-400/40 text-amber-200' : 'bg-well border-white/10 text-white/45 hover:text-white/80'
   }`
 
-export function ExplorerFilters({ filter, onChange, tokenIndex }: {
+/** Select précédé de son icône : la nature du filtre se lit sans parcourir l'intitulé. */
+function IconSelect({ icon: Icon, children, ...rest }: {
+  icon: typeof Package
+} & SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <div className="relative shrink-0">
+      <Icon className="w-3 h-3 text-white/30 absolute left-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+      <select {...rest} className={sel}>{children}</select>
+    </div>
+  )
+}
+
+export function ExplorerFilters({ filter, onChange }: {
+  filter: ExplorerFilter
+  onChange: (patch: Partial<ExplorerFilter>) => void
+}) {
+  const { t } = useTranslation()
+  const toNum = (v: string): number | null => {
+    const n = Number(v.replace(',', '.'))
+    return v.trim() === '' || Number.isNaN(n) ? null : n
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <IconSelect icon={Package} value={filter.pairing}
+        onChange={(e) => onChange({ pairing: e.target.value as PairFilter })}>
+        <option value="matched">{t('pwx.appariesSeulement')}</option>
+        <option value="all">{t('pwx.toutesLesFiches')}</option>
+        <option value="orphan">{t('pwx.nonAppariesChezLui')}</option>
+      </IconSelect>
+
+      <IconSelect icon={Boxes} value={filter.stock}
+        onChange={(e) => onChange({ stock: e.target.value as StockFilter })}>
+        <option value="all">{t('pwx.tousStocks')}</option>
+        <option value="in-stock">{t('pwx.inStock')}</option>
+        <option value="out-of-stock">{t('pwx.outOfStock')}</option>
+      </IconSelect>
+
+      <div className="flex items-center gap-1 shrink-0">
+        <EuroIcon className="w-3 h-3 text-white/30" />
+        <input type="number" step="1" min="0" value={filter.priceMin ?? ''} placeholder={t('pwx.min')}
+          onChange={(e) => onChange({ priceMin: toNum(e.target.value) })} className={num} />
+        <span className="text-white/20 text-[11px]">–</span>
+        <input type="number" step="1" min="0" value={filter.priceMax ?? ''} placeholder={t('pwx.max')}
+          onChange={(e) => onChange({ priceMax: toNum(e.target.value) })} className={num} />
+      </div>
+
+      <button type="button" className={chip(filter.promoOnly)} onClick={() => onChange({ promoOnly: !filter.promoOnly })}>
+        <Tag className="w-3 h-3 inline mr-1 -mt-px" />{t('pwx.onPromo')}
+      </button>
+      <button type="button" className={chip(filter.noPriceOnly)} onClick={() => onChange({ noPriceOnly: !filter.noPriceOnly })}>
+        {t('pwx.sansPrixExploitable')}
+      </button>
+
+      {isExplorerFilterActive(filter) && (
+        <button type="button" onClick={() => onChange(EMPTY_EXPLORER_FILTER)}
+          title={t('dam.tool.reset')}
+          className="text-white/35 hover:text-white/80 p-1.5 rounded hover:bg-white/[0.06] transition-colors shrink-0">
+          <FilterX className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** Mots-clés de titre : jetons actifs, puis les plus porteurs du site. Ligne séparée —
+ *  leur nombre varie, et ils pousseraient les contrôles hors de vue. */
+export function ExplorerTokens({ filter, onChange, tokenIndex }: {
   filter: ExplorerFilter
   onChange: (patch: Partial<ExplorerFilter>) => void
   tokenIndex: { token: string; count: number }[]
 }) {
   const { t } = useTranslation()
-  const num = (v: string): number | null => {
-    const n = Number(v.replace(',', '.'))
-    return v.trim() === '' || Number.isNaN(n) ? null : n
-  }
-  const topTokens = tokenIndex.slice(0, 10).filter((s) => !filter.tokens.includes(s.token))
+  const top = tokenIndex.slice(0, 8).filter((s) => !filter.tokens.includes(s.token))
+  if (filter.tokens.length === 0 && top.length === 0) return null
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 flex-wrap">
-        <select value={filter.pairing} onChange={(e) => onChange({ pairing: e.target.value as PairFilter })} className={sel}>
-          <option value="matched">{t('pwx.appariesSeulement')}</option>
-          <option value="all">{t('pwx.toutesLesFiches')}</option>
-          <option value="orphan">{t('pwx.nonAppariesChezLui')}</option>
-        </select>
-
-        <select value={filter.gap} onChange={(e) => onChange({ gap: e.target.value as GapBand })} className={sel}>
-          <option value="all">{t('pwx.tousEcarts')}</option>
-          <option value="cheaper">{t('pwx.ilEstMoinsCher')}</option>
-          <option value="aligned">{t('pwx.aligne1')}</option>
-          <option value="dearer">{t('pwx.jeSuisMoinsCher')}</option>
-        </select>
-
-        <select value={filter.stock} onChange={(e) => onChange({ stock: e.target.value as StockFilter })} className={sel}>
-          <option value="all">{t('pwx.tousStocks')}</option>
-          <option value="in-stock">{t('pwx.inStock')}</option>
-          <option value="out-of-stock">{t('pwx.outOfStock')}</option>
-        </select>
-
-        <div className="flex items-center gap-1">
-          <input type="number" step="1" min="0" value={filter.priceMin ?? ''} placeholder={t('pwx.prixHtMin')}
-            onChange={(e) => onChange({ priceMin: num(e.target.value) })} className={numCls} />
-          <span className="text-white/25 text-xs">–</span>
-          <input type="number" step="1" min="0" value={filter.priceMax ?? ''} placeholder="max"
-            onChange={(e) => onChange({ priceMax: num(e.target.value) })} className={numCls} />
-        </div>
-
-        <button type="button" className={chip(filter.promoOnly)} onClick={() => onChange({ promoOnly: !filter.promoOnly })}>
-          {t('pwx.onPromo')}
+    <div className="flex items-center gap-1 flex-wrap">
+      {filter.tokens.map((tk) => (
+        <button key={tk} type="button" onClick={() => onChange({ tokens: filter.tokens.filter((x) => x !== tk) })}
+          className="text-[11px] rounded px-2 py-0.5 bg-indigo-500/15 border border-indigo-400/40 text-indigo-200 hover:bg-indigo-500/25 transition-colors">
+          {tk} ×
         </button>
-        <button type="button" className={chip(filter.noPriceOnly)} onClick={() => onChange({ noPriceOnly: !filter.noPriceOnly })}>
-          {t('pwx.sansPrixExploitable')}
+      ))}
+      {top.length > 0 && <span className="text-[10px] text-white/20 ml-1">{t('pwx.motsCles')}</span>}
+      {top.map(({ token, count }) => (
+        <button key={token} type="button" onClick={() => onChange({ tokens: [...filter.tokens, token] })}
+          className="text-[11px] rounded px-2 py-0.5 text-white/35 hover:text-white/85 hover:bg-white/[0.06] transition-colors">
+          {token}<span className="text-white/20 ml-1 tabular-nums">{count}</span>
         </button>
-
-        {isExplorerFilterActive(filter) && (
-          <button type="button" onClick={() => onChange(EMPTY_EXPLORER_FILTER)}
-            className="text-[11px] rounded px-2 py-1.5 text-white/40 hover:text-white/80 flex items-center gap-1">
-            <FilterX className="w-3 h-3" />{t('dam.tool.reset')}
-          </button>
-        )}
-      </div>
-
-      {/* Sémantique des titres : jetons actifs, puis les mots-clés les plus porteurs. */}
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {filter.tokens.map((tk) => (
-          <button key={tk} type="button" onClick={() => onChange({ tokens: filter.tokens.filter((x) => x !== tk) })}
-            className="text-[11px] rounded px-2 py-1 bg-indigo-500/15 border border-indigo-400/40 text-indigo-200 flex items-center gap-1">
-            {tk}<X className="w-3 h-3" />
-          </button>
-        ))}
-        {topTokens.length > 0 && <span className="text-[10px] text-white/25 ml-1">{t('pwx.motsCles')}</span>}
-        {topTokens.map(({ token, count }) => (
-          <button key={token} type="button" onClick={() => onChange({ tokens: [...filter.tokens, token] })}
-            className="text-[11px] rounded px-2 py-1 bg-well border border-white/10 text-white/45 hover:text-white/80 hover:border-white/25">
-            {token}<span className="text-white/25 ml-1 tabular-nums">{count}</span>
-          </button>
-        ))}
-      </div>
+      ))}
     </div>
   )
 }
