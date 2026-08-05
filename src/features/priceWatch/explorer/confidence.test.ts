@@ -12,12 +12,18 @@ describe('scorePair — la nature de la preuve fixe le point de départ', () => 
     // Preuve la plus fragile du jeu : elle appelle un contrôle humain même sans
     // contradiction — un nombre dans un titre peut n'être qu'un nombre.
     expect(scorePair(base({ evidence: 'ref-in-title' })).band).toBe('check')
+    // Référence complète en tête de titre ou token entier du slug : `proveMatch` ne les
+    // accepte que sur une clé FORTE. Les classer sous la barre rendait « sûrs seulement »
+    // vide sur tout un site PrestaShop sans données structurées — lu comme une panne.
+    expect(scorePair(base({ evidence: 'ref-in-url' })).band).toBe('sure')
+    expect(scorePair(base({ evidence: 'ref-in-name' })).band).toBe('sure')
   })
 
   it('ordonne les preuves de la plus concluante à la plus fragile', () => {
     const s = (e: PairSignals['evidence']) => scorePair(base({ evidence: e })).score
     expect(s('gtin13')).toBeGreaterThan(s('ean-in-url'))
     expect(s('ean-in-url')).toBeGreaterThan(s('sku'))
+    expect(s('sku')).toBeGreaterThan(s('ref-in-name'))
     expect(s('ref-in-name')).toBeGreaterThan(s('ref-in-url'))
     expect(s('ref-in-url')).toBeGreaterThan(s('ref-in-title'))
   })
@@ -108,7 +114,7 @@ describe('scorePair — les renforts', () => {
     // Clé faible ET indirecte : deux mots de libellé en commun ne doivent pas suffire à
     // repasser la barre. Les renforts affinent le score dans la bande, ils n'en sortent pas.
     const contredit = scorePair(base({
-      evidence: 'ref-in-url', key: { weak: true, origin: true },
+      evidence: 'sku', key: { weak: true, origin: true },
       sourceName: 'Courroie tondeuse Stiga', listingName: 'Courroie tondeuse Stiga renforcée',
     }))
     expect(contredit.band).toBe('doubt')

@@ -88,6 +88,17 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
     [rows, effective, beforeTaxo, verdicts.of],
   )
   const stats = useMemo(() => computeStats(filtered), [filtered])
+  // Répartition des bandes sur TOUT le site, pas sur les lignes filtrées : elle sert à
+  // expliquer une liste vidée par le filtre de fiabilité.
+  const bands = useMemo(() => {
+    let sure = 0, check = 0, doubt = 0
+    for (const r of rows) {
+      if (r.confidence?.band === 'sure') sure++
+      else if (r.confidence?.band === 'check') check++
+      else if (r.confidence?.band === 'doubt') doubt++
+    }
+    return { sure, check, doubt }
+  }, [rows])
 
   // Ce que le catalogue source porte vraiment : dit d'un coup d'œil s'il faut relancer
   // « Comparer catalogue » pour obtenir taxonomie et visuels.
@@ -227,8 +238,21 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
           ) : error ? (
             <div className="py-16 text-center text-rose-300 text-sm">{error}</div>
           ) : visible.length === 0 ? (
-            <div className="py-16 text-center text-white/40 text-sm">
-              {rows.length === 0 ? t('pwx.aucuneFicheCollecteePour') : t('pwx.aucuneFicheNeCorrespond')}
+            <div className="py-16 text-center text-white/40 text-sm space-y-2">
+              <p>{rows.length === 0 ? t('pwx.aucuneFicheCollecteePour') : t('pwx.aucuneFicheNeCorrespond')}</p>
+              {/* Une liste vide qui se tait se lit comme une panne. Quand un filtre de
+                  fiabilité l'a vidée, on dit ce que le site contient RÉELLEMENT : sur un
+                  marchand sans données structurées, « sûrs seulement » peut légitimement
+                  ne rien rendre. */}
+              {rows.length > 0 && effective.trust !== 'all' && (
+                <p className="text-[11px] text-white/30">
+                  {t('pwx.trust.spread', bands)}
+                  <button type="button" onClick={() => patch({ trust: 'all' })}
+                    className="ml-2 underline decoration-dotted hover:text-white/70">
+                    {t('pwx.trust.filterAll')}
+                  </button>
+                </p>
+              )}
             </div>
           ) : (
             visible.map((r) => (

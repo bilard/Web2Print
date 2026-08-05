@@ -45,18 +45,28 @@ export interface Confidence {
 const BASE: Record<MatchEvidence, number> = {
   gtin13: 98,
   'ean-in-url': 88,
-  sku: 84,
-  mpn: 82,
-  'ref-in-name': 76,
-  'ref-in-url': 70,
-  'ref-in-title': 58,
+  sku: 86,
+  mpn: 84,
+  // Référence en TÊTE de titre et token entier du slug d'URL : `proveMatch` ne les
+  // accepte que sur une clé FORTE (≥ 5 caractères, délimitée). Elles restent donc du côté
+  // acquis. Les placer sous la barre rendait la bande « sûr » inatteignable sur tout un
+  // site PrestaShop sans données structurées — filtrer « sûrs seulement » y donnait un
+  // écran vide, ce qui se lit comme une panne, pas comme un résultat.
+  'ref-in-name': 84,
+  'ref-in-url': 80,
+  // Seule preuve laissée en dessous : un nombre au milieu d'un libellé libre peut n'être
+  // qu'un nombre. C'est le cas qui mérite vraiment l'œil humain.
+  'ref-in-title': 62,
 }
 
 const PENALTY: Record<DoubtReason, number> = {
   'ean-conflict': 45,
   'ref-conflict': 15,
-  'weak-key': 15,
-  'origin-key': 18,
+  'weak-key': 18,
+  // Une référence d'ORIGINE désigne la pièce que l'article remplace, pas l'article : deux
+  // équivalents d'une même pièce d'origine ne sont pas forcément interchangeables. La
+  // pénalité doit suffire à faire tomber en doute dès qu'un second défaut s'y ajoute.
+  'origin-key': 25,
   contested: 20,
   'price-gulf': 15,
 }

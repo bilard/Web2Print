@@ -5463,6 +5463,7 @@ export const fr = {
   'pwx.productUrl.help': 'Rend le titre de MON produit cliquable. Jetons acceptés : {ref}, {ean}, {id}. Une URL sans jeton est traitée comme un préfixe : la référence est ajoutée à la fin.',
   'pwx.srcSettings.title': 'Réglages de la jointure F1',
   'pwx.trust.sure': 'Sûr',
+  'pwx.trust.spread': 'Sur ce site : {sure} sûrs · {check} à vérifier · {doubt} douteux.',
   'pwx.verdict.ok.help': 'Valider : c’est bien le même produit',
   'pwx.verdict.ko.help': 'Rejeter : rapprochement faux',
   'pwx.verdict.filterAll': 'Tout l’audit',
