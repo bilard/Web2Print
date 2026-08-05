@@ -86,7 +86,11 @@ function gapTone(gap: number | null): string {
   return 'text-white/60'
 }
 
-export function ExplorerRow({ row }: { row: PairedRow }) {
+export function ExplorerRow({ row, onPickBand }: {
+  row: PairedRow
+  /** Filtre la liste sur la bande cliquée. */
+  onPickBand?: (band: ConfidenceBand) => void
+}) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const { listing, cmp, source, kind, confidence } = row
@@ -125,11 +129,15 @@ export function ExplorerRow({ row }: { row: PairedRow }) {
                   </span>
                 )}
                 {band && confidence && (
-                  <span title={why}
-                    className={`px-1 rounded border text-[9px] uppercase tracking-wide cursor-help ${band.cls}`}>
+                  // Cliquable : le badge est l'endroit où le regard tombe déjà quand un
+                  // appariement intrigue. Il isole d'un coup toutes les lignes de sa bande,
+                  // sans avoir à retrouver le filtre dans la barre du haut.
+                  <button type="button" onClick={() => onPickBand?.(confidence.band)}
+                    title={`${why}\n\n${t('pwx.trust.clickToFilter')}`}
+                    className={`px-1 rounded border text-[9px] uppercase tracking-wide hover:brightness-125 transition ${band.cls}`}>
                     {t(band.key)}
                     <span className="ml-1 opacity-60 tabular-nums">{confidence.score}</span>
-                  </span>
+                  </button>
                 )}
               </div>
               {source.url ? (

@@ -5270,6 +5270,7 @@ export const es: Record<TranslationKey, string> = {
   'pwx.productUrl.help': 'Hace que el título de MI producto sea clicable. Tokens aceptados: {ref}, {ean}, {id}. Una URL sin token se trata como prefijo: la referencia se añade al final.',
   'pwx.srcSettings.title': 'Ajustes de la unión F1',
   'pwx.trust.sure': 'Seguro',
+  'pwx.trust.clickToFilter': 'Haga clic para conservar solo estas filas',
   'pwx.trust.aVerifier': 'Por verificar',
   'pwx.trust.aVerifier.help': 'Emparejamientos cuya fiabilidad no está asegurada. Haga clic para conservar solo esos.',
   'pwx.trust.check': 'Por verificar',

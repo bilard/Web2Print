@@ -221,7 +221,10 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
               {rows.length === 0 ? t('pwx.aucuneFicheCollecteePour') : t('pwx.aucuneFicheNeCorrespond')}
             </div>
           ) : (
-            visible.map((r) => <ExplorerRow key={r.key} row={r} />)
+            visible.map((r) => (
+              <ExplorerRow key={r.key} row={r}
+                onPickBand={(b) => patch({ trust: b === 'sure' ? 'sure' : b === 'doubt' ? 'doubt' : 'suspect' })} />
+            ))
           )}
         </div>
       </div>
