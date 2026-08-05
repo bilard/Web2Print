@@ -6,8 +6,11 @@ import { ListChecks } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import {
-  rowsToCompetitorSites, deriveWatchId, type SourceSitesPayload,
+  rowsToCompetitorSites, deriveWatchId, normalizeDomain, type SourceSitesPayload,
 } from '@/features/priceWatch/sourceSites'
+import { stableId } from '@/features/priceWatch/core'
+import { saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { SourceSitesConfig } from './sourceSitesConfig'
 import type { SourceSitesNodeConfig } from './sourceSitesTypes'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
@@ -44,6 +47,21 @@ const sourceSitesNode: NodeSpec<SourceSitesNodeConfig, Record<string, never>, So
         count: sites.length,
         watchId,
         suffix: forced ? t('run.ss.forcedEngine', { count: forced }) : '.',
+      }))
+    }
+    // Marque l'état ACTIVÉ/DÉSACTIVÉ de chaque ligne dans la méta du concurrent. Sans
+    // cela, le cockpit et l'explorateur ne connaissent QUE les sites ayant des données :
+    // un concurrent décoché depuis des semaines continuait de peser dans les jauges et
+    // pouvait s'afficher comme « le plus lent du cycle ». L'état vit dans la config du
+    // workflow ; ces écrans lisent Firestore — il faut donc l'y déposer.
+    const uid = getWorkspaceUid()
+    if (uid) {
+      const active = new Set(sites.map((s) => s.id))
+      await Promise.all((config.sites ?? []).map((row) => {
+        const domain = normalizeDomain(row.domain ?? '')
+        if (!domain) return Promise.resolve()
+        return saveCompetitorMeta(uid, watchId, stableId(domain), { enabled: active.has(stableId(domain)) })
+          .catch(() => { /* méta non écrite : le cockpit retombe sur son ancien comportement */ })
       }))
     }
     ctx.reportCount?.(sites.length)

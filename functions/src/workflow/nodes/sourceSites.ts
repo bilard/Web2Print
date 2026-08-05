@@ -2,9 +2,12 @@
 // Jumeau SERVEUR (headless/cron) du node « Sites sources »
 // (src/features/workflows/registry/sourceSitesNode.tsx). Émet sur le port `sites` la
 // liste des sites ACTIFS + le watchId, consommés par Moisson / Comparer / Recherche
-// dirigée via `resolveSitesInput`. Aucune UI ni Firestore — logique pure.
+// dirigée via `resolveSitesInput`.
+import { getFirestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
-import { deriveWatchId, rowsToCompetitorSites, type SourceSiteRow } from '../../priceWatch/sourceSites'
+import { deriveWatchId, rowsToCompetitorSites, normalizeDomain, type SourceSiteRow } from '../../priceWatch/sourceSites'
+import { stableId } from '../../priceWatch/helpers'
+import { competitorDoc } from '../../priceWatch/paths'
 import { t } from '../../i18n'
 
 registerServerNode({
@@ -15,6 +18,19 @@ registerServerNode({
     const sites = rowsToCompetitorSites(rows)
     if (sites.length === 0) ctx.log('warn', t(ctx.locale, 'run.ss.noActiveSite'))
     else ctx.log('info', t(ctx.locale, 'run.ss.emitted', { count: sites.length, watchId, suffix: '.' }))
+
+    // Jumeau du client : marque l'état coché/décoché dans la méta du concurrent. Le
+    // cockpit lit Firestore et n'a aucun autre moyen de connaître un état qui vit dans
+    // la config du workflow — sans ça, un site décoché pèse encore sur les jauges.
+    const db = getFirestore()
+    const active = new Set(sites.map((s) => s.id))
+    await Promise.all(rows.map((row) => {
+      const domain = normalizeDomain(String(row?.domain ?? ''))
+      if (!domain) return Promise.resolve()
+      return db.doc(competitorDoc(ctx.uid, watchId, stableId(domain)))
+        .set({ enabled: active.has(stableId(domain)) }, { merge: true })
+        .catch(() => undefined)
+    }))
     return { sites: { watchId, sites } }
   },
 })

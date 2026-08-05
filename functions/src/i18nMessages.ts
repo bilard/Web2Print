@@ -213,6 +213,10 @@ const MESSAGES = {
     fr: 'Budget réservé au comparatif — recherche dirigée repoussée au prochain tick.',
     en: 'Budget reserved for the comparison — directed search postponed to the next tick.',
   },
+  'run.directed.noPriceDiag': {
+    fr: 'Diagnostic : {processed} produit(s) interrogés sur {products} exploitables · {keyless} ligne(s) sans aucune clé · {withOrigin} avec réf. d’origine · {sites} site(s), dont {skipped} coupé(s) par le disjoncteur.',
+    en: 'Diagnosis: {processed} product(s) queried out of {products} usable · {keyless} row(s) with no key at all · {withOrigin} with an original reference · {sites} site(s), {skipped} of which cut off by the breaker.',
+  },
   'run.directed.enginesForced': {
     fr: '{count} site(s) avec moteur forcé (Firecrawl / Bright Data / Jina) : la recherche dirigée l’utilise aussi.',
     en: '{count} site(s) with a forced engine (Firecrawl / Bright Data / Jina): directed search uses it too.',

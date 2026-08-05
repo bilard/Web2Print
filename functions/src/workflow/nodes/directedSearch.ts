@@ -165,6 +165,10 @@ registerServerNode({
         originRefs: descCol ? extractOriginRefs(String(r[descCol] ?? '')) : undefined,
       }))
       .filter((p) => p.ref || p.ean || p.originRefs?.length)
+    // Jumeau du client : chiffrer le vide (lignes sans clé, produits porteurs d'une réf
+    // d'origine) — c'est le cron qui tourne la nuit, et c'est LUI qu'on lit au réveil.
+    const keyless = (sheet.rows?.length ?? 0) - products.length
+    const withOrigin = products.filter((p) => p.originRefs?.length).length
 
     const budget = Math.max(1, Number(config.productBudget) || 60)
     const CURSOR_META = 'directed_cursor' // pas de __…__ : Firestore réserve ces ids
@@ -259,6 +263,10 @@ registerServerNode({
       to: pass.nextCursor, products: products.length, sites: sites.length,
     }))
     if (rows.length === 0) {
+      ctx.log('warn', t(ctx.locale, 'run.directed.noPriceDiag', {
+        processed: pass.processed, products: products.length, keyless,
+        withOrigin, sites: sites.length, skipped: 0,
+      }))
       ctx.log('warn', t(ctx.locale, 'run.directed.noPriceFound'))
     }
     if (hasGeneric) {

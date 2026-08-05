@@ -15,6 +15,9 @@ import type { CompetitorStat } from '../catalog/report'
  *  Se met à jour à CHAQUE passe de moisson → prime sur le snapshot figé du rapport. */
 export interface HarvestMeta {
   domain?: string
+  /** Site coché dans « Sites sources » (cf. CompetitorMeta.enabled). Absent = état
+   *  inconnu (aucun run depuis l'introduction du champ) → traité comme actif. */
+  enabled?: boolean
   /** Nombre de produits indexés — mis à jour EN COURS de moisson (toutes les N pages) puis
    *  remis à la valeur dédupliquée exacte au « Comparer ». Fait ticker « Fiches collectées ». */
   productCount?: number
@@ -110,9 +113,17 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
   const competitors = [...report.byCompetitor, ...liveOnly]
     .map((s) => opsCompetitorOf(s, liveMeta?.get(s.siteId)))
     .sort((a, b) => b.indexed - a.indexed || a.domain.localeCompare(b.domain))
-  // « Actif » = a collecté ≥ 1 fiche. Garde-fou : un site à 0 fiche mais `progress=1`
-  // (balayage « complet » de rien) ne doit ni compter comme bouclé ni verdir la jauge.
-  const active = competitors.filter((c) => c.indexed > 0)
+  // ⚠ Un site DÉCOCHÉ ne doit plus peser : il gardait ses fiches d'hier, donc il
+  // continuait d'alimenter les jauges et pouvait même s'afficher comme « le plus lent du
+  // cycle » alors qu'il ne tourne plus. L'état vient de la méta (écrite par le node) ;
+  // absent = inconnu, on le garde plutôt que de vider le tableau.
+  const disabled = new Set(
+    liveMeta ? [...liveMeta.entries()].filter(([, m]) => m.enabled === false).map(([id]) => id) : [],
+  )
+  // « Actif » = coché ET a collecté ≥ 1 fiche. Garde-fou : un site à 0 fiche mais
+  // `progress=1` (balayage « complet » de rien) ne doit ni compter comme bouclé ni
+  // verdir la jauge.
+  const active = competitors.filter((c) => c.indexed > 0 && !disabled.has(c.siteId))
   const totalIndexed = competitors.reduce((n, c) => n + c.indexed, 0)
   const totalCumulMs = competitors.reduce((n, c) => n + c.cumulMs, 0)
   const avgProgress = active.length
@@ -145,7 +156,9 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
 
   return {
     totalIndexed, totalCumulMs, avgProgress,
-    sitesActive: active.length, sitesTotal: competitors.length, sitesComplete,
+    sitesActive: active.length,
+    sitesTotal: competitors.filter((c) => !disabled.has(c.siteId)).length,
+    sitesComplete,
     cyclesDone, slowestCycle, runAt: report.runAt, lastCollectAt, lastCollectDomain,
     hasData: totalIndexed > 0,
     competitors,

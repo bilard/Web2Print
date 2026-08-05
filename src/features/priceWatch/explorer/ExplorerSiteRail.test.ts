@@ -38,6 +38,15 @@ describe('buildRail', () => {
     expect(orphanMeta[0]).toMatchObject({ domain: 'y.fr', collected: 10, matched: 0, medGapPct: null })
   })
 
+  it('écarte les sites décochés, garde ceux dont l’état est inconnu', () => {
+    const m = new Map<string, HarvestMeta>([
+      ['on', { domain: 'on.fr', productCount: 10, enabled: true }],
+      ['off', { domain: 'off.fr', productCount: 999, enabled: false }],
+      ['unknown', { domain: 'unknown.fr', productCount: 5 }],
+    ])
+    expect(buildRail(m, []).map((r) => r.domain)).toEqual(['on.fr', 'unknown.fr'])
+  })
+
   it('classe par volume collecté, à égalité par domaine', () => {
     const m = new Map<string, HarvestMeta>([
       ['x', { domain: 'x.fr', productCount: 10 }],

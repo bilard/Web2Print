@@ -35,6 +35,10 @@ export function buildRail(meta: Map<string, HarvestMeta>, stats: CompetitorStat[
   const byId = new Map(stats.map((s) => [s.siteId, s]))
   const ids = new Set([...meta.keys(), ...stats.map((s) => s.siteId)])
   return [...ids]
+    // Un site DÉCOCHÉ dans « Sites sources » n'a plus à figurer : ses fiches d'hier ne
+    // sont plus rafraîchies. `enabled` absent = état inconnu (aucun run depuis
+    // l'introduction du champ) → on le garde, mieux vaut un site de trop qu'une liste vide.
+    .filter((siteId) => meta.get(siteId)?.enabled !== false)
     .map((siteId) => {
       const m = meta.get(siteId)
       const s = byId.get(siteId)

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildOpsCockpit } from './opsMetrics'
+import { buildOpsCockpit, type HarvestMeta } from './opsMetrics'
 import type { StoredReport } from '../reportStore'
 import type { CompetitorStat } from '../catalog/report'
 
@@ -87,5 +87,28 @@ describe('buildOpsCockpit — balayage terminé en ATTENTE du cycle calendaire',
     expect(ck.cyclesDone).toBe(1)
     // Durée d'un cycle calculable dès le premier balayage bouclé.
     expect(ck.slowestCycle).toEqual({ domain: 'a.fr', cycleMs: 9000 })
+  })
+})
+
+describe('sites décochés', () => {
+  it('ne les compte ni dans les jauges ni dans le goulot du cycle', () => {
+    // Cas vécu : leroymerlin.fr décoché depuis des semaines s'affichait « le + lent »
+    // du cycle, et pesait sur « 18/19 sites bouclés ».
+    const meta = new Map<string, HarvestMeta>([
+      ['a', { domain: 'a.fr', productCount: 100, harvestProgress: 1, harvestSweeps: 2, cumulHarvestMs: 60_000, enabled: true }],
+      ['slow', { domain: 'leroymerlin.fr', productCount: 100, harvestProgress: 1, harvestSweeps: 1, cumulHarvestMs: 4_600_000, enabled: false }],
+    ])
+    const report = {
+      runAt: 1, kpis: {}, sites: [], products: [], totalMatched: 0, truncated: false,
+      byCompetitor: [
+        { siteId: 'a', domain: 'a.fr', matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, audit: { indexed: 100, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 } },
+        { siteId: 'slow', domain: 'leroymerlin.fr', matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, audit: { indexed: 100, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 } },
+      ],
+    } as unknown as StoredReport
+
+    const ops = buildOpsCockpit(report, meta)
+    expect(ops.sitesActive).toBe(1)
+    expect(ops.sitesTotal).toBe(1)
+    expect(ops.slowestCycle?.domain).toBe('a.fr')
   })
 })

@@ -37,6 +37,10 @@ export interface CompetitorMeta {
    *  pour distinguer « attend son tour » de « ne se lance plus » — sans lui, la carte
    *  affichait « OK » avec un horodatage vieux de plusieurs jours. */
   cycleWaitingAt?: number
+  /** Site coché dans « Sites sources ». Écrit à chaque run du node : le cockpit et
+   *  l'explorateur lisent Firestore et n'ont, sinon, aucun moyen de connaître l'état
+   *  d'activation — qui vit dans la config du workflow. */
+  enabled?: boolean
   /** Nombre de produits actuellement indexés (dérivé, pour l'affichage). */
   productCount?: number
   /** Nombre de pages moissonnées. */
