@@ -13,7 +13,7 @@ import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat,
 import type { SourceProduct } from './catalog/match'
 import { retainHistory } from './history'
 import type { KpiHistoryPoint } from './types'
-import { diffPrices, mergeEvents, chunkState, type PriceState, type PriceEvent } from './priceEvents'
+import { diffPrices, mergeEvents, chunkState, backfillEventUrls, type PriceState, type PriceEvent } from './priceEvents'
 import { stripUndefined } from '@/lib/stripUndefined'
 
 // ── Catalogue SOURCE persisté (pour recalculer le benchmark hors workflow) ──────────
@@ -122,10 +122,14 @@ async function recordPriceMoves(uid: string, watchId: string, rows: ProductRow[]
     // le journal échouait, le mouvement serait perdu DÉFINITIVEMENT (le prix de référence
     // aurait déjà bougé). Dans l'ordre inverse, un échec de l'état fait ré-émettre les
     // mêmes mouvements au tour suivant — et mergeEvents les déduplique.
-    if (events.length > 0) {
-      const journal = await loadPriceEvents(uid, watchId)
+    // Le journal est relu à CHAQUE analyse, même sans mouvement : c'est l'occasion de
+    // combler l'URL des mouvements écrits avant l'introduction de `u`. Sans ce rattrapage,
+    // l'écran resterait sans liens jusqu'à ce que le TTL de 90 j ait tout renouvelé.
+    const journal = await loadPriceEvents(uid, watchId)
+    const { events: healed, filled } = backfillEventUrls(journal, rows)
+    if (events.length > 0 || filled > 0) {
       await setDoc(doc(db, priceEventsDoc(uid, watchId)), {
-        events: mergeEvents(journal, events, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES),
+        events: mergeEvents(healed, events, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES),
       })
     }
     await savePriceState(uid, watchId, state)

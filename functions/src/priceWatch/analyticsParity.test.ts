@@ -6,7 +6,7 @@
 // le client n'aurait pas vus. Ce test exerce les fonctions clés côté serveur.
 import { describe, it, expect } from 'vitest'
 import { retainHistory } from './history'
-import { diffPrices, mergeEvents, chunkState, stateKey } from './priceEvents'
+import { diffPrices, mergeEvents, chunkState, backfillEventUrls, stateKey } from './priceEvents'
 import type { ProductRow } from './catalog/report'
 
 const DAY = 86_400_000
@@ -56,6 +56,16 @@ describe('priceEvents (parité serveur)', () => {
   it('porte l’URL de la fiche concurrent, comme le jumeau client', () => {
     const prev = { [stateKey('a', 'pm')]: { p: 80, t: NOW - DAY } }
     const { events } = diffPrices(prev, [row('a', 100, [cell('pm', 72)])], NOW)
+    expect(events[0].u).toBe('https://pm.fr/p.html')
+  })
+
+  it('comble l’URL des mouvements déjà journalisés, comme le jumeau client', () => {
+    const legacy = {
+      at: NOW - DAY, pid: 'a', name: 'x', ref: null, sid: 'pm', dom: 'pm.fr',
+      from: 100, to: 90, pctChange: -10, mine: 110, gapAfter: null,
+    }
+    const { events, filled } = backfillEventUrls([legacy], [row('a', 100, [cell('pm', 72)])])
+    expect(filled).toBe(1)
     expect(events[0].u).toBe('https://pm.fr/p.html')
   })
 

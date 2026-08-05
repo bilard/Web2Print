@@ -110,6 +110,33 @@ export function diffPrices(prev: PriceState, rows: ProductRow[], at: number): {
   return { events, state }
 }
 
+/**
+ * Complète l'URL (`u`) des mouvements DÉJÀ journalisés, depuis les relevés de l'analyse
+ * courante.
+ *
+ * Sans ça, ajouter `u` ne répare que l'avenir : le journal conserve 2000 mouvements sur
+ * 90 jours, donc l'écran resterait sans liens pendant des semaines. `rows` est la liste
+ * COMPLÈTE des appariés (avant `rankProducts` et tout plafond) — c'est ce qui permet de
+ * combler les produits que `reports/latest` ne contient pas.
+ *
+ * Retourne le nombre d'entrées comblées : à 0, l'appelant n'a RIEN à réécrire.
+ */
+export function backfillEventUrls(
+  events: PriceEvent[], rows: ProductRow[],
+): { events: PriceEvent[]; filled: number } {
+  const byKey = new Map<string, string>()
+  for (const r of rows) for (const c of r.competitors) if (c.url) byKey.set(stateKey(r.id, c.siteId), c.url)
+  let filled = 0
+  const out = events.map((e) => {
+    if (e.u) return e
+    const url = byKey.get(stateKey(e.pid, e.sid))
+    if (!url) return e
+    filled++
+    return { ...e, u: url }
+  })
+  return { events: out, filled }
+}
+
 /** Taille UTF-8 (identique côté client et serveur). */
 const utf8Bytes = (s: string): number => new TextEncoder().encode(s).length
 

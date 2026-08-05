@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { diffPrices, mergeEvents, chunkState, summarizeMoves, eventsSince, stateKey, type PriceEvent, type PriceState } from './priceEvents'
+import { diffPrices, mergeEvents, chunkState, backfillEventUrls, summarizeMoves, eventsSince, stateKey, type PriceEvent, type PriceState } from './priceEvents'
 import type { ProductRow } from './catalog/report'
 
 const T0 = new Date('2026-07-01T09:00:00').getTime()
@@ -96,6 +96,32 @@ describe('diffPrices', () => {
 const ev = (at: number, pctChange: number, sid = 'pm'): PriceEvent => ({
   at, pid: 'p', name: 'P', ref: null, sid, dom: `${sid}.fr`,
   from: 100, to: 100 + pctChange, pctChange, mine: 100, gapAfter: null,
+})
+
+describe('backfillEventUrls', () => {
+  const old = (pid: string, sid: string): PriceEvent => ({
+    at: T0, pid, name: 'x', ref: null, sid, dom: `${sid}.fr`,
+    from: 100, to: 90, pctChange: -10, mine: 110, gapAfter: null,
+  })
+
+  it('comble l’URL des mouvements déjà journalisés depuis l’analyse courante', () => {
+    const { events, filled } = backfillEventUrls([old('1', 'a')], [row('1', 120, [cell('a', 90)])])
+    expect(filled).toBe(1)
+    expect(events[0].u).toBe('https://a.fr/p.html')
+  })
+
+  it('ne touche pas un mouvement qui porte déjà son URL', () => {
+    const already: PriceEvent = { ...old('1', 'a'), u: 'https://ancien.fr/x' }
+    const { events, filled } = backfillEventUrls([already], [row('1', 120, [cell('a', 90)])])
+    expect(filled).toBe(0)
+    expect(events[0].u).toBe('https://ancien.fr/x')
+  })
+
+  it('clé introuvable : aucune URL inventée et `filled` à 0 (rien à réécrire)', () => {
+    const { events, filled } = backfillEventUrls([old('9', 'z')], [row('1', 120, [cell('a', 90)])])
+    expect(filled).toBe(0)
+    expect(events[0].u).toBeUndefined()
+  })
 })
 
 describe('mergeEvents', () => {

@@ -108,6 +108,29 @@ export function diffPrices(prev: PriceState, rows: ProductRow[], at: number): {
   return { events, state }
 }
 
+/**
+ * Complète l'URL (`u`) des mouvements DÉJÀ journalisés, depuis les relevés de l'analyse
+ * courante. Sans ce rattrapage, ajouter `u` ne répare que l'avenir (journal conservé
+ * 2000 mouvements / 90 jours). `rows` = liste COMPLÈTE des appariés, avant tout plafond.
+ * Retourne le nombre d'entrées comblées : à 0, rien à réécrire.
+ * Doit rester identique au jumeau CLIENT `src/features/priceWatch/priceEvents.ts`.
+ */
+export function backfillEventUrls(
+  events: PriceEvent[], rows: ProductRow[],
+): { events: PriceEvent[]; filled: number } {
+  const byKey = new Map<string, string>()
+  for (const r of rows) for (const c of r.competitors) if (c.url) byKey.set(stateKey(r.id, c.siteId), c.url)
+  let filled = 0
+  const out = events.map((e) => {
+    if (e.u) return e
+    const url = byKey.get(stateKey(e.pid, e.sid))
+    if (!url) return e
+    filled++
+    return { ...e, u: url }
+  })
+  return { events: out, filled }
+}
+
 /** Taille UTF-8 (identique côté client et serveur). */
 const utf8Bytes = (s: string): number => Buffer.byteLength(s, 'utf8')
 
