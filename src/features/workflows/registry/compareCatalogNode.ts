@@ -250,7 +250,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
       await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '', workflowId: ctx.workflowId })
       // Persiste le catalogue source → le recalcul mono-site (après un ▶ dans « Sites
       // sources ») pourra reconstruire le benchmark sans relancer tout le workflow.
-      await saveSourceCatalog(uid, watchId, products, vatRate).catch((e) => ctx.log('warn', t('run.sourceCatalogNotPersisted', { message: e instanceof Error ? e.message : String(e) })))
+      await saveSourceCatalog(uid, watchId, products, vatRate, { rows: rawRows.length }).catch((e) => ctx.log('warn', t('run.sourceCatalogNotPersisted', { message: e instanceof Error ? e.message : String(e) })))
       // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact.
       await Promise.all(report.byCompetitor.map((c) =>
         saveCompetitorMeta(uid, watchId, c.siteId, { productCount: c.audit.indexed })))

@@ -23,15 +23,17 @@ export interface SourceCatalogState {
   partial: boolean
   /** Produits annoncés à la dernière écriture (pour chiffrer l'écart). */
   expected: number
+  /** Lignes reçues par le node « Comparer catalogue » lors de cette écriture. */
+  sourceRows: number
 }
 
 /** Catalogue source du suivi : la base de l'appariement ET des écarts de prix. */
 export function useSourceCatalog(watchId: string | null): SourceCatalogState {
   const uid = useWorkspaceUid()
-  const [state, setState] = useState<SourceCatalogState>({ products: [], vatRate: 20, loading: false, absent: false, partial: false, expected: 0 })
+  const [state, setState] = useState<SourceCatalogState>({ products: [], vatRate: 20, loading: false, absent: false, partial: false, expected: 0, sourceRows: 0 })
 
   useEffect(() => {
-    if (!uid || !watchId) { setState({ products: [], vatRate: 20, loading: false, absent: false, partial: false, expected: 0 }); return }
+    if (!uid || !watchId) { setState({ products: [], vatRate: 20, loading: false, absent: false, partial: false, expected: 0, sourceRows: 0 }); return }
     let cancelled = false
     setState((s) => ({ ...s, loading: true }))
     loadSourceCatalog(uid, watchId)
@@ -44,13 +46,13 @@ export function useSourceCatalog(watchId: string | null): SourceCatalogState {
         setState({
           products: src?.products ?? [], vatRate: src?.vatRate ?? 20,
           loading: false, absent: src == null,
-          partial: !!src?.partial, expected: src?.expected ?? 0,
+          partial: !!src?.partial, expected: src?.expected ?? 0, sourceRows: src?.sourceRows ?? 0,
         })
       })
       .catch((e) => {
         if (cancelled) return
         console.error('[pw-explorer] catalogue source illisible', e)
-        setState({ products: [], vatRate: 20, loading: false, absent: true, partial: false, expected: 0 })
+        setState({ products: [], vatRate: 20, loading: false, absent: true, partial: false, expected: 0, sourceRows: 0 })
       })
     return () => { cancelled = true }
   }, [uid, watchId])

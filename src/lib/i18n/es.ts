@@ -5283,6 +5283,7 @@ export const es: Record<TranslationKey, string> = {
   'tst.ss.partialSourceCatalog': 'Catálogo de origen incompleto ({read} productos de {expected}): el benchmark NO se recalculó para no sobrescribir el último informe válido. Vuelva a ejecutar «Comparar catálogo».',
   'pwx.fallback.show': 'fuente alternativa',
   'pwx.fallback.help': 'Base PIM usada en lugar del catálogo del flujo para descripciones, imágenes y taxonomía. Innecesaria mientras el catálogo de origen las incluya.',
+  'pwx.src.catalogRows': 'Catálogo de origen del flujo: {count} productos conservados de {rows} filas leídas',
   'pwx.competitors': 'Competidores',
   'pwx.tabCollected': '{count} fichas recopiladas',
   'pwx.reload': 'Recargar',

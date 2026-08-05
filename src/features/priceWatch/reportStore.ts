@@ -48,7 +48,13 @@ export const SOURCE_CHUNK_BYTES_FOR_TEST = SOURCE_CHUNK_BYTES
 export const sliceSourceCatalogForTest = sliceByBytes
 
 /** Persiste le catalogue source (chunké sous la limite 1 Mo/doc) + la TVA. Remplace tout. */
-export async function saveSourceCatalog(uid: string, watchId: string, products: SourceProduct[], vatRate: number): Promise<void> {
+export async function saveSourceCatalog(
+  uid: string, watchId: string, products: SourceProduct[], vatRate: number,
+  /** Lignes REÇUES par le node. Persisté pour répondre, plus tard, à « pourquoi si peu
+   *  de produits ? » sans rouvrir le journal du run : 100 retenus sur 100 lignes désigne
+   *  la source, 100 sur 74 000 désigne le dédoublonnage. */
+  opts: { rows?: number } = {},
+): Promise<void> {
   const col = sourceCol(uid, watchId)
   // Purge les anciens chunks (catalogue plus petit qu'avant → pas d'orphelins).
   const existing = await getDocs(collection(db, col)).catch(() => null)
@@ -68,7 +74,10 @@ export async function saveSourceCatalog(uid: string, watchId: string, products: 
     // persisté depuis un run navigateur, et le recalcul mono-site (▶) restait aveugle.
     await setDoc(doc(db, col, `chunk_${i}`), { products: stripUndefined(slices[i]) })
   }
-  await setDoc(doc(db, col, '_meta'), { vatRate, chunks, count: products.length, at: Date.now() })
+  await setDoc(doc(db, col, '_meta'), {
+    vatRate, chunks, count: products.length, at: Date.now(),
+    ...(opts.rows != null ? { rows: opts.rows } : {}),
+  })
 }
 
 /** Relit le catalogue source persisté. null si jamais écrit (aucun « Comparer » lancé). */
@@ -77,6 +86,8 @@ export interface LoadedSourceCatalog {
   vatRate: number
   /** Nombre de produits annoncés par `_meta` à la dernière écriture. */
   expected: number
+  /** Lignes reçues par le node lors de cette écriture (0 = non mesuré, écriture ancienne). */
+  sourceRows: number
   /** Des tranches manquent : le catalogue relu est AMPUTÉ. Aucun calcul ne doit s'y fier. */
   partial: boolean
 }
@@ -88,6 +99,7 @@ export async function loadSourceCatalog(uid: string, watchId: string): Promise<L
   const vatRate = (meta.data()?.vatRate as number) ?? 20
   const chunks = (meta.data()?.chunks as number) ?? 0
   const expected = (meta.data()?.count as number) ?? 0
+  const sourceRows = (meta.data()?.rows as number) ?? 0
   const products: SourceProduct[] = []
   for (let i = 0; i < chunks; i++) {
     const c = await getDoc(doc(db, col, `chunk_${i}`))
@@ -96,7 +108,7 @@ export async function loadSourceCatalog(uid: string, watchId: string): Promise<L
   // Tolérance : le compte doit coller à quelques unités près (une tranche manquante en
   // coûte des centaines). Sous ce seuil, tout consommateur doit s'abstenir.
   const partial = expected > 0 && products.length < expected - 5
-  return { products, vatRate, expected, partial }
+  return { products, vatRate, expected, partial, sourceRows }
 }
 
 /** Plafond de produits persistés dans `latest` (les plus sous-cotés d'abord). Au-delà,

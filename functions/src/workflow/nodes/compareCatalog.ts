@@ -157,7 +157,7 @@ registerServerNode({
       await saveCatalogReport(ctx.uid, watchId, report, siteRefs, Date.now(), { label: ctx.workflowName })
       // Catalogue source (comme le node client) : sans lui, un suivi alimenté seulement
       // par le cron n'a rien à relire pour un recalcul mono-site après un ▶.
-      await saveSourceCatalog(ctx.uid, watchId, sourceProducts, vatRate)
+      await saveSourceCatalog(ctx.uid, watchId, sourceProducts, vatRate, { rows: rawRows.length })
         .catch((e) => ctx.log('warn', t(ctx.locale, 'run.sourceCatalogNotPersisted', { message: e instanceof Error ? e.message : String(e) })))
       // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact
       // (annule la dérive de l'incrément live de la moisson).

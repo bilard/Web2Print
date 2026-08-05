@@ -42,6 +42,8 @@ function sliceByBytes<T>(products: T[]): T[][] {
 /** Persiste le catalogue source (chunké sous la limite 1 Mo/doc) + la TVA. Remplace tout. */
 export async function saveSourceCatalog(
   uid: string, watchId: string, products: SourceProduct[], vatRate: number,
+  /** Lignes REÇUES par le node — jumeau du client (diagnostic « pourquoi si peu ? »). */
+  opts: { rows?: number } = {},
 ): Promise<void> {
   const db = getFirestore()
   const col = sourceCol(uid, watchId)
@@ -56,7 +58,10 @@ export async function saveSourceCatalog(
   for (let i = 0; i < chunks; i++) {
     await db.doc(`${col}/chunk_${i}`).set({ products: stripUndefined(slices[i]) })
   }
-  await db.doc(`${col}/_meta`).set({ vatRate, chunks, count: products.length, at: Date.now() })
+  await db.doc(`${col}/_meta`).set({
+    vatRate, chunks, count: products.length, at: Date.now(),
+    ...(opts.rows != null ? { rows: opts.rows } : {}),
+  })
 }
 
 // ── Journal des changements de prix (jumeau du client) ─────────────────────────────

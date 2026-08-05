@@ -21,6 +21,8 @@ export interface SourceCatalogFacts {
   /** Des tranches du catalogue manquent : les appariés affichés sont SOUS-COMPTÉS. */
   partial: boolean
   expected: number
+  /** Lignes fournies par la feuille source au dernier run (0 = non mesuré). */
+  sourceRows: number
 }
 
 export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, sheets, sheetIndex, onPickSheet, extras, imagePrefix, onImagePrefix }: {
@@ -51,7 +53,11 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
       {/* Catalogue source du WORKFLOW : c'est de là que viennent taxonomie, visuels et
           descriptions. La base PIM n'est qu'un repli, replié tant qu'il n'est pas utile. */}
       <Link2 className="w-3 h-3 shrink-0" />
-      <span className="text-white/50">{t('pwx.src.catalog', { count: n(facts.products) })}</span>
+      <span className="text-white/50">
+        {facts.sourceRows > 0
+          ? t('pwx.src.catalogRows', { count: n(facts.products), rows: n(facts.sourceRows) })
+          : t('pwx.src.catalog', { count: n(facts.products) })}
+      </span>
       {facts.partial && (
         <span className="text-rose-300 flex items-center gap-1 font-medium">
           <AlertTriangle className="w-3 h-3 shrink-0" />
