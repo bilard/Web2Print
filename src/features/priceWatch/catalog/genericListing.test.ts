@@ -57,3 +57,30 @@ describe('gabarit CollectionPage (enseignes : castorama, Kingfisher…)', () => 
     expect(out[0].image).not.toContain('&amp;')
   })
 })
+
+describe('URL d’image relative', () => {
+  // Vécu : toutes les vignettes concurrentes cassées dans l'explorateur. L'URL produit
+  // était absolutisée, l'image non — elle partait relative en base et le navigateur la
+  // résolvait contre le domaine de l'application, pas celui du marchand.
+  it('rend l’image absolue contre la page d’origine', () => {
+    const ld = JSON.stringify({
+      '@type': 'Product', name: 'Veste forestière', sku: 'V1',
+      image: '/img/p/12-345.jpg',
+      offers: { '@type': 'Offer', price: '106.02', priceCurrency: 'EUR' },
+    })
+    const [l] = parseListingGeneric(`<script type="application/ld+json">${ld}</script>`, 'https://m.fr/cat/veste.html')
+    expect(l.image).toBe('https://m.fr/img/p/12-345.jpg')
+  })
+
+  it('laisse intactes les URL déjà absolues et les images inline', () => {
+    const mk = (img: string) => JSON.stringify({
+      '@type': 'Product', name: 'X', image: img,
+      offers: { '@type': 'Offer', price: '1', priceCurrency: 'EUR' },
+    })
+    const of = (img: string) => parseListingGeneric(`<script type="application/ld+json">${mk(img)}</script>`, 'https://m.fr/p.html')[0].image
+    expect(of('https://cdn.autre.fr/a.jpg')).toBe('https://cdn.autre.fr/a.jpg')
+    expect(of('data:image/gif;base64,R0lGOD')).toBe('data:image/gif;base64,R0lGOD')
+    // Protocole-relatif : hérite du schéma de la page, donc https.
+    expect(of('//cdn.m.fr/a.jpg')).toBe('https://cdn.m.fr/a.jpg')
+  })
+})

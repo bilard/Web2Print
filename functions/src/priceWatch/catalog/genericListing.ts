@@ -82,6 +82,12 @@ function imageOf(v: unknown): string | undefined {
   return undefined
 }
 
+/** URL rendue absolue contre la page d'origine. Laisse passer `data:` (image inline). */
+function absolutize(raw: string | undefined, baseUrl?: string): string | undefined {
+  if (!raw || !baseUrl || /^(?:https?:|data:)/i.test(raw)) return raw
+  try { return new URL(raw, baseUrl).toString() } catch { return raw }
+}
+
 function toListing(o: Record<string, unknown>, baseUrl?: string): CompetitorListing | null {
   const name = str(o.name)
   if (!name) return null
@@ -89,6 +95,10 @@ function toListing(o: Record<string, unknown>, baseUrl?: string): CompetitorList
   const price = offer ? num(offer.price ?? offer.lowPrice) : undefined
   let url = str(o.url) ?? (offer ? str(offer.url) : undefined)
   if (url && baseUrl && !/^https?:\/\//i.test(url)) { try { url = new URL(url, baseUrl).toString() } catch { /* garde tel quel */ } }
+  // L'image du JSON-LD est relative aussi souvent que l'URL produit (« /img/p/12.jpg »,
+  // « //cdn.site.fr/… »). Oubliée ici, elle était stockée telle quelle et TOUTES les
+  // vignettes du concurrent restaient cassées dans l'explorateur.
+  const image = absolutize(imageOf(o.image), baseUrl)
   const currency = offer ? str(offer.priceCurrency) : undefined
   return {
     url: url ?? baseUrl ?? '',
@@ -99,7 +109,7 @@ function toListing(o: Record<string, unknown>, baseUrl?: string): CompetitorList
     taxIncluded: currency ? true : undefined, // B2C schema.org = prix TTC affiché
     availability: offer ? mapAvailability(offer.availability) : undefined,
     gtin13: str(o.gtin13) ?? str(o.gtin) ?? str(o.gtin14),
-    image: imageOf(o.image),
+    image,
   }
 }
 

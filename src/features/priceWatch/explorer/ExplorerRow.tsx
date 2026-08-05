@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { ImageOff, ChevronDown } from 'lucide-react'
 import type { PairedRow } from './pairing'
 import type { ConfidenceBand, DoubtReason } from './confidence'
+import type { CompetitorListing } from '../catalog/prestashop'
 import { discountPct } from './pairing'
 import { eur, pct } from '../dashboard/format'
 import { useTranslation, type TranslationKey } from '@/lib/i18n'
@@ -46,7 +47,10 @@ const STOCK_LABEL: Record<string, { key: TranslationKey; cls: string }> = {
 }
 
 function Thumb({ src, alt, size = 'h-16 w-16' }: { src: string | null; alt: string; size?: string }) {
-  if (!src) {
+  // Une URL morte laissait l'icône de fichier cassé du navigateur, indiscernable d'un
+  // visuel réel tant qu'on ne zoomait pas. On retombe sur le placeholder « aucun visuel ».
+  const [broken, setBroken] = useState(false)
+  if (!src || broken) {
     return (
       <div className={`${size} shrink-0 rounded bg-well border border-white/10 flex items-center justify-center`}>
         <ImageOff className="w-4 h-4 text-white/20" />
@@ -54,9 +58,24 @@ function Thumb({ src, alt, size = 'h-16 w-16' }: { src: string | null; alt: stri
     )
   }
   return (
-    <img src={src} alt={alt} loading="lazy"
+    // `no-referrer` : beaucoup de marchands bloquent le hotlink en lisant le Referer. Sans
+    // en-tête, le CDN sert l'image comme à un accès direct.
+    <img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)}
       className={`${size} shrink-0 rounded object-contain bg-[#fff] border border-white/10`} />
   )
+}
+
+/**
+ * Visuel du concurrent, rendu absolu contre l'URL de sa fiche. RATTRAPAGE : les relevés
+ * déjà stockés portent des chemins relatifs (`/img/p/12.jpg`) — l'extracteur JSON-LD
+ * absolutisait l'URL produit mais pas l'image. Corrigé à la source depuis, mais les
+ * milliers de fiches en base ne seront réécrites qu'au prochain balayage complet.
+ */
+function listingImage(l: CompetitorListing): string | null {
+  const raw = l.image
+  if (!raw) return null
+  if (/^(?:https?:|data:)/i.test(raw)) return raw
+  try { return new URL(raw, l.url).toString() } catch { return null }
 }
 
 /** Écart concurrent vs mon prix : négatif = il est moins cher (alerte). */
@@ -148,7 +167,7 @@ export function ExplorerRow({ row }: { row: PairedRow }) {
 
       {/* ── Fiche du concurrent ──────────────────────────────────────────── */}
       <div className="flex items-start gap-3 p-2.5 pl-3 border-l border-white/10 min-w-0">
-        <Thumb src={listing.image ?? null} alt={listing.name} />
+        <Thumb src={listingImage(listing)} alt={listing.name} />
         <div className="min-w-0 flex-1">
           <a href={listing.url} target="_blank" rel="noopener noreferrer" title={listing.url}
             className="block text-xs text-white/90 leading-snug break-words underline decoration-dotted decoration-white/30 underline-offset-[3px] hover:text-indigo-300 hover:decoration-solid">
