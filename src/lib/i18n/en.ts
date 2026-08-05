@@ -5267,6 +5267,8 @@ export const en: Record<TranslationKey, string> = {
   'pwx.fullscreenExit': 'Exit full screen',
   'pwx.imagePrefix.placeholder': 'Image prefix (https://…/)',
   'pwx.imagePrefix.help': 'Added in front of cells that only hold a file name (“2400956001.jpg”). No effect on cells already in http(s).',
+  'pwx.productUrl.placeholder': 'Product page (https://…/{ref})',
+  'pwx.productUrl.help': 'Makes MY product title clickable. Accepted tokens: {ref}, {ean}, {id}. A URL with no token is treated as a prefix — the reference is appended.',
   'pwx.taxo.noColumns': 'No taxonomy column in “{db}”. Expected: Family, WEBGROUP_DESC (sub-family) or PRODUCTGROUP.',
   'pwx.taxo.noJoin': 'Database “{db}” has neither reference nor EAN: its rows cannot be linked to the collected records.',
   'pwx.taxo.noValues': 'Columns {cols} found in “{db}”, but no matched record fills them in.',

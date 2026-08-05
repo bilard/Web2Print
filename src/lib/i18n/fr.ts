@@ -5459,6 +5459,8 @@ export const fr = {
   'pwx.fullscreenExit': 'Quitter le plein écran',
   'pwx.imagePrefix.placeholder': 'Préfixe des visuels (https://…/)',
   'pwx.imagePrefix.help': 'Ajouté devant les cellules qui ne contiennent qu’un nom de fichier (« 2400956001.jpg »). Sans effet sur les cellules déjà en http(s).',
+  'pwx.productUrl.placeholder': 'Fiche produit (https://…/{ref})',
+  'pwx.productUrl.help': 'Rend le titre de MON produit cliquable. Jetons acceptés : {ref}, {ean}, {id}. Une URL sans jeton est traitée comme un préfixe : la référence est ajoutée à la fin.',
   'pwx.taxo.noColumns': 'Aucune colonne de taxonomie dans « {db} ». Attendu : Famille, WEBGROUP_DESC (sous-famille) ou PRODUCTGROUP.',
   'pwx.taxo.noJoin': 'La base « {db} » n’a ni référence ni EAN : impossible de relier ses lignes aux fiches relevées.',
   'pwx.taxo.noValues': 'Colonnes {cols} trouvées dans « {db} », mais aucune fiche appariée ne les renseigne.',

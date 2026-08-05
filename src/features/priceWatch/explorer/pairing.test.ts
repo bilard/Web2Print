@@ -87,6 +87,44 @@ describe('pairSiteListings', () => {
   })
 })
 
+describe('lien vers MA fiche produit', () => {
+  // Le catalogue source (feuille du workflow) ne porte pas d'URL : sans gabarit, la
+  // colonne de gauche restait la seule des deux à ne pas être cliquable.
+  // La fiche concurrente reprend l'identité du produit testé, pour que l'appariement
+  // aboutisse quelle que soit sa référence.
+  const url = (tpl: string | undefined, p = products[0]) => {
+    const l: CompetitorListing = { url: 'https://c.fr/x', name: 'X', ref: p.ref, gtin13: p.ean, price: 10 }
+    return pairSiteListings([p], 's1', [l], { productUrl: tpl })[0].source?.url ?? null
+  }
+
+  it('remplace les jetons et ENCODE la valeur', () => {
+    expect(url('https://f1.fr/p/{ref}')).toBe('https://f1.fr/p/ABC-123')
+    expect(url('https://f1.fr/?ean={ean}')).toBe('https://f1.fr/?ean=4049582395377')
+    // Une référence F1 porte des « / » (« 381600533/1 ») : insérée telle quelle, elle
+    // fabriquerait un segment d'URL supplémentaire et un 404 muet.
+    expect(url('https://f1.fr/p/{ref}', { id: 'x', name: 'X', ref: '381600533/1' }))
+      .toBe('https://f1.fr/p/381600533%2F1')
+  })
+
+  it('traite une URL sans jeton comme un préfixe', () => {
+    expect(url('https://f1.fr/p/')).toBe('https://f1.fr/p/ABC-123')
+    expect(url('https://f1.fr/p')).toBe('https://f1.fr/p/ABC-123')
+  })
+
+  it('préfère aucun lien à un lien qui ment', () => {
+    expect(url(undefined)).toBeNull()
+    expect(url('')).toBeNull()
+    expect(url('www.f1.fr/p/')).toBeNull()          // pas de schéma : pas une URL
+    // Jeton sans valeur → l'URL tronquée mènerait à la page d'accueil.
+    expect(url('https://f1.fr/p/{ean}', { id: 'x', name: 'X', ref: 'ABC-123' })).toBeNull()
+  })
+
+  it('ne recouvre jamais une URL déjà portée par le catalogue', () => {
+    const p: SourceProduct = { ...products[0], url: 'https://f1.fr/vraie-fiche' }
+    expect(url('https://f1.fr/p/{ref}', p)).toBe('https://f1.fr/vraie-fiche')
+  })
+})
+
 describe('discountPct', () => {
   it('calcule la remise affichée, ignore les écarts nuls', () => {
     expect(discountPct(listings[0])).toBe(20)

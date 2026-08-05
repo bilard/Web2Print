@@ -25,7 +25,7 @@ export interface SourceCatalogFacts {
   sourceRows: number
 }
 
-export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, sheets, sheetIndex, onPickSheet, extras, imagePrefix, onImagePrefix }: {
+export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, sheets, sheetIndex, onPickSheet, extras, imagePrefix, onImagePrefix, productUrl, onProductUrl }: {
   facts: SourceCatalogFacts
   databases: SourceDbOption[]
   dbId: string
@@ -37,6 +37,8 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
   extras: SourceExtrasIndex
   imagePrefix: string
   onImagePrefix: (v: string) => void
+  productUrl: string
+  onProductUrl: (v: string) => void
 }) {
   const { t, locale } = useTranslation()
   const ok = extras.size > 0
@@ -141,6 +143,15 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
         <Image className="w-3 h-3 shrink-0" />
         <input value={imagePrefix} onChange={(e) => onImagePrefix(e.target.value)}
           placeholder={t('pwx.imagePrefix.placeholder')} title={t('pwx.imagePrefix.help')}
+          className="bg-well text-white/70 text-[11px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-white/25 w-[240px] placeholder:text-white/20" />
+      </label>
+
+      {/* Fiche produit sur MON site. Le catalogue source ne porte pas d'URL : sans ce
+          gabarit, la colonne de gauche est la seule des deux à ne pas être cliquable. */}
+      <label className="flex items-center gap-1 text-white/30">
+        <ExternalLink className="w-3 h-3 shrink-0" />
+        <input value={productUrl} onChange={(e) => onProductUrl(e.target.value)}
+          placeholder={t('pwx.productUrl.placeholder')} title={t('pwx.productUrl.help')}
           className="bg-well text-white/70 text-[11px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-white/25 w-[240px] placeholder:text-white/20" />
       </label>
     </div>

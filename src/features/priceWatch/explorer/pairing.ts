@@ -62,7 +62,10 @@ export function pairSiteListings(
   products: SourceProduct[],
   siteId: string,
   listings: CompetitorListing[],
-  opts: { vatRate?: number; alignedPct?: number; extras?: SourceExtras; imagePrefix?: string } = {},
+  opts: {
+    vatRate?: number; alignedPct?: number; extras?: SourceExtras
+    imagePrefix?: string; productUrl?: string
+  } = {},
 ): PairedRow[] {
   const extras = opts.extras ?? NO_EXTRAS
   const lookup = buildMemoryIndex(listings)
@@ -97,11 +100,40 @@ export function pairSiteListings(
         ? {
             id: p.id, ref: p.ref ?? null, ean: p.ean ?? null, name: p.name,
             description, images: images.filter(Boolean),
-            priceHt: p.price ?? null, url: p.url ?? null, path,
+            priceHt: p.price ?? null, url: p.url ?? sourceUrl(p, opts.productUrl), path,
           }
         : null,
     }
   })
+}
+
+/**
+ * Fiche produit sur MON site, reconstruite depuis un gabarit — le catalogue source ne
+ * porte presque jamais d'URL. Deux écritures acceptées, parce que l'une des deux suffit
+ * dans la plupart des ERP :
+ *   - gabarit à jetons : `https://…/produit/{ref}` (jetons `{ref}`, `{ean}`, `{id}`) ;
+ *   - simple préfixe : `https://…/produit/` → la référence est ajoutée à la fin.
+ *
+ * ⚠ Les valeurs sont ENCODÉES : une référence F1 comme `381600533/1` insérée telle quelle
+ * fabriquerait un segment d'URL supplémentaire et un 404 silencieux.
+ */
+function sourceUrl(p: SourceProduct, tpl?: string): string | null {
+  const base = tpl?.trim()
+  if (!base || !/^https?:\/\//i.test(base)) return null
+  const enc = (v: string | undefined) => (v ? encodeURIComponent(v) : '')
+  if (/\{(ref|ean|id)\}/.test(base)) {
+    const value: Record<string, string> = { ref: enc(p.ref), ean: enc(p.ean), id: enc(p.id) }
+    let complete = true
+    const url = base.replace(/\{(ref|ean|id)\}/g, (_, token: string) => {
+      if (!value[token]) complete = false
+      return value[token]
+    })
+    // Un jeton sans valeur donnerait une URL tronquée menant à la page d'accueil : mieux
+    // vaut aucun lien qu'un lien qui ment.
+    return complete ? url : null
+  }
+  const key = enc(p.ref) || enc(p.ean)
+  return key ? base.replace(/\/+$/, '') + '/' + key : null
 }
 
 /** Visuel du catalogue source : les ERP n'y stockent souvent qu'un nom de fichier, que

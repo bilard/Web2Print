@@ -62,10 +62,11 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   const rows = useMemo(
     () => (active && listings.length > 0
       ? pairSiteListings(source.products, active, listings, {
-          vatRate: source.vatRate, extras: extras.lookup, imagePrefix: src.imagePrefix,
+          vatRate: source.vatRate, extras: extras.lookup,
+          imagePrefix: src.imagePrefix, productUrl: src.productUrl,
         })
       : []),
-    [active, listings, source.products, source.vatRate, extras, src.imagePrefix],
+    [active, listings, source.products, source.vatRate, extras, src.imagePrefix, src.productUrl],
   )
   const tokenIndex = useMemo(() => buildTokenIndex(rows), [rows])
   // Sans catalogue source, TOUTES les fiches sont orphelines : garder le filtre « appariés
@@ -149,7 +150,8 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
           <ExplorerSourceLink facts={facts} databases={src.databases} dbId={src.dbId} onPickDb={src.setDbId}
             loading={src.loading} sheets={src.sheets} sheetIndex={src.sheetIndex}
             onPickSheet={src.setSheetIndex} extras={extras}
-            imagePrefix={src.imagePrefix} onImagePrefix={src.setImagePrefix} />
+            imagePrefix={src.imagePrefix} onImagePrefix={src.setImagePrefix}
+            productUrl={src.productUrl} onProductUrl={src.setProductUrl} />
           {source.absent && (
             <p className="text-[11px] text-amber-400/80 flex items-center gap-1.5">
               <AlertTriangle className="w-3 h-3 shrink-0" />

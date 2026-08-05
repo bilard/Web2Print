@@ -17,6 +17,7 @@ import { debugLog } from '@/lib/debugLog'
 const OPEN_DB = '__open__'
 const PREF_KEY = 'pwx:sourceDb'
 const PREFIX_KEY = 'pwx:imagePrefix'
+const PRODUCT_URL_KEY = 'pwx:productUrl'
 
 export interface SourceDbOption { docId: string; label: string; rows: number }
 
@@ -29,6 +30,9 @@ export interface SourceSheetState {
   /** Préfixe d'URL appliqué aux visuels dont la cellule ne porte qu'un nom de fichier. */
   imagePrefix: string
   setImagePrefix: (v: string) => void
+  /** Gabarit d'URL de MA fiche produit (`https://…/{ref}`), pour ouvrir mon propre site. */
+  productUrl: string
+  setProductUrl: (v: string) => void
   sheets: { name: string; rows: number }[]
   sheetIndex: number
   setSheetIndex: (i: number) => void
@@ -53,6 +57,13 @@ export function useSourceSheet(): SourceSheetState {
   const setImagePrefix = (v: string) => {
     setPrefixState(v)
     try { window.localStorage.setItem(PREFIX_KEY, v) } catch { /* préférence non persistée */ }
+  }
+  const [productUrl, setProductUrlState] = useState<string>(() => {
+    try { return window.localStorage.getItem(PRODUCT_URL_KEY) ?? '' } catch { return '' }
+  })
+  const setProductUrl = (v: string) => {
+    setProductUrlState(v)
+    try { window.localStorage.setItem(PRODUCT_URL_KEY, v) } catch { /* préférence non persistée */ }
   }
 
   const setDbId = (id: string) => {
@@ -98,7 +109,7 @@ export function useSourceSheet(): SourceSheetState {
   )
 
   return {
-    databases, dbId, setDbId, loading, imagePrefix, setImagePrefix,
+    databases, dbId, setDbId, loading, imagePrefix, setImagePrefix, productUrl, setProductUrl,
     sheets: sheets.map((s) => ({ name: s.name, rows: s.rows.length })),
     sheetIndex: index,
     setSheetIndex: setPicked,
