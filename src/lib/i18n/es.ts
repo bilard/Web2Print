@@ -5270,6 +5270,7 @@ export const es: Record<TranslationKey, string> = {
   'pwx.taxo.noJoin': 'La base «{db}» no tiene referencia ni EAN: sus filas no pueden vincularse con las fichas recopiladas.',
   'pwx.taxo.noValues': 'Columnas {cols} encontradas en «{db}», pero ninguna ficha emparejada las rellena.',
   'pwx.taxo.pickDb': 'Elija la base de datos de origen del catálogo en la barra, debajo de los filtros.',
+  'pwx.rail.collected': 'Fichas recopiladas',
   'pwx.competitors': 'Competidores',
   'pwx.tabCollected': '{count} fichas recopiladas',
   'pwx.reload': 'Recargar',

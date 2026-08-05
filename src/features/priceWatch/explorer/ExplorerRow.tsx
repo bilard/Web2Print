@@ -5,7 +5,7 @@
 // finalité de l'écran (« est-ce bien le même produit ? ») ; les mettre chacun au bord
 // extérieur de sa colonne obligerait à balayer la ligne des yeux pour comparer.
 import { useState } from 'react'
-import { ExternalLink, ImageOff, ChevronDown } from 'lucide-react'
+import { ImageOff, ChevronDown } from 'lucide-react'
 import type { PairedRow } from './pairing'
 import { discountPct } from './pairing'
 import { eur, pct } from '../dashboard/format'
@@ -112,7 +112,6 @@ export function ExplorerRow({ row }: { row: PairedRow }) {
           <a href={listing.url} target="_blank" rel="noopener noreferrer" title={listing.url}
             className="block text-xs text-white/90 leading-snug break-words underline decoration-dotted decoration-white/30 underline-offset-[3px] hover:text-indigo-300 hover:decoration-solid">
             {listing.name}
-            <ExternalLink className="w-3 h-3 inline-block ml-1 -mt-0.5 text-white/25" />
           </a>
           {/* Pas de nom de domaine ici : l'onglet actif et l'en-tête de colonne le
               portent déjà. Répété sur chaque ligne, il masquait la référence. */}

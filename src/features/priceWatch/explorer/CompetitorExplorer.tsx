@@ -12,9 +12,9 @@
 // comparaison illisible.
 import { useEffect, useMemo, useState } from 'react'
 import { RefreshCw, AlertTriangle, Loader2, Download, PanelLeftClose, ChevronsRight } from 'lucide-react'
-import { useCompetitorMeta } from '../useCatalogReport'
+import { useCompetitorMeta, useCatalogReport } from '../useCatalogReport'
 import { useSourceCatalog, useSiteListings } from './useSiteExplorer'
-import { buildTabs, ExplorerTabs } from './ExplorerTabs'
+import { buildRail, ExplorerSiteRail } from './ExplorerSiteRail'
 import { ExplorerSearch } from './ExplorerSearch'
 import { ExplorerFilters, ExplorerTokens } from './ExplorerFilters'
 import { ExplorerStats } from './ExplorerStats'
@@ -35,10 +35,14 @@ const iconBtn = 'bg-well text-white/55 text-xs rounded px-2.5 py-2 border border
 export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
   const { t } = useTranslation()
   const meta = useCompetitorMeta(watchId)
-  const tabs = useMemo(() => buildTabs(meta), [meta])
+  // Rapport agrégé : il porte l'appariement et l'écart médian PAR SITE, calculés avant
+  // tout plafond d'affichage. C'est ce qui permet de mesurer les 19 concurrents sans en
+  // charger un seul.
+  const report = useCatalogReport(watchId)
+  const sites = useMemo(() => buildRail(meta, report?.byCompetitor ?? []), [meta, report])
   const [siteId, setSiteId] = useState<string | null>(null)
-  const active = siteId && tabs.some((tab) => tab.siteId === siteId) ? siteId : (tabs.find((tab) => tab.productCount > 0)?.siteId ?? null)
-  const domain = tabs.find((tab) => tab.siteId === active)?.domain ?? ''
+  const active = siteId && sites.some((s) => s.siteId === siteId) ? siteId : (sites.find((s) => s.collected > 0)?.siteId ?? null)
+  const domain = sites.find((s) => s.siteId === active)?.domain ?? ''
 
   const source = useSourceCatalog(watchId)
   const { listings, loading, error, reload } = useSiteListings(watchId, active)
@@ -49,6 +53,7 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0])
   const [taxoOpen, setTaxoOpen] = useState(true)
+  const [railOpen, setRailOpen] = useState(true)
   const patch = (p: Partial<ExplorerFilter>) => { setFilter((f) => ({ ...f, ...p })); setPage(0) }
 
   // Appariement + écarts : recalculés quand le site OU le catalogue change. Sur des
@@ -96,10 +101,7 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
 
   return (
     <div className="h-full flex flex-col min-h-0" data-pw-section="explorer">
-      {/* ── Étage 1 · contexte : quel concurrent ─────────────────────────────── */}
-      <ExplorerTabs tabs={tabs} active={active} loading={loading} onPick={setSiteId} />
-
-      {/* ── Étage 2 · mesure : où j'en suis face à lui ───────────────────────── */}
+      {/* ── Étage 1 · mesure : où j'en suis face à lui ───────────────────────── */}
       <div className="flex items-center gap-5 px-3 py-2.5 bg-surface-2/60 border-b border-white/[0.06] flex-wrap">
         <ExplorerPositionBar stats={stats} active={effective.gap} onPick={(gap) => patch({ gap })} />
         <div className="h-8 w-px bg-white/10 hidden lg:block" />
@@ -109,7 +111,7 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
           onToggleStock={() => patch({ stock: effective.stock === 'out-of-stock' ? 'all' : 'out-of-stock' })} />
       </div>
 
-      {/* ── Étage 3 · contrôle : chercher, filtrer, paginer ──────────────────── */}
+      {/* ── Étage 2 · contrôle : chercher, filtrer, paginer ──────────────────── */}
       <div className="px-3 py-2 space-y-2 border-b border-white/10">
         <div className="flex items-center gap-2 flex-wrap">
           <ExplorerSearch rows={rows} tokenIndex={tokenIndex} value={filter.q}
@@ -142,8 +144,29 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
         </div>
       </div>
 
-      {/* ── Taxonomie F1 + liste : seules zones qui défilent ─────────────────── */}
+      {/* ── Concurrents · taxonomie F1 · liste : seules zones qui défilent ──── */}
       <div className="flex-1 min-h-0 flex">
+        {railOpen ? (
+          <div className="w-56 shrink-0 border-r border-white/10 bg-surface-2/60 flex flex-col min-h-0">
+            <button type="button" onClick={() => setRailOpen(false)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-white/35 hover:text-white/70 border-b border-white/[0.06]">
+              <PanelLeftClose className="w-3.5 h-3.5" />{t('pwx.competitors')}
+              <span className="ml-auto tabular-nums text-white/20">{sites.length}</span>
+            </button>
+            <div className="flex-1 min-h-0">
+              <ExplorerSiteRail items={sites} active={active} loading={loading} onPick={setSiteId} />
+            </div>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setRailOpen(true)} title={t('pwx.competitors')}
+            className="w-8 shrink-0 border-r border-white/10 bg-surface-2/60 hover:bg-white/[0.04] hover:border-indigo-500/30 flex flex-col items-center gap-2 pt-3 transition-colors group">
+            <ChevronsRight className="w-4 h-4 text-white/40 group-hover:text-indigo-400" />
+            <span className="text-[10px] font-semibold tracking-wider text-white/30 group-hover:text-white/60 [writing-mode:vertical-rl] rotate-180">
+              {t('pwx.competitors')}
+            </span>
+          </button>
+        )}
+
         {taxoOpen ? (
           <div className="w-60 shrink-0 border-r border-white/10 bg-surface-2/40 flex flex-col min-h-0">
             <button type="button" onClick={() => setTaxoOpen(false)}
