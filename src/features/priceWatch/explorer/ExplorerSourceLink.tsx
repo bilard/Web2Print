@@ -1,50 +1,64 @@
-// Bandeau de jointure : quelle base PIM alimente les descriptions et visuels F1, et
-// quelles colonnes y ont été reconnues. La détection est automatique mais doit rester
+// Bandeau de jointure : quelle base PIM alimente descriptions, visuels et taxonomie F1,
+// et quelles colonnes y ont été reconnues. La détection est automatique mais doit rester
 // VÉRIFIABLE — une colonne devinée en silence, c'est la panne muette du module
 // « Comparer catalogue » qu'on ne veut pas reproduire ici.
-import { Link2, AlertTriangle } from 'lucide-react'
+import { Link2, AlertTriangle, Loader2 } from 'lucide-react'
 import type { SourceExtrasIndex } from './sourceExtras'
+import { OPEN_DB, type SourceDbOption } from './useSourceSheet'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 
-export function ExplorerSourceLink({ sheet, sheets, sheetIndex, onPick, extras }: {
-  sheet: { name: string; rows: number } | null
+const selCls = 'bg-well text-white/70 text-[11px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-white/25 max-w-[200px]'
+
+export function ExplorerSourceLink({ databases, dbId, onPickDb, loading, sheets, sheetIndex, onPickSheet, extras }: {
+  databases: SourceDbOption[]
+  dbId: string
+  onPickDb: (id: string) => void
+  loading: boolean
   sheets: { name: string; rows: number }[]
   sheetIndex: number
-  onPick: (i: number) => void
+  onPickSheet: (i: number) => void
   extras: SourceExtrasIndex
 }) {
   const { t, locale } = useTranslation()
-  if (!sheet) {
-    return (
-      <p className="text-[11px] text-white/35 flex items-center gap-1.5">
-        <AlertTriangle className="w-3 h-3 shrink-0" />
-        {t('pwx.aucuneBaseOuverteOuvrez')}
-      </p>
-    )
-  }
-
   const ok = extras.size > 0
+  const n = (v: number) => v.toLocaleString(intlLocale(locale))
+
   return (
-    <div className="flex items-center gap-2 flex-wrap text-[11px] text-white/40">
+    <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-white/40">
       <Link2 className="w-3 h-3 shrink-0" />
       <span>{t('pwx.descriptionsEtVisuelsF1')}</span>
-      {sheets.length > 1 ? (
-        <select value={sheetIndex} onChange={(e) => onPick(Number(e.target.value))}
-          className="bg-well text-white/70 text-[11px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-white/25">
-          {sheets.map((s, i) => <option key={s.name} value={i}>{s.name} ({s.rows})</option>)}
+
+      <select value={dbId} onChange={(e) => onPickDb(e.target.value)} className={selCls} title={t('pwx.db.pick')}>
+        <option value={OPEN_DB}>{t('pwx.db.open')}</option>
+        {databases.map((d) => (
+          <option key={d.docId} value={d.docId}>{d.label} ({n(d.rows)})</option>
+        ))}
+      </select>
+
+      {sheets.length > 1 && (
+        <select value={sheetIndex} onChange={(e) => onPickSheet(Number(e.target.value))} className={selCls}>
+          {sheets.map((s, i) => <option key={s.name} value={i}>{s.name} ({n(s.rows)})</option>)}
         </select>
-      ) : (
-        <span className="text-white/70">{sheet.name}</span>
       )}
-      {ok ? (
+
+      {loading ? (
+        <span className="flex items-center gap-1 text-white/30"><Loader2 className="w-3 h-3 animate-spin" />{t('dam.loading')}</span>
+      ) : sheets.length === 0 ? (
+        <span className="text-amber-400/80 flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3 shrink-0" />{t('pwx.aucuneBaseOuverteOuvrez')}
+        </span>
+      ) : ok ? (
         <span className="text-white/30">
-          {t('pwx.link.indexed', { count: extras.size.toLocaleString(intlLocale(locale)) })}
+          {t('pwx.link.indexed', { count: n(extras.size) })}
           {extras.descriptionKey
             ? t('pwx.link.descCol', { col: extras.descriptionKey })
             : t('pwx.aucuneColonneDeDescription')}
           {extras.imageKeys.length > 0
             ? t('pwx.link.imgCols', { cols: extras.imageKeys.join(' », « ') })
             : t('pwx.aucuneColonneDImage')}
+          {extras.taxoKeys.some(Boolean)
+            ? t('pwx.link.taxoCols', { cols: extras.taxoKeys.filter(Boolean).join(' › ') })
+            : t('pwx.link.noTaxoCol')}
         </span>
       ) : (
         <span className="text-amber-400/80 flex items-center gap-1">

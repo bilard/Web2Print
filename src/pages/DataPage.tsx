@@ -114,6 +114,20 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [showRight, setShowRight] = useState(true)
   // Explorateur concurrents : occupe la zone centrale, comme la fiche produit.
   const [competitorsOpen, setCompetitorsOpen] = useState(false)
+  /** Ouvre l'explorateur en dégageant la place : colonnes du PIM repliées et menu du
+   *  tableau de bord réduit. La comparaison F1 ↔ concurrent est une vue à deux colonnes
+   *  d'images — chaque panneau ouvert lui retire de la largeur utile. */
+  const openCompetitors = useCallback(() => {
+    setCompetitorsOpen((open) => {
+      if (!open) {
+        setShowBdd(false)
+        setShowNav(false)
+        setShowRight(false)
+        window.dispatchEvent(new CustomEvent('dashboard:collapse-sidebar'))
+      }
+      return !open
+    })
+  }, [])
   const [showBdd, setShowBdd] = useState(true)
   const [showNav, setShowNav] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -711,7 +725,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 jamais montée et l'entrée serait introuvable. */}
             {canPriceWatch && (
             <button
-              onClick={() => setCompetitorsOpen((o) => !o)}
+              onClick={openCompetitors}
               className={`flex items-center gap-2 border text-[13px] font-medium px-4 py-2 rounded-lg transition-colors ${
                 competitorsOpen
                   ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200'

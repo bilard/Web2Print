@@ -5,18 +5,39 @@ import type { SiteStats } from './stats'
 import { eur } from '../dashboard/format'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 
-function Stat({ label, value, tone = 'text-white/80', hint }: {
+/** Un compteur. Avec `onToggle`, il devient un FILTRE : cliquer restreint la liste à ce
+ *  qu'il mesure — un chiffre qui intrigue doit pouvoir être ouvert, pas seulement lu. */
+function Stat({ label, value, tone = 'text-white/80', hint, onToggle, active }: {
   label: string; value: string; tone?: string; hint?: string
+  onToggle?: () => void; active?: boolean
 }) {
-  return (
-    <div className="flex items-baseline gap-1.5 whitespace-nowrap" title={hint}>
-      <span className="text-[10px] uppercase tracking-wide text-white/30">{label}</span>
+  const body = (
+    <>
+      <span className={`text-[10px] uppercase tracking-wide ${active ? 'text-white/60' : 'text-white/30'}`}>{label}</span>
       <span className={`text-xs font-medium tabular-nums ${tone}`}>{value}</span>
-    </div>
+    </>
+  )
+  if (!onToggle) {
+    return <div className="flex items-baseline gap-1.5 whitespace-nowrap" title={hint}>{body}</div>
+  }
+  return (
+    <button type="button" onClick={onToggle} title={hint}
+      className={`flex items-baseline gap-1.5 whitespace-nowrap rounded px-1.5 py-0.5 -mx-1 border transition-colors ${
+        active ? 'bg-white/[0.07] border-white/15' : 'border-transparent hover:bg-white/[0.05]'
+      }`}>
+      {body}
+    </button>
   )
 }
 
-export function ExplorerStats({ stats, collected }: { stats: SiteStats; collected: number }) {
+export function ExplorerStats({ stats, collected, promoOnly, outOfStockOnly, onTogglePromo, onToggleStock }: {
+  stats: SiteStats
+  collected: number
+  promoOnly: boolean
+  outOfStockOnly: boolean
+  onTogglePromo: () => void
+  onToggleStock: () => void
+}) {
   // ⚠ t() DANS le rendu (via useTranslation) : en constante de module, la langue serait
   // figée à l'import et ne suivrait plus le changement de langue.
   const { t, locale } = useTranslation()
@@ -32,8 +53,10 @@ export function ExplorerStats({ stats, collected }: { stats: SiteStats; collecte
       <Stat label={t('pwx.prixMedian')} value={eur(stats.medPriceTtc)}
         hint={t('pwx.stats.medPrice.help')} />
       <Stat label={t('pwx.stats.promos')} value={n(stats.promos)} tone="text-amber-300"
+        active={promoOnly} onToggle={onTogglePromo}
         hint={stats.medDiscountPct != null ? t('pwx.stats.promos.help', { pct: stats.medDiscountPct }) : t('pwx.fichesAvecUnPrix')} />
-      <Stat label={t('pwx.stats.ruptures')} value={n(stats.outOfStock)}
+      <Stat label={t('pwx.stats.ruptures')} value={n(stats.outOfStock)} tone={outOfStockOnly ? 'text-rose-300' : 'text-white/80'}
+        active={outOfStockOnly} onToggle={onToggleStock}
         hint={t('pwx.stats.ruptures.help')} />
     </div>
   )

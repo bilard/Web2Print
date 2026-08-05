@@ -42,7 +42,8 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
 
   const source = useSourceCatalog(watchId)
   const { listings, loading, error, reload } = useSiteListings(watchId, active)
-  const { sheet, sheets, sheetIndex, setSheetIndex, extras } = useSourceSheet()
+  const src = useSourceSheet()
+  const { extras } = src
 
   const [filter, setFilter] = useState<ExplorerFilter>(EMPTY_EXPLORER_FILTER)
   const [page, setPage] = useState(0)
@@ -102,7 +103,10 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
       <div className="flex items-center gap-5 px-3 py-2.5 bg-surface-2/60 border-b border-white/[0.06] flex-wrap">
         <ExplorerPositionBar stats={stats} active={effective.gap} onPick={(gap) => patch({ gap })} />
         <div className="h-8 w-px bg-white/10 hidden lg:block" />
-        <ExplorerStats stats={stats} collected={listings.length} />
+        <ExplorerStats stats={stats} collected={listings.length}
+          promoOnly={effective.promoOnly} outOfStockOnly={effective.stock === 'out-of-stock'}
+          onTogglePromo={() => patch({ promoOnly: !effective.promoOnly })}
+          onToggleStock={() => patch({ stock: effective.stock === 'out-of-stock' ? 'all' : 'out-of-stock' })} />
       </div>
 
       {/* ── Étage 3 · contrôle : chercher, filtrer, paginer ──────────────────── */}
@@ -125,7 +129,9 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
         </div>
         <ExplorerTokens filter={effective} onChange={patch} tokenIndex={tokenIndex} />
         <div className="flex items-center gap-4 flex-wrap">
-          <ExplorerSourceLink sheet={sheet} sheets={sheets} sheetIndex={sheetIndex} onPick={setSheetIndex} extras={extras} />
+          <ExplorerSourceLink databases={src.databases} dbId={src.dbId} onPickDb={src.setDbId}
+            loading={src.loading} sheets={src.sheets} sheetIndex={src.sheetIndex}
+            onPickSheet={src.setSheetIndex} extras={extras} />
           {source.absent && (
             <p className="text-[11px] text-amber-400/80 flex items-center gap-1.5">
               <AlertTriangle className="w-3 h-3 shrink-0" />

@@ -134,6 +134,15 @@ export default function DashboardPage() {
     if (typeof window === 'undefined') return true
     return window.localStorage.getItem('dashboard:sidebarOpen') !== 'false'
   })
+  // Un écran plein cadre (l'explorateur concurrents) demande la place : il émet cet
+  // événement plutôt que de piloter l'état d'un parent qu'il ne connaît pas. Réduire
+  // seulement — jamais rouvrir : le repli de l'utilisateur reste le sien.
+  useEffect(() => {
+    const collapse = () => setSidebarOpen(false)
+    window.addEventListener('dashboard:collapse-sidebar', collapse)
+    return () => window.removeEventListener('dashboard:collapse-sidebar', collapse)
+  }, [])
+
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => {
       const next = !prev

@@ -72,7 +72,14 @@ export function ExplorerRow({ row }: { row: PairedRow }) {
                   </span>
                 )}
               </div>
-              <div className="text-xs text-white/90 leading-snug mt-0.5 break-words">{source.name}</div>
+              {source.url ? (
+                <a href={source.url} target="_blank" rel="noopener noreferrer" title={t('pw.table.openSource')}
+                  className="block text-xs text-white/90 leading-snug mt-0.5 break-words underline decoration-dotted decoration-white/30 underline-offset-[3px] hover:text-indigo-300 hover:decoration-solid">
+                  {source.name}
+                </a>
+              ) : (
+                <div className="text-xs text-white/90 leading-snug mt-0.5 break-words">{source.name}</div>
+              )}
               {source.description && (
                 <button type="button" onClick={() => setOpen((o) => !o)}
                   className="mt-1 text-left text-[11px] text-white/45 hover:text-white/70 flex items-start gap-1">
@@ -102,10 +109,10 @@ export function ExplorerRow({ row }: { row: PairedRow }) {
       <div className="flex items-start gap-3 p-2.5 pl-3 border-l border-white/10 min-w-0">
         <Thumb src={listing.image ?? null} alt={listing.name} />
         <div className="min-w-0 flex-1">
-          <a href={listing.url} target="_blank" rel="noopener noreferrer"
-            className="text-xs text-white/90 leading-snug break-words hover:text-indigo-300 inline-flex items-start gap-1">
+          <a href={listing.url} target="_blank" rel="noopener noreferrer" title={listing.url}
+            className="block text-xs text-white/90 leading-snug break-words underline decoration-dotted decoration-white/30 underline-offset-[3px] hover:text-indigo-300 hover:decoration-solid">
             {listing.name}
-            <ExternalLink className="w-3 h-3 shrink-0 mt-0.5 text-white/30" />
+            <ExternalLink className="w-3 h-3 inline-block ml-1 -mt-0.5 text-white/25" />
           </a>
           {/* Pas de nom de domaine ici : l'onglet actif et l'en-tête de colonne le
               portent déjà. Répété sur chaque ligne, il masquait la référence. */}
