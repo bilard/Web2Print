@@ -2,7 +2,8 @@
 // et quelles colonnes y ont été reconnues. La détection est automatique mais doit rester
 // VÉRIFIABLE — une colonne devinée en silence, c'est la panne muette du module
 // « Comparer catalogue » qu'on ne veut pas reproduire ici.
-import { Link2, AlertTriangle, Loader2, Image, ExternalLink } from 'lucide-react'
+import { useState } from 'react'
+import { Link2, AlertTriangle, Loader2, Image, ExternalLink, Database } from 'lucide-react'
 import type { SourceExtrasIndex } from './sourceExtras'
 import { OPEN_DB, type SourceDbOption } from './useSourceSheet'
 import { useTranslation, intlLocale } from '@/lib/i18n'
@@ -39,7 +40,12 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
   const ok = extras.size > 0
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
 
+  // Quand le catalogue source porte déjà taxonomie et visuels, la jointure PIM ne sert
+  // plus à rien : elle n'est qu'un REPLI pour les catalogues écrits avant, ou pour une
+  // base plus riche que la feuille du workflow. Repliée par défaut dans ce cas — deux
+  // sources affichées côte à côte laissaient croire qu'il fallait choisir.
   const rich = facts.withTaxo > 0 || facts.withImage > 0
+  const [showFallback, setShowFallback] = useState(false)
   return (
     <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-white/40">
       {/* Catalogue source du WORKFLOW : c'est de là que viennent taxonomie, visuels et
@@ -71,6 +77,14 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
       )}
 
       <span className="text-white/15">|</span>
+      {rich && !showFallback ? (
+        <button type="button" onClick={() => setShowFallback(true)}
+          title={t('pwx.fallback.help')}
+          className="flex items-center gap-1 text-white/25 hover:text-white/60 transition-colors">
+          <Database className="w-3 h-3" />{t('pwx.fallback.show')}
+        </button>
+      ) : (
+      <>
       <span>{t('pwx.descriptionsEtVisuelsF1')}</span>
 
       <select value={dbId} onChange={(e) => onPickDb(e.target.value)} className={selCls} title={t('pwx.db.pick')}>
@@ -112,8 +126,11 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
         </span>
       )}
 
-      {/* Préfixe d'URL des visuels : les catalogues ERP ne stockent souvent que le nom
-          du fichier. Champ générique — aucune adresse client n'est codée en dur. */}
+      </>
+      )}
+
+      {/* Préfixe des visuels : utile quelle que soit la source — PATH_PHOTO ne porte
+          qu'un nom de fichier, côté catalogue du workflow comme côté base PIM. */}
       <label className="flex items-center gap-1 text-white/30">
         <Image className="w-3 h-3 shrink-0" />
         <input value={imagePrefix} onChange={(e) => onImagePrefix(e.target.value)}

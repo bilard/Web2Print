@@ -5474,6 +5474,8 @@ export const fr = {
   'pwx.src.openWorkflow': 'ouvrir le workflow',
   'pwx.src.partial': 'INCOMPLET : {read} produits relus sur {expected} — relancez « Comparer catalogue », les appariés sont sous-comptés.',
   'tst.ss.partialSourceCatalog': 'Catalogue source incomplet ({read} produits sur {expected}) : le benchmark n’a PAS été recalculé, pour ne pas écraser le dernier rapport valide. Relancez « Comparer catalogue ».',
+  'pwx.fallback.show': 'source de repli',
+  'pwx.fallback.help': 'Base PIM utilisée à la place du catalogue du workflow pour les descriptions, visuels et taxonomie. Inutile tant que le catalogue source les porte.',
   'pwx.competitors': 'Concurrents',
   'pwx.tabCollected': '{count} fiches collectées',
   'pwx.reload': 'Recharger',

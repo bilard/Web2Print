@@ -5282,6 +5282,8 @@ export const en: Record<TranslationKey, string> = {
   'pwx.src.openWorkflow': 'open the workflow',
   'pwx.src.partial': 'INCOMPLETE: {read} products read out of {expected} — run “Compare catalogue” again, matches are undercounted.',
   'tst.ss.partialSourceCatalog': 'Source catalogue incomplete ({read} products out of {expected}): the benchmark was NOT recalculated, so the last valid report stands. Run “Compare catalogue” again.',
+  'pwx.fallback.show': 'fallback source',
+  'pwx.fallback.help': 'PIM database used instead of the workflow catalogue for descriptions, images and taxonomy. Not needed while the source catalogue carries them.',
   'pwx.competitors': 'Competitors',
   'pwx.tabCollected': '{count} records collected',
   'pwx.reload': 'Reload',
