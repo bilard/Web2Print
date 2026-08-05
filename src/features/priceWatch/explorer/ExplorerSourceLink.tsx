@@ -71,14 +71,12 @@ export function ExplorerSourceLink({ databases, dbId, onPickDb, loading, sheets,
 
       {/* Préfixe d'URL des visuels : les catalogues ERP ne stockent souvent que le nom
           du fichier. Champ générique — aucune adresse client n'est codée en dur. */}
-      {extras.imageKeys.length > 0 && (
-        <label className="flex items-center gap-1 text-white/30">
-          <Image className="w-3 h-3 shrink-0" />
-          <input value={imagePrefix} onChange={(e) => onImagePrefix(e.target.value)}
-            placeholder={t('pwx.imagePrefix.placeholder')} title={t('pwx.imagePrefix.help')}
-            className="bg-well text-white/70 text-[11px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-white/25 w-[240px] placeholder:text-white/20" />
-        </label>
-      )}
+      <label className="flex items-center gap-1 text-white/30">
+        <Image className="w-3 h-3 shrink-0" />
+        <input value={imagePrefix} onChange={(e) => onImagePrefix(e.target.value)}
+          placeholder={t('pwx.imagePrefix.placeholder')} title={t('pwx.imagePrefix.help')}
+          className="bg-well text-white/70 text-[11px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-white/25 w-[240px] placeholder:text-white/20" />
+      </label>
     </div>
   )
 }

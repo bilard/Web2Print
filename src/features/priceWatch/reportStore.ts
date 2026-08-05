@@ -20,7 +20,28 @@ import { stripUndefined } from '@/lib/stripUndefined'
 // Le node « Comparer » écrit ici les produits source + la TVA ; le recalcul mono-site
 // (après un ▶) les relit pour reconstruire le rapport sans relancer tout le workflow.
 const sourceCol = (uid: string, watchId: string) => `${watchRootDoc(uid, watchId)}/reportSource`
+// Tranches bornées en OCTETS, pas en nombre de produits. Le catalogue porte désormais
+// description, visuel et taxonomie : à 2 000 produits par document, une base fournie
+// dépassait la limite dure de 1 Mo et l'écriture était REFUSÉE — échec qui ne remonte
+// qu'en avertissement de fin de run. Le plafond de comptage reste un garde-fou.
 const SOURCE_CHUNK = 2000
+const SOURCE_CHUNK_BYTES = 900_000
+
+/** Découpe le catalogue en tranches tenant chacune sous la limite d'un document. */
+function sliceByBytes<T>(products: T[]): T[][] {
+  const out: T[][] = []
+  let cur: T[] = []
+  let used = 0
+  for (const p of products) {
+    const size = utf8Bytes(JSON.stringify(p)) + 1
+    if (cur.length > 0 && (used + size > SOURCE_CHUNK_BYTES || cur.length >= SOURCE_CHUNK)) {
+      out.push(cur); cur = []; used = 0
+    }
+    cur.push(p); used += size
+  }
+  if (cur.length > 0 || out.length === 0) out.push(cur)
+  return out
+}
 
 /** Persiste le catalogue source (chunké sous la limite 1 Mo/doc) + la TVA. Remplace tout. */
 export async function saveSourceCatalog(uid: string, watchId: string, products: SourceProduct[], vatRate: number): Promise<void> {
@@ -28,7 +49,8 @@ export async function saveSourceCatalog(uid: string, watchId: string, products: 
   // Purge les anciens chunks (catalogue plus petit qu'avant → pas d'orphelins).
   const existing = await getDocs(collection(db, col)).catch(() => null)
   if (existing) await Promise.all(existing.docs.map((d) => deleteDoc(d.ref)))
-  const chunks = Math.max(1, Math.ceil(products.length / SOURCE_CHUNK))
+  const slices = sliceByBytes(products)
+  const chunks = slices.length
   await setDoc(doc(db, col, '_meta'), { vatRate, chunks, count: products.length, at: Date.now() })
   for (let i = 0; i < chunks; i++) {
     // ⚠ stripUndefined OBLIGATOIRE : un SourceProduct porte des champs facultatifs posés
@@ -37,9 +59,7 @@ export async function saveSourceCatalog(uid: string, watchId: string, products: 
     // refuse alors le doc ENTIER — « Unsupported field value: undefined ». Le jumeau
     // serveur nettoyait déjà ; le client, non : le catalogue source n'était jamais
     // persisté depuis un run navigateur, et le recalcul mono-site (▶) restait aveugle.
-    await setDoc(doc(db, col, `chunk_${i}`), {
-      products: stripUndefined(products.slice(i * SOURCE_CHUNK, (i + 1) * SOURCE_CHUNK)),
-    })
+    await setDoc(doc(db, col, `chunk_${i}`), { products: stripUndefined(slices[i]) })
   }
 }
 

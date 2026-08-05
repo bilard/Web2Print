@@ -15,11 +15,14 @@ import { buildReport } from '../../priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '../../priceWatch/reportStore'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '../../priceWatch/catalog/match'
+import { pickDisplayColumns, taxoPathOf, trimDescription } from '../../priceWatch/catalog/displayColumns'
 import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
 import { t } from '../../i18n'
 
 interface SheetLike {
-  columns?: unknown[]
+  /** En-têtes de la feuille branchée — clé et libellé servent à reconnaître les
+   *  colonnes d'affichage (description, visuel, taxonomie). */
+  columns?: { key: string; label?: string }[]
   rows?: Record<string, unknown>[]
 }
 
@@ -78,6 +81,11 @@ registerServerNode({
     const descriptionColumn = config.descriptionColumn as string | undefined
     const urlColumn = config.urlColumn as string | undefined
 
+    // Colonnes d'AFFICHAGE — jumeau strict du client : sans elles, un catalogue écrit
+    // par le cron perdrait taxonomie et visuels, et l'écran « Concurrents » resterait
+    // vide selon que le run vient du navigateur ou de la nuit.
+    const disp = pickDisplayColumns(products.columns ?? [], { description: descriptionColumn })
+
     // Produits source : identité + clés (dont réf d'origine extraites de la description).
     const sourceProducts: SourceProduct[] = []
     const seen = new Set<string>()
@@ -96,6 +104,9 @@ registerServerNode({
         price: Number.isNaN(price) ? undefined : price,
         ...(cell(row, urlColumn) ? { url: cell(row, urlColumn) } as object : {}),
         ...(cell(row, familyColumn) ? { family: cell(row, familyColumn) } as object : {}),
+        ...((d) => (d ? { description: d } : {}))(trimDescription(disp.description ? row[disp.description] : undefined)),
+        ...(disp.image && cell(row, disp.image) ? { image: cell(row, disp.image) } as object : {}),
+        ...((p) => (p.length > 0 ? { taxo: p } : {}))(taxoPathOf(row, disp.taxo)),
       })
     }
 

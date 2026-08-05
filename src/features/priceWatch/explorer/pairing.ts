@@ -62,7 +62,7 @@ export function pairSiteListings(
   products: SourceProduct[],
   siteId: string,
   listings: CompetitorListing[],
-  opts: { vatRate?: number; alignedPct?: number; extras?: SourceExtras } = {},
+  opts: { vatRate?: number; alignedPct?: number; extras?: SourceExtras; imagePrefix?: string } = {},
 ): PairedRow[] {
   const extras = opts.extras ?? NO_EXTRAS
   const lookup = buildMemoryIndex(listings)
@@ -81,7 +81,13 @@ export function pairSiteListings(
   return listings.map((listing) => {
     const hit = byListing.get(listing.url)
     const p = hit?.product
+    // Le catalogue source PERSISTÉ prime : le fichier F1 vient du workflow, pas du PIM,
+    // et c'est là que ses description/visuel/taxonomie voyagent. La jointure PIM ne sert
+    // que de repli — catalogues écrits avant cette version, ou base ouverte plus riche.
     const ex = p ? extras(p) : null
+    const description = p?.description ?? ex?.description ?? null
+    const images = p?.image ? [absoluteImage(p.image, opts.imagePrefix)] : (ex?.images ?? [])
+    const path = p?.taxo?.length ? p.taxo : (ex?.path ?? [])
     return {
       key: listing.url,
       listing,
@@ -90,12 +96,19 @@ export function pairSiteListings(
       source: p
         ? {
             id: p.id, ref: p.ref ?? null, ean: p.ean ?? null, name: p.name,
-            description: ex?.description ?? null, images: ex?.images ?? [],
-            priceHt: p.price ?? null, url: p.url ?? null, path: ex?.path ?? [],
+            description, images: images.filter(Boolean),
+            priceHt: p.price ?? null, url: p.url ?? null, path,
           }
         : null,
     }
   })
+}
+
+/** Visuel du catalogue source : les ERP n'y stockent souvent qu'un nom de fichier, que
+ *  l'utilisateur complète par un préfixe. Une valeur déjà absolue est laissée telle quelle. */
+function absoluteImage(v: string, prefix?: string): string {
+  if (/^https?:\/\//.test(v)) return v
+  return prefix ? prefix.replace(/\/+$/, '') + '/' + v.replace(/^\/+/, '') : ''
 }
 
 /** Remise affichée par le concurrent (prix barré → prix), en % positif. null si aucune. */

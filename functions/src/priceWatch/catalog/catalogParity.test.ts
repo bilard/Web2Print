@@ -14,6 +14,7 @@ import { foldText, keywordsForFamilies } from './categories'
 import { MAX_PAGES_PER_CATEGORY, initCursor, advance } from './harvest'
 import { planCategories, type CompetitorConfig, type HarvestDeps } from './runHarvest'
 import { searchUrl, directedPass, searchProductOnSite } from './searchDirected'
+import { pickDisplayColumns, taxoPathOf, trimDescription } from './displayColumns'
 
 describe('prestashop (parité serveur)', () => {
   it('parse les prix marchands', () => {
@@ -146,5 +147,21 @@ describe('appariement jardimax (parité serveur)', () => {
     const sites = ['a', 'b', 'c'].map((s) => ({ siteId: s, domain: `${s}.fr` }))
     await directedPass([{ id: 'p', ref: 'REF12345' }], sites, 0, 1, deps)
     expect(maxConcurrent).toBeGreaterThan(1)
+  })
+})
+
+describe('displayColumns (parité serveur)', () => {
+  it('reconnaît les en-têtes du catalogue F1 comme la copie client', () => {
+    expect(pickDisplayColumns([
+      { key: 'CODE_ARTICLE' }, { key: 'DESCRIPTIF' }, { key: 'PATH_PHOTO' },
+      { key: 'FAMILLE' }, { key: 'WEBGROUP_DESC' }, { key: 'PRODUCTGROUP' },
+    ])).toEqual({
+      description: 'DESCRIPTIF', image: 'PATH_PHOTO',
+      taxo: ['FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP'],
+    })
+  })
+  it('coupe le chemin au premier niveau vide et tronque la description', () => {
+    expect(taxoPathOf({ A: 'Motoculture', B: '', C: 'X' }, ['A', 'B', 'C'])).toEqual(['Motoculture'])
+    expect(trimDescription('x'.repeat(400))?.endsWith('…')).toBe(true)
   })
 })

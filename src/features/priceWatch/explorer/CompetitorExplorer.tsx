@@ -61,9 +61,11 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
   // mémoire — quelques centaines de ms, une seule fois par onglet.
   const rows = useMemo(
     () => (active && listings.length > 0
-      ? pairSiteListings(source.products, active, listings, { vatRate: source.vatRate, extras: extras.lookup })
+      ? pairSiteListings(source.products, active, listings, {
+          vatRate: source.vatRate, extras: extras.lookup, imagePrefix: src.imagePrefix,
+        })
       : []),
-    [active, listings, source.products, source.vatRate, extras],
+    [active, listings, source.products, source.vatRate, extras, src.imagePrefix],
   )
   const tokenIndex = useMemo(() => buildTokenIndex(rows), [rows])
   // Sans catalogue source, TOUTES les fiches sont orphelines : garder le filtre « appariés

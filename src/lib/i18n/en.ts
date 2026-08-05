@@ -5272,6 +5272,7 @@ export const en: Record<TranslationKey, string> = {
   'pwx.taxo.noValues': 'Columns {cols} found in “{db}”, but no matched record fills them in.',
   'pwx.taxo.pickDb': 'Choose the catalogue source database in the bar below the filters.',
   'pwx.rail.collected': 'Records collected',
+  'run.compareCatalog.displayColumns': 'Display columns recognised: {list}',
   'pwx.competitors': 'Competitors',
   'pwx.tabCollected': '{count} records collected',
   'pwx.reload': 'Reload',

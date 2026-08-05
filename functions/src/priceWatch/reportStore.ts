@@ -17,7 +17,27 @@ import { retainHistory } from './history'
 // Sans lui, un suivi alimenté UNIQUEMENT par le cron n'a pas de catalogue source en
 // base : le recalcul mono-site (bouton ▶ de « Sites sources ») ne peut rien reconstruire.
 const sourceCol = (uid: string, watchId: string) => `${watchRootDoc(uid, watchId)}/reportSource`
+// Tranches bornées en OCTETS, pas en nombre de produits (jumeau du client). Le catalogue
+// porte désormais description, visuel et taxonomie : à 2 000 produits par document, une
+// base fournie dépasse la limite dure de 1 Mo et l'écriture est REFUSÉE.
 const SOURCE_CHUNK = 2000
+const SOURCE_CHUNK_BYTES = 900_000
+
+/** Découpe le catalogue en tranches tenant chacune sous la limite d'un document. */
+function sliceByBytes<T>(products: T[]): T[][] {
+  const out: T[][] = []
+  let cur: T[] = []
+  let used = 0
+  for (const p of products) {
+    const size = utf8Bytes(JSON.stringify(p)) + 1
+    if (cur.length > 0 && (used + size > SOURCE_CHUNK_BYTES || cur.length >= SOURCE_CHUNK)) {
+      out.push(cur); cur = []; used = 0
+    }
+    cur.push(p); used += size
+  }
+  if (cur.length > 0 || out.length === 0) out.push(cur)
+  return out
+}
 
 /** Persiste le catalogue source (chunké sous la limite 1 Mo/doc) + la TVA. Remplace tout. */
 export async function saveSourceCatalog(
@@ -28,12 +48,11 @@ export async function saveSourceCatalog(
   // Purge des anciens chunks (catalogue rétréci → pas d'orphelins).
   const existing = await db.collection(col).get().catch(() => null)
   if (existing) await Promise.all(existing.docs.map((d) => d.ref.delete()))
-  const chunks = Math.max(1, Math.ceil(products.length / SOURCE_CHUNK))
+  const slices = sliceByBytes(products)
+  const chunks = slices.length
   await db.doc(`${col}/_meta`).set({ vatRate, chunks, count: products.length, at: Date.now() })
   for (let i = 0; i < chunks; i++) {
-    await db.doc(`${col}/chunk_${i}`).set(
-      { products: stripUndefined(products.slice(i * SOURCE_CHUNK, (i + 1) * SOURCE_CHUNK)) },
-    )
+    await db.doc(`${col}/chunk_${i}`).set({ products: stripUndefined(slices[i]) })
   }
 }
 

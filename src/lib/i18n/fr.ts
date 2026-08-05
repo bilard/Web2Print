@@ -5464,6 +5464,7 @@ export const fr = {
   'pwx.taxo.noValues': 'Colonnes {cols} trouvées dans « {db} », mais aucune fiche appariée ne les renseigne.',
   'pwx.taxo.pickDb': 'Choisissez la base source du catalogue dans le bandeau, sous les filtres.',
   'pwx.rail.collected': 'Fiches collectées',
+  'run.compareCatalog.displayColumns': 'Colonnes d’affichage reconnues : {list}',
   'pwx.competitors': 'Concurrents',
   'pwx.tabCollected': '{count} fiches collectées',
   'pwx.reload': 'Recharger',

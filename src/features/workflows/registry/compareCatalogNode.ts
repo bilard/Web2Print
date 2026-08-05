@@ -16,6 +16,7 @@ import { extractOriginRefs, type SourceProduct } from '@/features/priceWatch/cat
 import { buildReport } from '@/features/priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '@/features/priceWatch/reportStore'
 import { resolveCompareColumns, hasNoJoinKey } from '@/features/priceWatch/catalog/compareColumns'
+import { pickDisplayColumns, taxoPathOf, trimDescription } from '@/features/priceWatch/catalog/displayColumns'
 import type { CompetitorListing } from '@/features/priceWatch/catalog/prestashop'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
 import { t } from '@/lib/i18n'
@@ -160,6 +161,16 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     if (sites.length === 0) { ctx.log('warn', t('run.noCompetitor')); return { matrix: toSheet([], []) } }
     if (rawRows.length === 0) { ctx.log('warn', t('run.emptySheet')); return { matrix: toSheet([], []) } }
 
+    // Colonnes d'AFFICHAGE (description, visuel, taxonomie) : elles ne servent pas à
+    // l'appariement mais voyagent avec le catalogue source — le fichier F1 n'est pas une
+    // base du PIM, l'explorateur n'a aucun autre moyen de les retrouver.
+    const disp = pickDisplayColumns(sheetColumns, { description: config.descriptionColumn })
+    if (disp.taxo.length > 0 || disp.image) {
+      ctx.log('info', t('run.compareCatalog.displayColumns', {
+        list: [disp.description, disp.image, ...disp.taxo].filter(Boolean).join(' · '),
+      }))
+    }
+
     // Produits source : identité + clés (dont réf d'origine extraites de la description).
     const products: SourceProduct[] = []
     const seen = new Set<string>()
@@ -178,6 +189,9 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
         price: Number.isNaN(price) ? undefined : price,
         ...(cell(row, col.url) ? { url: cell(row, col.url) } as object : {}),
         ...(cell(row, col.family) ? { family: cell(row, col.family) } as object : {}),
+        ...((d) => (d ? { description: d } : {}))(trimDescription(disp.description ? row[disp.description] : undefined)),
+        ...(disp.image && cell(row, disp.image) ? { image: cell(row, disp.image) } as object : {}),
+        ...((p) => (p.length > 0 ? { taxo: p } : {}))(taxoPathOf(row, disp.taxo)),
       })
     }
 

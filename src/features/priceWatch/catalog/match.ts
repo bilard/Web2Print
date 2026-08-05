@@ -74,6 +74,12 @@ export interface SourceProduct extends SourceProductKeys {
   price?: number
   /** Lien de la fiche produit sur le site de la source (pour vérification 1 clic). */
   url?: string
+  /** Description catalogue, TRONQUÉE — affichage seul, aucun effet sur l'appariement. */
+  description?: string
+  /** Visuel : URL absolue, ou chemin relatif que l'écran préfixe. Affichage seul. */
+  image?: string
+  /** Chemin taxonomique (Famille › Sous-famille › Groupe produit). Affichage seul. */
+  taxo?: string[]
 }
 
 export interface MatchResult {
