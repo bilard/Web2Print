@@ -92,6 +92,10 @@ interface Opportunity {
   id: string; name: string; reference: string | null; famille: string | null
   myPriceHt: number | null; minPriceHt: number | null; minDomain: string | null
   gapPct: number | null; gapEur: number | null
+  /** Fiche produit chez la source (null si non renseignée) — vérifier MON prix. */
+  sourceUrl: string | null
+  /** Fiche scrapée qui porte `minPriceHt` — vérifier LE prix concurrent le plus bas. */
+  minUrl: string | null
 }
 interface ScatterPoint {
   x: number; y: number; tone: Tone; name: string
@@ -200,6 +204,34 @@ export function buildTableRows(products: ProductRow[]): TableRow[] {
   })
 }
 
+/** Index des pages scrapées, pour les listes qui ne portent que des IDENTIFIANTS (le
+ *  journal des mouvements ne stocke que `pid`/`sid` — une URL par événement gonflerait
+ *  le doc Firestore, déjà plafonné en octets). */
+export interface ProductLinkIndex {
+  /** `productId` → fiche produit chez la source. */
+  source: Map<string, string>
+  /** `productId|siteId` → fiche relevée chez le concurrent. */
+  competitor: Map<string, string>
+}
+
+/**
+ * Construit l'index depuis le rapport courant.
+ *
+ * ⚠ BIAIS DE SURVIE assumé : `report.products` est plafonné (`truncated`), donc un
+ * mouvement portant sur un produit hors plafond ne trouvera pas d'URL. Le rendu retombe
+ * alors sur du texte simple — jamais sur un lien deviné, qui enverrait vers la mauvaise
+ * fiche et ferait exactement le contraire de « vérifier la justesse du prix ».
+ */
+export function buildLinkIndex(products: ProductRow[]): ProductLinkIndex {
+  const source = new Map<string, string>()
+  const competitor = new Map<string, string>()
+  for (const p of products) {
+    if (p.sourceUrl) source.set(p.id, p.sourceUrl)
+    for (const c of p.competitors) if (c.url) competitor.set(`${p.id}|${c.siteId}`, c.url)
+  }
+  return { source, competitor }
+}
+
 const csvCell = (v: string | number | null): string => {
   const s = v == null ? '' : String(v)
   return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
@@ -224,11 +256,18 @@ export function groupRowsByFamily(rows: TableRow[]): FamilyGroup[] {
 }
 
 export function rowsToCsv(rows: TableRow[], competitors: { siteId: string; domain: string }[]): string {
-  const head = ['Référence', 'EAN', 'Produit', 'Famille', 'Mon prix HT', 'Meilleur écart %', ...competitors.map((c) => `${c.domain} (prix HT)`)]
+  // Les liens sont REJETÉS EN FIN de ligne : les colonnes chiffrées gardent leur ordre
+  // (et leur index) pour qui a déjà des tableurs branchés sur cet export.
+  const head = [
+    'Référence', 'EAN', 'Produit', 'Famille', 'Mon prix HT', 'Meilleur écart %',
+    ...competitors.map((c) => `${c.domain} (prix HT)`),
+    'Fiche source', ...competitors.map((c) => `${c.domain} (lien)`),
+  ]
   const dec = (v: number | null) => (v == null ? '' : String(v).replace('.', ','))
   const lines = rows.map((r) =>
     [csvCell(r.reference), csvCell(r.ean), csvCell(r.name), csvCell(r.famille ?? ''), dec(r.myPriceHt), dec(r.bestGapPct),
-      ...competitors.map((c) => dec(r.priceBySite[c.siteId] ?? null))].join(';'),
+      ...competitors.map((c) => dec(r.priceBySite[c.siteId] ?? null)),
+      csvCell(r.sourceUrl), ...competitors.map((c) => csvCell(r.urlBySite[c.siteId] ?? null))].join(';'),
   )
   return [head.join(';'), ...lines].join('\n')
 }
@@ -339,6 +378,7 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
     opportunities.push({
       id: p.id, name: p.name, reference: p.reference, famille: p.famille,
       myPriceHt: p.myPriceHt, minPriceHt, minDomain: best?.domain ?? null, gapPct: p.bestGapPct, gapEur,
+      sourceUrl: p.sourceUrl, minUrl: best?.url || null,
     })
   }
   opportunities.sort((a, b) => (b.gapEur ?? -Infinity) - (a.gapEur ?? -Infinity))

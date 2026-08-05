@@ -2074,6 +2074,8 @@ export const fr = {
   'pw.table.position': 'Position',
   'pw.table.empty': 'Aucun produit ne correspond à la recherche.',
   'pw.table.openSource': 'Ouvrir la fiche source',
+  'pw.link.competitor': 'Ouvrir la page scrapée chez le concurrent',
+  'pw.link.noPage': 'page non relevée',
   'pw.table.googleSearch': 'Rechercher ce produit sur Google',
 
   'pw.audit.eligible': 'Éligible',

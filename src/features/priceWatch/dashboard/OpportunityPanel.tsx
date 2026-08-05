@@ -1,6 +1,7 @@
 // Top opportunités : produits où je suis le plus cher, triés par écart UNITAIRE € (mon
 // prix HT − meilleur prix concurrent HT — PAS un revenu : ni volume ni marge en données).
 // Où baisser en priorité. Lit la vue filtrée (participe au cross-filter du cockpit).
+import { ExternalLink } from 'lucide-react'
 import type { Cockpit } from './analytics'
 import { eur, pct } from './format'
 import { useTranslation } from '@/lib/i18n'
@@ -36,12 +37,30 @@ export function OpportunityPanel({ ck }: { ck: Cockpit }) {
           <tbody>
             {rows.map((o) => (
               <tr key={o.id} className="border-t border-white/5 text-right">
+                {/* Nom → ma fiche source ; prix concurrent → la page scrapée qui porte CE
+                    prix. Sans lien quand l'URL manque : un lien deviné vérifierait faux. */}
                 <td className="text-left py-1.5 text-white/85 max-w-[200px] truncate" title={o.name}>
-                  {o.name}<span className="text-white/35"> · {o.reference ?? '—'}</span>
+                  {o.sourceUrl ? (
+                    <a href={o.sourceUrl} target="_blank" rel="noopener noreferrer" title={t('pw.table.openSource')}
+                      className="hover:text-indigo-300 hover:underline">
+                      {o.name}<span className="text-white/35"> · {o.reference ?? '—'}</span>
+                    </a>
+                  ) : (
+                    <>{o.name}<span className="text-white/35"> · {o.reference ?? '—'}</span></>
+                  )}
                 </td>
                 <td className="text-white/70">{eur(o.myPriceHt)}</td>
                 <td className="text-white/55 whitespace-nowrap">
-                  {eur(o.minPriceHt)}<span className="text-white/30"> {o.minDomain?.replace(/^www\./, '').split('.')[0] ?? ''}</span>
+                  {o.minUrl ? (
+                    <a href={o.minUrl} target="_blank" rel="noopener noreferrer" title={`${t('pw.link.competitor')} — ${o.minUrl}`}
+                      className="inline-flex items-center gap-1 hover:text-indigo-300 hover:underline">
+                      {eur(o.minPriceHt)}
+                      <span className="text-white/30">{o.minDomain?.replace(/^www\./, '').split('.')[0] ?? ''}</span>
+                      <ExternalLink className="w-3 h-3 shrink-0 text-white/25" />
+                    </a>
+                  ) : (
+                    <>{eur(o.minPriceHt)}<span className="text-white/30"> {o.minDomain?.replace(/^www\./, '').split('.')[0] ?? ''}</span></>
+                  )}
                 </td>
                 <td className="text-rose-400 font-medium">{pct(o.gapPct)}</td>
                 <td className="pl-2">

@@ -3,10 +3,11 @@
 // chaque concurrent apparié (prix TTC/HT, barré, écart, stock, type d'appariement,
 // image, lien). L'image + le nom concurrent servent à vérifier le bon appariement.
 import { useState } from 'react'
-import { ChevronDown, ImageOff } from 'lucide-react'
+import { ChevronDown, ExternalLink, ImageOff } from 'lucide-react'
 import type { ProductRow } from '../catalog/report'
 import { useResolvedImage } from '@/features/catalog/useResolvedImage'
 import { eur, pct, positionOf, POSITION_TEXT, STOCK_LABEL, MATCH_LABEL } from './format'
+import { useTranslation } from '@/lib/i18n'
 
 function GapBadge({ gap }: { gap: number | null }) {
   const pos = positionOf(gap)
@@ -27,25 +28,37 @@ function Thumb({ src, alt }: { src: string | null; alt: string }) {
 }
 
 export function ProductCard({ row }: { row: ProductRow }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const best = row.competitors.reduce<number | null>((m, c) => (c.gapPct != null && (m == null || c.gapPct < m) ? c.gapPct : m), null)
 
   return (
     <div className="bg-surface rounded-lg overflow-hidden">
-      <button type="button" onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-surface-2 transition-colors">
-        <ChevronDown className={`w-4 h-4 text-white/40 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-        <div className="min-w-0 flex-1">
-          <div className="text-sm text-white truncate">{row.name}</div>
-          <div className="text-xs text-white/40 truncate">
-            {row.reference ?? '—'}{row.famille ? ` · ${row.famille}` : ''} · {row.competitors.length} concurrent(s)
+      {/* Le lien vers MA fiche source est un frère du bouton de dépliage, jamais un
+          enfant : un <a> imbriqué dans un <button> est du HTML invalide (et le clic
+          déplierait la carte au lieu d'ouvrir la page). */}
+      <div className="flex items-center hover:bg-surface-2 transition-colors">
+        <button type="button" onClick={() => setOpen((o) => !o)}
+          className="min-w-0 flex-1 flex items-center gap-3 px-3 py-2.5 text-left">
+          <ChevronDown className={`w-4 h-4 text-white/40 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm text-white truncate">{row.name}</div>
+            <div className="text-xs text-white/40 truncate">
+              {row.reference ?? '—'}{row.famille ? ` · ${row.famille}` : ''} · {row.competitors.length} concurrent(s)
+            </div>
           </div>
-        </div>
-        <div className="text-right shrink-0">
-          <div className="text-xs text-white/50">{eur(row.myPriceHt)} <span className="text-white/30">HT</span></div>
-          <GapBadge gap={best} />
-        </div>
-      </button>
+          <div className="text-right shrink-0">
+            <div className="text-xs text-white/50">{eur(row.myPriceHt)} <span className="text-white/30">HT</span></div>
+            <GapBadge gap={best} />
+          </div>
+        </button>
+        {row.sourceUrl && (
+          <a href={row.sourceUrl} target="_blank" rel="noreferrer" title={t('pw.table.openSource')}
+            className="shrink-0 self-stretch flex items-center px-3 text-white/25 hover:text-indigo-300">
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        )}
+      </div>
 
       {open && (
         <div className="divide-y divide-white/5 border-t border-white/5">
@@ -56,8 +69,11 @@ export function ProductCard({ row }: { row: ProductRow }) {
                 {/* Domaine + nom cliquables → fiche du concurrent (l'icône ⧉ seule était
                     trop discrète, demande utilisateur). */}
                 {c.url ? (
-                  <a href={c.url} target="_blank" rel="noreferrer" title={`Ouvrir la fiche sur ${c.domain}`} className="block group/link">
-                    <div className="text-xs text-white/80 truncate group-hover/link:text-indigo-300 group-hover/link:underline">{c.domain}</div>
+                  <a href={c.url} target="_blank" rel="noreferrer" title={`${t('pw.link.competitor')} — ${c.url}`} className="block group/link">
+                    <div className="flex items-center gap-1 text-xs text-white/80 group-hover/link:text-indigo-300 group-hover/link:underline">
+                      <span className="truncate">{c.domain}</span>
+                      <ExternalLink className="w-3 h-3 shrink-0 text-white/25 group-hover/link:text-indigo-300" />
+                    </div>
                     <div className="text-[11px] text-white/40 truncate group-hover/link:text-white/60">{c.name}</div>
                   </a>
                 ) : (
@@ -68,6 +84,7 @@ export function ProductCard({ row }: { row: ProductRow }) {
                 )}
                 <div className="text-[11px] text-white/40">
                   {MATCH_LABEL[c.match]}{c.stock ? ` · ${STOCK_LABEL[c.stock]}` : ''}
+                  {!c.url && <span className="text-white/25"> · {t('pw.link.noPage')}</span>}
                 </div>
               </div>
               <div className="text-right shrink-0">

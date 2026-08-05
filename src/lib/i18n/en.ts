@@ -1985,6 +1985,8 @@ export const en: Record<TranslationKey, string> = {
   'pw.table.position': 'Position',
   'pw.table.empty': 'No product matches the search.',
   'pw.table.openSource': 'Open the source page',
+  'pw.link.competitor': "Open the scraped page on the competitor's site",
+  'pw.link.noPage': 'page not recorded',
   'pw.table.googleSearch': 'Search for this product on Google',
   'pw.audit.eligible': 'Eligible',
   'pw.audit.noPrice': 'No price',

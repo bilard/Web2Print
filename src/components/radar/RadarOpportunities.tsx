@@ -1,4 +1,4 @@
-import { TrendingDown } from 'lucide-react'
+import { ExternalLink, TrendingDown } from 'lucide-react'
 import type { Cockpit } from '@/features/priceWatch/dashboard/analytics'
 import { fmtEur, fmtEurCompact, fmtGapPct } from '@/features/priceWatch/radar/radarFormat'
 import { t } from '@/lib/i18n'
@@ -19,10 +19,20 @@ export function RadarOpportunities({ cockpit, landscape = false }: { cockpit: Co
         {items.map((o) => (
           <li key={o.id} className="flex items-center gap-3 py-2.5">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[14px] font-medium">{o.name}</p>
+              {o.sourceUrl ? (
+                <a href={o.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 min-w-0">
+                  <span className="truncate text-[14px] font-medium">{o.name}</span>
+                  <ExternalLink size={11} className="shrink-0" color="var(--radar-text-3)" />
+                </a>
+              ) : (
+                <p className="truncate text-[14px] font-medium">{o.name}</p>
+              )}
               <p className="mt-0.5 truncate text-[11px]" style={{ color: 'var(--radar-text-3)' }}>
                 {fmtEur(o.myPriceHt)} → <span style={{ color: 'var(--radar-text-2)' }}>{fmtEur(o.minPriceHt)}</span>
-                {o.minDomain ? ` · ${o.minDomain}` : ''}
+                {o.minDomain ? ' · ' : ''}
+                {o.minDomain && (o.minUrl
+                  ? <a href={o.minUrl} target="_blank" rel="noreferrer" className="underline" style={{ color: 'var(--radar-text-2)' }}>{o.minDomain}</a>
+                  : o.minDomain)}
               </p>
             </div>
             <div className="shrink-0 text-right">

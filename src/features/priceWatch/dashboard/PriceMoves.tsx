@@ -5,12 +5,14 @@
 // Lecture : une baisse concurrente est une pression sur moi (rose) ; une hausse me rend
 // mécaniquement plus compétitif (émeraude). L'écart affiché est celui d'APRÈS le mouvement.
 import { useMemo, useState } from 'react'
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, ExternalLink } from 'lucide-react'
 import type { PriceEvent } from '../priceEvents'
 import { summarizeMoves, eventsSince } from '../priceEvents'
-import { matchesQuery, EMPTY_FILTER, type CockpitFilter } from './analytics'
+import { matchesQuery, EMPTY_FILTER, type CockpitFilter, type ProductLinkIndex } from './analytics'
 import { eur, pct, agoShort } from './format'
 import { useTranslation } from '@/lib/i18n'
+
+const EMPTY_LINKS: ProductLinkIndex = { source: new Map(), competitor: new Map() }
 
 const WINDOWS = [7, 30, 90] as const
 
@@ -24,7 +26,13 @@ function Stat({ label, value, accent, sub }: { label: string; value: string; acc
   )
 }
 
-export function PriceMoves({ events, filter = EMPTY_FILTER }: { events: PriceEvent[]; filter?: CockpitFilter }) {
+export function PriceMoves({ events, filter = EMPTY_FILTER, links = EMPTY_LINKS }: {
+  events: PriceEvent[]
+  filter?: CockpitFilter
+  /** Pages scrapées, résolues depuis le rapport courant : le journal ne stocke que des
+   *  identifiants (cf. `buildLinkIndex`). Clé absente → texte simple, pas de lien. */
+  links?: ProductLinkIndex
+}) {
   const { t } = useTranslation()
   const [days, setDays] = useState<number>(30)
   const [onlyDown, setOnlyDown] = useState(false)
@@ -119,12 +127,31 @@ export function PriceMoves({ events, filter = EMPTY_FILTER }: { events: PriceEve
                 <tbody>
                   {rows.map((e, i) => {
                     const down = e.pctChange < 0
+                    const srcUrl = links.source.get(e.pid)
+                    const cmpUrl = links.competitor.get(`${e.pid}|${e.sid}`)
                     return (
                       <tr key={`${e.at}-${e.pid}-${e.sid}-${i}`} className="border-t border-white/5 text-right">
                         <td className="text-left py-1.5 text-white/85 max-w-[220px] truncate" title={e.name}>
-                          {e.name}{e.ref && <span className="text-white/35"> · {e.ref}</span>}
+                          {srcUrl ? (
+                            <a href={srcUrl} target="_blank" rel="noopener noreferrer" title={t('pw.table.openSource')}
+                              className="hover:text-indigo-300 hover:underline">
+                              {e.name}{e.ref && <span className="text-white/35"> · {e.ref}</span>}
+                            </a>
+                          ) : (
+                            <>{e.name}{e.ref && <span className="text-white/35"> · {e.ref}</span>}</>
+                          )}
                         </td>
-                        <td className="text-left text-white/55">{e.dom.replace(/^www\./, '')}</td>
+                        {/* Le lien concurrent est LA vérification du mouvement : « ce prix
+                            a-t-il vraiment baissé ? » se tranche sur la page elle-même. */}
+                        <td className="text-left text-white/55">
+                          {cmpUrl ? (
+                            <a href={cmpUrl} target="_blank" rel="noopener noreferrer" title={`${t('pw.link.competitor')} — ${cmpUrl}`}
+                              className="inline-flex items-center gap-1 hover:text-indigo-300 hover:underline">
+                              {e.dom.replace(/^www\./, '')}
+                              <ExternalLink className="w-3 h-3 shrink-0 text-white/25" />
+                            </a>
+                          ) : e.dom.replace(/^www\./, '')}
+                        </td>
                         <td className="text-white/45">{eur(e.from)}</td>
                         <td className="text-white/80">{eur(e.to)}</td>
                         <td className={`font-medium ${down ? 'text-rose-400' : 'text-emerald-400'}`}>

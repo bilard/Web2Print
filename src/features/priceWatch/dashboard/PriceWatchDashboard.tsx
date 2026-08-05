@@ -4,7 +4,7 @@
 import { useMemo, useState } from 'react'
 import { useCatalogReport, useReportHistory, usePriceEvents } from '../useCatalogReport'
 import type { StoredReport } from '../reportStore'
-import { buildCockpit, EMPTY_FILTER, type CockpitFilter } from './analytics'
+import { buildCockpit, buildLinkIndex, EMPTY_FILTER, type CockpitFilter } from './analytics'
 import { KpiStrip } from './KpiStrip'
 import { PositionDonut } from './PositionDonut'
 import { GapDistribution } from './GapDistribution'
@@ -65,6 +65,9 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   useLiveReportRefresh(watchId, report)
   const [filter, setFilter] = useState<CockpitFilter>(EMPTY_FILTER)
   const ck = useMemo(() => (report ? buildCockpit(report, filter) : null), [report, filter])
+  // Index des pages scrapées, NON filtré : le journal des mouvements ne stocke que des
+  // identifiants (pid/sid) et doit pouvoir se relier même quand le cockpit est filtré.
+  const links = useMemo(() => buildLinkIndex(report?.products ?? []), [report])
 
   const [detailOpen, setDetailOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
@@ -166,7 +169,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <ExpandableChart render={(h) => <PriceIndexTrend history={history} height={h} />} />
         <ExpandableChart render={(h) => <CompetitorTrend history={history} sites={report.sites} height={h} />} />
       </div>
-      <PriceMoves events={priceMoves} filter={filter} />
+      <PriceMoves events={priceMoves} filter={filter} links={links} />
       <OpportunityPanel ck={ck} />
 
       <AnalyticsTable ck={ck} searchQ={filter.q} onSearch={(q) => set({ q })}

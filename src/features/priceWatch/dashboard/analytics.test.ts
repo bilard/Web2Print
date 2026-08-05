@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { StoredReport } from '../reportStore'
 import type { KpiHistoryPoint } from '../types'
-import { buildCockpit, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries, priceIndexSeries, comparableTail, trendDelta, EMPTY_FILTER, matchesQuery, groupRowsByFamily, type TableRow } from './analytics'
+import { buildCockpit, buildLinkIndex, buildTableRows, rowsToCsv, filterProducts, sparkSeries, competitorSeries, priceIndexSeries, comparableTail, trendDelta, EMPTY_FILTER, matchesQuery, groupRowsByFamily, type TableRow } from './analytics'
 
 const cell = (siteId: string, domain: string, priceHt: number, gapPct: number, stock: 'in-stock' | 'out-of-stock' = 'in-stock') => ({
   siteId, domain, name: 'x', url: '', image: null,
@@ -159,6 +159,41 @@ describe('buildTableRows + rowsToCsv', () => {
     expect(lines).toHaveLength(4) // header + 3
     expect(lines[0]).toContain('a.com (prix HT)')
     expect(lines[1].split(';')[0]).toBe('R1')
+  })
+
+  it('CSV : colonnes de liens en FIN de ligne (fiche source + une par concurrent)', () => {
+    const linked = buildTableRows([{
+      ...report.products[0], sourceUrl: 'https://moi.fr/p1',
+      competitors: [{ ...report.products[0].competitors[0], url: 'https://a.com/p1' }],
+    }])
+    const lines = rowsToCsv(linked, report.sites).split('\n')
+    // Les colonnes chiffrées gardent leur index : 'Référence' reste en tête.
+    expect(lines[0].split(';').slice(0, 2)).toEqual(['Référence', 'EAN'])
+    expect(lines[0].split(';').slice(-3)).toEqual(['Fiche source', 'a.com (lien)', 'b.com (lien)'])
+    expect(lines[1].split(';').slice(-3)).toEqual(['https://moi.fr/p1', 'https://a.com/p1', ''])
+  })
+})
+
+describe('buildLinkIndex — pages scrapées adressables par identifiant', () => {
+  it('indexe la fiche source par produit et la fiche relevée par (produit, site)', () => {
+    const idx = buildLinkIndex([{
+      ...report.products[0], sourceUrl: 'https://moi.fr/p1',
+      competitors: [
+        { ...report.products[0].competitors[0], url: 'https://a.com/p1' },
+        { ...report.products[0].competitors[1], url: 'https://b.com/p1' },
+      ],
+    }])
+    expect(idx.source.get('1')).toBe('https://moi.fr/p1')
+    expect(idx.competitor.get('1|a')).toBe('https://a.com/p1')
+    expect(idx.competitor.get('1|b')).toBe('https://b.com/p1')
+  })
+
+  it("n'invente jamais d'entrée : URL vide ou produit hors rapport → absent", () => {
+    // La fixture a `url: ''` partout et `sourceUrl: null` : rien ne doit être indexé.
+    const idx = buildLinkIndex(report.products)
+    expect(idx.source.size).toBe(0)
+    expect(idx.competitor.size).toBe(0)
+    expect(idx.competitor.get('999|a')).toBeUndefined()
   })
 })
 

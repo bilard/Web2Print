@@ -6,18 +6,32 @@ import { fmtEur, fmtGapPct } from '@/features/priceWatch/radar/radarFormat'
 import { t } from '@/lib/i18n'
 
 const CAP = 40
+/** Concurrents visibles avant dépliage — au-delà, un bouton révèle le RESTE (et donc
+ *  leurs liens : un relevé masqué est un prix qu'on ne peut pas vérifier). */
+const COMP_PREVIEW = 5
 
 const stockDot: Record<string, string> = {
   'in-stock': 'var(--radar-good)', 'out-of-stock': 'var(--radar-bad)', 'on-order': 'var(--radar-warn)',
 }
 
 function ProductCard({ p }: { p: ProductRow }) {
+  const [allComps, setAllComps] = useState(false)
   const comps = [...p.competitors].sort((a, b) => (a.priceHt ?? Infinity) - (b.priceHt ?? Infinity))
+  const shownComps = allComps ? comps : comps.slice(0, COMP_PREVIEW)
   return (
     <li className="radar-card px-4 py-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-[14px] font-medium">{p.name}</p>
+          {/* Le nom ouvre MA fiche source : vérifier mon propre prix compte autant que
+              vérifier celui du concurrent. */}
+          {p.sourceUrl ? (
+            <a href={p.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 min-w-0">
+              <span className="truncate text-[14px] font-medium">{p.name}</span>
+              <ExternalLink size={11} className="shrink-0" color="var(--radar-text-3)" />
+            </a>
+          ) : (
+            <p className="truncate text-[14px] font-medium">{p.name}</p>
+          )}
           <p className="mt-0.5 truncate text-[11px]" style={{ color: 'var(--radar-text-3)' }}>
             {p.reference ?? '—'}{p.famille ? ` · ${p.famille}` : ''}
           </p>
@@ -30,7 +44,7 @@ function ProductCard({ p }: { p: ProductRow }) {
         </div>
       </div>
       <ul className="mt-2 space-y-1 border-t pt-2" style={{ borderColor: 'var(--radar-hair)' }}>
-        {comps.slice(0, 5).map((c) => (
+        {shownComps.map((c) => (
           <li key={c.siteId} className="flex items-center gap-2 text-[11.5px]">
             {c.stock && <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: stockDot[c.stock] ?? 'var(--radar-text-3)' }} />}
             <span className="min-w-0 flex-1 truncate" style={{ color: 'var(--radar-text-2)' }}>{c.domain}</span>
@@ -39,13 +53,19 @@ function ProductCard({ p }: { p: ProductRow }) {
               <span className="radar-tnum w-11 shrink-0 text-right" style={{ color: c.gapPct < 0 ? 'var(--radar-bad)' : 'var(--radar-good)' }}>{fmtGapPct(c.gapPct)}</span>
             )}
             {c.url && (
-              <a href={c.url} target="_blank" rel="noreferrer" className="radar-tap shrink-0" style={{ color: 'var(--radar-text-3)' }} aria-label="Ouvrir la fiche concurrent">
+              <a href={c.url} target="_blank" rel="noreferrer" className="radar-tap shrink-0" style={{ color: 'var(--radar-text-3)' }} aria-label={`Ouvrir la page scrapée sur ${c.domain}`}>
                 <ExternalLink size={12} />
               </a>
             )}
           </li>
         ))}
-        {comps.length > 5 && <li className="text-[10.5px]" style={{ color: 'var(--radar-text-3)' }}>+{comps.length - 5} autre(s) concurrent(s)</li>}
+        {comps.length > COMP_PREVIEW && (
+          <li>
+            <button type="button" onClick={() => setAllComps((v) => !v)} className="radar-tap text-[10.5px] underline" style={{ color: 'var(--radar-text-3)' }}>
+              {allComps ? 'Réduire' : `+${comps.length - COMP_PREVIEW} autre(s) concurrent(s)`}
+            </button>
+          </li>
+        )}
       </ul>
     </li>
   )
