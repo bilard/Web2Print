@@ -2,8 +2,8 @@
 // clic dans le ruban de position, qui montre déjà la répartition — deux commandes pour
 // le même filtre, à deux endroits, c'est ce qui rendait l'en-tête confus.
 import type { SelectHTMLAttributes } from 'react'
-import { Package, Boxes, Tag, EuroIcon, FilterX } from 'lucide-react'
-import { EMPTY_EXPLORER_FILTER, isExplorerFilterActive, type ExplorerFilter, type PairFilter, type StockFilter } from './filters'
+import { Package, Boxes, Tag, EuroIcon, FilterX, ShieldQuestion, ArrowDownNarrowWide } from 'lucide-react'
+import { EMPTY_EXPLORER_FILTER, isExplorerFilterActive, type ExplorerFilter, type PairFilter, type StockFilter, type TrustFilter } from './filters'
 import { useTranslation } from '@/lib/i18n'
 
 const sel = 'bg-well text-white/70 text-[11px] rounded pl-6 pr-1.5 py-1.5 border border-white/10 focus:outline-none focus:border-white/25 appearance-none'
@@ -45,6 +45,14 @@ export function ExplorerFilters({ filter, onChange }: {
         <option value="orphan">{t('pwx.nonAppariesChezLui')}</option>
       </IconSelect>
 
+      <IconSelect icon={ShieldQuestion} value={filter.trust}
+        onChange={(e) => onChange({ trust: e.target.value as TrustFilter })}>
+        <option value="all">{t('pwx.trust.filterAll')}</option>
+        <option value="suspect">{t('pwx.trust.filterSuspect')}</option>
+        <option value="doubt">{t('pwx.trust.filterDoubt')}</option>
+        <option value="sure">{t('pwx.trust.filterSure')}</option>
+      </IconSelect>
+
       <IconSelect icon={Boxes} value={filter.stock}
         onChange={(e) => onChange({ stock: e.target.value as StockFilter })}>
         <option value="all">{t('pwx.tousStocks')}</option>
@@ -66,6 +74,10 @@ export function ExplorerFilters({ filter, onChange }: {
       </button>
       <button type="button" className={chip(filter.noPriceOnly)} onClick={() => onChange({ noPriceOnly: !filter.noPriceOnly })}>
         {t('pwx.sansPrixExploitable')}
+      </button>
+      <button type="button" className={chip(filter.worstFirst)} title={t('pwx.trust.worstFirst.help')}
+        onClick={() => onChange({ worstFirst: !filter.worstFirst })}>
+        <ArrowDownNarrowWide className="w-3 h-3 inline mr-1 -mt-px" />{t('pwx.trust.worstFirst')}
       </button>
 
       {isExplorerFilterActive(filter) && (

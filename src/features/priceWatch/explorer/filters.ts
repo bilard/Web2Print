@@ -31,17 +31,26 @@ export interface ExplorerFilter {
   tokens: string[]
   /** Chemin de taxonomie F1 sélectionné dans l'arbre (préfixe : ses descendants passent). */
   path: string[]
+  /** Fiabilité de l'appariement : `suspect` = tout ce qui n'est pas jugé sûr. */
+  trust: TrustFilter
+  /** Les moins fiables en tête — l'ordre de travail quand on audite les rapprochements. */
+  worstFirst: boolean
 }
+
+/** `suspect` réunit « à vérifier » et « douteux » : le but est de sortir du lot tout ce
+ *  qui n'est pas acquis, pas de distinguer deux nuances de doute dans un menu. */
+export type TrustFilter = 'all' | 'suspect' | 'doubt' | 'sure'
 
 export const EMPTY_EXPLORER_FILTER: ExplorerFilter = {
   q: '', pairing: 'matched', gap: 'all', stock: 'all',
   promoOnly: false, noPriceOnly: false, priceMin: null, priceMax: null, tokens: [], path: [],
+  trust: 'all', worstFirst: false,
 }
 
 export function isExplorerFilterActive(f: ExplorerFilter): boolean {
   return !!f.q.trim() || f.pairing !== 'matched' || f.gap !== 'all' || f.stock !== 'all'
     || f.promoOnly || f.noPriceOnly || f.priceMin != null || f.priceMax != null
-    || f.tokens.length > 0 || f.path.length > 0
+    || f.tokens.length > 0 || f.path.length > 0 || f.trust !== 'all' || f.worstFirst
 }
 
 /**
@@ -79,9 +88,19 @@ export function matchesExplorerQuery(r: PairedRow, q: string): boolean {
 }
 
 export function filterRows(rows: PairedRow[], f: ExplorerFilter): PairedRow[] {
-  return rows.filter((r) => {
+  const kept = rows.filter((r) => {
     if (f.pairing === 'matched' && !r.source) return false
     if (f.pairing === 'orphan' && r.source) return false
+
+    if (f.trust !== 'all') {
+      // Une fiche orpheline n'a pas d'appariement à mettre en doute : elle sort de tout
+      // filtre de fiabilité plutôt que de gonfler le tas des suspects.
+      const band = r.confidence?.band
+      if (!band) return false
+      if (f.trust === 'suspect' && band === 'sure') return false
+      if (f.trust === 'doubt' && band !== 'doubt') return false
+      if (f.trust === 'sure' && band !== 'sure') return false
+    }
 
     // Taxonomie : sélection par PRÉFIXE — choisir une famille garde ses sous-familles.
     if (f.path.length > 0 && !isUnderPath(r.source?.path ?? [], f.path)) return false
@@ -110,6 +129,10 @@ export function filterRows(rows: PairedRow[], f: ExplorerFilter): PairedRow[] {
 
     return matchesExplorerQuery(r, f.q)
   })
+  // Tri APRÈS filtrage, et avant toute pagination côté écran. Les orphelines n'ont pas
+  // d'indice : elles vont en fin de liste plutôt qu'en tête d'un audit qui ne les vise pas.
+  if (!f.worstFirst) return kept
+  return [...kept].sort((a, b) => (a.confidence?.score ?? 999) - (b.confidence?.score ?? 999))
 }
 
 // ── Suggestions ─────────────────────────────────────────────────────────────────────

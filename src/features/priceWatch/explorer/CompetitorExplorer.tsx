@@ -123,8 +123,10 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
         <div className="h-8 w-px bg-white/10 hidden lg:block" />
         <ExplorerStats stats={stats} collected={listings.length}
           promoOnly={effective.promoOnly} outOfStockOnly={effective.stock === 'out-of-stock'}
+          suspectsOnly={effective.trust === 'suspect'}
           onTogglePromo={() => patch({ promoOnly: !effective.promoOnly })}
-          onToggleStock={() => patch({ stock: effective.stock === 'out-of-stock' ? 'all' : 'out-of-stock' })} />
+          onToggleStock={() => patch({ stock: effective.stock === 'out-of-stock' ? 'all' : 'out-of-stock' })}
+          onToggleSuspects={() => patch({ trust: effective.trust === 'suspect' ? 'all' : 'suspect' })} />
       </div>
 
       {/* ── Étage 2 · contrôle : chercher, filtrer, paginer ──────────────────── */}

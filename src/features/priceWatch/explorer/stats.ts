@@ -18,6 +18,8 @@ export interface SiteStats {
   promos: number
   medDiscountPct: number | null
   outOfStock: number
+  /** Appariements dont la fiabilité n'est PAS acquise (« à vérifier » + « douteux »). */
+  suspects: number
 }
 
 function median(xs: number[]): number | null {
@@ -33,9 +35,11 @@ export function computeStats(rows: PairedRow[]): SiteStats {
   const prices: number[] = []
   const discounts: number[] = []
   let matched = 0, withPrice = 0, cheaper = 0, aligned = 0, dearer = 0, promos = 0, outOfStock = 0
+  let suspects = 0
 
   for (const r of rows) {
     if (r.source) matched++
+    if (r.confidence && r.confidence.band !== 'sure') suspects++
     if (r.cmp.priceHt != null) withPrice++
     if (r.cmp.priceTtc != null) prices.push(r.cmp.priceTtc)
     if (r.listing.availability === 'out-of-stock') outOfStock++
@@ -53,6 +57,6 @@ export function computeStats(rows: PairedRow[]): SiteStats {
   return {
     shown: rows.length, matched, orphans: rows.length - matched, withPrice,
     medGapPct: median(gaps), cheaper, aligned, dearer,
-    medPriceTtc: median(prices), promos, medDiscountPct: median(discounts), outOfStock,
+    medPriceTtc: median(prices), promos, medDiscountPct: median(discounts), outOfStock, suspects,
   }
 }

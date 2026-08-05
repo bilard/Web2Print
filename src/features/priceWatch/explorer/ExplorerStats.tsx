@@ -30,13 +30,15 @@ function Stat({ label, value, tone = 'text-white/80', hint, onToggle, active }: 
   )
 }
 
-export function ExplorerStats({ stats, collected, promoOnly, outOfStockOnly, onTogglePromo, onToggleStock }: {
+export function ExplorerStats({ stats, collected, promoOnly, outOfStockOnly, suspectsOnly, onTogglePromo, onToggleStock, onToggleSuspects }: {
   stats: SiteStats
   collected: number
   promoOnly: boolean
   outOfStockOnly: boolean
+  suspectsOnly: boolean
   onTogglePromo: () => void
   onToggleStock: () => void
+  onToggleSuspects: () => void
 }) {
   // ⚠ t() DANS le rendu (via useTranslation) : en constante de module, la langue serait
   // figée à l'import et ne suivrait plus le changement de langue.
@@ -50,6 +52,11 @@ export function ExplorerStats({ stats, collected, promoOnly, outOfStockOnly, onT
         hint={t('pwx.stats.matched.help')} />
       <Stat label={t('pwx.chezLuiSeul')} value={n(stats.orphans)}
         hint={t('pwx.stats.orphans.help')} />
+      {/* Compteur d'audit : le seul chiffre de cette ligne qui appelle une ACTION. */}
+      <Stat label={t('pwx.trust.aVerifier')} value={n(stats.suspects)}
+        tone={stats.suspects > 0 ? 'text-amber-300' : 'text-white/80'}
+        active={suspectsOnly} onToggle={onToggleSuspects}
+        hint={t('pwx.trust.aVerifier.help')} />
       <Stat label={t('pwx.prixMedian')} value={eur(stats.medPriceTtc)}
         hint={t('pwx.stats.medPrice.help')} />
       <Stat label={t('pwx.stats.promos')} value={n(stats.promos)} tone="text-amber-300"

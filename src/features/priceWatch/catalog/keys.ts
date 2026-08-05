@@ -139,7 +139,9 @@ export interface CompetitorIdentity {
   name?: string
 }
 
-type MatchEvidence = 'gtin13' | 'ean-in-url' | 'ref-in-url' | 'sku' | 'mpn' | 'ref-in-name' | 'ref-in-title'
+/** Nature de la preuve, de la plus concluante à la plus fragile. Exportée : l'indice de
+ *  fiabilité de l'explorateur en fait sa valeur de départ (cf. `explorer/confidence.ts`). */
+export type MatchEvidence = 'gtin13' | 'ean-in-url' | 'ref-in-url' | 'sku' | 'mpn' | 'ref-in-name' | 'ref-in-title'
 
 /**
  * Cote dimensionnelle avec unité (`510MM`, `1000ML`, `12V`) — jamais une référence.

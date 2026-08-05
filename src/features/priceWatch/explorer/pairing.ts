@@ -8,7 +8,9 @@
 // appariement que le dashboard. Reconstruire une correspondance « listing → produit »
 // avec d'autres règles produirait des écarts contredisant le tableau de bord.
 import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct, type PriceComparison } from '../catalog/match'
+import type { MatchProof } from '../catalog/keys'
 import type { CompetitorListing } from '../catalog/prestashop'
+import { scorePair, type Confidence } from './confidence'
 
 /** Nature de la preuve d'appariement (même classement que le rapport). */
 type PairKind = 'exact-ean' | 'exact-ref' | 'origin'
@@ -38,6 +40,8 @@ export interface PairedRow {
   cmp: PriceComparison
   source: SourceSide | null
   kind: PairKind | null
+  /** Indice de fiabilité de l'appariement. null quand la fiche est orpheline. */
+  confidence: Confidence | null
 }
 
 function kindOf(proof: { key: { origin: boolean; kind: string }; evidence: string }): PairKind {
@@ -73,12 +77,17 @@ export function pairSiteListings(
   // Un listing peut être atteint par plusieurs produits source (variantes partageant une
   // référence dépaddée). Le PREMIER appariement prouvé gagne, comme dans le rapport où
   // l'ordre des produits fixe déjà l'issue.
-  const byListing = new Map<string, { product: SourceProduct; kind: PairKind }>()
+  //
+  // Les suivants ne sont pas jetés en silence pour autant : leur NOMBRE est retenu. Deux
+  // produits F1 distincts qui revendiquent la même fiche, c'est au moins un des deux qui
+  // se trompe — un défaut qu'aucun autre signal de l'indice ne voit.
+  const byListing = new Map<string, { product: SourceProduct; proof: MatchProof; contenders: number }>()
   for (const product of products) {
     const m = matchProduct(product, siteId, lookup)
     if (m.outcome !== 'matched' || !m.listing || !m.proof) continue
-    if (byListing.has(m.listing.url)) continue
-    byListing.set(m.listing.url, { product, kind: kindOf(m.proof) })
+    const seen = byListing.get(m.listing.url)
+    if (seen) { seen.contenders++; continue }
+    byListing.set(m.listing.url, { product, proof: m.proof, contenders: 1 })
   }
 
   return listings.map((listing) => {
@@ -91,11 +100,21 @@ export function pairSiteListings(
     const description = p?.description ?? ex?.description ?? null
     const images = p?.image ? [absoluteImage(p.image, opts.imagePrefix)] : (ex?.images ?? [])
     const path = p?.taxo?.length ? p.taxo : (ex?.path ?? [])
+    const cmp = comparePrices(p?.price, listing, { vatRate: opts.vatRate, alignedPct: opts.alignedPct })
     return {
       key: listing.url,
       listing,
-      cmp: comparePrices(p?.price, listing, { vatRate: opts.vatRate, alignedPct: opts.alignedPct }),
-      kind: hit?.kind ?? null,
+      cmp,
+      kind: hit ? kindOf(hit.proof) : null,
+      confidence: hit && p
+        ? scorePair({
+            evidence: hit.proof.evidence, key: hit.proof.key,
+            sourceEan: p.ean, listingEan: listing.gtin13,
+            sourceRef: p.ref, listingRef: listing.ref,
+            sourceName: p.name, listingName: listing.name,
+            deltaPct: cmp.deltaPct, contenders: hit.contenders,
+          })
+        : null,
       source: p
         ? {
             id: p.id, ref: p.ref ?? null, ean: p.ean ?? null, name: p.name,

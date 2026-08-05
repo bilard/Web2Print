@@ -63,6 +63,35 @@ describe('filterRows', () => {
   })
 })
 
+describe('filterRows — fiabilité', () => {
+  const f = EMPTY_EXPLORER_FILTER
+  // `/a` est prouvé par la réf. déclarée, `/b` par le gtin13. `/c` est orpheline : elle
+  // n'a aucun appariement à mettre en doute.
+  it('écarte les orphelines de tout filtre de fiabilité', () => {
+    expect(filterRows(rows, { ...f, pairing: 'all', trust: 'suspect' }).map((r) => r.key)).not.toContain('https://c.fr/c')
+    expect(filterRows(rows, { ...f, pairing: 'all', trust: 'sure' }).map((r) => r.key)).not.toContain('https://c.fr/c')
+  })
+
+  it('« sûrs seulement » et « à vérifier » partitionnent les appariés', () => {
+    const sure = filterRows(rows, { ...f, trust: 'sure' }).length
+    const suspect = filterRows(rows, { ...f, trust: 'suspect' }).length
+    expect(sure + suspect).toBe(filterRows(rows, f).length)
+  })
+
+  it('trie les moins fiables en tête, orphelines en fin', () => {
+    const sorted = filterRows(rows, { ...f, pairing: 'all', worstFirst: true })
+    const scores = sorted.map((r) => r.confidence?.score ?? Infinity)
+    expect([...scores].sort((a, b) => a - b)).toEqual(scores)
+    expect(sorted[sorted.length - 1].key).toBe('https://c.fr/c')
+  })
+
+  it('le tri ne change pas ce qui est retenu', () => {
+    const plain = filterRows(rows, f).map((r) => r.key).sort()
+    const sorted = filterRows(rows, { ...f, worstFirst: true }).map((r) => r.key).sort()
+    expect(sorted).toEqual(plain)
+  })
+})
+
 describe('suggestions', () => {
   it('écarte les mots-clés présents partout (ils ne cadrent rien)', () => {
     // « tondeuse » sur les 10 fiches (100 % > plafond 60 %) → écarté ; « special » sur 4.

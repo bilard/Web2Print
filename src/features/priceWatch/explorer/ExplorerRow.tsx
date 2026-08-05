@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { ImageOff, ChevronDown } from 'lucide-react'
 import type { PairedRow } from './pairing'
+import type { ConfidenceBand, DoubtReason } from './confidence'
 import { discountPct } from './pairing'
 import { eur, pct } from '../dashboard/format'
 import { useTranslation, type TranslationKey } from '@/lib/i18n'
@@ -20,6 +21,22 @@ const KIND_BADGE: Record<string, { key: TranslationKey; help: TranslationKey; cl
   'exact-ean': { key: 'pwx.badge.ean', help: 'pwx.badge.ean.help', cls: 'text-emerald-300 border-emerald-400/30' },
   'exact-ref': { key: 'pwx.badge.ref', help: 'pwx.badge.ref.help', cls: 'text-sky-300 border-sky-400/30' },
   origin: { key: 'pwx.badge.origin', help: 'pwx.badge.origin.help', cls: 'text-amber-300 border-amber-400/30' },
+}
+
+/** Indice de fiabilité : trois bandes, trois lectures — acquis, à contrôler, suspect. */
+const BAND: Record<ConfidenceBand, { key: TranslationKey; cls: string; edge: string }> = {
+  sure: { key: 'pwx.trust.sure', cls: 'text-emerald-300 border-emerald-400/30', edge: '' },
+  check: { key: 'pwx.trust.check', cls: 'text-amber-300 border-amber-400/40', edge: 'border-l-2 border-l-amber-400/50' },
+  doubt: { key: 'pwx.trust.doubt', cls: 'text-rose-300 border-rose-400/50 bg-rose-500/10', edge: 'border-l-2 border-l-rose-400/70 bg-rose-500/[0.04]' },
+}
+
+const DOUBT_LABEL: Record<DoubtReason, TranslationKey> = {
+  'ean-conflict': 'pwx.doubt.eanConflict',
+  'ref-conflict': 'pwx.doubt.refConflict',
+  'weak-key': 'pwx.doubt.weakKey',
+  'origin-key': 'pwx.doubt.originKey',
+  contested: 'pwx.doubt.contested',
+  'price-gulf': 'pwx.doubt.priceGulf',
 }
 
 const STOCK_LABEL: Record<string, { key: TranslationKey; cls: string }> = {
@@ -53,13 +70,19 @@ function gapTone(gap: number | null): string {
 export function ExplorerRow({ row }: { row: PairedRow }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
-  const { listing, cmp, source, kind } = row
+  const { listing, cmp, source, kind, confidence } = row
   const gap = cmp.deltaPct ?? null
   const promo = discountPct(listing)
   const stock = listing.availability ? STOCK_LABEL[listing.availability] : null
+  const band = confidence ? BAND[confidence.band] : null
+  // L'infobulle NOMME ce qui cloche : c'est là toute la valeur d'audit de l'indice. Sans
+  // elle, « 43 » n'apprend rien et l'utilisateur doit rouvrir les deux fiches.
+  const why = confidence
+    ? [t('pwx.trust.score', { score: confidence.score }), ...confidence.doubts.map((d) => `• ${t(DOUBT_LABEL[d])}`)].join('\n')
+    : ''
 
   return (
-    <div className="grid grid-cols-2 gap-0 border-t border-white/5 hover:bg-white/[0.02]">
+    <div className={`grid grid-cols-2 gap-0 border-t border-white/5 hover:bg-white/[0.02] ${band?.edge ?? ''}`}>
       {/* ── Mon produit (F1) ─────────────────────────────────────────────── */}
       <div className="flex items-start gap-3 p-2.5 pr-3 min-w-0">
         {source ? (
@@ -80,6 +103,13 @@ export function ExplorerRow({ row }: { row: PairedRow }) {
                   <span title={t(KIND_BADGE[kind].help)}
                     className={`px-1 rounded border text-[9px] uppercase tracking-wide cursor-help ${KIND_BADGE[kind].cls}`}>
                     {t(KIND_BADGE[kind].key)}
+                  </span>
+                )}
+                {band && confidence && (
+                  <span title={why}
+                    className={`px-1 rounded border text-[9px] uppercase tracking-wide cursor-help ${band.cls}`}>
+                    {t(band.key)}
+                    <span className="ml-1 opacity-60 tabular-nums">{confidence.score}</span>
                   </span>
                 )}
               </div>
