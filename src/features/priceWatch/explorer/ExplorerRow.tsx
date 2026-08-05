@@ -53,6 +53,7 @@ const DOUBT_LABEL: Record<DoubtReason, TranslationKey> = {
   'ean-conflict': 'pwx.doubt.eanConflict',
   'ref-conflict': 'pwx.doubt.refConflict',
   'weak-key': 'pwx.doubt.weakKey',
+  'numeric-short': 'pwx.doubt.numericShort',
   'origin-key': 'pwx.doubt.originKey',
   contested: 'pwx.doubt.contested',
   'price-gulf': 'pwx.doubt.priceGulf',
@@ -66,12 +67,19 @@ const STOCK_LABEL: Record<string, { key: TranslationKey; cls: string }> = {
 
 function Thumb({ src, alt, size = 'h-16 w-16' }: { src: string | null; alt: string; size?: string }) {
   // Une URL morte laissait l'icône de fichier cassé du navigateur, indiscernable d'un
-  // visuel réel tant qu'on ne zoomait pas. On retombe sur le placeholder « aucun visuel ».
+  // visuel réel tant qu'on ne zoomait pas. On retombe sur un placeholder — mais il DIT
+  // lequel des deux cas s'applique : « aucune adresse relevée » se corrige en relançant
+  // la collecte ou en réglant le préfixe, « adresse injoignable » désigne le site
+  // distant. Confondre les deux, c'est chercher la panne du mauvais côté.
+  const { t } = useTranslation()
   const [broken, setBroken] = useState(false)
   if (!src || broken) {
     return (
-      <div className={`${size} shrink-0 rounded bg-well border border-white/10 flex items-center justify-center`}>
-        <ImageOff className="w-4 h-4 text-white/20" />
+      <div title={broken ? t('pwx.thumb.broken', { url: src ?? '' }) : t('pwx.thumb.none')}
+        className={`${size} shrink-0 rounded bg-well border flex items-center justify-center cursor-help ${
+          broken ? 'border-amber-400/25' : 'border-white/10'
+        }`}>
+        <ImageOff className={`w-4 h-4 ${broken ? 'text-amber-400/40' : 'text-white/20'}`} />
       </div>
     )
   }

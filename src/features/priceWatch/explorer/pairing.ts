@@ -115,7 +115,7 @@ export function pairSiteListings(
         : null,
       confidence: hit && p
         ? scorePair({
-            evidence: hit.proof.evidence, key: hit.proof.key,
+            evidence: hit.proof.evidence, key: hit.proof.key, keyValue: hit.proof.key.value,
             sourceEan: p.ean, listingEan: listing.gtin13,
             sourceRef: p.ref, listingRef: listing.ref,
             sourceName: p.name, listingName: listing.name,

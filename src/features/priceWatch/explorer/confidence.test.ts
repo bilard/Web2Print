@@ -85,6 +85,36 @@ describe('scorePair — on retranche pour une CONTRADICTION, jamais pour une abs
   })
 })
 
+describe('scorePair — une clé numérique courte n’est pas une preuve', () => {
+  // Cas VÉCU sur manomano.fr : « CIRCLIP GUTBROD » réf. 000.11.036 apparié à
+  // « Bardusch-Filtre à Gaz Sous Vide 90917-11036 » — une pièce Toyota. La clé dépaddée
+  // valait « 11036 », cinq chiffres présents dans le slug du concurrent.
+  it('bascule en doute le CIRCLIP apparié à un filtre Toyota', () => {
+    const c = scorePair(base({
+      evidence: 'ref-in-url', keyValue: '11036',
+      sourceName: 'CIRCLIP GUTBROD',
+      listingName: 'Bardusch-Filtre à Gaz Sous Vide 90917-11036 Compatible HiAce Land Coaster',
+    }))
+    expect(c.doubts).toContain('numeric-short')
+    expect(c.band).toBe('doubt')
+  })
+
+  it('épargne une référence ALPHANUMÉRIQUE de même longueur', () => {
+    // « A35B7 » ne se retrouve pas par hasard dans une URL, « 11036 » si.
+    expect(scorePair(base({ evidence: 'ref-in-url', keyValue: 'A35B7' })).doubts).not.toContain('numeric-short')
+  })
+
+  it('épargne une référence numérique assez longue', () => {
+    expect(scorePair(base({ evidence: 'ref-in-url', keyValue: '3256000773' })).doubts).not.toContain('numeric-short')
+  })
+
+  it('n’applique rien quand la preuve vient d’un champ DÉCLARÉ', () => {
+    // Dans un `sku`, une valeur courte n'est pas là par hasard : le marchand l'a saisie
+    // comme référence, ce n'est pas un nombre croisé dans un texte.
+    expect(scorePair(base({ evidence: 'sku', keyValue: '11036' })).doubts).not.toContain('numeric-short')
+  })
+})
+
 describe('scorePair — le prix', () => {
   it('tolère le facteur grossiste → détail, alerte au-delà', () => {
     // F1 vend en gros, ces concurrents au détail : un facteur 2 ou 3 est le marché.

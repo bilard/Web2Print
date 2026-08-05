@@ -23,6 +23,7 @@ export type DoubtReason =
   | 'ean-conflict'   // les deux publient un code-barres, et ils diffèrent
   | 'ref-conflict'   // les deux publient une référence structurée, et elles diffèrent
   | 'weak-key'       // la clé qui prouve est courte : collision plausible
+  | 'numeric-short'  // clé tout en chiffres et courte, trouvée dans un texte ou une URL
   | 'origin-key'     // correspondance indirecte (réf. d'origine citée), pas la pièce elle-même
   | 'contested'      // plusieurs produits F1 revendiquent cette même fiche
   | 'price-gulf'     // prix sans commune mesure avec le mien
@@ -63,6 +64,12 @@ const PENALTY: Record<DoubtReason, number> = {
   'ean-conflict': 45,
   'ref-conflict': 15,
   'weak-key': 18,
+  // Cas VÉCU : « CIRCLIP GUTBROD » réf. 000.11.036 apparié à « Filtre à gaz Toyota
+  // 90917-11036 » — la clé dépaddée valait « 11036 », cinq chiffres retrouvés dans le
+  // slug du concurrent. Une référence ALPHANUMÉRIQUE de cinq caractères discrimine ;
+  // cinq chiffres purs se retrouvent dans n'importe quelle URL (identifiants de page,
+  // cotes, millésimes). La pénalité doit suffire à faire basculer en doute.
+  'numeric-short': 22,
   // Une référence d'ORIGINE désigne la pièce que l'article remplace, pas l'article : deux
   // équivalents d'une même pièce d'origine ne sont pas forcément interchangeables. La
   // pénalité doit suffire à faire tomber en doute dès qu'un second défaut s'y ajoute.
@@ -87,6 +94,8 @@ const PRICE_GULF_PCT = 300
 export interface PairSignals {
   evidence: MatchEvidence
   key: { weak: boolean; origin: boolean }
+  /** Valeur de la clé qui a prouvé — sa FORME décide de sa force. */
+  keyValue?: string
   sourceEan?: string | null
   listingEan?: string | null
   sourceRef?: string | null
@@ -97,6 +106,19 @@ export interface PairSignals {
   deltaPct?: number | null
   /** Nombre de produits F1 dont l'appariement a été prouvé sur CETTE fiche. */
   contenders?: number
+}
+
+/** Preuves lues dans un texte libre ou une adresse, par opposition à un champ d'identité
+ *  déclaré (`sku`, `mpn`, `gtin13`) où la valeur ne peut pas être là par hasard. */
+const INDIRECT = new Set(['ref-in-url', 'ref-in-title', 'ref-in-name', 'ean-in-url'])
+
+/** Longueur en deçà de laquelle une suite de CHIFFRES ne discrimine plus rien. Sept :
+ *  un EAN en fait treize, une référence constructeur numérique sept à dix ; en dessous,
+ *  le nombre appartient au bruit des URL et des libellés. */
+const NUMERIC_MIN_LEN = 7
+
+function isNumericShort(value?: string): boolean {
+  return !!value && /^\d+$/.test(value) && value.length < NUMERIC_MIN_LEN
 }
 
 /** Deux valeurs renseignées de part et d'autre, et différentes ? Une seule absente ne
@@ -119,6 +141,7 @@ export function scorePair(s: PairSignals): Confidence {
   // quand la preuve vient du champ `sku`, les deux valeurs sont égales par construction.
   if (s.evidence !== 'sku' && s.evidence !== 'mpn' && conflict(sRef, lRef)) doubts.push('ref-conflict')
   if (s.key.weak) doubts.push('weak-key')
+  if (isNumericShort(s.keyValue) && INDIRECT.has(s.evidence)) doubts.push('numeric-short')
   if (s.key.origin) doubts.push('origin-key')
   if ((s.contenders ?? 1) > 1) doubts.push('contested')
   if (s.deltaPct != null && s.deltaPct > PRICE_GULF_PCT) doubts.push('price-gulf')
@@ -132,7 +155,14 @@ export function scorePair(s: PairSignals): Confidence {
   // ensuite le score À L'INTÉRIEUR de la bande, sans jamais en faire franchir la borne :
   // ils rassurent, ils ne prouvent pas. Sans ce plafond, deux mots de libellé en commun
   // suffiraient à blanchir un appariement dont la clé est faible ET indirecte.
-  let core = BASE[s.evidence]
+  // La force d'une preuve tient au CHEMIN *et* à la forme de la clé. Un token entier
+  // trouvé dans un slug est solide quand la clé est « 3256000773 » ; la même règle sur
+  // « 11036 » ne vaut pas mieux qu'un nombre croisé au milieu d'un libellé. On ne part
+  // donc jamais du niveau « acquis » dans ce cas — empiler un malus sur une base haute
+  // laissait le CIRCLIP Gutbrod apparié à un filtre Toyota au-dessus de la barre du doute.
+  let core = doubts.includes('numeric-short')
+    ? Math.min(BASE[s.evidence], BASE['ref-in-title'])
+    : BASE[s.evidence]
   for (const d of doubts) core -= PENALTY[d]
   const band: ConfidenceBand = doubts.includes('ean-conflict')
     ? 'doubt' // un code-barres contredit ne se rachète par aucun renfort
