@@ -285,10 +285,20 @@ export function extractOriginRefs(description: string | null | undefined): strin
   const out: string[] = []
   const seen = new Set<string>()
 
-  // « Remplace origine: A, B », « Origine : A, B », « Remplace: A, B »
+  // Formulations reconnues, toutes suivies de « : » puis d'une liste :
+  //   « Remplace origine », « Origine », « Remplace », « Réf. origine », « Référence
+  //   d'origine », « Réf constructeur », « OEM », « Équivalent », « Compatible »,
+  //   « Remplace les références », « Correspondance ».
+  // Élargi après relevé en production : le catalogue n'appariait AUCUN produit par
+  // référence d'origine (« 0 orig. » sur 16 483 appariés) alors que ces références sont
+  // les seules qu'un concurrent puisse porter sur des pièces adaptables. Le risque de
+  // faux positif reste nul : une clé candidate doit ensuite être PROUVÉE chez le
+  // concurrent par `proveMatch` — elle élargit la recherche, jamais l'acceptation.
+  //
   // La liste se termine à une fin de PHRASE (point suivi d'un blanc ou de la fin) et
   // non au premier point : les références en contiennent (« 000.02.501 »).
-  for (const m of text.matchAll(/(?:remplace\s+origine|origine|remplace)\s*:\s*([\s\S]{2,300}?)(?=\.(?:\s|$)|;|$)/gi)) {
+  const LEAD = String.raw`(?:remplace\s+(?:les\s+)?(?:r[ée]f[ée]rences?|origines?)?|r[ée]f[\.]?\s*(?:d['’]?)?origine|r[ée]f[ée]rence\s+(?:d['’]?)?origine|r[ée]f[\.]?\s*constructeur|origine|oem|[ée]quivalen(?:t|ce)s?|compatible\s+avec|compatibilit[ée]|correspondances?)`
+  for (const m of text.matchAll(new RegExp(String.raw`${LEAD}\s*:\s*([\s\S]{2,300}?)(?=\.(?:\s|$)|;|$)`, 'gi'))) {
     for (const token of m[1].split(/[,;]| et /i)) {
       const raw = token.trim().replace(/\s*\)$/, '')
       // Une référence contient au moins un chiffre : écarte les mots de la phrase.

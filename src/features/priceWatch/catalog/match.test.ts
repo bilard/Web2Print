@@ -209,3 +209,28 @@ describe('extractOriginRefs', () => {
     expect(extractOriginRefs(null)).toEqual([])
   })
 })
+
+describe('extractOriginRefs — formulations élargies', () => {
+  // Relevé en production : « 0 orig. » sur 16 483 appariés. Sur des pièces adaptables,
+  // la référence d'origine est la SEULE clé qu'un concurrent puisse porter.
+  const cases: [string, string[]][] = [
+    ['Lame adaptable. Remplace origine: 516747, 344769.', ['516747', '344769']],
+    ['Courroie. Origine : A97, 135061.', ['A97', '135061']],
+    ['Réf. origine : 1134-3496-04', ['1134-3496-04']],
+    ['Référence d’origine : 729-05048', ['729-05048']],
+    ['Réf constructeur : 21130-2056', ['21130-2056']],
+    ['OEM : 000.02.501', ['000.02.501']],
+    ['Équivalent : 5032227330047', ['5032227330047']],
+    ['Compatible avec : 181004383/0 et 118801752/0', ['181004383/0', '118801752/0']],
+    ['Remplace les références : 6151-704-2110', ['6151-704-2110']],
+    ['Correspondance : WD40-33004', ['WD40-33004']],
+  ]
+  it.each(cases)('reconnaît « %s »', (text, expected) => {
+    expect(extractOriginRefs(text)).toEqual(expected)
+  })
+
+  it('n’invente rien sur une description ordinaire', () => {
+    expect(extractOriginRefs('Courroie renforcée pour tondeuse autoportée, largeur 12 mm.')).toEqual([])
+    expect(extractOriginRefs('Livraison : 48 heures.')).toEqual([])
+  })
+})

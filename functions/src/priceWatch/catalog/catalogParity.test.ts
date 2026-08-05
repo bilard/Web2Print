@@ -9,7 +9,7 @@ import {
   parseJsonLdObjects, parseProductPage, parseListingPage,
 } from './prestashop'
 import { candidateKeys, proveMatch } from './keys'
-import { indexKeysOf, buildMemoryIndex, matchProduct, dedupeListings } from './match'
+import { indexKeysOf, buildMemoryIndex, matchProduct, dedupeListings, extractOriginRefs } from './match'
 import { foldText, keywordsForFamilies } from './categories'
 import { MAX_PAGES_PER_CATEGORY, initCursor, advance } from './harvest'
 import { planCategories, type CompetitorConfig, type HarvestDeps } from './runHarvest'
@@ -163,5 +163,14 @@ describe('displayColumns (parité serveur)', () => {
   it('coupe le chemin au premier niveau vide et tronque la description', () => {
     expect(taxoPathOf({ A: 'Motoculture', B: '', C: 'X' }, ['A', 'B', 'C'])).toEqual(['Motoculture'])
     expect(trimDescription('x'.repeat(400))?.endsWith('…')).toBe(true)
+  })
+})
+
+describe('extractOriginRefs (parité serveur)', () => {
+  it('reconnaît les mêmes formulations élargies que le client', () => {
+    expect(extractOriginRefs('Réf. origine : 1134-3496-04')).toEqual(['1134-3496-04'])
+    expect(extractOriginRefs('Compatible avec : 181004383/0 et 118801752/0'))
+      .toEqual(['181004383/0', '118801752/0'])
+    expect(extractOriginRefs('Courroie renforcée, largeur 12 mm.')).toEqual([])
   })
 })
