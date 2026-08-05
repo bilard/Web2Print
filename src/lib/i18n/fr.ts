@@ -2075,6 +2075,7 @@ export const fr = {
   'pw.table.empty': 'Aucun produit ne correspond à la recherche.',
   'pw.table.openSource': 'Ouvrir la fiche source',
   'pw.link.competitor': 'Ouvrir la page scrapée chez le concurrent',
+  'pw.table.linkHint': 'Tout prix souligné en pointillé ouvre la page scrapée qui le porte.',
   'pw.link.noPage': 'page non relevée',
   'pw.table.googleSearch': 'Rechercher ce produit sur Google',
 

@@ -128,7 +128,11 @@ export function PriceMoves({ events, filter = EMPTY_FILTER, links = EMPTY_LINKS 
                   {rows.map((e, i) => {
                     const down = e.pctChange < 0
                     const srcUrl = links.source.get(e.pid)
-                    const cmpUrl = links.competitor.get(`${e.pid}|${e.sid}`)
+                    // `e.u` D'ABORD : l'événement porte l'URL relevée AU MOMENT du
+                    // mouvement. L'index du rapport n'est qu'un repli pour les journaux
+                    // écrits avant `u` — et il est aveugle aux produits sortis du plafond
+                    // (ceux où je suis moins cher, justement le bas du classement).
+                    const cmpUrl = e.u || links.competitor.get(`${e.pid}|${e.sid}`)
                     return (
                       <tr key={`${e.at}-${e.pid}-${e.sid}-${i}`} className="border-t border-white/5 text-right">
                         <td className="text-left py-1.5 text-white/85 max-w-[220px] truncate" title={e.name}>

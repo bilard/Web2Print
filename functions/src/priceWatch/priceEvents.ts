@@ -40,6 +40,14 @@ export interface PriceEvent {
   mine: number | null
   /** Mon écart % face à CE concurrent APRÈS le mouvement (négatif = il est moins cher). */
   gapAfter: number | null
+  /**
+   * URL de la fiche concurrent qui porte ce prix — vérifier le mouvement sur la page.
+   * PERSISTÉE : `reports/latest` est rangé par écart le plus négatif puis plafonné, donc
+   * un mouvement sur un produit où JE suis moins cher n'y trouve jamais sa cellule.
+   * À 2000 mouvements le plafond binding reste le NOMBRE (~600 ko / 900 ko de budget).
+   * Doit rester identique au jumeau CLIENT `src/features/priceWatch/priceEvents.ts`.
+   */
+  u?: string
 }
 
 /** Variation minimale retenue (%) : sous ce seuil, c'est du bruit d'arrondi, pas une
@@ -85,6 +93,8 @@ export function diffPrices(prev: PriceState, rows: ProductRow[], at: number): {
         from: before.p, to: c.priceHt,
         pctChange: Math.round(pctChange * 10) / 10,
         mine: r.myPriceHt, gapAfter: c.gapPct,
+        // Spread conditionnel : Firestore REJETTE `undefined` dans un setDoc.
+        ...(c.url ? { u: c.url } : {}),
       })
     }
   }

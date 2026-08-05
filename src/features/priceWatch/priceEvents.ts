@@ -37,6 +37,19 @@ export interface PriceEvent {
   mine: number | null
   /** Mon écart % face à CE concurrent APRÈS le mouvement (négatif = il est moins cher). */
   gapAfter: number | null
+  /**
+   * URL de la fiche concurrent qui porte ce prix — vérifier le mouvement sur la page.
+   *
+   * PERSISTÉE (nom court, à la manière de `pid`/`sid`/`dom`) plutôt que résolue depuis
+   * `reports/latest` : ce rapport est RANGÉ par écart le plus négatif puis plafonné, donc
+   * un mouvement sur un produit où JE suis moins cher — le bas du classement — n'y trouve
+   * jamais sa cellule. C'est précisément le biais de survie de l'invariant 1.
+   *
+   * Coût maîtrisé : à 2000 mouvements, le plafond BINDING est le nombre (~600 ko contre
+   * 900 ko de budget), donc aucun mouvement n'est perdu en échange. FACULTATIVE : les
+   * journaux écrits avant son introduction n'en ont pas (repli sur l'index du rapport).
+   */
+  u?: string
 }
 
 /** Variation minimale retenue (%) : sous ce seuil, c'est du bruit d'arrondi, pas une
@@ -82,6 +95,8 @@ export function diffPrices(prev: PriceState, rows: ProductRow[], at: number): {
         from: before.p, to: c.priceHt,
         pctChange: Math.round(pctChange * 10) / 10,
         mine: r.myPriceHt, gapAfter: c.gapPct,
+        // Spread conditionnel : Firestore REJETTE `undefined` dans un setDoc.
+        ...(c.url ? { u: c.url } : {}),
       })
     }
   }

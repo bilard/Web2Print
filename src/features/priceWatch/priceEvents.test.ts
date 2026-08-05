@@ -71,6 +71,20 @@ describe('diffPrices', () => {
     expect(events.map((e) => e.pid)).toEqual(['b', 'a'])
   })
 
+  it('porte l’URL de la fiche concurrent (le rapport plafonné ne peut pas la fournir)', () => {
+    const prev = { [stateKey('1', 'a')]: { p: 100, t: T0 - DAY } }
+    const { events } = diffPrices(prev, [row('1', 120, [cell('a', 90)])], T0)
+    expect(events[0].u).toBe('https://a.fr/p.html')
+  })
+
+  it('URL absente : le champ est OMIS, jamais `undefined` (Firestore le rejette)', () => {
+    const prev = { [stateKey('1', 'a')]: { p: 100, t: T0 - DAY } }
+    const noUrl = { ...cell('a', 90), url: '' }
+    const { events } = diffPrices(prev, [row('1', 120, [noUrl])], T0)
+    expect('u' in events[0]).toBe(false)
+    expect(JSON.stringify(events[0])).not.toContain('"u"')
+  })
+
   it('ignore un prix nul ou négatif (donnée de scraping cassée)', () => {
     const prev: PriceState = { [stateKey('a', 'pm')]: { p: 80, t: T0 } }
     const { events, state } = diffPrices(prev, [row('a', 100, [cell('pm', 0)])], T0 + DAY)

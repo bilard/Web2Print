@@ -53,6 +53,12 @@ describe('priceEvents (parité serveur)', () => {
     expect(events[0]).toMatchObject({ from: 80, to: 72, pctChange: -10 })
   })
 
+  it('porte l’URL de la fiche concurrent, comme le jumeau client', () => {
+    const prev = { [stateKey('a', 'pm')]: { p: 80, t: NOW - DAY } }
+    const { events } = diffPrices(prev, [row('a', 100, [cell('pm', 72)])], NOW)
+    expect(events[0].u).toBe('https://pm.fr/p.html')
+  })
+
   it('une cellule absente n’efface pas l’état', () => {
     const prev = { [stateKey('a', 'pm')]: { p: 80, t: NOW - DAY } }
     const { state } = diffPrices(prev, [row('a', 100, [cell('pm', null)])], NOW)

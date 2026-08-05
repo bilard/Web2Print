@@ -79,7 +79,7 @@ export function AnalyticsTable({ ck, searchQ, onSearch, onPickFamily, products }
       </div>
       <p className="text-[11px] text-white/40 mb-3">
         Prix concurrents en <span className="text-white/70">HT</span>, convertis du TTC affiché sur leurs sites (÷ TVA) — comparables à vos prix F1 déjà HT.
-        Survolez une cellule pour voir le TTC d’origine.
+        Survolez une cellule pour voir le TTC d’origine. {t('pw.table.linkHint')}
       </p>
       <div className="overflow-auto max-h-[520px] rounded border border-white/5">
         <table className="w-full text-xs tabular-nums">
@@ -122,7 +122,7 @@ export function AnalyticsTable({ ck, searchQ, onSearch, onPickFamily, products }
                   <div className="flex items-start gap-1.5">
                     {r.sourceUrl
                       ? <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" title={t('pw.table.openSource')}
-                          className="whitespace-normal break-words leading-snug text-white/85 hover:text-indigo-300 hover:underline">
+                          className="whitespace-normal break-words leading-snug text-white/85 underline decoration-dotted decoration-white/25 underline-offset-[3px] hover:text-indigo-300 hover:decoration-solid">
                           {r.name}<span className="text-white/35"> · {r.reference ?? '—'}</span>
                         </a>
                       : <span className="whitespace-normal break-words leading-snug text-white/85">
@@ -155,10 +155,16 @@ export function AnalyticsTable({ ck, searchQ, onSearch, onPickFamily, products }
                         gap: g == null ? '' : t('pw.tbl.cellGap', { pct: pct(g) }),
                         click: url ? t('pw.tbl.cellClick') : '',
                       })}>
+                      {/* Soulignement pointillé PERMANENT : sans lui, un prix cliquable
+                          et un prix sans page relevée sont indiscernables — il fallait
+                          survoler chaque cellule pour savoir laquelle mène quelque part. */}
                       {price == null
                         ? <span className="text-white/15">·</span>
                         : url
-                          ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-white/90 hover:text-[#fff] hover:underline">{Math.round(price)} €</a>
+                          ? <a href={url} target="_blank" rel="noopener noreferrer"
+                              className="text-white/90 underline decoration-dotted decoration-white/40 underline-offset-[3px] hover:decoration-solid hover:text-[#fff]">
+                              {Math.round(price)} €
+                            </a>
                           : <span className="text-white/85">{Math.round(price)} €</span>}
                     </td>
                   )
