@@ -5268,6 +5268,7 @@ export const es: Record<TranslationKey, string> = {
   'pwx.imagePrefix.help': 'Se añade delante de las celdas que solo contienen un nombre de archivo («2400956001.jpg»). Sin efecto en las celdas ya en http(s).',
   'pwx.productUrl.placeholder': 'Ficha de producto (https://…/{ref})',
   'pwx.productUrl.help': 'Hace que el título de MI producto sea clicable. Tokens aceptados: {ref}, {ean}, {id}. Una URL sin token se trata como prefijo: la referencia se añade al final.',
+  'pwx.srcSettings.title': 'Ajustes de la unión F1',
   'pwx.taxo.noColumns': 'Ninguna columna de taxonomía en «{db}». Se esperaba: Familia, WEBGROUP_DESC (subfamilia) o PRODUCTGROUP.',
   'pwx.taxo.noJoin': 'La base «{db}» no tiene referencia ni EAN: sus filas no pueden vincularse con las fichas recopiladas.',
   'pwx.taxo.noValues': 'Columnas {cols} encontradas en «{db}», pero ninguna ficha emparejada las rellena.',

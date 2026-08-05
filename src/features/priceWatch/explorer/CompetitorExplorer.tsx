@@ -11,7 +11,7 @@
 // de lignes, perdre « qui est à gauche, qui est à droite » au premier scroll rendait la
 // comparaison illisible.
 import { useEffect, useMemo, useState } from 'react'
-import { RefreshCw, AlertTriangle, Loader2, Download, PanelLeftClose, ChevronsRight } from 'lucide-react'
+import { RefreshCw, Loader2, Download, PanelLeftClose, ChevronsRight } from 'lucide-react'
 import { useCompetitorMeta, useCatalogReport } from '../useCatalogReport'
 import { useSourceCatalog, useSiteListings } from './useSiteExplorer'
 import { buildRail, ExplorerSiteRail } from './ExplorerSiteRail'
@@ -22,7 +22,7 @@ import { ExplorerPositionBar } from './ExplorerPositionBar'
 import { ExplorerPager, PAGE_SIZES } from './ExplorerPager'
 import { ExplorerRow } from './ExplorerRow'
 import { ExplorerTaxonomyTree } from './ExplorerTaxonomyTree'
-import { ExplorerSourceLink } from './ExplorerSourceLink'
+import { ExplorerSourceSettings } from './ExplorerSourceSettings'
 import { pairSiteListings } from './pairing'
 import { buildTokenIndex, filterRows, EMPTY_EXPLORER_FILTER, type ExplorerFilter } from './filters'
 import { computeStats } from './stats'
@@ -143,22 +143,14 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
             <button type="button" onClick={exportCsv} disabled={filtered.length === 0} className={iconBtn} title={t('pwx.exportCsv')}>
               <Download className="w-3.5 h-3.5" />
             </button>
+            <ExplorerSourceSettings facts={facts} databases={src.databases} dbId={src.dbId} onPickDb={src.setDbId}
+              loading={src.loading} sheets={src.sheets} sheetIndex={src.sheetIndex}
+              onPickSheet={src.setSheetIndex} extras={extras} absent={source.absent}
+              imagePrefix={src.imagePrefix} onImagePrefix={src.setImagePrefix}
+              productUrl={src.productUrl} onProductUrl={src.setProductUrl} />
           </div>
         </div>
         <ExplorerTokens filter={effective} onChange={patch} tokenIndex={tokenIndex} />
-        <div className="flex items-center gap-4 flex-wrap">
-          <ExplorerSourceLink facts={facts} databases={src.databases} dbId={src.dbId} onPickDb={src.setDbId}
-            loading={src.loading} sheets={src.sheets} sheetIndex={src.sheetIndex}
-            onPickSheet={src.setSheetIndex} extras={extras}
-            imagePrefix={src.imagePrefix} onImagePrefix={src.setImagePrefix}
-            productUrl={src.productUrl} onProductUrl={src.setProductUrl} />
-          {source.absent && (
-            <p className="text-[11px] text-amber-400/80 flex items-center gap-1.5">
-              <AlertTriangle className="w-3 h-3 shrink-0" />
-              {t('pwx.catalogueSourceAbsentLancez')}
-            </p>
-          )}
-        </div>
       </div>
 
       {/* ── Concurrents · taxonomie F1 · liste : seules zones qui défilent ──── */}
