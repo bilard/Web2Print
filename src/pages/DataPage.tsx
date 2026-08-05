@@ -85,6 +85,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const canCreate = useCan('pim.create')
   const canImport = useCan('pim.import')
   const canScrape = useCan('pim.scrape')
+  // ⚠ Sans garde explicite, une section est visible par TOUS (permissions fail-open).
+  // L'explorateur lit les relevés de veille tarifaire : c'est `priceWatch.view`.
+  const canPriceWatch = useCan('priceWatch.view')
   const quota = useQuota()
   // Quota démo plein → on bloque les actions qui AJOUTENT de la donnée (import/scrape = lignes
   // PIM ; Visuels IA = assets DAM). L'IA complétion (remplit des cellules existantes) et
@@ -412,11 +415,6 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             {savedFiles.length > 0 && <span className="ml-auto text-[9px] text-white/30">{savedFiles.length}</span>}
             {showBdd && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-indigo-400/80" />}
           </button>
-          <button onClick={() => setCompetitorsOpen((o) => !o)} className={sidebarBtn(competitorsOpen)}>
-            <Store className="w-4 h-4 opacity-50" aria-hidden="true" />
-            Concurrents
-            {competitorsOpen && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400/80" />}
-          </button>
           {hasData && (
             <>
               <button onClick={() => handleToggleRightTab('fields')} className={sidebarBtn(showRight && rightTab === 'fields')}>
@@ -707,6 +705,24 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               <OptionHelp text={t('pim.createEmpty.help')} />
             </button>
             )}
+            {/* Explorateur des fiches concurrents. Dans la barre d'actions et non dans la
+                colonne latérale : celle-ci passe par un portail qui n'existe QUE dans le
+                module Données du tableau de bord — sur /data en plein écran, elle n'est
+                jamais montée et l'entrée serait introuvable. */}
+            {canPriceWatch && (
+            <button
+              onClick={() => setCompetitorsOpen((o) => !o)}
+              className={`flex items-center gap-2 border text-[13px] font-medium px-4 py-2 rounded-lg transition-colors ${
+                competitorsOpen
+                  ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200'
+                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/70'
+              }`}
+              title={t('pwx.concurrentsResultatsDuScraping')}
+            >
+              <Store className="w-4 h-4" />
+              {t('pwx.competitors')}
+            </button>
+            )}
           </div>
 
           {/* Alerte plafond démo (persistante tant que la limite PIM est pleine) */}
@@ -718,7 +734,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               n'alimente que les descriptions et visuels F1 de la colonne de gauche). */}
           {competitorsOpen ? (
             <div className="flex-1 flex overflow-hidden">
-              <Suspense fallback={<div className="flex-1 flex items-center justify-center text-white/30 text-sm">Chargement…</div>}>
+              <Suspense fallback={<div className="flex-1 flex items-center justify-center text-white/30 text-sm">{t('dam.loading')}</div>}>
                 <CompetitorExplorerPanel onClose={() => setCompetitorsOpen(false)} />
               </Suspense>
             </div>

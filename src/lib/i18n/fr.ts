@@ -5441,6 +5441,7 @@ export const fr = {
   'pwx.prixMedian': 'Prix médian',
   'pwx.fichesAvecUnPrix': 'Fiches avec un prix barré.',
   'pwx.aucuneFicheCollecteeSur': 'Aucune fiche collectée sur ce site',
+  'pwx.competitors': 'Concurrents',
   'pwx.tabCollected': '{count} fiches collectées',
   'pwx.reload': 'Recharger',
   'pwx.resetFilters': 'Réinitialiser',

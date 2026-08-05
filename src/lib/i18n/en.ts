@@ -5249,6 +5249,7 @@ export const en: Record<TranslationKey, string> = {
   'pwx.prixMedian': 'Median price',
   'pwx.fichesAvecUnPrix': 'Records with a crossed-out price.',
   'pwx.aucuneFicheCollecteeSur': 'No records collected on this site',
+  'pwx.competitors': 'Competitors',
   'pwx.tabCollected': '{count} records collected',
   'pwx.reload': 'Reload',
   'pwx.resetFilters': 'Reset',
