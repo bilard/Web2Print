@@ -1,0 +1,82 @@
+import { describe, it, expect } from 'vitest'
+import { filterRows, matchesExplorerQuery, buildTokenIndex, suggest, EMPTY_EXPLORER_FILTER } from './filters'
+import { pairSiteListings, type PairedRow } from './pairing'
+import type { SourceProduct } from '../catalog/match'
+import type { CompetitorListing } from '../catalog/prestashop'
+
+const products: SourceProduct[] = [
+  { id: 'p1', name: 'Courroie tondeuse autoportée', ref: 'ABC-123', ean: '4049582395377', price: 100 },
+  { id: 'p2', name: 'Filtre à air moteur', ref: 'XYZ-9', ean: '3701234567890', price: 50 },
+]
+const listings: CompetitorListing[] = [
+  { url: 'https://c.fr/a', name: 'Courroie tondeuse ABC-123', ref: 'ABC-123', price: 108, listPrice: 130, availability: 'in-stock' },
+  { url: 'https://c.fr/b', name: 'Filtre air moteur thermique', gtin13: '3701234567890', price: 48, availability: 'out-of-stock' },
+  { url: 'https://c.fr/c', name: 'Lame de tondeuse universelle', ref: 'ZZZ', price: 25 },
+]
+const rows: PairedRow[] = pairSiteListings(products, 's1', listings, { vatRate: 0.2 })
+
+describe('matchesExplorerQuery', () => {
+  it('trouve par EAN F1 même si le concurrent ne publie pas de code-barres', () => {
+    const r = rows.find((x) => x.key.endsWith('/a'))!
+    expect(matchesExplorerQuery(r, '4049582395377')).toBe(true)
+  })
+
+  it('tolère les séparateurs de saisie dans un code-barres', () => {
+    const r = rows.find((x) => x.key.endsWith('/a'))!
+    expect(matchesExplorerQuery(r, '4 049582 395377')).toBe(true)
+    expect(matchesExplorerQuery(r, '4049582-395377')).toBe(true)
+  })
+
+  it('exige TOUS les mots saisis, sur les deux côtés de la ligne', () => {
+    const r = rows.find((x) => x.key.endsWith('/b'))!
+    expect(matchesExplorerQuery(r, 'filtre moteur')).toBe(true)
+    expect(matchesExplorerQuery(r, 'filtre courroie')).toBe(false)
+  })
+})
+
+describe('filterRows', () => {
+  const f = EMPTY_EXPLORER_FILTER
+
+  it('n’affiche que les fiches appariées par défaut', () => {
+    expect(filterRows(rows, f).map((r) => r.key)).toEqual(['https://c.fr/a', 'https://c.fr/b'])
+  })
+
+  it('isole les fiches que le concurrent est seul à vendre', () => {
+    expect(filterRows(rows, { ...f, pairing: 'orphan' }).map((r) => r.key)).toEqual(['https://c.fr/c'])
+  })
+
+  it('sépare « il est moins cher » de « je suis moins cher »', () => {
+    // Prix concurrent converti en HT (÷ 1,2) : 108 TTC → 90 HT (< 100), 48 → 40 HT (< 50).
+    expect(filterRows(rows, { ...f, gap: 'cheaper' })).toHaveLength(2)
+    expect(filterRows(rows, { ...f, gap: 'dearer' })).toHaveLength(0)
+  })
+
+  it('filtre sur la fourchette de prix HT, les promos et le stock', () => {
+    expect(filterRows(rows, { ...f, priceMin: 50 }).map((r) => r.key)).toEqual(['https://c.fr/a'])
+    expect(filterRows(rows, { ...f, promoOnly: true }).map((r) => r.key)).toEqual(['https://c.fr/a'])
+    expect(filterRows(rows, { ...f, stock: 'out-of-stock' }).map((r) => r.key)).toEqual(['https://c.fr/b'])
+  })
+
+  it('cumule les mots-clés de titre (ET logique)', () => {
+    expect(filterRows(rows, { ...f, pairing: 'all', tokens: ['tondeuse'] })).toHaveLength(2)
+    expect(filterRows(rows, { ...f, pairing: 'all', tokens: ['tondeuse', 'lame'] })).toHaveLength(1)
+  })
+})
+
+describe('suggestions', () => {
+  it('écarte les mots-clés présents partout (ils ne cadrent rien)', () => {
+    // « tondeuse » sur les 10 fiches (100 % > plafond 60 %) → écarté ; « special » sur 4.
+    const many = Array.from({ length: 10 }, (_, i): CompetitorListing => ({
+      url: `https://c.fr/${i}`, name: `Tondeuse ${i}${i < 4 ? ' spécial' : ''}`, price: 10 + i,
+    }))
+    const idx = buildTokenIndex(pairSiteListings([], 's1', many))
+    expect(idx.find((t) => t.token === 'tondeuse')).toBeUndefined()
+    expect(idx.find((t) => t.token === 'special')?.count).toBe(4)
+  })
+
+  it('propose la référence et le code-barres avant les mots-clés', () => {
+    const idx = buildTokenIndex(rows)
+    expect(suggest(rows, idx, 'ABC')[0]).toMatchObject({ kind: 'ref', value: 'ABC-123' })
+    expect(suggest(rows, idx, '404958')[0]).toMatchObject({ kind: 'ean' })
+  })
+})

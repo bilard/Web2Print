@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Upload, Download, Search, ArrowLeft,
   Table2, Tag, Plus, Save, Cloud, CloudOff,
   Loader2, Trash2, Columns3, RefreshCw, FolderTree, Group, List, Globe,
-  MoreVertical, ExternalLink,
+  MoreVertical, ExternalLink, Store,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight, GripVertical,
   Wand2, FolderUp, Link2, ImagePlus, X, Factory,
@@ -43,6 +43,11 @@ const UpdatePreviewModal = lazy(() =>
 )
 const ScrapingModal = lazy(() =>
   import('@/features/scraping/ScrapingModal').then((m) => ({ default: m.ScrapingModal })),
+)
+// Explorateur des fiches concurrents (veille tarifaire) : chargé à la demande — il tire
+// tout le module priceWatch, inutile tant que l'écran n'est pas ouvert.
+const CompetitorExplorerPanel = lazy(() =>
+  import('@/features/priceWatch/explorer/CompetitorExplorerPanel').then((m) => ({ default: m.CompetitorExplorerPanel })),
 )
 const ColumnCompletionModal = lazy(() =>
   import('@/features/excel/ai-completion/ColumnCompletionModal').then((m) => ({ default: m.ColumnCompletionModal })),
@@ -104,6 +109,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
 
   const [rightTab, setRightTab] = useState<RightTab>('fields')
   const [showRight, setShowRight] = useState(true)
+  // Explorateur concurrents : occupe la zone centrale, comme la fiche produit.
+  const [competitorsOpen, setCompetitorsOpen] = useState(false)
   const [showBdd, setShowBdd] = useState(true)
   const [showNav, setShowNav] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -405,6 +412,11 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             {savedFiles.length > 0 && <span className="ml-auto text-[9px] text-white/30">{savedFiles.length}</span>}
             {showBdd && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-indigo-400/80" />}
           </button>
+          <button onClick={() => setCompetitorsOpen((o) => !o)} className={sidebarBtn(competitorsOpen)}>
+            <Store className="w-4 h-4 opacity-50" aria-hidden="true" />
+            Concurrents
+            {competitorsOpen && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400/80" />}
+          </button>
           {hasData && (
             <>
               <button onClick={() => handleToggleRightTab('fields')} className={sidebarBtn(showRight && rightTab === 'fields')}>
@@ -702,7 +714,15 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
 
           {/* Breadcrumb PIM désactivé — pas pertinent pour le flux legacy */}
 
-          {hasSelectedDb && hasData ? (
+          {/* Explorateur concurrents : plein cadre, indépendant de la base ouverte (celle-ci
+              n'alimente que les descriptions et visuels F1 de la colonne de gauche). */}
+          {competitorsOpen ? (
+            <div className="flex-1 flex overflow-hidden">
+              <Suspense fallback={<div className="flex-1 flex items-center justify-center text-white/30 text-sm">Chargement…</div>}>
+                <CompetitorExplorerPanel onClose={() => setCompetitorsOpen(false)} />
+              </Suspense>
+            </div>
+          ) : hasSelectedDb && hasData ? (
             <div className="flex-1 flex overflow-hidden">
               {/* Taxonomy navigation sidebar */}
               {showNav ? (

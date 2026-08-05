@@ -1,0 +1,51 @@
+import { describe, it, expect } from 'vitest'
+import { buildSourceExtras } from './sourceExtras'
+import type { ExcelColumn, ExcelRow } from '@/features/excel/types'
+
+const col = (key: string, label: string, fieldType: ExcelColumn['fieldType'] = 'text'): ExcelColumn => ({
+  key, label, fieldType, detectedType: fieldType, isPrimary: false, width: 120,
+})
+
+const columns = [
+  col('CODE_ARTICLE', 'Référence article'),
+  col('GENCOD', 'EAN'),
+  col('LIBELLE', 'Désignation'),
+  col('DESCRIPTIF', 'Descriptif produit'),
+  col('PHOTO', 'Visuel produit'),
+]
+
+const rows: ExcelRow[] = [
+  {
+    _id: '1', CODE_ARTICLE: 'ABC-123', GENCOD: '4049582395377', LIBELLE: 'Courroie',
+    DESCRIPTIF: 'Courroie renforcée', PHOTO: 'https://f1/a.jpg, https://f1/a2.jpg',
+  },
+  { _id: '2', CODE_ARTICLE: 'XYZ-9', GENCOD: '3701234567890', LIBELLE: 'Filtre', DESCRIPTIF: 'Filtre à air', PHOTO: '' },
+]
+
+describe('buildSourceExtras', () => {
+  it('reconnaît les colonnes de description et de visuels sans configuration', () => {
+    const idx = buildSourceExtras(columns, rows)
+    expect(idx.descriptionKey).toBe('DESCRIPTIF')
+    expect(idx.imageKeys).toEqual(['PHOTO'])
+    expect(idx.size).toBe(2)
+  })
+
+  it('joint par EAN, puis par référence, en tolérant la casse et les séparateurs', () => {
+    const idx = buildSourceExtras(columns, rows)
+    expect(idx.lookup({ id: 'p', name: '', ean: '4049582395377' }).description).toBe('Courroie renforcée')
+    expect(idx.lookup({ id: 'p', name: '', ref: 'abc123' }).description).toBe('Courroie renforcée')
+    expect(idx.lookup({ id: 'p', name: '', ref: 'INCONNU' }).description).toBeNull()
+  })
+
+  it('éclate une cellule multi-visuels en URLs distinctes', () => {
+    const idx = buildSourceExtras(columns, rows)
+    expect(idx.lookup({ id: 'p', name: '', ref: 'ABC-123' }).images).toEqual(['https://f1/a.jpg', 'https://f1/a2.jpg'])
+    expect(idx.lookup({ id: 'p', name: '', ref: 'XYZ-9' }).images).toEqual([])
+  })
+
+  it('signale l’absence de clé de jointure au lieu d’indexer du vide', () => {
+    const idx = buildSourceExtras([col('LIBELLE', 'Désignation')], [{ _id: '1', LIBELLE: 'X' }])
+    expect(idx.size).toBe(0)
+    expect(idx.lookup({ id: 'p', name: 'X', ref: 'ABC-123' }).description).toBeNull()
+  })
+})
