@@ -135,7 +135,11 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
   const scraped = stats.updatedAt != null
   const shortName = domain.replace(/^www\./, '')
   const swept = (stats.harvestProgress ?? 0) >= 1
-  const status = siteStatus({ enabled, live, lastPassAt: stats.lastPassAt, lastPassPages: stats.lastPassPages, lastPassProducts: stats.lastPassProducts, cycleWaitingAt: stats.cycleWaitingAt })
+  const status = siteStatus({
+    enabled, live, lastPassAt: stats.lastPassAt, lastPassPages: stats.lastPassPages,
+    lastPassProducts: stats.lastPassProducts, cycleWaitingAt: stats.cycleWaitingAt,
+    productCount: stats.products,
+  })
   const badge = status === 'live' ? null : statusBadge(status as 'ok' | 'empty' | 'error' | 'waiting' | 'never' | 'disabled', stats)
   // Le verdict vient de tomber (< 2 min) → pop d'apparition pour attirer l'œil.
   const fresh = stats.lastPassAt != null && now - stats.lastPassAt < 2 * 60_000
@@ -285,11 +289,17 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
             'Fiches distinctes relevées sur CE site (doublons de pagination exclus). Ce n’est pas votre catalogue : c’est le sien.')}
           {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn',
             'Part des fiches relevées ici qui portent un prix. Un site qui charge ses prix en JavaScript reste bas.')}
+          {/* Un seul mot « familles » portait DEUX mesures : ×23 = catalogue balayé 23 fois
+              de bout en bout ; 1 % = avancement du balayage EN COURS. Deux libellés. */}
           {swept
-            ? chip('familles', `×${stats.harvestSweeps ?? 1} ✓`, 'ok')
-            : stats.harvestProgress != null && chip('familles', `${Math.round(stats.harvestProgress * 100)}%`, 'mute')}
-          {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute')}
-          {chip('scrape', agoShort(stats.harvestBeatAt ?? stats.updatedAt, now), 'mute')}
+            ? chip('balayages', `×${stats.harvestSweeps ?? 1} ✓`, 'ok',
+                'Nombre de fois que le catalogue de ce site a été parcouru de bout en bout. Chaque tour rafraîchit les prix déjà relevés.')
+            : stats.harvestProgress != null && chip('balayage', `${Math.round(stats.harvestProgress * 100)}%`, 'mute',
+                'Avancement du parcours EN COURS de son catalogue : part des catégories déjà visitées. Atteint 100 %, il repart pour un tour.')}
+          {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute',
+            'Outil qui a réellement fourni le HTML à la dernière passe. « Auto » escalade Cloud Function → Jina → Firecrawl → Bright Data ; un moteur choisi dans la liste ci-dessus est imposé.')}
+          {chip('scrape', agoShort(stats.harvestBeatAt ?? stats.updatedAt, now), 'mute',
+            'Ancienneté de la dernière passe de collecte sur ce site.')}
         </div>
       )}
       {/* Barre de balayage animée pendant la moisson (très visible, style TopProgressBar) */}

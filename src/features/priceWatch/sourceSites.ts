@@ -102,6 +102,9 @@ export interface SiteStatusInput {
   /** Dernière fois que le MODE CYCLE a mis ce site en attente (balayage terminé, on
    *  patiente que les retardataires finissent avant de rouvrir un cycle pour tous). */
   cycleWaitingAt?: number
+  /** Fiches déjà indexées pour ce site. Preuve qu'il A ÉTÉ collecté, même si le verdict
+   *  de dernière passe manque (méta écrite par une version antérieure, ou passe purgée). */
+  productCount?: number
 }
 
 /** Statut courant d'un site (fonction pure). Un site désactivé est 'disabled' quel que
@@ -109,7 +112,11 @@ export interface SiteStatusInput {
 export function siteStatus(s: SiteStatusInput): SiteStatus {
   if (!s.enabled) return 'disabled'
   if (s.live) return 'live'
-  if (s.lastPassAt == null) return 'never'
+  // « Jamais scrapé » seulement si RIEN ne prouve le contraire : un site affichant
+  // 14 003 fiches et 23 balayages complets a évidemment été collecté, même sans verdict
+  // de dernière passe. La contradiction « jamais scrapé · fiches 14 003 · scrape 5 h »
+  // décrédibilise tout le tableau.
+  if (s.lastPassAt == null) return (s.productCount ?? 0) > 0 ? 'ok' : 'never'
   // ⚠ EN ATTENTE avant tout verdict de contenu : en mode cycle, un site dont le balayage
   // est terminé est SAUTÉ à chaque passe jusqu'à ce que les retardataires finissent. Sans
   // ce statut, il affichait « OK » avec un horodatage vieux de plusieurs jours — on ne

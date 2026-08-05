@@ -93,6 +93,14 @@ describe('siteStatus + tri', () => {
   })
   it('en cours > échec > sans produit > OK > jamais', () => {
     expect(siteStatus({ enabled: true, live: true })).toBe('live')
+  })
+
+  it('ne dit « jamais scrapé » que si RIEN ne prouve une collecte', () => {
+    // Verdict de dernière passe absent (méta d'une version antérieure) MAIS des fiches
+    // indexées : la carte affichait « jamais scrapé · fiches 14 003 · scrape 5 h ».
+    expect(siteStatus({ enabled: true, live: false })).toBe('never')
+    expect(siteStatus({ enabled: true, live: false, productCount: 0 })).toBe('never')
+    expect(siteStatus({ enabled: true, live: false, productCount: 14_003 })).toBe('ok')
     expect(siteStatus({ enabled: true, live: false, lastPassAt: 1, lastPassPages: 0 })).toBe('error')
     expect(siteStatus({ enabled: true, live: false, lastPassAt: 1, lastPassPages: 5, lastPassProducts: 0 })).toBe('empty')
     expect(siteStatus({ enabled: true, live: false, lastPassAt: 1, lastPassPages: 5, lastPassProducts: 3 })).toBe('ok')
