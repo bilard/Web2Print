@@ -92,6 +92,32 @@ describe('filterRows — fiabilité', () => {
   })
 })
 
+describe('filterRows — avancement de l’audit', () => {
+  const f = EMPTY_EXPLORER_FILTER
+  // Verdicts posés à la main : `filterRows` reste pur, l'état Firestore lui est passé.
+  const verdictOf = (url: string) => (url.endsWith('/a') ? 'ok' as const : url.endsWith('/b') ? 'ko' as const : null)
+
+  it('isole ce qui reste à statuer, les validés et les rejetés', () => {
+    const keys = (audit: 'pending' | 'ok' | 'ko') =>
+      filterRows(rows, { ...f, pairing: 'all', audit }, verdictOf).map((r) => r.key)
+    expect(keys('ok')).toEqual(['https://c.fr/a'])
+    expect(keys('ko')).toEqual(['https://c.fr/b'])
+    expect(keys('pending')).toEqual(['https://c.fr/c'])
+  })
+
+  it('sans verdicts connus, tout reste à statuer', () => {
+    // L'écran peut rendre avant la lecture Firestore : ne rien savoir ne doit pas vider
+    // la liste ni faire passer des lignes pour validées.
+    expect(filterRows(rows, { ...f, pairing: 'all', audit: 'pending' })).toHaveLength(rows.length)
+    expect(filterRows(rows, { ...f, pairing: 'all', audit: 'ok' })).toHaveLength(0)
+  })
+
+  it('les trois états partitionnent la liste', () => {
+    const n = (audit: 'pending' | 'ok' | 'ko') => filterRows(rows, { ...f, pairing: 'all', audit }, verdictOf).length
+    expect(n('pending') + n('ok') + n('ko')).toBe(rows.length)
+  })
+})
+
 describe('suggestions', () => {
   it('écarte les mots-clés présents partout (ils ne cadrent rien)', () => {
     // « tondeuse » sur les 10 fiches (100 % > plafond 60 %) → écarté ; « special » sur 4.

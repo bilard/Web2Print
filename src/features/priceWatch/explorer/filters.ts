@@ -35,7 +35,12 @@ export interface ExplorerFilter {
   trust: TrustFilter
   /** Les moins fiables en tête — l'ordre de travail quand on audite les rapprochements. */
   worstFirst: boolean
+  /** Avancement de l'audit : ce qui reste à juger, ce qui a été validé, ce qui a été rejeté. */
+  audit: AuditFilter
 }
+
+/** `pending` = jamais jugé. C'est la file de travail : elle se vide à mesure qu'on statue. */
+export type AuditFilter = 'all' | 'pending' | 'ok' | 'ko'
 
 /** `suspect` réunit « à vérifier » et « douteux » : le but est de sortir du lot tout ce
  *  qui n'est pas acquis, pas de distinguer deux nuances de doute dans un menu. */
@@ -44,13 +49,14 @@ export type TrustFilter = 'all' | 'suspect' | 'doubt' | 'sure'
 export const EMPTY_EXPLORER_FILTER: ExplorerFilter = {
   q: '', pairing: 'matched', gap: 'all', stock: 'all',
   promoOnly: false, noPriceOnly: false, priceMin: null, priceMax: null, tokens: [], path: [],
-  trust: 'all', worstFirst: false,
+  trust: 'all', worstFirst: false, audit: 'all',
 }
 
 export function isExplorerFilterActive(f: ExplorerFilter): boolean {
   return !!f.q.trim() || f.pairing !== 'matched' || f.gap !== 'all' || f.stock !== 'all'
     || f.promoOnly || f.noPriceOnly || f.priceMin != null || f.priceMax != null
     || f.tokens.length > 0 || f.path.length > 0 || f.trust !== 'all' || f.worstFirst
+    || f.audit !== 'all'
 }
 
 /**
@@ -87,8 +93,18 @@ export function matchesExplorerQuery(r: PairedRow, q: string): boolean {
   return normalizeEan(r.source?.ean) === ean || normalizeEan(r.listing.gtin13) === ean
 }
 
-export function filterRows(rows: PairedRow[], f: ExplorerFilter): PairedRow[] {
+/** `verdictOf` est fourni par l'écran (état Firestore) : `filterRows` reste PUR — aucun
+ *  accès réseau, tout est testable sur un tableau de lignes et une lambda. */
+export function filterRows(
+  rows: PairedRow[], f: ExplorerFilter, verdictOf?: (url: string) => 'ok' | 'ko' | null,
+): PairedRow[] {
   const kept = rows.filter((r) => {
+    if (f.audit !== 'all') {
+      const v = verdictOf?.(r.listing.url) ?? null
+      if (f.audit === 'pending' && v != null) return false
+      if (f.audit === 'ok' && v !== 'ok') return false
+      if (f.audit === 'ko' && v !== 'ko') return false
+    }
     if (f.pairing === 'matched' && !r.source) return false
     if (f.pairing === 'orphan' && r.source) return false
 

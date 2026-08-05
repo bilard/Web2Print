@@ -2,8 +2,8 @@
 // clic dans le ruban de position, qui montre déjà la répartition — deux commandes pour
 // le même filtre, à deux endroits, c'est ce qui rendait l'en-tête confus.
 import type { SelectHTMLAttributes } from 'react'
-import { Package, Boxes, Tag, EuroIcon, FilterX, ShieldQuestion, ArrowDownNarrowWide } from 'lucide-react'
-import { EMPTY_EXPLORER_FILTER, isExplorerFilterActive, type ExplorerFilter, type PairFilter, type StockFilter, type TrustFilter } from './filters'
+import { Package, Boxes, Tag, EuroIcon, FilterX, ShieldQuestion, ArrowDownNarrowWide, ClipboardCheck } from 'lucide-react'
+import { EMPTY_EXPLORER_FILTER, isExplorerFilterActive, type ExplorerFilter, type PairFilter, type StockFilter, type TrustFilter, type AuditFilter } from './filters'
 import { useTranslation } from '@/lib/i18n'
 
 const sel = 'bg-well text-white/70 text-[11px] rounded pl-6 pr-1.5 py-1.5 border border-white/10 focus:outline-none focus:border-white/25 appearance-none'
@@ -51,6 +51,14 @@ export function ExplorerFilters({ filter, onChange }: {
         <option value="suspect">{t('pwx.trust.filterSuspect')}</option>
         <option value="doubt">{t('pwx.trust.filterDoubt')}</option>
         <option value="sure">{t('pwx.trust.filterSure')}</option>
+      </IconSelect>
+
+      <IconSelect icon={ClipboardCheck} value={filter.audit}
+        onChange={(e) => onChange({ audit: e.target.value as AuditFilter })}>
+        <option value="all">{t('pwx.verdict.filterAll')}</option>
+        <option value="pending">{t('pwx.verdict.filterPending')}</option>
+        <option value="ok">{t('pwx.verdict.filterOk')}</option>
+        <option value="ko">{t('pwx.verdict.filterKo')}</option>
       </IconSelect>
 
       <IconSelect icon={Boxes} value={filter.stock}

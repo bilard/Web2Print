@@ -5,7 +5,8 @@
 // finalité de l'écran (« est-ce bien le même produit ? ») ; les mettre chacun au bord
 // extérieur de sa colonne obligerait à balayer la ligne des yeux pour comparer.
 import { useState } from 'react'
-import { ImageOff, ChevronDown } from 'lucide-react'
+import { ImageOff, ChevronDown, Check, X } from 'lucide-react'
+import type { Verdict } from './verdictStore'
 import type { PairedRow } from './pairing'
 import type { ConfidenceBand, DoubtReason } from './confidence'
 import type { CompetitorListing } from '../catalog/prestashop'
@@ -86,10 +87,32 @@ function gapTone(gap: number | null): string {
   return 'text-white/60'
 }
 
-export function ExplorerRow({ row, onPickBand }: {
+/** Boutons de jugement : le geste d'audit, sur la ligne même. Un second clic sur le
+ *  bouton actif ANNULE le verdict — se tromper de touche ne doit pas être définitif. */
+function VerdictButtons({ verdict, onSet }: { verdict: Verdict | null; onSet: (v: Verdict) => void }) {
+  const { t } = useTranslation()
+  const cls = (on: boolean, tone: string) =>
+    `p-1 rounded border transition-colors ${on ? tone : 'border-transparent text-white/20 hover:text-white/60 hover:bg-white/[0.06]'}`
+  return (
+    <div className="flex items-center gap-0.5 shrink-0">
+      <button type="button" onClick={() => onSet('ok')} title={t('pwx.verdict.ok.help')}
+        className={cls(verdict === 'ok', 'bg-emerald-500/15 border-emerald-400/40 text-emerald-300')}>
+        <Check className="w-3.5 h-3.5" />
+      </button>
+      <button type="button" onClick={() => onSet('ko')} title={t('pwx.verdict.ko.help')}
+        className={cls(verdict === 'ko', 'bg-rose-500/15 border-rose-400/40 text-rose-300')}>
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  )
+}
+
+export function ExplorerRow({ row, onPickBand, verdict, onVerdict }: {
   row: PairedRow
   /** Filtre la liste sur la bande cliquée. */
   onPickBand?: (band: ConfidenceBand) => void
+  verdict?: Verdict | null
+  onVerdict?: (v: Verdict) => void
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -104,8 +127,15 @@ export function ExplorerRow({ row, onPickBand }: {
     ? [t('pwx.trust.score', { score: confidence.score }), ...confidence.doubts.map((d) => `• ${t(DOUBT_LABEL[d])}`)].join('\n')
     : ''
 
+  // Un verdict humain PRIME sur l'indice : une fois la ligne jugée, l'accent d'alerte
+  // s'efface (validée) ou la ligne s'estompe (rejetée). Sans cela, le rouge resterait sur
+  // des lignes déjà traitées et l'écran ne montrerait plus ce qui reste à faire.
+  const edge = verdict === 'ok' ? 'border-l-2 border-l-emerald-400/50'
+    : verdict === 'ko' ? 'border-l-2 border-l-white/15 opacity-45'
+    : (band?.edge ?? '')
+
   return (
-    <div className={`grid grid-cols-2 gap-0 border-t border-white/5 hover:bg-white/[0.02] ${band?.edge ?? ''}`}>
+    <div className={`grid grid-cols-2 gap-0 border-t border-white/5 hover:bg-white/[0.02] ${edge}`}>
       {/* ── Mon produit (F1) ─────────────────────────────────────────────── */}
       <div className="flex items-start gap-3 p-2.5 pr-3 min-w-0">
         {source ? (
@@ -204,6 +234,8 @@ export function ExplorerRow({ row, onPickBand }: {
             {cmp.priceHt == null && <span className="text-white/30 italic">{t('pwx.prixNonExploitable')}</span>}
           </div>
         </div>
+        {/* Jugement, au bout de la ligne : le geste vient APRÈS la comparaison visuelle. */}
+        {source && onVerdict && <VerdictButtons verdict={verdict ?? null} onSet={onVerdict} />}
       </div>
     </div>
   )

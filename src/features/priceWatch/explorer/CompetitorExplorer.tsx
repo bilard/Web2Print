@@ -28,6 +28,7 @@ import { buildTokenIndex, filterRows, EMPTY_EXPLORER_FILTER, type ExplorerFilter
 import { computeStats } from './stats'
 import { rowsToCsv } from './exportCsv'
 import { useSourceSheet } from './useSourceSheet'
+import { useVerdicts } from './useVerdicts'
 import { useTranslation } from '@/lib/i18n'
 
 const iconBtn = 'bg-well text-white/55 text-xs rounded px-2.5 py-2 border border-white/10 hover:text-white hover:border-white/25 disabled:opacity-40 disabled:hover:text-white/55 disabled:hover:border-white/10 flex items-center gap-1.5 transition-colors shrink-0'
@@ -48,6 +49,8 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   const { listings, loading, error, reload } = useSiteListings(watchId, active)
   const src = useSourceSheet()
   const { extras } = src
+  // Jugements d'audit du concurrent affiché : ils survivent à la session.
+  const verdicts = useVerdicts(watchId, active)
 
   const [filter, setFilter] = useState<ExplorerFilter>(EMPTY_EXPLORER_FILTER)
   const [page, setPage] = useState(0)
@@ -79,10 +82,10 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   // Deux passes : l'arbre se nourrit des lignes filtrées SANS la taxonomie (ses compteurs
   // suivent la recherche, mais choisir une famille ne doit pas amputer l'arbre lui-même),
   // la liste applique le filtre complet.
-  const beforeTaxo = useMemo(() => filterRows(rows, { ...effective, path: [] }), [rows, effective])
+  const beforeTaxo = useMemo(() => filterRows(rows, { ...effective, path: [] }, verdicts.of), [rows, effective, verdicts.of])
   const filtered = useMemo(
-    () => (effective.path.length === 0 ? beforeTaxo : filterRows(rows, effective)),
-    [rows, effective, beforeTaxo],
+    () => (effective.path.length === 0 ? beforeTaxo : filterRows(rows, effective, verdicts.of)),
+    [rows, effective, beforeTaxo, verdicts.of],
   )
   const stats = useMemo(() => computeStats(filtered), [filtered])
 
@@ -137,6 +140,13 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
             onAddToken={(tk) => patch({ tokens: filter.tokens.includes(tk) ? filter.tokens : [...filter.tokens, tk] })} />
           <ExplorerFilters filter={effective} onChange={patch} />
           <div className="ml-auto flex items-center gap-2">
+            {/* Avancement de l'audit : le seul chiffre qui mesure le TRAVAIL fait, pas
+                l'état des données. Sa place est près des contrôles qui le produisent. */}
+            {(verdicts.counts.ok > 0 || verdicts.counts.ko > 0) && (
+              <span className="text-[10px] text-white/30 tabular-nums whitespace-nowrap">
+                {t('pwx.verdict.done', verdicts.counts)}
+              </span>
+            )}
             <ExplorerPager total={filtered.length} page={safePage} pageSize={pageSize}
               onPage={setPage} onPageSize={setPageSize} />
             <button type="button" onClick={reload} disabled={loading} className={iconBtn} title={t('pwx.reload')}>
@@ -223,7 +233,9 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
           ) : (
             visible.map((r) => (
               <ExplorerRow key={r.key} row={r}
-                onPickBand={(b) => patch({ trust: b === 'sure' ? 'sure' : b === 'doubt' ? 'doubt' : 'suspect' })} />
+                onPickBand={(b) => patch({ trust: b === 'sure' ? 'sure' : b === 'doubt' ? 'doubt' : 'suspect' })}
+                verdict={verdicts.of(r.listing.url)}
+                onVerdict={(v) => verdicts.set(r.listing.url, v)} />
             ))
           )}
         </div>
