@@ -12,6 +12,7 @@ import { diffPrices, mergeEvents, chunkState, backfillEventUrls, type PriceState
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
 import type { SourceProduct } from './catalog/match'
 import { retainHistory } from './history'
+import { DEFAULT_VAT_RATE } from './catalog/match'
 
 // ── Catalogue SOURCE persisté — jumeau de saveSourceCatalog côté client ─────────────
 // Sans lui, un suivi alimenté UNIQUEMENT par le cron n'a pas de catalogue source en
@@ -77,7 +78,10 @@ export async function loadSourceCatalog(
   const meta = await db.doc(`${col}/_meta`).get()
   if (!meta.exists) return null
   const data = meta.data() ?? {}
-  const vatRate = typeof data.vatRate === 'number' ? data.vatRate : 20
+  // ⚠ TAUX (0,2), pas pourcentage — cf. jumeau client. Un défaut à 20 divise chaque
+  // prix concurrent par 21 et vide toutes les comparaisons.
+  const rawVat = data.vatRate
+  const vatRate = typeof rawVat === 'number' && rawVat > 0 && rawVat < 1 ? rawVat : DEFAULT_VAT_RATE
   const chunks = typeof data.chunks === 'number' ? data.chunks : 0
   const expected = typeof data.count === 'number' ? data.count : 0
   const products: SourceProduct[] = []

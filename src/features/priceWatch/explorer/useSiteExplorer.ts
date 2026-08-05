@@ -10,7 +10,7 @@ import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { loadAllListings } from '../catalog/store'
 import { loadSourceCatalog } from '../reportStore'
 import type { CompetitorListing } from '../catalog/prestashop'
-import type { SourceProduct } from '../catalog/match'
+import { DEFAULT_VAT_RATE, type SourceProduct } from '../catalog/match'
 import { debugLog } from '@/lib/debugLog'
 
 export interface SourceCatalogState {
@@ -30,10 +30,10 @@ export interface SourceCatalogState {
 /** Catalogue source du suivi : la base de l'appariement ET des écarts de prix. */
 export function useSourceCatalog(watchId: string | null): SourceCatalogState {
   const uid = useWorkspaceUid()
-  const [state, setState] = useState<SourceCatalogState>({ products: [], vatRate: 20, loading: false, absent: false, partial: false, expected: 0, sourceRows: 0 })
+  const [state, setState] = useState<SourceCatalogState>({ products: [], vatRate: DEFAULT_VAT_RATE, loading: false, absent: false, partial: false, expected: 0, sourceRows: 0 })
 
   useEffect(() => {
-    if (!uid || !watchId) { setState({ products: [], vatRate: 20, loading: false, absent: false, partial: false, expected: 0, sourceRows: 0 }); return }
+    if (!uid || !watchId) { setState({ products: [], vatRate: DEFAULT_VAT_RATE, loading: false, absent: false, partial: false, expected: 0, sourceRows: 0 }); return }
     let cancelled = false
     setState((s) => ({ ...s, loading: true }))
     loadSourceCatalog(uid, watchId)
@@ -44,7 +44,7 @@ export function useSourceCatalog(watchId: string | null): SourceCatalogState {
           console.warn('[pw-explorer] catalogue source AMPUTÉ :', src.products.length, '/', src.expected)
         }
         setState({
-          products: src?.products ?? [], vatRate: src?.vatRate ?? 20,
+          products: src?.products ?? [], vatRate: src?.vatRate ?? DEFAULT_VAT_RATE,
           loading: false, absent: src == null,
           partial: !!src?.partial, expected: src?.expected ?? 0, sourceRows: src?.sourceRows ?? 0,
         })
@@ -52,7 +52,7 @@ export function useSourceCatalog(watchId: string | null): SourceCatalogState {
       .catch((e) => {
         if (cancelled) return
         console.error('[pw-explorer] catalogue source illisible', e)
-        setState({ products: [], vatRate: 20, loading: false, absent: true, partial: false, expected: 0, sourceRows: 0 })
+        setState({ products: [], vatRate: DEFAULT_VAT_RATE, loading: false, absent: true, partial: false, expected: 0, sourceRows: 0 })
       })
     return () => { cancelled = true }
   }, [uid, watchId])

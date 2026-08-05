@@ -12,6 +12,7 @@ import {
 import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
 import type { SourceProduct } from './catalog/match'
 import { retainHistory } from './history'
+import { DEFAULT_VAT_RATE } from './catalog/match'
 import type { KpiHistoryPoint } from './types'
 import { diffPrices, mergeEvents, chunkState, backfillEventUrls, type PriceState, type PriceEvent } from './priceEvents'
 import { stripUndefined } from '@/lib/stripUndefined'
@@ -105,7 +106,13 @@ export async function loadSourceCatalog(uid: string, watchId: string): Promise<L
   const col = sourceCol(uid, watchId)
   const meta = await getDoc(doc(db, col, '_meta'))
   if (!meta.exists()) return null
-  const vatRate = (meta.data()?.vatRate as number) ?? 20
+  // ⚠ TAUX (0,2), pas pourcentage. Le défaut était 20 — soit 2 000 % de TVA : chaque
+  // prix concurrent était divisé par 21, passait sous le garde-fou anti-prix-aberrant
+  // de `comparePrices`, et le rapport sortait avec « 0 comparaison » sur des dizaines
+  // de milliers de produits pourtant appariés. Tuiles Tenue prix / Indice tarif / Écart
+  // toutes vides, sans un message.
+  const rawVat = meta.data()?.vatRate
+  const vatRate = typeof rawVat === 'number' && rawVat > 0 && rawVat < 1 ? rawVat : DEFAULT_VAT_RATE
   const chunks = (meta.data()?.chunks as number) ?? 0
   const expected = (meta.data()?.count as number) ?? 0
   const sourceRows = (meta.data()?.rows as number) ?? 0

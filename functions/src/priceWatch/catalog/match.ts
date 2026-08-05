@@ -15,7 +15,9 @@ import {
 import type { CompetitorListing, Availability } from './prestashop'
 
 /** TVA française de droit commun. Paramétrable : certaines familles en dérogent. */
-const DEFAULT_VAT_RATE = 0.2
+/** TVA par défaut, en TAUX (0,2 = 20 %). Exporté : la relecture du catalogue source
+ *  doit s'y replier plutôt que d'inventer une valeur — cf. reportStore. */
+export const DEFAULT_VAT_RATE = 0.2
 
 /**
  * Clés sous lesquelles indexer un produit relevé chez un concurrent. Un même produit
