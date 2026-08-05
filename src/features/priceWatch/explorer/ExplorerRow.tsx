@@ -7,6 +7,7 @@
 import { useState, type ReactNode } from 'react'
 import { ImageOff, ChevronDown, Check, X, Image as ImageIcon } from 'lucide-react'
 import type { Verdict } from './verdictStore'
+import type { StoredVisual } from '../visual/visualStore'
 import type { PairedRow } from './pairing'
 import type { ConfidenceBand, DoubtReason } from './confidence'
 import type { CompetitorListing } from '../catalog/prestashop'
@@ -36,6 +37,15 @@ const BAND: Record<ConfidenceBand, { key: TranslationKey; cls: string; edge: str
 const VERDICT_BADGE: Record<Verdict, { key: TranslationKey; cls: string }> = {
   ok: { key: 'pwx.verdict.ok', cls: 'text-emerald-300 border-emerald-400/40 bg-emerald-500/10' },
   ko: { key: 'pwx.verdict.ko', cls: 'text-white/40 border-white/20 line-through' },
+}
+
+/** Verdict de la comparaison des PHOTOS. Signal indépendant de l'indice : celui-ci juge
+ *  des clés (référence, code-barres), celui-là des objets. Les afficher côte à côte laisse
+ *  l'acheteur trancher — « clés incertaines mais c'est visiblement la même pièce ». */
+const VISUAL_BADGE: Record<string, { key: TranslationKey; cls: string }> = {
+  same: { key: 'pwx.visual.same', cls: 'text-emerald-300 border-emerald-400/30' },
+  different: { key: 'pwx.visual.different', cls: 'text-rose-300 border-rose-400/50 bg-rose-500/10' },
+  unclear: { key: 'pwx.visual.unclear', cls: 'text-white/35 border-white/15' },
 }
 
 const DOUBT_LABEL: Record<DoubtReason, TranslationKey> = {
@@ -133,7 +143,7 @@ function VerdictButtons({ verdict, onSet }: { verdict: Verdict | null; onSet: (v
   )
 }
 
-export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict }: {
+export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict, visual }: {
   row: PairedRow
   /** Filtre la liste sur la bande cliquée. */
   onPickBand?: (band: ConfidenceBand) => void
@@ -141,6 +151,8 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict
   onVerdict?: (v: Verdict) => void
   /** Filtre la liste sur le verdict cliqué (badge d'une ligne déjà jugée). */
   onPickVerdict?: (v: Verdict) => void
+  /** Comparaison des photos, produite par le node « Comparer les visuels ». */
+  visual?: StoredVisual | null
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -212,6 +224,13 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict
                     {verdict ? t(VERDICT_BADGE[verdict].key) : t(BAND[confidence.band].key)}
                     {!verdict && <span className="ml-1 opacity-60 tabular-nums">{confidence.score}</span>}
                   </button>
+                )}
+                {visual && (
+                  <span title={`${visual.note}\n\n${t('pwx.visual.score', { score: visual.score })}`}
+                    className={`px-1 rounded border text-[9px] uppercase tracking-wide cursor-help ${VISUAL_BADGE[visual.verdict].cls}`}>
+                    {t(VISUAL_BADGE[visual.verdict].key)}
+                    {visual.verdict !== 'unclear' && <span className="ml-1 opacity-60 tabular-nums">{visual.score}</span>}
+                  </span>
                 )}
               </div>
               {source.url ? (

@@ -71,6 +71,7 @@ type LLMTask =
   | 'catalog.plan'
   | 'catalog.inspiration'
   | 'i18n.labelTranslation'
+  | 'priceWatch.visualMatch'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -107,6 +108,10 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // Price OCR : Gemini Vision multimodal sur sous-image cropée. Très court (1 prix
   // par appel), donc Gemini Flash ne servirait pas — on garde Pro pour la fiabilité.
   'design.priceOCR':        { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
+  // Comparaison visuelle d'appariement : deux vignettes, une réponse de trois champs.
+  // Flash suffit largement (distinguer une jante d'un pantalon) et c'est le seul modèle
+  // dont le coût tienne sur des dizaines de milliers de paires.
+  'priceWatch.visualMatch': { primary: 'gemini', fallback: 'claude', model: 'gemini-3-flash' },
   // Logo Classify : classification sémantique texte-seul (logo/picto vs éditorial).
   // Court, batch — Gemini primary, Claude fallback.
   'design.logoClassify':    { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
@@ -186,6 +191,7 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   // Extraction visuelle = déterministe (positions absolues, contenus exacts)
   'design.imageDecompose':  0,
   'design.priceOCR':        0,
+  'priceWatch.visualMatch': 0,
   'design.logoClassify':    0,
   'design.semanticLayout':  0,
   'design.relayoutMultiFormat': 0,

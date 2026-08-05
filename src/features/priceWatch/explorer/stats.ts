@@ -20,6 +20,13 @@ export interface SiteStats {
   outOfStock: number
   /** Appariements dont la fiabilité n'est PAS acquise (« à vérifier » + « douteux »). */
   suspects: number
+  /** Appariements que les PHOTOS contredisent. */
+  visualDiff: number
+  /** Paires analysées visuellement — la COUVERTURE, sans laquelle `visualDiff` ment :
+   *  « 3 désaccords » n'a pas le même sens sur 40 paires jugées que sur 4 000. */
+  visualDone: number
+  /** Paires qui pourraient l'être (deux visuels présents). */
+  visualComparable: number
 }
 
 function median(xs: number[]): number | null {
@@ -30,14 +37,21 @@ function median(xs: number[]): number | null {
   return Math.round(v * 10) / 10
 }
 
-export function computeStats(rows: PairedRow[]): SiteStats {
+export function computeStats(
+  rows: PairedRow[],
+  visualOf?: (url: string) => { verdict: string } | null,
+): SiteStats {
   const gaps: number[] = []
   const prices: number[] = []
   const discounts: number[] = []
   let matched = 0, withPrice = 0, cheaper = 0, aligned = 0, dearer = 0, promos = 0, outOfStock = 0
   let suspects = 0
+  let visualDiff = 0, visualDone = 0, visualComparable = 0
 
   for (const r of rows) {
+    if (r.source?.images.length && r.listing.image) visualComparable++
+    const vis = visualOf?.(r.listing.url)
+    if (vis) { visualDone++; if (vis.verdict === 'different') visualDiff++ }
     if (r.source) matched++
     if (r.confidence && r.confidence.band !== 'sure') suspects++
     if (r.cmp.priceHt != null) withPrice++
@@ -58,5 +72,6 @@ export function computeStats(rows: PairedRow[]): SiteStats {
     shown: rows.length, matched, orphans: rows.length - matched, withPrice,
     medGapPct: median(gaps), cheaper, aligned, dearer,
     medPriceTtc: median(prices), promos, medDiscountPct: median(discounts), outOfStock, suspects,
+    visualDiff, visualDone, visualComparable,
   }
 }

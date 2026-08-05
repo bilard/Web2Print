@@ -37,7 +37,13 @@ export interface ExplorerFilter {
   worstFirst: boolean
   /** Avancement de l'audit : ce qui reste à juger, ce qui a été validé, ce qui a été rejeté. */
   audit: AuditFilter
+  /** Verdict de la comparaison des photos. */
+  visual: VisualFilter
 }
+
+/** `different` seul désigne les appariements que les PHOTOS contredisent — la liste la
+ *  plus rentable à éplucher, puisque le désaccord y est déjà établi. */
+export type VisualFilter = 'all' | 'same' | 'different' | 'unclear' | 'none'
 
 /** `pending` = jamais jugé. C'est la file de travail : elle se vide à mesure qu'on statue. */
 export type AuditFilter = 'all' | 'pending' | 'ok' | 'ko'
@@ -49,14 +55,14 @@ export type TrustFilter = 'all' | 'suspect' | 'doubt' | 'sure'
 export const EMPTY_EXPLORER_FILTER: ExplorerFilter = {
   q: '', pairing: 'matched', gap: 'all', stock: 'all',
   promoOnly: false, noPriceOnly: false, priceMin: null, priceMax: null, tokens: [], path: [],
-  trust: 'all', worstFirst: false, audit: 'all',
+  trust: 'all', worstFirst: false, audit: 'all', visual: 'all',
 }
 
 export function isExplorerFilterActive(f: ExplorerFilter): boolean {
   return !!f.q.trim() || f.pairing !== 'matched' || f.gap !== 'all' || f.stock !== 'all'
     || f.promoOnly || f.noPriceOnly || f.priceMin != null || f.priceMax != null
     || f.tokens.length > 0 || f.path.length > 0 || f.trust !== 'all' || f.worstFirst
-    || f.audit !== 'all'
+    || f.audit !== 'all' || f.visual !== 'all'
 }
 
 /**
@@ -96,9 +102,19 @@ export function matchesExplorerQuery(r: PairedRow, q: string): boolean {
 /** `verdictOf` est fourni par l'écran (état Firestore) : `filterRows` reste PUR — aucun
  *  accès réseau, tout est testable sur un tableau de lignes et une lambda. */
 export function filterRows(
-  rows: PairedRow[], f: ExplorerFilter, verdictOf?: (url: string) => 'ok' | 'ko' | null,
+  rows: PairedRow[], f: ExplorerFilter,
+  verdictOf?: (url: string) => 'ok' | 'ko' | null,
+  visualOf?: (url: string) => { verdict: string } | null,
 ): PairedRow[] {
   const kept = rows.filter((r) => {
+    if (f.visual !== 'all') {
+      // `none` = pas encore analysée. Distinguer « non analysée » de « non concluante »
+      // est indispensable : la première attend une passe, la seconde a déjà coûté un appel
+      // et ne dira jamais rien de plus.
+      const v = visualOf?.(r.listing.url) ?? null
+      if (f.visual === 'none') { if (v) return false }
+      else if (v?.verdict !== f.visual) return false
+    }
     if (f.audit !== 'all') {
       const v = verdictOf?.(r.listing.url) ?? null
       if (f.audit === 'pending' && v != null) return false

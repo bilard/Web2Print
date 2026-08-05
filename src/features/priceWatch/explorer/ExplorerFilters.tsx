@@ -2,8 +2,8 @@
 // clic dans le ruban de position, qui montre déjà la répartition — deux commandes pour
 // le même filtre, à deux endroits, c'est ce qui rendait l'en-tête confus.
 import type { SelectHTMLAttributes } from 'react'
-import { Package, Boxes, Tag, EuroIcon, FilterX, ShieldQuestion, ArrowDownNarrowWide, ClipboardCheck } from 'lucide-react'
-import { EMPTY_EXPLORER_FILTER, isExplorerFilterActive, type ExplorerFilter, type PairFilter, type StockFilter, type TrustFilter, type AuditFilter } from './filters'
+import { Package, Boxes, Tag, EuroIcon, FilterX, ShieldQuestion, ArrowDownNarrowWide, ClipboardCheck, ScanEye } from 'lucide-react'
+import { EMPTY_EXPLORER_FILTER, isExplorerFilterActive, type ExplorerFilter, type PairFilter, type StockFilter, type TrustFilter, type AuditFilter, type VisualFilter } from './filters'
 import { useTranslation } from '@/lib/i18n'
 
 const sel = 'bg-well text-white/70 text-[11px] rounded pl-6 pr-1.5 py-1.5 border border-white/10 focus:outline-none focus:border-white/25 appearance-none'
@@ -59,6 +59,15 @@ export function ExplorerFilters({ filter, onChange }: {
         <option value="pending">{t('pwx.verdict.filterPending')}</option>
         <option value="ok">{t('pwx.verdict.filterOk')}</option>
         <option value="ko">{t('pwx.verdict.filterKo')}</option>
+      </IconSelect>
+
+      <IconSelect icon={ScanEye} value={filter.visual}
+        onChange={(e) => onChange({ visual: e.target.value as VisualFilter })}>
+        <option value="all">{t('pwx.visual.filterAll')}</option>
+        <option value="different">{t('pwx.visual.filterDifferent')}</option>
+        <option value="same">{t('pwx.visual.filterSame')}</option>
+        <option value="unclear">{t('pwx.visual.filterUnclear')}</option>
+        <option value="none">{t('pwx.visual.filterNone')}</option>
       </IconSelect>
 
       <IconSelect icon={Boxes} value={filter.stock}

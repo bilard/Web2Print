@@ -30,15 +30,17 @@ function Stat({ label, value, tone = 'text-white/80', hint, onToggle, active }: 
   )
 }
 
-export function ExplorerStats({ stats, collected, promoOnly, outOfStockOnly, suspectsOnly, onTogglePromo, onToggleStock, onToggleSuspects }: {
+export function ExplorerStats({ stats, collected, promoOnly, outOfStockOnly, suspectsOnly, visualDiffOnly, onTogglePromo, onToggleStock, onToggleSuspects, onToggleVisualDiff }: {
   stats: SiteStats
   collected: number
   promoOnly: boolean
   outOfStockOnly: boolean
   suspectsOnly: boolean
+  visualDiffOnly: boolean
   onTogglePromo: () => void
   onToggleStock: () => void
   onToggleSuspects: () => void
+  onToggleVisualDiff: () => void
 }) {
   // ⚠ t() DANS le rendu (via useTranslation) : en constante de module, la langue serait
   // figée à l'import et ne suivrait plus le changement de langue.
@@ -57,6 +59,18 @@ export function ExplorerStats({ stats, collected, promoOnly, outOfStockOnly, sus
         tone={stats.suspects > 0 ? 'text-amber-300' : 'text-white/80'}
         active={suspectsOnly} onToggle={onToggleSuspects}
         hint={t('pwx.trust.aVerifier.help')} />
+      {/* Désaccords VISUELS, avec la couverture entre parenthèses. Publier « 3 » sans
+          dire sur combien de paires jugées serait le même biais que la moyenne d'un
+          ratio tronqué : le chiffre paraîtrait faible alors que rien n'a été analysé. */}
+      {stats.visualComparable > 0 && (
+        <Stat label={t('pwx.visual.stat')}
+          value={stats.visualDone === 0 ? '—' : `${n(stats.visualDiff)} / ${n(stats.visualDone)}`}
+          tone={stats.visualDiff > 0 ? 'text-rose-300' : 'text-white/80'}
+          active={visualDiffOnly} onToggle={stats.visualDone > 0 ? onToggleVisualDiff : undefined}
+          hint={stats.visualDone === 0
+            ? t('pwx.visual.stat.none', { comparable: n(stats.visualComparable) })
+            : t('pwx.visual.stat.help', { done: n(stats.visualDone), comparable: n(stats.visualComparable) })} />
+      )}
       <Stat label={t('pwx.prixMedian')} value={eur(stats.medPriceTtc)}
         hint={t('pwx.stats.medPrice.help')} />
       <Stat label={t('pwx.stats.promos')} value={n(stats.promos)} tone="text-amber-300"

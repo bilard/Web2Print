@@ -29,6 +29,7 @@ import { computeStats } from './stats'
 import { rowsToCsv } from './exportCsv'
 import { useSourceSheet } from './useSourceSheet'
 import { useVerdicts } from './useVerdicts'
+import { useVisuals } from '../visual/useVisuals'
 import { useTranslation } from '@/lib/i18n'
 
 const iconBtn = 'bg-well text-white/55 text-xs rounded px-2.5 py-2 border border-white/10 hover:text-white hover:border-white/25 disabled:opacity-40 disabled:hover:text-white/55 disabled:hover:border-white/10 flex items-center gap-1.5 transition-colors shrink-0'
@@ -51,6 +52,8 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   const { extras } = src
   // Jugements d'audit du concurrent affiché : ils survivent à la session.
   const verdicts = useVerdicts(watchId, active)
+  // Comparaison des photos, produite par le node « Comparer les visuels ».
+  const visuals = useVisuals(watchId, active)
 
   const [filter, setFilter] = useState<ExplorerFilter>(EMPTY_EXPLORER_FILTER)
   const [page, setPage] = useState(0)
@@ -82,12 +85,12 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   // Deux passes : l'arbre se nourrit des lignes filtrées SANS la taxonomie (ses compteurs
   // suivent la recherche, mais choisir une famille ne doit pas amputer l'arbre lui-même),
   // la liste applique le filtre complet.
-  const beforeTaxo = useMemo(() => filterRows(rows, { ...effective, path: [] }, verdicts.of), [rows, effective, verdicts.of])
+  const beforeTaxo = useMemo(() => filterRows(rows, { ...effective, path: [] }, verdicts.of, visuals.of), [rows, effective, verdicts.of, visuals.of])
   const filtered = useMemo(
-    () => (effective.path.length === 0 ? beforeTaxo : filterRows(rows, effective, verdicts.of)),
-    [rows, effective, beforeTaxo, verdicts.of],
+    () => (effective.path.length === 0 ? beforeTaxo : filterRows(rows, effective, verdicts.of, visuals.of)),
+    [rows, effective, beforeTaxo, verdicts.of, visuals.of],
   )
-  const stats = useMemo(() => computeStats(filtered), [filtered])
+  const stats = useMemo(() => computeStats(filtered, visuals.of), [filtered, visuals.of])
   // Répartition des bandes sur TOUT le site, pas sur les lignes filtrées : elle sert à
   // expliquer une liste vidée par le filtre de fiabilité.
   const bands = useMemo(() => {
@@ -137,10 +140,11 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
         <div className="h-8 w-px bg-white/10 hidden lg:block" />
         <ExplorerStats stats={stats} collected={listings.length}
           promoOnly={effective.promoOnly} outOfStockOnly={effective.stock === 'out-of-stock'}
-          suspectsOnly={effective.trust === 'suspect'}
+          suspectsOnly={effective.trust === 'suspect'} visualDiffOnly={effective.visual === 'different'}
           onTogglePromo={() => patch({ promoOnly: !effective.promoOnly })}
           onToggleStock={() => patch({ stock: effective.stock === 'out-of-stock' ? 'all' : 'out-of-stock' })}
-          onToggleSuspects={() => patch({ trust: effective.trust === 'suspect' ? 'all' : 'suspect' })} />
+          onToggleSuspects={() => patch({ trust: effective.trust === 'suspect' ? 'all' : 'suspect' })}
+          onToggleVisualDiff={() => patch({ visual: effective.visual === 'different' ? 'all' : 'different' })} />
       </div>
 
       {/* ── Étage 2 · contrôle : chercher, filtrer, paginer ──────────────────── */}
@@ -260,7 +264,8 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
                 onPickBand={(b) => patch({ trust: b === 'sure' ? 'sure' : b === 'doubt' ? 'doubt' : 'suspect' })}
                 verdict={verdicts.of(r.listing.url)}
                 onVerdict={(v) => verdicts.set(r.listing.url, v)}
-                onPickVerdict={(v) => patch({ audit: v })} />
+                onPickVerdict={(v) => patch({ audit: v })}
+                visual={visuals.of(r.listing.url)} />
             ))
           )}
         </div>
