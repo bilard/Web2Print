@@ -85,6 +85,10 @@ registerServerNode({
     // passe repoussée au prochain tick — le curseur ne bouge pas, « Comparer » garde sa
     // fenêtre CE run. Une passe démarrée avant l'échéance va au bout (bornée par
     // productBudget), la réserve absorbe ce débordement.
+    // Signal composite : le curseur n'étant écrit qu'APRÈS la passe, un run tué à
+    // l'échéance ne fait avancer RIEN. En s'arrêtant proprement, `directedPass` avance au
+    // plus grand préfixe traité — un gros budget ne coûte donc plus rien en dépassement.
+    const timedSignal = { get aborted() { return ctx.signal?.aborted === true || (ctx.deadlineAt != null && Date.now() > ctx.deadlineAt) } }
     if (ctx.deadlineAt && Date.now() > ctx.deadlineAt) {
       ctx.log('info', t(ctx.locale, 'run.directed.budgetReserved'))
       return { results: resultsSheet([]) }
@@ -194,7 +198,7 @@ registerServerNode({
         try { return await fetchHtml(url, 20000) } catch { return null }
       },
       ...(hasGeneric ? { searchWeb, extractProduct } : {}),
-      signal: ctx.signal,
+      signal: timedSignal,
       log: (m) => ctx.log('info', m),
       locale: ctx.locale,
     })

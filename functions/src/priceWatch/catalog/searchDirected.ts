@@ -184,7 +184,16 @@ export interface DirectedPassResult {
  */
 /** Produits cherchés de front (cf. jumeau client). Chacun lance déjà une requête PAR
  *  SITE : à 15 sites, 3 produits = 45 requêtes en vol, 3 par domaine. */
-const DIRECTED_CONCURRENCY = 3
+/**
+ * Produits traités de front. Le vrai coût d'un produit, c'est `sites` requêtes lancées
+ * en parallèle : le parallélisme utile est donc le PRODUIT des deux, et c'est lui qu'on
+ * borne. Un seul site actif → 8 produits de front ; dix-neuf sites → 2, sinon on
+ * envoie une centaine de requêtes simultanées chez les fournisseurs.
+ */
+function directedConcurrency(siteCount: number): number {
+  return Math.max(1, Math.min(8, Math.ceil(DIRECTED_PARALLEL_REQUESTS / Math.max(1, siteCount))))
+}
+const DIRECTED_PARALLEL_REQUESTS = 8
 
 export async function directedPass(
   products: DirectedSourceProduct[],
@@ -206,7 +215,7 @@ export async function directedPass(
   // fournisseurs (et pour le circuit-breaker de crédits).
   const completed = new Set<number>()
   const byIndex = new Map<number, DirectedPassResult['results']>()
-  await mapWithConcurrency(indices, DIRECTED_CONCURRENCY, async (i) => {
+  await mapWithConcurrency(indices, directedConcurrency(sites.length), async (i) => {
     if (deps.signal?.aborted) return
     const p = products[i]
     // Sites interrogés EN PARALLÈLE : en séquence, le débit d'une passe est la SOMME

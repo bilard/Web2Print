@@ -33,6 +33,8 @@ type DirectedInputs = { products: ExcelSheet; sites?: unknown }
 type DirectedOutputs = { results: ExcelSheet }
 
 const VAT = 0.2
+/** Fenêtre d'un run lancé depuis le navigateur (le serveur, lui, fournit `deadlineAt`). */
+const CLIENT_WINDOW_MS = 12 * 60_000
 
 function resultsSheet(rows: ExcelRow[]): ExcelSheet {
   return {
@@ -82,7 +84,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
       disabledNoteKey: 'node.directed-search.f3',
     },
   ],
-  defaultConfig: { sites: '', genericSites: '', refColumn: '', eanColumn: '', nameColumn: '', descriptionColumn: '', productBudget: 60, watchId: '' },
+  defaultConfig: { sites: '', genericSites: '', refColumn: '', eanColumn: '', nameColumn: '', descriptionColumn: '', productBudget: 400, watchId: '' },
   cardSummary: (c) => {
     const n = parseSitesConfig(c.sites).length
     return n ? `${n} site(s) · ${c.productBudget} produits/run` : ''
@@ -147,6 +149,13 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     const withOrigin = products.filter((p) => p.originRefs?.length).length
 
     const budget = Math.max(1, config.productBudget)
+    // ⚠ Échéance. Un run planifié est borné par le serveur ; un run navigateur ne l'était
+    // par RIEN. Or le curseur n'est écrit qu'APRÈS la passe : un run tué en cours de route
+    // ne fait avancer rien du tout, et le prochain refait exactement les mêmes produits.
+    // Ici on s'arrête PROPREMENT — `directedPass` avance alors le curseur au plus grand
+    // préfixe réellement traité, donc un gros budget ne coûte plus rien en cas de dépassement.
+    const deadlineAt = Date.now() + CLIENT_WINDOW_MS
+    const timedSignal = { get aborted() { return ctx.signal?.aborted === true || Date.now() > deadlineAt } }
     // Curseur persistant : on reprend là où le dernier tick s'est arrêté (le cron accumule
     // au fil des passages, comme la moisson). Stocké dans une méta dédiée (pseudo-site ignoré
     // par « Comparer », qui n'itère que les sites configurés).
@@ -180,7 +189,7 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     }
     const pass = await directedPass(products, sites, startCursor % Math.max(1, products.length), budget, {
       fetchHtml: fetchWithBreaker,
-      signal: ctx.signal,
+      signal: timedSignal,
       log: (m) => ctx.log('info', m),
       // Battement de progression : compteur live sur la carte + un log par produit —
       // sans ça la passe semble « tourner dans le vide » entre deux trouvailles.
