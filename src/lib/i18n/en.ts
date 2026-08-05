@@ -5291,6 +5291,8 @@ export const en: Record<TranslationKey, string> = {
   'run.directed.enginesForced': '{count} site(s) with a forced engine (Firecrawl / Bright Data / Jina): directed search uses it too.',
   'run.directed.originColumnMissing': "The “Description (original reference)” column is NOT SET on this node: no original reference can be extracted, and on adaptable parts those are the ONLY keys a competitor can carry. Set it (the sales text column), then reset the cursor.",
   'run.directed.originColumnNoMatch': "Column “{col}” was read, but no original reference is recognised in it. The expected pattern is “Remplace origine: A, B” (or “Origine: …”). Check that this column holds the sales text and that origins are quoted that way.",
+  'run.harvest.benchmarkRefreshed': 'Run window exhausted: benchmark recalculated right here — {count} matched products across {sites} site(s).',
+  'run.harvest.benchmarkSkipped': 'Benchmark not recalculated: {message} (the harvested records are saved).',
   'pwx.competitors': 'Competitors',
   'pwx.tabCollected': '{count} records collected',
   'pwx.reload': 'Reload',

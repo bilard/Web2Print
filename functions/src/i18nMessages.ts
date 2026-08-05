@@ -221,6 +221,14 @@ const MESSAGES = {
     fr: "Colonne « {col} » lue, mais aucune référence d’origine n’y est reconnue. Le motif attendu est « Remplace origine : A, B » (ou « Origine : … »). Vérifiez que cette colonne porte bien le texte commercial et que les origines y sont citées ainsi.",
     en: "Column “{col}” was read, but no original reference is recognised in it. The expected pattern is “Remplace origine: A, B” (or “Origine: …”). Check that this column holds the sales text and that origins are quoted that way.",
   },
+  'run.harvest.benchmarkRefreshed': {
+    fr: "Fenêtre du run épuisée : benchmark recalculé ici même — {count} produits appariés sur {sites} site(s).",
+    en: "Run window exhausted: benchmark recalculated right here — {count} matched products across {sites} site(s).",
+  },
+  'run.harvest.benchmarkSkipped': {
+    fr: "Benchmark non recalculé : {message} (les fiches moissonnées sont enregistrées).",
+    en: "Benchmark not recalculated: {message} (the harvested records are saved).",
+  },
   'run.directed.noPriceDiag': {
     fr: 'Diagnostic : {processed} produit(s) interrogés sur {products} exploitables · {keyless} ligne(s) sans aucune clé · {withOrigin} avec réf. d’origine · {sites} site(s), dont {skipped} coupé(s) par le disjoncteur.',
     en: 'Diagnosis: {processed} product(s) queried out of {products} usable · {keyless} row(s) with no key at all · {withOrigin} with an original reference · {sites} site(s), {skipped} of which cut off by the breaker.',

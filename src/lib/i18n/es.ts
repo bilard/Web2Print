@@ -5290,6 +5290,8 @@ export const es: Record<TranslationKey, string> = {
   'run.directed.enginesForced': '{count} sitio(s) con motor forzado (Firecrawl / Bright Data / Jina): la búsqueda dirigida también lo usa.',
   'run.directed.originColumnMissing': "La columna «Descripción (ref. de origen)» NO ESTÁ CONFIGURADA en este nodo: no se puede extraer ninguna referencia de origen y, en piezas adaptables, son las ÚNICAS claves que un competidor puede llevar. Configúrela (columna del texto comercial) y reinicie el cursor.",
   'run.directed.originColumnNoMatch': "Se leyó la columna «{col}», pero no se reconoce ninguna referencia de origen. El patrón esperado es «Remplace origine: A, B» (u «Origine: …»). Compruebe que esa columna contiene el texto comercial y que las referencias de origen se citan así.",
+  'run.harvest.benchmarkRefreshed': 'Ventana de ejecución agotada: benchmark recalculado aquí mismo — {count} productos emparejados en {sites} sitio(s).',
+  'run.harvest.benchmarkSkipped': 'Benchmark no recalculado: {message} (las fichas recopiladas están guardadas).',
   'pwx.competitors': 'Competidores',
   'pwx.tabCollected': '{count} fichas recopiladas',
   'pwx.reload': 'Recargar',

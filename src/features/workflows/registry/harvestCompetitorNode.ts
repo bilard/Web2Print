@@ -19,6 +19,7 @@ import { harvestPass, type CompetitorConfig, type HarvestDeps } from '@/features
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '@/features/priceWatch/catalog/store'
 import { harvestProgress } from '@/features/priceWatch/catalog/harvest'
 import { mapWithConcurrency, HARVEST_CONCURRENCY } from '@/features/priceWatch/concurrency'
+import { recomputeReport } from '@/features/priceWatch/catalog/recomputeReport'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
 import { t } from '@/lib/i18n'
 
@@ -286,6 +287,25 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
     })
     // L'ordre d'entrée est préservé : le tableau de statut reste stable d'un run à l'autre.
     const rows: Record<string, unknown>[] = results.filter((r): r is NonNullable<typeof r> => r != null)
+
+    // ⚠ FILET. « Comparer catalogue » est en AVAL : sur un catalogue de plusieurs
+    // centaines de milliers de fiches, la moisson consomme toute la fenêtre du run et le
+    // node reste `pending` — run après run. Constaté en production : les appariés sont
+    // restés gelés à une valeur d'un seul site pendant des heures, alors que la collecte
+    // tournait parfaitement. Quand la fenêtre est épuisée, on recalcule donc le benchmark
+    // ICI, à partir du catalogue source persisté et des index fraîchement écrits.
+    if (Date.now() > deadlineAt) {
+      try {
+        const siteRefs = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
+        const rec = await recomputeReport(uid, watchId, siteRefs, { label: ctx.workflowName })
+        if (rec) ctx.log('info', t('run.harvest.benchmarkRefreshed', { count: rec.matched, sites: rec.sites }))
+      } catch (e) {
+        // Garde-fous de `recomputeReport` (catalogue amputé, régression) : le rapport en
+        // place est PRÉSERVÉ, c'est le comportement voulu. On trace sans faire échouer
+        // la moisson, qui a bien enregistré ses fiches.
+        ctx.log('warn', t('run.harvest.benchmarkSkipped', { message: e instanceof Error ? e.message : String(e) }))
+      }
+    }
     return { status: statusSheet(rows) }
   },
 }

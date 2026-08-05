@@ -36,6 +36,21 @@ export function shouldRefreshReport(args: {
   return lastCollectAt > runAt // du neuf a été collecté depuis le dernier rapport
 }
 
+/**
+ * Sites à comparer : TOUS les concurrents connus des métas (hors pseudo-sites internes
+ * et sites décochés), plus ceux du rapport en place. L'union évite deux pièges opposés —
+ * rester prisonnier du rapport courant, et perdre un site dont la méta a été purgée.
+ */
+export function siteRefsOf(meta: Map<string, HarvestMeta>, report: StoredReport): { siteId: string; domain: string }[] {
+  const out = new Map<string, string>()
+  for (const [siteId, m] of meta.entries()) {
+    if (!m.domain || m.domain === 'directed-cursor' || m.enabled === false) continue
+    out.set(siteId, m.domain)
+  }
+  for (const c of report.byCompetitor) if (!out.has(c.siteId)) out.set(c.siteId, c.domain)
+  return [...out.entries()].map(([siteId, domain]) => ({ siteId, domain }))
+}
+
 /** Dernière écriture de méta de moisson (heartbeat), null si aucune. */
 function lastCollectOf(meta: Map<string, HarvestMeta>): number | null {
   let last: number | null = null
@@ -67,8 +82,13 @@ export function useLiveReportRefresh(watchId: string | null, report: StoredRepor
       if (!ok) return
       busy.current = true
       try {
-        const siteRefs = r.byCompetitor.map((c) => ({ siteId: c.siteId, domain: c.domain }))
-        await recomputeReport(uid, watchId, siteRefs)
+        // ⚠ Les sites viennent des MÉTAS, pas du rapport. En les prenant du rapport, le
+        // recalcul ne portait que sur les concurrents DÉJÀ dedans : un rapport tombé à un
+        // seul site se réécrivait indéfiniment à un seul site, et les autres ne pouvaient
+        // JAMAIS y revenir — quoi qu'on coche dans « Sites sources ». Constaté en
+        // production : « 10 069 appariés · 1 concurrent » figé pendant des heures alors
+        // que 23 sites collectaient.
+        await recomputeReport(uid, watchId, siteRefsOf(metaRef.current, r))
       } catch (e) {
         // Refus de garde-fou (catalogue amputé, régression d'appariement) : c'est le
         // comportement VOULU, pas une panne. On le trace sans alarmer l'écran — le

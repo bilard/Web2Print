@@ -64,6 +64,30 @@ export async function saveSourceCatalog(
   })
 }
 
+/**
+ * Relit le catalogue source persisté. Jumeau de `loadSourceCatalog` côté client, y
+ * compris la détection d'un catalogue AMPUTÉ : recalculer sur des tranches manquantes
+ * écraserait un rapport juste par un rapport à quelques appariés.
+ */
+export async function loadSourceCatalog(
+  uid: string, watchId: string,
+): Promise<{ products: SourceProduct[]; vatRate: number; expected: number; partial: boolean } | null> {
+  const db = getFirestore()
+  const col = sourceCol(uid, watchId)
+  const meta = await db.doc(`${col}/_meta`).get()
+  if (!meta.exists) return null
+  const data = meta.data() ?? {}
+  const vatRate = typeof data.vatRate === 'number' ? data.vatRate : 20
+  const chunks = typeof data.chunks === 'number' ? data.chunks : 0
+  const expected = typeof data.count === 'number' ? data.count : 0
+  const products: SourceProduct[] = []
+  for (let i = 0; i < chunks; i++) {
+    const c = await db.doc(`${col}/chunk_${i}`).get()
+    if (c.exists) products.push(...((c.data()?.products as SourceProduct[]) ?? []))
+  }
+  return { products, vatRate, expected, partial: expected > 0 && products.length < expected - 5 }
+}
+
 // ── Journal des changements de prix (jumeau du client) ─────────────────────────────
 // Sans ce bloc, un suivi piloté UNIQUEMENT par le cron n'aurait jamais de journal : le
 // dashboard afficherait « aucun mouvement » alors que les prix bougent à chaque nuit.
@@ -177,7 +201,10 @@ export async function saveCatalogReport(
   report: CatalogReport,
   sites: { siteId: string; domain: string }[],
   runAt: number,
-  opts: { label?: string } = {},
+  /** `trend: false` = analyse PARTIELLE (index encore en cours de remplissage) : le
+   *  tableau de bord est rafraîchi, mais AUCUN point d'historique n'est émis — sinon la
+   *  courbe raconterait la progression du scraping, pas le mouvement des prix. */
+  opts: { label?: string; trend?: boolean } = {},
 ): Promise<void> {
   const db = getFirestore()
   // Cap par OCTETS (pas seulement par nombre) : Firestore refuse tout doc > 1 048 576 o.
@@ -210,8 +237,11 @@ export async function saveCatalogReport(
   // Tendance : point KPI + rétention journalière (read-modify-write, doc minuscule).
   // ⚠ pas de transaction : un run client et un run cron du MÊME suivi simultanés
   // pourraient perdre un point — probabilité négligeable, acceptée.
-  // Le cron ne produit QUE des analyses complètes : pas de `trend: false` ici (le
-  // recalcul partiel est un geste client, cf. jumeau).
+  // ⚠ Le cron produit désormais AUSSI des analyses partielles : le filet de fin de
+  // moisson recalcule le benchmark quand la fenêtre du run est épuisée (« Comparer
+  // catalogue » n'aurait pas son tour). Ces recalculs ne doivent pas entrer dans
+  // l'historique — parité avec le jumeau client.
+  if (opts.trend === false) return
   // Journal des mouvements : diffé sur `report.products` COMPLET (avant rankProducts et
   // le plafond d'octets) — sur la liste tronquée, un produit qui se réaligne sortirait de
   // l'échantillon et son mouvement serait invisible.

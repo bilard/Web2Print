@@ -18,6 +18,10 @@ import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatc
 import { harvestProgress } from '../../priceWatch/catalog/harvest'
 import { mapWithConcurrency, HARVEST_CONCURRENCY } from '../../priceWatch/concurrency'
 import { buildServerFetcher } from '../../priceWatch/catalog/serverFetcher'
+import { loadAllListings } from '../../priceWatch/catalog/store'
+import { loadSourceCatalog, saveCatalogReport } from '../../priceWatch/reportStore'
+import { buildReport } from '../../priceWatch/catalog/report'
+import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
 import { applyTargeting, buildTargetingPrompt, familiesFromRows } from '../../priceWatch/catalog/categoryTargeting'
 import { callLlm } from '../llm'
 import { t } from '../../i18n'
@@ -214,6 +218,34 @@ registerServerNode({
     if (cycleMode && !ctx.signal.aborted && doneCount === sites.length) {
       ctx.reportCycleComplete?.()
       ctx.log('info', t(ctx.locale, 'run.harvest.cycleComplete', { count: sites.length }))
+    }
+    // ⚠ FILET (jumeau du client). « Comparer catalogue » est en AVAL : sur un catalogue
+    // de centaines de milliers de fiches, la moisson consomme toute la fenêtre du run et
+    // le node reste `pending`, run après run. Constaté en production : appariés gelés
+    // pendant des heures sur la valeur d'un seul site, alors que la collecte tournait.
+    // Fenêtre épuisée → on recalcule le benchmark ICI.
+    if (ctx.deadlineAt && Date.now() > ctx.deadlineAt) {
+      try {
+        const src = await loadSourceCatalog(ctx.uid, watchId)
+        if (src && src.products.length > 0 && !src.partial) {
+          const siteRefs = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
+          const indexBySite = new Map<string, CompetitorListing[]>()
+          for (const ref of siteRefs) {
+            indexBySite.set(ref.siteId, await loadAllListings(ctx.uid, watchId, ref.siteId))
+          }
+          const report = buildReport(src.products, siteRefs, indexBySite, { vatRate: src.vatRate })
+          // `trend: false` — recalcul PARTIEL par nature (index encore en cours de
+          // remplissage) : il rafraîchit le tableau de bord, jamais l'historique.
+          await saveCatalogReport(ctx.uid, watchId, report, siteRefs, Date.now(), { trend: false })
+          ctx.log('info', t(ctx.locale, 'run.harvest.benchmarkRefreshed', {
+            count: report.kpis.products, sites: siteRefs.length,
+          }))
+        }
+      } catch (e) {
+        ctx.log('warn', t(ctx.locale, 'run.harvest.benchmarkSkipped', {
+          message: e instanceof Error ? e.message : String(e),
+        }))
+      }
     }
     return { status: statusSheet(rows) }
   },

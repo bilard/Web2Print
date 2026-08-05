@@ -5483,6 +5483,8 @@ export const fr = {
   'run.directed.enginesForced': '{count} site(s) avec moteur forcé (Firecrawl / Bright Data / Jina) : la recherche dirigée l’utilise aussi.',
   'run.directed.originColumnMissing': "Colonne « Description (réf. d’origine) » NON RENSEIGNÉE dans ce node : aucune référence d’origine ne peut être extraite, et sur des pièces adaptables ce sont les SEULES clés qu’un concurrent puisse porter. Renseignez-la (colonne du texte commercial), puis remettez le curseur à zéro.",
   'run.directed.originColumnNoMatch': "Colonne « {col} » lue, mais aucune référence d’origine n’y est reconnue. Le motif attendu est « Remplace origine : A, B » (ou « Origine : … »). Vérifiez que cette colonne porte bien le texte commercial et que les origines y sont citées ainsi.",
+  'run.harvest.benchmarkRefreshed': 'Fenêtre du run épuisée : benchmark recalculé ici même — {count} produits appariés sur {sites} site(s).',
+  'run.harvest.benchmarkSkipped': 'Benchmark non recalculé : {message} (les fiches moissonnées sont enregistrées).',
   'pwx.competitors': 'Concurrents',
   'pwx.tabCollected': '{count} fiches collectées',
   'pwx.reload': 'Recharger',
