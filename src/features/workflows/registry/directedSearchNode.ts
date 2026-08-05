@@ -127,6 +127,10 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
         originRefs: descCol ? extractOriginRefs(String(r[descCol] ?? '')) : undefined,
       }))
       .filter((p) => p.ref || p.ean || p.originRefs?.length)
+    // Combien de lignes n'offrent AUCUNE clé interrogeable : c'est la première chose à
+    // savoir quand une passe ne rend rien, et le message générique ne le disait pas.
+    const keyless = sheet.rows.length - products.length
+    const withOrigin = products.filter((p) => p.originRefs?.length).length
 
     const budget = Math.max(1, config.productBudget)
     // Curseur persistant : on reprend là où le dernier tick s'est arrêté (le cron accumule
@@ -206,6 +210,14 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
       to: pass.nextCursor, products: products.length, sites: sites.length,
     }))
     if (rows.length === 0) {
+      // Chiffrer le vide : « 0 sur 20 produits, 0 avec réf d'origine, 3 sites coupés »
+      // oriente vers la bonne cause. Sans ces nombres, les trois explications possibles
+      // (clés propres au distributeur, description non mappée, sites injoignables) se
+      // valent et on cherche au hasard.
+      ctx.log('warn', t('run.directed.noPriceDiag', {
+        processed: pass.processed, products: products.length, keyless,
+        withOrigin, sites: sites.length, skipped: skipped.size,
+      }))
       ctx.log('warn', t('run.directed.noPriceFound'))
     }
     return { results: resultsSheet(rows) }

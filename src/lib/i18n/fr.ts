@@ -5479,6 +5479,7 @@ export const fr = {
   'pwx.src.catalogRows': 'Catalogue source du workflow : {count} produits retenus sur {rows} lignes lues',
   'tst.ss.benchmarkFailed': 'Moisson enregistrée, mais le recalcul du benchmark a échoué : {message}',
   'tst.ss.reportRegression': 'Recalcul REFUSÉ : {next} produits appariés contre {previous} au rapport en place. Le rapport actuel est conservé — le catalogue source est probablement incomplet (feuille de test ?). Relancez « Comparer catalogue » sur le catalogue entier.',
+  'run.directed.noPriceDiag': 'Diagnostic : {processed} produit(s) interrogés sur {products} exploitables · {keyless} ligne(s) sans aucune clé · {withOrigin} avec réf. d’origine · {sites} site(s), dont {skipped} coupé(s) par le disjoncteur.',
   'pwx.competitors': 'Concurrents',
   'pwx.tabCollected': '{count} fiches collectées',
   'pwx.reload': 'Recharger',

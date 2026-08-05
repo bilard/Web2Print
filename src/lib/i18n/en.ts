@@ -5287,6 +5287,7 @@ export const en: Record<TranslationKey, string> = {
   'pwx.src.catalogRows': 'Workflow source catalogue: {count} products kept out of {rows} rows read',
   'tst.ss.benchmarkFailed': 'Harvest saved, but the benchmark recalculation failed: {message}',
   'tst.ss.reportRegression': 'Recalculation REFUSED: {next} matched products against {previous} in the current report. The current report is kept — the source catalogue is probably incomplete (a test sheet?). Run “Compare catalogue” again on the full catalogue.',
+  'run.directed.noPriceDiag': 'Diagnosis: {processed} product(s) queried out of {products} usable · {keyless} row(s) with no key at all · {withOrigin} with an original reference · {sites} site(s), {skipped} of which cut off by the breaker.',
   'pwx.competitors': 'Competitors',
   'pwx.tabCollected': '{count} records collected',
   'pwx.reload': 'Reload',
