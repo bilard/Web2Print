@@ -5287,6 +5287,7 @@ export const es: Record<TranslationKey, string> = {
   'tst.ss.benchmarkFailed': 'Recolección guardada, pero el recálculo del benchmark falló: {message}',
   'tst.ss.reportRegression': 'Recálculo RECHAZADO: {next} productos emparejados frente a {previous} en el informe actual. Se conserva el informe actual: el catálogo de origen probablemente esté incompleto (¿hoja de prueba?). Vuelva a ejecutar «Comparar catálogo» sobre el catálogo completo.',
   'run.directed.noPriceDiag': 'Diagnóstico: {processed} producto(s) consultados de {products} utilizables · {keyless} fila(s) sin ninguna clave · {withOrigin} con referencia de origen · {sites} sitio(s), de los cuales {skipped} cortados por el disyuntor.',
+  'run.directed.enginesForced': '{count} sitio(s) con motor forzado (Firecrawl / Bright Data / Jina): la búsqueda dirigida también lo usa.',
   'pwx.competitors': 'Competidores',
   'pwx.tabCollected': '{count} fichas recopiladas',
   'pwx.reload': 'Recargar',

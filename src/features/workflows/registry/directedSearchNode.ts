@@ -11,10 +11,11 @@ import type { NodeSpec } from '../types'
 import type { ExcelSheet, ExcelRow } from '@/features/excel/types'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
 import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
-import { resolveSitesInput, sitesForRole } from '@/features/priceWatch/sourceSites'
+import { resolveSitesInput, sitesForRole, normalizeDomain } from '@/features/priceWatch/sourceSites'
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
 import { directedPass, type DirectedSourceProduct, type DirectedSite } from '@/features/priceWatch/catalog/searchDirected'
 import { extractOriginRefs } from '@/features/priceWatch/catalog/match'
+import { buildSiteFetcher } from '@/features/priceWatch/catalog/siteFetch'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
 import { t } from '@/lib/i18n'
 
@@ -105,8 +106,21 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     // listés ici (qu'ils viennent du port ou de la textarea sites) passent par Firecrawl.
     const genericDomains = new Set((config.genericSites ?? '').split(/[\n,]/).map((d) => bare(d.trim())).filter(Boolean))
     // Un site marqué « moisson » ne passe PAS par la recherche dirigée (payante à la réf).
-    const sites: DirectedSite[] = sitesForRole(resolved.sites, 'directed')
+    const directedSites = sitesForRole(resolved.sites, 'directed')
+    const sites: DirectedSite[] = directedSites
       .map((s) => ({ siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)) }))
+    // ⚠ Le moteur choisi par site (Firecrawl, Bright Data, Jina) valait pour la MOISSON
+    // seulement : la recherche dirigée passait toujours par la cascade automatique, qui
+    // s'arrête à Jina dès qu'elle rend un HTML « utilisable ». Un site réglé sur Firecrawl
+    // ne le voyait donc jamais ici — et sur une grille lazy-load, Jina ne rend aucun prix.
+    const fetcherByHost = new Map<string, ReturnType<typeof buildSiteFetcher>>()
+    for (const s of directedSites) {
+      if (!s.engine && !s.auth) continue
+      fetcherByHost.set(bare(s.domain), buildSiteFetcher(s.engine, { auth: s.auth, host: normalizeDomain(s.domain) }))
+    }
+    if (fetcherByHost.size > 0) {
+      ctx.log('info', t('run.directed.enginesForced', { count: fetcherByHost.size }))
+    }
     if (sites.length === 0) { ctx.log('warn', t('run.noCompetitor')); return { results: resultsSheet([]) } }
 
     const refCol = config.refColumn.trim()
@@ -149,7 +163,9 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
     const fetchWithBreaker = async (url: string): Promise<string | null> => {
       const host = (url.match(/^https?:\/\/([^/]+)/i)?.[1] ?? url).toLowerCase()
       if (skipped.has(host)) return null
-      const html = await fetchSourceHtml(url)
+      // Moteur forcé du site s'il y en a un, cascade automatique sinon.
+      const forced = fetcherByHost.get(bare(host))
+      const html = forced ? await forced.fetchHtml(url).catch(() => null) : await fetchSourceHtml(url)
       if (html) {
         fails.set(host, 0)
       } else {

@@ -9,6 +9,7 @@
 // reportConnector/reportCount. Logique partagée via les modules purs dupliqués.
 import { registerServerNode } from '../registry'
 import { fetchHtml } from '../../scraper/fetchHtml'
+import { buildServerFetcher } from '../../priceWatch/catalog/serverFetcher'
 import { stableId } from '../../priceWatch/helpers'
 import { resolveSitesInput, sitesForRole } from '../../priceWatch/sourceSites'
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
@@ -62,9 +63,22 @@ registerServerNode({
     // Sites « génériques » (marketplaces non-PrestaShop) : recherche web + Firecrawl.
     const genericDomains = new Set(String(config.genericSites ?? '').split(/[\n,]/).map((d) => bare(d.trim())).filter(Boolean))
     // Un site marqué « moisson » ne passe PAS par la recherche dirigée (payante à la réf).
-    const sites: DirectedSite[] = sitesForRole(resolved.sites, 'directed').map((s) => ({
+    const directedSites = sitesForRole(resolved.sites, 'directed')
+    const sites: DirectedSite[] = directedSites.map((s) => ({
       siteId: stableId(s.domain), domain: s.domain, generic: genericDomains.has(bare(s.domain)),
     }))
+    // ⚠ Jumeau du client : le moteur choisi par site (Firecrawl, Bright Data, Jina) vaut
+    // AUSSI pour la recherche dirigée. Sans cela, un site réglé sur Firecrawl restait servi
+    // par la cascade automatique, qui s'arrête au premier HTML « utilisable » — sur une
+    // grille lazy-load, aucun prix n'en sort.
+    const fetcherByHost = new Map<string, ReturnType<typeof buildServerFetcher>>()
+    for (const s of directedSites) {
+      if (!s.engine && !s.auth) continue
+      fetcherByHost.set(bare(s.domain), buildServerFetcher(ctx.uid, s))
+    }
+    if (fetcherByHost.size > 0) {
+      ctx.log('info', t(ctx.locale, 'run.directed.enginesForced', { count: fetcherByHost.size }))
+    }
     if (sites.length === 0) { ctx.log('warn', t(ctx.locale, 'run.noCompetitor')); return { results: resultsSheet([]) } }
 
     // Fenêtre AVAL déjà atteinte (la moisson a consommé la part des nodes à curseur) :
@@ -169,7 +183,12 @@ registerServerNode({
     const startIdx = startCursor % Math.max(1, products.length)
 
     const pass = await directedPass(products, regularSites, startIdx, budget, {
-      fetchHtml: async (url) => { try { return await fetchHtml(url, 20000) } catch { return null } },
+      fetchHtml: async (url) => {
+        const host = (url.match(/^https?:\/\/([^/]+)/i)?.[1] ?? url).toLowerCase()
+        const forced = fetcherByHost.get(bare(host))
+        if (forced) { try { return await forced.fetchHtml(url) } catch { return null } }
+        try { return await fetchHtml(url, 20000) } catch { return null }
+      },
       ...(hasGeneric ? { searchWeb, extractProduct } : {}),
       signal: ctx.signal,
       log: (m) => ctx.log('info', m),

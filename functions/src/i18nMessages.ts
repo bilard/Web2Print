@@ -213,6 +213,10 @@ const MESSAGES = {
     fr: 'Budget réservé au comparatif — recherche dirigée repoussée au prochain tick.',
     en: 'Budget reserved for the comparison — directed search postponed to the next tick.',
   },
+  'run.directed.enginesForced': {
+    fr: '{count} site(s) avec moteur forcé (Firecrawl / Bright Data / Jina) : la recherche dirigée l’utilise aussi.',
+    en: '{count} site(s) with a forced engine (Firecrawl / Bright Data / Jina): directed search uses it too.',
+  },
   'run.directed.genericNoFirecrawlKey': {
     fr: 'Sites génériques sans clé Firecrawl — extraction via les replis Bright Data puis Jina.',
     en: 'Generic sites without a Firecrawl key — extraction through the Bright Data then Jina fallbacks.',
