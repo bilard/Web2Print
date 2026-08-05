@@ -49,7 +49,9 @@ export function buildRail(meta: Map<string, HarvestMeta>, stats: CompetitorStat[
         medGapPct: s?.medGapPct ?? s?.avgGapPct ?? null,
       }
     })
-    .sort((a, b) => b.collected - a.collected || a.domain.localeCompare(b.domain))
+    // Alphabétique : sur 24 sites, on cherche un concurrent qu'on a en tête, pas le
+    // plus gros. Le volume reste lisible sur chaque ligne.
+    .sort((a, b) => a.domain.localeCompare(b.domain, 'fr'))
 }
 
 function dotColor(item: SiteRailItem): string {

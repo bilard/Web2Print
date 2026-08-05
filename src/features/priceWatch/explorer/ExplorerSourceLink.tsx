@@ -2,14 +2,25 @@
 // et quelles colonnes y ont été reconnues. La détection est automatique mais doit rester
 // VÉRIFIABLE — une colonne devinée en silence, c'est la panne muette du module
 // « Comparer catalogue » qu'on ne veut pas reproduire ici.
-import { Link2, AlertTriangle, Loader2, Image } from 'lucide-react'
+import { Link2, AlertTriangle, Loader2, Image, ExternalLink } from 'lucide-react'
 import type { SourceExtrasIndex } from './sourceExtras'
 import { OPEN_DB, type SourceDbOption } from './useSourceSheet'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 
 const selCls = 'bg-well text-white/70 text-[11px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-white/25 max-w-[200px]'
 
-export function ExplorerSourceLink({ databases, dbId, onPickDb, loading, sheets, sheetIndex, onPickSheet, extras, imagePrefix, onImagePrefix }: {
+/** Ce que le catalogue source PERSISTÉ porte réellement — la seule source possible pour
+ *  un fichier F1 qui vient du workflow et non du PIM. */
+export interface SourceCatalogFacts {
+  products: number
+  withImage: number
+  withTaxo: number
+  withDescription: number
+  workflowId?: string
+}
+
+export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, sheets, sheetIndex, onPickSheet, extras, imagePrefix, onImagePrefix }: {
+  facts: SourceCatalogFacts
   databases: SourceDbOption[]
   dbId: string
   onPickDb: (id: string) => void
@@ -25,9 +36,32 @@ export function ExplorerSourceLink({ databases, dbId, onPickDb, loading, sheets,
   const ok = extras.size > 0
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
 
+  const rich = facts.withTaxo > 0 || facts.withImage > 0
   return (
     <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-white/40">
+      {/* Catalogue source du WORKFLOW : c'est de là que viennent taxonomie, visuels et
+          descriptions. La base PIM n'est qu'un repli, replié tant qu'il n'est pas utile. */}
       <Link2 className="w-3 h-3 shrink-0" />
+      <span className="text-white/50">{t('pwx.src.catalog', { count: n(facts.products) })}</span>
+      {rich ? (
+        <span className="text-white/30">
+          {t('pwx.src.filled', {
+            img: n(facts.withImage), taxo: n(facts.withTaxo), desc: n(facts.withDescription),
+          })}
+        </span>
+      ) : (
+        <span className="text-amber-400/80 flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3 shrink-0" />
+          {t('pwx.src.rerun')}
+          {facts.workflowId && (
+            <a href={`/workflows/${facts.workflowId}`} className="underline decoration-dotted hover:text-amber-200 inline-flex items-center gap-0.5">
+              {t('pwx.src.openWorkflow')}<ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+        </span>
+      )}
+
+      <span className="text-white/15">|</span>
       <span>{t('pwx.descriptionsEtVisuelsF1')}</span>
 
       <select value={dbId} onChange={(e) => onPickDb(e.target.value)} className={selCls} title={t('pwx.db.pick')}>

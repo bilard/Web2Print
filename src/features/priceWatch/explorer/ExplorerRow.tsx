@@ -13,10 +13,13 @@ import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 // ⚠ Clés de traduction, pas libellés : un t() en constante de module fige la langue à
 // l'import. La résolution se fait dans le rendu, via useTranslation.
-const KIND_BADGE: Record<string, { key: TranslationKey; cls: string }> = {
-  'exact-ean': { key: 'pwx.badge.ean', cls: 'text-emerald-300 border-emerald-400/30' },
-  'exact-ref': { key: 'pwx.badge.ref', cls: 'text-sky-300 border-sky-400/30' },
-  origin: { key: 'pwx.badge.origin', cls: 'text-amber-300 border-amber-400/30' },
+// Le badge dit COMMENT l'appariement a été prouvé — et donc quelle confiance lui
+// accorder. Son infobulle l'explique : sans elle, « RÉF » et « ORIGINE » se ressemblent
+// alors que le second est une correspondance indirecte.
+const KIND_BADGE: Record<string, { key: TranslationKey; help: TranslationKey; cls: string }> = {
+  'exact-ean': { key: 'pwx.badge.ean', help: 'pwx.badge.ean.help', cls: 'text-emerald-300 border-emerald-400/30' },
+  'exact-ref': { key: 'pwx.badge.ref', help: 'pwx.badge.ref.help', cls: 'text-sky-300 border-sky-400/30' },
+  origin: { key: 'pwx.badge.origin', help: 'pwx.badge.origin.help', cls: 'text-amber-300 border-amber-400/30' },
 }
 
 const STOCK_LABEL: Record<string, { key: TranslationKey; cls: string }> = {
@@ -63,11 +66,19 @@ export function ExplorerRow({ row }: { row: PairedRow }) {
           <>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap text-[10px] tabular-nums">
-                <span className="text-white/70 font-medium">{source.ref ?? '—'}</span>
-                <span className="text-white/20">·</span>
-                <span className="text-white/45">{source.ean ?? t('pwx.noEan')}</span>
+                {/* Préfixes explicites : deux suites de chiffres côte à côte ne se
+                    distinguent pas d'un coup d'œil, et on cherche l'une OU l'autre. */}
+                <span className="text-white/70 font-medium">
+                  <span className="text-white/30 font-normal mr-1">{t('pwx.badge.ref')}</span>
+                  {source.ref ?? '—'}
+                </span>
+                <span className="text-white/45">
+                  <span className="text-white/30 mr-1">{t('pwx.badge.ean')}</span>
+                  {source.ean ?? t('pwx.noEan')}
+                </span>
                 {kind && (
-                  <span className={`px-1 rounded border text-[9px] uppercase tracking-wide ${KIND_BADGE[kind].cls}`}>
+                  <span title={t(KIND_BADGE[kind].help)}
+                    className={`px-1 rounded border text-[9px] uppercase tracking-wide cursor-help ${KIND_BADGE[kind].cls}`}>
                     {t(KIND_BADGE[kind].key)}
                   </span>
                 )}

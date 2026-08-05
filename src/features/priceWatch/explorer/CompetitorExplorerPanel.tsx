@@ -57,7 +57,7 @@ export function CompetitorExplorerPanel({ onClose }: { onClose: () => void }) {
       {/* Pas de scroll ici : l'explorateur garde son en-tête fixe et ne fait défiler
           que sa liste. Un `overflow-auto` à ce niveau ferait glisser tout l'écran. */}
       <div className="flex-1 min-h-0">
-        <CompetitorExplorer watchId={watchId} />
+        <CompetitorExplorer watchId={watchId} workflowId={watches.find((w) => w.watchId === watchId)?.workflowId} />
       </div>
     </div>
   )

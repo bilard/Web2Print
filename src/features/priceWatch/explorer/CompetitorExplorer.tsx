@@ -32,7 +32,7 @@ import { useTranslation } from '@/lib/i18n'
 
 const iconBtn = 'bg-well text-white/55 text-xs rounded px-2.5 py-2 border border-white/10 hover:text-white hover:border-white/25 disabled:opacity-40 disabled:hover:text-white/55 disabled:hover:border-white/10 flex items-center gap-1.5 transition-colors shrink-0'
 
-export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
+export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | null; workflowId?: string }) {
   const { t } = useTranslation()
   const meta = useCompetitorMeta(watchId)
   // Rapport agrégé : il porte l'appariement et l'écart médian PAR SITE, calculés avant
@@ -85,6 +85,16 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
   )
   const stats = useMemo(() => computeStats(filtered), [filtered])
 
+  // Ce que le catalogue source porte vraiment : dit d'un coup d'œil s'il faut relancer
+  // « Comparer catalogue » pour obtenir taxonomie et visuels.
+  const facts = useMemo(() => ({
+    products: source.products.length,
+    withImage: source.products.filter((p) => p.image).length,
+    withTaxo: source.products.filter((p) => p.taxo?.length).length,
+    withDescription: source.products.filter((p) => p.description).length,
+    workflowId,
+  }), [source.products, workflowId])
+
   // Le nombre de pages rétrécit avec les filtres : rester sur la page 7 d'un résultat qui
   // n'en compte plus que 2 afficherait une liste vide sans rien expliquer.
   useEffect(() => { setPage(0) }, [active])
@@ -133,7 +143,7 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
         </div>
         <ExplorerTokens filter={effective} onChange={patch} tokenIndex={tokenIndex} />
         <div className="flex items-center gap-4 flex-wrap">
-          <ExplorerSourceLink databases={src.databases} dbId={src.dbId} onPickDb={src.setDbId}
+          <ExplorerSourceLink facts={facts} databases={src.databases} dbId={src.dbId} onPickDb={src.setDbId}
             loading={src.loading} sheets={src.sheets} sheetIndex={src.sheetIndex}
             onPickSheet={src.setSheetIndex} extras={extras}
             imagePrefix={src.imagePrefix} onImagePrefix={src.setImagePrefix} />
