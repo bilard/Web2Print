@@ -40,6 +40,10 @@ export interface PairedRow {
   cmp: PriceComparison
   source: SourceSide | null
   kind: PairKind | null
+  /** La preuve, telle quelle : QUELLE valeur a établi le lien, et par quel chemin.
+   *  L'écran s'en sert pour la surligner des deux côtés — un badge « EAN » sur une fiche
+   *  qui n'affiche aucun code-barres laisse chercher un chiffre qui est dans l'URL. */
+  proof: { evidence: string; keyValue: string; isEan: boolean } | null
   /** Indice de fiabilité de l'appariement. null quand la fiche est orpheline. */
   confidence: Confidence | null
 }
@@ -106,6 +110,9 @@ export function pairSiteListings(
       listing,
       cmp,
       kind: hit ? kindOf(hit.proof) : null,
+      proof: hit
+        ? { evidence: hit.proof.evidence, keyValue: hit.proof.key.value, isEan: hit.proof.key.kind === 'ean' }
+        : null,
       confidence: hit && p
         ? scorePair({
             evidence: hit.proof.evidence, key: hit.proof.key,

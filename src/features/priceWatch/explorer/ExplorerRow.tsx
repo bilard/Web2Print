@@ -8,6 +8,7 @@ import { useState, type ReactNode } from 'react'
 import { ImageOff, ChevronDown, Check, X, Image as ImageIcon } from 'lucide-react'
 import type { Verdict } from './verdictStore'
 import type { StoredVisual } from '../visual/visualStore'
+import { highlightKey, proofSpot } from './proofHighlight'
 import type { PairedRow } from './pairing'
 import type { ConfidenceBand, DoubtReason } from './confidence'
 import type { CompetitorListing } from '../catalog/prestashop'
@@ -123,6 +124,29 @@ function SearchKey({ value, images = false, children }: {
   )
 }
 
+/** Teinte de la preuve : la MÊME des deux côtés de la ligne, c'est ce qui fait lire le
+ *  lien d'un coup d'œil. Verte pour un code-barres, bleue pour une référence — les
+ *  couleurs que le badge de nature porte déjà. */
+const PROOF_TONE = {
+  ean: 'bg-emerald-400/20 text-emerald-200 rounded-[3px] px-0.5',
+  ref: 'bg-sky-400/20 text-sky-200 rounded-[3px] px-0.5',
+}
+
+/** Texte dont on colore le ou les mots portant la clé de l'appariement. */
+function Marked({ text, keyValue, isEan }: { text: string; keyValue: string; isEan: boolean }) {
+  const segments = highlightKey(text, keyValue, isEan)
+  if (!segments.some((s) => s.hit)) return <>{text}</>
+  return (
+    <>
+      {segments.map((s, i) => (
+        s.hit
+          ? <mark key={i} className={isEan ? PROOF_TONE.ean : PROOF_TONE.ref}>{s.text}</mark>
+          : <span key={i}>{s.text}</span>
+      ))}
+    </>
+  )
+}
+
 /** Boutons de jugement : le geste d'audit, sur la ligne même. Un second clic sur le
  *  bouton actif ANNULE le verdict — se tromper de touche ne doit pas être définitif. */
 function VerdictButtons({ verdict, onSet }: { verdict: Verdict | null; onSet: (v: Verdict) => void }) {
@@ -156,7 +180,10 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
-  const { listing, cmp, source, kind, confidence } = row
+  const { listing, cmp, source, kind, confidence, proof } = row
+  // Où la preuve se lit chez le concurrent, et laquelle de mes deux clés l'a portée.
+  const spot = proof ? proofSpot(proof.evidence) : null
+  const proofOn = proof ? (proof.isEan ? 'ean' : 'ref') : null
   const gap = cmp.deltaPct ?? null
   const promo = discountPct(listing)
   const stock = listing.availability ? STOCK_LABEL[listing.availability] : null
@@ -185,11 +212,19 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict
                     distinguent pas d'un coup d'œil, et on cherche l'une OU l'autre. */}
                 <span className="text-white/70 font-medium">
                   <span className="text-white/30 font-normal mr-1">{t('pwx.badge.ref')}</span>
-                  {source.ref ? <SearchKey value={source.ref}>{source.ref}</SearchKey> : '—'}
+                  {source.ref
+                    ? <SearchKey value={source.ref}>
+                        <span className={proofOn === 'ref' ? PROOF_TONE.ref : ''}>{source.ref}</span>
+                      </SearchKey>
+                    : '—'}
                 </span>
                 <span className="text-white/45">
                   <span className="text-white/30 mr-1">{t('pwx.badge.ean')}</span>
-                  {source.ean ? <SearchKey value={source.ean}>{source.ean}</SearchKey> : t('pwx.noEan')}
+                  {source.ean
+                    ? <SearchKey value={source.ean}>
+                        <span className={proofOn === 'ean' ? PROOF_TONE.ean : ''}>{source.ean}</span>
+                      </SearchKey>
+                    : t('pwx.noEan')}
                 </span>
                 {/* Recherche d'images sur la référence : la vérification la plus rapide
                     quand le visuel du catalogue est un logo générique. */}
@@ -272,13 +307,29 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict
         <div className="min-w-0 flex-1">
           <a href={listing.url} target="_blank" rel="noopener noreferrer" title={listing.url}
             className="block text-xs text-white/90 leading-snug break-words underline decoration-dotted decoration-white/30 underline-offset-[3px] hover:text-indigo-300 hover:decoration-solid">
-            {listing.name}
+            {proof ? <Marked text={listing.name} keyValue={proof.keyValue} isEan={proof.isEan} /> : listing.name}
           </a>
           {/* Pas de nom de domaine ici : l'onglet actif et l'en-tête de colonne le
               portent déjà. Répété sur chaque ligne, il masquait la référence. */}
           {(listing.ref || listing.gtin13) && (
             <div className="text-[10px] text-white/40 tabular-nums mt-0.5">
-              {[listing.ref, listing.gtin13].filter(Boolean).join(' · ')}
+              {listing.ref && (
+                <span className={spot === 'ref' ? PROOF_TONE.ref : ''}>
+                  {proof ? <Marked text={listing.ref} keyValue={proof.keyValue} isEan={proof.isEan} /> : listing.ref}
+                </span>
+              )}
+              {listing.ref && listing.gtin13 && ' · '}
+              {listing.gtin13 && (
+                <span className={spot === 'gtin' ? PROOF_TONE.ean : ''}>{listing.gtin13}</span>
+              )}
+            </div>
+          )}
+          {/* La preuve n'est visible NULLE PART sur la fiche : elle est dans l'adresse.
+              Le dire évite de chercher un chiffre absent de tout ce qui est affiché. */}
+          {spot === 'url' && proof && (
+            <div className="text-[10px] mt-0.5">
+              <span className={`${proof.isEan ? PROOF_TONE.ean : PROOF_TONE.ref} tabular-nums`}>{proof.keyValue}</span>
+              <span className="text-white/30 ml-1">{t('pwx.proof.inUrl')}</span>
             </div>
           )}
           <div className="flex items-baseline gap-2 flex-wrap mt-1 tabular-nums">
