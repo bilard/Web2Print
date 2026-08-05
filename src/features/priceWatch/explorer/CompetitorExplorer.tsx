@@ -259,7 +259,8 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
               <ExplorerRow key={r.key} row={r}
                 onPickBand={(b) => patch({ trust: b === 'sure' ? 'sure' : b === 'doubt' ? 'doubt' : 'suspect' })}
                 verdict={verdicts.of(r.listing.url)}
-                onVerdict={(v) => verdicts.set(r.listing.url, v)} />
+                onVerdict={(v) => verdicts.set(r.listing.url, v)}
+                onPickVerdict={(v) => patch({ audit: v })} />
             ))
           )}
         </div>

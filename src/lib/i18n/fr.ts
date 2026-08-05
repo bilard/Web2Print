@@ -5465,6 +5465,8 @@ export const fr = {
   'pwx.trust.sure': 'Sûr',
   'pwx.trust.spread': 'Sur ce site : {sure} sûrs · {check} à vérifier · {doubt} douteux.',
   'pwx.verdict.ok.help': 'Valider : c’est bien le même produit',
+  'pwx.verdict.ok': 'Validé',
+  'pwx.verdict.ko': 'Rejeté',
   'pwx.verdict.ko.help': 'Rejeter : rapprochement faux',
   'pwx.verdict.filterAll': 'Tout l’audit',
   'pwx.verdict.filterPending': 'Reste à statuer',

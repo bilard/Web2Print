@@ -5272,6 +5272,8 @@ export const es: Record<TranslationKey, string> = {
   'pwx.trust.sure': 'Seguro',
   'pwx.trust.spread': 'En este sitio: {sure} seguros · {check} por verificar · {doubt} dudosos.',
   'pwx.verdict.ok.help': 'Validar: es el mismo producto',
+  'pwx.verdict.ok': 'Validado',
+  'pwx.verdict.ko': 'Rechazado',
   'pwx.verdict.ko.help': 'Rechazar: emparejamiento falso',
   'pwx.verdict.filterAll': 'Toda la auditoría',
   'pwx.verdict.filterPending': 'Pendiente de juzgar',

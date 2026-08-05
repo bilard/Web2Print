@@ -32,6 +32,12 @@ const BAND: Record<ConfidenceBand, { key: TranslationKey; cls: string; edge: str
   doubt: { key: 'pwx.trust.doubt', cls: 'text-rose-300 border-rose-400/50 bg-rose-500/10', edge: 'border-l-2 border-l-rose-400/70 bg-rose-500/[0.04]' },
 }
 
+/** Le jugement humain, une fois posé, remplace l'indice sur le badge. */
+const VERDICT_BADGE: Record<Verdict, { key: TranslationKey; cls: string }> = {
+  ok: { key: 'pwx.verdict.ok', cls: 'text-emerald-300 border-emerald-400/40 bg-emerald-500/10' },
+  ko: { key: 'pwx.verdict.ko', cls: 'text-white/40 border-white/20 line-through' },
+}
+
 const DOUBT_LABEL: Record<DoubtReason, TranslationKey> = {
   'ean-conflict': 'pwx.doubt.eanConflict',
   'ref-conflict': 'pwx.doubt.refConflict',
@@ -107,12 +113,14 @@ function VerdictButtons({ verdict, onSet }: { verdict: Verdict | null; onSet: (v
   )
 }
 
-export function ExplorerRow({ row, onPickBand, verdict, onVerdict }: {
+export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict }: {
   row: PairedRow
   /** Filtre la liste sur la bande cliquée. */
   onPickBand?: (band: ConfidenceBand) => void
   verdict?: Verdict | null
   onVerdict?: (v: Verdict) => void
+  /** Filtre la liste sur le verdict cliqué (badge d'une ligne déjà jugée). */
+  onPickVerdict?: (v: Verdict) => void
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -120,7 +128,6 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict }: {
   const gap = cmp.deltaPct ?? null
   const promo = discountPct(listing)
   const stock = listing.availability ? STOCK_LABEL[listing.availability] : null
-  const band = confidence ? BAND[confidence.band] : null
   // L'infobulle NOMME ce qui cloche : c'est là toute la valeur d'audit de l'indice. Sans
   // elle, « 43 » n'apprend rien et l'utilisateur doit rouvrir les deux fiches.
   const why = confidence
@@ -132,7 +139,7 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict }: {
   // des lignes déjà traitées et l'écran ne montrerait plus ce qui reste à faire.
   const edge = verdict === 'ok' ? 'border-l-2 border-l-emerald-400/50'
     : verdict === 'ko' ? 'border-l-2 border-l-white/15 opacity-45'
-    : (band?.edge ?? '')
+    : (confidence ? BAND[confidence.band].edge : '')
 
   return (
     <div className={`grid grid-cols-2 gap-0 border-t border-white/5 hover:bg-white/[0.02] ${edge}`}>
@@ -158,15 +165,23 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict }: {
                     {t(KIND_BADGE[kind].key)}
                   </span>
                 )}
-                {band && confidence && (
+                {confidence && (
                   // Cliquable : le badge est l'endroit où le regard tombe déjà quand un
-                  // appariement intrigue. Il isole d'un coup toutes les lignes de sa bande,
+                  // appariement intrigue. Il isole d'un coup toutes les lignes de son état,
                   // sans avoir à retrouver le filtre dans la barre du haut.
-                  <button type="button" onClick={() => onPickBand?.(confidence.band)}
+                  //
+                  // Une fois la ligne JUGÉE, il porte le verdict et non plus l'indice :
+                  // laisser « à vérifier » sur un appariement qu'on vient de valider donne
+                  // deux réponses contradictoires sur la même ligne. Le détail de l'indice
+                  // reste dans l'infobulle.
+                  <button type="button"
+                    onClick={() => (verdict ? onPickVerdict?.(verdict) : onPickBand?.(confidence.band))}
                     title={`${why}\n\n${t('pwx.trust.clickToFilter')}`}
-                    className={`px-1 rounded border text-[9px] uppercase tracking-wide hover:brightness-125 transition ${band.cls}`}>
-                    {t(band.key)}
-                    <span className="ml-1 opacity-60 tabular-nums">{confidence.score}</span>
+                    className={`px-1 rounded border text-[9px] uppercase tracking-wide hover:brightness-125 transition ${
+                      verdict ? VERDICT_BADGE[verdict].cls : BAND[confidence.band].cls
+                    }`}>
+                    {verdict ? t(VERDICT_BADGE[verdict].key) : t(BAND[confidence.band].key)}
+                    {!verdict && <span className="ml-1 opacity-60 tabular-nums">{confidence.score}</span>}
                   </button>
                 )}
               </div>

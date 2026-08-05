@@ -5273,6 +5273,8 @@ export const en: Record<TranslationKey, string> = {
   'pwx.trust.sure': 'Sure',
   'pwx.trust.spread': 'On this site: {sure} sure · {check} to check · {doubt} doubtful.',
   'pwx.verdict.ok.help': 'Confirm: same product',
+  'pwx.verdict.ok': 'Confirmed',
+  'pwx.verdict.ko': 'Rejected',
   'pwx.verdict.ko.help': 'Reject: wrong pairing',
   'pwx.verdict.filterAll': 'Whole audit',
   'pwx.verdict.filterPending': 'Still to judge',
