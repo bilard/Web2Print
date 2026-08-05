@@ -32,6 +32,8 @@ export interface SiteRowStats {
   /** Mise en attente par le mode cycle (balayage terminé, on patiente les retardataires). */
   cycleWaitingAt?: number
   /** Résultat de la dernière passe de moisson (verdict). */
+  /** Durée de la DERNIÈRE passe (ms) — avec `lastPassPages`, donne le débit réel. */
+  lastHarvestMs?: number
   lastPassPages?: number
   lastPassProducts?: number
   lastPassAt?: number
@@ -296,6 +298,18 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
                 'Nombre de fois que le catalogue de ce site a été parcouru de bout en bout. Chaque tour rafraîchit les prix déjà relevés.')
             : stats.harvestProgress != null && chip('balayage', `${Math.round(stats.harvestProgress * 100)}%`, 'mute',
                 'Avancement du parcours EN COURS de son catalogue : part des catégories déjà visitées. Atteint 100 %, il repart pour un tour.')}
+          {/* DÉBIT de la dernière passe : c'est LE chiffre qui départage les moteurs.
+              Firecrawl rend le JS et défile la page (10-30 s), Jina lit en quelques
+              secondes — sur un site qui rend déjà ses prix sans JS, forcer Firecrawl
+              divise le débit sans rien apporter. Mesuré, plus supposé. */}
+          {(() => {
+            const ms = stats.lastHarvestMs
+            const pages = stats.lastPassPages
+            if (!ms || ms < 1000 || !pages) return null
+            const perMin = Math.round((pages / (ms / 60_000)) * 10) / 10
+            return chip('débit', `${perMin.toLocaleString('fr-FR')} p/min`, perMin >= 6 ? 'ok' : 'warn',
+              `Pages lues par minute à la dernière passe (${pages} page(s) en ${Math.round(ms / 1000)} s). Comparez ce chiffre d’un moteur à l’autre : Firecrawl rend le JavaScript et défile la page (lent, payant), Jina lit en quelques secondes. Sur un site dont les prix sont déjà lisibles sans JavaScript — « prix » proche de 100 % — forcer Firecrawl divise le débit sans rien apporter.`)
+          })()}
           {stats.lastEngine && chip('via', ENGINE_LABELS[stats.lastEngine] ?? stats.lastEngine, 'mute',
             'Outil qui a réellement fourni le HTML à la dernière passe. « Auto » escalade Cloud Function → Jina → Firecrawl → Bright Data ; un moteur choisi dans la liste ci-dessus est imposé.')}
           {chip('scrape', agoShort(stats.harvestBeatAt ?? stats.updatedAt, now), 'mute',

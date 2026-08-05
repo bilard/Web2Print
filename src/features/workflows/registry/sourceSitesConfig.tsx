@@ -142,6 +142,7 @@ export function SourceSitesConfig({ config, onChange }: {
       cycleWaitingAt: meta?.cycleWaitingAt,
       harvestProgress: meta?.harvestProgress,
       harvestSweeps: meta?.harvestSweeps,
+      lastHarvestMs: meta?.lastHarvestMs,
       lastPassPages: meta?.lastPassPages,
       lastPassProducts: meta?.lastPassProducts,
       lastPassAt: meta?.lastPassAt,
