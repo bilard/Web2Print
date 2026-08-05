@@ -87,11 +87,20 @@ export function resolveCompareColumns(
   columns: ColumnLike[],
   configured: Partial<Record<CompareField, string>>,
 ): ResolvedColumns {
-  const known = new Set(columns.map((c) => c.key))
+  // Le nom saisi peut désigner la CLÉ ou le LIBELLÉ de la colonne : le sélecteur du node
+  // montre le libellé (« PV Brut F1 au 03072026 »), alors que la feuille indexe ses
+  // cellules par clé. Ne chercher que la clé rendait ces colonnes introuvables — et un
+  // prix source manquant vide TOUTES les comparaisons sans le moindre message.
+  const byKey = new Map<string, string>()
+  for (const c of columns) {
+    byKey.set(c.key, c.key)
+    if (c.label && !byKey.has(c.label)) byKey.set(c.label, c.key)
+  }
   const out: ResolvedColumns = { columns: {}, guessed: [], missing: [] }
   for (const field of Object.keys(ALIASES) as CompareField[]) {
     const asked = (configured[field] ?? '').trim()
-    if (asked && known.has(asked)) { out.columns[field] = asked; continue }
+    const resolved = asked ? byKey.get(asked) : undefined
+    if (resolved) { out.columns[field] = resolved; continue }
     const found = guess(columns, ALIASES[field])
     if (found) {
       out.columns[field] = found

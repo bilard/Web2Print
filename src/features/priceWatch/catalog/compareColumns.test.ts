@@ -80,3 +80,24 @@ describe('foldHeader', () => {
     expect(foldHeader('Réf. Article')).toBe('refarticle')
   })
 })
+
+describe('nom configuré = clé OU libellé', () => {
+  it('résout une colonne désignée par son LIBELLÉ', () => {
+    // Cas réel : le node affichait « PV Brut F1 au 03072026 » (libellé), la feuille
+    // indexe ses cellules par clé. Le prix source n'était jamais lu → « Mon prix HT — »
+    // partout et 0 comparaison sur 16 477 produits appariés.
+    const cols = [
+      { key: 'COL_12', label: 'PV Brut F1 au 03072026' },
+      { key: 'CODE_ARTICLE', label: 'Référence article' },
+    ]
+    const r = resolveCompareColumns(cols, { price: 'PV Brut F1 au 03072026', ref: 'CODE_ARTICLE' })
+    expect(r.columns.price).toBe('COL_12')
+    expect(r.columns.ref).toBe('CODE_ARTICLE')
+    expect(r.missing).not.toContain('price')
+  })
+
+  it('la CLÉ reste prioritaire quand les deux existent', () => {
+    const cols = [{ key: 'A', label: 'B' }, { key: 'B', label: 'C' }]
+    expect(resolveCompareColumns(cols, { price: 'B' }).columns.price).toBe('B')
+  })
+})

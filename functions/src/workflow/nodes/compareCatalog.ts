@@ -72,14 +72,26 @@ registerServerNode({
     if (sites.length === 0) { ctx.log('warn', t(ctx.locale, 'run.noCompetitor')); return { matrix: toSheet([], []) } }
     if (rawRows.length === 0) { ctx.log('warn', t(ctx.locale, 'run.emptySheet')); return { matrix: toSheet([], []) } }
 
-    const refColumn = config.refColumn as string | undefined
-    const ref2Column = config.ref2Column as string | undefined
-    const eanColumn = config.eanColumn as string | undefined
-    const nameColumn = config.nameColumn as string | undefined
-    const familyColumn = config.familyColumn as string | undefined
-    const priceColumn = config.priceColumn as string | undefined
-    const descriptionColumn = config.descriptionColumn as string | undefined
-    const urlColumn = config.urlColumn as string | undefined
+    // ⚠ Le nom saisi dans le node peut être la CLÉ ou le LIBELLÉ de la colonne (le
+    // sélecteur montre le libellé, la feuille indexe par clé). Sans cette résolution, un
+    // prix source désigné par son libellé n'était jamais lu — et un prix source manquant
+    // vide TOUTES les comparaisons, sans le moindre message. Jumeau du client
+    // (`resolveCompareColumns`).
+    const keyOf = (name: unknown): string | undefined => {
+      const asked = String(name ?? '').trim()
+      if (!asked) return undefined
+      const cols = products.columns ?? []
+      if (cols.some((c) => c.key === asked)) return asked
+      return cols.find((c) => c.label === asked)?.key
+    }
+    const refColumn = keyOf(config.refColumn)
+    const ref2Column = keyOf(config.ref2Column)
+    const eanColumn = keyOf(config.eanColumn)
+    const nameColumn = keyOf(config.nameColumn)
+    const familyColumn = keyOf(config.familyColumn)
+    const priceColumn = keyOf(config.priceColumn)
+    const descriptionColumn = keyOf(config.descriptionColumn)
+    const urlColumn = keyOf(config.urlColumn)
 
     // Colonnes d'AFFICHAGE — jumeau strict du client : sans elles, un catalogue écrit
     // par le cron perdrait taxonomie et visuels, et l'écran « Concurrents » resterait
