@@ -70,7 +70,10 @@ export function useLiveReportRefresh(watchId: string | null, report: StoredRepor
         const siteRefs = r.byCompetitor.map((c) => ({ siteId: c.siteId, domain: c.domain }))
         await recomputeReport(uid, watchId, siteRefs)
       } catch (e) {
-        console.warn('[veille] recalcul live du rapport échoué :', e instanceof Error ? e.message : e)
+        // Refus de garde-fou (catalogue amputé, régression d'appariement) : c'est le
+        // comportement VOULU, pas une panne. On le trace sans alarmer l'écran — le
+        // rapport en place, lui, est préservé.
+        console.warn('[veille] recalcul live du rapport non appliqué :', e instanceof Error ? e.message : e)
       } finally {
         busy.current = false
       }

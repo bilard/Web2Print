@@ -6,7 +6,7 @@
 import { buildReport } from './report'
 import type { SiteRef } from './matrix'
 import { loadAllListings, saveCompetitorMeta } from './store'
-import { loadSourceCatalog, saveCatalogReport } from '../reportStore'
+import { loadSourceCatalog, saveCatalogReport, loadCatalogReportKpis } from '../reportStore'
 import type { CompetitorListing } from './prestashop'
 
 export interface RecomputeResult {
@@ -21,6 +21,28 @@ export class PartialSourceCatalogError extends Error {
     this.name = 'PartialSourceCatalogError'
   }
 }
+
+/** Levée quand le recalcul apparierait BEAUCOUP moins que le rapport en place. */
+export class ReportRegressionError extends Error {
+  constructor(readonly next: number, readonly previous: number) {
+    super(`Recalcul refusé : ${next} appariés contre ${previous} au rapport en place`)
+    this.name = 'ReportRegressionError'
+  }
+}
+
+/**
+ * Un recalcul ne doit JAMAIS remplacer un rapport riche par un rapport dérisoire.
+ *
+ * Le cas vécu : un run lancé sur une feuille de test a réécrit le catalogue source avec
+ * 100 produits ; le rafraîchissement live a recalculé dans la foulée et 20 980 appariés
+ * sont devenus 72, sans un message. Le node « Comparer catalogue », lui, reste souverain
+ * — c'est un geste explicite de l'utilisateur, il écrit toujours.
+ *
+ * Seuil : on tolère une baisse jusqu'à la moitié (un catalogue peut légitimement maigrir,
+ * des sites peuvent être désactivés) ; en dessous, on garde et on alerte.
+ */
+const REGRESSION_FLOOR = 0.5
+const REGRESSION_MIN_PREVIOUS = 50
 
 /**
  * Reconstruit et persiste le rapport pour l'ensemble des `siteRefs` fournis, à partir du
@@ -41,6 +63,14 @@ export async function recomputeReport(
   for (const s of siteRefs) indexBySite.set(s.siteId, await loadAllListings(uid, watchId, s.siteId))
 
   const report = buildReport(src.products, siteRefs, indexBySite, { vatRate: src.vatRate })
+
+  // ⚠ FAIL-CLOSED n°2 : garde-fou de non-régression (cf. ReportRegressionError).
+  const previous = await loadCatalogReportKpis(uid, watchId)
+  if (previous != null
+    && previous >= REGRESSION_MIN_PREVIOUS
+    && report.kpis.products < previous * REGRESSION_FLOOR) {
+    throw new ReportRegressionError(report.kpis.products, previous)
+  }
   // `trend: false` — ce recalcul est PARTIEL par nature : il tombe au milieu d'une
   // moisson (index concurrent encore incomplet) ou juste après le ▶ d'un seul site.
   // Il rafraîchit le dashboard, mais ne doit PAS marquer l'historique : la courbe

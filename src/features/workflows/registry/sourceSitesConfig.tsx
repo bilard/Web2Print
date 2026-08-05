@@ -11,7 +11,7 @@ import { useCompetitorMeta, useCatalogReport } from '@/features/priceWatch/useCa
 import { stableId } from '@/features/priceWatch/core'
 import { harvestOneSite } from '@/features/priceWatch/catalog/runSingleSite'
 import { resetCompetitorData } from '@/features/priceWatch/catalog/store'
-import { recomputeReport, PartialSourceCatalogError } from '@/features/priceWatch/catalog/recomputeReport'
+import { recomputeReport, PartialSourceCatalogError, ReportRegressionError } from '@/features/priceWatch/catalog/recomputeReport'
 import {
   normalizeDomain, deriveWatchId, importSitesIntoRows, siteStatus, siteStatusRank, HARVEST_LIVE_WINDOW_MS,
   rowsToCompetitorSites, type SourceSiteRow, type SiteStatus,
@@ -99,6 +99,8 @@ export function SourceSitesConfig({ config, onChange }: {
       // moisson, elle, est déjà enregistrée — le message doit le dire.
       if (e instanceof PartialSourceCatalogError) {
         toast.error(t('tst.ss.partialSourceCatalog', { read: e.read, expected: e.expected }))
+      } else if (e instanceof ReportRegressionError) {
+        toast.error(t('tst.ss.reportRegression', { next: e.next, previous: e.previous }))
       } else {
         toast.error(t('tst.ss.benchmarkFailed', { message: e instanceof Error ? e.message : String(e) }))
       }

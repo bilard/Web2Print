@@ -5478,6 +5478,7 @@ export const fr = {
   'pwx.fallback.help': 'Base PIM utilisée à la place du catalogue du workflow pour les descriptions, visuels et taxonomie. Inutile tant que le catalogue source les porte.',
   'pwx.src.catalogRows': 'Catalogue source du workflow : {count} produits retenus sur {rows} lignes lues',
   'tst.ss.benchmarkFailed': 'Moisson enregistrée, mais le recalcul du benchmark a échoué : {message}',
+  'tst.ss.reportRegression': 'Recalcul REFUSÉ : {next} produits appariés contre {previous} au rapport en place. Le rapport actuel est conservé — le catalogue source est probablement incomplet (feuille de test ?). Relancez « Comparer catalogue » sur le catalogue entier.',
   'pwx.competitors': 'Concurrents',
   'pwx.tabCollected': '{count} fiches collectées',
   'pwx.reload': 'Recharger',

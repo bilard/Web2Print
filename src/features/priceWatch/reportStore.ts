@@ -43,6 +43,15 @@ function sliceByBytes<T>(products: T[]): T[][] {
   return out
 }
 
+/** Nombre de produits appariés du rapport en place. null s'il n'y en a pas encore.
+ *  Lecture MINIMALE (un doc) : sert de garde-fou de non-régression au recalcul. */
+export async function loadCatalogReportKpis(uid: string, watchId: string): Promise<number | null> {
+  const snap = await getDoc(doc(db, reportLatestDoc(uid, watchId)))
+  if (!snap.exists()) return null
+  const kpis = (snap.data() as StoredReport | undefined)?.kpis
+  return typeof kpis?.products === 'number' ? kpis.products : null
+}
+
 /** Exposés pour le test de découpe : la règle est trop coûteuse à vérifier en écrivant. */
 export const SOURCE_CHUNK_BYTES_FOR_TEST = SOURCE_CHUNK_BYTES
 export const sliceSourceCatalogForTest = sliceByBytes
