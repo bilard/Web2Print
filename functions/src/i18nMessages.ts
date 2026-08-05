@@ -213,6 +213,14 @@ const MESSAGES = {
     fr: 'Budget réservé au comparatif — recherche dirigée repoussée au prochain tick.',
     en: 'Budget reserved for the comparison — directed search postponed to the next tick.',
   },
+  'run.directed.originColumnMissing': {
+    fr: "Colonne « Description (réf. d’origine) » NON RENSEIGNÉE dans ce node : aucune référence d’origine ne peut être extraite, et sur des pièces adaptables ce sont les SEULES clés qu’un concurrent puisse porter. Renseignez-la (colonne du texte commercial), puis remettez le curseur à zéro.",
+    en: "The “Description (original reference)” column is NOT SET on this node: no original reference can be extracted, and on adaptable parts those are the ONLY keys a competitor can carry. Set it (the sales text column), then reset the cursor.",
+  },
+  'run.directed.originColumnNoMatch': {
+    fr: "Colonne « {col} » lue, mais aucune référence d’origine n’y est reconnue. Le motif attendu est « Remplace origine : A, B » (ou « Origine : … »). Vérifiez que cette colonne porte bien le texte commercial et que les origines y sont citées ainsi.",
+    en: "Column “{col}” was read, but no original reference is recognised in it. The expected pattern is “Remplace origine: A, B” (or “Origine: …”). Check that this column holds the sales text and that origins are quoted that way.",
+  },
   'run.directed.noPriceDiag': {
     fr: 'Diagnostic : {processed} produit(s) interrogés sur {products} exploitables · {keyless} ligne(s) sans aucune clé · {withOrigin} avec réf. d’origine · {sites} site(s), dont {skipped} coupé(s) par le disjoncteur.',
     en: 'Diagnosis: {processed} product(s) queried out of {products} usable · {keyless} row(s) with no key at all · {withOrigin} with an original reference · {sites} site(s), {skipped} of which cut off by the breaker.',

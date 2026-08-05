@@ -271,6 +271,11 @@ registerServerNode({
         processed: pass.processed, products: products.length, keyless,
         withOrigin, sites: sites.length, skipped: 0,
       }))
+      if (withOrigin === 0) {
+        ctx.log('warn', descCol
+          ? t(ctx.locale, 'run.directed.originColumnNoMatch', { col: descCol })
+          : t(ctx.locale, 'run.directed.originColumnMissing'))
+      }
       ctx.log('warn', t(ctx.locale, 'run.directed.noPriceFound'))
     }
     if (hasGeneric) {

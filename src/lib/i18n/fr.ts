@@ -5481,6 +5481,8 @@ export const fr = {
   'tst.ss.reportRegression': 'Recalcul REFUSÉ : {next} produits appariés contre {previous} au rapport en place. Le rapport actuel est conservé — le catalogue source est probablement incomplet (feuille de test ?). Relancez « Comparer catalogue » sur le catalogue entier.',
   'run.directed.noPriceDiag': 'Diagnostic : {processed} produit(s) interrogés sur {products} exploitables · {keyless} ligne(s) sans aucune clé · {withOrigin} avec réf. d’origine · {sites} site(s), dont {skipped} coupé(s) par le disjoncteur.',
   'run.directed.enginesForced': '{count} site(s) avec moteur forcé (Firecrawl / Bright Data / Jina) : la recherche dirigée l’utilise aussi.',
+  'run.directed.originColumnMissing': "Colonne « Description (réf. d’origine) » NON RENSEIGNÉE dans ce node : aucune référence d’origine ne peut être extraite, et sur des pièces adaptables ce sont les SEULES clés qu’un concurrent puisse porter. Renseignez-la (colonne du texte commercial), puis remettez le curseur à zéro.",
+  'run.directed.originColumnNoMatch': "Colonne « {col} » lue, mais aucune référence d’origine n’y est reconnue. Le motif attendu est « Remplace origine : A, B » (ou « Origine : … »). Vérifiez que cette colonne porte bien le texte commercial et que les origines y sont citées ainsi.",
   'pwx.competitors': 'Concurrents',
   'pwx.tabCollected': '{count} fiches collectées',
   'pwx.reload': 'Recharger',

@@ -243,6 +243,14 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
         processed: pass.processed, products: products.length, keyless,
         withOrigin, sites: sites.length, skipped: skipped.size,
       }))
+      // « 0 avec réf. d'origine » a DEUX causes opposées, et l'action diffère : colonne
+      // jamais renseignée (à mapper), ou colonne lue mais dont les textes ne citent
+      // aucune origine (le motif attendu est « Remplace origine : A, B »).
+      if (withOrigin === 0) {
+        ctx.log('warn', descCol
+          ? t('run.directed.originColumnNoMatch', { col: descCol })
+          : t('run.directed.originColumnMissing'))
+      }
       ctx.log('warn', t('run.directed.noPriceFound'))
     }
     return { results: resultsSheet(rows) }

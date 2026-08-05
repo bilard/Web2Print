@@ -5289,6 +5289,8 @@ export const en: Record<TranslationKey, string> = {
   'tst.ss.reportRegression': 'Recalculation REFUSED: {next} matched products against {previous} in the current report. The current report is kept — the source catalogue is probably incomplete (a test sheet?). Run “Compare catalogue” again on the full catalogue.',
   'run.directed.noPriceDiag': 'Diagnosis: {processed} product(s) queried out of {products} usable · {keyless} row(s) with no key at all · {withOrigin} with an original reference · {sites} site(s), {skipped} of which cut off by the breaker.',
   'run.directed.enginesForced': '{count} site(s) with a forced engine (Firecrawl / Bright Data / Jina): directed search uses it too.',
+  'run.directed.originColumnMissing': "The “Description (original reference)” column is NOT SET on this node: no original reference can be extracted, and on adaptable parts those are the ONLY keys a competitor can carry. Set it (the sales text column), then reset the cursor.",
+  'run.directed.originColumnNoMatch': "Column “{col}” was read, but no original reference is recognised in it. The expected pattern is “Remplace origine: A, B” (or “Origine: …”). Check that this column holds the sales text and that origins are quoted that way.",
   'pwx.competitors': 'Competitors',
   'pwx.tabCollected': '{count} records collected',
   'pwx.reload': 'Reload',

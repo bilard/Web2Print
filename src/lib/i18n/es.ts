@@ -5288,6 +5288,8 @@ export const es: Record<TranslationKey, string> = {
   'tst.ss.reportRegression': 'Recálculo RECHAZADO: {next} productos emparejados frente a {previous} en el informe actual. Se conserva el informe actual: el catálogo de origen probablemente esté incompleto (¿hoja de prueba?). Vuelva a ejecutar «Comparar catálogo» sobre el catálogo completo.',
   'run.directed.noPriceDiag': 'Diagnóstico: {processed} producto(s) consultados de {products} utilizables · {keyless} fila(s) sin ninguna clave · {withOrigin} con referencia de origen · {sites} sitio(s), de los cuales {skipped} cortados por el disyuntor.',
   'run.directed.enginesForced': '{count} sitio(s) con motor forzado (Firecrawl / Bright Data / Jina): la búsqueda dirigida también lo usa.',
+  'run.directed.originColumnMissing': "La columna «Descripción (ref. de origen)» NO ESTÁ CONFIGURADA en este nodo: no se puede extraer ninguna referencia de origen y, en piezas adaptables, son las ÚNICAS claves que un competidor puede llevar. Configúrela (columna del texto comercial) y reinicie el cursor.",
+  'run.directed.originColumnNoMatch': "Se leyó la columna «{col}», pero no se reconoce ninguna referencia de origen. El patrón esperado es «Remplace origine: A, B» (u «Origine: …»). Compruebe que esa columna contiene el texto comercial y que las referencias de origen se citan así.",
   'pwx.competitors': 'Competidores',
   'pwx.tabCollected': '{count} fichas recopiladas',
   'pwx.reload': 'Recargar',
