@@ -4,8 +4,8 @@
 // celle du concurrent juste après — les deux visuels sont donc ADJACENTS. C'est la
 // finalité de l'écran (« est-ce bien le même produit ? ») ; les mettre chacun au bord
 // extérieur de sa colonne obligerait à balayer la ligne des yeux pour comparer.
-import { useState } from 'react'
-import { ImageOff, ChevronDown, Check, X } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import { ImageOff, ChevronDown, Check, X, Image as ImageIcon } from 'lucide-react'
 import type { Verdict } from './verdictStore'
 import type { PairedRow } from './pairing'
 import type { ConfidenceBand, DoubtReason } from './confidence'
@@ -93,6 +93,26 @@ function gapTone(gap: number | null): string {
   return 'text-white/60'
 }
 
+/**
+ * Recherche externe d'une clé produit. Le seul recours quand le catalogue source ne suffit
+ * pas à trancher : chez un grossiste, le libellé est souvent un code de gestion
+ * (« SUB= 1 WAY ») et le visuel un logo générique, alors que la référence constructeur,
+ * elle, est reconnue partout ailleurs sur le web.
+ */
+function SearchKey({ value, images = false, children }: {
+  value: string; images?: boolean; children: ReactNode
+}) {
+  const { t } = useTranslation()
+  const url = `https://www.google.com/search?${images ? 'tbm=isch&' : ''}q=${encodeURIComponent(value)}`
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      title={t(images ? 'pwx.search.images' : 'pwx.search.web', { value })}
+      className="hover:text-indigo-300 hover:underline decoration-dotted underline-offset-[3px] transition-colors">
+      {children}
+    </a>
+  )
+}
+
 /** Boutons de jugement : le geste d'audit, sur la ligne même. Un second clic sur le
  *  bouton actif ANNULE le verdict — se tromper de touche ne doit pas être définitif. */
 function VerdictButtons({ verdict, onSet }: { verdict: Verdict | null; onSet: (v: Verdict) => void }) {
@@ -153,12 +173,21 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict
                     distinguent pas d'un coup d'œil, et on cherche l'une OU l'autre. */}
                 <span className="text-white/70 font-medium">
                   <span className="text-white/30 font-normal mr-1">{t('pwx.badge.ref')}</span>
-                  {source.ref ?? '—'}
+                  {source.ref ? <SearchKey value={source.ref}>{source.ref}</SearchKey> : '—'}
                 </span>
                 <span className="text-white/45">
                   <span className="text-white/30 mr-1">{t('pwx.badge.ean')}</span>
-                  {source.ean ?? t('pwx.noEan')}
+                  {source.ean ? <SearchKey value={source.ean}>{source.ean}</SearchKey> : t('pwx.noEan')}
                 </span>
+                {/* Recherche d'images sur la référence : la vérification la plus rapide
+                    quand le visuel du catalogue est un logo générique. */}
+                {(source.ref || source.ean) && (
+                  <SearchKey value={(source.ref || source.ean) as string} images>
+                    <span className="text-white/25 hover:text-indigo-300 inline-flex items-center">
+                      <ImageIcon className="w-3 h-3" />
+                    </span>
+                  </SearchKey>
+                )}
                 {kind && (
                   <span title={t(KIND_BADGE[kind].help)}
                     className={`px-1 rounded border text-[9px] uppercase tracking-wide cursor-help ${KIND_BADGE[kind].cls}`}>

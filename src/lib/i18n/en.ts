@@ -5271,6 +5271,8 @@ export const en: Record<TranslationKey, string> = {
   'pwx.productUrl.help': 'Makes MY product title clickable. Accepted tokens: {ref}, {ean}, {id}. A URL with no token is treated as a prefix — the reference is appended.',
   'pwx.srcSettings.title': 'F1 join settings',
   'pwx.trust.sure': 'Sure',
+  'pwx.search.web': 'Search the web for “{value}” — check which part this is',
+  'pwx.search.images': 'Search images of “{value}” — compare visually',
   'pwx.trust.spread': 'On this site: {sure} sure · {check} to check · {doubt} doubtful.',
   'pwx.verdict.ok.help': 'Confirm: same product',
   'pwx.verdict.ok': 'Confirmed',
