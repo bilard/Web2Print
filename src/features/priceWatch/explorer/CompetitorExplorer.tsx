@@ -131,7 +131,8 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
         <div className="flex items-center gap-4 flex-wrap">
           <ExplorerSourceLink databases={src.databases} dbId={src.dbId} onPickDb={src.setDbId}
             loading={src.loading} sheets={src.sheets} sheetIndex={src.sheetIndex}
-            onPickSheet={src.setSheetIndex} extras={extras} />
+            onPickSheet={src.setSheetIndex} extras={extras}
+            imagePrefix={src.imagePrefix} onImagePrefix={src.setImagePrefix} />
           {source.absent && (
             <p className="text-[11px] text-amber-400/80 flex items-center gap-1.5">
               <AlertTriangle className="w-3 h-3 shrink-0" />
@@ -150,7 +151,12 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
               <PanelLeftClose className="w-3.5 h-3.5" />{t('pwx.taxo.title')}
             </button>
             <ExplorerTaxonomyTree rows={beforeTaxo} selected={effective.path}
-              onSelect={(path) => patch({ path })} levels={extras.taxoLabels} />
+              onSelect={(path) => patch({ path })} levels={extras.taxoLabels}
+              diag={{
+                db: src.databases.find((d) => d.docId === src.dbId)?.label ?? t('pwx.db.open'),
+                joined: extras.size,
+                taxoCols: extras.taxoKeys.filter((k): k is string => !!k),
+              }} />
           </div>
         ) : (
           <button type="button" onClick={() => setTaxoOpen(true)} title={t('pwx.taxo.title')}

@@ -2,14 +2,14 @@
 // et quelles colonnes y ont été reconnues. La détection est automatique mais doit rester
 // VÉRIFIABLE — une colonne devinée en silence, c'est la panne muette du module
 // « Comparer catalogue » qu'on ne veut pas reproduire ici.
-import { Link2, AlertTriangle, Loader2 } from 'lucide-react'
+import { Link2, AlertTriangle, Loader2, Image } from 'lucide-react'
 import type { SourceExtrasIndex } from './sourceExtras'
 import { OPEN_DB, type SourceDbOption } from './useSourceSheet'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 
 const selCls = 'bg-well text-white/70 text-[11px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-white/25 max-w-[200px]'
 
-export function ExplorerSourceLink({ databases, dbId, onPickDb, loading, sheets, sheetIndex, onPickSheet, extras }: {
+export function ExplorerSourceLink({ databases, dbId, onPickDb, loading, sheets, sheetIndex, onPickSheet, extras, imagePrefix, onImagePrefix }: {
   databases: SourceDbOption[]
   dbId: string
   onPickDb: (id: string) => void
@@ -18,6 +18,8 @@ export function ExplorerSourceLink({ databases, dbId, onPickDb, loading, sheets,
   sheetIndex: number
   onPickSheet: (i: number) => void
   extras: SourceExtrasIndex
+  imagePrefix: string
+  onImagePrefix: (v: string) => void
 }) {
   const { t, locale } = useTranslation()
   const ok = extras.size > 0
@@ -65,6 +67,17 @@ export function ExplorerSourceLink({ databases, dbId, onPickDb, loading, sheets,
           <AlertTriangle className="w-3 h-3 shrink-0" />
           {t('pwx.aucuneColonneDeReference')}
         </span>
+      )}
+
+      {/* Préfixe d'URL des visuels : les catalogues ERP ne stockent souvent que le nom
+          du fichier. Champ générique — aucune adresse client n'est codée en dur. */}
+      {extras.imageKeys.length > 0 && (
+        <label className="flex items-center gap-1 text-white/30">
+          <Image className="w-3 h-3 shrink-0" />
+          <input value={imagePrefix} onChange={(e) => onImagePrefix(e.target.value)}
+            placeholder={t('pwx.imagePrefix.placeholder')} title={t('pwx.imagePrefix.help')}
+            className="bg-well text-white/70 text-[11px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-white/25 w-[240px] placeholder:text-white/20" />
+        </label>
       )}
     </div>
   )

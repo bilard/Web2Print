@@ -43,6 +43,32 @@ describe('buildSourceExtras', () => {
     expect(idx.lookup({ id: 'p', name: '', ref: 'XYZ-9' }).images).toEqual([])
   })
 
+  it('reconstruit l’URL des visuels stockés en NOM DE FICHIER, via le préfixe', () => {
+    // Base sans autre colonne d'images, pour isoler le comportement du préfixe.
+    const cols = [col('CODE_ARTICLE', 'Référence article'), col('PATH_PHOTO', 'Photo')]
+    const rs: ExcelRow[] = [{ _id: '1', CODE_ARTICLE: 'ABC-123', PATH_PHOTO: '2400956001.jpg' }]
+    const idx = buildSourceExtras(cols, rs, { imagePrefix: 'https://www.f1distribution.com/www/fichiers/articles/hr/' })
+    expect(idx.lookup({ id: 'p', name: '', ref: 'ABC-123' }).images)
+      .toEqual(['https://www.f1distribution.com/www/fichiers/articles/hr/2400956001.jpg'])
+  })
+
+  it('n’applique pas le préfixe aux cellules déjà absolues, et gère les barres en double', () => {
+    const cols = [col('CODE_ARTICLE', 'Référence article'), col('PATH_PHOTO', 'Photo')]
+    const rs: ExcelRow[] = [{ _id: '1', CODE_ARTICLE: 'ABC-123', PATH_PHOTO: 'https://cdn.x/a.jpg, /b.jpg' }]
+    const idx = buildSourceExtras(cols, rs, { imagePrefix: 'https://host/img/' })
+    expect(idx.lookup({ id: 'p', name: '', ref: 'ABC-123' }).images)
+      .toEqual(['https://cdn.x/a.jpg', 'https://host/img/b.jpg'])
+  })
+
+  it('détecte une colonne de visuels au CONTENU même sans préfixe configuré', () => {
+    const cols = [col('CODE_ARTICLE', 'Référence article'), col('VISU', 'Fichier')]
+    const rs: ExcelRow[] = [{ _id: '1', CODE_ARTICLE: 'ABC-123', VISU: '2400956001.jpg' }]
+    const idx = buildSourceExtras(cols, rs)
+    expect(idx.imageKeys).toEqual(['VISU'])
+    // Sans préfixe, rien n'est affichable : mieux vaut aucune image qu'une URL fausse.
+    expect(idx.lookup({ id: 'p', name: '', ref: 'ABC-123' }).images).toEqual([])
+  })
+
   it('reconnaît les trois niveaux de taxonomie, sans confondre famille et sous-famille', () => {
     const cols = [...columns, col('FAMILLE', 'Famille'), col('WEBGROUP_DESC', 'Sous famille'), col('PRODUCTGROUP', 'Product group')]
     const rs: ExcelRow[] = [{

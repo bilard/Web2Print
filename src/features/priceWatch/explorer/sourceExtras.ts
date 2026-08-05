@@ -52,20 +52,34 @@ function refKey(v: string): string {
   return v.toUpperCase().replace(/[^A-Z0-9]/g, '')
 }
 
-/** URLs d'images d'une cellule — une cellule peut en lister plusieurs (« a.jpg, b.jpg »). */
-function imageUrls(v: CellValue): string[] {
+const IMAGE_FILE_RX = /\.(png|jpe?g|webp|gif|avif)(\?|$)/i
+
+/**
+ * URLs d'images d'une cellule — une cellule peut en lister plusieurs (« a.jpg, b.jpg »).
+ *
+ * Beaucoup de catalogues ERP ne stockent que le NOM du fichier (« 2400956001.jpg ») :
+ * l'URL publique se reconstitue avec un préfixe propre au client. Sans lui, ces colonnes
+ * étaient silencieusement écartées et les vignettes restaient vides.
+ */
+function imageUrls(v: CellValue, prefix = ''): string[] {
   const s = str(v)
   if (!s) return []
-  return s.split(/[,;\n|]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u))
+  return s.split(/[,;\n|]/)
+    .map((u) => u.trim())
+    .filter(Boolean)
+    .map((u) => (/^https?:\/\//.test(u) ? u : prefix ? prefix.replace(/\/+$/, '') + '/' + u.replace(/^\/+/, '') : ''))
+    .filter(Boolean)
 }
 
 /** Colonnes d'images : type de champ déclaré, nom évocateur, ou valeurs qui en sont. */
 function findImageKeys(columns: ExcelColumn[], rows: ExcelRow[]): string[] {
   const byMeta = columns.filter((c) => c.fieldType === 'image' || IMAGE_KEY_RX.test(c.key) || IMAGE_KEY_RX.test(c.label))
   if (byMeta.length > 0) return byMeta.map((c) => c.key)
+  // Repli sur le CONTENU : une colonne dont les valeurs sont des noms de fichiers image
+  // compte, même sans préfixe configuré — c'est justement le cas qu'on veut rattraper.
   const sample = rows.slice(0, 40)
   return columns
-    .filter((c) => sample.some((r) => imageUrls(r[c.key]).some((u) => /\.(png|jpe?g|webp|gif|avif)(\?|$)|image/i.test(u))))
+    .filter((c) => sample.some((r) => str(r[c.key]).split(/[,;\n|]/).some((u) => IMAGE_FILE_RX.test(u.trim()))))
     .map((c) => c.key)
 }
 
@@ -96,7 +110,7 @@ function findTaxoKeys(columns: ExcelColumn[]): (string | null)[] {
 export function buildSourceExtras(
   columns: ExcelColumn[],
   rows: ExcelRow[],
-  configured: { ref?: string; ean?: string; description?: string } = {},
+  configured: { ref?: string; ean?: string; description?: string; imagePrefix?: string } = {},
 ): SourceExtrasIndex {
   if (rows.length === 0) return EMPTY
   const cols = columns.map((c) => ({ key: c.key, label: c.label }))
@@ -126,7 +140,7 @@ export function buildSourceExtras(
 
   const extract = (row: ExcelRow) => ({
     description: descKey ? (str(row[descKey]) || null) : null,
-    images: imageKeys.flatMap((k) => imageUrls(row[k])).slice(0, 6),
+    images: imageKeys.flatMap((k) => imageUrls(row[k], configured.imagePrefix)).slice(0, 6),
     // Chemin taxonomique : on s'arrête au premier niveau vide — « Famille > (vide) >
     // Groupe » créerait un nœud fantôme sous lequel des produits sans rapport se
     // retrouveraient regroupés.

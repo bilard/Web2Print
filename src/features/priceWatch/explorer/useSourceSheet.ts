@@ -16,6 +16,7 @@ import { debugLog } from '@/lib/debugLog'
 /** Base ouverte dans le PIM (valeur par défaut du sélecteur). */
 const OPEN_DB = '__open__'
 const PREF_KEY = 'pwx:sourceDb'
+const PREFIX_KEY = 'pwx:imagePrefix'
 
 export interface SourceDbOption { docId: string; label: string; rows: number }
 
@@ -25,6 +26,9 @@ export interface SourceSheetState {
   dbId: string
   setDbId: (id: string) => void
   loading: boolean
+  /** Préfixe d'URL appliqué aux visuels dont la cellule ne porte qu'un nom de fichier. */
+  imagePrefix: string
+  setImagePrefix: (v: string) => void
   sheets: { name: string; rows: number }[]
   sheetIndex: number
   setSheetIndex: (i: number) => void
@@ -43,6 +47,13 @@ export function useSourceSheet(): SourceSheetState {
   const [loaded, setLoaded] = useState<ExcelSheet[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [picked, setPicked] = useState<number | null>(null)
+  const [imagePrefix, setPrefixState] = useState<string>(() => {
+    try { return window.localStorage.getItem(PREFIX_KEY) ?? '' } catch { return '' }
+  })
+  const setImagePrefix = (v: string) => {
+    setPrefixState(v)
+    try { window.localStorage.setItem(PREFIX_KEY, v) } catch { /* préférence non persistée */ }
+  }
 
   const setDbId = (id: string) => {
     setDbIdState(id); setPicked(null)
@@ -82,12 +93,12 @@ export function useSourceSheet(): SourceSheetState {
   const current = sheets[index]
 
   const extras = useMemo(
-    () => buildSourceExtras(current?.columns ?? [], current?.rows ?? []),
-    [current],
+    () => buildSourceExtras(current?.columns ?? [], current?.rows ?? [], { imagePrefix }),
+    [current, imagePrefix],
   )
 
   return {
-    databases, dbId, setDbId, loading,
+    databases, dbId, setDbId, loading, imagePrefix, setImagePrefix,
     sheets: sheets.map((s) => ({ name: s.name, rows: s.rows.length })),
     sheetIndex: index,
     setSheetIndex: setPicked,
