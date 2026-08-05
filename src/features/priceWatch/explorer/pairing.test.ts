@@ -55,11 +55,14 @@ describe('pairSiteListings', () => {
   it('joint description et visuels via les extras (base PIM)', () => {
     const rows = pairSiteListings(products, 's1', listings, {
       vatRate: 0.2,
-      extras: (p) => (p.id === 'p1' ? { description: 'Courroie renforcée', images: ['https://f1/img.jpg'] } : { description: null, images: [] }),
+      extras: (p) => (p.id === 'p1'
+        ? { description: 'Courroie renforcée', images: ['https://f1/img.jpg'], path: ['Motoculture', 'Courroies'] }
+        : { description: null, images: [], path: [] }),
     })
     const courroie = rows.find((r) => r.key.endsWith('/courroie'))!
     expect(courroie.source?.description).toBe('Courroie renforcée')
     expect(courroie.source?.images).toEqual(['https://f1/img.jpg'])
+    expect(courroie.source?.path).toEqual(['Motoculture', 'Courroies'])
   })
 
   it('rend les fiches relevées même sans catalogue source (tout orphelin, prix conservés)', () => {

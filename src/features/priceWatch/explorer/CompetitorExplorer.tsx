@@ -11,7 +11,7 @@
 // de lignes, perdre « qui est à gauche, qui est à droite » au premier scroll rendait la
 // comparaison illisible.
 import { useEffect, useMemo, useState } from 'react'
-import { RefreshCw, AlertTriangle, Loader2, Download } from 'lucide-react'
+import { RefreshCw, AlertTriangle, Loader2, Download, PanelLeftClose, ChevronsRight } from 'lucide-react'
 import { useCompetitorMeta } from '../useCatalogReport'
 import { useSourceCatalog, useSiteListings } from './useSiteExplorer'
 import { buildTabs, ExplorerTabs } from './ExplorerTabs'
@@ -21,6 +21,7 @@ import { ExplorerStats } from './ExplorerStats'
 import { ExplorerPositionBar } from './ExplorerPositionBar'
 import { ExplorerPager, PAGE_SIZES } from './ExplorerPager'
 import { ExplorerRow } from './ExplorerRow'
+import { ExplorerTaxonomyTree } from './ExplorerTaxonomyTree'
 import { ExplorerSourceLink } from './ExplorerSourceLink'
 import { pairSiteListings } from './pairing'
 import { buildTokenIndex, filterRows, EMPTY_EXPLORER_FILTER, type ExplorerFilter } from './filters'
@@ -46,6 +47,7 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
   const [filter, setFilter] = useState<ExplorerFilter>(EMPTY_EXPLORER_FILTER)
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0])
+  const [taxoOpen, setTaxoOpen] = useState(true)
   const patch = (p: Partial<ExplorerFilter>) => { setFilter((f) => ({ ...f, ...p })); setPage(0) }
 
   // Appariement + écarts : recalculés quand le site OU le catalogue change. Sur des
@@ -65,7 +67,14 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
     () => (noSource ? { ...filter, pairing: 'all' as const } : filter),
     [filter, noSource],
   )
-  const filtered = useMemo(() => filterRows(rows, effective), [rows, effective])
+  // Deux passes : l'arbre se nourrit des lignes filtrées SANS la taxonomie (ses compteurs
+  // suivent la recherche, mais choisir une famille ne doit pas amputer l'arbre lui-même),
+  // la liste applique le filtre complet.
+  const beforeTaxo = useMemo(() => filterRows(rows, { ...effective, path: [] }), [rows, effective])
+  const filtered = useMemo(
+    () => (effective.path.length === 0 ? beforeTaxo : filterRows(rows, effective)),
+    [rows, effective, beforeTaxo],
+  )
   const stats = useMemo(() => computeStats(filtered), [filtered])
 
   // Le nombre de pages rétrécit avec les filtres : rester sur la page 7 d'un résultat qui
@@ -126,28 +135,49 @@ export function CompetitorExplorer({ watchId }: { watchId: string | null }) {
         </div>
       </div>
 
-      {/* ── Liste : seule zone qui défile ────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-auto">
-        <div className="grid grid-cols-2 text-[10px] uppercase tracking-wider sticky top-0 z-20 bg-surface-2 border-b border-white/10 shadow-[0_1px_0_rgba(255,255,255,0.04)]">
-          <div className="px-3 py-2 text-indigo-300/80 font-medium">{t('pwx.monProduitF1')}</div>
-          <div className="px-3 py-2 border-l border-white/10 text-white/50 font-medium">
-            {domain || t('pw.col.competitor')}
-          </div>
-        </div>
-
-        {loading || source.loading ? (
-          <div className="py-16 text-center text-white/40 text-sm flex items-center justify-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" />{t('pwx.lectureDesFichesCollectees')}
-          </div>
-        ) : error ? (
-          <div className="py-16 text-center text-rose-300 text-sm">{error}</div>
-        ) : visible.length === 0 ? (
-          <div className="py-16 text-center text-white/40 text-sm">
-            {rows.length === 0 ? t('pwx.aucuneFicheCollecteePour') : t('pwx.aucuneFicheNeCorrespond')}
+      {/* ── Taxonomie F1 + liste : seules zones qui défilent ─────────────────── */}
+      <div className="flex-1 min-h-0 flex">
+        {taxoOpen ? (
+          <div className="w-60 shrink-0 border-r border-white/10 bg-surface-2/40 flex flex-col min-h-0">
+            <button type="button" onClick={() => setTaxoOpen(false)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-white/35 hover:text-white/70 border-b border-white/[0.06]">
+              <PanelLeftClose className="w-3.5 h-3.5" />{t('pwx.taxo.title')}
+            </button>
+            <ExplorerTaxonomyTree rows={beforeTaxo} selected={effective.path}
+              onSelect={(path) => patch({ path })} levels={extras.taxoLabels} />
           </div>
         ) : (
-          visible.map((r) => <ExplorerRow key={r.key} row={r} domain={domain} />)
+          <button type="button" onClick={() => setTaxoOpen(true)} title={t('pwx.taxo.title')}
+            className="w-8 shrink-0 border-r border-white/10 bg-surface-2/40 hover:bg-white/[0.04] hover:border-indigo-500/30 flex flex-col items-center gap-2 pt-3 transition-colors group">
+            <ChevronsRight className="w-4 h-4 text-white/40 group-hover:text-indigo-400" />
+            <span className="text-[10px] font-semibold tracking-wider text-white/30 group-hover:text-white/60 [writing-mode:vertical-rl] rotate-180">
+              {t('pwx.taxo.title')}
+            </span>
+          </button>
         )}
+
+        <div className="flex-1 min-w-0 overflow-auto">
+          <div className="grid grid-cols-2 text-[10px] uppercase tracking-wider sticky top-0 z-20 bg-surface-2 border-b border-white/10 shadow-[0_1px_0_rgba(255,255,255,0.04)]">
+            <div className="px-3 py-2 text-indigo-300/80 font-medium">{t('pwx.monProduitF1')}</div>
+            <div className="px-3 py-2 border-l border-white/10 text-white/50 font-medium">
+              {domain || t('pw.col.competitor')}
+            </div>
+          </div>
+
+          {loading || source.loading ? (
+            <div className="py-16 text-center text-white/40 text-sm flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />{t('pwx.lectureDesFichesCollectees')}
+            </div>
+          ) : error ? (
+            <div className="py-16 text-center text-rose-300 text-sm">{error}</div>
+          ) : visible.length === 0 ? (
+            <div className="py-16 text-center text-white/40 text-sm">
+              {rows.length === 0 ? t('pwx.aucuneFicheCollecteePour') : t('pwx.aucuneFicheNeCorrespond')}
+            </div>
+          ) : (
+            visible.map((r) => <ExplorerRow key={r.key} row={r} />)
+          )}
+        </div>
       </div>
     </div>
   )

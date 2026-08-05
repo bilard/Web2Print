@@ -8,6 +8,7 @@ import { nameTokens } from '../catalog/nameMatch'
 import { foldText } from '../catalog/categories'
 import { normalizeEan } from '../catalog/keys'
 import { discountPct, type PairedRow } from './pairing'
+import { isUnderPath } from './taxonomyTree'
 
 /** Position du concurrent face à mon prix (lecture ACHETEUR, cf. `pw` : < 0 = lui moins cher). */
 export type GapBand = 'all' | 'cheaper' | 'aligned' | 'dearer'
@@ -28,16 +29,19 @@ export interface ExplorerFilter {
   priceMax: number | null
   /** Mots-clés de titre exigés (issus des suggestions sémantiques). */
   tokens: string[]
+  /** Chemin de taxonomie F1 sélectionné dans l'arbre (préfixe : ses descendants passent). */
+  path: string[]
 }
 
 export const EMPTY_EXPLORER_FILTER: ExplorerFilter = {
   q: '', pairing: 'matched', gap: 'all', stock: 'all',
-  promoOnly: false, noPriceOnly: false, priceMin: null, priceMax: null, tokens: [],
+  promoOnly: false, noPriceOnly: false, priceMin: null, priceMax: null, tokens: [], path: [],
 }
 
 export function isExplorerFilterActive(f: ExplorerFilter): boolean {
   return !!f.q.trim() || f.pairing !== 'matched' || f.gap !== 'all' || f.stock !== 'all'
-    || f.promoOnly || f.noPriceOnly || f.priceMin != null || f.priceMax != null || f.tokens.length > 0
+    || f.promoOnly || f.noPriceOnly || f.priceMin != null || f.priceMax != null
+    || f.tokens.length > 0 || f.path.length > 0
 }
 
 /**
@@ -78,6 +82,9 @@ export function filterRows(rows: PairedRow[], f: ExplorerFilter): PairedRow[] {
   return rows.filter((r) => {
     if (f.pairing === 'matched' && !r.source) return false
     if (f.pairing === 'orphan' && r.source) return false
+
+    // Taxonomie : sélection par PRÉFIXE — choisir une famille garde ses sous-familles.
+    if (f.path.length > 0 && !isUnderPath(r.source?.path ?? [], f.path)) return false
 
     const gap = r.cmp.deltaPct
     if (f.gap !== 'all') {

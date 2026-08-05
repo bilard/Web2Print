@@ -25,6 +25,8 @@ interface SourceSide {
   images: string[]
   priceHt: number | null
   url: string | null
+  /** Chemin taxonomique F1 (Famille > Sous-famille > Groupe produit), joint depuis le PIM. */
+  path: string[]
 }
 
 /** Une fiche concurrent, avec son produit F1 quand l'appariement est prouvé. */
@@ -45,9 +47,9 @@ function kindOf(proof: { key: { origin: boolean; kind: string }; evidence: strin
 }
 
 /** Enrichissements F1 non portés par le catalogue source persisté (description, visuels). */
-export type SourceExtras = (p: SourceProduct) => { description: string | null; images: string[] }
+export type SourceExtras = (p: SourceProduct) => { description: string | null; images: string[]; path: string[] }
 
-const NO_EXTRAS: SourceExtras = () => ({ description: null, images: [] })
+const NO_EXTRAS: SourceExtras = () => ({ description: null, images: [], path: [] })
 
 /**
  * Apparie TOUTES les fiches collectées chez un concurrent au catalogue source.
@@ -89,7 +91,7 @@ export function pairSiteListings(
         ? {
             id: p.id, ref: p.ref ?? null, ean: p.ean ?? null, name: p.name,
             description: ex?.description ?? null, images: ex?.images ?? [],
-            priceHt: p.price ?? null, url: p.url ?? null,
+            priceHt: p.price ?? null, url: p.url ?? null, path: ex?.path ?? [],
           }
         : null,
     }

@@ -8,24 +8,39 @@
 // On lit donc la base PIM, qui les porte déjà et reste fraîche sans relancer « Comparer ».
 // PUR : aucune dépendance React/Firebase.
 import type { ExcelColumn, ExcelRow, CellValue } from '@/features/excel/types'
-import { resolveCompareColumns } from '../catalog/compareColumns'
+import { resolveCompareColumns, foldHeader } from '../catalog/compareColumns'
 import { normalizeEan } from '../catalog/keys'
 import type { SourceProduct } from '../catalog/match'
 
 const IMAGE_KEY_RX = /image|photo|img|picture|visuel|illustration|thumbnail/i
 
+/**
+ * Niveaux de la taxonomie F1, du plus large au plus fin. Les alias sont ORDONNÉS et
+ * DISJOINTS : « sous-famille » ne doit jamais être capté comme famille, sinon les deux
+ * premiers niveaux de l'arbre désignent la même colonne et la navigation ne descend pas.
+ */
+const TAXO_LEVELS: { label: string; aliases: string[] }[] = [
+  { label: 'Famille', aliases: ['famille', 'family', 'famillearticle', 'univers', 'rayon', 'categorie', 'category'] },
+  { label: 'Sous-famille', aliases: ['webgroupdesc', 'webgroup', 'sousfamille', 'soussfamille', 'subfamily', 'groupeweb', 'sousfamilledesc'] },
+  { label: 'Groupe produit', aliases: ['productgroup', 'productgroupdesc', 'groupeproduit', 'groupearticle', 'sousgroupe'] },
+]
+
 export interface SourceExtrasIndex {
   /** Colonnes retenues (affichées à l'utilisateur : la détection doit être vérifiable). */
   descriptionKey: string | null
   imageKeys: string[]
+  /** Colonnes de taxonomie par niveau (null = niveau absent de la base). */
+  taxoKeys: (string | null)[]
+  /** Libellés des niveaux réellement trouvés, pour l'en-tête de l'arbre. */
+  taxoLabels: string[]
   /** Nombre de lignes indexées (0 = jointure impossible, base sans réf ni EAN). */
   size: number
-  lookup: (p: SourceProduct) => { description: string | null; images: string[] }
+  lookup: (p: SourceProduct) => { description: string | null; images: string[]; path: string[] }
 }
 
 const EMPTY: SourceExtrasIndex = {
-  descriptionKey: null, imageKeys: [], size: 0,
-  lookup: () => ({ description: null, images: [] }),
+  descriptionKey: null, imageKeys: [], taxoKeys: [], taxoLabels: [], size: 0,
+  lookup: () => ({ description: null, images: [], path: [] }),
 }
 
 function str(v: CellValue): string {
@@ -55,6 +70,26 @@ function findImageKeys(columns: ExcelColumn[], rows: ExcelRow[]): string[] {
 }
 
 /**
+ * Colonne d'un niveau de taxonomie. Égalité stricte d'abord, puis inclusion : « Famille »
+ * doit gagner sur « Sous-famille » quand les deux existent, alors qu'une inclusion nue
+ * retiendrait la première rencontrée.
+ */
+function findTaxoKeys(columns: ExcelColumn[]): (string | null)[] {
+  const folded = columns.map((c) => ({ key: c.key, forms: [foldHeader(c.key), foldHeader(c.label)] }))
+  const taken = new Set<string>()
+  return TAXO_LEVELS.map(({ aliases }) => {
+    for (const exact of [true, false]) {
+      for (const a of aliases) {
+        const hit = folded.find((c) => !taken.has(c.key)
+          && c.forms.some((f) => (exact ? f === a : f.includes(a))))
+        if (hit) { taken.add(hit.key); return hit.key }
+      }
+    }
+    return null
+  })
+}
+
+/**
  * Indexe une feuille PIM par référence ET par EAN. Les deux clés pointent la même ligne :
  * un produit source dont la réf n'est pas dans la base peut être retrouvé par son EAN.
  */
@@ -72,7 +107,9 @@ export function buildSourceExtras(
   const eanKeyCol = resolved.columns.ean
   const descKey = resolved.columns.description ?? null
   const imageKeys = findImageKeys(columns, rows)
-  if (!refKeyCol && !eanKeyCol) return { ...EMPTY, descriptionKey: descKey, imageKeys }
+  const taxoKeys = findTaxoKeys(columns)
+  const taxoLabels = TAXO_LEVELS.filter((_, i) => taxoKeys[i]).map((l) => l.label)
+  if (!refKeyCol && !eanKeyCol) return { ...EMPTY, descriptionKey: descKey, imageKeys, taxoKeys, taxoLabels }
 
   const byRef = new Map<string, ExcelRow>()
   const byEan = new Map<string, ExcelRow>()
@@ -90,18 +127,28 @@ export function buildSourceExtras(
   const extract = (row: ExcelRow) => ({
     description: descKey ? (str(row[descKey]) || null) : null,
     images: imageKeys.flatMap((k) => imageUrls(row[k])).slice(0, 6),
+    // Chemin taxonomique : on s'arrête au premier niveau vide — « Famille > (vide) >
+    // Groupe » créerait un nœud fantôme sous lequel des produits sans rapport se
+    // retrouveraient regroupés.
+    path: taxoKeys.reduce<string[]>((acc, key, i) => {
+      if (acc.length !== i || !key) return acc
+      const v = str(row[key])
+      return v ? [...acc, v] : acc
+    }, []),
   })
 
   return {
     descriptionKey: descKey,
     imageKeys,
+    taxoKeys,
+    taxoLabels,
     size: Math.max(byRef.size, byEan.size),
     lookup: (p) => {
       const ean = normalizeEan(p.ean)
       const row = (ean && byEan.get(ean))
         || (p.ref && byRef.get(refKey(p.ref)))
         || (p.ref2 && byRef.get(refKey(p.ref2)))
-      return row ? extract(row) : { description: null, images: [] }
+      return row ? extract(row) : { description: null, images: [], path: [] }
     },
   }
 }

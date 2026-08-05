@@ -47,7 +47,7 @@ function gapTone(gap: number | null): string {
   return 'text-white/60'
 }
 
-export function ExplorerRow({ row, domain }: { row: PairedRow; domain: string }) {
+export function ExplorerRow({ row }: { row: PairedRow }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const { listing, cmp, source, kind } = row
@@ -107,9 +107,13 @@ export function ExplorerRow({ row, domain }: { row: PairedRow; domain: string })
             {listing.name}
             <ExternalLink className="w-3 h-3 shrink-0 mt-0.5 text-white/30" />
           </a>
-          <div className="text-[10px] text-white/40 tabular-nums mt-0.5">
-            {domain} · {listing.ref ?? '—'}{listing.gtin13 ? ` · ${listing.gtin13}` : ''}
-          </div>
+          {/* Pas de nom de domaine ici : l'onglet actif et l'en-tête de colonne le
+              portent déjà. Répété sur chaque ligne, il masquait la référence. */}
+          {(listing.ref || listing.gtin13) && (
+            <div className="text-[10px] text-white/40 tabular-nums mt-0.5">
+              {[listing.ref, listing.gtin13].filter(Boolean).join(' · ')}
+            </div>
+          )}
           <div className="flex items-baseline gap-2 flex-wrap mt-1 tabular-nums">
             <span className="text-sm text-white/90 font-medium">{eur(cmp.priceHt)}</span>
             <span className="text-[10px] text-white/35">HT</span>

@@ -43,6 +43,22 @@ describe('buildSourceExtras', () => {
     expect(idx.lookup({ id: 'p', name: '', ref: 'XYZ-9' }).images).toEqual([])
   })
 
+  it('reconnaît les trois niveaux de taxonomie, sans confondre famille et sous-famille', () => {
+    const cols = [...columns, col('FAMILLE', 'Famille'), col('WEBGROUP_DESC', 'Sous famille'), col('PRODUCTGROUP', 'Product group')]
+    const rs: ExcelRow[] = [{
+      ...rows[0], FAMILLE: 'Motoculture', WEBGROUP_DESC: 'Tondeuses', PRODUCTGROUP: 'Courroies',
+    }]
+    const idx = buildSourceExtras(cols, rs)
+    expect(idx.taxoKeys).toEqual(['FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP'])
+    expect(idx.lookup({ id: 'p', name: '', ref: 'ABC-123' }).path).toEqual(['Motoculture', 'Tondeuses', 'Courroies'])
+  })
+
+  it('arrête le chemin au premier niveau vide (pas de nœud fantôme)', () => {
+    const cols = [...columns, col('FAMILLE', 'Famille'), col('WEBGROUP_DESC', 'Sous famille'), col('PRODUCTGROUP', 'Product group')]
+    const rs: ExcelRow[] = [{ ...rows[0], FAMILLE: 'Motoculture', WEBGROUP_DESC: '', PRODUCTGROUP: 'Courroies' }]
+    expect(buildSourceExtras(cols, rs).lookup({ id: 'p', name: '', ref: 'ABC-123' }).path).toEqual(['Motoculture'])
+  })
+
   it('signale l’absence de clé de jointure au lieu d’indexer du vide', () => {
     const idx = buildSourceExtras([col('LIBELLE', 'Désignation')], [{ _id: '1', LIBELLE: 'X' }])
     expect(idx.size).toBe(0)
