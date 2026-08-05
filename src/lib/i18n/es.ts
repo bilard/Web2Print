@@ -5284,6 +5284,7 @@ export const es: Record<TranslationKey, string> = {
   'pwx.fallback.show': 'fuente alternativa',
   'pwx.fallback.help': 'Base PIM usada en lugar del catálogo del flujo para descripciones, imágenes y taxonomía. Innecesaria mientras el catálogo de origen las incluya.',
   'pwx.src.catalogRows': 'Catálogo de origen del flujo: {count} productos conservados de {rows} filas leídas',
+  'tst.ss.benchmarkFailed': 'Recolección guardada, pero el recálculo del benchmark falló: {message}',
   'pwx.competitors': 'Competidores',
   'pwx.tabCollected': '{count} fichas recopiladas',
   'pwx.reload': 'Recargar',

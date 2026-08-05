@@ -5285,6 +5285,7 @@ export const en: Record<TranslationKey, string> = {
   'pwx.fallback.show': 'fallback source',
   'pwx.fallback.help': 'PIM database used instead of the workflow catalogue for descriptions, images and taxonomy. Not needed while the source catalogue carries them.',
   'pwx.src.catalogRows': 'Workflow source catalogue: {count} products kept out of {rows} rows read',
+  'tst.ss.benchmarkFailed': 'Harvest saved, but the benchmark recalculation failed: {message}',
   'pwx.competitors': 'Competitors',
   'pwx.tabCollected': '{count} records collected',
   'pwx.reload': 'Reload',

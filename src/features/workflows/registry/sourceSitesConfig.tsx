@@ -72,11 +72,22 @@ export function SourceSitesConfig({ config, onChange }: {
     if (!site) return
     setScrapingId(domain)
     try {
+      // ⚠ DEUX opérations, DEUX diagnostics. Sous un try commun, un recalcul de benchmark
+      // en échec s'affichait comme « moisson échouée » : le scraping avait pourtant
+      // collecté et enregistré ses fiches. Confondre les deux fait chercher une panne de
+      // scraping là où il n'y en a pas.
       const res = await harvestOneSite(uid, watchId, site, { pageBudget: 12 })
       toast.success(t('tst.rd.harvestResult', {
         host: domain, products: res.productsIndexed, pct: res.pctPrice,
         engine: res.engine ? t('tst.rd.harvestEngine', { engine: res.engine }) : '',
       }))
+    } catch (e) {
+      toast.error(t('tst.ss.harvestFailed', { domain, message: e instanceof Error ? e.message : t('tst.ss.harvestFailedDefault') }))
+      setScrapingId(null)
+      return
+    }
+
+    try {
       // Recalcule le benchmark (appariés, écarts) pour TOUS les sites actifs, à partir
       // du catalogue source persisté — le dashboard se met à jour sans relancer le run.
       const siteRefs = rowsToCompetitorSites(rows).map((s) => ({ siteId: s.id, domain: s.domain }))
@@ -84,12 +95,12 @@ export function SourceSitesConfig({ config, onChange }: {
       if (rec) toast.success(t('tst.ss.benchmarkDone', { count: rec.matched }))
       else toast.info(t('tst.ss.runCompareFirst'))
     } catch (e) {
-      // Catalogue source amputé : le rapport n'a PAS été réécrit (fail-closed). Le dire
-      // franchement — sinon l'utilisateur croit à un échec de moisson.
+      // Catalogue source amputé : le rapport n'a PAS été réécrit (fail-closed). La
+      // moisson, elle, est déjà enregistrée — le message doit le dire.
       if (e instanceof PartialSourceCatalogError) {
         toast.error(t('tst.ss.partialSourceCatalog', { read: e.read, expected: e.expected }))
       } else {
-        toast.error(t('tst.ss.harvestFailed', { domain, message: e instanceof Error ? e.message : t('tst.ss.harvestFailedDefault') }))
+        toast.error(t('tst.ss.benchmarkFailed', { message: e instanceof Error ? e.message : String(e) }))
       }
     } finally {
       setScrapingId(null)
