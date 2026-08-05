@@ -14,6 +14,14 @@ export interface RecomputeResult {
   sites: number
 }
 
+/** Levée quand le catalogue source relu est incomplet — voir `loadSourceCatalog`. */
+export class PartialSourceCatalogError extends Error {
+  constructor(readonly read: number, readonly expected: number) {
+    super(`Catalogue source incomplet : ${read} produits relus sur ${expected} attendus`)
+    this.name = 'PartialSourceCatalogError'
+  }
+}
+
 /**
  * Reconstruit et persiste le rapport pour l'ensemble des `siteRefs` fournis, à partir du
  * catalogue source persisté et de l'index Firestore courant. `null` si pas de catalogue
@@ -24,6 +32,10 @@ export async function recomputeReport(
 ): Promise<RecomputeResult | null> {
   const src = await loadSourceCatalog(uid, watchId)
   if (!src || src.products.length === 0) return null
+  // ⚠ FAIL-CLOSED. Recalculer sur un catalogue amputé écraserait un rapport JUSTE par un
+  // rapport à quelques dizaines d'appariés — et rien ne le dirait, puisque l'écriture,
+  // elle, réussit. Mieux vaut garder le dernier rapport valide et remonter l'anomalie.
+  if (src.partial) throw new PartialSourceCatalogError(src.products.length, src.expected)
 
   const indexBySite = new Map<string, CompetitorListing[]>()
   for (const s of siteRefs) indexBySite.set(s.siteId, await loadAllListings(uid, watchId, s.siteId))

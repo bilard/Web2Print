@@ -5472,6 +5472,8 @@ export const fr = {
   'pwx.src.filled': '· {img} avec visuel · {taxo} avec taxonomie · {desc} avec description',
   'pwx.src.rerun': '— sans visuel ni taxonomie : relancez « Comparer catalogue »',
   'pwx.src.openWorkflow': 'ouvrir le workflow',
+  'pwx.src.partial': 'INCOMPLET : {read} produits relus sur {expected} — relancez « Comparer catalogue », les appariés sont sous-comptés.',
+  'tst.ss.partialSourceCatalog': 'Catalogue source incomplet ({read} produits sur {expected}) : le benchmark n’a PAS été recalculé, pour ne pas écraser le dernier rapport valide. Relancez « Comparer catalogue ».',
   'pwx.competitors': 'Concurrents',
   'pwx.tabCollected': '{count} fiches collectées',
   'pwx.reload': 'Recharger',

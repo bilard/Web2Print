@@ -5279,6 +5279,8 @@ export const es: Record<TranslationKey, string> = {
   'pwx.src.filled': '· {img} con imagen · {taxo} con taxonomía · {desc} con descripción',
   'pwx.src.rerun': '— sin imagen ni taxonomía: vuelva a ejecutar «Comparar catálogo»',
   'pwx.src.openWorkflow': 'abrir el flujo',
+  'pwx.src.partial': 'INCOMPLETO: {read} productos leídos de {expected} — vuelva a ejecutar «Comparar catálogo», los emparejamientos están infravalorados.',
+  'tst.ss.partialSourceCatalog': 'Catálogo de origen incompleto ({read} productos de {expected}): el benchmark NO se recalculó para no sobrescribir el último informe válido. Vuelva a ejecutar «Comparar catálogo».',
   'pwx.competitors': 'Competidores',
   'pwx.tabCollected': '{count} fichas recopiladas',
   'pwx.reload': 'Recargar',

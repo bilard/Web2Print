@@ -93,7 +93,9 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
     withTaxo: source.products.filter((p) => p.taxo?.length).length,
     withDescription: source.products.filter((p) => p.description).length,
     workflowId,
-  }), [source.products, workflowId])
+    partial: source.partial,
+    expected: source.expected,
+  }), [source.products, source.partial, source.expected, workflowId])
 
   // Le nombre de pages rétrécit avec les filtres : rester sur la page 7 d'un résultat qui
   // n'en compte plus que 2 afficherait une liste vide sans rien expliquer.

@@ -19,30 +19,38 @@ export interface SourceCatalogState {
   loading: boolean
   /** Le catalogue source n'a jamais été persisté (aucun « Comparer catalogue » abouti). */
   absent: boolean
+  /** Des tranches manquent : ce qui est relu est amputé, les appariés seront sous-comptés. */
+  partial: boolean
+  /** Produits annoncés à la dernière écriture (pour chiffrer l'écart). */
+  expected: number
 }
 
 /** Catalogue source du suivi : la base de l'appariement ET des écarts de prix. */
 export function useSourceCatalog(watchId: string | null): SourceCatalogState {
   const uid = useWorkspaceUid()
-  const [state, setState] = useState<SourceCatalogState>({ products: [], vatRate: 20, loading: false, absent: false })
+  const [state, setState] = useState<SourceCatalogState>({ products: [], vatRate: 20, loading: false, absent: false, partial: false, expected: 0 })
 
   useEffect(() => {
-    if (!uid || !watchId) { setState({ products: [], vatRate: 20, loading: false, absent: false }); return }
+    if (!uid || !watchId) { setState({ products: [], vatRate: 20, loading: false, absent: false, partial: false, expected: 0 }); return }
     let cancelled = false
     setState((s) => ({ ...s, loading: true }))
     loadSourceCatalog(uid, watchId)
       .then((src) => {
         if (cancelled) return
         debugLog('[pw-explorer] catalogue source', src ? `${src.products.length} produits, TVA ${src.vatRate}` : 'absent')
+        if (src?.partial) {
+          console.warn('[pw-explorer] catalogue source AMPUTÉ :', src.products.length, '/', src.expected)
+        }
         setState({
           products: src?.products ?? [], vatRate: src?.vatRate ?? 20,
           loading: false, absent: src == null,
+          partial: !!src?.partial, expected: src?.expected ?? 0,
         })
       })
       .catch((e) => {
         if (cancelled) return
         console.error('[pw-explorer] catalogue source illisible', e)
-        setState({ products: [], vatRate: 20, loading: false, absent: true })
+        setState({ products: [], vatRate: 20, loading: false, absent: true, partial: false, expected: 0 })
       })
     return () => { cancelled = true }
   }, [uid, watchId])

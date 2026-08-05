@@ -17,6 +17,9 @@ export interface SourceCatalogFacts {
   withTaxo: number
   withDescription: number
   workflowId?: string
+  /** Des tranches du catalogue manquent : les appariés affichés sont SOUS-COMPTÉS. */
+  partial: boolean
+  expected: number
 }
 
 export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, sheets, sheetIndex, onPickSheet, extras, imagePrefix, onImagePrefix }: {
@@ -43,6 +46,12 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
           descriptions. La base PIM n'est qu'un repli, replié tant qu'il n'est pas utile. */}
       <Link2 className="w-3 h-3 shrink-0" />
       <span className="text-white/50">{t('pwx.src.catalog', { count: n(facts.products) })}</span>
+      {facts.partial && (
+        <span className="text-rose-300 flex items-center gap-1 font-medium">
+          <AlertTriangle className="w-3 h-3 shrink-0" />
+          {t('pwx.src.partial', { read: n(facts.products), expected: n(facts.expected) })}
+        </span>
+      )}
       {rich ? (
         <span className="text-white/30">
           {t('pwx.src.filled', {

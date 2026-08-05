@@ -50,10 +50,13 @@ export async function saveSourceCatalog(
   if (existing) await Promise.all(existing.docs.map((d) => d.ref.delete()))
   const slices = sliceByBytes(products)
   const chunks = slices.length
-  await db.doc(`${col}/_meta`).set({ vatRate, chunks, count: products.length, at: Date.now() })
+  // ⚠ `_meta` EN DERNIER (jumeau du client) : écrit en premier, il annonçait des tranches
+  // qui pouvaient ne jamais arriver, et la relecture rendait un catalogue amputé en le
+  // présentant comme complet.
   for (let i = 0; i < chunks; i++) {
     await db.doc(`${col}/chunk_${i}`).set({ products: stripUndefined(slices[i]) })
   }
+  await db.doc(`${col}/_meta`).set({ vatRate, chunks, count: products.length, at: Date.now() })
 }
 
 // ── Journal des changements de prix (jumeau du client) ─────────────────────────────

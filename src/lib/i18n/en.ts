@@ -5280,6 +5280,8 @@ export const en: Record<TranslationKey, string> = {
   'pwx.src.filled': '· {img} with an image · {taxo} with a taxonomy · {desc} with a description',
   'pwx.src.rerun': '— no image or taxonomy: run “Compare catalogue” again',
   'pwx.src.openWorkflow': 'open the workflow',
+  'pwx.src.partial': 'INCOMPLETE: {read} products read out of {expected} — run “Compare catalogue” again, matches are undercounted.',
+  'tst.ss.partialSourceCatalog': 'Source catalogue incomplete ({read} products out of {expected}): the benchmark was NOT recalculated, so the last valid report stands. Run “Compare catalogue” again.',
   'pwx.competitors': 'Competitors',
   'pwx.tabCollected': '{count} records collected',
   'pwx.reload': 'Reload',

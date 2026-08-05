@@ -11,7 +11,7 @@ import { useCompetitorMeta, useCatalogReport } from '@/features/priceWatch/useCa
 import { stableId } from '@/features/priceWatch/core'
 import { harvestOneSite } from '@/features/priceWatch/catalog/runSingleSite'
 import { resetCompetitorData } from '@/features/priceWatch/catalog/store'
-import { recomputeReport } from '@/features/priceWatch/catalog/recomputeReport'
+import { recomputeReport, PartialSourceCatalogError } from '@/features/priceWatch/catalog/recomputeReport'
 import {
   normalizeDomain, deriveWatchId, importSitesIntoRows, siteStatus, siteStatusRank, HARVEST_LIVE_WINDOW_MS,
   rowsToCompetitorSites, type SourceSiteRow, type SiteStatus,
@@ -84,7 +84,13 @@ export function SourceSitesConfig({ config, onChange }: {
       if (rec) toast.success(t('tst.ss.benchmarkDone', { count: rec.matched }))
       else toast.info(t('tst.ss.runCompareFirst'))
     } catch (e) {
-      toast.error(t('tst.ss.harvestFailed', { domain, message: e instanceof Error ? e.message : t('tst.ss.harvestFailedDefault') }))
+      // Catalogue source amputé : le rapport n'a PAS été réécrit (fail-closed). Le dire
+      // franchement — sinon l'utilisateur croit à un échec de moisson.
+      if (e instanceof PartialSourceCatalogError) {
+        toast.error(t('tst.ss.partialSourceCatalog', { read: e.read, expected: e.expected }))
+      } else {
+        toast.error(t('tst.ss.harvestFailed', { domain, message: e instanceof Error ? e.message : t('tst.ss.harvestFailedDefault') }))
+      }
     } finally {
       setScrapingId(null)
     }
