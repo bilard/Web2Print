@@ -148,7 +148,13 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
       : verdicts.of),
     [compiling, siteByUrl, allVerdicts, verdicts.of],
   )
-  const tokenIndex = useMemo(() => buildTokenIndex(rows), [rows])
+  // ⚠ Pas de suggestions PENDANT un balayage : l'index se recalcule à chaque site qui
+  // tombe, sur le cumul déjà rassemblé — quatre passes complètes vingt-quatre fois de
+  // suite, pour des mots-clés que personne ne lit tant que la liste grossit.
+  const tokenIndex = useMemo(
+    () => (compilation.running ? [] : buildTokenIndex(rows)),
+    [rows, compilation.running],
+  )
   // Sans catalogue source, TOUTES les fiches sont orphelines : garder le filtre « appariés
   // seulement » viderait l'écran et ferait croire à une collecte vide.
   const noSource = source.products.length === 0

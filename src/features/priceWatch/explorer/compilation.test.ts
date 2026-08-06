@@ -47,6 +47,23 @@ describe('compileSite', () => {
       .toEqual(onglet.map((r) => ({ key: r.key, score: r.confidence?.score })))
   })
 
+  it('fait entrer une ligne ACQUISE que les photos démentent', () => {
+    // Le verdict visuel entre dans l'indice : sans lui, l'appariement le plus douteux du
+    // lot — celui que les images contredisent — resterait « sûr » et sortirait de la file
+    // de travail. C'est exactement l'inverse du but de l'écran.
+    const sansVisuel = compileSite({ siteId: 's1', domain: 'c.fr' }, products, listings, {})
+    expect(sansVisuel.map((r) => r.key)).toEqual(['https://c.fr/courroie'])
+
+    const avecVisuel = compileSite({ siteId: 's1', domain: 'c.fr' }, products, listings, {},
+      (url) => (url === 'https://c.fr/filtre' ? 'different' : null))
+    expect(avecVisuel.map((r) => r.key)).toEqual(['https://c.fr/filtre', 'https://c.fr/courroie'])
+    const filtre = avecVisuel.find((r) => r.key === 'https://c.fr/filtre')!
+    // 98 (code-barres déclaré) − 45 (démenti visuel) = 53 : plus « acquis », donc dans
+    // la file de travail — c'est le fait qui compte, pas la nuance de bande.
+    expect(filtre.confidence?.band).toBe('check')
+    expect(filtre.confidence?.doubts).toContain('visual-conflict')
+  })
+
   it('rend une liste vide sans catalogue source — tout serait orphelin', () => {
     expect(compileSite({ siteId: 's1', domain: 'c.fr' }, [], listings)).toEqual([])
   })

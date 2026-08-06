@@ -6,6 +6,7 @@
 // les lignes suspectes sont conservées — quelques pour cent du volume lu.
 import { useCallback, useRef, useState } from 'react'
 import { loadAllListings } from '../catalog/store'
+import { loadVisuals, urlKey } from '../visual/visualStore'
 import { compileSite, COMPILE_CAP, type CompileOptions, type CompiledRow } from './compilation'
 import type { SourceProduct } from '../catalog/match'
 import { debugLog } from '@/lib/debugLog'
@@ -55,9 +56,17 @@ export function useCompilation(uid: string | null, watchId: string | null) {
     for (const site of sites) {
       if (runId.current !== id) return // abandonné
       try {
-        const listings = await loadAllListings(uid, watchId, site.siteId)
+        // Les deux lectures ensemble : l'index des fiches et les verdicts de PHOTOS du
+        // même site. Ces derniers pèsent dans l'indice de fiabilité — les ignorer ferait
+        // passer pour acquis un appariement que les images contredisent, et la compilation
+        // l'écarterait alors qu'il est le plus douteux du lot.
+        const [listings, visuals] = await Promise.all([
+          loadAllListings(uid, watchId, site.siteId),
+          loadVisuals(uid, watchId, site.siteId).catch(() => new Map()),
+        ])
         if (runId.current !== id) return
-        const found = compileSite(site, products, listings, opts)
+        const found = compileSite(site, products, listings, opts,
+          (url) => visuals.get(urlKey(url))?.verdict ?? null)
         // Le plafond se mesure sur le CUMUL : un seul site ne le franchit presque jamais,
         // c'est la somme de vingt-quatre qui fige l'onglet.
         const room = Math.max(0, COMPILE_CAP - kept)

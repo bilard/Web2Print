@@ -16,6 +16,7 @@
 // au site suivant (cf. `useCompilation`). À 200 000 fiches cumulées, tout garder ferait
 // tomber l'onglet.
 import { pairSiteListings, type PairedRow } from './pairing'
+import { withVisual, type VisualCall } from './confidence'
 import type { SourceProduct } from '../catalog/match'
 import type { CompetitorListing } from '../catalog/prestashop'
 
@@ -48,15 +49,27 @@ export const COMPILE_CAP = 40000
  *  se contrediraient sur les mêmes données. */
 export type CompileOptions = NonNullable<Parameters<typeof pairSiteListings>[3]>
 
+/**
+ * ⚠ `visualOf` n'est pas un raffinement d'affichage : le verdict des PHOTOS entre dans
+ * l'indice, et c'est lui qui décide de la bande. Sans lui, un appariement démenti par les
+ * images resterait « sûr » ICI et serait donc ÉCARTÉ de la compilation — l'écran d'audit
+ * laisserait échapper précisément les cas les plus douteux, et la même ligne s'afficherait
+ * « DOUTEUX » dans l'onglet du concurrent et « SÛR » dans la compilation.
+ */
 export function compileSite(
   site: { siteId: string; domain: string },
   products: SourceProduct[],
   listings: CompetitorListing[],
   opts: CompileOptions = {},
+  visualOf?: (url: string) => VisualCall | null,
 ): CompiledRow[] {
   const out: CompiledRow[] = []
   for (const row of pairSiteListings(products, site.siteId, listings, opts)) {
-    if (isSuspect(row)) out.push({ ...row, siteId: site.siteId, domain: site.domain })
+    const call = row.confidence && visualOf ? visualOf(row.listing.url) : null
+    const r = call && row.confidence
+      ? { ...row, confidence: withVisual(row.confidence, call) }
+      : row
+    if (isSuspect(r)) out.push({ ...r, siteId: site.siteId, domain: site.domain })
   }
   return out
 }
