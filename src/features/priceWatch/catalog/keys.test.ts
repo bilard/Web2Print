@@ -255,6 +255,15 @@ describe('refTokensFromUrl — réf dans le slug (autoportee)', () => {
       .toBe('ref-in-url')
   })
 
+  it('ne prend pas les chiffres d’un ASIN Amazon pour une référence', () => {
+    // Même défaut, autre forme : l'ASIN `B00002571E` était taillé en « 00002571 », qui
+    // appariait la vis GUTBROD réf. 000.02.571 à un CD (« Black Flower - Diabolique »).
+    // Les seules fiches qu'Amazon avait rendues étaient donc du bruit.
+    const url = 'https://www.amazon.fr/Black-Flower-Diabolique/dp/B00002571E'
+    expect(refTokensFromUrl(url)).toEqual(['B00002571E'])
+    expect(proveMatch(candidateKeys({ ref: '000.02.571' }), { url, name: 'Black Flower - Diabolique' })).toBeNull()
+  })
+
   it('rend joignables les catalogues à référence MIXTE, sans ouvrir aux mots', () => {
     // Gain de couverture du même correctif : « PL39005 » délimité est une preuve valable,
     // « castelgarden » n'en sera jamais une — aucun chiffre.
