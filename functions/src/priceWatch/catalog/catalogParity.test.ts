@@ -15,6 +15,7 @@ import { MAX_PAGES_PER_CATEGORY, initCursor, advance } from './harvest'
 import { planCategories, type CompetitorConfig, type HarvestDeps } from './runHarvest'
 import { searchUrl, directedPass, searchProductOnSite } from './searchDirected'
 import { pickDisplayColumns, taxoPathOf, trimDescription } from './displayColumns'
+import { parseListingDomCards } from './genericCards'
 
 describe('prestashop (parité serveur)', () => {
   it('parse les prix marchands', () => {
@@ -178,5 +179,24 @@ describe('extractOriginRefs (parité serveur)', () => {
     expect(extractOriginRefs('Compatible avec : 181004383/0 et 118801752/0'))
       .toEqual(['181004383/0', '118801752/0'])
     expect(extractOriginRefs('Courroie renforcée, largeur 12 mm.')).toEqual([])
+  })
+})
+
+describe('genericCards (parité serveur)', () => {
+  it('garde le visuel des cartes à conteneur « product… » IMBRIQUÉ, comme la copie client', () => {
+    // Le balayage tourne côté SERVEUR : sans ce report, la correction ne profiterait qu'à
+    // une collecte lancée depuis le navigateur. Si ce test tombe seul, les copies ont dérivé.
+    const card = (id: string, flag: boolean) => `
+      <article class="ajax_block_product"><div class="product-container">
+        <a class="img_link" href="https://s.test/${id}-c-${id}.html" title="Courroie ${id}">
+          <img class="img-fluid" src="https://static.s.test/${id}/c-${id}.jpg" alt="Courroie ${id}" /></a>
+        ${flag ? '<div class="product-flag"><div class="text">Produit conseillé</div></div>' : ''}
+        <h2><a class="product-name" href="https://s.test/${id}-c-${id}.html">Courroie ${id}</a></h2>
+        <span class="price product-price">6,48 € <span>T.T.C.</span></span>
+      </div></article>`
+    const rows = parseListingDomCards(
+      `<div class="products">${card('11', true)}${card('22', false)}</div>`, 'https://s.test/liste')
+    expect(rows).toHaveLength(2)
+    expect(rows.filter((r) => r.image)).toHaveLength(2)
   })
 })

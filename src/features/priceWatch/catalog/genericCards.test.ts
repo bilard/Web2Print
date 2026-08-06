@@ -155,3 +155,42 @@ describe('payload produit dans un attribut data-* (plateforme maison)', () => {
     expect(parseListingDomCards(only, CAT)).toEqual([])
   })
 })
+
+describe('conteneur « product… » IMBRIQUÉ dans la carte (123courroies)', () => {
+  // Le thème pose un badge `<div class="product-flag">` AU MILIEU de la carte, après le
+  // visuel et avant le nom. Découpé sur tous les conteneurs à la fois, ce badge ouvrait
+  // une fausse carte : le fragment retenu portait nom et prix mais plus le visuel, resté
+  // en amont. Mesuré sur la page réelle : 100 fiches, 63 visuels seulement.
+  const card = (id: string, flag: boolean) => `
+    <article class="ajax_block_product">
+      <div class="product-container">
+        <div class="row"><div class="col">
+          <a class="img_link" href="https://s.test/${id}-courroie-${id}.html" title="Courroie ${id}">
+            <img loading="eager" class="img-fluid" src="https://static.s.test/${id}-small/courroie-${id}.jpg" alt="Courroie ${id}" />
+          </a>
+          ${flag ? '<div class="product-flag"><div class="text">Produit conseillé</div></div>' : ''}
+        </div>
+        <div class="col"><h2><a class="product-name" href="https://s.test/${id}-courroie-${id}.html">Courroie ${id}</a></h2>
+          <div class="ref">R&eacute;f : REF-${id}</div>
+          <span class="price product-price">6,48 € <span>T.T.C.</span></span>
+        </div></div>
+      </div>
+    </article>`
+
+  it('garde le visuel des cartes qui portent un badge interne', () => {
+    const html = `<div class="products">${card('11', true)}${card('22', false)}${card('33', true)}</div>`
+    const rows = parseListingDomCards(html, 'https://s.test/liste')
+    expect(rows).toHaveLength(3)
+    expect(rows.filter((r) => r.image)).toHaveLength(3)
+    expect(rows[0].image).toBe('https://static.s.test/11-small/courroie-11.jpg')
+    expect(rows[0].name).toBe('Courroie 11')
+    expect(rows[0].ref).toBe('REF-11')
+  })
+
+  it('ne perd AUCUNE fiche quand aucune carte n’a de conteneur imbriqué', () => {
+    const html = `<div class="products">${card('11', false)}${card('22', false)}</div>`
+    const rows = parseListingDomCards(html, 'https://s.test/liste')
+    expect(rows).toHaveLength(2)
+    expect(rows.every((r) => r.image)).toBe(true)
+  })
+})

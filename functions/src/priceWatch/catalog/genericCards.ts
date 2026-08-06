@@ -232,15 +232,12 @@ function parseDataPayloadProducts(html: string, baseUrl?: string): CompetitorLis
   return out
 }
 
-/** Palier 3 — cartes DOM répétées (conteneur class~=product). Best-effort, borné. */
-function parseDomCards(html: string, baseUrl?: string): CompetitorListing[] {
-  // Débuts de carte : <li|article|div class="…product…"> (mot « product » dans une classe).
-  const starts = [...html.matchAll(/<(?:li|article|div)\b[^>]*class=["'][^"']*\bproduct[a-z0-9_-]*\b[^"']*["'][^>]*>/gi)]
-  if (starts.length < 2) return []
+/** Une carte par tranche, entre deux positions de découpe. */
+function cutCards(html: string, starts: number[], baseUrl?: string): CompetitorListing[] {
   const out: CompetitorListing[] = []
   for (let i = 0; i < starts.length; i++) {
-    const from = starts[i].index ?? 0
-    const to = i + 1 < starts.length ? (starts[i + 1].index ?? html.length) : Math.min(from + 4000, html.length)
+    const from = starts[i]
+    const to = i + 1 < starts.length ? starts[i + 1] : Math.min(from + 4000, html.length)
     const block = html.slice(from, Math.min(to, from + 4000))
     const url = extractCardUrl(block, baseUrl)
     const { price, listPrice } = extractCardPrice(block)
@@ -250,6 +247,51 @@ function parseDomCards(html: string, baseUrl?: string): CompetitorListing[] {
     }
   }
   return out
+}
+
+/**
+ * Palier 3 — cartes DOM répétées (conteneur class~=product). Best-effort, borné.
+ *
+ * ⚠ Découper sur TOUS les conteneurs « product… » à la fois FRAGMENTE les cartes. Un thème
+ * qui pose un `<div class="product-flag">Produit conseillé</div>` AU MILIEU de sa carte y
+ * ouvre une fausse carte : le morceau qui porte le nom et le prix ne contient plus le
+ * visuel, resté en amont — et c'est ce morceau-là que la dédup par URL retient, puisque le
+ * fragment complet, lui, se fait couper avant d'avoir un nom. Mesuré sur une page réelle :
+ * 100 fiches relevées mais 63 visuels seulement, sans rien pour l'expliquer à l'écran.
+ *
+ * On découpe donc avec UN SEUL mot de classe à la fois. Le conteneur RÉEL se répète une
+ * fois par produit, là où un élément décoratif interne n'apparaît que sur certaines cartes.
+ * La découpe groupée reste en lice : sur un thème qui alterne les noms de classe d'une
+ * carte à l'autre, c'est elle qui en trouve le plus.
+ */
+function parseDomCards(html: string, baseUrl?: string): CompetitorListing[] {
+  // Débuts de carte : <li|article|div class="…product…"> (mot « product » dans une classe).
+  const starts = [...html.matchAll(/<(?:li|article|div)\b[^>]*class=["'][^"']*\b(product[a-z0-9_-]*)\b[^"']*["'][^>]*>/gi)]
+  if (starts.length < 2) return []
+
+  const byToken = new Map<string, number[]>()
+  for (const m of starts) {
+    const bucket = byToken.get((m[1] ?? '').toLowerCase())
+    if (bucket) bucket.push(m.index ?? 0)
+    else byToken.set((m[1] ?? '').toLowerCase(), [m.index ?? 0])
+  }
+
+  let best: CompetitorListing[] = []
+  let bestImages = -1
+  const candidates = [starts.map((m) => m.index ?? 0), ...byToken.values()]
+  for (const positions of candidates) {
+    if (positions.length < 2) continue
+    const cards = cutCards(html, positions, baseUrl)
+    const images = cards.filter((c) => c.image).length
+    // ⚠ Jamais troquer des PRODUITS contre des visuels : perdre une fiche coûte plus cher
+    // que perdre sa photo. Le nombre de cartes prime ; les visuels ne départagent qu'à
+    // égalité — ce qui suffit à écarter la découpe fragmentée, à cartes égales.
+    if (cards.length > best.length || (cards.length === best.length && images > bestImages)) {
+      best = cards
+      bestImages = images
+    }
+  }
+  return best
 }
 
 /** Dédup par URL (les conteneurs imbriqués peuvent produire des doublons). */
