@@ -18,8 +18,8 @@ const listing = (o: Partial<CompetitorListing>): CompetitorListing =>
   ({ url: 'https://x.fr/p.html', name: 'x', ...o })
 
 const index = new Map<string, CompetitorListing[]>([
-  ['pm', [listing({ ref: 'BS691991', price: 98, availability: 'in-stock', url: 'https://pm.fr/a.html' })]],
-  ['wm', [listing({ ref: 'F1633', price: 11.7, url: 'https://wm.fr/b.html' })]],
+  ['pm', [listing({ ref: 'BS691991', price: 98, availability: 'in-stock', url: 'https://pm.fr/a.html', name: 'Alternateur Briggs & Stratton' })]],
+  ['wm', [listing({ ref: 'F1633', price: 11.7, url: 'https://wm.fr/b.html', name: 'Courroie trapézoïdale A35' })]],
 ])
 
 describe('buildMatrix', () => {
@@ -95,8 +95,8 @@ describe('buildMatrix', () => {
     ]
     const idx = new Map<string, CompetitorListing[]>([
       ['pm', [
-        listing({ ref: 'BS691991', price: 60, url: 'https://pm.fr/e.html' }),
-        listing({ ref: '532134149', price: 30, url: 'https://pm.fr/oem.html' }),
+        listing({ ref: 'BS691991', price: 60, url: 'https://pm.fr/e.html', name: 'Lame de coupe BS691991' }),
+        listing({ ref: '532134149', price: 30, url: 'https://pm.fr/oem.html', name: 'Lame de tondeuse HUSQVARNA' }),
       ]],
       ['wm', []],
     ])

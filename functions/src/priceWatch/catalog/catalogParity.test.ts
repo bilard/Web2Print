@@ -51,7 +51,7 @@ describe('match (parité serveur)', () => {
     const listings = [{ url: 'https://x.fr/a.html', name: 'Alternateur', ref: 'BS691991', price: 98 }]
     expect(indexKeysOf(listings[0])).toContain('BS691991')
     const lookup = buildMemoryIndex(listings)
-    const r = matchProduct({ id: 'a', name: 'Alt', ref: 'BS691991' }, 's', lookup)
+    const r = matchProduct({ id: 'a', name: 'Alternateur', ref: 'BS691991' }, 's', lookup)
     expect(r.outcome).toBe('matched')
   })
   it('apparie une réf constructeur lue en fin de libellé', () => {
@@ -71,9 +71,12 @@ describe('match (parité serveur)', () => {
     expect(lookup('5208301')).toHaveLength(1)
     expect(matchProduct({ id: 'a', name: 'CARBURATEUR', ref: '5208301' }, 's', lookup).outcome).toBe('not-found')
   })
-  it('laisse passer un libellé muet ou une famille commune', () => {
+  it('exige que le libellé CORROBORE, et l’accepte par famille de pièce', () => {
+    // Muet des deux côtés : refusé (doctrine « le libellé confirme »).
     const muet = buildMemoryIndex([{ url: 'https://x.fr/14-piece-5208302.html', name: 'CASTELGARDEN 3816005331', price: 12 }])
-    expect(matchProduct({ id: 'a', name: 'CARBURATEUR', ref: '5208302' }, 's', muet).outcome).toBe('matched')
+    expect(matchProduct({ id: 'a', name: 'CARBURATEUR', ref: '5208302' }, 's', muet).outcome).toBe('not-found')
+    // « SWITCH BOX BATTERY » ↔ « Boîtier de commutation » : aucun mot commun, même
+    // famille — c'est ce que la comparaison de mots bruts ne saurait pas voir.
     const commun = buildMemoryIndex([{ url: 'https://x.fr/15-boitier-5208303.html', name: 'Boîtier de commutation', price: 30 }])
     expect(matchProduct({ id: 'a', name: 'SWITCH BOX BATTERY', ref: '5208303' }, 's', commun).outcome).toBe('matched')
   })

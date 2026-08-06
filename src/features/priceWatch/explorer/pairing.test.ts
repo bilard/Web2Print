@@ -78,8 +78,8 @@ describe('pairSiteListings', () => {
 
   it('n’attribue pas deux fois la même fiche concurrente', () => {
     const dup: SourceProduct[] = [
-      { id: 'a', name: 'A', ref: 'ABC-123', price: 100 },
-      { id: 'b', name: 'B', ref: 'ABC123', price: 90 },
+      { id: 'a', name: 'Courroie tondeuse', ref: 'ABC-123', price: 100 },
+      { id: 'b', name: 'Courroie tondeuse bis', ref: 'ABC123', price: 90 },
     ]
     const rows = pairSiteListings(dup, 's1', [listings[0]], { vatRate: 0.2 })
     expect(rows).toHaveLength(1)
@@ -93,7 +93,8 @@ describe('lien vers MA fiche produit', () => {
   // La fiche concurrente reprend l'identité du produit testé, pour que l'appariement
   // aboutisse quelle que soit sa référence.
   const url = (tpl: string | undefined, p = products[0]) => {
-    const l: CompetitorListing = { url: 'https://c.fr/x', name: 'X', ref: p.ref, gtin13: p.ean, price: 10 }
+    // Le libellé reprend celui du produit : l'appariement exige qu'il corrobore la clé.
+    const l: CompetitorListing = { url: 'https://c.fr/x', name: p.name, ref: p.ref, gtin13: p.ean, price: 10 }
     return pairSiteListings([p], 's1', [l], { productUrl: tpl })[0].source?.url ?? null
   }
 
@@ -102,7 +103,7 @@ describe('lien vers MA fiche produit', () => {
     expect(url('https://f1.fr/?ean={ean}')).toBe('https://f1.fr/?ean=4049582395377')
     // Une référence F1 porte des « / » (« 381600533/1 ») : insérée telle quelle, elle
     // fabriquerait un segment d'URL supplémentaire et un 404 muet.
-    expect(url('https://f1.fr/p/{ref}', { id: 'x', name: 'X', ref: '381600533/1' }))
+    expect(url('https://f1.fr/p/{ref}', { id: 'x', name: 'Enjoliveur de roue', ref: '381600533/1' }))
       .toBe('https://f1.fr/p/381600533%2F1')
   })
 

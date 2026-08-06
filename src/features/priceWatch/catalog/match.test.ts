@@ -204,24 +204,67 @@ describe('matchProduct', () => {
 
     it('laisse passer un écart de prix ORDINAIRE entre grossiste et détaillant', () => {
       // ×4 : c'est le marché, pas une anomalie. Et ×14 reste toléré (lot de seize).
+      // Libellés corroborés : c'est bien le PRIX qu'on éprouve ici.
       const idx = buildMemoryIndex([listing({
-        url: 'https://c.fr/24-machin-7200998.html', name: 'Zorglub XR-9', price: 8,
+        ref: 'ZX-7200998', url: 'https://c.fr/24-machin.html', name: 'Zorglub XR-9', price: 8,
       })])
-      expect(matchProduct({ id: 'p', name: 'BIDULE', ref: '7200998', price: 1.91 }, 's', idx).outcome)
+      expect(matchProduct({ id: 'p', name: 'Zorglub série 9', ref: 'ZX-7200998', price: 1.91 }, 's', idx).outcome)
         .toBe('matched')
       const lot = buildMemoryIndex([listing({
         url: 'https://c.fr/25-couteaux-3568400.html', name: 'Couteaux scarificateurs x16 pour Wolf', price: 41.49,
-      })])
+      })])  // « COUTEAU » ↔ « Couteaux » : même racine, donc corroboré
       expect(matchProduct({ id: 'p', name: 'COUTEAU', ref: '3568400', price: 3.01 }, 's', lot).outcome)
         .toBe('matched')
     })
 
-    it('laisse passer un libellé MUET — on ne condamne jamais pour une absence', () => {
+    it('REFUSE un libellé qui ne corrobore rien, même sur une référence structurée', () => {
+      // Doctrine assumée : une référence n'est pas unique d'un fournisseur à l'autre. Le
+      // libellé doit CONFIRMER le rapprochement, pas seulement s'abstenir de le nier.
+      const idx = buildMemoryIndex([listing({
+        ref: '520-8302', url: 'https://c.fr/14-piece.html', name: 'CASTELGARDEN 3816005331', price: 12,
+      })])
+      expect(matchProduct({ id: 'p', name: 'CARBURATEUR', ref: '520-8302' }, 's', idx).outcome)
+        .toBe('not-found')
+    })
+
+    it('REFUSE le même libellé muet quand la clé est une suite de chiffres NUS', () => {
+      // Charge de la preuve inversée : « 5208302 » n'appartient à personne. Sans un mot
+      // qui corrobore, le rapprochement n'est qu'une coïncidence numérique.
       const idx = buildMemoryIndex([listing({
         url: 'https://c.fr/14-piece-5208302.html', name: 'CASTELGARDEN 3816005331', price: 12,
       })])
-      const r = matchProduct({ id: 'p', name: 'CARBURATEUR', ref: '5208302' }, 's', idx)
-      expect(r.outcome).toBe('matched')
+      expect(idx('5208302')).toHaveLength(1)
+      expect(matchProduct({ id: 'p', name: 'CARBURATEUR', ref: '5208302' }, 's', idx).outcome)
+        .toBe('not-found')
+    })
+
+    it('accepte une clé NUE dès qu’un mot corrobore — pluriels et dérivés compris', () => {
+      const idx = buildMemoryIndex([listing({
+        url: 'https://c.fr/16-pinces-2101431.html', name: 'Lot de 10 pinces alligator 50mm', price: 12,
+      })])
+      // « PINCE » ↔ « pinces » : aucun token identique, même racine.
+      expect(matchProduct({ id: 'p', name: 'PINCE ELECTRIQUE', ref: '2101431' }, 's', idx).outcome)
+        .toBe('matched')
+    })
+
+    it('refuse « BATTERIE » ↔ « Verre pour syphon » — les zéros de tête tombent', () => {
+      // Cas RÉEL : réf. F1 60527, adresse du concurrent « 0060527 ». La normalisation
+      // rapproche les deux nombres, et plus rien ne les distinguait.
+      const idx = buildMemoryIndex([listing({
+        url: 'https://c.fr/17-verre-syphon-0060527.html', name: 'Verre pour syphon MZ',
+      })])
+      expect(matchProduct({ id: 'p', name: 'BATTERIE 12V 105A', ref: '60527' }, 's', idx).outcome)
+        .toBe('not-found')
+    })
+
+    it('refuse « JEU DE RONDELLES » ↔ « Tête fil nylon » — les tirets tombent', () => {
+      // Cas RÉEL : réf. F1 1608115, référence marchand « 160-8115 ».
+      const idx = buildMemoryIndex([listing({
+        ref: '160-8115', url: 'https://c.fr/18-tete-fil.html',
+        name: 'Tête fil nylon universelle EASYLOAD', price: 27.56,
+      })])
+      expect(matchProduct({ id: 'p', name: 'JEU DE RONDELLES', ref: '1608115', price: 3.8 }, 's', idx).outcome)
+        .toBe('not-found')
     })
 
     it('laisse passer deux libellés qui partagent une famille malgré la langue', () => {

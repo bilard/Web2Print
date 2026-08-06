@@ -17,8 +17,11 @@ const PATHS: Record<string, string[]> = {
 const products: SourceProduct[] = Object.keys(PATHS).map((id, i) => ({
   id, name: `Produit ${id}`, ref: `REF-100${i}`, price: 100,
 }))
+// ⚠ Le libellé reprend celui de la source : l'appariement EXIGE que le nom corrobore la
+// référence (une réf n'est pas unique d'un fournisseur à l'autre). Une fiche « Fiche p1 »
+// face à un produit « Produit p1 » ne se joindrait plus.
 const listings: CompetitorListing[] = products.map((p, i) => ({
-  url: `https://c.fr/${p.id}`, name: `Fiche ${p.id}`, ref: `REF-100${i}`, price: 120,
+  url: `https://c.fr/${p.id}`, name: `Produit ${p.id} chez le concurrent`, ref: `REF-100${i}`, price: 120,
 }))
 // + une fiche que le concurrent est seul à vendre : elle n'a aucun chemin.
 listings.push({ url: 'https://c.fr/orphan', name: 'Inconnu', ref: 'ZZZ', price: 50 })

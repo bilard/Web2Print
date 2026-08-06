@@ -9,7 +9,10 @@ const sites: SiteRef[] = [
   { siteId: 'wm', domain: 'webmotoculture.com' },
 ]
 
-const listing = (o: Partial<CompetitorListing>): CompetitorListing => ({ url: 'https://x.fr/p.html', name: 'x', ...o })
+// ⚠ Le nom par défaut n'est pas décoratif : depuis que l'appariement EXIGE que le
+// libellé corrobore la référence, une fiche nommée « x » n'apparie plus rien. Les
+// fixtures portent donc des libellés réalistes, comme sur un vrai catalogue.
+const listing = (o: Partial<CompetitorListing>): CompetitorListing => ({ url: 'https://x.fr/p.html', name: 'Produit', ...o })
 
 describe('buildReport', () => {
   const products: SourceProduct[] = [
@@ -21,8 +24,8 @@ describe('buildReport', () => {
     { id: 'c', name: 'Vis', price: 1 },
   ]
   const index = new Map<string, CompetitorListing[]>([
-    ['pm', [listing({ ref: 'BS691991', price: 96, availability: 'in-stock', url: 'https://pm.fr/a.html', name: 'Alt 691991' })]],
-    ['wm', [listing({ ref: 'F1633', price: 11.7, url: 'https://wm.fr/b.html' })]],
+    ['pm', [listing({ ref: 'BS691991', price: 96, availability: 'in-stock', url: 'https://pm.fr/a.html', name: 'Alternateur Briggs 691991' })]],
+    ['wm', [listing({ ref: 'F1633', price: 11.7, url: 'https://wm.fr/b.html', name: 'Courroie trapézoïdale F1633' })]],
   ])
   const r = buildReport(products, sites, index)
 
@@ -59,7 +62,7 @@ describe('buildReport', () => {
 
   it('compte les ruptures concurrent', () => {
     const idx = new Map<string, CompetitorListing[]>([
-      ['pm', [listing({ ref: 'BS691991', price: 96, availability: 'out-of-stock', url: 'https://pm.fr/a.html' })]],
+      ['pm', [listing({ ref: 'BS691991', price: 96, availability: 'out-of-stock', url: 'https://pm.fr/a.html', name: 'Alternateur Briggs' })]],
       ['wm', []],
     ])
     const rr = buildReport([products[0]], sites, idx)
@@ -75,20 +78,20 @@ describe('buildReport', () => {
   })
 
   it('indice > 100 quand je suis au-dessus du marché', () => {
-    const src: SourceProduct[] = [{ id: 'a', name: 'Alt', ref: 'BS691991', price: 120 }]
+    const src: SourceProduct[] = [{ id: 'a', name: 'Alternateur', ref: 'BS691991', price: 120 }]
     const idx = new Map<string, CompetitorListing[]>([
-      ['pm', [listing({ ref: 'BS691991', price: 120, url: 'https://pm.fr/a.html' })]], // 100 HT
+      ['pm', [listing({ ref: 'BS691991', price: 120, url: 'https://pm.fr/a.html', name: 'Alternateur Briggs' })]], // 100 HT
       ['wm', []],
     ])
     expect(buildReport(src, sites, idx).kpis.priceIndex).toBe(120)
   })
 
   it('l’indice vs le + bas est plus sévère que vs la médiane', () => {
-    const src: SourceProduct[] = [{ id: 'a', name: 'Alt', ref: 'BS691991', price: 100 }]
+    const src: SourceProduct[] = [{ id: 'a', name: 'Alternateur', ref: 'BS691991', price: 100 }]
     // Concurrents : 96 et 60 TTC → 80 et 50 HT. Médiane 65, min 50.
     const idx = new Map<string, CompetitorListing[]>([
-      ['pm', [listing({ ref: 'BS691991', price: 96, url: 'https://pm.fr/a.html' })]],
-      ['wm', [listing({ ref: 'BS691991', price: 60, url: 'https://wm.fr/a.html' })]],
+      ['pm', [listing({ ref: 'BS691991', price: 96, url: 'https://pm.fr/a.html', name: 'Alternateur Briggs' })]],
+      ['wm', [listing({ ref: 'BS691991', price: 60, url: 'https://wm.fr/a.html', name: 'Alternateur Briggs' })]],
     ])
     const rr = buildReport(src, sites, idx)
     expect(rr.kpis.priceIndex).toBeGreaterThan(100)
@@ -96,7 +99,7 @@ describe('buildReport', () => {
   })
 
   it('ignore les produits sans prix exploitable (pas de division par zéro)', () => {
-    const src: SourceProduct[] = [{ id: 'a', name: 'Alt', ref: 'BS691991', price: 0 }]
+    const src: SourceProduct[] = [{ id: 'a', name: 'Alternateur', ref: 'BS691991', price: 0 }]
     const idx = new Map<string, CompetitorListing[]>([
       ['pm', [listing({ ref: 'BS691991', price: 96, url: 'https://pm.fr/a.html' })]],
       ['wm', []],
@@ -109,7 +112,7 @@ describe('buildReport', () => {
       { id: 'adapt', name: 'Lame adaptable', ref: '1100010', originRefs: ['532134149'], price: 7 },
     ]
     const idx = new Map<string, CompetitorListing[]>([
-      ['pm', [listing({ ref: '532134149', price: 30, url: 'https://pm.fr/oem.html' })]],
+      ['pm', [listing({ ref: '532134149', price: 30, url: 'https://pm.fr/oem.html', name: 'Lame de tondeuse HUSQVARNA' })]],
       ['wm', []],
     ])
     const rr = buildReport(src, sites, idx)
@@ -164,7 +167,9 @@ describe('medGapPct — écart de position robuste', () => {
     }))
     const listings: CompetitorListing[] = gapsPct.map((g, i) =>
       // Prix affiché TTC (défaut B2C) → comparePrices le ramène en HT via la TVA 20 %.
-      listing({ ref: `REF${i}`, price: Math.round(100 * (1 + g / 100) * 1.2 * 100) / 100, url: `https://s.fr/${i}.html` }))
+      // Même libellé des deux côtés : l'appariement exige que le nom corrobore la
+      // référence, et ce scénario-ci éprouve les ÉCARTS, pas la jointure.
+      listing({ ref: `REF${i}`, name: `Produit ${i}`, price: Math.round(100 * (1 + g / 100) * 1.2 * 100) / 100, url: `https://s.fr/${i}.html` }))
     return buildReport(products, site, new Map([['s', listings]]))
   }
 

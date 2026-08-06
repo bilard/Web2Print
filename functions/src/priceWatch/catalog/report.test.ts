@@ -12,7 +12,8 @@ const sites: SiteRef[] = [
   { siteId: 'wm', domain: 'webmotoculture.com' },
 ]
 
-const listing = (o: Partial<CompetitorListing>): CompetitorListing => ({ url: 'https://x.fr/p.html', name: 'x', ...o })
+// ⚠ Libellés RÉALISTES : l'appariement exige que le nom corrobore la référence.
+const listing = (o: Partial<CompetitorListing>): CompetitorListing => ({ url: 'https://x.fr/p.html', name: 'Produit', ...o })
 
 describe('buildReport (serveur)', () => {
   const products: SourceProduct[] = [
@@ -21,8 +22,8 @@ describe('buildReport (serveur)', () => {
     { id: 'c', name: 'Vis', price: 1 },
   ]
   const index = new Map<string, CompetitorListing[]>([
-    ['pm', [listing({ ref: 'BS691991', price: 96, availability: 'in-stock', url: 'https://pm.fr/a.html', name: 'Alt 691991' })]],
-    ['wm', [listing({ ref: 'F1633', price: 11.7, url: 'https://wm.fr/b.html' })]],
+    ['pm', [listing({ ref: 'BS691991', price: 96, availability: 'in-stock', url: 'https://pm.fr/a.html', name: 'Alternateur Briggs 691991' })]],
+    ['wm', [listing({ ref: 'F1633', price: 11.7, url: 'https://wm.fr/b.html', name: 'Courroie trapézoïdale F1633' })]],
   ])
   const r = buildReport(products, sites, index)
 
@@ -54,7 +55,7 @@ describe('buildReport (serveur)', () => {
       { id: 'adapt', name: 'Lame adaptable', ref: '1100010', originRefs: ['532134149'], price: 7 },
     ]
     const idx = new Map<string, CompetitorListing[]>([
-      ['pm', [listing({ ref: '532134149', price: 30, url: 'https://pm.fr/oem.html' })]],
+      ['pm', [listing({ ref: '532134149', price: 30, url: 'https://pm.fr/oem.html', name: 'Lame de tondeuse HUSQVARNA' })]],
       ['wm', []],
     ])
     const rr = buildReport(src, sites, idx)

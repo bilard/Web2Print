@@ -11,7 +11,8 @@ import {
   isInternalBarcode, refTokensFromUrl, refTokensFromText, MIN_REF_LEN, WEAK_REF_LEN,
   type JoinKey, type MatchProof, type SourceProductKeys,
 } from './keys'
-import { familiesConflict } from './partFamily'
+import { familiesConflict, partFamilies } from './partFamily'
+import { nameTokens } from './nameMatch'
 import type { CompetitorListing, Availability } from './prestashop'
 
 /** TVA française de droit commun. Paramétrable : certaines familles en dérogent. */
@@ -139,6 +140,33 @@ function priceAbyss(mine: number | undefined, theirs: number | undefined): boole
 }
 
 /**
+ * Les deux libellés se corroborent-ils ? Un mot en commun, ou une même famille de pièce.
+ *
+ * La comparaison porte sur des RACINES de quatre lettres, pas sur des mots entiers :
+ * « pince » et « pinces », « raccord » et « raccordement », « couteau » et « couteaux »
+ * désignent la même chose et n'ont pourtant aucun token identique. Les nombres sont
+ * exclus — une cote commune ne rapproche rien.
+ */
+const ROOT_LEN = 4
+
+function corroborated(sourceName: string, listingName: string | undefined): boolean {
+  const left = nameTokens(sourceName).filter((t) => !/^\d+$/.test(t))
+  const right = nameTokens(listingName).filter((t) => !/^\d+$/.test(t))
+  if (left.length === 0 || right.length === 0) return false
+  for (const a of left) {
+    for (const b of right) {
+      if (a === b) return true
+      const n = Math.min(a.length, b.length)
+      if (n >= ROOT_LEN && a.slice(0, n) === b.slice(0, n)) return true
+    }
+  }
+  const lf = partFamilies(sourceName)
+  if (lf.size === 0) return false
+  for (const f of partFamilies(listingName)) if (lf.has(f)) return true
+  return false
+}
+
+/**
  * Apparie un produit source à l'index d'un concurrent.
  *
  * Trois verrous, dans cet ordre : la clé doit RÉSOUDRE dans l'index, l'appariement doit
@@ -185,8 +213,16 @@ export function matchProduct(
       if (!proof) continue
       // Candidat écarté, pas produit rejeté : on continue de chercher — une autre fiche
       // du même site peut porter la bonne pièce sous la même clé.
+      // ⚠ CHARGE DE LA PREUVE INVERSÉE — changement de doctrine, décidé sur le terrain.
+      // Une référence n'est PAS unique d'un fournisseur à l'autre : chaque constructeur
+      // numérote comme il veut, et la normalisation rapproche encore ce qui différait
+      // (« 0060527 » → « 60527 », « 160-8115 » → « 1608115 »). Le rapprochement doit
+      // donc être CORROBORÉ par le libellé, au lieu d'être présumé bon jusqu'à
+      // contradiction. Seul le code-barres échappe à cette exigence.
       if (VETOABLE_EVIDENCE.has(proof.evidence)
-        && (familiesConflict(product.name, candidate.name) || priceAbyss(product.price, candidate.price))) {
+        && (!corroborated(product.name, candidate.name)
+          || familiesConflict(product.name, candidate.name)
+          || priceAbyss(product.price, candidate.price))) {
         vetoed++
         continue
       }
