@@ -100,6 +100,27 @@ export interface LoadedSourceCatalog {
   sourceRows: number
   /** Des tranches manquent : le catalogue relu est AMPUTÉ. Aucun calcul ne doit s'y fier. */
   partial: boolean
+  /** Poids relu, en octets (mesuré sur la 1re tranche × nombre de tranches). Ce chiffre
+   *  EXPLIQUE le temps d'ouverture de l'explorateur : tout est relu à chaque fois. */
+  bytes: number
+  /** Part de ces octets tenue par les champs d'AFFICHAGE SEUL (description, visuel,
+   *  taxonomie) — ceux dont l'appariement n'a aucun besoin. */
+  displayBytes: number
+  /** Durée totale de la relecture, en ms. */
+  ms: number
+}
+
+/** Poids UTF-8 d'une tranche et part qu'y tiennent les champs d'affichage seul.
+ *  Mesuré sur UNE tranche : sérialiser les 38 coûterait plus cher que le diagnostic. */
+function weighChunk(products: SourceProduct[]): { bytes: number; display: number } {
+  const bytes = utf8Bytes(JSON.stringify(products))
+  let display = 0
+  for (const p of products) {
+    if (p.description) display += utf8Bytes(p.description)
+    if (p.image) display += utf8Bytes(p.image)
+    if (p.taxo?.length) display += utf8Bytes(JSON.stringify(p.taxo))
+  }
+  return { bytes, display }
 }
 
 /** Tranches lues de front. Une tranche pèse jusqu'à 900 Ko : les enchaîner une par une
@@ -127,6 +148,8 @@ export async function loadSourceCatalog(
   const expected = (meta.data()?.count as number) ?? 0
   const sourceRows = (meta.data()?.rows as number) ?? 0
   const products: SourceProduct[] = []
+  const t0 = performance.now()
+  let weight: { bytes: number; display: number } | null = null
   onProgress?.(0, chunks)
   // Lots parallèles, remis dans l'ORDRE des tranches : le catalogue garde l'ordre du
   // node « Comparer », et une tranche absente est ignorée exactement comme avant (c'est
@@ -137,14 +160,22 @@ export async function loadSourceCatalog(
       (_, k) => getDoc(doc(db, col, `chunk_${start + k}`)),
     )
     for (const c of await Promise.all(batch)) {
-      if (c.exists()) products.push(...((c.data()?.products as SourceProduct[]) ?? []))
+      if (!c.exists()) continue
+      const slice = (c.data()?.products as SourceProduct[]) ?? []
+      if (!weight && slice.length > 0) weight = weighChunk(slice)
+      products.push(...slice)
     }
     onProgress?.(Math.min(start + SOURCE_READ_BATCH, chunks), chunks)
   }
   // Tolérance : le compte doit coller à quelques unités près (une tranche manquante en
   // coûte des centaines). Sous ce seuil, tout consommateur doit s'abstenir.
   const partial = expected > 0 && products.length < expected - 5
-  return { products, vatRate, expected, partial, sourceRows }
+  return {
+    products, vatRate, expected, partial, sourceRows,
+    bytes: (weight?.bytes ?? 0) * chunks,
+    displayBytes: (weight?.display ?? 0) * chunks,
+    ms: Math.round(performance.now() - t0),
+  }
 }
 
 /** Plafond de produits persistés dans `latest` (les plus sous-cotés d'abord). Au-delà,

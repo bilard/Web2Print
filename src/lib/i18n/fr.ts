@@ -5576,6 +5576,8 @@ export const fr = {
   'pwx.stats.promos': 'Promos',
   'pwx.stats.ruptures': 'Ruptures',
   'pwx.stats.shown.help': 'Fiches visibles après filtres, sur les fiches collectées chez ce concurrent.',
+  'pwx.src.weight': '{mb} Mo relus en {s} s',
+  'pwx.src.weight.help': 'Le catalogue source est relu INTÉGRALEMENT à chaque ouverture de cet écran (aucune donnée n’est mise en cache). Description, visuel et taxonomie y pèsent le plus lourd, alors qu’ils ne servent qu’à afficher les lignes visibles.',
   'pwx.source.pending': 'Lecture du catalogue source…',
   'pwx.source.pending.progress': 'Lecture du catalogue source… {done}/{total} tranches',
   'pwx.source.pending.hint': 'Calculé une fois le catalogue source relu — les fiches ci-dessous sont déjà consultables.',

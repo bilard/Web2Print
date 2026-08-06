@@ -5384,6 +5384,8 @@ export const en: Record<TranslationKey, string> = {
   'pwx.stats.promos': 'Promos',
   'pwx.stats.ruptures': 'Out of stock',
   'pwx.stats.shown.help': 'Items visible after filters, out of the items collected from this competitor.',
+  'pwx.src.weight': '{mb} MB read in {s} s',
+  'pwx.src.weight.help': 'The source catalogue is read IN FULL every time this screen opens (no data is cached). Description, image and taxonomy account for most of that weight, yet they only serve to display the visible rows.',
   'pwx.source.pending': 'Reading the source catalogue…',
   'pwx.source.pending.progress': 'Reading the source catalogue… {done}/{total} chunks',
   'pwx.source.pending.hint': 'Computed once the source catalogue has been read — the items below are already browsable.',

@@ -27,14 +27,19 @@ export interface SourceCatalogState {
   sourceRows: number
   /** Avancement de la relecture, en TRANCHES (0/0 tant que `_meta` n'a pas répondu). */
   progress: { done: number; total: number }
+  /** Poids relu et part d'affichage seul (cf. LoadedSourceCatalog), + durée. */
+  bytes: number
+  displayBytes: number
+  ms: number
 }
 
-/** Catalogue source du suivi : la base de l'appariement ET des écarts de prix. */
 const IDLE_SOURCE: SourceCatalogState = {
   products: [], vatRate: DEFAULT_VAT_RATE, loading: false, absent: false,
   partial: false, expected: 0, sourceRows: 0, progress: { done: 0, total: 0 },
+  bytes: 0, displayBytes: 0, ms: 0,
 }
 
+/** Catalogue source du suivi : la base de l'appariement ET des écarts de prix. */
 export function useSourceCatalog(watchId: string | null): SourceCatalogState {
   const uid = useWorkspaceUid()
   const [state, setState] = useState<SourceCatalogState>(IDLE_SOURCE)
@@ -50,7 +55,7 @@ export function useSourceCatalog(watchId: string | null): SourceCatalogState {
       .then((src) => {
         if (cancelled) return
         debugLog('[pw-explorer] catalogue source',
-          src ? `${src.products.length} produits, TVA ${src.vatRate}` : 'absent',
+          src ? `${src.products.length} produits, TVA ${src.vatRate}, ~${Math.round((src.bytes / 1e6) * 10) / 10} Mo dont ${Math.round((src.displayBytes / 1e6) * 10) / 10} Mo d'affichage seul` : 'absent',
           'en', Math.round(performance.now() - t0), 'ms')
         if (src?.partial) {
           console.warn('[pw-explorer] catalogue source AMPUTÉ :', src.products.length, '/', src.expected)
@@ -60,6 +65,7 @@ export function useSourceCatalog(watchId: string | null): SourceCatalogState {
           loading: false, absent: src == null,
           partial: !!src?.partial, expected: src?.expected ?? 0, sourceRows: src?.sourceRows ?? 0,
           progress: s.progress,
+          bytes: src?.bytes ?? 0, displayBytes: src?.displayBytes ?? 0, ms: src?.ms ?? 0,
         }))
       })
       .catch((e) => {

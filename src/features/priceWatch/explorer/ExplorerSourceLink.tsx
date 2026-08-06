@@ -23,6 +23,10 @@ export interface SourceCatalogFacts {
   expected: number
   /** Lignes fournies par la feuille source au dernier run (0 = non mesuré). */
   sourceRows: number
+  /** Poids relu à CHAQUE ouverture de l'écran et durée de cette relecture : c'est ce
+   *  chiffre, pas le nombre de produits, qui explique l'attente. */
+  bytes: number
+  ms: number
 }
 
 export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, sheets, sheetIndex, onPickSheet, extras, imagePrefix, onImagePrefix, productUrl, onProductUrl }: {
@@ -60,6 +64,13 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
           ? t('pwx.src.catalogRows', { count: n(facts.products), rows: n(facts.sourceRows) })
           : t('pwx.src.catalog', { count: n(facts.products) })}
       </span>
+      {/* Le temps d'ouverture n'a rien d'un mystère : tout le catalogue est relu à chaque
+          fois (aucun cache). On affiche donc ce qu'il a fallu transférer. */}
+      {facts.bytes > 0 && (
+        <span className="text-white/25" title={t('pwx.src.weight.help')}>
+          {t('pwx.src.weight', { mb: (facts.bytes / 1e6).toFixed(1), s: (facts.ms / 1000).toFixed(1) })}
+        </span>
+      )}
       {facts.partial && (
         <span className="text-rose-300 flex items-center gap-1 font-medium">
           <AlertTriangle className="w-3 h-3 shrink-0" />
