@@ -49,7 +49,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
 
   const source = useSourceCatalog(watchId)
   const { listings, loading, error, reload } = useSiteListings(watchId, active)
-  const src = useSourceSheet()
+  const src = useSourceSheet(watchId)
   const { extras } = src
   // Jugements d'audit du concurrent affiché : ils survivent à la session.
   const verdicts = useVerdicts(watchId, active)

@@ -5,12 +5,14 @@
 // (« F1 Google ») peut être une autre base entièrement. On liste donc toutes les bases et
 // on lit celle choisie SANS toucher au store excel (`fetchSheetsQuiet`) — basculer la base
 // active de l'utilisateur parce qu'il consulte des concurrents serait un effet de bord.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { fetchSheetsQuiet } from '@/features/manufacturer-verify/insights/fetchSheetsQuiet'
 import type { ExcelSheet } from '@/features/excel/types'
 import { buildSourceExtras, type SourceExtrasIndex } from './sourceExtras'
+import { loadExplorerPrefs, saveExplorerPrefs, type ExplorerPrefs } from './explorerPrefs'
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { debugLog } from '@/lib/debugLog'
 
 /** Base ouverte dans le PIM (valeur par défaut du sélecteur). */
@@ -39,10 +41,11 @@ export interface SourceSheetState {
   extras: SourceExtrasIndex
 }
 
-export function useSourceSheet(): SourceSheetState {
+export function useSourceSheet(watchId: string | null): SourceSheetState {
   const openSheets = useExcelStore((s) => s.sheets)
   const activeIndex = useExcelStore((s) => s.activeSheetIndex)
   const { listSavedFiles } = useExcelFirebase()
+  const uid = useWorkspaceUid()
 
   const [databases, setDatabases] = useState<SourceDbOption[]>([])
   const [dbId, setDbIdState] = useState<string>(() => {
@@ -54,21 +57,57 @@ export function useSourceSheet(): SourceSheetState {
   const [imagePrefix, setPrefixState] = useState<string>(() => {
     try { return window.localStorage.getItem(PREFIX_KEY) ?? '' } catch { return '' }
   })
-  const setImagePrefix = (v: string) => {
-    setPrefixState(v)
-    try { window.localStorage.setItem(PREFIX_KEY, v) } catch { /* préférence non persistée */ }
-  }
   const [productUrl, setProductUrlState] = useState<string>(() => {
     try { return window.localStorage.getItem(PRODUCT_URL_KEY) ?? '' } catch { return '' }
   })
+  // Ces réglages appartiennent au SUIVI, pas au navigateur (cf. explorerPrefs). Le
+  // localStorage reste le repli hors ligne et la valeur d'amorçage avant réponse.
+  const touched = useRef(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const push = (patch: ExplorerPrefs) => {
+    touched.current = true
+    if (!uid || !watchId) return
+    // Le préfixe se saisit lettre par lettre : sans ce délai, chaque frappe écrirait
+    // dans Firestore.
+    if (timer.current) clearTimeout(timer.current)
+    const snapshot = { dbId, imagePrefix, productUrl, ...patch }
+    timer.current = setTimeout(() => {
+      saveExplorerPrefs(uid, watchId, snapshot)
+        .catch((e) => console.warn('[pw-explorer] réglages non partagés', e))
+    }, 700)
+  }
+
+  useEffect(() => {
+    if (!uid || !watchId) return
+    let cancelled = false
+    loadExplorerPrefs(uid, watchId)
+      .then((prefs) => {
+        // Ne JAMAIS écraser une saisie en cours : le distant n'amorce que tant que
+        // l'utilisateur n'a rien touché sur cet écran.
+        if (cancelled || !prefs || touched.current) return
+        if (typeof prefs.dbId === 'string') { setDbIdState(prefs.dbId); setPicked(null) }
+        if (typeof prefs.imagePrefix === 'string') setPrefixState(prefs.imagePrefix)
+        if (typeof prefs.productUrl === 'string') setProductUrlState(prefs.productUrl)
+      })
+      .catch(() => { /* réglages partagés illisibles : on garde ceux du navigateur */ })
+    return () => { cancelled = true }
+  }, [uid, watchId])
+
+  const setImagePrefix = (v: string) => {
+    setPrefixState(v)
+    try { window.localStorage.setItem(PREFIX_KEY, v) } catch { /* préférence non persistée */ }
+    push({ imagePrefix: v })
+  }
   const setProductUrl = (v: string) => {
     setProductUrlState(v)
     try { window.localStorage.setItem(PRODUCT_URL_KEY, v) } catch { /* préférence non persistée */ }
+    push({ productUrl: v })
   }
 
   const setDbId = (id: string) => {
     setDbIdState(id); setPicked(null)
     try { window.localStorage.setItem(PREF_KEY, id) } catch { /* préférence non persistée */ }
+    push({ dbId: id })
   }
 
   useEffect(() => {
