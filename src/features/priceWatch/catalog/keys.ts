@@ -77,6 +77,14 @@ export interface JoinKey {
    *  lui-même. Un match sur une telle clé compare une pièce adaptable à la pièce
    *  d'origine qu'elle remplace — utile, mais PAS le même produit. À signaler. */
   origin: boolean
+  /** Référence TELLE QU'ÉCRITE dans le catalogue source, avant normalisation.
+   *
+   *  `value` a perdu ce qui distingue : « 122600092/0 » et « 160-8115 » y deviennent
+   *  « 1226000920 » et « 1608115 », indiscernables d'un numéro quelconque. Or c'est
+   *  précisément la FORME d'origine qui dit si la clé discrimine — une référence
+   *  structurée appartient à son constructeur, une suite de chiffres nus n'appartient à
+   *  personne (cf. `keyIsDistinctive` dans `match.ts`). */
+  raw: string
 }
 
 export interface SourceProductKeys {
@@ -97,16 +105,16 @@ export interface SourceProductKeys {
 export function candidateKeys(p: SourceProductKeys): JoinKey[] {
   const out: JoinKey[] = []
   const seen = new Set<string>()
-  const push = (kind: JoinKeyKind, value: string, origin: boolean) => {
+  const push = (kind: JoinKeyKind, value: string, origin: boolean, raw: string) => {
     if (!value) return
     const dedup = `${kind}:${value}`
     if (seen.has(dedup)) return
     seen.add(dedup)
-    out.push({ kind, value, weak: kind !== 'ean' && value.length < WEAK_REF_LEN, origin })
+    out.push({ kind, value, weak: kind !== 'ean' && value.length < WEAK_REF_LEN, origin, raw })
   }
 
   const ean = normalizeEan(p.ean)
-  if (ean && !isInternalBarcode(ean)) push('ean', ean, false)
+  if (ean && !isInternalBarcode(ean)) push('ean', ean, false, String(p.ean ?? ''))
 
   // Références propres du produit d'abord (origin=false), références d'origine ensuite
   // (origin=true) : un match exact prime toujours sur un match « pièce d'origine ».
@@ -118,9 +126,9 @@ export function candidateKeys(p: SourceProductKeys): JoinKey[] {
   ]) {
     const ref = normalizeRef(raw)
     if (ref.length < MIN_REF_LEN) continue
-    push('ref', ref, isOrigin)
+    push('ref', ref, isOrigin, raw)
     const nz = stripLeadingZeros(ref)
-    if (nz !== ref && nz.length >= MIN_REF_LEN) push('ref-nozero', nz, isOrigin)
+    if (nz !== ref && nz.length >= MIN_REF_LEN) push('ref-nozero', nz, isOrigin, raw)
   }
   return out
 }

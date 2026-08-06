@@ -111,9 +111,29 @@ export interface MatchResult {
  * 5205002 » de cinq marchands, tous appariés par référence, dont certains la DÉCLARENT en
  * champ `sku`. Exempter les champs déclarés laissait donc passer le gros des cas.
  */
-const VETOABLE_EVIDENCE = new Set<MatchProof['evidence']>([
-  'ref-in-url', 'ref-in-title', 'ref-in-name', 'ean-in-url', 'sku', 'mpn',
-])
+/** Une clé de type EAN identifie un article unique au monde, PEU IMPORTE où on l'a lue :
+ *  déclarée en `gtin13` ou retrouvée dans l'adresse de la fiche, treize chiffres qui
+ *  coïncident ne coïncident pas par hasard. Cas VÉCU du refus à tort : « ENJOLIVEUR »
+ *  réf. 122600092/0 ↔ « 122600092/0 - Protection de Roue Droite », dont l'URL portait
+ *  l'EAN du produit — même référence, même code-barres, deux libellés étrangers. */
+function keyIsBarcode(proof: MatchProof): boolean {
+  return proof.key.kind === 'ean' || proof.evidence === 'gtin13'
+}
+
+/**
+ * Une référence STRUCTURÉE — qui porte une lettre ou un séparateur — appartient à son
+ * constructeur : « 122600092/0 », « 1134-4319-01 », « BS691991 », « K10HDB » ne se
+ * rencontrent pas deux fois par accident.
+ *
+ * Une suite de CHIFFRES NUS, si : tous les catalogues numérotent pareil, et la
+ * normalisation rapproche encore ce qui différait (« 0060527 » → « 60527 »,
+ * « 160-8115 » → « 1608115 »). C'est la signature commune de tous les faux
+ * appariements remontés du terrain — et c'est là, et seulement là, qu'on exige du
+ * libellé qu'il confirme.
+ */
+function keyIsDistinctive(proof: MatchProof): boolean {
+  return !/^\d+$/.test(proof.key.raw.trim())
+}
 
 /**
  * Rapport de prix au-delà duquel deux articles ne peuvent pas être le même, quoi que
@@ -220,10 +240,13 @@ export function matchProduct(
       // (« 0060527 » → « 60527 », « 160-8115 » → « 1608115 »). Le rapprochement doit
       // donc être CORROBORÉ par le libellé, au lieu d'être présumé bon jusqu'à
       // contradiction. Seul le code-barres échappe à cette exigence.
-      if (VETOABLE_EVIDENCE.has(proof.evidence)
-        && (!corroborated(product.name, candidate.name)
-          || familiesConflict(product.name, candidate.name)
-          || priceAbyss(product.price, candidate.price))) {
+      // Un code-barres se suffit à lui-même — aucun libellé ne le renverse.
+      if (!keyIsBarcode(proof)
+        && (familiesConflict(product.name, candidate.name)
+          || priceAbyss(product.price, candidate.price)
+          // Le libellé doit CONFIRMER quand la clé, elle, ne prouve rien : une suite de
+          // chiffres nus n'appartient à personne.
+          || (!keyIsDistinctive(proof) && !corroborated(product.name, candidate.name)))) {
         vetoed++
         continue
       }

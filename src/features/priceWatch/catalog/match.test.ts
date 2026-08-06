@@ -217,14 +217,31 @@ describe('matchProduct', () => {
         .toBe('matched')
     })
 
-    it('REFUSE un libellé qui ne corrobore rien, même sur une référence structurée', () => {
-      // Doctrine assumée : une référence n'est pas unique d'un fournisseur à l'autre. Le
-      // libellé doit CONFIRMER le rapprochement, pas seulement s'abstenir de le nier.
+    it('apparie ENJOLIVEUR ↔ « Protection de Roue Droite » — cas RÉEL emc-motoculture', () => {
+      // Même référence (122600092/0) ET même code-barres, mais deux libellés sans un mot
+      // en commun. Exiger la corroboration sur TOUTES les clés refusait ce rapprochement
+      // parfait : c'est ce que ça coûtait.
+      const idx = buildMemoryIndex([listing({
+        name: '122600092/0 - Protection de Roue Droite pour Tondeuse Castelgarden / GGP / Stiga',
+        ref: '1226000920', price: 3.41,
+        url: 'https://c.fr/protection-de-roue/3559-1226000920-protection-roue-8008984359130.html',
+      })])
+      const r = matchProduct(
+        { id: 'p', name: 'ENJOLIVEUR', ref: '122600092/0', ean: '8008984359130', price: 2.92 },
+        's', idx,
+      )
+      expect(r.outcome).toBe('matched')
+      expect(r.listing?.price).toBe(3.41)
+    })
+
+    it('une référence STRUCTURÉE apparie seule, sans corroboration du libellé', () => {
+      // « 520-8302 » porte un séparateur : elle appartient à son constructeur, là où une
+      // suite de chiffres nus n'appartient à personne.
       const idx = buildMemoryIndex([listing({
         ref: '520-8302', url: 'https://c.fr/14-piece.html', name: 'CASTELGARDEN 3816005331', price: 12,
       })])
       expect(matchProduct({ id: 'p', name: 'CARBURATEUR', ref: '520-8302' }, 's', idx).outcome)
-        .toBe('not-found')
+        .toBe('matched')
     })
 
     it('REFUSE le même libellé muet quand la clé est une suite de chiffres NUS', () => {

@@ -37,8 +37,11 @@ const FAMILIES: Record<string, string[]> = {
   sparkplug: ['bougie', 'bougies', 'sparkplug'],
   battery: ['batterie', 'batteries', 'battery', 'accu', 'accus', 'accumulateur'],
   carburetor: ['carburateur', 'carburateurs', 'carburetor', 'carburettor'],
-  wheel: ['roue', 'roues', 'wheel', 'wheels'],
-  hubcap: ['enjoliveur', 'enjoliveurs', 'hubcap', 'hubcaps'],
+  // Roue, enjoliveur, protection de roue : le MÊME ensemble. Les séparer fabriquait une
+  // contradiction sur « ENJOLIVEUR » ↔ « Protection de Roue Droite pour Tondeuse
+  // Castelgarden » — même référence ET même code-barres. Voir la règle du fichier : un
+  // mot qui désigne une PARTIE d'un autre ensemble n'a pas sa place à côté de lui.
+  wheel: ['roue', 'roues', 'wheel', 'wheels', 'enjoliveur', 'enjoliveurs', 'hubcap', 'hubcaps'],
   pulley: ['poulie', 'poulies', 'pulley', 'pulleys'],
   muffler: ['silencieux', 'muffler', 'mufflers'],
   chain: ['chaine', 'chaines', 'chain', 'chains'],
