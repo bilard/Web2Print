@@ -1,3 +1,4 @@
+import { formatBytes } from '@/lib/blob'
 import {
   Fragment,
   Suspense,
@@ -350,12 +351,6 @@ function useStaticNodePreview(
   }, [isUpload, fileKey, mode, nodeId])
 
   return preview
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
 }
 
 function formatCell(v: unknown): string {

@@ -3,6 +3,7 @@
 // mouvement/caméra (121) chargés en LIVE via `higgsfieldCatalog`, force, seed,
 // batch, enhance. Sort des `assets` (URLs CDN) chaînables vers `save-dam`.
 // runtime 'any' → jumeau serveur (functions/src/workflow/nodes/higgsfield.ts).
+import { base64ToBlob } from '@/lib/blob'
 import { useEffect, useState } from 'react'
 import { Clapperboard, Loader2, Search } from 'lucide-react'
 import { httpsCallable } from 'firebase/functions'
@@ -81,12 +82,6 @@ const catalogFn = httpsCallable<Record<string, never>, HiggsfieldCatalog>(functi
 // Google Drive » (port `file`). Passe par imageProxy (fetch serveur, contourne
 // CORS ; cap 4 Mo) avec repli fetch direct. Best-effort → null si échec.
 const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(functions, 'imageProxy')
-function base64ToBlob(b64: string, mime: string): Blob {
-  const bin = atob(b64)
-  const bytes = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
-  return new Blob([bytes], { type: mime })
-}
 async function fetchAssetFile(a: HiggsfieldAsset): Promise<File | null> {
   try {
     const { data } = await imageProxyFn({ url: a.url })

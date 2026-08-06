@@ -1,6 +1,6 @@
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase/config'
-import { mimeTypeToExtension } from '@/features/briefs/ai/base64ToBlob'
+import { mimeTypeToExtension } from '@/lib/blob'
 
 /**
  * Upload un Blob dans Firebase Storage à `briefs/{briefId}/images/{imageId}.{ext}`,

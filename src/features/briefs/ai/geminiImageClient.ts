@@ -1,4 +1,4 @@
-import { base64ToBlob } from './base64ToBlob'
+import { base64ToBlob } from '@/lib/blob'
 import { llmPostWithFallback } from '@/lib/llmProxyClient'
 import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
 import { recordAiUsage } from '@/features/stats/aiUsageTracking'

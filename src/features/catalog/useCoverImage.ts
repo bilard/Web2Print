@@ -1,3 +1,4 @@
+import { base64ToBlob } from '@/lib/blob'
 import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // Visuel de couverture via Image IA (Gemini). Ne passe PAS par useImageGeneration
 // (dont l'upload final vers la galerie exige useEditorStore.projectId — toujours
@@ -14,13 +15,6 @@ import { removeBackground } from '@/features/imaging/removeBackground'
 import { useCatalogStore } from '@/stores/catalog.store'
 import { pagePx } from './components/pages/catalogCss'
 import { t } from '@/lib/i18n'
-
-function base64ToBlob(base64: string, mimeType: string): Blob {
-  const binary = atob(base64)
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-  return new Blob([bytes], { type: mimeType })
-}
 
 /**
  * Brief d'EMBLÈME de marque. Nano Banana est un modèle INSTRUIT : il suit une

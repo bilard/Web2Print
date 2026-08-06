@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { base64ToBlob, mimeTypeToExtension } from './base64ToBlob'
+import { base64ToBlob, mimeTypeToExtension } from './blob'
 
 describe('base64ToBlob', () => {
   it('decodes a small PNG header into a Blob with the right size and type', async () => {

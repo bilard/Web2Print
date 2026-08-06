@@ -1,3 +1,4 @@
+import { base64ToBlob } from '@/lib/blob'
 import { useState } from 'react'
 import {
   Sheet,
@@ -811,13 +812,6 @@ const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: st
   functions,
   'imageProxy',
 )
-
-function base64ToBlob(b64: string, mime: string): Blob {
-  const bin = atob(b64)
-  const bytes = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
-  return new Blob([bytes], { type: mime })
-}
 
 /**
  * Récupère un asset binaire. Les CDN retail bloquent CORS + proxies publics (UA non-navigateur),
