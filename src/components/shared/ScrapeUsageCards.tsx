@@ -9,6 +9,7 @@
 // exact, qui fait foi. La carte le dit plutôt que de laisser croire à un $0.00 rassurant.
 import { ExternalLink, Globe } from 'lucide-react'
 import type { FirecrawlAccount } from '@/features/stats/useFirecrawlAccount'
+import { FIRECRAWL_LOW_CREDITS } from '@/lib/firecrawlCredits'
 import { formatEur } from '@/lib/money'
 import { useTranslation } from '@/lib/i18n'
 
@@ -50,7 +51,7 @@ export function ScrapeUsageCards({ byPlatform, firecrawl }: {
         const credits = isFirecrawl ? firecrawl : undefined
         // Crédits bas = la moisson va s'arrêter d'elle-même : la couleur doit alerter
         // avant la panne, pas après.
-        const low = credits?.remainingCredits != null && credits.remainingCredits < 50
+        const low = credits?.remainingCredits != null && credits.remainingCredits < FIRECRAWL_LOW_CREDITS
         return (
           <div key={p.id} className="flex flex-col gap-2 px-2 py-3 border-b border-white/5 last:border-0">
             <div className="flex items-center justify-between gap-2 flex-wrap">

@@ -19,8 +19,13 @@ export interface FirecrawlAccount {
 
 const CREDIT_USAGE_URL = 'https://api.firecrawl.dev/v2/team/credit-usage'
 
-async function fetchFirecrawlAccount(key: string): Promise<FirecrawlAccount> {
+async function fetchFirecrawlAccount(): Promise<FirecrawlAccount> {
   const empty: FirecrawlAccount = { remainingCredits: null, totalCredits: null, error: null }
+  // La clé est lue À CHAQUE tentative, pas à la construction de la requête : elle se
+  // saisit dans les Réglages, sur un écran qui ne remonte pas ce panneau. Une requête
+  // désactivée d'après la clé du premier rendu resterait éteinte pour toujours.
+  const key = getApiKey('firecrawl')
+  if (!key) return { ...empty, error: null }
   try {
     const res = await fetch(CREDIT_USAGE_URL, { headers: { Authorization: `Bearer ${key}` } })
     if (!res.ok) {
@@ -41,13 +46,12 @@ async function fetchFirecrawlAccount(key: string): Promise<FirecrawlAccount> {
   }
 }
 
-/** Solde Firecrawl rafraîchi toutes les 60 s ; inactif tant qu'aucune clé n'est saisie. */
+/** Solde Firecrawl rafraîchi toutes les 60 s. Sans clé, le tour est gratuit (aucun appel
+ *  réseau) et le suivant reprend dès qu'une clé est saisie. */
 export function useFirecrawlAccount() {
-  const key = getApiKey('firecrawl')
   return useQuery({
-    queryKey: ['firecrawlAccount', key.slice(-6)],
-    queryFn: () => fetchFirecrawlAccount(key),
-    enabled: key !== '',
+    queryKey: ['firecrawlAccount'],
+    queryFn: fetchFirecrawlAccount,
     staleTime: 60_000,
     refetchInterval: 60_000,
     retry: 1,

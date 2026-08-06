@@ -1,5 +1,5 @@
 import { debugLog } from '@/lib/debugLog'
-import { parseFirecrawlCredits } from '@/lib/firecrawlCredits'
+import { parseFirecrawlCredits, FIRECRAWL_LOW_CREDITS } from '@/lib/firecrawlCredits'
 import { listBrowserActWorkflows } from '@/features/scraping/core/browserAct'
 
 /**
@@ -451,7 +451,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         if (typeof remaining === 'number') {
           const totalSuffix = typeof total === 'number' ? ` / ${total}` : ''
           if (remaining === 0) return { status: 'error', message: t('apitest.credits.zero', { suffix: totalSuffix }), action: buyAction }
-          if (remaining < 50) return { status: 'ok', message: `⚠ ${t('apitest.credits.left', { remaining, suffix: totalSuffix })}`, action: buyAction }
+          if (remaining < FIRECRAWL_LOW_CREDITS) return { status: 'ok', message: `⚠ ${t('apitest.credits.left', { remaining, suffix: totalSuffix })}`, action: buyAction }
           return { status: 'ok', message: t('apitest.credits.left', { remaining, suffix: totalSuffix }) }
         }
         return { status: 'ok', message: t('apitest.credits.noBalance') }

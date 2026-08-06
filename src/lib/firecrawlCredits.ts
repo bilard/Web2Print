@@ -14,6 +14,11 @@ export interface FirecrawlCredits {
 
 const MAX_DEPTH = 6
 
+/** En dessous, la réserve ne tient plus une passe de moisson : le test de clé comme la
+ *  carte de consommation doivent alerter au MÊME seuil, sinon l'un rassure quand l'autre
+ *  s'inquiète. */
+export const FIRECRAWL_LOW_CREDITS = 50
+
 /** Extrait `remaining`/`total` de n'importe quelle forme de réponse `credit-usage`.
  *  Profondeur bornée : une structure profonde ou circulaire ne doit pas figer l'UI. */
 export function parseFirecrawlCredits(json: unknown, depth = 0): FirecrawlCredits {
