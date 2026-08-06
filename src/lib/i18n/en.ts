@@ -2974,6 +2974,7 @@ export const en: Record<TranslationKey, string> = {
   'perm.pim.edit': 'Edit the products',
   'perm.pim.delete': 'Delete products',
   'perm.pim.export': 'Export the products',
+  'perm.pim.databases': 'Databases',
   'perm.pim.competitors': 'Competitors',
   'perm.taxonomies.view': 'View the taxonomies',
   'perm.taxonomies.edit': 'Manage the nodes (create/rename/delete)',

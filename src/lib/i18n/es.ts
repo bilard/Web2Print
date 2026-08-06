@@ -2973,6 +2973,7 @@ export const es: Record<TranslationKey, string> = {
   'perm.pim.edit': 'Editar los productos',
   'perm.pim.delete': 'Eliminar productos',
   'perm.pim.export': 'Exportar los productos',
+  'perm.pim.databases': 'Bases de datos',
   'perm.pim.competitors': 'Competidores',
   'perm.taxonomies.view': 'Ver las taxonomías',
   'perm.taxonomies.edit': 'Gestionar los nodos (crear/renombrar/eliminar)',

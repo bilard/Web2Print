@@ -92,6 +92,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const canPimCompetitors = useCan('pim.competitors')
   const canPriceWatch = useCan('priceWatch.view')
   const canCompetitors = canPimCompetitors && canPriceWatch
+  // Colonne des bases legacy : sans ce droit, ni le panneau ni sa poignée ne s'affichent.
+  const canDatabases = useCan('pim.databases')
   const quota = useQuota()
   // Quota démo plein → on bloque les actions qui AJOUTENT de la donnée (import/scrape = lignes
   // PIM ; Visuels IA = assets DAM). L'IA complétion (remplit des cellules existantes) et
@@ -425,16 +427,18 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         </>
       )}
 
-      {/* ─── PANNEAUX ─── toujours visible */}
+      {/* ─── PANNEAUX ─── */}
       <div>
         <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest px-3 mb-1">{t('pim.panels')}</p>
         <div className="space-y-px">
+          {canDatabases && (
           <button onClick={() => setShowBdd(!showBdd)} className={sidebarBtn(showBdd)}>
             <Cloud className="w-4 h-4 opacity-50" aria-hidden="true" />
             {t('pim.databases')}
             {savedFiles.length > 0 && <span className="ml-auto text-[9px] text-white/30">{savedFiles.length}</span>}
             {showBdd && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-indigo-400/80" />}
           </button>
+          )}
           {hasData && (
             <>
               <button onClick={() => handleToggleRightTab('fields')} className={sidebarBtn(showRight && rightTab === 'fields')}>
@@ -608,8 +612,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left sidebar — Bases de donnees (always available) */}
-        {showBdd ? (
+        {/* Colonne des bases (legacy) — gouvernée par `pim.databases` : sans le droit, ni la
+            colonne ni sa poignée verticale, sinon le rôle rouvrirait la liste d'un clic. */}
+        {!canDatabases ? null : showBdd ? (
           <div className="w-60 bg-surface-2 border-r border-white/[0.06] flex flex-col shrink-0 overflow-hidden">
             <div className="px-3 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
               <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider flex items-center gap-1.5">
