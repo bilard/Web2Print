@@ -5344,6 +5344,8 @@ export const en: Record<TranslationKey, string> = {
   'pwx.badge.origin.help': 'Matched by ORIGINAL REFERENCE: the link goes through a manufacturer reference quoted in your description (“replaces original: …”), not through your own reference. An INDIRECT match — check it visually, it is the most likely to point at a compatible part rather than the same one.',
   'pwx.src.catalog': 'Workflow source catalogue: {count} products',
   'pwx.src.filled': '· {img} with an image · {taxo} with a taxonomy · {desc} with a description',
+  'pwx.src.withUrl': ' · {count} with a product link',
+  'pwx.src.noUrlCol': 'No product link in the catalogue: map the URL column in the « Compare catalogue » node, then run it again.',
   'pwx.src.rerun': '— no image or taxonomy: run “Compare catalogue” again',
   'pwx.src.openWorkflow': 'open the workflow',
   'pwx.src.partial': 'INCOMPLETE: {read} products read out of {expected} — run “Compare catalogue” again, matches are undercounted.',

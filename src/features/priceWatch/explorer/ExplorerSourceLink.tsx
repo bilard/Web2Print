@@ -17,6 +17,9 @@ export interface SourceCatalogFacts {
   withImage: number
   withTaxo: number
   withDescription: number
+  /** Produits dont le catalogue persisté porte l'adresse de MA fiche. 0 = la colonne
+   *  d'URL n'a pas été mappée au dernier « Comparer catalogue ». */
+  withUrl: number
   workflowId?: string
   /** Des tranches du catalogue manquent : les appariés affichés sont SOUS-COMPTÉS. */
   partial: boolean
@@ -71,6 +74,14 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
           {t('pwx.src.weight', { mb: (facts.bytes / 1e6).toFixed(1), s: (facts.ms / 1000).toFixed(1) })}
         </span>
       )}
+      {/* Aucun lien dans le catalogue : c'est la colonne d'URL du node qui manque, pas un
+          réglage de cet écran. On le dit là où on cherche, avec le geste qui corrige. */}
+      {facts.products > 0 && facts.withUrl === 0 && (
+        <span className="text-amber-400/80 flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3 shrink-0" />
+          {t('pwx.src.noUrlCol')}
+        </span>
+      )}
       {facts.partial && (
         <span className="text-rose-300 flex items-center gap-1 font-medium">
           <AlertTriangle className="w-3 h-3 shrink-0" />
@@ -82,6 +93,9 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
           {t('pwx.src.filled', {
             img: n(facts.withImage), taxo: n(facts.withTaxo), desc: n(facts.withDescription),
           })}
+          {/* Le lien vers MA fiche mérite son compteur : sans lui, « pourquoi le nom F1
+              n'est-il pas cliquable ? » n'a aucune réponse lisible à l'écran. */}
+          {facts.withUrl > 0 && t('pwx.src.withUrl', { count: n(facts.withUrl) })}
         </span>
       ) : (
         <span className="text-amber-400/80 flex items-center gap-1">

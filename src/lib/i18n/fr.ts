@@ -5536,6 +5536,8 @@ export const fr = {
   'pwx.badge.origin.help': 'Apparié par RÉFÉRENCE D’ORIGINE : la correspondance passe par une référence constructeur citée dans votre description (« remplace origine : … »), pas par votre propre référence. Appariement INDIRECT — à vérifier visuellement, c’est le plus susceptible de désigner une pièce compatible plutôt que la même.',
   'pwx.src.catalog': 'Catalogue source du workflow : {count} produits',
   'pwx.src.filled': '· {img} avec visuel · {taxo} avec taxonomie · {desc} avec description',
+  'pwx.src.withUrl': ' · {count} avec lien produit',
+  'pwx.src.noUrlCol': 'Aucun lien produit dans le catalogue : mappez la colonne d’URL dans le node « Comparer catalogue », puis relancez-le.',
   'pwx.src.rerun': '— sans visuel ni taxonomie : relancez « Comparer catalogue »',
   'pwx.src.openWorkflow': 'ouvrir le workflow',
   'pwx.src.partial': 'INCOMPLET : {read} produits relus sur {expected} — relancez « Comparer catalogue », les appariés sont sous-comptés.',

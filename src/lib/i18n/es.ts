@@ -5343,6 +5343,8 @@ export const es: Record<TranslationKey, string> = {
   'pwx.badge.origin.help': 'Emparejado por REFERENCIA DE ORIGEN: la correspondencia pasa por una referencia de fabricante citada en su descripción («sustituye origen: …»), no por su propia referencia. Emparejamiento INDIRECTO: verifíquelo visualmente, es el más propenso a señalar una pieza compatible en lugar de la misma.',
   'pwx.src.catalog': 'Catálogo de origen del flujo: {count} productos',
   'pwx.src.filled': '· {img} con imagen · {taxo} con taxonomía · {desc} con descripción',
+  'pwx.src.withUrl': ' · {count} con enlace de producto',
+  'pwx.src.noUrlCol': 'Ningún enlace de producto en el catálogo: asigne la columna de URL en el nodo «Comparar catálogo» y vuelva a ejecutarlo.',
   'pwx.src.rerun': '— sin imagen ni taxonomía: vuelva a ejecutar «Comparar catálogo»',
   'pwx.src.openWorkflow': 'abrir el flujo',
   'pwx.src.partial': 'INCOMPLETO: {read} productos leídos de {expected} — vuelva a ejecutar «Comparar catálogo», los emparejamientos están infravalorados.',

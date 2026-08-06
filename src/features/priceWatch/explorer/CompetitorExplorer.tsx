@@ -118,6 +118,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
     withImage: source.products.filter((p) => p.image).length,
     withTaxo: source.products.filter((p) => p.taxo?.length).length,
     withDescription: source.products.filter((p) => p.description).length,
+    withUrl: source.products.filter((p) => p.url).length,
     workflowId,
     partial: source.partial,
     expected: source.expected,
