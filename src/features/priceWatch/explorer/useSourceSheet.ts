@@ -82,9 +82,23 @@ export function useSourceSheet(watchId: string | null): SourceSheetState {
     let cancelled = false
     loadExplorerPrefs(uid, watchId)
       .then((prefs) => {
+        if (cancelled || touched.current) return
+        if (!prefs) {
+          // Premier passage sur ce suivi : on y verse ce que CE navigateur avait déjà
+          // réglé, pour que le partage démarre sans obliger qui que ce soit à retaper.
+          // ⚠ Uniquement des valeurs NON VIDES : publier un préfixe vide en arrivant
+          // écraserait ensuite celui d'un collègue quand il rouvrirait l'écran.
+          const seed: ExplorerPrefs = {}
+          if (dbId && dbId !== OPEN_DB) seed.dbId = dbId
+          if (imagePrefix) seed.imagePrefix = imagePrefix
+          if (productUrl) seed.productUrl = productUrl
+          if (Object.keys(seed).length > 0) {
+            saveExplorerPrefs(uid, watchId, seed).catch(() => { /* partage différé */ })
+          }
+          return
+        }
         // Ne JAMAIS écraser une saisie en cours : le distant n'amorce que tant que
         // l'utilisateur n'a rien touché sur cet écran.
-        if (cancelled || !prefs || touched.current) return
         if (typeof prefs.dbId === 'string') { setDbIdState(prefs.dbId); setPicked(null) }
         if (typeof prefs.imagePrefix === 'string') setPrefixState(prefs.imagePrefix)
         if (typeof prefs.productUrl === 'string') setProductUrlState(prefs.productUrl)
