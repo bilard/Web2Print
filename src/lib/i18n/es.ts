@@ -5343,6 +5343,8 @@ export const es: Record<TranslationKey, string> = {
   'pwx.doubt.originKey': 'Correspondencia indirecta (referencia de origen)',
   'pwx.doubt.contested': 'Varios productos F1 reclaman esta ficha',
   'pwx.doubt.priceGulf': 'Precio sin relación con el mío',
+  'pwx.doubt.priceAbyss': 'Relación de precios que ningún margen de distribución explica',
+  'pwx.doubt.familyConflict': 'Los dos títulos designan piezas diferentes',
   'pwx.taxo.noColumns': 'Ninguna columna de taxonomía en «{db}». Se esperaba: Familia, WEBGROUP_DESC (subfamilia) o PRODUCTGROUP.',
   'pwx.taxo.noJoin': 'La base «{db}» no tiene referencia ni EAN: sus filas no pueden vincularse con las fichas recopiladas.',
   'pwx.taxo.noValues': 'Columnas {cols} encontradas en «{db}», pero ninguna ficha emparejada las rellena.',

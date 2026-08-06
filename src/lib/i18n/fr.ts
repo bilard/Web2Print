@@ -5536,6 +5536,8 @@ export const fr = {
   'pwx.doubt.originKey': 'Correspondance indirecte (référence d’origine)',
   'pwx.doubt.contested': 'Plusieurs produits F1 revendiquent cette fiche',
   'pwx.doubt.priceGulf': 'Prix sans commune mesure avec le mien',
+  'pwx.doubt.priceAbyss': 'Rapport de prix qu’aucune marge de distribution n’explique',
+  'pwx.doubt.familyConflict': 'Les deux libellés désignent des pièces différentes',
   'pwx.taxo.noColumns': 'Aucune colonne de taxonomie dans « {db} ». Attendu : Famille, WEBGROUP_DESC (sous-famille) ou PRODUCTGROUP.',
   'pwx.taxo.noJoin': 'La base « {db} » n’a ni référence ni EAN : impossible de relier ses lignes aux fiches relevées.',
   'pwx.taxo.noValues': 'Colonnes {cols} trouvées dans « {db} », mais aucune fiche appariée ne les renseigne.',

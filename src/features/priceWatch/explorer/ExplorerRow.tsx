@@ -72,6 +72,8 @@ const DOUBT_LABEL: Record<DoubtReason, TranslationKey> = {
   'origin-key': 'pwx.doubt.originKey',
   contested: 'pwx.doubt.contested',
   'price-gulf': 'pwx.doubt.priceGulf',
+  'price-abyss': 'pwx.doubt.priceAbyss',
+  'family-conflict': 'pwx.doubt.familyConflict',
 }
 
 const STOCK_LABEL: Record<string, { key: TranslationKey; cls: string }> = {

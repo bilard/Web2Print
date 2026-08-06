@@ -14,6 +14,7 @@
 // MONTER le score.
 import { normalizeEan, normalizeRef, type MatchEvidence } from '../catalog/keys'
 import { nameTokens } from '../catalog/nameMatch'
+import { familiesConflict } from './partFamily'
 
 /** Trois bandes seulement : agir, vérifier, laisser. Une échelle plus fine ne se lit pas. */
 export type ConfidenceBand = 'sure' | 'check' | 'doubt'
@@ -27,6 +28,8 @@ export type DoubtReason =
   | 'origin-key'     // correspondance indirecte (réf. d'origine citée), pas la pièce elle-même
   | 'contested'      // plusieurs produits F1 revendiquent cette même fiche
   | 'price-gulf'     // prix sans commune mesure avec le mien
+  | 'price-abyss'    // rapport de prix qu'aucune marge de distribution n'explique
+  | 'family-conflict' // les deux libellés nomment des pièces incompatibles
 
 /** Motif de RENFORT — ne peut que faire monter le score, jamais changer de bande. */
 type SupportReason = 'title-echo' | 'ean-echo' | 'ref-echo'
@@ -76,6 +79,17 @@ const PENALTY: Record<DoubtReason, number> = {
   'origin-key': 25,
   contested: 20,
   'price-gulf': 15,
+  // Cas VÉCU : « FILTRE A AIR » à 11,42 € apparié à « Démarreur KOHLER 4109806S » à
+  // 469,90 € — +4 015 %. L'écart de marge grossiste → détail explique un facteur 2 ou 3,
+  // un lot de dix explique un facteur 10 ; rien n'explique un facteur 40. La pénalité doit
+  // faire tomber en doute toute preuve INDIRECTE, sans condamner un code-barres déclaré
+  // des deux côtés (98 − 45 = 53, « à vérifier ») : là, c'est le prix qui est suspect.
+  'price-abyss': 45,
+  // Deux natures de pièce nommées et incompatibles. Même barème que le code-barres
+  // contredit : c'est le plus fort démenti qu'un libellé puisse porter. Sans forçage de
+  // bande pour autant — un GTIN identique des deux côtés reste plus probant qu'un titre
+  // marchand, et retombe en « à vérifier » plutôt qu'en « douteux ».
+  'family-conflict': 45,
 }
 
 /** Seuils de bande. `check` commence sous la valeur de `ref-in-title` : la preuve la plus
@@ -90,6 +104,13 @@ const CHECK_FROM = 45
  * `comparePrices` écarte déjà tout prix sous −60 % (erreur de parsing présumée).
  */
 const PRICE_GULF_PCT = 300
+
+/**
+ * Second palier : au-delà, le rapport de prix ne relève plus d'aucune politique
+ * commerciale. ×10 laisse la place au cas « je vends l'unité, il vend le lot de dix » ;
+ * au-delà, deux articles différents portent la même référence quelque part.
+ */
+const PRICE_ABYSS_PCT = 900
 
 export interface PairSignals {
   evidence: MatchEvidence
@@ -164,7 +185,14 @@ export function scorePair(s: PairSignals): Confidence {
   if (isNumericShort(s.keyValue) && INDIRECT.has(s.evidence)) doubts.push('numeric-short')
   if (s.key.origin) doubts.push('origin-key')
   if ((s.contenders ?? 1) > 1) doubts.push('contested')
-  if (s.deltaPct != null && s.deltaPct > PRICE_GULF_PCT) doubts.push('price-gulf')
+  // Un seul des deux paliers : cumuler « écart » et « gouffre » compterait deux fois le
+  // même fait, et l'infobulle dirait deux fois la même chose.
+  if (s.deltaPct != null && s.deltaPct > PRICE_ABYSS_PCT) doubts.push('price-abyss')
+  else if (s.deltaPct != null && s.deltaPct > PRICE_GULF_PCT) doubts.push('price-gulf')
+  // ⚠ Ce n'est PAS un raisonnement sur les mots communs (cf. l'en-tête du fichier) : on
+  // ne déclare rien tant que les deux libellés ne nomment pas chacun une nature de pièce.
+  // Deux natures nommées et disjointes, c'est un démenti, pas un défaut de recoupement.
+  if (familiesConflict(s.sourceName, s.listingName)) doubts.push('family-conflict')
 
   if (sEan && sEan === lEan) supports.push('ean-echo')
   if (sRef && sRef === lRef) supports.push('ref-echo')

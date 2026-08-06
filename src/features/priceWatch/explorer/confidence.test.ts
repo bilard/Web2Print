@@ -78,6 +78,42 @@ describe('scorePair — on retranche pour une CONTRADICTION, jamais pour une abs
     }))
     expect(c.band).not.toBe('doubt')
     expect(c.doubts).toEqual([])
+    // ⚠ Assertion la plus importante du fichier depuis l'ajout du lexique de familles :
+    // « BOX » et « Boîtier » en sont VOLONTAIREMENT absents. S'ils y entraient, cet
+    // appariement juste basculerait en doute — et des milliers avec lui.
+    expect(c.doubts).not.toContain('family-conflict')
+  })
+
+  // Cas RÉEL signalé : réf. 4109806 retrouvée dans l'URL du concurrent, donc appariement
+  // « prouvé » — sauf que c'est un FILTRE À AIR à 11,42 € face à un DÉMARREUR à 469,90 €.
+  // Les clés ne pouvaient rien voir ; le libellé et le prix, eux, démentent tous les deux.
+  it('condamne un appariement dont les libellés nomment deux pièces différentes', () => {
+    const c = scorePair(base({
+      evidence: 'ref-in-url', keyValue: '4109806',
+      sourceRef: '4109806', sourceEan: '3582329983211',
+      sourceName: 'FILTRE A AIR', listingName: 'Démarreur KOHLER 4109806S',
+      deltaPct: 4014.7,
+    }))
+    expect(c.doubts).toContain('family-conflict')
+    expect(c.doubts).toContain('price-abyss')
+    expect(c.band).toBe('doubt')
+  })
+
+  it('ne compte le prix qu’une fois : écart OU gouffre, jamais les deux', () => {
+    expect(scorePair(base({ evidence: 'sku', deltaPct: 450 })).doubts).toEqual(['price-gulf'])
+    expect(scorePair(base({ evidence: 'sku', deltaPct: 4014.7 })).doubts).toEqual(['price-abyss'])
+    // Un facteur 2 ou 3 est le fonctionnement normal grossiste → détail : rien à signaler.
+    expect(scorePair(base({ evidence: 'sku', deltaPct: 210 })).doubts).toEqual([])
+  })
+
+  it('un code-barres identique des deux côtés survit au gouffre de prix, en « à vérifier »', () => {
+    // C'est alors le PRIX qui est suspect (lot, erreur de saisie), pas l'appariement :
+    // le condamner ferait disparaître de l'audit la ligne la plus intéressante.
+    const c = scorePair(base({
+      evidence: 'gtin13', sourceEan: '4049582395377', listingEan: '4049582395377',
+      deltaPct: 4014.7,
+    }))
+    expect(c.band).toBe('check')
   })
 
   it('un code-barres contredit reste douteux quels que soient les renforts', () => {
