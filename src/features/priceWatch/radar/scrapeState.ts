@@ -131,6 +131,11 @@ export interface ScrapeRow {
   lastPassProducts?: number
 }
 
+/** Nom tel qu'il est AFFICHÉ — c'est lui qui doit gouverner le tri alphabétique. */
+function displayDomain(domain: string): string {
+  return domain.replace(/^www\./, '')
+}
+
 /** Ce que la config du node « Sites sources » apprend au tableau live. */
 export interface ScrapeSiteConfig {
   domain: string
@@ -208,11 +213,14 @@ export function buildScrapeRows(
       lastPassProducts: m?.lastPassProducts,
     })
   }
-  // Les désactivés en bas : ils ne participent plus à rien, ils n'ont pas à occuper le
-  // haut de l'écran juste parce qu'ils ont le plus gros catalogue.
+  // Les désactivés en bas — ils ne participent plus à rien — puis ordre ALPHABÉTIQUE.
+  // Un tri par activité ou par catalogue faisait sauter les cartes d'une position à
+  // l'autre entre deux rafraîchissements : on ne retrouvait plus un site du regard. La
+  // carte qui moissonne se repère à son halo vert, elle n'a pas besoin d'être en tête.
+  // ⚠ Tri sur le nom AFFICHÉ (`www.` retiré) : sinon « www.cdiscount.com » se range à W.
   return rows.sort((a, b) =>
     Number(a.status === 'disabled') - Number(b.status === 'disabled')
-    || Number(b.live) - Number(a.live) || b.products - a.products || a.domain.localeCompare(b.domain))
+    || displayDomain(a.domain).localeCompare(displayDomain(b.domain), 'fr'))
 }
 
 /** Compte des lignes par statut (pastilles de filtre de l'onglet Scraping). */

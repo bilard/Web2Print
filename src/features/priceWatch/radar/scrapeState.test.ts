@@ -139,16 +139,26 @@ describe('buildScrapeRows', () => {
     expect(rows[0].status).toBe('ok')
   })
 
-  it('ajoute un site présent en LIVE seulement et trie ce qui bouge d’abord', () => {
+  it('ajoute un site présent en LIVE seulement', () => {
     const meta = new Map([
       ['b', { domain: 'b.com', productCount: 5, updatedAt: NOW - 1_000, harvestBeatAt: NOW - 1_000, lastPassAt: NOW - 1_000, lastPassPages: 3, lastPassProducts: 5 }],
       ['a', { domain: 'a.com', productCount: 300, updatedAt: NOW - 3 * LIVE_WINDOW_MS, harvestBeatAt: NOW - 3 * LIVE_WINDOW_MS, lastPassAt: NOW - 3 * LIVE_WINDOW_MS, lastPassPages: 0, lastPassProducts: 0 }],
     ])
     const rows = buildScrapeRows(report, meta, NOW, RUNNING)
-    expect(rows.map((r) => r.domain)).toEqual(['b.com', 'a.com'])
+    expect(rows.map((r) => r.domain)).toEqual(['a.com', 'b.com'])
     // a.com : 0 page moissonnée MAIS 300 fiches indexées = « Recherche seule », pas une
     // panne. La PWA ne passait pas `productCount` à `siteStatus` et affichait « ✗ » rouge.
     expect(countByStatus(rows)).toMatchObject({ live: 1, directed: 1 })
+  })
+
+  it('trie par ordre ALPHABÉTIQUE du nom affiché — « www. » ne range pas un site à W', () => {
+    const meta = new Map([
+      ['w', { domain: 'www.cdiscount.com', productCount: 1, updatedAt: NOW }],
+      ['k', { domain: 'kramp.com', productCount: 9_000, updatedAt: NOW }],
+      ['a', { domain: 'amazon.fr', productCount: 2, updatedAt: NOW }],
+    ])
+    const rows = buildScrapeRows(null, meta, NOW, ENDED)
+    expect(rows.map((r) => r.domain)).toEqual(['amazon.fr', 'www.cdiscount.com', 'kramp.com'])
   })
 
   const cfg = (rows: [string, string, boolean][]) =>

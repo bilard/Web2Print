@@ -26,10 +26,14 @@ import { t } from '@/lib/i18n'
  *  valeurs différentes affichaient des comptes contradictoires d'un écran à l'autre. */
 const LIVE_WINDOW_MS = HARVEST_LIVE_WINDOW_MS
 
-type SortMode = 'manual' | 'status' | 'products'
+type SortMode = 'alpha' | 'manual' | 'status' | 'products'
 const SORT_LABELS: Record<SortMode, string> = {
-  manual: 'Sans tri', status: 'Par statut', products: 'Par produits',
+  alpha: 'A → Z', manual: 'Ordre saisi', status: 'Par statut', products: 'Par produits',
 }
+
+/** Nom AFFICHÉ d'un site : c'est lui qui gouverne le tri alphabétique, sans quoi
+ *  « www.cdiscount.com » se rangerait à W. */
+const displayDomain = (domain: string) => normalizeDomain(domain).replace(/^www\./, '')
 
 export function SourceSitesConfig({ config, onChange }: {
   config: SourceSitesNodeConfig
@@ -55,7 +59,7 @@ export function SourceSitesConfig({ config, onChange }: {
   const [draft, setDraft] = useState('')
   const [importing, setImporting] = useState(false)
   const [importText, setImportText] = useState('')
-  const [sort, setSort] = useState<SortMode>('manual')
+  const [sort, setSort] = useState<SortMode>('alpha')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<SiteStatus | null>(null)
   const [credsRow, setCredsRow] = useState<number | null>(null)
@@ -206,10 +210,20 @@ export function SourceSitesConfig({ config, onChange }: {
   if (q) displayRows = displayRows.filter((d) => normalizeDomain(d.r.domain).toLowerCase().includes(q))
   // Filtre par statut : clic sur un compteur de l'en-tête → n'afficher que ces sites.
   if (statusFilter) displayRows = displayRows.filter((d) => d.status === statusFilter)
-  if (sort === 'status') {
-    displayRows.sort((a, b) => siteStatusRank(a.status) - siteStatusRank(b.status) || a.i - b.i)
+  // Un site DÉSACTIVÉ va en fin de liste quel que soit le tri : il ne participe ni à la
+  // moisson, ni à la recherche dirigée, ni au comparatif — il n'a donc jamais à occuper
+  // le haut de l'écran, fût-ce parce qu'il porte le plus gros catalogue.
+  const offLast = (a: { r: SourceSiteRow }, b: { r: SourceSiteRow }) =>
+    Number(!a.r.enabled) - Number(!b.r.enabled)
+  if (sort === 'alpha') {
+    displayRows.sort((a, b) => offLast(a, b)
+      || displayDomain(a.r.domain).localeCompare(displayDomain(b.r.domain), 'fr'))
+  } else if (sort === 'status') {
+    displayRows.sort((a, b) => offLast(a, b) || siteStatusRank(a.status) - siteStatusRank(b.status) || a.i - b.i)
   } else if (sort === 'products') {
-    displayRows.sort((a, b) => (b.stats.products ?? -1) - (a.stats.products ?? -1) || a.i - b.i)
+    displayRows.sort((a, b) => offLast(a, b) || (b.stats.products ?? -1) - (a.stats.products ?? -1) || a.i - b.i)
+  } else {
+    displayRows.sort(offLast)
   }
   // Badge de statut cliquable de l'en-tête : bordé, teinté, bascule le filtre sur ce statut.
   const TONE_PILL: Record<'ok' | 'warn' | 'err' | 'mute', string> = {
