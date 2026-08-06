@@ -86,8 +86,12 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const canImport = useCan('pim.import')
   const canScrape = useCan('pim.scrape')
   // ⚠ Sans garde explicite, une section est visible par TOUS (permissions fail-open).
-  // L'explorateur lit les relevés de veille tarifaire : c'est `priceWatch.view`.
+  // L'explorateur vit dans le PIM et porte donc sa propre permission PIM ; il lit en plus
+  // les relevés de veille tarifaire, d'où la double garde (les deux sont requises).
+  // (deux appels séparés : `useCan(a) && useCan(b)` court-circuiterait le second hook)
+  const canPimCompetitors = useCan('pim.competitors')
   const canPriceWatch = useCan('priceWatch.view')
+  const canCompetitors = canPimCompetitors && canPriceWatch
   const quota = useQuota()
   // Quota démo plein → on bloque les actions qui AJOUTENT de la donnée (import/scrape = lignes
   // PIM ; Visuels IA = assets DAM). L'IA complétion (remplit des cellules existantes) et
@@ -723,7 +727,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 colonne latérale : celle-ci passe par un portail qui n'existe QUE dans le
                 module Données du tableau de bord — sur /data en plein écran, elle n'est
                 jamais montée et l'entrée serait introuvable. */}
-            {canPriceWatch && (
+            {canCompetitors && (
             <button
               onClick={openCompetitors}
               className={`flex items-center gap-2 border text-[13px] font-medium px-4 py-2 rounded-lg transition-colors ${

@@ -89,6 +89,7 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: 'pim.edit', module: 'PIM', labelKey: 'perm.pim.edit' },
   { key: 'pim.delete', module: 'PIM', labelKey: 'perm.pim.delete' },
   { key: 'pim.export', module: 'PIM', labelKey: 'perm.pim.export' },
+  { key: 'pim.competitors', module: 'PIM', labelKey: 'perm.pim.competitors' },
   { key: 'taxonomies.view', module: 'Taxonomies', labelKey: 'perm.taxonomies.view' },
   { key: 'taxonomies.edit', module: 'Taxonomies', labelKey: 'perm.taxonomies.edit' },
   { key: 'taxonomies.briefs', module: 'Taxonomies', labelKey: 'perm.taxonomies.briefs' },

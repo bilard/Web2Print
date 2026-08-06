@@ -3102,6 +3102,7 @@ export const fr = {
   'perm.pim.edit': 'Éditer les produits',
   'perm.pim.delete': 'Supprimer des produits',
   'perm.pim.export': 'Exporter les produits',
+  'perm.pim.competitors': 'Concurrents',
   'perm.taxonomies.view': 'Voir les taxonomies',
   'perm.taxonomies.edit': 'Gérer les nœuds (créer/renommer/supprimer)',
   'perm.taxonomies.briefs': 'Briefs clients',
