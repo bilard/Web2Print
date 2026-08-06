@@ -245,6 +245,10 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // légitime), mais la matrice ne portant que les lignes appariées, elle sort vide et
     // l'export en aval échoue plus bas avec un message qui ne dit pas d'où ça vient.
     // On raccorde les deux ICI, là où l'information existe encore.
+    // Fiches prouvées par la référence mais REFUSÉES par le libellé (« GICLEUR
+    // CARBURATEUR » ↔ « Filtre à huile » sous la même réf.). Sans ce chiffre, ces
+    // produits passent en « sans correspondance » sans que rien ne dise pourquoi.
+    if (m.vetoed > 0) ctx.log('info', t('run.compareCatalog.vetoed', { count: m.vetoed }))
     if (m.matched === 0) {
       ctx.log('warn', t('run.compareCatalog.noMatchAtAll', {
         listings: totalListings, products: products.length,

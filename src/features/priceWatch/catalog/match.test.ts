@@ -160,6 +160,18 @@ describe('matchProduct', () => {
       expect(r.listing?.price).toBe(21)
     })
 
+    it('refuse aussi une référence DÉCLARÉE en champ `sku` — cas mesuré en production', () => {
+      // « GICLEUR CARBURATEUR » réf. 5205002 ↔ « Filtre à huile KOHLER … 5205002 » chez
+      // cinq marchands. Deux constructeurs emploient le même numéro : seul le libellé
+      // départage, et exempter les champs déclarés laissait passer le gros des cas.
+      const idx = buildMemoryIndex([listing({
+        ref: '5205002', name: 'Filtre à huile KOHLER 52 050 02 - JOHN DEERE AM101207', price: 14,
+      })])
+      const r = matchProduct({ id: 'p', name: 'GICLEUR CARBURATEUR', ref: '5205002' }, 's', idx)
+      expect(r.outcome).toBe('not-found')
+      expect(r.vetoed).toBe(1)
+    })
+
     it('n’applique PAS le veto à un code-barres déclaré des deux côtés', () => {
       // Un GTIN identique reste plus probant qu'un titre marchand approximatif : le
       // désaccord de libellé s'y traite en indice de confiance, pas en rejet.

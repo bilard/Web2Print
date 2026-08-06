@@ -79,17 +79,17 @@ export type DirectedProductInput = SourceProductKeys & { name?: string }
  * « Mousse pré-filtre à air CUB CADET ». `proveMatch` valide (le nombre est bien dans
  * l'adresse), et sans ce garde-fou le faux prix entrait dans le comparatif.
  *
- * Restreint aux preuves INDIRECTES : un `sku` ou un code-barres déclaré des deux côtés
- * reste plus probant qu'un titre marchand approximatif.
+ * Seul le code-barres déclaré échappe au veto : il identifie un article unique, là où
+ * une référence constructeur est réutilisée par d'autres fabricants pour d'autres pièces.
  */
 function rejectedByName(
   product: DirectedProductInput,
   listing: CompetitorListing,
   evidence: MatchProof['evidence'],
 ): boolean {
-  const indirect = evidence === 'ref-in-url' || evidence === 'ref-in-title'
-    || evidence === 'ref-in-name' || evidence === 'ean-in-url'
-  return indirect && familiesConflict(product.name, listing.name)
+  // Tout sauf le code-barres déclaré : un EAN-13 identifie un article unique, une
+  // référence constructeur est réutilisée d'un fabricant à l'autre (cf. `match.ts`).
+  return evidence !== 'gtin13' && familiesConflict(product.name, listing.name)
 }
 
 async function searchProductGeneric(

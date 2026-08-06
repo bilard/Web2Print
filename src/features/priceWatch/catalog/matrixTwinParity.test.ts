@@ -6,6 +6,8 @@ import { buildMatrix as buildClient } from './matrix'
 import { buildMatrix as buildServer } from '../../../../functions/src/priceWatch/catalog/matrix'
 import { familiesConflict as conflictClient } from './partFamily'
 import { familiesConflict as conflictServer } from '../../../../functions/src/priceWatch/catalog/partFamily'
+import { matchProduct as matchClient, buildMemoryIndex as indexClient } from './match'
+import { matchProduct as matchServer, buildMemoryIndex as indexServer } from '../../../../functions/src/priceWatch/catalog/match'
 
 /**
  * PARITÉ des deux implémentations de la matrice de comparaison.
@@ -76,5 +78,38 @@ describe('parité veto de libellé client / serveur', () => {
   it('condamne bien le cas vécu, et lui seul parmi les libellés proches', () => {
     expect(conflictClient('CARBURATEUR', 'Mousse pré-filtre à air CUB CADET 5208301')).toBe(true)
     expect(conflictClient('CARBURATEUR', 'Carburateur adaptable HONDA')).toBe(false)
+  })
+})
+
+/**
+ * Le veto ne vaut que si les deux `matchProduct` s'accordent — et leurs deux listes de
+ * preuves vetoables sont des littéraux RECOPIÉS d'un fichier à l'autre, que rien ne
+ * relie. Ce test les épingle sur les trois natures de preuve qui comptent.
+ */
+describe('parité appariement client / serveur — veto compris', () => {
+  const CASES: { label: string; source: { id: string; name: string; ref?: string; ean?: string }; listing: Parameters<typeof matchClient>[0] extends never ? never : { url: string; name: string; ref?: string; gtin13?: string } }[] = [
+    {
+      label: 'référence déclarée + libellé contradictoire → refusé',
+      source: { id: 'p', name: 'GICLEUR CARBURATEUR', ref: '5205002' },
+      listing: { url: 'https://c.fr/a.html', name: 'Filtre à huile KOHLER 5205002', ref: '5205002' },
+    },
+    {
+      label: 'référence dans l’URL + libellé contradictoire → refusé',
+      source: { id: 'p', name: 'CARBURATEUR', ref: '5208301' },
+      listing: { url: 'https://c.fr/12-mousse-prefiltre-5208301.html', name: 'Mousse pré-filtre à air' },
+    },
+    {
+      label: 'code-barres déclaré → gardé malgré le libellé',
+      source: { id: 'p', name: 'FILTRE A AIR', ean: '3582321853475' },
+      listing: { url: 'https://c.fr/b.html', name: 'Démarreur KOHLER', ref: 'ZZ1', gtin13: '3582321853475' },
+    },
+  ]
+  it('rend le MÊME verdict des deux côtés', () => {
+    for (const c of CASES) {
+      const client = matchClient(c.source, 's', indexClient([c.listing]))
+      const server = matchServer(c.source, 's', indexServer([c.listing]))
+      expect(server.outcome, c.label).toBe(client.outcome)
+      expect(server.vetoed ?? 0, c.label).toBe(client.vetoed ?? 0)
+    }
   })
 })

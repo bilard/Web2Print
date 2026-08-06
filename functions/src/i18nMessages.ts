@@ -199,6 +199,10 @@ const MESSAGES = {
     fr: "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
     en: '{matched} product(s) matched: {exact} same product, {originOnly} original part (aftermarket ↔ OEM). {unmatched} without a match, {noKey} without a key.',
   },
+  'run.compareCatalog.vetoed': {
+    fr: "{count} fiche(s) écartée(s) : la référence correspondait, mais le libellé nommait une autre pièce (filtre \u2194 carburateur\u2026). Un trou vaut mieux qu\u2019un faux prix.",
+    en: '{count} listing(s) discarded: the reference matched, but the label named a different part (filter vs carburettor\u2026). A gap beats a false price.',
+  },
   'run.compareCatalog.noMatchAtAll': {
     fr: "Aucun appariement : la matrice sort VIDE, l'export en aval n'aura donc rien à écrire. L'index ne porte que {listings} fiche(s) concurrente(s) face à {products} produits source — un recouvrement nul est le résultat NORMAL d'un index trop maigre ou hors sujet. Étoffe la moisson, ou vérifie que les fiches indexées relèvent bien du même catalogue.",
     en: 'No match at all: the matrix comes out EMPTY, so the downstream export will have nothing to write. The index holds only {listings} competitor listing(s) against {products} source products — zero overlap is the NORMAL outcome of an index that is too thin or off-topic. Widen the harvest, or check that the indexed listings belong to the same catalogue.',

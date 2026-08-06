@@ -2293,6 +2293,7 @@ export const fr = {
   'run.compareCatalog.siteIndexCount': "{domain} : {count} produit(s) dans l'index.",
   'run.compareCatalog.emptyIndex': 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
   'run.compareCatalog.matchedBreakdown': "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
+  'run.compareCatalog.vetoed': '{count} fiche(s) écartée(s) : la référence correspondait, mais le libellé nommait une autre pièce (filtre ↔ carburateur…). Un trou vaut mieux qu\u2019un faux prix.',
   'run.compareCatalog.noMatchAtAll': "Aucun appariement : la matrice sort VIDE, l'export en aval n'aura donc rien à écrire. L'index ne porte que {listings} fiche(s) concurrente(s) face à {products} produits source — un recouvrement nul est le résultat NORMAL d'un index trop maigre ou hors sujet. Étoffe la moisson, ou vérifie que les fiches indexées relèvent bien du même catalogue.",
 
   // Recherche dirigée (`directed-search`)

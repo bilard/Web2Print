@@ -2171,6 +2171,7 @@ export const es: Record<TranslationKey, string> = {
   'run.compareCatalog.siteIndexCount': '{domain}: {count} producto(s) en el índice.',
   'run.compareCatalog.emptyIndex': 'Índice de competidores vacío para los {sites} sitio(s) bajo el seguimiento «{watchId}». Compruebe que el nodo «Cosecha de competidores» utiliza el MISMO identificador de seguimiento («{watchId}») y que se ha ejecutado antes.',
   'run.compareCatalog.matchedBreakdown': '{matched} producto(s) emparejado(s): {exact} mismo producto, {originOnly} pieza original (adaptable ↔ OEM). {unmatched} sin correspondencia, {noKey} sin clave.',
+  'run.compareCatalog.vetoed': '{count} ficha(s) descartada(s): la referencia coincidía, pero el nombre designaba otra pieza (filtro ↔ carburador…). Mejor un hueco que un precio falso.',
   'run.compareCatalog.noMatchAtAll': 'Ningún emparejamiento: la matriz sale VACÍA, así que la exportación posterior no tendrá nada que escribir. El índice solo contiene {listings} ficha(s) de la competencia frente a {products} productos de origen: un solapamiento nulo es el resultado NORMAL de un índice demasiado escaso o fuera de tema. Amplía la recolección o comprueba que las fichas indexadas pertenecen al mismo catálogo.',
   // Recherche dirigée (`directed-search`)
   'run.directed.noInputData': 'Búsqueda dirigida: no hay datos de producto en la entrada.',

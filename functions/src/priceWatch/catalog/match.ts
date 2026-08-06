@@ -92,17 +92,26 @@ export interface MatchResult {
   outcome: MatchOutcome
   listing?: CompetitorListing
   proof?: MatchProof
+  /** Candidats prouvés puis ÉCARTÉS parce que leur libellé nommait une autre pièce.
+   *  Remonté jusqu'au journal du run : un produit qui devient « sans correspondance »
+   *  doit pouvoir dire pourquoi, sinon il a juste l'air d'avoir disparu. */
+  vetoed?: number
 }
 
 /**
- * Preuves qui reposent sur une chaîne REPÉRÉE dans un texte libre ou une adresse, par
- * opposition à un champ d'identité déclaré (`sku`, `mpn`, `gtin13`) où la valeur ne peut
- * pas se trouver là par hasard. Seules celles-ci sont soumises au veto du libellé : un
- * code-barres identique des deux côtés reste plus probant qu'un titre marchand, souvent
- * approximatif — l'écart de libellé s'y traite en indice de confiance, pas en rejet.
+ * Preuves qu'un libellé contradictoire peut renverser — c'est-à-dire TOUTES sauf le
+ * code-barres déclaré.
+ *
+ * Un EAN-13 identifie un article unique au monde : deux produits différents ne le
+ * partagent pas, et si les libellés divergent c'est le titre marchand qui est fautif.
+ * Une RÉFÉRENCE, en revanche, n'appartient qu'à son constructeur — et deux constructeurs
+ * emploient le même numéro pour des pièces sans rapport. Mesuré sur le rapport de
+ * production : « GICLEUR CARBURATEUR » réf. 5205002 et le « Filtre à huile KOHLER
+ * 5205002 » de cinq marchands, tous appariés par référence, dont certains la DÉCLARENT en
+ * champ `sku`. Exempter les champs déclarés laissait donc passer le gros des cas.
  */
-const INDIRECT_EVIDENCE = new Set<MatchProof['evidence']>([
-  'ref-in-url', 'ref-in-title', 'ref-in-name', 'ean-in-url',
+const VETOABLE_EVIDENCE = new Set<MatchProof['evidence']>([
+  'ref-in-url', 'ref-in-title', 'ref-in-name', 'ean-in-url', 'sku', 'mpn',
 ])
 
 /**
@@ -126,7 +135,8 @@ const INDIRECT_EVIDENCE = new Set<MatchProof['evidence']>([
  *
  * ⚠ Le veto ne se déclenche que si les DEUX libellés nomment une famille de pièce et
  * qu'aucune n'est commune (cf. `familiesConflict`). Un côté muet, ou un mot inconnu du
- * lexique, ne rejette rien : on ne condamne jamais pour une absence.
+ * lexique, ne rejette rien : on ne condamne jamais pour une absence. Mesuré sur le
+ * rapport de production : 14 cellules sur 1 847, toutes de vrais faux appariements.
  */
 export function matchProduct(
   product: SourceProduct,
@@ -136,6 +146,7 @@ export function matchProduct(
   const keys = lookupKeysOf(product)
   if (keys.length === 0) return { productId: product.id, siteId, outcome: 'no-key' }
 
+  let vetoed = 0
   for (const key of keys) {
     for (const candidate of lookup(key.value) ?? []) {
       const proof = proveMatch([key], {
@@ -147,11 +158,14 @@ export function matchProduct(
       if (!proof) continue
       // Candidat écarté, pas produit rejeté : on continue de chercher — une autre fiche
       // du même site peut porter la bonne pièce sous la même clé.
-      if (INDIRECT_EVIDENCE.has(proof.evidence) && familiesConflict(product.name, candidate.name)) continue
+      if (VETOABLE_EVIDENCE.has(proof.evidence) && familiesConflict(product.name, candidate.name)) {
+        vetoed++
+        continue
+      }
       return { productId: product.id, siteId, outcome: 'matched', listing: candidate, proof }
     }
   }
-  return { productId: product.id, siteId, outcome: 'not-found' }
+  return { productId: product.id, siteId, outcome: 'not-found', vetoed }
 }
 
 /**

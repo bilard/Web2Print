@@ -39,6 +39,11 @@ export interface MatrixResult {
   unmatched: number
   /** Produits sans clé de jointure exploitable en entrée. */
   noKey: number
+  /** Fiches prouvées puis ÉCARTÉES parce que leur libellé nommait une autre pièce.
+   *  Chiffré dans le journal du run : sans ce compteur, la différence entre « le
+   *  concurrent ne l'a pas » et « il l'a, mais ce n'était pas le bon article » est
+   *  invisible — et une baisse d'appariés se lit comme une panne. */
+  vetoed: number
 }
 
 const AVAIL_LABEL: Record<string, string> = {
@@ -128,7 +133,7 @@ export function buildMatrix(
   const lookups = new Map(sites.map((s) => [s.siteId, buildMemoryIndex(indexBySite.get(s.siteId) ?? [])]))
 
   const rows: Record<string, unknown>[] = []
-  let matched = 0, matchedExact = 0, matchedOriginOnly = 0, unmatched = 0, noKey = 0
+  let matched = 0, matchedExact = 0, matchedOriginOnly = 0, unmatched = 0, noKey = 0, vetoed = 0
 
   for (const product of products) {
     const row: Record<string, unknown> = {
@@ -149,6 +154,7 @@ export function buildMatrix(
     for (const site of sites) {
       const lookup = lookups.get(site.siteId)!
       const m = matchProduct(product, site.siteId, lookup)
+      vetoed += m.vetoed ?? 0
       if (m.outcome !== 'no-key') sawKey = true
       if (m.outcome !== 'matched' || !m.listing || !m.proof) continue
       hitCount++
@@ -178,5 +184,5 @@ export function buildMatrix(
     if (!matchedOnly || hitCount > 0) rows.push(row)
   }
 
-  return { columns, rows, matched, matchedExact, matchedOriginOnly, unmatched, noKey }
+  return { columns, rows, matched, matchedExact, matchedOriginOnly, unmatched, noKey, vetoed }
 }

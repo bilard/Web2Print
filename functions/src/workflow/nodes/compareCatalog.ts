@@ -161,6 +161,8 @@ registerServerNode({
       matched: m.matched, exact: m.matchedExact, originOnly: m.matchedOriginOnly,
       unmatched: m.unmatched, noKey: m.noKey,
     }))
+    // Jumeau du client : fiches refusées par le libellé, puis 0 apparié.
+    if (m.vetoed > 0) ctx.log('info', t(ctx.locale, 'run.compareCatalog.vetoed', { count: m.vetoed }))
     // Jumeau du client : 0 apparié = matrice VIDE, donc export en échec plus bas. On le
     // dit ici, où l'on sait encore pourquoi (taille et pertinence de l'index).
     if (m.matched === 0) {
