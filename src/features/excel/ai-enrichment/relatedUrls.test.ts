@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeUrl, discoverRelatedUrls } from './relatedUrls'
+import { discoverRelatedUrls } from './relatedUrls'
+import { normalizeUrl } from '@/features/scraping/core/urlHeuristics'
 
 describe('normalizeUrl', () => {
   it('lowercases host and trims trailing slash', () => {

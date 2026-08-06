@@ -1,3 +1,4 @@
+import { dedupParagraphs } from '@/features/scraping/core/mergeMarkdown'
 import { discoverRelatedUrls, type RelatedUrls } from './relatedUrls'
 import type { EnrichedDocument } from './types'
 
@@ -25,33 +26,6 @@ export interface BundleDeps {
 
 const MAX_ADDITIONAL_URLS = 8
 const URL_TIMEOUT_MS = 30_000
-
-/** Hash simple pour dédoublonner les paragraphes dupliqués sur plusieurs onglets */
-function hashParagraph(p: string): string {
-  const trimmed = p.trim().toLowerCase().replace(/\s+/g, ' ')
-  let h = 0
-  for (let i = 0; i < trimmed.length; i++) h = ((h << 5) - h + trimmed.charCodeAt(i)) | 0
-  return `${trimmed.length}:${h}`
-}
-
-function dedupParagraphs(sections: Array<{ label: string; markdown: string }>): string {
-  const seen = new Set<string>()
-  const output: string[] = []
-  for (const s of sections) {
-    output.push(`## [Source: ${s.label}]`)
-    const paragraphs = s.markdown.split(/\n\n+/)
-    for (const p of paragraphs) {
-      if (!p.trim()) continue
-      // Ne jamais dédupliquer les blocs JINA_EXTRACTED_* (listes images/PDFs)
-      if (p.includes('JINA_EXTRACTED_')) { output.push(p); continue }
-      const h = hashParagraph(p)
-      if (seen.has(h)) continue
-      seen.add(h)
-      output.push(p)
-    }
-  }
-  return output.join('\n\n').trim()
-}
 
 function prioritizeUrls(r: RelatedUrls, includePdfs: boolean): string[] {
   // PDFs EXCLUS par défaut du bundle de contenu : leur texte est typiquement

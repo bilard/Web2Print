@@ -1,36 +1,11 @@
 /** Related-URL discovery utilities (pure, testable). */
 
-const TAB_QUERY_KEYS = ['tab', 'section', 'view', 'pane', 'content']
-
-function detectTabKeyFromUrl(baseUrl: URL): string | null {
-  for (const [k] of baseUrl.searchParams) {
-    if (TAB_QUERY_KEYS.includes(k.toLowerCase())) return k
-  }
-  return null
-}
-
-const TAB_ID_ATTRS = ['aria-controls', 'data-tab-id', 'data-tab', 'data-view', 'data-pane', 'data-section', 'data-qa']
-const TAB_ID_STRIP = /^(cmp-tab-|tab-|nav-item-|panel-)/i
-
-function extractTabId(el: Element): string | null {
-  for (const attr of TAB_ID_ATTRS) {
-    const raw = el.getAttribute(attr)
-    if (!raw) continue
-    const cleaned = raw.replace(TAB_ID_STRIP, '').trim()
-    if (cleaned && cleaned.length > 0 && cleaned.length < 80) return cleaned
-  }
-  const id = el.id
-  if (id && id.length < 80 && /tab|panel/i.test(id)) {
-    return id.replace(TAB_ID_STRIP, '')
-  }
-  return null
-}
-
-
 /** Pages TRANSVERSES d'un site e-commerce (CGV, mentions légales, compte,
  *  panier, contact, magasins…) : jamais des sous-pages PRODUIT — les fusionner
  *  au bundle noie la fiche (fixture réelle Trafic : 28 Ko de CGV fusionnés, la
  *  garantie légale devenait LA description). Segments EXACTS, jamais par site. */
+import { detectTabKeyFromUrl, extractTabId, isInsideNav, normalizeUrl } from './urlHeuristics'
+
 const NON_PRODUCT_SEGMENT_RE = /(?:^|\/)(?:conditions-?generales?(?:-de-vente)?|cgv|cgu|mentions-?legales?|legal(?:-notices?)?|privacy(?:-policy)?|politique-[a-z-]+|cookies?|contact(?:ez-nous|s)?|aide|help|faqs?|livraisons?|delivery|retours?|returns?|customer|account|mon-compte|login|connexion|panier|cart|checkout|wishlist|newsletter|magasins?|stores?|store-locator|a-propos|about(?:-us)?|qui-sommes-nous|recrutement|jobs?|carrieres?|sitemap|plan-du-site)(?:$|\/|\?)/i
 
 function isNonProductUrl(url: URL): boolean {
@@ -41,26 +16,6 @@ export interface RelatedUrls {
   tabs: string[]
   pdfs: string[]
   subpages: string[]
-}
-
-const NAV_ANCESTOR_SELECTORS = [
-  'header', 'footer',
-  'nav[role="navigation"]',
-  '[class*="breadcrumb" i]',
-  '[class*="sidebar" i]',
-  '[class*="mega-menu" i]',
-  '[class*="site-nav" i]',
-]
-
-function isInsideNav(el: Element): boolean {
-  let cur: Element | null = el
-  while (cur) {
-    for (const sel of NAV_ANCESTOR_SELECTORS) {
-      if (cur.matches?.(sel)) return true
-    }
-    cur = cur.parentElement
-  }
-  return false
 }
 
 export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
@@ -145,30 +100,3 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
   }
 }
 
-const TRACKING_PARAMS = new Set([
-  'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
-  'gclid', 'fbclid', 'mc_cid', 'mc_eid', 'msclkid', 'dclid',
-])
-
-export interface NormalizeOptions {
-  keepHash?: boolean
-}
-
-export function normalizeUrl(raw: string, opts: NormalizeOptions = {}): string | null {
-  try {
-    const u = new URL(raw)
-    u.hostname = u.hostname.toLowerCase()
-    if (u.pathname.length > 1 && u.pathname.endsWith('/')) {
-      u.pathname = u.pathname.slice(0, -1)
-    }
-    const params = Array.from(u.searchParams.entries())
-      .filter(([k]) => !TRACKING_PARAMS.has(k.toLowerCase()))
-      .sort(([a], [b]) => a.localeCompare(b))
-    u.search = ''
-    for (const [k, v] of params) u.searchParams.append(k, v)
-    if (!opts.keepHash) u.hash = ''
-    return u.toString().replace(/\/$/, '') // second trim for root
-  } catch {
-    return null
-  }
-}
