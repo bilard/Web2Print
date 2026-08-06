@@ -38,13 +38,18 @@ describe('buildRail', () => {
     expect(orphanMeta[0]).toMatchObject({ domain: 'y.fr', collected: 10, matched: 0, medGapPct: null })
   })
 
-  it('écarte les sites décochés, garde ceux dont l’état est inconnu', () => {
+  it('GARDE les sites décochés, marqués et rangés en fin de liste', () => {
+    // Ils étaient masqués : un concurrent disparaissait du rail sans un mot, ce qui se
+    // lit comme une perte de données alors que ses fiches sont intactes et consultables.
     const m = new Map<string, HarvestMeta>([
+      ['off', { domain: 'aaa-off.fr', productCount: 999, enabled: false }],
       ['on', { domain: 'on.fr', productCount: 10, enabled: true }],
-      ['off', { domain: 'off.fr', productCount: 999, enabled: false }],
       ['unknown', { domain: 'unknown.fr', productCount: 5 }],
     ])
-    expect(buildRail(m, []).map((r) => r.domain)).toEqual(['on.fr', 'unknown.fr'])
+    const rail = buildRail(m, [])
+    // Le décoché ferme la marche malgré son « a » initial et son plus gros volume.
+    expect(rail.map((r) => r.domain)).toEqual(['on.fr', 'unknown.fr', 'aaa-off.fr'])
+    expect(rail.map((r) => r.enabled)).toEqual([true, true, false])
   })
 
   it('classe par volume collecté, à égalité par domaine', () => {

@@ -24,6 +24,9 @@ export interface SiteRailItem {
   ruptures: number
   /** Écart médian de SES prix face aux vôtres. Négatif = il est moins cher. */
   medGapPct: number | null
+  /** Coché dans le node « Sites sources ». `false` = en pause : plus moissonné, plus
+   *  interrogé, et retiré du comparatif au prochain « Comparer catalogue ». */
+  enabled: boolean
 }
 
 /**
@@ -35,10 +38,11 @@ export function buildRail(meta: Map<string, HarvestMeta>, stats: CompetitorStat[
   const byId = new Map(stats.map((s) => [s.siteId, s]))
   const ids = new Set([...meta.keys(), ...stats.map((s) => s.siteId)])
   return [...ids]
-    // Un site DÉCOCHÉ dans « Sites sources » n'a plus à figurer : ses fiches d'hier ne
-    // sont plus rafraîchies. `enabled` absent = état inconnu (aucun run depuis
-    // l'introduction du champ) → on le garde, mieux vaut un site de trop qu'une liste vide.
-    .filter((siteId) => meta.get(siteId)?.enabled !== false)
+    // ⚠ Les sites DÉCOCHÉS étaient masqués — ils disparaissaient du rail sans un mot,
+    // ce qui se lit comme une perte de données alors que leurs fiches sont intactes.
+    // Ils restent donc visibles, marqués « en pause » et rangés en fin de liste : c'est
+    // le seul endroit où l'on voit d'un coup d'œil qui participe encore au comparatif.
+    // `enabled` absent = état inconnu (aucun run depuis l'introduction du champ) → actif.
     .map((siteId) => {
       const m = meta.get(siteId)
       const s = byId.get(siteId)
@@ -51,11 +55,14 @@ export function buildRail(meta: Map<string, HarvestMeta>, stats: CompetitorStat[
         cheaper: s?.cheaper ?? 0,
         ruptures: s?.ruptures ?? 0,
         medGapPct: s?.medGapPct ?? s?.avgGapPct ?? null,
+        enabled: m?.enabled !== false,
       }
     })
-    // Alphabétique : sur 24 sites, on cherche un concurrent qu'on a en tête, pas le
-    // plus gros. Le volume reste lisible sur chaque ligne.
-    .sort((a, b) => a.domain.localeCompare(b.domain, 'fr'))
+    // Les sites en pause en bas — ils ne participent plus à rien — puis alphabétique :
+    // sur 24 concurrents, on cherche celui qu'on a en tête, pas le plus gros. Le volume
+    // reste lisible sur chaque ligne.
+    .sort((a, b) => Number(!a.enabled) - Number(!b.enabled)
+      || a.domain.localeCompare(b.domain, 'fr'))
 }
 
 function dotColor(item: SiteRailItem): string {
@@ -80,6 +87,9 @@ export function ExplorerSiteRail({ items, active, loading, onPick }: {
       {items.map((item) => {
         const on = item.siteId === active
         const dead = item.collected === 0
+        // Un site en pause reste CONSULTABLE : ses fiches d'hier sont toujours là, et
+        // c'est souvent pour les revoir qu'on le cherche.
+        const paused = !item.enabled
         return (
           <li key={item.siteId}>
             <button type="button" onClick={() => onPick(item.siteId)} disabled={dead}
@@ -91,9 +101,15 @@ export function ExplorerSiteRail({ items, active, loading, onPick }: {
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">
                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor(item)}`} />
-                  <span className={`truncate text-[12px] ${on ? 'text-white font-medium' : 'text-white/65'}`}>
+                  <span className={`truncate text-[12px] ${on ? 'text-white font-medium' : paused ? 'text-white/35' : 'text-white/65'}`}>
                     {item.domain}
                   </span>
+                  {paused && (
+                    <span className="shrink-0 rounded px-1 py-px text-[9px] font-medium uppercase tracking-wide text-amber-300/80 bg-amber-500/10 border border-amber-500/25"
+                      title={t('pwx.rail.pausedHelp')}>
+                      {t('pwx.rail.paused')}
+                    </span>
+                  )}
                   {on && loading && <Loader2 className="w-3 h-3 animate-spin text-indigo-300 shrink-0" />}
                   {item.medGapPct != null && (
                     <span className={`ml-auto text-[10px] tabular-nums shrink-0 ${
