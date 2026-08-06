@@ -16,6 +16,7 @@ import {
   normalizeDomain, deriveWatchId, importSitesIntoRows, siteStatus, siteStatusRank, HARVEST_LIVE_WINDOW_MS,
   rowsToCompetitorSites, type SourceSiteRow, type SiteStatus,
 } from '@/features/priceWatch/sourceSites'
+import { displayDomain } from '@/features/priceWatch/siteLink'
 import { SourceSitesRowItem, type SiteRowStats } from './sourceSitesRow'
 import { SiteCredentialsForm } from './sourceSitesCreds'
 import { PurgeScrapingPanel } from './sourceSitesPurge'
@@ -30,10 +31,6 @@ type SortMode = 'alpha' | 'manual' | 'status' | 'products'
 const SORT_LABELS: Record<SortMode, string> = {
   alpha: 'A → Z', manual: 'Ordre saisi', status: 'Par statut', products: 'Par produits',
 }
-
-/** Nom AFFICHÉ d'un site : c'est lui qui gouverne le tri alphabétique, sans quoi
- *  « www.cdiscount.com » se rangerait à W. */
-const displayDomain = (domain: string) => normalizeDomain(domain).replace(/^www\./, '')
 
 export function SourceSitesConfig({ config, onChange }: {
   config: SourceSitesNodeConfig

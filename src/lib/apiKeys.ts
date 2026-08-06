@@ -1,4 +1,5 @@
 import { debugLog } from '@/lib/debugLog'
+import { parseFirecrawlCredits } from '@/lib/firecrawlCredits'
 import { listBrowserActWorkflows } from '@/features/scraping/core/browserAct'
 
 /**
@@ -433,10 +434,10 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
     }
 
     if (id === 'firecrawl') {
-      // Test Firecrawl: team usage endpoint (lightweight, vérifie auth).
-      // Format API très variable (v1/v2/legacy/billing). On utilise une recherche
-      // récursive pour trouver n'importe quel champ numérique nommé `credit*` /
-      // `remain*` à n'importe quel niveau.
+      // Test Firecrawl: team usage endpoint (lightweight, vérifie auth). Le parsing du
+      // solde est partagé avec la carte de consommation du panneau live
+      // (`parseFirecrawlCredits`) — deux lectures divergentes de la même réponse
+      // afficheraient deux soldes contradictoires.
       const res = await fetch('https://api.firecrawl.dev/v2/team/credit-usage', {
         headers: { 'Authorization': 'Bearer ' + key },
       })
@@ -445,33 +446,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         // Log pour debug si parsing échoue (visible dans la console navigateur)
         debugLog('[firecrawl] credit-usage response:', json)
 
-        // Recherche récursive : trouve le 1er nombre dont la clé contient
-        // "remain" ou "credit" (priorité aux clés "remain*"). Profondeur max 6
-        // pour éviter les structures circulaires.
-        const findCredits = (obj: unknown, depth = 0): { remaining?: number; total?: number } => {
-          if (depth > 6 || !obj || typeof obj !== 'object') return {}
-          const o = obj as Record<string, unknown>
-          let remaining: number | undefined
-          let total: number | undefined
-          for (const [key, val] of Object.entries(o)) {
-            if (typeof val === 'number') {
-              const k = key.toLowerCase()
-              if (/remain/.test(k) && remaining === undefined) remaining = val
-              else if ((/^plan|^total|allow|limit/.test(k)) && /credit/.test(k) && total === undefined) total = val
-              else if (/credit/.test(k) && remaining === undefined && !/used|consumed|spent/.test(k)) remaining = val
-            }
-          }
-          if (remaining !== undefined || total !== undefined) return { remaining, total }
-          for (const val of Object.values(o)) {
-            if (val && typeof val === 'object') {
-              const sub = findCredits(val, depth + 1)
-              if (sub.remaining !== undefined || sub.total !== undefined) return sub
-            }
-          }
-          return {}
-        }
-
-        const { remaining, total } = findCredits(json)
+        const { remaining, total } = parseFirecrawlCredits(json)
         const buyAction: ApiTestAction = { labelKey: 'apikeys.buyCredits', url: 'https://www.firecrawl.dev/pricing' }
         if (typeof remaining === 'number') {
           const totalSuffix = typeof total === 'number' ? ` / ${total}` : ''

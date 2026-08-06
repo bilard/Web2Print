@@ -4,6 +4,7 @@
 import type { StoredReport } from '../reportStore'
 import type { HarvestMeta, OpsCockpit } from '../dashboard/opsMetrics'
 import { siteStatus, HARVEST_LIVE_WINDOW_MS, type SiteStatus } from '../sourceSites'
+import { displayDomain } from '../siteLink'
 import { hhmm, timeAgo } from './radarFormat'
 import { t } from '@/lib/i18n'
 
@@ -129,11 +130,6 @@ export interface ScrapeRow {
   updatedAt?: number
   lastPassPages?: number
   lastPassProducts?: number
-}
-
-/** Nom tel qu'il est AFFICHÉ — c'est lui qui doit gouverner le tri alphabétique. */
-function displayDomain(domain: string): string {
-  return domain.replace(/^www\./, '')
 }
 
 /** Ce que la config du node « Sites sources » apprend au tableau live. */

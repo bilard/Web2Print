@@ -1,4 +1,6 @@
+import { ExternalLink } from 'lucide-react'
 import { SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
+import { displayDomain, siteHomeUrl } from '@/features/priceWatch/siteLink'
 import type { ScrapeRow } from '@/features/priceWatch/radar/scrapeState'
 import { fmtInt, fmtPct, timeAgo } from '@/features/priceWatch/radar/radarFormat'
 import type { SourceSiteRow } from '@/features/priceWatch/sourceSites'
@@ -62,7 +64,14 @@ export function RadarScrapingRow({ row, now, watchId, workflowId, cfg, onChanged
           se trouve le bouton qui réactive le site, il doit rester franc. */}
       <div style={off ? { opacity: 0.5 } : undefined}>
       <div className="flex items-center gap-2">
-        <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">{row.domain.replace(/^www\./, '')}</span>
+        {/* Le nom OUVRE le site du concurrent : depuis le mobile, c'est le seul moyen
+            d'aller vérifier un prix douteux sans retaper le domaine au clavier. */}
+        <a href={siteHomeUrl(row.domain)} target="_blank" rel="noopener noreferrer"
+          title={`Ouvrir ${displayDomain(row.domain)}`}
+          className="radar-tap inline-flex min-w-0 flex-1 items-center gap-1 text-[13.5px] font-semibold">
+          <span className="truncate">{displayDomain(row.domain)}</span>
+          <ExternalLink size={11} className="shrink-0" style={{ color: 'var(--radar-text-3)' }} />
+        </a>
         {/* Badge PLEIN quand ça moissonne (vert saturé, texte sombre) : la ligne active
             doit se repérer sans lire, y compris en plein soleil. */}
         <span className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-bold radar-tnum"

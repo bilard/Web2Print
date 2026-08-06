@@ -3,9 +3,10 @@
 //   dernière passe) · corbeille ; niveau 2 — moteur forcé + chips de stats insécables.
 // Pendant la moisson : ring vert pulsé + barre de balayage animée (progress-indeterminate).
 // Après la passe : badge verdict lisible d'un coup d'œil, pop fx-result s'il vient de tomber.
-import { Trash2, Lock, LockOpen, Play, Loader2, RotateCcw } from 'lucide-react'
+import { Trash2, Lock, LockOpen, Play, Loader2, RotateCcw, ExternalLink } from 'lucide-react'
 import { agoShort, pct } from '@/features/priceWatch/dashboard/format'
 import { siteStatus, SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
+import { displayDomain, siteHomeUrl } from '@/features/priceWatch/siteLink'
 import { t } from '@/lib/i18n'
 
 export interface SiteRowStats {
@@ -138,7 +139,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
   onRemove: () => void
 }) {
   const scraped = stats.updatedAt != null
-  const shortName = domain.replace(/^www\./, '')
+  const shortName = displayDomain(domain)
   const swept = (stats.harvestProgress ?? 0) >= 1
   const status = siteStatus({
     enabled, live, lastPassAt: stats.lastPassAt, lastPassPages: stats.lastPassPages,
@@ -169,13 +170,21 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           className="shrink-0 accent-indigo-500"
           title={t(enabled ? 'ss.disableSite' : 'ss.enableSite')}
         />
-        <span
-          className={`shrink-0 whitespace-nowrap font-semibold text-white ${
+        {/* Le nom OUVRE le site : vérifier une anomalie (prix aberrant, fiche vide, page
+            d'accueil qui a changé de structure) commence par aller voir chez le concurrent.
+            Sans ce lien il fallait recopier le domaine à la main dans un autre onglet. */}
+        <a
+          href={siteHomeUrl(domain)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={`Ouvrir ${shortName} dans un nouvel onglet`}
+          className={`group shrink-0 inline-flex items-center gap-1 whitespace-nowrap font-semibold text-white hover:text-indigo-300 transition-colors ${
             shortName.length > 30 ? 'text-[10px]' : shortName.length > 24 ? 'text-[11px]' : shortName.length > 18 ? 'text-xs' : 'text-sm'
           }`}
         >
           {shortName}
-        </span>
+          <ExternalLink className="w-2.5 h-2.5 shrink-0 text-white/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </a>
         <div className="flex-1 min-w-0 flex items-center overflow-hidden">
           {working ? (
             <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">

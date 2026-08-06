@@ -4,13 +4,14 @@ import { Activity, AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Pencil, 
 import { useUsageStats } from '@/features/stats/useUsageStats'
 import { fetchProviderBalances } from '@/features/stats/providerBalances'
 import { useBrightDataAccount } from '@/features/stats/useBrightDataAccount'
+import { useFirecrawlAccount } from '@/features/stats/useFirecrawlAccount'
+import { ScrapeUsageCards } from './ScrapeUsageCards'
+import { formatEur } from '@/lib/money'
 import { useIsOwner } from '@/features/auth/useAuth'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
 import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
 import { recordAudit } from '@/lib/auditLog'
 import { useTranslation } from '@/lib/i18n'
-
-const USD_TO_EUR = 0.92
 
 const PROVIDER_META: Record<AiProvider, { label: string; dot: string; topup: string }> = {
   claude:     { label: 'Claude (Anthropic)', dot: 'bg-orange-400',  topup: 'https://console.anthropic.com/settings/billing' },
@@ -29,21 +30,6 @@ const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen
  *  modèle texte Gemini sélectionné — il a son propre pricing ($30 / 1M output)
  *  et il est utile de voir sa consommation isolément. */
 const GEMINI_IMAGE_MODEL_ID = 'gemini-3.1-flash-image-preview'
-
-function formatEur(usd: number, decimals = 4): string {
-  const eur = usd * USD_TO_EUR
-  let d = decimals
-  if (eur >= 1) d = 2
-  else if (eur >= 0.01) d = 3
-  else if (eur >= 0.0001) d = 4
-  else d = 6
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: d,
-    maximumFractionDigits: d,
-  }).format(eur)
-}
 
 function formatTokens(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + ' M'
@@ -186,6 +172,8 @@ export function LiveLlmUsagePanel() {
   const { t } = useTranslation()
   const { data: stats, isLoading, isFetching, refetch, dataUpdatedAt } = useUsageStats()
   const { data: bdAccount, isFetching: isFetchingBd, refetch: refetchBd, error: bdError } = useBrightDataAccount()
+  // Firecrawl : clé PERSONNELLE → pas de gating propriétaire, contrairement à Bright Data.
+  const { data: firecrawlAccount } = useFirecrawlAccount()
   // Le compte Bright Data est partagé (un seul abonnement) → ses infos financières
   // (solde/conso/facturation/statut) ne s'affichent que pour le propriétaire.
   const isOwner = useIsOwner()
@@ -339,9 +327,17 @@ export function LiveLlmUsagePanel() {
     return !!(e.balance ?? e.zoneCost)
   }, [brightDataRow.apiErrors])
 
+  // Dépense des plateformes de scraping à l'usage (Jina, Firecrawl) : elle s'affiche
+  // désormais dans la section Scraping, donc elle doit entrer dans le total — un montant
+  // visible en carte mais absent du cumul fait mentir le bandeau « Total ce mois ».
+  const scrapeUsd = useMemo(
+    () => Object.values(stats?.scrape.byPlatform ?? {}).reduce((s, u) => s + u.costUsd, 0),
+    [stats],
+  )
+
   const grandTotalUsd = useMemo(
-    () => rows.reduce((s, r) => s + r.costUsd, 0) + brightDataRow.consumedUsd + removeBgRow.consumedUsd,
-    [rows, brightDataRow.consumedUsd, removeBgRow.consumedUsd],
+    () => rows.reduce((s, r) => s + r.costUsd, 0) + brightDataRow.consumedUsd + removeBgRow.consumedUsd + scrapeUsd,
+    [rows, brightDataRow.consumedUsd, removeBgRow.consumedUsd, scrapeUsd],
   )
   const grandTokensIn = useMemo(() => rows.reduce((s, r) => s + r.tokensIn, 0), [rows])
   const grandTokensOut = useMemo(() => rows.reduce((s, r) => s + r.tokensOut, 0), [rows])
@@ -524,11 +520,13 @@ export function LiveLlmUsagePanel() {
           )
         })}
 
-        {/* Section Scraping — Bright Data : infos compte (solde/facturation/statut) =
-            données financières personnelles du compte partagé → propriétaire uniquement. */}
-        {isOwner && (<>
+        {/* Section Scraping. L'EN-TÊTE est commun ; seul Bright Data est réservé au
+            propriétaire (compte partagé → données financières personnelles). Jina et
+            Firecrawl s'appuient sur la clé de CHAQUE utilisateur : les masquer reviendrait
+            à cacher à quelqu'un sa propre dépense. */}
         <div className="grid grid-cols-12 gap-2 px-2 pt-3 pb-1.5 text-[9px] text-white/30 uppercase tracking-wider border-t border-white/10 mt-2">
           <div className="col-span-9">{t('live.scraping')}</div>
+          {isOwner && (
           <div className="col-span-3 flex justify-end items-center gap-1.5">
             <button
               onClick={() => refetchBd()}
@@ -548,8 +546,10 @@ export function LiveLlmUsagePanel() {
               dashboard <ExternalLink className="w-2.5 h-2.5" />
             </a>
           </div>
+          )}
         </div>
 
+        {isOwner && (<>
         {!isLoading && (
           <div
             className={`flex flex-col gap-2 px-2 py-3 border-b border-white/5 last:border-0 ${
@@ -725,6 +725,11 @@ export function LiveLlmUsagePanel() {
         )}
         </>)}
 
+        {/* Jina & Firecrawl — facturés à l'usage sur la clé de l'utilisateur. */}
+        {!isLoading && (
+          <ScrapeUsageCards byPlatform={stats?.scrape.byPlatform ?? {}} firecrawl={firecrawlAccount} />
+        )}
+
         {/* Section Traitement d'images — Remove.bg : conso PER-USER (clé propre à
             chaque utilisateur) → visible par tous, pas owner-gated comme Bright Data. */}
         <div className="grid grid-cols-12 gap-2 px-2 pt-3 pb-1.5 text-[9px] text-white/30 uppercase tracking-wider border-t border-white/10 mt-2">
@@ -817,7 +822,8 @@ export function LiveLlmUsagePanel() {
         {t('live.footer.aggregated')}
         <code className="text-white/40">aiUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>,{' '}
         <code className="text-white/40">brightDataUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>,{' '}
-        <code className="text-white/40">removebgUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>.
+        <code className="text-white/40">removebgUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>,{' '}
+        <code className="text-white/40">scrapeUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>.
         {t('live.footer.autoRefresh')}<strong className="text-white/60">{t('live.alertsSuffix')}</strong>
         {t('live.footer.thresholds')}<em>{t('live.localSuffix')}</em>
         {t('live.footer.explain')}<ExternalLink className="inline w-2 h-2 -translate-y-px" />.
