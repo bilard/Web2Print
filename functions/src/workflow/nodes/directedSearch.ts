@@ -121,9 +121,16 @@ registerServerNode({
         if (p && p.price != null) {
           genExtracted++
           return {
-            url, name: p.name ?? '', ref: p.reference, price: p.price, currency: p.currency,
+            url, name: p.name ?? '', ref: p.reference, price: p.price, listPrice: p.listPrice,
+            currency: p.currency,
             taxIncluded: true, // prix affiché B2C = TTC
             availability: p.inStock == null ? undefined : (p.inStock ? 'in-stock' : 'out-of-stock'),
+            // Visuel et vendeur : ce palier ne les remontait pas, alors que le repli
+            // Bright Data (parseProductPage) le faisait déjà — d'où des lignes marketplace
+            // sans vignette et sans marchand, sans rien pour l'expliquer.
+            // ⚠ `seller` est extrait par MODÈLE : affichage seul, il n'entre pas dans
+            // `toIdentity` et ne peut donc ni prouver ni condamner un appariement.
+            image: p.image, seller: p.seller,
           }
         }
         // Firecrawl a répondu (pas une fiche / rien d'extrait) → pas de cascade.

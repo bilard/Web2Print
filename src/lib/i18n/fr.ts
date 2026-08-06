@@ -5471,6 +5471,7 @@ export const fr = {
   'pwx.trust.sure': 'Sûr',
   'pwx.thumb.none': 'Aucune adresse d’image relevée. Côté F1 : vérifiez le préfixe des visuels dans les réglages. Côté concurrent : le site n’en publie pas sur ses pages liste.',
   'pwx.thumb.broken': 'Adresse relevée mais injoignable :\n{url}',
+  'pwx.soldBy': 'Vendu par {seller}',
   'pwx.proof.inUrl': 'dans l’adresse de la fiche',
   'pwx.visual.filterAll': 'Tous visuels',
   'pwx.visual.filterDifferent': 'Visuels contredits',

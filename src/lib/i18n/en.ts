@@ -5279,6 +5279,7 @@ export const en: Record<TranslationKey, string> = {
   'pwx.trust.sure': 'Sure',
   'pwx.thumb.none': 'No image address collected. On the F1 side: check the image prefix in the settings. On the competitor side: the site publishes none on its list pages.',
   'pwx.thumb.broken': 'Address collected but unreachable:\n{url}',
+  'pwx.soldBy': 'Sold by {seller}',
   'pwx.proof.inUrl': 'in the page address',
   'pwx.visual.filterAll': 'All visuals',
   'pwx.visual.filterDifferent': 'Contradicted visuals',

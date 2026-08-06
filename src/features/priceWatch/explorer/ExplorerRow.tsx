@@ -395,6 +395,15 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict
             {cmp.priceTtc != null && <span className="text-[10px] text-white/35">({eur(cmp.priceTtc)} TTC)</span>}
             {gap != null && <span className={`text-xs font-medium ${gapTone(gap)}`}>{pct(gap)}</span>}
           </div>
+          {/* VENDEUR. Sur une marketplace, le nom de domaine ne dit plus qui vend : la même
+              fiche est proposée par des marchands tiers à des prix différents, et un écart
+              n'est pas interprétable tant qu'on ignore à qui on se compare. Absent chez un
+              marchand qui vend son propre stock — donc rien n'est affiché dans ce cas. */}
+          {listing.seller && (
+            <div className="mt-0.5 text-[10px] text-white/45 truncate" title={listing.seller}>
+              {t('pwx.soldBy', { seller: listing.seller })}
+            </div>
+          )}
           <div className="flex items-center gap-2 mt-0.5 text-[10px]">
             {stock && <span className={stock.cls}>{t(stock.key)}</span>}
             {promo != null && (

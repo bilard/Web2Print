@@ -249,3 +249,25 @@ describe('extractPrices — classe BEM « __price » (matijardin)', () => {
     expect(out[0].price).toBe(5.22)
   })
 })
+
+describe('vendeur déclaré dans l’offre (marketplace)', () => {
+  it('lit `offers.seller.name` du JSON-LD', () => {
+    const html = `<script type="application/ld+json">${JSON.stringify({
+      '@type': 'Product', name: 'Courroie MTD', sku: 'MTD754',
+      offers: { price: '19.90', priceCurrency: 'EUR', seller: { '@type': 'Organization', name: 'Ets Dupont' } },
+    })}</script>`
+    expect(parseProductPage(html, 'https://m.test/p/1')?.seller).toBe('Ets Dupont')
+  })
+
+  it('accepte un vendeur donné en chaîne, et n’invente rien sans offre', () => {
+    const withStr = `<script type="application/ld+json">${JSON.stringify({
+      '@type': 'Product', name: 'X', offers: { price: '9', seller: 'Marchand Y' },
+    })}</script>`
+    expect(parseProductPage(withStr, 'https://m.test/p/2')?.seller).toBe('Marchand Y')
+    // Un marchand qui vend son propre stock n'en déclare pas : c'est normal, pas un trou.
+    const none = `<script type="application/ld+json">${JSON.stringify({
+      '@type': 'Product', name: 'X', offers: { price: '9' },
+    })}</script>`
+    expect(parseProductPage(none, 'https://m.test/p/3')?.seller).toBeUndefined()
+  })
+})

@@ -5278,6 +5278,7 @@ export const es: Record<TranslationKey, string> = {
   'pwx.trust.sure': 'Seguro',
   'pwx.thumb.none': 'Ninguna dirección de imagen recogida. Lado F1: compruebe el prefijo de los visuales en los ajustes. Lado competidor: el sitio no publica ninguna en sus páginas de lista.',
   'pwx.thumb.broken': 'Dirección recogida pero inaccesible:\n{url}',
+  'pwx.soldBy': 'Vendido por {seller}',
   'pwx.proof.inUrl': 'en la dirección de la ficha',
   'pwx.visual.filterAll': 'Todos los visuales',
   'pwx.visual.filterDifferent': 'Visuales contradichos',

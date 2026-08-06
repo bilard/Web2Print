@@ -27,6 +27,17 @@ export interface CompetitorListing {
   gtin13?: string
   /** URL de l'image principale du produit chez le concurrent. */
   image?: string
+  /**
+   * VENDEUR de l'offre — le marchand tiers sur une marketplace (Amazon, Cdiscount,
+   * ManoMano), où le domaine ne dit plus qui vend : « vendu par Ets Dupont, expédié par
+   * Amazon » n'est pas la même offre que celle d'Amazon lui-même.
+   *
+   * ⚠ AFFICHAGE SEUL. Sur les marketplaces cette valeur est extraite par un MODÈLE
+   * (Firecrawl json+schema), pas lue dans un champ structuré : elle n'entre jamais dans
+   * `toIdentity`, `proveMatch` ni `scorePair`. Un nom de marchand halluciné ne doit
+   * pouvoir ni prouver ni condamner un appariement.
+   */
+  seller?: string
 }
 
 export type Availability = 'in-stock' | 'out-of-stock' | 'on-order'
@@ -289,6 +300,14 @@ export function parseProductPage(html: string, url: string): CompetitorListing |
       out.currency = str(offer.priceCurrency)
       const avail = str(offer.availability)
       if (avail) out.availability = extractAvailability(avail)
+      // Vendeur DÉCLARÉ dans l'offre — `offers.seller.name` sur les marketplaces. Lu ici
+      // il est structuré, donc fiable, contrairement à l'extraction par modèle du palier
+      // Firecrawl. Absent chez un marchand qui vend son propre stock : c'est normal.
+      const sellerRaw = offer.seller
+      const seller = (typeof sellerRaw === 'object' && sellerRaw !== null)
+        ? str((sellerRaw as Record<string, unknown>).name)
+        : str(sellerRaw)
+      if (seller) out.seller = seller
     }
   }
 
