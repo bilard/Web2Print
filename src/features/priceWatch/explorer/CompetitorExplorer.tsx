@@ -24,6 +24,9 @@ import { ExplorerRow } from './ExplorerRow'
 import { ExplorerTaxonomyTree } from './ExplorerTaxonomyTree'
 import { ExplorerSourceSettings } from './ExplorerSourceSettings'
 import { pairSiteListings } from './pairing'
+import { diagnoseEmptySearch } from './emptySearch'
+import { useGlobalSearch } from './useGlobalSearch'
+import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { withVisual } from './confidence'
 import { buildTokenIndex, filterRows, EMPTY_EXPLORER_FILTER, type ExplorerFilter } from './filters'
 import { computeStats } from './stats'
@@ -101,6 +104,18 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   // Sans catalogue source, TOUTES les fiches sont orphelines : garder le filtre « appariés
   // seulement » viderait l'écran et ferait croire à une collecte vide.
   const noSource = source.products.length === 0
+
+  // Recherche transversale : le concurrent affiché n'est qu'un des vingt-quatre. Une
+  // référence absente ICI est souvent présente AILLEURS, et l'écran ne le disait pas.
+  const uid = useWorkspaceUid()
+  const globalSearch = useGlobalSearch(uid, watchId)
+  const searchMiss = useMemo(
+    () => (filter.q.trim() ? diagnoseEmptySearch(filter.q, source.products) : null),
+    [filter.q, source.products],
+  )
+  // Une nouvelle saisie invalide le balayage précédent : afficher les résultats d'une
+  // autre requête serait pire que ne rien afficher.
+  useEffect(() => { globalSearch.reset() }, [filter.q, globalSearch.reset])
   const effective = useMemo(
     () => (noSource ? { ...filter, pairing: 'all' as const } : filter),
     [filter, noSource],
@@ -305,6 +320,50 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
           ) : visible.length === 0 ? (
             <div className="py-16 text-center text-white/40 text-sm space-y-2">
               <p>{rows.length === 0 ? t('pwx.aucuneFicheCollecteePour') : t('pwx.aucuneFicheNeCorrespond')}</p>
+              {/* Une recherche par clé qui ne rend rien se lit comme une saisie fausse.
+                  Or le produit est souvent au catalogue — c'est CE concurrent qui ne le
+                  vend pas. Le catalogue source est déjà en mémoire : on tranche entre les
+                  deux sans un accès réseau, et on le dit. */}
+              {/* Le produit est-il seulement au catalogue ? La réponse tient dans les
+                  données déjà en mémoire, et elle sépare « saisie fausse » de « ce
+                  concurrent ne le vend pas ». */}
+              {searchMiss && (
+                <p className="text-[11px] text-emerald-300/70 max-w-xl mx-auto leading-relaxed">
+                  {t('pwx.search.inCatalog', { name: searchMiss.product.name, ref: searchMiss.product.ref ?? '—', domain })}
+                </p>
+              )}
+              {/* Balayage des VINGT-QUATRE concurrents. À la demande : c'est plusieurs
+                  secondes de réseau et des centaines de milliers de fiches — on ne
+                  l'impose pas à chaque frappe. */}
+              {filter.q.trim() && !globalSearch.running && !globalSearch.finished && (
+                <button type="button"
+                  onClick={() => void globalSearch.run(filter.q, sites.filter((x) => x.collected > 0).map((x) => ({ siteId: x.siteId, domain: x.domain })))}
+                  className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3 py-1.5 text-[12px] text-indigo-200 hover:bg-indigo-500/20 transition-colors">
+                  {t('pwx.search.scanAll', { count: sites.filter((x) => x.collected > 0).length })}
+                </button>
+              )}
+              {globalSearch.running && (
+                <p className="text-[11px] text-white/40 flex items-center justify-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  {t('pwx.search.scanning', { done: globalSearch.done, total: globalSearch.total })}
+                </p>
+              )}
+              {globalSearch.hits.length > 0 && (
+                <div className="mx-auto max-w-xl space-y-1 pt-1 text-left">
+                  <p className="text-[11px] text-white/40 text-center">{t('pwx.search.foundOn', { count: globalSearch.hits.length })}</p>
+                  {globalSearch.hits.map((h) => (
+                    <button key={h.siteId} type="button" onClick={() => { setSiteId(h.siteId); setPage(0) }}
+                      className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-left hover:border-indigo-400/50 hover:bg-white/[0.06] transition-colors">
+                      <span className="text-[12px] font-medium text-white/80">{h.domain}</span>
+                      <span className="ml-2 text-[11px] tabular-nums text-white/35">{t('pwx.search.hitCount', { count: h.count })}</span>
+                      <span className="block truncate text-[11px] text-white/45">{h.sample.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {globalSearch.finished && globalSearch.hits.length === 0 && (
+                <p className="text-[11px] text-white/30">{t('pwx.search.foundNowhere')}</p>
+              )}
               {/* Une liste vide qui se tait se lit comme une panne. Quand un filtre de
                   fiabilité l'a vidée, on dit ce que le site contient RÉELLEMENT : sur un
                   marchand sans données structurées, « sûrs seulement » peut légitimement
