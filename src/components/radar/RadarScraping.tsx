@@ -11,8 +11,10 @@ import { normalizeDomain } from '@/features/priceWatch/sourceSites'
 import { stableId } from '@/features/priceWatch/core'
 import { t } from '@/lib/i18n'
 
-/** Ordre d'attention des pastilles de filtre (le plus urgent d'abord). */
-const FILTERS: SiteStatus[] = ['live', 'error', 'empty', 'directed', 'ok', 'never']
+/** Ordre d'attention des pastilles de filtre (le plus urgent d'abord ; les mis en pause
+ *  en dernier — ils ne demandent rien, mais on doit pouvoir les retrouver pour les
+ *  réactiver). */
+const FILTERS: SiteStatus[] = ['live', 'error', 'empty', 'directed', 'ok', 'never', 'disabled']
 
 const PILL_TONE: Record<'ok' | 'warn' | 'err' | 'mute', { fg: string; bg: string; border: string }> = {
   ok: { fg: 'var(--radar-live)', bg: 'rgba(48, 209, 88, 0.12)', border: 'rgba(48, 209, 88, 0.3)' },
@@ -34,10 +36,14 @@ export function RadarScraping({ report, meta, now, pulse, watchId, workflowId }:
   workflowId: string | null
 }) {
   const sites = useRadarSourceSites(workflowId)
-  const rows = useMemo(() => buildScrapeRows(report, meta, now, pulse), [report, meta, now, pulse])
+  const rows = useMemo(() => buildScrapeRows(report, meta, now, pulse, sites.byId), [report, meta, now, pulse, sites.byId])
   const counts = useMemo(() => countByStatus(rows), [rows])
   const [filter, setFilter] = useState<SiteStatus | null>(null)
   const shown = filter ? rows.filter((r) => r.status === filter) : rows
+  // Le bilan d'en-tête ne compte QUE ce qui alimente encore la veille : additionner les
+  // fiches d'un concurrent mis en pause annoncerait une couverture qui n'existe plus.
+  const active = rows.filter((r) => r.enabled)
+  const paused = rows.length - active.length
 
   if (rows.length === 0) {
     return (
@@ -54,7 +60,8 @@ export function RadarScraping({ report, meta, now, pulse, watchId, workflowId }:
           <Radio size={16} color="var(--radar-accent-2)" />
           <h2 className="text-[15px] font-semibold">Scraping site par site</h2>
           <span className="ml-auto radar-tnum text-[12px]" style={{ color: 'var(--radar-text-3)' }}>
-            {fmtInt(rows.length)} sites · {fmtInt(rows.reduce((n, r) => n + r.products, 0))} fiches
+            {fmtInt(active.length)} actifs · {fmtInt(active.reduce((n, r) => n + r.products, 0))} fiches
+            {paused > 0 && <span style={{ color: 'var(--radar-text-3)' }}> · {fmtInt(paused)} en pause</span>}
           </span>
         </div>
         <div className="mt-2.5 flex flex-wrap gap-1.5">

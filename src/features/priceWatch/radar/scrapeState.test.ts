@@ -146,6 +146,35 @@ describe('buildScrapeRows', () => {
     ])
     const rows = buildScrapeRows(report, meta, NOW, RUNNING)
     expect(rows.map((r) => r.domain)).toEqual(['b.com', 'a.com'])
-    expect(countByStatus(rows)).toMatchObject({ live: 1, error: 1 })
+    // a.com : 0 page moissonnée MAIS 300 fiches indexées = « Recherche seule », pas une
+    // panne. La PWA ne passait pas `productCount` à `siteStatus` et affichait « ✗ » rouge.
+    expect(countByStatus(rows)).toMatchObject({ live: 1, directed: 1 })
+  })
+
+  const cfg = (rows: [string, string, boolean][]) =>
+    new Map(rows.map(([id, domain, enabled]) => [id, { domain, enabled }]))
+
+  it('un site DÉSACTIVÉ dans la config sort du statut « live » et passe en dernier', () => {
+    const meta = new Map([
+      ['a', { domain: 'a.com', productCount: 140, updatedAt: NOW - 5_000, harvestBeatAt: NOW - 5_000, lastPassAt: NOW - 5_000, lastPassPages: 20, lastPassProducts: 40 }],
+      ['b', { domain: 'b.com', productCount: 5, updatedAt: NOW - 5_000, harvestBeatAt: NOW - 5_000, lastPassAt: NOW - 5_000, lastPassPages: 3, lastPassProducts: 5 }],
+    ])
+    const rows = buildScrapeRows(report, meta, NOW, RUNNING, cfg([['a', 'a.com', false], ['b', 'b.com', true]]))
+    expect(rows.map((r) => r.domain)).toEqual(['b.com', 'a.com'])
+    const a = rows.find((r) => r.domain === 'a.com')!
+    // Un battement résiduel ne doit pas rallumer un site qu'on vient de mettre en pause.
+    expect(a).toMatchObject({ enabled: false, live: false, status: 'disabled' })
+  })
+
+  it('un site désactivé RESTE visible même sans la moindre donnée — sinon on ne peut plus le réactiver', () => {
+    const rows = buildScrapeRows(null, new Map(), NOW, ENDED, cfg([['z', 'z.com', false]]))
+    expect(rows.map((r) => r.domain)).toEqual(['z.com'])
+    expect(rows[0]).toMatchObject({ enabled: false, status: 'disabled', products: 0 })
+  })
+
+  it('un site ABSENT de la config reste actif : l’index porte des concurrents retirés depuis', () => {
+    const meta = new Map([['a', { domain: 'a.com', productCount: 140, updatedAt: NOW - 5_000, harvestBeatAt: NOW - 900_000, lastPassAt: NOW - 900_000, lastPassPages: 20, lastPassProducts: 40 }]])
+    const rows = buildScrapeRows(report, meta, NOW, ENDED, cfg([['b', 'b.com', true]]))
+    expect(rows.find((r) => r.domain === 'a.com')).toMatchObject({ enabled: true, status: 'ok' })
   })
 })

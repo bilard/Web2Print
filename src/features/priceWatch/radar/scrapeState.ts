@@ -113,6 +113,8 @@ export interface ScrapeRow {
   siteId: string
   domain: string
   status: SiteStatus
+  /** Site coché dans le node « Sites sources ». false = exclu de TOUT (cf. buildScrapeRows). */
+  enabled: boolean
   /** Heartbeat récent → moisson en cours sur ce site. */
   live: boolean
   products: number
@@ -129,15 +131,26 @@ export interface ScrapeRow {
   lastPassProducts?: number
 }
 
-/** Lignes du tableau live : union des concurrents du rapport et des métas LIVE (un site
- *  fraîchement scrapé apparaît sans attendre un « Comparer »). Tri = ce qui bouge d'abord,
- *  puis le plus gros catalogue. */
+/** Ce que la config du node « Sites sources » apprend au tableau live. */
+export interface ScrapeSiteConfig {
+  domain: string
+  enabled: boolean
+}
+
+/** Lignes du tableau live : union des concurrents du rapport, des métas LIVE (un site
+ *  fraîchement scrapé apparaît sans attendre un « Comparer ») et de la CONFIG (un site
+ *  ajouté ou désactivé existe avant d'avoir la moindre donnée). Tri = les désactivés en
+ *  dernier, puis ce qui bouge, puis le plus gros catalogue. */
 export function buildScrapeRows(
   report: StoredReport | null,
   meta: Map<string, HarvestMeta>,
   now: number,
   /** Ce qui tourne côté serveur : arbitre « ça bouge encore ? » (cf. isBeatAlive). */
   pulse: RunPulse = { active: false, startedAt: null, endedAt: null },
+  /** Config du node « Sites sources », par `stableId(domaine)`. Un site ABSENT de cette
+   *  carte reste actif : l'index peut porter des concurrents retirés de la liste depuis,
+   *  et un suivi sans node « Sites sources » n'a aucune activation à lire. */
+  config?: ReadonlyMap<string, ScrapeSiteConfig>,
 ): ScrapeRow[] {
   const byId = new Map<string, { domain: string; matched: number | null; indexed: number; pctPrice: number | null }>()
   for (const c of report?.byCompetitor ?? []) {
@@ -151,23 +164,39 @@ export function buildScrapeRows(
   for (const [siteId, m] of meta.entries()) {
     if (!byId.has(siteId) && m.domain) byId.set(siteId, { domain: m.domain, matched: null, indexed: 0, pctPrice: null })
   }
+  // Un concurrent DÉSACTIVÉ n'est plus émis sur le port `sites` : ni moissonné, ni
+  // recherché, ni comparé — il finit donc par disparaître du rapport ET des métas. Sans
+  // cette union, le désactiver le faisait s'ÉVAPORER du tableau, et on ne pouvait plus
+  // le réactiver depuis le mobile. La config le maintient visible.
+  for (const [siteId, c] of config?.entries() ?? []) {
+    if (!byId.has(siteId) && c.domain) byId.set(siteId, { domain: c.domain, matched: null, indexed: 0, pctPrice: null })
+  }
 
   const rows: ScrapeRow[] = []
   for (const [siteId, base] of byId.entries()) {
     if (isCursorDomain(base.domain)) continue
     const m = meta.get(siteId)
+    const enabled = config?.get(siteId)?.enabled !== false
     // ⚠ « En cours » se lit sur `harvestBeatAt` — écrit UNIQUEMENT par une passe de
     // scraping. `updatedAt` bouge aussi quand le node « Comparer » réécrit la méta de TOUS
     // les concurrents dans la même rafale (constaté : 13 sites à la même milliseconde),
     // ce qui les allumait tous. Plusieurs sites peuvent être actifs à la fois : les nodes
     // « Moisson » et « Recherche dirigée » tournent en parallèle.
-    const live = isBeatAlive(m?.harvestBeatAt, pulse, now)
+    const live = enabled && isBeatAlive(m?.harvestBeatAt, pulse, now)
+    const products = m?.productCount ?? base.indexed
     rows.push({
       siteId,
       domain: base.domain,
-      status: siteStatus({ enabled: true, live, lastPassAt: m?.lastPassAt, lastPassPages: m?.lastPassPages, lastPassProducts: m?.lastPassProducts }),
+      // `productCount` est indispensable au statut « Recherche seule » : une marketplace
+      // n'est pas moissonnable (0 page) mais porte des fiches — sans lui, elle s'affichait
+      // « ✗ Sans catalogue » en rouge à côté de son propre compteur de fiches.
+      status: siteStatus({
+        enabled, live, lastPassAt: m?.lastPassAt, lastPassPages: m?.lastPassPages,
+        lastPassProducts: m?.lastPassProducts, productCount: products,
+      }),
+      enabled,
       live,
-      products: m?.productCount ?? base.indexed,
+      products,
       pctPrice: m?.pctPrice ?? base.pctPrice,
       matched: base.matched,
       progress: Math.max(0, Math.min(1, m?.harvestProgress ?? 0)),
@@ -179,7 +208,11 @@ export function buildScrapeRows(
       lastPassProducts: m?.lastPassProducts,
     })
   }
-  return rows.sort((a, b) => Number(b.live) - Number(a.live) || b.products - a.products || a.domain.localeCompare(b.domain))
+  // Les désactivés en bas : ils ne participent plus à rien, ils n'ont pas à occuper le
+  // haut de l'écran juste parce qu'ils ont le plus gros catalogue.
+  return rows.sort((a, b) =>
+    Number(a.status === 'disabled') - Number(b.status === 'disabled')
+    || Number(b.live) - Number(a.live) || b.products - a.products || a.domain.localeCompare(b.domain))
 }
 
 /** Compte des lignes par statut (pastilles de filtre de l'onglet Scraping). */

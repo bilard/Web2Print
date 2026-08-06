@@ -109,7 +109,9 @@ export function RadarSiteActions({ domain, watchId, workflowId, row, onChanged }
     <>
       <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t pt-2" style={{ borderColor: 'var(--radar-hair)' }}>
         {row && (
-          <IconBtn onClick={onToggle} busy={busy === 'toggle'} tint={enabled ? 'var(--radar-live)' : undefined}
+          // Case décochée en AMBRE, pas en gris : sur une carte déjà estompée, un bouton
+          // muet parmi cinq ne se voit plus — or c'est LE bouton qui remet le site en jeu.
+          <IconBtn onClick={onToggle} busy={busy === 'toggle'} tint={enabled ? 'var(--radar-live)' : '#fbbf24'}
             title={t(enabled ? 'ss.disableSite' : 'ss.enableSite')}>
             {enabled ? <CheckSquare size={15} /> : <Square size={15} />}
           </IconBtn>

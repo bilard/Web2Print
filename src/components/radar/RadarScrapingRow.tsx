@@ -40,21 +40,27 @@ export function RadarScrapingRow({ row, now, watchId, workflowId, cfg, onChanged
 }) {
   const meta = SITE_STATUS_META[row.status]
   const tone = TONE[meta.tone]
+  const off = !row.enabled
   const detail =
     row.status === 'ok' ? ` · +${fmtInt(row.lastPassProducts ?? 0)}` :
     row.status === 'empty' ? ` · ${row.lastPassPages ?? 0} p` :
+    row.status === 'directed' ? ` · ${fmtInt(row.products)} fiches` :
     row.status === 'error' ? ' · 0 page' : ''
   const swept = row.progress >= 1
 
   return (
     // Site en moisson : carte franchement verte (halo + liseré épais), lisible d'un coup
     // d'œil en plein soleil sur iPhone — même intention que le ring pulsé de l'app.
+    // Site en pause : carte estompée, sans aucun accent — elle ne réclame rien.
     <li className="radar-card relative overflow-hidden px-3.5 py-3"
       style={row.live ? {
         borderColor: 'rgba(48, 209, 88, 0.75)',
         boxShadow: '0 0 0 1.5px rgba(48, 209, 88, 0.45), 0 0 18px rgba(48, 209, 88, 0.18)',
         background: 'linear-gradient(180deg, rgba(48, 209, 88, 0.16), rgba(48, 209, 88, 0.07))',
       } : undefined}>
+      {/* L'estompage porte sur les DONNÉES, jamais sur la barre d'actions : c'est là que
+          se trouve le bouton qui réactive le site, il doit rester franc. */}
+      <div style={off ? { opacity: 0.5 } : undefined}>
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">{row.domain.replace(/^www\./, '')}</span>
         {/* Badge PLEIN quand ça moissonne (vert saturé, texte sombre) : la ligne active
@@ -79,6 +85,19 @@ export function RadarScrapingRow({ row, now, watchId, workflowId, cfg, onChanged
             moissonné il y a 9 min). */}
         {(row.harvestBeatAt ?? row.updatedAt) != null && <Chip label="scrape" value={timeAgo(row.harvestBeatAt ?? row.updatedAt, now)} />}
       </div>
+      </div>
+      {/* L’EFFET, écrit noir sur blanc. Une case décochée est muette : rien ne dit qu’elle
+          coupe AUSSI le comparatif — le site disparaît alors du tableau de bord au
+          prochain « Comparer », ce qui se lit comme une perte de données alors que
+          l’index est intact. */}
+      {off && (
+        <p className="mt-1.5 text-[11px] leading-snug" style={{ color: 'var(--radar-text-3)' }}>
+          En pause : plus moissonné, plus interrogé par la recherche dirigée, et retiré du
+          comparatif — ses prix quittent le tableau de bord au prochain « Comparer catalogue ».
+          Ses {fmtInt(row.products)} fiches déjà collectées restent stockées et reviennent
+          telles quelles à la réactivation.
+        </p>
+      )}
       <RadarSiteActions domain={row.domain} watchId={watchId} workflowId={workflowId} row={cfg} onChanged={onChanged} />
       {row.live && (
         <div className="absolute bottom-0 left-2 right-2 h-[3px] overflow-hidden rounded-full" aria-hidden>
