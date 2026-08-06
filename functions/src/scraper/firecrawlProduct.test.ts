@@ -35,11 +35,21 @@ describe('firecrawlScrapeProduct', () => {
     expect((await firecrawlScrapeProduct('https://m.test/p/1', 'k'))?.image).toBeUndefined()
   })
 
+  /** Installe un faux `fetch` et RETIENT les corps envoyés, dans l'ordre des appels. */
+  function capture(...responses: Response[]): { bodies: Record<string, unknown>[]; calls: () => number } {
+    const bodies: Record<string, unknown>[] = []
+    let n = 0
+    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>)
+      return responses[Math.min(n++, responses.length - 1)]
+    }) as unknown as typeof fetch
+    return { bodies, calls: () => n }
+  }
+
   it('envoie l’action anti-mur-de-consentement avant l’extraction', async () => {
-    const spy = vi.fn(async () => ok({ price: 9 }))
-    globalThis.fetch = spy as unknown as typeof fetch
+    const cap = capture(ok({ price: 9 }))
     await firecrawlScrapeProduct('https://www.amazon.fr/dp/B000', 'k')
-    const body = JSON.parse((spy.mock.calls[0][1] as RequestInit).body as string)
+    const body = cap.bodies[0] as { actions: { type: string; script: string }[]; location: unknown }
     expect(body.actions[0].type).toBe('executeJavascript')
     expect(body.actions[0].script).toContain('sp-cc-accept')
     expect(body.location).toEqual({ country: 'FR', languages: ['fr-FR'] })
@@ -48,19 +58,16 @@ describe('firecrawlScrapeProduct', () => {
   it('⚠ REJOUE SANS ACTIONS si l’API les refuse — ne jamais casser ce qui marchait', async () => {
     // cdiscount et manomano passaient déjà sans actions : une tentative refusée ne doit
     // pas les faire tomber. Deux appels, le second nu, et le résultat est bien rendu.
-    const spy = vi.fn()
-      .mockResolvedValueOnce(err(400, 'actions not supported'))
-      .mockResolvedValueOnce(ok({ price: 12.5, name: 'X' }))
-    globalThis.fetch = spy as unknown as typeof fetch
+    const cap = capture(err(400, 'actions not supported'), ok({ price: 12.5, name: 'X' }))
     expect(await firecrawlScrapeProduct('https://www.cdiscount.com/f-1.html', 'k')).toMatchObject({ price: 12.5 })
-    expect(spy).toHaveBeenCalledTimes(2)
-    expect(JSON.parse((spy.mock.calls[1][1] as RequestInit).body as string).actions).toBeUndefined()
+    expect(cap.calls()).toBe(2)
+    expect(cap.bodies[1].actions).toBeUndefined()
+    expect(cap.bodies[1].location).toBeUndefined()
   })
 
   it('ne rejoue PAS sur un 429 : ce n’est pas la requête qui est en cause', async () => {
-    const spy = vi.fn().mockResolvedValue(err(429, 'rate limited'))
-    globalThis.fetch = spy as unknown as typeof fetch
+    const cap = capture(err(429, 'rate limited'))
     expect(await firecrawlScrapeProduct('https://m.test/p/1', 'k')).toBeNull()
-    expect(spy).toHaveBeenCalledTimes(1)
+    expect(cap.calls()).toBe(1)
   })
 })
