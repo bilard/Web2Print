@@ -30,13 +30,15 @@ import { rowsToCsv } from './exportCsv'
 import { useSourceSheet } from './useSourceSheet'
 import { useVerdicts } from './useVerdicts'
 import { useVisuals } from '../visual/useVisuals'
-import { useTranslation } from '@/lib/i18n'
+import { useTranslation, intlLocale } from '@/lib/i18n'
 import { debugLog } from '@/lib/debugLog'
 
 const iconBtn = 'bg-well text-white/55 text-xs rounded px-2.5 py-2 border border-white/10 hover:text-white hover:border-white/25 disabled:opacity-40 disabled:hover:text-white/55 disabled:hover:border-white/10 flex items-center gap-1.5 transition-colors shrink-0'
 
 export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | null; workflowId?: string }) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
+  // Milliers séparés : à six chiffres, « 186170 » ne se lit pas d'un coup d'œil.
+  const nf = (v: number) => v.toLocaleString(intlLocale(locale))
   const meta = useCompetitorMeta(watchId)
   // Rapport agrégé : il porte l'appariement et l'écart médian PAR SITE, calculés avant
   // tout plafond d'affichage. C'est ce qui permet de mesurer les 19 concurrents sans en
@@ -255,7 +257,23 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
 
         <div className="flex-1 min-w-0 overflow-auto">
           <div className="grid grid-cols-2 text-[10px] uppercase tracking-wider sticky top-0 z-20 bg-surface-2 border-b border-white/10 shadow-[0_1px_0_rgba(255,255,255,0.04)]">
-            <div className="px-3 py-2 text-indigo-300/80 font-medium">{t('pwx.monProduitF1')}</div>
+            {/* Le résultat du filtre, CHIFFRÉ, à l'endroit où la liste commence. Le compte
+                figurait déjà dans la pagination, mais à l'autre bout de la barre d'outils :
+                après un clic sur une famille ou une bande de fiabilité, le regard est sur
+                la liste, pas sur le pager. Quand un filtre est actif on donne les DEUX
+                nombres — « 240 sur 186 170 » dit à la fois ce qui reste et ce qui a été
+                écarté, là où « 240 » seul ne se distingue pas d'une collecte maigre. */}
+            <div className="px-3 py-2 text-indigo-300/80 font-medium flex items-center gap-2">
+              {t('pwx.monProduitF1')}
+              {!loading && rows.length > 0 && (
+                <span className="ml-auto normal-case tracking-normal tabular-nums text-white/40"
+                  title={filtered.length === rows.length ? undefined : t('pwx.header.filtered.help')}>
+                  {filtered.length === rows.length
+                    ? t('pwx.header.rows', { count: nf(rows.length) })
+                    : t('pwx.header.filtered', { shown: nf(filtered.length), total: nf(rows.length) })}
+                </span>
+              )}
+            </div>
             <div className="px-3 py-2 border-l border-white/10 text-white/50 font-medium">
               {domain || t('pw.col.competitor')}
             </div>
