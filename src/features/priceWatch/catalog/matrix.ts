@@ -76,21 +76,29 @@ function baseColumns(labels: SourceLabels): MatrixColumn[] {
 }
 
 /**
- * Bloc de colonnes d'un concurrent. Le nom du produit et le prix HT reprennent les noms
- * de colonnes de la source, suffixés du concurrent (« Produit — pro-motoculture.com »).
- * Le nom concurrent permet de VÉRIFIER d'un coup d'œil que l'appariement (fait par
+ * Bloc de colonnes d'un concurrent.
+ *
+ * ⚠ Libellés NEUTRES, jamais ceux de la source. Ils reprenaient auparavant les noms de
+ * MES colonnes, suffixés du domaine — avec l'idée de garder un vocabulaire commun. Le
+ * résultat était trompeur dès que la source nomme ses colonnes en propre : un catalogue
+ * dont la colonne prix s'appelle « PV Brut F1 » produisait « PV Brut F1 —
+ * www.jardimax.com », qui se lit comme MON prix alors que c'est celui du concurrent ;
+ * une colonne nom appelée « DESCRIPTION » donnait « DESCRIPTION — www.jardimax.com »
+ * pour le libellé de SA fiche. Le nom de la colonne doit dire ce que la cellule
+ * contient, pas d'où vient le gabarit.
+ *
+ * Le domaine en suffixe permet de VÉRIFIER d'un coup d'œil que l'appariement (fait par
  * égalité exacte de clé) porte sur le bon produit.
  */
-function siteColumns(domain: string, labels: SourceLabels): MatrixColumn[] {
+function siteColumns(domain: string): MatrixColumn[] {
   const s = domain.replace(/[^a-z0-9]+/gi, '_')
-  const l = { ...DEFAULT_LABELS, ...Object.fromEntries(Object.entries(labels).filter(([, v]) => v)) }
   // ⚠️ Ces 9 colonnes DOIVENT rester contiguës : l'export les replie comme un
   // groupe unique, et un groupe Google Sheets est une plage, pas une sélection.
   const g = domain
   return [
-    { key: `nom_${s}`, label: `${l.name} — ${domain}`, kind: 'text', group: g },
+    { key: `nom_${s}`, label: `Produit — ${domain}`, kind: 'text', group: g },
     { key: `prix_ttc_${s}`, label: `Prix TTC — ${domain}`, kind: 'price', group: g },
-    { key: `prix_ht_${s}`, label: `${l.price} — ${domain}`, kind: 'price', group: g },
+    { key: `prix_ht_${s}`, label: `Prix HT — ${domain}`, kind: 'price', group: g },
     { key: `prix_barre_${s}`, label: `Prix barré TTC — ${domain}`, kind: 'price', group: g },
     { key: `ecart_${s}`, label: `Écart % — ${domain}`, kind: 'percent', group: g },
     { key: `stock_${s}`, label: `Stock — ${domain}`, kind: 'text', group: g },
@@ -129,7 +137,7 @@ export function buildMatrix(
 ): MatrixResult {
   const matchedOnly = opts.matchedOnly ?? true
   const labels = opts.labels ?? {}
-  const columns = [...baseColumns(labels), ...sites.flatMap((s) => siteColumns(s.domain, labels))]
+  const columns = [...baseColumns(labels), ...sites.flatMap((s) => siteColumns(s.domain))]
   const lookups = new Map(sites.map((s) => [s.siteId, buildMemoryIndex(indexBySite.get(s.siteId) ?? [])]))
 
   const rows: Record<string, unknown>[] = []

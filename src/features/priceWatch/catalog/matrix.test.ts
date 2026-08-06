@@ -31,6 +31,25 @@ describe('buildMatrix', () => {
     expect(m.columns.map((c) => c.key)).toContain('url_webmotoculture_com')
   })
 
+  it('nomme les colonnes CONCURRENT sans reprendre les intitulés de ma source', () => {
+    // Cas VÉCU : un catalogue dont la colonne prix s'appelle « PV Brut F1 » et la colonne
+    // nom « DESCRIPTION » produisait « PV Brut F1 — jardimax.com » et « DESCRIPTION —
+    // jardimax.com ». On lit alors MON vocabulaire sur des valeurs qui sont CELLES du
+    // concurrent : le tableau devient indéchiffrable.
+    const m2 = buildMatrix(products, sites, index, {
+      labels: { name: 'DESCRIPTION', price: 'PV Brut F1', ref: 'CODE_ARTICLE' },
+    })
+    const labels = m2.columns.map((c) => c.label)
+    // Mes intitulés nomment MES colonnes, et elles seules.
+    expect(labels).toContain('DESCRIPTION')
+    expect(labels).toContain('PV Brut F1')
+    // Celles du concurrent disent ce qu'elles contiennent.
+    expect(labels).toContain('Produit — pro-motoculture.com')
+    expect(labels).toContain('Prix HT — pro-motoculture.com')
+    expect(labels.filter((l) => l.startsWith('PV Brut F1 —'))).toEqual([])
+    expect(labels.filter((l) => l.startsWith('DESCRIPTION —'))).toEqual([])
+  })
+
   it('compte appariés / non appariés / sans clé', () => {
     expect(m.matched).toBe(2) // a chez pm, b chez wm
     expect(m.noKey).toBe(1)   // c
@@ -83,9 +102,10 @@ describe('buildMatrix', () => {
     expect(byKey.get('reference')).toBe('CODE_ARTICLE')
     expect(byKey.get('ean')).toBe('GENCOD')
     expect(byKey.get('mon_prix_ht')).toBe('PV_HT')
-    // Colonnes concurrent : nom source suffixé du domaine.
-    expect(byKey.get('nom_pro_motoculture_com')).toBe('DESIGNATION — pro-motoculture.com')
-    expect(byKey.get('prix_ht_pro_motoculture_com')).toBe('PV_HT — pro-motoculture.com')
+    // Colonnes concurrent : libellé NEUTRE. Y recopier mes intitulés ferait lire mon
+    // vocabulaire sur des valeurs qui sont les siennes (cf. le test ci-dessus).
+    expect(byKey.get('nom_pro_motoculture_com')).toBe('Produit — pro-motoculture.com')
+    expect(byKey.get('prix_ht_pro_motoculture_com')).toBe('Prix HT — pro-motoculture.com')
   })
 
   it('distingue un match « même produit » d’un match « pièce d’origine »', () => {
