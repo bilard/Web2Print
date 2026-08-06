@@ -77,7 +77,11 @@ export function useSiteListings(watchId: string | null, siteId: string | null): 
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
-    if (!uid || !watchId || !siteId) { setListings([]); setError(null); return }
+    // ⚠ `setLoading(false)` obligatoire ici : si l'effet se relance pendant un chargement
+    // (le rail se vide un instant sur un snapshot → `siteId` repasse à null), la passe
+    // précédente est marquée `cancelled` et ne rendra JAMAIS la main — sans ce reset,
+    // l'écran reste figé sur « Lecture des fiches collectées… ».
+    if (!uid || !watchId || !siteId) { setListings([]); setError(null); setLoading(false); return }
     let cancelled = false
     setLoading(true); setError(null)
     // Libère l'index précédent AVANT de charger le suivant : deux sites simultanés en
