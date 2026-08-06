@@ -64,9 +64,33 @@ const FAMILIES: Record<string, string[]> = {
   crankshaft: ['vilebrequin', 'vilebrequins', 'crankshaft'],
   handle: ['poignee', 'poignees', 'handle', 'handles', 'guidon', 'guidons', 'handlebar'],
   seat: ['siege', 'sieges', 'seat', 'seats'],
-  screw: ['boulon', 'boulons', 'screw', 'screws', 'bolt', 'bolts'],
+  screw: ['boulon', 'boulons', 'screw', 'screws', 'bolt', 'bolts', 'vis'],
   nut: ['ecrou', 'ecrous'],
   washer: ['rondelle', 'rondelles', 'washer', 'washers'],
+  // Vocabulaire du domaine, ajouté après relecture des appariements RÉELS. Chaque entrée
+  // regroupe les SYNONYMES d'une même pièce — c'est ce qui distingue ce lexique d'une
+  // comparaison de mots communs : « COUTEAU » et « Lame STIGA » n'ont aucun mot en
+  // partage et désignent pourtant la même pièce.
+  // ⚠ Deux ajouts ESSAYÉS PUIS RETIRÉS, mesure à l'appui : « membrane » (une membrane
+  // EST une pièce de carburateur — « KIT REPARATION CARBURATEUR » ↔ « Kit membranes
+  // WALBRO » est un appariement juste) et « palier » (« AXE DE PALIER MTD » ↔ « Axe de
+  // couteau MTD » l'est aussi). Un mot qui désigne un SOUS-ENSEMBLE d'une autre pièce
+  // n'a pas sa place ici : il fabrique une contradiction là où il y a emboîtement.
+  hose: ['durite', 'durites', 'tuyau', 'tuyaux', 'hose', 'hoses'],
+  nozzle: ['gicleur', 'gicleurs', 'buse', 'buses'],
+  roller: ['galet', 'galets', 'roller', 'rollers'],
+  flywheel: ['volant', 'volants', 'flywheel'],
+  fan: ['ventilateur', 'ventilateurs', 'turbine', 'turbines', 'helice', 'helices'],
+  damper: ['amortisseur', 'amortisseurs', 'silentbloc', 'silentblocs'],
+  clamp: ['collier', 'colliers', 'clamp', 'clamps'],
+  pin: ['goupille', 'goupilles', 'clavette', 'clavettes'],
+  lever: ['levier', 'leviers', 'manette', 'manettes', 'lever', 'levers'],
+  deflector: ['deflecteur', 'deflecteurs', 'deflector'],
+  wrench: ['cle', 'clef', 'cles', 'clefs', 'wrench', 'spanner'],
+  capacitor: ['condensateur', 'condensateurs', 'capacitor'],
+  // Rotor et stator sont deux pièces distinctes, mais les libellés marchands les
+  // emploient l'un pour l'autre : les séparer fabriquerait des contradictions fausses.
+  armature: ['stator', 'stators', 'rotor', 'rotors', 'induit', 'induits'],
   // ÉQUIPEMENT DE L'OPÉRATEUR — jamais une pièce de machine. Cas VÉCU : « BAGUE DE
   // ROUE » à 1,91 € appariée à « Chaussure de travail taille 41 GRISPORT 7200341 » à
   // 176 €, la référence figurant dans l'adresse de la fiche. Aucun mot du lexique ne
