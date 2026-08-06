@@ -31,6 +31,7 @@ import { useSourceSheet } from './useSourceSheet'
 import { useVerdicts } from './useVerdicts'
 import { useVisuals } from '../visual/useVisuals'
 import { useTranslation } from '@/lib/i18n'
+import { debugLog } from '@/lib/debugLog'
 
 const iconBtn = 'bg-well text-white/55 text-xs rounded px-2.5 py-2 border border-white/10 hover:text-white hover:border-white/25 disabled:opacity-40 disabled:hover:text-white/55 disabled:hover:border-white/10 flex items-center gap-1.5 transition-colors shrink-0'
 
@@ -66,12 +67,19 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   // dizaines de milliers de produits l'opération est en O(produits) sur un index en
   // mémoire — quelques centaines de ms, une seule fois par onglet.
   const rows = useMemo(
-    () => (active && listings.length > 0
-      ? pairSiteListings(source.products, active, listings, {
-          vatRate: source.vatRate, extras: extras.lookup,
-          imagePrefix: src.imagePrefix, productUrl: src.productUrl,
-        })
-      : []),
+    () => {
+      if (!active || listings.length === 0) return []
+      const t0 = performance.now()
+      const out = pairSiteListings(source.products, active, listings, {
+        vatRate: source.vatRate, extras: extras.lookup,
+        imagePrefix: src.imagePrefix, productUrl: src.productUrl,
+      })
+      // Cet appariement tourne SUR LE CHEMIN DE RENDU et rejoue quand le catalogue source
+      // arrive : à 186 000 fiches, une seconde ici fige l'onglet. Mesuré pour qu'un
+      // ralentissement se voie dans la console au lieu de passer pour un plantage.
+      debugLog('[pw-explorer] appariement', out.length, 'lignes en', Math.round(performance.now() - t0), 'ms')
+      return out
+    },
     [active, listings, source.products, source.vatRate, extras, src.imagePrefix, src.productUrl],
   )
   const tokenIndex = useMemo(() => buildTokenIndex(rows), [rows])
@@ -136,9 +144,21 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
     <div className="h-full flex flex-col min-h-0" data-pw-section="explorer">
       {/* ── Étage 1 · mesure : où j'en suis face à lui ───────────────────────── */}
       <div className="flex items-center gap-5 px-3 py-2.5 bg-surface-2/60 border-b border-white/[0.06] flex-wrap">
-        <ExplorerPositionBar stats={stats} active={effective.gap} onPick={(gap) => patch({ gap })} />
+        {/* Tant que le catalogue source n'est pas relu, la position tarifaire n'existe pas :
+            afficher un ruban à zéro se lirait comme « aligné partout ». On dit ce qui est
+            en cours, avec son avancement — la liste, elle, reste consultable. */}
+        {source.loading ? (
+          <div className="flex items-center gap-2 text-[11px] text-amber-200/80 whitespace-nowrap">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            {source.progress.total > 0
+              ? t('pwx.source.pending.progress', { done: source.progress.done, total: source.progress.total })
+              : t('pwx.source.pending')}
+          </div>
+        ) : (
+          <ExplorerPositionBar stats={stats} active={effective.gap} onPick={(gap) => patch({ gap })} />
+        )}
         <div className="h-8 w-px bg-white/10 hidden lg:block" />
-        <ExplorerStats stats={stats} collected={listings.length}
+        <ExplorerStats stats={stats} collected={listings.length} pairingPending={source.loading}
           promoOnly={effective.promoOnly} outOfStockOnly={effective.stock === 'out-of-stock'}
           suspectsOnly={effective.trust === 'suspect'} visualDiffOnly={effective.visual === 'different'}
           onTogglePromo={() => patch({ promoOnly: !effective.promoOnly })}
@@ -235,7 +255,11 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
             </div>
           </div>
 
-          {loading || source.loading ? (
+          {/* ⚠ Ne PAS attendre `source.loading` ici : les fiches du concurrent sont déjà
+              lues et paginées, seul l'appariement manque. Bloquer la liste sur le
+              catalogue source laissait l'écran sur son spinner alors que 186 000 fiches
+              étaient prêtes à l'affichage. */}
+          {loading ? (
             <div className="py-16 text-center text-white/40 text-sm flex items-center justify-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />{t('pwx.lectureDesFichesCollectees')}
             </div>

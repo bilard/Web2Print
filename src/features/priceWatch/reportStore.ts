@@ -102,7 +102,17 @@ export interface LoadedSourceCatalog {
   partial: boolean
 }
 
-export async function loadSourceCatalog(uid: string, watchId: string): Promise<LoadedSourceCatalog | null> {
+/** Tranches lues de front. Une tranche pèse jusqu'à 900 Ko : les enchaîner une par une
+ *  coûtait un aller-retour réseau complet par tranche (un catalogue de 95 tranches se
+ *  lisait en minutes, l'explorateur restant sur son spinner) ; les demander TOUTES d'un
+ *  coup ferait entrer ~85 Mo à la fois. */
+const SOURCE_READ_BATCH = 8
+
+export async function loadSourceCatalog(
+  uid: string, watchId: string,
+  /** Progression de la relecture (tranches lues / total), pour l'afficher. */
+  onProgress?: (done: number, total: number) => void,
+): Promise<LoadedSourceCatalog | null> {
   const col = sourceCol(uid, watchId)
   const meta = await getDoc(doc(db, col, '_meta'))
   if (!meta.exists()) return null
@@ -117,9 +127,19 @@ export async function loadSourceCatalog(uid: string, watchId: string): Promise<L
   const expected = (meta.data()?.count as number) ?? 0
   const sourceRows = (meta.data()?.rows as number) ?? 0
   const products: SourceProduct[] = []
-  for (let i = 0; i < chunks; i++) {
-    const c = await getDoc(doc(db, col, `chunk_${i}`))
-    if (c.exists()) products.push(...((c.data()?.products as SourceProduct[]) ?? []))
+  onProgress?.(0, chunks)
+  // Lots parallèles, remis dans l'ORDRE des tranches : le catalogue garde l'ordre du
+  // node « Comparer », et une tranche absente est ignorée exactement comme avant (c'est
+  // ce que le contrôle `products.length < expected - 5` en dessous doit voir).
+  for (let start = 0; start < chunks; start += SOURCE_READ_BATCH) {
+    const batch = Array.from(
+      { length: Math.min(SOURCE_READ_BATCH, chunks - start) },
+      (_, k) => getDoc(doc(db, col, `chunk_${start + k}`)),
+    )
+    for (const c of await Promise.all(batch)) {
+      if (c.exists()) products.push(...((c.data()?.products as SourceProduct[]) ?? []))
+    }
+    onProgress?.(Math.min(start + SOURCE_READ_BATCH, chunks), chunks)
   }
   // Tolérance : le compte doit coller à quelques unités près (une tranche manquante en
   // coûte des centaines). Sous ce seuil, tout consommateur doit s'abstenir.

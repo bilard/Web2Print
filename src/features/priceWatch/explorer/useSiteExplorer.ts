@@ -25,34 +25,47 @@ export interface SourceCatalogState {
   expected: number
   /** Lignes reçues par le node « Comparer catalogue » lors de cette écriture. */
   sourceRows: number
+  /** Avancement de la relecture, en TRANCHES (0/0 tant que `_meta` n'a pas répondu). */
+  progress: { done: number; total: number }
 }
 
 /** Catalogue source du suivi : la base de l'appariement ET des écarts de prix. */
+const IDLE_SOURCE: SourceCatalogState = {
+  products: [], vatRate: DEFAULT_VAT_RATE, loading: false, absent: false,
+  partial: false, expected: 0, sourceRows: 0, progress: { done: 0, total: 0 },
+}
+
 export function useSourceCatalog(watchId: string | null): SourceCatalogState {
   const uid = useWorkspaceUid()
-  const [state, setState] = useState<SourceCatalogState>({ products: [], vatRate: DEFAULT_VAT_RATE, loading: false, absent: false, partial: false, expected: 0, sourceRows: 0 })
+  const [state, setState] = useState<SourceCatalogState>(IDLE_SOURCE)
 
   useEffect(() => {
-    if (!uid || !watchId) { setState({ products: [], vatRate: DEFAULT_VAT_RATE, loading: false, absent: false, partial: false, expected: 0, sourceRows: 0 }); return }
+    if (!uid || !watchId) { setState(IDLE_SOURCE); return }
     let cancelled = false
-    setState((s) => ({ ...s, loading: true }))
-    loadSourceCatalog(uid, watchId)
+    setState((s) => ({ ...s, loading: true, progress: { done: 0, total: 0 } }))
+    const t0 = performance.now()
+    loadSourceCatalog(uid, watchId, (done, total) => {
+      if (!cancelled) setState((s) => ({ ...s, progress: { done, total } }))
+    })
       .then((src) => {
         if (cancelled) return
-        debugLog('[pw-explorer] catalogue source', src ? `${src.products.length} produits, TVA ${src.vatRate}` : 'absent')
+        debugLog('[pw-explorer] catalogue source',
+          src ? `${src.products.length} produits, TVA ${src.vatRate}` : 'absent',
+          'en', Math.round(performance.now() - t0), 'ms')
         if (src?.partial) {
           console.warn('[pw-explorer] catalogue source AMPUTÉ :', src.products.length, '/', src.expected)
         }
-        setState({
+        setState((s) => ({
           products: src?.products ?? [], vatRate: src?.vatRate ?? DEFAULT_VAT_RATE,
           loading: false, absent: src == null,
           partial: !!src?.partial, expected: src?.expected ?? 0, sourceRows: src?.sourceRows ?? 0,
-        })
+          progress: s.progress,
+        }))
       })
       .catch((e) => {
         if (cancelled) return
         console.error('[pw-explorer] catalogue source illisible', e)
-        setState({ products: [], vatRate: DEFAULT_VAT_RATE, loading: false, absent: true, partial: false, expected: 0, sourceRows: 0 })
+        setState({ ...IDLE_SOURCE, absent: true })
       })
     return () => { cancelled = true }
   }, [uid, watchId])

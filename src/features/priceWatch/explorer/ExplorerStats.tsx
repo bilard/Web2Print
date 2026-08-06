@@ -30,9 +30,13 @@ function Stat({ label, value, tone = 'text-white/80', hint, onToggle, active }: 
   )
 }
 
-export function ExplorerStats({ stats, collected, promoOnly, outOfStockOnly, suspectsOnly, visualDiffOnly, onTogglePromo, onToggleStock, onToggleSuspects, onToggleVisualDiff }: {
+export function ExplorerStats({ stats, collected, pairingPending, promoOnly, outOfStockOnly, suspectsOnly, visualDiffOnly, onTogglePromo, onToggleStock, onToggleSuspects, onToggleVisualDiff }: {
   stats: SiteStats
   collected: number
+  /** Le catalogue source n'est pas encore relu : les compteurs d'APPARIEMENT ne sont pas
+   *  « 0 », ils ne sont pas CALCULÉS. Les publier comme des faits ferait lire « rien ne
+   *  correspond » là où il n'y a rien eu à comparer. */
+  pairingPending: boolean
   promoOnly: boolean
   outOfStockOnly: boolean
   suspectsOnly: boolean
@@ -50,10 +54,10 @@ export function ExplorerStats({ stats, collected, promoOnly, outOfStockOnly, sus
     <div className="flex items-center gap-x-4 gap-y-1 flex-wrap">
       <Stat label={t('pwx.affichees')} value={`${n(stats.shown)} / ${n(collected)}`}
         hint={t('pwx.stats.shown.help')} />
-      <Stat label={t('pwx.appariees')} value={n(stats.matched)} tone="text-sky-300"
-        hint={t('pwx.stats.matched.help')} />
-      <Stat label={t('pwx.chezLuiSeul')} value={n(stats.orphans)}
-        hint={t('pwx.stats.orphans.help')} />
+      <Stat label={t('pwx.appariees')} value={pairingPending ? '…' : n(stats.matched)} tone="text-sky-300"
+        hint={pairingPending ? t('pwx.source.pending.hint') : t('pwx.stats.matched.help')} />
+      <Stat label={t('pwx.chezLuiSeul')} value={pairingPending ? '…' : n(stats.orphans)}
+        hint={pairingPending ? t('pwx.source.pending.hint') : t('pwx.stats.orphans.help')} />
       {/* Compteur d'audit : le seul chiffre de cette ligne qui appelle une ACTION. */}
       <Stat label={t('pwx.trust.aVerifier')} value={n(stats.suspects)}
         tone={stats.suspects > 0 ? 'text-amber-300' : 'text-white/80'}
