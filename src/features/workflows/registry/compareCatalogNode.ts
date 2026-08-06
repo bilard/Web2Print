@@ -8,7 +8,7 @@ import { Scale } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet, ExcelColumn, ExcelRow } from '@/features/excel/types'
-import { parsePrice, stableId } from '@/features/priceWatch/core'
+import { parsePrice, stableId, cell } from '@/features/priceWatch/core'
 import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
@@ -37,12 +37,6 @@ interface CompareConfig {
 }
 interface CompareInputs { products?: ExcelSheet; harvest?: unknown; sites?: unknown }
 type CompareOutputs = { matrix: ExcelSheet }
-
-function cell(row: Record<string, unknown>, col: string | undefined): string | undefined {
-  if (!col) return undefined
-  const v = row[col]
-  return v == null ? undefined : String(v).trim() || undefined
-}
 
 /** kind de colonne matrice → type de champ + décimales Excel (format de cellule). */
 const KIND_TO_FIELD: Record<MatrixColumn['kind'], { fieldType: ExcelColumn['fieldType']; decimals?: number }> = {

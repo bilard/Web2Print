@@ -171,8 +171,10 @@ export interface CatalogReport {
   products: ProductRow[]
 }
 
-/** Médiane d'une série (null si vide). Robuste aux prix aberrants d'un mauvais parsing. */
-function median(xs: number[]): number | null {
+/** Médiane d'une série (null si vide). Robuste aux prix aberrants d'un mauvais parsing.
+ *  Exportée : le tableau de bord s'en sert aussi, et deux médianes qui divergeraient
+ *  donneraient deux positions de marché contradictoires pour le même relevé. */
+export function median(xs: number[]): number | null {
   if (xs.length === 0) return null
   const s = [...xs].sort((a, b) => a - b)
   const mid = Math.floor(s.length / 2)

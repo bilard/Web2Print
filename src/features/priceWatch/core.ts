@@ -180,7 +180,9 @@ export interface ProductColumnMap {
   price?: string
 }
 
-function cell(row: Record<string, unknown>, col: string | undefined): string | undefined {
+/** Valeur d'une colonne, nettoyée — '' et null deviennent `undefined` pour que
+ *  l'appelant traite « colonne absente » et « cellule vide » de la même façon. */
+export function cell(row: Record<string, unknown>, col: string | undefined): string | undefined {
   if (!col) return undefined
   const v = row[col]
   return v == null ? undefined : String(v).trim() || undefined

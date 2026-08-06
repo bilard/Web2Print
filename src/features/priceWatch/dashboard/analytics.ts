@@ -6,6 +6,7 @@
 // les produits les moins bien positionnés quand `truncated=true`. Les métriques FIABLES
 // en toute circonstance sont `report.kpis` (headline) et `byCompetitor.avgGapPct`. Le
 // FILTRE global ne touche QUE les blocs dérivés — les headline restent globaux (kpis).
+import { median } from '../catalog/report'
 import type { StoredReport } from '../reportStore'
 import type { KpiHistoryPoint } from '../types'
 import type { ProductRow, ReportKpis } from '../catalog/report'
@@ -21,13 +22,6 @@ function toneOf(gapPct: number | null): Tone | null {
   if (gapPct < -ALIGN_BAND) return 'cheaper'
   if (gapPct > ALIGN_BAND) return 'dearer'
   return 'aligned'
-}
-
-function median(xs: number[]): number | null {
-  if (xs.length === 0) return null
-  const s = [...xs].sort((a, b) => a - b)
-  const mid = Math.floor(s.length / 2)
-  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2
 }
 
 const mean = (xs: number[]): number | null => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null)
