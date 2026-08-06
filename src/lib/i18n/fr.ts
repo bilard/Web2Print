@@ -2061,6 +2061,7 @@ export const fr = {
   'pw.rank.median.title': 'Écart de prix MÉDIAN — la position réelle du concurrent (ignore les valeurs extrêmes). C’est cette colonne qui trie le tableau.',
   'pw.rank.stock.title': 'Ruptures de stock chez ce concurrent (opportunités pour toi)',
 
+  'pw.watch.selector': 'Suivi',
   'pw.watch.manage': 'Gérer les suivis ({count})',
   'pw.watch.namePlaceholder': 'Nom du suivi (vide = nom du workflow)',
   'pw.watch.renamed': 'Suivi renommé « {label} ».',

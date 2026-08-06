@@ -1972,6 +1972,7 @@ export const es: Record<TranslationKey, string> = {
   'pw.rank.avg.title': 'Diferencia de precio MEDIA — solo indicativo: algunos emparejamientos aberrantes (lote vs unidad) la tiran hacia arriba',
   'pw.rank.median.title': 'Diferencia de precio MEDIANA — la posición real del competidor (ignora los valores extremos). Esta es la columna que ordena la tabla.',
   'pw.rank.stock.title': 'Roturas de stock en este competidor (oportunidades para usted)',
+  'pw.watch.selector': 'Seguimiento',
   'pw.watch.manage': 'Gestionar los seguimientos ({count})',
   'pw.watch.namePlaceholder': 'Nombre del seguimiento (vacío = nombre del workflow)',
   'pw.watch.renamed': 'Seguimiento renombrado a «{label}».',

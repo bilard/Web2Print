@@ -23,7 +23,10 @@ export function WatchSelector({ watches, value, onChange }: {
 
   return (
     <div className="flex items-center gap-2 shrink-0">
-      <span className="text-xs text-white/40">Source</span>
+      {/* « Suivi », pas « Source » : ce sélecteur choisit le SUIVI de veille. Sous le
+          libellé « Source », il se confondait avec la base source du catalogue F1, qui
+          se règle ailleurs (bouton curseurs de la barre de filtres). */}
+      <span className="text-xs text-white/40">{t('pw.watch.selector')}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)}
         className="bg-well text-white/80 text-sm rounded px-2 py-1.5 border border-white/10 focus:outline-none focus:border-white/25">
         {watches.map((w) => (

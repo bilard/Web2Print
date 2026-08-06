@@ -1973,6 +1973,7 @@ export const en: Record<TranslationKey, string> = {
   'pw.rank.avg.title': 'MEAN price gap — indicative only: a few aberrant matches (pack vs unit) pull it upwards',
   'pw.rank.median.title': "MEDIAN price gap — the competitor's real position (ignores the extreme values). This is the column the table is sorted by.",
   'pw.rank.stock.title': 'Out-of-stock items at this competitor (opportunities for you)',
+  'pw.watch.selector': 'Watch',
   'pw.watch.manage': 'Manage the monitorings ({count})',
   'pw.watch.namePlaceholder': 'Monitoring name (empty = workflow name)',
   'pw.watch.renamed': 'Monitoring renamed “{label}”.',
