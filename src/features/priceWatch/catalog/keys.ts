@@ -193,13 +193,25 @@ export function refTokensFromText(text: string | null | undefined): string[] {
  * Références candidates extraites du SLUG d'une URL produit, l'ID PrestaShop retiré.
  * PrestaShop construit `/{catégorie}/{id}-{slug-descriptif}.html` ; le PREMIER token
  * numérique est l'identifiant interne du site (jamais une réf constructeur) — on le
- * retire pour ne pas apparier un produit à l'ID d'un autre. Les tokens restants d'au
- * On ne retient que les tokens PUREMENT numériques d'au moins WEAK_REF_LEN chiffres :
- * cela écarte d'un coup les mots (« lame », « stiga ») ET les cotes avec unité
- * (« 510mm », « 51cm »), sans logique d'unités à maintenir. Une réf constructeur dans
- * un slug PrestaShop est numérique dans la quasi-totalité des cas terrain.
- * `…/173085-lame-510mm-stiga-181004383-0.html` → ['181004383'] (173085 = id retiré,
- * 510mm = non numérique, 0 = trop court).
+ * retire pour ne pas apparier un produit à l'ID d'un autre.
+ *
+ * ⚠ DÉCOUPE SUR LES SÉPARATEURS, jamais sur « tout ce qui n'est pas un chiffre ». Cette
+ * seconde règle DÉCHIQUETAIT les références alphanumériques et fabriquait des appariements
+ * faux à la chaîne — trois cas relevés le même jour :
+ *   `…-demarreur-kohler-4109806s.html`      → « 4109806 » appariait un FILTRE À AIR ;
+ *   `…-demarreur-massey-6306847m91.html`    → « 6306847 » appariait un SERRE-CÂBLE ;
+ *   `…-transmission-ggp-pl39005.html`       → « 39005 »   appariait une COURROIE.
+ * Dans les trois cas, la vraie référence du marchand n'est PAS la nôtre : la nôtre n'en
+ * est qu'un morceau. Un fragment découpé au milieu d'un code ne prouve rien.
+ *
+ * Un token n'est donc retenu que s'il est DÉLIMITÉ dans le slug, et alors :
+ *   - purement numérique (le cas de très loin le plus fréquent en réf constructeur) ;
+ *   - ou alphanumérique CONTENANT un chiffre (`PL39005`, `VLC2208`) — ce qui rend enfin
+ *     joignables les catalogues à référence mixte, sans ouvrir la porte aux mots
+ *     (« lame », « stiga ») qui n'en contiennent aucun.
+ * Les cotes avec unité sont écartées comme dans `refTokensFromText` — même barrière, même
+ * raison. `…/173085-lame-510mm-stiga-181004383-0.html` → ['181004383'] (173085 = id
+ * retiré, 510MM = cote, stiga = sans chiffre, 0 = trop court).
  */
 export function refTokensFromUrl(url: string | null | undefined): string[] {
   const path = String(url ?? '').split(/[?#]/)[0]
@@ -207,8 +219,11 @@ export function refTokensFromUrl(url: string | null | undefined): string[] {
   const slug = last.replace(/\.html?$/i, '').replace(/^\d+-/, '')
   const out: string[] = []
   const seen = new Set<string>()
-  for (const tok of slug.split(/[^0-9]+/)) {
+  for (const raw of slug.split(/[^A-Za-z0-9]+/)) {
+    const tok = raw.toUpperCase()
     if (tok.length < WEAK_REF_LEN || seen.has(tok)) continue
+    if (!/\d/.test(tok)) continue
+    if (DIMENSION_WITH_UNIT.test(tok) || DIMENSION_PAIR.test(tok)) continue
     seen.add(tok)
     out.push(tok)
   }

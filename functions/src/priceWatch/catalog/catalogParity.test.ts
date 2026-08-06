@@ -8,7 +8,7 @@ import {
   parsePriceFragment, splitProductBlocks, extractAvailability,
   parseJsonLdObjects, parseProductPage, parseListingPage,
 } from './prestashop'
-import { candidateKeys, proveMatch } from './keys'
+import { candidateKeys, proveMatch, refTokensFromUrl } from './keys'
 import { indexKeysOf, buildMemoryIndex, matchProduct, dedupeListings, extractOriginRefs } from './match'
 import { foldText, keywordsForFamilies } from './categories'
 import { MAX_PAGES_PER_CATEGORY, initCursor, advance } from './harvest'
@@ -198,5 +198,16 @@ describe('genericCards (parité serveur)', () => {
       `<div class="products">${card('11', true)}${card('22', false)}</div>`, 'https://s.test/liste')
     expect(rows).toHaveLength(2)
     expect(rows.filter((r) => r.image)).toHaveLength(2)
+  })
+})
+
+describe('refTokensFromUrl (parité serveur)', () => {
+  it('ne découpe pas une référence alphanumérique du slug, comme la copie client', () => {
+    // Le balayage et l'appariement tournent AUSSI côté serveur : sans ce report, les
+    // appariements faux reviendraient au premier cron. Si ce test tombe seul, dérive.
+    expect(refTokensFromUrl('https://x.fr/p/12345-demarreur-kohler-4109806s.html')).toEqual(['4109806S'])
+    expect(proveMatch(candidateKeys({ ref: '4109806' }), {
+      url: 'https://x.fr/p/12345-demarreur-kohler-4109806s.html', name: 'Démarreur KOHLER 4109806S',
+    })).toBeNull()
   })
 })

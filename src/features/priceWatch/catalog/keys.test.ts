@@ -235,6 +235,35 @@ describe('refTokensFromUrl — réf dans le slug (autoportee)', () => {
   it('renvoie [] quand le slug ne porte que l’id et du texte', () => {
     expect(refTokensFromUrl('https://www.jardimax.com/p/134027-lame-mulching-51cm-tondeuse-stiga.html')).toEqual([])
   })
+
+  // ⚠ CŒUR DE LA RÈGLE. Découper le slug sur « tout ce qui n'est pas un chiffre »
+  // déchiquetait les références alphanumériques : le morceau numérique prouvait alors un
+  // appariement contre un produit sans aucun rapport. Trois cas relevés le même jour.
+  it('ne DÉCOUPE PAS une référence alphanumérique en son morceau numérique', () => {
+    expect(refTokensFromUrl('https://x.fr/p/12345-demarreur-kohler-4109806s.html')).toEqual(['4109806S'])
+    expect(refTokensFromUrl('https://x.fr/p/12345-demarreur-massey-ferguson-6306847m91.html')).toEqual(['6306847M91'])
+    expect(refTokensFromUrl('https://x.fr/p/77-transmission-ggp-castelgarden-pl39005.html')).toEqual(['PL39005'])
+  })
+
+  it('n’apparie plus un produit dont la référence n’est qu’un MORCEAU de celle du marchand', () => {
+    // « FILTRE A AIR » réf. 4109806 ↔ « Démarreur KOHLER 4109806S » : la vraie référence
+    // du marchand n'est pas la nôtre, la nôtre n'en est qu'un fragment.
+    const url = 'https://x.fr/p/12345-demarreur-kohler-4109806s.html'
+    expect(proveMatch(candidateKeys({ ref: '4109806' }), { url, name: 'Démarreur KOHLER 4109806S' })).toBeNull()
+    // …mais le produit qui porte VRAIMENT cette référence reste apparié.
+    expect(proveMatch(candidateKeys({ ref: '4109806S' }), { url, name: 'Démarreur KOHLER 4109806S' })?.evidence)
+      .toBe('ref-in-url')
+  })
+
+  it('rend joignables les catalogues à référence MIXTE, sans ouvrir aux mots', () => {
+    // Gain de couverture du même correctif : « PL39005 » délimité est une preuve valable,
+    // « castelgarden » n'en sera jamais une — aucun chiffre.
+    expect(refTokensFromUrl('https://x.fr/p/77-transmission-ggp-castelgarden-pl39005.html'))
+      .not.toContain('CASTELGARDEN')
+    expect(proveMatch(candidateKeys({ ref: 'PL39005' }), {
+      url: 'https://x.fr/p/77-transmission-ggp-castelgarden-pl39005.html', name: 'Ensemble de transmission',
+    })?.evidence).toBe('ref-in-url')
+  })
 })
 
 describe('proveMatch — ref-in-url', () => {
