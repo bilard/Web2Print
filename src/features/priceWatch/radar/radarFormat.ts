@@ -1,6 +1,8 @@
-// Formatteurs de la PWA « radarPrice ». PUR, sans React. isIos/isStandalone dupliqués
-// (10 lignes) pour garder la surface radar auto-contenue, indépendante de la feature
-// analytics (Pulse).
+// Formatteurs de la PWA « radarPrice ». PUR, sans React.
+// `isIos`/`isStandalone` étaient recopiés ici pour garder la surface radar indépendante
+// de la feature analytics (Pulse). L'intention tient toujours — ils vivent désormais
+// dans `lib/pwaEnv`, qui n'appartient à aucune des deux : radar ne dépend toujours pas
+// d'analytics, et la détection iOS n'existe plus qu'en un exemplaire.
 
 /** Prix HT/€ compact en français : 12,34 € ; null → tiret. */
 export function fmtEur(v: number | null | undefined): string {
@@ -86,18 +88,4 @@ export function fmtDuration(ms: number | null | undefined): string {
 export function hhmm(ms: number | null | undefined): string {
   if (ms == null) return '—'
   return new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-}
-
-/** Vrai si l'app tourne en mode installé (écran d'accueil iOS ou display-mode standalone). */
-export function isStandalone(): boolean {
-  if (typeof window === 'undefined') return false
-  const iosStandalone = (window.navigator as unknown as { standalone?: boolean }).standalone === true
-  return iosStandalone || window.matchMedia('(display-mode: standalone)').matches
-}
-
-/** Vrai sur iPhone/iPad (pour n'afficher l'astuce « Ajouter à l'écran d'accueil » que là). */
-export function isIos(): boolean {
-  if (typeof navigator === 'undefined') return false
-  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && (navigator as unknown as { maxTouchPoints: number }).maxTouchPoints > 1)
 }

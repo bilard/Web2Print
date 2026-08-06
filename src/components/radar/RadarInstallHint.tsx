@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Share, X } from 'lucide-react'
-import { isIos, isStandalone } from '@/features/priceWatch/radar/radarFormat'
+import { isIos, isStandalone } from '@/lib/pwaEnv'
 import { t } from '@/lib/i18n'
 
 const DISMISS_KEY = 'radar_install_dismissed'

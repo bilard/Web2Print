@@ -79,17 +79,3 @@ export function pulseTrendSeries(events: AnalyticsEvent[], fromMs: number, toMs:
     connections: d.connections,
   }))
 }
-
-/** Vrai si l'app tourne en mode installé (écran d'accueil iOS ou display-mode standalone). */
-export function isStandalone(): boolean {
-  if (typeof window === 'undefined') return false
-  const iosStandalone = (window.navigator as unknown as { standalone?: boolean }).standalone === true
-  return iosStandalone || window.matchMedia('(display-mode: standalone)').matches
-}
-
-/** Vrai sur iPhone/iPad (pour n'afficher l'astuce « Ajouter à l'écran d'accueil » que là). */
-export function isIos(): boolean {
-  if (typeof navigator === 'undefined') return false
-  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && (navigator as unknown as { maxTouchPoints: number }).maxTouchPoints > 1)
-}
