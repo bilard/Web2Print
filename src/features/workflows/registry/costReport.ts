@@ -3,6 +3,8 @@
 // stocké sur Drive ou envoyé par mail (suivi des dépenses Tokens). Le data-shaping
 // (split Gemini texte/image, TOTAL = Σ lignes + Bright Data) duplique celui du
 // panneau ; à garder synchronisé si le panneau évolue.
+import { formatEur } from '@/lib/money'
+import { getBadgeKind, formatTokens, formatBillingDate, type BadgeKind } from '@/features/stats/usageFormat'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
@@ -25,43 +27,6 @@ const PROVIDER_META: Record<AiProvider, { label: string; dot: string; topup: str
   kimi:       { label: 'Kimi',               dot: '#fbbf24', topup: 'https://platform.moonshot.cn/console/account' },
   glm:        { label: 'GLM (Z.ai)',         dot: '#3859ff', topup: 'https://z.ai/manage-apikey/apikey-list' },
   openrouter: { label: 'OpenRouter',         dot: '#e879f9', topup: 'https://openrouter.ai/settings/credits' },
-}
-
-type BadgeKind = 'ok' | 'warning' | 'over' | 'unset'
-
-function getBadgeKind(costUsd: number, budgetUsd: number | null): BadgeKind {
-  if (budgetUsd === null || budgetUsd <= 0) return 'unset'
-  const pct = costUsd / budgetUsd
-  if (pct >= 1) return 'over'
-  if (pct >= 0.8) return 'warning'
-  return 'ok'
-}
-
-function formatEur(usd: number, decimals = 4): string {
-  const eur = usd * USD_TO_EUR
-  let d = decimals
-  if (eur >= 1) d = 2
-  else if (eur >= 0.01) d = 3
-  else if (eur >= 0.0001) d = 4
-  else d = 6
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency', currency: 'EUR', minimumFractionDigits: d, maximumFractionDigits: d,
-  }).format(eur)
-}
-
-function formatTokens(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + ' M'
-  if (n >= 10_000) return (n / 1_000).toFixed(1) + ' k'
-  return n.toLocaleString('fr-FR')
-}
-
-function formatBillingDate(iso: string | null): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  const day = String(d.getUTCDate()).padStart(2, '0')
-  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getUTCMonth()]
-  return `${day}-${month}-${String(d.getUTCFullYear()).slice(-2)}`
 }
 
 const esc = (s: string): string =>

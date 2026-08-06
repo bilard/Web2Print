@@ -7,6 +7,7 @@ import { useBrightDataAccount } from '@/features/stats/useBrightDataAccount'
 import { useFirecrawlAccount } from '@/features/stats/useFirecrawlAccount'
 import { ScrapeUsageCards } from './ScrapeUsageCards'
 import { formatEur } from '@/lib/money'
+import { getBadgeKind, formatTokens, formatBillingDate, type BadgeKind } from '@/features/stats/usageFormat'
 import { useIsOwner } from '@/features/auth/useAuth'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
 import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
@@ -30,33 +31,6 @@ const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen
  *  modèle texte Gemini sélectionné — il a son propre pricing ($30 / 1M output)
  *  et il est utile de voir sa consommation isolément. */
 const GEMINI_IMAGE_MODEL_ID = 'gemini-3.1-flash-image-preview'
-
-function formatTokens(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + ' M'
-  if (n >= 10_000) return (n / 1_000).toFixed(1) + ' k'
-  return n.toLocaleString('fr-FR')
-}
-
-/** "2026-06-01" → "01-Jun-26" comme le dashboard Bright Data. */
-function formatBillingDate(iso: string | null): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  const day = String(d.getUTCDate()).padStart(2, '0')
-  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getUTCMonth()]
-  const year = String(d.getUTCFullYear()).slice(-2)
-  return `${day}-${month}-${year}`
-}
-
-type BadgeKind = 'ok' | 'warning' | 'over' | 'unset'
-
-function getBadgeKind(costUsd: number, budgetUsd: number | null): BadgeKind {
-  if (budgetUsd === null || budgetUsd <= 0) return 'unset'
-  const pct = costUsd / budgetUsd
-  if (pct >= 1) return 'over'
-  if (pct >= 0.8) return 'warning'
-  return 'ok'
-}
 
 function StatusBadge({ kind, pct }: { kind: BadgeKind; pct: number | null }) {
   const pctLabel = pct !== null ? `${Math.round(pct * 100)}%` : null
