@@ -117,12 +117,15 @@ export const MODULE_ITEMS: ModuleItem[] = [
   },
   { id: 'data',   group: 'product-data', icon: FileSpreadsheet,labelKey: 'nav.data', accent: 'text-emerald-400', activeBg: 'bg-emerald-500/[0.1]', activeText: 'text-emerald-300',
     children: [
-      { id: 'action:import',       labelKey: 'nav.data.import',      intent: 'data:action:import' },
-      { id: 'action:scrape',       labelKey: 'nav.data.scrape',      intent: 'data:action:scrape' },
-      { id: 'action:create-empty', labelKey: 'nav.data.createEmpty', intent: 'data:action:create-empty' },
-      { id: 'action:update',       labelKey: 'nav.data.update',      intent: 'data:action:update' },
-      { id: 'action:export-xlsx',  labelKey: 'nav.data.exportXlsx',  intent: 'data:action:export-xlsx' },
-      { id: 'action:export-ec',    labelKey: 'nav.data.exportEc',    intent: 'data:action:export-ec' },
+      // ⚠ Sans `permission`, la règle `!perm ⇒ visible` montrait ces 6 outils à TOUS les
+      // rôles, y compris à celui qui n'a que `pim.view` (+ `pim.competitors`).
+      // « Mise à jour » relit un fichier Excel pour differ la base ⇒ même droit qu'un import.
+      { id: 'action:import',       labelKey: 'nav.data.import',      intent: 'data:action:import',       permission: 'pim.import' },
+      { id: 'action:scrape',       labelKey: 'nav.data.scrape',      intent: 'data:action:scrape',       permission: 'pim.scrape' },
+      { id: 'action:create-empty', labelKey: 'nav.data.createEmpty', intent: 'data:action:create-empty', permission: 'pim.create' },
+      { id: 'action:update',       labelKey: 'nav.data.update',      intent: 'data:action:update',       permission: 'pim.import' },
+      { id: 'action:export-xlsx',  labelKey: 'nav.data.exportXlsx',  intent: 'data:action:export-xlsx',  permission: 'pim.export' },
+      { id: 'action:export-ec',    labelKey: 'nav.data.exportEc',    intent: 'data:action:export-ec',    permission: 'pim.export' },
     ],
   },
   { id: 'taxonomies', group: 'product-data', icon: FolderTree, labelKey: 'nav.taxonomies', accent: 'text-teal-400',    activeBg: 'bg-teal-500/[0.1]',    activeText: 'text-teal-300',

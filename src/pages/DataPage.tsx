@@ -145,16 +145,18 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [aiCompletionOpen, setAiCompletionOpen] = useState(false)
   const [aiImageGenOpen, setAiImageGenOpen] = useState(false)
 
+  // Le menu latéral filtre déjà ces entrées par permission ; on re-vérifie ici pour qu'un
+  // intent émis autrement (raccourci, tour guidé) n'ouvre pas une modale interdite.
   useModuleIntent('data', (action) => {
     switch (action) {
-      case 'action:import': setImportModalOpen(true); break
-      case 'action:scrape': setScrapingOpen(true); break
-      case 'action:create-empty': createEmpty(); break
-      case 'action:update': setUpdateModalOpen(true); break
+      case 'action:import': if (canImport) setImportModalOpen(true); break
+      case 'action:scrape': if (canScrape) setScrapingOpen(true); break
+      case 'action:create-empty': if (canCreate) createEmpty(); break
+      case 'action:update': if (canImport) setUpdateModalOpen(true); break
       case 'action:export-xlsx':
-        exportToXlsx(sheets, `${currentFileName ?? sheets[activeSheetIndex]?.name ?? 'export'}.xlsx`)
+        if (canExport) exportToXlsx(sheets, `${currentFileName ?? sheets[activeSheetIndex]?.name ?? 'export'}.xlsx`)
         break
-      case 'action:export-ec': setEcExportOpen(true); break
+      case 'action:export-ec': if (canExport) setEcExportOpen(true); break
     }
   })
 
