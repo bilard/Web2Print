@@ -132,3 +132,42 @@ describe('discountPct', () => {
     expect(discountPct({ url: 'u', name: 'n', price: 10, listPrice: 10.02 })).toBeNull()
   })
 })
+
+describe('description affichée', () => {
+  const listing = (over: Partial<CompetitorListing> = {}): CompetitorListing => ({
+    url: 'https://x.test/p/1', name: 'Pneu 13x500-6', price: 70, ...over,
+  } as CompetitorListing)
+
+  const product = (over: Partial<SourceProduct> = {}): SourceProduct => ({
+    id: '1', name: 'PNEU 13 X 500 X 6', ref: '734-0298', price: 59.77, ...over,
+  })
+
+  it('écarte une description qui ne fait que recopier le libellé', () => {
+    // Cas VÉCU : la colonne « DESCRIPTIF » de l'export ERP recopie le libellé, et
+    // l'écran affichait « PNEU 13 X 500 X 6 » deux fois de suite.
+    const rows = pairSiteListings(
+      [product({ description: 'pneu  13 x 500 x 6' })],
+      'site', [listing({ ref: '734-0298' })],
+      { extras: () => ({ description: 'Pneu à profil gazon, jante 6 pouces', url: null, images: [], path: [] }) },
+    )
+    expect(rows[0].source?.description).toBe('Pneu à profil gazon, jante 6 pouces')
+  })
+
+  it('garde la description persistée dès qu’elle apporte autre chose que le nom', () => {
+    const rows = pairSiteListings(
+      [product({ description: 'Pneu tubeless renforcé, 4 plis' })],
+      'site', [listing({ ref: '734-0298' })],
+      { extras: () => ({ description: 'Version PIM', url: null, images: [], path: [] }) },
+    )
+    expect(rows[0].source?.description).toBe('Pneu tubeless renforcé, 4 plis')
+  })
+
+  it('n’invente rien quand les deux sources répètent le nom', () => {
+    // Mieux vaut le doublon que le vide : c'est ce que le catalogue contient vraiment.
+    const rows = pairSiteListings(
+      [product({ description: 'PNEU 13 X 500 X 6' })],
+      'site', [listing({ ref: '734-0298' })],
+    )
+    expect(rows[0].source?.description).toBe('PNEU 13 X 500 X 6')
+  })
+})

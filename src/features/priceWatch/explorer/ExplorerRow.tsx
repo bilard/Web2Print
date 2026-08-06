@@ -86,6 +86,10 @@ const SUPPORT_LABEL: Record<SupportReason, TranslationKey> = {
   'visual-echo': 'pwx.support.visualEcho',
 }
 
+/** Au-delà, la description passe derrière un chevron : deux lignes suffisent à situer la
+ *  pièce, un paragraphe entier repousserait le prix hors de vue à chaque ligne. */
+const LONG_DESCRIPTION = 140
+
 const STOCK_LABEL: Record<string, { key: TranslationKey; cls: string }> = {
   'in-stock': { key: 'pwx.inStock', cls: 'text-emerald-300' },
   'out-of-stock': { key: 'pwx.outOfStock', cls: 'text-rose-300' },
@@ -321,12 +325,20 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict
               ) : (
                 <div className="text-xs text-white/90 leading-snug mt-0.5 break-words">{source.name}</div>
               )}
+              {/* La description est LUE, pas dépliée : elle sert à trancher « est-ce bien
+                  la même pièce ? » et l'obliger à un clic sur chaque ligne annulait
+                  l'intérêt de la vue en regard. Le chevron ne subsiste que pour les
+                  descriptions assez longues pour noyer la ligne. */}
               {source.description && (
-                <button type="button" onClick={() => setOpen((o) => !o)}
-                  className="mt-1 text-left text-[11px] text-white/45 hover:text-white/70 flex items-start gap-1">
-                  <ChevronDown className={`w-3 h-3 mt-0.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-                  <span className={open ? '' : 'line-clamp-2'}>{source.description}</span>
-                </button>
+                source.description.length <= LONG_DESCRIPTION ? (
+                  <div className="mt-1 text-[11px] text-white/45 leading-snug break-words">{source.description}</div>
+                ) : (
+                  <button type="button" onClick={() => setOpen((o) => !o)}
+                    className="mt-1 text-left text-[11px] text-white/45 hover:text-white/70 flex items-start gap-1">
+                    <ChevronDown className={`w-3 h-3 mt-0.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+                    <span className={open ? '' : 'line-clamp-2'}>{source.description}</span>
+                  </button>
+                )
               )}
               <div className="mt-1 text-[11px] tabular-nums text-white/70">
                 {t('pwx.monPrixHt')} <span className="text-white/90 font-medium">{eur(source.priceHt)}</span>

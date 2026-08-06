@@ -101,7 +101,7 @@ export function pairSiteListings(
     // et c'est là que ses description/visuel/taxonomie voyagent. La jointure PIM ne sert
     // que de repli — catalogues écrits avant cette version, ou base ouverte plus riche.
     const ex = p ? extras(p) : null
-    const description = p?.description ?? ex?.description ?? null
+    const description = bestDescription(p?.description, ex?.description, p?.name)
     const images = p?.image ? [absoluteImage(p.image, opts.imagePrefix)] : (ex?.images ?? [])
     const path = p?.taxo?.length ? p.taxo : (ex?.path ?? [])
     const cmp = comparePrices(p?.price, listing, { vatRate: opts.vatRate, alignedPct: opts.alignedPct })
@@ -133,6 +133,34 @@ export function pairSiteListings(
         : null,
     }
   })
+}
+
+/** Forme comparable d'un libellé : sans accents, sans casse, espaces normalisés. */
+function fold(v: string | null | undefined): string {
+  return String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Description à afficher, la plus INFORMATIVE des deux sources.
+ *
+ * Le catalogue persisté prime d'ordinaire — c'est le fichier F1 du workflow. Mais beaucoup
+ * d'exports ERP portent une colonne « DESCRIPTIF » qui recopie le libellé : l'écran
+ * affichait alors « PNEU 13 X 500 X 6 » deux fois de suite, et la vraie description de la
+ * base PIM restait invisible derrière ce doublon. Répéter le nom n'apprend rien ; on
+ * bascule donc sur l'autre source dans ce cas — et seulement dans ce cas.
+ */
+function bestDescription(
+  persisted: string | null | undefined,
+  joined: string | null | undefined,
+  name: string | null | undefined,
+): string | null {
+  const echo = fold(name)
+  const useful = (v: string | null | undefined) => {
+    const s = String(v ?? '').trim()
+    return s && fold(s) !== echo ? s : null
+  }
+  return useful(persisted) ?? useful(joined) ?? persisted?.trim() ?? joined?.trim() ?? null
 }
 
 /**
