@@ -2162,6 +2162,7 @@ export const es: Record<TranslationKey, string> = {
   'run.compareCatalog.siteIndexCount': '{domain}: {count} producto(s) en el índice.',
   'run.compareCatalog.emptyIndex': 'Índice de competidores vacío para los {sites} sitio(s) bajo el seguimiento «{watchId}». Compruebe que el nodo «Cosecha de competidores» utiliza el MISMO identificador de seguimiento («{watchId}») y que se ha ejecutado antes.',
   'run.compareCatalog.matchedBreakdown': '{matched} producto(s) emparejado(s): {exact} mismo producto, {originOnly} pieza original (adaptable ↔ OEM). {unmatched} sin correspondencia, {noKey} sin clave.',
+  'run.compareCatalog.noMatchAtAll': 'Ningún emparejamiento: la matriz sale VACÍA, así que la exportación posterior no tendrá nada que escribir. El índice solo contiene {listings} ficha(s) de la competencia frente a {products} productos de origen: un solapamiento nulo es el resultado NORMAL de un índice demasiado escaso o fuera de tema. Amplía la recolección o comprueba que las fichas indexadas pertenecen al mismo catálogo.',
   // Recherche dirigée (`directed-search`)
   'run.directed.noInputData': 'Búsqueda dirigida: no hay datos de producto en la entrada.',
   'run.directed.noKeyColumn': 'Búsqueda dirigida: rellene al menos una columna Referencia o EAN.',
@@ -2174,7 +2175,8 @@ export const es: Record<TranslationKey, string> = {
   'run.directed.authMatched': 'Auth {host}: {hits}/{total} precio(s) emparejado(s) [cursor auth {from} → {to} / {products}].',
   'run.directed.pricesFound': '{count} precio(s) encontrado(s) en {processed} producto(s) [cursor {from} → {to} / {products}] × {sites} sitio(s).',
   'run.directed.noPriceFound': 'No se ha encontrado ningún precio en esta pasada. Compruebe que las claves consultadas existen EN LOS COMPETIDORES: una referencia de artículo y un EAN propios del distribuidor no se pueden encontrar en ningún otro lugar. En un catálogo de piezas adaptables, rellene «Columna Descripción (ref. original)».',
-  'run.directed.genericSummary': 'Genérico ({sites} sitio(s)): {queries} búsqueda(s) web · {noUrls} sin resultado (ref no vendida / 422) · {extracted} ficha(s) extraída(s){fallback} · {matched} emparejada(s) por prueba exacta.',
+  'run.directed.genericSummary': 'Genérico ({sites} sitio(s)): {queries} búsqueda(s) web · {noUrls} sin resultado (ref no vendida) · {failed} con FALLO de búsqueda · {extracted} ficha(s) extraída(s){fallback} · {matched} emparejada(s) por prueba exacta.',
+  'run.directed.searchChannelDown': 'Búsqueda web fallida en {failed} de {queries} consultas: NO es «la referencia no se vende», es el motor de búsqueda que no responde. Primera causa: {reason}',
   'run.directed.genericViaFallback': '(de los cuales {bd} Bright Data · {jina} Jina)',
   // Passe authentifiée : moteur SERVEUR uniquement (pas de jumeau client).
   'run.directed.krampHit': 'kramp: {name} {price}€ (prueba {evidence})',
@@ -2301,7 +2303,7 @@ export const es: Record<TranslationKey, string> = {
   'run.api.noDetail': 'fallo',
   'run.gs.workbookFull': 'Libro de Google lleno (10 millones de celdas en todas las pestañas). Las pestañas conservan las celdas de exportaciones anteriores incluso vaciadas: elimine las pestañas obsoletas, o las filas/columnas vacías («Eliminar», no «Borrar»), o exporte a un libro dedicado.',
   'run.gs.chartAxisMissing': 'eje X o columnas de valores no encontrados',
-  'run.gs.emptySheetInput': 'gsheets-export: hoja vacía en la entrada.',
+  'run.gs.emptySheetInput': 'Nada que exportar: el nodo anterior no ha producido ninguna fila. La hoja existente NO se ha modificado: escribirla vacía la habría borrado. Revisa el nodo que alimenta esta entrada.',
   'run.gs.driveCreateFailed': 'gsheets-export: creación en Drive {status} — {message}',
   'run.gs.tzIgnored': 'Zona horaria ignorada: {message}',
   'run.gs.formulasIgnored': 'Columnas de fórmula ignoradas: {message}',

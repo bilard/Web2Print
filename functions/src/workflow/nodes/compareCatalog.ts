@@ -161,6 +161,13 @@ registerServerNode({
       matched: m.matched, exact: m.matchedExact, originOnly: m.matchedOriginOnly,
       unmatched: m.unmatched, noKey: m.noKey,
     }))
+    // Jumeau du client : 0 apparié = matrice VIDE, donc export en échec plus bas. On le
+    // dit ici, où l'on sait encore pourquoi (taille et pertinence de l'index).
+    if (m.matched === 0) {
+      ctx.log('warn', t(ctx.locale, 'run.compareCatalog.noMatchAtAll', {
+        listings: totalListings, products: sourceProducts.length,
+      }))
+    }
 
     // Persiste le RAPPORT dashboard (comme le node client) → le CRON alimente le tableau
     // de bord Veille tarifaire sans ouvrir l'app. Non bloquant : un échec ne casse pas l'export.

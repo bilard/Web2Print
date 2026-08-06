@@ -241,6 +241,15 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
       matched: m.matched, exact: m.matchedExact, originOnly: m.matchedOriginOnly,
       unmatched: m.unmatched, noKey: m.noKey,
     }))
+    // 0 apparié n'est PAS une erreur (index maigre ou hors sujet = recouvrement nul
+    // légitime), mais la matrice ne portant que les lignes appariées, elle sort vide et
+    // l'export en aval échoue plus bas avec un message qui ne dit pas d'où ça vient.
+    // On raccorde les deux ICI, là où l'information existe encore.
+    if (m.matched === 0) {
+      ctx.log('warn', t('run.compareCatalog.noMatchAtAll', {
+        listings: totalListings, products: products.length,
+      }))
+    }
 
     // Persiste le RAPPORT dashboard (KPIs + stats/concurrent + liste rangée bornée +
     // point de tendance). Non bloquant : un échec de persistance ne doit pas casser

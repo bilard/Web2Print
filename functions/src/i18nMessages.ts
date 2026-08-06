@@ -199,6 +199,10 @@ const MESSAGES = {
     fr: "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
     en: '{matched} product(s) matched: {exact} same product, {originOnly} original part (aftermarket ↔ OEM). {unmatched} without a match, {noKey} without a key.',
   },
+  'run.compareCatalog.noMatchAtAll': {
+    fr: "Aucun appariement : la matrice sort VIDE, l'export en aval n'aura donc rien à écrire. L'index ne porte que {listings} fiche(s) concurrente(s) face à {products} produits source — un recouvrement nul est le résultat NORMAL d'un index trop maigre ou hors sujet. Étoffe la moisson, ou vérifie que les fiches indexées relèvent bien du même catalogue.",
+    en: 'No match at all: the matrix comes out EMPTY, so the downstream export will have nothing to write. The index holds only {listings} competitor listing(s) against {products} source products — zero overlap is the NORMAL outcome of an index that is too thin or off-topic. Widen the harvest, or check that the indexed listings belong to the same catalogue.',
+  },
 
   // — Recherche dirigée (`directed-search`) —
   'run.directed.noInputData': {
@@ -258,8 +262,12 @@ const MESSAGES = {
     en: 'No price found on this pass. Check that the keys queried exist AT THE COMPETITORS: an item reference and an EAN specific to the distributor cannot be found anywhere else. On an aftermarket parts catalogue, fill in "Description column (original ref.)".',
   },
   'run.directed.genericSummary': {
-    fr: 'Générique ({sites} site(s)) : {queries} recherche(s) web · {noUrls} sans résultat (réf non vendue / 422) · {extracted} fiche(s) extraite(s){fallback} · {matched} appariée(s) par preuve exacte.',
-    en: 'Generic ({sites} site(s)): {queries} web search(es) · {noUrls} with no result (ref not sold / 422) · {extracted} page(s) extracted{fallback} · {matched} matched by exact evidence.',
+    fr: 'Générique ({sites} site(s)) : {queries} recherche(s) web · {noUrls} sans résultat (réf non vendue) · {failed} en ÉCHEC de recherche · {extracted} fiche(s) extraite(s){fallback} · {matched} appariée(s) par preuve exacte.',
+    en: 'Generic ({sites} site(s)): {queries} web search(es) · {noUrls} with no result (ref not sold) · {failed} search FAILURES · {extracted} page(s) extracted{fallback} · {matched} matched by exact evidence.',
+  },
+  'run.directed.searchChannelDown': {
+    fr: "Recherche web en échec sur {failed} des {queries} interrogations — ce n'est PAS « la référence n'est pas vendue », c'est le moteur de recherche qui ne répond pas. Première cause : {reason}",
+    en: 'Web search failed on {failed} of {queries} queries — this is NOT “the reference is not sold”, it is the search engine not responding. First cause: {reason}',
   },
   'run.directed.genericViaFallback': {
     fr: ' (dont {bd} Bright Data · {jina} Jina)',
@@ -513,8 +521,8 @@ const MESSAGES = {
     en: 'X axis or value columns not found',
   },
   'run.gs.emptySheetInput': {
-    fr: 'gsheets-export : sheet vide en entrée.',
-    en: 'gsheets-export: empty sheet on the input.',
+    fr: "Rien à exporter : le node en amont n'a produit aucune ligne. La feuille existante n'a PAS été modifiée — l'écrire vide l'aurait écrasée. Regarde le node qui alimente cette entrée.",
+    en: 'Nothing to export: the upstream node produced no rows. The existing sheet was NOT modified — writing it empty would have wiped it. Check the node feeding this input.',
   },
   'run.gs.driveCreateFailed': {
     fr: 'gsheets-export : création Drive {status} — {message}',

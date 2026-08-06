@@ -102,13 +102,23 @@ registerServerNode({
     // faible (les réfs OEM ne sont pas vendues sur amazon/cdiscount…) est indistinguable
     // d'une panne. On les journalise en fin de passe pour rendre la réalité VISIBLE.
     let genQueries = 0, genNoUrls = 0, genExtracted = 0, genViaBd = 0, genViaJina = 0
+    // ⚠ « 0 résultat » et « la recherche a ÉCHOUÉ » étaient comptés ensemble : un
+    // « 60 sans résultat » se lisait alors « ces réfs ne sont vendues nulle part »
+    // alors que le moteur pouvait être HS (quota, 4xx, timeout). Les deux mènent à
+    // 0 fiche, mais l'un est une réalité du marché et l'autre une panne à réparer.
+    let genFailed = 0
+    let firstFailure = ''
     const searchWeb = async (query: string): Promise<string[]> => {
       genQueries++
       try {
         const urls = (await jinaSearch(ctx.uid, query, ctx.signal)).map((r) => r.url).filter(Boolean)
-        if (urls.length === 0) genNoUrls++ // 0 URL = réf non référencée sur ce marketplace (ou 422 Jina)
+        if (urls.length === 0) genNoUrls++ // 0 URL = réf non référencée sur ce marketplace
         return urls
-      } catch { genNoUrls++; return [] }
+      } catch (e) {
+        genFailed++
+        if (!firstFailure) firstFailure = e instanceof Error ? e.message : String(e)
+        return []
+      }
     }
     // Extraction d'UNE fiche marketplace, en CASCADE : Firecrawl (rendu JS + schéma) →
     // Bright Data (Web Unlocker/Scraping Browser + parseurs déterministes JSON-LD/microdata)
@@ -293,8 +303,14 @@ registerServerNode({
         : ''
       ctx.log('info', t(ctx.locale, 'run.directed.genericSummary', {
         sites: [...genericSiteIds].length, queries: genQueries, noUrls: genNoUrls,
-        extracted: genExtracted, fallback: viaRepli, matched: genMatched,
+        failed: genFailed, extracted: genExtracted, fallback: viaRepli, matched: genMatched,
       }))
+      // Une recherche en échec n'est pas une absence d'offre : le dire, avec la cause.
+      if (genFailed > 0) {
+        ctx.log('warn', t(ctx.locale, 'run.directed.searchChannelDown', {
+          failed: genFailed, queries: genQueries, reason: firstFailure.slice(0, 200),
+        }))
+      }
       // Alerte VISIBLE dans le rail de logs : sans elle, « 0 fiche extraite » à cause d'un
       // compte à sec est indistinguable d'une couverture marketplace réellement éparse.
       if (creditsExhausted('firecrawl')) ctx.log('warn', t(ctx.locale, 'run.directed.creditsFirecrawl'))

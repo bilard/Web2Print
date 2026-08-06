@@ -2284,6 +2284,7 @@ export const fr = {
   'run.compareCatalog.siteIndexCount': "{domain} : {count} produit(s) dans l'index.",
   'run.compareCatalog.emptyIndex': 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
   'run.compareCatalog.matchedBreakdown': "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
+  'run.compareCatalog.noMatchAtAll': "Aucun appariement : la matrice sort VIDE, l'export en aval n'aura donc rien à écrire. L'index ne porte que {listings} fiche(s) concurrente(s) face à {products} produits source — un recouvrement nul est le résultat NORMAL d'un index trop maigre ou hors sujet. Étoffe la moisson, ou vérifie que les fiches indexées relèvent bien du même catalogue.",
 
   // Recherche dirigée (`directed-search`)
   'run.directed.noInputData': 'Recherche dirigée : aucune donnée produit en entrée.',
@@ -2297,7 +2298,8 @@ export const fr = {
   'run.directed.authMatched': 'Auth {host} : {hits}/{total} prix apparié(s) [curseur auth {from} → {to} / {products}].',
   'run.directed.pricesFound': '{count} prix trouvé(s) sur {processed} produit(s) [curseur {from} → {to} / {products}] × {sites} site(s).',
   'run.directed.noPriceFound': "Aucun prix trouvé sur cette passe. Vérifie que les clés interrogées existent CHEZ LES CONCURRENTS : une référence article et un EAN propres au distributeur sont introuvables ailleurs. Sur un catalogue de pièces adaptables, renseigne « Colonne Description (réf. d’origine) ».",
-  'run.directed.genericSummary': 'Générique ({sites} site(s)) : {queries} recherche(s) web · {noUrls} sans résultat (réf non vendue / 422) · {extracted} fiche(s) extraite(s){fallback} · {matched} appariée(s) par preuve exacte.',
+  'run.directed.genericSummary': 'Générique ({sites} site(s)) : {queries} recherche(s) web · {noUrls} sans résultat (réf non vendue) · {failed} en ÉCHEC de recherche · {extracted} fiche(s) extraite(s){fallback} · {matched} appariée(s) par preuve exacte.',
+  'run.directed.searchChannelDown': "Recherche web en échec sur {failed} des {queries} interrogations — ce n'est PAS « la référence n'est pas vendue », c'est le moteur de recherche qui ne répond pas. Première cause : {reason}",
   'run.directed.genericViaFallback': ' (dont {bd} Bright Data · {jina} Jina)',
   // Passe authentifiée : moteur SERVEUR uniquement (pas de jumeau client).
   'run.directed.krampHit': 'kramp : {name} {price}€ (preuve {evidence})',
@@ -2428,7 +2430,7 @@ export const fr = {
   'run.api.noDetail': 'échec',
   'run.gs.workbookFull': 'Classeur Google plein (10 millions de cellules, tous onglets confondus). Les onglets gardent les cellules des exports précédents même vidées : supprimez les onglets obsolètes, ou les lignes/colonnes vides (« Supprimer », pas « Effacer »), ou exportez vers un classeur dédié.',
   'run.gs.chartAxisMissing': 'axe X ou colonnes de valeurs introuvables',
-  'run.gs.emptySheetInput': 'gsheets-export : sheet vide en entrée.',
+  'run.gs.emptySheetInput': "Rien à exporter : le node en amont n'a produit aucune ligne. La feuille existante n'a PAS été modifiée — l'écrire vide l'aurait écrasée. Regarde le node qui alimente cette entrée.",
   'run.gs.driveCreateFailed': 'gsheets-export : création Drive {status} — {message}',
   'run.gs.tzIgnored': 'Fuseau horaire ignoré : {message}',
   'run.gs.formulasIgnored': 'Colonnes formule ignorées : {message}',

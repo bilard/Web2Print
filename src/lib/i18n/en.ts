@@ -2163,6 +2163,7 @@ export const en: Record<TranslationKey, string> = {
   'run.compareCatalog.siteIndexCount': '{domain}: {count} product(s) in the index.',
   'run.compareCatalog.emptyIndex': 'Competitor index empty for the {sites} site(s) under the "{watchId}" monitoring. Check that the "Harvest competitors" node uses the SAME monitoring identifier ("{watchId}") and that it ran first.',
   'run.compareCatalog.matchedBreakdown': '{matched} product(s) matched: {exact} same product, {originOnly} original part (aftermarket ↔ OEM). {unmatched} without a match, {noKey} without a key.',
+  'run.compareCatalog.noMatchAtAll': 'No match at all: the matrix comes out EMPTY, so the downstream export will have nothing to write. The index holds only {listings} competitor listing(s) against {products} source products — zero overlap is the NORMAL outcome of an index that is too thin or off-topic. Widen the harvest, or check that the indexed listings belong to the same catalogue.',
   // Recherche dirigée (`directed-search`)
   'run.directed.noInputData': 'Directed search: no product data on the input.',
   'run.directed.noKeyColumn': 'Directed search: fill in at least a Reference or an EAN column.',
@@ -2175,7 +2176,8 @@ export const en: Record<TranslationKey, string> = {
   'run.directed.authMatched': 'Auth {host}: {hits}/{total} price(s) matched [auth cursor {from} → {to} / {products}].',
   'run.directed.pricesFound': '{count} price(s) found over {processed} product(s) [cursor {from} → {to} / {products}] × {sites} site(s).',
   'run.directed.noPriceFound': 'No price found on this pass. Check that the keys queried exist AT THE COMPETITORS: an item reference and an EAN specific to the distributor cannot be found anywhere else. On an aftermarket parts catalogue, fill in "Description column (original ref.)".',
-  'run.directed.genericSummary': 'Generic ({sites} site(s)): {queries} web search(es) · {noUrls} with no result (ref not sold / 422) · {extracted} page(s) extracted{fallback} · {matched} matched by exact evidence.',
+  'run.directed.genericSummary': 'Generic ({sites} site(s)): {queries} web search(es) · {noUrls} with no result (ref not sold) · {failed} search FAILURES · {extracted} page(s) extracted{fallback} · {matched} matched by exact evidence.',
+  'run.directed.searchChannelDown': 'Web search failed on {failed} of {queries} queries — this is NOT “the reference is not sold”, it is the search engine not responding. First cause: {reason}',
   'run.directed.genericViaFallback': ' (of which {bd} Bright Data · {jina} Jina)',
   // Passe authentifiée : moteur SERVEUR uniquement (pas de jumeau client).
   'run.directed.krampHit': 'kramp: {name} {price}€ (evidence {evidence})',
@@ -2302,7 +2304,7 @@ export const en: Record<TranslationKey, string> = {
   'run.api.noDetail': 'failure',
   'run.gs.workbookFull': 'Google workbook full (10 million cells across all tabs). Tabs keep the cells of previous exports even once emptied: delete the obsolete tabs, or the empty rows/columns ("Delete", not "Clear"), or export to a dedicated workbook.',
   'run.gs.chartAxisMissing': 'X axis or value columns not found',
-  'run.gs.emptySheetInput': 'gsheets-export: empty sheet on the input.',
+  'run.gs.emptySheetInput': 'Nothing to export: the upstream node produced no rows. The existing sheet was NOT modified — writing it empty would have wiped it. Check the node feeding this input.',
   'run.gs.driveCreateFailed': 'gsheets-export: Drive creation {status} — {message}',
   'run.gs.tzIgnored': 'Time zone skipped: {message}',
   'run.gs.formulasIgnored': 'Formula columns skipped: {message}',

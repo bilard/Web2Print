@@ -614,6 +614,13 @@ const gsheetsExportNode: NodeSpec<
       const fileId = config.spreadsheetId.trim()
       const status = await getDriveFileStatus(token, fileId)
       if (status === 'ok') {
+        // ⚠ La mise à jour REMPLACE le fichier par un XLSX converti : écrire une feuille
+        // sans ligne EFFACE l'export précédent. Un amont qui ne produit rien (0 apparié…)
+        // ne doit pas détruire le dernier résultat valide — le jumeau serveur refuse
+        // déjà, ici on refusait rien. Le mode « créer » reste permis : rien à perdre.
+        if (sheet.rows.length === 0 && formulas.length === 0) {
+          throw new Error(t('run.gs.emptySheetInput'))
+        }
         ctx.log('info', t('run.gs.updatingExisting', { rows: sheet.rows.length }))
         const meta = await updateGoogleSheetById(token, fileId, sheet, formulas, chart)
         ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
