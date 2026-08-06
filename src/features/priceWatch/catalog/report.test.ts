@@ -169,12 +169,17 @@ describe('medGapPct — écart de position robuste', () => {
   }
 
   it('quelques valeurs extrêmes emportent la moyenne, pas la médiane', () => {
-    // 29 produits à +50 %, 3 aberrations à +2900 % → moyenne ≈ +317 %, médiane +50 %.
-    const gaps = [...Array(29).fill(50), 2900, 2900, 2900]
+    // 29 produits à +50 %, 3 aberrations à +1600 % → moyenne ≈ +195 %, médiane +50 %.
+    // ⚠ L'aberration valait +2900 % à l'écriture de ce test. `matchProduct` REFUSE
+    // désormais d'apparier au-delà d'un rapport de prix de 21 (cf. `priceAbyss`) : de
+    // telles lignes n'existent plus, une partie du mal que la médiane compensait est
+    // traitée à la source. Le reste — lots, variantes — passe toujours, et c'est
+    // exactement ce que ce test protège.
+    const gaps = [...Array(29).fill(50), 1600, 1600, 1600]
     const s = scenario(gaps).byCompetitor[0]
     expect(s.matched).toBe(32)
-    expect(s.avgGapPct).toBeGreaterThan(300)   // le chiffre qui s'affichait en prod
-    expect(s.medGapPct).toBeCloseTo(50, 0)     // la position réelle du concurrent
+    expect(s.avgGapPct).toBeGreaterThan(150)   // la moyenne dérive toujours…
+    expect(s.medGapPct).toBeCloseTo(50, 0)     // …quand la médiane tient la position
   })
 
   it('sans valeur extrême, médiane et moyenne concordent', () => {

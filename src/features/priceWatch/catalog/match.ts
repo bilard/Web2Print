@@ -114,6 +114,31 @@ const VETOABLE_EVIDENCE = new Set<MatchProof['evidence']>([
 ])
 
 /**
+ * Rapport de prix au-delà duquel deux articles ne peuvent pas être le même, quoi que
+ * dise la référence. Filet UNIVERSEL, complémentaire du lexique : il attrape ce qu'aucun
+ * mot connu ne dénonce — cas VÉCU « BAGUE DE ROUE » 1,91 € ↔ « Chaussure de travail
+ * GRISPORT » 176,32 €, soit +9 131 %.
+ *
+ * ×21 est volontairement ÉNORME. F1 est grossiste et ces marchands vendent au détail :
+ * un facteur 2 ou 3 est le marché normal. Un lot explique davantage — mesuré sur le
+ * rapport de production, le pire cas légitime est « COUTEAU » 3,01 € ↔ « Couteaux
+ * scarificateurs x16 » 41,49 €, soit ×14. Au-delà de vingt-et-un, plus aucun
+ * conditionnement ne rend compte de l'écart. Mesure : 0 cellule sur 1 847 touchée, dans
+ * les deux sens.
+ *
+ * La TVA est ignorée à dessein : mon prix est HT, le sien souvent TTC, et 20 % ne
+ * déplacent pas un seuil de 2 100 %.
+ */
+const PRICE_ABYSS_RATIO = 21
+
+/** L'un des deux prix est-il sans commune mesure avec l'autre ? Symétrique : une fiche
+ *  vingt fois moins chère est aussi suspecte qu'une fiche vingt fois plus chère. */
+function priceAbyss(mine: number | undefined, theirs: number | undefined): boolean {
+  if (!mine || !theirs || mine <= 0 || theirs <= 0) return false
+  return theirs / mine > PRICE_ABYSS_RATIO || mine / theirs > PRICE_ABYSS_RATIO
+}
+
+/**
  * Apparie un produit source à l'index d'un concurrent.
  *
  * Trois verrous, dans cet ordre : la clé doit RÉSOUDRE dans l'index, l'appariement doit
@@ -136,6 +161,9 @@ const VETOABLE_EVIDENCE = new Set<MatchProof['evidence']>([
  * qu'aucune n'est commune (cf. `familiesConflict`). Un côté muet, ou un mot inconnu du
  * lexique, ne rejette rien : on ne condamne jamais pour une absence. Mesuré sur le
  * rapport de production : 14 cellules sur 1 847, toutes de vrais faux appariements.
+ *
+ * Un lexique ne peut pas tout nommer : `priceAbyss` prend le relais quand aucun mot ne
+ * parle, sur le seul rapport des prix.
  */
 export function matchProduct(
   product: SourceProduct,
@@ -157,7 +185,8 @@ export function matchProduct(
       if (!proof) continue
       // Candidat écarté, pas produit rejeté : on continue de chercher — une autre fiche
       // du même site peut porter la bonne pièce sous la même clé.
-      if (VETOABLE_EVIDENCE.has(proof.evidence) && familiesConflict(product.name, candidate.name)) {
+      if (VETOABLE_EVIDENCE.has(proof.evidence)
+        && (familiesConflict(product.name, candidate.name) || priceAbyss(product.price, candidate.price))) {
         vetoed++
         continue
       }

@@ -67,6 +67,17 @@ const FAMILIES: Record<string, string[]> = {
   screw: ['boulon', 'boulons', 'screw', 'screws', 'bolt', 'bolts'],
   nut: ['ecrou', 'ecrous'],
   washer: ['rondelle', 'rondelles', 'washer', 'washers'],
+  // ÉQUIPEMENT DE L'OPÉRATEUR — jamais une pièce de machine. Cas VÉCU : « BAGUE DE
+  // ROUE » à 1,91 € appariée à « Chaussure de travail taille 41 GRISPORT 7200341 » à
+  // 176 €, la référence figurant dans l'adresse de la fiche. Aucun mot du lexique ne
+  // parlait côté marchand, donc aucune contradiction n'était déclarée.
+  // ⚠ « boot(s) » anglais est VOLONTAIREMENT absent : en mécanique, c'est un soufflet
+  // de cardan, pas une chaussure. « botte(s) » français ne porte pas cette ambiguïté.
+  footwear: ['chaussure', 'chaussures', 'botte', 'bottes', 'brodequin', 'brodequins', 'sabot', 'sabots'],
+  glove: ['gant', 'gants', 'glove', 'gloves'],
+  helmet: ['casque', 'casques', 'helmet', 'helmets'],
+  eyewear: ['lunette', 'lunettes', 'goggles', 'visiere', 'visieres'],
+  clothing: ['veste', 'vestes', 'pantalon', 'pantalons', 'combinaison', 'combinaisons', 'salopette', 'salopettes', 'tablier', 'tabliers'],
 }
 
 /** Index inversé mot → famille, dressé une fois à l'import. */

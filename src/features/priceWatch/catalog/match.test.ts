@@ -183,6 +183,39 @@ describe('matchProduct', () => {
       expect(r.proof?.evidence).toBe('gtin13')
     })
 
+    it('refuse « BAGUE DE ROUE » ↔ « Chaussure de travail » — le lexique connaît l’EPI', () => {
+      const idx = buildMemoryIndex([listing({
+        url: 'https://c.fr/22-chaussure-travail-7200341.html',
+        name: 'Chaussure de travail taille 41 GRISPORT', price: 211.58,
+      })])
+      expect(idx('7200341')).toHaveLength(1)
+      expect(matchProduct({ id: 'p', name: 'BAGUE DE ROUE', ref: '7200341', price: 1.91 }, 's', idx).outcome)
+        .toBe('not-found')
+    })
+
+    it('refuse un ABÎME de prix même sans un mot connu de part et d’autre', () => {
+      // Filet universel : aucun lexique ne peut tout nommer. ×110 ici.
+      const idx = buildMemoryIndex([listing({
+        url: 'https://c.fr/23-machin-7200999.html', name: 'Zorglub XR-9 édition limitée', price: 211.58,
+      })])
+      expect(matchProduct({ id: 'p', name: 'BIDULE', ref: '7200999', price: 1.91 }, 's', idx).outcome)
+        .toBe('not-found')
+    })
+
+    it('laisse passer un écart de prix ORDINAIRE entre grossiste et détaillant', () => {
+      // ×4 : c'est le marché, pas une anomalie. Et ×14 reste toléré (lot de seize).
+      const idx = buildMemoryIndex([listing({
+        url: 'https://c.fr/24-machin-7200998.html', name: 'Zorglub XR-9', price: 8,
+      })])
+      expect(matchProduct({ id: 'p', name: 'BIDULE', ref: '7200998', price: 1.91 }, 's', idx).outcome)
+        .toBe('matched')
+      const lot = buildMemoryIndex([listing({
+        url: 'https://c.fr/25-couteaux-3568400.html', name: 'Couteaux scarificateurs x16 pour Wolf', price: 41.49,
+      })])
+      expect(matchProduct({ id: 'p', name: 'COUTEAU', ref: '3568400', price: 3.01 }, 's', lot).outcome)
+        .toBe('matched')
+    })
+
     it('laisse passer un libellé MUET — on ne condamne jamais pour une absence', () => {
       const idx = buildMemoryIndex([listing({
         url: 'https://c.fr/14-piece-5208302.html', name: 'CASTELGARDEN 3816005331', price: 12,
