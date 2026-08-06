@@ -14,7 +14,7 @@
 // MONTER le score.
 import { normalizeEan, normalizeRef, type MatchEvidence } from '../catalog/keys'
 import { nameTokens } from '../catalog/nameMatch'
-import { familiesConflict } from './partFamily'
+import { familiesConflict } from '../catalog/partFamily'
 
 /** Trois bandes seulement : agir, vérifier, laisser. Une échelle plus fine ne se lit pas. */
 export type ConfidenceBand = 'sure' | 'check' | 'doubt'

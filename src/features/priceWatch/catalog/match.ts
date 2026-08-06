@@ -11,6 +11,7 @@ import {
   isInternalBarcode, refTokensFromUrl, refTokensFromText, MIN_REF_LEN, WEAK_REF_LEN,
   type JoinKey, type MatchProof, type SourceProductKeys,
 } from './keys'
+import { familiesConflict } from './partFamily'
 import type { CompetitorListing, Availability } from './prestashop'
 
 /** TVA française de droit commun. Paramétrable : certaines familles en dérogent. */
@@ -93,13 +94,38 @@ export interface MatchResult {
 }
 
 /**
+ * Preuves qui reposent sur une chaîne REPÉRÉE dans un texte libre ou une adresse, par
+ * opposition à un champ d'identité déclaré (`sku`, `mpn`, `gtin13`) où la valeur ne peut
+ * pas se trouver là par hasard. Seules celles-ci sont soumises au veto du libellé : un
+ * code-barres identique des deux côtés reste plus probant qu'un titre marchand, souvent
+ * approximatif — l'écart de libellé s'y traite en indice de confiance, pas en rejet.
+ */
+const INDIRECT_EVIDENCE = new Set<MatchProof['evidence']>([
+  'ref-in-url', 'ref-in-title', 'ref-in-name', 'ean-in-url',
+])
+
+/**
  * Apparie un produit source à l'index d'un concurrent.
  *
- * Deux verrous, dans cet ordre : la clé doit RÉSOUDRE dans l'index, puis
- * l'appariement doit être PROUVÉ par égalité exacte (`proveMatch`). Le second n'est
- * pas redondant : un index peut contenir des collisions (deux produits sous la même
- * référence dépaddée), et un candidat non prouvé doit être rejeté, jamais retenu
- * faute de mieux.
+ * Trois verrous, dans cet ordre : la clé doit RÉSOUDRE dans l'index, l'appariement doit
+ * être PROUVÉ par égalité exacte (`proveMatch`), et les deux libellés ne doivent pas
+ * nommer des pièces INCOMPATIBLES.
+ *
+ * Le second verrou n'est pas redondant avec le premier : un index peut contenir des
+ * collisions (deux produits sous la même référence dépaddée), et un candidat non prouvé
+ * doit être rejeté, jamais retenu faute de mieux.
+ *
+ * Le TROISIÈME est là parce qu'une référence retrouvée dans une URL ne prouve pas ce
+ * qu'elle a l'air de prouver. Cas VÉCU : « CARBURATEUR » réf. 5208301 apparié à « Mousse
+ * pré-filtre à air CUB CADET », les sept chiffres figurant dans l'adresse de la fiche. Le
+ * même nombre s'y trouve, les deux articles n'ont rien à voir. Tant que ce démenti ne
+ * faisait que baisser un indice de confiance, la paire restait APPARIÉE : elle occupait
+ * la place du vrai concurrent et son prix entrait dans le comparatif. Un trou vaut mieux
+ * qu'un faux prix — principe de tout ce module.
+ *
+ * ⚠ Le veto ne se déclenche que si les DEUX libellés nomment une famille de pièce et
+ * qu'aucune n'est commune (cf. `familiesConflict`). Un côté muet, ou un mot inconnu du
+ * lexique, ne rejette rien : on ne condamne jamais pour une absence.
  */
 export function matchProduct(
   product: SourceProduct,
@@ -117,7 +143,11 @@ export function matchProduct(
         url: candidate.url,
         name: candidate.name,
       })
-      if (proof) return { productId: product.id, siteId, outcome: 'matched', listing: candidate, proof }
+      if (!proof) continue
+      // Candidat écarté, pas produit rejeté : on continue de chercher — une autre fiche
+      // du même site peut porter la bonne pièce sous la même clé.
+      if (INDIRECT_EVIDENCE.has(proof.evidence) && familiesConflict(product.name, candidate.name)) continue
+      return { productId: product.id, siteId, outcome: 'matched', listing: candidate, proof }
     }
   }
   return { productId: product.id, siteId, outcome: 'not-found' }

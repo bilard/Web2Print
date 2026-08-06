@@ -141,6 +141,10 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
         ref: refCol ? String(r[refCol] ?? '').trim() || undefined : undefined,
         ean: eanCol ? String(r[eanCol] ?? '').trim() || undefined : undefined,
         originRefs: descCol ? extractOriginRefs(String(r[descCol] ?? '')) : undefined,
+        // Le libellé ne sert pas à CHERCHER (aucune requête ne part dessus) mais à
+        // REFUSER : une fiche qui nomme une pièce incompatible est écartée, même quand
+        // la référence figure dans son adresse.
+        name: nameCol ? String(r[nameCol] ?? '').trim() || undefined : undefined,
       }))
       .filter((p) => p.ref || p.ean || p.originRefs?.length)
     // Combien de lignes n'offrent AUCUNE clé interrogeable : c'est la première chose à

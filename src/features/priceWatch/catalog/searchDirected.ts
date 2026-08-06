@@ -12,6 +12,7 @@
 import { parseListingPage, type CompetitorListing } from './prestashop'
 import { t } from '@/lib/i18n'
 import { candidateKeys, proveMatch, type SourceProductKeys, type MatchProof } from './keys'
+import { familiesConflict } from './partFamily'
 import { mapWithConcurrency } from '../concurrency'
 
 export interface SearchDeps {
@@ -66,8 +67,33 @@ export function preferProductUrls(urls: string[]): string[] {
  * sur le web, puis extrait les fiches candidates via Firecrawl (rendu JS + anti-bot) et
  * renvoie le premier apparié par PREUVE EXACTE. Ciblé par réf → coût borné (crédits).
  */
+/** Produit source, clés + LIBELLÉ. Le nom ne prouve jamais un appariement — mais il peut
+ *  le DÉMENTIR : cf. `rejectedByName`. */
+export type DirectedProductInput = SourceProductKeys & { name?: string }
+
+/**
+ * La fiche trouvée nomme-t-elle une pièce incompatible avec le produit cherché ?
+ *
+ * Une recherche « site:x 5208301 » ramène tout ce qui porte ce nombre quelque part — chez
+ * un marchand, l'identifiant de page suffit. Cas VÉCU : « CARBURATEUR » rendu comme
+ * « Mousse pré-filtre à air CUB CADET ». `proveMatch` valide (le nombre est bien dans
+ * l'adresse), et sans ce garde-fou le faux prix entrait dans le comparatif.
+ *
+ * Restreint aux preuves INDIRECTES : un `sku` ou un code-barres déclaré des deux côtés
+ * reste plus probant qu'un titre marchand approximatif.
+ */
+function rejectedByName(
+  product: DirectedProductInput,
+  listing: CompetitorListing,
+  evidence: MatchProof['evidence'],
+): boolean {
+  const indirect = evidence === 'ref-in-url' || evidence === 'ref-in-title'
+    || evidence === 'ref-in-name' || evidence === 'ean-in-url'
+  return indirect && familiesConflict(product.name, listing.name)
+}
+
 async function searchProductGeneric(
-  product: SourceProductKeys,
+  product: DirectedProductInput,
   domain: string,
   deps: SearchDeps,
 ): Promise<DirectedHit | null> {
@@ -87,6 +113,7 @@ async function searchProductGeneric(
       const listing = await deps.extractProduct(url)
       if (!listing) continue
       const proof = proveMatch(keys, toIdentity(listing))
+      if (proof && rejectedByName(product, listing, proof.evidence)) continue
       if (proof) {
         deps.log?.(t('run.directed.genericHit', { domain, query, name: listing.name, evidence: proof.evidence }))
         return { listing, evidence: proof.evidence, query }
@@ -123,7 +150,7 @@ export interface DirectedHit {
  * `null` si aucun résultat prouvé (le produit n'y est pas, ou pas sous une clé commune).
  */
 export async function searchProductOnSite(
-  product: SourceProductKeys,
+  product: DirectedProductInput,
   domain: string,
   deps: SearchDeps,
   opts?: { generic?: boolean },
@@ -140,6 +167,7 @@ export async function searchProductOnSite(
     if (!html) continue
     for (const listing of parseListingPage(html)) {
       const proof = proveMatch(keys, toIdentity(listing))
+      if (proof && rejectedByName(product, listing, proof.evidence)) continue
       if (proof) {
         deps.log?.(t('run.directed.hit', { domain, query, name: listing.name, evidence: proof.evidence }))
         return { listing, evidence: proof.evidence, query }
@@ -153,6 +181,8 @@ export async function searchProductOnSite(
 export interface DirectedSourceProduct extends SourceProductKeys {
   /** Identifiant stable de la ligne source (pour rattacher le hit au produit). */
   id: string
+  /** Libellé F1. Ne prouve rien, mais peut DÉMENTIR une fiche trouvée (`rejectedByName`). */
+  name?: string
 }
 
 export interface DirectedSite {

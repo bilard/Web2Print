@@ -62,6 +62,21 @@ describe('match (parité serveur)', () => {
     expect(r.outcome).toBe('matched')
     expect(r.proof?.evidence).toBe('ref-in-title')
   })
+  it('refuse un appariement que le LIBELLÉ dément', () => {
+    // Le cron doit rejeter ce que le navigateur rejette : sans ce veto côté serveur, un
+    // recalcul nocturne réintroduirait « CARBURATEUR » ↔ « Mousse pré-filtre à air ».
+    const lookup = buildMemoryIndex([
+      { url: 'https://x.fr/12-mousse-prefiltre-air-5208301.html', name: 'Mousse pré-filtre à air CUB CADET', price: 9.9 },
+    ])
+    expect(lookup('5208301')).toHaveLength(1)
+    expect(matchProduct({ id: 'a', name: 'CARBURATEUR', ref: '5208301' }, 's', lookup).outcome).toBe('not-found')
+  })
+  it('laisse passer un libellé muet ou une famille commune', () => {
+    const muet = buildMemoryIndex([{ url: 'https://x.fr/14-piece-5208302.html', name: 'CASTELGARDEN 3816005331', price: 12 }])
+    expect(matchProduct({ id: 'a', name: 'CARBURATEUR', ref: '5208302' }, 's', muet).outcome).toBe('matched')
+    const commun = buildMemoryIndex([{ url: 'https://x.fr/15-boitier-5208303.html', name: 'Boîtier de commutation', price: 30 }])
+    expect(matchProduct({ id: 'a', name: 'SWITCH BOX BATTERY', ref: '5208303' }, 's', commun).outcome).toBe('matched')
+  })
   it('écarte une clé de libellé ambiguë (deux fiches distinctes)', () => {
     const lookup = buildMemoryIndex([
       { url: 'https://x.fr/a.html', name: 'Lame adaptable 181004383 gauche' },

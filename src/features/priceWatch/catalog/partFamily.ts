@@ -22,7 +22,7 @@
 // Les QUALIFICATIFS sont exclus au même titre : « air », « huile », « oil », « moteur »
 // employés en complément (« filtre à huile », « courroie moteur ») ne désignent pas la
 // pièce. Les inclure ferait se croiser des familles sans rapport.
-import { nameTokens } from '../catalog/nameMatch'
+import { nameTokens } from './nameMatch'
 
 /**
  * Un identifiant de famille, tous synonymes confondus — français ET anglais dans le même

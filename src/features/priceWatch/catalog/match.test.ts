@@ -130,6 +130,64 @@ describe('matchProduct', () => {
     const r = matchProduct({ id: 'p', name: 'X', ref: '0306030002' }, 's', forged)
     expect(r.outcome).toBe('not-found')
   })
+
+  // — Veto du LIBELLÉ : la référence prouve, le nom dément ————————————————
+  describe('libellés incompatibles', () => {
+    it('refuse « CARBURATEUR » ↔ « Mousse pré-filtre à air » sur une réf. lue dans l’URL', () => {
+      // Cas RÉEL : les sept chiffres de la référence F1 figurent dans l'adresse de la
+      // fiche du concurrent. La clé résout, `proveMatch` prouve — et les deux articles
+      // n'ont rien à voir. Sans veto, ce prix entrait dans le comparatif.
+      const idx = buildMemoryIndex([listing({
+        url: 'https://c.fr/12-mousse-prefiltre-air-5208301.html',
+        name: 'Mousse pré-filtre à air CUB CADET', price: 9.9,
+      })])
+      // La clé résout bel et bien : sans cette assertion, le test passerait aussi si
+      // l'index était simplement vide — il ne prouverait alors plus rien du veto.
+      expect(idx('5208301')).toHaveLength(1)
+      const r = matchProduct({ id: 'p', name: 'CARBURATEUR', ref: '5208301' }, 's', idx)
+      expect(r.outcome).toBe('not-found')
+    })
+
+    it('écarte la mauvaise fiche mais garde la BONNE sous la même clé', () => {
+      // Le veto porte sur un candidat, pas sur le produit : si le site vend aussi la
+      // vraie pièce, elle doit être retenue.
+      const forged: IndexLookup = (key) => (key === '5208301' ? [
+        listing({ url: 'https://c.fr/12-mousse-5208301.html', name: 'Mousse pré-filtre à air' }),
+        listing({ url: 'https://c.fr/13-carbu-5208301.html', name: 'Carburateur adaptable HONDA', price: 21 }),
+      ] : undefined)
+      const r = matchProduct({ id: 'p', name: 'CARBURATEUR', ref: '5208301' }, 's', forged)
+      expect(r.outcome).toBe('matched')
+      expect(r.listing?.price).toBe(21)
+    })
+
+    it('n’applique PAS le veto à un code-barres déclaré des deux côtés', () => {
+      // Un GTIN identique reste plus probant qu'un titre marchand approximatif : le
+      // désaccord de libellé s'y traite en indice de confiance, pas en rejet.
+      const idx = buildMemoryIndex([listing({
+        ref: 'ZZ1', gtin13: '3582321853475', name: 'Démarreur KOHLER', price: 40,
+      })])
+      const r = matchProduct({ id: 'p', name: 'FILTRE A AIR', ean: '3582321853475' }, 's', idx)
+      expect(r.outcome).toBe('matched')
+      expect(r.proof?.evidence).toBe('gtin13')
+    })
+
+    it('laisse passer un libellé MUET — on ne condamne jamais pour une absence', () => {
+      const idx = buildMemoryIndex([listing({
+        url: 'https://c.fr/14-piece-5208302.html', name: 'CASTELGARDEN 3816005331', price: 12,
+      })])
+      const r = matchProduct({ id: 'p', name: 'CARBURATEUR', ref: '5208302' }, 's', idx)
+      expect(r.outcome).toBe('matched')
+    })
+
+    it('laisse passer deux libellés qui partagent une famille malgré la langue', () => {
+      // « SWITCH BOX BATTERY » ↔ « Boîtier de commutation » : `switch` en commun.
+      const idx = buildMemoryIndex([listing({
+        url: 'https://c.fr/15-boitier-5208303.html', name: 'Boîtier de commutation', price: 30,
+      })])
+      const r = matchProduct({ id: 'p', name: 'SWITCH BOX BATTERY', ref: '5208303' }, 's', idx)
+      expect(r.outcome).toBe('matched')
+    })
+  })
 })
 
 describe('comparePrices', () => {

@@ -4,6 +4,8 @@ import { buildMatrix as buildClient } from './matrix'
 // TypeScript distinct, mais le module est PUR — aucun accès Firestore, aucun
 // import Node. C'est ce qui rend cette comparaison possible.
 import { buildMatrix as buildServer } from '../../../../functions/src/priceWatch/catalog/matrix'
+import { familiesConflict as conflictClient } from './partFamily'
+import { familiesConflict as conflictServer } from '../../../../functions/src/priceWatch/catalog/partFamily'
 
 /**
  * PARITÉ des deux implémentations de la matrice de comparaison.
@@ -44,5 +46,35 @@ describe('parité matrice client / serveur', () => {
       const idx = cols.map((x, i) => ({ x, i })).filter(({ x }) => x.group === g).map(({ i }) => i)
       expect(idx[idx.length - 1] - idx[0], `« ${g} » n'est pas d'un seul tenant`).toBe(idx.length - 1)
     }
+  })
+})
+
+/**
+ * PARITÉ du veto de LIBELLÉ. Le lexique des familles de pièces existe en deux copies —
+ * une par projet — et il décide désormais d'APPARIER OU NON. Une dérive entre les deux
+ * ne se verrait pas : le rapport calculé au navigateur et celui recalculé par le cron
+ * porteraient des appariements différents, sans le moindre message.
+ *
+ * La tokenisation est comparée en même temps : c'est elle qui découpe « pré-filtre » en
+ * `pre` + `filtre`, et donc elle qui déclenche le veto sur le cas vécu.
+ */
+describe('parité veto de libellé client / serveur', () => {
+  const CASES: [string, string][] = [
+    ['CARBURATEUR', 'Mousse pré-filtre à air CUB CADET 5208301'],
+    ['FILTRE A AIR', 'Démarreur KOHLER 4109806S'],
+    ['SWITCH BOX BATTERY', 'Boîtier de commutation'],
+    ['BELT PULLEY ASSY', 'Courroie tondeuse'],
+    ['CARBURATEUR', 'CASTELGARDEN 3816005331'],
+    ['Carburateur HONDA. Remplace origine: 16100-Z0Y-813', 'Carburateur adaptable'],
+    ['', 'Lame de tondeuse'],
+  ]
+  it('rend le MÊME verdict des deux côtés', () => {
+    for (const [a, b] of CASES) {
+      expect(conflictServer(a, b), `« ${a} » ↔ « ${b} »`).toBe(conflictClient(a, b))
+    }
+  })
+  it('condamne bien le cas vécu, et lui seul parmi les libellés proches', () => {
+    expect(conflictClient('CARBURATEUR', 'Mousse pré-filtre à air CUB CADET 5208301')).toBe(true)
+    expect(conflictClient('CARBURATEUR', 'Carburateur adaptable HONDA')).toBe(false)
   })
 })
