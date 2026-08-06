@@ -27,6 +27,39 @@ describe('scorePair — la nature de la preuve fixe le point de départ', () => 
     expect(s('ref-in-name')).toBeGreaterThan(s('ref-in-url'))
     expect(s('ref-in-url')).toBeGreaterThan(s('ref-in-title'))
   })
+
+  // Cas RÉEL signalé comme « à vérifier » à tort : « ENJOLIVEUR » réf. 322110643/0 ↔
+  // « Enjoliveur 140mm CASTELGARDEN - GGP 322110643/0 ». Aucun motif de doute, et
+  // pourtant 67 — la seule cause était l'endroit de la preuve. Dix caractères délimités
+  // ne sont pas une coïncidence : la forme de la clé doit compter autant que le chemin.
+  it('classe comme sûre une clé DISTINCTIVE retrouvée comme mot entier dans le libellé', () => {
+    const c = scorePair(base({
+      evidence: 'ref-in-title', keyValue: '3221106430',
+      sourceRef: '322110643/0', sourceEan: '8008989110330',
+      sourceName: 'ENJOLIVEUR', listingName: 'Enjoliveur 140mm CASTELGARDEN - GGP 322110643/0',
+      deltaPct: 58.7,
+    }))
+    expect(c.doubts).toEqual([])
+    expect(c.band).toBe('sure')
+  })
+
+  it('ne promeut PAS une clé courte : c’est là que la coïncidence est plausible', () => {
+    // Sept chiffres : assez pour échapper au malus `numeric-short`, pas assez pour être
+    // tenu pour discriminant au milieu d'un texte libre. La bande reste « à vérifier ».
+    const c = scorePair(base({ evidence: 'ref-in-title', keyValue: '1103647' }))
+    expect(c.doubts).toEqual([])
+    expect(c.band).toBe('check')
+    // Une clé MIXTE discrimine à moindre longueur : une lettre suffit à sortir du bruit.
+    expect(scorePair(base({ evidence: 'ref-in-title', keyValue: 'BQ1234' })).band).toBe('sure')
+  })
+
+  it('la promotion ne rachète jamais une clé courte tout en chiffres', () => {
+    // Le CIRCLIP Gutbrod : « 11036 » retrouvé dans un slug Toyota. Clé faible ET numérique
+    // courte — aucune promotion possible, et le double malus la maintient en doute.
+    const c = scorePair(base({ evidence: 'ref-in-url', keyValue: '11036', key: { weak: true, origin: false } }))
+    expect(c.doubts).toContain('numeric-short')
+    expect(c.band).toBe('doubt')
+  })
 })
 
 describe('scorePair — on retranche pour une CONTRADICTION, jamais pour une absence', () => {

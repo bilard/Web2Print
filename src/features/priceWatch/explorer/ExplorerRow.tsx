@@ -49,6 +49,21 @@ const VISUAL_BADGE: Record<string, { key: TranslationKey; cls: string }> = {
   unclear: { key: 'pwx.visual.unclear', cls: 'text-white/35 border-white/15' },
 }
 
+/**
+ * Ce qui a PROUVÉ l'appariement, en clair. Indispensable : la bande se décide d'abord sur
+ * la nature de la preuve, et une ligne « à vérifier » SANS aucun motif de doute — le cas
+ * le plus fréquent — n'affichait qu'un score nu, donc aucune explication.
+ */
+const EVIDENCE_LABEL: Record<string, TranslationKey> = {
+  gtin13: 'pwx.proof.gtin13',
+  'ean-in-url': 'pwx.proof.eanInUrl',
+  sku: 'pwx.proof.sku',
+  mpn: 'pwx.proof.mpn',
+  'ref-in-name': 'pwx.proof.refInName',
+  'ref-in-url': 'pwx.proof.refInUrl',
+  'ref-in-title': 'pwx.proof.refInTitle',
+}
+
 const DOUBT_LABEL: Record<DoubtReason, TranslationKey> = {
   'ean-conflict': 'pwx.doubt.eanConflict',
   'ref-conflict': 'pwx.doubt.refConflict',
@@ -197,8 +212,17 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict
   const stock = listing.availability ? STOCK_LABEL[listing.availability] : null
   // L'infobulle NOMME ce qui cloche : c'est là toute la valeur d'audit de l'indice. Sans
   // elle, « 43 » n'apprend rien et l'utilisateur doit rouvrir les deux fiches.
+  //
+  // ⚠ Elle nomme AUSSI la preuve, même quand rien ne cloche : sur une ligne « à vérifier »
+  // sans motif de doute, la liste des doutes est vide et l'infobulle ne disait alors que le
+  // score. C'est la nature de la preuve qui décidait de la bande, et elle restait muette.
+  const proofLabel = proof ? EVIDENCE_LABEL[proof.evidence] : null
   const why = confidence
-    ? [t('pwx.trust.score', { score: confidence.score }), ...confidence.doubts.map((d) => `• ${t(DOUBT_LABEL[d])}`)].join('\n')
+    ? [
+        t('pwx.trust.score', { score: confidence.score }),
+        ...(proofLabel ? [t('pwx.trust.proof', { what: t(proofLabel) })] : []),
+        ...confidence.doubts.map((d) => `• ${t(DOUBT_LABEL[d])}`),
+      ].join('\n')
     : ''
 
   // Un verdict humain PRIME sur l'indice : une fois la ligne jugée, l'accent d'alerte

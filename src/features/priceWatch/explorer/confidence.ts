@@ -121,6 +121,26 @@ function isNumericShort(value?: string): boolean {
   return !!value && /^\d+$/.test(value) && value.length < NUMERIC_MIN_LEN
 }
 
+/**
+ * La force d'une référence trouvée DANS un libellé tient à sa forme, pas seulement à
+ * l'endroit où on l'a trouvée. `ref-in-title` part bas parce qu'un nombre croisé au
+ * milieu d'un texte libre peut n'être qu'un nombre — mais `322110643/0` retrouvé comme
+ * MOT ENTIER dans « Enjoliveur 140mm CASTELGARDEN - GGP 322110643/0 » n'est pas une
+ * coïncidence : dix caractères délimités valent la même chose qu'une référence en tête
+ * de libellé. Sans cette nuance, des appariements parfaits restaient « à vérifier » à
+ * vie, et la bande perdait son sens de file d'attente.
+ *
+ * Deux barèmes : une suite de chiffres a besoin de plus de longueur qu'une clé mixte
+ * pour discriminer (les URL et les libellés sont pleins de nombres, pas de codes).
+ */
+const TITLE_STRONG_DIGITS = 8
+const TITLE_STRONG_MIXED = 6
+
+function distinctiveInTitle(value?: string): boolean {
+  if (!value) return false
+  return /^\d+$/.test(value) ? value.length >= TITLE_STRONG_DIGITS : value.length >= TITLE_STRONG_MIXED
+}
+
 /** Deux valeurs renseignées de part et d'autre, et différentes ? Une seule absente ne
  *  contredit rien : la plupart des marchands ne publient aucun code-barres. */
 function conflict(a: string, b: string): boolean {
@@ -160,9 +180,15 @@ export function scorePair(s: PairSignals): Confidence {
   // « 11036 » ne vaut pas mieux qu'un nombre croisé au milieu d'un libellé. On ne part
   // donc jamais du niveau « acquis » dans ce cas — empiler un malus sur une base haute
   // laissait le CIRCLIP Gutbrod apparié à un filtre Toyota au-dessus de la barre du doute.
+  // Symétrique de la règle du dessus : une clé DISTINCTIVE retrouvée comme mot entier
+  // dans le libellé monte au niveau « référence en tête de libellé ». Les deux cas sont
+  // exclusifs par construction (`numeric-short` exige moins de 7 chiffres, la promotion
+  // au moins 8) — l'ordre du ternaire ne fait que le rendre lisible.
   let core = doubts.includes('numeric-short')
     ? Math.min(BASE[s.evidence], BASE['ref-in-title'])
-    : BASE[s.evidence]
+    : s.evidence === 'ref-in-title' && distinctiveInTitle(s.keyValue)
+      ? BASE['ref-in-name']
+      : BASE[s.evidence]
   for (const d of doubts) core -= PENALTY[d]
   const band: ConfidenceBand = doubts.includes('ean-conflict')
     ? 'doubt' // un code-barres contredit ne se rachète par aucun renfort
