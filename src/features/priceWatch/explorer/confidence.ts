@@ -30,16 +30,28 @@ export type DoubtReason =
   | 'price-gulf'     // prix sans commune mesure avec le mien
   | 'price-abyss'    // rapport de prix qu'aucune marge de distribution n'explique
   | 'family-conflict' // les deux libellés nomment des pièces incompatibles
+  | 'visual-conflict' // les photos montrent des objets de natures distinctes
 
 /** Motif de RENFORT — ne peut que faire monter le score, jamais changer de bande. */
-type SupportReason = 'title-echo' | 'ean-echo' | 'ref-echo'
+export type SupportReason = 'title-echo' | 'ean-echo' | 'ref-echo' | 'visual-echo'
 
 export interface Confidence {
   score: number
   band: ConfidenceBand
   doubts: DoubtReason[]
   supports: SupportReason[]
+  /** Rouages du calcul, conservés pour pouvoir REJOUER la bande quand un signal arrive
+   *  après coup (cf. `withVisual`). `core` = base moins les pénalités ; `bonus` = ce que
+   *  les renforts ajoutent au score sans toucher à la bande. */
+  raw: { core: number; bonus: number }
 }
+
+/**
+ * Verdict de la comparaison des PHOTOS. Union déclarée ici plutôt qu'importée : ce module
+ * est PUR et ne dépend d'aucun autre — le compilateur vérifie la compatibilité au point
+ * d'appel.
+ */
+export type VisualCall = 'same' | 'different' | 'unclear'
 
 /**
  * Valeur de départ, par nature de preuve. L'ordre reprend celui de `proveMatch`, qui teste
@@ -90,6 +102,10 @@ const PENALTY: Record<DoubtReason, number> = {
   // bande pour autant — un GTIN identique des deux côtés reste plus probant qu'un titre
   // marchand, et retombe en « à vérifier » plutôt qu'en « douteux ».
   'family-conflict': 45,
+  // Le seul démenti qui porte sur les OBJETS et non sur des chaînes de caractères. Même
+  // barème que les deux autres contradictions fortes. ⚠ `unclear` ne coûte RIEN : un
+  // visuel source remplacé par un logo générique est le cas courant, pas un indice.
+  'visual-conflict': 45,
 }
 
 /** Seuils de bande. `check` commence sous la valeur de `ref-in-title` : la preuve la plus
@@ -218,18 +234,54 @@ export function scorePair(s: PairSignals): Confidence {
       ? BASE['ref-in-name']
       : BASE[s.evidence]
   for (const d of doubts) core -= PENALTY[d]
+
+  let bonus = 0
+  if (supports.includes('ean-echo')) bonus += 8
+  if (supports.includes('ref-echo')) bonus += 5
+  bonus += Math.min(common, 2) * 5
+
+  return finalize(core, bonus, doubts, supports)
+}
+
+/** Bande et score à partir des rouages. Isolé pour que `withVisual` rejoue exactement le
+ *  même calcul plutôt que d'en tenir une seconde copie qui divergerait. */
+function finalize(core: number, bonus: number, doubts: DoubtReason[], supports: SupportReason[]): Confidence {
   const band: ConfidenceBand = doubts.includes('ean-conflict')
     ? 'doubt' // un code-barres contredit ne se rachète par aucun renfort
     : core >= SURE_FROM ? 'sure' : core >= CHECK_FROM ? 'check' : 'doubt'
-
-  let score = core
-  if (supports.includes('ean-echo')) score += 8
-  if (supports.includes('ref-echo')) score += 5
-  score += Math.min(common, 2) * 5
-
   const ceiling = band === 'sure' ? 100 : band === 'check' ? SURE_FROM - 1 : CHECK_FROM - 1
-  score = Math.max(0, Math.min(ceiling, Math.round(score)))
-  return { score, band, doubts, supports }
+  const score = Math.max(0, Math.min(ceiling, Math.round(core + bonus)))
+  return { score, band, doubts, supports, raw: { core, bonus } }
+}
+
+/** Renfort apporté par deux photos jugées identiques. Volontairement modeste : deux
+ *  filtres noirs ronds se ressemblent sans porter la même référence. */
+const VISUAL_ECHO_BONUS = 8
+
+/**
+ * Réévalue un indice une fois le verdict des PHOTOS connu.
+ *
+ * Pourquoi à part, et pas dans `scorePair` : les verdicts visuels sont lus par un autre
+ * chemin et arrivent APRÈS l'appariement. Les injecter en amont obligerait à relancer
+ * `pairSiteListings` — une passe en O(produits) sur des dizaines de milliers de lignes —
+ * à chaque fois qu'ils tombent. Ici le recoud coûte une soustraction par ligne.
+ *
+ * Asymétrie assumée, conforme à la règle du fichier :
+ *   - `different` est une CONTRADICTION observée sur les objets eux-mêmes → il retranche,
+ *     et peut faire changer de bande ;
+ *   - `same` n'est qu'un renfort → il monte le score À L'INTÉRIEUR de sa bande. Deux
+ *     photos qui se ressemblent ne prouvent pas une référence ;
+ *   - `unclear` ne fait rien : un visuel source remplacé par un logo générique est le cas
+ *     ordinaire, pas un indice.
+ */
+export function withVisual(c: Confidence, verdict: VisualCall): Confidence {
+  if (verdict === 'unclear') return c
+  if (verdict === 'same') {
+    if (c.supports.includes('visual-echo')) return c
+    return finalize(c.raw.core, c.raw.bonus + VISUAL_ECHO_BONUS, c.doubts, [...c.supports, 'visual-echo'])
+  }
+  if (c.doubts.includes('visual-conflict')) return c
+  return finalize(c.raw.core - PENALTY['visual-conflict'], c.raw.bonus, [...c.doubts, 'visual-conflict'], c.supports)
 }
 
 /** Mots significatifs partagés par les deux libellés, hors nombres — un même chiffre de

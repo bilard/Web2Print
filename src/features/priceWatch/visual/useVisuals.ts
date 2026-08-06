@@ -2,7 +2,7 @@
 // travail du node « Comparer les visuels », l'écran ne fait que restituer ce qu'elle a
 // produit — sinon consulter un onglet déclencherait des appels payants à l'insu de qui
 // regarde.
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { loadVisuals, urlKey, type StoredVisual, type VisualMap } from './visualStore'
 import { debugLog } from '@/lib/debugLog'
@@ -33,9 +33,10 @@ export function useVisuals(watchId: string | null, siteId: string | null): Visua
     return () => { cancelled = true }
   }, [uid, watchId, siteId])
 
-  return {
-    of: (url: string) => map.get(urlKey(url)) ?? null,
-    size: map.size,
-    loading,
-  }
+  // ⚠ Identité STABLE tant que la carte ne change pas : `of` sert de dépendance à des
+  // mémos qui parcourent des centaines de milliers de lignes. Recréé à chaque rendu, il
+  // les faisait tous rejouer pour rien.
+  const of = useCallback((url: string) => map.get(urlKey(url)) ?? null, [map])
+
+  return { of, size: map.size, loading }
 }

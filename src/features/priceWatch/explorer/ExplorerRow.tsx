@@ -10,7 +10,7 @@ import type { Verdict } from './verdictStore'
 import type { StoredVisual } from '../visual/visualStore'
 import { highlightKey, proofSpot } from './proofHighlight'
 import type { PairedRow } from './pairing'
-import type { ConfidenceBand, DoubtReason } from './confidence'
+import type { ConfidenceBand, DoubtReason, SupportReason } from './confidence'
 import type { CompetitorListing } from '../catalog/prestashop'
 import { discountPct } from './pairing'
 import { eur, pct } from '../dashboard/format'
@@ -74,6 +74,16 @@ const DOUBT_LABEL: Record<DoubtReason, TranslationKey> = {
   'price-gulf': 'pwx.doubt.priceGulf',
   'price-abyss': 'pwx.doubt.priceAbyss',
   'family-conflict': 'pwx.doubt.familyConflict',
+  'visual-conflict': 'pwx.doubt.visualConflict',
+}
+
+/** Ce qui CORROBORE. Affiché depuis que les photos entrent dans l'indice : sans cette
+ *  liste, un score monté par un renfort n'avait aucune justification lisible. */
+const SUPPORT_LABEL: Record<SupportReason, TranslationKey> = {
+  'ean-echo': 'pwx.support.eanEcho',
+  'ref-echo': 'pwx.support.refEcho',
+  'title-echo': 'pwx.support.titleEcho',
+  'visual-echo': 'pwx.support.visualEcho',
 }
 
 const STOCK_LABEL: Record<string, { key: TranslationKey; cls: string }> = {
@@ -224,6 +234,7 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict
         t('pwx.trust.score', { score: confidence.score }),
         ...(proofLabel ? [t('pwx.trust.proof', { what: t(proofLabel) })] : []),
         ...confidence.doubts.map((d) => `• ${t(DOUBT_LABEL[d])}`),
+        ...confidence.supports.map((s) => `+ ${t(SUPPORT_LABEL[s])}`),
       ].join('\n')
     : ''
 

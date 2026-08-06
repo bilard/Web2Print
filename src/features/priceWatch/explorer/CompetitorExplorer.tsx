@@ -24,6 +24,7 @@ import { ExplorerRow } from './ExplorerRow'
 import { ExplorerTaxonomyTree } from './ExplorerTaxonomyTree'
 import { ExplorerSourceSettings } from './ExplorerSourceSettings'
 import { pairSiteListings } from './pairing'
+import { withVisual } from './confidence'
 import { buildTokenIndex, filterRows, EMPTY_EXPLORER_FILTER, type ExplorerFilter } from './filters'
 import { computeStats } from './stats'
 import { rowsToCsv } from './exportCsv'
@@ -68,7 +69,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   // Appariement + écarts : recalculés quand le site OU le catalogue change. Sur des
   // dizaines de milliers de produits l'opération est en O(produits) sur un index en
   // mémoire — quelques centaines de ms, une seule fois par onglet.
-  const rows = useMemo(
+  const paired = useMemo(
     () => {
       if (!active || listings.length === 0) return []
       const t0 = performance.now()
@@ -84,6 +85,18 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
     },
     [active, listings, source.products, source.vatRate, extras, src.imagePrefix, src.productUrl],
   )
+  // Le verdict des PHOTOS pèse dans l'indice — c'est le seul démenti qui porte sur les
+  // objets et non sur des chaînes de caractères. Recousu ICI et non dans `pairSiteListings` :
+  // les verdicts arrivent par un autre chemin, longtemps après l'appariement, et les
+  // injecter en amont relancerait toute la passe de jointure à chaque fois qu'ils tombent.
+  const rows = useMemo(() => {
+    if (visuals.size === 0) return paired
+    return paired.map((r) => {
+      if (!r.confidence) return r
+      const v = visuals.of(r.key)
+      return v ? { ...r, confidence: withVisual(r.confidence, v.verdict) } : r
+    })
+  }, [paired, visuals.of, visuals.size])
   const tokenIndex = useMemo(() => buildTokenIndex(rows), [rows])
   // Sans catalogue source, TOUTES les fiches sont orphelines : garder le filtre « appariés
   // seulement » viderait l'écran et ferait croire à une collecte vide.

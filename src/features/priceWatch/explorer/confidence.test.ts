@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { scorePair, type PairSignals } from './confidence'
+import { scorePair, withVisual, type PairSignals } from './confidence'
 
 const base = (over: Partial<PairSignals> = {}): PairSignals => ({
   evidence: 'ref-in-title', key: { weak: false, origin: false }, ...over,
@@ -233,5 +233,43 @@ describe('scorePair — les renforts', () => {
       sourceName: 'Courroie tondeuse Stiga renforcée', listingName: 'Courroie tondeuse Stiga renforcée',
     }))
     expect(c.score).toBe(100)
+  })
+})
+
+describe('withVisual — le seul démenti qui porte sur les OBJETS', () => {
+  const acquis = () => scorePair(base({ evidence: 'sku', sourceRef: 'ABC123', listingRef: 'ABC123' }))
+
+  it('fait tomber un appariement dont les photos montrent deux objets différents', () => {
+    const c = withVisual(acquis(), 'different')
+    expect(c.doubts).toContain('visual-conflict')
+    expect(c.band).toBe('doubt')
+  })
+
+  it('ne touche à RIEN sur « indéterminé » : un logo générique n’est pas un indice', () => {
+    const before = acquis()
+    expect(withVisual(before, 'unclear')).toBe(before)
+  })
+
+  it('« même pièce » monte le score SANS changer de bande : deux photos ne prouvent pas une référence', () => {
+    const before = scorePair(base({ evidence: 'ref-in-title', keyValue: '1103647' }))
+    expect(before.band).toBe('check')
+    const after = withVisual(before, 'same')
+    expect(after.supports).toContain('visual-echo')
+    expect(after.score).toBeGreaterThan(before.score)
+    expect(after.band).toBe('check')
+  })
+
+  it('est idempotent : rejouer le même verdict ne cumule pas', () => {
+    const once = withVisual(acquis(), 'different')
+    expect(withVisual(once, 'different')).toBe(once)
+    const up = withVisual(acquis(), 'same')
+    expect(withVisual(up, 'same')).toBe(up)
+  })
+
+  it('un code-barres déclaré des deux côtés survit à des photos contredites, en « à vérifier »', () => {
+    // Le visuel source est souvent un logo maison ou une prise de vue sous un autre angle :
+    // condamner un GTIN identique sur cette seule base ferait plus de dégâts qu'il n'en évite.
+    const gtin = scorePair(base({ evidence: 'gtin13', sourceEan: '4049582395377', listingEan: '4049582395377' }))
+    expect(withVisual(gtin, 'different').band).toBe('check')
   })
 })
