@@ -315,6 +315,7 @@ export function SourceSitesConfig({ config, onChange }: {
             {nStatus('ok') > 0 && filterPill('ok', nStatus('ok'), 'ok', 'OK')}
             {nStatus('empty') > 0 && filterPill('empty', nStatus('empty'), 'warn', 'sans produit')}
             {nStatus('error') > 0 && filterPill('error', nStatus('error'), 'err', 'sans catalogue')}
+            {nStatus('directed') > 0 && filterPill('directed', nStatus('directed'), 'mute', 'recherche seule')}
             {nStatus('never') > 0 && filterPill('never', nStatus('never'), 'mute', 'jamais')}
             {statusFilter && (
               <button onClick={() => setStatusFilter(null)} className="text-[10px] text-indigo-400/80 hover:text-indigo-300 px-1" title="Retirer le filtre">

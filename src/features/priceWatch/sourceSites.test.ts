@@ -204,3 +204,27 @@ describe('statut « attend le cycle »', () => {
     expect(siteStatusRank('waiting')).toBeLessThan(siteStatusRank('ok'))
   })
 })
+
+describe('marketplace : 0 page moissonnée n’est pas une panne', () => {
+  // Cas RÉEL : amazon.fr affichait « ✗ Sans catalogue · 0 page » en rouge, juste à côté
+  // de « fiches 2 · appariés 2 ». Une marketplace n'est PAS moissonnable (accueil
+  // anti-bot → aucune catégorie cible) ; elle n'est atteinte que par la recherche
+  // dirigée. Le rouge se lisait comme une panne alors que c'est le mode prévu.
+  const base = { enabled: true, live: false, lastPassAt: 1_000, lastPassPages: 0 }
+
+  it('classe en « recherche seule » un site sans page moissonnée MAIS avec des fiches', () => {
+    expect(siteStatus({ ...base, productCount: 2 })).toBe('directed')
+  })
+
+  it('reste une ERREUR quand rien n’a jamais été indexé', () => {
+    // Là, 0 page ET 0 fiche : le site est réellement inaccessible, il faut le dire.
+    expect(siteStatus({ ...base, productCount: 0 })).toBe('error')
+    expect(siteStatus(base)).toBe('error')
+  })
+
+  it('ne prend pas le pas sur « en cours » ni sur l’attente de cycle', () => {
+    expect(siteStatus({ ...base, live: true, productCount: 2 })).toBe('live')
+    expect(siteStatus({ ...base, cycleWaitingAt: 2_000, productCount: 2 })).toBe('waiting')
+    expect(siteStatus({ ...base, enabled: false, productCount: 2 })).toBe('disabled')
+  })
+})

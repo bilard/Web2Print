@@ -12,7 +12,7 @@ import { stableId } from '@/features/priceWatch/core'
 import { t } from '@/lib/i18n'
 
 /** Ordre d'attention des pastilles de filtre (le plus urgent d'abord). */
-const FILTERS: SiteStatus[] = ['live', 'error', 'empty', 'ok', 'never']
+const FILTERS: SiteStatus[] = ['live', 'error', 'empty', 'directed', 'ok', 'never']
 
 const PILL_TONE: Record<'ok' | 'warn' | 'err' | 'mute', { fg: string; bg: string; border: string }> = {
   ok: { fg: 'var(--radar-live)', bg: 'rgba(48, 209, 88, 0.12)', border: 'rgba(48, 209, 88, 0.3)' },

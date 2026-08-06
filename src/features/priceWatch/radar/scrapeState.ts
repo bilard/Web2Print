@@ -184,7 +184,7 @@ export function buildScrapeRows(
 
 /** Compte des lignes par statut (pastilles de filtre de l'onglet Scraping). */
 export function countByStatus(rows: ScrapeRow[]): Record<SiteStatus, number> {
-  const out = { live: 0, error: 0, empty: 0, waiting: 0, ok: 0, never: 0, disabled: 0 }
+  const out = { live: 0, error: 0, empty: 0, waiting: 0, directed: 0, ok: 0, never: 0, disabled: 0 }
   for (const r of rows) out[r.status] += 1
   return out
 }

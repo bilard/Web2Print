@@ -4552,6 +4552,8 @@ export const es: Record<TranslationKey, string> = {
   'pw.site.emptyShort': 'sin producto',
   'pw.site.waiting': 'Esperando el ciclo',
   'pw.site.waitingShort': 'en espera',
+  'pw.site.directed': 'Solo búsqueda dirigida',
+  'pw.site.directedShort': 'solo búsqueda',
   'pw.site.error': 'Sin catálogo',
   'pw.site.errorShort': 'sin catálogo',
   'pw.site.never': 'Nunca',

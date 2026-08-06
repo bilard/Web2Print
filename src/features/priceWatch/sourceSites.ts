@@ -87,10 +87,10 @@ export const HARVEST_LIVE_WINDOW_MS = 3 * 60_000
 
 /** Statut d'un site dérivé de ses stats, pour le tri et l'affichage. Ordre = priorité
  *  d'attention (le plus urgent en premier). */
-export type SiteStatus = 'live' | 'error' | 'empty' | 'waiting' | 'ok' | 'never' | 'disabled'
+export type SiteStatus = 'live' | 'error' | 'empty' | 'waiting' | 'directed' | 'ok' | 'never' | 'disabled'
 
 const STATUS_RANK: Record<SiteStatus, number> = {
-  live: 0, error: 1, empty: 2, waiting: 3, ok: 4, never: 5, disabled: 6,
+  live: 0, error: 1, empty: 2, waiting: 3, directed: 4, ok: 5, never: 6, disabled: 7,
 }
 
 export interface SiteStatusInput {
@@ -123,7 +123,12 @@ export function siteStatus(s: SiteStatusInput): SiteStatus {
   // pouvait pas distinguer « attend son tour » de « ne se lance plus ». Le marqueur est
   // postérieur à la dernière passe RÉELLE : dès qu'il moissonne, il repasse en OK.
   if ((s.cycleWaitingAt ?? 0) > s.lastPassAt) return 'waiting'
-  if ((s.lastPassPages ?? 0) === 0) return 'error'
+  // ⚠ MÊME RAISONNEMENT QUE CI-DESSUS, autre symptôme. Zéro page moissonnée n'est pas
+  // un échec quand le site porte des fiches : une MARKETPLACE n'est pas moissonnable par
+  // construction (accueil anti-bot → aucune catégorie cible), elle n'est atteinte que par
+  // la RECHERCHE DIRIGÉE. Afficher « ✗ Sans catalogue » en rouge juste à côté de
+  // « fiches 2 » se lit comme une panne, alors que c'est le mode de fonctionnement prévu.
+  if ((s.lastPassPages ?? 0) === 0) return (s.productCount ?? 0) > 0 ? 'directed' : 'error'
   if ((s.lastPassProducts ?? 0) === 0) return 'empty'
   return 'ok'
 }
@@ -140,6 +145,7 @@ export const SITE_STATUS_META: Record<SiteStatus, { labelKey: TranslationKey; sh
   ok:       { labelKey: 'pw.site.ok',      shortKey: 'pw.site.ok',           icon: '✓', tone: 'ok' },
   empty:    { labelKey: 'pw.site.empty',   shortKey: 'pw.site.emptyShort',   icon: '⚠', tone: 'warn' },
   waiting:  { labelKey: 'pw.site.waiting', shortKey: 'pw.site.waitingShort', icon: '⏸', tone: 'mute' },
+  directed: { labelKey: 'pw.site.directed', shortKey: 'pw.site.directedShort', icon: '⌖', tone: 'mute' },
   error:    { labelKey: 'pw.site.error',   shortKey: 'pw.site.errorShort',   icon: '✗', tone: 'err' },
   never:    { labelKey: 'pw.site.never',   shortKey: 'pw.site.neverShort',   icon: '○', tone: 'mute' },
   disabled: { labelKey: 'pw.tail.disabled', shortKey: 'pw.tail.disabledShort', icon: '—', tone: 'mute' },

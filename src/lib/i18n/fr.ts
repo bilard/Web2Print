@@ -4714,6 +4714,8 @@ export const fr = {
   'pw.site.emptyShort': 'sans produit',
   'pw.site.waiting': 'Attend le cycle',
   'pw.site.waitingShort': 'en attente',
+  'pw.site.directed': 'Recherche seule',
+  'pw.site.directedShort': 'recherche seule',
   'pw.site.error': 'Sans catalogue',
   'pw.site.errorShort': 'sans catalogue',
   'pw.site.never': 'Jamais',

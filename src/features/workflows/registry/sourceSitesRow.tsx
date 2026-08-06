@@ -70,7 +70,7 @@ const TONE_BADGE: Record<'ok' | 'warn' | 'err' | 'mute', string> = {
 
 /** Badge de statut d'une ligne : mot LISIBLE (OK / Sans produit / Bloqué / Jamais) +
  *  détail chiffré, sans dépendre du tooltip. null pour un site désactivé (ligne grisée). */
-function statusBadge(status: 'ok' | 'empty' | 'error' | 'waiting' | 'never' | 'disabled', s: SiteRowStats): { cls: string; icon: string; label: string; detail: string; title: string } | null {
+function statusBadge(status: 'ok' | 'empty' | 'error' | 'waiting' | 'directed' | 'never' | 'disabled', s: SiteRowStats): { cls: string; icon: string; label: string; detail: string; title: string } | null {
   if (status === 'disabled') return null
   const meta = SITE_STATUS_META[status]
   const pages = s.lastPassPages ?? 0
@@ -78,13 +78,16 @@ function statusBadge(status: 'ok' | 'empty' | 'error' | 'waiting' | 'never' | 'd
   const detail =
     status === 'ok' ? `+${products.toLocaleString('fr-FR')}` :
     status === 'empty' ? `${pages} p` :
-    status === 'error' ? '0 page' : ''
+    status === 'error' ? '0 page' :
+    status === 'directed' ? `${(s.products ?? 0).toLocaleString('fr-FR')} fiches` : ''
   const engineLabel = s.lastEngine ? (ENGINE_LABELS[s.lastEngine] ?? s.lastEngine) : null
   const title =
     status === 'ok' ? `Dernière passe : ${products} produit(s) indexé(s) sur ${pages} page(s)` :
     status === 'empty' ? `${pages} page(s) lue(s) mais aucun produit extrait — gabarit de liste non reconnu ?` :
     status === 'waiting'
       ? 'Son balayage est TERMINÉ. Le mode cycle attend que tous les concurrents aient fini avant d’en rouvrir un pour tous — ce site ne repartira donc qu’à la fin du cycle. Désactive le cycle dans le planning si tu veux qu’il reparte tout de suite.' :
+    status === 'directed'
+      ? 'Ce site n\u2019est PAS moissonnable : son accueil ne rend aucune cat\u00e9gorie cible (marketplace / anti-bot). Il est aliment\u00e9 par la \u00ab Recherche dirig\u00e9e \u00bb, r\u00e9f\u00e9rence par r\u00e9f\u00e9rence \u2014 ce qui est le mode de fonctionnement pr\u00e9vu, pas une panne. Ses fiches sont bien index\u00e9es.' :
     status === 'error'
       ? (engineLabel
           ? `Page bien récupérée (via ${engineLabel}) mais AUCUN catalogue PrestaShop trouvé — marketplace ou structure non reconnue. Utilise la « Recherche dirigée » pour ce site.`
@@ -142,7 +145,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
     lastPassProducts: stats.lastPassProducts, cycleWaitingAt: stats.cycleWaitingAt,
     productCount: stats.products,
   })
-  const badge = status === 'live' ? null : statusBadge(status as 'ok' | 'empty' | 'error' | 'waiting' | 'never' | 'disabled', stats)
+  const badge = status === 'live' ? null : statusBadge(status as 'ok' | 'empty' | 'error' | 'waiting' | 'directed' | 'never' | 'disabled', stats)
   // Le verdict vient de tomber (< 2 min) → pop d'apparition pour attirer l'œil.
   const fresh = stats.lastPassAt != null && now - stats.lastPassAt < 2 * 60_000
   // « En cours » = heartbeat de moisson récent OU relance manuelle immédiate (bouton ▶) :
