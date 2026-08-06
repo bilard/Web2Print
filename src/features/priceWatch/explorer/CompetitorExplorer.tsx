@@ -153,7 +153,10 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
           <div className="flex items-center gap-2 text-[11px] text-amber-200/80 whitespace-nowrap">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             {source.progress.total > 0
-              ? t('pwx.source.pending.progress', { done: source.progress.done, total: source.progress.total })
+              ? t('pwx.source.pending.progress', {
+                  done: source.progress.done, total: source.progress.total,
+                  count: source.progress.expected.toLocaleString('fr-FR'),
+                })
               : t('pwx.source.pending')}
           </div>
         ) : (

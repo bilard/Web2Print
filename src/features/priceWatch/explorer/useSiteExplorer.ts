@@ -25,8 +25,9 @@ export interface SourceCatalogState {
   expected: number
   /** Lignes reçues par le node « Comparer catalogue » lors de cette écriture. */
   sourceRows: number
-  /** Avancement de la relecture, en TRANCHES (0/0 tant que `_meta` n'a pas répondu). */
-  progress: { done: number; total: number }
+  /** Avancement de la relecture, en TRANCHES (0/0 tant que `_meta` n'a pas répondu).
+   *  `expected` = produits annoncés, connu dès la première réponse. */
+  progress: { done: number; total: number; expected: number }
   /** Poids relu et part d'affichage seul (cf. LoadedSourceCatalog), + durée. */
   bytes: number
   displayBytes: number
@@ -35,7 +36,7 @@ export interface SourceCatalogState {
 
 const IDLE_SOURCE: SourceCatalogState = {
   products: [], vatRate: DEFAULT_VAT_RATE, loading: false, absent: false,
-  partial: false, expected: 0, sourceRows: 0, progress: { done: 0, total: 0 },
+  partial: false, expected: 0, sourceRows: 0, progress: { done: 0, total: 0, expected: 0 },
   bytes: 0, displayBytes: 0, ms: 0,
 }
 
@@ -47,10 +48,13 @@ export function useSourceCatalog(watchId: string | null): SourceCatalogState {
   useEffect(() => {
     if (!uid || !watchId) { setState(IDLE_SOURCE); return }
     let cancelled = false
-    setState((s) => ({ ...s, loading: true, progress: { done: 0, total: 0 } }))
+    setState((s) => ({ ...s, loading: true, progress: { done: 0, total: 0, expected: 0 } }))
     const t0 = performance.now()
-    loadSourceCatalog(uid, watchId, (done, total) => {
-      if (!cancelled) setState((s) => ({ ...s, progress: { done, total } }))
+    // Tracé à CHAQUE entrée : si cette ligne se répète, la lenteur n'est pas la lecture
+    // mais un effet qui se relance (la progression repartirait sans cesse de zéro).
+    debugLog('[pw-explorer] relecture du catalogue source — début')
+    loadSourceCatalog(uid, watchId, (done, total, expected) => {
+      if (!cancelled) setState((s) => ({ ...s, progress: { done, total, expected } }))
     })
       .then((src) => {
         if (cancelled) return

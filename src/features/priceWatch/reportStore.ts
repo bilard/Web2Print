@@ -131,8 +131,10 @@ const SOURCE_READ_BATCH = 8
 
 export async function loadSourceCatalog(
   uid: string, watchId: string,
-  /** Progression de la relecture (tranches lues / total), pour l'afficher. */
-  onProgress?: (done: number, total: number) => void,
+  /** Progression de la relecture. `expected` (produits annoncés par `_meta`) est connu
+   *  AVANT la première tranche : c'est lui qui dit si le découpage bute sur le plafond
+   *  de 2 000 produits ou sur celui de 900 Ko — donc ce que pèse vraiment le catalogue. */
+  onProgress?: (done: number, total: number, expected: number) => void,
 ): Promise<LoadedSourceCatalog | null> {
   const col = sourceCol(uid, watchId)
   const meta = await getDoc(doc(db, col, '_meta'))
@@ -150,7 +152,7 @@ export async function loadSourceCatalog(
   const products: SourceProduct[] = []
   const t0 = performance.now()
   let weight: { bytes: number; display: number } | null = null
-  onProgress?.(0, chunks)
+  onProgress?.(0, chunks, expected)
   // Lots parallèles, remis dans l'ORDRE des tranches : le catalogue garde l'ordre du
   // node « Comparer », et une tranche absente est ignorée exactement comme avant (c'est
   // ce que le contrôle `products.length < expected - 5` en dessous doit voir).
@@ -165,7 +167,7 @@ export async function loadSourceCatalog(
       if (!weight && slice.length > 0) weight = weighChunk(slice)
       products.push(...slice)
     }
-    onProgress?.(Math.min(start + SOURCE_READ_BATCH, chunks), chunks)
+    onProgress?.(Math.min(start + SOURCE_READ_BATCH, chunks), chunks, expected)
   }
   // Tolérance : le compte doit coller à quelques unités près (une tranche manquante en
   // coûte des centaines). Sous ce seuil, tout consommateur doit s'abstenir.

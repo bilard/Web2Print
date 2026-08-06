@@ -5580,7 +5580,7 @@ export const fr = {
   'pwx.src.weight': '{mb} Mo relus en {s} s',
   'pwx.src.weight.help': 'Le catalogue source est relu INTÉGRALEMENT à chaque ouverture de cet écran (aucune donnée n’est mise en cache). Description, visuel et taxonomie y pèsent le plus lourd, alors qu’ils ne servent qu’à afficher les lignes visibles.',
   'pwx.source.pending': 'Lecture du catalogue source…',
-  'pwx.source.pending.progress': 'Lecture du catalogue source… {done}/{total} tranches',
+  'pwx.source.pending.progress': 'Lecture du catalogue source… {done}/{total} tranches ({count} produits)',
   'pwx.source.pending.hint': 'Calculé une fois le catalogue source relu — les fiches ci-dessous sont déjà consultables.',
   'pwx.stats.matched.help': 'Fiches reliées à un produit de votre catalogue (EAN, référence ou réf d’origine).',
   'pwx.stats.orphans.help': 'Fiches sans équivalent dans votre catalogue — son offre que vous ne référencez pas.',

@@ -5387,7 +5387,7 @@ export const es: Record<TranslationKey, string> = {
   'pwx.src.weight': '{mb} MB leídos en {s} s',
   'pwx.src.weight.help': 'El catálogo de origen se lee ÍNTEGRAMENTE cada vez que se abre esta pantalla (no se almacena nada en caché). La descripción, la imagen y la taxonomía son lo que más pesa, aunque solo sirven para mostrar las filas visibles.',
   'pwx.source.pending': 'Leyendo el catálogo de origen…',
-  'pwx.source.pending.progress': 'Leyendo el catálogo de origen… {done}/{total} porciones',
+  'pwx.source.pending.progress': 'Leyendo el catálogo de origen… {done}/{total} porciones ({count} productos)',
   'pwx.source.pending.hint': 'Se calcula cuando se haya leído el catálogo de origen; las fichas de abajo ya se pueden consultar.',
   'pwx.stats.matched.help': 'Fichas vinculadas a un producto de su catálogo (EAN, referencia o ref. de origen).',
   'pwx.stats.orphans.help': 'Fichas sin equivalente en su catálogo — su oferta que usted no referencia.',
