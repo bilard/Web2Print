@@ -64,15 +64,22 @@ export function useSourceSheet(watchId: string | null): SourceSheetState {
   // localStorage reste le repli hors ligne et la valeur d'amorçage avant réponse.
   const touched = useRef(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pending = useRef<ExplorerPrefs>({})
   const push = (patch: ExplorerPrefs) => {
     touched.current = true
     if (!uid || !watchId) return
+    // ⚠ On publie UNIQUEMENT le réglage modifié. Envoyer l'état complet du hook faisait
+    // qu'un simple changement de base source réécrivait le préfixe et le gabarit d'URL
+    // avec les valeurs de CE navigateur — vides le plus souvent — et effaçait pour tout
+    // le monde le lien vers la fiche F1. `merge: true` fusionne map par map.
+    pending.current = { ...pending.current, ...patch }
     // Le préfixe se saisit lettre par lettre : sans ce délai, chaque frappe écrirait
     // dans Firestore.
     if (timer.current) clearTimeout(timer.current)
-    const snapshot = { dbId, imagePrefix, productUrl, ...patch }
     timer.current = setTimeout(() => {
-      saveExplorerPrefs(uid, watchId, snapshot)
+      const batch = pending.current
+      pending.current = {}
+      saveExplorerPrefs(uid, watchId, batch)
         .catch((e) => console.warn('[pw-explorer] réglages non partagés', e))
     }, 700)
   }
@@ -99,9 +106,13 @@ export function useSourceSheet(watchId: string | null): SourceSheetState {
         }
         // Ne JAMAIS écraser une saisie en cours : le distant n'amorce que tant que
         // l'utilisateur n'a rien touché sur cet écran.
-        if (typeof prefs.dbId === 'string') { setDbIdState(prefs.dbId); setPicked(null) }
-        if (typeof prefs.imagePrefix === 'string') setPrefixState(prefs.imagePrefix)
-        if (typeof prefs.productUrl === 'string') setProductUrlState(prefs.productUrl)
+        // ⚠ Une valeur VIDE côté suivi n'écrase rien : elle n'apporte aucun réglage, et
+        // des suivis en portent déjà (écrites par la première version de ce partage, qui
+        // publiait l'état complet du hook). Contrepartie assumée : vider un champ ne se
+        // propage pas aux autres membres — mieux que d'effacer un réglage qui marche.
+        if (prefs.dbId) { setDbIdState(prefs.dbId); setPicked(null) }
+        if (prefs.imagePrefix) setPrefixState(prefs.imagePrefix)
+        if (prefs.productUrl) setProductUrlState(prefs.productUrl)
       })
       .catch(() => { /* réglages partagés illisibles : on garde ceux du navigateur */ })
     return () => { cancelled = true }
