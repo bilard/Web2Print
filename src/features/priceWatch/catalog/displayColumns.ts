@@ -13,7 +13,15 @@ function foldHeaderName(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
-const DESCRIPTION = ['description', 'descriptif', 'desc', 'caracteristiques', 'commentaire']
+// ⚠ Le TEXTE DE VENTE passe AVANT « description ». Sur les exports ERP qui portent les
+// deux, la colonne « DESCRIPTION » recopie le plus souvent le libellé (« PNEU 13 X 500
+// X 6 » deux fois de suite à l'écran) tandis que « TEXT_VENTE » porte le vrai argumentaire
+// commercial — celui qui permet de trancher « est-ce bien la même pièce ? ». Une feuille
+// qui n'a que l'une des deux n'est pas concernée par cet ordre.
+const DESCRIPTION = [
+  'textvente', 'textevente', 'textedevente', 'texteventeweb',
+  'description', 'descriptif', 'desc', 'caracteristiques', 'commentaire',
+]
 const IMAGE = ['pathphoto', 'photo', 'image', 'visuel', 'img', 'illustration', 'urlimage', 'picture']
 
 /** Niveaux de taxonomie, du plus large au plus fin. Alias DISJOINTS : « sous-famille »

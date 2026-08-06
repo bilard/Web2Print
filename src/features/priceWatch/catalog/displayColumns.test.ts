@@ -60,3 +60,32 @@ describe('trimDescription', () => {
     expect(trimDescription(null)).toBeUndefined()
   })
 })
+
+describe('colonne TEXT_VENTE', () => {
+  it('retient le texte de vente PLUTÔT que la colonne « DESCRIPTION »', () => {
+    // Cas VÉCU sur le catalogue F1 : « DESCRIPTION » recopie le libellé, « TEXT_VENTE »
+    // porte l'argumentaire. Retenir la première affichait le nom deux fois de suite.
+    const cols = [
+      { key: 'LIBELLE', label: 'Désignation' },
+      { key: 'DESCRIPTION', label: 'Description' },
+      { key: 'TEXT_VENTE', label: 'Texte de vente' },
+    ]
+    expect(pickDisplayColumns(cols).description).toBe('TEXT_VENTE')
+  })
+
+  it('reconnaît les écritures usuelles du texte de vente', () => {
+    for (const key of ['TEXT_VENTE', 'TEXTE_VENTE', 'Texte de vente', 'texteVenteWeb']) {
+      expect(pickDisplayColumns([{ key }]).description).toBe(key)
+    }
+  })
+
+  it('ne change RIEN sur une feuille sans texte de vente', () => {
+    const cols = [{ key: 'LIBELLE' }, { key: 'DESCRIPTIF' }]
+    expect(pickDisplayColumns(cols).description).toBe('DESCRIPTIF')
+  })
+
+  it('la colonne saisie dans le node prime toujours sur la détection', () => {
+    const cols = [{ key: 'DESCRIPTION' }, { key: 'TEXT_VENTE' }]
+    expect(pickDisplayColumns(cols, { description: 'DESCRIPTION' }).description).toBe('DESCRIPTION')
+  })
+})

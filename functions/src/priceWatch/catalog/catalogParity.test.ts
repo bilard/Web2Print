@@ -160,6 +160,12 @@ describe('displayColumns (parité serveur)', () => {
       taxo: ['FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP'],
     })
   })
+  it('retient TEXT_VENTE plutôt que DESCRIPTION, comme la copie client', () => {
+    // Si ce test tombe seul, les deux copies ont divergé : reporter la modification.
+    expect(pickDisplayColumns([
+      { key: 'LIBELLE' }, { key: 'DESCRIPTION' }, { key: 'TEXT_VENTE' },
+    ]).description).toBe('TEXT_VENTE')
+  })
   it('coupe le chemin au premier niveau vide et tronque la description', () => {
     expect(taxoPathOf({ A: 'Motoculture', B: '', C: 'X' }, ['A', 'B', 'C'])).toEqual(['Motoculture'])
     expect(trimDescription('x'.repeat(400))?.endsWith('…')).toBe(true)

@@ -32,7 +32,9 @@ const ALIASES: Record<CompareField, string[]> = {
   name: ['nom', 'name', 'libelle', 'designation', 'intitule', 'produit', 'article', 'titre', 'title', 'productname'],
   family: ['famille', 'family', 'categorie', 'category', 'univers', 'rayon', 'sousfamille', 'gamme', 'segment'],
   price: ['prixht', 'prixdevente', 'prixvente', 'prixnet', 'montantht', 'tarif', 'prix', 'price', 'pricing', 'pvht', 'pv', 'unitprice'],
-  description: ['description', 'descriptif', 'desc', 'detail', 'details', 'caracteristiques', 'commentaire', 'texte'],
+  // Texte de vente en TÊTE : cf. la note de `displayColumns.ts`. Sur une feuille qui porte
+  // les deux, « DESCRIPTION » recopie le libellé et « TEXT_VENTE » porte l'argumentaire.
+  description: ['textvente', 'textevente', 'textedevente', 'texteventeweb', 'description', 'descriptif', 'desc', 'detail', 'details', 'caracteristiques', 'commentaire', 'texte'],
   url: ['urlsource', 'urlproduit', 'url', 'lienproduit', 'lien', 'pageproduit', 'producturl', 'link', 'permalink'],
 }
 
