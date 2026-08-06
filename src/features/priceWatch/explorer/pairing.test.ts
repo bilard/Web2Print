@@ -56,8 +56,8 @@ describe('pairSiteListings', () => {
     const rows = pairSiteListings(products, 's1', listings, {
       vatRate: 0.2,
       extras: (p) => (p.id === 'p1'
-        ? { description: 'Courroie renforcée', images: ['https://f1/img.jpg'], path: ['Motoculture', 'Courroies'] }
-        : { description: null, images: [], path: [] }),
+        ? { description: 'Courroie renforcée', url: null, images: ['https://f1/img.jpg'], path: ['Motoculture', 'Courroies'] }
+        : { description: null, url: null, images: [], path: [] }),
     })
     const courroie = rows.find((r) => r.key.endsWith('/courroie'))!
     expect(courroie.source?.description).toBe('Courroie renforcée')

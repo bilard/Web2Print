@@ -5571,6 +5571,7 @@ export const fr = {
   'pwx.showMore': 'Afficher {count} de plus ({total} au total)',
   'pwx.link.indexed': '· {count} lignes indexées',
   'pwx.link.descCol': ' · description « {col} »',
+  'pwx.link.urlCol': ' · lien produit « {col} »',
   'pwx.link.imgCols': ' · visuels « {cols} »',
   'pwx.stats.iWin': 'Je gagne',
   'pwx.stats.promos': 'Promos',

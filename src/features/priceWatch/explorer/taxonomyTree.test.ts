@@ -25,7 +25,7 @@ listings.push({ url: 'https://c.fr/orphan', name: 'Inconnu', ref: 'ZZZ', price: 
 
 const rows = pairSiteListings(products, 's1', listings, {
   vatRate: 0.2,
-  extras: (p) => ({ description: null, images: [], path: PATHS[p.id] ?? [] }),
+  extras: (p) => ({ description: null, url: null, images: [], path: PATHS[p.id] ?? [] }),
 })
 
 describe('buildTaxoTree', () => {
@@ -51,7 +51,7 @@ describe('buildTaxoTree', () => {
   it('ne crée pas de nœud fantôme quand un niveau intermédiaire est vide', () => {
     const partial = pairSiteListings(products.slice(0, 1), 's1', listings.slice(0, 1), {
       // Sous-famille absente : le chemin doit s'arrêter à la famille.
-      extras: () => ({ description: null, images: [], path: ['Motoculture'] }),
+      extras: () => ({ description: null, url: null, images: [], path: ['Motoculture'] }),
     })
     const tree = buildTaxoTree(partial)
     expect(tree.roots).toHaveLength(1)

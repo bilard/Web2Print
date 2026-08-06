@@ -28,6 +28,9 @@ const TAXO_LEVELS: { label: string; aliases: string[] }[] = [
 export interface SourceExtrasIndex {
   /** Colonnes retenues (affichées à l'utilisateur : la détection doit être vérifiable). */
   descriptionKey: string | null
+  /** Colonne portant l'adresse de MA fiche produit. Beaucoup de catalogues la portent
+   *  déjà (« URL », « Lien produit ») : la lire évite de faire saisir un gabarit. */
+  urlKey: string | null
   imageKeys: string[]
   /** Colonnes de taxonomie par niveau (null = niveau absent de la base). */
   taxoKeys: (string | null)[]
@@ -35,12 +38,12 @@ export interface SourceExtrasIndex {
   taxoLabels: string[]
   /** Nombre de lignes indexées (0 = jointure impossible, base sans réf ni EAN). */
   size: number
-  lookup: (p: SourceProduct) => { description: string | null; images: string[]; path: string[] }
+  lookup: (p: SourceProduct) => { description: string | null; url: string | null; images: string[]; path: string[] }
 }
 
 const EMPTY: SourceExtrasIndex = {
-  descriptionKey: null, imageKeys: [], taxoKeys: [], taxoLabels: [], size: 0,
-  lookup: () => ({ description: null, images: [], path: [] }),
+  descriptionKey: null, urlKey: null, imageKeys: [], taxoKeys: [], taxoLabels: [], size: 0,
+  lookup: () => ({ description: null, url: null, images: [], path: [] }),
 }
 
 function str(v: CellValue): string {
@@ -120,10 +123,13 @@ export function buildSourceExtras(
   const refKeyCol = resolved.columns.ref
   const eanKeyCol = resolved.columns.ean
   const descKey = resolved.columns.description ?? null
+  // Devinée par `resolveCompareColumns` (alias « url », « lienproduit », « permalink »…),
+  // exactement comme le fait le node « Comparer catalogue » sur la même feuille.
+  const urlKey = resolved.columns.url ?? null
   const imageKeys = findImageKeys(columns, rows)
   const taxoKeys = findTaxoKeys(columns)
   const taxoLabels = TAXO_LEVELS.filter((_, i) => taxoKeys[i]).map((l) => l.label)
-  if (!refKeyCol && !eanKeyCol) return { ...EMPTY, descriptionKey: descKey, imageKeys, taxoKeys, taxoLabels }
+  if (!refKeyCol && !eanKeyCol) return { ...EMPTY, descriptionKey: descKey, urlKey, imageKeys, taxoKeys, taxoLabels }
 
   const byRef = new Map<string, ExcelRow>()
   const byEan = new Map<string, ExcelRow>()
@@ -140,6 +146,9 @@ export function buildSourceExtras(
 
   const extract = (row: ExcelRow) => ({
     description: descKey ? (str(row[descKey]) || null) : null,
+    // Seule une adresse absolue est un lien : une cellule qui porte une référence ou un
+    // chemin relatif produirait un lien mort, plus trompeur qu'un libellé non cliquable.
+    url: urlKey ? (/^https?:\/\//i.test(str(row[urlKey])) ? str(row[urlKey]) : null) : null,
     images: imageKeys.flatMap((k) => imageUrls(row[k], configured.imagePrefix)).slice(0, 6),
     // Chemin taxonomique : on s'arrête au premier niveau vide — « Famille > (vide) >
     // Groupe » créerait un nœud fantôme sous lequel des produits sans rapport se
@@ -153,6 +162,7 @@ export function buildSourceExtras(
 
   return {
     descriptionKey: descKey,
+    urlKey,
     imageKeys,
     taxoKeys,
     taxoLabels,
@@ -162,7 +172,7 @@ export function buildSourceExtras(
       const row = (ean && byEan.get(ean))
         || (p.ref && byRef.get(refKey(p.ref)))
         || (p.ref2 && byRef.get(refKey(p.ref2)))
-      return row ? extract(row) : { description: null, images: [], path: [] }
+      return row ? extract(row) : { description: null, url: null, images: [], path: [] }
     },
   }
 }

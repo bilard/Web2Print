@@ -5379,6 +5379,7 @@ export const en: Record<TranslationKey, string> = {
   'pwx.showMore': 'Show {count} more ({total} in total)',
   'pwx.link.indexed': '· {count} indexed rows',
   'pwx.link.descCol': '· description “{col}”',
+  'pwx.link.urlCol': '· product link “{col}”',
   'pwx.link.imgCols': '· visuals “{cols}”',
   'pwx.stats.iWin': 'I win',
   'pwx.stats.promos': 'Promos',

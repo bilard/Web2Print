@@ -30,6 +30,20 @@ describe('buildSourceExtras', () => {
     expect(idx.size).toBe(2)
   })
 
+  it('reconnaît la colonne de lien produit et n’en retient que les adresses absolues', () => {
+    const withUrl = [...columns, col('LIEN_PRODUIT', 'Lien produit')]
+    const urlRows: ExcelRow[] = [
+      { ...rows[0], LIEN_PRODUIT: 'https://f1.example/p/abc-123' },
+      // Une cellule qui ne porte pas une adresse absolue ne doit produire AUCUN lien :
+      // un href relatif pointerait vers l'app elle-même.
+      { ...rows[1], LIEN_PRODUIT: '/produits/xyz-9' },
+    ]
+    const idx = buildSourceExtras(withUrl, urlRows)
+    expect(idx.urlKey).toBe('LIEN_PRODUIT')
+    expect(idx.lookup({ id: 'p', name: '', ref: 'ABC-123' }).url).toBe('https://f1.example/p/abc-123')
+    expect(idx.lookup({ id: 'p', name: '', ref: 'XYZ-9' }).url).toBeNull()
+  })
+
   it('joint par EAN, puis par référence, en tolérant la casse et les séparateurs', () => {
     const idx = buildSourceExtras(columns, rows)
     expect(idx.lookup({ id: 'p', name: '', ean: '4049582395377' }).description).toBe('Courroie renforcée')

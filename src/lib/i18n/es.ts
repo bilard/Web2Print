@@ -5378,6 +5378,7 @@ export const es: Record<TranslationKey, string> = {
   'pwx.showMore': 'Mostrar {count} más ({total} en total)',
   'pwx.link.indexed': '· {count} filas indexadas',
   'pwx.link.descCol': '· descripción «{col}»',
+  'pwx.link.urlCol': ' · enlace de producto «{col}»',
   'pwx.link.imgCols': '· imágenes «{cols}»',
   'pwx.stats.iWin': 'Gano',
   'pwx.stats.promos': 'Promociones',

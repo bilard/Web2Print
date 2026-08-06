@@ -55,9 +55,9 @@ function kindOf(proof: { key: { origin: boolean; kind: string }; evidence: strin
 }
 
 /** Enrichissements F1 non portés par le catalogue source persisté (description, visuels). */
-export type SourceExtras = (p: SourceProduct) => { description: string | null; images: string[]; path: string[] }
+export type SourceExtras = (p: SourceProduct) => { description: string | null; url: string | null; images: string[]; path: string[] }
 
-const NO_EXTRAS: SourceExtras = () => ({ description: null, images: [], path: [] })
+const NO_EXTRAS: SourceExtras = () => ({ description: null, url: null, images: [], path: [] })
 
 /**
  * Apparie TOUTES les fiches collectées chez un concurrent au catalogue source.
@@ -126,7 +126,9 @@ export function pairSiteListings(
         ? {
             id: p.id, ref: p.ref ?? null, ean: p.ean ?? null, name: p.name,
             description, images: images.filter(Boolean),
-            priceHt: p.price ?? null, url: p.url ?? sourceUrl(p, opts.productUrl), path,
+            // Adresse de MA fiche : catalogue persisté d'abord, puis la colonne URL de la
+            // base jointe, et seulement à défaut le gabarit saisi à la main.
+            priceHt: p.price ?? null, url: p.url ?? ex?.url ?? sourceUrl(p, opts.productUrl), path,
           }
         : null,
     }

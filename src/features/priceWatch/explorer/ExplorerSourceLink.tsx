@@ -131,6 +131,9 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
           {extras.descriptionKey
             ? t('pwx.link.descCol', { col: extras.descriptionKey })
             : t('pwx.aucuneColonneDeDescription')}
+          {/* La colonne d'URL rend le gabarit inutile : le dire, sinon on cherche pourquoi
+              le nom F1 est cliquable ici et pas là. */}
+          {extras.urlKey && t('pwx.link.urlCol', { col: extras.urlKey })}
           {extras.imageKeys.length > 0
             ? t('pwx.link.imgCols', { cols: extras.imageKeys.join(' », « ') })
             : t('pwx.aucuneColonneDImage')}
