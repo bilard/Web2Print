@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { FabricImage, type Canvas, type Group, type FabricObject } from 'fabric'
 import { parseSvgToFabric, type SvgParseOptions } from './svgToFabric'
-import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/globalCanvas'
+import { globalFabricCanvas, waitForCanvas, globalFitCanvas } from '@/features/editor/globalCanvas'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { globalSave } from '@/features/editor/useAutoSave'
 
@@ -50,22 +50,6 @@ function refreshTextObjects(canvas: Canvas): void {
     }
   }
   visit(canvas.getObjects())
-}
-
-function waitForCanvas(timeoutMs: number): Promise<typeof globalFabricCanvas> {
-  return new Promise((resolve) => {
-    if (globalFabricCanvas) return resolve(globalFabricCanvas)
-    const start = Date.now()
-    const interval = setInterval(() => {
-      if (globalFabricCanvas) {
-        clearInterval(interval)
-        resolve(globalFabricCanvas)
-      } else if (Date.now() - start > timeoutMs) {
-        clearInterval(interval)
-        resolve(null)
-      }
-    }, 100)
-  })
 }
 
 type Step = 'idle' | 'reading' | 'parsing' | 'rendering' | 'done' | 'error'

@@ -23,6 +23,7 @@
  *    laisser passer les clics aux Textbox au-dessus.
  */
 
+import { lockBgRoot } from './bgLockMarker'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FabricImage, Group, Rect, Textbox } from 'fabric'
 import type { Canvas, FabricObject } from 'fabric'
@@ -77,28 +78,6 @@ const findBgImageIn = (canvas: Canvas): FabricImage | null => {
   if (root instanceof FabricImage) return root
   if (root instanceof Group) return firstImageIn(root)
   return null
-}
-
-function lockBgRoot(root: FabricObject): void {
-  // Ne touche PAS à `visible` : c'est géré séparément par run()/undoDecompose pour
-  // cacher l'image bg après décomposition (template propre sans superposition).
-  root.set({
-    selectable: false,
-    evented: false,
-    lockMovementX: true,
-    lockMovementY: true,
-    lockScalingX: true,
-    lockScalingY: true,
-    lockRotation: true,
-    hasControls: false,
-    hoverCursor: 'default',
-  })
-  if (root instanceof Group) {
-    for (const child of (root as unknown as { _objects?: FabricObject[] })._objects ?? []) {
-      child.set({ selectable: false, evented: false, hasControls: false, hoverCursor: 'default' })
-      if (child instanceof Group) lockBgRoot(child)
-    }
-  }
 }
 
 const isDecomposeOverlay = (obj: FabricObject): boolean => {

@@ -1,3 +1,4 @@
+import { captureImageDataUrl } from '@/features/editor/captureImageDataUrl'
 import { useEffect, useCallback } from 'react'
 import {
   ImagePlus,
@@ -50,19 +51,6 @@ function refreshPageThumbnail() {
     const thumbnail = canvas.toDataURL({ multiplier: 0.15, format: 'jpeg', quality: 0.5 } as any)
     updatePage(page.id, { thumbnail })
   }, 300)
-}
-
-/** Capture les pixels d'un FabricImage en data URL persistante */
-function captureImageDataUrl(target: FabricImage): string | null {
-  const el = (target as any).getElement?.() as HTMLImageElement | undefined
-  if (!el) return null
-  const c = document.createElement('canvas')
-  c.width = el.naturalWidth || el.width
-  c.height = el.naturalHeight || el.height
-  const ctx = c.getContext('2d')
-  if (!ctx) return null
-  ctx.drawImage(el, 0, 0)
-  return c.toDataURL('image/png')
 }
 
 export function NanoBanaPanel() {

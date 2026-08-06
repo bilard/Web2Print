@@ -16,31 +16,9 @@
  */
 
 import { useEffect } from 'react'
-import { Group } from 'fabric'
-import type { FabricObject } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useEditorStore } from '@/stores/editor.store'
-import { isBgLockedMarker } from './bgLockMarker'
-
-function lockBgRoot(root: FabricObject): void {
-  root.set({
-    selectable: false,
-    evented: false,
-    lockMovementX: true,
-    lockMovementY: true,
-    lockScalingX: true,
-    lockScalingY: true,
-    lockRotation: true,
-    hasControls: false,
-    hoverCursor: 'default',
-  })
-  if (root instanceof Group) {
-    for (const child of (root as unknown as { _objects?: FabricObject[] })._objects ?? []) {
-      child.set({ selectable: false, evented: false, hasControls: false, hoverCursor: 'default' })
-      if (child instanceof Group) lockBgRoot(child)
-    }
-  }
-}
+import { isBgLockedMarker, lockBgRoot } from './bgLockMarker'
 
 export function useLockBgImage(): void {
   const objectsHash = useEditorStore((s) => s.canvasObjects.length)

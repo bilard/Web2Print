@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { parseIdml } from './idmlParser'
 import { idmlToFabricObjects } from './idmlToFabric'
 import { uploadFontsToStorage, uploadImagesToStorage } from './assemblyLoader'
-import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/globalCanvas'
+import { globalFabricCanvas, waitForCanvas, globalFitCanvas } from '@/features/editor/globalCanvas'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { globalSave } from '@/features/editor/useAutoSave'
 import { useEditorStore } from '@/stores/editor.store'
@@ -10,23 +10,6 @@ import { setGlobalIdmlSource, uploadIdmlToStorage } from './idmlSource'
 import type { IdmlUploadState } from './useIdmlUpload'
 import type { IdmlDocument } from './idmlParser'
 import type { FabricObject } from 'fabric'
-
-/** Poll for globalFabricCanvas to become non-null */
-function waitForCanvas(timeoutMs: number): Promise<typeof globalFabricCanvas> {
-  return new Promise((resolve) => {
-    if (globalFabricCanvas) return resolve(globalFabricCanvas)
-    const start = Date.now()
-    const interval = setInterval(() => {
-      if (globalFabricCanvas) {
-        clearInterval(interval)
-        resolve(globalFabricCanvas)
-      } else if (Date.now() - start > timeoutMs) {
-        clearInterval(interval)
-        resolve(null)
-      }
-    }, 100)
-  })
-}
 
 type ParseStep = 'idle' | 'parsing' | 'converting' | 'rendering' | 'done' | 'error'
 

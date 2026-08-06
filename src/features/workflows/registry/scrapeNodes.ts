@@ -34,7 +34,10 @@ const TEMPLATE_OPTIONS: Array<{ value: string; label?: string; labelKey?: Transl
   { value: 'custom', labelKey: 'opt.template.custom' },
 ]
 
-function parseUrls(raw: string): string[] {
+/** Découpe une saisie multi-URL (retours à la ligne, virgules, points-virgules).
+ *  Exportée : le node « Lister les produits » lit le même genre de champ, et deux
+ *  découpages divergents feraient accepter une saisie ici et pas là. */
+export function parseUrls(raw: string): string[] {
   return raw
     .split(/[\n,;]+/)
     .map((s) => s.trim())

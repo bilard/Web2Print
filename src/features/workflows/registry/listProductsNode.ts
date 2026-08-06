@@ -5,6 +5,7 @@
 // Sortie : une feuille où chaque ligne = un produit, taguée par `site` (domaine).
 // Brique d'entrée du workflow de comparaison de prix multi-sites — chaîner avec
 // le node « Comparer les prix » puis un node Export.
+import { parseUrls } from './scrapeNodes'
 import { ListChecks } from 'lucide-react'
 import { z } from 'zod'
 import { nodeRegistry } from './index'
@@ -373,13 +374,6 @@ const COLUMNS: ExcelColumn[] = [
   { key: 'originalPrice', label: 'Prix barré', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 100 },
   { key: 'url', label: 'URL', fieldType: 'url', detectedType: 'url', isPrimary: false, width: 280 },
 ]
-
-function parseUrls(raw: string): string[] {
-  return raw
-    .split(/[\n,;]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-}
 
 /** En mode « famille » : chaque ligne est un DOMAINE (on retire protocole/chemin). */
 function parseDomains(raw: string): string[] {

@@ -40,3 +40,27 @@ export function setEditorCommands(
 export function setGlobalFitCanvas(fit: (() => void) | null): void {
   globalFitCanvas = fit
 }
+
+/**
+ * Attend que le canvas Fabric global existe, dans la limite d'un délai.
+ *
+ * Les imports (IDML, SVG) peuvent être déclenchés avant que l'éditeur ait monté son
+ * canvas — au chargement d'un projet, ou depuis un panneau ouvert d'emblée. Sans cette
+ * attente, l'import échouait silencieusement sur un canvas null. Résout `null` au
+ * dépassement du délai : à l'appelant de le signaler, pas à ce helper de trancher.
+ */
+export function waitForCanvas(timeoutMs: number): Promise<typeof globalFabricCanvas> {
+  return new Promise((resolve) => {
+    if (globalFabricCanvas) return resolve(globalFabricCanvas)
+    const start = Date.now()
+    const interval = setInterval(() => {
+      if (globalFabricCanvas) {
+        clearInterval(interval)
+        resolve(globalFabricCanvas)
+      } else if (Date.now() - start > timeoutMs) {
+        clearInterval(interval)
+        resolve(null)
+      }
+    }, 100)
+  })
+}

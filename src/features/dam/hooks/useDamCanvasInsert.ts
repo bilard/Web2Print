@@ -1,22 +1,10 @@
+import { captureImageDataUrl } from '@/features/editor/captureImageDataUrl'
 import { useCallback } from 'react'
 import { FabricImage, FabricObject } from 'fabric'
 import { globalFabricCanvas } from '../../../features/editor/globalCanvas'
 import { syncToStore } from '../../../features/editor/useAddObject'
 import { findFabricObjectDeep } from '../../../features/editor/deepObjects'
 import type { DamImage } from '../types'
-
-/** Capture pixels from a FabricImage into a persistable data URL. */
-function captureImageDataUrl(target: FabricImage): string | null {
-  const el = (target as any).getElement?.() as HTMLImageElement | undefined
-  if (!el) return null
-  const c = document.createElement('canvas')
-  c.width = el.naturalWidth || el.width
-  c.height = el.naturalHeight || el.height
-  const ctx = c.getContext('2d')
-  if (!ctx) return null
-  ctx.drawImage(el, 0, 0)
-  return c.toDataURL('image/png')
-}
 
 export function useDamCanvasInsert() {
   const insertOnCanvas = useCallback(async (image: DamImage) => {
