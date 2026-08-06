@@ -206,8 +206,11 @@ function VerdictButtons({ verdict, onSet }: { verdict: Verdict | null; onSet: (v
   )
 }
 
-export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict, visual }: {
+export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPickVerdict, visual }: {
   row: PairedRow
+  /** Concurrent d'où vient la fiche. Fourni UNIQUEMENT en compilation, où chaque ligne
+   *  vient d'un marchand différent — dans l'onglet d'un site, l'en-tête le porte déjà. */
+  domain?: string
   /** Filtre la liste sur la bande cliquée. */
   onPickBand?: (band: ConfidenceBand) => void
   verdict?: Verdict | null
@@ -362,12 +365,18 @@ export function ExplorerRow({ row, onPickBand, verdict, onVerdict, onPickVerdict
       <div className="flex items-start gap-3 p-2.5 pl-3 border-l border-white/10 min-w-0">
         <Thumb src={listingImage(listing)} alt={listing.name} />
         <div className="min-w-0 flex-1">
+          {/* En compilation, l'en-tête ne peut plus nommer le marchand : chaque ligne vient
+              d'un site différent, et valider un appariement sans savoir chez QUI n'a
+              aucun sens. Absent dans l'onglet d'un concurrent (cf. le commentaire plus bas). */}
+          {domain && (
+            <div className="text-[10px] font-medium text-indigo-300/70 truncate mb-0.5" title={domain}>{domain}</div>
+          )}
           <a href={listing.url} target="_blank" rel="noopener noreferrer" title={listing.url}
             className="block text-xs text-white/90 leading-snug break-words underline decoration-dotted decoration-white/30 underline-offset-[3px] hover:text-indigo-300 hover:decoration-solid">
             {proof ? <Marked text={listing.name} keyValue={proof.keyValue} isEan={proof.isEan} /> : listing.name}
           </a>
-          {/* Pas de nom de domaine ici : l'onglet actif et l'en-tête de colonne le
-              portent déjà. Répété sur chaque ligne, il masquait la référence. */}
+          {/* Pas de nom de domaine ici hors compilation : l'onglet actif et l'en-tête de
+              colonne le portent déjà. Répété sur chaque ligne, il masquait la référence. */}
           {(listing.ref || listing.gtin13) && (
             <div className="text-[10px] text-white/40 tabular-nums mt-0.5">
               {listing.ref && (

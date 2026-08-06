@@ -11,7 +11,7 @@
 // de lignes, perdre « qui est à gauche, qui est à droite » au premier scroll rendait la
 // comparaison illisible.
 import { useEffect, useMemo, useState } from 'react'
-import { RefreshCw, Loader2, Download, PanelLeftClose, ChevronsRight } from 'lucide-react'
+import { RefreshCw, Loader2, Download, FileSpreadsheet, PanelLeftClose, ChevronsRight } from 'lucide-react'
 import { useCompetitorMeta, useCatalogReport } from '../useCatalogReport'
 import { useSourceCatalog, useSiteListings } from './useSiteExplorer'
 import { buildRail, ExplorerSiteRail } from './ExplorerSiteRail'
@@ -31,6 +31,11 @@ import { withVisual } from './confidence'
 import { buildTokenIndex, filterRows, EMPTY_EXPLORER_FILTER, type ExplorerFilter } from './filters'
 import { computeStats } from './stats'
 import { rowsToCsv } from './exportCsv'
+import { downloadRowsXlsx } from './exportXlsx'
+import { rowDomain, rowSiteId } from './compilation'
+import { useCompilation } from './useCompilation'
+import { useAllVerdicts } from './useAllVerdicts'
+import { ExplorerCompileBar } from './ExplorerCompileBar'
 import { useSourceSheet } from './useSourceSheet'
 import { useVerdicts } from './useVerdicts'
 import { useVisuals } from '../visual/useVisuals'
@@ -43,18 +48,34 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   const { t, locale } = useTranslation()
   // Milliers séparés : à six chiffres, « 186170 » ne se lit pas d'un coup d'œil.
   const nf = (v: number) => v.toLocaleString(intlLocale(locale))
+  const uid = useWorkspaceUid()
   const meta = useCompetitorMeta(watchId)
   // Rapport agrégé : il porte l'appariement et l'écart médian PAR SITE, calculés avant
   // tout plafond d'affichage. C'est ce qui permet de mesurer les 19 concurrents sans en
   // charger un seul.
   const report = useCatalogReport(watchId)
   const sites = useMemo(() => buildRail(meta, report?.byCompetitor ?? []), [meta, report])
+  // Concurrents qu'un balayage transversal peut lire : ceux qui ont des fiches. Les sites
+  // EN PAUSE en font partie — leurs relevés d'hier sont intacts, et un appariement douteux
+  // qu'on a cessé de rafraîchir reste un appariement douteux à trancher.
+  const scannable = useMemo(
+    () => sites.filter((s) => s.collected > 0).map((s) => ({ siteId: s.siteId, domain: s.domain })),
+    [sites],
+  )
   const [siteId, setSiteId] = useState<string | null>(null)
   const active = siteId && sites.some((s) => s.siteId === siteId) ? siteId : (sites.find((s) => s.collected > 0)?.siteId ?? null)
   const domain = sites.find((s) => s.siteId === active)?.domain ?? ''
 
+  // ── Compilation : tous les concurrents, seulement ce qui reste à contrôler ────────
+  // Elle REMPLACE la liste du site affiché — c'est un changement de périmètre, pas un
+  // filtre. Déclarée ICI parce que l'index du concurrent affiché est RELÂCHÉ pendant le
+  // balayage : garder 186 000 fiches d'un côté pendant qu'on en lit vingt-quatre index de
+  // l'autre ferait tomber l'onglet. Il se recharge en fermant la compilation.
+  const compilation = useCompilation(uid, watchId)
+  const compiling = compilation.running || compilation.finished
+
   const source = useSourceCatalog(watchId)
-  const { listings, loading, error, reload } = useSiteListings(watchId, active)
+  const { listings, loading, error, reload } = useSiteListings(watchId, compiling ? null : active)
   const src = useSourceSheet(watchId)
   const { extras } = src
   // Jugements d'audit du concurrent affiché : ils survivent à la session.
@@ -92,7 +113,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   // objets et non sur des chaînes de caractères. Recousu ICI et non dans `pairSiteListings` :
   // les verdicts arrivent par un autre chemin, longtemps après l'appariement, et les
   // injecter en amont relancerait toute la passe de jointure à chaque fois qu'ils tombent.
-  const rows = useMemo(() => {
+  const siteRows = useMemo(() => {
     if (visuals.size === 0) return paired
     return paired.map((r) => {
       if (!r.confidence) return r
@@ -100,6 +121,33 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
       return v ? { ...r, confidence: withVisual(r.confidence, v.verdict) } : r
     })
   }, [paired, visuals.of, visuals.size])
+
+  // ── Compilation : tous les concurrents, seulement ce qui reste à contrôler ────────
+  // Elle REMPLACE la liste du site affiché — c'est un changement de périmètre, pas un
+  // filtre. Tout ce qui suit (filtres, taxonomie, stats, export) travaille sur `rows`
+  // sans savoir d'où elles viennent.
+  const rows = compiling ? compilation.rows : siteRows
+  // Les verdicts ne sont relus qu'une fois le balayage FINI : recharger à chaque site
+  // ajouté ferait trois cents lectures pour vingt-quatre documents.
+  const compiledSiteIds = useMemo(
+    () => (compilation.finished ? [...new Set(compilation.rows.map((r) => r.siteId))] : []),
+    [compilation.finished, compilation.rows],
+  )
+  const allVerdicts = useAllVerdicts(watchId, compiledSiteIds)
+  // ⚠ Le verdict s'écrit dans le document du CONCURRENT de la ligne. En compilation,
+  // l'adresse seule ne dit pas de quel site elle vient : on garde la correspondance.
+  const siteByUrl = useMemo(() => {
+    if (!compiling) return null
+    const m = new Map<string, string>()
+    for (const r of compilation.rows) m.set(r.listing.url, r.siteId)
+    return m
+  }, [compiling, compilation.rows])
+  const verdictOf = useMemo(
+    () => (compiling && siteByUrl
+      ? (url: string) => allVerdicts.of(siteByUrl.get(url) ?? '', url)
+      : verdicts.of),
+    [compiling, siteByUrl, allVerdicts, verdicts.of],
+  )
   const tokenIndex = useMemo(() => buildTokenIndex(rows), [rows])
   // Sans catalogue source, TOUTES les fiches sont orphelines : garder le filtre « appariés
   // seulement » viderait l'écran et ferait croire à une collecte vide.
@@ -107,7 +155,6 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
 
   // Recherche transversale : le concurrent affiché n'est qu'un des vingt-quatre. Une
   // référence absente ICI est souvent présente AILLEURS, et l'écran ne le disait pas.
-  const uid = useWorkspaceUid()
   const globalSearch = useGlobalSearch(uid, watchId)
   const searchMiss = useMemo(
     () => (filter.q.trim() ? diagnoseEmptySearch(filter.q, source.products) : null),
@@ -117,18 +164,26 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   // autre requête serait pire que ne rien afficher.
   useEffect(() => { globalSearch.reset() }, [filter.q, globalSearch.reset])
   const effective = useMemo(
-    () => (noSource ? { ...filter, pairing: 'all' as const } : filter),
-    [filter, noSource],
+    () => {
+      // En compilation, toutes les lignes sont appariées par construction, et les verdicts
+      // VISUELS n'ont pas été chargés (ils se lisent par site) : garder le filtre d'image
+      // viderait la liste sur un signal qu'on n'a pas.
+      if (compiling) return { ...filter, pairing: 'matched' as const, visual: 'all' as const }
+      return noSource ? { ...filter, pairing: 'all' as const } : filter
+    },
+    [filter, noSource, compiling],
   )
+  // Idem : pas de verdict visuel en compilation, donc aucune lambda à passer aux filtres.
+  const visualOf = compiling ? undefined : visuals.of
   // Deux passes : l'arbre se nourrit des lignes filtrées SANS la taxonomie (ses compteurs
   // suivent la recherche, mais choisir une famille ne doit pas amputer l'arbre lui-même),
   // la liste applique le filtre complet.
-  const beforeTaxo = useMemo(() => filterRows(rows, { ...effective, path: [] }, verdicts.of, visuals.of), [rows, effective, verdicts.of, visuals.of])
+  const beforeTaxo = useMemo(() => filterRows(rows, { ...effective, path: [] }, verdictOf, visualOf), [rows, effective, verdictOf, visualOf])
   const filtered = useMemo(
-    () => (effective.path.length === 0 ? beforeTaxo : filterRows(rows, effective, verdicts.of, visuals.of)),
-    [rows, effective, beforeTaxo, verdicts.of, visuals.of],
+    () => (effective.path.length === 0 ? beforeTaxo : filterRows(rows, effective, verdictOf, visualOf)),
+    [rows, effective, beforeTaxo, verdictOf, visualOf],
   )
-  const stats = useMemo(() => computeStats(filtered, visuals.of), [filtered, visuals.of])
+  const stats = useMemo(() => computeStats(filtered, visualOf), [filtered, visualOf])
   // Répartition des bandes sur TOUT le site, pas sur les lignes filtrées : elle sert à
   // expliquer une liste vidée par le filtre de fiabilité.
   const bands = useMemo(() => {
@@ -159,16 +214,29 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
 
   // Le nombre de pages rétrécit avec les filtres : rester sur la page 7 d'un résultat qui
   // n'en compte plus que 2 afficherait une liste vide sans rien expliquer.
-  useEffect(() => { setPage(0) }, [active])
+  useEffect(() => { setPage(0) }, [active, compiling])
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage = Math.min(page, pageCount - 1)
   const visible = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize)
 
+  // Les deux exports rendent les lignes AFFICHÉES, filtres compris : un export qui ne
+  // correspondrait pas à l'écran n'aurait aucune valeur de preuve.
+  const domainOf = (r: typeof filtered[number]) => rowDomain(r, domain)
+  const baseName = compiling ? `a-valider-${compilation.total}-concurrents` : `concurrent-${domain}`
+
   const exportCsv = () => {
-    const url = URL.createObjectURL(new Blob(['﻿' + rowsToCsv(filtered, domain)], { type: 'text/csv;charset=utf-8' }))
+    const url = URL.createObjectURL(new Blob(['﻿' + rowsToCsv(filtered, domainOf)], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
-    a.href = url; a.download = `concurrent-${domain}.csv`; a.click()
+    a.href = url; a.download = `${baseName}.csv`; a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const exportXlsx = () => {
+    downloadRowsXlsx(
+      filtered,
+      { domainOf, verdictOf: (r) => verdictOf(r.listing.url) },
+      `${baseName}.xlsx`,
+    )
   }
 
   if (!watchId) return <p className="text-sm text-white/40 py-8 text-center">{t('pwx.aucunSuiviDeVeille')}</p>
@@ -194,7 +262,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
           <ExplorerPositionBar stats={stats} active={effective.gap} onPick={(gap) => patch({ gap })} />
         )}
         <div className="h-8 w-px bg-white/10 hidden lg:block" />
-        <ExplorerStats stats={stats} collected={listings.length} pairingPending={source.loading}
+        <ExplorerStats stats={stats} collected={compiling ? compilation.scanned : listings.length} pairingPending={source.loading}
           promoOnly={effective.promoOnly} outOfStockOnly={effective.stock === 'out-of-stock'}
           suspectsOnly={effective.trust === 'suspect'} visualDiffOnly={effective.visual === 'different'}
           onTogglePromo={() => patch({ promoOnly: !effective.promoOnly })}
@@ -213,18 +281,27 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
           <div className="ml-auto flex items-center gap-2">
             {/* Avancement de l'audit : le seul chiffre qui mesure le TRAVAIL fait, pas
                 l'état des données. Sa place est près des contrôles qui le produisent. */}
-            {(verdicts.counts.ok > 0 || verdicts.counts.ko > 0) && (
-              <span className="text-[10px] text-white/30 tabular-nums whitespace-nowrap">
-                {t('pwx.verdict.done', verdicts.counts)}
-              </span>
-            )}
+            {(() => {
+              const counts = compiling ? allVerdicts.counts : verdicts.counts
+              return (counts.ok > 0 || counts.ko > 0) && (
+                <span className="text-[10px] text-white/30 tabular-nums whitespace-nowrap">
+                  {t('pwx.verdict.done', counts)}
+                </span>
+              )
+            })()}
             <ExplorerPager total={filtered.length} page={safePage} pageSize={pageSize}
               onPage={setPage} onPageSize={setPageSize} />
-            <button type="button" onClick={reload} disabled={loading} className={iconBtn} title={t('pwx.reload')}>
+            <button type="button" onClick={reload} disabled={loading || compiling} className={iconBtn} title={t('pwx.reload')}>
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button type="button" onClick={exportCsv} disabled={filtered.length === 0} className={iconBtn} title={t('pwx.exportCsv')}>
               <Download className="w-3.5 h-3.5" />
+            </button>
+            {/* Classeur : les prix et les écarts y sont de vrais nombres, avec la
+                fiabilité, les motifs de doute et le verdict déjà rendu. C'est le fichier
+                qu'on trie et qu'on annote ; le CSV reste pour les reprises automatiques. */}
+            <button type="button" onClick={exportXlsx} disabled={filtered.length === 0} className={iconBtn} title={t('pwx.exportXlsx')}>
+              <FileSpreadsheet className="w-3.5 h-3.5" />
             </button>
             <ExplorerSourceSettings facts={facts} databases={src.databases} dbId={src.dbId} onPickDb={src.setDbId}
               loading={src.loading} sheets={src.sheets} sheetIndex={src.sheetIndex}
@@ -245,8 +322,15 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
               <PanelLeftClose className="w-3.5 h-3.5" />{t('pwx.competitors')}
               <span className="ml-auto tabular-nums text-white/20">{sites.length}</span>
             </button>
+            <ExplorerCompileBar state={compilation} sites={scannable.length} ready={!noSource}
+              onRun={() => void compilation.run(
+                scannable, source.products,
+                { vatRate: source.vatRate, extras: extras.lookup, imagePrefix: src.imagePrefix, productUrl: src.productUrl },
+              )}
+              onClose={() => { compilation.reset(); setPage(0) }} />
             <div className="flex-1 min-h-0">
-              <ExplorerSiteRail items={sites} active={active} loading={loading} onPick={setSiteId} />
+              <ExplorerSiteRail items={sites} active={compiling ? null : active} loading={loading}
+                onPick={(id) => { compilation.reset(); setSiteId(id) }} />
             </div>
           </div>
         ) : (
@@ -303,7 +387,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
               )}
             </div>
             <div className="px-3 py-2 border-l border-white/10 text-white/50 font-medium">
-              {domain || t('pw.col.competitor')}
+              {compiling ? t('pwx.compile.allSites', { count: compilation.total }) : (domain || t('pw.col.competitor'))}
             </div>
           </div>
 
@@ -311,15 +395,26 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
               lues et paginées, seul l'appariement manque. Bloquer la liste sur le
               catalogue source laissait l'écran sur son spinner alors que 186 000 fiches
               étaient prêtes à l'affichage. */}
-          {loading ? (
+          {loading && !compiling ? (
             <div className="py-16 text-center text-white/40 text-sm flex items-center justify-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />{t('pwx.lectureDesFichesCollectees')}
             </div>
-          ) : error ? (
+          ) : error && !compiling ? (
             <div className="py-16 text-center text-rose-300 text-sm">{error}</div>
           ) : visible.length === 0 ? (
             <div className="py-16 text-center text-white/40 text-sm space-y-2">
-              <p>{rows.length === 0 ? t('pwx.aucuneFicheCollecteePour') : t('pwx.aucuneFicheNeCorrespond')}</p>
+              {/* Une liste vide PENDANT un balayage n'est pas un résultat : elle le
+                  deviendra. Annoncer « aucune fiche » ici se lirait comme une panne. */}
+              {compilation.running ? (
+                <p className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t('pwx.compile.progress', { done: compilation.done, total: compilation.total, rows: 0 })}
+                </p>
+              ) : (
+                <p>{rows.length === 0
+                  ? (compiling ? t('pwx.compile.empty') : t('pwx.aucuneFicheCollecteePour'))
+                  : t('pwx.aucuneFicheNeCorrespond')}</p>
+              )}
               {/* Une recherche par clé qui ne rend rien se lit comme une saisie fausse.
                   Or le produit est souvent au catalogue — c'est CE concurrent qui ne le
                   vend pas. Le catalogue source est déjà en mémoire : on tranche entre les
@@ -337,9 +432,9 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
                   l'impose pas à chaque frappe. */}
               {filter.q.trim() && !globalSearch.running && !globalSearch.finished && (
                 <button type="button"
-                  onClick={() => void globalSearch.run(filter.q, sites.filter((x) => x.collected > 0).map((x) => ({ siteId: x.siteId, domain: x.domain })))}
+                  onClick={() => void globalSearch.run(filter.q, scannable)}
                   className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3 py-1.5 text-[12px] text-indigo-200 hover:bg-indigo-500/20 transition-colors">
-                  {t('pwx.search.scanAll', { count: sites.filter((x) => x.collected > 0).length })}
+                  {t('pwx.search.scanAll', { count: scannable.length })}
                 </button>
               )}
               {globalSearch.running && (
@@ -380,12 +475,17 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
             </div>
           ) : (
             visible.map((r) => (
-              <ExplorerRow key={r.key} row={r}
+              /* ⚠ La clé porte le site : en compilation, deux marchands d'une même
+                 marketplace peuvent référencer la même adresse de fiche. */
+              <ExplorerRow key={`${rowSiteId(r, active ?? '')}|${r.key}`} row={r}
+                domain={compiling ? rowDomain(r, domain) : undefined}
                 onPickBand={(b) => patch({ trust: b === 'sure' ? 'sure' : b === 'doubt' ? 'doubt' : 'suspect' })}
-                verdict={verdicts.of(r.listing.url)}
-                onVerdict={(v) => verdicts.set(r.listing.url, v)}
+                verdict={verdictOf(r.listing.url)}
+                onVerdict={(v) => (compiling
+                  ? allVerdicts.set(rowSiteId(r, active ?? ''), r.listing.url, v)
+                  : verdicts.set(r.listing.url, v))}
                 onPickVerdict={(v) => patch({ audit: v })}
-                visual={visuals.of(r.listing.url)} />
+                visual={visualOf?.(r.listing.url)} />
             ))
           )}
         </div>

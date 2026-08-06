@@ -16,13 +16,15 @@ function esc(v: string | number | null | undefined): string {
   return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
-export function rowsToCsv(rows: PairedRow[], domain: string): string {
+/** `domainOf` et non un domaine unique : en compilation, chaque ligne vient d'un marchand
+ *  différent, et une colonne « Concurrent » qui répéterait celui de l'onglet mentirait. */
+export function rowsToCsv(rows: PairedRow[], domainOf: (r: PairedRow) => string): string {
   const lines = [HEAD.join(';')]
   for (const r of rows) {
     const s = r.source
     lines.push([
       esc(s?.ref), esc(s?.ean), esc(s?.name), esc(s?.description), esc(s?.images.join(' | ')), esc(s?.priceHt),
-      esc(domain), esc(r.listing.name), esc(r.listing.ref), esc(r.listing.gtin13),
+      esc(domainOf(r)), esc(r.listing.name), esc(r.listing.ref), esc(r.listing.gtin13),
       esc(r.cmp.priceTtc), esc(r.cmp.priceHt), esc(r.cmp.listPriceTtc), esc(discountPct(r.listing)),
       esc(r.cmp.deltaPct), esc(r.listing.availability), esc(r.kind ? KIND[r.kind] : 'non apparié'),
       esc(r.listing.url),
