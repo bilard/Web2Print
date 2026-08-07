@@ -96,7 +96,7 @@ const harvestCompetitorNode: NodeSpec<HarvestConfig, HarvestInputs, HarvestOutpu
       helpKey: 'node.harvest-competitor.f3',
     },
     {
-      name: 'familyColumn', kind: 'text', label: 'Colonne Famille de la source',
+      name: 'familyColumn', kind: 'columnRef', labelKey: 'node.harvest-competitor.familyColumn.label',
       helpKey: 'node.harvest-competitor.f4',
     },
     {

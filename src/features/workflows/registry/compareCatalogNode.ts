@@ -91,7 +91,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     { name: 'ref2Column', kind: 'columnRef', labelKey: 'node.compare-catalog.ref2Column.label', helpKey: 'node.compare-catalog.ref2Column.help' },
     { name: 'eanColumn', kind: 'columnRef', label: 'Colonne EAN' },
     { name: 'nameColumn', kind: 'columnRef', label: 'Colonne Nom' },
-    { name: 'familyColumn', kind: 'columnRef', label: 'Colonne Famille' },
+    { name: 'familyColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.familyColumn.label', helpKey: 'node.compare-catalog.familyColumn.help' },
     { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Mon prix (HT)' },
     { name: 'descriptionColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.descriptionColumn.label', helpKey: 'node.compare-catalog.descriptionColumn.help' },
     { name: 'urlColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.urlColumn.label', helpKey: 'node.compare-catalog.urlColumn.help' },
