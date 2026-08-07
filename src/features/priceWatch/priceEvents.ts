@@ -239,6 +239,19 @@ export function summarizeMoves(events: PriceEvent[]): MoveSummary {
   }
 }
 
+/**
+ * Mouvements constatés par la DERNIÈRE analyse. Tous les événements d'un même run
+ * partagent son horodatage : on prend le plus récent et on garde ceux-là.
+ *
+ * ⚠ Pas « les N derniers jours » : entre deux runs il peut s'écouler une heure comme une
+ * semaine, et un mail qui annonce « depuis le dernier relevé » doit dire exactement ça.
+ */
+export function eventsOfLastRun(events: PriceEvent[]): PriceEvent[] {
+  if (events.length === 0) return []
+  const last = events.reduce((max, e) => (e.at > max ? e.at : max), 0)
+  return events.filter((e) => e.at === last)
+}
+
 /** Restreint le journal à une fenêtre glissante (en jours) à partir de `now`. */
 export function eventsSince(events: PriceEvent[], days: number, now: number): PriceEvent[] {
   const cutoff = now - days * DAY_MS

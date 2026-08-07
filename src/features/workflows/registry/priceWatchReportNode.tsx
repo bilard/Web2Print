@@ -14,6 +14,8 @@ import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { stableId } from '@/features/priceWatch/core'
 import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
 import { loadStoredReport, renderPriceWatchReport, DEFAULT_PW_REPORT } from './priceWatchReport'
+import { loadPriceEvents } from '@/features/priceWatch/reportStore'
+import { eventsOfLastRun } from '@/features/priceWatch/priceEvents'
 import { composeReportHtml } from './priceWatchComposer'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
 import { t } from '@/lib/i18n'
@@ -84,7 +86,11 @@ const pwReportNode: NodeSpec<PwReportConfig, Record<string, never>, PwReportOutp
     const prompt = (config.prompt ?? '').trim()
     if (prompt) {
       ctx.log('info', t('run.pwReport.composing'))
-      const composed = await composeReportHtml(report, prompt,
+      // Ce qui a BOUGÉ depuis le relevé précédent : le rapport `latest` est une photo,
+      // il ne porte pas les mouvements. Sans eux, une consigne du genre « les produits en
+      // baisse depuis le dernier run » n'aurait aucune donnée à quoi se raccrocher.
+      const moves = eventsOfLastRun(await loadPriceEvents(uid, watchId).catch(() => []))
+      const composed = await composeReportHtml(report, prompt, moves,
         (i) => ctx.log('info', t('run.pwReport.composedBy', { provider: i.provider, model: i.model })))
       if (composed) {
         const day = new Date().toISOString().slice(0, 10)

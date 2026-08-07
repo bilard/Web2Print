@@ -258,7 +258,9 @@ async function savePriceState(uid: string, watchId: string, state: PriceState): 
 
 /** Relit le journal des mouvements (plus récents d'abord). Le dashboard, lui, s'abonne
  *  au doc en direct (usePriceEvents) — cette lecture ponctuelle sert au diff. */
-async function loadPriceEvents(uid: string, watchId: string): Promise<PriceEvent[]> {
+/** Journal des mouvements de prix. Exposé : le mail de veille en tire « ce qui a bougé
+ *  depuis le dernier relevé », que le rapport `latest` ne porte pas. */
+export async function loadPriceEvents(uid: string, watchId: string): Promise<PriceEvent[]> {
   const snap = await getDoc(doc(db, priceEventsDoc(uid, watchId))).catch(() => null)
   return (snap?.data()?.events as PriceEvent[] | undefined) ?? []
 }

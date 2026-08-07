@@ -192,5 +192,19 @@ export function chunkState(state: PriceState, maxBytes: number): PriceState[] {
   return chunks
 }
 
-// Les dérivations d'affichage (summarizeMoves, eventsSince) vivent côté client
-// uniquement : le serveur écrit le journal, il ne le lit jamais pour l'afficher.
+// Les dérivations d'AFFICHAGE (summarizeMoves, eventsSince) vivent côté client : elles
+// servent le cockpit, que le cron ne rend pas. `eventsOfLastRun` fait exception — le mail
+// de veille annonce « depuis le dernier relevé », et il part aussi bien du cron.
+
+/**
+ * Mouvements constatés par la DERNIÈRE analyse. Tous les événements d'un même run
+ * partagent son horodatage : on prend le plus récent et on garde ceux-là.
+ *
+ * ⚠ Pas « les N derniers jours » : entre deux runs il peut s'écouler une heure comme une
+ * semaine, et un mail qui annonce « depuis le dernier relevé » doit dire exactement ça.
+ */
+export function eventsOfLastRun(events: PriceEvent[]): PriceEvent[] {
+  if (events.length === 0) return []
+  const last = events.reduce((max, e) => (e.at > max ? e.at : max), 0)
+  return events.filter((e) => e.at === last)
+}

@@ -10,9 +10,10 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
 import { makeServerFile } from './serverFile'
-import { reportLatestDoc } from '../../priceWatch/paths'
+import { reportLatestDoc, priceEventsDoc } from '../../priceWatch/paths'
 import { renderPriceWatchReport, DEFAULT_PW_REPORT } from '../../priceWatch/reportHtml'
 import { buildComposePrompt, normalizeComposedHtml } from '../../priceWatch/reportCompose'
+import { eventsOfLastRun, type PriceEvent } from '../../priceWatch/priceEvents'
 import type { StoredReport } from '../../priceWatch/reportStore'
 import type { ServerRunCtx } from '../types'
 import { stableId } from '../../priceWatch/helpers'
@@ -38,13 +39,14 @@ async function composeServerSide(
   ctx: Pick<ServerRunCtx, 'uid' | 'locale' | 'log'>,
   report: StoredReport,
   prompt: string,
+  moves: PriceEvent[],
 ): Promise<string | null> {
   try {
     // 32 000 tokens, pas les 8192 par défaut : un corps de mail entièrement en styles
     // inline pèse 20 à 30 Ko, et chaque guillemet de `style="…"` est ré-échappé dans la
     // chaîne JSON. Tronquée, la réponse n'est plus du JSON valide — donc un échec muet.
     // (`callDeepSeek` reclampe à 8192 de son côté ; Claude et Gemini encaissent.)
-    const r = await callLlm(ctx.uid, buildComposePrompt(report, prompt) + JSON_INSTRUCTION, {
+    const r = await callLlm(ctx.uid, buildComposePrompt(report, prompt, moves) + JSON_INSTRUCTION, {
       maxTokens: 32_000,
       preferProviders: ['claude', 'gemini'],
     })
@@ -91,7 +93,12 @@ registerServerNode({
     const prompt = String(config.prompt ?? '').trim()
     if (prompt) {
       ctx.log('info', t(ctx.locale, 'run.pwReport.composing'))
-      const composed = await composeServerSide(ctx, report, prompt)
+      // Mouvements du dernier relevé : le rapport `latest` est une photo, il ne dit pas
+      // ce qui a bougé. Une consigne « les baisses depuis le dernier run » n'aurait rien
+      // à quoi se raccrocher sans eux.
+      const jSnap = await getFirestore().doc(priceEventsDoc(ctx.uid, watchId)).get().catch(() => null)
+      const journal = ((jSnap?.data()?.events ?? []) as PriceEvent[])
+      const composed = await composeServerSide(ctx, report, prompt, eventsOfLastRun(journal))
       if (composed) {
         doneLog(composed)
         return { html: composed, file: makeServerFile(fileName, 'text/html;charset=utf-8', composed) }

@@ -19,6 +19,58 @@
 // (le navigateur annonce un schéma JSON via `generateJson`, le serveur écrit le sien). Une
 // instruction de format ici arriverait en double côté client.
 import type { StoredReport } from './reportStore'
+import type { PriceEvent } from './priceEvents'
+
+/**
+ * Ce qui a BOUGÉ au dernier relevé. Le rapport `latest` est une photo — il ne dit pas ce
+ * qui a changé depuis la veille, or c'est la première chose qu'un acheteur regarde.
+ *
+ * ⚠ Les baisses concurrentes d'abord, la plus forte en tête : une hausse chez un
+ * concurrent me profite, une baisse me met sous pression.
+ */
+function movesFacts(moves: PriceEvent[]): Record<string, unknown> | null {
+  if (moves.length === 0) return null
+  const down = moves.filter((m) => m.pctChange < 0)
+  const up = moves.filter((m) => m.pctChange > 0)
+  const avg = (xs: number[]) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null)
+  const byDom = new Map<string, { moves: number; down: number }>()
+  for (const m of moves) {
+    const a = byDom.get(m.dom) ?? { moves: 0, down: 0 }
+    a.moves++
+    if (m.pctChange < 0) a.down++
+    byDom.set(m.dom, a)
+  }
+  return {
+    releve_du: new Date(moves[0].at).toISOString(),
+    mouvements: moves.length,
+    baisses_concurrentes: down.length,
+    hausses_concurrentes: up.length,
+    baisse_moyenne_pct: avg(down.map((m) => m.pctChange)),
+    hausse_moyenne_pct: avg(up.map((m) => m.pctChange)),
+    par_concurrent: [...byDom.entries()]
+      .map(([domaine, a]) => ({ domaine: domaine.replace(/^www\./, ''), mouvements: a.moves, baisses: a.down }))
+      .sort((a, b) => b.mouvements - a.mouvements)
+      .slice(0, 20),
+    // Les plus fortes baisses, avec de quoi les vérifier sur la fiche du concurrent.
+    plus_fortes_baisses: [...down]
+      .sort((a, b) => a.pctChange - b.pctChange)
+      .slice(0, 25)
+      .map((m) => ({
+        produit: m.name, reference: m.ref,
+        concurrent: m.dom.replace(/^www\./, ''),
+        prix_ht_avant: m.from, prix_ht_apres: m.to, variation_pct: m.pctChange,
+        mon_prix_ht: m.mine, mon_ecart_pct_apres: m.gapAfter,
+        fiche: m.u ?? null,
+      })),
+    plus_fortes_hausses: [...up]
+      .sort((a, b) => b.pctChange - a.pctChange)
+      .slice(0, 10)
+      .map((m) => ({
+        produit: m.name, concurrent: m.dom.replace(/^www\./, ''),
+        prix_ht_avant: m.from, prix_ht_apres: m.to, variation_pct: m.pctChange,
+      })),
+  }
+}
 
 /** Faits transmis au modèle : bornés, déjà agrégés, sans donnée brute à recalculer. */
 function reportFacts(report: StoredReport): Record<string, unknown> {
@@ -79,14 +131,19 @@ const RENDER_RULES = `Contraintes techniques du support (un client de messagerie
  * une instruction concurrente — un brief maison placé avant reprendrait la main sur la
  * demande.
  */
-export function buildComposePrompt(report: StoredReport, prompt: string): string {
+export function buildComposePrompt(report: StoredReport, prompt: string, moves: PriceEvent[] = []): string {
+  const facts = reportFacts(report)
+  const changes = movesFacts(moves)
   return `${prompt.trim()}
 
 ---
 ${RENDER_RULES}
 
 Données du relevé (JSON) :
-${JSON.stringify(reportFacts(report), null, 1)}`
+${JSON.stringify(facts, null, 1)}${changes ? `
+
+Ce qui a CHANGÉ depuis le relevé précédent (JSON) :
+${JSON.stringify(changes, null, 1)}` : ''}`
 }
 
 /** En deçà, ce n'est pas un mail : plutôt un refus ou une réponse tronquée dès le début. */

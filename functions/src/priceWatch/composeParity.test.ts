@@ -5,6 +5,8 @@
 // rapport selon l'heure d'envoi. Ce test exerce les fonctions clés côté serveur.
 import { describe, it, expect } from 'vitest'
 import { buildComposePrompt, normalizeComposedHtml } from './reportCompose'
+import { eventsOfLastRun } from './priceEvents'
+import type { PriceEvent } from './priceEvents'
 import type { StoredReport } from './reportStore'
 
 const REPORT = {
@@ -75,5 +77,41 @@ describe('normalizeComposedHtml (parité serveur)', () => {
     expect(normalizeComposedHtml(null)).toBeNull()
     expect(normalizeComposedHtml('<p>ok</p>')).toBeNull()
     expect(normalizeComposedHtml(`Je ne peux pas produire ce rapport. ${'Désolé. '.repeat(40)}`)).toBeNull()
+  })
+})
+
+const RUN_2 = new Date('2026-08-07T06:00:00Z').getTime()
+const RUN_1 = new Date('2026-08-06T06:00:00Z').getTime()
+const move = (at: number, pct: number, name: string): PriceEvent => ({
+  at, pid: name, name, ref: 'R1', sid: 's', dom: 'www.exemple-a.fr',
+  from: 100, to: 100 + pct, pctChange: pct, mine: 95, gapAfter: pct, u: 'https://exemple-a.fr/p',
+})
+
+describe('mouvements de prix (parité serveur)', () => {
+  it('ne retient que le DERNIER relevé, pas une fenêtre de jours', () => {
+    // Entre deux runs il peut s'écouler une heure comme une semaine : « depuis le dernier
+    // relevé » doit dire exactement ça, sinon le mail annonce des baisses déjà envoyées.
+    const journal = [move(RUN_1, -5, 'Vieux'), move(RUN_2, -12, 'Récent'), move(RUN_2, 3, 'Hausse')]
+    const last = eventsOfLastRun(journal)
+    expect(last.map((m) => m.name)).toEqual(['Récent', 'Hausse'])
+    expect(eventsOfLastRun([])).toEqual([])
+  })
+
+  it('transmet les baisses au modèle, la plus forte en tête', () => {
+    const p = buildComposePrompt(REPORT, 'x', [move(RUN_2, -12, 'Lame'), move(RUN_2, -30, 'Courroie'), move(RUN_2, 4, 'Bougie')])
+    expect(p).toContain('Ce qui a CHANGÉ depuis le relevé précédent')
+    expect(p).toContain('"baisses_concurrentes": 2')
+    expect(p).toContain('"hausses_concurrentes": 1')
+    // Ordre : la plus forte baisse d'abord — c'est elle qui met le plus sous pression.
+    // (Sur la section des mouvements seule : le rapport cite « Lame » plus haut, dans ses
+    // exemples de produits sous-cotés.)
+    const section = p.slice(p.indexOf('Ce qui a CHANGÉ'))
+    expect(section.indexOf('Courroie')).toBeLessThan(section.indexOf('Lame'))
+    // L'URL de la fiche voyage : le mail doit pouvoir renvoyer vers la preuve.
+    expect(p).toContain('https://exemple-a.fr/p')
+  })
+
+  it("n'ajoute RIEN quand rien n'a bougé — pas de section vide dans le mail", () => {
+    expect(buildComposePrompt(REPORT, 'x')).not.toContain('Ce qui a CHANGÉ')
   })
 })

@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
 import { buildComposePrompt, normalizeComposedHtml } from '@/features/priceWatch/reportCompose'
 import type { StoredReport } from '@/features/priceWatch/reportStore'
+import type { PriceEvent } from '@/features/priceWatch/priceEvents'
 
 const schema = z.object({ html: z.string().min(1) })
 
@@ -25,12 +26,13 @@ const schemaForLLM = {
 export async function composeReportHtml(
   report: StoredReport,
   prompt: string,
+  moves: PriceEvent[],
   onProvider?: (info: { provider: string; model: string }) => void,
 ): Promise<string | null> {
   try {
     const out = await generateJson({
       task: 'priceWatch.analysis',
-      prompt: buildComposePrompt(report, prompt),
+      prompt: buildComposePrompt(report, prompt, moves),
       schema,
       schemaForLLM,
       version: 'pw-report-compose-1',
