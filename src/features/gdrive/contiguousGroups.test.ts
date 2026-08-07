@@ -7,17 +7,19 @@ import { contiguousGroups } from './gdriveCore'
  * replie les mauvaises colonnes, ou fond tous les concurrents en un seul bloc.
  */
 describe('contiguousGroups', () => {
-  it('couvre le bloc ENTIER quand une colonne libre le précède', () => {
-    // C'est la forme produite par `siteColumns` : une colonne de section (non marquée)
-    // ouvre chaque concurrent, donc le repli emporte tout le bloc — nom compris.
+  it('laisse TOUJOURS la première colonne du bloc hors du groupe', () => {
+    // ⚠ Mesuré en production : avec une seule colonne libre entre deux plages, Sheets les
+    // FUSIONNE — quatorze concurrents n'ont donné qu'un crochet de cent trente colonnes.
+    // Il faut deux colonnes libres : celle de tête (non marquée) et celle-ci.
     const cols = [undefined, 'kramp', 'kramp', 'kramp', undefined, 'rubix', 'rubix', 'rubix']
-    expect(contiguousGroups(cols)).toEqual([{ start: 1, end: 4 }, { start: 5, end: 8 }])
+    expect(contiguousGroups(cols)).toEqual([{ start: 2, end: 4 }, { start: 6, end: 8 }])
   })
 
-  it('cède la première colonne quand deux blocs se TOUCHENT', () => {
-    // Sans séparateur, couvrir les deux blocs en entier les ferait fusionner en un seul.
-    const cols = [undefined, 'kramp', 'kramp', 'kramp', 'rubix', 'rubix', 'rubix']
-    expect(contiguousGroups(cols)).toEqual([{ start: 1, end: 4 }, { start: 5, end: 7 }])
+  it('produit des plages séparées par DEUX colonnes au moins', () => {
+    const cols = [undefined, 'a', 'a', 'a', undefined, 'b', 'b', 'b', undefined, 'c', 'c', 'c']
+    const g = contiguousGroups(cols)
+    expect(g).toHaveLength(3)
+    for (let i = 1; i < g.length; i++) expect(g[i].start - g[i - 1].end).toBeGreaterThanOrEqual(2)
   })
 
   it('produit des groupes NON ADJACENTS — sinon Sheets les fusionne', () => {
@@ -30,14 +32,15 @@ describe('contiguousGroups', () => {
 
   it('n’englobe JAMAIS une colonne intercalée', () => {
     const cols = ['a', 'a', 'a', undefined, 'a', 'a', 'a']
-    expect(contiguousGroups(cols)).toEqual([{ start: 0, end: 3 }, { start: 4, end: 7 }])
+    expect(contiguousGroups(cols)).toEqual([{ start: 1, end: 3 }, { start: 5, end: 7 }])
   })
 
   it('ignore un concurrent trop étroit — il ne resterait rien à replier', () => {
     // 2 colonnes : une visible + une seule à replier → sans intérêt.
     expect(contiguousGroups(['a'])).toEqual([])
-    // Deux colonnes précédées d'une libre : le bloc est groupable en entier.
-    expect(contiguousGroups([undefined, 'a', 'a'])).toEqual([{ start: 1, end: 3 }])
+    expect(contiguousGroups(['a', 'a'])).toEqual([])
+    // Trois colonnes : il en reste deux à replier une fois la première laissée visible.
+    expect(contiguousGroups([undefined, 'a', 'a', 'a'])).toEqual([{ start: 2, end: 4 }])
   })
 
   it('ne groupe rien sans marquage', () => {

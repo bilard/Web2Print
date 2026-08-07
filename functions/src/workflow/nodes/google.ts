@@ -315,11 +315,9 @@ function contiguousGroupsServer(groups: (string | undefined)[]): { start: number
     // `i + 1` : la première colonne reste VISIBLE et sépare ce groupe du suivant.
     // Sans ce séparateur, Google fusionne les groupes adjacents de même niveau et
     // tous les concurrents n'en forment plus qu'un.
-    // Adjacent au précédent ? Il cède sa première colonne, sinon Sheets recolle les
-    // deux plages (jumeau du client).
-    const prev = out[out.length - 1]
-    const start = prev && prev.end === i ? i + 1 : i
-    if (j - start > 1) out.push({ start, end: j })
+    // `i + 1` TOUJOURS (jumeau du client) : Sheets fusionne les groupes que ne sépare
+    // qu'une seule colonne — mesuré en production, quatorze blocs n'en formaient qu'un.
+    if (j - (i + 1) > 1) out.push({ start: i + 1, end: j })
     i = j
   }
   return out
