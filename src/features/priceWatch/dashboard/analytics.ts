@@ -7,7 +7,6 @@
 // en toute circonstance sont `report.kpis` (headline) et `byCompetitor.avgGapPct`. Le
 // FILTRE global ne touche QUE les blocs dérivés — les headline restent globaux (kpis).
 import { median } from '../catalog/report'
-import { competitorCounts, type CompetitorCounts } from './opsMetrics'
 import type { StoredReport } from '../reportStore'
 import type { KpiHistoryPoint } from '../types'
 import type { ProductRow, ReportKpis } from '../catalog/report'
@@ -113,10 +112,10 @@ export interface Cockpit {
   truncated: boolean
   totalMatched: number
   runAt: number
+  /** Concurrents de la dernière analyse. ⚠ Le triplet ACTIFS · INACTIFS · TOTAL vit dans
+   *  le cockpit opérationnel (`buildOpsCockpit`), seul à connaître les sites mis en pause :
+   *  ne pas en refabriquer une seconde version ici. */
   competitorsCount: number
-  /** Triplet unifié ACTIFS · INACTIFS · TOTAL — MÊME définition que le cockpit et que la
-   *  liste des sites (cf. `competitorCounts`). Trois écrans en donnaient trois versions. */
-  competitorCounts: CompetitorCounts
   // vue filtrée
   filterActive: boolean
   filteredCount: number
@@ -398,10 +397,7 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
 
   return {
     kpis, truncated, totalMatched, runAt, competitorsCount: sites.length,
-    // ⚠ Vu du rapport seul, tous les sites qu'il porte étaient suivis : les concurrents
-    // mis en pause n'y figurent plus du tout. Le dashboard, qui lit aussi les métas de
-    // moisson, redresse le total (cf. `PriceWatchDashboard`).
-    competitorCounts: competitorCounts(sites.map((s) => s.siteId), byCompetitor.map((c) => c.siteId)),
+
     filterActive: active, filteredCount: view.length, totalCount: products.length,
     priceHoldPct, exposedPct,
     priceIndex, priceIndexBest, priceIndexBiased: !hasStoredIndex && priceIndex != null,

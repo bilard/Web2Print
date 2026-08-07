@@ -2,8 +2,7 @@
 // pré-agrégé via buildCockpit (pur). UN moteur de recherche global filtre les blocs
 // dérivés (les KPIs headline restent globaux). SOURCE (watchId) choisie dans le header.
 import { useMemo, useState } from 'react'
-import { competitorCounts } from './opsMetrics'
-import { useCatalogReport, useReportHistory, usePriceEvents, useCompetitorMeta } from '../useCatalogReport'
+import { useCatalogReport, useReportHistory, usePriceEvents } from '../useCatalogReport'
 import type { StoredReport } from '../reportStore'
 import { buildCockpit, buildLinkIndex, EMPTY_FILTER, type CockpitFilter } from './analytics'
 import { KpiStrip } from './KpiStrip'
@@ -66,15 +65,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   useLiveReportRefresh(watchId, report)
   const [filter, setFilter] = useState<CockpitFilter>(EMPTY_FILTER)
   const ck = useMemo(() => (report ? buildCockpit(report, filter) : null), [report, filter])
-  // ⚠ L'état COCHÉ vient de la méta live, pas du rapport : celui-ci fige les sites suivis
-  // au moment de l'analyse, et un site mis en pause depuis y compterait encore comme actif.
-  const liveMeta = useCompetitorMeta(watchId)
-  const liveCounts = useMemo(
-    () => (report
-      ? competitorCounts(report.sites.map((s) => s.siteId), [...liveMeta.keys()])
-      : null),
-    [report, liveMeta],
-  )
+
   // Index des pages scrapées, NON filtré : le journal des mouvements ne stocke que des
   // identifiants (pid/sid) et doit pouvoir se relier même quand le cockpit est filtré.
   const links = useMemo(() => buildLinkIndex(report?.products ?? []), [report])
@@ -129,7 +120,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       {/* KPIs fixés en haut au scroll vertical (demande utilisateur). Fond opaque pour
           couvrir le contenu qui défile derrière. */}
       <div className="sticky top-0 z-30 bg-background py-3 -my-1 shadow-lg shadow-background/80">
-        <KpiStrip ck={ck} history={history} counts={liveCounts} />
+        <KpiStrip ck={ck} history={history} />
       </div>
 
       {/* Moteur de recherche global (full-text + autocomplétion) : pilote tous les blocs dérivés. */}

@@ -3,7 +3,6 @@
 import type { KpiHistoryPoint } from '../types'
 import type { Cockpit } from './analytics'
 import { trendDelta, sparkSeries } from './analytics'
-import { competitorCountsLabel, type CompetitorCounts } from './opsMetrics'
 import { eur, pct, when } from './format'
 import { Sparkline } from './Sparkline'
 import { AnimatedNumber } from './AnimatedNumber'
@@ -52,11 +51,7 @@ const indexClass = (v: number | null) =>
 // Constante de MODULE : on stocke la CLÉ, la traduction se fait au rendu.
 const INDEX_TITLE_KEY = 'pw.kpi.index.title' as const
 
-export function KpiStrip({ ck, history, counts }: {
-  ck: Cockpit; history: KpiHistoryPoint[]
-  /** Comptes à jour (état COCHÉ lu en direct). À défaut, ceux figés dans le rapport. */
-  counts?: CompetitorCounts | null
-}) {
+export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoint[] }) {
   const { t } = useTranslation()
   const k = ck.kpis
   const d = trendDelta(history)
@@ -65,7 +60,7 @@ export function KpiStrip({ ck, history, counts }: {
   const expoTxt = ck.exposedPct == null ? '—' : <AnimatedNumber value={ck.exposedPct} format={(n) => `${Math.round(n)} %`} />
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 2xl:grid-cols-8 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 2xl:grid-cols-7 gap-2">
       <Tile label={t('pw.kpi.priceHold')} value={holdTxt} accent="text-emerald-400" sub={t('pw.kpi.priceHold.sub')}
         spark={<Sparkline values={s.hold} color="#34d399" />} />
       <Tile label={t('pw.kpi.exposed')} value={expoTxt} accent="text-rose-400"
@@ -86,16 +81,10 @@ export function KpiStrip({ ck, history, counts }: {
         sub={t('pw.kpi.gap.sub', { median: ck.medianGapPct == null ? '—' : pct(ck.medianGapPct) })}
         title={t('pw.kpi.gap.title') + (ck.truncated ? t('pw.kpi.gap.truncated') : '.')} />
       <Tile label={t('pw.kpi.matched')} value={<AnimatedNumber value={k.products} />}
-        title={t('pw.kpi.matched.title')}
+        title={`${t('pw.kpi.matched.title')} ${t('pw.kpi.competitors.sub', { count: k.comparisons })}`}
         sub={t('pw.kpi.matched.sub', { exact: k.matchedExact, orig: k.matchedOriginOnly })}
         delta={d && <Delta cur={d.last.products} prev={d.prev.products} />}
         spark={<Sparkline values={s.products} color="#818cf8" />} />
-      {/* ACTIFS · INACTIFS · TOTAL — même définition et même phrase que le cockpit et que
-          la liste des sites. Le total seul comptait pareil un concurrent qui apparie dix
-          mille produits et un autre resté muet. */}
-      <Tile label={t('pw.kpi.competitors')} title={t('pw.counts.help')}
-        value={<><AnimatedNumber value={(counts ?? ck.competitorCounts).active} /><span className="text-white/35">/{(counts ?? ck.competitorCounts).total}</span></>}
-        sub={competitorCountsLabel(counts ?? ck.competitorCounts)} />
       <Tile label={t('pw.kpi.outOfStock')} value={<AnimatedNumber value={k.ruptures} />} accent="text-amber-400" sub={t('pw.kpi.outOfStock.sub')} />
       <Tile label={t('pw.kpi.analysis')} value={when(ck.runAt)}
         sub={t(ck.truncated ? 'pw.kpi.analysis.sub.truncated' : 'pw.kpi.analysis.sub', { count: ck.totalMatched })}
