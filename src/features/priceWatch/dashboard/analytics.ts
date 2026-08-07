@@ -398,10 +398,10 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
 
   return {
     kpis, truncated, totalMatched, runAt, competitorsCount: sites.length,
-    // ⚠ Le rapport ne dit pas quels sites sont décochés AUJOURD'HUI : il fige ceux qui
-    // étaient suivis au moment de l'analyse. Le dashboard passe donc l'état à jour quand
-    // il l'a (cf. `withLiveCounts`) ; à défaut, tous comptent comme suivis.
-    competitorCounts: competitorCounts(sites.map(() => ({}))),
+    // ⚠ Vu du rapport seul, tous les sites qu'il porte étaient suivis : les concurrents
+    // mis en pause n'y figurent plus du tout. Le dashboard, qui lit aussi les métas de
+    // moisson, redresse le total (cf. `PriceWatchDashboard`).
+    competitorCounts: competitorCounts(sites.map((s) => s.siteId), byCompetitor.map((c) => c.siteId)),
     filterActive: active, filteredCount: view.length, totalCount: products.length,
     priceHoldPct, exposedPct,
     priceIndex, priceIndexBest, priceIndexBiased: !hasStoredIndex && priceIndex != null,

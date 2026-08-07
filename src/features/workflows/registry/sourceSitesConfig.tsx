@@ -182,12 +182,12 @@ export function SourceSitesConfig({ config, onChange }: {
     setImporting(false)
   }
 
-  // ⚠ MÊME définition qu'ailleurs (cockpit, bandeau de KPI) : actif = coché ET produisant
-  // des fiches. Compter les seules cases cochées annonçait « 14 actifs » là où deux sites
-  // ne rapportaient rien — trois écrans, trois chiffres, pour la même population.
-  const counts = competitorCounts(rows.map((r) => ({
-    enabled: r.enabled, indexed: statsFor(r.domain).products ?? 0,
-  })))
+  // MÊME définition qu'ailleurs (cockpit, bandeau de KPI) : actif = SUIVI, c'est-à-dire
+  // coché. Ici la source est directe — c'est cet écran qui porte les cases.
+  const counts = competitorCounts(
+    rows.filter((r) => r.enabled).map((r) => r.domain),
+    rows.map((r) => r.domain),
+  )
   // Tout sélectionner / désélectionner : bascule l'activation de TOUS les sites d'un clic.
   const allEnabled = rows.length > 0 && rows.every((r) => r.enabled)
   const toggleAll = () => onChange({ ...config, sites: rows.map((r) => ({ ...r, enabled: !allEnabled })) })

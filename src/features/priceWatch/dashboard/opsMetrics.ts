@@ -102,26 +102,28 @@ function opsCompetitorOf(s: CompetitorStat, live?: HarvestMeta): OpsCompetitor {
 /**
  * Compte unifié des concurrents : ACTIFS · INACTIFS · TOTAL.
  *
- * Trois écrans disaient trois choses de la même population, chacun avec sa définition
- * d'« actif » (coché ? collecte ? apparie ?). Une seule règle désormais :
+ *   ACTIF   = SUIVI, c'est-à-dire retenu pour la dernière analyse (`report.sites`). Le
+ *             node « Comparer catalogue » ne reçoit que les sites cochés : cette liste
+ *             EST la décision de l'utilisateur, constatée plutôt que devinée ;
+ *   TOTAL   = tous les concurrents connus du suivi — ceux de l'analyse plus ceux qui ont
+ *             une méta de moisson, donc les sites mis en pause depuis ;
+ *   INACTIF = la différence : suivis autrefois, plus aujourd'hui.
  *
- *   ACTIF   = SUIVI, c'est-à-dire coché. C'est une décision de l'utilisateur, pas un
- *             constat sur les données ;
- *   INACTIF = mis en pause (décoché) ;
- *   TOTAL   = tous les concurrents déclarés dans le suivi.
+ * ⚠ NE PAS repasser par un champ `enabled` en base : il n'est pas écrit pour tous les
+ * sites, et son absence faisait passer tout le monde pour actif — « 24/24 » dans le
+ * cockpit, « 14/14 » dans le bandeau, pour un suivi qui compte 14 sites sur 24 connus.
  *
- * ⚠ Ce qu'un site RAPPORTE est une autre question, et elle a déjà ses propres signaux :
- * les badges « OK » / « sans catalogue » de la liste, et les compteurs d'appariement. Un
- * site coché qui ne rapporte rien reste ACTIF — il est suivi, il ne produit simplement
- * pas ; mélanger les deux notions donnait « 12 actifs » là où l'utilisateur en a coché 14.
+ * ⚠ Ce qu'un site RAPPORTE est une autre question, avec ses propres signaux : badges
+ * « OK » / « sans catalogue » de la liste, compteurs d'appariement. Un site coché qui ne
+ * rapporte rien reste ACTIF — il est suivi, il ne produit simplement pas.
  */
 export interface CompetitorCounts { active: number; inactive: number; total: number }
 
-export function competitorCounts(
-  rows: { enabled?: boolean }[],
-): CompetitorCounts {
-  const active = rows.filter((r) => r.enabled !== false).length
-  return { active, inactive: rows.length - active, total: rows.length }
+export function competitorCounts(watchedIds: Iterable<string>, knownIds: Iterable<string>): CompetitorCounts {
+  const watched = new Set(watchedIds)
+  const total = new Set([...knownIds, ...watched])
+  const active = [...total].filter((id) => watched.has(id)).length
+  return { active, inactive: total.size - active, total: total.size }
 }
 
 /** Libellé commun des trois nombres — même phrase partout, jamais deux formulations. */
@@ -192,7 +194,7 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
     totalIndexed, totalCumulMs, avgProgress,
     sitesActive: active.length,
     sitesTotal: competitors.filter((c) => !disabled.has(c.siteId)).length,
-    counts: competitorCounts(competitors.map((c) => ({ enabled: !disabled.has(c.siteId) }))),
+    counts: competitorCounts(report.sites.map((s) => s.siteId), competitors.map((c) => c.siteId)),
     sitesComplete,
     cyclesDone, slowestCycle, runAt: report.runAt, lastCollectAt, lastCollectDomain,
     hasData: totalIndexed > 0,

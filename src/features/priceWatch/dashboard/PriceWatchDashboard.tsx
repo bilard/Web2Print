@@ -71,7 +71,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   const liveMeta = useCompetitorMeta(watchId)
   const liveCounts = useMemo(
     () => (report
-      ? competitorCounts(report.sites.map((s) => ({ enabled: liveMeta.get(s.siteId)?.enabled })))
+      ? competitorCounts(report.sites.map((s) => s.siteId), [...liveMeta.keys()])
       : null),
     [report, liveMeta],
   )
