@@ -62,10 +62,12 @@ function SpendLine({ label, tint, volume, cost }: {
   label: string; tint: string; volume: string; cost?: number
 }) {
   return (
-    <div className="flex items-baseline gap-1.5 text-[11px] leading-tight">
-      <span className={`w-16 shrink-0 text-left truncate ${tint}`}>{label}</span>
-      <span className="flex-1 text-right tabular-nums text-white/70">{volume}</span>
-      <span className="w-12 text-right tabular-nums text-amber-300/90">
+    <div className="flex items-baseline gap-1.5 text-[11px] leading-tight whitespace-nowrap">
+      <span className={`shrink-0 text-left truncate ${tint}`}>{label}</span>
+      {/* `min-w-0` + `whitespace-nowrap` : « 85,4 M tk » se coupait entre le nombre et son
+          unité, et la tuile gagnait une ligne pour un espace insécable manquant. */}
+      <span className="flex-1 min-w-0 text-right tabular-nums text-white/70 truncate">{volume}</span>
+      <span className="shrink-0 text-right tabular-nums text-amber-300/90">
         {cost != null && cost > 0 ? `$${cost.toFixed(2)}` : '—'}
       </span>
     </div>
