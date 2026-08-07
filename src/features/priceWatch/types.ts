@@ -41,7 +41,8 @@ export interface CompetitorSite {
   mode?: SiteMode
 }
 
-export type MatchStatus = 'auto' | 'confirmed' | 'pending' | 'rejected'
+/** Statut d'un appariement du suivi v1 (déprécié). Interne : plus aucun écran ne le lit. */
+type MatchStatus = 'auto' | 'confirmed' | 'pending' | 'rejected'
 
 export interface PriceMatch {
   productId: string

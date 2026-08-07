@@ -157,7 +157,6 @@ export const MODULE_ITEMS: ModuleItem[] = [
   },
   { id: 'price-watch', group: 'web', icon: TrendingUpDown, labelKey: 'nav.priceWatch', accent: 'text-orange-400', activeBg: 'bg-orange-500/[0.1]', activeText: 'text-orange-300',
     children: [
-      { id: 'section:pending',    labelKey: 'nav.priceWatch.pending',    intent: 'price-watch:section:pending' },
       { id: 'section:comparison', labelKey: 'nav.priceWatch.comparison', intent: 'price-watch:section:comparison' },
     ],
   },
