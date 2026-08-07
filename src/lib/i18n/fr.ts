@@ -2294,6 +2294,11 @@ export const fr = {
   'run.compareCatalog.emptyIndex': 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
   'run.compareCatalog.matchedBreakdown': "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
   'run.compareCatalog.vetoed': '{count} fiche(s) écartée(s) : la référence correspondait, mais le libellé nommait une autre pièce (filtre ↔ carburateur…). Un trou vaut mieux qu\u2019un faux prix.',
+  'run.compareCatalog.indexLoaded': '{count} fiche(s) concurrentes en mémoire pour {sites} site(s), lues en {s} s.',
+  'run.compareCatalog.matching': "Appariement de {products} produit(s) source avec {sites} concurrent(s) — étape ininterrompue : le journal ne reprend qu'à la fin.",
+  'run.compareCatalog.reportBuilding': 'Construction du rapport du tableau de bord (seconde passe sur les mêmes index)…',
+  'run.compareCatalog.sourceSaving': 'Catalogue source : {done}/{total} tranche(s) écrites.',
+  'run.compareCatalog.sourceSaved': 'Catalogue source enregistré : {count} produit(s) en {chunks} tranche(s), en {s} s.',
   'run.compareCatalog.noMatchAtAll': "Aucun appariement : la matrice sort VIDE, l'export en aval n'aura donc rien à écrire. L'index ne porte que {listings} fiche(s) concurrente(s) face à {products} produits source — un recouvrement nul est le résultat NORMAL d'un index trop maigre ou hors sujet. Étoffe la moisson, ou vérifie que les fiches indexées relèvent bien du même catalogue.",
 
   // Recherche dirigée (`directed-search`)

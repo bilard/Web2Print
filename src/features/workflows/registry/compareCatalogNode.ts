@@ -200,17 +200,30 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     }
 
     // Relecture de l'index concurrent depuis Firestore (pas via un edge).
+    //
+    // ⚠ ÉTAPE MUETTE LA PLUS LONGUE du node. Sur un suivi mûr, ce sont des centaines de
+    // milliers de fiches relues site par site, tout gardé en mémoire jusqu'à la fin du
+    // run : sans avancement, un node qui travaille ne se distingue pas d'un node figé.
+    // D'où le pourcentage sur la carte et le cumul journalisé à chaque site.
     const siteRefs: SiteRef[] = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
     const indexBySite = new Map<string, CompetitorListing[]>()
     const harvestBySite = new Map<string, { lastMs: number; cumulMs: number; progress: number; sweeps: number }>()
-    for (const s of siteRefs) {
+    const tIndex = Date.now()
+    let inMemory = 0
+    for (const [i, s] of siteRefs.entries()) {
       if (ctx.signal.aborted) break
       const meta = await loadCompetitorMeta(uid, watchId, s.siteId)
       if (meta?.cumulHarvestMs != null) harvestBySite.set(s.siteId, { lastMs: meta.lastHarvestMs ?? 0, cumulMs: meta.cumulHarvestMs, progress: meta.harvestProgress ?? 0, sweeps: meta.harvestSweeps ?? 0 })
       const listings = await loadAllListings(uid, watchId, s.siteId)
       indexBySite.set(s.siteId, listings)
+      inMemory += listings.length
       ctx.log('info', t('run.compareCatalog.siteIndexCount', { domain: s.domain, count: listings.length }))
+      // La lecture pèse l'essentiel du temps : elle occupe les 60 premiers pourcents.
+      ctx.setProgress?.(Math.round(((i + 1) / siteRefs.length) * 60))
     }
+    ctx.log('info', t('run.compareCatalog.indexLoaded', {
+      count: inMemory, sites: siteRefs.length, s: ((Date.now() - tIndex) / 1000).toFixed(1),
+    }))
 
     // Garde-fou : index vide sur TOUS les sites = la moisson n'a rien écrit sous CE
     // suivi. Cause classique : l'« Identifiant du suivi » de « Moisson concurrents »
@@ -229,7 +242,12 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     const labels = {
       ref: col.ref, ean: col.ean, name: col.name, family: col.family, price: col.price,
     }
+    // Appariement : passe SYNCHRONE de plusieurs minutes sur une base F1 × 14 concurrents.
+    // Annoncée AVANT, parce qu'elle ne rend la main qu'à la fin — aucun log ne peut sortir
+    // pendant, et le silence qui suivait passait pour un plantage.
+    ctx.log('info', t('run.compareCatalog.matching', { products: products.length, sites: siteRefs.length }))
     const m = buildMatrix(products, siteRefs, indexBySite, { vatRate, labels })
+    ctx.setProgress?.(75)
     ctx.reportCount?.(m.matched)
     ctx.log('info', t('run.compareCatalog.matchedBreakdown', {
       matched: m.matched, exact: m.matchedExact, originOnly: m.matchedOriginOnly,
@@ -253,15 +271,30 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // point de tendance). Non bloquant : un échec de persistance ne doit pas casser
     // l'export. Le tableau de bord « Veille tarifaire » lit ce rapport par watchId.
     try {
+      // Seconde passe complète sur les mêmes index — aussi longue que la première.
+      ctx.log('info', t('run.compareCatalog.reportBuilding'))
       const report = buildReport(products, siteRefs, indexBySite, { vatRate, harvestBySite })
       await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '', workflowId: ctx.workflowId })
+      ctx.setProgress?.(90)
       // Persiste le catalogue source → le recalcul mono-site (après un ▶ dans « Sites
       // sources ») pourra reconstruire le benchmark sans relancer tout le workflow.
-      await saveSourceCatalog(uid, watchId, products, vatRate, { rows: rawRows.length }).catch((e) => ctx.log('warn', t('run.sourceCatalogNotPersisted', { message: e instanceof Error ? e.message : String(e) })))
+      // C'est AUSSI ce que lit l'écran « Concurrents » pour apparier : son avancement est
+      // journalisé, un catalogue F1 s'écrit en dizaines de tranches.
+      const tSource = Date.now()
+      await saveSourceCatalog(uid, watchId, products, vatRate, {
+        rows: rawRows.length,
+        onProgress: (done, total) => {
+          if (done > 0) ctx.log('info', t('run.compareCatalog.sourceSaving', { done, total }))
+          ctx.setProgress?.(90 + Math.round((done / Math.max(1, total)) * 10))
+        },
+      }).then((chunks) => ctx.log('info', t('run.compareCatalog.sourceSaved', {
+        count: products.length, chunks, s: ((Date.now() - tSource) / 1000).toFixed(1),
+      }))).catch((e) => ctx.log('warn', t('run.sourceCatalogNotPersisted', { message: e instanceof Error ? e.message : String(e) })))
       // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact.
       await Promise.all(report.byCompetitor.map((c) =>
         saveCompetitorMeta(uid, watchId, c.siteId, { productCount: c.audit.indexed })))
       ctx.log('info', t('run.dashboardSaved', { watchId }))
+      ctx.setProgress?.(100)
     } catch (err) {
       ctx.log('warn', t('run.dashboardNotSaved', { message: err instanceof Error ? err.message : String(err) }))
     }

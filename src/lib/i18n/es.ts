@@ -2172,6 +2172,11 @@ export const es: Record<TranslationKey, string> = {
   'run.compareCatalog.emptyIndex': 'Índice de competidores vacío para los {sites} sitio(s) bajo el seguimiento «{watchId}». Compruebe que el nodo «Cosecha de competidores» utiliza el MISMO identificador de seguimiento («{watchId}») y que se ha ejecutado antes.',
   'run.compareCatalog.matchedBreakdown': '{matched} producto(s) emparejado(s): {exact} mismo producto, {originOnly} pieza original (adaptable ↔ OEM). {unmatched} sin correspondencia, {noKey} sin clave.',
   'run.compareCatalog.vetoed': '{count} ficha(s) descartada(s): la referencia coincidía, pero el nombre designaba otra pieza (filtro ↔ carburador…). Mejor un hueco que un precio falso.',
+  'run.compareCatalog.indexLoaded': '{count} ficha(s) de la competencia en memoria para {sites} sitio(s), leídas en {s} s.',
+  'run.compareCatalog.matching': 'Emparejando {products} producto(s) de origen con {sites} competidor(es): etapa ininterrumpida, el registro solo se reanuda al final.',
+  'run.compareCatalog.reportBuilding': 'Construcción del informe del panel (segunda pasada sobre los mismos índices)…',
+  'run.compareCatalog.sourceSaving': 'Catálogo de origen: {done}/{total} porción(es) escritas.',
+  'run.compareCatalog.sourceSaved': 'Catálogo de origen guardado: {count} producto(s) en {chunks} porción(es), en {s} s.',
   'run.compareCatalog.noMatchAtAll': 'Ningún emparejamiento: la matriz sale VACÍA, así que la exportación posterior no tendrá nada que escribir. El índice solo contiene {listings} ficha(s) de la competencia frente a {products} productos de origen: un solapamiento nulo es el resultado NORMAL de un índice demasiado escaso o fuera de tema. Amplía la recolección o comprueba que las fichas indexadas pertenecen al mismo catálogo.',
   // Recherche dirigée (`directed-search`)
   'run.directed.noInputData': 'Búsqueda dirigida: no hay datos de producto en la entrada.',

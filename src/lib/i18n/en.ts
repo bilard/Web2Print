@@ -2173,6 +2173,11 @@ export const en: Record<TranslationKey, string> = {
   'run.compareCatalog.emptyIndex': 'Competitor index empty for the {sites} site(s) under the "{watchId}" monitoring. Check that the "Harvest competitors" node uses the SAME monitoring identifier ("{watchId}") and that it ran first.',
   'run.compareCatalog.matchedBreakdown': '{matched} product(s) matched: {exact} same product, {originOnly} original part (aftermarket ↔ OEM). {unmatched} without a match, {noKey} without a key.',
   'run.compareCatalog.vetoed': '{count} listing(s) discarded: the reference matched, but the label named a different part (filter vs carburettor…). A gap beats a false price.',
+  'run.compareCatalog.indexLoaded': '{count} competitor listing(s) held in memory for {sites} site(s), read in {s} s.',
+  'run.compareCatalog.matching': 'Matching {products} source product(s) against {sites} competitor(s) — an uninterrupted step: the log only resumes once it is done.',
+  'run.compareCatalog.reportBuilding': 'Building the dashboard report (second pass over the same indexes)…',
+  'run.compareCatalog.sourceSaving': 'Source catalogue: {done}/{total} slice(s) written.',
+  'run.compareCatalog.sourceSaved': 'Source catalogue saved: {count} product(s) in {chunks} slice(s), in {s} s.',
   'run.compareCatalog.noMatchAtAll': 'No match at all: the matrix comes out EMPTY, so the downstream export will have nothing to write. The index holds only {listings} competitor listing(s) against {products} source products — zero overlap is the NORMAL outcome of an index that is too thin or off-topic. Widen the harvest, or check that the indexed listings belong to the same catalogue.',
   // Recherche dirigée (`directed-search`)
   'run.directed.noInputData': 'Directed search: no product data on the input.',

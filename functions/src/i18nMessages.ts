@@ -195,6 +195,22 @@ const MESSAGES = {
     fr: 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
     en: 'Competitor index empty for the {sites} site(s) under the "{watchId}" monitoring. Check that the "Harvest competitors" node uses the SAME monitoring identifier ("{watchId}") and that it ran first.',
   },
+  'run.compareCatalog.indexLoaded': {
+    fr: '{count} fiche(s) concurrentes en mémoire pour {sites} site(s), lues en {s} s.',
+    en: '{count} competitor listing(s) held in memory for {sites} site(s), read in {s} s.',
+  },
+  'run.compareCatalog.matching': {
+    fr: "Appariement de {products} produit(s) source avec {sites} concurrent(s) — étape ininterrompue : le journal ne reprend qu'à la fin.",
+    en: 'Matching {products} source product(s) against {sites} competitor(s) — an uninterrupted step: the log only resumes once it is done.',
+  },
+  'run.compareCatalog.reportBuilding': {
+    fr: 'Construction du rapport du tableau de bord (seconde passe sur les mêmes index)…',
+    en: 'Building the dashboard report (second pass over the same indexes)…',
+  },
+  'run.compareCatalog.sourceSaved': {
+    fr: 'Catalogue source enregistré : {count} produit(s) en {chunks} tranche(s), en {s} s.',
+    en: 'Source catalogue saved: {count} product(s) in {chunks} slice(s), in {s} s.',
+  },
   'run.compareCatalog.matchedBreakdown': {
     fr: "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
     en: '{matched} product(s) matched: {exact} same product, {originOnly} original part (aftermarket ↔ OEM). {unmatched} without a match, {noKey} without a key.',

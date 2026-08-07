@@ -57,37 +57,69 @@ export async function loadCatalogReportKpis(uid: string, watchId: string): Promi
 export const SOURCE_CHUNK_BYTES_FOR_TEST = SOURCE_CHUNK_BYTES
 export const sliceSourceCatalogForTest = sliceByBytes
 
-/** Persiste le catalogue source (chunké sous la limite 1 Mo/doc) + la TVA. Remplace tout. */
+/** Tranches écrites de front. Séquentiel, une base F1 mettait plusieurs MINUTES à
+ *  s'écrire — et l'écran « Concurrents » lit cette collection pendant tout ce temps. */
+const SOURCE_WRITE_BATCH = 5
+
+/** Une tranche devenue orpheline : le catalogue a rétréci depuis la dernière écriture. */
+function isStaleChunk(id: string, chunks: number): boolean {
+  const m = /^chunk_(\d+)$/.exec(id)
+  return m != null && Number(m[1]) >= chunks
+}
+
+/** Persiste le catalogue source (chunké sous la limite 1 Mo/doc) + la TVA. Remplace tout.
+ *  Rend le nombre de TRANCHES écrites : c'est lui qui explique la durée de l'étape. */
 export async function saveSourceCatalog(
   uid: string, watchId: string, products: SourceProduct[], vatRate: number,
-  /** Lignes REÇUES par le node. Persisté pour répondre, plus tard, à « pourquoi si peu
-   *  de produits ? » sans rouvrir le journal du run : 100 retenus sur 100 lignes désigne
-   *  la source, 100 sur 74 000 désigne le dédoublonnage. */
-  opts: { rows?: number } = {},
-): Promise<void> {
+  opts: {
+    /** Lignes REÇUES par le node. Persisté pour répondre, plus tard, à « pourquoi si peu
+     *  de produits ? » sans rouvrir le journal du run : 100 retenus sur 100 lignes désigne
+     *  la source, 100 sur 74 000 désigne le dédoublonnage. */
+    rows?: number
+    /** Avancement en TRANCHES : sans lui, le node reste muet pendant toute l'écriture et
+     *  un run qui travaille ne se distingue pas d'un run figé. */
+    onProgress?: (done: number, total: number) => void
+  } = {},
+): Promise<number> {
   const col = sourceCol(uid, watchId)
-  // Purge les anciens chunks (catalogue plus petit qu'avant → pas d'orphelins).
-  const existing = await getDocs(collection(db, col)).catch(() => null)
-  if (existing) await Promise.all(existing.docs.map((d) => deleteDoc(d.ref)))
   const slices = sliceByBytes(products)
   const chunks = slices.length
-  // ⚠ `_meta` est écrit EN DERNIER. Écrit en premier, il annonçait N tranches dont les
-  // suivantes pouvaient ne jamais arriver (onglet fermé, réseau, quota) : la relecture
-  // rendait alors un catalogue AMPUTÉ en le présentant comme complet, et le recalcul
-  // mono-site réécrivait un rapport avec une poignée d'appariés.
-  for (let i = 0; i < chunks; i++) {
-    // ⚠ stripUndefined OBLIGATOIRE : un SourceProduct porte des champs facultatifs posés
-    // EXPLICITEMENT à `undefined` par le node « Comparer » (`ref`/`ref2`/`ean` quand la
-    // colonne n'est pas mappée, `price` quand la cellule n'est pas un nombre). Firestore
-    // refuse alors le doc ENTIER — « Unsupported field value: undefined ». Le jumeau
-    // serveur nettoyait déjà ; le client, non : le catalogue source n'était jamais
-    // persisté depuis un run navigateur, et le recalcul mono-site (▶) restait aveugle.
-    await setDoc(doc(db, col, `chunk_${i}`), { products: stripUndefined(slices[i]) })
+  // ⚠ ÉCRIRE D'ABORD, EFFACER ENSUITE. La purge se faisait AVANT l'écriture : dès sa
+  // première milliseconde le catalogue — `_meta` compris — disparaissait, et l'explorateur
+  // « Concurrents » n'avait plus rien à apparier pendant toute la réécriture (minutes).
+  // Un run interrompu là (onglet fermé, quota, plantage) laissait le suivi SANS catalogue
+  // source jusqu'au prochain run complet, avec pour seul symptôme « 0 apparié » sur des
+  // centaines de milliers de fiches pourtant collectées. Écraser les tranches en place ne
+  // publie jamais d'état vide : au pire un mélange ancien/nouveau, tous deux valides.
+  opts.onProgress?.(0, chunks)
+  for (let i = 0; i < chunks; i += SOURCE_WRITE_BATCH) {
+    await Promise.all(slices.slice(i, i + SOURCE_WRITE_BATCH).map((slice, k) =>
+      // ⚠ stripUndefined OBLIGATOIRE : un SourceProduct porte des champs facultatifs posés
+      // EXPLICITEMENT à `undefined` par le node « Comparer » (`ref`/`ref2`/`ean` quand la
+      // colonne n'est pas mappée, `price` quand la cellule n'est pas un nombre). Firestore
+      // refuse alors le doc ENTIER — « Unsupported field value: undefined ». Le jumeau
+      // serveur nettoyait déjà ; le client, non : le catalogue source n'était jamais
+      // persisté depuis un run navigateur, et le recalcul mono-site (▶) restait aveugle.
+      setDoc(doc(db, col, `chunk_${i + k}`), { products: stripUndefined(slice) })))
+    opts.onProgress?.(Math.min(i + SOURCE_WRITE_BATCH, chunks), chunks)
   }
+  // ⚠ `_meta` est écrit APRÈS les tranches. Écrit en premier, il annoncerait N tranches
+  // dont les suivantes peuvent ne jamais arriver : la relecture rendrait un catalogue
+  // AMPUTÉ en le présentant comme complet, et le recalcul mono-site réécrirait un rapport
+  // avec une poignée d'appariés.
   await setDoc(doc(db, col, '_meta'), {
     vatRate, chunks, count: products.length, at: Date.now(),
     ...(opts.rows != null ? { rows: opts.rows } : {}),
   })
+  // Catalogue rétréci : les tranches au-delà du nouveau compte ne sont plus lues (`_meta`
+  // fait foi) mais resteraient facturées. Purge non bloquante — leur survie ne fausse rien.
+  const existing = await getDocs(collection(db, col)).catch(() => null)
+  if (existing) {
+    await Promise.all(existing.docs
+      .filter((d) => isStaleChunk(d.id, chunks))
+      .map((d) => deleteDoc(d.ref)))
+  }
+  return chunks
 }
 
 /** Relit le catalogue source persisté. null si jamais écrit (aucun « Comparer » lancé). */

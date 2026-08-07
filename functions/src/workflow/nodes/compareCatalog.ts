@@ -136,14 +136,22 @@ registerServerNode({
     const siteRefs: SiteRef[] = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
     const indexBySite = new Map<string, CompetitorListing[]>()
     const harvestBySite = new Map<string, { lastMs: number; cumulMs: number; progress: number; sweeps: number }>()
+    // ⚠ Étape MUETTE la plus longue (jumeau du client) : tout l'index de chaque site est
+    // gardé en mémoire jusqu'à la fin du run. Le cumul journalisé dit si le run travaille.
+    const tIndex = Date.now()
+    let inMemory = 0
     for (const s of siteRefs) {
       if (ctx.signal.aborted) break
       const meta = await loadCompetitorMeta(ctx.uid, watchId, s.siteId)
       if (meta?.cumulHarvestMs != null) harvestBySite.set(s.siteId, { lastMs: meta.lastHarvestMs ?? 0, cumulMs: meta.cumulHarvestMs, progress: meta.harvestProgress ?? 0, sweeps: meta.harvestSweeps ?? 0 })
       const listings = await loadAllListings(ctx.uid, watchId, s.siteId)
       indexBySite.set(s.siteId, listings)
+      inMemory += listings.length
       ctx.log('info', t(ctx.locale, 'run.compareCatalog.siteIndexCount', { domain: s.domain, count: listings.length }))
     }
+    ctx.log('info', t(ctx.locale, 'run.compareCatalog.indexLoaded', {
+      count: inMemory, sites: siteRefs.length, s: ((Date.now() - tIndex) / 1000).toFixed(1),
+    }))
 
     // Garde-fou (jumeau du client) : index vide sur TOUS les sites = la moisson n'a rien
     // écrit sous CE suivi (identifiant de suivi divergent, casse/espace, ou moisson non
@@ -156,6 +164,8 @@ registerServerNode({
     const vatRate = Math.max(0, Number(config.vatRate) || 20) / 100
     // En-têtes de sortie = noms de colonnes de la source (suffixés du concurrent).
     const labels = { ref: refColumn, ean: eanColumn, name: nameColumn, family: familyColumn, price: priceColumn }
+    // Passe SYNCHRONE annoncée avant : rien ne sort du journal tant qu'elle tourne.
+    ctx.log('info', t(ctx.locale, 'run.compareCatalog.matching', { products: sourceProducts.length, sites: siteRefs.length }))
     const m = buildMatrix(sourceProducts, siteRefs, indexBySite, { vatRate, labels })
     ctx.log('info', t(ctx.locale, 'run.compareCatalog.matchedBreakdown', {
       matched: m.matched, exact: m.matchedExact, originOnly: m.matchedOriginOnly,
@@ -174,11 +184,17 @@ registerServerNode({
     // Persiste le RAPPORT dashboard (comme le node client) → le CRON alimente le tableau
     // de bord Veille tarifaire sans ouvrir l'app. Non bloquant : un échec ne casse pas l'export.
     try {
+      ctx.log('info', t(ctx.locale, 'run.compareCatalog.reportBuilding'))
       const report = buildReport(sourceProducts, siteRefs, indexBySite, { vatRate, harvestBySite })
       await saveCatalogReport(ctx.uid, watchId, report, siteRefs, Date.now(), { label: ctx.workflowName })
       // Catalogue source (comme le node client) : sans lui, un suivi alimenté seulement
-      // par le cron n'a rien à relire pour un recalcul mono-site après un ▶.
+      // par le cron n'a rien à relire pour un recalcul mono-site après un ▶ — et l'écran
+      // « Concurrents » n'a rien à apparier.
+      const tSource = Date.now()
       await saveSourceCatalog(ctx.uid, watchId, sourceProducts, vatRate, { rows: rawRows.length })
+        .then((chunks) => ctx.log('info', t(ctx.locale, 'run.compareCatalog.sourceSaved', {
+          count: sourceProducts.length, chunks, s: ((Date.now() - tSource) / 1000).toFixed(1),
+        })))
         .catch((e) => ctx.log('warn', t(ctx.locale, 'run.sourceCatalogNotPersisted', { message: e instanceof Error ? e.message : String(e) })))
       // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact
       // (annule la dérive de l'incrément live de la moisson).

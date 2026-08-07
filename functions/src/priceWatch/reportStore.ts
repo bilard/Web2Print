@@ -40,29 +40,50 @@ function sliceByBytes<T>(products: T[]): T[][] {
   return out
 }
 
-/** Persiste le catalogue source (chunké sous la limite 1 Mo/doc) + la TVA. Remplace tout. */
+/** Tranches écrites de front (jumeau du client). */
+const SOURCE_WRITE_BATCH = 5
+
+/** Une tranche devenue orpheline : le catalogue a rétréci depuis la dernière écriture. */
+function isStaleChunk(id: string, chunks: number): boolean {
+  const m = /^chunk_(\d+)$/.exec(id)
+  return m != null && Number(m[1]) >= chunks
+}
+
+/** Persiste le catalogue source (chunké sous la limite 1 Mo/doc) + la TVA. Remplace tout.
+ *  Rend le nombre de TRANCHES écrites : c'est lui qui explique la durée de l'étape. */
 export async function saveSourceCatalog(
   uid: string, watchId: string, products: SourceProduct[], vatRate: number,
   /** Lignes REÇUES par le node — jumeau du client (diagnostic « pourquoi si peu ? »). */
   opts: { rows?: number } = {},
-): Promise<void> {
+): Promise<number> {
   const db = getFirestore()
   const col = sourceCol(uid, watchId)
-  // Purge des anciens chunks (catalogue rétréci → pas d'orphelins).
-  const existing = await db.collection(col).get().catch(() => null)
-  if (existing) await Promise.all(existing.docs.map((d) => d.ref.delete()))
   const slices = sliceByBytes(products)
   const chunks = slices.length
-  // ⚠ `_meta` EN DERNIER (jumeau du client) : écrit en premier, il annonçait des tranches
-  // qui pouvaient ne jamais arriver, et la relecture rendait un catalogue amputé en le
-  // présentant comme complet.
-  for (let i = 0; i < chunks; i++) {
-    await db.doc(`${col}/chunk_${i}`).set({ products: stripUndefined(slices[i]) })
+  // ⚠ ÉCRIRE D'ABORD, EFFACER ENSUITE (jumeau du client). La purge se faisait AVANT
+  // l'écriture : le catalogue — `_meta` compris — disparaissait dès la première
+  // milliseconde, et l'écran « Concurrents » n'avait plus rien à apparier pendant toute la
+  // réécriture. Un run interrompu là laissait le suivi SANS catalogue source.
+  for (let i = 0; i < chunks; i += SOURCE_WRITE_BATCH) {
+    await Promise.all(slices.slice(i, i + SOURCE_WRITE_BATCH).map((slice, k) =>
+      db.doc(`${col}/chunk_${i + k}`).set({ products: stripUndefined(slice) })))
   }
+  // ⚠ `_meta` APRÈS les tranches : écrit en premier, il annoncerait des tranches qui
+  // peuvent ne jamais arriver, et la relecture rendrait un catalogue amputé en le
+  // présentant comme complet.
   await db.doc(`${col}/_meta`).set({
     vatRate, chunks, count: products.length, at: Date.now(),
     ...(opts.rows != null ? { rows: opts.rows } : {}),
   })
+  // Tranches excédentaires d'un catalogue rétréci : plus lues (`_meta` fait foi), purgées
+  // après coup — leur survie ne fausse rien.
+  const existing = await db.collection(col).get().catch(() => null)
+  if (existing) {
+    await Promise.all(existing.docs
+      .filter((d) => isStaleChunk(d.id, chunks))
+      .map((d) => d.ref.delete()))
+  }
+  return chunks
 }
 
 /**
