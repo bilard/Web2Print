@@ -106,7 +106,19 @@ moteur PIM :
 5. Retirer le test temporaire et revenir sur `master`.
 
 Vérifier que l'instantané est **réellement peuplé** : deux sorties vides sont
-aussi « identiques ».
+aussi « identiques ». Et **compter** ce qu'on compare avant de conclure : sur
+un simple déplacement de bloc, `sed -n '/^\/\*\* Début/,/^}$/p' ` s'arrête à la
+PREMIÈRE accolade en colonne 0 — donc à la fin de la première fonction du bloc.
+Le diff est vert sur 70 lignes d'un bloc qui en fait 278, et « prouve » un
+déplacement dont 75 % n'a pas été regardé. Découper par indices de lignes
+(Python), afficher le compte des deux côtés, et n'accepter la preuve que si les
+deux totaux correspondent à la taille attendue.
+
+**Cas plus léger, mais suffisant sur un déplacement PUR** (aucune ligne
+retouchée) : extraire le bloc de `git show HEAD:<fichier>` et du fichier
+d'arrivée, puis `diff`. Identique au caractère près = neutre, sans avoir à
+rejouer la chaîne sur fixtures. Ça ne remplace PAS la parité dès qu'une ligne
+change.
 
 ⚠ **Ne pas construire un smoke sur des appels réseau live.** Beaucoup de sites
 marchands renvoient une page anti-bot (Akamai) ou un CAPTCHA à Jina : le test
@@ -148,6 +160,30 @@ CLAUDE.md, et knip le vérifie).
 
 ⚠ **Avant de créer un fichier, vérifier qu'il n'existe pas** (`ls`) : un
 `promoTypes.ts` déjà présent a failli être écrasé lors du premier passage.
+Mieux : dans un dossier déjà découpé, le module d'accueil existe souvent
+**déjà**, et c'est là qu'il faut poser le bloc plutôt que d'en créer un
+troisième. `ls <dossier>` avant de décider, systématiquement.
+
+### État du moteur d'enrichissement
+
+`excel/ai-enrichment/useProductEnrichment.ts` est le plus gros fichier du dépôt
+hors catalogues i18n. 2 601 → **2 189 lignes** en trois lots (2026-08-08) :
+
+| Extrait | Vers | Lignes |
+|---|---|---|
+| schéma zod + JSON Schema de la réponse LLM | `enrichmentSchemas.ts` *(créé)* | 76 |
+| `cleanDocumentName` + `extractNameFromUrl` + `humanizeName` | `documentUtils.ts` *(existant)* | 58 |
+| `sanitizeEnriched` + `filterDocumentsByProductRef` | `enrichmentSanitize.ts` *(existant)* | 278 |
+
+⚠ **Le vrai morceau est intact** : `enrichProductCoreInner` fait **1 664 lignes
+à lui seul**, soit 76 % de ce qui reste. Le découper n'est pas un lot mais un
+chantier à part entière — il touche au parsing, donc il exige la preuve de
+parité sur fixtures réelles (section plus haut), pas seulement `tsc` + tests.
+
+Dans `enrichmentSchemas.ts`, les `description` du JSON Schema **ne sont pas de
+la documentation** : le modèle les lit et elles pilotent ce qu'il produit
+(« recopié VERBATIM », « ne pas limiter le nombre »). Les reformuler change les
+fiches obtenues — recopier à l'octet près.
 
 ## Trois formes de doublon
 
@@ -184,6 +220,25 @@ canonique en teste cinq. Mesure : 0 changement sur 2 fiches réelles, 6/6 cas
 témoins désormais rejetés → fusionné.
 Exemples laissés en l'état : `relatedUrls.ts` et `scrapeBundle.ts`, forks
 divergents dont la fusion changerait le comportement du scraping.
+
+### 4ᵉ forme : le faux doublon (le plus coûteux)
+
+Deux fonctions de nom voisin, dans le même dossier, avec des **intentions
+différentes**. Le détecteur ne les signale pas — c'est l'œil qui les rapproche,
+et c'est l'œil qui se trompe. Les fusionner supprime un comportement sans que
+rien ne casse à la compilation.
+
+Vérifiés et **délibérément laissés séparés** (`excel/ai-enrichment/`) :
+
+| Paire | Ce qui les distingue |
+|---|---|
+| `displayDocumentName` / `cleanDocumentName` | la 1ʳᵉ garantit un libellé non vide ; la 2ᵈ REMPLACE un titre générique (« Télécharger », « PDF ») par un nom déduit de l'URL, humanisé, sans extension, en remontant au dossier parent quand le fichier est un hash de CDN |
+| `basenameFromUrl` / `extractNameFromUrl` | la 1ʳᵉ rend le fichier brut avec extension ; la 2ᵈ un nom lisible sans extension |
+| `sanitizeEnrichedProduct` / `sanitizeEnriched` | la 2ᵈ reçoit AUSSI les références produit, ce qui lui permet d'écarter les documents portant le code d'un autre SKU de la gamme (« FT dr101ch » sous la référence DR100CH) |
+
+Règle : **avant de fusionner deux noms voisins, lire les deux corps en entier
+et écrire la distinction en commentaire sur place.** Un rapprochement écarté
+qui n'est pas documenté sera re-tenté au passage suivant.
 
 ## Codemods
 
