@@ -1944,6 +1944,7 @@ export const es: Record<TranslationKey, string> = {
   'pw.ops.spend.help': 'Consumo contabilizado únicamente por el NAVEGADOR: una ejecución lanzada por el cron no aparece aquí. Es un mínimo, nunca la factura: el saldo de créditos del proveedor es lo que cuenta.',
   'pw.ops.jina': 'Jina (este mes)',
   'pw.ops.noRequest': 'ninguna solicitud',
+  'pw.counts.help': 'ACTIVO = vigilado (casilla marcada) Y produciendo fichas. INACTIVO = en pausa, o marcado pero estéril: catálogo inaccesible, anti-bot, sin clave de unión. Misma definición en las tres pantallas.',
   'pw.ops.activeCompetitors': 'Competidores activos',
   'pw.ops.nextHarvest': 'Próxima recolección',
   'pw.ops.manual': 'manual',

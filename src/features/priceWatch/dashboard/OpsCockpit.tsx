@@ -9,7 +9,7 @@ import { Layers, Timer, RefreshCw, Fuel, Radio, CalendarClock, Activity } from '
 import type { StoredReport } from '../reportStore'
 import { Gauge } from './Gauge'
 import { AnimatedNumber } from './AnimatedNumber'
-import { buildOpsCockpit } from './opsMetrics'
+import { buildOpsCockpit, competitorCountsLabel } from './opsMetrics'
 import { useCompetitorMeta } from '../useCatalogReport'
 import { useScrapeSpend } from './useScrapeSpend'
 import { duration, ago, compactNum } from './format'
@@ -227,8 +227,12 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                     volume={brightdata ? `${compactNum(brightdata.requests)} req` : '—'} cost={brightdata?.costUsd} />
                 </div>
               </Cell>
+              {/* ACTIFS · INACTIFS · TOTAL — même définition et même phrase que la liste
+                  des sites et que le bandeau de KPI, qui en donnaient trois versions. */}
               <Cell icon={Radio} tint="text-indigo-400" label={t('pw.ops.activeCompetitors')}
-                value={`${ck.sitesActive}/${ck.sitesTotal}`} sub={t('pw.ops.atFull', { count: ck.sitesComplete })} />
+                title={t('pw.counts.help')}
+                value={<>{ck.counts.active}<span className="text-white/35">/{ck.counts.total}</span></>}
+                sub={competitorCountsLabel(ck.counts)} />
               <Cell icon={CalendarClock} tint={cronOn ? 'text-emerald-400' : 'text-white/40'} label={t('pw.ops.nextHarvest')}>
                 {!cronOn ? (
                   <>

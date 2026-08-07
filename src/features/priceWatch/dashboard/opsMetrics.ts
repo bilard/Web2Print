@@ -61,6 +61,8 @@ export interface OpsCockpit {
   avgProgress: number          // balayage moyen (0..1) sur les concurrents actifs
   sitesActive: number          // concurrents ayant ≥ 1 fiche collectée
   sitesTotal: number
+  /** Triplet unifié ACTIFS · INACTIFS · TOTAL (cf. `competitorCounts`). */
+  counts: CompetitorCounts
   sitesComplete: number        // concurrents ayant bouclé ≥ 1 cycle complet
   cyclesDone: number           // cycles complets GARANTIS = min(sweeps) sur les actifs
   slowestCycle: { domain: string; cycleMs: number } | null // goulot → calibrage du cron
@@ -95,6 +97,35 @@ function opsCompetitorOf(s: CompetitorStat, live?: HarvestMeta): OpsCompetitor {
     // % prix LIVE (mis à jour au scrape depuis l'index) prioritaire sur le rapport figé.
     pctPrice: live?.pctPrice ?? s.audit?.pctPrice ?? 0,
   }
+}
+
+/**
+ * Compte unifié des concurrents : ACTIFS · INACTIFS · TOTAL.
+ *
+ * Trois écrans disaient trois choses de la même population — « 12 OK / 2 sans catalogue »
+ * dans la liste des sites, « 20/24 » dans les KPI, « 21/24 » dans le cockpit — parce que
+ * chacun avait sa définition d'« actif » (coché ? collecte ? apparie ?). Une seule règle
+ * désormais, et les trois nombres visibles partout :
+ *
+ *   ACTIF   = suivi (case cochée) ET produisant des fiches — il travaille ;
+ *   INACTIF = tout le reste : mis en pause, ou coché mais stérile (catalogue introuvable,
+ *             anti-bot, clé de jointure absente) — c'est la population à regarder ;
+ *   TOTAL   = tous les concurrents déclarés dans le suivi.
+ */
+export interface CompetitorCounts { active: number; inactive: number; total: number }
+
+export function competitorCounts(
+  rows: { enabled?: boolean; indexed: number }[],
+): CompetitorCounts {
+  const active = rows.filter((r) => r.enabled !== false && r.indexed > 0).length
+  return { active, inactive: rows.length - active, total: rows.length }
+}
+
+/** Libellé commun des trois nombres — même phrase partout, jamais deux formulations. */
+export function competitorCountsLabel(c: CompetitorCounts): string {
+  return c.inactive > 0
+    ? `${c.active} actifs · ${c.inactive} inactifs · ${c.total} au total`
+    : `${c.active} actifs · ${c.total} au total`
 }
 
 export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, HarvestMeta>): OpsCockpit {
@@ -158,6 +189,7 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
     totalIndexed, totalCumulMs, avgProgress,
     sitesActive: active.length,
     sitesTotal: competitors.filter((c) => !disabled.has(c.siteId)).length,
+    counts: competitorCounts(competitors.map((c) => ({ enabled: !disabled.has(c.siteId), indexed: c.indexed }))),
     sitesComplete,
     cyclesDone, slowestCycle, runAt: report.runAt, lastCollectAt, lastCollectDomain,
     hasData: totalIndexed > 0,

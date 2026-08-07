@@ -3,6 +3,7 @@
 import type { KpiHistoryPoint } from '../types'
 import type { Cockpit } from './analytics'
 import { trendDelta, sparkSeries } from './analytics'
+import { competitorCountsLabel } from './opsMetrics'
 import { eur, pct, when } from './format'
 import { Sparkline } from './Sparkline'
 import { AnimatedNumber } from './AnimatedNumber'
@@ -85,11 +86,12 @@ export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoin
         sub={t('pw.kpi.matched.sub', { exact: k.matchedExact, orig: k.matchedOriginOnly })}
         delta={d && <Delta cur={d.last.products} prev={d.prev.products} />}
         spark={<Sparkline values={s.products} color="#818cf8" />} />
-      {/* Le total seul comptait pareil un concurrent qui apparie dix mille produits et un
-          autre qui n'en apparie aucun. Le ratio dit lesquels pèsent vraiment. */}
-      <Tile label={t('pw.kpi.competitors')} title={t('pw.kpi.competitors.title')}
-        value={<><AnimatedNumber value={ck.competitorsMatched} /><span className="text-white/35">/{ck.competitorsCount}</span></>}
-        sub={t('pw.kpi.competitors.sub', { count: k.comparisons })} />
+      {/* ACTIFS · INACTIFS · TOTAL — même définition et même phrase que le cockpit et que
+          la liste des sites. Le total seul comptait pareil un concurrent qui apparie dix
+          mille produits et un autre resté muet. */}
+      <Tile label={t('pw.kpi.competitors')} title={t('pw.counts.help')}
+        value={<><AnimatedNumber value={ck.competitorCounts.active} /><span className="text-white/35">/{ck.competitorCounts.total}</span></>}
+        sub={competitorCountsLabel(ck.competitorCounts)} />
       <Tile label={t('pw.kpi.outOfStock')} value={<AnimatedNumber value={k.ruptures} />} accent="text-amber-400" sub={t('pw.kpi.outOfStock.sub')} />
       <Tile label={t('pw.kpi.analysis')} value={when(ck.runAt)}
         sub={t(ck.truncated ? 'pw.kpi.analysis.sub.truncated' : 'pw.kpi.analysis.sub', { count: ck.totalMatched })}

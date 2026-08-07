@@ -2028,6 +2028,7 @@ export const fr = {
   'pw.ops.spend.help': 'Consommation comptée par le NAVIGATEUR seul : un run lancé par le cron n’y apparaît pas. C’est un plancher, jamais la facture — le solde de crédits du fournisseur fait foi.',
   'pw.ops.jina': 'Jina (ce mois)',
   'pw.ops.noRequest': 'aucune requête',
+  'pw.counts.help': 'ACTIF = suivi (case cochée) ET produisant des fiches. INACTIF = mis en pause, ou coché mais stérile — catalogue introuvable, anti-bot, aucune clé de jointure. Même définition sur les trois écrans.',
   'pw.ops.activeCompetitors': 'Concurrents actifs',
   'pw.ops.nextHarvest': 'Prochaine moisson',
   'pw.ops.manual': 'manuel',

@@ -1945,6 +1945,7 @@ export const en: Record<TranslationKey, string> = {
   'pw.ops.spend.help': 'Usage counted by the BROWSER only: a run started by the cron does not show up here. It is a floor, never the bill — the provider credit balance is the authority.',
   'pw.ops.jina': 'Jina (this month)',
   'pw.ops.noRequest': 'no request',
+  'pw.counts.help': 'ACTIVE = monitored (box ticked) AND producing listings. INACTIVE = paused, or ticked but barren — catalogue unreachable, anti-bot, no join key. Same definition on all three screens.',
   'pw.ops.activeCompetitors': 'Active competitors',
   'pw.ops.nextHarvest': 'Next harvest',
   'pw.ops.manual': 'manual',

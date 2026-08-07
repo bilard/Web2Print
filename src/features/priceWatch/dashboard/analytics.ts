@@ -7,6 +7,7 @@
 // en toute circonstance sont `report.kpis` (headline) et `byCompetitor.avgGapPct`. Le
 // FILTRE global ne touche QUE les blocs dérivés — les headline restent globaux (kpis).
 import { median } from '../catalog/report'
+import { competitorCounts, type CompetitorCounts } from './opsMetrics'
 import type { StoredReport } from '../reportStore'
 import type { KpiHistoryPoint } from '../types'
 import type { ProductRow, ReportKpis } from '../catalog/report'
@@ -113,9 +114,9 @@ export interface Cockpit {
   totalMatched: number
   runAt: number
   competitorsCount: number
-  /** Concurrents ayant AU MOINS un produit apparié — ceux qui pèsent réellement dans les
-   *  comparaisons. Les autres sont déclarés mais muets : un total seul les compte pareil. */
-  competitorsMatched: number
+  /** Triplet unifié ACTIFS · INACTIFS · TOTAL — MÊME définition que le cockpit et que la
+   *  liste des sites (cf. `competitorCounts`). Trois écrans en donnaient trois versions. */
+  competitorCounts: CompetitorCounts
   // vue filtrée
   filterActive: boolean
   filteredCount: number
@@ -397,7 +398,10 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
 
   return {
     kpis, truncated, totalMatched, runAt, competitorsCount: sites.length,
-    competitorsMatched: byCompetitor.filter((c) => c.matched > 0).length,
+    // Le rapport ne dit pas quels sites sont décochés : tous ceux qu'il porte étaient
+    // suivis au moment de l'analyse. Le critère qui reste — et qui suffit — est la
+    // production de fiches.
+    competitorCounts: competitorCounts(byCompetitor.map((c) => ({ indexed: c.audit?.indexed ?? 0 }))),
     filterActive: active, filteredCount: view.length, totalCount: products.length,
     priceHoldPct, exposedPct,
     priceIndex, priceIndexBest, priceIndexBiased: !hasStoredIndex && priceIndex != null,

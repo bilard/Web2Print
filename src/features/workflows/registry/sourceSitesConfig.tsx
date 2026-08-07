@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { useCompetitorMeta, useCatalogReport } from '@/features/priceWatch/useCatalogReport'
 import { stableId } from '@/features/priceWatch/core'
+import { competitorCounts } from '@/features/priceWatch/dashboard/opsMetrics'
 import { harvestOneSite } from '@/features/priceWatch/catalog/runSingleSite'
 import { resetCompetitorData } from '@/features/priceWatch/catalog/store'
 import { recomputeReport, PartialSourceCatalogError, ReportRegressionError } from '@/features/priceWatch/catalog/recomputeReport'
@@ -181,7 +182,12 @@ export function SourceSitesConfig({ config, onChange }: {
     setImporting(false)
   }
 
-  const active = rows.filter((r) => r.enabled).length
+  // ⚠ MÊME définition qu'ailleurs (cockpit, bandeau de KPI) : actif = coché ET produisant
+  // des fiches. Compter les seules cases cochées annonçait « 14 actifs » là où deux sites
+  // ne rapportaient rien — trois écrans, trois chiffres, pour la même population.
+  const counts = competitorCounts(rows.map((r) => ({
+    enabled: r.enabled, indexed: statsFor(r.domain).products ?? 0,
+  })))
   // Tout sélectionner / désélectionner : bascule l'activation de TOUS les sites d'un clic.
   const allEnabled = rows.length > 0 && rows.every((r) => r.enabled)
   const toggleAll = () => onChange({ ...config, sites: rows.map((r) => ({ ...r, enabled: !allEnabled })) })
@@ -246,7 +252,7 @@ export function SourceSitesConfig({ config, onChange }: {
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-white/30 whitespace-nowrap">
-              {rows.length ? `${active}/${rows.length} actifs` : 'Sites'}
+              {rows.length ? `${counts.active}/${counts.total} actifs` : 'Sites'}
             </p>
             {totalProducts > 0 && (
               <p className="text-[10px] text-white/30 tabular-nums whitespace-nowrap">

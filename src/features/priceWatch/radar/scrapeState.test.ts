@@ -17,6 +17,7 @@ const UNKNOWN: RunPulse = { active: false, startedAt: null, endedAt: null }
 
 const ops = (patch: Partial<OpsCockpit> = {}): OpsCockpit => ({
   totalIndexed: 10, totalCumulMs: 0, avgProgress: 0.5, sitesActive: 1, sitesTotal: 1,
+  counts: { active: 1, inactive: 0, total: 1 },
   sitesComplete: 0, cyclesDone: 0, slowestCycle: null, runAt: NOW, lastCollectAt: null,
   lastCollectDomain: null, hasData: true,
   competitors: [{ siteId: 'a', domain: 'www.exemple.com', indexed: 10, progress: 0.5, sweeps: 0, cumulMs: 0, cycleMs: null, pctPrice: 90 }],
