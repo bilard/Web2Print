@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { Layers, Timer, RefreshCw, Fuel, Radio, CalendarClock, Activity } from 'lucide-react'
+import { Layers, Timer, RefreshCw, Fuel, Flame, Globe, Radio, CalendarClock, Activity } from 'lucide-react'
 import type { StoredReport } from '../reportStore'
 import { Gauge } from './Gauge'
 import { AnimatedNumber } from './AnimatedNumber'
@@ -36,11 +36,12 @@ function useWorkflowSchedule(workflowId: string | null): ScheduleDoc | null {
 }
 
 /** Tuile compteur : icône + label en tête, grand chiffre, sous-texte. */
-function Cell({ icon: Icon, tint, label, value, sub, children }: {
-  icon: typeof Layers; tint: string; label: string; value?: React.ReactNode; sub?: string; children?: React.ReactNode
+function Cell({ icon: Icon, tint, label, value, sub, title, children }: {
+  icon: typeof Layers; tint: string; label: string; value?: React.ReactNode; sub?: string
+  title?: string; children?: React.ReactNode
 }) {
   return (
-    <div className="bg-well rounded-lg px-3 py-3 flex flex-col items-center text-center min-w-0">
+    <div title={title} className="bg-well rounded-lg px-3 py-3 flex flex-col items-center text-center min-w-0">
       <div className="flex items-center gap-1.5 mb-1.5">
         <Icon className={`w-3.5 h-3.5 ${tint}`} />
         <span className="text-[10px] uppercase tracking-wide text-white/45 truncate">{label}</span>
@@ -68,6 +69,8 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   }, [])
 
   const jina = spend?.byPlatform.jina
+  const firecrawl = spend?.byPlatform.firecrawl
+  const brightdata = spend?.byPlatform.brightdata
   const remainingPct = Math.round((1 - ck.avgProgress) * 100)
   const cronOn = !!sched?.enabled
   // Cycle COMPLET = le planning l'a acté (cycleWaiting, mode calendaire) OU tous les
@@ -195,8 +198,21 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                 value={ck.slowestCycle ? duration(ck.slowestCycle.cycleMs) : '—'}
                 sub={ck.slowestCycle ? t('pw.ops.slowest', { domain: ck.slowestCycle.domain.replace(/^www\./, '') }) : t('pw.ops.noCycle')} />
               <Cell icon={Fuel} tint="text-emerald-400" label={t('pw.ops.jina')}
+                title={t('pw.ops.spend.help')}
                 value={jina ? compactNum(jina.tokens) : '0'}
                 sub={jina ? t('pw.ops.jina.sub', { req: jina.requests.toLocaleString(intlLocale(locale)), cost: `$${jina.costUsd.toFixed(2)}` }) : t('pw.ops.noRequest')} />
+              {/* Les deux autres couches de fetch, au même endroit : la moisson bascule de
+                  l'une à l'autre selon le site, et ne voir que Jina laissait croire que le
+                  reste ne coûtait rien. ⚠ Ces compteurs ne comptent QUE le navigateur —
+                  cf. l'infobulle : un cron nocturne n'y apparaît pas. */}
+              <Cell icon={Flame} tint="text-orange-400" label={t('pw.ops.firecrawl')}
+                title={t('pw.ops.spend.help')}
+                value={firecrawl ? compactNum(firecrawl.requests) : '0'}
+                sub={firecrawl ? t('pw.ops.spend.sub', { cost: `$${firecrawl.costUsd.toFixed(2)}` }) : t('pw.ops.noRequest')} />
+              <Cell icon={Globe} tint="text-cyan-400" label={t('pw.ops.brightdata')}
+                title={t('pw.ops.spend.help')}
+                value={brightdata ? compactNum(brightdata.requests) : '0'}
+                sub={brightdata ? t('pw.ops.spend.sub', { cost: `$${brightdata.costUsd.toFixed(2)}` }) : t('pw.ops.noRequest')} />
               <Cell icon={Radio} tint="text-indigo-400" label={t('pw.ops.activeCompetitors')}
                 value={`${ck.sitesActive}/${ck.sitesTotal}`} sub={t('pw.ops.atFull', { count: ck.sitesComplete })} />
               <Cell icon={CalendarClock} tint={cronOn ? 'text-emerald-400' : 'text-white/40'} label={t('pw.ops.nextHarvest')}>
