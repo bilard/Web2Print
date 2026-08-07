@@ -18,7 +18,9 @@ function sanitize(outputs: Record<string, Record<string, unknown>>): Record<stri
     for (const [port, val] of Object.entries(ports ?? {})) {
       if (val && typeof val === 'object' && Array.isArray((val as { rows?: unknown }).rows)) {
         const v = val as { rows: unknown[] }
-        capped[port] = { ...(val as object), rows: v.rows.slice(0, MAX_ROWS) }
+        // ⚠ `totalRows` accompagne l'échantillon : sans lui, une feuille de 115 815
+        // lignes se relit comme « 100 lignes » et la volumétrie affichée ment.
+        capped[port] = { ...(val as object), totalRows: v.rows.length, rows: v.rows.slice(0, MAX_ROWS) }
       } else {
         capped[port] = val
       }

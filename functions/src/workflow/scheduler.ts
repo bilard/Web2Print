@@ -71,7 +71,9 @@ function capOutputsForPreview(outputs: Record<string, Record<string, unknown>>, 
     for (const [port, val] of Object.entries(ports)) {
       if (val && typeof val === 'object' && Array.isArray((val as { rows?: unknown[] }).rows)) {
         const sheet = val as { rows: unknown[] }
-        p2[port] = { ...sheet, rows: sheet.rows.slice(0, maxRows) }
+        // ⚠ `totalRows` accompagne l'échantillon : c'est lui que l'éditeur affiche sous
+        // la carte, et 100 lignes annoncées pour 115 815 réelles est un chiffre faux.
+        p2[port] = { ...sheet, totalRows: sheet.rows.length, rows: sheet.rows.slice(0, maxRows) }
       } else {
         p2[port] = val
       }

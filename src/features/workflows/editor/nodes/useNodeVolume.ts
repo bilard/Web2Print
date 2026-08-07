@@ -28,9 +28,14 @@ const nf = (n: number) => n.toLocaleString('fr-FR')
 function fromOutputs(outputs: Record<string, unknown> | undefined): string | null {
   if (!outputs) return null
   for (const v of Object.values(outputs)) {
-    const sheet = v as { rows?: unknown[]; columns?: unknown[] } | null
+    const sheet = v as { rows?: unknown[]; columns?: unknown[]; totalRows?: number } | null
     if (sheet && Array.isArray(sheet.rows) && Array.isArray(sheet.columns)) {
-      return `${nf(sheet.rows.length)} lignes · ${sheet.columns.length} col.`
+      // ⚠ `totalRows` D'ABORD : les sorties persistées ne gardent qu'un ÉCHANTILLON de
+      // 100 lignes pour l'aperçu. Compter les lignes reçues annonçait « 100 lignes » sur
+      // une feuille de 115 815 — un chiffre faux, précisément là où on vient chercher un
+      // ordre de grandeur.
+      const total = typeof sheet.totalRows === 'number' ? sheet.totalRows : sheet.rows.length
+      return `${nf(total)} lignes · ${sheet.columns.length} col.`
     }
     if (Array.isArray(v)) return `${nf(v.length)} éléments`
   }

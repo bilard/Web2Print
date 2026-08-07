@@ -14,7 +14,9 @@ function capOutputs(outputs: Record<string, Record<string, unknown>>): Record<st
     for (const [port, val] of Object.entries(ports ?? {})) {
       if (val && typeof val === 'object' && Array.isArray((val as { rows?: unknown }).rows)) {
         const v = val as { rows: unknown[] }
-        capped[port] = { ...(val as object), rows: v.rows.slice(0, MAX_ROWS) }
+        // ⚠ `totalRows` accompagne l'échantillon (jumeau du client) : sans lui, une
+        // feuille de 115 815 lignes se relit comme « 100 lignes ».
+        capped[port] = { ...(val as object), totalRows: v.rows.length, rows: v.rows.slice(0, MAX_ROWS) }
       } else {
         capped[port] = val
       }
