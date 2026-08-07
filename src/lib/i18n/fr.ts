@@ -2501,6 +2501,8 @@ export const fr = {
   'run.gs.exportFallback': "Export XLSX refusé par Google ({message}) — lecture par l'API Sheets, sans plafond de taille.",
   'run.gs.valuesRead': '{rows} ligne(s) × {columns} colonne(s) lues dans « {name} » (API Sheets).',
   'run.gs.tabsRead': '{count} onglet(s) lu(s) — sélection #{index} ({name})',
+  'run.input.upstreamNotRun': "Entrée « {port} » manquante : le node amont « {node} » n'a pas été exécuté (run partiel). Lance le workflow complet, ou ce node amont d'abord.",
+  'run.input.upstreamNoOutput': 'Entrée « {port} » manquante : le node amont « {node} » (statut {status}) n’a rien produit sur sa sortie « {handle} ». Regarde SES logs — l’erreur est là, pas ici.',
   'run.gs.needSheetInput': 'Sheet manquante en entrée — branchez un node qui produit une Sheet (ou une Saisie texte).',
   'run.gs.testRowAdded': "Aucune donnée amont — 1 ligne d'essai ajoutée pour tester les formules (saisis des valeurs dans le Sheet, elles se recalculent).",
   'run.gs.noRowToExport': 'Aucune ligne à exporter — le fichier sera vide. Vérifie le node amont (« Comparer les prix »).',

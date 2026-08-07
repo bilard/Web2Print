@@ -2374,6 +2374,8 @@ export const es: Record<TranslationKey, string> = {
   'run.gs.exportFallback': 'Exportación XLSX rechazada por Google ({message}): lectura mediante la API de Sheets, sin límite de tamaño.',
   'run.gs.valuesRead': '{rows} fila(s) × {columns} columna(s) leídas en «{name}» (API de Sheets).',
   'run.gs.tabsRead': '{count} pestaña(s) leída(s) — selección #{index} ({name})',
+  'run.input.upstreamNotRun': 'Entrada «{port}» vacía: el nodo anterior «{node}» no se ejecutó (ejecución parcial). Ejecute el flujo completo, o antes ese nodo.',
+  'run.input.upstreamNoOutput': 'Entrada «{port}» vacía: el nodo anterior «{node}» (estado {status}) no produjo nada en su salida «{handle}». Consulte SUS registros: el fallo está ahí, no aquí.',
   'run.gs.needSheetInput': 'Sheet faltante en la entrada — conectar un nodo que produzca una Sheet (o una Entrada de texto).',
   'run.gs.testRowAdded': 'Ningún dato previo — 1 fila de prueba añadida para probar las fórmulas (introducir valores en la Sheet, se recalculan).',
   'run.gs.noRowToExport': 'Ninguna fila para exportar — el archivo estará vacío. Verificar el nodo previo (« Comparar los precios »).',

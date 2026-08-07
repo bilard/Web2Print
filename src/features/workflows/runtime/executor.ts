@@ -401,18 +401,25 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
         }
       }
 
-      // RUN partiel : avertir si une entrée vient d'un node amont hors sous-graphe
-      // et non disponible en cache (jamais exécuté).
-      if (runSet) {
-        for (const e of upstream) {
-          if (runSet.has(e.source)) continue
-          if (!outputs.has(e.source)) {
-            useRunContext.getState().appendLog(
-              node.id,
-              'warn',
-              `Entrée « ${e.targetHandle} » manquante : le node amont n'a pas encore été exécuté. Lance d'abord le workflow complet (ou le node amont).`,
-            )
-          }
+      // Entrée REQUISE vide alors qu'un edge l'alimente : le node va échouer sur un
+      // « … manquante en entrée » qui décrit le symptôme et tait la cause. On nomme donc
+      // ici le node amont fautif et ce qu'il a fait — jamais exécuté (run partiel),
+      // en erreur, ou terminé sans produire ce port.
+      for (const port of spec.inputs ?? []) {
+        // Un port FACULTATIF vide n'est signalé qu'en run partiel : ailleurs, ne rien
+        // recevoir sur un port optionnel est un cas nominal, pas une anomalie.
+        if (inputs[port.name] !== undefined || (!port.required && !runSet)) continue
+        for (const e of upstream.filter((edge) => edge.targetHandle === port.name)) {
+          const src = wf.nodes.find((n) => n.id === e.source)
+          const srcSpec = src ? nodeRegistry.get(src.type) : undefined
+          const label = srcSpec ? t(srcSpec.labelKey) : (src?.type ?? e.source)
+          const status = useRunContext.getState().nodeStates[e.source]?.status
+          useRunContext.getState().appendLog(node.id, 'warn', t(
+            !outputs.has(e.source)
+              ? 'run.input.upstreamNotRun'
+              : 'run.input.upstreamNoOutput',
+            { port: port.name, node: label, handle: e.sourceHandle, status: status ?? '—' },
+          ))
         }
       }
 

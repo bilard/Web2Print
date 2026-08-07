@@ -2375,6 +2375,8 @@ export const en: Record<TranslationKey, string> = {
   'run.gs.exportFallback': 'XLSX export refused by Google ({message}) — reading through the Sheets API instead, which has no size ceiling.',
   'run.gs.valuesRead': '{rows} row(s) × {columns} column(s) read from "{name}" (Sheets API).',
   'run.gs.tabsRead': '{count} tab(s) read — selection #{index} ({name})',
+  'run.input.upstreamNotRun': 'Input "{port}" is empty: the upstream node "{node}" was not run (partial run). Run the whole workflow, or that upstream node first.',
+  'run.input.upstreamNoOutput': 'Input "{port}" is empty: the upstream node "{node}" (status {status}) produced nothing on its "{handle}" output. Check ITS logs — the failure is there, not here.',
   'run.gs.needSheetInput': 'Sheet missing on the input — wire a node that produces a Sheet (or a Text input).',
   'run.gs.testRowAdded': 'No upstream data — 1 test row added to try the formulas (type values in the Sheet, they recalculate).',
   'run.gs.noRowToExport': 'No row to export — the file will be empty. Check the upstream node ("Compare prices").',
