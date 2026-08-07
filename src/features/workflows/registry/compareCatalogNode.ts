@@ -12,7 +12,7 @@ import { parsePrice, stableId, cell } from '@/features/priceWatch/core'
 import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
-import { extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
+import { buildLookups, extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
 import { buildReport } from '@/features/priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '@/features/priceWatch/reportStore'
 import { resolveCompareColumns, hasNoJoinKey } from '@/features/priceWatch/catalog/compareColumns'
@@ -269,7 +269,11 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // Annoncée AVANT, parce qu'elle ne rend la main qu'à la fin — aucun log ne peut sortir
     // pendant, et le silence qui suivait passait pour un plantage.
     ctx.log('info', t('run.compareCatalog.matching', { products: products.length, sites: siteRefs.length }))
-    const m = buildMatrix(products, siteRefs, indexBySite, { vatRate, labels })
+    // ⚠ Index bâtis UNE fois, partagés par les deux passes. Chacune les reconstruisait :
+    // à 434 000 fiches sur 14 sites, deux jeux coexistaient au moment où la mémoire de
+    // l'onglet est déjà au plus haut — et le rapport n'en finissait plus d'arriver.
+    const lookups = buildLookups(siteRefs, indexBySite)
+    const m = buildMatrix(products, siteRefs, indexBySite, { vatRate, labels, lookups })
     ctx.setProgress?.(75)
     ctx.reportCount?.(m.matched)
     ctx.log('info', t('run.compareCatalog.matchedBreakdown', {
@@ -296,7 +300,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     try {
       // Seconde passe complète sur les mêmes index — aussi longue que la première.
       ctx.log('info', t('run.compareCatalog.reportBuilding'))
-      const report = buildReport(products, siteRefs, indexBySite, { vatRate, harvestBySite })
+      const report = buildReport(products, siteRefs, indexBySite, { vatRate, harvestBySite, lookups })
       await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '', workflowId: ctx.workflowId })
       ctx.setProgress?.(90)
       // Persiste le catalogue source → le recalcul mono-site (après un ▶ dans « Sites

@@ -6,7 +6,7 @@
 // pré-calcule, au moment de la comparaison, des résumés BORNÉS : KPIs, stats par
 // concurrent (≤ N sites), et une liste centrée PRODUIT que la persistance range et
 // plafonne. L'alerte reine : « un concurrent est moins cher que moi ».
-import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct } from './match'
+import { matchProduct, comparePrices, buildLookups, type IndexLookup, type SourceProduct } from './match'
 import type { SiteRef } from './matrix'
 import type { CompetitorListing } from './prestashop'
 
@@ -214,6 +214,8 @@ interface BuildReportOptions {
   alignedPct?: number
   /** Durées de moisson par siteId (dernière passe + cumul), pour l'audit. */
   harvestBySite?: Map<string, { lastMs: number; cumulMs: number; progress: number; sweeps: number }>
+  /** Index déjà bâtis (cf. `buildLookups`). Les reconstruire ici doublerait la mémoire. */
+  lookups?: Map<string, IndexLookup>
 }
 
 /**
@@ -228,7 +230,7 @@ export function buildReport(
   opts: BuildReportOptions = {},
 ): CatalogReport {
   const alignedPct = opts.alignedPct ?? 1
-  const lookups = new Map(sites.map((s) => [s.siteId, buildMemoryIndex(indexBySite.get(s.siteId) ?? [])]))
+  const lookups = opts.lookups ?? buildLookups(sites, indexBySite)
 
   const rows: ProductRow[] = []
   const stat = new Map<string, CompetitorStat & { _gapSum: number; _gapN: number; _gaps: number[] }>()

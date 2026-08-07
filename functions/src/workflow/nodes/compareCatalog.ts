@@ -14,7 +14,7 @@ import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '../../p
 import { buildReport } from '../../priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '../../priceWatch/reportStore'
 import { buildMatrix, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
-import { extractOriginRefs, type SourceProduct } from '../../priceWatch/catalog/match'
+import { buildLookups, extractOriginRefs, type SourceProduct } from '../../priceWatch/catalog/match'
 import { pickDisplayColumns, taxoPathOf, trimDescription } from '../../priceWatch/catalog/displayColumns'
 import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
 import { t } from '../../i18n'
@@ -173,7 +173,10 @@ registerServerNode({
     const labels = { ref: refColumn, ean: eanColumn, name: nameColumn, family: familyColumn, price: priceColumn }
     // Passe SYNCHRONE annoncée avant : rien ne sort du journal tant qu'elle tourne.
     ctx.log('info', t(ctx.locale, 'run.compareCatalog.matching', { products: sourceProducts.length, sites: siteRefs.length }))
-    const m = buildMatrix(sourceProducts, siteRefs, indexBySite, { vatRate, labels })
+    // Index bâtis UNE fois, partagés par les deux passes (jumeau du client) : la Cloud
+    // Function plafonne à 512 Mio, deux jeux d'index la font tomber en OOM.
+    const lookups = buildLookups(siteRefs, indexBySite)
+    const m = buildMatrix(sourceProducts, siteRefs, indexBySite, { vatRate, labels, lookups })
     ctx.log('info', t(ctx.locale, 'run.compareCatalog.matchedBreakdown', {
       matched: m.matched, exact: m.matchedExact, originOnly: m.matchedOriginOnly,
       unmatched: m.unmatched, noKey: m.noKey,
@@ -192,7 +195,7 @@ registerServerNode({
     // de bord Veille tarifaire sans ouvrir l'app. Non bloquant : un échec ne casse pas l'export.
     try {
       ctx.log('info', t(ctx.locale, 'run.compareCatalog.reportBuilding'))
-      const report = buildReport(sourceProducts, siteRefs, indexBySite, { vatRate, harvestBySite })
+      const report = buildReport(sourceProducts, siteRefs, indexBySite, { vatRate, harvestBySite, lookups })
       await saveCatalogReport(ctx.uid, watchId, report, siteRefs, Date.now(), { label: ctx.workflowName })
       // Catalogue source (comme le node client) : sans lui, un suivi alimenté seulement
       // par le cron n'a rien à relire pour un recalcul mono-site après un ▶ — et l'écran

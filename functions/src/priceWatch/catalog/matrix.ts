@@ -5,7 +5,7 @@
 // (identité + mon prix) puis un bloc de colonnes par concurrent (TTC, barré TTC, HT
 // recalculé, écart %, stock, lien). Le prix concurrent est VERBATIM (TTC affiché) ;
 // le HT recalculé sert la comparaison à mon prix catalogue.
-import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct } from './match'
+import { matchProduct, comparePrices, buildLookups, type IndexLookup, type SourceProduct } from './match'
 import type { MatchProof } from './keys'
 import type { CompetitorListing } from './prestashop'
 
@@ -121,6 +121,8 @@ export interface BuildMatrixOptions {
   matchedOnly?: boolean
   /** Noms de colonnes de la source, pour les en-têtes de sortie. */
   labels?: SourceLabels
+  /** Index déjà bâtis (cf. `buildLookups`). Les reconstruire ici doublerait la mémoire. */
+  lookups?: Map<string, IndexLookup>
 }
 
 /**
@@ -138,7 +140,7 @@ export function buildMatrix(
   const matchedOnly = opts.matchedOnly ?? true
   const labels = opts.labels ?? {}
   const columns = [...baseColumns(labels), ...sites.flatMap((s) => siteColumns(s.domain))]
-  const lookups = new Map(sites.map((s) => [s.siteId, buildMemoryIndex(indexBySite.get(s.siteId) ?? [])]))
+  const lookups = opts.lookups ?? buildLookups(sites, indexBySite)
 
   const rows: Record<string, unknown>[] = []
   let matched = 0, matchedExact = 0, matchedOriginOnly = 0, unmatched = 0, noKey = 0, vetoed = 0

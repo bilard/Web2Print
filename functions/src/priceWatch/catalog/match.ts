@@ -70,6 +70,20 @@ function lookupKeysOf(p: SourceProductKeys): JoinKey[] {
 /** Résout une clé d'index en produits concurrents candidats. */
 export type IndexLookup = (key: string) => CompetitorListing[] | undefined
 
+/**
+ * Index mémoire de CHAQUE site, bâti une seule fois (jumeau du client).
+ *
+ * ⚠ `buildMatrix` et `buildReport` les construisaient chacun de leur côté sur les mêmes
+ * fiches : deux jeux d'index sur des centaines de milliers de fiches font tomber la Cloud
+ * Function (512 Mio) au moment précis où la mémoire est déjà au plus haut.
+ */
+export function buildLookups(
+  sites: { siteId: string }[],
+  indexBySite: Map<string, CompetitorListing[]>,
+): Map<string, IndexLookup> {
+  return new Map(sites.map((s) => [s.siteId, buildMemoryIndex(indexBySite.get(s.siteId) ?? [])]))
+}
+
 type MatchOutcome = 'matched' | 'not-found' | 'no-key'
 
 export interface SourceProduct extends SourceProductKeys {
