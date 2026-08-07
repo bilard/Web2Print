@@ -77,6 +77,13 @@ describe('ordre déduit des DONNÉES', () => {
     const withEmpty = rows.map((r) => ({ ...r, U: '' }))
     expect(pickDisplayColumns(cols, {}, withEmpty).taxo).toEqual(['F', 'S', 'G'])
   })
+
+  it('écarte un niveau de tête renseigné sur une MINORITÉ de lignes', () => {
+    // `taxoPathOf` s'arrête au premier niveau vide : garder une colonne à moitié remplie
+    // enverrait l'autre moitié du catalogue en « non classé ».
+    const sparse = rows.map((r, i) => ({ ...r, U: i === 0 ? 'Jardin' : '' }))
+    expect(pickDisplayColumns(cols, {}, sparse).taxo).toEqual(['F', 'S', 'G'])
+  })
 })
 
 describe('taxonomie SAISIE dans le node', () => {
@@ -110,10 +117,11 @@ describe('taxoPathOf', () => {
   it('ignore les espaces et les cellules absentes', () => {
     expect(taxoPathOf({ A: '  Jardin  ' }, ['A', 'B'])).toEqual(['Jardin'])
   })
-  it('démarre au premier niveau RENSEIGNÉ : un univers vide ne déclasse pas la ligne', () => {
-    // Cas vécu : la nouvelle colonne UNIVERS n'est remplie que sur une partie du fichier.
-    // S'arrêter net y renvoyait tout le reste du catalogue dans « non classé ».
-    expect(taxoPathOf({ U: '', F: 'Tonte', S: 'Courroies' }, ['U', 'F', 'S'])).toEqual(['Tonte', 'Courroies'])
+  it('coupe AUSSI quand c’est le niveau de tête qui manque', () => {
+    // Tentant de démarrer au premier niveau renseigné — mais l'arbre indexe par libellé à
+    // chaque niveau : « Tonte » deviendrait deux nœuds (racine ET enfant de « Jardin »),
+    // compteurs coupés en deux. Les niveaux trop peu renseignés sont écartés en amont.
+    expect(taxoPathOf({ U: '', F: 'Tonte', S: 'Courroies' }, ['U', 'F', 'S'])).toEqual([])
   })
 })
 

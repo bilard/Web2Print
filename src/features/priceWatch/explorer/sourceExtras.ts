@@ -101,15 +101,19 @@ function findTaxoKeys(columns: ExcelColumn[]): (string | null)[] {
 
 /**
  * Chemin taxonomique d'une ligne PIM — même règle que `taxoPathOf` du catalogue persisté :
- * on démarre au premier niveau RENSEIGNÉ (un UNIVERS absent de cette base ne doit pas
- * renvoyer la ligne en « non classé ») et on s'arrête au premier trou ensuite — « Famille >
- * (vide) > Groupe » créerait un nœud fantôme regroupant des produits sans rapport.
+ * on s'arrête au premier niveau vide, « Famille > (vide) > Groupe » créerait un nœud
+ * fantôme regroupant des produits sans rapport.
+ *
+ * ⚠ Un niveau que cette base ne porte PAS (`null`, ex. l'UNIVERS apparu côté catalogue)
+ * est SAUTÉ, lui : il ne dit rien de la ligne. C'est un trou de schéma, pas un trou de
+ * donnée — l'arbre reste homogène puisque toutes les lignes le sautent ensemble.
  */
 function taxoPath(row: ExcelRow, keys: (string | null)[]): string[] {
   const out: string[] = []
   for (const key of keys) {
-    const v = key ? str(row[key]) : ''
-    if (!v) { if (out.length > 0) break; continue }
+    if (!key) continue
+    const v = str(row[key])
+    if (!v) break
     out.push(v)
   }
   return out

@@ -109,34 +109,43 @@ function taxoFromConfig(headers: HeaderLike[], raw: string): string[] {
   return out
 }
 
+/** Part des lignes qu'un niveau doit renseigner pour entrer dans la hiérarchie. En dessous,
+ *  il coûte plus qu'il n'apporte : `taxoPathOf` s'arrête au premier niveau vide, donc une
+ *  colonne à moitié remplie enverrait l'autre moitié du catalogue en « non classé ». */
+const TAXO_MIN_COVERAGE = 0.5
+
 /**
  * Ordonne les niveaux DÉTECTÉS du plus large au plus fin d'après les données elles-mêmes,
- * et écarte ceux qui ne sont jamais renseignés.
+ * et écarte ceux que le fichier ne renseigne presque jamais.
  *
  * Aucun dictionnaire ne peut savoir si « PRODUCTGROUP » se range au-dessus ou au-dessous
  * de « SOUS FAMILLE » : cela dépend de l'ERP, et se tromper inverse l'arbre entier. Le
  * fichier, lui, le dit sans ambiguïté — un niveau qui en contient un autre a forcément
- * moins de valeurs distinctes. Une colonne vide partout est retirée : `taxoPathOf`
- * s'arrêterait dessus et renverrait tout le catalogue en « non classé ».
+ * moins de valeurs distinctes.
  */
 function orderByGranularity(keys: string[], rows: Record<string, unknown>[]): string[] {
   if (keys.length === 0 || rows.length === 0) return keys
   // Échantillon borné : la hiérarchie se lit sur quelques milliers de lignes, la mesurer
   // sur 200 000 coûterait plus cher que tout le reste de la résolution de colonnes.
   const step = Math.max(1, Math.floor(rows.length / 5000))
-  const distinct = new Map(keys.map((k) => [k, new Set<string>()]))
+  const stat = new Map(keys.map((k) => [k, { distinct: new Set<string>(), filled: 0 }]))
+  let seen = 0
   for (let i = 0; i < rows.length; i += step) {
+    seen++
     for (const k of keys) {
       const v = rows[i][k] == null ? '' : String(rows[i][k]).trim()
-      if (v) distinct.get(k)!.add(v)
+      if (!v) continue
+      const s = stat.get(k)!
+      s.distinct.add(v)
+      s.filled++
     }
   }
   return keys
-    .map((key, rank) => ({ key, rank, n: distinct.get(key)!.size }))
-    .filter((c) => c.n > 0)
+    .map((key, rank) => ({ key, rank, ...stat.get(key)! }))
+    .filter((c) => c.filled >= seen * TAXO_MIN_COVERAGE)
     // À égalité (une taxonomie plate, ou un échantillon trop court), l'ordre du
     // dictionnaire tranche : il reste la meilleure hypothèse disponible.
-    .sort((a, b) => a.n - b.n || a.rank - b.rank)
+    .sort((a, b) => a.distinct.size - b.distinct.size || a.rank - b.rank)
     .map((c) => c.key)
 }
 
@@ -168,16 +177,21 @@ export function pickDisplayColumns(
 }
 
 /**
- * Chemin taxonomique d'une ligne. Démarre au premier niveau RENSEIGNÉ, puis s'arrête au
- * premier vide : « Famille > (vide) > Groupe » créerait un nœud fantôme regroupant des
- * produits sans rapport, tandis qu'un niveau de tête absent (un UNIVERS rempli sur une
- * partie du fichier seulement) ne doit pas renvoyer la ligne en « non classé ».
+ * Chemin taxonomique d'une ligne. S'arrête au premier niveau vide : « Famille > (vide) >
+ * Groupe » créerait un nœud fantôme regroupant des produits sans rapport.
+ *
+ * ⚠ Y COMPRIS quand c'est le niveau de TÊTE qui manque. Démarrer au premier niveau
+ * renseigné paraît plus généreux — la ligne est classée au lieu de tomber en « non
+ * classé » — mais l'arbre indexe par libellé À CHAQUE niveau : « Tonte » devient alors
+ * DEUX nœuds, l'un enfant de « Jardin », l'autre racine, avec les compteurs coupés en
+ * deux. Vérifié sur `buildTaxoTree`. Le vrai remède est en amont : `orderByGranularity`
+ * écarte les niveaux que le fichier ne renseigne pas assez pour porter une hiérarchie.
  */
 export function taxoPathOf(row: Record<string, unknown>, keys: string[]): string[] {
   const out: string[] = []
   for (const k of keys) {
     const v = row[k] == null ? '' : String(row[k]).trim()
-    if (!v) { if (out.length > 0) break; continue }
+    if (!v) break
     out.push(v)
   }
   return out
