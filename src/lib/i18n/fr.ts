@@ -2021,6 +2021,7 @@ export const fr = {
   'pw.ops.harvestTime': 'Temps de moisson',
   'pw.ops.cycleDuration': 'Durée d’un cycle',
   'pw.ops.noCycle': 'aucun cycle bouclé',
+  'pw.ops.spend': 'Consommation (ce mois)',
   'pw.ops.firecrawl': 'Firecrawl (ce mois)',
   'pw.ops.brightdata': 'Bright Data (ce mois)',
   'pw.ops.spend.sub': '{cost}',

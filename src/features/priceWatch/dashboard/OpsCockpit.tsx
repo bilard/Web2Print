@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { Layers, Timer, RefreshCw, Fuel, Flame, Globe, Radio, CalendarClock, Activity } from 'lucide-react'
+import { Layers, Timer, RefreshCw, Fuel, Radio, CalendarClock, Activity } from 'lucide-react'
 import type { StoredReport } from '../reportStore'
 import { Gauge } from './Gauge'
 import { AnimatedNumber } from './AnimatedNumber'
@@ -14,7 +14,7 @@ import { useCompetitorMeta } from '../useCatalogReport'
 import { useScrapeSpend } from './useScrapeSpend'
 import { duration, ago, compactNum } from './format'
 import { formatCountdown } from '@/features/workflows/runtime/cronLabels'
-import { useTranslation, intlLocale } from '@/lib/i18n'
+import { useTranslation } from '@/lib/i18n'
 
 interface ScheduleDoc {
   enabled: boolean; nextRunAt: number; lastRunAt?: number; lastStatus?: string
@@ -41,23 +41,39 @@ function Cell({ icon: Icon, tint, label, value, sub, title, children }: {
   title?: string; children?: React.ReactNode
 }) {
   return (
-    <div title={title} className="bg-well rounded-lg px-3 py-3 flex flex-col items-center text-center min-w-0">
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <Icon className={`w-3.5 h-3.5 ${tint}`} />
+    <div title={title} className="bg-well rounded-lg px-3 py-2 flex flex-col items-center text-center min-w-0">
+      <div className="flex items-center gap-1.5 mb-1">
+        <Icon className={`w-3 h-3 ${tint}`} />
         <span className="text-[10px] uppercase tracking-wide text-white/45 truncate">{label}</span>
       </div>
       {children ?? (
         <>
-          <div className="text-2xl font-semibold text-white tabular-nums leading-none">{value}</div>
-          {sub && <div className="text-[11px] text-white/40 mt-1 truncate max-w-full">{sub}</div>}
+          <div className="text-xl font-semibold text-white tabular-nums leading-none">{value}</div>
+          {sub && <div className="text-[11px] text-white/40 mt-0.5 truncate max-w-full">{sub}</div>}
         </>
       )}
     </div>
   )
 }
 
+/** Une couche de fetch dans la tuile de consommation : nom, volume, dépense. Alignée en
+ *  colonnes pour que trois lignes se lisent d'un seul balayage vertical. */
+function SpendLine({ label, tint, volume, cost }: {
+  label: string; tint: string; volume: string; cost?: number
+}) {
+  return (
+    <div className="flex items-baseline gap-1.5 text-[11px] leading-tight">
+      <span className={`w-16 shrink-0 text-left truncate ${tint}`}>{label}</span>
+      <span className="flex-1 text-right tabular-nums text-white/70">{volume}</span>
+      <span className="w-12 text-right tabular-nums text-amber-300/90">
+        {cost != null && cost > 0 ? `$${cost.toFixed(2)}` : '—'}
+      </span>
+    </div>
+  )
+}
+
 export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId: string | null }) {
-  const { t, locale } = useTranslation()
+  const { t } = useTranslation()
   const liveMeta = useCompetitorMeta(watchId)
   const ck = buildOpsCockpit(report, liveMeta)
   const spend = useScrapeSpend()
@@ -151,7 +167,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
           {/* Deux jauges rondes (ratios) + tuiles compteurs. */}
           <div className="flex flex-wrap items-stretch gap-3">
             {/* Balayage : ce qui RESTE à traiter (moyenne des concurrents actifs). */}
-            <div className="bg-well rounded-lg px-4 py-3 flex flex-col items-center">
+            <div className="bg-well rounded-lg px-3 py-2 flex flex-col items-center justify-center">
               <Gauge value={ck.avgProgress} color="#818cf8">
                 <div className="text-xl font-semibold text-white tabular-nums"><AnimatedNumber value={ck.avgProgress * 100} format={(n) => `${Math.round(n)}%`} /></div>
                 <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">{t('pw.ops.families')}</div>
@@ -163,7 +179,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                 alimenté. On montre désormais la progression réelle (sites bouclés / actifs)
                 et, quand TOUS ont fini, un « ✓ Cycle complet » explicite (cycleWaiting du
                 planning) avec la date de relance — la réponse à « c'est complet quand ? ». */}
-            <div className="bg-well rounded-lg px-4 py-3 flex flex-col items-center"
+            <div className="bg-well rounded-lg px-3 py-2 flex flex-col items-center justify-center"
               title={cycleComplete
                 ? t('pw.ops.cycleDone.title')
                 : `${ck.sitesComplete} concurrent(s) sur ${ck.sitesActive} ont bouclé leur balayage ce cycle.`}>
@@ -197,22 +213,20 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
               <Cell icon={RefreshCw} tint="text-amber-400" label={t('pw.ops.cycleDuration')}
                 value={ck.slowestCycle ? duration(ck.slowestCycle.cycleMs) : '—'}
                 sub={ck.slowestCycle ? t('pw.ops.slowest', { domain: ck.slowestCycle.domain.replace(/^www\./, '') }) : t('pw.ops.noCycle')} />
-              <Cell icon={Fuel} tint="text-emerald-400" label={t('pw.ops.jina')}
-                title={t('pw.ops.spend.help')}
-                value={jina ? compactNum(jina.tokens) : '0'}
-                sub={jina ? t('pw.ops.jina.sub', { req: jina.requests.toLocaleString(intlLocale(locale)), cost: `$${jina.costUsd.toFixed(2)}` }) : t('pw.ops.noRequest')} />
-              {/* Les deux autres couches de fetch, au même endroit : la moisson bascule de
-                  l'une à l'autre selon le site, et ne voir que Jina laissait croire que le
-                  reste ne coûtait rien. ⚠ Ces compteurs ne comptent QUE le navigateur —
-                  cf. l'infobulle : un cron nocturne n'y apparaît pas. */}
-              <Cell icon={Flame} tint="text-orange-400" label={t('pw.ops.firecrawl')}
-                title={t('pw.ops.spend.help')}
-                value={firecrawl ? compactNum(firecrawl.requests) : '0'}
-                sub={firecrawl ? t('pw.ops.spend.sub', { cost: `$${firecrawl.costUsd.toFixed(2)}` }) : t('pw.ops.noRequest')} />
-              <Cell icon={Globe} tint="text-cyan-400" label={t('pw.ops.brightdata')}
-                title={t('pw.ops.spend.help')}
-                value={brightdata ? compactNum(brightdata.requests) : '0'}
-                sub={brightdata ? t('pw.ops.spend.sub', { cost: `$${brightdata.costUsd.toFixed(2)}` }) : t('pw.ops.noRequest')} />
+              {/* Les trois couches de fetch dans UNE tuile : la moisson bascule de l'une à
+                  l'autre selon le site, et leur donner un grand chiffre chacune coûtait trois
+                  cases pour deux zéros. ⚠ Ces compteurs ne comptent QUE le navigateur — cf.
+                  l'infobulle : un run du cron n'y apparaît pas. */}
+              <Cell icon={Fuel} tint="text-emerald-400" label={t('pw.ops.spend')} title={t('pw.ops.spend.help')}>
+                <div className="w-full space-y-0.5 mt-0.5">
+                  <SpendLine label="Jina" tint="text-emerald-400/80"
+                    volume={jina ? `${compactNum(jina.tokens)} tk` : '—'} cost={jina?.costUsd} />
+                  <SpendLine label="Firecrawl" tint="text-orange-400/80"
+                    volume={firecrawl ? `${compactNum(firecrawl.requests)} req` : '—'} cost={firecrawl?.costUsd} />
+                  <SpendLine label="Bright Data" tint="text-cyan-400/80"
+                    volume={brightdata ? `${compactNum(brightdata.requests)} req` : '—'} cost={brightdata?.costUsd} />
+                </div>
+              </Cell>
               <Cell icon={Radio} tint="text-indigo-400" label={t('pw.ops.activeCompetitors')}
                 value={`${ck.sitesActive}/${ck.sitesTotal}`} sub={t('pw.ops.atFull', { count: ck.sitesComplete })} />
               <Cell icon={CalendarClock} tint={cronOn ? 'text-emerald-400' : 'text-white/40'} label={t('pw.ops.nextHarvest')}>

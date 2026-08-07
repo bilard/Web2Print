@@ -1938,6 +1938,7 @@ export const en: Record<TranslationKey, string> = {
   'pw.ops.harvestTime': 'Harvest time',
   'pw.ops.cycleDuration': 'Cycle duration',
   'pw.ops.noCycle': 'no cycle completed',
+  'pw.ops.spend': 'Usage (this month)',
   'pw.ops.firecrawl': 'Firecrawl (this month)',
   'pw.ops.brightdata': 'Bright Data (this month)',
   'pw.ops.spend.sub': '{cost}',
