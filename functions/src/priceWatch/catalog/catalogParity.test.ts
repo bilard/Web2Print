@@ -176,7 +176,7 @@ describe('displayColumns (parité serveur)', () => {
       { key: 'FAMILLE' }, { key: 'WEBGROUP_DESC' }, { key: 'PRODUCTGROUP' },
     ])).toEqual({
       description: 'DESCRIPTIF', image: 'PATH_PHOTO',
-      taxo: ['FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP'],
+      taxo: ['FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP'], taxoDeclared: false,
     })
   })
   it('retient TEXT_VENTE plutôt que DESCRIPTION, comme la copie client', () => {

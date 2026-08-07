@@ -1299,6 +1299,7 @@ export const en: Record<TranslationKey, string> = {
   'wfn.skipped': 'Skipped',
   'wfn.failed': 'This node failed — see the detail below.',
   'wfn.noLog': 'Nothing processed yet. Run the node (▶ when hovering the card) to follow the logs here.',
+  'wfn.columnNotInSheet': 'This column does not exist in the connected sheet (last run). The node will guess one — fix it to pin the mapping.',
   'wfn.warning': 'Warning or error',
   // — Workflows : palette de nodes ——————————————————————————————————————
   'wfp.enrich': 'Complete / transform the data (optional).',
@@ -2175,6 +2176,7 @@ export const en: Record<TranslationKey, string> = {
   'run.compareCatalog.emptyIndex': 'Competitor index empty for the {sites} site(s) under the "{watchId}" monitoring. Check that the "Harvest competitors" node uses the SAME monitoring identifier ("{watchId}") and that it ran first.',
   'run.compareCatalog.matchedBreakdown': '{matched} product(s) matched: {exact} same product, {originOnly} original part (aftermarket ↔ OEM). {unmatched} without a match, {noKey} without a key.',
   'run.compareCatalog.vetoed': '{count} listing(s) discarded: the reference matched, but the label named a different part (filter vs carburettor…). A gap beats a false price.',
+  'run.compareCatalog.taxoConfigIgnored': 'Taxonomy entry IGNORED — "{asked}" matches no column in the sheet; automatic detection took over. Available headers: {headers}',
   'run.compareCatalog.taxoColumns': 'Taxonomy: {list}',
   'run.compareCatalog.noTaxoColumn': 'No taxonomy column recognised: the family tree on the "Competitors" screen will stay empty. Fill in "Taxonomy columns" on this node (broadest to finest, separated by ">").',
   'run.compareCatalog.indexLoaded': '{count} competitor listing(s) held in memory for {sites} site(s), read in {s} s.',

@@ -172,6 +172,14 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
         list: [disp.description, disp.image].filter(Boolean).join(' · '),
       }))
     }
+    // Une saisie qui ne désigne aucune colonne DOIT se voir : sans ce message, le repli
+    // sur la détection ressemble en tout point à une prise en compte.
+    if ((config.taxoColumns ?? '').trim() && !disp.taxoDeclared) {
+      ctx.log('warn', t('run.compareCatalog.taxoConfigIgnored', {
+        asked: config.taxoColumns.trim(),
+        headers: sheetColumns.map((c) => c.key).join(', ').slice(0, 300),
+      }))
+    }
     // La hiérarchie retenue est ANNONCÉE : c'est elle qui dessine l'arbre de l'écran
     // « Concurrents », et une racine perdue ne se voit qu'une fois l'arbre décapité.
     if (disp.taxo.length > 0) {

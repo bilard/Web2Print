@@ -8,7 +8,7 @@ describe('pickDisplayColumns', () => {
     const d = pickDisplayColumns(H('CODE_ARTICLE', 'DESCRIPTIF', 'PATH_PHOTO', 'FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP'))
     expect(d).toEqual({
       description: 'DESCRIPTIF', image: 'PATH_PHOTO',
-      taxo: ['FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP'],
+      taxo: ['FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP'], taxoDeclared: false,
     })
   })
 
@@ -35,7 +35,7 @@ describe('pickDisplayColumns', () => {
   })
 
   it('ne renvoie rien plutôt que d’inventer sur une feuille sans ces colonnes', () => {
-    expect(pickDisplayColumns(H('REF', 'PRIX'))).toEqual({ taxo: [] })
+    expect(pickDisplayColumns(H('REF', 'PRIX'))).toEqual({ taxo: [], taxoDeclared: false })
   })
 })
 
@@ -112,6 +112,15 @@ describe('taxonomie SAISIE dans le node', () => {
   it('accepte les séparateurs usuels et tolère casse et accents', () => {
     expect(pickDisplayColumns(cols, { taxo: 'univers | famille' }).taxo).toEqual(['UNIVERS', 'FAMILLE'])
     expect(pickDisplayColumns(cols, { taxo: 'UNIVERS, sous-famille' }).taxo).toEqual(['UNIVERS', 'SOUS FAMILLE'])
+  })
+
+  it('accepte le chevron TYPOGRAPHIQUE, celui que le journal du run écrit', () => {
+    // Recopier « UNIVERS › FAMILLE › SOUS_FAMILLE » depuis les logs doit marcher : sinon la
+    // saisie ne désigne rien et le repli sur la détection se fait sans un mot.
+    expect(pickDisplayColumns(cols, { taxo: 'UNIVERS › FAMILLE' }).taxo).toEqual(['UNIVERS', 'FAMILLE'])
+    expect(pickDisplayColumns(cols, { taxo: 'UNIVERS » FAMILLE' }).taxo).toEqual(['UNIVERS', 'FAMILLE'])
+    // Le souligné ne compte pas davantage que l'espace ou le tiret.
+    expect(pickDisplayColumns(H('SOUS_FAMILLE'), { taxo: 'SOUS FAMILLE' }).taxo).toEqual(['SOUS_FAMILLE'])
   })
 
   it('ignore un nom qui ne désigne aucune colonne, sans jeter les autres', () => {

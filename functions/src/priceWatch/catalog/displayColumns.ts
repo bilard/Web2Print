@@ -44,6 +44,10 @@ export interface DisplayColumns {
   image?: string
   /** Une clé par niveau trouvé, dans l'ordre. Les niveaux absents sont omis. */
   taxo: string[]
+  /** La hiérarchie vient de la SAISIE du node (et non de la détection). Faux alors que
+   *  l'utilisateur a rempli le champ = sa saisie ne désignait aucune colonne : à dire,
+   *  sinon le repli sur la détection passe pour une prise en compte. */
+  taxoDeclared: boolean
 }
 
 interface HeaderLike { key: string; label?: string }
@@ -95,11 +99,18 @@ function pickTaxoLevels(headers: HeaderLike[], taken: Set<string>): string[] {
   return hit.filter((k): k is string => !!k)
 }
 
-/** Colonnes SAISIES dans le node, dans l'ordre saisi. Séparateurs `>`, `|`, `,` ou saut de
- *  ligne ; la correspondance est tolérante (casse, accents, tirets). Un nom qui ne désigne
- *  aucune colonne est ignoré — mieux vaut trois niveaux justes que quatre dont un fantôme. */
+/**
+ * Colonnes SAISIES dans le node, dans l'ordre saisi. La correspondance est tolérante
+ * (casse, accents, tirets, soulignés). Un nom qui ne désigne aucune colonne est ignoré —
+ * mieux vaut trois niveaux justes que quatre dont un fantôme.
+ *
+ * ⚠ Les séparateurs acceptent le chevron TYPOGRAPHIQUE (`›`, `»`) autant que le signe
+ * clavier : le journal du run écrit la hiérarchie avec `›`, et la recopier dans ce champ
+ * doit marcher. N'accepter que `>` faisait d'une saisie parfaitement lisible une chaîne
+ * unique ne désignant rien — et le repli sur la détection était MUET.
+ */
 function taxoFromConfig(headers: HeaderLike[], raw: string): string[] {
-  const wanted = raw.split(/[>|,\n]/).map((s) => foldHeaderName(s)).filter(Boolean)
+  const wanted = raw.split(/[>›»|,;/\n]/).map((s) => foldHeaderName(s)).filter(Boolean)
   const out: string[] = []
   for (const w of wanted) {
     const hit = headers.find((h) => !out.includes(h.key)
@@ -173,6 +184,7 @@ export function pickDisplayColumns(
     ...(description ? { description } : {}),
     ...(image ? { image } : {}),
     taxo: declared.length > 0 ? declared : orderByGranularity(pickTaxoLevels(headers, taken), rows),
+    taxoDeclared: declared.length > 0,
   }
 }
 

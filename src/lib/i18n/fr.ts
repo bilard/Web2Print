@@ -1363,6 +1363,7 @@ export const fr = {
   'wfn.skipped': 'Ignoré',
   'wfn.failed': 'Ce node a échoué — voir le détail ci-dessous.',
   'wfn.noLog': 'Aucun traitement pour l’instant. Lancez le node (▶ au survol de la carte) pour suivre les logs ici.',
+  'wfn.columnNotInSheet': 'Cette colonne n’existe pas dans la feuille branchée (dernier run). Le node en devinera une — corrige pour figer le mapping.',
   'wfn.warning': 'Avertissement ou erreur',
 
   // — Workflows : palette de nodes ——————————————————————————————————————
@@ -2296,6 +2297,7 @@ export const fr = {
   'run.compareCatalog.emptyIndex': 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
   'run.compareCatalog.matchedBreakdown': "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
   'run.compareCatalog.vetoed': '{count} fiche(s) écartée(s) : la référence correspondait, mais le libellé nommait une autre pièce (filtre ↔ carburateur…). Un trou vaut mieux qu\u2019un faux prix.',
+  'run.compareCatalog.taxoConfigIgnored': 'Taxonomie saisie IGNORÉE — « {asked} » ne désigne aucune colonne de la feuille ; la détection automatique a repris la main. En-têtes disponibles : {headers}',
   'run.compareCatalog.taxoColumns': 'Taxonomie : {list}',
   'run.compareCatalog.noTaxoColumn': "Aucune colonne de taxonomie reconnue : l'arbre de familles de l'écran « Concurrents » restera vide. Renseigne « Colonnes Taxonomie » dans ce node (du plus large au plus fin, séparées par « > »).",
   'run.compareCatalog.indexLoaded': '{count} fiche(s) concurrentes en mémoire pour {sites} site(s), lues en {s} s.',

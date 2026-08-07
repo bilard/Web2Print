@@ -1298,6 +1298,7 @@ export const es: Record<TranslationKey, string> = {
   'wfn.skipped': 'Omitido',
   'wfn.failed': 'Este nodo ha fallado — ver el detalle a continuación.',
   'wfn.noLog': 'Ningún procesamiento por el momento. Iniciar el nodo (▶ al pasar el ratón sobre la tarjeta) para seguir los registros aquí.',
+  'wfn.columnNotInSheet': 'Esta columna no existe en la hoja conectada (último run). El nodo adivinará una: corríjala para fijar el mapeo.',
   'wfn.warning': 'Advertencia o error',
   // — Workflows : palette de nodes ——————————————————————————————————————
   'wfp.enrich': 'Completar / transformar los datos (opcional).',
@@ -2174,6 +2175,7 @@ export const es: Record<TranslationKey, string> = {
   'run.compareCatalog.emptyIndex': 'Índice de competidores vacío para los {sites} sitio(s) bajo el seguimiento «{watchId}». Compruebe que el nodo «Cosecha de competidores» utiliza el MISMO identificador de seguimiento («{watchId}») y que se ha ejecutado antes.',
   'run.compareCatalog.matchedBreakdown': '{matched} producto(s) emparejado(s): {exact} mismo producto, {originOnly} pieza original (adaptable ↔ OEM). {unmatched} sin correspondencia, {noKey} sin clave.',
   'run.compareCatalog.vetoed': '{count} ficha(s) descartada(s): la referencia coincidía, pero el nombre designaba otra pieza (filtro ↔ carburador…). Mejor un hueco que un precio falso.',
+  'run.compareCatalog.taxoConfigIgnored': 'Taxonomía introducida IGNORADA: «{asked}» no designa ninguna columna de la hoja; la detección automática ha tomado el relevo. Encabezados disponibles: {headers}',
   'run.compareCatalog.taxoColumns': 'Taxonomía: {list}',
   'run.compareCatalog.noTaxoColumn': 'Ninguna columna de taxonomía reconocida: el árbol de familias de la pantalla «Competidores» quedará vacío. Rellene «Columnas de taxonomía» en este nodo (de la más amplia a la más fina, separadas por «>»).',
   'run.compareCatalog.indexLoaded': '{count} ficha(s) de la competencia en memoria para {sites} sitio(s), leídas en {s} s.',

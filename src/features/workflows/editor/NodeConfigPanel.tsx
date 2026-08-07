@@ -441,6 +441,7 @@ export function NodeConfigPanel() {
                     </span>
                     <ConfigFieldRenderer
                       field={f}
+                      columns={availableColumns}
                       value={(node.config as Record<string, unknown>)[f.name]}
                       onChange={(v) =>
                         upsertNode({
