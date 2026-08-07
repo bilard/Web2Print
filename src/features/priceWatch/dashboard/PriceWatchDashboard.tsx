@@ -95,6 +95,13 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
 
   return (
     <div className="space-y-3">
+    {/* Cockpit opérationnel — où en est la COLLECTE (volumétrie, temps, cycles, tokens,
+        prochaine moisson). Distinct du BI prix qui suit.
+        ⚠ PLEINE LARGEUR, et pas dans la colonne de droite : resserré sur deux tiers
+        d'écran, ses huit blocs tronquaient chaque libellé (« CONSOMMATION (CE M… »). Ce
+        qu'il fallait lui prendre, c'est de la HAUTEUR — cf. la taille des jauges et le
+        nombre de colonnes de son rappel de concurrents. */}
+    <OpsCockpit report={report} watchId={watchId} />
     <div className="flex flex-col lg:flex-row gap-3" data-pw-section="comparison">
       {/* Colonne gauche : navigation par famille + liste des concurrents (Benchmark).
           Plus logique/lisible que le rail droit — la navigation (familles + concurrents)
@@ -108,13 +115,6 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <ScrapeSpendWidget />
       </div>
       <div className="flex-1 min-w-0 space-y-3">
-      {/* Cockpit opérationnel — où en est la COLLECTE (volumétrie, temps, cycles, tokens,
-          prochaine moisson), distinct du BI prix qui suit.
-          ⚠ Dans la colonne de DROITE, plus en pleine largeur : posé au-dessus des deux
-          colonnes, il s'étalait sur toute la page et repoussait « Navigation » d'une
-          hauteur entière avant qu'elle ne commence. Ici, la navigation démarre en haut de
-          page et le cockpit se serre sur la largeur des données qu'il décrit. */}
-      <OpsCockpit report={report} watchId={watchId} />
       {report.truncated && (
         <div className="bg-amber-500/10 border border-amber-500/25 rounded-md px-3 py-2 text-xs text-amber-300">
           {t('pw.truncated', { count: report.totalMatched.toLocaleString(intlLocale(locale)) })}

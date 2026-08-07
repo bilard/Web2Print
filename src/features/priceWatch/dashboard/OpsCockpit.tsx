@@ -170,7 +170,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
           <div className="flex flex-wrap items-stretch gap-3">
             {/* Balayage : ce qui RESTE à traiter (moyenne des concurrents actifs). */}
             <div className="bg-well rounded-lg px-3 py-2 flex flex-col items-center justify-center">
-              <Gauge value={ck.avgProgress} color="#818cf8">
+              <Gauge value={ck.avgProgress} color="#818cf8" size={84}>
                 <div className="text-xl font-semibold text-white tabular-nums"><AnimatedNumber value={ck.avgProgress * 100} format={(n) => `${Math.round(n)}%`} /></div>
                 <div className="text-[9px] uppercase tracking-wide text-white/45 mt-0.5">{t('pw.ops.families')}</div>
               </Gauge>
@@ -185,7 +185,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
               title={cycleComplete
                 ? t('pw.ops.cycleDone.title')
                 : `${ck.sitesComplete} concurrent(s) sur ${ck.sitesActive} ont bouclé leur balayage ce cycle.`}>
-              <Gauge value={ck.sitesActive ? ck.sitesComplete / ck.sitesActive : 0} color="#34d399">
+              <Gauge value={ck.sitesActive ? ck.sitesComplete / ck.sitesActive : 0} color="#34d399" size={84}>
                 {cycleComplete ? (
                   <>
                     <div className="text-2xl font-semibold text-emerald-300 leading-none">✓</div>
@@ -268,7 +268,9 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
           </div>
 
           {/* Qui scrape quoi : les concurrents par volume, barre de balayage + cycles. */}
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5">
+          {/* Quatre colonnes sur grand écran : les douze concurrents tiennent en trois
+              rangées au lieu de quatre, et c'est autant de hauteur rendue à la suite. */}
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-4 gap-y-1.5">
             {ck.competitors.filter((c) => c.indexed > 0).slice(0, 12).map((c) => (
               <div key={c.siteId} className="flex items-center gap-2 text-xs">
                 <span className="truncate text-white/75 flex-1 min-w-0" title={c.domain}>{c.domain.replace(/^www\./, '')}</span>
