@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useMemo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { useRunContext } from '../../runtime/runContext'
+import { useNodeVolume } from './useNodeVolume'
 import { nodeRegistry } from '../../registry'
 import { connectorsForSpec, connectorsByIds } from '../../registry/connectors'
 import { useConnectionDrag } from '../../runtime/connectionDragStore'
@@ -188,6 +189,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
     (s) => s.current?.edges.some((e) => e.source === id || e.target === id) ?? false,
   )
   const runOutputs = useRunContext((s) => s.nodeStates[id]?.outputs)
+  const volume = useNodeVolume(id, nodeType ?? '', liveConfig)
   const exportResult = useMemo(
     () => (status === 'success' ? findExportResult(runOutputs) : null),
     [status, runOutputs],
@@ -278,6 +280,20 @@ export function BaseNode({ id, data, selected }: NodeProps) {
               title={cardSummary}
             >
               {cardSummary}
+            </span>
+          ) : null}
+
+          {/* VOLUMÉTRIE : ce que le node a réellement produit, ou ce que la base contient
+              pour lui. Le canvas taisait les ordres de grandeur — il fallait ouvrir un
+              panneau, ou lancer un run, pour savoir si une source portait mille lignes ou
+              cent mille. Tabulaire et un ton plus vif que le résumé de config : c'est un
+              FAIT mesuré, pas un réglage. */}
+          {volume ? (
+            <span
+              className="mt-1 text-[9px] text-white/55 tabular-nums text-center leading-tight max-w-[112px] truncate"
+              title={volume}
+            >
+              {volume}
             </span>
           ) : null}
 
