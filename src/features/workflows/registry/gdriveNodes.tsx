@@ -35,6 +35,7 @@ import {
   uploadFileToDrive,
   type DriveFileMeta,
 } from '@/features/gdrive/gdriveCore'
+import { readGoogleSheetTab } from '@/features/gdrive/sheetValues'
 import { GDrivePickerModal } from '@/features/gdrive/GDrivePickerModal'
 import { GSheetsFormulaModal } from './GSheetsFormulaModal'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
@@ -304,10 +305,22 @@ const gsheetsImportNode: NodeSpec<
       throw new Error(t('run.gs.noFilePicked'))
     }
     ctx.log('info', t('run.gs.importingClient', { name: config.fileName, id: config.fileId }))
-    const sheets = await importGoogleSheetById(config.fileId, token)
-    const idx = Math.max(0, Math.min(config.sheetIndex ?? 0, sheets.length - 1))
-    ctx.log('info', t('run.gs.tabsRead', { count: sheets.length, index: idx, name: sheets[idx].name }))
-    return { sheet: sheets[idx] }
+    try {
+      const sheets = await importGoogleSheetById(config.fileId, token)
+      const idx = Math.max(0, Math.min(config.sheetIndex ?? 0, sheets.length - 1))
+      ctx.log('info', t('run.gs.tabsRead', { count: sheets.length, index: idx, name: sheets[idx].name }))
+      return { sheet: sheets[idx] }
+    } catch (e) {
+      // ⚠ L'export XLSX est plafonné par Google à ~10 Mo : un gros catalogue le franchit du
+      // jour où il gagne une colonne, et le refus ressemble à un problème de DROITS alors
+      // que le fichier s'ouvre normalement. L'API `values` ignore ce plafond — c'est déjà
+      // par elle que le cron lit ce même classeur depuis juillet. Repli ANNONCÉ : la
+      // lecture change de chemin, l'utilisateur doit pouvoir le savoir.
+      ctx.log('warn', t('run.gs.exportFallback', { message: e instanceof Error ? e.message : String(e) }))
+      const sheet = await readGoogleSheetTab(config.fileId, token, config.sheetIndex ?? 0)
+      ctx.log('info', t('run.gs.valuesRead', { rows: sheet.rows.length, columns: sheet.columns.length, name: sheet.name }))
+      return { sheet }
+    }
   },
 }
 

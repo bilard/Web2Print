@@ -2363,6 +2363,8 @@ export const en: Record<TranslationKey, string> = {
   'run.gs.needSheetOrText': 'Google Sheets export expects a Sheet or text on the input — wire a node that produces a Sheet (or a Text input).',
   'run.gs.noFilePicked': 'No Google Sheets selected — open the node configuration to pick one.',
   'run.gs.importingClient': 'Importing GSheet {name} ({id})…',
+  'run.gs.exportFallback': 'XLSX export refused by Google ({message}) — reading through the Sheets API instead, which has no size ceiling.',
+  'run.gs.valuesRead': '{rows} row(s) × {columns} column(s) read from "{name}" (Sheets API).',
   'run.gs.tabsRead': '{count} tab(s) read — selection #{index} ({name})',
   'run.gs.needSheetInput': 'Sheet missing on the input — wire a node that produces a Sheet (or a Text input).',
   'run.gs.testRowAdded': 'No upstream data — 1 test row added to try the formulas (type values in the Sheet, they recalculate).',

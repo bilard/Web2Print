@@ -2489,6 +2489,8 @@ export const fr = {
   'run.gs.needSheetOrText': 'Export Google Sheets attend une Sheet ou du texte en entrée — branchez un node qui produit une Sheet (ou une Saisie texte).',
   'run.gs.noFilePicked': 'Aucun Google Sheets sélectionné — ouvrez la config du node pour en choisir un.',
   'run.gs.importingClient': 'Import GSheet {name} ({id})…',
+  'run.gs.exportFallback': "Export XLSX refusé par Google ({message}) — lecture par l'API Sheets, sans plafond de taille.",
+  'run.gs.valuesRead': '{rows} ligne(s) × {columns} colonne(s) lues dans « {name} » (API Sheets).',
   'run.gs.tabsRead': '{count} onglet(s) lu(s) — sélection #{index} ({name})',
   'run.gs.needSheetInput': 'Sheet manquante en entrée — branchez un node qui produit une Sheet (ou une Saisie texte).',
   'run.gs.testRowAdded': "Aucune donnée amont — 1 ligne d'essai ajoutée pour tester les formules (saisis des valeurs dans le Sheet, elles se recalculent).",

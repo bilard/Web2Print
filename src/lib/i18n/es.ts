@@ -2362,6 +2362,8 @@ export const es: Record<TranslationKey, string> = {
   'run.gs.needSheetOrText': 'La exportación Google Sheets espera una Sheet o texto en la entrada — conectar un nodo que produzca una Sheet (o una Entrada de texto).',
   'run.gs.noFilePicked': 'Ningún Google Sheets seleccionado — abrir la configuración del nodo para elegir uno.',
   'run.gs.importingClient': 'Importación GSheet {name} ({id})…',
+  'run.gs.exportFallback': 'Exportación XLSX rechazada por Google ({message}): lectura mediante la API de Sheets, sin límite de tamaño.',
+  'run.gs.valuesRead': '{rows} fila(s) × {columns} columna(s) leídas en «{name}» (API de Sheets).',
   'run.gs.tabsRead': '{count} pestaña(s) leída(s) — selección #{index} ({name})',
   'run.gs.needSheetInput': 'Sheet faltante en la entrada — conectar un nodo que produzca una Sheet (o una Entrada de texto).',
   'run.gs.testRowAdded': 'Ningún dato previo — 1 fila de prueba añadida para probar las fórmulas (introducir valores en la Sheet, se recalculan).',
