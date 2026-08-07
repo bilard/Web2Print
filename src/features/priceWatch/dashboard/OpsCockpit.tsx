@@ -267,9 +267,13 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
             </div>
           </div>
 
-          {/* Qui scrape quoi : les concurrents par volume, barre de balayage + cycles. */}
+          {/* Qui scrape quoi : les SIX plus gros contributeurs, barre de balayage + cycles.
+              À douze, ce rappel occupait quatre rangées et repoussait tout le tableau de
+              bord vers le bas — or la liste complète, triable et auditée, est le panneau
+              « Benchmark » de la colonne de gauche. Six suffisent à dire d'où vient le
+              volume. */}
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5">
-            {ck.competitors.filter((c) => c.indexed > 0).slice(0, 12).map((c) => (
+            {ck.competitors.filter((c) => c.indexed > 0).slice(0, 6).map((c) => (
               <div key={c.siteId} className="flex items-center gap-2 text-xs">
                 <span className="truncate text-white/75 flex-1 min-w-0" title={c.domain}>{c.domain.replace(/^www\./, '')}</span>
                 <div className="h-1.5 w-16 rounded-full bg-white/[0.06] overflow-hidden shrink-0"
