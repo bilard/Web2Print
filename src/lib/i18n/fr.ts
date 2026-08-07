@@ -4676,6 +4676,7 @@ export const fr = {
   'pw.tbl.cellGap': ' · écart {pct}',
   'pw.tbl.cellClick': ' · clic : ouvrir la fiche',
   'pw.heat.cellTitle': '{domain} · {field} : {sign}{pct}% ({count})',
+  'pw.heat.lead.short': 'Une case = l’écart moyen d’UN concurrent sur UNE de vos familles.',
   'pw.heat.lead': 'Où chaque concurrent est agressif. Une case croise UN concurrent (ligne) et UNE de vos familles (colonne) : elle donne son écart de prix moyen face à vous sur cette famille, en %. Une colonne entièrement rose est une famille où le marché est sous vos prix ; une ligne rose, un concurrent qui vous passe dessous partout.',
   'pw.heat.legend.cheaper': 'il est moins cher que vous',
   'pw.heat.legend.aligned': 'au même niveau',

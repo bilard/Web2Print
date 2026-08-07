@@ -26,24 +26,29 @@ export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch
         <div className="text-sm font-semibold text-white">{t('pw.tail.gapByCompetitorFamily')}</div>
         <div className="text-[11px] text-white/35">{t('pw.chart.avgGap')}{ck.truncated ? t('pw.chart.onTop1000') : ''}</div>
       </div>
-      {/* À quoi sert ce tableau : rien ne le disait, et une grille de nombres colorés sans
-          clé de lecture n'apprend rien à qui ne l'a pas conçue. */}
-      <p className="text-[11px] text-white/45 mb-2 max-w-[70ch]">{t('pw.heat.lead')}</p>
-      <div className="flex items-center gap-3 mb-3 text-[10px] text-white/40 flex-wrap">
+      {/* Clé de lecture en UNE ligne, l'explication longue au survol : quatre lignes de
+          texte coûtaient plus de hauteur que trois rangées du tableau lui-même.
+          ⚠ Les pastilles reprennent EXACTEMENT `heatColor`, aux valeurs extrêmes de
+          l'échelle — une légende peinte à la main finirait par mentir sur les cases. */}
+      <div className="flex items-center gap-2.5 mb-3 text-[11px] text-white/45 flex-wrap"
+        title={t('pw.heat.lead')}>
+        <span className="text-white/60">{t('pw.heat.lead.short')}</span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: heatColor(-25) }} />
+          <span className="w-5 h-4 rounded-sm border border-white/10 flex items-center justify-center text-[9px] text-white/70"
+            style={{ backgroundColor: heatColor(-25) }}>−</span>
           {t('pw.heat.legend.cheaper')}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm border border-white/10" style={{ backgroundColor: heatColor(0) }} />
+          <span className="w-5 h-4 rounded-sm border border-white/10" style={{ backgroundColor: heatColor(0) }} />
           {t('pw.heat.legend.aligned')}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: heatColor(25) }} />
+          <span className="w-5 h-4 rounded-sm border border-white/10 flex items-center justify-center text-[9px] text-white/70"
+            style={{ backgroundColor: heatColor(25) }}>+</span>
           {t('pw.heat.legend.dearer')}
         </span>
-        <span className="text-white/25">·</span>
-        <span>{t('pw.heat.legend.click')}</span>
+        <span className="text-white/20">·</span>
+        <span className="text-white/35">{t('pw.heat.legend.click')}</span>
       </div>
       <div className="overflow-x-auto">
         <table className="border-separate border-spacing-0.5 text-xs tabular-nums">

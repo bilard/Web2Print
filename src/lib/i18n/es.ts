@@ -4517,6 +4517,7 @@ export const es: Record<TranslationKey, string> = {
   'pw.tbl.cellGap': '· diferencia {pct}',
   'pw.tbl.cellClick': '· clic: abrir la ficha',
   'pw.heat.cellTitle': '{domain} · {field}: {sign}{pct}% ({count})',
+  'pw.heat.lead.short': 'Una celda = la diferencia media de UN competidor en UNA de sus familias.',
   'pw.heat.lead': 'Dónde es agresivo cada competidor. Una celda cruza UN competidor (fila) y UNA de sus familias (columna): da su diferencia media de precio frente a usted en esa familia, en %. Una columna totalmente rosa es una familia donde el mercado está por debajo de sus precios; una fila rosa, un competidor que le supera en todo.',
   'pw.heat.legend.cheaper': 'es más barato que usted',
   'pw.heat.legend.aligned': 'al mismo nivel',

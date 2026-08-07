@@ -158,10 +158,13 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <ExpandableChart render={(h) => <PositionDonut kpis={report.kpis} onSelect={toggle} height={h ?? 300} />} />
         <ExpandableChart render={(h) => <GapDistribution ck={ck} onSelect={toggle} height={h ?? 300} />} />
       </div>
-      {/* items-stretch : le scatter s'étire sur toute la hauteur de la heatmap voisine. */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
-        <ExpandableChart className="h-full" render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} />
-        <ExpandableChart className="h-full" render={() => <HeatmapMatrix ck={ck} onSelect={toggle} />} />
+      {/* ⚠ items-start, PAS items-stretch. Le nuage s'alignait sur la hauteur de la
+          heatmap voisine — vingt lignes de concurrents, près de mille pixels — alors que
+          ses points tiennent dans le quart inférieur : le reste était du vide étiré. Chaque
+          carte prend désormais sa hauteur propre. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+        <ExpandableChart render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} />
+        <ExpandableChart render={() => <HeatmapMatrix ck={ck} onSelect={toggle} />} />
       </div>
       {/* Deux lectures temporelles complémentaires : MA dérive (indice, une courbe) et
           celle de CHAQUE concurrent (flux des écarts). */}

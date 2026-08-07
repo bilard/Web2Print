@@ -73,11 +73,12 @@ export function PriceIndexTrend({ history, height = 220 }: { history: KpiHistory
             )}
           </div>
         </div>
-        <div className="text-[11px] text-white/40 mt-0.5">
+        {/* Une ligne, la nuance au survol : trois phrases empilées coûtaient deux rangées
+            de hauteur sur chaque carte, pour un texte qu'on ne relit pas. */}
+        <div className="text-[11px] text-white/40 mt-0.5 truncate" title={`${t('pw.idx.lead')} ${t('pw.idx.undiscounted')}`}>
           {t('pw.idx.lead')}
           <span className="text-rose-400/70"> {t('pw.idx.above')}</span> ·
-          <span className="text-emerald-400/70"> {t('pw.idx.below')}</span>.
-          {t('pw.idx.undiscounted')}
+          <span className="text-emerald-400/70"> {t('pw.idx.below')}</span>
         </div>
       </div>
       {!enough ? (

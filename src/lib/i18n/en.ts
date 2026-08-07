@@ -4518,6 +4518,7 @@ export const en: Record<TranslationKey, string> = {
   'pw.tbl.cellGap': ' · gap {pct}',
   'pw.tbl.cellClick': ' · click: open the record',
   'pw.heat.cellTitle': '{domain} · {field}: {sign}{pct}% ({count})',
+  'pw.heat.lead.short': 'One cell = ONE competitor’s average gap on ONE of your families.',
   'pw.heat.lead': 'Where each competitor is aggressive. A cell crosses ONE competitor (row) with ONE of your families (column): it gives their average price gap against you on that family, in %. A fully pink column is a family where the market sits below your prices; a pink row, a competitor undercutting you everywhere.',
   'pw.heat.legend.cheaper': 'they are cheaper than you',
   'pw.heat.legend.aligned': 'on a par',

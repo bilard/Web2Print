@@ -31,9 +31,9 @@ export function PriceScatter({ ck, onSelect, height }: { ck: Cockpit; onSelect?:
   }
 
   return (
-    // h-full + flex-col : dans la grille items-stretch, le nuage occupe TOUTE la hauteur
-    // de la carte (alignée sur la heatmap voisine) ; en modale, `height` explicite prime.
-    <div className="bg-surface rounded-lg p-4 h-full flex flex-col">
+    // flex-col : la carte prend sa hauteur propre (la grille est en items-start) ; en
+    // modale, `height` explicite prime.
+    <div className="bg-surface rounded-lg p-4 flex flex-col">
       <div className="flex items-baseline justify-between mb-3">
         <div className="text-sm font-semibold text-white">{t('pw.tail.priceVsGap')}</div>
         <div className="text-[11px] text-white/35">{pts.length} produits{ck.truncated ? ' · top 1000' : ''}</div>
@@ -44,8 +44,11 @@ export function PriceScatter({ ck, onSelect, height }: { ck: Cockpit; onSelect?:
         // ⚠ Chart.js (maintainAspectRatio:false) dans un conteneur SANS hauteur propre
         // entre en boucle de croissance (canvas ↑ → div ↑ → canvas ↑ : page qui enfle à
         // l'infini, constaté en prod). Le canvas est donc en ABSOLU dans un conteneur
-        // relative : la hauteur de la rangée reste dictée par la heatmap voisine.
-        <div className="flex-1 min-h-[240px] relative" style={height != null ? { height, flex: 'none' } : undefined}>
+        // relative.
+        //
+        // Hauteur PLAFONNÉE en grille : un nuage n'a pas besoin de mille pixels pour se
+        // lire, et il n'a plus de voisin sur lequel s'aligner. En modale, `height` prime.
+        <div className="flex-1 min-h-[240px] max-h-[420px] relative" style={height != null ? { height, flex: 'none', maxHeight: 'none' } : undefined}>
           <div className="absolute inset-0">
           <Scatter
             data={data}
