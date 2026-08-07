@@ -96,7 +96,14 @@ registerServerNode({
     // Colonnes d'AFFICHAGE — jumeau strict du client : sans elles, un catalogue écrit
     // par le cron perdrait taxonomie et visuels, et l'écran « Concurrents » resterait
     // vide selon que le run vient du navigateur ou de la nuit.
-    const disp = pickDisplayColumns(products.columns ?? [], { description: descriptionColumn })
+    // ⚠ Les LIGNES entrent dans la résolution (jumeau du client) : elles seules disent
+    // lequel de « SOUS FAMILLE » et « PRODUCTGROUP » contient l'autre.
+    const disp = pickDisplayColumns(products.columns ?? [],
+      { description: descriptionColumn, taxo: typeof config.taxoColumns === 'string' ? config.taxoColumns : '' },
+      rawRows)
+    if (disp.taxo.length > 0) {
+      ctx.log('info', t(ctx.locale, 'run.compareCatalog.taxoColumns', { list: disp.taxo.join(' › ') }))
+    }
 
     // Produits source : identité + clés (dont réf d'origine extraites de la description).
     const sourceProducts: SourceProduct[] = []

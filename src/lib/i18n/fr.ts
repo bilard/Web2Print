@@ -1549,6 +1549,7 @@ export const fr = {
   // ⚠️ Schéma de clé DESCRIPTIF (`node.<type>.<champ>.label|help`). Les anciennes
   // clés `node.<type>.fN` restent en place — renuméroter aurait été risqué pour
   // zéro gain. Toute clé AJOUTÉE suit le schéma descriptif : opaque = collisions.
+  'node.compare-catalog.taxoColumns.help': "Niveaux de la taxonomie, du plus large au plus fin, séparés par « > » (ex. UNIVERS > FAMILLE > SOUS FAMILLE > PRODUCTGROUP). Laisse vide pour les détecter : l'ordre est alors déduit du nombre de valeurs distinctes de chaque colonne, et les colonnes vides sont écartées.",
   'node.compare-catalog.urlColumn.help': 'Lien de la fiche produit sur VOTRE site — rend le nom cliquable dans le tableau pour vérifier le prix. Optionnel.',
   'node.compare-catalog.watchId.help': 'Laisse VIDE : le suivi est automatiquement celui du workflow (le même que « Moisson concurrents » du workflow). Ne remplis que pour partager un suivi entre plusieurs workflows.',
   'node.compare-prices.noSource.help': 'Mode « famille » : branche toutes les enseignes sur « concurrents ». 1 ligne par produit, 1 colonne prix par enseigne, meilleur prix + écart.',
@@ -1768,6 +1769,7 @@ export const fr = {
   'node.compare-catalog.ref2Column.help': 'Référence secondaire éventuelle.',
   'node.compare-catalog.descriptionColumn.label': 'Colonne Description',
   'node.compare-catalog.descriptionColumn.help': 'Sert à extraire les réf. d’origine (« Remplace origine: … ») pour les pièces adaptables.',
+  'node.compare-catalog.taxoColumns.label': 'Colonnes Taxonomie (du plus large au plus fin)',
   'node.compare-catalog.urlColumn.label': 'Colonne URL (fiche source)',
   'node.compare-catalog.vatRate.label': 'TVA concurrents (%)',
   'node.compare-catalog.vatRate.help': 'Pour recalculer le HT depuis le TTC affiché. Défaut : 20.',
@@ -2294,6 +2296,8 @@ export const fr = {
   'run.compareCatalog.emptyIndex': 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
   'run.compareCatalog.matchedBreakdown': "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
   'run.compareCatalog.vetoed': '{count} fiche(s) écartée(s) : la référence correspondait, mais le libellé nommait une autre pièce (filtre ↔ carburateur…). Un trou vaut mieux qu\u2019un faux prix.',
+  'run.compareCatalog.taxoColumns': 'Taxonomie : {list}',
+  'run.compareCatalog.noTaxoColumn': "Aucune colonne de taxonomie reconnue : l'arbre de familles de l'écran « Concurrents » restera vide. Renseigne « Colonnes Taxonomie » dans ce node (du plus large au plus fin, séparées par « > »).",
   'run.compareCatalog.indexLoaded': '{count} fiche(s) concurrentes en mémoire pour {sites} site(s), lues en {s} s.',
   'run.compareCatalog.matching': "Appariement de {products} produit(s) source avec {sites} concurrent(s) — étape ininterrompue : le journal ne reprend qu'à la fin.",
   'run.compareCatalog.reportBuilding': 'Construction du rapport du tableau de bord (seconde passe sur les mêmes index)…',

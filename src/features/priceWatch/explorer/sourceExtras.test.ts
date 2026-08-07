@@ -83,13 +83,15 @@ describe('buildSourceExtras', () => {
     expect(idx.lookup({ id: 'p', name: '', ref: 'ABC-123' }).images).toEqual([])
   })
 
-  it('reconnaît les trois niveaux de taxonomie, sans confondre famille et sous-famille', () => {
+  it('reconnaît les niveaux de taxonomie, sans confondre famille et sous-famille', () => {
     const cols = [...columns, col('FAMILLE', 'Famille'), col('WEBGROUP_DESC', 'Sous famille'), col('PRODUCTGROUP', 'Product group')]
     const rs: ExcelRow[] = [{
       ...rows[0], FAMILLE: 'Motoculture', WEBGROUP_DESC: 'Tondeuses', PRODUCTGROUP: 'Courroies',
     }]
     const idx = buildSourceExtras(cols, rs)
-    expect(idx.taxoKeys).toEqual(['FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP'])
+    // Un emplacement par niveau du dictionnaire, `null` pour ceux que la base ne porte
+    // pas — ici l'UNIVERS, apparu dans le catalogue F1 et absent de cette feuille.
+    expect(idx.taxoKeys).toEqual([null, 'FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP'])
     expect(idx.lookup({ id: 'p', name: '', ref: 'ABC-123' }).path).toEqual(['Motoculture', 'Tondeuses', 'Courroies'])
   })
 

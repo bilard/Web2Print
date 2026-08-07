@@ -11,19 +11,12 @@ import type { ExcelColumn, ExcelRow, CellValue } from '@/features/excel/types'
 import { resolveCompareColumns, foldHeader } from '../catalog/compareColumns'
 import { normalizeEan } from '../catalog/keys'
 import type { SourceProduct } from '../catalog/match'
+// ⚠ MÊME dictionnaire que le node « Comparer catalogue ». Deux listes d'alias distinctes,
+// c'étaient deux arbres différents selon que la taxonomie venait du catalogue persisté ou
+// de la base PIM de repli — le niveau UNIVERS n'existant que d'un côté.
+import { TAXO_LEVELS } from '../catalog/displayColumns'
 
 const IMAGE_KEY_RX = /image|photo|img|picture|visuel|illustration|thumbnail/i
-
-/**
- * Niveaux de la taxonomie F1, du plus large au plus fin. Les alias sont ORDONNÉS et
- * DISJOINTS : « sous-famille » ne doit jamais être capté comme famille, sinon les deux
- * premiers niveaux de l'arbre désignent la même colonne et la navigation ne descend pas.
- */
-const TAXO_LEVELS: { label: string; aliases: string[] }[] = [
-  { label: 'Famille', aliases: ['famille', 'family', 'famillearticle', 'univers', 'rayon', 'categorie', 'category'] },
-  { label: 'Sous-famille', aliases: ['webgroupdesc', 'webgroup', 'sousfamille', 'soussfamille', 'subfamily', 'groupeweb', 'sousfamilledesc'] },
-  { label: 'Groupe produit', aliases: ['productgroup', 'productgroupdesc', 'groupeproduit', 'groupearticle', 'sousgroupe'] },
-]
 
 export interface SourceExtrasIndex {
   /** Colonnes retenues (affichées à l'utilisateur : la détection doit être vérifiable). */
@@ -107,6 +100,22 @@ function findTaxoKeys(columns: ExcelColumn[]): (string | null)[] {
 }
 
 /**
+ * Chemin taxonomique d'une ligne PIM — même règle que `taxoPathOf` du catalogue persisté :
+ * on démarre au premier niveau RENSEIGNÉ (un UNIVERS absent de cette base ne doit pas
+ * renvoyer la ligne en « non classé ») et on s'arrête au premier trou ensuite — « Famille >
+ * (vide) > Groupe » créerait un nœud fantôme regroupant des produits sans rapport.
+ */
+function taxoPath(row: ExcelRow, keys: (string | null)[]): string[] {
+  const out: string[] = []
+  for (const key of keys) {
+    const v = key ? str(row[key]) : ''
+    if (!v) { if (out.length > 0) break; continue }
+    out.push(v)
+  }
+  return out
+}
+
+/**
  * Indexe une feuille PIM par référence ET par EAN. Les deux clés pointent la même ligne :
  * un produit source dont la réf n'est pas dans la base peut être retrouvé par son EAN.
  */
@@ -150,14 +159,7 @@ export function buildSourceExtras(
     // chemin relatif produirait un lien mort, plus trompeur qu'un libellé non cliquable.
     url: urlKey ? (/^https?:\/\//i.test(str(row[urlKey])) ? str(row[urlKey]) : null) : null,
     images: imageKeys.flatMap((k) => imageUrls(row[k], configured.imagePrefix)).slice(0, 6),
-    // Chemin taxonomique : on s'arrête au premier niveau vide — « Famille > (vide) >
-    // Groupe » créerait un nœud fantôme sous lequel des produits sans rapport se
-    // retrouveraient regroupés.
-    path: taxoKeys.reduce<string[]>((acc, key, i) => {
-      if (acc.length !== i || !key) return acc
-      const v = str(row[key])
-      return v ? [...acc, v] : acc
-    }, []),
+    path: taxoPath(row, taxoKeys),
   })
 
   return {

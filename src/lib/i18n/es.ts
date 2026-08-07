@@ -1470,6 +1470,7 @@ export const es: Record<TranslationKey, string> = {
   // ⚠️ Schéma de clé DESCRIPTIF (`node.<type>.<champ>.label|help`). Les anciennes
   // clés `node.<type>.fN` restent en place — renuméroter aurait été risqué pour
   // zéro gain. Toute clé AJOUTÉE suit le schéma descriptif : opaque = collisions.
+  'node.compare-catalog.taxoColumns.help': 'Niveles de la taxonomía, del más amplio al más fino, separados por «>» (p. ej. UNIVERS > FAMILLE > SOUS FAMILLE > PRODUCTGROUP). Déjelo vacío para detectarlos: el orden se deduce entonces del número de valores distintos de cada columna y se descartan las columnas vacías.',
   'node.compare-catalog.urlColumn.help': 'Enlace de la ficha de producto en SU sitio — hace que el nombre sea clicable en la tabla para comprobar el precio. Opcional.',
   'node.compare-catalog.watchId.help': 'Dejar VACÍO: el seguimiento es automáticamente el del flujo de trabajo (el mismo que «Cosecha de competidores» del flujo de trabajo). Rellenar solo para compartir un seguimiento entre varios flujos de trabajo.',
   'node.compare-prices.noSource.help': 'Modo «familia»: conectar todas las marcas a «competidores». 1 línea por producto, 1 columna de precio por marca, mejor precio + diferencia.',
@@ -1689,6 +1690,7 @@ export const es: Record<TranslationKey, string> = {
   'node.compare-catalog.ref2Column.help': 'Referencia secundaria opcional.',
   'node.compare-catalog.descriptionColumn.label': 'Columna Descripción',
   'node.compare-catalog.descriptionColumn.help': 'Sirve para extraer las ref. originales («Sustituye origen: …») para las piezas adaptables.',
+  'node.compare-catalog.taxoColumns.label': 'Columnas de taxonomía (de la más amplia a la más fina)',
   'node.compare-catalog.urlColumn.label': 'Columna URL (ficha de origen)',
   'node.compare-catalog.vatRate.label': 'IVA de competidores (%)',
   'node.compare-catalog.vatRate.help': 'Para recalcular el precio sin IVA desde el precio con IVA mostrado. Por defecto: 20.',
@@ -2172,6 +2174,8 @@ export const es: Record<TranslationKey, string> = {
   'run.compareCatalog.emptyIndex': 'Índice de competidores vacío para los {sites} sitio(s) bajo el seguimiento «{watchId}». Compruebe que el nodo «Cosecha de competidores» utiliza el MISMO identificador de seguimiento («{watchId}») y que se ha ejecutado antes.',
   'run.compareCatalog.matchedBreakdown': '{matched} producto(s) emparejado(s): {exact} mismo producto, {originOnly} pieza original (adaptable ↔ OEM). {unmatched} sin correspondencia, {noKey} sin clave.',
   'run.compareCatalog.vetoed': '{count} ficha(s) descartada(s): la referencia coincidía, pero el nombre designaba otra pieza (filtro ↔ carburador…). Mejor un hueco que un precio falso.',
+  'run.compareCatalog.taxoColumns': 'Taxonomía: {list}',
+  'run.compareCatalog.noTaxoColumn': 'Ninguna columna de taxonomía reconocida: el árbol de familias de la pantalla «Competidores» quedará vacío. Rellene «Columnas de taxonomía» en este nodo (de la más amplia a la más fina, separadas por «>»).',
   'run.compareCatalog.indexLoaded': '{count} ficha(s) de la competencia en memoria para {sites} sitio(s), leídas en {s} s.',
   'run.compareCatalog.matching': 'Emparejando {products} producto(s) de origen con {sites} competidor(es): etapa ininterrumpida, el registro solo se reanuda al final.',
   'run.compareCatalog.reportBuilding': 'Construcción del informe del panel (segunda pasada sobre los mismos índices)…',

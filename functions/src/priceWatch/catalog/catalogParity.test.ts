@@ -189,6 +189,24 @@ describe('displayColumns (parité serveur)', () => {
     expect(taxoPathOf({ A: 'Motoculture', B: '', C: 'X' }, ['A', 'B', 'C'])).toEqual(['Motoculture'])
     expect(trimDescription('x'.repeat(400))?.endsWith('…')).toBe(true)
   })
+  it('range UNIVERS au-dessus de FAMILLE, comme la copie client', () => {
+    expect(pickDisplayColumns([
+      { key: 'UNIVERS' }, { key: 'FAMILLE' }, { key: 'PRODUCTGROUP' }, { key: 'SOUS FAMILLE' },
+    ]).taxo).toEqual(['UNIVERS', 'FAMILLE', 'SOUS FAMILLE', 'PRODUCTGROUP'])
+  })
+  it('déduit l’ordre des niveaux des DONNÉES, comme la copie client', () => {
+    const rows = [
+      { U: 'Jardin', F: 'Tonte', G: 'Courroie A', S: 'Courroies' },
+      { U: 'Jardin', F: 'Taille', G: 'Lame X', S: 'Lames' },
+      { U: 'Jardin', F: 'Taille', G: 'Lame Y', S: 'Lames' },
+    ]
+    const cols = [{ key: 'U', label: 'UNIVERS' }, { key: 'F', label: 'FAMILLE' }, { key: 'G', label: 'PRODUCTGROUP' }, { key: 'S', label: 'SOUS FAMILLE' }]
+    expect(pickDisplayColumns(cols, {}, rows).taxo).toEqual(['U', 'F', 'S', 'G'])
+  })
+  it('respecte la taxonomie SAISIE dans le node, comme la copie client', () => {
+    expect(pickDisplayColumns([{ key: 'UNIVERS' }, { key: 'FAMILLE' }], { taxo: 'FAMILLE > UNIVERS' }).taxo)
+      .toEqual(['FAMILLE', 'UNIVERS'])
+  })
 })
 
 describe('extractOriginRefs (parité serveur)', () => {

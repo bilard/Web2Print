@@ -1471,6 +1471,7 @@ export const en: Record<TranslationKey, string> = {
   // ⚠️ Schéma de clé DESCRIPTIF (`node.<type>.<champ>.label|help`). Les anciennes
   // clés `node.<type>.fN` restent en place — renuméroter aurait été risqué pour
   // zéro gain. Toute clé AJOUTÉE suit le schéma descriptif : opaque = collisions.
+  'node.compare-catalog.taxoColumns.help': 'Taxonomy levels, broadest to finest, separated by ">" (e.g. UNIVERS > FAMILLE > SOUS FAMILLE > PRODUCTGROUP). Leave empty to detect them: the order is then derived from how many distinct values each column holds, and empty columns are dropped.',
   'node.compare-catalog.urlColumn.help': 'Link to the product page on YOUR site — makes the name clickable in the table to check the price. Optional.',
   'node.compare-catalog.watchId.help': 'Leave EMPTY: the monitoring is automatically the workflow\'s own (the same as the workflow\'s "Competitor harvest"). Fill it in only to share one monitoring across several workflows.',
   'node.compare-prices.noSource.help': '"Family" mode: wire every retailer to "competitors". 1 row per product, 1 price column per retailer, best price + gap.',
@@ -1690,6 +1691,7 @@ export const en: Record<TranslationKey, string> = {
   'node.compare-catalog.ref2Column.help': 'Optional secondary reference.',
   'node.compare-catalog.descriptionColumn.label': 'Description column',
   'node.compare-catalog.descriptionColumn.help': 'Used to extract the original refs ("Replaces origin: …") for aftermarket parts.',
+  'node.compare-catalog.taxoColumns.label': 'Taxonomy columns (broadest to finest)',
   'node.compare-catalog.urlColumn.label': 'URL column (source page)',
   'node.compare-catalog.vatRate.label': 'Competitor VAT (%)',
   'node.compare-catalog.vatRate.help': 'To recompute the net price from the displayed gross price. Default: 20.',
@@ -2173,6 +2175,8 @@ export const en: Record<TranslationKey, string> = {
   'run.compareCatalog.emptyIndex': 'Competitor index empty for the {sites} site(s) under the "{watchId}" monitoring. Check that the "Harvest competitors" node uses the SAME monitoring identifier ("{watchId}") and that it ran first.',
   'run.compareCatalog.matchedBreakdown': '{matched} product(s) matched: {exact} same product, {originOnly} original part (aftermarket ↔ OEM). {unmatched} without a match, {noKey} without a key.',
   'run.compareCatalog.vetoed': '{count} listing(s) discarded: the reference matched, but the label named a different part (filter vs carburettor…). A gap beats a false price.',
+  'run.compareCatalog.taxoColumns': 'Taxonomy: {list}',
+  'run.compareCatalog.noTaxoColumn': 'No taxonomy column recognised: the family tree on the "Competitors" screen will stay empty. Fill in "Taxonomy columns" on this node (broadest to finest, separated by ">").',
   'run.compareCatalog.indexLoaded': '{count} competitor listing(s) held in memory for {sites} site(s), read in {s} s.',
   'run.compareCatalog.matching': 'Matching {products} source product(s) against {sites} competitor(s) — an uninterrupted step: the log only resumes once it is done.',
   'run.compareCatalog.reportBuilding': 'Building the dashboard report (second pass over the same indexes)…',

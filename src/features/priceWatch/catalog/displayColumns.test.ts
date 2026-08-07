@@ -39,6 +39,69 @@ describe('pickDisplayColumns', () => {
   })
 })
 
+describe('taxonomie à quatre niveaux (catalogue F1 2026)', () => {
+  it('reconnaît UNIVERS, FAMILLE, SOUS FAMILLE et PRODUCTGROUP, du plus large au plus fin', () => {
+    // La feuille les donne dans un autre ordre : c'est la HIÉRARCHIE qui compte, pas la
+    // position de la colonne dans le fichier.
+    const taxo = pickDisplayColumns(H('ARTICLECODE', 'UNIVERS', 'FAMILLE', 'PRODUCTGROUP', 'SOUS FAMILLE')).taxo
+    expect(taxo).toEqual(['UNIVERS', 'FAMILLE', 'SOUS FAMILLE', 'PRODUCTGROUP'])
+  })
+
+  it('ne capte pas « SOUS FAMILLE » comme famille quand FAMILLE est absente', () => {
+    expect(pickDisplayColumns(H('SOUS FAMILLE', 'PRODUCTGROUP')).taxo).toEqual(['SOUS FAMILLE', 'PRODUCTGROUP'])
+  })
+
+  it('garde l’ancienne feuille inchangée (non-régression)', () => {
+    expect(pickDisplayColumns(H('FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP')).taxo)
+      .toEqual(['FAMILLE', 'WEBGROUP_DESC', 'PRODUCTGROUP'])
+  })
+})
+
+describe('ordre déduit des DONNÉES', () => {
+  // Un dictionnaire ne peut pas savoir si « PRODUCTGROUP » est au-dessus ou au-dessous de
+  // « SOUS FAMILLE » : cela dépend de l'ERP. Les données, elles, le disent — un niveau
+  // large a moins de valeurs distinctes que le niveau qu'il contient.
+  const rows = [
+    { U: 'Jardin', F: 'Tonte', G: 'Courroie A', S: 'Courroies' },
+    { U: 'Jardin', F: 'Tonte', G: 'Courroie B', S: 'Courroies' },
+    { U: 'Jardin', F: 'Taille', G: 'Lame X', S: 'Lames' },
+    { U: 'Jardin', F: 'Taille', G: 'Lame Y', S: 'Lames' },
+  ]
+  const cols = [{ key: 'U', label: 'UNIVERS' }, { key: 'F', label: 'FAMILLE' }, { key: 'G', label: 'PRODUCTGROUP' }, { key: 'S', label: 'SOUS FAMILLE' }]
+
+  it('classe du plus large au plus fin d’après le nombre de valeurs distinctes', () => {
+    expect(pickDisplayColumns(cols, {}, rows).taxo).toEqual(['U', 'F', 'S', 'G'])
+  })
+
+  it('écarte un niveau vide sur toute la feuille plutôt que de couper les chemins', () => {
+    const withEmpty = rows.map((r) => ({ ...r, U: '' }))
+    expect(pickDisplayColumns(cols, {}, withEmpty).taxo).toEqual(['F', 'S', 'G'])
+  })
+})
+
+describe('taxonomie SAISIE dans le node', () => {
+  const cols = H('UNIVERS', 'FAMILLE', 'PRODUCTGROUP', 'SOUS FAMILLE')
+
+  it('fait foi, dans l’ordre saisi, sans rien deviner', () => {
+    const taxo = pickDisplayColumns(cols, { taxo: 'UNIVERS > FAMILLE > PRODUCTGROUP > SOUS FAMILLE' }).taxo
+    expect(taxo).toEqual(['UNIVERS', 'FAMILLE', 'PRODUCTGROUP', 'SOUS FAMILLE'])
+  })
+
+  it('accepte les séparateurs usuels et tolère casse et accents', () => {
+    expect(pickDisplayColumns(cols, { taxo: 'univers | famille' }).taxo).toEqual(['UNIVERS', 'FAMILLE'])
+    expect(pickDisplayColumns(cols, { taxo: 'UNIVERS, sous-famille' }).taxo).toEqual(['UNIVERS', 'SOUS FAMILLE'])
+  })
+
+  it('ignore un nom qui ne désigne aucune colonne, sans jeter les autres', () => {
+    expect(pickDisplayColumns(cols, { taxo: 'ABSENTE > FAMILLE' }).taxo).toEqual(['FAMILLE'])
+  })
+
+  it('retombe sur la détection quand la saisie ne désigne RIEN', () => {
+    expect(pickDisplayColumns(cols, { taxo: 'ABSENTE > INTROUVABLE' }).taxo)
+      .toEqual(['UNIVERS', 'FAMILLE', 'SOUS FAMILLE', 'PRODUCTGROUP'])
+  })
+})
+
 describe('taxoPathOf', () => {
   it('s’arrête au premier niveau vide', () => {
     const row = { A: 'Motoculture', B: '', C: 'Courroies' }
@@ -46,6 +109,11 @@ describe('taxoPathOf', () => {
   })
   it('ignore les espaces et les cellules absentes', () => {
     expect(taxoPathOf({ A: '  Jardin  ' }, ['A', 'B'])).toEqual(['Jardin'])
+  })
+  it('démarre au premier niveau RENSEIGNÉ : un univers vide ne déclasse pas la ligne', () => {
+    // Cas vécu : la nouvelle colonne UNIVERS n'est remplie que sur une partie du fichier.
+    // S'arrêter net y renvoyait tout le reste du catalogue dans « non classé ».
+    expect(taxoPathOf({ U: '', F: 'Tonte', S: 'Courroies' }, ['U', 'F', 'S'])).toEqual(['Tonte', 'Courroies'])
   })
 })
 

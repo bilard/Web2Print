@@ -195,6 +195,10 @@ const MESSAGES = {
     fr: 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
     en: 'Competitor index empty for the {sites} site(s) under the "{watchId}" monitoring. Check that the "Harvest competitors" node uses the SAME monitoring identifier ("{watchId}") and that it ran first.',
   },
+  'run.compareCatalog.taxoColumns': {
+    fr: 'Taxonomie : {list}',
+    en: 'Taxonomy: {list}',
+  },
   'run.compareCatalog.indexLoaded': {
     fr: '{count} fiche(s) concurrentes en mémoire pour {sites} site(s), lues en {s} s.',
     en: '{count} competitor listing(s) held in memory for {sites} site(s), read in {s} s.',

@@ -33,6 +33,8 @@ interface CompareConfig {
   priceColumn: string
   descriptionColumn: string
   urlColumn: string
+  /** Niveaux de taxonomie, du plus large au plus fin, séparés par `>`. Vide = détection. */
+  taxoColumns: string
   vatRate: number
 }
 interface CompareInputs { products?: ExcelSheet; harvest?: unknown; sites?: unknown }
@@ -93,6 +95,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Mon prix (HT)' },
     { name: 'descriptionColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.descriptionColumn.label', helpKey: 'node.compare-catalog.descriptionColumn.help' },
     { name: 'urlColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.urlColumn.label', helpKey: 'node.compare-catalog.urlColumn.help' },
+    { name: 'taxoColumns', kind: 'text', labelKey: 'node.compare-catalog.taxoColumns.label', helpKey: 'node.compare-catalog.taxoColumns.help' },
     { name: 'vatRate', kind: 'number', labelKey: 'node.compare-catalog.vatRate.label', helpKey: 'node.compare-catalog.vatRate.help' },
     {
       name: 'watchId', kind: 'text', labelKey: 'node.compare-catalog.watchId.label', helpKey: 'node.compare-catalog.watchId.help',
@@ -105,6 +108,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     watchId: '', label: '', sites: '', vatRate: 20,
     refColumn: 'reference', ref2Column: '', eanColumn: 'ean', nameColumn: 'name',
     familyColumn: 'family', priceColumn: 'price', descriptionColumn: 'description', urlColumn: '',
+    taxoColumns: '',
   },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
@@ -158,11 +162,22 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // Colonnes d'AFFICHAGE (description, visuel, taxonomie) : elles ne servent pas à
     // l'appariement mais voyagent avec le catalogue source — le fichier F1 n'est pas une
     // base du PIM, l'explorateur n'a aucun autre moyen de les retrouver.
-    const disp = pickDisplayColumns(sheetColumns, { description: config.descriptionColumn })
-    if (disp.taxo.length > 0 || disp.image) {
+    // ⚠ Les LIGNES entrent dans la résolution : elles seules disent lequel de
+    // « SOUS FAMILLE » et « PRODUCTGROUP » contient l'autre, et quelles colonnes de
+    // taxonomie sont vides d'un bout à l'autre du fichier.
+    const disp = pickDisplayColumns(sheetColumns,
+      { description: config.descriptionColumn, taxo: config.taxoColumns }, rawRows)
+    if (disp.image || disp.description) {
       ctx.log('info', t('run.compareCatalog.displayColumns', {
-        list: [disp.description, disp.image, ...disp.taxo].filter(Boolean).join(' · '),
+        list: [disp.description, disp.image].filter(Boolean).join(' · '),
       }))
+    }
+    // La hiérarchie retenue est ANNONCÉE : c'est elle qui dessine l'arbre de l'écran
+    // « Concurrents », et une racine perdue ne se voit qu'une fois l'arbre décapité.
+    if (disp.taxo.length > 0) {
+      ctx.log('info', t('run.compareCatalog.taxoColumns', { list: disp.taxo.join(' › ') }))
+    } else if (sheetColumns.length > 0) {
+      ctx.log('warn', t('run.compareCatalog.noTaxoColumn'))
     }
 
     // Produits source : identité + clés (dont réf d'origine extraites de la description).
