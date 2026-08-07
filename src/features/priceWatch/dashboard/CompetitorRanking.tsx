@@ -42,7 +42,9 @@ export function CompetitorRanking({ ck, onSelect, active, onOpenAudit, progressB
       {rows.length === 0 ? (
         <div className="text-white/40 text-sm py-8 text-center">{t('pw.rank.empty')}</div>
       ) : (
-        <div className="max-h-[460px] overflow-y-auto overscroll-contain -mx-1 px-1">
+        // 240 px : la bande occupait la hauteur de quatre lignes pleines alors qu'elle sert
+        // de repère, pas de tableau — le détail par concurrent vit plus bas.
+        <div className="max-h-[240px] overflow-y-auto overscroll-contain -mx-1 px-1">
         <table className="w-full text-xs tabular-nums">
           <thead className="sticky top-0 z-10 bg-surface">
             <tr className="text-[10px] uppercase tracking-wide text-right bg-well">
