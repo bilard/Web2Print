@@ -52,7 +52,9 @@ function toSheet(cols: MatrixColumn[], rows: Record<string, unknown>[]) {
       ...(c.group ? { group: c.group } : {}),
     }
   })
-  return { name: 'Veille tarifaire', columns, rows, taxonomy: [] }
+  // Ligne de titres de blocs (jumeau du client) : sans elle, arrivé au milieu du tableau
+  // plus rien ne dit de quel concurrent on lit les prix.
+  return { name: 'Veille tarifaire', columns, rows, taxonomy: [], groupHeaderRow: true }
 }
 
 registerServerNode({

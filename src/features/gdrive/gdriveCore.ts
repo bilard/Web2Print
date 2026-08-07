@@ -401,6 +401,7 @@ async function applySheetColorRules(token: string, spreadsheetId: string, sheet:
   if (rules.length === 0) return
   const gid = await getFirstSheetGid(token, spreadsheetId)
   const rowCount = sheet.rows.length
+  const headerRows = headerRowCount(sheet)
   let existing = 0
   try {
     const getRes = await fetch(`${SHEETS_API}/${spreadsheetId}?fields=sheets(properties(sheetId),conditionalFormats)`, {
@@ -421,7 +422,7 @@ async function applySheetColorRules(token: string, spreadsheetId: string, sheet:
         addConditionalFormatRule: {
           index: 0,
           rule: {
-            ranges: [{ sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: colIdx, endColumnIndex: colIdx + 1 }],
+            ranges: [{ sheetId: gid, startRowIndex: headerRows, endRowIndex: rowCount + headerRows, startColumnIndex: colIdx, endColumnIndex: colIdx + 1 }],
             booleanRule: {
               condition: { type: 'TEXT_EQ', values: [{ userEnteredValue: rule.equals }] },
               format: { backgroundColor: tone.bg, ...(tone.fg ? { textFormat: { foregroundColor: tone.fg } } : {}) },
@@ -475,6 +476,34 @@ async function applySheetColorRules(token: string, spreadsheetId: string, sheet:
  * ⚠ Conséquence : un bloc de moins de 3 colonnes n'est pas groupé (il ne resterait qu'une
  * colonne à replier, sans intérêt).
  */
+/**
+ * Nombre de lignes d'en-tête : deux quand la feuille demande une ligne de titres de blocs
+ * (et qu'elle en a au moins un), une sinon. TOUT ce qui se cale sur l'en-tête — gel,
+ * filtre, plages de couleur, première ligne de données — passe par ici : un décalage
+ * oublié à un seul endroit colore les en-têtes ou filtre la mauvaise ligne.
+ */
+export function headerRowCount(sheet: { columns: { group?: string }[]; groupHeaderRow?: boolean }): number {
+  return sheet.groupHeaderRow && sheet.columns.some((c) => c.group) ? 2 : 1
+}
+
+/** Plages de colonnes d'un même bloc, tête COMPRISE — la fusion couvre le bloc entier,
+ *  contrairement aux groupes pliables qui laissent des colonnes de séparation. */
+export function blockSpans(columns: { key: string; group?: string }[]): { start: number; end: number; title: string }[] {
+  const out: { start: number; end: number; title: string }[] = []
+  for (let i = 0; i < columns.length; i++) {
+    const g = columns[i].group
+    if (!g) continue
+    let j = i
+    while (j + 1 < columns.length && columns[j + 1].group === g) j++
+    // La colonne qui précède porte le titre du bloc et n'a pas de `group` : l'absorber
+    // évite une cellule orpheline entre deux titres fusionnés.
+    const start = i > 0 && !columns[i - 1].group && out.every((s) => s.end < i - 1) ? i - 1 : i
+    out.push({ start, end: j, title: g })
+    i = j
+  }
+  return out
+}
+
 export function contiguousGroups(groups: (string | undefined)[]): { start: number; end: number }[] {
   const out: { start: number; end: number }[] = []
   let i = 0
@@ -499,13 +528,16 @@ async function applySheetPresentation(token: string, spreadsheetId: string, shee
   const colCount = sheet.columns.length
   if (colCount === 0) return
   const rowCount = sheet.rows.length
+  // Une seule source pour le décalage : la ligne de titres de blocs, quand elle existe,
+  // repousse d'un cran le filtre, le gel, le corps et les échelles de couleur.
+  const headerRows = headerRowCount(sheet)
 
   const requests: unknown[] = [
     // En-tête : fond soutenu, texte blanc en gras, légèrement plus grand, centré
     // verticalement — et le texte qui passe à la ligne plutôt que d'être tronqué.
     {
       repeatCell: {
-        range: { sheetId: gid, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: colCount },
+        range: { sheetId: gid, startRowIndex: 0, endRowIndex: headerRows, startColumnIndex: 0, endColumnIndex: colCount },
         cell: {
           userEnteredFormat: {
             backgroundColor: HEADER_BG,
@@ -521,7 +553,7 @@ async function applySheetPresentation(token: string, spreadsheetId: string, shee
     // Corps : passage à la ligne, pour que l'ajustement de largeur ait un sens.
     ...(rowCount > 0 ? [{
       repeatCell: {
-        range: { sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: 0, endColumnIndex: colCount },
+        range: { sheetId: gid, startRowIndex: headerRows, endRowIndex: rowCount + headerRows, startColumnIndex: 0, endColumnIndex: colCount },
         cell: { userEnteredFormat: { wrapStrategy: 'WRAP', verticalAlignment: 'TOP' } },
         fields: 'userEnteredFormat(wrapStrategy,verticalAlignment)',
       },
@@ -529,11 +561,13 @@ async function applySheetPresentation(token: string, spreadsheetId: string, shee
     // En-tête FIGÉ : il reste visible au défilement, et le filtre porte dessus.
     {
       updateSheetProperties: {
-        properties: { sheetId: gid, gridProperties: { frozenRowCount: 1 } },
+        properties: { sheetId: gid, gridProperties: { frozenRowCount: headerRows } },
         fields: 'gridProperties.frozenRowCount',
       },
     },
-    { setBasicFilter: { filter: { range: { sheetId: gid, startRowIndex: 0, startColumnIndex: 0, endColumnIndex: colCount } } } },
+    // Le filtre porte sur la ligne des LIBELLÉS, jamais sur celle des titres de blocs :
+    // sinon les menus déroulants proposeraient des noms de concurrents, pas des valeurs.
+    { setBasicFilter: { filter: { range: { sheetId: gid, startRowIndex: headerRows - 1, startColumnIndex: 0, endColumnIndex: colCount } } } },
     {
       autoResizeDimensions: {
         dimensions: { sheetId: gid, dimension: 'COLUMNS', startIndex: 0, endIndex: colCount },
@@ -569,6 +603,7 @@ const METRIC_TYPES = new Set(['number', 'currency', 'percent', 'duration'])
 async function applyMetricColorScales(token: string, spreadsheetId: string, sheet: ExcelSheet): Promise<void> {
   const rowCount = sheet.rows.length
   if (rowCount === 0) return
+  const headerRows = headerRowCount(sheet)
   const metricCols = sheet.columns
     .map((c, i) => ({ c, i }))
     .filter(({ c }) => METRIC_TYPES.has(c.fieldType) || METRIC_TYPES.has(c.detectedType))
@@ -579,7 +614,7 @@ async function applyMetricColorScales(token: string, spreadsheetId: string, shee
     addConditionalFormatRule: {
       index: 0,
       rule: {
-        ranges: [{ sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: i, endColumnIndex: i + 1 }],
+        ranges: [{ sheetId: gid, startRowIndex: headerRows, endRowIndex: rowCount + headerRows, startColumnIndex: i, endColumnIndex: i + 1 }],
         gradientRule: {
           minpoint: { color: { red: 0.96, green: 0.80, blue: 0.80 }, type: 'MIN' },
           midpoint: { color: { red: 1, green: 0.95, blue: 0.75 }, type: 'PERCENTILE', value: '50' },
@@ -727,7 +762,19 @@ async function sheetToXlsxBlob(
   // Test des formules SANS données amont : on injecte 1 ligne d'essai (colonnes data
   // vides) pour que les colonnes-formule s'écrivent et soient évaluables/éditables.
   if (body.length === 0 && formulas && formulas.length > 0) body.push(sheet.columns.map(() => ''))
-  const ws = XLSX.utils.aoa_to_sheet([header, ...body])
+  // Ligne de titres de blocs, quand la feuille la demande : le nom du concurrent reste
+  // lisible au défilement horizontal, là où les libellés de colonnes sont identiques d'un
+  // bloc à l'autre. Écrite au début du bloc, la fusion couvre le reste.
+  const headerRows = headerRowCount(sheet)
+  const spans = headerRows === 2 ? blockSpans(sheet.columns) : []
+  const titleRow = sheet.columns.map(() => '')
+  for (const sp of spans) titleRow[sp.start] = sp.title
+  const ws = XLSX.utils.aoa_to_sheet(headerRows === 2 ? [titleRow, header, ...body] : [header, ...body])
+  if (spans.length > 0) {
+    ws['!merges'] = spans.filter((sp) => sp.end > sp.start).map((sp) => ({
+      s: { r: 0, c: sp.start }, e: { r: 0, c: sp.end },
+    }))
+  }
   const rows = body
 
   // Format (`z`) par colonne de données (hors en-tête). La grille suit l'ordre de
@@ -735,7 +782,7 @@ async function sheetToXlsxBlob(
   formats.forEach((fmt, ci) => {
     if (!fmt.z) return
     for (let r = 0; r < rows.length; r++) {
-      const cell = ws[XLSX.utils.encode_cell({ c: ci, r: r + 1 })] as { t?: string; v?: unknown; z?: string } | undefined
+      const cell = ws[XLSX.utils.encode_cell({ c: ci, r: r + headerRows })] as { t?: string; v?: unknown; z?: string } | undefined
       if (!cell) continue
       cell.z = fmt.z
       if (fmt.text && cell.t !== 's') { cell.t = 's'; cell.v = String(cell.v ?? '') }
@@ -752,17 +799,17 @@ async function sheetToXlsxBlob(
     formulas.forEach((f, fi) => {
       const colNum = baseCol + fi
       // En-tête
-      ws[XLSX.utils.encode_cell({ c: colNum, r: 0 })] = { t: 's', v: f.header }
+      ws[XLSX.utils.encode_cell({ c: colNum, r: headerRows - 1 })] = { t: 's', v: f.header }
       // Une formule par ligne de données (ligne tableur = index + 2 : +1 en-tête, base 1)
       for (let r = 0; r < rows.length; r++) {
-        const resolved = resolveFormula(f.template, letterOf, r + 2)
-        ws[XLSX.utils.encode_cell({ c: colNum, r: r + 1 })] = buildFormulaCell(resolved, f.format)
+        const resolved = resolveFormula(f.template, letterOf, r + headerRows + 1)
+        ws[XLSX.utils.encode_cell({ c: colNum, r: r + headerRows })] = buildFormulaCell(resolved, f.format)
       }
     })
     // Étend la plage du worksheet aux colonnes-formule.
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
     range.e.c = Math.max(range.e.c, baseCol + formulas.length - 1)
-    range.e.r = Math.max(range.e.r, rows.length)
+    range.e.r = Math.max(range.e.r, rows.length + headerRows - 1)
     ws['!ref'] = XLSX.utils.encode_range(range)
   }
 

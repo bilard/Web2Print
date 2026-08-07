@@ -40,7 +40,7 @@ const TONE_RGB: Record<ColorTone, { bg: { red: number; green: number; blue: numb
  *  colonne, ex « position » = moins cher/plus cher). Non bloquant. */
 async function applyColorRules(
   token: string, id: string, gid: number, keys: string[],
-  colorRules: SheetColorRule[], rowCount: number,
+  colorRules: SheetColorRule[], rowCount: number, headerRows = 1,
 ): Promise<void> {
   // Purge les règles existantes sur cet onglet (sinon elles s'accumulent à chaque
   // run en mode update / cron). deleteConditionalFormatRule index 0 répété N fois.
@@ -66,7 +66,7 @@ async function applyColorRules(
         addConditionalFormatRule: {
           index: 0,
           rule: {
-            ranges: [{ sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: colIdx, endColumnIndex: colIdx + 1 }],
+            ranges: [{ sheetId: gid, startRowIndex: headerRows, endRowIndex: rowCount + headerRows, startColumnIndex: colIdx, endColumnIndex: colIdx + 1 }],
             booleanRule: {
               condition: { type: 'TEXT_EQ', values: [{ userEnteredValue: rule.equals }] },
               format: { backgroundColor: tone.bg, ...(tone.fg ? { textFormat: { foregroundColor: tone.fg } } : {}) },
@@ -240,13 +240,13 @@ const MAX_COL_WIDTH_PX = 320
  */
 async function applyPresentation(
   token: string, id: string, gid: number, colCount: number, rowCount: number,
-  metricColumnIndexes: number[],
+  metricColumnIndexes: number[], headerRows = 1,
 ): Promise<void> {
   if (colCount === 0) return
   const requests: unknown[] = [
     {
       repeatCell: {
-        range: { sheetId: gid, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: colCount },
+        range: { sheetId: gid, startRowIndex: 0, endRowIndex: headerRows, startColumnIndex: 0, endColumnIndex: colCount },
         cell: {
           userEnteredFormat: {
             backgroundColor: HEADER_BG,
@@ -261,18 +261,19 @@ async function applyPresentation(
     },
     ...(rowCount > 0 ? [{
       repeatCell: {
-        range: { sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: 0, endColumnIndex: colCount },
+        range: { sheetId: gid, startRowIndex: headerRows, endRowIndex: rowCount + headerRows, startColumnIndex: 0, endColumnIndex: colCount },
         cell: { userEnteredFormat: { wrapStrategy: 'WRAP', verticalAlignment: 'TOP' } },
         fields: 'userEnteredFormat(wrapStrategy,verticalAlignment)',
       },
     }] : []),
     {
       updateSheetProperties: {
-        properties: { sheetId: gid, gridProperties: { frozenRowCount: 1 } },
+        properties: { sheetId: gid, gridProperties: { frozenRowCount: headerRows } },
         fields: 'gridProperties.frozenRowCount',
       },
     },
-    { setBasicFilter: { filter: { range: { sheetId: gid, startRowIndex: 0, startColumnIndex: 0, endColumnIndex: colCount } } } },
+    // Le filtre porte sur la ligne des LIBELLÉS, pas sur celle des titres de blocs.
+    { setBasicFilter: { filter: { range: { sheetId: gid, startRowIndex: headerRows - 1, startColumnIndex: 0, endColumnIndex: colCount } } } },
     { autoResizeDimensions: { dimensions: { sheetId: gid, dimension: 'COLUMNS', startIndex: 0, endIndex: colCount } } },
     // Échelles de couleur : posées APRÈS `applyColorRules`, qui purge les règles
     // existantes — dans l'ordre inverse elles disparaîtraient sans trace.
@@ -280,7 +281,7 @@ async function applyPresentation(
       addConditionalFormatRule: {
         index: 0,
         rule: {
-          ranges: [{ sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: i, endColumnIndex: i + 1 }],
+          ranges: [{ sheetId: gid, startRowIndex: headerRows, endRowIndex: rowCount + headerRows, startColumnIndex: i, endColumnIndex: i + 1 }],
           gradientRule: {
             minpoint: { color: { red: 0.96, green: 0.80, blue: 0.80 }, type: 'MIN' },
             midpoint: { color: { red: 1, green: 0.95, blue: 0.75 }, type: 'PERCENTILE', value: '50' },
@@ -304,6 +305,28 @@ async function applyPresentation(
 /** Plages CONTIGUËS de colonnes portant le même groupe.
  *  ⚠️ JUMEAU de `contiguousGroups` (`src/features/gdrive/gdriveCore.ts`), couvert
  *  côté client par `contiguousGroups.test.ts`. */
+/** Jumeaux de `headerRowCount` / `blockSpans` (client `gdrive/gdriveCore.ts`) : la ligne
+ *  de titres de blocs et le décalage qu'elle impose au filtre, au gel et aux couleurs. */
+function headerRowCountServer(cols: { group?: string }[], want: boolean): number {
+  return want && cols.some((c) => c.group) ? 2 : 1
+}
+
+function blockSpansServer(columns: { group?: string }[]): { start: number; end: number; title: string }[] {
+  const out: { start: number; end: number; title: string }[] = []
+  for (let i = 0; i < columns.length; i++) {
+    const g = columns[i].group
+    if (!g) continue
+    let j = i
+    while (j + 1 < columns.length && columns[j + 1].group === g) j++
+    // La colonne de tête qui précède (sans `group`) est absorbée : sans elle, une cellule
+    // orpheline resterait entre deux titres fusionnés.
+    const start = i > 0 && !columns[i - 1].group && out.every((sp) => sp.end < i - 1) ? i - 1 : i
+    out.push({ start, end: j, title: g })
+    i = j
+  }
+  return out
+}
+
 function contiguousGroupsServer(groups: (string | undefined)[]): { start: number; end: number }[] {
   const out: { start: number; end: number }[] = []
   let i = 0
@@ -395,12 +418,12 @@ async function capWideColumnsServer(token: string, id: string, gid: number, colC
   }).catch(() => {})
 }
 
-async function applyNumberFormats(token: string, id: string, gid: number, formats: (GFormat | null)[]): Promise<void> {
+async function applyNumberFormats(token: string, id: string, gid: number, formats: (GFormat | null)[], headerRows = 1): Promise<void> {
   const requests = formats.flatMap((f, i) =>
     f
       ? [{
           repeatCell: {
-            range: { sheetId: gid, startRowIndex: 1, startColumnIndex: i, endColumnIndex: i + 1 },
+            range: { sheetId: gid, startRowIndex: headerRows, startColumnIndex: i, endColumnIndex: i + 1 },
             cell: { userEnteredFormat: { numberFormat: { type: f.type, pattern: f.pattern } } },
             fields: 'userEnteredFormat.numberFormat',
           },
@@ -485,7 +508,7 @@ export function resolveFormula(template: string, letterByName: (n: string) => st
 /** Écrit les colonnes formule (à droite des données) en USER_ENTERED = formules vivantes. */
 async function writeFormulas(
   token: string, id: string, title: string,
-  dataKeys: string[], formulas: FormulaColumn[], nRows: number,
+  dataKeys: string[], formulas: FormulaColumn[], nRows: number, headerRows = 1,
 ): Promise<void> {
   const letter: Record<string, string> = {}
   dataKeys.forEach((k, i) => { letter[k] = colLetter(i) })
@@ -493,12 +516,12 @@ async function writeFormulas(
   const byName = (name: string) => letter[name] ?? null
   const values: string[][] = []
   for (let r = 0; r < nRows; r++) {
-    values.push(formulas.map((f) => `=${resolveFormula(f.template, byName, r + 2)}`))
+    values.push(formulas.map((f) => `=${resolveFormula(f.template, byName, r + headerRows + 1)}`))
   }
   const enc = encodeURIComponent(title)
   const start = colLetter(dataKeys.length)
   const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${enc}!${start}2?valueInputOption=USER_ENTERED`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${enc}!${start}${headerRows + 1}?valueInputOption=USER_ENTERED`,
     {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -664,7 +687,16 @@ registerServerNode({
       ...keys.map((k) => String(cols.find((c) => c.key === k)?.label ?? k)),
       ...formulas.map((f) => f.header),
     ]
+    // Ligne de titres de blocs (jumelle du client) : le nom du concurrent reste lisible
+    // au défilement horizontal, là où les libellés se répètent d'un bloc à l'autre.
+    const wantTitles = Boolean((sheet as { groupHeaderRow?: boolean }).groupHeaderRow)
+    const groupCols = keys.map((k) => (cols.find((c) => c.key === k) as { group?: string } | undefined)?.group)
+    const headerRows = headerRowCountServer(groupCols.map((g) => ({ group: g })), wantTitles)
+    const titleSpans = headerRows === 2 ? blockSpansServer(groupCols.map((g) => ({ group: g }))) : []
+    const titleRow: (string | number)[] = header.map(() => '')
+    for (const sp of titleSpans) titleRow[sp.start] = sp.title
     const matrix: (string | number)[][] = [
+      ...(headerRows === 2 ? [titleRow] : []),
       header,
       // colonnes formule = placeholder vide en RAW (écrasées ensuite en USER_ENTERED)
       ...sheet.rows.map((r) => [...keys.map((k, i) => toCell(r[k], formats[i])), ...formulas.map(() => '')]),
@@ -707,20 +739,20 @@ registerServerNode({
     }
     await writeValues(token, id, title, matrix)
     if (formulas.length > 0 && sheet.rows.length > 0) {
-      await writeFormulas(token, id, title, keys, formulas, sheet.rows.length).catch((e) =>
+      await writeFormulas(token, id, title, keys, formulas, sheet.rows.length, headerRows).catch((e) =>
         ctx.log('warn', t(ctx.locale, 'run.gs.formulasIgnored', { message: e instanceof Error ? e.message : String(e) })),
       )
       ctx.log('info', t(ctx.locale, 'run.gs.formulasAdded', { count: formulas.length }))
     }
     // Formats = colonnes données (détectés) + colonnes formule (format choisi par l'utilisateur).
     const allFormats = [...formats, ...formulas.map((f) => (f.format ? FORMULA_FORMATS[f.format] ?? null : null))]
-    await applyNumberFormats(token, id, gid, allFormats).catch((e) =>
+    await applyNumberFormats(token, id, gid, allFormats, headerRows).catch((e) =>
       ctx.log('warn', t(ctx.locale, 'run.gs.formatIgnored', { message: e instanceof Error ? e.message : String(e) })),
     )
     // Couleurs conditionnelles (ex: colonne « position » → vert/rouge), si la feuille en porte.
     const colorRules = Array.isArray(sheet.colorRules) ? sheet.colorRules : []
     if (colorRules.length > 0) {
-      await applyColorRules(token, id, gid, keys, colorRules, sheet.rows.length).catch((e) =>
+      await applyColorRules(token, id, gid, keys, colorRules, sheet.rows.length, headerRows).catch((e) =>
         ctx.log('warn', t(ctx.locale, 'run.gs.condColorsIgnored', { message: e instanceof Error ? e.message : String(e) })),
       )
     }
@@ -731,7 +763,25 @@ registerServerNode({
       .map((c, i) => ({ c: c as { fieldType?: string; detectedType?: string }, i }))
       .filter(({ c }) => METRIC_TYPES.has(String(c.fieldType)) || METRIC_TYPES.has(String(c.detectedType)))
       .map(({ i }) => i)
-    await applyPresentation(token, id, gid, keys.length + formulas.length, sheet.rows.length, metricIdx)
+    // Titres de blocs FUSIONNÉS sur toute leur largeur. Le client passe par les `!merges`
+    // du XLSX ; ici il faut la requête. Sans elle, le nom du concurrent n'apparaîtrait
+    // qu'au-dessus de sa première colonne et se perdrait au défilement.
+    if (titleSpans.length > 0) {
+      const merges = titleSpans.filter((sp) => sp.end > sp.start).map((sp) => ({
+        mergeCells: {
+          range: { sheetId: gid, startRowIndex: 0, endRowIndex: 1, startColumnIndex: sp.start, endColumnIndex: sp.end + 1 },
+          mergeType: 'MERGE_ALL',
+        },
+      }))
+      if (merges.length > 0) {
+        await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requests: merges }),
+        }).catch(() => { /* titres non fusionnés : dégradation acceptable */ })
+      }
+    }
+    await applyPresentation(token, id, gid, keys.length + formulas.length, sheet.rows.length, metricIdx, headerRows)
       .then(() => ctx.log('info', t(ctx.locale, 'run.gs.styled')))
       .catch((e) => ctx.log('warn', t(ctx.locale, 'run.gs.styleIgnored', { message: e instanceof Error ? e.message : String(e) })))
 

@@ -128,6 +128,19 @@ export interface ExcelSheet {
   taxonomyLevels?: TaxonomyLevelMap
   /** Règles de coloration conditionnelle (ex: colonne « position » → vert/rouge). */
   colorRules?: SheetColorRule[]
+  /**
+   * Ajoute une PREMIÈRE ligne d'en-tête portant le nom de chaque bloc (`column.group`),
+   * fusionné sur toute sa largeur, au-dessus des libellés de colonnes.
+   *
+   * Pourquoi : la veille tarifaire aligne quatorze blocs de neuf colonnes toutes nommées
+   * pareil (« Prix TTC », « Lien »…). Arrivé au milieu du tableau, plus rien ne dit de
+   * quel concurrent on lit les prix — le nom du bloc est sorti de l'écran à gauche. Une
+   * ligne de titres FIGÉE reste visible au défilement horizontal.
+   *
+   * Opt-in : ce module sert TOUS les exports Sheets, et une ligne de plus décalerait le
+   * filtre, le gel et les échelles de couleur de ceux qui n'en ont pas besoin.
+   */
+  groupHeaderRow?: boolean
   /** URL source du scrape (sert à absolutiser les chemins d'images relatifs lors
    *  de la centralisation DAM). Renseignée par scrapeResultToSheet. */
   sourceUrl?: string

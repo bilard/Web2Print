@@ -6,7 +6,7 @@
 // message. Ce test tient l'invariant, parce que rien à l'écran ne le signalait.
 import { describe, it, expect } from 'vitest'
 import * as XLSX from 'xlsx'
-import { exportSheetToXlsxBlob } from './gdriveCore'
+import { exportSheetToXlsxBlob, headerRowCount, blockSpans } from './gdriveCore'
 import type { ExcelSheet } from '@/features/excel/types'
 
 /** Deux concurrents, mêmes libellés de champs — la forme exacte de la matrice de veille. */
@@ -17,11 +17,11 @@ function sheetWithTwoCompetitors(): ExcelSheet {
     columns: [
       { key: 'produit', label: 'Produit', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
       { key: 'bloc_a', label: 'alpha.fr', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
-      { key: 'prix_ttc_a', label: 'Prix TTC', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 120 },
-      { key: 'url_a', label: 'Lien', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
+      { key: 'prix_ttc_a', label: 'Prix TTC', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 120, group: 'alpha.fr' },
+      { key: 'url_a', label: 'Lien', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120, group: 'alpha.fr' },
       { key: 'bloc_b', label: 'beta.fr', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
-      { key: 'prix_ttc_b', label: 'Prix TTC', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 120 },
-      { key: 'url_b', label: 'Lien', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
+      { key: 'prix_ttc_b', label: 'Prix TTC', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 120, group: 'beta.fr' },
+      { key: 'url_b', label: 'Lien', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120, group: 'beta.fr' },
     ],
     rows: [{
       _id: 'r1', produit: 'LAME 520MM', bloc_a: '', prix_ttc_a: 20.28, url_a: 'https://alpha.fr/p',
@@ -60,5 +60,34 @@ describe('export XLSX — libellés répétés', () => {
     const [head] = await grid(sheet)
     expect(head.indexOf('alpha.fr')).toBe(1)
     expect(head.indexOf('beta.fr')).toBe(4)
+  })
+})
+
+describe('ligne de titres de blocs', () => {
+  it('reste à UNE ligne d’en-tête tant que la feuille ne la demande pas', async () => {
+    // Ce module sert TOUS les exports Sheets : une ligne de plus décalerait le filtre,
+    // le gel et les échelles de couleur de ceux qui n'en ont pas besoin.
+    const sheet = sheetWithTwoCompetitors()
+    expect(headerRowCount(sheet)).toBe(1)
+    const [first] = await grid(sheet)
+    expect(first[0]).toBe('Produit')
+  })
+
+  it('coiffe chaque bloc de son titre, la colonne de tête comprise', async () => {
+    const sheet = { ...sheetWithTwoCompetitors(), groupHeaderRow: true }
+    expect(headerRowCount(sheet)).toBe(2)
+    // La fusion part de la colonne de TÊTE (celle qui porte le domaine), sinon un titre
+    // fusionné laisserait une cellule orpheline juste avant le suivant.
+    expect(blockSpans(sheet.columns)).toEqual([
+      { start: 1, end: 3, title: 'alpha.fr' },
+      { start: 4, end: 6, title: 'beta.fr' },
+    ])
+    const [titles, labels, data] = await grid(sheet)
+    expect(titles[1]).toBe('alpha.fr')
+    expect(titles[4]).toBe('beta.fr')
+    expect(labels[2]).toBe('Prix TTC')
+    // Les données commencent bien une ligne plus bas — un décalage oublié ici écrirait
+    // les prix par-dessus les libellés.
+    expect(data[0]).toBe('LAME 520MM')
   })
 })

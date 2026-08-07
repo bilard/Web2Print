@@ -62,7 +62,10 @@ function toSheet(cols: MatrixColumn[], rows: Record<string, unknown>[]): ExcelSh
       ...(c.group ? { group: c.group } : {}),
     }
   })
-  return { name: 'Veille tarifaire', columns, rows: rows as ExcelRow[], taxonomy: [] }
+  // Ligne de titres de blocs : quatorze concurrents partagent les mêmes libellés de
+  // colonnes (« Prix TTC », « Lien »…). Sans elle, arrivé au milieu du tableau plus rien
+  // ne dit de quel concurrent on lit les prix.
+  return { name: 'Veille tarifaire', columns, rows: rows as ExcelRow[], taxonomy: [], groupHeaderRow: true }
 }
 
 const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs> = {
