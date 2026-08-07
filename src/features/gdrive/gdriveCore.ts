@@ -642,38 +642,15 @@ async function applyColumnGroups(token: string, spreadsheetId: string, sheet: Ex
     body: JSON.stringify({ requests }),
   })
   if (!res.ok) throw new Error(`groupes de colonnes ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
-  await collapseGroups(token, spreadsheetId, gid, ranges)
 }
 
-/**
- * Replie les groupes fraîchement créés.
- *
- * ⚠️ Appel SÉPARÉ de la création, délibérément : un `batchUpdate` est atomique.
- * Si Google refuse le repli (profondeur inattendue, groupe déjà replié), le lot
- * entier est annulé — on perdrait les groupes eux-mêmes en voulant seulement les
- * fermer. Ici, un échec ne coûte que des groupes ouverts.
- */
-async function collapseGroups(
-  token: string, spreadsheetId: string, gid: number, ranges: { start: number; end: number }[],
-): Promise<void> {
-  if (ranges.length === 0) return
-  const requests = ranges.map(({ start, end }) => ({
-    updateDimensionGroup: {
-      dimensionGroup: {
-        range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end },
-        depth: 1,
-        collapsed: true,
-      },
-      fields: 'collapsed',
-    },
-  }))
-  const res = await fetch(`${SHEETS_API}/${spreadsheetId}:batchUpdate`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ requests }),
-  })
-  if (!res.ok) console.warn('[sheets] repli des groupes refusé:', res.status, (await res.text().catch(() => '')).slice(0, 200))
-}
+// ⚠️ Les groupes sont livrés DÉPLIÉS, et ce n'est pas un oubli.
+//
+// Ils étaient repliés à la création, pour que le crochet se remarque. Le résultat à
+// l'ouverture : cent trente colonnes masquées, un « + » minuscule, et la conviction que
+// les concurrents ne sont pas dans l'export — « où sont les compétiteurs ???? ». Un
+// export doit MONTRER ce qu'il exporte ; replier est un confort, à la main de qui lit,
+// et un clic suffit dans les deux sens. La donnée cachée par défaut passe pour absente.
 
 async function capWideColumns(token: string, spreadsheetId: string, gid: number, colCount: number): Promise<void> {
   const res = await fetch(

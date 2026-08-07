@@ -358,25 +358,12 @@ async function applyColumnGroupsServer(
   })
   if (!res.ok) throw new Error(`groupes ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
 
-  // ⚠️ Repli dans un appel SÉPARÉ : un `batchUpdate` est atomique. Si Google
-  // refuse le repli, le lot entier serait annulé — on perdrait les groupes en
-  // voulant seulement les fermer. Ici, un échec ne laisse que des groupes ouverts.
-  if (ranges.length === 0) return
-  const collapse = ranges.map(({ start, end }) => ({
-    updateDimensionGroup: {
-      dimensionGroup: {
-        range: { sheetId: gid, dimension: 'COLUMNS', startIndex: start, endIndex: end },
-        depth: 1,
-        collapsed: true,
-      },
-      fields: 'collapsed',
-    },
-  }))
-  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ requests: collapse }),
-  }).catch(() => { /* groupes ouverts : dégradation acceptable */ })
+  // ⚠️ Les groupes sont livrés DÉPLIÉS, et ce n'est pas un oubli — jumeau du client.
+  //
+  // Ils étaient repliés à la création, pour que le crochet se remarque. Le résultat à
+  // l'ouverture : cent trente colonnes masquées, un « + » minuscule, et la conviction que
+  // les concurrents ne sont pas dans l'export. Un export doit MONTRER ce qu'il exporte ;
+  // replier est un confort, à la main de qui lit, et un clic suffit dans les deux sens.
 }
 
 async function capWideColumnsServer(token: string, id: string, gid: number, colCount: number): Promise<void> {
