@@ -27,7 +27,9 @@ export interface PriceWatchReportOptions {
 export const DEFAULT_PW_REPORT: PriceWatchReportOptions = {
   title: 'Veille tarifaire',
   competitorThresholdPct: 5,
-  familyThresholdPct: 40,
+  // 65 et non 40 : à 40, cinquante-huit familles sur deux cents étaient signalées — une
+  // alerte qui désigne un quart du catalogue ne désigne plus rien.
+  familyThresholdPct: 65,
   examples: 15,
 }
 

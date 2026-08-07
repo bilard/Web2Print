@@ -115,7 +115,12 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     watchId: '', label: '', sites: '', vatRate: 20,
     refColumn: 'reference', ref2Column: '', eanColumn: 'ean', nameColumn: 'name',
     familyColumn: 'family', priceColumn: 'price', descriptionColumn: 'description', urlColumn: '',
-    taxoColumns: '', siteFields: '',
+    taxoColumns: '',
+    // Défaut SANS « Image » ni « Correspondance » : deux colonnes par concurrent, soit
+    // vingt-huit sur quatorze sites, qu'on ne relit qu'en contrôlant la qualité des
+    // appariements. Elles restent à un clic — mieux vaut les rajouter quand on en a besoin
+    // que traîner 126 colonnes dès la première feuille.
+    siteFields: 'nom,prix_ttc,prix_ht,prix_barre,ecart,stock,url',
   },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
