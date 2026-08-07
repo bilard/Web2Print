@@ -117,9 +117,15 @@ function dayName(d: number): string { return DAYS[d] ?? String(d) }
 
 /** Résumé lisible pour la carte : « lun–ven à 08:00 · 1×/jour ». */
 export function describeWindow(cfg: SendWindowConfig): string {
-  const days = cfg.weekdays.length === 0 || cfg.weekdays.length === 7
+  // Jours CONSÉCUTIFS résumés en plage : « lun→ven » plutôt que
+  // « lun–mar–mer–jeu–ven », qui débordait de la carte et s'y tronquait.
+  const sorted = [...cfg.weekdays].sort((a, b) => a - b)
+  const consecutive = sorted.length > 2 && sorted.every((d, i) => i === 0 || d === sorted[i - 1] + 1)
+  const days = sorted.length === 0 || sorted.length === 7
     ? 'tous les jours'
-    : cfg.weekdays.map((d) => DAYS[d]?.slice(0, 3)).join('–')
+    : consecutive
+      ? `${DAYS[sorted[0]]?.slice(0, 3)}→${DAYS[sorted[sorted.length - 1]]?.slice(0, 3)}`
+      : sorted.map((d) => DAYS[d]?.slice(0, 3)).join(', ')
   const freq = cfg.frequency === 'always' ? 'à chaque run'
     : cfg.frequency === 'daily' ? '1×/jour'
     : cfg.frequency === 'weekly' ? '1×/semaine' : '1×/mois'

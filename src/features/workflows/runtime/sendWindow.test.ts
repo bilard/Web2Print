@@ -63,8 +63,10 @@ describe('fenêtre d’envoi', () => {
     expect(periodKey(paris('2026-09-01T10:00:00Z'), c)).not.toBe(periodKey(paris('2026-08-31T10:00:00Z'), c))
   })
 
-  it('résume la cadence pour la carte', () => {
-    expect(describeWindow(cfg())).toContain('08:00')
+  it('résume la cadence pour la carte, sans déborder', () => {
+    // Jours consécutifs → plage, sinon la carte affichait « lun–mar–mer–jeu–ven … ».
+    expect(describeWindow(cfg())).toBe('lun→ven à 08:00 · 1×/jour')
+    expect(describeWindow(cfg({ weekdays: [1, 4] }))).toBe('lun, jeu à 08:00 · 1×/jour')
     expect(describeWindow(cfg({ weekdays: [] }))).toContain('tous les jours')
   })
 })
