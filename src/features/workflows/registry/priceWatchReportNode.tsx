@@ -4,7 +4,9 @@
 // (port `data` pour le corps du mail, `attachment` pour le joindre en .html) ou sur
 // « Export Google Drive » pour l'archiver.
 //
-// Client-only : lit Firestore avec l'identité du navigateur (cf. SERVER_UNSUPPORTED).
+// Jumeau serveur : functions/src/workflow/nodes/priceWatchReport.ts — le mail du matin
+// part par le cron, donc TOUT ce qui décide du contenu (consigne, faits, acceptation du
+// HTML composé) vit dans le module dupliqué `priceWatch/reportCompose.ts`.
 import { FileText } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'

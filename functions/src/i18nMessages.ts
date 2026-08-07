@@ -219,6 +219,22 @@ const MESSAGES = {
     fr: 'Rapport rendu : {products} produits appariés, {sites} concurrent(s), {size} Ko.',
     en: 'Report rendered: {products} matched products, {sites} competitor(s), {size} kB.',
   },
+  'run.pwReport.composing': {
+    fr: 'Composition du mail à partir de ta consigne…',
+    en: 'Composing the email from your instruction…',
+  },
+  'run.pwReport.composedBy': {
+    fr: 'Mail composé par {provider} ({model}).',
+    en: 'Email composed by {provider} ({model}).',
+  },
+  'run.pwReport.composeFailed': {
+    fr: "Composition indisponible (modèle injoignable ou réponse invalide) — le rapport STANDARD est envoyé à la place. Le mail part, il n'est simplement pas rédigé selon la consigne.",
+    en: 'Composition unavailable (model unreachable or invalid answer) — the STANDARD report is sent instead. The email goes out, it is simply not written to your instruction.',
+  },
+  'run.pwReport.composeUnusable': {
+    fr: 'Réponse de {model} inexploitable (fin : {stopReason}, {chars} caractères) — le rapport STANDARD est envoyé. Une fin « max_tokens » ou « length » signale une réponse TRONQUÉE : demande un mail plus court dans la consigne.',
+    en: 'Answer from {model} unusable (finish: {stopReason}, {chars} characters) — the STANDARD report is sent. A "max_tokens" or "length" finish signals a TRUNCATED answer: ask for a shorter email in your instruction.',
+  },
   'run.compareCatalog.siteFields': {
     fr: '{kept}/{total} champs retenus par concurrent — {columns} colonnes de comparaison.',
     en: '{kept}/{total} fields kept per competitor — {columns} comparison columns.',

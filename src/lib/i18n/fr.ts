@@ -1812,6 +1812,7 @@ export const fr = {
   'run.pwReport.composing': 'Composition du mail à partir de ta consigne…',
   'run.pwReport.composedBy': 'Mail composé par {provider} ({model}).',
   'run.pwReport.composeFailed': 'Composition indisponible (modèle injoignable ou réponse invalide) — le rapport STANDARD est envoyé à la place. Le mail part, il n\'est simplement pas rédigé selon la consigne.',
+  'run.pwReport.composeUnusable': 'Réponse de {model} inexploitable (fin : {stopReason}, {chars} caractères) — le rapport STANDARD est envoyé. Une fin « max_tokens » ou « length » signale une réponse TRONQUÉE : demande un mail plus court dans la consigne.',
   'node.pw-report.label': 'Rapport veille tarifaire',
   'node.pw-report.desc': 'Rend le rapport du suivi en HTML moderne : position tarifaire, alertes sur les écarts significatifs, classement des concurrents, familles exposées. À brancher sur « Envoyer via Gmail » (port data) ou « Export Google Drive ».',
   'node.pw-report.title.label': 'Titre du rapport',

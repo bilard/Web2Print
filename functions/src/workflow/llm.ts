@@ -2,7 +2,13 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import { getUserApiKey } from './apiKeys'
 
-export interface LlmResult { text: string; model: string; stopReason?: string }
+export interface LlmResult {
+  text: string
+  /** Provider retenu dans la cascade — le journal de run l'affiche à côté du modèle. */
+  provider: string
+  model: string
+  stopReason?: string
+}
 
 const DEFAULT_MAX_TOKENS = 8192
 
@@ -115,7 +121,7 @@ export async function callLlm(uid: string, prompt: string, opts: { maxTokens?: n
     if (!key) continue
     try {
       const r = await p.call(key, prompt, maxTokens)
-      if (r.text.trim()) return { text: r.text, model: p.model, stopReason: r.stopReason }
+      if (r.text.trim()) return { text: r.text, provider, model: p.model, stopReason: r.stopReason }
     } catch (e) {
       console.warn(`[llm] ${provider} KO → provider suivant :`, e instanceof Error ? e.message.slice(0, 200) : e)
     }

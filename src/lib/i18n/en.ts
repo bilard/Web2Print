@@ -1734,6 +1734,7 @@ export const en: Record<TranslationKey, string> = {
   'run.pwReport.composing': 'Composing the email from your instruction…',
   'run.pwReport.composedBy': 'Email composed by {provider} ({model}).',
   'run.pwReport.composeFailed': 'Composition unavailable (model unreachable or invalid answer) — the STANDARD report is sent instead. The email goes out, it is simply not written to your instruction.',
+  'run.pwReport.composeUnusable': 'Answer from {model} unusable (finish: {stopReason}, {chars} characters) — the STANDARD report is sent. A "max_tokens" or "length" finish signals a TRUNCATED answer: ask for a shorter email in your instruction.',
   'node.pw-report.label': 'Price monitoring report',
   'node.pw-report.desc': 'Renders the monitoring report as modern HTML: price position, alerts on significant gaps, competitor ranking, exposed families. Wire it to "Send via Gmail" (data port) or "Export to Google Drive".',
   'node.pw-report.title.label': 'Report title',

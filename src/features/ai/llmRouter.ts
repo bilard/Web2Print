@@ -252,6 +252,11 @@ interface GenerateJsonOptions<T> {
   /** Images base64 à inclure dans le prompt (vision multimodal, pour Claude).
    *  Format : data URIs (data:image/png;base64,<base64-string>) */
   imageDataUris?: string[]
+  /** Plafond de tokens de SORTIE. Défaut 8192, qui suffit à toutes les extractions.
+   *  À relever pour les tâches qui rédigent un document long (un corps de mail en HTML
+   *  inline) : au-delà du plafond la réponse est tronquée, donc le JSON invalide, donc
+   *  l'échec MUET — indiscernable d'un modèle injoignable. */
+  maxTokens?: number
 }
 
 /**
@@ -554,7 +559,7 @@ async function callOpenAICompatible<T>(
 ): Promise<T> {
   const fullPrompt = opts.prompt + SCHEMA_INSTRUCTION_HEADER + JSON.stringify(opts.schemaForLLM, null, 2)
   const temperature = TASK_TEMPERATURE[opts.task]
-  const max_tokens = 8192
+  const max_tokens = opts.maxTokens ?? 8192
 
   opts.onRequestSent?.({
     provider: config.providerId,
@@ -737,7 +742,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
   }
 
   const temperature = TASK_TEMPERATURE[opts.task]
-  const max_tokens = 8192
+  const max_tokens = opts.maxTokens ?? 8192
 
   // Construit le content du message user : texte seul OU multimodal (images + texte)
   type MessageContent = string | Array<{ type: string; [key: string]: unknown }>

@@ -1733,6 +1733,7 @@ export const es: Record<TranslationKey, string> = {
   'run.pwReport.composing': 'Componiendo el correo a partir de su consigna…',
   'run.pwReport.composedBy': 'Correo compuesto por {provider} ({model}).',
   'run.pwReport.composeFailed': 'Composición no disponible (modelo inaccesible o respuesta inválida): se envía el informe ESTÁNDAR en su lugar. El correo sale, simplemente no está redactado según la consigna.',
+  'run.pwReport.composeUnusable': 'Respuesta de {model} inutilizable (fin: {stopReason}, {chars} caracteres): se envía el informe ESTÁNDAR. Un fin «max_tokens» o «length» indica una respuesta TRUNCADA: pida un correo más corto en la consigna.',
   'node.pw-report.label': 'Informe de vigilancia de precios',
   'node.pw-report.desc': 'Convierte el informe del seguimiento en HTML moderno: posición tarifaria, alertas sobre diferencias significativas, clasificación de competidores, familias expuestas. Conéctelo a «Enviar por Gmail» (puerto data) o a «Exportar a Google Drive».',
   'node.pw-report.title.label': 'Título del informe',
