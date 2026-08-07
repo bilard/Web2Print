@@ -27,6 +27,34 @@ export class GoogleAuthMissingError extends Error {
   }
 }
 
+/**
+ * Message d'erreur Drive LISIBLE : l'API explique toujours son refus dans le corps de la
+ * réponse, et un « HTTP 403 » nu envoyait chercher un problème d'authentification là où le
+ * fichier était simplement trop gros pour l'export.
+ *
+ * Les deux causes courantes d'un 403 à l'export alors que la LECTURE des métadonnées passe :
+ *  - `exportSizeLimitExceeded` : Google plafonne l'export d'un Sheet à ~10 Mo. Rien à voir
+ *    avec les droits — le même compte ouvre le fichier sans peine ;
+ *  - restriction de téléchargement du fichier (propriétaire ayant coché « les lecteurs ne
+ *    peuvent pas télécharger, imprimer ni copier »).
+ */
+async function driveError(res: Response, what: string): Promise<Error> {
+  const body = await res.text().catch(() => '')
+  let reason = '', message = ''
+  try {
+    const e = (JSON.parse(body) as { error?: { message?: string; errors?: { reason?: string }[] } }).error
+    reason = e?.errors?.[0]?.reason ?? ''
+    message = e?.message ?? ''
+  } catch { message = body.slice(0, 200) }
+  const hint = reason === 'exportSizeLimitExceeded'
+    ? " — le fichier dépasse la limite d'export de Google (~10 Mo). Allège la feuille (colonnes inutiles, onglets annexes) ou exporte-la en .xlsx et importe le fichier."
+    : reason === 'cannotDownloadFile' || /download|copy/i.test(message)
+      ? ' — le téléchargement de ce fichier est restreint par son propriétaire (« les lecteurs ne peuvent pas télécharger, imprimer ni copier »).'
+      : ''
+  const detail = [reason, message].filter(Boolean).join(' : ')
+  return new Error(`${what} (HTTP ${res.status}${detail ? ` — ${detail}` : ''})${hint}`)
+}
+
 /** Récupère les métadonnées d'un fichier Drive. */
 async function getDriveFileMeta(fileId: string, token: string): Promise<DriveFileMeta> {
   const params = new URLSearchParams({ fields: 'id,name,mimeType,webViewLink' })
@@ -56,9 +84,7 @@ export async function downloadDriveFile(fileId: string, token: string): Promise<
       `${DRIVE_API}/files/${fileId}/export?mimeType=${encodeURIComponent(XLSX_MIME)}`,
       { headers: { Authorization: `Bearer ${token}` } },
     )
-    if (!res.ok) {
-      throw new Error(`Drive : export GSheet échoué (HTTP ${res.status})`)
-    }
+    if (!res.ok) throw await driveError(res, 'Drive : export GSheet échoué')
     blob = await res.blob()
     if (!/\.xlsx$/i.test(filename)) filename = `${filename}.xlsx`
     mime = XLSX_MIME
@@ -70,9 +96,7 @@ export async function downloadDriveFile(fileId: string, token: string): Promise<
     const res = await fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-    if (!res.ok) {
-      throw new Error(`Drive : download échoué (HTTP ${res.status})`)
-    }
+    if (!res.ok) throw await driveError(res, 'Drive : download échoué')
     blob = await res.blob()
   }
 
@@ -89,9 +113,7 @@ export async function importGoogleSheetById(sheetId: string, token: string): Pro
     `${DRIVE_API}/files/${sheetId}/export?mimeType=${encodeURIComponent(XLSX_MIME)}`,
     { headers: { Authorization: `Bearer ${token}` } },
   )
-  if (!res.ok) {
-    throw new Error(`Drive : export GSheet "${meta.name}" échoué (HTTP ${res.status})`)
-  }
+  if (!res.ok) throw await driveError(res, `Drive : export GSheet "${meta.name}" échoué`)
   const blob = await res.blob()
   const file = new File([blob], `${meta.name}.xlsx`, { type: XLSX_MIME })
   const { parseExcelFile } = await import('@/features/excel/useExcelImport')
