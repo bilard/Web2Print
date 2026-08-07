@@ -47,6 +47,21 @@ describe('taxonomie à quatre niveaux (catalogue F1 2026)', () => {
     expect(taxo).toEqual(['UNIVERS', 'FAMILLE', 'SOUS FAMILLE', 'PRODUCTGROUP'])
   })
 
+  it('reconnaît la feuille « F1 Google » : UNIVERS > FAMILLE > SOUS_FAMILLE', () => {
+    // Structure en place depuis le retrait de PRODUCTGROUP : trois niveaux, déjà dans
+    // l'ordre hiérarchique et nommés sans ambiguïté.
+    const cols = H('ARTICLECODE', 'DESCRIPTION', 'UNIVERS', 'FAMILLE', 'SOUS_FAMILLE', 'TEXT_VENTE_FR')
+    expect(pickDisplayColumns(cols).taxo).toEqual(['UNIVERS', 'FAMILLE', 'SOUS_FAMILLE'])
+    const rows = [
+      { UNIVERS: 'Jardin', FAMILLE: 'Tonte', SOUS_FAMILLE: 'Courroies' },
+      { UNIVERS: 'Jardin', FAMILLE: 'Tonte', SOUS_FAMILLE: 'Lames' },
+      { UNIVERS: 'Jardin', FAMILLE: 'Taille', SOUS_FAMILLE: 'Chaînes' },
+    ]
+    // Les données confirment la hiérarchie du dictionnaire au lieu de la contredire.
+    expect(pickDisplayColumns(cols, {}, rows).taxo).toEqual(['UNIVERS', 'FAMILLE', 'SOUS_FAMILLE'])
+    expect(taxoPathOf(rows[0], ['UNIVERS', 'FAMILLE', 'SOUS_FAMILLE'])).toEqual(['Jardin', 'Tonte', 'Courroies'])
+  })
+
   it('ne capte pas « SOUS FAMILLE » comme famille quand FAMILLE est absente', () => {
     expect(pickDisplayColumns(H('SOUS FAMILLE', 'PRODUCTGROUP')).taxo).toEqual(['SOUS FAMILLE', 'PRODUCTGROUP'])
   })
