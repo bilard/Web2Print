@@ -2,7 +2,8 @@
 // se testent donc sur des instants précis, dans un fuseau explicite — l'heure locale du
 // processus n'entre jamais en jeu, les Cloud Functions tournant en UTC.
 import { describe, it, expect } from 'vitest'
-import { evaluateWindow, periodKey, describeWindow, DEFAULT_SEND_WINDOW, type SendWindowConfig } from './sendWindow'
+import { evaluateWindow, periodKey, timeZoneForLocale, DEFAULT_SEND_WINDOW, type SendWindowConfig } from './sendWindow'
+import { describeWindow } from './sendWindowLabels'
 
 const cfg = (patch: Partial<SendWindowConfig> = {}): SendWindowConfig => ({ ...DEFAULT_SEND_WINDOW, ...patch })
 
@@ -65,8 +66,24 @@ describe('fenêtre d’envoi', () => {
 
   it('résume la cadence pour la carte, sans déborder', () => {
     // Jours consécutifs → plage, sinon la carte affichait « lun–mar–mer–jeu–ven … ».
-    expect(describeWindow(cfg())).toBe('lun→ven à 08:00 · 1×/jour')
-    expect(describeWindow(cfg({ weekdays: [1, 4] }))).toBe('lun, jeu à 08:00 · 1×/jour')
+    expect(describeWindow(cfg())).toBe('1×/jour · lun→ven à partir de 08:00')
+    expect(describeWindow(cfg({ weekdays: [1, 4] }))).toBe('1×/jour · lun, jeu à partir de 08:00')
     expect(describeWindow(cfg({ weekdays: [] }))).toContain('tous les jours')
+  })
+
+  it('dit « au 1er passage » dès que la période dépasse la journée', () => {
+    // « 1×/mois » et cinq jours cochés se lisent comme une contradiction tant que rien ne
+    // dit que les jours AUTORISENT l'envoi sans le déclencher.
+    expect(describeWindow(cfg({ frequency: 'monthly' }))).toBe('1×/mois · au 1er passage lun→ven à partir de 08:00')
+    expect(describeWindow(cfg({ frequency: 'daily' }))).not.toContain('1er passage')
+  })
+
+  it('déduit le fuseau de la langue, et retombe sur Paris pour une langue inconnue', () => {
+    // ⚠ La MÊME règle des deux côtés : la mémoire d'envoi est partagée cron ↔ navigateur.
+    expect(timeZoneForLocale('fr')).toBe('Europe/Paris')
+    expect(timeZoneForLocale('en')).toBe('Europe/London')
+    expect(timeZoneForLocale('es')).toBe('Europe/Madrid')
+    expect(timeZoneForLocale('de')).toBe(DEFAULT_SEND_WINDOW.timeZone)
+    expect(timeZoneForLocale('')).toBe(DEFAULT_SEND_WINDOW.timeZone)
   })
 })

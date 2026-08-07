@@ -6,17 +6,21 @@
 // — sinon le navigateur et le cron enverraient chacun le leur pour la même période.
 import { getFirestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
-import { evaluateWindow, DEFAULT_SEND_WINDOW, type SendFrequency, type SendWindowConfig } from '../sendWindow'
+import { evaluateWindow, timeZoneForLocale, DEFAULT_SEND_WINDOW, type SendFrequency, type SendWindowConfig } from '../sendWindow'
+import type { Locale } from '../../i18n'
 import { t } from '../../i18n'
 
-function toConfig(c: Record<string, unknown>): SendWindowConfig {
+function toConfig(c: Record<string, unknown>, locale: Locale): SendWindowConfig {
   const weekdays = String(c.weekdays ?? '')
     .split(/[,\s]+/).map((v) => Number(v)).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
   return {
     frequency: (String(c.frequency ?? '') || DEFAULT_SEND_WINDOW.frequency) as SendFrequency,
     atTime: String(c.atTime ?? '').trim(),
     weekdays,
-    timeZone: String(c.timeZone ?? '').trim() || DEFAULT_SEND_WINDOW.timeZone,
+    // Déduit de la LANGUE, comme au navigateur. Un `timeZone` resté dans une config
+    // ancienne est IGNORÉ : deux règles, ce sont deux découpages de la journée pour une
+    // mémoire d'envoi partagée — donc un mail en double, ou pas de mail du tout.
+    timeZone: timeZoneForLocale(locale),
   }
 }
 
@@ -28,7 +32,7 @@ registerServerNode({
     const snap = await ref.get().catch(() => null)
     const lastKey = (snap?.data()?.lastKey as string | undefined) ?? null
 
-    const verdict = evaluateWindow(new Date(), toConfig(config), lastKey)
+    const verdict = evaluateWindow(new Date(), toConfig(config, ctx.locale), lastKey)
     if (!verdict.open) {
       // `skip` et non une erreur : hors créneau, ne rien envoyer est le comportement
       // NORMAL. Un run nocturne marqué en échec toutes les demi-heures ferait sonner une

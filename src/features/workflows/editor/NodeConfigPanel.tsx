@@ -44,6 +44,31 @@ function collectUpstreamColumns(wf: Workflow, nodeId: string, visited = new Set<
 }
 
 /**
+ * Ce que la config produit vraiment, en une ligne — le même résumé que la carte, mais là
+ * où on règle les champs. Un réglage se juge sur son EFFET : « 1×/mois » et cinq jours
+ * cochés semblent se contredire tant que rien ne dit que le mois part au premier d'entre
+ * eux. Rendu à chaque frappe, donc toujours à jour.
+ *
+ * Générique : tout node qui déclare `cardSummary` en profite, sans rien à câbler.
+ */
+function ConfigSummary({ spec, config }: {
+  spec: { cardSummary?: (c: never) => string }
+  config: Record<string, unknown>
+}) {
+  if (!spec.cardSummary) return null
+  let summary: string
+  // Une config à moitié saisie peut faire échouer le résumé — ce n'est pas une raison
+  // pour faire tomber le panneau de configuration avec elle.
+  try { summary = spec.cardSummary(config as never) } catch { return null }
+  if (!summary) return null
+  return (
+    <div className="text-[11px] text-indigo-200/70 bg-indigo-500/10 border border-indigo-500/20 rounded px-2 py-1.5">
+      {summary}
+    </div>
+  )
+}
+
+/**
  * Colonnes configurées que la feuille branchée ne porte PLUS.
  *
  * Une source renommée (« Famille » → « FAMILLE ») ou amputée d'une colonne laissait une
@@ -479,6 +504,10 @@ export function NodeConfigPanel() {
                   ...node,
                   config: { ...(node.config as Record<string, unknown>), ...Object.fromEntries(names.map((n) => [n, ''])) },
                 })} />
+              {/* Aperçu VIVANT du réglage, quand le node sait se résumer. Sans lui,
+                  « Une fois par mois » et cinq jours cochés se lisent comme une
+                  contradiction : le résumé dit ce que la combinaison produit vraiment. */}
+              <ConfigSummary spec={spec} config={node.config as Record<string, unknown>} />
               {spec.ConfigComponent ? (
                 <spec.ConfigComponent
                   config={node.config as never}

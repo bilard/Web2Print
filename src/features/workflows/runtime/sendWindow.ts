@@ -28,6 +28,26 @@ export const DEFAULT_SEND_WINDOW: SendWindowConfig = {
   timeZone: 'Europe/Paris',
 }
 
+/**
+ * Fuseau déduit de la LANGUE de l'utilisateur. Il n'y a plus de champ à remplir : personne
+ * ne règle un fuseau à la main, et un identifiant IANA mal orthographié retombait en
+ * silence sur Paris.
+ *
+ * ⚠ MÊME règle des deux côtés, et surtout PAS le fuseau du système côté navigateur : la
+ * mémoire d'envoi est partagée avec le cron (`users/{uid}/sendWindows`). Deux fuseaux
+ * différents, ce sont deux découpages de la journée — donc un mail envoyé deux fois, ou
+ * pas du tout, selon qui passe en premier.
+ */
+const TZ_BY_LOCALE: Record<string, string> = {
+  fr: 'Europe/Paris',
+  en: 'Europe/London',
+  es: 'Europe/Madrid',
+}
+
+export function timeZoneForLocale(locale: string): string {
+  return TZ_BY_LOCALE[String(locale ?? '').slice(0, 2).toLowerCase()] ?? DEFAULT_SEND_WINDOW.timeZone
+}
+
 /** Champs de date lus DANS le fuseau demandé (et non dans celui du processus). */
 function zonedParts(at: Date, timeZone: string): {
   year: number; month: number; day: number; hour: number; minute: number; weekday: number
@@ -114,20 +134,3 @@ export function evaluateWindow(at: Date, cfg: SendWindowConfig, lastKey: string 
 
 const DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
 function dayName(d: number): string { return DAYS[d] ?? String(d) }
-
-/** Résumé lisible pour la carte : « lun–ven à 08:00 · 1×/jour ». */
-export function describeWindow(cfg: SendWindowConfig): string {
-  // Jours CONSÉCUTIFS résumés en plage : « lun→ven » plutôt que
-  // « lun–mar–mer–jeu–ven », qui débordait de la carte et s'y tronquait.
-  const sorted = [...cfg.weekdays].sort((a, b) => a - b)
-  const consecutive = sorted.length > 2 && sorted.every((d, i) => i === 0 || d === sorted[i - 1] + 1)
-  const days = sorted.length === 0 || sorted.length === 7
-    ? 'tous les jours'
-    : consecutive
-      ? `${DAYS[sorted[0]]?.slice(0, 3)}→${DAYS[sorted[sorted.length - 1]]?.slice(0, 3)}`
-      : sorted.map((d) => DAYS[d]?.slice(0, 3)).join(', ')
-  const freq = cfg.frequency === 'always' ? 'à chaque run'
-    : cfg.frequency === 'daily' ? '1×/jour'
-    : cfg.frequency === 'weekly' ? '1×/semaine' : '1×/mois'
-  return `${days}${cfg.atTime ? ` à ${cfg.atTime}` : ''} · ${freq}`
-}

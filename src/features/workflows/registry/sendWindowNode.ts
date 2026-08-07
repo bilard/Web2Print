@@ -16,16 +16,17 @@ import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import {
-  evaluateWindow, describeWindow, DEFAULT_SEND_WINDOW, type SendFrequency, type SendWindowConfig,
+  evaluateWindow, timeZoneForLocale, DEFAULT_SEND_WINDOW, type SendFrequency, type SendWindowConfig,
 } from '../runtime/sendWindow'
+import { describeWindow } from '../runtime/sendWindowLabels'
 import { t } from '@/lib/i18n'
+import { useLocaleStore } from '@/stores/locale.store'
 
 interface SendWindowNodeConfig {
   frequency: SendFrequency
   atTime: string
-  /** Jours autorisés, saisis « 1,2,3,4,5 » (0 = dimanche). Vide = tous les jours. */
+  /** Jours autorisés, « 1,2,3,4,5 » (0 = dimanche). Vide = tous les jours. */
   weekdays: string
-  timeZone: string
   /** Distingue deux cadences d'un même workflow (ex. « hebdo » et « mensuel »). */
   key: string
 }
@@ -48,7 +49,10 @@ function toConfig(c: SendWindowNodeConfig): SendWindowConfig {
     frequency: (c.frequency ?? DEFAULT_SEND_WINDOW.frequency) as SendFrequency,
     atTime: (c.atTime ?? '').trim(),
     weekdays,
-    timeZone: (c.timeZone ?? '').trim() || DEFAULT_SEND_WINDOW.timeZone,
+    // Plus de champ à remplir : la langue de l'utilisateur donne le fuseau, et le cron
+    // applique EXACTEMENT la même règle — sinon les deux découperaient la journée
+    // autrement et se renverraient le même mail.
+    timeZone: timeZoneForLocale(useLocaleStore.getState().locale),
   }
 }
 
@@ -64,12 +68,10 @@ const sendWindowNode: NodeSpec<SendWindowNodeConfig, { value: unknown }, { value
     { name: 'frequency', kind: 'select', labelKey: 'node.send-window.freq.label', options: FREQUENCIES, default: 'daily' },
     { name: 'atTime', kind: 'time', labelKey: 'node.send-window.atTime.label', helpKey: 'node.send-window.atTime.help' },
     { name: 'weekdays', kind: 'weekdays', labelKey: 'node.send-window.weekdays.label', helpKey: 'node.send-window.weekdays.help' },
-    { name: 'timeZone', kind: 'text', labelKey: 'node.send-window.tz.label', helpKey: 'node.send-window.tz.help' },
     { name: 'key', kind: 'text', labelKey: 'node.send-window.key.label', helpKey: 'node.send-window.key.help' },
   ],
   defaultConfig: {
-    frequency: 'daily', atTime: '08:00', weekdays: '1,2,3,4,5',
-    timeZone: DEFAULT_SEND_WINDOW.timeZone, key: '',
+    frequency: 'daily', atTime: '08:00', weekdays: '1,2,3,4,5', key: '',
   },
   runtime: 'client',
   cardSummary: (c) => describeWindow(toConfig(c)),
