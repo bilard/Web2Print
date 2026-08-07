@@ -57,13 +57,14 @@ export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch
           <thead>
             <tr>
               <th className="sticky left-0 bg-surface" />
-              {/* Familles écrites À LA VERTICALE : tronquées à 74 px, « ORIGINAL PARTS » et
-                  « F1 MTD NON STOCKÉ » se réduisaient au même « … » et ne se distinguaient
-                  plus. Verticales, elles tiennent en entier sans élargir les colonnes. */}
+              {/* Familles à l'HORIZONTALE : elles avaient été redressées à la verticale parce
+                  que les colonnes ne faisaient que 74 px et confondaient tous les noms dans
+                  le même « … ». La matrice occupe désormais toute la largeur — le nom tient
+                  couché, sur deux lignes au besoin, et se lit sans tourner la tête. */}
               {cols.map((f) => (
-                <th key={f} className="px-0.5 pb-1 align-bottom">
+                <th key={f} className="px-1 pb-1.5 align-bottom">
                   <div
-                    className="h-[104px] mx-auto text-white/55 text-[10px] font-medium whitespace-nowrap overflow-hidden text-ellipsis [writing-mode:vertical-rl] rotate-180"
+                    className="text-white/55 text-[10px] font-medium leading-tight text-center line-clamp-2 break-words"
                     title={f}
                   >
                     {f}
@@ -75,8 +76,11 @@ export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch
           <tbody>
             {rows.map((r) => (
               <tr key={r.siteId}>
+                {/* Domaines À GAUCHE : alignés à droite, ils laissaient devant eux une bande
+                    vide de la largeur du plus long, et l'œil devait remonter chaque nom
+                    depuis la grille. La colonne commence là où commence la carte. */}
                 <td onClick={() => onSelect?.({ competitor: r.siteId })}
-                  className="sticky left-0 bg-surface pr-2 text-white/70 text-right whitespace-nowrap max-w-[150px] truncate cursor-pointer hover:text-white" title={r.domain}>
+                  className="sticky left-0 bg-surface pr-3 text-white/70 text-left whitespace-nowrap max-w-[190px] truncate cursor-pointer hover:text-white" title={r.domain}>
                   {r.domain}
                 </td>
                 {cols.map((f) => {
