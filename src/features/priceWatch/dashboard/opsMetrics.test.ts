@@ -112,3 +112,26 @@ describe('sites décochés', () => {
     expect(ops.slowestCycle?.domain).toBe('a.fr')
   })
 })
+
+describe('comptes de concurrents', () => {
+  const audit = { indexed: 10, pctPrice: 100, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 }
+  const stat = (i: number) => ({
+    siteId: `s${i}`, domain: `s${i}.fr`, matched: 1, cheaper: 0, ruptures: 0,
+    avgGapPct: null, medGapPct: null, audit,
+  })
+  const report = (sites: number, known: number) => ({
+    runAt: 1, kpis: {}, products: [], totalMatched: 0, truncated: false,
+    byCompetitor: Array.from({ length: known }, (_, i) => stat(i)),
+    sites: Array.from({ length: sites }, (_, i) => ({ siteId: `s${i}`, domain: `s${i}.fr` })),
+  }) as unknown as Parameters<typeof buildOpsCockpit>[0]
+
+  it('compte les SUIVIS de la dernière analyse sur tous les concurrents connus', () => {
+    expect(buildOpsCockpit(report(14, 24)).counts).toEqual({ active: 14, inactive: 10, total: 24 })
+  })
+
+  it('retombe sur les sites qui ont des données quand le rapport ne liste pas les siens', () => {
+    // Analyses écrites avant que `sites` soit persisté : sans repli, « 0 actif sur 24 ».
+    const old = { ...report(0, 24), sites: [] } as unknown as Parameters<typeof buildOpsCockpit>[0]
+    expect(buildOpsCockpit(old).counts).toEqual({ active: 24, inactive: 0, total: 24 })
+  })
+})

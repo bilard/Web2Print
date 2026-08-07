@@ -194,7 +194,13 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
     totalIndexed, totalCumulMs, avgProgress,
     sitesActive: active.length,
     sitesTotal: competitors.filter((c) => !disabled.has(c.siteId)).length,
-    counts: competitorCounts(report.sites.map((s) => s.siteId), competitors.map((c) => c.siteId)),
+    // ⚠ Repli sur les sites AYANT DES DONNÉES quand le rapport ne porte pas sa liste :
+    // les analyses écrites avant que `sites` soit persisté rendraient sinon « 0 actif sur
+    // 24 », un chiffre spectaculairement faux là où l'on n'a simplement pas l'information.
+    counts: competitorCounts(
+      report.sites?.length ? report.sites.map((s) => s.siteId) : active.map((c) => c.siteId),
+      competitors.map((c) => c.siteId),
+    ),
     sitesComplete,
     cyclesDone, slowestCycle, runAt: report.runAt, lastCollectAt, lastCollectDomain,
     hasData: totalIndexed > 0,
