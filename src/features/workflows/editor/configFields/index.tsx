@@ -52,10 +52,65 @@ function ColumnField({ field, value, onChange, columns = [] }: FieldProps) {
   )
 }
 
+/** Séparateurs acceptés dans la chaîne stockée — le chevron typographique compris, parce
+ *  que c'est celui que le journal des runs écrit et qu'on recopie naturellement. */
+const LEVEL_SPLIT = /[>›»|,;/\n]/
+
+/**
+ * Plusieurs colonnes ORDONNÉES (niveaux de taxonomie, du plus large au plus fin). Stocké
+ * en une chaîne « A > B > C » : le format reste lisible, éditable à la main, et compatible
+ * avec les configs déjà saisies.
+ *
+ * Chaque niveau est un choix dans les colonnes RÉELLES : taper un nom de colonne de tête
+ * revenait à parier sur son orthographe exacte, et une faute retombait en silence sur la
+ * détection automatique.
+ */
+function ColumnListField({ value, onChange, columns = [] }: FieldProps) {
+  const levels = String(value ?? '').split(LEVEL_SPLIT).map((s) => s.trim()).filter(Boolean)
+  const commit = (next: string[]) => onChange(next.filter(Boolean).join(' > '))
+  // Sans colonnes connues, aucun choix à proposer : on garde la saisie libre plutôt que
+  // d'afficher une liste vide qui empêcherait toute configuration avant le premier run.
+  if (columns.length === 0) {
+    return <input type="text" className={inputCls} value={String(value ?? '')}
+      onChange={(e) => onChange(e.target.value)} placeholder="UNIVERS > FAMILLE > SOUS_FAMILLE" />
+  }
+  const free = columns.filter((c) => !levels.includes(c))
+  return (
+    <div className="space-y-1.5">
+      {levels.map((level, i) => (
+        <div key={`${level}-${i}`} className="flex items-center gap-1">
+          <span className="text-[10px] text-white/30 w-4 shrink-0 tabular-nums">{i + 1}.</span>
+          <select className={inputCls} value={columns.includes(level) ? level : ''}
+            onChange={(e) => commit(levels.map((l, j) => (j === i ? e.target.value : l)))}>
+            {/* Une valeur qui ne désigne aucune colonne reste visible plutôt que d'être
+                remplacée en douce par la première de la liste. */}
+            {!columns.includes(level) && <option value="">{level} — introuvable</option>}
+            {[level, ...free].filter((c) => columns.includes(c)).map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <button type="button" onClick={() => commit(levels.filter((_, j) => j !== i))}
+            className="shrink-0 px-1.5 py-1 text-white/30 hover:text-red-400" title={t('wfn.level.remove')}>×</button>
+          <button type="button" disabled={i === 0} title={t('wfn.level.up')}
+            onClick={() => commit(levels.map((l, j) => (j === i - 1 ? levels[i] : j === i ? levels[i - 1] : l)))}
+            className="shrink-0 px-1 py-1 text-white/30 hover:text-white disabled:opacity-20">↑</button>
+        </div>
+      ))}
+      {free.length > 0 && (
+        <select className={inputCls + ' text-white/50'} value=""
+          onChange={(e) => e.target.value && commit([...levels, e.target.value])}>
+          <option value="">{t('wfn.level.add')}</option>
+          {free.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      )}
+    </div>
+  )
+}
+
 export function ConfigFieldRenderer({ field, value, onChange, columns }: FieldProps) {
   switch (field.kind) {
     case 'columnRef':
       return <ColumnField field={field} value={value} onChange={onChange} columns={columns} />
+    case 'columnList':
+      return <ColumnListField field={field} value={value} onChange={onChange} columns={columns} />
     case 'text':
     case 'expression':
       return <input type="text" className={inputCls} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} placeholder={field.helpKey ? t(field.helpKey) : field.help} />

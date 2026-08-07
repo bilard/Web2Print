@@ -95,7 +95,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Mon prix (HT)' },
     { name: 'descriptionColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.descriptionColumn.label', helpKey: 'node.compare-catalog.descriptionColumn.help' },
     { name: 'urlColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.urlColumn.label', helpKey: 'node.compare-catalog.urlColumn.help' },
-    { name: 'taxoColumns', kind: 'text', labelKey: 'node.compare-catalog.taxoColumns.label', helpKey: 'node.compare-catalog.taxoColumns.help' },
+    { name: 'taxoColumns', kind: 'columnList', labelKey: 'node.compare-catalog.taxoColumns.label', helpKey: 'node.compare-catalog.taxoColumns.help' },
     { name: 'vatRate', kind: 'number', labelKey: 'node.compare-catalog.vatRate.label', helpKey: 'node.compare-catalog.vatRate.help' },
     {
       name: 'watchId', kind: 'text', labelKey: 'node.compare-catalog.watchId.label', helpKey: 'node.compare-catalog.watchId.help',

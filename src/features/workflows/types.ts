@@ -18,6 +18,8 @@ type ConfigFieldKind =
   | 'select'
   | 'expression'
   | 'columnRef'
+  /** Plusieurs colonnes ORDONNÉES, stockées en une chaîne « A > B > C ». */
+  | 'columnList'
 
 export interface ConfigField {
   name: string
