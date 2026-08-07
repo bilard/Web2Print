@@ -37,7 +37,16 @@ function ColumnField({ field, value, onChange, columns = [] }: FieldProps) {
         <datalist id={listId}>{columns.map((c) => <option key={c} value={c} />)}</datalist>
       )}
       {unknown && (
-        <span className="text-[11px] text-amber-400/80 mt-1 block">{t('wfn.columnNotInSheet')}</span>
+        <span className="text-[11px] text-amber-400/80 mt-1 flex items-start gap-2">
+          <span className="flex-1">{t('wfn.columnNotInSheet')}</span>
+          {/* Vider PLUTÔT que laisser : une valeur qui ne désigne rien fait deviner une
+              colonne de remplacement au node — un mapping inventé vaut moins qu'un champ
+              vide, qui laisse la détection choisir en connaissance de cause. */}
+          <button type="button" onClick={() => onChange('')}
+            className="shrink-0 underline decoration-dotted hover:text-amber-200">
+            {t('wfn.clearColumn')}
+          </button>
+        </span>
       )}
     </>
   )

@@ -28,12 +28,61 @@ function collectUpstreamColumns(wf: Workflow, nodeId: string, visited = new Set<
     if (csv?.columns?.length) {
       for (const c of csv.columns) cols.add(c)
     }
+    // Cas Import Google Sheets : en-têtes relus à la demande (bouton « Actualiser les
+    // colonnes »), sans lancer le workflow. Une feuille source change de structure entre
+    // deux runs — c'est la seule façon de le voir AVANT d'avoir tout recalculé.
+    const sheetCols = cfg?.sheetColumns as string[] | undefined
+    if (sheetCols?.length) {
+      for (const c of sheetCols) cols.add(c)
+    }
     // Sinon, remonte d'un cran (cas Pipe, Loop each, etc.)
-    if (!csv?.columns?.length) {
+    if (!csv?.columns?.length && !sheetCols?.length) {
       for (const c of collectUpstreamColumns(wf, src.id, visited)) cols.add(c)
     }
   }
   return Array.from(cols)
+}
+
+/**
+ * Colonnes configurées que la feuille branchée ne porte PLUS.
+ *
+ * Une source renommée (« Famille » → « FAMILLE ») ou amputée d'une colonne laissait une
+ * config qui pointait dans le vide : le node devinait alors une colonne de remplacement, et
+ * on ne l'apprenait qu'en lisant le journal d'un run de vingt minutes. Le panneau le dit
+ * maintenant d'un coup d'œil, et propose de tout vider — un champ vide laisse la détection
+ * choisir en connaissance de cause, une valeur morte lui force la main.
+ */
+function StaleColumnsBanner({ node, spec, columns, onClear }: {
+  node: WorkflowNode
+  spec: { configSchema: { name: string; kind: string; label?: string; labelKey?: string }[] }
+  columns: string[]
+  onClear: (names: string[]) => void
+}) {
+  const { t } = useTranslation()
+  // Aucune colonne connue = aucune affirmation possible : on se tait plutôt que d'alerter
+  // sur une feuille qu'on n'a simplement pas encore lue.
+  if (columns.length === 0) return null
+  const cfg = node.config as Record<string, unknown>
+  const stale = spec.configSchema.filter((f) => {
+    if (f.kind !== 'columnRef') return false
+    const v = String(cfg[f.name] ?? '').trim()
+    return v !== '' && !columns.includes(v)
+  })
+  if (stale.length === 0) return null
+  return (
+    <div className="rounded border border-amber-500/30 bg-amber-500/[0.07] px-2.5 py-2 flex items-start gap-2">
+      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] text-amber-200/90">
+          {t('wfn.staleColumns', { count: stale.length, list: stale.map((f) => String(cfg[f.name])).join(' · ') })}
+        </p>
+        <button type="button" onClick={() => onClear(stale.map((f) => f.name))}
+          className="text-[11px] text-amber-300 underline decoration-dotted hover:text-amber-100 mt-1">
+          {t('wfn.clearStaleColumns', { count: stale.length })}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 interface ConnectionsPanelProps {
@@ -422,6 +471,11 @@ export function NodeConfigPanel() {
 
           {tab === 'config' ? (
             <div className="space-y-3 flex-1 min-h-0 overflow-y-auto">
+              <StaleColumnsBanner node={node} spec={spec} columns={availableColumns}
+                onClear={(names) => upsertNode({
+                  ...node,
+                  config: { ...(node.config as Record<string, unknown>), ...Object.fromEntries(names.map((n) => [n, ''])) },
+                })} />
               {spec.ConfigComponent ? (
                 <spec.ConfigComponent
                   config={node.config as never}

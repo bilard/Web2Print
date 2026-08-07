@@ -12,6 +12,7 @@ import {
   X,
   FunctionSquare,
   BarChart3,
+  RefreshCw,
 } from 'lucide-react'
 import { httpsCallable } from 'firebase/functions'
 import { nodeRegistry } from './index'
@@ -35,7 +36,7 @@ import {
   uploadFileToDrive,
   type DriveFileMeta,
 } from '@/features/gdrive/gdriveCore'
-import { readGoogleSheetTab } from '@/features/gdrive/sheetValues'
+import { readGoogleSheetHeader, readGoogleSheetTab } from '@/features/gdrive/sheetValues'
 import { GDrivePickerModal } from '@/features/gdrive/GDrivePickerModal'
 import { GSheetsFormulaModal } from './GSheetsFormulaModal'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
@@ -249,6 +250,10 @@ function FilePickerForConfig<C extends PickedFileFields>({
 
 interface GSheetsImportConfig extends PickedFileFields {
   sheetIndex: number
+  /** En-têtes lus dans la feuille, SANS lancer le workflow. Ce sont eux que les nodes en
+   *  aval confrontent à leur mapping de colonnes — sinon on configure « Comparer catalogue »
+   *  contre les colonnes de l'avant-dernière version du fichier sans que rien ne le dise. */
+  sheetColumns?: string[]
 }
 
 function GSheetsImportConfigUi({
@@ -258,11 +263,29 @@ function GSheetsImportConfigUi({
   config: GSheetsImportConfig
   onChange: (next: GSheetsImportConfig) => void
 }) {
+  const [reading, setReading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Lecture de la seule ligne d'en-tête : une requête, aucune donnée produit transférée.
+  const refreshColumns = async () => {
+    if (!config.fileId) return
+    setReading(true); setError(null)
+    try {
+      const token = await getNodeGoogleToken()
+      const { columns } = await readGoogleSheetHeader(config.fileId, token, config.sheetIndex ?? 0)
+      onChange({ ...config, sheetColumns: columns })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setReading(false)
+    }
+  }
+
   return (
     <div className="space-y-3">
       <FilePickerForConfig
         config={config}
-        onChange={onChange}
+        onChange={(next) => onChange({ ...next, sheetColumns: undefined })}
         mimeFilter="sheets"
         emptyLabel="Choisir un Google Sheets"
       />
@@ -274,10 +297,24 @@ function GSheetsImportConfigUi({
           type="number"
           min={0}
           value={config.sheetIndex}
-          onChange={(e) => onChange({ ...config, sheetIndex: Number(e.target.value) })}
+          onChange={(e) => onChange({ ...config, sheetIndex: Number(e.target.value), sheetColumns: undefined })}
           className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
         />
         <p className="text-[10px] text-neutral-600 mt-1">{t('gdn.0PremierOnglet')}</p>
+      </div>
+
+      {/* Colonnes de la feuille, à jour à la demande — la structure d'un fichier source
+          change sans prévenir, et jusqu'ici seul un run complet le révélait. */}
+      <div>
+        <button type="button" onClick={refreshColumns} disabled={!config.fileId || reading}
+          className="w-full bg-well border border-white/10 rounded px-2 py-1.5 text-xs text-white/70 hover:text-white hover:border-white/25 disabled:opacity-40 flex items-center justify-center gap-1.5 transition-colors">
+          <RefreshCw className={`w-3.5 h-3.5 ${reading ? 'animate-spin' : ''}`} />
+          {t('gdn.refreshColumns')}
+        </button>
+        {config.sheetColumns?.length
+          ? <p className="text-[10px] text-neutral-500 mt-1">{t('gdn.columnsRead', { count: config.sheetColumns.length, list: config.sheetColumns.slice(0, 8).join(', ') })}</p>
+          : <p className="text-[10px] text-neutral-600 mt-1">{t('gdn.columnsUnknown')}</p>}
+        {error && <p className="text-[10px] text-amber-400/80 mt-1">{error}</p>}
       </div>
     </div>
   )

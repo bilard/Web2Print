@@ -74,6 +74,30 @@ async function listSheetTabs(id: string, token: string): Promise<string[]> {
     .map((s) => s.title)
 }
 
+/**
+ * Ligne d'EN-TÊTE d'un onglet, et rien d'autre (range `1:1`).
+ *
+ * Sert à l'éditeur : sans elle, les colonnes d'une feuille ne sont connues qu'APRÈS un run
+ * complet — on configurait donc les nodes en aval contre les colonnes de l'avant-dernière
+ * version du fichier, sans que rien ne le signale. Une requête, une ligne transférée.
+ */
+export async function readGoogleSheetHeader(
+  id: string, token: string, sheetIndex = 0,
+): Promise<{ tab: string; columns: string[] }> {
+  const tabs = await listSheetTabs(id, token)
+  if (tabs.length === 0) throw new Error('Sheets : ce classeur ne contient aucun onglet.')
+  const title = tabs[Math.max(0, Math.min(sheetIndex, tabs.length - 1))]
+  const res = await fetch(
+    `${SHEETS_API}/${id}/values/${encodeURIComponent(`${title}!1:1`)}?valueRenderOption=UNFORMATTED_VALUE`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+  if (!res.ok) {
+    throw new Error(`Sheets : lecture de l'en-tête impossible (HTTP ${res.status} — ${(await res.text().catch(() => '')).slice(0, 160)})`)
+  }
+  const matrix = ((await res.json()) as { values?: unknown[][] }).values ?? []
+  return { tab: title, columns: sheetKeysFromHeader(matrix[0] ?? []) }
+}
+
 /** Lit UN onglet (par position) sans passer par l'export XLSX. */
 export async function readGoogleSheetTab(
   id: string, token: string, sheetIndex = 0,
