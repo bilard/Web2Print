@@ -15,12 +15,15 @@ const CRON_UNIT_LABEL: Record<CronUnit, TranslationKey> = {
   week: 'cron.unit.week', month: 'cron.unit.month',
 }
 
-const WEEKDAY_KEYS = [
+/** Indexé par le jour JS (0 = dimanche). Nom complet — infobulle des pastilles de jours. */
+export const WEEKDAY_KEYS = [
   'cron.weekday.0', 'cron.weekday.1', 'cron.weekday.2', 'cron.weekday.3',
   'cron.weekday.4', 'cron.weekday.5', 'cron.weekday.6',
 ] as const satisfies readonly TranslationKey[]
 
-const WEEKDAY_SHORT_KEYS = [
+/** Indexé par le jour JS (0 = dimanche). Sert aussi aux pastilles de jours du panneau
+ *  de configuration — mêmes abréviations partout, une seule liste à traduire. */
+export const WEEKDAY_SHORT_KEYS = [
   'cron.weekdayShort.0', 'cron.weekdayShort.1', 'cron.weekdayShort.2', 'cron.weekdayShort.3',
   'cron.weekdayShort.4', 'cron.weekdayShort.5', 'cron.weekdayShort.6',
 ] as const satisfies readonly TranslationKey[]

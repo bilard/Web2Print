@@ -62,8 +62,8 @@ const sendWindowNode: NodeSpec<SendWindowNodeConfig, { value: unknown }, { value
   outputs: [{ name: 'value', type: 'any' }],
   configSchema: [
     { name: 'frequency', kind: 'select', labelKey: 'node.send-window.freq.label', options: FREQUENCIES, default: 'daily' },
-    { name: 'atTime', kind: 'text', labelKey: 'node.send-window.atTime.label', helpKey: 'node.send-window.atTime.help' },
-    { name: 'weekdays', kind: 'text', labelKey: 'node.send-window.weekdays.label', helpKey: 'node.send-window.weekdays.help' },
+    { name: 'atTime', kind: 'time', labelKey: 'node.send-window.atTime.label', helpKey: 'node.send-window.atTime.help' },
+    { name: 'weekdays', kind: 'weekdays', labelKey: 'node.send-window.weekdays.label', helpKey: 'node.send-window.weekdays.help' },
     { name: 'timeZone', kind: 'text', labelKey: 'node.send-window.tz.label', helpKey: 'node.send-window.tz.help' },
     { name: 'key', kind: 'text', labelKey: 'node.send-window.key.label', helpKey: 'node.send-window.key.help' },
   ],

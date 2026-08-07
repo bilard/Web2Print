@@ -17,6 +17,11 @@ type ConfigFieldKind =
   | 'checkbox'
   | 'select'
   | 'expression'
+  /** Heure de la journée — sélecteur natif, stocké « HH:MM ». */
+  | 'time'
+  /** Jours de la semaine — pastilles L M M J V S D, stockées « 1,2,3,4,5 » (0 = dimanche).
+   *  Vide = tous les jours, et c'est la forme normalisée des sept jours cochés. */
+  | 'weekdays'
   | 'columnRef'
   /** Plusieurs colonnes ORDONNÉES, stockées en une chaîne « A > B > C ». */
   | 'columnList'

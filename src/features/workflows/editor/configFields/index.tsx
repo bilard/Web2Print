@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import type { ConfigField } from '../../types'
+import { WEEKDAY_KEYS, WEEKDAY_SHORT_KEYS } from '../../runtime/cronLabels'
 import { t } from '@/lib/i18n'
 
 interface FieldProps {
@@ -137,8 +138,76 @@ function MultiSelectField({ field, value, onChange }: FieldProps) {
   )
 }
 
+/** Ordre d'AFFICHAGE : la semaine commence le lundi. Les valeurs restent celles de
+ *  JavaScript (0 = dimanche), c'est ce que le moteur de créneau compare. */
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]
+
+/**
+ * Jours de la semaine en pastilles. Stocké « 1,2,3,4,5 » — même format qu'avant, donc les
+ * cadences déjà réglées à la main restent valides.
+ *
+ * ⚠ Vide vaut « TOUS les jours », jamais « aucun » : une cadence sans aucun jour n'enverrait
+ * plus rien, en silence. Les sept jours cochés se ramènent donc à vide, et retirer le
+ * dernier jour y revient aussi — les deux états sont le même, autant n'en montrer qu'un.
+ */
+function WeekdaysField({ value, onChange }: FieldProps) {
+  const picked = String(value ?? '')
+    .split(/[,\s]+/).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+  const all = picked.length === 0
+  const commit = (days: number[]) => {
+    const kept = WEEK_ORDER.filter((d) => days.includes(d))
+    onChange(kept.length === 0 || kept.length === 7 ? '' : kept.join(','))
+  }
+  // Quand rien n'est coché, les sept jours sont actifs : cliquer RETIRE ce jour-là, ce que
+  // l'affichage laisse attendre puisque toutes les pastilles sont allumées.
+  const toggle = (d: number) => {
+    const base = all ? WEEK_ORDER : picked
+    commit(base.includes(d) ? base.filter((x) => x !== d) : [...base, d])
+  }
+  return (
+    <div className="space-y-1.5">
+      <div className="flex gap-1">
+        {WEEK_ORDER.map((d) => {
+          const on = all || picked.includes(d)
+          return (
+            <button key={d} type="button" onClick={() => toggle(d)} aria-pressed={on}
+              title={t(WEEKDAY_KEYS[d])}
+              className={`flex-1 py-1.5 rounded text-[11px] font-medium border transition-colors ${
+                on
+                  // Vide = implicite : allumé, mais plus discret qu'un choix délibéré.
+                  ? all
+                    ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-200/70'
+                    : 'bg-indigo-500/80 border-indigo-400 text-[#fff]'
+                  : 'bg-background border-neutral-700 text-white/35 hover:text-white/70'
+              }`}>
+              {t(WEEKDAY_SHORT_KEYS[d]).replace(/\.$/, '')}
+            </button>
+          )
+        })}
+      </div>
+      <div className="flex items-center gap-3 text-[11px]">
+        <span className={all ? 'text-indigo-300/80' : 'text-white/35'}>
+          {all ? t('wfn.weekdays.all') : t('wfn.weekdays.count', { n: picked.length })}
+        </span>
+        <button type="button" onClick={() => commit([1, 2, 3, 4, 5])}
+          className="text-white/40 underline decoration-dotted hover:text-white">{t('wfn.weekdays.week')}</button>
+        <button type="button" onClick={() => commit([6, 0])}
+          className="text-white/40 underline decoration-dotted hover:text-white">{t('wfn.weekdays.weekend')}</button>
+        <button type="button" onClick={() => onChange('')}
+          className="text-white/40 underline decoration-dotted hover:text-white">{t('wfn.weekdays.every')}</button>
+      </div>
+    </div>
+  )
+}
+
 export function ConfigFieldRenderer({ field, value, onChange, columns }: FieldProps) {
   switch (field.kind) {
+    case 'weekdays':
+      return <WeekdaysField field={field} value={value} onChange={onChange} />
+    case 'time':
+      // Sélecteur natif : même raison que le stepper des champs numériques — le contrôle
+      // du système connaît le format de l'utilisateur mieux qu'un masque de saisie.
+      return <input type="time" className={inputCls} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} />
     case 'multiSelect':
       return <MultiSelectField field={field} value={value} onChange={onChange} />
     case 'columnRef':
