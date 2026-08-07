@@ -68,6 +68,8 @@ type LLMTask =
   | 'web.discoveryFilter'
   | 'data.columnCompletion'
   | 'design.promoPlan'
+  /** Analyse rédigée du rapport de veille tarifaire, à partir d'une consigne UTILISATEUR. */
+  | 'priceWatch.analysis'
   | 'catalog.plan'
   | 'catalog.inspiration'
   | 'i18n.labelTranslation'
@@ -86,6 +88,9 @@ interface RouteConfig {
  * rapides ou massives sur Gemini Flash.
  */
 const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
+  // Analyse d'un rapport chiffré, rédigée pour un acheteur : raisonnement sur des
+  // écarts et arbitrage de priorités, pas de la génération créative. Claude en tête.
+  'priceWatch.analysis':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
   'brief.dynamicQuestions': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
   'brief.cartGeneration':   { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
   'brief.deckStructure':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
@@ -179,6 +184,7 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
 const TASK_TEMPERATURE: Record<LLMTask, number> = {
+  'priceWatch.analysis': 0.3,
   'brief.dynamicQuestions': 0.4,
   'brief.cartGeneration':   0.4,
   'brief.deckStructure':    0.4,

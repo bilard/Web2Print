@@ -12,11 +12,14 @@ import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { stableId } from '@/features/priceWatch/core'
 import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
 import { loadStoredReport, renderPriceWatchReport, DEFAULT_PW_REPORT } from './priceWatchReport'
+import { composeReportHtml } from './priceWatchComposer'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
 import { t } from '@/lib/i18n'
 
 interface PwReportConfig {
   title: string
+  /** Consigne libre : décrit ce que le mail doit contenir. Vide = rapport standard. */
+  prompt: string
   /** Identifiant du suivi. Vide = celui du workflow, comme les autres nodes de veille. */
   watchId: string
   competitorThresholdPct: number
@@ -46,6 +49,7 @@ const pwReportNode: NodeSpec<PwReportConfig, Record<string, never>, PwReportOutp
   ],
   configSchema: [
     { name: 'title', kind: 'text', labelKey: 'node.pw-report.title.label', helpKey: 'node.pw-report.title.help' },
+    { name: 'prompt', kind: 'textarea', labelKey: 'node.pw-report.prompt.label', helpKey: 'node.pw-report.prompt.help' },
     { name: 'watchId', kind: 'text', labelKey: 'node.compare-catalog.watchId.label', helpKey: 'node.compare-catalog.watchId.help' },
     { name: 'competitorThresholdPct', kind: 'number', labelKey: 'node.pw-report.compThreshold.label', helpKey: 'node.pw-report.compThreshold.help' },
     { name: 'familyThresholdPct', kind: 'number', labelKey: 'node.pw-report.famThreshold.label', helpKey: 'node.pw-report.famThreshold.help' },
@@ -54,6 +58,7 @@ const pwReportNode: NodeSpec<PwReportConfig, Record<string, never>, PwReportOutp
   ],
   defaultConfig: {
     title: DEFAULT_PW_REPORT.title,
+    prompt: '',
     watchId: '',
     competitorThresholdPct: DEFAULT_PW_REPORT.competitorThresholdPct,
     familyThresholdPct: DEFAULT_PW_REPORT.familyThresholdPct,
@@ -71,6 +76,27 @@ const pwReportNode: NodeSpec<PwReportConfig, Record<string, never>, PwReportOutp
 
     const report = await loadStoredReport(uid, watchId)
     if (!report) throw new Error(t('run.pwReport.noReport', { watchId }))
+
+    // Consigne libre : c'est ELLE qui compose le mail. Le rapport standard reste le repli —
+    // un modèle indisponible ou un JSON invalide ne doit pas priver du mail du matin.
+    const prompt = (config.prompt ?? '').trim()
+    if (prompt) {
+      ctx.log('info', t('run.pwReport.composing'))
+      const composed = await composeReportHtml(report, prompt,
+        (i) => ctx.log('info', t('run.pwReport.composedBy', { provider: i.provider, model: i.model })))
+      if (composed) {
+        const day = new Date().toISOString().slice(0, 10)
+        const raw = (config.fileName ?? '').trim() || `veille-tarifaire-${day}.html`
+        const name = raw.toLowerCase().endsWith('.html') ? raw : `${raw}.html`
+        ctx.log('info', t('run.pwReport.done', {
+          products: (report.kpis?.products ?? 0).toLocaleString('fr-FR'),
+          sites: (report.byCompetitor ?? []).filter((c) => c.matched > 0).length,
+          size: (composed.length / 1024).toFixed(1),
+        }))
+        return { html: composed, file: new File([composed], name, { type: 'text/html;charset=utf-8' }) }
+      }
+      ctx.log('warn', t('run.pwReport.composeFailed'))
+    }
 
     const html = renderPriceWatchReport(report, {
       title: (config.title ?? '').trim() || DEFAULT_PW_REPORT.title,

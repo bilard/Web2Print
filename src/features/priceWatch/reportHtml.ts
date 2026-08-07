@@ -14,6 +14,9 @@ const pct = (n: number | null | undefined) =>
 
 export interface PriceWatchReportOptions {
   title: string
+  /** Analyse rédigée (texte brut, paragraphes séparés par des sauts de ligne) à placer en
+   *  TÊTE du rapport. Vide = aucune section d'analyse — le rapport reste purement chiffré. */
+  analysis?: string
   /** Écart médian (%) à partir duquel un concurrent est signalé comme agressif. */
   competitorThresholdPct: number
   /** Part (%) de produits sous-cotés à partir de laquelle une famille est signalée. */
@@ -190,6 +193,14 @@ export function renderPriceWatchReport(
       ${kpiCell('Ruptures', nf(k.ruptures ?? 0), AMBER, 'chez les concurrents')}
     </tr></table>
   </td></tr>
+
+  ${opts.analysis?.trim()
+    ? section('Analyse', 'Rédigée à partir de votre consigne, sur les chiffres ci-dessus.',
+        `<table width="100%" cellpadding="0" cellspacing="0" style="background:${CARD};border:1px solid ${LINE};border-radius:10px;">
+          <tr><td style="padding:16px 18px;font:400 13px/1.75 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${TXT};">
+            ${opts.analysis.trim().split(/\n{2,}/).map((p) => `<p style="margin:0 0 10px;">${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}
+          </td></tr></table>`)
+    : ''}
 
   ${alerts.length > 0
     ? section('⚠ Écarts significatifs', `Seuils appliqués : concurrent sous vos prix de plus de ${opts.competitorThresholdPct} % en médiane, famille au-delà de ${opts.familyThresholdPct} % de produits sous-cotés.`, alertBox(alerts, 'danger'))
