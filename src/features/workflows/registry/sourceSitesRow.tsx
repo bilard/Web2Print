@@ -187,8 +187,12 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
         </a>
         <div className="flex-1 min-w-0 flex items-center overflow-hidden">
           {working ? (
-            <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-300 whitespace-nowrap">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
+            /* Cartouche FIXE, comme les verdicts : même bordure, même fond, même gabarit.
+               Le texte clignotait — sur quatorze lignes en cours, quatorze pastilles
+               pulsant à contretemps rendaient la colonne illisible, et l'état « en cours »
+               moins repérable que les autres alors qu'il est le plus consulté. */
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[10px] font-medium border rounded-md px-1.5 py-0.5 bg-emerald-500/15 border-emerald-500/40 text-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" aria-hidden />
               {scraping ? 'Scraping…' : 'En cours…'}
             </span>
           ) : badge ? (

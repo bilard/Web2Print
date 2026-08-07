@@ -319,7 +319,7 @@ export function SourceSitesConfig({ config, onChange }: {
           <div className="flex flex-wrap justify-center items-center gap-1.5 pt-0.5">
             {liveCount > 0 && (
               <span className="inline-flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" aria-hidden />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" aria-hidden />
                 {filterPill('live', liveCount, 'ok', 'en cours')}
               </span>
             )}
