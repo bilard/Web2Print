@@ -22,18 +22,45 @@ export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch
 
   return (
     <div className="bg-surface rounded-lg p-4">
-      <div className="flex items-baseline justify-between mb-3">
+      <div className="flex items-baseline justify-between mb-1 gap-3 flex-wrap">
         <div className="text-sm font-semibold text-white">{t('pw.tail.gapByCompetitorFamily')}</div>
         <div className="text-[11px] text-white/35">{t('pw.chart.avgGap')}{ck.truncated ? t('pw.chart.onTop1000') : ''}</div>
+      </div>
+      {/* À quoi sert ce tableau : rien ne le disait, et une grille de nombres colorés sans
+          clé de lecture n'apprend rien à qui ne l'a pas conçue. */}
+      <p className="text-[11px] text-white/45 mb-2 max-w-[70ch]">{t('pw.heat.lead')}</p>
+      <div className="flex items-center gap-3 mb-3 text-[10px] text-white/40 flex-wrap">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: heatColor(-25) }} />
+          {t('pw.heat.legend.cheaper')}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-sm border border-white/10" style={{ backgroundColor: heatColor(0) }} />
+          {t('pw.heat.legend.aligned')}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: heatColor(25) }} />
+          {t('pw.heat.legend.dearer')}
+        </span>
+        <span className="text-white/25">·</span>
+        <span>{t('pw.heat.legend.click')}</span>
       </div>
       <div className="overflow-x-auto">
         <table className="border-separate border-spacing-0.5 text-xs tabular-nums">
           <thead>
             <tr>
               <th className="sticky left-0 bg-surface" />
+              {/* Familles écrites À LA VERTICALE : tronquées à 74 px, « ORIGINAL PARTS » et
+                  « F1 MTD NON STOCKÉ » se réduisaient au même « … » et ne se distinguaient
+                  plus. Verticales, elles tiennent en entier sans élargir les colonnes. */}
               {cols.map((f) => (
-                <th key={f} className="px-1 pb-1 text-white/45 text-[10px] font-medium align-bottom">
-                  <div className="max-w-[74px] truncate mx-auto text-center" title={f}>{f}</div>
+                <th key={f} className="px-0.5 pb-1 align-bottom">
+                  <div
+                    className="h-[104px] mx-auto text-white/55 text-[10px] font-medium whitespace-nowrap overflow-hidden text-ellipsis [writing-mode:vertical-rl] rotate-180"
+                    title={f}
+                  >
+                    {f}
+                  </div>
                 </th>
               ))}
             </tr>
