@@ -211,6 +211,18 @@ const MESSAGES = {
     fr: 'Créneau ouvert : envoi autorisé pour la période {key}.',
     en: 'Window open: sending allowed for period {key}.',
   },
+  'run.sendWindow.reason.day': {
+    fr: "Jour non retenu pour l'envoi ({day}).",
+    en: 'Day not selected for sending ({day}).',
+  },
+  'run.sendWindow.reason.time': {
+    fr: "Avant l'heure d'envoi ({time}, {tz}).",
+    en: 'Before the sending time ({time}, {tz}).',
+  },
+  'run.sendWindow.reason.period': {
+    fr: 'Déjà envoyé pour cette période ({key}).',
+    en: 'Already sent for this period ({key}).',
+  },
   'run.pwReport.noReport': {
     fr: "Aucun rapport pour le suivi « {watchId} » : lance « Comparer catalogue » avant d'envoyer le mail.",
     en: 'No report for monitoring "{watchId}": run "Compare catalogue" before sending the email.',

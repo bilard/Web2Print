@@ -16,7 +16,8 @@ import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import {
-  evaluateWindow, timeZoneForLocale, DEFAULT_SEND_WINDOW, type SendFrequency, type SendWindowConfig,
+  evaluateWindow, timeZoneForLocale, weekdayName, DEFAULT_SEND_WINDOW,
+  type SendFrequency, type SendWindowConfig, type WindowVerdict,
 } from '../runtime/sendWindow'
 import { describeWindow } from '../runtime/sendWindowLabels'
 import { t } from '@/lib/i18n'
@@ -41,6 +42,16 @@ const FREQUENCIES = [
 /** Chemin de la mémoire d'envoi. Une entrée par workflow et par clé de cadence. */
 const stateDoc = (uid: string, workflowId: string, key: string) =>
   `users/${uid}/sendWindows/${workflowId}__${key || 'default'}`
+
+/** La phrase du journal, dans la langue de l'utilisateur. Le moteur de créneau est pur :
+ *  il rend un code, la mise en mots appartient à qui connaît la langue. */
+function closedReason(v: WindowVerdict, cfg: SendWindowConfig, locale: string): string {
+  switch (v.closed?.code) {
+    case 'day': return t('run.sendWindow.reason.day', { day: weekdayName(v.closed.weekday, locale) })
+    case 'time': return t('run.sendWindow.reason.time', { time: cfg.atTime, tz: cfg.timeZone })
+    default: return t('run.sendWindow.reason.period', { key: v.key })
+  }
+}
 
 function toConfig(c: SendWindowNodeConfig): SendWindowConfig {
   const weekdays = String(c.weekdays ?? '')
@@ -86,7 +97,8 @@ const sendWindowNode: NodeSpec<SendWindowNodeConfig, { value: unknown }, { value
     if (!verdict.open) {
       // ⚠ `skip` et non une erreur : ne pas envoyer est le comportement NORMAL hors
       // créneau. Marquer le run en échec ferait sonner une alerte chaque demi-heure.
-      ctx.skip?.(t('run.sendWindow.closed', { reason: verdict.reason }))
+      const locale = useLocaleStore.getState().locale
+      ctx.skip?.(t('run.sendWindow.closed', { reason: closedReason(verdict, cfg, locale) }))
       return { value: undefined }
     }
     // Mémorisé AVANT de laisser passer : si l'envoi échoue en aval, mieux vaut un mail

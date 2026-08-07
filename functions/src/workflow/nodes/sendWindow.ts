@@ -6,9 +6,21 @@
 // — sinon le navigateur et le cron enverraient chacun le leur pour la même période.
 import { getFirestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
-import { evaluateWindow, timeZoneForLocale, DEFAULT_SEND_WINDOW, type SendFrequency, type SendWindowConfig } from '../sendWindow'
+import {
+  evaluateWindow, timeZoneForLocale, weekdayName, DEFAULT_SEND_WINDOW,
+  type SendFrequency, type SendWindowConfig, type WindowVerdict,
+} from '../sendWindow'
 import type { Locale } from '../../i18n'
 import { t } from '../../i18n'
+
+/** La phrase du journal, dans la langue de l'utilisateur — jumelle de celle du client. */
+function closedReason(v: WindowVerdict, cfg: SendWindowConfig, locale: Locale): string {
+  switch (v.closed?.code) {
+    case 'day': return t(locale, 'run.sendWindow.reason.day', { day: weekdayName(v.closed.weekday, locale) })
+    case 'time': return t(locale, 'run.sendWindow.reason.time', { time: cfg.atTime, tz: cfg.timeZone })
+    default: return t(locale, 'run.sendWindow.reason.period', { key: v.key })
+  }
+}
 
 function toConfig(c: Record<string, unknown>, locale: Locale): SendWindowConfig {
   const weekdays = String(c.weekdays ?? '')
@@ -32,12 +44,13 @@ registerServerNode({
     const snap = await ref.get().catch(() => null)
     const lastKey = (snap?.data()?.lastKey as string | undefined) ?? null
 
-    const verdict = evaluateWindow(new Date(), toConfig(config, ctx.locale), lastKey)
+    const cfg = toConfig(config, ctx.locale)
+    const verdict = evaluateWindow(new Date(), cfg, lastKey)
     if (!verdict.open) {
       // `skip` et non une erreur : hors créneau, ne rien envoyer est le comportement
       // NORMAL. Un run nocturne marqué en échec toutes les demi-heures ferait sonner une
       // alerte pour un fonctionnement correct.
-      ctx.skip?.(t(ctx.locale, 'run.sendWindow.closed', { reason: verdict.reason }))
+      ctx.skip?.(t(ctx.locale, 'run.sendWindow.closed', { reason: closedReason(verdict, cfg, ctx.locale) }))
       return { value: undefined }
     }
     // Mémorisé AVANT de laisser passer : mieux vaut un mail manqué qu'un mail en double.

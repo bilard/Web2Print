@@ -2,7 +2,7 @@
 // se testent donc sur des instants précis, dans un fuseau explicite — l'heure locale du
 // processus n'entre jamais en jeu, les Cloud Functions tournant en UTC.
 import { describe, it, expect } from 'vitest'
-import { evaluateWindow, periodKey, timeZoneForLocale, DEFAULT_SEND_WINDOW, type SendWindowConfig } from './sendWindow'
+import { evaluateWindow, periodKey, timeZoneForLocale, weekdayName, DEFAULT_SEND_WINDOW, type SendWindowConfig } from './sendWindow'
 import { describeWindow } from './sendWindowLabels'
 
 const cfg = (patch: Partial<SendWindowConfig> = {}): SendWindowConfig => ({ ...DEFAULT_SEND_WINDOW, ...patch })
@@ -21,14 +21,20 @@ describe('fenêtre d’envoi', () => {
     // UTC, ce run serait passé — c'est exactement l'erreur que le fuseau évite.
     const v = evaluateWindow(paris('2026-08-10T05:30:00Z'), cfg({ atTime: '08:00' }), null)
     expect(v.open).toBe(false)
-    expect(v.reason).toContain('08:00')
+    expect(v.closed?.code).toBe('time')
   })
 
   it('refuse un jour non retenu', () => {
     // 2026-08-09 = dimanche.
     const v = evaluateWindow(paris('2026-08-09T10:00:00Z'), cfg({ weekdays: [1, 2, 3, 4, 5] }), null)
     expect(v.open).toBe(false)
-    expect(v.reason).toContain('dimanche')
+    expect(v.closed?.code).toBe('day')
+    // Le jour est rendu en NUMÉRO, pas en français : le moteur est pur et dupliqué côté
+    // serveur — c'est l'appelant, qui connaît la langue, qui en fait une phrase.
+    expect(v.closed?.weekday).toBe(0)
+    expect(weekdayName(0, 'fr')).toBe('dimanche')
+    expect(weekdayName(0, 'en')).toBe('Sunday')
+    expect(weekdayName(1, 'es')).toBe('lunes')
   })
 
   it('n’envoie qu’UNE fois par période, quel que soit le nombre de runs', () => {
@@ -38,7 +44,7 @@ describe('fenêtre d’envoi', () => {
     // Deuxième run du même jour : même clé de période → rien à faire.
     const second = evaluateWindow(paris('2026-08-10T09:00:00Z'), cfg(), first.key)
     expect(second.open).toBe(false)
-    expect(second.reason).toContain('Déjà envoyé')
+    expect(second.closed?.code).toBe('period')
     // Lendemain : nouvelle période, l'envoi repart.
     expect(evaluateWindow(paris('2026-08-11T07:00:00Z'), cfg(), first.key).open).toBe(true)
   })

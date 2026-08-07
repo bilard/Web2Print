@@ -96,11 +96,15 @@ export function periodKey(at: Date, cfg: SendWindowConfig): string {
   }
 }
 
+/** Ce qui a fermé le créneau. Un CODE, pas une phrase : ce module est pur et dupliqué
+ *  côté functions, il ne connaît ni la langue de l'utilisateur ni les catalogues. */
+type WindowClosedCode = 'day' | 'time' | 'period'
+
 export interface WindowVerdict {
   /** L'envoi peut avoir lieu maintenant. */
   open: boolean
-  /** Pourquoi il n'a pas lieu — affiché tel quel dans le journal du run. */
-  reason: string
+  /** Renseigné SEULEMENT quand l'envoi n'a pas lieu — l'appelant en fait une phrase. */
+  closed?: { code: WindowClosedCode; weekday: number }
   /** Clé de période à mémoriser après un envoi réussi. */
   key: string
 }
@@ -114,23 +118,26 @@ export interface WindowVerdict {
 export function evaluateWindow(at: Date, cfg: SendWindowConfig, lastKey: string | null): WindowVerdict {
   const p = zonedParts(at, cfg.timeZone)
   const key = periodKey(at, cfg)
+  const no = (code: WindowClosedCode): WindowVerdict => ({ open: false, key, closed: { code, weekday: p.weekday } })
 
-  if (cfg.weekdays.length > 0 && !cfg.weekdays.includes(p.weekday)) {
-    return { open: false, key, reason: `Jour non retenu pour l'envoi (${dayName(p.weekday)}).` }
-  }
+  if (cfg.weekdays.length > 0 && !cfg.weekdays.includes(p.weekday)) return no('day')
   const [h, m] = (cfg.atTime || '').split(':').map((v) => Number(v))
   if (Number.isFinite(h)) {
     const minutesNow = p.hour * 60 + p.minute
     const minutesTarget = h * 60 + (Number.isFinite(m) ? m : 0)
-    if (minutesNow < minutesTarget) {
-      return { open: false, key, reason: `Avant l'heure d'envoi (${cfg.atTime}, ${cfg.timeZone}).` }
-    }
+    if (minutesNow < minutesTarget) return no('time')
   }
-  if (lastKey != null && lastKey === key) {
-    return { open: false, key, reason: `Déjà envoyé pour cette période (${key}).` }
-  }
-  return { open: true, key, reason: '' }
+  if (lastKey != null && lastKey === key) return no('period')
+  return { open: true, key }
 }
 
-const DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
-function dayName(d: number): string { return DAYS[d] ?? String(d) }
+/**
+ * Nom du jour dans la langue demandée. `Intl` plutôt qu'un catalogue : un nom de jour est
+ * une donnée de LOCALE, pas un libellé applicatif — et le module reste pur, donc copiable
+ * verbatim côté serveur, où aucun catalogue d'interface n'existe.
+ */
+export function weekdayName(weekday: number, locale: string): string {
+  // 2024-01-07 est un dimanche : + weekday donne le bon jour, quelle que soit l'année.
+  const d = new Date(Date.UTC(2024, 0, 7 + (((weekday % 7) + 7) % 7)))
+  return new Intl.DateTimeFormat(locale || 'fr', { weekday: 'long', timeZone: 'UTC' }).format(d)
+}
