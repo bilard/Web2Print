@@ -13,7 +13,7 @@ import { CalendarCheck } from 'lucide-react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { nodeRegistry } from './index'
-import type { NodeSpec } from '../types'
+import type { ConfigField, NodeSpec } from '../types'
 import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import {
   evaluateWindow, timeZoneForLocale, weekdayName, DEFAULT_SEND_WINDOW,
@@ -32,12 +32,17 @@ interface SendWindowNodeConfig {
   key: string
 }
 
-const FREQUENCIES = [
-  { value: 'always', label: 'À chaque run (dans le créneau)' },
-  { value: 'daily', label: 'Une fois par jour' },
-  { value: 'weekly', label: 'Une fois par semaine' },
-  { value: 'monthly', label: 'Une fois par mois' },
+const FREQUENCIES: ConfigField['options'] = [
+  { value: 'always', labelKey: 'node.send-window.freq.always' },
+  { value: 'daily', labelKey: 'node.send-window.freq.daily' },
+  { value: 'weekly', labelKey: 'node.send-window.freq.weekly' },
+  { value: 'monthly', labelKey: 'node.send-window.freq.monthly' },
 ]
+
+// « À chaque run » ne retient RIEN : ni jour, ni heure. Les deux champs sont donc grisés,
+// et — c'est le point — ils cessent aussi d'AGIR. Un champ grisé qui continue de filtrer
+// serait pire que pas de grisage du tout.
+const noWindow = (c: Record<string, unknown>) => c.frequency === 'always'
 
 /** Chemin de la mémoire d'envoi. Une entrée par workflow et par clé de cadence. */
 const stateDoc = (uid: string, workflowId: string, key: string) =>
@@ -77,8 +82,10 @@ const sendWindowNode: NodeSpec<SendWindowNodeConfig, { value: unknown }, { value
   outputs: [{ name: 'value', type: 'any' }],
   configSchema: [
     { name: 'frequency', kind: 'select', labelKey: 'node.send-window.freq.label', options: FREQUENCIES, default: 'daily' },
-    { name: 'atTime', kind: 'time', labelKey: 'node.send-window.atTime.label', helpKey: 'node.send-window.atTime.help' },
-    { name: 'weekdays', kind: 'weekdays', labelKey: 'node.send-window.weekdays.label', helpKey: 'node.send-window.weekdays.help' },
+    { name: 'atTime', kind: 'time', labelKey: 'node.send-window.atTime.label', helpKey: 'node.send-window.atTime.help',
+      disabledWhen: noWindow, disabledNoteKey: 'node.send-window.freq.noWindow' },
+    { name: 'weekdays', kind: 'weekdays', labelKey: 'node.send-window.weekdays.label', helpKey: 'node.send-window.weekdays.help',
+      disabledWhen: noWindow, disabledNoteKey: 'node.send-window.freq.noWindow' },
     { name: 'key', kind: 'text', labelKey: 'node.send-window.key.label', helpKey: 'node.send-window.key.help' },
   ],
   defaultConfig: {

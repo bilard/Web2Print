@@ -92,4 +92,13 @@ describe('fenêtre d’envoi', () => {
     expect(timeZoneForLocale('de')).toBe(DEFAULT_SEND_WINDOW.timeZone)
     expect(timeZoneForLocale('')).toBe(DEFAULT_SEND_WINDOW.timeZone)
   })
+
+  it('« à chaque run » ne retient RIEN — ni jour, ni heure', () => {
+    // L'écran grise les deux champs dans ce mode : ils doivent aussi cesser d'AGIR,
+    // sinon un réglage grisé continuerait de filtrer en douce.
+    const c = cfg({ frequency: 'always', weekdays: [1], atTime: '23:00' })
+    // Dimanche, 07:30 à Paris : jour non retenu ET avant l'heure — et pourtant ouvert.
+    expect(evaluateWindow(paris('2026-08-09T05:30:00Z'), c, null).open).toBe(true)
+    expect(describeWindow(c)).toBe('À chaque run')
+  })
 })

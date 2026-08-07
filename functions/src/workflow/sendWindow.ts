@@ -121,6 +121,10 @@ export interface WindowVerdict {
 export function evaluateWindow(at: Date, cfg: SendWindowConfig, lastKey: string | null): WindowVerdict {
   const p = zonedParts(at, cfg.timeZone)
   const key = periodKey(at, cfg)
+  // « À chaque run » ne retient RIEN : ni jour, ni heure, ni période. C'est ce que
+  // l'intitulé promet, et l'écran grise les deux champs en conséquence — un réglage
+  // grisé qui filtrerait quand même serait un piège.
+  if (cfg.frequency === 'always') return { open: true, key }
   const no = (code: WindowClosedCode): WindowVerdict => ({ open: false, key, closed: { code, weekday: p.weekday } })
 
   if (cfg.weekdays.length > 0 && !cfg.weekdays.includes(p.weekday)) return no('day')

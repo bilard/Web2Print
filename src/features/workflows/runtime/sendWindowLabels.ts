@@ -39,6 +39,9 @@ function describeDays(weekdays: number[]): string {
  * *déclenchent* pas l'envoi, ils l'AUTORISENT — le mois part au premier d'entre eux.
  */
 export function describeWindow(cfg: SendWindowConfig): string {
+  // « À chaque run » ne retient ni jour ni heure : les mentionner décrirait un filtrage
+  // qui n'a pas lieu, alors même que l'écran grise les deux champs.
+  if (cfg.frequency === 'always') return t(FREQ_KEYS.always)
   const parts = [
     cfg.frequency === 'weekly' || cfg.frequency === 'monthly' ? t('sendWindow.firstPass') : '',
     describeDays(cfg.weekdays),
