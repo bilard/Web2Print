@@ -13,7 +13,7 @@ import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
 import { reportFromPairing } from '../../priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '../../priceWatch/reportStore'
-import { matrixFromPairing, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
+import { matrixFromPairing, SITE_FIELDS, type SiteField, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '../../priceWatch/catalog/match'
 import { createPairingRun } from '../../priceWatch/catalog/pairingRun'
 import { pickDisplayColumns, taxoPathOf, trimDescription } from '../../priceWatch/catalog/displayColumns'
@@ -175,7 +175,15 @@ registerServerNode({
     // En-têtes de sortie = noms de colonnes de la source (suffixés du concurrent).
     const labels = { ref: refColumn, ean: eanColumn, name: nameColumn, family: familyColumn, price: priceColumn }
     // Plus de passe d'appariement : elle a eu lieu site par site, pendant la lecture.
-    const m = matrixFromPairing(sourceProducts, siteRefs, pairing, { labels })
+    // Champs retenus par concurrent (jumeau du client) : vide = tous.
+    const picked = String(config.siteFields ?? '').split(',').map((v) => v.trim()).filter(Boolean)
+    const siteFields = picked.length > 0 ? new Set(picked as SiteField[]) : undefined
+    if (siteFields) {
+      ctx.log('info', t(ctx.locale, 'run.compareCatalog.siteFields', {
+        kept: siteFields.size, total: SITE_FIELDS.length, columns: siteFields.size * siteRefs.length,
+      }))
+    }
+    const m = matrixFromPairing(sourceProducts, siteRefs, pairing, { labels, siteFields })
     ctx.log('info', t(ctx.locale, 'run.compareCatalog.matchedBreakdown', {
       matched: m.matched, exact: m.matchedExact, originOnly: m.matchedOriginOnly,
       unmatched: m.unmatched, noKey: m.noKey,

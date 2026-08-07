@@ -215,6 +215,10 @@ const MESSAGES = {
     fr: 'Rapport rendu : {products} produits appariés, {sites} concurrent(s), {size} Ko.',
     en: 'Report rendered: {products} matched products, {sites} competitor(s), {size} kB.',
   },
+  'run.compareCatalog.siteFields': {
+    fr: '{kept}/{total} champs retenus par concurrent — {columns} colonnes de comparaison.',
+    en: '{kept}/{total} fields kept per competitor — {columns} comparison columns.',
+  },
   'run.compareCatalog.taxoColumns': {
     fr: 'Taxonomie : {list}',
     en: 'Taxonomy: {list}',

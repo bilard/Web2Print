@@ -105,8 +105,42 @@ function ColumnListField({ value, onChange, columns = [] }: FieldProps) {
   )
 }
 
+/**
+ * Choix multiple parmi des options fixes. Stocké en « a,b,c » : lisible dans la config
+ * sauvegardée, et un réglage qu'on peut relire sans outil.
+ *
+ * ⚠ Une valeur VIDE vaut « tout » côté node, jamais « rien » : un champ jamais touché ne
+ * doit pas vider silencieusement l'export de la moitié de ses colonnes.
+ */
+function MultiSelectField({ field, value, onChange }: FieldProps) {
+  const opts = field.options ?? []
+  const raw = String(value ?? '').trim()
+  const selected = raw ? new Set(raw.split(',').map((v) => v.trim()).filter(Boolean)) : new Set(opts.map((o) => o.value))
+  const toggle = (v: string) => {
+    const next = new Set(selected)
+    if (next.has(v)) next.delete(v)
+    else next.add(v)
+    // On réécrit dans l'ORDRE des options, pas dans l'ordre des clics : c'est celui des
+    // colonnes produites, et une config qui le respecte se relit sans surprise.
+    onChange(opts.filter((o) => next.has(o.value)).map((o) => o.value).join(','))
+  }
+  return (
+    <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+      {opts.map((o) => (
+        <label key={o.value} className="flex items-center gap-1.5 text-[11px] text-white/70 cursor-pointer">
+          <input type="checkbox" checked={selected.has(o.value)} onChange={() => toggle(o.value)}
+            className="accent-indigo-500" />
+          <span className="truncate">{o.labelKey ? t(o.labelKey) : o.label}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
 export function ConfigFieldRenderer({ field, value, onChange, columns }: FieldProps) {
   switch (field.kind) {
+    case 'multiSelect':
+      return <MultiSelectField field={field} value={value} onChange={onChange} />
     case 'columnRef':
       return <ColumnField field={field} value={value} onChange={onChange} columns={columns} />
     case 'columnList':

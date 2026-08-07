@@ -20,6 +20,8 @@ type ConfigFieldKind =
   | 'columnRef'
   /** Plusieurs colonnes ORDONNÉES, stockées en une chaîne « A > B > C ». */
   | 'columnList'
+  /** Choix MULTIPLE parmi des options fixes (cases à cocher), stocké « a,b,c ». */
+  | 'multiSelect'
 
 export interface ConfigField {
   name: string

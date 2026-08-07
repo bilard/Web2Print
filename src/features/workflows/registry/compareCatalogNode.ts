@@ -11,7 +11,7 @@ import type { ExcelSheet, ExcelColumn, ExcelRow } from '@/features/excel/types'
 import { parsePrice, stableId, cell } from '@/features/priceWatch/core'
 import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
-import { matrixFromPairing, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
+import { matrixFromPairing, SITE_FIELDS, type SiteField, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
 import { createPairingRun } from '@/features/priceWatch/catalog/pairingRun'
 import { reportFromPairing } from '@/features/priceWatch/catalog/report'
@@ -35,6 +35,8 @@ interface CompareConfig {
   urlColumn: string
   /** Niveaux de taxonomie, du plus large au plus fin, séparés par `>`. Vide = détection. */
   taxoColumns: string
+  /** Champs exportés par concurrent (« nom,prix_ttc,… »). Vide = tous. */
+  siteFields: string
   vatRate: number
 }
 interface CompareInputs { products?: ExcelSheet; harvest?: unknown; sites?: unknown }
@@ -96,6 +98,11 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     { name: 'descriptionColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.descriptionColumn.label', helpKey: 'node.compare-catalog.descriptionColumn.help' },
     { name: 'urlColumn', kind: 'columnRef', labelKey: 'node.compare-catalog.urlColumn.label', helpKey: 'node.compare-catalog.urlColumn.help' },
     { name: 'taxoColumns', kind: 'columnList', labelKey: 'node.compare-catalog.taxoColumns.label', helpKey: 'node.compare-catalog.taxoColumns.help' },
+    {
+      name: 'siteFields', kind: 'multiSelect',
+      labelKey: 'node.compare-catalog.siteFields.label', helpKey: 'node.compare-catalog.siteFields.help',
+      options: SITE_FIELDS.map((f) => ({ value: f.value, label: f.label })),
+    },
     { name: 'vatRate', kind: 'number', labelKey: 'node.compare-catalog.vatRate.label', helpKey: 'node.compare-catalog.vatRate.help' },
     {
       name: 'watchId', kind: 'text', labelKey: 'node.compare-catalog.watchId.label', helpKey: 'node.compare-catalog.watchId.help',
@@ -108,7 +115,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     watchId: '', label: '', sites: '', vatRate: 20,
     refColumn: 'reference', ref2Column: '', eanColumn: 'ean', nameColumn: 'name',
     familyColumn: 'family', priceColumn: 'price', descriptionColumn: 'description', urlColumn: '',
-    taxoColumns: '',
+    taxoColumns: '', siteFields: '',
   },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
@@ -286,7 +293,16 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // pendant, et le silence qui suivait passait pour un plantage.
     // Plus de « passe d'appariement » : elle a eu lieu site par site, pendant la lecture.
     // Il ne reste qu'à assembler — la matrice et le rapport lisent les MÊMES cellules.
-    const m = matrixFromPairing(products, siteRefs, pairing, { labels })
+    // Champs retenus par concurrent : à quatorze sites, neuf colonnes chacun font 126
+    // colonnes dont la plupart ne sont jamais lues. Vide = tous (réglage jamais touché).
+    const picked = (config.siteFields ?? '').split(',').map((v) => v.trim()).filter(Boolean)
+    const siteFields = picked.length > 0 ? new Set(picked as SiteField[]) : undefined
+    if (siteFields) {
+      ctx.log('info', t('run.compareCatalog.siteFields', {
+        kept: siteFields.size, total: SITE_FIELDS.length, columns: siteFields.size * siteRefs.length,
+      }))
+    }
+    const m = matrixFromPairing(products, siteRefs, pairing, { labels, siteFields })
     mark('matrice — assemblée')
     ctx.setProgress?.(75)
     ctx.reportCount?.(m.matched)

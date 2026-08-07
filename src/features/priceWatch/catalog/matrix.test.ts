@@ -132,3 +132,28 @@ describe('buildMatrix', () => {
     expect(adapt.match_pro_motoculture_com).toBe('Pièce d’origine')
   })
 })
+
+describe('champs exportés par concurrent', () => {
+  it('sans réglage, TOUS les champs sortent', () => {
+    const keys = buildMatrix(products, sites, index).columns.map((c) => c.key)
+    for (const f of ['nom', 'prix_ttc', 'prix_ht', 'prix_barre', 'ecart', 'stock', 'match', 'image', 'url']) {
+      expect(keys).toContain(`${f}_pro_motoculture_com`)
+    }
+  })
+
+  it('ne garde que les champs cochés, colonne de tête comprise', () => {
+    const m = buildMatrix(products, sites, index, {
+      siteFields: new Set(['prix_ttc', 'ecart'] as const),
+    })
+    const keys = m.columns.map((c) => c.key)
+    // La colonne de TÊTE reste : elle nomme le bloc et sépare deux concurrents — sans
+    // elle, Google Sheets fusionnerait les groupes voisins.
+    expect(keys).toContain('bloc_pro_motoculture_com')
+    expect(keys).toContain('prix_ttc_pro_motoculture_com')
+    expect(keys).toContain('ecart_pro_motoculture_com')
+    expect(keys).not.toContain('image_pro_motoculture_com')
+    expect(keys).not.toContain('url_pro_motoculture_com')
+    // 5 communes + 2 sites × (1 colonne de tête + 2 champs) = 11
+    expect(m.columns).toHaveLength(5 + 2 * 3)
+  })
+})

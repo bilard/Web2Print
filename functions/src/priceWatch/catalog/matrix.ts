@@ -92,7 +92,23 @@ function baseColumns(labels: SourceLabels): MatrixColumn[] {
  * Le domaine en suffixe permet de VÉRIFIER d'un coup d'œil que l'appariement (fait par
  * égalité exacte de clé) porte sur le bon produit.
  */
-function siteColumns(domain: string): MatrixColumn[] {
+/** Champs qu'un bloc concurrent peut porter, dans l'ordre où ils sortent. Exposé : le
+ *  node en fait ses cases à cocher, et les deux listes ne doivent jamais diverger. */
+export const SITE_FIELDS = [
+  { value: 'nom', label: 'Libellé' },
+  { value: 'prix_ttc', label: 'Prix TTC' },
+  { value: 'prix_ht', label: 'Prix HT' },
+  { value: 'prix_barre', label: 'Prix barré TTC' },
+  { value: 'ecart', label: 'Écart %' },
+  { value: 'stock', label: 'Stock' },
+  { value: 'match', label: 'Correspondance' },
+  { value: 'image', label: 'Image' },
+  { value: 'url', label: 'Lien' },
+] as const
+
+export type SiteField = typeof SITE_FIELDS[number]['value']
+
+function siteColumns(domain: string, fields?: Set<SiteField>): MatrixColumn[] {
   const s = domain.replace(/[^a-z0-9]+/gi, '_')
   // ⚠️ Ces colonnes DOIVENT rester contiguës : l'export les replie comme un
   // groupe unique, et un groupe Google Sheets est une plage, pas une sélection.
@@ -107,15 +123,20 @@ function siteColumns(domain: string): MatrixColumn[] {
     // fusionne les groupes adjacents de même niveau, et sans elle les quatorze concurrents
     // n'en formaient qu'un — et c'est elle qu'on lit quand le bloc est replié.
     { key: `bloc_${s}`, label: domain, kind: 'text' },
-    { key: `nom_${s}`, label: 'Libellé', kind: 'text', group: g },
-    { key: `prix_ttc_${s}`, label: 'Prix TTC', kind: 'price', group: g },
-    { key: `prix_ht_${s}`, label: 'Prix HT', kind: 'price', group: g },
-    { key: `prix_barre_${s}`, label: 'Prix barré TTC', kind: 'price', group: g },
-    { key: `ecart_${s}`, label: 'Écart %', kind: 'percent', group: g },
-    { key: `stock_${s}`, label: 'Stock', kind: 'text', group: g },
-    { key: `match_${s}`, label: 'Correspondance', kind: 'text', group: g },
-    { key: `image_${s}`, label: 'Image', kind: 'text', group: g },
-    { key: `url_${s}`, label: 'Lien', kind: 'text', group: g },
+    ...([
+      { f: 'nom', key: `nom_${s}`, label: 'Libellé', kind: 'text' },
+      { f: 'prix_ttc', key: `prix_ttc_${s}`, label: 'Prix TTC', kind: 'price' },
+      { f: 'prix_ht', key: `prix_ht_${s}`, label: 'Prix HT', kind: 'price' },
+      { f: 'prix_barre', key: `prix_barre_${s}`, label: 'Prix barré TTC', kind: 'price' },
+      { f: 'ecart', key: `ecart_${s}`, label: 'Écart %', kind: 'percent' },
+      { f: 'stock', key: `stock_${s}`, label: 'Stock', kind: 'text' },
+      { f: 'match', key: `match_${s}`, label: 'Correspondance', kind: 'text' },
+      { f: 'image', key: `image_${s}`, label: 'Image', kind: 'text' },
+      { f: 'url', key: `url_${s}`, label: 'Lien', kind: 'text' },
+    ] as { f: SiteField; key: string; label: string; kind: MatrixColumn['kind'] }[])
+      // Sans sélection, TOUT sort : un réglage jamais touché ne doit pas amputer l'export.
+      .filter((c) => !fields || fields.has(c.f))
+      .map(({ key, label, kind }) => ({ key, label, kind, group: g })),
   ]
 }
 
@@ -134,6 +155,8 @@ export interface BuildMatrixOptions {
   labels?: SourceLabels
   /** Appariement déjà réalisé (site par site). Sans lui, il est rejoué ici. */
   pairing?: PairingRun
+  /** Champs retenus par concurrent. Absent = tous — cf. `SITE_FIELDS`. */
+  siteFields?: Set<SiteField>
 }
 
 /**
@@ -165,7 +188,7 @@ export function matrixFromPairing(
 ): MatrixResult {
   const matchedOnly = opts.matchedOnly ?? true
   const labels = opts.labels ?? {}
-  const columns = [...baseColumns(labels), ...sites.flatMap((s) => siteColumns(s.domain))]
+  const columns = [...baseColumns(labels), ...sites.flatMap((s) => siteColumns(s.domain, opts.siteFields))]
 
   const rows: Record<string, unknown>[] = []
   let matched = 0, matchedExact = 0, matchedOriginOnly = 0, unmatched = 0, noKey = 0
