@@ -170,6 +170,15 @@ export interface RunContextApi {
   /** Remonte un compteur live (ex. nombre de produits scrapés) — affiché sur l'edge sortant. */
   reportCount?: (value: number) => void
   /**
+   * Suspend ce node ET tout ce qui en dépend, sans erreur.
+   *
+   * Le run reste vert : rien n'a échoué, il n'y avait simplement pas lieu d'agir. C'est
+   * ce qui manquait pour cadencer un envoi — un workflow qui tourne toutes les trente
+   * minutes ne doit pas poster quarante-huit mails, mais son run n'est pas en faute pour
+   * autant. La propagation aux nodes suivants est celle, existante, du statut `skipped`.
+   */
+  skip?: (reason: string) => void
+  /**
    * Persiste une mise à jour PARTIELLE de la config du node (fusionnée + autosave).
    * Ex. : un export qui crée un fichier mémorise son ID pour mettre à jour LE MÊME
    * fichier aux runs suivants. Optionnel : absent en exécution headless (cron).

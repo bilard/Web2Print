@@ -34,6 +34,12 @@ export interface ServerRunCtx {
    *  le scheduler bascule alors sur l'échéance calendaire de relance (cf. CycleCalendar)
    *  au lieu d'enchaîner à la cadence rapide. */
   reportCycleComplete?: () => void
+  /**
+   * Suspend ce node ET son aval, sans erreur — jumeau de `ctx.skip` côté client.
+   * Hors créneau d'envoi, ne rien faire est le comportement NORMAL : marquer le run en
+   * échec toutes les demi-heures ferait sonner une alerte pour un fonctionnement correct.
+   */
+  skip?: (reason: string) => void
   /** Échéance (epoch ms) à laquelle les nodes À CURSEUR (moisson, recherche dirigée)
    *  doivent rendre la main pour laisser leur fenêtre aux nodes AVAL (Comparer, exports).
    *  Sans elle, la moisson consomme tout le budget du run et le comparatif — dernier du

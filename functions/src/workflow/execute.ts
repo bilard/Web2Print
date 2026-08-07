@@ -244,9 +244,13 @@ export async function executeWorkflowHeadless(
       }
       const ctx = buildInterpolationContext(inputs)
       const cfg = interpolate(node.config, ctx) as Record<string, unknown>
+      // Un node peut demander à être SAUTÉ : le drapeau est lu juste après `run()`, et le
+      // node rejoint alors `skipped` — la propagation à l'aval existe déjà.
+      let skipReason: string | null = null
       const result = await spec.run(
         {
           uid: opts.uid,
+          skip: (reason: string) => { skipReason = reason },
           locale,
           signal: opts.signal,
           workflowId: wf.id,
@@ -262,6 +266,11 @@ export async function executeWorkflowHeadless(
         },
         cfg, inputs,
       )
+      if (skipReason != null) {
+        skipped.add(node.id)
+        log('info', skipReason, node.id)
+        return
+      }
       outputs.set(node.id, result ?? {})
       nodeOutputs[node.id] = result ?? {}
       nodeCount++

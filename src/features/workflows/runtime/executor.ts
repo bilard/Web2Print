@@ -423,8 +423,13 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
         }
       }
 
+      // Un node peut demander à être SAUTÉ (cf. `ctx.skip`) : le drapeau est lu juste
+      // après `run()`, et le node rejoint alors l'ensemble `skipped` — la propagation à
+      // l'aval est celle qui existe déjà pour les amonts sautés.
+      let skipReason: string | null = null
       const ctxApi: RunContextApi = {
         signal: ac.signal,
+        skip: (reason) => { skipReason = reason },
         workflowId: wf.id,
         workflowName: wf.name,
         log: (level, msg) => useRunContext.getState().appendLog(node.id, level, msg),
@@ -491,6 +496,12 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
           // Si Stop a été cliqué pendant l'exécution, ce node a été abandonné par la
           // boucle : ne pas réécrire son état (resté « arrêté »).
           if (ac.signal.aborted) return
+          if (skipReason != null) {
+            skipped.add(node.id)
+            useRunContext.getState().appendLog(node.id, 'info', skipReason)
+            useRunContext.getState().setNodeStatus(node.id, 'skipped')
+            return
+          }
           outputs.set(node.id, result ?? {})
           useRunContext.getState().setNodeOutputs(node.id, result ?? {})
           useRunContext.getState().endNode(node.id, 'success')

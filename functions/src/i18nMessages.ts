@@ -195,6 +195,14 @@ const MESSAGES = {
     fr: 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
     en: 'Competitor index empty for the {sites} site(s) under the "{watchId}" monitoring. Check that the "Harvest competitors" node uses the SAME monitoring identifier ("{watchId}") and that it ran first.',
   },
+  'run.sendWindow.closed': {
+    fr: 'Envoi suspendu — {reason}',
+    en: 'Send suspended — {reason}',
+  },
+  'run.sendWindow.open': {
+    fr: 'Créneau ouvert : envoi autorisé pour la période {key}.',
+    en: 'Window open: sending allowed for period {key}.',
+  },
   'run.pwReport.noReport': {
     fr: "Aucun rapport pour le suivi « {watchId} » : lance « Comparer catalogue » avant d'envoyer le mail.",
     en: 'No report for monitoring "{watchId}": run "Compare catalogue" before sending the email.',

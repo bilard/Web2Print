@@ -1,0 +1,44 @@
+// functions/src/workflow/nodes/sendWindow.ts
+// Jumeau SERVEUR du node « Cadence d'envoi ». C'est LE cas d'usage : le cron passe toutes
+// les demi-heures, et seul ce node décide qu'un mail part le lundi à 8 h.
+//
+// ⚠ La mémoire du dernier envoi est la MÊME que celle du client (users/{uid}/sendWindows)
+// — sinon le navigateur et le cron enverraient chacun le leur pour la même période.
+import { getFirestore } from 'firebase-admin/firestore'
+import { registerServerNode } from '../registry'
+import { evaluateWindow, DEFAULT_SEND_WINDOW, type SendFrequency, type SendWindowConfig } from '../sendWindow'
+import { t } from '../../i18n'
+
+function toConfig(c: Record<string, unknown>): SendWindowConfig {
+  const weekdays = String(c.weekdays ?? '')
+    .split(/[,\s]+/).map((v) => Number(v)).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+  return {
+    frequency: (String(c.frequency ?? '') || DEFAULT_SEND_WINDOW.frequency) as SendFrequency,
+    atTime: String(c.atTime ?? '').trim(),
+    weekdays,
+    timeZone: String(c.timeZone ?? '').trim() || DEFAULT_SEND_WINDOW.timeZone,
+  }
+}
+
+registerServerNode({
+  type: 'send-window',
+  run: async (ctx, config, inputs) => {
+    const key = String(config.key ?? '') || 'default'
+    const ref = getFirestore().doc(`users/${ctx.uid}/sendWindows/${ctx.workflowId || 'wf'}__${key}`)
+    const snap = await ref.get().catch(() => null)
+    const lastKey = (snap?.data()?.lastKey as string | undefined) ?? null
+
+    const verdict = evaluateWindow(new Date(), toConfig(config), lastKey)
+    if (!verdict.open) {
+      // `skip` et non une erreur : hors créneau, ne rien envoyer est le comportement
+      // NORMAL. Un run nocturne marqué en échec toutes les demi-heures ferait sonner une
+      // alerte pour un fonctionnement correct.
+      ctx.skip?.(t(ctx.locale, 'run.sendWindow.closed', { reason: verdict.reason }))
+      return { value: undefined }
+    }
+    // Mémorisé AVANT de laisser passer : mieux vaut un mail manqué qu'un mail en double.
+    await ref.set({ lastKey: verdict.key, at: Date.now() }, { merge: true }).catch(() => {})
+    ctx.log('info', t(ctx.locale, 'run.sendWindow.open', { key: verdict.key }))
+    return { value: inputs.value }
+  },
+})
