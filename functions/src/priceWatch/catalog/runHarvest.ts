@@ -5,7 +5,7 @@
 // Une passe consomme un budget borné de pages puis rend la main : le curseur persiste,
 // le tick suivant reprend. Jamais de balayage complet en un run (cf. audit : budget
 // ~500 s, le node DOIT se terminer pour que le checkpoint survive).
-import { parseListingPage, nextListingUrl, pageUrl } from './prestashop'
+import { parseListingPage, nextListingUrl, pageUrl, detectCatalogMode } from './prestashop'
 import { parseListingGeneric } from './genericListing'
 import { parseListingDomCards } from './genericCards'
 import { extractCategoryLinks, selectCategories, keywordsForFamilies } from './categories'
@@ -234,6 +234,8 @@ export async function harvestPass(
 
   let pagesFetched = 0
   let productsIndexed = 0
+  // Dit une seule fois par passe : le signal est une propriété de la boutique.
+  let catalogModeSeen = false
 
   for (let i = 0; i < pageBudget; i++) {
     if (deps.signal?.aborted) break
@@ -257,6 +259,12 @@ export async function harvestPass(
     let signature: string | undefined
 
     if (html) {
+      // ⚠ Marchand qui NE PUBLIE PAS ses prix (mode catalogue) : sans ce signal, un tel
+      // site se lit comme une panne de scraping — des milliers de fiches, aucun prix.
+      if (!catalogModeSeen && detectCatalogMode(html)) {
+        catalogModeSeen = true
+        deps.log?.(t(deps.locale ?? 'fr', 'run.harvest.catalogMode', { domain: cfg.domain }))
+      }
       // Extraction en cascade : PrestaShop 1.7 (rapide) → JSON-LD ItemList → microdata/
       // cartes DOM génériques (garde-fous stricts : [] plutôt qu'un prix douteux).
       const products = extractListingProducts(html, url)

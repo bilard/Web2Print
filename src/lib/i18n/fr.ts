@@ -2305,6 +2305,7 @@ export const fr = {
   'run.harvest.listReceivedSkipped': 'Liste reçue du node « Sites sources » : {count} site(s) à moissonner ({skipped} en recherche dirigée seule).',
   'run.harvest.directedOnly': '{skipped} site(s) en recherche dirigée seule — non moissonné(s).',
   'run.harvest.familiesRead': '{count} famille(s) lues dans la colonne « {column} ».',
+  'run.harvest.catalogMode': "{domain} : boutique en mode CATALOGUE — elle ne publie aucun prix, à personne. Les fiches sont relevées (utile pour savoir ce qu'elle référence), mais aucun écart ne pourra être calculé. Mets-la en pause si tu ne veux pas y consacrer de budget de moisson.",
   'run.harvest.newCycle': 'Nouveau cycle : réouverture des balayages de tous les sites.',
   'run.harvest.siteSweepDone': '{domain} : balayage terminé — en attente de la fin du cycle.',
   'run.harvest.siteAuth': '{domain} : accès authentifié (login cookie).',

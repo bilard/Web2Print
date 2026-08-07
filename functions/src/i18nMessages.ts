@@ -98,6 +98,10 @@ const MESSAGES = {
     fr: '{count} famille(s) lues dans la colonne « {column} ».',
     en: '{count} family/families read from the "{column}" column.',
   },
+  'run.harvest.catalogMode': {
+    fr: "{domain} : boutique en mode CATALOGUE — elle ne publie aucun prix, à personne. Les fiches sont relevées (utile pour savoir ce qu'elle référence), mais aucun écart ne pourra être calculé. Mets-la en pause si tu ne veux pas y consacrer de budget de moisson.",
+    en: '{domain}: shop in CATALOGUE mode — it publishes no price, to anyone. Listings are still collected (useful to know what it stocks), but no gap can be computed. Pause it if you would rather not spend harvest budget there.',
+  },
   'run.harvest.newCycle': {
     fr: 'Nouveau cycle : réouverture des balayages de tous les sites.',
     en: 'New cycle: reopening the sweeps of every site.',

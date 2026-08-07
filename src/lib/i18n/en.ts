@@ -2187,6 +2187,7 @@ export const en: Record<TranslationKey, string> = {
   'run.harvest.listReceivedSkipped': 'List received from the "Source sites" node: {count} site(s) to harvest ({skipped} on directed search only).',
   'run.harvest.directedOnly': '{skipped} site(s) on directed search only — not harvested.',
   'run.harvest.familiesRead': '{count} family/families read from the "{column}" column.',
+  'run.harvest.catalogMode': '{domain}: shop in CATALOGUE mode — it publishes no price, to anyone. Listings are still collected (useful to know what it stocks), but no gap can be computed. Pause it if you would rather not spend harvest budget there.',
   'run.harvest.newCycle': 'New cycle: reopening the sweeps of every site.',
   'run.harvest.siteSweepDone': '{domain}: sweep finished — waiting for the end of the cycle.',
   'run.harvest.siteAuth': '{domain}: authenticated access (cookie login).',

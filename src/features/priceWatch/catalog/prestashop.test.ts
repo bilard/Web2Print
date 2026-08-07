@@ -6,8 +6,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   parseListingPage, parsePriceFragment, splitProductBlocks,
-  extractAvailability, parseProductPage, parseJsonLdObjects, nextListingUrl, pageUrl,
-} from './prestashop'
+  extractAvailability, parseProductPage, parseJsonLdObjects, nextListingUrl, pageUrl, detectCatalogMode } from './prestashop'
 
 const fixture = (name: string) =>
   readFileSync(join(__dirname, '__fixtures__', `listing-${name}.html`), 'utf-8')
@@ -269,5 +268,19 @@ describe('vendeur déclaré dans l’offre (marketplace)', () => {
       '@type': 'Product', name: 'X', offers: { price: '9' },
     })}</script>`
     expect(parseProductPage(none, 'https://m.test/p/3')?.seller).toBeUndefined()
+  })
+})
+
+describe('mode catalogue (marchand qui ne publie pas ses prix)', () => {
+  // Cas VÉCU (dppmsas.fr) : 5 907 fiches relevées, aucun prix, écart médian impossible.
+  // Le signal vient de la configuration PrestaShop injectée dans CHAQUE page.
+  it('reconnaît une boutique qui masque ses prix', () => {
+    expect(detectCatalogMode('{"configuration":{"is_catalog":true,"show_prices":false}}')).toBe(true)
+    expect(detectCatalogMode('..."show_prices": false ,...')).toBe(true)
+  })
+
+  it('ne signale RIEN sur une boutique ordinaire', () => {
+    expect(detectCatalogMode('{"configuration":{"is_catalog":false,"show_prices":true}}')).toBe(false)
+    expect(detectCatalogMode('<html><body>24,99 €</body></html>')).toBe(false)
   })
 })

@@ -2186,6 +2186,7 @@ export const es: Record<TranslationKey, string> = {
   'run.harvest.listReceivedSkipped': 'Lista recibida del nodo «Sitios de origen»: {count} sitio(s) a recolectar ({skipped} solo en búsqueda dirigida).',
   'run.harvest.directedOnly': '{skipped} sitio(s) solo en búsqueda dirigida — no recolectado(s).',
   'run.harvest.familiesRead': '{count} familia(s) leída(s) en la columna «{column}».',
+  'run.harvest.catalogMode': '{domain}: tienda en modo CATÁLOGO: no publica ningún precio, a nadie. Las fichas se recopilan igualmente (útil para saber qué referencia), pero no podrá calcularse ninguna diferencia. Póngala en pausa si prefiere no dedicarle presupuesto de recolección.',
   'run.harvest.newCycle': 'Nuevo ciclo: reapertura de los barridos de todos los sitios.',
   'run.harvest.siteSweepDone': '{domain}: barrido terminado — esperando el fin del ciclo.',
   'run.harvest.siteAuth': '{domain}: acceso autenticado (login cookie).',

@@ -232,6 +232,17 @@ function extractPrices(block: string): Pick<CompetitorListing, 'price' | 'listPr
 }
 
 /** Extrait toutes les fiches d'une page liste. */
+/**
+ * Le marchand publie-t-il ses prix ? (jumeau du client)
+ *
+ * PrestaShop expose sa configuration dans le JSON injecté de chaque page : `is_catalog` et
+ * `show_prices: false` signifient que le serveur n'envoie AUCUN prix, à personne. Signal de
+ * CMS standard, valable partout où ce moteur tourne — pas une particularité d'un site.
+ */
+export function detectCatalogMode(html: string): boolean {
+  return /"is_catalog"\s*:\s*true/.test(html) || /"show_prices"\s*:\s*false/.test(html)
+}
+
 export function parseListingPage(html: string, baseUrl?: string): CompetitorListing[] {
   const out: CompetitorListing[] = []
   const seen = new Set<string>()
