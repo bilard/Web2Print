@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { basenameFromUrl, buildDocument, parseDocumentsCell, coerceDocuments, displayDocumentName } from './documentUtils'
+import { basenameFromUrl, buildDocument, cleanDocumentName, parseDocumentsCell, coerceDocuments, displayDocumentName } from './documentUtils'
 
 describe('basenameFromUrl', () => {
   it('extracts and decodes the last path segment', () => {
@@ -106,5 +106,38 @@ describe('displayDocumentName — fallback chain', () => {
 
   it('falls back to "Document" as last resort', () => {
     expect(displayDocumentName({ name: '', url: '', filename: '' })).toBe('Document')
+  })
+})
+
+describe('cleanDocumentName', () => {
+  const doc = (name: string, url: string, filename = '') => ({ name, url, filename })
+
+  it('laisse un titre parlant intact', () => {
+    const d = doc('Notice de montage', 'https://x.fr/files/abc.pdf')
+    expect(cleanDocumentName(d)).toBe(d)
+  })
+
+  it('remplace un libellé de LIEN par un nom tiré de l’URL', () => {
+    // « Télécharger », « PDF », « Cliquez ici » : le texte de l'ancre, pas le titre du
+    // document. C'est le cas courant sur les sites fabricants.
+    expect(cleanDocumentName(doc('Télécharger', 'https://x.fr/fiche-technique_dda351.pdf')).name)
+      .toBe('Fiche technique dda351')
+    expect(cleanDocumentName(doc('PDF', 'https://x.fr/notice-montage.pdf')).name).toBe('Notice montage')
+  })
+
+  it('remonte au dossier parent quand le fichier est un hash', () => {
+    // Une URL de CDN finit souvent en uuid : le segment parent porte alors le sens.
+    expect(cleanDocumentName(doc('voir', 'https://cdn.x.fr/declaration-ce/9f2c1ab4d5e6f7089a1b.pdf')).name)
+      .toBe('Declaration ce')
+  })
+
+  it('retombe sur le filename plutôt que de laisser un titre vide', () => {
+    expect(cleanDocumentName(doc('lien', 'https://x.fr/a/9f2c1ab4d5e6f7089a1b.pdf', 'garantie.pdf')).name)
+      .toBe('garantie.pdf')
+  })
+
+  it('rend le document tel quel quand rien de mieux n’est trouvable', () => {
+    const d = doc('pdf', 'pas-une-url')
+    expect(cleanDocumentName(d)).toBe(d)
   })
 })

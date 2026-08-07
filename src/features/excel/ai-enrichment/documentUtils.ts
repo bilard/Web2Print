@@ -148,3 +148,65 @@ export function coerceDocuments(input: unknown): EnrichedDocument[] {
   }
   return out
 }
+
+// ── Titre lisible d'un document (venu du moteur d'enrichissement) ───────────
+//
+// Distinct de `displayDocumentName` juste au-dessus, malgré la parenté apparente :
+// celui-ci REMPLACE un titre générique (« Télécharger ») par un nom déduit de l'URL,
+// humanisé et sans extension ; l'autre se contente de garantir un libellé non vide.
+
+/** Noms de liens génériques qui doivent être remplacés par un nom extrait de l'URL */
+const GENERIC_DOC_NAMES_RE = /^(t[eé]l[eé]charger|download|voir|open|cliquez?\s*ici|click\s*here|lien|link|pdf|document|fichier|file|accéder|access)$/i
+
+/**
+ * Nettoie le nom d'un document :
+ * - Si le titre est générique ("Télécharger"), extraire un nom lisible depuis l'URL
+ * - Décoder les noms de fichiers URL-encodés
+ * - Retirer les extensions et hashs illisibles
+ */
+export function cleanDocumentName(doc: EnrichedDocument): EnrichedDocument {
+  // Si le titre est générique, extraire un meilleur nom depuis l'URL
+  if (GENERIC_DOC_NAMES_RE.test(doc.name) || doc.name.length < 3) {
+    const betterName = extractNameFromUrl(doc.url)
+    if (betterName) return { ...doc, name: betterName }
+    // Fallback : afficher le filename (déjà décodé) plutôt qu'un titre vide
+    return doc.filename ? { ...doc, name: doc.filename } : doc
+  }
+  return doc
+}
+
+/** Extrait un nom lisible depuis une URL de document */
+function extractNameFromUrl(url: string): string {
+  try {
+    const pathname = new URL(url).pathname
+    // Dernier segment du path
+    const filename = decodeURIComponent(pathname.split('/').filter(Boolean).pop() || '')
+    if (!filename) return ''
+    // Retirer l'extension
+    const withoutExt = filename.replace(/\.\w{2,4}$/, '')
+    // Si c'est un hash/uuid, essayer le segment précédent
+    if (/^[a-f0-9-]{20,}$/i.test(withoutExt) || withoutExt.length < 3) {
+      const segments = pathname.split('/').filter(Boolean)
+      if (segments.length >= 2) {
+        const parent = decodeURIComponent(segments[segments.length - 2])
+        if (parent.length > 3 && !/^[a-f0-9-]{20,}$/i.test(parent)) {
+          return humanizeName(parent)
+        }
+      }
+      return ''
+    }
+    return humanizeName(withoutExt)
+  } catch {
+    return ''
+  }
+}
+
+/** Convertit un slug/filename en nom lisible : "fiche-technique_produit" → "Fiche technique produit" */
+function humanizeName(slug: string): string {
+  const cleaned = slug
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (cleaned.length < 3) return ''
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+}
