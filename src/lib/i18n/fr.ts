@@ -2121,6 +2121,7 @@ export const fr = {
   'pw.kpi.exposed.sub': '{under}/{total} sous-cotés',
   'pw.kpi.index.sub2': '{index} vs le + bas',
   'pw.kpi.matched.sub': '{exact} exact · {orig} orig.',
+  'pw.kpi.competitors.title': 'Concurrents ayant AU MOINS un produit apparié, sur le nombre total suivi. Les autres sont bien collectés, mais aucun de vos produits ne s’y retrouve — souvent un catalogue hors sujet ou une clé de jointure absente.',
   'pw.kpi.competitors.sub': '{count} comparaisons',
   'pw.kpi.outOfStock.sub': 'opportunités',
   'pw.kpi.analysis.sub': '{count} appariés',

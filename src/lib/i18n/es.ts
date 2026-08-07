@@ -2029,6 +2029,7 @@ export const es: Record<TranslationKey, string> = {
   'pw.kpi.exposed.sub': '{under}/{total} por debajo del precio',
   'pw.kpi.index.sub2': '{index} vs el + bajo',
   'pw.kpi.matched.sub': '{exact} exacto · {orig} orig.',
+  'pw.kpi.competitors.title': 'Competidores con AL MENOS un producto emparejado, sobre el total vigilado. Los demás se recopilan correctamente, pero ninguno de sus productos aparece allí: suele ser un catálogo fuera de tema o una clave de unión ausente.',
   'pw.kpi.competitors.sub': '{count} comparaciones',
   'pw.kpi.outOfStock.sub': 'oportunidades',
   'pw.kpi.analysis.sub': '{count} emparejados',

@@ -418,7 +418,10 @@ export function NodeConfigPanel() {
   const showEdge = !node && !!selectedEdge
 
   return (
-    <aside data-tour="wf-inspector" className="w-96 border-l border-white/10 bg-surface-2 flex flex-col overflow-hidden p-4 h-full">
+    // 440 px et non 384 : les lignes de « Sites sources » y empilent un domaine, trois
+    // sélecteurs et neuf mesures — elles débordaient et repliaient les chiffres sur
+    // quatre rangées.
+    <aside data-tour="wf-inspector" className="w-[440px] border-l border-white/10 bg-surface-2 flex flex-col overflow-hidden p-4 h-full">
       <h3 className="text-xs uppercase text-white/40 font-semibold mb-3 shrink-0">
         {showEdge ? 'Connexion' : 'Configuration'}
       </h3>

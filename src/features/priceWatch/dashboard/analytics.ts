@@ -113,6 +113,9 @@ export interface Cockpit {
   totalMatched: number
   runAt: number
   competitorsCount: number
+  /** Concurrents ayant AU MOINS un produit apparié — ceux qui pèsent réellement dans les
+   *  comparaisons. Les autres sont déclarés mais muets : un total seul les compte pareil. */
+  competitorsMatched: number
   // vue filtrée
   filterActive: boolean
   filteredCount: number
@@ -394,6 +397,7 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
 
   return {
     kpis, truncated, totalMatched, runAt, competitorsCount: sites.length,
+    competitorsMatched: byCompetitor.filter((c) => c.matched > 0).length,
     filterActive: active, filteredCount: view.length, totalCount: products.length,
     priceHoldPct, exposedPct,
     priceIndex, priceIndexBest, priceIndexBiased: !hasStoredIndex && priceIndex != null,

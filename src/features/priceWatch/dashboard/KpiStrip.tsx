@@ -85,7 +85,11 @@ export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoin
         sub={t('pw.kpi.matched.sub', { exact: k.matchedExact, orig: k.matchedOriginOnly })}
         delta={d && <Delta cur={d.last.products} prev={d.prev.products} />}
         spark={<Sparkline values={s.products} color="#818cf8" />} />
-      <Tile label={t('pw.kpi.competitors')} value={<AnimatedNumber value={ck.competitorsCount} />} sub={t('pw.kpi.competitors.sub', { count: k.comparisons })} />
+      {/* Le total seul comptait pareil un concurrent qui apparie dix mille produits et un
+          autre qui n'en apparie aucun. Le ratio dit lesquels pèsent vraiment. */}
+      <Tile label={t('pw.kpi.competitors')} title={t('pw.kpi.competitors.title')}
+        value={<><AnimatedNumber value={ck.competitorsMatched} /><span className="text-white/35">/{ck.competitorsCount}</span></>}
+        sub={t('pw.kpi.competitors.sub', { count: k.comparisons })} />
       <Tile label={t('pw.kpi.outOfStock')} value={<AnimatedNumber value={k.ruptures} />} accent="text-amber-400" sub={t('pw.kpi.outOfStock.sub')} />
       <Tile label={t('pw.kpi.analysis')} value={when(ck.runAt)}
         sub={t(ck.truncated ? 'pw.kpi.analysis.sub.truncated' : 'pw.kpi.analysis.sub', { count: ck.totalMatched })}

@@ -2030,6 +2030,7 @@ export const en: Record<TranslationKey, string> = {
   'pw.kpi.exposed.sub': '{under}/{total} under-priced',
   'pw.kpi.index.sub2': '{index} vs the lowest',
   'pw.kpi.matched.sub': '{exact} exact · {orig} orig.',
+  'pw.kpi.competitors.title': 'Competitors with AT LEAST one matched product, out of the total being monitored. The others are collected fine, but none of your products turns up there — usually an off-topic catalogue or a missing join key.',
   'pw.kpi.competitors.sub': '{count} comparisons',
   'pw.kpi.outOfStock.sub': 'opportunities',
   'pw.kpi.analysis.sub': '{count} matched',
