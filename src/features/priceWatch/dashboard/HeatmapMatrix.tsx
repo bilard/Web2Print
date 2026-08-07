@@ -51,7 +51,9 @@ export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch
         <span className="text-white/35">{t('pw.heat.legend.click')}</span>
       </div>
       <div className="overflow-x-auto">
-        <table className="border-separate border-spacing-0.5 text-xs tabular-nums">
+        {/* `w-full` : les colonnes se répartissent la largeur disponible au lieu de se
+            tasser à gauche en laissant les deux tiers de la carte vides. */}
+        <table className="w-full border-separate border-spacing-0.5 text-xs tabular-nums">
           <thead>
             <tr>
               <th className="sticky left-0 bg-surface" />
@@ -88,7 +90,7 @@ export function HeatmapMatrix({ ck, onSelect }: { ck: Cockpit; onSelect?: (patch
                 domain: r.domain, field: f, sign: g! > 0 ? '+' : '',
                 pct: Math.round(g! * 10) / 10, count: cell.n,
               }) : t('pw.heat.noMatch')}
-                      className={`h-8 min-w-[52px] text-center rounded-sm border border-white/5 text-white/85 ${cell?.n ? 'cursor-pointer' : ''}`}
+                      className={`h-9 min-w-[52px] text-center rounded-sm border border-white/5 text-white/85 ${cell?.n ? 'cursor-pointer' : ''}`}
                       style={{ backgroundColor: g == null ? 'transparent' : heatColor(g) }}
                     >
                       {g == null ? <span className="text-white/20">·</span> : `${g > 0 ? '+' : ''}${Math.round(g)}`}

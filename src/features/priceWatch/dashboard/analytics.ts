@@ -398,10 +398,10 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
 
   return {
     kpis, truncated, totalMatched, runAt, competitorsCount: sites.length,
-    // Le rapport ne dit pas quels sites sont décochés : tous ceux qu'il porte étaient
-    // suivis au moment de l'analyse. Le critère qui reste — et qui suffit — est la
-    // production de fiches.
-    competitorCounts: competitorCounts(byCompetitor.map((c) => ({ indexed: c.audit?.indexed ?? 0 }))),
+    // ⚠ Le rapport ne dit pas quels sites sont décochés AUJOURD'HUI : il fige ceux qui
+    // étaient suivis au moment de l'analyse. Le dashboard passe donc l'état à jour quand
+    // il l'a (cf. `withLiveCounts`) ; à défaut, tous comptent comme suivis.
+    competitorCounts: competitorCounts(sites.map(() => ({}))),
     filterActive: active, filteredCount: view.length, totalCount: products.length,
     priceHoldPct, exposedPct,
     priceIndex, priceIndexBest, priceIndexBiased: !hasStoredIndex && priceIndex != null,

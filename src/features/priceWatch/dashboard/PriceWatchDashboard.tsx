@@ -2,7 +2,8 @@
 // pré-agrégé via buildCockpit (pur). UN moteur de recherche global filtre les blocs
 // dérivés (les KPIs headline restent globaux). SOURCE (watchId) choisie dans le header.
 import { useMemo, useState } from 'react'
-import { useCatalogReport, useReportHistory, usePriceEvents } from '../useCatalogReport'
+import { competitorCounts } from './opsMetrics'
+import { useCatalogReport, useReportHistory, usePriceEvents, useCompetitorMeta } from '../useCatalogReport'
 import type { StoredReport } from '../reportStore'
 import { buildCockpit, buildLinkIndex, EMPTY_FILTER, type CockpitFilter } from './analytics'
 import { KpiStrip } from './KpiStrip'
@@ -65,6 +66,15 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
   useLiveReportRefresh(watchId, report)
   const [filter, setFilter] = useState<CockpitFilter>(EMPTY_FILTER)
   const ck = useMemo(() => (report ? buildCockpit(report, filter) : null), [report, filter])
+  // ⚠ L'état COCHÉ vient de la méta live, pas du rapport : celui-ci fige les sites suivis
+  // au moment de l'analyse, et un site mis en pause depuis y compterait encore comme actif.
+  const liveMeta = useCompetitorMeta(watchId)
+  const liveCounts = useMemo(
+    () => (report
+      ? competitorCounts(report.sites.map((s) => ({ enabled: liveMeta.get(s.siteId)?.enabled })))
+      : null),
+    [report, liveMeta],
+  )
   // Index des pages scrapées, NON filtré : le journal des mouvements ne stocke que des
   // identifiants (pid/sid) et doit pouvoir se relier même quand le cockpit est filtré.
   const links = useMemo(() => buildLinkIndex(report?.products ?? []), [report])
@@ -119,7 +129,7 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       {/* KPIs fixés en haut au scroll vertical (demande utilisateur). Fond opaque pour
           couvrir le contenu qui défile derrière. */}
       <div className="sticky top-0 z-30 bg-background py-3 -my-1 shadow-lg shadow-background/80">
-        <KpiStrip ck={ck} history={history} />
+        <KpiStrip ck={ck} history={history} counts={liveCounts} />
       </div>
 
       {/* Moteur de recherche global (full-text + autocomplétion) : pilote tous les blocs dérivés. */}
@@ -158,14 +168,12 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         <ExpandableChart render={(h) => <PositionDonut kpis={report.kpis} onSelect={toggle} height={h ?? 300} />} />
         <ExpandableChart render={(h) => <GapDistribution ck={ck} onSelect={toggle} height={h ?? 300} />} />
       </div>
-      {/* ⚠ items-start, PAS items-stretch. Le nuage s'alignait sur la hauteur de la
-          heatmap voisine — vingt lignes de concurrents, près de mille pixels — alors que
-          ses points tiennent dans le quart inférieur : le reste était du vide étiré. Chaque
-          carte prend désormais sa hauteur propre. */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-        <ExpandableChart render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} />
-        <ExpandableChart render={() => <HeatmapMatrix ck={ck} onSelect={toggle} />} />
-      </div>
+      {/* ⚠ EMPILÉS, plus côte à côte. Le nuage tient dans 300 px de haut, la matrice en
+          demande près de mille : en deux colonnes, la plus courte laissait un vide de la
+          hauteur de l'autre. Empilés, chacun prend toute la largeur — et la matrice s'en
+          sert pour étaler ses colonnes de familles, qui se serraient sur un tiers d'écran. */}
+      <ExpandableChart render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} />
+      <ExpandableChart render={() => <HeatmapMatrix ck={ck} onSelect={toggle} />} />
       {/* Deux lectures temporelles complémentaires : MA dérive (indice, une courbe) et
           celle de CHAQUE concurrent (flux des écarts). */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">

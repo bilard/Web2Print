@@ -205,7 +205,10 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1 min-w-[280px]">
+            {/* Six tuiles sur UNE rangée dès 1536 px : à trois colonnes sur un écran large,
+                chacune s'étalait sur près de six cents pixels pour y centrer huit
+                chiffres. */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-6 gap-2 flex-1 min-w-[280px]">
               <Cell icon={Layers} tint="text-sky-400" label={t('pw.ops.recordsCollected')}
                 value={<AnimatedNumber value={ck.totalIndexed} />} sub={t('pw.ops.activeCompetitors.sub', { active: ck.sitesActive, total: ck.sitesTotal })} />
               <Cell icon={Timer} tint="text-violet-400" label={t('pw.ops.harvestTime')}

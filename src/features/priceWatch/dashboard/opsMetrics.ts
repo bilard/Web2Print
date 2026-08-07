@@ -102,22 +102,25 @@ function opsCompetitorOf(s: CompetitorStat, live?: HarvestMeta): OpsCompetitor {
 /**
  * Compte unifié des concurrents : ACTIFS · INACTIFS · TOTAL.
  *
- * Trois écrans disaient trois choses de la même population — « 12 OK / 2 sans catalogue »
- * dans la liste des sites, « 20/24 » dans les KPI, « 21/24 » dans le cockpit — parce que
- * chacun avait sa définition d'« actif » (coché ? collecte ? apparie ?). Une seule règle
- * désormais, et les trois nombres visibles partout :
+ * Trois écrans disaient trois choses de la même population, chacun avec sa définition
+ * d'« actif » (coché ? collecte ? apparie ?). Une seule règle désormais :
  *
- *   ACTIF   = suivi (case cochée) ET produisant des fiches — il travaille ;
- *   INACTIF = tout le reste : mis en pause, ou coché mais stérile (catalogue introuvable,
- *             anti-bot, clé de jointure absente) — c'est la population à regarder ;
+ *   ACTIF   = SUIVI, c'est-à-dire coché. C'est une décision de l'utilisateur, pas un
+ *             constat sur les données ;
+ *   INACTIF = mis en pause (décoché) ;
  *   TOTAL   = tous les concurrents déclarés dans le suivi.
+ *
+ * ⚠ Ce qu'un site RAPPORTE est une autre question, et elle a déjà ses propres signaux :
+ * les badges « OK » / « sans catalogue » de la liste, et les compteurs d'appariement. Un
+ * site coché qui ne rapporte rien reste ACTIF — il est suivi, il ne produit simplement
+ * pas ; mélanger les deux notions donnait « 12 actifs » là où l'utilisateur en a coché 14.
  */
 export interface CompetitorCounts { active: number; inactive: number; total: number }
 
 export function competitorCounts(
-  rows: { enabled?: boolean; indexed: number }[],
+  rows: { enabled?: boolean }[],
 ): CompetitorCounts {
-  const active = rows.filter((r) => r.enabled !== false && r.indexed > 0).length
+  const active = rows.filter((r) => r.enabled !== false).length
   return { active, inactive: rows.length - active, total: rows.length }
 }
 
@@ -189,7 +192,7 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
     totalIndexed, totalCumulMs, avgProgress,
     sitesActive: active.length,
     sitesTotal: competitors.filter((c) => !disabled.has(c.siteId)).length,
-    counts: competitorCounts(competitors.map((c) => ({ enabled: !disabled.has(c.siteId), indexed: c.indexed }))),
+    counts: competitorCounts(competitors.map((c) => ({ enabled: !disabled.has(c.siteId) }))),
     sitesComplete,
     cyclesDone, slowestCycle, runAt: report.runAt, lastCollectAt, lastCollectDomain,
     hasData: totalIndexed > 0,

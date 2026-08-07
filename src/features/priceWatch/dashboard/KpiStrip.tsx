@@ -3,7 +3,7 @@
 import type { KpiHistoryPoint } from '../types'
 import type { Cockpit } from './analytics'
 import { trendDelta, sparkSeries } from './analytics'
-import { competitorCountsLabel } from './opsMetrics'
+import { competitorCountsLabel, type CompetitorCounts } from './opsMetrics'
 import { eur, pct, when } from './format'
 import { Sparkline } from './Sparkline'
 import { AnimatedNumber } from './AnimatedNumber'
@@ -52,7 +52,11 @@ const indexClass = (v: number | null) =>
 // Constante de MODULE : on stocke la CLÉ, la traduction se fait au rendu.
 const INDEX_TITLE_KEY = 'pw.kpi.index.title' as const
 
-export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoint[] }) {
+export function KpiStrip({ ck, history, counts }: {
+  ck: Cockpit; history: KpiHistoryPoint[]
+  /** Comptes à jour (état COCHÉ lu en direct). À défaut, ceux figés dans le rapport. */
+  counts?: CompetitorCounts | null
+}) {
   const { t } = useTranslation()
   const k = ck.kpis
   const d = trendDelta(history)
@@ -90,8 +94,8 @@ export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoin
           la liste des sites. Le total seul comptait pareil un concurrent qui apparie dix
           mille produits et un autre resté muet. */}
       <Tile label={t('pw.kpi.competitors')} title={t('pw.counts.help')}
-        value={<><AnimatedNumber value={ck.competitorCounts.active} /><span className="text-white/35">/{ck.competitorCounts.total}</span></>}
-        sub={competitorCountsLabel(ck.competitorCounts)} />
+        value={<><AnimatedNumber value={(counts ?? ck.competitorCounts).active} /><span className="text-white/35">/{(counts ?? ck.competitorCounts).total}</span></>}
+        sub={competitorCountsLabel(counts ?? ck.competitorCounts)} />
       <Tile label={t('pw.kpi.outOfStock')} value={<AnimatedNumber value={k.ruptures} />} accent="text-amber-400" sub={t('pw.kpi.outOfStock.sub')} />
       <Tile label={t('pw.kpi.analysis')} value={when(ck.runAt)}
         sub={t(ck.truncated ? 'pw.kpi.analysis.sub.truncated' : 'pw.kpi.analysis.sub', { count: ck.totalMatched })}
