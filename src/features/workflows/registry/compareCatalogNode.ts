@@ -112,6 +112,13 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
   },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
+    // ⚠ Jalons en CONSOLE, en plus du journal du node. Sur ce volume (400 000+ fiches en
+    // mémoire), l'onglet cesse de repeindre bien avant de s'arrêter de calculer : le
+    // journal semble alors figé à la dernière ligne rendue, et on ne sait plus distinguer
+    // « ça travaille » de « c'est bloqué ». La console, elle, écrit toujours.
+    const t0 = performance.now()
+    const mark = (step: string) =>
+      console.info(`[compare-catalog] ${step} — ${Math.round((performance.now() - t0) / 1000)}s`)
     const uid = getWorkspaceUid()
     if (!uid) throw new Error(t('run.notSignedIn'))
     // Sites + identité du suivi : le port `sites` (node « Sites sources ») GAGNE ;
@@ -274,6 +281,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // l'onglet est déjà au plus haut — et le rapport n'en finissait plus d'arriver.
     const lookups = buildLookups(siteRefs, indexBySite)
     const m = buildMatrix(products, siteRefs, indexBySite, { vatRate, labels, lookups })
+    mark('appariement — terminé')
     ctx.setProgress?.(75)
     ctx.reportCount?.(m.matched)
     ctx.log('info', t('run.compareCatalog.matchedBreakdown', {
@@ -298,10 +306,12 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // point de tendance). Non bloquant : un échec de persistance ne doit pas casser
     // l'export. Le tableau de bord « Veille tarifaire » lit ce rapport par watchId.
     try {
-      // Seconde passe complète sur les mêmes index — aussi longue que la première.
-      ctx.log('info', t('run.compareCatalog.reportBuilding'))
+        ctx.log('info', t('run.compareCatalog.reportBuilding'))
+      mark('rapport — début')
       const report = buildReport(products, siteRefs, indexBySite, { vatRate, harvestBySite, lookups })
+      mark('rapport — construit')
       await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '', workflowId: ctx.workflowId })
+      mark('rapport — écrit')
       ctx.setProgress?.(90)
       // Persiste le catalogue source → le recalcul mono-site (après un ▶ dans « Sites
       // sources ») pourra reconstruire le benchmark sans relancer tout le workflow.
@@ -314,9 +324,9 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
           if (done > 0) ctx.log('info', t('run.compareCatalog.sourceSaving', { done, total }))
           ctx.setProgress?.(90 + Math.round((done / Math.max(1, total)) * 10))
         },
-      }).then((chunks) => ctx.log('info', t('run.compareCatalog.sourceSaved', {
+      }).then((chunks) => (mark('catalogue source — écrit'), ctx.log('info', t('run.compareCatalog.sourceSaved', {
         count: products.length, chunks, s: ((Date.now() - tSource) / 1000).toFixed(1),
-      }))).catch((e) => ctx.log('warn', t('run.sourceCatalogNotPersisted', { message: e instanceof Error ? e.message : String(e) })))
+      })))).catch((e) => ctx.log('warn', t('run.sourceCatalogNotPersisted', { message: e instanceof Error ? e.message : String(e) })))
       // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact.
       await Promise.all(report.byCompetitor.map((c) =>
         saveCompetitorMeta(uid, watchId, c.siteId, { productCount: c.audit.indexed })))
