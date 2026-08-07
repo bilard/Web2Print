@@ -159,6 +159,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         if (canExport) exportToXlsx(sheets, `${currentFileName ?? sheets[activeSheetIndex]?.name ?? 'export'}.xlsx`)
         break
       case 'action:export-ec': if (canExport) setEcExportOpen(true); break
+      // Ouvert depuis la Veille tarifaire : le contrôle des appariements douteux vit ici.
+      case 'action:competitors': setCompetitorsOpen(true); break
     }
   })
 

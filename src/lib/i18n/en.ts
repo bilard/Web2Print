@@ -1905,6 +1905,8 @@ export const en: Record<TranslationKey, string> = {
   'node.list-products.familyHelp': 'E.g. “barbecue”. If filled in, the lines above are DOMAINS and the node FINDS the listing page for that family on each site through search (you do not have to paste a URL).',
   // — Veille tarifaire : cockpit ————————————————————————————————————————
   'pw.title': 'Price monitoring',
+  'pw.pending.movedLead': 'Doubtful matches are now reviewed on the "Competitors" screen: it scores every product ↔ listing pair, shows your product against the reading, and can sweep every competitor at once to gather what is left to settle.',
+  'pw.pending.openExplorer': 'Open the Competitors screen',
   'pw.noPending': 'Nothing to confirm yet. Uncertain matches (by name, when there is neither a shared EAN nor a shared reference) will appear here for validation.',
   'pw.kpi.priceHold': 'Price hold',
   'pw.kpi.exposed': 'Exposed',

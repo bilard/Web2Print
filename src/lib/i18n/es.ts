@@ -1904,6 +1904,8 @@ export const es: Record<TranslationKey, string> = {
   'node.list-products.familyHelp': 'Ej: «barbacoa». Si se rellena, las líneas anteriores son DOMINIOS y el nodo ENCUENTRA la página de lista de esta familia en cada sitio mediante búsqueda (no tiene que pegar una URL).',
   // — Veille tarifaire : cockpit ————————————————————————————————————————
   'pw.title': 'Vigilancia de precios',
+  'pw.pending.movedLead': 'El control de los emparejamientos dudosos se realiza ahora en la pantalla «Competidores»: juzga cada par producto ↔ ficha, muestra su producto frente al registro y puede barrer todos los competidores de una vez para reunir lo que queda por decidir.',
+  'pw.pending.openExplorer': 'Abrir la pantalla Competidores',
   'pw.noPending': 'Ningún emparejamiento por confirmar por el momento. Las coincidencias dudosas (por nombre, cuando no hay ni EAN ni referencia común) aparecerán aquí para su validación.',
   'pw.kpi.priceHold': 'Mantenimiento de precio',
   'pw.kpi.exposed': 'Expuestos',

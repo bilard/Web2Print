@@ -9,12 +9,21 @@ import { WatchSelector } from './dashboard/WatchSelector'
 import { useWatchList } from './useCatalogReport'
 import { usePriceMatches } from './usePriceWatch'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, ExternalLink } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useModuleIntentStore } from '@/stores/moduleIntent.store'
 import { quote, useTranslation } from '@/lib/i18n'
 
 export function PriceWatchPanel() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const legacyMatches = usePriceMatches()
+  // L'écran « Concurrents » vit dans le module Données : on l'y ouvre par un intent, le
+  // même canal que le menu en arbre — pas de second chemin d'ouverture à maintenir.
+  const openCompetitors = () => {
+    useModuleIntentStore.getState().set('data:action:competitors')
+    navigate('/data')
+  }
   const [legacyOpen, setLegacyOpen] = useState(false)
 
   // Source du tableau de bord : le suivi actif. Défaut = le plus récemment mis à jour
@@ -62,7 +71,21 @@ export function PriceWatchPanel() {
         </button>
         {legacyOpen && (legacyMatches.length > 0
           ? <div className="mt-3"><ComparisonTab /></div>
-          : <p className="mt-3 text-sm text-white/40">{t('pw.noPending')}</p>)}
+          : (
+            /* Cette section attendait les appariements de l'ancien suivi par recherche, qui
+               n'en produit plus : elle restait vide en permanence. Or le contrôle des
+               appariements douteux EXISTE — il vit dans l'écran « Concurrents », qui juge
+               chaque paire et sait balayer tous les sites d'un coup. Annoncer « rien à
+               confirmer » laissait croire que tout était validé, alors que des milliers de
+               paires attendaient. On renvoie donc là où le travail se fait. */
+            <div className="mt-3 space-y-2">
+              <p className="text-sm text-white/45 max-w-[80ch]">{t('pw.pending.movedLead')}</p>
+              <button type="button" onClick={openCompetitors}
+                className="inline-flex items-center gap-1.5 text-sm text-indigo-300 hover:text-indigo-200 underline decoration-dotted">
+                {t('pw.pending.openExplorer')}<ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
       </section>
     </div>
   )

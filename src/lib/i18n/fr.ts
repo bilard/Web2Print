@@ -1986,6 +1986,8 @@ export const fr = {
 
   // — Veille tarifaire : cockpit ————————————————————————————————————————
   'pw.title': 'Veille tarifaire',
+  'pw.pending.movedLead': 'Le contrôle des appariements douteux se fait désormais dans l’écran « Concurrents » : il juge chaque paire produit ↔ fiche, affiche votre produit face au relevé, et sait balayer tous les concurrents d’un coup pour rassembler ce qui reste à trancher.',
+  'pw.pending.openExplorer': 'Ouvrir l’écran Concurrents',
   'pw.noPending': 'Aucun appariement à confirmer pour l’instant. Les correspondances incertaines (par nom, quand il n’y a ni EAN ni référence commune) apparaîtront ici pour validation.',
 
   'pw.kpi.priceHold': 'Tenue prix',
