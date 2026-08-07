@@ -97,22 +97,24 @@ function siteColumns(domain: string): MatrixColumn[] {
   // groupe unique, et un groupe Google Sheets est une plage, pas une sélection.
   const g = domain
   return [
-    // Colonne de SECTION, hors du groupe et volontairement vide. Google Sheets fusionne
-    // les groupes adjacents de même niveau : sans une colonne libre entre deux
-    // concurrents, les quatorze blocs n'en formaient qu'un, un crochet géant qui ne
-    // regroupait rien. Ce rôle de séparateur était tenu par la colonne du NOM, qui
-    // restait donc dehors et décalée à l'écran ; une colonne dédiée l'y rend, et sert
-    // d'étiquette quand le bloc est replié — c'est elle qu'on voit alors.
-    { key: `bloc_${s}`, label: `▸ ${domain}`, kind: 'text' },
-    { key: `nom_${s}`, label: `Produit — ${domain}`, kind: 'text', group: g },
-    { key: `prix_ttc_${s}`, label: `Prix TTC — ${domain}`, kind: 'price', group: g },
-    { key: `prix_ht_${s}`, label: `Prix HT — ${domain}`, kind: 'price', group: g },
-    { key: `prix_barre_${s}`, label: `Prix barré TTC — ${domain}`, kind: 'price', group: g },
-    { key: `ecart_${s}`, label: `Écart % — ${domain}`, kind: 'percent', group: g },
-    { key: `stock_${s}`, label: `Stock — ${domain}`, kind: 'text', group: g },
-    { key: `match_${s}`, label: `Correspondance — ${domain}`, kind: 'text', group: g },
-    { key: `image_${s}`, label: `Image — ${domain}`, kind: 'text', group: g },
-    { key: `url_${s}`, label: `Lien — ${domain}`, kind: 'text', group: g },
+    // ⚠ Le domaine s'écrit UNE FOIS, ici, en tête de son bloc. Il était répété dans les
+    // neuf en-têtes (« Produit — jardimax.com », « Prix TTC — jardimax.com »…) : neuf fois
+    // la même information par concurrent, cent-vingt-six fois sur la feuille, au prix de
+    // libellés si longs qu'ils s'enroulaient sur quatre lignes.
+    //
+    // Cette colonne reste vide et hors du groupe : elle sépare deux blocs — Google Sheets
+    // fusionne les groupes adjacents de même niveau, et sans elle les quatorze concurrents
+    // n'en formaient qu'un — et c'est elle qu'on lit quand le bloc est replié.
+    { key: `bloc_${s}`, label: domain, kind: 'text' },
+    { key: `nom_${s}`, label: 'Libellé', kind: 'text', group: g },
+    { key: `prix_ttc_${s}`, label: 'Prix TTC', kind: 'price', group: g },
+    { key: `prix_ht_${s}`, label: 'Prix HT', kind: 'price', group: g },
+    { key: `prix_barre_${s}`, label: 'Prix barré TTC', kind: 'price', group: g },
+    { key: `ecart_${s}`, label: 'Écart %', kind: 'percent', group: g },
+    { key: `stock_${s}`, label: 'Stock', kind: 'text', group: g },
+    { key: `match_${s}`, label: 'Correspondance', kind: 'text', group: g },
+    { key: `image_${s}`, label: 'Image', kind: 'text', group: g },
+    { key: `url_${s}`, label: 'Lien', kind: 'text', group: g },
   ]
 }
 

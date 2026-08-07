@@ -43,11 +43,12 @@ describe('buildMatrix', () => {
     // Mes intitulés nomment MES colonnes, et elles seules.
     expect(labels).toContain('DESCRIPTION')
     expect(labels).toContain('PV Brut F1')
-    // Celles du concurrent disent ce qu'elles contiennent.
-    expect(labels).toContain('Produit — pro-motoculture.com')
-    expect(labels).toContain('Prix HT — pro-motoculture.com')
-    expect(labels.filter((l) => l.startsWith('PV Brut F1 —'))).toEqual([])
-    expect(labels.filter((l) => l.startsWith('DESCRIPTION —'))).toEqual([])
+    // Celles du concurrent disent ce qu'elles contiennent, et le DOMAINE n'apparaît qu'une
+    // fois — en tête de son bloc, pas répété dans chacun des neuf en-têtes.
+    expect(labels).toContain('pro-motoculture.com')
+    expect(labels.filter((l) => l === 'Libellé')).toHaveLength(sites.length)
+    expect(labels.filter((l) => l === 'Prix HT')).toHaveLength(sites.length)
+    expect(labels.filter((l) => l.includes('—'))).toEqual([])
   })
 
   it('compte appariés / non appariés / sans clé', () => {
@@ -104,8 +105,10 @@ describe('buildMatrix', () => {
     expect(byKey.get('mon_prix_ht')).toBe('PV_HT')
     // Colonnes concurrent : libellé NEUTRE. Y recopier mes intitulés ferait lire mon
     // vocabulaire sur des valeurs qui sont les siennes (cf. le test ci-dessus).
-    expect(byKey.get('nom_pro_motoculture_com')).toBe('Produit — pro-motoculture.com')
-    expect(byKey.get('prix_ht_pro_motoculture_com')).toBe('Prix HT — pro-motoculture.com')
+    expect(byKey.get('nom_pro_motoculture_com')).toBe('Libellé')
+    expect(byKey.get('prix_ht_pro_motoculture_com')).toBe('Prix HT')
+    // Le domaine, lui, nomme la colonne de tête du bloc.
+    expect(byKey.get('bloc_pro_motoculture_com')).toBe('pro-motoculture.com')
   })
 
   it('distingue un match « même produit » d’un match « pièce d’origine »', () => {
