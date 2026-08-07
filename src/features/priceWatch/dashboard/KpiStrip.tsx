@@ -25,16 +25,21 @@ function Tile({ label, value, sub, accent, delta, spark, title }: {
   title?: string
 }) {
   return (
-    <div className="bg-surface rounded-md px-3 py-2.5 border border-white/5 min-w-0" title={title}>
+    <div className="bg-surface rounded-md px-2.5 py-1.5 border border-white/5 min-w-0" title={title}>
       <div className="flex items-start justify-between gap-1">
         <div className="text-white/40 text-[10px] uppercase tracking-wide truncate">{label}</div>
         {spark}
       </div>
-      <div className={`text-xl font-semibold leading-tight mt-0.5 tabular-nums ${accent ?? 'text-white'}`}>{value}</div>
-      <div className="mt-0.5 flex items-center gap-1.5 min-h-[14px]">
-        {sub && <span className="text-white/35 text-[11px] truncate">{sub}</span>}
-        {delta}
-      </div>
+      <div className={`text-lg font-semibold leading-none mt-1 tabular-nums ${accent ?? 'text-white'}`}>{value}</div>
+      {/* Ligne de contexte rendue seulement si elle porte quelque chose : elle réservait sa
+          hauteur même vide, soit huit lignes de blanc sur le bandeau. Le sous-titre est
+          tronqué à l'affichage — son texte complet reste au survol. */}
+      {(sub || delta) && (
+        <div className="mt-0.5 flex items-center gap-1.5">
+          {sub && <span className="text-white/35 text-[11px] truncate" title={sub}>{sub}</span>}
+          {delta}
+        </div>
+      )}
     </div>
   )
 }
@@ -55,7 +60,7 @@ export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoin
   const expoTxt = ck.exposedPct == null ? '—' : <AnimatedNumber value={ck.exposedPct} format={(n) => `${Math.round(n)} %`} />
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 2xl:grid-cols-8 gap-2">
       <Tile label={t('pw.kpi.priceHold')} value={holdTxt} accent="text-emerald-400" sub={t('pw.kpi.priceHold.sub')}
         spark={<Sparkline values={s.hold} color="#34d399" />} />
       <Tile label={t('pw.kpi.exposed')} value={expoTxt} accent="text-rose-400"
@@ -86,7 +91,7 @@ export function KpiStrip({ ck, history }: { ck: Cockpit; history: KpiHistoryPoin
         sub={t(ck.truncated ? 'pw.kpi.analysis.sub.truncated' : 'pw.kpi.analysis.sub', { count: ck.totalMatched })}
         spark={
           <span className="flex items-center gap-1 text-[9px] font-medium text-emerald-400/80 tracking-wide" title={t('pw.kpi.autoRefresh')}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> {t('pw.kpi.live')}
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> {t('pw.kpi.live')}
           </span>
         } />
     </div>
