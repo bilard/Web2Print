@@ -11,12 +11,12 @@ import { registerServerNode } from '../registry'
 import { parsePrice, stableId } from '../../priceWatch/helpers'
 import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
-import { buildReport } from '../../priceWatch/catalog/report'
+import { reportFromPairing } from '../../priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '../../priceWatch/reportStore'
-import { buildMatrix, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
-import { buildLookups, extractOriginRefs, type SourceProduct } from '../../priceWatch/catalog/match'
+import { matrixFromPairing, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
+import { extractOriginRefs, type SourceProduct } from '../../priceWatch/catalog/match'
+import { createPairingRun } from '../../priceWatch/catalog/pairingRun'
 import { pickDisplayColumns, taxoPathOf, trimDescription } from '../../priceWatch/catalog/displayColumns'
-import type { CompetitorListing } from '../../priceWatch/catalog/prestashop'
 import { t } from '../../i18n'
 
 interface SheetLike {
@@ -141,42 +141,41 @@ registerServerNode({
 
     // Relecture de l'index concurrent depuis Firestore (pas via un edge).
     const siteRefs: SiteRef[] = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
-    const indexBySite = new Map<string, CompetitorListing[]>()
     const harvestBySite = new Map<string, { lastMs: number; cumulMs: number; progress: number; sweeps: number }>()
     // ⚠ Étape MUETTE la plus longue (jumeau du client) : tout l'index de chaque site est
     // gardé en mémoire jusqu'à la fin du run. Le cumul journalisé dit si le run travaille.
     const tIndex = Date.now()
-    let inMemory = 0
+    let readCount = 0
+    // ⚠ UN SEUL INDEX EN MÉMOIRE À LA FOIS (jumeau du client) : la Cloud Function plafonne
+    // à 512 Mio. Chaque site est apparié dès qu'il est lu, seules les cellules PROUVÉES
+    // sont retenues, et son index part au ramasse-miettes avant la lecture du suivant.
+    const vatRate = Math.max(0, Number(config.vatRate) || 20) / 100
+    const pairing = createPairingRun(sourceProducts, { vatRate })
     for (const s of siteRefs) {
       if (ctx.signal.aborted) break
       const meta = await loadCompetitorMeta(ctx.uid, watchId, s.siteId)
       if (meta?.cumulHarvestMs != null) harvestBySite.set(s.siteId, { lastMs: meta.lastHarvestMs ?? 0, cumulMs: meta.cumulHarvestMs, progress: meta.harvestProgress ?? 0, sweeps: meta.harvestSweeps ?? 0 })
       const listings = await loadAllListings(ctx.uid, watchId, s.siteId)
-      indexBySite.set(s.siteId, listings)
-      inMemory += listings.length
+      readCount += listings.length
+      pairing.addSite(s, listings)
       ctx.log('info', t(ctx.locale, 'run.compareCatalog.siteIndexCount', { domain: s.domain, count: listings.length }))
     }
     ctx.log('info', t(ctx.locale, 'run.compareCatalog.indexLoaded', {
-      count: inMemory, sites: siteRefs.length, s: ((Date.now() - tIndex) / 1000).toFixed(1),
+      count: readCount, sites: siteRefs.length, s: ((Date.now() - tIndex) / 1000).toFixed(1),
     }))
 
     // Garde-fou (jumeau du client) : index vide sur TOUS les sites = la moisson n'a rien
     // écrit sous CE suivi (identifiant de suivi divergent, casse/espace, ou moisson non
     // lancée). Échec explicite plutôt qu'une matrice vide qui ferait planter l'export.
-    const totalListings = [...indexBySite.values()].reduce((n, l) => n + l.length, 0)
+    const totalListings = readCount
     if (totalListings === 0) {
       throw new Error(t(ctx.locale, 'run.compareCatalog.emptyIndex', { sites: sites.length, watchId }))
     }
 
-    const vatRate = Math.max(0, Number(config.vatRate) || 20) / 100
     // En-têtes de sortie = noms de colonnes de la source (suffixés du concurrent).
     const labels = { ref: refColumn, ean: eanColumn, name: nameColumn, family: familyColumn, price: priceColumn }
-    // Passe SYNCHRONE annoncée avant : rien ne sort du journal tant qu'elle tourne.
-    ctx.log('info', t(ctx.locale, 'run.compareCatalog.matching', { products: sourceProducts.length, sites: siteRefs.length }))
-    // Index bâtis UNE fois, partagés par les deux passes (jumeau du client) : la Cloud
-    // Function plafonne à 512 Mio, deux jeux d'index la font tomber en OOM.
-    const lookups = buildLookups(siteRefs, indexBySite)
-    const m = buildMatrix(sourceProducts, siteRefs, indexBySite, { vatRate, labels, lookups })
+    // Plus de passe d'appariement : elle a eu lieu site par site, pendant la lecture.
+    const m = matrixFromPairing(sourceProducts, siteRefs, pairing, { labels })
     ctx.log('info', t(ctx.locale, 'run.compareCatalog.matchedBreakdown', {
       matched: m.matched, exact: m.matchedExact, originOnly: m.matchedOriginOnly,
       unmatched: m.unmatched, noKey: m.noKey,
@@ -195,7 +194,7 @@ registerServerNode({
     // de bord Veille tarifaire sans ouvrir l'app. Non bloquant : un échec ne casse pas l'export.
     try {
       ctx.log('info', t(ctx.locale, 'run.compareCatalog.reportBuilding'))
-      const report = buildReport(sourceProducts, siteRefs, indexBySite, { vatRate, harvestBySite, lookups })
+      const report = reportFromPairing(sourceProducts, siteRefs, pairing, { harvestBySite })
       await saveCatalogReport(ctx.uid, watchId, report, siteRefs, Date.now(), { label: ctx.workflowName })
       // Catalogue source (comme le node client) : sans lui, un suivi alimenté seulement
       // par le cron n'a rien à relire pour un recalcul mono-site après un ▶ — et l'écran

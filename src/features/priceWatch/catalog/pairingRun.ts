@@ -1,0 +1,128 @@
+// Appariement catalogue × concurrents, UN SITE À LA FOIS. PUR.
+//
+// ⚠ Raison d'être : la comparaison tenait l'index de TOUS les concurrents en mémoire, puis
+// le parcourait DEUX fois — une passe pour la matrice, une seconde, identique, pour le
+// rapport. Mesuré en production : 435 756 fiches sur 14 sites lues en 45 s, appariées en
+// 37 s, puis un run qui ne se terminait jamais — l'onglet ne repeignait même plus. C'est
+// exactement ce que l'écran « Concurrents » s'interdit depuis toujours (un seul index en
+// mémoire à la fois) ; le node fait désormais pareil.
+//
+// Le principe : chaque site est apparié dès qu'il est lu, on ne RETIENT que les cellules
+// prouvées (quelques dizaines de milliers, contre des centaines de milliers de fiches), et
+// son index est relâché avant de charger le suivant. La matrice et le rapport se
+// construisent ensuite à partir de ces cellules, sans jamais réapparier.
+import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct, type PriceComparison } from './match'
+import type { MatchProof } from './keys'
+import type { CompetitorListing } from './prestashop'
+
+/** Taux de remplissage des champs attendus sur les fiches collectées d'un site. Mesuré ICI
+ *  parce que c'est le seul endroit qui voit encore les fiches : l'index du site est relâché
+ *  juste après, et le rapport se construit longtemps plus tard. */
+export interface CompetitorAudit {
+  /** Nombre de fiches indexées pour ce site. */
+  indexed: number
+  pctPrice: number
+  pctListPrice: number
+  pctStock: number
+  pctName: number
+  pctImage: number
+  pctRef: number
+}
+
+export function auditListings(listings: CompetitorListing[]): CompetitorAudit {
+  const indexed = listings.length
+  if (!indexed) return { indexed: 0, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 }
+  let price = 0, listPrice = 0, stock = 0, name = 0, image = 0, ref = 0
+  for (const l of listings) {
+    if (l.price != null) price++
+    if (l.listPrice != null) listPrice++
+    if (l.availability) stock++
+    if (l.name && l.name.trim()) name++
+    if (l.image) image++
+    if (l.ref || l.gtin13) ref++
+  }
+  const pct = (n: number) => Math.round((n / indexed) * 100)
+  return { indexed, pctPrice: pct(price), pctListPrice: pct(listPrice), pctStock: pct(stock), pctName: pct(name), pctImage: pct(image), pctRef: pct(ref) }
+}
+
+/** Un appariement PROUVÉ, réduit à ce dont la matrice et le rapport ont besoin. Ne garde
+ *  aucune référence à l'index du site : c'est ce qui permet de le relâcher. */
+interface PairedCell {
+  /** Rang du produit source dans le tableau d'entrée (clé de regroupement). */
+  productIdx: number
+  siteId: string
+  domain: string
+  name: string
+  url: string
+  image: string | null
+  cmp: PriceComparison
+  proof: MatchProof
+}
+
+/** Ce que l'appariement observe, en plus des cellules — les compteurs que ni la matrice ni
+ *  le rapport ne peuvent recalculer après coup. */
+interface PairingTotals {
+  /** Fiches prouvées par la référence puis REFUSÉES par le libellé (tous sites). */
+  vetoed: number
+  /** Produits pour lesquels AU MOINS un site a pu interroger une clé. */
+  sawKey: boolean[]
+}
+
+export interface PairingRun {
+  /** Apparie tous les produits contre CE site. L'appelant peut relâcher `listings` après. */
+  addSite: (site: { siteId: string; domain: string }, listings: CompetitorListing[]) => void
+  /** Cellules prouvées, groupées par rang de produit. */
+  cellsByProduct: Map<number, PairedCell[]>
+  /** Remplissage des fiches, par site — mesuré pendant que l'index est encore là. */
+  auditBySite: Map<string, CompetitorAudit>
+  totals: PairingTotals
+}
+
+export function createPairingRun(
+  products: SourceProduct[],
+  opts: { vatRate?: number; alignedPct?: number } = {},
+): PairingRun {
+  const cellsByProduct = new Map<number, PairedCell[]>()
+  const auditBySite = new Map<string, CompetitorAudit>()
+  const totals: PairingTotals = { vetoed: 0, sawKey: new Array(products.length).fill(false) }
+
+  const addSite = (site: { siteId: string; domain: string }, listings: CompetitorListing[]) => {
+    auditBySite.set(site.siteId, auditListings(listings))
+    const lookup = buildMemoryIndex(listings)
+    for (let i = 0; i < products.length; i++) {
+      const m = matchProduct(products[i], site.siteId, lookup)
+      totals.vetoed += m.vetoed ?? 0
+      if (m.outcome !== 'no-key') totals.sawKey[i] = true
+      if (m.outcome !== 'matched' || !m.listing || !m.proof) continue
+      const cell: PairedCell = {
+        productIdx: i,
+        siteId: site.siteId,
+        domain: site.domain,
+        name: m.listing.name,
+        url: m.listing.url,
+        image: m.listing.image ?? null,
+        cmp: comparePrices(products[i].price, m.listing, { vatRate: opts.vatRate, alignedPct: opts.alignedPct }),
+        proof: m.proof,
+      }
+      const list = cellsByProduct.get(i)
+      if (list) list.push(cell)
+      else cellsByProduct.set(i, [cell])
+    }
+  }
+
+  return { addSite, cellsByProduct, auditBySite, totals }
+}
+
+/** Rejoue l'appariement de tous les sites d'un coup — le chemin des tests et des recalculs,
+ *  où le volume tient sans peine. Le node de production, lui, appelle `addSite` au fil de
+ *  ses lectures pour ne jamais tenir deux index à la fois. */
+export function pairAllSites(
+  products: SourceProduct[],
+  sites: { siteId: string; domain: string }[],
+  indexBySite: Map<string, CompetitorListing[]>,
+  opts: { vatRate?: number; alignedPct?: number } = {},
+): PairingRun {
+  const run = createPairingRun(products, opts)
+  for (const s of sites) run.addSite(s, indexBySite.get(s.siteId) ?? [])
+  return run
+}

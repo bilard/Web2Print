@@ -5,7 +5,12 @@
 // pré-calcule, au moment de la comparaison, des résumés BORNÉS : KPIs, stats par
 // concurrent (≤ N sites), et une liste centrée PRODUIT que la persistance range et
 // plafonne. L'alerte reine : « un concurrent est moins cher que moi ».
-import { matchProduct, comparePrices, buildLookups, type IndexLookup, type SourceProduct } from './match'
+import type { SourceProduct } from './match'
+import { pairAllSites, auditListings, type PairingRun, type CompetitorAudit } from './pairingRun'
+// Ré-exportés à leur place historique : ils ont déménagé dans `pairingRun` (mesure au fil
+// de la lecture), pas disparu — les écrans d'audit les importent toujours d'ici.
+export { auditListings }
+export type { CompetitorAudit }
 import type { SiteRef } from './matrix'
 import type { CompetitorListing } from './prestashop'
 
@@ -53,17 +58,6 @@ export interface ProductRow {
  * attendu. Rend visible « scrape complet » vs « champ manquant » vs « rien collecté ».
  * Taux 0-100 (arrondis, compacts en base).
  */
-export interface CompetitorAudit {
-  /** Nombre de fiches indexées pour ce site. */
-  indexed: number
-  pctPrice: number
-  pctListPrice: number
-  pctStock: number
-  pctName: number
-  pctImage: number
-  pctRef: number
-}
-
 export interface CompetitorStat {
   siteId: string
   domain: string
@@ -106,23 +100,6 @@ function medianPct(gaps: number[]): number | null {
   const mid = Math.floor(s.length / 2)
   const m = s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2
   return Math.round(m * 10) / 10
-}
-
-/** Taux de remplissage des champs attendus sur les fiches collectées d'un site. */
-export function auditListings(listings: CompetitorListing[]): CompetitorAudit {
-  const indexed = listings.length
-  if (!indexed) return { indexed: 0, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 }
-  let price = 0, listPrice = 0, stock = 0, name = 0, image = 0, ref = 0
-  for (const l of listings) {
-    if (l.price != null) price++
-    if (l.listPrice != null) listPrice++
-    if (l.availability) stock++
-    if (l.name && l.name.trim()) name++
-    if (l.image) image++
-    if (l.ref || l.gtin13) ref++
-  }
-  const pct = (n: number) => Math.round((n / indexed) * 100)
-  return { indexed, pctPrice: pct(price), pctListPrice: pct(listPrice), pctStock: pct(stock), pctName: pct(name), pctImage: pct(image), pctRef: pct(ref) }
 }
 
 export interface ReportKpis {
@@ -213,8 +190,8 @@ interface BuildReportOptions {
   alignedPct?: number
   /** Durées de moisson par siteId (dernière passe + cumul), pour l'audit. */
   harvestBySite?: Map<string, { lastMs: number; cumulMs: number; progress: number; sweeps: number }>
-  /** Index déjà bâtis (cf. `buildLookups`). Les reconstruire ici doublerait la mémoire. */
-  lookups?: Map<string, IndexLookup>
+  /** Appariement déjà réalisé (site par site). Sans lui, il est rejoué ici. */
+  pairing?: PairingRun
 }
 
 /**
@@ -228,30 +205,61 @@ export function buildReport(
   indexBySite: Map<string, CompetitorListing[]>,
   opts: BuildReportOptions = {},
 ): CatalogReport {
-  const alignedPct = opts.alignedPct ?? 1
-  const lookups = opts.lookups ?? buildLookups(sites, indexBySite)
+  return reportFromPairing(products, sites,
+    opts.pairing ?? pairAllSites(products, sites, indexBySite, { vatRate: opts.vatRate, alignedPct: opts.alignedPct }),
+    opts)
+}
 
+/**
+ * Assemble le rapport à partir d'un appariement DÉJÀ fait (cf. `pairingRun`) — le même que
+ * celui de la matrice. Auparavant cette fonction rejouait l'appariement complet pour son
+ * propre compte : sur un catalogue réel, c'était une seconde passe de plusieurs dizaines de
+ * secondes et un second jeu d'index en mémoire, au moment où elle est déjà au plus haut.
+ */
+export function reportFromPairing(
+  products: SourceProduct[],
+  sites: SiteRef[],
+  pairing: PairingRun,
+  opts: BuildReportOptions = {},
+): CatalogReport {
+  const alignedPct = opts.alignedPct ?? 1
+  // ⚠ Les relevés d'un produit sont rangés dans l'ordre des SITES, pas dans celui où leurs
+  // index ont été lus. Ils sont persistés et affichés tels quels : sans ce tri, la fiche
+  // d'un produit changerait d'ordre de concurrents d'un run à l'autre.
+  const siteRank = new Map(sites.map((s, i) => [s.siteId, i]))
   const rows: ProductRow[] = []
   const stat = new Map<string, CompetitorStat & { _gapSum: number; _gapN: number; _gaps: number[] }>()
-  for (const s of sites) stat.set(s.siteId, { siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null, medGapPct: null, audit: auditListings(indexBySite.get(s.siteId) ?? []), harvest: opts.harvestBySite?.get(s.siteId), _gapSum: 0, _gapN: 0, _gaps: [] })
+  for (const s of sites) {
+    stat.set(s.siteId, {
+      siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0,
+      avgGapPct: null, medGapPct: null,
+      audit: pairing.auditBySite.get(s.siteId) ?? auditListings([]),
+      harvest: opts.harvestBySite?.get(s.siteId),
+      _gapSum: 0, _gapN: 0, _gaps: [],
+    })
+  }
 
   const kpis: ReportKpis = {
     products: 0, matchedExact: 0, matchedOriginOnly: 0, sites: sites.length,
     comparisons: 0, cheaperThanMe: 0, aligned: 0, dearerThanMe: 0, ruptures: 0, productsUndercut: 0,
   }
 
-  for (const product of products) {
+  for (let i = 0; i < products.length; i++) {
+    const product = products[i]
+    const found = pairing.cellsByProduct.get(i)
+    if (!found || found.length === 0) continue
+    const paired = found.length > 1
+      ? [...found].sort((a, b) => (siteRank.get(a.siteId) ?? 0) - (siteRank.get(b.siteId) ?? 0))
+      : found
     const cells: CompetitorCell[] = []
     let exactHit = false
-    for (const site of sites) {
-      const m = matchProduct(product, site.siteId, lookups.get(site.siteId)!)
-      if (m.outcome !== 'matched' || !m.listing || !m.proof) continue
-      const st = stat.get(site.siteId)!
+    for (const p of paired) {
+      const st = stat.get(p.siteId)
+      if (!st) continue
       st.matched++
-      if (!m.proof.key.origin) exactHit = true
-      const cmp = comparePrices(product.price, m.listing, { vatRate: opts.vatRate, alignedPct })
-      const gap = cmp.deltaPct ?? null
-      const stock = cmp.availability ?? null
+      if (!p.proof.key.origin) exactHit = true
+      const gap = p.cmp.deltaPct ?? null
+      const stock = p.cmp.availability ?? null
       if (stock === 'out-of-stock') { st.ruptures++; kpis.ruptures++ }
       if (gap != null) {
         kpis.comparisons++
@@ -261,10 +269,10 @@ export function buildReport(
         else kpis.aligned++
       }
       cells.push({
-        siteId: site.siteId, domain: site.domain, name: m.listing.name, url: m.listing.url,
-        image: m.listing.image ?? null,
-        priceTtc: cmp.priceTtc ?? null, priceHt: cmp.priceHt ?? null, listPriceTtc: cmp.listPriceTtc ?? null,
-        gapPct: gap, stock, match: matchKindOf(m.proof),
+        siteId: p.siteId, domain: p.domain, name: p.name, url: p.url, image: p.image,
+        priceTtc: p.cmp.priceTtc ?? null, priceHt: p.cmp.priceHt ?? null,
+        listPriceTtc: p.cmp.listPriceTtc ?? null,
+        gapPct: gap, stock, match: matchKindOf(p.proof),
       })
     }
     if (cells.length === 0) continue

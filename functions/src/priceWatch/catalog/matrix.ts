@@ -1,11 +1,12 @@
-// src/features/priceWatch/catalog/matrix.ts
+// functions/src/priceWatch/catalog/matrix.ts
 // Construction de la matrice comparative produit × concurrent. PUR.
 //
 // Une ligne par produit source apparié à au moins un concurrent. Colonnes fixes
 // (identité + mon prix) puis un bloc de colonnes par concurrent (TTC, barré TTC, HT
 // recalculé, écart %, stock, lien). Le prix concurrent est VERBATIM (TTC affiché) ;
 // le HT recalculé sert la comparaison à mon prix catalogue.
-import { matchProduct, comparePrices, buildLookups, type IndexLookup, type SourceProduct } from './match'
+import type { SourceProduct } from './match'
+import { pairAllSites, type PairingRun } from './pairingRun'
 import type { MatchProof } from './keys'
 import type { CompetitorListing } from './prestashop'
 
@@ -21,9 +22,9 @@ export interface MatrixColumn {
    *  (ean = entier sans décimale, price = 2 décimales, percent = 1 décimale + %). */
   kind: 'text' | 'ean' | 'price' | 'percent'
   primary?: boolean
-  /** Concurrent auquel la colonne appartient — l'export en fait un groupe de
-   *  colonnes repliable. ⚠️ JUMEAU de `src/features/priceWatch/catalog/matrix.ts` :
-   *  marquer un seul des deux ne groupe que les exports lancés depuis ce côté-là. */
+  /** Concurrent auquel la colonne appartient. Les colonnes d'un même groupe sont
+   *  CONTIGUËS (cf. `siteColumns`) : l'export Google Sheets peut donc les replier
+   *  d'un seul bloc. Absent sur les colonnes communes (EAN, nom, mon prix). */
   group?: string
 }
 
@@ -93,7 +94,8 @@ function baseColumns(labels: SourceLabels): MatrixColumn[] {
  */
 function siteColumns(domain: string): MatrixColumn[] {
   const s = domain.replace(/[^a-z0-9]+/gi, '_')
-  // ⚠️ Ces 9 colonnes DOIVENT rester contiguës : l'export les replie d'un bloc.
+  // ⚠️ Ces 9 colonnes DOIVENT rester contiguës : l'export les replie comme un
+  // groupe unique, et un groupe Google Sheets est une plage, pas une sélection.
   const g = domain
   return [
     { key: `nom_${s}`, label: `Produit — ${domain}`, kind: 'text', group: g },
@@ -121,8 +123,8 @@ export interface BuildMatrixOptions {
   matchedOnly?: boolean
   /** Noms de colonnes de la source, pour les en-têtes de sortie. */
   labels?: SourceLabels
-  /** Index déjà bâtis (cf. `buildLookups`). Les reconstruire ici doublerait la mémoire. */
-  lookups?: Map<string, IndexLookup>
+  /** Appariement déjà réalisé (site par site). Sans lui, il est rejoué ici. */
+  pairing?: PairingRun
 }
 
 /**
@@ -137,15 +139,31 @@ export function buildMatrix(
   indexBySite: Map<string, CompetitorListing[]>,
   opts: BuildMatrixOptions = {},
 ): MatrixResult {
+  return matrixFromPairing(products, sites,
+    opts.pairing ?? pairAllSites(products, sites, indexBySite, { vatRate: opts.vatRate }), opts)
+}
+
+/**
+ * Assemble la matrice à partir d'un appariement DÉJÀ fait (cf. `pairingRun`). C'est ce
+ * chemin qu'emprunte le node : les sites y sont appariés au fil de leur lecture, un index
+ * à la fois, au lieu d'être tous tenus en mémoire puis parcourus deux fois.
+ */
+export function matrixFromPairing(
+  products: SourceProduct[],
+  sites: SiteRef[],
+  pairing: PairingRun,
+  opts: BuildMatrixOptions = {},
+): MatrixResult {
   const matchedOnly = opts.matchedOnly ?? true
   const labels = opts.labels ?? {}
   const columns = [...baseColumns(labels), ...sites.flatMap((s) => siteColumns(s.domain))]
-  const lookups = opts.lookups ?? buildLookups(sites, indexBySite)
 
   const rows: Record<string, unknown>[] = []
-  let matched = 0, matchedExact = 0, matchedOriginOnly = 0, unmatched = 0, noKey = 0, vetoed = 0
+  let matched = 0, matchedExact = 0, matchedOriginOnly = 0, unmatched = 0, noKey = 0
 
-  for (const product of products) {
+  for (let i = 0; i < products.length; i++) {
+    const product = products[i]
+    const cells = pairing.cellsByProduct.get(i) ?? []
     const row: Record<string, unknown> = {
       _id: `pw_${product.id}`,
       produit: product.name,
@@ -157,42 +175,36 @@ export function buildMatrix(
     // Colonnes de site pré-remplies à vide : une cellule absente ≠ une cellule vide
     // à l'export, et une matrice creuse doit rester lisible.
     for (const col of columns) if (!(col.key in row)) row[col.key] = ''
-    let hitCount = 0
     let exactHit = false
-    let sawKey = false
 
-    for (const site of sites) {
-      const lookup = lookups.get(site.siteId)!
-      const m = matchProduct(product, site.siteId, lookup)
-      vetoed += m.vetoed ?? 0
-      if (m.outcome !== 'no-key') sawKey = true
-      if (m.outcome !== 'matched' || !m.listing || !m.proof) continue
-      hitCount++
-      if (!m.proof.key.origin) exactHit = true
-      const s = site.domain.replace(/[^a-z0-9]+/gi, '_')
-      const cmp = comparePrices(product.price, m.listing, { vatRate: opts.vatRate })
-      row[`nom_${s}`] = m.listing.name
-      row[`prix_ttc_${s}`] = cmp.priceTtc ?? ''
-      row[`prix_ht_${s}`] = cmp.priceHt ?? ''
-      row[`prix_barre_${s}`] = cmp.listPriceTtc ?? ''
+    for (const c of cells) {
+      if (!c.proof.key.origin) exactHit = true
+      const s = c.domain.replace(/[^a-z0-9]+/gi, '_')
+      row[`nom_${s}`] = c.name
+      row[`prix_ttc_${s}`] = c.cmp.priceTtc ?? ''
+      row[`prix_ht_${s}`] = c.cmp.priceHt ?? ''
+      row[`prix_barre_${s}`] = c.cmp.listPriceTtc ?? ''
       // Écart en points de % (-18,4) — lisible dans l'aperçu. L'export d'une colonne
       // `percent` le convertit en vrai pourcentage Excel (÷100 + format 0.0%).
-      row[`ecart_${s}`] = cmp.deltaPct ?? ''
-      row[`stock_${s}`] = cmp.availability ? AVAIL_LABEL[cmp.availability] : ''
-      row[`match_${s}`] = matchLabel(m.proof)
-      row[`image_${s}`] = m.listing.image ?? ''
-      row[`url_${s}`] = m.listing.url
+      row[`ecart_${s}`] = c.cmp.deltaPct ?? ''
+      row[`stock_${s}`] = c.cmp.availability ? AVAIL_LABEL[c.cmp.availability] : ''
+      row[`match_${s}`] = matchLabel(c.proof)
+      row[`image_${s}`] = c.image ?? ''
+      row[`url_${s}`] = c.url
     }
 
-    if (hitCount > 0) {
+    if (cells.length > 0) {
       matched++
       if (exactHit) matchedExact++
       else matchedOriginOnly++
-    } else if (!sawKey) noKey++
+    } else if (!pairing.totals.sawKey[i]) noKey++
     else unmatched++
 
-    if (!matchedOnly || hitCount > 0) rows.push(row)
+    if (!matchedOnly || cells.length > 0) rows.push(row)
   }
 
-  return { columns, rows, matched, matchedExact, matchedOriginOnly, unmatched, noKey, vetoed }
+  return {
+    columns, rows, matched, matchedExact, matchedOriginOnly, unmatched, noKey,
+    vetoed: pairing.totals.vetoed,
+  }
 }

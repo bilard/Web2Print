@@ -11,13 +11,13 @@ import type { ExcelSheet, ExcelColumn, ExcelRow } from '@/features/excel/types'
 import { parsePrice, stableId, cell } from '@/features/priceWatch/core'
 import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
-import { buildMatrix, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
-import { buildLookups, extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
-import { buildReport } from '@/features/priceWatch/catalog/report'
+import { matrixFromPairing, type SiteRef, type MatrixColumn } from '@/features/priceWatch/catalog/matrix'
+import { extractOriginRefs, type SourceProduct } from '@/features/priceWatch/catalog/match'
+import { createPairingRun } from '@/features/priceWatch/catalog/pairingRun'
+import { reportFromPairing } from '@/features/priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '@/features/priceWatch/reportStore'
 import { resolveCompareColumns, hasNoJoinKey } from '@/features/priceWatch/catalog/compareColumns'
 import { pickDisplayColumns, taxoPathOf, trimDescription } from '@/features/priceWatch/catalog/displayColumns'
-import type { CompetitorListing } from '@/features/priceWatch/catalog/prestashop'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
 import { t } from '@/lib/i18n'
 
@@ -236,23 +236,33 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // run : sans avancement, un node qui travaille ne se distingue pas d'un node figé.
     // D'où le pourcentage sur la carte et le cumul journalisé à chaque site.
     const siteRefs: SiteRef[] = sites.map((s) => ({ siteId: stableId(s.domain), domain: s.domain }))
-    const indexBySite = new Map<string, CompetitorListing[]>()
     const harvestBySite = new Map<string, { lastMs: number; cumulMs: number; progress: number; sweeps: number }>()
     const tIndex = Date.now()
-    let inMemory = 0
+    let readCount = 0
+    // ⚠ UN SEUL INDEX EN MÉMOIRE À LA FOIS. Le node gardait les fiches de TOUS les
+    // concurrents jusqu'à la fin du run, puis les parcourait deux fois. Mesuré en prod :
+    // 435 756 fiches sur 14 sites, appariées en 37 s — puis un run qui ne se terminait
+    // jamais, l'onglet ayant cessé de repeindre. Chaque site est désormais apparié dès
+    // qu'il est lu ; seules les cellules PROUVÉES sont retenues, et son index part au
+    // ramasse-miettes avant la lecture du suivant.
+    // ⚠ TVA résolue AVANT l'appariement : c'est lui qui convertit désormais les prix
+    // concurrents, et un taux par défaut appliqué ici diviserait tous les prix par 21.
+    const vatRate = Math.max(0, (config.vatRate || 20)) / 100
+    const pairing = createPairingRun(products, { vatRate })
     for (const [i, s] of siteRefs.entries()) {
       if (ctx.signal.aborted) break
       const meta = await loadCompetitorMeta(uid, watchId, s.siteId)
       if (meta?.cumulHarvestMs != null) harvestBySite.set(s.siteId, { lastMs: meta.lastHarvestMs ?? 0, cumulMs: meta.cumulHarvestMs, progress: meta.harvestProgress ?? 0, sweeps: meta.harvestSweeps ?? 0 })
       const listings = await loadAllListings(uid, watchId, s.siteId)
-      indexBySite.set(s.siteId, listings)
-      inMemory += listings.length
+      readCount += listings.length
+      pairing.addSite(s, listings)
       ctx.log('info', t('run.compareCatalog.siteIndexCount', { domain: s.domain, count: listings.length }))
-      // La lecture pèse l'essentiel du temps : elle occupe les 60 premiers pourcents.
-      ctx.setProgress?.(Math.round(((i + 1) / siteRefs.length) * 60))
+      mark(`${s.domain} apparié`)
+      // Lecture + appariement vont de pair : ensemble, ils occupent les 80 premiers %.
+      ctx.setProgress?.(Math.round(((i + 1) / siteRefs.length) * 80))
     }
     ctx.log('info', t('run.compareCatalog.indexLoaded', {
-      count: inMemory, sites: siteRefs.length, s: ((Date.now() - tIndex) / 1000).toFixed(1),
+      count: readCount, sites: siteRefs.length, s: ((Date.now() - tIndex) / 1000).toFixed(1),
     }))
 
     // Garde-fou : index vide sur TOUS les sites = la moisson n'a rien écrit sous CE
@@ -261,12 +271,11 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // avec un message actionnable plutôt que de produire une matrice vide qui fera
     // planter l'export en aval avec un message trompeur. (Un index NON vide qui apparie
     // 0 produit reste légitime — c'est un recouvrement partiel, pas une erreur.)
-    const totalListings = [...indexBySite.values()].reduce((n, l) => n + l.length, 0)
+    const totalListings = readCount
     if (totalListings === 0) {
       throw new Error(t('run.compareCatalog.emptyIndex', { sites: sites.length, watchId }))
     }
 
-    const vatRate = Math.max(0, (config.vatRate || 20)) / 100
     // En-têtes de sortie = noms de colonnes de la source (suffixés du concurrent).
     // En-têtes de sortie : les noms RÉELS de la feuille, pas ceux configurés.
     const labels = {
@@ -275,13 +284,10 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // Appariement : passe SYNCHRONE de plusieurs minutes sur une base F1 × 14 concurrents.
     // Annoncée AVANT, parce qu'elle ne rend la main qu'à la fin — aucun log ne peut sortir
     // pendant, et le silence qui suivait passait pour un plantage.
-    ctx.log('info', t('run.compareCatalog.matching', { products: products.length, sites: siteRefs.length }))
-    // ⚠ Index bâtis UNE fois, partagés par les deux passes. Chacune les reconstruisait :
-    // à 434 000 fiches sur 14 sites, deux jeux coexistaient au moment où la mémoire de
-    // l'onglet est déjà au plus haut — et le rapport n'en finissait plus d'arriver.
-    const lookups = buildLookups(siteRefs, indexBySite)
-    const m = buildMatrix(products, siteRefs, indexBySite, { vatRate, labels, lookups })
-    mark('appariement — terminé')
+    // Plus de « passe d'appariement » : elle a eu lieu site par site, pendant la lecture.
+    // Il ne reste qu'à assembler — la matrice et le rapport lisent les MÊMES cellules.
+    const m = matrixFromPairing(products, siteRefs, pairing, { labels })
+    mark('matrice — assemblée')
     ctx.setProgress?.(75)
     ctx.reportCount?.(m.matched)
     ctx.log('info', t('run.compareCatalog.matchedBreakdown', {
@@ -308,7 +314,7 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     try {
         ctx.log('info', t('run.compareCatalog.reportBuilding'))
       mark('rapport — début')
-      const report = buildReport(products, siteRefs, indexBySite, { vatRate, harvestBySite, lookups })
+      const report = reportFromPairing(products, siteRefs, pairing, { harvestBySite })
       mark('rapport — construit')
       await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '', workflowId: ctx.workflowId })
       mark('rapport — écrit')
