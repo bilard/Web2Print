@@ -1959,6 +1959,7 @@ export const es: Record<TranslationKey, string> = {
   'pw.moves.increases': 'Subidas',
   'pw.moves.mostActive': 'El más activo',
   'pw.moves.empty': 'Ningún movimiento en esta ventana.',
+  'pw.moves.sort': 'Ordenar por esta columna: el tercer clic vuelve al orden cronológico',
   'pw.col.product': 'Producto',
   'pw.col.competitor': 'Competidor',
   'pw.col.before': 'Antes',

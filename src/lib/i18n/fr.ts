@@ -2044,6 +2044,7 @@ export const fr = {
   'pw.moves.increases': 'Hausses',
   'pw.moves.mostActive': 'Le plus actif',
   'pw.moves.empty': 'Aucun mouvement sur cette fenêtre.',
+  'pw.moves.sort': 'Trier sur cette colonne — troisième clic : retour à la chronologie',
   'pw.col.product': 'Produit',
   'pw.col.competitor': 'Concurrent',
   'pw.col.before': 'Avant',

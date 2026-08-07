@@ -5,7 +5,7 @@
 // Lecture : une baisse concurrente est une pression sur moi (rose) ; une hausse me rend
 // mécaniquement plus compétitif (émeraude). L'écart affiché est celui d'APRÈS le mouvement.
 import { useMemo, useState } from 'react'
-import { ArrowDownRight, ArrowUpRight, ExternalLink } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, ArrowUpDown, ExternalLink } from 'lucide-react'
 import type { PriceEvent } from '../priceEvents'
 import { summarizeMoves, eventsSince } from '../priceEvents'
 import { matchesQuery, EMPTY_FILTER, type CockpitFilter, type ProductLinkIndex } from './analytics'
@@ -26,6 +26,27 @@ function Stat({ label, value, accent, sub }: { label: string; value: string; acc
   )
 }
 
+/** Bandeau d'en-tête : plus lisible que le reste du tableau, et posé sur un fond qui le
+ *  détache des lignes — sur soixante mouvements, on relit sans cesse « avant / après /
+ *  variation » pour savoir quelle colonne on regarde. */
+const THEAD_CELL = 'bg-well font-medium py-2 px-2 first:pl-3'
+
+function SortTh({ label, active, asc, onClick, hint, first }: {
+  label: string; active: boolean; asc: boolean; onClick: () => void; hint: string; first?: boolean
+}) {
+  return (
+    <th className={`${THEAD_CELL} text-left ${first ? 'rounded-l-md' : ''}`}>
+      <button type="button" onClick={onClick} title={hint}
+        className={`inline-flex items-center gap-1 uppercase tracking-wide transition-colors ${
+          active ? 'text-white' : 'hover:text-white/80'
+        }`}>
+        {label}
+        <ArrowUpDown className={`w-3 h-3 shrink-0 ${active ? 'text-indigo-300' : 'text-white/20'} ${active && !asc ? 'rotate-180' : ''}`} />
+      </button>
+    </th>
+  )
+}
+
 export function PriceMoves({ events, filter = EMPTY_FILTER, links = EMPTY_LINKS }: {
   events: PriceEvent[]
   filter?: CockpitFilter
@@ -36,6 +57,16 @@ export function PriceMoves({ events, filter = EMPTY_FILTER, links = EMPTY_LINKS 
   const { t } = useTranslation()
   const [days, setDays] = useState<number>(30)
   const [onlyDown, setOnlyDown] = useState(false)
+  // Tri d'AFFICHAGE. « recent » est l'ordre naturel d'un journal ; les deux autres servent
+  // à regrouper — retrouver tous les mouvements d'un concurrent, ou d'une même pièce.
+  const [sort, setSort] = useState<'recent' | 'name' | 'domain'>('recent')
+  const [asc, setAsc] = useState(true)
+  const toggleSort = (key: 'name' | 'domain') => {
+    if (sort === key) {
+      // Troisième clic : retour à la chronologie, plutôt qu'un aller-retour sans issue.
+      if (!asc) { setSort('recent'); setAsc(true) } else setAsc(false)
+    } else { setSort(key); setAsc(true) }
+  }
   // `now` FIGÉ au montage : un `Date.now()` appelé au rendu changerait à chaque frame et
   // invaliderait les mémos ci-dessous — recalcul de la fenêtre sur des milliers de
   // mouvements à chaque render, pour un axe temps qui n'a pas bougé.
@@ -58,10 +89,22 @@ export function PriceMoves({ events, filter = EMPTY_FILTER, links = EMPTY_LINKS 
   const sum = useMemo(() => summarizeMoves(scoped), [scoped])
 
   // Les plus récents d'abord ; à date égale, le mouvement le plus marqué en tête.
-  const rows = useMemo(
+  //
+  // ⚠ Le plafond de 60 s'applique AVANT le tri d'affichage, et c'est voulu : il sélectionne
+  // les mouvements RÉCENTS. Trier par produit d'abord, puis couper, montrerait les 60
+  // premiers noms de l'alphabet sur toute la fenêtre — ce ne serait plus un journal.
+  const recent = useMemo(
     () => [...view].sort((a, b) => b.at - a.at || Math.abs(b.pctChange) - Math.abs(a.pctChange)).slice(0, 60),
     [view],
   )
+  const rows = useMemo(() => {
+    if (sort === 'recent') return recent
+    const dir = asc ? 1 : -1
+    const key = (e: PriceEvent) => (sort === 'name' ? e.name : e.dom.replace(/^www\./, ''))
+    // À valeur égale, on retombe sur la chronologie : deux lignes du même concurrent
+    // gardent leur ordre de mouvement, jamais un ordre arbitraire.
+    return [...recent].sort((a, b) => dir * key(a).localeCompare(key(b), 'fr') || b.at - a.at)
+  }, [recent, sort, asc])
 
   return (
     <div className="bg-surface rounded-lg p-4">
@@ -114,14 +157,16 @@ export function PriceMoves({ events, filter = EMPTY_FILTER, links = EMPTY_LINKS 
             <div className="overflow-x-auto">
               <table className="w-full text-xs tabular-nums min-w-[640px]">
                 <thead>
-                  <tr className="text-white/40 text-[10px] uppercase tracking-wide text-right">
-                    <th className="text-left font-medium pb-2">{t('pw.col.product')}</th>
-                    <th className="text-left font-medium pb-2">{t('pw.col.competitor')}</th>
-                    <th className="font-medium pb-2">{t('pw.col.before')}</th>
-                    <th className="font-medium pb-2">{t('pw.col.after')}</th>
-                    <th className="font-medium pb-2">{t('pw.col.change')}</th>
-                    <th className="font-medium pb-2">{t('pw.col.myGap')}</th>
-                    <th className="font-medium pb-2">{t('pw.col.when')}</th>
+                  <tr className="text-white/55 text-[11px] uppercase tracking-wide text-right">
+                    <SortTh label={t('pw.col.product')} active={sort === 'name'} asc={asc}
+                      onClick={() => toggleSort('name')} hint={t('pw.moves.sort')} first />
+                    <SortTh label={t('pw.col.competitor')} active={sort === 'domain'} asc={asc}
+                      onClick={() => toggleSort('domain')} hint={t('pw.moves.sort')} />
+                    <th className={`${THEAD_CELL} text-right`}>{t('pw.col.before')}</th>
+                    <th className={`${THEAD_CELL} text-right`}>{t('pw.col.after')}</th>
+                    <th className={`${THEAD_CELL} text-right`}>{t('pw.col.change')}</th>
+                    <th className={`${THEAD_CELL} text-right`}>{t('pw.col.myGap')}</th>
+                    <th className={`${THEAD_CELL} text-right rounded-r-md`}>{t('pw.col.when')}</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -1960,6 +1960,7 @@ export const en: Record<TranslationKey, string> = {
   'pw.moves.increases': 'Rises',
   'pw.moves.mostActive': 'Most active',
   'pw.moves.empty': 'No movement over this window.',
+  'pw.moves.sort': 'Sort on this column — third click returns to chronological order',
   'pw.col.product': 'Product',
   'pw.col.competitor': 'Competitor',
   'pw.col.before': 'Before',
