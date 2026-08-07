@@ -33,7 +33,11 @@ const pwReportNode: NodeSpec<PwReportConfig, Record<string, never>, PwReportOutp
   labelKey: 'node.pw-report.label',
   descriptionKey: 'node.pw-report.desc',
   icon: FileText,
-  inputs: [],
+  // Entrée d'ORDONNANCEMENT (facultative) : brancher la sortie de « Comparer catalogue »
+  // ici force l'analyse à tourner AVANT le rapport, dans un même run. La donnée est
+  // ignorée — le rapport est relu depuis Firestore, pas reçu par l'edge. Sans ce port, la
+  // carte n'était reliable à rien et pouvait rendre l'analyse de la veille.
+  inputs: [{ name: 'after', type: 'any' }],
   // `html` en tête : c'est la sortie à relier au port `data` de Gmail (corps du mail).
   // `file` sert à l'archivage Drive ou à la pièce jointe.
   outputs: [
