@@ -2459,7 +2459,7 @@ export const es: Record<TranslationKey, string> = {
   'run.gm.htmlUnchecked': '{{html}} detectado pero la casilla «HTML» está desmarcada: el marcado se enviará como texto sin formato. Marcar «HTML» para una representación visual.',
   'run.gm.bodyFromData': 'Cuerpo vacío y contenido recibido en «data»: ese contenido pasa a ser el cuerpo del correo (equivale a un cuerpo «{{html}}»).',
   'run.gm.htmlInjected': 'Contenido {{html}} inyectado en el cuerpo ({count} car.).',
-  'run.gm.htmlTokenNoData': '{{html}} presente en el cuerpo pero el puerto «data» no contiene HTML (cadena). Conectar ÚNICAMENTE la salida «html» del nodo de origen al puerto «data» (una sola arista).',
+  'run.gm.htmlTokenNoData': 'Envío CANCELADO: «{{html}}» está en el cuerpo, pero el puerto «data» no lleva ningún HTML. El correo habría salido con el token escrito tal cual. Causas habituales: este nodo se ejecutó SOLO (ejecute el flujo completo, o al menos el nodo que produce el HTML); varias aristas llegan a «data» y se han sobrescrito; o lo que llega es una hoja de filas, no HTML.',
   'run.gm.dataNotInserted': 'Contenido HTML/texto recibido en el puerto «data» pero no insertado: añadir {{html}} en el cuerpo para mostrarlo.',
   'run.gm.combinedTable': 'Tabla combinada: {count} columnas ({columns}) × {rows} filas.',
   'run.gm.htmlTable': 'Modo HTML: columnas representadas como tabla ({rows} filas).',

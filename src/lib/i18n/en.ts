@@ -2460,7 +2460,7 @@ export const en: Record<TranslationKey, string> = {
   'run.gm.htmlUnchecked': '{{html}} detected but the "HTML" box is unchecked: the markup will go out as plain text. Tick "HTML" for a visual rendering.',
   'run.gm.bodyFromData': 'Empty body and content received on "data": that content becomes the email body (same as a body of "{{html}}").',
   'run.gm.htmlInjected': '{{html}} content injected into the body ({count} chars).',
-  'run.gm.htmlTokenNoData': '{{html}} is present in the body but the "data" port holds no HTML (string). Wire ONLY the "html" output of the source node to the "data" port (a single edge).',
+  'run.gm.htmlTokenNoData': 'Send CANCELLED: "{{html}}" sits in the body, but the "data" port carries no HTML. The email would have gone out with the token spelled out. Usual causes: this node was run ALONE (run the whole workflow, or at least the node producing the HTML); several edges land on "data" and overwrote each other; or what arrives is a sheet of rows, not HTML.',
   'run.gm.dataNotInserted': 'HTML/text content received on the "data" port but not inserted: add {{html}} to the body to display it.',
   'run.gm.combinedTable': 'Combined table: {count} columns ({columns}) × {rows} rows.',
   'run.gm.htmlTable': 'HTML mode: columns rendered as a table ({rows} rows).',

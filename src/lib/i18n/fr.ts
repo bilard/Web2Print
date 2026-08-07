@@ -2586,7 +2586,7 @@ export const fr = {
   'run.gm.htmlUnchecked': '{{html}} détecté mais la case « HTML » est décochée : le balisage partira en texte brut. Coche « HTML » pour un rendu visuel.',
   'run.gm.bodyFromData': 'Corps vide et du contenu reçu sur « data » : ce contenu devient le corps du mail (équivaut à un corps « {{html}} »).',
   'run.gm.htmlInjected': 'Contenu {{html}} injecté dans le corps ({count} car.).',
-  'run.gm.htmlTokenNoData': '{{html}} présent dans le corps mais le port « data » ne contient pas de HTML (chaîne). Relie UNIQUEMENT la sortie « html » du node source au port « data » (une seule arête).',
+  'run.gm.htmlTokenNoData': 'Envoi ANNULÉ : « {{html}} » est dans le corps, mais le port « data » ne porte aucun HTML. Le mail serait parti avec le jeton écrit en toutes lettres. Causes usuelles : ce node a été lancé SEUL (lance le workflow complet, ou au moins le node qui produit le HTML) ; plusieurs arêtes arrivent sur « data » et se sont écrasées ; ou ce qui arrive est une feuille de lignes, pas du HTML.',
   'run.gm.dataNotInserted': "Contenu HTML/texte reçu sur le port « data » mais non inséré : ajoute {{html}} dans le corps pour l'afficher.",
   'run.gm.combinedTable': 'Tableau combiné : {count} colonnes ({columns}) × {rows} lignes.',
   'run.gm.htmlTable': 'Mode HTML : colonnes rendues en tableau ({rows} lignes).',

@@ -763,9 +763,14 @@ const sendGmailNode: NodeSpec<
       finalBody = finalBody.replace(HTML_TOKEN_RE, () => injected)
       ctx.log('info', t('run.gm.htmlInjected', { count: injected.length }))
     } else if (hasHtmlToken && rawString === null) {
-      // {{html}} demandé mais le port `data` ne porte pas de chaîne. Cause fréquente :
-      // plusieurs edges sur `data` (le fan-in écrase la string), ou c'est une sheet/rows.
-      ctx.log('warn', t('run.gm.htmlTokenNoData'))
+      // ⚠ ARRÊT, pas un simple avertissement. Le mail partait avec « {{html}} » écrit en
+      // toutes lettres dans le corps — visible du destinataire, et impossible à rattraper
+      // une fois envoyé. Mieux vaut ne rien envoyer et dire pourquoi.
+      //
+      // Causes, dans l'ordre de fréquence : le node a été lancé SEUL (l'amont n'a pas
+      // tourné, le port est vide) ; plusieurs edges sur `data` (le fan-in écrase la
+      // chaîne) ; ou ce qui arrive est une feuille de lignes, pas du HTML.
+      throw new Error(t('run.gm.htmlTokenNoData'))
     } else if (rawString !== null && !hasHtmlToken) {
       ctx.log('warn', t('run.gm.dataNotInserted'))
     }

@@ -195,6 +195,10 @@ const MESSAGES = {
     fr: 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
     en: 'Competitor index empty for the {sites} site(s) under the "{watchId}" monitoring. Check that the "Harvest competitors" node uses the SAME monitoring identifier ("{watchId}") and that it ran first.',
   },
+  'run.gm.htmlTokenNoData': {
+    fr: 'Envoi ANNULÉ : « {{html}} » est dans le corps, mais le port « data » ne porte aucun HTML. Le mail serait parti avec le jeton écrit en toutes lettres. Causes usuelles : ce node a été lancé SEUL (lance le workflow complet, ou au moins le node qui produit le HTML) ; plusieurs arêtes arrivent sur « data » et se sont écrasées ; ou ce qui arrive est une feuille de lignes, pas du HTML.',
+    en: 'Send CANCELLED: "{{html}}" sits in the body, but the "data" port carries no HTML. The email would have gone out with the token spelled out. Usual causes: this node was run ALONE (run the whole workflow, or at least the node producing the HTML); several edges land on "data" and overwrote each other; or what arrives is a sheet of rows, not HTML.',
+  },
   'run.sendWindow.closed': {
     fr: 'Envoi suspendu — {reason}',
     en: 'Send suspended — {reason}',

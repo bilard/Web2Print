@@ -945,6 +945,9 @@ registerServerNode({
     const to = String(config.to ?? '').trim()
     if (!to) throw new Error(t(ctx.locale, 'run.gm.noRecipient'))
     let body = injectHtmlToken(String(config.body ?? ''), inputs.data, isHtml)
+    // ⚠ ARRÊT si le jeton survit (jumeau du client) : le mail partirait avec « {{html} }»
+    // écrit en toutes lettres, visible du destinataire et irrattrapable une fois envoyé.
+    if (/\{\{\s*html\s*\}\}/.test(body)) throw new Error(t(ctx.locale, 'run.gm.htmlTokenNoData'))
     if (rows && hasTableToken(body)) body = injectTable(body, rows, isHtml)
     const mime = buildMime(to, String(config.subject ?? ''), body, isHtml, buildAttachment(rows))
     const id = await gmailSend(token, mime, ctx.locale)
